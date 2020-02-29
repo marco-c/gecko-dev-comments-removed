@@ -7,8 +7,8 @@
 
 
 
-#ifndef WEBMENC_H_
-#define WEBMENC_H_
+#ifndef VPX_WEBMENC_H_
+#define VPX_WEBMENC_H_
 
 #include <stdio.h>
 #include <stdlib.h>

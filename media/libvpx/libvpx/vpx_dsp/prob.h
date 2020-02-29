@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_PROB_H_
-#define VPX_DSP_PROB_H_
+#ifndef VPX_VPX_DSP_PROB_H_
+#define VPX_VPX_DSP_PROB_H_
 
 #include <assert.h>
 
@@ -32,7 +32,7 @@ typedef int8_t vpx_tree_index;
 
 #define TREE_SIZE(leaf_count) (2 * (leaf_count)-2)
 
-#define vpx_complement(x) (255 - x)
+#define vpx_complement(x) (255 - (x))
 
 #define MODE_MV_COUNT_SAT 20
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_X86_HIGHBD_INV_TXFM_SSE2_H_
-#define VPX_DSP_X86_HIGHBD_INV_TXFM_SSE2_H_
+#ifndef VPX_VPX_DSP_X86_HIGHBD_INV_TXFM_SSE2_H_
+#define VPX_VPX_DSP_X86_HIGHBD_INV_TXFM_SSE2_H_
 
 #include <emmintrin.h>  
 
@@ -18,6 +18,10 @@
 #include "vpx_dsp/inv_txfm.h"
 #include "vpx_dsp/x86/transpose_sse2.h"
 #include "vpx_dsp/x86/txfm_common_sse2.h"
+
+
+
+
 
 static INLINE void extend_64bit(const __m128i in,
                                 __m128i *const out ) {

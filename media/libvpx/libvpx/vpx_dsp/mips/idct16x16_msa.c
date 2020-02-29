@@ -8,6 +8,7 @@
 
 
 
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/mips/inv_txfm_msa.h"
 
 void vpx_idct16_1d_rows_msa(const int16_t *input, int16_t *output) {

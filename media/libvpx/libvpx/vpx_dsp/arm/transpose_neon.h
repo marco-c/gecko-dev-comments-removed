@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_ARM_TRANSPOSE_NEON_H_
-#define VPX_DSP_ARM_TRANSPOSE_NEON_H_
+#ifndef VPX_VPX_DSP_ARM_TRANSPOSE_NEON_H_
+#define VPX_VPX_DSP_ARM_TRANSPOSE_NEON_H_
 
 #include <arm_neon.h>
 

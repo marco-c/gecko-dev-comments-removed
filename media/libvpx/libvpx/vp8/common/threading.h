@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_THREADING_H_
-#define VP8_COMMON_THREADING_H_
+#ifndef VPX_VP8_COMMON_THREADING_H_
+#define VPX_VP8_COMMON_THREADING_H_
 
 #include "./vpx_config.h"
 
@@ -185,7 +185,7 @@ static inline int sem_destroy(sem_t *sem) {
 
 #endif
 
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
 #include "vpx_ports/x86.h"
 #else
 #define x86_pause_hint()

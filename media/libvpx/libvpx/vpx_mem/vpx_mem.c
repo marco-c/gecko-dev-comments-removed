@@ -16,11 +16,13 @@
 #include "include/vpx_mem_intrnl.h"
 #include "vpx/vpx_integer.h"
 
+#if !defined(VPX_MAX_ALLOCABLE_MEMORY)
 #if SIZE_MAX > (1ULL << 40)
 #define VPX_MAX_ALLOCABLE_MEMORY (1ULL << 40)
 #else
 
 #define VPX_MAX_ALLOCABLE_MEMORY ((1ULL << 31) - (1 << 16))
+#endif
 #endif
 
 

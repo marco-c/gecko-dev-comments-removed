@@ -11,8 +11,8 @@
 #include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
 
-void vpx_sad64x64x4d_avx512(const uint8_t *src, int src_stride,
-                            const uint8_t *const ref[4], int ref_stride,
+void vpx_sad64x64x4d_avx512(const uint8_t *src_ptr, int src_stride,
+                            const uint8_t *const ref_array[4], int ref_stride,
                             uint32_t res[4]) {
   __m512i src_reg, ref0_reg, ref1_reg, ref2_reg, ref3_reg;
   __m512i sum_ref0, sum_ref1, sum_ref2, sum_ref3;
@@ -20,17 +20,17 @@ void vpx_sad64x64x4d_avx512(const uint8_t *src, int src_stride,
   int i;
   const uint8_t *ref0, *ref1, *ref2, *ref3;
 
-  ref0 = ref[0];
-  ref1 = ref[1];
-  ref2 = ref[2];
-  ref3 = ref[3];
+  ref0 = ref_array[0];
+  ref1 = ref_array[1];
+  ref2 = ref_array[2];
+  ref3 = ref_array[3];
   sum_ref0 = _mm512_set1_epi16(0);
   sum_ref1 = _mm512_set1_epi16(0);
   sum_ref2 = _mm512_set1_epi16(0);
   sum_ref3 = _mm512_set1_epi16(0);
   for (i = 0; i < 64; i++) {
     
-    src_reg = _mm512_loadu_si512((const __m512i *)src);
+    src_reg = _mm512_loadu_si512((const __m512i *)src_ptr);
     ref0_reg = _mm512_loadu_si512((const __m512i *)ref0);
     ref1_reg = _mm512_loadu_si512((const __m512i *)ref1);
     ref2_reg = _mm512_loadu_si512((const __m512i *)ref2);
@@ -46,7 +46,7 @@ void vpx_sad64x64x4d_avx512(const uint8_t *src, int src_stride,
     sum_ref2 = _mm512_add_epi32(sum_ref2, ref2_reg);
     sum_ref3 = _mm512_add_epi32(sum_ref3, ref3_reg);
 
-    src += src_stride;
+    src_ptr += src_stride;
     ref0 += ref_stride;
     ref1 += ref_stride;
     ref2 += ref_stride;

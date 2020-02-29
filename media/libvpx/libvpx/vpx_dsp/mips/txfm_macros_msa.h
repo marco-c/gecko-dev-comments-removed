@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_MIPS_TXFM_MACROS_MIPS_MSA_H_
-#define VPX_DSP_MIPS_TXFM_MACROS_MIPS_MSA_H_
+#ifndef VPX_VPX_DSP_MIPS_TXFM_MACROS_MSA_H_
+#define VPX_VPX_DSP_MIPS_TXFM_MACROS_MSA_H_
 
 #include "vpx_dsp/mips/macros_msa.h"
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
-#define VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
+#ifndef VPX_VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
+#define VPX_VPX_UTIL_VPX_WRITE_YUV_FRAME_H_
 
 #include <stdio.h>
 #include "vpx_scale/yv12config.h"

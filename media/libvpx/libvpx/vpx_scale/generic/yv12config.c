@@ -15,6 +15,9 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
 
+#if defined(VPX_MAX_ALLOCABLE_MEMORY)
+#include "vp9/common/vp9_onyxc_int.h"
+#endif  
 
 
 
@@ -57,10 +60,18 @@ int vp8_yv12_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width,
 
     int uv_stride = y_stride >> 1;
     int uvplane_size = (uv_height + border) * uv_stride;
-    const int frame_size = yplane_size + 2 * uvplane_size;
+    const size_t frame_size = yplane_size + 2 * uvplane_size;
 
     if (!ybf->buffer_alloc) {
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, frame_size);
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+      
+      
+      
+      memset(ybf->buffer_alloc, 0, frame_size);
+#endif
+#endif
       ybf->buffer_alloc_sz = frame_size;
     }
 
@@ -142,6 +153,17 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
                              int border, int byte_alignment,
                              vpx_codec_frame_buffer_t *fb,
                              vpx_get_frame_buffer_cb_fn_t cb, void *cb_priv) {
+#if CONFIG_SIZE_LIMIT
+  if (width > DECODE_WIDTH_LIMIT || height > DECODE_HEIGHT_LIMIT) return -1;
+#endif
+
+  
+
+
+
+
+  if (border & 0x1f) return -3;
+
   if (ybf) {
     const int vp9_byte_align = (byte_alignment == 0) ? 1 : byte_alignment;
     const int aligned_width = (width + 7) & ~7;
@@ -166,9 +188,16 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
 
     uint8_t *buf = NULL;
 
+#if defined(VPX_MAX_ALLOCABLE_MEMORY)
     
     
-    if (frame_size > INT_MAX) {
+    
+    if (frame_size > VPX_MAX_ALLOCABLE_MEMORY / REF_FRAMES) return -1;
+#endif  
+
+    
+    
+    if (frame_size > SIZE_MAX) {
       return -1;
     }
 
@@ -192,31 +221,25 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
       
       
       
-      memset(ybf->buffer_alloc, 0, (int)frame_size);
+      memset(ybf->buffer_alloc, 0, (size_t)frame_size);
 #endif
 #endif
-    } else if (frame_size > (size_t)ybf->buffer_alloc_sz) {
+    } else if (frame_size > ybf->buffer_alloc_sz) {
       
       vpx_free(ybf->buffer_alloc);
       ybf->buffer_alloc = NULL;
+      ybf->buffer_alloc_sz = 0;
 
       ybf->buffer_alloc = (uint8_t *)vpx_memalign(32, (size_t)frame_size);
       if (!ybf->buffer_alloc) return -1;
 
-      ybf->buffer_alloc_sz = (int)frame_size;
+      ybf->buffer_alloc_sz = (size_t)frame_size;
 
       
       
       
       memset(ybf->buffer_alloc, 0, ybf->buffer_alloc_sz);
     }
-
-    
-
-
-
-
-    if (border & 0x1f) return -3;
 
     ybf->y_crop_width = width;
     ybf->y_crop_height = height;
@@ -231,7 +254,7 @@ int vpx_realloc_frame_buffer(YV12_BUFFER_CONFIG *ybf, int width, int height,
     ybf->uv_stride = uv_stride;
 
     ybf->border = border;
-    ybf->frame_size = (int)frame_size;
+    ybf->frame_size = (size_t)frame_size;
     ybf->subsampling_x = ss_x;
     ybf->subsampling_y = ss_y;
 

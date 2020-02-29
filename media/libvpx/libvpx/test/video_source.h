@@ -7,8 +7,8 @@
 
 
 
-#ifndef TEST_VIDEO_SOURCE_H_
-#define TEST_VIDEO_SOURCE_H_
+#ifndef VPX_TEST_VIDEO_SOURCE_H_
+#define VPX_TEST_VIDEO_SOURCE_H_
 
 #if defined(_WIN32)
 #undef NOMINMAX

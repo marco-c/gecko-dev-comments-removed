@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_VPX_INTEGER_H_
-#define VPX_VPX_INTEGER_H_
+#ifndef VPX_VPX_VPX_INTEGER_H_
+#define VPX_VPX_VPX_INTEGER_H_
 
 
 #include <stddef.h>
@@ -18,27 +18,10 @@
 #define VPX_FORCE_INLINE __forceinline
 #define VPX_INLINE __inline
 #else
-#define VPX_FORCE_INLINE __inline__ __attribute__(always_inline)
+#define VPX_FORCE_INLINE __inline__ __attribute__((always_inline))
 
 #define VPX_INLINE inline
 #endif
-
-#if !defined(VPX_DONT_DEFINE_STDINT_TYPES)
-
-#if defined(VPX_EMULATE_INTTYPES)
-typedef signed char int8_t;
-typedef signed short int16_t;
-typedef signed int int32_t;
-
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-
-#ifndef _UINTPTR_T_DEFINED
-typedef size_t uintptr_t;
-#endif
-
-#else
 
 
 
@@ -51,17 +34,7 @@ typedef size_t uintptr_t;
 #endif
 #endif  
 
-#include <stdint.h>
-
-#endif
-
-#endif 
-
-
-#if defined(_MSC_VER) && _MSC_VER < 1800
-#define PRId64 "I64d"
-#else
 #include <inttypes.h>
-#endif
+#include <stdint.h>
 
 #endif  

@@ -30,17 +30,37 @@ VpxVideoReader *vpx_video_reader_open(const char *filename) {
   char header[32];
   VpxVideoReader *reader = NULL;
   FILE *const file = fopen(filename, "rb");
-  if (!file) return NULL;  
+  if (!file) {
+    fprintf(stderr, "%s can't be opened.\n", filename);  
+    return NULL;
+  }
 
-  if (fread(header, 1, 32, file) != 32) return NULL;  
+  if (fread(header, 1, 32, file) != 32) {
+    fprintf(stderr, "File header on %s can't be read.\n",
+            filename);  
+    return NULL;
+  }
+  if (memcmp(kIVFSignature, header, 4) != 0) {
+    fprintf(stderr, "The IVF signature on %s is wrong.\n",
+            filename);  
 
-  if (memcmp(kIVFSignature, header, 4) != 0)
-    return NULL;  
+    return NULL;
+  }
+  if (mem_get_le16(header + 4) != 0) {
+    fprintf(stderr, "%s uses the wrong IVF version.\n",
+            filename);  
 
-  if (mem_get_le16(header + 4) != 0) return NULL;  
+    return NULL;
+  }
 
   reader = calloc(1, sizeof(*reader));
-  if (!reader) return NULL;  
+  if (!reader) {
+    fprintf(
+        stderr,
+        "Can't allocate VpxVideoReader\n");  
+
+    return NULL;
+  }
 
   reader->file = file;
   reader->info.codec_fourcc = mem_get_le32(header + 8);

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_TREEWRITER_H_
-#define VP8_ENCODER_TREEWRITER_H_
+#ifndef VPX_VP8_ENCODER_TREEWRITER_H_
+#define VPX_VP8_ENCODER_TREEWRITER_H_
 
 
 
@@ -56,8 +56,7 @@ static INLINE unsigned int vp8_cost_branch(const unsigned int ct[2],
 
 static void vp8_treed_write(vp8_writer *const w, vp8_tree t,
                             const vp8_prob *const p, int v,
-                            int n 
-                            ) {
+                            int n) { 
   vp8_tree_index i = 0;
 
   do {
@@ -73,8 +72,7 @@ static INLINE void vp8_write_token(vp8_writer *const w, vp8_tree t,
 }
 
 static int vp8_treed_cost(vp8_tree t, const vp8_prob *const p, int v,
-                          int n 
-                          ) {
+                          int n) { 
   int c = 0;
   vp8_tree_index i = 0;
 
@@ -93,9 +91,9 @@ static INLINE int vp8_cost_token(vp8_tree t, const vp8_prob *const p,
 
 
 
-void vp8_cost_tokens(int *Costs, const vp8_prob *, vp8_tree);
+void vp8_cost_tokens(int *c, const vp8_prob *, vp8_tree);
 
-void vp8_cost_tokens2(int *Costs, const vp8_prob *, vp8_tree, int);
+void vp8_cost_tokens2(int *c, const vp8_prob *, vp8_tree, int);
 
 #ifdef __cplusplus
 }  

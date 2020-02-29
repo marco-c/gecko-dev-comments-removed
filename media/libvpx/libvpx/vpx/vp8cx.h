@@ -7,8 +7,8 @@
 
 
 
-#ifndef VPX_VP8CX_H_
-#define VPX_VP8CX_H_
+#ifndef VPX_VPX_VP8CX_H_
+#define VPX_VPX_VP8CX_H_
 
 
 
@@ -158,6 +158,9 @@ enum vp8e_enc_control_id {
 
 
 
+
+
+
   VP8E_SET_ENABLEAUTOALTREF,
 
   
@@ -170,6 +173,9 @@ enum vp8e_enc_control_id {
   VP8E_SET_NOISE_SENSITIVITY,
 
   
+
+
+
 
 
 
@@ -427,6 +433,12 @@ enum vp8e_enc_control_id {
 
 
 
+  VP9E_SET_ROI_MAP,
+
+  
+
+
+
 
 
   VP9E_SET_SVC_PARAMETERS,
@@ -596,6 +608,74 @@ enum vp8e_enc_control_id {
 
 
   VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST,
+
+  
+
+
+
+
+
+
+  VP9E_SET_SVC_INTER_LAYER_PRED,
+
+  
+
+
+
+
+
+
+  VP9E_SET_SVC_FRAME_DROP_LAYER,
+
+  
+
+
+
+
+  VP9E_GET_SVC_REF_FRAME_CONFIG,
+
+  
+
+
+
+
+
+
+
+  VP9E_SET_SVC_GF_TEMPORAL_REF,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  VP9E_SET_SVC_SPATIAL_LAYER_SYNC,
+
+  
+
+
+
+
+
+  VP9E_SET_TPL,
+
+  
+
+
+
+
+
+
+
+  VP9E_SET_POSTENCODE_DROP,
 };
 
 
@@ -644,14 +724,18 @@ typedef enum vp9e_temporal_layering_mode {
 
 typedef struct vpx_roi_map {
   
+  uint8_t enabled;
+  
+
   unsigned char *roi_map;
   unsigned int rows; 
   unsigned int cols; 
   
+  int delta_q[8];  
+  int delta_lf[8]; 
   
-  
-  int delta_q[4];  
-  int delta_lf[4]; 
+  int skip[8];      
+  int ref_frame[8]; 
   
   unsigned int static_threshold[4];
 } vpx_roi_map_t;
@@ -716,8 +800,10 @@ typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
 
 
 typedef struct vpx_svc_layer_id {
-  int spatial_layer_id;  
+  int spatial_layer_id; 
+  
   int temporal_layer_id; 
+  int temporal_layer_id_per_spatial[VPX_SS_MAX_LAYERS]; 
 } vpx_svc_layer_id_t;
 
 
@@ -729,11 +815,57 @@ typedef struct vpx_svc_layer_id {
 
 
 typedef struct vpx_svc_ref_frame_config {
-  int frame_flags[VPX_TS_MAX_LAYERS]; 
-  int lst_fb_idx[VPX_TS_MAX_LAYERS];  
-  int gld_fb_idx[VPX_TS_MAX_LAYERS];  
-  int alt_fb_idx[VPX_TS_MAX_LAYERS];  
+  int lst_fb_idx[VPX_SS_MAX_LAYERS];         
+  int gld_fb_idx[VPX_SS_MAX_LAYERS];         
+  int alt_fb_idx[VPX_SS_MAX_LAYERS];         
+  int update_buffer_slot[VPX_SS_MAX_LAYERS]; 
+  
+  int update_last[VPX_SS_MAX_LAYERS];       
+  int update_golden[VPX_SS_MAX_LAYERS];     
+  int update_alt_ref[VPX_SS_MAX_LAYERS];    
+  int reference_last[VPX_SS_MAX_LAYERS];    
+  int reference_golden[VPX_SS_MAX_LAYERS];  
+  int reference_alt_ref[VPX_SS_MAX_LAYERS]; 
+  int64_t duration[VPX_SS_MAX_LAYERS];      
 } vpx_svc_ref_frame_config_t;
+
+
+
+
+
+
+typedef enum {
+  CONSTRAINED_LAYER_DROP,
+  
+  LAYER_DROP,           
+  FULL_SUPERFRAME_DROP, 
+  CONSTRAINED_FROM_ABOVE_DROP,
+  
+} SVC_LAYER_DROP_MODE;
+
+
+
+
+
+
+
+
+typedef struct vpx_svc_frame_drop {
+  int framedrop_thresh[VPX_SS_MAX_LAYERS]; 
+  SVC_LAYER_DROP_MODE
+  framedrop_mode;      
+  int max_consec_drop; 
+} vpx_svc_frame_drop_t;
+
+
+
+
+
+
+typedef struct vpx_svc_spatial_layer_sync {
+  int spatial_layer_sync[VPX_SS_MAX_LAYERS]; 
+  int base_layer_intra_only; 
+} vpx_svc_spatial_layer_sync_t;
 
 
 
@@ -749,6 +881,8 @@ VPX_CTRL_USE_TYPE(VP8E_SET_TEMPORAL_LAYER_ID, int)
 #define VPX_CTRL_VP8E_SET_TEMPORAL_LAYER_ID
 VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP, vpx_roi_map_t *)
 #define VPX_CTRL_VP8E_SET_ROI_MAP
+VPX_CTRL_USE_TYPE(VP9E_SET_ROI_MAP, vpx_roi_map_t *)
+#define VPX_CTRL_VP9E_SET_ROI_MAP
 VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP, vpx_active_map_t *)
 #define VPX_CTRL_VP8E_SET_ACTIVEMAP
 VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE, vpx_scaling_mode_t *)
@@ -792,6 +926,9 @@ VPX_CTRL_USE_TYPE(VP9E_SET_TILE_COLUMNS, int)
 VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS, int)
 #define VPX_CTRL_VP9E_SET_TILE_ROWS
 
+VPX_CTRL_USE_TYPE(VP9E_SET_TPL, int)
+#define VPX_CTRL_VP9E_SET_TPL
+
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
 #define VPX_CTRL_VP8E_GET_LAST_QUANTIZER
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64, int *)
@@ -801,8 +938,8 @@ VPX_CTRL_USE_TYPE(VP9E_GET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
 
 VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
 #define VPX_CTRL_VP8E_SET_MAX_INTRA_BITRATE_PCT
-VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
-#define VPX_CTRL_VP8E_SET_MAX_INTER_BITRATE_PCT
+VPX_CTRL_USE_TYPE(VP9E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
+#define VPX_CTRL_VP9E_SET_MAX_INTER_BITRATE_PCT
 
 VPX_CTRL_USE_TYPE(VP8E_SET_GF_CBR_BOOST_PCT, unsigned int)
 #define VPX_CTRL_VP8E_SET_GF_CBR_BOOST_PCT
@@ -866,6 +1003,25 @@ VPX_CTRL_USE_TYPE(VP9E_GET_LEVEL, int *)
 
 VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
 #define VPX_CTRL_VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_INTER_LAYER_PRED, unsigned int)
+#define VPX_CTRL_VP9E_SET_SVC_INTER_LAYER_PRED
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_FRAME_DROP_LAYER, vpx_svc_frame_drop_t *)
+#define VPX_CTRL_VP9E_SET_SVC_FRAME_DROP_LAYER
+
+VPX_CTRL_USE_TYPE(VP9E_GET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
+#define VPX_CTRL_VP9E_GET_SVC_REF_FRAME_CONFIG
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_GF_TEMPORAL_REF, unsigned int)
+#define VPX_CTRL_VP9E_SET_SVC_GF_TEMPORAL_REF
+
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_SPATIAL_LAYER_SYNC,
+                  vpx_svc_spatial_layer_sync_t *)
+#define VPX_CTRL_VP9E_SET_SVC_SPATIAL_LAYER_SYNC
+
+VPX_CTRL_USE_TYPE(VP9E_SET_POSTENCODE_DROP, unsigned int)
+#define VPX_CTRL_VP9E_SET_POSTENCODE_DROP
 
 
 

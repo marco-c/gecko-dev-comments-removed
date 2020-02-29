@@ -7,8 +7,8 @@
 
 
 
-#ifndef VP8_ENCODER_ENCODEFRAME_H_
-#define VP8_ENCODER_ENCODEFRAME_H_
+#ifndef VPX_VP8_ENCODER_ENCODEFRAME_H_
+#define VPX_VP8_ENCODER_ENCODEFRAME_H_
 
 #include "vp8/encoder/tokenize.h"
 

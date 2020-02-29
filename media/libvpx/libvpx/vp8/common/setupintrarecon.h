@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_SETUPINTRARECON_H_
-#define VP8_COMMON_SETUPINTRARECON_H_
+#ifndef VPX_VP8_COMMON_SETUPINTRARECON_H_
+#define VPX_VP8_COMMON_SETUPINTRARECON_H_
 
 #include "./vpx_config.h"
 #include "vpx_scale/yv12config.h"

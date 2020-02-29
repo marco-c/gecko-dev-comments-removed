@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_DENOISING_H_
-#define VP8_ENCODER_DENOISING_H_
+#ifndef VPX_VP8_ENCODER_DENOISING_H_
+#define VPX_VP8_ENCODER_DENOISING_H_
 
 #include "block.h"
 #include "vp8/common/loopfilter.h"

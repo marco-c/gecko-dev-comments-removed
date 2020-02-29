@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_BLOCK_H_
-#define VP8_ENCODER_BLOCK_H_
+#ifndef VPX_VP8_ENCODER_BLOCK_H_
+#define VPX_VP8_ENCODER_BLOCK_H_
 
 #include "vp8/common/onyx.h"
 #include "vp8/common/blockd.h"

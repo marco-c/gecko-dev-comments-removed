@@ -7,8 +7,8 @@
 
 
 
-#ifndef IVFDEC_H_
-#define IVFDEC_H_
+#ifndef VPX_IVFDEC_H_
+#define VPX_IVFDEC_H_
 
 #include "./tools_common.h"
 

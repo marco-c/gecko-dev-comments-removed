@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_CONTEXT_TREE_H_
-#define VP9_ENCODER_VP9_CONTEXT_TREE_H_
+#ifndef VPX_VP9_ENCODER_VP9_CONTEXT_TREE_H_
+#define VPX_VP9_ENCODER_VP9_CONTEXT_TREE_H_
 
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/encoder/vp9_block.h"
@@ -56,6 +56,7 @@ typedef struct {
   
   int rate;
   int64_t dist;
+  int64_t rdcost;
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
   unsigned int newmv_sse;
@@ -75,6 +76,8 @@ typedef struct {
 
   
   int32_t sum_y_eobs;
+  
+  uint8_t skip_ref_frame_mask;
 } PICK_MODE_CONTEXT;
 
 typedef struct PC_TREE {
@@ -88,6 +91,9 @@ typedef struct PC_TREE {
     struct PC_TREE *split[4];
     PICK_MODE_CONTEXT *leaf_split[4];
   };
+  
+  
+  MV mv;
 } PC_TREE;
 
 void vp9_setup_pc_tree(struct VP9Common *cm, struct ThreadData *td);
@@ -97,4 +103,4 @@ void vp9_free_pc_tree(struct ThreadData *td);
 }  
 #endif
 
-#endif 
+#endif  

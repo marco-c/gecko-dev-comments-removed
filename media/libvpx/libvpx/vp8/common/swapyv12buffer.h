@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_SWAPYV12BUFFER_H_
-#define VP8_COMMON_SWAPYV12BUFFER_H_
+#ifndef VPX_VP8_COMMON_SWAPYV12BUFFER_H_
+#define VPX_VP8_COMMON_SWAPYV12BUFFER_H_
 
 #include "vpx_scale/yv12config.h"
 

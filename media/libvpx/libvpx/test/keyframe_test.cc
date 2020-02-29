@@ -38,7 +38,7 @@ class KeyframeTest
     if (kf_do_force_kf_) {
       frame_flags_ = (video->frame() % 3) ? 0 : VPX_EFLAG_FORCE_KF;
     }
-    if (set_cpu_used_ && video->frame() == 1) {
+    if (set_cpu_used_ && video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
     }
   }
@@ -68,7 +68,9 @@ TEST_P(KeyframeTest, TestRandomVideoSource) {
 
   
   
-  if (GET_PARAM(1) > 0) EXPECT_GT(kf_count_, 1);
+  if (GET_PARAM(1) > 0) {
+    EXPECT_GT(kf_count_, 1);
+  }
 }
 
 TEST_P(KeyframeTest, TestDisableKeyframes) {
@@ -128,8 +130,9 @@ TEST_P(KeyframeTest, TestAutoKeyframe) {
 
   
   
-  if (GET_PARAM(1) > 0)
+  if (GET_PARAM(1) > 0) {
     EXPECT_EQ(2u, kf_pts_list_.size()) << " Not the right number of keyframes ";
+  }
 
   
   for (std::vector<vpx_codec_pts_t>::const_iterator iter = kf_pts_list_.begin();

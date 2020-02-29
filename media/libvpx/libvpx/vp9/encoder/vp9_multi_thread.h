@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_MULTI_THREAD_H
-#define VP9_ENCODER_VP9_MULTI_THREAD_H
+#ifndef VPX_VP9_ENCODER_VP9_MULTI_THREAD_H_
+#define VPX_VP9_ENCODER_VP9_MULTI_THREAD_H_
 
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_job_queue.h"
@@ -28,6 +28,9 @@ void vp9_assign_tile_to_thread(MultiThreadHandle *multi_thread_ctxt,
 void vp9_multi_thread_tile_init(VP9_COMP *cpi);
 
 void vp9_row_mt_mem_alloc(VP9_COMP *cpi);
+
+void vp9_row_mt_alloc_rd_thresh(VP9_COMP *const cpi,
+                                TileDataEnc *const this_tile);
 
 void vp9_row_mt_mem_dealloc(VP9_COMP *cpi);
 

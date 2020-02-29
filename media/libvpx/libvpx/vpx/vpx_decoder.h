@@ -7,8 +7,8 @@
 
 
 
-#ifndef VPX_VPX_DECODER_H_
-#define VPX_VPX_DECODER_H_
+#ifndef VPX_VPX_VPX_DECODER_H_
+#define VPX_VPX_VPX_DECODER_H_
 
 
 

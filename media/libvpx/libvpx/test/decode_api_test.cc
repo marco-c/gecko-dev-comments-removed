@@ -138,8 +138,30 @@ TEST(DecodeAPI, Vp9InvalidDecode) {
   EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
 }
 
-TEST(DecodeAPI, Vp9PeekSI) {
+void TestPeekInfo(const uint8_t *const data, uint32_t data_sz,
+                  uint32_t peek_size) {
   const vpx_codec_iface_t *const codec = &vpx_codec_vp9_dx_algo;
+  
+  
+  if (data_sz >= 8) {
+    vpx_codec_ctx_t dec;
+    EXPECT_EQ(VPX_CODEC_OK, vpx_codec_dec_init(&dec, codec, NULL, 0));
+    EXPECT_EQ((data_sz < peek_size) ? VPX_CODEC_UNSUP_BITSTREAM
+                                    : VPX_CODEC_CORRUPT_FRAME,
+              vpx_codec_decode(&dec, data, data_sz, NULL, 0));
+    vpx_codec_iter_t iter = NULL;
+    EXPECT_EQ(NULL, vpx_codec_get_frame(&dec, &iter));
+    EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
+  }
+
+  
+  vpx_codec_stream_info_t si;
+  si.sz = sizeof(si);
+  EXPECT_EQ((data_sz < peek_size) ? VPX_CODEC_UNSUP_BITSTREAM : VPX_CODEC_OK,
+            vpx_codec_peek_stream_info(codec, data, data_sz, &si));
+}
+
+TEST(DecodeAPI, Vp9PeekStreamInfo) {
   
   
   
@@ -150,24 +172,18 @@ TEST(DecodeAPI, Vp9PeekSI) {
   };
 
   for (uint32_t data_sz = 1; data_sz <= 32; ++data_sz) {
-    
-    
-    if (data_sz >= 8) {
-      vpx_codec_ctx_t dec;
-      EXPECT_EQ(VPX_CODEC_OK, vpx_codec_dec_init(&dec, codec, NULL, 0));
-      EXPECT_EQ(
-          (data_sz < 10) ? VPX_CODEC_UNSUP_BITSTREAM : VPX_CODEC_CORRUPT_FRAME,
-          vpx_codec_decode(&dec, data, data_sz, NULL, 0));
-      vpx_codec_iter_t iter = NULL;
-      EXPECT_EQ(NULL, vpx_codec_get_frame(&dec, &iter));
-      EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&dec));
-    }
+    TestPeekInfo(data, data_sz, 10);
+  }
+}
 
-    
-    vpx_codec_stream_info_t si;
-    si.sz = sizeof(si);
-    EXPECT_EQ((data_sz < 10) ? VPX_CODEC_UNSUP_BITSTREAM : VPX_CODEC_OK,
-              vpx_codec_peek_stream_info(codec, data, data_sz, &si));
+TEST(DecodeAPI, Vp9PeekStreamInfoTruncated) {
+  
+  
+  const uint8_t profile1_data[10] = { 0xa4, 0xe9, 0x30, 0x68, 0x53,
+                                      0xe9, 0x30, 0x68, 0x53, 0x04 };
+
+  for (uint32_t data_sz = 1; data_sz <= 10; ++data_sz) {
+    TestPeekInfo(profile1_data, data_sz, 11);
   }
 }
 #endif  

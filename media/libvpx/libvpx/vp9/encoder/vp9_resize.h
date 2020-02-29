@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_RESIZE_H_
-#define VP9_ENCODER_VP9_RESIZE_H_
+#ifndef VPX_VP9_ENCODER_VP9_RESIZE_H_
+#define VPX_VP9_ENCODER_VP9_RESIZE_H_
 
 #include <stdio.h>
 #include "vpx/vpx_integer.h"

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_SEGMENTATION_H_
-#define VP9_ENCODER_VP9_SEGMENTATION_H_
+#ifndef VPX_VP9_ENCODER_VP9_SEGMENTATION_H_
+#define VPX_VP9_ENCODER_VP9_SEGMENTATION_H_
 
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/encoder/vp9_encoder.h"
@@ -25,6 +25,11 @@ void vp9_disable_segfeature(struct segmentation *seg, int segment_id,
                             SEG_LVL_FEATURES feature_id);
 void vp9_clear_segdata(struct segmentation *seg, int segment_id,
                        SEG_LVL_FEATURES feature_id);
+
+void vp9_psnr_aq_mode_setup(struct segmentation *seg);
+
+void vp9_perceptual_aq_mode_setup(struct VP9_COMP *cpi,
+                                  struct segmentation *seg);
 
 
 

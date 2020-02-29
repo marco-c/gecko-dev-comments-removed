@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_RECONINTRA_H_
-#define VP9_COMMON_VP9_RECONINTRA_H_
+#ifndef VPX_VP9_COMMON_VP9_RECONINTRA_H_
+#define VPX_VP9_COMMON_VP9_RECONINTRA_H_
 
 #include "vpx/vpx_integer.h"
 #include "vp9/common/vp9_blockd.h"

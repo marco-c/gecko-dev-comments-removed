@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_MV_H_
-#define VP8_COMMON_MV_H_
+#ifndef VPX_VP8_COMMON_MV_H_
+#define VPX_VP8_COMMON_MV_H_
 #include "vpx/vpx_integer.h"
 
 #ifdef __cplusplus

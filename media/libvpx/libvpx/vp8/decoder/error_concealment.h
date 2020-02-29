@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_DECODER_ERROR_CONCEALMENT_H_
-#define VP8_DECODER_ERROR_CONCEALMENT_H_
+#ifndef VPX_VP8_DECODER_ERROR_CONCEALMENT_H_
+#define VPX_VP8_DECODER_ERROR_CONCEALMENT_H_
 
 #include "onyxd_int.h"
 #include "ec_types.h"

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_COMMON_H_
-#define VP8_COMMON_COMMON_H_
+#ifndef VPX_VP8_COMMON_COMMON_H_
+#define VPX_VP8_COMMON_COMMON_H_
 
 #include <assert.h>
 
@@ -31,15 +31,15 @@ extern "C" {
 
 
 
-#define vp8_copy_array(Dest, Src, N)       \
-  {                                        \
-    assert(sizeof(*Dest) == sizeof(*Src)); \
-    memcpy(Dest, Src, N * sizeof(*Src));   \
+#define vp8_copy_array(Dest, Src, N)           \
+  {                                            \
+    assert(sizeof(*(Dest)) == sizeof(*(Src))); \
+    memcpy(Dest, Src, (N) * sizeof(*(Src)));   \
   }
 
-#define vp8_zero(Dest) memset(&Dest, 0, sizeof(Dest));
+#define vp8_zero(Dest) memset(&(Dest), 0, sizeof(Dest));
 
-#define vp8_zero_array(Dest, N) memset(Dest, 0, N * sizeof(*Dest));
+#define vp8_zero_array(Dest, N) memset(Dest, 0, (N) * sizeof(*(Dest)));
 
 #ifdef __cplusplus
 }  

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_DECODER_TREEREADER_H_
-#define VP8_DECODER_TREEREADER_H_
+#ifndef VPX_VP8_DECODER_TREEREADER_H_
+#define VPX_VP8_DECODER_TREEREADER_H_
 
 #include "./vpx_config.h"
 #include "vp8/common/treecoder.h"
@@ -30,7 +30,7 @@ typedef BOOL_DECODER vp8_reader;
 static INLINE int vp8_treed_read(
     vp8_reader *const r, 
     vp8_tree t, const vp8_prob *const p) {
-  register vp8_tree_index i = 0;
+  vp8_tree_index i = 0;
 
   while ((i = t[i + vp8_read(r, p[i >> 1])]) > 0) {
   }

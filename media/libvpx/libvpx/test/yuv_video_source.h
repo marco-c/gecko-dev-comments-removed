@@ -7,8 +7,8 @@
 
 
 
-#ifndef TEST_YUV_VIDEO_SOURCE_H_
-#define TEST_YUV_VIDEO_SOURCE_H_
+#ifndef VPX_TEST_YUV_VIDEO_SOURCE_H_
+#define VPX_TEST_YUV_VIDEO_SOURCE_H_
 
 #include <cstdio>
 #include <cstdlib>

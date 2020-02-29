@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_SCALE_VPX_SCALE_H_
-#define VPX_SCALE_VPX_SCALE_H_
+#ifndef VPX_VPX_SCALE_VPX_SCALE_H_
+#define VPX_VPX_SCALE_VPX_SCALE_H_
 
 #include "vpx_scale/yv12config.h"
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_INV_TXFM_H_
-#define VPX_DSP_INV_TXFM_H_
+#ifndef VPX_VPX_DSP_INV_TXFM_H_
+#define VPX_VPX_DSP_INV_TXFM_H_
 
 #include <assert.h>
 
@@ -60,7 +60,6 @@ static INLINE tran_high_t highbd_check_range(tran_high_t input, int bd) {
 #endif  
 
 #if CONFIG_EMULATE_HARDWARE
-
 
 
 

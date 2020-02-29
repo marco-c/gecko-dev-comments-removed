@@ -7,8 +7,8 @@
 
 
 
-#ifndef VPX_DSP_VPX_CONVOLVE_H_
-#define VPX_DSP_VPX_CONVOLVE_H_
+#ifndef VPX_VPX_DSP_VPX_CONVOLVE_H_
+#define VPX_VPX_DSP_VPX_CONVOLVE_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_QUANT_COMMON_H_
-#define VP9_COMMON_VP9_QUANT_COMMON_H_
+#ifndef VPX_VP9_COMMON_VP9_QUANT_COMMON_H_
+#define VPX_VP9_COMMON_VP9_QUANT_COMMON_H_
 
 #include "vpx/vpx_codec.h"
 #include "vp9/common/vp9_seg_common.h"

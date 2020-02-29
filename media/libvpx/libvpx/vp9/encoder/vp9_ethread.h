@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_ETHREAD_H_
-#define VP9_ENCODER_VP9_ETHREAD_H_
+#ifndef VPX_VP9_ENCODER_VP9_ETHREAD_H_
+#define VPX_VP9_ENCODER_VP9_ETHREAD_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,8 +33,8 @@ typedef struct EncWorkerData {
 
 typedef struct VP9RowMTSyncData {
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t *mutex_;
-  pthread_cond_t *cond_;
+  pthread_mutex_t *mutex;
+  pthread_cond_t *cond;
 #endif
   
   int *cur_col;

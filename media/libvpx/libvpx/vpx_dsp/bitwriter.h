@@ -8,12 +8,17 @@
 
 
 
-#ifndef VPX_DSP_BITWRITER_H_
-#define VPX_DSP_BITWRITER_H_
+#ifndef VPX_VPX_DSP_BITWRITER_H_
+#define VPX_VPX_DSP_BITWRITER_H_
+
+#include <stdio.h>
 
 #include "vpx_ports/mem.h"
 
 #include "vpx_dsp/prob.h"
+#if CONFIG_BITSTREAM_DEBUG
+#include "vpx_util/vpx_debug_util.h"
+#endif  
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,15 +32,30 @@ typedef struct vpx_writer {
   uint8_t *buffer;
 } vpx_writer;
 
-void vpx_start_encode(vpx_writer *bc, uint8_t *buffer);
-void vpx_stop_encode(vpx_writer *bc);
+void vpx_start_encode(vpx_writer *br, uint8_t *source);
+void vpx_stop_encode(vpx_writer *br);
 
 static INLINE void vpx_write(vpx_writer *br, int bit, int probability) {
   unsigned int split;
   int count = br->count;
   unsigned int range = br->range;
   unsigned int lowvalue = br->lowvalue;
-  register int shift;
+  int shift;
+
+#if CONFIG_BITSTREAM_DEBUG
+  
+
+
+
+
+
+
+
+
+
+
+  bitstream_queue_push(bit, probability);
+#endif
 
   split = 1 + (((range - 1) * probability) >> 8);
 
@@ -65,7 +85,7 @@ static INLINE void vpx_write(vpx_writer *br, int bit, int probability) {
       br->buffer[x] += 1;
     }
 
-    br->buffer[br->pos++] = (lowvalue >> (24 - offset));
+    br->buffer[br->pos++] = (lowvalue >> (24 - offset)) & 0xff;
     lowvalue <<= offset;
     shift = count;
     lowvalue &= 0xffffff;

@@ -52,9 +52,10 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
     
 
 
-    if (video->frame_number() == 0)
+    if (video->frame_number() == 0) {
       ASSERT_EQ(VPX_CODEC_OK, res_peek)
           << "Peek return failed: " << vpx_codec_err_to_string(res_peek);
+    }
   } else {
     
 
@@ -97,7 +98,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     const vpx_image_t *img = NULL;
 
     
-    while ((img = dec_iter.Next())) {
+    while (!::testing::Test::HasFailure() && (img = dec_iter.Next())) {
       DecompressedFrameHook(*img, video->frame_number());
     }
   }

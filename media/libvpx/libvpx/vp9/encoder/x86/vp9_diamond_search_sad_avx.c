@@ -114,7 +114,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
   
   const uint8_t *best_address = in_what;
   const uint8_t *new_best_address = best_address;
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
   __m128i v_ba_q = _mm_set1_epi64x((intptr_t)best_address);
 #else
   __m128i v_ba_d = _mm_set1_epi32((intptr_t)best_address);
@@ -138,7 +138,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
   for (i = 0, step = 0; step < tot_steps; step++) {
     for (j = 0; j < cfg->searches_per_step; j += 4, i += 4) {
       __m128i v_sad_d, v_cost_d, v_outside_d, v_inside_d, v_diff_mv_w;
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
       __m128i v_blocka[2];
 #else
       __m128i v_blocka[1];
@@ -160,7 +160,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
       }
 
       
-      v_outside_d = _mm_xor_si128(v_inside_d, _mm_set1_epi8(0xff));
+      v_outside_d = _mm_xor_si128(v_inside_d, _mm_set1_epi8((int8_t)0xff));
       
       
       v_outside_d = _mm_srli_epi32(v_outside_d, 1);
@@ -175,7 +175,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
 
       
       {
-#if ARCH_X86_64  
+#if VPX_ARCH_X86_64  
         
         __m128i v_bo10_q = _mm_loadu_si128((const __m128i *)&ss_os[i + 0]);
         __m128i v_bo32_q = _mm_loadu_si128((const __m128i *)&ss_os[i + 2]);
@@ -294,7 +294,7 @@ int vp9_diamond_search_sad_avx(const MACROBLOCK *x,
     best_address = new_best_address;
 
     v_bmv_w = _mm_set1_epi32(bmv.as_int);
-#if ARCH_X86_64
+#if VPX_ARCH_X86_64
     v_ba_q = _mm_set1_epi64x((intptr_t)best_address);
 #else
     v_ba_d = _mm_set1_epi32((intptr_t)best_address);

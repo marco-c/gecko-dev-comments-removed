@@ -8,6 +8,7 @@
 
 
 
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/mips/inv_txfm_msa.h"
 
 void vpx_idct8x8_64_add_msa(const int16_t *input, uint8_t *dst,

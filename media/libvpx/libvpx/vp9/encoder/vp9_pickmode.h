@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_PICKMODE_H_
-#define VP9_ENCODER_VP9_PICKMODE_H_
+#ifndef VPX_VP9_ENCODER_VP9_PICKMODE_H_
+#define VPX_VP9_ENCODER_VP9_PICKMODE_H_
 
 #include "vp9/encoder/vp9_encoder.h"
 

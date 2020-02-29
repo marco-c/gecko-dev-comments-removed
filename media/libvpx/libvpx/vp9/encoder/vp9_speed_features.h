@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_SPEED_FEATURES_H_
-#define VP9_ENCODER_VP9_SPEED_FEATURES_H_
+#ifndef VPX_VP9_ENCODER_VP9_SPEED_FEATURES_H_
+#define VPX_VP9_ENCODER_VP9_SPEED_FEATURES_H_
 
 #include "vp9/common/vp9_enums.h"
 
@@ -57,7 +57,8 @@ typedef enum {
   BIGDIA = 3,
   SQUARE = 4,
   FAST_HEX = 5,
-  FAST_DIAMOND = 6
+  FAST_DIAMOND = 6,
+  MESH = 7
 } SEARCH_METHODS;
 
 typedef enum {
@@ -148,7 +149,10 @@ typedef enum {
   VAR_BASED_PARTITION,
 
   
-  SOURCE_VAR_BASED_PARTITION
+  SOURCE_VAR_BASED_PARTITION,
+
+  
+  ML_BASED_PARTITION
 } PARTITION_SEARCH_TYPE;
 
 typedef enum {
@@ -160,6 +164,19 @@ typedef enum {
   
   ONE_LOOP_REDUCED = 1
 } FAST_COEFF_UPDATE;
+
+typedef enum { EIGHTH_PEL, QUARTER_PEL, HALF_PEL, FULL_PEL } SUBPEL_FORCE_STOP;
+
+typedef struct ADAPT_SUBPEL_FORCE_STOP {
+  
+  int mv_thresh;
+
+  
+  SUBPEL_FORCE_STOP force_stop_below;
+
+  
+  SUBPEL_FORCE_STOP force_stop_above;
+} ADAPT_SUBPEL_FORCE_STOP;
 
 typedef struct MV_SPEED_FEATURES {
   
@@ -180,14 +197,16 @@ typedef struct MV_SPEED_FEATURES {
   SUBPEL_SEARCH_METHODS subpel_search_method;
 
   
-  int subpel_iters_per_step;
+  
+  int subpel_search_level;
 
   
+  SUBPEL_FORCE_STOP subpel_force_stop;
+
   
-  
-  
-  
-  int subpel_force_stop;
+  int enable_adaptive_subpel_force_stop;
+
+  ADAPT_SUBPEL_FORCE_STOP adapt_subpel_force_stop;
 
   
   int fullpel_search_step_param;
@@ -204,6 +223,28 @@ typedef struct MESH_PATTERN {
   int range;
   int interval;
 } MESH_PATTERN;
+
+typedef enum {
+  
+  NO_DETECTION = 0,
+
+  
+  
+  FAST_DETECTION_MAXQ = 1,
+
+  
+  
+  
+  
+  RE_ENCODE_MAXQ = 2
+} OVERSHOOT_DETECTION_CBR_RT;
+
+typedef enum {
+  USE_2_TAPS = 0,
+  USE_4_TAPS,
+  USE_8_TAPS,
+  USE_8_TAPS_SHARP,
+} SUBPEL_SEARCH_TYPE;
 
 typedef struct SPEED_FEATURES {
   MV_SPEED_FEATURES mv;
@@ -259,6 +300,9 @@ typedef struct SPEED_FEATURES {
   int allow_acl;
 
   
+  int enable_tpl_model;
+
+  
   
   int allow_txfm_domain_distortion;
   double tx_domain_thresh;
@@ -271,6 +315,9 @@ typedef struct SPEED_FEATURES {
   
   
   TX_SIZE_SEARCH_METHOD tx_size_search_method;
+
+  
+  int tx_size_search_depth;
 
   
   
@@ -294,8 +341,13 @@ typedef struct SPEED_FEATURES {
   int less_rectangular_check;
 
   
+  
   int use_square_partition_only;
-  BLOCK_SIZE use_square_only_threshold;
+  BLOCK_SIZE use_square_only_thresh_high;
+  BLOCK_SIZE use_square_only_thresh_low;
+
+  
+  int prune_ref_frame_for_rect_partitions;
 
   
   
@@ -326,6 +378,9 @@ typedef struct SPEED_FEATURES {
   
   
   int adaptive_motion_search;
+
+  
+  int enhanced_full_pixel_motion_search;
 
   
   int exhaustive_searches_thresh;
@@ -448,8 +503,27 @@ typedef struct SPEED_FEATURES {
   
   PARTITION_SEARCH_BREAKOUT_THR partition_search_breakout_thr;
 
-  
-  int ml_partition_search_early_termination;
+  struct {
+    
+    int search_breakout;
+    
+    
+    float search_breakout_thresh[3];
+
+    
+    int search_early_termination;
+
+    
+    
+    int var_pruning;
+
+    
+    
+    
+    
+    
+    int prune_rect_thresh[4];
+  } rd_ml_partition;
 
   
   int allow_partition_search_skip;
@@ -508,12 +582,44 @@ typedef struct SPEED_FEATURES {
 
   
   int svc_use_lowres_part;
+
+  
+  
+  OVERSHOOT_DETECTION_CBR_RT overshoot_detection_cbr_rt;
+
+  
+  int disable_16x16part_nonkey;
+
+  
+  int disable_golden_ref;
+
+  
+  
+  SUBPEL_SEARCH_TYPE use_accurate_subpel_search;
+
+  
+  SEARCH_METHODS temporal_filter_search_method;
+
+  
+  int nonrd_use_ml_partition;
+
+  
+  int variance_part_thresh_mult;
+
+  
+  int force_smooth_interpol;
+
+  
+  
+  int rt_intra_dc_only_low_content;
 } SPEED_FEATURES;
 
 struct VP9_COMP;
 
-void vp9_set_speed_features_framesize_independent(struct VP9_COMP *cpi);
-void vp9_set_speed_features_framesize_dependent(struct VP9_COMP *cpi);
+void vp9_set_speed_features_framesize_independent(struct VP9_COMP *cpi,
+                                                  int speed);
+void vp9_set_speed_features_framesize_dependent(struct VP9_COMP *cpi,
+                                                int speed);
 
 #ifdef __cplusplus
 }  

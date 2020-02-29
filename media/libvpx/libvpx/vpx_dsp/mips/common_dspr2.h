@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_COMMON_MIPS_DSPR2_H_
-#define VPX_COMMON_MIPS_DSPR2_H_
+#ifndef VPX_VPX_DSP_MIPS_COMMON_DSPR2_H_
+#define VPX_VPX_DSP_MIPS_COMMON_DSPR2_H_
 
 #include <assert.h>
 #include "./vpx_config.h"

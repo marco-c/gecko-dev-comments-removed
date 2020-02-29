@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_UTIL_VPX_ATOMICS_H_
-#define VPX_UTIL_VPX_ATOMICS_H_
+#ifndef VPX_VPX_UTIL_VPX_ATOMICS_H_
+#define VPX_VPX_UTIL_VPX_ATOMICS_H_
 
 #include "./vpx_config.h"
 
@@ -51,12 +51,12 @@ extern "C" {
   do {                              \
   } while (0)
 #else
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
 
 #define vpx_atomic_memory_barrier() __asm__ __volatile__("" ::: "memory")
-#elif ARCH_ARM
+#elif VPX_ARCH_ARM
 #define vpx_atomic_memory_barrier() __asm__ __volatile__("dmb ish" ::: "memory")
-#elif ARCH_MIPS
+#elif VPX_ARCH_MIPS
 #define vpx_atomic_memory_barrier() __asm__ __volatile__("sync" ::: "memory")
 #else
 #error Unsupported architecture!
@@ -68,7 +68,9 @@ extern "C" {
 
 
 
-typedef struct vpx_atomic_int { volatile int value; } vpx_atomic_int;
+typedef struct vpx_atomic_int {
+  volatile int value;
+} vpx_atomic_int;
 
 #define VPX_ATOMIC_INIT(num) \
   { num }

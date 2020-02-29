@@ -7,8 +7,8 @@
 
 
 
-#ifndef WEBMDEC_H_
-#define WEBMDEC_H_
+#ifndef VPX_WEBMDEC_H_
+#define VPX_WEBMDEC_H_
 
 #include "./tools_common.h"
 

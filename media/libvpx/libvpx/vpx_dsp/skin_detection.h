@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_SKIN_DETECTION_H_
-#define VPX_DSP_SKIN_DETECTION_H_
+#ifndef VPX_VPX_DSP_SKIN_DETECTION_H_
+#define VPX_VPX_DSP_SKIN_DETECTION_H_
 
 #ifdef __cplusplus
 extern "C" {

@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_REGISTER_STATE_CHECK_H_
-#define TEST_REGISTER_STATE_CHECK_H_
+#ifndef VPX_TEST_REGISTER_STATE_CHECK_H_
+#define VPX_TEST_REGISTER_STATE_CHECK_H_
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "./vpx_config.h"
@@ -28,7 +28,7 @@
 
 
 
-#if defined(_WIN64)
+#if defined(_WIN64) && VPX_ARCH_X86_64
 
 #undef NOMINMAX
 #define NOMINMAX
@@ -140,7 +140,7 @@ class RegisterStateCheck {};
 
 #endif  
 
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
 #if defined(__GNUC__)
 
 namespace libvpx_test {

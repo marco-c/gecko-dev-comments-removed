@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_ETHREADING_H_
-#define VP8_ENCODER_ETHREADING_H_
+#ifndef VPX_VP8_ENCODER_ETHREADING_H_
+#define VPX_VP8_ENCODER_ETHREADING_H_
 
 #include "vp8/encoder/onyx_int.h"
 

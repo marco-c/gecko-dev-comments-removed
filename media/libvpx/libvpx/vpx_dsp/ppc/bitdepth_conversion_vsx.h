@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_PPC_BITDEPTH_CONVERSION_VSX_H_
-#define VPX_DSP_PPC_BITDEPTH_CONVERSION_VSX_H_
+#ifndef VPX_VPX_DSP_PPC_BITDEPTH_CONVERSION_VSX_H_
+#define VPX_VPX_DSP_PPC_BITDEPTH_CONVERSION_VSX_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"

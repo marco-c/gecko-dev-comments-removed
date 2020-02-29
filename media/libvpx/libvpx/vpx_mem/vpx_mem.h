@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_MEM_VPX_MEM_H_
-#define VPX_MEM_VPX_MEM_H_
+#ifndef VPX_VPX_MEM_VPX_MEM_H_
+#define VPX_VPX_MEM_VPX_MEM_H_
 
 #include "vpx_config.h"
 #if defined(__uClinux__)

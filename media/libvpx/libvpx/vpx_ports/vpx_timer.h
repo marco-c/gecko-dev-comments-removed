@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_VPX_TIMER_H_
-#define VPX_PORTS_VPX_TIMER_H_
+#ifndef VPX_VPX_PORTS_VPX_TIMER_H_
+#define VPX_VPX_PORTS_VPX_TIMER_H_
 
 #include "./vpx_config.h"
 

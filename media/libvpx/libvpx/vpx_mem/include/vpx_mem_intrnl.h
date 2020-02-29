@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_MEM_INCLUDE_VPX_MEM_INTRNL_H_
-#define VPX_MEM_INCLUDE_VPX_MEM_INTRNL_H_
+#ifndef VPX_VPX_MEM_INCLUDE_VPX_MEM_INTRNL_H_
+#define VPX_VPX_MEM_INCLUDE_VPX_MEM_INTRNL_H_
 #include "./vpx_config.h"
 
 #define ADDRESS_STORAGE_SIZE sizeof(size_t)

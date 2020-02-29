@@ -8,6 +8,7 @@
 
 
 
+#include "./vpx_dsp_rtcd.h"
 #include "vpx_dsp/mips/inv_txfm_msa.h"
 
 static void idct32x8_row_transpose_store(const int16_t *input,

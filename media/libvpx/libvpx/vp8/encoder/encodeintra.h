@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_ENCODEINTRA_H_
-#define VP8_ENCODER_ENCODEINTRA_H_
+#ifndef VPX_VP8_ENCODER_ENCODEINTRA_H_
+#define VPX_VP8_ENCODER_ENCODEINTRA_H_
 #include "onyx_int.h"
 
 #ifdef __cplusplus

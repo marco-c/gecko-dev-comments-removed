@@ -8,10 +8,11 @@
 
 
 
-#ifndef VPX_DSP_PSNR_H_
-#define VPX_DSP_PSNR_H_
+#ifndef VPX_VPX_DSP_PSNR_H_
+#define VPX_VPX_DSP_PSNR_H_
 
 #include "vpx_scale/yv12config.h"
+#include "vpx/vpx_encoder.h"
 
 #define MAX_PSNR 100.0
 
@@ -19,11 +20,7 @@
 extern "C" {
 #endif
 
-typedef struct {
-  double psnr[4];       
-  uint64_t sse[4];      
-  uint32_t samples[4];  
-} PSNR_STATS;
+typedef struct vpx_psnr_pkt PSNR_STATS;
 
 
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_INVTRANS_H_
-#define VP8_COMMON_INVTRANS_H_
+#ifndef VPX_VP8_COMMON_INVTRANS_H_
+#define VPX_VP8_COMMON_INVTRANS_H_
 
 #include "./vpx_config.h"
 #include "vp8_rtcd.h"

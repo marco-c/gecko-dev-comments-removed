@@ -7,8 +7,8 @@
 
 
 
-#ifndef VP8_ENCODER_LOOKAHEAD_H_
-#define VP8_ENCODER_LOOKAHEAD_H_
+#ifndef VPX_VP8_ENCODER_LOOKAHEAD_H_
+#define VPX_VP8_ENCODER_LOOKAHEAD_H_
 #include "vpx_scale/yv12config.h"
 #include "vpx/vpx_integer.h"
 
@@ -74,7 +74,7 @@ int vp8_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
 struct lookahead_entry *vp8_lookahead_pop(struct lookahead_ctx *ctx, int drain);
 
 #define PEEK_FORWARD 1
-#define PEEK_BACKWARD -1
+#define PEEK_BACKWARD (-1)
 
 
 

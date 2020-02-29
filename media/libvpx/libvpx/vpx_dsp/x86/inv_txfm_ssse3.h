@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_X86_INV_TXFM_SSSE3_H_
-#define VPX_DSP_X86_INV_TXFM_SSSE3_H_
+#ifndef VPX_VPX_DSP_X86_INV_TXFM_SSSE3_H_
+#define VPX_VPX_DSP_X86_INV_TXFM_SSSE3_H_
 
 #include <tmmintrin.h>
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_X86_TXFM_COMMON_SSE2_H_
-#define VPX_DSP_X86_TXFM_COMMON_SSE2_H_
+#ifndef VPX_VPX_DSP_X86_TXFM_COMMON_SSE2_H_
+#define VPX_VPX_DSP_X86_TXFM_COMMON_SSE2_H_
 
 #include <emmintrin.h>
 #include "vpx/vpx_integer.h"

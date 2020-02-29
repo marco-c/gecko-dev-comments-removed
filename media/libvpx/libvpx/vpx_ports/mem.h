@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_MEM_H_
-#define VPX_PORTS_MEM_H_
+#ifndef VPX_VPX_PORTS_MEM_H_
+#define VPX_VPX_PORTS_MEM_H_
 
 #include "vpx_config.h"
 #include "vpx/vpx_integer.h"
@@ -49,6 +49,26 @@
 #define VPX_WITH_ASAN 1
 #else
 #define VPX_WITH_ASAN 0
+#endif  
+
+#if !defined(__has_attribute)
+#define __has_attribute(x) 0
+#endif  
+
+#if __has_attribute(uninitialized)
+
+
+
+
+
+
+
+
+
+
+#define VPX_UNINITIALIZED __attribute__((uninitialized))
+#else
+#define VPX_UNINITIALIZED
 #endif  
 
 #endif  

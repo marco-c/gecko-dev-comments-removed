@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_TREEWRITER_H_
-#define VP9_ENCODER_VP9_TREEWRITER_H_
+#ifndef VPX_VP9_ENCODER_VP9_TREEWRITER_H_
+#define VPX_VP9_ENCODER_VP9_TREEWRITER_H_
 
 #include "vpx_dsp/bitwriter.h"
 

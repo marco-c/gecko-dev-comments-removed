@@ -28,72 +28,71 @@ extern "C" {
 #if defined(_M_X64)
 
 
-#define READYUV422                                                             \
-    xmm0 = _mm_cvtsi32_si128(*(uint32*)u_buf);                                 \
-    xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));                      \
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
-    xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                                     \
-    u_buf += 4;                                                                \
-    xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
-    xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
-    y_buf += 8;
+#define READYUV422                                        \
+  xmm0 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
+  xmm1 = _mm_cvtsi32_si128(*(uint32_t*)(u_buf + offset)); \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
+  xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                  \
+  u_buf += 4;                                             \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
+  y_buf += 8;
 
 
-#define READYUVA422                                                            \
-    xmm0 = _mm_cvtsi32_si128(*(uint32*)u_buf);                                 \
-    xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));                      \
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
-    xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                                     \
-    u_buf += 4;                                                                \
-    xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
-    xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
-    y_buf += 8;                                                                \
-    xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                                   \
-    a_buf += 8;
+#define READYUVA422                                       \
+  xmm0 = _mm_cvtsi32_si128(*(uint32_t*)u_buf);            \
+  xmm1 = _mm_cvtsi32_si128(*(uint32_t*)(u_buf + offset)); \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                   \
+  xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                  \
+  u_buf += 4;                                             \
+  xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                \
+  xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                   \
+  y_buf += 8;                                             \
+  xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                \
+  a_buf += 8;
 
 
-#define YUVTORGB(yuvconstants)                                                 \
-    xmm1 = _mm_loadu_si128(&xmm0);                                             \
-    xmm2 = _mm_loadu_si128(&xmm0);                                             \
-    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB);           \
-    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG);           \
-    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR);           \
-    xmm0 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasB, xmm0);             \
-    xmm1 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasG, xmm1);             \
-    xmm2 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasR, xmm2);             \
-    xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);            \
-    xmm0 = _mm_adds_epi16(xmm0, xmm4);                                         \
-    xmm1 = _mm_adds_epi16(xmm1, xmm4);                                         \
-    xmm2 = _mm_adds_epi16(xmm2, xmm4);                                         \
-    xmm0 = _mm_srai_epi16(xmm0, 6);                                            \
-    xmm1 = _mm_srai_epi16(xmm1, 6);                                            \
-    xmm2 = _mm_srai_epi16(xmm2, 6);                                            \
-    xmm0 = _mm_packus_epi16(xmm0, xmm0);                                       \
-    xmm1 = _mm_packus_epi16(xmm1, xmm1);                                       \
-    xmm2 = _mm_packus_epi16(xmm2, xmm2);
+#define YUVTORGB(yuvconstants)                                     \
+  xmm1 = _mm_loadu_si128(&xmm0);                                   \
+  xmm2 = _mm_loadu_si128(&xmm0);                                   \
+  xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB); \
+  xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG); \
+  xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR); \
+  xmm0 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasB, xmm0);   \
+  xmm1 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasG, xmm1);   \
+  xmm2 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasR, xmm2);   \
+  xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);  \
+  xmm0 = _mm_adds_epi16(xmm0, xmm4);                               \
+  xmm1 = _mm_adds_epi16(xmm1, xmm4);                               \
+  xmm2 = _mm_adds_epi16(xmm2, xmm4);                               \
+  xmm0 = _mm_srai_epi16(xmm0, 6);                                  \
+  xmm1 = _mm_srai_epi16(xmm1, 6);                                  \
+  xmm2 = _mm_srai_epi16(xmm2, 6);                                  \
+  xmm0 = _mm_packus_epi16(xmm0, xmm0);                             \
+  xmm1 = _mm_packus_epi16(xmm1, xmm1);                             \
+  xmm2 = _mm_packus_epi16(xmm2, xmm2);
 
 
-#define STOREARGB                                                              \
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
-    xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);                                      \
-    xmm1 = _mm_loadu_si128(&xmm0);                                             \
-    xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);                                     \
-    xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);                                     \
-    _mm_storeu_si128((__m128i *)dst_argb, xmm0);                               \
-    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);                        \
-    dst_argb += 32;
-
+#define STOREARGB                                    \
+  xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);              \
+  xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);              \
+  xmm1 = _mm_loadu_si128(&xmm0);                     \
+  xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);             \
+  xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);             \
+  _mm_storeu_si128((__m128i*)dst_argb, xmm0);        \
+  _mm_storeu_si128((__m128i*)(dst_argb + 16), xmm1); \
+  dst_argb += 32;
 
 #if defined(HAS_I422TOARGBROW_SSSE3)
-void I422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
+void I422ToARGBRow_SSSE3(const uint8_t* y_buf,
+                         const uint8_t* u_buf,
+                         const uint8_t* v_buf,
+                         uint8_t* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width) {
   __m128i xmm0, xmm1, xmm2, xmm4;
   const __m128i xmm5 = _mm_set1_epi8(-1);
-  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
+  const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
     READYUV422
     YUVTORGB(yuvconstants)
@@ -104,15 +103,15 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 #endif
 
 #if defined(HAS_I422ALPHATOARGBROW_SSSE3)
-void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              const uint8* a_buf,
-                              uint8* dst_argb,
+void I422AlphaToARGBRow_SSSE3(const uint8_t* y_buf,
+                              const uint8_t* u_buf,
+                              const uint8_t* v_buf,
+                              const uint8_t* a_buf,
+                              uint8_t* dst_argb,
                               const struct YuvConstants* yuvconstants,
                               int width) {
   __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
-  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
+  const ptrdiff_t offset = (uint8_t*)v_buf - (uint8_t*)u_buf;
   while (width > 0) {
     READYUVA422
     YUVTORGB(yuvconstants)
@@ -127,175 +126,143 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 
-static const vec8 kARGBToY = {
-  13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
-};
+static const vec8 kARGBToY = {13, 65, 33, 0, 13, 65, 33, 0,
+                              13, 65, 33, 0, 13, 65, 33, 0};
 
 
-static const vec8 kARGBToYJ = {
-  15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0
-};
+static const vec8 kARGBToYJ = {15, 75, 38, 0, 15, 75, 38, 0,
+                               15, 75, 38, 0, 15, 75, 38, 0};
 
-static const vec8 kARGBToU = {
-  112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
-};
+static const vec8 kARGBToU = {112, -74, -38, 0, 112, -74, -38, 0,
+                              112, -74, -38, 0, 112, -74, -38, 0};
 
-static const vec8 kARGBToUJ = {
-  127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0
-};
+static const vec8 kARGBToUJ = {127, -84, -43, 0, 127, -84, -43, 0,
+                               127, -84, -43, 0, 127, -84, -43, 0};
 
 static const vec8 kARGBToV = {
-  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
+    -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
 };
 
-static const vec8 kARGBToVJ = {
-  -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0
-};
+static const vec8 kARGBToVJ = {-20, -107, 127, 0, -20, -107, 127, 0,
+                               -20, -107, 127, 0, -20, -107, 127, 0};
 
 
 static const lvec8 kShufARGBToUV_AVX = {
-  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
-  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15
-};
+    0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
+    0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15};
 
 
-static const vec8 kBGRAToY = {
-  0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
-};
+static const vec8 kBGRAToY = {0, 33, 65, 13, 0, 33, 65, 13,
+                              0, 33, 65, 13, 0, 33, 65, 13};
 
-static const vec8 kBGRAToU = {
-  0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112
-};
+static const vec8 kBGRAToU = {0, -38, -74, 112, 0, -38, -74, 112,
+                              0, -38, -74, 112, 0, -38, -74, 112};
 
-static const vec8 kBGRAToV = {
-  0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
-};
+static const vec8 kBGRAToV = {0, 112, -94, -18, 0, 112, -94, -18,
+                              0, 112, -94, -18, 0, 112, -94, -18};
 
 
-static const vec8 kABGRToY = {
-  33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
-};
+static const vec8 kABGRToY = {33, 65, 13, 0, 33, 65, 13, 0,
+                              33, 65, 13, 0, 33, 65, 13, 0};
 
-static const vec8 kABGRToU = {
-  -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0
-};
+static const vec8 kABGRToU = {-38, -74, 112, 0, -38, -74, 112, 0,
+                              -38, -74, 112, 0, -38, -74, 112, 0};
 
-static const vec8 kABGRToV = {
-  112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
-};
+static const vec8 kABGRToV = {112, -94, -18, 0, 112, -94, -18, 0,
+                              112, -94, -18, 0, 112, -94, -18, 0};
 
 
-static const vec8 kRGBAToY = {
-  0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33
-};
+static const vec8 kRGBAToY = {0, 13, 65, 33, 0, 13, 65, 33,
+                              0, 13, 65, 33, 0, 13, 65, 33};
 
-static const vec8 kRGBAToU = {
-  0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38
-};
+static const vec8 kRGBAToU = {0, 112, -74, -38, 0, 112, -74, -38,
+                              0, 112, -74, -38, 0, 112, -74, -38};
 
-static const vec8 kRGBAToV = {
-  0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112
-};
+static const vec8 kRGBAToV = {0, -18, -94, 112, 0, -18, -94, 112,
+                              0, -18, -94, 112, 0, -18, -94, 112};
 
-static const uvec8 kAddY16 = {
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
-};
+static const uvec8 kAddY16 = {16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+                              16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u};
 
 
-static const vec16 kAddYJ64 = {
-  64, 64, 64, 64, 64, 64, 64, 64
-};
+static const vec16 kAddYJ64 = {64, 64, 64, 64, 64, 64, 64, 64};
 
-static const uvec8 kAddUV128 = {
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
-};
+static const uvec8 kAddUV128 = {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
+                                128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
-static const uvec16 kAddUVJ128 = {
-  0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u
-};
+static const uvec16 kAddUVJ128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
+                                  0x8080u, 0x8080u, 0x8080u, 0x8080u};
 
 
 static const uvec8 kShuffleMaskRGB24ToARGB = {
-  0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
-};
+    0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u};
 
 
-static const uvec8 kShuffleMaskRAWToARGB = {
-  2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
-};
+static const uvec8 kShuffleMaskRAWToARGB = {2u, 1u, 0u, 12u, 5u,  4u,  3u, 13u,
+                                            8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u};
 
 
 static const uvec8 kShuffleMaskRAWToRGB24_0 = {
-  2u, 1u, 0u, 5u, 4u, 3u, 8u, 7u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
-};
+    2u,   1u,   0u,   5u,   4u,   3u,   8u,   7u,
+    128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
 
 static const uvec8 kShuffleMaskRAWToRGB24_1 = {
-  2u, 7u, 6u, 5u, 10u, 9u, 8u, 13u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
-};
+    2u,   7u,   6u,   5u,   10u,  9u,   8u,   13u,
+    128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
 
 static const uvec8 kShuffleMaskRAWToRGB24_2 = {
-  8u, 7u, 12u, 11u, 10u, 15u, 14u, 13u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
-};
+    8u,   7u,   12u,  11u,  10u,  15u,  14u,  13u,
+    128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
 
 static const uvec8 kShuffleMaskARGBToRGB24 = {
-  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
-};
+    0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u};
 
 
 static const uvec8 kShuffleMaskARGBToRAW = {
-  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
-};
+    2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u};
 
 
 static const uvec8 kShuffleMaskARGBToRGB24_0 = {
-  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
-};
+    0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u};
 
 
-static const lvec8 kShuffleYUY2Y = {
-  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14,
-  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
-};
+static const lvec8 kShuffleYUY2Y = {0,  0,  2,  2,  4,  4,  6,  6,  8,  8, 10,
+                                    10, 12, 12, 14, 14, 0,  0,  2,  2,  4, 4,
+                                    6,  6,  8,  8,  10, 10, 12, 12, 14, 14};
 
 
-static const lvec8 kShuffleYUY2UV = {
-  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15,
-  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
-};
+static const lvec8 kShuffleYUY2UV = {1,  3,  1,  3,  5,  7,  5,  7,  9,  11, 9,
+                                     11, 13, 15, 13, 15, 1,  3,  1,  3,  5,  7,
+                                     5,  7,  9,  11, 9,  11, 13, 15, 13, 15};
 
 
-static const lvec8 kShuffleUYVYY = {
-  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15,
-  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
-};
+static const lvec8 kShuffleUYVYY = {1,  1,  3,  3,  5,  5,  7,  7,  9,  9, 11,
+                                    11, 13, 13, 15, 15, 1,  1,  3,  3,  5, 5,
+                                    7,  7,  9,  9,  11, 11, 13, 13, 15, 15};
 
 
-static const lvec8 kShuffleUYVYUV = {
-  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14,
-  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
-};
+static const lvec8 kShuffleUYVYUV = {0,  2,  0,  2,  4,  6,  4,  6,  8,  10, 8,
+                                     10, 12, 14, 12, 14, 0,  2,  0,  2,  4,  6,
+                                     4,  6,  8,  10, 8,  10, 12, 14, 12, 14};
 
 
 static const lvec8 kShuffleNV21 = {
-  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
-  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+    1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
 };
 
 
-__declspec(naked)
-void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width) {
+__declspec(naked) void J400ToARGBRow_SSE2(const uint8_t* src_y,
+                                          uint8_t* dst_argb,
+                                          int width) {
   __asm {
-    mov        eax, [esp + 4]        
-    mov        edx, [esp + 8]        
-    mov        ecx, [esp + 12]       
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
+    pcmpeqb    xmm5, xmm5  
     pslld      xmm5, 24
 
   convertloop:
@@ -318,13 +285,14 @@ void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width) {
 
 #ifdef HAS_J400TOARGBROW_AVX2
 
-__declspec(naked)
-void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width) {
+__declspec(naked) void J400ToARGBRow_AVX2(const uint8_t* src_y,
+                                          uint8_t* dst_argb,
+                                          int width) {
   __asm {
-    mov         eax, [esp + 4]        
-    mov         edx, [esp + 8]        
-    mov         ecx, [esp + 12]       
-    vpcmpeqb    ymm5, ymm5, ymm5      
+    mov         eax, [esp + 4]  
+    mov         edx, [esp + 8]  
+    mov         ecx, [esp + 12]  
+    vpcmpeqb    ymm5, ymm5, ymm5  
     vpslld      ymm5, ymm5, 24
 
   convertloop:
@@ -348,13 +316,14 @@ void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width) {
 }
 #endif  
 
-__declspec(naked)
-void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width) {
+__declspec(naked) void RGB24ToARGBRow_SSSE3(const uint8_t* src_rgb24,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
-    pcmpeqb   xmm5, xmm5       
+    pcmpeqb   xmm5, xmm5  
     pslld     xmm5, 24
     movdqa    xmm4, xmmword ptr kShuffleMaskRGB24ToARGB
 
@@ -364,17 +333,17 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width) {
     movdqu    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
-    palignr   xmm2, xmm1, 8    
+    palignr   xmm2, xmm1, 8  
     pshufb    xmm2, xmm4
     por       xmm2, xmm5
-    palignr   xmm1, xmm0, 12   
+    palignr   xmm1, xmm0, 12  
     pshufb    xmm0, xmm4
     movdqu    [edx + 32], xmm2
     por       xmm0, xmm5
     pshufb    xmm1, xmm4
     movdqu    [edx], xmm0
     por       xmm1, xmm5
-    palignr   xmm3, xmm3, 4    
+    palignr   xmm3, xmm3, 4  
     pshufb    xmm3, xmm4
     movdqu    [edx + 16], xmm1
     por       xmm3, xmm5
@@ -386,14 +355,14 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width) {
   }
 }
 
-__declspec(naked)
-void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
-                        int width) {
+__declspec(naked) void RAWToARGBRow_SSSE3(const uint8_t* src_raw,
+                                          uint8_t* dst_argb,
+                                          int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
-    pcmpeqb   xmm5, xmm5       
+    pcmpeqb   xmm5, xmm5  
     pslld     xmm5, 24
     movdqa    xmm4, xmmword ptr kShuffleMaskRAWToARGB
 
@@ -403,17 +372,17 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
     movdqu    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
-    palignr   xmm2, xmm1, 8    
+    palignr   xmm2, xmm1, 8  
     pshufb    xmm2, xmm4
     por       xmm2, xmm5
-    palignr   xmm1, xmm0, 12   
+    palignr   xmm1, xmm0, 12  
     pshufb    xmm0, xmm4
     movdqu    [edx + 32], xmm2
     por       xmm0, xmm5
     pshufb    xmm1, xmm4
     movdqu    [edx], xmm0
     por       xmm1, xmm5
-    palignr   xmm3, xmm3, 4    
+    palignr   xmm3, xmm3, 4  
     pshufb    xmm3, xmm4
     movdqu    [edx + 16], xmm1
     por       xmm3, xmm5
@@ -425,11 +394,12 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
   }
 }
 
-__declspec(naked)
-void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width) {
+__declspec(naked) void RAWToRGB24Row_SSSE3(const uint8_t* src_raw,
+                                           uint8_t* dst_rgb24,
+                                           int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     movdqa    xmm3, xmmword ptr kShuffleMaskRAWToRGB24_0
     movdqa    xmm4, xmmword ptr kShuffleMaskRAWToRGB24_1
@@ -460,9 +430,9 @@ void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width) {
 
 
 
-__declspec(naked)
-void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
-                          int width) {
+__declspec(naked) void RGB565ToARGBRow_SSE2(const uint8_t* src_rgb565,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     mov       eax, 0x01080108  
     movd      xmm5, eax
@@ -470,33 +440,33 @@ void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
     mov       eax, 0x20802080  
     movd      xmm6, eax
     pshufd    xmm6, xmm6, 0
-    pcmpeqb   xmm3, xmm3       
+    pcmpeqb   xmm3, xmm3  
     psllw     xmm3, 11
-    pcmpeqb   xmm4, xmm4       
+    pcmpeqb   xmm4, xmm4  
     psllw     xmm4, 10
     psrlw     xmm4, 5
-    pcmpeqb   xmm7, xmm7       
+    pcmpeqb   xmm7, xmm7  
     psllw     xmm7, 8
 
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     sub       edx, eax
     sub       edx, eax
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
-    pand      xmm1, xmm3    
-    psllw     xmm2, 11      
-    pmulhuw   xmm1, xmm5    
-    pmulhuw   xmm2, xmm5    
+    pand      xmm1, xmm3  
+    psllw     xmm2, 11  
+    pmulhuw   xmm1, xmm5  
+    pmulhuw   xmm2, xmm5  
     psllw     xmm1, 8
-    por       xmm1, xmm2    
-    pand      xmm0, xmm4    
-    pmulhuw   xmm0, xmm6    
-    por       xmm0, xmm7    
+    por       xmm1, xmm2  
+    pand      xmm0, xmm4  
+    pmulhuw   xmm0, xmm6  
+    por       xmm0, xmm7  
     movdqa    xmm2, xmm1
     punpcklbw xmm1, xmm0
     punpckhbw xmm2, xmm0
@@ -516,9 +486,9 @@ void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
 
 
 
-__declspec(naked)
-void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
-                          int width) {
+__declspec(naked) void RGB565ToARGBRow_AVX2(const uint8_t* src_rgb565,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     mov        eax, 0x01080108  
     vmovd      xmm5, eax
@@ -526,32 +496,32 @@ void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
     mov        eax, 0x20802080  
     vmovd      xmm6, eax
     vbroadcastss ymm6, xmm6
-    vpcmpeqb   ymm3, ymm3, ymm3       
+    vpcmpeqb   ymm3, ymm3, ymm3  
     vpsllw     ymm3, ymm3, 11
-    vpcmpeqb   ymm4, ymm4, ymm4       
+    vpcmpeqb   ymm4, ymm4, ymm4  
     vpsllw     ymm4, ymm4, 10
     vpsrlw     ymm4, ymm4, 5
-    vpcmpeqb   ymm7, ymm7, ymm7       
+    vpcmpeqb   ymm7, ymm7, ymm7  
     vpsllw     ymm7, ymm7, 8
 
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     sub        edx, eax
     sub        edx, eax
 
  convertloop:
-    vmovdqu    ymm0, [eax]   
-    vpand      ymm1, ymm0, ymm3    
-    vpsllw     ymm2, ymm0, 11      
-    vpmulhuw   ymm1, ymm1, ymm5    
-    vpmulhuw   ymm2, ymm2, ymm5    
+    vmovdqu    ymm0, [eax]  
+    vpand      ymm1, ymm0, ymm3  
+    vpsllw     ymm2, ymm0, 11  
+    vpmulhuw   ymm1, ymm1, ymm5  
+    vpmulhuw   ymm2, ymm2, ymm5  
     vpsllw     ymm1, ymm1, 8
-    vpor       ymm1, ymm1, ymm2    
-    vpand      ymm0, ymm0, ymm4    
-    vpmulhuw   ymm0, ymm0, ymm6    
-    vpor       ymm0, ymm0, ymm7    
-    vpermq     ymm0, ymm0, 0xd8    
+    vpor       ymm1, ymm1, ymm2  
+    vpand      ymm0, ymm0, ymm4  
+    vpmulhuw   ymm0, ymm0, ymm6  
+    vpor       ymm0, ymm0, ymm7  
+    vpermq     ymm0, ymm0, 0xd8  
     vpermq     ymm1, ymm1, 0xd8
     vpunpckhbw ymm2, ymm1, ymm0
     vpunpcklbw ymm1, ymm1, ymm0
@@ -567,9 +537,9 @@ void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
 #endif  
 
 #ifdef HAS_ARGB1555TOARGBROW_AVX2
-__declspec(naked)
-void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
-                            int width) {
+__declspec(naked) void ARGB1555ToARGBRow_AVX2(const uint8_t* src_argb1555,
+                                              uint8_t* dst_argb,
+                                              int width) {
   __asm {
     mov        eax, 0x01080108  
     vmovd      xmm5, eax
@@ -577,33 +547,33 @@ void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
     mov        eax, 0x42004200  
     vmovd      xmm6, eax
     vbroadcastss ymm6, xmm6
-    vpcmpeqb   ymm3, ymm3, ymm3 
+    vpcmpeqb   ymm3, ymm3, ymm3  
     vpsllw     ymm3, ymm3, 11
-    vpsrlw     ymm4, ymm3, 6    
-    vpcmpeqb   ymm7, ymm7, ymm7 
+    vpsrlw     ymm4, ymm3, 6  
+    vpcmpeqb   ymm7, ymm7, ymm7  
     vpsllw     ymm7, ymm7, 8
 
-    mov        eax,  [esp + 4]   
-    mov        edx,  [esp + 8]   
+    mov        eax,  [esp + 4]  
+    mov        edx,  [esp + 8]  
     mov        ecx,  [esp + 12]  
     sub        edx,  eax
     sub        edx,  eax
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpsllw     ymm1, ymm0, 1       
-    vpsllw     ymm2, ymm0, 11      
+    vmovdqu    ymm0, [eax]  
+    vpsllw     ymm1, ymm0, 1  
+    vpsllw     ymm2, ymm0, 11  
     vpand      ymm1, ymm1, ymm3
-    vpmulhuw   ymm2, ymm2, ymm5    
-    vpmulhuw   ymm1, ymm1, ymm5    
+    vpmulhuw   ymm2, ymm2, ymm5  
+    vpmulhuw   ymm1, ymm1, ymm5  
     vpsllw     ymm1, ymm1, 8
-    vpor       ymm1, ymm1, ymm2    
-    vpsraw     ymm2, ymm0, 8       
-    vpand      ymm0, ymm0, ymm4    
-    vpmulhuw   ymm0, ymm0, ymm6    
+    vpor       ymm1, ymm1, ymm2  
+    vpsraw     ymm2, ymm0, 8  
+    vpand      ymm0, ymm0, ymm4  
+    vpmulhuw   ymm0, ymm0, ymm6  
     vpand      ymm2, ymm2, ymm7
-    vpor       ymm0, ymm0, ymm2    
-    vpermq     ymm0, ymm0, 0xd8    
+    vpor       ymm0, ymm0, ymm2  
+    vpermq     ymm0, ymm0, 0xd8  
     vpermq     ymm1, ymm1, 0xd8
     vpunpckhbw ymm2, ymm1, ymm0
     vpunpcklbw ymm1, ymm1, ymm0
@@ -619,29 +589,29 @@ void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
 #endif  
 
 #ifdef HAS_ARGB4444TOARGBROW_AVX2
-__declspec(naked)
-void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
-                            int width) {
+__declspec(naked) void ARGB4444ToARGBRow_AVX2(const uint8_t* src_argb4444,
+                                              uint8_t* dst_argb,
+                                              int width) {
   __asm {
     mov       eax,  0x0f0f0f0f  
     vmovd     xmm4, eax
     vbroadcastss ymm4, xmm4
-    vpslld    ymm5, ymm4, 4     
-    mov       eax,  [esp + 4]   
-    mov       edx,  [esp + 8]   
+    vpslld    ymm5, ymm4, 4  
+    mov       eax,  [esp + 4]  
+    mov       edx,  [esp + 8]  
     mov       ecx,  [esp + 12]  
     sub       edx,  eax
     sub       edx,  eax
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpand      ymm2, ymm0, ymm5    
-    vpand      ymm0, ymm0, ymm4    
+    vmovdqu    ymm0, [eax]  
+    vpand      ymm2, ymm0, ymm5  
+    vpand      ymm0, ymm0, ymm4  
     vpsrlw     ymm3, ymm2, 4
     vpsllw     ymm1, ymm0, 4
     vpor       ymm2, ymm2, ymm3
     vpor       ymm0, ymm0, ymm1
-    vpermq     ymm0, ymm0, 0xd8    
+    vpermq     ymm0, ymm0, 0xd8  
     vpermq     ymm2, ymm2, 0xd8
     vpunpckhbw ymm1, ymm0, ymm2
     vpunpcklbw ymm0, ymm0, ymm2
@@ -657,9 +627,9 @@ void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
 #endif  
 
 
-__declspec(naked)
-void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
-                            int width) {
+__declspec(naked) void ARGB1555ToARGBRow_SSE2(const uint8_t* src_argb1555,
+                                              uint8_t* dst_argb,
+                                              int width) {
   __asm {
     mov       eax, 0x01080108  
     movd      xmm5, eax
@@ -667,36 +637,36 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
     mov       eax, 0x42004200  
     movd      xmm6, eax
     pshufd    xmm6, xmm6, 0
-    pcmpeqb   xmm3, xmm3       
+    pcmpeqb   xmm3, xmm3  
     psllw     xmm3, 11
-    movdqa    xmm4, xmm3       
+    movdqa    xmm4, xmm3  
     psrlw     xmm4, 6
-    pcmpeqb   xmm7, xmm7       
+    pcmpeqb   xmm7, xmm7  
     psllw     xmm7, 8
 
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     sub       edx, eax
     sub       edx, eax
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
-    psllw     xmm1, 1       
-    psllw     xmm2, 11      
+    psllw     xmm1, 1  
+    psllw     xmm2, 11  
     pand      xmm1, xmm3
-    pmulhuw   xmm2, xmm5    
-    pmulhuw   xmm1, xmm5    
+    pmulhuw   xmm2, xmm5  
+    pmulhuw   xmm1, xmm5  
     psllw     xmm1, 8
-    por       xmm1, xmm2    
+    por       xmm1, xmm2  
     movdqa    xmm2, xmm0
-    pand      xmm0, xmm4    
-    psraw     xmm2, 8       
-    pmulhuw   xmm0, xmm6    
+    pand      xmm0, xmm4  
+    psraw     xmm2, 8  
+    pmulhuw   xmm0, xmm6  
     pand      xmm2, xmm7
-    por       xmm0, xmm2    
+    por       xmm0, xmm2  
     movdqa    xmm2, xmm1
     punpcklbw xmm1, xmm0
     punpckhbw xmm2, xmm0
@@ -710,26 +680,26 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
 }
 
 
-__declspec(naked)
-void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
-                            int width) {
+__declspec(naked) void ARGB4444ToARGBRow_SSE2(const uint8_t* src_argb4444,
+                                              uint8_t* dst_argb,
+                                              int width) {
   __asm {
     mov       eax, 0x0f0f0f0f  
     movd      xmm4, eax
     pshufd    xmm4, xmm4, 0
-    movdqa    xmm5, xmm4       
+    movdqa    xmm5, xmm4  
     pslld     xmm5, 4
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     sub       edx, eax
     sub       edx, eax
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqa    xmm2, xmm0
-    pand      xmm0, xmm4    
-    pand      xmm2, xmm5    
+    pand      xmm0, xmm4  
+    pand      xmm2, xmm5  
     movdqa    xmm1, xmm0
     movdqa    xmm3, xmm2
     psllw     xmm1, 4
@@ -748,37 +718,38 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
   }
 }
 
-__declspec(naked)
-void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToRGB24Row_SSSE3(const uint8_t* src_argb,
+                                            uint8_t* dst_rgb,
+                                            int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     movdqa    xmm6, xmmword ptr kShuffleMaskARGBToRGB24
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqu    xmm1, [eax + 16]
     movdqu    xmm2, [eax + 32]
     movdqu    xmm3, [eax + 48]
     lea       eax, [eax + 64]
-    pshufb    xmm0, xmm6    
+    pshufb    xmm0, xmm6  
     pshufb    xmm1, xmm6
     pshufb    xmm2, xmm6
     pshufb    xmm3, xmm6
-    movdqa    xmm4, xmm1   
-    psrldq    xmm1, 4      
-    pslldq    xmm4, 12     
-    movdqa    xmm5, xmm2   
-    por       xmm0, xmm4   
-    pslldq    xmm5, 8      
+    movdqa    xmm4, xmm1  
+    psrldq    xmm1, 4  
+    pslldq    xmm4, 12  
+    movdqa    xmm5, xmm2  
+    por       xmm0, xmm4  
+    pslldq    xmm5, 8  
     movdqu    [edx], xmm0  
-    por       xmm1, xmm5   
-    psrldq    xmm2, 8      
-    pslldq    xmm3, 4      
-    por       xmm2, xmm3   
-    movdqu    [edx + 16], xmm1   
-    movdqu    [edx + 32], xmm2   
+    por       xmm1, xmm5  
+    psrldq    xmm2, 8  
+    pslldq    xmm3, 4  
+    por       xmm2, xmm3  
+    movdqu    [edx + 16], xmm1  
+    movdqu    [edx + 32], xmm2  
     lea       edx, [edx + 48]
     sub       ecx, 16
     jg        convertloop
@@ -786,37 +757,38 @@ void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
-__declspec(naked)
-void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToRAWRow_SSSE3(const uint8_t* src_argb,
+                                          uint8_t* dst_rgb,
+                                          int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     movdqa    xmm6, xmmword ptr kShuffleMaskARGBToRAW
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqu    xmm1, [eax + 16]
     movdqu    xmm2, [eax + 32]
     movdqu    xmm3, [eax + 48]
     lea       eax, [eax + 64]
-    pshufb    xmm0, xmm6    
+    pshufb    xmm0, xmm6  
     pshufb    xmm1, xmm6
     pshufb    xmm2, xmm6
     pshufb    xmm3, xmm6
-    movdqa    xmm4, xmm1   
-    psrldq    xmm1, 4      
-    pslldq    xmm4, 12     
-    movdqa    xmm5, xmm2   
-    por       xmm0, xmm4   
-    pslldq    xmm5, 8      
+    movdqa    xmm4, xmm1  
+    psrldq    xmm1, 4  
+    pslldq    xmm4, 12  
+    movdqa    xmm5, xmm2  
+    por       xmm0, xmm4  
+    pslldq    xmm5, 8  
     movdqu    [edx], xmm0  
-    por       xmm1, xmm5   
-    psrldq    xmm2, 8      
-    pslldq    xmm3, 4      
-    por       xmm2, xmm3   
-    movdqu    [edx + 16], xmm1   
-    movdqu    [edx + 32], xmm2   
+    por       xmm1, xmm5  
+    psrldq    xmm2, 8  
+    pslldq    xmm3, 4  
+    por       xmm2, xmm3  
+    movdqu    [edx + 16], xmm1  
+    movdqu    [edx + 32], xmm2  
     lea       edx, [edx + 48]
     sub       ecx, 16
     jg        convertloop
@@ -824,33 +796,34 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
-__declspec(naked)
-void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToRGB565Row_SSE2(const uint8_t* src_argb,
+                                            uint8_t* dst_rgb,
+                                            int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
-    pcmpeqb   xmm3, xmm3       
+    pcmpeqb   xmm3, xmm3  
     psrld     xmm3, 27
-    pcmpeqb   xmm4, xmm4       
+    pcmpeqb   xmm4, xmm4  
     psrld     xmm4, 26
     pslld     xmm4, 5
-    pcmpeqb   xmm5, xmm5       
+    pcmpeqb   xmm5, xmm5  
     pslld     xmm5, 11
 
  convertloop:
-    movdqu    xmm0, [eax]   
-    movdqa    xmm1, xmm0    
-    movdqa    xmm2, xmm0    
-    pslld     xmm0, 8       
-    psrld     xmm1, 3       
-    psrld     xmm2, 5       
-    psrad     xmm0, 16      
-    pand      xmm1, xmm3    
-    pand      xmm2, xmm4    
-    pand      xmm0, xmm5    
-    por       xmm1, xmm2    
-    por       xmm0, xmm1    
+    movdqu    xmm0, [eax]  
+    movdqa    xmm1, xmm0  
+    movdqa    xmm2, xmm0  
+    pslld     xmm0, 8  
+    psrld     xmm1, 3  
+    psrld     xmm2, 5  
+    psrad     xmm0, 16  
+    pand      xmm1, xmm3  
+    pand      xmm2, xmm4  
+    pand      xmm0, xmm5  
+    por       xmm1, xmm2  
+    por       xmm0, xmm1  
     packssdw  xmm0, xmm0
     lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  
@@ -861,41 +834,42 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
-__declspec(naked)
-void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint32 dither4, int width) {
+__declspec(naked) void ARGBToRGB565DitherRow_SSE2(const uint8_t* src_argb,
+                                                  uint8_t* dst_rgb,
+                                                  const uint32_t dither4,
+                                                  int width) {
   __asm {
 
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
-    movd      xmm6, [esp + 12] 
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
+    movd      xmm6, [esp + 12]  
     mov       ecx, [esp + 16]  
-    punpcklbw xmm6, xmm6       
+    punpcklbw xmm6, xmm6  
     movdqa    xmm7, xmm6
     punpcklwd xmm6, xmm6
     punpckhwd xmm7, xmm7
-    pcmpeqb   xmm3, xmm3       
+    pcmpeqb   xmm3, xmm3  
     psrld     xmm3, 27
-    pcmpeqb   xmm4, xmm4       
+    pcmpeqb   xmm4, xmm4  
     psrld     xmm4, 26
     pslld     xmm4, 5
-    pcmpeqb   xmm5, xmm5       
+    pcmpeqb   xmm5, xmm5  
     pslld     xmm5, 11
 
  convertloop:
-    movdqu    xmm0, [eax]   
-    paddusb   xmm0, xmm6    
-    movdqa    xmm1, xmm0    
-    movdqa    xmm2, xmm0    
-    pslld     xmm0, 8       
-    psrld     xmm1, 3       
-    psrld     xmm2, 5       
-    psrad     xmm0, 16      
-    pand      xmm1, xmm3    
-    pand      xmm2, xmm4    
-    pand      xmm0, xmm5    
-    por       xmm1, xmm2    
-    por       xmm0, xmm1    
+    movdqu    xmm0, [eax]  
+    paddusb   xmm0, xmm6  
+    movdqa    xmm1, xmm0  
+    movdqa    xmm2, xmm0  
+    pslld     xmm0, 8  
+    psrld     xmm1, 3  
+    psrld     xmm2, 5  
+    psrad     xmm0, 16  
+    pand      xmm1, xmm3  
+    pand      xmm2, xmm4  
+    pand      xmm0, xmm5  
+    por       xmm1, xmm2  
+    por       xmm0, xmm1  
     packssdw  xmm0, xmm0
     lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  
@@ -907,39 +881,40 @@ void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
 }
 
 #ifdef HAS_ARGBTORGB565DITHERROW_AVX2
-__declspec(naked)
-void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint32 dither4, int width) {
+__declspec(naked) void ARGBToRGB565DitherRow_AVX2(const uint8_t* src_argb,
+                                                  uint8_t* dst_rgb,
+                                                  const uint32_t dither4,
+                                                  int width) {
   __asm {
-    mov        eax, [esp + 4]      
-    mov        edx, [esp + 8]      
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     vbroadcastss xmm6, [esp + 12]  
-    mov        ecx, [esp + 16]     
-    vpunpcklbw xmm6, xmm6, xmm6    
+    mov        ecx, [esp + 16]  
+    vpunpcklbw xmm6, xmm6, xmm6  
     vpermq     ymm6, ymm6, 0xd8
     vpunpcklwd ymm6, ymm6, ymm6
-    vpcmpeqb   ymm3, ymm3, ymm3    
+    vpcmpeqb   ymm3, ymm3, ymm3  
     vpsrld     ymm3, ymm3, 27
-    vpcmpeqb   ymm4, ymm4, ymm4    
+    vpcmpeqb   ymm4, ymm4, ymm4  
     vpsrld     ymm4, ymm4, 26
     vpslld     ymm4, ymm4, 5
-    vpslld     ymm5, ymm3, 11      
+    vpslld     ymm5, ymm3, 11  
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpaddusb   ymm0, ymm0, ymm6    
-    vpsrld     ymm2, ymm0, 5       
-    vpsrld     ymm1, ymm0, 3       
-    vpsrld     ymm0, ymm0, 8       
-    vpand      ymm2, ymm2, ymm4    
-    vpand      ymm1, ymm1, ymm3    
-    vpand      ymm0, ymm0, ymm5    
-    vpor       ymm1, ymm1, ymm2    
-    vpor       ymm0, ymm0, ymm1    
+    vmovdqu    ymm0, [eax]  
+    vpaddusb   ymm0, ymm0, ymm6  
+    vpsrld     ymm2, ymm0, 5  
+    vpsrld     ymm1, ymm0, 3  
+    vpsrld     ymm0, ymm0, 8  
+    vpand      ymm2, ymm2, ymm4  
+    vpand      ymm1, ymm1, ymm3  
+    vpand      ymm0, ymm0, ymm5  
+    vpor       ymm1, ymm1, ymm2  
+    vpor       ymm0, ymm0, ymm1  
     vpackusdw  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
-    vmovdqu    [edx], xmm0         
+    vmovdqu    [edx], xmm0  
     lea        edx, [edx + 16]
     sub        ecx, 8
     jg         convertloop
@@ -950,37 +925,38 @@ void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb, uint8* dst_rgb,
 #endif  
 
 
-__declspec(naked)
-void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToARGB1555Row_SSE2(const uint8_t* src_argb,
+                                              uint8_t* dst_rgb,
+                                              int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
-    pcmpeqb   xmm4, xmm4       
+    pcmpeqb   xmm4, xmm4  
     psrld     xmm4, 27
-    movdqa    xmm5, xmm4       
+    movdqa    xmm5, xmm4  
     pslld     xmm5, 5
-    movdqa    xmm6, xmm4       
+    movdqa    xmm6, xmm4  
     pslld     xmm6, 10
-    pcmpeqb   xmm7, xmm7       
+    pcmpeqb   xmm7, xmm7  
     pslld     xmm7, 15
 
  convertloop:
-    movdqu    xmm0, [eax]   
-    movdqa    xmm1, xmm0    
-    movdqa    xmm2, xmm0    
-    movdqa    xmm3, xmm0    
-    psrad     xmm0, 16      
-    psrld     xmm1, 3       
-    psrld     xmm2, 6       
-    psrld     xmm3, 9       
-    pand      xmm0, xmm7    
-    pand      xmm1, xmm4    
-    pand      xmm2, xmm5    
-    pand      xmm3, xmm6    
-    por       xmm0, xmm1    
-    por       xmm2, xmm3    
-    por       xmm0, xmm2    
+    movdqu    xmm0, [eax]  
+    movdqa    xmm1, xmm0  
+    movdqa    xmm2, xmm0  
+    movdqa    xmm3, xmm0  
+    psrad     xmm0, 16  
+    psrld     xmm1, 3  
+    psrld     xmm2, 6  
+    psrld     xmm3, 9  
+    pand      xmm0, xmm7  
+    pand      xmm1, xmm4  
+    pand      xmm2, xmm5  
+    pand      xmm3, xmm6  
+    por       xmm0, xmm1  
+    por       xmm2, xmm3  
+    por       xmm0, xmm2  
     packssdw  xmm0, xmm0
     lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  
@@ -991,22 +967,23 @@ void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
-__declspec(naked)
-void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToARGB4444Row_SSE2(const uint8_t* src_argb,
+                                              uint8_t* dst_rgb,
+                                              int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
-    pcmpeqb   xmm4, xmm4       
+    pcmpeqb   xmm4, xmm4  
     psllw     xmm4, 12
-    movdqa    xmm3, xmm4       
+    movdqa    xmm3, xmm4  
     psrlw     xmm3, 8
 
  convertloop:
-    movdqu    xmm0, [eax]   
+    movdqu    xmm0, [eax]  
     movdqa    xmm1, xmm0
-    pand      xmm0, xmm3    
-    pand      xmm1, xmm4    
+    pand      xmm0, xmm3  
+    pand      xmm1, xmm4  
     psrld     xmm0, 4
     psrld     xmm1, 8
     por       xmm0, xmm1
@@ -1021,33 +998,34 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int width) {
 }
 
 #ifdef HAS_ARGBTORGB565ROW_AVX2
-__declspec(naked)
-void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToRGB565Row_AVX2(const uint8_t* src_argb,
+                                            uint8_t* dst_rgb,
+                                            int width) {
   __asm {
-    mov        eax, [esp + 4]      
-    mov        edx, [esp + 8]      
-    mov        ecx, [esp + 12]     
-    vpcmpeqb   ymm3, ymm3, ymm3    
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
+    vpcmpeqb   ymm3, ymm3, ymm3  
     vpsrld     ymm3, ymm3, 27
-    vpcmpeqb   ymm4, ymm4, ymm4    
+    vpcmpeqb   ymm4, ymm4, ymm4  
     vpsrld     ymm4, ymm4, 26
     vpslld     ymm4, ymm4, 5
-    vpslld     ymm5, ymm3, 11      
+    vpslld     ymm5, ymm3, 11  
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpsrld     ymm2, ymm0, 5       
-    vpsrld     ymm1, ymm0, 3       
-    vpsrld     ymm0, ymm0, 8       
-    vpand      ymm2, ymm2, ymm4    
-    vpand      ymm1, ymm1, ymm3    
-    vpand      ymm0, ymm0, ymm5    
-    vpor       ymm1, ymm1, ymm2    
-    vpor       ymm0, ymm0, ymm1    
+    vmovdqu    ymm0, [eax]  
+    vpsrld     ymm2, ymm0, 5  
+    vpsrld     ymm1, ymm0, 3  
+    vpsrld     ymm0, ymm0, 8  
+    vpand      ymm2, ymm2, ymm4  
+    vpand      ymm1, ymm1, ymm3  
+    vpand      ymm0, ymm0, ymm5  
+    vpor       ymm1, ymm1, ymm2  
+    vpor       ymm0, ymm0, ymm1  
     vpackusdw  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
-    vmovdqu    [edx], xmm0         
+    vmovdqu    [edx], xmm0  
     lea        edx, [edx + 16]
     sub        ecx, 8
     jg         convertloop
@@ -1058,36 +1036,37 @@ void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
 #endif  
 
 #ifdef HAS_ARGBTOARGB1555ROW_AVX2
-__declspec(naked)
-void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToARGB1555Row_AVX2(const uint8_t* src_argb,
+                                              uint8_t* dst_rgb,
+                                              int width) {
   __asm {
-    mov        eax, [esp + 4]      
-    mov        edx, [esp + 8]      
-    mov        ecx, [esp + 12]     
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
     vpcmpeqb   ymm4, ymm4, ymm4
-    vpsrld     ymm4, ymm4, 27      
-    vpslld     ymm5, ymm4, 5       
-    vpslld     ymm6, ymm4, 10      
-    vpcmpeqb   ymm7, ymm7, ymm7    
+    vpsrld     ymm4, ymm4, 27  
+    vpslld     ymm5, ymm4, 5  
+    vpslld     ymm6, ymm4, 10  
+    vpcmpeqb   ymm7, ymm7, ymm7  
     vpslld     ymm7, ymm7, 15
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpsrld     ymm3, ymm0, 9       
-    vpsrld     ymm2, ymm0, 6       
-    vpsrld     ymm1, ymm0, 3       
-    vpsrad     ymm0, ymm0, 16      
-    vpand      ymm3, ymm3, ymm6    
-    vpand      ymm2, ymm2, ymm5    
-    vpand      ymm1, ymm1, ymm4    
-    vpand      ymm0, ymm0, ymm7    
-    vpor       ymm0, ymm0, ymm1    
-    vpor       ymm2, ymm2, ymm3    
-    vpor       ymm0, ymm0, ymm2    
+    vmovdqu    ymm0, [eax]  
+    vpsrld     ymm3, ymm0, 9  
+    vpsrld     ymm2, ymm0, 6  
+    vpsrld     ymm1, ymm0, 3  
+    vpsrad     ymm0, ymm0, 16  
+    vpand      ymm3, ymm3, ymm6  
+    vpand      ymm2, ymm2, ymm5  
+    vpand      ymm1, ymm1, ymm4  
+    vpand      ymm0, ymm0, ymm7  
+    vpor       ymm0, ymm0, ymm1  
+    vpor       ymm2, ymm2, ymm3  
+    vpor       ymm0, ymm0, ymm2  
     vpackssdw  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
-    vmovdqu    [edx], xmm0         
+    vmovdqu    [edx], xmm0  
     lea        edx, [edx + 16]
     sub        ecx, 8
     jg         convertloop
@@ -1098,27 +1077,28 @@ void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
 #endif  
 
 #ifdef HAS_ARGBTOARGB4444ROW_AVX2
-__declspec(naked)
-void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
+__declspec(naked) void ARGBToARGB4444Row_AVX2(const uint8_t* src_argb,
+                                              uint8_t* dst_rgb,
+                                              int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
-    vpcmpeqb   ymm4, ymm4, ymm4   
+    vpcmpeqb   ymm4, ymm4, ymm4  
     vpsllw     ymm4, ymm4, 12
-    vpsrlw     ymm3, ymm4, 8      
+    vpsrlw     ymm3, ymm4, 8  
 
  convertloop:
-    vmovdqu    ymm0, [eax]         
-    vpand      ymm1, ymm0, ymm4    
-    vpand      ymm0, ymm0, ymm3    
+    vmovdqu    ymm0, [eax]  
+    vpand      ymm1, ymm0, ymm4  
+    vpand      ymm0, ymm0, ymm3  
     vpsrld     ymm1, ymm1, 8
     vpsrld     ymm0, ymm0, 4
     vpor       ymm0, ymm0, ymm1
     vpackuswb  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
-    vmovdqu    [edx], xmm0         
+    vmovdqu    [edx], xmm0  
     lea        edx, [edx + 16]
     sub        ecx, 8
     jg         convertloop
@@ -1129,12 +1109,13 @@ void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width) {
 #endif  
 
 
-__declspec(naked)
-void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void ARGBToYRow_SSSE3(const uint8_t* src_argb,
+                                        uint8_t* dst_y,
+                                        int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kARGBToY
     movdqa     xmm5, xmmword ptr kAddY16
 
@@ -1164,12 +1145,13 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
 
 
 
-__declspec(naked)
-void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void ARGBToYJRow_SSSE3(const uint8_t* src_argb,
+                                         uint8_t* dst_y,
+                                         int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kARGBToYJ
     movdqa     xmm5, xmmword ptr kAddYJ64
 
@@ -1200,17 +1182,16 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
 
 #ifdef HAS_ARGBTOYROW_AVX2
 
-static const lvec32 kPermdARGBToY_AVX = {
-  0, 4, 1, 5, 2, 6, 3, 7
-};
+static const lvec32 kPermdARGBToY_AVX = {0, 4, 1, 5, 2, 6, 3, 7};
 
 
-__declspec(naked)
-void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void ARGBToYRow_AVX2(const uint8_t* src_argb,
+                                       uint8_t* dst_y,
+                                       int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     vbroadcastf128 ymm4, xmmword ptr kARGBToY
     vbroadcastf128 ymm5, xmmword ptr kAddY16
     vmovdqu    ymm6, ymmword ptr kPermdARGBToY_AVX
@@ -1244,12 +1225,13 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
 
 #ifdef HAS_ARGBTOYJROW_AVX2
 
-__declspec(naked)
-void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void ARGBToYJRow_AVX2(const uint8_t* src_argb,
+                                        uint8_t* dst_y,
+                                        int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     vbroadcastf128 ymm4, xmmword ptr kARGBToYJ
     vbroadcastf128 ymm5, xmmword ptr kAddYJ64
     vmovdqu    ymm6, ymmword ptr kPermdARGBToY_AVX
@@ -1283,12 +1265,13 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
 }
 #endif  
 
-__declspec(naked)
-void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void BGRAToYRow_SSSE3(const uint8_t* src_argb,
+                                        uint8_t* dst_y,
+                                        int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kBGRAToY
     movdqa     xmm5, xmmword ptr kAddY16
 
@@ -1316,12 +1299,13 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
   }
 }
 
-__declspec(naked)
-void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void ABGRToYRow_SSSE3(const uint8_t* src_argb,
+                                        uint8_t* dst_y,
+                                        int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kABGRToY
     movdqa     xmm5, xmmword ptr kAddY16
 
@@ -1349,12 +1333,13 @@ void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
   }
 }
 
-__declspec(naked)
-void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
+__declspec(naked) void RGBAToYRow_SSSE3(const uint8_t* src_argb,
+                                        uint8_t* dst_y,
+                                        int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kRGBAToY
     movdqa     xmm5, xmmword ptr kAddY16
 
@@ -1382,24 +1367,26 @@ void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
   }
 }
 
-__declspec(naked)
-void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ARGBToUVRow_SSSE3(const uint8_t* src_argb0,
+                                         int src_stride_argb,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     movdqa     xmm5, xmmword ptr kAddUV128
     movdqa     xmm6, xmmword ptr kARGBToV
     movdqa     xmm7, xmmword ptr kARGBToU
-    sub        edi, edx             
+    sub        edi, edx  
 
  convertloop:
-    
+         
     movdqu     xmm0, [eax]
     movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
@@ -1423,9 +1410,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     shufps     xmm4, xmm3, 0xdd
     pavgb      xmm2, xmm4
 
-    
-    
-    
+        
+        
+        
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     pmaddubsw  xmm0, xmm7  
@@ -1437,11 +1424,11 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     psraw      xmm0, 8
     psraw      xmm1, 8
     packsswb   xmm0, xmm1
-    paddb      xmm0, xmm5            
+    paddb      xmm0, xmm5  
 
-    
-    movlps     qword ptr [edx], xmm0 
-    movhps     qword ptr [edx + edi], xmm0 
+        
+    movlps     qword ptr [edx], xmm0  
+    movhps     qword ptr [edx + edi], xmm0  
     lea        edx, [edx + 8]
     sub        ecx, 16
     jg         convertloop
@@ -1452,24 +1439,26 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
   }
 }
 
-__declspec(naked)
-void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                        uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ARGBToUVJRow_SSSE3(const uint8_t* src_argb0,
+                                          int src_stride_argb,
+                                          uint8_t* dst_u,
+                                          uint8_t* dst_v,
+                                          int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     movdqa     xmm5, xmmword ptr kAddUVJ128
     movdqa     xmm6, xmmword ptr kARGBToVJ
     movdqa     xmm7, xmmword ptr kARGBToUJ
-    sub        edi, edx             
+    sub        edi, edx  
 
  convertloop:
-    
+         
     movdqu     xmm0, [eax]
     movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
@@ -1493,9 +1482,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     shufps     xmm4, xmm3, 0xdd
     pavgb      xmm2, xmm4
 
-    
-    
-    
+        
+        
+        
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     pmaddubsw  xmm0, xmm7  
@@ -1510,9 +1499,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     psraw      xmm1, 8
     packsswb   xmm0, xmm1
 
-    
-    movlps     qword ptr [edx], xmm0 
-    movhps     qword ptr [edx + edi], xmm0 
+        
+    movlps     qword ptr [edx], xmm0  
+    movhps     qword ptr [edx + edi], xmm0  
     lea        edx, [edx + 8]
     sub        ecx, 16
     jg         convertloop
@@ -1524,24 +1513,26 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 
 #ifdef HAS_ARGBTOUVROW_AVX2
-__declspec(naked)
-void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ARGBToUVRow_AVX2(const uint8_t* src_argb0,
+                                        int src_stride_argb,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     vbroadcastf128 ymm5, xmmword ptr kAddUV128
     vbroadcastf128 ymm6, xmmword ptr kARGBToV
     vbroadcastf128 ymm7, xmmword ptr kARGBToU
-    sub        edi, edx             
+    sub        edi, edx   
 
  convertloop:
-    
+        
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     vmovdqu    ymm2, [eax + 64]
@@ -1558,9 +1549,9 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vshufps    ymm2, ymm2, ymm3, 0xdd
     vpavgb     ymm2, ymm2, ymm4  
 
-    
-    
-    
+        
+        
+        
     vpmaddubsw ymm1, ymm0, ymm7  
     vpmaddubsw ymm3, ymm2, ymm7
     vpmaddubsw ymm0, ymm0, ymm6  
@@ -1574,9 +1565,9 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vpshufb    ymm0, ymm0, ymmword ptr kShufARGBToUV_AVX  
     vpaddb     ymm0, ymm0, ymm5  
 
-    
-    vextractf128 [edx], ymm0, 0 
-    vextractf128 [edx + edi], ymm0, 1 
+        
+    vextractf128 [edx], ymm0, 0  
+    vextractf128 [edx + edi], ymm0, 1  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -1590,24 +1581,26 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
 #endif  
 
 #ifdef HAS_ARGBTOUVJROW_AVX2
-__declspec(naked)
-void ARGBToUVJRow_AVX2(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
+                                         int src_stride_argb,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     vbroadcastf128 ymm5, xmmword ptr kAddUV128
     vbroadcastf128 ymm6, xmmword ptr kARGBToV
     vbroadcastf128 ymm7, xmmword ptr kARGBToU
-    sub        edi, edx             
+    sub        edi, edx   
 
  convertloop:
-    
+        
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     vmovdqu    ymm2, [eax + 64]
@@ -1624,9 +1617,9 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vshufps    ymm2, ymm2, ymm3, 0xdd
     vpavgb     ymm2, ymm2, ymm4  
 
-    
-    
-    
+        
+        
+        
     vpmaddubsw ymm1, ymm0, ymm7  
     vpmaddubsw ymm3, ymm2, ymm7
     vpmaddubsw ymm0, ymm0, ymm6  
@@ -1641,9 +1634,9 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vpermq     ymm0, ymm0, 0xd8  
     vpshufb    ymm0, ymm0, ymmword ptr kShufARGBToUV_AVX  
 
-    
-    vextractf128 [edx], ymm0, 0 
-    vextractf128 [edx + edi], ymm0, 1 
+        
+    vextractf128 [edx], ymm0, 0  
+    vextractf128 [edx + edi], ymm0, 1  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -1656,23 +1649,24 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0, int src_stride_argb,
 }
 #endif  
 
-__declspec(naked)
-void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
-                          uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ARGBToUV444Row_SSSE3(const uint8_t* src_argb0,
+                                            uint8_t* dst_u,
+                                            uint8_t* dst_v,
+                                            int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
     mov        edi, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     movdqa     xmm5, xmmword ptr kAddUV128
     movdqa     xmm6, xmmword ptr kARGBToV
     movdqa     xmm7, xmmword ptr kARGBToU
-    sub        edi, edx             
+    sub        edi, edx    
 
  convertloop:
-    
-    movdqu     xmm0, [eax]          
+        
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + 32]
     movdqu     xmm3, [eax + 48]
@@ -1688,7 +1682,7 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     paddb      xmm0, xmm5
     movdqu     [edx], xmm0
 
-    movdqu     xmm0, [eax]          
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + 32]
     movdqu     xmm3, [eax + 48]
@@ -1713,24 +1707,26 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
   }
 }
 
-__declspec(naked)
-void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void BGRAToUVRow_SSSE3(const uint8_t* src_argb0,
+                                         int src_stride_argb,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     movdqa     xmm5, xmmword ptr kAddUV128
     movdqa     xmm6, xmmword ptr kBGRAToV
     movdqa     xmm7, xmmword ptr kBGRAToU
-    sub        edi, edx             
+    sub        edi, edx  
 
  convertloop:
-    
+         
     movdqu     xmm0, [eax]
     movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
@@ -1754,9 +1750,9 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     shufps     xmm4, xmm3, 0xdd
     pavgb      xmm2, xmm4
 
-    
-    
-    
+        
+        
+        
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     pmaddubsw  xmm0, xmm7  
@@ -1768,11 +1764,11 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     psraw      xmm0, 8
     psraw      xmm1, 8
     packsswb   xmm0, xmm1
-    paddb      xmm0, xmm5            
+    paddb      xmm0, xmm5  
 
-    
-    movlps     qword ptr [edx], xmm0 
-    movhps     qword ptr [edx + edi], xmm0 
+        
+    movlps     qword ptr [edx], xmm0  
+    movhps     qword ptr [edx + edi], xmm0  
     lea        edx, [edx + 8]
     sub        ecx, 16
     jg         convertloop
@@ -1783,24 +1779,26 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
   }
 }
 
-__declspec(naked)
-void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void ABGRToUVRow_SSSE3(const uint8_t* src_argb0,
+                                         int src_stride_argb,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     movdqa     xmm5, xmmword ptr kAddUV128
     movdqa     xmm6, xmmword ptr kABGRToV
     movdqa     xmm7, xmmword ptr kABGRToU
-    sub        edi, edx             
+    sub        edi, edx  
 
  convertloop:
-    
+         
     movdqu     xmm0, [eax]
     movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
@@ -1824,9 +1822,9 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     shufps     xmm4, xmm3, 0xdd
     pavgb      xmm2, xmm4
 
-    
-    
-    
+        
+        
+        
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     pmaddubsw  xmm0, xmm7  
@@ -1838,11 +1836,11 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     psraw      xmm0, 8
     psraw      xmm1, 8
     packsswb   xmm0, xmm1
-    paddb      xmm0, xmm5            
+    paddb      xmm0, xmm5  
 
-    
-    movlps     qword ptr [edx], xmm0 
-    movhps     qword ptr [edx + edi], xmm0 
+        
+    movlps     qword ptr [edx], xmm0  
+    movhps     qword ptr [edx + edi], xmm0  
     lea        edx, [edx + 8]
     sub        ecx, 16
     jg         convertloop
@@ -1853,24 +1851,26 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
   }
 }
 
-__declspec(naked)
-void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void RGBAToUVRow_SSSE3(const uint8_t* src_argb0,
+                                         int src_stride_argb,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
     movdqa     xmm5, xmmword ptr kAddUV128
     movdqa     xmm6, xmmword ptr kRGBAToV
     movdqa     xmm7, xmmword ptr kRGBAToU
-    sub        edi, edx             
+    sub        edi, edx  
 
  convertloop:
-    
+         
     movdqu     xmm0, [eax]
     movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
@@ -1894,9 +1894,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     shufps     xmm4, xmm3, 0xdd
     pavgb      xmm2, xmm4
 
-    
-    
-    
+        
+        
+        
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     pmaddubsw  xmm0, xmm7  
@@ -1908,11 +1908,11 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     psraw      xmm0, 8
     psraw      xmm1, 8
     packsswb   xmm0, xmm1
-    paddb      xmm0, xmm5            
+    paddb      xmm0, xmm5  
 
-    
-    movlps     qword ptr [edx], xmm0 
-    movhps     qword ptr [edx + edi], xmm0 
+        
+    movlps     qword ptr [edx], xmm0  
+    movhps     qword ptr [edx + edi], xmm0  
     lea        edx, [edx + 8]
     sub        ecx, 16
     jg         convertloop
@@ -1925,109 +1925,95 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif  
 
 
-#define READYUV444_AVX2 __asm {                                                \
-    __asm vmovdqu    xmm0, [esi]                  /* U */                      \
-    __asm vmovdqu    xmm1, [esi + edi]            /* V */                      \
+#define READYUV444_AVX2 \
+  __asm {                                                \
+    __asm vmovdqu    xmm0, [esi] /* U */                      \
+    __asm vmovdqu    xmm1, [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 16]                                          \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
+    __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define READYUV422_AVX2 __asm {                                                \
-    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
-    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
+#define READYUV422_AVX2 \
+  __asm {                                                \
+    __asm vmovq      xmm0, qword ptr [esi] /* U */                      \
+    __asm vmovq      xmm1, qword ptr [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define READYUVA422_AVX2 __asm {                                               \
-    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
-    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
+#define READYUVA422_AVX2 \
+  __asm {                                               \
+    __asm vmovq      xmm0, qword ptr [esi] /* U */                      \
+    __asm vmovq      xmm1, qword ptr [esi + edi] /* V */                      \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+    __asm vpunpcklbw ymm0, ymm0, ymm1 /* UV */                     \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
     __asm lea        eax, [eax + 16]                                           \
-    __asm vmovdqu    xmm5, [ebp]                  /* A */                      \
+    __asm vmovdqu    xmm5, [ebp] /* A */                      \
     __asm vpermq     ymm5, ymm5, 0xd8                                          \
-    __asm lea        ebp, [ebp + 16]                                           \
-  }
+    __asm lea        ebp, [ebp + 16]}
 
 
-#define READYUV411_AVX2 __asm {                                                \
-    __asm vmovd      xmm0, dword ptr [esi]        /* U */                      \
-    __asm vmovd      xmm1, dword ptr [esi + edi]  /* V */                      \
-    __asm lea        esi,  [esi + 4]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
-    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpckldq ymm0, ymm0, ymm0             /* UVUVUVUV (upsample) */    \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-    __asm vpermq     ymm4, ymm4, 0xd8                                          \
-    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
-
-
-#define READNV12_AVX2 __asm {                                                  \
-    __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
+#define READNV12_AVX2 \
+  __asm {                                                  \
+    __asm vmovdqu    xmm0, [esi] /* UV */                     \
     __asm lea        esi,  [esi + 16]                                          \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpunpcklwd ymm0, ymm0, ymm0 /* UVUV (upsample) */        \
+    __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define READNV21_AVX2 __asm {                                                  \
-    __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
+#define READNV21_AVX2 \
+  __asm {                                                  \
+    __asm vmovdqu    xmm0, [esi] /* UV */                     \
     __asm lea        esi,  [esi + 16]                                          \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleNV21                      \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vmovdqu    xmm4, [eax] /* Y */                      \
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define READYUY2_AVX2 __asm {                                                  \
-    __asm vmovdqu    ymm4, [eax]          /* YUY2 */                           \
+#define READYUY2_AVX2 \
+  __asm {                                                  \
+    __asm vmovdqu    ymm4, [eax] /* YUY2 */                           \
     __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleYUY2Y                     \
-    __asm vmovdqu    ymm0, [eax]          /* UV */                             \
+    __asm vmovdqu    ymm0, [eax] /* UV */                             \
     __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleYUY2UV                    \
-    __asm lea        eax, [eax + 32]                                           \
-  }
+    __asm lea        eax, [eax + 32]}
 
 
-#define READUYVY_AVX2 __asm {                                                  \
-    __asm vmovdqu    ymm4, [eax]          /* UYVY */                           \
+#define READUYVY_AVX2 \
+  __asm {                                                  \
+    __asm vmovdqu    ymm4, [eax] /* UYVY */                           \
     __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleUYVYY                     \
-    __asm vmovdqu    ymm0, [eax]          /* UV */                             \
+    __asm vmovdqu    ymm0, [eax] /* UV */                             \
     __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleUYVYUV                    \
-    __asm lea        eax, [eax + 32]                                           \
-  }
+    __asm lea        eax, [eax + 32]}
 
 
-#define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
+#define YUVTORGB_AVX2(YuvConstants) \
+  __asm {                                    \
     __asm vpmaddubsw ymm2, ymm0, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
     __asm vpmaddubsw ymm1, ymm0, ymmword ptr [YuvConstants + KUVTOG] /* G UV */\
     __asm vpmaddubsw ymm0, ymm0, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
@@ -2036,68 +2022,67 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASG]               \
     __asm vpsubw     ymm1, ymm3, ymm1                                          \
     __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASB]               \
-    __asm vpsubw     ymm0, ymm3, ymm0                                          \
-    /* Step 2: Find Y contribution to 16 R,G,B values */                       \
+    __asm vpsubw     ymm0, ymm3, ymm0 /* Step 2: Find Y contribution to 16 R,G,B values */                       \
     __asm vpmulhuw   ymm4, ymm4, ymmword ptr [YuvConstants + KYTORGB]          \
-    __asm vpaddsw    ymm0, ymm0, ymm4           /* B += Y */                   \
-    __asm vpaddsw    ymm1, ymm1, ymm4           /* G += Y */                   \
-    __asm vpaddsw    ymm2, ymm2, ymm4           /* R += Y */                   \
+    __asm vpaddsw    ymm0, ymm0, ymm4 /* B += Y */                   \
+    __asm vpaddsw    ymm1, ymm1, ymm4 /* G += Y */                   \
+    __asm vpaddsw    ymm2, ymm2, ymm4 /* R += Y */                   \
     __asm vpsraw     ymm0, ymm0, 6                                             \
     __asm vpsraw     ymm1, ymm1, 6                                             \
     __asm vpsraw     ymm2, ymm2, 6                                             \
-    __asm vpackuswb  ymm0, ymm0, ymm0           /* B */                        \
-    __asm vpackuswb  ymm1, ymm1, ymm1           /* G */                        \
-    __asm vpackuswb  ymm2, ymm2, ymm2           /* R */                        \
+    __asm vpackuswb  ymm0, ymm0, ymm0 /* B */                        \
+    __asm vpackuswb  ymm1, ymm1, ymm1 /* G */                        \
+    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */                  \
   }
 
 
-#define STOREARGB_AVX2 __asm {                                                 \
-    __asm vpunpcklbw ymm0, ymm0, ymm1           /* BG */                       \
+#define STOREARGB_AVX2 \
+  __asm {                                                 \
+    __asm vpunpcklbw ymm0, ymm0, ymm1 /* BG */                       \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpcklbw ymm2, ymm2, ymm5           /* RA */                       \
+    __asm vpunpcklbw ymm2, ymm2, ymm5 /* RA */                       \
     __asm vpermq     ymm2, ymm2, 0xd8                                          \
-    __asm vpunpcklwd ymm1, ymm0, ymm2           /* BGRA first 8 pixels */      \
-    __asm vpunpckhwd ymm0, ymm0, ymm2           /* BGRA next 8 pixels */       \
+    __asm vpunpcklwd ymm1, ymm0, ymm2 /* BGRA first 8 pixels */      \
+    __asm vpunpckhwd ymm0, ymm0, ymm2 /* BGRA next 8 pixels */       \
     __asm vmovdqu    0[edx], ymm1                                              \
     __asm vmovdqu    32[edx], ymm0                                             \
-    __asm lea        edx,  [edx + 64]                                          \
-  }
+    __asm lea        edx,  [edx + 64]}
 
 
-#define STORERGBA_AVX2 __asm {                                                 \
-    __asm vpunpcklbw ymm1, ymm1, ymm2           /* GR */                       \
+#define STORERGBA_AVX2 \
+  __asm {                                                 \
+    __asm vpunpcklbw ymm1, ymm1, ymm2 /* GR */                       \
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm2, ymm5, ymm0           /* AB */                       \
+    __asm vpunpcklbw ymm2, ymm5, ymm0 /* AB */                       \
     __asm vpermq     ymm2, ymm2, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm2, ymm1           /* ABGR first 8 pixels */      \
-    __asm vpunpckhwd ymm1, ymm2, ymm1           /* ABGR next 8 pixels */       \
+    __asm vpunpcklwd ymm0, ymm2, ymm1 /* ABGR first 8 pixels */      \
+    __asm vpunpckhwd ymm1, ymm2, ymm1 /* ABGR next 8 pixels */       \
     __asm vmovdqu    [edx], ymm0                                               \
     __asm vmovdqu    [edx + 32], ymm1                                          \
-    __asm lea        edx,  [edx + 64]                                          \
-  }
+    __asm lea        edx,  [edx + 64]}
 
 #ifdef HAS_I422TOARGBROW_AVX2
 
 
-__declspec(naked)
-void I422ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void I422ToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READYUV422_AVX2
@@ -2119,21 +2104,21 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
 #ifdef HAS_I422ALPHATOARGBROW_AVX2
 
 
-__declspec(naked)
-void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
-                             const uint8* u_buf,
-                             const uint8* v_buf,
-                             const uint8* a_buf,
-                             uint8* dst_argb,
-                             const struct YuvConstants* yuvconstants,
-                             int width) {
+__declspec(naked) void I422AlphaToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    const uint8_t* a_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
     push       ebp
-    mov        eax, [esp + 16 + 4]   
-    mov        esi, [esp + 16 + 8]   
+    mov        eax, [esp + 16 + 4]  
+    mov        esi, [esp + 16 + 8]  
     mov        edi, [esp + 16 + 12]  
     mov        ebp, [esp + 16 + 16]  
     mov        edx, [esp + 16 + 20]  
@@ -2162,67 +2147,27 @@ void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
 #ifdef HAS_I444TOARGBROW_AVX2
 
 
-__declspec(naked)
-void I444ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void I444ToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
  convertloop:
     READYUV444_AVX2
-    YUVTORGB_AVX2(ebx)
-    STOREARGB_AVX2
-
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  
-
-#ifdef HAS_I411TOARGBROW_AVX2
-
-
-__declspec(naked)
-void I411ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
-    mov        edi, [esp + 12 + 12]  
-    mov        edx, [esp + 12 + 16]  
-    mov        ebx, [esp + 12 + 20]  
-    mov        ecx, [esp + 12 + 24]  
-    sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     
-
- convertloop:
-    READYUV411_AVX2
     YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
@@ -2241,21 +2186,21 @@ void I411ToARGBRow_AVX2(const uint8* y_buf,
 #ifdef HAS_NV12TOARGBROW_AVX2
 
 
-__declspec(naked)
-void NV12ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* uv_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void NV12ToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* uv_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       ebx
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ebx, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READNV12_AVX2
@@ -2276,21 +2221,21 @@ void NV12ToARGBRow_AVX2(const uint8* y_buf,
 #ifdef HAS_NV21TOARGBROW_AVX2
 
 
-__declspec(naked)
-void NV21ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* vu_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void NV21ToARGBRow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* vu_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       ebx
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ebx, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READNV21_AVX2
@@ -2311,18 +2256,18 @@ void NV21ToARGBRow_AVX2(const uint8* y_buf,
 #ifdef HAS_YUY2TOARGBROW_AVX2
 
 
-__declspec(naked)
-void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void YUY2ToARGBRow_AVX2(
+    const uint8_t* src_yuy2,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       ebx
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
     mov        ebx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READYUY2_AVX2
@@ -2342,18 +2287,18 @@ void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
 #ifdef HAS_UYVYTOARGBROW_AVX2
 
 
-__declspec(naked)
-void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void UYVYToARGBRow_AVX2(
+    const uint8_t* src_uyvy,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       ebx
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
     mov        ebx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READUYVY_AVX2
@@ -2373,25 +2318,25 @@ void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
 #ifdef HAS_I422TORGBAROW_AVX2
 
 
-__declspec(naked)
-void I422ToRGBARow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+__declspec(naked) void I422ToRGBARow_AVX2(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     
+    vpcmpeqb   ymm5, ymm5, ymm5  
 
  convertloop:
     READYUV422_AVX2
@@ -2415,100 +2360,83 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
 
 
 
-#define READYUV444 __asm {                                                     \
+#define READYUV444 \
+  __asm {                                                     \
     __asm movq       xmm0, qword ptr [esi] /* U */                             \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */                       \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm punpcklbw  xmm0, xmm1           /* UV */                             \
+    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
-  }
+    __asm lea        eax, [eax + 8]}
 
 
-#define READYUV422 __asm {                                                     \
-    __asm movd       xmm0, [esi]          /* U */                              \
-    __asm movd       xmm1, [esi + edi]    /* V */                              \
+#define READYUV422 \
+  __asm {                                                     \
+    __asm movd       xmm0, [esi] /* U */                              \
+    __asm movd       xmm1, [esi + edi] /* V */                              \
     __asm lea        esi,  [esi + 4]                                           \
-    __asm punpcklbw  xmm0, xmm1           /* UV */                             \
-    __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
+    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
+    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
-  }
+    __asm lea        eax, [eax + 8]}
 
 
-#define READYUVA422 __asm {                                                    \
-    __asm movd       xmm0, [esi]          /* U */                              \
-    __asm movd       xmm1, [esi + edi]    /* V */                              \
+#define READYUVA422 \
+  __asm {                                                    \
+    __asm movd       xmm0, [esi] /* U */                              \
+    __asm movd       xmm1, [esi + edi] /* V */                              \
     __asm lea        esi,  [esi + 4]                                           \
-    __asm punpcklbw  xmm0, xmm1           /* UV */                             \
-    __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
-    __asm movq       xmm4, qword ptr [eax]   /* Y */                           \
+    __asm punpcklbw  xmm0, xmm1 /* UV */                             \
+    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
+    __asm movq       xmm4, qword ptr [eax] /* Y */                           \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]                                            \
-    __asm movq       xmm5, qword ptr [ebp]   /* A */                           \
-    __asm lea        ebp, [ebp + 8]                                            \
-  }
+    __asm movq       xmm5, qword ptr [ebp] /* A */                           \
+    __asm lea        ebp, [ebp + 8]}
 
 
-
-
-
-#define READYUV411_EBX __asm {                                                 \
-    __asm movzx      ebx, word ptr [esi]        /* U */                        \
-    __asm movd       xmm0, ebx                                                 \
-    __asm movzx      ebx, word ptr [esi + edi]  /* V */                        \
-    __asm movd       xmm1, ebx                                                 \
-    __asm lea        esi,  [esi + 2]                                           \
-    __asm punpcklbw  xmm0, xmm1            /* UV */                            \
-    __asm punpcklwd  xmm0, xmm0            /* UVUV (upsample) */               \
-    __asm punpckldq  xmm0, xmm0            /* UVUVUVUV (upsample) */           \
-    __asm movq       xmm4, qword ptr [eax]                                     \
-    __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
-  }
-
-
-#define READNV12 __asm {                                                       \
+#define READNV12 \
+  __asm {                                                       \
     __asm movq       xmm0, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
-    __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
+    __asm punpcklwd  xmm0, xmm0 /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
-  }
+    __asm lea        eax, [eax + 8]}
 
 
-#define READNV21 __asm {                                                       \
+#define READNV21 \
+  __asm {                                                       \
     __asm movq       xmm0, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
     __asm pshufb     xmm0, xmmword ptr kShuffleNV21                            \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
-  }
+    __asm lea        eax, [eax + 8]}
 
 
-#define READYUY2 __asm {                                                       \
-    __asm movdqu     xmm4, [eax]          /* YUY2 */                           \
+#define READYUY2 \
+  __asm {                                                       \
+    __asm movdqu     xmm4, [eax] /* YUY2 */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleYUY2Y                           \
-    __asm movdqu     xmm0, [eax]          /* UV */                             \
+    __asm movdqu     xmm0, [eax] /* UV */                             \
     __asm pshufb     xmm0, xmmword ptr kShuffleYUY2UV                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define READUYVY __asm {                                                       \
-    __asm movdqu     xmm4, [eax]          /* UYVY */                           \
+#define READUYVY \
+  __asm {                                                       \
+    __asm movdqu     xmm4, [eax] /* UYVY */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleUYVYY                           \
-    __asm movdqu     xmm0, [eax]          /* UV */                             \
+    __asm movdqu     xmm0, [eax] /* UV */                             \
     __asm pshufb     xmm0, xmmword ptr kShuffleUYVYUV                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
+    __asm lea        eax, [eax + 16]}
 
 
-#define YUVTORGB(YuvConstants) __asm {                                         \
+#define YUVTORGB(YuvConstants) \
+  __asm {                                         \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
     __asm movdqa     xmm3, xmm0                                                \
@@ -2522,129 +2450,125 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
     __asm psubw      xmm2, xmm3                                                \
     __asm pmulhuw    xmm4, xmmword ptr [YuvConstants + KYTORGB]                \
-    __asm paddsw     xmm0, xmm4           /* B += Y */                         \
-    __asm paddsw     xmm1, xmm4           /* G += Y */                         \
-    __asm paddsw     xmm2, xmm4           /* R += Y */                         \
+    __asm paddsw     xmm0, xmm4 /* B += Y */                         \
+    __asm paddsw     xmm1, xmm4 /* G += Y */                         \
+    __asm paddsw     xmm2, xmm4 /* R += Y */                         \
     __asm psraw      xmm0, 6                                                   \
     __asm psraw      xmm1, 6                                                   \
     __asm psraw      xmm2, 6                                                   \
-    __asm packuswb   xmm0, xmm0           /* B */                              \
-    __asm packuswb   xmm1, xmm1           /* G */                              \
-    __asm packuswb   xmm2, xmm2           /* R */                              \
+    __asm packuswb   xmm0, xmm0 /* B */                              \
+    __asm packuswb   xmm1, xmm1 /* G */                              \
+    __asm packuswb   xmm2, xmm2 /* R */             \
   }
 
 
-#define STOREARGB __asm {                                                      \
-    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
-    __asm punpcklbw  xmm2, xmm5           /* RA */                             \
+#define STOREARGB \
+  __asm {                                                      \
+    __asm punpcklbw  xmm0, xmm1 /* BG */                             \
+    __asm punpcklbw  xmm2, xmm5 /* RA */                             \
     __asm movdqa     xmm1, xmm0                                                \
-    __asm punpcklwd  xmm0, xmm2           /* BGRA first 4 pixels */            \
-    __asm punpckhwd  xmm1, xmm2           /* BGRA next 4 pixels */             \
+    __asm punpcklwd  xmm0, xmm2 /* BGRA first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2 /* BGRA next 4 pixels */             \
     __asm movdqu     0[edx], xmm0                                              \
     __asm movdqu     16[edx], xmm1                                             \
-    __asm lea        edx,  [edx + 32]                                          \
-  }
+    __asm lea        edx,  [edx + 32]}
 
 
-#define STOREBGRA __asm {                                                      \
-    __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
-    __asm punpcklbw  xmm1, xmm0           /* GB */                             \
-    __asm punpcklbw  xmm5, xmm2           /* AR */                             \
+#define STOREBGRA \
+  __asm {                                                      \
+    __asm pcmpeqb    xmm5, xmm5 /* generate 0xffffffff for alpha */  \
+    __asm punpcklbw  xmm1, xmm0 /* GB */                             \
+    __asm punpcklbw  xmm5, xmm2 /* AR */                             \
     __asm movdqa     xmm0, xmm5                                                \
-    __asm punpcklwd  xmm5, xmm1           /* BGRA first 4 pixels */            \
-    __asm punpckhwd  xmm0, xmm1           /* BGRA next 4 pixels */             \
+    __asm punpcklwd  xmm5, xmm1 /* BGRA first 4 pixels */            \
+    __asm punpckhwd  xmm0, xmm1 /* BGRA next 4 pixels */             \
     __asm movdqu     0[edx], xmm5                                              \
     __asm movdqu     16[edx], xmm0                                             \
-    __asm lea        edx,  [edx + 32]                                          \
-  }
+    __asm lea        edx,  [edx + 32]}
 
 
-#define STORERGBA __asm {                                                      \
-    __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
-    __asm punpcklbw  xmm1, xmm2           /* GR */                             \
-    __asm punpcklbw  xmm5, xmm0           /* AB */                             \
+#define STORERGBA \
+  __asm {                                                      \
+    __asm pcmpeqb    xmm5, xmm5 /* generate 0xffffffff for alpha */  \
+    __asm punpcklbw  xmm1, xmm2 /* GR */                             \
+    __asm punpcklbw  xmm5, xmm0 /* AB */                             \
     __asm movdqa     xmm0, xmm5                                                \
-    __asm punpcklwd  xmm5, xmm1           /* RGBA first 4 pixels */            \
-    __asm punpckhwd  xmm0, xmm1           /* RGBA next 4 pixels */             \
+    __asm punpcklwd  xmm5, xmm1 /* RGBA first 4 pixels */            \
+    __asm punpckhwd  xmm0, xmm1 /* RGBA next 4 pixels */             \
     __asm movdqu     0[edx], xmm5                                              \
     __asm movdqu     16[edx], xmm0                                             \
-    __asm lea        edx,  [edx + 32]                                          \
-  }
+    __asm lea        edx,  [edx + 32]}
 
 
-#define STORERGB24 __asm {                                                     \
-    /* Weave into RRGB */                                                      \
-    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
-    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
+#define STORERGB24 \
+  __asm {/* Weave into RRGB */                                                      \
+    __asm punpcklbw  xmm0, xmm1 /* BG */                             \
+    __asm punpcklbw  xmm2, xmm2 /* RR */                             \
     __asm movdqa     xmm1, xmm0                                                \
-    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
-    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
-    /* RRGB -> RGB24 */                                                        \
-    __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
-    __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
-    __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
-    __asm movq       qword ptr 0[edx], xmm0  /* First 8 bytes */               \
-    __asm movdqu     8[edx], xmm1         /* Last 16 bytes */                  \
-    __asm lea        edx,  [edx + 24]                                          \
-  }
+    __asm punpcklwd  xmm0, xmm2 /* BGRR first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2 /* BGRR next 4 pixels */ /* RRGB -> RGB24 */                                                        \
+    __asm pshufb     xmm0, xmm5 /* Pack first 8 and last 4 bytes. */ \
+    __asm pshufb     xmm1, xmm6 /* Pack first 12 bytes. */           \
+    __asm palignr    xmm1, xmm0, 12 /* last 4 bytes of xmm0 + 12 xmm1 */ \
+    __asm movq       qword ptr 0[edx], xmm0 /* First 8 bytes */               \
+    __asm movdqu     8[edx], xmm1 /* Last 16 bytes */                  \
+    __asm lea        edx,  [edx + 24]}
 
 
-#define STORERGB565 __asm {                                                    \
-    /* Weave into RRGB */                                                      \
-    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
-    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
+#define STORERGB565 \
+  __asm {/* Weave into RRGB */                                                      \
+    __asm punpcklbw  xmm0, xmm1 /* BG */                             \
+    __asm punpcklbw  xmm2, xmm2 /* RR */                             \
     __asm movdqa     xmm1, xmm0                                                \
-    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
-    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
-    /* RRGB -> RGB565 */                                                       \
-    __asm movdqa     xmm3, xmm0    /* B  first 4 pixels of argb */             \
-    __asm movdqa     xmm2, xmm0    /* G */                                     \
-    __asm pslld      xmm0, 8       /* R */                                     \
-    __asm psrld      xmm3, 3       /* B */                                     \
-    __asm psrld      xmm2, 5       /* G */                                     \
-    __asm psrad      xmm0, 16      /* R */                                     \
-    __asm pand       xmm3, xmm5    /* B */                                     \
-    __asm pand       xmm2, xmm6    /* G */                                     \
-    __asm pand       xmm0, xmm7    /* R */                                     \
-    __asm por        xmm3, xmm2    /* BG */                                    \
-    __asm por        xmm0, xmm3    /* BGR */                                   \
-    __asm movdqa     xmm3, xmm1    /* B  next 4 pixels of argb */              \
-    __asm movdqa     xmm2, xmm1    /* G */                                     \
-    __asm pslld      xmm1, 8       /* R */                                     \
-    __asm psrld      xmm3, 3       /* B */                                     \
-    __asm psrld      xmm2, 5       /* G */                                     \
-    __asm psrad      xmm1, 16      /* R */                                     \
-    __asm pand       xmm3, xmm5    /* B */                                     \
-    __asm pand       xmm2, xmm6    /* G */                                     \
-    __asm pand       xmm1, xmm7    /* R */                                     \
-    __asm por        xmm3, xmm2    /* BG */                                    \
-    __asm por        xmm1, xmm3    /* BGR */                                   \
+    __asm punpcklwd  xmm0, xmm2 /* BGRR first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2 /* BGRR next 4 pixels */ /* RRGB -> RGB565 */                                                       \
+    __asm movdqa     xmm3, xmm0 /* B  first 4 pixels of argb */             \
+    __asm movdqa     xmm2, xmm0 /* G */                                     \
+    __asm pslld      xmm0, 8 /* R */                                     \
+    __asm psrld      xmm3, 3 /* B */                                     \
+    __asm psrld      xmm2, 5 /* G */                                     \
+    __asm psrad      xmm0, 16 /* R */                                     \
+    __asm pand       xmm3, xmm5 /* B */                                     \
+    __asm pand       xmm2, xmm6 /* G */                                     \
+    __asm pand       xmm0, xmm7 /* R */                                     \
+    __asm por        xmm3, xmm2 /* BG */                                    \
+    __asm por        xmm0, xmm3 /* BGR */                                   \
+    __asm movdqa     xmm3, xmm1 /* B  next 4 pixels of argb */              \
+    __asm movdqa     xmm2, xmm1 /* G */                                     \
+    __asm pslld      xmm1, 8 /* R */                                     \
+    __asm psrld      xmm3, 3 /* B */                                     \
+    __asm psrld      xmm2, 5 /* G */                                     \
+    __asm psrad      xmm1, 16 /* R */                                     \
+    __asm pand       xmm3, xmm5 /* B */                                     \
+    __asm pand       xmm2, xmm6 /* G */                                     \
+    __asm pand       xmm1, xmm7 /* R */                                     \
+    __asm por        xmm3, xmm2 /* BG */                                    \
+    __asm por        xmm1, xmm3 /* BGR */                                   \
     __asm packssdw   xmm0, xmm1                                                \
-    __asm movdqu     0[edx], xmm0  /* store 8 pixels of RGB565 */              \
-    __asm lea        edx, [edx + 16]                                           \
-  }
+    __asm movdqu     0[edx], xmm0 /* store 8 pixels of RGB565 */              \
+    __asm lea        edx, [edx + 16]}
 
 
 
-__declspec(naked)
-void I444ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void I444ToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5            
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READYUV444
@@ -2663,19 +2587,19 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void I422ToRGB24Row_SSSE3(const uint8* y_buf,
-                          const uint8* u_buf,
-                          const uint8* v_buf,
-                          uint8* dst_rgb24,
-                          const struct YuvConstants* yuvconstants,
-                          int width) {
+__declspec(naked) void I422ToRGB24Row_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_rgb24,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
@@ -2701,30 +2625,30 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void I422ToRGB565Row_SSSE3(const uint8* y_buf,
-                           const uint8* u_buf,
-                           const uint8* v_buf,
-                           uint8* rgb565_buf,
-                           const struct YuvConstants* yuvconstants,
-                           int width) {
+__declspec(naked) void I422ToRGB565Row_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* rgb565_buf,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5       
+    pcmpeqb    xmm5, xmm5  
     psrld      xmm5, 27
-    pcmpeqb    xmm6, xmm6       
+    pcmpeqb    xmm6, xmm6  
     psrld      xmm6, 26
     pslld      xmm6, 5
-    pcmpeqb    xmm7, xmm7       
+    pcmpeqb    xmm7, xmm7  
     pslld      xmm7, 11
 
  convertloop:
@@ -2744,25 +2668,25 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void I422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void I422ToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
     mov        ecx, [esp + 12 + 24]  
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READYUV422
@@ -2781,21 +2705,21 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              const uint8* a_buf,
-                              uint8* dst_argb,
-                              const struct YuvConstants* yuvconstants,
-                              int width) {
+__declspec(naked) void I422AlphaToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    const uint8_t* a_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
     push       ebp
-    mov        eax, [esp + 16 + 4]   
-    mov        esi, [esp + 16 + 8]   
+    mov        eax, [esp + 16 + 4]  
+    mov        esi, [esp + 16 + 8]  
     mov        edi, [esp + 16 + 12]  
     mov        ebp, [esp + 16 + 16]  
     mov        edx, [esp + 16 + 20]  
@@ -2821,61 +2745,21 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
 
 
 
-
-__declspec(naked)
-void I411ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    push       ebp
-    mov        eax, [esp + 16 + 4]   
-    mov        esi, [esp + 16 + 8]   
-    mov        edi, [esp + 16 + 12]  
-    mov        edx, [esp + 16 + 16]  
-    mov        ebp, [esp + 16 + 20]  
-    mov        ecx, [esp + 16 + 24]  
-    sub        edi, esi
-    pcmpeqb    xmm5, xmm5            
-
- convertloop:
-    READYUV411_EBX
-    YUVTORGB(ebp)
-    STOREARGB
-
-    sub        ecx, 8
-    jg         convertloop
-
-    pop        ebp
-    pop        ebx
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-
-
-__declspec(naked)
-void NV12ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* uv_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void NV12ToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* uv_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       ebx
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ebx, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READNV12
@@ -2893,21 +2777,21 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void NV21ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* vu_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void NV21ToARGBRow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* vu_buf,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       ebx
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ebx, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READNV21
@@ -2925,18 +2809,18 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
 
 
 
-__declspec(naked)
-void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void YUY2ToARGBRow_SSSE3(
+    const uint8_t* src_yuy2,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       ebx
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
     mov        ebx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READYUY2
@@ -2953,18 +2837,18 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
 
 
 
-__declspec(naked)
-void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void UYVYToARGBRow_SSSE3(
+    const uint8_t* src_uyvy,
+    uint8_t* dst_argb,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       ebx
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
     mov        ebx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
     READUYVY
@@ -2979,19 +2863,19 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
   }
 }
 
-__declspec(naked)
-void I422ToRGBARow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_rgba,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
+__declspec(naked) void I422ToRGBARow_SSSE3(
+    const uint8_t* y_buf,
+    const uint8_t* u_buf,
+    const uint8_t* v_buf,
+    uint8_t* dst_rgba,
+    const struct YuvConstants* yuvconstants,
+    int width) {
   __asm {
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   
-    mov        esi, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        esi, [esp + 12 + 8]  
     mov        edi, [esp + 12 + 12]  
     mov        edx, [esp + 12 + 16]  
     mov        ebx, [esp + 12 + 20]  
@@ -3016,39 +2900,38 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #ifdef HAS_I400TOARGBROW_SSE2
 
-__declspec(naked)
-void I400ToARGBRow_SSE2(const uint8* y_buf,
-                        uint8* rgb_buf,
-                        int width) {
+__declspec(naked) void I400ToARGBRow_SSE2(const uint8_t* y_buf,
+                                          uint8_t* rgb_buf,
+                                          int width) {
   __asm {
-    mov        eax, 0x4a354a35      
+    mov        eax, 0x4a354a35  
     movd       xmm2, eax
     pshufd     xmm2, xmm2,0
-    mov        eax, 0x04880488      
+    mov        eax, 0x04880488  
     movd       xmm3, eax
     pshufd     xmm3, xmm3, 0
-    pcmpeqb    xmm4, xmm4           
+    pcmpeqb    xmm4, xmm4  
     pslld      xmm4, 24
 
-    mov        eax, [esp + 4]       
-    mov        edx, [esp + 8]       
-    mov        ecx, [esp + 12]      
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
  convertloop:
-    
+        
     movq       xmm0, qword ptr [eax]
     lea        eax, [eax + 8]
-    punpcklbw  xmm0, xmm0           
+    punpcklbw  xmm0, xmm0  
     pmulhuw    xmm0, xmm2
     psubusw    xmm0, xmm3
     psrlw      xmm0, 6
-    packuswb   xmm0, xmm0           
+    packuswb   xmm0, xmm0        
 
-    
-    punpcklbw  xmm0, xmm0           
+        
+    punpcklbw  xmm0, xmm0  
     movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm0           
-    punpckhwd  xmm1, xmm1           
+    punpcklwd  xmm0, xmm0  
+    punpckhwd  xmm1, xmm1  
     por        xmm0, xmm4
     por        xmm1, xmm4
     movdqu     [edx], xmm0
@@ -3064,41 +2947,40 @@ void I400ToARGBRow_SSE2(const uint8* y_buf,
 #ifdef HAS_I400TOARGBROW_AVX2
 
 
-__declspec(naked)
-void I400ToARGBRow_AVX2(const uint8* y_buf,
-                        uint8* rgb_buf,
-                        int width) {
+__declspec(naked) void I400ToARGBRow_AVX2(const uint8_t* y_buf,
+                                          uint8_t* rgb_buf,
+                                          int width) {
   __asm {
-    mov        eax, 0x4a354a35      
+    mov        eax, 0x4a354a35  
     vmovd      xmm2, eax
     vbroadcastss ymm2, xmm2
-    mov        eax, 0x04880488      
+    mov        eax, 0x04880488  
     vmovd      xmm3, eax
     vbroadcastss ymm3, xmm3
-    vpcmpeqb   ymm4, ymm4, ymm4     
+    vpcmpeqb   ymm4, ymm4, ymm4  
     vpslld     ymm4, ymm4, 24
 
-    mov        eax, [esp + 4]       
-    mov        edx, [esp + 8]       
-    mov        ecx, [esp + 12]      
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
  convertloop:
-    
+        
     vmovdqu    xmm0, [eax]
     lea        eax, [eax + 16]
-    vpermq     ymm0, ymm0, 0xd8           
-    vpunpcklbw ymm0, ymm0, ymm0           
+    vpermq     ymm0, ymm0, 0xd8  
+    vpunpcklbw ymm0, ymm0, ymm0  
     vpmulhuw   ymm0, ymm0, ymm2
     vpsubusw   ymm0, ymm0, ymm3
     vpsrlw     ymm0, ymm0, 6
-    vpackuswb  ymm0, ymm0, ymm0           
+    vpackuswb  ymm0, ymm0, ymm0        
 
-    
-    
-    vpunpcklbw ymm1, ymm0, ymm0           
+        
+        
+    vpunpcklbw ymm1, ymm0, ymm0  
     vpermq     ymm1, ymm1, 0xd8
-    vpunpcklwd ymm0, ymm1, ymm1           
-    vpunpckhwd ymm1, ymm1, ymm1           
+    vpunpcklwd ymm0, ymm1, ymm1  
+    vpunpckhwd ymm1, ymm1, ymm1  
     vpor       ymm0, ymm0, ymm4
     vpor       ymm1, ymm1, ymm4
     vmovdqu    [edx], ymm0
@@ -3114,16 +2996,16 @@ void I400ToARGBRow_AVX2(const uint8* y_buf,
 
 #ifdef HAS_MIRRORROW_SSSE3
 
-static const uvec8 kShuffleMirror = {
-  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
-};
+static const uvec8 kShuffleMirror = {15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u,
+                                     7u,  6u,  5u,  4u,  3u,  2u,  1u, 0u};
 
 
-__declspec(naked)
-void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void MirrorRow_SSSE3(const uint8_t* src,
+                                       uint8_t* dst,
+                                       int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     movdqa    xmm5, xmmword ptr kShuffleMirror
 
@@ -3140,11 +3022,12 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #endif  
 
 #ifdef HAS_MIRRORROW_AVX2
-__declspec(naked)
-void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void MirrorRow_AVX2(const uint8_t* src,
+                                      uint8_t* dst,
+                                      int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     vbroadcastf128 ymm5, xmmword ptr kShuffleMirror
 
@@ -3164,17 +3047,17 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_MIRRORUVROW_SSSE3
 
-static const uvec8 kShuffleMirrorUV = {
-  14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
-};
+static const uvec8 kShuffleMirrorUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
+                                       15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u};
 
-__declspec(naked)
-void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
-                       int width) {
+__declspec(naked) void MirrorUVRow_SSSE3(const uint8_t* src,
+                                         uint8_t* dst_u,
+                                         uint8_t* dst_v,
+                                         int width) {
   __asm {
     push      edi
-    mov       eax, [esp + 4 + 4]   
-    mov       edx, [esp + 4 + 8]   
+    mov       eax, [esp + 4 + 4]  
+    mov       edx, [esp + 4 + 8]  
     mov       edi, [esp + 4 + 12]  
     mov       ecx, [esp + 4 + 16]  
     movdqa    xmm1, xmmword ptr kShuffleMirrorUV
@@ -3198,11 +3081,12 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 #endif  
 
 #ifdef HAS_ARGBMIRRORROW_SSE2
-__declspec(naked)
-void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBMirrorRow_SSE2(const uint8_t* src,
+                                          uint8_t* dst,
+                                          int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     lea       eax, [eax - 16 + ecx * 4]  
 
@@ -3221,15 +3105,14 @@ void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_ARGBMIRRORROW_AVX2
 
-static const ulvec32 kARGBShuffleMirror_AVX2 = {
-  7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
-};
+static const ulvec32 kARGBShuffleMirror_AVX2 = {7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u};
 
-__declspec(naked)
-void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBMirrorRow_AVX2(const uint8_t* src,
+                                          uint8_t* dst,
+                                          int width) {
   __asm {
-    mov       eax, [esp + 4]   
-    mov       edx, [esp + 8]   
+    mov       eax, [esp + 4]  
+    mov       edx, [esp + 8]  
     mov       ecx, [esp + 12]  
     vmovdqu   ymm5, ymmword ptr kARGBShuffleMirror_AVX2
 
@@ -3246,16 +3129,17 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 #endif  
 
 #ifdef HAS_SPLITUVROW_SSE2
-__declspec(naked)
-void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                     int width) {
+__declspec(naked) void SplitUVRow_SSE2(const uint8_t* src_uv,
+                                       uint8_t* dst_u,
+                                       uint8_t* dst_v,
+                                       int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
     sub        edi, edx
 
@@ -3265,10 +3149,10 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     lea        eax,  [eax + 32]
     movdqa     xmm2, xmm0
     movdqa     xmm3, xmm1
-    pand       xmm0, xmm5   
+    pand       xmm0, xmm5  
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
-    psrlw      xmm2, 8      
+    psrlw      xmm2, 8  
     psrlw      xmm3, 8
     packuswb   xmm2, xmm3
     movdqu     [edx], xmm0
@@ -3285,16 +3169,17 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 #endif  
 
 #ifdef HAS_SPLITUVROW_AVX2
-__declspec(naked)
-void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                     int width) {
+__declspec(naked) void SplitUVRow_AVX2(const uint8_t* src_uv,
+                                       uint8_t* dst_u,
+                                       uint8_t* dst_v,
+                                       int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    vpcmpeqb   ymm5, ymm5, ymm5      
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
     sub        edi, edx
 
@@ -3302,9 +3187,9 @@ void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     lea        eax,  [eax + 64]
-    vpsrlw     ymm2, ymm0, 8      
+    vpsrlw     ymm2, ymm0, 8  
     vpsrlw     ymm3, ymm1, 8
-    vpand      ymm0, ymm0, ymm5   
+    vpand      ymm0, ymm0, ymm5  
     vpand      ymm1, ymm1, ymm5
     vpackuswb  ymm0, ymm0, ymm1
     vpackuswb  ymm2, ymm2, ymm3
@@ -3324,24 +3209,25 @@ void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 #endif  
 
 #ifdef HAS_MERGEUVROW_SSE2
-__declspec(naked)
-void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                     int width) {
+__declspec(naked) void MergeUVRow_SSE2(const uint8_t* src_u,
+                                       const uint8_t* src_v,
+                                       uint8_t* dst_uv,
+                                       int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
     sub        edx, eax
 
   convertloop:
-    movdqu     xmm0, [eax]      
+    movdqu     xmm0, [eax]  
     movdqu     xmm1, [eax + edx]  
     lea        eax,  [eax + 16]
     movdqa     xmm2, xmm0
-    punpcklbw  xmm0, xmm1       
-    punpckhbw  xmm2, xmm1       
+    punpcklbw  xmm0, xmm1  
+    punpckhbw  xmm2, xmm1  
     movdqu     [edi], xmm0
     movdqu     [edi + 16], xmm2
     lea        edi, [edi + 32]
@@ -3355,24 +3241,25 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 #endif  
 
 #ifdef HAS_MERGEUVROW_AVX2
-__declspec(naked)
-void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                     int width) {
+__declspec(naked) void MergeUVRow_AVX2(const uint8_t* src_u,
+                                       const uint8_t* src_v,
+                                       uint8_t* dst_uv,
+                                       int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
     sub        edx, eax
 
   convertloop:
-    vmovdqu    ymm0, [eax]           
-    vmovdqu    ymm1, [eax + edx]     
+    vmovdqu    ymm0, [eax]  
+    vmovdqu    ymm1, [eax + edx]  
     lea        eax,  [eax + 32]
-    vpunpcklbw ymm2, ymm0, ymm1      
-    vpunpckhbw ymm0, ymm0, ymm1      
-    vextractf128 [edi], ymm2, 0       
+    vpunpcklbw ymm2, ymm0, ymm1  
+    vpunpckhbw ymm0, ymm0, ymm1  
+    vextractf128 [edi], ymm2, 0  
     vextractf128 [edi + 16], ymm0, 0  
     vextractf128 [edi + 32], ymm2, 1  
     vextractf128 [edi + 48], ymm0, 1  
@@ -3389,11 +3276,12 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 
 #ifdef HAS_COPYROW_SSE2
 
-__declspec(naked)
-void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
+__declspec(naked) void CopyRow_SSE2(const uint8_t* src,
+                                    uint8_t* dst,
+                                    int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     test       eax, 15
     jne        convertloopu
@@ -3427,11 +3315,12 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 
 #ifdef HAS_COPYROW_AVX
 
-__declspec(naked)
-void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
+__declspec(naked) void CopyRow_AVX(const uint8_t* src,
+                                   uint8_t* dst,
+                                   int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
 
   convertloop:
@@ -3451,13 +3340,14 @@ void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
 #endif  
 
 
-__declspec(naked)
-void CopyRow_ERMS(const uint8* src, uint8* dst, int count) {
+__declspec(naked) void CopyRow_ERMS(const uint8_t* src,
+                                    uint8_t* dst,
+                                    int width) {
   __asm {
     mov        eax, esi
     mov        edx, edi
-    mov        esi, [esp + 4]   
-    mov        edi, [esp + 8]   
+    mov        esi, [esp + 4]  
+    mov        edi, [esp + 8]  
     mov        ecx, [esp + 12]  
     rep movsb
     mov        edi, edx
@@ -3468,15 +3358,16 @@ void CopyRow_ERMS(const uint8* src, uint8* dst, int count) {
 
 #ifdef HAS_ARGBCOPYALPHAROW_SSE2
 
-__declspec(naked)
-void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBCopyAlphaRow_SSE2(const uint8_t* src,
+                                             uint8_t* dst,
+                                             int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
-    pcmpeqb    xmm0, xmm0       
+    pcmpeqb    xmm0, xmm0  
     pslld      xmm0, 24
-    pcmpeqb    xmm1, xmm1       
+    pcmpeqb    xmm1, xmm1  
     psrld      xmm1, 8
 
   convertloop:
@@ -3504,14 +3395,15 @@ void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_ARGBCOPYALPHAROW_AVX2
 
-__declspec(naked)
-void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBCopyAlphaRow_AVX2(const uint8_t* src,
+                                             uint8_t* dst,
+                                             int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     vpcmpeqb   ymm0, ymm0, ymm0
-    vpsrld     ymm0, ymm0, 8    
+    vpsrld     ymm0, ymm0, 8  
 
   convertloop:
     vmovdqu    ymm1, [eax]
@@ -3533,11 +3425,12 @@ void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_ARGBEXTRACTALPHAROW_SSE2
 
-__declspec(naked)
-void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
+__declspec(naked) void ARGBExtractAlphaRow_SSE2(const uint8_t* src_argb,
+                                                uint8_t* dst_a,
+                                                int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
 
   extractloop:
@@ -3558,17 +3451,54 @@ void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
 }
 #endif  
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_AVX2
+
+__declspec(naked) void ARGBExtractAlphaRow_AVX2(const uint8_t* src_argb,
+                                                uint8_t* dst_a,
+                                                int width) {
+  __asm {
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
+    vmovdqa    ymm4, ymmword ptr kPermdARGBToY_AVX
+
+  extractloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    vpsrld     ymm0, ymm0, 24
+    vpsrld     ymm1, ymm1, 24
+    vmovdqu    ymm2, [eax + 64]
+    vmovdqu    ymm3, [eax + 96]
+    lea        eax, [eax + 128]
+    vpackssdw  ymm0, ymm0, ymm1  
+    vpsrld     ymm2, ymm2, 24
+    vpsrld     ymm3, ymm3, 24
+    vpackssdw  ymm2, ymm2, ymm3  
+    vpackuswb  ymm0, ymm0, ymm2  
+    vpermd     ymm0, ymm4, ymm0  
+    vmovdqu    [edx], ymm0
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    jg         extractloop
+
+    vzeroupper
+    ret
+  }
+}
+#endif  
+
 #ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
 
-__declspec(naked)
-void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBCopyYToAlphaRow_SSE2(const uint8_t* src,
+                                                uint8_t* dst,
+                                                int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
-    pcmpeqb    xmm0, xmm0       
+    pcmpeqb    xmm0, xmm0  
     pslld      xmm0, 24
-    pcmpeqb    xmm1, xmm1       
+    pcmpeqb    xmm1, xmm1  
     psrld      xmm1, 8
 
   convertloop:
@@ -3598,14 +3528,15 @@ void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_ARGBCOPYYTOALPHAROW_AVX2
 
-__declspec(naked)
-void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
+__declspec(naked) void ARGBCopyYToAlphaRow_AVX2(const uint8_t* src,
+                                                uint8_t* dst,
+                                                int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     vpcmpeqb   ymm0, ymm0, ymm0
-    vpsrld     ymm0, ymm0, 8    
+    vpsrld     ymm0, ymm0, 8  
 
   convertloop:
     vpmovzxbd  ymm1, qword ptr [eax]
@@ -3630,14 +3561,13 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_SETROW_X86
 
 
-__declspec(naked)
-void SetRow_X86(uint8* dst, uint8 v8, int count) {
+__declspec(naked) void SetRow_X86(uint8_t* dst, uint8_t v8, int width) {
   __asm {
-    movzx      eax, byte ptr [esp + 8]    
+    movzx      eax, byte ptr [esp + 8]  
     mov        edx, 0x01010101  
-    mul        edx              
+    mul        edx  
     mov        edx, edi
-    mov        edi, [esp + 4]   
+    mov        edi, [esp + 4]  
     mov        ecx, [esp + 12]  
     shr        ecx, 2
     rep stosd
@@ -3647,12 +3577,11 @@ void SetRow_X86(uint8* dst, uint8 v8, int count) {
 }
 
 
-__declspec(naked)
-void SetRow_ERMS(uint8* dst, uint8 v8, int count) {
+__declspec(naked) void SetRow_ERMS(uint8_t* dst, uint8_t v8, int width) {
   __asm {
     mov        edx, edi
-    mov        edi, [esp + 4]   
-    mov        eax, [esp + 8]   
+    mov        edi, [esp + 4]  
+    mov        eax, [esp + 8]  
     mov        ecx, [esp + 12]  
     rep stosb
     mov        edi, edx
@@ -3661,12 +3590,13 @@ void SetRow_ERMS(uint8* dst, uint8 v8, int count) {
 }
 
 
-__declspec(naked)
-void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int count) {
+__declspec(naked) void ARGBSetRow_X86(uint8_t* dst_argb,
+                                      uint32_t v32,
+                                      int width) {
   __asm {
     mov        edx, edi
-    mov        edi, [esp + 4]   
-    mov        eax, [esp + 8]   
+    mov        edi, [esp + 4]  
+    mov        eax, [esp + 8]  
     mov        ecx, [esp + 12]  
     rep stosd
     mov        edi, edx
@@ -3676,12 +3606,13 @@ void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int count) {
 #endif  
 
 #ifdef HAS_YUY2TOYROW_AVX2
-__declspec(naked)
-void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int width) {
+__declspec(naked) void YUY2ToYRow_AVX2(const uint8_t* src_yuy2,
+                                       uint8_t* dst_y,
+                                       int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
     vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
 
@@ -3689,9 +3620,9 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int width) {
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     lea        eax,  [eax + 64]
-    vpand      ymm0, ymm0, ymm5   
+    vpand      ymm0, ymm0, ymm5  
     vpand      ymm1, ymm1, ymm5
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
@@ -3702,18 +3633,20 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int width) {
   }
 }
 
-__declspec(naked)
-void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void YUY2ToUVRow_AVX2(const uint8_t* src_yuy2,
+                                        int stride_yuy2,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
-    vpcmpeqb   ymm5, ymm5, ymm5      
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
     sub        edi, edx
 
@@ -3723,18 +3656,18 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
     vpavgb     ymm0, ymm0, [eax + esi]
     vpavgb     ymm1, ymm1, [eax + esi + 32]
     lea        eax,  [eax + 64]
-    vpsrlw     ymm0, ymm0, 8      
+    vpsrlw     ymm0, ymm0, 8  
     vpsrlw     ymm1, ymm1, 8
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vpand      ymm1, ymm0, ymm5  
-    vpsrlw     ymm0, ymm0, 8     
+    vpsrlw     ymm0, ymm0, 8  
     vpackuswb  ymm1, ymm1, ymm1  
     vpackuswb  ymm0, ymm0, ymm0  
     vpermq     ymm1, ymm1, 0xd8
     vpermq     ymm0, ymm0, 0xd8
     vextractf128 [edx], ymm1, 0  
-    vextractf128 [edx + edi], ymm0, 0 
+    vextractf128 [edx + edi], ymm0, 0  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -3746,16 +3679,17 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
   }
 }
 
-__declspec(naked)
-void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
-                         uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void YUY2ToUV422Row_AVX2(const uint8_t* src_yuy2,
+                                           uint8_t* dst_u,
+                                           uint8_t* dst_v,
+                                           int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    vpcmpeqb   ymm5, ymm5, ymm5      
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
     sub        edi, edx
 
@@ -3763,18 +3697,18 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     lea        eax,  [eax + 64]
-    vpsrlw     ymm0, ymm0, 8      
+    vpsrlw     ymm0, ymm0, 8  
     vpsrlw     ymm1, ymm1, 8
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vpand      ymm1, ymm0, ymm5  
-    vpsrlw     ymm0, ymm0, 8     
+    vpsrlw     ymm0, ymm0, 8  
     vpackuswb  ymm1, ymm1, ymm1  
     vpackuswb  ymm0, ymm0, ymm0  
     vpermq     ymm1, ymm1, 0xd8
     vpermq     ymm0, ymm0, 0xd8
     vextractf128 [edx], ymm1, 0  
-    vextractf128 [edx + edi], ymm0, 0 
+    vextractf128 [edx + edi], ymm0, 0  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -3785,21 +3719,21 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
   }
 }
 
-__declspec(naked)
-void UYVYToYRow_AVX2(const uint8* src_uyvy,
-                     uint8* dst_y, int width) {
+__declspec(naked) void UYVYToYRow_AVX2(const uint8_t* src_uyvy,
+                                       uint8_t* dst_y,
+                                       int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
   convertloop:
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     lea        eax,  [eax + 64]
-    vpsrlw     ymm0, ymm0, 8      
+    vpsrlw     ymm0, ymm0, 8  
     vpsrlw     ymm1, ymm1, 8
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
@@ -3810,18 +3744,20 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy,
   }
 }
 
-__declspec(naked)
-void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void UYVYToUVRow_AVX2(const uint8_t* src_uyvy,
+                                        int stride_uyvy,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
-    vpcmpeqb   ymm5, ymm5, ymm5      
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
     sub        edi, edx
 
@@ -3831,18 +3767,18 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
     vpavgb     ymm0, ymm0, [eax + esi]
     vpavgb     ymm1, ymm1, [eax + esi + 32]
     lea        eax,  [eax + 64]
-    vpand      ymm0, ymm0, ymm5   
+    vpand      ymm0, ymm0, ymm5  
     vpand      ymm1, ymm1, ymm5
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vpand      ymm1, ymm0, ymm5  
-    vpsrlw     ymm0, ymm0, 8     
+    vpsrlw     ymm0, ymm0, 8  
     vpackuswb  ymm1, ymm1, ymm1  
     vpackuswb  ymm0, ymm0, ymm0  
     vpermq     ymm1, ymm1, 0xd8
     vpermq     ymm0, ymm0, 0xd8
     vextractf128 [edx], ymm1, 0  
-    vextractf128 [edx + edi], ymm0, 0 
+    vextractf128 [edx + edi], ymm0, 0  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -3854,16 +3790,17 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
   }
 }
 
-__declspec(naked)
-void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
-                         uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void UYVYToUV422Row_AVX2(const uint8_t* src_uyvy,
+                                           uint8_t* dst_u,
+                                           uint8_t* dst_v,
+                                           int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    vpcmpeqb   ymm5, ymm5, ymm5      
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpsrlw     ymm5, ymm5, 8
     sub        edi, edx
 
@@ -3871,18 +3808,18 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     vmovdqu    ymm0, [eax]
     vmovdqu    ymm1, [eax + 32]
     lea        eax,  [eax + 64]
-    vpand      ymm0, ymm0, ymm5   
+    vpand      ymm0, ymm0, ymm5  
     vpand      ymm1, ymm1, ymm5
-    vpackuswb  ymm0, ymm0, ymm1   
+    vpackuswb  ymm0, ymm0, ymm1  
     vpermq     ymm0, ymm0, 0xd8
     vpand      ymm1, ymm0, ymm5  
-    vpsrlw     ymm0, ymm0, 8     
+    vpsrlw     ymm0, ymm0, 8  
     vpackuswb  ymm1, ymm1, ymm1  
     vpackuswb  ymm0, ymm0, ymm0  
     vpermq     ymm1, ymm1, 0xd8
     vpermq     ymm0, ymm0, 0xd8
     vextractf128 [edx], ymm1, 0  
-    vextractf128 [edx + edi], ymm0, 0 
+    vextractf128 [edx + edi], ymm0, 0  
     lea        edx, [edx + 16]
     sub        ecx, 32
     jg         convertloop
@@ -3895,21 +3832,21 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
 #endif  
 
 #ifdef HAS_YUY2TOYROW_SSE2
-__declspec(naked)
-void YUY2ToYRow_SSE2(const uint8* src_yuy2,
-                     uint8* dst_y, int width) {
+__declspec(naked) void YUY2ToYRow_SSE2(const uint8_t* src_yuy2,
+                                       uint8_t* dst_y,
+                                       int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
-    pcmpeqb    xmm5, xmm5        
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
 
   convertloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm5   
+    pand       xmm0, xmm5  
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqu     [edx], xmm0
@@ -3920,18 +3857,20 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2,
   }
 }
 
-__declspec(naked)
-void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void YUY2ToUVRow_SSE2(const uint8_t* src_yuy2,
+                                        int stride_yuy2,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
     sub        edi, edx
 
@@ -3943,13 +3882,13 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
     lea        eax,  [eax + 32]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
-    psrlw      xmm0, 8      
+    psrlw      xmm0, 8  
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  
     packuswb   xmm0, xmm0
-    psrlw      xmm1, 8     
+    psrlw      xmm1, 8  
     packuswb   xmm1, xmm1
     movq       qword ptr [edx], xmm0
     movq       qword ptr [edx + edi], xmm1
@@ -3963,16 +3902,17 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
   }
 }
 
-__declspec(naked)
-void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
-                         uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void YUY2ToUV422Row_SSE2(const uint8_t* src_yuy2,
+                                           uint8_t* dst_u,
+                                           uint8_t* dst_v,
+                                           int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
     sub        edi, edx
 
@@ -3980,13 +3920,13 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    psrlw      xmm0, 8      
+    psrlw      xmm0, 8  
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  
     packuswb   xmm0, xmm0
-    psrlw      xmm1, 8     
+    psrlw      xmm1, 8  
     packuswb   xmm1, xmm1
     movq       qword ptr [edx], xmm0
     movq       qword ptr [edx + edi], xmm1
@@ -3999,19 +3939,19 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
   }
 }
 
-__declspec(naked)
-void UYVYToYRow_SSE2(const uint8* src_uyvy,
-                     uint8* dst_y, int width) {
+__declspec(naked) void UYVYToYRow_SSE2(const uint8_t* src_uyvy,
+                                       uint8_t* dst_y,
+                                       int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
 
   convertloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    psrlw      xmm0, 8    
+    psrlw      xmm0, 8  
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqu     [edx], xmm0
@@ -4022,18 +3962,20 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy,
   }
 }
 
-__declspec(naked)
-void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
-                      uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void UYVYToUVRow_SSE2(const uint8_t* src_uyvy,
+                                        int stride_uyvy,
+                                        uint8_t* dst_u,
+                                        uint8_t* dst_v,
+                                        int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
     sub        edi, edx
 
@@ -4045,13 +3987,13 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
     lea        eax,  [eax + 32]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
-    pand       xmm0, xmm5   
+    pand       xmm0, xmm5  
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  
     packuswb   xmm0, xmm0
-    psrlw      xmm1, 8     
+    psrlw      xmm1, 8  
     packuswb   xmm1, xmm1
     movq       qword ptr [edx], xmm0
     movq       qword ptr [edx + edi], xmm1
@@ -4065,16 +4007,17 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
   }
 }
 
-__declspec(naked)
-void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
-                         uint8* dst_u, uint8* dst_v, int width) {
+__declspec(naked) void UYVYToUV422Row_SSE2(const uint8_t* src_uyvy,
+                                           uint8_t* dst_u,
+                                           uint8_t* dst_v,
+                                           int width) {
   __asm {
     push       edi
-    mov        eax, [esp + 4 + 4]    
-    mov        edx, [esp + 4 + 8]    
-    mov        edi, [esp + 4 + 12]   
-    mov        ecx, [esp + 4 + 16]   
-    pcmpeqb    xmm5, xmm5            
+    mov        eax, [esp + 4 + 4]  
+    mov        edx, [esp + 4 + 8]  
+    mov        edi, [esp + 4 + 12]  
+    mov        ecx, [esp + 4 + 16]  
+    pcmpeqb    xmm5, xmm5  
     psrlw      xmm5, 8
     sub        edi, edx
 
@@ -4082,13 +4025,13 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm5   
+    pand       xmm0, xmm5  
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  
     packuswb   xmm0, xmm0
-    psrlw      xmm1, 8     
+    psrlw      xmm1, 8  
     packuswb   xmm1, xmm1
     movq       qword ptr [edx], xmm0
     movq       qword ptr [edx + edi], xmm1
@@ -4108,13 +4051,15 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 
 
 
-__declspec(naked)
-void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
-                         const uint8* alpha, uint8* dst, int width) {
+__declspec(naked) void BlendPlaneRow_SSSE3(const uint8_t* src0,
+                                           const uint8_t* src1,
+                                           const uint8_t* alpha,
+                                           uint8_t* dst,
+                                           int width) {
   __asm {
     push       esi
     push       edi
-    pcmpeqb    xmm5, xmm5       
+    pcmpeqb    xmm5, xmm5  
     psllw      xmm5, 8
     mov        eax, 0x80808080  
     movd       xmm6, eax
@@ -4123,8 +4068,8 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
     mov        eax, 0x807f807f  
     movd       xmm7, eax
     pshufd     xmm7, xmm7, 0x00
-    mov        eax, [esp + 8 + 4]   
-    mov        edx, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        edx, [esp + 8 + 8]  
     mov        esi, [esp + 8 + 12]  
     mov        edi, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
@@ -4132,17 +4077,17 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
     sub        edx, esi
     sub        edi, esi
 
-    
+        
   convertloop8:
-    movq       xmm0, qword ptr [esi]        
+    movq       xmm0, qword ptr [esi]  
     punpcklbw  xmm0, xmm0
-    pxor       xmm0, xmm5         
+    pxor       xmm0, xmm5  
     movq       xmm1, qword ptr [eax + esi]  
     movq       xmm2, qword ptr [edx + esi]  
     punpcklbw  xmm1, xmm2
-    psubb      xmm1, xmm6         
+    psubb      xmm1, xmm6  
     pmaddubsw  xmm0, xmm1
-    paddw      xmm0, xmm7         
+    paddw      xmm0, xmm7  
     psrlw      xmm0, 8
     packuswb   xmm0, xmm0
     movq       qword ptr [edi + esi], xmm0
@@ -4163,13 +4108,15 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
 
 
 
-__declspec(naked)
-void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
-                         const uint8* alpha, uint8* dst, int width) {
+__declspec(naked) void BlendPlaneRow_AVX2(const uint8_t* src0,
+                                          const uint8_t* src1,
+                                          const uint8_t* alpha,
+                                          uint8_t* dst,
+                                          int width) {
   __asm {
     push        esi
     push        edi
-    vpcmpeqb    ymm5, ymm5, ymm5       
+    vpcmpeqb    ymm5, ymm5, ymm5  
     vpsllw      ymm5, ymm5, 8
     mov         eax, 0x80808080  
     vmovd       xmm6, eax
@@ -4177,8 +4124,8 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
     mov         eax, 0x807f807f  
     vmovd       xmm7, eax
     vbroadcastss ymm7, xmm7
-    mov         eax, [esp + 8 + 4]   
-    mov         edx, [esp + 8 + 8]   
+    mov         eax, [esp + 8 + 4]  
+    mov         edx, [esp + 8 + 8]  
     mov         esi, [esp + 8 + 12]  
     mov         edi, [esp + 8 + 16]  
     mov         ecx, [esp + 8 + 20]  
@@ -4186,23 +4133,23 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
     sub         edx, esi
     sub         edi, esi
 
-    
+        
   convertloop32:
-    vmovdqu     ymm0, [esi]        
-    vpunpckhbw  ymm3, ymm0, ymm0   
-    vpunpcklbw  ymm0, ymm0, ymm0   
-    vpxor       ymm3, ymm3, ymm5   
-    vpxor       ymm0, ymm0, ymm5   
+    vmovdqu     ymm0, [esi]  
+    vpunpckhbw  ymm3, ymm0, ymm0  
+    vpunpcklbw  ymm0, ymm0, ymm0  
+    vpxor       ymm3, ymm3, ymm5  
+    vpxor       ymm0, ymm0, ymm5  
     vmovdqu     ymm1, [eax + esi]  
     vmovdqu     ymm2, [edx + esi]  
     vpunpckhbw  ymm4, ymm1, ymm2
     vpunpcklbw  ymm1, ymm1, ymm2
-    vpsubb      ymm4, ymm4, ymm6   
-    vpsubb      ymm1, ymm1, ymm6   
+    vpsubb      ymm4, ymm4, ymm6  
+    vpsubb      ymm1, ymm1, ymm6  
     vpmaddubsw  ymm3, ymm3, ymm4
     vpmaddubsw  ymm0, ymm0, ymm1
-    vpaddw      ymm3, ymm3, ymm7   
-    vpaddw      ymm0, ymm0, ymm7   
+    vpaddw      ymm3, ymm3, ymm7  
+    vpaddw      ymm0, ymm0, ymm7  
     vpsrlw      ymm3, ymm3, 8
     vpsrlw      ymm0, ymm0, 8
     vpackuswb   ymm0, ymm0, ymm3
@@ -4221,52 +4168,51 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
 
 #ifdef HAS_ARGBBLENDROW_SSSE3
 
-static const uvec8 kShuffleAlpha = {
-  3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
-  11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
-};
+static const uvec8 kShuffleAlpha = {3u,  0x80, 3u,  0x80, 7u,  0x80, 7u,  0x80,
+                                    11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80};
 
 
-__declspec(naked)
-void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                        uint8* dst_argb, int width) {
+__declspec(naked) void ARGBBlendRow_SSSE3(const uint8_t* src_argb0,
+                                          const uint8_t* src_argb1,
+                                          uint8_t* dst_argb,
+                                          int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    pcmpeqb    xmm7, xmm7       
+    pcmpeqb    xmm7, xmm7  
     psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       
+    pcmpeqb    xmm6, xmm6  
     psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       
+    pcmpeqb    xmm5, xmm5  
     psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       
+    pcmpeqb    xmm4, xmm4  
     pslld      xmm4, 24
     sub        ecx, 4
-    jl         convertloop4b    
+    jl         convertloop4b  
 
-    
+        
   convertloop4:
-    movdqu     xmm3, [eax]      
+    movdqu     xmm3, [eax]  
     lea        eax, [eax + 16]
-    movdqa     xmm0, xmm3       
-    pxor       xmm3, xmm4       
-    movdqu     xmm2, [esi]      
-    pshufb     xmm3, xmmword ptr kShuffleAlpha 
-    pand       xmm2, xmm6       
-    paddw      xmm3, xmm7       
-    pmullw     xmm2, xmm3       
-    movdqu     xmm1, [esi]      
+    movdqa     xmm0, xmm3  
+    pxor       xmm3, xmm4  
+    movdqu     xmm2, [esi]  
+    pshufb     xmm3, xmmword ptr kShuffleAlpha  
+    pand       xmm2, xmm6  
+    paddw      xmm3, xmm7  
+    pmullw     xmm2, xmm3  
+    movdqu     xmm1, [esi]  
     lea        esi, [esi + 16]
-    psrlw      xmm1, 8          
-    por        xmm0, xmm4       
-    pmullw     xmm1, xmm3       
-    psrlw      xmm2, 8          
-    paddusb    xmm0, xmm2       
-    pand       xmm1, xmm5       
-    paddusb    xmm0, xmm1       
+    psrlw      xmm1, 8  
+    por        xmm0, xmm4  
+    pmullw     xmm1, xmm3  
+    psrlw      xmm2, 8  
+    paddusb    xmm0, xmm2  
+    pand       xmm1, xmm5  
+    paddusb    xmm0, xmm1  
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 4
@@ -4276,26 +4222,26 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     add        ecx, 4 - 1
     jl         convertloop1b
 
-    
+        
   convertloop1:
-    movd       xmm3, [eax]      
+    movd       xmm3, [eax]  
     lea        eax, [eax + 4]
-    movdqa     xmm0, xmm3       
-    pxor       xmm3, xmm4       
-    movd       xmm2, [esi]      
-    pshufb     xmm3, xmmword ptr kShuffleAlpha 
-    pand       xmm2, xmm6       
-    paddw      xmm3, xmm7       
-    pmullw     xmm2, xmm3       
-    movd       xmm1, [esi]      
+    movdqa     xmm0, xmm3  
+    pxor       xmm3, xmm4  
+    movd       xmm2, [esi]  
+    pshufb     xmm3, xmmword ptr kShuffleAlpha  
+    pand       xmm2, xmm6  
+    paddw      xmm3, xmm7  
+    pmullw     xmm2, xmm3  
+    movd       xmm1, [esi]  
     lea        esi, [esi + 4]
-    psrlw      xmm1, 8          
-    por        xmm0, xmm4       
-    pmullw     xmm1, xmm3       
-    psrlw      xmm2, 8          
-    paddusb    xmm0, xmm2       
-    pand       xmm1, xmm5       
-    paddusb    xmm0, xmm1       
+    psrlw      xmm1, 8  
+    por        xmm0, xmm4  
+    pmullw     xmm1, xmm3  
+    psrlw      xmm2, 8  
+    paddusb    xmm0, xmm2  
+    pand       xmm1, xmm5  
+    paddusb    xmm0, xmm1  
     movd       [edx], xmm0
     lea        edx, [edx + 4]
     sub        ecx, 1
@@ -4311,41 +4257,42 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 
 static const uvec8 kShuffleAlpha0 = {
-  3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
+    3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
 };
 static const uvec8 kShuffleAlpha1 = {
-  11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
-  15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
+    11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
+    15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
 };
-__declspec(naked)
-void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
+__declspec(naked) void ARGBAttenuateRow_SSSE3(const uint8_t* src_argb,
+                                              uint8_t* dst_argb,
+                                              int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
-    pcmpeqb    xmm3, xmm3       
+    pcmpeqb    xmm3, xmm3  
     pslld      xmm3, 24
     movdqa     xmm4, xmmword ptr kShuffleAlpha0
     movdqa     xmm5, xmmword ptr kShuffleAlpha1
 
  convertloop:
-    movdqu     xmm0, [eax]      
-    pshufb     xmm0, xmm4       
-    movdqu     xmm1, [eax]      
-    punpcklbw  xmm1, xmm1       
-    pmulhuw    xmm0, xmm1       
-    movdqu     xmm1, [eax]      
-    pshufb     xmm1, xmm5       
-    movdqu     xmm2, [eax]      
-    punpckhbw  xmm2, xmm2       
-    pmulhuw    xmm1, xmm2       
-    movdqu     xmm2, [eax]      
+    movdqu     xmm0, [eax]  
+    pshufb     xmm0, xmm4  
+    movdqu     xmm1, [eax]  
+    punpcklbw  xmm1, xmm1  
+    pmulhuw    xmm0, xmm1  
+    movdqu     xmm1, [eax]  
+    pshufb     xmm1, xmm5  
+    movdqu     xmm2, [eax]  
+    punpckhbw  xmm2, xmm2  
+    pmulhuw    xmm1, xmm2  
+    movdqu     xmm2, [eax]  
     lea        eax, [eax + 16]
     pand       xmm2, xmm3
     psrlw      xmm0, 8
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
-    por        xmm0, xmm2       
+    por        xmm0, xmm2  
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 4
@@ -4358,22 +4305,23 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBATTENUATEROW_AVX2
 
-static const uvec8 kShuffleAlpha_AVX2 = {
-  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u, 14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
-};
-__declspec(naked)
-void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
+static const uvec8 kShuffleAlpha_AVX2 = {6u,   7u,   6u,   7u,  6u,  7u,
+                                         128u, 128u, 14u,  15u, 14u, 15u,
+                                         14u,  15u,  128u, 128u};
+__declspec(naked) void ARGBAttenuateRow_AVX2(const uint8_t* src_argb,
+                                             uint8_t* dst_argb,
+                                             int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     sub        edx, eax
     vbroadcastf128 ymm4, xmmword ptr kShuffleAlpha_AVX2
-    vpcmpeqb   ymm5, ymm5, ymm5 
+    vpcmpeqb   ymm5, ymm5, ymm5  
     vpslld     ymm5, ymm5, 24
 
  convertloop:
-    vmovdqu    ymm6, [eax]       
+    vmovdqu    ymm6, [eax]  
     vpunpcklbw ymm0, ymm6, ymm6  
     vpunpckhbw ymm1, ymm6, ymm6  
     vpshufb    ymm2, ymm0, ymm4  
@@ -4398,40 +4346,40 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 
-__declspec(naked)
-void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
-                             int width) {
+__declspec(naked) void ARGBUnattenuateRow_SSE2(const uint8_t* src_argb,
+                                               uint8_t* dst_argb,
+                                               int width) {
   __asm {
     push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 12 + 4]   
-    mov        edx, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        edx, [esp + 12 + 8]  
     mov        ecx, [esp + 12 + 12]  
     lea        ebx, fixed_invtbl8
 
  convertloop:
-    movdqu     xmm0, [eax]      
+    movdqu     xmm0, [eax]  
     movzx      esi, byte ptr [eax + 3]  
     movzx      edi, byte ptr [eax + 7]  
-    punpcklbw  xmm0, xmm0       
+    punpcklbw  xmm0, xmm0  
     movd       xmm2, dword ptr [ebx + esi * 4]
     movd       xmm3, dword ptr [ebx + edi * 4]
-    pshuflw    xmm2, xmm2, 040h 
-    pshuflw    xmm3, xmm3, 040h 
+    pshuflw    xmm2, xmm2, 040h  
+    pshuflw    xmm3, xmm3, 040h  
     movlhps    xmm2, xmm3
-    pmulhuw    xmm0, xmm2       
+    pmulhuw    xmm0, xmm2  
 
-    movdqu     xmm1, [eax]      
+    movdqu     xmm1, [eax]  
     movzx      esi, byte ptr [eax + 11]  
     movzx      edi, byte ptr [eax + 15]  
-    punpckhbw  xmm1, xmm1       
+    punpckhbw  xmm1, xmm1  
     movd       xmm2, dword ptr [ebx + esi * 4]
     movd       xmm3, dword ptr [ebx + edi * 4]
-    pshuflw    xmm2, xmm2, 040h 
-    pshuflw    xmm3, xmm3, 040h 
+    pshuflw    xmm2, xmm2, 040h  
+    pshuflw    xmm3, xmm3, 040h  
     movlhps    xmm2, xmm3
-    pmulhuw    xmm1, xmm2       
+    pmulhuw    xmm1, xmm2  
     lea        eax, [eax + 16]
     packuswb   xmm0, xmm1
     movdqu     [edx], xmm0
@@ -4450,25 +4398,24 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #ifdef HAS_ARGBUNATTENUATEROW_AVX2
 
 static const uvec8 kUnattenShuffleAlpha_AVX2 = {
-  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15u
-};
+    0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15u};
 
 
 #ifdef USE_GATHER
-__declspec(naked)
-void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
-                             int width) {
+__declspec(naked) void ARGBUnattenuateRow_AVX2(const uint8_t* src_argb,
+                                               uint8_t* dst_argb,
+                                               int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     sub        edx, eax
     vbroadcastf128 ymm4, xmmword ptr kUnattenShuffleAlpha_AVX2
 
  convertloop:
-    vmovdqu    ymm6, [eax]       
+    vmovdqu    ymm6, [eax]  
     vpcmpeqb   ymm5, ymm5, ymm5  
-    vpsrld     ymm2, ymm6, 24    
+    vpsrld     ymm2, ymm6, 24  
     vpunpcklbw ymm0, ymm6, ymm6  
     vpunpckhbw ymm1, ymm6, ymm6  
     vpgatherdd ymm3, [ymm2 * 4 + fixed_invtbl8], ymm5  
@@ -4488,50 +4435,50 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     ret
   }
 }
-#else  
-__declspec(naked)
-void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
-                             int width) {
+#else   
+__declspec(naked) void ARGBUnattenuateRow_AVX2(const uint8_t* src_argb,
+                                               uint8_t* dst_argb,
+                                               int width) {
   __asm {
 
     push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 12 + 4]   
-    mov        edx, [esp + 12 + 8]   
+    mov        eax, [esp + 12 + 4]  
+    mov        edx, [esp + 12 + 8]  
     mov        ecx, [esp + 12 + 12]  
     sub        edx, eax
     lea        ebx, fixed_invtbl8
     vbroadcastf128 ymm5, xmmword ptr kUnattenShuffleAlpha_AVX2
 
  convertloop:
-    
-    movzx      esi, byte ptr [eax + 3]                 
-    movzx      edi, byte ptr [eax + 7]                 
+        
+    movzx      esi, byte ptr [eax + 3]  
+    movzx      edi, byte ptr [eax + 7]  
     vmovd      xmm0, dword ptr [ebx + esi * 4]  
     vmovd      xmm1, dword ptr [ebx + edi * 4]  
-    movzx      esi, byte ptr [eax + 11]                
-    movzx      edi, byte ptr [eax + 15]                
-    vpunpckldq xmm6, xmm0, xmm1                        
+    movzx      esi, byte ptr [eax + 11]  
+    movzx      edi, byte ptr [eax + 15]  
+    vpunpckldq xmm6, xmm0, xmm1  
     vmovd      xmm2, dword ptr [ebx + esi * 4]  
     vmovd      xmm3, dword ptr [ebx + edi * 4]  
-    movzx      esi, byte ptr [eax + 19]                
-    movzx      edi, byte ptr [eax + 23]                
-    vpunpckldq xmm7, xmm2, xmm3                        
+    movzx      esi, byte ptr [eax + 19]  
+    movzx      edi, byte ptr [eax + 23]  
+    vpunpckldq xmm7, xmm2, xmm3  
     vmovd      xmm0, dword ptr [ebx + esi * 4]  
     vmovd      xmm1, dword ptr [ebx + edi * 4]  
-    movzx      esi, byte ptr [eax + 27]                
-    movzx      edi, byte ptr [eax + 31]                
-    vpunpckldq xmm0, xmm0, xmm1                        
+    movzx      esi, byte ptr [eax + 27]  
+    movzx      edi, byte ptr [eax + 31]  
+    vpunpckldq xmm0, xmm0, xmm1  
     vmovd      xmm2, dword ptr [ebx + esi * 4]  
     vmovd      xmm3, dword ptr [ebx + edi * 4]  
-    vpunpckldq xmm2, xmm2, xmm3                        
-    vpunpcklqdq xmm3, xmm6, xmm7                       
-    vpunpcklqdq xmm0, xmm0, xmm2                       
-    vinserti128 ymm3, ymm3, xmm0, 1 
+    vpunpckldq xmm2, xmm2, xmm3  
+    vpunpcklqdq xmm3, xmm6, xmm7  
+    vpunpcklqdq xmm0, xmm0, xmm2  
+    vinserti128 ymm3, ymm3, xmm0, 1                
     
 
-    vmovdqu    ymm6, [eax]       
+    vmovdqu    ymm6, [eax]  
     vpunpcklbw ymm0, ymm6, ymm6  
     vpunpckhbw ymm1, ymm6, ymm6  
     vpunpcklwd ymm2, ymm3, ymm3  
@@ -4540,7 +4487,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     vpshufb    ymm3, ymm3, ymm5  
     vpmulhuw   ymm0, ymm0, ymm2  
     vpmulhuw   ymm1, ymm1, ymm3  
-    vpackuswb  ymm0, ymm0, ymm1  
+    vpackuswb  ymm0, ymm0, ymm1             
     vmovdqu    [eax + edx], ymm0
     lea        eax, [eax + 32]
     sub        ecx, 8
@@ -4558,12 +4505,13 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
 
-__declspec(naked)
-void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
+__declspec(naked) void ARGBGrayRow_SSSE3(const uint8_t* src_argb,
+                                         uint8_t* dst_argb,
+                                         int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqa     xmm4, xmmword ptr kARGBToYJ
     movdqa     xmm5, xmmword ptr kAddYJ64
 
@@ -4575,20 +4523,20 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     phaddw     xmm0, xmm1
     paddw      xmm0, xmm5  
     psrlw      xmm0, 7
-    packuswb   xmm0, xmm0   
+    packuswb   xmm0, xmm0  
     movdqu     xmm2, [eax]  
     movdqu     xmm3, [eax + 16]
     lea        eax, [eax + 32]
     psrld      xmm2, 24
     psrld      xmm3, 24
     packuswb   xmm2, xmm3
-    packuswb   xmm2, xmm2   
-    movdqa     xmm3, xmm0   
-    punpcklbw  xmm0, xmm0   
-    punpcklbw  xmm3, xmm2   
+    packuswb   xmm2, xmm2  
+    movdqa     xmm3, xmm0  
+    punpcklbw  xmm0, xmm0  
+    punpcklbw  xmm3, xmm2  
     movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm3   
-    punpckhwd  xmm1, xmm3   
+    punpcklwd  xmm0, xmm3  
+    punpckhwd  xmm1, xmm3  
     movdqu     [edx], xmm0
     movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
@@ -4604,24 +4552,20 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
 
 
-static const vec8 kARGBToSepiaB = {
-  17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0
-};
+static const vec8 kARGBToSepiaB = {17, 68, 35, 0, 17, 68, 35, 0,
+                                   17, 68, 35, 0, 17, 68, 35, 0};
 
-static const vec8 kARGBToSepiaG = {
-  22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0
-};
+static const vec8 kARGBToSepiaG = {22, 88, 45, 0, 22, 88, 45, 0,
+                                   22, 88, 45, 0, 22, 88, 45, 0};
 
-static const vec8 kARGBToSepiaR = {
-  24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
-};
+static const vec8 kARGBToSepiaR = {24, 98, 50, 0, 24, 98, 50, 0,
+                                   24, 98, 50, 0, 24, 98, 50, 0};
 
 
-__declspec(naked)
-void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
+__declspec(naked) void ARGBSepiaRow_SSSE3(uint8_t* dst_argb, int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        ecx, [esp + 8]   
+    mov        eax, [esp + 4] 
+    mov        ecx, [esp + 8] 
     movdqa     xmm2, xmmword ptr kARGBToSepiaB
     movdqa     xmm3, xmmword ptr kARGBToSepiaG
     movdqa     xmm4, xmmword ptr kARGBToSepiaR
@@ -4633,32 +4577,32 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     pmaddubsw  xmm6, xmm2
     phaddw     xmm0, xmm6
     psrlw      xmm0, 7
-    packuswb   xmm0, xmm0   
+    packuswb   xmm0, xmm0  
     movdqu     xmm5, [eax]  
     movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm3
     pmaddubsw  xmm1, xmm3
     phaddw     xmm5, xmm1
     psrlw      xmm5, 7
-    packuswb   xmm5, xmm5   
-    punpcklbw  xmm0, xmm5   
+    packuswb   xmm5, xmm5  
+    punpcklbw  xmm0, xmm5  
     movdqu     xmm5, [eax]  
     movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm4
     pmaddubsw  xmm1, xmm4
     phaddw     xmm5, xmm1
     psrlw      xmm5, 7
-    packuswb   xmm5, xmm5   
+    packuswb   xmm5, xmm5  
     movdqu     xmm6, [eax]  
     movdqu     xmm1, [eax + 16]
     psrld      xmm6, 24
     psrld      xmm1, 24
     packuswb   xmm6, xmm1
-    packuswb   xmm6, xmm6   
-    punpcklbw  xmm5, xmm6   
-    movdqa     xmm1, xmm0   
-    punpcklwd  xmm0, xmm5   
-    punpckhwd  xmm1, xmm5   
+    packuswb   xmm6, xmm6  
+    punpcklbw  xmm5, xmm6  
+    movdqa     xmm1, xmm0  
+    punpcklwd  xmm0, xmm5  
+    punpckhwd  xmm1, xmm5  
     movdqu     [eax], xmm0
     movdqu     [eax + 16], xmm1
     lea        eax, [eax + 32]
@@ -4674,19 +4618,20 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 
 
 
-__declspec(naked)
-void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
-                              const int8* matrix_argb, int width) {
+__declspec(naked) void ARGBColorMatrixRow_SSSE3(const uint8_t* src_argb,
+                                                uint8_t* dst_argb,
+                                                const int8_t* matrix_argb,
+                                                int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]  
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
     movdqu     xmm5, [ecx]
     pshufd     xmm2, xmm5, 0x00
     pshufd     xmm3, xmm5, 0x55
     pshufd     xmm4, xmm5, 0xaa
     pshufd     xmm5, xmm5, 0xff
-    mov        ecx, [esp + 16]  
+    mov        ecx, [esp + 16] 
 
  convertloop:
     movdqu     xmm0, [eax]  
@@ -4697,31 +4642,31 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm6, xmm3
     pmaddubsw  xmm1, xmm3
-    phaddsw    xmm0, xmm7   
-    phaddsw    xmm6, xmm1   
-    psraw      xmm0, 6      
-    psraw      xmm6, 6      
-    packuswb   xmm0, xmm0   
-    packuswb   xmm6, xmm6   
-    punpcklbw  xmm0, xmm6   
+    phaddsw    xmm0, xmm7  
+    phaddsw    xmm6, xmm1  
+    psraw      xmm0, 6  
+    psraw      xmm6, 6  
+    packuswb   xmm0, xmm0  
+    packuswb   xmm6, xmm6  
+    punpcklbw  xmm0, xmm6  
     movdqu     xmm1, [eax]  
     movdqu     xmm7, [eax + 16]
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm7, xmm4
-    phaddsw    xmm1, xmm7   
+    phaddsw    xmm1, xmm7  
     movdqu     xmm6, [eax]  
     movdqu     xmm7, [eax + 16]
     pmaddubsw  xmm6, xmm5
     pmaddubsw  xmm7, xmm5
-    phaddsw    xmm6, xmm7   
-    psraw      xmm1, 6      
-    psraw      xmm6, 6      
-    packuswb   xmm1, xmm1   
-    packuswb   xmm6, xmm6   
-    punpcklbw  xmm1, xmm6   
-    movdqa     xmm6, xmm0   
-    punpcklwd  xmm0, xmm1   
-    punpckhwd  xmm6, xmm1   
+    phaddsw    xmm6, xmm7  
+    psraw      xmm1, 6  
+    psraw      xmm6, 6  
+    packuswb   xmm1, xmm1  
+    packuswb   xmm6, xmm6  
+    punpcklbw  xmm1, xmm6  
+    movdqa     xmm6, xmm0  
+    punpcklwd  xmm0, xmm1  
+    punpckhwd  xmm6, xmm1  
     movdqu     [edx], xmm0
     movdqu     [edx + 16], xmm6
     lea        eax, [eax + 32]
@@ -4735,15 +4680,17 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
 #ifdef HAS_ARGBQUANTIZEROW_SSE2
 
-__declspec(naked)
-void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
-                          int interval_offset, int width) {
+__declspec(naked) void ARGBQuantizeRow_SSE2(uint8_t* dst_argb,
+                                            int scale,
+                                            int interval_size,
+                                            int interval_offset,
+                                            int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    movd       xmm2, [esp + 8]   
-    movd       xmm3, [esp + 12]  
-    movd       xmm4, [esp + 16]  
-    mov        ecx, [esp + 20]   
+    mov        eax, [esp + 4] 
+    movd       xmm2, [esp + 8] 
+    movd       xmm3, [esp + 12] 
+    movd       xmm4, [esp + 16] 
+    mov        ecx, [esp + 20] 
     pshuflw    xmm2, xmm2, 040h
     pshufd     xmm2, xmm2, 044h
     pshuflw    xmm3, xmm3, 040h
@@ -4756,16 +4703,16 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 
  convertloop:
     movdqu     xmm0, [eax]  
-    punpcklbw  xmm0, xmm5   
-    pmulhuw    xmm0, xmm2   
+    punpcklbw  xmm0, xmm5  
+    pmulhuw    xmm0, xmm2  
     movdqu     xmm1, [eax]  
-    punpckhbw  xmm1, xmm5   
+    punpckhbw  xmm1, xmm5  
     pmulhuw    xmm1, xmm2
-    pmullw     xmm0, xmm3   
+    pmullw     xmm0, xmm3  
     movdqu     xmm7, [eax]  
     pmullw     xmm1, xmm3
-    pand       xmm7, xmm6   
-    paddw      xmm0, xmm4   
+    pand       xmm7, xmm6  
+    paddw      xmm0, xmm4  
     paddw      xmm1, xmm4
     packuswb   xmm0, xmm1
     por        xmm0, xmm7
@@ -4780,25 +4727,26 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 
 #ifdef HAS_ARGBSHADEROW_SSE2
 
-__declspec(naked)
-void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
-                       uint32 value) {
+__declspec(naked) void ARGBShadeRow_SSE2(const uint8_t* src_argb,
+                                         uint8_t* dst_argb,
+                                         int width,
+                                         uint32_t value) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
     mov        ecx, [esp + 12]  
     movd       xmm2, [esp + 16]  
     punpcklbw  xmm2, xmm2
     punpcklqdq xmm2, xmm2
 
  convertloop:
-    movdqu     xmm0, [eax]      
+    movdqu     xmm0, [eax]  
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm0       
-    punpckhbw  xmm1, xmm1       
-    pmulhuw    xmm0, xmm2       
-    pmulhuw    xmm1, xmm2       
+    punpcklbw  xmm0, xmm0  
+    punpckhbw  xmm1, xmm1  
+    pmulhuw    xmm0, xmm2  
+    pmulhuw    xmm1, xmm2  
     psrlw      xmm0, 8
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
@@ -4814,28 +4762,29 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 
-__declspec(naked)
-void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                          uint8* dst_argb, int width) {
+__declspec(naked) void ARGBMultiplyRow_SSE2(const uint8_t* src_argb0,
+                                            const uint8_t* src_argb1,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     pxor       xmm5, xmm5  
 
  convertloop:
-    movdqu     xmm0, [eax]        
-    movdqu     xmm2, [esi]        
+    movdqu     xmm0, [eax]  
+    movdqu     xmm2, [esi]  
     movdqu     xmm1, xmm0
     movdqu     xmm3, xmm2
-    punpcklbw  xmm0, xmm0         
-    punpckhbw  xmm1, xmm1         
-    punpcklbw  xmm2, xmm5         
-    punpckhbw  xmm3, xmm5         
-    pmulhuw    xmm0, xmm2         
-    pmulhuw    xmm1, xmm3         
+    punpcklbw  xmm0, xmm0  
+    punpckhbw  xmm1, xmm1  
+    punpcklbw  xmm2, xmm5  
+    punpckhbw  xmm3, xmm5  
+    pmulhuw    xmm0, xmm2  
+    pmulhuw    xmm1, xmm3  
     lea        eax, [eax + 16]
     lea        esi, [esi + 16]
     packuswb   xmm0, xmm1
@@ -4853,13 +4802,14 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 #ifdef HAS_ARGBADDROW_SSE2
 
 
-__declspec(naked)
-void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                     uint8* dst_argb, int width) {
+__declspec(naked) void ARGBAddRow_SSE2(const uint8_t* src_argb0,
+                                       const uint8_t* src_argb1,
+                                       uint8_t* dst_argb,
+                                       int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
 
@@ -4867,11 +4817,11 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     jl         convertloop49
 
  convertloop4:
-    movdqu     xmm0, [eax]        
+    movdqu     xmm0, [eax]  
     lea        eax, [eax + 16]
-    movdqu     xmm1, [esi]        
+    movdqu     xmm1, [esi]  
     lea        esi, [esi + 16]
-    paddusb    xmm0, xmm1         
+    paddusb    xmm0, xmm1  
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 4
@@ -4882,11 +4832,11 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     jl         convertloop19
 
  convertloop1:
-    movd       xmm0, [eax]        
+    movd       xmm0, [eax]  
     lea        eax, [eax + 4]
-    movd       xmm1, [esi]        
+    movd       xmm1, [esi]  
     lea        esi, [esi + 4]
-    paddusb    xmm0, xmm1         
+    paddusb    xmm0, xmm1  
     movd       [edx], xmm0
     lea        edx, [edx + 4]
     sub        ecx, 1
@@ -4901,22 +4851,23 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 
-__declspec(naked)
-void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                          uint8* dst_argb, int width) {
+__declspec(naked) void ARGBSubtractRow_SSE2(const uint8_t* src_argb0,
+                                            const uint8_t* src_argb1,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
 
  convertloop:
-    movdqu     xmm0, [eax]        
+    movdqu     xmm0, [eax]  
     lea        eax, [eax + 16]
-    movdqu     xmm1, [esi]        
+    movdqu     xmm1, [esi]  
     lea        esi, [esi + 16]
-    psubusb    xmm0, xmm1         
+    psubusb    xmm0, xmm1  
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 4
@@ -4930,28 +4881,29 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBMULTIPLYROW_AVX2
 
-__declspec(naked)
-void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
-                          uint8* dst_argb, int width) {
+__declspec(naked) void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
+                                            const uint8_t* src_argb1,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
-    vpxor      ymm5, ymm5, ymm5     
+    vpxor      ymm5, ymm5, ymm5  
 
  convertloop:
-    vmovdqu    ymm1, [eax]        
+    vmovdqu    ymm1, [eax]  
     lea        eax, [eax + 32]
-    vmovdqu    ymm3, [esi]        
+    vmovdqu    ymm3, [esi]  
     lea        esi, [esi + 32]
-    vpunpcklbw ymm0, ymm1, ymm1   
-    vpunpckhbw ymm1, ymm1, ymm1   
-    vpunpcklbw ymm2, ymm3, ymm5   
-    vpunpckhbw ymm3, ymm3, ymm5   
-    vpmulhuw   ymm0, ymm0, ymm2   
-    vpmulhuw   ymm1, ymm1, ymm3   
+    vpunpcklbw ymm0, ymm1, ymm1  
+    vpunpckhbw ymm1, ymm1, ymm1  
+    vpunpcklbw ymm2, ymm3, ymm5  
+    vpunpckhbw ymm3, ymm3, ymm5  
+    vpmulhuw   ymm0, ymm0, ymm2  
+    vpmulhuw   ymm1, ymm1, ymm3  
     vpackuswb  ymm0, ymm0, ymm1
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
@@ -4967,20 +4919,21 @@ void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBADDROW_AVX2
 
-__declspec(naked)
-void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
-                     uint8* dst_argb, int width) {
+__declspec(naked) void ARGBAddRow_AVX2(const uint8_t* src_argb0,
+                                       const uint8_t* src_argb1,
+                                       uint8_t* dst_argb,
+                                       int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
 
  convertloop:
-    vmovdqu    ymm0, [eax]              
+    vmovdqu    ymm0, [eax]  
     lea        eax, [eax + 32]
-    vpaddusb   ymm0, ymm0, [esi]        
+    vpaddusb   ymm0, ymm0, [esi]  
     lea        esi, [esi + 32]
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
@@ -4996,20 +4949,21 @@ void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBSUBTRACTROW_AVX2
 
-__declspec(naked)
-void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
-                          uint8* dst_argb, int width) {
+__declspec(naked) void ARGBSubtractRow_AVX2(const uint8_t* src_argb0,
+                                            const uint8_t* src_argb1,
+                                            uint8_t* dst_argb,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
 
  convertloop:
-    vmovdqu    ymm0, [eax]              
+    vmovdqu    ymm0, [eax]  
     lea        eax, [eax + 32]
-    vpsubusb   ymm0, ymm0, [esi]        
+    vpsubusb   ymm0, ymm0, [esi]  
     lea        esi, [esi + 32]
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
@@ -5028,14 +4982,16 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
 
 
 
-__declspec(naked)
-void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
-                    const uint8* src_y2, uint8* dst_sobelx, int width) {
+__declspec(naked) void SobelXRow_SSE2(const uint8_t* src_y0,
+                                      const uint8_t* src_y1,
+                                      const uint8_t* src_y2,
+                                      uint8_t* dst_sobelx,
+                                      int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edi, [esp + 8 + 12]  
     mov        edx, [esp + 8 + 16]  
     mov        ecx, [esp + 8 + 20]  
@@ -5045,17 +5001,17 @@ void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     pxor       xmm5, xmm5  
 
  convertloop:
-    movq       xmm0, qword ptr [eax]            
-    movq       xmm1, qword ptr [eax + 2]        
+    movq       xmm0, qword ptr [eax]  
+    movq       xmm1, qword ptr [eax + 2]  
     punpcklbw  xmm0, xmm5
     punpcklbw  xmm1, xmm5
     psubw      xmm0, xmm1
-    movq       xmm1, qword ptr [eax + esi]      
+    movq       xmm1, qword ptr [eax + esi]  
     movq       xmm2, qword ptr [eax + esi + 2]  
     punpcklbw  xmm1, xmm5
     punpcklbw  xmm2, xmm5
     psubw      xmm1, xmm2
-    movq       xmm2, qword ptr [eax + edi]      
+    movq       xmm2, qword ptr [eax + edi]  
     movq       xmm3, qword ptr [eax + edi + 2]  
     punpcklbw  xmm2, xmm5
     punpcklbw  xmm3, xmm5
@@ -5063,7 +5019,7 @@ void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     paddw      xmm0, xmm2
     paddw      xmm0, xmm1
     paddw      xmm0, xmm1
-    pxor       xmm1, xmm1   
+    pxor       xmm1, xmm1  
     psubw      xmm1, xmm0
     pmaxsw     xmm0, xmm1
     packuswb   xmm0, xmm0
@@ -5084,13 +5040,14 @@ void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
 
 
 
-__declspec(naked)
-void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
-                    uint8* dst_sobely, int width) {
+__declspec(naked) void SobelYRow_SSE2(const uint8_t* src_y0,
+                                      const uint8_t* src_y1,
+                                      uint8_t* dst_sobely,
+                                      int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     sub        esi, eax
@@ -5098,17 +5055,17 @@ void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     pxor       xmm5, xmm5  
 
  convertloop:
-    movq       xmm0, qword ptr [eax]            
-    movq       xmm1, qword ptr [eax + esi]      
+    movq       xmm0, qword ptr [eax]  
+    movq       xmm1, qword ptr [eax + esi]  
     punpcklbw  xmm0, xmm5
     punpcklbw  xmm1, xmm5
     psubw      xmm0, xmm1
-    movq       xmm1, qword ptr [eax + 1]        
+    movq       xmm1, qword ptr [eax + 1]  
     movq       xmm2, qword ptr [eax + esi + 1]  
     punpcklbw  xmm1, xmm5
     punpcklbw  xmm2, xmm5
     psubw      xmm1, xmm2
-    movq       xmm2, qword ptr [eax + 2]        
+    movq       xmm2, qword ptr [eax + 2]  
     movq       xmm3, qword ptr [eax + esi + 2]  
     punpcklbw  xmm2, xmm5
     punpcklbw  xmm3, xmm5
@@ -5116,7 +5073,7 @@ void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     paddw      xmm0, xmm2
     paddw      xmm0, xmm1
     paddw      xmm0, xmm1
-    pxor       xmm1, xmm1   
+    pxor       xmm1, xmm1  
     psubw      xmm1, xmm0
     pmaxsw     xmm0, xmm1
     packuswb   xmm0, xmm0
@@ -5137,36 +5094,37 @@ void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
 
 
 
-__declspec(naked)
-void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
-                   uint8* dst_argb, int width) {
+__declspec(naked) void SobelRow_SSE2(const uint8_t* src_sobelx,
+                                     const uint8_t* src_sobely,
+                                     uint8_t* dst_argb,
+                                     int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     sub        esi, eax
-    pcmpeqb    xmm5, xmm5           
-    pslld      xmm5, 24             
+    pcmpeqb    xmm5, xmm5  
+    pslld      xmm5, 24  
 
  convertloop:
-    movdqu     xmm0, [eax]            
-    movdqu     xmm1, [eax + esi]      
+    movdqu     xmm0, [eax]  
+    movdqu     xmm1, [eax + esi]  
     lea        eax, [eax + 16]
-    paddusb    xmm0, xmm1             
-    movdqa     xmm2, xmm0             
-    punpcklbw  xmm2, xmm0             
-    punpckhbw  xmm0, xmm0             
-    movdqa     xmm1, xmm2             
-    punpcklwd  xmm1, xmm2             
-    punpckhwd  xmm2, xmm2             
-    por        xmm1, xmm5             
+    paddusb    xmm0, xmm1  
+    movdqa     xmm2, xmm0  
+    punpcklbw  xmm2, xmm0  
+    punpckhbw  xmm0, xmm0  
+    movdqa     xmm1, xmm2  
+    punpcklwd  xmm1, xmm2  
+    punpckhwd  xmm2, xmm2  
+    por        xmm1, xmm5  
     por        xmm2, xmm5
-    movdqa     xmm3, xmm0             
-    punpcklwd  xmm3, xmm0             
-    punpckhwd  xmm0, xmm0             
-    por        xmm3, xmm5             
+    movdqa     xmm3, xmm0  
+    punpcklwd  xmm3, xmm0  
+    punpckhwd  xmm0, xmm0  
+    por        xmm3, xmm5  
     por        xmm0, xmm5
     movdqu     [edx], xmm1
     movdqu     [edx + 16], xmm2
@@ -5184,22 +5142,23 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
 #ifdef HAS_SOBELTOPLANEROW_SSE2
 
-__declspec(naked)
-void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
-                          uint8* dst_y, int width) {
+__declspec(naked) void SobelToPlaneRow_SSE2(const uint8_t* src_sobelx,
+                                            const uint8_t* src_sobely,
+                                            uint8_t* dst_y,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     sub        esi, eax
 
  convertloop:
-    movdqu     xmm0, [eax]            
-    movdqu     xmm1, [eax + esi]      
+    movdqu     xmm0, [eax]  
+    movdqu     xmm1, [eax + esi]  
     lea        eax, [eax + 16]
-    paddusb    xmm0, xmm1             
+    paddusb    xmm0, xmm1  
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
@@ -5217,36 +5176,37 @@ void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
 
 
-__declspec(naked)
-void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
-                     uint8* dst_argb, int width) {
+__declspec(naked) void SobelXYRow_SSE2(const uint8_t* src_sobelx,
+                                       const uint8_t* src_sobely,
+                                       uint8_t* dst_argb,
+                                       int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
+    mov        eax, [esp + 4 + 4]  
+    mov        esi, [esp + 4 + 8]  
     mov        edx, [esp + 4 + 12]  
     mov        ecx, [esp + 4 + 16]  
     sub        esi, eax
-    pcmpeqb    xmm5, xmm5           
+    pcmpeqb    xmm5, xmm5  
 
  convertloop:
-    movdqu     xmm0, [eax]            
-    movdqu     xmm1, [eax + esi]      
+    movdqu     xmm0, [eax]  
+    movdqu     xmm1, [eax + esi]  
     lea        eax, [eax + 16]
     movdqa     xmm2, xmm0
-    paddusb    xmm2, xmm1             
-    movdqa     xmm3, xmm0             
+    paddusb    xmm2, xmm1  
+    movdqa     xmm3, xmm0  
     punpcklbw  xmm3, xmm5
     punpckhbw  xmm0, xmm5
-    movdqa     xmm4, xmm1             
+    movdqa     xmm4, xmm1  
     punpcklbw  xmm4, xmm2
     punpckhbw  xmm1, xmm2
-    movdqa     xmm6, xmm4             
-    punpcklwd  xmm6, xmm3             
-    punpckhwd  xmm4, xmm3             
-    movdqa     xmm7, xmm1             
-    punpcklwd  xmm7, xmm0             
-    punpckhwd  xmm1, xmm0             
+    movdqa     xmm6, xmm4  
+    punpcklwd  xmm6, xmm3  
+    punpckhwd  xmm4, xmm3  
+    movdqa     xmm7, xmm1  
+    punpcklwd  xmm7, xmm0  
+    punpckhwd  xmm1, xmm0  
     movdqu     [edx], xmm6
     movdqu     [edx + 16], xmm4
     movdqu     [edx + 32], xmm7
@@ -5275,8 +5235,11 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
 
 
-void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
-                                    int width, int area, uint8* dst,
+void CumulativeSumToAverageRow_SSE2(const int32_t* topleft,
+                                    const int32_t* botleft,
+                                    int width,
+                                    int area,
+                                    uint8_t* dst,
                                     int count) {
   __asm {
     mov        eax, topleft  
@@ -5294,18 +5257,18 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     cmp        area, 128  
     ja         l4
 
-    pshufd     xmm5, xmm5, 0        
-    pcmpeqb    xmm6, xmm6           
+    pshufd     xmm5, xmm5, 0  
+    pcmpeqb    xmm6, xmm6  
     psrld      xmm6, 16
     cvtdq2ps   xmm6, xmm6
-    addps      xmm5, xmm6           
-    mulps      xmm5, xmm4           
-    cvtps2dq   xmm5, xmm5           
-    packssdw   xmm5, xmm5           
+    addps      xmm5, xmm6  
+    mulps      xmm5, xmm4  
+    cvtps2dq   xmm5, xmm5  
+    packssdw   xmm5, xmm5  
 
-    
+        
   s4:
-    
+        
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + 32]
@@ -5345,9 +5308,9 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
 
     jmp        l4b
 
-    
+            
   l4:
-    
+        
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + 32]
@@ -5373,7 +5336,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     paddd      xmm3, [esi + edx * 4 + 48]
     lea        esi, [esi + 64]
 
-    cvtdq2ps   xmm0, xmm0   
+    cvtdq2ps   xmm0, xmm0  
     cvtdq2ps   xmm1, xmm1
     mulps      xmm0, xmm4
     mulps      xmm1, xmm4
@@ -5397,7 +5360,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     add        ecx, 4 - 1
     jl         l1b
 
-    
+        
   l1:
     movdqu     xmm0, [eax]
     psubd      xmm0, [eax + edx * 4]
@@ -5422,8 +5385,10 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 
 
-void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
-                                  const int32* previous_cumsum, int width) {
+void ComputeCumulativeSumRow_SSE2(const uint8_t* row,
+                                  int32_t* cumsum,
+                                  const int32_t* previous_cumsum,
+                                  int width) {
   __asm {
     mov        eax, row
     mov        edx, cumsum
@@ -5437,7 +5402,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     test       edx, 15
     jne        l4b
 
-    
+        
   l4:
     movdqu     xmm2, [eax]  
     lea        eax, [eax + 16]
@@ -5483,7 +5448,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     add        ecx, 4 - 1
     jl         l1b
 
-    
+        
   l1:
     movd       xmm2, dword ptr [eax]  
     lea        eax, [eax + 4]
@@ -5505,10 +5470,11 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 
-__declspec(naked)
-LIBYUV_API
-void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
-                        uint8* dst_argb, const float* uv_dudv, int width) {
+__declspec(naked) LIBYUV_API void ARGBAffineRow_SSE2(const uint8_t* src_argb,
+                                                     int src_argb_stride,
+                                                     uint8_t* dst_argb,
+                                                     const float* uv_dudv,
+                                                     int width) {
   __asm {
     push       esi
     push       edi
@@ -5519,46 +5485,46 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     movq       xmm2, qword ptr [ecx]  
     movq       xmm7, qword ptr [ecx + 8]  
     mov        ecx, [esp + 28]  
-    shl        esi, 16          
+    shl        esi, 16  
     add        esi, 4
     movd       xmm5, esi
     sub        ecx, 4
     jl         l4b
 
-    
+        
     pshufd     xmm7, xmm7, 0x44  
     pshufd     xmm5, xmm5, 0  
-    movdqa     xmm0, xmm2    
+    movdqa     xmm0, xmm2  
     addps      xmm0, xmm7
     movlhps    xmm2, xmm0
     movdqa     xmm4, xmm7
-    addps      xmm4, xmm4    
-    movdqa     xmm3, xmm2    
+    addps      xmm4, xmm4  
+    movdqa     xmm3, xmm2  
     addps      xmm3, xmm4
-    addps      xmm4, xmm4    
+    addps      xmm4, xmm4  
 
-    
+        
   l4:
-    cvttps2dq  xmm0, xmm2    
-    cvttps2dq  xmm1, xmm3    
-    packssdw   xmm0, xmm1    
-    pmaddwd    xmm0, xmm5    
+    cvttps2dq  xmm0, xmm2  
+    cvttps2dq  xmm1, xmm3  
+    packssdw   xmm0, xmm1  
+    pmaddwd    xmm0, xmm5  
     movd       esi, xmm0
     pshufd     xmm0, xmm0, 0x39  
     movd       edi, xmm0
     pshufd     xmm0, xmm0, 0x39  
     movd       xmm1, [eax + esi]  
     movd       xmm6, [eax + edi]  
-    punpckldq  xmm1, xmm6     
-    addps      xmm2, xmm4    
+    punpckldq  xmm1, xmm6  
+    addps      xmm2, xmm4  
     movq       qword ptr [edx], xmm1
     movd       esi, xmm0
     pshufd     xmm0, xmm0, 0x39  
     movd       edi, xmm0
     movd       xmm6, [eax + esi]  
     movd       xmm0, [eax + edi]  
-    punpckldq  xmm6, xmm0     
-    addps      xmm3, xmm4    
+    punpckldq  xmm6, xmm0  
+    addps      xmm3, xmm4  
     movq       qword ptr 8[edx], xmm6
     lea        edx, [edx + 16]
     sub        ecx, 4
@@ -5568,12 +5534,12 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     add        ecx, 4 - 1
     jl         l1b
 
-    
+        
   l1:
-    cvttps2dq  xmm0, xmm2    
-    packssdw   xmm0, xmm0    
-    pmaddwd    xmm0, xmm5    
-    addps      xmm2, xmm7    
+    cvttps2dq  xmm0, xmm2  
+    packssdw   xmm0, xmm0  
+    pmaddwd    xmm0, xmm5  
+    addps      xmm2, xmm7  
     movd       esi, xmm0
     movd       xmm0, [eax + esi]  
     movd       [edx], xmm0
@@ -5590,15 +5556,16 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 
 #ifdef HAS_INTERPOLATEROW_AVX2
 
-__declspec(naked)
-void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) {
+__declspec(naked) void InterpolateRow_AVX2(uint8_t* dst_ptr,
+                                           const uint8_t* src_ptr,
+                                           ptrdiff_t src_stride,
+                                           int dst_width,
+                                           int source_y_fraction) {
   __asm {
     push       esi
     push       edi
-    mov        edi, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        edi, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ecx, [esp + 8 + 16]  
     mov        eax, [esp + 8 + 20]  
@@ -5607,7 +5574,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     je         xloop100  
     sub        edi, esi
     cmp        eax, 128
-    je         xloop50   
+    je         xloop50  
 
     vmovd      xmm0, eax  
     neg        eax
@@ -5634,14 +5601,14 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     vpaddw     ymm0, ymm0, ymm4
     vpsrlw     ymm1, ymm1, 8
     vpsrlw     ymm0, ymm0, 8
-    vpackuswb  ymm0, ymm0, ymm1  
+    vpackuswb  ymm0, ymm0, ymm1            
     vmovdqu    [esi + edi], ymm0
     lea        esi, [esi + 32]
     sub        ecx, 32
     jg         xloop
     jmp        xloop99
 
-   
+        
  xloop50:
    vmovdqu    ymm0, [esi]
    vpavgb     ymm0, ymm0, [esi + edx]
@@ -5651,7 +5618,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
    jg         xloop50
    jmp        xloop99
 
-   
+        
  xloop100:
    rep movsb
 
@@ -5666,25 +5633,26 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
 
 
 
-__declspec(naked)
-void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
-                          ptrdiff_t src_stride, int dst_width,
-                          int source_y_fraction) {
+__declspec(naked) void InterpolateRow_SSSE3(uint8_t* dst_ptr,
+                                            const uint8_t* src_ptr,
+                                            ptrdiff_t src_stride,
+                                            int dst_width,
+                                            int source_y_fraction) {
   __asm {
     push       esi
     push       edi
 
-    mov        edi, [esp + 8 + 4]   
-    mov        esi, [esp + 8 + 8]   
+    mov        edi, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
     mov        edx, [esp + 8 + 12]  
     mov        ecx, [esp + 8 + 16]  
     mov        eax, [esp + 8 + 20]  
     sub        edi, esi
-    
+        
     cmp        eax, 0
     je         xloop100  
     cmp        eax, 128
-    je         xloop50   
+    je         xloop50  
 
     movd       xmm0, eax  
     neg        eax
@@ -5703,7 +5671,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqu     xmm1, xmm0
     punpcklbw  xmm0, xmm2
     punpckhbw  xmm1, xmm2
-    psubb      xmm0, xmm4  
+    psubb      xmm0, xmm4            
     psubb      xmm1, xmm4
     movdqa     xmm2, xmm5
     movdqa     xmm3, xmm5
@@ -5720,7 +5688,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
     jmp        xloop99
 
-    
+        
   xloop50:
     movdqu     xmm0, [esi]
     movdqu     xmm1, [esi + edx]
@@ -5731,7 +5699,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop50
     jmp        xloop99
 
-    
+        
   xloop100:
     movdqu     xmm0, [esi]
     movdqu     [esi + edi], xmm0
@@ -5747,15 +5715,16 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 
-__declspec(naked)
-void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
-                          const uint8* shuffler, int width) {
+__declspec(naked) void ARGBShuffleRow_SSSE3(const uint8_t* src_argb,
+                                            uint8_t* dst_argb,
+                                            const uint8_t* shuffler,
+                                            int width) {
   __asm {
-    mov        eax, [esp + 4]    
-    mov        edx, [esp + 8]    
-    mov        ecx, [esp + 12]   
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
     movdqu     xmm5, [ecx]
-    mov        ecx, [esp + 16]   
+    mov        ecx, [esp + 16]  
 
   wloop:
     movdqu     xmm0, [eax]
@@ -5773,15 +5742,16 @@ void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 }
 
 #ifdef HAS_ARGBSHUFFLEROW_AVX2
-__declspec(naked)
-void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
-                         const uint8* shuffler, int width) {
+__declspec(naked) void ARGBShuffleRow_AVX2(const uint8_t* src_argb,
+                                           uint8_t* dst_argb,
+                                           const uint8_t* shuffler,
+                                           int width) {
   __asm {
-    mov        eax, [esp + 4]     
-    mov        edx, [esp + 8]     
-    mov        ecx, [esp + 12]    
-    vbroadcastf128 ymm5, [ecx]    
-    mov        ecx, [esp + 16]    
+    mov        eax, [esp + 4]  
+    mov        edx, [esp + 8]  
+    mov        ecx, [esp + 12]  
+    vbroadcastf128 ymm5, [ecx]  
+    mov        ecx, [esp + 16]  
 
   wloop:
     vmovdqu    ymm0, [eax]
@@ -5801,152 +5771,36 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
 }
 #endif  
 
-__declspec(naked)
-void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
-                         const uint8* shuffler, int width) {
-  __asm {
-    push       ebx
-    push       esi
-    mov        eax, [esp + 8 + 4]    
-    mov        edx, [esp + 8 + 8]    
-    mov        esi, [esp + 8 + 12]   
-    mov        ecx, [esp + 8 + 16]   
-    pxor       xmm5, xmm5
-
-    mov        ebx, [esi]   
-    cmp        ebx, 0x03000102
-    je         shuf_3012
-    cmp        ebx, 0x00010203
-    je         shuf_0123
-    cmp        ebx, 0x00030201
-    je         shuf_0321
-    cmp        ebx, 0x02010003
-    je         shuf_2103
-
-  
-  shuf_any1:
-    movzx      ebx, byte ptr [esi]
-    movzx      ebx, byte ptr [eax + ebx]
-    mov        [edx], bl
-    movzx      ebx, byte ptr [esi + 1]
-    movzx      ebx, byte ptr [eax + ebx]
-    mov        [edx + 1], bl
-    movzx      ebx, byte ptr [esi + 2]
-    movzx      ebx, byte ptr [eax + ebx]
-    mov        [edx + 2], bl
-    movzx      ebx, byte ptr [esi + 3]
-    movzx      ebx, byte ptr [eax + ebx]
-    mov        [edx + 3], bl
-    lea        eax, [eax + 4]
-    lea        edx, [edx + 4]
-    sub        ecx, 1
-    jg         shuf_any1
-    jmp        shuf99
-
-  shuf_0123:
-    movdqu     xmm0, [eax]
-    lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm5
-    punpckhbw  xmm1, xmm5
-    pshufhw    xmm0, xmm0, 01Bh   
-    pshuflw    xmm0, xmm0, 01Bh
-    pshufhw    xmm1, xmm1, 01Bh
-    pshuflw    xmm1, xmm1, 01Bh
-    packuswb   xmm0, xmm1
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         shuf_0123
-    jmp        shuf99
-
-  shuf_0321:
-    movdqu     xmm0, [eax]
-    lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm5
-    punpckhbw  xmm1, xmm5
-    pshufhw    xmm0, xmm0, 039h   
-    pshuflw    xmm0, xmm0, 039h
-    pshufhw    xmm1, xmm1, 039h
-    pshuflw    xmm1, xmm1, 039h
-    packuswb   xmm0, xmm1
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         shuf_0321
-    jmp        shuf99
-
-  shuf_2103:
-    movdqu     xmm0, [eax]
-    lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm5
-    punpckhbw  xmm1, xmm5
-    pshufhw    xmm0, xmm0, 093h   
-    pshuflw    xmm0, xmm0, 093h
-    pshufhw    xmm1, xmm1, 093h
-    pshuflw    xmm1, xmm1, 093h
-    packuswb   xmm0, xmm1
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         shuf_2103
-    jmp        shuf99
-
-  shuf_3012:
-    movdqu     xmm0, [eax]
-    lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm5
-    punpckhbw  xmm1, xmm5
-    pshufhw    xmm0, xmm0, 0C6h   
-    pshuflw    xmm0, xmm0, 0C6h
-    pshufhw    xmm1, xmm1, 0C6h
-    pshuflw    xmm1, xmm1, 0C6h
-    packuswb   xmm0, xmm1
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         shuf_3012
-
-  shuf99:
-    pop        esi
-    pop        ebx
-    ret
-  }
-}
 
 
 
 
 
 
-
-__declspec(naked)
-void I422ToYUY2Row_SSE2(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_frame, int width) {
+__declspec(naked) void I422ToYUY2Row_SSE2(const uint8_t* src_y,
+                                          const uint8_t* src_u,
+                                          const uint8_t* src_v,
+                                          uint8_t* dst_frame,
+                                          int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
     sub        edx, esi
 
   convertloop:
-    movq       xmm2, qword ptr [esi] 
-    movq       xmm3, qword ptr [esi + edx] 
+    movq       xmm2, qword ptr [esi]  
+    movq       xmm3, qword ptr [esi + edx]  
     lea        esi, [esi + 8]
-    punpcklbw  xmm2, xmm3 
-    movdqu     xmm0, [eax] 
+    punpcklbw  xmm2, xmm3  
+    movdqu     xmm0, [eax]  
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm2 
+    punpcklbw  xmm0, xmm2  
     punpckhbw  xmm1, xmm2
     movdqu     [edi], xmm0
     movdqu     [edi + 16], xmm1
@@ -5960,30 +5814,30 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
   }
 }
 
-__declspec(naked)
-void I422ToUYVYRow_SSE2(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_frame, int width) {
+__declspec(naked) void I422ToUYVYRow_SSE2(const uint8_t* src_y,
+                                          const uint8_t* src_u,
+                                          const uint8_t* src_v,
+                                          uint8_t* dst_frame,
+                                          int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]    
-    mov        esi, [esp + 8 + 8]    
-    mov        edx, [esp + 8 + 12]   
-    mov        edi, [esp + 8 + 16]   
-    mov        ecx, [esp + 8 + 20]   
+    mov        eax, [esp + 8 + 4]  
+    mov        esi, [esp + 8 + 8]  
+    mov        edx, [esp + 8 + 12]  
+    mov        edi, [esp + 8 + 16]  
+    mov        ecx, [esp + 8 + 20]  
     sub        edx, esi
 
   convertloop:
-    movq       xmm2, qword ptr [esi] 
-    movq       xmm3, qword ptr [esi + edx] 
+    movq       xmm2, qword ptr [esi]  
+    movq       xmm3, qword ptr [esi + edx]  
     lea        esi, [esi + 8]
-    punpcklbw  xmm2, xmm3 
-    movdqu     xmm0, [eax] 
+    punpcklbw  xmm2, xmm3  
+    movdqu     xmm0, [eax]  
     movdqa     xmm1, xmm2
     lea        eax, [eax + 16]
-    punpcklbw  xmm1, xmm0 
+    punpcklbw  xmm1, xmm0  
     punpckhbw  xmm2, xmm0
     movdqu     [edi], xmm1
     movdqu     [edi + 16], xmm2
@@ -5998,22 +5852,22 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
 }
 
 #ifdef HAS_ARGBPOLYNOMIALROW_SSE2
-__declspec(naked)
-void ARGBPolynomialRow_SSE2(const uint8* src_argb,
-                            uint8* dst_argb, const float* poly,
-                            int width) {
+__declspec(naked) void ARGBPolynomialRow_SSE2(const uint8_t* src_argb,
+                                              uint8_t* dst_argb,
+                                              const float* poly,
+                                              int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        edx, [esp + 4 + 8]   
-    mov        esi, [esp + 4 + 12]  
-    mov        ecx, [esp + 4 + 16]  
+    mov        eax, [esp + 4 + 4] 
+    mov        edx, [esp + 4 + 8] 
+    mov        esi, [esp + 4 + 12] 
+    mov        ecx, [esp + 4 + 16] 
     pxor       xmm3, xmm3  
 
-    
+        
  convertloop:
-
-
+        
+        
     movq       xmm0, qword ptr [eax]  
     lea        eax, [eax + 8]
     punpcklbw  xmm0, xmm3
@@ -6057,25 +5911,25 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 #endif  
 
 #ifdef HAS_ARGBPOLYNOMIALROW_AVX2
-__declspec(naked)
-void ARGBPolynomialRow_AVX2(const uint8* src_argb,
-                            uint8* dst_argb, const float* poly,
-                            int width) {
+__declspec(naked) void ARGBPolynomialRow_AVX2(const uint8_t* src_argb,
+                                              uint8_t* dst_argb,
+                                              const float* poly,
+                                              int width) {
   __asm {
-    mov        eax, [esp + 4]   
-    mov        edx, [esp + 8]   
-    mov        ecx, [esp + 12]   
-    vbroadcastf128 ymm4, [ecx]       
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    mov        ecx, [esp + 12] 
+    vbroadcastf128 ymm4, [ecx]  
     vbroadcastf128 ymm5, [ecx + 16]  
     vbroadcastf128 ymm6, [ecx + 32]  
     vbroadcastf128 ymm7, [ecx + 48]  
-    mov        ecx, [esp + 16]  
+    mov        ecx, [esp + 16] 
 
     
  convertloop:
     vpmovzxbd   ymm0, qword ptr [eax]  
     lea         eax, [eax + 8]
-    vcvtdq2ps   ymm0, ymm0        
+    vcvtdq2ps   ymm0, ymm0  
     vmulps      ymm2, ymm0, ymm0  
     vmulps      ymm3, ymm0, ymm7  
     vfmadd132ps ymm0, ymm4, ymm5  
@@ -6095,16 +5949,125 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 }
 #endif  
 
+#ifdef HAS_HALFFLOATROW_SSE2
+static float kExpBias = 1.9259299444e-34f;
+__declspec(naked) void HalfFloatRow_SSE2(const uint16_t* src,
+                                         uint16_t* dst,
+                                         float scale,
+                                         int width) {
+  __asm {
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    movd       xmm4, dword ptr [esp + 12] 
+    mov        ecx, [esp + 16] 
+    mulss      xmm4, kExpBias
+    pshufd     xmm4, xmm4, 0
+    pxor       xmm5, xmm5
+    sub        edx, eax
+
+        
+ convertloop:
+    movdqu      xmm2, xmmword ptr [eax]  
+    add         eax, 16
+    movdqa      xmm3, xmm2
+    punpcklwd   xmm2, xmm5
+    cvtdq2ps    xmm2, xmm2  
+    punpckhwd   xmm3, xmm5
+    cvtdq2ps    xmm3, xmm3
+    mulps       xmm2, xmm4
+    mulps       xmm3, xmm4
+    psrld       xmm2, 13
+    psrld       xmm3, 13
+    packssdw    xmm2, xmm3
+    movdqu      [eax + edx - 16], xmm2
+    sub         ecx, 8
+    jg          convertloop
+    ret
+  }
+}
+#endif  
+
+#ifdef HAS_HALFFLOATROW_AVX2
+__declspec(naked) void HalfFloatRow_AVX2(const uint16_t* src,
+                                         uint16_t* dst,
+                                         float scale,
+                                         int width) {
+  __asm {
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    movd       xmm4, dword ptr [esp + 12] 
+    mov        ecx, [esp + 16] 
+
+    vmulss     xmm4, xmm4, kExpBias
+    vbroadcastss ymm4, xmm4
+    vpxor      ymm5, ymm5, ymm5
+    sub        edx, eax
+
+        
+ convertloop:
+    vmovdqu     ymm2, [eax]  
+    add         eax, 32
+    vpunpckhwd  ymm3, ymm2, ymm5  
+    vpunpcklwd  ymm2, ymm2, ymm5
+    vcvtdq2ps   ymm3, ymm3  
+    vcvtdq2ps   ymm2, ymm2
+    vmulps      ymm3, ymm3, ymm4  
+    vmulps      ymm2, ymm2, ymm4
+    vpsrld      ymm3, ymm3, 13  
+    vpsrld      ymm2, ymm2, 13
+    vpackssdw   ymm2, ymm2, ymm3
+    vmovdqu     [eax + edx - 32], ymm2
+    sub         ecx, 16
+    jg          convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  
+
+#ifdef HAS_HALFFLOATROW_F16C
+__declspec(naked) void HalfFloatRow_F16C(const uint16_t* src,
+                                         uint16_t* dst,
+                                         float scale,
+                                         int width) {
+  __asm {
+    mov        eax, [esp + 4] 
+    mov        edx, [esp + 8] 
+    vbroadcastss ymm4, [esp + 12] 
+    mov        ecx, [esp + 16] 
+    sub        edx, eax
+
+        
+ convertloop:
+    vpmovzxwd   ymm2, xmmword ptr [eax]  
+    vpmovzxwd   ymm3, xmmword ptr [eax + 16]  
+    add         eax, 32
+    vcvtdq2ps   ymm2, ymm2  
+    vcvtdq2ps   ymm3, ymm3
+    vmulps      ymm2, ymm2, ymm4  
+    vmulps      ymm3, ymm3, ymm4
+    vcvtps2ph   xmm2, ymm2, 3  
+    vcvtps2ph   xmm3, ymm3, 3
+    vmovdqu     [eax + edx + 32], xmm2
+    vmovdqu     [eax + edx + 32 + 16], xmm3
+    sub         ecx, 16
+    jg          convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  
+
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 
-__declspec(naked)
-void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
-                           int width) {
+__declspec(naked) void ARGBColorTableRow_X86(uint8_t* dst_argb,
+                                             const uint8_t* table_argb,
+                                             int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
-    mov        ecx, [esp + 4 + 12]  
+    mov        eax, [esp + 4 + 4] 
+    mov        esi, [esp + 4 + 8] 
+    mov        ecx, [esp + 4 + 12] 
 
     
   convertloop:
@@ -6131,13 +6094,14 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
 
 #ifdef HAS_RGBCOLORTABLEROW_X86
 
-__declspec(naked)
-void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
+__declspec(naked) void RGBColorTableRow_X86(uint8_t* dst_argb,
+                                            const uint8_t* table_argb,
+                                            int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]   
-    mov        esi, [esp + 4 + 8]   
-    mov        ecx, [esp + 4 + 12]  
+    mov        eax, [esp + 4 + 4] 
+    mov        esi, [esp + 4 + 8] 
+    mov        ecx, [esp + 4 + 12] 
 
     
   convertloop:
@@ -6162,27 +6126,28 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
 
 #ifdef HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
-__declspec(naked)
-void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
-                                 int width,
-                                 const uint8* luma, uint32 lumacoeff) {
+__declspec(naked) void ARGBLumaColorTableRow_SSSE3(const uint8_t* src_argb,
+                                                   uint8_t* dst_argb,
+                                                   int width,
+                                                   const uint8_t* luma,
+                                                   uint32_t lumacoeff) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   
-    mov        edi, [esp + 8 + 8]   
-    mov        ecx, [esp + 8 + 12]  
+    mov        eax, [esp + 8 + 4] 
+    mov        edi, [esp + 8 + 8] 
+    mov        ecx, [esp + 8 + 12] 
     movd       xmm2, dword ptr [esp + 8 + 16]  
     movd       xmm3, dword ptr [esp + 8 + 20]  
     pshufd     xmm2, xmm2, 0
     pshufd     xmm3, xmm3, 0
-    pcmpeqb    xmm4, xmm4        
+    pcmpeqb    xmm4, xmm4  
     psllw      xmm4, 8
     pxor       xmm5, xmm5
 
-    
+        
   convertloop:
-    movdqu     xmm0, xmmword ptr [eax]      
+    movdqu     xmm0, xmmword ptr [eax]  
     pmaddubsw  xmm0, xmm3
     phaddw     xmm0, xmm0
     pand       xmm0, xmm4  
@@ -6259,11 +6224,11 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 }
 #endif  
 
-#endif  
+#endif
 
 #ifdef __cplusplus
 }  
 }  
 #endif
 
-#endif  
+#endif

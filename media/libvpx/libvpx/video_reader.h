@@ -8,8 +8,8 @@
 
 
 
-#ifndef VIDEO_READER_H_
-#define VIDEO_READER_H_
+#ifndef VPX_VIDEO_READER_H_
+#define VPX_VIDEO_READER_H_
 
 #include "./video_common.h"
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_SKIN_MAP_H_
-#define VP9_ENCODER_VP9_SKIN_MAP_H_
+#ifndef VPX_VP9_ENCODER_VP9_SKIN_DETECTION_H_
+#define VPX_VP9_ENCODER_VP9_SKIN_DETECTION_H_
 
 #include "vp9/common/vp9_blockd.h"
 #include "vpx_dsp/skin_detection.h"

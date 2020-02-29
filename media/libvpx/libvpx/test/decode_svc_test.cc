@@ -8,6 +8,7 @@
 
 
 
+#include <memory>
 #include <string>
 
 #include "test/codec_factory.h"
@@ -53,7 +54,7 @@ class DecodeSvcTest : public ::libvpx_test::DecoderTest,
 
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer0) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
   ASSERT_TRUE(video.get() != NULL);
   video->Init();
@@ -70,7 +71,7 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer0) {
 
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer1) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
   ASSERT_TRUE(video.get() != NULL);
   video->Init();
@@ -87,7 +88,7 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer1) {
 
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer2) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
   ASSERT_TRUE(video.get() != NULL);
   video->Init();
@@ -105,7 +106,7 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer2) {
 
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer10) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
   ASSERT_TRUE(video.get() != NULL);
   video->Init();

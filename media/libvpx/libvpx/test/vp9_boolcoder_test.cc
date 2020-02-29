@@ -66,6 +66,9 @@ TEST(VP9, TestBitIO) {
         }
 
         vpx_stop_encode(&bw);
+        
+        
+        memset(bw_buffer + bw.pos, 0, sizeof(BD_VALUE) - 1);
 
         
         GTEST_ASSERT_EQ(bw_buffer[0] & 0x80, 0);

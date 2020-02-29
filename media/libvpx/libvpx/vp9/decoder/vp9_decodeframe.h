@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_DECODER_VP9_DECODEFRAME_H_
-#define VP9_DECODER_VP9_DECODEFRAME_H_
+#ifndef VPX_VP9_DECODER_VP9_DECODEFRAME_H_
+#define VPX_VP9_DECODER_VP9_DECODEFRAME_H_
 
 #ifdef __cplusplus
 extern "C" {

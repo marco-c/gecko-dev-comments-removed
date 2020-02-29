@@ -7,8 +7,8 @@
 
 
 
-#ifndef TEST_WEBM_VIDEO_SOURCE_H_
-#define TEST_WEBM_VIDEO_SOURCE_H_
+#ifndef VPX_TEST_WEBM_VIDEO_SOURCE_H_
+#define VPX_TEST_WEBM_VIDEO_SOURCE_H_
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>

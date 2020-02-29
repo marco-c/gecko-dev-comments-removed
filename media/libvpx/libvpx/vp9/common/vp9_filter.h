@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_FILTER_H_
-#define VP9_COMMON_VP9_FILTER_H_
+#ifndef VPX_VP9_COMMON_VP9_FILTER_H_
+#define VPX_VP9_COMMON_VP9_FILTER_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
@@ -25,6 +25,7 @@ extern "C" {
 #define EIGHTTAP_SHARP 2
 #define SWITCHABLE_FILTERS 3 /* Number of switchable filters */
 #define BILINEAR 3
+#define FOURTAP 4
 
 
 #define SWITCHABLE_FILTER_CONTEXTS (SWITCHABLE_FILTERS + 1)
@@ -32,7 +33,7 @@ extern "C" {
 
 typedef uint8_t INTERP_FILTER;
 
-extern const InterpKernel *vp9_filter_kernels[4];
+extern const InterpKernel *vp9_filter_kernels[5];
 
 #ifdef __cplusplus
 }  

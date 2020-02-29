@@ -126,8 +126,10 @@ static double calc_psnrhvs(const unsigned char *src, int _systride,
   const uint8_t *_dst8 = dst;
   const uint16_t *_src16 = CONVERT_TO_SHORTPTR(src);
   const uint16_t *_dst16 = CONVERT_TO_SHORTPTR(dst);
-  int16_t dct_s[8 * 8], dct_d[8 * 8];
-  tran_low_t dct_s_coef[8 * 8], dct_d_coef[8 * 8];
+  DECLARE_ALIGNED(16, int16_t, dct_s[8 * 8]);
+  DECLARE_ALIGNED(16, int16_t, dct_d[8 * 8]);
+  DECLARE_ALIGNED(16, tran_low_t, dct_s_coef[8 * 8]);
+  DECLARE_ALIGNED(16, tran_low_t, dct_d_coef[8 * 8]);
   double mask[8][8];
   int pixels;
   int x;
@@ -151,10 +153,14 @@ static double calc_psnrhvs(const unsigned char *src, int _systride,
 
 
 
+
+
+
+
+
   for (x = 0; x < 8; x++)
     for (y = 0; y < 8; y++)
-      mask[x][y] =
-          (_csf[x][y] * 0.3885746225901003) * (_csf[x][y] * 0.3885746225901003);
+      mask[x][y] = (_csf[x][y] / _csf[1][0]) * (_csf[x][y] / _csf[1][0]);
   for (y = 0; y < _h - 7; y += _step) {
     for (x = 0; x < _w - 7; x += _step) {
       int i;

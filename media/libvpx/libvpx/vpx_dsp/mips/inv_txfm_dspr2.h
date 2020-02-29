@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
-#define VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
+#ifndef VPX_VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
+#define VPX_VPX_DSP_MIPS_INV_TXFM_DSPR2_H_
 
 #include <assert.h>
 
@@ -25,7 +25,6 @@ extern "C" {
 #if HAVE_DSPR2
 #define DCT_CONST_ROUND_SHIFT_TWICE_COSPI_16_64(input)                         \
   ({                                                                           \
-                                                                               \
     int32_t tmp, out;                                                          \
     int dct_cost_rounding = DCT_CONST_ROUNDING;                                \
     int in = input;                                                            \

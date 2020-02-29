@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_SCAN_H_
-#define VP9_COMMON_VP9_SCAN_H_
+#ifndef VPX_VP9_COMMON_VP9_SCAN_H_
+#define VPX_VP9_COMMON_VP9_SCAN_H_
 
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"

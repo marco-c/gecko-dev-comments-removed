@@ -7,23 +7,17 @@
 
 
 
-#ifndef TEST_CLEAR_SYSTEM_STATE_H_
-#define TEST_CLEAR_SYSTEM_STATE_H_
+#ifndef VPX_TEST_CLEAR_SYSTEM_STATE_H_
+#define VPX_TEST_CLEAR_SYSTEM_STATE_H_
 
 #include "./vpx_config.h"
-#if ARCH_X86 || ARCH_X86_64
-#include "vpx_ports/x86.h"
-#endif
+#include "vpx_ports/system_state.h"
 
 namespace libvpx_test {
 
 
 
-inline void ClearSystemState() {
-#if ARCH_X86 || ARCH_X86_64
-  vpx_reset_mmx_state();
-#endif
-}
+inline void ClearSystemState() { vpx_clear_system_state(); }
 
 }  
 #endif  

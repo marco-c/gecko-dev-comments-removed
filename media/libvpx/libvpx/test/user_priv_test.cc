@@ -27,8 +27,8 @@
 
 namespace {
 
-using std::string;
 using libvpx_test::ACMRandom;
+using std::string;
 
 #if CONFIG_WEBM_IO
 
@@ -73,7 +73,7 @@ string DecodeFile(const string &filename) {
         CheckUserPrivateData(img->user_priv, &frame_num);
 
         
-        struct vp9_ref_frame ref;
+        struct vp9_ref_frame ref = vp9_ref_frame();
         
         ref.idx = rnd.Rand8() % 3;
         decoder.Control(VP9_GET_REFERENCE, &ref);

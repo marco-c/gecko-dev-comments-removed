@@ -11,8 +11,8 @@
 
 
 
-#ifndef Y4MINPUT_H_
-#define Y4MINPUT_H_
+#ifndef VPX_Y4MINPUT_H_
+#define VPX_Y4MINPUT_H_
 
 #include <stdio.h>
 #include "vpx/vpx_image.h"

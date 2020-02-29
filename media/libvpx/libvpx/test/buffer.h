@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_BUFFER_H_
-#define TEST_BUFFER_H_
+#ifndef VPX_TEST_BUFFER_H_
+#define VPX_TEST_BUFFER_H_
 
 #include <stdio.h>
 

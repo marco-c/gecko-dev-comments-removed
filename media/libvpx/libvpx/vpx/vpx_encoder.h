@@ -7,8 +7,8 @@
 
 
 
-#ifndef VPX_VPX_ENCODER_H_
-#define VPX_VPX_ENCODER_H_
+#ifndef VPX_VPX_VPX_ENCODER_H_
+#define VPX_VPX_VPX_ENCODER_H_
 
 
 
@@ -40,13 +40,7 @@ extern "C" {
 #define VPX_TS_MAX_LAYERS 5
 
 
-#define MAX_PERIODICITY VPX_TS_MAX_PERIODICITY
-
-
 #define VPX_MAX_LAYERS 12  // 3 temporal + 4 spatial layers are allowed.
-
-
-#define MAX_LAYERS VPX_MAX_LAYERS  // 3 temporal + 4 spatial layers allowed.
 
 
 #define VPX_SS_MAX_LAYERS 5
@@ -63,7 +57,7 @@ extern "C" {
 
 
 #define VPX_ENCODER_ABI_VERSION \
-  (6 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (14 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
 
 
 
@@ -150,15 +144,10 @@ typedef uint32_t vpx_codec_er_flags_t;
 
 
 enum vpx_codec_cx_pkt_kind {
-  VPX_CODEC_CX_FRAME_PKT,   
-  VPX_CODEC_STATS_PKT,      
-  VPX_CODEC_FPMB_STATS_PKT, 
-  VPX_CODEC_PSNR_PKT,       
-
-#if defined(VPX_TEST_SPATIAL_SVC)
-  VPX_CODEC_SPATIAL_SVC_LAYER_SIZES, 
-  VPX_CODEC_SPATIAL_SVC_LAYER_PSNR,  
-#endif
+  VPX_CODEC_CX_FRAME_PKT,    
+  VPX_CODEC_STATS_PKT,       
+  VPX_CODEC_FPMB_STATS_PKT,  
+  VPX_CODEC_PSNR_PKT,        
   VPX_CODEC_CUSTOM_PKT = 256 
 };
 
@@ -182,6 +171,13 @@ typedef struct vpx_codec_cx_pkt {
 
 
       int partition_id;
+      
+
+      unsigned int width[VPX_SS_MAX_LAYERS];  
+      unsigned int height[VPX_SS_MAX_LAYERS]; 
+      
+
+      uint8_t spatial_layer_encoded[VPX_SS_MAX_LAYERS];
     } frame;                            
     vpx_fixed_buf_t twopass_stats;      
     vpx_fixed_buf_t firstpass_mb_stats; 
@@ -192,11 +188,6 @@ typedef struct vpx_codec_cx_pkt {
     } psnr;                    
     vpx_fixed_buf_t raw;       
 
-#if defined(VPX_TEST_SPATIAL_SVC)
-    size_t layer_sizes[VPX_SS_MAX_LAYERS];
-    struct vpx_psnr_pkt layer_psnr[VPX_SS_MAX_LAYERS];
-#endif
-
     
 
 
@@ -205,8 +196,6 @@ typedef struct vpx_codec_cx_pkt {
     char pad[128 - sizeof(enum vpx_codec_cx_pkt_kind)]; 
   } data;                                               
 } vpx_codec_cx_pkt_t; 
-
-
 
 
 
@@ -232,11 +221,11 @@ typedef struct vpx_rational {
 } vpx_rational_t; 
 
 
-enum vpx_enc_pass {
+typedef enum vpx_enc_pass {
   VPX_RC_ONE_PASS,   
   VPX_RC_FIRST_PASS, 
   VPX_RC_LAST_PASS   
-};
+} vpx_enc_pass;
 
 
 enum vpx_rc_mode {
@@ -282,9 +271,6 @@ typedef struct vpx_codec_enc_cfg {
 
 
   
-
-
-
 
 
 
@@ -402,9 +388,6 @@ typedef struct vpx_codec_enc_cfg {
 
 
 
-
-
-
   unsigned int rc_dropframe_thresh;
 
   
@@ -487,11 +470,9 @@ typedef struct vpx_codec_enc_cfg {
 
 
 
-
   unsigned int rc_min_quantizer;
 
   
-
 
 
 
@@ -813,7 +794,7 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
 
 vpx_codec_err_t vpx_codec_enc_config_default(vpx_codec_iface_t *iface,
                                              vpx_codec_enc_cfg_t *cfg,
-                                             unsigned int reserved);
+                                             unsigned int usage);
 
 
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_BITREADER_BUFFER_H_
-#define VPX_DSP_BITREADER_BUFFER_H_
+#ifndef VPX_VPX_DSP_BITREADER_BUFFER_H_
+#define VPX_VPX_DSP_BITREADER_BUFFER_H_
 
 #include <limits.h>
 

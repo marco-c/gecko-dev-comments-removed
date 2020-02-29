@@ -485,10 +485,7 @@ static void read_mb_features(vp8_reader *r, MB_MODE_INFO *mi, MACROBLOCKD *x) {
   }
 }
 
-static void decode_mb_mode_mvs(VP8D_COMP *pbi, MODE_INFO *mi,
-                               MB_MODE_INFO *mbmi) {
-  (void)mbmi;
-
+static void decode_mb_mode_mvs(VP8D_COMP *pbi, MODE_INFO *mi) {
   
 
 
@@ -537,7 +534,7 @@ void vp8_decode_mode_mvs(VP8D_COMP *pbi) {
       int mb_num = mb_row * pbi->common.mb_cols + mb_col;
 #endif
 
-      decode_mb_mode_mvs(pbi, mi, &mi->mbmi);
+      decode_mb_mode_mvs(pbi, mi);
 
 #if CONFIG_ERROR_CONCEALMENT
       

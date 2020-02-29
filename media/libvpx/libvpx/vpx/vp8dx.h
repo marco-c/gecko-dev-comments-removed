@@ -17,8 +17,8 @@
 
 
 
-#ifndef VPX_VP8DX_H_
-#define VPX_VP8DX_H_
+#ifndef VPX_VPX_VP8DX_H_
+#define VPX_VPX_VP8DX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -124,6 +124,24 @@ enum vp8_dec_control_id {
 
   VPXD_GET_LAST_QUANTIZER,
 
+  
+
+
+
+
+
+  VP9D_SET_ROW_MT,
+
+  
+
+
+
+
+
+
+
+  VP9D_SET_LOOP_FILTER_OPT,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -144,10 +162,6 @@ typedef struct vpx_decrypt_init {
   
   void *decrypt_state;
 } vpx_decrypt_init;
-
-
-
-typedef vpx_decrypt_init vp8_decrypt_init;
 
 
 
@@ -181,6 +195,10 @@ VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
 #define VPX_CTRL_VP9_SET_SKIP_LOOP_FILTER
 VPX_CTRL_USE_TYPE(VP9_SET_SKIP_LOOP_FILTER, int)
+#define VPX_CTRL_VP9_DECODE_SET_ROW_MT
+VPX_CTRL_USE_TYPE(VP9D_SET_ROW_MT, int)
+#define VPX_CTRL_VP9_SET_LOOP_FILTER_OPT
+VPX_CTRL_USE_TYPE(VP9D_SET_LOOP_FILTER_OPT, int)
 
 
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_ENTROPYMODE_H_
-#define VP8_COMMON_ENTROPYMODE_H_
+#ifndef VPX_VP8_COMMON_ENTROPYMODE_H_
+#define VPX_VP8_COMMON_ENTROPYMODE_H_
 
 #include "onyxc_int.h"
 #include "treecoder.h"

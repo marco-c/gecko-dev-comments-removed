@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_FRAME_BUFFERS_H_
-#define VP9_COMMON_VP9_FRAME_BUFFERS_H_
+#ifndef VPX_VP9_COMMON_VP9_FRAME_BUFFERS_H_
+#define VPX_VP9_COMMON_VP9_FRAME_BUFFERS_H_
 
 #include "vpx/vpx_frame_buffer.h"
 #include "vpx/vpx_integer.h"

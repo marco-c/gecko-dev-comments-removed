@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_VPX_ONCE_H_
-#define VPX_PORTS_VPX_ONCE_H_
+#ifndef VPX_VPX_PORTS_VPX_ONCE_H_
+#define VPX_VPX_PORTS_VPX_ONCE_H_
 
 #include "vpx_config.h"
 

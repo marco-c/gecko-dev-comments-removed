@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_DECODER_VP9_DSUBEXP_H_
-#define VP9_DECODER_VP9_DSUBEXP_H_
+#ifndef VPX_VP9_DECODER_VP9_DSUBEXP_H_
+#define VPX_VP9_DECODER_VP9_DSUBEXP_H_
 
 #include "vpx_dsp/bitreader.h"
 

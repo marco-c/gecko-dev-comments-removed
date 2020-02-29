@@ -8,16 +8,18 @@
 
 
 
-#ifndef TEST_UTIL_H_
-#define TEST_UTIL_H_
+#ifndef VPX_TEST_UTIL_H_
+#define VPX_TEST_UTIL_H_
 
 #include <stdio.h>
 #include <math.h>
+#include <tuple>
+
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "vpx/vpx_image.h"
 
 
-#define GET_PARAM(k) std::tr1::get<k>(GetParam())
+#define GET_PARAM(k) std::get<k>(GetParam())
 
 inline double compute_psnr(const vpx_image_t *img1, const vpx_image_t *img2) {
   assert((img1->fmt == img2->fmt) && (img1->d_w == img2->d_w) &&

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_ONYXC_INT_H_
-#define VP9_COMMON_VP9_ONYXC_INT_H_
+#ifndef VPX_VP9_COMMON_VP9_ONYXC_INT_H_
+#define VPX_VP9_COMMON_VP9_ONYXC_INT_H_
 
 #include "./vpx_config.h"
 #include "vpx/internal/vpx_codec_internal.h"
@@ -39,8 +39,7 @@ extern "C" {
 
 
 
-
-#define FRAME_BUFFERS (REF_FRAMES + 4)
+#define FRAME_BUFFERS (REF_FRAMES + 1 + REFS_PER_FRAME)
 
 #define FRAME_CONTEXTS_LOG2 2
 #define FRAME_CONTEXTS (1 << FRAME_CONTEXTS_LOG2)
@@ -70,6 +69,7 @@ typedef struct {
   int mi_rows;
   int mi_cols;
   uint8_t released;
+  int frame_index;
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
@@ -127,6 +127,8 @@ typedef struct VP9Common {
   RefBuffer frame_refs[REFS_PER_FRAME];
 
   int new_fb_idx;
+
+  int cur_show_frame_fb_idx;
 
 #if CONFIG_VP9_POSTPROC
   YV12_BUFFER_CONFIG post_proc_buffer;
@@ -243,20 +245,48 @@ typedef struct VP9Common {
   int skip_loop_filter;
 
   
-  void *cb_priv;
-  vpx_get_frame_buffer_cb_fn_t get_fb_cb;
-  vpx_release_frame_buffer_cb_fn_t release_fb_cb;
-
-  
-  InternalFrameBufferList int_frame_buffers;
-
-  
   BufferPool *buffer_pool;
 
   PARTITION_CONTEXT *above_seg_context;
   ENTROPY_CONTEXT *above_context;
   int above_context_alloc_cols;
+
+  int lf_row;
 } VP9_COMMON;
+
+typedef struct {
+  int frame_width;
+  int frame_height;
+  int render_frame_width;
+  int render_frame_height;
+  int mi_rows;
+  int mi_cols;
+  int mb_rows;
+  int mb_cols;
+  int num_mbs;
+  vpx_bit_depth_t bit_depth;
+} FRAME_INFO;
+
+static INLINE void init_frame_info(FRAME_INFO *frame_info,
+                                   const VP9_COMMON *cm) {
+  frame_info->frame_width = cm->width;
+  frame_info->frame_height = cm->height;
+  frame_info->render_frame_width = cm->render_width;
+  frame_info->render_frame_height = cm->render_height;
+  frame_info->mi_cols = cm->mi_cols;
+  frame_info->mi_rows = cm->mi_rows;
+  frame_info->mb_cols = cm->mb_cols;
+  frame_info->mb_rows = cm->mb_rows;
+  frame_info->num_mbs = cm->MBs;
+  frame_info->bit_depth = cm->bit_depth;
+  
+}
+
+static INLINE YV12_BUFFER_CONFIG *get_buf_frame(VP9_COMMON *cm, int index) {
+  if (index < 0 || index >= FRAME_BUFFERS) return NULL;
+  if (cm->error.error_code != VPX_CODEC_OK) return NULL;
+  return &cm->buffer_pool->frame_bufs[index].buf;
+}
 
 static INLINE YV12_BUFFER_CONFIG *get_ref_frame(VP9_COMMON *cm, int index) {
   if (index < 0 || index >= REF_FRAMES) return NULL;

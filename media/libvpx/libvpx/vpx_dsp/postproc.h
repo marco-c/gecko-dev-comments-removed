@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_POSTPROC_H_
-#define VPX_DSP_POSTPROC_H_
+#ifndef VPX_VPX_DSP_POSTPROC_H_
+#define VPX_VPX_DSP_POSTPROC_H_
 
 #ifdef __cplusplus
 extern "C" {

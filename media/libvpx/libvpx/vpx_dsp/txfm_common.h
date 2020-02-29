@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_TXFM_COMMON_H_
-#define VPX_DSP_TXFM_COMMON_H_
+#ifndef VPX_VPX_DSP_TXFM_COMMON_H_
+#define VPX_VPX_DSP_TXFM_COMMON_H_
 
 #include "vpx_dsp/vpx_dsp_common.h"
 

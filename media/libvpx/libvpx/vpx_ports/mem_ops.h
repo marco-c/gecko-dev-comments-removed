@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_MEM_OPS_H_
-#define VPX_PORTS_MEM_OPS_H_
+#ifndef VPX_VPX_PORTS_MEM_OPS_H_
+#define VPX_VPX_PORTS_MEM_OPS_H_
 
 
 
@@ -223,6 +223,5 @@ static VPX_INLINE void mem_put_le32(void *vmem, MEM_VALUE_T val) {
   mem[2] = (MAU_T)((val >> 16) & 0xff);
   mem[3] = (MAU_T)((val >> 24) & 0xff);
 }
-
 
 #endif  

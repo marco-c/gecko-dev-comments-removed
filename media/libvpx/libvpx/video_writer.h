@@ -8,8 +8,8 @@
 
 
 
-#ifndef VIDEO_WRITER_H_
-#define VIDEO_WRITER_H_
+#ifndef VPX_VIDEO_WRITER_H_
+#define VPX_VIDEO_WRITER_H_
 
 #include "./video_common.h"
 

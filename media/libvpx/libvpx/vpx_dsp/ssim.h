@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_SSIM_H_
-#define VPX_DSP_SSIM_H_
+#ifndef VPX_VPX_DSP_SSIM_H_
+#define VPX_VPX_DSP_SSIM_H_
 
 #define MAX_SSIM_DB 100.0;
 

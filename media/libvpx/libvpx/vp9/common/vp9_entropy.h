@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_ENTROPY_H_
-#define VP9_COMMON_VP9_ENTROPY_H_
+#ifndef VPX_VP9_COMMON_VP9_ENTROPY_H_
+#define VPX_VP9_COMMON_VP9_ENTROPY_H_
 
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/prob.h"
@@ -133,7 +133,6 @@ static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
   return tx_size == TX_4X4 ? vp9_coefband_trans_4x4
                            : vp9_coefband_trans_8x8plus;
 }
-
 
 
 

@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_PRED_COMMON_H_
-#define VP9_COMMON_VP9_PRED_COMMON_H_
+#ifndef VPX_VP9_COMMON_VP9_PRED_COMMON_H_
+#define VPX_VP9_COMMON_VP9_PRED_COMMON_H_
 
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_onyxc_int.h"
@@ -145,6 +145,10 @@ static INLINE vpx_prob vp9_get_pred_prob_single_ref_p2(const VP9_COMMON *cm,
   return cm->fc->single_ref_prob[vp9_get_pred_context_single_ref_p2(xd)][1];
 }
 
+int vp9_compound_reference_allowed(const VP9_COMMON *cm);
+
+void vp9_setup_compound_reference_mode(VP9_COMMON *cm);
+
 
 
 
@@ -174,12 +178,6 @@ static INLINE const vpx_prob *get_tx_probs(TX_SIZE max_tx_size, int ctx,
     case TX_32X32: return tx_probs->p32x32[ctx];
     default: assert(0 && "Invalid max_tx_size."); return NULL;
   }
-}
-
-static INLINE const vpx_prob *get_tx_probs2(TX_SIZE max_tx_size,
-                                            const MACROBLOCKD *xd,
-                                            const struct tx_probs *tx_probs) {
-  return get_tx_probs(max_tx_size, get_tx_size_context(xd), tx_probs);
 }
 
 static INLINE unsigned int *get_tx_counts(TX_SIZE max_tx_size, int ctx,

@@ -37,7 +37,6 @@
 
 
 
-
 #ifndef GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
 
@@ -185,14 +184,9 @@ TEST_P(DerivedTest, DoesBlah) {
 # include <utility>
 #endif
 
-
-
-
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-param-util.h"
 #include "gtest/internal/gtest-param-util-generated.h"
-
-#if GTEST_HAS_PARAM_TEST
 
 namespace testing {
 
@@ -1375,8 +1369,6 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
 }
 # endif  
 
-
-
 # define TEST_P(test_case_name, test_name) \
   class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \
       : public test_case_name { \
@@ -1390,8 +1382,8 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
               #test_case_name, \
               ::testing::internal::CodeLocation(\
                   __FILE__, __LINE__))->AddTestPattern(\
-                      #test_case_name, \
-                      #test_name, \
+                      GTEST_STRINGIFY_(test_case_name), \
+                      GTEST_STRINGIFY_(test_name), \
                       new ::testing::internal::TestMetaFactory< \
                           GTEST_TEST_CLASS_NAME_(\
                               test_case_name, test_name)>()); \
@@ -1419,14 +1411,14 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
 
 
 # define INSTANTIATE_TEST_CASE_P(prefix, test_case_name, generator, ...) \
-  ::testing::internal::ParamGenerator<test_case_name::ParamType> \
+  static ::testing::internal::ParamGenerator<test_case_name::ParamType> \
       gtest_##prefix##test_case_name##_EvalGenerator_() { return generator; } \
-  ::std::string gtest_##prefix##test_case_name##_EvalGenerateName_( \
+  static ::std::string gtest_##prefix##test_case_name##_EvalGenerateName_( \
       const ::testing::TestParamInfo<test_case_name::ParamType>& info) { \
     return ::testing::internal::GetParamNameGen<test_case_name::ParamType> \
         (__VA_ARGS__)(info); \
   } \
-  int gtest_##prefix##test_case_name##_dummy_ GTEST_ATTRIBUTE_UNUSED_ = \
+  static int gtest_##prefix##test_case_name##_dummy_ GTEST_ATTRIBUTE_UNUSED_ = \
       ::testing::UnitTest::GetInstance()->parameterized_test_registry(). \
           GetTestCasePatternHolder<test_case_name>(\
               #test_case_name, \
@@ -1438,7 +1430,5 @@ internal::CartesianProductHolder10<Generator1, Generator2, Generator3,
                       __FILE__, __LINE__)
 
 }  
-
-#endif  
 
 #endif  

@@ -13,21 +13,15 @@
 #if defined(_MSC_VER)
 #include <intrin.h>  
 #endif
-#if !defined(__pnacl__) && !defined(__CLR_VER) && \
+#if !defined(__pnacl__) && !defined(__CLR_VER) &&                           \
     !defined(__native_client__) && (defined(_M_IX86) || defined(_M_X64)) && \
     defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219)
 #include <immintrin.h>  
 #endif
 
-#if !defined(__native_client__)
-#include <stdlib.h>  
-#endif
-
 
 #include <stdio.h>
 #include <string.h>
-
-#include "libyuv/basic_types.h"  
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -44,15 +38,19 @@ extern "C" {
 #endif
 
 
-#if (defined(_M_IX86) || defined(_M_X64) || \
-    defined(__i386__) || defined(__x86_64__)) && \
+LIBYUV_API int cpu_info_ = 0;
+
+
+
+#if (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \
+     defined(__x86_64__)) &&                                     \
     !defined(__pnacl__) && !defined(__CLR_VER)
 LIBYUV_API
-void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
+void CpuId(int info_eax, int info_ecx, int* cpu_info) {
 #if defined(_MSC_VER)
 
 #if defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219)
-  __cpuidex((int*)(cpu_info), info_eax, info_ecx);
+  __cpuidex(cpu_info, info_eax, info_ecx);
 #elif defined(_M_IX86)
   __asm {
     mov        eax, info_eax
@@ -66,26 +64,26 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
   }
 #else  
   if (info_ecx == 0) {
-    __cpuid((int*)(cpu_info), info_eax);
+    __cpuid(cpu_info, info_eax);
   } else {
-    cpu_info[3] = cpu_info[2] = cpu_info[1] = cpu_info[0] = 0;
+    cpu_info[3] = cpu_info[2] = cpu_info[1] = cpu_info[0] = 0u;
   }
 #endif
 
 #else  
-  uint32 info_ebx, info_edx;
-  asm volatile (
-#if defined( __i386__) && defined(__PIC__)
-    
-    "mov %%ebx, %%edi                          \n"
-    "cpuid                                     \n"
-    "xchg %%edi, %%ebx                         \n"
-    : "=D" (info_ebx),
+  int info_ebx, info_edx;
+  asm volatile(
+#if defined(__i386__) && defined(__PIC__)
+      
+      "mov %%ebx, %%edi                          \n"
+      "cpuid                                     \n"
+      "xchg %%edi, %%ebx                         \n"
+      : "=D"(info_ebx),
 #else
-    "cpuid                                     \n"
-    : "=b" (info_ebx),
+      "cpuid                                     \n"
+      : "=b"(info_ebx),
 #endif  
-      "+a" (info_eax), "+c" (info_ecx), "=d" (info_edx));
+        "+a"(info_eax), "+c"(info_ecx), "=d"(info_edx));
   cpu_info[0] = info_eax;
   cpu_info[1] = info_ebx;
   cpu_info[2] = info_ecx;
@@ -94,7 +92,9 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
 }
 #else  
 LIBYUV_API
-void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
+void CpuId(int eax, int ecx, int* cpu_info) {
+  (void)eax;
+  (void)ecx;
   cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
 }
 #endif
@@ -111,20 +111,22 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 #if defined(_M_IX86) && (_MSC_VER < 1900)
 #pragma optimize("g", off)
 #endif
-#if (defined(_M_IX86) || defined(_M_X64) || \
-    defined(__i386__) || defined(__x86_64__)) && \
+#if (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \
+     defined(__x86_64__)) &&                                     \
     !defined(__pnacl__) && !defined(__CLR_VER) && !defined(__native_client__)
-#define HAS_XGETBV
 
 int GetXCR0() {
-  uint32 xcr0 = 0u;
+  int xcr0 = 0;
 #if defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 160040219)
-  xcr0 = (uint32)(_xgetbv(0));  
+  xcr0 = (int)_xgetbv(0);  
 #elif defined(__i386__) || defined(__x86_64__)
-  asm(".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx");
+  asm(".byte 0x0f, 0x01, 0xd0" : "=a"(xcr0) : "c"(0) : "%edx");
 #endif  
   return xcr0;
 }
+#else
+
+#define GetXCR0() 0
 #endif  
 
 #if defined(_M_IX86) && (_MSC_VER < 1900)
@@ -133,8 +135,7 @@ int GetXCR0() {
 
 
 
-LIBYUV_API SAFEBUFFERS
-int ArmCpuCaps(const char* cpuinfo_name) {
+LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];
   FILE* f = fopen(cpuinfo_name, "r");
   if (!f) {
@@ -151,7 +152,7 @@ int ArmCpuCaps(const char* cpuinfo_name) {
       }
       
       p = strstr(cpuinfo_line, " asimd");
-      if (p && (p[6] == ' ' || p[6] == '\n')) {
+      if (p) {
         fclose(f);
         return kCpuHasNEON;
       }
@@ -162,102 +163,77 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 }
 
 
-LIBYUV_API
-int cpu_info_ = 0;  
 
-
-
-#if !defined(__native_client__) && !defined(_M_ARM)
-
-static LIBYUV_BOOL TestEnv(const char* name) {
-  const char* var = getenv(name);
-  if (var) {
-    if (var[0] != '0') {
-      return LIBYUV_TRUE;
+LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
+                                       const char ase[]) {
+  char cpuinfo_line[512];
+  FILE* f = fopen(cpuinfo_name, "r");
+  if (!f) {
+    
+    if (strcmp(ase, " msa") == 0) {
+      return kCpuHasMSA;
+    }
+    return 0;
+  }
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+    if (memcmp(cpuinfo_line, "ASEs implemented", 16) == 0) {
+      char* p = strstr(cpuinfo_line, ase);
+      if (p) {
+        fclose(f);
+        if (strcmp(ase, " msa") == 0) {
+          return kCpuHasMSA;
+        }
+        return 0;
+      }
     }
   }
-  return LIBYUV_FALSE;
+  fclose(f);
+  return 0;
 }
-#else  
-static LIBYUV_BOOL TestEnv(const char*) {
-  return LIBYUV_FALSE;
-}
-#endif
 
-LIBYUV_API SAFEBUFFERS
-int InitCpuFlags(void) {
-  
+static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
-#if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
-  uint32 cpu_info0[4] = { 0, 0, 0, 0 };
-  uint32 cpu_info1[4] = { 0, 0, 0, 0 };
-  uint32 cpu_info7[4] = { 0, 0, 0, 0 };
+#if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
+    (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+     defined(_M_IX86))
+  int cpu_info0[4] = {0, 0, 0, 0};
+  int cpu_info1[4] = {0, 0, 0, 0};
+  int cpu_info7[4] = {0, 0, 0, 0};
   CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
   if (cpu_info0[0] >= 7) {
     CpuId(7, 0, cpu_info7);
   }
-  cpu_info = ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
+  cpu_info = kCpuHasX86 | ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
              ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
-             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
-             ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
-             kCpuHasX86;
+             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0);
 
-#ifdef HAS_XGETBV
   
   if (((cpu_info1[2] & 0x1c000000) == 0x1c000000) &&  
       ((GetXCR0() & 6) == 6)) {  
-    cpu_info |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) | kCpuHasAVX;
+    cpu_info |= kCpuHasAVX | ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
+                ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
+                ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0);
 
     
     if ((GetXCR0() & 0xe0) == 0xe0) {
-      cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX3 : 0;
+      cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0;
+      cpu_info |= (cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0;
+      cpu_info |= (cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0;
+      cpu_info |= (cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0;
+      cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
+      cpu_info |= (cpu_info7[2] & 0x00004000) ? kCpuHasAVX512VPOPCNTDQ : 0;
+      cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI : 0;
     }
   }
 #endif
-
-  
-  if (TestEnv("LIBYUV_DISABLE_X86")) {
-    cpu_info &= ~kCpuHasX86;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE2")) {
-    cpu_info &= ~kCpuHasSSE2;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSSE3")) {
-    cpu_info &= ~kCpuHasSSSE3;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE41")) {
-    cpu_info &= ~kCpuHasSSE41;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE42")) {
-    cpu_info &= ~kCpuHasSSE42;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX")) {
-    cpu_info &= ~kCpuHasAVX;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX2")) {
-    cpu_info &= ~kCpuHasAVX2;
-  }
-  if (TestEnv("LIBYUV_DISABLE_ERMS")) {
-    cpu_info &= ~kCpuHasERMS;
-  }
-  if (TestEnv("LIBYUV_DISABLE_FMA3")) {
-    cpu_info &= ~kCpuHasFMA3;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX3")) {
-    cpu_info &= ~kCpuHasAVX3;
-  }
-#endif
 #if defined(__mips__) && defined(__linux__)
-#if defined(__mips_dspr2)
-  cpu_info |= kCpuHasDSPR2;
+#if defined(__mips_msa)
+  cpu_info = MipsCpuCaps("/proc/cpuinfo", " msa");
 #endif
   cpu_info |= kCpuHasMIPS;
-  if (getenv("LIBYUV_DISABLE_DSPR2")) {
-    cpu_info &= ~kCpuHasDSPR2;
-  }
 #endif
 #if defined(__arm__) || defined(__aarch64__)
 
@@ -276,22 +252,22 @@ int InitCpuFlags(void) {
   cpu_info = ArmCpuCaps("/proc/cpuinfo");
 #endif
   cpu_info |= kCpuHasARM;
-  if (TestEnv("LIBYUV_DISABLE_NEON")) {
-    cpu_info &= ~kCpuHasNEON;
-  }
 #endif  
-  if (TestEnv("LIBYUV_DISABLE_ASM")) {
-    cpu_info = 0;
-  }
-  cpu_info  |= kCpuInitialized;
-  cpu_info_ = cpu_info;
+  cpu_info |= kCpuInitialized;
   return cpu_info;
 }
 
 
 LIBYUV_API
-void MaskCpuFlags(int enable_flags) {
-  cpu_info_ = InitCpuFlags() & enable_flags;
+int MaskCpuFlags(int enable_flags) {
+  int cpu_info = GetCpuFlags() & enable_flags;
+  SetCpuFlags(cpu_info);
+  return cpu_info;
+}
+
+LIBYUV_API
+int InitCpuFlags(void) {
+  return MaskCpuFlags(-1);
 }
 
 #ifdef __cplusplus

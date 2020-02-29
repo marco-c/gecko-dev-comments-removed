@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_COMMON_DATA_H_
-#define VP9_COMMON_VP9_COMMON_DATA_H_
+#ifndef VPX_VP9_COMMON_VP9_COMMON_DATA_H_
+#define VPX_VP9_COMMON_VP9_COMMON_DATA_H_
 
 #include "vp9/common/vp9_enums.h"
 #include "vpx/vpx_integer.h"

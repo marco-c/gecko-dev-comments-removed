@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_TREECODER_H_
-#define VP8_COMMON_TREECODER_H_
+#ifndef VPX_VP8_COMMON_TREECODER_H_
+#define VPX_VP8_COMMON_TREECODER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ typedef const bool_coder_spec c_bool_coder_spec;
 typedef const bool_writer c_bool_writer;
 typedef const bool_reader c_bool_reader;
 
-#define vp8_complement(x) (255 - x)
+#define vp8_complement(x) (255 - (x))
 
 
 

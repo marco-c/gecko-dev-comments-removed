@@ -12,8 +12,8 @@
 
 
 
-#ifndef VPX_THREAD_H_
-#define VPX_THREAD_H_
+#ifndef VPX_VPX_UTIL_VPX_THREAD_H_
+#define VPX_VPX_UTIL_VPX_THREAD_H_
 
 #include "./vpx_config.h"
 
@@ -159,6 +159,23 @@ static INLINE int pthread_cond_init(pthread_cond_t *const condition,
   return 0;
 }
 
+static INLINE int pthread_cond_broadcast(pthread_cond_t *const condition) {
+  int ok = 1;
+#ifdef USE_WINDOWS_CONDITION_VARIABLE
+  WakeAllConditionVariable(condition);
+#else
+  while (WaitForSingleObject(condition->waiting_sem_, 0) == WAIT_OBJECT_0) {
+    
+    ok &= SetEvent(condition->signal_event_);
+    
+    
+    ok &= (WaitForSingleObject(condition->received_sem_, INFINITE) !=
+           WAIT_OBJECT_0);
+  }
+#endif
+  return !ok;
+}
+
 static INLINE int pthread_cond_signal(pthread_cond_t *const condition) {
   int ok = 1;
 #ifdef USE_WINDOWS_CONDITION_VARIABLE
@@ -194,6 +211,7 @@ static INLINE int pthread_cond_wait(pthread_cond_t *const condition,
 #endif
   return !ok;
 }
+
 #elif defined(__OS2__)
 #define INCL_DOS
 #include <os2.h>  
@@ -201,6 +219,11 @@ static INLINE int pthread_cond_wait(pthread_cond_t *const condition,
 #include <errno.h>        
 #include <stdlib.h>       
 #include <sys/builtin.h>  
+
+#if defined(__STRICT_ANSI__)
+
+int _beginthread(void (*)(void *), void *, unsigned, void *);
+#endif
 
 #define pthread_t TID
 #define pthread_mutex_t HMTX

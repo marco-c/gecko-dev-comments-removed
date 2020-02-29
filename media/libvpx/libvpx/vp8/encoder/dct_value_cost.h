@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_DCT_VALUE_COST_H_
-#define VP8_ENCODER_DCT_VALUE_COST_H_
+#ifndef VPX_VP8_ENCODER_DCT_VALUE_COST_H_
+#define VPX_VP8_ENCODER_DCT_VALUE_COST_H_
 
 #ifdef __cplusplus
 extern "C" {

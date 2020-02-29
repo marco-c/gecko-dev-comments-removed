@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_RATECTRL_H_
-#define VP9_ENCODER_VP9_RATECTRL_H_
+#ifndef VPX_VP9_ENCODER_VP9_RATECTRL_H_
+#define VPX_VP9_ENCODER_VP9_RATECTRL_H_
 
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
@@ -33,6 +33,14 @@ extern "C" {
 #define ONEHALFONLY_RESIZE 0
 
 #define FRAME_OVERHEAD_BITS 200
+
+
+
+
+#define STATIC_KF_GROUP_THRESH 99
+
+
+#define MAX_STATIC_GF_GROUP_LENGTH 250
 
 typedef enum {
   INTER_NORMAL = 0,
@@ -167,15 +175,34 @@ typedef struct {
   uint64_t avg_source_sad[MAX_LAG_BUFFERS];
   uint64_t prev_avg_source_sad_lag;
   int high_source_sad_lagindex;
+  int high_num_blocks_with_motion;
   int alt_ref_gf_group;
   int last_frame_is_src_altref;
   int high_source_sad;
   int count_last_scene_change;
+  int hybrid_intra_scene_change;
+  int re_encode_maxq_scene_change;
   int avg_frame_low_motion;
   int af_ratio_onepass_vbr;
   int force_qpmin;
   int reset_high_source_sad;
   double perc_arf_usage;
+  int force_max_q;
+  
+  int last_post_encode_dropped_scene_change;
+  
+  
+  int use_post_encode_drop;
+  
+  int ext_use_post_encode_drop;
+
+  int damped_adjustment[RATE_FACTOR_LEVELS];
+  double arf_active_best_quality_adjustment_factor;
+  int arf_increase_active_best_quality;
+
+  int preserve_arf_as_gld;
+  int preserve_next_arf_as_gld;
+  int show_arf_as_gld;
 } RATE_CONTROL;
 
 struct VP9_COMP;
@@ -184,7 +211,7 @@ struct VP9EncoderConfig;
 void vp9_rc_init(const struct VP9EncoderConfig *oxcf, int pass,
                  RATE_CONTROL *rc);
 
-int vp9_estimate_bits_at_q(FRAME_TYPE frame_kind, int q, int mbs,
+int vp9_estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
                            double correction_factor, vpx_bit_depth_t bit_depth);
 
 double vp9_convert_qindex_to_q(int qindex, vpx_bit_depth_t bit_depth);
@@ -197,7 +224,7 @@ int vp9_rc_get_default_min_gf_interval(int width, int height, double framerate);
 
 
 
-int vp9_rc_get_default_max_gf_interval(double framerate, int min_frame_rate);
+int vp9_rc_get_default_max_gf_interval(double framerate, int min_gf_interval);
 
 
 
@@ -238,12 +265,17 @@ void vp9_rc_postencode_update_drop_frame(struct VP9_COMP *cpi);
 void vp9_rc_update_rate_correction_factors(struct VP9_COMP *cpi);
 
 
+int post_encode_drop_cbr(struct VP9_COMP *cpi, size_t *size);
+
+int vp9_test_drop(struct VP9_COMP *cpi);
+
+
 
 int vp9_rc_drop_frame(struct VP9_COMP *cpi);
 
 
 void vp9_rc_compute_frame_size_bounds(const struct VP9_COMP *cpi,
-                                      int this_frame_target,
+                                      int frame_target,
                                       int *frame_under_shoot_limit,
                                       int *frame_over_shoot_limit);
 
@@ -293,6 +325,10 @@ int vp9_resize_one_pass_cbr(struct VP9_COMP *cpi);
 void vp9_scene_detection_onepass(struct VP9_COMP *cpi);
 
 int vp9_encodedframe_overshoot(struct VP9_COMP *cpi, int frame_size, int *q);
+
+void vp9_configure_buffer_updates(struct VP9_COMP *cpi, int gf_group_index);
+
+void vp9_estimate_qp_gop(struct VP9_COMP *cpi);
 
 #ifdef __cplusplus
 }  

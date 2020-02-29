@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_TEST_VECTORS_H_
-#define TEST_TEST_VECTORS_H_
+#ifndef VPX_TEST_TEST_VECTORS_H_
+#define VPX_TEST_TEST_VECTORS_H_
 
 #include "./vpx_config.h"
 

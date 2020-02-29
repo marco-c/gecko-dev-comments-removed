@@ -12,8 +12,8 @@
 
 
 
-#ifndef VPX_VPX_IMAGE_H_
-#define VPX_VPX_IMAGE_H_
+#ifndef VPX_VPX_VPX_IMAGE_H_
+#define VPX_VPX_VPX_IMAGE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +27,7 @@ extern "C" {
 
 
 
-#define VPX_IMAGE_ABI_VERSION (4) /**<\hideinitializer*/
+#define VPX_IMAGE_ABI_VERSION (5) /**<\hideinitializer*/
 
 #define VPX_IMG_FMT_PLANAR 0x100       /**< Image is a planar format. */
 #define VPX_IMG_FMT_UV_FLIP 0x200      /**< V plane precedes U in memory. */
@@ -37,29 +37,12 @@ extern "C" {
 
 typedef enum vpx_img_fmt {
   VPX_IMG_FMT_NONE,
-  VPX_IMG_FMT_RGB24,     
-  VPX_IMG_FMT_RGB32,     
-  VPX_IMG_FMT_RGB565,    
-  VPX_IMG_FMT_RGB555,    
-  VPX_IMG_FMT_UYVY,      
-  VPX_IMG_FMT_YUY2,      
-  VPX_IMG_FMT_YVYU,      
-  VPX_IMG_FMT_BGR24,     
-  VPX_IMG_FMT_RGB32_LE,  
-  VPX_IMG_FMT_ARGB,      
-  VPX_IMG_FMT_ARGB_LE,   
-  VPX_IMG_FMT_RGB565_LE, 
-  VPX_IMG_FMT_RGB555_LE, 
   VPX_IMG_FMT_YV12 =
       VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_UV_FLIP | 1, 
   VPX_IMG_FMT_I420 = VPX_IMG_FMT_PLANAR | 2,
-  VPX_IMG_FMT_VPXYV12 = VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_UV_FLIP |
-                        3, 
-  VPX_IMG_FMT_VPXI420 = VPX_IMG_FMT_PLANAR | 4,
   VPX_IMG_FMT_I422 = VPX_IMG_FMT_PLANAR | 5,
   VPX_IMG_FMT_I444 = VPX_IMG_FMT_PLANAR | 6,
   VPX_IMG_FMT_I440 = VPX_IMG_FMT_PLANAR | 7,
-  VPX_IMG_FMT_444A = VPX_IMG_FMT_PLANAR | VPX_IMG_FMT_HAS_ALPHA | 6,
   VPX_IMG_FMT_I42016 = VPX_IMG_FMT_I420 | VPX_IMG_FMT_HIGHBITDEPTH,
   VPX_IMG_FMT_I42216 = VPX_IMG_FMT_I422 | VPX_IMG_FMT_HIGHBITDEPTH,
   VPX_IMG_FMT_I44416 = VPX_IMG_FMT_I444 | VPX_IMG_FMT_HIGHBITDEPTH,
@@ -181,7 +164,7 @@ vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
 
 
 vpx_image_t *vpx_img_wrap(vpx_image_t *img, vpx_img_fmt_t fmt, unsigned int d_w,
-                          unsigned int d_h, unsigned int align,
+                          unsigned int d_h, unsigned int stride_align,
                           unsigned char *img_data);
 
 

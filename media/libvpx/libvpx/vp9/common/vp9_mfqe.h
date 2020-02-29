@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_MFQE_H_
-#define VP9_COMMON_VP9_MFQE_H_
+#ifndef VPX_VP9_COMMON_VP9_MFQE_H_
+#define VPX_VP9_COMMON_VP9_MFQE_H_
 
 #ifdef __cplusplus
 extern "C" {

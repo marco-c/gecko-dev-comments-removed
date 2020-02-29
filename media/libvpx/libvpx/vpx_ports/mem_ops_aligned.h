@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_PORTS_MEM_OPS_ALIGNED_H_
-#define VPX_PORTS_MEM_OPS_ALIGNED_H_
+#ifndef VPX_VPX_PORTS_MEM_OPS_ALIGNED_H_
+#define VPX_VPX_PORTS_MEM_OPS_ALIGNED_H_
 
 #include "vpx/vpx_integer.h"
 

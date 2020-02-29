@@ -7,8 +7,8 @@
 
 
 
-#ifndef TEST_IVF_VIDEO_SOURCE_H_
-#define TEST_IVF_VIDEO_SOURCE_H_
+#ifndef VPX_TEST_IVF_VIDEO_SOURCE_H_
+#define VPX_TEST_IVF_VIDEO_SOURCE_H_
 #include <cstdio>
 #include <cstdlib>
 #include <new>
@@ -16,7 +16,7 @@
 #include "test/video_source.h"
 
 namespace libvpx_test {
-const unsigned int kCodeBufferSize = 256 * 1024;
+const unsigned int kCodeBufferSize = 256 * 1024 * 1024;
 const unsigned int kIvfFileHdrSize = 32;
 const unsigned int kIvfFrameHdrSize = 12;
 

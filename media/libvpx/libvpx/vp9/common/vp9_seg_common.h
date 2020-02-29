@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP9_COMMON_VP9_SEG_COMMON_H_
-#define VP9_COMMON_VP9_SEG_COMMON_H_
+#ifndef VPX_VP9_COMMON_VP9_SEG_COMMON_H_
+#define VPX_VP9_COMMON_VP9_SEG_COMMON_H_
 
 #include "vpx_dsp/prob.h"
 

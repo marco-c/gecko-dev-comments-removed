@@ -32,10 +32,14 @@
 
 
 
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_SPI_H_
 #define GTEST_INCLUDE_GTEST_GTEST_SPI_H_
 
 #include "gtest/gtest.h"
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 
@@ -97,13 +101,12 @@ class GTEST_API_ SingleFailureChecker {
  public:
   
   SingleFailureChecker(const TestPartResultArray* results,
-                       TestPartResult::Type type,
-                       const string& substr);
+                       TestPartResult::Type type, const std::string& substr);
   ~SingleFailureChecker();
  private:
   const TestPartResultArray* const results_;
   const TestPartResult::Type type_;
-  const string substr_;
+  const std::string substr_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(SingleFailureChecker);
 };
@@ -111,6 +114,8 @@ class GTEST_API_ SingleFailureChecker {
 }  
 
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
 

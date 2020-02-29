@@ -256,6 +256,13 @@
 
 
 
+
+
+
+
+
+
+
 #include <ctype.h>   
 #include <stddef.h>  
 #include <stdlib.h>
@@ -271,10 +278,12 @@
 # include <TargetConditionals.h>
 #endif
 
+
+
+#include <string>  
 #include <algorithm>  
 #include <iostream>  
 #include <sstream>  
-#include <string>  
 #include <utility>
 #include <vector>  
 
@@ -306,7 +315,7 @@
 
 
 
-#if _MSC_VER >= 1500
+#if _MSC_VER >= 1400
 # define GTEST_DISABLE_MSC_WARNINGS_PUSH_(warnings) \
     __pragma(warning(push))                        \
     __pragma(warning(disable: warnings))
@@ -318,12 +327,28 @@
 # define GTEST_DISABLE_MSC_WARNINGS_POP_()
 #endif
 
+
+
+#ifdef __clang__
+# define GTEST_DISABLE_MSC_DEPRECATED_PUSH_()                         \
+    _Pragma("clang diagnostic push")                                  \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"") \
+    _Pragma("clang diagnostic ignored \"-Wdeprecated-implementations\"")
+#define GTEST_DISABLE_MSC_DEPRECATED_POP_() \
+    _Pragma("clang diagnostic pop")
+#else
+# define GTEST_DISABLE_MSC_DEPRECATED_PUSH_() \
+    GTEST_DISABLE_MSC_WARNINGS_PUSH_(4996)
+# define GTEST_DISABLE_MSC_DEPRECATED_POP_() \
+    GTEST_DISABLE_MSC_WARNINGS_POP_()
+#endif
+
 #ifndef GTEST_LANG_CXX11
 
 
 
 
-# if __GXX_EXPERIMENTAL_CXX0X__ || __cplusplus >= 201103L
+# if __GXX_EXPERIMENTAL_CXX0X__ || __cplusplus >= 201103L || _MSC_VER >= 1900
 
 #  define GTEST_LANG_CXX11 1
 # else
@@ -355,12 +380,16 @@
 #if GTEST_STDLIB_CXX11
 # define GTEST_HAS_STD_BEGIN_AND_END_ 1
 # define GTEST_HAS_STD_FORWARD_LIST_ 1
-# define GTEST_HAS_STD_FUNCTION_ 1
+# if !defined(_MSC_VER) || (_MSC_FULL_VER >= 190023824)
+
+#   define GTEST_HAS_STD_FUNCTION_ 1
+# endif
 # define GTEST_HAS_STD_INITIALIZER_LIST_ 1
 # define GTEST_HAS_STD_MOVE_ 1
-# define GTEST_HAS_STD_SHARED_PTR_ 1
-# define GTEST_HAS_STD_TYPE_TRAITS_ 1
 # define GTEST_HAS_STD_UNIQUE_PTR_ 1
+# define GTEST_HAS_STD_SHARED_PTR_ 1
+# define GTEST_HAS_UNORDERED_MAP_ 1
+# define GTEST_HAS_UNORDERED_SET_ 1
 #endif
 
 
@@ -368,6 +397,7 @@
 #if GTEST_LANG_CXX11
 # define GTEST_HAS_STD_TUPLE_ 1
 # if defined(__clang__)
+
 
 #  if defined(__has_include) && !__has_include(<tuple>)
 #   undef GTEST_HAS_STD_TUPLE_
@@ -396,10 +426,16 @@
 #  include <io.h>
 # endif
 
+#if GTEST_OS_WINDOWS_MINGW && !defined(__MINGW64_VERSION_MAJOR)
+
+
+typedef struct _CRITICAL_SECTION GTEST_CRITICAL_SECTION;
+#else
 
 
 
-struct _RTL_CRITICAL_SECTION;
+typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
+#endif
 #else
 
 
@@ -453,7 +489,10 @@ struct _RTL_CRITICAL_SECTION;
 #ifndef GTEST_HAS_EXCEPTIONS
 
 
-# if defined(_MSC_VER) || defined(__BORLANDC__)
+# if defined(_MSC_VER) && defined(_CPPUNWIND)
+
+#  define GTEST_HAS_EXCEPTIONS 1
+# elif defined(__BORLANDC__)
 
 
 
@@ -498,15 +537,11 @@ struct _RTL_CRITICAL_SECTION;
 # define GTEST_HAS_STD_STRING 1
 #elif !GTEST_HAS_STD_STRING
 
-# error "Google Test cannot be used where ::std::string isn't available."
+# error "::std::string isn't available."
 #endif  
 
 #ifndef GTEST_HAS_GLOBAL_STRING
-
-
-
 # define GTEST_HAS_GLOBAL_STRING 0
-
 #endif  
 
 #ifndef GTEST_HAS_STD_WSTRING
@@ -600,8 +635,9 @@ struct _RTL_CRITICAL_SECTION;
 
 
 
-# define GTEST_HAS_PTHREAD (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX \
-    || GTEST_OS_QNX || GTEST_OS_FREEBSD || GTEST_OS_NACL)
+#define GTEST_HAS_PTHREAD                                             \
+  (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX || GTEST_OS_QNX || \
+   GTEST_OS_FREEBSD || GTEST_OS_NACL || GTEST_OS_NETBSD || GTEST_OS_FUCHSIA)
 #endif  
 
 #if GTEST_HAS_PTHREAD
@@ -616,7 +652,7 @@ struct _RTL_CRITICAL_SECTION;
 
 
 #if !defined(GTEST_HAS_HASH_MAP_)
-# if _MSC_VER
+# if defined(_MSC_VER) && (_MSC_VER < 1900)
 #  define GTEST_HAS_HASH_MAP_ 1  // Indicates that hash_map is available.
 #  define GTEST_HAS_HASH_SET_ 1  // Indicates that hash_set is available.
 # endif  
@@ -629,6 +665,14 @@ struct _RTL_CRITICAL_SECTION;
 # if GTEST_OS_LINUX_ANDROID && defined(_STLPORT_MAJOR)
 
 #  define GTEST_HAS_TR1_TUPLE 0
+# elif defined(_MSC_VER) && (_MSC_VER >= 1910)
+
+
+
+#  define GTEST_HAS_TR1_TUPLE 0
+# elif GTEST_LANG_CXX11 && defined(_LIBCPP_VERSION)
+
+#  define GTEST_HAS_TR1_TUPLE 0
 # else
 
 #  define GTEST_HAS_TR1_TUPLE 1
@@ -638,6 +682,10 @@ struct _RTL_CRITICAL_SECTION;
 
 
 #ifndef GTEST_USE_OWN_TR1_TUPLE
+
+# if GTEST_OS_SYMBIAN
+#  define GTEST_USE_OWN_TR1_TUPLE 1
+# else
 
 
 
@@ -651,7 +699,8 @@ struct _RTL_CRITICAL_SECTION;
 
 
 # if (defined(__GNUC__) && !defined(__CUDACC__) && (GTEST_GCC_VER_ >= 40000) \
-      && !GTEST_OS_QNX && !defined(_LIBCPP_VERSION)) || _MSC_VER >= 1600
+      && !GTEST_OS_QNX && !defined(_LIBCPP_VERSION)) \
+      || (_MSC_VER >= 1600 && _MSC_VER < 1900)
 #  define GTEST_ENV_HAS_TR1_TUPLE_ 1
 # endif
 
@@ -667,9 +716,8 @@ struct _RTL_CRITICAL_SECTION;
 # else
 #  define GTEST_USE_OWN_TR1_TUPLE 1
 # endif
-
+# endif  
 #endif  
-
 
 
 
@@ -687,22 +735,6 @@ struct _RTL_CRITICAL_SECTION;
 
 # if GTEST_USE_OWN_TR1_TUPLE
 #  include "gtest/internal/gtest-tuple.h"  
-# elif GTEST_ENV_HAS_STD_TUPLE_
-#  include <tuple>
-
-
-
-
-namespace std {
-namespace tr1 {
-using ::std::get;
-using ::std::make_tuple;
-using ::std::tuple;
-using ::std::tuple_element;
-using ::std::tuple_size;
-}
-}
-
 # elif GTEST_OS_SYMBIAN
 
 
@@ -737,10 +769,12 @@ using ::std::tuple_size;
 #   include <tr1/tuple>  
 #  endif  
 
-# else
 
-
+# elif _MSC_VER >= 1600
 #  include <tuple>  
+
+# else  
+#  include <tr1/tuple>  
 # endif  
 
 #endif  
@@ -755,7 +789,11 @@ using ::std::tuple_size;
 # if GTEST_OS_LINUX && !defined(__ia64__)
 #  if GTEST_OS_LINUX_ANDROID
 
-#    if defined(__arm__) && __ANDROID_API__ >= 9
+
+#    if defined(__LP64__) || \
+        (defined(__arm__) && __ANDROID_API__ >= 9) || \
+        (defined(__mips__) && __ANDROID_API__ >= 12) || \
+        (defined(__i386__) && __ANDROID_API__ >= 17)
 #     define GTEST_HAS_CLONE 1
 #    else
 #     define GTEST_HAS_CLONE 0
@@ -786,18 +824,14 @@ using ::std::tuple_size;
 
 
 
-#if (GTEST_OS_LINUX || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS || \
-     (GTEST_OS_MAC && !GTEST_OS_IOS) || \
-     (GTEST_OS_WINDOWS_DESKTOP && _MSC_VER >= 1400) || \
+#if (GTEST_OS_LINUX || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS ||   \
+     (GTEST_OS_MAC && !GTEST_OS_IOS) ||                         \
+     (GTEST_OS_WINDOWS_DESKTOP && _MSC_VER >= 1400) ||          \
      GTEST_OS_WINDOWS_MINGW || GTEST_OS_AIX || GTEST_OS_HPUX || \
-     GTEST_OS_OPENBSD || GTEST_OS_QNX || GTEST_OS_FREEBSD)
+     GTEST_OS_OPENBSD || GTEST_OS_QNX || GTEST_OS_FREEBSD || \
+     GTEST_OS_NETBSD || GTEST_OS_FUCHSIA)
 # define GTEST_HAS_DEATH_TEST 1
 #endif
-
-
-
-
-#define GTEST_HAS_PARAM_TEST 1
 
 
 
@@ -813,7 +847,7 @@ using ::std::tuple_size;
 
 
 
-#if GTEST_HAS_PARAM_TEST && GTEST_HAS_TR1_TUPLE && !defined(__SUNPRO_CC)
+#if (GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_) && !defined(__SUNPRO_CC)
 # define GTEST_HAS_COMBINE 1
 #endif
 
@@ -864,15 +898,39 @@ using ::std::tuple_size;
 # define GTEST_ATTRIBUTE_UNUSED_
 #endif
 
+#if GTEST_LANG_CXX11
+# define GTEST_CXX11_EQUALS_DELETE_ = delete
+#else  
+# define GTEST_CXX11_EQUALS_DELETE_
+#endif  
 
 
-#define GTEST_DISALLOW_ASSIGN_(type)\
-  void operator=(type const &)
+#if (defined(__GNUC__) || defined(__clang__)) && !defined(COMPILER_ICC)
+# if defined(__MINGW_PRINTF_FORMAT)
 
 
 
-#define GTEST_DISALLOW_COPY_AND_ASSIGN_(type)\
-  type(type const &);\
+#  define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check) \
+       __attribute__((__format__(__MINGW_PRINTF_FORMAT, string_index, \
+                                 first_to_check)))
+# else
+#  define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check) \
+       __attribute__((__format__(__printf__, string_index, first_to_check)))
+# endif
+#else
+# define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check)
+#endif
+
+
+
+
+#define GTEST_DISALLOW_ASSIGN_(type) \
+  void operator=(type const &) GTEST_CXX11_EQUALS_DELETE_
+
+
+
+#define GTEST_DISALLOW_COPY_AND_ASSIGN_(type) \
+  type(type const &) GTEST_CXX11_EQUALS_DELETE_; \
   GTEST_DISALLOW_ASSIGN_(type)
 
 
@@ -920,6 +978,11 @@ using ::std::tuple_size;
 
 #endif  
 
+
+
+
+#ifndef GTEST_API_
+
 #ifdef _MSC_VER
 # if GTEST_LINKED_AS_SHARED_LIBRARY
 #  define GTEST_API_ __declspec(dllimport)
@@ -928,11 +991,17 @@ using ::std::tuple_size;
 # endif
 #elif __GNUC__ >= 4 || defined(__clang__)
 # define GTEST_API_ __attribute__((visibility ("default")))
-#endif 
+#endif  
+
+#endif  
 
 #ifndef GTEST_API_
 # define GTEST_API_
-#endif
+#endif  
+
+#ifndef GTEST_DEFAULT_DEATH_TEST_STYLE
+# define GTEST_DEFAULT_DEATH_TEST_STYLE  "fast"
+#endif  
 
 #ifdef __GNUC__
 
@@ -942,10 +1011,12 @@ using ::std::tuple_size;
 #endif
 
 
-#if defined(__GLIBCXX__) || defined(_LIBCPP_VERSION)
-# define GTEST_HAS_CXXABI_H_ 1
-#else
-# define GTEST_HAS_CXXABI_H_ 0
+#if !defined(GTEST_HAS_CXXABI_H_)
+# if defined(__GLIBCXX__) || (defined(_LIBCPP_VERSION) && !defined(_MSC_VER))
+#  define GTEST_HAS_CXXABI_H_ 1
+# else
+#  define GTEST_HAS_CXXABI_H_ 0
+# endif
 #endif
 
 
@@ -983,19 +1054,6 @@ using ::std::tuple_size;
 # endif  
 #else
 # define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_
-#endif  
-
-
-
-#if defined(__clang__)
-# if defined(__has_attribute) && __has_attribute(no_sanitize)
-#  define GTEST_ATTRIBUTE_NO_SANITIZE_UNSIGNED_OVERFLOW_ \
-       __attribute__((no_sanitize("unsigned-integer-overflow")))
-# else
-#  define GTEST_ATTRIBUTE_NO_SANITIZE_UNSIGNED_OVERFLOW_
-# endif  
-#else
-# define GTEST_ATTRIBUTE_NO_SANITIZE_UNSIGNED_OVERFLOW_
 #endif  
 
 namespace testing {
@@ -1102,6 +1160,16 @@ struct StaticAssertTypeEqHelper<T, T> {
 };
 
 
+template <typename T, typename U>
+struct IsSame {
+  enum { value = false };
+};
+template <typename T>
+struct IsSame<T, T> {
+  enum { value = true };
+};
+
+
 #define GTEST_ARRAY_SIZE_(array) (sizeof(array) / sizeof(array[0]))
 
 #if GTEST_HAS_GLOBAL_STRING
@@ -1164,6 +1232,10 @@ class scoped_ptr {
 
 
 
+#if GTEST_USES_PCRE
+
+#elif GTEST_USES_POSIX_RE || GTEST_USES_SIMPLE_RE
+
 
 
 class GTEST_API_ RE {
@@ -1175,11 +1247,11 @@ class GTEST_API_ RE {
   
   RE(const ::std::string& regex) { Init(regex.c_str()); }  
 
-#if GTEST_HAS_GLOBAL_STRING
+# if GTEST_HAS_GLOBAL_STRING
 
   RE(const ::string& regex) { Init(regex.c_str()); }  
 
-#endif  
+# endif  
 
   RE(const char* regex) { Init(regex); }  
   ~RE();
@@ -1201,7 +1273,7 @@ class GTEST_API_ RE {
     return PartialMatch(str.c_str(), re);
   }
 
-#if GTEST_HAS_GLOBAL_STRING
+# if GTEST_HAS_GLOBAL_STRING
 
   static bool FullMatch(const ::string& str, const RE& re) {
     return FullMatch(str.c_str(), re);
@@ -1210,7 +1282,7 @@ class GTEST_API_ RE {
     return PartialMatch(str.c_str(), re);
   }
 
-#endif  
+# endif  
 
   static bool FullMatch(const char* str, const RE& re);
   static bool PartialMatch(const char* str, const RE& re);
@@ -1224,19 +1296,21 @@ class GTEST_API_ RE {
   const char* pattern_;
   bool is_valid_;
 
-#if GTEST_USES_POSIX_RE
+# if GTEST_USES_POSIX_RE
 
   regex_t full_regex_;     
   regex_t partial_regex_;  
 
-#else  
+# else  
 
   const char* full_pattern_;  
 
-#endif
+# endif
 
   GTEST_DISALLOW_ASSIGN_(RE);
 };
+
+#endif  
 
 
 
@@ -1323,13 +1397,59 @@ inline void FlushInfoLog() { fflush(NULL); }
     GTEST_LOG_(FATAL) << #posix_call << "failed with error " \
                       << gtest_error
 
+
+
+
+template <typename T>
+struct AddReference { typedef T& type; };  
+template <typename T>
+struct AddReference<T&> { typedef T& type; };  
+
+
+
+#define GTEST_ADD_REFERENCE_(T) \
+    typename ::testing::internal::AddReference<T>::type
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct ConstRef { typedef const T& type; };
+template <typename T>
+struct ConstRef<T&> { typedef T& type; };
+
+
+#define GTEST_REFERENCE_TO_CONST_(T) \
+  typename ::testing::internal::ConstRef<T>::type
+
 #if GTEST_HAS_STD_MOVE_
+using std::forward;
 using std::move;
+
+template <typename T>
+struct RvalueRef {
+  typedef T&& type;
+};
 #else  
 template <typename T>
 const T& move(const T& t) {
   return t;
 }
+template <typename T>
+GTEST_ADD_REFERENCE_(T) forward(GTEST_ADD_REFERENCE_(T) t) { return t; }
+
+template <typename T>
+struct RvalueRef {
+  typedef const T& type;
+};
 #endif  
 
 
@@ -1431,24 +1551,24 @@ GTEST_API_ std::string GetCapturedStderr();
 
 #endif  
 
-
-GTEST_API_ std::string TempDir();
-
-
 GTEST_API_ size_t GetFileSize(FILE* file);
 
 
 GTEST_API_ std::string ReadEntireFile(FILE* file);
 
 
-GTEST_API_ const ::std::vector<testing::internal::string>& GetArgvs();
+GTEST_API_ std::vector<std::string> GetArgvs();
 
 #if GTEST_HAS_DEATH_TEST
 
-const ::std::vector<testing::internal::string>& GetInjectableArgvs();
-void SetInjectableArgvs(const ::std::vector<testing::internal::string>*
-                             new_argvs);
+std::vector<std::string> GetInjectableArgvs();
 
+void SetInjectableArgvs(const std::vector<std::string>* new_argvs);
+void SetInjectableArgvs(const std::vector<std::string>& new_argvs);
+#if GTEST_HAS_GLOBAL_STRING
+void SetInjectableArgvs(const std::vector< ::string>& new_argvs);
+#endif  
+void ClearInjectableArgvs();
 
 #endif  
 
@@ -1706,7 +1826,7 @@ class GTEST_API_ Mutex {
   
   MutexType type_;
   long critical_section_init_phase_;  
-  _RTL_CRITICAL_SECTION* critical_section_;
+  GTEST_CRITICAL_SECTION* critical_section_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Mutex);
 };
@@ -1982,8 +2102,13 @@ class MutexBase {
      extern ::testing::internal::MutexBase mutex
 
 
-#  define GTEST_DEFINE_STATIC_MUTEX_(mutex) \
-     ::testing::internal::MutexBase mutex = { PTHREAD_MUTEX_INITIALIZER, false, pthread_t() }
+
+
+
+
+
+#define GTEST_DEFINE_STATIC_MUTEX_(mutex) \
+  ::testing::internal::MutexBase mutex = {PTHREAD_MUTEX_INITIALIZER, false, 0}
 
 
 
@@ -2040,7 +2165,7 @@ extern "C" inline void DeleteThreadLocalValue(void* value_holder) {
 
 
 template <typename T>
-class ThreadLocal {
+class GTEST_API_ ThreadLocal {
  public:
   ThreadLocal()
       : key_(CreateKey()), default_factory_(new DefaultValueHolderFactory()) {}
@@ -2172,7 +2297,7 @@ class GTestMutexLock {
 typedef GTestMutexLock MutexLock;
 
 template <typename T>
-class ThreadLocal {
+class GTEST_API_ ThreadLocal {
  public:
   ThreadLocal() : value_() {}
   explicit ThreadLocal(const T& value) : value_(value) {}
@@ -2196,7 +2321,8 @@ GTEST_API_ size_t GetThreadCount();
 
 
 
-#if defined(__SYMBIAN32__) || defined(__IBMCPP__) || defined(__SUNPRO_CC)
+#if defined(__SYMBIAN32__) || defined(__IBMCPP__) || \
+     (defined(__SUNPRO_CC) && __SUNPRO_CC < 0x5130)
 
 
 # define GTEST_ELLIPSIS_NEEDS_POD_ 1
@@ -2222,6 +2348,13 @@ template <bool bool_value> const bool bool_constant<bool_value>::value;
 typedef bool_constant<false> false_type;
 typedef bool_constant<true> true_type;
 
+template <typename T, typename U>
+struct is_same : public false_type {};
+
+template <typename T>
+struct is_same<T, T> : public true_type {};
+
+
 template <typename T>
 struct is_pointer : public false_type {};
 
@@ -2232,6 +2365,7 @@ template <typename Iterator>
 struct IteratorTraits {
   typedef typename Iterator::value_type value_type;
 };
+
 
 template <typename T>
 struct IteratorTraits<T*> {
@@ -2364,7 +2498,7 @@ inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
 
 
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(4996 )
+GTEST_DISABLE_MSC_DEPRECATED_PUSH_()
 
 inline const char* StrNCpy(char* dest, const char* src, size_t n) {
   return strncpy(dest, src, n);
@@ -2398,7 +2532,7 @@ inline int Close(int fd) { return close(fd); }
 inline const char* StrError(int errnum) { return strerror(errnum); }
 #endif
 inline const char* GetEnv(const char* name) {
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE | GTEST_OS_WINDOWS_RT
+#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT
   
   static_cast<void>(name);  
   return NULL;
@@ -2412,7 +2546,7 @@ inline const char* GetEnv(const char* name) {
 #endif
 }
 
-GTEST_DISABLE_MSC_WARNINGS_POP_()
+GTEST_DISABLE_MSC_DEPRECATED_POP_()
 
 #if GTEST_OS_WINDOWS_MOBILE
 
@@ -2528,15 +2662,15 @@ typedef TypeWithSize<8>::Int TimeInMillis;
 # define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
 # define GTEST_DECLARE_int32_(name) \
     GTEST_API_ extern ::testing::internal::Int32 GTEST_FLAG(name)
-#define GTEST_DECLARE_string_(name) \
+# define GTEST_DECLARE_string_(name) \
     GTEST_API_ extern ::std::string GTEST_FLAG(name)
 
 
-#define GTEST_DEFINE_bool_(name, default_val, doc) \
+# define GTEST_DEFINE_bool_(name, default_val, doc) \
     GTEST_API_ bool GTEST_FLAG(name) = (default_val)
-#define GTEST_DEFINE_int32_(name, default_val, doc) \
+# define GTEST_DEFINE_int32_(name, default_val, doc) \
     GTEST_API_ ::testing::internal::Int32 GTEST_FLAG(name) = (default_val)
-#define GTEST_DEFINE_string_(name, default_val, doc) \
+# define GTEST_DEFINE_string_(name, default_val, doc) \
     GTEST_API_ ::std::string GTEST_FLAG(name) = (default_val)
 
 #endif  
@@ -2559,7 +2693,8 @@ bool ParseInt32(const Message& src_text, const char* str, Int32* value);
 
 bool BoolFromGTestEnv(const char* flag, bool default_val);
 GTEST_API_ Int32 Int32FromGTestEnv(const char* flag, Int32 default_val);
-std::string StringFromGTestEnv(const char* flag, const char* default_val);
+std::string OutputFlagAlsoCheckEnvVar();
+const char* StringFromGTestEnv(const char* flag, const char* default_val);
 
 }  
 }  

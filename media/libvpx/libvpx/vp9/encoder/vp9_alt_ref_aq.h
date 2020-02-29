@@ -15,8 +15,8 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_ALT_REF_AQ_H_
-#define VP9_ENCODER_VP9_ALT_REF_AQ_H_
+#ifndef VPX_VP9_ENCODER_VP9_ALT_REF_AQ_H_
+#define VPX_VP9_ENCODER_VP9_ALT_REF_AQ_H_
 
 #include "vpx/vpx_integer.h"
 

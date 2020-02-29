@@ -8,15 +8,23 @@
 
 
 
-#ifndef VPX_PORTS_SYSTEM_STATE_H_
-#define VPX_PORTS_SYSTEM_STATE_H_
+#ifndef VPX_VPX_PORTS_SYSTEM_STATE_H_
+#define VPX_VPX_PORTS_SYSTEM_STATE_H_
 
 #include "./vpx_config.h"
 
-#if ARCH_X86 || ARCH_X86_64
-void vpx_reset_mmx_state(void);
-#define vpx_clear_system_state() vpx_reset_mmx_state()
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if (VPX_ARCH_X86 || VPX_ARCH_X86_64) && HAVE_MMX
+extern void vpx_clear_system_state(void);
 #else
 #define vpx_clear_system_state()
 #endif  
+
+#ifdef __cplusplus
+}  
+#endif
+
 #endif  

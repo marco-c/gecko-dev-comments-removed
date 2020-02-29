@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_SKIN_DETECTION_H_
-#define VP8_COMMON_SKIN_DETECTION_H_
+#ifndef VPX_VP8_COMMON_VP8_SKIN_DETECTION_H_
+#define VPX_VP8_COMMON_VP8_SKIN_DETECTION_H_
 
 #include "vp8/encoder/onyx_int.h"
 #include "vpx/vpx_integer.h"

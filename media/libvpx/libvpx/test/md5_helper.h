@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_MD5_HELPER_H_
-#define TEST_MD5_HELPER_H_
+#ifndef VPX_TEST_MD5_HELPER_H_
+#define VPX_TEST_MD5_HELPER_H_
 
 #include "./md5_utils.h"
 #include "vpx/vpx_decoder.h"

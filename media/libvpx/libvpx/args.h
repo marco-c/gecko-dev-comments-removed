@@ -8,8 +8,8 @@
 
 
 
-#ifndef ARGS_H_
-#define ARGS_H_
+#ifndef VPX_ARGS_H_
+#define VPX_ARGS_H_
 #include <stdio.h>
 
 #ifdef __cplusplus

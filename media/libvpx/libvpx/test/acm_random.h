@@ -8,8 +8,8 @@
 
 
 
-#ifndef TEST_ACM_RANDOM_H_
-#define TEST_ACM_RANDOM_H_
+#ifndef VPX_TEST_ACM_RANDOM_H_
+#define VPX_TEST_ACM_RANDOM_H_
 
 #include <assert.h>
 
@@ -34,6 +34,23 @@ class ACMRandom {
     return (value >> 15) & 0xffff;
   }
 
+  int32_t Rand20Signed(void) {
+    
+    const uint32_t value = random_.Generate(1048576);
+    return static_cast<int32_t>(value) - 524288;
+  }
+
+  int16_t Rand16Signed(void) {
+    
+    return static_cast<int16_t>(random_.Generate(65536));
+  }
+
+  int16_t Rand13Signed(void) {
+    
+    const uint32_t value = random_.Generate(8192);
+    return static_cast<int16_t>(value) - 4096;
+  }
+
   int16_t Rand9Signed(void) {
     
     const uint32_t value = random_.Generate(512);
@@ -51,7 +68,7 @@ class ACMRandom {
     
     
     const uint8_t r = Rand8();
-    return r < 128 ? r << 4 : r >> 4;
+    return static_cast<uint8_t>((r < 128) ? r << 4 : r >> 4);
   }
 
   uint32_t RandRange(const uint32_t range) {

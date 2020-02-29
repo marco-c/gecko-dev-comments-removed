@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_DECODER_DBOOLHUFF_H_
-#define VP8_DECODER_DBOOLHUFF_H_
+#ifndef VPX_VP8_DECODER_DBOOLHUFF_H_
+#define VPX_VP8_DECODER_DBOOLHUFF_H_
 
 #include <stddef.h>
 #include <limits.h>
@@ -76,7 +76,7 @@ static int vp8dx_decode_bool(BOOL_DECODER *br, int probability) {
   }
 
   {
-    register int shift = vp8_norm[range];
+    const unsigned char shift = vp8_norm[(unsigned char)range];
     range <<= shift;
     value <<= shift;
     count -= shift;

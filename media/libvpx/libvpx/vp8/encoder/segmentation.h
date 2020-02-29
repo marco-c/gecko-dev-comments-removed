@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_ENCODER_SEGMENTATION_H_
-#define VP8_ENCODER_SEGMENTATION_H_
+#ifndef VPX_VP8_ENCODER_SEGMENTATION_H_
+#define VPX_VP8_ENCODER_SEGMENTATION_H_
 
 #include "string.h"
 #include "vp8/common/blockd.h"

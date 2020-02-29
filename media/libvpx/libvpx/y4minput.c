@@ -139,7 +139,6 @@ static int y4m_parse_tags(y4m_input *_y4m, char *_tags) {
 
 
 
-
 #define OC_MINI(_a, _b) ((_a) > (_b) ? (_b) : (_a))
 #define OC_MAXI(_a, _b) ((_a) < (_b) ? (_b) : (_a))
 #define OC_CLAMPI(_a, _b, _c) (OC_MAXI(_a, OC_MINI(_b, _c)))
@@ -976,6 +975,8 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     _y4m->aux_buf_sz =
         _y4m->aux_buf_read_sz + ((_y4m->pic_w + 1) / 2) * _y4m->pic_h;
     _y4m->convert = y4m_convert_411_420jpeg;
+    fprintf(stderr, "Unsupported conversion from yuv 411\n");
+    return -1;
   } else if (strcmp(_y4m->chroma_type, "444") == 0) {
     _y4m->src_c_dec_h = 1;
     _y4m->src_c_dec_v = 1;
@@ -1029,30 +1030,6 @@ int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
     if (only_420) {
       fprintf(stderr, "Unsupported conversion from 444p12 to 420jpeg\n");
       return -1;
-    }
-  } else if (strcmp(_y4m->chroma_type, "444alpha") == 0) {
-    _y4m->src_c_dec_h = 1;
-    _y4m->src_c_dec_v = 1;
-    if (only_420) {
-      _y4m->dst_c_dec_h = 2;
-      _y4m->dst_c_dec_v = 2;
-      _y4m->dst_buf_read_sz = _y4m->pic_w * _y4m->pic_h;
-      
-
-
-
-
-      _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 3 * _y4m->pic_w * _y4m->pic_h;
-      _y4m->convert = y4m_convert_444_420jpeg;
-    } else {
-      _y4m->vpx_fmt = VPX_IMG_FMT_444A;
-      _y4m->bps = 32;
-      _y4m->dst_c_dec_h = _y4m->src_c_dec_h;
-      _y4m->dst_c_dec_v = _y4m->src_c_dec_v;
-      _y4m->dst_buf_read_sz = 4 * _y4m->pic_w * _y4m->pic_h;
-      
-      _y4m->aux_buf_sz = _y4m->aux_buf_read_sz = 0;
-      _y4m->convert = y4m_convert_null;
     }
   } else if (strcmp(_y4m->chroma_type, "mono") == 0) {
     _y4m->src_c_dec_h = _y4m->src_c_dec_v = 0;

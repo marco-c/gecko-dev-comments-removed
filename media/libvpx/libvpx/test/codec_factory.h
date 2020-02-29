@@ -7,8 +7,10 @@
 
 
 
-#ifndef TEST_CODEC_FACTORY_H_
-#define TEST_CODEC_FACTORY_H_
+#ifndef VPX_TEST_CODEC_FACTORY_H_
+#define VPX_TEST_CODEC_FACTORY_H_
+
+#include <tuple>
 
 #include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
@@ -53,23 +55,22 @@ class CodecFactory {
 template <class T1>
 class CodecTestWithParam
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1> > {};
 
 template <class T1, class T2>
 class CodecTestWith2Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2> > {};
 
 template <class T1, class T2, class T3>
 class CodecTestWith3Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2, T3> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2, T3> > {};
 
 template <class T1, class T2, class T3, class T4>
 class CodecTestWith4Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2, T3, T4> > {
-};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2, T3, T4> > {};
 
 
 

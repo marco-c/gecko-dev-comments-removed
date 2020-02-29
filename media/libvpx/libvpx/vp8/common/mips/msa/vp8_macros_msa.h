@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_MIPS_MSA_VP8_MACROS_MSA_H_
-#define VP8_COMMON_MIPS_MSA_VP8_MACROS_MSA_H_
+#ifndef VPX_VP8_COMMON_MIPS_MSA_VP8_MACROS_MSA_H_
+#define VPX_VP8_COMMON_MIPS_MSA_VP8_MACROS_MSA_H_
 
 #include <msa.h>
 
@@ -1757,4 +1757,4 @@
                                                                 \
     tmp1_m;                                                     \
   })
-#endif 
+#endif  

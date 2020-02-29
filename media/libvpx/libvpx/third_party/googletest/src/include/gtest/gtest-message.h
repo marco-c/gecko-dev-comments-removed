@@ -43,12 +43,16 @@
 
 
 
+
 #ifndef GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
 #define GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
 
 #include <limits>
 
 #include "gtest/internal/gtest-port.h"
+
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 
 
@@ -196,7 +200,6 @@ class GTEST_API_ Message {
   std::string GetString() const;
 
  private:
-
 #if GTEST_OS_SYMBIAN
   
   
@@ -246,5 +249,7 @@ std::string StreamableToString(const T& streamable) {
 
 }  
 }  
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

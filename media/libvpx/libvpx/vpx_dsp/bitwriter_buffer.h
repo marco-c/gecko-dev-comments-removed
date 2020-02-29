@@ -8,8 +8,8 @@
 
 
 
-#ifndef VPX_DSP_BITWRITER_BUFFER_H_
-#define VPX_DSP_BITWRITER_BUFFER_H_
+#ifndef VPX_VPX_DSP_BITWRITER_BUFFER_H_
+#define VPX_VPX_DSP_BITWRITER_BUFFER_H_
 
 #include "vpx/vpx_integer.h"
 

@@ -8,11 +8,12 @@
 
 
 
-#ifndef VP8_COMMON_BLOCKD_H_
-#define VP8_COMMON_BLOCKD_H_
+#ifndef VPX_VP8_COMMON_BLOCKD_H_
+#define VPX_VP8_COMMON_BLOCKD_H_
 
 void vpx_log(const char *format, ...);
 
+#include "vpx/internal/vpx_codec_internal.h"
 #include "vpx_config.h"
 #include "vpx_scale/yv12config.h"
 #include "mv.h"
@@ -37,7 +38,9 @@ extern "C" {
 #define SEGMENT_DELTADATA 0
 #define SEGMENT_ABSDATA 1
 
-typedef struct { int r, c; } POS;
+typedef struct {
+  int r, c;
+} POS;
 
 #define PLANE_TYPE_Y_NO_DC 0
 #define PLANE_TYPE_Y2 1
@@ -180,6 +183,9 @@ typedef struct {
   unsigned int low_res_ref_frames[MAX_REF_FRAMES];
   
   unsigned int key_frame_counter_value;
+  
+  unsigned int skip_encoding_prev_stream;
+  unsigned int skip_encoding_base_stream;
   LOWER_RES_MB_INFO *mb_info;
 } LOWER_RES_FRAME_INFO;
 #endif
@@ -196,8 +202,9 @@ typedef struct blockd {
   union b_mode_info bmi;
 } BLOCKD;
 
-typedef void (*vp8_subpix_fn_t)(unsigned char *src, int src_pitch, int xofst,
-                                int yofst, unsigned char *dst, int dst_pitch);
+typedef void (*vp8_subpix_fn_t)(unsigned char *src_ptr, int src_pixels_per_line,
+                                int xoffset, int yoffset,
+                                unsigned char *dst_ptr, int dst_pitch);
 
 typedef struct macroblockd {
   DECLARE_ALIGNED(16, unsigned char, predictor[384]);
@@ -283,7 +290,9 @@ typedef struct macroblockd {
 
   int corrupted;
 
-#if ARCH_X86 || ARCH_X86_64
+  struct vpx_internal_error_info error_info;
+
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
   
 
 

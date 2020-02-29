@@ -8,8 +8,8 @@
 
 
 
-#ifndef VP8_COMMON_FILTER_H_
-#define VP8_COMMON_FILTER_H_
+#ifndef VPX_VP8_COMMON_FILTER_H_
+#define VPX_VP8_COMMON_FILTER_H_
 
 #include "vpx_ports/mem.h"
 

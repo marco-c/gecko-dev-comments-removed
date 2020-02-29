@@ -8,16 +8,12 @@
 
 
 
-#ifndef VP9_ENCODER_VP9_LOOKAHEAD_H_
-#define VP9_ENCODER_VP9_LOOKAHEAD_H_
+#ifndef VPX_VP9_ENCODER_VP9_LOOKAHEAD_H_
+#define VPX_VP9_ENCODER_VP9_LOOKAHEAD_H_
 
 #include "vpx_scale/yv12config.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vpx_integer.h"
-
-#if CONFIG_SPATIAL_SVC
-#include "vpx/vp8cx.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +25,7 @@ struct lookahead_entry {
   YV12_BUFFER_CONFIG img;
   int64_t ts_start;
   int64_t ts_end;
+  int show_idx; 
   vpx_enc_frame_flags_t flags;
 };
 
@@ -36,10 +33,12 @@ struct lookahead_entry {
 #define MAX_PRE_FRAMES 1
 
 struct lookahead_ctx {
-  int max_sz;                  
-  int sz;                      
-  int read_idx;                
-  int write_idx;               
+  int max_sz;        
+  int sz;            
+  int read_idx;      
+  int write_idx;     
+  int next_show_idx; 
+
   struct lookahead_entry *buf; 
 };
 
@@ -67,6 +66,23 @@ void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
 
 
 
+int vp9_lookahead_full(const struct lookahead_ctx *ctx);
+
+
+
+
+
+
+
+
+int vp9_lookahead_next_show_idx(const struct lookahead_ctx *ctx);
+
+
+
+
+
+
+
 
 
 
@@ -77,10 +93,7 @@ void vp9_lookahead_destroy(struct lookahead_ctx *ctx);
 
 
 int vp9_lookahead_push(struct lookahead_ctx *ctx, YV12_BUFFER_CONFIG *src,
-                       int64_t ts_start, int64_t ts_end,
-#if CONFIG_VP9_HIGHBITDEPTH
-                       int use_highbitdepth,
-#endif
+                       int64_t ts_start, int64_t ts_end, int use_highbitdepth,
                        vpx_enc_frame_flags_t flags);
 
 
