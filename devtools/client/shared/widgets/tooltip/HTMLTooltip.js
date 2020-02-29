@@ -481,14 +481,24 @@ HTMLTooltip.prototype = {
 
 
 
+
   async show(anchor, options) {
     const { left, top } = this._updateContainerBounds(anchor, options);
+    const isTooltipVisible = this.isVisible();
 
     if (this.useXulWrapper) {
-      await this._showXulWrapperAt(left, top);
+      if (!isTooltipVisible) {
+        await this._showXulWrapperAt(left, top);
+      } else {
+        this._moveXulWrapperTo(left, top);
+      }
     } else {
       this.container.style.left = left + "px";
       this.container.style.top = top + "px";
+    }
+
+    if (isTooltipVisible) {
+      return;
     }
 
     this.container.classList.add("tooltip-visible");
@@ -496,14 +506,28 @@ HTMLTooltip.prototype = {
     
     this._focusedElement = this.doc.activeElement;
 
-    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
-    this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
+    if (this.doc.defaultView) {
+      if (this.attachEventsTimer) {
+        this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+      }
+
       
-      this.topWindow = this._getTopWindow();
-      this.topWindow.addEventListener("click", this._onClick, true);
-      this.topWindow.addEventListener("mouseup", this._onMouseup, true);
-      this.emit("shown");
-    }, 0);
+      
+      
+      
+      
+      await new Promise(resolve => {
+        this.attachEventsTimer = this.doc.defaultView.setTimeout(() => {
+          
+          this.topWindow = this._getTopWindow();
+          this.topWindow.addEventListener("click", this._onClick, true);
+          this.topWindow.addEventListener("mouseup", this._onMouseup, true);
+          resolve();
+        }, 0);
+      });
+    }
+
+    this.emit("shown");
   },
 
   startTogglingOnHover(baseNode, targetNodeCb, options) {
@@ -512,27 +536,6 @@ HTMLTooltip.prototype = {
 
   stopTogglingOnHover() {
     this.toggle.stop();
-  },
-
-  
-
-
-
-
-
-  updateContainerBounds(anchor, options) {
-    if (!this.isVisible()) {
-      return;
-    }
-
-    const { left, top } = this._updateContainerBounds(anchor, options);
-
-    if (this.useXulWrapper) {
-      this._moveXulWrapperTo(left, top);
-    } else {
-      this.container.style.left = left + "px";
-      this.container.style.top = top + "px";
-    }
   },
 
   _updateContainerBounds(anchor, { position, x = 0, y = 0 } = {}) {
@@ -794,7 +797,10 @@ HTMLTooltip.prototype = {
       return;
     }
 
-    this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+    if (this.doc && this.doc.defaultView) {
+      this.doc.defaultView.clearTimeout(this.attachEventsTimer);
+    }
+
     
     
     if (fromMouseup) {
