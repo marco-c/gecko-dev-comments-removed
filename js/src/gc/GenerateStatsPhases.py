@@ -1,61 +1,61 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# flake8: noqa: F821
 
-# Generate graph structures for GC statistics recording.
-#
-# Stats phases are nested and form a directed acyclic graph starting
-# from a set of root phases. Importantly, a phase may appear under more
-# than one parent phase.
-#
-# For example, the following arrangement is possible:
-#
-#            +---+
-#            | A |
-#            +---+
-#              |
-#      +-------+-------+
-#      |       |       |
-#      v       v       v
-#    +---+   +---+   +---+
-#    | B |   | C |   | D |
-#    +---+   +---+   +---+
-#              |       |
-#              +---+---+
-#                  |
-#                  v
-#                +---+
-#                | E |
-#                +---+
-#
-# This graph is expanded into a tree (or really a forest) and phases
-# with multiple parents are duplicated.
-#
-# For example, the input example above would be expanded to:
-#
-#            +---+
-#            | A |
-#            +---+
-#              |
-#      +-------+-------+
-#      |       |       |
-#      v       v       v
-#    +---+   +---+   +---+
-#    | B |   | C |   | D |
-#    +---+   +---+   +---+
-#              |       |
-#              v       v
-#            +---+   +---+
-#            | E |   | E'|
-#            +---+   +---+
 
-# NOTE: If you add new phases here the current next phase kind number can be
-# found at the end of js/src/gc/StatsPhasesGenerated.inc
-# You must also update
-# toolkit/components/telemetry/other/GCTelemetry.jsm and
-# toolkit/components/telemetry/tests/browser/browser_TelemetryGC.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import re
 import collections
@@ -65,12 +65,12 @@ class PhaseKind():
     def __init__(self, name, descr, bucket, children=[]):
         self.name = name
         self.descr = descr
-        # For telemetry
+        
         self.bucket = bucket
         self.children = children
 
 
-# The root marking phase appears in several places in the graph.
+
 MarkRootsPhaseKind = PhaseKind("MARK_ROOTS", "Mark Roots", 48, [
     PhaseKind("MARK_CCWS", "Mark Cross Compartment Wrappers", 50),
     PhaseKind("MARK_STACK", "Mark C and JS stacks", 51),
@@ -192,9 +192,9 @@ PhaseKindGraphRoots = [
 
 
 def findAllPhaseKinds():
-    # Make a linear list of all unique phases by performing a depth first
-    # search on the phase graph starting at the roots.  This will be used to
-    # generate the PhaseKind enum.
+    
+    
+    
     phases = []
     seen = set()
 
@@ -215,8 +215,8 @@ AllPhaseKinds = findAllPhaseKinds()
 
 
 class Phase:
-    # Expand the DAG into a tree, duplicating phases which have more than
-    # one parent.
+    
+    
     def __init__(self, phaseKind, parent):
         self.phaseKind = phaseKind
         self.parent = parent
@@ -238,12 +238,12 @@ def expandPhases():
         ep = Phase(phaseKind, parent)
         phases.append(ep)
 
-        # Update list of expanded phases for this phase kind.
+        
         if phasesForKind[phaseKind]:
             phasesForKind[phaseKind][-1].nextInPhaseKind = ep
         phasesForKind[phaseKind].append(ep)
 
-        # Recurse over children.
+        
         for child in phaseKind.children:
             child_ep = traverse(child, ep)
             if ep.children:
@@ -259,8 +259,8 @@ def expandPhases():
 
 AllPhases, PhasesForPhaseKind = expandPhases()
 
-# Name phases based on phase kind name and index if there are multiple phases
-# corresponding to a single phase kind.
+
+
 
 for phaseKind in AllPhaseKinds:
     phases = PhasesForPhaseKind[phaseKind]
@@ -270,13 +270,13 @@ for phaseKind in AllPhaseKinds:
         for index, phase in enumerate(phases):
             phase.name = "%s_%d" % (phaseKind.name, index + 1)
 
-# Find the maximum phase nesting.
+
 MaxPhaseNesting = max(phase.depth for phase in AllPhases) + 1
 
-# And the maximum bucket number.
+
 MaxBucket = max(kind.bucket for kind in AllPhaseKinds)
 
-# Generate code.
+
 
 
 def writeList(out, items):
@@ -285,7 +285,7 @@ def writeList(out, items):
 
 
 def writeEnumClass(out, name, type, items, extraItems):
-    items = ["FIRST"] + items + ["LIMIT"] + extraItems
+    items = ["FIRST"] + list(items) + ["LIMIT"] + list(extraItems)
     items[1] += " = " + items[0]
     out.write("enum class %s : %s {\n" % (name, type))
     writeList(out, items)
@@ -293,9 +293,9 @@ def writeEnumClass(out, name, type, items, extraItems):
 
 
 def generateHeader(out):
-    #
-    # Generate PhaseKind enum.
-    #
+    
+    
+    
     phaseKindNames = map(lambda phaseKind: phaseKind.name, AllPhaseKinds)
     extraPhaseKinds = [
         "NONE = LIMIT",
@@ -305,9 +305,9 @@ def generateHeader(out):
     writeEnumClass(out, "PhaseKind", "uint8_t", phaseKindNames, extraPhaseKinds)
     out.write("\n")
 
-    #
-    # Generate Phase enum.
-    #
+    
+    
+    
     phaseNames = map(lambda phase: phase.name, AllPhases)
     extraPhases = [
         "NONE = LIMIT",
@@ -317,16 +317,16 @@ def generateHeader(out):
     writeEnumClass(out, "Phase", "uint8_t", phaseNames, extraPhases)
     out.write("\n")
 
-    #
-    # Generate MAX_PHASE_NESTING constant.
-    #
+    
+    
+    
     out.write("static const size_t MAX_PHASE_NESTING = %d;\n" % MaxPhaseNesting)
 
 
 def generateCpp(out):
-    #
-    # Generate the PhaseKindInfo table.
-    #
+    
+    
+    
     out.write("static constexpr PhaseKindTable phaseKinds = {\n")
     for phaseKind in AllPhaseKinds:
         phase = PhasesForPhaseKind[phaseKind][0]
@@ -335,9 +335,9 @@ def generateCpp(out):
     out.write("};\n")
     out.write("\n")
 
-    #
-    # Generate the PhaseInfo tree.
-    #
+    
+    
+    
     def name(phase):
         return "Phase::" + phase.name if phase else "Phase::NONE"
 
@@ -345,7 +345,7 @@ def generateCpp(out):
     for phase in AllPhases:
         firstChild = phase.children[0] if phase.children else None
         phaseKind = phase.phaseKind
-        out.write("    /* %s */ PhaseInfo { %s, %s, %s, %s, PhaseKind::%s, %d, \"%s\", \"%s\" },\n" %  # NOQA: E501
+        out.write("    /* %s */ PhaseInfo { %s, %s, %s, %s, PhaseKind::%s, %d, \"%s\", \"%s\" },\n" %  
                   (name(phase),
                    name(phase.parent),
                    name(firstChild),
@@ -357,9 +357,9 @@ def generateCpp(out):
                    phase.path))
     out.write("};\n")
 
-    #
-    # Print in a comment the next available phase kind number.
-    #
+    
+    
+    
     out.write("// The next available phase kind number is: %d\n" %
             (MaxBucket + 1))
 
