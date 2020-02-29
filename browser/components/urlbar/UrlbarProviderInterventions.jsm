@@ -5,6 +5,7 @@
 "use strict";
 
 var EXPORTED_SYMBOLS = ["UrlbarProviderInterventions", "QueryScorer"];
+var gGlobalScope = this;
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -679,7 +680,10 @@ class ProviderInterventions extends UrlbarProvider {
 
 
   resetAppUpdater() {
-    appUpdater = new AppUpdater();
+    
+    if (!Object.getOwnPropertyDescriptor(gGlobalScope, "appUpdater").get) {
+      appUpdater = new AppUpdater();
+    }
   }
 }
 

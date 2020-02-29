@@ -13,6 +13,7 @@
 
 
 
+
 "use strict";
 
 
@@ -25,7 +26,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ResetProfile: "resource://gre/modules/ResetProfile.jsm",
   UrlbarProviderInterventions:
     "resource:///modules/UrlbarProviderInterventions.jsm",
+  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.jsm",
+  SearchTestUtils: "resource://testing-common/SearchTestUtils.jsm",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
 });
 
@@ -344,4 +348,144 @@ function makeProfileResettable() {
       "Shouldn't be able to reset from mochitest's temporary profile once removed from the profile manager."
     );
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function checkIntervention({
+  searchString,
+  tip,
+  title,
+  button,
+  awaitCallback,
+} = {}) {
+  
+  
+  return BrowserTestUtils.withNewTab("about:blank", async () => {
+    
+    let [result, element] = await awaitTip(searchString);
+    Assert.strictEqual(result.payload.type, tip);
+    await element.ownerDocument.l10n.translateFragment(element);
+
+    let actualTitle = element._elements.get("title").textContent;
+    if (typeof title == "string") {
+      Assert.equal(actualTitle, title, "Title string");
+    } else {
+      
+      Assert.ok(title.test(actualTitle), "Title regexp");
+    }
+
+    let actualButton = element._elements.get("tipButton").textContent;
+    if (typeof button == "string") {
+      Assert.equal(actualButton, button, "Button string");
+    } else {
+      
+      Assert.ok(button.test(actualButton), "Button regexp");
+    }
+
+    Assert.ok(BrowserTestUtils.is_visible(element._elements.get("helpButton")));
+
+    let values = await Promise.all([awaitCallback(), pickTip()]);
+    Assert.ok(true, "Refresh dialog opened");
+
+    
+    await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
+
+    const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
+    TelemetryTestUtils.assertKeyedScalar(
+      scalars,
+      "urlbar.tips",
+      `${tip}-shown`,
+      1
+    );
+    TelemetryTestUtils.assertKeyedScalar(
+      scalars,
+      "urlbar.tips",
+      `${tip}-picked`,
+      1
+    );
+
+    return values[0] || null;
+  });
+}
+
+
+
+
+
+
+
+
+async function awaitNoTip(searchString, win = window) {
+  let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window: win,
+    value: searchString,
+    waitForFocus,
+    fireInputEvent: true,
+  });
+  for (let result of context.results) {
+    Assert.notEqual(result.type, UrlbarUtils.RESULT_TYPE.TIP);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+async function promiseAlertDialogOpen(buttonAction, uris, func) {
+  let win = await BrowserTestUtils.domWindowOpened(null, async aWindow => {
+    
+    
+    
+    await BrowserTestUtils.waitForEvent(aWindow, "load");
+
+    return uris.includes(aWindow.document.documentURI);
+  });
+
+  if (func) {
+    await func(win);
+    return win;
+  }
+
+  let dialog = win.document.querySelector("dialog");
+  dialog.getButton(buttonAction).click();
+
+  return win;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function promiseAlertDialog(buttonAction, uris, func) {
+  let win = await promiseAlertDialogOpen(buttonAction, uris, func);
+  return BrowserTestUtils.windowClosed(win);
 }
