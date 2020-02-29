@@ -820,11 +820,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
 
   
   
-  
   static nsAutoCString sDiscoveryPrePath;
-#ifdef ANDROID
-  static nsAutoCString sFxaSPrePath;
-#endif
   static bool recvdPrefValues = false;
   if (!recvdPrefValues) {
     nsAutoCString discoveryURLString;
@@ -837,16 +833,6 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     if (discoveryURL) {
       discoveryURL->GetPrePath(sDiscoveryPrePath);
     }
-#ifdef ANDROID
-    nsAutoCString fxaURLString;
-    Preferences::GetCString("identity.fxaccounts.remote.webchannel.uri",
-                            fxaURLString);
-    nsCOMPtr<nsIURI> fxaURL;
-    NS_NewURI(getter_AddRefs(fxaURL), fxaURLString);
-    if (fxaURL) {
-      fxaURL->GetPrePath(sFxaSPrePath);
-    }
-#endif
     recvdPrefValues = true;
   }
   nsAutoCString requestedPrePath;
@@ -855,11 +841,6 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   if (requestedPrePath.Equals(sDiscoveryPrePath)) {
     return NS_OK;
   }
-#ifdef ANDROID
-  if (requestedPrePath.Equals(sFxaSPrePath)) {
-    return NS_OK;
-  }
-#endif
   nsAutoCString requestedURL;
   finalURI->GetAsciiSpec(requestedURL);
   if (xpc::AreNonLocalConnectionsDisabled()) {
