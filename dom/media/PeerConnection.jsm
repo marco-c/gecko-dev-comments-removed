@@ -519,7 +519,7 @@ class RTCPeerConnection {
     this.makeGetterSetterEH("onidpvalidationerror");
 
     this._pc = new this._win.PeerConnectionImpl();
-    this._operationsChain = this._win.Promise.resolve();
+    this._operations = 0;
 
     this.__DOM_IMPL__._innerObject = this;
     const observer = new this._win.PeerConnectionObserver(this.__DOM_IMPL__);
@@ -586,20 +586,20 @@ class RTCPeerConnection {
   
 
   async _chain(func) {
-    let p = (async () => {
-      await this._operationsChain;
-      
-      
-      
-      
-      
+    const p = (async () => {
+      if (this._operations++) {
+        await this._operationsChain;
+      }
       if (this._closed) {
         return null;
       }
       return func();
     })();
     
-    this._operationsChain = p.catch(() => {});
+    this._operationsChain = p.then(
+      () => this._operations--,
+      () => this._operations--
+    );
     return p;
   }
 
@@ -1085,12 +1085,18 @@ class RTCPeerConnection {
     this._sanityCheckSdp(action, type, sdp);
 
     return this._chain(async () => {
-      await this._getPermission();
+      
+      
+      
+      
+      
+      const p = this._getPermission();
       await new Promise((resolve, reject) => {
         this._onSetDescriptionSuccess = resolve;
         this._onSetDescriptionFailure = reject;
         this._impl.setLocalDescription(action, sdp);
       });
+      await p;
       this._negotiationNeeded = false;
       if (type == "answer") {
         if (this._localUfragsToReplace.size > 0) {
@@ -1178,7 +1184,6 @@ class RTCPeerConnection {
 
     return this._chain(async () => {
       const haveSetRemote = (async () => {
-        await this._getPermission();
         if (type == "offer" && this.signalingState == "have-local-offer") {
           await new Promise((resolve, reject) => {
             this._onSetDescriptionSuccess = resolve;
@@ -1193,11 +1198,13 @@ class RTCPeerConnection {
           this._transceivers = this._transceivers.filter(t => !t.shouldRemove);
           this._updateCanTrickle();
         }
+        const p = this._getPermission();
         await new Promise((resolve, reject) => {
           this._onSetDescriptionSuccess = resolve;
           this._onSetDescriptionFailure = reject;
           this._impl.setRemoteDescription(action, sdp);
         });
+        await p;
         this._processTrackAdditionsAndRemovals();
         this._fireLegacyAddStreamEvents();
         this._transceivers = this._transceivers.filter(t => !t.shouldRemove);
