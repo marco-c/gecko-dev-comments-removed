@@ -2172,26 +2172,15 @@ SearchService.prototype = {
       var i = 0;
       var prefName;
 
-      
-      const originalDefault = this.originalDefaultEngine;
-      if (originalDefault) {
-        this.__sortedEngines.push(originalDefault);
-        addedEngines[originalDefault.name] = originalDefault;
-      }
-
-      
-      
-      const originalPrivateDefault = this.originalPrivateDefaultEngine;
-      if (originalPrivateDefault && originalPrivateDefault != originalDefault) {
-        this.__sortedEngines.push(originalPrivateDefault);
-        addedEngines[originalPrivateDefault.name] = originalPrivateDefault;
-      }
-
       if (SearchUtils.distroID) {
         try {
           var extras = Services.prefs.getChildList(
             SearchUtils.BROWSER_SEARCH_PREF + "order.extra."
           );
+
+          
+          
+          extras.sort();
 
           for (prefName of extras) {
             let engineName = Services.prefs.getCharPref(prefName);
@@ -2221,6 +2210,25 @@ SearchService.prototype = {
           this.__sortedEngines.push(engine);
           addedEngines[engine.name] = engine;
         }
+      }
+
+      
+      const originalDefault = this.originalDefaultEngine;
+      if (originalDefault && !(originalDefault.name in addedEngines)) {
+        this.__sortedEngines.push(originalDefault);
+        addedEngines[originalDefault.name] = originalDefault;
+      }
+
+      
+      
+      const originalPrivateDefault = this.originalPrivateDefaultEngine;
+      if (
+        originalPrivateDefault &&
+        originalPrivateDefault != originalDefault &&
+        !(originalPrivateDefault.name in addedEngines)
+      ) {
+        this.__sortedEngines.push(originalPrivateDefault);
+        addedEngines[originalPrivateDefault.name] = originalPrivateDefault;
       }
 
       if (gModernConfig) {
