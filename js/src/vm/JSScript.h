@@ -2622,6 +2622,16 @@ class JSScript : public js::BaseScript {
     return scope->as<js::FunctionScope>().hasParameterExprs();
   }
 
+  bool functionAllowsParameterRedeclaration() const {
+    
+    
+    
+    
+    
+    
+    return hasMappedArgsObj();
+  }
+
   
   
   
