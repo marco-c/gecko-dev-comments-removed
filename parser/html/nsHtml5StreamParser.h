@@ -6,12 +6,12 @@
 #ifndef nsHtml5StreamParser_h
 #define nsHtml5StreamParser_h
 
+#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsHtml5MetaScanner.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/EncodingDetector.h"
 #include "mozilla/JapaneseDetector.h"
-#include "mozilla/UniquePtr.h"
 #include "nsHtml5TreeOpExecutor.h"
 #include "nsHtml5OwningUTF16Buffer.h"
 #include "nsIInputStream.h"
@@ -429,7 +429,7 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  mozilla::UniquePtr<nsHtml5MetaScanner> mMetaScanner;
+  nsAutoPtr<nsHtml5MetaScanner> mMetaScanner;
 
   
   
@@ -484,12 +484,12 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  mozilla::UniquePtr<nsHtml5TreeBuilder> mTreeBuilder;
+  nsAutoPtr<nsHtml5TreeBuilder> mTreeBuilder;
 
   
 
 
-  mozilla::UniquePtr<nsHtml5Tokenizer> mTokenizer;
+  nsAutoPtr<nsHtml5Tokenizer> mTokenizer;
 
   
 
@@ -533,7 +533,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  nsTArray<mozilla::UniquePtr<nsHtml5Speculation>> mSpeculations;
+  nsTArray<nsAutoPtr<nsHtml5Speculation>> mSpeculations;
   mozilla::Mutex mSpeculationMutex;
 
   
