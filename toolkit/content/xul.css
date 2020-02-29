@@ -383,7 +383,8 @@ stack {
   position: relative;
 }
 
-stack > *|* {
+
+stack > *|*:not(:-moz-native-anonymous) {
   grid-area: 1 / 1;
   z-index: 0;
 
