@@ -559,8 +559,6 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 
 
 
-
-
 #define FOR_EACH_PARSENODE_SUBCLASS(MACRO)                                   \
   MACRO(BinaryNode, BinaryNodeType, asBinary)                                \
   MACRO(AssignmentNode, AssignmentNodeType, asAssignment)                    \
