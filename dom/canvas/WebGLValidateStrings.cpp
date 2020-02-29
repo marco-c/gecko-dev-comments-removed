@@ -1,93 +1,83 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebGLValidateStrings.h"
 
-#include "WebGLContext.h"
-
 #include <regex>
+
+#include "WebGLTypes.h"
 
 namespace mozilla {
 
+/* GLSL ES 3.00 p17:
+  - Comments are delimited by / * and * /, or by // and a newline.
 
+  - '//' style comments include the initial '//' marker and continue up to, but
+not including, the terminating newline.
 
+  - '/ * ... * /' comments include both the start and end marker.
 
+  - The begin comment delimiters (/ * or //) are not recognized as comment
+delimiters inside of a comment, hence comments cannot be nested.
 
-
-
-
-
-
-
-
-
-
-
-
-
+  - Comments are treated syntactically as a single space.
+*/
 
 std::string CommentsToSpaces(const std::string& src) {
+  constexpr auto flags = std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize;
 
-
-
-
-
-
-
-#define LINE_COMMENT "//(?:[^]*?[^\\\\])??\n"
-
-
-#define BLOCK_COMMENT "/[*][^]*?[*]/"
-
-  static const std::regex COMMENT_RE(
-      "(?:" LINE_COMMENT ")|(?:" BLOCK_COMMENT ")",
-      std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize);
-
-#undef LINE_COMMENT
-#undef BLOCK_COMMENT
-
-  static const std::regex TRAILING_RE("/[*/]", std::regex::ECMAScript |
-                                                   std::regex::nosubs |
-                                                   std::regex::optimize);
+  static const auto RE_COMMENT_BEGIN = std::regex("/[*/]", flags);
+  static const auto RE_LINE_COMMENT_END = std::regex(R"([^\\]\n)", flags);
+  static const auto RE_BLOCK_COMMENT_END = std::regex(R"(\*/)", flags);
 
   std::string ret;
   ret.reserve(src.size());
 
+  // Replace all comments with block comments with the right number of newlines.
+  // Line positions may be off, but line numbers will be accurate, which is more important.
+
   auto itr = src.begin();
-  auto end = src.end();
+  const auto end = src.end();
   std::smatch match;
-  while (std::regex_search(itr, end, match, COMMENT_RE)) {
-    const auto matchBegin = itr + match.position();
-    const auto matchEnd = matchBegin + match.length();
-    ret.append(itr, matchBegin);
-    for (itr = matchBegin; itr != matchEnd; ++itr) {
-      auto cur = *itr;
-      switch (cur) {
-        case '/':
-        case '*':
-        case '\n':
-        case '\\':
-          break;
-        default:
-          cur = ' ';
-          break;
+  while (std::regex_search(itr, end, match, RE_COMMENT_BEGIN)) {
+    MOZ_ASSERT(match.length() == 2);
+    const auto commentBegin = itr + match.position();
+    ret.append(itr, commentBegin);
+
+    itr = commentBegin + match.length();
+
+    const bool isBlockComment = (*(commentBegin + 1) == '*');
+    const auto* endRegex = &RE_LINE_COMMENT_END;
+    if (isBlockComment) {
+      endRegex = &RE_BLOCK_COMMENT_END;
+    }
+
+    if (isBlockComment) {
+      ret += "/*";
+    }
+
+    const bool isTerminated = std::regex_search(itr, end, match, *endRegex);
+    if (!isTerminated) return ret;
+
+    const auto commentEnd = itr + match.position() + match.length();
+    for (; itr != commentEnd; ++itr) {
+      const auto cur = *itr;
+      if (cur == '\n') {
+        ret += cur;
       }
-      ret += cur;
+    }
+    if (isBlockComment) {
+      ret += "*/";
     }
   }
 
-  
-  
-  if (std::regex_search(itr, end, match, TRAILING_RE)) {
-    end = itr + match.position();
-  }
   ret.append(itr, end);
   return ret;
 }
 
-
+////////////////////////////////////////////////////////////////////////////////
 
 static bool IsValidGLSLChar(const char c) {
   if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
@@ -134,7 +124,7 @@ static bool IsValidGLSLChar(const char c) {
   }
 }
 
-
+////
 
 Maybe<char> CheckGLSLPreprocString(const bool webgl2,
                                    const std::string& string) {
@@ -179,4 +169,4 @@ Maybe<webgl::ErrorInfo> CheckGLSLVariableName(const bool webgl2,
   return {};
 }
 
-}  
+}  // namespace mozilla
