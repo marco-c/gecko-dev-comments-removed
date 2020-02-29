@@ -4643,7 +4643,8 @@ bool jit::AnalyzeArgumentsUsage(JSContext* cx, JSScript* scriptArg) {
   
   
   
-  if (!script->hasMappedArgsObj() && script->jitScript()->modifiesArguments()) {
+  if (!script->hasMappedArgsObj() && script->jitScript()->modifiesArguments() &&
+      argumentsContentsObserved) {
     return true;
   }
 
