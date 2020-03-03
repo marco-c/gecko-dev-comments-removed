@@ -75,6 +75,21 @@ async function waitUntil(condition, message) {
 
 
 
+
+
+
+
+function getElementByLabel(document, label) {
+  return waitUntil(
+    () => document.querySelector(`[label="${label}"]`),
+    `Trying to find the button with the label "${label}".`
+  );
+}
+
+
+
+
+
 function getElementByXPath(document, path) {
   return document.evaluate(
     path,
@@ -83,27 +98,6 @@ function getElementByXPath(document, path) {
     XPathResult.FIRST_ORDERED_NODE_TYPE,
     null
   ).singleNodeValue;
-}
-
-
-
-
-
-
-
-
-
-
-
-async function getElementFromPopupByText(text) {
-  const xpath = `//*[contains(text(), '${text}')]`;
-  return waitUntil(() => {
-    const iframe = document.getElementById("PanelUI-profilerIframe");
-    if (iframe) {
-      return getElementByXPath(iframe.contentDocument, xpath);
-    }
-    return null;
-  }, `Trying to find the element with the text "${text}".`);
 }
 
 
@@ -128,10 +122,12 @@ async function getElementFromDocumentByText(document, text) {
 
 
 
-function maybeGetElementFromPopupByText(text) {
+
+
+function maybeGetElementFromDocumentByText(document, text) {
   info(`Immediately trying to find the element with the text "${text}".`);
   const xpath = `//*[contains(text(), '${text}')]`;
-  return getElementByXPath(getIframeDocument(), xpath);
+  return getElementByXPath(document, xpath);
 }
 
 
@@ -190,7 +186,8 @@ async function makeSureProfilerPopupIsEnabled() {
 
 
 
-function toggleOpenProfilerPopup() {
+
+async function toggleOpenProfilerPopup() {
   info("Toggle open the profiler popup.");
 
   info("> Find the profiler menu button.");
@@ -201,6 +198,7 @@ function toggleOpenProfilerPopup() {
 
   info("> Trigger a click on the profiler menu button.");
   profilerButton.click();
+  await tick();
 }
 
 
@@ -322,7 +320,7 @@ async function closePopup() {
 
 
 
-function openAboutProfiling(callback) {
+function withAboutProfiling(callback) {
   info("Begin to open about:profiling in a new tab.");
   return BrowserTestUtils.withNewTab(
     "about:profiling",

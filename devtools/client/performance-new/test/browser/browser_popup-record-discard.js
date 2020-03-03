@@ -1,0 +1,34 @@
+
+
+
+
+"use strict";
+
+add_task(async function test() {
+  info("Test that the profiler popup recording can be discarded.");
+  await setProfilerFrontendUrl(
+    "http://example.com/browser/devtools/client/performance-new/test/browser/fake-frontend.html"
+  );
+  await makeSureProfilerPopupIsEnabled();
+  await toggleOpenProfilerPopup();
+
+  {
+    const button = await getElementByLabel(document, "Start Recording");
+    info("Click the button to start recording.");
+    button.click();
+  }
+
+  {
+    const button = await getElementByLabel(document, "Discard");
+    info("Click the button to discard the recording.");
+    button.click();
+  }
+
+  {
+    const button = await getElementByLabel(document, "Start Recording");
+    ok(
+      Boolean(button),
+      "The popup reverted back to be able to start recording again"
+    );
+  }
+});
