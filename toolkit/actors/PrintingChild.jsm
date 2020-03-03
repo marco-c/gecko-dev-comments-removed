@@ -381,6 +381,9 @@ class PrintingChild extends ActorChild {
 
   print(contentWindow, simplifiedMode, defaultPrinterName) {
     let printSettings = this.getPrintSettings(defaultPrinterName);
+    
+    
+    printSettings.title = contentWindow.document.title;
     let printCancelled = false;
 
     
