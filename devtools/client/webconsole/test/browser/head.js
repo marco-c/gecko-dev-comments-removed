@@ -1340,6 +1340,50 @@ function getAutocompletePopupLabels(popup) {
 
 
 
+
+function hasExactPopupLabels(popup, expected) {
+  return hasPopupLabels(popup, expected, true);
+}
+
+
+
+
+
+
+
+
+function hasPopupLabel(popup, label) {
+  return hasPopupLabels(popup, [label]);
+}
+
+
+
+
+
+
+
+
+function hasPopupLabels(popup, expectedLabels, checkAll = false) {
+  const autocompleteLabels = getAutocompletePopupLabels(popup);
+  if (checkAll) {
+    return (
+      autocompleteLabels.length === expectedLabels.length &&
+      autocompleteLabels.every((autoLabel, idx) => {
+        return expectedLabels.indexOf(autoLabel) === idx;
+      })
+    );
+  }
+  return expectedLabels.every(expectedLabel => {
+    return autocompleteLabels.includes(expectedLabel);
+  });
+}
+
+
+
+
+
+
+
 function getConfirmDialog(toolbox) {
   const { doc } = toolbox;
   return doc.querySelector(".invoke-confirm");
