@@ -5,6 +5,7 @@
 
 "use strict";
 
+const Debugger = require("Debugger");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 loader.lazyRequireGetter(
@@ -162,7 +163,7 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   );
 
   if (options.eager) {
-    allowSideEffects(dbg, sideEffectData);
+    allowSideEffects(sideEffectData);
   }
 
   
@@ -268,14 +269,14 @@ function preventSideEffects(dbg) {
     throw new Error("Debugger has hook installed");
   }
 
-  const data = {
-    executedScripts: new Set(),
-    debuggees: dbg.getDebuggees(),
-
-    handler: {
-      hit: () => null,
-    },
-  };
+  
+  
+  
+  
+  const newDbg = new Debugger();
+  for (const debuggee of dbg.getDebuggees()) {
+    newDbg.addDebuggee(debuggee.unsafeDereference());
+  }
 
   
   
@@ -290,7 +291,12 @@ function preventSideEffects(dbg) {
     return ++count % 100 === 0 && Date.now() > endTime;
   }
 
-  dbg.onEnterFrame = frame => {
+  const executedScripts = new Set();
+  const handler = {
+    hit: () => null,
+  };
+
+  newDbg.onEnterFrame = frame => {
     if (shouldCancel()) {
       return null;
     }
@@ -303,19 +309,22 @@ function preventSideEffects(dbg) {
 
     const script = frame.script;
 
-    if (data.executedScripts.has(script)) {
+    if (executedScripts.has(script)) {
       return undefined;
     }
-    data.executedScripts.add(script);
+    executedScripts.add(script);
 
     const offsets = script.getEffectfulOffsets();
     for (const offset of offsets) {
-      script.setBreakpoint(offset, data.handler);
+      script.setBreakpoint(offset, handler);
     }
 
     return undefined;
   };
 
+  
+  
+  
   dbg.onNativeCall = (callee, reason) => {
     
     
@@ -330,22 +339,15 @@ function preventSideEffects(dbg) {
     return null;
   };
 
-  return data;
+  return {
+    dbg,
+    newDbg,
+  };
 }
 
-function allowSideEffects(dbg, data) {
-  for (const script of data.executedScripts) {
-    script.clearBreakpoint(data.handler);
-  }
-
-  for (const global of dbg.getDebuggees()) {
-    if (!data.debuggees.includes(global)) {
-      dbg.removeDebuggee(global);
-    }
-  }
-
-  dbg.onEnterFrame = undefined;
-  dbg.onNativeCall = undefined;
+function allowSideEffects(data) {
+  data.dbg.onNativeCall = undefined;
+  data.newDbg.removeAllDebuggees();
 }
 
 
