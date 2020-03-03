@@ -2276,11 +2276,7 @@ pref("devtools.aboutdebugging.collapsibilities.temporaryExtension", false);
 
 pref("devtools.debugger.features.map-await-expression", true);
 
-#ifdef NIGHTLY_BUILD
 pref("devtools.debugger.features.async-live-stacks", true);
-#else
-pref("devtools.debugger.features.async-live-stacks", false);
-#endif
 
 
 
