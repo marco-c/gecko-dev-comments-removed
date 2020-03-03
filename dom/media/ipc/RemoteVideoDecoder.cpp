@@ -342,17 +342,25 @@ MediaResult RemoteVideoDecoderParent::ProcessDecodedData(
                                                            mKnowsCompositor);
       }
 
-      if (texture && !texture->IsAddedToCompositableClient()) {
-        texture->InitIPDLActor(mKnowsCompositor);
-        texture->SetAddedToCompositableClient();
-      }
       if (texture) {
+        if (!texture->IsAddedToCompositableClient()) {
+          texture->InitIPDLActor(mKnowsCompositor);
+          texture->SetAddedToCompositableClient();
+        }
         sd = mParent->StoreImage(video->mImage, texture);
         size = texture->GetSize();
       }
-    } else {
-      PlanarYCbCrImage* image =
-          static_cast<PlanarYCbCrImage*>(video->mImage.get());
+    }
+
+    
+    
+    if (!IsSurfaceDescriptorValid(sd)) {
+      PlanarYCbCrImage* image = video->mImage->AsPlanarYCbCrImage();
+      if (!image) {
+        return MediaResult(NS_ERROR_UNEXPECTED,
+                           "Expected Planar YCbCr image in "
+                           "RemoteVideoDecoderParent::ProcessDecodedData");
+      }
 
       SurfaceDescriptorBuffer sdBuffer;
       ShmemBuffer buffer = AllocateBuffer(image->GetDataSize());
