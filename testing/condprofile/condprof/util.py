@@ -14,14 +14,14 @@ import shutil
 import contextlib
 import yaml
 from subprocess import Popen, PIPE
-import traceback
 import sys
 import tempfile
-from datetime import datetime
 
 import requests
 from requests.exceptions import ConnectionError
 from requests.packages.urllib3.util.retry import Retry
+
+import mozlog
 
 from condprof import progress
 
@@ -50,76 +50,84 @@ DEFAULT_PREFS = {
 DEFAULT_CUSTOMIZATION = os.path.join(
     os.path.dirname(__file__), "customization", "default.json"
 )
+STRUCTLOG_PAD_SIZE = 20
 
-_LOGGER = None
 
+class BridgeLogger:
+    def __init__(self, logger):
+        self.logger = logger
 
-class NullLogger:
-    def info(self, *args, **kw):
+    def _find(self, text, *names):
         
+        for name in names:
+            if name + " " * STRUCTLOG_PAD_SIZE in text:
+                return True
+        return False
+
+    def _convert(self, message):
+        return obfuscate(message)[1]
+
+    def info(self, message, *args, **kw):
+        if not isinstance(message, str):
+            message = str(message)
         
-        pass
+        if self._find(message, "request", "response"):
+            self.logger.debug(self._convert(message), *args, **kw)
+        else:
+            self.logger.info(self._convert(message), *args, **kw)
 
-    def visit_url(self, index, total, url):
-        print("%d/%d %s" % (index, total, url))
+    def error(self, message, *args, **kw):
+        self.logger.error(self._convert(message), *args, **kw)
 
-    def msg(self, event):
-        print(event)
-
-    def error(self, event, *args, **kw):
-        print(event)
-        traceback.print_exc(file=sys.stdout)
+    def warning(self, message, *args, **kw):
+        self.logger.warning(self._convert(message), *args, **kw)
 
 
-def _get_logger():
-    global _LOGGER
-    if _LOGGER is not None:
-        return _LOGGER
+logger = None
 
+
+def get_logger():
+    global logger
+    if logger is not None:
+        return logger
+    new_logger = mozlog.get_default_logger("condprof")
+    if new_logger is None:
+        new_logger = mozlog.unstructured.getLogger("condprof")
+
+    
+    new_logger = BridgeLogger(new_logger)
+
+    
     if sys.version_info.major == 3:
-        
-        try:
-            from arsenic import connection
-            from structlog import wrap_logger
+        from arsenic import connection
+        from structlog import wrap_logger
 
-            logger = wrap_logger(NullLogger(), processors=[])
-            connection.log = logger
-        except ImportError:
-            logger = NullLogger()
-    else:
-        
-        logger = NullLogger()
+        connection.log = wrap_logger(new_logger)
 
-    _LOGGER = logger
-    return _LOGGER
+    logger = new_logger
+    return logger
 
 
-def LOG(msg):
-    msg = "[%s] %s" % (datetime.now().isoformat(), msg)
-    _get_logger().msg(obfuscate(msg)[1])
 
-
-def ERROR(msg):
-    msg = "[%s] %s" % (datetime.now().isoformat(), msg)
-    _get_logger().error(obfuscate(msg)[1])
+get_logger()
 
 
 def fresh_profile(profile, customization_data):
     from mozprofile import create_profile  
 
     
-    LOG("Creating a fresh profile")
+    logger.info("Creating a fresh profile")
     new_profile = create_profile(app="firefox")
     prefs = customization_data["prefs"]
     prefs.update(DEFAULT_PREFS)
-    LOG("Setting prefs %s" % str(prefs.items()))
+    logger.info("Setting prefs %s" % str(prefs.items()))
     new_profile.set_preferences(prefs)
     extensions = []
     for name, url in customization_data["addons"].items():
-        LOG("Downloading addon %s" % name)
+        logger.info("Downloading addon %s" % name)
         extension = download_file(url)
         extensions.append(extension)
-    LOG("Installing addons")
+    logger.info("Installing addons")
     new_profile.addons.install(extensions, unpack=True)
     new_profile.addons.install(extensions)
     shutil.copytree(new_profile.profile, profile)
@@ -175,7 +183,7 @@ def check_exists(archive, server=None):
 def download_file(url, target=None):
     present, headers = check_exists(url)
     if not present:
-        LOG("Cannot find %r" % url)
+        logger.info("Cannot find %r" % url)
         raise ArchiveNotFound(url)
 
     etag = headers.get("ETag")
@@ -190,18 +198,20 @@ def download_file(url, target=None):
         with open(target + ".etag") as f:
             current_etag = f.read()
         if etag == current_etag:
-            LOG("Already Downloaded.")
+            logger.info("Already Downloaded.")
             
             return target
         else:
-            LOG("Changed!")
+            logger.info("Changed!")
 
-    LOG("Downloading %s" % url)
+    logger.info("Downloading %s" % url)
     req = requests.get(url, stream=True)
     total_length = int(req.headers.get("content-length"))
     target_dir = os.path.dirname(target)
     if target_dir != "" and not os.path.exists(target_dir):
+        logger.info("Creating dir %s" % target_dir)
         os.makedirs(target_dir)
+
     with open(target, "wb") as f:
         if TASK_CLUSTER:
             for chunk in req.iter_content(chunk_size=1024):
@@ -249,7 +259,7 @@ def latest_nightly(binary=None):
     if binary is None:
         
         nightly_archive = get_firefox_download_link()
-        LOG("Downloading %s" % nightly_archive)
+        logger.info("Downloading %s" % nightly_archive)
         target = download_file(nightly_archive)
         
         
@@ -274,7 +284,7 @@ def latest_nightly(binary=None):
         
         if mounted:
             if platform.system() == "Darwin":
-                LOG("Unmounting Firefox")
+                logger.info("Unmounting Firefox")
                 time.sleep(10)
                 os.system("hdiutil detach /Volumes/Nightly")
             elif platform.system() == "Linux":
@@ -283,12 +293,12 @@ def latest_nightly(binary=None):
 
 
 def write_yml_file(yml_file, yml_data):
-    LOG("writing %s to %s" % (yml_data, yml_file))
+    logger.info("writing %s to %s" % (yml_data, yml_file))
     try:
         with open(yml_file, "w") as outfile:
             yaml.dump(yml_data, outfile, default_flow_style=False)
-    except Exception as e:
-        ERROR("failed to write yaml file, exeption: %s" % e)
+    except Exception:
+        logger.error("failed to write yaml file", exc_info=True)
 
 
 def get_version(firefox):
