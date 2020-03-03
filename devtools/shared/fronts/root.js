@@ -229,14 +229,19 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     return this.getProcess(0);
   }
 
+  
+
+
+
+
+
   async getProcess(id) {
     const { form, processDescriptor } = await super.getProcess(id);
     
     
     
     
-    const processDescriptorFront = processDescriptor || form;
-    return processDescriptorFront.getTarget();
+    return processDescriptor || form;
   }
 
   

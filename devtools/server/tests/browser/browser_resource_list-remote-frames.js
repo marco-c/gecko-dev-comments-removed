@@ -44,7 +44,8 @@ async function testBrowserListFrames(tabTarget) {
   
   
   
-  const target = await tabTarget.client.mainRoot.getMainProcess();
+  const targetDescriptor = await tabTarget.client.mainRoot.getMainProcess();
+  const target = await targetDescriptor.getTarget();
   await getFrames(target, tabTarget);
 }
 

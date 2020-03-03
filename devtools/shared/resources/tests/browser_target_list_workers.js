@@ -35,7 +35,8 @@ async function testBrowserWorkers(mainRoot) {
   
   const worker = new Worker(CHROME_WORKER_URL);
 
-  const target = await mainRoot.getMainProcess();
+  const targetDescriptor = await mainRoot.getMainProcess();
+  const target = await targetDescriptor.getTarget();
   const targetList = new TargetList(mainRoot, target);
   await targetList.startListening();
 
