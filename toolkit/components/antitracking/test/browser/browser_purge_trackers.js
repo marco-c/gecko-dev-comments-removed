@@ -91,6 +91,9 @@ add_task(async function() {
   );
 
   
+  SiteDataTestUtils.addToCookies("https://example.com");
+
+  
   Services.cookies.add(
     uri.host,
     uri.pathQueryRef,
