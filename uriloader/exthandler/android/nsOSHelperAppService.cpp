@@ -37,7 +37,8 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char* aScheme,
   
   
   nsAutoCString scheme(aScheme);
-  *aExists = scheme.Equals(NS_LITERAL_CSTRING("intent"));
+  *aExists = !scheme.Equals(NS_LITERAL_CSTRING("unsupported")) &&
+             !scheme.Equals(NS_LITERAL_CSTRING("unknownextproto"));
   return NS_OK;
 }
 
