@@ -77,7 +77,11 @@ add_task(async function test_remotetab_opens() {
   await BrowserTestUtils.withNewTab(
     { url: "about:robots", gBrowser },
     async function() {
-      await promiseAutocompleteResultPopup("Test Remote");
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        waitForFocus: SimpleTest.waitForFocus,
+        value: "Test Remote",
+      });
 
       
       

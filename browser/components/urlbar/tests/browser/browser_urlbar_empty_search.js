@@ -28,7 +28,12 @@ add_task(async function test_setup() {
 
 add_task(async function test_empty() {
   info("Test searching for nothing");
-  await promiseAutocompleteResultPopup("", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "",
+    fireInputEvent: true,
+  });
   
   
   let results = [{}]; 
@@ -41,7 +46,12 @@ add_task(async function test_empty() {
 
   for (let str of [" ", "  "]) {
     info(`Test searching for "${str}"`);
-    await promiseAutocompleteResultPopup(str, window, true);
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      waitForFocus: SimpleTest.waitForFocus,
+      value: str,
+      fireInputEvent: true,
+    });
     
     Assert.ok(
       (await UrlbarTestUtils.getDetailsOfResultAt(window, 0)).heuristic,
@@ -61,7 +71,12 @@ add_task(async function test_empty() {
 
 add_task(async function test_backspace_empty() {
   info("Testing that deleting the input value via backspace closes the popup");
-  await promiseAutocompleteResultPopup(" ", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: " ",
+    fireInputEvent: true,
+  });
   await UrlbarTestUtils.promisePopupClose(window, () => {
     EventUtils.synthesizeKey("KEY_Backspace");
   });

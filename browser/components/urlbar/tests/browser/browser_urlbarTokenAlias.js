@@ -40,8 +40,8 @@ add_task(async function testRevert() {
 
 add_task(async function spacesBeforeAlias() {
   gURLBar.search("     " + ALIAS);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -52,8 +52,8 @@ add_task(async function spacesBeforeAlias() {
 
 add_task(async function charsBeforeAlias() {
   gURLBar.search("not an alias " + ALIAS);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(false);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -65,8 +65,8 @@ add_task(async function charsBeforeAlias() {
 
 add_task(async function restrictionCharBeforeAlias() {
   gURLBar.search(UrlbarTokenizer.RESTRICT.BOOKMARK + " " + ALIAS);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(false);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -80,8 +80,8 @@ add_task(async function restrictionCharBeforeAlias() {
 add_task(async function aliasCase() {
   let alias = "@TeSt";
   gURLBar.search(alias);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true, alias);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -99,8 +99,8 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   
   let searchString = `${ALIAS} aaa`;
   gURLBar.search(searchString);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -120,8 +120,8 @@ add_task(async function inputDoesntMatchHeuristicResult() {
   
   searchString = `${ALIAS} bbb`;
   gURLBar.search(searchString);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -170,8 +170,11 @@ add_task(async function nonHeuristicAliases() {
   
   
   gURLBar.search("@");
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(tokenEngines.length - 1);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(
+    window,
+    tokenEngines.length - 1
+  );
   
   
   for (let { tokenAliases } of tokenEngines) {
@@ -193,8 +196,8 @@ add_task(async function nonTokenAlias() {
   Assert.equal(engine.alias, alias);
 
   gURLBar.search(alias);
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertFirstResultIsAlias(true, alias);
   assertHighlighted(false);
 
@@ -210,7 +213,7 @@ add_task(async function nonTokenAlias() {
 add_task(async function clickAndFillAlias() {
   
   gURLBar.search("@");
-  await promiseSearchComplete();
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   
   
@@ -218,7 +221,10 @@ add_task(async function clickAndFillAlias() {
   for (let i = 0; !testEngineItem; i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     if (details.searchParams && details.searchParams.keyword == ALIAS) {
-      testEngineItem = await waitForAutocompleteResultAt(i);
+      testEngineItem = await UrlbarTestUtils.waitForAutocompleteResultAt(
+        window,
+        i
+      );
     }
   }
 
@@ -226,8 +232,8 @@ add_task(async function clickAndFillAlias() {
   EventUtils.synthesizeMouseAtCenter(testEngineItem, {});
 
   
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true);
 
   
@@ -240,8 +246,8 @@ add_task(async function clickAndFillAlias() {
   
   for (let i = 0; i < 2; i++) {
     EventUtils.synthesizeKey("KEY_Enter");
-    await promiseSearchComplete();
-    await waitForAutocompleteResultAt(0);
+    await UrlbarTestUtils.promiseSearchComplete(window);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
     await assertAlias(true);
     Assert.equal(gURLBar.value, `${ALIAS} `);
   }
@@ -256,7 +262,7 @@ add_task(async function clickAndFillAlias() {
 add_task(async function enterAndFillAlias() {
   
   gURLBar.search("@");
-  await promiseSearchComplete();
+  await UrlbarTestUtils.promiseSearchComplete(window);
 
   
   
@@ -274,8 +280,8 @@ add_task(async function enterAndFillAlias() {
   EventUtils.synthesizeKey("KEY_Enter");
 
   
-  await promiseSearchComplete();
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.promiseSearchComplete(window);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(true);
 
   
@@ -288,8 +294,8 @@ add_task(async function enterAndFillAlias() {
   
   for (let i = 0; i < 2; i++) {
     EventUtils.synthesizeKey("KEY_Enter");
-    await promiseSearchComplete();
-    await waitForAutocompleteResultAt(0);
+    await UrlbarTestUtils.promiseSearchComplete(window);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
     await assertAlias(true);
     Assert.equal(gURLBar.value, `${ALIAS} `);
   }
@@ -311,11 +317,11 @@ add_task(async function enterAutofillsAlias() {
       selectionStart: value.length,
       selectionEnd: value.length,
     });
-    await waitForAutocompleteResultAt(0);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
 
     
     EventUtils.synthesizeKey("KEY_Enter");
-    await waitForAutocompleteResultAt(0);
+    await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
 
     
     
@@ -338,12 +344,13 @@ async function doSimpleTest(revertBetweenSteps) {
   });
 
   
-  await promiseAutocompleteResultPopup(
-    ALIAS.substr(0, ALIAS.length - 1),
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    true
-  );
-  await waitForAutocompleteResultAt(0);
+    waitForFocus: SimpleTest.waitForFocus,
+    value: ALIAS.substr(0, ALIAS.length - 1),
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(false);
 
   if (revertBetweenSteps) {
@@ -352,42 +359,58 @@ async function doSimpleTest(revertBetweenSteps) {
   }
 
   
-  await promiseAutocompleteResultPopup(ALIAS, window, true);
-  await waitForAutocompleteResultAt(0);
-  await assertAlias(true);
-
-  if (revertBetweenSteps) {
-    gURLBar.handleRevert();
-    gURLBar.blur();
-  }
-
-  
-  await promiseAutocompleteResultPopup(ALIAS + " foo", window, true);
-  await waitForAutocompleteResultAt(0);
-  await assertAlias(true);
-
-  if (revertBetweenSteps) {
-    gURLBar.handleRevert();
-    gURLBar.blur();
-  }
-
-  
-  await promiseAutocompleteResultPopup(ALIAS, window, true);
-  await waitForAutocompleteResultAt(0);
-  await assertAlias(true);
-
-  if (revertBetweenSteps) {
-    gURLBar.handleRevert();
-    gURLBar.blur();
-  }
-
-  
-  await promiseAutocompleteResultPopup(
-    ALIAS.substr(0, ALIAS.length - 1),
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
-    true
-  );
-  await waitForAutocompleteResultAt(0);
+    waitForFocus: SimpleTest.waitForFocus,
+    value: ALIAS,
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
+  if (revertBetweenSteps) {
+    gURLBar.handleRevert();
+    gURLBar.blur();
+  }
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: ALIAS + " foo",
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
+  if (revertBetweenSteps) {
+    gURLBar.handleRevert();
+    gURLBar.blur();
+  }
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: ALIAS,
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
+  await assertAlias(true);
+
+  if (revertBetweenSteps) {
+    gURLBar.handleRevert();
+    gURLBar.blur();
+  }
+
+  
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: ALIAS.substr(0, ALIAS.length - 1),
+    fireInputEvent: true,
+  });
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
   await assertAlias(false);
 
   await UrlbarTestUtils.promisePopupClose(window, () =>
@@ -450,7 +473,12 @@ function assertHighlighted(highlighted, expectedAlias) {
 
 
 add_task(async function hiddenEngine() {
-  await promiseAutocompleteResultPopup("@", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "@",
+    fireInputEvent: true,
+  });
 
   const defaultEngine = await Services.search.getDefault();
 
@@ -473,7 +501,12 @@ add_task(async function hiddenEngine() {
   
   
   defaultEngine.hidden = true;
-  await promiseAutocompleteResultPopup("@", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "@",
+    fireInputEvent: true,
+  });
   foundDefaultEngineInPopup = false;
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
@@ -499,7 +532,12 @@ add_task(async function hiddenEngine() {
 
 
 add_task(async function hiddenEngine() {
-  await promiseAutocompleteResultPopup("@", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "@",
+    fireInptuEvent: true,
+  });
 
   const defaultEngine = await Services.search.getDefault();
 
@@ -522,7 +560,12 @@ add_task(async function hiddenEngine() {
   
   
   defaultEngine.hidden = true;
-  await promiseAutocompleteResultPopup("@", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "@",
+    fireInputEvent: true,
+  });
   foundDefaultEngineInPopup = false;
   for (let i = 0; i < UrlbarTestUtils.getResultCount(window); i++) {
     let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);

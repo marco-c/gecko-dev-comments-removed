@@ -15,7 +15,12 @@ add_task(async function test() {
   ]);
 
   
-  await promiseAutocompleteResultPopup("x", window, true);
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    waitForFocus: SimpleTest.waitForFocus,
+    value: "x",
+    fireInputEvent: true,
+  });
   await checkResults();
 
   await deleteInput();

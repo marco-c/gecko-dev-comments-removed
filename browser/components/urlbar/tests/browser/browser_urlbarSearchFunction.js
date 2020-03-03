@@ -140,7 +140,7 @@ function assertOneOffButtonsVisible(visible) {
 
 
 async function assertUrlbarValue(value) {
-  await waitForAutocompleteResultAt(0);
+  await UrlbarTestUtils.waitForAutocompleteResultAt(window, 0);
 
   Assert.equal(gURLBar.value, value);
   Assert.greater(

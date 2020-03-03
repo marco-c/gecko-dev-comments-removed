@@ -48,7 +48,11 @@ add_task(async function mainTest() {
     await BrowserTestUtils.withNewTab("about:blank", async () => {
       
       
-      await promiseAutocompleteResultPopup("amp");
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        waitForFocus: SimpleTest.waitForFocus,
+        value: "amp",
+      });
       await TestUtils.waitForCondition(() => {
         return (
           UrlbarTestUtils.getResultCount(window) ==
@@ -75,7 +79,7 @@ add_task(async function mainTest() {
 
       
       
-      await promiseSearchComplete();
+      await UrlbarTestUtils.promiseSearchComplete(window);
 
       
       
