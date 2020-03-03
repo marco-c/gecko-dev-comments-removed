@@ -53,6 +53,8 @@ class nsHttpConnection;
 class nsHttpConnectionInfo;
 class HttpTransactionShell;
 class AltSvcMapping;
+class SimpleHttpChannel;
+class TRR;
 
 
 
@@ -501,6 +503,17 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   void MaybeEnableSpeculativeConnect();
 
+  
+  friend class SimpleHttpChannel;
+  friend class TRR;
+  nsresult CreateSimpleHttpChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
+                                   uint32_t proxyResolveFlags, nsIURI* proxyURI,
+                                   nsILoadInfo* aLoadInfo, nsIChannel** result);
+  nsresult SetupChannelInternal(HttpBaseChannel* aChannel, nsIURI* uri,
+                                nsIProxyInfo* givenProxyInfo,
+                                uint32_t proxyResolveFlags, nsIURI* proxyURI,
+                                nsILoadInfo* aLoadInfo, nsIChannel** result);
+
  private:
   
   nsMainThreadPtrHandle<nsIIOService> mIOService;
@@ -773,7 +786,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   
   uint32_t mProcessId;
-  uint32_t mNextChannelId;
+  Atomic<uint32_t, Relaxed> mNextChannelId;
 
   
   

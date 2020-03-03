@@ -621,6 +621,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsCOMPtr<nsIStreamListener> mListener;
   
   nsCOMPtr<nsIStreamListener> mCompressListener;
+  nsCOMPtr<nsIEventTarget> mCurrentThread;
 
  private:
   
