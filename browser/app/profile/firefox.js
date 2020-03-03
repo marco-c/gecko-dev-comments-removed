@@ -2278,12 +2278,6 @@ pref("devtools.debugger.features.map-await-expression", true);
 
 pref("devtools.debugger.features.async-live-stacks", true);
 
-#ifdef defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
-pref("devtools.debugger.features.async-captured-stacks", true);
-#else
-pref("devtools.debugger.features.async-captured-stacks", false);
-#endif
-
 
 
 
