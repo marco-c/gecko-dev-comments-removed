@@ -2648,6 +2648,18 @@ int32_t Accessible::GetLevelInternal() {
     } else {
       ++level;  
     }
+  } else if (role == roles::COMMENT) {
+    
+    
+    level = 1;
+
+    Accessible* parent = this;
+    while ((parent = parent->Parent())) {
+      roles::Role parentRole = parent->Role();
+      if (parentRole == roles::COMMENT) {
+        ++level;
+      }
+    }
   }
 
   return level;
