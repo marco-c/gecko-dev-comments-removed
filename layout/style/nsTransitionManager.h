@@ -93,20 +93,6 @@ struct ElementPropertyTransition : public dom::KeyframeEffect {
   
   
   double CurrentValuePortion() const;
-
-  
-  
-  
-  void UpdateStartValueFromReplacedTransition();
-
-  struct ReplacedTransitionProperties {
-    TimeDuration mStartTime;
-    double mPlaybackRate;
-    TimingParams mTiming;
-    Maybe<ComputedTimingFunction> mTimingFunction;
-    AnimationValue mFromValue, mToValue;
-  };
-  Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
 
 namespace dom {
@@ -197,12 +183,29 @@ class CSSTransition final : public Animation {
   
   
   static Nullable<TimeDuration> GetCurrentTimeAt(
-      const DocumentTimeline& aTimeline, const TimeStamp& aBaseTime,
+      const AnimationTimeline& aTimeline, const TimeStamp& aBaseTime,
       const TimeDuration& aStartTime, double aPlaybackRate);
 
   void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) override {
     QueueEvents(aActiveTime);
   }
+
+  struct ReplacedTransitionProperties {
+    TimeDuration mStartTime;
+    double mPlaybackRate;
+    TimingParams mTiming;
+    Maybe<ComputedTimingFunction> mTimingFunction;
+    AnimationValue mFromValue, mToValue;
+  };
+  void SetReplacedTransition(
+      ReplacedTransitionProperties&& aReplacedTransition) {
+    mReplacedTransition.emplace(std::move(aReplacedTransition));
+  }
+
+  
+  
+  
+  void UpdateStartValueFromReplacedTransition();
 
  protected:
   virtual ~CSSTransition() {
@@ -261,6 +264,8 @@ class CSSTransition final : public Animation {
   
   nsCSSPropertyID mTransitionProperty;
   AnimationValue mTransitionToValue;
+
+  Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
 
 }  

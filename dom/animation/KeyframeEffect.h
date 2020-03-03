@@ -189,6 +189,10 @@ class KeyframeEffect : public AnimationEffect {
 
   
   
+  void ReplaceTransitionStartValue(AnimationValue&& aStartValue);
+
+  
+  
   nsCSSPropertyIDSet GetPropertySet() const;
 
   
