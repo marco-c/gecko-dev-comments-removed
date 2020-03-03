@@ -540,10 +540,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSPoint GetNextCharPointInternal(
+  WSPoint LookForNextCharPointWithinAllTextNodes(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
   template <typename PT, typename CT>
-  WSPoint GetPreviousCharPointInternal(
+  WSPoint LookForPreviousCharPointWithinAllTextNodes(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   nsresult GetWSNodes();
