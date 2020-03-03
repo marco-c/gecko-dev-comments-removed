@@ -313,20 +313,6 @@ class nsFrameSelection final {
 
   nsresult SelectCellElement(nsIContent* aCell);
 
- private:
-  
-
-
-
-
-
-
-
-
-  nsresult AddCellsToSelection(nsIContent* aTable, int32_t aStartRowIndex,
-                               int32_t aStartColumnIndex, int32_t aEndRowIndex,
-                               int32_t aEndColumnIndex);
-
  public:
   
 
