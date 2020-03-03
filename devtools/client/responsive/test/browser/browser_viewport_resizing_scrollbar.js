@@ -48,58 +48,49 @@ const TEST_URL =
   "</head>" +
   '<body><div style="background:orange; width:1000px; height:1000px"></div></body>';
 
-addRDMTask(TEST_URL, async function({ ui, manager }) {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["layout.testing.overlay-scrollbars.always-visible", true],
-      ["security.data_uri.unique_opaque_origin", false],
-    ],
-  });
-
-  const store = ui.toolWindow.store;
-
-  
-  await waitUntilState(store, state => state.viewports.length == 1);
-
-  info("--- Starting viewport test output ---");
-
-  const browser = ui.getViewportBrowser();
-
-  const expected = [
-    {
-      metaSupport: false,
-    },
-    {
-      metaSupport: true,
-    },
-  ];
-
-  for (const e of expected) {
-    const message = "Meta Viewport " + (e.metaSupport ? "ON" : "OFF");
-
+addRDMTask(
+  TEST_URL,
+  async function({ ui, manager }) {
     
-    info(message + " setting meta viewport support.");
-    await setTouchAndMetaViewportSupport(ui, e.metaSupport);
-
     
-    await setViewportSize(ui, manager, 300, 600);
-    const initialSnapshot = await snapshotWindow(browser.contentWindow);
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["layout.testing.overlay-scrollbars.always-visible", true],
+        ["security.data_uri.unique_opaque_origin", false],
+      ],
+    });
 
-    
-    await setViewportSize(ui, manager, 600, 300);
+    info("--- Starting viewport test output ---");
 
-    
-    const reload = waitForViewportLoad(ui);
-    browser.reload();
-    await reload;
+    const browser = ui.getViewportBrowser();
 
-    
-    await setViewportSize(ui, manager, 300, 600);
-    const finalSnapshot = await snapshotWindow(browser.contentWindow);
+    const expected = [false, true];
+    for (const e of expected) {
+      const message = "Meta Viewport " + (e ? "ON" : "OFF");
 
-    const result = compareSnapshots(initialSnapshot, finalSnapshot, true);
-    is(result[2], result[1], "Window snapshots should match.");
-  }
-});
+      
+      info(message + " setting meta viewport support.");
+      await setTouchAndMetaViewportSupport(ui, e.metaSupport);
+
+      
+      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+      const initialSnapshot = await snapshotWindow(browser);
+
+      
+      await setViewportSizeAndAwaitReflow(ui, manager, 600, 300);
+
+      
+      const reload = waitForViewportLoad(ui);
+      browser.reload();
+      await reload;
+
+      
+      await setViewportSizeAndAwaitReflow(ui, manager, 300, 600);
+      const finalSnapshot = await snapshotWindow(browser);
+
+      const result = compareSnapshots(initialSnapshot, finalSnapshot, true);
+      is(result[2], result[1], "Window snapshots should match.");
+    }
+  },
+  { usingBrowserUI: true }
+);

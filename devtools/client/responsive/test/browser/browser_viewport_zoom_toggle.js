@@ -15,76 +15,89 @@ function setZoomForBrowser(browser, zoom) {
   ZoomManager.setZoomForBrowser(browser, zoom);
 }
 
-add_task(async function() {
-  const INITIAL_ZOOM_LEVEL = 1;
-  const PRE_RDM_ZOOM_LEVEL = 1.5;
-  const MID_RDM_ZOOM_LEVEL = 2;
+addRDMTask(
+  null,
+  async function({ message }) {
+    const INITIAL_ZOOM_LEVEL = 1;
+    const PRE_RDM_ZOOM_LEVEL = 1.5;
+    const MID_RDM_ZOOM_LEVEL = 2;
 
-  const tab = await addTab(TEST_URL);
-  const browser = tab.linkedBrowser;
+    const tab = await addTab(TEST_URL);
+    const browser = tab.linkedBrowser;
 
-  await load(browser, TEST_URL);
+    await load(browser, TEST_URL);
 
-  
-  const initialOuterZoom = getZoomForBrowser(browser);
-  is(
-    initialOuterZoom,
-    INITIAL_ZOOM_LEVEL,
-    "Initial outer zoom should be " + INITIAL_ZOOM_LEVEL + "."
-  );
+    
+    const initialOuterZoom = getZoomForBrowser(browser);
+    is(
+      initialOuterZoom,
+      INITIAL_ZOOM_LEVEL,
+      "Initial outer zoom should be " + INITIAL_ZOOM_LEVEL + "."
+    );
 
-  
-  setZoomForBrowser(browser, PRE_RDM_ZOOM_LEVEL);
+    
+    setZoomForBrowser(browser, PRE_RDM_ZOOM_LEVEL);
 
-  const preRDMOuterZoom = getZoomForBrowser(browser);
-  is(
-    preRDMOuterZoom,
-    PRE_RDM_ZOOM_LEVEL,
-    "Pre-RDM outer zoom should be " + PRE_RDM_ZOOM_LEVEL + "."
-  );
+    const preRDMOuterZoom = getZoomForBrowser(browser);
+    is(
+      preRDMOuterZoom,
+      PRE_RDM_ZOOM_LEVEL,
+      "Pre-RDM outer zoom should be " + PRE_RDM_ZOOM_LEVEL + "."
+    );
 
-  
-  
-  
-  const { ui } = await openRDM(tab);
-  const uiDocShell = ui.toolWindow.docShell;
+    
+    
+    
+    const { ui } = await openRDM(tab);
 
-  
-  
-  
-  
-  
+    
+    await message.wait(ui.toolWindow, "post-init");
 
-  const preZoomUIZoom = uiDocShell.contentViewer.fullZoom;
-  is(
-    preZoomUIZoom,
-    INITIAL_ZOOM_LEVEL,
-    "Pre-zoom UI zoom should be " + INITIAL_ZOOM_LEVEL + "."
-  );
+    const uiDocShell = ui.toolWindow.docShell;
 
-  
-  setZoomForBrowser(browser, MID_RDM_ZOOM_LEVEL);
+    
+    
+    
+    
+    
 
-  
-  const postZoomUIZoom = uiDocShell.contentViewer.fullZoom;
-  is(postZoomUIZoom, preZoomUIZoom, "UI zoom should be unchanged by RDM zoom.");
+    const preZoomUIZoom = uiDocShell.contentViewer.fullZoom;
+    is(
+      preZoomUIZoom,
+      INITIAL_ZOOM_LEVEL,
+      "Pre-zoom UI zoom should be " + INITIAL_ZOOM_LEVEL + "."
+    );
 
-  
-  const finalRDMZoom = getZoomForBrowser(browser);
-  is(
-    finalRDMZoom,
-    MID_RDM_ZOOM_LEVEL,
-    "RDM zoom should be " + MID_RDM_ZOOM_LEVEL + "."
-  );
+    
+    setZoomForBrowser(browser, MID_RDM_ZOOM_LEVEL);
 
-  
-  await closeRDM(tab);
+    
+    const postZoomUIZoom = uiDocShell.contentViewer.fullZoom;
+    is(
+      postZoomUIZoom,
+      preZoomUIZoom,
+      "UI zoom should be unchanged by RDM zoom."
+    );
 
-  
-  const finalOuterZoom = getZoomForBrowser(browser);
-  todo_is(
-    finalOuterZoom,
-    finalRDMZoom,
-    "Final outer zoom should match last RDM zoom."
-  );
-});
+    
+    const finalRDMZoom = getZoomForBrowser(browser);
+    is(
+      finalRDMZoom,
+      MID_RDM_ZOOM_LEVEL,
+      "RDM zoom should be " + MID_RDM_ZOOM_LEVEL + "."
+    );
+
+    
+    await closeRDM(tab);
+
+    const finalOuterZoom = getZoomForBrowser(browser);
+    is(
+      finalOuterZoom,
+      finalRDMZoom,
+      "Final outer zoom should match last RDM zoom."
+    );
+
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
