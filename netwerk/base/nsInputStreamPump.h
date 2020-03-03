@@ -99,6 +99,9 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   bool mRetargeting;
   bool mAsyncStreamIsBuffered;
   
+  
+  bool mOffMainThread;
+  
   mozilla::RecursiveMutex mMutex;
 };
 
