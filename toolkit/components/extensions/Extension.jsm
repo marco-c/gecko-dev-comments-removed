@@ -1721,6 +1721,7 @@ class Extension extends ExtensionData {
       this.policy.allowedOrigins = this.whiteListedHosts;
 
       this.cachePermissions();
+      this.updatePermissions();
     });
 
     this.on("remove-permissions", (ignoreEvent, permissions) => {
@@ -1742,6 +1743,7 @@ class Extension extends ExtensionData {
       this.policy.allowedOrigins = this.whiteListedHosts;
 
       this.cachePermissions();
+      this.updatePermissions();
     });
     
   }
@@ -2112,6 +2114,13 @@ class Extension extends ExtensionData {
 
     return super.initLocale(locale);
   }
+
+  
+
+
+
+
+
 
   updatePermissions(reason) {
     const { principal } = this;
