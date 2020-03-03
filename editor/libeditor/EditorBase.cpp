@@ -36,11 +36,12 @@
 #include "mozilla/FlushType.h"                
 #include "mozilla/IMEContentObserver.h"       
 #include "mozilla/IMEStateManager.h"          
-#include "mozilla/mozalloc.h"                 
-#include "mozilla/mozInlineSpellChecker.h"    
-#include "mozilla/mozSpellChecker.h"          
-#include "mozilla/Preferences.h"              
-#include "mozilla/PresShell.h"                
+#include "mozilla/InternalMutationEvent.h"  
+#include "mozilla/mozalloc.h"               
+#include "mozilla/mozInlineSpellChecker.h"  
+#include "mozilla/mozSpellChecker.h"        
+#include "mozilla/Preferences.h"            
+#include "mozilla/PresShell.h"              
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/Services.h"           
 #include "mozilla/ServoCSSParser.h"     
@@ -51,12 +52,12 @@
 #include "mozilla/TextServicesDocument.h"  
 #include "mozilla/TextEvents.h"
 #include "mozilla/TransactionManager.h"  
-#include "mozilla/dom/AbstractRange.h"   
-#include "mozilla/dom/CharacterData.h"   
-#include "mozilla/dom/DataTransfer.h"    
-#include "mozilla/InternalMutationEvent.h"  
-#include "mozilla/dom/Element.h"      
-#include "mozilla/dom/EventTarget.h"  
+#include "mozilla/Tuple.h"
+#include "mozilla/dom/AbstractRange.h"  
+#include "mozilla/dom/CharacterData.h"  
+#include "mozilla/dom/DataTransfer.h"   
+#include "mozilla/dom/Element.h"        
+#include "mozilla/dom/EventTarget.h"    
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"  
@@ -2704,8 +2705,8 @@ nsresult EditorBase::InsertTextWithTransaction(
       NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     }
     nsresult rv = InsertTextIntoTextNodeWithTransaction(
-        aStringToInsert, MOZ_KnownLive(*pointToInsert.GetContainerAsText()),
-        pointToInsert.Offset());
+        aStringToInsert, EditorDOMPointInText(pointToInsert.ContainerAsText(),
+                                              pointToInsert.Offset()));
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2719,8 +2720,8 @@ nsresult EditorBase::InsertTextWithTransaction(
     NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     
     nsresult rv = InsertTextIntoTextNodeWithTransaction(
-        aStringToInsert, MOZ_KnownLive(*pointToInsert.GetContainerAsText()),
-        pointToInsert.Offset());
+        aStringToInsert, EditorDOMPointInText(pointToInsert.ContainerAsText(),
+                                              pointToInsert.Offset()));
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2762,56 +2763,48 @@ static bool TextFragmentBeginsWithStringAtOffset(
   return aString.EqualsLatin1(aTextFragment.Get1b() + aOffset, stringLength);
 }
 
-namespace {
-struct AdjustedInsertionRange {
-  EditorRawDOMPoint mBegin;
-  EditorRawDOMPoint mEnd;
-};
-}  
-
-static AdjustedInsertionRange AdjustTextInsertionRange(
-    Text& aTextNode, const int32_t aInsertionOffset,
-    const nsAString& aInsertedString) {
-  if (TextFragmentBeginsWithStringAtOffset(aTextNode.TextFragment(),
-                                           aInsertionOffset, aInsertedString)) {
-    EditorRawDOMPoint begin{&aTextNode, aInsertionOffset};
-    EditorRawDOMPoint end{
-        &aTextNode,
-        static_cast<int32_t>(aInsertionOffset + aInsertedString.Length())};
-    return {begin, end};
+static Tuple<EditorDOMPointInText, EditorDOMPointInText>
+AdjustTextInsertionRange(const EditorDOMPointInText& aInsertedPoint,
+                         const nsAString& aInsertedString) {
+  if (TextFragmentBeginsWithStringAtOffset(
+          aInsertedPoint.ContainerAsText()->TextFragment(),
+          aInsertedPoint.Offset(), aInsertedString)) {
+    return MakeTuple(aInsertedPoint,
+                     EditorDOMPointInText(
+                         aInsertedPoint.ContainerAsText(),
+                         aInsertedPoint.Offset() + aInsertedString.Length()));
   }
 
-  const EditorRawDOMPoint begin{&aTextNode, 0};
-  const EditorRawDOMPoint end{&aTextNode,
-                              static_cast<int32_t>(aTextNode.TextLength())};
-  return {begin, end};
+  return MakeTuple(
+      EditorDOMPointInText(aInsertedPoint.ContainerAsText(), 0),
+      EditorDOMPointInText::AtEndOf(*aInsertedPoint.ContainerAsText()));
 }
 nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
-    const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
-    bool aSuppressIME) {
+    const nsAString& aStringToInsert,
+    const EditorDOMPointInText& aPointToInsert, bool aSuppressIME) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
+  EditorDOMPointInText pointToInsert(aPointToInsert);
   RefPtr<EditTransactionBase> transaction;
   bool isIMETransaction = false;
-  RefPtr<Text> insertedTextNode = &aTextNode;
-  int32_t insertedOffset = aOffset;
   
   
   
   if (ShouldHandleIMEComposition() && !aSuppressIME) {
-    transaction = CompositionTransaction::Create(*this, aStringToInsert,
-                                                 aTextNode, aOffset);
+    transaction =
+        CompositionTransaction::Create(*this, aStringToInsert, pointToInsert);
     isIMETransaction = true;
     
     
     
     
     
-    insertedTextNode = mComposition->GetContainerTextNode();
-    insertedOffset = mComposition->XPOffsetInTextNode();
+    pointToInsert.Set(mComposition->GetContainerTextNode(),
+                      mComposition->XPOffsetInTextNode());
   } else {
-    transaction = InsertTextTransaction::Create(*this, aStringToInsert,
-                                                aTextNode, aOffset);
+    transaction =
+        InsertTextTransaction::Create(*this, aStringToInsert, pointToInsert);
   }
 
   
@@ -2820,22 +2813,22 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   nsresult rv = DoTransactionInternal(transaction);
   EndUpdateViewBatch();
 
-  if (AsHTMLEditor() && insertedTextNode) {
+  if (AsHTMLEditor() && pointToInsert.IsSet()) {
     
     
     
     if (!MaybeHasMutationEventListeners(
             NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED)) {
-      const EditorRawDOMPoint begin{insertedTextNode, insertedOffset};
-      const EditorRawDOMPoint end{
-          insertedTextNode,
-          static_cast<int32_t>(insertedOffset + aStringToInsert.Length())};
+      EditorDOMPointInText endOfInsertion(
+          pointToInsert.ContainerAsText(),
+          pointToInsert.Offset() + aStringToInsert.Length());
+      TopLevelEditSubActionDataRef().DidInsertText(*this, pointToInsert,
+                                                   endOfInsertion);
+    } else if (pointToInsert.ContainerAsText()->IsInComposedDoc()) {
+      EditorDOMPointInText begin, end;
+      Tie(begin, end) =
+          AdjustTextInsertionRange(pointToInsert, aStringToInsert);
       TopLevelEditSubActionDataRef().DidInsertText(*this, begin, end);
-    } else if (insertedTextNode->IsInComposedDoc()) {
-      AdjustedInsertionRange adjustedRange = AdjustTextInsertionRange(
-          *insertedTextNode, insertedOffset, aStringToInsert);
-      TopLevelEditSubActionDataRef().DidInsertText(*this, adjustedRange.mBegin,
-                                                   adjustedRange.mEnd);
     }
   }
 
@@ -2845,8 +2838,8 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
     for (auto& listener : listeners) {
       
       
-      listener->DidInsertText(insertedTextNode, insertedOffset, aStringToInsert,
-                              rv);
+      listener->DidInsertText(pointToInsert.ContainerAsText(),
+                              pointToInsert.Offset(), aStringToInsert, rv);
     }
   }
 

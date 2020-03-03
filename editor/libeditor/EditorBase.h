@@ -1375,11 +1375,9 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertTextIntoTextNodeWithTransaction(
-      const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
-      bool aSuppressIME = false);
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTextIntoTextNodeWithTransaction(
+      const nsAString& aStringToInsert,
+      const EditorDOMPointInText& aPointToInsert, bool aSuppressIME = false);
 
   
 

@@ -6,7 +6,9 @@
 #ifndef CompositionTransaction_h
 #define CompositionTransaction_h
 
-#include "mozilla/EditTransactionBase.h"   
+#include "mozilla/EditTransactionBase.h"  
+
+#include "mozilla/EditorDOMPoint.h"        
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      
 
@@ -36,8 +38,8 @@ class Text;
 class CompositionTransaction final : public EditTransactionBase {
  protected:
   CompositionTransaction(EditorBase& aEditorBase,
-                         const nsAString& aStringToInsert, dom::Text& aTextNode,
-                         uint32_t aOffset);
+                         const nsAString& aStringToInsert,
+                         const EditorDOMPointInText& aPointToInsert);
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IMETEXTTXN_IID)
@@ -54,11 +56,9 @@ class CompositionTransaction final : public EditTransactionBase {
 
 
 
-
-
   static already_AddRefed<CompositionTransaction> Create(
       EditorBase& aEditorBase, const nsAString& aStringToInsert,
-      dom::Text& aTextNode, uint32_t aOffset);
+      const EditorDOMPointInText& aPointToInsert);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
                                            EditTransactionBase)

@@ -6,7 +6,9 @@
 #ifndef InsertTextTransaction_h
 #define InsertTextTransaction_h
 
-#include "mozilla/EditTransactionBase.h"   
+#include "mozilla/EditTransactionBase.h"  
+
+#include "mozilla/EditorDOMPoint.h"        
 #include "nsCycleCollectionParticipant.h"  
 #include "nsID.h"                          
 #include "nsISupportsImpl.h"               
@@ -36,8 +38,8 @@ class Text;
 class InsertTextTransaction final : public EditTransactionBase {
  protected:
   InsertTextTransaction(EditorBase& aEditorBase,
-                        const nsAString& aStringToInsert, dom::Text& aTextNode,
-                        uint32_t aOffset);
+                        const nsAString& aStringToInsert,
+                        const EditorDOMPointInText& aPointToInsert);
 
  public:
   
@@ -47,11 +49,9 @@ class InsertTextTransaction final : public EditTransactionBase {
 
 
 
-
-
   static already_AddRefed<InsertTextTransaction> Create(
       EditorBase& aEditorBase, const nsAString& aStringToInsert,
-      dom::Text& aTextNode, uint32_t aOffset);
+      const EditorDOMPointInText& aPointToInsert);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_INSERTTEXTTXN_IID)
 
