@@ -89,6 +89,7 @@ pub struct CompositeTile {
 
 pub struct ExternalSurfaceDescriptor {
     pub local_rect: PictureRect,
+    pub world_rect: WorldRect,
     pub device_rect: DeviceRect,
     pub clip_rect: DeviceRect,
     pub image_keys: [ImageKey; 3],
@@ -96,6 +97,7 @@ pub struct ExternalSurfaceDescriptor {
     pub yuv_color_space: YuvColorSpace,
     pub yuv_format: YuvFormat,
     pub yuv_rescale: f32,
+    pub z_id: ZBufferId,
 }
 
 
@@ -215,7 +217,7 @@ impl Default for CompositorKind {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 struct Occluder {
-    slice: usize,
+    z_id: ZBufferId,
     device_rect: DeviceIntRect,
 }
 
@@ -319,14 +321,14 @@ impl CompositeState {
     
     pub fn register_occluder(
         &mut self,
-        slice: usize,
+        z_id: ZBufferId,
         rect: WorldRect,
     ) {
         let device_rect = (rect * self.global_device_pixel_scale).round().to_i32();
 
         self.occluders.push(Occluder {
             device_rect,
-            slice,
+            z_id,
         });
     }
 
@@ -334,7 +336,7 @@ impl CompositeState {
     
     pub fn is_tile_occluded(
         &self,
-        slice: usize,
+        z_id: ZBufferId,
         device_rect: DeviceRect,
     ) -> bool {
         
@@ -354,7 +356,7 @@ impl CompositeState {
         let ref_area = device_rect.size.width * device_rect.size.height;
 
         
-        let cover_area = area_of_occluders(&self.occluders, slice, &device_rect);
+        let cover_area = area_of_occluders(&self.occluders, z_id, &device_rect);
         debug_assert!(cover_area <= ref_area);
 
         
@@ -366,7 +368,6 @@ impl CompositeState {
         &mut self,
         tile_cache: &TileCacheInstance,
         device_clip_rect: DeviceRect,
-        z_id: ZBufferId,
         global_device_pixel_scale: DevicePixelScale,
         resource_cache: &ResourceCache,
         gpu_cache: &mut GpuCache,
@@ -417,7 +418,7 @@ impl CompositeState {
                 valid_rect: tile.device_valid_rect.translate(-device_rect.origin.to_vector()),
                 dirty_rect: tile.device_dirty_rect.translate(-device_rect.origin.to_vector()),
                 clip_rect: device_clip_rect,
-                z_id,
+                z_id: tile.z_id,
                 tile_id,
             };
 
@@ -481,12 +482,11 @@ impl CompositeState {
 
             
             
-            
-            
+
             self.external_surfaces.push(ResolvedExternalSurface {
                 device_rect: external_surface.device_rect,
                 clip_rect,
-                z_id,
+                z_id: external_surface.z_id,
                 yuv_color_space: external_surface.yuv_color_space,
                 yuv_format: external_surface.yuv_format,
                 yuv_rescale: external_surface.yuv_rescale,
@@ -689,7 +689,7 @@ pub trait Compositor {
 
 fn area_of_occluders(
     occluders: &[Occluder],
-    slice: usize,
+    z_id: ZBufferId,
     clip_rect: &DeviceIntRect,
 ) -> i32 {
     
@@ -730,7 +730,7 @@ fn area_of_occluders(
     let mut events = Vec::with_capacity(occluders.len() * 2);
     for occluder in occluders {
         
-        if occluder.slice > slice {
+        if occluder.z_id.0 > z_id.0 {
             
             
             if let Some(rect) = occluder.device_rect.intersection(clip_rect) {
