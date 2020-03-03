@@ -127,14 +127,50 @@ void DocumentOrShadowRoot::SetAdoptedStyleSheets(
   auto* shadow = ShadowRoot::FromNode(AsNode());
   MOZ_ASSERT((mKind == Kind::ShadowRoot) == !!shadow);
 
-  ClearAdoptedStyleSheets();
+  StyleSheetSet set(aAdoptedStyleSheets.Length());
+  size_t commonPrefix = 0;
+
+  
+  
+  size_t min =
+      std::min(aAdoptedStyleSheets.Length(), mAdoptedStyleSheets.Length());
+  for (size_t i = 0; i < min; ++i) {
+    if (aAdoptedStyleSheets[i] != mAdoptedStyleSheets[i]) {
+      break;
+    }
+    ++commonPrefix;
+    set.PutEntry(mAdoptedStyleSheets[i]);
+  }
+
+  
+  
+  
+  if (commonPrefix != mAdoptedStyleSheets.Length()) {
+    StyleSheetSet removedSet(mAdoptedStyleSheets.Length() - commonPrefix);
+    for (size_t i = mAdoptedStyleSheets.Length(); i != commonPrefix; --i) {
+      RefPtr<StyleSheet> sheetToRemove = mAdoptedStyleSheets.PopLastElement();
+      if (MOZ_UNLIKELY(set.Contains(sheetToRemove))) {
+        
+        
+        set.Clear();
+        
+        
+        commonPrefix = 0;
+      }
+      if (MOZ_LIKELY(removedSet.EnsureInserted(sheetToRemove))) {
+        RemoveSheetFromStylesIfApplicable(*sheetToRemove);
+        sheetToRemove->RemoveAdopter(*this);
+      }
+    }
+    mAdoptedStyleSheets.TruncateLength(commonPrefix);
+  }
 
   
   mAdoptedStyleSheets.SetCapacity(aAdoptedStyleSheets.Length());
 
-  AdoptedStyleSheetSet set(aAdoptedStyleSheets.Length());
-  for (const OwningNonNull<StyleSheet>& sheet : aAdoptedStyleSheets) {
-    if (MOZ_UNLIKELY(!set.EnsureInserted(sheet.get()))) {
+  
+  for (const auto& sheet : MakeSpan(aAdoptedStyleSheets).From(commonPrefix)) {
+    if (MOZ_UNLIKELY(!set.EnsureInserted(sheet))) {
       
       
       
