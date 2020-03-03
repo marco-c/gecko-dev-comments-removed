@@ -526,9 +526,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
+
   template <typename PT, typename CT>
   WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetNextCharPoint(const WSPoint& aPoint) const;
+  WSPoint GetNextCharPointFromPointInText(const WSPoint& aPoint) const;
 
   
 
@@ -572,9 +573,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
 
+
   template <typename PT, typename CT>
   WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetPreviousCharPoint(const WSPoint& aPoint) const;
+  WSPoint GetPreviousCharPointFromPointInText(const WSPoint& aPoint) const;
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
 
