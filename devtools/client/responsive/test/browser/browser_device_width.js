@@ -45,9 +45,8 @@ addRDMTask(
 
     info("Checking for screen props once again.");
     await checkScreenProps2(ui);
-  }
-  
-  
+  },
+  { usingBrowserUI: true }
 );
 
 async function setViewportSizeWithInputKeys(ui) {

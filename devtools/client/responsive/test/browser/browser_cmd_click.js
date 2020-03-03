@@ -11,24 +11,23 @@ const TEST_URL = `data:text/html,<a href="${TAB_URL}">Click me</a>`.replace(
   "%20"
 );
 
-addRDMTask(TEST_URL, async function({ ui }) {
-  const store = ui.toolWindow.store;
-
-  
-  await waitUntilState(store, state => state.viewports.length == 1);
-
-  
-  await waitForFrameLoad(ui, TEST_URL);
-  const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
-  BrowserTestUtils.synthesizeMouseAtCenter(
-    "a",
-    {
-      ctrlKey: true,
-      metaKey: true,
-    },
-    ui.getViewportBrowser()
-  );
-  const newTab = await newTabPromise;
-  ok(newTab, "New tab opened from link");
-  await removeTab(newTab);
-});
+addRDMTask(
+  TEST_URL,
+  async function({ ui }) {
+    
+    await waitForFrameLoad(ui, TEST_URL);
+    const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, TAB_URL);
+    BrowserTestUtils.synthesizeMouseAtCenter(
+      "a",
+      {
+        ctrlKey: true,
+        metaKey: true,
+      },
+      ui.getViewportBrowser()
+    );
+    const newTab = await newTabPromise;
+    ok(newTab, "New tab opened from link");
+    await removeTab(newTab);
+  },
+  { usingBrowserUI: true, waitForDeviceList: true }
+);
