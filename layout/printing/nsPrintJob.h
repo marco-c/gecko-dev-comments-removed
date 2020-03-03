@@ -117,7 +117,6 @@ class nsPrintJob final : public nsIObserver,
   bool IsRangeSelection();
   
   int32_t GetPrintPreviewNumPages();
-  nsresult GetDocumentName(nsAString& aDocName);
   already_AddRefed<nsIPrintSettings> GetCurrentPrintSettings();
 
   
