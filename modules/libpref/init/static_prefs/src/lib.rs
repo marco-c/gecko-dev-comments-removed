@@ -8,4 +8,7 @@
 
 
 
-include!(concat!(env!("MOZ_TOPOBJDIR"), "/modules/libpref/static_prefs.rs"));
+include!(concat!(
+    env!("MOZ_TOPOBJDIR"),
+    "/modules/libpref/static_prefs.rs"
+));
