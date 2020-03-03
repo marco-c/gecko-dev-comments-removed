@@ -101,6 +101,8 @@ struct AnimationProperty {
                              const dom::Element* aElement);
 };
 
+struct ElementPropertyTransition;
+
 namespace dom {
 
 class Animation;
@@ -184,10 +186,6 @@ class KeyframeEffect : public AnimationEffect {
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     const ComputedStyle* aStyle);
-
-  
-  
-  void ReplaceTransitionStartValue(AnimationValue&& aStartValue);
 
   
   

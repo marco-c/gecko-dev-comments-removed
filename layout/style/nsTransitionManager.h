@@ -32,6 +32,83 @@ struct StyleTransition;
 
 
 namespace mozilla {
+
+struct ElementPropertyTransition : public dom::KeyframeEffect {
+  ElementPropertyTransition(dom::Document* aDocument,
+                            OwningAnimationTarget&& aTarget,
+                            TimingParams&& aTiming,
+                            AnimationValue aStartForReversingTest,
+                            double aReversePortion,
+                            const KeyframeEffectParams& aEffectOptions)
+      : dom::KeyframeEffect(aDocument, std::move(aTarget), std::move(aTiming),
+                            aEffectOptions),
+        mStartForReversingTest(aStartForReversingTest),
+        mReversePortion(aReversePortion) {}
+
+  ElementPropertyTransition* AsTransition() override { return this; }
+  const ElementPropertyTransition* AsTransition() const override {
+    return this;
+  }
+
+  nsCSSPropertyID TransitionProperty() const {
+    MOZ_ASSERT(mKeyframes.Length() == 2,
+               "Transitions should have exactly two animation keyframes. "
+               "Perhaps we are using an un-initialized transition?");
+    MOZ_ASSERT(mKeyframes[0].mPropertyValues.Length() == 1,
+               "Transitions should have exactly one property in their first "
+               "frame");
+    return mKeyframes[0].mPropertyValues[0].mProperty;
+  }
+
+  AnimationValue ToValue() const {
+    
+    
+    
+    
+    if (mProperties.Length() < 1 || mProperties[0].mSegments.Length() < 1) {
+      NS_WARNING("Failed to generate transition property values");
+      return AnimationValue();
+    }
+    return mProperties[0].mSegments[0].mToValue;
+  }
+
+  
+  
+  
+  
+  
+  AnimationValue mStartForReversingTest;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double mReversePortion;
+
+  
+  
+  
+  double CurrentValuePortion() const;
+
+  
+  
+  
+  void UpdateStartValueFromReplacedTransition();
+
+  struct ReplacedTransitionProperties {
+    TimeDuration mStartTime;
+    double mPlaybackRate;
+    TimingParams mTiming;
+    Maybe<ComputedTimingFunction> mTimingFunction;
+    AnimationValue mFromValue, mToValue;
+  };
+  Maybe<ReplacedTransitionProperties> mReplacedTransition;
+};
+
 namespace dom {
 
 class CSSTransition final : public Animation {
@@ -120,45 +197,12 @@ class CSSTransition final : public Animation {
   
   
   static Nullable<TimeDuration> GetCurrentTimeAt(
-      const AnimationTimeline& aTimeline, const TimeStamp& aBaseTime,
+      const DocumentTimeline& aTimeline, const TimeStamp& aBaseTime,
       const TimeDuration& aStartTime, double aPlaybackRate);
 
   void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) override {
     QueueEvents(aActiveTime);
   }
-
-  
-  
-  
-  double CurrentValuePortion() const;
-
-  const AnimationValue& StartForReversingTest() const {
-    return mStartForReversingTest;
-  }
-  double ReversePortion() const { return mReversePortion; }
-
-  void SetReverseParameters(AnimationValue&& aStartForReversingTest,
-                            double aReversePortion) {
-    mStartForReversingTest = std::move(aStartForReversingTest);
-    mReversePortion = aReversePortion;
-  }
-
-  struct ReplacedTransitionProperties {
-    TimeDuration mStartTime;
-    double mPlaybackRate;
-    TimingParams mTiming;
-    Maybe<ComputedTimingFunction> mTimingFunction;
-    AnimationValue mFromValue, mToValue;
-  };
-  void SetReplacedTransition(
-      ReplacedTransitionProperties&& aReplacedTransition) {
-    mReplacedTransition.emplace(std::move(aReplacedTransition));
-  }
-
-  
-  
-  
-  void UpdateStartValueFromReplacedTransition();
 
  protected:
   virtual ~CSSTransition() {
@@ -214,30 +258,9 @@ class CSSTransition final : public Animation {
   
   
   
+  
   nsCSSPropertyID mTransitionProperty;
   AnimationValue mTransitionToValue;
-
-  
-  
-  
-  
-  
-  
-  
-  AnimationValue mStartForReversingTest;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  double mReversePortion = 1.0;
-
-  Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
 
 }  
