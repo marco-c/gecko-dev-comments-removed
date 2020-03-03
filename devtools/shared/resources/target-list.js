@@ -27,7 +27,7 @@ class LegacyImplementationProcesses {
   }
 
   async _processListChanged() {
-    const { processes } = await this.rootFront.listProcesses();
+    const processes = await this.rootFront.listProcesses();
     
     
     for (const descriptor of this.descriptors) {

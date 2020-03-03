@@ -13,20 +13,8 @@ const {
 loader.lazyRequireGetter(this, "getFront", "devtools/shared/protocol", true);
 loader.lazyRequireGetter(
   this,
-  "ProcessDescriptorFront",
-  "devtools/shared/fronts/descriptors/process",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "TabDescriptorFront",
   "devtools/shared/fronts/descriptors/tab",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "FrameDescriptorFront",
-  "devtools/shared/fronts/descriptors/frame",
   true
 );
 loader.lazyRequireGetter(
@@ -215,7 +203,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     let { workers } = await this.listWorkers();
 
     
-    const { processes } = await this.listProcesses();
+    const processes = await this.listProcesses();
     for (const processDescriptorFront of processes) {
       
       if (processDescriptorFront.isParent) {
@@ -231,14 +219,6 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     return workers;
   }
 
-  async listProcesses() {
-    const { processes } = await super.listProcesses();
-    const processDescriptors = processes.map(form =>
-      this._getProcessDescriptorFront(form)
-    );
-    return { processes: processDescriptors };
-  }
-
   
 
 
@@ -250,58 +230,13 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
   }
 
   async getProcess(id) {
-    const { form } = await super.getProcess(id);
+    const { form, processDescriptor } = await super.getProcess(id);
     
     
-    const processDescriptorFront = this._getProcessDescriptorFront(form);
+    
+    
+    const processDescriptorFront = processDescriptor || form;
     return processDescriptorFront.getTarget();
-  }
-
-  
-
-
-
-
-  
-
-
-  _getFrameDescriptorFront(form) {
-    let front = this.actor(form.actor);
-    if (front) {
-      return front;
-    }
-    front = new FrameDescriptorFront(this._client, null, this);
-    front.form(form);
-    front.actorID = form.actor;
-    this.manage(front);
-    return front;
-  }
-
-  
-
-
-
-
-
-
-  _getProcessDescriptorFront(form) {
-    let front = this.actor(form.actor);
-    if (front) {
-      return front;
-    }
-    front = new ProcessDescriptorFront(this._client, null, this);
-    front.form(form);
-    front.actorID = form.actor;
-    this.manage(front);
-    return front;
-  }
-
-  async getBrowsingContextDescriptor(id) {
-    const form = await super.getBrowsingContextDescriptor(id);
-    if (form.actor && form.actor.includes("processDescriptor")) {
-      return this._getProcessDescriptorFront(form);
-    }
-    return this._getFrameDescriptorFront(form);
   }
 
   

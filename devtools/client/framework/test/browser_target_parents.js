@@ -36,7 +36,7 @@ add_task(async function() {
   const client = await setupDebuggerClient();
   const mainRoot = client.mainRoot;
 
-  const { processes } = await mainRoot.listProcesses();
+  const processes = await mainRoot.listProcesses();
 
   
   
