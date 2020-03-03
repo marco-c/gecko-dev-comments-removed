@@ -229,6 +229,7 @@ impl TextRunPrimitive {
         subpixel_mode: &SubpixelMode,
         raster_space: RasterSpace,
         prim_rect: PictureRect,
+        root_scaling_factor: f32,
         spatial_tree: &SpatialTree,
     ) -> bool {
         
@@ -239,7 +240,10 @@ impl TextRunPrimitive {
         
 
         let raster_scale = raster_space.local_scale().unwrap_or(1.0).max(0.001);
-        let dps = surface.device_pixel_scale.0;
+        
+        
+        
+        let dps = surface.device_pixel_scale.0 * root_scaling_factor;
         let glyph_raster_scale = dps * raster_scale;
         let font_size = specified_font.size.to_f32_px();
         let device_font_size = font_size * glyph_raster_scale;
@@ -365,6 +369,7 @@ impl TextRunPrimitive {
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
         raster_space: RasterSpace,
+        root_scaling_factor: f32,
         subpixel_mode: &SubpixelMode,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
@@ -380,6 +385,7 @@ impl TextRunPrimitive {
             subpixel_mode,
             raster_space,
             prim_rect,
+            root_scaling_factor,
             spatial_tree,
         );
 
