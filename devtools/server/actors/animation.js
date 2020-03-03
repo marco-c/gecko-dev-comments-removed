@@ -113,18 +113,42 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     return !!this.player.effect.pseudoElement;
   },
 
+  get pseudoElemenName() {
+    if (!this.isPseudoElement) {
+      return null;
+    }
+
+    return `_moz_generated_content_${this.player.effect.pseudoElement.replace(
+      /^::/,
+      ""
+    )}`;
+  },
+
   get node() {
     if (!this.isPseudoElement) {
       return this.player.effect.target;
     }
 
+    const pseudoElementName = this.pseudoElemenName;
     const originatingElem = this.player.effect.target;
     const treeWalker = this.walker.getDocumentWalker(originatingElem);
+
     
     
-    return this.player.effect.pseudoElement === "::before"
-      ? treeWalker.firstChild()
-      : treeWalker.lastChild();
+    for (
+      let next = treeWalker.firstChild();
+      next;
+      next = treeWalker.nextSibling()
+    ) {
+      if (next.nodeName === pseudoElementName) {
+        return next;
+      }
+    }
+
+    console.warn(
+      `Pseudo element ${this.player.effect.pseudoElement} is not found`
+    );
+    return originatingElem;
   },
 
   get document() {
