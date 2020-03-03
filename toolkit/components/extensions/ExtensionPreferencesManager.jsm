@@ -416,6 +416,20 @@ this.ExtensionPreferencesManager = {
 
 
 
+  async removeSettingsForPermission(id, permission) {
+    settingsMap.forEach((setting, name) => {
+      if (setting.permission == permission) {
+        this.removeSetting(id, name);
+      }
+    });
+  },
+
+  
+
+
+
+
+
 
 
   async getSetting(name) {
