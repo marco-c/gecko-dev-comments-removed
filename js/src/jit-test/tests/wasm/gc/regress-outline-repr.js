@@ -1,0 +1,60 @@
+
+
+
+
+
+
+
+const wat = `
+(module
+  (gc_feature_opt_in 3)
+
+  (type $S
+    (struct
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut i64))
+      (field (mut anyref))))
+  (type $S2 (struct))
+
+  (func $main
+    (struct.set $S 18
+      (struct.new $S
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (i64.const 0)
+        (ref.null))
+      (struct.new $S2)))
+  (start $main))
+`
+wasmEvalText(wat);
