@@ -1,19 +1,9 @@
 
 
 
-var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-
-
-var commonFile = do_get_file(
-  "../../../../../toolkit/components/places/tests/head_common.js",
-  false
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
-if (commonFile) {
-  let uri = Services.io.newFileURI(commonFile);
-  Services.scriptloader.loadSubScript(uri.spec, this);
-}
-
 
 var {
   UrlbarMuxer,
@@ -22,9 +12,14 @@ var {
   UrlbarUtils,
 } = ChromeUtils.import("resource:///modules/UrlbarUtils.jsm");
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AddonTestUtils: "resource://testing-common/AddonTestUtils.jsm",
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   HttpServer: "resource://testing-common/httpd.js",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+  TestUtils: "resource://testing-common/TestUtils.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
   UrlbarInput: "resource:///modules/UrlbarInput.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -36,9 +31,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
-const { AddonTestUtils } = ChromeUtils.import(
-  "resource://testing-common/AddonTestUtils.jsm"
-);
 AddonTestUtils.init(this, false);
 AddonTestUtils.createAppInfo(
   "xpcshell@tests.mozilla.org",
