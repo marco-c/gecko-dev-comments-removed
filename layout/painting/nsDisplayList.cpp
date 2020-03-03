@@ -435,13 +435,9 @@ static void AddAnimationForProperty(nsIFrame* aFrame,
   // since after generating the new transition other requestAnimationFrame
   // callbacks may run that introduce further lag between the main thread and
   // the compositor.
-  if (aAnimation->AsCSSTransition() && aAnimation->GetEffect() &&
-      aAnimation->GetEffect()->AsTransition()) {
-    // We update startValue from the replaced transition only if the effect is
-    // an ElementPropertyTransition.
-    aAnimation->GetEffect()
-        ->AsTransition()
-        ->UpdateStartValueFromReplacedTransition();
+  CSSTransition* cssTransition = aAnimation->AsCSSTransition();
+  if (cssTransition) {
+    cssTransition->UpdateStartValueFromReplacedTransition();
   }
 
   animation->originTime() =
@@ -5141,12 +5137,28 @@ bool nsDisplayBackgroundColor::CreateWebRenderCommands(
     return false;
   }
 
+  uint64_t animationsId = 0;
+  // We don't support background-color animations on table elements yet.
+  if (GetType() == DisplayItemType::TYPE_BACKGROUND_COLOR) {
+    animationsId = AddAnimationsForWebRender(
+        this, aManager, aDisplayListBuilder, aBuilder.GetRenderRoot());
+  }
+
   LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
       mBackgroundRect, mFrame->PresContext()->AppUnitsPerDevPixel());
   wr::LayoutRect r = wr::ToLayoutRect(bounds);
 
-  aBuilder.PushRect(r, r, !BackfaceIsHidden(),
-                    wr::ToColorF(ToDeviceColor(mColor)));
+  if (animationsId) {
+    wr::WrAnimationProperty prop{
+        wr::WrAnimationType::BackgroundColor,
+        animationsId,
+    };
+    aBuilder.PushRectWithAnimation(r, r, !BackfaceIsHidden(),
+                                   wr::ToColorF(ToDeviceColor(mColor)), &prop);
+  } else {
+    aBuilder.PushRect(r, r, !BackfaceIsHidden(),
+                      wr::ToColorF(ToDeviceColor(mColor)));
+  }
 
   return true;
 }
@@ -8346,9 +8358,7 @@ bool nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
 
 bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
     nsDisplayListBuilder* aBuilder) {
-  LayerManager* layerManager = aBuilder->GetWidgetLayerManager();
-  return layerManager &&
-         layerManager->GetBackendType() != layers::LayersBackend::LAYERS_WR;
+  return StaticPrefs::gfx_omta_background_color();
 }
 
 /* static */
