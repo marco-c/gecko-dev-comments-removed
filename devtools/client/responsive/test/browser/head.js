@@ -49,6 +49,11 @@ loader.lazyRequireGetter(
   "ResponsiveUIManager",
   "devtools/client/responsive/manager"
 );
+loader.lazyRequireGetter(
+  this,
+  "message",
+  "devtools/client/responsive/utils/message"
+);
 
 const E10S_MULTI_ENABLED =
   Services.prefs.getIntPref("dom.ipc.processCount") > 1;
@@ -151,57 +156,106 @@ var closeRDM = async function(tab, options) {
 
 
 
-function addRDMTaskWithPreAndPost(
-  rdmURL,
-  rdmPreTask,
-  rdmTask,
-  rdmPostTask,
-  includeBrowserEmbeddedUI
-) {
+
+
+
+
+
+
+
+
+
+
+function addRDMTaskWithPreAndPost(url, preTask, task, postTask, options) {
   
-  
-  function taskSetup(url, preTask, task, postTask, usingBrowserUI) {
-    add_task(async function() {
-      await SpecialPowers.pushPrefEnv({
-        set: [["devtools.responsive.browserUI.enabled", usingBrowserUI]],
-      });
-      const tab = await addTab(url);
-      const browser = tab.linkedBrowser;
+  let usingBrowserUI = false;
+  let onlyPrefAndTask = false;
+  let waitForDeviceList = false;
+  if (typeof options == "object") {
+    usingBrowserUI = !!options.usingBrowserUI;
+    onlyPrefAndTask = !!options.onlyPrefAndTask;
+    waitForDeviceList = !!options.waitForDeviceList;
+  }
+
+  add_task(async function() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["devtools.responsive.browserUI.enabled", usingBrowserUI]],
+    });
+
+    let tab;
+    let browser;
+    let preTaskValue = null;
+    let taskValue = null;
+    let ui;
+    let manager;
+
+    if (!onlyPrefAndTask) {
+      tab = await addTab(url);
+      browser = tab.linkedBrowser;
+
       if (preTask) {
-        await preTask({ browser, usingBrowserUI });
+        preTaskValue = await preTask({ message, browser, usingBrowserUI });
       }
-      const { ui, manager } = await openRDM(tab);
-      try {
-        await task({ ui, manager, browser, usingBrowserUI });
-      } catch (err) {
-        ok(
-          false,
-          "Got an error with usingBrowserUI " +
-            usingBrowserUI +
-            ": " +
-            DevToolsUtils.safeErrorString(err)
+
+      const rdmValues = await openRDM(tab);
+      ui = rdmValues.ui;
+      manager = rdmValues.manager;
+
+      
+      await message.wait(ui.toolWindow, "post-init");
+
+      
+      const { store } = ui.toolWindow;
+      await waitUntilState(store, state => state.viewports.length == 1);
+
+      if (waitForDeviceList) {
+        
+        const localTypes = require("devtools/client/responsive/types");
+
+        await waitUntilState(
+          store,
+          state => state.devices.listState == localTypes.loadableState.LOADED
         );
       }
+    }
 
+    try {
+      taskValue = await task({
+        ui,
+        manager,
+        message,
+        browser,
+        usingBrowserUI,
+        preTaskValue,
+      });
+    } catch (err) {
+      ok(
+        false,
+        "Got an error with usingBrowserUI " +
+          usingBrowserUI +
+          ": " +
+          DevToolsUtils.safeErrorString(err)
+      );
+    }
+
+    if (!onlyPrefAndTask) {
       await closeRDM(tab);
       if (postTask) {
-        await postTask({ browser, usingBrowserUI });
+        await postTask({
+          message,
+          browser,
+          usingBrowserUI,
+          preTaskValue,
+          taskValue,
+        });
       }
       await removeTab(tab);
+    }
 
-      
-      
-      await SpecialPowers.flushPrefEnv();
-    });
-  }
-
-  
-  taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask, false);
-
-  if (includeBrowserEmbeddedUI) {
     
-    taskSetup(rdmURL, rdmPreTask, rdmTask, rdmPostTask, true);
-  }
+    
+    await SpecialPowers.flushPrefEnv();
+  });
 }
 
 
@@ -221,14 +275,8 @@ function addRDMTaskWithPreAndPost(
 
 
 
-function addRDMTask(rdmURL, rdmTask, includeBrowserEmbeddedUI) {
-  addRDMTaskWithPreAndPost(
-    rdmURL,
-    undefined,
-    rdmTask,
-    undefined,
-    includeBrowserEmbeddedUI
-  );
+function addRDMTask(rdmURL, rdmTask, options) {
+  addRDMTaskWithPreAndPost(rdmURL, undefined, rdmTask, undefined, options);
 }
 
 function spawnViewportTask(ui, args, task) {
@@ -823,18 +871,12 @@ async function setTouchAndMetaViewportSupport(ui, value) {
 
 
 
-async function testViewportZoomWidthAndHeight(
-  message,
-  ui,
-  zoom,
-  width,
-  height
-) {
+async function testViewportZoomWidthAndHeight(msg, ui, zoom, width, height) {
   if (typeof zoom !== "undefined") {
     const resolution = await spawnViewportTask(ui, {}, function() {
       return content.windowUtils.getResolution();
     });
-    is(resolution, zoom, message + " should have expected zoom.");
+    is(resolution, zoom, msg + " should have expected zoom.");
   }
 
   if (typeof width !== "undefined" || typeof height !== "undefined") {
@@ -845,18 +887,10 @@ async function testViewportZoomWidthAndHeight(
       };
     });
     if (typeof width !== "undefined") {
-      is(
-        innerSize.width,
-        width,
-        message + " should have expected inner width."
-      );
+      is(innerSize.width, width, msg + " should have expected inner width.");
     }
     if (typeof height !== "undefined") {
-      is(
-        innerSize.height,
-        height,
-        message + " should have expected inner height."
-      );
+      is(innerSize.height, height, msg + " should have expected inner height.");
     }
   }
 }
