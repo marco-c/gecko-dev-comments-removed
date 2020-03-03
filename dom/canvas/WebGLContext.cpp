@@ -952,6 +952,12 @@ Maybe<ICRData> WebGLContext::InitializeCanvasRenderer(
 
   gl->Screen()->Morph(std::move(factory));
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  
+  mForceResizeOnPresent = true;
+#endif
   mVRReady = true;
   return Some(ret);
 }
@@ -978,12 +984,14 @@ bool WebGLContext::PresentScreenBuffer(gl::GLScreenBuffer* const targetScreen) {
   if (!ValidateAndInitFB(nullptr)) return false;
 
   const auto& screen = targetScreen ? targetScreen : gl->Screen();
-  if ((!screen->IsReadBufferReady() || screen->Size() != mDefaultFB->mSize) &&
+  if ((!screen->IsReadBufferReady() || mForceResizeOnPresent ||
+       screen->Size() != mDefaultFB->mSize) &&
       !screen->Resize(mDefaultFB->mSize)) {
     GenerateWarning("screen->Resize failed. Losing context.");
     LoseContext();
     return false;
   }
+  mForceResizeOnPresent = false;
 
   gl->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, 0);
   BlitBackbufferToCurDriverFB();
