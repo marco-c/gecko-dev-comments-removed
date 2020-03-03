@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"          
 #include "mozilla/EditAction.h"          
 #include "mozilla/EditorDOMPoint.h"      
+#include "mozilla/EventForwards.h"       
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
 #include "mozilla/PresShell.h"           
@@ -928,6 +929,13 @@ class EditorBase : public nsIEditor,
         SettingDataTransfer aSettingDataTransfer, int32_t aClipboardType);
     dom::DataTransfer* GetDataTransfer() const { return mDataTransfer; }
 
+    
+
+
+
+
+    void AppendTargetRange(dom::StaticRange& aTargetRange);
+
     void Abort() { mAborted = true; }
     bool IsAborted() const { return mAborted; }
 
@@ -1105,6 +1113,9 @@ class EditorBase : public nsIEditor,
 
     
     RefPtr<dom::DataTransfer> mDataTransfer;
+
+    
+    OwningNonNullStaticRangeArray mTargetRanges;
 
     
     
