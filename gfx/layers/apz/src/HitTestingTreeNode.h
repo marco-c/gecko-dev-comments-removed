@@ -116,6 +116,7 @@ class HitTestingTreeNode {
                         const ScrollbarData& aScrollbarData);
   bool MatchesScrollDragMetrics(const AsyncDragMetrics& aDragMetrics) const;
   bool IsScrollbarNode() const;  
+  bool IsScrollbarContainerNode() const;  
   
   ScrollDirection GetScrollbarDirection() const;
   bool IsScrollThumbNode() const;  

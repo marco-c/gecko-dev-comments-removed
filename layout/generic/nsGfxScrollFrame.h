@@ -518,7 +518,7 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
-  nsSize TrueOuterSize() const;
+  nsSize TrueOuterSize(nsDisplayListBuilder* aBuilder) const;
 
   already_AddRefed<Element> MakeScrollbar(dom::NodeInfo* aNodeInfo,
                                           bool aVertical,

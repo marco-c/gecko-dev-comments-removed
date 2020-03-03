@@ -151,6 +151,12 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   std::vector<HitTestingTreeNode*> mFixedPositionNodesWithAnimationId;
+
+  
+  
+  
+  
+  std::vector<HitTestingTreeNode*> mRootScrollbars;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -469,9 +475,15 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
           
           
           
-          if (node->IsScrollThumbNode() && node->GetScrollbarAnimationId()) {
-            state.mScrollThumbs.push_back(node);
+          if (node->GetScrollbarAnimationId()) {
+            if (node->IsScrollThumbNode()) {
+              state.mScrollThumbs.push_back(node);
+            } else if (node->IsScrollbarContainerNode()) {
+              
+              state.mRootScrollbars.push_back(node);
+            }
           }
+
           
           if (node->GetFixedPositionAnimationId().isSome()) {
             state.mFixedPositionNodesWithAnimationId.push_back(node);
@@ -620,6 +632,16 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
           *(thumb->GetScrollbarAnimationId()), thumb->GetTransform(),
           thumb->GetScrollbarData(), targetGuid, target->GetTransform(),
           target->IsAncestorOf(thumb));
+    }
+
+    mRootScrollbarInfo.clear();
+    
+    
+    
+    for (const HitTestingTreeNode* scrollbar : state.mRootScrollbars) {
+      MOZ_ASSERT(scrollbar->IsScrollbarContainerNode());
+      mRootScrollbarInfo.emplace_back(*(scrollbar->GetScrollbarAnimationId()),
+                                      scrollbar->GetScrollbarDirection());
     }
 
     mFixedPositionInfo.clear();
@@ -783,6 +805,23 @@ void APZCTreeManager::SampleForWebRender(wr::TransactionWrapper& aTxn,
             });
     transforms.AppendElement(
         wr::ToWrTransformProperty(info.mThumbAnimationId, transform));
+  }
+
+  
+  for (const RootScrollbarInfo& info : mRootScrollbarInfo) {
+    
+    if (info.mScrollDirection == ScrollDirection::eHorizontal) {
+      ScreenPoint translation =
+          AsyncCompositionManager::ComputeFixedMarginsOffset(
+              mCompositorFixedLayerMargins, SideBits::eBottom, ScreenMargin());
+
+      LayerToParentLayerMatrix4x4 transform =
+          LayerToParentLayerMatrix4x4::Translation(ViewAs<ParentLayerPixel>(
+              translation, PixelCastJustification::ScreenIsParentLayerForRoot));
+
+      transforms.AppendElement(
+          wr::ToWrTransformProperty(info.mScrollbarAnimationId, transform));
+    }
   }
 
   for (const FixedPositionInfo& info : mFixedPositionInfo) {
