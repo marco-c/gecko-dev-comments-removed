@@ -21,7 +21,7 @@ addRDMTask(
     
     
     info("Toggle Touch simulation");
-    const { document } = ui.getBrowserWindow();
+    const { document } = ui.toolWindow;
     const touchButton = document.getElementById("touch-simulation-button");
     const changed = once(ui, "touch-simulation-changed");
     touchButton.click();
@@ -48,9 +48,8 @@ addRDMTask(
       !hasNavigated,
       "The page should not have navigated when picking the <a> element"
     );
-  }
-  
-  
+  },
+  { usingBrowserUI: true }
 );
 
 
