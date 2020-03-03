@@ -33,6 +33,10 @@ add_task(async function setup() {
     SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
     true
   );
+  Services.prefs.setBoolPref(
+    SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+    true
+  );
   
   
   Services.prefs.getDefaultBranch("distribution.").setCharPref("id", "test");
