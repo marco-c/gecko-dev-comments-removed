@@ -600,24 +600,10 @@ class RemoteSettingsClient extends EventEmitter {
           }
         } else {
           
-          if (e instanceof RemoteSettingsClient.MissingSignatureError) {
-            
-            reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
-          } else if (e instanceof SyncConflictError) {
-            reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
-          } else if (/unparseable/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.PARSE_ERROR;
-          } else if (/NetworkError/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
-          } else if (/Timeout/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.TIMEOUT_ERROR;
-          } else if (/HTTP 5??/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.SERVER_ERROR;
-          } else if (/Backoff/.test(e.message)) {
-            reportStatus = UptakeTelemetry.STATUS.BACKOFF;
-          } else {
-            reportStatus = UptakeTelemetry.STATUS.SYNC_ERROR;
-          }
+          
+          reportStatus = this._telemetryFromError(e, {
+            default: UptakeTelemetry.STATUS.SYNC_ERROR,
+          });
           throw e;
         }
       }
@@ -641,19 +627,11 @@ class RemoteSettingsClient extends EventEmitter {
       }
     } catch (e) {
       
-      if (
-        /(IndexedDB|AbortError|ConstraintError|QuotaExceededError|VersionError)/.test(
-          e.message
-        )
-      ) {
-        reportStatus = UptakeTelemetry.STATUS.CUSTOM_1_ERROR;
-      }
-      if (e instanceof RemoteSettingsClient.NetworkOfflineError) {
-        reportStatus = UptakeTelemetry.STATUS.NETWORK_OFFLINE_ERROR;
-      }
       
-      if (reportStatus === null) {
-        reportStatus = UptakeTelemetry.STATUS.UNKNOWN_ERROR;
+      if (reportStatus == null) {
+        reportStatus = this._telemetryFromError(e, {
+          default: UptakeTelemetry.STATUS.UNKNOWN_ERROR,
+        });
       }
       throw e;
     } finally {
@@ -671,6 +649,42 @@ class RemoteSettingsClient extends EventEmitter {
       console.debug(`${this.identifier} sync status is ${reportStatus}`);
       this._syncRunning = false;
     }
+  }
+
+  
+
+
+
+  _telemetryFromError(e, options = { default: null }) {
+    let reportStatus = options.default;
+
+    if (e instanceof RemoteSettingsClient.NetworkOfflineError) {
+      reportStatus = UptakeTelemetry.STATUS.NETWORK_OFFLINE_ERROR;
+    } else if (e instanceof RemoteSettingsClient.MissingSignatureError) {
+      
+      reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
+    } else if (e instanceof SyncConflictError) {
+      reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
+    } else if (/unparseable/.test(e.message)) {
+      reportStatus = UptakeTelemetry.STATUS.PARSE_ERROR;
+    } else if (/NetworkError/.test(e.message)) {
+      reportStatus = UptakeTelemetry.STATUS.NETWORK_ERROR;
+    } else if (/Timeout/.test(e.message)) {
+      reportStatus = UptakeTelemetry.STATUS.TIMEOUT_ERROR;
+    } else if (/HTTP 5??/.test(e.message)) {
+      reportStatus = UptakeTelemetry.STATUS.SERVER_ERROR;
+    } else if (/Backoff/.test(e.message)) {
+      reportStatus = UptakeTelemetry.STATUS.BACKOFF;
+    } else if (
+      
+      e instanceof Kinto.adapters.IDB.IDBError ||
+      
+      /IndexedDB/.test(e.message)
+    ) {
+      reportStatus = UptakeTelemetry.STATUS.CUSTOM_1_ERROR;
+    }
+
+    return reportStatus;
   }
 
   
