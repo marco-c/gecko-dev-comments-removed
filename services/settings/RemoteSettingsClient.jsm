@@ -141,6 +141,13 @@ class UnknownCollectionError extends Error {
   }
 }
 
+class SyncConflictError extends Error {
+  constructor() {
+    super("Unable to overwrite local data");
+    this.name = "SyncConflictError";
+  }
+}
+
 class AttachmentDownloader extends Downloader {
   constructor(client) {
     super(client.bucketName, client.collectionName);
@@ -549,7 +556,7 @@ class RemoteSettingsClient extends EventEmitter {
           }
           if (!syncResult.ok) {
             
-            throw new Error("Sync failed");
+            throw new SyncConflictError();
           }
           
           
@@ -596,6 +603,8 @@ class RemoteSettingsClient extends EventEmitter {
           if (e instanceof RemoteSettingsClient.MissingSignatureError) {
             
             reportStatus = UptakeTelemetry.STATUS.SIGNATURE_ERROR;
+          } else if (e instanceof SyncConflictError) {
+            reportStatus = UptakeTelemetry.STATUS.CONFLICT_ERROR;
           } else if (/unparseable/.test(e.message)) {
             reportStatus = UptakeTelemetry.STATUS.PARSE_ERROR;
           } else if (/NetworkError/.test(e.message)) {
