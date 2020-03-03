@@ -368,6 +368,11 @@ export interface PerformancePref {
 
 
   PopupEnabled: "devtools.performance.popup.enabled";
+  
+
+
+
+  PopupIntroDisplayed: "devtools.performance.popup.intro-displayed";
 }
 
 
