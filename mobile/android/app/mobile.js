@@ -128,7 +128,6 @@ pref("browser.sessionstore.backupInterval", 120000);
 pref("browser.sessionstore.max_tabs_undo", 10);
 pref("browser.sessionstore.max_resumed_crashes", 2);
 pref("browser.sessionstore.privacy_level", 0); 
-pref("browser.sessionstore.debug_logging", false);
 
 
 pref("urlclassifier.downloadAllowTable", "");
