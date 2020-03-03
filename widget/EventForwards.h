@@ -215,6 +215,26 @@ inline bool IsDataTransferAvailableOnHTMLEditor(EditorInputType aInputType) {
 
 
 
+inline bool MayHaveTargetRangesOnHTMLEditor(EditorInputType aInputType) {
+  switch (aInputType) {
+    
+    case EditorInputType::eHistoryRedo:
+    case EditorInputType::eHistoryUndo:
+    
+    case EditorInputType::eFormatSetBlockTextDirection:
+      return false;
+    default:
+      return true;
+  }
+}
+
+
+
+
+
+
+
+
 
 
 inline bool IsCancelableBeforeInputEvent(EditorInputType aInputType) {
