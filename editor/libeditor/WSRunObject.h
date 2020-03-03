@@ -151,13 +151,15 @@ class MOZ_STACK_CLASS WSScanResult final {
       : mContent(aContent), mReason(aReason) {
     AssertIfInvalidData();
   }
-  MOZ_NEVER_INLINE_DEBUG WSScanResult(nsIContent* aContent, uint32_t aOffset,
+  MOZ_NEVER_INLINE_DEBUG WSScanResult(const EditorDOMPoint& aPoint,
                                       WSType aReason)
-      : mContent(aContent), mOffset(Some(aOffset)), mReason(aReason) {
+      : mContent(aPoint.GetContainerAsContent()),
+        mOffset(Some(aPoint.Offset())),
+        mReason(aReason) {
     AssertIfInvalidData();
   }
 
-  void AssertIfInvalidData() const {
+  MOZ_NEVER_INLINE_DEBUG void AssertIfInvalidData() const {
 #ifdef DEBUG
     MOZ_ASSERT(mReason == WSType::text || mReason == WSType::normalWS ||
                mReason == WSType::br || mReason == WSType::special ||
@@ -484,21 +486,6 @@ class MOZ_STACK_CLASS WSRunScanner {
   };
 
   
-  
-  
-  
-  struct MOZ_STACK_CLASS WSPoint final {
-    RefPtr<dom::Text> mTextNode;
-    uint32_t mOffset;
-    char16_t mChar;
-
-    WSPoint() : mTextNode(nullptr), mOffset(0), mChar(0) {}
-
-    WSPoint(dom::Text* aTextNode, int32_t aOffset, char16_t aChar)
-        : mTextNode(aTextNode), mOffset(aOffset), mChar(aChar) {}
-  };
-
-  
 
 
 
@@ -529,8 +516,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetNextCharPointFromPointInText(const WSPoint& aPoint) const;
+  EditorDOMPointInText GetNextCharPoint(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
+  EditorDOMPointInText GetNextCharPointFromPointInText(
+      const EditorDOMPointInText& aPoint) const;
 
   
 
@@ -542,10 +531,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSPoint LookForNextCharPointWithinAllTextNodes(
+  EditorDOMPointInText LookForNextCharPointWithinAllTextNodes(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
   template <typename PT, typename CT>
-  WSPoint LookForPreviousCharPointWithinAllTextNodes(
+  EditorDOMPointInText LookForPreviousCharPointWithinAllTextNodes(
       const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   nsresult GetWSNodes();
@@ -576,8 +565,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  WSPoint GetPreviousCharPointFromPointInText(const WSPoint& aPoint) const;
+  EditorDOMPointInText GetPreviousCharPoint(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
+  EditorDOMPointInText GetPreviousCharPointFromPointInText(
+      const EditorDOMPointInText& aPoint) const;
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
 
@@ -786,8 +777,6 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   MOZ_CAN_RUN_SCRIPT nsresult AdjustWhitespace();
 
  protected:
-  using WSPoint = WSRunScanner::WSPoint;
-
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToDeleteRangePriv(WSRunObject* aEndObject);
   MOZ_CAN_RUN_SCRIPT nsresult PrepareToSplitAcrossBlocksPriv();
 
@@ -807,8 +796,8 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertNBSPAndRemoveFollowingASCIIWhitespaces(WSPoint aPoint);
+  MOZ_CAN_RUN_SCRIPT nsresult InsertNBSPAndRemoveFollowingASCIIWhitespaces(
+      const EditorDOMPointInText& aPoint);
 
   
 
