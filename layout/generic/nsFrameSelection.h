@@ -313,6 +313,20 @@ class nsFrameSelection final {
 
   nsresult SelectCellElement(nsIContent* aCell);
 
+ private:
+  
+
+
+
+
+
+
+
+
+  nsresult AddCellsToSelection(nsIContent* aTable, int32_t aStartRowIndex,
+                               int32_t aStartColumnIndex, int32_t aEndRowIndex,
+                               int32_t aEndColumnIndex);
+
  public:
   
 
@@ -789,9 +803,17 @@ class nsFrameSelection final {
   
   MOZ_CAN_RUN_SCRIPT
   nsresult NotifySelectionListeners(mozilla::SelectionType aSelectionType);
+  
+  
+  nsresult UpdateSelectionCacheOnRepaintSelection(
+      mozilla::dom::Selection* aSel);
 
   
   static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
+
+  nsresult SelectBlockOfCells(nsIContent* aStartNode, nsIContent* aEndNode);
+  nsresult SelectRowOrColumn(nsIContent* aCellContent,
+                             mozilla::TableSelectionMode aTarget);
 
   static nsresult GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
                                  int32_t& aColIndex);
@@ -820,18 +842,6 @@ class nsFrameSelection final {
     
     nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
 
-    nsresult HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
-                             mozilla::TableSelectionMode aTarget,
-                             mozilla::WidgetMouseEvent* aMouseEvent,
-                             bool aDragState,
-                             mozilla::dom::Selection& aNormalSelection);
-
-    nsresult SelectBlockOfCells(nsIContent* aStartCell, nsIContent* aEndCell,
-                                mozilla::dom::Selection& aNormalSelection);
-
-    nsresult SelectRowOrColumn(nsIContent* aCellContent,
-                               mozilla::dom::Selection& aNormalSelection);
-
     
     nsresult UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
                            int32_t aStartColumnIndex, int32_t aEndRowIndex,
@@ -846,7 +856,6 @@ class nsFrameSelection final {
     nsCOMPtr<nsIContent> mUnselectCellOnMouseUp;
     mozilla::TableSelectionMode mMode = mozilla::TableSelectionMode::None;
     int32_t mSelectedCellIndex = 0;
-    bool mDragSelectingCells = false;
   };
 
   TableSelection mTableSelection;
@@ -885,6 +894,7 @@ class nsFrameSelection final {
   bool mDelayedMouseEventIsShift = false;
 
   bool mChangesDuringBatching = false;
+  bool mDragSelectingCells = false;
   bool mDragState = false;  
   bool mDesiredPosSet = false;
   bool mAccessibleCaretEnabled = false;
