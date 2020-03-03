@@ -144,8 +144,7 @@ class ChromeMacOSLoginCrypto {
 
 
 
-  async decryptData(ciphertextArray) {
-    let ciphertext = this.arrayToString(ciphertextArray);
+  async decryptData(ciphertext) {
     if (!ciphertext.startsWith(ENCRYPTION_VERSION_PREFIX)) {
       throw new Error("Unknown encryption version");
     }
