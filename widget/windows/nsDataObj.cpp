@@ -1368,7 +1368,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
     if (event && event->IsInited()) {
       event->Signal();  
     }
-    aSTG.hGlobal = globalMem.get();
+    aSTG.hGlobal = globalMem.disown();
     aSTG.tymed = TYMED_HGLOBAL;
   }
 
