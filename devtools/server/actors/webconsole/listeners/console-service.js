@@ -83,6 +83,11 @@ ConsoleServiceListener.prototype = {
       }
     }
 
+    
+    if (message.sourceName === "debugger eager eval code") {
+      return;
+    }
+
     this.listener.onConsoleServiceMessage(message);
   },
 

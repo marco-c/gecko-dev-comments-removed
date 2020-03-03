@@ -109,6 +109,7 @@ function isObject(value) {
 
 
 
+
 exports.evalWithDebugger = function(string, options = {}, webConsole) {
   const evalString = getEvalInput(string);
   const { frame, dbg } = getFrameDbg(options, webConsole);
@@ -139,8 +140,10 @@ exports.evalWithDebugger = function(string, options = {}, webConsole) {
   helpers.evalInput = string;
   const evalOptions = {};
 
-  if (typeof options.url === "string") {
-    evalOptions.url = options.url;
+  const urlOption =
+    options.url || (options.eager ? "debugger eager eval code" : null);
+  if (typeof urlOption === "string") {
+    evalOptions.url = urlOption;
   }
 
   if (typeof options.lineNumber === "number") {
