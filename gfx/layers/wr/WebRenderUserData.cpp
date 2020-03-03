@@ -1,11 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "WebRenderUserData.h"
 
+#include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/ImageClient.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -25,7 +26,7 @@ void WebRenderBackgroundData::AddWebRenderCommands(
   aBuilder.PushRect(mBounds, mBounds, true, mColor);
 }
 
-
+/* static */
 bool WebRenderUserData::SupportsAsyncUpdate(nsIFrame* aFrame) {
   if (!aFrame) {
     return false;
@@ -39,7 +40,7 @@ bool WebRenderUserData::SupportsAsyncUpdate(nsIFrame* aFrame) {
   return false;
 }
 
-
+/* static */
 bool WebRenderUserData::ProcessInvalidateForImage(
     nsIFrame* aFrame, DisplayItemType aType, ContainerProducerID aProducerId) {
   MOZ_ASSERT(aFrame);
@@ -114,9 +115,9 @@ bool WebRenderImageData::UsingSharedSurface(
     return false;
   }
 
-  
-  
-  
+  // If this is just an update with the same image key, then we know that the
+  // share request initiated an asynchronous update so that we don't need to
+  // rebuild the scene.
   wr::ImageKey key;
   nsresult rv = SharedSurfacesChild::Share(
       mContainer, mManager, mManager->AsyncResourceUpdates(), key, aProducerId);
@@ -125,8 +126,8 @@ bool WebRenderImageData::UsingSharedSurface(
 
 void WebRenderImageData::ClearImageKey() {
   if (mKey) {
-    
-    
+    // If we don't own the key, then the owner is responsible for discarding the
+    // key when appropriate.
     if (mOwnsKey) {
       mManager->AddImageKeyForDiscard(mKey.value());
       if (mTextureOfImage) {
@@ -155,16 +156,16 @@ Maybe<wr::ImageKey> WebRenderImageData::UpdateImageKey(
     nsresult rv = SharedSurfacesChild::Share(aContainer, mManager, aResources,
                                              key, kContainerProducerID_Invalid);
     if (NS_SUCCEEDED(rv)) {
-      
-      
-      
+      // Ensure that any previously owned keys are released before replacing. We
+      // don't own this key, the surface itself owns it, so that it can be
+      // shared across multiple elements.
       ClearImageKey();
       mKey = Some(key);
       return mKey;
     }
 
     if (rv != NS_ERROR_NOT_IMPLEMENTED) {
-      
+      // We should be using the shared surface but somehow sharing it failed.
       ClearImageKey();
       return Nothing();
     }
@@ -180,23 +181,23 @@ Maybe<wr::ImageKey> WebRenderImageData::UpdateImageKey(
   ImageClientSingle* imageClient = mImageClient->AsImageClientSingle();
   uint32_t oldCounter = imageClient->GetLastUpdateGenerationCounter();
 
-  bool ret = imageClient->UpdateImage(aContainer,  0,
+  bool ret = imageClient->UpdateImage(aContainer, /* unused */ 0,
                                       Some(mManager->GetRenderRoot()));
   RefPtr<TextureClient> currentTexture = imageClient->GetForwardedTexture();
   if (!ret || !currentTexture) {
-    
+    // Delete old key
     ClearImageKey();
     return Nothing();
   }
 
-  
+  // Reuse old key if generation is not updated.
   if (!aFallback &&
       oldCounter == imageClient->GetLastUpdateGenerationCounter() && mKey) {
     return mKey;
   }
 
-  
-  
+  // If we already had a texture and the format hasn't changed, better to reuse
+  // the image keys than create new ones.
   bool useUpdate = mKey.isSome() && !!mTextureOfImage && !!currentTexture &&
                    mTextureOfImage->GetSize() == currentTexture->GetSize() &&
                    mTextureOfImage->GetFormat() == currentTexture->GetFormat();
@@ -208,12 +209,12 @@ Maybe<wr::ImageKey> WebRenderImageData::UpdateImageKey(
     MOZ_ASSERT(mKey.isSome());
     MOZ_ASSERT(mTextureOfImage);
     aResources.PushExternalImageForTexture(
-        extId.ref(), mKey.ref(), currentTexture,  true);
+        extId.ref(), mKey.ref(), currentTexture, /* aIsUpdate */ true);
   } else {
     ClearImageKey();
     key = WrBridge()->GetNextImageKey();
     aResources.PushExternalImageForTexture(extId.ref(), key, currentTexture,
-                                            false);
+                                           /* aIsUpdate */ false);
     mKey = Some(key);
   }
 
@@ -237,15 +238,15 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
   MOZ_ASSERT(aContainer->IsAsync());
 
   if (mPipelineId.isSome() && mContainer != aContainer) {
-    
-    
+    // In this case, we need to remove the existed pipeline and create new one
+    // because the ImageContainer is changed.
     WrBridge()->RemovePipelineIdForCompositable(mPipelineId.ref(),
                                                 mManager->GetRenderRoot());
     mPipelineId.reset();
   }
 
   if (!mPipelineId) {
-    
+    // Alloc async image pipeline id.
     mPipelineId =
         Some(WrBridge()->GetCompositorBridgeChild()->GetNextPipelineId());
     WrBridge()->AddPipelineIdForAsyncCompositable(
@@ -255,17 +256,17 @@ void WebRenderImageData::CreateAsyncImageWebRenderCommands(
   }
   MOZ_ASSERT(!mImageClient);
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Push IFrame for async image pipeline.
+  //
+  // We don't push a stacking context for this async image pipeline here.
+  // Instead, we do it inside the iframe that hosts the image. As a result,
+  // a bunch of the calculations normally done as part of that stacking
+  // context need to be done manually and pushed over to the parent side,
+  // where it will be done when we build the display list for the iframe.
+  // That happens in AsyncImagePipelineManager.
   wr::LayoutRect r = wr::ToLayoutRect(aBounds);
   aBuilder.PushIFrame(r, aIsBackfaceVisible, mPipelineId.ref(),
-                       false);
+                      /*ignoreMissingPipelines*/ false);
 
   WrBridge()->AddWebRenderParentCommand(
       OpUpdateAsyncImagePipeline(mPipelineId.value(), aSCBounds, aSCTransform,
@@ -336,16 +337,21 @@ WebRenderImageData* WebRenderFallbackData::PaintIntoImage() {
   return mImageData.get();
 }
 
+WebRenderAPZAnimationData::WebRenderAPZAnimationData(
+    RenderRootStateManager* aManager, nsDisplayItem* aItem)
+    : WebRenderUserData(aManager, aItem),
+      mAnimationId(AnimationHelper::GetNextCompositorAnimationsId()) {}
+
 WebRenderAnimationData::WebRenderAnimationData(RenderRootStateManager* aManager,
                                                nsDisplayItem* aItem)
     : WebRenderUserData(aManager, aItem) {}
 
 WebRenderAnimationData::~WebRenderAnimationData() {
-  
-  
-  
+  // It may be the case that nsDisplayItem that created this WebRenderUserData
+  // gets destroyed without getting a chance to discard the compositor animation
+  // id, so we should do it as part of cleanup here.
   uint64_t animationId = mAnimationInfo.GetCompositorAnimationsId();
-  
+  // animationId might be 0 if mAnimationInfo never held any active animations.
   if (animationId) {
     mManager->AddCompositorAnimationsIdForDiscard(animationId);
   }
@@ -418,5 +424,5 @@ void DestroyWebRenderUserDataTable(WebRenderUserDataTable* aTable) {
   delete aTable;
 }
 
-}  
-}  
+}  // namespace layers
+}  // namespace mozilla
