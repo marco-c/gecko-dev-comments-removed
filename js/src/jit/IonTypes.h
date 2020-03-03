@@ -448,13 +448,14 @@ enum class MIRType : uint8_t {
   
   Value,
   ObjectOrNull,
-  None,         
-  Slots,        
-  Elements,     
-  Pointer,      
-  RefOrNull,    
-  Shape,        
-  ObjectGroup,  
+  None,          
+  Slots,         
+  Elements,      
+  Pointer,       
+  RefOrNull,     
+  StackResults,  
+  Shape,         
+  ObjectGroup,   
   Last = ObjectGroup,
   
   Int8x16 = Int32 | (4 << VECTOR_SCALE_SHIFT),
@@ -601,6 +602,8 @@ static inline const char* StringFromMIRType(MIRType type) {
       return "Pointer";
     case MIRType::RefOrNull:
       return "RefOrNull";
+    case MIRType::StackResults:
+      return "StackResults";
     case MIRType::Shape:
       return "Shape";
     case MIRType::ObjectGroup:
