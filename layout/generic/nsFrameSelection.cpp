@@ -2895,6 +2895,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
   mPresShell = nullptr;
 }
 
+#ifdef XP_MACOSX
 
 
 
@@ -2914,8 +2915,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
 
 
 
-nsresult nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(
-    Selection* aSel) {
+static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
   PresShell* presShell = aSel->GetPresShell();
   if (!presShell) {
     return NS_OK;
@@ -2929,6 +2929,7 @@ nsresult nsFrameSelection::UpdateSelectionCacheOnRepaintSelection(
 
   return NS_OK;
 }
+#endif  
 
 
 
