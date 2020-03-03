@@ -6,6 +6,9 @@
 
 var EXPORTED_SYMBOLS = ["RemoteSettingsClient"];
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -429,6 +432,7 @@ class RemoteSettingsClient extends EventEmitter {
     let importedFromDump = [];
     const startedAt = new Date();
     let reportStatus = null;
+    let thrownError = null;
     try {
       
       if (Utils.isOffline) {
@@ -626,6 +630,7 @@ class RemoteSettingsClient extends EventEmitter {
         );
       }
     } catch (e) {
+      thrownError = e;
       
       
       if (reportStatus == null) {
@@ -641,11 +646,34 @@ class RemoteSettingsClient extends EventEmitter {
         reportStatus = UptakeTelemetry.STATUS.SUCCESS;
       }
       
-      await UptakeTelemetry.report(TELEMETRY_COMPONENT, reportStatus, {
+      let reportArgs = {
         source: this.identifier,
         trigger,
         duration: durationMilliseconds,
-      });
+      };
+      
+      
+      
+      if (
+        thrownError !== null &&
+        AppConstants.NIGHTLY_BUILD &&
+        [
+          UptakeTelemetry.STATUS.SYNC_ERROR,
+          UptakeTelemetry.STATUS.CUSTOM_1_ERROR, 
+          UptakeTelemetry.STATUS.UNKNOWN_ERROR,
+        ].includes(reportStatus)
+      ) {
+        
+        
+        reportArgs = { ...reportArgs, errorName: thrownError.name };
+      }
+
+      await UptakeTelemetry.report(
+        TELEMETRY_COMPONENT,
+        reportStatus,
+        reportArgs
+      );
+
       console.debug(`${this.identifier} sync status is ${reportStatus}`);
       this._syncRunning = false;
     }
