@@ -39,7 +39,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
-  ["autoFill.stddevMultiplier", [0.0, "float"]],
+  ["autoFill.stddevMultiplier", [0.0, "getFloatPref"]],
 
   
   
@@ -184,9 +184,8 @@ const SUGGEST_PREF_TO_BEHAVIOR = {
 
 const PREF_TYPES = new Map([
   ["boolean", "Bool"],
-  ["float", "Float"],
-  ["number", "Int"],
   ["string", "Char"],
+  ["number", "Int"],
 ]);
 
 
@@ -240,32 +239,11 @@ class Preferences {
 
 
 
-
-
-
   get(pref) {
     if (!this._map.has(pref)) {
       this._map.set(pref, this._getPrefValue(pref));
     }
     return this._map.get(pref);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  set(pref, value) {
-    let { defaultValue, setter } = this._getPrefDescriptor(pref);
-    if (typeof value != typeof defaultValue) {
-      throw new Error(`Invalid value type ${typeof value} for pref ${pref}`);
-    }
-    setter(pref, value);
   }
 
   
@@ -299,8 +277,25 @@ class Preferences {
 
 
   _readPref(pref) {
-    let { defaultValue, getter } = this._getPrefDescriptor(pref);
-    return getter(pref, defaultValue);
+    let prefs = Services.prefs.getBranch(PREF_URLBAR_BRANCH);
+    let def = PREF_URLBAR_DEFAULTS.get(pref);
+    if (def === undefined) {
+      prefs = Services.prefs;
+      def = PREF_OTHER_DEFAULTS.get(pref);
+    }
+    if (def === undefined) {
+      throw new Error("Trying to access an unknown pref " + pref);
+    }
+    let getterName;
+    if (!Array.isArray(def)) {
+      getterName = `get${PREF_TYPES.get(typeof def)}Pref`;
+    } else {
+      if (def.length != 2) {
+        throw new Error("Malformed pref def: " + pref);
+      }
+      [def, getterName] = def;
+    }
+    return prefs[getterName](pref, def);
   }
 
   
@@ -379,44 +374,6 @@ class Preferences {
       }
     }
     return this._readPref(pref);
-  }
-
-  
-
-
-
-
-
-  _getPrefDescriptor(pref) {
-    let branch = Services.prefs.getBranch(PREF_URLBAR_BRANCH);
-    let defaultValue = PREF_URLBAR_DEFAULTS.get(pref);
-    if (defaultValue === undefined) {
-      branch = Services.prefs;
-      defaultValue = PREF_OTHER_DEFAULTS.get(pref);
-    }
-    if (defaultValue === undefined) {
-      throw new Error("Trying to access an unknown pref " + pref);
-    }
-
-    let type;
-    if (!Array.isArray(defaultValue)) {
-      type = PREF_TYPES.get(typeof defaultValue);
-    } else {
-      if (defaultValue.length != 2) {
-        throw new Error("Malformed pref def: " + pref);
-      }
-      [defaultValue, type] = defaultValue;
-      type = PREF_TYPES.get(type);
-    }
-    if (!type) {
-      throw new Error("Unknown pref type: " + pref);
-    }
-    return {
-      defaultValue,
-      getter: branch[`get${type}Pref`],
-      
-      setter: branch[`set${type == "Float" ? "Char" : type}Pref`],
-    };
   }
 }
 
