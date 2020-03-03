@@ -15,7 +15,8 @@ static HTTP_LWS: &'static [u8] = &[' ' as u8, '\t' as u8];
 
 fn trim_token(token: &[u8]) -> &[u8] {
     
-    let ltrim = token.iter()
+    let ltrim = token
+        .iter()
         .take_while(|c| HTTP_LWS.iter().any(|ws| &ws == c))
         .count();
 
@@ -42,15 +43,17 @@ fn trim_token(token: &[u8]) -> &[u8] {
 
 
 
-pub extern "C" fn rust_prepare_accept_languages<'a, 'b>(i_accept_languages: &'a nsACString,
-                                                        o_accept_languages: &'b mut nsACString)
-                                                        -> nsresult {
+pub extern "C" fn rust_prepare_accept_languages<'a, 'b>(
+    i_accept_languages: &'a nsACString,
+    o_accept_languages: &'b mut nsACString,
+) -> nsresult {
     if i_accept_languages.is_empty() {
         return NS_OK;
     }
 
     let make_tokens = || {
-        i_accept_languages.split(|c| *c == (',' as u8))
+        i_accept_languages
+            .split(|c| *c == (',' as u8))
             .map(|token| trim_token(token))
             .filter(|token| token.len() != 0)
     };
@@ -58,7 +61,6 @@ pub extern "C" fn rust_prepare_accept_languages<'a, 'b>(i_accept_languages: &'a 
     let n = make_tokens().count();
 
     for (count_n, i_token) in make_tokens().enumerate() {
-
         
         if count_n != 0 {
             o_accept_languages.append(",");
@@ -134,12 +136,12 @@ fn canonicalize_language_tag(token: &mut [u8]) {
             2 => {
                 sub_tag[0] = sub_tag[0].to_ascii_uppercase();
                 sub_tag[1] = sub_tag[1].to_ascii_uppercase();
-            },
+            }
             
-            4  => {
+            4 => {
                 sub_tag[0] = sub_tag[0].to_ascii_uppercase();
-            },
-            _ => {},
+            }
+            _ => {}
         };
     }
 }
@@ -174,7 +176,9 @@ pub fn is_valid_ipv4_addr<'a>(addr: &'a [u8]) -> bool {
                 }
             }
             
-            no_digit if no_digit.to_digit(10).is_none() => { return false; }
+            no_digit if no_digit.to_digit(10).is_none() => {
+                return false;
+            }
             digit => {
                 match current_octet {
                     None => {
@@ -186,7 +190,9 @@ pub fn is_valid_ipv4_addr<'a>(addr: &'a [u8]) -> bool {
                             
                             return false;
                         }
-                        if let Some(applied) = try_apply_digit(octet, digit.to_digit(10).unwrap() as u8) {
+                        if let Some(applied) =
+                            try_apply_digit(octet, digit.to_digit(10).unwrap() as u8)
+                        {
                             current_octet = Some(applied);
                         } else {
                             
@@ -199,7 +205,6 @@ pub fn is_valid_ipv4_addr<'a>(addr: &'a [u8]) -> bool {
     }
     dots == 3 && current_octet.is_some()
 }
-
 
 #[no_mangle]
 #[allow(non_snake_case)]
