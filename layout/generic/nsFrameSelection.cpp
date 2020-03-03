@@ -335,7 +335,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsFrameSelection)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mCellParent)
   tmp->mTableSelection.mMode = TableSelectionMode::None;
-  tmp->mDragSelectingCells = false;
+  tmp->mTableSelection.mDragSelectingCells = false;
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mStartSelectedCell)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mEndSelectedCell)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTableSelection.mAppendStartSelectedCell)
@@ -1133,7 +1133,7 @@ nsresult nsFrameSelection::HandleClick(nsIContent* aNewFocus,
   }
 
   
-  if (!mDragSelectingCells) {
+  if (!mTableSelection.mDragSelectingCells) {
     BidiLevelFromClick(aNewFocus, aContentOffset);
     PostReason(nsISelectionListener::MOUSEDOWN_REASON +
                nsISelectionListener::DRAG_REASON);
@@ -1259,7 +1259,7 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
 
   
   mTableSelection.mMode = TableSelectionMode::None;
-  mDragSelectingCells = false;
+  mTableSelection.mDragSelectingCells = false;
   mTableSelection.mStartSelectedCell = nullptr;
   mTableSelection.mEndSelectedCell = nullptr;
   mTableSelection.mAppendStartSelectedCell = nullptr;
@@ -1414,7 +1414,7 @@ void nsFrameSelection::SetDragState(bool aState) {
   mDragState = aState;
 
   if (!mDragState) {
-    mDragSelectingCells = false;
+    mTableSelection.mDragSelectingCells = false;
     
     PostReason(nsISelectionListener::MOUSEUP_REASON);
     
@@ -2045,7 +2045,7 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
   NS_ENSURE_TRUE(aParentContent, NS_ERROR_NULL_POINTER);
   NS_ENSURE_TRUE(aMouseEvent, NS_ERROR_NULL_POINTER);
 
-  if (mDragState && mDragSelectingCells &&
+  if (mDragState && mTableSelection.mDragSelectingCells &&
       aTarget == TableSelectionMode::Table) {
     
     
@@ -2071,7 +2071,7 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
   SelectionBatcher selectionBatcher(mDomSelections[index]);
 
   int32_t startRowIndex, startColIndex, curRowIndex, curColIndex;
-  if (mDragState && mDragSelectingCells) {
+  if (mDragState && mTableSelection.mDragSelectingCells) {
     
     if (aTarget != TableSelectionMode::Table) {
       
@@ -2183,7 +2183,8 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           
           mDomSelections[index]->RemoveAllRanges(IgnoreErrors());
         }
-        mDragSelectingCells = true;  
+        mTableSelection.mDragSelectingCells =
+            true;  
         mTableSelection.mMode = aTarget;
         
         mTableSelection.mStartSelectedCell = childContent;
@@ -2217,7 +2218,7 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         
         
         
-        mDragSelectingCells = false;
+        mTableSelection.mDragSelectingCells = false;
         mTableSelection.mStartSelectedCell = nullptr;
         mTableSelection.mEndSelectedCell = nullptr;
 
@@ -2235,7 +2236,7 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         
         
         
-        mDragSelectingCells = true;
+        mTableSelection.mDragSelectingCells = true;
 
         
         mTableSelection.mStartSelectedCell = nullptr;
@@ -2247,9 +2248,11 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
     } else {
 #ifdef DEBUG_TABLE_SELECTION
       printf(
-          "HandleTableSelection: Mouse UP event. mDragSelectingCells=%d, "
+          "HandleTableSelection: Mouse UP event. "
+          "mTableSelection.mDragSelectingCells=%d, "
           "mTableSelection.mStartSelectedCell=%p\n",
-          mDragSelectingCells, mTableSelection.mStartSelectedCell.get());
+          mTableSelection.mDragSelectingCells,
+          mTableSelection.mStartSelectedCell.get());
 #endif
       
       uint32_t rangeCount = mDomSelections[index]->RangeCount();
@@ -2258,17 +2261,17 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           mTableSelection.mAppendStartSelectedCell &&
           mTableSelection.mAppendStartSelectedCell != childContent) {
         
-        mDragSelectingCells = false;
+        mTableSelection.mDragSelectingCells = false;
         return SelectBlockOfCells(mTableSelection.mAppendStartSelectedCell,
                                   childContent);
       }
 
-      if (mDragSelectingCells) {
+      if (mTableSelection.mDragSelectingCells) {
         mTableSelection.mAppendStartSelectedCell =
             mTableSelection.mStartSelectedCell;
       }
 
-      mDragSelectingCells = false;
+      mTableSelection.mDragSelectingCells = false;
       mTableSelection.mStartSelectedCell = nullptr;
       mTableSelection.mEndSelectedCell = nullptr;
 
@@ -2396,7 +2399,7 @@ nsresult nsFrameSelection::SelectBlockOfCells(nsIContent* aStartCell,
     return NS_ERROR_NULL_POINTER;
   }
 
-  if (mDragSelectingCells) {
+  if (mTableSelection.mDragSelectingCells) {
     
     
     mTableSelection.UnselectCells(table, startRowIndex, startColIndex,
