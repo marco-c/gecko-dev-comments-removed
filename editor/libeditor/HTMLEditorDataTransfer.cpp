@@ -372,7 +372,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   
   
   
-  WSRunObject wsObj(this, pointToInsert);
+  WSRunObject wsObj(*this, pointToInsert);
   if (wsObj.GetEndReasonContent() &&
       wsObj.GetEndReasonContent()->IsHTMLElement(nsGkAtoms::br) &&
       !IsVisibleBRElement(wsObj.GetEndReasonContent())) {

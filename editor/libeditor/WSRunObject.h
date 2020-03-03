@@ -659,21 +659,25 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
   template <typename PT, typename CT>
-  WSRunObject(HTMLEditor* aHTMLEditor,
-              const EditorDOMPointBase<PT, CT>& aScanStartPoint,
-              const EditorDOMPointBase<PT, CT>& aScanEndPoint);
+  MOZ_CAN_RUN_SCRIPT WSRunObject(
+      HTMLEditor& aHTMLEditor,
+      const EditorDOMPointBase<PT, CT>& aScanStartPoint,
+      const EditorDOMPointBase<PT, CT>& aScanEndPoint);
   template <typename PT, typename CT>
-  WSRunObject(HTMLEditor* aHTMLEditor,
-              const EditorDOMPointBase<PT, CT>& aScanStartPoint)
+  MOZ_CAN_RUN_SCRIPT WSRunObject(
+      HTMLEditor& aHTMLEditor,
+      const EditorDOMPointBase<PT, CT>& aScanStartPoint)
       : WSRunObject(aHTMLEditor, aScanStartPoint, aScanStartPoint) {}
-  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
-              int32_t aScanStartOffset, nsINode* aScanEndNode,
-              int32_t aScanEndOffset)
+  MOZ_CAN_RUN_SCRIPT WSRunObject(HTMLEditor& aHTMLEditor,
+                                 nsINode* aScanStartNode,
+                                 int32_t aScanStartOffset,
+                                 nsINode* aScanEndNode, int32_t aScanEndOffset)
       : WSRunObject(aHTMLEditor,
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
                     EditorRawDOMPoint(aScanEndNode, aScanEndOffset)) {}
-  WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aScanStartNode,
-              int32_t aScanStartOffset)
+  MOZ_CAN_RUN_SCRIPT WSRunObject(HTMLEditor& aHTMLEditor,
+                                 nsINode* aScanStartNode,
+                                 int32_t aScanStartOffset)
       : WSRunObject(aHTMLEditor,
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset),
                     EditorRawDOMPoint(aScanStartNode, aScanStartOffset)) {}
@@ -700,29 +704,24 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   
   
   
-  MOZ_CAN_RUN_SCRIPT
-  static nsresult PrepareToDeleteRange(HTMLEditor* aHTMLEditor,
-                                       nsCOMPtr<nsINode>* aStartNode,
-                                       int32_t* aStartOffset,
-                                       nsCOMPtr<nsINode>* aEndNode,
-                                       int32_t* aEndOffset);
+  MOZ_CAN_RUN_SCRIPT static nsresult PrepareToDeleteRange(
+      HTMLEditor& aHTMLEditor, nsCOMPtr<nsINode>* aStartNode,
+      int32_t* aStartOffset, nsCOMPtr<nsINode>* aEndNode, int32_t* aEndOffset);
 
   
   
   
-  MOZ_CAN_RUN_SCRIPT
-  static nsresult PrepareToDeleteNode(HTMLEditor* aHTMLEditor,
-                                      nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT static nsresult PrepareToDeleteNode(
+      HTMLEditor& aHTMLEditor, nsIContent* aContent);
 
   
   
   
   
   
-  MOZ_CAN_RUN_SCRIPT
-  static nsresult PrepareToSplitAcrossBlocks(HTMLEditor* aHTMLEditor,
-                                             nsCOMPtr<nsINode>* aSplitNode,
-                                             int32_t* aSplitOffset);
+  MOZ_CAN_RUN_SCRIPT static nsresult PrepareToSplitAcrossBlocks(
+      HTMLEditor& aHTMLEditor, nsCOMPtr<nsINode>* aSplitNode,
+      int32_t* aSplitOffset);
 
   
 
@@ -862,7 +861,8 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   }
 
   
-  HTMLEditor* mHTMLEditor;
+  
+  HTMLEditor& mHTMLEditor;
 };
 
 }  
