@@ -7,6 +7,7 @@
 #ifndef MOZILLA_GFX_TYPES_H_
 #define MOZILLA_GFX_TYPES_H_
 
+#include "mozilla/DefineEnum.h"  
 #include "mozilla/EndianUtils.h"
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  
@@ -410,13 +411,15 @@ enum class SamplingFilter : int8_t {
   SENTINEL  
 };
 
-enum class PatternType : int8_t {
+
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(PatternType, int8_t, (
   COLOR,
   SURFACE,
   LINEAR_GRADIENT,
   RADIAL_GRADIENT,
   CONIC_GRADIENT
-};
+));
+
 
 enum class JoinStyle : int8_t {
   BEVEL,
