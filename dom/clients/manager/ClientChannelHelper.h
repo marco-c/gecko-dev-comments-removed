@@ -22,18 +22,26 @@ class ClientInfo;
 
 
 
-
-
-
-
 nsresult AddClientChannelHelper(nsIChannel* aChannel,
                                 Maybe<ClientInfo>&& aReservedClientInfo,
                                 Maybe<ClientInfo>&& aInitialClientInfo,
-                                nsISerialEventTarget* aEventTarget,
-                                bool aManagedInParent);
+                                nsISerialEventTarget* aEventTarget);
+
+
+
+
+
+
+
+nsresult AddClientChannelHelperInChild(nsIChannel* aChannel,
+                                       nsISerialEventTarget* aEventTarget);
+
+
+
+
 
 nsresult AddClientChannelHelperInParent(nsIChannel* aChannel,
-                                        nsISerialEventTarget* aEventTarget);
+                                        Maybe<ClientInfo>&& aInitialClientInfo);
 
 }  
 }  
