@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_indexeddb_filemanager_h__
 #define mozilla_dom_indexeddb_filemanager_h__
@@ -24,7 +24,7 @@ namespace indexedDB {
 
 class FileInfo;
 
-// Implemented in ActorsParent.cpp.
+
 class FileManager final {
   friend class FileInfo;
 
@@ -40,7 +40,7 @@ class FileManager final {
 
   int64_t mLastFileId;
 
-  // Protected by IndexedDatabaseManager::FileMutex()
+  
   nsDataHashtable<nsUint64HashKey, FileInfo*> mFileInfos;
 
   const bool mEnforcingQuota;
@@ -91,7 +91,7 @@ class FileManager final {
 
   MOZ_MUST_USE RefPtr<FileInfo> GetFileInfo(int64_t aId) const;
 
-  MOZ_MUST_USE RefPtr<FileInfo> CreateFileInfo();
+  MOZ_MUST_USE RefPtr<FileInfo> GetNewFileInfo();
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileManager)
 
@@ -99,8 +99,8 @@ class FileManager final {
   ~FileManager() = default;
 };
 
-}  // namespace indexedDB
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
+}  
 
-#endif  // mozilla_dom_indexeddb_filemanager_h__
+#endif  
