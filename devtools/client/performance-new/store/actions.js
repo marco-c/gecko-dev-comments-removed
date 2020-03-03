@@ -108,7 +108,7 @@ exports.changeEntries = entries =>
 exports.changeFeatures = features => {
   return (dispatch, getState) => {
     let promptEnvRestart = null;
-    if (selectors.getPageContext(getState()) === "popup") {
+    if (selectors.getPageContext(getState()) === "aboutprofiling") {
       
       
       if (

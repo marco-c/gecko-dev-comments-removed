@@ -80,12 +80,14 @@ class RecordingButton extends PureComponent {
       onClick,
       additionalMessage,
       isPrimary,
-      pageContext,
+      
       additionalButton,
     } = buttonSettings;
 
     const nbsp = "\u00A0";
-    const showAdditionalMessage = pageContext === "popup" && additionalMessage;
+    const showAdditionalMessage = false;
+    
+    
     const buttonClass = isPrimary ? "primary" : "default";
 
     return div(
