@@ -597,7 +597,7 @@ nsCSPContext::GetAllowsInline(nsContentPolicyType aContentType,
 }
 
 NS_IMETHODIMP
-nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
                                   bool aWasRedirected, bool aEnforceWhitelist,
                                   bool* outAllowsNavigateTo) {
   
@@ -617,7 +617,7 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   
   
   
-  if (aLoadInfo->GetIsFormSubmission()) {
+  if (aIsFormSubmission) {
     for (unsigned long i = 0; i < mPolicies.Length(); i++) {
       if (mPolicies[i]->hasDirective(
               nsIContentSecurityPolicy::FORM_ACTION_DIRECTIVE)) {
