@@ -257,8 +257,8 @@ class ProviderSearchTips extends UrlbarProvider {
       
       
       
-      Services.prefs.setIntPref(
-        `browser.urlbar.tipShownCount.${this.showedTipTypeInCurrentEngagement}`,
+      UrlbarPrefs.set(
+        `tipShownCount.${this.showedTipTypeInCurrentEngagement}`,
         MAX_SHOWN_COUNT
       );
     }
@@ -346,10 +346,7 @@ class ProviderSearchTips extends UrlbarProvider {
     this.disableTipsForCurrentSession = true;
 
     
-    Services.prefs.setIntPref(
-      `browser.urlbar.tipShownCount.${tip}`,
-      shownCount + 1
-    );
+    UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
 
     
     let window = BrowserWindowTracker.getTopWindow();
