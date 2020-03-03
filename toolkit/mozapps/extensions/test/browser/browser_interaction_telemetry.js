@@ -399,7 +399,7 @@ add_task(async function testGeneralActions() {
     let shown = BrowserTestUtils.waitForEvent(menu, "shown");
     
     
-    pageOptionsButton.click();
+    EventUtils.synthesizeMouseAtCenter(pageOptionsButton, {}, win);
     await shown;
     info(`Clicking ${item.getAttribute("action")}`);
     item.click();
