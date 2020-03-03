@@ -139,7 +139,7 @@ class PropertiesView extends Component {
     const { object } = member;
 
     
-    this.selectRow(evt.currentTarget);
+    this.selectRow({ props: { member } });
 
     
     if (typeof object === "object") {
