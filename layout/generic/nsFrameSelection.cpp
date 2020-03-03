@@ -2594,23 +2594,33 @@ nsresult nsFrameSelection::RestrictCellsToSelection(nsIContent* aTable,
 
 nsresult nsFrameSelection::SelectRowOrColumn(nsIContent* aCellContent,
                                              TableSelectionMode aTarget) {
-  if (!aCellContent) return NS_ERROR_NULL_POINTER;
+  if (!aCellContent) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   nsIContent* table = GetParentTable(aCellContent);
-  if (!table) return NS_ERROR_NULL_POINTER;
+  if (!table) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   
   
   
   nsTableWrapperFrame* tableFrame = do_QueryFrame(table->GetPrimaryFrame());
-  if (!tableFrame) return NS_ERROR_FAILURE;
+  if (!tableFrame) {
+    return NS_ERROR_FAILURE;
+  }
   nsITableCellLayout* cellLayout = GetCellLayout(aCellContent);
-  if (!cellLayout) return NS_ERROR_FAILURE;
+  if (!cellLayout) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   int32_t rowIndex, colIndex;
   nsresult result = cellLayout->GetCellIndexes(rowIndex, colIndex);
-  if (NS_FAILED(result)) return result;
+  if (NS_FAILED(result)) {
+    return result;
+  }
 
   
   
@@ -2626,9 +2636,13 @@ nsresult nsFrameSelection::SelectRowOrColumn(nsIContent* aCellContent,
     
     nsCOMPtr<nsIContent> curCellContent =
         tableFrame->GetCellAt(rowIndex, colIndex);
-    if (!curCellContent) break;
+    if (!curCellContent) {
+      break;
+    }
 
-    if (!firstCell) firstCell = curCellContent;
+    if (!firstCell) {
+      firstCell = curCellContent;
+    }
 
     lastCell = std::move(curCellContent);
 
@@ -2647,7 +2661,9 @@ nsresult nsFrameSelection::SelectRowOrColumn(nsIContent* aCellContent,
     if (!mTableSelection.mStartSelectedCell) {
       
       result = SelectCellElement(firstCell);
-      if (NS_FAILED(result)) return result;
+      if (NS_FAILED(result)) {
+        return result;
+      }
       mTableSelection.mStartSelectedCell = firstCell;
     }
 
