@@ -1051,7 +1051,12 @@ enum Role {
 
   MARK = 179,
 
-  LAST_ROLE = MARK
+  
+
+
+  SUGGESTION = 180,
+
+  LAST_ROLE = SUGGESTION
 };
 
 }  

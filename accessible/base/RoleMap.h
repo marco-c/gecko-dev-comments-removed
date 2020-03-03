@@ -1640,3 +1640,12 @@ ROLE(MARK,
      java::SessionAccessibility::CLASSNAME_VIEW,
      eNameFromSubtreeIfReqRule)
 
+ROLE(SUGGESTION,
+     "suggestion",
+     ATK_ROLE_SUGGESTION,
+     NSAccessibilityGroupRole,
+     USE_ROLE_STRING,
+     IA2_ROLE_SUGGESTION,
+     java::SessionAccessibility::CLASSNAME_VIEW,
+     eNoNameRule)
+
