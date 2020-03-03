@@ -29,7 +29,6 @@ namespace mozilla {
 namespace dom {
 class PerformanceStorage;
 class XMLHttpRequestMainThread;
-class CanonicalBrowsingContext;
 }  
 
 namespace net {
@@ -41,7 +40,8 @@ namespace ipc {
 
 nsresult LoadInfoArgsToLoadInfo(
     const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-    nsINode* aCspToInheritLoadingContext, net::LoadInfo** outLoadInfo);
+    nsINode* aLoadingContext, nsINode* aCspToInheritLoadingContext,
+    net::LoadInfo** outLoadInfo);
 }  
 
 namespace net {
@@ -72,10 +72,6 @@ class LoadInfo final : public nsILoadInfo {
   LoadInfo(nsPIDOMWindowOuter* aOuterWindow, nsIPrincipal* aTriggeringPrincipal,
            nsISupports* aContextForTopLevelLoad, nsSecurityFlags aSecurityFlags,
            uint32_t aSandboxFlags);
-  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal,
-           const OriginAttributes& aOriginAttributes, uint64_t aOuterWindowID,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   already_AddRefed<nsILoadInfo> Clone() const;
@@ -171,7 +167,8 @@ class LoadInfo final : public nsILoadInfo {
 
   friend nsresult mozilla::ipc::LoadInfoArgsToLoadInfo(
       const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-      nsINode* aCspToInheritLoadingContext, net::LoadInfo** outLoadInfo);
+      nsINode* aLoadingContext, nsINode* aCspToInheritLoadingContext,
+      net::LoadInfo** outLoadInfo);
 
   ~LoadInfo() = default;
 

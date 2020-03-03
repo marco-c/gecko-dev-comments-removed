@@ -283,8 +283,8 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   if (cspToInherit) {
     bool allowsNavigateTo = false;
     nsresult rv = cspToInherit->GetAllowsNavigateTo(
-        aNewURI, aLoadInfo->GetIsFormSubmission(), true, 
-        false,                                           
+        aNewURI, aLoadInfo, true, 
+        false,                    
         &allowsNavigateTo);
     NS_ENSURE_SUCCESS(rv, rv);
 
