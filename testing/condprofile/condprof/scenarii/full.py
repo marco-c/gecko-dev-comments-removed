@@ -19,6 +19,9 @@ class Builder:
         
         if "gecko" in self.platform:
             self.max_urls = max(self.max_urls, 30)
+        
+        elif "fennec" in self.platform:
+            self.max_urls = max(self.max_urls, 5)
         elif self.mobile:
             self.max_urls = max(self.max_urls, 150)
 
