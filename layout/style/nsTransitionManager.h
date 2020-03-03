@@ -37,40 +37,14 @@ struct ElementPropertyTransition : public dom::KeyframeEffect {
   ElementPropertyTransition(dom::Document* aDocument,
                             OwningAnimationTarget&& aTarget,
                             TimingParams&& aTiming,
-                            AnimationValue aStartForReversingTest,
-                            double aReversePortion,
                             const KeyframeEffectParams& aEffectOptions)
       : dom::KeyframeEffect(aDocument, std::move(aTarget), std::move(aTiming),
-                            aEffectOptions),
-        mStartForReversingTest(aStartForReversingTest),
-        mReversePortion(aReversePortion) {}
+                            aEffectOptions) {}
 
   ElementPropertyTransition* AsTransition() override { return this; }
   const ElementPropertyTransition* AsTransition() const override {
     return this;
   }
-
-  
-  
-  
-  
-  
-  AnimationValue mStartForReversingTest;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  double mReversePortion;
-
-  
-  
-  
-  double CurrentValuePortion() const;
 };
 
 namespace dom {
@@ -168,6 +142,22 @@ class CSSTransition final : public Animation {
     QueueEvents(aActiveTime);
   }
 
+  
+  
+  
+  double CurrentValuePortion() const;
+
+  const AnimationValue& StartForReversingTest() const {
+    return mStartForReversingTest;
+  }
+  double ReversePortion() const { return mReversePortion; }
+
+  void SetReverseParameters(AnimationValue&& aStartForReversingTest,
+                            double aReversePortion) {
+    mStartForReversingTest = std::move(aStartForReversingTest);
+    mReversePortion = aReversePortion;
+  }
+
   struct ReplacedTransitionProperties {
     TimeDuration mStartTime;
     double mPlaybackRate;
@@ -239,9 +229,28 @@ class CSSTransition final : public Animation {
   
   
   
-  
   nsCSSPropertyID mTransitionProperty;
   AnimationValue mTransitionToValue;
+
+  
+  
+  
+  
+  
+  
+  
+  AnimationValue mStartForReversingTest;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  double mReversePortion = 1.0;
 
   Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
