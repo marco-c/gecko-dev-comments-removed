@@ -430,13 +430,6 @@ void Decoder::PostSize(int32_t aWidth, int32_t aHeight,
              "Output size will result in upscaling");
 
   
-  
-  
-  if (mOutputSize->width < aWidth || mOutputSize->height < aHeight) {
-    mDownscaler.emplace(*mOutputSize);
-  }
-
-  
   mProgress |= FLAG_SIZE_AVAILABLE;
 }
 

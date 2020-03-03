@@ -298,12 +298,18 @@ LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
     return Transition::TerminateSuccess();
   }
 
-  
-  
   if (mDirEntry->mSize == OutputSize()) {
+    
+    
     MOZ_ASSERT_IF(desiredSize, mDirEntry->mSize == *desiredSize);
     MOZ_ASSERT_IF(!desiredSize, mDirEntry->mSize == Size());
-    mDownscaler.reset();
+  } else if (OutputSize().width < mDirEntry->mSize.width ||
+             OutputSize().height < mDirEntry->mSize.height) {
+    
+    
+    
+    
+    mDownscaler.emplace(OutputSize());
   }
 
   size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();

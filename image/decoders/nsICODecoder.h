@@ -8,6 +8,7 @@
 
 #include "StreamingLexer.h"
 #include "Decoder.h"
+#include "Downscaler.h"
 #include "imgFrame.h"
 #include "mozilla/gfx/2D.h"
 #include "nsBMPDecoder.h"
@@ -81,6 +82,7 @@ class nsICODecoder : public Decoder {
   };
 
   StreamingLexer<ICOState, 32> mLexer;  
+  Maybe<Downscaler> mDownscaler;        
   RefPtr<Decoder> mContainedDecoder;    
   Maybe<SourceBufferIterator>
       mReturnIterator;               

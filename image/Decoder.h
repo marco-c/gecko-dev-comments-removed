@@ -13,7 +13,6 @@
 #include "mozilla/RefPtr.h"
 #include "AnimationParams.h"
 #include "DecoderFlags.h"
-#include "Downscaler.h"
 #include "ImageMetadata.h"
 #include "Orientation.h"
 #include "SourceBuffer.h"
@@ -558,8 +557,6 @@ class Decoder {
       RawAccessFrameRef&& aPreviousFrame);
 
  protected:
-  Maybe<Downscaler> mDownscaler;
-
   
   qcms_profile* mInProfile;
 
