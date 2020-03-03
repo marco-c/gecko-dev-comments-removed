@@ -172,8 +172,7 @@ void Accessible::Description(nsString& aDescription) {
 
   if (!HasOwnContent() || mContent->IsText()) return;
 
-  nsTextEquivUtils::GetTextEquivFromIDRefs(this, nsGkAtoms::aria_describedby,
-                                           aDescription);
+  ARIADescription(aDescription);
 
   if (aDescription.IsEmpty()) {
     NativeDescription(aDescription);
@@ -1962,6 +1961,22 @@ void Accessible::ARIAName(nsString& aName) const {
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::aria_label,
                                      aName)) {
     aName.CompressWhitespace();
+  }
+}
+
+
+void Accessible::ARIADescription(nsString& aDescription) const {
+  
+  nsresult rv = nsTextEquivUtils::GetTextEquivFromIDRefs(
+      this, nsGkAtoms::aria_describedby, aDescription);
+  if (NS_SUCCEEDED(rv)) {
+    aDescription.CompressWhitespace();
+  }
+
+  if (aDescription.IsEmpty() && mContent->IsElement() &&
+      mContent->AsElement()->GetAttr(
+          kNameSpaceID_None, nsGkAtoms::aria_description, aDescription)) {
+    aDescription.CompressWhitespace();
   }
 }
 

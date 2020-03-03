@@ -1070,6 +1070,11 @@ class Accessible : public nsISupports {
   
 
 
+  void ARIADescription(nsString& aDescription) const;
+
+  
+
+
 
   static void NameFromAssociatedXULLabel(DocAccessible* aDocument,
                                          nsIContent* aElm, nsString& aName);
