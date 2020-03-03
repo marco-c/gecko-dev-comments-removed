@@ -11,6 +11,7 @@
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/ModuloBuffer.h"
 #include "mozilla/Pair.h"
+#include "mozilla/ProfileBufferIndex.h"
 #include "mozilla/Unused.h"
 
 #include "mozilla/Maybe.h"
@@ -71,12 +72,9 @@ namespace mozilla {
 
 
 class BlocksRingBuffer {
-  
-  using Index = uint64_t;
-
  public:
   
-  using Buffer = ModuloBuffer<uint32_t, Index>;
+  using Buffer = ModuloBuffer<uint32_t, ProfileBufferIndex>;
   using Byte = Buffer::Byte;
   using BufferWriter = Buffer::Writer;
   using BufferReader = Buffer::Reader;
@@ -112,60 +110,6 @@ class BlocksRingBuffer {
   
   template <typename T>
   struct Deserializer;
-
-  
-  
-  
-  class BlockIndex {
-   public:
-    
-    
-    
-    
-    
-    BlockIndex() : mBlockIndex(0) {}
-
-    
-    
-    explicit operator bool() const { return mBlockIndex != 0; }
-
-    
-    
-    bool operator==(const BlockIndex& aRhs) const {
-      return mBlockIndex == aRhs.mBlockIndex;
-    }
-    bool operator!=(const BlockIndex& aRhs) const {
-      return mBlockIndex != aRhs.mBlockIndex;
-    }
-    bool operator<(const BlockIndex& aRhs) const {
-      return mBlockIndex < aRhs.mBlockIndex;
-    }
-    bool operator<=(const BlockIndex& aRhs) const {
-      return mBlockIndex <= aRhs.mBlockIndex;
-    }
-    bool operator>(const BlockIndex& aRhs) const {
-      return mBlockIndex > aRhs.mBlockIndex;
-    }
-    bool operator>=(const BlockIndex& aRhs) const {
-      return mBlockIndex >= aRhs.mBlockIndex;
-    }
-
-    
-    
-    uint64_t ConvertToU64() const { return uint64_t(mBlockIndex); }
-    static BlockIndex ConvertFromU64(uint64_t aIndex) {
-      return BlockIndex(Index(aIndex));
-    }
-
-   private:
-    
-    
-    friend class BlocksRingBuffer;
-    explicit BlockIndex(Index aBlockIndex) : mBlockIndex(aBlockIndex) {}
-    explicit operator Index() const { return mBlockIndex; }
-
-    Index mBlockIndex;
-  };
 
   enum class ThreadSafety { WithoutMutex, WithMutex };
 
@@ -262,10 +206,10 @@ class BlocksRingBuffer {
   
   struct State {
     
-    BlockIndex mRangeStart;
+    ProfileBufferBlockIndex mRangeStart;
 
     
-    BlockIndex mRangeEnd;
+    ProfileBufferBlockIndex mRangeEnd;
 
     
     uint64_t mPushedBlockCount = 0;
@@ -368,25 +312,31 @@ class BlocksRingBuffer {
     }
 
     
-    BlockIndex CurrentBlockIndex() const {
-      return BlockIndex(mEntryStart - BufferReader::ULEB128Size(mEntryBytes));
+    ProfileBufferBlockIndex CurrentBlockIndex() const {
+      return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+          mEntryStart - BufferReader::ULEB128Size(mEntryBytes));
     }
 
     
-    BlockIndex NextBlockIndex() const {
-      return BlockIndex(mEntryStart + mEntryBytes);
+    ProfileBufferBlockIndex NextBlockIndex() const {
+      return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(mEntryStart +
+                                                                   mEntryBytes);
     }
 
     
-    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
+    ProfileBufferBlockIndex BufferRangeStart() const {
+      return mRing.mFirstReadIndex;
+    }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
+    ProfileBufferBlockIndex BufferRangeEnd() const {
+      return mRing.mNextWriteIndex;
+    }
 
     
     
     
-    Maybe<EntryReader> GetEntryAt(BlockIndex aBlockIndex) {
+    Maybe<EntryReader> GetEntryAt(ProfileBufferBlockIndex aBlockIndex) {
       
       MOZ_ASSERT(aBlockIndex <= BufferRangeEnd());
       if (aBlockIndex >= BufferRangeStart() && aBlockIndex < BufferRangeEnd()) {
@@ -400,7 +350,7 @@ class BlocksRingBuffer {
 
     
     Maybe<EntryReader> GetNextEntry() {
-      const BlockIndex nextBlockIndex = NextBlockIndex();
+      const ProfileBufferBlockIndex nextBlockIndex = NextBlockIndex();
       if (nextBlockIndex < BufferRangeEnd()) {
         return Some(EntryReader(mRing, nextBlockIndex));
       }
@@ -411,9 +361,10 @@ class BlocksRingBuffer {
     
     friend class BlocksRingBuffer;
 
-    explicit EntryReader(const BlocksRingBuffer& aRing, BlockIndex aBlockIndex)
+    explicit EntryReader(const BlocksRingBuffer& aRing,
+                         ProfileBufferBlockIndex aBlockIndex)
         : BufferReader(aRing.mMaybeUnderlyingBuffer->mBuffer.ReaderAt(
-              Index(aBlockIndex))),
+              aBlockIndex.ConvertToProfileBufferIndex())),
           mRing(aRing),
           mEntryBytes(BufferReader::ReadULEB128<Length>()),
           mEntryStart(CurrentIndex()) {
@@ -426,7 +377,7 @@ class BlocksRingBuffer {
     
     const BlocksRingBuffer& mRing;
     const Length mEntryBytes;
-    const Index mEntryStart;
+    const ProfileBufferIndex mEntryStart;
   };
 
   class Reader;
@@ -470,28 +421,34 @@ class BlocksRingBuffer {
     }
 
     
-    BlockIndex CurrentBlockIndex() const { return mBlockIndex; }
+    ProfileBufferBlockIndex CurrentBlockIndex() const { return mBlockIndex; }
 
     
-    BlockIndex NextBlockIndex() const {
+    ProfileBufferBlockIndex NextBlockIndex() const {
       MOZ_ASSERT(!IsAtEnd());
-      BufferReader reader =
-          mRing->mMaybeUnderlyingBuffer->mBuffer.ReaderAt(Index(mBlockIndex));
+      BufferReader reader = mRing->mMaybeUnderlyingBuffer->mBuffer.ReaderAt(
+          mBlockIndex.ConvertToProfileBufferIndex());
       Length entrySize = reader.ReadULEB128<Length>();
-      return BlockIndex(reader.CurrentIndex() + entrySize);
+      return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+          reader.CurrentIndex() + entrySize);
     }
 
     
-    BlockIndex BufferRangeStart() const { return mRing->mFirstReadIndex; }
+    ProfileBufferBlockIndex BufferRangeStart() const {
+      return mRing->mFirstReadIndex;
+    }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing->mNextWriteIndex; }
+    ProfileBufferBlockIndex BufferRangeEnd() const {
+      return mRing->mNextWriteIndex;
+    }
 
    private:
     
     friend class Reader;
 
-    BlockIterator(const BlocksRingBuffer& aRing, BlockIndex aBlockIndex)
+    BlockIterator(const BlocksRingBuffer& aRing,
+                  ProfileBufferBlockIndex aBlockIndex)
         : mRing(WrapNotNull(&aRing)), mBlockIndex(aBlockIndex) {
       
       mRing->mMutex.AssertCurrentThreadOwns();
@@ -501,7 +458,7 @@ class BlocksRingBuffer {
     
     
     NotNull<const BlocksRingBuffer*> mRing;
-    BlockIndex mBlockIndex;
+    ProfileBufferBlockIndex mBlockIndex;
   };
 
   
@@ -521,10 +478,14 @@ class BlocksRingBuffer {
 #endif  
 
     
-    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
+    ProfileBufferBlockIndex BufferRangeStart() const {
+      return mRing.mFirstReadIndex;
+    }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
+    ProfileBufferBlockIndex BufferRangeEnd() const {
+      return mRing.mNextWriteIndex;
+    }
 
     
     
@@ -538,7 +499,7 @@ class BlocksRingBuffer {
     
     
     
-    BlockIterator At(BlockIndex aBlockIndex) const {
+    BlockIterator At(ProfileBufferBlockIndex aBlockIndex) const {
       if (aBlockIndex < BufferRangeStart()) {
         
         
@@ -605,8 +566,9 @@ class BlocksRingBuffer {
   
   
   
+  
   template <typename Callback>
-  auto ReadAt(BlockIndex aBlockIndex, Callback&& aCallback) const {
+  auto ReadAt(ProfileBufferBlockIndex aBlockIndex, Callback&& aCallback) const {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
     MOZ_ASSERT(aBlockIndex <= mNextWriteIndex);
     Maybe<EntryReader> maybeEntryReader;
@@ -676,25 +638,31 @@ class BlocksRingBuffer {
     }
 
     
-    BlockIndex CurrentBlockIndex() const {
-      return BlockIndex(mEntryStart - BufferWriter::ULEB128Size(mEntryBytes));
+    ProfileBufferBlockIndex CurrentBlockIndex() const {
+      return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+          mEntryStart - BufferWriter::ULEB128Size(mEntryBytes));
     }
 
     
     
-    BlockIndex BlockEndIndex() const {
-      return BlockIndex(mEntryStart + mEntryBytes);
+    ProfileBufferBlockIndex BlockEndIndex() const {
+      return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(mEntryStart +
+                                                                   mEntryBytes);
     }
 
     
-    BlockIndex BufferRangeStart() const { return mRing.mFirstReadIndex; }
+    ProfileBufferBlockIndex BufferRangeStart() const {
+      return mRing.mFirstReadIndex;
+    }
 
     
-    BlockIndex BufferRangeEnd() const { return mRing.mNextWriteIndex; }
+    ProfileBufferBlockIndex BufferRangeEnd() const {
+      return mRing.mNextWriteIndex;
+    }
 
     
     
-    Maybe<EntryReader> GetEntryAt(BlockIndex aBlockIndex) {
+    Maybe<EntryReader> GetEntryAt(ProfileBufferBlockIndex aBlockIndex) {
       
       MOZ_RELEASE_ASSERT(aBlockIndex < BufferRangeEnd());
       if (aBlockIndex >= BufferRangeStart()) {
@@ -717,10 +685,10 @@ class BlocksRingBuffer {
              static_cast<Length>(BufferWriter::ULEB128Size(aEntryBytes));
     }
 
-    EntryWriter(BlocksRingBuffer& aRing, BlockIndex aBlockIndex,
+    EntryWriter(BlocksRingBuffer& aRing, ProfileBufferBlockIndex aBlockIndex,
                 Length aEntryBytes)
         : BufferWriter(aRing.mMaybeUnderlyingBuffer->mBuffer.WriterAt(
-              Index(aBlockIndex))),
+              aBlockIndex.ConvertToProfileBufferIndex())),
           mRing(aRing),
           mEntryBytes(aEntryBytes),
           mEntryStart([&]() {
@@ -737,7 +705,7 @@ class BlocksRingBuffer {
     
     BlocksRingBuffer& mRing;
     const Length mEntryBytes;
-    const Index mEntryStart;
+    const ProfileBufferIndex mEntryStart;
   };
 
   
@@ -763,16 +731,20 @@ class BlocksRingBuffer {
         const Length blockBytes =
             EntryWriter::BlockSizeForEntrySize(entryBytes);
         
-        const BlockIndex blockIndex = mNextWriteIndex;
+        const ProfileBufferBlockIndex blockIndex = mNextWriteIndex;
         
-        const Index blockEnd = Index(blockIndex) + blockBytes;
+        const ProfileBufferIndex blockEnd =
+            blockIndex.ConvertToProfileBufferIndex() + blockBytes;
         
-        mNextWriteIndex = BlockIndex(blockEnd);
-        while (blockEnd > Index(mFirstReadIndex) + bufferBytes) {
+        mNextWriteIndex =
+            ProfileBufferBlockIndex::CreateFromProfileBufferIndex(blockEnd);
+        while (blockEnd >
+               mFirstReadIndex.ConvertToProfileBufferIndex() + bufferBytes) {
           
           EntryReader reader = ReaderInBlockAt(mFirstReadIndex);
           mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
-          MOZ_ASSERT(reader.CurrentIndex() <= Index(reader.NextBlockIndex()));
+          MOZ_ASSERT(reader.CurrentIndex() <=
+                     reader.NextBlockIndex().ConvertToProfileBufferIndex());
           
           mFirstReadIndex = reader.NextBlockIndex();
         }
@@ -798,7 +770,7 @@ class BlocksRingBuffer {
   }
 
   
-  BlockIndex PutFrom(const void* aSrc, Length aBytes) {
+  ProfileBufferBlockIndex PutFrom(const void* aSrc, Length aBytes) {
     return ReserveAndPut([aBytes]() { return aBytes; },
                          [&](EntryWriter* aEntryWriter) {
                            if (MOZ_LIKELY(aEntryWriter)) {
@@ -806,14 +778,14 @@ class BlocksRingBuffer {
                              return aEntryWriter->CurrentBlockIndex();
                            }
                            
-                           return BlockIndex{};
+                           return ProfileBufferBlockIndex{};
                          });
   }
 
   
   
   template <typename... Ts>
-  BlockIndex PutObjects(const Ts&... aTs) {
+  ProfileBufferBlockIndex PutObjects(const Ts&... aTs) {
     static_assert(sizeof...(Ts) > 0,
                   "PutObjects must be given at least one object.");
     return ReserveAndPut([&]() { return SumBytes(aTs...); },
@@ -823,39 +795,41 @@ class BlocksRingBuffer {
                              return aEntryWriter->CurrentBlockIndex();
                            }
                            
-                           return BlockIndex{};
+                           return ProfileBufferBlockIndex{};
                          });
   }
 
   
   template <typename T>
-  BlockIndex PutObject(const T& aOb) {
+  ProfileBufferBlockIndex PutObject(const T& aOb) {
     return PutObjects(aOb);
   }
 
   
-  BlockIndex AppendContents(const BlocksRingBuffer& aSrc) {
+  ProfileBufferBlockIndex AppendContents(const BlocksRingBuffer& aSrc) {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
 
     if (MOZ_UNLIKELY(!mMaybeUnderlyingBuffer)) {
       
-      return BlockIndex{};
+      return ProfileBufferBlockIndex{};
     }
 
     baseprofiler::detail::BaseProfilerMaybeAutoLock srcLock(aSrc.mMutex);
 
     if (MOZ_UNLIKELY(!aSrc.mMaybeUnderlyingBuffer)) {
       
-      return BlockIndex{};
+      return ProfileBufferBlockIndex{};
     }
 
-    const Index srcStartIndex = Index(aSrc.mFirstReadIndex);
-    const Index srcEndIndex = Index(aSrc.mNextWriteIndex);
+    const ProfileBufferIndex srcStartIndex =
+        aSrc.mFirstReadIndex.ConvertToProfileBufferIndex();
+    const ProfileBufferIndex srcEndIndex =
+        aSrc.mNextWriteIndex.ConvertToProfileBufferIndex();
     const Length bytesToCopy = static_cast<Length>(srcEndIndex - srcStartIndex);
 
     if (MOZ_UNLIKELY(bytesToCopy == 0)) {
       
-      return BlockIndex{};
+      return ProfileBufferBlockIndex{};
     }
 
     const Length bufferBytes =
@@ -865,17 +839,21 @@ class BlocksRingBuffer {
                        "Entry would wrap and overwrite itself");
 
     
-    const Index dstStartIndex = Index(mNextWriteIndex);
+    const ProfileBufferIndex dstStartIndex =
+        mNextWriteIndex.ConvertToProfileBufferIndex();
     
-    const Index dstEndIndex = dstStartIndex + bytesToCopy;
+    const ProfileBufferIndex dstEndIndex = dstStartIndex + bytesToCopy;
     
-    mNextWriteIndex = BlockIndex(dstEndIndex);
+    mNextWriteIndex =
+        ProfileBufferBlockIndex::CreateFromProfileBufferIndex(dstEndIndex);
 
-    while (dstEndIndex > Index(mFirstReadIndex) + bufferBytes) {
+    while (dstEndIndex >
+           mFirstReadIndex.ConvertToProfileBufferIndex() + bufferBytes) {
       
       EntryReader reader = ReaderInBlockAt(mFirstReadIndex);
       mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
-      MOZ_ASSERT(reader.CurrentIndex() <= Index(reader.NextBlockIndex()));
+      MOZ_ASSERT(reader.CurrentIndex() <=
+                 reader.NextBlockIndex().ConvertToProfileBufferIndex());
       
       mFirstReadIndex = reader.NextBlockIndex();
     }
@@ -895,9 +873,9 @@ class BlocksRingBuffer {
       *writer = *reader;
     }
     MOZ_ASSERT(writer == mMaybeUnderlyingBuffer->mBuffer.WriterAt(
-                             Index(mNextWriteIndex)));
+                             mNextWriteIndex.ConvertToProfileBufferIndex()));
 
-    return BlockIndex(dstStartIndex);
+    return ProfileBufferBlockIndex::CreateFromProfileBufferIndex(dstStartIndex);
   }
 
   
@@ -909,7 +887,7 @@ class BlocksRingBuffer {
 
   
   
-  void ClearBefore(BlockIndex aBlockIndex) {
+  void ClearBefore(ProfileBufferBlockIndex aBlockIndex) {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
     if (!mMaybeUnderlyingBuffer) {
       return;
@@ -948,11 +926,12 @@ class BlocksRingBuffer {
       return;
     }
     using ULL = unsigned long long;
-    printf("start=%llu (%llu) end=%llu (%llu) - ", ULL(Index(mFirstReadIndex)),
-           ULL(Index(mFirstReadIndex) &
+    printf("start=%llu (%llu) end=%llu (%llu) - ",
+           ULL(mFirstReadIndex.ConvertToProfileBufferIndex()),
+           ULL(mFirstReadIndex.ConvertToProfileBufferIndex() &
                (mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() - 1)),
-           ULL(Index(mNextWriteIndex)),
-           ULL(Index(mNextWriteIndex) &
+           ULL(mNextWriteIndex.ConvertToProfileBufferIndex()),
+           ULL(mNextWriteIndex.ConvertToProfileBufferIndex() &
                (mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value() - 1)));
     mMaybeUnderlyingBuffer->mBuffer.Dump();
   }
@@ -963,7 +942,7 @@ class BlocksRingBuffer {
   
   
   
-  void AssertBlockIndexIsValid(BlockIndex aBlockIndex) const {
+  void AssertBlockIndexIsValid(ProfileBufferBlockIndex aBlockIndex) const {
 #ifdef DEBUG
     mMutex.AssertCurrentThreadOwns();
     MOZ_ASSERT(aBlockIndex >= mFirstReadIndex);
@@ -972,8 +951,8 @@ class BlocksRingBuffer {
 #  if 1
     
     
-    BufferReader br =
-        mMaybeUnderlyingBuffer->mBuffer.ReaderAt(Index(aBlockIndex));
+    BufferReader br = mMaybeUnderlyingBuffer->mBuffer.ReaderAt(
+        aBlockIndex.ConvertToProfileBufferIndex());
     Length entryBytes = br.ReadULEB128<Length>();
     MOZ_ASSERT(entryBytes > 0, "Empty entries are not allowed");
     MOZ_ASSERT(
@@ -981,9 +960,9 @@ class BlocksRingBuffer {
                          BufferReader::ULEB128Size(entryBytes),
         "Entry would wrap and overwrite itself");
     
-    MOZ_ASSERT(Index(aBlockIndex) + BufferReader::ULEB128Size(entryBytes) +
-                   entryBytes <=
-               Index(mNextWriteIndex));
+    MOZ_ASSERT(aBlockIndex.ConvertToProfileBufferIndex() +
+                   BufferReader::ULEB128Size(entryBytes) + entryBytes <=
+               mNextWriteIndex.ConvertToProfileBufferIndex());
 #  else
     
     
@@ -1002,7 +981,7 @@ class BlocksRingBuffer {
   
   
   
-  void AssertBlockIndexIsValidOrEnd(BlockIndex aBlockIndex) const {
+  void AssertBlockIndexIsValidOrEnd(ProfileBufferBlockIndex aBlockIndex) const {
 #ifdef DEBUG
     mMutex.AssertCurrentThreadOwns();
     if (aBlockIndex == mNextWriteIndex) {
@@ -1013,7 +992,7 @@ class BlocksRingBuffer {
   }
 
   
-  EntryReader ReaderInBlockAt(BlockIndex aBlockIndex) const {
+  EntryReader ReaderInBlockAt(ProfileBufferBlockIndex aBlockIndex) const {
     mMutex.AssertCurrentThreadOwns();
     MOZ_ASSERT(aBlockIndex >= mFirstReadIndex);
     MOZ_ASSERT(aBlockIndex < mNextWriteIndex);
@@ -1103,12 +1082,14 @@ class BlocksRingBuffer {
   
   
   
-  BlockIndex mFirstReadIndex = BlockIndex(Index(1));
+  ProfileBufferBlockIndex mFirstReadIndex =
+      ProfileBufferBlockIndex::CreateFromProfileBufferIndex(1);
   
   
   
   
-  BlockIndex mNextWriteIndex = BlockIndex(Index(1));
+  ProfileBufferBlockIndex mNextWriteIndex =
+      ProfileBufferBlockIndex::CreateFromProfileBufferIndex(1);
 };
 
 
@@ -1205,24 +1186,25 @@ struct BlocksRingBuffer::Deserializer<T&&>
 
 
 template <>
-struct BlocksRingBuffer::Serializer<BlocksRingBuffer::BlockIndex> {
-  static constexpr Length Bytes(const BlockIndex& aBlockIndex) {
-    return sizeof(BlockIndex);
+struct BlocksRingBuffer::Serializer<ProfileBufferBlockIndex> {
+  static constexpr Length Bytes(const ProfileBufferBlockIndex& aBlockIndex) {
+    return sizeof(ProfileBufferBlockIndex);
   }
 
-  static void Write(EntryWriter& aEW, const BlockIndex& aBlockIndex) {
+  static void Write(EntryWriter& aEW,
+                    const ProfileBufferBlockIndex& aBlockIndex) {
     aEW.Write(&aBlockIndex, sizeof(aBlockIndex));
   }
 };
 
 template <>
-struct BlocksRingBuffer::Deserializer<BlocksRingBuffer::BlockIndex> {
-  static void ReadInto(EntryReader& aER, BlockIndex& aBlockIndex) {
+struct BlocksRingBuffer::Deserializer<ProfileBufferBlockIndex> {
+  static void ReadInto(EntryReader& aER, ProfileBufferBlockIndex& aBlockIndex) {
     aER.Read(&aBlockIndex, sizeof(aBlockIndex));
   }
 
-  static BlockIndex Read(EntryReader& aER) {
-    BlockIndex blockIndex;
+  static ProfileBufferBlockIndex Read(EntryReader& aER) {
+    ProfileBufferBlockIndex blockIndex;
     ReadInto(aER, blockIndex);
     return blockIndex;
   }
@@ -1826,8 +1808,8 @@ struct BlocksRingBuffer::Serializer<BlocksRingBuffer> {
       
       return ULEB128Size<Length>(0);
     }
-    const auto start = Index(aBuffer.mFirstReadIndex);
-    const auto end = Index(aBuffer.mNextWriteIndex);
+    const auto start = aBuffer.mFirstReadIndex.ConvertToProfileBufferIndex();
+    const auto end = aBuffer.mNextWriteIndex.ConvertToProfileBufferIndex();
     const auto len = end - start;
     if (len == 0) {
       
@@ -1845,8 +1827,8 @@ struct BlocksRingBuffer::Serializer<BlocksRingBuffer> {
       aEW.WriteULEB128<Length>(0);
       return;
     }
-    const auto start = Index(aBuffer.mFirstReadIndex);
-    const auto end = Index(aBuffer.mNextWriteIndex);
+    const auto start = aBuffer.mFirstReadIndex.ConvertToProfileBufferIndex();
+    const auto end = aBuffer.mNextWriteIndex.ConvertToProfileBufferIndex();
     MOZ_ASSERT(end - start <= std::numeric_limits<Length>::max());
     const auto len = static_cast<Length>(end - start);
     if (len == 0) {
@@ -1891,10 +1873,12 @@ struct BlocksRingBuffer::Deserializer<BlocksRingBuffer> {
       MOZ_ASSERT(aBuffer.BufferLength()->Value() >= len);
     }
     
-    const auto start = aER.ReadObject<BlocksRingBuffer::Index>();
-    aBuffer.mFirstReadIndex = BlocksRingBuffer::BlockIndex(start);
-    const auto end = aER.ReadObject<BlocksRingBuffer::Index>();
-    aBuffer.mNextWriteIndex = BlocksRingBuffer::BlockIndex(end);
+    const auto start = aER.ReadObject<ProfileBufferIndex>();
+    aBuffer.mFirstReadIndex =
+        ProfileBufferBlockIndex::CreateFromProfileBufferIndex(start);
+    const auto end = aER.ReadObject<ProfileBufferIndex>();
+    aBuffer.mNextWriteIndex =
+        ProfileBufferBlockIndex::CreateFromProfileBufferIndex(end);
     MOZ_ASSERT(end - start == len);
     
     auto writer = aBuffer.mMaybeUnderlyingBuffer->mBuffer.WriterAt(start);

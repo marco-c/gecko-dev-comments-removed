@@ -22,13 +22,6 @@ class ProfileBuffer final {
   
   
   
-  
-  
-  using BlockIndex = mozilla::BlocksRingBuffer::BlockIndex;
-
-  
-  
-  
   ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer,
                 mozilla::PowerOfTwo32 aCapacity);
 
@@ -105,11 +98,11 @@ class ProfileBuffer final {
       
       MOZ_ASSERT(aReader);
       for (mozilla::BlocksRingBuffer::EntryReader er : *aReader) {
-        if (er.CurrentBlockIndex().ConvertToU64() > aPosition) {
+        if (er.CurrentBlockIndex().ConvertToProfileBufferIndex() > aPosition) {
           
           return;
         }
-        if (er.CurrentBlockIndex().ConvertToU64() == aPosition) {
+        if (er.CurrentBlockIndex().ConvertToProfileBufferIndex() == aPosition) {
           MOZ_RELEASE_ASSERT(er.RemainingBytes() <= sizeof(entry));
           er.Read(&entry, er.RemainingBytes());
           return;
@@ -134,14 +127,15 @@ class ProfileBuffer final {
   
   
   
-  static BlockIndex AddEntry(mozilla::BlocksRingBuffer& aBlocksRingBuffer,
-                             const ProfileBufferEntry& aEntry);
+  static mozilla::ProfileBufferBlockIndex AddEntry(
+      mozilla::BlocksRingBuffer& aBlocksRingBuffer,
+      const ProfileBufferEntry& aEntry);
 
   
   
   
   
-  static BlockIndex AddThreadIdEntry(
+  static mozilla::ProfileBufferBlockIndex AddThreadIdEntry(
       mozilla::BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
 
   
@@ -162,10 +156,10 @@ class ProfileBuffer final {
   
   
   uint64_t BufferRangeStart() const {
-    return mEntries.GetState().mRangeStart.ConvertToU64();
+    return mEntries.GetState().mRangeStart.ConvertToProfileBufferIndex();
   }
   uint64_t BufferRangeEnd() const {
-    return mEntries.GetState().mRangeEnd.ConvertToU64();
+    return mEntries.GetState().mRangeEnd.ConvertToProfileBufferIndex();
   }
 
  private:

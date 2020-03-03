@@ -24,13 +24,6 @@ class ProfileBuffer final {
   
   
   
-  
-  
-  using BlockIndex = BlocksRingBuffer::BlockIndex;
-
-  
-  
-  
   ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity);
 
   
@@ -101,15 +94,15 @@ class ProfileBuffer final {
   
   
   
-  static BlockIndex AddEntry(BlocksRingBuffer& aBlocksRingBuffer,
-                             const ProfileBufferEntry& aEntry);
+  static ProfileBufferBlockIndex AddEntry(BlocksRingBuffer& aBlocksRingBuffer,
+                                          const ProfileBufferEntry& aEntry);
 
   
   
   
   
-  static BlockIndex AddThreadIdEntry(BlocksRingBuffer& aBlocksRingBuffer,
-                                     int aThreadId);
+  static ProfileBufferBlockIndex AddThreadIdEntry(
+      BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
 
   
   BlocksRingBuffer& mEntries;
@@ -129,10 +122,10 @@ class ProfileBuffer final {
   
   
   uint64_t BufferRangeStart() const {
-    return mEntries.GetState().mRangeStart.ConvertToU64();
+    return mEntries.GetState().mRangeStart.ConvertToProfileBufferIndex();
   }
   uint64_t BufferRangeEnd() const {
-    return mEntries.GetState().mRangeEnd.ConvertToU64();
+    return mEntries.GetState().mRangeEnd.ConvertToProfileBufferIndex();
   }
 
  private:
