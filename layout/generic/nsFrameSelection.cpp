@@ -2062,7 +2062,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
   
   
   const int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
-  if (!mDomSelections[index]) return NS_ERROR_NULL_POINTER;
+  if (!mDomSelections[index]) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   mDomSelections[index]->SetDirection(eDirNext);
 
@@ -2099,9 +2101,13 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           
           result = GetCellIndexes(mTableSelection.mEndSelectedCell,
                                   startRowIndex, startColIndex);
-          if (NS_FAILED(result)) return result;
+          if (NS_FAILED(result)) {
+            return result;
+          }
           result = GetCellIndexes(childContent, curRowIndex, curColIndex);
-          if (NS_FAILED(result)) return result;
+          if (NS_FAILED(result)) {
+            return result;
+          }
 
 #ifdef DEBUG_TABLE_SELECTION
           printf(
@@ -2112,8 +2118,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           if ((mTableSelection.mMode == TableSelectionMode::Row &&
                startRowIndex == curRowIndex) ||
               (mTableSelection.mMode == TableSelectionMode::Column &&
-               startColIndex == curColIndex))
+               startColIndex == curColIndex)) {
             return NS_OK;
+          }
         }
 #ifdef DEBUG_TABLE_SELECTION
         printf(" Dragged into a new column or row\n");
@@ -2137,19 +2144,24 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
         if (mTableSelection.mStartSelectedCell && aMouseEvent->IsShift()) {
           result = GetCellIndexes(mTableSelection.mStartSelectedCell,
                                   startRowIndex, startColIndex);
-          if (NS_FAILED(result)) return result;
+          if (NS_FAILED(result)) {
+            return result;
+          }
           result = GetCellIndexes(childContent, curRowIndex, curColIndex);
-          if (NS_FAILED(result)) return result;
+          if (NS_FAILED(result)) {
+            return result;
+          }
 
           if (startRowIndex == curRowIndex || startColIndex == curColIndex) {
             
             mTableSelection.mStartSelectedCell = nullptr;
             mDomSelections[index]->RemoveAllRanges(IgnoreErrors());
 
-            if (startRowIndex == curRowIndex)
+            if (startRowIndex == curRowIndex) {
               mTableSelection.mMode = TableSelectionMode::Row;
-            else
+            } else {
               mTableSelection.mMode = TableSelectionMode::Column;
+            }
 
             const RefPtr<Selection> selection = mDomSelections[index];
             if (!selection) {
@@ -2192,7 +2204,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
 
           
           nsIFrame* cellFrame = childContent->GetPrimaryFrame();
-          if (!cellFrame) return NS_ERROR_NULL_POINTER;
+          if (!cellFrame) {
+            return NS_ERROR_NULL_POINTER;
+          }
           isSelected = cellFrame->IsSelected();
         } else {
           
@@ -2338,7 +2352,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           
           
           RefPtr<nsRange> range = mDomSelections[index]->GetRangeAt(i);
-          if (!range) return NS_ERROR_NULL_POINTER;
+          if (!range) {
+            return NS_ERROR_NULL_POINTER;
+          }
 
           nsINode* container = range->GetStartContainer();
           if (!container) {
@@ -2353,7 +2369,9 @@ nsresult nsFrameSelection::HandleTableSelection(nsINode* aParentContent,
           }
 
           
-          if (!previousCellParent) break;
+          if (!previousCellParent) {
+            break;
+          }
 
           if (previousCellParent == aParentContent &&
               offset == aContentOffset) {
