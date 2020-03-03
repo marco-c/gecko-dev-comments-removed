@@ -44,11 +44,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
-  ["clickSelectsAll", false],
-
-  
-  
-  
   
   ["ctrlCanonizesURLs", true],
 
@@ -65,11 +60,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   ["disableExtendForTests", false],
-
-  
-  
-  
-  ["doubleClickSelectsAll", false],
 
   
   ["eventTelemetry.enabled", false],

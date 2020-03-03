@@ -438,11 +438,10 @@
     _maybeSelectAll() {
       if (
         !this._preventClickSelectsAll &&
-        UrlbarPrefs.get("clickSelectsAll") &&
         document.activeElement == this._textbox &&
         this._textbox.selectionStart == this._textbox.selectionEnd
       ) {
-        this._textbox.editor.selectAll();
+        this.select();
       }
     }
 
@@ -563,11 +562,6 @@
           
           
           this.openSuggestionsPanel(true);
-        }
-
-        if (event.detail == 2 && UrlbarPrefs.get("doubleClickSelectsAll")) {
-          this._textbox.editor.selectAll();
-          event.preventDefault();
         }
       });
     }

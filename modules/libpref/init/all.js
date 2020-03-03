@@ -3541,8 +3541,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   pref("middlemouse.openNewWindow", true);
   pref("middlemouse.scrollbarPosition", true);
 
-  pref("browser.urlbar.clickSelectsAll", false);
-
   
   
   
@@ -3583,8 +3581,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   pref("middlemouse.paste", true);
   pref("middlemouse.openNewWindow", true);
   pref("middlemouse.scrollbarPosition", true);
-
-  pref("browser.urlbar.clickSelectsAll", false);
 
   
   
