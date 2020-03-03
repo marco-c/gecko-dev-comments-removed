@@ -76,7 +76,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool Open(dom::CanonicalBrowsingContext* aProcessTopBrowsingContext,
+  bool Open(dom::CanonicalBrowsingContext* aBrowsingContext,
+            dom::CanonicalBrowsingContext* aProcessTopBrowsingContext,
             nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
             nsLoadFlags aLoadFlags, uint32_t aLoadType, uint32_t aCacheKey,
             bool aIsActive, bool aIsTopLevelDoc,
@@ -86,7 +87,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
             const uint64_t& aChannelId, const TimeStamp& aAsyncOpenTime,
             const Maybe<uint32_t>& aDocumentOpenFlags, bool aPluginsAllowed,
             nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
-            nsresult* aRv);
+            uint64_t aOuterWindowId, nsresult* aRv);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -200,6 +201,13 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
                         const Maybe<uint64_t>& aDestinationProcess);
+
+  
+  
+  
+  already_AddRefed<LoadInfo> CreateLoadInfo(
+      dom::CanonicalBrowsingContext* aBrowsingContext,
+      nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
 
   
   
