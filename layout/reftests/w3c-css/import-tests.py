@@ -33,7 +33,6 @@ import re
 
 
 gSubtrees = [
-    os.path.join("css-writing-modes"),
 ]
 
 
