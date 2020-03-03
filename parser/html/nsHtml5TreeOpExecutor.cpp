@@ -812,8 +812,7 @@ void nsHtml5TreeOpExecutor::MaybeComplainAboutCharset(const char* aMsgId,
   
   if (!strcmp(aMsgId, "EncNoDeclaration") && mDocShell) {
     BrowsingContext* const bc = mDocShell->GetBrowsingContext();
-    BrowsingContext* const parent = bc->GetParent();
-    if (parent) {
+    if (bc && bc->GetParent()) {
       return;
     }
   }
