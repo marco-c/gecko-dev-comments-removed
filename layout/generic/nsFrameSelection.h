@@ -717,17 +717,18 @@ class nsFrameSelection final {
   bool AdjustForMaintainedSelection(nsIContent* aContent, int32_t aOffset);
 
   
-  void PostReason(int16_t aReason) { mSelectionChangeReason = aReason; }
+  void PostReason(int16_t aReason) { mSelectionChangeReasons = aReason; }
   int16_t PopReason() {
-    int16_t retval = mSelectionChangeReason;
-    mSelectionChangeReason = nsISelectionListener::NO_REASON;
+    int16_t retval = mSelectionChangeReasons;
+    mSelectionChangeReasons = nsISelectionListener::NO_REASON;
     return retval;
   }
   bool IsUserSelectionReason() const {
-    return (mSelectionChangeReason & (nsISelectionListener::DRAG_REASON |
-                                      nsISelectionListener::MOUSEDOWN_REASON |
-                                      nsISelectionListener::MOUSEUP_REASON |
-                                      nsISelectionListener::KEYPRESS_REASON)) !=
+    return (mSelectionChangeReasons &
+            (nsISelectionListener::DRAG_REASON |
+             nsISelectionListener::MOUSEDOWN_REASON |
+             nsISelectionListener::MOUSEUP_REASON |
+             nsISelectionListener::KEYPRESS_REASON)) !=
            nsISelectionListener::NO_REASON;
   }
 
@@ -841,7 +842,8 @@ class nsFrameSelection final {
 
   mozilla::PresShell* mPresShell = nullptr;
   
-  int16_t mSelectionChangeReason = nsISelectionListener::NO_REASON;
+  
+  int16_t mSelectionChangeReasons = nsISelectionListener::NO_REASON;
   
   int16_t mDisplaySelection = nsISelectionController::SELECTION_OFF;
 
