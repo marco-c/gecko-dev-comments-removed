@@ -45,30 +45,6 @@ using mozilla::dom::Nullable;
 using namespace mozilla;
 using namespace mozilla::css;
 
-double ElementPropertyTransition::CurrentValuePortion() const {
-  MOZ_ASSERT(!GetLocalTime().IsNull(),
-             "Getting the value portion of an animation that's not being "
-             "sampled");
-
-  
-  
-  
-  
-  
-  
-  TimingParams timingToUse = SpecifiedTiming();
-  timingToUse.SetFill(dom::FillMode::Both);
-  ComputedTiming computedTiming = GetComputedTiming(&timingToUse);
-
-  MOZ_ASSERT(!computedTiming.mProgress.IsNull(),
-             "Got a null progress for a fill mode of 'both'");
-
-  
-  
-  
-  return computedTiming.mProgress.Value();
-}
-
 
 
 JSObject* CSSTransition::WrapObject(JSContext* aCx,
@@ -304,6 +280,31 @@ Nullable<TimeDuration> CSSTransition::GetCurrentTimeAt(
   }
 
   return result;
+}
+
+double CSSTransition::CurrentValuePortion() const {
+  if (!GetEffect()) {
+    return 0.0;
+  }
+
+  
+  
+  
+  
+  
+  
+  TimingParams timingToUse = GetEffect()->SpecifiedTiming();
+  timingToUse.SetFill(dom::FillMode::Both);
+  ComputedTiming computedTiming = GetEffect()->GetComputedTiming(&timingToUse);
+
+  if (computedTiming.mProgress.IsNull()) {
+    return 0.0;
+  }
+
+  
+  
+  
+  return computedTiming.mProgress.Value();
 }
 
 void CSSTransition::UpdateStartValueFromReplacedTransition() {
@@ -739,17 +740,14 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
 
   
   
-  
-  
-  
   if (haveCurrentTransition &&
       aElementTransitions->mAnimations[currentIndex]->HasCurrentEffect() &&
-      oldPT && oldPT->mStartForReversingTest == endValue) {
+      oldTransition && oldTransition->StartForReversingTest() == endValue) {
     
     
     double valuePortion =
-        oldPT->CurrentValuePortion() * oldPT->mReversePortion +
-        (1.0 - oldPT->mReversePortion);
+        oldTransition->CurrentValuePortion() * oldTransition->ReversePortion() +
+        (1.0 - oldTransition->ReversePortion());
     
     
     
@@ -792,7 +790,7 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   KeyframeEffectParams effectOptions;
   RefPtr<ElementPropertyTransition> pt = new ElementPropertyTransition(
       aElement->OwnerDoc(), OwningAnimationTarget(aElement, aPseudoType),
-      std::move(timing), startForReversingTest, reversePortion, effectOptions);
+      std::move(timing), effectOptions);
 
   pt->SetKeyframes(GetTransitionKeyframes(aProperty, std::move(startValue),
                                           std::move(endValue)),
@@ -805,6 +803,8 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   animation->SetCreationSequence(
       mPresContext->RestyleManager()->GetAnimationGeneration());
   animation->SetEffectFromStyle(pt);
+  animation->SetReverseParameters(std::move(startForReversingTest),
+                                  reversePortion);
   animation->PlayFromStyle();
 
   if (!aElementTransitions) {
