@@ -74,17 +74,6 @@ pub enum CompositeSurfaceFormat {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone)]
-pub enum TileCompositeMode {
-    
-    Default,
-    
-    Over,
-}
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CompositeTile {
     pub surface: CompositeTileSurface,
     pub rect: DeviceRect,
@@ -93,7 +82,6 @@ pub struct CompositeTile {
     pub valid_rect: DeviceRect,
     pub z_id: ZBufferId,
     pub tile_id: Option<NativeTileId>,
-    pub mode: TileCompositeMode,
 }
 
 
@@ -423,24 +411,6 @@ impl CompositeState {
                 visible_alpha_tile_count += 1;
             }
 
-            
-            
-            let mut mode = TileCompositeMode::Default;
-
-            if tile.has_compositor_surface {
-                
-                
-                
-                
-                
-                for surface in &tile_cache.external_surfaces {
-                    if surface.device_rect.intersects(&tile.device_valid_rect) {
-                        mode = TileCompositeMode::Over;
-                        break;
-                    }
-                }
-            }
-
             let tile = CompositeTile {
                 surface,
                 rect: device_rect,
@@ -449,7 +419,6 @@ impl CompositeState {
                 clip_rect: device_clip_rect,
                 z_id,
                 tile_id,
-                mode,
             };
 
             self.push_tile(tile, is_opaque);
@@ -564,19 +533,12 @@ impl CompositeState {
                 self.clear_tiles.push(tile);
             }
             CompositeTileSurface::Texture { .. } => {
-                match tile.mode {
-                    TileCompositeMode::Default => {
-                        
-                        
-                        if is_opaque {
-                            self.opaque_tiles.push(tile);
-                        } else {
-                            self.alpha_tiles.push(tile);
-                        }
-                    }
-                    TileCompositeMode::Over => {
-                        self.alpha_tiles.push(tile);
-                    }
+                
+                
+                if is_opaque {
+                    self.opaque_tiles.push(tile);
+                } else {
+                    self.alpha_tiles.push(tile);
                 }
             }
         }
