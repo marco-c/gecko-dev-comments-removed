@@ -50,7 +50,7 @@ MOZ_NEVER_INLINE PVOID SwapThreadLocalStoragePointer(PVOID aNewValue) {
   return oldValue;
 }
 
-int main(int argc, char* argv[]) {
+int wmain(int argc, wchar_t* argv[]) {
   UNICODE_STRING normal;
   ::RtlInitUnicodeString(&normal, kNormal);
 
@@ -207,48 +207,22 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  iatThunks = k32headers.GetIATThunksForModule("ntdll.dll");
+  PEHeaders ntdllheaders(::GetModuleHandleW(L"ntdll.dll"));
+
+  auto ntdllBoundaries = ntdllheaders.GetBounds();
+  if (!ntdllBoundaries) {
+    printf(
+        "TEST-FAILED | NativeNt | "
+        "Unable to obtain the boundaries of ntdll.dll\n");
+    return 1;
+  }
+
+  iatThunks =
+      k32headers.GetIATThunksForModule("ntdll.dll", ntdllBoundaries.ptr());
   if (!iatThunks) {
     printf(
         "TEST-FAILED | NativeNt | Unable to find the IAT thunk for "
         "ntdll.dll in kernel32.dll\n");
-    return 1;
-  }
-
-  
-  HMODULE ntdllImageBase = ::GetModuleHandleW(L"ntdll.dll");
-  PEHeaders ntdllHeaders(ntdllImageBase);
-
-  auto exportDir = ntdllHeaders.GetExportDirectory();
-  auto tableOfNames = ntdllHeaders.RVAToPtr<PDWORD>(exportDir->AddressOfNames);
-  for (DWORD i = 0; i < exportDir->NumberOfNames; ++i) {
-    const auto name = ntdllHeaders.RVAToPtr<const char*>(tableOfNames[i]);
-    auto funcEntry = ntdllHeaders.FindExportAddressTableEntry(name);
-    if (funcEntry.isErr() || !funcEntry.inspect() ||
-        ntdllHeaders.RVAToPtr<const void*>(*funcEntry.inspect()) !=
-            ::GetProcAddress(ntdllImageBase, name)) {
-      printf(
-          "TEST-FAILED | NativeNt | FindExportAddressTableEntry returned "
-          "a wrong value.\n");
-      return 1;
-    }
-  }
-
-  
-  auto funcEntry = k32headers.FindExportAddressTableEntry("HeapAlloc");
-  if (funcEntry.isErr() || funcEntry.inspect()) {
-    printf(
-        "TEST-FAILED | NativeNt | kernel32!HeapAlloc should be forwarded to "
-        "ntdll!RtlAllocateHeap.\n");
-    return 1;
-  }
-
-  
-  funcEntry = k32headers.FindExportAddressTableEntry("Invalid name");
-  if (funcEntry.isOk()) {
-    printf(
-        "TEST-FAILED | NativeNt | FindExportAddressTableEntry should return "
-        "an error for a non-existent name.\n");
     return 1;
   }
 

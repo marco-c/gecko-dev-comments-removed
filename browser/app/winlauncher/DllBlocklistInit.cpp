@@ -89,8 +89,23 @@ static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
     return importDirRestored;
   }
 
+  mozilla::nt::PEHeaders ntdllImage(::GetModuleHandleW(L"ntdll.dll"));
+  if (!ntdllImage) {
+    return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+  }
+
+  auto ntdllBoundaries = ntdllImage.GetBounds();
+  if (!ntdllBoundaries) {
+    return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+  }
+
+  
+  
+  
+  
+  
   Maybe<Span<IMAGE_THUNK_DATA> > ntdllThunks =
-      ourExeImage.GetIATThunksForModule("ntdll.dll");
+      ourExeImage.GetIATThunksForModule("ntdll.dll", ntdllBoundaries.ptr());
   if (!ntdllThunks) {
     return LAUNCHER_ERROR_FROM_WIN32(ERROR_INVALID_DATA);
   }

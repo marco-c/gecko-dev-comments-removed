@@ -17,11 +17,13 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/BinarySearch.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Range.h"
 #include "mozilla/Span.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include "mozilla/interceptor/MMPolicies.h"
+#include "mozilla/interceptor/TargetFunction.h"
 
 #if defined(MOZILLA_INTERNAL_API)
 #  include "nsString.h"
@@ -421,6 +423,16 @@ inline int StrcmpASCII(const char* aLeft, const char* aRight) {
   return curLeft - curRight;
 }
 
+inline size_t StrlenASCII(const char* aStr) {
+  size_t len = 0;
+
+  while (*(aStr++)) {
+    ++len;
+  }
+
+  return len;
+}
+
 class MOZ_RAII PEHeaders final {
   
 
@@ -440,15 +452,17 @@ class MOZ_RAII PEHeaders final {
   
   
   
-  static PIMAGE_DOS_HEADER HModuleToBaseAddr(HMODULE aModule) {
-    return reinterpret_cast<PIMAGE_DOS_HEADER>(
-        reinterpret_cast<uintptr_t>(aModule) & ~uintptr_t(3));
+  template <typename T>
+  static T HModuleToBaseAddr(HMODULE aModule) {
+    return reinterpret_cast<T>(reinterpret_cast<uintptr_t>(aModule) &
+                               ~uintptr_t(3));
   }
 
   explicit PEHeaders(void* aBaseAddress)
       : PEHeaders(reinterpret_cast<PIMAGE_DOS_HEADER>(aBaseAddress)) {}
 
-  explicit PEHeaders(HMODULE aModule) : PEHeaders(HModuleToBaseAddr(aModule)) {}
+  explicit PEHeaders(HMODULE aModule)
+      : PEHeaders(HModuleToBaseAddr<PIMAGE_DOS_HEADER>(aModule)) {}
 
   explicit PEHeaders(PIMAGE_DOS_HEADER aMzHeader)
       : mMzHeader(aMzHeader),
@@ -510,87 +524,14 @@ class MOZ_RAII PEHeaders final {
     return reinterpret_cast<T>(absAddress);
   }
 
-  Maybe<Span<const uint8_t>> GetBounds() const {
+  Maybe<Range<const uint8_t>> GetBounds() const {
     if (!mImageLimit) {
       return Nothing();
     }
 
     auto base = reinterpret_cast<const uint8_t*>(mMzHeader);
     DWORD imageSize = mPeHeader->OptionalHeader.SizeOfImage;
-    return Some(MakeSpan(base, imageSize));
-  }
-
-  PIMAGE_EXPORT_DIRECTORY GetExportDirectory() {
-    return GetImageDirectoryEntry<PIMAGE_EXPORT_DIRECTORY>(
-        IMAGE_DIRECTORY_ENTRY_EXPORT);
-  }
-
-  
-
-
-
-
-
-  LauncherResult<const DWORD*> FindExportAddressTableEntry(
-      const char* aFunctionNameASCII) {
-    struct NameTableComparator {
-      NameTableComparator(PEHeaders& aPEHeader, const char* aTarget)
-          : mPEHeader(aPEHeader), mTarget(aTarget) {}
-
-      int operator()(DWORD aOther) const {
-        
-        return StrcmpASCII(mTarget,
-                           mPEHeader.RVAToPtrUnchecked<const char*>(aOther));
-      }
-
-      PEHeaders& mPEHeader;
-      const char* mTarget;
-    };
-
-    DWORD rvaDirStart, rvaDirEnd;
-    const auto exportDir = GetImageDirectoryEntry<PIMAGE_EXPORT_DIRECTORY>(
-        IMAGE_DIRECTORY_ENTRY_EXPORT, &rvaDirStart, &rvaDirEnd);
-    if (!exportDir) {
-      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
-    }
-
-    const auto exportAddressTable =
-        RVAToPtr<const DWORD*>(exportDir->AddressOfFunctions);
-    const auto exportNameTable =
-        RVAToPtr<const DWORD*>(exportDir->AddressOfNames);
-    const auto exportOrdinalTable =
-        RVAToPtr<const WORD*>(exportDir->AddressOfNameOrdinals);
-
-    
-    
-    if (!exportAddressTable || !exportNameTable || !exportOrdinalTable) {
-      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
-    }
-
-    const NameTableComparator comp(*this, aFunctionNameASCII);
-
-    size_t match;
-    if (!BinarySearchIf(exportNameTable, 0, exportDir->NumberOfNames, comp,
-                        &match)) {
-      return LAUNCHER_ERROR_FROM_WIN32(ERROR_PROC_NOT_FOUND);
-    }
-
-    WORD index = exportOrdinalTable[match];
-
-    if (index >= exportDir->NumberOfFunctions) {
-      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
-    }
-
-    DWORD rvaFunction = exportAddressTable[index];
-    if (rvaFunction >= rvaDirStart && rvaFunction < rvaDirEnd) {
-      
-      
-      
-      
-      return nullptr;
-    }
-
-    return &exportAddressTable[index];
+    return Some(Range(base, imageSize));
   }
 
   PIMAGE_IMPORT_DESCRIPTOR GetImportDirectory() {
@@ -683,8 +624,14 @@ class MOZ_RAII PEHeaders final {
     return nullptr;
   }
 
+  
+
+
+
+
   Maybe<Span<IMAGE_THUNK_DATA>> GetIATThunksForModule(
-      const char* aModuleNameASCII) {
+      const char* aModuleNameASCII,
+      const Range<const uint8_t>* aBoundaries = nullptr) {
     PIMAGE_IMPORT_DESCRIPTOR impDesc = GetImportDescriptor(aModuleNameASCII);
     if (!impDesc) {
       return Nothing();
@@ -699,6 +646,15 @@ class MOZ_RAII PEHeaders final {
     
     PIMAGE_THUNK_DATA curIatThunk = firstIatThunk;
     while (IsValid(curIatThunk)) {
+      if (aBoundaries) {
+        auto iatEntry =
+            reinterpret_cast<const uint8_t*>(curIatThunk->u1.Function);
+        if (iatEntry < aBoundaries->begin().get() ||
+            iatEntry >= aBoundaries->end().get()) {
+          return Nothing();
+        }
+      }
+
       ++curIatThunk;
     }
 
@@ -809,26 +765,10 @@ class MOZ_RAII PEHeaders final {
   enum class BoundsCheckPolicy { Default, Skip };
 
   template <typename T, BoundsCheckPolicy Policy = BoundsCheckPolicy::Default>
-  T GetImageDirectoryEntry(const uint32_t aDirectoryIndex,
-                           DWORD* aOutRvaStart = nullptr,
-                           DWORD* aOutRvaEnd = nullptr) {
-    if (aOutRvaStart) {
-      *aOutRvaStart = 0;
-    }
-    if (aOutRvaEnd) {
-      *aOutRvaEnd = 0;
-    }
-
+  T GetImageDirectoryEntry(const uint32_t aDirectoryIndex) {
     PIMAGE_DATA_DIRECTORY dirEntry = GetImageDirectoryEntryPtr(aDirectoryIndex);
     if (!dirEntry) {
       return nullptr;
-    }
-
-    if (aOutRvaStart) {
-      *aOutRvaStart = dirEntry->VirtualAddress;
-    }
-    if (aOutRvaEnd) {
-      *aOutRvaEnd = dirEntry->VirtualAddress + dirEntry->Size;
     }
 
     return Policy == BoundsCheckPolicy::Skip
@@ -928,6 +868,214 @@ class MOZ_RAII PEHeaders final {
   PIMAGE_NT_HEADERS mPeHeader;
   void* mImageLimit;
   bool mIsImportDirectoryTampered;
+};
+
+
+template <typename MMPolicy>
+class MOZ_RAII PEExportSection {
+  const MMPolicy& mMMPolicy;
+  uintptr_t mImageBase;
+  DWORD mOrdinalBase;
+  DWORD mRvaDirStart;
+  DWORD mRvaDirEnd;
+  mozilla::interceptor::TargetObjectArray<MMPolicy, DWORD> mExportAddressTable;
+  mozilla::interceptor::TargetObjectArray<MMPolicy, DWORD> mExportNameTable;
+  mozilla::interceptor::TargetObjectArray<MMPolicy, WORD> mExportOrdinalTable;
+
+  explicit PEExportSection(const MMPolicy& aMMPolicy)
+      : mMMPolicy(aMMPolicy),
+        mImageBase(0),
+        mOrdinalBase(0),
+        mRvaDirStart(0),
+        mRvaDirEnd(0),
+        mExportAddressTable(mMMPolicy),
+        mExportNameTable(mMMPolicy),
+        mExportOrdinalTable(mMMPolicy) {}
+
+  PEExportSection(const MMPolicy& aMMPolicy, uintptr_t aImageBase,
+                  DWORD aRvaDirStart, DWORD aRvaDirEnd,
+                  const IMAGE_EXPORT_DIRECTORY& exportDir)
+      : mMMPolicy(aMMPolicy),
+        mImageBase(aImageBase),
+        mOrdinalBase(exportDir.Base),
+        mRvaDirStart(aRvaDirStart),
+        mRvaDirEnd(aRvaDirEnd),
+        mExportAddressTable(mMMPolicy,
+                            mImageBase + exportDir.AddressOfFunctions,
+                            exportDir.NumberOfFunctions),
+        mExportNameTable(mMMPolicy, mImageBase + exportDir.AddressOfNames,
+                         exportDir.NumberOfNames),
+        mExportOrdinalTable(mMMPolicy,
+                            mImageBase + exportDir.AddressOfNameOrdinals,
+                            exportDir.NumberOfNames) {}
+
+  static const PEExportSection Get(uintptr_t aImageBase,
+                                   const MMPolicy& aMMPolicy) {
+    mozilla::interceptor::TargetObject<MMPolicy, IMAGE_DOS_HEADER> mzHeader(
+        aMMPolicy, aImageBase);
+    if (!mzHeader || mzHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    mozilla::interceptor::TargetObject<MMPolicy, IMAGE_NT_HEADERS> peHeader(
+        aMMPolicy, aImageBase + mzHeader->e_lfanew);
+    if (!peHeader || peHeader->Signature != IMAGE_NT_SIGNATURE) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    if (peHeader->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR_MAGIC) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    const IMAGE_OPTIONAL_HEADER& optionalHeader = peHeader->OptionalHeader;
+
+    DWORD imageSize = optionalHeader.SizeOfImage;
+    
+    
+    
+    if (imageSize < sizeof(IMAGE_DOS_HEADER) + sizeof(IMAGE_NT_HEADERS)) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    if (optionalHeader.NumberOfRvaAndSizes <= IMAGE_DIRECTORY_ENTRY_EXPORT) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    const IMAGE_DATA_DIRECTORY& exportDirectoryEntry =
+        optionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+    if (!exportDirectoryEntry.VirtualAddress || !exportDirectoryEntry.Size) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    mozilla::interceptor::TargetObject<MMPolicy, IMAGE_EXPORT_DIRECTORY>
+        exportDirectory(aMMPolicy,
+                        aImageBase + exportDirectoryEntry.VirtualAddress);
+    if (!exportDirectory || !exportDirectory->NumberOfFunctions) {
+      return PEExportSection(aMMPolicy);
+    }
+
+    return PEExportSection(
+        aMMPolicy, aImageBase, exportDirectoryEntry.VirtualAddress,
+        exportDirectoryEntry.VirtualAddress + exportDirectoryEntry.Size,
+        *exportDirectory.GetLocalBase());
+  }
+
+  FARPROC GetProcAddressByOrdinal(WORD aOrdinal) const {
+    if (aOrdinal < mOrdinalBase) {
+      return nullptr;
+    }
+
+    auto rvaToFunction = mExportAddressTable[aOrdinal - mOrdinalBase];
+    if (!rvaToFunction) {
+      return nullptr;
+    }
+    return reinterpret_cast<FARPROC>(mImageBase + *rvaToFunction);
+  }
+
+ public:
+  static const PEExportSection Get(HMODULE aModule, const MMPolicy& aMMPolicy) {
+    return Get(PEHeaders::HModuleToBaseAddr<uintptr_t>(aModule), aMMPolicy);
+  }
+
+  explicit operator bool() const {
+    
+    
+    return mImageBase && mRvaDirStart && mRvaDirEnd && mExportAddressTable &&
+           mExportNameTable && mExportOrdinalTable;
+  }
+
+  template <typename T>
+  T RVAToPtr(uint32_t aRva) const {
+    return reinterpret_cast<T>(mImageBase + aRva);
+  }
+
+  PIMAGE_EXPORT_DIRECTORY GetExportDirectory() const {
+    if (!*this) {
+      return nullptr;
+    }
+
+    return RVAToPtr<PIMAGE_EXPORT_DIRECTORY>(mRvaDirStart);
+  }
+
+  
+
+
+
+
+
+
+  const DWORD* FindExportAddressTableEntry(
+      const char* aFunctionNameASCII) const {
+    if (!*this || !aFunctionNameASCII) {
+      return nullptr;
+    }
+
+    struct NameTableComparator {
+      NameTableComparator(const PEExportSection<MMPolicy>& aExportSection,
+                          const char* aTarget)
+          : mExportSection(aExportSection),
+            mTargetName(aTarget),
+            mTargetNamelength(StrlenASCII(aTarget)) {}
+
+      int operator()(DWORD aRVAToString) const {
+        mozilla::interceptor::TargetObjectArray<MMPolicy, char> itemString(
+            mExportSection.mMMPolicy, mExportSection.mImageBase + aRVAToString,
+            mTargetNamelength + 1);
+        return StrcmpASCII(mTargetName, itemString[0]);
+      }
+
+      const PEExportSection<MMPolicy>& mExportSection;
+      const char* mTargetName;
+      size_t mTargetNamelength;
+    };
+
+    const NameTableComparator comp(*this, aFunctionNameASCII);
+
+    size_t match;
+    if (!mExportNameTable.BinarySearchIf(comp, &match)) {
+      return nullptr;
+    }
+
+    const WORD* index = mExportOrdinalTable[match];
+    if (!index) {
+      return nullptr;
+    }
+
+    const DWORD* rvaToFunction = mExportAddressTable[*index];
+    if (!rvaToFunction) {
+      return nullptr;
+    }
+
+    if (*rvaToFunction >= mRvaDirStart && *rvaToFunction < mRvaDirEnd) {
+      
+      
+      
+      
+      return nullptr;
+    }
+
+    return rvaToFunction;
+  }
+
+  
+
+
+
+
+  FARPROC GetProcAddress(const char* aFunctionNameASCII) const {
+    uintptr_t maybeOdrinal = reinterpret_cast<uintptr_t>(aFunctionNameASCII);
+    
+    
+    if (maybeOdrinal < 0x10000) {
+      return GetProcAddressByOrdinal(static_cast<WORD>(maybeOdrinal));
+    }
+
+    auto rvaToFunction = FindExportAddressTableEntry(aFunctionNameASCII);
+    if (!rvaToFunction) {
+      return nullptr;
+    }
+    return reinterpret_cast<FARPROC>(mImageBase + *rvaToFunction);
+  }
 };
 
 inline HANDLE RtlGetProcessHeap() {
