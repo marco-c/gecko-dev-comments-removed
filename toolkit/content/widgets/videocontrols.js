@@ -135,7 +135,7 @@ this.VideoControlsWidget = class {
       return false;
     }
 
-    const MIN_VIDEO_DIMENSION = 160; 
+    const MIN_VIDEO_DIMENSION = 140; 
     if (
       someVideo.videoWidth < MIN_VIDEO_DIMENSION ||
       someVideo.videoHeight < MIN_VIDEO_DIMENSION
