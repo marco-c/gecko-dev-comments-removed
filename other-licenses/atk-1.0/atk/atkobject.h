@@ -236,10 +236,127 @@ extern "C" {
 
 
 
-typedef enum
-{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
   ATK_ROLE_INVALID = 0,
-  ATK_ROLE_ACCEL_LABEL,      
+  ATK_ROLE_ACCEL_LABEL, 
   ATK_ROLE_ALERT,
   ATK_ROLE_ANIMATION,
   ATK_ROLE_ARROW,
@@ -361,10 +478,14 @@ typedef enum
   ATK_ROLE_SUBSCRIPT,
   ATK_ROLE_SUPERSCRIPT,
   ATK_ROLE_FOOTNOTE,
+  ATK_ROLE_CONTENT_DELETION,
+  ATK_ROLE_CONTENT_INSERTION,
+  ATK_ROLE_MARK,
+  ATK_ROLE_SUGGESTION,
   ATK_ROLE_LAST_DEFINED
 } AtkRole;
 
-AtkRole                  atk_role_register        (const gchar *name);
+AtkRole atk_role_register(const gchar* name);
 
 
 
@@ -383,8 +504,7 @@ AtkRole                  atk_role_register        (const gchar *name);
 
 
 
-typedef enum
-{
+typedef enum {
   ATK_LAYER_INVALID,
   ATK_LAYER_BACKGROUND,
   ATK_LAYER_CANVAS,
@@ -421,35 +541,33 @@ struct _AtkAttribute {
   gchar* value;
 };
 
-#define ATK_TYPE_OBJECT                           (atk_object_get_type ())
-#define ATK_OBJECT(obj)                           (G_TYPE_CHECK_INSTANCE_CAST ((obj), ATK_TYPE_OBJECT, AtkObject))
-#define ATK_OBJECT_CLASS(klass)                   (G_TYPE_CHECK_CLASS_CAST ((klass), ATK_TYPE_OBJECT, AtkObjectClass))
-#define ATK_IS_OBJECT(obj)                        (G_TYPE_CHECK_INSTANCE_TYPE ((obj), ATK_TYPE_OBJECT))
-#define ATK_IS_OBJECT_CLASS(klass)                (G_TYPE_CHECK_CLASS_TYPE ((klass), ATK_TYPE_OBJECT))
-#define ATK_OBJECT_GET_CLASS(obj)                 (G_TYPE_INSTANCE_GET_CLASS ((obj), ATK_TYPE_OBJECT, AtkObjectClass))
+#define ATK_TYPE_OBJECT (atk_object_get_type())
+#define ATK_OBJECT(obj) \
+  (G_TYPE_CHECK_INSTANCE_CAST((obj), ATK_TYPE_OBJECT, AtkObject))
+#define ATK_OBJECT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_CAST((klass), ATK_TYPE_OBJECT, AtkObjectClass))
+#define ATK_IS_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), ATK_TYPE_OBJECT))
+#define ATK_IS_OBJECT_CLASS(klass) \
+  (G_TYPE_CHECK_CLASS_TYPE((klass), ATK_TYPE_OBJECT))
+#define ATK_OBJECT_GET_CLASS(obj) \
+  (G_TYPE_INSTANCE_GET_CLASS((obj), ATK_TYPE_OBJECT, AtkObjectClass))
 
-#define ATK_TYPE_IMPLEMENTOR                      (atk_implementor_get_type ())
-#define ATK_IS_IMPLEMENTOR(obj)                   G_TYPE_CHECK_INSTANCE_TYPE ((obj), ATK_TYPE_IMPLEMENTOR)
-#define ATK_IMPLEMENTOR(obj)                      G_TYPE_CHECK_INSTANCE_CAST ((obj), ATK_TYPE_IMPLEMENTOR, AtkImplementor)
-#define ATK_IMPLEMENTOR_GET_IFACE(obj)            (G_TYPE_INSTANCE_GET_INTERFACE ((obj), ATK_TYPE_IMPLEMENTOR, AtkImplementorIface))
+#define ATK_TYPE_IMPLEMENTOR (atk_implementor_get_type())
+#define ATK_IS_IMPLEMENTOR(obj) \
+  G_TYPE_CHECK_INSTANCE_TYPE((obj), ATK_TYPE_IMPLEMENTOR)
+#define ATK_IMPLEMENTOR(obj) \
+  G_TYPE_CHECK_INSTANCE_CAST((obj), ATK_TYPE_IMPLEMENTOR, AtkImplementor)
+#define ATK_IMPLEMENTOR_GET_IFACE(obj)                        \
+  (G_TYPE_INSTANCE_GET_INTERFACE((obj), ATK_TYPE_IMPLEMENTOR, \
+                                 AtkImplementorIface))
 
+typedef struct _AtkImplementor AtkImplementor; 
+typedef struct _AtkImplementorIface AtkImplementorIface;
 
-typedef struct _AtkImplementor            AtkImplementor; 
-typedef struct _AtkImplementorIface       AtkImplementorIface;
-
-
-typedef struct _AtkObject                 AtkObject;
-typedef struct _AtkObjectClass            AtkObjectClass;
-typedef struct _AtkRelationSet            AtkRelationSet;
-typedef struct _AtkStateSet               AtkStateSet;
-
-
-
-
-
-
-
-
+typedef struct _AtkObject AtkObject;
+typedef struct _AtkObjectClass AtkObjectClass;
+typedef struct _AtkRelationSet AtkRelationSet;
+typedef struct _AtkStateSet AtkStateSet;
 
 
 
@@ -461,18 +579,25 @@ typedef struct _AtkStateSet               AtkStateSet;
 
 
 
-struct _AtkPropertyValues
-{
-  const gchar  *property_name;
+
+
+
+
+
+
+
+
+
+
+struct _AtkPropertyValues {
+  const gchar* property_name;
   GValue old_value;
   GValue new_value;
 };
 
-typedef struct _AtkPropertyValues        AtkPropertyValues;
+typedef struct _AtkPropertyValues AtkPropertyValues;
 
-typedef gboolean (*AtkFunction)          (gpointer data); 
-
-
+typedef gboolean (*AtkFunction)(gpointer data);
 
 
 
@@ -483,135 +608,121 @@ typedef gboolean (*AtkFunction)          (gpointer data);
 
 
 
-typedef void (*AtkPropertyChangeHandler) (AtkObject*, AtkPropertyValues*);
 
 
-struct _AtkObject
-{
+typedef void (*AtkPropertyChangeHandler)(AtkObject*, AtkPropertyValues*);
+
+struct _AtkObject {
   GObject parent;
 
-  gchar *description;
-  gchar *name;
-  AtkObject *accessible_parent;
+  gchar* description;
+  gchar* name;
+  AtkObject* accessible_parent;
   AtkRole role;
-  AtkRelationSet *relation_set;
+  AtkRelationSet* relation_set;
   AtkLayer layer;
 };
 
-struct _AtkObjectClass
-{
+struct _AtkObjectClass {
   GObjectClass parent;
 
   
 
 
-  G_CONST_RETURN gchar*    (* get_name)            (AtkObject                *accessible);
+  G_CONST_RETURN gchar* (*get_name)(AtkObject* accessible);
   
 
 
-  G_CONST_RETURN gchar*    (* get_description)     (AtkObject                *accessible);
+  G_CONST_RETURN gchar* (*get_description)(AtkObject* accessible);
   
 
 
-  AtkObject*               (*get_parent)           (AtkObject                *accessible);
+  AtkObject* (*get_parent)(AtkObject* accessible);
 
   
 
 
-  gint                    (* get_n_children)       (AtkObject                *accessible);
-  
-
-
-
-
-  AtkObject*              (* ref_child)            (AtkObject                *accessible,
-                                                    gint                      i);
+  gint (*get_n_children)(AtkObject* accessible);
   
 
 
 
-  gint                    (* get_index_in_parent) (AtkObject                 *accessible);
-  
 
-
-  AtkRelationSet*         (* ref_relation_set)    (AtkObject                 *accessible);
-  
-
-
-  AtkRole                 (* get_role)            (AtkObject                 *accessible);
-  AtkLayer                (* get_layer)           (AtkObject                 *accessible);
-  gint                    (* get_mdi_zorder)      (AtkObject                 *accessible);
-  
-
-
-  AtkStateSet*            (* ref_state_set)       (AtkObject                 *accessible);
-  
-
-
-  void                    (* set_name)            (AtkObject                 *accessible,
-                                                   const gchar               *name);
-  
-
-
-  void                    (* set_description)     (AtkObject                 *accessible,
-                                                   const gchar               *description);
-  
-
-
-  void                    (* set_parent)          (AtkObject                 *accessible,
-                                                   AtkObject                 *parent);
-  
-
-
-  void                    (* set_role)            (AtkObject                 *accessible,
-                                                   AtkRole                   role);
-  
-
-
-guint                     (* connect_property_change_handler)    (AtkObject
-                 *accessible,
-                                                                  AtkPropertyChangeHandler       *handler);
+  AtkObject* (*ref_child)(AtkObject* accessible, gint i);
   
 
 
 
-void                      (* remove_property_change_handler)     (AtkObject
-                *accessible,
-                                                                  guint
-                handler_id);
-void                      (* initialize)                         (AtkObject                     *accessible,
-                                                                  gpointer                      data);
+  gint (*get_index_in_parent)(AtkObject* accessible);
+  
+
+
+  AtkRelationSet* (*ref_relation_set)(AtkObject* accessible);
+  
+
+
+  AtkRole (*get_role)(AtkObject* accessible);
+  AtkLayer (*get_layer)(AtkObject* accessible);
+  gint (*get_mdi_zorder)(AtkObject* accessible);
+  
+
+
+  AtkStateSet* (*ref_state_set)(AtkObject* accessible);
+  
+
+
+  void (*set_name)(AtkObject* accessible, const gchar* name);
+  
+
+
+  void (*set_description)(AtkObject* accessible, const gchar* description);
+  
+
+
+  void (*set_parent)(AtkObject* accessible, AtkObject* parent);
+  
+
+
+  void (*set_role)(AtkObject* accessible, AtkRole role);
+  
+
+
+  guint (*connect_property_change_handler)(AtkObject* accessible,
+                                           AtkPropertyChangeHandler* handler);
   
 
 
 
-  void                    (* children_changed)    (AtkObject                  *accessible,
-                                                   guint                      change_index,
-                                                   gpointer                   changed_child);
+  void (*remove_property_change_handler)(AtkObject* accessible,
+                                         guint handler_id);
+  void (*initialize)(AtkObject* accessible, gpointer data);
   
 
 
 
-  void                    (* focus_event)         (AtkObject                  *accessible,
-                                                   gboolean                   focus_in);
+  void (*children_changed)(AtkObject* accessible, guint change_index,
+                           gpointer changed_child);
   
 
 
 
-  void                    (* property_change)     (AtkObject                  *accessible,
-                                                   AtkPropertyValues          *values);
+  void (*focus_event)(AtkObject* accessible, gboolean focus_in);
   
 
 
 
-  void                    (* state_change)        (AtkObject                  *accessible,
-                                                   const gchar                *name,
-                                                   gboolean                   state_set);
+  void (*property_change)(AtkObject* accessible, AtkPropertyValues* values);
   
 
 
 
-  void                    (*visible_data_changed) (AtkObject                  *accessible);
+  void (*state_change)(AtkObject* accessible, const gchar* name,
+                       gboolean state_set);
+  
+
+
+
+  void (*visible_data_changed)(AtkObject* accessible);
 
   
 
@@ -619,29 +730,27 @@ void                      (* initialize)                         (AtkObject     
 
 
 
-  void                    (*active_descendant_changed) (AtkObject                  *accessible,
-                                                        gpointer                   *child);
+  void (*active_descendant_changed)(AtkObject* accessible, gpointer* child);
 
   
 
 
 
-  AtkAttributeSet* 	  (*get_attributes)            (AtkObject                  *accessible);
+  AtkAttributeSet* (*get_attributes)(AtkObject* accessible);
 
-  const gchar*            (*get_object_locale)         (AtkObject                  *accessible);
+  const gchar* (*get_object_locale)(AtkObject* accessible);
 
-  AtkFunction             pad1;
+  AtkFunction pad1;
 };
 
-GType            atk_object_get_type   (void);
+GType atk_object_get_type(void);
 
-struct _AtkImplementorIface
-{
+struct _AtkImplementorIface {
   GTypeInterface parent;
 
-  AtkObject*   (*ref_accessible) (AtkImplementor *implementor);
+  AtkObject* (*ref_accessible)(AtkImplementor* implementor);
 };
-GType atk_implementor_get_type (void);
+GType atk_implementor_get_type(void);
 
 
 
@@ -655,59 +764,50 @@ GType atk_implementor_get_type (void);
 
 
 
-AtkObject*              atk_implementor_ref_accessible            (AtkImplementor *implementor);
+AtkObject* atk_implementor_ref_accessible(AtkImplementor* implementor);
 
 
 
 
 
-G_CONST_RETURN gchar*   atk_object_get_name                       (AtkObject *accessible);
-G_CONST_RETURN gchar*   atk_object_get_description                (AtkObject *accessible);
-AtkObject*              atk_object_get_parent                     (AtkObject *accessible);
-gint                    atk_object_get_n_accessible_children      (AtkObject *accessible);
-AtkObject*              atk_object_ref_accessible_child           (AtkObject *accessible,
-                                                                   gint        i);
-AtkRelationSet*         atk_object_ref_relation_set               (AtkObject *accessible);
-AtkRole                 atk_object_get_role                       (AtkObject *accessible);
-AtkLayer                atk_object_get_layer                      (AtkObject *accessible);
-gint                    atk_object_get_mdi_zorder                 (AtkObject *accessible);
-AtkAttributeSet*        atk_object_get_attributes                 (AtkObject *accessible);
-AtkStateSet*            atk_object_ref_state_set                  (AtkObject *accessible);
-gint                    atk_object_get_index_in_parent            (AtkObject *accessible);
-void                    atk_object_set_name                       (AtkObject *accessible,
-                                                                   const gchar *name);
-void                    atk_object_set_description                (AtkObject *accessible,
-                                                                   const gchar *description);
-void                    atk_object_set_parent                     (AtkObject *accessible,
-                                                                   AtkObject *parent);
-void                    atk_object_set_role                       (AtkObject *accessible,
-                                                                   AtkRole   role);
+G_CONST_RETURN gchar* atk_object_get_name(AtkObject* accessible);
+G_CONST_RETURN gchar* atk_object_get_description(AtkObject* accessible);
+AtkObject* atk_object_get_parent(AtkObject* accessible);
+gint atk_object_get_n_accessible_children(AtkObject* accessible);
+AtkObject* atk_object_ref_accessible_child(AtkObject* accessible, gint i);
+AtkRelationSet* atk_object_ref_relation_set(AtkObject* accessible);
+AtkRole atk_object_get_role(AtkObject* accessible);
+AtkLayer atk_object_get_layer(AtkObject* accessible);
+gint atk_object_get_mdi_zorder(AtkObject* accessible);
+AtkAttributeSet* atk_object_get_attributes(AtkObject* accessible);
+AtkStateSet* atk_object_ref_state_set(AtkObject* accessible);
+gint atk_object_get_index_in_parent(AtkObject* accessible);
+void atk_object_set_name(AtkObject* accessible, const gchar* name);
+void atk_object_set_description(AtkObject* accessible,
+                                const gchar* description);
+void atk_object_set_parent(AtkObject* accessible, AtkObject* parent);
+void atk_object_set_role(AtkObject* accessible, AtkRole role);
+
+guint atk_object_connect_property_change_handler(
+    AtkObject* accessible, AtkPropertyChangeHandler* handler);
+void atk_object_remove_property_change_handler(AtkObject* accessible,
+                                               guint handler_id);
+
+void atk_object_notify_state_change(AtkObject* accessible, AtkState state,
+                                    gboolean value);
+void atk_object_initialize(AtkObject* accessible, gpointer data);
+
+G_CONST_RETURN gchar* atk_role_get_name(AtkRole role);
+AtkRole atk_role_for_name(const gchar* name);
 
 
-guint                atk_object_connect_property_change_handler  (AtkObject                      *accessible,
-                                                                  AtkPropertyChangeHandler       *handler);
-void                 atk_object_remove_property_change_handler   (AtkObject                      *accessible,
-                                                                  guint                          handler_id);
-
-void                 atk_object_notify_state_change              (AtkObject                      *accessible,
-                                                                  AtkState                       state,
-                                                                  gboolean                       value);
-void                 atk_object_initialize                       (AtkObject                     *accessible,
-                                                                  gpointer                      data);
-                                    
-G_CONST_RETURN gchar* atk_role_get_name      (AtkRole         role);
-AtkRole               atk_role_for_name      (const gchar     *name);
-
-
-
-gboolean              atk_object_add_relationship              (AtkObject      *object,
-								AtkRelationType relationship,
-								AtkObject      *target);
-gboolean              atk_object_remove_relationship           (AtkObject      *object,
-								AtkRelationType relationship,
-								AtkObject      *target);
-G_CONST_RETURN gchar* atk_role_get_localized_name              (AtkRole     role);
-
+gboolean atk_object_add_relationship(AtkObject* object,
+                                     AtkRelationType relationship,
+                                     AtkObject* target);
+gboolean atk_object_remove_relationship(AtkObject* object,
+                                        AtkRelationType relationship,
+                                        AtkObject* target);
+G_CONST_RETURN gchar* atk_role_get_localized_name(AtkRole role);
 
 
 
@@ -771,6 +871,5 @@ G_CONST_RETURN gchar* atk_role_get_localized_name              (AtkRole     role
 #ifdef __cplusplus
 }
 #endif 
-
 
 #endif 
