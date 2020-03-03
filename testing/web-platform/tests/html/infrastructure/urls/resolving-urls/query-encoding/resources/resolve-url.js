@@ -354,16 +354,6 @@ onload = function() {
   {help:'https://html.spec.whatwg.org/multipage/#dom-eventsource'});
 
   
-  subsetTestByKey('xmldocument', async_test, function() {
-    var doc = document.implementation.createDocument(null, "x");
-    doc.load(input_url_svg);
-    doc.onload = this.step_func_done(function() {
-      assert_equals(doc.documentElement.textContent, expected_current);
-    });
-  }, 'XMLDocument#load()',
-  {help:'https://html.spec.whatwg.org/multipage/#dom-xmldocument-load'});
-
-  
   subsetTestByKey('window-open', async_test, function() {
     var id = 'test_window_open';
     var iframe = document.createElement('iframe');
