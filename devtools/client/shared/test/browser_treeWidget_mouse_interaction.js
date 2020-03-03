@@ -17,7 +17,7 @@ add_task(async function() {
   });
 
   await addTab("about:blank");
-  const [host, , doc] = await createHost("bottom", TEST_URI);
+  const { host, doc } = await createHost("bottom", TEST_URI);
 
   
   

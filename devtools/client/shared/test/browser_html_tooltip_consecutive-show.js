@@ -25,7 +25,7 @@ function getTooltipContent(doc) {
 }
 
 add_task(async function() {
-  const [, , doc] = await createHost("bottom", TEST_URI);
+  const { doc } = await createHost("bottom", TEST_URI);
 
   
   
