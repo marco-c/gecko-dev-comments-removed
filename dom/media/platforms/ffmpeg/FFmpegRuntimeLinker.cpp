@@ -53,6 +53,22 @@ bool FFmpegRuntimeLinker::Init() {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
 
+#ifdef MOZ_WAYLAND
+  {
+    const char* lib = "libva.so.2";
+    PRLibSpec lspec;
+    lspec.type = PR_LibSpec_Pathname;
+    lspec.value.pathname = lib;
+    sLibAV.mVALib = PR_LoadLibraryWithFlags(lspec, PR_LD_NOW | PR_LD_LOCAL);
+    
+    if (sLibAV.mVALib &&
+        !PR_FindSymbol(sLibAV.mVALib, "vaExportSurfaceHandle")) {
+      PR_UnloadLibrary(sLibAV.mVALib);
+      sLibAV.mVALib = nullptr;
+    }
+  }
+#endif
+
   
   
   sLinkStatus = LinkStatus_NOT_FOUND;

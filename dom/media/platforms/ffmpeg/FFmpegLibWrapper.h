@@ -16,6 +16,10 @@ struct AVPacket;
 struct AVDictionary;
 struct AVCodecParserContext;
 struct PRLibrary;
+#ifdef MOZ_WAYLAND
+struct AVCodecHWConfig;
+struct AVBufferRef;
+#endif
 
 namespace mozilla {
 
@@ -43,10 +47,16 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
   
   
   
+  
   LinkResult Link();
 
   
   void Unlink();
+
+#ifdef MOZ_WAYLAND
+  
+  bool IsVAAPIAvailable();
+#endif
 
   
   
@@ -102,8 +112,33 @@ struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper {
   
   int (*av_frame_get_colorspace)(const AVFrame* frame);
   int (*av_frame_get_color_range)(const AVFrame* frame);
+
+#ifdef MOZ_WAYLAND
+  const AVCodecHWConfig* (*avcodec_get_hw_config)(const AVCodec* codec,
+                                                  int index);
+  int (*av_hwdevice_ctx_create)(AVBufferRef** device_ctx, int type,
+                                const char* device, AVDictionary* opts,
+                                int flags);
+  AVBufferRef* (*av_buffer_ref)(AVBufferRef* buf);
+  void (*av_buffer_unref)(AVBufferRef** buf);
+  int (*av_hwframe_transfer_get_formats)(AVBufferRef* hwframe_ctx, int dir,
+                                         int** formats, int flags);
+  int (*av_hwdevice_ctx_create_derived)(AVBufferRef** dst_ctx, int type,
+                                        AVBufferRef* src_ctx, int flags);
+  AVBufferRef* (*av_hwframe_ctx_alloc)(AVBufferRef* device_ctx);
+  int (*av_dict_set)(AVDictionary** pm, const char* key, const char* value,
+                     int flags);
+  void (*av_dict_free)(AVDictionary** m);
+
+  int (*vaExportSurfaceHandle)(void*, unsigned int, uint32_t, uint32_t, void*);
+  int (*vaSyncSurface)(void*, unsigned int);
+#endif
+
   PRLibrary* mAVCodecLib;
   PRLibrary* mAVUtilLib;
+#ifdef MOZ_WAYLAND
+  PRLibrary* mVALib;
+#endif
 
  private:
 };
