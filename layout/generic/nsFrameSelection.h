@@ -773,7 +773,6 @@ class nsFrameSelection final {
   
   static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
 
-  nsresult SelectBlockOfCells(nsIContent* aStartNode, nsIContent* aEndNode);
   nsresult SelectRowOrColumn(nsIContent* aCellContent,
                              mozilla::TableSelectionMode aTarget);
 
@@ -803,6 +802,9 @@ class nsFrameSelection final {
     
     
     nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
+
+    nsresult SelectBlockOfCells(nsIContent* aStartCell, nsIContent* aEndCell,
+                                mozilla::dom::Selection& aNormalSelection);
 
     
     nsresult UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
