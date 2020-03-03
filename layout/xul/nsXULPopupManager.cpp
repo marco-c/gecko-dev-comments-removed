@@ -1585,36 +1585,64 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
   }
 
   
-  if (mozilla::widget::nsAutoRollup::GetLastRollup() == aPopup->GetContent())
-    return false;
-
-  nsCOMPtr<nsIDocShellTreeItem> dsti = aPopup->PresContext()->GetDocShell();
-  nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(dsti);
-  if (!baseWin) return false;
-
-  nsCOMPtr<nsIDocShellTreeItem> root;
-  dsti->GetInProcessRootTreeItem(getter_AddRefs(root));
-  if (!root) {
+  if (mozilla::widget::nsAutoRollup::GetLastRollup() == aPopup->GetContent()) {
     return false;
   }
 
-  nsCOMPtr<nsPIDOMWindowOuter> rootWin = root->GetWindow();
+  nsCOMPtr<nsIDocShell> docShell = aPopup->PresContext()->GetDocShell();
 
-  
-  
-  if (dsti->ItemType() != nsIDocShellTreeItem::typeChrome) {
+  nsCOMPtr<nsIBaseWindow> baseWin = do_QueryInterface(docShell);
+  if (!baseWin) {
+    return false;
+  }
+
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIDocShellTreeItem> root;
+    docShell->GetInProcessRootTreeItem(getter_AddRefs(root));
+    if (!root) {
+      return false;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> rootWin = root->GetWindow();
+
     
-    nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (!fm || !rootWin) return false;
+    
+    if (docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+      
+      nsFocusManager* fm = nsFocusManager::GetFocusManager();
+      if (!fm || !rootWin) {
+        return false;
+      }
 
-    nsCOMPtr<mozIDOMWindowProxy> activeWindow;
-    fm->GetActiveWindow(getter_AddRefs(activeWindow));
-    if (activeWindow != rootWin) return false;
+      nsCOMPtr<nsPIDOMWindowOuter> activeWindow = fm->GetActiveWindow();
+      if (activeWindow != rootWin) {
+        return false;
+      }
 
+      
+      bool visible;
+      baseWin->GetVisibility(&visible);
+      if (!visible) {
+        return false;
+      }
+    }
+  } else {
     
     bool visible;
     baseWin->GetVisibility(&visible);
-    if (!visible) return false;
+    if (!visible) {
+      return false;
+    }
+
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    BrowsingContext* bc = docShell->GetBrowsingContext();
+    if (!fm || !bc) {
+      return false;
+    }
+
+    if (fm->GetActiveBrowsingContext() != bc->Top()) {
+      return false;
+    }
   }
 
   
@@ -1626,6 +1654,7 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
   }
 
 #ifdef XP_MACOSX
+  nsCOMPtr<nsPIDOMWindowOuter> rootWin = root->GetWindow();
   if (rootWin) {
     auto globalWin = nsGlobalWindowOuter::Cast(rootWin.get());
     if (globalWin->IsInModalState()) {
