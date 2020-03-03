@@ -175,6 +175,11 @@ var whitelist = [
     platforms: ["linux", "macosx"],
   },
   
+  {
+    file: "resource://gre/modules/OSCrypto.jsm",
+    platforms: ["linux", "macosx"],
+  },
+  
   { file: "chrome://global/skin/icons/error-16.png" },
   
   { file: "chrome://marionette/content/test.xhtml" },

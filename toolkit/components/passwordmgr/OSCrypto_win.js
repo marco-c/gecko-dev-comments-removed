@@ -185,7 +185,8 @@ OSCrypto.prototype = {
 
 
 
-  decryptData(data, entropy = null) {
+
+  decryptData(data, entropy = null, output = "string") {
     let array = this.stringToArray(data);
     let encryptedData = wintypes.BYTE.array(array.length)(array);
     let inData = new this._structs.DATA_BLOB(
@@ -210,8 +211,15 @@ OSCrypto.prototype = {
       }
 
       let decrypted = this._convertWinArrayToJSArray(outData);
+
       
-      return new TextDecoder().decode(new Uint8Array(decrypted));
+      const bytes = new Uint8Array(decrypted);
+      if (output === "bytes") {
+        return bytes;
+      }
+
+      
+      return new TextDecoder().decode(bytes);
     } finally {
       if (outData.pbData) {
         this._functions.get("LocalFree")(outData.pbData);
