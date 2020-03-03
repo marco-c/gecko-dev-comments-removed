@@ -519,10 +519,7 @@ class ResponsiveUI {
         if (this.isBrowserUIEnabled) {
           
           
-          const {
-            width,
-            height,
-          } = this.rdmFrame.contentWindow.getViewportSize();
+          const { width, height } = this.getViewportSize();
           this.updateViewportSize(width, height);
         } else {
           const zoom = tab.linkedBrowser.fullZoom;
@@ -708,7 +705,7 @@ class ResponsiveUI {
       deltaY = 0;
     }
 
-    const viewportSize = this.rdmFrame.contentWindow.getViewportSize();
+    const viewportSize = this.getViewportSize();
 
     let width = Math.round(viewportSize.width + deltaX);
     let height = Math.round(viewportSize.height + deltaY);
@@ -1100,13 +1097,30 @@ class ResponsiveUI {
     
     this.browserStackEl.style.setProperty("--rdm-width", `${scaledWidth}px`);
     this.browserStackEl.style.setProperty("--rdm-height", `${scaledHeight}px`);
+
+    
+    
+    
+    
+    
+    
+    this.emit("content-resize", {
+      width,
+      height,
+    });
   }
 
   
 
 
   getViewportSize() {
-    return this.toolWindow.getViewportSize();
+    
+    
+    if (this.toolWindow.getViewportSize) {
+      return this.toolWindow.getViewportSize();
+    }
+
+    return { width: 0, height: 0 };
   }
 
   
@@ -1120,6 +1134,7 @@ class ResponsiveUI {
     }
 
     const { width, height } = size;
+    this.rdmFrame.contentWindow.setViewportSize({ width, height });
     this.updateViewportSize(width, height);
   }
 
