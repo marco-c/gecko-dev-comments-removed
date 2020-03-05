@@ -106,8 +106,6 @@ impl GradientBuilder {
         angle: f32,
         extend_mode: di::ExtendMode,
     ) -> di::ConicGradient {
-        
-
         let (start_offset, end_offset) =
             self.normalize(extend_mode);
 
