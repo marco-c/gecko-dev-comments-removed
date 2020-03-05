@@ -12,41 +12,65 @@ PromiseTestUtils.whitelistRejectionsGlobally(
   /Permission denied to access property "document" on cross-origin object/
 );
 
+const Types = require("devtools/client/responsive/types");
+
 const TEST_URL = "http://example.com/";
 
-add_task(async function() {
-  const tab = await addTab(TEST_URL);
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(TEST_URL);
 
-  const { ui } = await openRDM(tab);
-  const clientClosed = waitForClientClose(ui);
+    const { ui } = await openRDM(tab);
+    const { store } = ui.toolWindow;
+    await waitUntilState(
+      store,
+      state =>
+        state.viewports.length == 1 &&
+        state.devices.listState == Types.loadableState.LOADED
+    );
+    const clientClosed = waitForClientClose(ui);
 
-  closeRDM(tab, {
-    reason: "BeforeTabRemotenessChange",
-  });
+    closeRDM(tab, {
+      reason: "BeforeTabRemotenessChange",
+    });
 
-  
-  
-  
-  is(ui.destroyed, true, "RDM closed synchronously");
+    
+    
+    
+    is(ui.destroyed, true, "RDM closed synchronously");
 
-  await clientClosed;
-  await removeTab(tab);
-});
+    await clientClosed;
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
 
-add_task(async function() {
-  const tab = await addTab(TEST_URL);
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(TEST_URL);
 
-  const { ui } = await openRDM(tab);
-  const clientClosed = waitForClientClose(ui);
+    const { ui } = await openRDM(tab);
+    const { store } = ui.toolWindow;
+    await waitUntilState(
+      store,
+      state =>
+        state.viewports.length == 1 &&
+        state.devices.listState == Types.loadableState.LOADED
+    );
+    const clientClosed = waitForClientClose(ui);
 
-  
-  await load(tab.linkedBrowser, "about:robots");
+    
+    await load(tab.linkedBrowser, "about:robots");
 
-  
-  
-  
-  is(ui.destroyed, true, "RDM closed synchronously");
+    
+    
+    
+    is(ui.destroyed, true, "RDM closed synchronously");
 
-  await clientClosed;
-  await removeTab(tab);
-});
+    await clientClosed;
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
