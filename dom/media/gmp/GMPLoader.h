@@ -21,14 +21,14 @@ namespace gmp {
 
 class SandboxStarter {
  public:
-  virtual ~SandboxStarter() {}
+  virtual ~SandboxStarter() = default;
   virtual bool Start(const char* aLibPath) = 0;
 };
 
 
 class GMPAdapter {
  public:
-  virtual ~GMPAdapter() {}
+  virtual ~GMPAdapter() = default;
   
   
   

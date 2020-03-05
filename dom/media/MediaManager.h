@@ -321,7 +321,7 @@ class MediaManager final : public nsIMediaManagerService, public nsIObserver {
   
   explicit MediaManager(UniquePtr<base::Thread> aMediaThread);
 
-  ~MediaManager() {}
+  ~MediaManager() = default;
   void Shutdown();
 
   void StopScreensharing(uint64_t aWindowID);

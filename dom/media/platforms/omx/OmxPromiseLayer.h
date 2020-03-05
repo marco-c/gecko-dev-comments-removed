@@ -40,7 +40,7 @@ class TrackInfo;
 
 class OmxPromiseLayer {
  protected:
-  virtual ~OmxPromiseLayer() {}
+  virtual ~OmxPromiseLayer() = default;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OmxPromiseLayer)
@@ -119,7 +119,7 @@ class OmxPromiseLayer {
   
   class BufferData {
    protected:
-    virtual ~BufferData() {}
+    virtual ~BufferData() = default;
 
    public:
     explicit BufferData(OMX_BUFFERHEADERTYPE* aBuffer)

@@ -100,7 +100,7 @@ Maybe<MediaMIMEType> MakeMediaMIMEType(const char* aType);
 
 class MediaCodecs {
  public:
-  MediaCodecs() {}
+  MediaCodecs() = default;
   
   explicit MediaCodecs(const nsAString& aCodecs) : mCodecs(aCodecs) {}
   

@@ -63,7 +63,7 @@ class CaptureTask : public DirectMediaTrackListener,
   explicit CaptureTask(dom::ImageCapture* aImageCapture);
 
  protected:
-  virtual ~CaptureTask() {}
+  virtual ~CaptureTask() = default;
 
   
   

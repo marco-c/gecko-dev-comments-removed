@@ -89,7 +89,7 @@ TextTrackCue::TextTrackCue(nsPIDOMWindowInner* aOwnerWindow, double aStartTime,
   }
 }
 
-TextTrackCue::~TextTrackCue() {}
+TextTrackCue::~TextTrackCue() = default;
 
 
 

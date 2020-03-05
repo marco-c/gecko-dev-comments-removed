@@ -29,7 +29,7 @@ class AudioSinkWrapper : public MediaSink {
   
   class Creator {
    public:
-    virtual ~Creator() {}
+    virtual ~Creator() = default;
     virtual AudioSink* Create() = 0;
   };
 

@@ -30,7 +30,7 @@ class TrackMetadataBase {
 
  protected:
   
-  virtual ~TrackMetadataBase() {}
+  virtual ~TrackMetadataBase() = default;
 };
 
 

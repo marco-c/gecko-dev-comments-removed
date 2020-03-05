@@ -122,7 +122,7 @@ class BaseMediaResource : public MediaResource,
         mChannel(aChannel),
         mURI(aURI),
         mLoadInBackground(false) {}
-  virtual ~BaseMediaResource() {}
+  virtual ~BaseMediaResource() = default;
 
   
   

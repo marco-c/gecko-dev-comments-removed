@@ -202,7 +202,7 @@ class Sbgp final : public Atom
 
 struct CencSampleEncryptionInfoEntry final {
  public:
-  CencSampleEncryptionInfoEntry() {}
+  CencSampleEncryptionInfoEntry() = default;
 
   Result<Ok, nsresult> Init(BoxReader& aReader);
 

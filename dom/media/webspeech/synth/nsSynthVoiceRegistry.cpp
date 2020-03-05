@@ -72,7 +72,7 @@ namespace dom {
 class VoiceData final {
  private:
   
-  ~VoiceData() {}
+  ~VoiceData() = default;
 
  public:
   VoiceData(nsISpeechService* aService, const nsAString& aUri,
@@ -105,7 +105,7 @@ class VoiceData final {
 class GlobalQueueItem final {
  private:
   
-  ~GlobalQueueItem() {}
+  ~GlobalQueueItem() = default;
 
  public:
   GlobalQueueItem(VoiceData* aVoice, nsSpeechTask* aTask,

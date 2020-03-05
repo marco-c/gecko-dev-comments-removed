@@ -19,7 +19,7 @@ class FileMediaResource : public BaseMediaResource {
         mSize(aSize),
         mLock("FileMediaResource.mLock"),
         mSizeInitialized(aSize != -1) {}
-  ~FileMediaResource() {}
+  ~FileMediaResource() = default;
 
   
   nsresult Open(nsIStreamListener** aStreamListener) override;

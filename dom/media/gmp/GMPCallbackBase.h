@@ -8,7 +8,7 @@
 
 class GMPCallbackBase {
  public:
-  virtual ~GMPCallbackBase() {}
+  virtual ~GMPCallbackBase() = default;
 
   
   

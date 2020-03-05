@@ -121,7 +121,7 @@ class FileBlockCache : public MediaBlockCacheBase {
 
    private:
     
-    ~BlockChange() {}
+    ~BlockChange() = default;
   };
 
  private:

@@ -64,7 +64,7 @@ class GMPRecord {
   
   virtual GMPErr Close() = 0;
 
-  virtual ~GMPRecord() {}
+  virtual ~GMPRecord() = default;
 };
 
 
@@ -104,7 +104,7 @@ class GMPRecordClient {
   
   virtual void WriteComplete(GMPErr aStatus) = 0;
 
-  virtual ~GMPRecordClient() {}
+  virtual ~GMPRecordClient() = default;
 };
 
 #endif  

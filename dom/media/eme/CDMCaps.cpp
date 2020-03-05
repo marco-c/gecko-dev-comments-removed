@@ -11,9 +11,9 @@
 
 namespace mozilla {
 
-CDMCaps::CDMCaps() {}
+CDMCaps::CDMCaps() = default;
 
-CDMCaps::~CDMCaps() {}
+CDMCaps::~CDMCaps() = default;
 
 
 

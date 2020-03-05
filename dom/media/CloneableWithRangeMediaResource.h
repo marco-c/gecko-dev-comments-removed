@@ -23,7 +23,7 @@ class CloneableWithRangeMediaResource : public BaseMediaResource {
     MOZ_ASSERT(mStream);
   }
 
-  ~CloneableWithRangeMediaResource() {}
+  ~CloneableWithRangeMediaResource() = default;
 
   
   nsresult Open(nsIStreamListener** aStreamListener) override;

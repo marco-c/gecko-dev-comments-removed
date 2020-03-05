@@ -60,7 +60,7 @@ class EncodedFrame final {
 
  private:
   
-  ~EncodedFrame() {}
+  ~EncodedFrame() = default;
 
   
   nsTArray<uint8_t> mFrameData;

@@ -23,7 +23,8 @@ namespace camera {
 
 class VideoEngine {
  private:
-  virtual ~VideoEngine(){};
+  virtual ~VideoEngine() = default;
+
   
   
   

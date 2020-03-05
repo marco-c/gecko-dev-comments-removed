@@ -161,7 +161,7 @@ class FrameStatistics {
   };
 
  private:
-  ~FrameStatistics() {}
+  ~FrameStatistics() = default;
 
   
   mutable ReentrantMonitor mReentrantMonitor;

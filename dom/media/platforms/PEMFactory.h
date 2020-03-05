@@ -27,7 +27,7 @@ class PEMFactory final {
   bool SupportsMimeType(const nsACString& aMimeType) const;
 
  private:
-  virtual ~PEMFactory() {}
+  virtual ~PEMFactory() = default;
   
   already_AddRefed<PlatformEncoderModule> FindPEM(
       const TrackInfo& aTrackInfo) const;

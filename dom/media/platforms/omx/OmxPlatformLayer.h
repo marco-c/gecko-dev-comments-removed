@@ -63,7 +63,7 @@ class OmxPlatformLayer {
 
   virtual nsresult Shutdown() = 0;
 
-  virtual ~OmxPlatformLayer() {}
+  virtual ~OmxPlatformLayer() = default;
 
   
   

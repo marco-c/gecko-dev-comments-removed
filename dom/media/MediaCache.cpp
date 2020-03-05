@@ -93,8 +93,8 @@ class MediaCacheFlusher final : public nsIObserver,
   static void UnregisterMediaCache(MediaCache* aMediaCache);
 
  private:
-  MediaCacheFlusher() {}
-  ~MediaCacheFlusher() {}
+  MediaCacheFlusher() = default;
+  ~MediaCacheFlusher() = default;
 
   
   
@@ -378,7 +378,7 @@ class MediaCache {
   };
 
   struct BlockOwner {
-    constexpr BlockOwner() {}
+    constexpr BlockOwner() = default;
 
     
     MediaCacheStream* mStream = nullptr;

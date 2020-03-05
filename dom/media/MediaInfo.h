@@ -456,7 +456,7 @@ class TrackInfoSharedPtr {
   }
 
  private:
-  ~TrackInfoSharedPtr() {}
+  ~TrackInfoSharedPtr() = default;
   UniquePtr<TrackInfo> mInfo;
   
   uint32_t mStreamSourceID;

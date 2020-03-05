@@ -42,7 +42,7 @@ class ThreadSharedObject {
 
  protected:
   
-  virtual ~ThreadSharedObject() {}
+  virtual ~ThreadSharedObject() = default;
 };
 
 

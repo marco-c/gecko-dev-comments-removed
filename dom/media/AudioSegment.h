@@ -288,13 +288,12 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
 
   AudioSegment() : MediaSegmentBase<AudioSegment, AudioChunk>(AUDIO) {}
 
-  AudioSegment(AudioSegment&& aSegment)
-      : MediaSegmentBase<AudioSegment, AudioChunk>(std::move(aSegment)) {}
+  AudioSegment(AudioSegment&& aSegment) = default;
 
   AudioSegment(const AudioSegment&) = delete;
   AudioSegment& operator=(const AudioSegment&) = delete;
 
-  ~AudioSegment() {}
+  ~AudioSegment() = default;
 
   
   

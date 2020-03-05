@@ -17,7 +17,7 @@
 class GMPVideoDecoderCallbackProxy : public GMPCallbackBase,
                                      public GMPVideoDecoderCallback {
  public:
-  virtual ~GMPVideoDecoderCallbackProxy() {}
+  virtual ~GMPVideoDecoderCallbackProxy() = default;
 };
 
 
