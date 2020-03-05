@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/AliasAnalysis.h"
 
@@ -42,8 +42,8 @@ class LoopAliasInfo : public TempObject {
   MInstruction* firstInstruction() const { return *loopHeader_->begin(); }
 };
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
 void AliasAnalysis::spewDependencyList() {
 #ifdef JS_JITSPEW
@@ -76,7 +76,7 @@ void AliasAnalysis::spewDependencyList() {
 #endif
 }
 
-
+// Unwrap any slot or element to its corresponding object.
 static inline const MDefinition* MaybeUnwrap(const MDefinition* object) {
   while (object->isSlots() || object->isElements() ||
          object->isConvertElementsToDoubles()) {
@@ -94,16 +94,16 @@ static inline const MDefinition* MaybeUnwrap(const MDefinition* object) {
   return object;
 }
 
-
-
+// Get the object of any load/store. Returns nullptr if not tied to
+// an object.
 static inline const MDefinition* GetObject(const MDefinition* ins) {
   if (ins->getAliasSet().isNone()) {
     return nullptr;
   }
   MOZ_ASSERT(ins->getAliasSet().isStore() || ins->getAliasSet().isLoad());
 
-  
-  
+  // Note: only return the object if that object owns that property.
+  // I.e. the property isn't on the prototype chain.
   const MDefinition* object = nullptr;
   switch (ins->op()) {
     case MDefinition::Opcode::InitializedLength:
@@ -170,14 +170,11 @@ static inline const MDefinition* GetObject(const MDefinition* ins) {
     case MDefinition::Opcode::WasmStoreGlobalVar:
     case MDefinition::Opcode::WasmStoreGlobalCell:
     case MDefinition::Opcode::WasmStoreRef:
-    case MDefinition::Opcode::ArraySlice:
-    case MDefinition::Opcode::StoreElementHole:
-    case MDefinition::Opcode::FallibleStoreElement:
       return nullptr;
     default:
 #ifdef DEBUG
-      
-      
+      // Crash when the default aliasSet is overriden, but when not added in the
+      // list above.
       if (!ins->hasDefaultAliasSet()) {
         MOZ_CRASH(
             "Overridden getAliasSet without updating AliasAnalysis GetObject");
@@ -193,7 +190,7 @@ static inline const MDefinition* GetObject(const MDefinition* ins) {
   return object;
 }
 
-
+// Generic comparing if a load aliases a store using TI information.
 MDefinition::AliasType AliasAnalysis::genericMightAlias(
     const MDefinition* load, const MDefinition* store) {
   const MDefinition* loadObject = GetObject(load);
@@ -214,9 +211,9 @@ MDefinition::AliasType AliasAnalysis::genericMightAlias(
   return MDefinition::AliasType::NoAlias;
 }
 
-
-
-
+// Whether there might be a path from src to dest, excluding loop backedges.
+// This is approximate and really ought to depend on precomputed reachability
+// information.
 static inline bool BlockMightReach(MBasicBlock* src, MBasicBlock* dest) {
   while (src->id() <= dest->id()) {
     if (src == dest) {
@@ -228,7 +225,7 @@ static inline bool BlockMightReach(MBasicBlock* src, MBasicBlock* dest) {
       case 1: {
         MBasicBlock* successor = src->getSuccessor(0);
         if (successor->id() <= src->id()) {
-          return true;  
+          return true;  // Don't iloop.
         }
         src = successor;
         break;
@@ -270,27 +267,27 @@ static void IonSpewAliasInfo(const char* pre, MInstruction* ins,
 #endif
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// [SMDOC] IonMonkey Alias Analysis
+//
+// This pass annotates every load instruction with the last store instruction
+// on which it depends. The algorithm is optimistic in that it ignores explicit
+// dependencies and only considers loads and stores.
+//
+// Loads inside loops only have an implicit dependency on a store before the
+// loop header if no instruction inside the loop body aliases it. To calculate
+// this efficiently, we maintain a list of maybe-invariant loads and the
+// combined alias set for all stores inside the loop. When we see the loop's
+// backedge, this information is used to mark every load we wrongly assumed to
+// be loop invariant as having an implicit dependency on the last instruction of
+// the loop header, so that it's never moved before the loop header.
+//
+// The algorithm depends on the invariant that both control instructions and
+// effectful instructions (stores) are never hoisted.
 bool AliasAnalysis::analyze() {
   Vector<MInstructionVector, AliasSet::NumCategories, JitAllocPolicy> stores(
       alloc());
 
-  
+  // Initialize to the first instruction.
   MInstruction* firstIns = *graph_.entryBlock()->begin();
   for (unsigned i = 0; i < AliasSet::NumCategories; i++) {
     MInstructionVector defs(alloc());
@@ -302,8 +299,8 @@ bool AliasAnalysis::analyze() {
     }
   }
 
-  
-  
+  // Type analysis may have inserted new instructions. Since this pass depends
+  // on the instruction number ordering, all instructions are renumbered.
   uint32_t newId = 0;
 
   for (ReversePostorderIterator block(graph_.rpoBegin());
@@ -335,9 +332,9 @@ bool AliasAnalysis::analyze() {
         continue;
       }
 
-      
-      
-      
+      // For the purposes of alias analysis, all recoverable operations
+      // are treated as effect free as the memory represented by these
+      // operations cannot be aliased by others.
       if (def->canRecoverOnBailout()) {
         continue;
       }
@@ -358,7 +355,7 @@ bool AliasAnalysis::analyze() {
         }
 #endif
       } else {
-        
+        // Find the most recent store on which this instruction depends.
         MInstruction* lastStore = firstIns;
 
         for (AliasSetIterator iter(set); iter; iter++) {
@@ -380,9 +377,9 @@ bool AliasAnalysis::analyze() {
         def->setDependency(lastStore);
         IonSpewDependency(*def, lastStore, "depends", "");
 
-        
-        
-        
+        // If the last store was before the current loop, we assume this load
+        // is loop invariant. If a later instruction writes to the same
+        // location, we will fix this at the end of the loop.
         if (loop_ && lastStore->id() < loop_->firstInstruction()->id()) {
           if (!loop_->addInvariantLoad(*def)) {
             return false;
@@ -391,8 +388,8 @@ bool AliasAnalysis::analyze() {
       }
     }
 
-    
-    
+    // Renumber the last instruction, as the analysis depends on this and the
+    // order.
     block->lastIns()->setId(newId++);
 
     if (block->isLoopBackedge()) {
@@ -431,10 +428,10 @@ bool AliasAnalysis::analyze() {
         }
 
         if (hasAlias) {
-          
-          
-          
-          
+          // This instruction depends on stores inside the loop body. Mark it as
+          // having a dependency on the last instruction of the loop header. The
+          // last instruction is a control instruction and these are never
+          // hoisted.
           MControlInstruction* controlIns = loop_->loopHeader()->lastIns();
           IonSpewDependency(ins, controlIns, "depends",
                             "due to stores in loop body");
