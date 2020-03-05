@@ -1274,6 +1274,46 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+  _multiFrameXPath: function(xPath) {
+    const nodes = [];
+
+    for (const window of this.targetActor.windows) {
+      const document = window.document;
+      try {
+        const result = document.evaluate(
+          xPath,
+          document.documentElement,
+          null,
+          window.XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+          null
+        );
+
+        for (let i = 0; i < result.snapshotLength; i++) {
+          nodes.push(result.snapshotItem(i));
+        }
+      } catch (e) {
+        
+      }
+    }
+
+    return nodes;
+  },
+
+  
+
+
+
+
+  multiFrameXPath: function(xPath) {
+    return new NodeListActor(this, this._multiFrameXPath(xPath));
+  },
+
+  
+
+
+
+
+
 
 
 
