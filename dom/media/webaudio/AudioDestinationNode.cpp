@@ -428,10 +428,7 @@ void AudioDestinationNode::NotifyMainThreadTrackEnded() {
 
 void AudioDestinationNode::FireOfflineCompletionEvent() {
   AudioContext* context = Context();
-  context->Shutdown();
-  
-  
-  
+  context->OfflineClose();
 
   OfflineDestinationNodeEngine* engine =
       static_cast<OfflineDestinationNodeEngine*>(Track()->Engine());
@@ -444,6 +441,8 @@ void AudioDestinationNode::FireOfflineCompletionEvent() {
   context->Dispatch(do_AddRef(new OnCompleteTask(context, renderedBuffer)));
 
   context->OnStateChanged(nullptr, AudioContextState::Closed);
+
+  mOfflineRenderingRef.Drop(this);
 }
 
 void AudioDestinationNode::ResolvePromise(AudioBuffer* aRenderedBuffer) {
