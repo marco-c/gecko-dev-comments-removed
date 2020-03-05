@@ -14,6 +14,7 @@
 namespace mozilla {
 namespace webgpu {
 
+class BindGroup;
 class Buffer;
 class CommandEncoder;
 class ComputePipeline;
@@ -32,6 +33,9 @@ class ComputePassEncoder final : public ObjectBase,
   void Cleanup() {}
 
   ffi::WGPURawPass mRaw;
+  
+  std::vector<RefPtr<const BindGroup>> mUsedBindGroups;
+  std::vector<RefPtr<const ComputePipeline>> mUsedPipelines;
 
  public:
   void SetBindGroup(uint32_t aSlot, const BindGroup& aBindGroup,
