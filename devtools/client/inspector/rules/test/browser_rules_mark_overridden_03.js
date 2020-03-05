@@ -23,18 +23,11 @@ add_task(async function() {
   const { inspector, view } = await openRuleView();
   await selectNode("#testid", inspector);
 
-  const idRule = getRuleViewRuleEditor(view, 1).rule;
-  const idProp = idRule.textProps[0];
+  const idProp = getTextProperty(view, 1, { "background-color": "blue" });
   ok(idProp.overridden, "Not-important rule should be overridden.");
 
-  const classRule = getRuleViewRuleEditor(view, 2).rule;
-  const classProp = classRule.textProps[0];
+  const classProp = getTextProperty(view, 2, { "background-color": "green" });
   ok(!classProp.overridden, "Important rule should not be overridden.");
 
   ok(idProp.overridden, "ID property should be overridden.");
-
-  
-  
-  
-  
 });
