@@ -755,7 +755,14 @@ class nsPresContext : public nsISupports,
 
 
 
-  nsITheme* GetTheme();
+
+
+  nsITheme* Theme() MOZ_NONNULL_RETURN {
+    if (MOZ_LIKELY(mTheme)) {
+      return mTheme;
+    }
+    return EnsureTheme();
+  }
 
   
 
@@ -1319,6 +1326,8 @@ class nsPresContext : public nsISupports,
   virtual ~nsPresContext();
 
   void LastRelease();
+
+  nsITheme* EnsureTheme();
 
 #ifdef DEBUG
  private:

@@ -334,10 +334,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 
 
-static bool sNoTheme = false;
-
-
-
 
 static bool sLookAndFeelChanged;
 
@@ -1274,17 +1270,15 @@ void nsPresContext::RecordInteractionTime(InteractionType aType,
   }
 }
 
-nsITheme* nsPresContext::GetTheme() {
-  if (!sNoTheme && !mTheme) {
-    if (StaticPrefs::widget_disable_native_theme_for_content() &&
-        (!IsChrome() || XRE_IsContentProcess())) {
-      mTheme = do_GetBasicNativeThemeDoNotUseDirectly();
-    } else {
-      mTheme = do_GetNativeThemeDoNotUseDirectly();
-    }
-    if (!mTheme) sNoTheme = true;
+nsITheme* nsPresContext::EnsureTheme() {
+  MOZ_ASSERT(!mTheme);
+  if (StaticPrefs::widget_disable_native_theme_for_content() &&
+      (!IsChrome() || XRE_IsContentProcess())) {
+    mTheme = do_GetBasicNativeThemeDoNotUseDirectly();
+  } else {
+    mTheme = do_GetNativeThemeDoNotUseDirectly();
   }
-
+  MOZ_RELEASE_ASSERT(mTheme);
   return mTheme;
 }
 
