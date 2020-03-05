@@ -805,28 +805,31 @@ def findTestMediaDevices(log):
                            'v4l2sink', 'device=%s' % device])
     info['video'] = name
 
-    if platform.linux_distribution()[0] == 'debian':
-        
-        
-        pass
-    else:
-        
-        pactl = spawn.find_executable("pactl")
+    
+    pactl = spawn.find_executable("pactl")
 
-        def null_sink_loaded():
-            o = subprocess.check_output(
-                [pactl, 'list', 'short', 'modules'])
-            return filter(lambda x: 'module-null-sink' in x, o.splitlines())
+    if not pactl:
+        log.error('Could not find pactl on system')
+        return None
 
-        if not null_sink_loaded():
+    try:
+        o = subprocess.check_output(
+            [pactl, 'list', 'short', 'modules'])
+    except subprocess.CalledProcessError:
+        log.error('Could not list currently loaded modules')
+        return None
+
+    null_sink = filter(lambda x: 'module-null-sink' in x, o.splitlines())
+
+    if not null_sink:
+        try:
             subprocess.check_call([
                 pactl,
                 'load-module',
                 'module-null-sink'
             ])
-
-        if not null_sink_loaded():
-            log.error('Couldn\'t load module-null-sink')
+        except subprocess.CalledProcessError:
+            log.error('Could not load module-null-sink')
             return None
 
     

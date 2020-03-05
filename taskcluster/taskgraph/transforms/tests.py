@@ -557,8 +557,7 @@ def set_defaults(config, tests):
         test.setdefault('limit-platforms', [])
         
         
-        if ('linux1804' in test['test-platform'] or
-                config.params['try_task_config'].get('ubuntu-bionic')):
+        if ('linux1804' in test['test-platform']):
             test.setdefault('docker-image', {'in-tree': 'ubuntu1804-test'})
         else:
             test.setdefault('docker-image', {'in-tree': 'desktop1604-test'})
