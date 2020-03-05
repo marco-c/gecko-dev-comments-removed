@@ -3624,7 +3624,10 @@ class Document : public nsINode,
   void ScheduleIntersectionObserverNotification();
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
-  DOMIntersectionObserver* GetLazyLoadImageObserver();
+  DOMIntersectionObserver* GetLazyLoadImageObserver() {
+    return mLazyLoadImageObserver;
+  }
+  DOMIntersectionObserver& EnsureLazyLoadImageObserver();
 
   
   nsresult Dispatch(TaskCategory aCategory,
