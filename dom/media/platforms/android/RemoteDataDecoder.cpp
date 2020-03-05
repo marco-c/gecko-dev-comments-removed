@@ -847,8 +847,6 @@ void RemoteDataDecoder::DrainComplete() {
   }
   SetState(State::DRAINED);
   ReturnDecodedData();
-  
-  mJavaDecoder->Flush();
 }
 
 void RemoteDataDecoder::Error(const MediaResult& aError) {
