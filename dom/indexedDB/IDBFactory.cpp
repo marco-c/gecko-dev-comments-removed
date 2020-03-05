@@ -328,8 +328,8 @@ nsresult IDBFactory::AllowedForWindowInternal(
   }
 
   if (ShouldPartitionStorage(access) &&
-      !StoragePartitioningEnabled(access,
-                                  aWindow->GetExtantDoc()->CookieSettings())) {
+      !StoragePartitioningEnabled(
+          access, aWindow->GetExtantDoc()->CookieJarSettings())) {
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
@@ -414,13 +414,6 @@ bool IDBFactory::IsChrome() const {
   MOZ_ASSERT(mPrincipalInfo);
 
   return mPrincipalInfo->type() == PrincipalInfo::TSystemPrincipalInfo;
-}
-
-void IDBFactory::IncrementParentLoggingRequestSerialNumber() {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(mBackgroundActor);
-
-  mBackgroundActor->SendIncrementLoggingRequestSerialNumber();
 }
 
 RefPtr<IDBOpenDBRequest> IDBFactory::Open(JSContext* aCx,

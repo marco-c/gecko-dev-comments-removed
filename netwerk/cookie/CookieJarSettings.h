@@ -1,0 +1,162 @@
+
+
+
+
+
+
+#ifndef mozilla_net_CookieJarSettings_h
+#define mozilla_net_CookieJarSettings_h
+
+#include "nsICookieJarSettings.h"
+#include "nsDataHashtable.h"
+#include "nsTArray.h"
+
+class nsIPermission;
+
+namespace mozilla {
+namespace net {
+
+class CookieJarSettingsArgs;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CookieJarSettings final : public nsICookieJarSettings {
+ public:
+  typedef nsTArray<RefPtr<nsIPermission>> CookiePermissionList;
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICOOKIEJARSETTINGS
+
+  static already_AddRefed<nsICookieJarSettings> CreateBlockingAll();
+
+  static already_AddRefed<nsICookieJarSettings> Create();
+
+  static already_AddRefed<nsICookieJarSettings> Create(
+      uint32_t aCookieBehavior);
+
+  static CookieJarSettings* Cast(nsICookieJarSettings* aCS) {
+    return static_cast<CookieJarSettings*>(aCS);
+  }
+
+  void Serialize(CookieJarSettingsArgs& aData);
+
+  static void Deserialize(const CookieJarSettingsArgs& aData,
+                          nsICookieJarSettings** aCookieJarSettings);
+
+  void Merge(const CookieJarSettingsArgs& aData);
+
+  
+  
+  
+  bool HasBeenChanged() const { return mToBeMerged; }
+
+ private:
+  enum State {
+    
+    eFixed,
+
+    
+    
+    eProgressive,
+  };
+
+  CookieJarSettings(uint32_t aCookieBehavior, State aState);
+  ~CookieJarSettings();
+
+  uint32_t mCookieBehavior;
+  CookiePermissionList mCookiePermissions;
+
+  State mState;
+
+  bool mToBeMerged;
+};
+
+}  
+}  
+
+#endif  

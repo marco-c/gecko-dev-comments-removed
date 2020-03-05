@@ -17,7 +17,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/BrowsingContext.h"
-#include "mozilla/net/CookieSettings.h"
+#include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozIThirdPartyUtil.h"
@@ -223,7 +223,7 @@ LoadInfo::LoadInfo(
 
       
       
-      mCookieSettings = aLoadingContext->OwnerDoc()->CookieSettings();
+      mCookieJarSettings = aLoadingContext->OwnerDoc()->CookieJarSettings();
     }
 
     mInnerWindowID = aLoadingContext->OwnerDoc()->InnerWindowID();
@@ -418,7 +418,7 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   
   
   
-  mCookieSettings = CookieSettings::Create();
+  mCookieJarSettings = CookieJarSettings::Create();
 }
 
 LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
@@ -496,7 +496,7 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   
-  mCookieSettings = CookieSettings::Create();
+  mCookieJarSettings = CookieJarSettings::Create();
 }
 
 LoadInfo::LoadInfo(const LoadInfo& rhs)
@@ -507,7 +507,7 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mTopLevelPrincipal(rhs.mTopLevelPrincipal),
       mTopLevelStorageAreaPrincipal(rhs.mTopLevelStorageAreaPrincipal),
       mResultPrincipalURI(rhs.mResultPrincipalURI),
-      mCookieSettings(rhs.mCookieSettings),
+      mCookieJarSettings(rhs.mCookieJarSettings),
       mCspToInherit(rhs.mCspToInherit),
       mClientInfo(rhs.mClientInfo),
       
@@ -571,7 +571,8 @@ LoadInfo::LoadInfo(
     nsIPrincipal* aPrincipalToInherit, nsIPrincipal* aSandboxedLoadingPrincipal,
     nsIPrincipal* aTopLevelPrincipal,
     nsIPrincipal* aTopLevelStorageAreaPrincipal, nsIURI* aResultPrincipalURI,
-    nsICookieSettings* aCookieSettings, nsIContentSecurityPolicy* aCspToInherit,
+    nsICookieJarSettings* aCookieJarSettings,
+    nsIContentSecurityPolicy* aCspToInherit,
     const Maybe<ClientInfo>& aClientInfo,
     const Maybe<ClientInfo>& aReservedClientInfo,
     const Maybe<ClientInfo>& aInitialClientInfo,
@@ -607,7 +608,7 @@ LoadInfo::LoadInfo(
       mTopLevelPrincipal(aTopLevelPrincipal),
       mTopLevelStorageAreaPrincipal(aTopLevelStorageAreaPrincipal),
       mResultPrincipalURI(aResultPrincipalURI),
-      mCookieSettings(aCookieSettings),
+      mCookieJarSettings(aCookieJarSettings),
       mCspToInherit(aCspToInherit),
       mClientInfo(aClientInfo),
       mReservedClientInfo(aReservedClientInfo),
@@ -867,10 +868,10 @@ LoadInfo::GetCookiePolicy(uint32_t* aResult) {
 
 namespace {
 
-already_AddRefed<nsICookieSettings> CreateCookieSettings(
+already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
     nsContentPolicyType aContentPolicyType) {
-  if (StaticPrefs::network_cookieSettings_unblocked_for_testing()) {
-    return CookieSettings::Create();
+  if (StaticPrefs::network_cookieJarSettings_unblocked_for_testing()) {
+    return CookieJarSettings::Create();
   }
 
   
@@ -878,30 +879,30 @@ already_AddRefed<nsICookieSettings> CreateCookieSettings(
   
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON ||
       aContentPolicyType == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    return CookieSettings::Create();
+    return CookieJarSettings::Create();
   }
 
-  return CookieSettings::CreateBlockingAll();
+  return CookieJarSettings::CreateBlockingAll();
 }
 
 }  
 
 NS_IMETHODIMP
-LoadInfo::GetCookieSettings(nsICookieSettings** aCookieSettings) {
-  if (!mCookieSettings) {
-    mCookieSettings = CreateCookieSettings(mInternalContentPolicyType);
+LoadInfo::GetCookieJarSettings(nsICookieJarSettings** aCookieJarSettings) {
+  if (!mCookieJarSettings) {
+    mCookieJarSettings = CreateCookieJarSettings(mInternalContentPolicyType);
   }
 
-  nsCOMPtr<nsICookieSettings> cookieSettings = mCookieSettings;
-  cookieSettings.forget(aCookieSettings);
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings = mCookieJarSettings;
+  cookieJarSettings.forget(aCookieJarSettings);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-LoadInfo::SetCookieSettings(nsICookieSettings* aCookieSettings) {
-  MOZ_ASSERT(aCookieSettings);
+LoadInfo::SetCookieJarSettings(nsICookieJarSettings* aCookieJarSettings) {
+  MOZ_ASSERT(aCookieJarSettings);
   
-  mCookieSettings = aCookieSettings;
+  mCookieJarSettings = aCookieJarSettings;
   return NS_OK;
 }
 

@@ -10,7 +10,7 @@
 #include "mozilla/dom/Document.h"
 
 class nsIChannel;
-class nsICookieSettings;
+class nsICookieJarSettings;
 class nsIPrincipal;
 class nsIURI;
 class nsPIDOMWindowInner;
@@ -81,7 +81,7 @@ StorageAccess StorageAllowedForChannel(nsIChannel* aChannel);
 
 
 StorageAccess StorageAllowedForServiceWorker(
-    nsIPrincipal* aPrincipal, nsICookieSettings* aCookieSettings);
+    nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings);
 
 
 
@@ -115,10 +115,10 @@ bool ShouldPartitionStorage(StorageAccess aAccess);
 bool ShouldPartitionStorage(uint32_t aRejectedReason);
 
 bool StoragePartitioningEnabled(StorageAccess aAccess,
-                                nsICookieSettings* aCookieSettings);
+                                nsICookieJarSettings* aCookieJarSettings);
 
 bool StoragePartitioningEnabled(uint32_t aRejectedReason,
-                                nsICookieSettings* aCookieSettings);
+                                nsICookieJarSettings* aCookieJarSettings);
 
 }  
 

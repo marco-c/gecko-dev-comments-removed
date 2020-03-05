@@ -15,7 +15,7 @@
 #include "nsCOMArray.h"           
 #include "nsCompatibility.h"      
 #include "nsCOMPtr.h"             
-#include "nsICookieSettings.h"
+#include "nsICookieJarSettings.h"
 #include "nsGkAtoms.h"           
 #include "nsNameSpaceManager.h"  
 #include "nsIApplicationCache.h"
@@ -1426,7 +1426,7 @@ class Document : public nsINode,
   bool StorageAccessSandboxed() const;
 
   
-  nsICookieSettings* CookieSettings();
+  nsICookieJarSettings* CookieJarSettings();
 
   
   inline void Changed() { ++mGeneration; }
@@ -5054,7 +5054,7 @@ class Document : public nsINode,
 
   bool mPendingInitialTranslation;
 
-  nsCOMPtr<nsICookieSettings> mCookieSettings;
+  nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
 
   
   int32_t mGeneration;
