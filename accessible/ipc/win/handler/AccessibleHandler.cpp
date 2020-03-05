@@ -41,6 +41,16 @@
 namespace mozilla {
 namespace a11y {
 
+
+
+const WCHAR kEmulatedWindowClassName[] = L"MozillaContentWindowClass";
+const uint32_t kEmulatedWindowClassNameNChars =
+    sizeof(kEmulatedWindowClassName) / sizeof(WCHAR);
+
+
+
+const uint32_t kIdContentProcessMask = 0x7F000000;
+
 static mscom::Factory<AccessibleHandler> sHandlerFactory;
 
 HRESULT
@@ -78,7 +88,8 @@ AccessibleHandler::AccessibleHandler(IUnknown* aOuter, HRESULT* aResult)
       mCachedTextAttribRuns(nullptr),
       mCachedNTextAttribRuns(-1),
       mCachedRelations(nullptr),
-      mCachedNRelations(-1) {
+      mCachedNRelations(-1),
+      mIsEmulatedWindow(false) {
   RefPtr<AccessibleHandlerControl> ctl(gControlFactory.GetOrCreateSingleton());
   MOZ_ASSERT(ctl);
   if (!ctl) {
@@ -471,6 +482,15 @@ AccessibleHandler::ReadHandlerPayload(IStream* aStream, REFIID aIid) {
   
   ReleaseStaticIA2DataInterfaces(mCachedData.mStaticData);
 
+  WCHAR className[kEmulatedWindowClassNameNChars];
+  if (mCachedData.mDynamicData.mHwnd &&
+      ::GetClassName(
+          reinterpret_cast<HWND>(uintptr_t(mCachedData.mDynamicData.mHwnd)),
+          className, kEmulatedWindowClassNameNChars) > 0 &&
+      wcscmp(className, kEmulatedWindowClassName) == 0) {
+    mIsEmulatedWindow = true;
+  }
+
   if (!mCachedData.mGeckoBackChannel) {
     return S_OK;
   }
@@ -662,6 +682,33 @@ AccessibleHandler::get_accChild(VARIANT varChild, IDispatch** ppdispChild) {
     disp.forget(ppdispChild);
     return S_OK;
   }
+
+  if (mIsEmulatedWindow && varChild.vt == VT_I4 && varChild.lVal < 0 &&
+      (varChild.lVal & kIdContentProcessMask) !=
+          (mCachedData.mDynamicData.mUniqueId & kIdContentProcessMask)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HWND rootHwnd = GetParent(
+        reinterpret_cast<HWND>(uintptr_t(mCachedData.mDynamicData.mHwnd)));
+    MOZ_ASSERT(rootHwnd);
+    LRESULT lresult = ::SendMessage(rootHwnd, WM_GETOBJECT, 0, OBJID_CLIENT);
+    if (lresult > 0) {
+      RefPtr<IAccessible2_3> rootAcc;
+      HRESULT hr = ::ObjectFromLresult(lresult, IID_IAccessible2_3, 0,
+                                       getter_AddRefs(rootAcc));
+      if (hr == S_OK) {
+        return rootAcc->get_accChild(varChild, ppdispChild);
+      }
+    }
+  }
+
   HRESULT hr = ResolveIA2();
   if (FAILED(hr)) {
     return hr;
