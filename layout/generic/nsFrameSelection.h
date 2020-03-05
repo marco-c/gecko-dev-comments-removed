@@ -701,6 +701,9 @@ class nsFrameSelection final {
   void DisconnectFromPresShell();
   nsresult ClearNormalSelection();
 
+  
+  static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
+
  private:
   ~nsFrameSelection();
 
@@ -789,9 +792,6 @@ class nsFrameSelection final {
   
   MOZ_CAN_RUN_SCRIPT
   nsresult NotifySelectionListeners(mozilla::SelectionType aSelectionType);
-
-  
-  static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
 
   static nsresult GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
                                  int32_t& aColIndex);
