@@ -157,7 +157,7 @@ struct ImageBackendData {
   virtual ~ImageBackendData() = default;
 
  protected:
-  ImageBackendData() {}
+  ImageBackendData() = default;
 };
 
 
@@ -280,7 +280,7 @@ class BufferRecycleBin final {
   typedef mozilla::Mutex Mutex;
 
   
-  ~BufferRecycleBin() {}
+  ~BufferRecycleBin() = default;
 
   
   
@@ -314,7 +314,7 @@ class ImageFactory {
  protected:
   friend class ImageContainer;
 
-  ImageFactory() {}
+  ImageFactory() = default;
   virtual ~ImageFactory() = default;
 
   virtual RefPtr<PlanarYCbCrImage> CreatePlanarYCbCrImage(

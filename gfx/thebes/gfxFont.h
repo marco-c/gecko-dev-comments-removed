@@ -347,7 +347,7 @@ class gfxFontCache final : private gfxFontCacheExpirationTracker {
 
  protected:
   class MemoryReporter final : public nsIMemoryReporter {
-    ~MemoryReporter() {}
+    ~MemoryReporter() = default;
 
    public:
     NS_DECL_ISUPPORTS
@@ -356,7 +356,7 @@ class gfxFontCache final : private gfxFontCacheExpirationTracker {
 
   
   class Observer final : public nsIObserver {
-    ~Observer() {}
+    ~Observer() = default;
 
    public:
     NS_DECL_ISUPPORTS
@@ -399,7 +399,7 @@ class gfxFontCache final : private gfxFontCacheExpirationTracker {
     
     explicit HashEntry(KeyTypePointer aStr) : mFont(nullptr) {}
     HashEntry(const HashEntry& toCopy) : mFont(toCopy.mFont) {}
-    ~HashEntry() {}
+    ~HashEntry() = default;
 
     bool KeyEquals(const KeyTypePointer aKey) const;
     static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
@@ -1071,7 +1071,7 @@ class gfxShapedText {
   
   class DetailedGlyphStore {
    public:
-    DetailedGlyphStore() : mLastUsed(0) {}
+    DetailedGlyphStore() = default;
 
     
     
@@ -1169,7 +1169,7 @@ class gfxShapedText {
     
     
     
-    nsTArray<DGRec>::index_type mLastUsed;
+    nsTArray<DGRec>::index_type mLastUsed = 0;
   };
 
   mozilla::UniquePtr<DetailedGlyphStore> mDetailedGlyphs;
@@ -2056,7 +2056,7 @@ class gfxFont {
     CacheHashEntry(const CacheHashEntry& toCopy) {
       NS_ERROR("Should not be called");
     }
-    ~CacheHashEntry() {}
+    ~CacheHashEntry() = default;
 
     bool KeyEquals(const KeyTypePointer aKey) const;
 

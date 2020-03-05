@@ -25,7 +25,7 @@ namespace mozilla {
 
 class GenericRefCountedBase {
  protected:
-  virtual ~GenericRefCountedBase(){};
+  virtual ~GenericRefCountedBase() = default;
 
  public:
   

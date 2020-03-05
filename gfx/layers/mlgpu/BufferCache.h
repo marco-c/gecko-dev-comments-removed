@@ -51,11 +51,10 @@ class BufferCache final {
   
   struct CacheEntry {
     CacheEntry() : mLastUsedFrame(0) {}
-    CacheEntry(const CacheEntry& aEntry)
-        : mLastUsedFrame(aEntry.mLastUsedFrame), mBuffer(aEntry.mBuffer) {}
-    CacheEntry(CacheEntry&& aEntry)
-        : mLastUsedFrame(aEntry.mLastUsedFrame),
-          mBuffer(std::move(aEntry.mBuffer)) {}
+    
+    
+    CacheEntry(const CacheEntry& aEntry) = default;
+    CacheEntry(CacheEntry&& aEntry) = default;
     CacheEntry(size_t aLastUsedFrame, MLGBuffer* aBuffer)
         : mLastUsedFrame(aLastUsedFrame), mBuffer(aBuffer) {}
 

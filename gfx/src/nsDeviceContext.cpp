@@ -73,7 +73,7 @@ class nsFontCache final : public nsIObserver {
   
   static const int32_t kMaxCacheEntries = 128;
 
-  ~nsFontCache() {}
+  ~nsFontCache() = default;
 
   nsDeviceContext* mContext;  
   RefPtr<nsAtom> mLocaleLanguage;

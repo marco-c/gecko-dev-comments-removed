@@ -46,7 +46,7 @@ class TileHost {
   
   
   
-  TileHost() {}
+  TileHost() = default;
 
   
   TileHost(TextureReadLock* aSharedLock, TextureHost* aTextureHost,

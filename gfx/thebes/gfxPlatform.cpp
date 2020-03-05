@@ -1477,7 +1477,7 @@ void gfxPlatform::WillShutdown() {
 #endif
 }
 
-gfxPlatform::~gfxPlatform() {}
+gfxPlatform::~gfxPlatform() = default;
 
 
 already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(

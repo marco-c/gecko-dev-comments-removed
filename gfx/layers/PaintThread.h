@@ -35,8 +35,8 @@ namespace layers {
 
 class PaintTask {
  public:
-  PaintTask() {}
-  ~PaintTask() {}
+  PaintTask() = default;
+  ~PaintTask() = default;
 
   void DropTextureClients();
 

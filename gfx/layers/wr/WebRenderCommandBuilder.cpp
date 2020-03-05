@@ -232,7 +232,7 @@ struct Grouper {
                                    wr::IpcResourceUpdateQueue& aResources,
                                    DIGroup* aGroup, nsDisplayItem* aItem,
                                    const StackingContextHelper& aSc);
-  ~Grouper() {}
+  ~Grouper() = default;
 };
 
 

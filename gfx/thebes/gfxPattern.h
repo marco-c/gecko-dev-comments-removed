@@ -63,7 +63,7 @@ class gfxPattern final {
 
  private:
   
-  ~gfxPattern() {}
+  ~gfxPattern() = default;
 
   mozilla::gfx::GeneralPattern mGfxPattern;
   RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;

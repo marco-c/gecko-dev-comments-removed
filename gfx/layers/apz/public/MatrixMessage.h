@@ -17,7 +17,7 @@ namespace layers {
 class MatrixMessage {
  public:
   
-  MatrixMessage() {}
+  MatrixMessage() = default;
 
   MatrixMessage(const Maybe<LayerToScreenMatrix4x4>& aMatrix,
                 const ScreenRect& aTopLevelViewportVisibleRectInBrowserCoords,

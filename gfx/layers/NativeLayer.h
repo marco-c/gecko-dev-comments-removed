@@ -59,7 +59,7 @@ class NativeLayerRoot {
   }
 
  protected:
-  virtual ~NativeLayerRoot() {}
+  virtual ~NativeLayerRoot() = default;
 };
 
 
@@ -69,7 +69,7 @@ class NativeLayerRoot {
 
 class NativeLayerRootSnapshotter {
  public:
-  virtual ~NativeLayerRootSnapshotter() {}
+  virtual ~NativeLayerRootSnapshotter() = default;
 
   
   
@@ -119,6 +119,11 @@ class NativeLayer {
   virtual gfx::IntPoint GetPosition() = 0;
 
   virtual gfx::IntRect GetRect() = 0;
+
+  
+  
+  virtual void SetValidRect(const gfx::IntRect& aValidRect) = 0;
+  virtual gfx::IntRect GetValidRect() = 0;
 
   
   
@@ -180,7 +185,7 @@ class NativeLayer {
   virtual void DiscardBackbuffers() = 0;
 
  protected:
-  virtual ~NativeLayer() {}
+  virtual ~NativeLayer() = default;
 };
 
 }  
