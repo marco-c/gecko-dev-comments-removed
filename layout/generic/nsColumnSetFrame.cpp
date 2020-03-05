@@ -1145,9 +1145,13 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
     
     
     
+    
+    const bool forceUnboundedLastColumn =
+        aReflowInput.mParentReflowInput->AvailableBSize() ==
+        NS_UNCONSTRAINEDSIZE;
     MarkPrincipalChildrenDirty(this);
     ReflowColumns(aDesiredSize, aReflowInput, aStatus, aConfig,
-                  availableContentBSize == NS_UNCONSTRAINEDSIZE);
+                  forceUnboundedLastColumn);
   }
 }
 
