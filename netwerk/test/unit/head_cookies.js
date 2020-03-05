@@ -105,14 +105,7 @@ function do_load_profile(generator) {
 
 
 function do_set_single_http_cookie(uri, channel, expected) {
-  Services.cookies.setCookieStringFromHttp(
-    uri,
-    null,
-    null,
-    "foo=bar",
-    null,
-    channel
-  );
+  Services.cookies.setCookieStringFromHttp(uri, null, "foo=bar", null, channel);
   Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected);
 }
 
@@ -122,15 +115,14 @@ function do_set_cookies(uri, channel, session, expected) {
   let suffix = session ? "" : "; max-age=1000";
 
   
-  Services.cookies.setCookieString(uri, null, "oh=hai" + suffix, null);
+  Services.cookies.setCookieString(uri, "oh=hai" + suffix, null);
   Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[0]);
   
-  Services.cookies.setCookieString(uri, null, "can=has" + suffix, channel);
+  Services.cookies.setCookieString(uri, "can=has" + suffix, channel);
   Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[1]);
   
   Services.cookies.setCookieStringFromHttp(
     uri,
-    null,
     null,
     "cheez=burger" + suffix,
     null,
@@ -140,7 +132,6 @@ function do_set_cookies(uri, channel, session, expected) {
   
   Services.cookies.setCookieStringFromHttp(
     uri,
-    null,
     null,
     "hot=dog" + suffix,
     null,

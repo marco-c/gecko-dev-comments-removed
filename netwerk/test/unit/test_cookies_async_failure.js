@@ -128,7 +128,7 @@ function do_corrupt_db(file) {
 function* run_test_1(generator) {
   
   let uri = NetUtil.newURI("http://foo.com/");
-  Services.cookies.setCookieString(uri, null, "oh=hai; max-age=1000", null);
+  Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
 
   
   do_close_profile(sub_generator);
@@ -237,7 +237,7 @@ function* run_test_2(generator) {
   Services.cookies.runInTransaction(_ => {
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieString(uri, null, "oh=hai; max-age=1000", null);
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 
@@ -297,7 +297,6 @@ function* run_test_3(generator) {
       let uri = NetUtil.newURI("http://hither.com/");
       Services.cookies.setCookieString(
         uri,
-        null,
         "oh" + i + "=hai; max-age=1000",
         null
       );
@@ -306,7 +305,6 @@ function* run_test_3(generator) {
       let uri = NetUtil.newURI("http://haithur.com/");
       Services.cookies.setCookieString(
         uri,
-        null,
         "oh" + i + "=hai; max-age=1000",
         null
       );
@@ -379,7 +377,7 @@ function* run_test_4(generator) {
   Services.cookies.runInTransaction(_ => {
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieString(uri, null, "oh=hai; max-age=1000", null);
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 
@@ -403,7 +401,7 @@ function* run_test_4(generator) {
   
   
   let uri = NetUtil.newURI("http://0.com/");
-  Services.cookies.setCookieString(uri, null, "oh2=hai; max-age=1000", null);
+  Services.cookies.setCookieString(uri, "oh2=hai; max-age=1000", null);
 
   
   Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
@@ -439,15 +437,10 @@ function* run_test_5(generator) {
   do_load_profile();
   Services.cookies.runInTransaction(_ => {
     let uri = NetUtil.newURI("http://bar.com/");
-    Services.cookies.setCookieString(
-      uri,
-      null,
-      "oh=hai; path=/; max-age=1000",
-      null
-    );
+    Services.cookies.setCookieString(uri, "oh=hai; path=/; max-age=1000", null);
     for (let i = 0; i < 3000; ++i) {
       let uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieString(uri, null, "oh=hai; max-age=1000", null);
+      Services.cookies.setCookieString(uri, "oh=hai; max-age=1000", null);
     }
   });
 

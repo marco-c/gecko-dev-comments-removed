@@ -42,7 +42,7 @@ function* do_run_test() {
   let uri2 = NetUtil.newURI("http://bar.com/bar.html");
 
   
-  Services.cookies.setCookieString(uri1, null, "oh=hai; max-age=1000", null);
+  Services.cookies.setCookieString(uri1, "oh=hai; max-age=1000", null);
   Assert.equal(Services.cookiemgr.countCookiesFromHost(uri1.host), 1);
 
   
@@ -54,7 +54,7 @@ function* do_run_test() {
   chan2.QueryInterface(Ci.nsIPrivateBrowsingChannel);
   chan2.setPrivate(true);
 
-  Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
+  Services.cookies.setCookieString(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), "");
   Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
@@ -63,7 +63,7 @@ function* do_run_test() {
   Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), "");
   Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "");
 
-  Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
+  Services.cookies.setCookieString(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
   
@@ -83,7 +83,7 @@ function* do_run_test() {
   
   Assert.equal(Services.cookiemgr.getCookieString(uri1, chan1), "");
   Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "");
-  Services.cookies.setCookieString(uri2, null, "oh=hai; max-age=1000", chan2);
+  Services.cookies.setCookieString(uri2, "oh=hai; max-age=1000", chan2);
   Assert.equal(Services.cookiemgr.getCookieString(uri2, chan2), "oh=hai");
 
   
