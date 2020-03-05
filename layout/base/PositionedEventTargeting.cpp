@@ -86,6 +86,10 @@ struct EventRadiusPrefs {
   bool mRegistered;
   bool mTouchOnly;
   bool mRepositionEventCoords;
+  bool mTouchClusterDetectionEnabled;
+  bool mSimplifiedClusterDetection;
+  uint32_t mLimitReadableSize;
+  uint32_t mKeepLimitSizeForCluster;
 };
 
 static EventRadiusPrefs sMouseEventRadiusPrefs;
@@ -132,6 +136,12 @@ static const EventRadiusPrefs* GetPrefsFor(EventClassID aEventClassID) {
     nsPrintfCString repositionPref("ui.%s.radius.reposition", prefBranch);
     Preferences::AddBoolVarCache(&prefs->mRepositionEventCoords, repositionPref,
                                  false);
+
+    
+    prefs->mTouchClusterDetectionEnabled = false;
+    prefs->mSimplifiedClusterDetection = false;
+    prefs->mLimitReadableSize = 8;
+    prefs->mKeepLimitSizeForCluster = 16;
   }
 
   return prefs;
@@ -338,11 +348,28 @@ static bool IsElementPresent(nsTArray<nsIFrame*>& aCandidates,
   return false;
 }
 
+static bool IsLargeElement(nsIFrame* aFrame, const EventRadiusPrefs* aPrefs) {
+  uint32_t keepLimitSizeForCluster = aPrefs->mKeepLimitSizeForCluster;
+  nsSize frameSize = aFrame->GetSize();
+  nsPresContext* pc = aFrame->PresContext();
+  PresShell* presShell = pc->PresShell();
+  float cumulativeResolution = presShell->GetCumulativeResolution();
+  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) >
+          keepLimitSizeForCluster &&
+      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) >
+          keepLimitSizeForCluster) {
+    return true;
+  }
+  return false;
+}
+
 static nsIFrame* GetClosest(
     nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
     const nsRect& aTargetRect, const EventRadiusPrefs* aPrefs,
     nsIFrame* aRestrictToDescendants, nsIContent* aClickableAncestor,
-    nsTArray<nsIFrame*>& aCandidates) {
+    nsTArray<nsIFrame*>& aCandidates, int32_t* aElementsInCluster) {
+  std::vector<nsIContent*> mContentsInCluster;  
+                                                
   nsIFrame* bestTarget = nullptr;
   
   float bestDistance = 1e6f;
@@ -397,6 +424,19 @@ static nsIFrame* GetClosest(
     }
 
     
+    
+    
+    
+    if ((labelTargetId.IsEmpty() ||
+         !IsElementPresent(aCandidates, labelTargetId)) &&
+        !IsLargeElement(f, aPrefs)) {
+      if (std::find(mContentsInCluster.begin(), mContentsInCluster.end(),
+                    clickableContent) == mContentsInCluster.end()) {
+        mContentsInCluster.push_back(clickableContent);
+      }
+    }
+
+    
     float distance =
         ComputeDistanceFromRegion(aPointRelativeToRootFrame, region);
     nsIContent* content = f->GetContent();
@@ -411,7 +451,86 @@ static nsIFrame* GetClosest(
       bestTarget = f;
     }
   }
+  *aElementsInCluster = mContentsInCluster.size();
   return bestTarget;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsElementClickableAndReadable(nsIFrame* aFrame,
+                                          WidgetGUIEvent* aEvent,
+                                          const EventRadiusPrefs* aPrefs) {
+  if (!aPrefs->mTouchClusterDetectionEnabled) {
+    return true;
+  }
+
+  if (aPrefs->mSimplifiedClusterDetection) {
+    return true;
+  }
+
+  if (aEvent->mClass != eMouseEventClass) {
+    return true;
+  }
+
+  uint32_t limitReadableSize = aPrefs->mLimitReadableSize;
+  nsSize frameSize = aFrame->GetSize();
+  nsPresContext* pc = aFrame->PresContext();
+  PresShell* presShell = pc->PresShell();
+  float cumulativeResolution = presShell->GetCumulativeResolution();
+  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) <
+          limitReadableSize ||
+      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) <
+          limitReadableSize) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  bool testFontSize = false;
+  if (content) {
+    nsINodeList* childNodes = content->ChildNodes();
+    uint32_t childNodeCount = childNodes->Length();
+    if ((content->IsText()) ||
+        
+        
+
+        (childNodeCount == 1 && childNodes->Item(0) &&
+         childNodes->Item(0)->IsText())) {
+      
+      
+      
+      
+      
+      
+      
+
+      testFontSize = true;
+    }
+  }
+
+  if (testFontSize) {
+    RefPtr<nsFontMetrics> fm =
+        nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
+    if (fm && fm->EmHeight() > 0 &&  
+        (pc->AppUnitsToGfxUnits(fm->EmHeight()) * cumulativeResolution) <
+            limitReadableSize) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 nsIFrame* FindFrameTargetedByInputEvent(
@@ -443,6 +562,9 @@ nsIFrame* FindFrameTargetedByInputEvent(
   if (target) {
     clickableAncestor = GetClickableAncestor(target, nsGkAtoms::body);
     if (clickableAncestor) {
+      if (!IsElementClickableAndReadable(target, aEvent, prefs)) {
+        aEvent->AsMouseEventBase()->mHitCluster = true;
+      }
       PET_LOG("Target %p is clickable\n", target);
       
       
@@ -480,10 +602,19 @@ nsIFrame* FindFrameTargetedByInputEvent(
     return target;
   }
 
+  int32_t elementsInCluster = 0;
+
   nsIFrame* closestClickable = GetClosest(
       aRootFrame, aPointRelativeToRootFrame, targetRect, prefs,
-      restrictToDescendants, clickableAncestor, candidates);
+      restrictToDescendants, clickableAncestor, candidates, &elementsInCluster);
   if (closestClickable) {
+    if ((prefs->mTouchClusterDetectionEnabled && elementsInCluster > 1) ||
+        (!IsElementClickableAndReadable(closestClickable, aEvent, prefs))) {
+      if (aEvent->mClass == eMouseEventClass) {
+        WidgetMouseEventBase* mouseEventBase = aEvent->AsMouseEventBase();
+        mouseEventBase->mHitCluster = true;
+      }
+    }
     target = closestClickable;
   }
   PET_LOG("Final target is %p\n", target);
