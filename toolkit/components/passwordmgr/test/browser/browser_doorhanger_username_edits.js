@@ -50,10 +50,6 @@ add_task(async function test_edit_username() {
 
   for (let testCase of testCases) {
     info("Test case: " + JSON.stringify(testCase));
-    
-    await LoginTestUtils.clearData();
-    await cleanupDoorhanger();
-    await cleanupPasswordNotifications();
 
     
     if (testCase.usernameInPageExists) {
@@ -78,8 +74,6 @@ add_task(async function test_edit_username() {
       );
     }
 
-    let formFilledPromise = listenForTestNotification("FormProcessed");
-
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
@@ -88,49 +82,29 @@ add_task(async function test_edit_username() {
           "passwordmgr/test/browser/form_basic.html",
       },
       async function(browser) {
-        await formFilledPromise;
-
-        await initForm(browser, {
-          "#form-basic-username": testCase.usernameInPage,
-        });
-
-        let editMessagePromise = listenForTestNotification(
-          "PasswordEditedOrGenerated"
-        );
-        await changeContentFormValues(browser, {
-          "#form-basic-password": "password",
-        });
-        info("Waiting for editMessagePromise");
-        await editMessagePromise;
-
-        
-        await cleanupDoorhanger();
-        await cleanupPasswordNotifications();
-        
-        await clearMessageCache(browser);
-
         
         
-        info("Submitting the form");
-        let formSubmittedPromise = listenForTestNotification("FormSubmit");
         let promiseShown = BrowserTestUtils.waitForEvent(
           PopupNotifications.panel,
           "popupshown",
           event => event.target == PopupNotifications.panel
         );
+        let formSubmittedPromise = listenForTestNotification("FormSubmit");
+        await changeContentFormValues(browser, {
+          "#form-basic-username": testCase.usernameInPage,
+          "#form-basic-password": "password",
+        });
+        await TestUtils.waitForTick();
         await SpecialPowers.spawn(browser, [], async function() {
           content.document.getElementById("form-basic").submit();
         });
-        info("Waiting for the submit message");
         await formSubmittedPromise;
 
-        info("Waiting for the doorhanger");
         let notif = await waitForDoorhanger(browser, "any");
-        ok(!notif.dismissed, "Doorhanger is not dismissed");
         await promiseShown;
 
         
-        if (testCase.usernameChangedTo !== undefined) {
+        if (testCase.usernameChangedTo) {
           await updateDoorhangerInputValues({
             username: testCase.usernameChangedTo,
           });
@@ -138,10 +112,10 @@ add_task(async function test_edit_username() {
 
         
         
-        let expectModifyLogin =
-          testCase.usernameChangedTo !== undefined
-            ? testCase.usernameChangedToExists
-            : testCase.usernameInPageExists;
+        let expectModifyLogin = testCase.usernameChangedTo
+          ? testCase.usernameChangedToExists
+          : testCase.usernameInPageExists;
+
         
         
         
@@ -157,9 +131,8 @@ add_task(async function test_edit_username() {
           "popuphidden"
         );
         clickDoorhangerButton(notif, CHANGE_BUTTON);
-        await promiseHidden;
-        info("Waiting for storage changed");
         let [result] = await promiseLogin;
+        await promiseHidden;
 
         
         let login = expectModifyLogin
@@ -169,22 +142,15 @@ add_task(async function test_edit_username() {
           : result.QueryInterface(Ci.nsILoginInfo);
         Assert.equal(
           login.username,
-          testCase.usernameChangedTo !== undefined
-            ? testCase.usernameChangedTo
-            : testCase.usernameInPage
+          testCase.usernameChangedTo || testCase.usernameInPage
         );
         Assert.equal(login.password, "password");
+
+        await cleanupDoorhanger();
       }
     );
+
+    
+    Services.logins.removeAllLogins();
   }
 });
-
-async function initForm(browser, formDefaults = {}) {
-  await ContentTask.spawn(browser, formDefaults, async function(
-    selectorValues
-  ) {
-    for (let [sel, value] of Object.entries(selectorValues)) {
-      content.document.querySelector(sel).value = value;
-    }
-  });
-}
