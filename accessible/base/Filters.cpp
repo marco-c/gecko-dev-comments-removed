@@ -30,7 +30,11 @@ uint32_t filters::GetRow(Accessible* aAccessible) {
 
   
   a11y::role role = aAccessible->Role();
-  if (role == roles::GROUPING) return eSkip;
+  const nsRoleMapEntry* roleMapEntry = aAccessible->ARIARoleMap();
+  if (role == roles::GROUPING ||
+      (aAccessible->IsGenericHyperText() && !roleMapEntry)) {
+    return eSkip;
+  }
 
   return eSkipSubtree;
 }
