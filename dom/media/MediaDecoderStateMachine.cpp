@@ -2872,7 +2872,10 @@ void MediaDecoderStateMachine::StopPlayback() {
 void MediaDecoderStateMachine::MaybeStartPlayback() {
   MOZ_ASSERT(OnTaskQueue());
   
-  MOZ_ASSERT(mSentFirstFrameLoadedEvent);
+  if (!mSentFirstFrameLoadedEvent) {
+    LOG("MaybeStartPlayback: Not starting playback before loading first frame");
+    return;
+  }
 
   if (IsPlaying()) {
     
