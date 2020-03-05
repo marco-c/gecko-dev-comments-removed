@@ -3135,17 +3135,6 @@
 
 
 
- \
-    MACRO(PopVarEnv, pop_var_env, NULL, 1, 0, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
-
 
 
 
@@ -3516,6 +3505,7 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(239)                                   \
   MACRO(240)                                   \
   MACRO(241)                                   \
   MACRO(242)                                   \
