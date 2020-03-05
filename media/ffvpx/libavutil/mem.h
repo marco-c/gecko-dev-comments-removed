@@ -339,7 +339,7 @@ av_alloc_size(2, 3) void *av_realloc_array(void *ptr, size_t nmemb, size_t size)
 
 
 
-av_alloc_size(2, 3) int av_reallocp_array(void *ptr, size_t nmemb, size_t size);
+int av_reallocp_array(void *ptr, size_t nmemb, size_t size);
 
 
 

@@ -83,7 +83,7 @@
 #define FF_QSCALE_TYPE_H264  2
 #define FF_QSCALE_TYPE_VP56  3
 
-#define FF_SANE_NB_CHANNELS 64U
+#define FF_SANE_NB_CHANNELS 256U
 
 #define FF_SIGNBIT(x) ((x) >> CHAR_BIT * sizeof(x) - 1)
 
@@ -218,6 +218,14 @@ typedef struct AVCodecInternal {
 
     
     int nb_draining_errors;
+
+    
+    int changed_frames_dropped;
+    int initial_format;
+    int initial_width, initial_height;
+    int initial_sample_rate;
+    int initial_channels;
+    uint64_t initial_channel_layout;
 } AVCodecInternal;
 
 struct AVCodecDefault {
@@ -403,6 +411,18 @@ int ff_alloc_a53_sei(const AVFrame *frame, size_t prefix_len,
 
 
 int64_t ff_guess_coded_bitrate(AVCodecContext *avctx);
+
+
+
+
+
+
+
+
+
+
+int ff_int_from_list_or_default(void *ctx, const char * val_name, int val,
+                                const int * array_valid_values, int default_value);
 
 #if defined(_WIN32) && CONFIG_SHARED && !defined(BUILDING_avcodec)
 #    define av_export_avcodec __declspec(dllimport)

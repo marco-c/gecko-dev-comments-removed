@@ -173,6 +173,22 @@ typedef struct AVFloatDSPContext {
 
 
     float (*scalarproduct_float)(const float *v1, const float *v2, int len);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    void (*vector_dmul)(double *dst, const double *src0, const double *src1,
+                        int len);
 } AVFloatDSPContext;
 
 

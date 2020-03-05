@@ -174,10 +174,6 @@ typedef struct AVPixFmtDescriptor {
 
 
 
-
-
-
-
 #define AV_PIX_FMT_FLAG_ALPHA        (1 << 7)
 
 
@@ -348,6 +344,12 @@ char *av_get_pix_fmt_string(char *buf, int buf_size,
 
 
 
+
+void av_read_image_line2(void *dst, const uint8_t *data[4],
+                        const int linesize[4], const AVPixFmtDescriptor *desc,
+                        int x, int y, int c, int w, int read_pal_component,
+                        int dst_element_size);
+
 void av_read_image_line(uint16_t *dst, const uint8_t *data[4],
                         const int linesize[4], const AVPixFmtDescriptor *desc,
                         int x, int y, int c, int w, int read_pal_component);
@@ -365,6 +367,11 @@ void av_read_image_line(uint16_t *dst, const uint8_t *data[4],
 
 
 
+
+
+void av_write_image_line2(const void *src, uint8_t *data[4],
+                         const int linesize[4], const AVPixFmtDescriptor *desc,
+                         int x, int y, int c, int w, int src_element_size);
 
 void av_write_image_line(const uint16_t *src, uint8_t *data[4],
                          const int linesize[4], const AVPixFmtDescriptor *desc,

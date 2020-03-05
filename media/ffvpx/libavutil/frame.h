@@ -158,6 +158,27 @@ enum AVFrameSideDataType {
 
     AV_FRAME_DATA_QP_TABLE_DATA,
 #endif
+
+    
+
+
+
+
+
+    AV_FRAME_DATA_S12M_TIMECODE,
+
+    
+
+
+
+
+    AV_FRAME_DATA_DYNAMIC_HDR_PLUS,
+
+    
+
+
+
+    AV_FRAME_DATA_REGIONS_OF_INTEREST,
 };
 
 enum AVActiveFormatDescription {
@@ -184,6 +205,62 @@ typedef struct AVFrameSideData {
     AVDictionary *metadata;
     AVBufferRef *buf;
 } AVFrameSideData;
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct AVRegionOfInterest {
+    
+
+
+
+    uint32_t self_size;
+    
+
+
+
+
+
+
+
+
+    int top;
+    int bottom;
+    int left;
+    int right;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    AVRational qoffset;
+} AVRegionOfInterest;
 
 
 
@@ -382,7 +459,6 @@ typedef struct AVFrame {
 
 
 
-
     int64_t reordered_opaque;
 
     
@@ -514,6 +590,8 @@ typedef struct AVFrame {
     int decode_error_flags;
 #define FF_DECODE_ERROR_INVALID_BITSTREAM   1
 #define FF_DECODE_ERROR_MISSING_REFERENCE   2
+#define FF_DECODE_ERROR_CONCEALMENT_ACTIVE  4
+#define FF_DECODE_ERROR_DECODE_SLICES       8
 
     
 

@@ -101,6 +101,14 @@ void av_thread_message_queue_set_free_func(AVThreadMessageQueue *mq,
 
 
 
+int av_thread_message_queue_nb_elems(AVThreadMessageQueue *mq);
+
+
+
+
+
+
+
 
 void av_thread_message_flush(AVThreadMessageQueue *mq);
 
