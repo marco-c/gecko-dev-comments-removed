@@ -19,6 +19,7 @@ namespace mozilla {
 namespace net {
 
 class SocketProcessBridgeParent;
+class SocketProcessParent;
 
 }  
 
@@ -46,6 +47,7 @@ class BackgroundParent final {
   typedef mozilla::dom::ContentParent ContentParent;
   typedef mozilla::ipc::Transport Transport;
   friend class mozilla::net::SocketProcessBridgeParent;
+  friend class mozilla::net::SocketProcessParent;
 
  public:
   
@@ -82,6 +84,7 @@ class BackgroundParent final {
   static bool Alloc(ContentParent* aContent,
                     Endpoint<PBackgroundParent>&& aEndpoint);
 
+  
   
   static bool Alloc(Endpoint<PBackgroundParent>&& aEndpoint);
 };
