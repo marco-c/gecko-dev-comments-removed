@@ -425,7 +425,7 @@ class ThreadedDriver : public GraphDriver {
 
 
 
-  void RunThread();
+  virtual void RunThread();
   friend class MediaTrackGraphInitThreadRunnable;
   uint32_t IterationDuration() override { return MEDIA_GRAPH_TARGET_PERIOD_MS; }
 
@@ -496,6 +496,8 @@ class OfflineClockDriver : public ThreadedDriver {
                      GraphTime aSlice);
   virtual ~OfflineClockDriver();
   OfflineClockDriver* AsOfflineClockDriver() override { return this; }
+
+  void RunThread() override;
 
  protected:
   TimeDuration WaitInterval() override { return TimeDuration(); }
