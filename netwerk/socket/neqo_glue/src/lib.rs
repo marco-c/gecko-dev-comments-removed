@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use neqo_common::Datagram;
 use neqo_crypto::{init, PRErrorCode};
@@ -39,7 +39,7 @@ impl NeqoHttp3Conn {
         max_table_size: u32,
         max_blocked_streams: u16,
     ) -> Result<RefPtr<NeqoHttp3Conn>, nsresult> {
-        
+        // Nss init.
         init();
 
         let origin_conv = str::from_utf8(origin).map_err(|_| NS_ERROR_INVALID_ARG)?;
@@ -100,7 +100,7 @@ pub unsafe extern "C" fn neqo_http3conn_release(conn: &NeqoHttp3Conn) -> nsrefcn
     rc
 }
 
-
+// xpcom::RefPtr support
 unsafe impl RefCounted for NeqoHttp3Conn {
     unsafe fn addref(&self) {
         neqo_http3conn_addref(self);
@@ -110,7 +110,7 @@ unsafe impl RefCounted for NeqoHttp3Conn {
     }
 }
 
-
+// Allocate a new NeqoHttp3Conn object.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new(
     origin: &nsACString,
@@ -139,9 +139,9 @@ pub extern "C" fn neqo_http3conn_new(
     }
 }
 
-
-
-
+/* Process a packet.
+ * packet holds packet data.
+ */
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_input(
     conn: &mut NeqoHttp3Conn,
@@ -160,9 +160,9 @@ pub extern "C" fn neqo_http3conn_process_http3(conn: &mut NeqoHttp3Conn) {
     conn.conn.process_http3(Instant::now());
 }
 
-
-
-
+/* Process output and store data to be sent into conn.packets_to_send.
+ * neqo_http3conn_get_data_to_send will be called to pick up this data.
+ */
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_output(conn: &mut NeqoHttp3Conn) -> u64 {
     loop {
@@ -230,17 +230,17 @@ pub extern "C" fn neqo_http3conn_fetch(
     stream_id: &mut u64,
 ) -> nsresult {
     let mut hdrs = Vec::new();
-    
-    
-    
+    // this is only used for headers built by Firefox.
+    // Firefox supplies all headers already prepared for sending over http1.
+    // They need to be split into (String, String) pairs.
     match str::from_utf8(headers) {
         Err(_) => { return NS_ERROR_INVALID_ARG; },
         Ok(h) => {
             for elem in h.split("\r\n").skip(1) {
                 if elem.starts_with(':') {
-                    
-                    
-                    
+                    // colon headers are for http/2 and 3 and this is http/1
+                    // input, so that is probably a smuggling attack of some
+                    // kind.
                     continue;
                 }
                 if elem.len() == 0 {
@@ -312,123 +312,25 @@ pub extern "C" fn neqo_htttp3conn_send_request_body(
     }
 }
 
-
-#[repr(C)]
-pub enum Http3AppError {
-    NoError,
-    WrongSettingsDirection,
-    PushRefused,
-    InternalError,
-    PushAlreadyInCache,
-    RequestCancelled,
-    IncompleteRequest,
-    ConnectError,
-    ExcessiveLoad,
-    VersionFallback,
-    WrongStream,
-    LimitExceeded,
-    DuplicatePush,
-    UnknownStreamType,
-    WrongStreamCount,
-    ClosedCriticalStream,
-    WrongStreamDirection,
-    EarlyResponse,
-    MissingSettings,
-    UnexpectedFrame,
-    RequestRejected,
-    GeneralProtocolError,
-    MalformedFrame(u64),
-    DecompressionFailed,
-    EncoderStreamError,
-    DecoderStreamError,
-}
-
-impl From<u64> for Http3AppError {
-    fn from(error: u64) -> Http3AppError {
-        match error {
-            0 => Http3AppError::NoError,
-            1 => Http3AppError::WrongSettingsDirection,
-            2 => Http3AppError::PushRefused,
-            3 => Http3AppError::InternalError,
-            4 => Http3AppError::PushAlreadyInCache,
-            5 => Http3AppError::RequestCancelled,
-            6 => Http3AppError::IncompleteRequest,
-            7 => Http3AppError::ConnectError,
-            8 => Http3AppError::ExcessiveLoad,
-            9 => Http3AppError::VersionFallback,
-            10 => Http3AppError::WrongStream,
-            11 => Http3AppError::LimitExceeded,
-            12 => Http3AppError::DuplicatePush,
-            13 => Http3AppError::UnknownStreamType,
-            14 => Http3AppError::WrongStreamCount,
-            15 => Http3AppError::ClosedCriticalStream,
-            16 => Http3AppError::WrongStreamDirection,
-            17 => Http3AppError::EarlyResponse,
-            18 => Http3AppError::MissingSettings,
-            19 => Http3AppError::UnexpectedFrame,
-            20 => Http3AppError::RequestRejected,
-            0xff => Http3AppError::GeneralProtocolError,
-            0x100..=0x1ff => Http3AppError::MalformedFrame(error - 0x100),
-            0x200 => Http3AppError::DecompressionFailed,
-            0x201 => Http3AppError::EncoderStreamError,
-            0x202 => Http3AppError::DecoderStreamError,
-            _ => Http3AppError::InternalError,
-        }
-    }
-}
-
-#[repr(C)]
-pub enum QuicTransportError {
-    NoError,
-    InternalError,
-    ServerBusy,
-    FlowControlError,
-    StreamLimitError,
-    StreamStateError,
-    FinalSizeError,
-    FrameEncodingError,
-    TransportParameterError,
-    ProtocolViolation,
-    InvalidMigration,
-    CryptoAlert(u8),
-}
-
-impl From<u64> for QuicTransportError {
-    fn from(error: u64) -> QuicTransportError {
-        match error {
-            0 => QuicTransportError::NoError,
-            1 => QuicTransportError::InternalError,
-            2 => QuicTransportError::ServerBusy,
-            3 => QuicTransportError::FlowControlError,
-            4 => QuicTransportError::StreamLimitError,
-            5 => QuicTransportError::StreamStateError,
-            6 => QuicTransportError::FinalSizeError,
-            7 => QuicTransportError::FrameEncodingError,
-            8 => QuicTransportError::TransportParameterError,
-            10 => QuicTransportError::ProtocolViolation,
-            12 => QuicTransportError::InvalidMigration,
-            0x100..=0x1ff => QuicTransportError::CryptoAlert((error & 0xff) as u8),
-            _ => QuicTransportError::InternalError,
-        }
-    }
-}
-
+// This is only used for telemetry. Therefore we only return error code
+// numbers and do not label them. Recording telemetry is easier with a
+// number.
 #[repr(C)]
 pub enum CloseError {
-    QuicTransportError(QuicTransportError),
-    Http3AppError(Http3AppError),
+    QuicTransportError(u64),
+    Http3AppError(u64),
 }
 
 impl From<neqo_transport::CloseError> for CloseError {
     fn from(error: neqo_transport::CloseError) -> CloseError {
         match error {
-            neqo_transport::CloseError::Transport(c) => CloseError::QuicTransportError(c.into()),
-            neqo_transport::CloseError::Application(c) => CloseError::Http3AppError(c.into()),
+            neqo_transport::CloseError::Transport(c) => CloseError::QuicTransportError(c),
+            neqo_transport::CloseError::Application(c) => CloseError::Http3AppError(c),
         }
     }
 }
 
-
+// Reset a stream with streamId.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_reset_stream(
     conn: &mut NeqoHttp3Conn,
@@ -441,7 +343,7 @@ pub extern "C" fn neqo_http3conn_reset_stream(
     }
 }
 
-
+// Close sending side of a stream with stream_id
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_close_stream(
     conn: &mut NeqoHttp3Conn,
@@ -455,27 +357,27 @@ pub extern "C" fn neqo_http3conn_close_stream(
 
 #[repr(C)]
 pub enum Http3Event {
-    
+    /// A request stream has space for more data to be send.
     DataWritable {
         stream_id: u64,
     },
-    
+    /// A server has send STOP_SENDING frame.
     StopSending {
         stream_id: u64,
     },
     HeaderReady {
         stream_id: u64,
     },
-    
+    /// New bytes available for reading.
     DataReadable {
         stream_id: u64,
     },
-    
+    /// Peer reset the stream.
     Reset {
         stream_id: u64,
-        error: Http3AppError,
+        error: u64,
     },
-    
+    /// A new push stream
     NewPushStream {
         stream_id: u64,
     },
@@ -526,7 +428,7 @@ impl From<Http3ClientEvent> for Http3Event {
             }
             Http3ClientEvent::Reset { stream_id, error } => Http3Event::Reset {
                 stream_id,
-                error: error.into(),
+                error,
             },
             Http3ClientEvent::NewPushStream { stream_id } => {
                 Http3Event::NewPushStream { stream_id }
@@ -549,9 +451,9 @@ impl From<Http3ClientEvent> for Http3Event {
     }
 }
 
-
-
-
+// Read response headers.
+// Firefox needs these headers to look like http1 heeaders, so we are
+// building that here.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_read_response_headers(
     conn: &mut NeqoHttp3Conn,
@@ -583,7 +485,7 @@ pub extern "C" fn neqo_http3conn_read_response_headers(
     }
 }
 
-
+// Read response data into buf.
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_read_response_data(
     conn: &mut NeqoHttp3Conn,

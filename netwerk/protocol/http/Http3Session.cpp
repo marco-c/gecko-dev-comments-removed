@@ -10,6 +10,7 @@
 #include "mozilla/net/DNS.h"
 #include "nsHttpHandler.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Telemetry.h"
 #include "ASpdySession.h"  
 #include "nsIOService.h"
 #include "nsISSLSocketControl.h"
@@ -325,6 +326,7 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         LOG(("Http3Session::ProcessEvents - ConnectionClosing"));
         if (NS_SUCCEEDED(mError) && !IsClosing()) {
           mError = NS_ERROR_NET_HTTP3_PROTOCOL_ERROR;
+          CloseConnectionTelemetry(event.connection_closing.error, true);
         }
         CloseInternal(false);
         break;
@@ -332,6 +334,7 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         LOG(("Http3Session::ProcessEvents - ConnectionClosed"));
         if (NS_SUCCEEDED(mError) && !IsClosing()) {
           mError = NS_ERROR_NET_HTTP3_PROTOCOL_ERROR;
+          CloseConnectionTelemetry(event.connection_closed.error, false);
         }
         mIsClosedByNeqo = true;
         
@@ -643,7 +646,7 @@ nsresult Http3Session::SendRequestBody(uint64_t aStreamId, const char* buf,
                                            count, countRead);
 }
 
-void Http3Session::ResetRecvd(uint64_t aStreamId, Http3AppError aError) {
+void Http3Session::ResetRecvd(uint64_t aStreamId, uint64_t aError) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   RefPtr<Http3Stream> stream = mStreamIdHash.Get(aStreamId);
   if (!stream) {
@@ -654,13 +657,13 @@ void Http3Session::ResetRecvd(uint64_t aStreamId, Http3AppError aError) {
 
   
   
-  if (aError.tag == Http3AppError::Tag::VersionFallback) {
+  if (aError == HTTP3_APP_ERROR_VERSION_FALLBACK) {
     
     
     
     stream->Transaction()->DisableSpdy();
     CloseStream(stream, NS_ERROR_NET_RESET);
-  } else if (aError.tag == Http3AppError::Tag::RequestRejected) {
+  } else if (aError == HTTP3_APP_ERROR_REQUEST_REJECTED) {
     
     
     
@@ -818,6 +821,11 @@ void Http3Session::Close(nsresult aReason) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   mError = aReason;
   CloseInternal(true);
+
+  
+  
+  Telemetry::Accumulate(Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
+                        NS_LITERAL_CSTRING("closing"), 37);
 
   if (mCleanShutdown || mIsClosedByNeqo) {
     
@@ -1220,6 +1228,60 @@ void Http3Session::SetSecInfo() {
     mSocketControl->SetInfo(secInfo.cipher, secInfo.version, secInfo.group,
                             secInfo.signature_scheme);
   }
+}
+
+void Http3Session::CloseConnectionTelemetry(CloseError& aError, bool aClosing) {
+  uint64_t value = 0;
+
+  switch (aError.tag) {
+    case CloseError::Tag::QuicTransportError:
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (aError.quic_transport_error._0 <= 12) {
+        value = aError.quic_transport_error._0;
+      } else if (aError.quic_transport_error._0 < 0x100) {
+        value = 13;
+      } else {
+        value = 14;
+      }
+      break;
+    case CloseError::Tag::Http3AppError:
+      if (aError.http3_app_error._0 <= 0x110) {
+        
+        
+        
+        value = (aError.http3_app_error._0 - 0x100) + 15;
+      } else if (aError.http3_app_error._0 < 0x200) {
+        
+        
+        value = 32;  
+      } else if (aError.http3_app_error._0 < 0x203) {
+        
+        
+        
+        value = aError.http3_app_error._0 - 0x200 + 33;
+      } else {
+        value = 36;
+      }
+  }
+
+  
+  
+  
+  
+  
+  Telemetry::Accumulate(
+      Telemetry::HTTP3_CONNECTTION_CLOSE_CODE,
+      aClosing ? NS_LITERAL_CSTRING("closing") : NS_LITERAL_CSTRING("closed"),
+      value);
 }
 
 }  
