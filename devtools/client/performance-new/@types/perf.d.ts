@@ -372,6 +372,12 @@ export interface PerformancePref {
 
 
   PopupIntroDisplayed: "devtools.performance.popup.intro-displayed";
+  
+
+
+
+
+  PopupFeatureFlag: "devtools.performance.popup.feature-flag";
 }
 
 

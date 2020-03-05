@@ -45,6 +45,8 @@ const DURATION_PREF = "devtools.performance.recording.duration";
 
 const PRESET_PREF = "devtools.performance.recording.preset";
 
+const POPUP_FEATURE_FLAG_PREF = "devtools.performance.popup.feature-flag";
+
 
 
 
@@ -394,6 +396,7 @@ function revertRecordingPreferences() {
   Services.prefs.clearUserPref(THREADS_PREF);
   Services.prefs.clearUserPref(OBJDIRS_PREF);
   Services.prefs.clearUserPref(DURATION_PREF);
+  Services.prefs.clearUserPref(POPUP_FEATURE_FLAG_PREF);
 }
 
 
@@ -499,6 +502,10 @@ function handleWebChannelMessage(channel, id, message, target) {
               "the profiler menu button"
           );
         }
+        
+        
+        Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
+
         ProfilerMenuButton.toggle(ownerDocument);
       }
 

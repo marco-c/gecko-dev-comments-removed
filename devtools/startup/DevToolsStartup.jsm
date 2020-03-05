@@ -628,6 +628,11 @@ DevToolsStartup.prototype = {
       AppConstants.NIGHTLY_BUILD
     );
 
+    
+    
+    
+    this.initializeProfilerWebChannel();
+
     if (!isPopupFeatureFlagEnabled) {
       
       
@@ -636,10 +641,6 @@ DevToolsStartup.prototype = {
       
       return;
     }
-
-    
-    
-    this.initializeProfilerWebChannel();
 
     if (isProfilerButtonEnabled()) {
       ProfilerMenuButton.initialize();
