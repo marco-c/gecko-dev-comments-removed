@@ -789,10 +789,6 @@ class nsFrameSelection final {
   
   MOZ_CAN_RUN_SCRIPT
   nsresult NotifySelectionListeners(mozilla::SelectionType aSelectionType);
-  
-  
-  nsresult UpdateSelectionCacheOnRepaintSelection(
-      mozilla::dom::Selection* aSel);
 
   
   static nsITableCellLayout* GetCellLayout(nsIContent* aCellContent);
