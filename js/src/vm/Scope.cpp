@@ -749,6 +749,14 @@ bool FunctionScope::prepareForScopeCreation(
   data->hasParameterExprs = hasParameterExprs;
   data->canonicalFunction.init(fun);
 
+  return updateEnvShapeIfRequired(cx, envShape, needsEnvironment,
+                                  hasParameterExprs);
+}
+
+bool FunctionScope::updateEnvShapeIfRequired(JSContext* cx,
+                                             MutableHandleShape envShape,
+                                             bool needsEnvironment,
+                                             bool hasParameterExprs) {
   
   
   
@@ -760,7 +768,6 @@ bool FunctionScope::prepareForScopeCreation(
       return false;
     }
   }
-
   return true;
 }
 
@@ -924,6 +931,12 @@ bool VarScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
     return false;
   }
 
+  return updateEnvShapeIfRequired(cx, envShape, needsEnvironment);
+}
+
+bool VarScope::updateEnvShapeIfRequired(JSContext* cx,
+                                        MutableHandleShape envShape,
+                                        bool needsEnvironment) {
   
   
   
@@ -1160,6 +1173,12 @@ bool EvalScope::prepareForScopeCreation(JSContext* cx, ScopeKind scopeKind,
     }
   }
 
+  return updateEnvShapeIfRequired(cx, envShape, scopeKind);
+}
+
+bool EvalScope::updateEnvShapeIfRequired(JSContext* cx,
+                                         MutableHandleShape envShape,
+                                         ScopeKind scopeKind) {
   
   
   if (!envShape && scopeKind == ScopeKind::StrictEval) {
@@ -1269,6 +1288,16 @@ bool ModuleScope::prepareForScopeCreation(JSContext* cx,
     return false;
   }
 
+  if (!updateEnvShapeIfRequired(cx, envShape)) {
+    return false;
+  }
+
+  data->module.init(module);
+  return true;
+}
+
+bool ModuleScope::updateEnvShapeIfRequired(JSContext* cx,
+                                           MutableHandleShape envShape) {
   
   if (!envShape) {
     envShape.set(getEmptyEnvironmentShape(cx));
@@ -1276,8 +1305,6 @@ bool ModuleScope::prepareForScopeCreation(JSContext* cx,
       return false;
     }
   }
-
-  data->module.init(module);
   return true;
 }
 
