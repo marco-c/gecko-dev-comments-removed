@@ -595,7 +595,7 @@ ConnectionData.prototype = Object.freeze({
   },
 
   get transactionInProgress() {
-    return this._open && this._dbConn.transactionInProgress;
+    return this._open && this._hasInProgressTransaction;
   },
 
   executeTransaction(func, type) {
@@ -1543,11 +1543,6 @@ OpenedConnection.prototype = Object.freeze({
   },
 
   
-
-
-
-
-
 
 
   get transactionInProgress() {

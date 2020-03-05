@@ -126,21 +126,6 @@ impl Conn {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn transaction_in_progress(&self) -> Result<bool> {
-        let mut in_progress = false;
-        unsafe { self.handle.GetTransactionInProgress(&mut in_progress) }.to_result()?;
-        Ok(in_progress)
-    }
-
-    
     pub fn transaction_with_behavior(
         &mut self,
         behavior: TransactionBehavior,
