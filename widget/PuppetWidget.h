@@ -233,6 +233,10 @@ class PuppetWidget : public nsBaseWidget,
   nsIntSize GetScreenDimensions();
 
   
+  virtual ScreenIntMargin GetSafeAreaInsets() const override;
+  void UpdateSafeAreaInsets(const ScreenIntMargin& aSafeAreaInsets);
+
+  
   
   
   
@@ -398,6 +402,8 @@ class PuppetWidget : public nsBaseWidget,
 
   nsCOMPtr<imgIContainer> mCustomCursor;
   uint32_t mCursorHotspotX, mCursorHotspotY;
+
+  ScreenIntMargin mSafeAreaInsets;
 
   nsCOMArray<nsIKeyEventInPluginCallback> mKeyEventInPluginCallbacks;
 
