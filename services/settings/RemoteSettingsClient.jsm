@@ -289,8 +289,9 @@ class RemoteSettingsClient extends EventEmitter {
   async getLastModified() {
     let timestamp = -1;
     try {
-      const collection = await this.openCollection();
-      timestamp = await collection.db.getLastModified();
+      const kintoCollection = await this.openCollection();
+      timestamp = await kintoCollection.db.getLastModified();
+      await kintoCollection.db.close();
     } catch (err) {
       console.warn(
         `Error retrieving the getLastModified timestamp from ${
@@ -380,6 +381,8 @@ class RemoteSettingsClient extends EventEmitter {
       });
     }
 
+    await kintoCollection.db.close();
+
     
     return this._filterEntries(data);
   }
@@ -433,6 +436,7 @@ class RemoteSettingsClient extends EventEmitter {
     const startedAt = new Date();
     let reportStatus = null;
     let thrownError = null;
+    let kintoCollection = null;
     try {
       
       if (Utils.isOffline) {
@@ -440,7 +444,7 @@ class RemoteSettingsClient extends EventEmitter {
       }
 
       
-      const kintoCollection = await this.openCollection();
+      kintoCollection = await this.openCollection();
       let collectionLastModified = await kintoCollection.db.getLastModified();
 
       
@@ -640,6 +644,9 @@ class RemoteSettingsClient extends EventEmitter {
       }
       throw e;
     } finally {
+      if (kintoCollection) {
+        await kintoCollection.db.close();
+      }
       const durationMilliseconds = new Date() - startedAt;
       
       if (reportStatus === null) {
