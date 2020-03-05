@@ -15,7 +15,7 @@
 
 use webrender::{TileNode, TileNodeKind, InvalidationReason, TileOffset};
 use webrender::{TileSerializer, TileCacheInstanceSerializer, TileCacheLoggerUpdateLists};
-use webrender::{PrimitiveCompareResultDetail, CompareHelperResult, UpdateKind, ItemUid};
+use webrender::{PrimitiveCompareResultDetail, CompareHelperResult, ItemUid};
 use serde::Deserialize;
 use std::fs::File;
 use std::io::prelude::*;
@@ -44,6 +44,7 @@ static CSS_NO_SURFACE: &str              = "fill:#40c040;fill-opacity:0.1;";
 static CSS_PRIM_COUNT: &str              = "fill:#40f0f0;fill-opacity:0.1;";
 static CSS_CONTENT: &str                 = "fill:#f04040;fill-opacity:0.1;";
 static CSS_COMPOSITOR_KIND_CHANGED: &str = "fill:#f0c070;fill-opacity:0.1;";
+static CSS_VALID_RECT_CHANGED: &str      = "fill:#ff00ff;fill-opacity:0.1;";
 
 
 struct SvgSettings {
@@ -95,6 +96,7 @@ fn tile_to_svg(key: TileOffset,
             Some(InvalidationReason::PrimCount { .. }) => CSS_PRIM_COUNT.to_string(),
             Some(InvalidationReason::CompositorKindChanged) => CSS_COMPOSITOR_KIND_CHANGED.to_string(),
             Some(InvalidationReason::Content { .. } ) => CSS_CONTENT.to_string(),
+            Some(InvalidationReason::ValidRectChanged) => CSS_VALID_RECT_CHANGED.to_string(),
             None => {
                 let mut background = tile.background_color;
                 if background.is_none() {
@@ -514,20 +516,15 @@ macro_rules! updatelist_to_html_macro {
                 html += &format!("<div class=\"subheader\">{}</div>\n<div class=\"intern data\">\n",
                                  stringify!($name));
                 for list in &update_lists.$name.1 {
-                    let mut insert_count = 0;
-                    for update in &list.updates {
-                        match update.kind {
-                            UpdateKind::Insert => {
-                                html += &format!("<div class=\"insert\"><b>{}</b> {}</div>\n",
-                                                 update.uid.get_uid(),
-                                                 format!("({:?})", list.data[insert_count]));
-                                insert_count = insert_count + 1;
-                            }
-                            _ => {
-                                html += &format!("<div class=\"remove\"><b>{}</b></div>\n",
-                                                 update.uid.get_uid());
-                            }
-                        };
+                    for insertion in &list.insertions {
+                        html += &format!("<div class=\"insert\"><b>{}</b> {}</div>\n",
+                                         insertion.uid.get_uid(),
+                                         format!("({:?})", insertion.value));
+                    }
+
+                    for removal in &list.removals {
+                        html += &format!("<div class=\"remove\"><b>{}</b></div>\n",
+                                         removal.uid.get_uid());
                     }
                 }
                 html += "</div><br/>\n";
