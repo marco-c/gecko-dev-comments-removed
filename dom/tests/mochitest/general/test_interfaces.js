@@ -147,7 +147,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "AnimationPlaybackEvent", insecureContext: true },
   
-  { name: "AnimationTimeline", insecureContext: true, release: false },
+  { name: "AnimationTimeline", insecureContext: true },
   
   { name: "Attr", insecureContext: true },
   
@@ -313,7 +313,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "DocumentFragment", insecureContext: true },
   
-  { name: "DocumentTimeline", insecureContext: true, release: false },
+  { name: "DocumentTimeline", insecureContext: true },
   
   { name: "DocumentType", insecureContext: true },
   
