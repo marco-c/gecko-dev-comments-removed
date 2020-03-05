@@ -865,24 +865,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
         );
       }
 
-      const parentFrame = thread._getNextStepFrame(this);
-      if (parentFrame && parentFrame.script) {
-        const { onStep, onPop } = thread._makeSteppingHooks({
-          steppingType: "next",
-          completion,
-        });
-
-        if (!thread.sources.isFrameBlackBoxed(parentFrame)) {
-          parentFrame.onStep = onStep;
-        }
-
-        
-        
-        
-        parentFrame.onPop = onPop;
-        return undefined;
-      }
-
+      thread._attachSteppingHooks(this, "next", completion);
       return undefined;
     };
   },
@@ -1015,7 +998,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _handleResumeLimit: async function({ resumeLimit }) {
-    let steppingType = resumeLimit.type;
+    const steppingType = resumeLimit.type;
     if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
@@ -1028,19 +1011,28 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       return true;
     }
 
+    return this._attachSteppingHooks(
+      this.youngestFrame,
+      steppingType,
+      undefined
+    );
+  },
+
+  _attachSteppingHooks: function(frame, steppingType, completion) {
     
     
-    if (steppingType === "finish" && this.youngestFrame.reportedPop) {
+    if (steppingType === "finish" && frame.reportedPop) {
       steppingType = "next";
     }
 
     const { onEnterFrame, onPop, onStep } = this._makeSteppingHooks({
       steppingType,
+      completion,
     });
 
     
     
-    const stepFrame = this._getNextStepFrame(this.youngestFrame);
+    const stepFrame = this._getNextStepFrame(frame);
     if (stepFrame) {
       switch (steppingType) {
         case "step":
@@ -1053,7 +1045,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
             if (!this.sources.isFrameBlackBoxed(stepFrame)) {
               stepFrame.onStep = onStep;
             }
-            stepFrame.onPop = onPop;
           }
         
         case "finish":
