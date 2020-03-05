@@ -654,15 +654,12 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
     
     
     constexpr uint16_t UnsupportedFlags = FunctionFlags::MUTABLE_FLAGS |
+                                          FunctionFlags::SELFHOSTLAZY |
                                           FunctionFlags::BOUND_FUN |
                                           FunctionFlags::WASM_JIT_ENTRY;
     if ((flags & UnsupportedFlags) != 0) {
       return xdr->fail(JS::TranscodeResult_Failure_BadDecode);
     }
-
-    
-    flags &= ~FunctionFlags::INTERPRETED_LAZY;
-    flags |= FunctionFlags::INTERPRETED;
 
     fun = NewFunctionWithProto(cx, nullptr, nargs, FunctionFlags(flags),
                                nullptr, atom, proto, allocKind, TenuredObject);
@@ -1753,9 +1750,6 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
     return;
   }
 
-  flags_.clearInterpreted();
-  flags_.setInterpretedLazy();
-
   MOZ_ASSERT(!script->isAsync() && !script->isGenerator(),
              "Generator resume code in the JITs assumes non-lazy function");
 
@@ -1770,6 +1764,8 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   } else {
     
     
+    flags_.clearBaseScript();
+    flags_.setSelfHostedLazy();
     u.scripted.s.selfHostedLazy_ = &rt->selfHostedLazyScript.ref();
     MOZ_ASSERT(isSelfHostedBuiltin());
     MOZ_ASSERT(isExtended());

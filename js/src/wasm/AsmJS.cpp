@@ -1427,7 +1427,7 @@ class MOZ_STACK_CLASS JS_HAZ_ROOTED ModuleValidatorShared {
   MOZ_MUST_USE bool initDummyFunction() {
     
     dummyFunction_ = NewScriptedFunction(
-        cx_, 0, FunctionFlags::INTERPRETED, nullptr,
+        cx_, 0, FunctionFlags::BASESCRIPT, nullptr,
          nullptr, gc::AllocKind::FUNCTION, TenuredObject);
     if (!dummyFunction_) {
       return false;
