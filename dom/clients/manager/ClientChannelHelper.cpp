@@ -56,6 +56,10 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
     return NS_ERROR_NO_INTERFACE;
   }
 
+  virtual void CreateClient(nsILoadInfo* aLoadInfo, nsIPrincipal* aPrincipal) {
+    CreateClientForPrincipal(aLoadInfo, aPrincipal, mEventTarget);
+  }
+
   NS_IMETHOD
   AsyncOnChannelRedirect(nsIChannel* aOldChannel, nsIChannel* aNewChannel,
                          uint32_t aFlags,
@@ -116,15 +120,7 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
       NS_ENSURE_SUCCESS(rv, rv);
 
       reservedClient.reset();
-
-      
-      
-      
-      reservedClient = ClientManager::CreateSource(ClientType::Window,
-                                                   mEventTarget, principal);
-      MOZ_DIAGNOSTIC_ASSERT(reservedClient);
-
-      newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
+      CreateClient(newLoadInfo, principal);
     }
 
     uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
@@ -166,6 +162,19 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
       : mOuter(aOuter), mEventTarget(aEventTarget) {}
 
   NS_DECL_ISUPPORTS
+
+  static void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
+                                       nsIPrincipal* aPrincipal,
+                                       nsISerialEventTarget* aEventTarget) {
+    
+    
+    
+    UniquePtr<ClientSource> reservedClient = ClientManager::CreateSource(
+        ClientType::Window, aEventTarget, aPrincipal);
+    MOZ_DIAGNOSTIC_ASSERT(reservedClient);
+
+    aLoadInfo->GiveReservedClientSource(std::move(reservedClient));
+  }
 };
 
 NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
@@ -174,112 +183,27 @@ NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
 class ClientChannelHelperParent final : public ClientChannelHelper {
   ~ClientChannelHelperParent() = default;
 
-  NS_IMETHOD
-  AsyncOnChannelRedirect(nsIChannel* aOldChannel, nsIChannel* aNewChannel,
-                         uint32_t aFlags,
-                         nsIAsyncVerifyRedirectCallback* aCallback) override {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    nsresult rv = nsContentUtils::CheckSameOrigin(aOldChannel, aNewChannel);
-    if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_DOM_BAD_URI)) {
-      return rv;
-    }
-
-    nsCOMPtr<nsILoadInfo> oldLoadInfo = aOldChannel->LoadInfo();
-    nsCOMPtr<nsILoadInfo> newLoadInfo = aNewChannel->LoadInfo();
-
-    UniquePtr<ClientSource> reservedClient =
-        oldLoadInfo->TakeReservedClientSource();
-
-    
-    
-    if (NS_SUCCEEDED(rv)) {
-      if (reservedClient) {
-        newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
-      }
-
-      
-      
-      
-      else if (oldLoadInfo != newLoadInfo) {
-        const Maybe<ClientInfo>& reservedClientInfo =
-            oldLoadInfo->GetReservedClientInfo();
-
-        const Maybe<ClientInfo>& initialClientInfo =
-            oldLoadInfo->GetInitialClientInfo();
-
-        MOZ_DIAGNOSTIC_ASSERT(reservedClientInfo.isNothing() ||
-                              initialClientInfo.isNothing());
-
-        if (reservedClientInfo.isSome()) {
-          newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
-        }
-
-        if (initialClientInfo.isSome()) {
-          newLoadInfo->SetInitialClientInfo(initialClientInfo.ref());
-        }
-      }
-    }
-
-    
-    
-    else {
-      
-      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-      MOZ_DIAGNOSTIC_ASSERT(ssm);
-
-      nsCOMPtr<nsIPrincipal> principal;
-      rv = ssm->GetChannelResultPrincipal(aNewChannel,
-                                          getter_AddRefs(principal));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      
-      
-      
-      
-      Maybe<ClientInfo> reservedInfo =
-          ClientManager::CreateInfo(ClientType::Window, principal);
-      if (reservedInfo) {
-        newLoadInfo->SetReservedClientInfo(*reservedInfo);
-      }
-    }
-
-    uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
-    nsCOMPtr<nsIHttpChannelInternal> http = do_QueryInterface(aOldChannel);
-    if (http) {
-      MOZ_ALWAYS_SUCCEEDS(http->GetRedirectMode(&redirectMode));
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) &&
-        redirectMode != nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW) {
-      newLoadInfo->ClearController();
-    }
-
-    nsCOMPtr<nsIChannelEventSink> outerSink = do_GetInterface(mOuter);
-    if (outerSink) {
-      return outerSink->AsyncOnChannelRedirect(aOldChannel, aNewChannel, aFlags,
-                                               aCallback);
-    }
-
-    aCallback->OnRedirectVerifyCallback(NS_OK);
-    return NS_OK;
+  void CreateClient(nsILoadInfo* aLoadInfo, nsIPrincipal* aPrincipal) override {
+    CreateClientForPrincipal(aLoadInfo, aPrincipal, mEventTarget);
   }
 
  public:
-  explicit ClientChannelHelperParent(nsIInterfaceRequestor* aOuter)
+  static void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
+                                       nsIPrincipal* aPrincipal,
+                                       nsISerialEventTarget* aEventTarget) {
+    
+    
+    
+    
+    
+    Maybe<ClientInfo> reservedInfo =
+        ClientManager::CreateInfo(ClientType::Window, aPrincipal);
+    if (reservedInfo) {
+      aLoadInfo->SetReservedClientInfo(*reservedInfo);
+    }
+  }
+  ClientChannelHelperParent(nsIInterfaceRequestor* aOuter,
+                            nsISerialEventTarget* aEventTarget)
       : ClientChannelHelper(aOuter, nullptr) {}
 };
 
@@ -315,10 +239,11 @@ class ClientChannelHelperChild final : public ClientChannelHelper {
 
 }  
 
-nsresult AddClientChannelHelper(nsIChannel* aChannel,
-                                Maybe<ClientInfo>&& aReservedClientInfo,
-                                Maybe<ClientInfo>&& aInitialClientInfo,
-                                nsISerialEventTarget* aEventTarget) {
+template <typename T>
+nsresult AddClientChannelHelperInternal(nsIChannel* aChannel,
+                                        Maybe<ClientInfo>&& aReservedClientInfo,
+                                        Maybe<ClientInfo>&& aInitialClientInfo,
+                                        nsISerialEventTarget* aEventTarget) {
   MOZ_ASSERT(NS_IsMainThread());
 
   Maybe<ClientInfo> initialClientInfo(std::move(aInitialClientInfo));
@@ -369,30 +294,16 @@ nsresult AddClientChannelHelper(nsIChannel* aChannel,
   rv = aChannel->GetNotificationCallbacks(getter_AddRefs(outerCallbacks));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  UniquePtr<ClientSource> reservedClient;
   if (initialClientInfo.isNothing() && reservedClientInfo.isNothing()) {
-    
-    
-    
-    
-    reservedClient = ClientManager::CreateSource(
-        ClientType::Window, aEventTarget, channelPrincipal);
-    MOZ_DIAGNOSTIC_ASSERT(reservedClient);
+    T::CreateClientForPrincipal(loadInfo, channelPrincipal, aEventTarget);
   }
 
-  RefPtr<ClientChannelHelper> helper =
-      new ClientChannelHelper(outerCallbacks, aEventTarget);
+  RefPtr<ClientChannelHelper> helper = new T(outerCallbacks, aEventTarget);
 
   
   
   rv = aChannel->SetNotificationCallbacks(helper);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (reservedClient) {
-    loadInfo->GiveReservedClientSource(std::move(reservedClient));
-  }
 
   if (initialClientInfo.isSome()) {
     loadInfo->SetInitialClientInfo(initialClientInfo.ref());
@@ -403,6 +314,23 @@ nsresult AddClientChannelHelper(nsIChannel* aChannel,
   }
 
   return NS_OK;
+}
+
+nsresult AddClientChannelHelper(nsIChannel* aChannel,
+                                Maybe<ClientInfo>&& aReservedClientInfo,
+                                Maybe<ClientInfo>&& aInitialClientInfo,
+                                nsISerialEventTarget* aEventTarget) {
+  return AddClientChannelHelperInternal<ClientChannelHelper>(
+      aChannel, std::move(aReservedClientInfo), std::move(aInitialClientInfo),
+      aEventTarget);
+}
+
+nsresult AddClientChannelHelperInParent(
+    nsIChannel* aChannel, Maybe<ClientInfo>&& aInitialClientInfo) {
+  Maybe<ClientInfo> emptyReservedInfo;
+  return AddClientChannelHelperInternal<ClientChannelHelperParent>(
+      aChannel, std::move(emptyReservedInfo), std::move(aInitialClientInfo),
+      nullptr);
 }
 
 nsresult AddClientChannelHelperInChild(nsIChannel* aChannel,
@@ -416,63 +344,6 @@ nsresult AddClientChannelHelperInChild(nsIChannel* aChannel,
 
   RefPtr<ClientChannelHelper> helper =
       new ClientChannelHelperChild(outerCallbacks, aEventTarget);
-
-  
-  
-  rv = aChannel->SetNotificationCallbacks(helper);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
-}
-
-nsresult AddClientChannelHelperInParent(
-    nsIChannel* aChannel, Maybe<ClientInfo>&& aInitialClientInfo) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  Maybe<ClientInfo> initialClientInfo(std::move(aInitialClientInfo));
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-
-  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-  NS_ENSURE_TRUE(ssm, NS_ERROR_FAILURE);
-
-  nsCOMPtr<nsIPrincipal> channelPrincipal;
-  nsresult rv = ssm->GetChannelResultPrincipal(
-      aChannel, getter_AddRefs(channelPrincipal));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  if (initialClientInfo.isSome()) {
-    nsCOMPtr<nsIPrincipal> initialPrincipal = PrincipalInfoToPrincipal(
-        initialClientInfo.ref().PrincipalInfo(), nullptr);
-
-    bool equals = false;
-    rv = initialPrincipal ? initialPrincipal->Equals(channelPrincipal, &equals)
-                          : NS_ERROR_FAILURE;
-    if (NS_FAILED(rv) || !equals) {
-      initialClientInfo.reset();
-    }
-  }
-
-  nsCOMPtr<nsIInterfaceRequestor> outerCallbacks;
-  rv = aChannel->GetNotificationCallbacks(getter_AddRefs(outerCallbacks));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (initialClientInfo.isNothing()) {
-    
-    
-    
-    
-    Maybe<ClientInfo> reservedInfo =
-        ClientManager::CreateInfo(ClientType::Window, channelPrincipal);
-    MOZ_DIAGNOSTIC_ASSERT(reservedInfo);
-    loadInfo->SetReservedClientInfo(reservedInfo.ref());
-  } else {
-    loadInfo->SetInitialClientInfo(initialClientInfo.ref());
-  }
-
-  RefPtr<ClientChannelHelper> helper =
-      new ClientChannelHelperParent(outerCallbacks);
 
   
   
