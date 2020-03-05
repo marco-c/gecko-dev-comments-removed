@@ -101,7 +101,7 @@ void SetASameSiteCookie(nsICookieService* aCookieService, const char* aSpec1,
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings =
       aAllowed ? CookieJarSettings::Create()
-               : CookieJarSettings::CreateBlockingAll();
+               : CookieJarSettings::GetBlockingAll();
   MOZ_ASSERT(cookieJarSettings);
 
   nsCOMPtr<nsILoadInfo> loadInfo = dummyChannel->LoadInfo();

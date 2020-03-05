@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -19,6 +20,8 @@
 
 namespace mozilla {
 namespace net {
+
+static StaticRefPtr<CookieJarSettings> sBlockinAll;
 
 namespace {
 
@@ -67,12 +70,18 @@ class ReleaseCookiePermissions final : public Runnable {
 }  
 
 
-already_AddRefed<nsICookieJarSettings> CookieJarSettings::CreateBlockingAll() {
+already_AddRefed<nsICookieJarSettings> CookieJarSettings::GetBlockingAll() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  RefPtr<CookieJarSettings> cookieJarSettings =
+  if (sBlockinAll) {
+    return do_AddRef(sBlockinAll);
+  }
+
+  sBlockinAll =
       new CookieJarSettings(nsICookieService::BEHAVIOR_REJECT, eFixed);
-  return cookieJarSettings.forget();
+  ClearOnShutdown(&sBlockinAll);
+
+  return do_AddRef(sBlockinAll);
 }
 
 
