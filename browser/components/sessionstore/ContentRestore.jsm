@@ -58,8 +58,6 @@ function ContentRestore(chromeGlobal) {
 
   let EXPORTED_METHODS = [
     "restoreHistory",
-    "finishRestoreHistory",
-    "restoreOnNewEntry",
     "restoreTabContent",
     "restoreDocument",
     "resetRestore",
@@ -96,26 +94,6 @@ function ContentRestoreInternal(chromeGlobal) {
   
   
   this._progressListener = null;
-
-  this._shistoryInParent = false;
-  this._callbacksForBottomHalf = null;
-}
-
-function kickOffNewLoadFromBlankPage(webNavigation, newURI) {
-  
-  
-  webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
-
-  
-  
-  
-  
-  let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-  let loadURIOptions = {
-    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    loadFlags,
-  };
-  webNavigation.loadURI(newURI, loadURIOptions);
 }
 
 
@@ -133,9 +111,8 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreHistory(tabData, loadArguments, callbacks, shistoryInParent) {
+  restoreHistory(tabData, loadArguments, callbacks) {
     this._tabData = tabData;
-    this._callbacksForBottomHalf = callbacks;
 
     
     let webNavigation = this.docShell.QueryInterface(Ci.nsIWebNavigation);
@@ -153,46 +130,27 @@ ContentRestoreInternal.prototype = {
       webNavigation.setCurrentURI(Services.io.newURI(uri));
     }
 
-    this._shistoryInParent = shistoryInParent;
+    SessionHistory.restore(this.docShell, tabData);
 
-    if (this._shistoryInParent) {
-      callbacks.requestRestoreSHistory();
-    } else {
-      SessionHistory.restore(this.docShell, tabData);
-
+    
+    let listener = new HistoryListener(this.docShell, () => {
       
-      let listener = new HistoryListener(this.docShell, () => {
-        
-        this.restoreTabContent(
-          null,
-          false,
-          callbacks.onLoadFinished,
-          null,
-          null
-        );
-      });
+      this.restoreTabContent(null, false, callbacks.onLoadFinished);
+    });
 
-      webNavigation.sessionHistory.legacySHistory.addSHistoryListener(listener);
-      this._historyListener = listener;
+    webNavigation.sessionHistory.legacySHistory.addSHistoryListener(listener);
+    this._historyListener = listener;
 
-      this.finishRestoreHistory();
-    }
-  },
-
-  finishRestoreHistory() {
     
     
     SessionStoreUtils.restoreDocShellCapabilities(
       this.docShell,
-      this._tabData.disallow
+      tabData.disallow
     );
 
-    if (this._tabData.storage && this.docShell instanceof Ci.nsIDocShell) {
-      SessionStoreUtils.restoreSessionStorage(
-        this.docShell,
-        this._tabData.storage
-      );
-      delete this._tabData.storage;
+    if (tabData.storage && this.docShell instanceof Ci.nsIDocShell) {
+      SessionStoreUtils.restoreSessionStorage(this.docShell, tabData.storage);
+      delete tabData.storage;
     }
 
     
@@ -204,33 +162,19 @@ ContentRestoreInternal.prototype = {
         this._tabData = null;
 
         
-        this.restoreTabContentStarted(
-          this._callbacksForBottomHalf.onLoadFinished,
-          this._callbacksForBottomHalf.removeRestoreListener
-        );
+        this.restoreTabContentStarted(callbacks.onLoadFinished);
 
         
-        this._callbacksForBottomHalf.onLoadStarted();
+        callbacks.onLoadStarted();
       },
     });
-  },
-
-  restoreOnNewEntry(newURI) {
-    let webNavigation = this.docShell.QueryInterface(Ci.nsIWebNavigation);
-    kickOffNewLoadFromBlankPage(webNavigation, newURI);
   },
 
   
 
 
 
-  restoreTabContent(
-    loadArguments,
-    isRemotenessUpdate,
-    finishCallback,
-    removeListenerCallback,
-    reloadSHistoryCallback
-  ) {
+  restoreTabContent(loadArguments, isRemotenessUpdate, finishCallback) {
     let tabData = this._tabData;
     this._tabData = null;
 
@@ -238,7 +182,7 @@ ContentRestoreInternal.prototype = {
     let history = webNavigation.sessionHistory.legacySHistory;
 
     
-    this.restoreTabContentStarted(finishCallback, removeListenerCallback);
+    this.restoreTabContentStarted(finishCallback);
 
     
     
@@ -329,11 +273,7 @@ ContentRestoreInternal.prototype = {
         
         
         
-        if (this._shistoryInParent) {
-          reloadSHistoryCallback();
-        } else {
-          history.reloadCurrentEntry();
-        }
+        history.reloadCurrentEntry();
       } else {
         
         let loadURIOptions = {
@@ -358,14 +298,10 @@ ContentRestoreInternal.prototype = {
 
 
 
-  restoreTabContentStarted(finishCallback, removeListenerCallback) {
+  restoreTabContentStarted(finishCallback) {
     
-    if (!this._shistoryInParent) {
-      this._historyListener.uninstall();
-      this._historyListener = null;
-    } else {
-      removeListenerCallback();
-    }
+    this._historyListener.uninstall();
+    this._historyListener = null;
 
     
     this._progressListener.uninstall();
@@ -435,8 +371,6 @@ ContentRestoreInternal.prototype = {
       this._progressListener.uninstall();
     }
     this._progressListener = null;
-
-    this._callbacksForBottomHalf = null;
   },
 };
 
@@ -481,7 +415,20 @@ HistoryListener.prototype = {
       return;
     }
 
-    kickOffNewLoadFromBlankPage(this.webNavigation, newURI);
+    
+    
+    this.webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
+
+    
+    
+    
+    
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
+    let loadURIOptions = {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags,
+    };
+    this.webNavigation.loadURI(newURI.spec, loadURIOptions);
   },
 
   OnHistoryReload() {
