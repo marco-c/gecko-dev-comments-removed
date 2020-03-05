@@ -83,6 +83,11 @@ var connect = async function() {
     "devtools.browsertoolbox.fission",
     env.get("MOZ_BROWSER_TOOLBOX_FISSION_PREF") === "1"
   );
+  
+  Services.prefs.setBoolPref(
+    "devtools.webconsole.input.context",
+    env.get("MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT") === "1"
+  );
 
   const port = env.get("MOZ_BROWSER_TOOLBOX_PORT");
 

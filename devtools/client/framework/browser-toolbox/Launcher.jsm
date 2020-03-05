@@ -254,10 +254,16 @@ BrowserToolboxLauncher.prototype = {
       "devtools.browsertoolbox.fission",
       false
     );
+    const isInputContextEnabled = Services.prefs.getBoolPref(
+      "devtools.webconsole.input.context",
+      false
+    );
     const environment = {
       
       
       MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",
+      
+      MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT: isInputContextEnabled ? "1" : "0",
       
       
       MOZ_DISABLE_SAFE_MODE_KEY: "1",
