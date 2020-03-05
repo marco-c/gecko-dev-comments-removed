@@ -377,6 +377,10 @@ void EventSourceImpl::CloseInternal() {
 
   
   
+  RefPtr<EventSourceImpl> kungFuDeathGrip = this;
+
+  
+  
   if (NS_IsMainThread()) {
     CleanupOnMainThread();
   } else {
