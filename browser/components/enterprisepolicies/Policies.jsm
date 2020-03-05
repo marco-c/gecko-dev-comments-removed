@@ -77,6 +77,18 @@ var Policies = {
     },
   },
 
+  AppAutoUpdate: {
+    onBeforeUIStartup(manager, param) {
+      
+      
+      if (param) {
+        manager.disallowFeature("app-auto-updates-off");
+      } else {
+        manager.disallowFeature("app-auto-updates-on");
+      }
+    },
+  },
+
   AppUpdateURL: {
     onBeforeAddons(manager, param) {
       setDefaultPref("app.update.url", param.href);
