@@ -184,11 +184,20 @@ impl MergeTask {
             result: AtomicRefCell::new(Err(error::Error::DidNotRun)),
         })
     }
-}
 
-impl Task for MergeTask {
-    fn run(&self) {
+    fn merge(&self) -> error::Result<store::ApplyStatus> {
         let mut db = self.db.clone();
+        if db.transaction_in_progress()? {
+            
+            
+            
+            
+            
+            
+            
+            
+            return Err(error::Error::StorageBusy);
+        }
         let log = Logger::new(self.max_log_level, self.logger.clone());
         let driver = Driver::new(log, self.progress.clone());
         let mut store = store::Store::new(
@@ -199,10 +208,16 @@ impl Task for MergeTask {
             self.remote_time_millis,
             &self.weak_uploads,
         );
-        *self.result.borrow_mut() = store
-            .validate()
-            .and_then(|_| store.prepare())
-            .and_then(|_| store.merge_with_driver(&driver, &*self.controller));
+        store.validate()?;
+        store.prepare()?;
+        let status = store.merge_with_driver(&driver, &*self.controller)?;
+        Ok(status)
+    }
+}
+
+impl Task for MergeTask {
+    fn run(&self) {
+        *self.result.borrow_mut() = self.merge();
     }
 
     fn done(&self) -> Result<(), nsresult> {
