@@ -82,8 +82,13 @@ class AboutWelcomeChild extends JSWindowActorChild {
 
 
   AWSendEventTelemetry(eventData) {
-    
-    log.debug("Sending event telemetry:", eventData);
+    this.AWSendToParent("TELEMETRY_EVENT", {
+      ...eventData,
+      event_context: {
+        ...eventData.event_context,
+        page: "about:welcome",
+      },
+    });
   }
 
   
