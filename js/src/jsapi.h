@@ -2442,6 +2442,15 @@ extern JS_PUBLIC_API void JS_ReportErrorNumberUTF8VA(
 
 
 
+
+
+extern JS_PUBLIC_API void JS_ReportErrorNumberUTF8Array(
+    JSContext* cx, JSErrorCallback errorCallback, void* userRef,
+    const unsigned errorNumber, const char** args);
+
+
+
+
 extern JS_PUBLIC_API void JS_ReportErrorNumberUC(JSContext* cx,
                                                  JSErrorCallback errorCallback,
                                                  void* userRef,
