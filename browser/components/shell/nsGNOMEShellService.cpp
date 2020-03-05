@@ -71,7 +71,19 @@ static const MimeTypeAssociation appTypes[] = {
 #define kDesktopDrawBGGSKey "draw-background"
 #define kDesktopColorGSKey "primary-color"
 
-static bool IsRunningAsASnap() { return (PR_GetEnv("SNAP") != nullptr); }
+static bool IsRunningAsASnap() {
+  
+  
+  const char* snap_name = PR_GetEnv("SNAP_NAME");
+
+  
+  if (snap_name == nullptr) {
+    return false;
+  }
+
+  
+  return (strcmp(snap_name, "firefox") == 0);
+}
 
 nsresult nsGNOMEShellService::Init() {
   nsresult rv;
