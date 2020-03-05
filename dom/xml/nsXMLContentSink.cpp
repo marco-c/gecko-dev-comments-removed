@@ -51,6 +51,7 @@
 #include "mozilla/dom/ProcessingInstruction.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/txMozillaXSLTProcessor.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
 
 using namespace mozilla;
@@ -93,7 +94,7 @@ nsXMLContentSink::nsXMLContentSink()
   PodArrayZero(mText);
 }
 
-nsXMLContentSink::~nsXMLContentSink() {}
+nsXMLContentSink::~nsXMLContentSink() = default;
 
 nsresult nsXMLContentSink::Init(Document* aDoc, nsIURI* aURI,
                                 nsISupports* aContainer, nsIChannel* aChannel) {
@@ -169,6 +170,13 @@ nsresult nsXMLContentSink::MaybePrettyPrint() {
     mPrettyPrintXML = false;
 
     return NS_OK;
+  }
+
+  {
+    
+    
+    
+    nsAutoMicroTask mt;
   }
 
   

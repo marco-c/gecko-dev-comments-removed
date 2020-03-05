@@ -55,7 +55,7 @@ ProcessingInstruction::ProcessingInstruction(
                   false);  
 }
 
-ProcessingInstruction::~ProcessingInstruction() {}
+ProcessingInstruction::~ProcessingInstruction() = default;
 
 
 
