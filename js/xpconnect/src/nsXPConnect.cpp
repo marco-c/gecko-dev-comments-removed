@@ -377,11 +377,14 @@ void xpc::ErrorReport::ErrorReportToMessageString(JSErrorReport* aReport,
                                                   nsAString& aString) {
   aString.Truncate();
   if (aReport->message()) {
-    JSLinearString* name = js::GetErrorTypeName(
-        CycleCollectedJSContext::Get()->Context(), aReport->exnType);
-    if (name) {
-      AssignJSLinearString(aString, name);
-      aString.AppendLiteral(": ");
+    
+    if (!JSREPORT_IS_WARNING(aReport->flags)) {
+      JSLinearString* name = js::GetErrorTypeName(
+          CycleCollectedJSContext::Get()->Context(), aReport->exnType);
+      if (name) {
+        AssignJSLinearString(aString, name);
+        aString.AppendLiteral(": ");
+      }
     }
     aString.Append(NS_ConvertUTF8toUTF16(aReport->message().c_str()));
   }
