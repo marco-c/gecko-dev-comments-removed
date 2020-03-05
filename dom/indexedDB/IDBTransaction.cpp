@@ -988,7 +988,10 @@ IDBTransaction::Run() {
   
 
   if (ReadyState::Finished == mReadyState) {
-    MOZ_ASSERT(IsAborted());
+    
+    
+    
+    MOZ_ASSERT(mFiredCompleteOrAbort || IsAborted());
     return NS_OK;
   }
 
