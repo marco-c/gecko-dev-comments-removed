@@ -97,9 +97,10 @@ static inline const MDefinition* MaybeUnwrap(const MDefinition* object) {
 
 
 static inline const MDefinition* GetObject(const MDefinition* ins) {
-  if (!ins->getAliasSet().isStore() && !ins->getAliasSet().isLoad()) {
+  if (ins->getAliasSet().isNone()) {
     return nullptr;
   }
+  MOZ_ASSERT(ins->getAliasSet().isStore() || ins->getAliasSet().isLoad());
 
   
   
