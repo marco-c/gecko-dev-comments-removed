@@ -54,19 +54,41 @@ void CSSAnimation::SetEffect(AnimationEffect* aEffect) {
   AddOverriddenProperties(CSSAnimationProperties::Effect);
 }
 
+void CSSAnimation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
+  
+  
+  
+  bool wasPaused = PlayState() == AnimationPlayState::Paused;
+
+  Animation::SetStartTimeAsDouble(aStartTime);
+
+  bool isPaused = PlayState() == AnimationPlayState::Paused;
+
+  if (wasPaused != isPaused) {
+    AddOverriddenProperties(CSSAnimationProperties::PlayState);
+  }
+}
+
 mozilla::dom::Promise* CSSAnimation::GetReady(ErrorResult& aRv) {
   FlushUnanimatedStyle();
   return Animation::GetReady(aRv);
 }
 
-void CSSAnimation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
-  mPauseShouldStick = false;
-  Animation::Play(aRv, aLimitBehavior);
-}
+void CSSAnimation::Reverse(ErrorResult& aRv) {
+  
+  
+  bool wasPaused = PlayState() == AnimationPlayState::Paused;
 
-void CSSAnimation::Pause(ErrorResult& aRv) {
-  mPauseShouldStick = true;
-  Animation::Pause(aRv);
+  Animation::Reverse(aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  bool isPaused = PlayState() == AnimationPlayState::Paused;
+
+  if (wasPaused != isPaused) {
+    AddOverriddenProperties(CSSAnimationProperties::PlayState);
+  }
 }
 
 AnimationPlayState CSSAnimation::PlayStateFromJS() const {
@@ -88,25 +110,30 @@ void CSSAnimation::PlayFromJS(ErrorResult& aRv) {
   
   FlushUnanimatedStyle();
   Animation::PlayFromJS(aRv);
-}
-
-void CSSAnimation::PlayFromStyle() {
-  mIsStylePaused = false;
-  if (!mPauseShouldStick) {
-    ErrorResult rv;
-    Animation::Play(rv, Animation::LimitBehavior::Continue);
-    
-    MOZ_ASSERT(!rv.Failed(), "Unexpected exception playing animation");
-  }
-}
-
-void CSSAnimation::PauseFromStyle() {
-  
-  if (mIsStylePaused) {
+  if (aRv.Failed()) {
     return;
   }
 
-  mIsStylePaused = true;
+  AddOverriddenProperties(CSSAnimationProperties::PlayState);
+}
+
+void CSSAnimation::PauseFromJS(ErrorResult& aRv) {
+  Animation::PauseFromJS(aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  AddOverriddenProperties(CSSAnimationProperties::PlayState);
+}
+
+void CSSAnimation::PlayFromStyle() {
+  ErrorResult rv;
+  Animation::Play(rv, Animation::LimitBehavior::Continue);
+  
+  MOZ_ASSERT(!rv.Failed(), "Unexpected exception playing animation");
+}
+
+void CSSAnimation::PauseFromStyle() {
   ErrorResult rv;
   Animation::Pause(rv);
   
@@ -470,18 +497,13 @@ static void UpdateOldAnimationPropertiesWithNew(
 
   
   
-  if (aOld.PlayState() != AnimationPlayState::Idle) {
-    
-    
-    
-    
-    
-    
-    
-    if (!aOld.IsStylePaused() && aNewIsStylePaused) {
+  if (aOld.PlayState() != AnimationPlayState::Idle &&
+      ~aOverriddenProperties & CSSAnimationProperties::PlayState) {
+    bool wasPaused = aOld.PlayState() == AnimationPlayState::Paused;
+    if (!wasPaused && aNewIsStylePaused) {
       aOld.PauseFromStyle();
       animationChanged = true;
-    } else if (aOld.IsStylePaused() && !aNewIsStylePaused) {
+    } else if (wasPaused && !aNewIsStylePaused) {
       aOld.PlayFromStyle();
       animationChanged = true;
     }

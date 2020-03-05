@@ -58,8 +58,6 @@ class CSSAnimation final : public Animation {
   explicit CSSAnimation(nsIGlobalObject* aGlobal, nsAtom* aAnimationName)
       : dom::Animation(aGlobal),
         mAnimationName(aAnimationName),
-        mIsStylePaused(false),
-        mPauseShouldStick(false),
         mNeedsNewAnimationIndexWhenRun(false),
         mPreviousPhase(ComputedTiming::AnimationPhase::Idle),
         mPreviousIteration(0) {
@@ -85,9 +83,9 @@ class CSSAnimation final : public Animation {
 
   
   void SetEffect(AnimationEffect* aEffect) override;
+  void SetStartTimeAsDouble(const Nullable<double>& aStartTime) override;
   Promise* GetReady(ErrorResult& aRv) override;
-  void Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) override;
-  void Pause(ErrorResult& aRv) override;
+  void Reverse(ErrorResult& aRv) override;
 
   
   
@@ -100,6 +98,7 @@ class CSSAnimation final : public Animation {
   AnimationPlayState PlayStateFromJS() const override;
   bool PendingFromJS() const override;
   void PlayFromJS(ErrorResult& aRv) override;
+  void PauseFromJS(ErrorResult& aRv) override;
 
   void PlayFromStyle();
   void PauseFromStyle();
@@ -128,8 +127,6 @@ class CSSAnimation final : public Animation {
   void Tick() override;
   void QueueEvents(
       const StickyTimeDuration& aActiveTime = StickyTimeDuration());
-
-  bool IsStylePaused() const { return mIsStylePaused; }
 
   bool HasLowerCompositeOrderThan(const CSSAnimation& aOther) const;
 
@@ -207,58 +204,6 @@ class CSSAnimation final : public Animation {
   
   
   OwningElementRef mOwningElement;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mIsStylePaused;
-  bool mPauseShouldStick;
 
   
   
