@@ -229,15 +229,30 @@ class Connection final : public mozIStorageConnection,
 
 
   nsresult beginTransactionInternal(
-      sqlite3* aNativeConnection,
+      const SQLiteMutexAutoLock& aProofOfLock, sqlite3* aNativeConnection,
       int32_t aTransactionType = TRANSACTION_DEFERRED);
-  nsresult commitTransactionInternal(sqlite3* aNativeConnection);
-  nsresult rollbackTransactionInternal(sqlite3* aNativeConnection);
+  nsresult commitTransactionInternal(const SQLiteMutexAutoLock& aProofOfLock,
+                                     sqlite3* aNativeConnection);
+  nsresult rollbackTransactionInternal(const SQLiteMutexAutoLock& aProofOfLock,
+                                       sqlite3* aNativeConnection);
 
   
 
 
   inline bool connectionReady() { return mDBConn != nullptr; }
+
+  
+
+
+
+
+
+
+
+
+  inline bool transactionInProgress(const SQLiteMutexAutoLock& aProofOfLock) {
+    return !getAutocommit();
+  }
 
   
 
@@ -400,12 +415,6 @@ class Connection final : public mozIStorageConnection,
 
 
   mozilla::Atomic<int32_t> mDefaultTransactionType;
-
-  
-
-
-
-  bool mTransactionInProgress;
 
   
 
