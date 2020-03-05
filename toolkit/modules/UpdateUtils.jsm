@@ -240,7 +240,7 @@ var UpdateUtils = {
         
         return DEFAULT_APP_UPDATE_AUTO;
       })
-      .then(maybeUpdateAutoConfigChanged.bind(this));
+      .then(maybeUpdateAutoConfigChanged);
     updateAutoIOPromise = readPromise;
     return readPromise;
   },
@@ -281,7 +281,10 @@ var UpdateUtils = {
       
       let prefValue = !!enabledValue;
       Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, prefValue);
-      maybeUpdateAutoConfigChanged(prefValue);
+      
+      
+      
+      
       return Promise.resolve(prefValue);
     }
     
@@ -309,7 +312,7 @@ var UpdateUtils = {
           throw e;
         }
       })
-      .then(maybeUpdateAutoConfigChanged.bind(this));
+      .then(maybeUpdateAutoConfigChanged);
     updateAutoIOPromise = writePromise;
     return writePromise;
   },
@@ -357,11 +360,7 @@ async function writeUpdateAutoConfig(enabledValue) {
 
 
 function maybeUpdateAutoConfigChanged(newValue) {
-  
-  if (
-    updateAutoSettingCachedVal !== null &&
-    newValue != updateAutoSettingCachedVal
-  ) {
+  if (newValue !== updateAutoSettingCachedVal) {
     updateAutoSettingCachedVal = newValue;
     Services.obs.notifyObservers(
       null,
@@ -370,6 +369,18 @@ function maybeUpdateAutoConfigChanged(newValue) {
     );
   }
   return newValue;
+}
+
+
+
+if (AppConstants.platform != "win") {
+  Services.prefs.addObserver(
+    PREF_APP_UPDATE_AUTO,
+    async (subject, topic, data) => {
+      let value = await UpdateUtils.getAppUpdateAutoEnabled();
+      maybeUpdateAutoConfigChanged(value);
+    }
+  );
 }
 
 
