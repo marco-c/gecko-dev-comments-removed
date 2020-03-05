@@ -1,9 +1,9 @@
-
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# This module needs to stay Python 2 and 3 compatible
+#
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -59,7 +59,7 @@ class BridgeLogger:
         self.logger = logger
 
     def _find(self, text, *names):
-        
+        # structlog's ConsoleRenderer pads values
         for name in names:
             if name + " " * STRUCTLOG_PAD_SIZE in text:
                 return True
@@ -71,7 +71,7 @@ class BridgeLogger:
     def info(self, message, *args, **kw):
         if not isinstance(message, str):
             message = str(message)
-        
+        # converting Arsenic request/response struct log
         if self._find(message, "request", "response"):
             self.logger.debug(self._convert(message), *args, **kw)
         else:
@@ -95,28 +95,31 @@ def get_logger():
     if new_logger is None:
         new_logger = mozlog.unstructured.getLogger("condprof")
 
-    
+    # wrap the logger into the BridgeLogger
     new_logger = BridgeLogger(new_logger)
 
-    
+    # bridge for Arsenic
     if sys.version_info.major == 3:
-        from arsenic import connection
-        from structlog import wrap_logger
+        try:
+            from arsenic import connection
+            from structlog import wrap_logger
 
-        connection.log = wrap_logger(new_logger)
-
+            connection.log = wrap_logger(new_logger)
+        except ImportError:
+            # Arsenic is not installed for client-only usage
+            pass
     logger = new_logger
     return logger
 
 
-
+# initializing the logger right away
 get_logger()
 
 
 def fresh_profile(profile, customization_data):
-    from mozprofile import create_profile  
+    from mozprofile import create_profile  # NOQA
 
-    
+    # XXX on android we mgiht need to run it on the device?
     logger.info("Creating a fresh profile")
     new_profile = create_profile(app="firefox")
     prefs = customization_data["prefs"]
@@ -172,7 +175,7 @@ def check_exists(archive, server=None):
     if resp.status_code in (302, 303):
         return check_exists(resp.headers["Location"])
 
-    
+    # see Bug 1574854
     if resp.status_code == 200 and "text/html" in resp.headers["Content-Type"]:
         exists = False
     else:
@@ -192,15 +195,15 @@ def download_file(url, target=None):
         target = url.split("/")[-1]
 
     if os.path.exists(target):
-        
-        
+        # XXX for now, reusing downloads without checking them
+        # when we don't have an .etag file
         if etag is None or not os.path.exists(target + ".etag"):
             return target
         with open(target + ".etag") as f:
             current_etag = f.read()
         if etag == current_etag:
             logger.info("Already Downloaded.")
-            
+            # should at least check the size?
             return target
         else:
             logger.info("Changed!")
@@ -258,17 +261,17 @@ def extract_from_dmg(dmg, target):
 def latest_nightly(binary=None):
 
     if binary is None:
-        
+        # we want to use the latest nightly
         nightly_archive = get_firefox_download_link()
         logger.info("Downloading %s" % nightly_archive)
         target = download_file(nightly_archive)
-        
-        
+        # on macOs we just mount the DMG
+        # XXX replace with extract_from_dmg
         if platform.system() == "Darwin":
             cmd = "hdiutil attach -mountpoint /Volumes/Nightly %s"
             os.system(cmd % target)
             binary = "/Volumes/Nightly/Firefox Nightly.app/Contents/MacOS/firefox"
-        
+        # on linux we unpack it
         elif platform.system() == "Linux":
             cmd = "bunzip2 %s" % target
             os.system(cmd)
@@ -282,14 +285,14 @@ def latest_nightly(binary=None):
     try:
         yield binary
     finally:
-        
+        # XXX replace with extract_from_dmg
         if mounted:
             if platform.system() == "Darwin":
                 logger.info("Unmounting Firefox")
                 time.sleep(10)
                 os.system("hdiutil detach /Volumes/Nightly")
             elif platform.system() == "Linux":
-                
+                # XXX we should keep it for next time
                 shutil.rmtree("firefox")
 
 
