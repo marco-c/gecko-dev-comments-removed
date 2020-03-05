@@ -79,7 +79,7 @@ namespace dom {
 enum class AudioContextOperation;
 }
 
-struct GraphInterface {
+struct GraphInterface : public nsISupports {
   
 
 
@@ -173,8 +173,6 @@ struct GraphInterface {
       mResult.as<SwitchDriver>().Switched();
     }
   };
-
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
 
