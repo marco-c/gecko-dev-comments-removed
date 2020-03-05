@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeThemeAndroid.h"
 
@@ -34,10 +34,10 @@ static void ClampRectAndMoveToCenter(nsRect& aRect) {
 static void PaintCheckboxControl(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                                  const nsRect& aRect,
                                  const EventStates& aState) {
-  
-  
-  
-  
+  // Checkbox controls aren't something that we can render on Android
+  // natively. We fake native drawing of appearance: checkbox items
+  // out here, and use hardcoded colours from AndroidColors.h to
+  // simulate native theming.
   RectCornerRadii innerRadii(2, 2, 2, 2);
   nsRect paddingRect =
       nsCSSRendering::GetBoxShadowInnerPaddingRect(aFrame, aRect);
@@ -69,14 +69,14 @@ static void PaintCheckboxControl(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 
 static void PaintCheckMark(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                            const nsRect& aRect) {
-  
+  // Points come from the coordinates on a 7X7 unit box centered at 0,0
   const int32_t checkPolygonX[] = {-3, -1, 3, 3, -1, -3};
   const int32_t checkPolygonY[] = {-1, 1, -3, -1, 3, 1};
   const int32_t checkNumPoints = sizeof(checkPolygonX) / sizeof(int32_t);
-  const int32_t checkSize = 9;  
-                                
+  const int32_t checkSize = 9;  // 2 units of padding on either side
+                                // of the 7x7 unit checkmark
 
-  
+  // Scale the checkmark based on the smallest dimension
   nscoord paintScale = std::min(aRect.width, aRect.height) / checkSize;
   nsPoint paintCenter(aRect.x + aRect.width / 2, aRect.y + aRect.height / 2);
 
@@ -113,10 +113,10 @@ static void PaintIndeterminateMark(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 
 static void PaintRadioControl(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                               const nsRect& aRect, const EventStates& aState) {
-  
-  
-  
-  
+  // Radio controls aren't something that we can render on Android
+  // natively. We fake native drawing of appearance: radio items
+  // out here, and use hardcoded colours to simulate native
+  // theming.
   const nscoord twipsPerPixel = aFrame->PresContext()->DevPixelsToAppUnits(1);
   Rect devPxRect = NSRectToRect(aRect, twipsPerPixel);
   RefPtr<PathBuilder> builder = aDrawTarget->CreatePathBuilder();
@@ -145,8 +145,8 @@ static void PaintRadioControl(nsIFrame* aFrame, DrawTarget* aDrawTarget,
 
 static void PaintCheckedRadioButton(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                                     const nsRect& aRect) {
-  
-  
+  // The dot is an ellipse 2px on all sides smaller than the content-box,
+  // drawn in the foreground color.
   nsRect rect(aRect);
   rect.Deflate(nsPresContext::CSSPixelsToAppUnits(2),
                nsPresContext::CSSPixelsToAppUnits(2));
@@ -207,9 +207,9 @@ bool nsNativeThemeAndroid::GetWidgetPadding(nsDeviceContext* aContext,
                                             StyleAppearance aAppearance,
                                             LayoutDeviceIntMargin* aResult) {
   switch (aAppearance) {
-    
-    
-    
+    // Radios and checkboxes return a fixed size in GetMinimumWidgetSize
+    // and have a meaningful baseline, so they can't have
+    // author-specified padding.
     case StyleAppearance::Checkbox:
     case StyleAppearance::Radio:
       aResult->SizeTo(0, 0, 0, 0);
@@ -234,7 +234,7 @@ nsNativeThemeAndroid::GetMinimumWidgetSize(nsPresContext* aPresContext,
                                            bool* aIsOverridable) {
   if (aAppearance == StyleAppearance::Radio ||
       aAppearance == StyleAppearance::Checkbox) {
-    
+    // 9px + (1px padding + 1px border) * 2
     aResult->width = aPresContext->CSSPixelsToDevPixels(13);
     aResult->height = aPresContext->CSSPixelsToDevPixels(13);
   }
@@ -294,7 +294,7 @@ nsITheme::Transparency nsNativeThemeAndroid::GetWidgetTransparency(
   return eUnknownTransparency;
 }
 
-already_AddRefed<nsITheme> do_GetNativeTheme() {
+already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly() {
   static nsCOMPtr<nsITheme> inst;
 
   if (!inst) {
