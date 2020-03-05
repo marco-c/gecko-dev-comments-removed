@@ -80,6 +80,10 @@ struct AnimationValue {
   nscolor GetColor(nscolor aForegroundColor) const;
 
   
+  
+  bool IsCurrentColor() const;
+
+  
   const mozilla::StyleTransform& GetTransformProperty() const;
   const mozilla::StyleScale& GetScaleProperty() const;
   const mozilla::StyleTranslate& GetTranslateProperty() const;

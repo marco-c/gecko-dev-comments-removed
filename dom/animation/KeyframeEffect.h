@@ -444,6 +444,9 @@ class KeyframeEffect : public AnimationEffect {
   bool mNeedsStyleData = false;
 
   
+  bool mHasCurrentColor = false;
+
+  
   
   
   using BaseValuesHashmap =
