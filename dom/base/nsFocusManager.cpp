@@ -171,7 +171,9 @@ static const char* kObservedPrefs[] = {
     "accessibility.mouse_focuses_formcontrol", "focusmanager.testmode",
     nullptr};
 
-nsFocusManager::nsFocusManager() : mEventHandlingNeedsFlush(false) {}
+nsFocusManager::nsFocusManager()
+    : mActiveBrowsingContextInContentSetFromOtherProcess(false),
+      mEventHandlingNeedsFlush(false) {}
 
 nsFocusManager::~nsFocusManager() {
   Preferences::UnregisterCallbacks(nsFocusManager::PrefChanged, kObservedPrefs,
@@ -647,13 +649,13 @@ nsFocusManager::WindowRaised(mozIDOMWindowProxy* aWindow) {
     BrowsingContext* bc = window->GetBrowsingContext();
     if (bc == bc->Top()) {
       BrowsingContext* active = GetActiveBrowsingContext();
-      if (active == bc) {
+      if (active == bc && !mActiveBrowsingContextInContentSetFromOtherProcess) {
         
         
         return NS_OK;
       }
 
-      if (active) {
+      if (active && active != bc) {
         if (active->IsInProcess()) {
           WindowLowered(active->GetDOMWindow());
         }
@@ -4458,28 +4460,32 @@ void nsFocusManager::SetActiveBrowsingContextInContent(
   mozilla::dom::ContentChild* contentChild =
       mozilla::dom::ContentChild::GetSingleton();
   MOZ_ASSERT(contentChild);
-  if (aContext) {
-    contentChild->SendSetActiveBrowsingContext(aContext);
-  } else if (mActiveBrowsingContextInContent) {
-    
-    
-    
-    
-    nsPIDOMWindowOuter* outer = mActiveBrowsingContextInContent->GetDOMWindow();
-    if (outer) {
-      nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
-      if (inner) {
-        WindowGlobalChild* globalChild = inner->GetWindowGlobalChild();
-        if (globalChild) {
-          RefPtr<BrowserChild> browserChild = globalChild->GetBrowserChild();
-          if (browserChild && !browserChild->IsDestroyed()) {
-            contentChild->SendUnsetActiveBrowsingContext(
-                mActiveBrowsingContextInContent);
+  if (aContext != mActiveBrowsingContextInContent) {
+    if (aContext) {
+      contentChild->SendSetActiveBrowsingContext(aContext);
+    } else if (mActiveBrowsingContextInContent) {
+      
+      
+      
+      
+      nsPIDOMWindowOuter* outer =
+          mActiveBrowsingContextInContent->GetDOMWindow();
+      if (outer) {
+        nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
+        if (inner) {
+          WindowGlobalChild* globalChild = inner->GetWindowGlobalChild();
+          if (globalChild) {
+            RefPtr<BrowserChild> browserChild = globalChild->GetBrowserChild();
+            if (browserChild && !browserChild->IsDestroyed()) {
+              contentChild->SendUnsetActiveBrowsingContext(
+                  mActiveBrowsingContextInContent);
+            }
           }
         }
       }
     }
   }
+  mActiveBrowsingContextInContentSetFromOtherProcess = false;
   mActiveBrowsingContextInContent = aContext;
 }
 
@@ -4496,6 +4502,7 @@ void nsFocusManager::SetActiveBrowsingContextFromOtherProcess(
     
     return;
   }
+  mActiveBrowsingContextInContentSetFromOtherProcess = true;
   mActiveBrowsingContextInContent = aContext;
 }
 
