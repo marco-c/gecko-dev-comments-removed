@@ -2,14 +2,14 @@
 
 
 
-use api::{ColorF, ImageKey, YuvColorSpace, YuvFormat, ImageRendering};
+use api::{ColorF, YuvColorSpace, YuvFormat, ImageRendering};
 use api::units::{DeviceRect, DeviceIntSize, DeviceIntRect, DeviceIntPoint, WorldRect};
 use api::units::{DevicePixelScale, DevicePoint, PictureRect, TexelRect};
 use crate::batch::{resolve_image, get_buffer_kind};
 use crate::gpu_cache::GpuCache;
 use crate::gpu_types::{ZBufferId, ZBufferIdGenerator};
 use crate::internal_types::TextureSource;
-use crate::picture::{ResolvedSurfaceTexture, TileCacheInstance, TileSurface};
+use crate::picture::{ImageDependency, ResolvedSurfaceTexture, TileCacheInstance, TileSurface};
 use crate::prim_store::DeferredResolve;
 use crate::renderer::ImageBufferKind;
 use crate::resource_cache::{ImageRequest, ResourceCache};
@@ -92,7 +92,7 @@ pub struct ExternalSurfaceDescriptor {
     pub world_rect: WorldRect,
     pub device_rect: DeviceRect,
     pub clip_rect: DeviceRect,
-    pub image_keys: [ImageKey; 3],
+    pub image_dependencies: [ImageDependency; 3],
     pub image_rendering: ImageRendering,
     pub yuv_color_space: YuvColorSpace,
     pub yuv_format: YuvFormat,
@@ -132,6 +132,7 @@ pub struct ResolvedExternalSurface {
     pub z_id: ZBufferId,
 
     
+    pub image_dependencies: [ImageDependency; 3],
     pub yuv_planes: [YuvPlaneDescriptor; 3],
     pub yuv_color_space: YuvColorSpace,
     pub yuv_format: YuvFormat,
@@ -229,6 +230,11 @@ pub struct CompositeSurfaceDescriptor {
     pub surface_id: Option<NativeSurfaceId>,
     pub offset: DevicePoint,
     pub clip_rect: DeviceRect,
+    
+    
+    
+    
+    pub image_dependencies: [ImageDependency; 3],
 }
 
 
@@ -439,7 +445,7 @@ impl CompositeState {
             let mut valid_plane_count = 0;
 
             for i in 0 .. required_plane_count {
-                let key = external_surface.image_keys[i];
+                let key = external_surface.image_dependencies[i].key;
                 let plane = &mut yuv_planes[i];
 
                 let request = ImageRequest {
@@ -491,6 +497,7 @@ impl CompositeState {
                 yuv_format: external_surface.yuv_format,
                 yuv_rescale: external_surface.yuv_rescale,
                 image_buffer_kind: get_buffer_kind(yuv_planes[0].texture),
+                image_dependencies: external_surface.image_dependencies,
                 yuv_planes,
             });
         }
@@ -501,8 +508,30 @@ impl CompositeState {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.opaque),
                     offset: tile_cache.device_position,
                     clip_rect: device_clip_rect,
+                    image_dependencies: [ImageDependency::INVALID; 3],
                 }
             );
+        }
+
+        
+        
+        if let CompositorKind::Draw { .. } = self.compositor_kind {
+            
+            
+            
+            for external_surface in &self.external_surfaces {
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        
+                        
+                        
+                        surface_id: None,
+                        offset: external_surface.device_rect.origin,
+                        clip_rect: external_surface.clip_rect,
+                        image_dependencies: external_surface.image_dependencies,
+                    }
+                );
+            }
         }
 
         if visible_alpha_tile_count > 0 {
@@ -511,6 +540,7 @@ impl CompositeState {
                     surface_id: tile_cache.native_surface.as_ref().map(|s| s.alpha),
                     offset: tile_cache.device_position,
                     clip_rect: device_clip_rect,
+                    image_dependencies: [ImageDependency::INVALID; 3],
                 }
             );
         }
