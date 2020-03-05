@@ -135,30 +135,6 @@ public final class GeckoBundle implements Parcelable {
 
 
 
-
-    public Boolean getBooleanObject(final String key, final Boolean defaultValue) {
-        final Object value = mMap.get(key);
-        return value == null ? defaultValue : (Boolean) value;
-    }
-
-    
-
-
-
-
-
-
-    public Boolean getBooleanObject(final String key) {
-        return getBooleanObject(key, null);
-    }
-
-    
-
-
-
-
-
-
     public boolean[] getBooleanArray(final String key) {
         final Object value = mMap.get(key);
         return value == null ? null :
@@ -233,30 +209,6 @@ public final class GeckoBundle implements Parcelable {
 
     public int getInt(final String key) {
         return getInt(key, 0);
-    }
-
-    
-
-
-
-
-
-
-
-    public Integer getInteger(final String key, final Integer defaultValue) {
-        final Object value = mMap.get(key);
-        return value == null ? defaultValue : ((Integer) value);
-    }
-
-    
-
-
-
-
-
-
-    public Integer getInteger(final String key) {
-        return getInteger(key, null);
     }
 
     private static int[] getIntArray(final double[] array) {

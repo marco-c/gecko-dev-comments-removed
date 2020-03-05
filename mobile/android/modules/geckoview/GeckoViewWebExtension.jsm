@@ -442,17 +442,6 @@ var GeckoViewWebExtension = {
     debug`observe ${aTopic}`;
 
     switch (aTopic) {
-      case "testing-installed-addon":
-      case "testing-uninstalled-addon": {
-        
-        
-        
-        EventDispatcher.instance.sendRequest({
-          type: "GeckoView:WebExtension:DebuggerListUpdated",
-        });
-        break;
-      }
-
       case "devtools-installed-addon": {
         EventDispatcher.instance.sendRequest({
           type: "GeckoView:WebExtension:DebuggerListUpdated",
@@ -861,5 +850,3 @@ GeckoViewWebExtension.browserActions = new WeakMap();
 
 GeckoViewWebExtension.pageActions = new WeakMap();
 Services.obs.addObserver(GeckoViewWebExtension, "devtools-installed-addon");
-Services.obs.addObserver(GeckoViewWebExtension, "testing-installed-addon");
-Services.obs.addObserver(GeckoViewWebExtension, "testing-uninstalled-addon");

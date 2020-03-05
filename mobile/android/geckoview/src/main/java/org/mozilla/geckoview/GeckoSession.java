@@ -335,7 +335,86 @@ public class GeckoSession implements Parcelable {
             }
         };
 
-    private final WebExtension.SessionController mWebExtensionController;
+    private final WebExtension.Listener mWebExtensionListener;
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public @Nullable WebExtension.MessageDelegate getMessageDelegate(
+            final @NonNull WebExtension webExtension,
+            final @NonNull String nativeApp) {
+        return mWebExtensionListener.getMessageDelegate(webExtension, nativeApp);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setMessageDelegate(final @NonNull WebExtension webExtension,
+                                   final @Nullable WebExtension.MessageDelegate delegate,
+                                   final @NonNull String nativeApp) {
+        mWebExtensionListener.setMessageDelegate(webExtension, delegate, nativeApp);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setWebExtensionActionDelegate(final @NonNull WebExtension webExtension,
+                                              final @Nullable WebExtension.ActionDelegate delegate) {
+        mWebExtensionListener.setActionDelegate(webExtension, delegate);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    @Nullable
+    public WebExtension.ActionDelegate getWebExtensionActionDelegate(
+            final @NonNull WebExtension webExtension) {
+        return mWebExtensionListener.getActionDelegate(webExtension);
+    }
 
     private final GeckoSessionHandler<ContentDelegate> mContentHandler =
         new GeckoSessionHandler<ContentDelegate>(
@@ -1188,7 +1267,7 @@ public class GeckoSession implements Parcelable {
         mSettings = new GeckoSessionSettings(settings, this);
         mListener.registerListeners();
 
-        mWebExtensionController = new WebExtension.SessionController(this);
+        mWebExtensionListener = new WebExtension.Listener(this);
 
         mAutofillSupport = new Autofill.Support(this);
         mAutofillSupport.registerListeners();
@@ -1236,7 +1315,7 @@ public class GeckoSession implements Parcelable {
                     mEventDispatcher, mAccessibility != null ? mAccessibility.nativeProvider : null,
                     createInitData());
             onWindowChanged(WINDOW_TRANSFER_IN,  false);
-            mWebExtensionController.setRuntime(mWindow.runtime);
+            mWebExtensionListener.runtime = mWindow.runtime;
         }
     }
 
@@ -1357,7 +1436,7 @@ public class GeckoSession implements Parcelable {
         final boolean isRemote = runtime.getSettings().getUseMultiprocess();
 
         mWindow = new Window(runtime, this, mNativeQueue);
-        mWebExtensionController.setRuntime(runtime);
+        mWebExtensionListener.runtime = runtime;
 
         onWindowChanged(WINDOW_OPEN,  true);
 
@@ -1806,17 +1885,6 @@ public class GeckoSession implements Parcelable {
         final GeckoBundle msg = new GeckoBundle(1);
         msg.putInt("index", index);
         mEventDispatcher.dispatch("GeckoView:GotoHistoryIndex", msg);
-    }
-
-    
-
-
-
-
-
-    @UiThread
-    public @NonNull WebExtension.SessionController getWebExtensionController() {
-        return mWebExtensionController;
     }
 
     

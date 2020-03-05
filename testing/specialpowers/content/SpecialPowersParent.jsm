@@ -6,9 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["SpecialPowersParent"];
 
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -967,11 +964,6 @@ class SpecialPowersParent extends JSWindowActorParent {
             
             
             return;
-          }
-          if (AppConstants.platform === "android") {
-            
-            
-            Services.obs.notifyObservers(null, "testing-installed-addon", id);
           }
           
           
