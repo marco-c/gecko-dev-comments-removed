@@ -414,11 +414,175 @@ public class WebExtension {
 
 
 
+
+
+
         @UiThread
         @NonNull
         default GeckoResult<AllowOrDeny> onCloseTab(@Nullable WebExtension source,
                                                     @NonNull GeckoSession session)  {
             return GeckoResult.DENY;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        @NonNull
+        default GeckoResult<AllowOrDeny> onUpdateTab(final @NonNull WebExtension extension,
+                                                     final @NonNull GeckoSession session,
+                                                     final @NonNull UpdateTabDetails details) {
+            return GeckoResult.DENY;
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+    public static class UpdateTabDetails {
+        
+
+
+
+
+        @Nullable
+        public final Boolean active;
+        
+
+
+
+        @Nullable
+        public final Boolean autoDiscardable;
+        
+
+
+
+        @Nullable
+        public final Boolean highlighted;
+        
+
+
+        @Nullable
+        public final Boolean muted;
+        
+
+
+        @Nullable
+        public final Boolean pinned;
+        
+
+
+
+
+
+
+        @Nullable
+        public final String url;
+
+        
+        protected UpdateTabDetails() {
+            active = null;
+            autoDiscardable = null;
+            highlighted = null;
+            muted = null;
+            pinned = null;
+            url = null;
+        }
+
+         UpdateTabDetails(final GeckoBundle bundle) {
+            active = bundle.getBooleanObject("active");
+            autoDiscardable = bundle.getBooleanObject("autoDiscardable");
+            highlighted = bundle.getBooleanObject("highlighted");
+            muted = bundle.getBooleanObject("muted");
+            pinned = bundle.getBooleanObject("pinned");
+            url = bundle.getString("url");
+        }
+    }
+
+    
+
+
+
+
+
+
+
+    public static class CreateTabDetails {
+        
+
+
+
+
+        @Nullable
+        public final Boolean active;
+        
+
+
+
+
+
+        @Nullable
+        public final Boolean discarded;
+        
+
+
+        @Nullable
+        public final Integer index;
+        
+
+
+        @Nullable
+        public final Boolean openInReaderMode;
+        
+
+
+        @Nullable
+        public final Boolean pinned;
+        
+
+
+
+
+
+
+        @Nullable
+        public final String url;
+
+        
+        protected CreateTabDetails() {
+            active = null;
+            discarded = null;
+            index = null;
+            openInReaderMode = null;
+            pinned = null;
+            url = null;
+        }
+
+         CreateTabDetails(final GeckoBundle bundle) {
+            active = bundle.getBooleanObject("active");
+            discarded = bundle.getBooleanObject("discarded");
+            index = bundle.getInteger("index");
+            openInReaderMode = bundle.getBooleanObject("openInReaderMode");
+            pinned = bundle.getBooleanObject("pinned");
+            url = bundle.getString("url");
         }
     }
 
@@ -440,11 +604,10 @@ public class WebExtension {
 
 
 
-
-
         @UiThread
         @Nullable
-        default GeckoResult<GeckoSession> onNewTab(@Nullable WebExtension source, @Nullable String uri) {
+        default GeckoResult<GeckoSession> onNewTab(@NonNull WebExtension source,
+                                                   @NonNull CreateTabDetails createDetails) {
             return null;
         }
     }
@@ -700,6 +863,7 @@ public class WebExtension {
                 mEventDispatcher.registerUiThreadListener(
                         this,
                         "GeckoView:WebExtension:NewTab",
+                        "GeckoView:WebExtension:UpdateTab",
                         "GeckoView:WebExtension:CloseTab"
                 );
                 mTabDelegateRegistered = true;
