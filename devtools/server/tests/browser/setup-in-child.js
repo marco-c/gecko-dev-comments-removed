@@ -15,7 +15,7 @@ exports.callParent = function() {
     
     conn.setupInParent({
       module:
-        "chrome://mochitests/content/chrome/devtools/server/tests/chrome/setup-in-parent.js",
+        "chrome://mochitests/content/browser/devtools/server/tests/browser/setup-in-parent.js",
       setupParent: "setupParent",
       args: [{ one: true }, 2, "three"],
     });
