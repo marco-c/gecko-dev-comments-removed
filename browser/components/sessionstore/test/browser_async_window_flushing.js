@@ -38,8 +38,12 @@ add_task(async function test_add_interesting_window() {
     content.location = newPage;
   });
 
-  await promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
-
+  if (Services.prefs.getBoolPref("fission.sessionHistoryInParent", false)) {
+    let tab = newWin.gBrowser.selectedTab;
+    await promiseOnHistoryReplaceEntry(tab);
+  } else {
+    await promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
+  }
   
   
   browser.userTypedValue = null;
