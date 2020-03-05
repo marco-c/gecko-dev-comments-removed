@@ -641,8 +641,6 @@ class gfxUserFontEntry : public gfxFontEntry {
     MOZ_ASSERT_UNREACHABLE("not meaningful for a userfont placeholder");
   }
 
-  static void Shutdown() { sFontLoadingThread = nullptr; }
-
  protected:
   struct OTSMessage {
     nsCString mMessage;
@@ -680,7 +678,7 @@ class gfxUserFontEntry : public gfxFontEntry {
                              nsIFontLoadCompleteCallback* aCallback);
 
   
-  void StartPlatformFontLoadOnWorkerThread(
+  void StartPlatformFontLoadOnBackgroundThread(
       const uint8_t* aFontData, uint32_t aLength,
       nsMainThreadPtrHandle<nsIFontLoadCompleteCallback> aCallback);
 
@@ -749,8 +747,6 @@ class gfxUserFontEntry : public gfxFontEntry {
   gfxUserFontSet* MOZ_NON_OWNING_REF
       mFontSet;  
   RefPtr<gfxFontSrcPrincipal> mPrincipal;
-
-  static mozilla::StaticRefPtr<mozilla::LazyIdleThread> sFontLoadingThread;
 };
 
 #endif 
