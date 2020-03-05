@@ -240,10 +240,8 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         }
 
         RefPtr<Http3Stream> stream = mStreamIdHash.Get(id);
+        MOZ_ASSERT(stream);
         if (!stream) {
-          
-          
-          
           LOG(
               ("Http3Session::ProcessEvents - stream not found "
                "stream_id=0x%" PRIx64 " [this=%p].",
@@ -292,6 +290,18 @@ nsresult Http3Session::ProcessEvents(uint32_t count, uint32_t* countWritten,
         }
         break;
       }
+      case Http3Event::Tag::DataWritable:
+        MOZ_ASSERT(mState == CONNECTED);
+        LOG(("Http3Session::ProcessEvents - DataWritable"));
+        if (mReadyForWriteButBlocked.RemoveElement(
+                event.data_writable.stream_id)) {
+          RefPtr<Http3Stream> stream =
+              mStreamIdHash.Get(event.data_writable.stream_id);
+          if (stream) {
+            mReadyForWrite.Push(stream);
+          }
+        }
+        break;
       case Http3Event::Tag::Reset:
         LOG(("Http3Session::ProcessEvents - Reset"));
         ResetRecvd(event.reset.stream_id, event.reset.error);
@@ -534,6 +544,7 @@ static void RemoveStreamFromQueue(Http3Stream* aStream, nsDeque& queue) {
 void Http3Session::RemoveStreamFromQueues(Http3Stream* aStream) {
   RemoveStreamFromQueue(aStream, mReadyForWrite);
   RemoveStreamFromQueue(aStream, mQueuedStreams);
+  mReadyForWriteButBlocked.RemoveElement(aStream->StreamId());
 }
 
 
@@ -726,8 +737,10 @@ nsresult Http3Session::ReadSegmentsAgain(nsAHttpSegmentReader* reader,
             this, static_cast<uint32_t>(rv)));
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
         
-        
-        rv = NS_OK;
+        MOZ_ASSERT(!mReadyForWriteButBlocked.Contains(stream->StreamId()));
+        if (!mReadyForWriteButBlocked.Contains(stream->StreamId())) {
+          mReadyForWriteButBlocked.AppendElement(stream->StreamId());
+        }
       } else if (ASpdySession::SoftStreamError(rv)) {
         CloseStream(stream, rv);
         LOG3(("Http3Session::ReadSegments %p soft error override\n", this));
@@ -1066,7 +1079,8 @@ void Http3Session::TransactionHasDataToWrite(nsAHttpTransaction* caller) {
   LOG3(("Http3Session::TransactionHasDataToWrite %p ID is 0x%" PRIx64, this,
         stream->StreamId()));
 
-  if (!IsClosing()) {
+  MOZ_ASSERT(!mReadyForWriteButBlocked.Contains(stream->StreamId()));
+  if (!IsClosing() && !mReadyForWriteButBlocked.Contains(stream->StreamId())) {
     mReadyForWrite.Push(stream);
     Unused << mConnection->ResumeSend();
   } else {

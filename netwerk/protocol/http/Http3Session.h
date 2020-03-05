@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=4 sw=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef Http3Session_H__
 #define Http3Session_H__
@@ -24,7 +24,7 @@ class HttpConnectionUDP;
 class Http3Stream;
 class QuicSocketControl;
 
-
+// IID for the Http3Session interface
 #define NS_HTTP3SESSION_IID                          \
   {                                                  \
     0x8fc82aaf, 0xc4ef, 0x46ed, {                    \
@@ -60,19 +60,19 @@ class Http3Session final : public nsAHttpTransaction,
 
   bool CanReuse();
 
-  
+  // TODO: use this.
   bool RoomForMoreStreams() { return mQueuedStreams.GetSize() == 0; }
 
-  
+  // We will let neqo-transport handle connection timeouts.
   uint32_t ReadTimeoutTick(PRIntervalTime now) { return UINT32_MAX; }
 
-  
+  // overload of nsAHttpTransaction
   MOZ_MUST_USE nsresult ReadSegmentsAgain(nsAHttpSegmentReader*, uint32_t,
                                           uint32_t*, bool*) final;
   MOZ_MUST_USE nsresult WriteSegmentsAgain(nsAHttpSegmentWriter*, uint32_t,
                                            uint32_t*, bool*) final;
 
-  
+  // The folowing functions are used by Http3Stream:
   nsresult TryActivating(const nsACString& aMethod, const nsACString& aScheme,
                          const nsACString& aHost, const nsACString& aPath,
                          const nsACString& aHeaders, uint64_t* aStreamId,
@@ -102,8 +102,8 @@ class Http3Session final : public nsAHttpTransaction,
 
   nsISocketTransport* SocketTransport() { return mSocketTransport; }
 
-  
-  
+  // This function will be called by QuicSocketControl when the certificate
+  // verification is done.
   void Authenticated(int32_t aError);
 
   nsresult ProcessOutputAndEvents();
@@ -143,6 +143,7 @@ class Http3Session final : public nsAHttpTransaction,
       mStreamTransactionHash;
 
   nsDeque mReadyForWrite;
+  nsTArray<uint64_t> mReadyForWriteButBlocked;
   nsDeque mQueuedStreams;
 
   enum State { INITIALIZING, CONNECTED, CLOSING, CLOSED } mState;
@@ -160,7 +161,7 @@ class Http3Session final : public nsAHttpTransaction,
 
   RefPtr<HttpConnectionUDP> mSegmentReaderWriter;
 
-  
+  // The underlying socket transport object is needed to propogate some events
   RefPtr<nsISocketTransport> mSocketTransport;
 
   nsCOMPtr<nsITimer> mTimer;
@@ -172,7 +173,7 @@ class Http3Session final : public nsAHttpTransaction,
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http3Session, NS_HTTP3SESSION_IID);
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // Http3Session_H__
