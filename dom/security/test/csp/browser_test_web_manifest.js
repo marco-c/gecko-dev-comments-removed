@@ -17,10 +17,6 @@ const httpsManifest = `${path}file_web_manifest_https.html`;
 const server = `${path}file_testserver.sjs`;
 const defaultURL = new URL(`http://example.org${server}`);
 const secureURL = new URL(`https://example.com:443${server}`);
-
-
-Services.prefs.setBoolPref("dom.manifest.enabled", true);
-
 const tests = [
   
   

@@ -1,9 +1,6 @@
 
 
 "use strict";
-
-Services.prefs.setBoolPref("dom.manifest.enabled", true);
-
 const { ManifestIcons } = ChromeUtils.import(
   "resource://gre/modules/ManifestIcons.jsm"
 );
