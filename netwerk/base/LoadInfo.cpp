@@ -378,17 +378,12 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   }
 
   
-  mOuterWindowID = aOuterWindow->WindowID();
+  mOuterWindowID = mParentOuterWindowID = mTopOuterWindowID =
+      aOuterWindow->WindowID();
   RefPtr<BrowsingContext> bc = aOuterWindow->GetBrowsingContext();
   mBrowsingContextID = bc ? bc->Id() : 0;
 
   
-  
-  nsCOMPtr<nsPIDOMWindowOuter> parent =
-      aOuterWindow->GetInProcessScriptableParent();
-  mParentOuterWindowID = parent ? parent->WindowID() : 0;
-  mTopOuterWindowID = FindTopOuterWindowID(aOuterWindow);
-
   nsGlobalWindowInner* innerWindow =
       nsGlobalWindowInner::Cast(aOuterWindow->GetCurrentInnerWindow());
   if (innerWindow) {
@@ -401,11 +396,17 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   nsCOMPtr<nsIDocShell> docShell = aOuterWindow->GetDocShell();
   MOZ_ASSERT(docShell);
   mOriginAttributes = nsDocShell::Cast(docShell)->GetOriginAttributes();
-  mAncestorPrincipals = nsDocShell::Cast(docShell)->AncestorPrincipals();
-  mAncestorOuterWindowIDs =
-      nsDocShell::Cast(docShell)->AncestorOuterWindowIDs();
-  MOZ_DIAGNOSTIC_ASSERT(mAncestorPrincipals.Length() ==
-                        mAncestorOuterWindowIDs.Length());
+
+  
+  
+  if (aSecurityFlags != nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK) {
+    MOZ_ASSERT(aOuterWindow->GetInProcessScriptableParent() == aOuterWindow);
+    MOZ_ASSERT(mTopOuterWindowID == FindTopOuterWindowID(aOuterWindow));
+    MOZ_DIAGNOSTIC_ASSERT(
+        nsDocShell::Cast(docShell)->AncestorPrincipals().IsEmpty());
+    MOZ_DIAGNOSTIC_ASSERT(
+        nsDocShell::Cast(docShell)->AncestorOuterWindowIDs().IsEmpty());
+  }
 
 #ifdef DEBUG
   if (docShell->GetBrowsingContext()->IsChrome()) {
