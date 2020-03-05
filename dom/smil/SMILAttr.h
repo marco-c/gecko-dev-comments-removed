@@ -92,7 +92,7 @@ class SMILAttr {
   
 
 
-  virtual ~SMILAttr() {}
+  virtual ~SMILAttr() = default;
 };
 
 }  
