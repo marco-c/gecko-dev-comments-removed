@@ -777,16 +777,10 @@ void DocumentLoadListener::SerializeRedirectData(
     redirectLoadInfo->AppendRedirectHistoryEntry(entry, true);
   }
 
-  if (!aIsCrossProcess) {
-    
-    
-    
-    
-    const Maybe<ClientInfo>& reservedClientInfo =
-        channelLoadInfo->GetReservedClientInfo();
-    if (reservedClientInfo) {
-      redirectLoadInfo->SetReservedClientInfo(*reservedClientInfo);
-    }
+  const Maybe<ClientInfo>& reservedClientInfo =
+      channelLoadInfo->GetReservedClientInfo();
+  if (reservedClientInfo) {
+    redirectLoadInfo->SetReservedClientInfo(*reservedClientInfo);
   }
 
   
@@ -941,42 +935,8 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   RedirectToRealChannel(redirectFlags, newLoadFlags, aDestinationProcess)
       ->Then(
           GetCurrentThreadSerialEventTarget(), __func__,
-          [self](Tuple<nsresult, Maybe<LoadInfoArgs>>&& aResponse) {
-            if (NS_SUCCEEDED(Get<0>(aResponse))) {
-              nsCOMPtr<nsILoadInfo> newLoadInfo;
-              MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(
-                  Get<1>(aResponse), getter_AddRefs(newLoadInfo)));
-              if (newLoadInfo) {
-                
-                
-                
-                
-                
-                nsCOMPtr<nsILoadInfo> oldLoadInfo;
-                self->mChannel->GetLoadInfo(getter_AddRefs(oldLoadInfo));
-                MOZ_ASSERT(oldLoadInfo);
-                Maybe<ClientInfo> oldClientInfo =
-                    oldLoadInfo->GetReservedClientInfo();
-                Maybe<ServiceWorkerDescriptor> oldController =
-                    oldLoadInfo->GetController();
-                Maybe<ClientInfo> newClientInfo =
-                    newLoadInfo->GetReservedClientInfo();
-                Maybe<ServiceWorkerDescriptor> newController =
-                    newLoadInfo->GetController();
-                if (oldClientInfo.isSome() && newClientInfo.isSome() &&
-                    newController.isSome() && oldController.isSome() &&
-                    newController.ref() == oldController.ref()) {
-                  RefPtr<ServiceWorkerManager> swMgr =
-                      ServiceWorkerManager::GetInstance();
-                  MOZ_ASSERT(swMgr);
-                  swMgr->UpdateControlledClient(oldClientInfo.ref(),
-                                                newClientInfo.ref(),
-                                                newController.ref());
-                }
-                self->mChannel->SetLoadInfo(newLoadInfo);
-              }
-            }
-            self->RedirectToRealChannelFinished(Get<0>(aResponse));
+          [self](const nsresult& aResponse) {
+            self->RedirectToRealChannelFinished(aResponse);
           },
           [self](const mozilla::ipc::ResponseRejectReason) {
             self->RedirectToRealChannelFinished(NS_ERROR_FAILURE);

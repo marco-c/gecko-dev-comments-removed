@@ -43,6 +43,12 @@ nsresult AddClientChannelHelperInChild(nsIChannel* aChannel,
 nsresult AddClientChannelHelperInParent(nsIChannel* aChannel,
                                         Maybe<ClientInfo>&& aInitialClientInfo);
 
+
+
+
+void CreateReservedSourceIfNeeded(nsIChannel* aChannel,
+                                  nsISerialEventTarget* aEventTarget);
+
 }  
 }  
 
