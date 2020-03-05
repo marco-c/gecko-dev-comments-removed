@@ -1144,12 +1144,12 @@ nsresult IDBDatabase::RenameObjectStore(int64_t aObjectStoreId,
   
   
 
-  for (const auto& objSpec : objectStores) {
+  for (auto& objSpec : objectStores) {
     const bool idIsCurrent = objSpec.metadata().id() == aObjectStoreId;
 
     if (idIsCurrent) {
       MOZ_ASSERT(!foundObjectStoreSpec);
-      foundObjectStoreSpec = const_cast<ObjectStoreSpec*>(&objSpec);
+      foundObjectStoreSpec = &objSpec;
     }
 
     if (objSpec.metadata().name() == aName) {
