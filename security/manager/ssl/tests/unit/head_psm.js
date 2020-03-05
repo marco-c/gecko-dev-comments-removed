@@ -479,6 +479,27 @@ function add_connection_test(
   aAfterStreamOpen,
    aOriginAttributes
 ) {
+  add_test(function() {
+    if (aBeforeConnect) {
+      aBeforeConnect();
+    }
+    asyncConnectTo(
+      aHost,
+      aExpectedResult,
+      aWithSecurityInfo,
+      aAfterStreamOpen,
+      aOriginAttributes
+    ).then(run_next_test);
+  });
+}
+
+async function asyncConnectTo(
+  aHost,
+  aExpectedResult,
+   aWithSecurityInfo = undefined,
+   aAfterStreamOpen = undefined,
+   aOriginAttributes = undefined
+) {
   const REMOTE_PORT = 8443;
 
   function Connection(host) {
@@ -557,30 +578,22 @@ function add_connection_test(
     return connection.go();
   }
 
-  add_test(function() {
-    if (aBeforeConnect) {
-      aBeforeConnect();
-    }
-    connectTo(aHost).then(function(conn) {
-      info("handling " + aHost);
-      let expectedNSResult =
-        aExpectedResult == PRErrorCodeSuccess
-          ? Cr.NS_OK
-          : getXPCOMStatusFromNSS(aExpectedResult);
-      Assert.equal(
-        conn.result,
-        expectedNSResult,
-        "Actual and expected connection result should match"
+  return connectTo(aHost).then(function(conn) {
+    info("handling " + aHost);
+    let expectedNSResult =
+      aExpectedResult == PRErrorCodeSuccess
+        ? Cr.NS_OK
+        : getXPCOMStatusFromNSS(aExpectedResult);
+    Assert.equal(
+      conn.result,
+      expectedNSResult,
+      "Actual and expected connection result should match"
+    );
+    if (aWithSecurityInfo) {
+      aWithSecurityInfo(
+        conn.transport.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo)
       );
-      if (aWithSecurityInfo) {
-        aWithSecurityInfo(
-          conn.transport.securityInfo.QueryInterface(
-            Ci.nsITransportSecurityInfo
-          )
-        );
-      }
-      run_next_test();
-    });
+    }
   });
 }
 
@@ -614,6 +627,16 @@ function _getBinaryUtil(binaryUtilName) {
 
 
 function _setupTLSServerTest(serverBinName, certsPath, addDefaultRoot) {
+  asyncStartTLSTestServer(serverBinName, certsPath, addDefaultRoot).then(
+    run_next_test
+  );
+}
+
+async function asyncStartTLSTestServer(
+  serverBinName,
+  certsPath,
+  addDefaultRoot
+) {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
@@ -636,19 +659,21 @@ function _setupTLSServerTest(serverBinName, certsPath, addDefaultRoot) {
   envSvc.set("MOZ_TLS_SERVER_CALLBACK_PORT", CALLBACK_PORT);
 
   let httpServer = new HttpServer();
-  httpServer.registerPathHandler("/", function handleServerCallback(
-    aRequest,
-    aResponse
-  ) {
-    aResponse.setStatusLine(aRequest.httpVersion, 200, "OK");
-    aResponse.setHeader("Content-Type", "text/plain");
-    let responseBody = "OK!";
-    aResponse.bodyOutputStream.write(responseBody, responseBody.length);
-    executeSoon(function() {
-      httpServer.stop(run_next_test);
+  let serverReady = new Promise(resolve => {
+    httpServer.registerPathHandler("/", function handleServerCallback(
+      aRequest,
+      aResponse
+    ) {
+      aResponse.setStatusLine(aRequest.httpVersion, 200, "OK");
+      aResponse.setHeader("Content-Type", "text/plain");
+      let responseBody = "OK!";
+      aResponse.bodyOutputStream.write(responseBody, responseBody.length);
+      executeSoon(function() {
+        httpServer.stop(resolve);
+      });
     });
+    httpServer.start(CALLBACK_PORT);
   });
-  httpServer.start(CALLBACK_PORT);
 
   let serverBin = _getBinaryUtil(serverBinName);
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
@@ -662,6 +687,8 @@ function _setupTLSServerTest(serverBinName, certsPath, addDefaultRoot) {
   registerCleanupFunction(function() {
     process.kill();
   });
+
+  await serverReady;
 }
 
 
@@ -1164,4 +1191,24 @@ function getSubjectAndSPKIHash(nsCert) {
   let subjectString = arrayToString(subject);
   let spkiHashString = nsCert.sha256SubjectPublicKeyInfoDigest;
   return { subjectString, spkiHashString };
+}
+
+function run_certutil_on_directory(directory, args, expectSuccess = true) {
+  let envSvc = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  let greBinDir = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  envSvc.set("DYLD_LIBRARY_PATH", greBinDir.path);
+  
+  
+  envSvc.set("LD_LIBRARY_PATH", greBinDir.path + ":/data/local/xpcb");
+  let certutilBin = _getBinaryUtil("certutil");
+  let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+  process.init(certutilBin);
+  args.push("-d");
+  args.push(`sql:${directory}`);
+  process.run(true, args, args.length);
+  if (expectSuccess) {
+    Assert.equal(process.exitValue, 0, "certutil should succeed");
+  }
 }

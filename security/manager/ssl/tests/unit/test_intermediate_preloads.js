@@ -164,7 +164,9 @@ add_task(
     
     addCertFromFile(certDB, "test_intermediate_preloads/ca.pem", "CTu,,");
 
-    let ee_cert = constructCertFromFile("test_intermediate_preloads/ee.pem");
+    let ee_cert = constructCertFromFile(
+      "test_intermediate_preloads/default-ee.pem"
+    );
     notEqual(ee_cert, null, "EE cert should have successfully loaded");
 
     equal(
@@ -261,7 +263,9 @@ add_task(
     
     addCertFromFile(certDB, "test_intermediate_preloads/ca.pem", "CTu,,");
 
-    let ee_cert = constructCertFromFile("test_intermediate_preloads/ee.pem");
+    let ee_cert = constructCertFromFile(
+      "test_intermediate_preloads/default-ee.pem"
+    );
     notEqual(ee_cert, null, "EE cert should have successfully loaded");
 
     
@@ -316,7 +320,9 @@ add_task(
     
     addCertFromFile(certDB, "test_intermediate_preloads/ca.pem", "CTu,,");
 
-    let ee_cert = constructCertFromFile("test_intermediate_preloads/ee.pem");
+    let ee_cert = constructCertFromFile(
+      "test_intermediate_preloads/default-ee.pem"
+    );
     notEqual(ee_cert, null, "EE cert should have successfully loaded");
 
     
@@ -344,7 +350,9 @@ add_task(
     
     addCertFromFile(certDB, "test_intermediate_preloads/ca.pem", "CTu,,");
 
-    let ee_cert = constructCertFromFile("test_intermediate_preloads/ee.pem");
+    let ee_cert = constructCertFromFile(
+      "test_intermediate_preloads/default-ee.pem"
+    );
     notEqual(ee_cert, null, "EE cert should have successfully loaded");
 
     
@@ -396,6 +404,32 @@ add_task(
 
     
     
+
+    
+    
+    await asyncStartTLSTestServer(
+      "BadCertAndPinningServer",
+      "test_intermediate_preloads"
+    );
+    
+    
+    let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+    certDir.append("test_intermediate_preloads");
+    Assert.ok(certDir.exists(), "test_intermediate_preloads should exist");
+    let args = ["-D", "-n", "int"];
+    
+    
+    run_certutil_on_directory(certDir.path, args, false);
+    let certsCachedPromise = TestUtils.topicObserved(
+      "psm:intermediate-certs-cached"
+    );
+    await asyncConnectTo("ee.example.com", PRErrorCodeSuccess);
+    let subjectAndData = await certsCachedPromise;
+    Assert.equal(subjectAndData.length, 2, "expecting [subject, data]");
+    
+    
+    Assert.equal(subjectAndData[1], "0", `expecting "0" certs imported`);
+
     await checkCertErrorGeneric(
       certDB,
       ee_cert,
