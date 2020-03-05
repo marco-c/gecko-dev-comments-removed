@@ -1,56 +1,56 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "debugger/Script-inl.h"
 
-#include "mozilla/Maybe.h"   // for Some, Maybe
-#include "mozilla/Span.h"    // for Span
-#include "mozilla/Vector.h"  // for Vector
+#include "mozilla/Maybe.h"   
+#include "mozilla/Span.h"    
+#include "mozilla/Vector.h"  
 
-#include <stddef.h>  // for ptrdiff_t
-#include <stdint.h>  // for uint32_t, SIZE_MAX, int32_t
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "jsapi.h"             // for CallArgs, Rooted, CallArgsFromVp
-#include "jsfriendapi.h"       // for GetErrorMessage
-#include "jsnum.h"             // for ToNumber
-#include "NamespaceImports.h"  // for CallArgs, RootedValue
+#include "jsapi.h"             
+#include "jsfriendapi.h"       
+#include "jsnum.h"             
+#include "NamespaceImports.h"  
 
-#include "builtin/Array.h"         // for NewDenseEmptyArray
-#include "debugger/Debugger.h"     // for DebuggerScriptReferent, Debugger
-#include "debugger/DebugScript.h"  // for DebugScript
-#include "debugger/Source.h"       // for DebuggerSource
-#include "gc/Barrier.h"            // for ImmutablePropertyNamePtr
-#include "gc/GC.h"                 // for MemoryUse, MemoryUse::Breakpoint
-#include "gc/Rooting.h"            // for RootedDebuggerScript
-#include "gc/Tracer.h"         // for TraceManuallyBarrieredCrossCompartmentEdge
-#include "gc/Zone.h"           // for Zone
-#include "gc/ZoneAllocator.h"  // for AddCellMemory
-#include "js/HeapAPI.h"        // for GCCellPtr
-#include "js/Wrapper.h"        // for UncheckedUnwrap
-#include "vm/ArrayObject.h"    // for ArrayObject
-#include "vm/BytecodeUtil.h"   // for GET_JUMP_OFFSET
-#include "vm/GlobalObject.h"   // for GlobalObject
-#include "vm/JSContext.h"      // for JSContext, ReportValueError
-#include "vm/JSFunction.h"     // for JSFunction
-#include "vm/JSObject.h"       // for RequireObject, JSObject
-#include "vm/ObjectGroup.h"    // for TenuredObject
-#include "vm/ObjectOperations.h"  // for DefineDataProperty, HasOwnProperty
-#include "vm/Realm.h"             // for AutoRealm
-#include "vm/Runtime.h"           // for JSAtomState, JSRuntime
-#include "vm/StringType.h"        // for NameToId, PropertyName, JSAtom
-#include "wasm/WasmDebug.h"       // for ExprLoc, DebugState
-#include "wasm/WasmInstance.h"    // for Instance
-#include "wasm/WasmTypes.h"       // for Bytes
+#include "builtin/Array.h"         
+#include "debugger/Debugger.h"     
+#include "debugger/DebugScript.h"  
+#include "debugger/Source.h"       
+#include "gc/Barrier.h"            
+#include "gc/GC.h"                 
+#include "gc/Rooting.h"            
+#include "gc/Tracer.h"         
+#include "gc/Zone.h"           
+#include "gc/ZoneAllocator.h"  
+#include "js/HeapAPI.h"        
+#include "js/Wrapper.h"        
+#include "vm/ArrayObject.h"    
+#include "vm/BytecodeUtil.h"   
+#include "vm/GlobalObject.h"   
+#include "vm/JSContext.h"      
+#include "vm/JSFunction.h"     
+#include "vm/JSObject.h"       
+#include "vm/ObjectGroup.h"    
+#include "vm/ObjectOperations.h"  
+#include "vm/Realm.h"             
+#include "vm/Runtime.h"           
+#include "vm/StringType.h"        
+#include "wasm/WasmDebug.h"       
+#include "wasm/WasmInstance.h"    
+#include "wasm/WasmTypes.h"       
 
-#include "vm/BytecodeUtil-inl.h"      // for BytecodeRangeWithPosition
-#include "vm/JSAtom-inl.h"            // for ValueToId
-#include "vm/JSObject-inl.h"          // for NewBuiltinClassInstance
-#include "vm/JSScript-inl.h"          // for LazyScript::functionDelazifying
-#include "vm/ObjectOperations-inl.h"  // for GetProperty
-#include "vm/Realm-inl.h"             // for AutoRealm::AutoRealm
+#include "vm/BytecodeUtil-inl.h"      
+#include "vm/JSAtom-inl.h"            
+#include "vm/JSObject-inl.h"          
+#include "vm/JSScript-inl.h"          
+#include "vm/ObjectOperations-inl.h"  
+#include "vm/Realm-inl.h"             
 
 using namespace js;
 
@@ -58,17 +58,17 @@ using mozilla::Maybe;
 using mozilla::Some;
 
 const JSClassOps DebuggerScript::classOps_ = {
-    nullptr,                          // addProperty
-    nullptr,                          // delProperty
-    nullptr,                          // enumerate
-    nullptr,                          // newEnumerate
-    nullptr,                          // resolve
-    nullptr,                          // mayResolve
-    nullptr,                          // finalize
-    nullptr,                          // call
-    nullptr,                          // hasInstance
-    nullptr,                          // construct
-    CallTraceMethod<DebuggerScript>,  // trace
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    nullptr,                          
+    CallTraceMethod<DebuggerScript>,  
 };
 
 const JSClass DebuggerScript::class_ = {
@@ -77,7 +77,7 @@ const JSClass DebuggerScript::class_ = {
 
 void DebuggerScript::trace(JSTracer* trc) {
   JSObject* upcast = this;
-  // This comes from a private pointer, so no barrier needed.
+  
   gc::Cell* cell = getReferentCell();
   if (cell) {
     if (cell->is<BaseScript>()) {
@@ -95,7 +95,7 @@ void DebuggerScript::trace(JSTracer* trc) {
   }
 }
 
-/* static */
+
 NativeObject* DebuggerScript::initClass(JSContext* cx,
                                         Handle<GlobalObject*> global,
                                         HandleObject debugCtor) {
@@ -103,7 +103,7 @@ NativeObject* DebuggerScript::initClass(JSContext* cx,
                    methods_, nullptr, nullptr);
 }
 
-/* static */
+
 DebuggerScript* DebuggerScript::create(JSContext* cx, HandleObject proto,
                                        Handle<DebuggerScriptReferent> referent,
                                        HandleNativeObject debugger) {
@@ -127,8 +127,8 @@ static JSScript* DelazifyScript(JSContext* cx, Handle<BaseScript*> script) {
   }
   MOZ_ASSERT(script->isFunction());
 
-  // JSFunction::getOrCreateScript requires an enclosing scope. This requires
-  // the enclosing script to be non-lazy.
+  
+  
   if (script->hasEnclosingLazyScript()) {
     Rooted<LazyScript*> enclosingLazyScript(cx, script->enclosingLazyScript());
     if (!DelazifyScript(cx, enclosingLazyScript)) {
@@ -136,9 +136,9 @@ static JSScript* DelazifyScript(JSContext* cx, Handle<BaseScript*> script) {
     }
 
     if (!script->enclosingScriptHasEverBeenCompiled()) {
-      // It didn't work! Delazifying the enclosing script still didn't
-      // delazify this script. This happens when the function
-      // corresponding to this script was removed by constant folding.
+      
+      
+      
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_DEBUG_OPTIMIZED_OUT_FUN);
       return nullptr;
@@ -152,7 +152,7 @@ static JSScript* DelazifyScript(JSContext* cx, Handle<BaseScript*> script) {
   return JSFunction::getOrCreateScript(cx, fun);
 }
 
-/* static */
+
 DebuggerScript* DebuggerScript::check(JSContext* cx, HandleValue v) {
   JSObject* thisobj = RequireObject(cx, v);
   if (!thisobj) {
@@ -167,8 +167,8 @@ DebuggerScript* DebuggerScript::check(JSContext* cx, HandleValue v) {
 
   DebuggerScript& scriptObj = thisobj->as<DebuggerScript>();
 
-  // Check for Debugger.Script.prototype, which is of class
-  // DebuggerScript::class but whose script is null.
+  
+  
   if (!scriptObj.getReferentCell()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_INCOMPATIBLE_PROTO, "Debugger.Script",
@@ -255,7 +255,7 @@ struct MOZ_STACK_CLASS DebuggerScript::CallData {
 };
 
 template <DebuggerScript::CallData::Method MyMethod>
-/* static */
+
 bool DebuggerScript::CallData::ToNative(JSContext* cx, unsigned argc,
                                         Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -477,7 +477,7 @@ bool DebuggerScript::CallData::getFormat() {
 
 static bool PushFunctionScript(JSContext* cx, Debugger* dbg, HandleFunction fun,
                                HandleObject array) {
-  // Ignore asm.js natives.
+  
   if (!IsInterpretedNonSelfHostedFunction(fun)) {
     return true;
   }
@@ -575,7 +575,7 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
   size_t maxColumn;
 
   bool passesQuery(size_t offset, size_t lineno, size_t colno) {
-    // [minOffset, maxOffset) - Inclusive minimum and exclusive maximum.
+    
     if ((minOffset && offset < *minOffset) ||
         (maxOffset && offset >= *maxOffset)) {
       return false;
@@ -751,8 +751,8 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
         return false;
       }
 
-      // If no end column is given, we use the default of 0 and wrap to
-      // the next line.
+      
+      
       minLine = Some(line);
       maxLine = Some(line + (maxColumnValue.isUndefined() ? 1 : 0));
     }
@@ -819,7 +819,7 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
       return false;
     }
 
-    // Second pass: build the result array.
+    
     result_.set(NewDenseEmptyArray(cx_));
     if (!result_) {
       return false;
@@ -1020,32 +1020,32 @@ bool DebuggerScript::CallData::getOffsetMetadata() {
 
 namespace {
 
-/*
- * FlowGraphSummary::populate(cx, script) computes a summary of script's
- * control flow graph used by DebuggerScript_{getAllOffsets,getLineOffsets}.
- *
- * An instruction on a given line is an entry point for that line if it can be
- * reached from (an instruction on) a different line. We distinguish between the
- * following cases:
- *   - hasNoEdges:
- *       The instruction cannot be reached, so the instruction is not an entry
- *       point for the line it is on.
- *   - hasSingleEdge:
- *       The instruction can be reached from a single line. If this line is
- *       different from the line the instruction is on, the instruction is an
- *       entry point for that line.
- *
- * Similarly, an instruction on a given position (line/column pair) is an
- * entry point for that position if it can be reached from (an instruction on) a
- * different position. Again, we distinguish between the following cases:
- *   - hasNoEdges:
- *       The instruction cannot be reached, so the instruction is not an entry
- *       point for the position it is on.
- *   - hasSingleEdge:
- *       The instruction can be reached from a single position. If this line is
- *       different from the position the instruction is on, the instruction is
- *       an entry point for that position.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FlowGraphSummary {
  public:
   class Entry {
@@ -1102,15 +1102,15 @@ class FlowGraphSummary {
       size_t column = prevColumn;
       JSOp op = r.frontOpcode();
 
-      if (FlowsIntoNext(prevOp)) {
+      if (BytecodeFallsThrough(prevOp)) {
         addEdge(prevLineno, prevColumn, r.frontOffset());
       }
 
-      // If we visit the branch target before we visit the
-      // branch op itself, just reuse the previous location.
-      // This is reasonable for the time being because this
-      // situation can currently only arise from loop heads,
-      // where this assumption holds.
+      
+      
+      
+      
+      
       if (BytecodeIsJumpTarget(op) && !entries_[r.frontOffset()].hasNoEdges()) {
         lineno = entries_[r.frontOffset()].lineno();
         column = entries_[r.frontOffset()].column();
@@ -1142,11 +1142,11 @@ class FlowGraphSummary {
           addEdge(lineno, column, target);
         }
       } else if (op == JSOp::Try) {
-        // As there is no literal incoming edge into the catch block, we
-        // make a fake one by copying the JSOp::Try location, as-if this
-        // was an incoming edge of the catch block. This is needed
-        // because we only report offsets of entry points which have
-        // valid incoming edges.
+        
+        
+        
+        
+        
         for (const JSTryNote& tn : script->trynotes()) {
           if (tn.start == r.frontOffset() + JSOpLength_Try) {
             uint32_t catchOffset = tn.start + tn.length;
@@ -1182,7 +1182,7 @@ class FlowGraphSummary {
   Vector<Entry> entries_;
 };
 
-} /* anonymous namespace */
+} 
 
 class DebuggerScript::GetOffsetLocationMatcher {
   JSContext* cx_;
@@ -1222,18 +1222,18 @@ class DebuggerScript::GetOffsetLocationMatcher {
     size_t offset = r.frontOffset();
     bool isEntryPoint = r.frontIsEntryPoint();
 
-    // Line numbers are only correctly defined on entry points. Thus looks
-    // either for the next valid offset in the flowData, being the last entry
-    // point flowing into the current offset, or for the next valid entry point.
+    
+    
+    
     while (!r.frontIsEntryPoint() &&
            !flowData[r.frontOffset()].hasSingleEdge()) {
       r.popFront();
       MOZ_ASSERT(!r.empty());
     }
 
-    // If this is an entry point, take the line number associated with the entry
-    // point, otherwise settle on the next instruction and take the incoming
-    // edge position.
+    
+    
+    
     size_t lineno;
     size_t column;
     if (r.frontIsEntryPoint()) {
@@ -1255,7 +1255,7 @@ class DebuggerScript::GetOffsetLocationMatcher {
       return false;
     }
 
-    // The same entry point test that is used by getAllColumnOffsets.
+    
     isEntryPoint = (isEntryPoint && !flowData[offset].hasNoEdges() &&
                     (flowData[offset].lineno() != r.frontLineNumber() ||
                      flowData[offset].column() != r.frontColumnNumber()));
@@ -1403,11 +1403,11 @@ bool DebuggerScript::CallData::getSuccessorOrPredecessorOffsets() {
   return true;
 }
 
-// Return whether an opcode is considered effectful: it can have direct side
-// effects that can be observed outside of the current frame. Opcodes are not
-// effectful if they only modify the current frame's state, modify objects
-// created by the current frame, or can potentially call other scripts or
-// natives which could have side effects.
+
+
+
+
+
 static bool BytecodeIsEffectful(JSOp op) {
   switch (op) {
     case JSOp::SetProp:
@@ -1439,8 +1439,8 @@ static bool BytecodeIsEffectful(JSOp op) {
     case JSOp::SetFunName:
     case JSOp::MutateProto:
     case JSOp::DynamicImport:
-      // Treat async functions as effectful so that microtask checkpoints
-      // won't run.
+      
+      
     case JSOp::InitialYield:
     case JSOp::Yield:
       return true;
@@ -1686,14 +1686,14 @@ bool DebuggerScript::CallData::getAllOffsets() {
     return false;
   }
 
-  // First pass: determine which offsets in this script are jump targets and
-  // which line numbers jump to them.
+  
+  
   FlowGraphSummary flowData(cx);
   if (!flowData.populate(cx, script)) {
     return false;
   }
 
-  // Second pass: build the result array.
+  
   RootedObject result(cx, NewDenseEmptyArray(cx));
   if (!result) {
     return false;
@@ -1706,10 +1706,10 @@ bool DebuggerScript::CallData::getAllOffsets() {
     size_t offset = r.frontOffset();
     size_t lineno = r.frontLineNumber();
 
-    // Make a note, if the current instruction is an entry point for the current
-    // line.
+    
+    
     if (!flowData[offset].hasNoEdges() && flowData[offset].lineno() != lineno) {
-      // Get the offsets array for this line.
+      
       RootedObject offsets(cx);
       RootedValue offsetsv(cx);
 
@@ -1728,8 +1728,8 @@ bool DebuggerScript::CallData::getAllOffsets() {
       } else {
         MOZ_ASSERT(offsetsv.isUndefined());
 
-        // Create an empty offsets array for this line.
-        // Store it in the result array.
+        
+        
         RootedId id(cx);
         RootedValue v(cx, NumberValue(lineno));
         offsets = NewDenseEmptyArray(cx);
@@ -1743,7 +1743,7 @@ bool DebuggerScript::CallData::getAllOffsets() {
         }
       }
 
-      // Append the current offset to the offsets array.
+      
       if (!NewbornArrayPush(cx, offsets, NumberValue(offset))) {
         return false;
       }
@@ -1792,14 +1792,14 @@ class DebuggerScript::GetAllColumnOffsetsMatcher {
       return false;
     }
 
-    // First pass: determine which offsets in this script are jump targets
-    // and which positions jump to them.
+    
+    
     FlowGraphSummary flowData(cx_);
     if (!flowData.populate(cx_, script)) {
       return false;
     }
 
-    // Second pass: build the result array.
+    
     result_.set(NewDenseEmptyArray(cx_));
     if (!result_) {
       return false;
@@ -1810,8 +1810,8 @@ class DebuggerScript::GetAllColumnOffsetsMatcher {
       size_t column = r.frontColumnNumber();
       size_t offset = r.frontOffset();
 
-      // Make a note, if the current instruction is an entry point for
-      // the current position.
+      
+      
       if (r.frontIsEntryPoint() && !flowData[offset].hasNoEdges() &&
           (flowData[offset].lineno() != lineno ||
            flowData[offset].column() != column)) {
@@ -1875,8 +1875,8 @@ class DebuggerScript::GetLineOffsetsMatcher {
       return false;
     }
 
-    // First pass: determine which offsets in this script are jump targets and
-    // which line numbers jump to them.
+    
+    
     FlowGraphSummary flowData(cx_);
     if (!flowData.populate(cx_, script)) {
       return false;
@@ -1887,7 +1887,7 @@ class DebuggerScript::GetLineOffsetsMatcher {
       return false;
     }
 
-    // Second pass: build the result array.
+    
     for (BytecodeRangeWithPosition r(cx_, script); !r.empty(); r.popFront()) {
       if (!r.frontIsEntryPoint()) {
         continue;
@@ -1895,7 +1895,7 @@ class DebuggerScript::GetLineOffsetsMatcher {
 
       size_t offset = r.frontOffset();
 
-      // If the op at offset is an entry point, append offset to result.
+      
       if (r.frontLineNumber() == lineno_ && !flowData[offset].hasNoEdges() &&
           flowData[offset].lineno() != lineno_) {
         if (!NewbornArrayPush(cx_, result_, NumberValue(offset))) {
@@ -1934,7 +1934,7 @@ bool DebuggerScript::CallData::getLineOffsets() {
     return false;
   }
 
-  // Parse lineno argument.
+  
   RootedValue linenoValue(cx, args[0]);
   size_t lineno;
   if (!ToNumber(cx, &linenoValue)) {
@@ -1973,8 +1973,8 @@ struct DebuggerScript::SetBreakpointMatcher {
       return false;
     }
 
-    // If the Debugger's compartment has killed incoming wrappers, we may not
-    // have gotten usable results from the 'wrap' calls. Treat it as a failure.
+    
+    
     if (IsDeadProxyObject(handler_) || IsDeadProxyObject(debuggerObject_)) {
       ReportAccessDenied(cx_);
       return false;
@@ -2010,16 +2010,16 @@ struct DebuggerScript::SetBreakpointMatcher {
       return false;
     }
 
-    // Ensure observability *before* setting the breakpoint. If the script is
-    // not already a debuggee, trying to ensure observability after setting
-    // the breakpoint (and thus marking the script as a debuggee) will skip
-    // actually ensuring observability.
+    
+    
+    
+    
     if (!dbg_->ensureExecutionObservabilityOfScript(cx_, script)) {
       return false;
     }
 
-    // A Breakpoint belongs logically to its script's compartment, so its
-    // references to its Debugger and handler must be properly wrapped.
+    
+    
     AutoRealm ar(cx_, script);
     if (!wrapCrossCompartmentEdges()) {
       return false;
@@ -2049,8 +2049,8 @@ struct DebuggerScript::SetBreakpointMatcher {
       return false;
     }
 
-    // A Breakpoint belongs logically to its Instance's compartment, so its
-    // references to its Debugger and handler must be properly wrapped.
+    
+    
     AutoRealm ar(cx_, wasmInstance);
     if (!wrapCrossCompartmentEdges()) {
       return false;
@@ -2157,11 +2157,11 @@ class DebuggerScript::ClearBreakpointMatcher {
       return false;
     }
 
-    // A Breakpoint belongs logically to its script's compartment, so it holds
-    // its handler via a cross-compartment wrapper. But the handler passed to
-    // `clearBreakpoint` is same-compartment with the Debugger. Wrap it here, so
-    // that `DebugScript::clearBreakpointsIn` gets the right value to search
-    // for.
+    
+    
+    
+    
+    
     AutoRealm ar(cx_, script);
     if (!cx_->compartment()->wrap(cx_, &handler_)) {
       return false;
@@ -2177,10 +2177,10 @@ class DebuggerScript::ClearBreakpointMatcher {
       return true;
     }
 
-    // A Breakpoint belongs logically to its instance's compartment, so it holds
-    // its handler via a cross-compartment wrapper. But the handler passed to
-    // `clearBreakpoint` is same-compartment with the Debugger. Wrap it here, so
-    // that `DebugState::clearBreakpointsIn` gets the right value to search for.
+    
+    
+    
+    
     AutoRealm ar(cx_, instanceObj);
     if (!cx_->compartment()->wrap(cx_, &handler_)) {
       return false;
@@ -2284,8 +2284,8 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
     return false;
   }
 
-  // If the script has no coverage information, then skip this and return null
-  // instead.
+  
+  
   if (!script->hasScriptCounts()) {
     args.rval().setNull();
     return true;
@@ -2293,8 +2293,8 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
 
   ScriptCounts* sc = &script->getScriptCounts();
 
-  // If the main ever got visited, then assume that any code before main got
-  // visited once.
+  
+  
   uint64_t hits = 0;
   const PCCounts* counts =
       sc->maybeGetPCCounts(script->pcToOffset(script->main()));
@@ -2302,11 +2302,11 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
     hits = 1;
   }
 
-  // Build an array of objects which are composed of 4 properties:
-  //  - offset          PC offset of the current opcode.
-  //  - lineNumber      Line of the current opcode.
-  //  - columnNumber    Column of the current opcode.
-  //  - count           Number of times the instruction got executed.
+  
+  
+  
+  
+  
   RootedObject result(cx, NewDenseEmptyArray(cx));
   if (!result) {
     return false;
@@ -2323,13 +2323,13 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
   RootedValue columnNumberValue(cx);
   RootedValue countValue(cx);
 
-  // Iterate linearly over the bytecode.
+  
   for (BytecodeRangeWithPosition r(cx, script); !r.empty(); r.popFront()) {
     size_t offset = r.frontOffset();
 
-    // The beginning of each non-branching sequences of instruction set the
-    // number of execution of the current instruction and any following
-    // instruction.
+    
+    
+    
     counts = sc->maybeGetPCCounts(offset);
     if (counts) {
       hits = counts->numExec();
@@ -2340,8 +2340,8 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
     columnNumberValue.setNumber(double(r.frontColumnNumber()));
     countValue.setNumber(double(hits));
 
-    // Create a new object with the offset, line number, column number, the
-    // number of hit counts, and append it to the array.
+    
+    
     item = NewObjectWithGivenProto<PlainObject>(cx, nullptr);
     if (!item || !DefineDataProperty(cx, item, offsetId, offsetValue) ||
         !DefineDataProperty(cx, item, lineNumberId, lineNumberValue) ||
@@ -2351,8 +2351,8 @@ bool DebuggerScript::CallData::getOffsetsCoverage() {
       return false;
     }
 
-    // If the current instruction has thrown, then decrement the hit counts
-    // with the number of throws.
+    
+    
     counts = sc->maybeGetThrowCounts(offset);
     if (counts) {
       hits -= counts->numExec();
@@ -2384,7 +2384,7 @@ bool DebuggerScript::CallData::setInstrumentationId() {
   return true;
 }
 
-/* static */
+
 bool DebuggerScript::construct(JSContext* cx, unsigned argc, Value* vp) {
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NO_CONSTRUCTOR,
                             "Debugger.Script");
@@ -2428,9 +2428,9 @@ const JSFunctionSpec DebuggerScript::methods_[] = {
     JS_DEBUG_FN("getEffectfulOffsets", getEffectfulOffsets, 1),
     JS_DEBUG_FN("setInstrumentationId", setInstrumentationId, 1),
 
-    // The following APIs are deprecated due to their reliance on the
-    // under-defined 'entrypoint' concept. Make use of getPossibleBreakpoints,
-    // getPossibleBreakpointOffsets, or getOffsetMetadata instead.
+    
+    
+    
     JS_DEBUG_FN("getAllOffsets", getAllOffsets, 0),
     JS_DEBUG_FN("getAllColumnOffsets", getAllColumnOffsets, 0),
     JS_DEBUG_FN("getLineOffsets", getLineOffsets, 1),
