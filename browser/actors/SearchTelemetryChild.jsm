@@ -10,7 +10,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  ActorChild: "resource://gre/modules/ActorChild.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
@@ -90,7 +89,7 @@ const searchProviders = new SearchProviders();
 
 
 
-class SearchTelemetryChild extends ActorChild {
+class SearchTelemetryChild extends JSWindowActorChild {
   
 
 
@@ -110,11 +109,16 @@ class SearchTelemetryChild extends ActorChild {
 
 
   _checkForAdLink() {
-    if (!this.content) {
+    try {
+      if (!this.contentWindow) {
+        return;
+      }
+    } catch (ex) {
+      
       return;
     }
 
-    let doc = this.content.document;
+    let doc = this.document;
     let url = doc.documentURI;
     let providerInfo = this._getProviderInfoForUrl(url);
     if (!providerInfo) {
@@ -152,11 +156,6 @@ class SearchTelemetryChild extends ActorChild {
 
 
   handleEvent(event) {
-    
-    if (event.target.ownerGlobal != this.content) {
-      return;
-    }
-
     const cancelCheck = () => {
       if (this._waitForContentTimeout) {
         clearTimeout(this._waitForContentTimeout);

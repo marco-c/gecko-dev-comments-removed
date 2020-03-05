@@ -227,6 +227,10 @@ class TelemetryHandler {
     );
   }
 
+  reportPageWithAds(info) {
+    this._contentHandler._reportPageWithAds(info);
+  }
+
   
 
 
@@ -411,7 +415,6 @@ class TelemetryHandler {
 
 
   _registerWindow(win) {
-    this._contentHandler.registerWindow(win);
     win.gBrowser.tabContainer.addEventListener("TabClose", this);
   }
 
@@ -426,7 +429,6 @@ class TelemetryHandler {
       this.stopTrackingBrowser(tab);
     }
 
-    this._contentHandler.unregisterWindow(win);
     win.gBrowser.tabContainer.removeEventListener("TabClose", this);
   }
 
@@ -622,20 +624,6 @@ class ContentHandler {
 
 
 
-  receiveMessage(msg) {
-    if (msg.name != "SearchTelemetry:PageInfo") {
-      LOG("Received unexpected message: " + msg.name);
-      return;
-    }
-
-    this._reportPageWithAds(msg.data);
-  }
-
-  
-
-
-
-
 
   overrideSearchTelemetryForTests(providerInfo) {
     Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", providerInfo);
@@ -793,25 +781,6 @@ class ContentHandler {
         Cu.reportError(e);
       }
     });
-  }
-
-  
-
-
-
-
-
-  registerWindow(win) {
-    win.messageManager.addMessageListener("SearchTelemetry:PageInfo", this);
-  }
-
-  
-
-
-
-
-  unregisterWindow(win) {
-    win.messageManager.removeMessageListener("SearchTelemetry:PageInfo", this);
   }
 
   
