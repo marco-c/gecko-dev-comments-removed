@@ -309,58 +309,64 @@ this.tabs = class extends ExtensionAPI {
           },
         }).api(),
 
-        async create(createProperties) {
-          let principal = context.principal;
-          let window =
-            createProperties.windowId !== null
-              ? windowTracker.getWindow(createProperties.windowId, context)
-              : windowTracker.topWindow;
+        async create({
+          active,
+          discarded,
+          index,
+          openInReaderMode,
+          pinned,
+          title,
+          url,
+        } = {}) {
+          if (active === null) {
+            active = true;
+          }
 
-          let { BrowserApp } = window;
-          let url;
+          tabListener.initTabReady();
 
-          if (createProperties.url !== null) {
-            url = context.uri.resolve(createProperties.url);
+          if (url !== null) {
+            url = context.uri.resolve(url);
 
             if (!context.checkLoadURL(url, { dontReportErrors: true })) {
               return Promise.reject({ message: `Illegal URL: ${url}` });
             }
-          } else {
-            
-            principal = Services.scriptSecurityManager.getSystemPrincipal();
           }
 
-          let options = {};
+          const nativeTab = await GeckoViewTabBridge.createNewTab({
+            extensionId: context.extension.id,
+            createProperties: {
+              active,
+              discarded,
+              index,
+              openInReaderMode,
+              pinned,
+              url,
+            },
+          });
 
-          let active = true;
-          if (createProperties.active !== null) {
-            active = createProperties.active;
-          }
-          options.selected = active;
+          const { browser } = nativeTab;
 
-          if (createProperties.index !== null) {
-            options.tabIndex = createProperties.index;
-          }
+          let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
 
           
           
-          if (url && url.startsWith("about:")) {
-            options.disallowInheritPrincipal = true;
-          } else {
-            options.triggeringPrincipal = context.principal;
-          }
-
-          options.parentId = BrowserApp.selectedTab.id;
-
-          tabListener.initTabReady();
-          options.triggeringPrincipal = principal;
-
-          options.extensionId = context.extension.id;
-          options.url = url;
-
-          let nativeTab = await GeckoViewTabBridge.createNewTab(options);
-          if (createProperties.url) {
+          if (url !== null) {
             tabListener.initializingTabs.add(nativeTab);
+          } else {
+            url = "about:blank";
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+          }
+
+          browser.loadURI(url, {
+            flags,
+            
+            
+            triggeringPrincipal: context.principal,
+          });
+
+          if (active) {
+            const newWindow = browser.ownerGlobal;
+            mobileWindowTracker.setTabActive(newWindow, true);
           }
 
           return tabManager.convert(nativeTab);
@@ -386,28 +392,44 @@ this.tabs = class extends ExtensionAPI {
           );
         },
 
-        async update(tabId, updateProperties) {
-          let nativeTab = getTabOrActive(tabId);
+        async update(
+          tabId,
+          { active, autoDiscardable, highlighted, muted, pinned, url } = {}
+        ) {
+          const nativeTab = getTabOrActive(tabId);
+          const window = nativeTab.browser.ownerGlobal;
 
-          let { BrowserApp } = nativeTab.browser.ownerGlobal;
-
-          if (updateProperties.url !== null) {
-            let url = context.uri.resolve(updateProperties.url);
+          if (url !== null) {
+            url = context.uri.resolve(url);
 
             if (!context.checkLoadURL(url, { dontReportErrors: true })) {
               return Promise.reject({ message: `Illegal URL: ${url}` });
             }
+          }
 
-            let options = {
+          await GeckoViewTabBridge.updateTab({
+            window,
+            extensionId: context.extension.id,
+            updateProperties: {
+              active,
+              autoDiscardable,
+              highlighted,
+              muted,
+              pinned,
+              url,
+            },
+          });
+
+          if (url !== null) {
+            nativeTab.browser.loadURI(url, {
               triggeringPrincipal: context.principal,
-            };
-            nativeTab.browser.loadURI(url, options);
+            });
           }
 
-          if (updateProperties.active) {
-            BrowserApp.selectTab(nativeTab);
-          }
           
+          if (active) {
+            mobileWindowTracker.setTabActive(window, true);
+          }
 
           return tabManager.convert(nativeTab);
         },
