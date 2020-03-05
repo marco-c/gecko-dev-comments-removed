@@ -471,15 +471,6 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
   }
 }
 
-void APZEventState::ProcessClusterHit() {
-  
-  
-#ifndef MOZ_WIDGET_ANDROID
-  MOZ_ASSERT(false);
-#endif
-  mActiveElementManager->ClearActivation();
-}
-
 bool APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault) {
   if (mPendingTouchPreventedResponse) {
     APZES_LOG("Sending response %d for pending guid: %s\n", aPreventDefault,

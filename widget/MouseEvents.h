@@ -100,8 +100,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
       : mPressure(0),
         mButton(0),
         mButtons(0),
-        mInputSource( 1),
-        mHitCluster(false) {}
+        mInputSource( 1) {}
   
   
 
@@ -111,8 +110,7 @@ class WidgetMouseEventBase : public WidgetInputEvent {
         mPressure(0),
         mButton(0),
         mButtons(0),
-        mInputSource( 1),
-        mHitCluster(false) {}
+        mInputSource( 1) {}
   
   
 
@@ -140,9 +138,6 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   
   uint16_t mInputSource;
 
-  
-  bool mHitCluster;
-
   bool IsLeftButtonPressed() const {
     return !!(mButtons & MouseButtonsFlag::eLeftFlag);
   }
@@ -166,7 +161,6 @@ class WidgetMouseEventBase : public WidgetInputEvent {
     mButton = aEvent.mButton;
     mButtons = aEvent.mButtons;
     mPressure = aEvent.mPressure;
-    mHitCluster = aEvent.mHitCluster;
     mInputSource = aEvent.mInputSource;
   }
 
