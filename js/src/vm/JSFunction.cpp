@@ -595,13 +595,13 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
       xdrFlags |= IsAsync;
     }
 
-    if (fun->isInterpretedLazy()) {
+    if (fun->hasBytecode()) {
+      
+      script = fun->nonLazyScript();
+    } else {
       
       xdrFlags |= IsLazy;
       lazy = fun->lazyScript();
-    } else {
-      
-      script = fun->nonLazyScript();
     }
 
     if (fun->displayAtom()) {
@@ -1262,11 +1262,18 @@ bool JSFunction::isDerivedClassConstructor() const {
 bool JSFunction::getLength(JSContext* cx, HandleFunction fun,
                            uint16_t* length) {
   MOZ_ASSERT(!fun->isBoundFunction());
-  if (fun->isInterpretedLazy() && !getOrCreateScript(cx, fun)) {
+
+  if (fun->isNative()) {
+    *length = fun->nargs();
+    return true;
+  }
+
+  JSScript* script = getOrCreateScript(cx, fun);
+  if (!script) {
     return false;
   }
 
-  *length = fun->isNative() ? fun->nargs() : fun->nonLazyScript()->funLength();
+  *length = script->funLength();
   return true;
 }
 
@@ -1570,7 +1577,6 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
 #if defined(JS_BUILD_BINAST)
     if (!frontend::CompileLazyBinASTFunction(
             cx, lazy, ss->binASTSource() + sourceStart, sourceLength)) {
-      MOZ_ASSERT(fun->isInterpretedLazy());
       MOZ_ASSERT(fun->baseScript() == lazy);
       MOZ_ASSERT(!lazy->hasScript());
       return false;
@@ -1595,7 +1601,6 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
       if (!frontend::CompileLazyFunction(cx, lazy, units.get(), sourceLength)) {
         
         
-        MOZ_ASSERT(fun->isInterpretedLazy());
         MOZ_ASSERT(fun->baseScript() == lazy);
         MOZ_ASSERT(!lazy->hasScript());
         return false;
@@ -1613,7 +1618,6 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
       if (!frontend::CompileLazyFunction(cx, lazy, units.get(), sourceLength)) {
         
         
-        MOZ_ASSERT(fun->isInterpretedLazy());
         MOZ_ASSERT(fun->baseScript() == lazy);
         MOZ_ASSERT(!lazy->hasScript());
         return false;
@@ -1654,7 +1658,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
 
 bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
                                                    HandleFunction fun) {
-  MOZ_ASSERT(fun->hasLazyScript());
+  MOZ_ASSERT(fun->hasBaseScript());
   MOZ_ASSERT(cx->compartment() == fun->compartment());
 
   
@@ -1709,12 +1713,7 @@ bool JSFunction::delazifySelfHostedLazyFunction(JSContext* cx,
 }
 
 void JSFunction::maybeRelazify(JSRuntime* rt) {
-  
-  
-  
-  if (isIncomplete()) {
-    return;
-  }
+  MOZ_ASSERT(!isIncomplete(), "Cannot relazify incomplete functions");
 
   
   Realm* realm = this->realm();
@@ -1767,7 +1766,7 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   LazyScript* lazy = script->maybeLazyScript();
   if (lazy) {
     u.scripted.s.script_ = lazy;
-    MOZ_ASSERT(hasLazyScript());
+    MOZ_ASSERT(hasBaseScript());
   } else {
     
     
@@ -2038,8 +2037,6 @@ bool JSFunction::isBuiltinFunctionConstructor() {
 }
 
 bool JSFunction::needsExtraBodyVarEnvironment() const {
-  MOZ_ASSERT(!isInterpretedLazy());
-
   if (isNative()) {
     return false;
   }
@@ -2052,8 +2049,6 @@ bool JSFunction::needsExtraBodyVarEnvironment() const {
 }
 
 bool JSFunction::needsNamedLambdaEnvironment() const {
-  MOZ_ASSERT(!isInterpretedLazy());
-
   if (!isNamedLambda()) {
     return false;
   }
@@ -2124,7 +2119,7 @@ JSFunction* js::NewFunctionWithProto(
   }
 
   
-  MOZ_ASSERT(!flags.isInterpretedLazy());
+  MOZ_ASSERT(!flags.hasSelfHostedLazyScript());
   MOZ_ASSERT(!flags.isWasmWithJitEntry());
 
   
@@ -2283,10 +2278,10 @@ JSFunction* js::CloneFunctionReuseScript(JSContext* cx, HandleFunction fun,
     return nullptr;
   }
 
-  if (fun->hasScript()) {
+  if (fun->hasBytecode()) {
     clone->initScript(fun->nonLazyScript());
     clone->initEnvironment(enclosingEnv);
-  } else if (fun->hasLazyScript()) {
+  } else if (fun->hasBaseScript()) {
     MOZ_ASSERT(fun->compartment() == clone->compartment());
     LazyScript* lazy = fun->lazyScript();
     clone->initLazyScript(lazy);

@@ -821,6 +821,10 @@ bool FrameIter::matchCallee(JSContext* cx, JS::Handle<JSFunction*> fun) const {
 
   
   
+  MOZ_ASSERT(fun->hasBaseScript());
+
+  
+  
   
   if (((currentCallee->flags().toRaw() ^ fun->flags().toRaw()) &
        FunctionFlags::STABLE_ACROSS_CLONES) != 0 ||
@@ -834,9 +838,7 @@ bool FrameIter::matchCallee(JSContext* cx, JS::Handle<JSFunction*> fun) const {
   Rooted<JSObject*> global(cx, &fun->global());
   bool useSameScript =
       CanReuseScriptForClone(fun->realm(), currentCallee, global);
-  if (useSameScript &&
-      (currentCallee->hasScript() != fun->hasScript() ||
-       currentCallee->nonLazyScript() != fun->nonLazyScript())) {
+  if (useSameScript && (currentCallee->baseScript() != fun->baseScript())) {
     return false;
   }
 

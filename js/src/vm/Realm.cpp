@@ -539,12 +539,19 @@ static bool AddInnerLazyFunctionsFromScript(
     if (!gcThing.is<JSObject>()) {
       continue;
     }
-
     JSObject* obj = &gcThing.as<JSObject>();
-    if (obj->is<JSFunction>() && obj->as<JSFunction>().isInterpretedLazy()) {
-      if (!lazyFunctions.append(obj)) {
-        return false;
-      }
+
+    if (!obj->is<JSFunction>()) {
+      continue;
+    }
+    JSFunction* fun = &obj->as<JSFunction>();
+
+    if (!fun->hasBaseScript() || fun->hasBytecode()) {
+      continue;
+    }
+
+    if (!lazyFunctions.append(obj)) {
+      return false;
     }
   }
   return true;
@@ -566,16 +573,25 @@ static bool AddLazyFunctionsForRealm(JSContext* cx,
   for (auto i = cx->zone()->cellIter<JSObject>(kind); !i.done(); i.next()) {
     JSFunction* fun = &i->as<JSFunction>();
 
+    
+    
+    
+    if (fun->isIncomplete()) {
+      continue;
+    }
+
     if (fun->realm() != cx->realm()) {
       continue;
     }
 
-    if (fun->hasLazyScript()) {
-      LazyScript* lazy = fun->lazyScript();
-      if (lazy->enclosingScriptHasEverBeenCompiled()) {
-        if (!lazyFunctions.append(fun)) {
-          return false;
-        }
+    if (!fun->hasBaseScript() || fun->hasBytecode()) {
+      continue;
+    }
+
+    LazyScript* lazy = fun->lazyScript();
+    if (lazy->enclosingScriptHasEverBeenCompiled()) {
+      if (!lazyFunctions.append(fun)) {
+        return false;
       }
     }
   }
@@ -606,7 +622,7 @@ static bool CreateLazyScriptsForRealm(JSContext* cx) {
 
     
     
-    if (!fun->isInterpretedLazy()) {
+    if (!fun->isInterpreted() || fun->hasBytecode()) {
       continue;
     }
 
