@@ -363,6 +363,7 @@ function isBrowserShowingNotification() {
   
   if (
     window.gURLBar.view.isOpen ||
+    window.gHighPriorityNotificationBox.currentNotification ||
     window.gBrowser.getNotificationBox().currentNotification
   ) {
     return true;
