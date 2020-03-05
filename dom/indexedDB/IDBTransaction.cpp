@@ -386,7 +386,35 @@ void IDBTransaction::SendCommit(const bool aAutoCommit) {
       LoggingSerialNumber(), requestSerialNumber,
       aAutoCommit ? "automatically" : "explicitly");
 
-  DoWithTransactionChild([](auto& actor) { actor.SendCommit(); });
+  const auto lastRequestSerialNumber =
+      [this, aAutoCommit,
+       requestSerialNumber]() -> Maybe<decltype(requestSerialNumber)> {
+    if (aAutoCommit) {
+      return Nothing();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const bool dispatchingEventForThisTransaction =
+        BackgroundChildImpl::GetThreadLocalForCurrentThread()
+            ->mIndexedDBThreadLocal->GetCurrentTransaction() == this;
+
+    return Some(requestSerialNumber
+                    ? (requestSerialNumber -
+                       (dispatchingEventForThisTransaction ? 0 : 1))
+                    : 0);
+  }();
+
+  DoWithTransactionChild([lastRequestSerialNumber](auto& actor) {
+    actor.SendCommit(lastRequestSerialNumber);
+  });
 
   mSentCommitOrAbort.Flip();
 }
@@ -452,7 +480,7 @@ void IDBTransaction::GetCallerLocation(nsAString& aFilename,
 }
 
 RefPtr<IDBObjectStore> IDBTransaction::CreateObjectStore(
-    const ObjectStoreSpec& aSpec) {
+    ObjectStoreSpec& aSpec) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aSpec.metadata().id());
   MOZ_ASSERT(Mode::VersionChange == mMode);
@@ -877,22 +905,16 @@ RefPtr<IDBObjectStore> IDBTransaction::ObjectStore(const nsAString& aName,
     return nullptr;
   }
 
-  const ObjectStoreSpec* spec = nullptr;
-
-  if (IDBTransaction::Mode::VersionChange == mMode ||
-      mObjectStoreNames.Contains(aName)) {
-    const nsTArray<ObjectStoreSpec>& objectStores =
-        mDatabase->Spec()->objectStores();
-
-    const auto foundIt =
-        std::find_if(objectStores.cbegin(), objectStores.cend(),
-                     [&aName](const auto& objectStore) {
-                       return objectStore.metadata().name() == aName;
-                     });
-    if (foundIt != objectStores.cend()) {
-      spec = &*foundIt;
+  auto* const spec = [this, &aName]() -> ObjectStoreSpec* {
+    if (IDBTransaction::Mode::VersionChange == mMode ||
+        mObjectStoreNames.Contains(aName)) {
+      return mDatabase->LookupModifiableObjectStoreSpec(
+          [&aName](const auto& objectStore) {
+            return objectStore.metadata().name() == aName;
+          });
     }
-  }
+    return nullptr;
+  }();
 
   if (!spec) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_NOT_FOUND_ERR);

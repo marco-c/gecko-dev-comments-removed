@@ -65,7 +65,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
   
   
   
-  const ObjectStoreSpec* mSpec;
+  ObjectStoreSpec* mSpec;
   UniquePtr<ObjectStoreSpec> mDeletedSpec;
 
   nsTArray<RefPtr<IDBIndex>> mIndexes;
@@ -96,7 +96,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
   };
 
   static MOZ_MUST_USE RefPtr<IDBObjectStore> Create(
-      IDBTransaction* aTransaction, const ObjectStoreSpec& aSpec);
+      IDBTransaction* aTransaction, ObjectStoreSpec& aSpec);
 
   static void AppendIndexUpdateInfo(int64_t aIndexID, const KeyPath& aKeyPath,
                                     bool aMultiEntry, const nsCString& aLocale,
@@ -243,7 +243,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                JS::Handle<JSObject*> aGivenProto) override;
 
  private:
-  IDBObjectStore(IDBTransaction* aTransaction, const ObjectStoreSpec* aSpec);
+  IDBObjectStore(IDBTransaction* aTransaction, ObjectStoreSpec* aSpec);
 
   ~IDBObjectStore();
 
