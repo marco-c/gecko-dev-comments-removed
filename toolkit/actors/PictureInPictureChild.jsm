@@ -63,8 +63,8 @@ XPCOMUtils.defineLazyGetter(this, "gToggleOverrides", () => {
 
 
 class PictureInPictureToggleChild extends JSWindowActorChild {
-  constructor(dispatcher) {
-    super(dispatcher);
+  constructor() {
+    super();
     
     
     

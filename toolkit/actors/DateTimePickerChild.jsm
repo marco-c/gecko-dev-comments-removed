@@ -20,8 +20,8 @@ class DateTimePickerChild extends JSWindowActorChild {
 
 
 
-  constructor(dispatcher) {
-    super(dispatcher);
+  constructor() {
+    super();
 
     this._inputElement = null;
   }
