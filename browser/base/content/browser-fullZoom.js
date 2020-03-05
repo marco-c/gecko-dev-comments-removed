@@ -461,7 +461,11 @@ var FullZoom = {
     
     
     
-    if (!aBrowser.mInitialized || aBrowser.isSyntheticDocument) {
+    if (
+      !aBrowser.mInitialized ||
+      aBrowser.isSyntheticDocument ||
+      (!this.siteSpecific && aBrowser.tabHasCustomZoom)
+    ) {
       this._executeSoon(aCallback);
       return;
     }
@@ -498,6 +502,10 @@ var FullZoom = {
       gInPrintPreviewMode ||
       browser.isSyntheticDocument
     ) {
+      
+      
+      
+      browser.tabHasCustomZoom = !this.siteSpecific;
       return null;
     }
 
