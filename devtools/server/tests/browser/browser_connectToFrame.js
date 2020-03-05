@@ -1,0 +1,139 @@
+
+
+
+
+
+
+
+"use strict";
+
+const {
+  connectToFrame,
+} = require("devtools/server/connectors/frame-connector");
+
+add_task(async function() {
+  
+  const browser = document.createXULElement("browser");
+  browser.setAttribute("type", "content");
+  document.body.appendChild(browser);
+
+  const mm = browser.messageManager;
+
+  
+  
+  mm.loadFrameScript(
+    "data:text/javascript,new " +
+      function FrameScriptScope() {
+        
+        
+        const { require } = ChromeUtils.import(
+          "resource://devtools/shared/Loader.jsm"
+        );
+        const { DevToolsServer } = require("devtools/server/devtools-server");
+        const {
+          ActorRegistry,
+        } = require("devtools/server/actors/utils/actor-registry");
+        
+
+        DevToolsServer.init();
+
+        function TestActor() {
+          dump("instantiate test actor\n");
+        }
+        TestActor.prototype = {
+          actorPrefix: "test",
+
+          destroy: function() {
+            sendAsyncMessage("test-actor-destroyed", null);
+          },
+          hello: function() {
+            return { msg: "world" };
+          },
+        };
+        TestActor.prototype.requestTypes = {
+          hello: TestActor.prototype.hello,
+        };
+        ActorRegistry.addTargetScopedActor(
+          {
+            constructorName: "TestActor",
+            constructorFun: TestActor,
+          },
+          "testActor"
+        );
+      },
+    false
+  );
+
+  
+  DevToolsServer.init();
+  if (!DevToolsServer.createRootActor) {
+    DevToolsServer.registerAllActors();
+  }
+
+  async function initAndCloseFirstClient() {
+    
+    const transport = DevToolsServer.connectPipe();
+    const conn = transport._serverConnection;
+    const client = new DevToolsClient(transport);
+    const actor = await connectToFrame(conn, browser);
+    ok(actor.testActor, "Got the test actor");
+
+    
+    
+    await client.request({
+      to: actor.testActor,
+      type: "hello",
+    });
+
+    
+    
+    await initAndCloseSecondClient(actor.testActor);
+
+    ok(
+      DevToolsServer.initialized,
+      "DevToolsServer isn't destroyed until all clients are disconnected"
+    );
+
+    
+    
+    const onActorDestroyed = new Promise(resolve => {
+      mm.addMessageListener("test-actor-destroyed", function listener() {
+        mm.removeMessageListener("test-actor-destroyed", listener);
+        ok(true, "Actor is cleaned up");
+        resolve();
+      });
+    });
+
+    
+    await client.close();
+
+    await onActorDestroyed;
+
+    
+    
+    ok(
+      !DevToolsServer.initialized,
+      "DevToolsServer is destroyed when all clients are disconnected"
+    );
+  }
+
+  async function initAndCloseSecondClient(firstActor) {
+    
+    const transport = DevToolsServer.connectPipe();
+    const conn = transport._serverConnection;
+    const client = new DevToolsClient(transport);
+    const actor = await connectToFrame(conn, browser);
+    ok(actor.testActor, "Got a test actor for the second connection");
+    isnot(
+      actor.testActor,
+      firstActor,
+      "We get different actor instances between two connections"
+    );
+    return client.close();
+  }
+
+  await initAndCloseFirstClient();
+
+  DevToolsServer.destroy();
+  browser.remove();
+});
