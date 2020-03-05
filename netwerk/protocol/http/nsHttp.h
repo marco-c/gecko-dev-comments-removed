@@ -35,13 +35,10 @@ enum class HttpVersion {
   v3_0 = 30
 };
 
-enum class SpdyVersion {
-  NONE = 0,
-  HTTP_2 = 5
-};
+enum class SpdyVersion { NONE = 0, HTTP_2 = 5 };
 
 extern const nsCString kHttp3Version;
-const char kHttp3VersionHEX[] = "ff00000019";  
+const char kHttp3VersionHEX[] = "ff0000001b";  
 
 
 
