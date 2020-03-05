@@ -246,6 +246,19 @@ class Connection final : public mozIStorageConnection,
 
 
 
+
+
+  inline bool transactionInProgress(const SQLiteMutexAutoLock& aProofOfLock) {
+    return mDBConn ? !sqlite3_get_autocommit(mDBConn) : false;
+  }
+
+  
+
+
+
+
+
+
   bool operationSupported(ConnectionOperation aOperationType);
 
   
@@ -400,12 +413,6 @@ class Connection final : public mozIStorageConnection,
 
 
   mozilla::Atomic<int32_t> mDefaultTransactionType;
-
-  
-
-
-
-  bool mTransactionInProgress;
 
   
 
