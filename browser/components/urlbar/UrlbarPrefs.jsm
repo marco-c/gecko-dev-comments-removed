@@ -101,7 +101,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["openintab", false],
 
   
-  ["openViewOnFocus", false],
+  ["openViewOnFocus", true],
 
   
   
@@ -149,18 +149,18 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["usepreloadedtopurls.expire_days", 14],
 
   
-  ["update1", false],
+  ["update1", true],
 
   
   
-  ["update1.interventions", false],
+  ["update1.interventions", true],
 
   
-  ["update1.view.stripHttps", false],
+  ["update1.view.stripHttps", true],
 
   
   
-  ["update1.searchTips", false],
+  ["update1.searchTips", true],
 
   
   ["update2.searchButton", false],

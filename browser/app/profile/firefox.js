@@ -308,25 +308,21 @@ pref("browser.urlbar.openintab", false);
 pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
-#ifdef EARLY_BETA_OR_EARLIER
-  
-  pref("browser.urlbar.update1", true);
-  
-  
-  pref("browser.urlbar.update1.interventions", true);
-  
-  
-  pref("browser.urlbar.update1.searchTips", true);
-  
-  pref("browser.urlbar.update1.view.stripHttps", true);
-  pref("browser.urlbar.openViewOnFocus", true);
-#else
-  pref("browser.urlbar.update1", false);
-  pref("browser.urlbar.update1.interventions", false);
-  pref("browser.urlbar.update1.searchTips", false);
-  pref("browser.urlbar.update1.view.stripHttps", false);
-  pref("browser.urlbar.openViewOnFocus", false);
-#endif
+
+pref("browser.urlbar.update1", true);
+
+
+
+pref("browser.urlbar.update1.interventions", true);
+
+
+
+pref("browser.urlbar.update1.searchTips", true);
+
+
+pref("browser.urlbar.update1.view.stripHttps", true);
+
+pref("browser.urlbar.openViewOnFocus", true);
 
 
 
