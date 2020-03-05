@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.geckoview.test.rule;
 
@@ -82,12 +82,12 @@ import java.util.regex.Pattern;
 import kotlin.jvm.JvmClassMappingKt;
 import kotlin.reflect.KClass;
 
-
-
-
-
-
-
+/**
+ * TestRule that, for each test, sets up a GeckoSession, runs the test on the UI thread,
+ * and tears down the GeckoSession at the end of the test. The rule also provides methods
+ * for waiting on particular callbacks to be called, and methods for asserting that
+ * callbacks are called in the proper order.
+ */
 public class GeckoSessionTestRule implements TestRule {
     private static final String LOGTAG = "GeckoSessionTestRule";
 
@@ -117,21 +117,21 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Specify the timeout for any of the wait methods, in milliseconds, relative to
+     * {@link Environment#DEFAULT_TIMEOUT_MILLIS}. When the default timeout scales to account
+     * for differences in the device under test, the timeout value here will be
+     * scaled as well. Can be used on classes or methods.
+     */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface TimeoutMillis {
         long value();
     }
 
-    
-
-
+    /**
+     * Specify the display size for the GeckoSession in device pixels
+     */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface WithDisplay {
@@ -139,20 +139,20 @@ public class GeckoSessionTestRule implements TestRule {
         int height();
     }
 
-    
-
-
+    /**
+     * Specify that the main session should not be opened at the start of the test.
+     */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface ClosedSessionAtStart {
         boolean value() default true;
     }
 
-    
-
-
-
-
+    /**
+     * Specify that the test will set a delegate to null when creating a session, rather
+     * than setting the delegate to a proxy. The test cannot wait on any delegates that
+     * are set to null.
+     */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface NullDelegate {
@@ -165,26 +165,26 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Specify a list of GeckoSession settings to be applied to the GeckoSession object
+     * under test. Can be used on classes or methods. Note that the settings values must
+     * be string literals regardless of the type of the settings.
+     * <p>
+     * Enable tracking protection for a particular test:
+     * <pre>
+     * &#64;Setting.List(&#64;Setting(key = Setting.Key.USE_TRACKING_PROTECTION,
+     *                        value = "false"))
+     * &#64;Test public void test() { ... }
+     * </pre>
+     * <p>
+     * Use multiple settings:
+     * <pre>
+     * &#64;Setting.List({&#64;Setting(key = Setting.Key.USE_PRIVATE_MODE,
+     *                         value = "true"),
+     *                &#64;Setting(key = Setting.Key.USE_TRACKING_PROTECTION,
+     *                         value = "false")})
+     * </pre>
+     */
     @Target({ElementType.METHOD, ElementType.TYPE})
     @Retention(RetentionPolicy.RUNTIME)
     public @interface Setting {
@@ -269,72 +269,72 @@ public class GeckoSessionTestRule implements TestRule {
         String value();
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Assert that a method is called or not called, and if called, the order and number
+     * of times it is called. The order number is a monotonically increasing integer; if
+     * an called method's order number is less than the current order number, an exception
+     * is raised for out-of-order call.
+     * <p>
+     * {@code @AssertCalled} asserts the method must be called at least once.
+     * <p>
+     * {@code @AssertCalled(false)} asserts the method must not be called.
+     * <p>
+     * {@code @AssertCalled(order = 2)} asserts the method must be called once and
+     * after any other method with order number less than 2.
+     * <p>
+     * {@code @AssertCalled(order = {2, 4})} asserts order number 2 for first
+     * call and order number 4 for any subsequent calls.
+     * <p>
+     * {@code @AssertCalled(count = 2)} asserts two calls total in any order
+     * with respect to other calls.
+     * <p>
+     * {@code @AssertCalled(count = 2, order = 2)} asserts two calls, both with
+     * order number 2.
+     * <p>
+     * {@code @AssertCalled(count = 2, order = {2, 4, 6})} asserts two calls
+     * total: the first with order number 2 and the second with order number 4.
+     */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     public @interface AssertCalled {
-        
-
-
-
+        /**
+         * @return True if the method must be called if count != 0,
+         *         or false if the method must not be called.
+         */
         boolean value() default true;
 
-        
-
-
-
+        /**
+         * @return The number of calls allowed. Specify -1 to allow any number > 0. Specify 0 to
+         *         assert the method is not called, even if value() is true.
+         */
         int count() default -1;
 
-        
-
-
-
-
+        /**
+         * @return If called, the order number for each call, or 0 to allow arbitrary
+         *         order. If order's length is more than count, extra elements are not used;
+         *         if order's length is less than count, the last element is repeated.
+         */
         int[] order() default 0;
     }
 
-    
-
-
+    /**
+     * Interface that represents a function that registers or unregisters a delegate.
+     */
     public interface DelegateRegistrar<T> {
         void invoke(T delegate) throws Throwable;
     }
 
-    
-
-
-
-
+    /*
+     * If the value here is true, content crashes will be ignored. If false, the test will
+     * be failed immediately if a content crash occurs. This is also the case when
+     * {@link IgnoreCrash} is not present.
+     */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     public @interface IgnoreCrash {
-        
-
-
+        /**
+         * @return True if content crashes should be ignored, false otherwise. Default is true.
+         */
         boolean value() default true;
     }
 
@@ -347,7 +347,7 @@ public class GeckoSessionTestRule implements TestRule {
     public static class RejectedPromiseException extends RuntimeException {
         private final Object mReason;
 
-         RejectedPromiseException(final Object reason) {
+        /* package */ RejectedPromiseException(final Object reason) {
             super(String.valueOf(reason));
             mReason = reason;
         }
@@ -373,7 +373,7 @@ public class GeckoSessionTestRule implements TestRule {
         public final int counter;
         public final int order;
 
-         CallInfo(final int counter, final int order) {
+        /* package */ CallInfo(final int counter, final int order) {
             this.counter = counter;
             this.order = order;
         }
@@ -388,20 +388,20 @@ public class GeckoSessionTestRule implements TestRule {
 
         public MethodCall(final GeckoSession session, final Method method,
                           final CallRequirement requirement) {
-            this(session, method, requirement,  null);
+            this(session, method, requirement, /* target */ null);
         }
 
-         MethodCall(final GeckoSession session, final Method method,
+        /* package */ MethodCall(final GeckoSession session, final Method method,
                                  final AssertCalled annotation, final Object target) {
             this(session, method,
                  (annotation != null) ? new CallRequirement(annotation.value(),
                                                             annotation.count(),
                                                             annotation.order())
                                       : null,
-                  target);
+                 /* target */ target);
         }
 
-         MethodCall(final GeckoSession session, final Method method,
+        /* package */ MethodCall(final GeckoSession session, final Method method,
                                  final CallRequirement requirement, final Object target) {
             this.session = session;
             this.method = method;
@@ -430,7 +430,7 @@ public class GeckoSessionTestRule implements TestRule {
             return method.hashCode();
         }
 
-         int getOrder() {
+        /* package */ int getOrder() {
             if (requirement == null || currentCount == 0) {
                 return 0;
             }
@@ -442,34 +442,34 @@ public class GeckoSessionTestRule implements TestRule {
             return order[Math.min(currentCount - 1, order.length - 1)];
         }
 
-         int getCount() {
+        /* package */ int getCount() {
             return (requirement == null) ? -1 :
                    requirement.allowed ? requirement.count : 0;
         }
 
-         void incrementCounter() {
+        /* package */ void incrementCounter() {
             currentCount++;
         }
 
-         int getCurrentCount() {
+        /* package */ int getCurrentCount() {
             return currentCount;
         }
 
-         boolean allowUnlimitedCalls() {
+        /* package */ boolean allowUnlimitedCalls() {
             return getCount() == -1;
         }
 
-         boolean allowMoreCalls() {
+        /* package */ boolean allowMoreCalls() {
             final int count = getCount();
             return count == -1 || count > currentCount;
         }
 
-         CallInfo getInfo() {
+        /* package */ CallInfo getInfo() {
             return new CallInfo(currentCount, getOrder());
         }
 
-        
-        
+        // Similar to Method.equals, but treat the same method from an interface and an
+        // overriding class as the same (e.g. CharSequence.length == String.length).
         private static boolean methodsEqual(final @NonNull Method m1, final @NonNull Method m2) {
             return (m1.getDeclaringClass().isAssignableFrom(m2.getDeclaringClass()) ||
                     m2.getDeclaringClass().isAssignableFrom(m1.getDeclaringClass())) &&
@@ -486,7 +486,7 @@ public class GeckoSessionTestRule implements TestRule {
 
         public CallRecord(final GeckoSession session, final Method method, final Object[] args) {
             this.method = method;
-            this.methodCall = new MethodCall(session, method,  null);
+            this.methodCall = new MethodCall(session, method, /* requirement */ null);
             this.args = args;
         }
     }
@@ -583,10 +583,10 @@ public class GeckoSessionTestRule implements TestRule {
                 final MethodCall call = new MethodCall(
                         session, callbackMethod,
                         getAssertCalled(callbackMethod, callback), callback);
-                
-                
-                
-                
+                // It's unclear if we should assert the call count if we replace an existing
+                // delegate half way through. Until that is resolved, forbid replacing an
+                // existing delegate during a test. If you are thinking about changing this
+                // behavior, first see if #delegateDuringNextWait fits your needs.
                 assertThat("Cannot replace an existing delegate",
                            mDelegates, not(hasKey(pair)));
                 mDelegates.put(pair, call);
@@ -601,10 +601,10 @@ public class GeckoSessionTestRule implements TestRule {
             assertThat("Delegate must be an interface",
                        delegate.isInterface(), equalTo(true));
 
-            
-            
-            
-            addDelegatesForInterface( null, impl, delegate);
+            // Delegate each interface to the real thing, then register the delegate using our
+            // proxy. That way all calls to the delegate are recorded just like our internal
+            // delegates.
+            addDelegatesForInterface(/* session */ null, impl, delegate);
 
             final ExternalDelegate<T> externalDelegate =
                     new ExternalDelegate<>(delegate, impl, register, unregister);
@@ -618,7 +618,7 @@ public class GeckoSessionTestRule implements TestRule {
             return mExternalDelegates;
         }
 
-        
+        /** Generate a JS function to set new prefs and return a set of saved prefs. */
         public void setPrefs(final @NonNull Map<String, ?> prefs) {
             mOldPrefs = (JSONObject) webExtensionApiCall("SetPrefs", args -> {
                 final JSONObject existingPrefs = mOldPrefs != null ? mOldPrefs : new JSONObject();
@@ -639,7 +639,7 @@ public class GeckoSessionTestRule implements TestRule {
             });
         }
 
-        
+        /** Generate a JS function to set new prefs and reset a set of saved prefs. */
         private void restorePrefs() {
             if (mOldPrefs == null) {
                 return;
@@ -690,14 +690,14 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-     static AssertCalled getAssertCalled(final Method method, final Object callback) {
+    /* package */ static AssertCalled getAssertCalled(final Method method, final Object callback) {
         final AssertCalled annotation = method.getAnnotation(AssertCalled.class);
         if (annotation != null) {
             return annotation;
         }
 
-        
-        
+        // Some Kotlin lambdas have an invoke method that carries the annotation,
+        // instead of the interface method carrying the annotation.
         try {
             return callback.getClass().getDeclaredMethod(
                     "invoke", method.getParameterTypes()).getAnnotation(AssertCalled.class);
@@ -762,40 +762,40 @@ public class GeckoSessionTestRule implements TestRule {
                 .build();
     }
 
-    
-
-
-
-
+    /**
+     * Set an ErrorCollector for assertion errors, or null to not use one.
+     *
+     * @param ec ErrorCollector or null.
+     */
     public void setErrorCollector(final @Nullable ErrorCollector ec) {
         mErrorCollector = ec;
     }
 
-    
-
-
-
-
+    /**
+     * Get the current ErrorCollector, or null if not using one.
+     *
+     * @return ErrorCollector or null.
+     */
     public @Nullable ErrorCollector getErrorCollector() {
         return mErrorCollector;
     }
 
-    
-
-
-
-
+    /**
+     * Get the current timeout value in milliseconds.
+     *
+     * @return The current timeout value in milliseconds.
+     */
     public long getTimeoutMillis() {
         return mTimeoutMillis;
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Assert a condition with junit.Assert or an error collector.
+     *
+     * @param reason Reason string
+     * @param value Value to check
+     * @param matcher Matcher for checking the value
+     */
     public <T> void checkThat(final String reason, final T value, final Matcher<? super T> matcher) {
         if (mErrorCollector != null) {
             mErrorCollector.checkThat(reason, value, matcher);
@@ -837,20 +837,20 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
+    /**
+     * Get the session set up for the current test.
+     *
+     * @return GeckoSession object.
+     */
     public @NonNull GeckoSession getSession() {
         return mMainSession;
     }
 
-    
-
-
-
-
+    /**
+     * Get the runtime set up for the current test.
+     *
+     * @return GeckoRuntime object.
+     */
     public @NonNull GeckoRuntime getRuntime() {
         return RuntimeCreator.getRuntime();
     }
@@ -937,7 +937,7 @@ public class GeckoSessionTestRule implements TestRule {
                                     final GeckoSessionSettings settings) {
         for (final Annotation annotation : annotations) {
             if (TimeoutMillis.class.equals(annotation.annotationType())) {
-                
+                // Scale timeout based on the default timeout to account for the device under test.
                 final long value = ((TimeoutMillis) annotation).value();
                 final long timeout = value * env.getScaledTimeoutMillis() / Environment.DEFAULT_TIMEOUT_MILLIS;
                 mTimeoutMillis = Math.max(timeout, 1000);
@@ -1098,8 +1098,10 @@ public class GeckoSessionTestRule implements TestRule {
     }
 
     protected void prepareSession(final GeckoSession session) {
-        session.setMessageDelegate(RuntimeCreator.sTestSupportExtension, mMessageDelegate,
-                "browser");
+        session.getWebExtensionController()
+                .setMessageDelegate(RuntimeCreator.sTestSupportExtension,
+                                    mMessageDelegate,
+                          "browser");
         for (final Class<?> cls : DEFAULT_DELEGATES) {
             try {
                 setDelegate(cls, session, mNullDelegates.contains(cls) ? null : mCallbackProxy);
@@ -1109,20 +1111,20 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Call open() on a session, and ensure it's ready for use by the test. In particular,
+     * remove any extra calls recorded as part of opening the session.
+     *
+     * @param session Session to open.
+     */
     public void openSession(final GeckoSession session) {
         ThreadUtils.assertOnUiThread();
-        
-        
-        
+        // We receive an initial about:blank load; don't expose that to the test. The initial
+        // load ends with the first onPageStop call, so ignore everything from the session
+        // until the first onPageStop call.
 
         try {
-            
+            // We cannot detect initial page load without progress delegate.
             assertThat("ProgressDelegate cannot be null-delegate when opening session",
                     GeckoSession.ProgressDelegate.class, not(isIn(mNullDelegates)));
             mCallRecordHandler = (method, args) -> {
@@ -1146,12 +1148,12 @@ public class GeckoSessionTestRule implements TestRule {
 
     private void waitForOpenSession(final GeckoSession session) {
         ThreadUtils.assertOnUiThread();
-        
-        
-        
+        // We receive an initial about:blank load; don't expose that to the test. The initial
+        // load ends with the first onPageStop call, so ignore everything from the session
+        // until the first onPageStop call.
 
         try {
-            
+            // We cannot detect initial page load without progress delegate.
             assertThat("ProgressDelegate cannot be null-delegate when opening session",
                        GeckoSession.ProgressDelegate.class, not(isIn(mNullDelegates)));
             mCallRecordHandler = (method, args) -> {
@@ -1171,9 +1173,9 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
+    /**
+     * Internal method to perform callback checks at the end of a test.
+     */
     public void performTestEndCheck() {
         mWaitScopeDelegates.clearAndAssert();
         mTestScopeDelegates.clearAndAssert();
@@ -1200,12 +1202,12 @@ public class GeckoSessionTestRule implements TestRule {
         WebExtensionController controller = getRuntime().getWebExtensionController();
         List<WebExtension> list = waitForResult(controller.list());
 
-        
+        // Uninstall any left-over extensions
         for (WebExtension extension : list) {
             waitForResult(controller.uninstall(extension));
         }
 
-        
+        // If an extension was still installed, this test should fail
         assertThat("A WebExtension was left installed during this test.",
                 list.size(), equalTo(0));
     }
@@ -1265,7 +1267,7 @@ public class GeckoSessionTestRule implements TestRule {
                     prepareStatement(description);
                     Log.e(LOGTAG, "after prepareStatement");
                 } catch (final Throwable t) {
-                    
+                    // Any error here is not related to a specific test
                     throw new TestHarnessException(t);
                 }
             }
@@ -1305,104 +1307,104 @@ public class GeckoSessionTestRule implements TestRule {
         };
     }
 
-    
-
-
+    /**
+     * This simply sends an empty message to the web content and waits for a reply.
+     */
     public void waitForRoundTrip(final GeckoSession session) {
         waitForJS(session, "true");
     }
 
-    
-
-
-
+    /**
+     * Wait until a page load has finished on any session. A session must have started a
+     * page load since the last wait, or this method will wait indefinitely.
+     */
     public void waitForPageStop() {
-        waitForPageStop( null);
+        waitForPageStop(/* session */ null);
     }
 
-    
-
-
-
-
-
+    /**
+     * Wait until a page load has finished. The session must have started a page load since
+     * the last wait, or this method will wait indefinitely.
+     *
+     * @param session Session to wait on, or null to wait on any session.
+     */
     public void waitForPageStop(final GeckoSession session) {
-        waitForPageStops(session,  1);
+        waitForPageStops(session, /* count */ 1);
     }
 
-    
-
-
-
-
-
+    /**
+     * Wait until a page load has finished on any session. A session must have started a
+     * page load since the last wait, or this method will wait indefinitely.
+     *
+     * @param count Number of page loads to wait for.
+     */
     public void waitForPageStops(final int count) {
-        waitForPageStops( null, count);
+        waitForPageStops(/* session */ null, count);
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Wait until a page load has finished. The session must have started a page load since
+     * the last wait, or this method will wait indefinitely.
+     *
+     * @param session Session to wait on, or null to wait on any session.
+     * @param count Number of page loads to wait for.
+     */
     public void waitForPageStops(final GeckoSession session, final int count) {
         final List<MethodCall> methodCalls = new ArrayList<>(1);
         methodCalls.add(new MethodCall(session, sOnPageStop,
-                new CallRequirement( true, count, null)));
+                new CallRequirement(/* allowed */ true, count, null)));
 
         waitUntilCalled(session, GeckoSession.ProgressDelegate.class, methodCalls);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified callback
+     * interface for any session. If no methods are specified, wait until any method has
+     * been called.
+     *
+     * @param callback Target callback interface; must be an interface under GeckoSession.
+     * @param methods List of methods to wait on; use empty or null or wait on any method.
+     */
     public void waitUntilCalled(final @NonNull KClass<?> callback,
                                 final @Nullable String... methods) {
-        waitUntilCalled( null, callback, methods);
+        waitUntilCalled(/* session */ null, callback, methods);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified callback
+     * interface. If no methods are specified, wait until any method has been called.
+     *
+     * @param session Session to wait on, or null to wait on any session.
+     * @param callback Target callback interface; must be an interface under GeckoSession.
+     * @param methods List of methods to wait on; use empty or null or wait on any method.
+     */
     public void waitUntilCalled(final @Nullable GeckoSession session,
                                 final @NonNull KClass<?> callback,
                                 final @Nullable String... methods) {
         waitUntilCalled(session, JvmClassMappingKt.getJavaClass(callback), methods);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified callback
+     * interface for any session. If no methods are specified, wait until any method has
+     * been called.
+     *
+     * @param callback Target callback interface; must be an interface under GeckoSession.
+     * @param methods List of methods to wait on; use empty or null or wait on any method.
+     */
     public void waitUntilCalled(final @NonNull Class<?> callback,
                                 final @Nullable String... methods) {
-        waitUntilCalled( null, callback, methods);
+        waitUntilCalled(/* session */ null, callback, methods);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified callback
+     * interface. If no methods are specified, wait until any method has been called.
+     *
+     * @param session Session to wait on, or null to wait on any session.
+     * @param callback Target callback interface; must be an interface under GeckoSession.
+     * @param methods List of methods to wait on; use empty or null or wait on any method.
+     */
     public void waitUntilCalled(final @Nullable GeckoSession session,
                                 final @NonNull Class<?> callback,
                                 final @Nullable String... methods) {
@@ -1425,7 +1427,7 @@ public class GeckoSessionTestRule implements TestRule {
                         continue;
                     }
                     waitMethods.add(new MethodCall(session, method,
-                                                    null));
+                                                   /* requirement */ null));
                     break;
                 }
             }
@@ -1439,27 +1441,27 @@ public class GeckoSessionTestRule implements TestRule {
         waitUntilCalled(session, callback, waitMethods);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified object for any
+     * session, as specified by any {@link AssertCalled @AssertCalled} annotations. If no
+     * {@link AssertCalled @AssertCalled} annotations are found, wait until any method has
+     * been called. Only methods belonging to a GeckoSession callback are supported.
+     *
+     * @param callback Target callback object; must implement an interface under GeckoSession.
+     */
     public void waitUntilCalled(final @NonNull Object callback) {
-        waitUntilCalled( null, callback);
+        waitUntilCalled(/* session */ null, callback);
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Wait until the specified methods have been called on the specified object,
+     * as specified by any {@link AssertCalled @AssertCalled} annotations. If no
+     * {@link AssertCalled @AssertCalled} annotations are found, wait until any method
+     * has been called. Only methods belonging to a GeckoSession callback are supported.
+     *
+     * @param session Session to wait on, or null to wait on any session.
+     * @param callback Target callback object; must implement an interface under GeckoSession.
+     */
     public void waitUntilCalled(final @Nullable GeckoSession session,
                                 final @NonNull Object callback) {
         if (callback instanceof Class<?>) {
@@ -1485,7 +1487,7 @@ public class GeckoSessionTestRule implements TestRule {
                 final AssertCalled ac = getAssertCalled(callbackMethod, callback);
                 if (ac != null && ac.value() && ac.count() != 0) {
                     methodCalls.add(new MethodCall(session, method,
-                                                   ac,  null));
+                                                   ac, /* target */ null));
                 }
             }
             isSessionCallback = true;
@@ -1509,9 +1511,9 @@ public class GeckoSessionTestRule implements TestRule {
                        session, isIn(mSubSessions));
         }
 
-        
-        
-        
+        // Make sure all handlers are set though #delegateUntilTestEnd or #delegateDuringNextWait,
+        // instead of through GeckoSession directly, so that we can still record calls even with
+        // custom handlers set.
         for (final Class<?> ifce : DEFAULT_DELEGATES) {
             final Object callback;
             try {
@@ -1521,7 +1523,7 @@ public class GeckoSessionTestRule implements TestRule {
                 throw unwrapRuntimeException(e);
             }
             if (mNullDelegates.contains(ifce)) {
-                
+                // Null-delegates are initially null but are allowed to be any value.
                 continue;
             }
             assertThat(ifce.getSimpleName() + " callbacks should be " +
@@ -1530,13 +1532,13 @@ public class GeckoSessionTestRule implements TestRule {
         }
 
         if (methodCalls.isEmpty()) {
-            
+            // Waiting for any call on `delegate`; make sure it doesn't contain any null-delegates.
             for (final Class<?> ifce : mNullDelegates) {
                 assertThat("Cannot wait on null-delegate callbacks",
                            delegate, not(typeCompatibleWith(ifce)));
             }
         } else {
-            
+            // Waiting for particular calls; make sure those calls aren't from a null-delegate.
             for (final MethodCall call : methodCalls) {
                 assertThat("Cannot wait on null-delegate callbacks",
                            call.method.getDeclaringClass(), not(isIn(mNullDelegates)));
@@ -1552,7 +1554,7 @@ public class GeckoSessionTestRule implements TestRule {
         while (!calledAny || !methodCalls.isEmpty()) {
             final int currentIndex = index;
 
-            
+            // Let's wait for more messages if we reached the end
             UiThreadUtils.waitForCondition(() -> (currentIndex < mCallRecords.size()), mTimeoutMillis);
 
             if (SystemClock.uptimeMillis() - startTime > mTimeoutMillis) {
@@ -1586,38 +1588,38 @@ public class GeckoSessionTestRule implements TestRule {
         mLastWaitEnd = endCallIndex;
         mWaitScopeDelegates.clearAndAssert();
 
-        
-        
+        // Register any test-delegates that were not registered due to wait-delegates
+        // having precedence.
         for (final ExternalDelegate<?> delegate : mTestScopeDelegates.getExternalDelegates()) {
             delegate.register();
         }
     }
 
-    
-
-
-
-
-
-
-
-
-
+    /**
+     * Playback callbacks that were made on all sessions during the previous wait. For any
+     * methods annotated with {@link AssertCalled @AssertCalled}, assert that the
+     * callbacks satisfy the specified requirements. If no {@link AssertCalled
+     * @AssertCalled} annotations are found, assert any method has been called. Only
+     * methods belonging to a GeckoSession callback are supported.
+     *
+     * @param callback Target callback object; must implement one or more interfaces
+     *                 under GeckoSession.
+     */
     public void forCallbacksDuringWait(final @NonNull Object callback) {
-        forCallbacksDuringWait( null, callback);
+        forCallbacksDuringWait(/* session */ null, callback);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Playback callbacks that were made during the previous wait. For any methods
+     * annotated with {@link AssertCalled @AssertCalled}, assert that the callbacks
+     * satisfy the specified requirements. If no {@link AssertCalled @AssertCalled}
+     * annotations are found, assert any method has been called. Only methods belonging
+     * to a GeckoSession callback are supported.
+     *
+     * @param session  Target session object, or null to playback all sessions.
+     * @param callback Target callback object; must implement one or more interfaces
+     *                 under GeckoSession.
+     */
     public void forCallbacksDuringWait(final @Nullable GeckoSession session,
                                        final @NonNull Object callback) {
         final Method[] declaredMethods = callback.getClass().getDeclaredMethods();
@@ -1642,7 +1644,7 @@ public class GeckoSessionTestRule implements TestRule {
                 }
                 final MethodCall call = new MethodCall(
                         session, callbackMethod, getAssertCalled(callbackMethod, callback),
-                         null);
+                        /* target */ null);
                 methodCalls.add(call);
 
                 if (call.requirement != null) {
@@ -1702,78 +1704,78 @@ public class GeckoSessionTestRule implements TestRule {
                   calledAny, equalTo(true));
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Get information about the current call. Only valid during a {@link
+     * #forCallbacksDuringWait}, {@link #delegateDuringNextWait}, or {@link
+     * #delegateUntilTestEnd} callback.
+     *
+     * @return Call information
+     */
     public @NonNull CallInfo getCurrentCall() {
         assertThat("Should be in a method call", mCurrentMethodCall, notNullValue());
         return mCurrentMethodCall.getInfo();
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Delegate implemented interfaces to the specified callback object for all sessions,
+     * for the rest of the test.  Only GeckoSession callback interfaces are supported.
+     * Delegates for {@code delegateUntilTestEnd} can be temporarily overridden by
+     * delegates for {@link #delegateDuringNextWait}.
+     *
+     * @param callback Callback object, or null to clear all previously-set delegates.
+     */
     public void delegateUntilTestEnd(final @NonNull Object callback) {
-        delegateUntilTestEnd( null, callback);
+        delegateUntilTestEnd(/* session */ null, callback);
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Delegate implemented interfaces to the specified callback object, for the rest of the test.
+     * Only GeckoSession callback interfaces are supported. Delegates for {@link
+     * #delegateUntilTestEnd} can be temporarily overridden by delegates for {@link
+     * #delegateDuringNextWait}.
+     *
+     * @param session Session to target, or null to target all sessions.
+     * @param callback Callback object, or null to clear all previously-set delegates.
+     */
     public void delegateUntilTestEnd(final @Nullable GeckoSession session,
                                      final @NonNull Object callback) {
         mTestScopeDelegates.delegate(session, callback);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Delegate implemented interfaces to the specified callback object for all sessions,
+     * during the next wait.  Only GeckoSession callback interfaces are supported.
+     * Delegates for {@code delegateDuringNextWait} can temporarily take precedence over
+     * delegates for {@link #delegateUntilTestEnd}.
+     *
+     * @param callback Callback object, or null to clear all previously-set delegates.
+     */
     public void delegateDuringNextWait(final @NonNull Object callback) {
-        delegateDuringNextWait( null, callback);
+        delegateDuringNextWait(/* session */ null, callback);
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Delegate implemented interfaces to the specified callback object, during the next wait.
+     * Only GeckoSession callback interfaces are supported. Delegates for {@link
+     * #delegateDuringNextWait} can temporarily take precedence over delegates for
+     * {@link #delegateUntilTestEnd}.
+     *
+     * @param session Session to target, or null to target all sessions.
+     * @param callback Callback object, or null to clear all previously-set delegates.
+     */
     public void delegateDuringNextWait(final @Nullable GeckoSession session,
                                        final @NonNull Object callback) {
         mWaitScopeDelegates.delegate(session, callback);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Synthesize a tap event at the specified location using the main session.
+     * The session must have been created with a display.
+     *
+     * @param session Target session
+     * @param x X coordinate
+     * @param y Y coordinate
+     */
     public void synthesizeTap(final @NonNull GeckoSession session,
                               final int x, final int y) {
         final long downTime = SystemClock.uptimeMillis();
@@ -1858,7 +1860,7 @@ public class GeckoSessionTestRule implements TestRule {
     }
 
     public Object evaluateJS(final @NonNull GeckoSession session, final @NonNull String js) {
-        
+        // Let's make sure we have the port already
         UiThreadUtils.waitForCondition(() -> mPorts.containsKey(session), mTimeoutMillis);
 
         final JSONObject message = new JSONObject();
@@ -1903,13 +1905,13 @@ public class GeckoSessionTestRule implements TestRule {
         return value;
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Initialize and keep track of the specified session within the test rule. The
+     * session is automatically cleaned up at the end of the test.
+     *
+     * @param session Session to keep track of.
+     * @return Same session
+     */
     public GeckoSession wrapSession(final GeckoSession session) {
         try {
             mSubSessions.add(session);
@@ -1935,74 +1937,74 @@ public class GeckoSessionTestRule implements TestRule {
         return wrapSession(session);
     }
 
-    
-
-
-
-
+    /**
+     * Create a new, opened session using the main session settings.
+     *
+     * @return New session.
+     */
     public GeckoSession createOpenSession() {
-        return createSession(mMainSession.getSettings(),  true);
+        return createSession(mMainSession.getSettings(), /* open */ true);
     }
 
-    
-
-
-
-
-
+    /**
+     * Create a new, opened session using the specified settings.
+     *
+     * @param settings Settings for the new session.
+     * @return New session.
+     */
     public GeckoSession createOpenSession(final GeckoSessionSettings settings) {
-        return createSession(settings,  true);
+        return createSession(settings, /* open */ true);
     }
 
-    
-
-
-
-
+    /**
+     * Create a new, closed session using the specified settings.
+     *
+     * @return New session.
+     */
     public GeckoSession createClosedSession() {
-        return createSession(mMainSession.getSettings(),  false);
+        return createSession(mMainSession.getSettings(), /* open */ false);
     }
 
-    
-
-
-
-
-
+    /**
+     * Create a new, closed session using the specified settings.
+     *
+     * @param settings Settings for the new session.
+     * @return New session.
+     */
     public GeckoSession createClosedSession(final GeckoSessionSettings settings) {
-        return createSession(settings,  false);
+        return createSession(settings, /* open */ false);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Return a value from the given array indexed by the current call counter. Only valid
+     * during a {@link #forCallbacksDuringWait}, {@link #delegateDuringNextWait}, or
+     * {@link #delegateUntilTestEnd} callback.
+     * <p><p>
+     * Asserts that {@code foo} is equal to {@code "bar"} during the first call and {@code
+     * "baz"} during the second call:
+     * <pre>{@code assertThat("Foo should match", foo, equalTo(forEachCall("bar",
+     * "baz")));}</pre>
+     *
+     * @param values Input array
+     * @return Value from input array indexed by the current call counter.
+     */
     @SafeVarargs
     public final <T> T forEachCall(T... values) {
         assertThat("Should be in a method call", mCurrentMethodCall, notNullValue());
         return values[Math.min(mCurrentMethodCall.getCurrentCount(), values.length) - 1];
     }
 
-    
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Evaluate a JavaScript expression and return the result, similar to {@link #evaluateJS}.
+     * In addition, treat the evaluation as a wait event, which will affect other calls such as
+     * {@link #forCallbacksDuringWait}. If the result is a Promise, wait on the Promise to settle
+     * and return or throw based on the outcome.
+     *
+     * @param session Session containing the target page.
+     * @param js JavaScript expression.
+     * @return Result of the expression or value of the resolved Promise.
+     * @see #evaluateJS
+     */
     public @Nullable Object waitForJS(final @NonNull GeckoSession session, final @NonNull String js) {
         try {
             beforeWait();
@@ -2012,25 +2014,25 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Get a list of Gecko prefs. Undefined prefs will return as null.
+     *
+     * @param prefs List of pref names.
+     * @return Pref values as a list of values.
+     */
     public JSONArray getPrefs(final @NonNull String... prefs) {
         return (JSONArray) webExtensionApiCall("GetPrefs", args -> {
             args.put("prefs", new JSONArray(Arrays.asList(prefs)));
         });
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Gets the color of a link for a given URI and selector.
+     *
+     * @param uri Page where the link is present.
+     * @param selector Selector that matches the link
+     * @return String representing the color, e.g. rgb(0, 0, 255)
+     */
     public String getLinkColor(final String uri, final String selector) {
         return (String) webExtensionApiCall("GetLinkColor", args -> {
             args.put("uri", uri);
@@ -2053,12 +2055,12 @@ public class GeckoSessionTestRule implements TestRule {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * Adds value to the given histogram.
+     *
+     * @param id the histogram id to increment.
+     * @param value to add to the histogram.
+     */
     public void addHistogram(final String id, final long value) {
         webExtensionApiCall("AddHistogram", args -> {
             args.put("id", id);
@@ -2066,12 +2068,12 @@ public class GeckoSessionTestRule implements TestRule {
         });
     }
 
-    
-
-
-
-
-
+    /**
+     * Revokes SSL overrides set for a given host and port
+     *
+     * @param host the host.
+     * @param port the port (-1 == 443).
+     */
     public void removeCertOverride(final String host, final long port) {
         webExtensionApiCall("RemoveCertOverride", args -> {
             args.put("host", host);
@@ -2083,12 +2085,12 @@ public class GeckoSessionTestRule implements TestRule {
         void setArgs(JSONObject object) throws JSONException;
     }
 
-    
-
-
-
-
-
+    /**
+     * Sets value to the given scalar.
+     *
+     * @param id the scalar to be set.
+     * @param value the value to set.
+     */
     public <T> void setScalar(final String id, final T value) {
         webExtensionApiCall("SetScalar", args -> {
             args.put("id", id);
@@ -2096,9 +2098,9 @@ public class GeckoSessionTestRule implements TestRule {
         });
     }
 
-    
-
-
+    /**
+     * Invokes nsIDOMWindowUtils.setResolutionAndScaleTo.
+     */
     public void setResolutionAndScaleTo(final float resolution) {
         webExtensionApiCall("SetResolutionAndScaleTo", args -> {
             args.put("resolution", resolution);
@@ -2106,7 +2108,7 @@ public class GeckoSessionTestRule implements TestRule {
     }
 
     private Object webExtensionApiCall(final String apiName, SetArgs argsSetter) {
-        
+        // Ensure background script is connected
         UiThreadUtils.waitForCondition(() -> RuntimeCreator.backgroundPort() != null,
                 mTimeoutMillis);
 
@@ -2131,45 +2133,45 @@ public class GeckoSessionTestRule implements TestRule {
         return waitForMessage(id);
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Set a list of Gecko prefs for the rest of the test. Prefs set in {@link #setPrefsDuringNextWait} can
+     * temporarily take precedence over prefs set in {@code setPrefsUntilTestEnd}.
+     *
+     * @param prefs Map of pref names to values.
+     * @see #setPrefsDuringNextWait
+     */
     public void setPrefsUntilTestEnd(final @NonNull Map<String, ?> prefs) {
         mTestScopeDelegates.setPrefs(prefs);
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Set a list of Gecko prefs during the next wait. Prefs set in {@code setPrefsDuringNextWait} can
+     * temporarily take precedence over prefs set in {@link #setPrefsUntilTestEnd}.
+     *
+     * @param prefs Map of pref names to values.
+     * @see #setPrefsUntilTestEnd
+     */
     public void setPrefsDuringNextWait(final @NonNull Map<String, ?> prefs) {
         mWaitScopeDelegates.setPrefs(prefs);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Register an external, non-GeckoSession delegate, and start recording the delegate calls
+     * until the end of the test. The delegate can then be used with methods such as {@link
+     * #waitUntilCalled(Class, String...)} and {@link #forCallbacksDuringWait(Object)}. At the
+     * end of the test, the delegate is automatically unregistered. Delegates added by {@link
+     * #addExternalDelegateDuringNextWait} can temporarily take precedence over delegates added
+     * by {@code delegateUntilTestEnd}.
+     *
+     * @param delegate Delegate instance to register.
+     * @param register DelegateRegistrar instance that represents a function to register the
+     *                 delegate.
+     * @param unregister DelegateRegistrar instance that represents a function to unregister the
+     *                   delegate.
+     * @param impl Default delegate implementation. Its methods may be annotated with
+     *             {@link AssertCalled} annotations to assert expected behavior.
+     * @see #addExternalDelegateDuringNextWait
+     */
     public <T> void addExternalDelegateUntilTestEnd(@NonNull final Class<T> delegate,
                                                     @NonNull final DelegateRegistrar<T> register,
                                                     @NonNull final DelegateRegistrar<T> unregister,
@@ -2177,14 +2179,14 @@ public class GeckoSessionTestRule implements TestRule {
         final ExternalDelegate<T> externalDelegate =
                 mTestScopeDelegates.addExternalDelegate(delegate, register, unregister, impl);
 
-        
+        // Register if there is not a wait delegate to take precedence over this call.
         if (!mWaitScopeDelegates.getExternalDelegates().contains(externalDelegate)) {
             externalDelegate.register();
         }
     }
 
-    
-
+    /** @see #addExternalDelegateUntilTestEnd(Class, DelegateRegistrar,
+     *                                        DelegateRegistrar, Object) */
     public <T> void addExternalDelegateUntilTestEnd(@NonNull final KClass<T> delegate,
                                                     @NonNull final DelegateRegistrar<T> register,
                                                     @NonNull final DelegateRegistrar<T> unregister,
@@ -2193,23 +2195,23 @@ public class GeckoSessionTestRule implements TestRule {
                                         register, unregister, impl);
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Register an external, non-GeckoSession delegate, and start recording the delegate calls
+     * during the next wait. The delegate can then be used with methods such as {@link
+     * #waitUntilCalled(Class, String...)} and {@link #forCallbacksDuringWait(Object)}. After the
+     * next wait, the delegate is automatically unregistered. Delegates added by {@code
+     * addExternalDelegateDuringNextWait} can temporarily take precedence over delegates added
+     * by {@link #delegateUntilTestEnd}.
+     *
+     * @param delegate Delegate instance to register.
+     * @param register DelegateRegistrar instance that represents a function to register the
+     *                 delegate.
+     * @param unregister DelegateRegistrar instance that represents a function to unregister the
+     *                   delegate.
+     * @param impl Default delegate implementation. Its methods may be annotated with
+     *             {@link AssertCalled} annotations to assert expected behavior.
+     * @see #addExternalDelegateDuringNextWait
+     */
     public <T> void addExternalDelegateDuringNextWait(@NonNull final Class<T> delegate,
                                                       @NonNull final DelegateRegistrar<T> register,
                                                       @NonNull final DelegateRegistrar<T> unregister,
@@ -2217,8 +2219,8 @@ public class GeckoSessionTestRule implements TestRule {
         final ExternalDelegate<T> externalDelegate =
                 mWaitScopeDelegates.addExternalDelegate(delegate, register, unregister, impl);
 
-        
-        
+        // Always register because this call always takes precedence, but make sure to unregister
+        // any test-delegates first.
         final int index = mTestScopeDelegates.getExternalDelegates().indexOf(externalDelegate);
         if (index >= 0) {
             mTestScopeDelegates.getExternalDelegates().get(index).unregister();
@@ -2226,8 +2228,8 @@ public class GeckoSessionTestRule implements TestRule {
         externalDelegate.register();
     }
 
-    
-
+    /** @see #addExternalDelegateDuringNextWait(Class, DelegateRegistrar,
+     *                                          DelegateRegistrar, Object) */
     public <T> void addExternalDelegateDuringNextWait(@NonNull final KClass<T> delegate,
                                                       @NonNull final DelegateRegistrar<T> register,
                                                       @NonNull final DelegateRegistrar<T> unregister,
@@ -2236,14 +2238,14 @@ public class GeckoSessionTestRule implements TestRule {
                                           register, unregister, impl);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * This waits for the given result and returns it's value. If
+     * the result failed with an exception, it is rethrown.
+     *
+     * @param result A {@link GeckoResult} instance.
+     * @param <T> The type of the value held by the {@link GeckoResult}
+     * @return The value of the completed {@link GeckoResult}.
+     */
     public <T> T waitForResult(@NonNull GeckoResult<T> result) throws Throwable {
         beforeWait();
         try {
