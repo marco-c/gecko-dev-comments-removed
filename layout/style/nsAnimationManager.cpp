@@ -290,6 +290,23 @@ void CSSAnimation::UpdateTiming(SeekFlag aSeekFlag,
 
 
 
+void CSSAnimationKeyframeEffect::SetKeyframes(JSContext* aContext,
+                                              JS::Handle<JSObject*> aKeyframes,
+                                              ErrorResult& aRv) {
+  KeyframeEffect::SetKeyframes(aContext, aKeyframes, aRv);
+
+  if (aRv.Failed()) {
+    return;
+  }
+
+  if (mAnimation && mAnimation->AsCSSAnimation()) {
+    mAnimation->AsCSSAnimation()->AddOverriddenProperties(
+        CSSAnimationProperties::Keyframes);
+  }
+}
+
+
+
 
 
 static already_AddRefed<CSSAnimation> PopExistingAnimation(
@@ -378,6 +395,7 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
 static void UpdateOldAnimationPropertiesWithNew(
     CSSAnimation& aOld, TimingParams&& aNewTiming,
     nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
+    CSSAnimationProperties aOverriddenProperties,
     ServoCSSAnimationBuilder& aBuilder) {
   bool animationChanged = false;
 
@@ -389,7 +407,8 @@ static void UpdateOldAnimationPropertiesWithNew(
     oldEffect->SetSpecifiedTiming(std::move(aNewTiming));
 
     KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect();
-    if (oldKeyframeEffect) {
+    if (~aOverriddenProperties & CSSAnimationProperties::Keyframes &&
+        oldKeyframeEffect) {
       aBuilder.SetKeyframes(*oldKeyframeEffect, std::move(aNewKeyframes));
     }
   }
@@ -463,14 +482,14 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
     
     
     
-    UpdateOldAnimationPropertiesWithNew(*oldAnim, std::move(timing),
-                                        std::move(keyframes), isStylePaused,
-                                        aBuilder);
+    UpdateOldAnimationPropertiesWithNew(
+        *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
+        oldAnim->GetOverriddenProperties(), aBuilder);
     return oldAnim.forget();
   }
 
   KeyframeEffectParams effectOptions;
-  RefPtr<KeyframeEffect> effect = new KeyframeEffect(
+  RefPtr<KeyframeEffect> effect = new CSSAnimationKeyframeEffect(
       aPresContext->Document(),
       OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoType),
       std::move(timing), effectOptions);
