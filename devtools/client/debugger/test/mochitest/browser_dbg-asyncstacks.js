@@ -5,7 +5,7 @@
 
 
 add_task(async function() {
-  pushPref("devtools.debugger.features.async-live-stacks", true);
+  pushPref("devtools.debugger.features.async-captured-stacks", true);
   const dbg = await initDebugger("doc-frames-async.html");
 
   invokeInTab("main");
@@ -14,6 +14,6 @@ add_task(async function() {
   is(findElement(dbg, "frame", 1).innerText, "sleep\ndoc-frames-async.html:13");
   is(
     findElement(dbg, "frame", 2).innerText,
-    "await\nmain\ndoc-frames-async.html:17"
+    "async\nmain\ndoc-frames-async.html:17"
   );
 });
