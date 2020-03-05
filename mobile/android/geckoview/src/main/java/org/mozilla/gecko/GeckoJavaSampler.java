@@ -60,6 +60,7 @@ public class GeckoJavaSampler {
 
         private boolean mPauseSampler;
         private boolean mStopSampler;
+        private boolean mBufferOverflowed = false;
 
         private Sample[] mSamples;
         private int mSamplePos;
@@ -67,7 +68,9 @@ public class GeckoJavaSampler {
         public SamplingRunnable(final int aInterval, final int aSampleCount) {
             
             mInterval = Math.max(10, aInterval);
-            mSampleCount = aSampleCount;
+            
+            
+            mSampleCount = Math.min(aSampleCount, 100000);
         }
 
         @Override
@@ -94,7 +97,13 @@ public class GeckoJavaSampler {
                     if (!mPauseSampler) {
                         StackTraceElement[] bt = sMainThread.getStackTrace();
                         mSamples[mSamplePos] = new Sample(bt);
-                        mSamplePos = (mSamplePos + 1) % mSamples.length;
+                        mSamplePos += 1;
+                        if (mSamplePos == mSampleCount) {
+                            
+                            
+                            mSamplePos = 0;
+                            mBufferOverflowed = true;
+                        }
                     }
                     if (mStopSampler) {
                         break;
@@ -104,15 +113,22 @@ public class GeckoJavaSampler {
         }
 
         private Sample getSample(final int aSampleId) {
-            if (aSampleId < mSamples.length && mSamples[aSampleId] != null) {
-                int startPos = 0;
-                if (mSamples[mSamplePos] != null) {
-                    startPos = mSamplePos;
-                }
-                int readPos = (startPos + aSampleId) % mSamples.length;
-                return mSamples[readPos];
+            if (aSampleId >= mSampleCount) {
+                
+                return null;
             }
-            return null;
+
+            int samplePos = aSampleId;
+            if (mBufferOverflowed) {
+                
+                
+                samplePos = (samplePos + mSamplePos) % mSampleCount;
+            }
+
+            
+            
+            
+            return mSamples[samplePos];
         }
     }
 
