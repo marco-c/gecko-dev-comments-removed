@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import
 
@@ -10,7 +10,7 @@ PACKAGE_NAME = "manifestparser"
 PACKAGE_VERSION = '2.0.0'
 
 DEPS = [
-    'mozlog >= 5.0',
+    'mozlog >= 6.0',
     'six >= 1.10.0',
 ]
 setup(name=PACKAGE_NAME,
@@ -21,7 +21,7 @@ setup(name=PACKAGE_NAME,
                    'Programming Language :: Python :: 3',
                    'Programming Language :: Python :: 3.5',
                    ],
-                  
+                  # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='mozilla manifests',
       author='Mozilla Automation and Testing Team',
       author_email='tools@lists.mozilla.org',
