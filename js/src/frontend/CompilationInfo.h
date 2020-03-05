@@ -15,6 +15,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "frontend/UsedNameTracker.h"
+#include "js/GCVector.h"
 #include "js/RealmOptions.h"
 #include "js/SourceText.h"
 #include "js/Vector.h"
@@ -49,7 +50,11 @@ struct MOZ_RAII CompilationInfo {
   
   Vector<RegExpCreationData> regExpData;
   Vector<BigIntCreationData> bigIntData;
-  Vector<FunctionCreationData> funcData;
+
+  
+  
+  
+  JS::RootedVector<FunctionCreationData> funcData;
 
   
   
