@@ -103,7 +103,7 @@ function receiveProfile(profile, getSymbolTableCallback) {
     throw new Error("No browser window");
   }
   const browser = win.gBrowser;
-  Services.focus.activeWindow = win;
+  win.focus();
 
   
   const baseUrl = Services.prefs.getStringPref(
