@@ -1553,7 +1553,9 @@ Inspector.prototype = {
 
 
   untrackReflowsInSelection() {
-    if (!this.reflowFront) {
+    
+    
+    if (!this.reflowFront || !this.reflowFront.actorID) {
       return;
     }
 
@@ -1653,8 +1655,6 @@ Inspector.prototype = {
     }
 
     this.cancelUpdate();
-
-    this.untrackReflowsInSelection();
 
     this.sidebar.destroy();
 
