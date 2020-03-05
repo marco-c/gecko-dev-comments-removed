@@ -134,7 +134,9 @@ function addContentHelpers() {
 
 
 
-function test_newtab(testInfo) {
+
+
+function test_newtab(testInfo, browserURL = "about:newtab") {
   
   let { before, test: contentTask, after } = testInfo;
   if (!before) {
@@ -165,7 +167,7 @@ function test_newtab(testInfo) {
     
     let tab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      "about:newtab",
+      browserURL,
       false
     );
 
