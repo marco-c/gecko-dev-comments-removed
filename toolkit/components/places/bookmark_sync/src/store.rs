@@ -450,6 +450,9 @@ impl<'s> dogear::Store for Store<'s> {
         
         
         
+        if self.db.transaction_in_progress()? {
+            return Err(Error::StorageBusy);
+        }
         let tx = self.db.transaction()?;
         if self.total_sync_changes != total_sync_changes() {
             return Err(Error::MergeConflict);
