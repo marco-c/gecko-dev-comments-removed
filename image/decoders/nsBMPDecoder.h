@@ -19,19 +19,41 @@ namespace image {
 
 namespace bmp {
 
+struct CalRgbEndpoint {
+  uint32_t mGamma;
+  uint32_t mX;
+  uint32_t mY;
+  uint32_t mZ;
+};
+
 
 
 
 struct Header {
-  uint32_t mDataOffset;   
-  uint32_t mBIHSize;      
-  int32_t mWidth;         
-  int32_t mHeight;        
-  uint16_t mBpp;          
-  uint32_t mCompression;  
-  uint32_t mImageSize;    
-                          
-  uint32_t mNumColors;    
+  uint32_t mDataOffset;       
+  uint32_t mBIHSize;          
+  int32_t mWidth;             
+  int32_t mHeight;            
+  uint16_t mBpp;              
+  uint32_t mCompression;      
+  uint32_t mImageSize;        
+                              
+  uint32_t mNumColors;        
+  InfoColorSpace mCsType;     
+  InfoColorIntent mCsIntent;  
+
+  union {
+    struct {
+      CalRgbEndpoint mRed;
+      CalRgbEndpoint mGreen;
+      CalRgbEndpoint mBlue;
+    } mCalibrated;
+
+    struct {
+      uint32_t mOffset;
+      uint32_t mLength;
+    } mProfile;
+  } mColorSpace;
 
   Header()
       : mDataOffset(0),
@@ -41,7 +63,9 @@ struct Header {
         mBpp(0),
         mCompression(0),
         mImageSize(0),
-        mNumColors(0) {}
+        mNumColors(0),
+        mCsType(InfoColorSpace::SRGB),
+        mCsIntent(InfoColorIntent::IMAGES) {}
 };
 
 
@@ -158,6 +182,10 @@ class nsBMPDecoder : public Decoder {
     INFO_HEADER_SIZE,
     INFO_HEADER_REST,
     BITFIELDS,
+    SKIP_TO_COLOR_PROFILE,
+    FOUND_COLOR_PROFILE,
+    COLOR_PROFILE,
+    ALLOCATE_SURFACE,
     COLOR_TABLE,
     GAP,
     AFTER_GAP,
@@ -184,10 +212,16 @@ class nsBMPDecoder : public Decoder {
 
   void FinishRow();
 
+  void PrepareCalibratedColorProfile();
+  void PrepareColorProfileTransform();
+
   LexerTransition<State> ReadFileHeader(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderSize(const char* aData, size_t aLength);
   LexerTransition<State> ReadInfoHeaderRest(const char* aData, size_t aLength);
   LexerTransition<State> ReadBitfields(const char* aData, size_t aLength);
+  LexerTransition<State> SeekColorProfile(size_t aLength);
+  LexerTransition<State> ReadColorProfile(const char* aData, size_t aLength);
+  LexerTransition<State> AllocateSurface();
   LexerTransition<State> ReadColorTable(const char* aData, size_t aLength);
   LexerTransition<State> SkipGap();
   LexerTransition<State> AfterGap();
@@ -199,6 +233,9 @@ class nsBMPDecoder : public Decoder {
   SurfacePipe mPipe;
 
   StreamingLexer<State> mLexer;
+
+  
+  Maybe<SourceBufferIterator> mReturnIterator;
 
   UniquePtr<uint32_t[]> mRowBuffer;
 
