@@ -832,42 +832,26 @@ class FastErrorResult : public mozilla::binding_danger::TErrorResult<
 
 
 
-
-namespace binding_danger {
-class OOMReporterInstantiator;
-}  
-
 class OOMReporter : private dom::binding_detail::FastErrorResult {
  public:
   void MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG ReportOOM() {
     Throw(NS_ERROR_OUT_OF_MEMORY);
   }
 
- private:
   
   
-  friend class binding_danger::OOMReporterInstantiator;
+  
+  
+  
+  static OOMReporter& From(FastErrorResult& aRv) { return aRv; }
 
+ private:
   
   template <typename CleanupPolicy>
   friend class binding_danger::TErrorResult;
 
   OOMReporter() : dom::binding_detail::FastErrorResult() {}
 };
-
-namespace binding_danger {
-class OOMReporterInstantiator : public OOMReporter {
- public:
-  OOMReporterInstantiator() : OOMReporter() {}
-
-  
-  
-  
-  bool MaybeSetPendingException(JSContext* cx, const char* context = nullptr) {
-    return OOMReporter::MaybeSetPendingException(cx, context);
-  }
-};
-}  
 
 template <typename CleanupPolicy>
 binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&() {
