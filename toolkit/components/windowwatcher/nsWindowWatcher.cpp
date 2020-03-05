@@ -1695,16 +1695,12 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
                                nsIWebBrowserChrome::CHROME_WINDOW_MIN);
 
   
-  if (!aDialog && !aHasChromeParent && !aChromeURL) {
+  bool scrollbarsPresent = false;
+  if (WinHasOption(aFeatures, "scrollbars", 1, &scrollbarsPresent) ||
+      !scrollbarsPresent) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_SCROLLBARS;
-  } else {
-    bool scrollbarsPresent = false;
-    if (WinHasOption(aFeatures, "scrollbars", 1, &scrollbarsPresent) ||
-        !scrollbarsPresent) {
-      chromeFlags |= nsIWebBrowserChrome::CHROME_SCROLLBARS;
-    }
-    presenceFlag = presenceFlag || scrollbarsPresent;
   }
+  presenceFlag = presenceFlag || scrollbarsPresent;
 
   return chromeFlags;
 }
