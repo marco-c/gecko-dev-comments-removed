@@ -171,12 +171,12 @@ class MediaEncoder {
 
 
 
-  bool IsShutdown();
+  void AssertShutdownCalled() { MOZ_ASSERT(mShutdownPromise); }
 
   
 
 
-  RefPtr<GenericNonExclusivePromise> Cancel();
+  RefPtr<GenericNonExclusivePromise::AllPromiseType> Cancel();
 
   bool HasError();
 
@@ -239,7 +239,7 @@ class MediaEncoder {
 
 
 
-  RefPtr<GenericNonExclusivePromise> Shutdown();
+  RefPtr<GenericNonExclusivePromise::AllPromiseType> Shutdown();
 
   
 
@@ -282,9 +282,8 @@ class MediaEncoder {
   bool mInitialized;
   bool mCompleted;
   bool mError;
-  bool mShutdown;
   
-  RefPtr<GenericNonExclusivePromise> mShutdownPromise;
+  RefPtr<GenericNonExclusivePromise::AllPromiseType> mShutdownPromise;
   
   double GetEncodeTimeStamp() {
     TimeDuration decodeTime;
