@@ -385,25 +385,43 @@ function getElRect(selector, win) {
 
 
 
-function dragElementBy(selector, x, y, win) {
-  const { Simulate } = win.require(
-    "devtools/client/shared/vendor/react-dom-test-utils"
-  );
-  const rect = getElRect(selector, win);
+function dragElementBy(selector, x, y, ui) {
+  const browserWindow = ui.getBrowserWindow();
+  const rect = getElRect(selector, browserWindow);
   const startPoint = {
     clientX: Math.floor(rect.left + rect.width / 2),
     clientY: Math.floor(rect.top + rect.height / 2),
   };
   const endPoint = [startPoint.clientX + x, startPoint.clientY + y];
 
-  const elem = win.document.querySelector(selector);
+  const elem = browserWindow.document.querySelector(selector);
+
+  if (!Services.prefs.getBoolPref("devtools.responsive.browserUI.enabled")) {
+    const { Simulate } = ui.toolWindow.require(
+      "devtools/client/shared/vendor/react-dom-test-utils"
+    );
+    
+    Simulate.mouseDown(elem, startPoint);
+  } else {
+    EventUtils.synthesizeMouseAtPoint(
+      startPoint.clientX,
+      startPoint.clientY,
+      { type: "mousedown" },
+      browserWindow
+    );
+  }
 
   
-  Simulate.mouseDown(elem, startPoint);
-
-  
-  EventUtils.synthesizeMouseAtPoint(...endPoint, { type: "mousemove" }, win);
-  EventUtils.synthesizeMouseAtPoint(...endPoint, { type: "mouseup" }, win);
+  EventUtils.synthesizeMouseAtPoint(
+    ...endPoint,
+    { type: "mousemove" },
+    browserWindow
+  );
+  EventUtils.synthesizeMouseAtPoint(
+    ...endPoint,
+    { type: "mouseup" },
+    browserWindow
+  );
 
   return rect;
 }
@@ -415,13 +433,18 @@ async function testViewportResize(
   expectedViewportSize,
   expectedHandleMove
 ) {
-  const win = ui.getBrowserWindow();
+  let resized;
 
-  const resized = waitForViewportResizeTo(ui, ...expectedViewportSize);
-  const startRect = dragElementBy(selector, ...moveBy, win);
+  if (!Services.prefs.getBoolPref("devtools.responsive.browserUI.enabled")) {
+    resized = waitForViewportResizeTo(ui, ...expectedViewportSize);
+  } else {
+    resized = ui.once("viewport-resize-dragend");
+  }
+
+  const startRect = dragElementBy(selector, ...moveBy, ui);
   await resized;
 
-  const endRect = getElRect(selector, win);
+  const endRect = getElRect(selector, ui.getBrowserWindow());
   is(
     endRect.left - startRect.left,
     expectedHandleMove[0],

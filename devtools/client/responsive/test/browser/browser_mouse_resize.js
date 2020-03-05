@@ -42,7 +42,6 @@ addRDMTask(
       [0, -10],
       ui
     );
-  }
-  
-  
+  },
+  { usingBrowserUI: true, waitForDeviceList: true }
 );
