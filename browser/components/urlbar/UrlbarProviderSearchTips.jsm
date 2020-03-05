@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Log: "resource://gre/modules/Log.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.jsm",
@@ -79,6 +80,10 @@ const SUPPORTED_ENGINES = new Map([
 
 
 const MAX_SHOWN_COUNT = 4;
+
+
+
+const SHOW_TIP_DELAY_MS = 200;
 
 
 
@@ -329,18 +334,12 @@ class ProviderSearchTips extends UrlbarProvider {
       return;
     }
 
-    if (this._maybeShowTipForUrlInstance != instance) {
-      return;
-    }
-
     
     
     let shownCount = UrlbarPrefs.get(`tipShownCount.${tip}`);
     if (shownCount >= MAX_SHOWN_COUNT && !ignoreShowLimits) {
       return;
     }
-
-    this.currentTip = tip;
 
     
     this.disableTipsForCurrentSession = true;
@@ -349,8 +348,24 @@ class ProviderSearchTips extends UrlbarProvider {
     UrlbarPrefs.set(`tipShownCount.${tip}`, shownCount + 1);
 
     
-    let window = BrowserWindowTracker.getTopWindow();
-    window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
+    setTimeout(() => {
+      if (this._maybeShowTipForUrlInstance != instance) {
+        return;
+      }
+
+      let window = BrowserWindowTracker.getTopWindow();
+      
+      
+      if (
+        window.gURLBar.getAttribute("pageproxystate") == "invalid" &&
+        window.gURLBar.value != ""
+      ) {
+        return;
+      }
+
+      this.currentTip = tip;
+      window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
+    }, SHOW_TIP_DELAY_MS);
   }
 }
 
