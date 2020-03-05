@@ -1833,7 +1833,19 @@ public class GeckoSession implements Parcelable {
 
     @AnyThread
     public void reload() {
-        mEventDispatcher.dispatch("GeckoView:Reload", null);
+        reload(LOAD_FLAGS_NONE);
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public void reload(final @LoadFlags int flags) {
+        final GeckoBundle msg = new GeckoBundle();
+        msg.putInt("flags", flags);
+        mEventDispatcher.dispatch("GeckoView:Reload", msg);
     }
 
     
