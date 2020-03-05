@@ -169,6 +169,16 @@ var UpdateUtils = {
 
 
   getAppUpdateAutoEnabled() {
+    if (Services.policies) {
+      if (!Services.policies.isAllowed("app-auto-updates-off")) {
+        
+        return Promise.resolve(true);
+      }
+      if (!Services.policies.isAllowed("app-auto-updates-on")) {
+        
+        return Promise.resolve(false);
+      }
+    }
     if (AppConstants.platform != "win") {
       
       let prefValue = Services.prefs.getBoolPref(
@@ -256,7 +266,17 @@ var UpdateUtils = {
 
 
 
+
+
+
+
   setAppUpdateAutoEnabled(enabledValue) {
+    if (this.appUpdateAutoSettingIsLocked()) {
+      return Promise.reject(
+        "setAppUpdateAutoEnabled: Unable to change value of setting because " +
+          "it is locked by policy"
+      );
+    }
     if (AppConstants.platform != "win") {
       
       let prefValue = !!enabledValue;
@@ -292,6 +312,21 @@ var UpdateUtils = {
       .then(maybeUpdateAutoConfigChanged.bind(this));
     updateAutoIOPromise = writePromise;
     return writePromise;
+  },
+
+  
+
+
+
+
+
+
+  appUpdateAutoSettingIsLocked() {
+    return (
+      Services.policies &&
+      (!Services.policies.isAllowed("app-auto-updates-off") ||
+        !Services.policies.isAllowed("app-auto-updates-on"))
+    );
   },
 };
 
