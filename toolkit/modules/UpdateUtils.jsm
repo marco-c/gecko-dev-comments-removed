@@ -169,16 +169,6 @@ var UpdateUtils = {
 
 
   getAppUpdateAutoEnabled() {
-    if (Services.policies) {
-      if (!Services.policies.isAllowed("app-auto-updates-off")) {
-        
-        return Promise.resolve(true);
-      }
-      if (!Services.policies.isAllowed("app-auto-updates-on")) {
-        
-        return Promise.resolve(false);
-      }
-    }
     if (AppConstants.platform != "win") {
       
       let prefValue = Services.prefs.getBoolPref(
@@ -240,7 +230,7 @@ var UpdateUtils = {
         
         return DEFAULT_APP_UPDATE_AUTO;
       })
-      .then(maybeUpdateAutoConfigChanged);
+      .then(maybeUpdateAutoConfigChanged.bind(this));
     updateAutoIOPromise = readPromise;
     return readPromise;
   },
@@ -266,25 +256,12 @@ var UpdateUtils = {
 
 
 
-
-
-
-
   setAppUpdateAutoEnabled(enabledValue) {
-    if (this.appUpdateAutoSettingIsLocked()) {
-      return Promise.reject(
-        "setAppUpdateAutoEnabled: Unable to change value of setting because " +
-          "it is locked by policy"
-      );
-    }
     if (AppConstants.platform != "win") {
       
       let prefValue = !!enabledValue;
       Services.prefs.setBoolPref(PREF_APP_UPDATE_AUTO, prefValue);
-      
-      
-      
-      
+      maybeUpdateAutoConfigChanged(prefValue);
       return Promise.resolve(prefValue);
     }
     
@@ -312,24 +289,9 @@ var UpdateUtils = {
           throw e;
         }
       })
-      .then(maybeUpdateAutoConfigChanged);
+      .then(maybeUpdateAutoConfigChanged.bind(this));
     updateAutoIOPromise = writePromise;
     return writePromise;
-  },
-
-  
-
-
-
-
-
-
-  appUpdateAutoSettingIsLocked() {
-    return (
-      Services.policies &&
-      (!Services.policies.isAllowed("app-auto-updates-off") ||
-        !Services.policies.isAllowed("app-auto-updates-on"))
-    );
   },
 };
 
@@ -360,7 +322,11 @@ async function writeUpdateAutoConfig(enabledValue) {
 
 
 function maybeUpdateAutoConfigChanged(newValue) {
-  if (newValue !== updateAutoSettingCachedVal) {
+  
+  if (
+    updateAutoSettingCachedVal !== null &&
+    newValue != updateAutoSettingCachedVal
+  ) {
     updateAutoSettingCachedVal = newValue;
     Services.obs.notifyObservers(
       null,
@@ -369,18 +335,6 @@ function maybeUpdateAutoConfigChanged(newValue) {
     );
   }
   return newValue;
-}
-
-
-
-if (AppConstants.platform != "win") {
-  Services.prefs.addObserver(
-    PREF_APP_UPDATE_AUTO,
-    async (subject, topic, data) => {
-      let value = await UpdateUtils.getAppUpdateAutoEnabled();
-      maybeUpdateAutoConfigChanged(value);
-    }
-  );
 }
 
 
