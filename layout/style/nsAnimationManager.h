@@ -84,9 +84,10 @@ class CSSAnimation final : public Animation {
   nsAtom* AnimationName() const { return mAnimationName; }
 
   
-  virtual Promise* GetReady(ErrorResult& aRv) override;
-  virtual void Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) override;
-  virtual void Pause(ErrorResult& aRv) override;
+  void SetEffect(AnimationEffect* aEffect) override;
+  Promise* GetReady(ErrorResult& aRv) override;
+  void Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) override;
+  void Pause(ErrorResult& aRv) override;
 
   
   
