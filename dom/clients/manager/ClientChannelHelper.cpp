@@ -292,95 +292,10 @@ class ClientChannelHelperChild final : public ClientChannelHelper {
                          nsIAsyncVerifyRedirectCallback* aCallback) override {
     MOZ_ASSERT(NS_IsMainThread());
 
-    nsresult rv = nsContentUtils::CheckSameOrigin(aOldChannel, aNewChannel);
-    if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_DOM_BAD_URI)) {
-      return rv;
-    }
-
-    nsCOMPtr<nsILoadInfo> oldLoadInfo = aOldChannel->LoadInfo();
-    nsCOMPtr<nsILoadInfo> newLoadInfo = aNewChannel->LoadInfo();
-
-    UniquePtr<ClientSource> reservedClient =
-        oldLoadInfo->TakeReservedClientSource();
-
-    
-    
-    if (NS_SUCCEEDED(rv)) {
-      
-      
-      
-      
-      
-      Maybe<ClientInfo> newClientInfo = newLoadInfo->GetReservedClientInfo();
-      if (newClientInfo) {
-        if (!reservedClient || reservedClient->Info() != *newClientInfo) {
-          
-          
-          reservedClient.reset(nullptr);
-          reservedClient =
-              ClientManager::CreateSourceFromInfo(*newClientInfo, mEventTarget);
-        }
-        newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
-      }
-    }
-
-    
-    
-    else {
-      
-      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-      MOZ_DIAGNOSTIC_ASSERT(ssm);
-
-      nsCOMPtr<nsIPrincipal> principal;
-      rv = ssm->GetChannelResultPrincipal(aNewChannel,
-                                          getter_AddRefs(principal));
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      reservedClient.reset();
-
-      const Maybe<ClientInfo>& reservedClientInfo =
-          newLoadInfo->GetReservedClientInfo();
-      
-      
-      
-      
-      if (reservedClientInfo) {
-        reservedClient = ClientManager::CreateSourceFromInfo(
-            *reservedClientInfo, mEventTarget);
-      } else {
-        
-        
-        
-        reservedClient = ClientManager::CreateSource(ClientType::Window,
-                                                     mEventTarget, principal);
-      }
-      MOZ_DIAGNOSTIC_ASSERT(reservedClient);
-
-      newLoadInfo->GiveReservedClientSource(std::move(reservedClient));
-    }
-
-    uint32_t redirectMode = nsIHttpChannelInternal::REDIRECT_MODE_MANUAL;
-    nsCOMPtr<nsIHttpChannelInternal> http = do_QueryInterface(aOldChannel);
-    if (http) {
-      MOZ_ALWAYS_SUCCEEDS(http->GetRedirectMode(&redirectMode));
-    }
-
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!(aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) &&
-        redirectMode != nsIHttpChannelInternal::REDIRECT_MODE_FOLLOW) {
-      newLoadInfo->ClearController();
-    }
+    CreateReservedSourceIfNeeded(aNewChannel, mEventTarget);
 
     nsCOMPtr<nsIChannelEventSink> outerSink = do_GetInterface(mOuter);
     if (outerSink) {
