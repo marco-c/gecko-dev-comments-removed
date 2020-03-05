@@ -1345,6 +1345,12 @@ class EditorBase : public nsIEditor,
 
 
 
+  bool IsSelectionRangeContainerNotContent() const;
+
+  
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
