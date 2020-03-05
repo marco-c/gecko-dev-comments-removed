@@ -18,7 +18,6 @@
 #include "frontend/BinAST-macros.h"  
 #include "gc/Rooting.h"              
 #include "js/AllocPolicy.h"          
-#include "js/StableStringChars.h"    
 #include "js/UniquePtr.h"            
 #include "js/Utility.h"              
 #include "js/Vector.h"               
