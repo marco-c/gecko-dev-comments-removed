@@ -840,6 +840,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       frame.onStep = onStep;
       frame.onPop = onPop;
+      frame.waitingOnStep = true;
       return undefined;
     };
   },
@@ -1025,19 +1026,25 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       steppingType = "next";
     }
 
+    
+    
+    const stepFrame = this._getNextStepFrame(frame);
+    if (!stepFrame) {
+      steppingType = "step";
+    }
+
     const { onEnterFrame, onPop, onStep } = this._makeSteppingHooks({
       steppingType,
       completion,
     });
 
-    
-    
-    const stepFrame = this._getNextStepFrame(frame);
+    if (steppingType === "step") {
+      this.dbg.onEnterFrame = onEnterFrame;
+    }
+
     if (stepFrame) {
       switch (steppingType) {
         case "step":
-          this.dbg.onEnterFrame = onEnterFrame;
-        
         case "break":
         case "next":
           if (stepFrame.script) {
