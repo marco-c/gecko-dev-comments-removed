@@ -3545,7 +3545,7 @@ BackgroundCursorChild<CursorType>::HandleIndividualCursorResponse(
 template <IDBCursorType CursorType>
 template <typename T, typename Func>
 void BackgroundCursorChild<CursorType>::HandleMultipleCursorResponses(
-    const nsTArray<T>& aResponses, const Func& aHandleRecord) {
+    nsTArray<T>&& aResponses, const Func& aHandleRecord) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mRequest);
   MOZ_ASSERT(mTransaction);
@@ -3560,14 +3560,11 @@ void BackgroundCursorChild<CursorType>::HandleMultipleCursorResponses(
   MOZ_ASSERT_IF(aResponses.Length() > 1, mCachedResponses.empty());
 
   
-  auto& responses = const_cast<nsTArray<T>&>(aResponses);
-
-  
   
   RefPtr<IDBCursor> strongNewCursor;
 
   bool isFirst = true;
-  for (auto& response : responses) {
+  for (auto& response : aResponses) {
     IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
         "PRELOAD: Processing response for key %s", "Processing",
         mTransaction->LoggingSerialNumber(),
@@ -3579,7 +3576,7 @@ void BackgroundCursorChild<CursorType>::HandleMultipleCursorResponses(
     
     
     auto maybeNewCursor =
-        aHandleRecord( isFirst, response);
+        aHandleRecord( isFirst, std::move(response));
     if (maybeNewCursor) {
       MOZ_ASSERT(!strongNewCursor);
       strongNewCursor = std::move(maybeNewCursor);
@@ -3604,13 +3601,13 @@ void BackgroundCursorChild<CursorType>::HandleMultipleCursorResponses(
 
 template <IDBCursorType CursorType>
 void BackgroundCursorChild<CursorType>::HandleResponse(
-    const nsTArray<ObjectStoreCursorResponse>& aResponses) {
+    nsTArray<ObjectStoreCursorResponse>&& aResponses) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mTransaction);
 
   HandleMultipleCursorResponses(
-      aResponses, [this](const bool useAsCurrentResult,
-                         ObjectStoreCursorResponse& response) {
+      std::move(aResponses), [this](const bool useAsCurrentResult,
+                                    ObjectStoreCursorResponse&& response) {
         
         
         
@@ -3623,12 +3620,12 @@ void BackgroundCursorChild<CursorType>::HandleResponse(
 
 template <IDBCursorType CursorType>
 void BackgroundCursorChild<CursorType>::HandleResponse(
-    const nsTArray<ObjectStoreKeyCursorResponse>& aResponses) {
+    nsTArray<ObjectStoreKeyCursorResponse>&& aResponses) {
   AssertIsOnOwningThread();
 
   HandleMultipleCursorResponses(
-      aResponses, [this](const bool useAsCurrentResult,
-                         ObjectStoreKeyCursorResponse& response) {
+      std::move(aResponses), [this](const bool useAsCurrentResult,
+                                    ObjectStoreKeyCursorResponse&& response) {
         return HandleIndividualCursorResponse(useAsCurrentResult,
                                               std::move(response.key()));
       });
@@ -3636,13 +3633,13 @@ void BackgroundCursorChild<CursorType>::HandleResponse(
 
 template <IDBCursorType CursorType>
 void BackgroundCursorChild<CursorType>::HandleResponse(
-    const nsTArray<IndexCursorResponse>& aResponses) {
+    nsTArray<IndexCursorResponse>&& aResponses) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mTransaction);
 
   HandleMultipleCursorResponses(
-      aResponses,
-      [this](const bool useAsCurrentResult, IndexCursorResponse& response) {
+      std::move(aResponses),
+      [this](const bool useAsCurrentResult, IndexCursorResponse&& response) {
         return HandleIndividualCursorResponse(
             useAsCurrentResult, std::move(response.key()),
             std::move(response.sortKey()), std::move(response.objectKey()),
@@ -3653,13 +3650,13 @@ void BackgroundCursorChild<CursorType>::HandleResponse(
 
 template <IDBCursorType CursorType>
 void BackgroundCursorChild<CursorType>::HandleResponse(
-    const nsTArray<IndexKeyCursorResponse>& aResponses) {
+    nsTArray<IndexKeyCursorResponse>&& aResponses) {
   AssertIsOnOwningThread();
   static_assert(!CursorTypeTraits<CursorType>::IsObjectStoreCursor);
 
   HandleMultipleCursorResponses(
-      aResponses,
-      [this](const bool useAsCurrentResult, IndexKeyCursorResponse& response) {
+      std::move(aResponses),
+      [this](const bool useAsCurrentResult, IndexKeyCursorResponse&& response) {
         return HandleIndividualCursorResponse(
             useAsCurrentResult, std::move(response.key()),
             std::move(response.sortKey()), std::move(response.objectKey()));
@@ -3695,7 +3692,7 @@ void BackgroundCursorChild<CursorType>::ActorDestroy(ActorDestroyReason aWhy) {
 
 template <IDBCursorType CursorType>
 mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
-    const CursorResponse& aResponse) {
+    CursorResponse&& aResponse) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aResponse.type() != CursorResponse::T__None);
   MOZ_ASSERT(mRequest);
@@ -3723,7 +3720,8 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
 
     case CursorResponse::TArrayOfObjectStoreCursorResponse:
       if constexpr (CursorType == IDBCursorType::ObjectStore) {
-        HandleResponse(aResponse.get_ArrayOfObjectStoreCursorResponse());
+        HandleResponse(
+            std::move(aResponse.get_ArrayOfObjectStoreCursorResponse()));
       } else {
         MOZ_CRASH("Response type mismatch");
       }
@@ -3731,7 +3729,8 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
 
     case CursorResponse::TArrayOfObjectStoreKeyCursorResponse:
       if constexpr (CursorType == IDBCursorType::ObjectStoreKey) {
-        HandleResponse(aResponse.get_ArrayOfObjectStoreKeyCursorResponse());
+        HandleResponse(
+            std::move(aResponse.get_ArrayOfObjectStoreKeyCursorResponse()));
       } else {
         MOZ_CRASH("Response type mismatch");
       }
@@ -3739,7 +3738,7 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
 
     case CursorResponse::TArrayOfIndexCursorResponse:
       if constexpr (CursorType == IDBCursorType::Index) {
-        HandleResponse(aResponse.get_ArrayOfIndexCursorResponse());
+        HandleResponse(std::move(aResponse.get_ArrayOfIndexCursorResponse()));
       } else {
         MOZ_CRASH("Response type mismatch");
       }
@@ -3747,7 +3746,8 @@ mozilla::ipc::IPCResult BackgroundCursorChild<CursorType>::RecvResponse(
 
     case CursorResponse::TArrayOfIndexKeyCursorResponse:
       if constexpr (CursorType == IDBCursorType::IndexKey) {
-        HandleResponse(aResponse.get_ArrayOfIndexKeyCursorResponse());
+        HandleResponse(
+            std::move(aResponse.get_ArrayOfIndexKeyCursorResponse()));
       } else {
         MOZ_CRASH("Response type mismatch");
       }
