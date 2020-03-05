@@ -4,13 +4,6 @@
 
 "use strict";
 
-loader.lazyRequireGetter(
-  this,
-  "isWhitespaceTextNode",
-  "devtools/server/actors/inspector/utils",
-  true
-);
-
 
 
 
@@ -209,22 +202,6 @@ WalkerSearch.prototype = {
     }
   },
 
-  _searchXPath: function(query, options, results) {
-    const isXPath = query && query.startsWith("/");
-    if (!options.types.includes("xpath") || !isXPath) {
-      return;
-    }
-
-    const nodes = this.walker._multiFrameXPath(query);
-    for (const node of nodes) {
-      
-      
-      if (!isWhitespaceTextNode(node)) {
-        this._addResult(node, "xpath", results);
-      }
-    }
-  },
-
   
 
 
@@ -258,9 +235,6 @@ WalkerSearch.prototype = {
 
     
     this._searchSelectors(query, options, results);
-
-    
-    this._searchXPath(query, options, results);
 
     
     const resultList = [];
@@ -308,7 +282,6 @@ WalkerSearch.ALL_RESULTS_TYPES = [
   "attributeName",
   "attributeValue",
   "selector",
-  "xpath",
 ];
 
 exports.WalkerSearch = WalkerSearch;
