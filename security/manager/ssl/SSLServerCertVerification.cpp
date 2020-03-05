@@ -71,6 +71,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "SSLServerCertVerification.h"
 
 #include <cstring>
@@ -86,6 +106,7 @@
 #include "SharedCertVerifier.h"
 #include "SharedSSLState.h"
 #include "TransportSecurityInfo.h"  
+#include "VerifySSLServerCertChild.h"
 #include "cert.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
@@ -111,7 +132,6 @@
 #include "mozpkix/pkix.h"
 #include "mozpkix/pkixnss.h"
 #include "secerr.h"
-#include "secoidt.h"
 #include "secport.h"
 #include "ssl.h"
 #include "sslerr.h"
@@ -170,37 +190,6 @@ void StopSSLServerCertVerificationThreads() {
 }
 
 namespace {
-
-
-
-
-
-
-
-class SSLServerCertVerificationResult : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-
-  explicit SSLServerCertVerificationResult(TransportSecurityInfo* infoObject);
-
-  void Dispatch(nsNSSCertificate* aCert,
-                nsTArray<nsTArray<uint8_t>>&& aBuiltChain,
-                nsTArray<nsTArray<uint8_t>>&& aPeerCertChain,
-                uint16_t aCertificateTransparencyStatus, EVStatus aEVStatus,
-                bool aSucceeded, PRErrorCode aFinalError,
-                uint32_t aCollectedErrors);
-
- private:
-  const RefPtr<TransportSecurityInfo> mInfoObject;
-  RefPtr<nsNSSCertificate> mCert;
-  nsTArray<nsTArray<uint8_t>> mBuiltChain;
-  nsTArray<nsTArray<uint8_t>> mPeerCertChain;
-  uint16_t mCertificateTransparencyStatus;
-  EVStatus mEVStatus;
-  bool mSucceeded;
-  PRErrorCode mFinalError;
-  uint32_t mCollectedErrors;
-};
 
 
 uint32_t MapOverridableErrorToProbeValue(PRErrorCode errorCode) {
@@ -476,23 +465,21 @@ class SSLServerCertVerificationJob : public Runnable {
                             Maybe<DelegatedCredentialInfo>& dcInfo,
                             uint32_t providerFlags, Time time, PRTime prtime,
                             uint32_t certVerifierFlags,
-                            SSLServerCertVerificationResult* aResultTask);
+                            BaseSSLServerCertVerificationResult* aResultTask);
 
  private:
   NS_DECL_NSIRUNNABLE
 
   
-  SSLServerCertVerificationJob(uint64_t addrForLogging, void* aPinArg,
-                               const UniqueCERTCertificate& cert,
-                               nsTArray<nsTArray<uint8_t>>&& peerCertChain,
-                               const nsACString& aHostName, int32_t aPort,
-                               const OriginAttributes& aOriginAttributes,
-                               Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
-                               Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
-                               Maybe<DelegatedCredentialInfo>& dcInfo,
-                               uint32_t providerFlags, Time time, PRTime prtime,
-                               uint32_t certVerifierFlags,
-                               SSLServerCertVerificationResult* aResultTask);
+  SSLServerCertVerificationJob(
+      uint64_t addrForLogging, void* aPinArg, const UniqueCERTCertificate& cert,
+      nsTArray<nsTArray<uint8_t>>&& peerCertChain, const nsACString& aHostName,
+      int32_t aPort, const OriginAttributes& aOriginAttributes,
+      Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
+      Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
+      Maybe<DelegatedCredentialInfo>& dcInfo, uint32_t providerFlags, Time time,
+      PRTime prtime, uint32_t certVerifierFlags,
+      BaseSSLServerCertVerificationResult* aResultTask);
   uint64_t mAddrForLogging;
   void* mPinArg;
   const UniqueCERTCertificate mCert;
@@ -507,7 +494,7 @@ class SSLServerCertVerificationJob : public Runnable {
   Maybe<nsTArray<uint8_t>> mStapledOCSPResponse;
   Maybe<nsTArray<uint8_t>> mSCTsFromTLSExtension;
   Maybe<DelegatedCredentialInfo> mDCInfo;
-  RefPtr<SSLServerCertVerificationResult> mResultTask;
+  RefPtr<BaseSSLServerCertVerificationResult> mResultTask;
 };
 
 SSLServerCertVerificationJob::SSLServerCertVerificationJob(
@@ -518,7 +505,7 @@ SSLServerCertVerificationJob::SSLServerCertVerificationJob(
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
     Maybe<DelegatedCredentialInfo>& dcInfo, uint32_t providerFlags, Time time,
     PRTime prtime, uint32_t certVerifierFlags,
-    SSLServerCertVerificationResult* aResultTask)
+    BaseSSLServerCertVerificationResult* aResultTask)
     : Runnable("psm::SSLServerCertVerificationJob"),
       mAddrForLogging(addrForLogging),
       mPinArg(aPinArg),
@@ -1208,7 +1195,7 @@ SECStatus SSLServerCertVerificationJob::Dispatch(
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
     Maybe<DelegatedCredentialInfo>& dcInfo, uint32_t providerFlags, Time time,
     PRTime prtime, uint32_t certVerifierFlags,
-    SSLServerCertVerificationResult* aResultTask) {
+    BaseSSLServerCertVerificationResult* aResultTask) {
   
   if (!aResultTask || !serverCert) {
     NS_ERROR("Invalid parameters for SSL server cert validation");
@@ -1468,6 +1455,15 @@ SECStatus AuthCertificateHookInternal(
   uint64_t addr = reinterpret_cast<uintptr_t>(aPtrForLogging);
   RefPtr<SSLServerCertVerificationResult> resultTask =
       new SSLServerCertVerificationResult(infoObject);
+
+  if (XRE_IsSocketProcess()) {
+    return RemoteProcessCertVerification(
+        serverCert, std::move(peerCertChain), infoObject->GetHostName(),
+        infoObject->GetPort(), infoObject->GetOriginAttributes(),
+        stapledOCSPResponse, sctsFromTLSExtension, dcInfo, providerFlags,
+        certVerifierFlags, resultTask);
+  }
+
   
   
   
@@ -1619,6 +1615,8 @@ SECStatus AuthCertificateHookWithInfo(
                                      stapledOCSPResponse, sctsFromTLSExtension,
                                      dcInfo, providerFlags, certVerifierFlags);
 }
+
+NS_IMPL_ISUPPORTS_INHERITED0(SSLServerCertVerificationResult, Runnable)
 
 SSLServerCertVerificationResult::SSLServerCertVerificationResult(
     TransportSecurityInfo* infoObject)
