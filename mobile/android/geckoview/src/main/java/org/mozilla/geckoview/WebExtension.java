@@ -425,6 +425,97 @@ public class WebExtension {
         }
     }
 
+    
+    public static class SessionController {
+        private final Listener mListener;
+
+         void setRuntime(final GeckoRuntime runtime) {
+            mListener.runtime = runtime;
+        }
+
+         SessionController(final GeckoSession session) {
+            mListener = new Listener(session);
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @AnyThread
+        public void setMessageDelegate(final @NonNull WebExtension webExtension,
+                                       final @Nullable WebExtension.MessageDelegate delegate,
+                                       final @NonNull String nativeApp) {
+            mListener.setMessageDelegate(webExtension, delegate, nativeApp);
+        }
+
+        
+
+
+
+
+
+
+
+
+        @AnyThread
+        public @Nullable WebExtension.MessageDelegate getMessageDelegate(
+                final @NonNull WebExtension extension,
+                final @NonNull String nativeApp) {
+            return mListener.getMessageDelegate(extension, nativeApp);
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+        @AnyThread
+        public void setActionDelegate(final @NonNull WebExtension extension,
+                                      final @Nullable ActionDelegate delegate) {
+            mListener.setActionDelegate(extension, delegate);
+        }
+
+        
+
+
+
+
+
+
+
+        @AnyThread
+        @Nullable
+        public ActionDelegate getActionDelegate(
+                final @NonNull WebExtension extension) {
+            return mListener.getActionDelegate(extension);
+        }
+    }
+
      final static class Listener implements BundleEventListener {
         final private HashMap<Sender, WebExtension.MessageDelegate> mMessageDelegates;
         final private HashMap<String, WebExtension.ActionDelegate> mActionDelegates;
