@@ -653,10 +653,9 @@ XDRResult js::XDRInterpretedFunction(XDRState<mode>* xdr,
 
     
     
-    constexpr uint16_t UnsupportedFlags = FunctionFlags::MUTABLE_FLAGS |
-                                          FunctionFlags::SELFHOSTLAZY |
-                                          FunctionFlags::BOUND_FUN |
-                                          FunctionFlags::WASM_JIT_ENTRY;
+    constexpr uint16_t UnsupportedFlags =
+        FunctionFlags::MUTABLE_FLAGS | FunctionFlags::SELFHOSTLAZY |
+        FunctionFlags::BOUND_FUN | FunctionFlags::WASM_JIT_ENTRY;
     if ((flags & UnsupportedFlags) != 0) {
       return xdr->fail(JS::TranscodeResult_Failure_BadDecode);
     }
