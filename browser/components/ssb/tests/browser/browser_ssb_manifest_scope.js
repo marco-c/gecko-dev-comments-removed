@@ -2,6 +2,9 @@
 
 
 
+Services.prefs.setBoolPref("dom.manifest.enabled", true);
+
+
 
 function build_task(page, linkId, external, preload) {
   let expectedTarget = linkId + "/final.html";
