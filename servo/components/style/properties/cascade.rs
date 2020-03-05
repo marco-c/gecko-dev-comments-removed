@@ -380,6 +380,9 @@ fn application_when_ignoring_colors(
     
     
     match *declaration {
+        
+        
+        
         PropertyDeclaration::BackgroundColor(ref color) => {
             if color.is_transparent() {
                 return DeclarationApplication::Apply;
@@ -405,11 +408,19 @@ fn application_when_ignoring_colors(
         
         
         #[cfg(feature = "gecko")]
-        PropertyDeclaration::BackgroundImage(..) => {
+        PropertyDeclaration::BackgroundImage(ref bkg) => {
+            use crate::values::generics::image::Image;
+            
+            
+            
+            
             if static_prefs::pref!("browser.display.permit_backplate") {
-                DeclarationApplication::Apply
+                if bkg.0.iter().all(|image| matches!(*image, Image::Url(..))) {
+                    return DeclarationApplication::Apply;
+                }
+                return DeclarationApplication::Ignore;
             } else {
-                DeclarationApplication::Ignore
+                return DeclarationApplication::Ignore;
             }
         },
         _ => DeclarationApplication::Ignore,
