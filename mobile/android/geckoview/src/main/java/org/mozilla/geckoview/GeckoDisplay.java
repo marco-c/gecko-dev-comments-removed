@@ -117,22 +117,6 @@ public class GeckoDisplay {
 
 
 
-    @UiThread
-    public void safeAreaInsetsChanged(final int top, final int right, final int bottom, final int left) {
-        ThreadUtils.assertOnUiThread();
-
-        if (mSession.getDisplay() == this) {
-            mSession.onSafeAreaInsetsChanged(top, right, bottom, left);
-        }
-    }
-    
-
-
-
-
-
-
-
 
     @UiThread
     public void setDynamicToolbarMaxHeight(final int height) {

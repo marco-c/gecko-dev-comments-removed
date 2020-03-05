@@ -3224,14 +3224,6 @@ class nsContentUtils {
 
   static nsGlobalWindowInner* CallerInnerWindow();
 
-  
-
-
-
-  static mozilla::ScreenIntMargin GetWindowSafeAreaInsets(
-      nsIScreen* aScreen, const mozilla::ScreenIntMargin& aSafeareaInsets,
-      const mozilla::LayoutDeviceIntRect& aWindowRect);
-
  private:
   static bool InitializeEventTable();
 
