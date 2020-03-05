@@ -1,6 +1,6 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, # You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -74,12 +74,12 @@ class Watch(MachCommandBase):
 
         if not conditions.is_artifact_build(self):
             print('mach watch requires an artifact build. See '
-                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Simple_Firefox_build')  # noqa
+                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Simple_Firefox_build')  
             return 1
 
         if not self.substs.get('WATCHMAN', None):
             print('mach watch requires watchman to be installed. See '
-                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching')  # noqa
+                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching')  
             return 1
 
         self._activate_virtualenv()
@@ -87,7 +87,7 @@ class Watch(MachCommandBase):
             self.virtualenv_manager.install_pip_package('pywatchman==1.3.0')
         except Exception:
             print('Could not install pywatchman from pip. See '
-                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching')  # noqa
+                  'https://developer.mozilla.org/docs/Mozilla/Developer_guide/Build_Instructions/Incremental_builds_with_filesystem_watching')  
             return 1
 
         from mozbuild.faster_daemon import Daemon
@@ -96,7 +96,7 @@ class Watch(MachCommandBase):
         try:
             return daemon.watch()
         except KeyboardInterrupt:
-            # Suppress ugly stack trace when user hits Ctrl-C.
+            
             sys.exit(3)
 
 
@@ -120,7 +120,7 @@ class CargoProvider(MachCommandBase):
     @CommandArgument('-v', '--verbose', action='store_true',
                      help='Verbose output.')
     def check(self, all_crates=None, crates=None, jobs=0, verbose=False):
-        # XXX duplication with `mach vendor rust`
+        
         crates_and_roots = {
             'gkrust': 'toolkit/library/rust',
             'gkrust-gtest': 'toolkit/library/gtest/rust',
@@ -236,8 +236,8 @@ class Clobber(MachCommandBase):
                 cmd = ['git', 'clean', '-f', '-x', '*.py[cdo]', 'python/',
                        'third_party/python/']
             else:
-                # We don't know what is tracked/untracked if we don't have VCS.
-                # So we can't clean python/ and third_party/python/.
+                
+                
                 cmd = ['find', '.', '-type', 'f', '-name', '*.py[cdo]',
                        '-delete']
             ret = subprocess.call(cmd, cwd=self.topsrcdir)
@@ -273,14 +273,14 @@ class Logs(MachCommandBase):
         if os.isatty(sys.stdout.fileno()):
             env = dict(os.environ)
             if 'LESS' not in env:
-                # Sensible default flags if none have been set in the user
-                # environment.
+                
+                
                 env[b'LESS'] = b'FRX'
             less = subprocess.Popen(['less'], stdin=subprocess.PIPE, env=env)
-            # Various objects already have a reference to sys.stdout, so we
-            # can't just change it, we need to change the file descriptor under
-            # it to redirect to less's input.
-            # First keep a copy of the sys.stdout file descriptor.
+            
+            
+            
+            
             output_fd = os.dup(sys.stdout.fileno())
             os.dup2(less.stdin.fileno(), sys.stdout.fileno())
 
@@ -303,13 +303,13 @@ class Logs(MachCommandBase):
                 self._logger.handle(record)
 
         if self.log_manager.terminal:
-            # Close less's input so that it knows that we're done sending data.
+            
             less.stdin.close()
-            # Since the less's input file descriptor is now also the stdout
-            # file descriptor, we still actually have a non-closed system file
-            # descriptor for less's input. Replacing sys.stdout's file
-            # descriptor with what it was before we replaced it will properly
-            # close less's input.
+            
+            
+            
+            
+            
             os.dup2(output_fd, sys.stdout.fileno())
             less.wait()
 
@@ -353,7 +353,7 @@ class Warnings(MachCommandBase):
             dirpath = None
 
         type_counts = database.type_counts(dirpath)
-        sorted_counts = sorted(type_counts.iteritems(),
+        sorted_counts = sorted(type_counts.items(),
                                key=operator.itemgetter(1))
 
         total = 0
@@ -386,7 +386,7 @@ class Warnings(MachCommandBase):
                 return 1
 
         if flags:
-            # Flatten lists of flags.
+            
             flags = set(itertools.chain(*[flaglist.split(',') for flaglist in flags]))
 
         for warning in by_name:
@@ -478,7 +478,7 @@ class GTestCommands(MachCommandBase):
               package, adb_path, device_serial, remote_test_root, libxul_path, no_install,
               debug, debugger, debugger_args):
 
-        # We lazy build gtest because it's slow to link
+        
         try:
             config = self.config_environment
         except Exception:
@@ -531,14 +531,14 @@ class GTestCommands(MachCommandBase):
         if debug or debugger or debugger_args:
             args = self.prepend_debugger_args(args, debugger, debugger_args)
 
-        # Use GTest environment variable to control test execution
-        # For details see:
-        # https://code.google.com/p/googletest/wiki/AdvancedGuide#Running_Test_Programs:_Advanced_Options
+        
+        
+        
         gtest_env = {b'GTEST_FILTER': gtest_filter}
 
-        # Note: we must normalize the path here so that gtest on Windows sees
-        # a MOZ_GMP_PATH which has only Windows dir seperators, because
-        # nsIFile cannot open the paths with non-Windows dir seperators.
+        
+        
+        
         xre_path = os.path.join(os.path.normpath(self.topobjdir), "dist", "bin")
         gtest_env["MOZ_XRE_DIR"] = xre_path
         gtest_env["MOZ_GMP_PATH"] = os.pathsep.join(
@@ -571,7 +571,7 @@ class GTestCommands(MachCommandBase):
         import functools
 
         def handle_line(job_id, line):
-            # Prepend the jobId
+            
             line = '[%d] %s' % (job_id + 1, line.strip())
             self.log(logging.INFO, "GTest", {'line': line}, '{line}')
 
@@ -593,8 +593,8 @@ class GTestCommands(MachCommandBase):
             if status:
                 exit_code = status
 
-        # Clamp error code to 255 to prevent overflowing multiple of
-        # 256 into 0
+        
+        
         if exit_code > 255:
             exit_code = 255
 
@@ -603,13 +603,13 @@ class GTestCommands(MachCommandBase):
     def android_gtest(self, test_dir, shuffle, gtest_filter,
                       package, adb_path, device_serial, remote_test_root, libxul_path,
                       enable_webrender, install):
-        # setup logging for mozrunner
+        
         from mozlog.commandline import setup_logging
         format_args = {'level': self._mach_context.settings['test']['level']}
         default_format = self._mach_context.settings['test']['format']
         setup_logging('mach-gtest', {}, {default_format: sys.stdout}, format_args)
 
-        # ensure that a device is available and test app is installed
+        
         from mozrunner.devices.android_device import (verify_android_device, get_adb_path)
         verify_android_device(self, install=install, app=package, device_serial=device_serial)
 
@@ -618,7 +618,7 @@ class GTestCommands(MachCommandBase):
         if not libxul_path:
             libxul_path = os.path.join(self.topobjdir, "dist", "bin", "gtest", "libxul.so")
 
-        # run gtest via remotegtests.py
+        
         import imp
         path = os.path.join('testing', 'gtest', 'remotegtests.py')
         with open(path, 'r') as fh:
@@ -645,8 +645,8 @@ class GTestCommands(MachCommandBase):
         import mozdebug
 
         if not debugger:
-            # No debugger name was provided. Look for the default ones on
-            # current OS.
+            
+            
             debugger = mozdebug.get_default_debugger_name(mozdebug.DebuggerSearch.KeepLooking)
 
         if debugger:
@@ -655,8 +655,8 @@ class GTestCommands(MachCommandBase):
                 print("Could not find a suitable debugger in your PATH.")
                 return 1
 
-        # Parameters come from the CLI. We need to convert them before
-        # their use.
+        
+        
         if debugger_args:
             from mozbuild import shellutil
             try:
@@ -666,7 +666,7 @@ class GTestCommands(MachCommandBase):
                 print("(We can't handle the %r character.)" % e.char)
                 return 1
 
-        # Prepend the debugger args.
+        
         args = [debuggerInfo.path] + debuggerInfo.args + args
         return args
 
@@ -883,7 +883,7 @@ class RunProgram(MachCommandBase):
         else:
             raise RuntimeError('Application not recognized: {}'.format(app))
 
-        # `verify_android_device` respects `DEVICE_SERIAL` if it is set and sets it otherwise.
+        
         verify_android_device(self, app=app,
                               install=InstallIntent.NO if no_install else InstallIntent.PROMPT)
         device_serial = os.environ.get('DEVICE_SERIAL')
@@ -897,8 +897,8 @@ class RunProgram(MachCommandBase):
         if profile:
             if os.path.isdir(profile):
                 host_profile = profile
-                # Always /data/local/tmp, rather than `device.test_root`, because GeckoView only
-                # takes its configuration file from /data/local/tmp, and we want to follow suit.
+                
+                
                 target_profile = '/data/local/tmp/{}-profile'.format(app)
                 device.rm(target_profile, recursive=True, force=True)
                 device.push(host_profile, target_profile)
@@ -918,7 +918,7 @@ class RunProgram(MachCommandBase):
             extras['env{}'.format(i)] = e
         if args:
             extras['args'] = " ".join(args)
-        extras['use_multiprocess'] = True  # Only GVE and TRA process this extra.
+        extras['use_multiprocess'] = True  
 
         if env or args:
             restart = True
@@ -930,8 +930,8 @@ class RunProgram(MachCommandBase):
                      'Stopping {app} to ensure clean restart.')
             device.stop_application(app)
 
-        # We'd prefer to log the actual `am start ...` command, but it's not trivial to wire the
-        # device's logger to mach's logger.
+        
+        
         self.log(logging.INFO, "run",
                  {'app': app, 'activity_name': activity_name},
                  'Starting {app}/{activity_name}.')
@@ -971,8 +971,8 @@ class RunProgram(MachCommandBase):
 
             import mozdebug
             if not debugger:
-                # No debugger name was provided. Look for the default ones on
-                # current OS.
+                
+                
                 debugger = mozdebug.get_default_debugger_name(mozdebug.DebuggerSearch.KeepLooking)
 
             if debugger:
@@ -982,8 +982,8 @@ class RunProgram(MachCommandBase):
                 print("Could not find a suitable debugger in your PATH.")
                 return 1
 
-            # Parameters come from the CLI. We need to convert them before
-            # their use.
+            
+            
             if debugger_args:
                 from mozbuild import shellutil
                 try:
@@ -993,7 +993,7 @@ class RunProgram(MachCommandBase):
                     print("(We can't handle the %r character.)" % e.char)
                     return 1
 
-            # Prepend the debugger args.
+            
             args = [self.debuggerInfo.path] + self.debuggerInfo.args + args
 
         return self.run_process(args=args, ensure_exit_code=False,
@@ -1074,9 +1074,9 @@ class RunProgram(MachCommandBase):
             return 1
 
             if not no_profile_option_given:
-                # The profile name may be non-ascii, but come from the
-                # commandline as str, so convert here with a better guess at
-                # an encoding than the default.
+                
+                
+                
                 encoding = (sys.getfilesystemencoding() or
                             sys.getdefaultencoding())
                 args = [unicode(a, encoding) if not isinstance(a, unicode) else a
@@ -1102,8 +1102,8 @@ class RunProgram(MachCommandBase):
 
             import mozdebug
             if not debugger:
-                # No debugger name was provided. Look for the default ones on
-                # current OS.
+                
+                
                 debugger = mozdebug.get_default_debugger_name(mozdebug.DebuggerSearch.KeepLooking)
 
             if debugger:
@@ -1113,8 +1113,8 @@ class RunProgram(MachCommandBase):
                 print("Could not find a suitable debugger in your PATH.")
                 return 1
 
-            # Parameters come from the CLI. We need to convert them before
-            # their use.
+            
+            
             if debugger_args:
                 from mozbuild import shellutil
                 try:
@@ -1124,7 +1124,7 @@ class RunProgram(MachCommandBase):
                     print("(We can't handle the %r character.)" % e.char)
                     return 1
 
-            # Prepend the debugger args.
+            
             args = [self.debuggerInfo.path] + self.debuggerInfo.args + args
 
         if dmd:
@@ -1228,8 +1228,8 @@ class MachDebug(MachCommandBase):
         func = getattr(self, '_environment_%s' % format.replace('.', '_'))
 
         if output:
-            # We want to preserve mtimes if the output file already exists
-            # and the content hasn't changed.
+            
+            
             from mozbuild.util import FileAvoidWrite
             with FileAvoidWrite(output) as out:
                 return func(out, verbose)
@@ -1414,7 +1414,7 @@ class WebRTCGTestCommands(GTestCommands):
         if debug or debugger or debugger_args:
             args = self.prepend_debugger_args(args, debugger, debugger_args)
 
-        # Used to locate resources used by tests
+        
         cwd = os.path.join(self.topsrcdir, 'media', 'webrtc', 'trunk')
 
         if not os.path.isdir(cwd):
@@ -1422,12 +1422,12 @@ class WebRTCGTestCommands(GTestCommands):
             return 1
 
         gtest_env = {
-            # These tests are not run under ASAN upstream, so we need to
-            # disable some checks.
+            
+            
             b'ASAN_OPTIONS': 'alloc_dealloc_mismatch=0',
-            # Use GTest environment variable to control test execution
-            # For details see:
-            # https://code.google.com/p/googletest/wiki/AdvancedGuide#Running_Test_Programs:_Advanced_Options
+            
+            
+            
             b'GTEST_FILTER': gtest_filter
         }
 
@@ -1606,7 +1606,7 @@ class Analyze(MachCommandBase):
             print('Could not install tablib via pip.')
             return 1
         if path is None:
-            # go find tup db and make a cost_dict
+            
             from mozbuild.analyze.graph import Graph
             db_path = mozpath.join(self.topsrcdir, '.tup', 'db')
             if os.path.isfile(db_path):
@@ -1619,7 +1619,7 @@ class Analyze(MachCommandBase):
                 print('Could not find %s to make a cost dictionary.' % db_path, res, sep='\n')
                 return 1
         else:
-            # path to cost_dict.gz was specified
+            
             if os.path.isfile(path):
                 r = Report(days, path)
                 r.generate_output(format, limit, self.topobjdir)
