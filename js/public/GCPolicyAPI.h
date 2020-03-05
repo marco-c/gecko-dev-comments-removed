@@ -200,6 +200,9 @@ struct GCPolicy<mozilla::UniquePtr<T, D>> {
   }
 };
 
+template <>
+struct GCPolicy<mozilla::Nothing> : public IgnoreGCPolicy<mozilla::Nothing> {};
+
 
 
 template <typename T>

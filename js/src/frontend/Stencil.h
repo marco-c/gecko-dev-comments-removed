@@ -21,6 +21,7 @@
 #include "gc/AllocKind.h"                
 #include "gc/Barrier.h"                  
 #include "gc/Rooting.h"  
+#include "js/GCVariant.h"    
 #include "js/RegExpFlags.h"  
 #include "js/RootingAPI.h"   
 #include "js/UniquePtr.h"    
@@ -228,6 +229,57 @@ class BigIntCreationData {
 
 using BigIntIndex = TypedIndex<BigIntCreationData>;
 
+class EnvironmentShapeCreationData {
+  
+  struct CreateEnvShapeData {
+    BindingIter freshBi;
+    const JSClass* cls;
+    uint32_t nextEnvironmentSlot;
+    uint32_t baseShapeFlags;
+
+    void trace(JSTracer* trc) { freshBi.trace(trc); }
+  };
+
+  
+  struct EmptyEnvShapeData {
+    const JSClass* cls;
+    uint32_t baseShapeFlags;
+    void trace(JSTracer* trc){
+        
+        
+    };
+  };
+
+  
+  
+  
+  mozilla::Variant<mozilla::Nothing, CreateEnvShapeData, EmptyEnvShapeData>
+      data_ = mozilla::AsVariant(mozilla::Nothing());
+
+ public:
+  explicit operator bool() const { return !data_.is<mozilla::Nothing>(); }
+
+  
+  void set(const BindingIter& freshBi, const JSClass* cls,
+           uint32_t nextEnvironmentSlot, uint32_t baseShapeFlags) {
+    data_ = mozilla::AsVariant(
+        CreateEnvShapeData{freshBi, cls, nextEnvironmentSlot, baseShapeFlags});
+  }
+
+  
+  void set(const JSClass* cls, uint32_t shapeFlags) {
+    data_ = mozilla::AsVariant(EmptyEnvShapeData{cls, shapeFlags});
+  }
+
+  
+  MOZ_MUST_USE bool createShape(JSContext* cx, MutableHandleShape shape);
+
+  void trace(JSTracer* trc) {
+    using DataGCPolicy = JS::GCPolicy<decltype(data_)>;
+    DataGCPolicy::trace(trc, &data_, "data_");
+  }
+};
+
 class ScopeCreationData {
   friend class js::AbstractScope;
   friend class js::GCMarker;
@@ -239,8 +291,7 @@ class ScopeCreationData {
   ScopeKind kind_;
 
   
-  
-  HeapPtr<Shape*> environmentShape_ = {};
+  EnvironmentShapeCreationData environmentShape_;
 
   
   
@@ -258,14 +309,14 @@ class ScopeCreationData {
   UniquePtr<BaseScopeData> data_;
 
  public:
-  ScopeCreationData(JSContext* cx, ScopeKind kind,
-                    Handle<AbstractScope> enclosing,
-                    UniquePtr<BaseScopeData> data = {},
-                    Shape* environmentShape = nullptr,
-                    frontend::FunctionBox* funbox = nullptr)
+  ScopeCreationData(
+      JSContext* cx, ScopeKind kind, Handle<AbstractScope> enclosing,
+      Handle<frontend::EnvironmentShapeCreationData> environmentShape,
+      UniquePtr<BaseScopeData> data = {},
+      frontend::FunctionBox* funbox = nullptr)
       : enclosing_(enclosing),
         kind_(kind),
-        environmentShape_(environmentShape),
+        environmentShape_(environmentShape),  
         funbox_(funbox),
         data_(std::move(data)) {}
 
@@ -314,7 +365,9 @@ class ScopeCreationData {
                      Handle<AbstractScope> enclosing, ScopeIndex* index);
 
   bool hasEnvironment() const {
-    return Scope::hasEnvironment(kind(), environmentShape_);
+    
+    
+    return Scope::hasEnvironment(kind(), !!environmentShape_);
   }
 
   
