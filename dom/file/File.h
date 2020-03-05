@@ -26,21 +26,19 @@ class File final : public Blob {
   
   static File* Create(nsIGlobalObject* aGlobal, BlobImpl* aImpl);
 
-  static already_AddRefed<File> Create(nsIGlobalObject* aGlobal,
-                                       const nsAString& aName,
-                                       const nsAString& aContentType,
-                                       uint64_t aLength,
-                                       int64_t aLastModifiedDate);
+  
+  
+  
+  static already_AddRefed<File> CreateMemoryFileWithLastModifiedNow(
+      nsIGlobalObject* aGlobal, void* aMemoryBuffer, uint64_t aLength,
+      const nsAString& aName, const nsAString& aContentType);
 
   
   
-  
-  static already_AddRefed<File> CreateMemoryFile(nsIGlobalObject* aGlobal,
-                                                 void* aMemoryBuffer,
-                                                 uint64_t aLength,
-                                                 const nsAString& aName,
-                                                 const nsAString& aContentType,
-                                                 int64_t aLastModifiedDate);
+  static already_AddRefed<File> CreateMemoryFileWithCustomLastModified(
+      nsIGlobalObject* aGlobal, void* aMemoryBuffer, uint64_t aLength,
+      const nsAString& aName, const nsAString& aContentType,
+      int64_t aLastModifiedDate);
 
   
   

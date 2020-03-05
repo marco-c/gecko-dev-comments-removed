@@ -24,13 +24,15 @@ class MemoryBlobImpl final : public BaseBlobImpl {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(MemoryBlobImpl, BaseBlobImpl)
 
   
-  MemoryBlobImpl(void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
-                 const nsAString& aContentType, int64_t aLastModifiedDate)
-      : BaseBlobImpl(NS_LITERAL_STRING("MemoryBlobImpl"), aName, aContentType,
-                     aLength, aLastModifiedDate),
-        mDataOwner(new DataOwner(aMemoryBuffer, aLength)) {
-    MOZ_ASSERT(mDataOwner && mDataOwner->mData, "must have data");
-  }
+  static already_AddRefed<MemoryBlobImpl> CreateWithLastModifiedNow(
+      void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
+      const nsAString& aContentType);
+
+  
+  
+  static already_AddRefed<MemoryBlobImpl> CreateWithCustomLastModified(
+      void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
+      const nsAString& aContentType, int64_t aLastModifiedDate);
 
   
   MemoryBlobImpl(void* aMemoryBuffer, uint64_t aLength,
@@ -142,6 +144,15 @@ class MemoryBlobImpl final : public BaseBlobImpl {
   };
 
  private:
+  
+  MemoryBlobImpl(void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
+                 const nsAString& aContentType, int64_t aLastModifiedDate)
+      : BaseBlobImpl(NS_LITERAL_STRING("MemoryBlobImpl"), aName, aContentType,
+                     aLength, aLastModifiedDate),
+        mDataOwner(new DataOwner(aMemoryBuffer, aLength)) {
+    MOZ_ASSERT(mDataOwner && mDataOwner->mData, "must have data");
+  }
+
   
   MemoryBlobImpl(const MemoryBlobImpl* aOther, uint64_t aStart,
                  uint64_t aLength, const nsAString& aContentType)

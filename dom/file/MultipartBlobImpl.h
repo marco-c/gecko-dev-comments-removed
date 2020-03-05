@@ -16,6 +16,10 @@
 namespace mozilla {
 namespace dom {
 
+
+
+constexpr int64_t MULTIPARTBLOBIMPL_UNKNOWN_LAST_MODIFIED = INT64_MAX;
+
 class MultipartBlobImpl final : public BaseBlobImpl {
  public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(MultipartBlobImpl, BaseBlobImpl)
@@ -33,7 +37,8 @@ class MultipartBlobImpl final : public BaseBlobImpl {
   
   explicit MultipartBlobImpl(const nsAString& aName)
       : BaseBlobImpl(NS_LITERAL_STRING("MultipartBlobImpl"), aName,
-                     EmptyString(), UINT64_MAX) {}
+                     EmptyString(), UINT64_MAX,
+                     MULTIPARTBLOBIMPL_UNKNOWN_LAST_MODIFIED) {}
 
   
   MultipartBlobImpl()
@@ -68,13 +73,18 @@ class MultipartBlobImpl final : public BaseBlobImpl {
 
   void GetBlobImplType(nsAString& aBlobImplType) const override;
 
+  void SetLastModified(int64_t aLastModified);
+
  protected:
+  
   MultipartBlobImpl(nsTArray<RefPtr<BlobImpl>>&& aBlobImpls,
                     const nsAString& aName, const nsAString& aContentType)
       : BaseBlobImpl(NS_LITERAL_STRING("MultipartBlobImpl"), aName,
-                     aContentType, UINT64_MAX),
+                     aContentType, UINT64_MAX,
+                     MULTIPARTBLOBIMPL_UNKNOWN_LAST_MODIFIED),
         mBlobImpls(std::move(aBlobImpls)) {}
 
+  
   MultipartBlobImpl(nsTArray<RefPtr<BlobImpl>>&& aBlobImpls,
                     const nsAString& aContentType)
       : BaseBlobImpl(NS_LITERAL_STRING("MultipartBlobImpl"), aContentType,
