@@ -97,13 +97,17 @@ impl ExtraCheck {
     }
 }
 
+pub struct RefTestFuzzy {
+    max_difference: usize,
+    num_differences: usize,
+}
+
 pub struct Reftest {
     op: ReftestOp,
     test: Vec<PathBuf>,
     reference: PathBuf,
     font_render_mode: Option<FontRenderMode>,
-    max_difference: usize,
-    num_differences: usize,
+    fuzziness: Vec<RefTestFuzzy>,
     extra_checks: Vec<ExtraCheck>,
     disable_dual_source_blending: bool,
     allow_mipmaps: bool,
@@ -123,16 +127,100 @@ impl Reftest {
             ReftestImageComparison::Equal => {
                 true
             }
-            ReftestImageComparison::NotEqual { max_difference, count_different } => {
-                if max_difference > self.max_difference || count_different > self.num_differences {
+            ReftestImageComparison::NotEqual { difference_histogram, max_difference, count_different } => {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+
+                let prefix_sum = difference_histogram.iter()
+                                                     .scan(0, |sum, i| { *sum += i; Some(*sum) })
+                                                     .collect::<Vec<_>>();
+
+                
+                assert_eq!(0, difference_histogram[0]);
+                assert_eq!(0, prefix_sum[0]);
+
+                
+                let mut previous_max_diff = 0;
+
+                
+                
+                let mut previous_sum_fail = 0;  
+
+                let mut is_failing = false;
+                let mut fail_text = String::new();
+
+                for fuzzy in &self.fuzziness {
+                    let fuzzy_max_difference = cmp::min(255, fuzzy.max_difference);
+                    let num_differences = prefix_sum[fuzzy_max_difference] - previous_sum_fail;
+                    if num_differences > fuzzy.num_differences {
+                        fail_text.push_str(
+                            &format!("{} differences > {} and <= {} (allowed {}); ",
+                                     num_differences,
+                                     previous_max_diff, fuzzy_max_difference,
+                                     fuzzy.num_differences));
+                        is_failing = true;
+                    }
+                    previous_max_diff = fuzzy_max_difference;
+                    previous_sum_fail = prefix_sum[previous_max_diff];
+                }
+                
+                
+                let num_differences = prefix_sum[255] - previous_sum_fail;
+                if num_differences > 0 {
+                    fail_text.push_str(
+                        &format!("{} num_differences > {} and <= {} (allowed {}); ",
+                                num_differences,
+                                previous_max_diff, 255,
+                                0));
+                    is_failing = true;
+                }
+
+                if is_failing {
                     println!(
-                        "{} | {} | {}: {}, {}: {}",
+                        "{} | {} | {}: {}, {}: {} | {}",
                         "REFTEST TEST-UNEXPECTED-FAIL",
                         self,
                         "image comparison, max difference",
                         max_difference,
                         "number of differing pixels",
-                        count_different
+                        count_different,
+                        fail_text,
                     );
                     println!("REFTEST   IMAGE 1 (TEST): {}", test.clone().create_data_uri());
                     println!(
@@ -175,10 +263,12 @@ pub struct ReftestImage {
     pub size: DeviceIntSize,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum ReftestImageComparison {
     Equal,
     NotEqual {
+        
+        difference_histogram: Vec<usize>,
         max_difference: usize,
         count_different: usize,
     },
@@ -190,6 +280,7 @@ impl ReftestImage {
         assert_eq!(self.data.len(), other.data.len());
         assert_eq!(self.data.len() % 4, 0);
 
+        let mut histogram = [0usize; 256];
         let mut count = 0;
         let mut max = 0;
 
@@ -202,12 +293,19 @@ impl ReftestImage {
                     .unwrap();
 
                 count += 1;
+                assert!(pixel_max < 256, "pixel values are not 8 bit, update the histogram binning code");
+                
+                
+                
+                
+                histogram[pixel_max as usize] += 1;
                 max = cmp::max(max, pixel_max);
             }
         }
 
         if count != 0 {
             ReftestImageComparison::NotEqual {
+                difference_histogram: histogram.to_vec(),
                 max_difference: max,
                 count_different: count,
             }
@@ -267,8 +365,7 @@ impl ReftestManifest {
 
             let tokens: Vec<&str> = s.split_whitespace().collect();
 
-            let mut max_difference = 0;
-            let mut max_count = 0;
+            let mut fuzziness = Vec::new();
             let mut op = None;
             let mut font_render_mode = None;
             let mut extra_checks = vec![];
@@ -314,10 +411,29 @@ impl ReftestManifest {
                         let (_, args, _) = parse_function(function);
                         allow_sacrificing_subpixel_aa = Some(args[0].parse().unwrap());
                     }
+                    function if function.starts_with("fuzzy-range") => {  
+                        let (_, args, _) = parse_function(function);
+                        let num_range = args.len() / 2;
+                        for range in 0..num_range {
+                            let mut max = args[range * 2 + 0];
+                            let mut num = args[range * 2 + 1];
+                            if max.starts_with("<=") { 
+                                max = &max[2..];
+                            }
+                            if num.starts_with("*") {
+                                num = &num[1..];
+                            }
+                            let max_difference  = max.parse().unwrap();
+                            let num_differences = num.parse().unwrap();
+                            fuzziness.push(RefTestFuzzy { max_difference, num_differences });
+                        }
+                    }
                     function if function.starts_with("fuzzy") => {
                         let (_, args, _) = parse_function(function);
-                        max_difference = args[0].parse().unwrap();
-                        max_count = args[1].parse().unwrap();
+                        let max_difference = args[0].parse().unwrap();
+                        let num_differences = args[1].parse().unwrap();
+                        assert!(fuzziness.is_empty()); 
+                        fuzziness.push(RefTestFuzzy { max_difference, num_differences });
                     }
                     function if function.starts_with("draw_calls") => {
                         let (_, args, _) = parse_function(function);
@@ -389,13 +505,38 @@ impl ReftestManifest {
             let reference = paths.pop().unwrap();
             let test = paths;
 
+            
+            
+            
+            
+            match fuzziness.len() {
+                0 => fuzziness.push(RefTestFuzzy {
+                        max_difference: options.allow_max_difference,
+                        num_differences: options.allow_num_differences }),
+                1 => {
+                    let mut fuzzy = &mut fuzziness[0];
+                    fuzzy.max_difference = cmp::max(fuzzy.max_difference, options.allow_max_difference);
+                    fuzzy.num_differences = cmp::max(fuzzy.num_differences, options.allow_num_differences);
+                },
+                _ => {
+                    
+                    
+                    fuzziness.sort_by(|a, b| a.max_difference.cmp(&b.max_difference));
+                    for pair in fuzziness.windows(2) {
+                        if pair[0].max_difference == pair[1].max_difference {
+                            println!("Warning: repeated fuzzy of max_difference {} ignored.",
+                                     pair[1].max_difference);
+                        }
+                    }
+                }
+            }
+
             reftests.push(Reftest {
                 op,
                 test,
                 reference,
                 font_render_mode,
-                max_difference: cmp::max(max_difference, options.allow_max_difference),
-                num_differences: cmp::max(max_count, options.allow_num_differences),
+                fuzziness,
                 extra_checks,
                 disable_dual_source_blending,
                 allow_mipmaps,
