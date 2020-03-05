@@ -1,15 +1,15 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//
-// Eric Vaughan
-// Netscape Communications
-//
-// See documentation in associated header file
-//
+
+
+
+
+
+
+
+
+
+
+
 
 #include "nsScrollbarFrame.h"
 #include "nsSliderFrame.h"
@@ -27,11 +27,11 @@
 using namespace mozilla;
 using mozilla::dom::Element;
 
-//
-// NS_NewScrollbarFrame
-//
-// Creates a new scrollbar frame and returns it
-//
+
+
+
+
+
 nsIFrame* NS_NewScrollbarFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell)
       nsScrollbarFrame(aStyle, aPresShell->GetPresContext());
@@ -48,10 +48,10 @@ void nsScrollbarFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
   nsBoxFrame::Init(aContent, aParent, aPrevInFlow);
 
-  // We want to be a reflow root since we use reflows to move the
-  // slider.  Any reflow inside the scrollbar frame will be a reflow to
-  // move the slider and will thus not change anything outside of the
-  // scrollbar or change the size of the scrollbar frame.
+  
+  
+  
+  
   AddStateBits(NS_FRAME_REFLOW_ROOT);
 }
 
@@ -73,8 +73,8 @@ void nsScrollbarFrame::Reflow(nsPresContext* aPresContext,
 
   nsBoxFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
 
-  // nsGfxScrollFrame may have told us to shrink to nothing. If so, make sure
-  // our desired size agrees.
+  
+  
   if (aReflowInput.AvailableWidth() == 0) {
     aDesiredSize.Width() = 0;
   }
@@ -89,11 +89,11 @@ nsresult nsScrollbarFrame::AttributeChanged(int32_t aNameSpaceID,
   nsresult rv =
       nsBoxFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 
-  // Update value in our children
+  
   UpdateChildrenAttributeValue(aAttribute, true);
 
-  // if the current position changes, notify any nsGfxScrollFrame
-  // parent we may have
+  
+  
   if (aAttribute != nsGkAtoms::curpos) return rv;
 
   nsIScrollableFrame* scrollable = do_QueryFrame(GetParent());
@@ -163,99 +163,91 @@ nsIScrollbarMediator* nsScrollbarFrame::GetScrollbarMediator() {
 }
 
 nsresult nsScrollbarFrame::GetXULMargin(nsMargin& aMargin) {
+  nsresult rv = NS_ERROR_FAILURE;
   aMargin.SizeTo(0, 0, 0, 0);
 
-  const bool overlayScrollbars =
-      !!LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars);
-
-  const bool horizontal = IsXULHorizontal();
-  bool didSetMargin = false;
-
-  if (overlayScrollbars) {
-    nsSize minSize;
-    bool widthSet = false;
-    bool heightSet = false;
-    AddXULMinSize(this, minSize, widthSet, heightSet);
-    if (horizontal) {
-      if (heightSet) {
-        aMargin.top = -minSize.height;
-        didSetMargin = true;
+  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
+    nsPresContext* presContext = PresContext();
+    nsITheme* theme = presContext->GetTheme();
+    if (theme && theme->ThemeSupportsWidget(presContext, this,
+                                            StyleAppearance::Scrollbar)) {
+      LayoutDeviceIntSize size;
+      bool isOverridable;
+      theme->GetMinimumWidgetSize(presContext, this, StyleAppearance::Scrollbar,
+                                  &size, &isOverridable);
+      if (IsXULHorizontal()) {
+        aMargin.top = -presContext->DevPixelsToAppUnits(size.height);
+      } else {
+        aMargin.left = -presContext->DevPixelsToAppUnits(size.width);
       }
-    } else {
-      if (widthSet) {
-        aMargin.left = -minSize.width;
-        didSetMargin = true;
-      }
+      rv = NS_OK;
     }
   }
 
-  if (!didSetMargin) {
-    DebugOnly<nsresult> rv = nsBox::GetXULMargin(aMargin);
-    // TODO(emilio): Should probably not be fallible, it's not like anybody
-    // cares about the return value anyway.
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "nsBox::GetXULMargin can't really fail");
+  if (NS_FAILED(rv)) {
+    rv = nsBox::GetXULMargin(aMargin);
   }
 
-  if (!horizontal) {
+  if (NS_SUCCEEDED(rv) && !IsXULHorizontal()) {
     nsIScrollbarMediator* scrollFrame = GetScrollbarMediator();
     if (scrollFrame && !scrollFrame->IsScrollbarOnRight()) {
       std::swap(aMargin.left, aMargin.right);
     }
   }
 
-  return NS_OK;
+  return rv;
 }
 
 void nsScrollbarFrame::SetIncrementToLine(int32_t aDirection) {
-  // get the scrollbar's content node
+  
   nsIContent* content = GetContent();
   mSmoothScroll = true;
   mIncrement = aDirection * nsSliderFrame::GetIncrement(content);
 }
 
 void nsScrollbarFrame::SetIncrementToPage(int32_t aDirection) {
-  // get the scrollbar's content node
+  
   nsIContent* content = GetContent();
   mSmoothScroll = true;
   mIncrement = aDirection * nsSliderFrame::GetPageIncrement(content);
 }
 
 void nsScrollbarFrame::SetIncrementToWhole(int32_t aDirection) {
-  // get the scrollbar's content node
+  
   nsIContent* content = GetContent();
   if (aDirection == -1)
     mIncrement = -nsSliderFrame::GetCurrentPosition(content);
   else
     mIncrement = nsSliderFrame::GetMaxPosition(content) -
                  nsSliderFrame::GetCurrentPosition(content);
-  // Don't repeat or use smooth scrolling if scrolling to beginning or end
-  // of a page.
+  
+  
   mSmoothScroll = false;
 }
 
 int32_t nsScrollbarFrame::MoveToNewPosition() {
-  // get the scrollbar's content node
+  
   RefPtr<Element> content = GetContent()->AsElement();
 
-  // get the current pos
+  
   int32_t curpos = nsSliderFrame::GetCurrentPosition(content);
 
-  // get the max pos
+  
   int32_t maxpos = nsSliderFrame::GetMaxPosition(content);
 
-  // increment the given amount
+  
   if (mIncrement) {
     curpos += mIncrement;
   }
 
-  // make sure the current position is between the current and max positions
+  
   if (curpos < 0) {
     curpos = 0;
   } else if (curpos > maxpos) {
     curpos = maxpos;
   }
 
-  // set the current position of the slider.
+  
   nsAutoString curposStr;
   curposStr.AppendInt(curpos);
 
@@ -265,13 +257,13 @@ int32_t nsScrollbarFrame::MoveToNewPosition() {
                      NS_LITERAL_STRING("true"), false);
   }
   content->SetAttr(kNameSpaceID_None, nsGkAtoms::curpos, curposStr, false);
-  // notify the nsScrollbarFrame of the change
+  
   AttributeChanged(kNameSpaceID_None, nsGkAtoms::curpos,
                    dom::MutationEvent_Binding::MODIFICATION);
   if (!weakFrame.IsAlive()) {
     return curpos;
   }
-  // notify all nsSliderFrames of the change
+  
   nsIFrame::ChildListIterator childLists(this);
   for (; !childLists.IsDone(); childLists.Next()) {
     nsFrameList::Enumerator childFrames(childLists.CurrentList());
@@ -339,8 +331,8 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
 
   Element* el(GetContent()->AsElement());
 
-  // If there are children already in the node, don't create any anonymous
-  // content (this only apply to crashtests/369038-1.xhtml)
+  
+  
   if (el->HasChildren()) {
     return NS_OK;
   }
@@ -356,16 +348,16 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
   {
     AnonymousContentKey key;
     mUpTopButton =
-        MakeScrollbarButton(sbbNodeInfo, vertical, /* aBottom */ false,
-                            /* aDown */ false, key);
+        MakeScrollbarButton(sbbNodeInfo, vertical,  false,
+                             false, key);
     aElements.AppendElement(ContentInfo(mUpTopButton, key));
   }
 
   {
     AnonymousContentKey key;
     mDownTopButton =
-        MakeScrollbarButton(sbbNodeInfo, vertical, /* aBottom */ false,
-                            /* aDown */ true, key);
+        MakeScrollbarButton(sbbNodeInfo, vertical,  false,
+                             true, key);
     aElements.AppendElement(ContentInfo(mDownTopButton, key));
   }
 
@@ -396,21 +388,21 @@ nsresult nsScrollbarFrame::CreateAnonymousContent(
   {
     AnonymousContentKey key;
     mUpBottomButton =
-        MakeScrollbarButton(sbbNodeInfo, vertical, /* aBottom */ true,
-                            /* aDown */ false, key);
+        MakeScrollbarButton(sbbNodeInfo, vertical,  true,
+                             false, key);
     aElements.AppendElement(ContentInfo(mUpBottomButton, key));
   }
 
   {
     AnonymousContentKey key;
     mDownBottomButton =
-        MakeScrollbarButton(sbbNodeInfo, vertical, /* aBottom */ true,
-                            /* aDown */ true, key);
+        MakeScrollbarButton(sbbNodeInfo, vertical,  true,
+                             true, key);
     aElements.AppendElement(ContentInfo(mDownBottomButton, key));
   }
 
-  // Don't cache styles if we are inside a <select> element, since we have
-  // some UA style sheet rules that depend on the <select>'s attributes.
+  
+  
   if (GetContent()->GetParent() &&
       GetContent()->GetParent()->IsHTMLElement(nsGkAtoms::select)) {
     for (auto& info : aElements) {
@@ -482,7 +474,7 @@ void nsScrollbarFrame::UpdateChildrenAttributeValue(nsAtom* aAttribute,
     if (mSlider) {
       mSlider->SetAttr(kNameSpaceID_None, aAttribute, value, aNotify);
     }
-    // Set the value on "collapsed" attribute.
+    
     if (mThumb) {
       mThumb->SetAttr(kNameSpaceID_None, nsGkAtoms::collapsed, value, aNotify);
     }

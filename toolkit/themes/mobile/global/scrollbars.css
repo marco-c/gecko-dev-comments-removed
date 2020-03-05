@@ -1,11 +1,11 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.w3.org/1999/xhtml");
 @namespace xul url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
-
+/* Style the scrollbars */
 xul|scrollbar[root="true"] {
   position: relative;
   z-index: 2147483647;
@@ -20,7 +20,10 @@ xul|scrollbar {
   display: block;
 }
 
+/* Scrollbar code will reset the margin to the correct side depending on
+   where layout actually puts the scrollbar */
 xul|scrollbar[orient="vertical"] {
+  margin-left: -6px;
   min-width: 6px;
   max-width: 6px;
 }
@@ -32,6 +35,7 @@ xul|scrollbar[orient="vertical"] xul|thumb {
 }
 
 xul|scrollbar[orient="horizontal"] {
+  margin-top: -6px;
   min-height: 6px;
   max-height: 6px;
 }
