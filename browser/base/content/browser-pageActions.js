@@ -744,6 +744,8 @@ var BrowserPageActions = {
 
 
 
+
+
   actionForNode(node) {
     if (!node) {
       return null;
@@ -764,7 +766,7 @@ var BrowserPageActions = {
         action = PageActions.actionForID(actionID);
       }
     }
-    return action;
+    return action && !action.__isSeparator ? action : null;
   },
 
   
@@ -1041,7 +1043,6 @@ function showBrowserPageActionFeedback(action, event = null, messageId = null) {
 BrowserPageActions.bookmark = {
   onShowingInPanel(buttonNode) {
     
-    BookmarkingUI.updateBookmarkPageMenuItem();
   },
 
   onCommand(event, buttonNode) {

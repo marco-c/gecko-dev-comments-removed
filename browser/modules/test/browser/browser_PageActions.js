@@ -1776,6 +1776,43 @@ add_task(async function contextMenu() {
 });
 
 
+add_task(async function contextMenuOnSeparator() {
+  
+  await promiseOpenPageActionPanel();
+  let separator = BrowserPageActions.panelButtonNodeForActionID(
+    PageActions.ACTION_ID_BOOKMARK_SEPARATOR
+  );
+  Assert.ok(separator, "The bookmark separator should be in the panel");
+
+  
+  
+  let showingPromise = BrowserTestUtils.waitForEvent(
+    document.getElementById("pageActionContextMenu"),
+    "popupshowing",
+    false
+  );
+  EventUtils.synthesizeMouseAtCenter(separator, {
+    type: "contextmenu",
+    button: 2,
+  });
+  let event = await showingPromise;
+  Assert.ok(
+    event.defaultPrevented,
+    "defaultPrevented should be true on popupshowing event"
+  );
+
+  
+  EventUtils.synthesizeMouseAtCenter(BrowserPageActions.mainButtonNode, {});
+  await promisePageActionPanelHidden();
+
+  
+  
+  
+  EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, { type: "mousemove" });
+  gURLBar.focus();
+});
+
+
 add_task(async function transient() {
   let initialActionsInPanel = PageActions.actionsInPanel(window);
 
