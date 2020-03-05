@@ -8,25 +8,119 @@
 
 #include "builtin/streams/PipeToState.h"
 
+#include "mozilla/Assertions.h"  
+
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+
+#include "builtin/Promise.h"  
+#include "builtin/streams/ReadableStream.h"  
+#include "builtin/streams/ReadableStreamReader.h"  
+#include "builtin/streams/WritableStream.h"  
+#include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "js/Class.h"       
 #include "js/RootingAPI.h"  
+#include "vm/PromiseObject.h"  
 
+#include "vm/JSContext-inl.h"  
 #include "vm/JSObject-inl.h"  
 
+using JS::Handle;
 using JS::Int32Value;
+using JS::ObjectValue;
 using JS::Rooted;
 
 using js::PipeToState;
 
- PipeToState* PipeToState::create(JSContext* cx) {
+
+
+
+
+
+
+ PipeToState* PipeToState::create(
+    JSContext* cx, Handle<PromiseObject*> promise,
+    Handle<ReadableStream*> unwrappedSource,
+    Handle<WritableStream*> unwrappedDest, bool preventClose, bool preventAbort,
+    bool preventCancel, Handle<JSObject*> signal) {
+  cx->check(promise);
+
+  
+  
+#ifdef DEBUG
+  if (signal) {
+    
+  }
+#endif
+
+  
+  MOZ_ASSERT(!unwrappedSource->locked());
+
+  
+  MOZ_ASSERT(!unwrappedDest->isLocked());
+
   Rooted<PipeToState*> state(cx, NewBuiltinClassInstance<PipeToState>(cx));
   if (!state) {
     return nullptr;
   }
 
-  state->setFixedSlot(Slot_Flags, Int32Value(0));
+  MOZ_ASSERT(state->getFixedSlot(Slot_Promise).isUndefined());
+  state->initFixedSlot(Slot_Promise, ObjectValue(*promise));
 
-  return state;
+  
+  
+  
+  
+  
+  
+  
+  
+  {
+    ReadableStreamDefaultReader* reader =
+        CreateReadableStreamDefaultReader(cx, unwrappedSource);
+    if (!reader) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(state->getFixedSlot(Slot_Reader).isUndefined());
+    state->initFixedSlot(Slot_Reader, ObjectValue(*reader));
+  }
+
+  
+  {
+    WritableStreamDefaultWriter* writer =
+        CreateWritableStreamDefaultWriter(cx, unwrappedDest);
+    if (!writer) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(state->getFixedSlot(Slot_Writer).isUndefined());
+    state->initFixedSlot(Slot_Writer, ObjectValue(*writer));
+  }
+
+  
+  unwrappedSource->setDisturbed();
+
+  state->initFlags(preventClose, preventAbort, preventCancel);
+  MOZ_ASSERT(state->preventClose() == preventClose);
+  MOZ_ASSERT(state->preventAbort() == preventAbort);
+  MOZ_ASSERT(state->preventCancel() == preventCancel);
+
+  
+  MOZ_ASSERT(!state->shuttingDown(), "should be set to false by initFlags");
+
+  
+  
+
+  
+  
+
+  
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "pipeTo");
+  return nullptr;
 }
 
 const JSClass PipeToState::class_ = {"PipeToState",

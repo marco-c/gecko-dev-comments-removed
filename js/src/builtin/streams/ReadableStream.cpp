@@ -368,10 +368,10 @@ static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
   
   
   bool preventClose, preventAbort, preventCancel;
-  Rooted<Value> signal(cx);
+  Rooted<Value> signalVal(cx);
   {
     
-    auto& v = signal;
+    auto& v = signalVal;
 
     if (!GetProperty(cx, options, cx->names().preventClose, &v)) {
       return false;
@@ -388,7 +388,7 @@ static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
     }
     preventCancel = JS::ToBoolean(v);
   }
-  if (!GetProperty(cx, options, cx->names().signal, &signal)) {
+  if (!GetProperty(cx, options, cx->names().signal, &signalVal)) {
     return false;
   }
 
@@ -416,7 +416,23 @@ static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  
+  Rooted<JSObject*> signal(cx, nullptr);
+  do {
+    if (signalVal.isUndefined()) {
+      break;
+    }
+
+    if (signalVal.isObject()) {
+      
+      
+
+      signal = &signalVal.toObject();
+    }
+
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
+    return ReturnPromiseRejectedWithPendingError(cx, args);
+  } while (false);
 
   
   

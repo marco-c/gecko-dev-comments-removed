@@ -13,11 +13,20 @@
 
 #include <stdint.h>  
 
+#include "builtin/streams/ReadableStreamReader.h"  
+#include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "js/Class.h"         
+#include "js/RootingAPI.h"    
 #include "js/Value.h"         
 #include "vm/NativeObject.h"  
+#include "vm/PromiseObject.h"  
+
+class JS_PUBLIC_API JSObject;
 
 namespace js {
+
+class ReadableStream;
+class WritableStream;
 
 
 
@@ -28,11 +37,51 @@ class PipeToState : public NativeObject {
   
 
 
-  enum Slots { Slot_Flags, SlotCount };
+  enum Slots {
+    
+    Slot_Flags = 0,
+
+    
+
+
+
+
+
+
+
+
+    Slot_Promise,
+
+    
+
+
+
+
+
+
+
+    Slot_Reader,
+
+    
+
+
+
+
+
+
+
+    Slot_Writer,
+
+    SlotCount,
+  };
 
  private:
-  enum Flags {
-    Flag_ShuttingDown = 1 << 0,
+  enum Flags : uint32_t {
+    Flag_ShuttingDown = 0b0001,
+
+    Flag_PreventClose = 0b0010,
+    Flag_PreventAbort = 0b0100,
+    Flag_PreventCancel = 0b1000,
   };
 
   uint32_t flags() const { return getFixedSlot(Slot_Flags).toInt32(); }
@@ -43,13 +92,46 @@ class PipeToState : public NativeObject {
  public:
   static const JSClass class_;
 
+  PromiseObject* promise() const {
+    return &getFixedSlot(Slot_Promise).toObject().as<PromiseObject>();
+  }
+
+  ReadableStreamDefaultReader* reader() const {
+    return &getFixedSlot(Slot_Reader)
+                .toObject()
+                .as<ReadableStreamDefaultReader>();
+  }
+
+  WritableStreamDefaultWriter* writer() const {
+    return &getFixedSlot(Slot_Writer)
+                .toObject()
+                .as<WritableStreamDefaultWriter>();
+  }
+
   bool shuttingDown() const { return flags() & Flag_ShuttingDown; }
   void setShuttingDown() {
     MOZ_ASSERT(!shuttingDown());
     setFlags(flags() | Flag_ShuttingDown);
   }
 
-  static PipeToState* create(JSContext* cx);
+  bool preventClose() const { return flags() & Flag_PreventClose; }
+  bool preventAbort() const { return flags() & Flag_PreventAbort; }
+  bool preventCancel() const { return flags() & Flag_PreventCancel; }
+
+  void initFlags(bool preventClose, bool preventAbort, bool preventCancel) {
+    MOZ_ASSERT(getFixedSlot(Slot_Flags).isUndefined());
+
+    uint32_t flagBits = (preventClose ? Flag_PreventClose : 0) |
+                        (preventAbort ? Flag_PreventAbort : 0) |
+                        (preventCancel ? Flag_PreventCancel : 0);
+    setFlags(flagBits);
+  }
+
+  static PipeToState* create(JSContext* cx, JS::Handle<PromiseObject*> promise,
+                             JS::Handle<ReadableStream*> unwrappedSource,
+                             JS::Handle<WritableStream*> unwrappedDest,
+                             bool preventClose, bool preventAbort,
+                             bool preventCancel, JS::Handle<JSObject*> signal);
 };
 
 }  
