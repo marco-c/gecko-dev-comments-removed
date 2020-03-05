@@ -6,6 +6,10 @@
 
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
+const {
+  evalWithDebugger,
+} = require("devtools/server/actors/webconsole/eval-with-debugger");
+
 if (!isWorker) {
   loader.lazyRequireGetter(
     this,
@@ -115,6 +119,34 @@ function JSPropertyProvider({
   const { lastStatement, isElementAccess } = inputAnalysis;
 
   
+  
+  
+  if (webconsoleActor && shouldInputBeEagerlyEvaluated(inputAnalysis)) {
+    const eagerResponse = evalWithDebugger(
+      mainExpression,
+      { eager: true, selectedNodeActor },
+      webconsoleActor
+    );
+
+    const ret =
+      eagerResponse && eagerResponse.result && eagerResponse.result.return;
+
+    
+    if (ret && ret !== undefined) {
+      const matches =
+        typeof ret != "object"
+          ? getMatchedProps(ret, matchProp)
+          : getMatchedPropsInDbgObject(ret, matchProp);
+
+      return prepareReturnedObject({
+        matches,
+        search: matchProp,
+        isElementAccess,
+      });
+    }
+  }
+
+  
   let astExpression;
   const startQuoteRegex = /^('|"|`)/;
   const env = environment || dbgObject.asEnvironment();
@@ -174,6 +206,7 @@ function JSPropertyProvider({
         }
 
         let props = getMatchedPropsInDbgObject(matchingObject, search);
+
         if (isElementAccess) {
           props = wrapMatchesInQuotes(props, elementAccessQuote);
         }
@@ -306,36 +339,27 @@ function JSPropertyProvider({
     }
   }
 
-  const prepareReturnedObject = matches => {
-    if (isElementAccess) {
-      
-      
-      matches = wrapMatchesInQuotes(matches, elementAccessQuote);
-    } else if (!isWorker) {
-      
-      
-      
-      for (const match of matches) {
-        try {
-          
-          
-          
-          Reflect.parse(`({${match}: true})`);
-        } catch (e) {
-          matches.delete(match);
-        }
-      }
-    }
+  const matches =
+    typeof obj != "object"
+      ? getMatchedProps(obj, search)
+      : getMatchedPropsInDbgObject(obj, search);
+  return prepareReturnedObject({
+    matches,
+    search,
+    isElementAccess,
+    elementAccessQuote,
+  });
+}
 
-    return { isElementAccess, matchProp, matches };
-  };
+function shouldInputBeEagerlyEvaluated({ lastStatement }) {
+  const inComputedProperty =
+    lastStatement.lastIndexOf("[") !== -1 &&
+    lastStatement.lastIndexOf("[") > lastStatement.lastIndexOf("]");
 
-  
-  if (typeof obj != "object") {
-    return prepareReturnedObject(getMatchedProps(obj, search));
-  }
+  const hasPropertyAccess =
+    lastStatement.includes(".") || lastStatement.includes("[");
 
-  return prepareReturnedObject(getMatchedPropsInDbgObject(obj, search));
+  return hasPropertyAccess && !inComputedProperty;
 }
 
 function shouldInputBeAutocompleted(inputAnalysisState) {
@@ -866,6 +890,36 @@ function isObjectUsable(object) {
 
 function getVariableInEnvironment(environment, name) {
   return getExactMatchImpl(environment, name, DebuggerEnvironmentSupport);
+}
+
+function prepareReturnedObject({
+  matches,
+  search,
+  isElementAccess,
+  elementAccessQuote,
+}) {
+  if (isElementAccess) {
+    
+    
+
+    matches = wrapMatchesInQuotes(matches, elementAccessQuote);
+  } else if (!isWorker) {
+    
+    
+    
+    for (const match of matches) {
+      try {
+        
+        
+        
+        Reflect.parse(`({${match}: true})`);
+      } catch (e) {
+        matches.delete(match);
+      }
+    }
+  }
+
+  return { isElementAccess, matchProp: search, matches };
 }
 
 
