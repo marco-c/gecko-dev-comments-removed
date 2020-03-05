@@ -20,6 +20,12 @@
     }                                                \
   }
 
+namespace mozilla {
+namespace net {
+class ConsoleReportCollected;
+}
+}  
+
 
 
 class NS_NO_VTABLE nsIConsoleReportCollector : public nsISupports {
@@ -113,6 +119,10 @@ class NS_NO_VTABLE nsIConsoleReportCollector : public nsISupports {
   
   
   virtual void FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
+
+  
+  virtual void StealConsoleReports(
+      nsTArray<mozilla::net::ConsoleReportCollected>& aReports) = 0;
 
   
   virtual void ClearConsoleReports() = 0;

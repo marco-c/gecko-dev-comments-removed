@@ -51,7 +51,8 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   
   bool OnStopRequest(const nsresult& aChannelStatus,
                      const ResourceTimingStructArgs& aTiming,
-                     const nsHttpHeaderArray& aResponseTrailers);
+                     const nsHttpHeaderArray& aResponseTrailers,
+                     const nsTArray<ConsoleReportCollected>& aConsoleReports);
 
   
   
