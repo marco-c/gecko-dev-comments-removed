@@ -137,9 +137,12 @@ class AntiTrackingCommon final {
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
 
   
-  static nsresult IsOnContentBlockingAllowList(nsIPrincipal* aTopWinPrincipal,
-                                               bool aIsPrivateBrowsing,
-                                               bool& aIsAllowListed);
+  
+  
+  
+  static nsresult IsOnContentBlockingAllowList(
+      nsIPrincipal* aContentBlockingAllowListPrincipal, bool aIsPrivateBrowsing,
+      bool& aIsAllowListed);
 
   
   
