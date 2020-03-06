@@ -18,31 +18,31 @@ var maxPayload = (maxPayloadSize - 6) + ":" + Array(maxPayloadSize - 6).fill('*'
 
 
 
-var noDataTest = { id: "NoData" };
-var nullDataTest = { id: "NullData", data: null };
-var undefinedDataTest = { id: "UndefinedData", data: undefined };
-var smallStringTest = { id: "SmallString", data: smallPayload };
-var mediumStringTest = { id: "MediumString", data: mediumPayload };
-var largeStringTest = { id: "LargeString", data: largePayload };
-var maxStringTest = { id: "MaxString", data: maxPayload };
-var emptyBlobTest = { id: "EmptyBlob", data: new Blob() };
-var smallBlobTest = { id: "SmallBlob", data: new Blob([smallPayload]) };
-var mediumBlobTest = { id: "MediumBlob", data: new Blob([mediumPayload]) };
-var largeBlobTest = { id: "LargeBlob", data: new Blob([largePayload]) };
-var maxBlobTest = { id: "MaxBlob", data: new Blob([maxPayload]) };
-var emptyBufferSourceTest = { id: "EmptyBufferSource", data: new Uint8Array() };
-var smallBufferSourceTest = { id: "SmallBufferSource", data: CreateArrayBufferFromPayload(smallPayload) };
-var mediumBufferSourceTest = { id: "MediumBufferSource", data: CreateArrayBufferFromPayload(mediumPayload) };
-var largeBufferSourceTest = { id: "LargeBufferSource", data: CreateArrayBufferFromPayload(largePayload) };
-var maxBufferSourceTest = { id: "MaxBufferSource", data: CreateArrayBufferFromPayload(maxPayload) };
-var emptyFormDataTest = { id: "EmptyFormData", data: CreateEmptyFormDataPayload() };
-var smallFormDataTest = { id: "SmallFormData", data: CreateFormDataFromPayload(smallPayload) };
-var mediumFormDataTest = { id: "MediumFormData", data: CreateFormDataFromPayload(mediumPayload) };
-var largeFormDataTest = { id: "LargeFormData", data: CreateFormDataFromPayload(largePayload) };
-var smallSafeContentTypeEncodedTest = { id: "SmallSafeContentTypeEncoded", data: new Blob([smallPayload], { type: 'application/x-www-form-urlencoded' }) };
-var smallSafeContentTypeFormTest = { id: "SmallSafeContentTypeForm", data: new FormData() };
-var smallSafeContentTypeTextTest = { id: "SmallSafeContentTypeText", data: new Blob([smallPayload], { type: 'text/plain' }) };
-var smallCORSContentTypeTextTest = { id: "SmallCORSContentTypeText", data: new Blob([smallPayload], { type: 'text/html' }) };
+var noDataTest = { name: "NoData" };
+var nullDataTest = { name: "NullData", data: null };
+var undefinedDataTest = { name: "UndefinedData", data: undefined };
+var smallStringTest = { name: "SmallString", data: smallPayload };
+var mediumStringTest = { name: "MediumString", data: mediumPayload };
+var largeStringTest = { name: "LargeString", data: largePayload };
+var maxStringTest = { name: "MaxString", data: maxPayload };
+var emptyBlobTest = { name: "EmptyBlob", data: new Blob() };
+var smallBlobTest = { name: "SmallBlob", data: new Blob([smallPayload]) };
+var mediumBlobTest = { name: "MediumBlob", data: new Blob([mediumPayload]) };
+var largeBlobTest = { name: "LargeBlob", data: new Blob([largePayload]) };
+var maxBlobTest = { name: "MaxBlob", data: new Blob([maxPayload]) };
+var emptyBufferSourceTest = { name: "EmptyBufferSource", data: new Uint8Array() };
+var smallBufferSourceTest = { name: "SmallBufferSource", data: CreateArrayBufferFromPayload(smallPayload) };
+var mediumBufferSourceTest = { name: "MediumBufferSource", data: CreateArrayBufferFromPayload(mediumPayload) };
+var largeBufferSourceTest = { name: "LargeBufferSource", data: CreateArrayBufferFromPayload(largePayload) };
+var maxBufferSourceTest = { name: "MaxBufferSource", data: CreateArrayBufferFromPayload(maxPayload) };
+var emptyFormDataTest = { name: "EmptyFormData", data: CreateEmptyFormDataPayload() };
+var smallFormDataTest = { name: "SmallFormData", data: CreateFormDataFromPayload(smallPayload) };
+var mediumFormDataTest = { name: "MediumFormData", data: CreateFormDataFromPayload(mediumPayload) };
+var largeFormDataTest = { name: "LargeFormData", data: CreateFormDataFromPayload(largePayload) };
+var smallSafeContentTypeEncodedTest = { name: "SmallSafeContentTypeEncoded", data: new Blob([smallPayload], { type: 'application/x-www-form-urlencoded' }) };
+var smallSafeContentTypeFormTest = { name: "SmallSafeContentTypeForm", data: new FormData() };
+var smallSafeContentTypeTextTest = { name: "SmallSafeContentTypeText", data: new Blob([smallPayload], { type: 'text/plain' }) };
+var smallCORSContentTypeTextTest = { name: "SmallCORSContentTypeText", data: new Blob([smallPayload], { type: 'text/html' }) };
 
 
 
@@ -65,13 +65,6 @@ var allTests = [].concat(stringTests, stringMaxTest, blobTests, blobMaxTest, buf
 var sampleTests = [noDataTest, nullDataTest, undefinedDataTest, smallStringTest, smallBlobTest, smallBufferSourceTest, smallFormDataTest, smallSafeContentTypeEncodedTest, smallSafeContentTypeFormTest, smallSafeContentTypeTextTest];
 
 var preflightTests = [smallCORSContentTypeTextTest];
-
-
-
-var testLookup = {};
-allTests.forEach(function(testCase) {
-    testLookup[testCase.id] = testCase;
-});
 
 
 function CreateArrayBufferFromPayload(payload) {
@@ -110,71 +103,22 @@ function CreateFormDataFromPayload(payload) {
 
 
 
-function initSession(testCases) {
-    return {
-        
-        
-        id: self.token(),
-        
-        testCaseLookup: {},
-        
-        testCases: [],
-        
-        totalCount: testCases.length,
-        
-        
-        sentCount: 0,
-        
-        
-        doneCount: 0,
-        
-        add: function add(testCase) {
-            this.testCases.push(testCase);
-            this.testCaseLookup[testCase.id] = testCase;
-        }
+
+
+function runTests(testCases, suffix = '', buildUrl = self.buildUrl, sendData = self.sendData) {
+    for (const testCase of testCases) {
+        const id = token();
+        async_test((test) => {
+            const url = buildUrl(id);
+            assert_true(sendData(url, testCase.data), 'sendBeacon should succeed');
+            waitForResult(id).then(() => test.done(), test.step_func((e) => {throw e;}));
+        }, `Verify 'navigator.sendbeacon()' successfully sends for variant: ${testCase.name}${suffix}`);
     };
 }
 
-
-
-
-
-
-
-
-
-
-function runTests(testCases, sendData = self.sendData) {
-    const session = initSession(testCases);
-
-    testCases.forEach(function(testCase, testIndex) {
-        
-        
-        const testCaseCopy = Object.assign({ session: session }, testCase);
-
-        testCaseCopy.index = testIndex;
-
-        async_test((test) => {
-            
-            
-            testCaseCopy.test = test;
-
-            
-            var baseUrl = "http://{{host}}:{{ports[http][0]}}";
-            if (self.buildBaseUrl) {
-                baseUrl = self.buildBaseUrl(baseUrl);
-            }
-            var targetUrl = `${baseUrl}/beacon/resources/beacon.py?cmd=store&sid=${session.id}&tid=${testCaseCopy.id}&tidx=${testIndex}`;
-            if (self.buildTargetUrl) {
-                targetUrl = self.buildTargetUrl(targetUrl);
-            }
-            
-            testCaseCopy.url = targetUrl;
-
-            assert_true(sendData(testCaseCopy), 'sendBeacon should succeed');
-            waitForResult(testCaseCopy).then(() => test.done(), test.step_func((e) => {throw e;}));
-        }, `Verify 'navigator.sendbeacon()' successfully sends for variant: ${testCaseCopy.id}`);
-    });
+function buildUrl(id) {
+    const baseUrl = "http://{{host}}:{{ports[http][0]}}";
+    return `${baseUrl}/beacon/resources/beacon.py?cmd=store&id=${id}`;
 }
 
 
@@ -183,15 +127,13 @@ function runTests(testCases, sendData = self.sendData) {
 
 
 
-function sendData(testCase) {
-    return self.navigator.sendBeacon(testCase.url, testCase.data);
+function sendData(url, payload) {
+    return self.navigator.sendBeacon(url, payload);
 }
 
 
-async function waitForResult(testCase) {
-    const session = testCase.session;
-    const index = testCase.index;
-    const url = `resources/beacon.py?cmd=stat&sid=${session.id}&tidx_min=${index}&tidx_max=${index}`;
+async function waitForResult(id) {
+    const url = `resources/beacon.py?cmd=stat&id=${id}`;
     for (let i = 0; i < 30; ++i) {
         const response = await fetch(url);
         const text = await response.text();
@@ -218,16 +160,10 @@ function runSendInIframeAndNavigateTests() {
     iframe.onload = function() {
         
         iframe.onload = null;
-        function sendData(testCase) {
-            return iframe.contentWindow.navigator.sendBeacon(testCase.url, testCase.data);
+        function sendData(url, payload) {
+            return iframe.contentWindow.navigator.sendBeacon(url, payload);
         }
-        const tests = [];
-        for (const test of sampleTests) {
-            const copy = Object.assign({}, test);
-            copy.id = `${test.id}-NAVIGATE`;
-            tests.push(copy);
-        }
-        runTests(tests, sendData);
+        runTests(sampleTests, '-NAVIGATE', self.buildUrl, sendData);
         
         iframe.contentWindow.location = "http://{{host}}:{{ports[http][0]}}/";
     };

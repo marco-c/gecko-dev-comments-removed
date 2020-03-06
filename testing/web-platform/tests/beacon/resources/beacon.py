@@ -1,7 +1,5 @@
 import json
 
-def build_stash_key(session_id, test_num):
-    return "%s_%s" % (session_id, test_num)
 
 def main(request, response):
     """Helper handler for Beacon tests.
@@ -9,63 +7,50 @@ def main(request, response):
     It handles two forms of requests:
 
     STORE:
-        A URL with a query string of the form 'cmd=store&sid=<token>&tidx=<test_index>&tid=<test_name>'.
+        A URL with a query string of the form 'cmd=store&id=<token>'.
 
-        Stores the receipt of a sendBeacon() request along with its validation result, returning HTTP 200 OK.
+        Stores the receipt of a sendBeacon() request along with its validation
+        result, returning HTTP 200 OK.
 
-        Parameters:
-            tidx - the integer index of the test.
-            tid - a friendly identifier or name for the test, used when returning results.
+        if "preflightExpected"  exists in the query, this handler responds to
+        CORS preflights.
 
     STAT:
-        A URL with a query string of the form 'cmd=stat&sid=<token>&tidx_min=<min_test_index>&tidx_max=<max_test_index>'.
+        A URL with a query string of the form 'cmd=stat&id=<token>'.
 
-        Retrieves the results of test with indices [min_test_index, max_test_index] and returns them as
-        a JSON array and HTTP 200 OK status code. Due to the eventual read-once nature of the stash, results for a given test
-        are only guaranteed to be returned once, though they may be returned multiple times.
+        Retrieves the results of test for the given id and returns them as a
+        JSON array and HTTP 200 OK status code. Due to the eventual read-once
+        nature of the stash, results for a given test are only guaranteed to be
+        returned once, though they may be returned multiple times.
 
-        Parameters:
-            tidx_min - the lower-bounding integer test index.
-            tidx_max - the upper-bounding integer test index.
-
-        Example response body:
-            [{"id": "Test1", error: null}, {"id": "Test2", error: "some validation details"}]
+        Example response bodies:
+            - [{error: null}]
+            - [{error: "some validation details"}]
+            - []
 
     Common parameters:
         cmd - the command, 'store' or 'stat'.
-        sid - session id used to provide isolation to a test run comprising multiple sendBeacon()
-              tests.
+        id - the unique identifier of the test.
     """
 
-    session_id = request.GET.first("sid");
-    command = request.GET.first("cmd").lower();
-
-    
-    
-    def wrap_key(key, path):
-        return (str(path), str(key))
-    request.server.stash._wrap_key = wrap_key
+    id = request.GET.first("id")
+    command = request.GET.first("cmd").lower()
 
     
     if "origin" in request.GET:
-        response.headers.set("Access-Control-Allow-Origin", request.GET.first("origin"))
+        response.headers.set("Access-Control-Allow-Origin",
+                             request.GET.first("origin"))
     if "credentials" in request.GET:
-        response.headers.set("Access-Control-Allow-Credentials", request.GET.first("credentials"))
+        response.headers.set("Access-Control-Allow-Credentials",
+                             request.GET.first("credentials"))
 
     
     if command == "store":
-        
-        test_id = request.GET.first("tid")
-        
-        
-        
-        test_idx = request.GET.first("tidx")
-        test_data = { "id": test_id, "error": None }
+        error = None
 
+        
         
         if request.method == "POST":
-            test_data_key = build_stash_key(session_id, test_idx)
-
             payload = ""
             if "Content-Type" in request.headers and \
                "form-data" in request.headers["Content-Type"]:
@@ -84,41 +69,37 @@ def main(request, response):
                 payload_size = int(payload_parts[0])
 
                 
+                
                 if payload_size != len(payload_parts[1]):
-                    test_data["error"] = "expected %d characters but got %d" % (payload_size, len(payload_parts[1]))
+                    error = "expected %d characters but got %d" % (
+                        payload_size, len(payload_parts[1]))
                 else:
                     
                     for i in range(0, payload_size):
                         if payload_parts[1][i] != "*":
-                            test_data["error"] = "expected '*' at index %d but got '%s''" % (i, payload_parts[1][i])
+                            error = "expected '*' at index %d but got '%s''" % (
+                                i, payload_parts[1][i])
                             break
 
             
             
-            request.server.stash.put(test_data_key, test_data)
+            request.server.stash.put(id, {"error": error})
         elif request.method == "OPTIONS":
             
             
+            
             if "preflightExpected" in request.GET:
-                response.headers.set("Access-Control-Allow-Headers", "content-type")
+                response.headers.set("Access-Control-Allow-Headers",
+                                     "content-type")
                 response.headers.set("Access-Control-Allow-Methods", "POST")
             else:
-                test_data_key = build_stash_key(session_id, test_idx)
-                test_data["error"] = "Preflight not expected."
-                request.server.stash.put(test_data_key, test_data)
+                error = "Preflight not expected."
+                request.server.stash.put(id, {"error": error})
     elif command == "stat":
-        test_idx_min = int(request.GET.first("tidx_min"))
-        test_idx_max = int(request.GET.first("tidx_max"))
-
-        
-        results = []
-        for test_idx in range(test_idx_min, test_idx_max+1): 
-            test_data_key = build_stash_key(session_id, test_idx)
-            test_data = request.server.stash.take(test_data_key)
-            if test_data:
-                results.append(test_data)
+        test_data = request.server.stash.take(id)
+        results = [test_data] if test_data else []
 
         response.headers.set("Content-Type", "text/plain")
         response.content = json.dumps(results)
     else:
-        response.status = 400 
+        response.status = 400  

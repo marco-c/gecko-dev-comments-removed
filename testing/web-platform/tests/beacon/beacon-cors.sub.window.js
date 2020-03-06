@@ -8,15 +8,8 @@
 
 
 [true, false].forEach(function(allowCors) {
-    
-    
-    self.buildBaseUrl = function(baseUrl) {
-        return "http://{{domains[www]}}:{{ports[http][0]}}";
-    };
-    
-    
-    
-    self.buildTargetUrl = function(targetUrl) {
+    function buildUrl(id) {
+        const baseUrl = "http://{{domains[www]}}:{{ports[http][0]}}";
         
         
         
@@ -27,16 +20,10 @@
         
         
         
-        return allowCors ? `${targetUrl}&origin=http://{{host}}:{{ports[http][0]}}&credentials=true` : targetUrl;
+        const additionalQuery = allowCors ? "&origin=http://{{host}}:{{ports[http][0]}}&credentials=true" : "";
+        return `${baseUrl}/beacon/resources/beacon.py?cmd=store&id=${id}${additionalQuery}`
     }
-
-    const tests = [];
-    for (const test of sampleTests) {
-        const copy = Object.assign({}, test);
-        copy.id = `${test.id}-${allowCors ? "CORS-ALLOW" : "CORS-FORBID"}`;
-        tests.push(copy);
-    }
-    runTests(tests);
+    runTests(sampleTests, allowCors ? "-CORS-ALLOW" : "-CORS-FORBID", buildUrl);
 });
 
 
@@ -44,24 +31,12 @@
 
 
 {
-    
-    
-    self.buildBaseUrl = function (baseUrl) {
-        return "http://{{domains[www]}}:{{ports[http][0]}}";
-    };
-
-    
-    
-    self.buildTargetUrl = function (targetUrl) {
-        return `${targetUrl}&origin=http://{{host}}:{{ports[http][0]}}&credentials=true&preflightExpected=true`;
+    function buildUrl(id) {
+        const baseUrl = "http://{{domains[www]}}:{{ports[http][0]}}";
+        const additionalQuery = "&origin=http://{{host}}:{{ports[http][0]}}&credentials=true&preflightExpected=true";
+        return `${baseUrl}/beacon/resources/beacon.py?cmd=store&id=${id}${additionalQuery}`
     }
-    const tests = [];
-    for (const test of preflightTests) {
-        const copy = Object.assign({}, test);
-        copy.id = `${test.id}-PREFLIGHT-ALLOW`;
-        tests.push(copy);
-    }
-    runTests(tests);
+    runTests(preflightTests, "-PREFLIGHT-ALLOW", buildUrl);
 }
 
 done();
