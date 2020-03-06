@@ -1112,7 +1112,7 @@ void BaseScript::traceChildren(JSTracer* trc) {
   
   
   if (hasBytecode()) {
-    JSScript* script = static_cast<JSScript*>(this);
+    JSScript* script = this->asJSScript();
 
     if (hasDebugScript()) {
       DebugAPI::traceDebugScript(trc, script);
