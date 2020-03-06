@@ -156,13 +156,13 @@ def test_subtest_messages(capfd):
     output.seek(0)
     output_json = json.load(output)
 
-    t1_log = output_json["tests"]["t1"]["artifacts"]["log"]
-    assert t1_log == "subtest_failure\n" \
-                     "[FAIL expected PASS] t1_a: t1_a_message\n" \
-                     "[PASS] t1_b: t1_b_message\n"
-
-    t2_log = output_json["tests"]["t2"]["artifacts"]["log"]
-    assert t2_log == "[TIMEOUT expected PASS] t2_message\n"
+    t1_artifacts = output_json["tests"]["t1"]["artifacts"]
+    assert t1_artifacts["log"] == "[FAIL expected PASS] t1_a: t1_a_message\n" \
+                                  "[PASS] t1_b: t1_b_message\n"
+    assert t1_artifacts["wpt_subtest_failure"] == "true"
+    t2_artifacts = output_json["tests"]["t2"]["artifacts"]
+    assert t2_artifacts["log"] == "[TIMEOUT expected PASS] t2_message\n"
+    assert "wpt_subtest_failure" not in t2_artifacts.keys()
 
 
 def test_subtest_failure(capfd):
@@ -203,13 +203,15 @@ def test_subtest_failure(capfd):
     output_json = json.load(output)
 
     test_obj = output_json["tests"]["t1"]
-    t1_log = test_obj["artifacts"]["log"]
-    assert t1_log == "subtest_failure\n" \
-                     "[FAIL expected PASS] t1_a: t1_a_message\n" \
-                     "[PASS] t1_b: t1_b_message\n" \
-                     "[TIMEOUT expected PASS] t1_c: t1_c_message\n"
+    t1_artifacts = test_obj["artifacts"]
+    assert t1_artifacts["log"] == "[FAIL expected PASS] t1_a: t1_a_message\n" \
+                                  "[PASS] t1_b: t1_b_message\n" \
+                                  "[TIMEOUT expected PASS] t1_c: t1_c_message\n"
+    assert t1_artifacts["wpt_subtest_failure"] == "true"
     
     
+    
+    assert t1_artifacts["wpt_actual_status"] == "PASS"
     assert test_obj["actual"] == "FAIL"
     assert test_obj["expected"] == "PASS"
     
@@ -300,10 +302,12 @@ def test_unexpected_subtest_pass(capfd):
     output_json = json.load(output)
 
     test_obj = output_json["tests"]["t1"]
-    t1_log = test_obj["artifacts"]["log"]
-    assert t1_log == "subtest_failure\n" \
-                     "[PASS expected FAIL] t1_a: t1_a_message\n"
+    t1_artifacts = test_obj["artifacts"]
+    assert t1_artifacts["log"] == "[PASS expected FAIL] t1_a: t1_a_message\n"
+    assert t1_artifacts["wpt_subtest_failure"] == "true"
     
+    
+    assert t1_artifacts["wpt_actual_status"] == "PASS"
     assert test_obj["actual"] == "FAIL"
     assert test_obj["expected"] == "PASS"
     
@@ -445,6 +449,40 @@ def test_flaky_test_unexpected(capfd):
     
     assert test_obj["expected"] == "PASS TIMEOUT"
     
+    
+    assert test_obj["is_regression"] is True
+    assert test_obj["is_unexpected"] is True
+
+
+def test_precondition_failed(capfd):
+    
+
+    
+    output = StringIO()
+    logger = structuredlog.StructuredLogger("test_a")
+    logger.add_handler(handlers.StreamHandler(output, ChromiumFormatter()))
+
+    
+    logger.suite_start(["t1"], run_info={}, time=123)
+    logger.test_start("t1")
+    logger.test_end("t1", status="PRECONDITION_FAILED", expected="OK")
+    logger.suite_end()
+
+    
+    
+    captured = capfd.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
+
+    
+    output.seek(0)
+    output_json = json.load(output)
+
+    test_obj = output_json["tests"]["t1"]
+    
+    
+    assert test_obj["actual"] == "FAIL"
+    assert test_obj["artifacts"]["wpt_actual_status"] == "PRECONDITION_FAILED"
     
     assert test_obj["is_regression"] is True
     assert test_obj["is_unexpected"] is True
