@@ -14,6 +14,7 @@
 #include "TouchManager.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/PositionedEventTargeting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -206,6 +207,9 @@ bool APZEventState::FireContextmenuEvents(PresShell* aPresShell,
                                           const CSSToLayoutDeviceScale& aScale,
                                           Modifiers aModifiers,
                                           const nsCOMPtr<nsIWidget>& aWidget) {
+  
+  EventRetargetSuppression suppression;
+
   
   
   
