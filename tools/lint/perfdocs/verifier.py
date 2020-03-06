@@ -117,25 +117,25 @@ class Verifier(object):
                 
                 
                 ytests = ytests['tests']
-                for mnf_pth in ytests:
+                for test_name in ytests:
                     foundtest = False
                     for t in framework_info["test_list"][suite]:
                         tb = os.path.basename(t)
                         tb = re.sub("\..*", "", tb)
-                        if mnf_pth == tb:
+                        if test_name == tb:
                             
                             foundtest = True
                             break
-                        if mnf_pth in tb:
+                        if test_name in tb:
                             
                             
-                            global_descriptions[suite].append(mnf_pth)
+                            global_descriptions[suite].append(test_name)
                             foundtest = True
                             break
                     if not foundtest:
                         logger.warning(
                             "Could not find an existing test for {} - bad test name?".format(
-                                mnf_pth
+                                test_name
                             ),
                             framework_info["yml_path"]
                         )
@@ -146,7 +146,7 @@ class Verifier(object):
                 )
 
         
-        for suite, manifest_paths in framework_info["test_list"].items():
+        for suite, test_list in framework_info["test_list"].items():
             if not yaml_content["suites"].get(suite):
                 
                 logger.warning(
@@ -165,24 +165,27 @@ class Verifier(object):
             tests_found = 0
             missing_tests = []
             test_to_manifest = {}
-            for mnf_pth in manifest_paths:
-                tb = os.path.basename(mnf_pth)
+            for test_name, manifest_path in test_list.items():
+                tb = os.path.basename(manifest_path)
                 tb = re.sub("\..*", "", tb)
-                if stests.get(tb) or stests.get(mnf_pth):
+                if stests.get(tb) or stests.get(test_name):
                     
                     tests_found += 1
                     continue
-                test_to_manifest[tb] = mnf_pth
-                missing_tests.append(tb)
+                test_to_manifest[test_name] = manifest_path
+                missing_tests.append(test_name)
 
             
             
             new_mtests = []
             for mt in missing_tests:
                 found = False
-                for mnf_pth in global_descriptions[suite]:
-                    if mnf_pth in mt:
-                        
+                for test_name in global_descriptions[suite]:
+                    
+                    if mt.startswith(test_name):
+                        found = True
+                        break
+                    if test_name in mt:
                         found = True
                         break
                 if not found:
@@ -191,12 +194,11 @@ class Verifier(object):
             if len(new_mtests):
                 
                 
-                for mnf_pth in new_mtests:
+                for test_name in new_mtests:
                     logger.warning(
-                        "Could not find a test description for {}".format(mnf_pth),
-                        test_to_manifest[mnf_pth]
+                        "Could not find a test description for {}".format(test_name),
+                        test_to_manifest[test_name]
                     )
-                continue
 
     def validate_yaml(self, yaml_path):
         '''
@@ -295,9 +297,11 @@ class Verifier(object):
                 "rst": self.validate_rst_content(matched_rst)
             }
 
+            
+            for file_format, valid in _valid_files.items():
+                if not valid:
+                    logger.log("File validation error: {}".format(file_format))
             if not all(_valid_files.values()):
-                
-                logger.log("Bad perfdocs directory found in {}".format(matched['path']))
                 continue
             found_good += 1
 
