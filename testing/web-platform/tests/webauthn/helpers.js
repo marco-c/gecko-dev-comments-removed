@@ -537,28 +537,22 @@ function validateAuthenticatorAssertionResponse(assert) {
 
 function standardSetup(cb) {
     
-    let authenticator;
-    promise_test(async t => {
-        try {
-            authenticator = await window.test_driver.add_virtual_authenticator({
-                protocol: "ctap1/u2f",
-                transport: "usb"
-            });
-        } catch (error) {
-            if (error !== "error: Action add_virtual_authenticator not implemented") {
-                throw error;
-            }
-            
+    window.test_driver.add_virtual_authenticator({
+        protocol: "ctap1/u2f",
+        transport: "usb"
+    }).then(authenticator => {
+        cb();
+        
+        
+        promise_test(() => window.test_driver.remove_virtual_authenticator(authenticator),
+                     "Clean up the test environment");
+    }).catch(error => {
+        if (error !== "error: Action add_virtual_authenticator not implemented") {
+            throw error;
         }
-    }, "Set up the test environment");
-
-    cb();
-
-    promise_test(t => {
-        if (authenticator) {
-            return window.test_driver.remove_virtual_authenticator(authenticator);
-        }
-    }, "Clean up the test environment");
+        
+        cb();
+    });
 }
 
 
