@@ -392,8 +392,11 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
       case ValType::F64:
         vp.set(NumberValue(JS::CanonicalizeNaN(value.f64())));
         break;
-      default:
-        MOZ_CRASH("Global constant type");
+      case ValType::Ref:
+        
+        
+        vp.set(MagicValue(JS_OPTIMIZED_OUT));
+        break;
     }
     return true;
   }
@@ -421,9 +424,11 @@ bool DebugState::getGlobal(Instance& instance, uint32_t globalIndex,
       vp.set(NumberValue(JS::CanonicalizeNaN(*static_cast<double*>(dataPtr))));
       break;
     }
-    default:
-      MOZ_CRASH("Global variable type");
+    case ValType::Ref: {
+      
+      vp.set(MagicValue(JS_OPTIMIZED_OUT));
       break;
+    }
   }
   return true;
 }
