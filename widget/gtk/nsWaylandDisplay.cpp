@@ -1,9 +1,9 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=4:tabstop=4:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "nsWaylandDisplay.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -11,6 +11,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#ifdef MOZ_LOGGING
+#  include "mozilla/Logging.h"
+#  include "nsTArray.h"
+#  include "Units.h"
+extern mozilla::LazyLogModule gWaylandDmabufLog;
+#  define LOGDMABUF(args) \
+    MOZ_LOG(gWaylandDmabufLog, mozilla::LogLevel::Debug, args)
+#else
+#  define LOGDMABUF(args)
+#endif 
 
 namespace mozilla {
 namespace widget {
@@ -26,14 +37,14 @@ wl_display* WaylandDisplayGetWLDisplay(GdkDisplay* aGdkDisplay) {
     aGdkDisplay = gdk_display_get_default();
   }
 
-  // Available as of GTK 3.8+
+  
   static auto sGdkWaylandDisplayGetWlDisplay = (wl_display * (*)(GdkDisplay*))
       dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_wl_display");
   return sGdkWaylandDisplayGetWlDisplay(aGdkDisplay);
 }
 
-// nsWaylandDisplay needs to be created for each calling thread(main thread,
-// compositor thread and render thread)
+
+
 #define MAX_DISPLAY_CONNECTIONS 5
 
 static nsWaylandDisplay* gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
@@ -59,13 +70,13 @@ static void DispatchDisplay(nsWaylandDisplay* aDisplay) {
   aDisplay->DispatchEventQueue();
 }
 
-// Each thread which is using wayland connection (wl_display) has to operate
-// its own wl_event_queue. Main Firefox thread wl_event_queue is handled
-// by Gtk main loop, other threads/wl_event_queue has to be handled by us.
-//
-// nsWaylandDisplay is our interface to wayland compositor. It provides wayland
-// global objects as we need (wl_display, wl_shm) and operates wl_event_queue on
-// compositor (not the main) thread.
+
+
+
+
+
+
+
 void WaylandDispatchDisplays() {
   StaticMutexAutoLock lock(gWaylandDisplaysMutex);
   for (auto& display : gWaylandDisplays) {
@@ -76,12 +87,12 @@ void WaylandDispatchDisplays() {
   }
 }
 
-// Get WaylandDisplay for given wl_display and actual calling thread.
+
 static nsWaylandDisplay* WaylandDisplayGetLocked(GdkDisplay* aGdkDisplay,
                                                  const StaticMutexAutoLock&) {
   wl_display* waylandDisplay = WaylandDisplayGetWLDisplay(aGdkDisplay);
 
-  // Search existing display connections for wl_display:thread combination.
+  
   for (auto& display : gWaylandDisplays) {
     if (display && display->Matches(waylandDisplay)) {
       return display;
@@ -193,7 +204,7 @@ static void dmabuf_modifiers(void* data,
 static void dmabuf_format(void* data,
                           struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
                           uint32_t format) {
-  // XXX: deprecated
+  
 }
 
 static const struct zwp_linux_dmabuf_v1_listener dmabuf_listener = {
@@ -238,7 +249,7 @@ static void global_registry_handler(void* data, wl_registry* registry,
                        display->GetEventQueue());
     display->SetIdleInhibitManager(idle_inhibit_manager);
   } else if (strcmp(interface, "wl_compositor") == 0) {
-    // Requested wl_compositor version 4 as we need wl_surface_damage_buffer().
+    
     auto compositor = static_cast<wl_compositor*>(
         wl_registry_bind(registry, id, &wl_compositor_interface, 4));
     wl_proxy_set_queue((struct wl_proxy*)compositor, display->GetEventQueue());
@@ -252,6 +263,7 @@ static void global_registry_handler(void* data, wl_registry* registry,
   } else if (strcmp(interface, "zwp_linux_dmabuf_v1") == 0 && version > 2) {
     auto dmabuf = static_cast<zwp_linux_dmabuf_v1*>(
         wl_registry_bind(registry, id, &zwp_linux_dmabuf_v1_interface, 3));
+    LOGDMABUF(("zwp_linux_dmabuf_v1 is available."));
     display->SetDmabuf(dmabuf);
     zwp_linux_dmabuf_v1_add_listener(dmabuf, &dmabuf_listener, data);
   }
@@ -285,9 +297,9 @@ static const struct wl_callback_listener sync_callback_listener = {
 void nsWaylandDisplay::SyncBegin() {
   WaitForSyncEnd();
 
-  // Use wl_display_sync() to synchronize wayland events.
-  // See dri2_wl_swap_buffers_with_damage() from MESA
-  // or wl_display_roundtrip_queue() from wayland-client.
+  
+  
+  
   struct wl_display* displayWrapper =
       static_cast<wl_display*>(wl_proxy_create_wrapper((void*)mDisplay));
   if (!displayWrapper) {
@@ -309,7 +321,7 @@ void nsWaylandDisplay::SyncBegin() {
 }
 
 void nsWaylandDisplay::WaitForSyncEnd() {
-  // We're done here
+  
   if (!mSyncCallback) {
     return;
   }
@@ -329,10 +341,11 @@ bool nsWaylandDisplay::Matches(wl_display* aDisplay) {
 
 bool nsWaylandDisplay::ConfigureGbm() {
   if (!nsGbmLib::IsAvailable()) {
+    LOGDMABUF(("nsGbmLib is not available!"));
     return false;
   }
 
-  // TODO - Better DRM device detection/configuration.
+  
   const char* drm_render_node = getenv("MOZ_WAYLAND_DRM_DEVICE");
   if (!drm_render_node) {
     drm_render_node = "/dev/dri/renderD128";
@@ -340,22 +353,23 @@ bool nsWaylandDisplay::ConfigureGbm() {
 
   mGbmFd = open(drm_render_node, O_RDWR);
   if (mGbmFd < 0) {
-    NS_WARNING(
-        nsPrintfCString("Failed to open drm render node %s\n", drm_render_node)
-            .get());
+    LOGDMABUF(
+        (nsPrintfCString("Failed to open drm render node %s\n", drm_render_node)
+             .get()));
     return false;
   }
 
   mGbmDevice = nsGbmLib::CreateDevice(mGbmFd);
   if (mGbmDevice == nullptr) {
-    NS_WARNING(nsPrintfCString("Failed to create drm render device %s\n",
+    LOGDMABUF((nsPrintfCString("Failed to create drm render device %s\n",
                                drm_render_node)
-                   .get());
+                   .get()));
     close(mGbmFd);
     mGbmFd = -1;
     return false;
   }
 
+  LOGDMABUF(("GBM device initialized"));
   return true;
 }
 
@@ -414,7 +428,7 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
   wl_registry_add_listener(mRegistry, &registry_listener, this);
 
   if (NS_IsMainThread()) {
-    // Use default event queue in main thread operated by Gtk+.
+    
     mEventQueue = nullptr;
     wl_display_roundtrip(mDisplay);
     wl_display_roundtrip(mDisplay);
@@ -435,7 +449,7 @@ nsWaylandDisplay::nsWaylandDisplay(wl_display* aDisplay)
 void nsWaylandDisplay::Shutdown() { mDispatcherThreadLoop = nullptr; }
 
 nsWaylandDisplay::~nsWaylandDisplay() {
-  // Owned by Gtk+, we don't need to release
+  
   mDisplay = nullptr;
 
   wl_registry_destroy(mRegistry);
@@ -452,9 +466,10 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
     return sIsDMABufEnabled;
   }
 
-  // WaylandDisplayGet() loads dmabuf config prefs
+  
   nsWaylandDisplay* display = WaylandDisplayGet();
   if (!display) {
+    LOGDMABUF(("IsDMABufEnabled(): Failed to get Wayland display!"));
     return false;
   }
 
@@ -463,19 +478,21 @@ bool nsWaylandDisplay::IsDMABufEnabled() {
       !StaticPrefs::widget_wayland_dmabuf_textures_enabled() &&
       !StaticPrefs::widget_wayland_dmabuf_webgl_enabled() &&
       !StaticPrefs::widget_wayland_dmabuf_vaapi_enabled()) {
-    // Disabled by user, just quit.
+    
+    LOGDMABUF(("IsDMABufEnabled(): Disabled by preferences."));
     return false;
   }
 
   if (!display->ConfigureGbm()) {
-    NS_WARNING("Failed to create GbmDevice, DMABUF/DRM won't be available!");
+    LOGDMABUF(("Failed to create GbmDevice, DMABUF/DRM won't be available!"));
     return false;
   }
 
-  if (!display->GetGbmFormat(/* aHasAlpha */ false) ||
-      !display->GetGbmFormat(/* aHasAlpha */ true)) {
-    NS_WARNING(
-        "Failed to create obtain pixel format, DMABUF/DRM won't be available!");
+  if (!display->GetGbmFormat( false) ||
+      !display->GetGbmFormat( true)) {
+    LOGDMABUF(
+        ("Failed to create obtain pixel format, DMABUF/DRM won't be "
+         "available!"));
     return false;
   }
 
@@ -523,25 +540,28 @@ GetOffsetFunc nsGbmLib::sGetOffset;
 DeviceIsFormatSupportedFunc nsGbmLib::sDeviceIsFormatSupported;
 DrmPrimeHandleToFDFunc nsGbmLib::sDrmPrimeHandleToFD;
 
-bool nsGbmLib::IsAvailable() {
-  if (!Load()) {
-    return false;
-  }
+bool nsGbmLib::IsLoaded() {
   return sCreateDevice != nullptr && sCreate != nullptr &&
          sCreateWithModifiers != nullptr && sImport != nullptr &&
          sGetModifier != nullptr && sGetStride != nullptr &&
          sGetFd != nullptr && sDestroy != nullptr && sMap != nullptr &&
          sUnmap != nullptr && sGetPlaneCount != nullptr &&
          sGetHandleForPlane != nullptr && sGetStrideForPlane != nullptr &&
-         sGetOffset != nullptr && sDeviceIsFormatSupported != nullptr &&
-         sDrmPrimeHandleToFD != nullptr;
+         sGetOffset != nullptr && sDeviceIsFormatSupported != nullptr;
+}
+
+bool nsGbmLib::IsAvailable() {
+  if (!Load()) {
+    return false;
+  }
+  return IsLoaded();
 }
 
 bool nsGbmLib::IsModifierAvailable() {
   if (!Load()) {
     return false;
   }
-  return sDrmPrimeHandleToFD != nullptr;
+  return IsLoaded() && sDrmPrimeHandleToFD != nullptr;
 }
 
 bool nsGbmLib::Load() {
@@ -550,9 +570,9 @@ bool nsGbmLib::Load() {
 
     sGbmLibHandle = dlopen(GBMLIB_NAME, RTLD_LAZY | RTLD_LOCAL);
     if (!sGbmLibHandle) {
-      NS_WARNING(nsPrintfCString("Failed to load %s, dmabuf isn't available.\n",
+      LOGDMABUF((nsPrintfCString("Failed to load %s, dmabuf isn't available.\n",
                                  GBMLIB_NAME)
-                     .get());
+                     .get()));
       return false;
     }
 
@@ -577,15 +597,21 @@ bool nsGbmLib::Load() {
     sDeviceIsFormatSupported = (DeviceIsFormatSupportedFunc)dlsym(
         sGbmLibHandle, "gbm_device_is_format_supported");
 
+    if (!IsLoaded()) {
+      LOGDMABUF(
+          (nsPrintfCString("Failed to load all symbols from %s\n", GBMLIB_NAME)
+               .get()));
+    }
+
     sXf86DrmLibHandle = dlopen(DRMLIB_NAME, RTLD_LAZY | RTLD_LOCAL);
     if (sXf86DrmLibHandle) {
       sDrmPrimeHandleToFD = (DrmPrimeHandleToFDFunc)dlsym(sXf86DrmLibHandle,
                                                           "drmPrimeHandleToFD");
       if (!sDrmPrimeHandleToFD) {
-        NS_WARNING(nsPrintfCString(
+        LOGDMABUF((nsPrintfCString(
                        "Failed to load %s, gbm modifiers are not available.\n",
                        DRMLIB_NAME)
-                       .get());
+                       .get()));
       }
     }
   }
@@ -593,5 +619,5 @@ bool nsGbmLib::Load() {
   return sGbmLibHandle;
 }
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  

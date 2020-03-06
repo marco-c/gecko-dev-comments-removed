@@ -1,9 +1,9 @@
-/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=4:tabstop=4:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef __MOZ_WAYLAND_DISPLAY_H__
 #define __MOZ_WAYLAND_DISPLAY_H__
@@ -12,8 +12,8 @@
 #include "mozilla/widget/gtk-primary-selection-client-protocol.h"
 #include "mozilla/widget/idle-inhibit-unstable-v1-client-protocol.h"
 
-#include "base/message_loop.h"  // for MessageLoop
-#include "base/task.h"          // for NewRunnableMethod, etc
+#include "base/message_loop.h"  
+#include "base/task.h"          
 #include "mozilla/StaticMutex.h"
 
 #include "mozilla/widget/gbm.h"
@@ -30,10 +30,10 @@ struct GbmFormat {
   int mModifiersCount;
 };
 
-// Our general connection to Wayland display server,
-// holds our display connection and runs event loop.
-// We have a global nsWaylandDisplay object for each thread,
-// recently we have three for main, compositor and render one.
+
+
+
+
 class nsWaylandDisplay {
  public:
   explicit nsWaylandDisplay(wl_display* aDisplay);
@@ -78,7 +78,7 @@ class nsWaylandDisplay {
   void SetDmabuf(zwp_linux_dmabuf_v1* aDmabuf);
   zwp_linux_dmabuf_v1* GetDmabuf() { return mDmabuf; };
   gbm_device* GetGbmDevice();
-  // Returns -1 if we fails to gbm device file descriptor.
+  
   int GetGbmDeviceFd();
   bool IsExplicitSyncEnabled() { return mExplicitSync; }
   GbmFormat* GetGbmFormat(bool aHasAlpha);
@@ -152,6 +152,7 @@ typedef int (*DrmPrimeHandleToFDFunc)(int, uint32_t, uint32_t, int*);
 class nsGbmLib {
  public:
   static bool Load();
+  static bool IsLoaded();
   static bool IsAvailable();
   static bool IsModifierAvailable();
 
@@ -225,7 +226,7 @@ class nsGbmLib {
   static bool sLibLoaded;
 };
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
 
-#endif  // __MOZ_WAYLAND_DISPLAY_H__
+#endif  
