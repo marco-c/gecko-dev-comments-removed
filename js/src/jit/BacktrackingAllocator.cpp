@@ -937,10 +937,6 @@ static bool IsThisSlotDefinition(LDefinition* def) {
              THIS_FRAME_ARGSLOT + sizeof(Value);
 }
 
-static bool HasStackPolicy(LDefinition* def) {
-  return def->policy() == LDefinition::STACK;
-}
-
 bool BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
                                             LiveBundle* bundle1) {
   
@@ -976,17 +972,6 @@ bool BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
         return true;
       }
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (HasStackPolicy(reg0.def()) || HasStackPolicy(reg1.def())) {
-    return true;
   }
 
   
@@ -1174,22 +1159,6 @@ bool BacktrackingAllocator::tryMergeReusedRegister(VirtualRegister& def,
   return tryMergeBundles(def.firstBundle(), input.firstBundle());
 }
 
-void BacktrackingAllocator::allocateStackDefinition(VirtualRegister& reg) {
-  LInstruction* ins = reg.ins()->toInstruction();
-  if (reg.def()->type() == LDefinition::STACKRESULTS) {
-    LStackArea alloc(ins->toInstruction());
-    stackSlotAllocator.allocateStackArea(&alloc);
-    reg.def()->setOutput(alloc);
-  } else {
-    
-    
-    const LUse* use = ins->getOperand(0)->toUse();
-    VirtualRegister& area = vregs[use->virtualRegister()];
-    const LStackArea* areaAlloc = area.def()->output()->toStackArea();
-    reg.def()->setOutput(areaAlloc->resultAlloc(reg.ins()));
-  }
-}
-
 bool BacktrackingAllocator::mergeAndQueueRegisters() {
   MOZ_ASSERT(!vregs[0u].hasRanges());
 
@@ -1276,12 +1245,6 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
   
   for (size_t i = 1; i < graph.numVirtualRegisters(); i++) {
     VirtualRegister& reg = vregs[i];
-
-    
-    if (reg.def() && reg.def()->policy() == LDefinition::STACK) {
-      allocateStackDefinition(reg);
-    }
-
     for (LiveRange::RegisterLinkIterator iter = reg.rangesBegin(); iter;
          iter++) {
       LiveRange* range = LiveRange::get(*iter);
@@ -1493,9 +1456,7 @@ bool BacktrackingAllocator::computeRequirement(LiveBundle* bundle,
     if (range->hasDefinition()) {
       
       LDefinition::Policy policy = reg.def()->policy();
-      if (policy == LDefinition::FIXED || policy == LDefinition::STACK) {
-        
-        
+      if (policy == LDefinition::FIXED) {
         
         JitSpew(JitSpew_RegAlloc, "  Requirement %s, fixed by definition",
                 reg.def()->output()->toString().get());
@@ -1538,14 +1499,6 @@ bool BacktrackingAllocator::computeRequirement(LiveBundle* bundle,
           return false;
         }
       }
-
-      
-      
-      
-      MOZ_ASSERT_IF(policy == LUse::STACK,
-                    requirement->kind() == Requirement::FIXED);
-      MOZ_ASSERT_IF(policy == LUse::STACK,
-                    requirement->allocation().isStackArea());
     }
   }
 
@@ -2352,15 +2305,6 @@ static inline bool IsTraceable(VirtualRegister& reg) {
     return true;
   }
 #endif
-  if (reg.type() == LDefinition::STACKRESULTS) {
-    MOZ_ASSERT(reg.def());
-    const LStackArea* alloc = reg.def()->output()->toStackArea();
-    for (auto iter = alloc->results(); iter; iter.next()) {
-      if (iter.isGcPointer()) {
-        return true;
-      }
-    }
-  }
   return false;
 }
 
@@ -2440,17 +2384,6 @@ bool BacktrackingAllocator::populateSafepoints() {
               return false;
             }
             break;
-          case LDefinition::STACKRESULTS: {
-            MOZ_ASSERT(a.isStackArea());
-            for (auto iter = a.toStackArea()->results(); iter; iter.next()) {
-              if (iter.isGcPointer()) {
-                if (!safepoint->addGcPointer(iter.alloc())) {
-                  return false;
-                }
-              }
-            }
-            break;
-          }
 #ifdef JS_NUNBOX32
           case LDefinition::TYPE:
             if (!safepoint->addNunboxType(i, a)) {
