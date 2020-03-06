@@ -77,8 +77,6 @@ class Requirement {
 
   CodePosition pos() const { return position_; }
 
-  int priority() const;
-
   MOZ_MUST_USE bool merge(const Requirement& newRequirement) {
     
     
@@ -101,8 +99,6 @@ class Requirement {
     return true;
   }
 
-  void dump() const;
-
  private:
   Kind kind_;
   LAllocation allocation_;
@@ -114,29 +110,54 @@ struct UsePosition : public TempObject,
  private:
   
   
+  
+  
+  
+  
+  
+  
+  
   uintptr_t use_;
+  static_assert(LUse::ANY | LUse::REGISTER | LUse::FIXED < 0x3,
+                "Common LUse policies can be represented in low bits "
+                "on 32-bit systems");
+
+  static constexpr uintptr_t PolicyMask = sizeof(uintptr_t) - 1;
+  static constexpr uintptr_t UseMask = ~PolicyMask;
 
   void setUse(LUse* use) {
     
     
-    static_assert(
-        (LUse::ANY | LUse::REGISTER | LUse::FIXED | LUse::KEEPALIVE) <= 0x3,
-        "Cannot pack the LUse::Policy value on 32 bits architectures.");
-
-    
-    
     
     MOZ_ASSERT(use->policy() != LUse::RECOVERED_INPUT);
-    use_ = uintptr_t(use) | (use->policy() & 0x3);
+
+    uintptr_t policyBits = use->policy();
+#ifndef JS_64BIT
+    
+    
+    if (policyBits >= PolicyMask) {
+      policyBits = PolicyMask;
+    }
+#endif
+    use_ = uintptr_t(use) | policyBits;
+    MOZ_ASSERT(use->policy() == usePolicy());
   }
 
  public:
   CodePosition pos;
 
-  LUse* use() const { return reinterpret_cast<LUse*>(use_ & ~0x3); }
+  LUse* use() const { return reinterpret_cast<LUse*>(use_ & UseMask); }
 
   LUse::Policy usePolicy() const {
-    LUse::Policy policy = LUse::Policy(use_ & 0x3);
+    uintptr_t bits = use_ & PolicyMask;
+#ifndef JS_64BIT
+    
+    
+    if (bits == PolicyMask) {
+      return use()->policy();
+    }
+#endif
+    LUse::Policy policy = LUse::Policy(bits);
     MOZ_ASSERT(use()->policy() == policy);
     return policy;
   }
@@ -509,7 +530,7 @@ class VirtualRegister {
 
 
 
-typedef js::Vector<CodePosition, 4, SystemAllocPolicy> SplitPositionVector;
+using SplitPositionVector = js::Vector<CodePosition, 4, SystemAllocPolicy>;
 
 class BacktrackingAllocator : protected RegisterAllocator {
   friend class JSONSpewer;
@@ -538,7 +559,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
 
   PriorityQueue<QueueItem, QueueItem, 0, SystemAllocPolicy> allocationQueue;
 
-  typedef SplayTree<LiveRange*, LiveRange> LiveRangeSet;
+  using LiveRangeSet = SplayTree<LiveRange*, LiveRange>;
 
   
   
@@ -618,8 +639,8 @@ class BacktrackingAllocator : protected RegisterAllocator {
   }
 
  private:
-  typedef Vector<LiveRange*, 4, SystemAllocPolicy> LiveRangeVector;
-  typedef Vector<LiveBundle*, 4, SystemAllocPolicy> LiveBundleVector;
+  using LiveRangeVector = Vector<LiveRange*, 4, SystemAllocPolicy>;
+  using LiveBundleVector = Vector<LiveBundle*, 4, SystemAllocPolicy>;
 
   
   MOZ_MUST_USE bool init();
@@ -640,6 +661,7 @@ class BacktrackingAllocator : protected RegisterAllocator {
   MOZ_MUST_USE bool tryMergeBundles(LiveBundle* bundle0, LiveBundle* bundle1);
   MOZ_MUST_USE bool tryMergeReusedRegister(VirtualRegister& def,
                                            VirtualRegister& input);
+  void allocateStackDefinition(VirtualRegister& reg);
   MOZ_MUST_USE bool mergeAndQueueRegisters();
   MOZ_MUST_USE bool tryAllocateFixed(LiveBundle* bundle,
                                      Requirement requirement, bool* success,
