@@ -21,6 +21,8 @@ promise_test(async t => {
     "/wake-lock/resources/page1.html"
   );
   
+  const frameDOMException1 = iframe.contentWindow.DOMException;
+  
   const wakeLock2 = await getWakeLockObject(
     iframe,
     "/wake-lock/resources/page2.html"
@@ -30,6 +32,7 @@ promise_test(async t => {
   await promise_rejects_dom(
     t,
     "NotAllowedError",
+    frameDOMException1,
     wakeLock1.request('screen'),
     "Inactive document, so must throw NotAllowedError"
   );
@@ -58,6 +61,8 @@ promise_test(async t => {
     innerIframe,
     "/wake-lock/resources/page2.html"
   );
+  
+  const innerIframeDOMException = innerIframe.contentWindow.DOMException;
 
   
   
@@ -73,6 +78,7 @@ promise_test(async t => {
   await promise_rejects_dom(
     t,
     "NotAllowedError",
+    innerIframeDOMException,
     wakeLock.request('screen'),
     "Active, but not fully active, so must throw NotAllowedError"
   );
