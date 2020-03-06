@@ -775,18 +775,8 @@ async function openDebugger(options = {}) {
   toolbox = await gDevTools.showToolbox(target, "jsdebugger");
   const panel = toolbox.getCurrentPanel();
 
-  
-  if (panel._view) {
-    panel._view.Variables.lazyEmpty = false;
-  }
+  await toolbox.threadFront.getSources();
 
-  
-  if (panel.panelWin && panel.panelWin.DebuggerController) {
-    await panel.panelWin.DebuggerController.waitForSourcesLoaded();
-  } else {
-    
-    await toolbox.threadFront.getSources();
-  }
   return { target, toolbox, panel };
 }
 
