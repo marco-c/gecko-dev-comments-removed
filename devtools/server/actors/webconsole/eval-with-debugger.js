@@ -333,14 +333,21 @@ function preventSideEffects(dbg) {
   
   
   dbg.onNativeCall = (callee, reason) => {
-    
-    
-    if (
-      reason == "get" ||
-      (reason == "call" && nativeHasNoSideEffects(callee))
-    ) {
+    try {
       
-      return undefined;
+      
+      if (
+        reason == "get" ||
+        (reason == "call" && nativeHasNoSideEffects(callee))
+      ) {
+        
+        return undefined;
+      }
+    } catch (err) {
+      DevToolsUtils.reportException(
+        "evalWithDebugger onNativeCall",
+        new Error("Unable to validate native function against whitelist")
+      );
     }
     
     return null;
