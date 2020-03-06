@@ -213,10 +213,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:HttpChannelParent::OnDataAvailable\n"
 
          
-         "race:DatabaseWork\n"
-         "race:OpenDirectory\n"
-
-         
          "race:nsSocketTransport::OnSocketReady\n"
 
          
