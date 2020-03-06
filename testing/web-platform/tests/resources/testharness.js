@@ -2808,24 +2808,8 @@
         var message_port;
 
         if (is_service_worker(worker)) {
-            if (window.MessageChannel) {
-                
-                
-                
-                
-                
-                
-                var message_channel = new MessageChannel();
-                message_port = message_channel.port1;
-                message_port.start();
-                worker.postMessage({type: "connect"}, [message_channel.port2]);
-            } else {
-                
-                
-                
-                message_port = navigator.serviceWorker;
-                worker.postMessage({type: "connect"});
-            }
+            message_port = navigator.serviceWorker;
+            worker.postMessage({type: "connect"});
         } else if (is_shared_worker(worker)) {
             message_port = worker.port;
             message_port.start();
