@@ -129,9 +129,9 @@ static JSScript* DelazifyScript(JSContext* cx, Handle<BaseScript*> script) {
 
   
   
-  if (script->hasEnclosingLazyScript()) {
-    Rooted<LazyScript*> enclosingLazyScript(cx, script->enclosingLazyScript());
-    if (!DelazifyScript(cx, enclosingLazyScript)) {
+  if (script->hasEnclosingScript()) {
+    Rooted<BaseScript*> enclosingScript(cx, script->enclosingScript());
+    if (!DelazifyScript(cx, enclosingScript)) {
       return nullptr;
     }
 

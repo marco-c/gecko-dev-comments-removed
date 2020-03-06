@@ -1436,10 +1436,10 @@ class ScriptWarmUpData {
   
   
 
-  LazyScript* toEnclosingScript() const {
-    return getTaggedPtr<LazyScript*, EnclosingScriptTag>();
+  BaseScript* toEnclosingScript() const {
+    return getTaggedPtr<BaseScript*, EnclosingScriptTag>();
   }
-  inline void initEnclosingScript(LazyScript* enclosingScript);
+  inline void initEnclosingScript(BaseScript* enclosingScript);
   inline void clearEnclosingScript();
 
   Scope* toEnclosingScope() const {
@@ -2294,13 +2294,11 @@ setterLevel:                                                                  \
 
   void setArgumentsHasVarBinding();
 
-  bool hasEnclosingLazyScript() const {
-    return warmUpData_.isEnclosingScript();
-  }
-  LazyScript* enclosingLazyScript() const {
+  bool hasEnclosingScript() const { return warmUpData_.isEnclosingScript(); }
+  BaseScript* enclosingScript() const {
     return warmUpData_.toEnclosingScript();
   }
-  void setEnclosingLazyScript(LazyScript* enclosingLazyScript);
+  void setEnclosingScript(BaseScript* enclosingScript);
 
   
   
