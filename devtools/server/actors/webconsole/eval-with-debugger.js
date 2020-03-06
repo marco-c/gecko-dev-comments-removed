@@ -280,13 +280,18 @@ function preventSideEffects(dbg) {
   
   
   
-  const newDbg = new Debugger();
-  for (const debuggee of dbg.getDebuggees()) {
-    newDbg.addDebuggee(debuggee.unsafeDereference());
-  }
+  
+  
+  
+  
+  ensureSideEffectFreeNatives();
 
   
   
+  
+  
+  const newDbg = new Debugger();
+  newDbg.addAllGlobalsAsDebuggees();
 
   const timeoutDuration = 100;
   const endTime = Date.now() + timeoutDuration;
@@ -403,8 +408,6 @@ function nativeHasNoSideEffects(fn) {
     case "valueOf":
       return true;
   }
-
-  ensureSideEffectFreeNatives();
 
   const natives = gSideEffectFreeNatives.get(fn.name);
   return natives && natives.some(n => fn.isSameNative(n));
