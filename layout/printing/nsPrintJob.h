@@ -126,10 +126,6 @@ class nsPrintJob final : public nsIObserver,
   bool GetIsPrintPreview() { return mIsDoingPrintPreview; }
   bool GetIsCreatingPrintPreview() { return mIsCreatingPrintPreview; }
 
-  
-  
-  enum eDocTitleDefault { eDocTitleDefBlank, eDocTitleDefURLDoc };
-
   nsresult GetSeqFrameAndCountPages(nsIFrame*& aSeqFrame, int32_t& aCount);
 
   void TurnScriptingOn(bool aDoTurnOn);
@@ -211,9 +207,24 @@ class nsPrintJob final : public nsIObserver,
   
   already_AddRefed<nsPIDOMWindowOuter> FindFocusedDOMWindow() const;
 
-  void GetDisplayTitleAndURL(const mozilla::UniquePtr<nsPrintObject>& aPO,
-                             nsAString& aTitle, nsAString& aURLStr,
-                             eDocTitleDefault aDefType);
+  
+  enum class DocTitleDefault : uint32_t { eDocURLElseFallback, eFallback };
+
+  
+
+
+
+
+
+
+
+
+
+
+  static void GetDisplayTitleAndURL(mozilla::dom::Document& aDoc,
+                                    nsIPrintSettings* aSettings,
+                                    DocTitleDefault aTitleDefault,
+                                    nsAString& aTitle, nsAString& aURLStr);
 
   MOZ_CAN_RUN_SCRIPT nsresult
   CommonPrint(bool aIsPrintPreview, nsIPrintSettings* aPrintSettings,
@@ -281,8 +292,6 @@ class nsPrintJob final : public nsIObserver,
   RefPtr<nsPrintData> mPrtPreview;
 
   nsPagePrintTimer* mPagePrintTimer = nullptr;
-
-  nsString mFallbackDocTitle;
 
   float mScreenDPI = 115.0f;
   int32_t mLoadCounter = 0;
