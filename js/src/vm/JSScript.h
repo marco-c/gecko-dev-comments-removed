@@ -3083,11 +3083,6 @@ class JSScript : public js::BaseScript {
   };
 };
 
-
-static_assert(
-    sizeof(JSScript) % js::gc::CellAlignBytes == 0,
-    "Size of JSScript must be an integral multiple of js::gc::CellAlignBytes");
-
 namespace js {
 
 
@@ -3230,11 +3225,6 @@ class LazyScript : public BaseScript {
   bool hasScript() const { return bool(u.script_); }
 };
 
-
-static_assert(sizeof(LazyScript) % js::gc::CellAlignBytes == 0,
-              "Size of LazyScript must be an integral multiple of "
-              "js::gc::CellAlignBytes");
-
 struct ScriptAndCounts {
   
   JSScript* script;
@@ -3317,8 +3307,6 @@ namespace ubi {
 
 template <>
 class Concrete<JSScript> : public Concrete<js::BaseScript> {};
-template <>
-class Concrete<js::LazyScript> : public Concrete<js::BaseScript> {};
 
 }  
 }  
