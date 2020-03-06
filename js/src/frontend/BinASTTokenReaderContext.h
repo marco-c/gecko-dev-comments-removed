@@ -1633,7 +1633,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
   
 
 
-  MOZ_MUST_USE JS::Result<Ok> registerLazyScript(LazyScript* lazy);
+  MOZ_MUST_USE JS::Result<Ok> registerLazyScript(BaseScript* lazy);
 
   
   
@@ -1772,7 +1772,7 @@ class MOZ_STACK_CLASS BinASTTokenReaderContext : public BinASTTokenReaderBase {
 
   
   
-  Rooted<GCVector<LazyScript*>> lazyScripts_;
+  Rooted<GCVector<BaseScript*>> lazyScripts_;
 
  public:
   BinASTTokenReaderContext(const BinASTTokenReaderContext&) = delete;

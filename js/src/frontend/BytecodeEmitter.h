@@ -85,7 +85,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   JS::Rooted<JSScript*> script;
 
   
-  JS::Rooted<LazyScript*> lazyScript;
+  JS::Rooted<BaseScript*> lazyScript;
 
  private:
   BytecodeSection bytecodeSection_;
@@ -188,7 +188,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   BytecodeEmitter(
       BytecodeEmitter* parent, SharedContext* sc, JS::Handle<JSScript*> script,
-      JS::Handle<LazyScript*> lazyScript, uint32_t line, uint32_t column,
+      JS::Handle<BaseScript*> lazyScript, uint32_t line, uint32_t column,
       CompilationInfo& compilationInfo, EmitterMode emitterMode,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
@@ -206,14 +206,14 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  public:
   BytecodeEmitter(
       BytecodeEmitter* parent, BCEParserHandle* parser, SharedContext* sc,
-      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
+      JS::Handle<JSScript*> script, JS::Handle<BaseScript*> lazyScript,
       uint32_t line, uint32_t column, CompilationInfo& compilationInfo,
       EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
 
   BytecodeEmitter(
       BytecodeEmitter* parent, const EitherParser& parser, SharedContext* sc,
-      JS::Handle<JSScript*> script, JS::Handle<LazyScript*> lazyScript,
+      JS::Handle<JSScript*> script, JS::Handle<BaseScript*> lazyScript,
       uint32_t line, uint32_t column, CompilationInfo& compilationInfo,
       EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid());
@@ -222,7 +222,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   BytecodeEmitter(
       BytecodeEmitter* parent, Parser<FullParseHandler, Unit>* parser,
       SharedContext* sc, JS::Handle<JSScript*> script,
-      JS::Handle<LazyScript*> lazyScript, uint32_t line, uint32_t column,
+      JS::Handle<BaseScript*> lazyScript, uint32_t line, uint32_t column,
       CompilationInfo& compilationInfo, EmitterMode emitterMode = Normal,
       FieldInitializers fieldInitializers = FieldInitializers::Invalid())
       : BytecodeEmitter(parent, EitherParser(parser), sc, script, lazyScript,
