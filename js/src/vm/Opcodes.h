@@ -2408,33 +2408,8 @@
 
 
 
-
  \
-    MACRO(ThrowSetAliasedConst, throw_set_aliased_const, NULL, 5, 0, 0, JOF_ENVCOORD|JOF_NAME|JOF_DETECTING) \
-    
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(ThrowSetCallee, throw_set_callee, NULL, 1, 0, 0, JOF_BYTE) \
-    
-
-
-
-
-
-
-
-
- \
-    MACRO(ThrowSetConst, throw_set_const, NULL, 4, 0, 0, JOF_LOCAL|JOF_NAME|JOF_DETECTING) \
+    MACRO(ThrowSetConst, throw_set_const, NULL, 5, 0, 0, JOF_ATOM|JOF_NAME|JOF_DETECTING) \
     
 
 
@@ -3488,6 +3463,8 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(236)                                   \
+  MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \
