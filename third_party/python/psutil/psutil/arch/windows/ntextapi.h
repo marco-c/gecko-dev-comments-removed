@@ -3,6 +3,8 @@
 
 
 
+
+
 #if !defined(__NTEXTAPI_H__)
 #define __NTEXTAPI_H__
 #include <winternl.h>
@@ -10,68 +12,86 @@
 
 typedef LONG NTSTATUS;
 
-#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
-#define STATUS_BUFFER_TOO_SMALL 0xC0000023L
-#define SystemExtendedHandleInformation 64
-#define MemoryWorkingSetInformation 0x1
+
+#define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
+#define STATUS_BUFFER_TOO_SMALL ((NTSTATUS)0xC0000023L)
 #define STATUS_ACCESS_DENIED ((NTSTATUS)0xC0000022L)
+#define STATUS_NOT_FOUND ((NTSTATUS)0xC0000225L)
+#define STATUS_BUFFER_OVERFLOW ((NTSTATUS)0x80000005L)
 
 
 
 
 
+#undef  SystemExtendedHandleInformation
+#define SystemExtendedHandleInformation 64
+#undef  MemoryWorkingSetInformation
+#define MemoryWorkingSetInformation 0x1
+#undef  ObjectNameInformation
+#define ObjectNameInformation 1
+#undef  ProcessIoPriority
+#define ProcessIoPriority 33
+#undef  ProcessWow64Information
+#define ProcessWow64Information 26
+#undef  SystemProcessIdInformation
+#define SystemProcessIdInformation 88
 
 
-typedef enum _PROCESSINFOCLASS2 {
-    _ProcessBasicInformation,
-    ProcessQuotaLimits,
-    ProcessIoCounters,
-    ProcessVmCounters,
-    ProcessTimes,
-    ProcessBasePriority,
-    ProcessRaisePriority,
-    _ProcessDebugPort,
-    ProcessExceptionPort,
-    ProcessAccessToken,
-    ProcessLdtInformation,
-    ProcessLdtSize,
-    ProcessDefaultHardErrorMode,
-    ProcessIoPortHandlers,
-    ProcessPooledUsageAndLimits,
-    ProcessWorkingSetWatch,
-    ProcessUserModeIOPL,
-    ProcessEnableAlignmentFaultFixup,
-    ProcessPriorityClass,
-    ProcessWx86Information,
-    ProcessHandleCount,
-    ProcessAffinityMask,
-    ProcessPriorityBoost,
-    ProcessDeviceMap,
-    ProcessSessionInformation,
-    ProcessForegroundInformation,
-    _ProcessWow64Information,
-    
-    _ProcessImageFileName,
-    ProcessLUIDDeviceMapsEnabled,
-    _ProcessBreakOnTermination,
-    ProcessDebugObjectHandle,
-    ProcessDebugFlags,
-    ProcessHandleTracing,
-    ProcessIoPriority,
-    ProcessExecuteFlags,
-    ProcessResourceManagement,
-    ProcessCookie,
-    ProcessImageInformation,
-    MaxProcessInfoClass
-} PROCESSINFOCLASS2;
+typedef enum _KTHREAD_STATE {
+    Initialized,
+    Ready,
+    Running,
+    Standby,
+    Terminated,
+    Waiting,
+    Transition,
+    DeferredReady,
+    GateWait,
+    MaximumThreadState
+} KTHREAD_STATE, *PKTHREAD_STATE;
 
-#define PROCESSINFOCLASS PROCESSINFOCLASS2
-#define ProcessBasicInformation _ProcessBasicInformation
-#define ProcessWow64Information _ProcessWow64Information
-#define ProcessDebugPort _ProcessDebugPort
-#define ProcessImageFileName _ProcessImageFileName
-#define ProcessBreakOnTermination _ProcessBreakOnTermination
-
+typedef enum _KWAIT_REASON {
+    Executive,
+    FreePage,
+    PageIn,
+    PoolAllocation,
+    DelayExecution,
+    Suspended,
+    UserRequest,
+    WrExecutive,
+    WrFreePage,
+    WrPageIn,
+    WrPoolAllocation,
+    WrDelayExecution,
+    WrSuspended,
+    WrUserRequest,
+    WrEventPair,
+    WrQueue,
+    WrLpcReceive,
+    WrLpcReply,
+    WrVirtualMemory,
+    WrPageOut,
+    WrRendezvous,
+    WrKeyedEvent,
+    WrTerminated,
+    WrProcessInSwap,
+    WrCpuRateControl,
+    WrCalloutStack,
+    WrKernel,
+    WrResource,
+    WrPushLock,
+    WrMutex,
+    WrQuantumEnd,
+    WrDispatchInt,
+    WrPreempted,
+    WrYieldExecution,
+    WrFastMutex,
+    WrGuardedMutex,
+    WrRundown,
+    WrAlertByThreadId,
+    WrDeferredPreempt,
+    MaximumWaitReason
+} KWAIT_REASON, *PKWAIT_REASON;
 
 
 
@@ -86,6 +106,7 @@ typedef struct {
     LARGE_INTEGER InterruptTime;
     ULONG InterruptCount;
 } _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION;
+
 
 typedef struct {
     LARGE_INTEGER IdleProcessTime;
@@ -164,6 +185,7 @@ typedef struct {
     ULONG SystemCalls;
 } _SYSTEM_PERFORMANCE_INFORMATION;
 
+
 typedef struct {
     ULONG ContextSwitches;
     ULONG DpcCount;
@@ -172,62 +194,6 @@ typedef struct {
     ULONG DpcBypassCount;
     ULONG ApcBypassCount;
 } _SYSTEM_INTERRUPT_INFORMATION;
-
-typedef enum _KTHREAD_STATE {
-    Initialized,
-    Ready,
-    Running,
-    Standby,
-    Terminated,
-    Waiting,
-    Transition,
-    DeferredReady,
-    GateWait,
-    MaximumThreadState
-} KTHREAD_STATE, *PKTHREAD_STATE;
-
-typedef enum _KWAIT_REASON {
-    Executive,
-    FreePage,
-    PageIn,
-    PoolAllocation,
-    DelayExecution,
-    Suspended,
-    UserRequest,
-    WrExecutive,
-    WrFreePage,
-    WrPageIn,
-    WrPoolAllocation,
-    WrDelayExecution,
-    WrSuspended,
-    WrUserRequest,
-    WrEventPair,
-    WrQueue,
-    WrLpcReceive,
-    WrLpcReply,
-    WrVirtualMemory,
-    WrPageOut,
-    WrRendezvous,
-    WrKeyedEvent,
-    WrTerminated,
-    WrProcessInSwap,
-    WrCpuRateControl,
-    WrCalloutStack,
-    WrKernel,
-    WrResource,
-    WrPushLock,
-    WrMutex,
-    WrQuantumEnd,
-    WrDispatchInt,
-    WrPreempted,
-    WrYieldExecution,
-    WrFastMutex,
-    WrGuardedMutex,
-    WrRundown,
-    WrAlertByThreadId,
-    WrDeferredPreempt,
-    MaximumWaitReason
-} KWAIT_REASON, *PKWAIT_REASON;
 
 typedef struct _SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX {
     PVOID Object;
@@ -271,19 +237,6 @@ typedef struct _SYSTEM_THREAD_INFORMATION2 {
 #define SYSTEM_THREAD_INFORMATION SYSTEM_THREAD_INFORMATION2
 #define PSYSTEM_THREAD_INFORMATION PSYSTEM_THREAD_INFORMATION2
 
-typedef struct _TEB *PTEB;
-
-typedef struct _SYSTEM_EXTENDED_THREAD_INFORMATION {
-    SYSTEM_THREAD_INFORMATION ThreadInfo;
-    PVOID StackBase;
-    PVOID StackLimit;
-    PVOID Win32StartAddress;
-    PTEB TebBase;
-    ULONG_PTR Reserved2;
-    ULONG_PTR Reserved3;
-    ULONG_PTR Reserved4;
-} SYSTEM_EXTENDED_THREAD_INFORMATION, *PSYSTEM_EXTENDED_THREAD_INFORMATION;
-
 typedef struct _SYSTEM_PROCESS_INFORMATION2 {
     ULONG NextEntryOffset;
     ULONG NumberOfThreads;
@@ -324,6 +277,7 @@ typedef struct _SYSTEM_PROCESS_INFORMATION2 {
 #define SYSTEM_PROCESS_INFORMATION SYSTEM_PROCESS_INFORMATION2
 #define PSYSTEM_PROCESS_INFORMATION PSYSTEM_PROCESS_INFORMATION2
 
+
 typedef struct _PROCESSOR_POWER_INFORMATION {
    ULONG Number;
    ULONG MaxMhz;
@@ -354,6 +308,7 @@ typedef struct {
     LPCWSTR env;
 } RTL_USER_PROCESS_PARAMETERS_, *PRTL_USER_PROCESS_PARAMETERS_;
 
+
 typedef struct _WINSTATION_INFO {
     BYTE Reserved1[72];
     ULONG SessionId;
@@ -366,6 +321,7 @@ typedef struct _WINSTATION_INFO {
     FILETIME CurrentTime;
 } WINSTATION_INFO, *PWINSTATION_INFO;
 
+
 #if (_WIN32_WINNT < 0x0601)  
 typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
     LOGICAL_PROCESSOR_RELATIONSHIP Relationship;
@@ -377,8 +333,10 @@ typedef struct _SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX {
         CACHE_RELATIONSHIP Cache;
         GROUP_RELATIONSHIP Group;
     } DUMMYUNIONNAME;
-} SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
+} SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX, \
+    *PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
 #endif
+
 
 typedef struct _MEMORY_WORKING_SET_BLOCK {
     ULONG_PTR Protection : 5;
@@ -392,10 +350,12 @@ typedef struct _MEMORY_WORKING_SET_BLOCK {
 #endif
 } MEMORY_WORKING_SET_BLOCK, *PMEMORY_WORKING_SET_BLOCK;
 
+
 typedef struct _MEMORY_WORKING_SET_INFORMATION {
     ULONG_PTR NumberOfEntries;
     MEMORY_WORKING_SET_BLOCK WorkingSetInfo[1];
 } MEMORY_WORKING_SET_INFORMATION, *PMEMORY_WORKING_SET_INFORMATION;
+
 
 typedef struct _PSUTIL_PROCESS_WS_COUNTERS {
     SIZE_T NumberOfPages;
@@ -405,17 +365,121 @@ typedef struct _PSUTIL_PROCESS_WS_COUNTERS {
 } PSUTIL_PROCESS_WS_COUNTERS, *PPSUTIL_PROCESS_WS_COUNTERS;
 
 
+typedef struct _SYSTEM_PROCESS_ID_INFORMATION {
+    HANDLE ProcessId;
+    UNICODE_STRING ImageName;
+} SYSTEM_PROCESS_ID_INFORMATION, *PSYSTEM_PROCESS_ID_INFORMATION;
 
 
 
 
 
-typedef BOOL (WINAPI *_GetLogicalProcessorInformationEx)(
+#ifdef _WIN64
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[21];
+    PVOID LoaderData;
+    PRTL_USER_PROCESS_PARAMETERS_ ProcessParameters;
+    
+} PEB_;
+
+
+
+typedef struct {
+    USHORT Length;
+    USHORT MaxLength;
+    DWORD Buffer;
+} UNICODE_STRING32;
+
+typedef struct {
+    BYTE Reserved1[16];
+    DWORD Reserved2[5];
+    UNICODE_STRING32 CurrentDirectoryPath;
+    DWORD CurrentDirectoryHandle;
+    UNICODE_STRING32 DllPath;
+    UNICODE_STRING32 ImagePathName;
+    UNICODE_STRING32 CommandLine;
+    DWORD env;
+} RTL_USER_PROCESS_PARAMETERS32;
+
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    DWORD Reserved3[2];
+    DWORD Ldr;
+    DWORD ProcessParameters;
+    
+} PEB32;
+#else  
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    PVOID Reserved3[2];
+    PVOID Ldr;
+    PRTL_USER_PROCESS_PARAMETERS_ ProcessParameters;
+    
+} PEB_;
+
+
+
+
+typedef NTSTATUS (NTAPI *_NtWow64ReadVirtualMemory64)(
+    HANDLE ProcessHandle,
+    PVOID64 BaseAddress,
+    PVOID Buffer,
+    ULONG64 Size,
+    PULONG64 NumberOfBytesRead);
+
+typedef struct {
+    PVOID Reserved1[2];
+    PVOID64 PebBaseAddress;
+    PVOID Reserved2[4];
+    PVOID UniqueProcessId[2];
+    PVOID Reserved3[2];
+} PROCESS_BASIC_INFORMATION64;
+
+typedef struct {
+    USHORT Length;
+    USHORT MaxLength;
+    PVOID64 Buffer;
+} UNICODE_STRING64;
+
+typedef struct {
+    BYTE Reserved1[16];
+    PVOID64 Reserved2[5];
+    UNICODE_STRING64 CurrentDirectoryPath;
+    PVOID64 CurrentDirectoryHandle;
+    UNICODE_STRING64 DllPath;
+    UNICODE_STRING64 ImagePathName;
+    UNICODE_STRING64 CommandLine;
+    PVOID64 env;
+} RTL_USER_PROCESS_PARAMETERS64;
+
+typedef struct {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[21];
+    PVOID64 LoaderData;
+    PVOID64 ProcessParameters;
+    
+} PEB64;
+#endif  
+
+
+
+
+
+BOOL (WINAPI *_GetLogicalProcessorInformationEx) (
     LOGICAL_PROCESSOR_RELATIONSHIP relationship,
     PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer,
     PDWORD ReturnLength);
 
-typedef BOOLEAN (WINAPI * _WinStationQueryInformationW)(
+#define GetLogicalProcessorInformationEx _GetLogicalProcessorInformationEx
+
+BOOLEAN (WINAPI * _WinStationQueryInformationW) (
     HANDLE ServerHandle,
     ULONG SessionId,
     WINSTATIONINFOCLASS WinStationInformationClass,
@@ -423,34 +487,46 @@ typedef BOOLEAN (WINAPI * _WinStationQueryInformationW)(
     ULONG WinStationInformationLength,
     PULONG pReturnLength);
 
-typedef NTSTATUS (NTAPI *_NtQueryInformationProcess)(
+#define WinStationQueryInformationW _WinStationQueryInformationW
+
+NTSTATUS (NTAPI *_NtQueryInformationProcess) (
     HANDLE ProcessHandle,
     DWORD ProcessInformationClass,
     PVOID ProcessInformation,
     DWORD ProcessInformationLength,
     PDWORD ReturnLength);
 
-typedef NTSTATUS (NTAPI *_NtQuerySystemInformation)(
+#define NtQueryInformationProcess _NtQueryInformationProcess
+
+NTSTATUS (NTAPI *_NtQuerySystemInformation) (
     ULONG SystemInformationClass,
     PVOID SystemInformation,
     ULONG SystemInformationLength,
     PULONG ReturnLength);
 
-typedef NTSTATUS (NTAPI *_NtSetInformationProcess)(
+#define NtQuerySystemInformation _NtQuerySystemInformation
+
+NTSTATUS (NTAPI *_NtSetInformationProcess) (
     HANDLE ProcessHandle,
     DWORD ProcessInformationClass,
     PVOID ProcessInformation,
     DWORD ProcessInformationLength);
 
-typedef PSTR (NTAPI * _RtlIpv4AddressToStringA)(
+#define NtSetInformationProcess _NtSetInformationProcess
+
+PSTR (NTAPI * _RtlIpv4AddressToStringA) (
     struct in_addr *Addr,
     PSTR S);
 
-typedef PSTR (NTAPI * _RtlIpv6AddressToStringA)(
+#define RtlIpv4AddressToStringA _RtlIpv4AddressToStringA
+
+PSTR (NTAPI * _RtlIpv6AddressToStringA) (
     struct in6_addr *Addr,
     PSTR P);
 
-typedef DWORD (WINAPI * _GetExtendedTcpTable)(
+#define RtlIpv6AddressToStringA _RtlIpv6AddressToStringA
+
+DWORD (WINAPI * _GetExtendedTcpTable) (
     PVOID pTcpTable,
     PDWORD pdwSize,
     BOOL bOrder,
@@ -458,7 +534,9 @@ typedef DWORD (WINAPI * _GetExtendedTcpTable)(
     TCP_TABLE_CLASS TableClass,
     ULONG Reserved);
 
-typedef DWORD (WINAPI * _GetExtendedUdpTable)(
+#define GetExtendedTcpTable _GetExtendedTcpTable
+
+DWORD (WINAPI * _GetExtendedUdpTable) (
     PVOID pUdpTable,
     PDWORD pdwSize,
     BOOL bOrder,
@@ -466,32 +544,46 @@ typedef DWORD (WINAPI * _GetExtendedUdpTable)(
     UDP_TABLE_CLASS TableClass,
     ULONG Reserved);
 
-typedef DWORD (CALLBACK *_GetActiveProcessorCount)(
+#define GetExtendedUdpTable _GetExtendedUdpTable
+
+DWORD (CALLBACK *_GetActiveProcessorCount) (
     WORD GroupNumber);
 
-typedef ULONGLONG (CALLBACK *_GetTickCount64)(
+#define GetActiveProcessorCount _GetActiveProcessorCount
+
+ULONGLONG (CALLBACK *_GetTickCount64) (
     void);
 
-typedef NTSTATUS (NTAPI *_NtQueryObject)(
+#define GetTickCount64 _GetTickCount64
+
+NTSTATUS (NTAPI *_NtQueryObject) (
     HANDLE Handle,
     OBJECT_INFORMATION_CLASS ObjectInformationClass,
     PVOID ObjectInformation,
     ULONG ObjectInformationLength,
     PULONG ReturnLength);
 
-typedef NTSTATUS (WINAPI *_RtlGetVersion) (
+#define NtQueryObject _NtQueryObject
+
+NTSTATUS (WINAPI *_RtlGetVersion) (
     PRTL_OSVERSIONINFOW lpVersionInformation
 );
 
-typedef NTSTATUS (WINAPI *_NtResumeProcess) (
+#define RtlGetVersion _RtlGetVersion
+
+NTSTATUS (WINAPI *_NtResumeProcess) (
     HANDLE hProcess
 );
 
-typedef NTSTATUS (WINAPI *_NtSuspendProcess) (
+#define NtResumeProcess _NtResumeProcess
+
+NTSTATUS (WINAPI *_NtSuspendProcess) (
     HANDLE hProcess
 );
 
-typedef NTSTATUS (NTAPI *_NtQueryVirtualMemory) (
+#define NtSuspendProcess _NtSuspendProcess
+
+NTSTATUS (NTAPI *_NtQueryVirtualMemory) (
     HANDLE ProcessHandle,
     PVOID BaseAddress,
     int MemoryInformationClass,
@@ -500,8 +592,12 @@ typedef NTSTATUS (NTAPI *_NtQueryVirtualMemory) (
     PSIZE_T ReturnLength
 );
 
-typedef ULONG (WINAPI *_RtlNtStatusToDosErrorNoTeb) (
+#define NtQueryVirtualMemory _NtQueryVirtualMemory
+
+ULONG (WINAPI *_RtlNtStatusToDosErrorNoTeb) (
     NTSTATUS status
 );
+
+#define RtlNtStatusToDosErrorNoTeb _RtlNtStatusToDosErrorNoTeb
 
 #endif 

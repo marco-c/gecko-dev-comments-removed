@@ -4,7 +4,6 @@
 
 """Routines common to all posix systems."""
 
-import errno
 import glob
 import os
 import sys
@@ -12,17 +11,18 @@ import time
 
 from ._common import memoize
 from ._common import sdiskusage
+from ._common import TimeoutExpired
 from ._common import usage_percent
+from ._compat import ChildProcessError
+from ._compat import FileNotFoundError
+from ._compat import InterruptedError
+from ._compat import PermissionError
+from ._compat import ProcessLookupError
 from ._compat import PY3
 from ._compat import unicode
 
 
 __all__ = ['pid_exists', 'wait_pid', 'disk_usage', 'get_terminal_map']
-
-
-
-
-TimeoutExpired = None
 
 
 def pid_exists(pid):
@@ -36,19 +36,13 @@ def pid_exists(pid):
         return True
     try:
         os.kill(pid, 0)
-    except OSError as err:
-        if err.errno == errno.ESRCH:
-            
-            return False
-        elif err.errno == errno.EPERM:
-            
-            return True
-        else:
-            
-            
-            
-            
-            raise err
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        
+        return True
+    
+    
     else:
         return True
 
@@ -84,24 +78,20 @@ def wait_pid(pid, timeout=None, proc_name=None):
     while True:
         try:
             retpid, status = waitcall()
-        except OSError as err:
-            if err.errno == errno.EINTR:
-                delay = check_timeout(delay)
-                continue
-            elif err.errno == errno.ECHILD:
-                
-                
-                
-                
-                
-                
-                while True:
-                    if pid_exists(pid):
-                        delay = check_timeout(delay)
-                    else:
-                        return
-            else:
-                raise
+        except InterruptedError:
+            delay = check_timeout(delay)
+        except ChildProcessError:
+            
+            
+            
+            
+            
+            
+            while True:
+                if pid_exists(pid):
+                    delay = check_timeout(delay)
+                else:
+                    return
         else:
             if retpid == 0:
                 
@@ -180,7 +170,6 @@ def get_terminal_map():
         assert name not in ret, name
         try:
             ret[os.stat(name).st_rdev] = name
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
     return ret

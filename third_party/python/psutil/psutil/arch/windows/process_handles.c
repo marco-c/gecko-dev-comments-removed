@@ -5,509 +5,288 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <windows.h>
-#include <Psapi.h>
 #include <Python.h>
-#include "ntextapi.h"
-#include "global.h"
-#include "process_handles.h"
-#include "process_info.h"
+
 #include "../../_psutil_common.h"
-
-CRITICAL_SECTION g_cs;
-BOOL g_initialized = FALSE;
-NTSTATUS g_status;
-HANDLE g_hFile = NULL;
-HANDLE g_hEvtStart = NULL;
-HANDLE g_hEvtFinish = NULL;
-HANDLE g_hThread = NULL;
-PUNICODE_STRING g_pNameBuffer = NULL;
-ULONG g_dwSize = 0;
-ULONG g_dwLength = 0;
+#include "process_utils.h"
 
 
-#define ObjectNameInformation 1
-#define NTQO_TIMEOUT 100
+#define THREAD_TIMEOUT 100  // ms
+
+PUNICODE_STRING globalFileName = NULL;
 
 
-static VOID
-psutil_get_open_files_init(BOOL threaded) {
-    if (g_initialized == TRUE)
-        return;
+static int
+psutil_enum_handles(PSYSTEM_HANDLE_INFORMATION_EX *handles) {
+    static ULONG initialBufferSize = 0x10000;
+    NTSTATUS status;
+    PVOID buffer;
+    ULONG bufferSize;
 
-    
-    if (threaded == TRUE) {
-        g_hEvtStart = CreateEvent(NULL, FALSE, FALSE, NULL);
-        g_hEvtFinish = CreateEvent(NULL, FALSE, FALSE, NULL);
-        InitializeCriticalSection(&g_cs);
+    bufferSize = initialBufferSize;
+    buffer = MALLOC_ZERO(bufferSize);
+    if (buffer == NULL) {
+        PyErr_NoMemory();
+        return 1;
     }
 
-    g_initialized = TRUE;
+    while ((status = NtQuerySystemInformation(
+        SystemExtendedHandleInformation,
+        buffer,
+        bufferSize,
+        NULL
+        )) == STATUS_INFO_LENGTH_MISMATCH)
+    {
+        FREE(buffer);
+        bufferSize *= 2;
+
+        
+        if (bufferSize > 256 * 1024 * 1024) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "SystemExtendedHandleInformation buffer too big");
+            return 1;
+        }
+
+        buffer = MALLOC_ZERO(bufferSize);
+        if (buffer == NULL) {
+            PyErr_NoMemory();
+            return 1;
+        }
+    }
+
+    if (! NT_SUCCESS(status)) {
+        psutil_SetFromNTStatusErr(status, "NtQuerySystemInformation");
+        FREE(buffer);
+        return 1;
+    }
+
+    *handles = (PSYSTEM_HANDLE_INFORMATION_EX)buffer;
+    return 0;
 }
 
 
-static DWORD WINAPI
-psutil_wait_thread(LPVOID lpvParam) {
-    
-    while (TRUE) {
-        WaitForSingleObject(g_hEvtStart, INFINITE);
+static int
+psutil_get_filename(LPVOID lpvParam) {
+    HANDLE hFile = *((HANDLE*)lpvParam);
+    NTSTATUS status;
+    ULONG bufferSize;
+    ULONG attempts = 8;
 
-        
-        g_status = psutil_NtQueryObject(
-            g_hFile,
-            ObjectNameInformation,
-            g_pNameBuffer,
-            g_dwSize,
-            &g_dwLength);
-        SetEvent(g_hEvtFinish);
+    bufferSize = 0x200;
+    globalFileName = MALLOC_ZERO(bufferSize);
+    if (globalFileName == NULL) {
+        PyErr_NoMemory();
+        goto error;
     }
+
+
+    
+    if (GetFileType(hFile) != FILE_TYPE_DISK) {
+        SetLastError(0);
+        globalFileName->Length = 0;
+        return 0;
+    }
+
+    
+    
+    do {
+        status = NtQueryObject(
+            hFile,
+            ObjectNameInformation,
+            globalFileName,
+            bufferSize,
+            &bufferSize
+            );
+        if (status == STATUS_BUFFER_OVERFLOW ||
+                status == STATUS_INFO_LENGTH_MISMATCH ||
+                status == STATUS_BUFFER_TOO_SMALL)
+        {
+            FREE(globalFileName);
+            globalFileName = MALLOC_ZERO(bufferSize);
+            if (globalFileName == NULL) {
+                PyErr_NoMemory();
+                goto error;
+            }
+        }
+        else {
+            break;
+        }
+    } while (--attempts);
+
+    if (! NT_SUCCESS(status)) {
+        psutil_SetFromNTStatusErr(status, "NtQuerySystemInformation");
+        FREE(globalFileName);
+        globalFileName = NULL;
+        return 1;
+    }
+
+    return 0;
+
+error:
+    if (globalFileName != NULL) {
+        FREE(globalFileName);
+        globalFileName = NULL;
+    }
+    return 1;
 }
 
 
 static DWORD
-psutil_create_thread() {
-    DWORD dwWait = 0;
+psutil_threaded_get_filename(HANDLE hFile) {
+    DWORD dwWait;
+    HANDLE hThread;
+    DWORD threadRetValue;
 
-    if (g_hThread == NULL)
-        g_hThread = CreateThread(
-            NULL,
-            0,
-            psutil_wait_thread,
-            NULL,
-            0,
-            NULL);
-    if (g_hThread == NULL)
-        return GetLastError();
+    hThread = CreateThread(
+        NULL, 0, (LPTHREAD_START_ROUTINE)psutil_get_filename, &hFile, 0, NULL);
+    if (hThread == NULL) {
+        PyErr_SetFromOSErrnoWithSyscall("CreateThread");
+        return 1;
+    }
 
     
-    SetEvent(g_hEvtStart);
-
-    
-    dwWait = WaitForSingleObject(g_hEvtFinish, NTQO_TIMEOUT);
+    dwWait = WaitForSingleObject(hThread, THREAD_TIMEOUT);
 
     
     if (dwWait == WAIT_TIMEOUT) {
-        SuspendThread(g_hThread);
-        TerminateThread(g_hThread, 1);
-        WaitForSingleObject(g_hThread, INFINITE);
-        CloseHandle(g_hThread);
-
-        g_hThread = NULL;
+        psutil_debug(
+            "get handle name thread timed out after %i ms", THREAD_TIMEOUT);
+        if (TerminateThread(hThread, 0) == 0) {
+            PyErr_SetFromOSErrnoWithSyscall("TerminateThread");
+            CloseHandle(hThread);
+            return 1;
+        }
+        CloseHandle(hThread);
+        return 0;
     }
 
-    return dwWait;
+    if (dwWait == WAIT_FAILED) {
+        psutil_debug("WaitForSingleObject -> WAIT_FAILED");
+        if (TerminateThread(hThread, 0) == 0) {
+            PyErr_SetFromOSErrnoWithSyscall(
+                "WaitForSingleObject -> WAIT_FAILED -> TerminateThread");
+            CloseHandle(hThread);
+            return 1;
+        }
+        PyErr_SetFromOSErrnoWithSyscall("WaitForSingleObject");
+        CloseHandle(hThread);
+        return 1;
+    }
+
+    if (GetExitCodeThread(hThread, &threadRetValue) == 0) {
+        if (TerminateThread(hThread, 0) == 0) {
+            PyErr_SetFromOSErrnoWithSyscall(
+                "GetExitCodeThread (failed) -> TerminateThread");
+            CloseHandle(hThread);
+            return 1;
+        }
+
+        CloseHandle(hThread);
+        PyErr_SetFromOSErrnoWithSyscall("GetExitCodeThread");
+        return 1;
+    }
+    CloseHandle(hThread);
+    return threadRetValue;
 }
-
-
-static PyObject *
-psutil_get_open_files_ntqueryobject(long dwPid, HANDLE hProcess) {
-    NTSTATUS                            status;
-    PSYSTEM_HANDLE_INFORMATION_EX       pHandleInfo = NULL;
-    DWORD                               dwInfoSize = 0x10000;
-    DWORD                               dwRet = 0;
-    PSYSTEM_HANDLE_TABLE_ENTRY_INFO_EX  hHandle = NULL;
-    DWORD                               i = 0;
-    BOOLEAN                             error = FALSE;
-    DWORD                               dwWait = 0;
-    PyObject*                           py_retlist = NULL;
-    PyObject*                           py_path = NULL;
-
-    if (g_initialized == FALSE)
-        psutil_get_open_files_init(TRUE);
-
-    
-    
-    EnterCriticalSection(&g_cs);
-
-    if (g_hEvtStart == NULL ||
-        g_hEvtFinish == NULL)
-
-    {
-        PyErr_SetFromWindowsErr(0);
-        error = TRUE;
-        goto cleanup;
-    }
-
-    
-    py_retlist = PyList_New(0);
-    if (py_retlist == NULL) {
-        error = TRUE;
-        goto cleanup;
-    }
-
-    do {
-        if (pHandleInfo != NULL) {
-            HeapFree(GetProcessHeap(), 0, pHandleInfo);
-            pHandleInfo = NULL;
-        }
-
-        
-        
-        dwInfoSize *= 2;
-        pHandleInfo = HeapAlloc(GetProcessHeap(),
-                                HEAP_ZERO_MEMORY,
-                                dwInfoSize);
-
-        if (pHandleInfo == NULL) {
-            PyErr_NoMemory();
-            error = TRUE;
-            goto cleanup;
-        }
-    } while ((status = psutil_NtQuerySystemInformation(
-                            SystemExtendedHandleInformation,
-                            pHandleInfo,
-                            dwInfoSize,
-                            &dwRet)) == STATUS_INFO_LENGTH_MISMATCH);
-
-    
-    if (! NT_SUCCESS(status)) {
-        psutil_SetFromNTStatusErr(
-            status, "NtQuerySystemInformation(SystemExtendedHandleInformation)");
-        error = TRUE;
-        goto cleanup;
-    }
-
-    for (i = 0; i < pHandleInfo->NumberOfHandles; i++) {
-        hHandle = &pHandleInfo->Handles[i];
-
-        
-        if (hHandle->UniqueProcessId != (ULONG_PTR)dwPid)
-            goto loop_cleanup;
-
-        if (!DuplicateHandle(hProcess,
-                             (HANDLE)hHandle->HandleValue,
-                             GetCurrentProcess(),
-                             &g_hFile,
-                             0,
-                             TRUE,
-                             DUPLICATE_SAME_ACCESS))
-        {
-            
-
-
-
-
-
-            goto loop_cleanup;
-        }
-
-        
-        g_dwLength = (MAX_PATH+1) * sizeof(WCHAR);
-
-        do {
-            
-            if (g_pNameBuffer != NULL) {
-                HeapFree(GetProcessHeap(), 0, g_pNameBuffer);
-                g_pNameBuffer = NULL;
-                g_dwSize = 0;
-            }
-
-            
-            
-            if (g_dwLength == 0)
-                goto loop_cleanup;
-
-            g_dwSize = g_dwLength;
-            if (g_dwSize > 0) {
-                g_pNameBuffer = HeapAlloc(GetProcessHeap(),
-                                          HEAP_ZERO_MEMORY,
-                                          g_dwSize);
-
-                if (g_pNameBuffer == NULL)
-                    goto loop_cleanup;
-            }
-
-            dwWait = psutil_create_thread();
-
-            
-            if (dwWait != WAIT_OBJECT_0)
-                goto loop_cleanup;
-
-        } while (g_status == STATUS_INFO_LENGTH_MISMATCH);
-
-        
-        if (!NT_SUCCESS(g_status))
-            goto loop_cleanup;
-
-        
-        if (g_pNameBuffer->Length > 0) {
-            
-
-
-
-
-
-
-
-            py_path = PyUnicode_FromWideChar(g_pNameBuffer->Buffer,
-                                                g_pNameBuffer->Length/2);
-            if (py_path == NULL) {
-                
-
-
-
-
-
-                error = TRUE;
-                goto loop_cleanup;
-            }
-
-            if (PyList_Append(py_retlist, py_path)) {
-                
-
-
-
-
-
-                error = TRUE;
-                goto loop_cleanup;
-            }
-        }
-
-loop_cleanup:
-    Py_XDECREF(py_path);
-    py_path = NULL;
-
-    if (g_pNameBuffer != NULL)
-        HeapFree(GetProcessHeap(), 0, g_pNameBuffer);
-    g_pNameBuffer = NULL;
-    g_dwSize = 0;
-    g_dwLength = 0;
-
-    if (g_hFile != NULL)
-        CloseHandle(g_hFile);
-    g_hFile = NULL;
-}
-
-cleanup:
-    if (g_pNameBuffer != NULL)
-        HeapFree(GetProcessHeap(), 0, g_pNameBuffer);
-    g_pNameBuffer = NULL;
-    g_dwSize = 0;
-    g_dwLength = 0;
-
-    if (g_hFile != NULL)
-        CloseHandle(g_hFile);
-    g_hFile = NULL;
-
-    if (pHandleInfo != NULL)
-        HeapFree(GetProcessHeap(), 0, pHandleInfo);
-    pHandleInfo = NULL;
-
-    if (error) {
-        Py_XDECREF(py_retlist);
-        py_retlist = NULL;
-    }
-
-    LeaveCriticalSection(&g_cs);
-
-    return py_retlist;
-}
-
-
-static PyObject *
-psutil_get_open_files_getmappedfilename(long dwPid, HANDLE hProcess) {
-    NTSTATUS                            status;
-    PSYSTEM_HANDLE_INFORMATION_EX       pHandleInfo = NULL;
-    DWORD                               dwInfoSize = 0x10000;
-    DWORD                               dwRet = 0;
-    PSYSTEM_HANDLE_TABLE_ENTRY_INFO_EX  hHandle = NULL;
-    HANDLE                              hFile = NULL;
-    HANDLE                              hMap = NULL;
-    DWORD                               i = 0;
-    BOOLEAN                             error = FALSE;
-    PyObject*                           py_retlist = NULL;
-    PyObject*                           py_path = NULL;
-    ULONG                               dwSize = 0;
-    LPVOID                              pMem = NULL;
-    wchar_t                             pszFilename[MAX_PATH+1];
-
-    if (g_initialized == FALSE)
-        psutil_get_open_files_init(FALSE);
-
-    
-    py_retlist = PyList_New(0);
-    if (py_retlist == NULL) {
-        error = TRUE;
-        goto cleanup;
-    }
-
-    do {
-        if (pHandleInfo != NULL) {
-            HeapFree(GetProcessHeap(), 0, pHandleInfo);
-            pHandleInfo = NULL;
-        }
-
-        
-        
-        dwInfoSize *= 2;
-        pHandleInfo = HeapAlloc(GetProcessHeap(),
-                                HEAP_ZERO_MEMORY,
-                                dwInfoSize);
-
-        if (pHandleInfo == NULL) {
-            PyErr_NoMemory();
-            error = TRUE;
-            goto cleanup;
-        }
-    } while ((status = psutil_NtQuerySystemInformation(
-                            SystemExtendedHandleInformation,
-                            pHandleInfo,
-                            dwInfoSize,
-                            &dwRet)) == STATUS_INFO_LENGTH_MISMATCH);
-
-    
-    if (! NT_SUCCESS(status)) {
-        psutil_SetFromNTStatusErr(
-            status, "NtQuerySystemInformation(SystemExtendedHandleInformation)");
-        error = TRUE;
-        goto cleanup;
-    }
-
-    for (i = 0; i < pHandleInfo->NumberOfHandles; i++) {
-        hHandle = &pHandleInfo->Handles[i];
-
-        
-        if (hHandle->UniqueProcessId != (ULONG_PTR)dwPid)
-            goto loop_cleanup;
-
-        if (!DuplicateHandle(hProcess,
-                             (HANDLE)hHandle->HandleValue,
-                             GetCurrentProcess(),
-                             &hFile,
-                             0,
-                             TRUE,
-                             DUPLICATE_SAME_ACCESS))
-        {
-            
-
-
-
-
-
-            goto loop_cleanup;
-        }
-
-        hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
-        if (hMap == NULL) {
-            
-
-
-
-
-
-            goto loop_cleanup;
-        }
-
-        pMem = MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 1);
-
-        if (pMem == NULL) {
-            
-
-
-
-
-
-            goto loop_cleanup;
-        }
-
-        dwSize = GetMappedFileName(
-            GetCurrentProcess(), pMem, (LPSTR)pszFilename, MAX_PATH);
-        if (dwSize == 0) {
-            
-
-
-
-
-
-            goto loop_cleanup;
-        }
-
-        pszFilename[dwSize] = '\0';
-        
-
-
-
-
-
-
-
-        py_path = PyUnicode_FromWideChar(pszFilename, dwSize);
-        if (py_path == NULL) {
-            
-
-
-
-
-
-            error = TRUE;
-            goto loop_cleanup;
-        }
-
-        if (PyList_Append(py_retlist, py_path)) {
-            
-
-
-
-
-
-            error = TRUE;
-            goto loop_cleanup;
-        }
-
-loop_cleanup:
-        Py_XDECREF(py_path);
-        py_path = NULL;
-
-        if (pMem != NULL)
-            UnmapViewOfFile(pMem);
-        pMem = NULL;
-
-        if (hMap != NULL)
-            CloseHandle(hMap);
-        hMap = NULL;
-
-        if (hFile != NULL)
-            CloseHandle(hFile);
-        hFile = NULL;
-
-        dwSize = 0;
-    }
-
-cleanup:
-    if (pMem != NULL)
-        UnmapViewOfFile(pMem);
-    pMem = NULL;
-
-    if (hMap != NULL)
-        CloseHandle(hMap);
-    hMap = NULL;
-
-    if (hFile != NULL)
-        CloseHandle(hFile);
-    hFile = NULL;
-
-    if (pHandleInfo != NULL)
-        HeapFree(GetProcessHeap(), 0, pHandleInfo);
-    pHandleInfo = NULL;
-
-    if (error) {
-        Py_XDECREF(py_retlist);
-        py_retlist = NULL;
-    }
-
-    return py_retlist;
-}
-
-
-
 
 
 PyObject *
-psutil_get_open_files(long dwPid, HANDLE hProcess) {
+psutil_get_open_files(DWORD dwPid, HANDLE hProcess) {
+    PSYSTEM_HANDLE_INFORMATION_EX       handlesList = NULL;
+    PSYSTEM_HANDLE_TABLE_ENTRY_INFO_EX  hHandle = NULL;
+    HANDLE                              hFile = NULL;
+    ULONG                               i = 0;
+    BOOLEAN                             errorOccurred = FALSE;
+    PyObject*                           py_path = NULL;
+    PyObject*                           py_retlist = PyList_New(0);;
+
+    if (!py_retlist)
+        return NULL;
+
     
-    if (PSUTIL_WINVER >= PSUTIL_WINDOWS_VISTA)
-        return psutil_get_open_files_ntqueryobject(dwPid, hProcess);
-    else
-        return psutil_get_open_files_getmappedfilename(dwPid, hProcess);
+    
+    EnterCriticalSection(&PSUTIL_CRITICAL_SECTION);
+
+    if (psutil_enum_handles(&handlesList) != 0)
+        goto error;
+
+    for (i = 0; i < handlesList->NumberOfHandles; i++) {
+        hHandle = &handlesList->Handles[i];
+        if ((ULONG_PTR)hHandle->UniqueProcessId != dwPid)
+            continue;
+        if (! DuplicateHandle(
+                hProcess,
+                hHandle->HandleValue,
+                GetCurrentProcess(),
+                &hFile,
+                0,
+                TRUE,
+                DUPLICATE_SAME_ACCESS))
+        {
+            
+            continue;
+        }
+
+        
+        if (psutil_threaded_get_filename(hFile) != 0)
+            goto error;
+
+        if (globalFileName->Length > 0) {
+            py_path = PyUnicode_FromWideChar(globalFileName->Buffer,
+                                             wcslen(globalFileName->Buffer));
+            if (! py_path)
+                goto error;
+            if (PyList_Append(py_retlist, py_path))
+                goto error;
+            Py_CLEAR(py_path);  
+        }
+
+        
+        if (globalFileName != NULL) {
+            FREE(globalFileName);
+            globalFileName = NULL;
+        }
+        CloseHandle(hFile);
+        hFile = NULL;
+    }
+
+    goto exit;
+
+error:
+    Py_XDECREF(py_retlist);
+    errorOccurred = TRUE;
+    goto exit;
+
+exit:
+    if (hFile != NULL)
+        CloseHandle(hFile);
+    if (globalFileName != NULL) {
+        FREE(globalFileName);
+        globalFileName = NULL;
+    }
+    if (py_path != NULL)
+        Py_DECREF(py_path);
+    if (handlesList != NULL)
+        FREE(handlesList);
+
+    LeaveCriticalSection(&PSUTIL_CRITICAL_SECTION);
+    if (errorOccurred == TRUE)
+        return NULL;
+    return py_retlist;
 }

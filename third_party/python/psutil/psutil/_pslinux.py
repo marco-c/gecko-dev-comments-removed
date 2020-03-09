@@ -25,6 +25,8 @@ from . import _common
 from . import _psposix
 from . import _psutil_linux as cext
 from . import _psutil_posix as cext_posix
+from ._common import AccessDenied
+from ._common import debug
 from ._common import decode
 from ._common import get_procfs_path
 from ._common import isfile_strict
@@ -33,14 +35,19 @@ from ._common import memoize_when_activated
 from ._common import NIC_DUPLEX_FULL
 from ._common import NIC_DUPLEX_HALF
 from ._common import NIC_DUPLEX_UNKNOWN
+from ._common import NoSuchProcess
 from ._common import open_binary
 from ._common import open_text
 from ._common import parse_environ_block
 from ._common import path_exists_strict
 from ._common import supports_ipv6
 from ._common import usage_percent
+from ._common import ZombieProcess
 from ._compat import b
 from ._compat import basestring
+from ._compat import FileNotFoundError
+from ._compat import PermissionError
+from ._compat import ProcessLookupError
 from ._compat import PY3
 
 if sys.version_info >= (3, 4):
@@ -70,6 +77,7 @@ POWER_SUPPLY_PATH = "/sys/class/power_supply"
 HAS_SMAPS = os.path.exists('/proc/%s/smaps' % os.getpid())
 HAS_PRLIMIT = hasattr(cext, "linux_prlimit")
 HAS_PROC_IO_PRIORITY = hasattr(cext, "proc_ioprio_get")
+HAS_CPU_AFFINITY = hasattr(cext, "proc_cpu_affinity_get")
 _DEFAULT = object()
 
 
@@ -159,13 +167,6 @@ TCP_STATUSES = {
 
 
 
-NoSuchProcess = None
-ZombieProcess = None
-AccessDenied = None
-TimeoutExpired = None
-
-
-
 
 
 
@@ -200,6 +201,10 @@ pmmap_ext = namedtuple(
 pio = namedtuple('pio', ['read_count', 'write_count',
                          'read_bytes', 'write_bytes',
                          'read_chars', 'write_chars'])
+
+pcputimes = namedtuple('pcputimes',
+                       ['user', 'system', 'children_user', 'children_system',
+                        'iowait'])
 
 
 
@@ -747,6 +752,8 @@ class Connections:
     """
 
     def __init__(self):
+        
+        
         tcp4 = ("tcp", socket.AF_INET, socket.SOCK_STREAM)
         tcp6 = ("tcp6", socket.AF_INET6, socket.SOCK_STREAM)
         udp4 = ("udp", socket.AF_INET, socket.SOCK_DGRAM)
@@ -772,17 +779,16 @@ class Connections:
         for fd in os.listdir("%s/%s/fd" % (self._procfs_path, pid)):
             try:
                 inode = readlink("%s/%s/fd/%s" % (self._procfs_path, pid, fd))
+            except (FileNotFoundError, ProcessLookupError):
+                
+                
+                
+                continue
             except OSError as err:
-                
-                
-                
-                if err.errno in (errno.ENOENT, errno.ESRCH):
-                    continue
-                elif err.errno == errno.EINVAL:
+                if err.errno == errno.EINVAL:
                     
                     continue
-                else:
-                    raise
+                raise
             else:
                 if inode.startswith('socket:['):
                     
@@ -795,7 +801,7 @@ class Connections:
         for pid in pids():
             try:
                 inodes.update(self.get_proc_inodes(pid))
-            except OSError as err:
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
                 
                 
                 
@@ -803,9 +809,7 @@ class Connections:
                 
                 
                 
-                if err.errno not in (
-                        errno.ENOENT, errno.ESRCH, errno.EPERM, errno.EACCES):
-                    raise
+                continue
         return inodes
 
     @staticmethod
@@ -933,7 +937,7 @@ class Connections:
                             path = tokens[-1]
                         else:
                             path = ""
-                        type_ = int(type_)
+                        type_ = _common.socktype_to_enum(int(type_))
                         
                         
                         
@@ -954,15 +958,14 @@ class Connections:
         else:
             inodes = self.get_all_inodes()
         ret = set()
-        for f, family, type_ in self.tmap[kind]:
+        for proto_name, family, type_ in self.tmap[kind]:
+            path = "%s/net/%s" % (self._procfs_path, proto_name)
             if family in (socket.AF_INET, socket.AF_INET6):
                 ls = self.process_inet(
-                    "%s/net/%s" % (self._procfs_path, f),
-                    family, type_, inodes, filter_pid=pid)
+                    path, family, type_, inodes, filter_pid=pid)
             else:
                 ls = self.process_unix(
-                    "%s/net/%s" % (self._procfs_path, f),
-                    family, inodes, filter_pid=pid)
+                    path, family, inodes, filter_pid=pid)
             for fd, family, type_, laddr, raddr, status, bound_pid in ls:
                 if pid:
                     conn = _common.pconn(fd, family, type_, laddr, raddr,
@@ -1068,6 +1071,7 @@ def disk_io_counters(perdisk=False):
         
         
         
+        
         with open_text("%s/diskstats" % get_procfs_path()) as f:
             lines = f.readlines()
         for line in lines:
@@ -1079,7 +1083,7 @@ def disk_io_counters(perdisk=False):
                 reads = int(fields[2])
                 (reads_merged, rbytes, rtime, writes, writes_merged,
                     wbytes, wtime, _, busy_time, _) = map(int, fields[4:14])
-            elif flen == 14 or flen == 18:
+            elif flen == 14 or flen >= 18:
                 
                 name = fields[2]
                 (reads, reads_merged, rbytes, rtime, writes, writes_merged,
@@ -1103,7 +1107,7 @@ def disk_io_counters(perdisk=False):
                     fields = f.read().strip().split()
                 name = os.path.basename(root)
                 (reads, reads_merged, rbytes, rtime, writes, writes_merged,
-                    wbytes, wtime, _, busy_time, _) = map(int, fields)
+                    wbytes, wtime, _, busy_time) = map(int, fields[:10])
                 yield (name, reads, writes, rbytes, wbytes, rtime,
                        wtime, reads_merged, writes_merged, busy_time)
 
@@ -1174,6 +1178,7 @@ def disk_partitions(all=False):
                 continue
         ntuple = _common.sdiskpart(device, mountpoint, fstype, opts)
         retlist.append(ntuple)
+
     return retlist
 
 
@@ -1201,6 +1206,8 @@ def sensors_temperatures():
     
     
     basenames.extend(glob.glob('/sys/class/hwmon/hwmon*/device/temp*_*'))
+    basenames.extend(glob.glob(
+        '/sys/devices/platform/coretemp.*/hwmon/hwmon*/temp*_*'))
     basenames = sorted(set([x.split('_')[0] for x in basenames]))
 
     for base in basenames:
@@ -1209,7 +1216,7 @@ def sensors_temperatures():
             current = float(cat(path)) / 1000.0
             path = os.path.join(os.path.dirname(base), 'name')
             unit_name = cat(path, binary=False)
-        except (IOError, OSError, ValueError) as err:
+        except (IOError, OSError, ValueError):
             
             
             
@@ -1218,8 +1225,6 @@ def sensors_temperatures():
             
             
             
-            warnings.warn("ignoring %r for file %r" % (err, path),
-                          RuntimeWarning)
             continue
 
         high = cat(base + '_max', fallback=None)
@@ -1251,8 +1256,7 @@ def sensors_temperatures():
                 path = os.path.join(base, 'type')
                 unit_name = cat(path, binary=False)
             except (IOError, OSError, ValueError) as err:
-                warnings.warn("ignoring %r for file %r" % (err, path),
-                              RuntimeWarning)
+                debug("ignoring %r for file %r" % (err, path))
                 continue
 
             trip_paths = glob.glob(base + '/trip_point*')
@@ -1490,11 +1494,10 @@ def ppid_map():
         try:
             with open_binary("%s/%s/stat" % (procfs_path, pid)) as f:
                 data = f.read()
-        except EnvironmentError as err:
+        except (FileNotFoundError, ProcessLookupError):
             
             
-            if err.errno not in (errno.ENOENT, errno.ESRCH):
-                raise
+            pass
         else:
             rpar = data.rfind(b')')
             dset = data[rpar + 2:].split()
@@ -1511,16 +1514,12 @@ def wrap_exceptions(fun):
     def wrapper(self, *args, **kwargs):
         try:
             return fun(self, *args, **kwargs)
-        except EnvironmentError as err:
-            if err.errno in (errno.EPERM, errno.EACCES):
-                raise AccessDenied(self.pid, self._name)
-            
-            
-            if err.errno == errno.ESRCH:
-                raise NoSuchProcess(self.pid, self._name)
-            
-            if err.errno == errno.ENOENT and not os.path.exists("%s/%s" % (
-                    self._procfs_path, self.pid)):
+        except PermissionError:
+            raise AccessDenied(self.pid, self._name)
+        except ProcessLookupError:
+            raise NoSuchProcess(self.pid, self._name)
+        except FileNotFoundError:
+            if not os.path.exists("%s/%s" % (self._procfs_path, self.pid)):
                 raise NoSuchProcess(self.pid, self._name)
             
             
@@ -1576,6 +1575,7 @@ class Process(object):
         ret['children_stime'] = fields[14]
         ret['create_time'] = fields[19]
         ret['cpu_num'] = fields[36]
+        ret['blkio_ticks'] = fields[39]  
 
         return ret
 
@@ -1617,21 +1617,19 @@ class Process(object):
     def exe(self):
         try:
             return readlink("%s/%s/exe" % (self._procfs_path, self.pid))
-        except OSError as err:
-            if err.errno in (errno.ENOENT, errno.ESRCH):
-                
-                
-                
-                if os.path.lexists("%s/%s" % (self._procfs_path, self.pid)):
-                    return ""
+        except (FileNotFoundError, ProcessLookupError):
+            
+            
+            
+            if os.path.lexists("%s/%s" % (self._procfs_path, self.pid)):
+                return ""
+            else:
+                if not pid_exists(self.pid):
+                    raise NoSuchProcess(self.pid, self._name)
                 else:
-                    if not pid_exists(self.pid):
-                        raise NoSuchProcess(self.pid, self._name)
-                    else:
-                        raise ZombieProcess(self.pid, self._name, self._ppid)
-            if err.errno in (errno.EPERM, errno.EACCES):
-                raise AccessDenied(self.pid, self._name)
-            raise
+                    raise ZombieProcess(self.pid, self._name, self._ppid)
+        except PermissionError:
+            raise AccessDenied(self.pid, self._name)
 
     @wrap_exceptions
     def cmdline(self):
@@ -1650,7 +1648,13 @@ class Process(object):
         sep = '\x00' if data.endswith('\x00') else ' '
         if data.endswith(sep):
             data = data[:-1]
-        return data.split(sep)
+        cmdline = data.split(sep)
+        
+        
+        
+        if sep == '\x00' and len(cmdline) == 1 and ' ' in data:
+            cmdline = data.split(' ')
+        return cmdline
 
     @wrap_exceptions
     def environ(self):
@@ -1707,7 +1711,8 @@ class Process(object):
         stime = float(values['stime']) / CLOCK_TICKS
         children_utime = float(values['children_utime']) / CLOCK_TICKS
         children_stime = float(values['children_stime']) / CLOCK_TICKS
-        return _common.pcputimes(utime, stime, children_utime, children_stime)
+        iowait = float(values['blkio_ticks']) / CLOCK_TICKS
+        return pcputimes(utime, stime, children_utime, children_stime, iowait)
 
     @wrap_exceptions
     def cpu_num(self):
@@ -1839,7 +1844,7 @@ class Process(object):
                         path = path[:-10]
                 ls.append((
                     decode(addr), decode(perms), path,
-                    data[b'Rss:'],
+                    data.get(b'Rss:', 0),
                     data.get(b'Size:', 0),
                     data.get(b'Pss:', 0),
                     data.get(b'Shared_Clean:', 0),
@@ -1856,14 +1861,12 @@ class Process(object):
     def cwd(self):
         try:
             return readlink("%s/%s/cwd" % (self._procfs_path, self.pid))
-        except OSError as err:
+        except (FileNotFoundError, ProcessLookupError):
             
-            if err.errno in (errno.ENOENT, errno.ESRCH):
-                if not pid_exists(self.pid):
-                    raise NoSuchProcess(self.pid, self._name)
-                else:
-                    raise ZombieProcess(self.pid, self._name, self._ppid)
-            raise
+            if not pid_exists(self.pid):
+                raise NoSuchProcess(self.pid, self._name)
+            else:
+                raise ZombieProcess(self.pid, self._name, self._ppid)
 
     @wrap_exceptions
     def num_ctx_switches(self,
@@ -1899,13 +1902,11 @@ class Process(object):
             try:
                 with open_binary(fname) as f:
                     st = f.read().strip()
-            except IOError as err:
-                if err.errno == errno.ENOENT:
-                    
-                    
-                    hit_enoent = True
-                    continue
-                raise
+            except FileNotFoundError:
+                
+                
+                hit_enoent = True
+                continue
             
             st = st[st.find(b')') + 2:]
             values = st.split(b' ')
@@ -1930,38 +1931,41 @@ class Process(object):
     def nice_set(self, value):
         return cext_posix.setpriority(self.pid, value)
 
-    @wrap_exceptions
-    def cpu_affinity_get(self):
-        return cext.proc_cpu_affinity_get(self.pid)
+    
+    if HAS_CPU_AFFINITY:
 
-    def _get_eligible_cpus(
-            self, _re=re.compile(br"Cpus_allowed_list:\t(\d+)-(\d+)")):
-        
-        data = self._read_status_file()
-        match = _re.findall(data)
-        if match:
-            return list(range(int(match[0][0]), int(match[0][1]) + 1))
-        else:
-            return list(range(len(per_cpu_times())))
+        @wrap_exceptions
+        def cpu_affinity_get(self):
+            return cext.proc_cpu_affinity_get(self.pid)
 
-    @wrap_exceptions
-    def cpu_affinity_set(self, cpus):
-        try:
-            cext.proc_cpu_affinity_set(self.pid, cpus)
-        except (OSError, ValueError) as err:
-            if isinstance(err, ValueError) or err.errno == errno.EINVAL:
-                eligible_cpus = self._get_eligible_cpus()
-                all_cpus = tuple(range(len(per_cpu_times())))
-                for cpu in cpus:
-                    if cpu not in all_cpus:
-                        raise ValueError(
-                            "invalid CPU number %r; choose between %s" % (
-                                cpu, eligible_cpus))
-                    if cpu not in eligible_cpus:
-                        raise ValueError(
-                            "CPU number %r is not eligible; choose "
-                            "between %s" % (cpu, eligible_cpus))
-            raise
+        def _get_eligible_cpus(
+                self, _re=re.compile(br"Cpus_allowed_list:\t(\d+)-(\d+)")):
+            
+            data = self._read_status_file()
+            match = _re.findall(data)
+            if match:
+                return list(range(int(match[0][0]), int(match[0][1]) + 1))
+            else:
+                return list(range(len(per_cpu_times())))
+
+        @wrap_exceptions
+        def cpu_affinity_set(self, cpus):
+            try:
+                cext.proc_cpu_affinity_set(self.pid, cpus)
+            except (OSError, ValueError) as err:
+                if isinstance(err, ValueError) or err.errno == errno.EINVAL:
+                    eligible_cpus = self._get_eligible_cpus()
+                    all_cpus = tuple(range(len(per_cpu_times())))
+                    for cpu in cpus:
+                        if cpu not in all_cpus:
+                            raise ValueError(
+                                "invalid CPU number %r; choose between %s" % (
+                                    cpu, eligible_cpus))
+                        if cpu not in eligible_cpus:
+                            raise ValueError(
+                                "CPU number %r is not eligible; choose "
+                                "between %s" % (cpu, eligible_cpus))
+                raise
 
     
     if HAS_PROC_IO_PRIORITY:
@@ -2029,16 +2033,15 @@ class Process(object):
             file = "%s/%s/fd/%s" % (self._procfs_path, self.pid, fd)
             try:
                 path = readlink(file)
-            except OSError as err:
+            except (FileNotFoundError, ProcessLookupError):
                 
-                if err.errno in (errno.ENOENT, errno.ESRCH):
-                    hit_enoent = True
-                    continue
-                elif err.errno == errno.EINVAL:
+                hit_enoent = True
+                continue
+            except OSError as err:
+                if err.errno == errno.EINVAL:
                     
                     continue
-                else:
-                    raise
+                raise
             else:
                 
                 
@@ -2052,13 +2055,10 @@ class Process(object):
                         with open_binary(file) as f:
                             pos = int(f.readline().split()[1])
                             flags = int(f.readline().split()[1], 8)
-                    except IOError as err:
-                        if err.errno == errno.ENOENT:
-                            
-                            
-                            hit_enoent = True
-                        else:
-                            raise
+                    except FileNotFoundError:
+                        
+                        
+                        hit_enoent = True
                     else:
                         mode = file_flags_to_mode(flags)
                         ntuple = popenfile(

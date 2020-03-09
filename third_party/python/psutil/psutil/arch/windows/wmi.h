@@ -4,8 +4,6 @@
 
 
 
-
-
 #include <Python.h>
 
 PyObject* psutil_init_loadavg_counter();

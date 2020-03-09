@@ -10,8 +10,6 @@
 #include <windows.h>
 #include <pdh.h>
 
-#include "../../_psutil_common.h"
-
 
 
 
@@ -22,8 +20,8 @@
 
 
 #define LOADAVG_FACTOR_1F  0.9200444146293232478931553241
-#define LOADAVG_FACTOR_5F  0.6592406302004437462547604110
-#define LOADAVG_FACTOR_15F 0.2865047968601901003248854266
+#define LOADAVG_FACTOR_5F  0.9834714538216174894737477501
+#define LOADAVG_FACTOR_15F 0.9944598480048967508795473394
 
 #define SAMPLING_INTERVAL 5
 
@@ -98,7 +96,7 @@ psutil_init_loadavg_counter(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 
 error:
-    PyErr_SetExcFromWindowsErr(PyExc_OSError, 0);
+    PyErr_SetFromWindowsErr(0);
     return NULL;
 }
 
