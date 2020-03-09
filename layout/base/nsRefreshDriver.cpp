@@ -1954,7 +1954,13 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
     if (!mResizeEventFlushObservers.RemoveElement(presShell)) {
       continue;
     }
-    presShell->FireResizeEvent();
+    
+    
+    
+    
+    
+    
+    MOZ_KnownLive(presShell)->FireResizeEvent();
   }
   DispatchVisualViewportResizeEvents();
 

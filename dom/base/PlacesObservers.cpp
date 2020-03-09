@@ -288,7 +288,7 @@ void PlacesObservers::NotifyListeners(
       
       
       [&](auto& cb, const auto& events)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY { cb->Call(aEvents); });
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY { MOZ_KnownLive(cb)->Call(aEvents); });
 
   CallListeners<WeakPtr<places::INativePlacesEventCallback>,
                 RefPtr<places::INativePlacesEventCallback>>(

@@ -543,9 +543,12 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     
     
     if (!inserted || NS_FAILED(rv)) {
+      
+      
       EditorDOMPoint insertedPoint =
           InsertNodeIntoProperAncestorWithTransaction(
-              content, pointToInsert, SplitAtEdges::eDoNotCreateEmptyContainer);
+              MOZ_KnownLive(content), pointToInsert,
+              SplitAtEdges::eDoNotCreateEmptyContainer);
       if (insertedPoint.IsSet()) {
         lastInsertedContent = content;
         pointToInsert = insertedPoint;

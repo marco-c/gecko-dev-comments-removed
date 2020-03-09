@@ -168,9 +168,15 @@ uint32_t ResizeObserverController::BroadcastAllActiveObservations() {
 
   
   
-  nsTArray<RefPtr<ResizeObserver>> observers(mResizeObservers);
+  const nsTArray<RefPtr<ResizeObserver>> observers(mResizeObservers);
   for (auto& observer : observers) {
-    uint32_t targetDepth = observer->BroadcastActiveObservations();
+    
+    
+    
+    
+    
+    uint32_t targetDepth =
+        MOZ_KnownLive(observer)->BroadcastActiveObservations();
     if (targetDepth < shallowestTargetDepth) {
       shallowestTargetDepth = targetDepth;
     }

@@ -264,8 +264,10 @@ nsresult HTMLEditor::SetInlinePropertyInternal(
 
       
       for (auto& content : arrayOfContents) {
-        nsresult rv = SetInlinePropertyOnNode(*content, aProperty, aAttribute,
-                                              aAttributeValue);
+        
+        
+        nsresult rv = SetInlinePropertyOnNode(
+            MOZ_KnownLive(*content), aProperty, aAttribute, aAttributeValue);
         if (NS_WARN_IF(Destroyed())) {
           return NS_ERROR_EDITOR_DESTROYED;
         }
@@ -473,8 +475,10 @@ nsresult HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
 
       
       for (auto& node : arrayOfNodes) {
-        nsresult rv =
-            SetInlinePropertyOnNode(node, aProperty, aAttribute, aValue);
+        
+        
+        nsresult rv = SetInlinePropertyOnNode(MOZ_KnownLive(node), aProperty,
+                                              aAttribute, aValue);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -604,8 +608,10 @@ nsresult HTMLEditor::SetInlinePropertyOnNode(nsIContent& aNode,
   }
 
   for (auto& node : nodesToSet) {
-    nsresult rv =
-        SetInlinePropertyOnNodeImpl(node, aProperty, aAttribute, aValue);
+    
+    
+    nsresult rv = SetInlinePropertyOnNodeImpl(MOZ_KnownLive(node), aProperty,
+                                              aAttribute, aValue);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1717,8 +1723,10 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
           if (!content->IsText()) {
             
             
+            
+            
             DebugOnly<nsresult> rvIgnored = SetInlinePropertyOnNode(
-                content, MOZ_KnownLive(*style.mProperty),
+                MOZ_KnownLive(content), MOZ_KnownLive(*style.mProperty),
                 MOZ_KnownLive(style.mAttribute),
                 NS_LITERAL_STRING("-moz-editor-invert-value"));
             if (NS_WARN_IF(Destroyed())) {
@@ -1768,8 +1776,10 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
                     textNode, style.mProperty, style.mAttribute)) {
               continue;
             }
+            
+            
             nsresult rv = SetInlinePropertyOnTextNode(
-                textNode, 0, textNode->TextLength(),
+                MOZ_KnownLive(textNode), 0, textNode->TextLength(),
                 MOZ_KnownLive(*style.mProperty),
                 MOZ_KnownLive(style.mAttribute),
                 NS_LITERAL_STRING("-moz-editor-invert-value"));
@@ -1958,7 +1968,10 @@ nsresult HTMLEditor::RelativeFontChange(FontSize aDir) {
 
         
         for (auto& node : arrayOfNodes) {
-          rv = RelativeFontChangeOnNode(aDir == FontSize::incr ? +1 : -1, node);
+          
+          
+          rv = RelativeFontChangeOnNode(aDir == FontSize::incr ? +1 : -1,
+                                        MOZ_KnownLive(node));
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
@@ -2090,7 +2103,9 @@ nsresult HTMLEditor::RelativeFontChangeHelper(int32_t aSizeChange,
     }
 
     for (const auto& child : childList) {
-      nsresult rv = RelativeFontChangeOnNode(aSizeChange, child);
+      
+      
+      nsresult rv = RelativeFontChangeOnNode(aSizeChange, MOZ_KnownLive(child));
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -2107,7 +2122,9 @@ nsresult HTMLEditor::RelativeFontChangeHelper(int32_t aSizeChange,
   }
 
   for (const auto& child : childList) {
-    nsresult rv = RelativeFontChangeHelper(aSizeChange, child);
+    
+    
+    nsresult rv = RelativeFontChangeHelper(aSizeChange, MOZ_KnownLive(child));
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -2182,7 +2199,9 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
   }
 
   for (const auto& child : childList) {
-    nsresult rv = RelativeFontChangeOnNode(aSizeChange, child);
+    
+    
+    nsresult rv = RelativeFontChangeOnNode(aSizeChange, MOZ_KnownLive(child));
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
