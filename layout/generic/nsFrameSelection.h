@@ -323,6 +323,8 @@ class nsFrameSelection final {
 
 
 
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult RemoveCellsFromSelection(nsIContent* aTable, int32_t aStartRowIndex,
                                     int32_t aStartColumnIndex,
                                     int32_t aEndRowIndex,
@@ -337,6 +339,8 @@ class nsFrameSelection final {
 
 
 
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult RestrictCellsToSelection(nsIContent* aTable, int32_t aStartRowIndex,
                                     int32_t aStartColumnIndex,
                                     int32_t aEndRowIndex,
@@ -828,14 +832,15 @@ class nsFrameSelection final {
                              bool aDragState,
                              mozilla::dom::Selection& aNormalSelection);
 
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY
     nsresult SelectBlockOfCells(nsIContent* aStartCell, nsIContent* aEndCell,
                                 mozilla::dom::Selection& aNormalSelection);
 
     nsresult SelectRowOrColumn(nsIContent* aCellContent,
                                mozilla::dom::Selection& aNormalSelection);
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+    MOZ_CAN_RUN_SCRIPT nsresult
     UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
                   int32_t aStartColumnIndex, int32_t aEndRowIndex,
                   int32_t aEndColumnIndex, bool aRemoveOutsideOfCellRange,
