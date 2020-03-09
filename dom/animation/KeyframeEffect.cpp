@@ -724,15 +724,16 @@ template <class OptionsType>
 static KeyframeEffectParams KeyframeEffectParamsFromUnion(
     const OptionsType& aOptions, CallerType aCallerType, ErrorResult& aRv) {
   KeyframeEffectParams result;
-  if (aOptions.IsUnrestrictedDouble() ||
-      
-      
-      !StaticPrefs::dom_animations_api_compositing_enabled()) {
+  if (aOptions.IsUnrestrictedDouble()) {
     return result;
   }
 
   const KeyframeEffectOptions& options =
       KeyframeEffectOptionsFromUnion(aOptions);
+
+  
+  
+  
   result.mIterationComposite = options.mIterationComposite;
   result.mComposite = options.mComposite;
 
@@ -1161,7 +1162,7 @@ void KeyframeEffect::GetProperties(
   }
 }
 
-void KeyframeEffect::GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
+void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
                                   ErrorResult& aRv) const {
   MOZ_ASSERT(aResult.IsEmpty());
   MOZ_ASSERT(!aRv.Failed());

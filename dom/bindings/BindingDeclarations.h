@@ -34,6 +34,8 @@ class nsWrapperCache;
 namespace mozilla {
 namespace dom {
 
+class BindingCallContext;
+
 
 
 struct DictionaryBase {
