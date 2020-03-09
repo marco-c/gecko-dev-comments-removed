@@ -45,6 +45,25 @@ function sectionExcludes(config, key, value) {
   return hasAppKey(config, key) && !config.application[key].includes(value);
 }
 
+function sectionIncludes(config, key, value) {
+  return hasAppKey(config, key) && config.application[key].includes(value);
+}
+
+function isDistroExcluded(config, key, distroID) {
+  
+  
+  
+  const appKey = hasAppKey(config, key);
+  if (!appKey) {
+    return false;
+  }
+  const distroList = config.application[key];
+  if (distroID) {
+    return distroList.length && !distroList.includes(distroID);
+  }
+  return !!distroList.length;
+}
+
 function belowMinVersion(config, version) {
   return (
     hasAppKey(config, "minVersion") &&
@@ -90,12 +109,13 @@ class SearchEngineSelector {
 
 
 
-  fetchEngineConfiguration(locale, region, channel) {
+
+  fetchEngineConfiguration(locale, region, channel, distroID) {
     let cohort = Services.prefs.getCharPref("browser.search.cohort", null);
     let name = getAppInfo("name");
     let version = getAppInfo("version");
     log(
-      `fetchEngineConfiguration ${region}:${locale}:${channel}:${cohort}:${name}:${version}`
+      `fetchEngineConfiguration ${region}:${locale}:${channel}:${distroID}:${cohort}:${name}:${version}`
     );
     let engines = [];
     const lcLocale = locale.toLowerCase();
@@ -109,6 +129,9 @@ class SearchEngineSelector {
         if (
           sectionExcludes(section, "channel", channel) ||
           sectionExcludes(section, "name", name) ||
+          (distroID &&
+            sectionIncludes(section, "excludedDistributions", distroID)) ||
+          isDistroExcluded(section, "distributions", distroID) ||
           belowMinVersion(section, version) ||
           aboveMaxVersion(section, version)
         ) {
