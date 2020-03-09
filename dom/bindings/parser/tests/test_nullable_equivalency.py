@@ -66,21 +66,21 @@ def checkEquivalent(iface, harness):
     harness.check(type1.nullable(), False, 'attr1 should not be nullable')
     harness.check(type2.nullable(), True, 'attr2 should be nullable')
 
-    
-    
+    # We don't know about type1, but type2, the nullable type, definitely
+    # shouldn't be builtin.
     harness.check(type2.builtin, False, 'attr2 should not be builtin')
 
-    
-    
-    
-    
-    
-    
-    
+    # Ensure that all attributes of type2 match those in type1, except for:
+    #  - names on an ignore list,
+    #  - names beginning with '_',
+    #  - functions which throw when called with no args, and
+    #  - class-level non-callables ("static variables").
+    #
+    # Yes, this is an ugly, fragile hack.  But it finds bugs...
     for attr in dir(type1):
         if attr.startswith('_') or \
            attr in ['nullable', 'builtin', 'filename', 'location',
-                    'inner', 'QName', 'getDeps', 'name'] or \
+                    'inner', 'QName', 'getDeps', 'name', 'prettyName'] or \
            (hasattr(type(type1), attr) and not callable(getattr(type1, attr))):
             continue
 
@@ -90,7 +90,7 @@ def checkEquivalent(iface, harness):
             try:
                 v1 = a1()
             except:
-                
+                # Can't call a1 with no args, so skip this attriute.
                 continue
 
             try:
