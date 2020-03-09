@@ -74,7 +74,18 @@ const EMIT_MEDIA_RULES_THROTTLING = 500;
 
 
 
-function StyleSheetEditor(styleSheet, win, file, isNew, walker, highlighter) {
+
+
+
+function StyleSheetEditor(
+  styleSheet,
+  win,
+  file,
+  isNew,
+  walker,
+  highlighter,
+  styleSheetFriendlyIndex
+) {
   EventEmitter.decorate(this);
 
   this.styleSheet = styleSheet;
@@ -84,6 +95,7 @@ function StyleSheetEditor(styleSheet, win, file, isNew, walker, highlighter) {
   this._isNew = isNew;
   this.walker = walker;
   this.highlighter = highlighter;
+  this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
 
   
   this._isUpdating = false;
@@ -188,12 +200,12 @@ StyleSheetEditor.prototype = {
     }
 
     if (this._isNew) {
-      const index = this.styleSheet.styleSheetIndex + 1;
+      const index = this.styleSheetFriendlyIndex + 1 || 0;
       return getString("newStyleSheet", index);
     }
 
     if (!this.styleSheet.href) {
-      const index = this.styleSheet.styleSheetIndex + 1;
+      const index = this.styleSheetFriendlyIndex + 1 || 0;
       return getString("inlineStyleSheet", index);
     }
 

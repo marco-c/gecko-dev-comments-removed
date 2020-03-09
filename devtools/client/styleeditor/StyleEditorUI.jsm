@@ -376,6 +376,36 @@ StyleEditorUI.prototype = {
     return this._seenSheets.get(styleSheet);
   },
 
+  _getInlineStyleSheetsCount() {
+    return this.editors.filter(editor => !editor.styleSheet.href).length;
+  },
+
+  _getNewStyleSheetsCount() {
+    return this.editors.filter(editor => editor.isNew).length;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _getNextFriendlyIndex: function(styleSheet, isNew) {
+    if (styleSheet.href) {
+      return undefined;
+    }
+
+    return isNew
+      ? this._getNewStyleSheetsCount()
+      : this._getInlineStyleSheetsCount();
+  },
+
   
 
 
@@ -401,7 +431,8 @@ StyleEditorUI.prototype = {
       file,
       isNew,
       this._walker,
-      this._highlighter
+      this._highlighter,
+      this._getNextFriendlyIndex(styleSheet, isNew)
     );
 
     editor.on("property-change", this._summaryChange.bind(this, editor));
