@@ -1786,6 +1786,12 @@ public class WebExtension {
         
 
 
+
+        public final boolean allowedInPrivateBrowsing;
+
+        
+
+
         public final boolean enabled;
 
         
@@ -1807,6 +1813,7 @@ public class WebExtension {
             disabledFlags = 0;
             enabled = true;
             baseUrl = null;
+            allowedInPrivateBrowsing = false;
         }
 
          MetaData(final GeckoBundle bundle) {
@@ -1824,6 +1831,7 @@ public class WebExtension {
             blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
             enabled = bundle.getBoolean("enabled", false);
             baseUrl = bundle.getString("baseURL");
+            allowedInPrivateBrowsing = bundle.getBoolean("privateBrowsingAllowed", false);
 
             int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
             if (signedState <= SignedStateFlags.LAST) {

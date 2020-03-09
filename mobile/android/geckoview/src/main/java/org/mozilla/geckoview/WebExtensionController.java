@@ -493,6 +493,35 @@ public class WebExtensionController {
     }
 
     
+
+
+
+
+
+
+
+    @NonNull
+    @AnyThread
+    public GeckoResult<WebExtension> setAllowedInPrivateBrowsing(
+            final @NonNull WebExtension extension,
+            final boolean allowed) {
+        final WebExtensionController.WebExtensionResult result =
+                new WebExtensionController.WebExtensionResult("extension");
+
+        final GeckoBundle bundle = new GeckoBundle(2);
+        bundle.putString("extensionId", extension.id);
+        bundle.putBoolean("allowed", allowed);
+
+        EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:SetPBAllowed",
+                bundle, result);
+
+        return result.then(newExtension -> {
+            registerWebExtension(newExtension);
+            return GeckoResult.fromValue(newExtension);
+        });
+    }
+
+    
     GeckoResult<WebExtension> installBuiltIn(final String uri) {
         final WebExtensionResult result = new WebExtensionResult("extension");
 
