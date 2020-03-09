@@ -703,7 +703,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   float ComputedVolume() const;
   bool ComputedMuted() const;
-  nsSuspendedTypes ComputedSuspended() const;
 
   void SetMediaInfo(const MediaInfo& aInfo);
 
@@ -1229,9 +1228,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void AudioCaptureTrackChange(bool aCapture);
 
   
-  bool AudioChannelAgentBlockedPlay();
-
-  
   void MaybeDoLoad();
 
   
@@ -1338,6 +1334,15 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   void NotifyMediaControlPlaybackStateChanged();
+
+  
+  
+  void CreateStopMediaControlTimerIfNeeded();
+  static void StopMediaControlTimerCallback(nsITimer* aTimer, void* aClosure);
+
+  
+  
+  void ClearStopMediaControlTimerIfNeeded();
 
   
   
@@ -1556,6 +1561,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   nsCOMPtr<nsITimer> mVideoDecodeSuspendTimer;
+
+  
+  nsCOMPtr<nsITimer> mStopMediaControlTimer;
 
   
   RefPtr<MediaKeys> mMediaKeys;
