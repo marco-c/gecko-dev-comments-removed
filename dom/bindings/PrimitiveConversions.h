@@ -1,12 +1,12 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/**
+ * Conversions from jsval to primitive values
+ */
 
 #ifndef mozilla_dom_PrimitiveConversions_h
 #define mozilla_dom_PrimitiveConversions_h
@@ -20,6 +20,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/BindingCallContext.h"
 
 namespace mozilla {
 namespace dom {
@@ -72,44 +73,44 @@ struct DisallowedConversion {
 
  private:
   static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+                               const char* sourceDescription, jstype* retval) {
     MOZ_CRASH("This should never be instantiated!");
   }
 };
 
 struct PrimitiveConversionTraits_smallInt {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // The output of JS::ToInt32 is determined as follows:
+  //   1) The value is converted to a double
+  //   2) Anything that's not a finite double returns 0
+  //   3) The double is rounded towards zero to the nearest integer
+  //   4) The resulting integer is reduced mod 2^32.  The output of this
+  //      operation is an integer in the range [0, 2^32).
+  //   5) If the resulting number is >= 2^31, 2^32 is subtracted from it.
+  //
+  // The result of all this is a number in the range [-2^31, 2^31)
+  //
+  // WebIDL conversions for the 8-bit, 16-bit, and 32-bit integer types
+  // are defined in the same way, except that step 4 uses reduction mod
+  // 2^8 and 2^16 for the 8-bit and 16-bit types respectively, and step 5
+  // is only done for the signed types.
+  //
+  // C/C++ define integer conversion semantics to unsigned types as taking
+  // your input integer mod (1 + largest value representable in the
+  // unsigned type).  Since 2^32 is zero mod 2^8, 2^16, and 2^32,
+  // converting to the unsigned int of the relevant width will correctly
+  // perform step 4; in particular, the 2^32 possibly subtracted in step 5
+  // will become 0.
+  //
+  // Once we have step 4 done, we're just going to assume 2s-complement
+  // representation and cast directly to the type we really want.
+  //
+  // So we can cast directly for all unsigned types and for int32_t; for
+  // the smaller-width signed types we need to cast through the
+  // corresponding unsigned type.
   typedef int32_t jstype;
   typedef int32_t intermediateType;
   static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+                               const char* sourceDescription, jstype* retval) {
     return JS::ToInt32(cx, v, retval);
   }
 };
@@ -141,7 +142,7 @@ struct PrimitiveConversionTraits<int64_t, eDefault> {
   typedef int64_t jstype;
   typedef int64_t intermediateType;
   static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+                               const char* sourceDescription, jstype* retval) {
     return JS::ToInt64(cx, v, retval);
   }
 };
@@ -151,7 +152,7 @@ struct PrimitiveConversionTraits<uint64_t, eDefault> {
   typedef uint64_t jstype;
   typedef uint64_t intermediateType;
   static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+                               const char* sourceDescription, jstype* retval) {
     return JS::ToUint64(cx, v, retval);
   }
 };
@@ -174,32 +175,34 @@ struct PrimitiveConversionTraits_Limits<uint64_t> {
   static inline uint64_t max() { return (1LL << 53) - 1; }
 };
 
-template <typename T,
-          bool (*Enforce)(JSContext* cx, const double& d, T* retval)>
+template <typename T, typename U,
+          bool (*Enforce)(U cx, const char* sourceDescription, const double& d,
+                          T* retval)>
 struct PrimitiveConversionTraits_ToCheckedIntHelper {
   typedef T jstype;
   typedef T intermediateType;
 
-  static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+  static inline bool converter(U cx, JS::Handle<JS::Value> v,
+                               const char* sourceDescription, jstype* retval) {
     double intermediate;
     if (!JS::ToNumber(cx, v, &intermediate)) {
       return false;
     }
 
-    return Enforce(cx, intermediate, retval);
+    return Enforce(cx, sourceDescription, intermediate, retval);
   }
 };
 
 template <typename T>
-inline bool PrimitiveConversionTraits_EnforceRange(JSContext* cx,
-                                                   const double& d, T* retval) {
+inline bool PrimitiveConversionTraits_EnforceRange(
+    BindingCallContext& cx, const char* sourceDescription, const double& d,
+    T* retval) {
   static_assert(std::numeric_limits<T>::is_integer,
                 "This can only be applied to integers!");
 
   if (!mozilla::IsFinite(d)) {
-    return ThrowErrorMessage<MSG_ENFORCE_RANGE_NON_FINITE>(
-        cx, TypeName<T>::value());
+    return cx.ThrowErrorMessage<MSG_ENFORCE_RANGE_NON_FINITE>(
+        sourceDescription, TypeName<T>::value());
   }
 
   bool neg = (d < 0);
@@ -207,9 +210,8 @@ inline bool PrimitiveConversionTraits_EnforceRange(JSContext* cx,
   rounded = neg ? -rounded : rounded;
   if (rounded < PrimitiveConversionTraits_Limits<T>::min() ||
       rounded > PrimitiveConversionTraits_Limits<T>::max()) {
-    
-    return ThrowErrorMessage<MSG_ENFORCE_RANGE_OUT_OF_RANGE>(
-        cx, nullptr, TypeName<T>::value());
+    return cx.ThrowErrorMessage<MSG_ENFORCE_RANGE_OUT_OF_RANGE>(
+        sourceDescription, TypeName<T>::value());
   }
 
   *retval = static_cast<T>(rounded);
@@ -219,11 +221,13 @@ inline bool PrimitiveConversionTraits_EnforceRange(JSContext* cx,
 template <typename T>
 struct PrimitiveConversionTraits<T, eEnforceRange>
     : public PrimitiveConversionTraits_ToCheckedIntHelper<
-          T, PrimitiveConversionTraits_EnforceRange<T> > {};
+          T, BindingCallContext&, PrimitiveConversionTraits_EnforceRange<T> > {
+};
 
 template <typename T>
-inline bool PrimitiveConversionTraits_Clamp(JSContext* cx, const double& d,
-                                            T* retval) {
+inline bool PrimitiveConversionTraits_Clamp(JSContext* cx,
+                                            const char* sourceDescription,
+                                            const double& d, T* retval) {
   static_assert(std::numeric_limits<T>::is_integer,
                 "This can only be applied to integers!");
 
@@ -242,23 +246,23 @@ inline bool PrimitiveConversionTraits_Clamp(JSContext* cx, const double& d,
 
   MOZ_ASSERT(mozilla::IsFinite(d));
 
-  
-  
-  
-  
-  
+  // Banker's rounding (round ties towards even).
+  // We move away from 0 by 0.5f and then truncate.  That gets us the right
+  // answer for any starting value except plus or minus N.5.  With a starting
+  // value of that form, we now have plus or minus N+1.  If N is odd, this is
+  // the correct result.  If N is even, plus or minus N is the correct result.
   double toTruncate = (d < 0) ? d - 0.5 : d + 0.5;
 
   T truncated = static_cast<T>(toTruncate);
 
   if (truncated == toTruncate) {
-    
-
-
-
-
-
-
+    /*
+     * It was a tie (since moving away from 0 by 0.5 gave us the exact integer
+     * we want). Since we rounded away from 0, we either already have an even
+     * number or we have an odd number but the number we want is one closer to
+     * 0. So just unconditionally masking out the ones bit should do the trick
+     * to get us the value we want.
+     */
     truncated &= ~1;
   }
 
@@ -269,7 +273,7 @@ inline bool PrimitiveConversionTraits_Clamp(JSContext* cx, const double& d,
 template <typename T>
 struct PrimitiveConversionTraits<T, eClamp>
     : public PrimitiveConversionTraits_ToCheckedIntHelper<
-          T, PrimitiveConversionTraits_Clamp<T> > {};
+          T, JSContext*, PrimitiveConversionTraits_Clamp<T> > {};
 
 template <ConversionBehavior B>
 struct PrimitiveConversionTraits<bool, B> : public DisallowedConversion<bool> {
@@ -279,8 +283,8 @@ template <>
 struct PrimitiveConversionTraits<bool, eDefault> {
   typedef bool jstype;
   typedef bool intermediateType;
-  static inline bool converter(JSContext* , JS::Handle<JS::Value> v,
-                               jstype* retval) {
+  static inline bool converter(JSContext* /* unused */, JS::Handle<JS::Value> v,
+                               const char* sourceDescription, jstype* retval) {
     *retval = JS::ToBoolean(v);
     return true;
   }
@@ -298,7 +302,7 @@ struct PrimitiveConversionTraits_float {
   typedef double jstype;
   typedef double intermediateType;
   static inline bool converter(JSContext* cx, JS::Handle<JS::Value> v,
-                               jstype* retval) {
+                               const char* sourceDescription, jstype* retval) {
     return JS::ToNumber(cx, v, retval);
   }
 };
@@ -310,10 +314,12 @@ template <>
 struct PrimitiveConversionTraits<double, eDefault>
     : PrimitiveConversionTraits_float {};
 
-template <typename T, ConversionBehavior B>
-bool ValueToPrimitive(JSContext* cx, JS::Handle<JS::Value> v, T* retval) {
+template <typename T, ConversionBehavior B, typename U>
+bool ValueToPrimitive(U& cx, JS::Handle<JS::Value> v,
+                      const char* sourceDescription, T* retval) {
   typename PrimitiveConversionTraits<T, B>::jstype t;
-  if (!PrimitiveConversionTraits<T, B>::converter(cx, v, &t)) return false;
+  if (!PrimitiveConversionTraits<T, B>::converter(cx, v, sourceDescription, &t))
+    return false;
 
   *retval = static_cast<T>(
       static_cast<typename PrimitiveConversionTraits<T, B>::intermediateType>(
@@ -321,7 +327,7 @@ bool ValueToPrimitive(JSContext* cx, JS::Handle<JS::Value> v, T* retval) {
   return true;
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif 
+#endif /* mozilla_dom_PrimitiveConversions_h */
