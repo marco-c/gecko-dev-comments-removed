@@ -48,7 +48,7 @@ add_task(async function() {
 
   
   div.style.cssText = "width: 200px; height: 30px";
-  tooltip.updateContainerBounds(box1, { position: "top" });
+  tooltip.show(box1, { position: "top" });
 
   
   const updatedPanelBounds = tooltip.panel

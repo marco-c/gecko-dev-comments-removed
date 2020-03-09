@@ -19,11 +19,8 @@
 
 
 
-
 async function showTooltip(tooltip, anchor, { position, x, y } = {}) {
-  const onShown = tooltip.once("shown");
-  tooltip.show(anchor, { position, x, y });
-  await onShown;
+  await tooltip.show(anchor, { position, x, y });
   return waitForReflow(tooltip);
 }
 
