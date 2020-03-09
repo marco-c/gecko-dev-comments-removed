@@ -209,9 +209,26 @@ MediaMetadataBase MediaSessionController::GetCurrentMediaMetadata() const {
   if (mActiveMediaSessionContextId) {
     Maybe<MediaMetadataBase> metadata =
         mMetadataMap.Get(*mActiveMediaSessionContextId);
-    return metadata ? *metadata : CreateDefaultMetadata();
+    if (!metadata) {
+      return CreateDefaultMetadata();
+    }
+    FillMissingTitleAndArtworkIfNeeded(*metadata);
+    return *metadata;
   }
   return CreateDefaultMetadata();
+}
+
+void MediaSessionController::FillMissingTitleAndArtworkIfNeeded(
+    MediaMetadataBase& aMetadata) const {
+  
+  
+  
+  if (aMetadata.mTitle.IsEmpty()) {
+    aMetadata.mTitle = GetDefaultTitle();
+  }
+  if (aMetadata.mArtwork.IsEmpty()) {
+    aMetadata.mArtwork.AppendElement()->mSrc = GetDefaultFaviconURL();
+  }
 }
 
 }  
