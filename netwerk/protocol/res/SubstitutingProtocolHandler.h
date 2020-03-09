@@ -9,7 +9,6 @@
 
 #include "nsISubstitutingProtocolHandler.h"
 
-#include "nsISubstitutionObserver.h"
 #include "nsDataHashtable.h"
 #include "nsStandardURL.h"
 #include "nsJARURI.h"
@@ -112,10 +111,6 @@ class SubstitutingProtocolHandler {
   RWLock mSubstitutionsLock;
   nsDataHashtable<nsCStringHashKey, SubstitutionEntry> mSubstitutions;
   nsCOMPtr<nsIIOService> mIOService;
-
-  
-  
-  nsTArray<nsCOMPtr<nsISubstitutionObserver>> mObservers;
 
   
   
