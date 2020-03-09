@@ -985,13 +985,19 @@ nsresult HTMLEditor::InsertLineBreakAsAction(nsIPrincipal* aPrincipal) {
     return EditorBase::ToGenericNSResult(rv);
   }
 
+  if (IsSelectionRangeContainerNotContent()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
+  }
+
   
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName);
   rv = InsertBrElementAtSelectionWithTransaction();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "InsertBrElementAtSelectionWithTransaction() failed");
-  return rv;
+  
+  
+  return NS_FAILED(rv) ? rv : NS_OK;
 }
 
 nsresult HTMLEditor::InsertParagraphSeparatorAsAction(
@@ -1110,6 +1116,7 @@ EditActionResult HTMLEditor::HandleTabKeyPressInTable(
 
 nsresult HTMLEditor::InsertBrElementAtSelectionWithTransaction() {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
   
   
@@ -1847,6 +1854,10 @@ HTMLEditor::GetParagraphState(bool* aMixed, nsAString& aFirstParagraphState) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  if (NS_WARN_IF(IsSelectionRangeContainerNotContent())) {
+    return NS_ERROR_FAILURE;
+  }
+
   ErrorResult error;
   ParagraphStateAtSelection state(*this, error);
   if (NS_WARN_IF(error.Failed())) {
@@ -2215,6 +2226,10 @@ nsresult HTMLEditor::FormatBlockContainerAsSubAction(nsAtom& aTagName) {
     return result.Rv();
   }
 
+  if (IsSelectionRangeContainerNotContent()) {
+    return NS_SUCCESS_DOM_NO_OPERATION;
+  }
+
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
@@ -2321,12 +2336,18 @@ Element* HTMLEditor::GetElementOrParentByTagName(const nsAtom& aTagName,
   if (aNode) {
     return GetElementOrParentByTagNameInternal(aTagName, *aNode);
   }
+
+  if (IsSelectionRangeContainerNotContent()) {
+    return nullptr;
+  }
+
   return GetElementOrParentByTagNameAtSelection(aTagName);
 }
 
 Element* HTMLEditor::GetElementOrParentByTagNameAtSelection(
     const nsAtom& aTagName) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
   MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
 
