@@ -139,16 +139,20 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
       
       uint8_t optByte = (uint8_t)buf[currentIndex];
 
+      
+      
+      
       bool enableWasmBaseline = ((optByte & 0xF0) == (1 << 7));
-      bool enableWasmIon = IonCanCompile() && ((optByte & 0xF0) == (1 << 6));
+      bool enableWasmIon =
+          IonPlatformSupport() && ((optByte & 0xF0) == (1 << 6));
       bool enableWasmCranelift = false;
 #ifdef ENABLE_WASM_CRANELIFT
       enableWasmCranelift =
-          CraneliftCanCompile() && ((optByte & 0xF0) == (1 << 5));
+          CraneliftPlatformSupport() && ((optByte & 0xF0) == (1 << 5));
 #endif
-      bool enableWasmAwaitTier2 = (IonCanCompile()
+      bool enableWasmAwaitTier2 = (IonPlatformSupport()
 #ifdef ENABLE_WASM_CRANELIFT
-                                   || CraneliftCanCompile()
+                                   || CraneliftPlatformSupport()
 #endif
                                        ) &&
                                   ((optByte & 0xF) == (1 << 3));
@@ -158,7 +162,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
         
         
         
-        if (IonCanCompile()) {
+        if (IonPlatformSupport()) {
           enableWasmIon = true;
         } else {
           enableWasmBaseline = true;

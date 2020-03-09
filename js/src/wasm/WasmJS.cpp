@@ -64,33 +64,7 @@ using mozilla::RangedPtr;
 
 extern mozilla::Atomic<bool> fuzzingSafe;
 
-bool wasm::HasReftypesSupport(JSContext* cx) {
-#ifdef ENABLE_WASM_REFTYPES
-  return true;
-#else
-  return false;
-#endif
-}
-
-bool wasm::HasGcSupport(JSContext* cx) {
-#ifdef ENABLE_WASM_CRANELIFT
-  if (cx->options().wasmCranelift()) {
-    return false;
-  }
-#endif
-#ifdef ENABLE_WASM_GC
-  return cx->options().wasmGc() && cx->options().wasmBaseline();
-#else
-  return false;
-#endif
-}
-
-bool wasm::HasMultiValueSupport(JSContext* cx) {
-#ifdef ENABLE_WASM_CRANELIFT
-  if (cx->options().wasmCranelift()) {
-    return false;
-  }
-#endif
+static inline bool WasmMultiValueFlag(JSContext* cx) {
 #ifdef ENABLE_WASM_MULTI_VALUE
   return true;
 #else
@@ -98,12 +72,85 @@ bool wasm::HasMultiValueSupport(JSContext* cx) {
 #endif
 }
 
-bool wasm::HasI64BigIntSupport(JSContext* cx) {
-#ifdef ENABLE_WASM_CRANELIFT
-  if (cx->options().wasmCranelift()) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool wasm::BaselineAvailable(JSContext* cx) {
+  
+  return cx->options().wasmBaseline() && BaselinePlatformSupport();
+}
+
+bool wasm::IonAvailable(JSContext* cx) {
+  if (!cx->options().wasmIon() || !IonPlatformSupport()) {
     return false;
   }
+
+  
+  bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
+  bool gc = cx->options().wasmGc();
+  bool cranelift = CraneliftAvailable(cx);
+  return !debug && !gc && !cranelift;
+}
+
+bool wasm::CraneliftAvailable(JSContext* cx) {
+  if (!cx->options().wasmCranelift() || !CraneliftPlatformSupport()) {
+    return false;
+  }
+
+  
+  
+  bool debug = cx->realm() && cx->realm()->debuggerObservesAsmJS();
+  bool gc = cx->options().wasmGc();
+  bool multiValue = WasmMultiValueFlag(cx);
+  bool threads =
+      cx->realm() &&
+      cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+  return !debug && !gc && !multiValue && !threads;
+}
+
+
+
+
+
+
+
+
+
+bool wasm::ReftypesAvailable(JSContext* cx) {
+  
+#ifdef ENABLE_WASM_REFTYPES
+  return true;
+#else
+  return false;
 #endif
+}
+
+bool wasm::GcTypesAvailable(JSContext* cx) {
+  
+  return cx->options().wasmGc() && BaselineAvailable(cx);
+}
+
+bool wasm::MultiValuesAvailable(JSContext* cx) {
+  
+  return WasmMultiValueFlag(cx) && (BaselineAvailable(cx) || IonAvailable(cx));
+}
+
+bool wasm::I64BigIntConversionAvailable(JSContext* cx) {
+  
 #ifdef ENABLE_WASM_BIGINT
   return cx->options().isWasmBigIntEnabled();
 #else
@@ -111,7 +158,14 @@ bool wasm::HasI64BigIntSupport(JSContext* cx) {
 #endif
 }
 
-bool wasm::HasCompilerSupport(JSContext* cx) {
+bool wasm::ThreadsAvailable(JSContext* cx) {
+  
+  return cx->realm() &&
+         cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled() &&
+         (BaselineAvailable(cx) || IonAvailable(cx));
+}
+
+bool wasm::HasPlatformSupport(JSContext* cx) {
 #if !MOZ_LITTLE_ENDIAN() || defined(JS_CODEGEN_NONE)
   return false;
 #endif
@@ -143,22 +197,10 @@ bool wasm::HasCompilerSupport(JSContext* cx) {
   }
 #endif
 
-  return BaselineCanCompile() || IonCanCompile() || CraneliftCanCompile();
-}
-
-bool wasm::HasOptimizedCompilerTier(JSContext* cx) {
-  return (cx->options().wasmIon() && IonCanCompile())
-#ifdef ENABLE_WASM_CRANELIFT
-         || (cx->options().wasmCranelift() && CraneliftCanCompile())
-#endif
-      ;
-}
-
-
-
-static bool HasAvailableCompilerTier(JSContext* cx) {
-  return (cx->options().wasmBaseline() && BaselineCanCompile()) ||
-         HasOptimizedCompilerTier(cx);
+  
+  
+  return BaselinePlatformSupport() || IonPlatformSupport() ||
+         CraneliftPlatformSupport();
 }
 
 bool wasm::HasSupport(JSContext* cx) {
@@ -170,10 +212,11 @@ bool wasm::HasSupport(JSContext* cx) {
                   cx->realm()->principals() &&
                   cx->realm()->principals()->isSystemOrAddonPrincipal();
   }
-  return prefEnabled && HasCompilerSupport(cx) && HasAvailableCompilerTier(cx);
+  return prefEnabled && HasPlatformSupport(cx) &&
+         (BaselineAvailable(cx) || IonAvailable(cx) || CraneliftAvailable(cx));
 }
 
-bool wasm::HasStreamingSupport(JSContext* cx) {
+bool wasm::StreamingCompilationAvailable(JSContext* cx) {
   
   return HasSupport(cx) &&
          cx->runtime()->offThreadPromiseState.ref().initialized() &&
@@ -181,8 +224,12 @@ bool wasm::HasStreamingSupport(JSContext* cx) {
          cx->runtime()->reportStreamErrorCallback;
 }
 
-bool wasm::HasCachingSupport(JSContext* cx) {
-  return HasStreamingSupport(cx) && HasOptimizedCompilerTier(cx);
+bool wasm::CodeCachingAvailable(JSContext* cx) {
+  
+  
+  
+  
+  return StreamingCompilationAvailable(cx) && IonAvailable(cx);
 }
 
 bool wasm::CheckRefType(JSContext* cx, RefType::Kind targetTypeKind,
@@ -242,7 +289,7 @@ static bool ToWebAssemblyValue(JSContext* cx, ValType targetType, HandleValue v,
     }
     case ValType::I64: {
 #ifdef ENABLE_WASM_BIGINT
-      if (HasI64BigIntSupport(cx)) {
+      if (I64BigIntConversionAvailable(cx)) {
         BigInt* bigint = ToBigInt(cx, v);
         if (!bigint) {
           return false;
@@ -289,7 +336,7 @@ static bool ToJSValue(JSContext* cx, const Val& val, MutableHandleValue out) {
       return true;
     case ValType::I64: {
 #ifdef ENABLE_WASM_BIGINT
-      if (HasI64BigIntSupport(cx)) {
+      if (I64BigIntConversionAvailable(cx)) {
         BigInt* bi = BigInt::createFromInt64(cx, val.i64());
         if (!bi) {
           return false;
@@ -442,7 +489,7 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
           obj->val(&val);
         } else {
           if (IsNumberType(global.type())) {
-            if (HasI64BigIntSupport(cx)) {
+            if (I64BigIntConversionAvailable(cx)) {
               if (global.type() == ValType::I64 && v.isNumber()) {
                 return ThrowBadImportType(cx, import.field.get(), "BigInt");
               }
@@ -595,6 +642,11 @@ bool wasm::CompileAndSerialize(const ShareableBytes& bytecode,
   
   
   compileArgs->baselineEnabled = false;
+
+  
+  
+  
+  
   compileArgs->ionEnabled = true;
 
   
@@ -2277,7 +2329,7 @@ bool WasmTableObject::construct(JSContext* cx, unsigned argc, Value* vp) {
 #ifdef ENABLE_WASM_REFTYPES
   } else if (StringEqualsLiteral(elementLinearStr, "anyref") ||
              StringEqualsLiteral(elementLinearStr, "nullref")) {
-    if (!HasReftypesSupport(cx)) {
+    if (!ReftypesAvailable(cx)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_WASM_BAD_ELEMENT);
       return false;
@@ -2735,18 +2787,18 @@ bool WasmGlobalObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   } else if (StringEqualsLiteral(typeLinearStr, "f64")) {
     globalType = ValType::F64;
 #ifdef ENABLE_WASM_BIGINT
-  } else if (HasI64BigIntSupport(cx) &&
+  } else if (I64BigIntConversionAvailable(cx) &&
              StringEqualsLiteral(typeLinearStr, "i64")) {
     globalType = ValType::I64;
 #endif
 #ifdef ENABLE_WASM_REFTYPES
-  } else if (HasReftypesSupport(cx) &&
+  } else if (ReftypesAvailable(cx) &&
              StringEqualsLiteral(typeLinearStr, "funcref")) {
     globalType = RefType::func();
-  } else if (HasReftypesSupport(cx) &&
+  } else if (ReftypesAvailable(cx) &&
              StringEqualsLiteral(typeLinearStr, "anyref")) {
     globalType = RefType::any();
-  } else if (HasReftypesSupport(cx) &&
+  } else if (ReftypesAvailable(cx) &&
              StringEqualsLiteral(typeLinearStr, "nullref")) {
     globalType = RefType::null();
 #endif
@@ -2822,7 +2874,7 @@ bool WasmGlobalObject::valueGetterImpl(JSContext* cx, const CallArgs& args) {
       return true;
     case ValType::I64:
 #ifdef ENABLE_WASM_BIGINT
-      if (HasI64BigIntSupport(cx)) {
+      if (I64BigIntConversionAvailable(cx)) {
         return args.thisv().toObject().as<WasmGlobalObject>().value(
             cx, args.rval());
       }
@@ -2866,7 +2918,7 @@ bool WasmGlobalObject::valueSetterImpl(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  if (global->type() == ValType::I64 && !HasI64BigIntSupport(cx)) {
+  if (global->type() == ValType::I64 && !I64BigIntConversionAvailable(cx)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_I64_TYPE);
     return false;
@@ -2890,7 +2942,7 @@ bool WasmGlobalObject::valueSetterImpl(JSContext* cx, const CallArgs& args) {
       break;
     case ValType::I64:
 #ifdef ENABLE_WASM_BIGINT
-      MOZ_ASSERT(HasI64BigIntSupport(cx),
+      MOZ_ASSERT(I64BigIntConversionAvailable(cx),
                  "expected BigInt support for setting I64 global");
       cell->i64 = val.get().i64();
 #endif

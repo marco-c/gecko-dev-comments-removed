@@ -1,0 +1,3 @@
+
+
+assertEq(wasmCompileMode(), "cranelift");
