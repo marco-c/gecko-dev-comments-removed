@@ -387,6 +387,41 @@ bool WarpBuilder::build_ResumeIndex(BytecodeLocation loc) {
   return true;
 }
 
+bool WarpBuilder::build_BigInt(BytecodeLocation loc) {
+  BigInt* bi = loc.getBigInt(script_);
+  pushConstant(BigIntValue(bi));
+  return true;
+}
+
+bool WarpBuilder::build_String(BytecodeLocation loc) {
+  JSAtom* atom = loc.getAtom(script_);
+  pushConstant(StringValue(atom));
+  return true;
+}
+
+bool WarpBuilder::build_Symbol(BytecodeLocation loc) {
+  uint32_t which = loc.getSymbolIndex();
+  JS::Symbol* sym = mirGen_.runtime->wellKnownSymbols().get(which);
+  pushConstant(SymbolValue(sym));
+  return true;
+}
+
+bool WarpBuilder::build_RegExp(BytecodeLocation loc) {
+  RegExpObject* reObj = loc.getRegExp(script_);
+
+  
+  
+  
+  bool hasShared = false;
+
+  MRegExp* regexp =
+      MRegExp::New(alloc(),  nullptr, reObj, hasShared);
+  current->add(regexp);
+  current->push(regexp);
+
+  return true;
+}
+
 bool WarpBuilder::build_Return(BytecodeLocation) {
   MDefinition* def = current->pop();
 
