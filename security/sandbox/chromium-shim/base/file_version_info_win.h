@@ -7,9 +7,13 @@
 
 
 
-
 #ifndef BASE_FILE_VERSION_INFO_WIN_H_
 #define BASE_FILE_VERSION_INFO_WIN_H_
+
+#include <memory>
+#include <vector>
+
+#include "base/macros.h"
 
 #include "mozilla/Assertions.h"
 
@@ -23,9 +27,27 @@ class FilePath;
 class FileVersionInfoWin {
  public:
   static std::unique_ptr<FileVersionInfoWin> CreateFileVersionInfoWin(
-      const base::FilePath& file_path) { MOZ_CRASH(); }
+      const base::FilePath& file_path);
 
-  VS_FIXEDFILEINFO* fixed_file_info() { MOZ_CRASH(); }
+  
+  const VS_FIXEDFILEINFO* fixed_file_info() const { return fixed_file_info_; }
+
+ private:
+  
+  
+  FileVersionInfoWin(std::vector<uint8_t>&& data,
+                     WORD language,
+                     WORD code_page);
+
+  const std::vector<uint8_t> owned_data_;
+  const void* const data_;
+  const WORD language_;
+  const WORD code_page_;
+
+  
+  const VS_FIXEDFILEINFO* const fixed_file_info_;
+
+  DISALLOW_COPY_AND_ASSIGN(FileVersionInfoWin);
 };
 
 #endif  
