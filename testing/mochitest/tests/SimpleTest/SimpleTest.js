@@ -16,19 +16,35 @@
 
 
 
-var SimpleTest = { };
+
+
+
+
+
+
+var SimpleTest = {};
 var parentRunner = null;
 
 
 
 
-var isSingleTestRun = (parent == window && !(opener || window.arguments && window.arguments[0].SimpleTest));
+var isSingleTestRun =
+  parent == window &&
+  !(opener || (window.arguments && window.arguments[0].SimpleTest));
 try {
   var isPrimaryTestWindow = !!parent.TestRunner || isSingleTestRun;
-} catch(e) {
-  dump("TEST-UNEXPECTED-FAIL, Exception caught: " + e.message +
-                ", at: " + e.fileName + " (" + e.lineNumber +
-                "), location: " + window.location.href + "\n");
+} catch (e) {
+  dump(
+    "TEST-UNEXPECTED-FAIL, Exception caught: " +
+      e.message +
+      ", at: " +
+      e.fileName +
+      " (" +
+      e.lineNumber +
+      "), location: " +
+      window.location.href +
+      "\n"
+  );
 }
 
 
@@ -38,182 +54,184 @@ try {
 
 
 (function() {
-    function ancestor(w) {
-        return w.parent != w ? w.parent : w.opener || w.arguments && w.arguments[0];
-    }
+  function ancestor(w) {
+    return w.parent != w
+      ? w.parent
+      : w.opener || (w.arguments && w.arguments[0]);
+  }
 
-    var w = ancestor(window);
-    while (w && (!parentRunner || !window.SpecialPowers)) {
-        if (!parentRunner) {
-            parentRunner = w.TestRunner;
-            if (!parentRunner && w.wrappedJSObject) {
-                parentRunner = w.wrappedJSObject.TestRunner;
-            }
-        }
-        if (!window.SpecialPowers) {
-            window.SpecialPowers = w.SpecialPowers;
-        }
-        w = ancestor(w);
+  var w = ancestor(window);
+  while (w && (!parentRunner || !window.SpecialPowers)) {
+    if (!parentRunner) {
+      parentRunner = w.TestRunner;
+      if (!parentRunner && w.wrappedJSObject) {
+        parentRunner = w.wrappedJSObject.TestRunner;
+      }
     }
+    if (!window.SpecialPowers) {
+      window.SpecialPowers = w.SpecialPowers;
+    }
+    w = ancestor(w);
+  }
 
-    if (parentRunner) {
-        SimpleTest.harnessParameters = parentRunner.getParameterInfo();
-    }
+  if (parentRunner) {
+    SimpleTest.harnessParameters = parentRunner.getParameterInfo();
+  }
 })();
 
 
-if (typeof(repr) == 'undefined') {
-    this.repr = function(o) {
-        if (typeof(o) == "undefined") {
-            return "undefined";
-        } else if (o === null) {
-            return "null";
-        }
-        try {
-            if (typeof(o.__repr__) == 'function') {
-                return o.__repr__();
-            } else if (typeof(o.repr) == 'function' && o.repr != arguments.callee) {
-                return o.repr();
-            }
-       } catch (e) {
-       }
-       try {
-            if (typeof(o.NAME) == 'string' && (
-                    o.toString == Function.prototype.toString ||
-                    o.toString == Object.prototype.toString
-                )) {
-                return o.NAME;
-            }
-        } catch (e) {
-        }
-        var ostring;
-        try {
-            if (o === 0) {
-                ostring = (1 / o > 0) ? "+0" : "-0";
-            } else if (typeof o === "string") {
-                ostring = JSON.stringify(o);
-            } else if (Array.isArray(o)) {
-                ostring = "[" + o.map(val => repr(val)).join(", ") + "]";
-            } else {
-                ostring = (o + "");
-            }
-        } catch (e) {
-            return "[" + typeof(o) + "]";
-        }
-        if (typeof(o) == "function") {
-            o = ostring.replace(/^\s+/, "");
-            var idx = o.indexOf("{");
-            if (idx != -1) {
-                o = o.substr(0, idx) + "{...}";
-            }
-        }
-        return ostring;
-    };
+if (typeof repr == "undefined") {
+  this.repr = function repr(o) {
+    if (typeof o == "undefined") {
+      return "undefined";
+    } else if (o === null) {
+      return "null";
+    }
+    try {
+      if (typeof o.__repr__ == "function") {
+        return o.__repr__();
+      } else if (typeof o.repr == "function" && o.repr != repr) {
+        return o.repr();
+      }
+    } catch (e) {}
+    try {
+      if (
+        typeof o.NAME == "string" &&
+        (o.toString == Function.prototype.toString ||
+          o.toString == Object.prototype.toString)
+      ) {
+        return o.NAME;
+      }
+    } catch (e) {}
+    var ostring;
+    try {
+      if (o === 0) {
+        ostring = 1 / o > 0 ? "+0" : "-0";
+      } else if (typeof o === "string") {
+        ostring = JSON.stringify(o);
+      } else if (Array.isArray(o)) {
+        ostring = "[" + o.map(val => repr(val)).join(", ") + "]";
+      } else {
+        ostring = o + "";
+      }
+    } catch (e) {
+      return "[" + typeof o + "]";
+    }
+    if (typeof o == "function") {
+      o = ostring.replace(/^\s+/, "");
+      var idx = o.indexOf("{");
+      if (idx != -1) {
+        o = o.substr(0, idx) + "{...}";
+      }
+    }
+    return ostring;
+  };
 }
 
 
 
 
-if (typeof(partial) == 'undefined') {
-    this.partial = function(func) {
-        var args = [];
-        for (var i = 1; i < arguments.length; i++) {
-            args.push(arguments[i]);
+if (typeof partial == "undefined") {
+  this.partial = function(func) {
+    var args = [];
+    for (let i = 1; i < arguments.length; i++) {
+      args.push(arguments[i]);
+    }
+    return function() {
+      if (arguments.length > 0) {
+        for (let i = 1; i < arguments.length; i++) {
+          args.push(arguments[i]);
         }
-        return function() {
-            if (arguments.length > 0) {
-                for (var i = 1; i < arguments.length; i++) {
-                    args.push(arguments[i]);
-                }
-            }
-            func(args);
-        };
+      }
+      func(args);
     };
+  };
 }
 
-if (typeof(getElement) == 'undefined') {
-    this.getElement = function(id) {
-        return ((typeof(id) == "string") ?
-            document.getElementById(id) : id);
-    };
-    this.$ = this.getElement;
+if (typeof getElement == "undefined") {
+  this.getElement = function(id) {
+    return typeof id == "string" ? document.getElementById(id) : id;
+  };
+  this.$ = this.getElement;
 }
 
 SimpleTest._newCallStack = function(path) {
-    var rval = function () {
-        var callStack = arguments.callee.callStack;
-        for (var i = 0; i < callStack.length; i++) {
-            if (callStack[i].apply(this, arguments) === false) {
-                break;
-            }
-        }
-        try {
-            this[path] = null;
-        } catch (e) {
-            
-        }
-    };
-    rval.callStack = [];
-    return rval;
+  var rval = function callStackHandler() {
+    var callStack = callStackHandler.callStack;
+    for (var i = 0; i < callStack.length; i++) {
+      if (callStack[i].apply(this, arguments) === false) {
+        break;
+      }
+    }
+    try {
+      this[path] = null;
+    } catch (e) {
+      
+    }
+  };
+  rval.callStack = [];
+  return rval;
 };
 
-if (typeof(addLoadEvent) == 'undefined') {
-    this.addLoadEvent = function(func) {
-        var existing = window["onload"];
-        var regfunc = existing;
-        if (!(typeof(existing) == 'function'
-                && typeof(existing.callStack) == "object"
-                && existing.callStack !== null)) {
-            regfunc = SimpleTest._newCallStack("onload");
-            if (typeof(existing) == 'function') {
-                regfunc.callStack.push(existing);
-            }
-            window["onload"] = regfunc;
-        }
-        regfunc.callStack.push(func);
-    };
+if (typeof addLoadEvent == "undefined") {
+  this.addLoadEvent = function(func) {
+    var existing = window.onload;
+    var regfunc = existing;
+    if (
+      !(
+        typeof existing == "function" &&
+        typeof existing.callStack == "object" &&
+        existing.callStack !== null
+      )
+    ) {
+      regfunc = SimpleTest._newCallStack("onload");
+      if (typeof existing == "function") {
+        regfunc.callStack.push(existing);
+      }
+      window.onload = regfunc;
+    }
+    regfunc.callStack.push(func);
+  };
 }
 
 function createEl(type, attrs, html) {
-    
-    var el;
-    if (!document.body) {
-        el = document.createElementNS("http://www.w3.org/1999/xhtml", type);
+  
+  var el;
+  if (!document.body) {
+    el = document.createElementNS("http://www.w3.org/1999/xhtml", type);
+  } else {
+    el = document.createElement(type);
+  }
+  if (attrs !== null && attrs !== undefined) {
+    for (var k in attrs) {
+      el.setAttribute(k, attrs[k]);
     }
-    else {
-        el = document.createElement(type);
-    }
-    if (attrs !== null && attrs !== undefined) {
-        for (var k in attrs) {
-            el.setAttribute(k, attrs[k]);
-        }
-    }
-    if (html !== null && html !== undefined) {
-        el.appendChild(document.createTextNode(html));
-    }
-    return el;
+  }
+  if (html !== null && html !== undefined) {
+    el.appendChild(document.createTextNode(html));
+  }
+  return el;
 }
 
 
-if (typeof(computedStyle) == 'undefined') {
-    this.computedStyle = function(elem, cssProperty) {
-        elem = getElement(elem);
-        if (elem.currentStyle) {
-            return elem.currentStyle[cssProperty];
-        }
-        if (typeof(document.defaultView) == 'undefined' || document === null) {
-            return undefined;
-        }
-        var style = document.defaultView.getComputedStyle(elem);
-        if (typeof(style) == 'undefined' || style === null) {
-            return undefined;
-        }
+if (typeof computedStyle == "undefined") {
+  this.computedStyle = function(elem, cssProperty) {
+    elem = getElement(elem);
+    if (elem.currentStyle) {
+      return elem.currentStyle[cssProperty];
+    }
+    if (typeof document.defaultView == "undefined" || document === null) {
+      return undefined;
+    }
+    var style = document.defaultView.getComputedStyle(elem);
+    if (typeof style == "undefined" || style === null) {
+      return undefined;
+    }
 
-        var selectorCase = cssProperty.replace(/([A-Z])/g, '-$1'
-            ).toLowerCase();
+    var selectorCase = cssProperty.replace(/([A-Z])/g, "-$1").toLowerCase();
 
-        return style.getPropertyValue(selectorCase);
-    };
+    return style.getPropertyValue(selectorCase);
+  };
 }
 
 SimpleTest._tests = [];
@@ -225,7 +243,7 @@ SimpleTest._inChaosMode = false;
 
 
 
-SimpleTest.expected = 'pass';
+SimpleTest.expected = "pass";
 SimpleTest.num_failed = 0;
 
 SpecialPowers.setAsDefaultAssertHandler();
@@ -241,9 +259,11 @@ function usesFailurePatterns() {
 
 function recordIfMatchesFailurePattern(name, diag) {
   let index = SimpleTest.expected.findIndex(([pat, count]) => {
-    return pat == null ||
+    return (
+      pat == null ||
       (typeof name == "string" && name.includes(pat)) ||
-      (typeof diag == "string" && diag.includes(pat));
+      (typeof diag == "string" && diag.includes(pat))
+    );
   });
   if (index >= 0) {
     SimpleTest.num_failed[index]++;
@@ -252,120 +272,178 @@ function recordIfMatchesFailurePattern(name, diag) {
   return false;
 }
 
-SimpleTest.setExpected = function () {
+SimpleTest.setExpected = function() {
   if (parent.TestRunner) {
     if (!Array.isArray(parent.TestRunner.expected)) {
       SimpleTest.expected = parent.TestRunner.expected;
     } else {
       
-      SimpleTest.expected = parent.TestRunner.expected.filter(([pat]) => pat != "ASSERTION");
+      SimpleTest.expected = parent.TestRunner.expected.filter(
+        ([pat]) => pat != "ASSERTION"
+      );
       SimpleTest.num_failed = new Array(SimpleTest.expected.length);
       SimpleTest.num_failed.fill(0);
     }
   }
-}
+};
 SimpleTest.setExpected();
 
 
 
 
-SimpleTest.ok = function (condition, name) {
-    if (arguments.length > 2) {
-      const diag = "Too many arguments passed to `ok(condition, name)`";
-      SimpleTest.record(false, name, diag);
-    } else {
-      SimpleTest.record(condition, name);
-    }
+SimpleTest.ok = function(condition, name) {
+  if (arguments.length > 2) {
+    const diag = "Too many arguments passed to `ok(condition, name)`";
+    SimpleTest.record(false, name, diag);
+  } else {
+    SimpleTest.record(condition, name);
+  }
 };
 
-SimpleTest.record = function (condition, name, diag, stack, expected) {
-    var test = {'result': !!condition, 'name': name, 'diag': diag};
-    if (SimpleTest.expected == 'fail') {
-      if (!test.result) {
-        SimpleTest.num_failed++;
-        test.result = !test.result;
-      }
-      var successInfo = {status:"PASS", expected:"PASS", message:"TEST-PASS"};
-      var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
-    } else if (!test.result && usesFailurePatterns()) {
-      if (recordIfMatchesFailurePattern(name, diag)) {
-        test.result = true;
-        
-        name = '[suppressed] ' + name;
-      }
-      var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
-      var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
-    } else if (expected == "fail") {
-      var successInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
-      var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
-    } else {
-      var successInfo = {status:"PASS", expected:"PASS", message:"TEST-PASS"};
-      var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
+SimpleTest.record = function(condition, name, diag, stack, expected) {
+  var test = { result: !!condition, name, diag };
+  let successInfo;
+  let failureInfo;
+  if (SimpleTest.expected == "fail") {
+    if (!test.result) {
+      SimpleTest.num_failed++;
+      test.result = !test.result;
     }
-
-    if (condition) {
-        stack = null;
-    } else if (!stack) {
-      stack = (new Error).stack.replace(/^(.*@)http:\/\/mochi.test:8888\/tests\//gm, '    $1').split('\n');
-      stack.splice(0, 1);
-      stack = stack.join('\n');
+    successInfo = {
+      status: "PASS",
+      expected: "PASS",
+      message: "TEST-PASS",
+    };
+    failureInfo = {
+      status: "FAIL",
+      expected: "FAIL",
+      message: "TEST-KNOWN-FAIL",
+    };
+  } else if (!test.result && usesFailurePatterns()) {
+    if (recordIfMatchesFailurePattern(name, diag)) {
+      test.result = true;
+      
+      name = "[suppressed] " + name;
     }
+    successInfo = {
+      status: "FAIL",
+      expected: "FAIL",
+      message: "TEST-KNOWN-FAIL",
+    };
+    failureInfo = {
+      status: "FAIL",
+      expected: "PASS",
+      message: "TEST-UNEXPECTED-FAIL",
+    };
+  } else if (expected == "fail") {
+    successInfo = {
+      status: "PASS",
+      expected: "FAIL",
+      message: "TEST-UNEXPECTED-PASS",
+    };
+    failureInfo = {
+      status: "FAIL",
+      expected: "FAIL",
+      message: "TEST-KNOWN-FAIL",
+    };
+  } else {
+    successInfo = {
+      status: "PASS",
+      expected: "PASS",
+      message: "TEST-PASS",
+    };
+    failureInfo = {
+      status: "FAIL",
+      expected: "PASS",
+      message: "TEST-UNEXPECTED-FAIL",
+    };
+  }
 
-    SimpleTest._logResult(test, successInfo, failureInfo, stack);
-    SimpleTest._tests.push(test);
+  if (condition) {
+    stack = null;
+  } else if (!stack) {
+    stack = new Error().stack
+      .replace(/^(.*@)http:\/\/mochi.test:8888\/tests\//gm, "    $1")
+      .split("\n");
+    stack.splice(0, 1);
+    stack = stack.join("\n");
+  }
+
+  SimpleTest._logResult(test, successInfo, failureInfo, stack);
+  SimpleTest._tests.push(test);
 };
 
 
 
 
-SimpleTest.is = function (a, b, name) {
-    
-    var pass = Object.is(a, b);
-    var diag = pass ? "" : "got " + repr(a) + ", expected " + repr(b)
-    SimpleTest.record(pass, name, diag);
-};
-
-SimpleTest.isfuzzy = function (a, b, epsilon, name) {
-  var pass = (a >= b - epsilon) && (a <= b + epsilon);
-  var diag = pass ? "" : "got " + repr(a) + ", expected " + repr(b) + " epsilon: +/- " + repr(epsilon)
+SimpleTest.is = function(a, b, name) {
+  
+  var pass = Object.is(a, b);
+  var diag = pass ? "" : "got " + repr(a) + ", expected " + repr(b);
   SimpleTest.record(pass, name, diag);
 };
 
-SimpleTest.isnot = function (a, b, name) {
-    var pass = !Object.is(a, b);
-    var diag = pass ? "" : "didn't expect " + repr(a) + ", but got it";
-    SimpleTest.record(pass, name, diag);
+SimpleTest.isfuzzy = function(a, b, epsilon, name) {
+  var pass = a >= b - epsilon && a <= b + epsilon;
+  var diag = pass
+    ? ""
+    : "got " +
+      repr(a) +
+      ", expected " +
+      repr(b) +
+      " epsilon: +/- " +
+      repr(epsilon);
+  SimpleTest.record(pass, name, diag);
+};
+
+SimpleTest.isnot = function(a, b, name) {
+  var pass = !Object.is(a, b);
+  var diag = pass ? "" : "didn't expect " + repr(a) + ", but got it";
+  SimpleTest.record(pass, name, diag);
 };
 
 
 
 
 SimpleTest.doesThrow = function(fn, name) {
-    var gotException = false;
-    try {
-      fn();
-    } catch (ex) { gotException = true; }
-    ok(gotException, name);
+  var gotException = false;
+  try {
+    fn();
+  } catch (ex) {
+    gotException = true;
+  }
+  ok(gotException, name);
 };
 
 
 
 SimpleTest.todo = function(condition, name, diag) {
-    var test = {'result': !!condition, 'name': name, 'diag': diag, todo: true};
-    if (test.result && usesFailurePatterns() &&
-        recordIfMatchesFailurePattern(name, diag)) {
-      
-      
-      
-      
-      test.result = false;
-      
-      name = '[suppressed] ' + name;
-    }
-    var successInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
-    var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
-    SimpleTest._logResult(test, successInfo, failureInfo);
-    SimpleTest._tests.push(test);
+  var test = { result: !!condition, name, diag, todo: true };
+  if (
+    test.result &&
+    usesFailurePatterns() &&
+    recordIfMatchesFailurePattern(name, diag)
+  ) {
+    
+    
+    
+    
+    test.result = false;
+    
+    name = "[suppressed] " + name;
+  }
+  var successInfo = {
+    status: "PASS",
+    expected: "FAIL",
+    message: "TEST-UNEXPECTED-PASS",
+  };
+  var failureInfo = {
+    status: "FAIL",
+    expected: "FAIL",
+    message: "TEST-KNOWN-FAIL",
+  };
+  SimpleTest._logResult(test, successInfo, failureInfo);
+  SimpleTest._tests.push(test);
 };
 
 
@@ -377,20 +455,19 @@ SimpleTest.todo = function(condition, name, diag) {
 
 
 SimpleTest.getTestFileURL = function(path) {
-  var lastSlashIdx = path.lastIndexOf("/") + 1;
-  var filename = path.substr(lastSlashIdx);
   var location = window.location;
   
-  var remotePath = location.pathname.replace(/\/[^\/]+?$/,"");
-  var url = location.origin +
-            remotePath + "/" + path;
+  var remotePath = location.pathname.replace(/\/[^\/]+?$/, "");
+  var url = location.origin + remotePath + "/" + path;
   return url;
 };
 
 SimpleTest._getCurrentTestURL = function() {
-    return parentRunner && parentRunner.currentTestURL ||
-           typeof gTestPath == "string" && gTestPath ||
-           "unknown test url";
+  return (
+    (parentRunner && parentRunner.currentTestURL) ||
+    (typeof gTestPath == "string" && gTestPath) ||
+    "unknown test url"
+  );
 };
 
 SimpleTest._forceLogMessageOutput = false;
@@ -399,207 +476,214 @@ SimpleTest._forceLogMessageOutput = false;
 
 
 SimpleTest.requestCompleteLog = function() {
-    if (!parentRunner || SimpleTest._forceLogMessageOutput) {
-        return;
-    }
+  if (!parentRunner || SimpleTest._forceLogMessageOutput) {
+    return;
+  }
 
-    parentRunner.structuredLogger.deactivateBuffering();
-    SimpleTest._forceLogMessageOutput = true;
+  parentRunner.structuredLogger.deactivateBuffering();
+  SimpleTest._forceLogMessageOutput = true;
 
-    SimpleTest.registerCleanupFunction(function() {
-        parentRunner.structuredLogger.activateBuffering();
-        SimpleTest._forceLogMessageOutput = false;
-    });
+  SimpleTest.registerCleanupFunction(function() {
+    parentRunner.structuredLogger.activateBuffering();
+    SimpleTest._forceLogMessageOutput = false;
+  });
 };
 
-SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
-    var url = SimpleTest._getCurrentTestURL();
-    var result = test.result ? passInfo : failInfo;
-    var diagnostic = test.diag || null;
-    
-    var subtest = test.name ? String(test.name) : null;
-    var isError = !test.result == !test.todo;
+SimpleTest._logResult = function(test, passInfo, failInfo, stack) {
+  var url = SimpleTest._getCurrentTestURL();
+  var result = test.result ? passInfo : failInfo;
+  var diagnostic = test.diag || null;
+  
+  var subtest = test.name ? String(test.name) : null;
+  var isError = !test.result == !test.todo;
 
-    if (parentRunner) {
-        if (!result.status || !result.expected) {
-            if (diagnostic) {
-                parentRunner.structuredLogger.info(diagnostic);
-            }
-            return;
-        }
-
-        if (isError) {
-            parentRunner.addFailedTest(url);
-        }
-
-        parentRunner.structuredLogger.testStatus(url,
-                                                 subtest,
-                                                 result.status,
-                                                 result.expected,
-                                                 diagnostic,
-                                                 stack);
-    } else if (typeof dump === "function") {
-        var diagMessage = test.name + (test.diag ? " - " + test.diag : "");
-        var debugMsg = [result.message, url, diagMessage].join(' | ');
-        dump(debugMsg + "\n");
-    } else {
-        
+  if (parentRunner) {
+    if (!result.status || !result.expected) {
+      if (diagnostic) {
+        parentRunner.structuredLogger.info(diagnostic);
+      }
+      return;
     }
+
+    if (isError) {
+      parentRunner.addFailedTest(url);
+    }
+
+    parentRunner.structuredLogger.testStatus(
+      url,
+      subtest,
+      result.status,
+      result.expected,
+      diagnostic,
+      stack
+    );
+  } else if (typeof dump === "function") {
+    var diagMessage = test.name + (test.diag ? " - " + test.diag : "");
+    var debugMsg = [result.message, url, diagMessage].join(" | ");
+    dump(debugMsg + "\n");
+  } else {
+    
+  }
 };
 
 SimpleTest.info = function(name, message) {
-    var log = message ? name + ' | ' + message : name;
-    if (parentRunner) {
-        parentRunner.structuredLogger.info(log);
+  var log = message ? name + " | " + message : name;
+  if (parentRunner) {
+    parentRunner.structuredLogger.info(log);
+  } else {
+    dump(log + "\n");
+  }
+};
+
+
+
+
+
+SimpleTest.todo_is = function(a, b, name) {
+  var pass = Object.is(a, b);
+  var diag = pass
+    ? repr(a) + " should equal " + repr(b)
+    : "got " + repr(a) + ", expected " + repr(b);
+  SimpleTest.todo(pass, name, diag);
+};
+
+SimpleTest.todo_isnot = function(a, b, name) {
+  var pass = !Object.is(a, b);
+  var diag = pass
+    ? repr(a) + " should not equal " + repr(b)
+    : "didn't expect " + repr(a) + ", but got it";
+  SimpleTest.todo(pass, name, diag);
+};
+
+
+
+
+SimpleTest.report = function() {
+  var passed = 0;
+  var failed = 0;
+  var todo = 0;
+
+  var tallyAndCreateDiv = function(test) {
+    var cls, msg, div;
+    var diag = test.diag ? " - " + test.diag : "";
+    if (test.todo && !test.result) {
+      todo++;
+      cls = "test_todo";
+      msg = "todo | " + test.name + diag;
+    } else if (test.result && !test.todo) {
+      passed++;
+      cls = "test_ok";
+      msg = "passed | " + test.name + diag;
     } else {
-        dump(log + '\n');
+      failed++;
+      cls = "test_not_ok";
+      msg = "failed | " + test.name + diag;
     }
-};
+    div = createEl("div", { class: cls }, msg);
+    return div;
+  };
+  var results = [];
+  for (var d = 0; d < SimpleTest._tests.length; d++) {
+    results.push(tallyAndCreateDiv(SimpleTest._tests[d]));
+  }
 
+  var summary_class =
+    
+    failed != 0 ? "some_fail" : passed == 0 ? "todo_only" : "all_pass";
 
-
-
-
-SimpleTest.todo_is = function (a, b, name) {
-    var pass = Object.is(a, b);
-    var diag = pass ? repr(a) + " should equal " + repr(b)
-                    : "got " + repr(a) + ", expected " + repr(b);
-    SimpleTest.todo(pass, name, diag);
-};
-
-SimpleTest.todo_isnot = function (a, b, name) {
-    var pass = !Object.is(a, b);
-    var diag = pass ? repr(a) + " should not equal " + repr(b)
-                    : "didn't expect " + repr(a) + ", but got it";
-    SimpleTest.todo(pass, name, diag);
-};
-
-
-
-
-
-SimpleTest.report = function () {
-    var passed = 0;
-    var failed = 0;
-    var todo = 0;
-
-    var tallyAndCreateDiv = function (test) {
-            var cls, msg, div;
-            var diag = test.diag ? " - " + test.diag : "";
-            if (test.todo && !test.result) {
-                todo++;
-                cls = "test_todo";
-                msg = "todo | " + test.name + diag;
-            } else if (test.result && !test.todo) {
-                passed++;
-                cls = "test_ok";
-                msg = "passed | " + test.name + diag;
-            } else {
-                failed++;
-                cls = "test_not_ok";
-                msg = "failed | " + test.name + diag;
-            }
-          div = createEl('div', {'class': cls}, msg);
-          return div;
-        };
-    var results = [];
-    for (var d=0; d<SimpleTest._tests.length; d++) {
-        results.push(tallyAndCreateDiv(SimpleTest._tests[d]));
-    }
-
-    var summary_class = failed != 0 ? 'some_fail' :
-                          passed == 0 ? 'todo_only' : 'all_pass';
-
-    var div1 = createEl('div', {'class': 'tests_report'});
-    var div2 = createEl('div', {'class': 'tests_summary ' + summary_class});
-    var div3 = createEl('div', {'class': 'tests_passed'}, 'Passed: ' + passed);
-    var div4 = createEl('div', {'class': 'tests_failed'}, 'Failed: ' + failed);
-    var div5 = createEl('div', {'class': 'tests_todo'}, 'Todo: ' + todo);
-    div2.appendChild(div3);
-    div2.appendChild(div4);
-    div2.appendChild(div5);
-    div1.appendChild(div2);
-    for (var t=0; t<results.length; t++) {
-        
-        div1.appendChild(results[t]);
-    }
-    return div1;
+  var div1 = createEl("div", { class: "tests_report" });
+  var div2 = createEl("div", { class: "tests_summary " + summary_class });
+  var div3 = createEl("div", { class: "tests_passed" }, "Passed: " + passed);
+  var div4 = createEl("div", { class: "tests_failed" }, "Failed: " + failed);
+  var div5 = createEl("div", { class: "tests_todo" }, "Todo: " + todo);
+  div2.appendChild(div3);
+  div2.appendChild(div4);
+  div2.appendChild(div5);
+  div1.appendChild(div2);
+  for (var t = 0; t < results.length; t++) {
+    
+    div1.appendChild(results[t]);
+  }
+  return div1;
 };
 
 
 
 
 SimpleTest.toggle = function(el) {
-    if (computedStyle(el, 'display') == 'block') {
-        el.style.display = 'none';
-    } else {
-        el.style.display = 'block';
-    }
+  if (computedStyle(el, "display") == "block") {
+    el.style.display = "none";
+  } else {
+    el.style.display = "block";
+  }
 };
 
 
 
 
-SimpleTest.toggleByClass = function (cls, evt) {
-    var children = document.getElementsByTagName('div');
-    var elements = [];
-    for (var i=0; i<children.length; i++) {
-        var child = children[i];
-        var clsName = child.className;
-        if (!clsName) {
-            continue;
-        }
-        var classNames = clsName.split(' ');
-        for (var j = 0; j < classNames.length; j++) {
-            if (classNames[j] == cls) {
-                elements.push(child);
-                break;
-            }
-        }
+SimpleTest.toggleByClass = function(cls, evt) {
+  var children = document.getElementsByTagName("div");
+  var elements = [];
+  for (var i = 0; i < children.length; i++) {
+    var child = children[i];
+    var clsName = child.className;
+    if (!clsName) {
+      continue;
     }
-    for (var t=0; t<elements.length; t++) {
-        
-        SimpleTest.toggle(elements[t]);
+    var classNames = clsName.split(" ");
+    for (var j = 0; j < classNames.length; j++) {
+      if (classNames[j] == cls) {
+        elements.push(child);
+        break;
+      }
     }
-    if (evt)
-        evt.preventDefault();
+  }
+  for (var t = 0; t < elements.length; t++) {
+    
+    SimpleTest.toggle(elements[t]);
+  }
+  if (evt) {
+    evt.preventDefault();
+  }
 };
 
 
 
 
 SimpleTest.showReport = function() {
-    var togglePassed = createEl('a', {'href': '#'}, "Toggle passed checks");
-    var toggleFailed = createEl('a', {'href': '#'}, "Toggle failed checks");
-    var toggleTodo = createEl('a',{'href': '#'}, "Toggle todo checks");
-    togglePassed.onclick = partial(SimpleTest.toggleByClass, 'test_ok');
-    toggleFailed.onclick = partial(SimpleTest.toggleByClass, 'test_not_ok');
-    toggleTodo.onclick = partial(SimpleTest.toggleByClass, 'test_todo');
-    var body = document.body;  
-    if (!body) {
-        
-        body = document.getElementsByTagNameNS("http://www.w3.org/1999/xhtml",
-                                               "body")[0];
-    }
-    var firstChild = body.childNodes[0];
-    var addNode;
-    if (firstChild) {
-        addNode = function (el) {
-            body.insertBefore(el, firstChild);
-        };
-    } else {
-        addNode = function (el) {
-            body.appendChild(el)
-        };
-    }
-    addNode(togglePassed);
-    addNode(createEl('span', null, " "));
-    addNode(toggleFailed);
-    addNode(createEl('span', null, " "));
-    addNode(toggleTodo);
-    addNode(SimpleTest.report());
+  var togglePassed = createEl("a", { href: "#" }, "Toggle passed checks");
+  var toggleFailed = createEl("a", { href: "#" }, "Toggle failed checks");
+  var toggleTodo = createEl("a", { href: "#" }, "Toggle todo checks");
+  togglePassed.onclick = partial(SimpleTest.toggleByClass, "test_ok");
+  toggleFailed.onclick = partial(SimpleTest.toggleByClass, "test_not_ok");
+  toggleTodo.onclick = partial(SimpleTest.toggleByClass, "test_todo");
+  var body = document.body; 
+  if (!body) {
     
-    addNode(createEl('hr'));
+    body = document.getElementsByTagNameNS(
+      "http://www.w3.org/1999/xhtml",
+      "body"
+    )[0];
+  }
+  var firstChild = body.childNodes[0];
+  var addNode;
+  if (firstChild) {
+    addNode = function(el) {
+      body.insertBefore(el, firstChild);
+    };
+  } else {
+    addNode = function(el) {
+      body.appendChild(el);
+    };
+  }
+  addNode(togglePassed);
+  addNode(createEl("span", null, " "));
+  addNode(toggleFailed);
+  addNode(createEl("span", null, " "));
+  addNode(toggleTodo);
+  addNode(SimpleTest.report());
+  
+  addNode(createEl("hr"));
 };
 
 
@@ -609,8 +693,8 @@ SimpleTest.showReport = function() {
 
 
 
-SimpleTest.waitForExplicitFinish = function () {
-    SimpleTest._stopOnLoad = false;
+SimpleTest.waitForExplicitFinish = function() {
+  SimpleTest._stopOnLoad = false;
 };
 
 
@@ -621,11 +705,15 @@ SimpleTest.waitForExplicitFinish = function () {
 
 
 
-SimpleTest.requestLongerTimeout = function (factor) {
-    if (parentRunner) {
-        parentRunner.requestLongerTimeout(factor);
-    }
-}
+SimpleTest.requestLongerTimeout = function(factor) {
+  if (parentRunner) {
+    parentRunner.requestLongerTimeout(factor);
+  } else {
+    dump(
+      "[SimpleTest.requestLongerTimeout()] ignoring request, maybe you meant to call the global `requestLongerTimeout` instead?\n"
+    );
+  }
+};
 
 
 
@@ -660,34 +748,45 @@ SimpleTest.requestLongerTimeout = function (factor) {
 
 
 SimpleTest.expectAssertions = function(min, max) {
-    if (parentRunner) {
-        parentRunner.expectAssertions(min, max);
-    }
-}
+  if (parentRunner) {
+    parentRunner.expectAssertions(min, max);
+  }
+};
 
 SimpleTest._flakyTimeoutIsOK = false;
 SimpleTest._originalSetTimeout = window.setTimeout;
 window.setTimeout = function SimpleTest_setTimeoutShim() {
+  
+  if (parentRunner) {
     
-    if (parentRunner) {
-        
-        switch (SimpleTest.harnessParameters.testRoot) {
-        case "browser":
-        case "chrome":
-        case "a11y":
-            break;
-        default:
-            if (!SimpleTest._alreadyFinished && arguments.length > 1 && arguments[1] > 0) {
-                if (SimpleTest._flakyTimeoutIsOK) {
-                    SimpleTest.todo(false, "The author of the test has indicated that flaky timeouts are expected.  Reason: " + SimpleTest._flakyTimeoutReason);
-                } else {
-                    SimpleTest.ok(false, "Test attempted to use a flaky timeout value " + arguments[1]);
-                }
-            }
+    switch (SimpleTest.harnessParameters.testRoot) {
+      case "browser":
+      case "chrome":
+      case "a11y":
+        break;
+      default:
+        if (
+          !SimpleTest._alreadyFinished &&
+          arguments.length > 1 &&
+          arguments[1] > 0
+        ) {
+          if (SimpleTest._flakyTimeoutIsOK) {
+            SimpleTest.todo(
+              false,
+              "The author of the test has indicated that flaky timeouts are expected.  Reason: " +
+                SimpleTest._flakyTimeoutReason
+            );
+          } else {
+            SimpleTest.ok(
+              false,
+              "Test attempted to use a flaky timeout value " + arguments[1]
+            );
+          }
         }
     }
-    return SimpleTest._originalSetTimeout.apply(window, arguments);
-}
+  }
+  return SimpleTest._originalSetTimeout.apply(window, arguments);
+};
 
 
 
@@ -703,12 +802,12 @@ window.setTimeout = function SimpleTest_setTimeoutShim() {
 
 
 
-SimpleTest.requestFlakyTimeout = function (reason) {
-    SimpleTest.is(typeof(reason), "string", "A valid string reason is expected");
-    SimpleTest.isnot(reason, "", "Reason cannot be empty");
-    SimpleTest._flakyTimeoutIsOK = true;
-    SimpleTest._flakyTimeoutReason = reason;
-}
+SimpleTest.requestFlakyTimeout = function(reason) {
+  SimpleTest.is(typeof reason, "string", "A valid string reason is expected");
+  SimpleTest.isnot(reason, "", "Reason cannot be empty");
+  SimpleTest._flakyTimeoutIsOK = true;
+  SimpleTest._flakyTimeoutReason = reason;
+};
 
 SimpleTest._pendingWaitForFocusCount = 0;
 
@@ -718,15 +817,18 @@ SimpleTest._pendingWaitForFocusCount = 0;
 
 
 
-SimpleTest.promiseFocus = function (targetWindow, expectBlankPage)
-{
-    return new Promise(function (resolve, reject) {
-        SimpleTest.waitForFocus(win => {
-            
-            resolve();
-        }, targetWindow, expectBlankPage);
-    });
-}
+SimpleTest.promiseFocus = function(targetWindow, expectBlankPage) {
+  return new Promise(function(resolve, reject) {
+    SimpleTest.waitForFocus(
+      win => {
+        
+        resolve();
+      },
+      targetWindow,
+      expectBlankPage
+    );
+  });
+};
 
 
 
@@ -748,185 +850,220 @@ SimpleTest.promiseFocus = function (targetWindow, expectBlankPage)
 
 
 
-SimpleTest.waitForFocus = function (callback, targetWindow, expectBlankPage) {
+SimpleTest.waitForFocus = function(callback, targetWindow, expectBlankPage) {
+  
+  
+  
+  
+  
+  
+  
+  function waitForFocusInner(targetWin, isChildProcess, expectBlank) {
     
-    
-    
-    
-    
-    
-    function waitForFocusInner(targetWindow, isChildProcess, expectBlankPage)
-    {
-      
 
 
-      var loaded = false, focused = false, finished = false;
+    var loaded = false,
+      focused = false,
+      finished = false;
 
-      function info(msg) {
-          if (!isChildProcess) {
-              SimpleTest.info(msg);
-          }
+    function info(msg) {
+      if (!isChildProcess) {
+        SimpleTest.info(msg);
       }
+    }
 
-      function focusedWindow() {
-          if (isChildProcess) {
-              return Cc["@mozilla.org/focus-manager;1"].
-                      getService(Ci.nsIFocusManager).focusedWindow;
-          }
-          return SpecialPowers.focusedWindow();
-      }
-
-      function getHref(aWindow) {
-          return isChildProcess ? aWindow.location.href :
-                                  SpecialPowers.getPrivilegedProps(aWindow, 'location.href');
-      }
-
-      
-
-      function focusedOrLoaded(event) {
-          try {
-              if (event) {
-                  if (event.type == "load") {
-                      if (expectBlankPage != (event.target.location == "about:blank")) {
-                          return;
-                      }
-
-                      loaded = true;
-                  } else if (event.type == "focus") {
-                      focused = true;
-                  }
-
-                  event.currentTarget.removeEventListener(event.type, focusedOrLoaded, true);
-              }
-
-              if (loaded && focused && !finished) {
-                  finished = true;
-                  if (isChildProcess) {
-                      sendAsyncMessage("WaitForFocus:ChildFocused", {}, null);
-                  } else {
-                      SimpleTest._pendingWaitForFocusCount--;
-                      SimpleTest.executeSoon(function() { callback(targetWindow) });
-                  }
-              }
-          } catch (e) {
-              if (!isChildProcess) {
-                  SimpleTest.ok(false, "Exception caught in focusedOrLoaded: " + e.message +
-                                ", at: " + e.fileName + " (" + e.lineNumber + ")");
-              }
-          }
-      }
-
-      function waitForLoadAndFocusOnWindow(desiredWindow) {
-          
-
-
-
-
-          loaded = expectBlankPage ?
-                     getHref(desiredWindow) == "about:blank" :
-                     getHref(desiredWindow) != "about:blank" &&
-                         desiredWindow.document.readyState == "complete";
-          if (!loaded) {
-              info("must wait for load");
-              desiredWindow.addEventListener("load", focusedOrLoaded, true);
-          }
-
-          var childDesiredWindow = { };
-          if (isChildProcess) {
-              var fm = Cc["@mozilla.org/focus-manager;1"].
-                         getService(Ci.nsIFocusManager);
-              fm.getFocusedElementForWindow(desiredWindow, true, childDesiredWindow);
-              childDesiredWindow = childDesiredWindow.value;
-          } else {
-              childDesiredWindow = SpecialPowers.getFocusedElementForWindow(desiredWindow, true);
-          }
-
-          
-          focused = (focusedWindow() == childDesiredWindow);
-          if (!focused) {
-              info("must wait for focus");
-              childDesiredWindow.addEventListener("focus", focusedOrLoaded, true);
-              if (isChildProcess) {
-                  childDesiredWindow.focus();
-              }
-              else {
-                  SpecialPowers.focus(childDesiredWindow);
-              }
-          }
-
-          focusedOrLoaded(null);
-      }
-
+    function focusedWindow() {
       if (isChildProcess) {
-          
-          addMessageListener("WaitForFocus:FocusChild", function focusChild(msg) {
-              removeMessageListener("WaitForFocus:FocusChild", focusChild);
-              finished = false;
-              waitForLoadAndFocusOnWindow(msg.objects.child);
-          });
+        return Cc["@mozilla.org/focus-manager;1"].getService(Ci.nsIFocusManager)
+          .focusedWindow;
       }
-
-      waitForLoadAndFocusOnWindow(targetWindow);
+      return SpecialPowers.focusedWindow();
     }
 
-    SimpleTest._pendingWaitForFocusCount++;
-    if (!targetWindow) {
-        targetWindow = window;
+    function getHref(aWindow) {
+      return isChildProcess
+        ? aWindow.location.href
+        : SpecialPowers.getPrivilegedProps(aWindow, "location.href");
     }
 
-    expectBlankPage = !!expectBlankPage;
+    
 
-    
-    
-    
-    
-    
-    
-    
-    var c = Object.getOwnPropertyDescriptor(window, 'Components');
-    var Cu, Ci;
-    if (c && c.value && !c.writable) {
-        Cu = Components.utils;
-        Ci = Components.interfaces;
-    } else {
-        Cu = SpecialPowers.Cu;
-        Ci = SpecialPowers.Ci;
-    }
+    function focusedOrLoaded(event) {
+      try {
+        if (event) {
+          if (event.type == "load") {
+            if (expectBlank != (event.target.location == "about:blank")) {
+              return;
+            }
 
-    var browser = null;
-    if (typeof(XULElement) != "undefined" &&
-        targetWindow instanceof XULElement &&
-        targetWindow.localName == "browser") {
-        browser = targetWindow;
-    }
+            loaded = true;
+          } else if (event.type == "focus") {
+            focused = true;
+          }
 
-    var isWrapper = Cu.isCrossProcessWrapper(targetWindow);
-    if (isWrapper) {
-        throw new Error("Can't pass CPOW to SimpleTest.focus as the content window.");
-    }
-
-    if (browser && browser.isRemoteBrowser) {
-        browser.messageManager.addMessageListener("WaitForFocus:ChildFocused", function waitTest(msg) {
-            browser.messageManager.removeMessageListener("WaitForFocus:ChildFocused", waitTest);
-            SimpleTest._pendingWaitForFocusCount--;
-            setTimeout(callback, 0, browser);
-        });
-
-        
-        var frameScript = "data:,(" + waitForFocusInner.toString() +
-                          ")(content, true, " + expectBlankPage + ");";
-        browser.messageManager.loadFrameScript(frameScript, true);
-        browser.focus();
-    }
-    else {
-        
-        
-        if (browser) {
-          targetWindow = browser.contentWindow;
+          event.currentTarget.removeEventListener(
+            event.type,
+            focusedOrLoaded,
+            true
+          );
         }
 
-        waitForFocusInner(targetWindow, false, expectBlankPage);
+        if (loaded && focused && !finished) {
+          finished = true;
+          if (isChildProcess) {
+            sendAsyncMessage("WaitForFocus:ChildFocused", {}, null);
+          } else {
+            SimpleTest._pendingWaitForFocusCount--;
+            SimpleTest.executeSoon(function() {
+              callback(targetWin);
+            });
+          }
+        }
+      } catch (e) {
+        if (!isChildProcess) {
+          SimpleTest.ok(
+            false,
+            "Exception caught in focusedOrLoaded: " +
+              e.message +
+              ", at: " +
+              e.fileName +
+              " (" +
+              e.lineNumber +
+              ")"
+          );
+        }
+      }
     }
+
+    function waitForLoadAndFocusOnWindow(desiredWindow) {
+      
+
+
+
+
+      loaded = expectBlank
+        ? getHref(desiredWindow) == "about:blank"
+        : getHref(desiredWindow) != "about:blank" &&
+          desiredWindow.document.readyState == "complete";
+      if (!loaded) {
+        info("must wait for load");
+        desiredWindow.addEventListener("load", focusedOrLoaded, true);
+      }
+
+      var childDesiredWindow = {};
+      if (isChildProcess) {
+        var fm = Cc["@mozilla.org/focus-manager;1"].getService(
+          Ci.nsIFocusManager
+        );
+        fm.getFocusedElementForWindow(desiredWindow, true, childDesiredWindow);
+        childDesiredWindow = childDesiredWindow.value;
+      } else {
+        childDesiredWindow = SpecialPowers.getFocusedElementForWindow(
+          desiredWindow,
+          true
+        );
+      }
+
+      
+      focused = focusedWindow() == childDesiredWindow;
+      if (!focused) {
+        info("must wait for focus");
+        childDesiredWindow.addEventListener("focus", focusedOrLoaded, true);
+        if (isChildProcess) {
+          childDesiredWindow.focus();
+        } else {
+          SpecialPowers.focus(childDesiredWindow);
+        }
+      }
+
+      focusedOrLoaded(null);
+    }
+
+    if (isChildProcess) {
+      
+      addMessageListener("WaitForFocus:FocusChild", function focusChild(msg) {
+        removeMessageListener("WaitForFocus:FocusChild", focusChild);
+        finished = false;
+        waitForLoadAndFocusOnWindow(msg.objects.child);
+      });
+    }
+
+    waitForLoadAndFocusOnWindow(targetWin);
+  }
+
+  SimpleTest._pendingWaitForFocusCount++;
+  if (!targetWindow) {
+    targetWindow = window;
+  }
+
+  expectBlankPage = !!expectBlankPage;
+
+  
+  
+  
+  
+  
+  
+  
+  var c = Object.getOwnPropertyDescriptor(window, "Components");
+  var Cu, Ci;
+  if (c && c.value && !c.writable) {
+    
+    Cu = Components.utils;
+    
+    Ci = Components.interfaces;
+  } else {
+    Cu = SpecialPowers.Cu;
+    Ci = SpecialPowers.Ci;
+  }
+
+  var browser = null;
+  if (
+    typeof XULElement != "undefined" &&
+    targetWindow instanceof XULElement &&
+    targetWindow.localName == "browser"
+  ) {
+    browser = targetWindow;
+  }
+
+  var isWrapper = Cu.isCrossProcessWrapper(targetWindow);
+  if (isWrapper) {
+    throw new Error(
+      "Can't pass CPOW to SimpleTest.focus as the content window."
+    );
+  }
+
+  if (browser && browser.isRemoteBrowser) {
+    browser.messageManager.addMessageListener(
+      "WaitForFocus:ChildFocused",
+      function waitTest(msg) {
+        browser.messageManager.removeMessageListener(
+          "WaitForFocus:ChildFocused",
+          waitTest
+        );
+        SimpleTest._pendingWaitForFocusCount--;
+        setTimeout(callback, 0, browser);
+      }
+    );
+
+    
+    var frameScript =
+      "data:,(" +
+      waitForFocusInner.toString() +
+      ")(content, true, " +
+      expectBlankPage +
+      ");";
+    browser.messageManager.loadFrameScript(frameScript, true);
+    browser.focus();
+  } else {
+    
+    
+    if (browser) {
+      targetWindow = browser.contentWindow;
+    }
+
+    waitForFocusInner(targetWindow, false, expectBlankPage);
+  }
 };
 
 
@@ -967,105 +1104,142 @@ SimpleTest.waitForFocus = function (callback, targetWindow, expectBlankPage) {
 
 
 
-SimpleTest.waitForClipboard = function(aExpectedStringOrValidatorFn, aSetupFn,
-                                       aSuccessFn, aFailureFn, aFlavor, aTimeout, aExpectFailure) {
-    let promise = SimpleTest.promiseClipboardChange(aExpectedStringOrValidatorFn, aSetupFn,
-                                                    aFlavor, aTimeout, aExpectFailure);
-    promise.then(aSuccessFn).catch(aFailureFn);
-}
+
+SimpleTest.waitForClipboard = function(
+  aExpectedStringOrValidatorFn,
+  aSetupFn,
+  aSuccessFn,
+  aFailureFn,
+  aFlavor,
+  aTimeout,
+  aExpectFailure
+) {
+  let promise = SimpleTest.promiseClipboardChange(
+    aExpectedStringOrValidatorFn,
+    aSetupFn,
+    aFlavor,
+    aTimeout,
+    aExpectFailure
+  );
+  promise.then(aSuccessFn).catch(aFailureFn);
+};
 
 
 
 
-SimpleTest.promiseClipboardChange = async function(aExpectedStringOrValidatorFn, aSetupFn,
-                                                   aFlavor, aTimeout, aExpectFailure) {
-    let requestedFlavor = aFlavor || "text/unicode";
+SimpleTest.promiseClipboardChange = async function(
+  aExpectedStringOrValidatorFn,
+  aSetupFn,
+  aFlavor,
+  aTimeout,
+  aExpectFailure
+) {
+  let requestedFlavor = aFlavor || "text/unicode";
 
+  
+  let initialVal = "waitForClipboard-known-value-" + Math.random();
+  let preExpectedVal = initialVal;
+
+  let inputValidatorFn;
+  if (aExpectFailure) {
     
-    let initialVal = "waitForClipboard-known-value-" + Math.random();
-    let preExpectedVal = initialVal;
+    if (aExpectedStringOrValidatorFn !== null) {
+      SimpleTest.ok(
+        false,
+        "When expecting failure, aExpectedStringOrValidatorFn must be null"
+      );
+    }
 
-    let inputValidatorFn;
-    if (aExpectFailure) {
-        
-        if (aExpectedStringOrValidatorFn !== null) {
-            SimpleTest.ok(false, "When expecting failure, aExpectedStringOrValidatorFn must be null");
-        }
-
-        inputValidatorFn = function(aData) {
-            return aData != initialVal;
-        };
+    inputValidatorFn = function(aData) {
+      return aData != initialVal;
+    };
+    
+  } else if (typeof aExpectedStringOrValidatorFn == "string") {
+    if (aExpectedStringOrValidatorFn.includes("\r")) {
+      throw new Error(
+        "Use function instead of string to compare raw line breakers in clipboard"
+      );
+    }
+    if (requestedFlavor === "text/html" && navigator.platform.includes("Win")) {
+      inputValidatorFn = function(aData) {
+        return (
+          aData.replace(/\r\n?/g, "\n") ===
+          `<html><body>\n<!--StartFragment-->${aExpectedStringOrValidatorFn}<!--EndFragment-->\n</body>\n</html>`
+        );
+      };
     } else {
+      inputValidatorFn = function(aData) {
+        return aData.replace(/\r\n?/g, "\n") === aExpectedStringOrValidatorFn;
+      };
+    }
+  } else {
+    inputValidatorFn = aExpectedStringOrValidatorFn;
+  }
+
+  let maxPolls = aTimeout ? aTimeout / 100 : 50;
+
+  async function putAndVerify(operationFn, validatorFn, flavor) {
+    await operationFn();
+
+    let data;
+    for (let i = 0; i < maxPolls; i++) {
+      data = SpecialPowers.getClipboardData(flavor);
+      if (validatorFn(data)) {
         
-        if (typeof(aExpectedStringOrValidatorFn) == "string") {
-          if (aExpectedStringOrValidatorFn.includes("\r")) {
-            throw new Error("Use function instead of string to compare raw line breakers in clipboard");
-          }
-          if (requestedFlavor === "text/html" && navigator.platform.includes("Win")) {
-            inputValidatorFn = function(aData) {
-              return aData.replace(/\r\n?/g, "\n") ===
-                         `<html><body>\n<!--StartFragment-->${aExpectedStringOrValidatorFn}<!--EndFragment-->\n</body>\n</html>`;
-            };
-          } else {
-            inputValidatorFn = function(aData) {
-              return aData.replace(/\r\n?/g, "\n") === aExpectedStringOrValidatorFn;
-            };
-          }
+        if (preExpectedVal) {
+          preExpectedVal = null;
         } else {
-          inputValidatorFn = aExpectedStringOrValidatorFn;
+          SimpleTest.ok(
+            !aExpectFailure,
+            "Clipboard has the given value: '" + data + "'"
+          );
         }
+
+        return data;
+      }
+
+      
+      await new Promise(resolve => {
+        SimpleTest._originalSetTimeout.apply(window, [resolve, 100]);
+      });
     }
 
-    let maxPolls = aTimeout ? aTimeout / 100 : 50;
-
-    async function putAndVerify(operationFn, validatorFn, flavor) {
-        await operationFn();
-
-        let data;
-        for (let i = 0; i < maxPolls; i++) {
-            data = SpecialPowers.getClipboardData(flavor);
-            if (validatorFn(data)) {
-                
-                if (preExpectedVal) {
-                    preExpectedVal = null;
-                } else {
-                    SimpleTest.ok(!aExpectFailure, "Clipboard has the given value: '" + data + "'");
-                }
-
-                return data;
-            }
-
-            
-            await new Promise(resolve => { SimpleTest._originalSetTimeout.apply(window, [resolve, 100]); });
-        }
-
-        SimpleTest.ok(aExpectFailure, "Timed out while polling clipboard for pasted data, got: " + data);
-        if (!aExpectFailure) {
-          throw "failed";
-        }
+    SimpleTest.ok(
+      aExpectFailure,
+      "Timed out while polling clipboard for pasted data, got: " + data
+    );
+    if (!aExpectFailure) {
+      throw new Error("failed");
     }
+    return data;
+  }
 
-    
-    await putAndVerify(function() { SpecialPowers.clipboardCopyString(preExpectedVal); },
-                       function(aData) { return aData  == preExpectedVal; },
-                       "text/unicode");
+  
+  await putAndVerify(
+    function() {
+      SpecialPowers.clipboardCopyString(preExpectedVal);
+    },
+    function(aData) {
+      return aData == preExpectedVal;
+    },
+    "text/unicode"
+  );
 
-    return await putAndVerify(aSetupFn, inputValidatorFn, requestedFlavor);
-}
-
-
-
-
-
-
-
-
-
-
+  return putAndVerify(aSetupFn, inputValidatorFn, requestedFlavor);
+};
 
 
 
-SimpleTest.waitForCondition = function (aCond, aCallback, aErrorMsg) {
+
+
+
+
+
+
+
+
+
+SimpleTest.waitForCondition = function(aCond, aCallback, aErrorMsg) {
   var tries = 0;
   var interval = setInterval(() => {
     if (tries >= 30) {
@@ -1085,9 +1259,12 @@ SimpleTest.waitForCondition = function (aCond, aCallback, aErrorMsg) {
     }
     tries++;
   }, 100);
-  var moveOn = () => { clearInterval(interval); aCallback(); };
+  var moveOn = () => {
+    clearInterval(interval);
+    aCallback();
+  };
 };
-SimpleTest.promiseWaitForCondition = function (aCond, aErrorMsg) {
+SimpleTest.promiseWaitForCondition = function(aCond, aErrorMsg) {
   return new Promise(resolve => {
     this.waitForCondition(aCond, resolve, aErrorMsg);
   });
@@ -1098,186 +1275,225 @@ SimpleTest.promiseWaitForCondition = function (aCond, aErrorMsg) {
 
 
 SimpleTest.executeSoon = function(aFunc) {
-    if ("SpecialPowers" in window) {
-        return SpecialPowers.executeSoon(aFunc, window);
-    }
-    setTimeout(aFunc, 0);
-    return null;   
+  if ("SpecialPowers" in window) {
+    return SpecialPowers.executeSoon(aFunc, window);
+  }
+  setTimeout(aFunc, 0);
+  return null; 
 };
 
 SimpleTest.registerCleanupFunction = function(aFunc) {
-    SimpleTest._cleanupFunctions.push(aFunc);
+  SimpleTest._cleanupFunctions.push(aFunc);
 };
 
 SimpleTest.registerTimeoutFunction = function(aFunc) {
-    SimpleTest._timeoutFunctions.push(aFunc);
+  SimpleTest._timeoutFunctions.push(aFunc);
 };
 
 SimpleTest.testInChaosMode = function() {
-    if (SimpleTest._inChaosMode) {
-      
-      return;
-    }
-    SpecialPowers.DOMWindowUtils.enterChaosMode();
-    SimpleTest._inChaosMode = true;
+  if (SimpleTest._inChaosMode) {
+    
+    return;
+  }
+  SpecialPowers.DOMWindowUtils.enterChaosMode();
+  SimpleTest._inChaosMode = true;
 };
 
 SimpleTest.timeout = async function() {
-    for (const func of SimpleTest._timeoutFunctions) {
-        await func();
-    }
-    SimpleTest._timeoutFunctions = [];
-}
+  for (const func of SimpleTest._timeoutFunctions) {
+    await func();
+  }
+  SimpleTest._timeoutFunctions = [];
+};
 
 
 
 
 
 SimpleTest.finish = function() {
-    if (SimpleTest._alreadyFinished) {
-        var err = "[SimpleTest.finish()] this test already called finish!";
-        if (parentRunner) {
-            parentRunner.structuredLogger.error(err);
-        } else {
-            dump(err + '\n');
-        }
+  if (SimpleTest._alreadyFinished) {
+    var err = "[SimpleTest.finish()] this test already called finish!";
+    if (parentRunner) {
+      parentRunner.structuredLogger.error(err);
+    } else {
+      dump(err + "\n");
     }
+  }
 
-    if (SimpleTest.expected == 'fail' && SimpleTest.num_failed <= 0) {
-        msg = 'We expected at least one failure';
-        var test = {'result': false, 'name': 'fail-if condition in manifest', 'diag': msg};
-        var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
-        var failureInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
-
-        SimpleTest._logResult(test, successInfo, failureInfo);
-        SimpleTest._tests.push(test);
-    } else if (usesFailurePatterns()) {
-        SimpleTest.expected.forEach(([pat, expected_count], i) => {
-            let count = SimpleTest.num_failed[i];
-            let diag;
-            if (expected_count === null && count == 0) {
-                diag = "expected some failures but got none";
-            } else if (expected_count !== null && expected_count != count) {
-                diag = `expected ${expected_count} failures but got ${count}`;
-            } else {
-                return;
-            }
-            var name = pat ? `failure pattern \`${pat}\` in this test` : "failures in this test";
-            var test = {'result': false, name, diag};
-            var successInfo = {status:"PASS", expected:"PASS", message:"TEST-PASS"};
-            var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
-            SimpleTest._logResult(test, successInfo, failureInfo);
-            SimpleTest._tests.push(test);
-        });
-    }
-
-    SimpleTest._timeoutFunctions = [];
-
-    SimpleTest.testsLength = SimpleTest._tests.length;
-
-    SimpleTest._alreadyFinished = true;
-
-    if (SimpleTest._inChaosMode) {
-        SpecialPowers.DOMWindowUtils.leaveChaosMode();
-        SimpleTest._inChaosMode = false;
-    }
-
-    var afterCleanup = async function() {
-        SpecialPowers.removeFiles();
-
-        if (SpecialPowers.DOMWindowUtils.isTestControllingRefreshes) {
-            SimpleTest.ok(false, "test left refresh driver under test control");
-            SpecialPowers.DOMWindowUtils.restoreNormalRefresh();
-        }
-        if (SimpleTest._expectingUncaughtException) {
-            SimpleTest.ok(false, "expectUncaughtException was called but no uncaught exception was detected!");
-        }
-        if (SimpleTest._pendingWaitForFocusCount != 0) {
-            SimpleTest.is(SimpleTest._pendingWaitForFocusCount, 0,
-                          "[SimpleTest.finish()] waitForFocus() was called a "
-                          + "different number of times from the number of "
-                          + "callbacks run.  Maybe the test terminated "
-                          + "prematurely -- be sure to use "
-                          + "SimpleTest.waitForExplicitFinish().");
-        }
-        if (SimpleTest._tests.length == 0) {
-            SimpleTest.ok(false, "[SimpleTest.finish()] No checks actually run. "
-                               + "(You need to call ok(), is(), or similar "
-                               + "functions at least once.  Make sure you use "
-                               + "SimpleTest.waitForExplicitFinish() if you need "
-                               + "it.)");
-        }
-
-        let workers = await SpecialPowers.registeredServiceWorkers();
-        let promise = null;
-        if (SimpleTest._expectingRegisteredServiceWorker) {
-            if (workers.length === 0) {
-                SimpleTest.ok(false, "This test is expected to leave a service worker registered");
-            }
-        } else {
-            if (workers.length > 0) {
-                SimpleTest.ok(false, "This test left a service worker registered without cleaning it up");
-                for (let worker of workers) {
-                    SimpleTest.ok(false, `Left over worker: ${worker.scriptSpec} (scope: ${worker.scope})`);
-                }
-                promise = SpecialPowers.removeAllServiceWorkerData();
-            }
-        }
-
-        
-        
-        
-        
-        
-        
-        function finish() {
-            if (parentRunner) {
-                
-                parentRunner.testFinished(SimpleTest._tests);
-            }
-
-            if (!parentRunner || parentRunner.showTestReport) {
-                SpecialPowers.flushPermissions(function () {
-                  SpecialPowers.flushPrefEnv(function() {
-                    SimpleTest.showReport();
-                  });
-                });
-            }
-        }
-
-        if (promise) {
-            promise.then(finish);
-        } else {
-            finish();
-        }
-    }
-
-    var executeCleanupFunction = function() {
-        var func = SimpleTest._cleanupFunctions.pop();
-
-        if (!func) {
-            afterCleanup();
-            return;
-        }
-
-        var ret;
-        try {
-            ret = func();
-        } catch (ex) {
-            SimpleTest.ok(false, "Cleanup function threw exception: " + ex);
-        }
-
-        if (ret && ret.constructor.name == "Promise") {
-            ret.then(executeCleanupFunction,
-                     (ex) => SimpleTest.ok(false, "Cleanup promise rejected: " + ex));
-        } else {
-            executeCleanupFunction();
-        }
+  if (SimpleTest.expected == "fail" && SimpleTest.num_failed <= 0) {
+    let msg = "We expected at least one failure";
+    let test = {
+      result: false,
+      name: "fail-if condition in manifest",
+      diag: msg,
+    };
+    let successInfo = {
+      status: "FAIL",
+      expected: "FAIL",
+      message: "TEST-KNOWN-FAIL",
+    };
+    let failureInfo = {
+      status: "PASS",
+      expected: "FAIL",
+      message: "TEST-UNEXPECTED-PASS",
     };
 
-    executeCleanupFunction();
+    SimpleTest._logResult(test, successInfo, failureInfo);
+    SimpleTest._tests.push(test);
+  } else if (usesFailurePatterns()) {
+    SimpleTest.expected.forEach(([pat, expected_count], i) => {
+      let count = SimpleTest.num_failed[i];
+      let diag;
+      if (expected_count === null && count == 0) {
+        diag = "expected some failures but got none";
+      } else if (expected_count !== null && expected_count != count) {
+        diag = `expected ${expected_count} failures but got ${count}`;
+      } else {
+        return;
+      }
+      let name = pat
+        ? `failure pattern \`${pat}\` in this test`
+        : "failures in this test";
+      let test = { result: false, name, diag };
+      let successInfo = {
+        status: "PASS",
+        expected: "PASS",
+        message: "TEST-PASS",
+      };
+      let failureInfo = {
+        status: "FAIL",
+        expected: "PASS",
+        message: "TEST-UNEXPECTED-FAIL",
+      };
+      SimpleTest._logResult(test, successInfo, failureInfo);
+      SimpleTest._tests.push(test);
+    });
+  }
 
-    SpecialPowers.notifyObservers(null, "test-complete");
+  SimpleTest._timeoutFunctions = [];
+
+  SimpleTest.testsLength = SimpleTest._tests.length;
+
+  SimpleTest._alreadyFinished = true;
+
+  if (SimpleTest._inChaosMode) {
+    SpecialPowers.DOMWindowUtils.leaveChaosMode();
+    SimpleTest._inChaosMode = false;
+  }
+
+  var afterCleanup = async function() {
+    SpecialPowers.removeFiles();
+
+    if (SpecialPowers.DOMWindowUtils.isTestControllingRefreshes) {
+      SimpleTest.ok(false, "test left refresh driver under test control");
+      SpecialPowers.DOMWindowUtils.restoreNormalRefresh();
+    }
+    if (SimpleTest._expectingUncaughtException) {
+      SimpleTest.ok(
+        false,
+        "expectUncaughtException was called but no uncaught exception was detected!"
+      );
+    }
+    if (SimpleTest._pendingWaitForFocusCount != 0) {
+      SimpleTest.is(
+        SimpleTest._pendingWaitForFocusCount,
+        0,
+        "[SimpleTest.finish()] waitForFocus() was called a " +
+          "different number of times from the number of " +
+          "callbacks run.  Maybe the test terminated " +
+          "prematurely -- be sure to use " +
+          "SimpleTest.waitForExplicitFinish()."
+      );
+    }
+    if (SimpleTest._tests.length == 0) {
+      SimpleTest.ok(
+        false,
+        "[SimpleTest.finish()] No checks actually run. " +
+          "(You need to call ok(), is(), or similar " +
+          "functions at least once.  Make sure you use " +
+          "SimpleTest.waitForExplicitFinish() if you need " +
+          "it.)"
+      );
+    }
+
+    let workers = await SpecialPowers.registeredServiceWorkers();
+    let promise = null;
+    if (SimpleTest._expectingRegisteredServiceWorker) {
+      if (workers.length === 0) {
+        SimpleTest.ok(
+          false,
+          "This test is expected to leave a service worker registered"
+        );
+      }
+    } else if (workers.length > 0) {
+      SimpleTest.ok(
+        false,
+        "This test left a service worker registered without cleaning it up"
+      );
+      for (let worker of workers) {
+        SimpleTest.ok(
+          false,
+          `Left over worker: ${worker.scriptSpec} (scope: ${worker.scope})`
+        );
+      }
+      promise = SpecialPowers.removeAllServiceWorkerData();
+    }
+
+    
+    
+    
+    
+    
+    
+    function finish() {
+      if (parentRunner) {
+        
+        parentRunner.testFinished(SimpleTest._tests);
+      }
+
+      if (!parentRunner || parentRunner.showTestReport) {
+        SpecialPowers.flushPermissions(function() {
+          SpecialPowers.flushPrefEnv(function() {
+            SimpleTest.showReport();
+          });
+        });
+      }
+    }
+
+    if (promise) {
+      promise.then(finish);
+    } else {
+      finish();
+    }
+  };
+
+  var executeCleanupFunction = function() {
+    var func = SimpleTest._cleanupFunctions.pop();
+
+    if (!func) {
+      afterCleanup();
+      return;
+    }
+
+    var ret;
+    try {
+      ret = func();
+    } catch (ex) {
+      SimpleTest.ok(false, "Cleanup function threw exception: " + ex);
+    }
+
+    if (ret && ret.constructor.name == "Promise") {
+      ret.then(executeCleanupFunction, ex =>
+        SimpleTest.ok(false, "Cleanup promise rejected: " + ex)
+      );
+    } else {
+      executeCleanupFunction();
+    }
+  };
+
+  executeCleanupFunction();
+
+  SpecialPowers.notifyObservers(null, "test-complete");
 };
 
 
@@ -1310,7 +1526,7 @@ SimpleTest.finish = function() {
 
 
 
-SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) {
+SimpleTest.monitorConsole = function(continuation, msgs, forbidUnexpectedMsgs) {
   if (SimpleTest._stopOnLoad) {
     ok(false, "Console monitoring requires use of waitForExplicitFinish.");
   }
@@ -1320,7 +1536,7 @@ SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) 
       if (!(k in msg)) {
         return false;
       }
-      if (pat[k] instanceof RegExp && typeof(msg[k]) === 'string') {
+      if (pat[k] instanceof RegExp && typeof msg[k] === "string") {
         if (!pat[k].test(msg[k])) {
           return false;
         }
@@ -1334,7 +1550,7 @@ SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) 
   var forbiddenMsgs = [];
   var i = 0;
   while (i < msgs.length) {
-    var pat = msgs[i];
+    let pat = msgs[i];
     if ("forbid" in pat) {
       var forbid = pat.forbid;
       delete pat.forbid;
@@ -1351,15 +1567,20 @@ SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) 
   var assertionLabel = JSON.stringify(msgs);
   function listener(msg) {
     if (msg.message === "SENTINEL" && !msg.isScriptError) {
-      is(counter, msgs.length,
-         "monitorConsole | number of messages " + assertionLabel);
+      is(
+        counter,
+        msgs.length,
+        "monitorConsole | number of messages " + assertionLabel
+      );
       SimpleTest.executeSoon(continuation);
       return;
     }
-    for (var pat of forbiddenMsgs) {
+    for (let pat of forbiddenMsgs) {
       if (msgMatches(msg, pat)) {
-        ok(false, "monitorConsole | observed forbidden message " +
-                  JSON.stringify(msg));
+        ok(
+          false,
+          "monitorConsole | observed forbidden message " + JSON.stringify(msg)
+        );
         return;
       }
     }
@@ -1374,14 +1595,22 @@ SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) 
     }
     var matches = msgMatches(msg, msgs[counter]);
     if (forbidUnexpectedMsgs) {
-      ok(matches, "monitorConsole | [" + counter + "] must match " +
-                  JSON.stringify(msg));
+      ok(
+        matches,
+        "monitorConsole | [" + counter + "] must match " + JSON.stringify(msg)
+      );
     } else {
-      info("monitorConsole | [" + counter + "] " +
-           (matches ? "matched " : "did not match ") + JSON.stringify(msg));
+      info(
+        "monitorConsole | [" +
+          counter +
+          "] " +
+          (matches ? "matched " : "did not match ") +
+          JSON.stringify(msg)
+      );
     }
-    if (matches)
+    if (matches) {
       counter++;
+    }
   }
   SpecialPowers.registerConsoleListener(listener);
 };
@@ -1389,7 +1618,7 @@ SimpleTest.monitorConsole = function (continuation, msgs, forbidUnexpectedMsgs) 
 
 
 
-SimpleTest.endMonitorConsole = function () {
+SimpleTest.endMonitorConsole = function() {
   SpecialPowers.postConsoleSentinel();
 };
 
@@ -1401,7 +1630,7 @@ SimpleTest.endMonitorConsole = function () {
 
 
 
-SimpleTest.expectConsoleMessages = function (testfn, msgs, continuation) {
+SimpleTest.expectConsoleMessages = function(testfn, msgs, continuation) {
   SimpleTest.monitorConsole(continuation, msgs);
   testfn();
   SimpleTest.executeSoon(SimpleTest.endMonitorConsole);
@@ -1421,51 +1650,27 @@ SimpleTest.runTestExpectingConsoleMessages = function(testfn, msgs) {
 
 
 
-SimpleTest.expectChildProcessCrash = function () {
-    if (parentRunner) {
-        parentRunner.expectChildProcessCrash();
-    }
+SimpleTest.expectChildProcessCrash = function() {
+  if (parentRunner) {
+    parentRunner.expectChildProcessCrash();
+  }
 };
 
 
 
 
 
-SimpleTest.expectUncaughtException = function (aExpecting) {
-    SimpleTest._expectingUncaughtException = aExpecting === void 0 || !!aExpecting;
+SimpleTest.expectUncaughtException = function(aExpecting) {
+  SimpleTest._expectingUncaughtException =
+    aExpecting === void 0 || !!aExpecting;
 };
 
 
 
 
 
-SimpleTest.isExpectingUncaughtException = function () {
-    return SimpleTest._expectingUncaughtException;
-};
-
-
-
-
-
-
-SimpleTest.ignoreAllUncaughtExceptions = function (aIgnoring) {
-    SimpleTest._ignoringAllUncaughtExceptions = aIgnoring === void 0 || !!aIgnoring;
-};
-
-
-
-
-
-SimpleTest.isIgnoringAllUncaughtExceptions = function () {
-    return SimpleTest._ignoringAllUncaughtExceptions;
-};
-
-
-
-
-
-SimpleTest.expectRegisteredServiceWorker = function () {
-    SimpleTest._expectingRegisteredServiceWorker = true;
+SimpleTest.isExpectingUncaughtException = function() {
+  return SimpleTest._expectingUncaughtException;
 };
 
 
@@ -1473,191 +1678,235 @@ SimpleTest.expectRegisteredServiceWorker = function () {
 
 
 
-SimpleTest.reset = function () {
-    SimpleTest._ignoringAllUncaughtExceptions = false;
-    SimpleTest._expectingUncaughtException = false;
-    SimpleTest._expectingRegisteredServiceWorker = false;
-    SimpleTest._bufferedMessages = [];
+SimpleTest.ignoreAllUncaughtExceptions = function(aIgnoring) {
+  SimpleTest._ignoringAllUncaughtExceptions =
+    aIgnoring === void 0 || !!aIgnoring;
+};
+
+
+
+
+
+SimpleTest.isIgnoringAllUncaughtExceptions = function() {
+  return SimpleTest._ignoringAllUncaughtExceptions;
+};
+
+
+
+
+
+SimpleTest.expectRegisteredServiceWorker = function() {
+  SimpleTest._expectingRegisteredServiceWorker = true;
+};
+
+
+
+
+
+
+SimpleTest.reset = function() {
+  SimpleTest._ignoringAllUncaughtExceptions = false;
+  SimpleTest._expectingUncaughtException = false;
+  SimpleTest._expectingRegisteredServiceWorker = false;
+  SimpleTest._bufferedMessages = [];
 };
 
 if (isPrimaryTestWindow) {
-    addLoadEvent(function() {
-        if (SimpleTest._stopOnLoad) {
-            SimpleTest.finish();
-        }
-    });
+  addLoadEvent(function() {
+    if (SimpleTest._stopOnLoad) {
+      SimpleTest.finish();
+    }
+  });
 }
 
 
 
-
-SimpleTest.DNE = {dne: 'Does not exist'};
+SimpleTest.DNE = { dne: "Does not exist" };
 SimpleTest.LF = "\r\n";
 
+SimpleTest._deepCheck = function(e1, e2, stack, seen) {
+  var ok = false;
+  if (Object.is(e1, e2)) {
+    
+    ok = true;
+  } else if (
+    typeof e1 != "object" ||
+    typeof e2 != "object" ||
+    e1 === null ||
+    e2 === null
+  ) {
+    
+    ok = false;
+  } else if (e1 == SimpleTest.DNE || e2 == SimpleTest.DNE) {
+    ok = false;
+  } else if (SimpleTest.isa(e1, "Array") && SimpleTest.isa(e2, "Array")) {
+    ok = SimpleTest._eqArray(e1, e2, stack, seen);
+  } else {
+    ok = SimpleTest._eqAssoc(e1, e2, stack, seen);
+  }
+  return ok;
+};
 
-SimpleTest._deepCheck = function (e1, e2, stack, seen) {
-    var ok = false;
-    if (Object.is(e1, e2)) {
-        
-        ok = true;
-    } else if (typeof e1 != "object" || typeof e2 != "object" || e1 === null || e2 === null) {
-        
-        ok = false;
-    } else if (e1 == SimpleTest.DNE || e2 == SimpleTest.DNE) {
-        ok = false;
-    } else if (SimpleTest.isa(e1, 'Array') && SimpleTest.isa(e2, 'Array')) {
-        ok = SimpleTest._eqArray(e1, e2, stack, seen);
+SimpleTest._eqArray = function(a1, a2, stack, seen) {
+  
+  if (a1 == a2) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  for (var j = 0; j < seen.length; j++) {
+    if (seen[j][0] == a1) {
+      return seen[j][1] == a2;
+    }
+  }
+
+  
+  
+  seen.push([a1, a2]);
+
+  var ok = true;
+  
+  
+  var max = Math.max(a1.length, a2.length);
+  if (max == 0) {
+    return SimpleTest._eqAssoc(a1, a2, stack, seen);
+  }
+  for (var i = 0; i < max; i++) {
+    var e1 = i < a1.length ? a1[i] : SimpleTest.DNE;
+    var e2 = i < a2.length ? a2[i] : SimpleTest.DNE;
+    stack.push({ type: "Array", idx: i, vals: [e1, e2] });
+    ok = SimpleTest._deepCheck(e1, e2, stack, seen);
+    if (ok) {
+      stack.pop();
     } else {
-        ok = SimpleTest._eqAssoc(e1, e2, stack, seen);
+      break;
     }
-    return ok;
+  }
+  return ok;
 };
 
-SimpleTest._eqArray = function (a1, a2, stack, seen) {
-    
-    if (a1 == a2) return true;
+SimpleTest._eqAssoc = function(o1, o2, stack, seen) {
+  
+  if (o1 == o2) {
+    return true;
+  }
 
-    
-    
-    
-    
-    
-    
-    for (var j = 0; j < seen.length; j++) {
-        if (seen[j][0] == a1) {
-            return seen[j][1] == a2;
-        }
+  
+  
+  
+  
+  
+  
+  seen = seen.slice(0);
+  for (let j = 0; j < seen.length; j++) {
+    if (seen[j][0] == o1) {
+      return seen[j][1] == o2;
     }
+  }
 
-    
-    
-    seen.push([ a1, a2 ]);
+  
+  
+  seen.push([o1, o2]);
 
-    var ok = true;
-    
-    
-    var max = Math.max(a1.length, a2.length);
-    if (max == 0) return SimpleTest._eqAssoc(a1, a2, stack, seen);
-    for (var i = 0; i < max; i++) {
-        var e1 = i < a1.length ? a1[i] : SimpleTest.DNE;
-        var e2 = i < a2.length ? a2[i] : SimpleTest.DNE;
-        stack.push({ type: 'Array', idx: i, vals: [e1, e2] });
-        ok = SimpleTest._deepCheck(e1, e2, stack, seen);
-        if (ok) {
-            stack.pop();
-        } else {
-            break;
-        }
-    }
-    return ok;
-};
+  
 
-SimpleTest._eqAssoc = function (o1, o2, stack, seen) {
-    
-    if (o1 == o2) return true;
-
-    
-    
-    
-    
-    
-    
-    seen = seen.slice(0);
-    for (var j = 0; j < seen.length; j++) {
-        if (seen[j][0] == o1) {
-            return seen[j][1] == o2;
-        }
-    }
-
-    
-    
-    seen.push([ o1, o2 ]);
-
-    
-
-    var ok = true;
-    
-    var o1Size = 0; for (var i in o1) o1Size++;
-    var o2Size = 0; for (var i in o2) o2Size++;
-    var bigger = o1Size > o2Size ? o1 : o2;
-    for (var i in bigger) {
-        var e1 = i in o1 ? o1[i] : SimpleTest.DNE;
-        var e2 = i in o2 ? o2[i] : SimpleTest.DNE;
-        stack.push({ type: 'Object', idx: i, vals: [e1, e2] });
-        ok = SimpleTest._deepCheck(e1, e2, stack, seen)
-        if (ok) {
-            stack.pop();
-        } else {
-            break;
-        }
-    }
-    return ok;
-};
-
-SimpleTest._formatStack = function (stack) {
-    var variable = '$Foo';
-    for (var i = 0; i < stack.length; i++) {
-        var entry = stack[i];
-        var type = entry['type'];
-        var idx = entry['idx'];
-        if (idx != null) {
-            if (type == 'Array') {
-                
-                variable += '[' + idx + ']';
-            } else {
-                
-                idx = idx.replace("'", "\\'");
-                variable += "['" + idx + "']";
-            }
-        }
-    }
-
-    var vals = stack[stack.length-1]['vals'].slice(0, 2);
-    var vars = [
-        variable.replace('$Foo',     'got'),
-        variable.replace('$Foo',     'expected')
-    ];
-
-    var out = "Structures begin differing at:" + SimpleTest.LF;
-    for (var i = 0; i < vals.length; i++) {
-        var val = vals[i];
-        if (val === SimpleTest.DNE) {
-            val = "Does not exist";
-        } else {
-            val = repr(val);
-        }
-        out += vars[i] + ' = ' + val + SimpleTest.LF;
-    }
-
-    return '    ' + out;
-};
-
-
-SimpleTest.isDeeply = function (it, as, name) {
-    var stack = [{ vals: [it, as] }];
-    var seen = [];
-    if ( SimpleTest._deepCheck(it, as, stack, seen)) {
-        SimpleTest.record(true, name);
+  var ok = true;
+  
+  var o1Size = 0;
+  
+  for (let i in o1) {
+    o1Size++;
+  }
+  var o2Size = 0;
+  
+  for (let i in o2) {
+    o2Size++;
+  }
+  var bigger = o1Size > o2Size ? o1 : o2;
+  for (let i in bigger) {
+    var e1 = i in o1 ? o1[i] : SimpleTest.DNE;
+    var e2 = i in o2 ? o2[i] : SimpleTest.DNE;
+    stack.push({ type: "Object", idx: i, vals: [e1, e2] });
+    ok = SimpleTest._deepCheck(e1, e2, stack, seen);
+    if (ok) {
+      stack.pop();
     } else {
-        SimpleTest.record(false, name, SimpleTest._formatStack(stack));
+      break;
     }
+  }
+  return ok;
 };
 
-SimpleTest.typeOf = function (object) {
-    var c = Object.prototype.toString.apply(object);
-    var name = c.substring(8, c.length - 1);
-    if (name != 'Object') return name;
-    
-    
-    if (/function ([^(\s]+)/.test(Function.toString.call(object.constructor))) {
-        return RegExp.$1;
+SimpleTest._formatStack = function(stack) {
+  var variable = "$Foo";
+  for (let i = 0; i < stack.length; i++) {
+    var entry = stack[i];
+    var type = entry.type;
+    var idx = entry.idx;
+    if (idx != null) {
+      if (type == "Array") {
+        
+        variable += "[" + idx + "]";
+      } else {
+        
+        idx = idx.replace("'", "\\'");
+        variable += "['" + idx + "']";
+      }
     }
-    
+  }
+
+  var vals = stack[stack.length - 1].vals.slice(0, 2);
+  var vars = [
+    variable.replace("$Foo", "got"),
+    variable.replace("$Foo", "expected"),
+  ];
+
+  var out = "Structures begin differing at:" + SimpleTest.LF;
+  for (let i = 0; i < vals.length; i++) {
+    var val = vals[i];
+    if (val === SimpleTest.DNE) {
+      val = "Does not exist";
+    } else {
+      val = repr(val);
+    }
+    out += vars[i] + " = " + val + SimpleTest.LF;
+  }
+
+  return "    " + out;
+};
+
+SimpleTest.isDeeply = function(it, as, name) {
+  var stack = [{ vals: [it, as] }];
+  var seen = [];
+  if (SimpleTest._deepCheck(it, as, stack, seen)) {
+    SimpleTest.record(true, name);
+  } else {
+    SimpleTest.record(false, name, SimpleTest._formatStack(stack));
+  }
+};
+
+SimpleTest.typeOf = function(object) {
+  var c = Object.prototype.toString.apply(object);
+  var name = c.substring(8, c.length - 1);
+  if (name != "Object") {
     return name;
+  }
+  
+  
+  if (/function ([^(\s]+)/.test(Function.toString.call(object.constructor))) {
+    return RegExp.$1;
+  }
+  
+  return name;
 };
 
-SimpleTest.isa = function (object, clas) {
-    return SimpleTest.typeOf(object) == clas;
+SimpleTest.isa = function(object, clas) {
+  return SimpleTest.typeOf(object) == clas;
 };
 
 
@@ -1673,53 +1922,58 @@ var isDeeply = SimpleTest.isDeeply;
 var info = SimpleTest.info;
 
 var gOldOnError = window.onerror;
-window.onerror = function simpletestOnerror(errorMsg, url, lineNumber,
-                                            columnNumber, originalException) {
+window.onerror = function simpletestOnerror(
+  errorMsg,
+  url,
+  lineNumber,
+  columnNumber,
+  originalException
+) {
+  
+  
+  
+  
+  
+  
+  var isExpected = !!SimpleTest._expectingUncaughtException;
+  var message = (isExpected ? "expected " : "") + "uncaught exception";
+  var error = errorMsg + " at ";
+  try {
+    error += originalException.stack;
+  } catch (e) {
     
+    error += url + ":" + lineNumber + ":" + columnNumber;
+  }
+  if (!SimpleTest._ignoringAllUncaughtExceptions) {
     
-    
-    
-    
-    
-    var isExpected = !!SimpleTest._expectingUncaughtException;
-    var message = (isExpected ? "expected " : "") + "uncaught exception";
-    var error = errorMsg + " at ";
+    if (!SimpleTest._alreadyFinished) {
+      SimpleTest.record(isExpected, message, error);
+    }
+    SimpleTest._expectingUncaughtException = false;
+  } else {
+    SimpleTest.todo(false, message + ": " + error);
+  }
+  
+
+  
+  if (gOldOnError) {
     try {
-        error += originalException.stack;
+      
+      gOldOnError(errorMsg, url, lineNumber);
     } catch (e) {
-        
-        error += url + ":" + lineNumber + ":" + columnNumber;
+      
+      SimpleTest.info("Exception thrown by gOldOnError(): " + e);
+      
+      if (e.stack) {
+        SimpleTest.info("JavaScript error stack:\n" + e.stack);
+      }
     }
-    if (!SimpleTest._ignoringAllUncaughtExceptions) {
-        
-        if (!SimpleTest._alreadyFinished) {
-            SimpleTest.record(isExpected, message, error);
-        }
-        SimpleTest._expectingUncaughtException = false;
-    } else {
-        SimpleTest.todo(false, message + ": " + error);
-    }
-    
+  }
 
+  if (!SimpleTest._stopOnLoad && !isExpected && !SimpleTest._alreadyFinished) {
     
-    if (gOldOnError) {
-        try {
-            
-            gOldOnError(errorMsg, url, lineNumber);
-        } catch (e) {
-            
-            SimpleTest.info("Exception thrown by gOldOnError(): " + e);
-            
-            if (e.stack) {
-                SimpleTest.info("JavaScript error stack:\n" + e.stack);
-            }
-        }
-    }
-
-    if (!SimpleTest._stopOnLoad && !isExpected && !SimpleTest._alreadyFinished) {
-        
-        SimpleTest.executeSoon(SimpleTest.finish);
-    }
+    SimpleTest.executeSoon(SimpleTest.finish);
+  }
 };
 
 
@@ -1731,25 +1985,30 @@ window.onerror = function simpletestOnerror(errorMsg, url, lineNumber,
 
 var gAndroidSdk = null;
 function getAndroidSdk() {
-    if (gAndroidSdk === null) {
-        var iframe = document.documentElement.appendChild(document.createElement("iframe"));
-        iframe.style.display = "none";
-        var nav = iframe.contentWindow.navigator;
-        if (!nav.userAgent.includes("Mobile") &&
-            !nav.userAgent.includes("Tablet")) {
-            gAndroidSdk = -1;
-        } else {
-            
-            
-            var versionString = nav.userAgent.includes("Android") ?
-                                'version' : 'sdk_version';
-            gAndroidSdk = SpecialPowers.Cc['@mozilla.org/system-info;1']
-                                       .getService(SpecialPowers.Ci.nsIPropertyBag2)
-                                       .getProperty(versionString);
-        }
-        document.documentElement.removeChild(iframe);
+  if (gAndroidSdk === null) {
+    var iframe = document.documentElement.appendChild(
+      document.createElement("iframe")
+    );
+    iframe.style.display = "none";
+    var nav = iframe.contentWindow.navigator;
+    if (
+      !nav.userAgent.includes("Mobile") &&
+      !nav.userAgent.includes("Tablet")
+    ) {
+      gAndroidSdk = -1;
+    } else {
+      
+      
+      var versionString = nav.userAgent.includes("Android")
+        ? "version"
+        : "sdk_version";
+      gAndroidSdk = SpecialPowers.Cc["@mozilla.org/system-info;1"]
+        .getService(SpecialPowers.Ci.nsIPropertyBag2)
+        .getProperty(versionString);
     }
-    return gAndroidSdk;
+    document.documentElement.removeChild(iframe);
+  }
+  return gAndroidSdk;
 }
 
 
@@ -1758,17 +2017,19 @@ function getAndroidSdk() {
 
 
 
-var add_task = (function () {
+var add_task = (function() {
   
   var task_list = [];
   var run_only_this_task = null;
 
   function isGenerator(value) {
-    return value && typeof value === "object" && typeof value.next === "function";
+    return (
+      value && typeof value === "object" && typeof value.next === "function"
+    );
   }
 
   
-  return function (generatorFunction) {
+  return function(generatorFunction) {
     if (task_list.length === 0) {
       
       
@@ -1787,10 +2048,12 @@ var add_task = (function () {
         
         
         
-        if (typeof window !== "undefined" &&
-            typeof HTMLDocument !== "undefined" &&
-            window.document instanceof HTMLDocument &&
-            window.document.readyState !== "complete") {
+        if (
+          typeof window !== "undefined" &&
+          typeof HTMLDocument !== "undefined" &&
+          window.document instanceof HTMLDocument &&
+          window.document.readyState !== "complete"
+        ) {
           setTimeout(nextTick);
           return;
         }
@@ -1816,7 +2079,10 @@ var add_task = (function () {
           try {
             for (var task of task_list) {
               var name = task.name || "";
-              if (task.__skipMe || (run_only_this_task && task != run_only_this_task)) {
+              if (
+                task.__skipMe ||
+                (run_only_this_task && task != run_only_this_task)
+              ) {
                 skipTask(name);
                 continue;
               }
@@ -1829,10 +2095,19 @@ var add_task = (function () {
             }
           } catch (ex) {
             try {
-              SimpleTest.record(false, "" + ex, "Should not throw any errors", ex.stack);
+              SimpleTest.record(
+                false,
+                "" + ex,
+                "Should not throw any errors",
+                ex.stack
+              );
             } catch (ex2) {
-              SimpleTest.record(false, "(The exception cannot be converted to string.)",
-                 "Should not throw any errors", ex.stack);
+              SimpleTest.record(
+                false,
+                "(The exception cannot be converted to string.)",
+                "Should not throw any errors",
+                ex.stack
+              );
             }
           }
           
@@ -1840,15 +2115,14 @@ var add_task = (function () {
         })();
       });
     }
-    generatorFunction.skip = () => generatorFunction.__skipMe = true;
-    generatorFunction.only = () => run_only_this_task = generatorFunction;
+    generatorFunction.skip = () => (generatorFunction.__skipMe = true);
+    generatorFunction.only = () => (run_only_this_task = generatorFunction);
     
     
     task_list.push(generatorFunction);
     return generatorFunction;
   };
 })();
-
 
 
 
