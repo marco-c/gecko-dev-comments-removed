@@ -692,7 +692,7 @@ impl SSABuilder {
     ) -> Option<(Block, SSABlock, Inst)> {
         match func.dfg.analyze_branch(jump_inst) {
             BranchInfo::NotABranch => {
-                panic!("you have declared a non-branch instruction as a predecessor to an block");
+                panic!("you have declared a non-branch instruction as a predecessor to a block");
             }
             
             

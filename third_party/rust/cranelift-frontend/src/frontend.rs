@@ -1,7 +1,6 @@
 
 use crate::ssa::{SSABlock, SSABuilder, SideEffects};
 use crate::variable::Variable;
-use alloc::vec::Vec;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::entity::{EntitySet, SecondaryMap};
 use cranelift_codegen::ir;
@@ -627,7 +626,14 @@ impl<'a> FunctionBuilder<'a> {
     }
 
     
-    pub fn emit_small_memcpy(
+    
+    
+    
+    
+    
+    
+    
+    pub fn emit_small_memory_copy(
         &mut self,
         config: TargetFrontendConfig,
         dest: Value,
@@ -635,6 +641,7 @@ impl<'a> FunctionBuilder<'a> {
         size: u64,
         dest_align: u8,
         src_align: u8,
+        non_overlapping: bool,
     ) {
         
         const THRESHOLD: u64 = 4;
@@ -663,16 +670,27 @@ impl<'a> FunctionBuilder<'a> {
 
         if load_and_store_amount > THRESHOLD {
             let size_value = self.ins().iconst(config.pointer_type(), size as i64);
-            self.call_memcpy(config, dest, src, size_value);
+            if non_overlapping {
+                self.call_memcpy(config, dest, src, size_value);
+            } else {
+                self.call_memmove(config, dest, src, size_value);
+            }
             return;
         }
 
         let mut flags = MemFlags::new();
         flags.set_aligned();
 
-        for i in 0..load_and_store_amount {
-            let offset = (access_size * i) as i32;
-            let value = self.ins().load(int_type, flags, src, offset);
+        
+        
+        let registers: smallvec::SmallVec<[_; THRESHOLD as usize]> = (0..load_and_store_amount)
+            .map(|i| {
+                let offset = (access_size * i) as i32;
+                (self.ins().load(int_type, flags, src, offset), offset)
+            })
+            .collect();
+
+        for (value, offset) in registers {
             self.ins().store(flags, value, dest, offset);
         }
     }
@@ -797,55 +815,6 @@ impl<'a> FunctionBuilder<'a> {
         });
 
         self.ins().call(libc_memmove, &[dest, source, size]);
-    }
-
-    
-    pub fn emit_small_memmove(
-        &mut self,
-        config: TargetFrontendConfig,
-        dest: Value,
-        src: Value,
-        size: u64,
-        dest_align: u8,
-        src_align: u8,
-    ) {
-        
-        const THRESHOLD: u64 = 4;
-
-        let access_size = greatest_divisible_power_of_two(size);
-        assert!(
-            access_size.is_power_of_two(),
-            "`size` is not a power of two"
-        );
-        assert!(
-            access_size >= u64::from(::core::cmp::min(src_align, dest_align)),
-            "`size` is smaller than `dest` and `src`'s alignment value."
-        );
-        let load_and_store_amount = size / access_size;
-
-        if load_and_store_amount > THRESHOLD {
-            let size_value = self.ins().iconst(config.pointer_type(), size as i64);
-            self.call_memmove(config, dest, src, size_value);
-            return;
-        }
-
-        let mut flags = MemFlags::new();
-        flags.set_aligned();
-
-        
-        let registers: Vec<_> = (0..load_and_store_amount)
-            .map(|i| {
-                let offset = (access_size * i) as i32;
-                (
-                    self.ins().load(config.pointer_type(), flags, src, offset),
-                    offset,
-                )
-            })
-            .collect();
-
-        for (value, offset) in registers {
-            self.ins().store(flags, value, dest, offset);
-        }
     }
 }
 
@@ -1104,7 +1073,7 @@ block0:
             let src = builder.use_var(x);
             let dest = builder.use_var(y);
             let size = 8;
-            builder.emit_small_memcpy(target.frontend_config(), dest, src, size, 8, 8);
+            builder.emit_small_memory_copy(target.frontend_config(), dest, src, size, 8, 8, true);
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
@@ -1161,7 +1130,7 @@ block0:
             let src = builder.use_var(x);
             let dest = builder.use_var(y);
             let size = 8192;
-            builder.emit_small_memcpy(target.frontend_config(), dest, src, size, 8, 8);
+            builder.emit_small_memory_copy(target.frontend_config(), dest, src, size, 8, 8, true);
             builder.ins().return_(&[dest]);
 
             builder.seal_all_blocks();
