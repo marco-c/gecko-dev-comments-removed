@@ -32,7 +32,9 @@ class Virtualenv(object):
 
     @property
     def exists(self):
-        return os.path.isdir(self.path)
+        
+        
+        return os.path.isdir(self.path) and os.path.isdir(self.lib_path)
 
     @property
     def broken_link(self):
