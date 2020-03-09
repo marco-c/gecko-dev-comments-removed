@@ -85,10 +85,19 @@ class TimeInputType : public DateTimeInputTypeBase {
                              mozilla::Decimal& aResultValue) const override;
   bool ConvertNumberToString(mozilla::Decimal aValue,
                              nsAString& aResultString) const override;
+  bool IsRangeOverflow() const override;
+  bool IsRangeUnderflow() const override;
+  nsresult GetRangeOverflowMessage(nsAString& aMessage) override;
+  nsresult GetRangeUnderflowMessage(nsAString& aMessage) override;
 
  private:
   explicit TimeInputType(mozilla::dom::HTMLInputElement* aInputElement)
       : DateTimeInputTypeBase(aInputElement) {}
+
+  
+  bool HasReversedRange() const;
+  bool IsReversedRangeUnderflowAndOverflow() const;
+  nsresult GetReversedRangeUnderflowAndOverflowMessage(nsAString& aMessage);
 };
 
 
