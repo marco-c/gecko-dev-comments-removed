@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2016 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmValidate.h"
 
@@ -40,7 +40,7 @@ using mozilla::IsUtf8;
 using mozilla::MakeSpan;
 using mozilla::Unused;
 
-// Decoder implementation.
+
 
 bool Decoder::failf(const char* msg, ...) {
   va_list ap;
@@ -100,17 +100,17 @@ bool Decoder::startSection(SectionId id, ModuleEnvironment* env,
                            MaybeSectionRange* range, const char* sectionName) {
   MOZ_ASSERT(!*range);
 
-  // Record state at beginning of section to allow rewinding to this point
-  // if, after skipping through several custom sections, we don't find the
-  // section 'id'.
+  
+  
+  
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength = env->customSections.length();
 
-  // Maintain a pointer to the current section that gets updated as custom
-  // sections are skipped.
+  
+  
   const uint8_t* currentSectionStart = cur_;
 
-  // Only start a section with 'id', skipping any custom sections before it.
+  
 
   uint8_t idValue;
   if (!readFixedU8(&idValue)) {
@@ -122,25 +122,25 @@ bool Decoder::startSection(SectionId id, ModuleEnvironment* env,
       goto rewind;
     }
 
-    // Rewind to the beginning of the current section since this is what
-    // skipCustomSection() assumes.
+    
+    
     cur_ = currentSectionStart;
     if (!skipCustomSection(env)) {
       return false;
     }
 
-    // Having successfully skipped a custom section, consider the next
-    // section.
+    
+    
     currentSectionStart = cur_;
     if (!readFixedU8(&idValue)) {
       goto rewind;
     }
   }
 
-  // Don't check the size since the range of bytes being decoded might not
-  // contain the section body. (This is currently the case when streaming: the
-  // code section header is decoded with the module environment bytes, the
-  // body of the code section is streamed in separately.)
+  
+  
+  
+  
 
   uint32_t size;
   if (!readVarU32(&size)) {
@@ -175,16 +175,16 @@ bool Decoder::finishSection(const SectionRange& range,
 bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
                                  ModuleEnvironment* env,
                                  MaybeSectionRange* range) {
-  // Record state at beginning of section to allow rewinding to this point
-  // if, after skipping through several custom sections, we don't find the
-  // section 'id'.
+  
+  
+  
   const uint8_t* const initialCur = cur_;
   const size_t initialCustomSectionsLength = env->customSections.length();
 
   while (true) {
-    // Try to start a custom section. If we can't, rewind to the beginning
-    // since we may have skipped several custom sections already looking for
-    // 'expected'.
+    
+    
+    
     if (!startSection(SectionId::Custom, env, range, "custom")) {
       return false;
     }
@@ -211,22 +211,22 @@ bool Decoder::startCustomSection(const char* expected, size_t expectedLength,
 
     sec.payloadLength = payloadEnd - sec.payloadOffset;
 
-    // Now that we have a valid custom section, record its offsets in the
-    // metadata which can be queried by the user via Module.customSections.
-    // Note: after an entry is appended, it may be popped if this loop or
-    // the loop in startSection needs to rewind.
+    
+    
+    
+    
     if (!env->customSections.append(sec)) {
       return false;
     }
 
-    // If this is the expected custom section, we're done.
+    
     if (!expected || (expectedLength == sec.nameLength &&
                       !memcmp(cur_, expected, sec.nameLength))) {
       cur_ += sec.nameLength;
       return true;
     }
 
-    // Otherwise, blindly skip the custom section and keep looking.
+    
     skipAndFinishCustomSection(**range);
     range->reset();
   }
@@ -265,7 +265,7 @@ void Decoder::finishCustomSection(const char* name, const SectionRange& range) {
     return;
   }
 
-  // Nothing to do! (c.f. skipAndFinishCustomSection())
+  
 }
 
 void Decoder::skipAndFinishCustomSection(const SectionRange& range) {
@@ -350,7 +350,7 @@ bool Decoder::skipNameSubsection() {
   return true;
 }
 
-// Misc helpers.
+
 
 bool wasm::EncodeLocalEntries(Encoder& e, const ValTypeVector& locals) {
   if (locals.length() > MaxLocals) {
@@ -445,7 +445,7 @@ bool wasm::DecodeValidatedLocalEntries(Decoder& d, ValTypeVector* locals) {
   return true;
 }
 
-// Function body validation.
+
 
 class NothingVector {
   Nothing unused_;
@@ -569,7 +569,7 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
 #endif
       case uint16_t(Op::SelectNumeric): {
         StackType unused;
-        CHECK(iter.readSelect(/*typed*/ false, &unused, &nothing, &nothing,
+        CHECK(iter.readSelect( false, &unused, &nothing, &nothing,
                               &nothing));
       }
       case uint16_t(Op::SelectTyped): {
@@ -577,7 +577,7 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
           return iter.unrecognizedOpcode(&op);
         }
         StackType unused;
-        CHECK(iter.readSelect(/*typed*/ true, &unused, &nothing, &nothing,
+        CHECK(iter.readSelect( true, &unused, &nothing, &nothing,
                               &nothing));
       }
       case uint16_t(Op::Block):
@@ -858,30 +858,30 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             CHECK(iter.readConversion(ValType::F64, ValType::I64, &nothing));
           case uint32_t(MiscOp::MemCopy): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
 #endif
             uint32_t unusedDestMemIndex;
             uint32_t unusedSrcMemIndex;
-            CHECK(iter.readMemOrTableCopy(/*isMem=*/true, &unusedDestMemIndex,
+            CHECK(iter.readMemOrTableCopy(true, &unusedDestMemIndex,
                                           &nothing, &unusedSrcMemIndex,
                                           &nothing, &nothing));
           }
           case uint32_t(MiscOp::DataDrop): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
 #endif
             uint32_t unusedSegIndex;
-            CHECK(iter.readDataOrElemDrop(/*isData=*/true, &unusedSegIndex));
+            CHECK(iter.readDataOrElemDrop(true, &unusedSegIndex));
           }
           case uint32_t(MiscOp::MemFill):
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
@@ -889,20 +889,20 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             CHECK(iter.readMemFill(&nothing, &nothing, &nothing));
           case uint32_t(MiscOp::MemInit): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
 #endif
             uint32_t unusedSegIndex;
             uint32_t unusedTableIndex;
-            CHECK(iter.readMemOrTableInit(/*isMem=*/true, &unusedSegIndex,
+            CHECK(iter.readMemOrTableInit(true, &unusedSegIndex,
                                           &unusedTableIndex, &nothing, &nothing,
                                           &nothing));
           }
           case uint32_t(MiscOp::TableCopy): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
@@ -910,29 +910,29 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             uint32_t unusedDestTableIndex;
             uint32_t unusedSrcTableIndex;
             CHECK(iter.readMemOrTableCopy(
-                /*isMem=*/false, &unusedDestTableIndex, &nothing,
+                false, &unusedDestTableIndex, &nothing,
                 &unusedSrcTableIndex, &nothing, &nothing));
           }
           case uint32_t(MiscOp::ElemDrop): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
 #endif
             uint32_t unusedSegIndex;
-            CHECK(iter.readDataOrElemDrop(/*isData=*/false, &unusedSegIndex));
+            CHECK(iter.readDataOrElemDrop(false, &unusedSegIndex));
           }
           case uint32_t(MiscOp::TableInit): {
 #ifndef ENABLE_WASM_BULKMEM_OPS
-            // Bulk memory must be available if shared memory is enabled.
+            
             if (env.sharedMemoryEnabled == Shareable::False) {
               return iter.fail("bulk memory ops disabled");
             }
 #endif
             uint32_t unusedSegIndex;
             uint32_t unusedTableIndex;
-            CHECK(iter.readMemOrTableInit(/*isMem=*/false, &unusedSegIndex,
+            CHECK(iter.readMemOrTableInit(false, &unusedSegIndex,
                                           &unusedTableIndex, &nothing, &nothing,
                                           &nothing));
           }
@@ -1236,7 +1236,7 @@ bool wasm::ValidateFunctionBody(const ModuleEnvironment& env,
   return true;
 }
 
-// Section macros.
+
 
 static bool DecodePreamble(Decoder& d) {
   if (d.bytesRemain() > MaxModuleBytes) {
@@ -1459,12 +1459,12 @@ static bool DecodeGCFeatureOptInSection(Decoder& d, ModuleEnvironment* env) {
     return d.fail("expected gc feature version");
   }
 
-  // For documentation of what's in the various versions, see
-  // https://github.com/lars-t-hansen/moz-gc-experiments
-  //
-  // Version 1 is complete and obsolete.
-  // Version 2 is incomplete but obsolete.
-  // Version 3 is in progress.
+  
+  
+  
+  
+  
+  
 
   switch (version) {
     case 1:
@@ -1590,8 +1590,8 @@ static bool DecodeSignatureIndex(Decoder& d, const TypeDefVector& types,
     return d.fail("signature index references non-signature");
   }
 
-  // FIXME: Remove this check when full multi-value function returns land.
-  // Bug 1585909.
+  
+  
   if (def.funcType().results().length() > MaxFuncResults) {
     return d.fail("too many returns in signature");
   }
@@ -1686,9 +1686,9 @@ static bool DecodeTableTypeAndLimits(Decoder& d, bool refTypesEnabled,
     return false;
   }
 
-  // If there's a maximum, check it is in range.  The check to exclude
-  // initial > maximum is carried out by the DecodeLimits call above, so
-  // we don't repeat it here.
+  
+  
+  
   if (limits.initial > MaxTableInitialLength ||
       ((limits.maximum.isSome() && limits.maximum.value() > MaxTableLength))) {
     return d.fail("too many table elements");
@@ -1770,8 +1770,8 @@ void wasm::ConvertMemoryPagesToBytes(Limits* memory) {
   CheckedInt<uint32_t> maximumBytes = *memory->maximum;
   maximumBytes *= PageSize;
 
-  // Clamp the maximum memory value to UINT32_MAX; it's not semantically
-  // visible since growing will fail for values greater than INT32_MAX.
+  
+  
   memory->maximum =
       Some(maximumBytes.isValid() ? maximumBytes.value() : UINT32_MAX);
 
@@ -1915,7 +1915,7 @@ static bool DecodeImportSection(Decoder& d, ModuleEnvironment* env) {
     return false;
   }
 
-  // The global data offsets will be filled in by ModuleGenerator::init.
+  
   if (!env->funcImportGlobalDataOffsets.resize(env->funcTypes.length())) {
     return false;
   }
@@ -2400,9 +2400,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
       seg->offsetIfActive.emplace(offset);
     } else {
-      // Too many bugs result from keeping this value zero.  For passive
-      // or declared segments, there really is no table index, and we should
-      // never touch the field.
+      
+      
+      
       MOZ_ASSERT(kind == ElemSegmentKind::Passive ||
                  kind == ElemSegmentKind::Declared);
       seg->tableIndex = (uint32_t)-1;
@@ -2411,9 +2411,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     ElemSegmentPayload payload = flags->payload();
     ValType elemType;
 
-    // `ActiveWithTableIndex`, `Declared`, and `Passive` element segments encode
-    // the type or definition kind of the payload. `Active` element segments are
-    // restricted to MVP behavior, which assumes only function indices.
+    
+    
+    
     if (kind == ElemSegmentKind::Active) {
       elemType = RefType::func();
     } else {
@@ -2452,7 +2452,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
     }
 
-    // Check constraints on the element type.
+    
     switch (kind) {
       case ElemSegmentKind::Declared: {
         if (!(elemType.isReference() &&
@@ -2474,7 +2474,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
         break;
       }
       case ElemSegmentKind::Passive: {
-        // By construction, above.
+        
         MOZ_ASSERT(elemType.isReference());
         break;
       }
@@ -2495,18 +2495,18 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     }
 
 #ifdef WASM_PRIVATE_REFTYPES
-    // We assume that passive or declared segments may be applied to external
-    // tables. We can do slightly better: if there are no external tables in
-    // the module then we don't need to worry about passive or declared
-    // segments either. But this is a temporary restriction.
+    
+    
+    
+    
     bool exportedTable = kind == ElemSegmentKind::Passive ||
                          kind == ElemSegmentKind::Declared ||
                          env->tables[seg->tableIndex].importedOrExported;
 #endif
 
-    // For passive segments we should use DecodeInitializerExpression() but we
-    // don't really want to generalize that function yet, so instead read the
-    // required Ref.Func and End here.
+    
+    
+    
 
     for (uint32_t i = 0; i < numElems; i++) {
       bool needIndex = true;
@@ -2583,7 +2583,7 @@ static bool DecodeDataCountSection(Decoder& d, ModuleEnvironment* env) {
   }
 
 #ifndef ENABLE_WASM_BULKMEM_OPS
-  // Bulk memory must be available if shared memory is enabled.
+  
   if (env->sharedMemoryEnabled == Shareable::False) {
     return d.fail("bulk memory ops disabled");
   }
@@ -2886,7 +2886,7 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
       return d.fail("unable to read function index");
     }
 
-    // Names must refer to real functions and be given in ascending order.
+    
     if (funcIndex >= env->numFuncs() || funcIndex < funcNames.length()) {
       return d.fail("invalid function index");
     }
@@ -2919,8 +2919,8 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
     return false;
   }
 
-  // To encourage fully valid function names subsections; only save names if
-  // the entire subsection decoded correctly.
+  
+  
   env->funcNames = std::move(funcNames);
   return true;
 }
@@ -2937,7 +2937,7 @@ static bool DecodeNameSection(Decoder& d, ModuleEnvironment* env) {
   env->nameCustomSectionIndex = Some(env->customSections.length() - 1);
   const CustomSectionEnv& nameSection = env->customSections.back();
 
-  // Once started, custom sections do not report validation errors.
+  
 
   if (!DecodeModuleNameSubsection(d, nameSection, env)) {
     goto finish;
@@ -2980,17 +2980,17 @@ bool wasm::DecodeModuleTail(Decoder& d, ModuleEnvironment* env) {
   return true;
 }
 
-// Validate algorithm.
+
 
 bool wasm::Validate(JSContext* cx, const ShareableBytes& bytecode,
                     UniqueChars* error) {
   Decoder d(bytecode.bytes, 0, error);
 
-  bool gcTypesConfigured = GcTypesAvailable(cx);
-  bool refTypesConfigured = ReftypesAvailable(cx);
-  bool multiValueConfigured = MultiValuesAvailable(cx);
+  bool gcTypesConfigured = HasGcSupport(cx);
+  bool refTypesConfigured = HasReftypesSupport(cx);
+  bool multiValueConfigured = HasMultiValueSupport(cx);
   bool hugeMemory = false;
-  bool bigIntConfigured = I64BigIntConversionAvailable(cx);
+  bool bigIntConfigured = HasI64BigIntSupport(cx);
 
   CompilerEnvironment compilerEnv(
       CompileMode::Once, Tier::Optimized, OptimizedBackend::Ion,

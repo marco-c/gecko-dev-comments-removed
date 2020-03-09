@@ -27,8 +27,7 @@ namespace js {
 namespace wasm {
 
 
-
-MOZ_MUST_USE bool IonPlatformSupport();
+bool IonCanCompile();
 
 
 MOZ_MUST_USE bool IonCompileFunctions(const ModuleEnvironment& env,

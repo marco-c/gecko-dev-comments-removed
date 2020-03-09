@@ -1,8 +1,0 @@
-
-
-if (wasmCompilersPresent().match("ion")) {
-    assertEq(wasmCompileMode(), "ion");
-} else {
-    
-    assertEq(wasmCompileMode(), "none");
-}
