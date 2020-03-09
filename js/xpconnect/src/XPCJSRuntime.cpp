@@ -455,23 +455,21 @@ Scriptability::Scriptability(JS::Realm* realm)
       mDocShellAllowsScript(true),
       mScriptBlockedByPolicy(false) {
   nsIPrincipal* prin = nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
-  mImmuneToScriptPolicy = PrincipalImmuneToScriptPolicy(prin);
 
-  
-  
-  if (!mImmuneToScriptPolicy) {
-    nsCOMPtr<nsIURI> codebase;
-    nsresult rv = prin->GetURI(getter_AddRefs(codebase));
-    bool policyAllows;
-    if (NS_SUCCEEDED(rv) && codebase &&
-        NS_SUCCEEDED(nsXPConnect::SecurityManager()->PolicyAllowsScript(
-            codebase, &policyAllows))) {
-      mScriptBlockedByPolicy = !policyAllows;
-    } else {
-      
-      mScriptBlockedByPolicy = true;
-    }
+  mImmuneToScriptPolicy = PrincipalImmuneToScriptPolicy(prin);
+  if (mImmuneToScriptPolicy) {
+    return;
   }
+  
+  
+  bool policyAllows;
+  nsresult rv = prin->GetIsScriptAllowedByPolicy(&policyAllows);
+  if (NS_SUCCEEDED(rv)) {
+    mScriptBlockedByPolicy = !policyAllows;
+    return;
+  }
+  
+  mScriptBlockedByPolicy = true;
 }
 
 bool Scriptability::Allowed() {
