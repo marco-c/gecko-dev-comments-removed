@@ -85,8 +85,15 @@ AccessibilityView.prototype = {
 
 
 
+
+
+
+
+
+
+
+
   async initialize({
-    front,
     supports,
     fluentBundles,
     toolbox,
@@ -95,12 +102,16 @@ AccessibilityView.prototype = {
     stopListeningForAccessibilityEvents,
     audit,
     simulate,
+    enableAccessibility,
+    disableAccessibility,
+    resetAccessiblity,
+    startListeningForLifecycleEvents,
+    stopListeningForLifecycleEvents,
   }) {
     
-    await this.store.dispatch(reset(front, supports));
+    await this.store.dispatch(reset(resetAccessiblity, supports));
     const container = document.getElementById("content");
     const mainFrame = MainFrame({
-      accessibility: front,
       fluentBundles,
       toolbox,
       getAccessibilityTreeRoot,
@@ -108,6 +119,11 @@ AccessibilityView.prototype = {
       stopListeningForAccessibilityEvents,
       audit,
       simulate,
+      enableAccessibility,
+      disableAccessibility,
+      resetAccessiblity,
+      startListeningForLifecycleEvents,
+      stopListeningForLifecycleEvents,
     });
     
     const provider = createElement(Provider, { store: this.store }, mainFrame);

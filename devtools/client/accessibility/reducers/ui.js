@@ -178,8 +178,7 @@ function onPrefChange(state, { name, value }) {
 
 
 
-function onReset(state, { accessibility, supports }) {
-  const { enabled, canBeDisabled, canBeEnabled } = accessibility;
+function onReset(state, { enabled, canBeDisabled, canBeEnabled, supports }) {
   const newState = {
     ...getInitialState(),
     enabled,
