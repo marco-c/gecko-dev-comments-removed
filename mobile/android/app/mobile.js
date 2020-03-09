@@ -342,13 +342,6 @@ pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-deb
 pref("devtools.remote.usb.enabled", false);
 pref("devtools.remote.wifi.enabled", false);
 
-
-
-
-
-
-pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\",\"java\"]");
-
 pref("ui.touch.radius.enabled", false);
 pref("ui.touch.radius.leftmm", 3);
 pref("ui.touch.radius.topmm", 5);

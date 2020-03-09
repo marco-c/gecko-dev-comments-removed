@@ -845,31 +845,41 @@ pref("toolkit.dump.emit", false);
 
 
 
+
+
+
 pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com");
 
 
 
 pref("devtools.performance.recording.preset", "web-developer");
+pref("devtools.performance.recording.preset.remote", "web-developer");
 
 
 pref("devtools.performance.recording.entries", 10000000);
+pref("devtools.performance.recording.entries.remote", 10000000);
 
 pref("devtools.performance.recording.interval", 1000);
+pref("devtools.performance.recording.interval.remote", 1000);
 
 
 
 pref("devtools.performance.recording.duration", 0);
+pref("devtools.performance.recording.duration.remote", 0);
 
 
 
 
-pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\"]");
+pref("devtools.performance.recording.features", "[\"js\",\"leaf\",\"stackwalk\",\"screenshots\"]");
+pref("devtools.performance.recording.features.remote", "[\"js\",\"leaf\",\"stackwalk\",\"screenshots\",\"java\"]");
 
 pref("devtools.performance.recording.threads", "[\"GeckoMain\",\"Compositor\",\"Renderer\"]");
+pref("devtools.performance.recording.threads.remote", "[\"GeckoMain\",\"Compositor\",\"Renderer\"]");
 
 
 
 pref("devtools.performance.recording.objdirs", "[]");
+pref("devtools.performance.recording.objdirs.remote", "[]");
 
 pref("devtools.performance.popup.intro-displayed", false);
 

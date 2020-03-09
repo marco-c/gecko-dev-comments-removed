@@ -345,7 +345,7 @@ function getActiveConfiguration() {
   );
 
   info("Start the profiler with the current about:profiling configuration.");
-  startProfiler();
+  startProfiler("aboutprofiling");
 
   
   

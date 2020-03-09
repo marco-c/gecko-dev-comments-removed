@@ -6,6 +6,7 @@
 
 
 
+
 "use strict";
 
 
@@ -42,8 +43,8 @@
 
 
 const {
-  getRecordingPreferencesFromBrowser,
-  setRecordingPreferencesOnBrowser,
+  getRecordingPreferences,
+  setRecordingPreferences,
   getSymbolsFromThisBrowser,
   presets,
 } = ChromeUtils.import(
@@ -86,9 +87,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       supportedFeatures,
       presets,
       
-      recordingPreferences: getRecordingPreferencesFromBrowser(),
+      recordingPreferences: getRecordingPreferences("aboutprofiling"),
       
-      setRecordingPreferences: setRecordingPreferencesOnBrowser,
+
+
+      setRecordingPreferences: newRecordingPreferences =>
+        setRecordingPreferences("aboutprofiling", newRecordingPreferences),
+
       
       
       getSymbolTableGetter: () => getSymbolsFromThisBrowser,

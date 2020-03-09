@@ -9,6 +9,7 @@
 
 
 
+
 "use strict";
 
 {
@@ -48,17 +49,16 @@ const actions = require("devtools/client/performance-new/store/actions");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const {
   receiveProfile,
-  getRecordingPreferencesFromDebuggee,
-  setRecordingPreferencesOnDebuggee,
   createMultiModalGetSymbolTableFn,
 } = require("devtools/client/performance-new/browser");
 
 const {
-  getDefaultRecordingPreferencesForOlderFirefox,
+  setRecordingPreferences,
   presets,
-} = ChromeUtils.import(
+  getRecordingPreferences,
+} =  (ChromeUtils.import(
   "resource://devtools/client/performance-new/popup/background.jsm.js"
-);
+));
 
 
 
@@ -72,26 +72,19 @@ const {
 
 
 
-async function gInit(perfFront, preferenceFront) {
+async function gInit(perfFront, pageContext) {
   const store = createStore(reducers);
-
   
-  const [recordingPreferences, supportedFeatures] = await Promise.all([
-    
-    
-    
-    
-    getRecordingPreferencesFromDebuggee(
-      preferenceFront,
-      getDefaultRecordingPreferencesForOlderFirefox()
-    ),
-    
-    
-    
-    
-    
-    Promise.resolve(perfFront.getSupportedFeatures()).catch(() => null),
-  ]);
+  
+  
+  
+  
+  
+  
+  
+  const supportedFeatures = await Promise.resolve(
+    perfFront.getSupportedFeatures()
+  ).catch(() => null);
 
   
   
@@ -99,7 +92,7 @@ async function gInit(perfFront, preferenceFront) {
     actions.initializeStore({
       perfFront,
       receiveProfile,
-      recordingPreferences,
+      recordingPreferences: getRecordingPreferences(pageContext),
       presets,
       supportedFeatures,
       pageContext: "devtools",
@@ -110,10 +103,7 @@ async function gInit(perfFront, preferenceFront) {
 
 
       setRecordingPreferences: newRecordingPreferences =>
-        setRecordingPreferencesOnDebuggee(
-          preferenceFront,
-          newRecordingPreferences
-        ),
+        setRecordingPreferences(pageContext, newRecordingPreferences),
 
       
       

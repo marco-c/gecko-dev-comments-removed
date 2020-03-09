@@ -31,6 +31,7 @@ const { AppConstants } = ChromeUtils.import(
 
 
 
+
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
@@ -107,6 +108,15 @@ const lazyRecordingUtils = requireLazy(() => {
 
   
   const recordingUtils = require("devtools/shared/performance-new/recording-utils");
+  return recordingUtils;
+});
+
+const lazyUtils = requireLazy(() => {
+  const { require } = ChromeUtils.import(
+    "resource://devtools/shared/Loader.jsm"
+  );
+  
+  const recordingUtils = require("devtools/client/performance-new/utils");
   return recordingUtils;
 });
 
@@ -230,7 +240,8 @@ async function captureProfile() {
 
 
 
-function startProfiler() {
+
+function startProfiler(pageContext) {
   const { translatePreferencesToState } = lazyPreferenceManagement();
   const {
     entries,
@@ -238,7 +249,7 @@ function startProfiler() {
     features,
     threads,
     duration,
-  } = translatePreferencesToState(getRecordingPreferencesFromBrowser());
+  } = translatePreferencesToState(getRecordingPreferences(pageContext));
 
   
   const { getActiveBrowsingContextID } = lazyRecordingUtils();
@@ -268,20 +279,21 @@ function stopProfiler() {
 
 
 
-function toggleProfiler() {
+
+function toggleProfiler(pageContext) {
   if (Services.profiler.IsActive()) {
     stopProfiler();
   } else {
-    startProfiler();
+    startProfiler(pageContext);
   }
 }
 
 
 
 
-function restartProfiler() {
+function restartProfiler(pageContext) {
   stopProfiler();
-  startProfiler();
+  startProfiler(pageContext);
 }
 
 
@@ -305,11 +317,38 @@ function _getArrayOfStringsHostPref(prefName) {
 
 
 
-function getRecordingPreferencesFromBrowser() {
+
+
+
+
+
+
+function getPrefPostfix(pageContext) {
+  switch (pageContext) {
+    case "devtools":
+    case "aboutprofiling":
+      
+      return "";
+    case "devtools-remote":
+      return ".remote";
+    default: {
+      const { UnhandledCaseError } = lazyUtils();
+      throw new UnhandledCaseError(pageContext, "Page Context");
+    }
+  }
+}
+
+
+
+
+
+function getRecordingPreferences(pageContext) {
+  const postfix = getPrefPostfix(pageContext);
+
   
   
-  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
-  const presetName = Services.prefs.getCharPref(PRESET_PREF);
+  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
+  const presetName = Services.prefs.getCharPref(PRESET_PREF + postfix);
 
   
   const recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
@@ -318,11 +357,11 @@ function getRecordingPreferencesFromBrowser() {
   }
 
   
-  const entries = Services.prefs.getIntPref(ENTRIES_PREF);
-  const interval = Services.prefs.getIntPref(INTERVAL_PREF);
-  const features = _getArrayOfStringsPref(FEATURES_PREF);
-  const threads = _getArrayOfStringsPref(THREADS_PREF);
-  const duration = Services.prefs.getIntPref(DURATION_PREF);
+  const entries = Services.prefs.getIntPref(ENTRIES_PREF + postfix);
+  const interval = Services.prefs.getIntPref(INTERVAL_PREF + postfix);
+  const features = _getArrayOfStringsPref(FEATURES_PREF + postfix);
+  const threads = _getArrayOfStringsPref(THREADS_PREF + postfix);
+  const duration = Services.prefs.getIntPref(DURATION_PREF + postfix);
 
   const supportedFeatures = new Set(Services.profiler.GetFeatures());
 
@@ -373,14 +412,25 @@ function getRecordingPrefsFromPreset(presetName, objdirs) {
 
 
 
-function setRecordingPreferencesOnBrowser(prefs) {
-  Services.prefs.setCharPref(PRESET_PREF, prefs.presetName);
-  Services.prefs.setIntPref(ENTRIES_PREF, prefs.entries);
+
+function setRecordingPreferences(pageContext, prefs) {
+  const postfix = getPrefPostfix(pageContext);
+  Services.prefs.setCharPref(PRESET_PREF + postfix, prefs.presetName);
+  Services.prefs.setIntPref(ENTRIES_PREF + postfix, prefs.entries);
   
-  Services.prefs.setIntPref(INTERVAL_PREF, prefs.interval);
-  Services.prefs.setCharPref(FEATURES_PREF, JSON.stringify(prefs.features));
-  Services.prefs.setCharPref(THREADS_PREF, JSON.stringify(prefs.threads));
-  Services.prefs.setCharPref(OBJDIRS_PREF, JSON.stringify(prefs.objdirs));
+  Services.prefs.setIntPref(INTERVAL_PREF + postfix, prefs.interval);
+  Services.prefs.setCharPref(
+    FEATURES_PREF + postfix,
+    JSON.stringify(prefs.features)
+  );
+  Services.prefs.setCharPref(
+    THREADS_PREF + postfix,
+    JSON.stringify(prefs.threads)
+  );
+  Services.prefs.setCharPref(
+    OBJDIRS_PREF + postfix,
+    JSON.stringify(prefs.objdirs)
+  );
 }
 
 const platform = AppConstants.platform;
@@ -388,14 +438,17 @@ const platform = AppConstants.platform;
 
 
 
+
 function revertRecordingPreferences() {
-  Services.prefs.clearUserPref(PRESET_PREF);
-  Services.prefs.clearUserPref(ENTRIES_PREF);
-  Services.prefs.clearUserPref(INTERVAL_PREF);
-  Services.prefs.clearUserPref(FEATURES_PREF);
-  Services.prefs.clearUserPref(THREADS_PREF);
-  Services.prefs.clearUserPref(OBJDIRS_PREF);
-  Services.prefs.clearUserPref(DURATION_PREF);
+  for (const postfix of ["", ".remote"]) {
+    Services.prefs.clearUserPref(PRESET_PREF + postfix);
+    Services.prefs.clearUserPref(ENTRIES_PREF + postfix);
+    Services.prefs.clearUserPref(INTERVAL_PREF + postfix);
+    Services.prefs.clearUserPref(FEATURES_PREF + postfix);
+    Services.prefs.clearUserPref(THREADS_PREF + postfix);
+    Services.prefs.clearUserPref(OBJDIRS_PREF + postfix);
+    Services.prefs.clearUserPref(DURATION_PREF + postfix);
+  }
   Services.prefs.clearUserPref(POPUP_FEATURE_FLAG_PREF);
 }
 
@@ -404,58 +457,22 @@ function revertRecordingPreferences() {
 
 
 
-function changePreset(presetName) {
-  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF);
+
+
+function changePreset(pageContext, presetName) {
+  const postfix = getPrefPostfix(pageContext);
+  const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
   let recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
 
   if (!recordingPrefs) {
     
     
     
-    Services.prefs.setCharPref(PRESET_PREF, presetName);
-    recordingPrefs = getRecordingPreferencesFromBrowser();
+    Services.prefs.setCharPref(PRESET_PREF + postfix, presetName);
+    recordingPrefs = getRecordingPreferences(pageContext);
   }
 
-  setRecordingPreferencesOnBrowser(recordingPrefs);
-}
-
-
-
-
-
-let _defaultPrefsForOlderFirefox;
-
-
-
-
-
-
-
-
-
-
-
-
-function getDefaultRecordingPreferencesForOlderFirefox() {
-  if (!_defaultPrefsForOlderFirefox) {
-    _defaultPrefsForOlderFirefox = {
-      presetName: "custom",
-      entries: 10000000, 
-      
-      duration: 0,
-      interval: 1000, 
-      features: ["js", "leaf", "stackwalk"],
-      threads: ["GeckoMain", "Compositor"],
-      objdirs: [],
-    };
-
-    if (AppConstants.platform === "android") {
-      
-      _defaultPrefsForOlderFirefox.features.push("java");
-    }
-  }
-
-  return _defaultPrefsForOlderFirefox;
+  setRecordingPreferences(pageContext, recordingPrefs);
 }
 
 
@@ -539,11 +556,10 @@ module.exports = {
   toggleProfiler,
   platform,
   getSymbolsFromThisBrowser,
-  getRecordingPreferencesFromBrowser,
-  setRecordingPreferencesOnBrowser,
+  getRecordingPreferences,
+  setRecordingPreferences,
   revertRecordingPreferences,
   changePreset,
-  getDefaultRecordingPreferencesForOlderFirefox,
   handleWebChannelMessage,
 };
 
