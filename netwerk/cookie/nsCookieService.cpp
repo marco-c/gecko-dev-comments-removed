@@ -4,9 +4,9 @@
 
 
 
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Printf.h"
@@ -2265,8 +2265,8 @@ void nsCookieService::SetCookieStringInternal(
 }
 
 void nsCookieService::NotifyAccepted(nsIChannel* aChannel) {
-  ContentBlockingNotifier::OnDecision(
-      aChannel, ContentBlockingNotifier::BlockingDecision::eAllow, 0);
+  AntiTrackingCommon::NotifyBlockingDecision(
+      aChannel, AntiTrackingCommon::BlockingDecision::eAllow, 0);
 }
 
 
@@ -2282,9 +2282,8 @@ void nsCookieService::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
     MOZ_ASSERT(aOperation == OPERATION_READ);
   }
 
-  ContentBlockingNotifier::OnDecision(
-      aChannel, ContentBlockingNotifier::BlockingDecision::eBlock,
-      aRejectedReason);
+  AntiTrackingCommon::NotifyBlockingDecision(
+      aChannel, AntiTrackingCommon::BlockingDecision::eBlock, aRejectedReason);
 }
 
 

@@ -5,9 +5,9 @@
 
 
 #include "mozilla/Attributes.h"
+#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Pair.h"
