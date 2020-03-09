@@ -233,6 +233,7 @@ decorate_task(
   }
 );
 
+
 decorate_task(
   AddonStudies.withStudies([
     addonStudyFactory({
@@ -260,6 +261,47 @@ decorate_task(
     ok(
       newStudy.studyEndDate,
       "The study end date is set when the add-on for the study is uninstalled."
+    );
+  }
+);
+
+decorate_task(
+  AddonStudies.withStudies([
+    NormandyTestUtils.factories.addonStudyFactory({ active: true }),
+    NormandyTestUtils.factories.branchedAddonStudyFactory(),
+  ]),
+  async function testRemoveOldAddonStudies([noBranchStudy, branchedStudy]) {
+    
+    const preActiveIds = (await AddonStudies.getAllActive()).map(
+      addon => addon.recipeId
+    );
+    Assert.deepEqual(
+      preActiveIds,
+      [noBranchStudy.recipeId, branchedStudy.recipeId],
+      "Both studies should be active"
+    );
+
+    
+    await AddonStudies.migrations.migration02RemoveOldAddonStudyAction();
+
+    
+    const postActiveIds = (await AddonStudies.getAllActive()).map(
+      addon => addon.recipeId
+    );
+    Assert.deepEqual(
+      postActiveIds,
+      [branchedStudy.recipeId],
+      "The unbranched study should end"
+    );
+
+    
+    const postAllIds = (await AddonStudies.getAll()).map(
+      addon => addon.recipeId
+    );
+    Assert.deepEqual(
+      postAllIds,
+      [noBranchStudy.recipeId, branchedStudy.recipeId],
+      "Both studies should still be present"
     );
   }
 );

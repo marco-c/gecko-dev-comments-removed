@@ -54,6 +54,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "BranchedAddonStudyAction",
+  "resource://normandy/actions/BranchedAddonStudyAction.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "CleanupManager",
   "resource://normandy/lib/CleanupManager.jsm"
 );
@@ -198,48 +203,73 @@ var AddonStudies = {
 
 
 
-
-
-
-  async migrateAddonStudyFieldsToSlugAndUserFacingFields() {
-    const db = await getDatabase();
-    const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
-
+  migrations: {
     
-    if (studies.length === 0) {
-      return;
-    }
 
-    
-    
-    const writePromises = [];
-    const objectStore = db.objectStore(STORE_NAME, "readwrite");
 
-    for (const study of studies) {
+
+    async migration01AddonStudyFieldsToSlugAndUserFacingFields() {
+      const db = await getDatabase();
+      const studies = await db.objectStore(STORE_NAME, "readonly").getAll();
+
       
-      if (!study.slug) {
-        study.slug = study.name;
+      if (studies.length === 0) {
+        return;
       }
 
       
-      if (study.name && !study.userFacingName) {
-        study.userFacingName = study.name;
-      }
-      delete study.name;
-      if (study.description && !study.userFacingDescription) {
-        study.userFacingDescription = study.description;
-      }
-      delete study.description;
-
       
-      if (!study.branch) {
-        study.branch = AddonStudies.NO_BRANCHES_MARKER;
+      const writePromises = [];
+      const objectStore = db.objectStore(STORE_NAME, "readwrite");
+
+      for (const study of studies) {
+        
+        if (!study.slug) {
+          study.slug = study.name;
+        }
+
+        
+        if (study.name && !study.userFacingName) {
+          study.userFacingName = study.name;
+        }
+        delete study.name;
+        if (study.description && !study.userFacingDescription) {
+          study.userFacingDescription = study.description;
+        }
+        delete study.description;
+
+        
+        if (!study.branch) {
+          study.branch = AddonStudies.NO_BRANCHES_MARKER;
+        }
+
+        writePromises.push(objectStore.put(study));
       }
 
-      writePromises.push(objectStore.put(study));
-    }
+      await Promise.all(writePromises);
+    },
 
-    await Promise.all(writePromises);
+    async migration02RemoveOldAddonStudyAction() {
+      const studies = await AddonStudies.getAllActive({
+        branched: AddonStudies.FILTER_NOT_BRANCHED,
+      });
+      if (!studies.length) {
+        return;
+      }
+      const action = new BranchedAddonStudyAction();
+      for (const study of studies) {
+        try {
+          await action.unenroll(
+            study.recipeId,
+            "migration-removing-unbranched-action"
+          );
+        } catch (e) {
+          log.error(
+            `Stopping add-on study ${study.slug} during migration failed: ${e}`
+          );
+        }
+      }
+    },
   },
 
   
