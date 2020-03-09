@@ -207,7 +207,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mPrefChangePendingNeedsReflow(false),
       mPostedPrefChangedRunnable(false),
       mIsGlyph(false),
-      mUsesRootEMUnits(false),
       mUsesExChUnits(false),
       mCounterStylesDirty(true),
       mFontFeatureValuesDirty(true),
@@ -766,7 +765,7 @@ void nsPresContext::DetachPresShell() {
   }
 }
 
-void nsPresContext::DoChangeCharSet(NotNull<const Encoding*> aCharSet) {
+void nsPresContext::DocumentCharSetChanged(NotNull<const Encoding*> aCharSet) {
   UpdateCharSet(aCharSet);
   mDeviceContext->FlushFontCache();
 
@@ -792,11 +791,6 @@ void nsPresContext::UpdateCharSet(NotNull<const Encoding*> aCharSet) {
     default:
       SetVisualMode(IsVisualCharset(aCharSet));
   }
-}
-
-void nsPresContext::DispatchCharSetChange(NotNull<const Encoding*> aEncoding) {
-  
-  DoChangeCharSet(aEncoding);
 }
 
 nsPresContext* nsPresContext::GetParentPresContext() {
@@ -1487,11 +1481,6 @@ void nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
 
   
   
-  mUsesRootEMUnits = false;
-  mUsesExChUnits = false;
-
-  
-  
   
   
   
@@ -1499,8 +1488,7 @@ void nsPresContext::RebuildAllStyleData(nsChangeHint aExtraHint,
   mDocument->MarkUserFontSetDirty();
   MarkCounterStylesDirty();
   MarkFontFeatureValuesDirty();
-
-  RestyleManager()->RebuildAllStyleData(aExtraHint, aRestyleHint);
+  PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
 }
 
 void nsPresContext::PostRebuildAllStyleDataEvent(
@@ -1509,7 +1497,10 @@ void nsPresContext::PostRebuildAllStyleDataEvent(
     
     return;
   }
-  RestyleManager()->PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
+  if (aRestyleHint.DefinitelyRecascadesAllSubtree()) {
+    mUsesExChUnits = false;
+  }
+  RestyleManager()->RebuildAllStyleData(aExtraHint, aRestyleHint);
 }
 
 static CallState MediaFeatureValuesChangedAllDocumentsCallback(

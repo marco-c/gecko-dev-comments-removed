@@ -2269,16 +2269,19 @@ void RestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          RestyleHint aRestyleHint) {
   
   
-  PostRebuildAllStyleDataEvent(aExtraHint, aRestyleHint);
-}
-
-void RestyleManager::PostRebuildAllStyleDataEvent(nsChangeHint aExtraHint,
-                                                  RestyleHint aRestyleHint) {
   
   
   
   
-  StyleSet()->ClearCachedStyleData();
+  
+  
+  
+  
+  
+  
+  if (aRestyleHint.DefinitelyRecascadesAllSubtree()) {
+    StyleSet()->ClearCachedStyleData();
+  }
 
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {

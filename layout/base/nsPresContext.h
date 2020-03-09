@@ -175,7 +175,7 @@ class nsPresContext : public nsISupports,
 
   mozilla::PresShell* GetPresShell() const { return mPresShell; }
 
-  void DispatchCharSetChange(NotNull<const Encoding*> aCharSet);
+  void DocumentCharSetChanged(NotNull<const Encoding*> aCharSet);
 
   
 
@@ -260,6 +260,11 @@ class nsPresContext : public nsISupports,
   }
 
   
+
+
+
+
+
 
 
 
@@ -1015,10 +1020,6 @@ class nsPresContext : public nsISupports,
   void NotifyContentfulPaint();
   void NotifyDOMContentFlushed();
 
-  bool UsesRootEMUnits() const { return mUsesRootEMUnits; }
-
-  void SetUsesRootEMUnits(bool aValue) { mUsesRootEMUnits = aValue; }
-
   bool UsesExChUnits() const { return mUsesExChUnits; }
 
   void SetUsesExChUnits(bool aValue) { mUsesExChUnits = aValue; }
@@ -1098,8 +1099,6 @@ class nsPresContext : public nsISupports,
   
   
   void ForceReflowForFontInfoUpdate();
-
-  void DoChangeCharSet(NotNull<const Encoding*> aCharSet);
 
   
 
@@ -1289,7 +1288,8 @@ class nsPresContext : public nsISupports,
   unsigned mIsGlyph : 1;
 
   
-  unsigned mUsesRootEMUnits : 1;
+  
+  
   
   unsigned mUsesExChUnits : 1;
 
