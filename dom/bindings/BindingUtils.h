@@ -1269,27 +1269,27 @@ inline bool WrapNewBindingNonWrapperCachedObject(
 }
 
 template <bool Fatal>
-inline bool EnumValueNotFound(JSContext* cx, JS::HandleString str,
+inline bool EnumValueNotFound(BindingCallContext& cx, JS::HandleString str,
                               const char* type, const char* sourceDescription);
 
 template <>
-inline bool EnumValueNotFound<false>(JSContext* cx, JS::HandleString str,
-                                     const char* type,
+inline bool EnumValueNotFound<false>(BindingCallContext& cx,
+                                     JS::HandleString str, const char* type,
                                      const char* sourceDescription) {
   
   return true;
 }
 
 template <>
-inline bool EnumValueNotFound<true>(JSContext* cx, JS::HandleString str,
-                                    const char* type,
+inline bool EnumValueNotFound<true>(BindingCallContext& cx,
+                                    JS::HandleString str, const char* type,
                                     const char* sourceDescription) {
   JS::UniqueChars deflated = JS_EncodeStringToUTF8(cx, str);
   if (!deflated) {
     return false;
   }
-  return ThrowErrorMessage<MSG_INVALID_ENUM_VALUE>(cx, sourceDescription,
-                                                   deflated.get(), type);
+  return cx.ThrowErrorMessage<MSG_INVALID_ENUM_VALUE>(sourceDescription,
+                                                      deflated.get(), type);
 }
 
 template <typename CharT>
@@ -1319,7 +1319,7 @@ inline int FindEnumStringIndexImpl(const CharT* chars, size_t length,
 }
 
 template <bool InvalidValueFatal>
-inline bool FindEnumStringIndex(JSContext* cx, JS::Handle<JS::Value> v,
+inline bool FindEnumStringIndex(BindingCallContext& cx, JS::Handle<JS::Value> v,
                                 const EnumEntry* values, const char* type,
                                 const char* sourceDescription, int* index) {
   
@@ -2458,7 +2458,7 @@ bool ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj);
 
 
 
-bool GetContentGlobalForJSImplementedObject(JSContext* cx,
+bool GetContentGlobalForJSImplementedObject(BindingCallContext& cx,
                                             JS::Handle<JSObject*> obj,
                                             nsIGlobalObject** global);
 
