@@ -35,8 +35,8 @@
 
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const React = require("devtools/client/shared/vendor/react");
-const DevToolsAndPopup = React.createFactory(
-  require("devtools/client/performance-new/components/DevToolsAndPopup")
+const DevToolsPanel = React.createFactory(
+  require("devtools/client/performance-new/components/DevToolsPanel")
 );
 const ProfilerEventHandling = React.createFactory(
   require("devtools/client/performance-new/components/ProfilerEventHandling")
@@ -94,9 +94,6 @@ async function gInit(perfFront, preferenceFront) {
   ]);
 
   
-  recordingPreferences.presetName = "custom";
-
-  
   
   store.dispatch(
     actions.initializeStore({
@@ -139,7 +136,7 @@ async function gInit(perfFront, preferenceFront) {
         React.Fragment,
         null,
         ProfilerEventHandling(),
-        DevToolsAndPopup()
+        DevToolsPanel()
       )
     ),
     document.querySelector("#root")

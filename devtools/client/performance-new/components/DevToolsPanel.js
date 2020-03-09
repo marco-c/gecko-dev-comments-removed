@@ -1,0 +1,84 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+const {
+  PureComponent,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+const {
+  div,
+  hr,
+} = require("devtools/client/shared/vendor/react-dom-factories");
+const RecordingButton = createFactory(
+  require("devtools/client/performance-new/components/RecordingButton")
+);
+const Description = createFactory(
+  require("devtools/client/performance-new/components/Description")
+);
+const DevToolsPresetSelection = createFactory(
+  require("devtools/client/performance-new/components/DevToolsPresetSelection")
+);
+
+const selectors = require("devtools/client/performance-new/store/selectors");
+
+
+
+
+
+
+
+
+class DevToolsPanel extends PureComponent {
+  render() {
+    const { isSupportedPlatform, pageContext } = this.props;
+
+    if (isSupportedPlatform === null) {
+      
+      return null;
+    }
+
+    return div(
+      { className: `perf perf-${pageContext}` },
+      RecordingButton(),
+      Description(),
+      hr({ className: "perf-presets-hr" }),
+      DevToolsPresetSelection()
+    );
+  }
+}
+
+
+
+
+
+function mapStateToProps(state) {
+  return {
+    isSupportedPlatform: selectors.getIsSupportedPlatform(state),
+    pageContext: selectors.getPageContext(state),
+  };
+}
+
+module.exports = connect(mapStateToProps)(DevToolsPanel);
