@@ -52,6 +52,8 @@
 
 
 
+
+
 "use strict";
 
 const {
@@ -83,6 +85,7 @@ const {
   formatFileSize,
   calculateOverhead,
   UnhandledCaseError,
+  featureDescriptions,
 } = require("devtools/client/performance-new/utils");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const actions = require("devtools/client/performance-new/store/actions");
@@ -167,120 +170,6 @@ const threadColumns = [
       title: "DNS resolution happens on this thread",
     },
   ],
-];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const featureCheckboxes = [
-  {
-    name: "Native Stacks",
-    value: "stackwalk",
-    title:
-      "Record native stacks (C++ and Rust). This is not available on all platforms.",
-    recommended: true,
-    disabledReason: "Native stack walking is not supported on this platform.",
-  },
-  {
-    name: "JavaScript",
-    value: "js",
-    title:
-      "Record JavaScript stack information, and interleave it with native stacks.",
-    recommended: true,
-  },
-  {
-    name: "Responsiveness",
-    value: "responsiveness",
-    title: "Collect thread responsiveness information.",
-    recommended: true,
-  },
-  {
-    name: "Java",
-    value: "java",
-    title: "Profile Java code",
-    disabledReason: "This feature is only available on Android.",
-  },
-  {
-    name: "Native Leaf Stack",
-    value: "leaf",
-    title:
-      "Record the native memory address of the leaf-most stack. This could be " +
-      "useful on platforms that do not support stack walking.",
-  },
-  {
-    name: "No Periodic Sampling",
-    value: "nostacksampling",
-    title: "Disable interval-based stack sampling",
-  },
-  {
-    name: "Main Thread IO",
-    value: "mainthreadio",
-    title: "Record main thread I/O markers.",
-  },
-  {
-    name: "Privacy",
-    value: "privacy",
-    title: "Remove some potentially user-identifiable information.",
-  },
-  {
-    name: "Sequential Styling",
-    value: "seqstyle",
-    title: "Disable parallel traversal in styling.",
-  },
-  {
-    name: "JIT Optimizations",
-    value: "trackopts",
-    title: "Track JIT optimizations in the JS engine.",
-  },
-  {
-    name: "TaskTracer",
-    value: "tasktracer",
-    title: "Enable TaskTracer (Experimental.)",
-    disabledReason:
-      "TaskTracer requires a custom build with the environment variable MOZ_TASK_TRACER set.",
-  },
-  {
-    name: "Screenshots",
-    value: "screenshots",
-    title: "Record screenshots of all browser windows.",
-  },
-  {
-    name: "JSTracer",
-    value: "jstracer",
-    title: "Trace JS engine (Experimental.)",
-    disabledReason:
-      "JS Tracer is currently disabled due to crashes. See Bug 1565788.",
-  },
-  {
-    name: "Preference Read",
-    value: "preferencereads",
-    title: "Track Preference Reads",
-  },
-  {
-    name: "IPC Messages",
-    value: "ipcmessages",
-    title: "Track IPC messages.",
-  },
-  {
-    name: "JS Allocations",
-    value: "jsallocations",
-    title: "Track JavaScript allocations (Experimental.)",
-  },
-  {
-    name: "Native Allocations",
-    value: "nativeallocations",
-    title: "Track native allocations (Experimental.)",
-  },
 ];
 
 
@@ -507,9 +396,15 @@ class Settings extends PureComponent {
 
 
 
-  _renderFeatureCheckbox(featureCheckbox, showUnsupportedFeatures) {
+  _renderFeatureCheckbox(featureDescription, showUnsupportedFeatures) {
     const { supportedFeatures } = this.props;
-    const { name, value, title, recommended, disabledReason } = featureCheckbox;
+    const {
+      name,
+      value,
+      title,
+      recommended,
+      disabledReason,
+    } = featureDescription;
     let isSupported = true;
     if (supportedFeatures !== null && !supportedFeatures.includes(value)) {
       isSupported = false;
@@ -569,16 +464,16 @@ class Settings extends PureComponent {
       div(
         null,
         
-        featureCheckboxes.map(featureCheckbox =>
-          this._renderFeatureCheckbox(featureCheckbox, false)
+        featureDescriptions.map(featureDescription =>
+          this._renderFeatureCheckbox(featureDescription, false)
         ),
         h3(
           { className: "perf-settings-features-disabled-title" },
           "The following features are currently unavailable:"
         ),
         
-        featureCheckboxes.map(featureCheckbox =>
-          this._renderFeatureCheckbox(featureCheckbox, true)
+        featureDescriptions.map(featureDescription =>
+          this._renderFeatureCheckbox(featureDescription, true)
         )
       )
     );

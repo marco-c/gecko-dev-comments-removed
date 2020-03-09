@@ -453,3 +453,21 @@ export class ProfilerWebChannel {
     handler: (idle: string, message: MessageFromFrontend, target: MockedExports.WebChannelTarget) => void
   ) => void;
 }
+
+
+
+
+
+export interface FeatureDescription {
+  
+  name: string,
+  
+  
+  value: string,
+  
+  title: string,
+  
+  recommended?: boolean,
+  
+  disabledReason?: string,
+}
