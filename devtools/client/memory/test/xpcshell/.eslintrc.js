@@ -2,10 +2,13 @@
 
 module.exports = {
   
-  "extends": "../../../../.eslintrc.xpcshell.js",
-  "rules": {
-    "no-unused-vars": ["error", {
-      "vars": "local",
-    }]
-  }
+  extends: "../../../../.eslintrc.xpcshell.js",
+  rules: {
+    "no-unused-vars": [
+      "error",
+      {
+        vars: "local",
+      },
+    ],
+  },
 };

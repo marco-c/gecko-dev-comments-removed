@@ -6,8 +6,8 @@
 
 module.exports = {
   
-  "extends": "../../../.eslintrc.mochitests.js",
-  "env": {
-    "jest": true
+  extends: "../../../.eslintrc.mochitests.js",
+  env: {
+    jest: true,
   },
 };

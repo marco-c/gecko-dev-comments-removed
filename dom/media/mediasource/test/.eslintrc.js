@@ -2,29 +2,29 @@
 
 module.exports = {
   
-  "extends": "plugin:mozilla/mochitest-test",
+  extends: "plugin:mozilla/mochitest-test",
   
   
-  "globals": {
-    "addMSEPrefs": false,
-    "fetchAndLoad": false,
-    "fetchAndLoadAsync": false,
-    "fetchWithXHR": false,
-    "logEvents": false,
-    "loadSegment": false,
-    "must_not_reject": false,
-    "must_not_throw": false,
-    "must_reject": false,
-    "must_throw": false,
-    "once": false,
-    "range": false,
-    "runWithMSE": false,
-    "wait": false,
-    "waitUntilTime": false
+  globals: {
+    addMSEPrefs: false,
+    fetchAndLoad: false,
+    fetchAndLoadAsync: false,
+    fetchWithXHR: false,
+    logEvents: false,
+    loadSegment: false,
+    must_not_reject: false,
+    must_not_throw: false,
+    must_reject: false,
+    must_throw: false,
+    once: false,
+    range: false,
+    runWithMSE: false,
+    wait: false,
+    waitUntilTime: false,
   },
   
-  "rules": {
+  rules: {
     "no-var": "error",
-    "prefer-const": "error"
-  }
+    "prefer-const": "error",
+  },
 };

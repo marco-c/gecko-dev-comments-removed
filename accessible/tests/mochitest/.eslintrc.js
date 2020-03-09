@@ -1,22 +1,24 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
     
     
     "no-nested-ternary": "off",
   },
 
-  "overrides": [{
-    "files": [
-      
-      
-      "attributes/test_listbox.html",
-      "treeupdate/test_ariaowns.html",
-    ],
-    "rules": {
-      "no-undef": "off",
-    }
-  }]
+  overrides: [
+    {
+      files: [
+        
+        
+        "attributes/test_listbox.html",
+        "treeupdate/test_ariaowns.html",
+      ],
+      rules: {
+        "no-undef": "off",
+      },
+    },
+  ],
 };

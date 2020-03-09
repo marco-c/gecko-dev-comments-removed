@@ -1,19 +1,17 @@
 "use strict";
 
 module.exports = {
-  "plugins": [
-    "react"
-  ],
-  "globals": {
-    "exports": true,
-    "isWorker": true,
-    "loader": true,
-    "module": true,
-    "reportError": true,
-    "require": true,
+  plugins: ["react"],
+  globals: {
+    exports: true,
+    isWorker: true,
+    loader: true,
+    module: true,
+    reportError: true,
+    require: true,
   },
-  "rules": {
-    "no-unused-vars": ["error", {"args": "none", "vars": "all"}],
+  rules: {
+    "no-unused-vars": ["error", { args: "none", vars: "all" }],
     
     
 
@@ -24,8 +22,11 @@ module.exports = {
     
     
     
-    "mozilla/reject-some-requires": ["error", "^devtools/shared/platform/(chome|content)/"],
+    "mozilla/reject-some-requires": [
+      "error",
+      "^devtools/shared/platform/(chome|content)/",
+    ],
     "mozilla/var-only-at-top-level": "error",
-    "mozilla/use-chromeutils-import": ["error", {allowCu: true}]
-  }
+    "mozilla/use-chromeutils-import": ["error", { allowCu: true }],
+  },
 };

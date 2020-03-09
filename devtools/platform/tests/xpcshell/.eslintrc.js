@@ -1,11 +1,9 @@
 
 module.exports = {
-  "extends": [
-    "plugin:mozilla/xpcshell-test"
-  ],
-  "rules": {
+  extends: ["plugin:mozilla/xpcshell-test"],
+  rules: {
     
-    "camelcase": "off",
+    camelcase: "off",
     
     
     
@@ -15,5 +13,5 @@ module.exports = {
     "block-scoped-var": "off",
     
     "mozilla/reject-some-requires": "off",
-  }
-}
+  },
+};

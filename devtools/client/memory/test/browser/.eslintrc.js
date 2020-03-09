@@ -2,8 +2,8 @@
 
 module.exports = {
   
-  "extends": "../../../../.eslintrc.mochitests.js",
-  "rules": {
-    "no-unused-vars": ["error", { "vars": "local", "args": "none" }],
-  }
+  extends: "../../../../.eslintrc.mochitests.js",
+  rules: {
+    "no-unused-vars": ["error", { vars: "local", args: "none" }],
+  },
 };

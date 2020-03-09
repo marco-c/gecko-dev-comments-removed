@@ -5,11 +5,14 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
     
     
     
-    "mozilla/reject-some-requires": ["error", "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm|devtools/shared/platform/(chome|content)/.*)$"],
+    "mozilla/reject-some-requires": [
+      "error",
+      "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm|devtools/shared/platform/(chome|content)/.*)$",
+    ],
   },
 };

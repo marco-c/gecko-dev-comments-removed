@@ -1,24 +1,32 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
     
     
-    "complexity": ["error", {"max": 68}],
+    complexity: ["error", { max: 68 }],
 
-    "no-unused-vars": ["error", {
-      "args": "none",
-      "vars": "all",
-    }],
+    "no-unused-vars": [
+      "error",
+      {
+        args: "none",
+        vars: "all",
+      },
+    ],
   },
-  "overrides": [{
-    "files": "test/xpcshell/head*.js",
-    "rules": {
-      "no-unused-vars": ["error", {
-        "args": "none",
-        "vars": "local",
-      }],
+  overrides: [
+    {
+      files: "test/xpcshell/head*.js",
+      rules: {
+        "no-unused-vars": [
+          "error",
+          {
+            args: "none",
+            vars: "local",
+          },
+        ],
+      },
     },
-  }],
+  ],
 };

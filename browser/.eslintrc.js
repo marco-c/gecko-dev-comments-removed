@@ -1,10 +1,10 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
     
-    "complexity": ["error", {"max": 44}],
+    complexity: ["error", { max: 44 }],
 
     
     
@@ -22,5 +22,5 @@ module.exports = {
     "no-shadow": "error",
 
     "mozilla/no-task": "error",
-  }
+  },
 };

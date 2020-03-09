@@ -1,9 +1,9 @@
 "use strict";
 
 module.exports = {
-  "globals": {
+  globals: {
     
     
-    "arguments": false
-  }
+    arguments: false,
+  },
 };

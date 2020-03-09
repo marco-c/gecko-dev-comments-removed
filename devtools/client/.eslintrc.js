@@ -1,13 +1,13 @@
 "use strict";
 
 module.exports = {
-  "env": { "browser": true },
-  "globals": {
-    "define": true,
+  env: { browser: true },
+  globals: {
+    define: true,
   },
-  "rules": {
+  rules: {
     
     
     "mozilla/use-ownerGlobal": "off",
-  }
+  },
 };

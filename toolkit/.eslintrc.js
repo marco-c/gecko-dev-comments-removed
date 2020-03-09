@@ -4,8 +4,8 @@ module.exports = {
   rules: {
     
     
-    "complexity": ["error", 45],
+    complexity: ["error", 45],
 
     "mozilla/no-task": "error",
-  }
+  },
 };

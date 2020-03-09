@@ -1,20 +1,18 @@
 "use strict";
 
 module.exports = {
-  "extends": [
-    "plugin:mozilla/mochitest-test",
-  ],
-  "globals": {
-    "promptDone": true,
-    "startTest": true,
+  extends: ["plugin:mozilla/mochitest-test"],
+  globals: {
+    promptDone: true,
+    startTest: true,
     
     
-    "assert": true,
-    "addMessageListener": true,
-    "sendAsyncMessage": true,
-    "Assert": true,
+    assert: true,
+    addMessageListener: true,
+    sendAsyncMessage: true,
+    Assert: true,
   },
-  "rules": {
+  rules: {
     "no-var": "off",
   },
 };

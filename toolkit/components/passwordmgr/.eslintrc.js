@@ -1,14 +1,21 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     "block-scoped-var": "error",
 
     
     
-    "complexity": ["error", 56],
+    complexity: ["error", 56],
 
-    "no-unused-vars": ["error", {"args": "none", "vars": "local", "varsIgnorePattern": "^(ids|ignored|unused)$"}],
+    "no-unused-vars": [
+      "error",
+      {
+        args: "none",
+        vars: "local",
+        varsIgnorePattern: "^(ids|ignored|unused)$",
+      },
+    ],
     "no-var": "error",
-  }
+  },
 };

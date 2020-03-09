@@ -2,9 +2,9 @@
 
 module.exports = {
   
-  "extends": "../../../../.eslintrc.mochitests.js",
-  "globals": {
-    "ChromeUtils": true,
-    "sendAsyncMessage": true,
-  }
+  extends: "../../../../.eslintrc.mochitests.js",
+  globals: {
+    ChromeUtils: true,
+    sendAsyncMessage: true,
+  },
 };

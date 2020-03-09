@@ -1,64 +1,68 @@
+
+
+
+
 module.exports = {
-  "parser": "babel-eslint",
-  "plugins": [
+  parser: "babel-eslint",
+  plugins: [
     "react",
     "mozilla",
     "flowtype",
     "babel",
     "prettier",
     "import",
-    "file-header"
+    "file-header",
   ],
-  "globals": {
-    "atob": true,
-    "btoa": true,
-    "Cc": true,
-    "Ci": true,
-    "Components": true,
-    "console": true,
-    "Cr": true,
-    "Cu": true,
-    "devtools": true,
-    "dump": true,
-    "EventEmitter": true,
-    "isWorker": true,
-    "loader": true,
-    "reportError": true,
-    "Services": true,
-    "Task": true,
-    "XPCNativeWrapper": true,
-    "XPCOMUtils": true,
-    "_Iterator": true,
-    "__dirname": true,
-    "process": true,
-    "global": true,
-    "L10N": true
+  globals: {
+    atob: true,
+    btoa: true,
+    Cc: true,
+    Ci: true,
+    Components: true,
+    console: true,
+    Cr: true,
+    Cu: true,
+    devtools: true,
+    dump: true,
+    EventEmitter: true,
+    isWorker: true,
+    loader: true,
+    reportError: true,
+    Services: true,
+    Task: true,
+    XPCNativeWrapper: true,
+    XPCOMUtils: true,
+    _Iterator: true,
+    __dirname: true,
+    process: true,
+    global: true,
+    L10N: true,
   },
-  "extends": [
+  extends: [
     "prettier",
     "prettier/flowtype",
     "prettier/react",
-    "plugin:jest/recommended"
+    "plugin:jest/recommended",
   ],
-  "parserOptions": {
-    "ecmaVersion": 2016,
-    "sourceType": "module",
-    "ecmaFeatures": { "jsx": true },
+  parserOptions: {
+    ecmaVersion: 2016,
+    sourceType: "module",
+    ecmaFeatures: { jsx: true },
 
     
     
     
-    "babelOptions": {
-      "root": __dirname,
+    babelOptions: {
+      root: __dirname,
     },
   },
-  "env": {
-    "es6": true,
-    "browser": true,
-    "commonjs": true,
-    "jest": true
+  env: {
+    es6: true,
+    browser: true,
+    commonjs: true,
+    jest: true,
   },
-  "rules": {
+  rules: {
     
     
 
@@ -81,8 +85,8 @@ module.exports = {
     "react/sort-comp": [
       1,
       {
-        order: ["propTypes", "everything-else", "render"]
-      }
+        order: ["propTypes", "everything-else", "render"],
+      },
     ],
 
     
@@ -100,9 +104,9 @@ module.exports = {
     
     "block-scoped-var": 2,
     
-    "camelcase": ["error", { "properties": "never" }],
+    camelcase: ["error", { properties: "never" }],
     
-    "complexity": ["error", { "max": 22 }],
+    complexity: ["error", { max: 22 }],
     
     
     "consistent-this": 0,
@@ -113,7 +117,7 @@ module.exports = {
     "dot-notation": 2,
     
     
-    "eqeqeq": 0,
+    eqeqeq: 0,
     
     
     
@@ -139,7 +143,7 @@ module.exports = {
     
     
     
-    "new-cap": [2, { "capIsNew": false }],
+    "new-cap": [2, { capIsNew: false }],
     
     "no-array-constructor": 2,
     
@@ -211,9 +215,9 @@ module.exports = {
     "prefer-const": [
       "error",
       {
-        "destructuring": "all",
-        "ignoreReadBeforeAssign": false
-      }
+        destructuring: "all",
+        ignoreReadBeforeAssign: false,
+      },
     ],
     
     "no-native-reassign": 2,
@@ -283,7 +287,7 @@ module.exports = {
     
     "no-unreachable": 2,
     
-    "no-unused-vars": [2, { "vars": "all", "args": "none" }],
+    "no-unused-vars": [2, { vars: "all", args: "none" }],
     
     "no-use-before-define": 0,
     
@@ -300,12 +304,12 @@ module.exports = {
     
     "one-var": 0,
     
-    "radix": 2,
+    radix: 2,
     
     
     "sort-vars": 0,
     
-    "strict": [2, "global"],
+    strict: [2, "global"],
     
     "use-isnan": 2,
     
@@ -318,7 +322,7 @@ module.exports = {
     
     "vars-on-top": 0,
     
-    "yoda": 2,
+    yoda: 2,
 
     
     
@@ -382,12 +386,11 @@ module.exports = {
       [
         "This Source Code Form is subject to the terms of the Mozilla Public",
         "License, v. 2.0. If a copy of the MPL was not distributed with this",
-        "file, You can obtain one at <http://mozilla.org/MPL/2.0/>."
+        "file, You can obtain one at <http://mozilla.org/MPL/2.0/>.",
       ],
       "block",
-      ["-\\*-(.*)-\\*-", "eslint(.*)", "vim(.*)"]
+      ["-\\*-(.*)-\\*-", "eslint(.*)", "vim(.*)"],
     ],
     "consistent-return": "off",
-
-  }
-}
+  },
+};

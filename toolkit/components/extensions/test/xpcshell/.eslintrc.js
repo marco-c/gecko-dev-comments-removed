@@ -1,9 +1,9 @@
 "use strict";
 
 module.exports = {
-  "env": {
+  env: {
     
     
-    "webextensions": true
-  }
+    webextensions: true,
+  },
 };

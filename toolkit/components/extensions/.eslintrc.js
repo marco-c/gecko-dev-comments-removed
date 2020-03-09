@@ -1,44 +1,46 @@
 "use strict";
 
 module.exports = {
-
-  "globals": {
+  globals: {
     
-    "Cc": true,
-    "Ci": true,
-    "Cr": true,
-    "Cu": true,
-    "AppConstants": true,
-    "ExtensionAPI": true,
-    "ExtensionCommon": true,
-    "ExtensionUtils": true,
-    "extensions": true,
-    "global": true,
-    "require": false,
-    "Services": true,
-    "XPCOMUtils": true,
+    Cc: true,
+    Ci: true,
+    Cr: true,
+    Cu: true,
+    AppConstants: true,
+    ExtensionAPI: true,
+    ExtensionCommon: true,
+    ExtensionUtils: true,
+    extensions: true,
+    global: true,
+    require: false,
+    Services: true,
+    XPCOMUtils: true,
   },
 
-  "rules": {
+  rules: {
     
     "mozilla/balanced-listeners": "error",
     "mozilla/no-aArgs": "error",
     "mozilla/var-only-at-top-level": "error",
 
-    "valid-jsdoc": ["error", {
-      "prefer": {
-        "return": "returns",
+    "valid-jsdoc": [
+      "error",
+      {
+        prefer: {
+          return: "returns",
+        },
+        preferType: {
+          Boolean: "boolean",
+          Number: "number",
+          String: "string",
+          bool: "boolean",
+        },
+        requireParamDescription: false,
+        requireReturn: false,
+        requireReturnDescription: false,
       },
-      "preferType": {
-        "Boolean": "boolean",
-        "Number": "number",
-        "String": "string",
-        "bool": "boolean",
-      },
-      "requireParamDescription": false,
-      "requireReturn": false,
-      "requireReturnDescription": false,
-    }],
+    ],
 
     
     "consistent-return": "off",
@@ -54,9 +56,14 @@ module.exports = {
     "no-unused-expressions": "error",
 
     
-    "no-unused-vars": ["error", {
-      "args": "none", "vars": "all", "varsIgnorePattern": "^console$"
-    }],
+    "no-unused-vars": [
+      "error",
+      {
+        args: "none",
+        vars: "all",
+        varsIgnorePattern: "^console$",
+      },
+    ],
 
     
     "no-use-before-define": "error",
@@ -66,7 +73,7 @@ module.exports = {
     "block-scoped-var": "error",
 
     
-    "complexity": "error",
+    complexity: "error",
 
     
     
@@ -78,7 +85,7 @@ module.exports = {
 
     
     
-    "eqeqeq": "off",
+    eqeqeq: "off",
 
     
     
@@ -103,7 +110,7 @@ module.exports = {
     
     
     
-    "new-cap": ["off", {"capIsNew": false}],
+    "new-cap": ["off", { capIsNew: false }],
 
     
     "no-bitwise": "off",
@@ -130,7 +137,7 @@ module.exports = {
     "no-inline-comments": "off",
 
     
-    "no-labels": ["error", {"allowLoop": true}],
+    "no-labels": ["error", { allowLoop: true }],
 
     
     "no-multi-str": "error",
@@ -191,20 +198,20 @@ module.exports = {
     "one-var": "off",
 
     
-    "radix": "error",
+    radix: "error",
 
     
     
     "sort-vars": "off",
 
     
-    "strict": ["error", "global"],
+    strict: ["error", "global"],
 
     
     "vars-on-top": "off",
 
     
-    "yoda": "error",
+    yoda: "error",
 
     
     "no-inner-declarations": "error",
@@ -213,13 +220,18 @@ module.exports = {
     "no-label-var": "error",
   },
 
-  "overrides": [{
-    "files": "test/xpcshell/head*.js",
-    "rules": {
-      "no-unused-vars": ["error", {
-        "args": "none",
-        "vars": "local",
-      }],
+  overrides: [
+    {
+      files: "test/xpcshell/head*.js",
+      rules: {
+        "no-unused-vars": [
+          "error",
+          {
+            args: "none",
+            vars: "local",
+          },
+        ],
+      },
     },
-  }],
+  ],
 };

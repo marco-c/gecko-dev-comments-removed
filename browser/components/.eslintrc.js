@@ -4,6 +4,6 @@ module.exports = {
   rules: {
     
     
-    "complexity": ["error", 61],
-  }
+    complexity: ["error", 61],
+  },
 };

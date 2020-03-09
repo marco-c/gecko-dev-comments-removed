@@ -1,8 +1,8 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
-    "sort-keys": "error"
-  }
+    "sort-keys": "error",
+  },
 };

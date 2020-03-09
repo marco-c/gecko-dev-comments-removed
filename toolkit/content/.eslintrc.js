@@ -1,17 +1,15 @@
 "use strict";
 
 module.exports = {
-  "env": {
+  env: {
     "mozilla/browser-window": true,
   },
 
-  "plugins": [
-    "mozilla"
-  ],
+  plugins: ["mozilla"],
 
   rules: {
     
     
-    "complexity": ["error", 48],
-  }
+    complexity: ["error", 48],
+  },
 };

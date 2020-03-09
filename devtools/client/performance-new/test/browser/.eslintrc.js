@@ -1,9 +1,9 @@
 
 
 
-'use strict';
+"use strict";
 
 module.exports = {
   
-  'extends': '../../../../.eslintrc.mochitests.js'
+  extends: "../../../../.eslintrc.mochitests.js",
 };

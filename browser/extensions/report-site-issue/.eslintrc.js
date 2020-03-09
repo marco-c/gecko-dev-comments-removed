@@ -1,26 +1,29 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
     "mozilla/balanced-listeners": "error",
     "mozilla/no-aArgs": "error",
     "mozilla/var-only-at-top-level": "error",
 
-    "valid-jsdoc": ["error", {
-      "prefer": {
-        "return": "returns",
+    "valid-jsdoc": [
+      "error",
+      {
+        prefer: {
+          return: "returns",
+        },
+        preferType: {
+          Boolean: "boolean",
+          Number: "number",
+          String: "string",
+          bool: "boolean",
+        },
+        requireParamDescription: false,
+        requireReturn: false,
+        requireReturnDescription: false,
       },
-      "preferType": {
-        "Boolean": "boolean",
-        "Number": "number",
-        "String": "string",
-        "bool": "boolean",
-      },
-      "requireParamDescription": false,
-      "requireReturn": false,
-      "requireReturnDescription": false,
-    }],
+    ],
 
     
     "no-unused-expressions": "error",
@@ -33,13 +36,13 @@ module.exports = {
     "block-scoped-var": "error",
 
     
-    "complexity": ["error", {"max": 26}],
+    complexity: ["error", { max: 26 }],
 
     
     "max-nested-callbacks": ["error", 4],
 
     
-    "no-console": ["error", {allow: ["error", "info", "trace", "warn"]}],
+    "no-console": ["error", { allow: ["error", "info", "trace", "warn"] }],
 
     
     "no-fallthrough": "error",
@@ -55,13 +58,13 @@ module.exports = {
     "no-return-assign": "error",
 
     
-    "radix": "error",
+    radix: "error",
 
     
-    "strict": ["error", "global"],
+    strict: ["error", "global"],
 
     
-    "yoda": "error",
+    yoda: "error",
 
     
     "no-inner-declarations": "error",

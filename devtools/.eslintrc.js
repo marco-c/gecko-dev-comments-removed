@@ -1,155 +1,153 @@
 "use strict";
 
 module.exports = {
-  "plugins": [
-    "react"
-  ],
-  "globals": {
-    "exports": true,
-    "isWorker": true,
-    "loader": true,
-    "module": true,
-    "reportError": true,
-    "require": true,
+  plugins: ["react"],
+  globals: {
+    exports: true,
+    isWorker: true,
+    loader: true,
+    module: true,
+    reportError: true,
+    require: true,
   },
-  "overrides": [{
-    "files": [
-      "client/framework/**",
-    ],
-    "rules": {
-      "no-return-assign": "off",
-    }
-  }, {
-    "files": [
-      "client/shared/*.jsm",
-    ],
-    "rules": {
-      "camelcase": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/**",
-      "client/shared/*.jsm",
-      "client/shared/widgets/*.jsm",
-      "client/storage/VariablesView.jsm",
-    ],
-    "rules": {
-      "consistent-return": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/**",
-    ],
-    "rules": {
-      "max-nested-callbacks": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/**",
-      "client/shared/*.jsm",
-      "client/shared/widgets/*.jsm",
-      "client/storage/VariablesView.jsm",
-      "shared/webconsole/test/chrome/*.html",
-    ],
-    "rules": {
-      "mozilla/no-aArgs": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/test/**",
-    ],
-    "rules": {
-      "mozilla/var-only-at-top-level": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/**",
-      "client/shared/widgets/*.jsm",
-      "client/storage/VariablesView.jsm",
-    ],
-    "rules": {
-      "no-shadow": "off",
-    }
-  }, {
-    "files": [
-      "client/framework/**",
-    ],
-    "rules": {
-      "strict": "off",
-    }
-  }, {
-    
-    "files": [
-      "**/head*.js",
-    ],
-    "rules": {
-      "no-unused-vars": ["error", {"args": "none", "vars": "local"}],
-    }
-  }, {
-    
-    "files": [
-      "server/**",
+  overrides: [
+    {
+      files: ["client/framework/**"],
+      rules: {
+        "no-return-assign": "off",
+      },
+    },
+    {
+      files: ["client/shared/*.jsm"],
+      rules: {
+        camelcase: "off",
+      },
+    },
+    {
+      files: [
+        "client/framework/**",
+        "client/shared/*.jsm",
+        "client/shared/widgets/*.jsm",
+        "client/storage/VariablesView.jsm",
+      ],
+      rules: {
+        "consistent-return": "off",
+      },
+    },
+    {
+      files: ["client/framework/**"],
+      rules: {
+        "max-nested-callbacks": "off",
+      },
+    },
+    {
+      files: [
+        "client/framework/**",
+        "client/shared/*.jsm",
+        "client/shared/widgets/*.jsm",
+        "client/storage/VariablesView.jsm",
+        "shared/webconsole/test/chrome/*.html",
+      ],
+      rules: {
+        "mozilla/no-aArgs": "off",
+      },
+    },
+    {
+      files: ["client/framework/test/**"],
+      rules: {
+        "mozilla/var-only-at-top-level": "off",
+      },
+    },
+    {
+      files: [
+        "client/framework/**",
+        "client/shared/widgets/*.jsm",
+        "client/storage/VariablesView.jsm",
+      ],
+      rules: {
+        "no-shadow": "off",
+      },
+    },
+    {
+      files: ["client/framework/**"],
+      rules: {
+        strict: "off",
+      },
+    },
+    {
       
+      files: ["**/head*.js"],
+      rules: {
+        "no-unused-vars": ["error", { args: "none", vars: "local" }],
+      },
+    },
+    {
       
+      files: [
+        "server/**",
+        
+        
+        
+        "shared/!(fronts)/**",
+        
+        "shared/*.**",
+      ],
+      rules: {
+        "mozilla/reject-some-requires": [
+          "error",
+          "^(resource://)?devtools/client",
+        ],
+      },
+    },
+    {
       
-      "shared/!(fronts)/**",
+      files: ["**"],
+      excludedFiles: [
+        
+        "**/*.jsm",
+        "**/test/**/head.js",
+        "**/test/**/shared-head.js",
+        "client/debugger/test/mochitest/code_frame-script.js",
+        "client/inspector/animation-old/test/doc_frame_script.js",
+        "client/inspector/animation/test/doc_frame_script.js",
+        "client/inspector/rules/test/doc_frame_script.js",
+        "client/inspector/shared/test/doc_frame_script.js",
+        "client/jsonview/converter-observer.js",
+        "client/jsonview/test/doc_frame_script.js",
+        "client/responsive.html/browser/content.js",
+        "client/shared/browser-loader.js",
+        "server/actors/webconsole/content-process-forward.js",
+        "server/actors/worker/service-worker-process.js",
+        "server/startup/content-process.js",
+        "server/startup/frame.js",
+        "shared/base-loader.js",
+        "shared/worker/loader.js",
+        "startup/aboutdebugging-registration.js",
+        "startup/aboutdevtools/aboutdevtools-registration.js",
+        "startup/aboutdevtoolstoolbox-registration.js",
+        "startup/devtools-startup.js",
+      ],
+      rules: {
+        "mozilla/no-define-cc-etc": "off",
+      },
+    },
+    {
       
-      "shared/*.**",
-    ],
-    "rules": {
-      "mozilla/reject-some-requires": ["error", "^(resource\://)?devtools/client"],
-    }
-  }, {
-    
-    "files": [
-      "**"
-    ],
-    "excludedFiles": [
-      
-      "**/*.jsm",
-      "**/test/**/head.js",
-      "**/test/**/shared-head.js",
-      "client/debugger/test/mochitest/code_frame-script.js",
-      "client/inspector/animation-old/test/doc_frame_script.js",
-      "client/inspector/animation/test/doc_frame_script.js",
-      "client/inspector/rules/test/doc_frame_script.js",
-      "client/inspector/shared/test/doc_frame_script.js",
-      "client/jsonview/converter-observer.js",
-      "client/jsonview/test/doc_frame_script.js",
-      "client/responsive.html/browser/content.js",
-      "client/shared/browser-loader.js",
-      "server/actors/webconsole/content-process-forward.js",
-      "server/actors/worker/service-worker-process.js",
-      "server/startup/content-process.js",
-      "server/startup/frame.js",
-      "shared/base-loader.js",
-      "shared/worker/loader.js",
-      "startup/aboutdebugging-registration.js",
-      "startup/aboutdevtools/aboutdevtools-registration.js",
-      "startup/aboutdevtoolstoolbox-registration.js",
-      "startup/devtools-startup.js",
-    ],
-    "rules": {
-      "mozilla/no-define-cc-etc": "off",
-    }
-  }, {
-    
-    "files": [
-      "**"
-    ],
-    "excludedFiles": [
-      
-      
-      "client/debugger/**",
-      
-      
-      "client/shared/build/**",
-    ],
-    "rules": {
-      "mozilla/reject-relative-requires": "error",
-    }
-  }],
-  "rules": {
+      files: ["**"],
+      excludedFiles: [
+        
+        
+        "client/debugger/**",
+        
+        
+        "client/shared/build/**",
+      ],
+      rules: {
+        "mozilla/reject-relative-requires": "error",
+      },
+    },
+  ],
+  rules: {
     
     
 
@@ -160,9 +158,12 @@ module.exports = {
     
     
     
-    "mozilla/reject-some-requires": ["error", "^devtools/shared/platform/(chome|content)/"],
+    "mozilla/reject-some-requires": [
+      "error",
+      "^devtools/shared/platform/(chome|content)/",
+    ],
     "mozilla/var-only-at-top-level": "error",
-    "mozilla/use-chromeutils-import": ["error", {allowCu: true}],
+    "mozilla/use-chromeutils-import": ["error", { allowCu: true }],
 
     
     "react/display-name": "error",
@@ -173,49 +174,47 @@ module.exports = {
     "react/no-unknown-property": "error",
     "react/prefer-es6-class": ["off", "always"],
     "react/prop-types": "error",
-    "react/sort-comp": ["error", {
-      order: [
-        "static-methods",
-        "lifecycle",
-        "everything-else",
-        "render"
-      ],
-      groups: {
-        lifecycle: [
-          "displayName",
-          "propTypes",
-          "contextTypes",
-          "childContextTypes",
-          "mixins",
-          "statics",
-          "defaultProps",
-          "constructor",
-          "getDefaultProps",
-          "getInitialState",
-          "state",
-          "getChildContext",
-          "componentWillMount",
-          "componentDidMount",
-          "componentWillReceiveProps",
-          "shouldComponentUpdate",
-          "componentWillUpdate",
-          "componentDidUpdate",
-          "componentWillUnmount"
-        ]
-      }
-    }],
+    "react/sort-comp": [
+      "error",
+      {
+        order: ["static-methods", "lifecycle", "everything-else", "render"],
+        groups: {
+          lifecycle: [
+            "displayName",
+            "propTypes",
+            "contextTypes",
+            "childContextTypes",
+            "mixins",
+            "statics",
+            "defaultProps",
+            "constructor",
+            "getDefaultProps",
+            "getInitialState",
+            "state",
+            "getChildContext",
+            "componentWillMount",
+            "componentDidMount",
+            "componentWillReceiveProps",
+            "shouldComponentUpdate",
+            "componentWillUpdate",
+            "componentDidUpdate",
+            "componentWillUnmount",
+          ],
+        },
+      },
+    ],
 
     
     
     "block-scoped-var": "error",
     
-    "camelcase": ["error", { "properties": "never" }],
+    camelcase: ["error", { properties: "never" }],
     
     
     
     
     
-    "complexity": ["error", 20],
+    complexity: ["error", 20],
     
     
     "consistent-this": "off",
@@ -224,7 +223,7 @@ module.exports = {
     "default-case": "off",
     
     
-    "eqeqeq": "off",
+    eqeqeq: "off",
     
     
     
@@ -245,7 +244,7 @@ module.exports = {
     
     
     
-    "new-cap": ["error", {"capIsNew": false}],
+    "new-cap": ["error", { capIsNew: false }],
     
     "no-bitwise": "off",
     
@@ -291,10 +290,13 @@ module.exports = {
     
     "no-restricted-modules": "off",
     
-    "no-restricted-properties": ["error", {
-      "property": "setupInParent",
-      "message": "avoid child/parent communication with setupInParent"
-    }],
+    "no-restricted-properties": [
+      "error",
+      {
+        property: "setupInParent",
+        message: "avoid child/parent communication with setupInParent",
+      },
+    ],
     
     
     "no-return-assign": "error",
@@ -316,7 +318,7 @@ module.exports = {
     "no-undefined": "off",
     
     
-    "no-unused-vars": ["error", {"args": "none", "vars": "all"}],
+    "no-unused-vars": ["error", { args: "none", vars: "all" }],
     
     "no-use-before-define": "off",
     
@@ -331,14 +333,14 @@ module.exports = {
     
     "one-var": "off",
     
-    "prefer-const": ["error", { "destructuring": "all" }],
+    "prefer-const": ["error", { destructuring: "all" }],
     
-    "radix": "error",
+    radix: "error",
     
     
     "sort-vars": "off",
     
-    "strict": ["error", "global"],
+    strict: ["error", "global"],
     
     
     
@@ -347,7 +349,7 @@ module.exports = {
     
     "vars-on-top": "off",
     
-    "yoda": "error",
+    yoda: "error",
 
     
     
@@ -398,5 +400,5 @@ module.exports = {
     
     
     "operator-assignment": "off",
-  }
+  },
 };

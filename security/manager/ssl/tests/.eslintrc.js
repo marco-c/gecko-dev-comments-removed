@@ -1,8 +1,8 @@
 "use strict";
 
 module.exports = {
-  "rules": {
+  rules: {
     
-    "mozilla/var-only-at-top-level": "error"
-  }
+    "mozilla/var-only-at-top-level": "error",
+  },
 };

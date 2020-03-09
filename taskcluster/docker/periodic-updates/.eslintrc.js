@@ -1,12 +1,12 @@
 "use strict";
 
 module.exports = {
-  "globals": {
+  globals: {
     
     
-    "arguments": false
+    arguments: false,
   },
-  "rules": {
+  rules: {
     
     "array-callback-return": "error",
 
@@ -27,7 +27,7 @@ module.exports = {
     "no-console": "error",
 
     
-    "no-constant-condition": ["error", { "checkLoops": false }],
+    "no-constant-condition": ["error", { checkLoops: false }],
 
     
     "no-extend-native": "error",
@@ -58,16 +58,19 @@ module.exports = {
     "no-useless-escape": "error",
 
     
-    "strict": ["error", "global"],
+    strict: ["error", "global"],
 
     
-    "valid-jsdoc": ["error", {
-      "requireParamDescription": false,
-      "requireReturn": false,
-      "requireReturnDescription": false,
-    }],
+    "valid-jsdoc": [
+      "error",
+      {
+        requireParamDescription: false,
+        requireReturn: false,
+        requireReturnDescription: false,
+      },
+    ],
 
     
-    "yoda": ["error", "never"],
-  }
+    yoda: ["error", "never"],
+  },
 };
