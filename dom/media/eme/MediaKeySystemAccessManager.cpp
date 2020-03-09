@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "MediaKeySystemAccessManager.h"
 
@@ -62,7 +62,7 @@ void MediaKeySystemAccessManager::PendingRequest::
 }
 
 void MediaKeySystemAccessManager::PendingRequest::RejectPromiseWithTypeError(
-    const nsAString& aReason) {
+    const nsACString& aReason) {
   if (mPromise) {
     mPromise->MaybeRejectWithTypeError(aReason);
   }
@@ -136,20 +136,20 @@ void MediaKeySystemAccessManager::CheckDoesWindowSupportProtectedMedia(
   MKSAM_LOG_DEBUG("aRequest->mKeySystem=%s",
                   NS_ConvertUTF16toUTF8(aRequest->mKeySystem).get());
 
-  // In Windows OS, some Firefox windows that host content cannot support
-  // protected content, so check the status of support for this window.
-  // On other platforms windows should always support protected media.
+  
+  
+  
 #ifdef XP_WIN
   RefPtr<BrowserChild> browser(BrowserChild::GetFrom(mWindow));
   if (!browser) {
     if (!XRE_IsParentProcess() || XRE_IsE10sParentProcess()) {
-      // In this case, there is no browser because the Navigator object has
-      // been disconnected from its window. Thus, reject the promise.
+      
+      
       aRequest->mPromise->MaybeRejectWithTypeError(
-          u"Browsing context is no longer available");
+          "Browsing context is no longer available");
     } else {
-      // In this case, there is no browser because e10s is off. Proceed with
-      // the request with support since this scenario is always supported.
+      
+      
       MKSAM_LOG_DEBUG("Allowing protected media on Windows with e10s off.");
 
       OnDoesWindowSupportProtectedMedia(true, std::move(aRequest));
@@ -177,13 +177,13 @@ void MediaKeySystemAccessManager::CheckDoesWindowSupportProtectedMedia(
               "IsWindowSupportingProtectedMedia: "
               "reason=%d",
               static_cast<int>(value.RejectValue()));
-          // Treat as failure.
+          
           self->OnDoesWindowSupportProtectedMedia(false, std::move(request));
         }
       });
 
 #else
-  // Non-Windows OS windows always support protected media.
+  
   MKSAM_LOG_DEBUG(
       "Allowing protected media because all non-Windows OS windows support "
       "protected media.");
@@ -210,11 +210,11 @@ void MediaKeySystemAccessManager::OnDoesWindowSupportProtectedMedia(
 
 void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
     UniquePtr<PendingRequest> aRequest) {
-  // At time of writing, only GeckoView is expected to leverage the need to
-  // approve EME requests from the application. However, this functionality
-  // can be tested on all platforms by manipulating the
-  // media.eme.require-app-approval + test prefs associated with
-  // MediaKeySystemPermissionRequest.
+  
+  
+  
+  
+  
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aRequest);
   MKSAM_LOG_DEBUG("aRequest->mKeySystem=%s",
@@ -223,16 +223,16 @@ void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
   if (!StaticPrefs::media_eme_require_app_approval()) {
     MKSAM_LOG_DEBUG(
         "media.eme.require-app-approval is false, allowing request.");
-    // We don't require app approval as the pref is not set. Treat as app
-    // approving by passing true to the handler.
+    
+    
     OnDoesAppAllowProtectedMedia(true, std::move(aRequest));
     return;
   }
 
   if (mAppAllowsProtectedMediaPromiseRequest.Exists()) {
-    // We already have a pending permission request, we don't need to fire
-    // another. Just wait for the existing permission request to be handled
-    // and the result from that will be used to handle the current request.
+    
+    
+    
     MKSAM_LOG_DEBUG(
         "mAppAllowsProtectedMediaPromiseRequest already exists. aRequest "
         "addded to queue and will be handled when exising permission request "
@@ -252,8 +252,8 @@ void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
     return;
   }
 
-  // If we're not using testing prefs (which take precedence over cached
-  // values) and have a cached value, handle based on the cached value.
+  
+  
   if (appApprovalRequest->CheckPromptPrefs() ==
           MediaKeySystemAccessPermissionRequest::PromptResult::Pending &&
       mAppAllowsProtectedMedia) {
@@ -264,23 +264,23 @@ void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
     return;
   }
 
-  // Store the approval request, it will be handled when we get a response
-  // from the app.
+  
+  
   mPendingAppApprovalRequests.AppendElement(std::move(aRequest));
 
   RefPtr<MediaKeySystemAccessPermissionRequest::RequestPromise> p =
       appApprovalRequest->GetPromise();
   p->Then(
        GetCurrentThreadSerialEventTarget(), __func__,
-       // Allow callback
+       
        [this,
         self = RefPtr<MediaKeySystemAccessManager>(this)](bool aRequestResult) {
          MOZ_ASSERT(NS_IsMainThread());
          MOZ_ASSERT(aRequestResult, "Result should be true on allow callback!");
          mAppAllowsProtectedMediaPromiseRequest.Complete();
-         // Cache result.
+         
          mAppAllowsProtectedMedia = Some(aRequestResult);
-         // For each pending request, handle it based on the app's response.
+         
          for (UniquePtr<PendingRequest>& approvalRequest :
               mPendingAppApprovalRequests) {
            OnDoesAppAllowProtectedMedia(*mAppAllowsProtectedMedia,
@@ -288,16 +288,16 @@ void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
          }
          self->mPendingAppApprovalRequests.Clear();
        },
-       // Cancel callback
+       
        [this,
         self = RefPtr<MediaKeySystemAccessManager>(this)](bool aRequestResult) {
          MOZ_ASSERT(NS_IsMainThread());
          MOZ_ASSERT(!aRequestResult,
                     "Result should be false on cancel callback!");
          mAppAllowsProtectedMediaPromiseRequest.Complete();
-         // Cache result.
+         
          mAppAllowsProtectedMedia = Some(aRequestResult);
-         // For each pending request, handle it based on the app's response.
+         
          for (UniquePtr<PendingRequest>& approvalRequest :
               mPendingAppApprovalRequests) {
            OnDoesAppAllowProtectedMedia(*mAppAllowsProtectedMedia,
@@ -307,13 +307,13 @@ void MediaKeySystemAccessManager::CheckDoesAppAllowProtectedMedia(
        })
       ->Track(mAppAllowsProtectedMediaPromiseRequest);
 
-  // Prefs not causing short circuit, no cached value, go ahead and request
-  // permission.
+  
+  
   MKSAM_LOG_DEBUG("Dispatching async request for app approval");
   if (NS_FAILED(appApprovalRequest->Start())) {
-    // This shouldn't happen unless we're shutting down or similar edge cases.
-    // If this is regularly being hit then something is wrong and should be
-    // investigated.
+    
+    
+    
     MKSAM_LOG_DEBUG(
         "Failed to start app approval request! Eme approval will be left in "
         "limbo!");
@@ -344,38 +344,38 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   MKSAM_LOG_DEBUG("aIsSupportedInWindow=%s",
                   NS_ConvertUTF16toUTF8(aRequest->mKeySystem).get());
 
-  // 1. If keySystem is the empty string, return a promise rejected with a newly
-  // created TypeError.
+  
+  
   if (aRequest->mKeySystem.IsEmpty()) {
-    aRequest->mPromise->MaybeRejectWithTypeError(u"Key system string is empty");
-    // Don't notify DecoderDoctor, as there's nothing we or the user can
-    // do to fix this situation; the site is using the API wrong.
+    aRequest->mPromise->MaybeRejectWithTypeError("Key system string is empty");
+    
+    
     return;
   }
-  // 2. If supportedConfigurations is empty, return a promise rejected with a
-  // newly created TypeError.
+  
+  
   if (aRequest->mConfigs.IsEmpty()) {
     aRequest->mPromise->MaybeRejectWithTypeError(
-        u"Candidate MediaKeySystemConfigs is empty");
-    // Don't notify DecoderDoctor, as there's nothing we or the user can
-    // do to fix this situation; the site is using the API wrong.
+        "Candidate MediaKeySystemConfigs is empty");
+    
+    
     return;
   }
 
-  // 3. Let document be the calling context's Document.
-  // 4. Let origin be the origin of document.
-  // 5. Let promise be a new promise.
-  // 6. Run the following steps in parallel:
+  
+  
+  
+  
 
   DecoderDoctorDiagnostics diagnostics;
 
-  //   1. If keySystem is not one of the Key Systems supported by the user
-  //   agent, reject promise with a NotSupportedError. String comparison is
-  //   case-sensitive.
+  
+  
+  
   if (!IsWidevineKeySystem(aRequest->mKeySystem) &&
       !IsClearkeyKeySystem(aRequest->mKeySystem)) {
-    // Not to inform user, because nothing to do if the keySystem is not
-    // supported.
+    
+    
     aRequest->RejectPromiseWithNotSupportedError(
         NS_LITERAL_STRING("Key system is unsupported"));
     diagnostics.StoreMediaKeySystemAccess(
@@ -385,9 +385,9 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
 
   if (!StaticPrefs::media_eme_enabled() &&
       !IsClearkeyKeySystem(aRequest->mKeySystem)) {
-    // EME disabled by user, send notification to chrome so UI can inform user.
-    // Clearkey is allowed even when EME is disabled because we want the pref
-    // "media.eme.enabled" only taking effect on proprietary DRMs.
+    
+    
+    
     MediaKeySystemAccess::NotifyObservers(mWindow, aRequest->mKeySystem,
                                           MediaKeySystemStatus::Api_disabled);
     aRequest->RejectPromiseWithNotSupportedError(
@@ -409,23 +409,23 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
       message.get());
   LogToBrowserConsole(NS_ConvertUTF8toUTF16(msg));
 
-  // We may need to install the CDM to continue.
+  
   if (status == MediaKeySystemStatus::Cdm_not_installed &&
       IsWidevineKeySystem(aRequest->mKeySystem)) {
-    // These are cases which could be resolved by downloading a new(er) CDM.
-    // When we send the status to chrome, chrome's GMPProvider will attempt to
-    // download or update the CDM. In AwaitInstall() we add listeners to wait
-    // for the update to complete, and we'll call this function again with
-    // aType==Subsequent once the download has completed and the GMPService
-    // has had a new plugin added. AwaitInstall() sets a timer to fail if the
-    // update/download takes too long or fails.
+    
+    
+    
+    
+    
+    
+    
 
     if (aRequest->mRequestType != PendingRequest::RequestType::Initial) {
       MOZ_ASSERT(aRequest->mRequestType ==
                  PendingRequest::RequestType::Subsequent);
-      // CDM is not installed, but this is a subsequent request. We've waited,
-      // but can't service this request! Give up. Chrome will still be showing a
-      // "I can't play, updating" notification.
+      
+      
+      
       aRequest->RejectPromiseWithNotSupportedError(
           NS_LITERAL_STRING("Timed out while waiting for a CDM update"));
       diagnostics.StoreMediaKeySystemAccess(
@@ -435,20 +435,20 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
 
     const nsString keySystem = aRequest->mKeySystem;
     if (AwaitInstall(std::move(aRequest))) {
-      // Notify chrome that we're going to wait for the CDM to download/update.
+      
       MediaKeySystemAccess::NotifyObservers(mWindow, keySystem, status);
     } else {
-      // Failed to await the install. Log failure and give up trying to service
-      // this request.
+      
+      
       diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(), keySystem,
                                             false, __func__);
     }
     return;
   }
   if (status != MediaKeySystemStatus::Available) {
-    // Failed due to user disabling something, send a notification to
-    // chrome, so we can show some UI to explain how the user can rectify
-    // the situation.
+    
+    
+    
     MediaKeySystemAccess::NotifyObservers(mWindow, aRequest->mKeySystem,
                                           status);
     aRequest->RejectPromiseWithNotSupportedError(
@@ -478,34 +478,34 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
   bool isPrivateBrowsing =
       mWindow->GetExtantDoc() &&
       mWindow->GetExtantDoc()->NodePrincipal()->GetPrivateBrowsingId() > 0;
-  //   2. Let implementation be the implementation of keySystem.
-  //   3. For each value in supportedConfigurations:
-  //     1. Let candidate configuration be the value.
-  //     2. Let supported configuration be the result of executing the Get
-  //     Supported Configuration algorithm on implementation, candidate
-  //     configuration, and origin.
-  //     3. If supported configuration is not NotSupported, run the following
-  //     steps:
-  //       1. Let access be a new MediaKeySystemAccess object, and initialize it
-  //       as follows:
-  //         1. Set the keySystem attribute to keySystem.
-  //         2. Let the configuration value be supported configuration.
-  //         3. Let the cdm implementation value be implementation.
-  //      2. Resolve promise with access and abort the parallel steps of this
-  //      algorithm.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   MediaKeySystemConfiguration config;
   if (MediaKeySystemAccess::GetSupportedConfig(
           aRequest->mKeySystem, aRequest->mConfigs, config, &diagnostics,
           isPrivateBrowsing, deprecationWarningLogFn)) {
     aRequest->mSupportedConfig = Some(config);
-    // The app gets the final say on if we provide access or not.
+    
     CheckDoesAppAllowProtectedMedia(std::move(aRequest));
     return;
   }
-  // 4. Reject promise with a NotSupportedError.
+  
 
-  // Not to inform user, because nothing to do if the corresponding keySystem
-  // configuration is not supported.
+  
+  
   aRequest->RejectPromiseWithNotSupportedError(
       NS_LITERAL_STRING("Key system configuration is not supported"));
   diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(),
@@ -569,9 +569,9 @@ void MediaKeySystemAccessManager::RetryRequest(
   MOZ_ASSERT(aRequest);
   MKSAM_LOG_DEBUG("aRequest->mKeySystem=%s",
                   NS_ConvertUTF16toUTF8(aRequest->mKeySystem).get());
-  // Cancel and null timer if it exists.
+  
   aRequest->CancelTimer();
-  // Indicate that this is a request that's being retried.
+  
   aRequest->mRequestType = PendingRequest::RequestType::Subsequent;
   RequestMediaKeySystemAccess(std::move(aRequest));
 }
@@ -583,31 +583,31 @@ nsresult MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
   MKSAM_LOG_DEBUG("%s", aTopic);
 
   if (!strcmp(aTopic, "gmp-changed")) {
-    // Filter out the requests where the CDM's install-status is no longer
-    // "unavailable". This will be the CDMs which have downloaded since the
-    // initial request.
-    // Note: We don't have a way to communicate from chrome that the CDM has
-    // failed to download, so we'll just let the timeout fail us in that case.
+    
+    
+    
+    
+    
     nsTArray<UniquePtr<PendingRequest>> requests;
     for (size_t i = mPendingInstallRequests.Length(); i-- > 0;) {
       nsAutoCString message;
       MediaKeySystemStatus status = MediaKeySystemAccess::GetKeySystemStatus(
           mPendingInstallRequests[i]->mKeySystem, message);
       if (status == MediaKeySystemStatus::Cdm_not_installed) {
-        // Not yet installed, don't retry. Keep waiting until timeout.
+        
         continue;
       }
-      // Status has changed, retry request.
+      
       requests.AppendElement(std::move(mPendingInstallRequests[i]));
       mPendingInstallRequests.RemoveElementAt(i);
     }
-    // Retry all pending requests, but this time fail if the CDM is not
-    // installed.
+    
+    
     for (size_t i = requests.Length(); i-- > 0;) {
       RetryRequest(std::move(requests[i]));
     }
   } else if (!strcmp(aTopic, "timer-callback")) {
-    // Find the timer that expired and re-run the request for it.
+    
     nsCOMPtr<nsITimer> timer(do_QueryInterface(aSubject));
     for (size_t i = 0; i < mPendingInstallRequests.Length(); i++) {
       if (mPendingInstallRequests[i]->mTimer == timer) {
@@ -644,7 +644,7 @@ void MediaKeySystemAccessManager::Shutdown() {
   MKSAM_LOG_DEBUG("");
   for (const UniquePtr<PendingRequest>& installRequest :
        mPendingInstallRequests) {
-    // Cancel all requests; we're shutting down.
+    
     installRequest->CancelTimer();
     installRequest->RejectPromiseWithInvalidAccessError(NS_LITERAL_STRING(
         "Promise still outstanding at MediaKeySystemAccessManager shutdown"));
@@ -667,7 +667,7 @@ void MediaKeySystemAccessManager::Shutdown() {
   }
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
 #undef MKSAM_LOG_DEBUG

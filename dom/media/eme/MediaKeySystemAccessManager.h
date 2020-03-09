@@ -137,7 +137,7 @@ class MediaKeySystemAccessManager final : public nsIObserver {
     
     void RejectPromiseWithInvalidAccessError(const nsAString& aReason);
     void RejectPromiseWithNotSupportedError(const nsAString& aReason);
-    void RejectPromiseWithTypeError(const nsAString& aReason);
+    void RejectPromiseWithTypeError(const nsACString& aReason);
 
     void CancelTimer();
   };
