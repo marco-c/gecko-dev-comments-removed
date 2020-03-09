@@ -6,8 +6,9 @@
 
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-
+#include "mozilla/StaticPrefs_media.h"
 #include "nsIChromeRegistry.h"
+#include "nsIObserverService.h"
 #include "nsIXULAppInfo.h"
 
 #ifdef MOZ_PLACES
@@ -24,6 +25,19 @@ mozilla::LazyLogModule gMediaSession("MediaSession");
 
 namespace mozilla {
 namespace dom {
+
+static bool IsMetadataEmpty(const Maybe<MediaMetadataBase>& aMetadata) {
+  
+  if (!aMetadata) {
+    return true;
+  }
+
+  
+  
+  const MediaMetadataBase& metadata = *aMetadata;
+  return metadata.mTitle.IsEmpty() && metadata.mArtist.IsEmpty() &&
+         metadata.mAlbum.IsEmpty() && metadata.mArtwork.IsEmpty();
+}
 
 MediaSessionController::MediaSessionController(uint64_t aContextId)
     : mTopLevelBCId(aContextId) {
@@ -51,13 +65,28 @@ void MediaSessionController::NotifySessionDestroyed(
   UpdateActiveMediaSessionContextId();
 }
 
-void MediaSessionController::UpdateMetadata(uint64_t aSessionContextId,
-                                            MediaMetadataBase& aMetadata) {
+void MediaSessionController::UpdateMetadata(
+    uint64_t aSessionContextId, const Maybe<MediaMetadataBase>& aMetadata) {
   if (!mMetadataMap.Contains(aSessionContextId)) {
     return;
   }
-  LOG("Update metadata for session %" PRId64, aSessionContextId);
-  mMetadataMap.GetValue(aSessionContextId)->emplace(aMetadata);
+  if (IsMetadataEmpty(aMetadata)) {
+    LOG("Reset metadata for session %" PRId64, aSessionContextId);
+    mMetadataMap.GetValue(aSessionContextId)->reset();
+  } else {
+    LOG("Update metadata for session %" PRId64 " title=%s artist=%s album=%s",
+        aSessionContextId, NS_ConvertUTF16toUTF8((*aMetadata).mTitle).get(),
+        NS_ConvertUTF16toUTF8(aMetadata->mArtist).get(),
+        NS_ConvertUTF16toUTF8(aMetadata->mAlbum).get());
+    mMetadataMap.Put(aSessionContextId, aMetadata);
+  }
+  mMetadataChangedEvent.Notify(GetCurrentMediaMetadata());
+  if (StaticPrefs::media_mediacontrol_testingevents_enabled()) {
+    if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
+      obs->NotifyObservers(nullptr, "media-session-controller-metadata-changed",
+                           nullptr);
+    }
+  }
 }
 
 void MediaSessionController::UpdateActiveMediaSessionContextId() {
@@ -97,15 +126,25 @@ void MediaSessionController::UpdateActiveMediaSessionContextId() {
 
 MediaMetadataBase MediaSessionController::CreateDefaultMetadata() const {
   MediaMetadataBase metadata;
+  metadata.mTitle = GetDefaultTitle();
+  metadata.mArtwork.AppendElement()->mSrc = GetDefaultFaviconURL();
+
+  LOG("Default media metadata, title=%s, album src=%s",
+      NS_ConvertUTF16toUTF8(metadata.mTitle).get(),
+      NS_ConvertUTF16toUTF8(metadata.mArtwork[0].mSrc).get());
+  return metadata;
+}
+
+nsString MediaSessionController::GetDefaultTitle() const {
   RefPtr<CanonicalBrowsingContext> bc =
       CanonicalBrowsingContext::Get(mTopLevelBCId);
   if (!bc) {
-    return metadata;
+    return EmptyString();
   }
 
   RefPtr<WindowGlobalParent> globalParent = bc->GetCurrentWindowGlobal();
   if (!globalParent) {
-    return metadata;
+    return EmptyString();
   }
 
   
@@ -119,26 +158,22 @@ MediaMetadataBase MediaSessionController::CreateDefaultMetadata() const {
         nsContentUtils::IsInPrivateBrowsing(element->OwnerDoc());
   }
 
+  nsString defaultTitle;
   if (inPrivateBrowsing) {
     
     if (nsCOMPtr<nsIXULAppInfo> appInfo =
             do_GetService("@mozilla.org/xre/app-info;1")) {
       nsCString appName;
       appInfo->GetName(appName);
-      CopyUTF8toUTF16(appName, metadata.mTitle);
+      CopyUTF8toUTF16(appName, defaultTitle);
     } else {
-      metadata.mTitle.AssignLiteral("Firefox");
+      defaultTitle.AssignLiteral("Firefox");
     }
-    metadata.mTitle.AppendLiteral(" is playing media");
+    defaultTitle.AppendLiteral(" is playing media");
   } else {
-    metadata.mTitle = globalParent->GetDocumentTitle();
+    defaultTitle = globalParent->GetDocumentTitle();
   }
-  metadata.mArtwork.AppendElement()->mSrc = GetDefaultFaviconURL();
-
-  LOG("Default media metadata, title=%s, album src=%s",
-      NS_ConvertUTF16toUTF8(metadata.mTitle).get(),
-      NS_ConvertUTF16toUTF8(metadata.mArtwork[0].mSrc).get());
-  return metadata;
+  return defaultTitle;
 }
 
 nsString MediaSessionController::GetDefaultFaviconURL() const {

@@ -46,13 +46,18 @@ class MediaSessionController {
 
   
   
-  void UpdateMetadata(uint64_t aSessionContextId, MediaMetadataBase& aMetadata);
+  void UpdateMetadata(uint64_t aSessionContextId,
+                      const Maybe<MediaMetadataBase>& aMetadata);
 
   
   
   
   MediaMetadataBase GetCurrentMediaMetadata() const;
   uint64_t Id() const { return mTopLevelBCId; }
+
+  MediaEventSource<MediaMetadataBase>& MetadataChangedEvent() {
+    return mMetadataChangedEvent;
+  }
 
  protected:
   ~MediaSessionController() = default;
@@ -61,10 +66,12 @@ class MediaSessionController {
 
  private:
   nsString GetDefaultFaviconURL() const;
+  nsString GetDefaultTitle() const;
   MediaMetadataBase CreateDefaultMetadata() const;
   void UpdateActiveMediaSessionContextId();
 
   nsDataHashtable<nsUint64HashKey, Maybe<MediaMetadataBase>> mMetadataMap;
+  MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
 };
 
 }  
