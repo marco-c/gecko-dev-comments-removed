@@ -57,6 +57,11 @@ void StreamControl::CloseReadStreams(const nsID& aId) {
 void StreamControl::CloseAllReadStreams() {
   AssertOwningThread();
 
+  
+  
+  
+  
+  
   auto readStreamList = mReadStreamList;
   ReadStreamList::ForwardIterator iter(readStreamList);
   while (iter.HasMore()) {
