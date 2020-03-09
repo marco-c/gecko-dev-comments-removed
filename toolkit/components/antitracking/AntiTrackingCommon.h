@@ -120,14 +120,6 @@ class AntiTrackingCommon final {
   static bool HasUserInteraction(nsIPrincipal* aPrincipal);
 
   
-  
-  
-  
-  typedef std::function<void()> AntiTrackingSettingsChangedCallback;
-  static void OnAntiTrackingSettingsChanged(
-      const AntiTrackingSettingsChangedCallback& aCallback);
-
-  
   typedef MozPromise<nsresult, bool, true> FirstPartyStorageAccessGrantPromise;
   static RefPtr<FirstPartyStorageAccessGrantPromise>
   SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
@@ -135,24 +127,6 @@ class AntiTrackingCommon final {
       const nsCString& aTrackingOrigin, int aAllowMode,
       uint64_t aExpirationTime =
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
-
-  
-  
-  
-  
-  static nsresult IsOnContentBlockingAllowList(
-      nsIPrincipal* aContentBlockingAllowListPrincipal, bool aIsPrivateBrowsing,
-      bool& aIsAllowListed);
-
-  
-  
-  
-  static void ComputeContentBlockingAllowListPrincipal(
-      nsIPrincipal* aDocumentPrincipal, nsIPrincipal** aPrincipal);
-
-  static void RecomputeContentBlockingAllowListPrincipal(
-      nsIURI* aURIBeingLoaded, const OriginAttributes& aAttrs,
-      nsIPrincipal** aPrincipal);
 
   enum class BlockingDecision {
     eBlock,
