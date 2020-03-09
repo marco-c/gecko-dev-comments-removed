@@ -426,6 +426,11 @@ class HTMLMediaElement::MediaControlEventListener final
     mControlAgent = nullptr;
   }
 
+  bool IsStarted() const { return mState != ControlledMediaState::eStopped; }
+
+  
+
+
   void NotifyMediaStartedPlaying() {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
@@ -473,8 +478,6 @@ class HTMLMediaElement::MediaControlEventListener final
       Owner()->Pause();
     }
   }
-
-  bool IsStarted() const { return mState != ControlledMediaState::eStopped; }
 
  private:
   ~MediaControlEventListener() = default;
