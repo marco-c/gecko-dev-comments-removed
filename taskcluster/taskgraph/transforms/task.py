@@ -196,27 +196,6 @@ task_description_schema = Schema({
     
     
     
-    Optional('coalesce'): {
-        
-        
-        
-        
-        'job-identifier': text_type,
-
-        
-        
-        
-        'age': int,
-
-        
-        
-        'size': int,
-    },
-
-    
-    
-    
-    
     
     Required('always-target'): bool,
 
@@ -321,10 +300,6 @@ def get_branch_repo(config):
     )]
 
 
-COALESCE_KEY = '{project}.{job-identifier}'
-SUPERSEDER_URL = 'https://coalesce.mozilla-releng.net/v1/list/{age}/{size}/{key}'
-
-
 @memoize
 def get_default_priority(graph_config, project):
     return evaluate_keyed_by(
@@ -362,24 +337,6 @@ def index_builder(name):
         index_builders[name] = func
         return func
     return wrap
-
-
-def coalesce_key(config, task):
-    return COALESCE_KEY.format(**{
-               'project': config.params['project'],
-               'job-identifier': task['coalesce']['job-identifier'],
-           })
-
-
-def superseder_url(config, task):
-    key = coalesce_key(config, task)
-    age = task['coalesce']['age']
-    size = task['coalesce']['size']
-    return SUPERSEDER_URL.format(
-        age=age,
-        size=size,
-        key=key
-    )
 
 
 UNSUPPORTED_INDEX_PRODUCT_ERROR = """\
@@ -693,10 +650,6 @@ def build_docker_worker_payload(config, task, task_def):
     if capabilities:
         payload['capabilities'] = capabilities
 
-    
-    if 'coalesce' in task:
-        payload['supersederUrl'] = superseder_url(config, task)
-
     check_caches_are_volumes(task)
     check_required_volumes(task)
 
@@ -894,10 +847,6 @@ def build_generic_worker_payload(config, task, task_def):
 
     if features:
         task_def['payload']['features'] = features
-
-    
-    if 'coalesce' in task:
-        task_def['payload']['supersederUrl'] = superseder_url(config, task)
 
 
 @payload_builder('scriptworker-signing', schema={
@@ -1931,10 +1880,6 @@ def build_task(config, tasks):
 
         if 'deadline-after' not in task:
             task['deadline-after'] = '1 day'
-
-        if 'coalesce' in task:
-            key = coalesce_key(config, task)
-            routes.append('coalesce.v1.' + key)
 
         if 'priority' not in task:
             task['priority'] = get_default_priority(config.graph_config, config.params['project'])
