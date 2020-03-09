@@ -222,8 +222,10 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
 
 
-  nsresult RemoveRange(mozilla::dom::Selection* aSpellCheckSelection,
-                       nsRange* aRange);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  RemoveRange(mozilla::dom::Selection* aSpellCheckSelection, nsRange* aRange);
   nsresult AddRange(mozilla::dom::Selection* aSpellCheckSelection,
                     nsRange* aRange);
   bool SpellCheckSelectionIsFull() {

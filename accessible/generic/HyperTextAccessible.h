@@ -341,8 +341,10 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  bool SetSelectionBoundsAt(int32_t aSelectionNum, int32_t aStartOffset,
-                            int32_t aEndOffset);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool SetSelectionBoundsAt(int32_t aSelectionNum,
+                                                        int32_t aStartOffset,
+                                                        int32_t aEndOffset);
 
   
 
@@ -354,7 +356,8 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  bool RemoveFromSelection(int32_t aSelectionNum);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool RemoveFromSelection(int32_t aSelectionNum);
 
   
 
@@ -508,7 +511,9 @@ class HyperTextAccessible : public AccessibleWrap {
   void GetSelectionDOMRanges(SelectionType aSelectionType,
                              nsTArray<nsRange*>* aRanges);
 
-  nsresult SetSelectionRange(int32_t aStartPos, int32_t aEndPos);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetSelectionRange(int32_t aStartPos,
+                                                         int32_t aEndPos);
 
   
 

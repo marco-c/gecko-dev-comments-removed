@@ -100,7 +100,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
 
 
-  void SetSelection(mozilla::dom::Selection* aSelection);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetSelection(
+      mozilla::dom::Selection* aSelection);
 
   
 

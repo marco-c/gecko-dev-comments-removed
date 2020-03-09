@@ -820,6 +820,8 @@ class nsFrameSelection final {
     
     nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
 
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY
     nsresult HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
                              mozilla::TableSelectionMode aTarget,
                              mozilla::WidgetMouseEvent* aMouseEvent,
@@ -833,11 +835,11 @@ class nsFrameSelection final {
                                mozilla::dom::Selection& aNormalSelection);
 
     
-    nsresult UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
-                           int32_t aStartColumnIndex, int32_t aEndRowIndex,
-                           int32_t aEndColumnIndex,
-                           bool aRemoveOutsideOfCellRange,
-                           mozilla::dom::Selection& aNormalSelection);
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+    UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
+                  int32_t aStartColumnIndex, int32_t aEndRowIndex,
+                  int32_t aEndColumnIndex, bool aRemoveOutsideOfCellRange,
+                  mozilla::dom::Selection& aNormalSelection);
 
     nsCOMPtr<nsINode> mCellParent;  
     nsCOMPtr<nsIContent> mStartSelectedCell;

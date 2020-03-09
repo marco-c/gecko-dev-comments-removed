@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=2 sw=2 et tw=78: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "HyperTextAccessible-inl.h"
 
@@ -47,9 +47,9 @@
 using namespace mozilla;
 using namespace mozilla::a11y;
 
-
-
-
+////////////////////////////////////////////////////////////////////////////////
+// HyperTextAccessible
+////////////////////////////////////////////////////////////////////////////////
 
 HyperTextAccessible::HyperTextAccessible(nsIContent* aNode, DocAccessible* aDoc)
     : AccessibleWrap(aNode, aDoc) {
@@ -74,7 +74,7 @@ uint64_t HyperTextAccessible::NativeState() const {
     states |= states::EDITABLE;
 
   } else if (mContent->IsHTMLElement(nsGkAtoms::article)) {
-    
+    // We want <article> to behave like a document in terms of readonly state.
     states |= states::READONLY;
   }
 
@@ -92,7 +92,7 @@ nsIntRect HyperTextAccessible::GetBoundsInFrame(nsIFrame* aFrame,
         presContext->AppUnitsPerDevPixel());
   }
 
-  
+  // Substring must be entirely within the same text node.
   int32_t startContentOffset, endContentOffset;
   nsresult rv = RenderedToContentOffset(aFrame, aStartRenderedOffset,
                                         &startContentOffset);
@@ -102,20 +102,20 @@ nsIntRect HyperTextAccessible::GetBoundsInFrame(nsIFrame* aFrame,
 
   nsIFrame* frame;
   int32_t startContentOffsetInFrame;
-  
-  
+  // Get the right frame continuation -- not really a child, but a sibling of
+  // the primary frame passed in
   rv = aFrame->GetChildFrameContainingOffset(
       startContentOffset, false, &startContentOffsetInFrame, &frame);
   NS_ENSURE_SUCCESS(rv, nsIntRect());
 
   nsRect screenRect;
   while (frame && startContentOffset < endContentOffset) {
-    
-    
-    
+    // Start with this frame's screen rect, which we will shrink based on
+    // the substring we care about within it. We will then add that frame to
+    // the total screenRect we are returning.
     nsRect frameScreenRect = frame->GetScreenRectInAppUnits();
 
-    
+    // Get the length of the substring in this frame that we want the bounds for
     int32_t startFrameTextOffset, endFrameTextOffset;
     frame->GetOffsets(startFrameTextOffset, endFrameTextOffset);
     int32_t frameTotalTextLength = endFrameTextOffset - startFrameTextOffset;
@@ -123,12 +123,12 @@ nsIntRect HyperTextAccessible::GetBoundsInFrame(nsIFrame* aFrame,
     int32_t frameSubStringLength =
         std::min(frameTotalTextLength - startContentOffsetInFrame, seekLength);
 
-    
+    // Add the point where the string starts to the frameScreenRect
     nsPoint frameTextStartPoint;
     rv = frame->GetPointFromOffset(startContentOffset, &frameTextStartPoint);
     NS_ENSURE_SUCCESS(rv, nsIntRect());
 
-    
+    // Use the point for the end offset to calculate the width
     nsPoint frameTextEndPoint;
     rv = frame->GetPointFromOffset(startContentOffset + frameSubStringLength,
                                    &frameTextEndPoint);
@@ -141,7 +141,7 @@ nsIntRect HyperTextAccessible::GetBoundsInFrame(nsIFrame* aFrame,
 
     screenRect.UnionRect(frameScreenRect, screenRect);
 
-    
+    // Get ready to loop back for next frame continuation
     startContentOffset += frameSubStringLength;
     startContentOffsetInFrame = 0;
     frame = frame->GetNextContinuation();
@@ -209,10 +209,10 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
     findNode = aNode;
 
   } else if (aNode->IsText()) {
-    
-    
-    
-    
+    // For text nodes, aNodeOffset comes in as a character offset
+    // Text offset will be added at the end, if we find the offset in this
+    // hypertext We want the "skipped" offset into the text (rendered text
+    // without the extra whitespace)
     nsIFrame* frame = aNode->AsContent()->GetPrimaryFrame();
     NS_ENSURE_TRUE(frame, 0);
 
@@ -222,27 +222,27 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
     findNode = aNode;
 
   } else {
-    
-    
-    
-    
-    
-    
-    
+    // findNode could be null if aNodeOffset == # of child nodes, which means
+    // one of two things:
+    // 1) there are no children, and the passed-in node is not mContent -- use
+    //    parentContent for the node to find
+    // 2) there are no children and the passed-in node is mContent, which means
+    //    we're an empty nsIAccessibleText
+    // 3) there are children and we're at the end of the children
 
     findNode = aNode->GetChildAt_Deprecated(aNodeOffset);
     if (!findNode) {
       if (aNodeOffset == 0) {
         if (aNode == GetNode()) {
-          
-          
+          // Case #1: this accessible has no children and thus has empty text,
+          // we can only be at hypertext offset 0.
           return 0;
         }
 
-        
+        // Case #2: there are no children, we're at this node.
         findNode = aNode;
       } else if (aNodeOffset == static_cast<int32_t>(aNode->GetChildCount())) {
-        
+        // Case #3: we're after the last child, get next node to this one.
         for (nsINode* tmpNode = aNode;
              !findNode && tmpNode && tmpNode != mContent;
              tmpNode = tmpNode->GetParent()) {
@@ -252,15 +252,15 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
     }
   }
 
-  
-  
-  
+  // Get accessible for this findNode, or if that node isn't accessible, use the
+  // accessible for the next DOM node which has one (based on forward depth
+  // first search)
   Accessible* descendant = nullptr;
   if (findNode) {
     dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(findNode);
     if (brElement && brElement->IsPaddingForEmptyEditor()) {
-      
-      
+      // This <br> is the hacky "padding <br> element" used when there is no
+      // text in the editor.
       return 0;
     }
 
@@ -282,25 +282,25 @@ uint32_t HyperTextAccessible::DOMPointToOffset(nsINode* aNode,
 uint32_t HyperTextAccessible::TransformOffset(Accessible* aDescendant,
                                               uint32_t aOffset,
                                               bool aIsEndOffset) const {
-  
+  // From the descendant, go up and get the immediate child of this hypertext.
   uint32_t offset = aOffset;
   Accessible* descendant = aDescendant;
   while (descendant) {
     Accessible* parent = descendant->Parent();
     if (parent == this) return GetChildOffset(descendant) + offset;
 
-    
-    
-    
-    
-    
-    
-    
+    // This offset no longer applies because the passed-in text object is not
+    // a child of the hypertext. This happens when there are nested hypertexts,
+    // e.g. <div>abc<h1>def</h1>ghi</div>. Thus we need to adjust the offset
+    // to make it relative the hypertext.
+    // If the end offset is not supposed to be inclusive and the original point
+    // is not at 0 offset then the returned offset should be after an embedded
+    // character the original point belongs to.
     if (aIsEndOffset) {
-      
-      
-      
-      
+      // Similar to our special casing in FindOffset, we add handling for
+      // bulleted lists here because PeekOffset returns the inner text node
+      // for a list when it should return the list bullet.
+      // We manually set the offset so the error doesn't propagate up.
       if (offset == 0 && parent && parent->IsHTMLListItem() &&
           descendant->PrevSibling() && descendant->PrevSibling()->GetFrame() &&
           descendant->PrevSibling()->GetFrame()->IsBulletFrame()) {
@@ -315,19 +315,19 @@ uint32_t HyperTextAccessible::TransformOffset(Accessible* aDescendant,
     descendant = parent;
   }
 
-  
-  
+  // If the given a11y point cannot be mapped into offset relative this
+  // hypertext offset then return length as fallback value.
   return CharacterCount();
 }
 
-
-
-
-
-
-
-
-
+/**
+ * GetElementAsContentOf() returns a content representing an element which is
+ * or includes aNode.
+ *
+ * XXX This method is enough to retrieve ::before or ::after pseudo element.
+ *     So, if you want to use this for other purpose, you might need to check
+ *     ancestors too.
+ */
 static nsIContent* GetElementAsContentOf(nsINode* aNode) {
   if (auto* element = dom::Element::FromNode(aNode)) {
     return element;
@@ -341,17 +341,17 @@ bool HyperTextAccessible::OffsetsToDOMRange(int32_t aStartOffset,
   DOMPoint startPoint = OffsetToDOMPoint(aStartOffset);
   if (!startPoint.node) return false;
 
-  
-  
-  
-  
+  // HyperTextAccessible manages pseudo elements generated by ::before or
+  // ::after.  However, contents of them are not in the DOM tree normally.
+  // Therefore, they are not selectable and editable.  So, when this creates
+  // a DOM range, it should not start from nor end in any pseudo contents.
 
   nsIContent* container = GetElementAsContentOf(startPoint.node);
   DOMPoint startPointForDOMRange =
       ClosestNotGeneratedDOMPoint(startPoint, container);
   aRange->SetStart(startPointForDOMRange.node, startPointForDOMRange.idx);
 
-  
+  // If the caller wants collapsed range, let's collapse the range to its start.
   if (aStartOffset == aEndOffset) {
     aRange->Collapse(true);
     return true;
@@ -371,8 +371,8 @@ bool HyperTextAccessible::OffsetsToDOMRange(int32_t aStartOffset,
 }
 
 DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) {
-  
-  
+  // 0 offset is valid even if no children. In this case the associated editor
+  // is empty so return a DOM point for editor root element.
   if (aOffset == 0) {
     RefPtr<TextEditor> textEditor = GetEditor();
     if (textEditor) {
@@ -388,10 +388,10 @@ DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) {
   Accessible* child = GetChildAt(childIdx);
   int32_t innerOffset = aOffset - GetChildOffset(childIdx);
 
-  
+  // A text leaf case.
   if (child->IsTextLeaf()) {
-    
-    
+    // The point is inside the text node. This is always true for any text leaf
+    // except a last child one. See assertion below.
     if (aOffset < GetChildOffset(childIdx + 1)) {
       nsIContent* content = child->GetContent();
       int32_t idx = 0;
@@ -402,12 +402,12 @@ DOMPoint HyperTextAccessible::OffsetToDOMPoint(int32_t aOffset) {
       return DOMPoint(content, idx);
     }
 
-    
+    // Set the DOM point right after the text node.
     MOZ_ASSERT(static_cast<uint32_t>(aOffset) == CharacterCount());
     innerOffset = 1;
   }
 
-  
+  // Case of embedded object. The point is either before or after the element.
   NS_ASSERTION(innerOffset == 0 || innerOffset == 1, "A wrong inner offset!");
   nsINode* node = child->GetNode();
   nsINode* parentNode = node->GetParentNode();
@@ -420,23 +420,23 @@ DOMPoint HyperTextAccessible::ClosestNotGeneratedDOMPoint(
     const DOMPoint& aDOMPoint, nsIContent* aElementContent) {
   MOZ_ASSERT(aDOMPoint.node, "The node must not be null");
 
-  
+  // ::before pseudo element
   if (aElementContent &&
       aElementContent->IsGeneratedContentContainerForBefore()) {
     MOZ_ASSERT(aElementContent->GetParent(),
                "::before must have parent element");
-    
-    
+    // The first child of its parent (i.e., immediately after the ::before) is
+    // good point for a DOM range.
     return DOMPoint(aElementContent->GetParent(), 0);
   }
 
-  
+  // ::after pseudo element
   if (aElementContent &&
       aElementContent->IsGeneratedContentContainerForAfter()) {
     MOZ_ASSERT(aElementContent->GetParent(),
                "::after must have parent element");
-    
-    
+    // The end of its parent (i.e., immediately before the ::after) is good
+    // point for a DOM range.
     return DOMPoint(aElementContent->GetParent(),
                     aElementContent->GetParent()->GetChildCount());
   }
@@ -451,7 +451,7 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   NS_ASSERTION(aDirection == eDirPrevious || aAmount != eSelectBeginLine,
                "eSelectBeginLine should only be used with eDirPrevious");
 
-  
+  // Find a leaf accessible frame to start with. PeekOffset wants this.
   HyperTextAccessible* text = this;
   Accessible* child = nullptr;
   int32_t innerOffset = aOffset;
@@ -459,9 +459,9 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   do {
     int32_t childIdx = text->GetChildIndexAtOffset(innerOffset);
 
-    
-    
-    
+    // We can have an empty text leaf as our only child. Since empty text
+    // leaves are not accessible we then have no children, but 0 is a valid
+    // innerOffset.
     if (childIdx == -1) {
       NS_ASSERTION(innerOffset == 0 && !text->ChildCount(), "No childIdx?");
       return DOMPointToOffset(text->GetNode(), 0, aDirection == eDirNext);
@@ -469,13 +469,13 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
 
     child = text->GetChildAt(childIdx);
 
-    
-    
+    // HTML list items may need special processing because PeekOffset doesn't
+    // work with list bullets.
     if (text->IsHTMLListItem()) {
       HTMLLIAccessible* li = text->AsHTMLListItem();
       if (child == li->Bullet()) {
-        
-        
+        // XXX: the logic is broken for multichar bullets in moving by
+        // char/cluster/word cases.
         if (text != this) {
           return aDirection == eDirPrevious ? TransformOffset(text, 0, false)
                                             : TransformOffset(text, 1, true);
@@ -488,8 +488,8 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
         switch (aAmount) {
           case eSelectLine:
           case eSelectEndLine:
-            
-            
+            // Ask a text leaf next (if not empty) to the bullet for an offset
+            // since list item may be multiline.
             return nextOffset < CharacterCount()
                        ? FindOffset(nextOffset, aDirection, aAmount,
                                     aWordMovementType)
@@ -523,17 +523,17 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
   childFrame->GetChildFrameContainingOffset(
       innerContentOffset, true, &unusedOffsetInFrame, &frameAtOffset);
 
-  const bool kIsJumpLinesOk = true;       
-  const bool kIsScrollViewAStop = false;  
-  const bool kIsKeyboardSelect = true;    
-  const bool kIsVisualBidi = false;       
+  const bool kIsJumpLinesOk = true;       // okay to jump lines
+  const bool kIsScrollViewAStop = false;  // do not stop at scroll views
+  const bool kIsKeyboardSelect = true;    // is keyboard selection
+  const bool kIsVisualBidi = false;       // use visual order for bidi text
   nsPeekOffsetStruct pos(
       aAmount, aDirection, innerContentOffset, nsPoint(0, 0), kIsJumpLinesOk,
       kIsScrollViewAStop, kIsKeyboardSelect, kIsVisualBidi, false,
       nsPeekOffsetStruct::ForceEditableRegion::No, aWordMovementType, false);
   nsresult rv = frameAtOffset->PeekOffset(&pos);
 
-  
+  // PeekOffset fails on last/first lines of the text in certain cases.
   bool fallBackToSelectEndLine = false;
   if (NS_FAILED(rv) && aAmount == eSelectLine) {
     fallBackToSelectEndLine = aDirection == eDirNext;
@@ -545,24 +545,24 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
     return 0;
   }
 
-  
+  // Turn the resulting DOM point into an offset.
   uint32_t hyperTextOffset = DOMPointToOffset(
       pos.mResultContent, pos.mContentOffset, aDirection == eDirNext);
 
   if (fallBackToSelectEndLine && IsLineEndCharAt(hyperTextOffset)) {
-    
-    
-    
-    
+    // We used eSelectEndLine, but the caller requested eSelectLine.
+    // If there's a '\n' at the end of the line, eSelectEndLine will stop
+    // on it rather than after it. This is not what we want, since the caller
+    // wants the next line, not the same line.
     ++hyperTextOffset;
   }
 
   if (aDirection == eDirPrevious) {
-    
-    
+    // If we reached the end during search, this means we didn't find the DOM
+    // point and we're actually at the start of the paragraph
     if (hyperTextOffset == CharacterCount()) return 0;
 
-    
+    // PeekOffset stops right before bullet so return 0 to workaround it.
     if (IsHTMLListItem() && aAmount == eSelectBeginLine &&
         hyperTextOffset > 0) {
       Accessible* prevOffsetChild = GetChildAtOffset(hyperTextOffset - 1);
@@ -575,13 +575,13 @@ uint32_t HyperTextAccessible::FindOffset(uint32_t aOffset,
 
 uint32_t HyperTextAccessible::FindLineBoundary(
     uint32_t aOffset, EWhichLineBoundary aWhichLineBoundary) {
-  
-  
-  
+  // Note: empty last line doesn't have own frame (a previous line contains '\n'
+  // character instead) thus when it makes a difference we need to process this
+  // case separately (otherwise operations are performed on previous line).
   switch (aWhichLineBoundary) {
     case ePrevLineBegin: {
-      
-      
+      // Fetch a previous line and move to its start (as arrow up and home keys
+      // were pressed).
       if (IsEmptyLastLineOffset(aOffset))
         return FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
 
@@ -592,12 +592,12 @@ uint32_t HyperTextAccessible::FindLineBoundary(
     case ePrevLineEnd: {
       if (IsEmptyLastLineOffset(aOffset)) return aOffset - 1;
 
-      
+      // If offset is at first line then return 0 (first line start).
       uint32_t tmpOffset = FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
       if (tmpOffset == 0) return 0;
 
-      
-      
+      // Otherwise move to end of previous line (as arrow up and end keys were
+      // pressed).
       tmpOffset = FindOffset(aOffset, eDirPrevious, eSelectLine);
       return FindOffset(tmpOffset, eDirNext, eSelectEndLine);
     }
@@ -605,20 +605,20 @@ uint32_t HyperTextAccessible::FindLineBoundary(
     case eThisLineBegin:
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
 
-      
+      // Move to begin of the current line (as home key was pressed).
       return FindOffset(aOffset, eDirPrevious, eSelectBeginLine);
 
     case eThisLineEnd:
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
 
-      
+      // Move to end of the current line (as end key was pressed).
       return FindOffset(aOffset, eDirNext, eSelectEndLine);
 
     case eNextLineBegin: {
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
 
-      
-      
+      // Move to begin of the next line if any (arrow down and home keys),
+      // otherwise end of the current line (arrow down only).
       uint32_t tmpOffset = FindOffset(aOffset, eDirNext, eSelectLine);
       if (tmpOffset == CharacterCount()) return tmpOffset;
 
@@ -628,7 +628,7 @@ uint32_t HyperTextAccessible::FindLineBoundary(
     case eNextLineEnd: {
       if (IsEmptyLastLineOffset(aOffset)) return aOffset;
 
-      
+      // Move to next line end (as down arrow and end key were pressed).
       uint32_t tmpOffset = FindOffset(aOffset, eDirNext, eSelectLine);
       if (tmpOffset == CharacterCount()) return tmpOffset;
 
@@ -664,9 +664,9 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_START: {
-      
-      
-      
+      // If the offset is a word start (except text length offset) then move
+      // backward to find a start offset (end offset is the given offset).
+      // Otherwise move backward twice to find both start and end offsets.
       if (adjustedOffset == CharacterCount()) {
         *aEndOffset =
             FindWordBoundary(adjustedOffset, eDirPrevious, eStartWord);
@@ -686,7 +686,7 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
     }
 
     case nsIAccessibleText::BOUNDARY_WORD_END: {
-      
+      // Move word backward twice to find start and end offsets.
       *aEndOffset = FindWordBoundary(convertedOffset, eDirPrevious, eEndWord);
       *aStartOffset = FindWordBoundary(*aEndOffset, eDirPrevious, eEndWord);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
@@ -702,7 +702,7 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
     case nsIAccessibleText::BOUNDARY_LINE_END: {
       *aEndOffset = FindLineBoundary(adjustedOffset, ePrevLineEnd);
       int32_t tmpOffset = *aEndOffset;
-      
+      // Adjust offset if line is wrapped.
       if (*aEndOffset != 0 && !IsLineEndCharAt(*aEndOffset)) tmpOffset--;
 
       *aStartOffset = FindLineBoundary(tmpOffset, ePrevLineEnd);
@@ -727,8 +727,8 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
 
   switch (aBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
-      
-      
+      // Return no char if caret is at the end of wrapped line (case of no line
+      // end character). Returning a next line char is confusing for AT.
       if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET &&
           IsCaretAtEndOfLine())
         *aStartOffset = *aEndOffset = adjustedOffset;
@@ -746,9 +746,9 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_END:
-      
-      
-      
+      // Ignore the spec and follow what WebKitGtk does because Orca expects it,
+      // i.e. return a next word at word end offset of the current word
+      // (WebKitGtk behavior) instead the current word (AKT spec).
       *aEndOffset = FindWordBoundary(adjustedOffset, eDirNext, eEndWord);
       *aStartOffset = FindWordBoundary(*aEndOffset, eDirPrevious, eEndWord);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
@@ -767,7 +767,7 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       if (aOffset == nsIAccessibleText::TEXT_OFFSET_CARET)
         adjustedOffset = AdjustCaretOffset(adjustedOffset);
 
-      
+      // In contrast to word end boundary we follow the spec here.
       *aStartOffset = FindLineBoundary(adjustedOffset, ePrevLineEnd);
       *aEndOffset = FindLineBoundary(adjustedOffset, eThisLineEnd);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
@@ -795,8 +795,8 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
 
   switch (aBoundaryType) {
     case nsIAccessibleText::BOUNDARY_CHAR:
-      
-      
+      // If caret is at the end of wrapped line (case of no line end character)
+      // then char after the offset is a first char at next line.
       if (adjustedOffset >= CharacterCount())
         *aStartOffset = *aEndOffset = CharacterCount();
       else
@@ -804,16 +804,16 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_START:
-      
+      // Move word forward twice to find start and end offsets.
       *aStartOffset = FindWordBoundary(adjustedOffset, eDirNext, eStartWord);
       *aEndOffset = FindWordBoundary(*aStartOffset, eDirNext, eStartWord);
       TextSubstring(*aStartOffset, *aEndOffset, aText);
       break;
 
     case nsIAccessibleText::BOUNDARY_WORD_END:
-      
-      
-      
+      // If the offset is a word end (except 0 offset) then move forward to find
+      // end offset (start offset is the given offset). Otherwise move forward
+      // twice to find both start and end offsets.
       if (convertedOffset == 0) {
         *aStartOffset = FindWordBoundary(convertedOffset, eDirNext, eEndWord);
         *aEndOffset = FindWordBoundary(*aStartOffset, eDirNext, eEndWord);
@@ -845,10 +845,10 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
 already_AddRefed<nsIPersistentProperties> HyperTextAccessible::TextAttributes(
     bool aIncludeDefAttrs, int32_t aOffset, int32_t* aStartOffset,
     int32_t* aEndOffset) {
-  
-  
-  
-  
+  // 1. Get each attribute and its ranges one after another.
+  // 2. As we get each new attribute, we pass the current start and end offsets
+  //    as in/out parameters. In other words, as attributes are collected,
+  //    the attribute range itself can only stay the same or get smaller.
 
   *aStartOffset = *aEndOffset = 0;
   index_t offset = ConvertMagicOffset(aOffset);
@@ -861,8 +861,8 @@ already_AddRefed<nsIPersistentProperties> HyperTextAccessible::TextAttributes(
 
   Accessible* accAtOffset = GetChildAtOffset(offset);
   if (!accAtOffset) {
-    
-    
+    // Offset 0 is correct offset when accessible has empty text. Include
+    // default attributes if they were requested, otherwise return empty set.
     if (offset == 0) {
       if (aIncludeDefAttrs) {
         TextAttrsMgr textAttrsMgr(this);
@@ -882,13 +882,13 @@ already_AddRefed<nsIPersistentProperties> HyperTextAccessible::TextAttributes(
                             accAtOffsetIdx);
   textAttrsMgr.GetAttributes(attributes, &startOffset, &endOffset);
 
-  
+  // Compute spelling attributes on text accessible only.
   nsIFrame* offsetFrame = accAtOffset->GetFrame();
   if (offsetFrame && offsetFrame->IsTextFrame()) {
     int32_t nodeOffset = 0;
     RenderedToContentOffset(offsetFrame, offsetInAcc, &nodeOffset);
 
-    
+    // Set 'misspelled' text attribute.
     GetSpellTextAttr(accAtOffset->GetNode(), nodeOffset, &startOffset,
                      &endOffset, attributes);
   }
@@ -916,7 +916,7 @@ int32_t HyperTextAccessible::GetLevelInternal() {
 
 void HyperTextAccessible::SetMathMLXMLRoles(
     nsIPersistentProperties* aAttributes) {
-  
+  // Add MathML xmlroles based on the position inside the parent.
   Accessible* parent = Parent();
   if (parent) {
     switch (parent->Role()) {
@@ -928,10 +928,10 @@ void HyperTextAccessible::SetMathMLXMLRoles(
       case roles::MATHML_SQUARE_ROOT:
       case roles::MATHML_STYLE:
         if (Role() == roles::MATHML_OPERATOR) {
-          
-          
-          
-          
+          // This is an operator inside an <mrow> (or an inferred <mrow>).
+          // See http://www.w3.org/TR/MathML3/chapter3.html#presm.inferredmrow
+          // XXX We should probably do something similar for MATHML_FENCED, but
+          // operators do not appear in the accessible tree. See bug 1175747.
           nsIMathMLFrame* mathMLFrame = do_QueryFrame(GetFrame());
           if (mathMLFrame) {
             nsEmbellishData embellishData;
@@ -999,7 +999,7 @@ void HyperTextAccessible::SetMathMLXMLRoles(
                                                  : nsGkAtoms::overscript));
       } break;
       case roles::MATHML_MULTISCRIPTS: {
-        
+        // Get the <multiscripts> base.
         nsIContent* child;
         bool baseFound = false;
         for (child = parent->GetContent()->GetFirstChild(); child;
@@ -1012,11 +1012,11 @@ void HyperTextAccessible::SetMathMLXMLRoles(
         if (baseFound) {
           nsIContent* content = GetContent();
           if (child == content) {
-            
+            // We are the base.
             nsAccUtils::SetAccAttr(aAttributes, nsGkAtoms::xmlroles,
                                    nsGkAtoms::base);
           } else {
-            
+            // Browse the list of scripts to find us and determine our type.
             bool postscript = true;
             bool subscript = true;
             for (child = child->GetNextSibling(); child;
@@ -1055,8 +1055,8 @@ HyperTextAccessible::NativeAttributes() {
   nsCOMPtr<nsIPersistentProperties> attributes =
       AccessibleWrap::NativeAttributes();
 
-  
-  
+  // 'formatting' attribute is deprecated, 'display' attribute should be
+  // instead.
   nsIFrame* frame = GetFrame();
   if (frame && frame->IsBlockFrame()) {
     nsAutoString unused;
@@ -1084,8 +1084,8 @@ HyperTextAccessible::NativeAttributes() {
 nsAtom* HyperTextAccessible::LandmarkRole() const {
   if (!HasOwnContent()) return nullptr;
 
-  
-  
+  // For the html landmark elements we expose them like we do ARIA landmarks to
+  // make AT navigation schemes "just work".
   if (mContent->IsHTMLElement(nsGkAtoms::nav)) {
     return nsGkAtoms::navigation;
   }
@@ -1115,16 +1115,16 @@ int32_t HyperTextAccessible::OffsetAtPoint(int32_t aX, int32_t aY,
 
   nsRect frameScreenRect = hyperFrame->GetScreenRectInAppUnits();
   if (!frameScreenRect.Contains(coordsInAppUnits.x, coordsInAppUnits.y))
-    return -1;  
+    return -1;  // Not found
 
   nsPoint pointInHyperText(coordsInAppUnits.x - frameScreenRect.X(),
                            coordsInAppUnits.y - frameScreenRect.Y());
 
-  
-  
+  // Go through the frames to check if each one has the point.
+  // When one does, add up the character offsets until we have a match
 
-  
-  
+  // We have an point in an accessible child of this, now we need to add up the
+  // offsets before it to what we already have
   int32_t offset = 0;
   uint32_t childCount = ChildCount();
   for (uint32_t childIdx = 0; childIdx < childCount; childIdx++) {
@@ -1141,13 +1141,13 @@ int32_t HyperTextAccessible::OffsetAtPoint(int32_t aX, int32_t aY,
       nsSize frameSize = frame->GetSize();
       if (pointInFrame.x < frameSize.width &&
           pointInFrame.y < frameSize.height) {
-        
+        // Finished
         if (frame->IsTextFrame()) {
           nsIFrame::ContentOffsets contentOffsets =
               frame->GetContentOffsetsFromPointExternal(
                   pointInFrame, nsIFrame::IGNORE_SELECTION_STYLE);
           if (contentOffsets.IsNull() || contentOffsets.content != content) {
-            return -1;  
+            return -1;  // Not found
           }
           uint32_t addToOffset;
           nsresult rv = ContentToRenderedOffset(
@@ -1163,7 +1163,7 @@ int32_t HyperTextAccessible::OffsetAtPoint(int32_t aX, int32_t aY,
     offset += nsAccUtils::TextLength(childAcc);
   }
 
-  return -1;  
+  return -1;  // Not found
 }
 
 nsIntRect HyperTextAccessible::TextBounds(int32_t aStartOffset,
@@ -1179,7 +1179,7 @@ nsIntRect HyperTextAccessible::TextBounds(int32_t aStartOffset,
 
   if (CharacterCount() == 0) {
     nsPresContext* presContext = mDoc->PresContext();
-    
+    // Empty content, use our own bound to at least get x,y coordinates
     return GetFrame()->GetScreenRectInAppUnits().ToNearestPixels(
         presContext->AppUnitsPerDevPixel());
   }
@@ -1212,9 +1212,9 @@ nsIntRect HyperTextAccessible::TextBounds(int32_t aStartOffset,
     offset1 = 0;
   }
 
-  
-  
-  
+  // This document may have a resolution set, we will need to multiply
+  // the document-relative coordinates by that value and re-apply the doc's
+  // screen coordinates.
   nsPresContext* presContext = mDoc->PresContext();
   nsIFrame* rootFrame = presContext->PresShell()->GetRootFrame();
   nsIntRect orgRectPixels =
@@ -1233,14 +1233,14 @@ nsIntRect HyperTextAccessible::TextBounds(int32_t aStartOffset,
 
 already_AddRefed<TextEditor> HyperTextAccessible::GetEditor() const {
   if (!mContent->HasFlag(NODE_IS_EDITABLE)) {
-    
-    
+    // If we're inside an editable container, then return that container's
+    // editor
     Accessible* ancestor = Parent();
     while (ancestor) {
       HyperTextAccessible* hyperText = ancestor->AsHyperText();
       if (hyperText) {
-        
-        
+        // Recursion will stop at container doc because it has its own impl
+        // of GetEditor()
         return hyperText->GetEditor();
       }
 
@@ -1253,7 +1253,7 @@ already_AddRefed<TextEditor> HyperTextAccessible::GetEditor() const {
   nsCOMPtr<nsIDocShell> docShell = nsCoreUtils::GetDocShellFor(mContent);
   nsCOMPtr<nsIEditingSession> editingSession;
   docShell->GetEditingSession(getter_AddRefs(editingSession));
-  if (!editingSession) return nullptr;  
+  if (!editingSession) return nullptr;  // No editing session interface
 
   dom::Document* docNode = mDoc->DocumentNode();
   RefPtr<HTMLEditor> htmlEditor =
@@ -1261,32 +1261,32 @@ already_AddRefed<TextEditor> HyperTextAccessible::GetEditor() const {
   return htmlEditor.forget();
 }
 
-
-
-
+/**
+ * =================== Caret & Selection ======================
+ */
 
 nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
                                                 int32_t aEndPos) {
-  
-  
-  
-  
-  
-  
+  // Before setting the selection range, we need to ensure that the editor
+  // is initialized. (See bug 804927.)
+  // Otherwise, it's possible that lazy editor initialization will override
+  // the selection we set here and leave the caret at the end of the text.
+  // By calling GetEditor here, we ensure that editor initialization is
+  // completed before we set the selection.
   RefPtr<TextEditor> textEditor = GetEditor();
 
   bool isFocusable = InteractiveState() & states::FOCUSABLE;
 
-  
-  
-  
-  
+  // If accessible is focusable then focus it before setting the selection to
+  // neglect control's selection changes on focus if any (for example, inputs
+  // that do select all on focus).
+  // some input controls
   if (isFocusable) TakeFocus();
 
-  dom::Selection* domSel = DOMSelection();
+  RefPtr<dom::Selection> domSel = DOMSelection();
   NS_ENSURE_STATE(domSel);
 
-  
+  // Set up the selection.
   for (int32_t idx = domSel->RangeCount() - 1; idx > 0; idx--) {
     RefPtr<nsRange> range{domSel->GetRangeAt(idx)};
     domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
@@ -1294,15 +1294,15 @@ nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
   }
   SetSelectionBoundsAt(0, aStartPos, aEndPos);
 
-  
+  // Make sure it is visible
   domSel->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION,
                          ScrollAxis(), ScrollAxis(),
                          dom::Selection::SCROLL_FOR_CARET_MOVE |
                              dom::Selection::SCROLL_OVERFLOW_HIDDEN);
 
-  
-  
-  
+  // When selection is done, move the focus to the selection if accessible is
+  // not focusable. That happens when selection is set within hypertext
+  // accessible.
   if (isFocusable) return NS_OK;
 
   nsFocusManager* DOMFocusManager = nsFocusManager::GetFocusManager();
@@ -1321,43 +1321,43 @@ nsresult HyperTextAccessible::SetSelectionRange(int32_t aStartPos,
 }
 
 int32_t HyperTextAccessible::CaretOffset() const {
-  
-  
+  // Not focused focusable accessible except document accessible doesn't have
+  // a caret.
   if (!IsDoc() && !FocusMgr()->IsFocused(this) &&
       (InteractiveState() & states::FOCUSABLE)) {
     return -1;
   }
 
-  
+  // Check cached value.
   int32_t caretOffset = -1;
   HyperTextAccessible* text = SelectionMgr()->AccessibleWithCaret(&caretOffset);
 
-  
+  // Use cached value if it corresponds to this accessible.
   if (caretOffset != -1) {
     if (text == this) return caretOffset;
 
     nsINode* textNode = text->GetNode();
-    
+    // Ignore offset if cached accessible isn't a text leaf.
     if (nsCoreUtils::IsAncestorOf(GetNode(), textNode))
       return TransformOffset(text, textNode->IsText() ? caretOffset : 0, false);
   }
 
-  
-  
+  // No caret if the focused node is not inside this DOM node and this DOM node
+  // is not inside of focused node.
   FocusManager::FocusDisposition focusDisp =
       FocusMgr()->IsInOrContainsFocus(this);
   if (focusDisp == FocusManager::eNone) return -1;
 
-  
-  
+  // Turn the focus node and offset of the selection into caret hypretext
+  // offset.
   dom::Selection* domSel = DOMSelection();
   NS_ENSURE_TRUE(domSel, -1);
 
   nsINode* focusNode = domSel->GetFocusNode();
   uint32_t focusOffset = domSel->FocusOffset();
 
-  
-  
+  // No caret if this DOM node is inside of focused node but the selection's
+  // focus point is not inside of this DOM node.
   if (focusDisp == FocusManager::eContainedByFocus) {
     nsINode* resultNode =
         nsCoreUtils::GetDOMNodeFromDOMPoint(focusNode, focusOffset);
@@ -1372,8 +1372,8 @@ int32_t HyperTextAccessible::CaretOffset() const {
 }
 
 int32_t HyperTextAccessible::CaretLineNumber() {
-  
-  
+  // Provide the line number for the caret, relative to the
+  // currently focused node. Use a 1-based index
   RefPtr<nsFrameSelection> frameSelection = FrameSelection();
   if (!frameSelection) return -1;
 
@@ -1398,29 +1398,29 @@ int32_t HyperTextAccessible::CaretLineNumber() {
   nsIContent* hyperTextContent = IsContent() ? mContent.get() : nullptr;
   while (caretFrame) {
     if (hyperTextContent == caretFrame->GetContent()) {
-      return lineNumber;  
-                          
+      return lineNumber;  // Must be in a single line hyper text, there is no
+                          // line iterator
     }
     nsContainerFrame* parentFrame = caretFrame->GetParent();
     if (!parentFrame) break;
 
-    
+    // Add lines for the sibling frames before the caret
     nsIFrame* sibling = parentFrame->PrincipalChildList().FirstChild();
     while (sibling && sibling != caretFrame) {
       nsAutoLineIterator lineIterForSibling = sibling->GetLineIterator();
       if (lineIterForSibling) {
-        
+        // For the frames before that grab all the lines
         int32_t addLines = lineIterForSibling->GetNumLines();
         lineNumber += addLines;
       }
       sibling = sibling->GetNextSibling();
     }
 
-    
-    if (!lineIterForCaret) {  
+    // Get the line number relative to the container with lines
+    if (!lineIterForCaret) {  // Add the caret line just once
       lineIterForCaret = parentFrame->GetLineIterator();
       if (lineIterForCaret) {
-        
+        // Ancestor of caret
         int32_t addLines = lineIterForCaret->FindLineContaining(caretFrame);
         lineNumber += addLines;
       }
@@ -1448,24 +1448,24 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
   if (!frame || rect.IsEmpty()) return LayoutDeviceIntRect();
 
   nsPoint offset;
-  
-  
+  // Offset from widget origin to the frame origin, which includes chrome
+  // on the widget.
   *aWidget = frame->GetNearestWidget(offset);
   NS_ENSURE_TRUE(*aWidget, LayoutDeviceIntRect());
   rect.MoveBy(offset);
 
   LayoutDeviceIntRect caretRect = LayoutDeviceIntRect::FromUnknownRect(
       rect.ToOutsidePixels(frame->PresContext()->AppUnitsPerDevPixel()));
-  
-  
-  
+  // clang-format off
+  // ((content screen origin) - (content offset in the widget)) = widget origin on the screen
+  // clang-format on
   caretRect.MoveBy((*aWidget)->WidgetToScreenOffset() -
                    (*aWidget)->GetClientOffset());
 
-  
-  
-  
-  
+  // Correct for character size, so that caret always matches the size of
+  // the character. This is important for font size transitions, and is
+  // necessary because the Gecko caret uses the previous character's size as
+  // the user moves forward in the text by character.
   nsIntRect charRect = CharBounds(
       CaretOffset(), nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
   if (!charRect.IsEmpty()) {
@@ -1476,7 +1476,7 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
 
 void HyperTextAccessible::GetSelectionDOMRanges(SelectionType aSelectionType,
                                                 nsTArray<nsRange*>* aRanges) {
-  
+  // Ignore selection if it is not visible.
   RefPtr<nsFrameSelection> frameSelection = FrameSelection();
   if (!frameSelection || frameSelection->GetDisplaySelection() <=
                              nsISelectionController::SELECTION_HIDDEN)
@@ -1499,7 +1499,7 @@ void HyperTextAccessible::GetSelectionDOMRanges(SelectionType aSelectionType,
                                                   childCount, true, aRanges);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  
+  // Remove collapsed ranges
   uint32_t numRanges = aRanges->Length();
   for (uint32_t idx = 0; idx < numRanges; idx++) {
     if ((*aRanges)[idx]->Collapsed()) {
@@ -1530,13 +1530,13 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
 
   nsRange* range = ranges[aSelectionNum];
 
-  
+  // Get start and end points.
   nsINode* startNode = range->GetStartContainer();
   nsINode* endNode = range->GetEndContainer();
   int32_t startOffset = range->StartOffset(), endOffset = range->EndOffset();
 
-  
-  
+  // Make sure start is before end, by swapping DOM points.  This occurs when
+  // the user selects backwards in the text.
   const Maybe<int32_t> order =
       nsContentUtils::ComparePoints(endNode, endOffset, startNode, startOffset);
 
@@ -1577,7 +1577,7 @@ bool HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
     return false;
   }
 
-  dom::Selection* domSel = DOMSelection();
+  RefPtr<dom::Selection> domSel = DOMSelection();
   if (!domSel) return false;
 
   RefPtr<nsRange> range;
@@ -1594,8 +1594,8 @@ bool HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
                          std::max(startOffset, endOffset), range))
     return false;
 
-  
-  
+  // If this is not a new range, notify selection listeners that the existing
+  // selection range has changed. Otherwise, just add the new range.
   if (aSelectionNum != static_cast<int32_t>(rangeCount)) {
     domSel->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
                                                            IgnoreErrors());
@@ -1605,8 +1605,8 @@ bool HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
   domSel->AddRangeAndSelectFramesAndNotifyListeners(*range, err);
 
   if (!err.Failed()) {
-    
-    
+    // Changing the direction of the selection assures that the caret
+    // will be at the logical end of the selection.
     domSel->SetDirection(startOffset < endOffset ? eDirNext : eDirPrevious);
     return true;
   }
@@ -1615,7 +1615,7 @@ bool HyperTextAccessible::SetSelectionBoundsAt(int32_t aSelectionNum,
 }
 
 bool HyperTextAccessible::RemoveFromSelection(int32_t aSelectionNum) {
-  dom::Selection* domSel = DOMSelection();
+  RefPtr<dom::Selection> domSel = DOMSelection();
   if (!domSel) return false;
 
   if (aSelectionNum < 0 ||
@@ -1659,15 +1659,15 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(parentFrame);
     if (scrollableFrame) {
       if (!initialScrolled) {
-        
-        
+        // Scroll substring to the given point. Turn the point into percents
+        // relative scrollable area to use nsCoreUtils::ScrollSubstringTo.
         nsRect frameRect = parentFrame->GetScreenRectInAppUnits();
         nscoord offsetPointX = coordsInAppUnits.x - frameRect.X();
         nscoord offsetPointY = coordsInAppUnits.y - frameRect.Y();
 
         nsSize size(parentFrame->GetSize());
 
-        
+        // avoid divide by zero
         size.width = size.width ? size.width : 1;
         size.height = size.height ? size.height : 1;
 
@@ -1681,10 +1681,10 @@ void HyperTextAccessible::ScrollSubstringToPoint(int32_t aStartOffset,
 
         initialScrolled = true;
       } else {
-        
-        
-        
-        
+        // Substring was scrolled to the given point already inside its closest
+        // scrollable area. If there are nested scrollable areas then make
+        // sure we scroll lower areas to the given point inside currently
+        // traversed scrollable area.
         nsCoreUtils::ScrollFrameToPoint(parentFrame, frame, coords);
       }
     }
@@ -1747,8 +1747,8 @@ void HyperTextAccessible::RangeByChild(Accessible* aChild,
   while ((parent = child->Parent()) && !(ht = parent->AsHyperText()))
     child = parent;
 
-  
-  
+  // If no text then return collapsed text range, otherwise return a range
+  // containing the text enclosed by the given child.
   if (ht) {
     int32_t childIdx = child->IndexInParent();
     int32_t startOffset = ht->GetChildOffset(childIdx);
@@ -1766,7 +1766,7 @@ void HyperTextAccessible::RangeAtPoint(int32_t aX, int32_t aY,
   Accessible* parent = nullptr;
   while ((parent = child->Parent()) && !parent->IsHyperText()) child = parent;
 
-  
+  // Return collapsed text range for the point.
   if (parent) {
     HyperTextAccessible* ht = parent->AsHyperText();
     int32_t offset = ht->GetChildOffset(child);
@@ -1774,12 +1774,12 @@ void HyperTextAccessible::RangeAtPoint(int32_t aX, int32_t aY,
   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Accessible public
 
-
-
-
+// Accessible protected
 ENameValueFlag HyperTextAccessible::NativeName(nsString& aName) const {
-  
+  // Check @alt attribute for invalid img elements.
   bool hasImgAlt = false;
   if (mContent->IsHTMLElement(nsGkAtoms::img)) {
     hasImgAlt = mContent->AsElement()->GetAttr(kNameSpaceID_None,
@@ -1790,9 +1790,9 @@ ENameValueFlag HyperTextAccessible::NativeName(nsString& aName) const {
   ENameValueFlag nameFlag = AccessibleWrap::NativeName(aName);
   if (!aName.IsEmpty()) return nameFlag;
 
-  
-  
-  
+  // Get name from title attribute for HTML abbr and acronym elements making it
+  // a valid name from markup. Otherwise their name isn't picked up by recursive
+  // name computation algorithm. See NS_OK_NAME_FROM_TOOLTIP.
   if (IsAbbreviation() && mContent->AsElement()->GetAttr(
                               kNameSpaceID_None, nsGkAtoms::title, aName))
     aName.CompressWhitespace();
@@ -1832,7 +1832,7 @@ Relation HyperTextAccessible::RelationByType(RelationType aType) const {
           nsIContent* parentContent = parent->GetContent();
           if (parentContent &&
               parentContent->IsMathMLElement(nsGkAtoms::mroot_)) {
-            
+            // Add a relation pointing to the parent <mroot>.
             rel.AppendTarget(parent);
           }
         }
@@ -1843,7 +1843,7 @@ Relation HyperTextAccessible::RelationByType(RelationType aType) const {
         Accessible* base = GetChildAt(0);
         Accessible* index = GetChildAt(1);
         if (base && index) {
-          
+          // Append the <mroot> children in the order index, base.
           rel.AppendTarget(index);
           rel.AppendTarget(base);
         }
@@ -1856,14 +1856,14 @@ Relation HyperTextAccessible::RelationByType(RelationType aType) const {
   return rel;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// HyperTextAccessible public static
 
 nsresult HyperTextAccessible::ContentToRenderedOffset(
     nsIFrame* aFrame, int32_t aContentOffset, uint32_t* aRenderedOffset) const {
   if (!aFrame) {
-    
-    
+    // Current frame not rendered -- this can happen if text is set on
+    // something with display: none
     *aRenderedOffset = 0;
     return NS_OK;
   }
@@ -1909,8 +1909,8 @@ nsresult HyperTextAccessible::RenderedToContentOffset(
   return NS_OK;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// HyperTextAccessible public
 
 int32_t HyperTextAccessible::GetChildOffset(uint32_t aChildIndex,
                                             bool aInvalidateAfter) const {
@@ -1968,8 +1968,8 @@ int32_t HyperTextAccessible::GetChildIndexAtOffset(uint32_t aOffset) const {
   return -1;
 }
 
-
-
+////////////////////////////////////////////////////////////////////////////////
+// HyperTextAccessible protected
 
 nsresult HyperTextAccessible::GetDOMPointByFrameOffset(nsIFrame* aFrame,
                                                        int32_t aOffset,
@@ -1978,8 +1978,8 @@ nsresult HyperTextAccessible::GetDOMPointByFrameOffset(nsIFrame* aFrame,
   NS_ENSURE_ARG(aAccessible);
 
   if (!aFrame) {
-    
-    
+    // If the given frame is null then set offset after the DOM node of the
+    // given accessible.
     NS_ASSERTION(!aAccessible->IsDoc(),
                  "Shouldn't be called on document accessible!");
 
@@ -2016,7 +2016,7 @@ nsresult HyperTextAccessible::GetDOMPointByFrameOffset(nsIFrame* aFrame,
   return NS_OK;
 }
 
-
+// HyperTextAccessible
 void HyperTextAccessible::GetSpellTextAttr(
     nsINode* aNode, int32_t aNodeOffset, uint32_t* aStartOffset,
     uint32_t* aEndOffset, nsIPersistentProperties* aAttributes) {
@@ -2034,8 +2034,8 @@ void HyperTextAccessible::GetSpellTextAttr(
     nsRange* range = domSel->GetRangeAt(idx);
     if (range->Collapsed()) continue;
 
-    
-    
+    // See if the point comes after the range in which case we must continue in
+    // case there is another range after this one.
     nsINode* endNode = range->GetEndContainer();
     int32_t endNodeOffset = range->EndOffset();
     Maybe<int32_t> order = nsContentUtils::ComparePoints(
@@ -2048,18 +2048,18 @@ void HyperTextAccessible::GetSpellTextAttr(
       continue;
     }
 
-    
-    
-    
-    
+    // At this point our point is either in this range or before it but after
+    // the previous range.  So we check to see if the range starts before the
+    // point in which case the point is in the missspelled range, otherwise it
+    // must be before the range and after the previous one if any.
     nsINode* startNode = range->GetStartContainer();
     int32_t startNodeOffset = range->StartOffset();
     order = nsContentUtils::ComparePoints(startNode, startNodeOffset, aNode,
                                           aNodeOffset);
     if (!order) {
-      
-      
-      
+      // As (`aNode`, `aNodeOffset`) is comparable to the end of the range, it
+      // should also be comparable to the range's start. Returning here
+      // prevents crashes in release builds.
       MOZ_ASSERT_UNREACHABLE();
       return;
     }
@@ -2081,7 +2081,7 @@ void HyperTextAccessible::GetSpellTextAttr(
       return;
     }
 
-    
+    // This range came after the point.
     endOffset = DOMPointToOffset(startNode, startNodeOffset);
 
     if (idx > 0) {
@@ -2090,9 +2090,9 @@ void HyperTextAccessible::GetSpellTextAttr(
                                      prevRange->EndOffset());
     }
 
-    
-    
-    
+    // The previous range might not be within this accessible. In that case,
+    // DOMPointToOffset returns length as a fallback. We don't want to use
+    // that offset if so, hence the startOffset < *aEndOffset check.
     if (startOffset > *aStartOffset && startOffset < *aEndOffset)
       *aStartOffset = startOffset;
 
@@ -2101,17 +2101,17 @@ void HyperTextAccessible::GetSpellTextAttr(
     return;
   }
 
-  
-  
-  
-  
+  // We never found a range that ended after the point, therefore we know that
+  // the point is not in a range, that we do not need to compute an end offset,
+  // and that we should use the end offset of the last range to compute the
+  // start offset of the text attribute range.
   nsRange* prevRange = domSel->GetRangeAt(rangeCount - 1);
   startOffset =
       DOMPointToOffset(prevRange->GetEndContainer(), prevRange->EndOffset());
 
-  
-  
-  
+  // The previous range might not be within this accessible. In that case,
+  // DOMPointToOffset returns length as a fallback. We don't want to use
+  // that offset if so, hence the startOffset < *aEndOffset check.
   if (startOffset > *aStartOffset && startOffset < *aEndOffset)
     *aStartOffset = startOffset;
 }
