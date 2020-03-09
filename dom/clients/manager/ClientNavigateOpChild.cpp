@@ -218,7 +218,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
     
     nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
     CopyableErrorResult result;
-    result.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
+    result.ThrowTypeError(err);
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 
@@ -267,7 +267,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
     
     nsPrintfCString err("Invalid URL \"%s\"", aArgs.url().get());
     CopyableErrorResult result;
-    result.ThrowTypeError(NS_ConvertUTF8toUTF16(err));
+    result.ThrowTypeError(err);
     return ClientOpPromise::CreateAndReject(result, __func__);
   }
 

@@ -332,15 +332,15 @@ already_AddRefed<Promise> ServiceWorkerRegistration::ShowNotification(
     return nullptr;
   }
 
-  NS_ConvertUTF8toUTF16 scope(mDescriptor.Scope());
-
   
   
   
   if (mDescriptor.GetActive().isNothing() && NS_IsMainThread()) {
-    aRv.ThrowTypeError<MSG_NO_ACTIVE_WORKER>(scope);
+    aRv.ThrowTypeError<MSG_NO_ACTIVE_WORKER>(mDescriptor.Scope());
     return nullptr;
   }
+
+  NS_ConvertUTF8toUTF16 scope(mDescriptor.Scope());
 
   RefPtr<Promise> p = Notification::ShowPersistentNotification(
       aCx, global, scope, aTitle, aOptions, mDescriptor, aRv);

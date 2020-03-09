@@ -182,15 +182,12 @@ void ServiceWorkerJob::Finish(ErrorResult& aRv) {
     
     aRv.SuppressException();
 
-    NS_ConvertUTF8toUTF16 scriptSpec(mScriptSpec);
-    NS_ConvertUTF8toUTF16 scope(mScope);
-
     
     
     
     
     ErrorResult& rv = aRv;
-    rv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(scriptSpec, scope);
+    rv.ThrowTypeError<MSG_SW_INSTALL_ERROR>(mScriptSpec, mScope);
   }
 
   
