@@ -735,6 +735,22 @@ SearchService.prototype = {
       await this._loadEngines(cache);
 
       
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Services.startup.shuttingDown) {
+        SearchUtils.log("_init: abandoning init due to shutting down");
+        this._initRV = Cr.NS_ERROR_ABORT;
+        this._initObservers.reject(this._initRV);
+        return this._initRV;
+      }
+
+      
       SearchUtils.log("_init: engines loaded, writing cache");
       this._buildCache();
       this._addObservers();
@@ -1523,7 +1539,7 @@ SearchService.prototype = {
         
         if (Services.startup.shuttingDown) {
           SearchUtils.log("_reInit: abandoning reInit due to shutting down");
-          this._initObservers.reject();
+          this._initObservers.reject(Cr.NS_ERROR_ABORT);
           return;
         }
 
