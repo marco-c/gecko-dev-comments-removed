@@ -1143,11 +1143,15 @@ nsresult nsFrameSelection::HandleClick(nsIContent* aNewFocus,
     BidiLevelFromClick(aNewFocus, aContentOffset);
     SetChangeReasons(nsISelectionListener::MOUSEDOWN_REASON +
                      nsISelectionListener::DRAG_REASON);
-    if ((aFocusMode == FocusMode::kExtendSelection) &&
-        AdjustForMaintainedSelection(aNewFocus, aContentOffset))
-      return NS_OK;  
 
-    int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
+    const int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
+    MOZ_ASSERT(mDomSelections[index]);
+
+    if ((aFocusMode == FocusMode::kExtendSelection) &&
+        AdjustForMaintainedSelection(aNewFocus, aContentOffset)) {
+      return NS_OK;  
+    }
+
     AutoPrepareFocusRange prep(mDomSelections[index],
                                aFocusMode == FocusMode::kMultiRangeSelection);
     return TakeFocus(aNewFocus, aContentOffset, aContentEndOffset, aHint,
