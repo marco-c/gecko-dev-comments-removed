@@ -965,7 +965,7 @@ function CrashStore(storeDir, telemetrySizeKey) {
 CrashStore.prototype = Object.freeze({
   
   
-  HIGH_WATER_DAILY_THRESHOLD: 100,
+  HIGH_WATER_DAILY_THRESHOLD: 500,
 
   
 
