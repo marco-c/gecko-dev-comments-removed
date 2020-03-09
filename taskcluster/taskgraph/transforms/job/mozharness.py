@@ -71,10 +71,6 @@ mozharness_run_schema = Schema({
 
     
     
-    Optional('extra-workspace-cache-key'): text_type,
-
-    
-    
     Required('tooltool-downloads'): Any(
         False,
         'public',
@@ -227,7 +223,6 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
     )
     run.pop('secrets')
     run.pop('requires-signed-builds')
-    run.pop('extra-workspace-cache-key', None)
 
     configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
 
@@ -321,7 +316,6 @@ def mozharness_on_generic_worker(config, job, taskdesc):
     run.pop('secrets')
     run.pop('requires-signed-builds')
     run.pop('job-script', None)
-    run.pop('extra-workspace-cache-key', None)
     configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
 
     
