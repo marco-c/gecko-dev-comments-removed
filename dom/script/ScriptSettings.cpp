@@ -598,7 +598,7 @@ AutoEntryScript::AutoEntryScript(JSObject* aObject, const char* aReason,
   
 }
 
-AutoEntryScript::~AutoEntryScript() {}
+AutoEntryScript::~AutoEntryScript() = default;
 
 AutoEntryScript::DocshellEntryMonitor::DocshellEntryMonitor(JSContext* aCx,
                                                             const char* aReason)
