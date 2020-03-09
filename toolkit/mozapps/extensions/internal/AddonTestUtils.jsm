@@ -404,10 +404,6 @@ var AddonTestUtils = {
       "http://127.0.0.1/updateBackgroundURL"
     );
     Services.prefs.setCharPref(
-      "extensions.blocklist.url",
-      "http://127.0.0.1/blocklistURL"
-    );
-    Services.prefs.setCharPref(
       "services.settings.server",
       "http://localhost/dummy-kinto/v1"
     );
@@ -417,19 +413,6 @@ var AddonTestUtils = {
 
     
     Services.prefs.setBoolPref("xpinstall.signatures.required", true);
-
-    
-    
-    var blockFile = OS.Path.join(this.profileDir.path, "blocklist.xml");
-
-    var data =
-      '<?xml version="1.0" encoding="UTF-8"?>\n' +
-      '<blocklist xmlns="http://www.mozilla.org/2006/addons-blocklist">\n' +
-      "</blocklist>\n";
-
-    this.awaitPromise(
-      OS.File.writeAtomic(blockFile, new TextEncoder().encode(data))
-    );
 
     
     function pathShouldntExist(file) {
@@ -957,15 +940,6 @@ var AddonTestUtils = {
 
     if (newVersion) {
       this.appInfo.version = newVersion;
-      if (Cu.isModuleLoaded("resource://gre/modules/Blocklist.jsm")) {
-        let bsPassBlocklist = ChromeUtils.import(
-          "resource://gre/modules/Blocklist.jsm",
-          null
-        );
-        Object.defineProperty(bsPassBlocklist, "gAppVersion", {
-          value: newVersion,
-        });
-      }
     }
     
     

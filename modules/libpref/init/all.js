@@ -2315,6 +2315,7 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 pref("security.cert_pinning.hpkp.enabled", false);
 
 
+
 pref("services.settings.poll_interval", 86400); 
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 pref("services.settings.default_bucket", "main");
@@ -2342,13 +2343,8 @@ pref("extensions.abuseReport.amoDetailsURL", "https://services.addons.mozilla.or
 pref("extensions.blocklist.enabled", true);
 
 
-pref("extensions.blocklist.interval", 86400);
-
-pref("extensions.blocklist.useXML", false);
-
 
 pref("security.onecrl.maximum_staleness_in_seconds", 108000);
-pref("extensions.blocklist.url", "https://blocklists.settings.services.mozilla.com/v1/blocklist/3/%APP_ID%/%APP_VERSION%/%PRODUCT%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/%PING_COUNT%/%TOTAL_PING_COUNT%/%DAYS_SINCE_LAST_PING%/");
 pref("extensions.blocklist.detailsURL", "https://blocked.cdn.mozilla.net/");
 pref("extensions.blocklist.itemURL", "https://blocked.cdn.mozilla.net/%blockID%.html");
 

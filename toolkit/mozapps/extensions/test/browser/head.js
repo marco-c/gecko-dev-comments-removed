@@ -120,8 +120,6 @@ var gCatMan = Services.catMan;
 
 var backgroundUpdateConfig =
   "@mozilla.org/addons/integration;1,getService,addon-background-update-timer,extensions.update.interval,86400";
-var blocklistUpdateConfig =
-  "@mozilla.org/extensions/blocklist;1,getService,blocklist-background-update-timer,extensions.blocklist.interval,86400";
 
 var UTIMER = "update-timer";
 var AMANAGER = "addonManager";
@@ -139,23 +137,6 @@ function enableBackgroundUpdateTimer() {
     UTIMER,
     AMANAGER,
     backgroundUpdateConfig,
-    false,
-    true
-  );
-}
-
-function disableBlocklistUpdateTimer() {
-  info("Disabling " + UTIMER + " " + BLOCKLIST);
-  blocklistUpdateConfig = gCatMan.getCategoryEntry(UTIMER, BLOCKLIST);
-  gCatMan.deleteCategoryEntry(UTIMER, BLOCKLIST, true);
-}
-
-function enableBlocklistUpdateTimer() {
-  info("Enabling " + UTIMER + " " + BLOCKLIST);
-  gCatMan.addCategoryEntry(
-    UTIMER,
-    BLOCKLIST,
-    blocklistUpdateConfig,
     false,
     true
   );

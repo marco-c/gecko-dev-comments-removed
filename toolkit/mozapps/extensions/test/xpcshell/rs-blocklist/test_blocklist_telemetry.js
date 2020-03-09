@@ -37,39 +37,6 @@ add_task(async function test_setup() {
   await AddonTestUtils.promiseStartupManager();
 });
 
-add_task(async function test_blocklist_useXML_scalar() {
-  
-  
-  
-  ChromeUtils.import("resource://gre/modules/Blocklist.jsm");
-
-  assertTelemetryScalars({
-    "blocklist.useXML": false,
-    "blocklist.lastModified_rs_addons": undefined,
-    "blocklist.lastModified_rs_plugins": undefined,
-  });
-
-  
-  Services.prefs.setBoolPref("extensions.blocklist.useXML", true);
-
-  
-  
-  assertTelemetryScalars({
-    "blocklist.useXML": true,
-    "blocklist.lastModified_rs_addons": undefined,
-    "blocklist.lastModified_rs_plugins": undefined,
-  });
-
-  
-  Services.prefs.setBoolPref("extensions.blocklist.useXML", false);
-
-  assertTelemetryScalars({
-    "blocklist.useXML": false,
-    "blocklist.lastModified_rs_addons": undefined,
-    "blocklist.lastModified_rs_plugins": undefined,
-  });
-});
-
 add_task(async function test_blocklist_lastModified_rs_scalars() {
   const now = Date.now();
 
@@ -120,7 +87,6 @@ add_task(async function test_blocklist_lastModified_rs_scalars() {
   ]);
 
   assertTelemetryScalars({
-    "blocklist.useXML": false,
     "blocklist.lastModified_rs_addons": undefined,
     "blocklist.lastModified_rs_plugins": lastEntryTimesUTC.plugins,
   });
@@ -134,7 +100,6 @@ add_task(async function test_blocklist_lastModified_rs_scalars() {
   ]);
 
   assertTelemetryScalars({
-    "blocklist.useXML": false,
     "blocklist.lastModified_rs_addons": lastEntryTimesUTC.addons,
     "blocklist.lastModified_rs_plugins": lastEntryTimesUTC.plugins,
   });
