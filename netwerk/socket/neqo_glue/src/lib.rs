@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
 
 use neqo_common::Datagram;
 use neqo_crypto::{init, PRErrorCode};
@@ -39,7 +39,7 @@ impl NeqoHttp3Conn {
         max_table_size: u32,
         max_blocked_streams: u16,
     ) -> Result<RefPtr<NeqoHttp3Conn>, nsresult> {
-        // Nss init.
+        
         init();
 
         let origin_conv = str::from_utf8(origin).map_err(|_| NS_ERROR_INVALID_ARG)?;
@@ -69,7 +69,7 @@ impl NeqoHttp3Conn {
             local,
             remote,
             max_table_size,
-            max_blocked_streams
+            max_blocked_streams,
         ) {
             Ok(c) => c,
             Err(_) => return Err(NS_ERROR_INVALID_ARG),
@@ -100,7 +100,7 @@ pub unsafe extern "C" fn neqo_http3conn_release(conn: &NeqoHttp3Conn) -> nsrefcn
     rc
 }
 
-// xpcom::RefPtr support
+
 unsafe impl RefCounted for NeqoHttp3Conn {
     unsafe fn addref(&self) {
         neqo_http3conn_addref(self);
@@ -110,7 +110,7 @@ unsafe impl RefCounted for NeqoHttp3Conn {
     }
 }
 
-// Allocate a new NeqoHttp3Conn object.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_new(
     origin: &nsACString,
@@ -139,9 +139,9 @@ pub extern "C" fn neqo_http3conn_new(
     }
 }
 
-/* Process a packet.
- * packet holds packet data.
- */
+
+
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_input(
     conn: &mut NeqoHttp3Conn,
@@ -160,9 +160,9 @@ pub extern "C" fn neqo_http3conn_process_http3(conn: &mut NeqoHttp3Conn) {
     conn.conn.process_http3(Instant::now());
 }
 
-/* Process output and store data to be sent into conn.packets_to_send.
- * neqo_http3conn_get_data_to_send will be called to pick up this data.
- */
+
+
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_process_output(conn: &mut NeqoHttp3Conn) -> u64 {
     loop {
@@ -210,9 +210,15 @@ pub extern "C" fn neqo_http3conn_close(conn: &mut NeqoHttp3Conn, error: u64) {
 }
 
 fn is_excluded_header(name: &str) -> bool {
-    if (name == "connection") || (name == "host") || (name == "keep-alive") ||
-        (name == "proxy-connection") || (name == "te") || (name == "transfer-encoding") ||
-        (name == "upgrade") || (name == "sec-websocket-key") {
+    if (name == "connection")
+        || (name == "host")
+        || (name == "keep-alive")
+        || (name == "proxy-connection")
+        || (name == "te")
+        || (name == "transfer-encoding")
+        || (name == "upgrade")
+        || (name == "sec-websocket-key")
+    {
         true
     } else {
         false
@@ -230,17 +236,19 @@ pub extern "C" fn neqo_http3conn_fetch(
     stream_id: &mut u64,
 ) -> nsresult {
     let mut hdrs = Vec::new();
-    // this is only used for headers built by Firefox.
-    // Firefox supplies all headers already prepared for sending over http1.
-    // They need to be split into (String, String) pairs.
+    
+    
+    
     match str::from_utf8(headers) {
-        Err(_) => { return NS_ERROR_INVALID_ARG; },
+        Err(_) => {
+            return NS_ERROR_INVALID_ARG;
+        }
         Ok(h) => {
             for elem in h.split("\r\n").skip(1) {
                 if elem.starts_with(':') {
-                    // colon headers are for http/2 and 3 and this is http/1
-                    // input, so that is probably a smuggling attack of some
-                    // kind.
+                    
+                    
+                    
                     continue;
                 }
                 if elem.len() == 0 {
@@ -264,21 +272,32 @@ pub extern "C" fn neqo_http3conn_fetch(
 
     let method_tmp = match str::from_utf8(method) {
         Ok(m) => m,
-        Err(_) => { return NS_ERROR_INVALID_ARG; }
+        Err(_) => {
+            return NS_ERROR_INVALID_ARG;
+        }
     };
     let scheme_tmp = match str::from_utf8(scheme) {
         Ok(s) => s,
-        Err(_) => { return NS_ERROR_INVALID_ARG; }
+        Err(_) => {
+            return NS_ERROR_INVALID_ARG;
+        }
     };
     let host_tmp = match str::from_utf8(host) {
         Ok(h) => h,
-        Err(_) => { return NS_ERROR_INVALID_ARG; }
+        Err(_) => {
+            return NS_ERROR_INVALID_ARG;
+        }
     };
     let path_tmp = match str::from_utf8(path) {
         Ok(p) => p,
-        Err(_) => { return NS_ERROR_INVALID_ARG; }
+        Err(_) => {
+            return NS_ERROR_INVALID_ARG;
+        }
     };
-    match conn.conn.fetch(method_tmp, scheme_tmp, host_tmp, path_tmp, &hdrs) {
+    match conn
+        .conn
+        .fetch(method_tmp, scheme_tmp, host_tmp, path_tmp, &hdrs)
+    {
         Ok(id) => {
             *stream_id = id;
             NS_OK
@@ -312,9 +331,9 @@ pub extern "C" fn neqo_htttp3conn_send_request_body(
     }
 }
 
-// This is only used for telemetry. Therefore we only return error code
-// numbers and do not label them. Recording telemetry is easier with a
-// number.
+
+
+
 #[repr(C)]
 pub enum CloseError {
     QuicTransportError(u64),
@@ -330,7 +349,7 @@ impl From<neqo_transport::CloseError> for CloseError {
     }
 }
 
-// Reset a stream with streamId.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_reset_stream(
     conn: &mut NeqoHttp3Conn,
@@ -343,7 +362,7 @@ pub extern "C" fn neqo_http3conn_reset_stream(
     }
 }
 
-// Close sending side of a stream with stream_id
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_close_stream(
     conn: &mut NeqoHttp3Conn,
@@ -357,27 +376,27 @@ pub extern "C" fn neqo_http3conn_close_stream(
 
 #[repr(C)]
 pub enum Http3Event {
-    /// A request stream has space for more data to be send.
+    
     DataWritable {
         stream_id: u64,
     },
-    /// A server has send STOP_SENDING frame.
+    
     StopSending {
         stream_id: u64,
     },
     HeaderReady {
         stream_id: u64,
     },
-    /// New bytes available for reading.
+    
     DataReadable {
         stream_id: u64,
     },
-    /// Peer reset the stream.
+    
     Reset {
         stream_id: u64,
         error: u64,
     },
-    /// A new push stream
+    
     NewPushStream {
         stream_id: u64,
     },
@@ -414,22 +433,13 @@ pub extern "C" fn neqo_http3conn_event(conn: &mut NeqoHttp3Conn) -> Http3Event {
 impl From<Http3ClientEvent> for Http3Event {
     fn from(event: Http3ClientEvent) -> Self {
         match event {
-            Http3ClientEvent::DataWritable { stream_id } => {
-                Http3Event::DataWritable { stream_id }
-            }
+            Http3ClientEvent::DataWritable { stream_id } => Http3Event::DataWritable { stream_id },
             Http3ClientEvent::StopSending { stream_id, .. } => {
                 Http3Event::StopSending { stream_id }
             }
-            Http3ClientEvent::HeaderReady { stream_id } => {
-                Http3Event::HeaderReady { stream_id }
-            }
-            Http3ClientEvent::DataReadable { stream_id } => {
-                Http3Event::DataReadable { stream_id }
-            }
-            Http3ClientEvent::Reset { stream_id, error } => Http3Event::Reset {
-                stream_id,
-                error,
-            },
+            Http3ClientEvent::HeaderReady { stream_id } => Http3Event::HeaderReady { stream_id },
+            Http3ClientEvent::DataReadable { stream_id } => Http3Event::DataReadable { stream_id },
+            Http3ClientEvent::Reset { stream_id, error } => Http3Event::Reset { stream_id, error },
             Http3ClientEvent::NewPushStream { stream_id } => {
                 Http3Event::NewPushStream { stream_id }
             }
@@ -451,9 +461,9 @@ impl From<Http3ClientEvent> for Http3Event {
     }
 }
 
-// Read response headers.
-// Firefox needs these headers to look like http1 heeaders, so we are
-// building that here.
+
+
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_read_response_headers(
     conn: &mut NeqoHttp3Conn,
@@ -485,7 +495,7 @@ pub extern "C" fn neqo_http3conn_read_response_headers(
     }
 }
 
-// Read response data into buf.
+
 #[no_mangle]
 pub extern "C" fn neqo_http3conn_read_response_data(
     conn: &mut NeqoHttp3Conn,
