@@ -162,13 +162,13 @@ class _MockBaseOpen(object):
         self.open = open
         self.files = files
 
-    def __call__(self, name, mode='r', buffering=None, encoding=None):
+    def __call__(self, name, mode='r', buffering=None, encoding=None, newline=None):
         
         
         
         if isinstance(name, int):
             return self.open(name, mode=mode, buffering=buffering,
-                             encoding=encoding)
+                             encoding=encoding, newline=newline)
         
         absname = normcase(os.path.abspath(name))
         if 'w' in mode:
