@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "WebGLValidateStrings.h"
 
@@ -11,19 +11,19 @@
 
 namespace mozilla {
 
-/* GLSL ES 3.00 p17:
-  - Comments are delimited by / * and * /, or by // and a newline.
 
-  - '//' style comments include the initial '//' marker and continue up to, but
-not including, the terminating newline.
 
-  - '/ * ... * /' comments include both the start and end marker.
 
-  - The begin comment delimiters (/ * or //) are not recognized as comment
-delimiters inside of a comment, hence comments cannot be nested.
 
-  - Comments are treated syntactically as a single space.
-*/
+
+
+
+
+
+
+
+
+
 
 std::string CommentsToSpaces(const std::string& src) {
   constexpr auto flags = std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize;
@@ -35,8 +35,8 @@ std::string CommentsToSpaces(const std::string& src) {
   std::string ret;
   ret.reserve(src.size());
 
-  // Replace all comments with block comments with the right number of newlines.
-  // Line positions may be off, but line numbers will be accurate, which is more important.
+  
+  
 
   auto itr = src.begin();
   const auto end = src.end();
@@ -58,10 +58,15 @@ std::string CommentsToSpaces(const std::string& src) {
       ret += "/*";
     }
 
-    const bool isTerminated = std::regex_search(itr, end, match, *endRegex);
-    if (!isTerminated) return ret;
+    auto commentEnd = end;
+    if (!isBlockComment && itr != end && *itr == '\n') {
+      commentEnd = itr + 1;  
+    } else if (std::regex_search(itr, end, match, *endRegex)) {
+      commentEnd = itr + match.position() + match.length();
+    } else {
+      return ret;
+    }
 
-    const auto commentEnd = itr + match.position() + match.length();
     for (; itr != commentEnd; ++itr) {
       const auto cur = *itr;
       if (cur == '\n') {
@@ -77,7 +82,7 @@ std::string CommentsToSpaces(const std::string& src) {
   return ret;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
 
 static bool IsValidGLSLChar(const char c) {
   if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
@@ -124,7 +129,7 @@ static bool IsValidGLSLChar(const char c) {
   }
 }
 
-////
+
 
 Maybe<char> CheckGLSLPreprocString(const bool webgl2,
                                    const std::string& string) {
@@ -169,4 +174,4 @@ Maybe<webgl::ErrorInfo> CheckGLSLVariableName(const bool webgl2,
   return {};
 }
 
-}  // namespace mozilla
+}  
