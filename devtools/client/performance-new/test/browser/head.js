@@ -593,3 +593,20 @@ function setReactFriendlyInputValue(input, value) {
   
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
+
+
+
+
+
+
+
+
+
+function setupGetRecordingState(document) {
+  const selectors = require("devtools/client/performance-new/store/selectors");
+  const store = document.defaultView.gStore;
+  if (!store) {
+    throw new Error("Could not find the redux store on the window object.");
+  }
+  return () => selectors.getRecordingState(store.getState());
+}

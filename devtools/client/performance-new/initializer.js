@@ -10,6 +10,8 @@
 
 
 
+
+
 "use strict";
 
 {
@@ -92,6 +94,16 @@ async function gInit(perfFront, pageContext, openAboutProfiling) {
       const { openTrustedLink } = require("devtools/client/shared/link");
       openTrustedLink("about:profiling", {});
     };
+  }
+
+  {
+    
+    const anyWindow =  (window);
+    const panelWindow =  (anyWindow);
+    
+    
+    const anyStore =  (store);
+    panelWindow.gStore = anyStore;
   }
 
   
