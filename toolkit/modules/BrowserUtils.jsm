@@ -70,6 +70,64 @@ var BrowserUtils = {
 
 
 
+
+
+
+
+
+
+  checkEmptyPageOrigin(browser, uri = browser.currentURI) {
+    
+    
+    if (browser.hasContentOpener) {
+      return false;
+    }
+    let contentPrincipal = browser.contentPrincipal;
+    
+    if (contentPrincipal.URI) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let uriToCheck = browser.documentURI || uri;
+      if (
+        (uriToCheck.spec == "about:blank" &&
+          contentPrincipal.isNullPrincipal) ||
+        contentPrincipal.URI.spec == "about:blank"
+      ) {
+        return true;
+      }
+      return contentPrincipal.URI.equals(uri);
+    }
+    
+    
+    return contentPrincipal.isSystemPrincipal;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   urlSecurityCheck(aURL, aPrincipal, aFlags) {
     var secMan = Services.scriptSecurityManager;
     if (aFlags === undefined) {
