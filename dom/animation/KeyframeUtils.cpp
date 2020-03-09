@@ -21,6 +21,7 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
+#include "mozilla/dom/BindingCallContext.h"
 #include "mozilla/dom/Document.h"  
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffect.h"  
@@ -421,7 +422,8 @@ static bool ConvertKeyframeSequence(JSContext* aCx, dom::Document* aDocument,
 
     
     dom::binding_detail::FastBaseKeyframe keyframeDict;
-    if (!keyframeDict.Init(aCx, value,
+    BindingCallContext callCx(aCx, aContext);
+    if (!keyframeDict.Init(callCx, value,
                            "Element of sequence<Keyframe> argument")) {
       
       
@@ -993,8 +995,8 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
   
   
   dom::binding_detail::FastBasePropertyIndexedKeyframe keyframeDict;
-  if (!keyframeDict.Init(aCx, aValue, "BasePropertyIndexedKeyframe argument",
-                         false)) {
+  
+  if (!keyframeDict.Init(aCx, aValue, "BasePropertyIndexedKeyframe argument")) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
