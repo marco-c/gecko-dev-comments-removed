@@ -161,27 +161,6 @@ Object.getOwnPropertyNames(perfDescription.methods).forEach(methodName => {
 
 
 
-
-function setReactFriendlyInputValue(element, value) {
-  const valueSetter = Object.getOwnPropertyDescriptor(element, "value").set;
-  const prototype = Object.getPrototypeOf(element);
-  const prototypeValueSetter = Object.getOwnPropertyDescriptor(
-    prototype,
-    "value"
-  ).set;
-
-  if (valueSetter && valueSetter !== prototypeValueSetter) {
-    prototypeValueSetter.call(element, value);
-  } else {
-    valueSetter.call(element, value);
-  }
-  element.dispatchEvent(new Event("input", { bubbles: true }));
-}
-
-
-
-
-
 function createPerfComponent() {
   const React = require("devtools/client/shared/vendor/react");
   const ReactDOM = require("devtools/client/shared/vendor/react-dom");
