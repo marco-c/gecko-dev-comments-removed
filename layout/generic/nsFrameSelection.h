@@ -864,6 +864,10 @@ class nsFrameSelection final {
     bool AdjustNormalSelection(const nsIContent* aContent, int32_t aOffset,
                                mozilla::dom::Selection& aNormalSelection) const;
 
+    void MaintainAnchorFocusRange(
+        const mozilla::dom::Selection& aNormalSelection,
+        nsSelectionAmount aAmount);
+
     RefPtr<nsRange> mRange;
     nsSelectionAmount mAmount = eSelectNoAmount;
   };
