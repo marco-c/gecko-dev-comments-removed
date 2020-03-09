@@ -4,6 +4,10 @@
 
 "use strict";
 
+const {
+  AccessibilityProxy,
+} = require("devtools/client/accessibility/accessibility-proxy");
+
 
 
 
@@ -16,50 +20,6 @@ class AccessibilityStartup {
 
     
     this.initAccessibility();
-  }
-
-  get target() {
-    return this.toolbox.target;
-  }
-
-  
-
-
-  get accessibility() {
-    return this._accessibility;
-  }
-
-  get walker() {
-    return this._accessibility.accessibleWalkerFront;
-  }
-
-  get simulator() {
-    return this._accessibility.simulatorFront;
-  }
-
-  
-
-
-
-
-  async prepareAccessibility() {
-    try {
-      
-      
-      await this._accessibility.bootstrap();
-      this._supports = {};
-      
-      
-      
-      
-      
-      
-      
-      return true;
-    } catch (e) {
-      
-      return false;
-    }
   }
 
   
@@ -76,23 +36,24 @@ class AccessibilityStartup {
           this.toolbox.once("accessibility-init"),
         ]);
 
-        this._accessibility = await this.target.getFront("accessibility");
+        this.accessibilityProxy = new AccessibilityProxy(this.toolbox);
         
         
         
-        const prepared = await Promise.race([
-          this.prepareAccessibility(),
-          this.target.once("close"), 
+        const initialized = await Promise.race([
+          this.accessibilityProxy.initialize(),
+          this.toolbox.target.once("close"), 
         ]);
         
-        if (!prepared) {
+        if (!initialized) {
           return;
         }
 
         this._updateToolHighlight();
-
-        this._accessibility.on("init", this._updateToolHighlight);
-        this._accessibility.on("shutdown", this._updateToolHighlight);
+        this.accessibilityProxy.startListeningForLifecycleEvents({
+          init: this._updateToolHighlight,
+          shutdown: this._updateToolHighlight,
+        });
       }.bind(this)();
     }
 
@@ -111,7 +72,7 @@ class AccessibilityStartup {
     }
 
     this._destroyingAccessibility = async function() {
-      if (!this._accessibility) {
+      if (!this.accessibilityProxy) {
         return;
       }
 
@@ -119,10 +80,13 @@ class AccessibilityStartup {
       
       await this._initAccessibility;
 
-      this._accessibility.off("init", this._updateToolHighlight);
-      this._accessibility.off("shutdown", this._updateToolHighlight);
+      this.accessibilityProxy.stopListeningForLifecycleEvents({
+        init: this._updateToolHighlight,
+        shutdown: this._updateToolHighlight,
+      });
 
-      this._accessibility = null;
+      this.accessibilityProxy.destroy();
+      this.accessibilityProxy = null;
     }.bind(this)();
     return this._destroyingAccessibility;
   }
@@ -133,9 +97,9 @@ class AccessibilityStartup {
 
   async _updateToolHighlight() {
     const isHighlighted = await this.toolbox.isToolHighlighted("accessibility");
-    if (this._accessibility.enabled && !isHighlighted) {
+    if (this.accessibilityProxy.enabled && !isHighlighted) {
       this.toolbox.highlightTool("accessibility");
-    } else if (!this._accessibility.enabled && isHighlighted) {
+    } else if (!this.accessibilityProxy.enabled && isHighlighted) {
       this.toolbox.unhighlightTool("accessibility");
     }
   }
