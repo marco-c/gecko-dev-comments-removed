@@ -142,6 +142,15 @@ async function generateAnswer(offer) {
 
 
 
+async function generateOffer() {
+  const pc = new RTCPeerConnection();
+  const offer = await pc.createOffer();
+  pc.close();
+  return offer;
+}
+
+
+
 
 
 function test_never_resolve(testFunc, testName) {
