@@ -152,14 +152,8 @@ nsString MediaSessionController::GetDefaultTitle() const {
   
   
   
-  bool inPrivateBrowsing = false;
-  if (RefPtr<Element> element = bc->GetEmbedderElement()) {
-    inPrivateBrowsing =
-        nsContentUtils::IsInPrivateBrowsing(element->OwnerDoc());
-  }
-
   nsString defaultTitle;
-  if (inPrivateBrowsing) {
+  if (IsInPrivateBrowsing()) {
     
     if (nsCOMPtr<nsIXULAppInfo> appInfo =
             do_GetService("@mozilla.org/xre/app-info;1")) {
@@ -206,7 +200,8 @@ MediaMetadataBase MediaSessionController::GetCurrentMediaMetadata() const {
   
   
   
-  if (mActiveMediaSessionContextId) {
+  
+  if (mActiveMediaSessionContextId && !IsInPrivateBrowsing()) {
     Maybe<MediaMetadataBase> metadata =
         mMetadataMap.Get(*mActiveMediaSessionContextId);
     if (!metadata) {
@@ -229,6 +224,19 @@ void MediaSessionController::FillMissingTitleAndArtworkIfNeeded(
   if (aMetadata.mArtwork.IsEmpty()) {
     aMetadata.mArtwork.AppendElement()->mSrc = GetDefaultFaviconURL();
   }
+}
+
+bool MediaSessionController::IsInPrivateBrowsing() const {
+  RefPtr<CanonicalBrowsingContext> bc =
+      CanonicalBrowsingContext::Get(mTopLevelBCId);
+  if (!bc) {
+    return false;
+  }
+  RefPtr<Element> element = bc->GetEmbedderElement();
+  if (!element) {
+    return false;
+  }
+  return nsContentUtils::IsInPrivateBrowsing(element->OwnerDoc());
 }
 
 }  
