@@ -63,7 +63,7 @@
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
-#include "mozilla/AntiTrackingCommon.h"
+#include "mozilla/AntiTrackingRedirectHeuristic.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/SyncRunnable.h"
@@ -74,7 +74,7 @@
 #include "mozilla/dom/network/Connection.h"
 
 #include "nsNSSComponent.h"
-#include "SimpleHttpChannel.h"
+#include "TRRServiceChannel.h"
 
 #if defined(XP_UNIX)
 #  include <sys/utsname.h>
@@ -838,7 +838,7 @@ nsresult nsHttpHandler::AsyncOnChannelRedirect(
   newChan->GetURI(getter_AddRefs(newURI));
   MOZ_ASSERT(newURI);
 
-  AntiTrackingCommon::RedirectHeuristic(oldChan, oldURI, newChan, newURI);
+  AntiTrackingRedirectHeuristic(oldChan, oldURI, newChan, newURI);
 
   
   RefPtr<nsAsyncRedirectVerifyHelper> redirectCallbackHelper =
@@ -2158,12 +2158,12 @@ nsHttpHandler::NewProxiedChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
                               proxyResolveFlags, proxyURI, aLoadInfo, result);
 }
 
-nsresult nsHttpHandler::CreateSimpleHttpChannel(
+nsresult nsHttpHandler::CreateTRRServiceChannel(
     nsIURI* uri, nsIProxyInfo* givenProxyInfo, uint32_t proxyResolveFlags,
     nsIURI* proxyURI, nsILoadInfo* aLoadInfo, nsIChannel** result) {
-  HttpBaseChannel* httpChannel = new SimpleHttpChannel();
+  HttpBaseChannel* httpChannel = new TRRServiceChannel();
 
-  LOG(("nsHttpHandler::CreateSimpleHttpChannel [proxyInfo=%p]\n",
+  LOG(("nsHttpHandler::CreateTRRServiceChannel [proxyInfo=%p]\n",
        givenProxyInfo));
 
   return SetupChannelInternal(httpChannel, uri, givenProxyInfo,
