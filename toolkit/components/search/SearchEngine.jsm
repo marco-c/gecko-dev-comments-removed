@@ -920,6 +920,8 @@ SearchEngine.prototype = {
   _isBuiltin: false,
   
   _orderHint: null,
+  
+  _telemetryId: null,
 
   
 
@@ -1498,6 +1500,7 @@ SearchEngine.prototype = {
     this._locale = params.locale;
     this._isBuiltin = !!params.isBuiltin;
     this._orderHint = params.orderHint;
+    this._telemetryId = params.telemetryId;
 
     this._initEngineURLFromMetaData(SearchUtils.URL_TYPE.SEARCH, {
       method: (params.searchPostParams && "POST") || params.method || "GET",
@@ -1770,6 +1773,7 @@ SearchEngine.prototype = {
     this._metaData = json._metaData || {};
     this._isBuiltin = json._isBuiltin;
     this._orderHint = json._orderHint || null;
+    this._telemetryId = json._telemetryId || null;
     if (json.filePath) {
       this._filePath = json.filePath;
     }
@@ -1810,6 +1814,7 @@ SearchEngine.prototype = {
       _urls: this._urls,
       _isBuiltin: this._isBuiltin,
       _orderHint: this._orderHint,
+      _telemetryId: this._telemetryId,
     };
 
     if (this._updateInterval) {
@@ -1861,6 +1866,21 @@ SearchEngine.prototype = {
     var value = val ? val.trim() : null;
     this.setAttr("alias", value);
     SearchUtils.notifyAction(this, SearchUtils.MODIFIED_TYPE.CHANGED);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  get telemetryId() {
+    return this._telemetryId || this.identifier || `other-${this.name}`;
   },
 
   

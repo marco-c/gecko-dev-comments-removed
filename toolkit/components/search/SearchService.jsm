@@ -529,7 +529,7 @@ SearchService.prototype = {
   
   
   get CACHE_VERSION() {
-    return gModernConfig ? 2 : 1;
+    return gModernConfig ? 4 : 3;
   },
 
   
@@ -2681,6 +2681,9 @@ SearchService.prototype = {
     if (locale != SearchUtils.DEFAULT_TAG) {
       shortName += "-" + locale;
     }
+    
+    
+    
     if ("telemetryId" in engineParams && engineParams.telemetryId) {
       shortName = engineParams.telemetryId;
     }
@@ -2726,6 +2729,7 @@ SearchService.prototype = {
       suggestPostParams: suggestUrlPostParams,
       queryCharset: searchProvider.encoding || "UTF-8",
       mozParams,
+      telemetryId: engineParams.telemetryId,
       initEngine: engineParams.initEngine || false,
     };
 
@@ -3158,15 +3162,6 @@ SearchService.prototype = {
       name: engine.name ? engine.name : "",
     };
 
-    let shortName;
-    if (engine.identifier) {
-      shortName = engine.identifier;
-    } else if (engine.name) {
-      shortName = "other-" + engine.name;
-    } else {
-      shortName = "UNDEFINED";
-    }
-
     if (engine._isDefault) {
       engineData.origin = "default";
     } else {
@@ -3252,7 +3247,7 @@ SearchService.prototype = {
       engineData.submissionURL = uri.spec;
     }
 
-    return [shortName, engineData];
+    return [engine.telemetryId, engineData];
   },
 
   async getDefaultEngineInfo() {
