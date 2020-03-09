@@ -897,7 +897,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   
   
   
-  if (!mGradient->Repeating() || stopDelta == 0.0) {
+  if (!mGradient->Repeating() || (!mGradient->IsConic() && stopDelta == 0.0)) {
     stopOrigin = std::min(stopOrigin, 0.0);
     stopEnd = std::max(stopEnd, 1.0);
   }
@@ -951,7 +951,8 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
       matrix.PreTranslate(-mLineStart);
     }
   } else {
-    gradientPattern = new gfxPattern(mCenter.x, mCenter.y, mAngle);
+    gradientPattern =
+        new gfxPattern(mCenter.x, mCenter.y, mAngle, stopOrigin, stopEnd);
   }
   
   matrix.PreTranslate(gfxPoint(mPresContext->CSSPixelsToDevPixels(aSrc.x),

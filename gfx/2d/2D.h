@@ -298,14 +298,22 @@ class RadialGradientPattern : public Pattern {
 class ConicGradientPattern : public Pattern {
  public:
   
-  ConicGradientPattern(const Point& aCenter, Float aAngle,
-                       GradientStops* aStops, const Matrix& aMatrix = Matrix())
-      : mCenter(aCenter), mAngle(aAngle), mStops(aStops), mMatrix(aMatrix) {}
+  ConicGradientPattern(const Point& aCenter, Float aAngle, Float aStartOffset,
+                       Float aEndOffset, GradientStops* aStops,
+                       const Matrix& aMatrix = Matrix())
+      : mCenter(aCenter),
+        mAngle(aAngle),
+        mStartOffset(aStartOffset),
+        mEndOffset(aEndOffset),
+        mStops(aStops),
+        mMatrix(aMatrix) {}
 
   PatternType GetType() const override { return PatternType::CONIC_GRADIENT; }
 
   Point mCenter;  
   Float mAngle;   
+  Float mStartOffset;  
+  Float mEndOffset;    
   RefPtr<GradientStops>
       mStops;      
 
