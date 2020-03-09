@@ -283,10 +283,19 @@ nsresult nsMIMEInfoWin::LoadUriInternal(nsIURI* aURL) {
     
     
     mozilla::LauncherVoidResult shellExecuteOk =
-        mozilla::ShellExecuteByExplorer(validatedUri.unwrap(), args, verb,
+        mozilla::ShellExecuteByExplorer(validatedUri.inspect(), args, verb,
                                         workingDir, showCmd);
     if (shellExecuteOk.isErr()) {
-      return NS_ERROR_FAILURE;
+      SHELLEXECUTEINFOW sinfo = {sizeof(sinfo)};
+      sinfo.fMask = SEE_MASK_NOASYNC;
+      sinfo.lpVerb = V_BSTR(&verb);
+      sinfo.nShow = showCmd;
+      sinfo.lpFile = validatedUri.inspect();
+
+      BOOL result = ShellExecuteExW(&sinfo);
+      if (!result || reinterpret_cast<LONG_PTR>(sinfo.hInstApp) < 32) {
+        rv = NS_ERROR_FAILURE;
+      }
     }
   }
 
