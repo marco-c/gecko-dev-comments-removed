@@ -116,7 +116,14 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   NS_DECL_NSISERVICEWORKERMANAGER
   NS_DECL_NSIOBSERVER
 
-  bool IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI);
+  
+  
+  
+  
+  
+  
+  bool IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
+                   nsIChannel* aChannel);
 
   
   

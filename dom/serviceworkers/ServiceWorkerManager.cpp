@@ -2313,13 +2313,59 @@ void ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
   aRv = uploadChannel->EnsureUploadStreamIsCloneable(permissionsRunnable);
 }
 
-bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI) {
+bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,
+                                       nsIChannel* aChannel) {
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aURI);
+  MOZ_ASSERT(aChannel);
 
   RefPtr<ServiceWorkerRegistrationInfo> registration =
       GetServiceWorkerRegistrationInfo(aPrincipal, aURI);
-  return registration && registration->GetActive();
+
+  
+  if (!ServiceWorkerParentInterceptEnabled()) {
+    return registration && registration->GetActive();
+  }
+
+  if (!registration || !registration->GetActive()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (!registration->GetActive()->HandlesFetch()) {
+    
+    if (StorageAllowedForChannel(aChannel) != StorageAccess::eAllow) {
+      return false;
+    }
+
+    
+    
+    MOZ_ASSERT(nsContentUtils::IsNonSubresourceRequest(aChannel));
+
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+    Maybe<ClientInfo> clientInfo = loadInfo->GetReservedClientInfo();
+    if (clientInfo.isNothing()) {
+      clientInfo = loadInfo->GetInitialClientInfo();
+    }
+
+    if (clientInfo.isSome()) {
+      StartControllingClient(clientInfo.ref(), registration);
+    }
+    loadInfo->SetController(registration->GetActive()->Descriptor());
+
+    
+    
+    registration->MaybeScheduleTimeCheckAndUpdate();
+    return false;
+  }
+  
+  return true;
 }
 
 nsresult ServiceWorkerManager::GetClientRegistration(
