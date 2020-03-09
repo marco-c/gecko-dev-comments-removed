@@ -8,10 +8,13 @@
 #define mozilla_antitrackingutils_h
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "nsStringFwd.h"
 
 class nsPIDOMWindowInner;
 class nsPIDOMWindowOuter;
 class nsIChannel;
+class nsIPermission;
+class nsIPrincipal;
 class nsIURI;
 
 namespace mozilla {
@@ -24,6 +27,19 @@ class AntiTrackingUtils final {
   
   static already_AddRefed<nsIURI> MaybeGetDocumentURIBeingLoaded(
       nsIChannel* aChannel);
+
+  static void CreateStoragePermissionKey(const nsCString& aTrackingOrigin,
+                                         nsACString& aPermissionKey);
+
+  
+  
+  static bool CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
+                                         nsACString& aKey);
+
+  
+  
+  static bool IsStorageAccessPermission(nsIPermission* aPermission,
+                                        nsIPrincipal* aPrincipal);
 };
 
 }  

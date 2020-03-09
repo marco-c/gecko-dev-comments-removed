@@ -101,16 +101,6 @@ class AntiTrackingCommon final {
       ContentBlockingNotifier::StorageAccessGrantedReason aReason,
       const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
-  
-  
-  static bool CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
-                                         nsACString& aKey);
-
-  
-  
-  static bool IsStorageAccessPermission(nsIPermission* aPermission,
-                                        nsIPrincipal* aPrincipal);
-
   static void StoreUserInteractionFor(nsIPrincipal* aPrincipal);
 
   static bool HasUserInteraction(nsIPrincipal* aPrincipal);
