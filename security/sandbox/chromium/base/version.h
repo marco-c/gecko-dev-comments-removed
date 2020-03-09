@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "base/base_export.h"
+#include "base/strings/string_piece.h"
 
 namespace base {
 
@@ -28,7 +29,7 @@ class BASE_EXPORT Version {
   
   
   
-  explicit Version(const std::string& version_str);
+  explicit Version(StringPiece version_str);
 
   
   
@@ -43,7 +44,7 @@ class BASE_EXPORT Version {
   
   
   
-  static bool IsValidWildcardString(const std::string& wildcard_string);
+  static bool IsValidWildcardString(StringPiece wildcard_string);
 
   
   int CompareTo(const Version& other) const;
@@ -52,10 +53,10 @@ class BASE_EXPORT Version {
   
   
   
-  int CompareToWildcardString(const std::string& wildcard_string) const;
+  int CompareToWildcardString(StringPiece wildcard_string) const;
 
   
-  const std::string GetString() const;
+  std::string GetString() const;
 
   const std::vector<uint32_t>& components() const { return components_; }
 

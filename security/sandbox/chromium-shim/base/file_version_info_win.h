@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "base/macros.h"
+#include "base/version.h"
 
 #include "mozilla/Assertions.h"
 
@@ -30,7 +31,7 @@ class FileVersionInfoWin {
       const base::FilePath& file_path);
 
   
-  const VS_FIXEDFILEINFO* fixed_file_info() const { return fixed_file_info_; }
+  base::Version GetFileVersion() const;
 
  private:
   
@@ -45,7 +46,7 @@ class FileVersionInfoWin {
   const WORD code_page_;
 
   
-  const VS_FIXEDFILEINFO* const fixed_file_info_;
+  const VS_FIXEDFILEINFO& fixed_file_info_;
 
   DISALLOW_COPY_AND_ASSIGN(FileVersionInfoWin);
 };
