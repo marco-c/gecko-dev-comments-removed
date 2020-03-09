@@ -101,8 +101,9 @@ inline bool ThrowErrorMessage(JSContext* aCx, Ts&&... aArgs) {
   return false;
 }
 
-struct StringArrayAppender {
-  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount) {
+template <typename CharT>
+struct TStringArrayAppender {
+  static void Append(nsTArray<nsTString<CharT>>& aArgs, uint16_t aCount) {
     MOZ_RELEASE_ASSERT(aCount == 0,
                        "Must give at least as many string arguments as are "
                        "required by the ErrNum.");
@@ -110,8 +111,8 @@ struct StringArrayAppender {
 
   
   template <typename... Ts>
-  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount,
-                     const nsAString& aFirst, Ts&&... aOtherArgs) {
+  static void Append(nsTArray<nsTString<CharT>>& aArgs, uint16_t aCount,
+                     const nsTSubstring<CharT>& aFirst, Ts&&... aOtherArgs) {
     if (aCount == 0) {
       MOZ_ASSERT(false,
                  "There should not be more string arguments provided than are "
@@ -124,54 +125,21 @@ struct StringArrayAppender {
 
   
   template <int N, typename... Ts>
-  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount,
-                     const char16_t (&aFirst)[N], Ts&&... aOtherArgs) {
+  static void Append(nsTArray<nsTString<CharT>>& aArgs, uint16_t aCount,
+                     const CharT (&aFirst)[N], Ts&&... aOtherArgs) {
     if (aCount == 0) {
       MOZ_ASSERT(false,
                  "There should not be more string arguments provided than are "
                  "required by the ErrNum.");
       return;
     }
-    aArgs.AppendElement(nsLiteralString(aFirst));
+    aArgs.AppendElement(nsTLiteralString<CharT>(aFirst));
     Append(aArgs, aCount - 1, std::forward<Ts>(aOtherArgs)...);
   }
 };
 
-struct CStringArrayAppender {
-  static void Append(nsTArray<nsCString>& aArgs, uint16_t aCount) {
-    MOZ_RELEASE_ASSERT(aCount == 0,
-                       "Must give at least as many string arguments as are "
-                       "required by the ErrNum.");
-  }
-
-  
-  template <typename... Ts>
-  static void Append(nsTArray<nsCString>& aArgs, uint16_t aCount,
-                     const nsACString& aFirst, Ts&&... aOtherArgs) {
-    if (aCount == 0) {
-      MOZ_ASSERT(false,
-                 "There should not be more string arguments provided than are "
-                 "required by the ErrNum.");
-      return;
-    }
-    aArgs.AppendElement(aFirst);
-    Append(aArgs, aCount - 1, std::forward<Ts>(aOtherArgs)...);
-  }
-
-  
-  template <int N, typename... Ts>
-  static void Append(nsTArray<nsCString>& aArgs, uint16_t aCount,
-                     const char (&aFirst)[N], Ts&&... aOtherArgs) {
-    if (aCount == 0) {
-      MOZ_ASSERT(false,
-                 "There should not be more string arguments provided than are "
-                 "required by the ErrNum.");
-      return;
-    }
-    aArgs.AppendElement(nsLiteralCString(aFirst));
-    Append(aArgs, aCount - 1, std::forward<Ts>(aOtherArgs)...);
-  }
-};
+using StringArrayAppender = TStringArrayAppender<char16_t>;
+using CStringArrayAppender = TStringArrayAppender<char>;
 
 }  
 
