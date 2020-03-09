@@ -64,8 +64,7 @@ class UrlbarInput {
       this.window.MozXULElement.parseXULToFragment(`
         <vbox class="urlbarView"
               role="group"
-              tooltip="aHTMLTooltip"
-              context="">
+              tooltip="aHTMLTooltip">
           <html:div class="urlbarView-body-outer">
             <html:div class="urlbarView-body-inner">
               <html:div id="urlbar-results"
@@ -261,6 +260,73 @@ class UrlbarInput {
 
 
 
+  setURI(uri, updatePopupNotifications) {
+    let value = this.window.gBrowser.userTypedValue;
+    let valid = false;
+
+    
+    
+    
+    if (value === null) {
+      uri = uri || this.window.gBrowser.currentURI;
+      
+      try {
+        uri = Services.uriFixup.createExposableURI(uri);
+      } catch (e) {}
+
+      
+      
+      if (
+        this.window.isInitialPage(uri) &&
+        this.window.checkEmptyPageOrigin(
+          this.window.gBrowser.selectedBrowser,
+          uri
+        )
+      ) {
+        value = "";
+      } else {
+        
+        try {
+          value = losslessDecodeURI(uri);
+        } catch (ex) {
+          value = "about:blank";
+        }
+      }
+
+      valid =
+        !this.window.isBlankPageURL(uri.spec) || uri.schemeIs("moz-extension");
+    } else if (
+      this.window.isInitialPage(value) &&
+      this.window.checkEmptyPageOrigin(this.window.gBrowser.selectedBrowser)
+    ) {
+      value = "";
+      valid = true;
+    }
+
+    let isDifferentValidValue = valid && value != this.value;
+    this.value = value;
+    this.valueIsTyped = !valid;
+    this.removeAttribute("usertyping");
+    if (isDifferentValidValue) {
+      
+      
+      this.selectionStart = this.selectionEnd = 0;
+    }
+
+    this.window.SetPageProxyState(
+      valid ? "valid" : "invalid",
+      updatePopupNotifications
+    );
+  }
+
+  
+
+
+
+
+
+
+
 
   makeURIReadable(uri) {
     
@@ -432,7 +498,7 @@ class UrlbarInput {
 
   handleRevert() {
     this.window.gBrowser.userTypedValue = null;
-    this.window.URLBarSetURI(null, true);
+    this.setURI(null, true);
     if (this.value && this.focused) {
       this.select();
     }
@@ -1144,19 +1210,6 @@ class UrlbarInput {
     } catch (ex) {}
 
     return "";
-  }
-
-  
-
-
-
-
-
-
-
-
-  _losslessDecodeURI(aURI) {
-    return losslessDecodeURI(aURI);
   }
 
   
@@ -2180,7 +2233,7 @@ class UrlbarInput {
       
       
       this.window.gBrowser.userTypedValue = null;
-      this.window.URLBarSetURI(null, true);
+      this.setURI(null, true);
     }
   }
 

@@ -63,7 +63,7 @@ var CustomizationHandler = {
     gBrowser.selectedBrowser.focus();
 
     
-    URLBarSetURI();
+    gURLBar.setURI();
     UpdateUrlbarSearchSplitterState();
   },
 };
