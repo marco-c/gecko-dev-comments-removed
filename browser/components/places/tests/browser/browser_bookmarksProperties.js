@@ -121,7 +121,7 @@ gTests.push({
             
             self._cleanShutdown = true;
             self.window.document
-              .getElementById("bookmarkproperties")
+              .getElementById("bookmarkpropertiesdialog")
               .cancelDialog();
             break;
           case "popupshown":
@@ -250,7 +250,7 @@ gTests.push({
             
             self._cleanShutdown = true;
             self.window.document
-              .getElementById("bookmarkproperties")
+              .getElementById("bookmarkpropertiesdialog")
               .cancelDialog();
             break;
           case "popupshown":
@@ -407,7 +407,7 @@ gTests.push({
         );
 
         self.window.document
-          .getElementById("bookmarkproperties")
+          .getElementById("bookmarkpropertiesdialog")
           .cancelDialog();
       });
     });
