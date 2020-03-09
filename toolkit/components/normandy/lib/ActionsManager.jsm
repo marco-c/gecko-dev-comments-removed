@@ -22,8 +22,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PreferenceRolloutAction:
     "resource://normandy/actions/PreferenceRolloutAction.jsm",
   ShowHeartbeatAction: "resource://normandy/actions/ShowHeartbeatAction.jsm",
-  SinglePreferenceExperimentAction:
-    "resource://normandy/actions/SinglePreferenceExperimentAction.jsm",
   Uptake: "resource://normandy/lib/Uptake.jsm",
 });
 
@@ -40,13 +38,10 @@ const actionConstructors = {
   "preference-rollback": PreferenceRollbackAction,
   "preference-rollout": PreferenceRolloutAction,
   "show-heartbeat": ShowHeartbeatAction,
-  "single-preference-experiment": SinglePreferenceExperimentAction,
 };
 
 
-const actionAliases = {
-  "preference-experiment": "single-preference-experiment",
-};
+const actionAliases = {};
 
 
 
