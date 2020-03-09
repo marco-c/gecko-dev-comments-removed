@@ -228,7 +228,7 @@ function DownloadsPlacesView(aRichListBox, aActive = true) {
   window.addEventListener(
     "resize",
     () => {
-      this._ensureVisibleElementsAreActive();
+      this._ensureVisibleElementsAreActive(true);
     },
     true
   );
@@ -247,69 +247,97 @@ DownloadsPlacesView.prototype = {
   set active(val) {
     this._active = val;
     if (this._active) {
-      this._ensureVisibleElementsAreActive();
+      this._ensureVisibleElementsAreActive(true);
     }
     return this._active;
   },
 
-  _ensureVisibleElementsAreActive() {
+  
+
+
+
+
+
+
+
+
+  _ensureVisibleElementsAreActive(debounce = false) {
     if (
       !this.active ||
-      this._ensureVisibleTimer ||
+      (debounce && this._ensureVisibleTimer) ||
       !this._richlistbox.firstChild
     ) {
       return;
     }
 
-    this._ensureVisibleTimer = setTimeout(() => {
-      delete this._ensureVisibleTimer;
-      if (!this._richlistbox.firstChild) {
-        return;
-      }
+    if (debounce) {
+      this._ensureVisibleTimer = setTimeout(() => {
+        this._internalEnsureVisibleElementsAreActive();
+      }, 10);
+    } else {
+      this._internalEnsureVisibleElementsAreActive();
+    }
+  },
 
-      let rlbRect = this._richlistbox.getBoundingClientRect();
-      let winUtils = window.windowUtils;
-      let nodes = winUtils.nodesFromRect(
-        rlbRect.left,
-        rlbRect.top,
-        0,
-        rlbRect.width,
-        rlbRect.height,
-        0,
-        true,
-        false,
-        false
-      );
+  _internalEnsureVisibleElementsAreActive() {
+    
+    
+    
+    if (!this._richlistbox.firstChild) {
       
       
       
-      let firstVisibleNode, lastVisibleNode;
-      for (let node of nodes) {
-        if (node.localName === "richlistitem" && node._shell) {
-          node._shell.ensureActive();
-          
-          firstVisibleNode = node;
-          
-          if (!lastVisibleNode) {
-            lastVisibleNode = node;
-          }
+      delete this._ensureVisibleTimer;
+      return;
+    }
+
+    if (this._ensureVisibleTimer) {
+      clearTimeout(this._ensureVisibleTimer);
+      delete this._ensureVisibleTimer;
+    }
+
+    let rlbRect = this._richlistbox.getBoundingClientRect();
+    let winUtils = window.windowUtils;
+    let nodes = winUtils.nodesFromRect(
+      rlbRect.left,
+      rlbRect.top,
+      0,
+      rlbRect.width,
+      rlbRect.height,
+      0,
+      true,
+      false,
+      false
+    );
+    
+    
+    
+    let firstVisibleNode, lastVisibleNode;
+    for (let node of nodes) {
+      if (node.localName === "richlistitem" && node._shell) {
+        node._shell.ensureActive();
+        
+        firstVisibleNode = node;
+        
+        if (!lastVisibleNode) {
+          lastVisibleNode = node;
         }
       }
+    }
 
-      
-      
-      
-      let nodeBelowVisibleArea = lastVisibleNode && lastVisibleNode.nextSibling;
-      if (nodeBelowVisibleArea && nodeBelowVisibleArea._shell) {
-        nodeBelowVisibleArea._shell.ensureActive();
-      }
+    
+    
+    
+    let nodeBelowVisibleArea = lastVisibleNode && lastVisibleNode.nextSibling;
+    if (nodeBelowVisibleArea && nodeBelowVisibleArea._shell) {
+      nodeBelowVisibleArea._shell.ensureActive();
+    }
 
-      let nodeAboveVisibleArea =
-        firstVisibleNode && firstVisibleNode.previousSibling;
-      if (nodeAboveVisibleArea && nodeAboveVisibleArea._shell) {
-        nodeAboveVisibleArea._shell.ensureActive();
-      }
-    }, 10);
+    let nodeAboveVisibleArea =
+      firstVisibleNode && firstVisibleNode.previousSibling;
+    if (nodeAboveVisibleArea && nodeAboveVisibleArea._shell) {
+      nodeAboveVisibleArea._shell.ensureActive();
+    }
   },
 
   _place: "",
@@ -716,7 +744,7 @@ DownloadsPlacesView.prototype = {
   },
 
   onScroll() {
-    this._ensureVisibleElementsAreActive();
+    this._ensureVisibleElementsAreActive(true);
   },
 
   onSelect() {
