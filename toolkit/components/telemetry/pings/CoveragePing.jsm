@@ -151,9 +151,7 @@ var CoveragePing = Object.freeze({
       } else {
         
         log.error(
-          `error submitting to ${endpoint}, status: ${status}, type: ${
-            event.type
-          }`
+          `error submitting to ${endpoint}, status: ${status}, type: ${event.type}`
         );
       }
 

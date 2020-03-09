@@ -81,9 +81,7 @@ add_task(async function() {
   
   tooltipRect = previewTooltip.panel.getBoundingClientRect();
   info(
-    `CSS variable tooltip dimensions: ${tooltipRect.width} x ${
-      tooltipRect.height
-    }`
+    `CSS variable tooltip dimensions: ${tooltipRect.width} x ${tooltipRect.height}`
   );
   is(
     tooltipRect.height,

@@ -240,9 +240,7 @@ class AddonRolloutAction extends BaseAction {
 
 
 
-      const safeErrorMessage = `${error.fileName}:${error.lineNumber}:${
-        error.columnNumber
-      } ${error.name}`;
+      const safeErrorMessage = `${error.fileName}:${error.lineNumber}:${error.columnNumber} ${error.name}`;
       TelemetryEvents.sendEvent(eventName, "addon_rollout", error.slug, {
         reason: safeErrorMessage.slice(0, 80), 
       });

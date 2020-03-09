@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PanelTestProvider: "resource://activity-stream/lib/PanelTestProvider.jsm",
   ToolbarBadgeHub: "resource://activity-stream/lib/ToolbarBadgeHub.jsm",
   ToolbarPanelHub: "resource://activity-stream/lib/ToolbarPanelHub.jsm",
+  MomentsPageHub: "resource://activity-stream/lib/MomentsPageHub.jsm",
   ASRouterTargeting: "resource://activity-stream/lib/ASRouterTargeting.jsm",
   QueryCache: "resource://activity-stream/lib/ASRouterTargeting.jsm",
   ASRouterPreferences: "resource://activity-stream/lib/ASRouterPreferences.jsm",
@@ -389,9 +390,7 @@ const MessageLoaderUtils = {
       messages = [];
       MessageLoaderUtils.reportError(
         new Error(
-          `Tried to load messages for ${
-            provider.id
-          } but the result was not an Array.`
+          `Tried to load messages for ${provider.id} but the result was not an Array.`
         )
       );
     }
@@ -928,6 +927,12 @@ class _ASRouter {
       dispatch: this.dispatch,
       handleUserAction: this.handleUserAction,
     });
+    MomentsPageHub.init(this.waitForInitialized, {
+      handleMessageRequest: this.handleMessageRequest,
+      addImpression: this.addImpression,
+      blockMessageById: this.blockMessageById,
+      dispatch: this.dispatch,
+    });
 
     this._loadLocalProviders();
 
@@ -1001,6 +1006,7 @@ class _ASRouter {
     BookmarkPanelHub.uninit();
     ToolbarPanelHub.uninit();
     ToolbarBadgeHub.uninit();
+    MomentsPageHub.uninit();
 
     
     for (const listener of ASRouterTriggerListeners.values()) {
@@ -1341,8 +1347,10 @@ class _ASRouter {
         }
         break;
       case "toolbar_badge":
-      case "update_action":
         ToolbarBadgeHub.registerBadgeNotificationListener(message, { force });
+        break;
+      case "update_action":
+        MomentsPageHub.executeAction(message);
         break;
       case "milestone_message":
         CFRPageActions.showMilestone(target, message, this.dispatch, { force });
@@ -2182,6 +2190,7 @@ class _ASRouter {
       case "DOORHANGER_TELEMETRY":
       case "TOOLBAR_BADGE_TELEMETRY":
       case "TOOLBAR_PANEL_TELEMETRY":
+      case "MOMENTS_PAGE_TELEMETRY":
         if (this.dispatchToAS) {
           this.dispatchToAS(ac.ASRouterUserEvent(action.data));
         }

@@ -43,9 +43,7 @@ add_task(async function() {
 
     ok(
       true,
-      `${
-        expectedSelectionChangeEvents[i]
-      } selectionchange events detected on mouseover`
+      `${expectedSelectionChangeEvents[i]} selectionchange events detected on mouseover`
     );
 
     

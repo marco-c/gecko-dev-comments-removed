@@ -75,9 +75,7 @@ CensusTreeNodeCacheValue.prototype = null;
 
 CensusTreeNodeCache.hashFrame = function(frame) {
   
-  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${
-    frame.column
-  },${frame.asyncCause}`;
+  return `FRAME,${frame.functionDisplayName},${frame.source},${frame.line},${frame.column},${frame.asyncCause}`;
 };
 
 

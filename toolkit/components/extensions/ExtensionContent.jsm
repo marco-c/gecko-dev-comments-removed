@@ -727,9 +727,7 @@ class UserScript extends Script {
     }
 
     const sandbox = Cu.Sandbox(principal, {
-      sandboxName: `User Script registered by ${
-        this.extension.policy.debugName
-      }`,
+      sandboxName: `User Script registered by ${this.extension.policy.debugName}`,
       sandboxPrototype: contentWindow,
       sameZoneAs: contentWindow,
       wantXrays: true,
@@ -794,9 +792,7 @@ class ContentScriptContextChild extends BaseContext {
       
       
       this.sandbox = Cu.Sandbox(contentWindow, {
-        sandboxName: `Web-Accessible Extension Page ${
-          extension.policy.debugName
-        }`,
+        sandboxName: `Web-Accessible Extension Page ${extension.policy.debugName}`,
         sandboxPrototype: contentWindow,
         sameZoneAs: contentWindow,
         wantXrays: false,

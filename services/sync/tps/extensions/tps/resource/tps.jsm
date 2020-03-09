@@ -1231,9 +1231,7 @@ var TPS = {
         
         if (this._syncsReportedViaTelemetry < this._syncCount) {
           this.DumpError(
-            `Telemetry missed syncs: Saw ${
-              this._syncsReportedViaTelemetry
-            }, should have >= ${this._syncCount}.`
+            `Telemetry missed syncs: Saw ${this._syncsReportedViaTelemetry}, should have >= ${this._syncCount}.`
           );
         }
       }

@@ -127,9 +127,7 @@ function run_test() {
   
   Assert.equal(
     ep.origin,
-    `[Expanded Principal [${exampleOrg.origin}, ${exampleCom.origin}, ${
-      nullPrin.origin
-    }]]`
+    `[Expanded Principal [${exampleOrg.origin}, ${exampleCom.origin}, ${nullPrin.origin}]]`
   );
 
   

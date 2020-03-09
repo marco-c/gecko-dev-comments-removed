@@ -9,6 +9,7 @@ var EXPORTED_SYMBOLS = ["RemoteSettingsClient"];
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ClientEnvironmentBase:
@@ -291,9 +292,7 @@ class RemoteSettingsClient extends EventEmitter {
       await kintoCollection.db.close();
     } catch (err) {
       console.warn(
-        `Error retrieving the getLastModified timestamp from ${
-          this.identifier
-        } RemoteSettingClient`,
+        `Error retrieving the getLastModified timestamp from ${this.identifier} RemoteSettingClient`,
         err
       );
     }
@@ -589,9 +588,7 @@ class RemoteSettingsClient extends EventEmitter {
           
           try {
             console.warn(
-              `Signature verified failed for ${
-                this.identifier
-              }. Retry from scratch`
+              `Signature verified failed for ${this.identifier}. Retry from scratch`
             );
             syncResult = await this._retrySyncFromScratch(
               kintoCollection,
@@ -634,7 +631,12 @@ class RemoteSettingsClient extends EventEmitter {
       thrownError = e;
       
       
-      if (reportStatus == null) {
+      if (Services.startup.shuttingDown) {
+        reportStatus = UptakeTelemetry.STATUS.SHUTDOWN_ERROR;
+      }
+      
+      
+      else if (reportStatus == null) {
         reportStatus = this._telemetryFromError(e, {
           default: UptakeTelemetry.STATUS.UNKNOWN_ERROR,
         });
@@ -666,6 +668,7 @@ class RemoteSettingsClient extends EventEmitter {
           UptakeTelemetry.STATUS.SYNC_ERROR,
           UptakeTelemetry.STATUS.CUSTOM_1_ERROR, 
           UptakeTelemetry.STATUS.UNKNOWN_ERROR,
+          UptakeTelemetry.STATUS.SHUTDOWN_ERROR,
         ].includes(reportStatus)
       ) {
         

@@ -415,9 +415,7 @@ class Query {
       
       
       logger.debug(
-        `Cropping ${this.context.results.length} matches to ${
-          this.context.maxResults
-        }`
+        `Cropping ${this.context.results.length} matches to ${this.context.maxResults}`
       );
       let resultCount = this.context.maxResults;
       for (let i = 0; i < this.context.results.length; i++) {
