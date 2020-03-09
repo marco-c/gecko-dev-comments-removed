@@ -60,6 +60,16 @@ module.exports = {
   plugins: ["mozilla"],
   overrides: [
     {
+      
+      
+      
+      files: [".eslintrc.js"],
+      env: {
+        node: true,
+        browser: false,
+      },
+    },
+    {
       files: [
         "*.html",
         "*.xhtml",
