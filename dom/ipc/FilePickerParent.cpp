@@ -36,7 +36,7 @@ void FilePickerParent::FilePickerShownCallback::Destroy() {
   mFilePickerParent = nullptr;
 }
 
-FilePickerParent::~FilePickerParent() {}
+FilePickerParent::~FilePickerParent() = default;
 
 
 
