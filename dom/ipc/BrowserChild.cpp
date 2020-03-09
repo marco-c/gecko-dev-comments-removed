@@ -2814,8 +2814,33 @@ void BrowserChild::NotifyPainted() {
 }
 
 IPCResult BrowserChild::RecvUpdateEffects(const EffectsInfo& aEffects) {
+  bool needInvalidate = false;
+  if (mEffectsInfo.IsVisible() && aEffects.IsVisible() &&
+      mEffectsInfo != aEffects) {
+    
+    
+    needInvalidate = true;
+  }
+
   mEffectsInfo = aEffects;
   UpdateVisibility();
+
+  if (needInvalidate) {
+    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+    if (docShell) {
+      
+      
+      
+      
+      RefPtr<PresShell> presShell = docShell->GetPresShell();
+      if (presShell) {
+        if (nsIFrame* root = presShell->GetRootFrame()) {
+          root->InvalidateFrame();
+        }
+      }
+    }
+  }
+
   return IPC_OK();
 }
 
