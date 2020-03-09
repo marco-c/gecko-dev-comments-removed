@@ -1780,6 +1780,12 @@ public class WebExtension {
         
 
 
+
+        public final @NonNull String baseUrl;
+
+        
+
+
         public final boolean enabled;
 
         
@@ -1800,6 +1806,7 @@ public class WebExtension {
             signedState = SignedStateFlags.UNKNOWN;
             disabledFlags = 0;
             enabled = true;
+            baseUrl = null;
         }
 
          MetaData(final GeckoBundle bundle) {
@@ -1816,6 +1823,7 @@ public class WebExtension {
             isRecommended = bundle.getBoolean("isRecommended");
             blocklistState = bundle.getInt("blocklistState", BlocklistStateFlags.NOT_BLOCKED);
             enabled = bundle.getBoolean("enabled", false);
+            baseUrl = bundle.getString("baseURL");
 
             int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
             if (signedState <= SignedStateFlags.LAST) {
