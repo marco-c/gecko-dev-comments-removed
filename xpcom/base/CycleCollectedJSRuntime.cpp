@@ -1404,8 +1404,18 @@ void CycleCollectedJSRuntime::OnGC(JSContext* aContext, JSGCStatus aStatus,
       
       
       
-      bool finalizeIncrementally =
-          JS::WasIncrementalGC(mJSRuntime) || JS_IsExceptionPending(aContext);
+      
+      
+      
+      
+      
+      
+      
+      bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) ||
+                                   JS_IsExceptionPending(aContext) ||
+                                   (JS::InternalGCReason(aReason) &&
+                                    aReason != JS::GCReason::DESTROY_RUNTIME);
+
       FinalizeDeferredThings(
           finalizeIncrementally ? CycleCollectedJSContext::FinalizeIncrementally
                                 : CycleCollectedJSContext::FinalizeNow);
