@@ -248,6 +248,7 @@ enum BFCacheStatus {
   HAS_ACTIVE_SPEECH_SYNTHESIS = 1 << 9,  
   HAS_USED_VR = 1 << 10,                 
   CONTAINS_REMOTE_SUBFRAMES = 1 << 11,   
+  NOT_ONLY_TOPLEVEL_IN_BCG = 1 << 12     
 };
 
 }  
@@ -584,9 +585,6 @@ class Document : public nsINode,
   nsIPrincipal* GetContentBlockingAllowListPrincipal() const {
     return mContentBlockingAllowListPrincipal;
   }
-
-  already_AddRefed<nsIPrincipal> RecomputeContentBlockingAllowListPrincipal(
-      nsIURI* aURIBeingLoaded, const OriginAttributes& aAttrs);
 
   
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
