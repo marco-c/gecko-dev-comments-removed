@@ -68,9 +68,6 @@
 
 
 
-
-
-
 "use strict";
 
 ChromeUtils.defineModuleGetter(
@@ -943,26 +940,6 @@ var PreferenceExperiments = {
         }
       }
       storage.saveSoon();
-    },
-
-    async migration05RemoveOldAction() {
-      const experiments = await PreferenceExperiments.getAllActive();
-      for (const experiment of experiments) {
-        if (experiment.actionName == "SinglePreferenceExperimentAction") {
-          try {
-            await PreferenceExperiments.stop(experiment.slug, {
-              resetValue: true,
-              reason: "migration-removing-single-pref-action",
-            });
-          } catch (e) {
-            log.error(
-              `Stopping preference experiment ${
-                experiment.slug
-              } during migration failed: ${e}`
-            );
-          }
-        }
-      }
     },
   },
 };
