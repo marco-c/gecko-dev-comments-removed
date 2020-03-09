@@ -58,6 +58,56 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
     this._client = client;
   }
+  
+
+
+
+
+
+
+
+
+  async listAllServiceWorkers(workerTargets) {
+    const result = [];
+    const { registrations } = await this.listServiceWorkerRegistrations();
+    const allWorkers = workerTargets
+      ? workerTargets
+      : await this.listAllWorkerTargets();
+
+    for (const registrationFront of registrations) {
+      
+      const latestWorker =
+        registrationFront.activeWorker ||
+        registrationFront.waitingWorker ||
+        registrationFront.installingWorker ||
+        registrationFront.evaluatingWorker;
+
+      if (latestWorker !== null) {
+        const latestWorkerFront = allWorkers.find(
+          workerFront => workerFront.id === latestWorker.id
+        );
+        if (latestWorkerFront) {
+          registrationFront.workerTargetFront = latestWorkerFront;
+        }
+        
+        result.push({
+          registration: registrationFront,
+          workers: [
+            {
+              id: registrationFront.id,
+              name: latestWorker.url,
+              state: latestWorker.state,
+              stateText: latestWorker.stateText,
+              url: latestWorker.url,
+              workerTargetFront: latestWorkerFront,
+            },
+          ],
+        });
+      }
+    }
+
+    return result;
+  }
 
   
 
@@ -75,116 +125,35 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
   async listAllWorkers() {
-    let registrations = [];
-    let workers = [];
-
-    try {
-      
-      ({ registrations } = await this.listServiceWorkerRegistrations());
-
-      workers = await this.listAllWorkerTargets();
-    } catch (e) {
-      
-    }
+    const allWorkers = await this.listAllWorkerTargets();
+    const serviceWorkers = await this.listAllServiceWorkers(allWorkers);
 
     const result = {
-      service: [],
+      service: serviceWorkers
+        .map(({ registration, workers }) => {
+          return workers.map(worker => {
+            return Object.assign(worker, {
+              registrationFront: registration,
+              fetch: registration.fetch,
+            });
+          });
+        })
+        .flat(),
       shared: [],
       other: [],
     };
 
-    registrations.forEach(front => {
-      const {
-        activeWorker,
-        waitingWorker,
-        installingWorker,
-        evaluatingWorker,
-      } = front;
-      const newestWorker =
-        activeWorker || waitingWorker || installingWorker || evaluatingWorker;
-
-      
-      
-      
-      
-      result.service.push({
-        active: front.active,
-        fetch: front.fetch,
-        id: front.id,
-        lastUpdateTime: front.lastUpdateTime,
-        name: front.url,
-        registrationFront: front,
-        scope: front.scope,
-        url: front.url,
-        newestWorkerId: newestWorker && newestWorker.id,
-      });
-    });
-
-    workers.forEach(front => {
+    allWorkers.forEach(front => {
       const worker = {
         id: front.id,
-        name: front.url,
         url: front.url,
+        name: front.url,
         workerTargetFront: front,
       };
+
       switch (front.type) {
         case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-          const registration = result.service.find(r => {
-            
-            
-            
-            
-            if (!r.registrationFront) {
-              
-              
-              return false;
-            }
-
-            
-
-
-
-
-
-
-
-
-
-            const { isParentInterceptEnabled } = r.registrationFront.traits;
-            if (!r.newestWorkerId || !isParentInterceptEnabled) {
-              return r.scope === front.scope;
-            }
-
-            return r.newestWorkerId === front.id;
-          });
-
-          if (registration) {
-            
-            
-            
-            
-            if (!registration.url) {
-              registration.name = registration.url = front.url;
-            }
-            registration.workerTargetFront = front;
-          } else {
-            
-            
-            
-
-            
-            
-            
-            
-            
-            
-            
-            
-            worker.fetch = front.fetch;
-            worker.scope = front.scope;
-            worker.active = false;
-            result.service.push(worker);
-          }
+          
           break;
         case Ci.nsIWorkerDebugger.TYPE_SHARED:
           result.shared.push(worker);
