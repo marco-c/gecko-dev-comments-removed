@@ -52,6 +52,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.jsm",
+  ExtensionPreferencesManager:
+    "resource://gre/modules/ExtensionPreferencesManager.jsm",
   ExtensionProcessScript: "resource://gre/modules/ExtensionProcessScript.jsm",
   ExtensionStorage: "resource://gre/modules/ExtensionStorage.jsm",
   ExtensionStorageIDB: "resource://gre/modules/ExtensionStorageIDB.jsm",
@@ -589,15 +591,11 @@ class ExtensionData {
 
 
 
-  get manifestPermissions() {
-    if (this.type !== "extension") {
-      return null;
-    }
-
+  permissionsObject(permissionsArray) {
     let permissions = new Set();
     let origins = new Set();
     let { restrictSchemes, isPrivileged } = this;
-    for (let perm of this.manifest.permissions || []) {
+    for (let perm of permissionsArray || []) {
       let type = classifyPermission(perm, restrictSchemes, isPrivileged);
       if (type.origin) {
         origins.add(perm);
@@ -605,6 +603,27 @@ class ExtensionData {
         permissions.add(perm);
       }
     }
+    return {
+      permissions,
+      origins,
+    };
+  }
+
+  
+
+
+
+
+
+
+  get manifestPermissions() {
+    if (this.type !== "extension") {
+      return null;
+    }
+
+    let { permissions, origins } = this.permissionsObject(
+      this.manifest.permissions
+    );
 
     if (this.manifest.devtools_page) {
       permissions.add("devtools");
@@ -616,6 +635,16 @@ class ExtensionData {
       }
     }
 
+    return {
+      permissions: Array.from(permissions),
+      origins: Array.from(origins),
+    };
+  }
+
+  get manifestOptionalPermissions() {
+    let { permissions, origins } = this.permissionsObject(
+      this.manifest.optional_permissions
+    );
     return {
       permissions: Array.from(permissions),
       origins: Array.from(origins),
@@ -666,6 +695,74 @@ class ExtensionData {
         perm => !oldPermissions.permissions.includes(perm)
       ),
     };
+  }
+
+  
+  static intersectPermissions(oldPermissions, newPermissions) {
+    let matcher = new MatchPatternSet(newPermissions.origins, {
+      restrictSchemes: false,
+    });
+
+    return {
+      origins: oldPermissions.origins.filter(perm =>
+        matcher.subsumesDomain(
+          new MatchPattern(perm, { restrictSchemes: false })
+        )
+      ),
+      permissions: oldPermissions.permissions.filter(perm =>
+        newPermissions.permissions.includes(perm)
+      ),
+    };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  static async migratePermissions(
+    id,
+    oldPermissions,
+    oldOptionalPermissions,
+    newPermissions,
+    newOptionalPermissions
+  ) {
+    let migrated = ExtensionData.intersectPermissions(
+      oldPermissions,
+      newOptionalPermissions
+    );
+    
+    
+    
+    await ExtensionPermissions.add(id, migrated);
+
+    
+    
+    let permSet = new Set(
+      newPermissions.permissions.concat(newOptionalPermissions.permissions)
+    );
+    let oldPerms = oldPermissions.permissions.concat(
+      oldOptionalPermissions.permissions
+    );
+
+    let removed = oldPerms.filter(x => !permSet.has(x));
+    if (removed.length) {
+      await Management.asyncLoadSettingsModules();
+      for (let name of removed) {
+        await ExtensionPreferencesManager.removeSettingsForPermission(id, name);
+      }
+    }
+
+    
+    await ExtensionPermissions.remove(id, {
+      permissions: removed,
+      origins: [],
+    });
   }
 
   canUseExperiment(manifest) {
@@ -1541,7 +1638,16 @@ class BootstrapScope {
     return null;
   }
 
-  update(data, reason) {
+  async update(data, reason) {
+    
+    await ExtensionData.migratePermissions(
+      data.id,
+      data.oldPermissions,
+      data.oldOptionalPermissions,
+      data.userPermissions,
+      data.optionalPermissions
+    );
+
     return Management.emit("update", {
       id: data.id,
       resourceURI: data.resourceURI,
