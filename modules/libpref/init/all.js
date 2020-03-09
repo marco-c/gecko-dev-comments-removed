@@ -812,7 +812,11 @@ pref("toolkit.telemetry.unified", true);
 #else
   
   
-  pref("toolkit.asyncshutdown.crash_timeout", 180000); 
+  #if defined(MOZ_TSAN)
+    pref("toolkit.asyncshutdown.crash_timeout", 360000); 
+  #else
+    pref("toolkit.asyncshutdown.crash_timeout", 180000); 
+  #endif
 #endif // !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
 pref("toolkit.asyncshutdown.log", false);
