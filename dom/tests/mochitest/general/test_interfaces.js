@@ -243,7 +243,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "CSS2Properties", insecureContext: true },
   
-  { name: "CSSAnimation", insecureContext: true, release: false },
+  { name: "CSSAnimation", insecureContext: true },
   
   { name: "CSSConditionRule", insecureContext: true },
   
@@ -283,7 +283,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "CSSSupportsRule", insecureContext: true },
   
-  { name: "CSSTransition", insecureContext: true, release: false },
+  { name: "CSSTransition", insecureContext: true },
   
   { name: "CustomElementRegistry", insecureContext: true },
   
