@@ -15,10 +15,10 @@
 
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
-#include "js/Class.h"         
-#include "js/RootingAPI.h"    
-#include "js/Value.h"         
-#include "vm/NativeObject.h"  
+#include "js/Class.h"                                     
+#include "js/RootingAPI.h"                                
+#include "js/Value.h"          
+#include "vm/NativeObject.h"   
 #include "vm/PromiseObject.h"  
 
 class JS_PUBLIC_API JSObject;

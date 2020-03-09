@@ -5512,10 +5512,10 @@ AttachDecision CallIRGenerator::tryAttachStub() {
   
   if (calleeFunc->isNative()) {
     if (op_ == JSOp::FunCall) {
-        return tryAttachFunCall(calleeFunc);
+      return tryAttachFunCall(calleeFunc);
     }
     if (op_ == JSOp::FunApply) {
-        return tryAttachFunApply(calleeFunc);
+      return tryAttachFunApply(calleeFunc);
     }
     return tryAttachCallNative(calleeFunc);
   }

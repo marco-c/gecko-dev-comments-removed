@@ -18,12 +18,12 @@
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
-#include "js/Class.h"       
-#include "js/RootingAPI.h"  
+#include "js/Class.h"          
+#include "js/RootingAPI.h"     
 #include "vm/PromiseObject.h"  
 
 #include "vm/JSContext-inl.h"  
-#include "vm/JSObject-inl.h"  
+#include "vm/JSObject-inl.h"   
 
 using JS::Handle;
 using JS::Int32Value;
