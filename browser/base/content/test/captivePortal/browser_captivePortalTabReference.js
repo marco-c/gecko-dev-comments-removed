@@ -80,7 +80,7 @@ async function checkCaptivePortalTabReference(evt, currState) {
 
   
   Services.obs.notifyObservers(null, evt);
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => CPS.state == currState,
     "Captive portal has been released"
   );
