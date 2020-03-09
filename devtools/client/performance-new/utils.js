@@ -135,6 +135,10 @@ function scaleRangeWithClamping(
 
 
 
+
+
+
+
 function calculateOverhead(interval, bufferSize, features) {
   
   const periodicSampling = !features.includes("nostacksampling");

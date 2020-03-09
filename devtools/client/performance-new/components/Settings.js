@@ -52,8 +52,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -62,8 +60,6 @@ const {
 } = require("devtools/client/shared/vendor/react");
 const {
   div,
-  details,
-  summary,
   label,
   input,
   span,
@@ -83,8 +79,6 @@ const DirectoryPicker = createFactory(
 const {
   makeExponentialScale,
   formatFileSize,
-  calculateOverhead,
-  UnhandledCaseError,
   featureDescriptions,
 } = require("devtools/client/performance-new/utils");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
@@ -97,8 +91,6 @@ const {
 
 
 const PROFILE_ENTRY_SIZE = 9;
-
-const NOTCHES = Array(22).fill("discrete-level-notch");
 
 
 
@@ -204,35 +196,6 @@ class Settings extends PureComponent {
     this._entriesExponentialScale = makeExponentialScale(100000, 100000000);
   }
 
-  _renderNotches() {
-    const { interval, entries, features } = this.props;
-    const overhead = calculateOverhead(interval, entries, features);
-    const notchCount = 22;
-    const notches = [];
-    for (let i = 0; i < notchCount; i++) {
-      const active =
-        i <= Math.round(overhead * (NOTCHES.length - 1))
-          ? "active"
-          : "inactive";
-
-      let level = "normal";
-      if (i > 16) {
-        level = "critical";
-      } else if (i > 10) {
-        level = "warning";
-      }
-      notches.push(
-        div({
-          key: i,
-          className:
-            `perf-settings-notch perf-settings-notch-${level} ` +
-            `perf-settings-notch-${active}`,
-        })
-      );
-    }
-    return notches;
-  }
-
   
 
 
@@ -331,12 +294,11 @@ class Settings extends PureComponent {
 
   _renderThreads() {
     const { temporaryThreadText } = this.state;
-    const { pageContext, threads } = this.props;
+    const { threads } = this.props;
 
     return renderSection(
       "perf-settings-threads-summary",
       "Threads",
-      pageContext,
       div(
         null,
         div(
@@ -460,7 +422,6 @@ class Settings extends PureComponent {
     return renderSection(
       "perf-settings-features-summary",
       "Features",
-      this.props.pageContext,
       div(
         null,
         
@@ -480,11 +441,10 @@ class Settings extends PureComponent {
   }
 
   _renderLocalBuildSection() {
-    const { objdirs, pageContext } = this.props;
+    const { objdirs } = this.props;
     return renderSection(
       "perf-settings-local-build-summary",
       "Local build",
-      pageContext,
       div(
         null,
         p(
@@ -502,40 +462,11 @@ class Settings extends PureComponent {
     );
   }
 
-  
-
-
-
-  _renderTitle() {
-    const { pageContext } = this.props;
-    switch (pageContext) {
-      case "aboutprofiling":
-        return "Buffer Settings";
-      case "devtools":
-        return "Recording Settings";
-      default:
-        throw new UnhandledCaseError(pageContext, "PageContext");
-    }
-  }
-
   render() {
     return section(
       { className: "perf-settings" },
-      this.props.pageContext === "aboutprofiling"
-        ? h1(null, "Full Settings")
-        : null,
-      h2({ className: "perf-settings-title" }, this._renderTitle()),
-      
-      this.props.pageContext === "aboutprofiling"
-        ? null
-        : div(
-            { className: "perf-settings-row" },
-            label({ className: "perf-settings-label" }, "Overhead:"),
-            div(
-              { className: "perf-settings-value perf-settings-notches" },
-              this._renderNotches()
-            )
-          ),
+      h1(null, "Full Settings"),
+      h2({ className: "perf-settings-title" }, "Buffer Settings"),
       Range({
         label: "Sampling interval:",
         value: this.props.interval,
@@ -594,16 +525,6 @@ function _entriesTextDisplay(value) {
   return formatFileSize(value * PROFILE_ENTRY_SIZE);
 }
 
-function _handleToggle() {
-  
-  const anyWindow = window;
-  
-  const popupWindow = anyWindow;
-
-  if (popupWindow.gResizePopup) {
-    popupWindow.gResizePopup(document.body.clientHeight);
-  }
-}
 
 
 
@@ -613,44 +534,11 @@ function _handleToggle() {
 
 
 
-
-
-function renderSection(id, title, pageContext, children) {
-  switch (pageContext) {
-    case "devtools":
-      
-      return details(
-        {
-          className: "perf-settings-details",
-          
-          onToggle: _handleToggle,
-        },
-        summary(
-          {
-            className: "perf-settings-summary",
-            id,
-          },
-          
-          
-          title + ":"
-        ),
-        
-        div(
-          { className: "perf-settings-details-contents" },
-          
-          
-          div({ className: "perf-settings-details-contents-slider" }, children)
-        )
-      );
-    case "aboutprofiling":
-      
-      return div(
-        { className: "perf-settings-sections" },
-        div(null, h2(null, title), children)
-      );
-    default:
-      throw new UnhandledCaseError(pageContext, "PageContext");
-  }
+function renderSection(id, title, children) {
+  return div(
+    { className: "perf-settings-sections" },
+    div(null, h2(null, title), children)
+  );
 }
 
 
@@ -666,7 +554,6 @@ function mapStateToProps(state) {
     threadsString: selectors.getThreadsString(state),
     objdirs: selectors.getObjdirs(state),
     supportedFeatures: selectors.getSupportedFeatures(state),
-    pageContext: selectors.getPageContext(state),
   };
 }
 
