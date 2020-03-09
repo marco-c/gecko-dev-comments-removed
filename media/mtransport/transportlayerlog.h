@@ -17,7 +17,7 @@ namespace mozilla {
 
 class TransportLayerLogging : public TransportLayer {
  public:
-  TransportLayerLogging() {}
+  TransportLayerLogging() = default;
 
   
   TransportResult SendPacket(MediaPacket& packet) override;

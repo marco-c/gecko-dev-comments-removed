@@ -41,7 +41,7 @@ class TransportLayer : public sigslot::has_slots<> {
   
   TransportLayer() : state_(TS_NONE), flow_id_(), downward_(nullptr) {}
 
-  virtual ~TransportLayer() {}
+  virtual ~TransportLayer() = default;
 
   
   nsresult Init();  
