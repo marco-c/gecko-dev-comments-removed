@@ -53,9 +53,6 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::unicode;
 
-using mozilla::dom::FontPatternListEntry;
-using mozilla::dom::SystemFontListEntry;
-
 #ifndef FC_POSTSCRIPT_NAME
 #  define FC_POSTSCRIPT_NAME "postscriptname" /* String */
 #endif
@@ -1447,10 +1444,7 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
     int fcVersion = FcGetVersion();
     bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
 
-    for (SystemFontListEntry& fle : fontList) {
-      MOZ_ASSERT(fle.type() ==
-                 SystemFontListEntry::Type::TFontPatternListEntry);
-      FontPatternListEntry& fpe(fle);
+    for (FontPatternListEntry& fpe : fontList) {
       nsCString& patternStr = fpe.pattern();
       if (fcCharsetParseBug) {
         int32_t index = patternStr.Find(":charset= ");
@@ -1501,7 +1495,7 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
 }
 
 void gfxFcPlatformFontList::ReadSystemFontList(
-    nsTArray<SystemFontListEntry>* retValue) {
+    nsTArray<FontPatternListEntry>* retValue) {
   
   
   

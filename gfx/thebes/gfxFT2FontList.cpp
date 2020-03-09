@@ -1492,10 +1492,10 @@ void gfxFT2FontList::AppendFaceFromFontListEntry(const FontListEntry& aFLE,
   }
 }
 
-void gfxFT2FontList::GetSystemFontList(nsTArray<FontListEntry>* retValue) {
+void gfxFT2FontList::ReadSystemFontList(nsTArray<FontListEntry>* aList) {
   for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
     auto family = static_cast<FT2FontFamily*>(iter.Data().get());
-    family->AddFacesToFontList(retValue);
+    family->AddFacesToFontList(aList);
   }
 }
 
@@ -1531,13 +1531,14 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
   }
 
   
-  nsTArray<FontListEntry> fonts;
-  mozilla::dom::ContentChild::GetSingleton()->SendReadFontList(&fonts);  
-  for (uint32_t i = 0, n = fonts.Length(); i < n; ++i) {
+  
+  auto& fontList = dom::ContentChild::GetSingleton()->SystemFontList();
+  for (FontListEntry& fle : fontList) {
     
     
-    AppendFaceFromFontListEntry(fonts[i], kUnknown);
+    AppendFaceFromFontListEntry(fle, kUnknown);
   }
+
   
   
   for (auto iter = mFontFamilies.Iter(); !iter.Done(); iter.Next()) {
@@ -1548,7 +1549,9 @@ nsresult gfxFT2FontList::InitFontListForPlatform() {
 
   LOG(("got font list from chrome process: %" PRIdPTR " faces in %" PRIu32
        " families",
-       fonts.Length(), mFontFamilies.Count()));
+       fontList.Length(), mFontFamilies.Count()));
+  fontList.Clear();
+
   return NS_OK;
 }
 
