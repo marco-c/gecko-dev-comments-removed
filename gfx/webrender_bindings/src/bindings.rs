@@ -433,9 +433,11 @@ pub struct WrFilterData {
 }
 
 #[repr(u32)]
+#[derive(Debug)]
 pub enum WrAnimationType {
     Transform = 0,
     Opacity = 1,
+    BackgroundColor = 2,
 }
 
 #[repr(C)]
@@ -457,6 +459,13 @@ pub struct WrTransformProperty {
 pub struct WrOpacityProperty {
     pub id: u64,
     pub opacity: f32,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct WrColorProperty {
+    pub id: u64,
+    pub color: ColorF,
 }
 
 /// cbindgen:field-names=[mHandle]
@@ -961,6 +970,65 @@ impl AsyncPropertySampler for SamplerCallback {
     fn deregister(&self) {
         unsafe { apz_deregister_sampler(self.window_id) }
     }
+}
+
+
+
+
+
+
+
+
+
+pub struct WrHitTester {
+    ptr: Arc<dyn ApiHitTester>,
+}
+
+#[no_mangle]
+pub extern "C" fn wr_api_request_hit_tester(
+    dh: &DocumentHandle,
+) -> *mut WrHitTester {
+    let hit_tester = dh.api.request_hit_tester(dh.document_id);
+    Box::into_raw(Box::new(WrHitTester { ptr: hit_tester }))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wr_hit_tester_clone(hit_tester: *mut WrHitTester) -> *mut WrHitTester {
+    let new_ref = Arc::clone(&(*hit_tester).ptr);
+    Box::into_raw(Box::new(WrHitTester { ptr: new_ref }))
+}
+
+
+#[no_mangle]
+pub extern "C" fn wr_hit_tester_hit_test(
+    hit_tester: &WrHitTester,
+    point: WorldPoint,
+    out_pipeline_id: &mut WrPipelineId,
+    out_scroll_id: &mut u64,
+    out_hit_info: &mut u16
+) -> bool {
+    let result = hit_tester.ptr.hit_test(
+        None,
+        point,
+        HitTestFlags::empty()
+    );
+
+    for item in &result.items {
+        
+        
+        
+        debug_assert!(item.tag.1 != 0);
+        *out_pipeline_id = item.pipeline;
+        *out_scroll_id = item.tag.0;
+        *out_hit_info = item.tag.1;
+        return true;
+    }
+    return false;
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wr_hit_tester_delete(hit_tester: *mut WrHitTester) {
+    let _ = Box::from_raw(hit_tester);
 }
 
 extern "C" {
@@ -1705,10 +1773,13 @@ pub extern "C" fn wr_transaction_update_dynamic_properties(
     opacity_count: usize,
     transform_array: *const WrTransformProperty,
     transform_count: usize,
+    color_array: *const WrColorProperty,
+    color_count: usize,
 ) {
     let mut properties = DynamicProperties {
         transforms: Vec::with_capacity(transform_count),
         floats: Vec::with_capacity(opacity_count),
+        colors: Vec::with_capacity(color_count),
     };
 
     if transform_count > 0 {
@@ -1735,6 +1806,19 @@ pub extern "C" fn wr_transaction_update_dynamic_properties(
                 value: element.opacity,
             };
             properties.floats.push(prop);
+        }
+    }
+
+    if color_count > 0 {
+        let color_slice = unsafe { make_slice(color_array, color_count) };
+
+        properties.colors.reserve(color_slice.len());
+        for element in color_slice.iter() {
+            let prop = PropertyValue {
+                key: PropertyBindingKey::new(element.id),
+                value: element.color,
+            };
+            properties.colors.push(prop);
         }
     }
 
@@ -2381,6 +2465,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
                                                   
                                                   transform_ref.cloned().unwrap_or(LayoutTransform::identity())));
             },
+            _ => unreachable!("{:?} should not create a stacking context", anim.effect_type),
         }
     }
 
@@ -2613,19 +2698,17 @@ fn prim_flags(
     }
 }
 
-#[no_mangle]
-pub extern "C" fn wr_dp_push_rect(state: &mut WrState,
-                                  rect: LayoutRect,
-                                  clip: LayoutRect,
-                                  is_backface_visible: bool,
-                                  parent: &WrSpaceAndClipChain,
-                                  color: ColorF) {
-    debug_assert!(unsafe { !is_in_render_thread() });
-
+fn common_item_properties_for_rect(
+    state: &mut WrState,
+    rect: LayoutRect,
+    clip: LayoutRect,
+    is_backface_visible: bool,
+    parent: &WrSpaceAndClipChain
+) -> CommonItemProperties {
     let space_and_clip = parent.to_webrender(state.pipeline_id);
     let clip_rect = clip.intersection(&rect);
 
-    let prim_info = CommonItemProperties {
+    CommonItemProperties {
         
         
         
@@ -2635,12 +2718,64 @@ pub extern "C" fn wr_dp_push_rect(state: &mut WrState,
         flags: prim_flags(is_backface_visible),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
-    };
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn wr_dp_push_rect(state: &mut WrState,
+                                  rect: LayoutRect,
+                                  clip: LayoutRect,
+                                  is_backface_visible: bool,
+                                  parent: &WrSpaceAndClipChain,
+                                  color: ColorF) {
+    debug_assert!(unsafe { !is_in_render_thread() });
+
+    let prim_info = common_item_properties_for_rect(
+        state,
+        rect,
+        clip,
+        is_backface_visible,
+        parent,
+    );
 
     state.frame_builder.dl_builder.push_rect(
         &prim_info,
         color,
     );
+}
+
+#[no_mangle]
+pub extern "C" fn wr_dp_push_rect_with_animation(
+    state: &mut WrState,
+    rect: LayoutRect,
+    clip: LayoutRect,
+    is_backface_visible: bool,
+    parent: &WrSpaceAndClipChain,
+    color: ColorF,
+    animation: *const WrAnimationProperty) {
+    debug_assert!(unsafe { !is_in_render_thread() });
+
+    let prim_info = common_item_properties_for_rect(
+        state,
+        rect,
+        clip,
+        is_backface_visible,
+        parent,
+    );
+
+    let anim = unsafe { animation.as_ref() };
+    if let Some(anim) = anim {
+        debug_assert!(anim.id > 0);
+        match anim.effect_type {
+            WrAnimationType::BackgroundColor => {
+                state.frame_builder.dl_builder.push_rect_with_animation(
+                    &prim_info,
+                    PropertyBinding::Binding(PropertyBindingKey::new(anim.id), color),
+                )
+            },
+            _ => unreachable!("Didn't expect {:?} animation", anim.effect_type),
+        }
+    }
 }
 
 #[no_mangle]

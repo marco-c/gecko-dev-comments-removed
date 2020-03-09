@@ -216,12 +216,15 @@ void TransactionBuilder::InvalidateRenderedFrame() {
 
 void TransactionBuilder::UpdateDynamicProperties(
     const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
-    const nsTArray<wr::WrTransformProperty>& aTransformArray) {
+    const nsTArray<wr::WrTransformProperty>& aTransformArray,
+    const nsTArray<wr::WrColorProperty>& aColorArray) {
   wr_transaction_update_dynamic_properties(
       mTxn, aOpacityArray.IsEmpty() ? nullptr : aOpacityArray.Elements(),
       aOpacityArray.Length(),
       aTransformArray.IsEmpty() ? nullptr : aTransformArray.Elements(),
-      aTransformArray.Length());
+      aTransformArray.Length(),
+      aColorArray.IsEmpty() ? nullptr : aColorArray.Elements(),
+      aColorArray.Length());
 }
 
 bool TransactionBuilder::IsEmpty() const {
@@ -327,6 +330,10 @@ already_AddRefed<WebRenderAPI> WebRenderAPI::Clone() {
                        mUseTripleBuffering, mSyncHandle, mRenderRoot);
   renderApi->mRootApi = this;  
   renderApi->mRootDocumentApi = this;
+  if (mFastHitTester) {
+    renderApi->mFastHitTester = wr_hit_tester_clone(mFastHitTester);
+  }
+
   return renderApi.forget();
 }
 
@@ -363,11 +370,17 @@ WebRenderAPI::WebRenderAPI(wr::DocumentHandle* aHandle, wr::WindowId aId,
       mUseDComp(aUseDComp),
       mUseTripleBuffering(aUseTripleBuffering),
       mSyncHandle(aSyncHandle),
-      mRenderRoot(aRenderRoot) {}
+      mRenderRoot(aRenderRoot),
+      mFastHitTester(nullptr) {}
 
 WebRenderAPI::~WebRenderAPI() {
   if (!mRootDocumentApi) {
     wr_api_delete_document(mDocHandle);
+  }
+
+  if (mFastHitTester) {
+    wr_hit_tester_delete(mFastHitTester);
+    mFastHitTester = nullptr;
   }
 
   if (!mRootApi) {
@@ -462,6 +475,30 @@ bool WebRenderAPI::HitTest(const wr::WorldPoint& aPoint,
   uint16_t serialized = static_cast<uint16_t>(aOutHitInfo.serialize());
   const bool result = wr_api_hit_test(mDocHandle, aPoint, &aOutPipelineId,
                                       &aOutScrollId, &serialized);
+
+  if (result) {
+    aOutSideBits = ExtractSideBitsFromHitInfoBits(serialized);
+    aOutHitInfo.deserialize(serialized);
+  }
+  return result;
+}
+
+bool WebRenderAPI::FastHitTest(const wr::WorldPoint& aPoint,
+                               wr::WrPipelineId& aOutPipelineId,
+                               layers::ScrollableLayerGuid::ViewID& aOutScrollId,
+                               gfx::CompositorHitTestInfo& aOutHitInfo,
+                               SideBits& aOutSideBits) {
+  static_assert(DoesCompositorHitTestInfoFitIntoBits<16>(),
+                "CompositorHitTestFlags MAX value has to be less than number "
+                "of bits in uint16_t");
+
+  if (!mFastHitTester) {
+    mFastHitTester = wr_api_request_hit_tester(mDocHandle);
+  }
+
+  uint16_t serialized = static_cast<uint16_t>(aOutHitInfo.serialize());
+  const bool result = wr_hit_tester_hit_test(mFastHitTester, aPoint, &aOutPipelineId,
+                                             &aOutScrollId, &serialized);
 
   if (result) {
     aOutSideBits = ExtractSideBitsFromHitInfoBits(serialized);
@@ -1137,6 +1174,20 @@ void DisplayListBuilder::PushHitTest(const wr::LayoutRect& aBounds,
            Stringify(clip).c_str());
   wr_dp_push_hit_test(mWrState, aBounds, clip, aIsBackfaceVisible,
                       &mCurrentSpaceAndClipChain);
+}
+
+void DisplayListBuilder::PushRectWithAnimation(
+    const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
+    bool aIsBackfaceVisible, const wr::ColorF& aColor,
+    const WrAnimationProperty* aAnimation) {
+  wr::LayoutRect clip = MergeClipLeaf(aClip);
+  WRDL_LOG("PushRectWithAnimation b=%s cl=%s c=%s\n", mWrState,
+           Stringify(aBounds).c_str(), Stringify(clip).c_str(),
+           Stringify(aColor).c_str());
+
+  wr_dp_push_rect_with_animation(mWrState, aBounds, clip, aIsBackfaceVisible,
+                                 &mCurrentSpaceAndClipChain, aColor,
+                                 aAnimation);
 }
 
 void DisplayListBuilder::PushClearRect(const wr::LayoutRect& aBounds) {

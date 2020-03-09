@@ -106,7 +106,8 @@ class TransactionBuilder final {
 
   void UpdateDynamicProperties(
       const nsTArray<wr::WrOpacityProperty>& aOpacityArray,
-      const nsTArray<wr::WrTransformProperty>& aTransformArray);
+      const nsTArray<wr::WrTransformProperty>& aTransformArray,
+      const nsTArray<wr::WrColorProperty>& aColorArray);
 
   void SetDocumentView(const LayoutDeviceIntRect& aDocRect);
 
@@ -232,9 +233,22 @@ class WebRenderAPI final {
 
   wr::WindowId GetId() const { return mId; }
 
+  
   bool HitTest(const wr::WorldPoint& aPoint, wr::WrPipelineId& aOutPipelineId,
                layers::ScrollableLayerGuid::ViewID& aOutScrollId,
                gfx::CompositorHitTestInfo& aOutHitInfo, SideBits& aOutSideBits);
+
+  
+  
+  
+  
+  
+  
+  
+  bool FastHitTest(const wr::WorldPoint& aPoint, wr::WrPipelineId& aOutPipelineId,
+                   layers::ScrollableLayerGuid::ViewID& aOutScrollId,
+                   gfx::CompositorHitTestInfo& aOutHitInfo,
+                   SideBits& aOutSideBits);
 
   void SendTransaction(TransactionBuilder& aTxn);
 
@@ -325,6 +339,8 @@ class WebRenderAPI final {
   
   RefPtr<wr::WebRenderAPI> mRootApi;
   RefPtr<wr::WebRenderAPI> mRootDocumentApi;
+
+  WrHitTester* mFastHitTester;
 
   friend class DisplayListBuilder;
   friend class layers::WebRenderBridgeParent;
@@ -462,6 +478,10 @@ class DisplayListBuilder final {
 
   void PushRect(const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
                 bool aIsBackfaceVisible, const wr::ColorF& aColor);
+  void PushRectWithAnimation(const wr::LayoutRect& aBounds,
+                             const wr::LayoutRect& aClip,
+                             bool aIsBackfaceVisible, const wr::ColorF& aColor,
+                             const WrAnimationProperty* aAnimation);
   void PushRoundedRect(const wr::LayoutRect& aBounds,
                        const wr::LayoutRect& aClip, bool aIsBackfaceVisible,
                        const wr::ColorF& aColor);
