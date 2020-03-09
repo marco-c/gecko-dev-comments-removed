@@ -34,6 +34,7 @@ const {
 
 
 
+
 const changeRecordingState = (exports.changeRecordingState = (
   state,
   options = { didRecordingUnexpectedlyStopped: false }
@@ -230,6 +231,22 @@ exports.stopProfilerAndDiscardProfile = () => {
   return async (dispatch, getState) => {
     const perfFront = selectors.getPerfFront(getState());
     dispatch(changeRecordingState("request-to-stop-profiler"));
-    perfFront.stopProfilerAndDiscardProfile();
+
+    try {
+      await perfFront.stopProfilerAndDiscardProfile();
+    } catch (error) {
+      
+      const anyWindow = window;
+      
+      const { gIsPanelDestroyed } = anyWindow;
+
+      if (gIsPanelDestroyed) {
+        
+        
+        
+      } else {
+        throw error;
+      }
+    }
   };
 };
