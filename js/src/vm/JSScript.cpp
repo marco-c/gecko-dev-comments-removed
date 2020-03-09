@@ -1144,7 +1144,10 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     if (!sourceObjectArg) {
       xdrFlags |= OwnSource;
     }
-    if (script->maybeLazyScript()) {
+    
+    
+    
+    if (script->allowRelazify()) {
       xdrFlags |= HasLazyScript;
     }
   }
@@ -1289,6 +1292,7 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
     if (mode == XDR_DECODE) {
       script->setLazyScript(lazy);
+      script->setAllowRelazify();
     }
   }
 
@@ -1407,6 +1411,11 @@ void JSScript::setDefaultClassConstructorSpan(
   
   
   clearFlag(ImmutableFlags::SelfHosted);
+
+  
+  
+  
+  clearAllowRelazify();
 }
 
 bool JSScript::initScriptCounts(JSContext* cx) {
@@ -5647,8 +5656,8 @@ void JSScript::AutoDelazify::holdScript(JS::HandleFunction fun) {
       JSAutoRealm ar(cx_, fun);
       script_ = JSFunction::getOrCreateScript(cx_, fun);
       if (script_) {
-        oldDoNotRelazify_ = script_->hasFlag(MutableFlags::DoNotRelazify);
-        script_->setDoNotRelazify(true);
+        oldAllowRelazify_ = script_->allowRelazify();
+        script_->clearAllowRelazify();
       }
     }
   }
@@ -5658,7 +5667,7 @@ void JSScript::AutoDelazify::dropScript() {
   
   
   if (script_ && !script_->realm()->isSelfHostingRealm()) {
-    script_->setDoNotRelazify(oldDoNotRelazify_);
+    script_->setAllowRelazify(oldAllowRelazify_);
   }
   script_ = nullptr;
 }

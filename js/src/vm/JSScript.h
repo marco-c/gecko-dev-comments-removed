@@ -2240,7 +2240,7 @@ setterLevel:                                                                  \
   
   
   MUTABLE_FLAG_GETTER_SETTER(hasDebugScript, HasDebugScript)
-  MUTABLE_FLAG_GETTER_SETTER(doNotRelazify, DoNotRelazify)
+  MUTABLE_FLAG_GETTER_SETTER(allowRelazify, AllowRelazify)
   MUTABLE_FLAG_GETTER_SETTER(failedBoundsCheck, FailedBoundsCheck)
   MUTABLE_FLAG_GETTER_SETTER(failedShapeGuard, FailedShapeGuard)
   MUTABLE_FLAG_GETTER_SETTER(hadFrequentBailouts, HadFrequentBailouts)
@@ -2708,20 +2708,6 @@ class JSScript : public js::BaseScript {
     return !hasInnerFunctions() && !hasDirectEval() && !isGenerator() &&
            !isAsync() && !hasCallSiteObj();
   }
-  bool canRelazify() const {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool lazyAvailable = selfHosted() || u.lazyScript;
-    return isRelazifiable() && lazyAvailable && !hasJitScript() &&
-           !doNotRelazify();
-  }
 
   void setLazyScript(js::LazyScript* lazy) { u.lazyScript = lazy; }
   js::LazyScript* maybeLazyScript() { return u.lazyScript; }
@@ -3059,11 +3045,11 @@ class JSScript : public js::BaseScript {
   class AutoDelazify {
     JS::RootedScript script_;
     JSContext* cx_;
-    bool oldDoNotRelazify_;
+    bool oldAllowRelazify_ = false;
 
    public:
     explicit AutoDelazify(JSContext* cx, JS::HandleFunction fun = nullptr)
-        : script_(cx), cx_(cx), oldDoNotRelazify_(false) {
+        : script_(cx), cx_(cx) {
       holdScript(fun);
     }
 

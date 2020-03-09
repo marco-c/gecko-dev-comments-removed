@@ -1629,15 +1629,14 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
     
     
     script->setLazyScript(lazy);
+    script->setAllowRelazify();
   } else if (lazy->isWrappedByDebugger()) {
     
     
     
     
     
-    
     script->setLazyScript(lazy);
-    script->setDoNotRelazify(true);
   }
 
   
@@ -1738,23 +1737,17 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
 
   
   JSScript* script = nonLazyScript();
-  if (!script->canRelazify()) {
+  if (!script->allowRelazify()) {
     return;
   }
+  MOZ_ASSERT(script->isRelazifiable());
 
   
   
-  if (isSelfHostedBuiltin() &&
-      (!isExtended() || !getExtendedSlot(LAZY_FUNCTION_NAME_SLOT).isString())) {
+  
+  if (script->hasJitScript()) {
     return;
   }
-
-  MOZ_ASSERT(!script->isAsync() && !script->isGenerator(),
-             "Generator resume code in the JITs assumes non-lazy function");
-
-  MOZ_ASSERT(!script->isDefaultClassConstructor(),
-             "default class constructors are built-in, but have their "
-             "self-hosted flag cleared");
 
   BaseScript* lazy = script->maybeLazyScript();
   if (lazy) {

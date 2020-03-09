@@ -204,10 +204,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   
   
   
-  
-  
-  
-  DoNotRelazify = 1 << 14,
+  AllowRelazify = 1 << 14,
 
   
 
