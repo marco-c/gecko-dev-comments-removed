@@ -725,8 +725,6 @@ class nsFrameSelection final {
                                                     CaretAssociateHint aHint,
                                                     bool aJumpLines);
 
-  bool AdjustForMaintainedSelection(nsIContent* aContent, int32_t aOffset);
-
   
 
 
@@ -859,6 +857,13 @@ class nsFrameSelection final {
   TableSelection mTableSelection;
 
   struct MaintainedRange {
+    
+
+
+
+    bool AdjustNormalSelection(const nsIContent* aContent, int32_t aOffset,
+                               mozilla::dom::Selection& aNormalSelection) const;
+
     RefPtr<nsRange> mRange;
     nsSelectionAmount mAmount = eSelectNoAmount;
   };
