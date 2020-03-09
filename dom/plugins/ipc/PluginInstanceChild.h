@@ -455,7 +455,7 @@ class PluginInstanceChild : public PPluginInstanceChild {
 
   
   void PaintRectToSurface(const nsIntRect& aRect, gfxASurface* aSurface,
-                          const gfx::Color& aColor);
+                          const gfx::DeviceColor& aColor);
 
   
   

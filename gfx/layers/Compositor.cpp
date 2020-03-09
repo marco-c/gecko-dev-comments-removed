@@ -65,12 +65,12 @@ Compositor::Compositor(widget::CompositorWidget* aWidget,
       
       
       ,
-      mClearColor(1.0, 1.0, 1.0, 1.0),
-      mDefaultClearColor(1.0, 1.0, 1.0, 1.0)
+      mClearColor(ToDeviceColor(sRGBColor::OpaqueWhite())),
+      mDefaultClearColor(ToDeviceColor(sRGBColor::OpaqueWhite()))
 #else
       ,
-      mClearColor(0.0, 0.0, 0.0, 0.0),
-      mDefaultClearColor(0.0, 0.0, 0.0, 0.0)
+      mClearColor(DeviceColor()),
+      mDefaultClearColor(DeviceColor())
 #endif
 {
 }
@@ -149,24 +149,25 @@ void Compositor::DrawDiagnosticsInternal(DiagnosticFlags aFlags,
   int lWidth = 2;
 #endif
 
-  gfx::Color color;
+  
+  gfx::DeviceColor color;
   if (aFlags & DiagnosticFlags::CONTENT) {
-    color = gfx::Color(0.0f, 1.0f, 0.0f, 1.0f);  
+    color = gfx::DeviceColor(0.0f, 1.0f, 0.0f, 1.0f);  
     if (aFlags & DiagnosticFlags::COMPONENT_ALPHA) {
-      color = gfx::Color(0.0f, 1.0f, 1.0f, 1.0f);  
+      color = gfx::DeviceColor(0.0f, 1.0f, 1.0f, 1.0f);  
     }
   } else if (aFlags & DiagnosticFlags::IMAGE) {
     if (aFlags & DiagnosticFlags::NV12) {
-      color = gfx::Color(1.0f, 1.0f, 0.0f, 1.0f);  
+      color = gfx::DeviceColor(1.0f, 1.0f, 0.0f, 1.0f);  
     } else if (aFlags & DiagnosticFlags::YCBCR) {
-      color = gfx::Color(1.0f, 0.55f, 0.0f, 1.0f);  
+      color = gfx::DeviceColor(1.0f, 0.55f, 0.0f, 1.0f);  
     } else {
-      color = gfx::Color(1.0f, 0.0f, 0.0f, 1.0f);  
+      color = gfx::DeviceColor(1.0f, 0.0f, 0.0f, 1.0f);  
     }
   } else if (aFlags & DiagnosticFlags::COLOR) {
-    color = gfx::Color(0.0f, 0.0f, 1.0f, 1.0f);  
+    color = gfx::DeviceColor(0.0f, 0.0f, 1.0f, 1.0f);  
   } else if (aFlags & DiagnosticFlags::CONTAINER) {
-    color = gfx::Color(0.8f, 0.0f, 0.8f, 1.0f);  
+    color = gfx::DeviceColor(0.8f, 0.0f, 0.8f, 1.0f);  
   }
 
   
@@ -356,7 +357,8 @@ void Compositor::DrawPolygon(const gfx::Polygon& aPolygon,
                 aTransform, aVisibleRect);
 }
 
-void Compositor::SlowDrawRect(const gfx::Rect& aRect, const gfx::Color& aColor,
+void Compositor::SlowDrawRect(const gfx::Rect& aRect,
+                              const gfx::DeviceColor& aColor,
                               const gfx::IntRect& aClipRect,
                               const gfx::Matrix4x4& aTransform,
                               int aStrokeWidth) {
@@ -384,7 +386,8 @@ void Compositor::SlowDrawRect(const gfx::Rect& aRect, const gfx::Color& aColor,
       aClipRect, effects, opacity, aTransform);
 }
 
-void Compositor::FillRect(const gfx::Rect& aRect, const gfx::Color& aColor,
+void Compositor::FillRect(const gfx::Rect& aRect,
+                          const gfx::DeviceColor& aColor,
                           const gfx::IntRect& aClipRect,
                           const gfx::Matrix4x4& aTransform) {
   float opacity = 1.0f;

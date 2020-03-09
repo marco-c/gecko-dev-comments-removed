@@ -308,11 +308,11 @@ class MLGDevice {
       MLGRenderTargetFlags aFlags = MLGRenderTargetFlags::Default) = 0;
 
   
-  virtual void Clear(MLGRenderTarget* aRT, const gfx::Color& aColor) = 0;
+  virtual void Clear(MLGRenderTarget* aRT, const gfx::DeviceColor& aColor) = 0;
   virtual void ClearDepthBuffer(MLGRenderTarget* aRT) = 0;
 
   
-  virtual void ClearView(MLGRenderTarget* aRT, const gfx::Color& aColor,
+  virtual void ClearView(MLGRenderTarget* aRT, const gfx::DeviceColor& aColor,
                          const gfx::IntRect* aRects, size_t aNumRects) = 0;
 
   

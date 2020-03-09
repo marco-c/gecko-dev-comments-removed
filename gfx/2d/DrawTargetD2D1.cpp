@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <initguid.h>
 #include "DrawTargetD2D1.h"
@@ -22,7 +22,7 @@
 
 #include "mozilla/Mutex.h"
 
-// decltype is not usable for overloaded functions.
+
 typedef HRESULT(WINAPI* D2D1CreateFactoryFunc)(
     D2D1_FACTORY_TYPE factoryType, REFIID iid,
     CONST D2D1_FACTORY_OPTIONS* pFactoryOptions, void** factory);
@@ -54,34 +54,34 @@ DrawTargetD2D1::~DrawTargetD2D1() {
 
   if (mSnapshot) {
     MutexAutoLock lock(*mSnapshotLock);
-    // We may hold the only reference. MarkIndependent will clear mSnapshot;
-    // keep the snapshot object alive so it doesn't get destroyed while
-    // MarkIndependent is running.
+    
+    
+    
     RefPtr<SourceSurfaceD2D1> deathGrip = mSnapshot;
-    // mSnapshot can be treated as independent of this DrawTarget since we know
-    // this DrawTarget won't change again.
+    
+    
     deathGrip->MarkIndependent();
-    // mSnapshot will be cleared now.
+    
   }
 
   if (mDC && IsDeviceContextValid()) {
-    // The only way mDC can be null is if Init failed, but it can happen and the
-    // destructor is the only place where we need to check for it since the
-    // DrawTarget will destroyed right after Init fails.
+    
+    
+    
     mDC->EndDraw();
   }
 
   {
-    // Until this point in the destructor it -must- still be valid for
-    // FlushInternal to be called on this.
+    
+    
     StaticMutexAutoLock lock(Factory::mDTDependencyLock);
-    // Targets depending on us can break that dependency, since we're obviously
-    // not going to be modified in the future.
+    
+    
     for (auto iter = mDependentTargets.begin(); iter != mDependentTargets.end();
          iter++) {
       (*iter)->mDependingOnTargets.erase(this);
     }
-    // Our dependencies on other targets no longer matter.
+    
     for (TargetSet::iterator iter = mDependingOnTargets.begin();
          iter != mDependingOnTargets.end(); iter++) {
       (*iter)->mDependentTargets.erase(this);
@@ -91,7 +91,7 @@ DrawTargetD2D1::~DrawTargetD2D1() {
 
 bool DrawTargetD2D1::IsValid() const {
   if (NS_IsMainThread()) {
-    // Uninitialized DTs are considered valid.
+    
     return mInitState != InitState::Failure;
   } else {
     return const_cast<DrawTargetD2D1*>(this)->EnsureInitialized();
@@ -144,13 +144,13 @@ already_AddRefed<SourceSurface> DrawTargetD2D1::IntoLuminanceSource(
     return nullptr;
   }
   if ((aLuminanceType != LuminanceType::LUMINANCE) ||
-      // See bug 1372577, some race condition where we get invalid
-      // results with D2D in the parent process. Fallback in that case.
+      
+      
       XRE_IsParentProcess()) {
     return DrawTarget::IntoLuminanceSource(aLuminanceType, aOpacity);
   }
 
-  // Create the luminance effect
+  
   if (!EnsureLuminanceEffect()) {
     return DrawTarget::IntoLuminanceSource(aLuminanceType, aOpacity);
   }
@@ -175,13 +175,13 @@ already_AddRefed<SourceSurface> DrawTargetD2D1::IntoLuminanceSource(
                                           SurfaceFormat::B8G8R8A8, mSize);
 }
 
-// Command lists are kept around by device contexts until EndDraw is called,
-// this can cause issues with memory usage (see bug 1238328). EndDraw/BeginDraw
-// are expensive though, especially relatively when little work is done, so
-// we try to reduce the amount of times we execute these purges.
+
+
+
+
 static const uint32_t kPushedLayersBeforePurge = 25;
-// Rendering glyphs with different transforms causes the glyph cache to grow
-// very large (see bug 1474883) so we must call EndDraw every so often.
+
+
 static const uint32_t kTransformedGlyphsBeforePurge = 1000;
 
 void DrawTargetD2D1::Flush() { FlushInternal(); }
@@ -190,7 +190,7 @@ void DrawTargetD2D1::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
                                  const Rect& aSource,
                                  const DrawSurfaceOptions& aSurfOptions,
                                  const DrawOptions& aOptions) {
-  PrepareForDrawing(aOptions.mCompositionOp, ColorPattern(Color()));
+  PrepareForDrawing(aOptions.mCompositionOp, ColorPattern(DeviceColor()));
 
   D2D1_RECT_F samplingBounds;
 
@@ -206,8 +206,8 @@ void DrawTargetD2D1::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
 
   RefPtr<ID2D1ImageBrush> brush;
 
-  // Here we scale the source pattern up to the size and position where we want
-  // it to be.
+  
+  
   Matrix transform;
   transform.PreTranslate(aDest.X() - aSource.X() * xScale,
                          aDest.Y() - aSource.Y() * yScale);
@@ -224,8 +224,8 @@ void DrawTargetD2D1::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
   RefPtr<ID2D1Bitmap> bitmap;
   HRESULT hr = E_FAIL;
   if (aSurface->GetType() == SurfaceType::D2D1_1_IMAGE) {
-    // If this is called with a DataSourceSurface it might do a partial upload
-    // that our DrawBitmap call doesn't support.
+    
+    
     hr = image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
   }
 
@@ -234,11 +234,11 @@ void DrawTargetD2D1::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
     mDC->DrawBitmap(bitmap, D2DRect(aDest), aOptions.mAlpha,
                     D2DFilter(aSurfOptions.mSamplingFilter), D2DRect(aSource));
   } else {
-    // This has issues ignoring the alpha channel on windows 7 with images
-    // marked opaque.
+    
+    
     MOZ_ASSERT(aSurface->GetFormat() != SurfaceFormat::B8G8R8X8);
 
-    // Bug 1275478 - D2D1 cannot draw A8 surface correctly.
+    
     MOZ_ASSERT(aSurface->GetFormat() != SurfaceFormat::A8);
 
     mDC->CreateImageBrush(
@@ -251,7 +251,7 @@ void DrawTargetD2D1::DrawSurface(SourceSurface* aSurface, const Rect& aDest,
     mDC->FillRectangle(D2DRect(aDest), brush);
   }
 
-  FinalizeDrawing(aOptions.mCompositionOp, ColorPattern(Color()));
+  FinalizeDrawing(aOptions.mCompositionOp, ColorPattern(DeviceColor()));
 }
 
 void DrawTargetD2D1::DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
@@ -262,7 +262,7 @@ void DrawTargetD2D1::DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
     return;
   }
 
-  PrepareForDrawing(aOptions.mCompositionOp, ColorPattern(Color()));
+  PrepareForDrawing(aOptions.mCompositionOp, ColorPattern(DeviceColor()));
 
   mDC->SetAntialiasMode(D2DAAMode(aOptions.mAntialiasMode));
 
@@ -289,12 +289,12 @@ void DrawTargetD2D1::DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
                        imageBrush);
   }
 
-  FinalizeDrawing(aOptions.mCompositionOp, ColorPattern(Color()));
+  FinalizeDrawing(aOptions.mCompositionOp, ColorPattern(DeviceColor()));
 }
 
 void DrawTargetD2D1::DrawSurfaceWithShadow(SourceSurface* aSurface,
                                            const Point& aDest,
-                                           const Color& aColor,
+                                           const DeviceColor& aColor,
                                            const Point& aOffset, Float aSigma,
                                            CompositionOp aOperator) {
   if (!EnsureInitialized()) {
@@ -320,7 +320,7 @@ void DrawTargetD2D1::DrawSurfaceWithShadow(SourceSurface* aSurface,
     return;
   }
 
-  // Step 1, create the shadow effect.
+  
   RefPtr<ID2D1Effect> shadowEffect;
   HRESULT hr = mDC->CreateEffect(
       mFormat == SurfaceFormat::A8 ? CLSID_D2D1GaussianBlur : CLSID_D2D1Shadow,
@@ -357,7 +357,7 @@ void DrawTargetD2D1::ClearRect(const Rect& aRect) {
   }
 
   if (aRect.IsEmpty()) {
-    // Nothing to be done.
+    
     return;
   }
 
@@ -447,8 +447,8 @@ void DrawTargetD2D1::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
 
   HRESULT hr = image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
   if (!bitmap || FAILED(hr)) {
-    // D2D says if we have an actual ID2D1Image and not a bitmap underlying the
-    // object, we can't query for a bitmap. Instead, Push/PopLayer
+    
+    
     gfxWarning() << "FillOpacityMask only works with Bitmap source surfaces. "
                     "Falling back to push/pop layer";
 
@@ -477,16 +477,16 @@ void DrawTargetD2D1::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
     FinalizeDrawing(aOptions.mCompositionOp, aSource);
     return;
   } else {
-    // If this is a data source surface, we might have created a partial bitmap
-    // for this surface and only uploaded part of the mask. In that case,
-    // we have to fixup our sizes here.
+    
+    
+    
     size.width = bitmap->GetSize().width;
     size.height = bitmap->GetSize().height;
     dest.SetWidth(size.width);
     dest.SetHeight(size.height);
   }
 
-  // FillOpacityMask only works if the antialias mode is MODE_ALIASED
+  
   mDC->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
 
   Rect maskRect = Rect(aMask->GetRect().x, aMask->GetRect().y,
@@ -754,10 +754,10 @@ void DrawTargetD2D1::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
     needsRepushedLayers = CurrentLayer().mPushedClips.size() &&
                           !GetDeviceSpaceClipRect(rect, isAligned);
 
-    // If we have a complex clip in our stack and we have a transparent
-    // background, and subpixel AA is permitted, we need to repush our layer
-    // stack limited by the glyph run bounds initializing our layers for
-    // subpixel AA.
+    
+    
+    
+    
     if (needsRepushedLayers) {
       mDC->GetGlyphRunWorldBounds(D2D1::Point2F(), &autoRun,
                                   DWRITE_MEASURING_MODE_NATURAL, &rect);
@@ -769,9 +769,9 @@ void DrawTargetD2D1::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
       PopAllClips();
 
       if (!mTransform.IsRectilinear()) {
-        // We must limit the pixels we touch to the -user space- bounds of
-        // the glyphs being drawn. In order not to get transparent pixels
-        // copied up in our pushed layer stack.
+        
+        
+        
         D2D1_RECT_F userRect;
         mDC->SetTransform(D2D1::IdentityMatrix());
         mDC->GetGlyphRunWorldBounds(D2D1::Point2F(), &autoRun,
@@ -853,8 +853,8 @@ void DrawTargetD2D1::PushClipGeometry(ID2D1Geometry* aGeometry,
 
   CurrentLayer().mPushedClips.push_back(clip);
 
-  // The transform of clips is relative to the world matrix, since we use the
-  // total transform for the clips, make the world matrix identity.
+  
+  
   mDC->SetTransform(D2D1::IdentityMatrix());
   mTransformDirty = true;
 
@@ -887,10 +887,10 @@ void DrawTargetD2D1::PushClipRect(const Rect& aRect) {
     return;
   }
   if (!mTransform.IsRectilinear()) {
-    // Whoops, this isn't a rectangle in device space, Direct2D will not deal
-    // with this transform the way we want it to.
-    // See remarks:
-    // http://msdn.microsoft.com/en-us/library/dd316860%28VS.85%29.aspx
+    
+    
+    
+    
     RefPtr<ID2D1Geometry> geom = ConvertRectToGeometry(D2DRect(aRect));
     return PushClipGeometry(geom, D2DMatrix(mTransform));
   }
@@ -902,7 +902,7 @@ void DrawTargetD2D1::PushClipRect(const Rect& aRect) {
   IntRect intRect;
   clip.mIsPixelAligned = rect.ToIntRect(&intRect);
 
-  // Do not store the transform, just store the device space rectangle directly.
+  
   clip.mBounds = D2DRect(rect);
 
   CurrentLayer().mPushedClips.push_back(clip);
@@ -922,7 +922,7 @@ void DrawTargetD2D1::PushDeviceSpaceClipRects(const IntRect* aRects,
   if (!EnsureInitialized()) {
     return;
   }
-  // Build a path for the union of the rects.
+  
   RefPtr<ID2D1PathGeometry> path;
   factory()->CreatePathGeometry(getter_AddRefs(path));
   RefPtr<ID2D1GeometrySink> sink;
@@ -939,8 +939,8 @@ void DrawTargetD2D1::PushDeviceSpaceClipRects(const IntRect* aRects,
   }
   sink->Close();
 
-  // The path is in device-space, so there is no transform needed,
-  // and all rects are pixel aligned.
+  
+  
   PushClipGeometry(path, D2D1::IdentityMatrix(), true);
 }
 
@@ -993,7 +993,7 @@ void DrawTargetD2D1::PushLayer(bool aOpaque, Float aOpacity,
 
     maskTransform =
         maskTransform.PreTranslate(aMask->GetRect().X(), aMask->GetRect().Y());
-    // The mask is given in user space. Our layer will apply it in device space.
+    
     maskTransform = maskTransform * mTransform;
 
     if (image) {
@@ -1041,7 +1041,7 @@ void DrawTargetD2D1::PushLayer(bool aOpaque, Float aOpacity,
 }
 
 void DrawTargetD2D1::PopLayer() {
-  // We must have at least one layer at all times.
+  
   MOZ_ASSERT(mPushedLayers.size() > 1);
   MOZ_ASSERT(CurrentLayer().mPushedClips.size() == 0);
   if (!EnsureInitialized() || mPushedLayers.size() <= 1) {
@@ -1245,7 +1245,7 @@ bool DrawTargetD2D1::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   }
 
   if (!CanCreateSimilarDrawTarget(aSize, aFormat)) {
-    // Size unsupported.
+    
     return false;
   }
 
@@ -1255,9 +1255,9 @@ bool DrawTargetD2D1::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   return true;
 }
 
-/**
- * Private helpers.
- */
+
+
+
 uint32_t DrawTargetD2D1::GetByteSize() const {
   return mSize.width * mSize.height * BytesPerPixel(mFormat);
 }
@@ -1269,7 +1269,7 @@ RefPtr<ID2D1Factory1> DrawTargetD2D1::factory() {
     return mFactory;
   }
 
-  // We don't allow initializing the factory off the main thread.
+  
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   RefPtr<ID2D1Factory> factory;
@@ -1289,7 +1289,7 @@ RefPtr<ID2D1Factory1> DrawTargetD2D1::factory() {
 #else
   options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 #endif
-  // options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+  
 
   HRESULT hr =
       createD2DFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, __uuidof(ID2D1Factory),
@@ -1326,15 +1326,15 @@ void DrawTargetD2D1::CleanupD2D() {
   }
 }
 
-void DrawTargetD2D1::FlushInternal(bool aHasDependencyMutex /* = false */) {
+void DrawTargetD2D1::FlushInternal(bool aHasDependencyMutex ) {
   if (IsDeviceContextValid()) {
     if ((mUsedCommandListsSincePurge >= kPushedLayersBeforePurge ||
          mTransformedGlyphsSinceLastPurge >= kTransformedGlyphsBeforePurge) &&
         mPushedLayers.size() == 1) {
-      // It's important to pop all clips as otherwise layers can forget about
-      // their clip when doing an EndDraw. When we have layers pushed we cannot
-      // easily pop all underlying clips to delay the purge until we have no
-      // layers pushed.
+      
+      
+      
+      
       PopAllClips();
       mUsedCommandListsSincePurge = 0;
       mTransformedGlyphsSinceLastPurge = 0;
@@ -1352,7 +1352,7 @@ void DrawTargetD2D1::FlushInternal(bool aHasDependencyMutex /* = false */) {
   }
 
   Factory::mDTDependencyLock.AssertCurrentThreadOwns();
-  // We no longer depend on any target.
+  
   for (TargetSet::iterator iter = mDependingOnTargets.begin();
        iter != mDependingOnTargets.end(); iter++) {
     (*iter)->mDependentTargets.erase(this);
@@ -1365,7 +1365,7 @@ bool DrawTargetD2D1::EnsureInitialized() {
     return mInitState == InitState::Success;
   }
 
-  // Don't retry.
+  
   mInitState = InitState::Failure;
 
   HRESULT hr;
@@ -1390,7 +1390,7 @@ bool DrawTargetD2D1::EnsureInitialized() {
   if (!mSurface) {
     if (mDC->GetMaximumBitmapSize() < UINT32(mSize.width) ||
         mDC->GetMaximumBitmapSize() < UINT32(mSize.height)) {
-      // This is 'ok', so don't assert
+      
       gfxCriticalNote << "[D2D1.1] Attempt to use unsupported surface size "
                       << mSize;
       return false;
@@ -1455,11 +1455,11 @@ void DrawTargetD2D1::MarkChanged() {
   if (mSnapshot) {
     MutexAutoLock lock(*mSnapshotLock);
     if (mSnapshot->hasOneRef()) {
-      // Just destroy it, since no-one else knows about it.
+      
       mSnapshot = nullptr;
     } else {
       mSnapshot->DrawTargetWillChange();
-      // The snapshot will no longer depend on this target.
+      
       MOZ_ASSERT(!mSnapshot);
     }
   }
@@ -1467,13 +1467,13 @@ void DrawTargetD2D1::MarkChanged() {
   {
     StaticMutexAutoLock lock(Factory::mDTDependencyLock);
     if (mDependentTargets.size()) {
-      // Copy mDependentTargets since the Flush()es below will modify it.
+      
       TargetSet tmpTargets = mDependentTargets;
       for (TargetSet::iterator iter = tmpTargets.begin();
            iter != tmpTargets.end(); iter++) {
         (*iter)->FlushInternal(true);
       }
-      // The Flush() should have broken all dependencies on this target.
+      
       MOZ_ASSERT(!mDependentTargets.size());
     }
   }
@@ -1498,8 +1498,8 @@ void DrawTargetD2D1::PrepareForDrawing(CompositionOp aOp,
   bool patternSupported = IsPatternSupportedByD2D(aPattern);
 
   if (D2DSupportsPrimitiveBlendMode(aOp) && patternSupported) {
-    // It's important to do this before FlushTransformToDC! As this will cause
-    // the transform to become dirty.
+    
+    
     PushAllClips();
 
     FlushTransformToDC();
@@ -1514,8 +1514,8 @@ void DrawTargetD2D1::PrepareForDrawing(CompositionOp aOp,
   mDC->SetTarget(mCommandList);
   mUsedCommandListsSincePurge++;
 
-  // This is where we should have a valid command list.  If we don't, something
-  // is wrong, and it's likely an OOM.
+  
+  
   if (!mCommandList) {
     gfxDevCrash(LogReason::InvalidCommandList)
         << "Invalid D2D1.1 command list on creation "
@@ -1603,8 +1603,8 @@ void DrawTargetD2D1::FinalizeDrawing(CompositionOp aOp,
       return;
     }
 
-    // We don't need to preserve the current content of this layer as the output
-    // of the blend effect should completely replace it.
+    
+    
     RefPtr<ID2D1Image> tmpImage = GetImageForLayerContent(false);
     if (!tmpImage) {
       return;
@@ -1624,12 +1624,12 @@ void DrawTargetD2D1::FinalizeDrawing(CompositionOp aOp,
   const RadialGradientPattern* pat =
       static_cast<const RadialGradientPattern*>(&aPattern);
   if (pat->mCenter1 == pat->mCenter2 && pat->mRadius1 == pat->mRadius2) {
-    // Draw nothing!
+    
     return;
   }
 
   if (!pat->mStops) {
-    // Draw nothing because of no color stops
+    
     return;
   }
 
@@ -1663,8 +1663,8 @@ void DrawTargetD2D1::FinalizeDrawing(CompositionOp aOp,
 
 void DrawTargetD2D1::AddDependencyOnSource(SourceSurfaceD2D1* aSource) {
   Maybe<MutexAutoLock> snapshotLock;
-  // We grab the SnapshotLock as well, this guaranteeds aSource->mDrawTarget
-  // cannot be cleared in between the if statement and the dereference.
+  
+  
   if (aSource->mSnapshotLock) {
     snapshotLock.emplace(*aSource->mSnapshotLock);
   }
@@ -1730,13 +1730,13 @@ already_AddRefed<ID2D1Image> DrawTargetD2D1::GetImageForLayerContent(
           CriticalLog::DefaultOptions(Factory::ReasonableSurfaceSize(mSize)))
           << "[D2D1.1] 6CreateBitmap failure " << mSize << " Code: " << hexa(hr)
           << " format " << (int)mFormat;
-      // If it's a recreate target error, return and handle it elsewhere.
+      
       if (hr == D2DERR_RECREATE_TARGET) {
         mDC->Flush();
         return nullptr;
       }
-      // For now, crash in other scenarios; this should happen because tmpBitmap
-      // is null and CopyFromBitmap call below dereferences it.
+      
+      
     }
     mDC->Flush();
 
@@ -1791,7 +1791,7 @@ already_AddRefed<ID2D1Geometry> DrawTargetD2D1::GetClippedGeometry(
 
   mCurrentClipBounds = IntRect(IntPoint(0, 0), mSize);
 
-  // if pathGeom is null then pathRect represents the path.
+  
   RefPtr<ID2D1Geometry> pathGeom;
   D2D1_RECT_F pathRect;
   bool pathRectIsAxisAligned = false;
@@ -1806,7 +1806,7 @@ already_AddRefed<ID2D1Geometry> DrawTargetD2D1::GetClippedGeometry(
 
   iter++;
   for (; iter != CurrentLayer().mPushedClips.end(); iter++) {
-    // Do nothing but add it to the current clip bounds.
+    
     if (!iter->mGeometry && iter->mIsPixelAligned) {
       mCurrentClipBounds.IntersectRect(
           mCurrentClipBounds,
@@ -1825,7 +1825,7 @@ already_AddRefed<ID2D1Geometry> DrawTargetD2D1::GetClippedGeometry(
                     int32_t(pathRect.bottom - pathRect.top)));
       }
       if (iter->mGeometry) {
-        // See if pathRect needs to go into the path geometry.
+        
         if (!pathRectIsAxisAligned) {
           pathGeom = ConvertRectToGeometry(pathRect);
         } else {
@@ -1859,10 +1859,10 @@ already_AddRefed<ID2D1Geometry> DrawTargetD2D1::GetClippedGeometry(
     pathGeom = newGeom.forget();
   }
 
-  // For now we need mCurrentClippedGeometry to always be non-nullptr. This
-  // method might seem a little strange but it is just fine, if pathGeom is
-  // nullptr pathRect will always still contain 1 clip unaccounted for
-  // regardless of mCurrentClipBounds.
+  
+  
+  
+  
   if (!pathGeom) {
     pathGeom = ConvertRectToGeometry(pathRect);
   }
@@ -1954,7 +1954,7 @@ already_AddRefed<ID2D1Brush> DrawTargetD2D1::CreateBrushForPattern(
   }
 
   if (aPattern.GetType() == PatternType::COLOR) {
-    Color color = static_cast<const ColorPattern*>(&aPattern)->mColor;
+    DeviceColor color = static_cast<const ColorPattern*>(&aPattern)->mColor;
     return GetSolidColorBrush(
         D2D1::ColorF(color.r, color.g, color.b, color.a * aAlpha));
   }
@@ -2003,7 +2003,7 @@ already_AddRefed<ID2D1Brush> DrawTargetD2D1::CreateBrushForPattern(
       return CreateTransparentBlackBrush();
     }
 
-    // This will not be a complex radial gradient brush.
+    
     mDC->CreateRadialGradientBrush(
         D2D1::RadialGradientBrushProperties(
             D2DPoint(pat->mCenter2), D2DPoint(pat->mCenter1 - pat->mCenter2),
@@ -2051,9 +2051,9 @@ already_AddRefed<ID2D1Brush> DrawTargetD2D1::CreateBrushForPattern(
     }
 
     if (surf->GetFormat() == SurfaceFormat::A8) {
-      // See bug 1251431, at least FillOpacityMask does not appear to allow a
-      // source bitmapbrush with source format A8. This creates a BGRA surface
-      // with the same alpha values that the A8 surface has.
+      
+      
+      
       RefPtr<ID2D1Bitmap> bitmap;
       HRESULT hr = image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
       if (SUCCEEDED(hr) && bitmap) {
@@ -2088,9 +2088,9 @@ already_AddRefed<ID2D1Brush> DrawTargetD2D1::CreateBrushForPattern(
       RefPtr<ID2D1Bitmap> bitmap;
       HRESULT hr = image->QueryInterface((ID2D1Bitmap**)getter_AddRefs(bitmap));
       if (SUCCEEDED(hr) && bitmap) {
-        /**
-         * Create the brush with the proper repeat modes.
-         */
+        
+
+
         RefPtr<ID2D1BitmapBrush> bitmapBrush;
         D2D1_EXTEND_MODE xRepeat = D2DExtend(pat->mExtendMode, Axis::X_AXIS);
         D2D1_EXTEND_MODE yRepeat = D2DExtend(pat->mExtendMode, Axis::Y_AXIS);
@@ -2117,8 +2117,8 @@ already_AddRefed<ID2D1Brush> DrawTargetD2D1::CreateBrushForPattern(
       samplingBounds = D2DRect(pat->mSamplingRect);
       mat.PreTranslate(pat->mSamplingRect.X(), pat->mSamplingRect.Y());
     } else {
-      // We will do a partial upload of the sampling restricted area from
-      // GetImageForSurface.
+      
+      
       samplingBounds = D2D1::RectF(0, 0, pat->mSamplingRect.Width(),
                                    pat->mSamplingRect.Height());
     }
@@ -2168,8 +2168,8 @@ already_AddRefed<ID2D1Image> DrawTargetD2D1::GetImageForSurface(
       AddDependencyOnSource(surf);
     } break;
     case SurfaceType::DUAL_DT: {
-      // Sometimes we have a dual drawtarget but the underlying targets
-      // are d2d surfaces. Let's not readback and reupload in those cases.
+      
+      
       SourceSurfaceDual* dualSurface =
           static_cast<SourceSurfaceDual*>(surface.get());
       SourceSurface* first = dualSurface->GetFirstSurface();
@@ -2180,7 +2180,7 @@ already_AddRefed<ID2D1Image> DrawTargetD2D1::GetImageForSurface(
         AddDependencyOnSource(d2dSurface);
         break;
       }
-      // Otherwise fall through
+      
     }
     default: {
       RefPtr<DataSourceSurface> dataSurf = surface->GetDataSurface();
@@ -2210,7 +2210,7 @@ already_AddRefed<SourceSurface> DrawTargetD2D1::OptimizeSourceSurface(
     return nullptr;
   }
 
-  // Special case captures so we don't resolve them to a data surface.
+  
   if (aSurface->GetType() == SurfaceType::CAPTURE) {
     SourceSurfaceCapture* capture =
         static_cast<SourceSurfaceCapture*>(aSurface);
@@ -2279,5 +2279,5 @@ bool DrawTargetD2D1::IsDeviceContextValid() {
   return mDC && Factory::GetD2D1Device(&seqNo) && seqNo == mDeviceSeq;
 }
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  

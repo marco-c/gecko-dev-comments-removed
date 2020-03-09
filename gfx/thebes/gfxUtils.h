@@ -223,7 +223,7 @@ class gfxUtils {
 
 
 
-  static const mozilla::gfx::Color& GetColorForFrameNumber(
+  static const mozilla::gfx::DeviceColor& GetColorForFrameNumber(
       uint64_t aFrameNumber);
   static const uint32_t sNumFrameColors;
 
@@ -333,9 +333,9 @@ namespace gfx {
 
 
 
-Color ToDeviceColor(Color aColor);
-Color ToDeviceColor(const StyleRGBA& aColor);
-Color ToDeviceColor(nscolor aColor);
+DeviceColor ToDeviceColor(const sRGBColor& aColor);
+DeviceColor ToDeviceColor(const StyleRGBA& aColor);
+DeviceColor ToDeviceColor(nscolor aColor);
 
 
 

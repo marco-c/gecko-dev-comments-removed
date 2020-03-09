@@ -254,20 +254,20 @@ class gfxContext final {
 
 
 
-  void SetDeviceColor(const mozilla::gfx::Color& aColor);
+  void SetDeviceColor(const mozilla::gfx::DeviceColor& aColor);
 
   
 
 
 
 
-  bool GetDeviceColor(mozilla::gfx::Color& aColorOut);
+  bool GetDeviceColor(mozilla::gfx::DeviceColor& aColorOut);
 
   
 
 
 
-  bool HasNonOpaqueNonTransparentColor(mozilla::gfx::Color& aColorOut) {
+  bool HasNonOpaqueNonTransparentColor(mozilla::gfx::DeviceColor& aColorOut) {
     return GetDeviceColor(aColorOut) && 0.f < aColorOut.a && aColorOut.a < 1.f;
   }
 
@@ -276,7 +276,7 @@ class gfxContext final {
 
 
 
-  void SetColor(const mozilla::gfx::Color& aColor);
+  void SetColor(const mozilla::gfx::sRGBColor& aColor);
 
   
 
@@ -475,7 +475,8 @@ class gfxContext final {
 
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::DrawTarget DrawTarget;
-  typedef mozilla::gfx::Color Color;
+  typedef mozilla::gfx::sRGBColor sRGBColor;
+  typedef mozilla::gfx::DeviceColor DeviceColor;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::gfx::PathBuilder PathBuilder;
   typedef mozilla::gfx::SourceSurface SourceSurface;
@@ -494,7 +495,7 @@ class gfxContext final {
     }
 
     mozilla::gfx::CompositionOp op;
-    Color color;
+    DeviceColor color;
     RefPtr<gfxPattern> pattern;
     Matrix transform;
     struct PushedClip {
@@ -509,7 +510,7 @@ class gfxContext final {
     mozilla::gfx::AntialiasMode aaMode;
     bool patternTransformChanged;
     Matrix patternTransform;
-    Color fontSmoothingBackgroundColor;
+    DeviceColor fontSmoothingBackgroundColor;
     
     mozilla::gfx::Point deviceOffset;
 #ifdef DEBUG

@@ -2560,7 +2560,7 @@ void SVGTextDrawPathCallbacks::HandleTextGeometry() {
   if (IsClipPathChild()) {
     RefPtr<Path> path = mContext.GetPath();
     ColorPattern white(
-        Color(1.f, 1.f, 1.f, 1.f));  
+        DeviceColor(1.f, 1.f, 1.f, 1.f));  
     mContext.GetDrawTarget()->Fill(path, white);
   } else {
     

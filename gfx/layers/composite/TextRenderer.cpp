@@ -41,7 +41,10 @@ static void PNGAPI row_callback(png_structp png_ptr, png_bytep new_row,
     
     Float alphaValue = Float(0xFF - new_row[x]) / 255.0f;
     Float baseValue = sBackgroundOpacity * (1.0f - alphaValue);
-    Color pixelColor(baseValue, baseValue, baseValue, baseValue + alphaValue);
+    
+    
+    sRGBColor pixelColor(baseValue, baseValue, baseValue,
+                         baseValue + alphaValue);
     dst[x] = pixelColor.ToABGR();
   }
 }
@@ -147,10 +150,13 @@ void TextRenderer::RenderTextToDrawTarget(DrawTarget* aDrawTarget,
   }
 
   
+  
+  
   IntSize size = aDrawTarget->GetSize();
-  aDrawTarget->FillRect(Rect(0, 0, size.width, size.height),
-                        ColorPattern(Color(1.0, 1.0, 1.0, sBackgroundOpacity)),
-                        DrawOptions(1.0, CompositionOp::OP_SOURCE));
+  aDrawTarget->FillRect(
+      Rect(0, 0, size.width, size.height),
+      ColorPattern(DeviceColor(1.0, 1.0, 1.0, sBackgroundOpacity)),
+      DrawOptions(1.0, CompositionOp::OP_SOURCE));
 
   IntPoint currentPos;
 

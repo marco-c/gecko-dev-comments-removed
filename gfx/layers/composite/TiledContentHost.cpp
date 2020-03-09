@@ -423,7 +423,7 @@ void TiledContentHost::Composite(
   
   
   
-  Color backgroundColor;
+  DeviceColor backgroundColor;
   if (aOpacity == 1.0f && StaticPrefs::layers_low_precision_opacity() < 1.0f) {
     
     
@@ -526,10 +526,10 @@ void TiledContentHost::RenderTile(
 
 void TiledContentHost::RenderLayerBuffer(
     TiledLayerBufferComposite& aLayerBuffer, Compositor* aCompositor,
-    const Color* aBackgroundColor, EffectChain& aEffectChain, float aOpacity,
-    const gfx::SamplingFilter aSamplingFilter, const gfx::IntRect& aClipRect,
-    nsIntRegion aVisibleRegion, gfx::Matrix4x4 aTransform,
-    const Maybe<Polygon>& aGeometry) {
+    const DeviceColor* aBackgroundColor, EffectChain& aEffectChain,
+    float aOpacity, const gfx::SamplingFilter aSamplingFilter,
+    const gfx::IntRect& aClipRect, nsIntRegion aVisibleRegion,
+    gfx::Matrix4x4 aTransform, const Maybe<Polygon>& aGeometry) {
   float resolution = aLayerBuffer.GetResolution();
   gfx::Size layerScale(1, 1);
 

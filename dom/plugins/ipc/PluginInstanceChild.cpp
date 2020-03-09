@@ -3228,7 +3228,7 @@ void PluginInstanceChild::PaintRectToPlatformSurface(const nsIntRect& aRect,
 
 void PluginInstanceChild::PaintRectToSurface(const nsIntRect& aRect,
                                              gfxASurface* aSurface,
-                                             const Color& aColor) {
+                                             const DeviceColor& aColor) {
   
   nsIntRect plPaintRect(aRect);
   RefPtr<gfxASurface> renderSurface = aSurface;
@@ -3335,7 +3335,7 @@ void PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
 
   
   
-  PaintRectToSurface(rect, aSurface, Color(1.f, 1.f, 1.f));
+  PaintRectToSurface(rect, aSurface, DeviceColor::MaskOpaqueWhite());
   {
     RefPtr<DrawTarget> dt = CreateDrawTargetForSurface(whiteImage);
     RefPtr<SourceSurface> surface =
@@ -3345,7 +3345,7 @@ void PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
 
   
   
-  PaintRectToSurface(rect, aSurface, Color(0.f, 0.f, 0.f));
+  PaintRectToSurface(rect, aSurface, DeviceColor::MaskOpaqueBlack());
 
   
   
@@ -3356,7 +3356,7 @@ void PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
   gfxPoint deviceOffset = -targetRect.TopLeft();
   
   whiteImage->SetDeviceOffset(deviceOffset);
-  PaintRectToSurface(rect, whiteImage, Color(1.f, 1.f, 1.f));
+  PaintRectToSurface(rect, whiteImage, DeviceColor::MaskOpaqueWhite());
 
   if (useSurfaceSubimageForBlack) {
     gfxImageSurface* surface = static_cast<gfxImageSurface*>(aSurface);
@@ -3368,7 +3368,7 @@ void PluginInstanceChild::PaintRectWithAlphaExtraction(const nsIntRect& aRect,
 
   
   blackImage->SetDeviceOffset(deviceOffset);
-  PaintRectToSurface(rect, blackImage, Color(0.f, 0.f, 0.f));
+  PaintRectToSurface(rect, blackImage, DeviceColor::MaskOpaqueBlack());
 #endif
 
   MOZ_ASSERT(whiteImage && blackImage, "Didn't paint enough!");
@@ -3528,7 +3528,7 @@ bool PluginInstanceChild::ShowPluginFrame() {
     }
     
     
-    PaintRectToSurface(rect, mCurrentSurface, Color());
+    PaintRectToSurface(rect, mCurrentSurface, DeviceColor());
   } else if (!temporarilyMakeVisible && mDoAlphaExtraction) {
     
     
@@ -3545,7 +3545,7 @@ bool PluginInstanceChild::ShowPluginFrame() {
                                      ? mHelperSurface
                                      : mCurrentSurface;
 
-    PaintRectToSurface(rect, target, Color());
+    PaintRectToSurface(rect, target, DeviceColor());
   }
   mHasPainted = true;
 

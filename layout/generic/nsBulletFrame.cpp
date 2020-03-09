@@ -314,8 +314,6 @@ class BulletRenderer final {
   nsString mText;
   RefPtr<nsFontMetrics> mFontMetrics;
   nsPoint mPoint;
-  RefPtr<ScaledFont> mFont;
-  nsTArray<layers::GlyphArray> mGlyphs;
 
   
   int32_t mListStyleType;
@@ -406,7 +404,7 @@ void BulletRenderer::PaintTextToContext(nsIFrame* aFrame, gfxContext* aCtx,
   DrawTargetAutoDisableSubpixelAntialiasing disable(drawTarget,
                                                     aDisableSubpixelAA);
 
-  aCtx->SetColor(Color::FromABGR(mColor));
+  aCtx->SetColor(sRGBColor::FromABGR(mColor));
 
   nsPresContext* presContext = aFrame->PresContext();
   if (!presContext->BidiEnabled() && HasRTLChars(mText)) {

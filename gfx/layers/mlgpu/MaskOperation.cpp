@@ -144,7 +144,7 @@ void MaskCombineOperation::Render() {
 
   
   
-  device->Clear(mTarget, Color(1, 0, 0, 1));
+  device->Clear(mTarget, DeviceColor(1, 0, 0, 1));
   device->SetScissorRect(Nothing());
   device->SetRenderTarget(mTarget);
   device->SetViewport(IntRect(IntPoint(0, 0), mTarget->GetSize()));

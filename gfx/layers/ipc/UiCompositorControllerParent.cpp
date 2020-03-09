@@ -159,7 +159,7 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvDefaultClearColor(
     Compositor* compositor = state->mLayerManager->GetCompositor();
     if (compositor) {
       
-      compositor->SetDefaultClearColor(gfx::Color::UnusualFromARGB(aColor));
+      compositor->SetDefaultClearColor(gfx::DeviceColor::UnusualFromARGB(aColor));
     }
   }
 

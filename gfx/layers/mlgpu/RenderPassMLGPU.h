@@ -327,7 +327,7 @@ class ClearViewPass final : public RenderPassMLGPU {
  private:
   
   RenderViewMLGPU* mView;
-  gfx::Color mColor;
+  gfx::DeviceColor mColor;
   nsTArray<gfx::IntRect> mRects;
 };
 

@@ -231,7 +231,7 @@ struct SVGContextPaintImpl : public SVGContextPaint {
 
 
 class SVGEmbeddingContextPaint : public SVGContextPaint {
-  typedef gfx::Color Color;
+  typedef gfx::DeviceColor DeviceColor;
 
  public:
   SVGEmbeddingContextPaint() : mFillOpacity(1.0f), mStrokeOpacity(1.0f) {}
@@ -248,11 +248,11 @@ class SVGEmbeddingContextPaint : public SVGContextPaint {
   }
 
   void SetFill(nscolor aFill) { mFill.emplace(gfx::ToDeviceColor(aFill)); }
-  const Maybe<Color>& GetFill() const { return mFill; }
+  const Maybe<DeviceColor>& GetFill() const { return mFill; }
   void SetStroke(nscolor aStroke) {
     mStroke.emplace(gfx::ToDeviceColor(aStroke));
   }
-  const Maybe<Color>& GetStroke() const { return mStroke; }
+  const Maybe<DeviceColor>& GetStroke() const { return mStroke; }
 
   
 
@@ -277,8 +277,8 @@ class SVGEmbeddingContextPaint : public SVGContextPaint {
   uint32_t Hash() const override;
 
  private:
-  Maybe<Color> mFill;
-  Maybe<Color> mStroke;
+  Maybe<DeviceColor> mFill;
+  Maybe<DeviceColor> mStroke;
   float mFillOpacity;
   float mStrokeOpacity;
 };

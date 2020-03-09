@@ -29,7 +29,7 @@ namespace mozilla {
 class ComputedStyle;
 
 namespace gfx {
-struct Color;
+struct sRGBColor;
 class DrawTarget;
 }  
 
@@ -62,7 +62,7 @@ struct nsBackgroundLayerState {
   
 
 
-  nsBackgroundLayerState(nsIFrame* aForFrame, const nsStyleImage* aImage,
+  nsBackgroundLayerState(nsIFrame* aForFrame, const mozilla::StyleImage* aImage,
                          uint32_t aFlags)
       : mImageRenderer(aForFrame, aImage, aFlags) {}
 
@@ -96,7 +96,7 @@ struct nsBackgroundLayerState {
 };
 
 struct nsCSSRendering {
-  typedef mozilla::gfx::Color Color;
+  typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::CompositionOp CompositionOp;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Float Float;
@@ -141,8 +141,8 @@ struct nsCSSRendering {
                              RectCornerRadii& aOutRadii);
   static nsRect GetShadowRect(const nsRect& aFrameArea, bool aNativeTheme,
                               nsIFrame* aForFrame);
-  static mozilla::gfx::Color GetShadowColor(const mozilla::StyleSimpleShadow&,
-                                            nsIFrame* aFrame, float aOpacity);
+  static mozilla::gfx::sRGBColor GetShadowColor(
+      const mozilla::StyleSimpleShadow&, nsIFrame* aFrame, float aOpacity);
   
   
   
@@ -770,7 +770,7 @@ struct nsCSSRendering {
 
 
 class nsContextBoxBlur {
-  typedef mozilla::gfx::Color Color;
+  typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
@@ -877,8 +877,8 @@ class nsContextBoxBlur {
   static void BlurRectangle(gfxContext* aDestinationCtx, const nsRect& aRect,
                             int32_t aAppUnitsPerDevPixel,
                             RectCornerRadii* aCornerRadii, nscoord aBlurRadius,
-                            const Color& aShadowColor, const nsRect& aDirtyRect,
-                            const gfxRect& aSkipRect);
+                            const sRGBColor& aShadowColor,
+                            const nsRect& aDirtyRect, const gfxRect& aSkipRect);
 
   
 
@@ -906,7 +906,7 @@ class nsContextBoxBlur {
   bool InsetBoxBlur(gfxContext* aDestinationCtx,
                     mozilla::gfx::Rect aDestinationRect,
                     mozilla::gfx::Rect aShadowClipRect,
-                    mozilla::gfx::Color& aShadowColor,
+                    mozilla::gfx::sRGBColor& aShadowColor,
                     nscoord aBlurRadiusAppUnits, nscoord aSpreadRadiusAppUnits,
                     int32_t aAppUnitsPerDevPixel, bool aHasBorderRadius,
                     RectCornerRadii& aInnerClipRectRadii,

@@ -81,16 +81,16 @@ static void ComputeBorderCornerDimensions(const Float* aBorderWidths,
 
 
 
-static Color MakeBorderColor(nscolor aColor,
-                             BorderColorStyle aBorderColorStyle);
+static sRGBColor MakeBorderColor(nscolor aColor,
+                                 BorderColorStyle aBorderColorStyle);
 
 
 
 
-static Color ComputeColorForLine(uint32_t aLineIndex,
-                                 const BorderColorStyle* aBorderColorStyle,
-                                 uint32_t aBorderColorStyleCount,
-                                 nscolor aBorderColor);
+static sRGBColor ComputeColorForLine(uint32_t aLineIndex,
+                                     const BorderColorStyle* aBorderColorStyle,
+                                     uint32_t aBorderColorStyleCount,
+                                     nscolor aBorderColor);
 
 
 
@@ -1202,31 +1202,31 @@ void nsCSSBorderRenderer::FillSolidBorder(const Rect& aOuterRect,
   }
 }
 
-Color MakeBorderColor(nscolor aColor, BorderColorStyle aBorderColorStyle) {
+sRGBColor MakeBorderColor(nscolor aColor, BorderColorStyle aBorderColorStyle) {
   nscolor colors[2];
   int k = 0;
 
   switch (aBorderColorStyle) {
     case BorderColorStyleNone:
-      return Color(0.f, 0.f, 0.f, 0.f);  
+      return sRGBColor(0.f, 0.f, 0.f, 0.f);  
 
     case BorderColorStyleLight:
       k = 1;
       [[fallthrough]];
     case BorderColorStyleDark:
       NS_GetSpecial3DColors(colors, aColor);
-      return Color::FromABGR(colors[k]);
+      return sRGBColor::FromABGR(colors[k]);
 
     case BorderColorStyleSolid:
     default:
-      return Color::FromABGR(aColor);
+      return sRGBColor::FromABGR(aColor);
   }
 }
 
-Color ComputeColorForLine(uint32_t aLineIndex,
-                          const BorderColorStyle* aBorderColorStyle,
-                          uint32_t aBorderColorStyleCount,
-                          nscolor aBorderColor) {
+sRGBColor ComputeColorForLine(uint32_t aLineIndex,
+                              const BorderColorStyle* aBorderColorStyle,
+                              uint32_t aBorderColorStyleCount,
+                              nscolor aBorderColor) {
   NS_ASSERTION(aLineIndex < aBorderColorStyleCount, "Invalid lineIndex given");
 
   return MakeBorderColor(aBorderColor, aBorderColorStyle[aLineIndex]);
@@ -1509,8 +1509,8 @@ void nsCSSBorderRenderer::DrawBorderSides(mozilla::SideBits aSides) {
                           noMarginLeft ? 0 : borderWidths[i][3]));
 
     if (borderColorStyle[i] != BorderColorStyleNone) {
-      Color c = ComputeColorForLine(i, borderColorStyle, borderColorStyleCount,
-                                    borderRenderColor);
+      sRGBColor c = ComputeColorForLine(
+          i, borderColorStyle, borderColorStyleCount, borderRenderColor);
       ColorPattern color(ToDeviceColor(c));
 
       FillSolidBorder(soRect, siRect, radii, borderWidths[i], aSides, color);
@@ -2703,15 +2703,13 @@ static void ComputeCornerSkirtSize(Float aAlpha1, Float aAlpha2, Float aSlopeY,
 
 
 
-static void DrawBorderRadius(DrawTarget* aDrawTarget, Corner c,
-                             const Point& aOuterCorner,
-                             const Point& aInnerCorner,
-                             const twoFloats& aCornerMultPrev,
-                             const twoFloats& aCornerMultNext,
-                             const Size& aCornerDims, const Size& aOuterRadius,
-                             const Size& aInnerRadius, const Color& aFirstColor,
-                             const Color& aSecondColor, Float aSkirtSize,
-                             Float aSkirtSlope) {
+static void DrawBorderRadius(
+    DrawTarget* aDrawTarget, Corner c, const Point& aOuterCorner,
+    const Point& aInnerCorner, const twoFloats& aCornerMultPrev,
+    const twoFloats& aCornerMultNext, const Size& aCornerDims,
+    const Size& aOuterRadius, const Size& aInnerRadius,
+    const DeviceColor& aFirstColor, const DeviceColor& aSecondColor,
+    Float aSkirtSize, Float aSkirtSlope) {
   
   Point outerCornerStart = aOuterCorner + aCornerMultPrev * aCornerDims;
   
@@ -2828,8 +2826,8 @@ static void DrawCorner(DrawTarget* aDrawTarget, const Point& aOuterCorner,
                        const Point& aInnerCorner,
                        const twoFloats& aCornerMultPrev,
                        const twoFloats& aCornerMultNext,
-                       const Size& aCornerDims, const Color& aFirstColor,
-                       const Color& aSecondColor, Float aSkirtSize,
+                       const Size& aCornerDims, const DeviceColor& aFirstColor,
+                       const DeviceColor& aSecondColor, Float aSkirtSize,
                        Float aSkirtSlope) {
   
   Point cornerStart = aOuterCorner + aCornerMultPrev * aCornerDims;
@@ -2915,7 +2913,7 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
     int i3 = (i + 3) % 4;
 
     Float sideWidth = 0.0f;
-    Color firstColor, secondColor;
+    DeviceColor firstColor, secondColor;
     if (IsVisible(mBorderStyles[i]) && mBorderWidths[i]) {
       
       sideWidth = mBorderWidths[i];
@@ -3216,7 +3214,7 @@ void nsCSSBorderRenderer::DrawBorders() {
       
       if (simpleCornerStyle && IsZeroSize(mBorderRadii[corner]) &&
           IsSolidCornerStyle(mBorderStyles[sides[0]], corner)) {
-        Color color = MakeBorderColor(
+        sRGBColor color = MakeBorderColor(
             mBorderColors[sides[0]],
             BorderColorStyleForSolidCorner(mBorderStyles[sides[0]], corner));
         mDrawTarget->FillRect(GetCornerRect(corner),

@@ -2155,27 +2155,27 @@ int gfxPlatform::GetRenderingIntent() {
   return pIntent;
 }
 
-void gfxPlatform::TransformPixel(const Color& in, Color& out,
-                                 qcms_transform* transform) {
+DeviceColor gfxPlatform::TransformPixel(const sRGBColor& in,
+                                        qcms_transform* transform) {
   if (transform) {
     
 #ifdef IS_LITTLE_ENDIAN
     
     uint32_t packed = in.ToABGR();
     qcms_transform_data(transform, (uint8_t*)&packed, (uint8_t*)&packed, 1);
-    out = Color::FromABGR(packed);
+    auto out = DeviceColor::FromABGR(packed);
 #else
     
     uint32_t packed = in.UnusualToARGB();
     
     qcms_transform_data(transform, (uint8_t*)&packed + 1, (uint8_t*)&packed + 1,
                         1);
-    out = Color::UnusualFromARGB(packed);
+    auto out = DeviceColor::UnusualFromARGB(packed);
 #endif
+    out.a = in.a;
+    return out;
   }
-
-  else if (&out != &in)
-    out = in;
+  return DeviceColor(in.r, in.g, in.b, in.a);
 }
 
 nsTArray<uint8_t> gfxPlatform::GetPlatformCMSOutputProfileData() {

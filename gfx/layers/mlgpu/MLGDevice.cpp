@@ -313,7 +313,7 @@ void MLGDevice::DrawClearRegion(const ClearRegionHelper& aHelper) {
   
   
   if (!aHelper.mRects.IsEmpty()) {
-    Color color(0.0, 0.0, 0.0, 0.0);
+    DeviceColor color(0.0, 0.0, 0.0, 0.0);
     ClearView(mCurrentRT, color, aHelper.mRects.Elements(),
               aHelper.mRects.Length());
   }

@@ -1416,7 +1416,7 @@ void nsSVGUtils::MakeFillPatternFor(nsIFrame* aFrame, gfxContext* aContext,
   
   
   
-  Color color(Color::FromABGR(
+  sRGBColor color(sRGBColor::FromABGR(
       GetFallbackOrPaintColor(*aFrame->Style(), &nsStyleSVG::mFill)));
   color.a *= fillOpacity;
   aOutPattern->InitColorPattern(ToDeviceColor(color));
@@ -1483,7 +1483,7 @@ void nsSVGUtils::MakeStrokePatternFor(nsIFrame* aFrame, gfxContext* aContext,
   
   
   
-  Color color(Color::FromABGR(
+  sRGBColor color(sRGBColor::FromABGR(
       GetFallbackOrPaintColor(*aFrame->Style(), &nsStyleSVG::mStroke)));
   color.a *= strokeOpacity;
   aOutPattern->InitColorPattern(ToDeviceColor(color));

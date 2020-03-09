@@ -156,7 +156,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   typedef mozilla::StretchRange StretchRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::WeightRange WeightRange;
-  typedef mozilla::gfx::Color Color;
+  typedef mozilla::gfx::sRGBColor sRGBColor;
+  typedef mozilla::gfx::DeviceColor DeviceColor;
   typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::IntSize IntSize;
@@ -517,10 +518,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-
-
-  static void TransformPixel(const Color& in, Color& out,
-                             qcms_transform* transform);
+  static DeviceColor TransformPixel(const sRGBColor& in,
+                                    qcms_transform* transform);
 
   
 
