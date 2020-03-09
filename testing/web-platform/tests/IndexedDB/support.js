@@ -101,6 +101,16 @@ function assert_key_equals(actual, expected, description) {
   assert_equals(indexedDB.cmp(actual, expected), 0, description);
 }
 
+
+
+
+
+
+
+
+
+
+
 function indexeddb_test(upgrade_func, open_func, description, options) {
   async_test(function(t) {
     options = Object.assign({upgrade_will_abort: false}, options);
@@ -187,5 +197,15 @@ function keep_alive(tx, store_name) {
   return () => {
     assert_false(completed, 'Transaction completed while kept alive');
     keepSpinning = false;
+  };
+}
+
+
+
+function barrier_func(count, func) {
+  let n = 0;
+  return () => {
+    if (++n === count)
+      func();
   };
 }
