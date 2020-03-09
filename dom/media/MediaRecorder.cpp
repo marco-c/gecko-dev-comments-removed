@@ -1799,7 +1799,7 @@ already_AddRefed<MediaRecorder> MediaRecorder::Constructor(
   
   if (!Preferences::GetBool("media.recorder.audio_node.enabled", false)) {
     
-    NS_NAMED_LITERAL_STRING(argStr, "Argument 1 of MediaRecorder.constructor");
+    NS_NAMED_LITERAL_STRING(argStr, "Argument 1");
     NS_NAMED_LITERAL_STRING(typeStr, "MediaStream");
     aRv.ThrowTypeError<MSG_DOES_NOT_IMPLEMENT_INTERFACE>(argStr, typeStr);
     return nullptr;

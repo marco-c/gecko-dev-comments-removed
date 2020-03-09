@@ -2493,7 +2493,7 @@ bool ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj) {
   return true;
 }
 
-bool GetContentGlobalForJSImplementedObject(JSContext* cx,
+bool GetContentGlobalForJSImplementedObject(BindingCallContext& cx,
                                             JS::Handle<JSObject*> obj,
                                             nsIGlobalObject** globalObj) {
   
@@ -2509,7 +2509,7 @@ bool GetContentGlobalForJSImplementedObject(JSContext* cx,
   }
 
   if (!domImplVal.isObject()) {
-    ThrowErrorMessage<MSG_NOT_OBJECT>(cx, "Value");
+    cx.ThrowErrorMessage<MSG_NOT_OBJECT>("Value");
     return false;
   }
 
