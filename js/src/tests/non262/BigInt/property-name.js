@@ -161,9 +161,24 @@
 
 
 {
+  let {0n: a, ...b} = ["ok", "test"];
+  assertEq(a, "ok");
+  assertEqArray(Object.getOwnPropertyNames(b), ["1"]);
+}
+
+
+{
   let a;
   ({0n: a} = ["ok"]);
   assertEq(a, "ok");
+}
+
+
+{
+  let a, b;
+  ({0n: a, ...b} = ["ok", "test"]);
+  assertEq(a, "ok");
+  assertEqArray(Object.getOwnPropertyNames(b), ["1"]);
 }
 
 
