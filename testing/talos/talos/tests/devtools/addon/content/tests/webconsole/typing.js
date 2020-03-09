@@ -42,11 +42,11 @@ module.exports = async function() {
 
   
   for (const char of Array.from(input)) {
-    const onPopupOpened = jsterm.autocompletePopup.once("popup-opened");
+    const onAutocompleteUpdated = jsterm.once("autocomplete-updated");
     jsterm.insertStringAtCursor(char);
     
     jsterm.props.autocompleteUpdate();
-    await onPopupOpened;
+    await onAutocompleteUpdated;
   }
 
   test.done();
