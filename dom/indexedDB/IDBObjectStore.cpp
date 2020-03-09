@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "IDBObjectStore.h"
 
@@ -25,7 +25,7 @@
 #include "KeyPath.h"
 #include "ProfilerHelpers.h"
 #include "ReportInternalError.h"
-#include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject
+#include "js/Array.h"  
 #include "js/Class.h"
 #include "js/Date.h"
 #include "js/StructuredClone.h"
@@ -56,7 +56,7 @@
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
 
-// Include this last to avoid path problems on Windows.
+
 #include "ActorsChild.h"
 
 namespace mozilla {
@@ -84,7 +84,7 @@ IndexUpdateInfo MakeIndexUpdateInfo(const int64_t aIndexID, const Key& aKey,
   return indexUpdateInfo;
 }
 
-}  // namespace
+}  
 
 struct IDBObjectStore::StructuredCloneWriteInfo {
   JSAutoStructuredCloneBuffer mCloneBuffer;
@@ -117,14 +117,14 @@ struct IDBObjectStore::StructuredCloneWriteInfo {
   MOZ_COUNTED_DTOR(StructuredCloneWriteInfo)
 };
 
-// Used by ValueWrapper::Clone to hold strong references to any blob-like
-// objects through the clone process.  This is necessary because:
-// - The structured clone process may trigger content code via getters/other
-//   which can potentially cause existing strong references to be dropped,
-//   necessitating the clone to hold its own strong references.
-// - The structured clone can abort partway through, so it's necessary to track
-//   what strong references have been acquired so that they can be freed even
-//   if a de-serialization does not occur.
+
+
+
+
+
+
+
+
 struct IDBObjectStore::StructuredCloneInfo {
   nsTArray<StructuredCloneFile> mFiles;
 };
@@ -207,11 +207,11 @@ bool StructuredCloneWriteCallback(JSContext* aCx,
     cloneWriteInfo->mOffsetToKeyProp = js::GetSCOffset(aWriter);
 
     uint64_t value = 0;
-    // Omit endian swap
+    
     return JS_WriteBytes(aWriter, &value, sizeof(value));
   }
 
-  // UNWRAP_OBJECT calls might mutate this.
+  
   JS::Rooted<JSObject*> obj(aCx, aObj);
 
   IDBMutableFile* mutableFile;
@@ -223,8 +223,8 @@ bool StructuredCloneWriteCallback(JSContext* aCx,
     IDBDatabase* const database = mutableFile->Database();
     MOZ_ASSERT(database);
 
-    // Throw when trying to store IDBMutableFile objects that live in a
-    // different database.
+    
+    
     if (database != cloneWriteInfo->mDatabase) {
       MOZ_ASSERT(!SameCOMIdentity(database, cloneWriteInfo->mDatabase));
 
@@ -362,7 +362,7 @@ bool CopyingStructuredCloneWriteCallback(JSContext* aCx,
   auto* const cloneInfo =
       static_cast<IDBObjectStore::StructuredCloneInfo*>(aClosure);
 
-  // UNWRAP_OBJECT calls might mutate this.
+  
   JS::Rooted<JSObject*> obj(aCx, aObj);
 
   {
@@ -419,10 +419,10 @@ bool CopyingStructuredCloneWriteCallback(JSContext* aCx,
 
 nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
   static const JSStructuredCloneCallbacks kStructuredCloneCallbacks = {
-      nullptr /* read */,          StructuredCloneWriteCallback /* write */,
-      nullptr /* reportError */,   nullptr /* readTransfer */,
-      nullptr /* writeTransfer */, nullptr /* freeTransfer */,
-      nullptr /* canTransfer */,   nullptr /* sabCloned */
+      nullptr ,          StructuredCloneWriteCallback ,
+      nullptr ,   nullptr ,
+      nullptr , nullptr ,
+      nullptr ,   nullptr 
   };
 
   MOZ_ASSERT(aCx);
@@ -441,10 +441,9 @@ nsresult GetAddInfoCallback(JSContext* aCx, void* aClosure) {
   return NS_OK;
 }
 
-bool ResolveMysteryMutableFile(IDBMutableFile* aMutableFile,
+bool ResolveMysteryMutableFile(IDBMutableFile& aMutableFile,
                                const nsString& aName, const nsString& aType) {
-  MOZ_ASSERT(aMutableFile);
-  aMutableFile->SetLazyData(aName, aType);
+  aMutableFile.SetLazyData(aName, aType);
   return true;
 }
 
@@ -520,7 +519,7 @@ bool ReadBlobOrFile(JSStructuredCloneReader* aReader, uint32_t aTag,
 
   CopyUTF8toUTF16(type, aRetval->type);
 
-  // Blobs are done.
+  
   if (aTag == SCTAG_DOM_BLOB) {
     return true;
   }
@@ -575,13 +574,13 @@ class ValueDeserializationHelper {
                                        JS::MutableHandle<JSObject*> aResult) {
     MOZ_ASSERT(aCx);
 
-    // If we have eBlob, we are in an IDB SQLite schema upgrade where we don't
-    // care about a real 'MutableFile', but we just care of having a propert
-    // |mType| flag.
-    if (aFile.mType == StructuredCloneFile::eBlob) {
-      aFile.mType = StructuredCloneFile::eMutableFile;
+    
+    
+    
+    if (aFile.Type() == StructuredCloneFile::eBlob) {
+      aFile.MutateType(StructuredCloneFile::eMutableFile);
 
-      // Just make a dummy object.
+      
       JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
 
       if (NS_WARN_IF(!obj)) {
@@ -592,19 +591,19 @@ class ValueDeserializationHelper {
       return true;
     }
 
-    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eMutableFile);
+    MOZ_ASSERT(aFile.Type() == StructuredCloneFile::eMutableFile);
 
-    if (!aFile.mMutableFile || !NS_IsMainThread()) {
+    if (!aFile.HasMutableFile() || !NS_IsMainThread()) {
       return false;
     }
 
-    if (NS_WARN_IF(!ResolveMysteryMutableFile(aFile.mMutableFile, aData.name,
-                                              aData.type))) {
+    if (NS_WARN_IF(!ResolveMysteryMutableFile(aFile.MutableMutableFile(),
+                                              aData.name, aData.type))) {
       return false;
     }
 
     JS::Rooted<JS::Value> wrappedMutableFile(aCx);
-    if (!ToJSValue(aCx, aFile.mMutableFile, &wrappedMutableFile)) {
+    if (!ToJSValue(aCx, aFile.MutableMutableFile(), &wrappedMutableFile)) {
       return false;
     }
 
@@ -620,50 +619,51 @@ class ValueDeserializationHelper {
     MOZ_ASSERT(aData.tag == SCTAG_DOM_FILE ||
                aData.tag == SCTAG_DOM_FILE_WITHOUT_LASTMODIFIEDDATE ||
                aData.tag == SCTAG_DOM_BLOB);
-    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eBlob);
+    MOZ_ASSERT(aFile.Type() == StructuredCloneFile::eBlob);
 
-    RefPtr<Blob> blob = aFile.mBlob;
-
-    // It can happen that this IDB is chrome code, so there is no parent, but
-    // still we want to set a correct parent for the new File object.
-    nsCOMPtr<nsIGlobalObject> global;
-    if (NS_IsMainThread()) {
-      if (aDatabase && aDatabase->GetParentObject()) {
-        global = aDatabase->GetParentObject();
-      } else {
-        global = xpc::CurrentNativeGlobal(aCx);
+    const auto blob = [&aFile, aDatabase, aCx]() -> RefPtr<Blob> {
+      if (aFile.HasBlob()) {
+        return aFile.BlobPtr();
       }
-    } else {
-      WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
-      MOZ_ASSERT(workerPrivate);
 
-      WorkerGlobalScope* globalScope = workerPrivate->GlobalScope();
-      MOZ_ASSERT(globalScope);
+      
+      
+      const auto global = [aDatabase, aCx]() -> nsCOMPtr<nsIGlobalObject> {
+        if (NS_IsMainThread()) {
+          if (aDatabase && aDatabase->GetParentObject()) {
+            return aDatabase->GetParentObject();
+          }
+          return xpc::CurrentNativeGlobal(aCx);
+        }
+        const WorkerPrivate* const workerPrivate =
+            GetCurrentThreadWorkerPrivate();
+        MOZ_ASSERT(workerPrivate);
 
-      global = do_QueryObject(globalScope);
-    }
+        WorkerGlobalScope* const globalScope = workerPrivate->GlobalScope();
+        MOZ_ASSERT(globalScope);
 
-    MOZ_ASSERT(global);
+        return do_QueryObject(globalScope);
+      }();
 
-    /* If we are creating an index, we do not have an mBlob but do have an
-     * mInfo.  Unlike other index or upgrade cases, we do need a real-looking
-     * Blob/File instance because the index's key path can reference their
-     * properties.  Rather than create a fake-looking object, create a real
-     * Blob. */
-    if (!blob) {
-      MOZ_ASSERT(aFile.mFileInfo);
+      MOZ_ASSERT(global);
+
+      
+
+
+
+
       const nsCOMPtr<nsIFile> file =
-          FileInfo::GetFileForFileInfo(*aFile.mFileInfo);
+          FileInfo::GetFileForFileInfo(aFile.FileInfo());
       if (!file) {
-        return false;
+        return nullptr;
       }
 
-      const RefPtr<FileBlobImpl> impl = new FileBlobImpl(file);
-      impl->SetFileId(aFile.mFileInfo->Id());
-      blob = File::Create(global, impl);
-      if (NS_WARN_IF(!blob)) {
-        return false;
-      }
+      const auto impl = MakeRefPtr<FileBlobImpl>(file);
+      impl->SetFileId(aFile.FileInfo().Id());
+      return File::Create(global, impl);
+    }();
+    if (NS_WARN_IF(!blob)) {
+      return false;
     }
 
     if (aData.tag == SCTAG_DOM_BLOB) {
@@ -671,12 +671,12 @@ class ValueDeserializationHelper {
                                 INT64_MAX);
       MOZ_ASSERT(!blob->IsFile());
 
-      // ActorsParent sends here a kind of half blob and half file wrapped into
-      // a DOM File object. DOM File and DOM Blob are a WebIDL wrapper around a
-      // BlobImpl object. SetLazyData() has just changed the BlobImpl to be a
-      // Blob (see the previous assert), but 'blob' still has the WebIDL DOM
-      // File wrapping.
-      // Before exposing it to content, we must recreate a DOM Blob object.
+      
+      
+      
+      
+      
+      
 
       const RefPtr<Blob> exposedBlob =
           Blob::Create(blob->GetParentObject(), blob->Impl());
@@ -715,12 +715,12 @@ class ValueDeserializationHelper {
                                       const WasmModuleData& aData,
                                       JS::MutableHandle<JSObject*> aResult) {
     MOZ_ASSERT(aCx);
-    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eWasmBytecode);
-    MOZ_ASSERT(!aFile.mBlob);
+    MOZ_ASSERT(aFile.Type() == StructuredCloneFile::eWasmBytecode);
+    MOZ_ASSERT(!aFile.HasBlob());
 
-    // Just create a plain object here, support for de-serialization of
-    // WebAssembly.Modules has been removed in bug 1561876. Full removal is
-    // tracked in bug 1487479.
+    
+    
+    
 
     JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
     if (NS_WARN_IF(!obj)) {
@@ -736,8 +736,8 @@ JSObject* CommonStructuredCloneReadCallback(
     JSContext* aCx, JSStructuredCloneReader* aReader,
     const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag, uint32_t aData,
     void* aClosure) {
-  // We need to statically assert that our tag values are what we expect
-  // so that if people accidentally change them they notice.
+  
+  
   static_assert(SCTAG_DOM_BLOB == 0xffff8001 &&
                     SCTAG_DOM_FILE_WITHOUT_LASTMODIFIEDDATE == 0xffff8002 &&
                     SCTAG_DOM_MUTABLEFILE == 0xffff8004 &&
@@ -837,11 +837,11 @@ JSObject* CopyingStructuredCloneReadCallback(
     StructuredCloneFile& file = cloneInfo->mFiles[aData];
 
     if (aTag == SCTAG_DOM_BLOB) {
-      MOZ_ASSERT(file.mType == StructuredCloneFile::eBlob);
-      MOZ_ASSERT(!file.mBlob->IsFile());
+      MOZ_ASSERT(file.Type() == StructuredCloneFile::eBlob);
+      MOZ_ASSERT(!file.Blob().IsFile());
 
       JS::Rooted<JS::Value> wrappedBlob(aCx);
-      if (NS_WARN_IF(!ToJSValue(aCx, file.mBlob, &wrappedBlob))) {
+      if (NS_WARN_IF(!ToJSValue(aCx, file.MutableBlob(), &wrappedBlob))) {
         return nullptr;
       }
 
@@ -851,12 +851,12 @@ JSObject* CopyingStructuredCloneReadCallback(
     }
 
     if (aTag == SCTAG_DOM_FILE) {
-      MOZ_ASSERT(file.mType == StructuredCloneFile::eBlob);
+      MOZ_ASSERT(file.Type() == StructuredCloneFile::eBlob);
 
       {
-        // Create a scope so ~RefPtr fires before returning an unwrapped
-        // JS::Value.
-        const RefPtr<Blob> blob = file.mBlob;
+        
+        
+        const RefPtr<Blob> blob = file.BlobPtr();
         MOZ_ASSERT(blob->IsFile());
 
         const RefPtr<File> file = blob->ToFile();
@@ -873,10 +873,11 @@ JSObject* CopyingStructuredCloneReadCallback(
       return result;
     }
 
-    MOZ_ASSERT(file.mType == StructuredCloneFile::eMutableFile);
+    MOZ_ASSERT(file.Type() == StructuredCloneFile::eMutableFile);
 
     JS::Rooted<JS::Value> wrappedMutableFile(aCx);
-    if (NS_WARN_IF(!ToJSValue(aCx, file.mMutableFile, &wrappedMutableFile))) {
+    if (NS_WARN_IF(
+            !ToJSValue(aCx, file.MutableMutableFile(), &wrappedMutableFile))) {
       return nullptr;
     }
 
@@ -889,10 +890,10 @@ JSObject* CopyingStructuredCloneReadCallback(
                                                              aTag);
 }
 
-}  // namespace
+}  
 
 const JSClass IDBObjectStore::sDummyPropJSClass = {
-    "IDBObjectStore Dummy", 0 /* flags */
+    "IDBObjectStore Dummy", 0 
 };
 
 IDBObjectStore::IDBObjectStore(IDBTransaction* aTransaction,
@@ -916,7 +917,7 @@ IDBObjectStore::~IDBObjectStore() {
   }
 }
 
-// static
+
 RefPtr<IDBObjectStore> IDBObjectStore::Create(IDBTransaction* aTransaction,
                                               ObjectStoreSpec& aSpec) {
   MOZ_ASSERT(aTransaction);
@@ -925,19 +926,19 @@ RefPtr<IDBObjectStore> IDBObjectStore::Create(IDBTransaction* aTransaction,
   return new IDBObjectStore(aTransaction, &aSpec);
 }
 
-// static
+
 void IDBObjectStore::AppendIndexUpdateInfo(
     const int64_t aIndexID, const KeyPath& aKeyPath, const bool aMultiEntry,
     const nsCString& aLocale, JSContext* const aCx, JS::Handle<JS::Value> aVal,
     nsTArray<IndexUpdateInfo>* const aUpdateInfoArray, ErrorResult* const aRv) {
-  // This precondition holds when `aVal` is the result of a structured clone.
+  
   js::AutoAssertNoContentJS noContentJS(aCx);
 
   if (!aMultiEntry) {
     Key key;
     *aRv = aKeyPath.ExtractKey(aCx, aVal, key);
 
-    // If an index's keyPath doesn't match an object, we ignore that object.
+    
     if (aRv->ErrorCodeIs(NS_ERROR_DOM_INDEXEDDB_DATA_ERR) || key.IsUnset()) {
       aRv->SuppressException();
       return;
@@ -1002,7 +1003,7 @@ void IDBObjectStore::AppendIndexUpdateInfo(
       Key value;
       const auto result = value.SetFromJSVal(aCx, arrayItem, *aRv);
       if (!result.Is(Ok, *aRv) || value.IsUnset()) {
-        // Not a value we can do anything with, ignore it.
+        
         aRv->SuppressException();
         continue;
       }
@@ -1017,7 +1018,7 @@ void IDBObjectStore::AppendIndexUpdateInfo(
     Key value;
     const auto result = value.SetFromJSVal(aCx, val, *aRv);
     if (!result.Is(Ok, *aRv) || value.IsUnset()) {
-      // Not a value we can do anything with, ignore it.
+      
       aRv->SuppressException();
       return;
     }
@@ -1027,11 +1028,11 @@ void IDBObjectStore::AppendIndexUpdateInfo(
   }
 }
 
-// static
+
 void IDBObjectStore::ClearCloneReadInfo(StructuredCloneReadInfo& aReadInfo) {
-  // This is kind of tricky, we only want to release stuff on the main thread,
-  // but we can end up being called on other threads if we have already been
-  // cleared on the main thread.
+  
+  
+  
   if (!aReadInfo.mFiles.Length()) {
     return;
   }
@@ -1039,7 +1040,7 @@ void IDBObjectStore::ClearCloneReadInfo(StructuredCloneReadInfo& aReadInfo) {
   aReadInfo.mFiles.Clear();
 }
 
-// static
+
 bool IDBObjectStore::DeserializeValue(JSContext* aCx,
                                       StructuredCloneReadInfo&& aCloneReadInfo,
                                       JS::MutableHandle<JS::Value> aValue) {
@@ -1062,8 +1063,8 @@ bool IDBObjectStore::DeserializeValue(JSContext* aCx,
       nullptr,
       nullptr};
 
-  // FIXME: Consider to use StructuredCloneHolder here and in other
-  //        deserializing methods.
+  
+  
   return JS_ReadStructuredClone(
       aCx, aCloneReadInfo.mData, JS_STRUCTURED_CLONE_VERSION,
       JS::StructuredCloneScope::DifferentProcessForIndexedDB, aValue,
@@ -1072,7 +1073,7 @@ bool IDBObjectStore::DeserializeValue(JSContext* aCx,
 
 namespace {
 
-// This class helps to create only 1 sandbox.
+
 class SandboxHolder final {
  public:
   NS_INLINE_DECL_REFCOUNTING(SandboxHolder)
@@ -1102,7 +1103,7 @@ class SandboxHolder final {
       nsIXPConnect* const xpc = nsContentUtils::XPConnect();
       MOZ_ASSERT(xpc, "This should never be null!");
 
-      // Let's use a null principal.
+      
       const nsCOMPtr<nsIPrincipal> principal =
           NullPrincipal::CreateWithoutOriginAttributes();
 
@@ -1138,8 +1139,8 @@ class DeserializeIndexValueHelper final : public Runnable {
         mStatus(NS_ERROR_FAILURE) {}
 
   void DispatchAndWait(ErrorResult& aRv) {
-    // We don't need to go to the main-thread and use the sandbox. Let's create
-    // the updateInfo data here.
+    
+    
     if (!mCloneReadInfo.mData.Size()) {
       AutoJSAPI jsapi;
       jsapi.Init();
@@ -1153,7 +1154,7 @@ class DeserializeIndexValueHelper final : public Runnable {
       return;
     }
 
-    // The operation will continue on the main-thread.
+    
 
     MOZ_ASSERT(!(mCloneReadInfo.mData.Size() % sizeof(uint64_t)));
 
@@ -1258,13 +1259,13 @@ class DeserializeUpgradeValueHelper final : public Runnable {
         mStatus(NS_ERROR_FAILURE) {}
 
   nsresult DispatchAndWait(nsAString& aFileIds) {
-    // We don't need to go to the main-thread and use the sandbox.
+    
     if (!mCloneReadInfo.mData.Size()) {
       PopulateFileIds(aFileIds);
       return NS_OK;
     }
 
-    // The operation will continue on the main-thread.
+    
 
     MOZ_ASSERT(!(mCloneReadInfo.mData.Size() % sizeof(uint64_t)));
 
@@ -1341,14 +1342,13 @@ class DeserializeUpgradeValueHelper final : public Runnable {
     for (uint32_t count = mCloneReadInfo.mFiles.Length(), index = 0;
          index < count; index++) {
       const StructuredCloneFile& file = mCloneReadInfo.mFiles[index];
-      MOZ_ASSERT(file.mFileInfo);
 
-      const int64_t id = file.mFileInfo->Id();
+      const int64_t id = file.FileInfo().Id();
 
       if (index) {
         aFileIds.Append(' ');
       }
-      aFileIds.AppendInt(file.mType == StructuredCloneFile::eBlob ? id : -id);
+      aFileIds.AppendInt(file.Type() == StructuredCloneFile::eBlob ? id : -id);
     }
   }
 
@@ -1364,9 +1364,9 @@ class DeserializeUpgradeValueHelper final : public Runnable {
   nsresult mStatus;
 };
 
-}  // namespace
+}  
 
-// static
+
 void IDBObjectStore::DeserializeIndexValueToUpdateInfos(
     int64_t aIndexID, const KeyPath& aKeyPath, bool aMultiEntry,
     const nsCString& aLocale, StructuredCloneReadInfo& aCloneReadInfo,
@@ -1379,7 +1379,7 @@ void IDBObjectStore::DeserializeIndexValueToUpdateInfos(
   helper->DispatchAndWait(aRv);
 }
 
-// static
+
 nsresult IDBObjectStore::DeserializeUpgradeValueToFileIds(
     StructuredCloneReadInfo& aCloneReadInfo, nsAString& aFileIds) {
   MOZ_ASSERT(!NS_IsMainThread());
@@ -1396,7 +1396,7 @@ void IDBObjectStore::AssertIsOnOwningThread() const {
   mTransaction->AssertIsOnOwningThread();
 }
 
-#endif  // DEBUG
+#endif  
 
 void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
                                 JS::Handle<JS::Value> aKeyVal,
@@ -1404,8 +1404,8 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
                                 Key& aKey,
                                 nsTArray<IndexUpdateInfo>& aUpdateInfoArray,
                                 ErrorResult& aRv) {
-  // Return DATA_ERR if a key was passed in and this objectStore uses inline
-  // keys.
+  
+  
   if (!aKeyVal.isUndefined() && HasValidKeyPath()) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
     return;
@@ -1414,7 +1414,7 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
   const bool isAutoIncrement = AutoIncrement();
 
   if (!HasValidKeyPath()) {
-    // Out-of-line keys must be passed in.
+    
     const auto result = aKey.SetFromJSVal(aCx, aKeyVal, aRv);
     if (!result.Is(Ok, aRv)) {
       if (result.Is(Invalid, aRv)) {
@@ -1434,14 +1434,14 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
     }
   }
 
-  // Return DATA_ERR if no key was specified this isn't an autoIncrement
-  // objectStore.
+  
+  
   if (aKey.IsUnset() && !isAutoIncrement) {
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
     return;
   }
 
-  // Figure out indexes and the index values to update here.
+  
 
   if (mSpec->indexes().Length() && !aValueWrapper.Clone(aCx)) {
     aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
@@ -1452,7 +1452,7 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
     const nsTArray<IndexMetadata>& indexes = mSpec->indexes();
     const uint32_t idxCount = indexes.Length();
 
-    aUpdateInfoArray.SetCapacity(idxCount);  // Pretty good estimate
+    aUpdateInfoArray.SetCapacity(idxCount);  
 
     for (uint32_t idxIndex = 0; idxIndex < idxCount; idxIndex++) {
       const IndexMetadata& metadata = indexes[idxIndex];
@@ -1529,11 +1529,11 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
     return nullptr;
   }
 
-  // Check the size limit of the serialized message which mainly consists of
-  // a StructuredCloneBuffer, an encoded object key, and the encoded index keys.
-  // kMaxIDBMsgOverhead covers the minor stuff not included in this calculation
-  // because the precise calculation would slow down this AddOrPut operation.
-  static const size_t kMaxIDBMsgOverhead = 1024 * 1024;  // 1MB
+  
+  
+  
+  
+  static const size_t kMaxIDBMsgOverhead = 1024 * 1024;  
   const uint32_t maximalSizeFromPref =
       IndexedDatabaseManager::MaxSerializedMsgSize();
   MOZ_ASSERT(maximalSizeFromPref > kMaxIDBMsgOverhead);
@@ -1566,7 +1566,7 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   commonParams.key() = key;
   commonParams.indexUpdateInfos().SwapElements(updateInfo);
 
-  // Convert any blobs or mutable files into FileAddInfo.
+  
   nsTArray<StructuredCloneFile>& files = cloneWriteInfo.mFiles;
 
   if (!files.IsEmpty()) {
@@ -1586,13 +1586,13 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
       FileAddInfo* const fileAddInfo = fileAddInfos.AppendElement(fallible);
       MOZ_ASSERT(fileAddInfo);
 
-      switch (file.mType) {
+      switch (file.Type()) {
         case StructuredCloneFile::eBlob: {
-          MOZ_ASSERT(file.mBlob);
-          MOZ_ASSERT(!file.mMutableFile);
+          MOZ_ASSERT(file.HasBlob());
+          MOZ_ASSERT(!file.HasMutableFile());
 
           PBackgroundIDBDatabaseFileChild* const fileActor =
-              database->GetOrCreateFileActorForBlob(file.mBlob);
+              database->GetOrCreateFileActorForBlob(file.MutableBlob());
           if (NS_WARN_IF(!fileActor)) {
             IDB_REPORT_INTERNAL_ERR();
             aRv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -1606,11 +1606,11 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
         }
 
         case StructuredCloneFile::eMutableFile: {
-          MOZ_ASSERT(file.mMutableFile);
-          MOZ_ASSERT(!file.mBlob);
+          MOZ_ASSERT(file.HasMutableFile());
+          MOZ_ASSERT(!file.HasBlob());
 
           PBackgroundMutableFileChild* const mutableFileActor =
-              file.mMutableFile->GetBackgroundActor();
+              file.MutableFile().GetBackgroundActor();
           if (NS_WARN_IF(!mutableFileActor)) {
             IDB_REPORT_INTERNAL_ERR();
             aRv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -1625,11 +1625,11 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
 
         case StructuredCloneFile::eWasmBytecode:
         case StructuredCloneFile::eWasmCompiled: {
-          MOZ_ASSERT(file.mBlob);
-          MOZ_ASSERT(!file.mMutableFile);
+          MOZ_ASSERT(file.HasBlob());
+          MOZ_ASSERT(!file.HasMutableFile());
 
           PBackgroundIDBDatabaseFileChild* const fileActor =
-              database->GetOrCreateFileActorForBlob(file.mBlob);
+              database->GetOrCreateFileActorForBlob(file.MutableBlob());
           if (NS_WARN_IF(!fileActor)) {
             IDB_REPORT_INTERNAL_ERR();
             aRv = NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR;
@@ -1637,7 +1637,7 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
           }
 
           fileAddInfo->file() = fileActor;
-          fileAddInfo->type() = file.mType;
+          fileAddInfo->type() = file.Type();
 
           break;
         }
@@ -1746,9 +1746,9 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllInternal(
         IDB_LOG_STRINGIFY(keyRange), IDB_LOG_STRINGIFY(aLimit));
   }
 
-  // TODO: This is necessary to preserve request ordering only. Proper
-  // sequencing of requests should be done in a more sophisticated manner that
-  // doesn't require invalidating cursor caches (Bug 1580499).
+  
+  
+  
   mTransaction->InvalidateCursorCaches();
 
   mTransaction->StartRequest(request, params);
@@ -1764,7 +1764,7 @@ RefPtr<IDBRequest> IDBObjectStore::Add(JSContext* aCx,
 
   ValueWrapper valueWrapper(aCx, aValue);
 
-  return AddOrPut(aCx, valueWrapper, aKey, false, /* aFromCursor */ false, aRv);
+  return AddOrPut(aCx, valueWrapper, aKey, false,  false, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::Put(JSContext* aCx,
@@ -1775,7 +1775,7 @@ RefPtr<IDBRequest> IDBObjectStore::Put(JSContext* aCx,
 
   ValueWrapper valueWrapper(aCx, aValue);
 
-  return AddOrPut(aCx, valueWrapper, aKey, true, /* aFromCursor */ false, aRv);
+  return AddOrPut(aCx, valueWrapper, aKey, true,  false, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::Delete(JSContext* aCx,
@@ -1783,7 +1783,7 @@ RefPtr<IDBRequest> IDBObjectStore::Delete(JSContext* aCx,
                                           ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return DeleteInternal(aCx, aKey, /* aFromCursor */ false, aRv);
+  return DeleteInternal(aCx, aKey,  false, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::Get(JSContext* aCx,
@@ -1791,7 +1791,7 @@ RefPtr<IDBRequest> IDBObjectStore::Get(JSContext* aCx,
                                        ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetInternal(/* aKeyOnly */ false, aCx, aKey, aRv);
+  return GetInternal( false, aCx, aKey, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::GetKey(JSContext* aCx,
@@ -1799,7 +1799,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetKey(JSContext* aCx,
                                           ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetInternal(/* aKeyOnly */ true, aCx, aKey, aRv);
+  return GetInternal( true, aCx, aKey, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::Clear(JSContext* aCx, ErrorResult& aRv) {
@@ -1845,7 +1845,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetAll(JSContext* aCx,
                                           ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal(/* aKeysOnly */ false, aCx, aKey, aLimit, aRv);
+  return GetAllInternal( false, aCx, aKey, aLimit, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::GetAllKeys(JSContext* aCx,
@@ -1854,7 +1854,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetAllKeys(JSContext* aCx,
                                               ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return GetAllInternal(/* aKeysOnly */ true, aCx, aKey, aLimit, aRv);
+  return GetAllInternal( true, aCx, aKey, aLimit, aRv);
 }
 
 RefPtr<IDBRequest> IDBObjectStore::OpenCursor(JSContext* aCx,
@@ -1863,7 +1863,7 @@ RefPtr<IDBRequest> IDBObjectStore::OpenCursor(JSContext* aCx,
                                               ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return OpenCursorInternal(/* aKeysOnly */ false, aCx, aRange, aDirection,
+  return OpenCursorInternal( false, aCx, aRange, aDirection,
                             aRv);
 }
 
@@ -1872,7 +1872,7 @@ RefPtr<IDBRequest> IDBObjectStore::OpenCursor(JSContext* aCx,
                                               ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return OpenCursorInternal(/* aKeysOnly */ false, aCx,
+  return OpenCursorInternal( false, aCx,
                             JS::UndefinedHandleValue, aDirection, aRv);
 }
 
@@ -1882,7 +1882,7 @@ RefPtr<IDBRequest> IDBObjectStore::OpenKeyCursor(JSContext* aCx,
                                                  ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  return OpenCursorInternal(/* aKeysOnly */ true, aCx, aRange, aDirection, aRv);
+  return OpenCursorInternal( true, aCx, aRange, aDirection, aRv);
 }
 
 RefPtr<IDBIndex> IDBObjectStore::Index(const nsAString& aName,
@@ -1947,7 +1947,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IDBObjectStore)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 
-  // Don't unlink mTransaction!
+  
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIndexes)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDeletedIndexes)
@@ -2027,7 +2027,7 @@ RefPtr<IDBRequest> IDBObjectStore::GetInternal(bool aKeyOnly, JSContext* aCx,
   }
 
   if (!keyRange) {
-    // Must specify a key or keyRange for get().
+    
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
     return nullptr;
   }
@@ -2052,9 +2052,9 @@ RefPtr<IDBRequest> IDBObjectStore::GetInternal(bool aKeyOnly, JSContext* aCx,
       IDB_LOG_STRINGIFY(mTransaction), IDB_LOG_STRINGIFY(this),
       IDB_LOG_STRINGIFY(keyRange));
 
-  // TODO: This is necessary to preserve request ordering only. Proper
-  // sequencing of requests should be done in a more sophisticated manner that
-  // doesn't require invalidating cursor caches (Bug 1580499).
+  
+  
+  
   mTransaction->InvalidateCursorCaches();
 
   mTransaction->StartRequest(request, params);
@@ -2090,7 +2090,7 @@ RefPtr<IDBRequest> IDBObjectStore::DeleteInternal(JSContext* aCx,
   }
 
   if (!keyRange) {
-    // Must specify a key or keyRange for delete().
+    
     aRv.Throw(NS_ERROR_DOM_INDEXEDDB_KEY_ERR);
     return nullptr;
   }
@@ -2182,10 +2182,10 @@ RefPtr<IDBIndex> IDBObjectStore::CreateIndex(
   const IndexMetadata* const oldMetadataElements =
       indexes.IsEmpty() ? nullptr : indexes.Elements();
 
-  // With this setup we only validate the passed in locale name by the time we
-  // get to encoding Keys. Maybe we should do it here right away and error out.
+  
+  
 
-  // Valid locale names are always ASCII as per BCP-47.
+  
   nsCString locale = NS_LossyConvertUTF16toASCII(aOptionalParameters.mLocale);
   bool autoLocale = locale.EqualsASCII("auto");
   if (autoLocale) {
@@ -2199,8 +2199,8 @@ RefPtr<IDBIndex> IDBObjectStore::CreateIndex(
   if (oldMetadataElements && oldMetadataElements != indexes.Elements()) {
     MOZ_ASSERT(indexes.Length() > 1);
 
-    // Array got moved, update the spec pointers for all live indexes.
-    RefreshSpec(/* aMayDelete */ false);
+    
+    RefreshSpec( false);
   }
 
   transaction->CreateIndex(this, *metadata);
@@ -2209,8 +2209,8 @@ RefPtr<IDBIndex> IDBObjectStore::CreateIndex(
 
   mIndexes.AppendElement(index);
 
-  // Don't do this in the macro because we always need to increment the serial
-  // number to keep in sync with the parent.
+  
+  
   const uint64_t requestSerialNumber = IDBRequest::NextSerialNumber();
 
   IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
@@ -2253,13 +2253,13 @@ void IDBObjectStore::DeleteIndex(const nsAString& aName, ErrorResult& aRv) {
   const auto foundId = foundMetadataIt->id();
   MOZ_ASSERT(foundId);
 
-  // Must remove index from mIndexes before altering the metadata array!
+  
   {
     const auto end = mIndexes.end();
     const auto foundIt = std::find_if(
         mIndexes.begin(), end,
         [foundId](const auto& index) { return index->Id() == foundId; });
-    // TODO: Or should we assert foundIt != end?
+    
     if (foundIt != end) {
       auto& index = *foundIt;
 
@@ -2272,10 +2272,10 @@ void IDBObjectStore::DeleteIndex(const nsAString& aName, ErrorResult& aRv) {
 
   mSpec->indexes().RemoveElementAt(foundMetadataIt.GetIndex());
 
-  RefreshSpec(/* aMayDelete */ false);
+  RefreshSpec( false);
 
-  // Don't do this in the macro because we always need to increment the serial
-  // number to keep in sync with the parent.
+  
+  
   const uint64_t requestSerialNumber = IDBRequest::NextSerialNumber();
 
   IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
@@ -2330,9 +2330,9 @@ RefPtr<IDBRequest> IDBObjectStore::Count(JSContext* aCx,
       IDB_LOG_STRINGIFY(mTransaction), IDB_LOG_STRINGIFY(this),
       IDB_LOG_STRINGIFY(keyRange));
 
-  // TODO: This is necessary to preserve request ordering only. Proper
-  // sequencing of requests should be done in a more sophisticated manner that
-  // doesn't require invalidating cursor caches (Bug 1580499).
+  
+  
+  
   mTransaction->InvalidateCursorCaches();
 
   mTransaction->StartRequest(request, params);
@@ -2376,8 +2376,8 @@ RefPtr<IDBRequest> IDBObjectStore::OpenCursorInternal(
   const CommonOpenCursorParams commonParams = {
       objectStoreId, std::move(optionalKeyRange), aDirection};
 
-  // TODO: It would be great if the IPDL generator created a constructor
-  // accepting a CommonOpenCursorParams by value or rvalue reference.
+  
+  
   const auto params =
       aKeysOnly ? OpenCursorParams{ObjectStoreOpenKeyCursorParams{commonParams}}
                 : OpenCursorParams{ObjectStoreOpenCursorParams{commonParams}};
@@ -2412,9 +2412,9 @@ RefPtr<IDBRequest> IDBObjectStore::OpenCursorInternal(
                 : new BackgroundCursorChild<IDBCursorType::ObjectStore>(
                       request, this, aDirection);
 
-  // TODO: This is necessary to preserve request ordering only. Proper
-  // sequencing of requests should be done in a more sophisticated manner that
-  // doesn't require invalidating cursor caches (Bug 1580499).
+  
+  
+  
   mTransaction->InvalidateCursorCaches();
 
   mTransaction->OpenCursor(actor, params);
@@ -2470,7 +2470,7 @@ void IDBObjectStore::NoteDeletion() {
     return;
   }
 
-  // Copy the spec here.
+  
   mDeletedSpec = MakeUnique<ObjectStoreSpec>(*mSpec);
   mDeletedSpec->indexes().Clear();
 
@@ -2507,7 +2507,7 @@ void IDBObjectStore::SetName(const nsAString& aName, ErrorResult& aRv) {
     return;
   }
 
-  // Cache logging string of this object store before renaming.
+  
   const LoggingString loggingOldObjectStore(this);
 
   const nsresult rv =
@@ -2518,8 +2518,8 @@ void IDBObjectStore::SetName(const nsAString& aName, ErrorResult& aRv) {
     return;
   }
 
-  // Don't do this in the macro because we always need to increment the serial
-  // number to keep in sync with the parent.
+  
+  
   const uint64_t requestSerialNumber = IDBRequest::NextSerialNumber();
 
   IDB_LOG_MARK_CHILD_TRANSACTION_REQUEST(
@@ -2559,14 +2559,14 @@ bool IDBObjectStore::ValueWrapper::Clone(JSContext* aCx) {
   }
 
   static const JSStructuredCloneCallbacks callbacks = {
-      CopyingStructuredCloneReadCallback /* read */,
-      CopyingStructuredCloneWriteCallback /* write */,
-      nullptr /* reportError */,
-      nullptr /* readTransfer */,
-      nullptr /* writeTransfer */,
-      nullptr /* freeTransfer */,
-      nullptr /* canTransfer */,
-      nullptr /* sabCloned */
+      CopyingStructuredCloneReadCallback ,
+      CopyingStructuredCloneWriteCallback ,
+      nullptr ,
+      nullptr ,
+      nullptr ,
+      nullptr ,
+      nullptr ,
+      nullptr 
   };
 
   StructuredCloneInfo cloneInfo;
@@ -2583,5 +2583,5 @@ bool IDBObjectStore::ValueWrapper::Clone(JSContext* aCx) {
   return true;
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

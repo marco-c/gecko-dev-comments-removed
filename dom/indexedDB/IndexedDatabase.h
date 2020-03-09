@@ -33,13 +33,21 @@ struct StructuredCloneFile {
     eEndGuard
   };
 
-  RefPtr<Blob> mBlob;
-  RefPtr<IDBMutableFile> mMutableFile;
-  RefPtr<FileInfo> mFileInfo;
-  FileType mType;
+  StructuredCloneFile(const StructuredCloneFile&) = delete;
+  StructuredCloneFile& operator=(const StructuredCloneFile&) = delete;
+#ifdef NS_BUILD_REFCNT_LOGGING
+  
+  StructuredCloneFile(StructuredCloneFile&&);
+#else
+  StructuredCloneFile(StructuredCloneFile&&) = default;
+#endif
+  StructuredCloneFile& operator=(StructuredCloneFile&&) = delete;
 
   
   inline explicit StructuredCloneFile(FileType aType, RefPtr<Blob> aBlob = {});
+
+  
+  inline StructuredCloneFile(FileType aType, RefPtr<FileInfo> aFileInfo);
 
   
   inline explicit StructuredCloneFile(RefPtr<IDBMutableFile> aMutableFile);
@@ -49,6 +57,43 @@ struct StructuredCloneFile {
 
   
   inline bool operator==(const StructuredCloneFile& aOther) const;
+
+  
+  
+  
+  void MutateType(FileType aNewType) { mType = aNewType; }
+
+  FileType Type() const { return mType; }
+
+  const indexedDB::FileInfo& FileInfo() const { return *mFileInfo; }
+
+  
+  RefPtr<indexedDB::FileInfo> FileInfoPtr() const;
+
+  const dom::Blob& Blob() const { return *mBlob; }
+
+  
+  
+  
+  
+  dom::Blob& MutableBlob() const { return *mBlob; }
+
+  
+  inline RefPtr<dom::Blob> BlobPtr() const;
+
+  bool HasBlob() const { return mBlob; }
+
+  const IDBMutableFile& MutableFile() const { return *mMutableFile; }
+
+  IDBMutableFile& MutableMutableFile() const { return *mMutableFile; }
+
+  bool HasMutableFile() const { return mMutableFile; }
+
+ private:
+  RefPtr<dom::Blob> mBlob;
+  RefPtr<IDBMutableFile> mMutableFile;
+  RefPtr<indexedDB::FileInfo> mFileInfo;
+  FileType mType;
 };
 
 struct StructuredCloneReadInfo {
@@ -106,4 +151,4 @@ struct StructuredCloneReadInfo {
 }  
 }  
 
-#endif
+#endif  
