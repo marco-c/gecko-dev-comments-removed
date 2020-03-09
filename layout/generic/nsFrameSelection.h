@@ -864,6 +864,12 @@ class nsFrameSelection final {
     bool AdjustNormalSelection(const nsIContent* aContent, int32_t aOffset,
                                mozilla::dom::Selection& aNormalSelection) const;
 
+    
+
+
+    void AdjustContentOffsets(nsIFrame::ContentOffsets& aOffsets,
+                              bool aScrollViewStop) const;
+
     void MaintainAnchorFocusRange(
         const mozilla::dom::Selection& aNormalSelection,
         nsSelectionAmount aAmount);
