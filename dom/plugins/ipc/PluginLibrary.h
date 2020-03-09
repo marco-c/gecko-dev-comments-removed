@@ -52,7 +52,7 @@ class PluginLibrary {
  public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
-  virtual ~PluginLibrary() {}
+  virtual ~PluginLibrary() = default;
 
   
 
