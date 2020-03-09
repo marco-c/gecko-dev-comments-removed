@@ -1,19 +1,19 @@
-
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
 function run_test() {
   test_getElementsByTagName();
   test_getElementsByTagNameNS();
   test_getElementsByAttribute();
   test_getElementsByAttributeNS();
 
-  
-  
+  // What else should we test?
+  // XXXbz we need more tests here to test liveness!
 }
 
 function test_getElementsByTagName() {
   var doc = ParseFile("nodelist_data_1.xml");
   var root = doc.documentElement;
 
-  
+  // Check that getElementsByTagName returns an HTMLCollection.
   Assert.equal(
     ChromeUtils.getClassName(doc.getElementsByTagName("*")),
     "HTMLCollection"
@@ -23,7 +23,7 @@ function test_getElementsByTagName() {
     "HTMLCollection"
   );
 
-  
+  // Check that getElementsByTagName excludes the element it's called on.
   Assert.equal(
     doc.getElementsByTagName("*").length,
     root.getElementsByTagName("*").length + 1
@@ -34,11 +34,11 @@ function test_getElementsByTagName() {
     3
   );
 
-  
-  
+  // Check that the first element of getElementsByTagName on the document is
+  // the right thing.
   Assert.equal(doc.getElementsByTagName("*").item(0), root);
 
-  
+  // Check that we get the right things in the right order
   var numTests = doc.getElementsByTagName("test").length;
   Assert.equal(numTests, 5);
 
@@ -50,7 +50,7 @@ function test_getElementsByTagName() {
     );
   }
 
-  
+  // Check that we handle tagnames containing ':' correctly
   Assert.equal(
     ChromeUtils.getClassName(doc.getElementsByTagName("foo:test")),
     "HTMLCollection"
@@ -74,7 +74,7 @@ function test_getElementsByTagNameNS() {
   var doc = ParseFile("nodelist_data_1.xml");
   var root = doc.documentElement;
 
-  
+  // Check that getElementsByTagNameNS returns an HTMLCollection.
   Assert.equal(
     ChromeUtils.getClassName(doc.getElementsByTagNameNS("*", "*")),
     "HTMLCollection"
@@ -84,7 +84,7 @@ function test_getElementsByTagNameNS() {
     "HTMLCollection"
   );
 
-  
+  // Check that passing "" and null for the namespace URI gives the same result
   var list1 = doc.getElementsByTagNameNS("", "test");
   var list2 = doc.getElementsByTagNameNS(null, "test");
   Assert.equal(list1.length, list2.length);
@@ -92,7 +92,7 @@ function test_getElementsByTagNameNS() {
     Assert.equal(list1.item(i), list2.item(i));
   }
 
-  
+  // Check that getElementsByTagNameNS excludes the element it's called on.
   Assert.equal(
     doc.getElementsByTagNameNS("*", "*").length,
     root.getElementsByTagNameNS("*", "*").length + 1
@@ -110,12 +110,12 @@ function test_getElementsByTagNameNS() {
     7
   );
 
-  
-  
+  // Check that the first element of getElementsByTagNameNS on the document is
+  // the right thing.
   Assert.equal(doc.getElementsByTagNameNS("*", "*").item(0), root);
   Assert.equal(doc.getElementsByTagNameNS(null, "*").item(0), root);
 
-  
+  // Check that we get the right things in the right order
 
   var numTests = doc.getElementsByTagNameNS("*", "test").length;
   Assert.equal(numTests, 14);
@@ -128,7 +128,7 @@ function test_getElementsByTagNameNS() {
     );
   }
 
-  
+  // Check general proper functioning of having a non-wildcard namespace.
   var test2 = doc.getElementById("test2");
   Assert.equal(doc.getElementsByTagNameNS("", "test").length, 3);
   Assert.equal(test2.getElementsByTagNameNS("", "test").length, 1);
@@ -139,7 +139,7 @@ function test_getElementsByTagNameNS() {
   Assert.equal(doc.getElementsByTagNameNS("bar", "test").length, 4);
   Assert.equal(test2.getElementsByTagNameNS("bar", "test").length, 2);
 
-  
+  // Check that we handle tagnames containing ':' correctly
   Assert.equal(
     ChromeUtils.getClassName(doc.getElementsByTagNameNS(null, "foo:test")),
     "HTMLCollection"
@@ -166,10 +166,10 @@ function test_getElementsByTagNameNS() {
   Assert.equal(doc.getElementsByTagNameNS("bar", "bar:test").length, 0);
   Assert.equal(doc.getElementsByTagNameNS("*", "bar:test").length, 0);
 
-  
-  
-  
-  
+  // Check that previously-unknown namespaces are handled right.  Note that we
+  // can just hardcode the strings, since we're running only once in XPCshell.
+  // If someone wants to run these in a browser, some use of Math.random() may
+  // be in order.
   list1 = doc.getElementsByTagNameNS("random-bogus-namespace", "foo");
   list2 = doc.documentElement.getElementsByTagNameNS(
     "random-bogus-namespace2",
@@ -190,9 +190,6 @@ function test_getElementsByAttribute() {
   var doc = ParseFile("nodelist_data_2.xhtml");
   var root = doc.documentElement;
 
-  
-  
-
   Assert.equal(ChromeUtils.getClassName(root), "XULElement");
 
   Assert.equal(
@@ -210,7 +207,7 @@ function test_getElementsByAttribute() {
   Assert.equal(ChromeUtils.getClassName(master3), "XULElement");
   Assert.equal(ChromeUtils.getClassName(external), "XULElement");
 
-  
+  // Basic tests
   Assert.equal(root.getElementsByAttribute("foo", "foo").length, 14);
   Assert.equal(master1.getElementsByAttribute("foo", "foo").length, 4);
 
@@ -223,7 +220,7 @@ function test_getElementsByAttribute() {
   Assert.equal(root.getElementsByAttribute("foo", "*").length, 21);
   Assert.equal(master1.getElementsByAttribute("foo", "*").length, 6);
 
-  
+  // Test the various combinations of attributes with colons in the name
   Assert.equal(root.getElementsByAttribute("foo:foo", "foo").length, 16);
   Assert.equal(master1.getElementsByAttribute("foo:foo", "foo").length, 5);
   Assert.equal(master2.getElementsByAttribute("foo:foo", "foo").length, 4);
@@ -268,12 +265,9 @@ function test_getElementsByAttributeNS() {
   var doc = ParseFile("nodelist_data_2.xhtml");
   var root = doc.documentElement;
 
-  
-  
-
   Assert.equal(ChromeUtils.getClassName(root), "XULElement");
 
-  
+  // Check that getElementsByAttributeNS returns an HTMLCollection.
   Assert.equal(
     ChromeUtils.getClassName(root.getElementsByAttributeNS("*", "*", "*")),
     "HTMLCollection"
@@ -289,7 +283,7 @@ function test_getElementsByAttributeNS() {
   Assert.equal(ChromeUtils.getClassName(master3), "XULElement");
   Assert.equal(ChromeUtils.getClassName(external), "XULElement");
 
-  
+  // Test wildcard namespace
   Assert.equal(root.getElementsByAttributeNS("*", "foo", "foo").length, 38);
   Assert.equal(master1.getElementsByAttributeNS("*", "foo", "foo").length, 11);
   Assert.equal(master2.getElementsByAttributeNS("*", "foo", "foo").length, 10);
@@ -310,7 +304,7 @@ function test_getElementsByAttributeNS() {
   Assert.equal(master2.getElementsByAttributeNS("*", "foo", "*").length, 15);
   Assert.equal(master3.getElementsByAttributeNS("*", "foo", "*").length, 15);
 
-  
+  // Test null namespace. This should be the same as getElementsByAttribute.
   Assert.equal(
     root.getElementsByAttributeNS("", "foo", "foo").length,
     root.getElementsByAttribute("foo", "foo").length
@@ -328,7 +322,7 @@ function test_getElementsByAttributeNS() {
     master3.getElementsByAttribute("foo", "foo").length
   );
 
-  
+  // Test namespace "foo"
   Assert.equal(root.getElementsByAttributeNS("foo", "foo", "foo").length, 24);
   Assert.equal(master1.getElementsByAttributeNS("foo", "foo", "foo").length, 7);
   Assert.equal(master2.getElementsByAttributeNS("foo", "foo", "foo").length, 6);
