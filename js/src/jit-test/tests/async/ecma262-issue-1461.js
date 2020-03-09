@@ -1,8 +1,7 @@
-
-
-
-
-
+// <https://github.com/tc39/ecma262/pull/1470> changes a detail of
+// error-handling in %AsyncFromSyncIteratorPrototype% methods. This test is
+// based on a comment in the thread where the issue was first reported,
+// <https://github.com/tc39/ecma262/issues/1461#issuecomment-468602852>
 
 let log = [];
 

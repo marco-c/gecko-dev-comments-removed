@@ -150,7 +150,7 @@ function testWithAwait() {
     assertEq(promise.promiseState, "fulfilled");
 
     
-    if (onPromiseSettledCount == 3) {
+    if (onPromiseSettledCount == 2) {
       assertEq(promise.promiseValue, "expected");
     }
   };

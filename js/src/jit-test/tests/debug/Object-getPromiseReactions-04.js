@@ -1,7 +1,6 @@
 
 
 
-
 const g = newGlobal({ newCompartment: true });
 const dbg = new Debugger;
 const DOg = dbg.addDebuggee(g);

@@ -4452,33 +4452,19 @@ static MOZ_MUST_USE bool InternalAwait(JSContext* cx, HandleValue value,
                                        HandleObject resultPromise,
                                        PromiseHandler onFulfilled,
                                        PromiseHandler onRejected, T extraStep) {
-  Rooted<PromiseObject*> unwrappedPromise(cx);
-  if (cx->realm()->creationOptions().getAwaitFixEnabled()) {
-    
-    RootedObject promise(cx, PromiseObject::unforgeableResolve(cx, value));
-    if (!promise) {
-      return false;
-    }
+  
+  RootedObject promise(cx, PromiseObject::unforgeableResolve(cx, value));
+  if (!promise) {
+    return false;
+  }
 
-    
-    
-    
-    unwrappedPromise = UnwrapAndDowncastObject<PromiseObject>(cx, promise);
-    if (!unwrappedPromise) {
-      return false;
-    }
-  } else {
-    
-    unwrappedPromise = CreatePromiseObjectWithoutResolutionFunctions(cx);
-    if (!unwrappedPromise) {
-      return false;
-    }
-
-    
-    
-    if (!ResolvePromiseInternal(cx, unwrappedPromise, value)) {
-      return false;
-    }
+  
+  
+  
+  Rooted<PromiseObject*> unwrappedPromise(
+      cx, UnwrapAndDowncastObject<PromiseObject>(cx, promise));
+  if (!unwrappedPromise) {
+    return false;
   }
 
   

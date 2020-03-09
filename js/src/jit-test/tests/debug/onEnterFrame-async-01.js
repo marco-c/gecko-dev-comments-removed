@@ -1,6 +1,5 @@
 
 
-
 let g = newGlobal({newCompartment: true});
 g.eval(`
     async function timeout(n) {
