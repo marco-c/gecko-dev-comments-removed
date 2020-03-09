@@ -173,7 +173,7 @@ class ChannelEventQueue final {
 
  private:
   
-  ~ChannelEventQueue() {}
+  ~ChannelEventQueue() = default;
 
   void SuspendInternal();
   void ResumeInternal();
