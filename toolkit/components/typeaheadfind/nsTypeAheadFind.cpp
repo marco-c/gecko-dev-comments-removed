@@ -540,7 +540,7 @@ nsresult nsTypeAheadFind::FindItNow(uint32_t aMode, bool aIsLinksOnly,
       NS_ASSERTION(window, "document has no window");
       if (!window) return NS_ERROR_UNEXPECTED;
 
-      nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
+      nsFocusManager* fm = nsFocusManager::GetFocusManager();
       if (usesIndependentSelection) {
         
 
@@ -1063,7 +1063,7 @@ nsresult nsTypeAheadFind::FindInternal(uint32_t aMode,
       nsCOMPtr<Document> document = presShell->GetDocument();
       if (!document) return NS_ERROR_UNEXPECTED;
 
-      nsCOMPtr<nsIFocusManager> fm = do_GetService(FOCUSMANAGER_CONTRACTID);
+      nsFocusManager* fm = nsFocusManager::GetFocusManager();
       if (fm) {
         nsPIDOMWindowOuter* window = document->GetWindow();
         RefPtr<Element> focusedElement;
