@@ -311,6 +311,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
   
   mCx = cx;
+
+  
+  
+  mCallContext.emplace(cx, nullptr);
 }
 
 bool CallbackObject::CallSetup::ShouldRethrowException(
