@@ -32,14 +32,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   if (!nsContentUtils::IsNonSubresourceRequest(aChannel)) {
     const Maybe<ServiceWorkerDescriptor>& controller =
         loadInfo->GetController();
-    
-    
-    
-    if (controller.isSome()) {
-      *aShouldIntercept = controller.ref().HandlesFetch();
-    } else {
-      *aShouldIntercept = false;
-    }
+    *aShouldIntercept = controller.isSome();
     return NS_OK;
   }
 
@@ -48,7 +41,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
 
   
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-  if (!swm || !swm->IsAvailable(principal, aURI, aChannel)) {
+  if (!swm || !swm->IsAvailable(principal, aURI)) {
     return NS_OK;
   }
 

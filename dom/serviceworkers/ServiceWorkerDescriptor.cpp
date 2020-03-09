@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ServiceWorkerDescriptor.h"
 #include "mozilla/dom/IPCServiceWorkerDescriptor.h"
@@ -29,8 +29,6 @@ ServiceWorkerDescriptor::ServiceWorkerDescriptor(
   mData->scope() = aScope;
   mData->scriptURL() = aScriptURL;
   mData->state() = aState;
-  
-  mData->handlesFetch() = true;
 }
 
 ServiceWorkerDescriptor::ServiceWorkerDescriptor(
@@ -39,7 +37,7 @@ ServiceWorkerDescriptor::ServiceWorkerDescriptor(
     const nsACString& aScriptURL, ServiceWorkerState aState)
     : mData(MakeUnique<IPCServiceWorkerDescriptor>(
           aId, aRegistrationId, aRegistrationVersion, aPrincipalInfo,
-          nsCString(aScriptURL), nsCString(aScope), aState, true)) {}
+          nsCString(aScriptURL), nsCString(aScope), aState)) {}
 
 ServiceWorkerDescriptor::ServiceWorkerDescriptor(
     const IPCServiceWorkerDescriptor& aDescriptor)
@@ -120,14 +118,6 @@ void ServiceWorkerDescriptor::SetRegistrationVersion(uint64_t aVersion) {
   mData->registrationVersion() = aVersion;
 }
 
-bool ServiceWorkerDescriptor::HandlesFetch() const {
-  return mData->handlesFetch();
-}
-
-void ServiceWorkerDescriptor::SetHandlesFetch(bool aHandlesFetch) {
-  mData->handlesFetch() = aHandlesFetch;
-}
-
 bool ServiceWorkerDescriptor::Matches(
     const ServiceWorkerDescriptor& aDescriptor) const {
   return Id() == aDescriptor.Id() && Scope() == aDescriptor.Scope() &&
@@ -139,5 +129,5 @@ const IPCServiceWorkerDescriptor& ServiceWorkerDescriptor::ToIPC() const {
   return *mData;
 }
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
