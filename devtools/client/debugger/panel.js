@@ -19,6 +19,15 @@ loader.lazyRequireGetter(
 const DBG_STRINGS_URI = "devtools/client/locales/debugger.properties";
 const L10N = new LocalizationHelper(DBG_STRINGS_URI);
 
+function registerStoreObserver(store, subscriber) {
+  let oldState = store.getState();
+  store.subscribe(() => {
+    const state = store.getState();
+    subscriber(state, oldState);
+    oldState = state;
+  });
+}
+
 function DebuggerPanel(iframeWindow, toolbox) {
   this.panelWin = iframeWindow;
   this.panelWin.L10N = L10N;
@@ -67,7 +76,17 @@ DebuggerPanel.prototype = {
       this.toolbox.toggleDragging
     );
 
+    registerStoreObserver(this._store, this._onDebuggerStateChange.bind(this));
+
     return this;
+  },
+
+  _onDebuggerStateChange(state, oldState) {
+    const { getCurrentThread } = this._selectors;
+
+    if (getCurrentThread(state) !== getCurrentThread(oldState)) {
+      this.toolbox.selectThread(getCurrentThread(state));
+    }
   },
 
   getVarsForTests() {
@@ -186,17 +205,21 @@ DebuggerPanel.prototype = {
       console.error(
         "Selecting a worker needs the pref debugger.features.windowless-service-workers set to true"
       );
-    } else if (!isThreadAvailable) {
-      console.error(`Worker ${threadId} is not available for debugging`);
-    } else {
-      
-      const cx = this._selectors.getContext(this._getState());
-      this._actions.selectThread(cx, threadId);
-
-      
-      const source = this.getSourceByURL(workerTargetFront._url);
-      await this.selectSource(source.id, 1, 1);
+      return;
     }
+
+    if (!isThreadAvailable) {
+      console.error(`Worker ${threadId} is not available for debugging`);
+      return;
+    }
+
+    
+    const cx = this._selectors.getContext(this._getState());
+    this._actions.selectThread(cx, threadId);
+
+    
+    const source = this.getSourceByURL(workerTargetFront._url);
+    await this.selectSource(source.id, 1, 1);
   },
 
   previewPausedLocation(location) {

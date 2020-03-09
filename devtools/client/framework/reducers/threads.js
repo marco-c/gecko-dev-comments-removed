@@ -12,7 +12,17 @@ exports.reducer = threadsReducer;
 function threadsReducer(state = initialReducerState, action) {
   switch (action.type) {
     case "SELECT_THREAD": {
-      return { ...state, selected: action.thread };
+      const thread = state.threads.find(
+        thread => thread.actor === action.thread.actor
+      );
+
+      
+      
+      if (!thread) {
+        return state;
+      }
+
+      return { ...state, selected: thread };
     }
     case "ADD_THREAD": {
       return {
