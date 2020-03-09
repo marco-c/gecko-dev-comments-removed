@@ -1,3 +1,12 @@
 
 
 
+"use strict";
+
+registerCleanupFunction(() => {
+  
+  const { revertRecordingPreferences } = ChromeUtils.import(
+    "resource://devtools/client/performance-new/popup/background.jsm.js"
+  );
+  revertRecordingPreferences();
+});
