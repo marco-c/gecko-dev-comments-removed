@@ -208,7 +208,11 @@ async function toggleOpenProfilerPopup() {
 
 
 function setProfilerFrontendUrl(url) {
-  info("Setting the profiler URL to the fake frontend.");
+  info(
+    "Setting the profiler URL to the fake frontend. Note that this doesn't currently " +
+      "support the WebChannels, so expect a few error messages about the WebChannel " +
+      "URLs not being correct."
+  );
   return SpecialPowers.pushPrefEnv({
     set: [
       
@@ -339,6 +343,41 @@ function withAboutProfiling(callback) {
 
 
 
+async function withDevToolsPanel(callback) {
+  SpecialPowers.pushPrefEnv({
+    set: [["devtools.performance.new-panel-enabled", "true"]],
+  });
+
+  const { gDevTools } = require("devtools/client/framework/devtools");
+  const { TargetFactory } = require("devtools/client/framework/target");
+
+  info("Create a new about:blank tab.");
+  const tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+  info("Begin to open the DevTools and the performance-new panel.");
+  const target = await TargetFactory.forTab(tab);
+  const toolbox = await gDevTools.showToolbox(target, "performance");
+
+  const { document } = toolbox.getCurrentPanel().panelWin;
+
+  info("The performance-new panel is now open and ready to use.");
+  await callback(document);
+
+  info("About to remove the about:blank tab");
+  await toolbox.destroy();
+  BrowserTestUtils.removeTab(tab);
+  info("The about:blank tab is now removed.");
+  await new Promise(resolve => setTimeout(resolve, 500));
+}
+
+
+
+
+
+
+
+
+
 function getActiveConfiguration() {
   const { startProfiler, stopProfiler } = ChromeUtils.import(
     "resource://devtools/client/performance-new/popup/background.jsm.js"
@@ -396,6 +435,41 @@ function activeConfigurationHasThread(thread) {
 
 
 
+
+async function devToolsActiveConfigurationHasFeature(document, feature) {
+  info("Get the active configuration of the profiler via user driven events.");
+  const start = await getActiveButtonFromText(document, "Start recording");
+  info("Click the button to start recording.");
+  start.click();
+
+  
+  
+  const cancel = await getActiveButtonFromText(document, "Cancel recording");
+
+  const { activeConfiguration } = Services.profiler;
+  if (!activeConfiguration) {
+    throw new Error(
+      "Expected to find an active configuration for the profile."
+    );
+  }
+
+  info("Click the cancel button to discard the profile..");
+  cancel.click();
+
+  
+  await getActiveButtonFromText(document, "Start recording");
+
+  return activeConfiguration.features.includes(feature);
+}
+
+
+
+
+
+
+
+
+
 async function getNearestInputFromText(document, text) {
   const textElement = await getElementFromDocumentByText(document, text);
   if (textElement.control) {
@@ -405,12 +479,40 @@ async function getNearestInputFromText(document, text) {
   
   let next = textElement;
   while ((next = next.parentElement)) {
-    const input = next.querySelector("input");
+    const input = next.querySelector("input, select");
     if (input) {
       return input;
     }
   }
-  throw new Error("Could not find an input near text element.");
+  throw new Error("Could not find an input or select near the text element.");
+}
+
+
+
+
+
+
+
+
+
+async function getActiveButtonFromText(document, text) {
+  
+  let button = await getElementFromDocumentByText(document, text);
+
+  while (button.tagName !== "button") {
+    
+    button = button.parentElement;
+    if (!button) {
+      throw new Error(`Unable to find a button from the text "${text}"`);
+    }
+  }
+
+  await waitUntil(
+    () => !button.disabled,
+    "Waiting until the button is not disabled."
+  );
+
+  return button;
 }
 
 
@@ -475,18 +577,19 @@ function withWebChannelTestDocument(callback) {
 
 
 
-function setReactFriendlyInputValue(element, value) {
-  const valueSetter = Object.getOwnPropertyDescriptor(element, "value").set;
-  const prototype = Object.getPrototypeOf(element);
-  const prototypeValueSetter = Object.getOwnPropertyDescriptor(
-    prototype,
-    "value"
-  ).set;
 
-  if (valueSetter && valueSetter !== prototypeValueSetter) {
-    prototypeValueSetter.call(element, value);
-  } else {
-    valueSetter.call(element, value);
+
+
+function setReactFriendlyInputValue(input, value) {
+  const previousValue = input.value;
+
+  input.value = value;
+
+  const tracker = input._valueTracker;
+  if (tracker) {
+    tracker.setValue(previousValue);
   }
-  element.dispatchEvent(new Event("input", { bubbles: true }));
+
+  
+  input.dispatchEvent(new Event("change", { bubbles: true }));
 }
