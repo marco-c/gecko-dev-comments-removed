@@ -74,6 +74,8 @@ struct ParamTraits<mozilla::WidgetEvent> {
       
       
       aResult->ResetCrossProcessDispatchingState();
+      
+      aResult->MarkAsComingFromAnotherProcess();
     }
     return ret;
   }

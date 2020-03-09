@@ -176,6 +176,8 @@ struct BaseEventFlags {
   
   
   bool mPostedToRemoteProcess : 1;
+  
+  bool mCameFromAnotherProcess : 1;
 
   
   
@@ -336,6 +338,16 @@ struct BaseEventFlags {
 
   inline bool HasBeenPostedToRemoteProcess() const {
     return mPostedToRemoteProcess;
+  }
+  
+
+
+  inline bool CameFromAnotherProcess() const { return mCameFromAnotherProcess; }
+  
+
+
+  inline void MarkAsComingFromAnotherProcess() {
+    mCameFromAnotherProcess = true;
   }
   
 
@@ -699,6 +711,18 @@ class WidgetEvent : public WidgetEventTime {
 
   inline bool HasBeenPostedToRemoteProcess() const {
     return mFlags.HasBeenPostedToRemoteProcess();
+  }
+  
+
+
+  inline bool CameFromAnotherProcess() const {
+    return mFlags.CameFromAnotherProcess();
+  }
+  
+
+
+  inline void MarkAsComingFromAnotherProcess() {
+    mFlags.MarkAsComingFromAnotherProcess();
   }
   
 

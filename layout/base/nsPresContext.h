@@ -181,7 +181,7 @@ class nsPresContext : public nsISupports,
 
 
 
-  nsPresContext* GetParentPresContext();
+  nsPresContext* GetParentPresContext() const;
 
   
 
@@ -218,7 +218,7 @@ class nsPresContext : public nsISupports,
 
 
 
-  nsRootPresContext* GetRootPresContext();
+  nsRootPresContext* GetRootPresContext() const;
 
   virtual bool IsRoot() { return false; }
 
