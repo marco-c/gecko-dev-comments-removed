@@ -317,6 +317,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     if (front) {
       if (!form.actor.includes("tabDescriptor")) {
         
+        front.form(form);
         return front;
       }
 
