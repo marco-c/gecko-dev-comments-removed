@@ -30,8 +30,6 @@ static LazyLogModule gContentBlockingLog("ContentBlockingLog");
 
 typedef Telemetry::OriginMetricID OriginMetricID;
 
-namespace dom {
-
 
 NS_NAMED_LITERAL_CSTRING(ContentBlockingLog::kDummyOriginHash, "PAGELOAD");
 
@@ -293,5 +291,4 @@ void ContentBlockingLog::ReportOrigins() {
   }
 }
 
-}  
 }  

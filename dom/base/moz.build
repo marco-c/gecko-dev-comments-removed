@@ -156,7 +156,6 @@ EXPORTS.mozilla.dom += [
     'ChromeNodeList.h',
     'ChromeUtils.h',
     'Comment.h',
-    'ContentBlockingLog.h',
     'ContentFrameMessageManager.h',
     'ContentProcessMessageManager.h',
     'CustomElementRegistry.h',
@@ -280,7 +279,6 @@ UNIFIED_SOURCES += [
     'ChromeNodeList.cpp',
     'ChromeUtils.cpp',
     'Comment.cpp',
-    'ContentBlockingLog.cpp',
     'ContentFrameMessageManager.cpp',
     'ContentIterator.cpp',
     'ContentProcessMessageManager.cpp',
@@ -548,11 +546,9 @@ if CONFIG['MOZ_X11']:
     CXXFLAGS += CONFIG['TK_CFLAGS']
 
 GeneratedFile('UseCounterList.h', script='gen-usecounters.py',
-              py2=True,
               entry_point='use_counter_list', inputs=['UseCounters.conf'])
 
 GeneratedFile('UseCounterWorkerList.h', script='gen-usecounters.py',
-              py2=True,
               entry_point='use_counter_list', inputs=['UseCountersWorker.conf'])
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
