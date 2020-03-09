@@ -156,6 +156,19 @@ const ActorRegistry = {
       constructor: "PerfActor",
       type: { global: true },
     });
+    
+
+
+
+
+    this.registerModule(
+      "devtools/server/actors/accessibility/parent-accessibility",
+      {
+        prefix: "parentAccessibility",
+        constructor: "ParentAccessibilityActor",
+        type: { global: true },
+      }
+    );
   },
 
   

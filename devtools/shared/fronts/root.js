@@ -414,6 +414,19 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     this.fronts.set(typeName, front);
     return front;
   }
+
+  
+
+
+
+
+
+
+
+  async hasActor(actorName) {
+    const rootForm = await this.rootForm;
+    return !!rootForm[actorName + "Actor"];
+  }
 }
 exports.RootFront = RootFront;
 registerFront(RootFront);

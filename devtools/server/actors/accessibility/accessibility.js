@@ -4,10 +4,8 @@
 
 "use strict";
 
-const { DevToolsServer } = require("devtools/server/devtools-server");
 const Services = require("Services");
 const { Actor, ActorClassWithSpec } = require("devtools/shared/protocol");
-const defer = require("devtools/shared/defer");
 const { accessibilitySpec } = require("devtools/shared/specs/accessibility");
 
 loader.lazyRequireGetter(
@@ -22,15 +20,12 @@ loader.lazyRequireGetter(
   "devtools/server/actors/accessibility/simulator",
   true
 );
-loader.lazyRequireGetter(this, "events", "devtools/shared/event-emitter");
 loader.lazyRequireGetter(
   this,
   "isWebRenderEnabled",
   "devtools/server/actors/utils/accessibility",
   true
 );
-
-const PREF_ACCESSIBILITY_FORCE_DISABLED = "accessibility.force_disabled";
 
 
 
@@ -40,174 +35,22 @@ const PREF_ACCESSIBILITY_FORCE_DISABLED = "accessibility.force_disabled";
 const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
   initialize(conn, targetActor) {
     Actor.prototype.initialize.call(this, conn);
-
-    this.initializedDeferred = defer();
-
-    if (DevToolsServer.isInChildProcess) {
-      this._msgName = `debug:${this.conn.prefix}accessibility`;
-      
-      this.conn.setupInParent({
-        module: "devtools/server/actors/accessibility/accessibility-parent",
-        setupParent: "setupParentProcess",
-      });
-
-      this.onMessage = this.onMessage.bind(this);
-      this.messageManager.addMessageListener(
-        `${this._msgName}:event`,
-        this.onMessage
-      );
-    } else {
-      this.userPref = Services.prefs.getIntPref(
-        PREF_ACCESSIBILITY_FORCE_DISABLED
-      );
-      Services.obs.addObserver(this, "a11y-consumers-changed");
-      Services.prefs.addObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
-      this.initializedDeferred.resolve();
-    }
-
+    
+    
+    
+    
     Services.obs.addObserver(this, "a11y-init-or-shutdown");
     this.targetActor = targetActor;
   },
 
   bootstrap() {
-    return this.initializedDeferred.promise.then(() => ({
+    return {
       enabled: this.enabled,
-      canBeEnabled: this.canBeEnabled,
-      canBeDisabled: this.canBeDisabled,
-    }));
+    };
   },
 
   get enabled() {
     return Services.appinfo.accessibilityEnabled;
-  },
-
-  get canBeEnabled() {
-    if (DevToolsServer.isInChildProcess) {
-      return this._canBeEnabled;
-    }
-
-    return Services.prefs.getIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED) < 1;
-  },
-
-  get canBeDisabled() {
-    if (DevToolsServer.isInChildProcess) {
-      return this._canBeDisabled;
-    } else if (!this.enabled) {
-      return true;
-    }
-
-    const { PlatformAPI } = JSON.parse(this.walker.a11yService.getConsumers());
-    return !PlatformAPI;
-  },
-
-  
-
-
-
-
-
-
-  get messageManager() {
-    if (!DevToolsServer.isInChildProcess) {
-      throw new Error(
-        "Message manager should only be used when actor is in child process."
-      );
-    }
-
-    return this.conn.parentMessageManager;
-  },
-
-  onMessage(msg) {
-    const { topic, data } = msg.data;
-
-    switch (topic) {
-      case "initialized":
-        this._canBeEnabled = data.canBeEnabled;
-        this._canBeDisabled = data.canBeDisabled;
-
-        
-        
-        
-        
-        if (!data.enabled && this.enabled && data.canBeEnabled) {
-          this.messageManager.sendAsyncMessage(this._msgName, {
-            action: "enable",
-          });
-        }
-
-        this.initializedDeferred.resolve();
-        break;
-      case "can-be-disabled-change":
-        this._canBeDisabled = data;
-        events.emit(this, "can-be-disabled-change", this.canBeDisabled);
-        break;
-
-      case "can-be-enabled-change":
-        this._canBeEnabled = data;
-        events.emit(this, "can-be-enabled-change", this.canBeEnabled);
-        break;
-
-      default:
-        break;
-    }
-  },
-
-  
-
-
-  async enable() {
-    if (this.enabled || !this.canBeEnabled) {
-      return;
-    }
-
-    const initPromise = this.once("init");
-
-    if (DevToolsServer.isInChildProcess) {
-      this.messageManager.sendAsyncMessage(this._msgName, { action: "enable" });
-    } else {
-      
-      
-      this.walker.a11yService;
-    }
-
-    await initPromise;
-  },
-
-  
-
-
-  async disable() {
-    if (!this.enabled || !this.canBeDisabled) {
-      return;
-    }
-
-    this.disabling = true;
-    const shutdownPromise = this.once("shutdown");
-    if (DevToolsServer.isInChildProcess) {
-      this.messageManager.sendAsyncMessage(this._msgName, {
-        action: "disable",
-      });
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      Services.prefs.setIntPref(PREF_ACCESSIBILITY_FORCE_DISABLED, 1);
-      
-      
-      
-      
-      Services.prefs.setIntPref(
-        PREF_ACCESSIBILITY_FORCE_DISABLED,
-        this.userPref
-      );
-    }
-
-    await shutdownPromise;
-    delete this.disabling;
   },
 
   
@@ -223,41 +66,15 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
 
 
   observe(subject, topic, data) {
-    if (topic === "a11y-init-or-shutdown") {
-      
-      
-      
-      
-      const enabled = data === "1";
-      if (enabled && this.enabled) {
-        events.emit(this, "init");
-      } else if (!enabled && !this.enabled) {
-        if (this.walker) {
-          this.walker.reset();
-        }
-
-        events.emit(this, "shutdown");
+    const enabled = data === "1";
+    if (enabled && this.enabled) {
+      this.emit("init");
+    } else if (!enabled && !this.enabled) {
+      if (this.walker) {
+        this.walker.reset();
       }
-    } else if (topic === "a11y-consumers-changed") {
-      
-      
-      
-      
-      
-      
-      const { PlatformAPI } = JSON.parse(data);
-      events.emit(this, "can-be-disabled-change", !PlatformAPI);
-    } else if (
-      !this.disabling &&
-      topic === "nsPref:changed" &&
-      data === PREF_ACCESSIBILITY_FORCE_DISABLED
-    ) {
-      
-      
-      
-      
-      
-      events.emit(this, "can-be-enabled-change", this.canBeEnabled);
+
+      this.emit("shutdown");
     }
   },
 
@@ -276,6 +93,7 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
   },
 
   
+
 
 
 
@@ -303,31 +121,10 @@ const AccessibilityActor = ActorClassWithSpec(accessibilitySpec, {
 
 
   async destroy() {
-    if (this.destroyed) {
-      await this.destroyed;
-      return;
-    }
-
-    let resolver;
-    this.destroyed = new Promise(resolve => {
-      resolver = resolve;
-    });
-
-    Services.obs.removeObserver(this, "a11y-init-or-shutdown");
-    if (DevToolsServer.isInChildProcess) {
-      this.messageManager.removeMessageListener(
-        `${this._msgName}:event`,
-        this.onMessage
-      );
-    } else {
-      Services.obs.removeObserver(this, "a11y-consumers-changed");
-      Services.prefs.removeObserver(PREF_ACCESSIBILITY_FORCE_DISABLED, this);
-    }
-
     Actor.prototype.destroy.call(this);
+    Services.obs.removeObserver(this, "a11y-init-or-shutdown");
     this.walker = null;
     this.targetActor = null;
-    resolver();
   },
 });
 
