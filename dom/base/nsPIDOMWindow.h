@@ -13,7 +13,6 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "mozilla/dom/EventTarget.h"
-#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TaskCategory.h"
 #include "js/TypeDecls.h"
@@ -698,7 +697,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   ~nsPIDOMWindowOuter();
 
   void RefreshMediaElementsSuspend(SuspendTypes aSuspend);
-  bool IsDisposableSuspend(SuspendTypes aSuspend) const;
   void MaybeNotifyMediaResumedFromBlock(SuspendTypes aSuspend);
 
  public:

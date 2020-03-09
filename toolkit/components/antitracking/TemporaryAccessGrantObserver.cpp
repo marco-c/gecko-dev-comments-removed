@@ -5,11 +5,11 @@
 
 
 #include "TemporaryAccessGrantObserver.h"
-#include "AntiTrackingCommon.h"
 
 #include "nsIObserverService.h"
 #include "nsPermissionManager.h"
 #include "nsTHashtable.h"
+#include "nsXULAppAPI.h"
 
 using namespace mozilla;
 
