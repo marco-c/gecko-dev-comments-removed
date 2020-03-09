@@ -2,12 +2,14 @@
 
 
 
+import io
 import re
+import six
 import yaml
 import atexit
-import shared_telemetry_utils as utils
+from . import shared_telemetry_utils as utils
 
-from shared_telemetry_utils import ParserError
+from .shared_telemetry_utils import ParserError
 atexit.register(ParserError.exit_func)
 
 
@@ -99,16 +101,16 @@ class ScalarType:
         
         REQUIRED_FIELDS = {
             'bug_numbers': list,  
-            'description': basestring,
-            'expires': basestring,
-            'kind': basestring,
+            'description': six.string_types,
+            'expires': six.string_types,
+            'kind': six.string_types,
             'notification_emails': list,  
             'record_in_processes': list,
             'products': list,
         }
 
         OPTIONAL_FIELDS = {
-            'release_channel_collection': basestring,
+            'release_channel_collection': six.string_types,
             'keyed': bool,
             'keys': list,
             'operating_systems': list,
@@ -118,12 +120,12 @@ class ScalarType:
         
         LIST_FIELDS_CONTENT = {
             'bug_numbers': int,
-            'notification_emails': basestring,
-            'record_in_processes': basestring,
-            'products': basestring,
-            'keys': basestring,
-            'operating_systems': basestring,
-            'record_into_store': basestring,
+            'notification_emails': six.string_types,
+            'record_in_processes': six.string_types,
+            'products': six.string_types,
+            'keys': six.string_types,
+            'operating_systems': six.string_types,
+            'record_into_store': six.string_types,
         }
 
         
@@ -190,7 +192,7 @@ class ScalarType:
                             '\n`keys` values count  must not exceed {}'.format(MAX_KEY_COUNT))\
                             .handle_later()
 
-            invalid = filter(lambda k: len(k) > MAX_KEY_LENGTH, keys)
+            invalid = list(filter(lambda k: len(k) > MAX_KEY_LENGTH, keys))
             if len(invalid) > 0:
                 ParserError(self._name + ' - invalid key value' +
                             '\n `keys` values are exceeding length {}:'.format(MAX_LENGTH_COUNT) +
@@ -395,7 +397,7 @@ def load_scalars(filename, strict_type_checks=True):
     
     scalars = None
     try:
-        with open(filename, 'r') as f:
+        with io.open(filename, 'r', encoding='utf-8') as f:
             scalars = yaml.safe_load(f)
     except IOError as e:
         ParserError('Error opening ' + filename + ': ' + e.message).handle_now()
@@ -408,7 +410,7 @@ def load_scalars(filename, strict_type_checks=True):
     
     
     
-    for category_name in scalars:
+    for category_name in sorted(scalars):
         category = scalars[category_name]
 
         
@@ -416,7 +418,7 @@ def load_scalars(filename, strict_type_checks=True):
             ParserError('Category "{}" must have at least one probe in it'
                         '.\nSee: {}'.format(category_name, BASE_DOC_URL)).handle_later()
 
-        for probe_name in category:
+        for probe_name in sorted(category):
             
             scalar_info = category[probe_name]
             scalar_list.append(
