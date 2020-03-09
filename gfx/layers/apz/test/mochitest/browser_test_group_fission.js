@@ -58,6 +58,10 @@ add_task(async function test_main() {
     ]);
   }
 
+  
+  
+  requestLongerTimeout(subtests.length);
+
   let fissionWindow = await BrowserTestUtils.openNewBrowserWindow({
     fission: true,
   });
