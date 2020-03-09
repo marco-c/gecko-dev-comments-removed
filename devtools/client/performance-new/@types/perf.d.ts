@@ -58,6 +58,7 @@ export interface PerfFront {
   isLockedForPrivateBrowsing: () => MaybePromise<boolean>;
   on: (type: string, listener: () => void) => void;
   off: (type: string, listener: () => void) => void;
+  destroy: () => void,
   
 
 
@@ -97,7 +98,11 @@ export type RecordingState =
 
 
 
-export type PageContext = "devtools" | "devtools-remote" | "aboutprofiling";
+export type PageContext =
+  | "devtools"
+  | "devtools-remote"
+  | "aboutprofiling"
+  | "aboutprofiling-remote";
 
 export interface State {
   recordingState: RecordingState;
@@ -221,6 +226,11 @@ export interface InitializedValues {
   
   
   supportedFeatures: string[] | null
+  
+  
+  openAboutProfiling?: () => void,
+  
+  openRemoteDevTools?: () => void,
 }
 
 
@@ -268,6 +278,8 @@ export type Action =
       setRecordingPreferences: SetRecordingPreferences;
       presets: Presets;
       pageContext: PageContext;
+      openAboutProfiling?: () => void,
+      openRemoteDevTools?: () => void,
       recordingSettingsFromPreferences: RecordingStateFromPreferences;
       getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
       supportedFeatures: string[] | null;
@@ -287,6 +299,8 @@ export interface InitializeStoreValues {
   recordingPreferences: RecordingStateFromPreferences;
   supportedFeatures: string[] | null;
   getSymbolTableGetter: (profile: object) => GetSymbolTableCallback;
+  openAboutProfiling?: () => void;
+  openRemoteDevTools?: () => void;
 }
 
 export type PopupBackgroundFeatures = { [feature: string]: boolean };

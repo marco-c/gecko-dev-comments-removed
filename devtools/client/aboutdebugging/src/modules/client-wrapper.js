@@ -174,10 +174,22 @@ class ClientWrapper {
     return "chrome://devtools/content/performance-new/index.xhtml";
   }
 
-  async loadPerformanceProfiler(win) {
+  
+
+
+
+  async loadPerformanceProfiler(win, openAboutProfiling) {
     const perfFront = await this.getFront("perf");
-    const perfActorVersion = this.client.mainRoot.traits.perfActorVersion;
-    win.gInit(perfFront, "devtools-remote", perfActorVersion);
+    win.gInit(perfFront, "devtools-remote", openAboutProfiling);
+  }
+
+  
+
+
+
+  async loadAboutProfiling(win, openRemoteDevTools) {
+    const perfFront = await this.getFront("perf");
+    win.gInit(perfFront, "aboutprofiling-remote", openRemoteDevTools);
   }
 }
 

@@ -29,6 +29,7 @@
 
 
 
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -61,7 +62,6 @@ class DevToolsPresetSelection extends PureComponent {
   constructor(props) {
     super(props);
     this.onPresetChange = this.onPresetChange.bind(this);
-    this.handleLinkClick = this.handleLinkClick.bind(this);
 
     
 
@@ -82,13 +82,8 @@ class DevToolsPresetSelection extends PureComponent {
     this.props.changePreset(presets, event.target.value);
   }
 
-  handleLinkClick() {
-    const { openTrustedLink } = require("devtools/client/shared/link");
-    openTrustedLink("about:profiling", {});
-  }
-
   render() {
-    const { presetName, presets } = this.props;
+    const { presetName, presets, openAboutProfiling } = this.props;
 
     let presetDescription;
     const currentPreset = presets[presetName];
@@ -124,7 +119,7 @@ class DevToolsPresetSelection extends PureComponent {
           })
         ),
         button(
-          { className: "perf-external-link", onClick: this.handleLinkClick },
+          { className: "perf-external-link", onClick: openAboutProfiling },
           "Edit Settings…"
         )
       );
@@ -170,6 +165,7 @@ function mapStateToProps(state) {
     interval: selectors.getInterval(state),
     threads: selectors.getThreads(state),
     features: selectors.getFeatures(state),
+    openAboutProfiling: selectors.getOpenAboutProfiling(state),
   };
 }
 

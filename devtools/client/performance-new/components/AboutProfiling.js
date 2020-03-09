@@ -22,6 +22,7 @@
 
 
 
+
 "use strict";
 
 const {
@@ -70,7 +71,12 @@ class AboutProfiling extends PureComponent {
   }
 
   render() {
-    const { isSupportedPlatform, pageContext, promptEnvRestart } = this.props;
+    const {
+      isSupportedPlatform,
+      pageContext,
+      promptEnvRestart,
+      openRemoteDevTools,
+    } = this.props;
 
     if (isSupportedPlatform === null) {
       
@@ -100,6 +106,21 @@ class AboutProfiling extends PureComponent {
             )
           )
         : null,
+
+      openRemoteDevTools
+        ? div(
+            { className: "perf-back" },
+            button(
+              {
+                className: "perf-back-button",
+                type: "button",
+                onClick: openRemoteDevTools,
+              },
+              "Save settings and go back"
+            )
+          )
+        : null,
+
       div(
         { className: "perf-intro" },
         h1({ className: "perf-intro-title" }, "Profiler Settings"),
@@ -130,6 +151,7 @@ function mapStateToProps(state) {
     isSupportedPlatform: selectors.getIsSupportedPlatform(state),
     pageContext: selectors.getPageContext(state),
     promptEnvRestart: selectors.getPromptEnvRestart(state),
+    openRemoteDevTools: selectors.getOpenRemoteDevTools(state),
   };
 }
 

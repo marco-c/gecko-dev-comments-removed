@@ -7,6 +7,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -73,31 +75,35 @@ const {
 
 
 
-document.addEventListener("DOMContentLoaded", async () => {
+
+
+
+
+async function gInit(perfFront, pageContext, openRemoteDevTools) {
   const store = createStore(reducers);
-  const perfFrontInterface = new ActorReadyGeckoProfilerInterface();
-  const supportedFeatures = await perfFrontInterface.getSupportedFeatures();
+  const supportedFeatures = await perfFront.getSupportedFeatures();
 
   
   
   store.dispatch(
     actions.initializeStore({
-      perfFront: perfFrontInterface,
+      perfFront,
       receiveProfile,
       supportedFeatures,
       presets,
       
-      recordingPreferences: getRecordingPreferences("aboutprofiling"),
+      recordingPreferences: getRecordingPreferences(pageContext),
       
 
 
       setRecordingPreferences: newRecordingPreferences =>
-        setRecordingPreferences("aboutprofiling", newRecordingPreferences),
+        setRecordingPreferences(pageContext, newRecordingPreferences),
 
       
       
       getSymbolTableGetter: () => getSymbolsFromThisBrowser,
-      pageContext: "aboutprofiling",
+      pageContext,
+      openRemoteDevTools,
     })
   );
 
@@ -118,6 +124,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   window.addEventListener("unload", function() {
     
     
-    perfFrontInterface.destroy();
+    if (pageContext !== "aboutprofiling-remote") {
+      
+      
+      perfFront.destroy();
+    }
   });
-});
+}
+
+
+
+if (window.location.hash !== "#remote") {
+  document.addEventListener("DOMContentLoaded", () => {
+    gInit(new ActorReadyGeckoProfilerInterface(), "aboutprofiling");
+  });
+}

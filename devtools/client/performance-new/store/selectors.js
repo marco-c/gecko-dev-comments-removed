@@ -61,6 +61,28 @@ const getPresetName = state => state.presetName;
 
 
 
+const getOpenRemoteDevTools = state =>
+  getInitializedValues(state).openRemoteDevTools;
+
+
+
+
+
+
+
+const getOpenAboutProfiling = state => {
+  const { openAboutProfiling } = getInitializedValues(state);
+  if (!openAboutProfiling) {
+    throw new Error("Expected to get an openAboutProfiling function.");
+  }
+  return openAboutProfiling;
+};
+
+
+
+
+
+
 
 const getRecordingSettings = state => {
   const presets = getPresets(state);
@@ -138,6 +160,8 @@ module.exports = {
   getObjdirs,
   getPresets,
   getPresetName,
+  getOpenRemoteDevTools,
+  getOpenAboutProfiling,
   getRecordingSettings,
   getInitializedValues,
   getPerfFront,

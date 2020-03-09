@@ -330,6 +330,7 @@ function getPrefPostfix(pageContext) {
       
       return "";
     case "devtools-remote":
+    case "aboutprofiling-remote":
       return ".remote";
     default: {
       const { UnhandledCaseError } = lazyUtils();

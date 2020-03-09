@@ -72,7 +72,8 @@ const {
 
 
 
-async function gInit(perfFront, pageContext) {
+
+async function gInit(perfFront, pageContext, openAboutProfiling) {
   const store = createStore(reducers);
   
   
@@ -86,6 +87,13 @@ async function gInit(perfFront, pageContext) {
     perfFront.getSupportedFeatures()
   ).catch(() => null);
 
+  if (!openAboutProfiling) {
+    openAboutProfiling = () => {
+      const { openTrustedLink } = require("devtools/client/shared/link");
+      openTrustedLink("about:profiling", {});
+    };
+  }
+
   
   
   store.dispatch(
@@ -95,6 +103,7 @@ async function gInit(perfFront, pageContext) {
       recordingPreferences: getRecordingPreferences(pageContext),
       presets,
       supportedFeatures,
+      openAboutProfiling,
       pageContext: "devtools",
 
       
