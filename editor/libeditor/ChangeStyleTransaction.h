@@ -69,7 +69,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
                             const nsAString& aValue);
 
  private:
-  virtual ~ChangeStyleTransaction();
+  virtual ~ChangeStyleTransaction() = default;
 
   
 

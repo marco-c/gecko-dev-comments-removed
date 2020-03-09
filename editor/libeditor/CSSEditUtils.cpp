@@ -278,8 +278,6 @@ CSSEditUtils::CSSEditUtils(HTMLEditor* aHTMLEditor)
   mIsCSSPrefChecked = Preferences::GetBool("editor.use_css", mIsCSSPrefChecked);
 }
 
-CSSEditUtils::~CSSEditUtils() {}
-
 
 
 

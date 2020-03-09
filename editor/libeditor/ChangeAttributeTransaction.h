@@ -61,7 +61,7 @@ class ChangeAttributeTransaction final : public EditTransactionBase {
   NS_IMETHOD RedoTransaction() override;
 
  private:
-  virtual ~ChangeAttributeTransaction();
+  virtual ~ChangeAttributeTransaction() = default;
 
   
   nsCOMPtr<dom::Element> mElement;

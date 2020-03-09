@@ -69,7 +69,7 @@ class InsertTextTransaction final : public EditTransactionBase {
   void GetData(nsString& aResult);
 
  private:
-  virtual ~InsertTextTransaction();
+  virtual ~InsertTextTransaction() = default;
 
   
   bool IsSequentialInsert(InsertTextTransaction& aOtherTrasaction);

@@ -60,7 +60,7 @@ class CreateElementTransaction final : public EditTransactionBase {
   already_AddRefed<dom::Element> GetNewNode();
 
  protected:
-  virtual ~CreateElementTransaction();
+  virtual ~CreateElementTransaction() = default;
 
   
 

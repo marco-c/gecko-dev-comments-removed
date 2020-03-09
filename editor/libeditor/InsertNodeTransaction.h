@@ -53,7 +53,7 @@ class InsertNodeTransaction final : public EditTransactionBase {
   NS_DECL_EDITTRANSACTIONBASE
 
  protected:
-  virtual ~InsertNodeTransaction();
+  virtual ~InsertNodeTransaction() = default;
 
   
   nsCOMPtr<nsIContent> mContentToInsert;

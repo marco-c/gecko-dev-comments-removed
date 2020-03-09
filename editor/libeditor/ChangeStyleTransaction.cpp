@@ -63,8 +63,6 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 NS_IMPL_ADDREF_INHERITED(ChangeStyleTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(ChangeStyleTransaction, EditTransactionBase)
 
-ChangeStyleTransaction::~ChangeStyleTransaction() {}
-
 
 
 bool ChangeStyleTransaction::ValueIncludes(const nsAString& aValueList,

@@ -30,7 +30,7 @@ struct RangeItem final {
 
  private:
   
-  ~RangeItem();
+  ~RangeItem() = default;
 
  public:
   void StoreRange(nsRange* aRange);
