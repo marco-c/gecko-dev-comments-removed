@@ -394,21 +394,23 @@ class HTMLMediaElement::MediaControlEventListener final
     MOZ_ASSERT(aElement);
   }
 
-  void Start() {
+  
+  bool Start() {
     MOZ_ASSERT(NS_IsMainThread());
     if (IsStarted()) {
       
-      return;
+      return true;
     }
 
     
     
     if (!InitMediaAgent()) {
       MEDIACONTROL_LOG("Fail to init content media agent!");
-      return;
+      return false;
     }
 
     NotifyMediaStateChanged(ControlledMediaState::eStarted);
+    return true;
   }
 
   void Stop() {
@@ -444,10 +446,13 @@ class HTMLMediaElement::MediaControlEventListener final
 
   void UpdateMediaAudibleState(bool aIsOwnerAudible) {
     MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(IsStarted());
     if (mIsOwnerAudible == aIsOwnerAudible) {
       return;
     }
     mIsOwnerAudible = aIsOwnerAudible;
+    MEDIACONTROL_LOG("Media becomes %s",
+                     mIsOwnerAudible ? "audible" : "inaudible");
     
     
     
@@ -7215,7 +7220,7 @@ void HTMLMediaElement::NotifyAudioPlaybackChanged(
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->NotifyAudioPlaybackChanged(aReason);
   }
-  if (mMediaControlEventListener) {
+  if (mMediaControlEventListener && mMediaControlEventListener->IsStarted()) {
     mMediaControlEventListener->UpdateMediaAudibleState(IsAudible());
   }
   
@@ -7687,17 +7692,21 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
     mMediaControlEventListener = new MediaControlEventListener(this);
   }
 
-  if (mMediaControlEventListener->IsStarted()) {
+  if (mMediaControlEventListener->IsStarted() ||
+      !mMediaControlEventListener->Start()) {
     return;
   }
-
-  mMediaControlEventListener->Start();
 
   
   
   
   
   NotifyMediaControlPlaybackStateChanged();
+
+  
+  
+  
+  mMediaControlEventListener->UpdateMediaAudibleState(IsAudible());
 }
 
 void HTMLMediaElement::StopListeningMediaControlEventIfNeeded() {
