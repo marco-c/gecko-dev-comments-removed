@@ -8,7 +8,6 @@ from itertools import chain, count
 
 from . import click
 from ._compat import install_req_from_line
-from .cache import DependencyCache
 from .logging import log
 from .utils import (
     UNSAFE_PACKAGES,
@@ -18,7 +17,6 @@ from .utils import (
     is_pinned_requirement,
     is_url_requirement,
     key_from_ireq,
-    key_from_req,
 )
 
 green = partial(click.style, fg="green")
@@ -32,7 +30,7 @@ class RequirementSummary(object):
 
     def __init__(self, ireq):
         self.req = ireq.req
-        self.key = key_from_req(ireq.req)
+        self.key = key_from_ireq(ireq)
         self.extras = str(sorted(ireq.extras))
         self.specifier = str(ireq.specifier)
 
@@ -56,7 +54,6 @@ def combine_install_requirements(ireqs):
     source_ireqs = []
     for ireq in ireqs:
         source_ireqs.extend(getattr(ireq, "_source_ireqs", [ireq]))
-    source_ireqs.sort(key=str)
 
     
     combined_ireq = copy.deepcopy(source_ireqs[0])
@@ -96,7 +93,7 @@ class Resolver(object):
         self,
         constraints,
         repository,
-        cache=None,
+        cache,
         prereleases=False,
         clear_caches=False,
         allow_unsafe=False,
@@ -109,8 +106,6 @@ class Resolver(object):
         self.our_constraints = set(constraints)
         self.their_constraints = set()
         self.repository = repository
-        if cache is None:
-            cache = DependencyCache()  
         self.dependency_cache = cache
         self.prereleases = prereleases
         self.clear_caches = clear_caches
@@ -120,7 +115,12 @@ class Resolver(object):
     @property
     def constraints(self):
         return set(
-            self._group_constraints(chain(self.our_constraints, self.their_constraints))
+            self._group_constraints(
+                chain(
+                    sorted(self.our_constraints, key=str),
+                    sorted(self.their_constraints, key=str),
+                )
+            )
         )
 
     def resolve_hashes(self, ireqs):
@@ -155,8 +155,8 @@ class Resolver(object):
                 raise RuntimeError(
                     "No stable configuration of concrete packages "
                     "could be found for the given constraints after "
-                    "%d rounds of resolving.\n"
-                    "This is likely a bug." % max_rounds
+                    "{max_rounds} rounds of resolving.\n"
+                    "This is likely a bug.".format(max_rounds=max_rounds)
                 )
 
             log.debug("")
@@ -258,7 +258,7 @@ class Resolver(object):
         for best_match in best_matches:
             their_constraints.extend(self._iter_dependencies(best_match))
         
-        theirs = set(self._group_constraints(their_constraints))
+        theirs = set(self._group_constraints(sorted(their_constraints, key=str)))
 
         
         
@@ -273,12 +273,10 @@ class Resolver(object):
         if has_changed:
             log.debug("")
             log.debug("New dependencies found in this round:")
-            for new_dependency in sorted(diff, key=lambda req: key_from_req(req.req)):
+            for new_dependency in sorted(diff, key=key_from_ireq):
                 log.debug("  adding {}".format(new_dependency))
             log.debug("Removed dependencies in this round:")
-            for removed_dependency in sorted(
-                removed, key=lambda req: key_from_req(req.req)
-            ):
+            for removed_dependency in sorted(removed, key=key_from_ireq):
                 log.debug("  removing {}".format(removed_dependency))
 
         
@@ -320,6 +318,8 @@ class Resolver(object):
             )
         )
         best_match.comes_from = ireq.comes_from
+        if hasattr(ireq, "_source_ireqs"):
+            best_match._source_ireqs = ireq._source_ireqs
         return best_match
 
     def _iter_dependencies(self, ireq):
@@ -331,6 +331,17 @@ class Resolver(object):
         Editable requirements will never be looked up, as they may have
         changed at any time.
         """
+        
+        
+        
+        
+        
+        
+        
+        
+        if ireq.constraint:
+            return
+
         if ireq.editable or is_url_requirement(ireq):
             for dependency in self.repository.get_dependencies(ireq):
                 yield dependency

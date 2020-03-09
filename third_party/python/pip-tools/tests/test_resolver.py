@@ -155,6 +155,28 @@ from piptools.resolver import combine_install_requirements
                     ),
                 },
             ),
+            
+            
+            (
+                [
+                    "git+https://github.com/celery/billiard#egg=billiard==3.5.9999",
+                    "celery==4.0.2",
+                ],
+                [
+                    "amqp==2.1.4 (from kombu==4.0.2->celery==4.0.2)",
+                    "kombu==4.0.2 (from celery==4.0.2)",
+                    "billiard<3.6.0,==3.5.9999,>=3.5.0.2 from "
+                    "git+https://github.com/celery/billiard#egg=billiard==3.5.9999",
+                    "vine==1.1.3 (from amqp==2.1.4->kombu==4.0.2->celery==4.0.2)",
+                    "celery==4.0.2",
+                    "pytz==2016.4 (from celery==4.0.2)",
+                ],
+            ),
+            
+            (
+                ["aiohttp", ("yarl==1.4.2", True)],
+                ["aiohttp==3.6.2", "idna==2.8 (from yarl==1.4.2)", "yarl==1.4.2"],
+            ),
         ]
     ),
 )
@@ -236,6 +258,19 @@ def test_iter_dependencies(resolver, from_line):
         next(res._iter_dependencies(ireq))
 
 
+def test_iter_dependencies_results(resolver, from_line):
+    res = resolver([])
+    ireq = from_line("aiohttp==3.6.2")
+    assert next(res._iter_dependencies(ireq)).comes_from == ireq
+
+
+def test_iter_dependencies_ignores_constraints(resolver, from_line):
+    res = resolver([])
+    ireq = from_line("aiohttp==3.6.2", constraint=True)
+    with pytest.raises(StopIteration):
+        next(res._iter_dependencies(ireq))
+
+
 def test_combine_install_requirements(from_line):
     celery30 = from_line("celery>3.0", comes_from="-r requirements.in")
     celery31 = from_line("celery==3.1.1", comes_from=from_line("fake-package"))
@@ -264,8 +299,8 @@ def test_compile_failure_shows_provenance(resolver, from_line):
     with pytest.raises(NoCandidateFound) as err:
         resolver(requirements).resolve()
     lines = str(err.value).splitlines()
+    assert lines[-2].strip() == "celery>3.2"
     assert (
-        lines[-2].strip()
+        lines[-1].strip()
         == "celery==3.1.18 (from fake-piptools-test-with-pinned-deps==0.1)"
     )
-    assert lines[-1].strip() == "celery>3.2"
