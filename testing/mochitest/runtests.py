@@ -2760,7 +2760,12 @@ toolbar#nav-bar {
                 options.browserArgs.extend(['--jsconsole'])
 
             if options.jsdebugger:
-                options.browserArgs.extend(['-jsdebugger', '-wait-for-jsdebugger'])
+                options.browserArgs.extend(['-wait-for-jsdebugger', '-jsdebugger'])
+
+            
+            
+            if options.jsdebuggerPath:
+                options.browserArgs.extend([options.jsdebuggerPath])
 
             
             
