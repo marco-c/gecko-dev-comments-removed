@@ -13,6 +13,7 @@ namespace mozilla {
 
 
 int GetEffectiveContentSandboxLevel();
+int GetEffectiveSocketProcessSandboxLevel();
 
 
 bool IsContentSandboxEnabled();

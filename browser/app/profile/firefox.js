@@ -1101,6 +1101,12 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   pref("security.sandbox.content.level", 4);
+  
+  
+  
+  
+  
+  pref("security.sandbox.socket.process.level", 1);
   pref("security.sandbox.content.write_path_whitelist", "");
   pref("security.sandbox.content.read_path_whitelist", "");
   pref("security.sandbox.content.syscall_whitelist", "");
