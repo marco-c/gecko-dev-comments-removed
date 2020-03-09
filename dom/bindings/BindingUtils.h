@@ -18,7 +18,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DeferredFinalize.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/dom/BindingCallContext.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CallbackObject.h"
 #include "mozilla/dom/DOMJSClass.h"
@@ -206,9 +205,8 @@ template <class T, bool mayBeWrapper, typename U, typename V, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObjectInternal(V& obj, U& value,
                                                 prototypes::ID protoID,
                                                 uint32_t protoDepth,
-                                                const CxType& cx) {
+                                                CxType cx) {
   static_assert(IsSame<CxType, JSContext*>::value ||
-                    IsSame<CxType, BindingCallContext>::value ||
                     IsSame<CxType, decltype(nullptr)>::value,
                 "Unexpected CxType");
 
@@ -327,7 +325,7 @@ struct MutableValueHandleWrapper {
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JSObject*> obj,
-                                        U& value, const CxType& cx) {
+                                        U& value, CxType cx) {
   binding_detail::MutableObjectHandleWrapper wrapper(obj);
   return binding_detail::UnwrapObjectInternal<T, true>(
       wrapper, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
@@ -335,7 +333,7 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JSObject*> obj,
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JS::Value> obj,
-                                        U& value, const CxType& cx) {
+                                        U& value, CxType cx) {
   MOZ_ASSERT(obj.isObject());
   binding_detail::MutableValueHandleWrapper wrapper(obj);
   return binding_detail::UnwrapObjectInternal<T, true>(
@@ -345,21 +343,21 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::MutableHandle<JS::Value> obj,
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, RefPtr<U>& value,
-                                        const CxType& cx) {
+                                        CxType cx) {
   return binding_detail::UnwrapObjectInternal<T, true>(
       obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
 }
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, nsCOMPtr<U>& value,
-                                        const CxType& cx) {
+                                        CxType cx) {
   return binding_detail::UnwrapObjectInternal<T, true>(
       obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
 }
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, OwningNonNull<U>& value,
-                                        const CxType& cx) {
+                                        CxType cx) {
   return binding_detail::UnwrapObjectInternal<T, true>(
       obj, value, PrototypeID, PrototypeTraits<PrototypeID>::Depth, cx);
 }
@@ -367,7 +365,7 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObject(JSObject* obj, OwningNonNull<U>& value,
 
 template <prototypes::ID PrototypeID, class T, typename U, typename CxType>
 MOZ_ALWAYS_INLINE nsresult UnwrapObject(JS::Handle<JS::Value> obj, U& value,
-                                        const CxType& cx) {
+                                        CxType cx) {
   MOZ_ASSERT(obj.isObject());
   return UnwrapObject<PrototypeID, T>(&obj.toObject(), value, cx);
 }
@@ -1269,27 +1267,27 @@ inline bool WrapNewBindingNonWrapperCachedObject(
 }
 
 template <bool Fatal>
-inline bool EnumValueNotFound(BindingCallContext& cx, JS::HandleString str,
+inline bool EnumValueNotFound(JSContext* cx, JS::HandleString str,
                               const char* type, const char* sourceDescription);
 
 template <>
-inline bool EnumValueNotFound<false>(BindingCallContext& cx,
-                                     JS::HandleString str, const char* type,
+inline bool EnumValueNotFound<false>(JSContext* cx, JS::HandleString str,
+                                     const char* type,
                                      const char* sourceDescription) {
   
   return true;
 }
 
 template <>
-inline bool EnumValueNotFound<true>(BindingCallContext& cx,
-                                    JS::HandleString str, const char* type,
+inline bool EnumValueNotFound<true>(JSContext* cx, JS::HandleString str,
+                                    const char* type,
                                     const char* sourceDescription) {
   JS::UniqueChars deflated = JS_EncodeStringToUTF8(cx, str);
   if (!deflated) {
     return false;
   }
-  return cx.ThrowErrorMessage<MSG_INVALID_ENUM_VALUE>(sourceDescription,
-                                                      deflated.get(), type);
+  return ThrowErrorMessage<MSG_INVALID_ENUM_VALUE>(cx, sourceDescription,
+                                                   deflated.get(), type);
 }
 
 template <typename CharT>
@@ -1319,7 +1317,7 @@ inline int FindEnumStringIndexImpl(const CharT* chars, size_t length,
 }
 
 template <bool InvalidValueFatal>
-inline bool FindEnumStringIndex(BindingCallContext& cx, JS::Handle<JS::Value> v,
+inline bool FindEnumStringIndex(JSContext* cx, JS::Handle<JS::Value> v,
                                 const EnumEntry* values, const char* type,
                                 const char* sourceDescription, int* index) {
   
@@ -1853,9 +1851,8 @@ static inline bool ConvertJSValueToString(
 }
 
 template <typename T>
-static inline bool ConvertJSValueToString(
-    JSContext* cx, JS::Handle<JS::Value> v,
-    const char* , T& result) {
+static inline bool ConvertJSValueToString(JSContext* cx,
+                                          JS::Handle<JS::Value> v, T& result) {
   return ConvertJSValueToString(cx, v, eStringify, eStringify, result);
 }
 
@@ -1865,9 +1862,9 @@ MOZ_MUST_USE bool NormalizeUSVString(
     binding_detail::FakeString<char16_t>& aString);
 
 template <typename T>
-static inline bool ConvertJSValueToUSVString(
-    JSContext* cx, JS::Handle<JS::Value> v,
-    const char* , T& result) {
+static inline bool ConvertJSValueToUSVString(JSContext* cx,
+                                             JS::Handle<JS::Value> v,
+                                             T& result) {
   if (!ConvertJSValueToString(cx, v, eStringify, eStringify, result)) {
     return false;
   }
@@ -1900,15 +1897,12 @@ inline bool ConvertIdToString(JSContext* cx, JS::HandleId id, T& result,
   return true;
 }
 
-bool ConvertJSValueToByteString(BindingCallContext& cx, JS::Handle<JS::Value> v,
-                                bool nullable, const char* sourceDescription,
-                                nsACString& result);
+bool ConvertJSValueToByteString(JSContext* cx, JS::Handle<JS::Value> v,
+                                bool nullable, nsACString& result);
 
-inline bool ConvertJSValueToByteString(BindingCallContext& cx,
-                                       JS::Handle<JS::Value> v,
-                                       const char* sourceDescription,
+inline bool ConvertJSValueToByteString(JSContext* cx, JS::Handle<JS::Value> v,
                                        nsACString& result) {
-  return ConvertJSValueToByteString(cx, v, false, sourceDescription, result);
+  return ConvertJSValueToByteString(cx, v, false, result);
 }
 
 template <typename T>
@@ -2462,7 +2456,7 @@ bool ReportLenientThisUnwrappingFailure(JSContext* cx, JSObject* obj);
 
 
 
-bool GetContentGlobalForJSImplementedObject(BindingCallContext& cx,
+bool GetContentGlobalForJSImplementedObject(JSContext* cx,
                                             JS::Handle<JSObject*> obj,
                                             nsIGlobalObject** global);
 

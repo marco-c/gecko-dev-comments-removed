@@ -480,8 +480,9 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
     
     
     
-    aRv.ThrowTypeError<MSG_INVALID_ENUM_VALUE>(u"argument 2", u"readwriteflush",
-                                               u"IDBTransactionMode");
+    aRv.ThrowTypeError<MSG_INVALID_ENUM_VALUE>(
+        u"Argument 2 of IDBDatabase.transaction", u"readwriteflush",
+        u"IDBTransactionMode");
     return nullptr;
   }
 
