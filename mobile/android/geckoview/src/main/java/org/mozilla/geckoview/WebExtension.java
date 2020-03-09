@@ -816,6 +816,16 @@ public class WebExtension {
 
         public Listener(final GeckoSession session) {
             this(session, null);
+            
+            
+            
+            mEventDispatcher.registerUiThreadListener(
+                    this,
+                    "GeckoView:WebExtension:NewTab",
+                    "GeckoView:WebExtension:UpdateTab",
+                    "GeckoView:WebExtension:CloseTab"
+            );
+            mTabDelegateRegistered = true;
         }
 
         private Listener(final GeckoSession session, final GeckoRuntime runtime) {
