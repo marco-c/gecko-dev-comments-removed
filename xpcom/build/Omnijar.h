@@ -135,6 +135,17 @@ class Omnijar {
 
 
 
+
+  static already_AddRefed<nsZipArchive> GetInnerReader(
+      nsIFile* aPath, const nsACString& aEntry);
+
+  
+
+
+
+
+
+
   static nsresult GetURIString(Type aType, nsACString& aResult);
 
  private:

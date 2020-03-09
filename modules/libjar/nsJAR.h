@@ -81,7 +81,9 @@ class nsJAR final : public nsIZipReader {
   mozilla::Mutex mLock;  
   int64_t mMtime;
   bool mOpened;
-  bool mIsOmnijar;
+
+  
+  bool mSkipArchiveClosing;
 
   nsresult LoadEntry(const nsACString& aFilename, nsCString& aBuf);
   int32_t ReadLine(const char** src);
