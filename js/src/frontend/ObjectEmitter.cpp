@@ -381,7 +381,7 @@ bool ObjectEmitter::emitObject(size_t propertyCount) {
   
   
   
-  if (!bce_->emitNewInit()) {
+  if (!bce_->emit1(JSOp::NewInit)) {
     
     return false;
   }
@@ -472,7 +472,7 @@ bool ClassEmitter::emitClass(JS::Handle<JSAtom*> name,
   hasNameOnStack_ = hasNameOnStack;
   isDerived_ = false;
 
-  if (!bce_->emitNewInit()) {
+  if (!bce_->emit1(JSOp::NewInit)) {
     
     return false;
   }
