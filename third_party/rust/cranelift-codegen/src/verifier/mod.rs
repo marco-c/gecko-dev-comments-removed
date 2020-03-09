@@ -961,7 +961,7 @@ impl<'a> Verifier<'a> {
                         format!("{} is defined by invalid instruction {}", v, def_inst),
                     ));
                 }
-                // Defining instruction is inserted in a block.
+                // Defining instruction is inserted in an block.
                 if self.func.layout.inst_block(def_inst) == None {
                     return errors.fatal((
                         loc_inst,

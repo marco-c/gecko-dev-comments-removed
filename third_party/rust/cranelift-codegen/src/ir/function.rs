@@ -296,7 +296,7 @@ impl Function {
     pub fn is_leaf(&self) -> bool {
         
         
-        self.dfg.signatures.is_empty()
+        !self.dfg.signatures.is_empty()
     }
 }
 

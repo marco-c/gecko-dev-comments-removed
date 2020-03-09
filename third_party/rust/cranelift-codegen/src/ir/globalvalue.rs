@@ -63,9 +63,6 @@ pub enum GlobalValueData {
         
         
         colocated: bool,
-
-        
-        tls: bool,
     },
 }
 
@@ -113,13 +110,11 @@ impl fmt::Display for GlobalValueData {
                 ref name,
                 offset,
                 colocated,
-                tls,
             } => {
                 write!(
                     f,
-                    "symbol {}{}{}",
+                    "symbol {}{}",
                     if colocated { "colocated " } else { "" },
-                    if tls { "tls " } else { "" },
                     name
                 )?;
                 let offset_val: i64 = offset.into();
