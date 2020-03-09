@@ -8,10 +8,8 @@
 #define mozilla_dom_indexeddatabase_h__
 
 #include "js/StructuredClone.h"
-#include "mozilla/Variant.h"
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
-#include "InitializedOnce.h"
 
 namespace mozilla {
 namespace dom {
@@ -35,24 +33,13 @@ struct StructuredCloneFile {
     eEndGuard
   };
 
-  StructuredCloneFile(const StructuredCloneFile&) = delete;
-  StructuredCloneFile& operator=(const StructuredCloneFile&) = delete;
-#ifdef NS_BUILD_REFCNT_LOGGING
-  
-  StructuredCloneFile(StructuredCloneFile&&);
-#else
-  StructuredCloneFile(StructuredCloneFile&&) = default;
-#endif
-  StructuredCloneFile& operator=(StructuredCloneFile&&) = delete;
+  RefPtr<Blob> mBlob;
+  RefPtr<IDBMutableFile> mMutableFile;
+  RefPtr<FileInfo> mFileInfo;
+  FileType mType;
 
   
-  inline explicit StructuredCloneFile(FileType aType);
-
-  
-  inline StructuredCloneFile(FileType aType, RefPtr<Blob> aBlob);
-
-  
-  inline StructuredCloneFile(FileType aType, RefPtr<FileInfo> aFileInfo);
+  inline explicit StructuredCloneFile(FileType aType, RefPtr<Blob> aBlob = {});
 
   
   inline explicit StructuredCloneFile(RefPtr<IDBMutableFile> aMutableFile);
@@ -62,52 +49,6 @@ struct StructuredCloneFile {
 
   
   inline bool operator==(const StructuredCloneFile& aOther) const;
-
-  
-  
-  
-  void MutateType(FileType aNewType) { mType = aNewType; }
-
-  FileType Type() const { return mType; }
-
-  const indexedDB::FileInfo& FileInfo() const {
-    return *mContents->as<RefPtr<indexedDB::FileInfo>>();
-  }
-
-  
-  RefPtr<indexedDB::FileInfo> FileInfoPtr() const;
-
-  const dom::Blob& Blob() const { return *mContents->as<RefPtr<dom::Blob>>(); }
-
-  
-  
-  
-  
-  dom::Blob& MutableBlob() const { return *mContents->as<RefPtr<dom::Blob>>(); }
-
-  
-  inline RefPtr<dom::Blob> BlobPtr() const;
-
-  bool HasBlob() const { return mContents->is<RefPtr<dom::Blob>>(); }
-
-  const IDBMutableFile& MutableFile() const {
-    return *mContents->as<RefPtr<IDBMutableFile>>();
-  }
-
-  IDBMutableFile& MutableMutableFile() const {
-    return *mContents->as<RefPtr<IDBMutableFile>>();
-  }
-
-  bool HasMutableFile() const {
-    return mContents->is<RefPtr<IDBMutableFile>>();
-  }
-
- private:
-  InitializedOnce<
-      const Variant<Nothing, RefPtr<dom::Blob>, RefPtr<IDBMutableFile>,
-                    RefPtr<indexedDB::FileInfo>>>
-      mContents;
-  FileType mType;
 };
 
 struct StructuredCloneReadInfo {
@@ -165,4 +106,4 @@ struct StructuredCloneReadInfo {
 }  
 }  
 
-#endif  
+#endif

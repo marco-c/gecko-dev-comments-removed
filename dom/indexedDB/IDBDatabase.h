@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_idbdatabase_h__
 #define mozilla_dom_idbdatabase_h__
@@ -45,7 +45,7 @@ class StringOrStringSequence;
 namespace indexedDB {
 class BackgroundDatabaseChild;
 class PBackgroundIDBDatabaseFileChild;
-}  // namespace indexedDB
+}  
 
 class IDBDatabase final : public DOMEventTargetHelper {
   typedef mozilla::dom::indexedDB::DatabaseSpec DatabaseSpec;
@@ -58,14 +58,14 @@ class IDBDatabase final : public DOMEventTargetHelper {
   friend class IDBObjectStore;
   friend class IDBIndex;
 
-  // The factory must be kept alive when IndexedDB is used in multiple
-  // processes. If it dies then the entire actor tree will be destroyed with it
-  // and the world will explode.
+  
+  
+  
   RefPtr<IDBFactory> mFactory;
 
   UniquePtr<DatabaseSpec> mSpec;
 
-  // Normally null except during a versionchange transaction.
+  
   UniquePtr<DatabaseSpec> mPreviousSpec;
 
   indexedDB::BackgroundDatabaseChild* mBackgroundActor;
@@ -78,7 +78,7 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   RefPtr<Observer> mObserver;
 
-  // Weak refs, IDBMutableFile strongly owns this IDBDatabase object.
+  
   nsTArray<IDBMutableFile*> mLiveMutableFiles;
 
   const bool mFileHandleDisabled;
@@ -129,8 +129,8 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   void Invalidate();
 
-  // Whether or not the database has been invalidated. If it has then no further
-  // transactions for this database will be allowed to run.
+  
+  
   bool IsInvalidated() const {
     AssertIsOnOwningThread();
 
@@ -143,8 +143,8 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   void ExitSetVersionTransaction();
 
-  // Called when a versionchange transaction is aborted to reset the
-  // DatabaseInfo.
+  
+  
   void RevertToPreviousState();
 
   IDBFactory* Factory() const {
@@ -160,7 +160,7 @@ class IDBDatabase final : public DOMEventTargetHelper {
   void AbortTransactions(bool aShouldWarn);
 
   indexedDB::PBackgroundIDBDatabaseFileChild* GetOrCreateFileActorForBlob(
-      Blob& aBlob);
+      Blob* aBlob);
 
   void NoteFinishedFileActor(
       indexedDB::PBackgroundIDBDatabaseFileChild* aFileActor);
@@ -169,8 +169,8 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   void NoteInactiveTransaction();
 
-  // XXX This doesn't really belong here... It's only needed for IDBMutableFile
-  //     serialization and should be removed or fixed someday.
+  
+  
   nsresult GetQuotaInfo(nsACString& aOrigin, PersistenceType* aPersistenceType);
 
   bool IsFileHandleDisabled() const { return mFileHandleDisabled; }
@@ -187,7 +187,7 @@ class IDBDatabase final : public DOMEventTargetHelper {
 
   void DeleteObjectStore(const nsAString& name, ErrorResult& aRv);
 
-  // This will be called from the DOM.
+  
   MOZ_MUST_USE RefPtr<IDBTransaction> Transaction(
       JSContext* aCx, const StringOrStringSequence& aStoreNames,
       IDBTransactionMode aMode, ErrorResult& aRv);
@@ -206,8 +206,8 @@ class IDBDatabase final : public DOMEventTargetHelper {
   void ClearBackgroundActor() {
     AssertIsOnOwningThread();
 
-    // Decrease the number of active databases if it was not done in
-    // CloseInternal().
+    
+    
     MaybeDecreaseActiveDatabaseCount();
 
     mBackgroundActor = nullptr;
@@ -226,14 +226,14 @@ class IDBDatabase final : public DOMEventTargetHelper {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IDBDatabase, DOMEventTargetHelper)
 
-  // DOMEventTargetHelper
+  
   void DisconnectFromOwner() override;
 
   virtual void LastRelease() override;
 
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
 
-  // nsWrapperCache
+  
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
@@ -265,10 +265,10 @@ class IDBDatabase final : public DOMEventTargetHelper {
   void LogWarning(const char* aMessageName, const nsAString& aFilename,
                   uint32_t aLineNumber, uint32_t aColumnNumber);
 
-  // Only accessed by IDBObjectStore.
+  
   nsresult RenameObjectStore(int64_t aObjectStoreId, const nsAString& aName);
 
-  // Only accessed by IDBIndex.
+  
   nsresult RenameIndex(int64_t aObjectStoreId, int64_t aIndexId,
                        const nsAString& aName);
 
@@ -277,7 +277,7 @@ class IDBDatabase final : public DOMEventTargetHelper {
   void MaybeDecreaseActiveDatabaseCount();
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_dom_idbdatabase_h__
+#endif  
