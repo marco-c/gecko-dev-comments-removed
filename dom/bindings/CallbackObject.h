@@ -27,6 +27,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/BindingCallContext.h"
 #include "nsWrapperCache.h"
 #include "nsJSEnvironment.h"
 #include "xpcpublic.h"
@@ -349,6 +350,10 @@ class CallbackObject : public nsISupports {
 
     JSContext* GetContext() const { return mCx; }
 
+    
+    
+    BindingCallContext& GetCallContext() { return *mCallContext; }
+
    private:
     
     CallSetup(const CallSetup&) = delete;
@@ -379,6 +384,10 @@ class CallbackObject : public nsISupports {
     
     
     Maybe<JSAutoRealm> mAr;
+
+    
+    
+    Maybe<BindingCallContext> mCallContext;
 
     
     
