@@ -1834,6 +1834,9 @@ pref("app.normandy.onsync_skew_sec", 600);
 #endif
 
 
+pref("browser.ssb.enabled", false);
+
+
 #if defined(RELEASE_OR_BETA) && !defined(MOZ_DEV_EDITION)
   pref("intl.multilingual.enabled", true);
   pref("intl.multilingual.downloadEnabled", true);
