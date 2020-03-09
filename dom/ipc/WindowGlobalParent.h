@@ -63,7 +63,7 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  bool IsInProcess() { return mInProcess; }
+  bool IsInProcess() override { return mInProcess; }
 
   
   
