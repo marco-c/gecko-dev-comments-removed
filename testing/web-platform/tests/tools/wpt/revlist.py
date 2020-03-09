@@ -106,11 +106,14 @@ def get_parser():
                         type=int,
                         help="maximum number of revisions to be returned by "
                              "the command")
+    parser.add_argument("--verbose", action="store_true", help="debug logging")
     return parser
 
 
 def run_rev_list(**kwargs):
     
+    if kwargs.get('verbose'):
+        logger.setLevel(logging.DEBUG)
     
     
     epoch_threshold = 600
