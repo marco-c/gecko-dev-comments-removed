@@ -777,22 +777,21 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
 }
 
 PBackgroundIDBDatabaseFileChild* IDBDatabase::GetOrCreateFileActorForBlob(
-    Blob* aBlob) {
+    Blob& aBlob) {
   AssertIsOnOwningThread();
-  MOZ_ASSERT(aBlob);
   MOZ_ASSERT(mBackgroundActor);
 
   
   
   
   
-  nsWeakPtr weakRef = do_GetWeakReference(aBlob);
+  nsWeakPtr weakRef = do_GetWeakReference(&aBlob);
   MOZ_ASSERT(weakRef);
 
   PBackgroundIDBDatabaseFileChild* actor = nullptr;
 
   if (!mFileActors.Get(weakRef, &actor)) {
-    BlobImpl* blobImpl = aBlob->Impl();
+    BlobImpl* blobImpl = aBlob.Impl();
     MOZ_ASSERT(blobImpl);
 
     PBackgroundChild* backgroundManager =
