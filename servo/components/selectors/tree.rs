@@ -119,13 +119,6 @@ pub trait Element: Sized + Clone + Debug {
 
     
     
-    fn exported_part(
-        &self,
-        name: &<Self::Impl as SelectorImpl>::PartName,
-    ) -> Option<<Self::Impl as SelectorImpl>::PartName>;
-
-    
-    
     fn imported_part(
         &self,
         name: &<Self::Impl as SelectorImpl>::PartName,

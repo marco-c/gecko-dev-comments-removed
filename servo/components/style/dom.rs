@@ -524,6 +524,14 @@ pub trait TElement:
 
     
     
+    fn each_exported_part<F>(&self, _name: &Atom, _callback: F)
+    where
+        F: FnMut(&Atom),
+    {
+    }
+
+    
+    
     
     
     

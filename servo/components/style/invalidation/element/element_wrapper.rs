@@ -63,9 +63,6 @@ pub trait ElementSnapshot: Sized {
     fn is_part(&self, name: &Atom) -> bool;
 
     
-    fn exported_part(&self, name: &Atom) -> Option<Atom>;
-
-    
     fn imported_part(&self, name: &Atom) -> Option<Atom>;
 
     
@@ -368,13 +365,6 @@ where
         match self.snapshot() {
             Some(snapshot) if snapshot.has_attrs() => snapshot.is_part(name),
             _ => self.element.is_part(name),
-        }
-    }
-
-    fn exported_part(&self, name: &Atom) -> Option<Atom> {
-        match self.snapshot() {
-            Some(snapshot) if snapshot.has_attrs() => snapshot.exported_part(name),
-            _ => self.element.exported_part(name),
         }
     }
 
