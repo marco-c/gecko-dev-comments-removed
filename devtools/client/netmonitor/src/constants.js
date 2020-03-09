@@ -94,6 +94,44 @@ const ACTIVITY_TYPE = {
 
 const EVENTS = {
   
+  REQUEST_ADDED: "NetMonitor:RequestAdded",
+
+  
+  UPDATING_REQUEST_HEADERS: "NetMonitor:NetworkEventUpdating:RequestHeaders",
+
+  
+  UPDATING_REQUEST_COOKIES: "NetMonitor:NetworkEventUpdating:RequestCookies",
+
+  
+  UPDATING_REQUEST_POST_DATA: "NetMonitor:NetworkEventUpdating:RequestPostData",
+
+  
+  UPDATING_SECURITY_INFO: "NetMonitor:NetworkEventUpdating:SecurityInfo",
+
+  
+  UPDATING_RESPONSE_HEADERS: "NetMonitor:NetworkEventUpdating:ResponseHeaders",
+
+  
+  UPDATING_RESPONSE_COOKIES: "NetMonitor:NetworkEventUpdating:ResponseCookies",
+
+  
+  UPDATING_EVENT_TIMINGS: "NetMonitor:NetworkEventUpdating:EventTimings",
+  RECEIVED_EVENT_TIMINGS: "NetMonitor:NetworkEventUpdated:EventTimings",
+
+  
+  UPDATING_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdating:ResponseContent",
+
+  UPDATING_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdating:ResponseCache",
+
+  
+  CONNECTED: "connected",
+
+  
+  PAYLOAD_READY: "NetMonitor:PayloadReady",
+};
+
+const TEST_EVENTS = {
+  
   
   
   NETWORK_EVENT: "NetMonitor:NetworkEvent",
@@ -101,52 +139,33 @@ const EVENTS = {
   TIMELINE_EVENT: "NetMonitor:TimelineEvent",
 
   
-  REQUEST_ADDED: "NetMonitor:RequestAdded",
+  STARTED_RECEIVING_RESPONSE: "NetMonitor:NetworkEventUpdating:ResponseStart",
 
   
-  UPDATING_REQUEST_HEADERS: "NetMonitor:NetworkEventUpdating:RequestHeaders",
   RECEIVED_REQUEST_HEADERS: "NetMonitor:NetworkEventUpdated:RequestHeaders",
 
   
-  UPDATING_REQUEST_COOKIES: "NetMonitor:NetworkEventUpdating:RequestCookies",
-  RECEIVED_REQUEST_COOKIES: "NetMonitor:NetworkEventUpdated:RequestCookies",
-
-  
-  UPDATING_REQUEST_POST_DATA: "NetMonitor:NetworkEventUpdating:RequestPostData",
-  RECEIVED_REQUEST_POST_DATA: "NetMonitor:NetworkEventUpdated:RequestPostData",
-
-  
-  UPDATING_SECURITY_INFO: "NetMonitor:NetworkEventUpdating:SecurityInfo",
-  RECEIVED_SECURITY_INFO: "NetMonitor:NetworkEventUpdated:SecurityInfo",
-
-  
-  UPDATING_RESPONSE_HEADERS: "NetMonitor:NetworkEventUpdating:ResponseHeaders",
   RECEIVED_RESPONSE_HEADERS: "NetMonitor:NetworkEventUpdated:ResponseHeaders",
 
   
-  UPDATING_RESPONSE_COOKIES: "NetMonitor:NetworkEventUpdating:ResponseCookies",
+  RECEIVED_REQUEST_COOKIES: "NetMonitor:NetworkEventUpdated:RequestCookies",
+
+  
+  RECEIVED_REQUEST_POST_DATA: "NetMonitor:NetworkEventUpdated:RequestPostData",
+
+  
+  RECEIVED_SECURITY_INFO: "NetMonitor:NetworkEventUpdated:SecurityInfo",
+
+  
   RECEIVED_RESPONSE_COOKIES: "NetMonitor:NetworkEventUpdated:ResponseCookies",
 
-  
-  UPDATING_EVENT_TIMINGS: "NetMonitor:NetworkEventUpdating:EventTimings",
-  RECEIVED_EVENT_TIMINGS: "NetMonitor:NetworkEventUpdated:EventTimings",
+  RECEIVED_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdated:ResponseCache",
 
   
-  STARTED_RECEIVING_RESPONSE: "NetMonitor:NetworkEventUpdating:ResponseStart",
-  UPDATING_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdating:ResponseContent",
   RECEIVED_RESPONSE_CONTENT: "NetMonitor:NetworkEventUpdated:ResponseContent",
 
   
   RECEIVED_EVENT_STACKTRACE: "NetMonitor:NetworkEventUpdated:StackTrace",
-
-  UPDATING_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdating:ResponseCache",
-  RECEIVED_RESPONSE_CACHE: "NetMonitor:NetworkEventUpdated:ResponseCache",
-
-  
-  CONNECTED: "connected",
-
-  
-  PAYLOAD_READY: "NetMonitor:PayloadReady",
 
   
   THROTTLING_CHANGED: "NetMonitor:ThrottlingChanged",
@@ -514,6 +533,7 @@ const BLOCKED_REASON_MESSAGES = {
 const general = {
   ACTIVITY_TYPE,
   EVENTS,
+  TEST_EVENTS,
   FILTER_SEARCH_DELAY: 200,
   UPDATE_PROPS,
   HEADERS,

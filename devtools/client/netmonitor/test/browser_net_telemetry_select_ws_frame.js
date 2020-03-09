@@ -65,7 +65,7 @@ add_task(async function() {
   
   const payloadResolved = waitFor(
     monitor.panelWin.api,
-    EVENTS.LONGSTRING_RESOLVED
+    TEST_EVENTS.LONGSTRING_RESOLVED
   );
 
   
