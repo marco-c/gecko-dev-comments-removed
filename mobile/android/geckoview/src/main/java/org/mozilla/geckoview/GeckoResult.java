@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
 
@@ -221,6 +222,25 @@ public class GeckoResult<T> {
     
 
 
+    @AnyThread
+    public interface CancellationDelegate {
+
+        
+
+
+
+
+
+
+
+        default @NonNull GeckoResult<Boolean> cancel() {
+            return GeckoResult.fromValue(false);
+        }
+    }
+
+    
+
+
     public static final GeckoResult<AllowOrDeny> ALLOW = GeckoResult.fromValue(AllowOrDeny.ALLOW);
 
     
@@ -236,6 +256,9 @@ public class GeckoResult<T> {
     private Throwable mError;
     private boolean mIsUncaughtError;
     private SimpleArrayMap<Dispatcher, ArrayList<Runnable>> mListeners = new SimpleArrayMap<>();
+
+    private GeckoResult<?> mParent;
+    private CancellationDelegate mCancellationDelegate;
 
     
 
@@ -436,7 +459,6 @@ public class GeckoResult<T> {
         return thenInternal(mDispatcher, valueListener, exceptionListener);
     }
 
-
     private @NonNull <U> GeckoResult<U> thenInternal(@NonNull final Dispatcher dispatcher,
                                                      @Nullable final OnValueListener<T, U> valueListener,
                                                      @Nullable final OnExceptionListener<U> exceptionListener) {
@@ -445,6 +467,7 @@ public class GeckoResult<T> {
         }
 
         final GeckoResult<U> result = new GeckoResult<U>();
+        result.mParent = this;
         thenInternal(dispatcher, () -> {
             try {
                 if (haveValue()) {
@@ -668,6 +691,7 @@ public class GeckoResult<T> {
             return;
         }
 
+        this.mCancellationDelegate = other.mCancellationDelegate;
         other.thenInternal(DirectDispatcher.sInstance, () -> {
             if (other.haveValue()) {
                 complete(other.mValue);
@@ -836,5 +860,58 @@ public class GeckoResult<T> {
 
     private boolean haveError() {
         return mComplete && mError != null;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    public synchronized @NonNull GeckoResult<Boolean> cancel() {
+        if (haveValue() || haveError()) {
+            return GeckoResult.fromValue(false);
+        }
+
+        if (mCancellationDelegate != null) {
+            return mCancellationDelegate.cancel().then(value -> {
+                if (value) {
+                    try {
+                        this.completeExceptionally(new CancellationException());
+                    } catch (IllegalStateException e) {
+                        
+                    }
+                }
+                return GeckoResult.fromValue(value);
+            });
+        }
+
+        if (mParent != null) {
+            return mParent.cancel();
+        }
+
+        return GeckoResult.fromValue(false);
+    }
+
+    
+
+
+
+
+
+    public void setCancellationDelegate(final @Nullable CancellationDelegate delegate) {
+        mCancellationDelegate = delegate;
     }
 }
