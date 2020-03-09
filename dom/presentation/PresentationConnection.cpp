@@ -62,7 +62,7 @@ PresentationConnection::PresentationConnection(
   mRole = aRole;
 }
 
- PresentationConnection::~PresentationConnection() {}
+ PresentationConnection::~PresentationConnection() = default;
 
 
 already_AddRefed<PresentationConnection> PresentationConnection::Create(
