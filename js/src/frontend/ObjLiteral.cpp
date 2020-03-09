@@ -1,9 +1,9 @@
-/* -*- Mode: C; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sw=2 et tw=0 ft=c:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #include "frontend/ObjLiteral.h"
 #include "mozilla/DebugOnly.h"
@@ -52,11 +52,8 @@ static JSObject* InterpretObjLiteralObj(
 
   Rooted<IdValueVector> properties(cx, IdValueVector(cx));
 
-  // Compute property values and build the key/value-pair list.
-  while (true) {
-    if (!reader.readInsn(&insn)) {
-      break;
-    }
+  
+  while (reader.readInsn(&insn)) {
     MOZ_ASSERT(insn.isValid());
 
     jsid propId;
@@ -95,10 +92,7 @@ static JSObject* InterpretObjLiteralArray(
 
   Rooted<ValueVector> elements(cx, ValueVector(cx));
 
-  while (true) {
-    if (!reader.readInsn(&insn)) {
-      break;
-    }
+  while (reader.readInsn(&insn)) {
     MOZ_ASSERT(insn.isValid());
 
     JS::Value propVal = InterpretObjLiteralValue(atoms, insn);
@@ -128,4 +122,4 @@ JSObject* InterpretObjLiteral(JSContext* cx, ObjLiteralAtomVector& atoms,
              : InterpretObjLiteralObj(cx, atoms, literalInsns, flags);
 }
 
-}  // namespace js
+}  
