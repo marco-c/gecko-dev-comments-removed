@@ -124,10 +124,6 @@ class AntiTrackingCommon final {
       uint64_t aExpirationTime =
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
 
-  
-  static already_AddRefed<nsIURI> MaybeGetDocumentURIBeingLoaded(
-      nsIChannel* aChannel);
-
   static void RedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
                                 nsIChannel* aNewChannel, nsIURI* aNewURI);
 };

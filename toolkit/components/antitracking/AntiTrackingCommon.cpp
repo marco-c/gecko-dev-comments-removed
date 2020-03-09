@@ -1424,28 +1424,6 @@ bool AntiTrackingCommon::HasUserInteraction(nsIPrincipal* aPrincipal) {
 }
 
 
-already_AddRefed<nsIURI> AntiTrackingCommon::MaybeGetDocumentURIBeingLoaded(
-    nsIChannel* aChannel) {
-  nsCOMPtr<nsIURI> uriBeingLoaded;
-  nsLoadFlags loadFlags = 0;
-  nsresult rv = aChannel->GetLoadFlags(&loadFlags);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-  if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
-    
-    
-    
-    
-    rv = aChannel->GetURI(getter_AddRefs(uriBeingLoaded));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return nullptr;
-    }
-  }
-  return uriBeingLoaded.forget();
-}
-
-
 void AntiTrackingCommon::RedirectHeuristic(nsIChannel* aOldChannel,
                                            nsIURI* aOldURI,
                                            nsIChannel* aNewChannel,
