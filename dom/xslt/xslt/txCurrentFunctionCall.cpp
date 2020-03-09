@@ -13,7 +13,7 @@
 
 
 
-CurrentFunctionCall::CurrentFunctionCall() {}
+CurrentFunctionCall::CurrentFunctionCall() = default;
 
 
 

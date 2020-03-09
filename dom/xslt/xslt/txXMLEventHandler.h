@@ -26,7 +26,7 @@ class Document;
 
 class txAXMLEventHandler {
  public:
-  virtual ~txAXMLEventHandler() {}
+  virtual ~txAXMLEventHandler() = default;
 
   
 
@@ -153,7 +153,7 @@ class txAOutputXMLEventHandler : public txAXMLEventHandler {
 
 class txAOutputHandlerFactory {
  public:
-  virtual ~txAOutputHandlerFactory() {}
+  virtual ~txAOutputHandlerFactory() = default;
 
   
 

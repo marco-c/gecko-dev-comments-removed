@@ -17,7 +17,7 @@
 
 
 
-GenerateIdFunctionCall::GenerateIdFunctionCall() {}
+GenerateIdFunctionCall::GenerateIdFunctionCall() = default;
 
 
 

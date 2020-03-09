@@ -21,7 +21,7 @@ class txIEvalContext;
 
 class txXPathResultComparator {
  public:
-  virtual ~txXPathResultComparator() {}
+  virtual ~txXPathResultComparator() = default;
 
   
 

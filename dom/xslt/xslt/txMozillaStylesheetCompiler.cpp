@@ -89,7 +89,7 @@ class txStylesheetSink final : public nsIXMLContentSink,
   bool mCheckedForXML;
 
  protected:
-  ~txStylesheetSink() {}
+  ~txStylesheetSink() = default;
 
   
   txStylesheetSink();
@@ -343,7 +343,7 @@ class txCompileObserver final : public txACompileObserver {
   txCompileObserver();
 
   
-  ~txCompileObserver() {}
+  ~txCompileObserver() = default;
 };
 
 txCompileObserver::txCompileObserver(txMozillaXSLTProcessor* aProcessor,
@@ -521,7 +521,7 @@ class txSyncCompileObserver final : public txACompileObserver {
 
  private:
   
-  ~txSyncCompileObserver() {}
+  ~txSyncCompileObserver() = default;
 
   RefPtr<txMozillaXSLTProcessor> mProcessor;
 };

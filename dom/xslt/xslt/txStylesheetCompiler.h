@@ -204,7 +204,7 @@ class txStylesheetCompiler final : private txStylesheetCompilerState,
 
  private:
   
-  ~txStylesheetCompiler() {}
+  ~txStylesheetCompiler() = default;
 
   nsresult startElementInternal(int32_t aNamespaceID, nsAtom* aLocalName,
                                 nsAtom* aPrefix, txStylesheetAttr* aAttributes,

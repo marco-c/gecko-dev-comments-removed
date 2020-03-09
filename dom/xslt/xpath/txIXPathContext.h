@@ -27,7 +27,7 @@ class txXPathNode;
 
 class txIParseContext {
  public:
-  virtual ~txIParseContext() {}
+  virtual ~txIParseContext() = default;
 
   
 
@@ -66,7 +66,7 @@ class txIParseContext {
 
 class txIMatchContext {
  public:
-  virtual ~txIMatchContext() {}
+  virtual ~txIMatchContext() = default;
 
   
 
