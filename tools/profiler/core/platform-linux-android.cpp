@@ -406,17 +406,9 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
   
   
   
-  
-  
-  
-  
-  pthread_attr_t attr;
-  if (pthread_attr_init(&attr) != 0 ||
-      pthread_attr_setstacksize(&attr, lul::N_STACK_BYTES + 20 * 1024) != 0 ||
-      pthread_create(&mThread, &attr, ThreadEntry, this) != 0) {
+  if (pthread_create(&mThread, nullptr, ThreadEntry, this) != 0) {
     MOZ_CRASH("pthread_create failed");
   }
-  pthread_attr_destroy(&attr);
 }
 
 SamplerThread::~SamplerThread() {
