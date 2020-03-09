@@ -486,11 +486,11 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   }
   
   if (aOptions.mNumberOfInputs > UINT16_MAX) {
-    aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>(u"numberOfInputs");
+    aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("numberOfInputs");
     return nullptr;
   }
   if (aOptions.mNumberOfOutputs > UINT16_MAX) {
-    aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>(u"numberOfOutputs");
+    aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("numberOfOutputs");
     return nullptr;
   }
 

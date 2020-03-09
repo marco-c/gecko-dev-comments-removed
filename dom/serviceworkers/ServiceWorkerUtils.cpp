@@ -79,7 +79,7 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
 
   
   if (!aScriptURI->SchemeIs("http") && !aScriptURI->SchemeIs("https")) {
-    aRv.ThrowTypeError(u"Script URL's scheme is not 'http' or 'https'");
+    aRv.ThrowTypeError("Script URL's scheme is not 'http' or 'https'");
     return;
   }
 
@@ -91,7 +91,7 @@ void ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
 
   
   if (!aScopeURI->SchemeIs("http") && !aScopeURI->SchemeIs("https")) {
-    aRv.ThrowTypeError(u"Scope URL's scheme is not 'http' or 'https'");
+    aRv.ThrowTypeError("Scope URL's scheme is not 'http' or 'https'");
     return;
   }
 

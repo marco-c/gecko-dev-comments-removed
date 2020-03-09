@@ -342,7 +342,7 @@ void BodyStream::ErrorPropagation(JSContext* aCx,
   ErrorResult rv;
   
   
-  rv.ThrowTypeError(u"Error in body stream");
+  rv.ThrowTypeError("Error in body stream");
 
   JS::Rooted<JS::Value> errorValue(aCx);
   bool ok = ToJSValue(aCx, std::move(rv), &errorValue);

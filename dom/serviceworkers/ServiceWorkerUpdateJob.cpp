@@ -74,7 +74,7 @@ class ServiceWorkerUpdateJob::CompareCallback final
     : public serviceWorkerScriptCache::CompareCallback {
   RefPtr<ServiceWorkerUpdateJob> mJob;
 
-  ~CompareCallback() {}
+  ~CompareCallback() = default;
 
  public:
   explicit CompareCallback(ServiceWorkerUpdateJob* aJob) : mJob(aJob) {
@@ -159,7 +159,7 @@ ServiceWorkerUpdateJob::ServiceWorkerUpdateJob(
       mUpdateViaCache(aUpdateViaCache),
       mOnFailure(serviceWorkerScriptCache::OnFailure::DoNothing) {}
 
-ServiceWorkerUpdateJob::~ServiceWorkerUpdateJob() {}
+ServiceWorkerUpdateJob::~ServiceWorkerUpdateJob() = default;
 
 void ServiceWorkerUpdateJob::FailUpdateJob(ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -232,7 +232,7 @@ void ServiceWorkerUpdateJob::AsyncExecute() {
   if (!registration) {
     ErrorResult rv;
     rv.ThrowTypeError<MSG_SW_UPDATE_BAD_REGISTRATION>(
-        NS_ConvertUTF8toUTF16(mScope), u"uninstalled");
+        NS_ConvertUTF8toUTF16(mScope), "uninstalled");
     FailUpdateJob(rv);
     return;
   }
@@ -248,7 +248,7 @@ void ServiceWorkerUpdateJob::AsyncExecute() {
   if (newest && !newest->ScriptSpec().Equals(mScriptSpec)) {
     ErrorResult rv;
     rv.ThrowTypeError<MSG_SW_UPDATE_BAD_REGISTRATION>(
-        NS_ConvertUTF8toUTF16(mScope), u"changed");
+        NS_ConvertUTF8toUTF16(mScope), "changed");
     FailUpdateJob(rv);
     return;
   }

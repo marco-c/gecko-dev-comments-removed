@@ -73,7 +73,7 @@ void MIDIOutput::Send(const Sequence<uint8_t>& aData,
   
   
   if (msgArray.IsEmpty()) {
-    aRv.ThrowTypeError(u"Empty message array");
+    aRv.ThrowTypeError("Empty message array");
     return;
   }
 

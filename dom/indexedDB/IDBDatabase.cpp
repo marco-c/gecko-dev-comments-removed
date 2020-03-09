@@ -480,8 +480,8 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
     
     
     
-    aRv.ThrowTypeError<MSG_INVALID_ENUM_VALUE>(u"argument 2", u"readwriteflush",
-                                               u"IDBTransactionMode");
+    aRv.ThrowTypeError<MSG_INVALID_ENUM_VALUE>("argument 2", "readwriteflush",
+                                               "IDBTransactionMode");
     return nullptr;
   }
 
@@ -581,7 +581,7 @@ RefPtr<IDBTransaction> IDBDatabase::Transaction(
       break;
     case IDBTransactionMode::Versionchange:
       
-      aRv.ThrowTypeError(u"Invalid transaction mode");
+      aRv.ThrowTypeError("Invalid transaction mode");
       return nullptr;
 
     default:

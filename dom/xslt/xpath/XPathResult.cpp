@@ -79,7 +79,7 @@ void XPathResult::RemoveObserver() {
 
 nsINode* XPathResult::IterateNext(ErrorResult& aRv) {
   if (!isIterator()) {
-    aRv.ThrowTypeError(u"Result is not an iterator");
+    aRv.ThrowTypeError("Result is not an iterator");
     return nullptr;
   }
 
@@ -138,7 +138,7 @@ void XPathResult::SetExprResult(txAExprResult* aExprResult,
     
     
     
-    aRv.ThrowTypeError(u"Result type mismatch");
+    aRv.ThrowTypeError("Result type mismatch");
     return;
   }
 

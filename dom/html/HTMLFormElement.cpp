@@ -309,7 +309,7 @@ void HTMLFormElement::RequestSubmit(nsGenericHTMLElement* aSubmitter,
 
     
     if (!fc || !fc->IsSubmitControl()) {
-      aRv.ThrowTypeError(u"The submitter is not a submit button.");
+      aRv.ThrowTypeError("The submitter is not a submit button.");
       return;
     }
 

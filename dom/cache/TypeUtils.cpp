@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/cache/TypeUtils.h"
 
@@ -71,7 +71,7 @@ void ToHeadersEntryList(nsTArray<HeadersEntry>& aOut,
   }
 }
 
-}  // namespace
+}  
 
 already_AddRefed<InternalRequest> TypeUtils::ToInternalRequest(
     JSContext* aCx, const RequestOrUSVString& aIn, BodyAction aBodyAction,
@@ -79,8 +79,8 @@ already_AddRefed<InternalRequest> TypeUtils::ToInternalRequest(
   if (aIn.IsRequest()) {
     Request& request = aIn.GetAsRequest();
 
-    // Check and set bodyUsed flag immediately because its on Request
-    // instead of InternalRequest.
+    
+    
     CheckAndSetBodyUsed(aCx, &request, aBodyAction, aRv);
     if (aRv.Failed()) {
       return nullptr;
@@ -98,8 +98,8 @@ already_AddRefed<InternalRequest> TypeUtils::ToInternalRequest(
   if (aIn.IsRequest()) {
     RefPtr<Request> request = aIn.GetAsRequest().get();
 
-    // Check and set bodyUsed flag immediately because its on Request
-    // instead of InternalRequest.
+    
+    
     CheckAndSetBodyUsed(aCx, request, aBodyAction, aRv);
     if (aRv.Failed()) {
       return nullptr;
@@ -126,7 +126,7 @@ void TypeUtils::ToCacheRequest(
   if (!schemeValid) {
     if (aSchemeAction == TypeErrorOnInvalidScheme) {
       NS_ConvertUTF8toUTF16 urlUTF16(url);
-      aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>(u"Request", urlUTF16);
+      aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>("Request", urlUTF16);
       return;
     }
   }
@@ -151,7 +151,7 @@ void TypeUtils::ToCacheRequest(
     return;
   }
 
-  // BodyUsed flag is checked and set previously in ToInternalRequest()
+  
 
   nsCOMPtr<nsIInputStream> stream;
   aIn->GetBody(getter_AddRefs(stream));
@@ -172,8 +172,8 @@ void TypeUtils::ToCacheResponseWithoutBody(CacheResponse& aOut,
 
   for (uint32_t i = 0; i < aOut.urlList().Length(); i++) {
     MOZ_DIAGNOSTIC_ASSERT(!aOut.urlList()[i].IsEmpty());
-    // Pass all Response URL schemes through... The spec only requires we take
-    // action on invalid schemes for Request objects.
+    
+    
     ProcessURL(aOut.urlList()[i], nullptr, nullptr, nullptr, aRv);
   }
 
@@ -182,7 +182,7 @@ void TypeUtils::ToCacheResponseWithoutBody(CacheResponse& aOut,
   RefPtr<InternalHeaders> headers = aIn.UnfilteredHeaders();
   MOZ_DIAGNOSTIC_ASSERT(headers);
   if (HasVaryStar(headers)) {
-    aRv.ThrowTypeError(u"Invalid Response object with a 'Vary: *' header.");
+    aRv.ThrowTypeError("Invalid Response object with a 'Vary: *' header.");
     return;
   }
   ToHeadersEntryList(aOut.headers(), headers);
@@ -231,7 +231,7 @@ void TypeUtils::ToCacheResponse(
   }
 }
 
-// static
+
 void TypeUtils::ToCacheQueryParams(CacheQueryParams& aOut,
                                    const CacheQueryOptions& aIn) {
   aOut.ignoreSearch() = aIn.mIgnoreSearch;
@@ -247,7 +247,7 @@ void TypeUtils::ToCacheQueryParams(CacheQueryParams& aOut,
 
 already_AddRefed<Response> TypeUtils::ToResponse(const CacheResponse& aIn) {
   if (aIn.type() == ResponseType::Error) {
-    // We don't bother tracking the internal error code for cached responses...
+    
     RefPtr<InternalResponse> error =
         InternalResponse::NetworkError(NS_ERROR_FAILURE);
     RefPtr<Response> r = new Response(GetGlobalObject(), error, nullptr);
@@ -262,8 +262,8 @@ already_AddRefed<Response> TypeUtils::ToResponse(const CacheResponse& aIn) {
       ToInternalHeaders(aIn.headers(), aIn.headersGuard());
   ErrorResult result;
 
-  // Be careful to fill the headers before setting the guard in order to
-  // correctly re-create the original headers.
+  
+  
   ir->Headers()->Fill(*internalHeaders, result);
   MOZ_DIAGNOSTIC_ASSERT(!result.Failed());
   ir->Headers()->SetGuard(aIn.headersGuard(), result);
@@ -324,8 +324,8 @@ already_AddRefed<InternalRequest> TypeUtils::ToInternalRequest(
       ToInternalHeaders(aIn.headers(), aIn.headersGuard());
   ErrorResult result;
 
-  // Be careful to fill the headers before setting the guard in order to
-  // correctly re-create the original headers.
+  
+  
   internalRequest->Headers()->Fill(*internalHeaders, result);
   MOZ_DIAGNOSTIC_ASSERT(!result.Failed());
 
@@ -346,7 +346,7 @@ already_AddRefed<Request> TypeUtils::ToRequest(const CacheRequest& aIn) {
   return request.forget();
 }
 
-// static
+
 already_AddRefed<InternalHeaders> TypeUtils::ToInternalHeaders(
     const nsTArray<HeadersEntry>& aHeadersEntryList, HeadersGuardEnum aGuard) {
   nsTArray<InternalHeaders::Entry> entryList(aHeadersEntryList.Length());
@@ -362,16 +362,16 @@ already_AddRefed<InternalHeaders> TypeUtils::ToInternalHeaders(
   return ref.forget();
 }
 
-// Utility function to remove the fragment from a URL, check its scheme, and
-// optionally provide a URL without the query.  We're not using nsIURL or URL to
-// do this because they require going to the main thread. static
+
+
+
 void TypeUtils::ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
                            nsACString* aUrlWithoutQueryOut,
                            nsACString* aUrlQueryOut, ErrorResult& aRv) {
   const nsCString& flatURL = PromiseFlatCString(aUrl);
   const char* url = flatURL.get();
 
-  // off the main thread URL parsing using nsStdURLParser.
+  
   nsCOMPtr<nsIURLParser> urlParser = new nsStdURLParser();
 
   uint32_t pathPos;
@@ -379,7 +379,7 @@ void TypeUtils::ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
   uint32_t schemePos;
   int32_t schemeLen;
   aRv = urlParser->ParseURL(url, flatURL.Length(), &schemePos, &schemeLen,
-                            nullptr, nullptr,  // ignore authority
+                            nullptr, nullptr,  
                             &pathPos, &pathLen);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
@@ -395,7 +395,7 @@ void TypeUtils::ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
   int32_t queryLen;
 
   aRv = urlParser->ParsePath(url + pathPos, flatURL.Length() - pathPos, nullptr,
-                             nullptr,  // ignore filepath
+                             nullptr,  
                              &queryPos, &queryLen, nullptr, nullptr);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
@@ -413,7 +413,7 @@ void TypeUtils::ProcessURL(nsACString& aUrl, bool* aSchemeValidOut,
     return;
   }
 
-  // ParsePath gives us query position relative to the start of the path
+  
   queryPos += pathPos;
 
   *aUrlWithoutQueryOut = Substring(aUrl, 0, queryPos - 1);
@@ -452,7 +452,7 @@ already_AddRefed<InternalRequest> TypeUtils::ToInternalRequest(
   RequestOrUSVString requestOrString;
   requestOrString.SetAsUSVString().ShareOrDependUpon(aIn);
 
-  // Re-create a GlobalObject stack object so we can use webidl Constructors.
+  
   AutoJSAPI jsapi;
   if (NS_WARN_IF(!jsapi.Init(GetGlobalObject()))) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
@@ -497,6 +497,6 @@ void TypeUtils::SerializeCacheStream(
   aStreamCleanupList.AppendElement(std::move(autoStream));
 }
 
-}  // namespace cache
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
+}  

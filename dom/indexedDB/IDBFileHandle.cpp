@@ -262,7 +262,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::GetMetadata(
 
   
   if (!aParameters.mSize && !aParameters.mLastModified) {
-    aRv.ThrowTypeError(u"Either size or lastModified should be true.");
+    aRv.ThrowTypeError("Either size or lastModified should be true.");
     return nullptr;
   }
 
@@ -301,7 +301,7 @@ RefPtr<IDBFileRequest> IDBFileHandle::Truncate(const Optional<uint64_t>& aSize,
     
     
     if (aSize.Value() == UINT64_MAX) {
-      aRv.ThrowTypeError(u"UINT64_MAX is not a valid size");
+      aRv.ThrowTypeError("UINT64_MAX is not a valid size");
       return nullptr;
     }
     location = aSize.Value();
@@ -395,12 +395,12 @@ bool IDBFileHandle::CheckStateAndArgumentsForRead(uint64_t aSize,
 
   
   if (!aSize) {
-    aRv.ThrowTypeError(u"0 (Zero) is not a valid read size.");
+    aRv.ThrowTypeError("0 (Zero) is not a valid read size.");
     return false;
   }
 
   if (aSize > UINT32_MAX) {
-    aRv.ThrowTypeError(u"Data size for read is too large.");
+    aRv.ThrowTypeError("Data size for read is too large.");
     return false;
   }
 
