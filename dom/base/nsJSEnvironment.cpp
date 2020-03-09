@@ -383,6 +383,10 @@ nsJSEnvironmentObserver::Observe(nsISupports* aSubject, const char* aTopic,
                                  const char16_t* aData) {
   if (!nsCRT::strcmp(aTopic, "memory-pressure")) {
     if (StaticPrefs::javascript_options_gc_on_memory_pressure()) {
+      if (sShuttingDown) {
+        
+        return NS_OK;
+      }
       nsDependentString data(aData);
       if (data.EqualsLiteral("low-memory-ongoing")) {
         
