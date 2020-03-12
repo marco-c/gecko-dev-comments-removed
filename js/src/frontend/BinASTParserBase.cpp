@@ -16,26 +16,4 @@ BinASTParserBase::BinASTParserBase(JSContext* cx,
     : ParserSharedBase(cx, compilationInfo, sourceObject,
                        ParserSharedBase::Kind::BinASTParser) {}
 
-ObjectBox* BinASTParserBase::newObjectBox(JSObject* obj) {
-  MOZ_ASSERT(obj);
-
-  
-
-
-
-
-
-
-
-  auto* box = alloc_.new_<ObjectBox>(obj, traceListHead_);
-  if (!box) {
-    ReportOutOfMemory(cx_);
-    return nullptr;
-  }
-
-  traceListHead_ = box;
-
-  return box;
-}
-
 }  

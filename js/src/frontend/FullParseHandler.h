@@ -12,7 +12,6 @@
 
 #include <cstddef>  
 #include <string.h>
-#include <type_traits>
 
 #include "frontend/ParseNode.h"
 #include "frontend/SharedContext.h"
@@ -25,7 +24,6 @@ class RegExpObject;
 
 namespace frontend {
 
-class BinASTParserBase;
 class TokenStreamAnyChars;
 
 enum class SourceKind {
@@ -220,23 +218,6 @@ class FullParseHandler {
 
   RawUndefinedLiteralType newRawUndefinedLiteral(const TokenPos& pos) {
     return new_<RawUndefinedLiteral>(pos);
-  }
-
-  
-  
-  
-  
-  
-  template <
-      class Boxer,
-      std::enable_if_t<std::is_base_of_v<BinASTParserBase, Boxer>, int> = 0>
-  RegExpLiteralType newRegExp(RegExpObject* reobj, const TokenPos& pos,
-                              Boxer& boxer) {
-    ObjectBox* objbox = boxer.newObjectBox(reobj);
-    if (!objbox) {
-      return null();
-    }
-    return new_<RegExpLiteral>(objbox, pos);
   }
 
   RegExpLiteralType newRegExp(RegExpIndex index, const TokenPos& pos) {
