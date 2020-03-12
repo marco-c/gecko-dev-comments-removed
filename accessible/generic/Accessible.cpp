@@ -301,10 +301,6 @@ uint64_t Accessible::VisibilityState() const {
     return states::INVISIBLE;
   }
 
-  if (frame->Style()->IsInOpacityZeroSubtree()) {
-    return states::INVISIBLE;
-  }
-
   if (!frame->StyleVisibility()->IsVisible()) return states::INVISIBLE;
 
   
