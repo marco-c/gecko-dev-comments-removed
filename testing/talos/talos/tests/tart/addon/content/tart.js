@@ -27,9 +27,11 @@
 
 
 
-let aboutNewTabService = Cc[
-  "@mozilla.org/browser/aboutnewtab-service;1"
-].getService(Ci.nsIAboutNewTabService);
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
 
 
 
@@ -78,9 +80,9 @@ Tart.prototype = {
       }, "newtab-url-changed");
     });
     if (url === "about:newtab") {
-      aboutNewTabService.resetNewTabURL();
+      AboutNewTab.resetNewTabURL();
     } else {
-      aboutNewTabService.newTabURL = url;
+      AboutNewTab.newTabURL = url;
     }
     return promise;
   },
