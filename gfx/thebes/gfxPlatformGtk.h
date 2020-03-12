@@ -22,7 +22,7 @@ class SystemFontListEntry;
 };
 };  
 
-class gfxPlatformGtk : public gfxPlatform {
+class gfxPlatformGtk final : public gfxPlatform {
  public:
   gfxPlatformGtk();
   virtual ~gfxPlatformGtk();

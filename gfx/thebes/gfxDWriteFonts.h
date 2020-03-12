@@ -21,7 +21,7 @@
 
 
 
-class gfxDWriteFont : public gfxFont {
+class gfxDWriteFont final : public gfxFont {
  public:
   gfxDWriteFont(const RefPtr<mozilla::gfx::UnscaledFontDWrite>& aUnscaledFont,
                 gfxFontEntry* aFontEntry, const gfxFontStyle* aFontStyle,
