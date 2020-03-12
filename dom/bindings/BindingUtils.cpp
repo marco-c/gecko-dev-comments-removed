@@ -142,34 +142,24 @@ void binding_detail::ThrowErrorMessage(JSContext* aCx,
   
   
   
-  
-  
-  
-  const char16_t* args[JS::MaxNumErrorArguments + 1];
+  const char* args[JS::MaxNumErrorArguments + 1];
   size_t argCount = GetErrorArgCount(static_cast<ErrNum>(aErrorNumber));
   MOZ_ASSERT(argCount > 0, "We have a context arg!");
-  
-  
-  nsTArray<nsString> argHolders(argCount);
+  nsAutoCString firstArg;
 
   for (size_t i = 0; i < argCount; ++i) {
-    const char* arg = va_arg(ap, const char*);
+    args[i] = va_arg(ap, const char*);
     if (i == 0) {
-      if (!arg || !*arg) {
-        
-        argHolders.AppendElement();
-      } else {
-        argHolders.AppendElement(NS_ConvertUTF8toUTF16(arg));
-        argHolders[0].AppendLiteral(": ");
+      if (args[0] && *args[0]) {
+        firstArg.Append(args[0]);
+        firstArg.AppendLiteral(": ");
       }
-    } else {
-      argHolders.AppendElement(NS_ConvertUTF8toUTF16(arg));
+      args[0] = firstArg.get();
     }
-    args[i] = argHolders[i].get();
   }
 
-  JS_ReportErrorNumberUCArray(aCx, GetErrorMessage, nullptr, aErrorNumber,
-                              args);
+  JS_ReportErrorNumberUTF8Array(aCx, GetErrorMessage, nullptr, aErrorNumber,
+                                args);
   va_end(ap);
 }
 
