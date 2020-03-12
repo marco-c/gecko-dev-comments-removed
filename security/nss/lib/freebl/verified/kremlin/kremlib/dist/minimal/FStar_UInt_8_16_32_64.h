@@ -3,11 +3,6 @@
 
 
 
-
-
-
-
-
 #include <inttypes.h>
 #include <stdbool.h>
 #include "kremlin/internal/compat.h"
@@ -28,7 +23,7 @@ extern uint64_t FStar_UInt64_minus(uint64_t a);
 
 extern uint32_t FStar_UInt64_n_minus_one;
 
-inline static uint64_t
+static inline uint64_t
 FStar_UInt64_eq_mask(uint64_t a, uint64_t b)
 {
     uint64_t x = a ^ b;
@@ -38,7 +33,7 @@ FStar_UInt64_eq_mask(uint64_t a, uint64_t b)
     return xnx - (uint64_t)1U;
 }
 
-inline static uint64_t
+static inline uint64_t
 FStar_UInt64_gte_mask(uint64_t a, uint64_t b)
 {
     uint64_t x = a;
@@ -66,7 +61,7 @@ extern uint32_t FStar_UInt32_minus(uint32_t a);
 
 extern uint32_t FStar_UInt32_n_minus_one;
 
-inline static uint32_t
+static inline uint32_t
 FStar_UInt32_eq_mask(uint32_t a, uint32_t b)
 {
     uint32_t x = a ^ b;
@@ -76,7 +71,7 @@ FStar_UInt32_eq_mask(uint32_t a, uint32_t b)
     return xnx - (uint32_t)1U;
 }
 
-inline static uint32_t
+static inline uint32_t
 FStar_UInt32_gte_mask(uint32_t a, uint32_t b)
 {
     uint32_t x = a;
@@ -104,7 +99,7 @@ extern uint16_t FStar_UInt16_minus(uint16_t a);
 
 extern uint32_t FStar_UInt16_n_minus_one;
 
-inline static uint16_t
+static inline uint16_t
 FStar_UInt16_eq_mask(uint16_t a, uint16_t b)
 {
     uint16_t x = a ^ b;
@@ -114,7 +109,7 @@ FStar_UInt16_eq_mask(uint16_t a, uint16_t b)
     return xnx - (uint16_t)1U;
 }
 
-inline static uint16_t
+static inline uint16_t
 FStar_UInt16_gte_mask(uint16_t a, uint16_t b)
 {
     uint16_t x = a;
@@ -142,7 +137,7 @@ extern uint8_t FStar_UInt8_minus(uint8_t a);
 
 extern uint32_t FStar_UInt8_n_minus_one;
 
-inline static uint8_t
+static inline uint8_t
 FStar_UInt8_eq_mask(uint8_t a, uint8_t b)
 {
     uint8_t x = a ^ b;
@@ -152,7 +147,7 @@ FStar_UInt8_eq_mask(uint8_t a, uint8_t b)
     return xnx - (uint8_t)1U;
 }
 
-inline static uint8_t
+static inline uint8_t
 FStar_UInt8_gte_mask(uint8_t a, uint8_t b)
 {
     uint8_t x = a;
