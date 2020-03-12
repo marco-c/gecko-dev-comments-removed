@@ -446,9 +446,9 @@ bool IsClassThreadAwareInprocServer(REFCLSID aClsid) {
 
   
   
-  return threadingModel.EqualsLiteral("Both") ||
-         threadingModel.EqualsLiteral("Free") ||
-         threadingModel.EqualsLiteral("Neutral");
+  return threadingModel.LowerCaseEqualsLiteral("both") ||
+         threadingModel.LowerCaseEqualsLiteral("free") ||
+         threadingModel.LowerCaseEqualsLiteral("neutral");
 }
 #endif  
 
