@@ -121,7 +121,7 @@ class ProviderTopSites extends UrlbarProvider {
       
       
       title: link.label || link.title || link.hostname || "",
-      favicon: link.smallFavicon || link.favicon || null,
+      favicon: link.favicon || link.tippyTopIcon || null,
     }));
 
     for (let site of sites) {

@@ -56,10 +56,6 @@ ChromeUtils.defineModuleGetter(
   "chrome://pocket/content/Pocket.jsm"
 );
 
-const { BrowserWindowTracker } = ChromeUtils.import(
-  "resource:///modules/BrowserWindowTracker.jsm"
-);
-
 XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
@@ -92,11 +88,6 @@ const ACTIVITY_STREAM_DEFAULT_LIMIT = 12;
 
 
 const ACTIVITY_STREAM_DEFAULT_RECENT = 5 * 24 * 60 * 60;
-
-
-
-
-const DEFAULT_SMALL_FAVICON_WIDTH = 16;
 
 const POCKET_UPDATE_TIME = 24 * 60 * 60 * 1000; 
 const POCKET_INACTIVE_TIME = 7 * 24 * 60 * 60 * 1000; 
@@ -921,17 +912,8 @@ var ActivityStreamProvider = {
       if (link.favicon) {
         let encodedData = btoa(String.fromCharCode.apply(null, link.favicon));
         link.favicon = `data:${link.mimeType};base64,${encodedData}`;
-        delete link.mimeType;
       }
-
-      if (link.smallFavicon) {
-        let encodedData = btoa(
-          String.fromCharCode.apply(null, link.smallFavicon)
-        );
-        link.smallFavicon = `data:${link.smallFaviconMimeType};base64,${encodedData}`;
-        delete link.smallFaviconMimeType;
-      }
-
+      delete link.mimeType;
       return link;
     });
   },
@@ -942,46 +924,28 @@ var ActivityStreamProvider = {
 
 
 
-
-
-
-  async _loadIcons(aUri, preferredFaviconWidth) {
-    let iconData = {};
+  _getIconData(aUri) {
     
-    let faviconData;
-    try {
-      faviconData = await PlacesUtils.promiseFaviconData(aUri, 0);
-      Object.assign(iconData, {
-        favicon: faviconData.data,
-        faviconLength: faviconData.dataLen,
-        faviconRef: faviconData.uri.ref,
-        faviconSize: faviconData.size,
-        mimeType: faviconData.mimeType,
-      });
-    } catch (e) {
-      
-      
-      return null;
-    }
-
-    
-    try {
-      faviconData = await PlacesUtils.promiseFaviconData(
+    const preferredWidth = 0;
+    return new Promise(resolve =>
+      PlacesUtils.favicons.getFaviconDataForPage(
         aUri,
-        preferredFaviconWidth
-      );
-      Object.assign(iconData, {
-        smallFavicon: faviconData.data,
-        smallFaviconLength: faviconData.dataLen,
-        smallFaviconRef: faviconData.uri.ref,
-        smallFaviconSize: faviconData.size,
-        smallFaviconMimeType: faviconData.mimeType,
-      });
-    } catch (e) {
-      
-    }
-
-    return iconData;
+        
+        (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
+          resolve(
+            iconUri
+              ? {
+                  favicon,
+                  faviconLength,
+                  faviconRef: iconUri.ref,
+                  faviconSize,
+                  mimeType,
+                }
+              : null
+          ),
+        preferredWidth
+      )
+    );
   },
 
   
@@ -995,11 +959,6 @@ var ActivityStreamProvider = {
 
 
   _addFavicons(aLinks) {
-    const win = BrowserWindowTracker.getTopWindow();
-    
-    
-    const preferredFaviconWidth =
-      DEFAULT_SMALL_FAVICON_WIDTH * (win ? win.devicePixelRatio : 2);
     
     
     
@@ -1017,7 +976,7 @@ var ActivityStreamProvider = {
             let iconData;
             try {
               let linkUri = Services.io.newURI(link.url);
-              iconData = await this._loadIcons(linkUri, preferredFaviconWidth);
+              iconData = await this._getIconData(linkUri);
 
               
               if (!iconData) {
@@ -1025,17 +984,14 @@ var ActivityStreamProvider = {
                   .mutate()
                   .setScheme(linkUri.scheme === "https" ? "http" : "https")
                   .finalize();
-                iconData = await this._loadIcons(
-                  linkUri,
-                  preferredFaviconWidth
-                );
+                iconData = await this._getIconData(linkUri);
               }
             } catch (e) {
               
             }
 
             
-            resolve(Object.assign(link, iconData));
+            resolve(Object.assign(link, iconData || {}));
           })
       )
     );
