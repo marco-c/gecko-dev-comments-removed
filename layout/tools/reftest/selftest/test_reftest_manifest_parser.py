@@ -38,6 +38,22 @@ def test_parse_test_types(parse):
     assert tests[4]['type'] == 'print'
 
 
+def test_parse_failure_type_interactions(parse):
+    """Tests interactions between skip and fails."""
+    tests = parse('failure-type-interactions.list')
+    for t in tests:
+        if 'skip' in t['name']:
+            assert t['skip']
+        else:
+            assert not t['skip']
+
+        
+        if 'fails' in t['name']:
+            assert t['expected'] == 1
+        else:
+            assert t['expected'] == 0
+
+
 def test_parse_invalid_manifests(parse):
     
     

@@ -38,8 +38,7 @@ for (let [key, val] of Object.entries({
   EXPECTED_PASS: 0,
   EXPECTED_FAIL: 1,
   EXPECTED_RANDOM: 2,
-  EXPECTED_DEATH: 3,     
-  EXPECTED_FUZZY: 4,
+  EXPECTED_FUZZY: 3,
 
   
   PREF_BOOLEAN: 0,

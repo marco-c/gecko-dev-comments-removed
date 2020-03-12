@@ -110,6 +110,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
         var maxAsserts = 0;
         var needs_focus = false;
         var slow = false;
+        var skip = false;
         var testPrefSettings = defaultTestPrefSettings.concat();
         var refPrefSettings = defaultRefPrefSettings.concat();
         var fuzzy_delta = { min: 0, max: 2 };
@@ -227,7 +228,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
                 } else if (stat == "random") {
                     expected_status = EXPECTED_RANDOM;
                 } else if (stat == "skip") {
-                    expected_status = EXPECTED_DEATH;
+                    skip = true;
                 } else if (stat == "silentfail") {
                     allow_silent_fail = true;
                 }
@@ -286,7 +287,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
             
             if (nonSkipUsed) {
                 throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": include statement with annotation other than 'skip' or 'skip-if'";
-            } else if (expected_status == EXPECTED_DEATH) {
+            } else if (skip) {
                 g.logger.info("Skipping included manifest at " + aURL.spec + " line " + lineNo + " due to matching skip condition");
             } else {
                 
@@ -335,7 +336,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
             var type = items[0];
             if (items.length != 2)
                 throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": incorrect number of arguments to " + type;
-            if (type == TYPE_LOAD && expected_status != EXPECTED_PASS && expected_status != EXPECTED_DEATH)
+            if (type == TYPE_LOAD && expected_status != EXPECTED_PASS)
                 throw "Error in manifest file " + aURL.spec + " line " + lineNo + ": incorrect known failure type for load test";
             AddTestItem({ type: type,
                           expected: expected_status,
@@ -346,6 +347,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
                           maxAsserts: maxAsserts,
                           needsFocus: needs_focus,
                           slow: slow,
+                          skip: skip,
                           prefSettings1: testPrefSettings,
                           prefSettings2: refPrefSettings,
                           fuzzyMinDelta: fuzzy_delta.min,
@@ -383,7 +385,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
                 
                 if (expected_status === EXPECTED_FAIL ||
                     expected_status === EXPECTED_RANDOM) {
-                    expected_status = EXPECTED_DEATH;
+                    skip = true;
                 }
             }
 
@@ -396,6 +398,7 @@ function ReadManifest(aURL, aFilter, aManifestID)
                           maxAsserts: maxAsserts,
                           needsFocus: needs_focus,
                           slow: slow,
+                          skip: skip,
                           prefSettings1: testPrefSettings,
                           prefSettings2: refPrefSettings,
                           fuzzyMinDelta: fuzzy_delta.min,
