@@ -1409,13 +1409,19 @@ impl Device {
         let is_emulator = renderer_name.starts_with("Android Emulator");
         let avoid_tex_image = is_emulator;
 
+        let supports_texture_storage = allow_texture_storage_support &&
+            match gl.get_type() {
+                gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
+                
+                
+                gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_texture_storage"),
+            };
+        let supports_texture_swizzle = allow_texture_swizzling &&
+            (gl.get_type() == gl::GlType::Gles || supports_extension(&extensions, "GL_ARB_texture_swizzle"));
+
         let (color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage) = match gl.get_type() {
             
-            gl::GlType::Gl if
-                allow_texture_storage_support &&
-                allow_texture_swizzling &&
-                supports_extension(&extensions, "GL_ARB_texture_storage")
-            => (
+            gl::GlType::Gl if supports_texture_storage && supports_texture_swizzle => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
                 Swizzle::Bgra, 
@@ -1429,7 +1435,7 @@ impl Device {
                 TexStorageUsage::Never
             ),
             
-            gl::GlType::Gles if supports_gles_bgra && allow_texture_storage_support && supports_extension(&extensions, "GL_EXT_texture_storage") => (
+            gl::GlType::Gles if supports_gles_bgra && supports_texture_storage => (
                 TextureFormatPair::from(ImageFormat::BGRA8),
                 TextureFormatPair { internal: gl::BGRA8_EXT, external: gl::BGRA_EXT },
                 Swizzle::Rgba, 
@@ -1447,7 +1453,7 @@ impl Device {
             ),
             
             
-            gl::GlType::Gles if allow_texture_swizzling => (
+            gl::GlType::Gles if supports_texture_swizzle => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
                 Swizzle::Bgra, 
@@ -1490,10 +1496,6 @@ impl Device {
         let supports_advanced_blend_equation =
             supports_extension(&extensions, "GL_KHR_blend_equation_advanced") &&
             !is_adreno;
-
-        let supports_texture_swizzle = allow_texture_swizzling &&
-            (gl.get_type() == gl::GlType::Gles || supports_extension(&extensions, "GL_ARB_texture_storage"));
-
 
         
         
