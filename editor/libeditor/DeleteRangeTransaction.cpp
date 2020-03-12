@@ -35,8 +35,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(DeleteRangeTransaction,
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DeleteRangeTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditAggregateTransaction)
 
-NS_IMETHODIMP
-DeleteRangeTransaction::DoTransaction() {
+NS_IMETHODIMP DeleteRangeTransaction::DoTransaction() {
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mRangeToDelete)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -57,31 +56,37 @@ DeleteRangeTransaction::DoTransaction() {
   if (startRef.Container() == endRef.Container()) {
     
     nsresult rv = CreateTxnsToDeleteBetween(startRef.AsRaw(), endRef.AsRaw());
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteBetween() failed");
       return rv;
     }
   } else {
     
     
     nsresult rv = CreateTxnsToDeleteContent(startRef.AsRaw(), nsIEditor::eNext);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteContent() failed");
       return rv;
     }
     
     rv = CreateTxnsToDeleteNodesBetween(rangeToDelete);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween() failed");
       return rv;
     }
     
     rv = CreateTxnsToDeleteContent(endRef.AsRaw(), nsIEditor::ePrevious);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING("DeleteRangeTransaction::CreateTxnsToDeleteContent() failed");
       return rv;
     }
   }
 
   
   nsresult rv = EditAggregateTransaction::DoTransaction();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditAggregateTransaction::DoTransaction() failed");
     return rv;
   }
 
@@ -91,24 +96,25 @@ DeleteRangeTransaction::DoTransaction() {
 
   RefPtr<Selection> selection = mEditorBase->GetSelection();
   if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_NULL_POINTER;
+    return NS_ERROR_NOT_INITIALIZED;
   }
   rv = selection->Collapse(startRef.AsRaw());
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Selection::Collapsed() failed");
+  return rv;
 }
 
-NS_IMETHODIMP
-DeleteRangeTransaction::UndoTransaction() {
-  return EditAggregateTransaction::UndoTransaction();
+NS_IMETHODIMP DeleteRangeTransaction::UndoTransaction() {
+  nsresult rv = EditAggregateTransaction::UndoTransaction();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditAggregateTransaction::UndoTransaction() failed");
+  return rv;
 }
 
-NS_IMETHODIMP
-DeleteRangeTransaction::RedoTransaction() {
-  return EditAggregateTransaction::RedoTransaction();
+NS_IMETHODIMP DeleteRangeTransaction::RedoTransaction() {
+  nsresult rv = EditAggregateTransaction::RedoTransaction();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditAggregateTransaction::RedoTransaction() failed");
+  return rv;
 }
 
 nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
@@ -142,13 +148,19 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
             numToDel);
     
     
-    if (NS_WARN_IF(!deleteTextTransaction)) {
+    if (!deleteTextTransaction) {
+      NS_WARNING("DeleteTextTransaction::MaybeCreate() failed");
       return NS_ERROR_FAILURE;
     }
-    AppendChild(deleteTextTransaction);
+    DebugOnly<nsresult> rvIgnored = AppendChild(deleteTextTransaction);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "DeleteRangeTransaction::AppendChild() failed, but ignored");
     return NS_OK;
   }
 
+  
+  
   
   
   for (nsIContent* child = aStart.GetChildAtOffset();
@@ -161,7 +173,10 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
     
     
     if (deleteNodeTransaction) {
-      AppendChild(deleteNodeTransaction);
+      DebugOnly<nsresult> rvIgnored = AppendChild(deleteNodeTransaction);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rvIgnored),
+          "DeleteRangeTransaction::AppendChild() failed, but ignored");
     }
   }
 
@@ -200,13 +215,17 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteContent(
   RefPtr<DeleteTextTransaction> deleteTextTransaction =
       DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode, startOffset,
                                          numToDelete);
+  NS_WARNING_ASSERTION(deleteTextTransaction,
+                       "DeleteTextTransaction::MaybeCreate() failed");
   
   
-  if (NS_WARN_IF(!deleteTextTransaction)) {
+  if (!deleteTextTransaction) {
     return NS_ERROR_FAILURE;
   }
-  AppendChild(deleteTextTransaction);
-
+  DebugOnly<nsresult> rvIgnored = AppendChild(deleteTextTransaction);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "DeleteRangeTransaction::AppendChild() failed, but ignored");
   return NS_OK;
 }
 
@@ -218,9 +237,12 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween(
 
   ContentSubtreeIterator subtreeIter;
   nsresult rv = subtreeIter.Init(aRangeToDelete);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("ContentSubtreeIterator::Init() failed");
+    return rv;
+  }
 
-  while (!subtreeIter.IsDone()) {
+  for (; !subtreeIter.IsDone(); subtreeIter.Next()) {
     nsCOMPtr<nsINode> node = subtreeIter.GetCurrentNode();
     if (NS_WARN_IF(!node)) {
       return NS_ERROR_NULL_POINTER;
@@ -232,12 +254,14 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween(
     
     
     
-    if (NS_WARN_IF(!deleteNodeTransaction)) {
+    if (!deleteNodeTransaction) {
+      NS_WARNING("DeleteNodeTransaction::MaybeCreate() failed");
       return NS_ERROR_FAILURE;
     }
-    AppendChild(deleteNodeTransaction);
-
-    subtreeIter.Next();
+    DebugOnly<nsresult> rvIgnored = AppendChild(deleteNodeTransaction);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "DeleteRangeTransaction::AppendChild() failed, but ignored");
   }
   return NS_OK;
 }
