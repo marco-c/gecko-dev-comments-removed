@@ -2588,13 +2588,29 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
   
   
 
-  
-  if (!aWindow || aWindow == mActiveWindow || aWindow == mWindowBeingLowered)
+  if (!aWindow || aWindow == mWindowBeingLowered) {
     return;
+  }
+
+  if (XRE_IsParentProcess()) {
+    if (aWindow == mActiveWindow) {
+      return;
+    }
+  } else {
+    
+    
+    
+    
+    if (aWindow->GetBrowsingContext() == GetActiveBrowsingContext()) {
+      return;
+    }
+  }
 
   if (sTestMode) {
     
     
+    
+
     
     nsCOMPtr<nsPIDOMWindowOuter> active(mActiveWindow);
     nsCOMPtr<nsPIDOMWindowOuter> window(aWindow);
