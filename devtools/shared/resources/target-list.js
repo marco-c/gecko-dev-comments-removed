@@ -16,9 +16,11 @@ const CONTENTTOOLBOX_FISSION_ENABLED = "devtools.contenttoolbox.fission";
 
 
 class LegacyImplementationProcesses {
-  constructor(rootFront, target, onTargetAvailable, onTargetDestroyed) {
-    this.rootFront = rootFront;
-    this.target = target;
+  constructor(targetList, onTargetAvailable, onTargetDestroyed) {
+    this.targetList = targetList;
+    this.rootFront = targetList.rootFront;
+    this.target = targetList.targetFront;
+
     this.onTargetAvailable = onTargetAvailable;
     this.onTargetDestroyed = onTargetDestroyed;
 
@@ -76,9 +78,11 @@ class LegacyImplementationProcesses {
 }
 
 class LegacyImplementationFrames {
-  constructor(rootFront, target, onTargetAvailable) {
-    this.rootFront = rootFront;
-    this.target = target;
+  constructor(targetList, onTargetAvailable) {
+    this.targetList = targetList;
+    this.rootFront = targetList.rootFront;
+    this.target = targetList.targetFront;
+
     this.onTargetAvailable = onTargetAvailable;
   }
 
@@ -116,36 +120,95 @@ class LegacyImplementationFrames {
   unlisten() {}
 }
 
-
-
 class LegacyImplementationWorkers {
-  constructor(rootFront, target, onTargetAvailable, onTargetDestroyed) {
-    this.rootFront = rootFront;
-    this.target = target;
+  constructor(targetList, onTargetAvailable, onTargetDestroyed) {
+    this.targetList = targetList;
+    this.rootFront = targetList.rootFront;
+    this.target = targetList.targetFront;
+
     this.onTargetAvailable = onTargetAvailable;
     this.onTargetDestroyed = onTargetDestroyed;
 
-    this.targets = new Set();
-    this._workerListChanged = this._workerListChanged.bind(this);
+    this.targetsByProcess = new WeakMap();
+    this.targetsListeners = new WeakMap();
+
+    this._onProcessAvailable = this._onProcessAvailable.bind(this);
+    this._onProcessDestroyed = this._onProcessDestroyed.bind(this);
   }
 
-  async _workerListChanged() {
-    const { workers } = await this.target.listWorkers();
+  async _onProcessAvailable({ targetFront }) {
+    this.targetsByProcess.set(targetFront, new Set());
+    
+    const listener = this._workerListChanged.bind(this, targetFront);
+    this.targetsListeners.set(targetFront, listener);
     
     
-    for (const target of this.targets) {
+    if (targetFront.isParentProcess) {
+      this.rootFront.on("workerListChanged", listener);
+    } else {
+      targetFront.on("workerListChanged", listener);
+    }
+    
+    await this._workerListChanged(targetFront);
+  }
+
+  async _onProcessDestroyed({ targetFront }) {
+    const existingTargets = this.targetsByProcess.get(targetFront);
+
+    
+    
+    for (const target of existingTargets) {
+      this.onTargetDestroyed(target);
+
+      target.destroy();
+      existingTargets.delete(target);
+    }
+    this.targetsByProcess.delete(targetFront);
+    this.targetsListeners.delete(targetFront);
+  }
+
+  async _workerListChanged(targetFront) {
+    let workers;
+    
+    if (targetFront.isParentProcess) {
+      
+      
+      
+      ({ workers } = await this.rootFront.listWorkers());
+    } else {
+      
+      
+      ({ workers } = await targetFront.listWorkers());
+    }
+
+    
+    const existingTargets = this.targetsByProcess.get(targetFront);
+
+    
+    
+    for (const target of existingTargets) {
       if (!workers.includes(target)) {
         this.onTargetDestroyed(target);
 
         target.destroy();
-        this.targets.delete(target);
+        existingTargets.delete(target);
       }
     }
     const promises = workers
-      .filter(workerTarget => !this.targets.has(workerTarget))
+      
+      
+      
+      
+      .filter(
+        workerTarget =>
+          !workerTarget.url.startsWith(
+            "resource://gre/modules/subprocess/subprocess_worker"
+          )
+      )
+      .filter(workerTarget => !existingTargets.has(workerTarget))
       .map(async workerTarget => {
         
-        this.targets.add(workerTarget);
+        existingTargets.add(workerTarget);
         await this.onTargetAvailable(workerTarget);
       });
 
@@ -153,12 +216,47 @@ class LegacyImplementationWorkers {
   }
 
   async listen() {
-    this.target.on("workerListChanged", this._workerListChanged);
-    await this._workerListChanged();
+    if (this.target.isParentProcess) {
+      await this.targetList.watchTargets(
+        [TargetList.TYPES.PROCESS],
+        this._onProcessAvailable,
+        this._onProcessDestroyed
+      );
+      
+      
+      await this._onProcessAvailable({ targetFront: this.target });
+    } else {
+      this.targetsByProcess.set(this.target, new Set());
+      this._workerListChangedListener = this._workerListChanged.bind(
+        this,
+        this.target
+      );
+      this.target.on("workerListChanged", this._workerListChangedListener);
+      await this._workerListChanged(this.target);
+    }
   }
 
   unlisten() {
-    this.target.off("workerListChanged", this._workerListChanged);
+    if (this.target.isParentProcess) {
+      for (const targetFront of this.targetList.getAllTargets(
+        TargetList.TYPES.PROCESS
+      )) {
+        const listener = this.targetsListeners.get(targetFront);
+        targetFront.off("workerListChanged", listener);
+        this.targetsByProcess.delete(targetFront);
+        this.targetsListeners.delete(targetFront);
+      }
+      this.targetList.unwatchTargets(
+        [TargetList.TYPES.PROCESS],
+        this._onProcessAvailable,
+        this._onProcessDestroyed
+      );
+    } else {
+      this.target.off("workerListChanged", this._workerListChangedListener);
+      delete this._workerListChangedListener;
+      this.targetsByProcess.delete(this.target);
+      this.targetsListeners.delete(this.target);
+    }
   }
 }
 
@@ -203,20 +301,17 @@ class TargetList {
 
     this.legacyImplementation = {
       process: new LegacyImplementationProcesses(
-        this.rootFront,
-        this.targetFront,
+        this,
         this._onTargetAvailable,
         this._onTargetDestroyed
       ),
       frame: new LegacyImplementationFrames(
-        this.rootFront,
-        this.targetFront,
+        this,
         this._onTargetAvailable,
         this._onTargetDestroyed
       ),
       worker: new LegacyImplementationWorkers(
-        this.rootFront,
-        this.targetFront,
+        this,
         this._onTargetAvailable,
         this._onTargetDestroyed
       ),

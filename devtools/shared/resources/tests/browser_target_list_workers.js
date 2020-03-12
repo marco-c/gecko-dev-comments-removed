@@ -7,9 +7,10 @@
 
 const { TargetList } = require("devtools/shared/resources/target-list");
 
-const FISSION_TEST_URL = URL_ROOT + "fission_document.html";
+const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 const CHROME_WORKER_URL = CHROME_URL_ROOT + "test_worker.js";
-const WORKER_URL = URL_ROOT + "test_worker.js";
+const WORKER_URL = URL_ROOT_SSL + "test_worker.js";
+const SERVICE_WORKER_URL = URL_ROOT_SSL + "test_service_worker.js";
 
 add_task(async function() {
   
@@ -22,8 +23,11 @@ add_task(async function() {
   const client = await createLocalClient();
   const mainRoot = client.mainRoot;
 
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
+  const tab = await addTab(FISSION_TEST_URL);
+
   await testBrowserWorkers(mainRoot);
-  await testTabWorkers(mainRoot);
+  await testTabWorkers(mainRoot, tab);
 
   await client.close();
 });
@@ -33,7 +37,9 @@ async function testBrowserWorkers(mainRoot) {
 
   
   
-  const worker = new Worker(CHROME_WORKER_URL);
+  const worker = new Worker(CHROME_WORKER_URL + "#simple-worker");
+  
+  const sharedWorker = new SharedWorker(CHROME_WORKER_URL + "#shared-worker");
 
   const targetDescriptor = await mainRoot.getMainProcess();
   const target = await targetDescriptor.getTarget();
@@ -43,9 +49,19 @@ async function testBrowserWorkers(mainRoot) {
   
   const workers = await targetList.getAllTargets(TargetList.TYPES.WORKER);
   const hasWorker = workers.find(workerTarget => {
-    return workerTarget.url == CHROME_WORKER_URL;
+    return workerTarget.url == CHROME_WORKER_URL + "#simple-worker";
   });
   ok(hasWorker, "retrieve the target for the worker");
+
+  const hasSharedWorker = workers.find(workerTarget => {
+    return workerTarget.url == CHROME_WORKER_URL + "#shared-worker";
+  });
+  ok(hasSharedWorker, "retrieve the target for the shared worker");
+
+  const hasServiceWorker = workers.find(workerTarget => {
+    return workerTarget.url == SERVICE_WORKER_URL;
+  });
+  ok(hasServiceWorker, "retrieve the target for the service worker");
 
   
   const workers2 = await targetList.getAllTargets(TargetList.TYPES.WORKER);
@@ -62,7 +78,7 @@ async function testBrowserWorkers(mainRoot) {
 
   
   const targets = [];
-  const onAvailable = ({ type, targetFront, isTopLevel }) => {
+  const onAvailable = async ({ type, targetFront, isTopLevel }) => {
     is(
       type,
       TargetList.TYPES.WORKER,
@@ -94,7 +110,7 @@ async function testBrowserWorkers(mainRoot) {
 
   
   const onWorkerCreated = new Promise(resolve => {
-    const onAvailable2 = ({ type, targetFront, isTopLevel }) => {
+    const onAvailable2 = async ({ type, targetFront, isTopLevel }) => {
       if (targets.includes(targetFront)) {
         return;
       }
@@ -105,6 +121,7 @@ async function testBrowserWorkers(mainRoot) {
   });
   
   const worker2 = new Worker(CHROME_WORKER_URL + "#second");
+  info("Wait for the second worker to be created");
   const workerTarget = await onWorkerCreated;
 
   is(
@@ -122,12 +139,10 @@ async function testBrowserWorkers(mainRoot) {
   targetList.stopListening();
 }
 
-async function testTabWorkers(mainRoot) {
+async function testTabWorkers(mainRoot, tab) {
   info("Test TargetList against workers via a tab target");
 
   
-  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
-  const tab = await addTab(FISSION_TEST_URL);
   const target = await mainRoot.getTab({ tab });
 
   
@@ -150,7 +165,7 @@ async function testTabWorkers(mainRoot) {
 
   
   const targets = [];
-  const onAvailable = ({ type, targetFront, isTopLevel }) => {
+  const onAvailable = async ({ type, targetFront, isTopLevel }) => {
     is(
       type,
       TargetList.TYPES.WORKER,
