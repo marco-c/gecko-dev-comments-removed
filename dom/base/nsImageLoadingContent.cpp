@@ -1858,13 +1858,12 @@ Element* nsImageLoadingContent::FindImageMap() {
 }
 
 nsLoadFlags nsImageLoadingContent::LoadFlags() {
-  nsIContent* thisContent = AsContent();
-  if (thisContent->IsHTMLElement(nsGkAtoms::img) &&
-      thisContent->OwnerDoc()->IsScriptEnabled() &&
-      static_cast<HTMLImageElement*>(thisContent)->LoadingState() ==
-          HTMLImageElement::Loading::Lazy) {
+  auto* image = HTMLImageElement::FromNode(AsContent());
+  if (image && image->OwnerDoc()->IsScriptEnabled() &&
+      image->LoadingState() == HTMLImageElement::Loading::Lazy) {
+    
+    
     return nsIRequest::LOAD_BACKGROUND;
   }
-
   return nsIRequest::LOAD_NORMAL;
 }
