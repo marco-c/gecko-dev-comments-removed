@@ -51,20 +51,6 @@ LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadHeader(
   uint8_t width = uint8_t(aData[0]);
   uint8_t height = uint8_t(aData[1]);
   SurfaceFormat format = SurfaceFormat(aData[2]);
-  bool transform = bool(aData[3]);
-
-  
-  
-  SurfacePipeFlags pipeFlags = SurfacePipeFlags();
-  if (transform) {
-    if (mCMSMode == eCMSMode_All) {
-      mTransform = GetCMSsRGBTransform(format);
-    }
-
-    if (!(GetSurfaceFlags() & SurfaceFlags::NO_PREMULTIPLY_ALPHA)) {
-      pipeFlags |= SurfacePipeFlags::PREMULTIPLY_ALPHA;
-    }
-  }
 
   
   mBytesPerRow = width * 4;
@@ -83,7 +69,7 @@ LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadHeader(
   MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
   Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
       this, Size(), OutputSize(), FullFrame(), format, SurfaceFormat::OS_RGBA,
-       Nothing(), mTransform, pipeFlags);
+       Nothing(), mTransform, SurfacePipeFlags());
   if (!pipe) {
     return Transition::TerminateFailure();
   }

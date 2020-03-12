@@ -328,7 +328,10 @@ class Decoder {
 
 
 
-  void SetSurfaceFlags(SurfaceFlags aSurfaceFlags);
+  void SetSurfaceFlags(SurfaceFlags aSurfaceFlags) {
+    MOZ_ASSERT(!mInitialized);
+    mSurfaceFlags = aSurfaceFlags;
+  }
   SurfaceFlags GetSurfaceFlags() const { return mSurfaceFlags; }
 
   
@@ -453,9 +456,6 @@ class Decoder {
   virtual nsresult FinishInternal();
   virtual nsresult FinishWithErrorInternal();
 
-  qcms_profile* GetCMSOutputProfile() const;
-  qcms_transform* GetCMSsRGBTransform(gfx::SurfaceFormat aFormat) const;
-
   
 
 
@@ -566,8 +566,6 @@ class Decoder {
 
   uint8_t* mImageData;  
   uint32_t mImageDataLength;
-
-  uint32_t mCMSMode;
 
  private:
   RefPtr<RasterImage> mImage;

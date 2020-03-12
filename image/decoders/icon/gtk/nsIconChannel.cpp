@@ -59,19 +59,17 @@ static nsresult moz_gdk_pixbuf_to_channel(GdkPixbuf* aPixbuf, nsIURI* aURI,
   *(out++) = width;
   *(out++) = height;
   *(out++) = uint8_t(mozilla::gfx::SurfaceFormat::OS_RGBA);
-
-  
-  *(out++) = 0xFF;
+  *(out++) = 0;
 
   const guchar* const pixels = gdk_pixbuf_get_pixels(aPixbuf);
   int instride = gdk_pixbuf_get_rowstride(aPixbuf);
   int outstride = width * n_channels;
 
   
-  mozilla::gfx::SwizzleData(pixels, instride,
-                            mozilla::gfx::SurfaceFormat::R8G8B8A8, out,
-                            outstride, mozilla::gfx::SurfaceFormat::OS_RGBA,
-                            mozilla::gfx::IntSize(width, height));
+  mozilla::gfx::PremultiplyData(pixels, instride,
+                                mozilla::gfx::SurfaceFormat::R8G8B8A8, out,
+                                outstride, mozilla::gfx::SurfaceFormat::OS_RGBA,
+                                mozilla::gfx::IntSize(width, height));
 
   nsresult rv;
   nsCOMPtr<nsIStringInputStream> stream =
