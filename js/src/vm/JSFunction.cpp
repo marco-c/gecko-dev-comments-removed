@@ -169,14 +169,6 @@ static bool ArgumentsRestrictions(JSContext* cx, HandleFunction fun) {
     return false;
   }
 
-  
-  
-  if (!JS_ReportErrorFlagsAndNumberASCII(
-          cx, JSREPORT_WARNING | JSREPORT_STRICT, GetErrorMessage, nullptr,
-          JSMSG_DEPRECATED_USAGE, js_arguments_str)) {
-    return false;
-  }
-
   return true;
 }
 
@@ -248,14 +240,6 @@ static bool CallerRestrictions(JSContext* cx, HandleFunction fun) {
   
   if (!IsSloppyNormalFunction(fun)) {
     ThrowTypeErrorBehavior(cx);
-    return false;
-  }
-
-  
-  
-  if (!JS_ReportErrorFlagsAndNumberASCII(
-          cx, JSREPORT_WARNING | JSREPORT_STRICT, GetErrorMessage, nullptr,
-          JSMSG_DEPRECATED_USAGE, js_caller_str)) {
     return false;
   }
 
