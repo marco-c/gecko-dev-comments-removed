@@ -11,6 +11,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/PowerOfTwo.h"
+#include "mozilla/ProfileBufferEntrySerialization.h"
 #include "mozilla/UniquePtr.h"
 
 #include <functional>
@@ -123,6 +124,57 @@ class ModuloBuffer {
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  ProfileBufferEntryReader EntryReaderFromTo(
+      Index aStart, Index aEnd, ProfileBufferBlockIndex aBlockIndex,
+      ProfileBufferBlockIndex aNextBlockIndex) const {
+    using EntrySpan = Span<const ProfileBufferEntryReader::Byte>;
+    if (aStart == aEnd) {
+      return ProfileBufferEntryReader{};
+    }
+    
+    MOZ_ASSERT(aEnd - aStart <= mMask.MaskValue() + 1);
+    
+    Offset start = static_cast<Offset>(aStart) & mMask;
+    
+    Offset end = (static_cast<Offset>(aEnd - 1) & mMask) + 1;
+    if (start < end) {
+      
+      return ProfileBufferEntryReader{EntrySpan(&mBuffer[start], end - start),
+                                      aBlockIndex, aNextBlockIndex};
+    }
+    
+    
+    return ProfileBufferEntryReader{
+        EntrySpan(&mBuffer[start], mMask.MaskValue() + 1 - start),
+        EntrySpan(&mBuffer[0], end), aBlockIndex, aNextBlockIndex};
+  }
+
+  ProfileBufferEntryWriter EntryWriterFromTo(Index aStart, Index aEnd) const {
+    using EntrySpan = Span<ProfileBufferEntryReader::Byte>;
+    if (aStart == aEnd) {
+      return ProfileBufferEntryWriter{};
+    }
+    MOZ_ASSERT(aEnd - aStart <= mMask.MaskValue() + 1);
+    
+    Offset start = static_cast<Offset>(aStart) & mMask;
+    
+    Offset end = (static_cast<Offset>(aEnd - 1) & mMask) + 1;
+    if (start < end) {
+      
+      return ProfileBufferEntryWriter{
+          EntrySpan(&mBuffer[start], end - start),
+          ProfileBufferBlockIndex::CreateFromProfileBufferIndex(aStart),
+          ProfileBufferBlockIndex::CreateFromProfileBufferIndex(aEnd)};
+    }
+    
+    
+    return ProfileBufferEntryWriter{
+        EntrySpan(&mBuffer[start], mMask.MaskValue() + 1 - start),
+        EntrySpan(&mBuffer[0], end),
+        ProfileBufferBlockIndex::CreateFromProfileBufferIndex(aStart),
+        ProfileBufferBlockIndex::CreateFromProfileBufferIndex(aEnd)};
   }
 
   
