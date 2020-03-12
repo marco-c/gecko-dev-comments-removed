@@ -10,6 +10,7 @@
 #include "jit/JitContext.h"
 #include "jit/MIR.h"
 #include "jit/MIRBuilderShared.h"
+#include "jit/WarpOracle.h"
 
 namespace js {
 namespace jit {
@@ -107,6 +108,7 @@ namespace jit {
   _(ToId)                   \
   _(Typeof)                 \
   _(TypeofExpr)             \
+  _(Arguments)              \
   _(SetRval)                \
   _(Return)                 \
   _(RetRval)
@@ -129,6 +131,11 @@ class MOZ_STACK_CLASS WarpBuilder {
   
   
   
+  const WarpOpSnapshot* opSnapshotIter_ = nullptr;
+
+  
+  
+  
   
   uint32_t loopDepth_ = 0;
   LoopStateStack loopStack_;
@@ -140,6 +147,14 @@ class MOZ_STACK_CLASS WarpBuilder {
   WarpSnapshot& input() const { return input_; }
 
   BytecodeSite* newBytecodeSite(BytecodeLocation loc);
+
+  const WarpOpSnapshot* getOpSnapshotImpl(BytecodeLocation loc);
+
+  template <typename T>
+  const T* getOpSnapshot(BytecodeLocation loc) {
+    const WarpOpSnapshot* snapshot = getOpSnapshotImpl(loc);
+    return snapshot ? snapshot->as<T>() : nullptr;
+  }
 
   void initBlock(MBasicBlock* block);
   MOZ_MUST_USE bool startNewEntryBlock(size_t stackDepth, BytecodeLocation loc);

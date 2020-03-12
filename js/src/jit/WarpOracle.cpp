@@ -6,6 +6,8 @@
 
 #include "jit/WarpOracle.h"
 
+#include "mozilla/ScopeExit.h"
+
 #include "jit/JitScript.h"
 #include "jit/MIRGenerator.h"
 #include "jit/WarpBuilder.h"
@@ -42,12 +44,25 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   WarpScriptSnapshot* scriptSnapshot;
   MOZ_TRY_VAR(scriptSnapshot, createScriptSnapshot(script_));
 
-  auto* snapshot = alloc_.lifoAlloc()->new_<WarpSnapshot>(scriptSnapshot);
+  auto* snapshot = new (alloc_.fallible()) WarpSnapshot(scriptSnapshot);
   if (!snapshot) {
     return abort(AbortReason::Alloc);
   }
 
   return snapshot;
+}
+
+template <typename T, typename... Args>
+static MOZ_MUST_USE bool AddOpSnapshot(TempAllocator& alloc,
+                                       WarpOpSnapshotList& snapshots,
+                                       uint32_t offset, Args&&... args) {
+  T* snapshot = new (alloc.fallible()) T(offset, std::forward<Args>(args)...);
+  if (!snapshot) {
+    return false;
+  }
+
+  snapshots.insertBack(snapshot);
+  return true;
 }
 
 AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
@@ -60,8 +75,14 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
 
   
   
-  for (const BytecodeLocation& it : AllBytecodesIterable(script)) {
-    JSOp op = it.getOp();
+  WarpOpSnapshotList opSnapshots;
+  auto autoClearOpSnapshots =
+      mozilla::MakeScopeExit([&] { opSnapshots.clear(); });
+
+  
+  
+  for (BytecodeLocation loc : AllBytecodesIterable(script)) {
+    JSOp op = loc.getOp();
     switch (op) {
 #define OP_CASE(OP) case JSOp::OP:
       WARP_OPCODE_LIST(OP_CASE)
@@ -77,12 +98,46 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
                      uint8_t(op));
 #endif
     }
+
+    uint32_t offset = loc.bytecodeToOffset(script);
+
+    
+    
+    
+    switch (op) {
+      case JSOp::Arguments:
+        if (script->needsArgsObj()) {
+          bool mapped = script->hasMappedArgsObj();
+          ArgumentsObject* templateObj =
+              script->realm()->maybeArgumentsTemplateObject(mapped);
+          if (!AddOpSnapshot<WarpArguments>(alloc_, opSnapshots, offset,
+                                            templateObj)) {
+            return abort(AbortReason::Alloc);
+          }
+        }
+        break;
+
+      case JSOp::RegExp: {
+        bool hasShared = loc.getRegExp(script)->hasShared();
+        if (!AddOpSnapshot<WarpRegExp>(alloc_, opSnapshots, offset,
+                                       hasShared)) {
+          return abort(AbortReason::Alloc);
+        }
+        break;
+      }
+
+      default:
+        break;
+    }
   }
 
-  auto* scriptSnapshot = alloc_.lifoAlloc()->new_<WarpScriptSnapshot>(script);
+  auto* scriptSnapshot = new (alloc_.fallible())
+      WarpScriptSnapshot(script, std::move(opSnapshots));
   if (!scriptSnapshot) {
     return abort(AbortReason::Alloc);
   }
+
+  autoClearOpSnapshots.release();
 
   return scriptSnapshot;
 }
