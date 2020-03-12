@@ -58,7 +58,7 @@ struct StructuredCloneFile {
   inline explicit StructuredCloneFile(RefPtr<IDBMutableFile> aMutableFile);
 
   
-  inline ~StructuredCloneFile();
+  ~StructuredCloneFile();
 
   
   inline bool operator==(const StructuredCloneFile& aOther) const;
@@ -111,11 +111,6 @@ struct StructuredCloneFile {
 };
 
 struct StructuredCloneReadInfo {
-  JSStructuredCloneData mData;
-  nsTArray<StructuredCloneFile> mFiles;
-  IDBDatabase* mDatabase;
-  bool mHasPreprocessInfo;
-
   
   inline explicit StructuredCloneReadInfo(JS::StructuredCloneScope aScope);
 
@@ -125,12 +120,12 @@ struct StructuredCloneReadInfo {
   
   inline StructuredCloneReadInfo(JSStructuredCloneData&& aData,
                                  nsTArray<StructuredCloneFile> aFiles,
-                                 IDBDatabase* aDatabase,
-                                 bool aHasPreprocessInfo);
+                                 IDBDatabase* aDatabase = nullptr,
+                                 bool aHasPreprocessInfo = false);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
   
-  inline ~StructuredCloneReadInfo();
+  ~StructuredCloneReadInfo();
 
   
   
@@ -138,20 +133,11 @@ struct StructuredCloneReadInfo {
   
   
   inline StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther) noexcept;
-
-  
-  
-  
-  
-  
-  
-  inline StructuredCloneReadInfo& operator=(
-      StructuredCloneReadInfo&& aOther) noexcept;
 #else
   StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther) = default;
+#endif
   StructuredCloneReadInfo& operator=(StructuredCloneReadInfo&& aOther) =
       default;
-#endif
 
   StructuredCloneReadInfo(const StructuredCloneReadInfo& aOther) = delete;
   StructuredCloneReadInfo& operator=(const StructuredCloneReadInfo& aOther) =
@@ -159,6 +145,31 @@ struct StructuredCloneReadInfo {
 
   
   inline size_t Size() const;
+
+  bool HasPreprocessInfo() const { return mHasPreprocessInfo; }
+
+  const JSStructuredCloneData& Data() const { return mData; }
+  JSStructuredCloneData ReleaseData() { return std::move(mData); }
+
+  
+  
+  
+  StructuredCloneFile& MutableFile(const size_t aIndex) {
+    return mFiles[aIndex];
+  }
+  const nsTArray<StructuredCloneFile>& Files() const { return mFiles; }
+
+  nsTArray<StructuredCloneFile> ReleaseFiles() { return std::move(mFiles); }
+
+  bool HasFiles() const { return !mFiles.IsEmpty(); }
+
+  IDBDatabase* Database() const { return mDatabase; }
+
+ private:
+  JSStructuredCloneData mData;
+  nsTArray<StructuredCloneFile> mFiles;
+  IDBDatabase* mDatabase;   
+  bool mHasPreprocessInfo;  
 };
 
 }  
