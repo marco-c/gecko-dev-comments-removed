@@ -595,33 +595,45 @@ class OpenWindowRunnable final : public Runnable {
       return NS_OK;
     }
 
-    RefPtr<ContentParent> targetProcess;
-
     
     
     
     if (Preferences::GetBool("dom.clients.openwindow_favors_same_process",
                              false)) {
-      targetProcess = mSourceProcess;
+      OnProcessLaunched(mSourceProcess);
+      return NS_OK;
     }
+
+    RefPtr<OpenWindowRunnable> self = this;
 
     
     
     
-    if (!targetProcess) {
-      targetProcess = ContentParent::GetNewOrUsedBrowserProcess(
-          nullptr, NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
-          ContentParent::GetInitialProcessPriority(nullptr), nullptr);
-    }
+    ContentParent::GetNewOrUsedBrowserProcessAsync(
+         nullptr,
+         NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE),
+         ContentParent::GetInitialProcessPriority(nullptr),
+         nullptr)
+        ->Then(
+            GetCurrentThreadSerialEventTarget(), __func__,
+            
+            [self](const RefPtr<ContentParent>& aTargetProcess) {
+              self->OnProcessLaunched(aTargetProcess);
+            },
+            
+            [self]() { self->OnProcessLaunched(nullptr); });
+    return NS_OK;
+  }
 
+  void OnProcessLaunched(ContentParent* aTargetProcess) {
     
     
-    if (!targetProcess) {
+    if (!aTargetProcess) {
       CopyableErrorResult rv;
       rv.ThrowAbortError("Opening window aborted");
       mPromise->Reject(rv, __func__);
       mPromise = nullptr;
-      return NS_OK;
+      return;
     }
 
     ClientOpenWindowOpParent* actor =
@@ -634,14 +646,12 @@ class OpenWindowRunnable final : public Runnable {
     
     nsCOMPtr<nsIPrincipal> principal =
         PrincipalInfoToPrincipal(mArgs.principalInfo());
-    nsresult rv = targetProcess->TransmitPermissionsForPrincipal(principal);
+    nsresult rv = aTargetProcess->TransmitPermissionsForPrincipal(principal);
     Unused << NS_WARN_IF(NS_FAILED(rv));
 
     
     
-    Unused << targetProcess->SendPClientOpenWindowOpConstructor(actor, mArgs);
-
-    return NS_OK;
+    Unused << aTargetProcess->SendPClientOpenWindowOpConstructor(actor, mArgs);
   }
 };
 
