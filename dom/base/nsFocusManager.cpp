@@ -359,6 +359,7 @@ InputContextAction::Cause nsFocusManager::GetFocusMoveActionCause(
 
 NS_IMETHODIMP
 nsFocusManager::GetActiveWindow(mozIDOMWindowProxy** aWindow) {
+  
   NS_IF_ADDREF(*aWindow = mActiveWindow);
   return NS_OK;
 }
@@ -1006,6 +1007,8 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
     
     
     
+
+    
     if (mActiveWindow == mFocusedWindow || mActiveWindow == window)
       WindowLowered(mActiveWindow);
     else
@@ -1401,6 +1404,7 @@ void nsFocusManager::SetFocusInner(Element* aNewContent, int32_t aFlags,
   if (StaticPrefs::full_screen_api_exit_on_windowRaise() &&
       !isElementInActiveWindow &&
       aFlags & (FLAG_RAISE | FLAG_NONSYSTEMCALLER)) {
+    
     if (Document* doc = mActiveWindow ? mActiveWindow->GetDoc() : nullptr) {
       if (doc->GetFullscreenElement()) {
         if (XRE_IsParentProcess()) {
@@ -2567,6 +2571,8 @@ void nsFocusManager::ScrollIntoView(PresShell* aPresShell, nsIContent* aContent,
 void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
                                  CallerType aCallerType) {
   
+  
+
   
   if (!aWindow || aWindow == mActiveWindow || aWindow == mWindowBeingLowered)
     return;
