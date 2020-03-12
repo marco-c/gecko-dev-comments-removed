@@ -322,6 +322,7 @@ impl FrameBuilder {
             global_screen_world_rect,
             &scene.spatial_tree,
             global_device_pixel_scale,
+            (1.0, 1.0),
         );
         surfaces.push(root_surface);
 
@@ -405,6 +406,10 @@ impl FrameBuilder {
                 if let Some(native_surface) = cache_state.native_surface.take() {
                     visibility_state.resource_cache.destroy_compositor_surface(native_surface.opaque);
                     visibility_state.resource_cache.destroy_compositor_surface(native_surface.alpha);
+                }
+
+                for (_, external_surface) in cache_state.external_native_surface_cache.drain() {
+                    visibility_state.resource_cache.destroy_compositor_surface(external_surface.native_surface_id)
                 }
             }
         }

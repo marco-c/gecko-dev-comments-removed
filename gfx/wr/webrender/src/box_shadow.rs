@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, PrimitiveKeyKind};
-use api::MAX_BLUR_RADIUS;
+use api::PropertyBinding;
 use api::units::*;
 use crate::clip::{ClipItemKey, ClipItemKeyKind};
 use crate::scene_building::SceneBuilder;
@@ -49,6 +49,10 @@ pub struct BoxShadowClipSource {
 
 
 pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
+
+
+
+pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 
 
@@ -163,7 +167,7 @@ impl<'a> SceneBuilder<'a> {
                 &LayoutPrimitiveInfo::with_clip_rect(final_prim_rect, prim_info.clip_rect),
                 clips,
                 PrimitiveKeyKind::Rectangle {
-                    color: color.into(),
+                    color: PropertyBinding::Value(color.into()),
                 },
             );
         } else {
@@ -189,7 +193,7 @@ impl<'a> SceneBuilder<'a> {
             
             
             let prim = PrimitiveKeyKind::Rectangle {
-                color: color.into(),
+                color: PropertyBinding::Value(color.into()),
             };
 
             
