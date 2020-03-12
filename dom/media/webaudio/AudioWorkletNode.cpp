@@ -346,7 +346,7 @@ bool WorkletNodeEngine::CallProcess(AudioNodeTrack* aTrack, JSContext* aCx,
   }
   argv[0].setObject(*mInputs.mJSArray);
   argv[1].setObject(*mOutputs.mJSArray);
-  
+  argv[2].setObject(*mParameters.mJSObject);
   JS::Rooted<JS::Value> rval(aCx);
   if (!JS::Call(aCx, mProcessor, aCallable, argv, &rval)) {
     return false;
@@ -454,6 +454,35 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
       float* dest = JS_GetFloat32ArrayData(float32Arrays[c], &isShared, nogc);
       MOZ_ASSERT(!isShared);  
       AudioBlockCopyChannelWithScale(channelData[c], volume, dest);
+    }
+  }
+
+  TrackTime tick = mDestination->GraphTimeToTrackTime(aFrom);
+  
+  for (size_t i = 0; i < mParamTimelines.Length(); ++i) {
+    const auto& float32Arrays = mParameters.mFloat32Arrays[i];
+    uint32_t length = JS_GetTypedArrayLength(float32Arrays);
+
+    
+    
+    
+    
+    if (length != WEBAUDIO_BLOCK_SIZE) {
+      SendProcessorError();
+      ProduceSilence(aTrack, aOutput);
+      return;
+    }
+    JS::AutoCheckCannotGC nogc;
+    bool isShared;
+    float* dest = JS_GetFloat32ArrayData(float32Arrays, &isShared, nogc);
+    MOZ_ASSERT(!isShared);  
+
+    size_t frames =
+        mParamTimelines[i].mTimeline.HasSimpleValue() ? 1 : WEBAUDIO_BLOCK_SIZE;
+    mParamTimelines[i].mTimeline.GetValuesAtTime(tick, dest, frames);
+    
+    if (frames == 1) {
+      std::fill_n(dest + 1, WEBAUDIO_BLOCK_SIZE - 1, dest[0]);
     }
   }
 
