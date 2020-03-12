@@ -13,12 +13,12 @@
 #ifndef gc_MaybeRooted_h
 #define gc_MaybeRooted_h
 
+#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
 #include <type_traits>  
 
 #include "gc/Allocator.h"   
-#include "js/ComparisonOperators.h"  
 #include "js/RootingAPI.h"  
 
 namespace js {
@@ -51,22 +51,14 @@ class MOZ_RAII FakeRooted : public RootedBase<T, FakeRooted<T>> {
   FakeRooted(const FakeRooted&) = delete;
 };
 
-}  
-
-namespace JS {
-
 namespace detail {
 
 template <typename T>
-struct DefineComparisonOps<js::FakeRooted<T>> : std::true_type {
-  static const T& get(const js::FakeRooted<T>& v) { return v.get(); }
+struct DefineComparisonOps<FakeRooted<T>> : std::true_type {
+  static const T& get(const FakeRooted<T>& v) { return v.get(); }
 };
 
 }  
-
-}  
-
-namespace js {
 
 
 
@@ -95,22 +87,14 @@ class FakeMutableHandle
   T* ptr;
 };
 
-}  
-
-namespace JS {
-
 namespace detail {
 
 template <typename T>
-struct DefineComparisonOps<js::FakeMutableHandle<T>> : std::true_type {
-  static const T& get(const js::FakeMutableHandle<T>& v) { return v.get(); }
+struct DefineComparisonOps<FakeMutableHandle<T>> : std::true_type {
+  static const T& get(const FakeMutableHandle<T>& v) { return v.get(); }
 };
 
 }  
-
-}  
-
-namespace js {
 
 
 
