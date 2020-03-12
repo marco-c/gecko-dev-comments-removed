@@ -5,7 +5,7 @@
 
 
 #include "SettingsChangeObserver.h"
-#include "AntiTrackingCommon.h"
+#include "ContentBlockingUserInteraction.h"
 
 #include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
