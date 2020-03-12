@@ -606,6 +606,11 @@ static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 
 
 
+static const unsigned MaxFuncResults = 1;
+
+
+
+
 static const unsigned FailFP = 0xbad;
 
 
