@@ -4,9 +4,12 @@
 
 
 
-#include "CheckableInputTypes.h"
+#include "mozilla/dom/CheckableInputTypes.h"
 
 #include "mozilla/dom/HTMLInputElement.h"
+
+using namespace mozilla;
+using namespace mozilla::dom;
 
 
 

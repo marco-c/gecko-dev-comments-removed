@@ -4,22 +4,27 @@
 
 
 
-#ifndef HiddenInputType_h__
-#define HiddenInputType_h__
+#ifndef mozilla_dom_HiddenInputType_h__
+#define mozilla_dom_HiddenInputType_h__
 
-#include "InputType.h"
+#include "mozilla/dom/InputType.h"
+
+namespace mozilla {
+namespace dom {
 
 
-class HiddenInputType : public ::InputType {
+class HiddenInputType : public InputType {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) HiddenInputType(aInputElement);
   }
 
  private:
-  explicit HiddenInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit HiddenInputType(HTMLInputElement* aInputElement)
       : InputType(aInputElement) {}
 };
+
+}  
+}  
 
 #endif 

@@ -4,9 +4,12 @@
 
 
 
-#include "FileInputType.h"
+#include "mozilla/dom/FileInputType.h"
 
 #include "mozilla/dom/HTMLInputElement.h"
+
+using namespace mozilla;
+using namespace mozilla::dom;
 
 bool FileInputType::IsValueMissing() const {
   if (!mInputElement->IsRequired()) {

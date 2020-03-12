@@ -4,70 +4,72 @@
 
 
 
-#ifndef ButtonInputTypes_h__
-#define ButtonInputTypes_h__
+#ifndef mozilla_dom_ButtonInputTypes_h__
+#define mozilla_dom_ButtonInputTypes_h__
 
-#include "InputType.h"
+#include "mozilla/dom/InputType.h"
 
-class ButtonInputTypeBase : public ::InputType {
+namespace mozilla {
+namespace dom {
+
+class ButtonInputTypeBase : public InputType {
  public:
   ~ButtonInputTypeBase() override = default;
 
  protected:
-  explicit ButtonInputTypeBase(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit ButtonInputTypeBase(HTMLInputElement* aInputElement)
       : InputType(aInputElement) {}
 };
 
 
 class ButtonInputType : public ButtonInputTypeBase {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) ButtonInputType(aInputElement);
   }
 
  private:
-  explicit ButtonInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit ButtonInputType(HTMLInputElement* aInputElement)
       : ButtonInputTypeBase(aInputElement) {}
 };
 
 
 class ImageInputType : public ButtonInputTypeBase {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) ImageInputType(aInputElement);
   }
 
  private:
-  explicit ImageInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit ImageInputType(HTMLInputElement* aInputElement)
       : ButtonInputTypeBase(aInputElement) {}
 };
 
 
 class ResetInputType : public ButtonInputTypeBase {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) ResetInputType(aInputElement);
   }
 
  private:
-  explicit ResetInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit ResetInputType(HTMLInputElement* aInputElement)
       : ButtonInputTypeBase(aInputElement) {}
 };
 
 
 class SubmitInputType : public ButtonInputTypeBase {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) SubmitInputType(aInputElement);
   }
 
  private:
-  explicit SubmitInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit SubmitInputType(HTMLInputElement* aInputElement)
       : ButtonInputTypeBase(aInputElement) {}
 };
+
+}  
+}  
 
 #endif 

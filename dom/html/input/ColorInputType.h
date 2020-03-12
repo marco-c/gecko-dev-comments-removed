@@ -4,22 +4,27 @@
 
 
 
-#ifndef ColorInputType_h__
-#define ColorInputType_h__
+#ifndef mozilla_dom_ColorInputType_h__
+#define mozilla_dom_ColorInputType_h__
 
-#include "InputType.h"
+#include "mozilla/dom/InputType.h"
+
+namespace mozilla {
+namespace dom {
 
 
-class ColorInputType : public ::InputType {
+class ColorInputType : public InputType {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) ColorInputType(aInputElement);
   }
 
  private:
-  explicit ColorInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit ColorInputType(HTMLInputElement* aInputElement)
       : InputType(aInputElement) {}
 };
+
+}  
+}  
 
 #endif 

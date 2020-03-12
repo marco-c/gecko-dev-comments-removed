@@ -4,19 +4,22 @@
 
 
 
-#include "NumericInputTypes.h"
+#include "mozilla/dom/NumericInputTypes.h"
 
 #include "mozilla/TextControlState.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "ICUUtils.h"
 
+using namespace mozilla;
+using namespace mozilla::dom;
+
 bool NumericInputTypeBase::IsRangeOverflow() const {
-  mozilla::Decimal maximum = mInputElement->GetMaximum();
+  Decimal maximum = mInputElement->GetMaximum();
   if (maximum.isNaN()) {
     return false;
   }
 
-  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  Decimal value = mInputElement->GetValueAsDecimal();
   if (value.isNaN()) {
     return false;
   }
@@ -25,12 +28,12 @@ bool NumericInputTypeBase::IsRangeOverflow() const {
 }
 
 bool NumericInputTypeBase::IsRangeUnderflow() const {
-  mozilla::Decimal minimum = mInputElement->GetMinimum();
+  Decimal minimum = mInputElement->GetMinimum();
   if (minimum.isNaN()) {
     return false;
   }
 
-  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  Decimal value = mInputElement->GetValueAsDecimal();
   if (value.isNaN()) {
     return false;
   }
@@ -39,10 +42,10 @@ bool NumericInputTypeBase::IsRangeUnderflow() const {
 }
 
 bool NumericInputTypeBase::HasStepMismatch(bool aUseZeroIfValueNaN) const {
-  mozilla::Decimal value = mInputElement->GetValueAsDecimal();
+  Decimal value = mInputElement->GetValueAsDecimal();
   if (value.isNaN()) {
     if (aUseZeroIfValueNaN) {
-      value = mozilla::Decimal(0);
+      value = Decimal(0);
     } else {
       
       
@@ -50,24 +53,23 @@ bool NumericInputTypeBase::HasStepMismatch(bool aUseZeroIfValueNaN) const {
     }
   }
 
-  mozilla::Decimal step = mInputElement->GetStep();
+  Decimal step = mInputElement->GetStep();
   if (step == kStepAny) {
     return false;
   }
 
   
-  return NS_floorModulo(value - GetStepBase(), step) != mozilla::Decimal(0);
+  return NS_floorModulo(value - GetStepBase(), step) != Decimal(0);
 }
 
 nsresult NumericInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
   
-  mozilla::Decimal maximum = mInputElement->GetMaximum();
+  Decimal maximum = mInputElement->GetMaximum();
   MOZ_ASSERT(!maximum.isNaN());
 
   nsAutoString maxStr;
   char buf[32];
-  mozilla::DebugOnly<bool> ok =
-      maximum.toString(buf, mozilla::ArrayLength(buf));
+  DebugOnly<bool> ok = maximum.toString(buf, ArrayLength(buf));
   maxStr.AssignASCII(buf);
   MOZ_ASSERT(ok, "buf not big enough");
 
@@ -77,13 +79,12 @@ nsresult NumericInputTypeBase::GetRangeOverflowMessage(nsAString& aMessage) {
 }
 
 nsresult NumericInputTypeBase::GetRangeUnderflowMessage(nsAString& aMessage) {
-  mozilla::Decimal minimum = mInputElement->GetMinimum();
+  Decimal minimum = mInputElement->GetMinimum();
   MOZ_ASSERT(!minimum.isNaN());
 
   nsAutoString minStr;
   char buf[32];
-  mozilla::DebugOnly<bool> ok =
-      minimum.toString(buf, mozilla::ArrayLength(buf));
+  DebugOnly<bool> ok = minimum.toString(buf, ArrayLength(buf));
   minStr.AssignASCII(buf);
   MOZ_ASSERT(ok, "buf not big enough");
 
@@ -92,27 +93,27 @@ nsresult NumericInputTypeBase::GetRangeUnderflowMessage(nsAString& aMessage) {
       "FormValidationNumberRangeUnderflow", mInputElement->OwnerDoc(), minStr);
 }
 
-bool NumericInputTypeBase::ConvertStringToNumber(
-    nsAString& aValue, mozilla::Decimal& aResultValue) const {
+bool NumericInputTypeBase::ConvertStringToNumber(nsAString& aValue,
+                                                 Decimal& aResultValue) const {
   
   
   ICUUtils::LanguageTagIterForContent langTagIter(mInputElement);
   aResultValue =
-      mozilla::Decimal::fromDouble(ICUUtils::ParseNumber(aValue, langTagIter));
+      Decimal::fromDouble(ICUUtils::ParseNumber(aValue, langTagIter));
   if (!aResultValue.isFinite()) {
-    aResultValue = mozilla::dom::HTMLInputElement::StringToDecimal(aValue);
+    aResultValue = HTMLInputElement::StringToDecimal(aValue);
   }
   return aResultValue.isFinite();
 }
 
 bool NumericInputTypeBase::ConvertNumberToString(
-    mozilla::Decimal aValue, nsAString& aResultString) const {
+    Decimal aValue, nsAString& aResultString) const {
   MOZ_ASSERT(aValue.isFinite(), "aValue must be a valid non-Infinite number.");
 
   aResultString.Truncate();
 
   char buf[32];
-  bool ok = aValue.toString(buf, mozilla::ArrayLength(buf));
+  bool ok = aValue.toString(buf, ArrayLength(buf));
   aResultString.AssignASCII(buf);
   MOZ_ASSERT(ok, "buf not big enough");
 
@@ -170,5 +171,5 @@ nsresult RangeInputType::MinMaxStepAttrChanged() {
   
   nsAutoString value;
   GetNonFileValueInternal(value);
-  return SetValueInternal(value, mozilla::TextControlState::eSetValue_Internal);
+  return SetValueInternal(value, TextControlState::eSetValue_Internal);
 }

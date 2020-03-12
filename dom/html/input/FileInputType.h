@@ -4,16 +4,18 @@
 
 
 
-#ifndef FileInputType_h__
-#define FileInputType_h__
+#ifndef mozilla_dom_FileInputType_h__
+#define mozilla_dom_FileInputType_h__
 
-#include "InputType.h"
+#include "mozilla/dom/InputType.h"
+
+namespace mozilla {
+namespace dom {
 
 
-class FileInputType : public ::InputType {
+class FileInputType : public InputType {
  public:
-  static InputType* Create(mozilla::dom::HTMLInputElement* aInputElement,
-                           void* aMemory) {
+  static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) FileInputType(aInputElement);
   }
 
@@ -22,8 +24,11 @@ class FileInputType : public ::InputType {
   nsresult GetValueMissingMessage(nsAString& aMessage) override;
 
  private:
-  explicit FileInputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit FileInputType(HTMLInputElement* aInputElement)
       : InputType(aInputElement) {}
 };
+
+}  
+}  
 
 #endif 

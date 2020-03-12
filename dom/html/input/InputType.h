@@ -4,8 +4,8 @@
 
 
 
-#ifndef InputType_h__
-#define InputType_h__
+#ifndef mozilla_dom_InputType_h__
+#define mozilla_dom_InputType_h__
 
 #include <stdint.h>
 #include "mozilla/Decimal.h"
@@ -21,28 +21,31 @@ inline mozilla::Decimal NS_floorModulo(mozilla::Decimal x, mozilla::Decimal y) {
   return (x - y * (x / y).floor());
 }
 
+class nsIFrame;
+
 namespace mozilla {
 namespace dom {
 class HTMLInputElement;
-}  
-}  
-
-struct DoNotDelete;
-class nsIFrame;
 
 
 
 
 class InputType {
  public:
-  static mozilla::UniquePtr<InputType, DoNotDelete> Create(
-      mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
-      void* aMemory);
+  
+  
+  
+  struct DoNotDelete {
+    void operator()(InputType* p) { p->~InputType(); }
+  };
+
+  static UniquePtr<InputType, DoNotDelete> Create(
+      HTMLInputElement* aInputElement, uint8_t aType, void* aMemory);
 
   virtual ~InputType() = default;
 
   
-  static const mozilla::Decimal kStepAny;
+  static const Decimal kStepAny;
 
   
 
@@ -55,7 +58,7 @@ class InputType {
   virtual bool IsValueMissing() const;
   virtual bool HasTypeMismatch() const;
   
-  virtual mozilla::Maybe<bool> HasPatternMismatch() const;
+  virtual Maybe<bool> HasPatternMismatch() const;
   virtual bool IsRangeOverflow() const;
   virtual bool IsRangeUnderflow() const;
   virtual bool HasStepMismatch(bool aUseZeroIfValueNaN) const;
@@ -82,7 +85,7 @@ class InputType {
 
 
   virtual bool ConvertStringToNumber(nsAString& aValue,
-                                     mozilla::Decimal& aResultValue) const;
+                                     Decimal& aResultValue) const;
 
   
 
@@ -95,11 +98,11 @@ class InputType {
 
 
 
-  virtual bool ConvertNumberToString(mozilla::Decimal aValue,
+  virtual bool ConvertNumberToString(Decimal aValue,
                                      nsAString& aResultString) const;
 
  protected:
-  explicit InputType(mozilla::dom::HTMLInputElement* aInputElement)
+  explicit InputType(HTMLInputElement* aInputElement)
       : mInputElement(aInputElement) {}
 
   
@@ -140,7 +143,7 @@ class InputType {
 
 
 
-  mozilla::Decimal GetStepBase() const;
+  Decimal GetStepBase() const;
 
   
 
@@ -229,13 +232,10 @@ class InputType {
 
   uint32_t MaximumWeekInYear(uint32_t aYear) const;
 
-  mozilla::dom::HTMLInputElement* mInputElement;
+  HTMLInputElement* mInputElement;
 };
 
-
-
-struct DoNotDelete {
-  void operator()(::InputType* p) { p->~InputType(); }
-};
+}  
+}  
 
 #endif 
