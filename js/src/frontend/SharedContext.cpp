@@ -6,7 +6,7 @@
 
 #include "frontend/SharedContext.h"
 
-#include "frontend/AbstractScope.h"
+#include "frontend/AbstractScopePtr.h"
 #include "frontend/ModuleSharedContext.h"
 
 #include "frontend/ParseContext-inl.h"
@@ -119,8 +119,7 @@ bool FunctionBox::atomsAreKept() { return cx_->zone()->hasKeptAtoms(); }
 FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
                          uint32_t toStringStart,
                          CompilationInfo& compilationInfo,
-                         Directives directives,
-                         GeneratorKind generatorKind,
+                         Directives directives, GeneratorKind generatorKind,
                          FunctionAsyncKind asyncKind, JSAtom* explicitName,
                          FunctionFlags flags)
     : SharedContext(cx, Kind::FunctionBox, compilationInfo, directives),
@@ -163,12 +162,10 @@ FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
 FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
                          JSFunction* fun, uint32_t toStringStart,
                          CompilationInfo& compilationInfo,
-                         Directives directives,
-                         GeneratorKind generatorKind,
+                         Directives directives, GeneratorKind generatorKind,
                          FunctionAsyncKind asyncKind)
     : FunctionBox(cx, traceListHead, toStringStart, compilationInfo, directives,
-                  generatorKind, asyncKind, fun->explicitName(),
-                  fun->flags()) {
+                  generatorKind, asyncKind, fun->explicitName(), fun->flags()) {
   object_ = fun;
   
   
@@ -179,8 +176,7 @@ FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
 FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
                          uint32_t toStringStart,
                          CompilationInfo& compilationInfo,
-                         Directives directives,
-                         GeneratorKind generatorKind,
+                         Directives directives, GeneratorKind generatorKind,
                          FunctionAsyncKind asyncKind, size_t index)
     : FunctionBox(cx, traceListHead, toStringStart, compilationInfo, directives,
                   generatorKind, asyncKind,
@@ -214,7 +210,7 @@ void FunctionBox::initStandaloneFunction(Scope* enclosingScope) {
   
   
   MOZ_ASSERT(enclosingScope->is<GlobalScope>());
-  enclosingScope_ = AbstractScope(enclosingScope);
+  enclosingScope_ = AbstractScopePtr(enclosingScope);
   allowNewTarget_ = true;
   thisBinding_ = ThisBinding::Function;
 }
@@ -297,11 +293,11 @@ void FunctionBox::initWithEnclosingScope(JSFunction* fun) {
 
   computeInWith(enclosingScope);
 
-  enclosingScope_ = AbstractScope(enclosingScope);
+  enclosingScope_ = AbstractScopePtr(enclosingScope);
 }
 
 void FunctionBox::setEnclosingScopeForInnerLazyFunction(
-    const AbstractScope& enclosingScope) {
+    const AbstractScopePtr& enclosingScope) {
   
   
   

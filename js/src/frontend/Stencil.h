@@ -15,7 +15,7 @@
 #include <stdint.h>  
 #include <stdlib.h>  
 
-#include "frontend/AbstractScope.h"      
+#include "frontend/AbstractScopePtr.h"   
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ObjLiteral.h"         
 #include "frontend/TypedIndex.h"         
@@ -284,11 +284,11 @@ class EnvironmentShapeCreationData {
 };
 
 class ScopeCreationData {
-  friend class js::AbstractScope;
+  friend class js::AbstractScopePtr;
   friend class js::GCMarker;
 
   
-  AbstractScope enclosing_;
+  AbstractScopePtr enclosing_;
 
   
   ScopeKind kind_;
@@ -313,7 +313,7 @@ class ScopeCreationData {
 
  public:
   ScopeCreationData(
-      JSContext* cx, ScopeKind kind, Handle<AbstractScope> enclosing,
+      JSContext* cx, ScopeKind kind, Handle<AbstractScopePtr> enclosing,
       Handle<frontend::EnvironmentShapeCreationData> environmentShape,
       UniquePtr<BaseScopeData> data = {},
       frontend::FunctionBox* funbox = nullptr)
@@ -324,7 +324,7 @@ class ScopeCreationData {
         data_(std::move(data)) {}
 
   ScopeKind kind() const { return kind_; }
-  AbstractScope enclosing() { return enclosing_; }
+  AbstractScopePtr enclosing() { return enclosing_; }
   bool getOrCreateEnclosingScope(JSContext* cx, MutableHandleScope scope) {
     return enclosing_.getOrCreateScope(cx, scope);
   }
@@ -334,18 +334,18 @@ class ScopeCreationData {
                      Handle<FunctionScope::Data*> dataArg,
                      bool hasParameterExprs, bool needsEnvironment,
                      frontend::FunctionBox* funbox,
-                     Handle<AbstractScope> enclosing, ScopeIndex* index);
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<LexicalScope::Data*> dataArg,
-                     uint32_t firstFrameSlot, Handle<AbstractScope> enclosing,
-                     ScopeIndex* index);
+                     uint32_t firstFrameSlot,
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<VarScope::Data*> dataArg,
                      uint32_t firstFrameSlot, bool needsEnvironment,
-                     Handle<AbstractScope> enclosing, ScopeIndex* index);
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
@@ -355,17 +355,17 @@ class ScopeCreationData {
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      ScopeKind kind, Handle<EvalScope::Data*> dataArg,
-                     Handle<AbstractScope> enclosing, ScopeIndex* index);
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
                      Handle<ModuleScope::Data*> dataArg,
-                     HandleModuleObject module, Handle<AbstractScope> enclosing,
-                     ScopeIndex* index);
+                     HandleModuleObject module,
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   
   static bool create(JSContext* cx, frontend::CompilationInfo& compilationInfo,
-                     Handle<AbstractScope> enclosing, ScopeIndex* index);
+                     Handle<AbstractScopePtr> enclosing, ScopeIndex* index);
 
   bool hasEnvironment() const {
     

@@ -17,24 +17,24 @@
 #include "jstypes.h"           
 #include "NamespaceImports.h"  
 
-#include "frontend/AbstractScope.h"    
-#include "frontend/BytecodeOffset.h"   
-#include "frontend/CompilationInfo.h"  
-#include "frontend/JumpList.h"         
-#include "frontend/NameCollections.h"  
-#include "frontend/ObjLiteral.h"       
-#include "frontend/ParseNode.h"        
-#include "frontend/SourceNotes.h"      
-#include "frontend/Stencil.h"          
-#include "gc/Barrier.h"                
-#include "gc/Rooting.h"                
-#include "js/GCVariant.h"              
-#include "js/GCVector.h"               
-#include "js/TypeDecls.h"              
-#include "js/Value.h"                  
-#include "js/Vector.h"                 
-#include "vm/JSScript.h"               
-#include "vm/Opcodes.h"                
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/BytecodeOffset.h"    
+#include "frontend/CompilationInfo.h"   
+#include "frontend/JumpList.h"          
+#include "frontend/NameCollections.h"   
+#include "frontend/ObjLiteral.h"        
+#include "frontend/ParseNode.h"         
+#include "frontend/SourceNotes.h"       
+#include "frontend/Stencil.h"           
+#include "gc/Barrier.h"                 
+#include "gc/Rooting.h"                 
+#include "js/GCVariant.h"               
+#include "js/GCVector.h"                
+#include "js/TypeDecls.h"               
+#include "js/Value.h"                   
+#include "js/Vector.h"                  
+#include "vm/JSScript.h"                
+#include "vm/Opcodes.h"                 
 
 namespace js {
 
@@ -97,15 +97,15 @@ struct MOZ_STACK_CLASS GCThingList {
 
   void finishInnerFunctions();
 
-  AbstractScope getScope(size_t index) const {
+  AbstractScopePtr getScope(size_t index) const {
     auto& elem = vector[index].get();
     if (elem.is<JS::GCCellPtr>()) {
-      return AbstractScope(&elem.as<JS::GCCellPtr>().as<Scope>());
+      return AbstractScopePtr(&elem.as<JS::GCCellPtr>().as<Scope>());
     }
-    return AbstractScope(compilationInfo, elem.as<ScopeIndex>());
+    return AbstractScopePtr(compilationInfo, elem.as<ScopeIndex>());
   }
 
-  AbstractScope firstScope() const {
+  AbstractScopePtr firstScope() const {
     MOZ_ASSERT(firstScopeIndex.isSome());
     return getScope(*firstScopeIndex);
   }

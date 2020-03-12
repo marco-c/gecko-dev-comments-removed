@@ -4,8 +4,8 @@
 
 
 
-#ifndef frontend_AbstractScope_h
-#define frontend_AbstractScope_h
+#ifndef frontend_AbstractScopePtr_h
+#define frontend_AbstractScopePtr_h
 
 #include "mozilla/Variant.h"
 
@@ -39,7 +39,7 @@ using HeapPtrScope = HeapPtr<Scope*>;
 
 
 
-class AbstractScope {
+class AbstractScopePtr {
  public:
   
   
@@ -66,11 +66,11 @@ class AbstractScope {
   friend class js::Scope;
   friend class js::frontend::FunctionBox;
 
-  AbstractScope() = default;
+  AbstractScopePtr() = default;
 
-  explicit AbstractScope(Scope* scope) : scope_(HeapPtrScope(scope)) {}
+  explicit AbstractScopePtr(Scope* scope) : scope_(HeapPtrScope(scope)) {}
 
-  AbstractScope(frontend::CompilationInfo& compilationInfo, ScopeIndex scope)
+  AbstractScopePtr(frontend::CompilationInfo& compilationInfo, ScopeIndex scope)
       : scope_(Deferred{scope, compilationInfo}) {}
 
   bool isNullptr() const {
@@ -111,7 +111,7 @@ class AbstractScope {
   }
 
   ScopeKind kind() const;
-  AbstractScope enclosing() const;
+  AbstractScopePtr enclosing() const;
   bool hasEnvironment() const;
   uint32_t nextFrameSlot() const;
   
@@ -119,7 +119,7 @@ class AbstractScope {
   JSFunction* canonicalFunction() const;
 
   bool hasOnChain(ScopeKind kind) const {
-    for (AbstractScope it = *this; it; it = it.enclosing()) {
+    for (AbstractScopePtr it = *this; it; it = it.enclosing()) {
       if (it.kind() == kind) {
         return true;
       }
@@ -132,23 +132,23 @@ class AbstractScope {
 
 
 template <>
-inline bool AbstractScope::is<GlobalScope>() const {
+inline bool AbstractScopePtr::is<GlobalScope>() const {
   return !isNullptr() &&
          (kind() == ScopeKind::Global || kind() == ScopeKind::NonSyntactic);
 }
 
 template <>
-inline bool AbstractScope::is<EvalScope>() const {
+inline bool AbstractScopePtr::is<EvalScope>() const {
   return !isNullptr() &&
          (kind() == ScopeKind::Eval || kind() == ScopeKind::StrictEval);
 }
 
 
-class AbstractScopeIter {
-  AbstractScope scope_;
+class AbstractScopePtrIter {
+  AbstractScopePtr scope_;
 
  public:
-  explicit AbstractScopeIter(const AbstractScope& f) : scope_(f) {}
+  explicit AbstractScopePtrIter(const AbstractScopePtr& f) : scope_(f) {}
   explicit operator bool() const { return !done(); }
 
   bool done() const { return !scope_; }
@@ -159,7 +159,7 @@ class AbstractScopeIter {
     return scope_.kind();
   }
 
-  AbstractScope abstractScope() const { return scope_; }
+  AbstractScopePtr abstractScopePtr() const { return scope_; }
 
   void operator++(int) {
     MOZ_ASSERT(!done());
@@ -182,8 +182,8 @@ class AbstractScopeIter {
 
 namespace JS {
 template <>
-struct GCPolicy<js::AbstractScope::Deferred>
-    : JS::IgnoreGCPolicy<js::AbstractScope::Deferred> {};
+struct GCPolicy<js::AbstractScopePtr::Deferred>
+    : JS::IgnoreGCPolicy<js::AbstractScopePtr::Deferred> {};
 }  
 
 #endif  

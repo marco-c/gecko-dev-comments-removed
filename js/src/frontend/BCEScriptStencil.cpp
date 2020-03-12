@@ -6,9 +6,9 @@
 
 #include "frontend/BCEScriptStencil.h"
 
-#include "frontend/AbstractScope.h"    
-#include "frontend/BytecodeEmitter.h"  
-#include "frontend/BytecodeSection.h"  
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/BytecodeEmitter.h"   
+#include "frontend/BytecodeSection.h"   
 
 using namespace js;
 using namespace js::frontend;
@@ -60,7 +60,7 @@ void BCEScriptStencil::init(uint32_t nslots) {
 
 bool BCEScriptStencil::getNeedsFunctionEnvironmentObjects() const {
   
-  js::AbstractScope bodyScope = bce_.bodyScope();
+  js::AbstractScopePtr bodyScope = bce_.bodyScope();
   if (bodyScope.kind() == js::ScopeKind::Function) {
     if (bodyScope.hasEnvironment()) {
       return true;
@@ -68,7 +68,7 @@ bool BCEScriptStencil::getNeedsFunctionEnvironmentObjects() const {
   }
 
   
-  js::AbstractScope outerScope = bce_.outermostScope();
+  js::AbstractScopePtr outerScope = bce_.outermostScope();
   if (outerScope.kind() == js::ScopeKind::NamedLambda ||
       outerScope.kind() == js::ScopeKind::StrictNamedLambda) {
     MOZ_ASSERT(bce_.sc->asFunctionBox()->isNamedLambda());
