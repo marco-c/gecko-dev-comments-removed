@@ -1,12 +1,13 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
 
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DocumentChannelParent.h"
 #include "mozilla/dom/BrowserParent.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ClientInfo.h"
 
 extern mozilla::LazyLogModule gDocumentChannelLog;
@@ -17,20 +18,24 @@ using namespace mozilla::dom;
 namespace mozilla {
 namespace net {
 
-DocumentChannelParent::DocumentChannelParent(BrowserParent* aBrowser,
+DocumentChannelParent::DocumentChannelParent(CanonicalBrowsingContext* aContext,
                                              nsILoadContext* aLoadContext,
                                              PBOverrideStatus aOverrideStatus) {
   LOG(("DocumentChannelParent ctor [this=%p]", this));
-  mParent = new DocumentLoadListener(aBrowser->GetBrowsingContext(),
-                                     aLoadContext, aOverrideStatus, this);
+  // Sometime we can get this called without a BrowsingContext, so that we have
+  // an actor to call SendFailedAsyncOpen on.
+  if (aContext) {
+    mParent =
+        new DocumentLoadListener(aContext, aLoadContext, aOverrideStatus, this);
+  }
 }
 
 DocumentChannelParent::~DocumentChannelParent() {
   LOG(("DocumentChannelParent dtor [this=%p]", this));
 }
 
-bool DocumentChannelParent::Init(BrowserParent* aBrowser,
-                                 const DocumentChannelCreationArgs& aArgs) {
+bool DocumentChannelParent::Init(const DocumentChannelCreationArgs& aArgs) {
+  MOZ_ASSERT(mParent);
   RefPtr<nsDocShellLoadState> loadState =
       new nsDocShellLoadState(aArgs.loadState());
   LOG(("DocumentChannelParent Init [this=%p, uri=%s]", this,
@@ -45,19 +50,15 @@ bool DocumentChannelParent::Init(BrowserParent* aBrowser,
     clientInfo.emplace(ClientInfo(aArgs.initialClientInfo().ref()));
   }
 
-  RefPtr<BrowsingContext> bc;
-  loadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
-
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   rv = NS_ERROR_UNEXPECTED;
-  if (!mParent->Open(bc->Canonical(), aBrowser->GetBrowsingContext(), loadState,
-                     loadInfo, aArgs.loadFlags(), aArgs.loadType(),
+  if (!mParent->Open(loadState, loadInfo, aArgs.loadFlags(), aArgs.loadType(),
                      aArgs.cacheKey(), aArgs.isActive(), aArgs.isTopLevelDoc(),
-                     aArgs.hasNonEmptySandboxingFlags(), aArgs.channelId(),
-                     aArgs.asyncOpenTime(), aArgs.documentOpenFlags(),
-                     aArgs.pluginsAllowed(), aArgs.timing().refOr(nullptr),
-                     std::move(clientInfo), aArgs.outerWindowId(), &rv)) {
+                     aArgs.channelId(), aArgs.asyncOpenTime(),
+                     aArgs.documentOpenFlags(), aArgs.pluginsAllowed(),
+                     aArgs.timing().refOr(nullptr), std::move(clientInfo),
+                     aArgs.outerWindowId(), &rv)) {
     return SendFailedAsyncOpen(rv);
   }
 
@@ -76,7 +77,7 @@ DocumentChannelParent::RedirectToRealChannel(uint32_t aRedirectFlags,
   return SendRedirectToRealChannel(args);
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
 #undef LOG

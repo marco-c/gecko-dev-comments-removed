@@ -63,25 +63,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIProcessSwitchRequestor,
                              public nsIMultiPartChannelListener {
  public:
-  
-  
-  
-  
-  explicit DocumentLoadListener(
-      dom::CanonicalBrowsingContext* aProcessTopBrowsingContext,
-      nsILoadContext* aLoadContext, PBOverrideStatus aOverrideStatus,
-      ADocumentChannelBridge* aBridge);
+  explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
+                                nsILoadContext* aLoadContext,
+                                PBOverrideStatus aOverrideStatus,
+                                ADocumentChannelBridge* aBridge);
 
   
-  
-  
-  
-  bool Open(dom::CanonicalBrowsingContext* aBrowsingContext,
-            dom::CanonicalBrowsingContext* aProcessTopBrowsingContext,
-            nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
+  bool Open(nsDocShellLoadState* aLoadState, LoadInfo* aLoadInfo,
             nsLoadFlags aLoadFlags, uint32_t aLoadType, uint32_t aCacheKey,
-            bool aIsActive, bool aIsTopLevelDoc,
-            bool aHasNonEmptySandboxingFlags, const uint64_t& aChannelId,
+            bool aIsActive, bool aIsTopLevelDoc, const uint64_t& aChannelId,
             const TimeStamp& aAsyncOpenTime,
             const Maybe<uint32_t>& aDocumentOpenFlags, bool aPluginsAllowed,
             nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,

@@ -26,12 +26,14 @@ NS_INTERFACE_MAP_END_INHERITING(DocumentChannel)
 NS_IMPL_ADDREF_INHERITED(DocumentChannelChild, DocumentChannel)
 NS_IMPL_RELEASE_INHERITED(DocumentChannelChild, DocumentChannel)
 
-DocumentChannelChild::DocumentChannelChild(
-    nsDocShellLoadState* aLoadState, net::LoadInfo* aLoadInfo,
-    nsLoadFlags aLoadFlags, uint32_t aLoadType, uint32_t aCacheKey,
-    bool aIsActive, bool aIsTopLevelDoc, bool aHasNonEmptySandboxingFlags)
+DocumentChannelChild::DocumentChannelChild(nsDocShellLoadState* aLoadState,
+                                           net::LoadInfo* aLoadInfo,
+                                           nsLoadFlags aLoadFlags,
+                                           uint32_t aLoadType,
+                                           uint32_t aCacheKey, bool aIsActive,
+                                           bool aIsTopLevelDoc)
     : DocumentChannel(aLoadState, aLoadInfo, aLoadFlags, aLoadType, aCacheKey,
-                      aIsActive, aIsTopLevelDoc, aHasNonEmptySandboxingFlags) {
+                      aIsActive, aIsTopLevelDoc) {
   LOG(("DocumentChannelChild ctor [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
 }
@@ -88,7 +90,6 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   args.cacheKey() = mCacheKey;
   args.isActive() = mIsActive;
   args.isTopLevelDoc() = mIsTopLevelDoc;
-  args.hasNonEmptySandboxingFlags() = mHasNonEmptySandboxingFlags;
   args.channelId() = mChannelId;
   args.asyncOpenTime() = mAsyncOpenTime;
   args.documentOpenFlags() = mDocumentOpenFlags;
@@ -114,11 +115,14 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  
-  
+  if (!GetDocShell() || !GetDocShell()->GetBrowsingContext() ||
+      GetDocShell()->GetBrowsingContext()->IsDiscarded()) {
+    return NS_ERROR_FAILURE;
+  }
 
   gNeckoChild->SendPDocumentChannelConstructor(
-      this, browserChild, IPC::SerializedLoadContext(this), args);
+      this, browserChild, GetDocShell()->GetBrowsingContext(),
+      IPC::SerializedLoadContext(this), args);
 
   mIsPending = true;
   mWasOpened = true;
