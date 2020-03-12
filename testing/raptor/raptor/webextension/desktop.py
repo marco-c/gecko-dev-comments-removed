@@ -204,6 +204,8 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
         except NotImplementedError:  
             pass
 
+        self.crashes += self.runner.crashed
+
     def clean_up(self):
         self.runner.stop()
 
