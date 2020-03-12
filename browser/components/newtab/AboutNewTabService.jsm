@@ -186,15 +186,15 @@ AboutNewTabService.prototype = {
             Services.scriptloader.loadSubScript(script, win); 
           }
         };
-        subject.addEventListener("DOMContentLoaded", onLoaded, { once: true });
+        win.addEventListener("DOMContentLoaded", onLoaded, { once: true });
 
         
         
         
         const onUnloaded = () => {
-          subject.removeEventListener("DOMContentLoaded", onLoaded);
+          win.removeEventListener("DOMContentLoaded", onLoaded);
         };
-        subject.addEventListener("unload", onUnloaded, { once: true });
+        win.addEventListener("unload", onUnloaded, { once: true });
         break;
       }
       case TOPIC_APP_QUIT:
