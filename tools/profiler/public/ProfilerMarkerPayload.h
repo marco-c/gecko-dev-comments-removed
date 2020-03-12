@@ -57,7 +57,7 @@ class ProfilerMarkerPayload {
       UniqueProfilerBacktrace aStack = nullptr)
       : mCommonProps{aStartTime, aEndTime, std::move(aStack), aInnerWindowID} {}
 
-  virtual ~ProfilerMarkerPayload() {}
+  virtual ~ProfilerMarkerPayload() = default;
 
   
   
