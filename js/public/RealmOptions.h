@@ -279,9 +279,6 @@ class JS_PUBLIC_API RealmBehaviors {
     Mode mode_;
   };
 
-  bool extraWarnings(JSContext* cx) const;
-  Override& extraWarningsOverride() { return extraWarningsOverride_; }
-
   bool getSingletonsAsTemplates() const { return singletonsAsTemplates_; }
   RealmBehaviors& setSingletonsAsValues() {
     singletonsAsTemplates_ = false;
@@ -301,7 +298,6 @@ class JS_PUBLIC_API RealmBehaviors {
   bool discardSource_ = false;
   bool disableLazyParsing_ = false;
   bool clampAndJitterTime_ = true;
-  Override extraWarningsOverride_ = {};
 
   
   

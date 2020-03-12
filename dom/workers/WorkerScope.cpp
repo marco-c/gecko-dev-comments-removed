@@ -614,16 +614,11 @@ bool DedicatedWorkerGlobalScope::WrapGlobalObject(
 
   
   
-  
   const bool discardSource =
       usesSystemPrincipal && xpc::ShouldDiscardSystemSource();
-  const bool extraWarnings =
-      usesSystemPrincipal && xpc::ExtraWarningsForSystemJS();
 
   JS::RealmBehaviors& behaviors = options.behaviors();
-  behaviors.setDiscardSource(discardSource)
-      .extraWarningsOverride()
-      .set(extraWarnings);
+  behaviors.setDiscardSource(discardSource);
 
   xpc::SetPrefableRealmOptions(options);
 

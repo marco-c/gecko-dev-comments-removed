@@ -1,15 +1,15 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/* JavaScript API. */
 
 #ifndef js_ContextOptions_h
 #define js_ContextOptions_h
 
-#include "jstypes.h"  
+#include "jstypes.h"  // JS_PUBLIC_API
 
 struct JS_PUBLIC_API JSContext;
 
@@ -38,7 +38,6 @@ class JS_PUBLIC_API ContextOptions {
         dumpStackOnDebuggeeWouldRun_(false),
         werror_(false),
         strictMode_(false),
-        extraWarnings_(false),
 #ifdef JS_ENABLE_SMOOSH
         trySmoosh_(false),
 #endif
@@ -90,7 +89,7 @@ class JS_PUBLIC_API ContextOptions {
   }
 
   bool wasmCranelift() const { return wasmCranelift_; }
-  
+  // Defined out-of-line because it depends on a compile-time option
   ContextOptions& setWasmCranelift(bool flag);
 
   bool testWasmAwaitTier2() const { return testWasmAwaitTier2_; }
@@ -108,7 +107,7 @@ class JS_PUBLIC_API ContextOptions {
 #endif
 
   bool wasmGc() const { return wasmGc_; }
-  
+  // Defined out-of-line because it depends on a compile-time option
   ContextOptions& setWasmGc(bool flag);
 
   bool throwOnAsmJSValidationFailure() const {
@@ -123,17 +122,17 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  
-  
-  
+  // Override to allow disabling Ion for this context irrespective of the
+  // process-wide Ion-enabled setting. This must be set right after creating
+  // the context.
   bool disableIon() const { return disableIon_; }
   ContextOptions& setDisableIon() {
     disableIon_ = true;
     return *this;
   }
 
-  
-  
+  // Override to allow disabling the eval restriction security checks for
+  // this context.
   bool disableEvalSecurityChecks() const { return disableEvalSecurityChecks_; }
   ContextOptions& setDisableEvalSecurityChecks() {
     disableEvalSecurityChecks_ = true;
@@ -180,28 +179,18 @@ class JS_PUBLIC_API ContextOptions {
     return *this;
   }
 
-  bool extraWarnings() const { return extraWarnings_; }
-  ContextOptions& setExtraWarnings(bool flag) {
-    extraWarnings_ = flag;
-    return *this;
-  }
-  ContextOptions& toggleExtraWarnings() {
-    extraWarnings_ = !extraWarnings_;
-    return *this;
-  }
-
 #ifdef JS_ENABLE_SMOOSH
-  
-  
+  // Try compiling SmooshMonkey frontend first, and fallback to C++
+  // implementation when it fails.
   bool trySmoosh() const { return trySmoosh_; }
   ContextOptions& setTrySmoosh(bool flag) {
     trySmoosh_ = flag;
     return *this;
   }
-#endif  
+#endif  // JS_ENABLE_SMOOSH
 
   bool fuzzing() const { return fuzzing_; }
-  
+  // Defined out-of-line because it depends on a compile-time option
   ContextOptions& setFuzzing(bool flag);
 
   void disableOptionsForSafeMode() {
@@ -233,7 +222,6 @@ class JS_PUBLIC_API ContextOptions {
   bool dumpStackOnDebuggeeWouldRun_ : 1;
   bool werror_ : 1;
   bool strictMode_ : 1;
-  bool extraWarnings_ : 1;
 #ifdef JS_ENABLE_SMOOSH
   bool trySmoosh_ : 1;
 #endif
@@ -242,6 +230,6 @@ class JS_PUBLIC_API ContextOptions {
 
 JS_PUBLIC_API ContextOptions& ContextOptionsRef(JSContext* cx);
 
-}  
+}  // namespace JS
 
-#endif  
+#endif  // js_ContextOptions_h
