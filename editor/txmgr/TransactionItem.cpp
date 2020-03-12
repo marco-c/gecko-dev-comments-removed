@@ -59,97 +59,37 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(TransactionItem, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(TransactionItem, Release)
 
-nsresult TransactionItem::AddChild(TransactionItem* aTransactionItem) {
-  NS_ENSURE_TRUE(aTransactionItem, NS_ERROR_NULL_POINTER);
-
+nsresult TransactionItem::AddChild(TransactionItem& aTransactionItem) {
   if (!mUndoStack) {
     mUndoStack = new TransactionStack(TransactionStack::FOR_UNDO);
   }
 
-  mUndoStack->Push(aTransactionItem);
+  mUndoStack->Push(&aTransactionItem);
   return NS_OK;
 }
 
 already_AddRefed<nsITransaction> TransactionItem::GetTransaction() {
-  nsCOMPtr<nsITransaction> txn = mTransaction;
-  return txn.forget();
-}
-
-nsresult TransactionItem::GetIsBatch(bool* aIsBatch) {
-  NS_ENSURE_TRUE(aIsBatch, NS_ERROR_NULL_POINTER);
-  *aIsBatch = !mTransaction;
-  return NS_OK;
-}
-
-nsresult TransactionItem::GetNumberOfChildren(int32_t* aNumChildren) {
-  NS_ENSURE_TRUE(aNumChildren, NS_ERROR_NULL_POINTER);
-
-  *aNumChildren = 0;
-
-  int32_t ui = 0;
-  nsresult rv = GetNumberOfUndoItems(&ui);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  int32_t ri = 0;
-  rv = GetNumberOfRedoItems(&ri);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  *aNumChildren = ui + ri;
-  return NS_OK;
-}
-
-nsresult TransactionItem::GetChild(int32_t aIndex, TransactionItem** aChild) {
-  NS_ENSURE_TRUE(aChild, NS_ERROR_NULL_POINTER);
-
-  *aChild = 0;
-
-  int32_t numItems = 0;
-  nsresult rv = GetNumberOfChildren(&numItems);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (aIndex < 0 || aIndex >= numItems) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  
-  rv = GetNumberOfUndoItems(&numItems);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  if (numItems > 0 && aIndex < numItems) {
-    NS_ENSURE_TRUE(mUndoStack, NS_ERROR_FAILURE);
-
-    RefPtr<TransactionItem> child = mUndoStack->GetItem(aIndex);
-    child.forget(aChild);
-    return *aChild ? NS_OK : NS_ERROR_FAILURE;
-  }
-
-  
-  aIndex -= numItems;
-
-  rv = GetNumberOfRedoItems(&numItems);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(mRedoStack && numItems != 0 && aIndex < numItems,
-                 NS_ERROR_FAILURE);
-
-  RefPtr<TransactionItem> child = mRedoStack->GetItem(aIndex);
-  child.forget(aChild);
-  return *aChild ? NS_OK : NS_ERROR_FAILURE;
+  return do_AddRef(mTransaction);
 }
 
 nsresult TransactionItem::DoTransaction() {
-  if (mTransaction) {
-    return mTransaction->DoTransaction();
+  if (!mTransaction) {
+    return NS_OK;
   }
-  return NS_OK;
+  nsresult rv = mTransaction->DoTransaction();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "nsITransaction::DoTransaction() failed");
+  return rv;
 }
 
 nsresult TransactionItem::UndoTransaction(
     TransactionManager* aTransactionManager) {
   nsresult rv = UndoChildren(aTransactionManager);
   if (NS_FAILED(rv)) {
-    RecoverFromUndoError(aTransactionManager);
+    NS_WARNING("TransactionItem::UndoChildren() failed");
+    DebugOnly<nsresult> rvIgnored = RecoverFromUndoError(aTransactionManager);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "TransactionItem::RecoverFromUndoError() failed");
     return rv;
   }
 
@@ -158,112 +98,58 @@ nsresult TransactionItem::UndoTransaction(
   }
 
   rv = mTransaction->UndoTransaction();
-  if (NS_FAILED(rv)) {
-    RecoverFromUndoError(aTransactionManager);
-    return rv;
+  if (NS_SUCCEEDED(rv)) {
+    return NS_OK;
   }
 
-  return NS_OK;
+  NS_WARNING("TransactionItem::UndoTransaction() failed");
+  DebugOnly<nsresult> rvIgnored = RecoverFromUndoError(aTransactionManager);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "TransactionItem::RecoverFromUndoError() failed");
+  return rv;
 }
 
 nsresult TransactionItem::UndoChildren(
     TransactionManager* aTransactionManager) {
-  if (mUndoStack) {
-    if (!mRedoStack && mUndoStack) {
-      mRedoStack = new TransactionStack(TransactionStack::FOR_REDO);
-    }
-
-    
-    int32_t sz = mUndoStack->GetSize();
-
-    nsresult rv = NS_OK;
-    while (sz-- > 0) {
-      RefPtr<TransactionItem> transactionItem = mUndoStack->Peek();
-      if (!transactionItem) {
-        return NS_ERROR_FAILURE;
-      }
-
-      nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
-      bool doInterrupt = false;
-      rv = aTransactionManager->WillUndoNotify(transaction, &doInterrupt);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      if (doInterrupt) {
-        return NS_OK;
-      }
-
-      rv = transactionItem->UndoTransaction(aTransactionManager);
-      if (NS_SUCCEEDED(rv)) {
-        transactionItem = mUndoStack->Pop();
-        mRedoStack->Push(transactionItem.forget());
-      }
-
-      nsresult rv2 = aTransactionManager->DidUndoNotify(transaction, rv);
-      if (NS_SUCCEEDED(rv)) {
-        rv = rv2;
-      }
-    }
-    
-    
-    
-    return rv;
-  }
-
-  return NS_OK;
-}
-
-nsresult TransactionItem::RedoTransaction(
-    TransactionManager* aTransactionManager) {
-  nsCOMPtr<nsITransaction> transaction(mTransaction);
-  if (transaction) {
-    nsresult rv = transaction->RedoTransaction();
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  nsresult rv = RedoChildren(aTransactionManager);
-  if (NS_FAILED(rv)) {
-    RecoverFromRedoError(aTransactionManager);
-    return rv;
-  }
-
-  return NS_OK;
-}
-
-nsresult TransactionItem::RedoChildren(
-    TransactionManager* aTransactionManager) {
-  if (!mRedoStack) {
+  if (!mUndoStack) {
     return NS_OK;
   }
 
-  
-  int32_t sz = mRedoStack->GetSize();
+  if (!mRedoStack) {
+    mRedoStack = new TransactionStack(TransactionStack::FOR_REDO);
+  }
+
+  size_t undoStackSize = mUndoStack->GetSize();
 
   nsresult rv = NS_OK;
-  while (sz-- > 0) {
-    RefPtr<TransactionItem> transactionItem = mRedoStack->Peek();
+  while (undoStackSize-- > 0) {
+    RefPtr<TransactionItem> transactionItem = mUndoStack->Peek();
     if (!transactionItem) {
       return NS_ERROR_FAILURE;
     }
 
     nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
     bool doInterrupt = false;
-    rv = aTransactionManager->WillRedoNotify(transaction, &doInterrupt);
+    rv = aTransactionManager->WillUndoNotify(transaction, &doInterrupt);
     if (NS_FAILED(rv)) {
+      NS_WARNING("TransactionManager::WillUndoNotify() failed");
       return rv;
     }
     if (doInterrupt) {
       return NS_OK;
     }
 
-    rv = transactionItem->RedoTransaction(aTransactionManager);
+    rv = transactionItem->UndoTransaction(aTransactionManager);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "TransactionItem::UndoTransaction() failed");
     if (NS_SUCCEEDED(rv)) {
-      transactionItem = mRedoStack->Pop();
-      mUndoStack->Push(transactionItem.forget());
+      transactionItem = mUndoStack->Pop();
+      mRedoStack->Push(transactionItem.forget());
     }
 
-    
     nsresult rv2 = aTransactionManager->DidUndoNotify(transaction, rv);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv2),
+                         "TransactionManager::DidUndoNotify() failed");
     if (NS_SUCCEEDED(rv)) {
       rv = rv2;
     }
@@ -274,28 +160,88 @@ nsresult TransactionItem::RedoChildren(
   return rv;
 }
 
-nsresult TransactionItem::GetNumberOfUndoItems(int32_t* aNumItems) {
-  NS_ENSURE_TRUE(aNumItems, NS_ERROR_NULL_POINTER);
+nsresult TransactionItem::RedoTransaction(
+    TransactionManager* aTransactionManager) {
+  nsCOMPtr<nsITransaction> transaction(mTransaction);
+  if (transaction) {
+    nsresult rv = transaction->RedoTransaction();
+    if (NS_FAILED(rv)) {
+      NS_WARNING("nsITransaction::RedoTransaction() failed");
+      return rv;
+    }
+  }
 
-  if (!mUndoStack) {
-    *aNumItems = 0;
+  nsresult rv = RedoChildren(aTransactionManager);
+  if (NS_SUCCEEDED(rv)) {
     return NS_OK;
   }
 
-  *aNumItems = mUndoStack->GetSize();
-  return *aNumItems ? NS_OK : NS_ERROR_FAILURE;
+  NS_WARNING("TransactionItem::RedoChildren() failed");
+  DebugOnly<nsresult> rvIgnored = RecoverFromRedoError(aTransactionManager);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "TransactionItem::RecoverFromRedoError() failed");
+  return rv;
 }
 
-nsresult TransactionItem::GetNumberOfRedoItems(int32_t* aNumItems) {
-  NS_ENSURE_TRUE(aNumItems, NS_ERROR_NULL_POINTER);
-
+nsresult TransactionItem::RedoChildren(
+    TransactionManager* aTransactionManager) {
   if (!mRedoStack) {
-    *aNumItems = 0;
     return NS_OK;
   }
 
-  *aNumItems = mRedoStack->GetSize();
-  return *aNumItems ? NS_OK : NS_ERROR_FAILURE;
+  
+  size_t redoStackSize = mRedoStack->GetSize();
+
+  nsresult rv = NS_OK;
+  while (redoStackSize-- > 0) {
+    RefPtr<TransactionItem> transactionItem = mRedoStack->Peek();
+    if (NS_WARN_IF(!transactionItem)) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsCOMPtr<nsITransaction> transaction = transactionItem->GetTransaction();
+    bool doInterrupt = false;
+    rv = aTransactionManager->WillRedoNotify(transaction, &doInterrupt);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("TransactionManager::WillRedoNotify() failed");
+      return rv;
+    }
+    if (doInterrupt) {
+      return NS_OK;
+    }
+
+    rv = transactionItem->RedoTransaction(aTransactionManager);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "TransactionItem::RedoTransaction() failed");
+    if (NS_SUCCEEDED(rv)) {
+      transactionItem = mRedoStack->Pop();
+      mUndoStack->Push(transactionItem.forget());
+    }
+
+    
+    nsresult rv2 = aTransactionManager->DidUndoNotify(transaction, rv);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv2),
+                         "TransactionManager::DidUndoNotify() failed");
+    if (NS_SUCCEEDED(rv)) {
+      rv = rv2;
+    }
+  }
+  
+  
+  
+  return rv;
+}
+
+size_t TransactionItem::NumberOfUndoItems() const {
+  NS_WARNING_ASSERTION(!mUndoStack || mUndoStack->GetSize() > 0,
+                       "UndoStack cannot have no children");
+  return mUndoStack ? mUndoStack->GetSize() : 0;
+}
+
+size_t TransactionItem::NumberOfRedoItems() const {
+  NS_WARNING_ASSERTION(!mRedoStack || mRedoStack->GetSize() > 0,
+                       "UndoStack cannot have no children");
+  return mRedoStack ? mRedoStack->GetSize() : 0;
 }
 
 nsresult TransactionItem::RecoverFromUndoError(
@@ -303,7 +249,10 @@ nsresult TransactionItem::RecoverFromUndoError(
   
   
   
-  return RedoChildren(aTransactionManager);
+  nsresult rv = RedoChildren(aTransactionManager);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "TransactionItem::RedoChildren() failed");
+  return rv;
 }
 
 nsresult TransactionItem::RecoverFromRedoError(
@@ -314,6 +263,7 @@ nsresult TransactionItem::RecoverFromRedoError(
   
   nsresult rv = UndoChildren(aTransactionManager);
   if (NS_FAILED(rv)) {
+    NS_WARNING("TransactionItem::UndoChildren() failed");
     return rv;
   }
 
@@ -321,7 +271,10 @@ nsresult TransactionItem::RecoverFromRedoError(
     return NS_OK;
   }
 
-  return mTransaction->UndoTransaction();
+  rv = mTransaction->UndoTransaction();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "nsITransaction::UndoTransaction() failed");
+  return rv;
 }
 
 }  
