@@ -7294,6 +7294,10 @@ nsIPrincipal* nsPIDOMWindowInner::GetDocumentContentBlockingAllowListPrincipal()
               : mDocContentBlockingAllowListPrincipal.get();
 }
 
+mozilla::dom::WindowContext* nsPIDOMWindowInner::GetWindowContext() const {
+  return mWindowGlobalChild ? mWindowGlobalChild->WindowContext() : nullptr;
+}
+
 void nsPIDOMWindowInner::MaybeCreateDoc() {
   
   MOZ_ASSERT(!mDoc);
