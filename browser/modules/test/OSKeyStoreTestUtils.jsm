@@ -38,7 +38,8 @@ var OSKeyStoreTestUtils = {
 
 
   canTestOSKeyStoreLogin() {
-    return !AppConstants.MOZILLA_OFFICIAL;
+    
+    return AppConstants.DEBUG && AppConstants.platform != "linux";
   },
 
   

@@ -125,7 +125,32 @@ var OSKeyStore = {
 
 
 
-  async ensureLoggedIn(reauth = false) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async ensureLoggedIn(reauth = false, generateKeyIfNotAvailable = true) {
+    if (
+      (typeof reauth != "boolean" && typeof reauth != "string") ||
+      reauth === true ||
+      reauth === ""
+    ) {
+      throw new Error(
+        "reauth is required to either be `false` or a non-empty string"
+      );
+    }
+
     if (this._pendingUnlockPromise) {
       log.debug("ensureLoggedIn: Has a pending unlock operation");
       return this._pendingUnlockPromise;
@@ -136,51 +161,52 @@ var OSKeyStore = {
     );
 
     let unlockPromise;
-
-    
-    if (typeof reauth == "boolean" && !reauth) {
-      unlockPromise = Promise.resolve();
-    } else if (!AppConstants.MOZILLA_OFFICIAL && this._testReauth) {
-      unlockPromise = this._reauthInTests();
-    } else if (
-      AppConstants.platform == "win" ||
-      AppConstants.platform == "macosx"
-    ) {
-      let reauthLabel = typeof reauth == "string" ? reauth : "";
-      
-      
-      unlockPromise = osReauthenticator
-        .asyncReauthenticateUser(reauthLabel)
-        .then(reauthResult => {
-          if (typeof reauthResult == "boolean" && !reauthResult) {
-            throw new Components.Exception(
-              "User canceled OS reauth entry",
-              Cr.NS_ERROR_FAILURE
-            );
-          }
-        });
+    if (typeof reauth == "string") {
+      if (AppConstants.DEBUG && this._testReauth) {
+        unlockPromise = this._reauthInTests();
+      } else if (
+        AppConstants.platform == "win" ||
+        AppConstants.platform == "macosx"
+      ) {
+        
+        
+        unlockPromise = osReauthenticator
+          .asyncReauthenticateUser(reauth)
+          .then(reauthResult => {
+            if (typeof reauthResult == "boolean" && !reauthResult) {
+              throw new Components.Exception(
+                "User canceled OS reauth entry",
+                Cr.NS_ERROR_FAILURE
+              );
+            }
+          });
+      } else {
+        log.debug("ensureLoggedIn: Skipping reauth on unsupported platforms");
+        unlockPromise = Promise.resolve();
+      }
     } else {
-      log.debug("ensureLoggedIn: Skipping reauth on unsupported platforms");
       unlockPromise = Promise.resolve();
     }
 
-    unlockPromise = unlockPromise.then(async () => {
-      if (!(await nativeOSKeyStore.asyncSecretAvailable(this.STORE_LABEL))) {
-        log.debug(
-          "ensureLoggedIn: Secret unavailable, attempt to generate new secret."
-        );
-        let recoveryPhrase = await nativeOSKeyStore.asyncGenerateSecret(
-          this.STORE_LABEL
-        );
-        
-        
-        
-        log.debug(
-          "ensureLoggedIn: Secret generated. Recovery phrase length: " +
-            recoveryPhrase.length
-        );
-      }
-    });
+    if (generateKeyIfNotAvailable) {
+      unlockPromise = unlockPromise.then(async () => {
+        if (!(await nativeOSKeyStore.asyncSecretAvailable(this.STORE_LABEL))) {
+          log.debug(
+            "ensureLoggedIn: Secret unavailable, attempt to generate new secret."
+          );
+          let recoveryPhrase = await nativeOSKeyStore.asyncGenerateSecret(
+            this.STORE_LABEL
+          );
+          
+          
+          
+          log.debug(
+            "ensureLoggedIn: Secret generated. Recovery phrase length: " +
+              recoveryPhrase.length
+          );
+        }
+      });
+    }
 
     unlockPromise = unlockPromise.then(
       () => {
@@ -205,7 +231,6 @@ var OSKeyStore = {
   },
 
   
-
 
 
 

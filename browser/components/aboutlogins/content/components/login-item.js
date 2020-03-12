@@ -291,7 +291,10 @@ export default class LoginItem extends HTMLElement {
           
           if (this._revealCheckbox.checked && !this.dataset.editing) {
             let masterPasswordAuth = await new Promise(resolve => {
-              window.AboutLoginsUtils.promptForMasterPassword(resolve);
+              window.AboutLoginsUtils.promptForMasterPassword(
+                resolve,
+                "about-logins-reveal-password-os-auth-dialog-message"
+              );
             });
             if (!masterPasswordAuth) {
               this._revealCheckbox.checked = false;
@@ -341,7 +344,10 @@ export default class LoginItem extends HTMLElement {
               : this._copyPasswordButton;
           if (copyButton.dataset.copyLoginProperty == "password") {
             let masterPasswordAuth = await new Promise(resolve => {
-              window.AboutLoginsUtils.promptForMasterPassword(resolve);
+              window.AboutLoginsUtils.promptForMasterPassword(
+                resolve,
+                "about-logins-copy-password-os-auth-dialog-message"
+              );
             });
             if (!masterPasswordAuth) {
               return;
@@ -396,7 +402,10 @@ export default class LoginItem extends HTMLElement {
         }
         if (classList.contains("edit-button")) {
           let masterPasswordAuth = await new Promise(resolve => {
-            window.AboutLoginsUtils.promptForMasterPassword(resolve);
+            window.AboutLoginsUtils.promptForMasterPassword(
+              resolve,
+              "about-logins-edit-login-os-auth-dialog-message"
+            );
           });
           if (!masterPasswordAuth) {
             return;
@@ -776,7 +785,6 @@ export default class LoginItem extends HTMLElement {
     this._passwordInput.tabIndex = inputTabIndex;
     if (shouldEdit) {
       this.dataset.editing = true;
-      this._originInput.focus();
     } else {
       delete this.dataset.editing;
       
@@ -812,6 +820,7 @@ export default class LoginItem extends HTMLElement {
     
     if (this.dataset.isNewLogin) {
       this._originDisplayInput.replaceWith(this._originInput);
+      this._originInput.focus();
     } else {
       this._originInput.replaceWith(this._originDisplayInput);
     }
