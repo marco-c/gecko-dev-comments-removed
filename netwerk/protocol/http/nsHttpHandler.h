@@ -53,8 +53,8 @@ class nsHttpConnection;
 class nsHttpConnectionInfo;
 class HttpTransactionShell;
 class AltSvcMapping;
-class SimpleHttpChannel;
 class TRR;
+class TRRServiceChannel;
 
 
 
@@ -262,6 +262,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
     MOZ_ASSERT(XRE_IsParentProcess());
     return mAltSvcCache.get();
   }
+
+  void ClearHostMapping(nsHttpConnectionInfo* aConnInfo);
 
   
   uint32_t GenerateUniqueID() { return ++mLastUniqueID; }
@@ -504,9 +506,9 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   void MaybeEnableSpeculativeConnect();
 
   
-  friend class SimpleHttpChannel;
+  friend class TRRServiceChannel;
   friend class TRR;
-  nsresult CreateSimpleHttpChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
+  nsresult CreateTRRServiceChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
                                    uint32_t proxyResolveFlags, nsIURI* proxyURI,
                                    nsILoadInfo* aLoadInfo, nsIChannel** result);
   nsresult SetupChannelInternal(HttpBaseChannel* aChannel, nsIURI* uri,
