@@ -2991,6 +2991,39 @@ extern JS_PUBLIC_API void SetOutOfMemoryCallback(JSContext* cx,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr size_t WAIT_CALLBACK_CLIENT_MAXMEM = 32;
+
+using BeforeWaitCallback = void* (*)(uint8_t* memory);
+using AfterWaitCallback = void (*)(void* cookie);
+
+extern JS_PUBLIC_API void SetWaitCallback(JSRuntime* rt,
+                                          BeforeWaitCallback beforeWait,
+                                          AfterWaitCallback afterWait,
+                                          size_t requiredMemory);
+
+
+
+
 struct AllFrames {};
 
 
