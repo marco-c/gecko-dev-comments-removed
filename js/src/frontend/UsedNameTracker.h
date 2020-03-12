@@ -155,15 +155,6 @@ class UsedNameTracker {
   
   
   void rewind(RewindToken token);
-
-  
-  void reset() {
-    map_.clear();
-    RewindToken token;
-    token.scriptId = 0;
-    token.scopeId = 0;
-    rewind(token);
-  }
 };
 
 }  
