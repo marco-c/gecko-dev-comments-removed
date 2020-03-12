@@ -80,7 +80,6 @@ class WorkerTargetFront extends TargetMixin(
       
       this.targetForm.consoleActor = connectResponse.consoleActor;
       this.targetForm.threadActor = connectResponse.threadActor;
-      this._threadActor = connectResponse.threadActor;
 
       return this.attachConsole();
     })();
