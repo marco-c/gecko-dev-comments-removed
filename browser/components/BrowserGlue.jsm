@@ -26,6 +26,12 @@ ChromeUtils.defineModuleGetter(
   "resource:///modules/CustomizableUI.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "PushService",
@@ -387,16 +393,6 @@ let LEGACY_ACTORS = {
         ContentSearchClient: { capture: true, wantUntrusted: true },
       },
       messages: ["ContentSearch"],
-    },
-  },
-
-  OfflineApps: {
-    child: {
-      module: "resource:///actors/OfflineAppsChild.jsm",
-      events: {
-        MozApplicationManifest: {},
-      },
-      messages: ["OfflineApps:StartFetching"],
     },
   },
 
@@ -1219,6 +1215,7 @@ BrowserGlue.prototype = {
     }
 
     SaveToPocket.init();
+
     Services.obs.notifyObservers(null, "browser-ui-startup-complete");
   },
 
@@ -1581,6 +1578,8 @@ BrowserGlue.prototype = {
 
   
   _onFirstWindowLoaded: function BG__onFirstWindowLoaded(aWindow) {
+    AboutNewTab.init();
+
     TabCrashHandler.init();
 
     ProcessHangMonitor.init();
