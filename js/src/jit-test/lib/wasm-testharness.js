@@ -1,22 +1,6 @@
 if (!wasmIsSupported())
     quit();
 
-
-
-
-
-
-
-
-
-
-
-
-
-let harnessdir = libdir + "../tests/wasm/spec/harness/";
-
-load(harnessdir + 'sync_index.js');
-
 function test(func, description) {
     let maybeErr;
     try {
