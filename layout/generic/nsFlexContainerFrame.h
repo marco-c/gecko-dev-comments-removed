@@ -279,13 +279,25 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void DoFlexLayout(ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
-                    nsReflowStatus& aStatus, nscoord aContentBoxMainSize,
-                    nscoord aAvailableBSizeForContent,
-                    nsTArray<StrutInfo>& aStruts,
-                    const FlexboxAxisTracker& aAxisTracker,
-                    nscoord aMainGapSize, nscoord aCrossGapSize,
-                    bool aHasLineClampEllipsis);
+
+
+
+
+
+
+
+
+
+
+
+
+  void DoFlexLayout(
+      ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+      nsReflowStatus& aStatus, nscoord& aContentBoxMainSize,
+      nscoord& aContentBoxCrossSize, nscoord& aFlexContainerAscent,
+      nscoord aAvailableBSizeForContent, mozilla::LinkedList<FlexLine>& aLines,
+      nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
+      nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis);
 
   
 #ifdef DEBUG
