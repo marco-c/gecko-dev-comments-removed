@@ -363,11 +363,6 @@ class ResponsiveUI {
     }
     this.destroying = true;
 
-    this.targetList.unwatchTargets(
-      [this.targetList.TYPES.FRAME],
-      this.onTargetAvailable
-    );
-
     
     
     
@@ -391,6 +386,11 @@ class ResponsiveUI {
         await this.responsiveFront.setDocumentInRDMPane(false);
         await this.responsiveFront.setFloatingScrollbars(false);
       }
+
+      this.targetList.unwatchTargets(
+        [this.targetList.TYPES.FRAME],
+        this.onTargetAvailable
+      );
     }
 
     this.tab.removeEventListener("TabClose", this);
