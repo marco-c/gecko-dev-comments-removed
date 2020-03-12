@@ -325,9 +325,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT nsresult OnMouseUp(int32_t aX, int32_t aY,
-                                        Element* aTarget);
+  MOZ_CAN_RUN_SCRIPT nsresult OnMouseUp(int32_t aX, int32_t aY);
 
   
 
