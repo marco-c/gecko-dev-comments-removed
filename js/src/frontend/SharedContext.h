@@ -307,8 +307,8 @@ class FunctionBox : public SharedContext {
   
 
   JSFunction* object_;
-  FunctionBox* traceLink;
-  FunctionBox* emitLink;
+  FunctionBox* traceLink_;
+  FunctionBox* emitLink_;
 
   
   
