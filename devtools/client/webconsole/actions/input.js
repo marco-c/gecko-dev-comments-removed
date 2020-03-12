@@ -208,22 +208,32 @@ function setInputValue(value) {
   };
 }
 
-function terminalInputChanged(expression) {
+
+
+
+
+
+
+
+
+function terminalInputChanged(expression, force = false) {
   return async ({ dispatch, webConsoleUI, hud, toolbox, client, getState }) => {
     const prefs = getAllPrefs(getState());
     if (!prefs.eagerEvaluation) {
-      return;
+      return null;
     }
 
     const { terminalInput = "" } = getState().history;
+
     
     if (
       (!terminalInput && !expression) ||
       (typeof terminalInput === "string" &&
         typeof expression === "string" &&
-        expression.trim() === terminalInput.trim())
+        expression.trim() === terminalInput.trim() &&
+        !force)
     ) {
-      return;
+      return null;
     }
 
     const originalExpression = expression;
@@ -233,8 +243,12 @@ function terminalInputChanged(expression) {
     });
 
     
-    if (!expression.trim()) {
-      return;
+    if (!expression || !expression.trim()) {
+      return dispatch({
+        type: SET_TERMINAL_EAGER_RESULT,
+        expression: originalExpression,
+        result: null,
+      });
     }
 
     let mapped;
@@ -251,13 +265,20 @@ function terminalInputChanged(expression) {
       eager: true,
     });
 
-    
     return dispatch({
       type: SET_TERMINAL_EAGER_RESULT,
       expression: originalExpression,
       result: getEagerEvaluationResult(response),
     });
   };
+}
+
+
+
+
+function updateInstantEvaluationResultForCurrentExpression() {
+  return ({ getState, dispatch }) =>
+    dispatch(terminalInputChanged(getState().history.terminalInput, true));
 }
 
 function getEagerEvaluationResult(response) {
@@ -278,4 +299,5 @@ module.exports = {
   focusInput,
   setInputValue,
   terminalInputChanged,
+  updateInstantEvaluationResultForCurrentExpression,
 };
