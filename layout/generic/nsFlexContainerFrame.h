@@ -288,18 +288,6 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                     bool aHasLineClampEllipsis);
 
   
-
-
-
-
-
-
-
-
-  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  bool SortChildrenIfNeeded();
-
-  
 #ifdef DEBUG
   void SanityCheckAnonymousFlexItems() const;
 #endif  
