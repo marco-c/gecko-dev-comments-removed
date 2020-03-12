@@ -245,9 +245,6 @@ class SharedContext {
     localStrict = strict;
     return retVal;
   }
-
-  
-  bool needStrictChecks() const { return strict(); }
 };
 
 class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
