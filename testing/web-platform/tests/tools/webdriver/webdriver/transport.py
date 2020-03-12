@@ -105,7 +105,6 @@ class HTTPWireProtocol(object):
                 conn_kwargs["strict"] = True
             
             
-            
             self._conn = HTTPConnection(self.host, self.port, **conn_kwargs)
 
         return self._conn
@@ -124,6 +123,7 @@ class HTTPWireProtocol(object):
              headers=None,
              encoder=json.JSONEncoder,
              decoder=json.JSONDecoder,
+             timeout=None,
              **codec_kwargs):
         """
         Send a command to the remote.
@@ -179,13 +179,13 @@ class HTTPWireProtocol(object):
         
         
         self._last_request_is_blocked = True
-        response = self._request(method, uri, payload, headers)
+        response = self._request(method, uri, payload, headers, timeout=None)
         self._last_request_is_blocked = False
         return Response.from_http(response, decoder=decoder, **codec_kwargs)
 
-    def _request(self, method, uri, payload, headers=None):
+    def _request(self, method, uri, payload, headers=None, timeout=None):
         if isinstance(payload, text_type):
-            payload = body.encode("utf-8")
+            payload = payload.encode("utf-8")
 
         if headers is None:
             headers = {}
@@ -195,8 +195,21 @@ class HTTPWireProtocol(object):
 
         if self._last_request_is_blocked or self._has_unread_data():
             self.close()
+
         self.connection.request(method, url, payload, headers)
-        return self.connection.getresponse()
+
+        
+        
+        try:
+            if timeout:
+                previous_timeout = self._conn.gettimeout()
+                self._conn.settimeout(timeout)
+            response = self.connection.getresponse()
+        finally:
+            if timeout:
+                self._conn.settimeout(previous_timeout)
+
+        return response
 
     def _has_unread_data(self):
         return self._conn and self._conn.sock and select.select([self._conn.sock], [], [], 0)[0]

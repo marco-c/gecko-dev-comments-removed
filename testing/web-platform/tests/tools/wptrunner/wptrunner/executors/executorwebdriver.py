@@ -301,19 +301,15 @@ class WebDriverProtocol(Protocol):
         self.webdriver = None
 
     def is_alive(self):
-        socket_previous_timeout = socket.getdefaulttimeout()
         try:
             
             
             
             
             
-            socket.setdefaulttimeout(2)
-            self.webdriver.window_handle
+            self.webdriver.send_session_command("GET", "window", timeout=2)
         except (socket.timeout, client.UnknownErrorException, client.InvalidSessionIdException):
             return False
-        finally:
-            socket.setdefaulttimeout(socket_previous_timeout)
         return True
 
     def after_connect(self):
