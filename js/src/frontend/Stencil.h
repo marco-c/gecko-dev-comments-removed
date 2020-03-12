@@ -17,6 +17,7 @@
 
 #include "frontend/AbstractScope.h"      
 #include "frontend/NameAnalysisTypes.h"  
+#include "frontend/ObjLiteral.h"         
 #include "frontend/TypedIndex.h"         
 #include "gc/AllocKind.h"                
 #include "gc/Barrier.h"                  
@@ -419,6 +420,16 @@ class ScopeCreationData {
 };
 
 
+
+
+using ScriptThingVariant =
+    mozilla::Variant<JS::GCCellPtr, BigIntIndex, ObjLiteralCreationData,
+                     RegExpIndex, ScopeIndex>;
+
+
+using ScriptThingsVector = GCVector<ScriptThingVariant>;
+
+
 class ScriptStencil {
  public:
   
@@ -506,5 +517,8 @@ struct GCPolicy<js::frontend::ScopeCreationData*> {
   }
 };
 
+template <typename T>
+struct GCPolicy<js::frontend::TypedIndex<T>>
+    : JS::IgnoreGCPolicy<js::frontend::TypedIndex<T>> {};
 }  
 #endif 
