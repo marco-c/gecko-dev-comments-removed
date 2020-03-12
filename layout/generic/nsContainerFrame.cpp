@@ -1026,7 +1026,12 @@ void nsContainerFrame::FinishReflowChild(
     
     
     aKidFrame->SetSize(aWM, convertedSize);
-    aReflowInput->ApplyRelativePositioning(&pos, aContainerSize);
+
+    const LogicalMargin offsets =
+        aReflowInput->ComputedLogicalOffsets().ConvertTo(
+            aWM, aReflowInput->GetWritingMode());
+    ReflowInput::ApplyRelativePositioning(aKidFrame, aWM, offsets, &pos,
+                                          aContainerSize);
   }
 
   if (ReflowChildFlags::NoMoveFrame !=
