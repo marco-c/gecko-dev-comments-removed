@@ -513,9 +513,7 @@ static bool IsCacheableNoProperty(JSContext* cx, JSObject* obj,
 
   
   
-  
-  if ((pc && JSOp(*pc) == JSOp::GetBoundName) ||
-      cx->realm()->behaviors().extraWarnings(cx)) {
+  if (pc && JSOp(*pc) == JSOp::GetBoundName) {
     return false;
   }
 

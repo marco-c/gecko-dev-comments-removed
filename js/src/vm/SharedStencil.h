@@ -187,7 +187,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
   WarmupResets_MASK = 0xFF,
 
   
-  WarnedAboutUndefinedProp = 1 << 8,
 
   
   HasRunOnce = 1 << 9,

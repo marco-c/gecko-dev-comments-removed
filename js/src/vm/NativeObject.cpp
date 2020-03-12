@@ -2311,78 +2311,7 @@ bool js::NativeGetExistingProperty(JSContext* cx, HandleObject receiver,
   return GetExistingProperty<CanGC>(cx, receiverValue, obj, shape, vp);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-static bool Detecting(JSContext* cx, JSScript* script, jsbytecode* pc) {
-  MOZ_ASSERT(script->containsPC(pc));
-
-  BytecodeIterator scriptIterator =
-      BytecodeIterator(BytecodeLocation(script, pc));
-  BytecodeIterator endIter = BytecodeIterator(script->endLocation());
-
-  
-  while (scriptIterator->isJumpTarget() || scriptIterator->is(JSOp::Dup)) {
-    if (++scriptIterator == endIter) {
-      
-      
-      return false;
-    }
-  }
-
-  
-  
-  if (scriptIterator->isDetectingOp()) {
-    return true;
-  }
-
-  
-  if (scriptIterator->is(JSOp::Null)) {
-    if (++scriptIterator == endIter) {
-      return false;
-    }
-    return scriptIterator->isEqualityOp() &&
-           !scriptIterator->isStrictEqualityOp();
-  }
-
-  
-  
-  if (scriptIterator->is(JSOp::GetGName) || scriptIterator->is(JSOp::GetName) ||
-      scriptIterator->is(JSOp::Undefined)) {
-    
-    
-    
-    if (scriptIterator->isNameOp() &&
-        scriptIterator->getPropertyName(script) != cx->names().undefined) {
-      return false;
-    }
-    
-    
-    
-    if (++scriptIterator == endIter) {
-      return false;
-    }
-    return scriptIterator->isEqualityOp();
-  }
-  return false;
-}
-
 enum IsNameLookup { NotNameLookup = false, NameLookup = true };
-
-
-
-
-
 
 
 
@@ -2406,54 +2335,7 @@ static bool GetNonexistentProperty(JSContext* cx, HandleId id,
   }
 
   
-  
-  
-  
-  
-  if (MOZ_LIKELY(!cx->realm()->behaviors().extraWarnings(cx))) {
-    return true;
-  }
-
-  jsbytecode* pc;
-  RootedScript script(cx, cx->currentScript(&pc));
-  if (!script) {
-    return true;
-  }
-
-  if (JSOp(*pc) != JSOp::GetProp && JSOp(*pc) != JSOp::GetElem) {
-    return true;
-  }
-
-  
-  if (script->warnedAboutUndefinedProp()) {
-    return true;
-  }
-
-  
-  
-  
-  if (script->selfHosted()) {
-    return true;
-  }
-
-  
-  pc += GetBytecodeLength(pc);
-  if (Detecting(cx, script, pc)) {
-    return true;
-  }
-
-  unsigned flags = JSREPORT_WARNING | JSREPORT_STRICT;
-  script->setWarnedAboutUndefinedProp();
-
-  
-  UniqueChars bytes =
-      IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsPropertyKey);
-  if (!bytes) {
-    return false;
-  }
-
-  return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
-                                          JSMSG_UNDEFINED_PROP, bytes.get());
+  return true;
 }
 
 
