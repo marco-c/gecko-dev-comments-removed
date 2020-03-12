@@ -1,17 +1,19 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * Base class for the XML and HTML content sinks, which construct a
- * DOM based on information from the parser.
- */
+
+
+
+
+
+
+
+
+
 
 #include "nsContentSink.h"
 #include "mozilla/Components.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/StaticPrefs_content.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/css/Loader.h"
@@ -129,8 +131,8 @@ nsContentSink::nsContentSink()
 
 nsContentSink::~nsContentSink() {
   if (mDocument) {
-    // Remove ourselves just to be safe, though we really should have
-    // been removed in DidBuildModel if everything worked right.
+    
+    
     mDocument->RemoveObserver(this);
   }
 }
@@ -189,16 +191,16 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
         FlushTags();
       }
       if (mDeferredLayoutStart) {
-        // We might not have really started layout, since this sheet was still
-        // loading.  Do it now.  Probably doesn't matter whether we do this
-        // before or after we unblock scripts, but before feels saner.  Note
-        // that if mDeferredLayoutStart is true, that means any subclass
-        // StartLayout() stuff that needs to happen has already happened, so we
-        // don't need to worry about it.
+        
+        
+        
+        
+        
+        
         StartLayout(false);
       }
 
-      // Go ahead and try to scroll to our ref if we have one
+      
       ScrollToRef();
     }
 
@@ -215,8 +217,8 @@ nsresult nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel) {
     return NS_OK;
   }
 
-  // Note that the only header we care about is the "link" header, since we
-  // have all the infrastructure for kicking off stylesheet loads.
+  
+  
 
   nsAutoCString linkHeader;
 
@@ -245,7 +247,7 @@ nsresult nsContentSink::ProcessHeaderData(nsAtom* aHeader,
                                           const nsAString& aValue,
                                           nsIContent* aContent) {
   nsresult rv = NS_OK;
-  // necko doesn't process headers coming in from the parser
+  
 
   mDocument->SetHeaderData(aHeader, aValue);
 
@@ -258,53 +260,53 @@ void nsContentSink::DoProcessLinkHeader() {
   ProcessLinkHeader(value);
 }
 
-// check whether the Link header field applies to the context resource
-// see <http://tools.ietf.org/html/rfc5988#section-5.2>
+
+
 
 bool nsContentSink::LinkContextIsOurDocument(const nsAString& aAnchor) {
   if (aAnchor.IsEmpty()) {
-    // anchor parameter not present or empty -> same document reference
+    
     return true;
   }
 
   nsIURI* docUri = mDocument->GetDocumentURI();
 
-  // the document URI might contain a fragment identifier ("#...')
-  // we want to ignore that because it's invisible to the server
-  // and just affects the local interpretation in the recipient
+  
+  
+  
   nsCOMPtr<nsIURI> contextUri;
   nsresult rv = NS_GetURIWithoutRef(docUri, getter_AddRefs(contextUri));
 
   if (NS_FAILED(rv)) {
-    // copying failed
+    
     return false;
   }
 
-  // resolve anchor against context
+  
   nsCOMPtr<nsIURI> resolvedUri;
   rv = NS_NewURI(getter_AddRefs(resolvedUri), aAnchor, nullptr, contextUri);
 
   if (NS_FAILED(rv)) {
-    // resolving failed
+    
     return false;
   }
 
   bool same;
   rv = contextUri->Equals(resolvedUri, &same);
   if (NS_FAILED(rv)) {
-    // comparison failed
+    
     return false;
   }
 
   return same;
 }
 
-// Decode a parameter value using the encoding defined in RFC 5987 (in place)
-//
-//   charset  "'" [ language ] "'" value-chars
-//
-// returns true when decoding happened successfully (otherwise leaves
-// passed value alone)
+
+
+
+
+
+
 bool nsContentSink::Decode5987Format(nsAString& aEncoded) {
   nsresult rv;
   nsCOMPtr<nsIMIMEHeaderParam> mimehdrpar =
@@ -316,8 +318,8 @@ bool nsContentSink::Decode5987Format(nsAString& aEncoded) {
   const char16_t* encstart = aEncoded.BeginReading();
   const char16_t* encend = aEncoded.EndReading();
 
-  // create a plain ASCII string, aborting if we can't do that
-  // converted form is always shorter than input
+  
+  
   while (encstart != encend) {
     if (*encstart > 0 && *encstart < 128) {
       asciiValue.Append((char)*encstart);
@@ -340,10 +342,10 @@ bool nsContentSink::Decode5987Format(nsAString& aEncoded) {
 nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
   nsresult rv = NS_OK;
 
-  // keep track where we are within the header field
+  
   bool seenParameters = false;
 
-  // parse link content and call process style link
+  
   nsAutoString href;
   nsAutoString rel;
   nsAutoString title;
@@ -357,10 +359,10 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
 
   crossOrigin.SetIsVoid(true);
 
-  // copy to work buffer
+  
   nsAutoString stringList(aLinkData);
 
-  // put an extra null at the end
+  
   stringList.Append(kNullCh);
 
   char16_t* start = stringList.BeginWriting();
@@ -369,7 +371,7 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
   char16_t endCh;
 
   while (*start != kNullCh) {
-    // skip leading space
+    
     while ((*start != kNullCh) && nsCRT::IsAsciiSpace(*start)) {
       ++start;
     }
@@ -379,12 +381,12 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
 
     bool wasQuotedString = false;
 
-    // look for semicolon or comma
+    
     while (*end != kNullCh && *end != kSemicolon && *end != kComma) {
       char16_t ch = *end;
 
       if (ch == kQuote || ch == kLessThan) {
-        // quoted string
+        
 
         char16_t quote = ch;
         if (quote == kLessThan) {
@@ -395,9 +397,9 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
 
         char16_t* closeQuote = (end + 1);
 
-        // seek closing quote
+        
         while (*closeQuote != kNullCh && quote != *closeQuote) {
-          // in quoted-string, "\" is an escape character
+          
           if (wasQuotedString && *closeQuote == kBackSlash &&
               *(closeQuote + 1) != kNullCh) {
             ++closeQuote;
@@ -407,9 +409,9 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
         }
 
         if (quote == *closeQuote) {
-          // found closer
+          
 
-          // skip to close quote
+          
           end = closeQuote;
 
           last = end - 1;
@@ -417,12 +419,12 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
           ch = *(end + 1);
 
           if (ch != kNullCh && ch != kSemicolon && ch != kComma) {
-            // end string here
+            
             *(++end) = kNullCh;
 
             ch = *(end + 1);
 
-            // keep going until semi or comma
+            
             while (ch != kNullCh && ch != kSemicolon && ch != kComma) {
               ++end;
 
@@ -438,15 +440,15 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
 
     endCh = *end;
 
-    // end string here
+    
     *end = kNullCh;
 
     if (start < end) {
       if ((*start == kLessThan) && (*last == kGreaterThan)) {
         *last = kNullCh;
 
-        // first instance of <...> wins
-        // also, do not allow hrefs after the first param was seen
+        
+        
         if (href.IsEmpty() && !seenParameters) {
           href = (start + 1);
           href.StripWhitespace();
@@ -475,7 +477,7 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
           }
 
           if (wasQuotedString) {
-            // unescape in-place
+            
             char16_t* unescaped = value;
             char16_t* src = value;
 
@@ -501,15 +503,15 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
             }
           } else if (attr.LowerCaseEqualsLiteral("title*")) {
             if (titleStar.IsEmpty() && !wasQuotedString) {
-              // RFC 5987 encoding; uses token format only, so skip if we get
-              // here with a quoted-string
+              
+              
               nsAutoString tmp;
               tmp = value;
               if (Decode5987Format(tmp)) {
                 titleStar = tmp;
                 titleStar.CompressWhitespace();
               } else {
-                // header value did not parse, throw it away
+                
                 titleStar.Truncate();
               }
             }
@@ -522,8 +524,8 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
             if (media.IsEmpty()) {
               media = value;
 
-              // The HTML5 spec is formulated in terms of the CSS3 spec,
-              // which specifies that media queries are case insensitive.
+              
+              
               nsContentUtils::ASCIIToLower(media);
             }
           } else if (attr.LowerCaseEqualsLiteral("anchor")) {
@@ -543,11 +545,11 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
               as.CompressWhitespace();
             }
           } else if (attr.LowerCaseEqualsLiteral("referrerpolicy")) {
-            // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#referrer-policy-attribute
-            // Specs says referrer policy attribute is an enumerated attribute,
-            // case insensitive and includes the empty string
-            // We will parse the value with AttributeReferrerPolicyFromString
-            // later, which will handle parsing it as an enumerated attribute.
+            
+            
+            
+            
+            
             if (referrerPolicy.IsEmpty()) {
               referrerPolicy = value;
             }
@@ -557,13 +559,13 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
     }
 
     if (endCh == kComma) {
-      // hit a comma, process what we've got so far
+      
 
-      href.Trim(" \t\n\r\f");  // trim HTML5 whitespace
+      href.Trim(" \t\n\r\f");  
       if (!href.IsEmpty() && !rel.IsEmpty()) {
         rv = ProcessLinkFromHeader(
             anchor, href, rel,
-            // prefer RFC 5987 variant over non-I18zed version
+            
             titleStar.IsEmpty() ? title : titleStar, type, media, crossOrigin,
             referrerPolicy, as);
       }
@@ -584,11 +586,11 @@ nsresult nsContentSink::ProcessLinkHeader(const nsAString& aLinkData) {
     start = ++end;
   }
 
-  href.Trim(" \t\n\r\f");  // trim HTML5 whitespace
+  href.Trim(" \t\n\r\f");  
   if (!href.IsEmpty() && !rel.IsEmpty()) {
     rv =
         ProcessLinkFromHeader(anchor, href, rel,
-                              // prefer RFC 5987 variant over non-I18zed version
+                              
                               titleStar.IsEmpty() ? title : titleStar, type,
                               media, crossOrigin, referrerPolicy, as);
   }
@@ -603,16 +605,16 @@ nsresult nsContentSink::ProcessLinkFromHeader(
     const nsAString& aAs) {
   uint32_t linkTypes = nsStyleLinkElement::ParseLinkTypes(aRel);
 
-  // The link relation may apply to a different resource, specified
-  // in the anchor parameter. For the link relations supported so far,
-  // we simply abort if the link applies to a resource different to the
-  // one we've loaded
+  
+  
+  
+  
   if (!LinkContextIsOurDocument(aAnchor)) {
     return NS_OK;
   }
 
   if (nsContentUtils::PrefetchPreloadEnabled(mDocShell)) {
-    // prefetch href if relation is "next" or "prefetch"
+    
     if ((linkTypes & nsStyleLinkElement::eNEXT) ||
         (linkTypes & nsStyleLinkElement::ePREFETCH) ||
         (linkTypes & nsStyleLinkElement::ePRELOAD)) {
@@ -628,7 +630,7 @@ nsresult nsContentSink::ProcessLinkFromHeader(
     }
   }
 
-  // is it a stylesheet link?
+  
   if (!(linkTypes & nsStyleLinkElement::eSTYLESHEET)) {
     return NS_OK;
   }
@@ -643,7 +645,7 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
     const nsAString& aType, const nsAString& aMedia,
     const nsAString& aReferrerPolicy) {
   if (aAlternate && aTitle.IsEmpty()) {
-    // alternates must have title return without error, for now
+    
     return NS_OK;
   }
 
@@ -651,9 +653,9 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
   nsAutoString params;
   nsContentUtils::SplitMimeType(aType, mimeType, params);
 
-  // see bug 18817
+  
   if (!mimeType.IsEmpty() && !mimeType.LowerCaseEqualsLiteral("text/css")) {
-    // Unknown stylesheet language
+    
     return NS_OK;
   }
 
@@ -662,12 +664,12 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
                           mDocument->GetDocBaseURI());
 
   if (NS_FAILED(rv)) {
-    // The URI is bad, move along, don't propagate the error (for now)
+    
     return NS_OK;
   }
 
-  // Link header is working like a <link> node, so referrerPolicy attr should
-  // have higher priority than referrer policy from document.
+  
+  
   ReferrerPolicy policy =
       ReferrerInfo::ReferrerPolicyAttributeFromString(aReferrerPolicy);
   nsCOMPtr<nsIReferrerInfo> referrerInfo =
@@ -682,8 +684,8 @@ nsresult nsContentSink::ProcessStyleLinkFromHeader(
       CORS_NONE,
       aTitle,
       aMedia,
-      /* integrity = */ EmptyString(),
-      /* nonce = */ EmptyString(),
+       EmptyString(),
+       EmptyString(),
       aAlternate ? Loader::HasAlternateRel::Yes : Loader::HasAlternateRel::No,
       Loader::IsInline::No,
       Loader::IsExplicitlyEnabled::No,
@@ -711,11 +713,11 @@ nsresult nsContentSink::ProcessMETATag(nsIContent* aContent) {
 
   nsresult rv = NS_OK;
 
-  // set any HTTP-EQUIV data into document's header data as well as url
+  
   nsAutoString header;
   element->GetAttr(kNameSpaceID_None, nsGkAtoms::httpEquiv, header);
   if (!header.IsEmpty()) {
-    // Ignore META REFRESH when document is sandboxed from automatic features.
+    
     nsContentUtils::ASCIIToLower(header);
     if (nsGkAtoms::refresh->Equals(header) &&
         (mDocument->GetSandboxFlags() & SANDBOXED_AUTOMATIC_FEATURES)) {
@@ -751,7 +753,7 @@ void nsContentSink::PrefetchPreloadHref(const nsAString& aHref,
                                         const nsAString& aMedia) {
   nsCOMPtr<nsIPrefetchService> prefetchService(components::Prefetch::Service());
   if (prefetchService) {
-    // construct URI using document charset
+    
     auto encoding = mDocument->GetDocumentCharacterSet();
     nsCOMPtr<nsIURI> uri;
     NS_NewURI(getter_AddRefs(uri), aHref, encoding, mDocument->GetDocBaseURI());
@@ -765,7 +767,7 @@ void nsContentSink::PrefetchPreloadHref(const nsAString& aHref,
         policyType = HTMLLinkElement::AsValueToContentPolicy(asAttr);
 
         if (policyType == nsIContentPolicy::TYPE_INVALID) {
-          // Ignore preload with a wrong or empty as attribute.
+          
           return;
         }
 
@@ -827,7 +829,7 @@ void nsContentSink::PrefetchDNS(const nsAString& aHref) {
 
 void nsContentSink::Preconnect(const nsAString& aHref,
                                const nsAString& aCrossOrigin) {
-  // construct URI using document charset
+  
   auto encoding = mDocument->GetDocumentCharacterSet();
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aHref, encoding, mDocument->GetDocBaseURI());
@@ -855,14 +857,14 @@ nsresult nsContentSink::SelectDocAppCache(
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!equal) {
-      // This is a foreign entry, force a reload to avoid loading the foreign
-      // entry. The entry will be marked as foreign to avoid loading it again.
+      
+      
 
       *aAction = CACHE_SELECTION_RELOAD;
     } else {
-      // The http manifest attribute URI is equal to the manifest URI of
-      // the cache the document was loaded from - associate the document with
-      // that cache and invoke the cache update process.
+      
+      
+      
 #ifdef DEBUG
       nsAutoCString docURISpec, clientID;
       mDocumentURI->GetAsciiSpec(docURISpec);
@@ -876,22 +878,22 @@ nsresult nsContentSink::SelectDocAppCache(
       rv = mDocument->SetApplicationCache(aLoadApplicationCache);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      // Document will be added as implicit entry to the cache as part of
-      // the update process.
+      
+      
       *aAction = CACHE_SELECTION_UPDATE;
     }
   } else {
-    // The document was not loaded from an application cache
-    // Here we know the manifest has the same origin as the
-    // document. There is call to CheckMayLoadWithReporting() on it above.
+    
+    
+    
 
     if (!aFetchedWithHTTPGetOrEquiv) {
-      // The document was not loaded using HTTP GET or equivalent
-      // method. The spec says to run the cache selection algorithm w/o
-      // the manifest specified.
+      
+      
+      
       *aAction = CACHE_SELECTION_RESELECT_WITHOUT_MANIFEST;
     } else {
-      // Always do an update in this case
+      
       *aAction = CACHE_SELECTION_UPDATE;
     }
   }
@@ -908,8 +910,8 @@ nsresult nsContentSink::SelectDocAppCacheNoManifest(
   nsresult rv;
 
   if (aLoadApplicationCache) {
-    // The document was loaded from an application cache, use that
-    // application cache as the document's application cache.
+    
+    
 #ifdef DEBUG
     nsAutoCString docURISpec, clientID;
     mDocumentURI->GetAsciiSpec(docURISpec);
@@ -923,8 +925,8 @@ nsresult nsContentSink::SelectDocAppCacheNoManifest(
     rv = mDocument->SetApplicationCache(aLoadApplicationCache);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Return the uri and invoke the update process for the selected
-    // application cache.
+    
+    
     rv = aLoadApplicationCache->GetManifestURI(aManifestURI);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -935,18 +937,18 @@ nsresult nsContentSink::SelectDocAppCacheNoManifest(
 }
 
 void nsContentSink::ProcessOfflineManifest(nsIContent* aElement) {
-  // Only check the manifest for root document nodes.
+  
   if (aElement != mDocument->GetRootElement()) {
     return;
   }
 
-  // Don't bother processing offline manifest for documents
-  // without a docshell
+  
+  
   if (!mDocShell) {
     return;
   }
 
-  // Check for a manifest= attribute.
+  
   nsAutoString manifestSpec;
   aElement->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::manifest,
                                  manifestSpec);
@@ -954,25 +956,25 @@ void nsContentSink::ProcessOfflineManifest(nsIContent* aElement) {
 }
 
 void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
-  // Don't bother processing offline manifest for documents
-  // without a docshell
+  
+  
   if (!mDocShell) {
     return;
   }
 
-  // If offline storage is disabled skip processing
+  
   if (!StaticPrefs::browser_cache_offline_storage_enable()) {
     return;
   }
 
-  // If this document has been interecepted, let's skip the processing of the
-  // manifest.
+  
+  
   if (mDocument->GetController().isSome()) {
     return;
   }
 
-  // If the docshell's in private browsing mode, we don't want to do any
-  // manifest processing.
+  
+  
   nsCOMPtr<nsILoadContext> loadContext = do_QueryInterface(mDocShell);
   if (loadContext->UsePrivateBrowsing()) {
     return;
@@ -980,7 +982,7 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
 
   nsresult rv;
 
-  // Grab the application cache the document was loaded from, if any.
+  
   nsCOMPtr<nsIApplicationCache> applicationCache;
 
   nsCOMPtr<nsIApplicationCacheChannel> applicationCacheChannel =
@@ -1003,8 +1005,8 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
   }
 
   if (aManifestSpec.IsEmpty() && !applicationCache) {
-    // Not loaded from an application cache, and no manifest
-    // attribute.  Nothing to do here.
+    
+    
     return;
   }
 
@@ -1020,7 +1022,7 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
       return;
     }
 
-    // Documents must list a manifest from the same origin
+    
     rv = mDocument->NodePrincipal()->CheckMayLoadWithReporting(
         manifestURI, false, mDocument->InnerWindowID());
     if (NS_FAILED(rv)) {
@@ -1078,12 +1080,12 @@ void nsContentSink::ProcessOfflineManifest(const nsAString& aManifestSpec) {
       break;
     }
     case CACHE_SELECTION_RELOAD: {
-      // This situation occurs only for toplevel documents, see bottom
-      // of SelectDocAppCache method.
-      // The document has been loaded from a different offline cache group than
-      // the manifest it refers to, i.e. this is a foreign entry, mark it as
-      // such and force a reload to avoid loading it.  The next attempt will not
-      // choose it.
+      
+      
+      
+      
+      
+      
 
       applicationCacheChannel->MarkOfflineCacheEntryAsForeign();
 
@@ -1110,7 +1112,7 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
                                         mDocumentURI->GetSpecOrDefault());
 
   if (mLayoutStarted) {
-    // Nothing to do here
+    
     return;
   }
 
@@ -1118,18 +1120,18 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
 
   if (!aIgnorePendingSheets &&
       (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation())) {
-    // Bail out; we'll start layout when the sheets and l10n load
+    
     return;
   }
 
   mDeferredLayoutStart = false;
 
-  // Notify on all our content.  If none of our presshells have started layout
-  // yet it'll be a no-op except for updating our data structures, a la
-  // UpdateChildCounts() (because we don't want to double-notify on whatever we
-  // have right now).  If some of them _have_ started layout, we want to make
-  // sure to flush tags instead of just calling UpdateChildCounts() after we
-  // loop over the shells.
+  
+  
+  
+  
+  
+  
   FlushTags();
 
   mLayoutStarted = true;
@@ -1137,11 +1139,11 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
 
   mDocument->SetMayStartLayout(true);
   RefPtr<PresShell> presShell = mDocument->GetPresShell();
-  // Make sure we don't call Initialize() for a shell that has
-  // already called it. This can happen when the layout frame for
-  // an iframe is constructed *between* the Embed() call for the
-  // docshell in the iframe, and the content sink's call to OpenBody().
-  // (Bug 153815)
+  
+  
+  
+  
+  
   if (presShell && !presShell->DidInitialize()) {
     nsresult rv = presShell->Initialize();
     if (NS_FAILED(rv)) {
@@ -1149,8 +1151,8 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
     }
   }
 
-  // If the document we are loading has a reference or it is a
-  // frameset document, disable the scroll bars on the views.
+  
+  
 
   mDocument->SetScrollToRef(mDocument->GetDocumentURI());
 }
@@ -1159,9 +1161,9 @@ void nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex) {
   mInNotification++;
 
   {
-    // Scope so we call EndUpdate before we decrease mInNotification
-    //
-    // Note that aContainer->OwnerDoc() may not be mDocument.
+    
+    
+    
     MOZ_AUTO_DOC_UPDATE(aContainer->OwnerDoc(), true);
     MutationObservers::NotifyContentAppended(
         aContainer, aContainer->GetChildAt_Deprecated(aStartIndex));
@@ -1174,7 +1176,7 @@ void nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex) {
 NS_IMETHODIMP
 nsContentSink::Notify(nsITimer* timer) {
   if (mParsing) {
-    // We shouldn't interfere with our normal DidProcessAToken logic
+    
     mDroppedTimer = true;
     return NS_OK;
   }
@@ -1184,8 +1186,8 @@ nsContentSink::Notify(nsITimer* timer) {
   } else {
     FlushTags();
 
-    // Now try and scroll to the reference
-    // XXX Should we scroll unconditionally for history loads??
+    
+    
     ScrollToRef();
   }
 
@@ -1231,7 +1233,7 @@ nsresult nsContentSink::WillInterruptImpl() {
       int64_t interval = GetNotificationInterval();
       int64_t diff = now - mLastNotificationTime;
 
-      // If it's already time for us to have a notification
+      
       if (diff > interval || mDroppedTimer) {
         mBackoffCount--;
         SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
@@ -1248,7 +1250,7 @@ nsresult nsContentSink::WillInterruptImpl() {
         interval -= diff;
         int32_t delay = interval;
 
-        // Convert to milliseconds
+        
         delay /= PR_USEC_PER_MSEC;
 
         NS_NewTimerWithCallback(getter_AddRefs(mNotificationTimer), this, delay,
@@ -1290,18 +1292,18 @@ nsresult nsContentSink::DidProcessATokenImpl() {
     return NS_OK;
   }
 
-  // Get the current user event time
+  
   PresShell* presShell = mDocument->GetPresShell();
   if (!presShell) {
-    // If there's no pres shell in the document, return early since
-    // we're not laying anything out here.
+    
+    
     return NS_OK;
   }
 
-  // Increase before comparing to gEventProbeRate
+  
   ++mDeflectedCount;
 
-  // Check if there's a pending event
+  
   if (StaticPrefs::content_sink_pending_event_mode() != 0 &&
       !mHasPendingEvent &&
       (mDeflectedCount % StaticPrefs::content_sink_event_probe_rate()) == 0) {
@@ -1316,7 +1318,7 @@ nsresult nsContentSink::DidProcessATokenImpl() {
     return NS_ERROR_HTMLPARSER_INTERRUPTED;
   }
 
-  // Have we processed enough tokens to check time?
+  
   if (!mHasPendingEvent &&
       mDeflectedCount <
           uint32_t(mDynamicLowerValue
@@ -1327,7 +1329,7 @@ nsresult nsContentSink::DidProcessATokenImpl() {
 
   mDeflectedCount = 0;
 
-  // Check if it's time to return to the main event loop
+  
   if (PR_IntervalToMicroseconds(PR_IntervalNow()) > mCurrentParseEndTime) {
     return NS_ERROR_HTMLPARSER_INTERRUPTED;
   }
@@ -1335,7 +1337,7 @@ nsresult nsContentSink::DidProcessATokenImpl() {
   return NS_OK;
 }
 
-//----------------------------------------------------------------------
+
 
 void nsContentSink::FavorPerformanceHint(bool perfOverStarvation,
                                          uint32_t starvationDelay) {
@@ -1346,16 +1348,16 @@ void nsContentSink::FavorPerformanceHint(bool perfOverStarvation,
 }
 
 void nsContentSink::BeginUpdate(Document* aDocument) {
-  // Remember nested updates from updates that we started.
+  
   if (mInNotification > 0 && mUpdatesInNotification < 2) {
     ++mUpdatesInNotification;
   }
 
-  // If we're in a script and we didn't do the notification,
-  // something else in the script processing caused the
-  // notification to occur. Since this could result in frame
-  // creation, make sure we've flushed everything before we
-  // continue.
+  
+  
+  
+  
+  
 
   if (!mInNotification++) {
     FlushTags();
@@ -1363,11 +1365,11 @@ void nsContentSink::BeginUpdate(Document* aDocument) {
 }
 
 void nsContentSink::EndUpdate(Document* aDocument) {
-  // If we're in a script and we didn't do the notification,
-  // something else in the script processing caused the
-  // notification to occur. Update our notion of how much
-  // has been flushed to include any new content if ending
-  // this update leaves us not inside a notification.
+  
+  
+  
+  
+  
   if (!--mInNotification) {
     UpdateChildCounts();
   }
@@ -1389,7 +1391,7 @@ void nsContentSink::DidBuildModelImpl(bool aTerminated) {
     mDocument->NotifyPossibleTitleChange(false);
   }
 
-  // Cancel a timer if we had one out there
+  
   if (mNotificationTimer) {
     SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
                SINK_TRACE_REFLOW,
@@ -1402,31 +1404,31 @@ void nsContentSink::DidBuildModelImpl(bool aTerminated) {
 
 void nsContentSink::DropParserAndPerfHint(void) {
   if (!mParser) {
-    // Make sure we don't unblock unload too many times
+    
     return;
   }
 
-  // Ref. Bug 49115
-  // Do this hack to make sure that the parser
-  // doesn't get destroyed, accidently, before
-  // the circularity, between sink & parser, is
-  // actually broken.
-  // Drop our reference to the parser to get rid of a circular
-  // reference.
+  
+  
+  
+  
+  
+  
+  
   RefPtr<nsParserBase> kungFuDeathGrip = std::move(mParser);
   mozilla::Unused << kungFuDeathGrip;
 
   if (mDynamicLowerValue) {
-    // Reset the performance hint which was set to FALSE
-    // when mDynamicLowerValue was set.
+    
+    
     FavorPerformanceHint(true, 0);
   }
 
-  // Call UnblockOnload only if mRunsToComletion is false and if
-  // we have already started loading because it's possible that this function
-  // is called (i.e. the parser is terminated) before we start loading due to
-  // destroying the window inside unload event callbacks for the previous
-  // document.
+  
+  
+  
+  
+  
   if (!mRunsToCompletion && mIsBlockingOnload) {
     mDocument->UnblockOnload(true);
     mIsBlockingOnload = false;
@@ -1495,7 +1497,7 @@ void nsContentSink::WillBuildModelImpl() {
   }
 }
 
-/* static */
+
 void nsContentSink::NotifyDocElementCreated(Document* aDoc) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 

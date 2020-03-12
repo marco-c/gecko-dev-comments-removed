@@ -1,12 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/WindowRootBinding.h"
 #include "nsCOMPtr.h"
 #include "nsWindowRoot.h"
@@ -93,8 +94,8 @@ EventListenerManager* nsWindowRoot::GetExistingListenerManager() const {
 
 void nsWindowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   aVisitor.mCanHandle = true;
-  aVisitor.mForceContentDispatch = true;  // FIXME! Bug 329119
-  // To keep mWindow alive
+  aVisitor.mForceContentDispatch = true;  
+  
   aVisitor.mItemData = static_cast<nsISupports*>(mWindow);
   aVisitor.SetParentTarget(mParent, false);
 }
@@ -110,7 +111,7 @@ nsPIDOMWindowOuter* nsWindowRoot::GetOwnerGlobalForBindingsInternal() {
 nsIGlobalObject* nsWindowRoot::GetOwnerGlobal() const {
   nsCOMPtr<nsIGlobalObject> global =
       do_QueryInterface(mWindow->GetCurrentInnerWindow());
-  // We're still holding a ref to it, so returning the raw pointer is ok...
+  
   return global;
 }
 
@@ -120,9 +121,9 @@ nsresult nsWindowRoot::GetControllers(bool aForVisibleWindow,
                                       nsIControllers** aResult) {
   *aResult = nullptr;
 
-  // XXX: we should fix this so there's a generic interface that
-  // describes controllers, so this code would have no special
-  // knowledge of what object might have controllers.
+  
+  
+  
 
   nsFocusManager::SearchRange searchRange =
       aForVisibleWindow ? nsFocusManager::eIncludeVisibleDescendants
@@ -197,7 +198,7 @@ nsresult nsWindowRoot::GetControllerForCommand(const char* aCommand,
       }
     }
 
-    // XXXndeakin P3 is this casting safe?
+    
     nsGlobalWindowOuter* win = nsGlobalWindowOuter::Cast(focusedWindow);
     focusedWindow = win->GetPrivateParent();
   }
@@ -219,17 +220,17 @@ void nsWindowRoot::GetEnabledDisabledCommandsForControllers(
     nsCOMPtr<nsICommandController> commandController(
         do_QueryInterface(controller));
     if (commandController) {
-      // All of our default command controllers have 20-60 commands.  Let's just
-      // leave enough space here for all of them so we probably don't need to
-      // heap-allocate.
+      
+      
+      
       AutoTArray<nsCString, 64> commands;
       if (NS_SUCCEEDED(commandController->GetSupportedCommands(commands))) {
         for (auto& commandStr : commands) {
-          // Use a hash to determine which commands have already been handled by
-          // earlier controllers, as the earlier controller's result should get
-          // priority.
+          
+          
+          
           if (aCommandsHandled.EnsureInserted(commandStr)) {
-            // We inserted a new entry into aCommandsHandled.
+            
             bool enabled = false;
             controller->IsCommandEnabled(commandStr.get(), &enabled);
 
@@ -302,8 +303,8 @@ void nsWindowRoot::RemoveBrowser(nsIRemoteTab* aBrowser) {
 }
 
 void nsWindowRoot::EnumerateBrowsers(BrowserEnumerator aEnumFunc, void* aArg) {
-  // Collect strong references to all browsers in a separate array in
-  // case aEnumFunc alters mWeakBrowsers.
+  
+  
   nsTArray<nsCOMPtr<nsIRemoteTab>> remoteTabs;
   for (auto iter = mWeakBrowsers.ConstIter(); !iter.Done(); iter.Next()) {
     nsCOMPtr<nsIRemoteTab> remoteTab(do_QueryReferent(iter.Get()->GetKey()));
@@ -317,7 +318,7 @@ void nsWindowRoot::EnumerateBrowsers(BrowserEnumerator aEnumFunc, void* aArg) {
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////////
+
 
 already_AddRefed<EventTarget> NS_NewWindowRoot(nsPIDOMWindowOuter* aWindow) {
   nsCOMPtr<EventTarget> result = new nsWindowRoot(aWindow);
