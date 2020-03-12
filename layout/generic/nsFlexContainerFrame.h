@@ -279,6 +279,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                     nscoord aAvailableBSizeForContent,
                     mozilla::LinkedList<FlexLine>& aLines,
                     nsTArray<StrutInfo>& aStruts,
+                    nsTArray<nsIFrame*>& aPlaceholders,
                     const FlexboxAxisTracker& aAxisTracker,
                     nscoord aMainGapSize, nscoord aCrossGapSize,
                     bool aHasLineClampEllipsis,
@@ -449,6 +450,26 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                         nscoord aFlexContainerAscent,
                         mozilla::LinkedList<FlexLine>& aLines,
                         const FlexboxAxisTracker& aAxisTracker);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void ReflowChildren(
+      const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
+      const nscoord aContentBoxCrossSize, nscoord& aFlexContainerAscent,
+      mozilla::LinkedList<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
+      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis);
 
   
 
