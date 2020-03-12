@@ -124,6 +124,8 @@ static const uintptr_t IS_PROXY = 1;
 - (void)valueDidChange;
 - (void)selectedTextDidChange;
 - (void)documentLoadComplete;
+- (void)menuOpened;
+- (void)menuClosed;
 
 
 - (id)childAt:(uint32_t)i;
