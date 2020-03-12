@@ -6845,8 +6845,8 @@ static bool TryInstantiate(JSContext* cx, CallArgs args, const Module& module,
 
   
   
-  if (!HasPlatformSupport(cx)) {
-    return LinkFail(cx, "no platform support");
+  if (!HasCompilerSupport(cx)) {
+    return LinkFail(cx, "no compiler support");
   }
 
   Rooted<ImportValues> imports(cx);
@@ -7039,7 +7039,7 @@ static bool TypeFailureWarning(frontend::ParserBase& parser, const char* str) {
 
 
 static bool IsAsmJSCompilerAvailable(JSContext* cx) {
-  return HasPlatformSupport(cx) && IonAvailable(cx);
+  return HasCompilerSupport(cx) && IonCanCompile() && cx->options().wasmIon();
 }
 
 static bool EstablishPreconditions(JSContext* cx,

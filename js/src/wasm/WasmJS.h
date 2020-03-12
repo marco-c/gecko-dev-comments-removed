@@ -27,7 +27,6 @@
 namespace js {
 
 class ArrayBufferObjectMaybeShared;
-class JSStringBuilder;
 class StructTypeDescr;
 class TypedArrayObject;
 class WasmFunctionScope;
@@ -40,11 +39,11 @@ namespace wasm {
 
 
 
+bool HasCompilerSupport(JSContext* cx);
 
 
 
-bool HasPlatformSupport(JSContext* cx);
-
+bool HasOptimizedCompilerTier(JSContext* cx);
 
 
 
@@ -55,62 +54,29 @@ bool HasSupport(JSContext* cx);
 
 
 
+bool HasStreamingSupport(JSContext* cx);
+
+bool HasCachingSupport(JSContext* cx);
 
 
 
 
-
-
-
-bool BaselineAvailable(JSContext* cx);
-bool IonAvailable(JSContext* cx);
-bool CraneliftAvailable(JSContext* cx);
+bool HasReftypesSupport(JSContext* cx);
 
 
 
 
+bool HasGcSupport(JSContext* cx);
 
 
 
 
+bool HasMultiValueSupport(JSContext* cx);
 
 
 
 
-
-
-bool IonDisabledByFeatures(JSContext* cx, bool* isDisabled,
-                           JSStringBuilder* reason = nullptr);
-bool CraneliftDisabledByFeatures(JSContext* cx, bool* isDisabled,
-                                 JSStringBuilder* reason = nullptr);
-
-
-
-
-
-
-
-
-bool StreamingCompilationAvailable(JSContext* cx);
-
-
-
-bool CodeCachingAvailable(JSContext* cx);
-
-
-bool ReftypesAvailable(JSContext* cx);
-
-
-bool GcTypesAvailable(JSContext* cx);
-
-
-bool MultiValuesAvailable(JSContext* cx);
-
-
-bool I64BigIntConversionAvailable(JSContext* cx);
-
-
-bool ThreadsAvailable(JSContext* cx);
+bool HasI64BigIntSupport(JSContext* cx);
 
 
 

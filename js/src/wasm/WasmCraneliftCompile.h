@@ -27,25 +27,16 @@ namespace js {
 namespace wasm {
 
 #ifdef ENABLE_WASM_CRANELIFT
-
-
-MOZ_MUST_USE bool CraneliftPlatformSupport();
+MOZ_MUST_USE bool CraneliftCanCompile();
+#else
+MOZ_MUST_USE inline bool CraneliftCanCompile() { return false; }
+#endif
 
 
 MOZ_MUST_USE bool CraneliftCompileFunctions(
     const ModuleEnvironment& env, LifoAlloc& lifo,
     const FuncCompileInputVector& inputs, CompiledCode* code,
     UniqueChars* error);
-#else
-MOZ_MUST_USE inline bool CraneliftPlatformSupport() { return false; }
-
-MOZ_MUST_USE inline bool CraneliftCompileFunctions(
-    const ModuleEnvironment& env, LifoAlloc& lifo,
-    const FuncCompileInputVector& inputs, CompiledCode* code,
-    UniqueChars* error) {
-  MOZ_CRASH("Should not happen");
-}
-#endif
 
 }  
 }  

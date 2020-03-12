@@ -26,8 +26,7 @@ namespace wasm {
 
 
 
-
-MOZ_MUST_USE bool BaselinePlatformSupport();
+bool BaselineCanCompile();
 
 
 MOZ_MUST_USE bool BaselineCompileFunctions(const ModuleEnvironment& env,

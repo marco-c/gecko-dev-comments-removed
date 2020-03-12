@@ -78,12 +78,25 @@ uint32_t wasm::ObservedCPUFeatures() {
 
 SharedCompileArgs CompileArgs::build(JSContext* cx,
                                      ScriptedCaller&& scriptedCaller) {
-  bool baseline = BaselineAvailable(cx);
-  bool ion = IonAvailable(cx);
-  bool cranelift = CraneliftAvailable(cx);
+  bool baseline = BaselineCanCompile() && cx->options().wasmBaseline();
+  bool ion = IonCanCompile() && cx->options().wasmIon();
+#ifdef ENABLE_WASM_CRANELIFT
+  bool cranelift = CraneliftCanCompile() && cx->options().wasmCranelift();
+#else
+  bool cranelift = false;
+#endif
 
-  
-  MOZ_RELEASE_ASSERT(!(ion && cranelift));
+#ifdef ENABLE_WASM_GC
+  bool gc = cx->options().wasmGc();
+#else
+  bool gc = false;
+#endif
+
+#ifdef ENABLE_WASM_BIGINT
+  bool bigInt = cx->options().isWasmBigIntEnabled();
+#else
+  bool bigInt = false;
+#endif
 
   
   
@@ -91,23 +104,39 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   
   bool debug = cx->realm()->debuggerObservesAsmJS();
 
+  bool sharedMemory =
+      cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
   bool forceTiering =
       cx->options().testWasmAwaitTier2() || JitOptions.wasmDelayTier2;
 
-  
-  MOZ_RELEASE_ASSERT(!(debug && (ion || cranelift)));
+  if (debug || gc) {
+    if (!baseline) {
+      JS_ReportErrorASCII(cx, "can't use wasm debug/gc without baseline");
+      return nullptr;
+    }
+    ion = false;
+    cranelift = false;
+  }
 
-  if (forceTiering && !(baseline && (cranelift || ion))) {
+  if (forceTiering && (!baseline || (!cranelift && !ion))) {
     
     
     
     forceTiering = false;
   }
 
-  if (!(baseline || ion || cranelift)) {
-    JS_ReportErrorASCII(cx, "no WebAssembly compiler available");
-    return nullptr;
+#ifdef ENABLE_WASM_CRANELIFT
+  if (!baseline && !ion && !cranelift) {
+    if (cx->options().wasmCranelift() && !CraneliftCanCompile()) {
+      
+      JS_ReportErrorASCII(cx, "cranelift isn't supported on this platform");
+      return nullptr;
+    }
   }
+#endif
+
+  
+  MOZ_RELEASE_ASSERT(baseline || ion || cranelift);
 
   CompileArgs* target = cx->new_<CompileArgs>(std::move(scriptedCaller));
   if (!target) {
@@ -118,17 +147,11 @@ SharedCompileArgs CompileArgs::build(JSContext* cx,
   target->ionEnabled = ion;
   target->craneliftEnabled = cranelift;
   target->debugEnabled = debug;
-  target->sharedMemoryEnabled =
-      cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled();
+  target->sharedMemoryEnabled = sharedMemory;
   target->forceTiering = forceTiering;
-  target->gcEnabled = wasm::GcTypesAvailable(cx);
+  target->gcEnabled = gc;
   target->hugeMemory = wasm::IsHugeMemoryEnabled();
-  target->bigIntEnabled = wasm::I64BigIntConversionAvailable(cx);
-  target->multiValuesEnabled = wasm::MultiValuesAvailable(cx);
-
-  Log(cx, "available wasm compilers: tier1=%s tier2=%s",
-      baseline ? "baseline" : "none",
-      ion ? "ion" : (cranelift ? "cranelift" : "none"));
+  target->bigIntEnabled = bigInt;
 
   return target;
 }
@@ -463,15 +486,13 @@ void CompilerEnvironment::computeParameters(Decoder& d, bool gcFeatureOptIn) {
   bool forceTiering = args_->forceTiering;
   bool hugeMemory = args_->hugeMemory;
   bool bigIntEnabled = args_->bigIntEnabled;
-  bool multiValuesEnabled = args_->multiValuesEnabled;
 
   bool hasSecondTier = ionEnabled || craneliftEnabled;
-  MOZ_ASSERT_IF(debugEnabled, baselineEnabled);
+  MOZ_ASSERT_IF(gcEnabled || debugEnabled, baselineEnabled);
   MOZ_ASSERT_IF(forceTiering, baselineEnabled && hasSecondTier);
 
   
   MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled || craneliftEnabled);
-  MOZ_RELEASE_ASSERT(!(ionEnabled && craneliftEnabled));
 
   uint32_t codeSectionSize = 0;
 
@@ -495,10 +516,13 @@ void CompilerEnvironment::computeParameters(Decoder& d, bool gcFeatureOptIn) {
   debug_ = debugEnabled ? DebugEnabled::True : DebugEnabled::False;
   gcTypes_ = gcEnabled;
   refTypes_ = true;
-  multiValues_ = multiValuesEnabled;
+#ifdef ENABLE_WASM_MULTI_VALUE
+  multiValues_ = !craneliftEnabled;
+#else
+  multiValues_ = false;
+#endif
   hugeMemory_ = hugeMemory;
-  bigInt_ = bigIntEnabled;
-  multiValues_ = multiValuesEnabled;
+  bigInt_ = bigIntEnabled && !craneliftEnabled;
   state_ = Computed;
 }
 
@@ -603,8 +627,12 @@ void wasm::CompileTier2(const CompileArgs& args, const Bytes& bytecode,
 #else
   bool refTypesConfigured = false;
 #endif
-  bool multiValueConfigured = args.multiValuesEnabled;
-  bool bigIntConfigured = args.bigIntEnabled;
+#ifdef ENABLE_WASM_MULTI_VALUE
+  bool multiValueConfigured = !args.craneliftEnabled;
+#else
+  bool multiValueConfigured = false;
+#endif
+  bool bigIntConfigured = args.bigIntEnabled && !args.craneliftEnabled;
 
   OptimizedBackend optimizedBackend = args.craneliftEnabled
                                           ? OptimizedBackend::Cranelift
