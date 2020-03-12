@@ -1395,9 +1395,10 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  MOZ_ASSERT(mChannel == chan,
-             "HttpChannelParent getting OnStartRequest from a different "
-             "HttpBaseChannel instance");
+  
+  
+
+
 
   
   
