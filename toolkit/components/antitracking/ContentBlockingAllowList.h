@@ -26,6 +26,8 @@ class ContentBlockingAllowList final {
   static nsresult Check(nsIPrincipal* aContentBlockingAllowListPrincipal,
                         bool aIsPrivateBrowsing, bool& aIsAllowListed);
 
+  static bool Check(nsIHttpChannel* aChannel);
+
   
   
   
@@ -44,7 +46,6 @@ class ContentBlockingAllowList final {
   
   static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
   static bool Check(nsPIDOMWindowInner* aWindow);
-  static bool Check(nsIHttpChannel* aChannel);
 
   friend class AntiTrackingCommon;
 };
