@@ -97,9 +97,6 @@ class nsPNGDecoder : public Decoder {
   uint8_t* interlacebuf;
   gfx::SurfaceFormat mFormat;
 
-  
-  uint32_t mCMSMode;
-
   uint8_t mChannels;
   uint8_t mPass;
   bool mFrameIsHidden;
