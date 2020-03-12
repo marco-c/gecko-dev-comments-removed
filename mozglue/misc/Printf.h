@@ -90,7 +90,7 @@ class PrintfTarget {
 
  protected:
   MFBT_API PrintfTarget();
-  virtual ~PrintfTarget() {}
+  virtual ~PrintfTarget() = default;
 
   
 
