@@ -4457,9 +4457,6 @@ pref("snav.enabled", false);
 pref("dom.wakelock.enabled", false);
 
 
-pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
-
-
 pref("dom.presentation.tcp_server.debug", false);
 pref("dom.presentation.discovery.enabled", false);
 pref("dom.presentation.discovery.timeout_ms", 10000);
@@ -4836,6 +4833,9 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   
   
   pref("services.sync.maxResyncs", 5);
+
+  
+  pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 #endif // MOZ_SERVICES_SYNC
 
 
