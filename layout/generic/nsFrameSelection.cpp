@@ -1408,7 +1408,9 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
   }
 
   
-  if (GetBatching()) return NS_OK;
+  if (IsBatching()) {
+    return NS_OK;
+  }
 
   
   return NotifySelectionListeners(SelectionType::eNormal);

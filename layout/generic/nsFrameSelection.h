@@ -781,7 +781,7 @@ class nsFrameSelection final {
                                 
   void SetDesiredPos(nsPoint aPos);  
 
-  uint32_t GetBatching() const { return mBatching.mCounter; }
+  bool IsBatching() const { return mBatching.mCounter > 0; }
 
   void SetChangesDuringBatchingFlag() {
     MOZ_ASSERT(mBatching.mCounter > 0);
