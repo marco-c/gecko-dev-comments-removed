@@ -220,9 +220,26 @@ class BrowserTestUtilsChild extends JSWindowActorChild {
 
         let dies = function() {
           ChromeUtils.privateNoteIntentionalCrash();
-          let zero = new ctypes.intptr_t(8);
-          let badptr = ctypes.cast(zero, ctypes.PointerType(ctypes.int32_t));
-          badptr.contents;
+
+          switch (aMessage.data.crashType) {
+            case "CRASH_OOM": {
+              let debug = Cc["@mozilla.org/xpcom/debug;1"].getService(
+                Ci.nsIDebug2
+              );
+              debug.crashWithOOM();
+              break;
+            }
+            case "CRASH_INVALID_POINTER_DEREF": 
+            default: {
+              
+              let zero = new ctypes.intptr_t(8);
+              let badptr = ctypes.cast(
+                zero,
+                ctypes.PointerType(ctypes.int32_t)
+              );
+              badptr.contents;
+            }
+          }
         };
 
         dump("\nEt tu, Brute?\n");

@@ -135,6 +135,12 @@ nsDebugImpl::Abort(const char* aFile, int32_t aLine) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsDebugImpl::CrashWithOOM() {
+  NS_ABORT_OOM(-1);
+  return NS_OK;
+}
+
 
 extern "C" void intentional_panic(const char* message);
 
