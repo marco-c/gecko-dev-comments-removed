@@ -553,6 +553,8 @@ impl BindgenContext {
             clang_sys::CXTranslationUnit_DetailedPreprocessingRecord;
 
         let translation_unit = {
+            let _t =
+                Timer::new("translation_unit").with_output(options.time_phases);
             let clang_args = if explicit_target {
                 Cow::Borrowed(&options.clang_args)
             } else {
@@ -573,6 +575,7 @@ impl BindgenContext {
 - Unrecognized flags
 - Invalid flag arguments
 - File I/O errors
+- Host vs. target architecture mismatch
 If you encounter an error missing from this list, please file an issue or a PR!")
         };
 
@@ -931,6 +934,8 @@ If you encounter an error missing from this list, please file an issue or a PR!"
 
     
     fn resolve_typerefs(&mut self) {
+        let _t = self.timer("resolve_typerefs");
+
         let typerefs = self.collect_typerefs();
 
         for (id, ty, loc, parent_id) in typerefs {
@@ -987,6 +992,8 @@ If you encounter an error missing from this list, please file an issue or a PR!"
     
     
     fn compute_bitfield_units(&mut self) {
+        let _t = self.timer("compute_bitfield_units");
+
         assert!(self.collected_typerefs());
 
         let need_bitfield_allocation =
@@ -2160,10 +2167,27 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                     }
                     break;
                 }
-                _ => {
+                spelling if !found_namespace_keyword => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    warn!(
+                        "Ignored unknown namespace prefix '{}' at {:?} in {:?}",
+                        String::from_utf8_lossy(spelling),
+                        token,
+                        cursor
+                    );
+                }
+                spelling => {
                     panic!(
-                        "Unknown token while processing namespace: {:?}",
-                        token
+                        "Unknown token '{}' while processing namespace at {:?} in {:?}",
+                        String::from_utf8_lossy(spelling),
+                        token,
+                        cursor
                     );
                 }
             }
@@ -2321,7 +2345,7 @@ If you encounter an error missing from this list, please file an issue or a PR!"
                             }
 
                             let mut prefix_path =
-                                parent.path_for_whitelisting(self);
+                                parent.path_for_whitelisting(self).clone();
                             enum_.variants().iter().any(|variant| {
                                 prefix_path.push(variant.name().into());
                                 let name = prefix_path[1..].join("::");

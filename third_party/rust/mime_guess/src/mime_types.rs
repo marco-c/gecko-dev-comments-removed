@@ -13,6 +13,7 @@
 
 
 
+
 pub static MIME_TYPES: &[(&str, &[&str])] = &[
     ("123", &["application/vnd.lotus-1-2-3"]),
     ("323", &["text/h323"]),
@@ -649,7 +650,7 @@ pub static MIME_TYPES: &[(&str, &[&str])] = &[
     ("mc1", &["application/vnd.medcalcdata"]),
     ("mcd", &["application/vnd.mcd"]),
     ("mcurl", &["text/vnd.curl.mcurl"]),
-    ("md", &["text/x-markdown"]),
+    ("md", &["text/markdown", "text/x-markdown"]),
     ("mda", &["application/msaccess"]),
     ("mdb", &["application/x-msaccess"]),
     ("mde", &["application/msaccess"]),

@@ -64,4 +64,7 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
     fn item_name(&self, _original_item_name: &str) -> Option<String> {
         None
     }
+
+    
+    fn include_file(&self, _filename: &str) {}
 }

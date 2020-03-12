@@ -8,7 +8,6 @@
 
 
 #![deny(missing_docs)]
-#![deny(warnings)]
 #![deny(unused_extern_crates)]
 
 
@@ -23,6 +22,7 @@ extern crate cexpr;
 #[allow(unused_extern_crates)]
 extern crate cfg_if;
 extern crate clang_sys;
+extern crate lazycell;
 extern crate rustc_hash;
 #[macro_use]
 extern crate lazy_static;
@@ -82,7 +82,7 @@ doc_mod!(ir, ir_docs);
 doc_mod!(parse, parse_docs);
 doc_mod!(regex_set, regex_set_docs);
 
-pub use codegen::EnumVariation;
+pub use codegen::{AliasVariation, EnumVariation};
 use features::RustFeatures;
 pub use features::{RustTarget, LATEST_STABLE_RUST, RUST_TARGET_STRINGS};
 use ir::context::{BindgenContext, ItemId};
@@ -95,7 +95,6 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Arc;
 use std::{env, iter};
 
 
@@ -198,6 +197,8 @@ impl Default for CodegenConfig {
 
 
 
+
+
 #[derive(Debug, Default)]
 pub struct Builder {
     options: BindgenOptions,
@@ -234,7 +235,12 @@ impl Builder {
                     codegen::EnumVariation::Rust {
                         non_exhaustive: true,
                     } => "rust_non_exhaustive",
-                    codegen::EnumVariation::Bitfield => "bitfield",
+                    codegen::EnumVariation::NewType { is_bitfield: true } => {
+                        "bitfield"
+                    }
+                    codegen::EnumVariation::NewType { is_bitfield: false } => {
+                        "newtype"
+                    }
                     codegen::EnumVariation::Consts => "consts",
                     codegen::EnumVariation::ModuleConsts => "moduleconsts",
                 }
@@ -248,6 +254,16 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--bitfield-enum".into());
+                output_vector.push(item.to_owned());
+            })
+            .count();
+
+        self.options
+            .newtype_enums
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--newtype-enum".into());
                 output_vector.push(item.to_owned());
             })
             .count();
@@ -288,6 +304,42 @@ impl Builder {
             .iter()
             .map(|item| {
                 output_vector.push("--constified-enum".into());
+                output_vector.push(item.to_owned());
+            })
+            .count();
+
+        if self.options.default_alias_style != Default::default() {
+            output_vector.push("--default-alias-style=".into());
+            output_vector
+                .push(self.options.default_alias_style.as_str().into());
+        }
+
+        self.options
+            .type_alias
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--type-alias".into());
+                output_vector.push(item.to_owned());
+            })
+            .count();
+
+        self.options
+            .new_type_alias
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--new-type-alias".into());
+                output_vector.push(item.to_owned());
+            })
+            .count();
+
+        self.options
+            .new_type_alias_deref
+            .get_items()
+            .iter()
+            .map(|item| {
+                output_vector.push("--new-type-alias-deref".into());
                 output_vector.push(item.to_owned());
             })
             .count();
@@ -421,6 +473,9 @@ impl Builder {
         if self.options.disable_name_namespacing {
             output_vector.push("--disable-name-namespacing".into());
         }
+        if self.options.disable_nested_struct_naming {
+            output_vector.push("--disable-nested-struct-naming".into());
+        }
 
         if !self.options.codegen_config.functions() {
             output_vector.push("--ignore-functions".into());
@@ -465,6 +520,13 @@ impl Builder {
 
         if self.options.array_pointers_in_arguments {
             output_vector.push("--use-array-pointers-in-arguments".into());
+        }
+
+        if let Some(ref wasm_import_module_name) =
+            self.options.wasm_import_module_name
+        {
+            output_vector.push("--wasm-import-module-name".into());
+            output_vector.push(wasm_import_module_name.clone());
         }
 
         self.options
@@ -540,6 +602,10 @@ impl Builder {
 
         if !self.options.record_matches {
             output_vector.push("--no-record-matches".into());
+        }
+
+        if self.options.size_t_is_usize {
+            output_vector.push("--size_t-is-usize".into());
         }
 
         if !self.options.rustfmt_bindings {
@@ -732,11 +798,19 @@ impl Builder {
 
     
     
+    
+    
+    
+    
     pub fn blacklist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.blacklisted_types.insert(arg);
         self
     }
 
+    
+    
+    
+    
     
     
     pub fn blacklist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
@@ -747,11 +821,19 @@ impl Builder {
     
     
     
+    
+    
+    
+    
     pub fn blacklist_item<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.blacklisted_items.insert(arg);
         self
     }
 
+    
+    
+    
+    
     
     
     pub fn opaque_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
@@ -770,11 +852,19 @@ impl Builder {
     
     
     
+    
+    
+    
+    
     pub fn whitelist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.whitelisted_types.insert(arg);
         self
     }
 
+    
+    
+    
+    
     
     
     
@@ -791,6 +881,10 @@ impl Builder {
         self.whitelist_function(arg)
     }
 
+    
+    
+    
+    
     
     
     
@@ -821,8 +915,21 @@ impl Builder {
     
     
     
+    
+    
+    
     pub fn bitfield_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.bitfield_enums.insert(arg);
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn newtype_enum<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.newtype_enums.insert(arg);
         self
     }
 
@@ -867,6 +974,45 @@ impl Builder {
     
     pub fn constified_enum_module<T: AsRef<str>>(mut self, arg: T) -> Builder {
         self.options.constified_enum_modules.insert(arg);
+        self
+    }
+
+    
+    pub fn default_alias_style(
+        mut self,
+        arg: codegen::AliasVariation,
+    ) -> Builder {
+        self.options.default_alias_style = arg;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn type_alias<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.type_alias.insert(arg);
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn new_type_alias<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.new_type_alias.insert(arg);
+        self
+    }
+
+    
+    
+    
+    
+    pub fn new_type_alias_deref<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.new_type_alias_deref.insert(arg);
         self
     }
 
@@ -1096,6 +1242,29 @@ impl Builder {
     
     
     
+    pub fn disable_nested_struct_naming(mut self) -> Builder {
+        self.options.disable_nested_struct_naming = true;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1182,6 +1351,12 @@ impl Builder {
     
     pub fn prepend_enum_name(mut self, doit: bool) -> Self {
         self.options.prepend_enum_name = doit;
+        self
+    }
+
+    
+    pub fn size_t_is_usize(mut self, is: bool) -> Self {
+        self.options.size_t_is_usize = is;
         self
     }
 
@@ -1361,6 +1536,15 @@ impl Builder {
         self.options.array_pointers_in_arguments = doit;
         self
     }
+
+    
+    pub fn wasm_import_module_name<T: Into<String>>(
+        mut self,
+        import_name: T,
+    ) -> Self {
+        self.options.wasm_import_module_name = Some(import_name.into());
+        self
+    }
 }
 
 
@@ -1403,11 +1587,16 @@ struct BindgenOptions {
     default_enum_style: codegen::EnumVariation,
 
     
+    
     bitfield_enums: RegexSet,
+
+    
+    newtype_enums: RegexSet,
 
     
     rustified_enums: RegexSet,
 
+    
     rustified_non_exhaustive_enums: RegexSet,
 
     
@@ -1415,6 +1604,19 @@ struct BindgenOptions {
 
     
     constified_enums: RegexSet,
+
+    
+    default_alias_style: codegen::AliasVariation,
+
+    
+    type_alias: RegexSet,
+
+    
+    new_type_alias: RegexSet,
+
+    
+    
+    new_type_alias_deref: RegexSet,
 
     
     builtins: bool,
@@ -1438,6 +1640,9 @@ struct BindgenOptions {
 
     
     disable_name_namespacing: bool,
+
+    
+    disable_nested_struct_naming: bool,
 
     
     layout_tests: bool,
@@ -1582,6 +1787,9 @@ struct BindgenOptions {
     record_matches: bool,
 
     
+    size_t_is_usize: bool,
+
+    
     rustfmt_bindings: bool,
 
     
@@ -1599,6 +1807,9 @@ struct BindgenOptions {
 
     
     array_pointers_in_arguments: bool,
+
+    
+    wasm_import_module_name: Option<String>,
 }
 
 
@@ -1619,7 +1830,12 @@ impl BindgenOptions {
             &mut self.bitfield_enums,
             &mut self.constified_enums,
             &mut self.constified_enum_modules,
+            &mut self.newtype_enums,
             &mut self.rustified_enums,
+            &mut self.rustified_non_exhaustive_enums,
+            &mut self.type_alias,
+            &mut self.new_type_alias,
+            &mut self.new_type_alias_deref,
             &mut self.no_partialeq_types,
             &mut self.no_copy_types,
             &mut self.no_hash_types,
@@ -1661,10 +1877,15 @@ impl Default for BindgenOptions {
             whitelisted_vars: Default::default(),
             default_enum_style: Default::default(),
             bitfield_enums: Default::default(),
+            newtype_enums: Default::default(),
             rustified_enums: Default::default(),
             rustified_non_exhaustive_enums: Default::default(),
             constified_enums: Default::default(),
             constified_enum_modules: Default::default(),
+            default_alias_style: Default::default(),
+            type_alias: Default::default(),
+            new_type_alias: Default::default(),
+            new_type_alias_deref: Default::default(),
             builtins: false,
             emit_ast: false,
             emit_ir: false,
@@ -1683,6 +1904,7 @@ impl Default for BindgenOptions {
             enable_cxx_namespaces: false,
             enable_function_attribute_detection: false,
             disable_name_namespacing: false,
+            disable_nested_struct_naming: false,
             use_core: false,
             ctypes_prefix: None,
             namespaced_constants: true,
@@ -1708,15 +1930,18 @@ impl Default for BindgenOptions {
             time_phases: false,
             record_matches: true,
             rustfmt_bindings: true,
+            size_t_is_usize: false,
             rustfmt_configuration_file: None,
             no_partialeq_types: Default::default(),
             no_copy_types: Default::default(),
             no_hash_types: Default::default(),
             array_pointers_in_arguments: false,
+            wasm_import_module_name: None,
         }
     }
 }
 
+#[cfg(feature = "runtime")]
 fn ensure_libclang_is_loaded() {
     if clang_sys::is_loaded() {
         return;
@@ -1727,7 +1952,7 @@ fn ensure_libclang_is_loaded() {
     
 
     lazy_static! {
-        static ref LIBCLANG: Arc<clang_sys::SharedLibrary> = {
+        static ref LIBCLANG: std::sync::Arc<clang_sys::SharedLibrary> = {
             clang_sys::load().expect("Unable to find libclang");
             clang_sys::get_library().expect(
                 "We just loaded libclang and it had better still be \
@@ -1738,6 +1963,9 @@ fn ensure_libclang_is_loaded() {
 
     clang_sys::set_library(Some(LIBCLANG.clone()));
 }
+
+#[cfg(not(feature = "runtime"))]
+fn ensure_libclang_is_loaded() {}
 
 
 #[derive(Debug)]
@@ -1753,10 +1981,13 @@ impl Bindings {
     ) -> Result<Bindings, ()> {
         ensure_libclang_is_loaded();
 
+        #[cfg(feature = "runtime")]
         debug!(
             "Generating bindings, libclang at {}",
             clang_sys::get_library().unwrap().path().display()
         );
+        #[cfg(not(feature = "runtime"))]
+        debug!("Generating bindings, libclang linked");
 
         options.build();
 
@@ -1958,10 +2189,9 @@ impl Bindings {
             }
         }
         #[cfg(not(feature = "which-rustfmt"))]
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "which wasn't enabled, and no rustfmt binary specified",
-        ))
+        
+        
+        Ok(Cow::Owned("rustfmt".into()))
     }
 
     
@@ -2113,10 +2343,7 @@ pub struct ClangVersion {
 
 
 pub fn clang_version() -> ClangVersion {
-    if !clang_sys::is_loaded() {
-        
-        clang_sys::load().expect("Unable to find libclang");
-    }
+    ensure_libclang_is_loaded();
 
     let raw_v: String = clang::extract_clang_version();
     let split_v: Option<Vec<&str>> = raw_v
@@ -2144,6 +2371,27 @@ pub fn clang_version() -> ClangVersion {
     ClangVersion {
         parsed: None,
         full: raw_v.clone(),
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct CargoCallbacks;
+
+impl callbacks::ParseCallbacks for CargoCallbacks {
+    fn include_file(&self, filename: &str) {
+        println!("cargo:rerun-if-changed={}", filename);
     }
 }
 

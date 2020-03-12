@@ -349,11 +349,62 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
 #![cfg_attr(not(feature = "std"), no_std)]
-
 #![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
+#![deny(missing_docs)]
+#![warn(missing_doc_code_examples)]
 
 #[cfg(all(not(feature = "std"), feature = "alloc"))]
 #[macro_use]
@@ -363,9 +414,17 @@ extern crate alloc;
 extern crate lazy_static;
 extern crate memchr;
 #[cfg(feature = "regexp")]
-extern crate regex;
+pub extern crate regex;
+#[cfg(feature = "lexical")]
+extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
+#[cfg(test)]
+extern crate doc_comment;
+
+
+
+
 
 
 
@@ -373,48 +432,40 @@ pub mod lib {
   
   
   #[cfg(not(feature = "std"))]
+  
   pub mod std {
     #[cfg(feature = "alloc")]
     #[cfg_attr(feature = "alloc", macro_use)]
     pub use alloc::{boxed, string, vec};
 
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str, borrow};
+
+    
     pub mod prelude {
       pub use core::prelude as v1;
     }
   }
 
   #[cfg(feature = "std")]
+  
   pub mod std {
-    pub use std::{boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec};
+    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec, borrow};
+
+    
     pub mod prelude {
       pub use std::prelude as v1;
     }
   }
+
+  #[cfg(feature = "regexp")]
+  pub use regex;
 }
 
 pub use self::traits::*;
 pub use self::util::*;
-
-#[cfg(feature = "verbose-errors")]
-pub use self::verbose_errors::*;
-
-#[cfg(not(feature = "verbose-errors"))]
-pub use self::simple_errors::*;
-
-pub use self::branch::*;
 pub use self::internal::*;
-pub use self::macros::*;
 pub use self::methods::*;
-pub use self::multi::*;
-pub use self::sequence::*;
-
 pub use self::bits::*;
-pub use self::bytes::*;
-
-pub use self::character::*;
-pub use self::nom::*;
-
 pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
@@ -424,37 +475,30 @@ pub use self::str::*;
 #[macro_use]
 mod util;
 
-#[cfg(feature = "verbose-errors")]
 #[macro_use]
-pub mod verbose_errors;
-
-#[cfg(not(feature = "verbose-errors"))]
-#[macro_use]
-pub mod simple_errors;
+pub mod error;
 
 #[macro_use]
 mod internal;
 mod traits;
 #[macro_use]
-mod macros;
+pub mod combinator;
 #[macro_use]
-mod branch;
+pub mod branch;
 #[macro_use]
-mod sequence;
+pub mod sequence;
 #[macro_use]
-mod multi;
+pub mod multi;
 #[macro_use]
 pub mod methods;
 
 #[macro_use]
-mod bytes;
+pub mod bytes;
 #[macro_use]
 pub mod bits;
 
 #[macro_use]
-mod character;
-#[macro_use]
-mod nom;
+pub mod character;
 
 #[macro_use]
 pub mod whitespace;
@@ -465,4 +509,5 @@ mod regexp;
 
 mod str;
 
-pub mod types;
+#[macro_use]
+pub mod number;

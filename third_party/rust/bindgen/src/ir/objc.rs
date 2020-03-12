@@ -12,6 +12,7 @@ use clang_sys::CXCursor_ObjCClassRef;
 use clang_sys::CXCursor_ObjCInstanceMethodDecl;
 use clang_sys::CXCursor_ObjCProtocolDecl;
 use clang_sys::CXCursor_ObjCProtocolRef;
+use clang_sys::CXCursor_TemplateTypeParameter;
 use proc_macro2::{Ident, Span, TokenStream};
 
 
@@ -26,6 +27,9 @@ pub struct ObjCInterface {
     category: Option<String>,
 
     is_protocol: bool,
+
+    
+    pub template_names: Vec<String>,
 
     conforms_to: Vec<ItemId>,
 
@@ -58,6 +62,7 @@ impl ObjCInterface {
             name: name.to_owned(),
             category: None,
             is_protocol: false,
+            template_names: Vec::new(),
             conforms_to: Vec::new(),
             methods: Vec::new(),
             class_methods: Vec::new(),
@@ -83,6 +88,11 @@ impl ObjCInterface {
                 self.name().to_owned()
             }
         }
+    }
+
+    
+    pub fn is_template(&self) -> bool {
+        !self.template_names.is_empty()
     }
 
     
@@ -154,6 +164,10 @@ impl ObjCInterface {
                     let method = ObjCMethod::new(&name, signature, is_class_method);
                     interface.add_method(method);
                 }
+                CXCursor_TemplateTypeParameter => {
+                    let name = c.spelling();
+                    interface.template_names.push(name);
+                }
                 _ => {}
             }
             CXChildVisit_Continue
@@ -183,8 +197,8 @@ impl ObjCMethod {
         ObjCMethod {
             name: name.to_owned(),
             rust_name: rust_name.to_owned(),
-            signature: signature,
-            is_class_method: is_class_method,
+            signature,
+            is_class_method,
         }
     }
 
@@ -212,11 +226,16 @@ impl ObjCMethod {
 
     
     pub fn format_method_call(&self, args: &[TokenStream]) -> TokenStream {
-        let split_name: Vec<_> = self
+        let split_name: Vec<Option<Ident>> = self
             .name
             .split(':')
-            .filter(|p| !p.is_empty())
-            .map(|name| Ident::new(name, Span::call_site()))
+            .map(|name| {
+                if name.is_empty() {
+                    None
+                } else {
+                    Some(Ident::new(name, Span::call_site()))
+                }
+            })
             .collect();
 
         
@@ -228,11 +247,11 @@ impl ObjCMethod {
         }
 
         
-        if args.len() != split_name.len() {
+        if args.len() != split_name.len() - 1 {
             panic!(
                 "Incorrect method name or arguments for objc method, {:?} vs {:?}",
                 args,
-                split_name
+                split_name,
             );
         }
 
@@ -245,10 +264,15 @@ impl ObjCMethod {
             args_without_types.push(Ident::new(name, Span::call_site()))
         }
 
-        let args = split_name
-            .into_iter()
-            .zip(args_without_types)
-            .map(|(arg, arg_val)| quote! { #arg : #arg_val });
+        let args = split_name.into_iter().zip(args_without_types).map(
+            |(arg, arg_val)| {
+                if let Some(arg) = arg {
+                    quote! { #arg: #arg_val }
+                } else {
+                    quote! { #arg_val: #arg_val }
+                }
+            },
+        );
 
         quote! {
             #( #args )*

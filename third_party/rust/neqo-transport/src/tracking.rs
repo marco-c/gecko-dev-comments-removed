@@ -192,7 +192,7 @@ impl ::std::fmt::Display for PacketRange {
 
 
 pub const ACK_DELAY: Duration = Duration::from_millis(20); 
-const MAX_TRACKED_RANGES: usize = 100;
+const MAX_TRACKED_RANGES: usize = 32;
 const MAX_ACKS_PER_FRAME: usize = 32;
 
 

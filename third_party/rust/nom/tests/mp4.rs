@@ -1,13 +1,13 @@
-#![cfg(feature = "stream")]
 #![allow(dead_code)]
 
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, Needed, be_f32, be_u16, be_u32, be_u64};
-
-
-use nom::{Err, ErrorKind};
+use nom::{
+  IResult, Needed, Err,
+  error::ErrorKind,
+  number::streaming::{be_u16, be_u32, be_u64, be_f32}
+};
 
 use std::str;
 
@@ -261,7 +261,7 @@ fn mvhd_box(input: &[u8]) -> IResult<&[u8], MvhdBox> {
   } else if input.len() == 112 {
     mvhd64(input)
   } else {
-    Err(Err::Error(error_position!(input, ErrorKind::Custom(32u32))))
+    Err(Err::Error(error_position!(input, ErrorKind::TooLarge)))
   };
   println!("res: {:?}", res);
   res
@@ -272,7 +272,7 @@ fn unknown_box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
 }
 
 
-fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType, u32> {
+fn box_type(input: &[u8]) -> IResult<&[u8], MP4BoxType> {
   alt!(input,
     tag!("ftyp") => { |_| MP4BoxType::Ftyp } |
     tag!("moov") => { |_| MP4BoxType::Moov } |
@@ -316,214 +316,4 @@ named!(moov_header<&[u8],MP4BoxHeader>,
     (MP4BoxHeader{ length: length, tag: tag})
   )
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

@@ -838,21 +838,17 @@ impl CryptoStreams {
                     ..
                 } = self
                 {
-                    
-                    
-                    let tmp_h = mem::replace(handshake, CryptoStream::default());
-                    let tmp_a = mem::replace(application, CryptoStream::default());
                     *self = Self::Handshake {
-                        handshake: tmp_h,
-                        application: tmp_a,
+                        handshake: mem::take(handshake),
+                        application: mem::take(application),
                     };
                 }
             }
             PNSpace::Handshake => {
                 if let Self::Handshake { application, .. } = self {
-                    
-                    let tmp_a = mem::replace(application, CryptoStream::default());
-                    *self = Self::ApplicationData { application: tmp_a };
+                    *self = Self::ApplicationData {
+                        application: mem::take(application),
+                    };
                 } else if matches!(self, Self::Initial {..}) {
                     panic!("Discarding handshake before initial discarded");
                 }

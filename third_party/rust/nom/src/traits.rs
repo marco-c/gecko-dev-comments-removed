@@ -1,34 +1,26 @@
 
 
-use internal::{Err, IResult, Needed};
-use lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
-use lib::std::iter::Enumerate;
-use lib::std::slice::Iter;
-use lib::std::iter::Map;
-
-use lib::std::str::Chars;
-use lib::std::str::CharIndices;
-use lib::std::str::FromStr;
-use lib::std::str::from_utf8;
-#[cfg(feature = "alloc")]
-use lib::std::string::String;
-#[cfg(feature = "alloc")]
-use lib::std::vec::Vec;
-
+use crate::internal::{Err, IResult, Needed};
+use crate::error::{ParseError, ErrorKind};
+use crate::lib::std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use crate::lib::std::iter::Enumerate;
+use crate::lib::std::slice::Iter;
+use crate::lib::std::iter::Map;
+use crate::lib::std::str::Chars;
+use crate::lib::std::str::CharIndices;
+use crate::lib::std::str::FromStr;
+use crate::lib::std::str::from_utf8;
 use memchr;
 
-#[cfg(feature = "verbose-errors")]
-use verbose_errors::Context;
-#[cfg(not(feature = "verbose-errors"))]
-use simple_errors::Context;
-
-use util::ErrorKind;
+#[cfg(feature = "alloc")]
+use crate::lib::std::string::String;
+#[cfg(feature = "alloc")]
+use crate::lib::std::vec::Vec;
 
 
 pub trait InputLength {
   
   
-  #[inline]
   fn input_len(&self) -> usize;
 }
 
@@ -99,6 +91,7 @@ impl<'a> Offset for &'a str {
 
 
 pub trait AsBytes {
+  
   fn as_bytes(&self) -> &[u8];
 }
 
@@ -160,31 +153,24 @@ as_bytes_array_impls! {
 
 pub trait AsChar {
   
-  #[inline]
   fn as_char(self) -> char;
 
   
   
   
   
-  #[inline]
   fn is_alpha(self) -> bool;
 
   
   
-  #[inline]
   fn is_alphanum(self) -> bool;
   
-  #[inline]
   fn is_dec_digit(self) -> bool;
   
-  #[inline]
   fn is_hex_digit(self) -> bool;
   
-  #[inline]
   fn is_oct_digit(self) -> bool;
   
-  #[inline]
   fn len(self) -> usize;
 }
 
@@ -254,17 +240,9 @@ impl AsChar for char {
   fn as_char(self) -> char {
     self
   }
-  #[cfg(feature = "alloc")]
   #[inline]
   fn is_alpha(self) -> bool {
-    self.is_alphabetic()
-  }
-  #[cfg(not(feature = "alloc"))]
-  #[inline]
-  fn is_alpha(self) -> bool {
-    unimplemented!(
-      "error[E0658]: use of unstable library feature 'core_char_ext': the stable interface is `impl char` in later crate (see issue #32110)"
-    )
+    self.is_ascii_alphabetic()
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -272,11 +250,11 @@ impl AsChar for char {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self.is_digit(10)
+    self.is_ascii_digit()
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    self.is_digit(16)
+    self.is_ascii_hexdigit()
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -295,7 +273,7 @@ impl<'a> AsChar for &'a char {
   }
   #[inline]
   fn is_alpha(self) -> bool {
-    <char as AsChar>::is_alpha(*self)
+    self.is_ascii_alphabetic()
   }
   #[inline]
   fn is_alphanum(self) -> bool {
@@ -303,11 +281,11 @@ impl<'a> AsChar for &'a char {
   }
   #[inline]
   fn is_dec_digit(self) -> bool {
-    self.is_digit(10)
+    self.is_ascii_digit()
   }
   #[inline]
   fn is_hex_digit(self) -> bool {
-    self.is_digit(16)
+    self.is_ascii_hexdigit()
   }
   #[inline]
   fn is_oct_digit(self) -> bool {
@@ -320,13 +298,17 @@ impl<'a> AsChar for &'a char {
 }
 
 
-
-
-
 pub trait InputIter {
+  
+  
+  
   type Item;
-  type RawItem;
+  
+  
+  
   type Iter: Iterator<Item = (usize, Self::Item)>;
+
+  
   type IterElem: Iterator<Item = Self::Item>;
 
   
@@ -336,7 +318,7 @@ pub trait InputIter {
   
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
-    P: Fn(Self::RawItem) -> bool;
+    P: Fn(Self::Item) -> bool;
   
   fn slice_index(&self, count: usize) -> Option<usize>;
 }
@@ -355,7 +337,6 @@ fn star(r_u8: &u8) -> u8 {
 
 impl<'a> InputIter for &'a [u8] {
   type Item = u8;
-  type RawItem = u8;
   type Iter = Enumerate<Self::IterElem>;
   type IterElem = Map<Iter<'a, Self::Item>, fn(&u8) -> u8>;
 
@@ -398,7 +379,6 @@ impl<'a> InputTake for &'a [u8] {
 
 impl<'a> InputIter for &'a str {
   type Item = char;
-  type RawItem = char;
   type Iter = CharIndices<'a>;
   type IterElem = Chars<'a>;
   #[inline]
@@ -411,7 +391,7 @@ impl<'a> InputIter for &'a str {
   }
   fn position<P>(&self, predicate: P) -> Option<usize>
   where
-    P: Fn(Self::RawItem) -> bool,
+    P: Fn(Self::Item) -> bool,
   {
     for (o, c) in self.char_indices() {
       if predicate(c) {
@@ -460,60 +440,93 @@ impl<'a> InputTake for &'a str {
 
 pub trait UnspecializedInput {}
 
-use types::CompleteStr;
-use types::CompleteByteSlice;
-
 
 
 
 pub trait InputTakeAtPosition: Sized {
+  
+  
+  
   type Item;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  
+  
+  
+  
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+
+  
+  
+  
+  
+  
+  
+  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool;
+
+  
+  
+  
+  
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+  where
+    P: Fn(Self::Item) -> bool;
+
+  
+  
+  
+  
+  
+  
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool;
 }
 
-impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput> InputTakeAtPosition for T {
-  type Item = <T as InputIter>::RawItem;
+impl<T: InputLength + InputIter + InputTake + Clone + UnspecializedInput> InputTakeAtPosition for T {
+  type Item = <T as InputIter>::Item;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.position(predicate) {
       Some(n) => Ok(self.take_split(n)),
-      None => {
-        if self.at_eof() {
-          Ok(self.take_split(self.input_len()))
-        } else {
-          Err(Err::Incomplete(Needed::Size(1)))
-        }
-      }
+      None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match self.position(predicate) {
-      Some(0) => Err(Err::Error(Context::Code(self.clone(), e))),
+      Some(0) => Err(Err::Error(E::from_error_kind(self.clone(), e))),
       Some(n) => Ok(self.take_split(n)),
-      None => {
-        if self.at_eof() {
-          if self.input_len() == 0 {
-            Err(Err::Error(Context::Code(self.clone(), e)))
-          } else {
-            Ok(self.take_split(self.input_len()))
-          }
-        } else {
-          Err(Err::Incomplete(Needed::Size(1)))
-        }
+      None => Err(Err::Incomplete(Needed::Size(1))),
+    }
+  }
+
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position(predicate) {
+      Err(Err::Incomplete(_)) => Ok(self.take_split(self.input_len())),
+      res => res,
+    }
+  }
+
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.split_at_position1(predicate, e) {
+      Err(Err::Incomplete(_)) => if self.input_len() == 0 {
+        Err(Err::Error(E::from_error_kind(self.clone(), e)))
+      } else {
+        Ok(self.take_split(self.input_len()))
       }
+      res => res,
     }
   }
 }
@@ -521,7 +534,7 @@ impl<T: InputLength + InputIter + InputTake + AtEof + Clone + UnspecializedInput
 impl<'a> InputTakeAtPosition for &'a [u8] {
   type Item = u8;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
@@ -531,57 +544,37 @@ impl<'a> InputTakeAtPosition for &'a [u8] {
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
     match (0..self.len()).find(|b| predicate(self[*b])) {
-      Some(0) => Err(Err::Error(Context::Code(self, e))),
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
       Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
-}
 
-impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
-  type Item = u8;
-
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
-      None => {
-        let (i, o) = self.0.take_split(self.0.len());
-        Ok((CompleteByteSlice(i), CompleteByteSlice(o)))
-      }
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(i) => Ok((&self[i..], &self[..i])),
+      None => Ok(self.take_split(self.input_len())),
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match (0..self.0.len()).find(|b| predicate(self.0[*b])) {
-      Some(0) => Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e))),
-      Some(i) => Ok((
-        CompleteByteSlice(&self.0[i..]),
-        CompleteByteSlice(&self.0[..i]),
-      )),
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match (0..self.len()).find(|b| predicate(self[*b])) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => {
-        if self.0.len() == 0 {
-          Err(Err::Error(Context::Code(CompleteByteSlice(self.0), e)))
+        if self.len() == 0 {
+          Err(Err::Error(E::from_error_kind(self, e)))
         } else {
-          Ok((
-            CompleteByteSlice(&self.0[self.0.len()..]),
-            CompleteByteSlice(self.0),
-          ))
+          Ok(self.take_split(self.input_len()))
         }
-      }
+      },
     }
   }
 }
@@ -589,59 +582,47 @@ impl<'a> InputTakeAtPosition for CompleteByteSlice<'a> {
 impl<'a> InputTakeAtPosition for &'a str {
   type Item = char;
 
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
+  fn split_at_position<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
+  fn split_at_position1<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
   where
     P: Fn(Self::Item) -> bool,
   {
-    match self.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(Context::Code(self, e))),
-      Some((i, _)) => Ok((&self[i..], &self[..i])),
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => Err(Err::Incomplete(Needed::Size(1))),
     }
   }
-}
 
-impl<'a> InputTakeAtPosition for CompleteStr<'a> {
-  type Item = char;
-
-  fn split_at_position<P>(&self, predicate: P) -> IResult<Self, Self, u32>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
-      None => {
-        let (i, o) = self.0.take_split(self.0.len());
-        Ok((CompleteStr(i), CompleteStr(o)))
-      }
+  fn split_at_position_complete<P, E: ParseError<Self>>(&self, predicate: P) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.find(predicate) {
+      Some(i) => Ok((&self[i..], &self[..i])),
+      None =>  Ok(self.take_split(self.input_len()))
     }
   }
 
-  fn split_at_position1<P>(&self, predicate: P, e: ErrorKind<u32>) -> IResult<Self, Self, u32>
-  where
-    P: Fn(Self::Item) -> bool,
-  {
-    match self.0.char_indices().find(|&(_, c)| predicate(c)) {
-      Some((0, _)) => Err(Err::Error(Context::Code(CompleteStr(self.0), e))),
-      Some((i, _)) => Ok((CompleteStr(&self.0[i..]), CompleteStr(&self.0[..i]))),
+  fn split_at_position1_complete<P, E: ParseError<Self>>(&self, predicate: P, e: ErrorKind) -> IResult<Self, Self, E>
+    where P: Fn(Self::Item) -> bool {
+    match self.find(predicate) {
+      Some(0) => Err(Err::Error(E::from_error_kind(self, e))),
+      Some(i) => Ok((&self[i..], &self[..i])),
       None => {
-        if self.0.len() == 0 {
-          Err(Err::Error(Context::Code(CompleteStr(self.0), e)))
+        if self.len() == 0 {
+          Err(Err::Error(E::from_error_kind(self, e)))
         } else {
-          let (i, o) = self.0.take_split(self.0.len());
-          Ok((CompleteStr(i), CompleteStr(o)))
+          Ok(self.take_split(self.input_len()))
         }
-      }
+      },
     }
   }
 }
@@ -650,8 +631,11 @@ impl<'a> InputTakeAtPosition for CompleteStr<'a> {
 
 #[derive(Debug, PartialEq)]
 pub enum CompareResult {
+  
   Ok,
+  
   Incomplete,
+  
   Error,
 }
 
@@ -711,8 +695,8 @@ impl<'a, 'b> Compare<&'b [u8]> for &'a [u8] {
     let other = &t[..m];
 
     if !reduced.iter().zip(other).all(|(a, b)| match (*a, *b) {
-      (0...64, 0...64) | (91...96, 91...96) | (123...255, 123...255) => a == b,
-      (65...90, 65...90) | (97...122, 97...122) | (65...90, 97...122) | (97...122, 65...90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
+      (0..=64, 0..=64) | (91..=96, 91..=96) | (123..=255, 123..=255) => a == b,
+      (65..=90, 65..=90) | (97..=122, 97..=122) | (65..=90, 97..=122) | (97..=122, 65..=90) => *a | 0b00_10_00_00 == *b | 0b00_10_00_00,
       _ => false,
     }) {
       CompareResult::Error
@@ -753,7 +737,6 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
   }
 
   
-  #[cfg(feature = "alloc")]
   #[inline(always)]
   fn compare_no_case(&self, t: &'b str) -> CompareResult {
     let pos = self
@@ -772,16 +755,11 @@ impl<'a, 'b> Compare<&'b str> for &'a str {
       }
     }
   }
-
-  #[cfg(not(feature = "alloc"))]
-  #[inline(always)]
-  fn compare_no_case(&self, _: &'b str) -> CompareResult {
-    unimplemented!()
-  }
 }
 
 
 pub trait FindToken<T> {
+  
   fn find_token(&self, token: T) -> bool;
 }
 
@@ -811,7 +789,12 @@ impl<'a, 'b> FindToken<&'a u8> for &'b str {
 
 impl<'a> FindToken<char> for &'a [u8] {
   fn find_token(&self, token: char) -> bool {
-    memchr::memchr(token as u8, self).is_some()
+    for i in self.iter() {
+      if token as u8 == *i {
+        return true;
+      }
+    }
+    false
   }
 }
 
@@ -828,6 +811,7 @@ impl<'a> FindToken<char> for &'a str {
 
 
 pub trait FindSubstring<T> {
+  
   fn find_substring(&self, substr: T) -> Option<usize>;
 }
 
@@ -883,6 +867,8 @@ impl<'a, 'b> FindSubstring<&'b str> for &'a str {
 
 
 pub trait ParseTo<R> {
+  
+  
   fn parse_to(&self) -> Option<R>;
 }
 
@@ -904,7 +890,7 @@ impl<'a, R: FromStr> ParseTo<R> for &'a str {
 
 
 pub trait Slice<R> {
-  #[inline(always)]
+  
   fn slice(&self, range: R) -> Self;
 }
 
@@ -946,56 +932,6 @@ macro_rules! slice_ranges_impl {
 
 slice_ranges_impl! {str}
 slice_ranges_impl! {[T]}
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait AtEof {
-  fn at_eof(&self) -> bool;
-}
-
-pub fn need_more<I: AtEof, O, E>(input: I, needed: Needed) -> IResult<I, O, E> {
-  if input.at_eof() {
-    Err(Err::Error(Context::Code(input, ErrorKind::Eof)))
-  } else {
-    Err(Err::Incomplete(needed))
-  }
-}
-
-pub fn need_more_err<I: AtEof, O, E>(input: I, needed: Needed, err: ErrorKind<E>) -> IResult<I, O, E> {
-  if input.at_eof() {
-    Err(Err::Error(Context::Code(input, err)))
-  } else {
-    Err(Err::Incomplete(needed))
-  }
-}
-
-
-impl<I: AtEof, T> AtEof for (I, T) {
-  fn at_eof(&self) -> bool {
-    self.0.at_eof()
-  }
-}
-
-impl<'a, T> AtEof for &'a [T] {
-  fn at_eof(&self) -> bool {
-    false
-  }
-}
-
-impl<'a> AtEof for &'a str {
-  fn at_eof(&self) -> bool {
-    false
-  }
-}
 
 macro_rules! array_impls {
   ($($N:expr)+) => {
@@ -1061,15 +997,20 @@ array_impls! {
 }
 
 
+
 pub trait ExtendInto {
+
+  
+  
+  
   type Item;
+
+  
   type Extender: Extend<Self::Item>;
 
   
-  #[inline]
   fn new_builder(&self) -> Self::Extender;
   
-  #[inline]
   fn extend_into(&self, acc: &mut Self::Extender);
 }
 
@@ -1089,7 +1030,38 @@ impl ExtendInto for [u8] {
 }
 
 #[cfg(feature = "alloc")]
+impl ExtendInto for &[u8] {
+  type Item = u8;
+  type Extender = Vec<u8>;
+
+  #[inline]
+  fn new_builder(&self) -> Vec<u8> {
+    Vec::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut Vec<u8>) {
+    acc.extend(self.iter().cloned());
+  }
+}
+
+
+#[cfg(feature = "alloc")]
 impl ExtendInto for str {
+  type Item = char;
+  type Extender = String;
+
+  #[inline]
+  fn new_builder(&self) -> String {
+    String::new()
+  }
+  #[inline]
+  fn extend_into(&self, acc: &mut String) {
+    acc.push_str(self);
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl ExtendInto for &str {
   type Item = char;
   type Extender = String;
 
@@ -1115,6 +1087,72 @@ impl ExtendInto for char {
   #[inline]
   fn extend_into(&self, acc: &mut String) {
     acc.push(*self);
+  }
+}
+
+
+
+
+
+
+
+pub trait ToUsize {
+  
+  fn to_usize(&self) -> usize;
+}
+
+impl ToUsize for u8 {
+  #[inline]
+  fn to_usize(&self) -> usize {
+    *self as usize
+  }
+}
+
+impl ToUsize for u16 {
+  #[inline]
+  fn to_usize(&self) -> usize {
+    *self as usize
+  }
+}
+
+impl ToUsize for usize {
+  #[inline]
+  fn to_usize(&self) -> usize {
+    *self
+  }
+}
+
+#[cfg(any(target_pointer_width = "32", target_pointer_width = "64"))]
+impl ToUsize for u32 {
+  #[inline]
+  fn to_usize(&self) -> usize {
+    *self as usize
+  }
+}
+
+#[cfg(target_pointer_width = "64")]
+impl ToUsize for u64 {
+  #[inline]
+  fn to_usize(&self) -> usize {
+    *self as usize
+  }
+}
+
+
+pub trait ErrorConvert<E> {
+  
+  fn convert(self) -> E;
+}
+
+impl<I> ErrorConvert<(I, ErrorKind)> for ((I, usize), ErrorKind) {
+  fn convert(self) -> (I, ErrorKind) {
+    ((self.0).0, self.1)
+  }
+}
+
+impl<I> ErrorConvert<((I, usize), ErrorKind)> for (I, ErrorKind) {
+  fn convert(self) -> ((I, usize), ErrorKind) {
+    ((self.0, 0), self.1)
   }
 }
 

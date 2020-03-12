@@ -1,6 +1,6 @@
-use attribute::ExtendedAttributeList;
-use common::{Default, Identifier, Punctuated};
-use types::{AttributedType, Type};
+use crate::attribute::ExtendedAttributeList;
+use crate::common::{Default, Identifier, Punctuated};
+use crate::types::{AttributedType, Type};
 
 
 pub type ArgumentList<'a> = Punctuated<Argument<'a>, term!(,)>;
@@ -34,8 +34,8 @@ ast_types! {
 #[cfg(test)]
 mod test {
     use super::*;
-    use literal::{DecLit, DefaultValue, IntegerLit};
-    use Parse;
+    use crate::literal::{DecLit, DefaultValue, IntegerLit};
+    use crate::Parse;
 
     test!(should_parse_single_argument { "short a" =>
         "";

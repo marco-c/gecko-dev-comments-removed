@@ -122,6 +122,7 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
         
         if runtime {
             files.push("libclang.so.*".into());
+            files.push("libclang-*.so.*".into());
         }
     }
 
@@ -198,7 +199,7 @@ pub fn link() {
         
         
         let lib = if !directory.ends_with("bin") {
-            directory.to_owned()
+            directory
         } else {
             directory.parent().unwrap().join("lib")
         };
@@ -233,7 +234,7 @@ pub fn link() {
 
         
         
-        let name = match name.find(".dylib").or(name.find(".so")) {
+        let name = match name.find(".dylib").or_else(|| name.find(".so")) {
             Some(index) => &name[0..index],
             None => &name,
         };

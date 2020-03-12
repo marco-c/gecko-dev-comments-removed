@@ -23,13 +23,11 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/mime/0.3.13")]
+#![doc(html_root_url = "https://docs.rs/mime/0.3.16")]
 #![deny(warnings)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 
-
-extern crate unicase;
 
 use std::cmp::Ordering;
 use std::error::Error;
@@ -75,15 +73,23 @@ pub struct FromStrError {
     inner: parse::ParseError,
 }
 
-impl Error for FromStrError {
-    fn description(&self) -> &str {
-        "an error occurred while parsing a MIME type"
+impl FromStrError {
+    fn s(&self) -> &str {
+        "mime parse error"
     }
 }
 
 impl fmt::Display for FromStrError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}: {}", self.description(), self.inner)
+        write!(f, "{}: {}", self.s(), self.inner)
+    }
+}
+
+impl Error for FromStrError {
+    
+    #[allow(deprecated)]
+    fn description(&self) -> &str {
+        self.s()
     }
 }
 
@@ -206,6 +212,15 @@ impl Mime {
         Params(inner)
     }
 
+    
+    
+    
+    pub fn essence_str(&self) -> &str {
+        let end = self.semicolon().unwrap_or(self.source.as_ref().len());
+
+        &self.source.as_ref()[..end]
+    }
+
     #[cfg(test)]
     fn has_params(&self) -> bool {
         match self.params {
@@ -233,24 +248,33 @@ impl Mime {
 
 
 
+fn eq_ascii(a: &str, b: &str) -> bool {
+    
+    
+    #[allow(deprecated, unused)]
+    use std::ascii::AsciiExt;
+
+    a.eq_ignore_ascii_case(b)
+}
+
 fn mime_eq_str(mime: &Mime, s: &str) -> bool {
     if let ParamSource::Utf8(semicolon) = mime.params {
         if mime.source.as_ref().len() == s.len() {
-            unicase::eq_ascii(mime.source.as_ref(), s)
+            eq_ascii(mime.source.as_ref(), s)
         } else {
             params_eq(semicolon, mime.source.as_ref(), s)
         }
     } else if let Some(semicolon) = mime.semicolon() {
         params_eq(semicolon, mime.source.as_ref(), s)
     } else {
-        unicase::eq_ascii(mime.source.as_ref(), s)
+        eq_ascii(mime.source.as_ref(), s)
     }
 }
 
 fn params_eq(semicolon: usize, a: &str, b: &str) -> bool {
     if b.len() < semicolon + 1 {
         false
-    } else if !unicase::eq_ascii(&a[..semicolon], &b[..semicolon]) {
+    } else if !eq_ascii(&a[..semicolon], &b[..semicolon]) {
         false
     } else {
         
@@ -280,7 +304,7 @@ fn params_eq(semicolon: usize, a: &str, b: &str) -> bool {
                         #[allow(deprecated)]
                         { b[..b_idx].trim_left() }
                     };
-                    if !unicase::eq_ascii(a_name, b_name) {
+                    if !eq_ascii(a_name, b_name) {
                         return false;
                     }
                     sensitive = a_name != CHARSET;
@@ -327,7 +351,7 @@ fn params_eq(semicolon: usize, a: &str, b: &str) -> bool {
             };
 
             if sensitive {
-                if !unicase::eq_ascii(&a[..a_end], &b[..b_end]) {
+                if !eq_ascii(&a[..a_end], &b[..b_end]) {
                     return false;
                 }
             } else {
@@ -424,7 +448,7 @@ impl fmt::Display for Mime {
 
 fn name_eq_str(name: &Name, s: &str) -> bool {
     if name.insensitive {
-        unicase::eq_ascii(name.source, s)
+        eq_ascii(name.source, s)
     } else {
         name.source == s
     }
@@ -902,5 +926,12 @@ mod tests {
         assert_eq!("ABC", param);
         assert_ne!(param, "abc");
         assert_ne!("abc", param);
+    }
+
+    #[test]
+    fn test_essence_str() {
+        assert_eq!(TEXT_PLAIN.essence_str(), "text/plain");
+        assert_eq!(TEXT_PLAIN_UTF_8.essence_str(), "text/plain");
+        assert_eq!(IMAGE_SVG.essence_str(), "image/svg+xml");
     }
 }
