@@ -11,6 +11,7 @@
 #include "nsDisplayItemTypes.h"
 #include "mozilla/Array.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/layers/LayersMessages.h"  
 
 struct RawServoAnimationValue;
 class nsIContent;
@@ -74,8 +75,8 @@ class AnimationInfo final {
   nsTArray<PropertyAnimationGroup>& GetPropertyAnimationGroups() {
     return mPropertyAnimationGroups;
   }
-  const CompositorAnimationData* GetTransformLikeMetaData() const {
-    return mTransformLikeMetaData.get();
+  const Maybe<TransformData>& GetTransformData() const {
+    return mTransformData;
   }
   bool ApplyPendingUpdatesForThisTransaction();
   bool HasTransformAnimation() const;
@@ -122,7 +123,7 @@ class AnimationInfo final {
   
   
   nsTArray<PropertyAnimationGroup> mPropertyAnimationGroups;
-  UniquePtr<CompositorAnimationData> mTransformLikeMetaData;
+  Maybe<TransformData> mTransformData;
   
   RefPtr<gfx::Path> mCachedMotionPath;
   
