@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "base/basictypes.h"
 
@@ -150,13 +150,13 @@ LazyLogModule gBrowserFocusLog("BrowserFocus");
 #define LOGBROWSERFOCUS(args) \
   MOZ_LOG(gBrowserFocusLog, mozilla::LogLevel::Debug, args)
 
-/* static */
+
 BrowserParent* BrowserParent::sFocus = nullptr;
-/* static */
+
 BrowserParent* BrowserParent::sTopLevelWebFocus = nullptr;
 
-// The flags passed by the webProgress notifications are 16 bits shifted
-// from the ones registered by webProgressListeners.
+
+
 #define NOTIFY_FLAG_SHIFT 16
 
 namespace mozilla {
@@ -225,20 +225,20 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mIsMouseEnterIntoWidgetEventSuppressed(false),
       mIsDestroyingForProcessSwitch(false) {
   MOZ_ASSERT(aManager);
-  // When the input event queue is disabled, we don't need to handle the case
-  // that some input events are dispatched before PBrowserConstructor.
+  
+  
   mIsReadyToHandleInputEvents = !ContentParent::IsInputEventQueueSupported();
 }
 
 BrowserParent::~BrowserParent() = default;
 
-/* static */
+
 void BrowserParent::InitializeStatics() { MOZ_ASSERT(XRE_IsParentProcess()); }
 
-/* static */
+
 BrowserParent* BrowserParent::GetFocused() { return sFocus; }
 
-/*static*/
+
 BrowserParent* BrowserParent::GetFrom(nsFrameLoader* aFrameLoader) {
   if (!aFrameLoader) {
     return nullptr;
@@ -246,12 +246,12 @@ BrowserParent* BrowserParent::GetFrom(nsFrameLoader* aFrameLoader) {
   return aFrameLoader->GetBrowserParent();
 }
 
-/*static*/
+
 BrowserParent* BrowserParent::GetFrom(PBrowserParent* aBrowserParent) {
   return static_cast<BrowserParent*>(aBrowserParent);
 }
 
-/*static*/
+
 BrowserParent* BrowserParent::GetFrom(nsIContent* aContent) {
   RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(aContent);
   if (!loaderOwner) {
@@ -261,7 +261,7 @@ BrowserParent* BrowserParent::GetFrom(nsIContent* aContent) {
   return GetFrom(frameLoader);
 }
 
-/* static */
+
 BrowserParent* BrowserParent::GetBrowserParentFromLayersId(
     layers::LayersId aLayersId) {
   if (!sLayerToBrowserParentTable) {
@@ -270,7 +270,7 @@ BrowserParent* BrowserParent::GetBrowserParentFromLayersId(
   return sLayerToBrowserParentTable->Get(uint64_t(aLayersId));
 }
 
-/*static*/
+
 TabId BrowserParent::GetTabIdFrom(nsIDocShell* docShell) {
   nsCOMPtr<nsIBrowserChild> browserChild(BrowserChild::GetFrom(docShell));
   if (browserChild) {
@@ -313,7 +313,7 @@ already_AddRefed<nsILoadContext> BrowserParent::GetLoadContext() {
       }
     }
     loadContext = new LoadContext(
-        GetOwnerElement(), true /* aIsContent */, isPrivate,
+        GetOwnerElement(), true , isPrivate,
         mChromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW,
         mChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW,
         useTrackingProtection, OriginAttributesRef());
@@ -322,11 +322,11 @@ already_AddRefed<nsILoadContext> BrowserParent::GetLoadContext() {
   return loadContext.forget();
 }
 
-/**
- * Will return nullptr if there is no outer window available for the
- * document hosting the owner element of this BrowserParent. Also will return
- * nullptr if that outer window is in the process of closing.
- */
+
+
+
+
+
 already_AddRefed<nsPIDOMWindowOuter> BrowserParent::GetParentWindowOuter() {
   nsCOMPtr<nsIContent> frame = GetOwnerElement();
   if (!frame) {
@@ -429,16 +429,16 @@ uint32_t BrowserParent::GetMaxTouchPoints(Element* aElement) {
 
 a11y::DocAccessibleParent* BrowserParent::GetTopLevelDocAccessible() const {
 #ifdef ACCESSIBILITY
-  // XXX Consider managing non top level PDocAccessibles with their parent
-  // document accessible.
+  
+  
   const ManagedContainer<PDocAccessibleParent>& docs =
       ManagedPDocAccessibleParent();
   for (auto iter = docs.ConstIter(); !iter.Done(); iter.Next()) {
     auto doc = static_cast<a11y::DocAccessibleParent*>(iter.Get()->GetKey());
-    // We want the document for this BrowserParent even if it's for an
-    // embedded out-of-process iframe. Therefore, we use
-    // IsTopLevelInContentProcess. In contrast, using IsToplevel would only
-    // include documents that aren't embedded; e.g. tab documents.
+    
+    
+    
+    
     if (doc->IsTopLevelInContentProcess()) {
       return doc;
     }
@@ -469,8 +469,8 @@ ParentShowInfo BrowserParent::GetShowInfo() {
   if (mFrameElement) {
     nsAutoString name;
     mFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name);
-    // FIXME(emilio, bug 1606660): allowfullscreen should probably move to
-    // OwnerShowInfo.
+    
+    
     bool allowFullscreen =
         mFrameElement->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
         mFrameElement->HasAttr(kNameSpaceID_None,
@@ -503,11 +503,11 @@ already_AddRefed<nsIPrincipal> BrowserParent::GetContentPrincipal() const {
 }
 
 void BrowserParent::SetOwnerElement(Element* aElement) {
-  // If we held previous content then unregister for its events.
+  
   RemoveWindowListeners();
 
-  // If we change top-level documents then we need to change our
-  // registration with them.
+  
+  
   RefPtr<nsPIWindowRoot> curTopLevelWin, newTopLevelWin;
   if (mFrameElement) {
     curTopLevelWin = nsContentUtils::GetWindowRoot(mFrameElement->OwnerDoc());
@@ -520,7 +520,7 @@ void BrowserParent::SetOwnerElement(Element* aElement) {
     curTopLevelWin->RemoveBrowser(mBrowserHost);
   }
 
-  // Update to the new content, and register to listen for events from it.
+  
   mFrameElement = aElement;
 
   if (mBrowserHost && newTopLevelWin && !isSameTopLevelWin) {
@@ -557,8 +557,8 @@ void BrowserParent::SetOwnerElement(Element* aElement) {
   AddWindowListeners();
   TryCacheDPIAndScale();
 
-  // Try to send down WidgetNativeData, now that this BrowserParent is
-  // associated with a widget.
+  
+  
   nsCOMPtr<nsIWidget> widget = GetTopLevelWidget();
   if (widget) {
     WindowsHandle widgetNativeData = reinterpret_cast<WindowsHandle>(
@@ -572,8 +572,8 @@ void BrowserParent::SetOwnerElement(Element* aElement) {
     mRemoteLayerTreeOwner.OwnerContentChanged();
   }
 
-  // Set our BrowsingContext's embedder if we're not embedded within a
-  // BrowserBridgeParent.
+  
+  
   if (!GetBrowserBridgeParent() && mBrowsingContext && mFrameElement) {
     mBrowsingContext->SetEmbedderElement(mFrameElement);
   }
@@ -629,15 +629,15 @@ void BrowserParent::DestroyInternal() {
   }
 #endif
 
-  // If this fails, it's most likely due to a content-process crash,
-  // and auto-cleanup will kick in.  Otherwise, the child side will
-  // destroy itself and send back __delete__().
+  
+  
+  
   Unused << SendDestroy();
 
 #ifdef XP_WIN
-  // Let all PluginWidgets know we are tearing down. Prevents
-  // these objects from sending async events after the child side
-  // is shut down.
+  
+  
+  
   const ManagedContainer<PPluginWidgetParent>& kids =
       ManagedPPluginWidgetParent();
   for (auto iter = kids.ConstIter(); !iter.Done(); iter.Next()) {
@@ -648,8 +648,8 @@ void BrowserParent::DestroyInternal() {
 }
 
 void BrowserParent::Destroy() {
-  // Aggressively release the window to avoid leaking the world in shutdown
-  // corner cases.
+  
+  
   mBrowserDOMWindow = nullptr;
 
   if (mIsDestroyed) {
@@ -683,19 +683,19 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   ContentProcessManager::GetSingleton()->UnregisterRemoteFrame(mTabId);
 
   if (mRemoteLayerTreeOwner.IsInitialized()) {
-    // It's important to unmap layers after the remote browser has been
-    // destroyed, otherwise it may still send messages to the compositor which
-    // will reject them, causing assertions.
+    
+    
+    
     RemoveBrowserParentFromTable(mRemoteLayerTreeOwner.GetLayersId());
     mRemoteLayerTreeOwner.Destroy();
   }
 
-  // Even though BrowserParent::Destroy calls this, we need to do it here too in
-  // case of a crash.
+  
+  
   BrowserParent::UnsetTopLevelWebFocus(this);
 
   if (why == AbnormalShutdown) {
-    // dom_reporting_header must also be enabled for the report to be sent.
+    
     if (StaticPrefs::dom_reporting_crash_enabled()) {
       nsCOMPtr<nsIPrincipal> principal = GetContentPrincipal();
 
@@ -704,8 +704,8 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
         CrashReporter::GetAnnotation(OtherPid(),
                                      CrashReporter::Annotation::MozCrashReason,
                                      crash_reason);
-        // FIXME(arenevier): Find a less fragile way to identify that a crash
-        // was caused by OOM
+        
+        
         bool is_oom = false;
         if (crash_reason == "OOM" || crash_reason == "OOM!" ||
             StringBeginsWith(crash_reason,
@@ -720,37 +720,37 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     }
   }
 
-  // Prevent executing ContentParent::NotifyTabDestroying in
-  // BrowserParent::Destroy() called by frameLoader->DestroyComplete() below
-  // when tab crashes in contentprocess because ContentParent::ActorDestroy()
-  // in main process will be triggered before this function
-  // and remove the process information that
-  // ContentParent::NotifyTabDestroying need from mContentParentMap.
+  
+  
+  
+  
+  
+  
 
-  // When tab crashes in content process,
-  // there is no need to call ContentParent::NotifyTabDestroying
-  // because the jobs in ContentParent::NotifyTabDestroying
-  // will be done by ContentParent::ActorDestroy.
+  
+  
+  
+  
   if (XRE_IsContentProcess() && why == AbnormalShutdown && !mIsDestroyed) {
     DestroyInternal();
     mIsDestroyed = true;
   }
 
-  // Tell our embedder that the tab is now going away unless we're an
-  // out-of-process iframe.
+  
+  
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader(true);
   if (frameLoader) {
     ReceiveMessage(CHILD_PROCESS_SHUTDOWN_MESSAGE, false, nullptr, nullptr,
                    nullptr);
 
     if (!mBrowsingContext->GetParent()) {
-      // If this is a top-level BrowsingContext, tell the frameloader it's time
-      // to go away. Otherwise, this is a subframe crash, and we can keep the
-      // frameloader around.
+      
+      
+      
       frameLoader->DestroyComplete();
     }
 
-    // If this was a crash, tell our nsFrameLoader to fire crash events.
+    
     if (why == AbnormalShutdown) {
       frameLoader->MaybeNotifyCrashed(mBrowsingContext, GetIPCChannel());
 
@@ -831,10 +831,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvDropLinks(
   nsCOMPtr<nsIBrowser> browser =
       mFrameElement ? mFrameElement->AsBrowser() : nullptr;
   if (browser) {
-    // Verify that links have not been modified by the child. If links have
-    // not been modified then it's safe to load those links using the
-    // SystemPrincipal. If they have been modified by web content, then
-    // we use a NullPrincipal which still allows to load web links.
+    
+    
+    
+    
     bool loadUsingSystemPrincipal = true;
     if (aLinks.Length() != mVerifyDropLinks.Length()) {
       loadUsingSystemPrincipal = false;
@@ -894,7 +894,7 @@ void BrowserParent::LoadURL(nsIURI* aURI) {
   aURI->GetSpec(spec);
 
   if (mCreatingWindow) {
-    // Don't send the message if the child wants to load its own URL.
+    
     MOZ_ASSERT(mDelayedURL.IsEmpty());
     mDelayedURL = spec;
     return;
@@ -994,13 +994,13 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin = do_QueryInterface(treeOwner);
   NS_ENSURE_TRUE(treeOwnerAsWin, IPC_OK());
 
-  // We only care about the parameters that actually changed, see more details
-  // in `BrowserChild::SetDimensions()`.
-  // Note that `BrowserChild::SetDimensions()` may be called before receiving
-  // our `SendUIResolutionChanged()` call.  Therefore, if given each cordinate
-  // shouldn't be ignored, we need to recompute it if DPI has been changed.
-  // And also note that don't use `mDefaultScale.scale` here since it may be
-  // different from the result of `GetUnscaledDevicePixelsPerCSSPixel()`.
+  
+  
+  
+  
+  
+  
+  
   double currentScale;
   treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&currentScale);
 
@@ -1131,11 +1131,11 @@ void BrowserParent::SizeModeChanged(const nsSizeMode& aSizeMode) {
 
 void BrowserParent::ThemeChanged() {
   if (!mIsDestroyed) {
-    // The theme has changed, and any cached values we had sent down
-    // to the child have been invalidated. When this method is called,
-    // LookAndFeel should have the up-to-date values, which we now
-    // send down to the child. We do this for every remote tab for now,
-    // but bug 1156934 has been filed to do it once per content process.
+    
+    
+    
+    
+    
     Unused << SendThemeChanged(LookAndFeel::GetIntCache());
   }
 }
@@ -1157,9 +1157,9 @@ void BrowserParent::DynamicToolbarOffsetChanged(ScreenIntCoord aOffset) {
 void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
                                     nsTArray<uint32_t>& aCharCodes) {
   if (!mIsDestroyed) {
-    // Note that we don't need to mark aEvent is posted to a remote process
-    // because the event may be dispatched to it as normal keyboard event.
-    // Therefore, we should use local copy to send it.
+    
+    
+    
     WidgetKeyboardEvent localEvent(aEvent);
     Unused << SendHandleAccessKey(localEvent, aCharCodes);
   }
@@ -1168,7 +1168,7 @@ void BrowserParent::HandleAccessKey(const WidgetKeyboardEvent& aEvent,
 void BrowserParent::Activate() {
   LOGBROWSERFOCUS(("Activate %p", this));
   if (!mIsDestroyed) {
-    SetTopLevelWebFocus(this);  // Intentionally inside "if"
+    SetTopLevelWebFocus(this);  
     Unused << Manager()->SendActivate(this);
   }
 }
@@ -1176,7 +1176,7 @@ void BrowserParent::Activate() {
 void BrowserParent::Deactivate(bool aWindowLowering) {
   LOGBROWSERFOCUS(("Deactivate %p", this));
   if (!aWindowLowering) {
-    UnsetTopLevelWebFocus(this);  // Intentionally outside the next "if"
+    UnsetTopLevelWebFocus(this);  
   }
   if (!mIsDestroyed) {
     Unused << Manager()->SendDeactivate(this);
@@ -1187,12 +1187,12 @@ void BrowserParent::Deactivate(bool aWindowLowering) {
 a11y::PDocAccessibleParent* BrowserParent::AllocPDocAccessibleParent(
     PDocAccessibleParent* aParent, const uint64_t&, const uint32_t&,
     const IAccessibleHolder&) {
-  // Reference freed in DeallocPDocAccessibleParent.
+  
   return do_AddRef(new a11y::DocAccessibleParent()).take();
 }
 
 bool BrowserParent::DeallocPDocAccessibleParent(PDocAccessibleParent* aParent) {
-  // Free reference from AllocPDocAccessibleParent.
+  
   static_cast<a11y::DocAccessibleParent*>(aParent)->Release();
   return true;
 }
@@ -1203,17 +1203,17 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     const IAccessibleHolder& aDocCOMProxy) {
   auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
 
-  // If this tab is already shutting down just mark the new actor as shutdown
-  // and ignore it.  When the tab actor is destroyed it will be too.
+  
+  
   if (mIsDestroyed) {
     doc->MarkAsShutdown();
     return IPC_OK();
   }
 
   if (aParentDoc) {
-    // A document should never directly be the parent of another document.
-    // There should always be an outer doc accessible child of the outer
-    // document containing the child.
+    
+    
+    
     MOZ_ASSERT(aParentID);
     if (!aParentID) {
       return IPC_FAIL_NO_REASON(this);
@@ -1241,8 +1241,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
   }
 
   if (GetBrowserBridgeParent()) {
-    // Iframe document rendered in a different process to its embedder.
-    // In this case, we don't get aParentDoc and aParentID.
+    
+    
     MOZ_ASSERT(!aParentDoc && !aParentID);
     doc->SetTopLevelInContentProcess();
 #  ifdef XP_WIN
@@ -1253,8 +1253,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     a11y::ProxyCreated(
         doc, a11y::Interfaces::DOCUMENT | a11y::Interfaces::HYPERTEXT);
 #  ifdef XP_WIN
-    // This *must* be called after ProxyCreated because WrapperFor will fail
-    // before that.
+    
+    
     a11y::AccessibleWrap* wrapper = a11y::WrapperFor(doc);
     MOZ_ASSERT(wrapper);
     wrapper->SetID(aMsaaID);
@@ -1262,14 +1262,14 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     a11y::DocAccessibleParent* embedderDoc;
     uint64_t embedderID;
     Tie(embedderDoc, embedderID) = doc->GetRemoteEmbedder();
-    // It's possible the embedder accessible hasn't been set yet; e.g.
-    // a hidden iframe. In that case, embedderDoc will be null and this will
-    // be handled when the embedder is set.
+    
+    
+    
     if (embedderDoc) {
       MOZ_ASSERT(embedderID);
       mozilla::ipc::IPCResult added =
           embedderDoc->AddChildDoc(doc, embedderID,
-                                   /* aCreating */ false);
+                                    false);
       if (!added) {
 #  ifdef DEBUG
         return added;
@@ -1280,9 +1280,9 @@ mozilla::ipc::IPCResult BrowserParent::RecvPDocAccessibleConstructor(
     }
     return IPC_OK();
   } else {
-    // null aParentDoc means this document is at the top level in the child
-    // process.  That means it makes no sense to get an id for an accessible
-    // that is its parent.
+    
+    
+    
     MOZ_ASSERT(!aParentID);
     if (aParentID) {
       return IPC_FAIL_NO_REASON(this);
@@ -1356,8 +1356,8 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
     return IPC_FAIL(this, "Cannot create without valid principal");
   }
 
-  // Construct our new WindowGlobalParent, bind, and initialize it.
-  auto wgp = MakeRefPtr<WindowGlobalParent>(aInit, /* inproc */ false);
+  
+  auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
 
   BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
   wgp->Init(aInit);
@@ -1378,8 +1378,8 @@ void BrowserParent::SendMouseEvent(const nsAString& aType, float aX, float aY,
 void BrowserParent::MouseEnterIntoWidget() {
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (widget) {
-    // When we mouseenter the tab, the tab's cursor should
-    // become the current cursor.  When we mouseexit, we stop.
+    
+    
     mTabSetsCursor = true;
     if (mCursor != eCursorInvalid) {
       widget->SetCursor(mCursor, mCustomCursor, mCustomCursorHotspotX,
@@ -1387,9 +1387,9 @@ void BrowserParent::MouseEnterIntoWidget() {
     }
   }
 
-  // Mark that we have missed a mouse enter event, so that
-  // the next mouse event will create a replacement mouse
-  // enter event and send it to the child.
+  
+  
+  
   mIsMouseEnterIntoWidgetEventSuppressed = true;
 }
 
@@ -1401,8 +1401,8 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (widget) {
-    // When we mouseenter the tab, the tab's cursor should
-    // become the current cursor.  When we mouseexit, we stop.
+    
+    
     if (eMouseEnterIntoWidget == aEvent.mMessage) {
       mTabSetsCursor = true;
       if (mCursor != eCursorInvalid) {
@@ -1429,9 +1429,9 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
   bool isInputPriorityEventEnabled = Manager()->IsInputPriorityEventEnabled();
 
   if (mIsMouseEnterIntoWidgetEventSuppressed) {
-    // In the case that the BrowserParent suppressed the eMouseEnterWidget event
-    // due to its corresponding BrowserChild wasn't ready to handle it, we have
-    // to resend it when the BrowserChild is ready.
+    
+    
+    
     mIsMouseEnterIntoWidgetEventSuppressed = false;
     WidgetMouseEvent localEvent(aEvent);
     localEvent.mMessage = eMouseEnterIntoWidget;
@@ -1479,8 +1479,8 @@ LayoutDeviceToCSSScale BrowserParent::GetLayoutDeviceToCSSScale() {
 }
 
 bool BrowserParent::QueryDropLinksForVerification() {
-  // Before sending the dragEvent, we query the links being dragged and
-  // store them on the parent, to make sure the child can not modify links.
+  
+  
   nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
   if (!dragSession) {
     NS_WARNING("No dragSession to query links for verification");
@@ -1500,16 +1500,16 @@ bool BrowserParent::QueryDropLinksForVerification() {
     return false;
   }
 
-  // No more than one drop event can happen simultaneously; reset the link
-  // verification array and store all links that are being dragged.
+  
+  
   mVerifyDropLinks.Clear();
 
   nsTArray<RefPtr<nsIDroppedLinkItem>> droppedLinkItems;
   dropHandler->QueryLinks(initialDataTransfer, droppedLinkItems);
 
-  // Since the entire event is cancelled if one of the links is invalid,
-  // we can store all links on the parent side without any prior
-  // validation checks.
+  
+  
+  
   nsresult rv = NS_OK;
   for (nsIDroppedLinkItem* item : droppedLinkItems) {
     nsString tmp;
@@ -1675,13 +1675,13 @@ class SynthesizedEventObserver : public nsIObserver {
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
                      const char16_t* aData) override {
     if (!mBrowserParent || !mObserverId) {
-      // We already sent the notification, or we don't actually need to
-      // send any notification at all.
+      
+      
       return NS_OK;
     }
 
     if (mBrowserParent->IsDestroyed()) {
-      // If this happens it's probably a bug in the test that's triggering this.
+      
       NS_WARNING(
           "BrowserParent was unexpectedly destroyed during event "
           "synthesization!");
@@ -1689,7 +1689,7 @@ class SynthesizedEventObserver : public nsIObserver {
                    mObserverId, nsCString(aTopic))) {
       NS_WARNING("Unable to send native event synthesization response!");
     }
-    // Null out browserParent to indicate we already sent the response
+    
     mBrowserParent = nullptr;
     return NS_OK;
   }
@@ -1711,7 +1711,7 @@ class MOZ_STACK_CLASS AutoSynthesizedEventResponder {
         mTopic(aTopic) {}
 
   ~AutoSynthesizedEventResponder() {
-    // This may be a no-op if the observer already sent a response.
+    
     mObserver->Observe(nullptr, mTopic, nullptr);
   }
 
@@ -1834,8 +1834,8 @@ void BrowserParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent) {
   aEvent.mRefPoint = TransformParentToChild(aEvent.mRefPoint);
 
   if (aEvent.mMessage == eKeyPress) {
-    // XXX Should we do this only when input context indicates an editor having
-    //     focus and the key event won't cause inputting text?
+    
+    
     aEvent.InitAllEditCommands();
   } else {
     aEvent.PreventNativeKeyBindings();
@@ -1854,10 +1854,10 @@ void BrowserParent::SendRealTouchEvent(WidgetTouchEvent& aEvent) {
     return;
   }
 
-  // PresShell::HandleEventInternal adds touches on touch end/cancel.  This
-  // confuses remote content and the panning and zooming logic into thinking
-  // that the added touches are part of the touchend/cancel, when actually
-  // they're not.
+  
+  
+  
+  
   if (aEvent.mMessage == eTouchEnd || aEvent.mMessage == eTouchCancel) {
     for (int i = aEvent.mTouches.Length() - 1; i >= 0; i--) {
       if (!aEvent.mTouches[i]->mChanged) {
@@ -2060,10 +2060,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvShowTooltip(
     return IPC_OK();
   }
 
-  // ShowTooltip will end up accessing XULElement properties in JS (specifically
-  // BoxObject). However, to get it to JS, we need to make sure we're a
-  // nsFrameLoaderOwner, which implies we're a XULFrameElement. We can then
-  // safely pass Element into JS.
+  
+  
+  
+  
   RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(mFrameElement);
   if (!flo) return IPC_OK();
 
@@ -2182,14 +2182,14 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyIMEPositionChange(
 
 mozilla::ipc::IPCResult BrowserParent::RecvOnEventNeedingAckHandled(
     const EventMessage& aMessage) {
-  // This is called when the child process receives WidgetCompositionEvent or
-  // WidgetSelectionEvent.
-  // FYI: Don't check if widget is nullptr here because it's more important to
-  //      notify mContentCahce of this than handling something in it.
+  
+  
+  
+  
   nsCOMPtr<nsIWidget> widget = GetTextInputHandlingWidget();
 
-  // While calling OnEventNeedingAckHandled(), BrowserParent *might* be
-  // destroyed since it may send notifications to IME.
+  
+  
   RefPtr<BrowserParent> kungFuDeathGrip(this);
   mContentCache.OnEventNeedingAckHandled(widget, aMessage);
   return IPC_OK();
@@ -2206,25 +2206,25 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnWindowedPluginKeyEvent(
     const NativeEventData& aKeyEventData) {
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (NS_WARN_IF(!widget)) {
-    // Notifies the plugin process of the key event being not consumed by us.
+    
     HandledWindowedPluginKeyEvent(aKeyEventData, false);
     return IPC_OK();
   }
   nsresult rv = widget->OnWindowedPluginKeyEvent(aKeyEventData, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    // Notifies the plugin process of the key event being not consumed by us.
+    
     HandledWindowedPluginKeyEvent(aKeyEventData, false);
     return IPC_OK();
   }
 
-  // If the key event is posted to another process, we need to wait a call
-  // of HandledWindowedPluginKeyEvent().  So, nothing to do here in this case.
+  
+  
   if (rv == NS_SUCCESS_EVENT_HANDLED_ASYNCHRONOUSLY) {
     return IPC_OK();
   }
 
-  // Otherwise, the key event is handled synchronously.  Let's notify the
-  // plugin process of the key event's result.
+  
+  
   bool consumed = (rv == NS_SUCCESS_EVENT_CONSUMED);
   HandledWindowedPluginKeyEvent(aKeyEventData, consumed);
 
@@ -2269,8 +2269,8 @@ LayoutDeviceIntPoint BrowserParent::TransformPoint(
     const LayoutDeviceToLayoutDeviceMatrix4x4& aMatrix) {
   LayoutDevicePoint floatPoint(aPoint);
   LayoutDevicePoint floatTransformed = TransformPoint(floatPoint, aMatrix);
-  // The next line loses precision if an out-of-process iframe
-  // has been scaled or rotated.
+  
+  
   return RoundedToInt(floatTransformed);
 }
 
@@ -2315,10 +2315,10 @@ LayoutDeviceIntRect BrowserParent::TransformChildToParent(
   LayoutDeviceToLayoutDeviceMatrix4x4 matrix =
       GetChildToParentConversionMatrix();
   LayoutDeviceRect floatRect(aRect);
-  // The outcome is not ideal if an out-of-process iframe has been rotated
+  
   LayoutDeviceRect floatTransformed = matrix.TransformBounds(floatRect);
-  // The next line loses precision if an out-of-process iframe
-  // has been scaled or rotated.
+  
+  
   return RoundedToInt(floatTransformed);
 }
 
@@ -2343,8 +2343,8 @@ void BrowserParent::SetChildToParentConversionMatrix(
 }
 
 LayoutDeviceIntPoint BrowserParent::GetChildProcessOffset() {
-  // The "toplevel widget" in child processes is always at position
-  // 0,0.  Map the event coordinates to match that.
+  
+  
 
   LayoutDeviceIntPoint offset(0, 0);
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
@@ -2368,22 +2368,22 @@ LayoutDeviceIntPoint BrowserParent::GetChildProcessOffset() {
     return offset;
   }
 
-  // Note that we don't want to take into account transforms here:
+  
 #if 0
   nsPoint pt(0, 0);
   nsLayoutUtils::TransformPoint(targetFrame, rootFrame, pt);
 #endif
-  // In practice, when transforms are applied to this frameLoader, we currently
-  // get the wrong results whether we take transforms into account here or not.
-  // But applying transforms here gives us the wrong results in all
-  // circumstances when transforms are applied, unless they're purely
-  // translational. It also gives us the wrong results whenever CSS transitions
-  // are used to apply transforms, since the offeets aren't updated as the
-  // transition is animated.
-  //
-  // What we actually need to do is apply the transforms to the coordinates of
-  // any events we send to the child, and reverse them for any screen
-  // coordinates that we retrieve from the child.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   nsPoint pt = targetFrame->GetOffsetTo(rootFrame);
   return -nsLayoutUtils::TranslateViewToWidget(presContext, rootView, pt,
@@ -2416,8 +2416,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvReplyKeyEvent(
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.MarkAsHandledInRemoteProcess();
 
-  // Here we convert the WidgetEvent that we received to an Event
-  // to be able to dispatch it to the <browser> element as the target element.
+  
+  
   Document* doc = mFrameElement->OwnerDoc();
   nsPresContext* presContext = doc->GetPresContext();
   NS_ENSURE_TRUE(presContext, IPC_OK());
@@ -2427,8 +2427,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvReplyKeyEvent(
 
   nsEventStatus status = nsEventStatus_eIgnore;
 
-  // Handle access key in this process before dispatching reply event because
-  // ESM handles it before dispatching the event to the DOM tree.
+  
+  
   if (localEvent.mMessage == eKeyPress &&
       (localEvent.ModifiersMatchWithAccessKey(AccessKeyType::eChrome) ||
        localEvent.ModifiersMatchWithAccessKey(AccessKeyType::eContent))) {
@@ -2459,20 +2459,20 @@ mozilla::ipc::IPCResult BrowserParent::RecvAccessKeyNotHandled(
     const WidgetKeyboardEvent& aEvent) {
   NS_ENSURE_TRUE(mFrameElement, IPC_OK());
 
-  // This is called only when this process had focus and HandleAccessKey
-  // message was posted to all remote process and each remote process didn't
-  // execute any content access keys.
-  // XXX If there were two or more remote processes, this may be called
-  //     twice or more for a keyboard event, that must be a bug.  But how to
-  //     detect if received event has already been handled?
+  
+  
+  
+  
+  
+  
 
   MOZ_ASSERT(aEvent.mMessage == eKeyPress);
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.MarkAsHandledInRemoteProcess();
   localEvent.mMessage = eAccessKeyNotFound;
 
-  // Here we convert the WidgetEvent that we received to an Event
-  // to be able to dispatch it to the <browser> element as the target element.
+  
+  
   Document* doc = mFrameElement->OwnerDoc();
   PresShell* presShell = doc->GetPresShell();
   NS_ENSURE_TRUE(presShell, IPC_OK());
@@ -2505,10 +2505,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnStateChange(
     const RequestData& aRequestData, const uint32_t aStateFlags,
     const nsresult aStatus,
     const Maybe<WebProgressStateChangeData>& aStateChangeData) {
-  // If we're being destroyed because we're swapping to a new process,
-  // then suppress the generated STATE_STOP state changes, since from
-  // the parent process' perspective we aren't really stop, just changing
-  // where the load is happening.
+  
+  
+  
+  
   uint32_t stopFlags = nsIWebProgressListener::STATE_STOP |
                        nsIWebProgressListener::STATE_IS_WINDOW |
                        nsIWebProgressListener::STATE_IS_NETWORK;
@@ -2695,7 +2695,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyContentBlockingEvent(
     const uint32_t& aEvent, const RequestData& aRequestData,
     const bool aBlocked, const nsACString& aTrackingOrigin,
     nsTArray<nsCString>&& aTrackingFullHashes,
-    const Maybe<mozilla::AntiTrackingCommon::StorageAccessGrantedReason>&
+    const Maybe<mozilla::ContentBlockingNotifier::StorageAccessGrantedReason>&
         aReason) {
   MOZ_ASSERT(aRequestData.elapsedLoadTimeMS().isNothing());
 
@@ -2705,14 +2705,14 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyContentBlockingEvent(
     return IPC_OK();
   }
 
-  // Get the top-level browsing context.
+  
   bc = bc->Top();
   RefPtr<dom::WindowGlobalParent> wgp =
       bc->Canonical()->GetCurrentWindowGlobal();
 
-  // The WindowGlobalParent would be null while running the test
-  // browser_339445.js. This is unexpected and we will address this in a
-  // following bug. For now, we first workaround this issue.
+  
+  
+  
   if (!wgp) {
     return IPC_OK();
   }
@@ -2737,8 +2737,8 @@ bool BrowserParent::GetWebProgressListener(
   nsCOMPtr<nsIBrowser> browser;
   RefPtr<Element> currentElement = mFrameElement;
 
-  // In Responsive Design Mode, mFrameElement will be the <iframe mozbrowser>,
-  // but we want the <xul:browser> that it is embedded in.
+  
+  
   while (currentElement) {
     browser = currentElement->AsBrowser();
     if (browser) {
@@ -2763,7 +2763,7 @@ bool BrowserParent::GetWebProgressListener(
 
   nsCOMPtr<nsIWebProgressListener> listener = do_QueryInterface(manager);
   if (!listener) {
-    // We are no longer remote so we cannot forward this event.
+    
     return false;
   }
 
@@ -2847,10 +2847,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvSessionStoreUpdate(
     data.mInnerHTML.Construct(std::move(innerHTML));
     data.mUrl.Construct(std::move(url));
   }
-  // In normal case, we only update the storage when needed.
-  // However, we need to reset the session storage(aOrigins.Length() will be 0)
-  //   if the usage is over the "browser_sessionstore_dom_storage_limit".
-  // In this case, aIsFullStorage is true.
+  
+  
+  
+  
   if (aOrigins.Length() != 0 || aIsFullStorage) {
     data.mStorageOrigins.Construct(std::move(aOrigins));
     data.mStorageKeys.Construct(std::move(aKeys));
@@ -2950,11 +2950,11 @@ bool BrowserParent::SendPasteTransferable(const IPCDataTransfer& aDataTransfer,
       aDataTransfer, aIsPrivateData, aRequestingPrincipal, aContentPolicyType);
 }
 
-/* static */
+
 void BrowserParent::SetTopLevelWebFocus(BrowserParent* aBrowserParent) {
   BrowserParent* old = GetFocused();
   if (aBrowserParent && !aBrowserParent->GetBrowserBridgeParent()) {
-    // top-level Web content
+    
     sTopLevelWebFocus = aBrowserParent;
     BrowserParent* bp = UpdateFocus();
     if (old != bp) {
@@ -2965,11 +2965,11 @@ void BrowserParent::SetTopLevelWebFocus(BrowserParent* aBrowserParent) {
   }
 }
 
-/* static */
+
 void BrowserParent::UnsetTopLevelWebFocus(BrowserParent* aBrowserParent) {
   BrowserParent* old = GetFocused();
   if (sTopLevelWebFocus == aBrowserParent) {
-    // top-level Web content
+    
     sTopLevelWebFocus = nullptr;
     sFocus = nullptr;
     if (old) {
@@ -2980,7 +2980,7 @@ void BrowserParent::UnsetTopLevelWebFocus(BrowserParent* aBrowserParent) {
   }
 }
 
-/* static */
+
 void BrowserParent::UpdateFocusFromBrowsingContext() {
   BrowserParent* old = GetFocused();
   BrowserParent* bp = UpdateFocus();
@@ -2992,7 +2992,7 @@ void BrowserParent::UpdateFocusFromBrowsingContext() {
   }
 }
 
-/* static */
+
 BrowserParent* BrowserParent::UpdateFocus() {
   if (!sTopLevelWebFocus) {
     sFocus = nullptr;
@@ -3036,7 +3036,7 @@ BrowserParent* BrowserParent::UpdateFocus() {
   return sFocus;
 }
 
-/* static */
+
 void BrowserParent::UnsetTopLevelWebFocusAll() {
   if (sTopLevelWebFocus) {
     UnsetTopLevelWebFocus(sTopLevelWebFocus);
@@ -3134,8 +3134,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetNativeChildOfShareableWindow(
 #if defined(XP_WIN)
   nsCOMPtr<nsIWidget> widget = GetTopLevelWidget();
   if (widget) {
-    // Note that this call will probably cause a sync native message to the
-    // process that owns the child window.
+    
+    
     widget->SetNativeData(NS_NATIVE_CHILD_OF_SHAREABLE_WINDOW, aChildWindow);
   }
   return IPC_OK();
@@ -3157,7 +3157,7 @@ bool BrowserParent::ReceiveMessage(const nsString& aMessage, bool aSync,
                                    StructuredCloneData* aData,
                                    CpowHolder* aCpows, nsIPrincipal* aPrincipal,
                                    nsTArray<StructuredCloneData>* aRetVal) {
-  // If we're for an oop iframe, don't deliver messages to the wrong place.
+  
   if (mBrowserBridgeParent) {
     return true;
   }
@@ -3173,13 +3173,13 @@ bool BrowserParent::ReceiveMessage(const nsString& aMessage, bool aSync,
   return true;
 }
 
-// nsIAuthPromptProvider
 
-// This method is largely copied from nsDocShell::GetAuthPrompt
+
+
 NS_IMETHODIMP
 BrowserParent::GetAuthPrompt(uint32_t aPromptReason, const nsIID& iid,
                              void** aResult) {
-  // we're either allowing auth, or it's a proxy request
+  
   nsresult rv;
   nsCOMPtr<nsIPromptFactory> wwatch =
       do_GetService(NS_WINDOWWATCHER_CONTRACTID, &rv);
@@ -3189,8 +3189,8 @@ BrowserParent::GetAuthPrompt(uint32_t aPromptReason, const nsIID& iid,
   RefPtr<Element> frame = mFrameElement;
   if (frame) window = frame->OwnerDoc()->GetWindow();
 
-  // Get an auth prompter for our window so that the parenting
-  // of the dialogs works as it should when using tabs.
+  
+  
   nsCOMPtr<nsISupports> prompt;
   rv = wwatch->GetPrompt(window, iid, getter_AddRefs(prompt));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -3246,22 +3246,22 @@ void BrowserParent::TryCacheDPIAndScale() {
 void BrowserParent::ApzAwareEventRoutingToChild(
     ScrollableLayerGuid* aOutTargetGuid, uint64_t* aOutInputBlockId,
     nsEventStatus* aOutApzResponse) {
-  // Let the widget know that the event will be sent to the child process,
-  // which will (hopefully) send a confirmation notice back to APZ.
-  // Do this even if APZ is off since we need it for swipe gesture support on
-  // OS X without APZ.
+  
+  
+  
+  
   InputAPZContext::SetRoutedToChildProcess();
 
   if (AsyncPanZoomEnabled()) {
     if (aOutTargetGuid) {
       *aOutTargetGuid = InputAPZContext::GetTargetLayerGuid();
 
-      // There may be cases where the APZ hit-testing code came to a different
-      // conclusion than the main-thread hit-testing code as to where the event
-      // is destined. In such cases the layersId of the APZ result may not match
-      // the layersId of this RemoteLayerTreeOwner. In such cases the
-      // main-thread hit- testing code "wins" so we need to update the guid to
-      // reflect this.
+      
+      
+      
+      
+      
+      
       if (mRemoteLayerTreeOwner.IsInitialized()) {
         if (aOutTargetGuid->mLayersId != mRemoteLayerTreeOwner.GetLayersId()) {
           *aOutTargetGuid =
@@ -3306,7 +3306,7 @@ mozilla::ipc::IPCResult BrowserParent::RecvBrowserFrameOpenWindow(
     cwi.dimensions() = GetDimensionInfo();
   }
 
-  // Resolve the request with the information we collected.
+  
   aResolve(cwi);
 
   if (!cwi.windowOpened()) {
@@ -3330,7 +3330,7 @@ void BrowserParent::SetDocShellIsActive(bool isActive) {
   SetRenderLayers(isActive);
   Unused << SendSetDocShellIsActive(isActive);
 
-  // update active accessible documents on windows
+  
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   if (a11y::Compatibility::IsDolphin()) {
     if (a11y::DocAccessibleParent* tabDoc = GetTopLevelDocAccessible()) {
@@ -3357,17 +3357,17 @@ bool BrowserParent::GetRenderLayers() { return mRenderLayers; }
 void BrowserParent::SetRenderLayers(bool aEnabled) {
   if (mActiveInPriorityManager != aEnabled) {
     mActiveInPriorityManager = aEnabled;
-    // Let's inform the priority manager. This operation can end up with the
-    // changing of the process priority.
+    
+    
     ProcessPriorityManager::TabActivityChanged(this, aEnabled);
   }
 
   if (aEnabled == mRenderLayers) {
     if (aEnabled && mHasLayers && mPreserveLayers) {
-      // RenderLayers might be called when we've been preserving layers,
-      // and already had layers uploaded. In that case, the MozLayerTreeReady
-      // event will not naturally arrive, which can confuse the front-end
-      // layer. So we fire the event here.
+      
+      
+      
+      
       RefPtr<BrowserParent> self = this;
       LayersObserverEpoch epoch = mLayerTreeEpoch;
       NS_DispatchToMainThread(NS_NewRunnableFunction(
@@ -3380,8 +3380,8 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
     return;
   }
 
-  // Preserve layers means that attempts to stop rendering layers
-  // will be ignored.
+  
+  
   if (!aEnabled && mPreserveLayers) {
     return;
   }
@@ -3392,14 +3392,14 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
 }
 
 void BrowserParent::SetRenderLayersInternal(bool aEnabled) {
-  // Increment the epoch so that layer tree updates from previous
-  // RenderLayers requests are ignored.
+  
+  
   mLayerTreeEpoch = mLayerTreeEpoch.Next();
 
   Unused << SendRenderLayers(aEnabled, mLayerTreeEpoch);
 
-  // Ask the child to repaint using the PHangMonitor channel/thread (which may
-  // be less congested).
+  
+  
   if (aEnabled) {
     Manager()->PaintTabWhileInterruptingJS(this, mLayerTreeEpoch);
   }
@@ -3411,14 +3411,14 @@ void BrowserParent::PreserveLayers(bool aPreserveLayers) {
 
 void BrowserParent::NotifyResolutionChanged() {
   if (!mIsDestroyed) {
-    // TryCacheDPIAndScale()'s cache is keyed off of
-    // mDPI being greater than 0, so this invalidates it.
+    
+    
     mDPI = -1;
     TryCacheDPIAndScale();
-    // If mDPI was set to -1 to invalidate it and then TryCacheDPIAndScale
-    // fails to cache the values, then mDefaultScale.scale might be invalid.
-    // We don't want to send that value to content. Just send -1 for it too in
-    // that case.
+    
+    
+    
+    
     Unused << SendUIResolutionChanged(mDPI, mRounding,
                                       mDPI < 0 ? -1.0 : mDefaultScale.scale);
   }
@@ -3445,9 +3445,9 @@ bool BrowserParent::StartApzAutoscroll(float aAnchorX, float aAnchorY,
       SLGuidAndRenderRoot guid(layersId, aPresShellId, aScrollId,
                                gfxUtils::GetContentRenderRoot());
 
-      // The anchor coordinates that are passed in are relative to the origin
-      // of the screen, but we are sending them to APZ which only knows about
-      // coordinates relative to the widget, so convert them accordingly.
+      
+      
+      
       CSSPoint anchorCss{aAnchorX, aAnchorY};
       LayoutDeviceIntPoint anchor =
           RoundedToInt(anchorCss * widget->GetDefaultScale());
@@ -3502,9 +3502,9 @@ void BrowserParent::NavigateByKey(bool aForward, bool aForDocumentNavigation) {
 
 void BrowserParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch,
                                     bool aActive) {
-  // Ignore updates from old epochs. They might tell us that layers are
-  // available when we've already sent a message to clear them. We can't trust
-  // the update in that case since layers could disappear anytime after that.
+  
+  
+  
   if (aEpoch != mLayerTreeEpoch || mIsDestroyed) {
     return;
   }
@@ -3531,9 +3531,9 @@ void BrowserParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch,
 
 mozilla::ipc::IPCResult BrowserParent::RecvPaintWhileInterruptingJSNoOp(
     const LayersObserverEpoch& aEpoch) {
-  // We sent a PaintWhileInterruptingJS message when layers were already
-  // visible. In this case, we should act as if an update occurred even though
-  // we already have the layers.
+  
+  
+  
   LayerTreeUpdate(aEpoch, true);
   return IPC_OK();
 }
@@ -3563,11 +3563,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyCompositorTransaction() {
   nsIFrame* docFrame = frameLoader->GetPrimaryFrameOfOwningContent();
 
   if (!docFrame) {
-    // Bad, but nothing we can do about it (XXX/cjones: or is there?
-    // maybe bug 589337?).  When the new frame is created, we'll
-    // probably still be the current render frame and will get to draw
-    // our content then.  Or, we're shutting down and this update goes
-    // to /dev/null.
+    
+    
+    
+    
+    
     return IPC_OK();
   }
 
@@ -3576,11 +3576,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvNotifyCompositorTransaction() {
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvRemoteIsReadyToHandleInputEvents() {
-  // When enabling input event prioritization, input events may preempt other
-  // normal priority IPC messages. To prevent the input events preempt
-  // PBrowserConstructor, we use an IPC 'RemoteIsReadyToHandleInputEvents' to
-  // notify the parent that BrowserChild is created and ready to handle input
-  // events.
+  
+  
+  
+  
+  
   SetReadyToHandleInputEvents();
   return IPC_OK();
 }
@@ -3622,8 +3622,8 @@ nsresult BrowserParent::HandleEvent(Event* aEvent) {
   aEvent->GetType(eventType);
   if (eventType.EqualsLiteral("MozUpdateWindowPos") ||
       eventType.EqualsLiteral("fullscreenchange")) {
-    // Events that signify the window moving are used to update the position
-    // and notify the BrowserChild.
+    
+    
     return UpdatePosition();
   }
   return NS_OK;
@@ -3770,8 +3770,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvInvokeDragSession(
   if (!presShell) {
     Unused << Manager()->SendEndDragSession(true, true, LayoutDeviceIntPoint(),
                                             0);
-    // Continue sending input events with input priority when stopping the dnd
-    // session.
+    
+    
     Manager()->SetInputPriorityEventEnabled(true);
     return IPC_OK();
   }
@@ -3818,7 +3818,7 @@ void BrowserParent::StartPersistence(
   if (!ok) {
     aRv.Throw(NS_ERROR_FAILURE);
   }
-  // (The actor will be destroyed on constructor failure.)
+  
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvLookUpDictionary(
@@ -3839,8 +3839,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvShowCanvasPermissionPrompt(
   nsCOMPtr<nsIBrowser> browser =
       mFrameElement ? mFrameElement->AsBrowser() : nullptr;
   if (!browser) {
-    // If the tab is being closed, the browser may not be available.
-    // In this case we can ignore the request.
+    
+    
     return IPC_OK();
   }
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
@@ -3912,16 +3912,16 @@ void BrowserParent::LiveResizeStarted() { SuppressDisplayport(true); }
 void BrowserParent::LiveResizeStopped() { SuppressDisplayport(false); }
 
 void BrowserParent::SetBrowserBridgeParent(BrowserBridgeParent* aBrowser) {
-  // We should either be clearing out our reference to a browser bridge, or not
-  // have either a browser bridge, browser host, or owner content yet.
+  
+  
   MOZ_ASSERT(!aBrowser ||
              (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
   mBrowserBridgeParent = aBrowser;
 }
 
 void BrowserParent::SetBrowserHost(BrowserHost* aBrowser) {
-  // We should either be clearing out our reference to a browser host, or not
-  // have either a browser bridge, browser host, or owner content yet.
+  
+  
   MOZ_ASSERT(!aBrowser ||
              (!mBrowserBridgeParent && !mBrowserHost && !mFrameElement));
   mBrowserHost = aBrowser;
@@ -4005,44 +4005,44 @@ void BrowserParent::OnSubFrameCrashed() {
   }
 
   ContentParent* manager = Manager();
-  // Set the owner process of a browsing context belonging to a
-  // crashed process to the parent context's process, since
-  // we'll be showing the crashed page in that process.
+  
+  
+  
   mBrowsingContext->SetOwnerProcessId(embedderProcess->ChildID());
 
-  // Find all same process sub tree nodes and detach them, cache all
-  // other nodes in the sub tree.
+  
+  
   mBrowsingContext->PostOrderWalk([&](auto* aContext) {
-    // By iterating in reverse we can deal with detach removing the child that
-    // we're currently on
+    
+    
     for (auto it = aContext->GetChildren().rbegin();
          it != aContext->GetChildren().rend(); it++) {
       RefPtr<BrowsingContext> context = *it;
       if (context->Canonical()->IsOwnedByProcess(processId)) {
-        // Hold a reference to `context` until the response comes back to
-        // ensure it doesn't die while messages relating to this context are
-        // in-flight.
+        
+        
+        
         auto resolve = [context](bool) {};
         auto reject = [context](ResponseRejectReason) {};
         context->Group()->EachOtherParent(manager, [&](auto* aParent) {
           aParent->SendDetachBrowsingContext(context->Id(), resolve, reject);
         });
 
-        context->Detach(/* aFromIPC */ true);
+        context->Detach( true);
       }
     }
 
-    // Cache all the children not owned by crashing process. Note that
-    // all remaining children are out of process, which makes it ok to
-    // just cache.
+    
+    
+    
     aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
       Unused << aParent->SendCacheBrowsingContextChildren(aContext);
     });
-    aContext->CacheChildren(/* aFromIPC */ true);
+    aContext->CacheChildren( true);
   });
 
   MOZ_DIAGNOSTIC_ASSERT(!mBrowsingContext->GetChildren().Length());
-  // Tell the browser bridge to show the subframe crashed page.
+  
   if (GetBrowserBridgeParent()) {
     Unused << GetBrowserBridgeParent()->SendSubFrameCrashed(mBrowsingContext);
   }
@@ -4076,5 +4076,5 @@ mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingWebVR(
   return IPC_OK();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
