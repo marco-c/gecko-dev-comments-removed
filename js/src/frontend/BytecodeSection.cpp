@@ -11,7 +11,6 @@
 #include "mozilla/ReverseIterator.h"  
 
 #include "frontend/CompilationInfo.h"
-#include "frontend/ParseNode.h"      
 #include "frontend/SharedContext.h"  
 #include "frontend/Stencil.h"        
 #include "vm/BytecodeUtil.h"         

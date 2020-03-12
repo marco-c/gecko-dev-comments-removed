@@ -300,9 +300,15 @@ inline EvalSharedContext* SharedContext::asEvalContext() {
 
 enum class HasHeritage : bool { No, Yes };
 
-class FunctionBox : public ObjectBox, public SharedContext {
+class FunctionBox : public SharedContext {
+  friend struct GCThingList;
+
   
   
+
+  JSObject* object_;
+  FunctionBox* traceLink;
+  FunctionBox* emitLink;
 
   
   
@@ -497,6 +503,10 @@ class FunctionBox : public ObjectBox, public SharedContext {
 
   
   void clearFunctionCreationData() { functionCreationDataIndex().reset(); }
+
+  bool hasObject() const { return object_ != nullptr; }
+
+  JSObject* object() const { return object_; }
 
   JSFunction* function() const { return &object()->as<JSFunction>(); }
 
