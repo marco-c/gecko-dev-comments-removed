@@ -18,8 +18,8 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "ReferrerInfo.h"
 
-#include "mozilla/AntiTrackingCommon.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ContentBlocking.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/dom/Element.h"
@@ -205,8 +205,7 @@ ReferrerPolicy ReferrerInfo::GetDefaultReferrerPolicy(nsIHttpChannel* aChannel,
   if (aChannel && aURI && cjs->GetRejectThirdPartyTrackers()) {
     uint32_t rejectedReason = 0;
     thirdPartyTrackerIsolated =
-        !AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-            aChannel, aURI, &rejectedReason);
+        !ContentBlocking::ShouldAllowAccessFor(aChannel, aURI, &rejectedReason);
     
     
     

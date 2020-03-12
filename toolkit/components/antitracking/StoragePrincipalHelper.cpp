@@ -7,7 +7,7 @@
 #include "StoragePrincipalHelper.h"
 
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
-#include "mozilla/AntiTrackingCommon.h"
+#include "mozilla/ContentBlocking.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
@@ -32,8 +32,7 @@ bool ChooseOriginAttributes(nsIChannel* aChannel, OriginAttributes& aAttrs) {
   }
 
   uint32_t rejectedReason = 0;
-  if (AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-          aChannel, uri, &rejectedReason)) {
+  if (ContentBlocking::ShouldAllowAccessFor(aChannel, uri, &rejectedReason)) {
     return false;
   }
 

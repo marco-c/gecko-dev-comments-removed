@@ -7,7 +7,7 @@
 
 #include <utility>
 
-#include "mozilla/AntiTrackingCommon.h"
+#include "mozilla/ContentBlocking.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/Unused.h"
@@ -185,7 +185,7 @@ nsCString ImageCacheKey::GetTopLevelBaseDomain(Document* aDocument,
   
   
   
-  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
+  if (!ContentBlocking::ApproximateAllowAccessForWithoutChannel(
           aDocument->GetInnerWindow(), aURI)) {
     nsPIDOMWindowOuter* top =
         aDocument->GetInnerWindow()->GetInProcessScriptableTop();
