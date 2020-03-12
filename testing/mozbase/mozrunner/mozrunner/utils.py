@@ -259,10 +259,22 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
         def stack_fixer_function(line):
             return stack_fixer_module.fixSymbols(line, symbolsPath)
 
-    elif mozinfo.isLinux or mozinfo.isMac or mozinfo.isWin:
+    elif mozinfo.isMac:
         
         
-        stack_fixer_module = import_stack_fixer_module('fix_stacks')
+        
+        stack_fixer_module = import_stack_fixer_module(
+            'fix_macosx_stack')
+
+        def stack_fixer_function(line):
+            return stack_fixer_module.fixSymbols(line)
+
+    elif mozinfo.isLinux:
+        
+        
+        
+        stack_fixer_module = import_stack_fixer_module(
+            'fix_linux_stack')
 
         def stack_fixer_function(line):
             return stack_fixer_module.fixSymbols(line)
