@@ -218,7 +218,7 @@ nsresult TRR::CreateChannelHelper(nsIURI* aUri, nsIChannel** aResult) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  return gHttpHandler->CreateSimpleHttpChannel(aUri,
+  return gHttpHandler->CreateTRRServiceChannel(aUri,
                                                nullptr,  
                                                0,        
                                                nullptr,  
@@ -392,6 +392,12 @@ nsresult TRR::SendHTTPRequest() {
   if (!StaticPrefs::network_trr_send_user_agent_headers()) {
     rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"),
                                        EmptyCString(), false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  if (StaticPrefs::network_trr_send_empty_accept_encoding_headers()) {
+    rv = httpChannel->SetEmptyRequestHeader(
+        NS_LITERAL_CSTRING("Accept-Encoding"));
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
