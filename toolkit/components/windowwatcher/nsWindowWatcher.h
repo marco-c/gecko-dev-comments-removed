@@ -56,6 +56,13 @@ class nsWindowWatcher : public nsIWindowWatcher,
                                        bool aPositionSpecified,
                                        bool aSizeSpecified);
 
+  
+  
+  
+  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContextByName(
+      const nsAString& aName, bool aForceNoOpener,
+      mozilla::dom::BrowsingContext* aCurrentContext);
+
  protected:
   virtual ~nsWindowWatcher();
 
@@ -65,13 +72,6 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   nsWatcherWindowEntry* FindWindowEntry(mozIDOMWindowProxy* aWindow);
   nsresult RemoveWindow(nsWatcherWindowEntry* aInfo);
-
-  
-  
-  
-  already_AddRefed<mozilla::dom::BrowsingContext> GetBrowsingContextByName(
-      const nsAString& aName, bool aForceNoOpener,
-      mozilla::dom::BrowsingContext* aCurrentContext);
 
   
   
