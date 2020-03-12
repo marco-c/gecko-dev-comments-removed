@@ -589,7 +589,7 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
       aAudioContext.GetParamMapForWorkletName(aName);
   if (!parameterDescriptors) {
     
-    aRv.ThrowNotSupportedError(
+    aRv.ThrowInvalidStateError(
         NS_LITERAL_CSTRING("Unknown AudioWorklet name '") +
         NS_ConvertUTF16toUTF8(aName) + NS_LITERAL_CSTRING("'"));
     return nullptr;
