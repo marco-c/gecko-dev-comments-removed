@@ -471,6 +471,13 @@ template <typename Unit>
 bool frontend::SourceAwareCompiler<Unit>::canHandleParseFailure(
     CompilationInfo& compilationInfo, const Directives& newDirectives) {
   
+  
+  
+  
+  
+  
+  
+  
   return !parser->anyChars.hadError() &&
          compilationInfo.directives != newDirectives;
 }
