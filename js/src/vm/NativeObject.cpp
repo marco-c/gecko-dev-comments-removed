@@ -1345,34 +1345,8 @@ void js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
   }
 }
 
-static bool PurgeProtoChain(JSContext* cx, JSObject* objArg, HandleId id) {
-  
-  RootedObject obj(cx, objArg);
-
-  RootedShape shape(cx);
-  while (obj) {
-    
-    if (!obj->isNative()) {
-      break;
-    }
-
-    shape = obj->as<NativeObject>().lookup(cx, id);
-    if (shape) {
-      return NativeObject::reshapeForShadowedProp(cx, obj.as<NativeObject>());
-    }
-
-    obj = obj->staticPrototype();
-  }
-
-  return true;
-}
-
-static bool PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg,
-                                        HandleId id) {
-  
-  RootedObject obj(cx, objArg);
-
-  MOZ_ASSERT(obj->isNative());
+static bool ReshapeForShadowedPropSlow(JSContext* cx, HandleNativeObject obj,
+                                       HandleId id) {
   MOZ_ASSERT(obj->isDelegate());
 
   
@@ -1380,42 +1354,38 @@ static bool PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg,
     return true;
   }
 
-  if (!PurgeProtoChain(cx, obj->staticPrototype(), id)) {
-    return false;
-  }
-
-  
-
-
-
-
-
-
-  if (obj->is<CallObject>()) {
-    while ((obj = obj->enclosingEnvironment()) != nullptr) {
-      if (!PurgeProtoChain(cx, obj, id)) {
-        return false;
-      }
+  RootedObject proto(cx, obj->staticPrototype());
+  while (proto) {
+    
+    if (!proto->isNative()) {
+      break;
     }
+
+    if (proto->as<NativeObject>().contains(cx, id)) {
+      return NativeObject::reshapeForShadowedProp(cx, proto.as<NativeObject>());
+    }
+
+    proto = proto->staticPrototype();
   }
 
   return true;
 }
 
-
-
-
-
-
-
-
 static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
                                                      HandleObject obj,
                                                      HandleId id) {
-  if (obj->isDelegate() && obj->isNative()) {
-    return PurgeEnvironmentChainHelper(cx, obj, id);
+  
+  
+  
+  
+  
+
+  
+  if (!obj->isDelegate() || !obj->isNative()) {
+    return true;
   }
-  return true;
+
+  return ReshapeForShadowedPropSlow(cx, obj.as<NativeObject>(), id);
 }
 
 
