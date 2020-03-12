@@ -1,27 +1,27 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/FunctionEmitter.h"
 
-#include "mozilla/Assertions.h"  // MOZ_ASSERT
+#include "mozilla/Assertions.h"  
 
-#include "builtin/ModuleObject.h"          // ModuleObject
-#include "frontend/BCEScriptStencil.h"     // BCEScriptStencil
-#include "frontend/BytecodeEmitter.h"      // BytecodeEmitter
-#include "frontend/ModuleSharedContext.h"  // ModuleSharedContext
-#include "frontend/NameAnalysisTypes.h"    // NameLocation
-#include "frontend/NameOpEmitter.h"        // NameOpEmitter
-#include "frontend/ParseContext.h"         // BindingIter
-#include "frontend/PropOpEmitter.h"        // PropOpEmitter
-#include "frontend/SharedContext.h"        // SharedContext
-#include "vm/AsyncFunction.h"              // AsyncFunctionResolveKind
-#include "vm/JSScript.h"                   // JSScript
-#include "vm/Opcodes.h"                    // JSOp
-#include "vm/Scope.h"                      // BindingKind
-#include "wasm/AsmJS.h"                    // IsAsmJSModule
+#include "builtin/ModuleObject.h"          
+#include "frontend/BCEScriptStencil.h"     
+#include "frontend/BytecodeEmitter.h"      
+#include "frontend/ModuleSharedContext.h"  
+#include "frontend/NameAnalysisTypes.h"    
+#include "frontend/NameOpEmitter.h"        
+#include "frontend/ParseContext.h"         
+#include "frontend/PropOpEmitter.h"        
+#include "frontend/SharedContext.h"        
+#include "vm/AsyncFunction.h"              
+#include "vm/JSScript.h"                   
+#include "vm/Opcodes.h"                    
+#include "vm/Scope.h"                      
+#include "wasm/AsmJS.h"                    
 
 using namespace js;
 using namespace js::frontend;
@@ -40,10 +40,10 @@ FunctionEmitter::FunctionEmitter(BytecodeEmitter* bce, FunctionBox* funbox,
       isHoisted_(isHoisted) {}
 
 bool FunctionEmitter::interpretedCommon() {
-  // Mark as singletons any function which will only be executed once, or
-  // which is inner to a lambda we only expect to run once. In the latter
-  // case, if the lambda runs multiple times then CloneFunctionObject will
-  // make a deep clone of its contents.
+  
+  
+  
+  
   bool singleton = bce_->checkRunOnceContext();
   return funbox_->setTypeForScriptedFunction(bce_->cx, singleton);
 }
@@ -55,7 +55,7 @@ bool FunctionEmitter::prepareForNonLazy() {
   MOZ_ASSERT(funbox_->emitBytecode);
   MOZ_ASSERT(!funbox_->wasEmitted);
 
-  //                [stack]
+  
 
   funbox_->wasEmitted = true;
 
@@ -74,10 +74,10 @@ bool FunctionEmitter::prepareForNonLazy() {
 bool FunctionEmitter::emitNonLazyEnd() {
   MOZ_ASSERT(state_ == State::NonLazy);
 
-  //                [stack]
+  
 
   if (!emitFunction()) {
-    //              [stack] FUN?
+    
     return false;
   }
 
@@ -94,7 +94,7 @@ bool FunctionEmitter::emitLazy() {
   MOZ_ASSERT(!funbox_->emitBytecode);
   MOZ_ASSERT(!funbox_->wasEmitted);
 
-  //                [stack]
+  
 
   funbox_->wasEmitted = true;
 
@@ -104,13 +104,13 @@ bool FunctionEmitter::emitLazy() {
 
   funbox_->setEnclosingScopeForInnerLazyFunction(bce_->innermostScope());
   if (bce_->emittingRunOnceLambda) {
-    // NOTE: The 'funbox' is only partially initialized so we defer checking
-    // the shouldSuppressRunOnce condition until delazification.
+    
+    
     funbox_->setTreatAsRunOnce();
   }
 
   if (!emitFunction()) {
-    //              [stack] FUN?
+    
     return false;
   }
 
@@ -124,10 +124,10 @@ bool FunctionEmitter::emitAgain() {
   MOZ_ASSERT(state_ == State::Start);
   MOZ_ASSERT(funbox_->wasEmitted);
 
-  //                [stack]
+  
 
-  // Annex B block-scoped functions are hoisted like any other assignment
-  // that assigns the function to the outer 'var' binding.
+  
+  
   if (!funbox_->isAnnexB) {
 #ifdef DEBUG
     state_ = State::End;
@@ -135,16 +135,16 @@ bool FunctionEmitter::emitAgain() {
     return true;
   }
 
-  // Get the location of the 'var' binding in the body scope. The
-  // name must be found, else there is a bug in the Annex B handling
-  // in Parser.
-  //
-  // In sloppy eval contexts, this location is dynamic.
+  
+  
+  
+  
+  
   Maybe<NameLocation> lhsLoc =
       bce_->locationOfNameBoundInScope(name_, bce_->varEmitterScope);
 
-  // If there are parameter expressions, the var name could be a
-  // parameter.
+  
+  
   if (!lhsLoc && bce_->sc->isFunctionBox() &&
       bce_->sc->asFunctionBox()->hasExtraBodyVarScope()) {
     lhsLoc = bce_->locationOfNameBoundInScope(
@@ -163,22 +163,22 @@ bool FunctionEmitter::emitAgain() {
   NameOpEmitter noe(bce_, name_, *lhsLoc,
                     NameOpEmitter::Kind::SimpleAssignment);
   if (!noe.prepareForRhs()) {
-    //              [stack]
+    
     return false;
   }
 
   if (!bce_->emitGetName(name_)) {
-    //              [stack] FUN
+    
     return false;
   }
 
   if (!noe.emitAssignment()) {
-    //              [stack] FUN
+    
     return false;
   }
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -194,12 +194,12 @@ bool FunctionEmitter::emitAsmJSModule() {
   MOZ_ASSERT(!funbox_->wasEmitted);
   MOZ_ASSERT(IsAsmJSModule(fun_));
 
-  //                [stack]
+  
 
   funbox_->wasEmitted = true;
 
   if (!emitFunction()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -210,28 +210,28 @@ bool FunctionEmitter::emitAsmJSModule() {
 }
 
 bool FunctionEmitter::emitFunction() {
-  // Make the function object a literal in the outer script's pool.
+  
   uint32_t index;
   if (!bce_->perScriptData().gcThingList().append(funbox_, &index)) {
     return false;
   }
 
-  //                [stack]
+  
 
   if (isHoisted_ == IsHoisted::No) {
     return emitNonHoisted(index);
-    //              [stack] FUN?
+    
   }
 
   bool topLevelFunction;
   if (bce_->sc->isFunctionBox() ||
       (bce_->sc->isEvalContext() && bce_->sc->strict())) {
-    // No nested functions inside other functions are top-level.
+    
     topLevelFunction = false;
   } else {
-    // In sloppy eval scripts, top-level functions are accessed dynamically.
-    // In global and module scripts, top-level functions are those bound in
-    // the var scope.
+    
+    
+    
     NameLocation loc = bce_->lookupName(name_);
     topLevelFunction = loc.kind() == NameLocation::Kind::Dynamic ||
                        loc.bindingKind() == BindingKind::Var;
@@ -239,44 +239,44 @@ bool FunctionEmitter::emitFunction() {
 
   if (topLevelFunction) {
     return emitTopLevelFunction(index);
-    //              [stack]
+    
   }
 
   return emitHoisted(index);
-  //                [stack]
+  
 }
 
 bool FunctionEmitter::emitNonHoisted(unsigned index) {
-  // Non-hoisted functions simply emit their respective op.
+  
 
-  //                [stack]
+  
 
-  // JSOp::LambdaArrow is always preceded by a opcode that pushes new.target.
-  // See below.
+  
+  
   MOZ_ASSERT(funbox_->isArrow() == (syntaxKind_ == FunctionSyntaxKind::Arrow));
 
   if (funbox_->isArrow()) {
     if (!emitNewTargetForArrow()) {
-      //            [stack] NEW.TARGET/NULL
+      
       return false;
     }
   }
 
   if (syntaxKind_ == FunctionSyntaxKind::DerivedClassConstructor) {
-    //              [stack] PROTO
+    
     if (!bce_->emitIndexOp(JSOp::FunWithProto, index)) {
-      //            [stack] FUN
+      
       return false;
     }
     return true;
   }
 
-  // This is a FunctionExpression, ArrowFunctionExpression, or class
-  // constructor. Emit the single instruction (without location info).
+  
+  
   JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOp::LambdaArrow
                                                      : JSOp::Lambda;
   if (!bce_->emitIndexOp(op, index)) {
-    //              [stack] FUN
+    
     return false;
   }
 
@@ -286,29 +286,29 @@ bool FunctionEmitter::emitNonHoisted(unsigned index) {
 bool FunctionEmitter::emitHoisted(unsigned index) {
   MOZ_ASSERT(syntaxKind_ == FunctionSyntaxKind::Statement);
 
-  //                [stack]
+  
 
-  // For functions nested within functions and blocks, make a lambda and
-  // initialize the binding name of the function in the current scope.
+  
+  
 
   NameOpEmitter noe(bce_, name_, NameOpEmitter::Kind::Initialize);
   if (!noe.prepareForRhs()) {
-    //              [stack]
+    
     return false;
   }
 
   if (!bce_->emitIndexOp(JSOp::Lambda, index)) {
-    //              [stack] FUN
+    
     return false;
   }
 
   if (!noe.emitAssignment()) {
-    //              [stack] FUN
+    
     return false;
   }
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -316,11 +316,11 @@ bool FunctionEmitter::emitHoisted(unsigned index) {
 }
 
 bool FunctionEmitter::emitTopLevelFunction(unsigned index) {
-  //                [stack]
+  
 
   if (bce_->sc->isModuleContext()) {
-    // For modules, we record the function and instantiate the binding
-    // during ModuleInstantiate(), before the script is run.
+    
+    
 
     JS::Rooted<ModuleObject*> module(bce_->cx,
                                      bce_->sc->asModuleContext()->module());
@@ -335,27 +335,27 @@ bool FunctionEmitter::emitTopLevelFunction(unsigned index) {
   MOZ_ASSERT(bce_->inPrologue());
 
   if (!bce_->emitIndexOp(JSOp::Lambda, index)) {
-    //              [stack] FUN
+    
     return false;
   }
   if (!bce_->emit1(JSOp::DefFun)) {
-    //              [stack]
+    
     return false;
   }
   return true;
 }
 
 bool FunctionEmitter::emitNewTargetForArrow() {
-  //                [stack]
+  
 
   if (bce_->sc->allowNewTarget()) {
     if (!bce_->emit1(JSOp::NewTarget)) {
-      //            [stack] NEW.TARGET
+      
       return false;
     }
   } else {
     if (!bce_->emit1(JSOp::Null)) {
-      //            [stack] NULL
+      
       return false;
     }
   }
@@ -367,15 +367,15 @@ bool FunctionScriptEmitter::prepareForParameters() {
   MOZ_ASSERT(state_ == State::Start);
   MOZ_ASSERT(bce_->inPrologue());
 
-  //                [stack]
+  
 
   if (paramStart_) {
     bce_->setScriptStartOffsetIfUnset(*paramStart_);
   }
 
-  // The ordering of these EmitterScopes is important. The named lambda
-  // scope needs to enclose the function scope needs to enclose the extra
-  // var scope.
+  
+  
+  
 
   if (funbox_->namedLambdaBindings()) {
     namedLambdaEmitterScope_.emplace(bce_);
@@ -384,10 +384,10 @@ bool FunctionScriptEmitter::prepareForParameters() {
     }
   }
 
-  /*
-   * Mark the script so that initializers created within it may be given more
-   * precise types.
-   */
+  
+
+
+
   if (bce_->isRunOnceLambda()) {
     bce_->script->setTreatAsRunOnce();
     MOZ_ASSERT(!bce_->script->hasRunOnce());
@@ -407,13 +407,13 @@ bool FunctionScriptEmitter::prepareForParameters() {
   functionEmitterScope_.emplace(bce_);
 
   if (funbox_->hasParameterExprs) {
-    // There's parameter exprs, emit them in the main section.
-    //
-    // One caveat is that Debugger considers ops in the prologue to be
-    // unreachable (i.e. cannot set a breakpoint on it). If there are no
-    // parameter exprs, any unobservable environment ops (like pushing the
-    // call object, setting '.this', etc) need to go in the prologue, else it
-    // messes up breakpoint tests.
+    
+    
+    
+    
+    
+    
+    
     if (!bce_->switchToMain()) {
       return false;
     }
@@ -424,7 +424,7 @@ bool FunctionScriptEmitter::prepareForParameters() {
   }
 
   if (!bce_->emitInitializeFunctionSpecialNames()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -434,11 +434,11 @@ bool FunctionScriptEmitter::prepareForParameters() {
     }
   }
 
-  // Parameters can't reuse the reject try-catch block from the function body,
-  // because the body may have pushed an additional var-environment. This
-  // messes up scope resolution for the |.generator| variable, because we'd
-  // need different hops to reach |.generator| depending on whether the error
-  // was thrown from the parameters or the function body.
+  
+  
+  
+  
+  
   if (funbox_->hasParameterExprs && funbox_->needsPromiseResult()) {
     if (!emitAsyncFunctionRejectPrologue()) {
       return false;
@@ -454,7 +454,7 @@ bool FunctionScriptEmitter::prepareForParameters() {
 bool FunctionScriptEmitter::prepareForBody() {
   MOZ_ASSERT(state_ == State::Parameters);
 
-  //                [stack]
+  
 
   if (rejectTryCatch_) {
     if (!emitAsyncFunctionRejectEpilogue()) {
@@ -463,7 +463,7 @@ bool FunctionScriptEmitter::prepareForBody() {
   }
 
   if (!emitExtraBodyVarScope()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -476,7 +476,7 @@ bool FunctionScriptEmitter::prepareForBody() {
   if (funbox_->isClassConstructor()) {
     if (!funbox_->isDerivedClassConstructor()) {
       if (!bce_->emitInitializeInstanceFields()) {
-        //          [stack]
+        
         return false;
       }
     }
@@ -496,29 +496,29 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectPrologue() {
 
 bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
   if (!rejectTryCatch_->emitCatch()) {
-    //              [stack] EXC
+    
     return false;
   }
 
   if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-    //              [stack] EXC GEN
+    
     return false;
   }
   if (!bce_->emit2(JSOp::AsyncResolve,
                    uint8_t(AsyncFunctionResolveKind::Reject))) {
-    //              [stack] PROMISE
+    
     return false;
   }
   if (!bce_->emit1(JSOp::SetRval)) {
-    //              [stack]
+    
     return false;
   }
   if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-    //              [stack] GEN
+    
     return false;
   }
   if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -530,7 +530,7 @@ bool FunctionScriptEmitter::emitAsyncFunctionRejectEpilogue() {
 }
 
 bool FunctionScriptEmitter::emitExtraBodyVarScope() {
-  //                [stack]
+  
 
   if (!funbox_->hasExtraBodyVarScope()) {
     return true;
@@ -545,48 +545,48 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
     return true;
   }
 
-  // After emitting expressions for all parameters, copy over any formal
-  // parameters which have been redeclared as vars. For example, in the
-  // following, the var y in the body scope is 42:
-  //
-  //   function f(x, y = 42) { var y; }
-  //
+  
+  
+  
+  
+  
+  
   JS::Rooted<JSAtom*> name(bce_->cx);
   for (BindingIter bi(*funbox_->functionScopeBindings(), true); bi; bi++) {
     name = bi.name();
 
-    // There may not be a var binding of the same name.
+    
     if (!bce_->locationOfNameBoundInScope(name,
                                           extraBodyVarEmitterScope_.ptr())) {
       continue;
     }
 
-    // The '.this' and '.generator' function special
-    // bindings should never appear in the extra var
-    // scope. 'arguments', however, may.
+    
+    
+    
     MOZ_ASSERT(name != bce_->cx->names().dotThis &&
                name != bce_->cx->names().dotGenerator);
 
     NameOpEmitter noe(bce_, name, NameOpEmitter::Kind::Initialize);
     if (!noe.prepareForRhs()) {
-      //            [stack]
+      
       return false;
     }
 
     NameLocation paramLoc =
         *bce_->locationOfNameBoundInScope(name, functionEmitterScope_.ptr());
     if (!bce_->emitGetNameAtLocation(name, paramLoc)) {
-      //            [stack] VAL
+      
       return false;
     }
 
     if (!noe.emitAssignment()) {
-      //            [stack] VAL
+      
       return false;
     }
 
     if (!bce_->emit1(JSOp::Pop)) {
-      //            [stack]
+      
       return false;
     }
   }
@@ -597,71 +597,71 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
 bool FunctionScriptEmitter::emitEndBody() {
   MOZ_ASSERT(state_ == State::Body);
 
-  //                [stack]
+  
 
   if (funbox_->needsFinalYield()) {
-    // If we fall off the end of a generator, do a final yield.
+    
     bool needsIteratorResult = funbox_->needsIteratorResult();
     if (needsIteratorResult) {
       if (!bce_->emitPrepareIteratorResult()) {
-        //          [stack] RESULT
+        
         return false;
       }
     }
 
     if (!bce_->emit1(JSOp::Undefined)) {
-      //            [stack] RESULT? UNDEF
+      
       return false;
     }
 
     if (needsIteratorResult) {
       if (!bce_->emitFinishIteratorResult(true)) {
-        //          [stack] RESULT
+        
         return false;
       }
     }
 
     if (funbox_->needsPromiseResult()) {
       if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-        //          [stack] RVAL GEN
+        
         return false;
       }
 
       if (!bce_->emit2(JSOp::AsyncResolve,
                        uint8_t(AsyncFunctionResolveKind::Fulfill))) {
-        //          [stack] PROMISE
+        
         return false;
       }
     }
 
     if (!bce_->emit1(JSOp::SetRval)) {
-      //            [stack]
+      
       return false;
     }
 
     if (!bce_->emitGetDotGeneratorInInnermostScope()) {
-      //            [stack] GEN
+      
       return false;
     }
 
-    // No need to check for finally blocks, etc as in EmitReturn.
+    
     if (!bce_->emitYieldOp(JSOp::FinalYieldRval)) {
-      //            [stack]
+      
       return false;
     }
   } else {
-    // Non-generator functions just return |undefined|. The
-    // JSOp::RetRval emitted below will do that, except if the
-    // script has a finally block: there can be a non-undefined
-    // value in the return value slot. Make sure the return value
-    // is |undefined|.
+    
+    
+    
+    
+    
     if (bce_->hasTryFinally) {
       if (!bce_->emit1(JSOp::Undefined)) {
-        //          [stack] UNDEF
+        
         return false;
       }
       if (!bce_->emit1(JSOp::SetRval)) {
-        //          [stack]
+        
         return false;
       }
     }
@@ -669,7 +669,7 @@ bool FunctionScriptEmitter::emitEndBody() {
 
   if (funbox_->isDerivedClassConstructor()) {
     if (!bce_->emitCheckDerivedClassConstructorReturn()) {
-      //            [stack]
+      
       return false;
     }
   }
@@ -700,21 +700,21 @@ bool FunctionScriptEmitter::emitEndBody() {
     }
   }
 
-  // We only want to mark the end of a function as a breakable position if
-  // there is token there that the user can easily associate with the function
-  // as a whole. Since arrow function single-expression bodies have no closing
-  // curly bracket, we do not place a breakpoint at their end position.
+  
+  
+  
+  
   if (!funbox_->hasExprBody()) {
     if (!bce_->markSimpleBreakpoint()) {
       return false;
     }
   }
 
-  // Always end the script with a JSOp::RetRval. Some other parts of the
-  // codebase depend on this opcode,
-  // e.g. InterpreterRegs::setToEndOfScript.
+  
+  
+  
   if (!bce_->emitReturnRval()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -739,7 +739,9 @@ bool FunctionScriptEmitter::initScript(
   if (!bce_->getNslots(&nslots)) {
     return false;
   }
-  BCEScriptStencil stencil(*bce_, nslots);
+
+  JS::Rooted<BCEScriptStencil> stencil(bce_->cx,
+                                       BCEScriptStencil(*bce_, nslots));
   if (!JSScript::fullyInitFromStencil(bce_->cx, bce_->script, stencil)) {
     return false;
   }
@@ -761,16 +763,16 @@ FunctionParamsEmitter::FunctionParamsEmitter(BytecodeEmitter* bce,
 bool FunctionParamsEmitter::emitSimple(JS::Handle<JSAtom*> paramName) {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (funbox_->hasParameterExprs) {
     if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
-      //            [stack] ARG
+      
       return false;
     }
 
     if (!emitAssignment(paramName)) {
-      //            [stack]
+      
       return false;
     }
   }
@@ -782,10 +784,10 @@ bool FunctionParamsEmitter::emitSimple(JS::Handle<JSAtom*> paramName) {
 bool FunctionParamsEmitter::prepareForDefault() {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (!prepareForInitializer()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -798,14 +800,14 @@ bool FunctionParamsEmitter::prepareForDefault() {
 bool FunctionParamsEmitter::emitDefaultEnd(JS::Handle<JSAtom*> paramName) {
   MOZ_ASSERT(state_ == State::Default);
 
-  //                [stack] DEFAULT
+  
 
   if (!emitInitializerEnd()) {
-    //              [stack] ARG/DEFAULT
+    
     return false;
   }
   if (!emitAssignment(paramName)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -820,10 +822,10 @@ bool FunctionParamsEmitter::emitDefaultEnd(JS::Handle<JSAtom*> paramName) {
 bool FunctionParamsEmitter::prepareForDestructuring() {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
-    //              [stack] ARG
+    
     return false;
   }
 
@@ -836,10 +838,10 @@ bool FunctionParamsEmitter::prepareForDestructuring() {
 bool FunctionParamsEmitter::emitDestructuringEnd() {
   MOZ_ASSERT(state_ == State::Destructuring);
 
-  //                [stack] ARG
+  
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -854,10 +856,10 @@ bool FunctionParamsEmitter::emitDestructuringEnd() {
 bool FunctionParamsEmitter::prepareForDestructuringDefaultInitializer() {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (!prepareForInitializer()) {
-    //              [stack]
+    
     return false;
   }
 
@@ -870,10 +872,10 @@ bool FunctionParamsEmitter::prepareForDestructuringDefaultInitializer() {
 bool FunctionParamsEmitter::prepareForDestructuringDefault() {
   MOZ_ASSERT(state_ == State::DestructuringDefaultInitializer);
 
-  //                [stack] DEFAULT
+  
 
   if (!emitInitializerEnd()) {
-    //              [stack] ARG/DEFAULT
+    
     return false;
   }
 
@@ -886,10 +888,10 @@ bool FunctionParamsEmitter::prepareForDestructuringDefault() {
 bool FunctionParamsEmitter::emitDestructuringDefaultEnd() {
   MOZ_ASSERT(state_ == State::DestructuringDefault);
 
-  //                [stack] ARG/DEFAULT
+  
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -904,14 +906,14 @@ bool FunctionParamsEmitter::emitDestructuringDefaultEnd() {
 bool FunctionParamsEmitter::emitRest(JS::Handle<JSAtom*> paramName) {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (!emitRestArray()) {
-    //              [stack] REST
+    
     return false;
   }
   if (!emitAssignment(paramName)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -924,10 +926,10 @@ bool FunctionParamsEmitter::emitRest(JS::Handle<JSAtom*> paramName) {
 bool FunctionParamsEmitter::prepareForDestructuringRest() {
   MOZ_ASSERT(state_ == State::Start);
 
-  //                [stack]
+  
 
   if (!emitRestArray()) {
-    //              [stack] REST
+    
     return false;
   }
 
@@ -940,10 +942,10 @@ bool FunctionParamsEmitter::prepareForDestructuringRest() {
 bool FunctionParamsEmitter::emitDestructuringRestEnd() {
   MOZ_ASSERT(state_ == State::DestructuringRest);
 
-  //                [stack] REST
+  
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
@@ -954,28 +956,28 @@ bool FunctionParamsEmitter::emitDestructuringRestEnd() {
 }
 
 bool FunctionParamsEmitter::prepareForInitializer() {
-  //                [stack]
+  
 
-  // If we have an initializer, emit the initializer and assign it
-  // to the argument slot. TDZ is taken care of afterwards.
+  
+  
   MOZ_ASSERT(funbox_->hasParameterExprs);
   if (!bce_->emitArgOp(JSOp::GetArg, argSlot_)) {
-    //              [stack] ARG
+    
     return false;
   }
   default_.emplace(bce_);
   if (!default_->prepareForDefault()) {
-    //              [stack]
+    
     return false;
   }
   return true;
 }
 
 bool FunctionParamsEmitter::emitInitializerEnd() {
-  //                [stack] DEFAULT
+  
 
   if (!default_->emitEnd()) {
-    //              [stack] ARG/DEFAULT
+    
     return false;
   }
   default_.reset();
@@ -983,40 +985,40 @@ bool FunctionParamsEmitter::emitInitializerEnd() {
 }
 
 bool FunctionParamsEmitter::emitRestArray() {
-  //                [stack]
+  
 
   if (!bce_->emit1(JSOp::Rest)) {
-    //              [stack] REST
+    
     return false;
   }
   return true;
 }
 
 bool FunctionParamsEmitter::emitAssignment(JS::Handle<JSAtom*> paramName) {
-  //                [stack] ARG
+  
 
   NameLocation paramLoc =
       *bce_->locationOfNameBoundInScope(paramName, functionEmitterScope_);
 
-  // RHS is already pushed in the caller side.
-  // Make sure prepareForRhs doesn't touch stack.
+  
+  
   MOZ_ASSERT(paramLoc.kind() == NameLocation::Kind::ArgumentSlot ||
              paramLoc.kind() == NameLocation::Kind::FrameSlot ||
              paramLoc.kind() == NameLocation::Kind::EnvironmentCoordinate);
 
   NameOpEmitter noe(bce_, paramName, paramLoc, NameOpEmitter::Kind::Initialize);
   if (!noe.prepareForRhs()) {
-    //              [stack] ARG
+    
     return false;
   }
 
   if (!noe.emitAssignment()) {
-    //              [stack] ARG
+    
     return false;
   }
 
   if (!bce_->emit1(JSOp::Pop)) {
-    //              [stack]
+    
     return false;
   }
 
