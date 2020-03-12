@@ -508,47 +508,45 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
 
   JSContext* cx = compilationInfo.cx;
 
-  for (;;) {
-    ParseNode* pn;
-    {
-      AutoGeckoProfilerEntry pseudoFrame(cx, "script parsing",
-                                         JS::ProfilingCategoryPair::JS_Parsing);
-      if (sc->isEvalContext()) {
-        pn = parser->evalBody(sc->asEvalContext());
-      } else {
-        pn = parser->globalBody(sc->asGlobalContext());
-      }
+  ParseNode* pn;
+  {
+    AutoGeckoProfilerEntry pseudoFrame(cx, "script parsing",
+                                       JS::ProfilingCategoryPair::JS_Parsing);
+    if (sc->isEvalContext()) {
+      pn = parser->evalBody(sc->asEvalContext());
+    } else {
+      pn = parser->globalBody(sc->asGlobalContext());
     }
+  }
 
-    if (pn) {
-      
-      AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
-                                         JS::ProfilingCategoryPair::JS_Parsing);
-
-      
-      if (!parser->publishDeferredFunctions()) {
-        return nullptr;
-      }
-
-      Maybe<BytecodeEmitter> emitter;
-      if (!emplaceEmitter(compilationInfo, emitter, sc)) {
-        return nullptr;
-      }
-
-      if (!emitter->emitScript(pn)) {
-        return nullptr;
-      }
-
-      
-      break;
-    }
-
+  if (!pn) {
+    
+    
     
     
     MOZ_ASSERT(
         !canHandleParseFailure(compilationInfo, compilationInfo.directives));
-
     return nullptr;
+  }
+
+  {
+    
+    AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
+                                       JS::ProfilingCategoryPair::JS_Parsing);
+
+    
+    if (!parser->publishDeferredFunctions()) {
+      return nullptr;
+    }
+
+    Maybe<BytecodeEmitter> emitter;
+    if (!emplaceEmitter(compilationInfo, emitter, sc)) {
+      return nullptr;
+    }
+
+    if (!emitter->emitScript(pn)) {
+      return nullptr;
+    }
   }
 
   
