@@ -218,21 +218,6 @@ class nsFrameSelection final {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(nsFrameSelection)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(nsFrameSelection)
 
-  
-
-
-
-
-
-
-
-
-
-
-
-  void Init(mozilla::PresShell* aPresShell, nsIContent* aLimiter,
-            bool aAccessibleCaretEnabled);
-
   enum class FocusMode {
     kExtendSelection,     
     kCollapseToNewPoint,  
@@ -689,7 +674,17 @@ class nsFrameSelection final {
                                                  nsIFrame** aRetFrame,
                                                  nsPoint& aRetPoint);
 
-  nsFrameSelection();
+  
+
+
+
+
+
+
+
+
+  nsFrameSelection(mozilla::PresShell* aPresShell, nsIContent* aLimiter,
+                   bool aAccessibleCaretEnabled);
 
   void StartBatchChanges();
 
