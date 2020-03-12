@@ -51,44 +51,59 @@ NS_INTERFACE_MAP_END_INHERITING(EditAggregateTransaction)
 NS_IMPL_ADDREF_INHERITED(PlaceholderTransaction, EditAggregateTransaction)
 NS_IMPL_RELEASE_INHERITED(PlaceholderTransaction, EditAggregateTransaction)
 
-NS_IMETHODIMP
-PlaceholderTransaction::DoTransaction() { return NS_OK; }
+NS_IMETHODIMP PlaceholderTransaction::DoTransaction() { return NS_OK; }
 
-NS_IMETHODIMP
-PlaceholderTransaction::UndoTransaction() {
+NS_IMETHODIMP PlaceholderTransaction::UndoTransaction() {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   
   nsresult rv = EditAggregateTransaction::UndoTransaction();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditAggregateTransaction::UndoTransaction() failed");
+    return rv;
+  }
 
   
   RefPtr<Selection> selection = mEditorBase->GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  return mStartSel.RestoreSelection(selection);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = mStartSel.RestoreSelection(selection);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "SelectionState::RestoreSelection() failed");
+  return rv;
 }
 
-NS_IMETHODIMP
-PlaceholderTransaction::RedoTransaction() {
+NS_IMETHODIMP PlaceholderTransaction::RedoTransaction() {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   
   nsresult rv = EditAggregateTransaction::RedoTransaction();
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditAggregateTransaction::RedoTransaction() failed");
+    return rv;
+  }
 
   
   RefPtr<Selection> selection = mEditorBase->GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-  return mEndSel.RestoreSelection(selection);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
+  rv = mEndSel.RestoreSelection(selection);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "SelectionState::RestoreSelection() failed");
+  return rv;
 }
 
-NS_IMETHODIMP
-PlaceholderTransaction::Merge(nsITransaction* aTransaction, bool* aDidMerge) {
-  NS_ENSURE_TRUE(aDidMerge && aTransaction, NS_ERROR_NULL_POINTER);
+NS_IMETHODIMP PlaceholderTransaction::Merge(nsITransaction* aTransaction,
+                                            bool* aDidMerge) {
+  if (NS_WARN_IF(!aDidMerge) || NS_WARN_IF(!aTransaction)) {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   
   *aDidMerge = false;
@@ -101,10 +116,8 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction, bool* aDidMerge) {
   }
 
   
-  EditTransactionBase* editTransactionBase = (EditTransactionBase*)aTransaction;
-  
-  nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
-      do_QueryObject(editTransactionBase);
+  EditTransactionBase* editTransactionBase =
+      reinterpret_cast<EditTransactionBase*>(aTransaction);
 
   
   if (mAbsorb) {
@@ -116,7 +129,10 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction, bool* aDidMerge) {
       if (!mCompositionTransaction) {
         
         mCompositionTransaction = otherTransaction;
-        AppendChild(editTransactionBase);
+        DebugOnly<nsresult> rvIgnored = AppendChild(editTransactionBase);
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rvIgnored),
+            "EditAggregateTransaction::AppendChild() failed, but ignored");
       } else {
         bool didMerge;
         mCompositionTransaction->Merge(otherTransaction, &didMerge);
@@ -125,95 +141,120 @@ PlaceholderTransaction::Merge(nsITransaction* aTransaction, bool* aDidMerge) {
           
           
           mCompositionTransaction = otherTransaction;
-          AppendChild(editTransactionBase);
+          DebugOnly<nsresult> rvIgnored = AppendChild(editTransactionBase);
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rvIgnored),
+              "EditAggregateTransaction::AppendChild() failed, but ignored");
         }
       }
-    } else if (!absorbingTransaction) {
-      
-      
-      AppendChild(editTransactionBase);
+    } else {
+      nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
+          do_QueryInterface(editTransactionBase);
+      if (!absorbingTransaction) {
+        
+        
+        DebugOnly<nsresult> rvIgnored = AppendChild(editTransactionBase);
+        NS_WARNING_ASSERTION(
+            NS_SUCCEEDED(rvIgnored),
+            "EditAggregateTransaction::AppendChild() failed, but ignored");
+      }
     }
     *aDidMerge = true;
     
     
     
     
-  } else {
-    
-    if ((mName.get() == nsGkAtoms::TypingTxnName ||
-         mName.get() == nsGkAtoms::IMETxnName ||
-         mName.get() == nsGkAtoms::DeleteTxnName) &&
-        !mCommitted) {
-      if (absorbingTransaction) {
-        RefPtr<nsAtom> atom;
-        absorbingTransaction->GetTxnName(getter_AddRefs(atom));
-        if (atom && atom == mName) {
-          
-          
-          bool isSame;
-          absorbingTransaction->StartSelectionEquals(&mEndSel, &isSame);
-          if (isSame) {
-            mAbsorb = true;  
-            absorbingTransaction->ForwardEndBatchTo(this);
-            
-            
-            
-            
-            
-            
-            RememberEndingSelection();
-            *aDidMerge = true;
-          }
-        }
-      }
-    }
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-PlaceholderTransaction::GetTxnName(nsAtom** aName) { return GetName(aName); }
-
-NS_IMETHODIMP
-PlaceholderTransaction::StartSelectionEquals(SelectionState* aSelState,
-                                             bool* aResult) {
-  
-  
-  NS_ENSURE_TRUE(aResult && aSelState, NS_ERROR_NULL_POINTER);
-  if (!mStartSel.IsCollapsed() || !aSelState->IsCollapsed()) {
-    *aResult = false;
     return NS_OK;
   }
-  *aResult = mStartSel.IsEqual(aSelState);
+
+  
+  if (mCommitted || (mName.get() != nsGkAtoms::TypingTxnName &&
+                     mName.get() != nsGkAtoms::IMETxnName &&
+                     mName.get() != nsGkAtoms::DeleteTxnName)) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
+      do_QueryInterface(editTransactionBase);
+  if (!absorbingTransaction) {
+    return NS_OK;
+  }
+
+  RefPtr<nsAtom> otherTransactionName;
+  DebugOnly<nsresult> rvIgnored =
+      absorbingTransaction->GetTxnName(getter_AddRefs(otherTransactionName));
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "nsIAbsorbingTransaction::GetTxnName() failed, but ignored");
+  if (!otherTransactionName || otherTransactionName != mName) {
+    return NS_OK;
+  }
+  
+  
+  if (!absorbingTransaction->StartSelectionEquals(mEndSel)) {
+    return NS_OK;
+  }
+  mAbsorb = true;  
+  absorbingTransaction->ForwardEndBatchTo(this);
+  
+  
+  
+  
+  
+  
+  rvIgnored = RememberEndingSelection();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "PlaceholderTransaction::RememberEndingSelection() failed, but "
+      "ignored");
+  *aDidMerge = true;
   return NS_OK;
 }
 
-NS_IMETHODIMP
-PlaceholderTransaction::EndPlaceHolderBatch() {
+NS_IMETHODIMP PlaceholderTransaction::GetTxnName(nsAtom** aName) {
+  nsresult rv = GetName(aName);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditAggregationTransaction::GetName() failed");
+  return rv;
+}
+
+NS_IMETHODIMP_(bool)
+PlaceholderTransaction::StartSelectionEquals(SelectionState& aSelectionState) {
+  
+  
+  return mStartSel.IsCollapsed() && aSelectionState.IsCollapsed() &&
+         mStartSel.IsEqual(&aSelectionState);
+}
+
+NS_IMETHODIMP PlaceholderTransaction::EndPlaceHolderBatch() {
   mAbsorb = false;
 
   if (mForwarding) {
-    nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryReferent(mForwarding);
-    if (plcTxn) {
-      plcTxn->EndPlaceHolderBatch();
+    nsCOMPtr<nsIAbsorbingTransaction> forwardingTransaction =
+        do_QueryReferent(mForwarding);
+    if (forwardingTransaction) {
+      DebugOnly<nsresult> rvIgnored =
+          forwardingTransaction->EndPlaceHolderBatch();
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rvIgnored),
+          "nsIAbsorbingTransaction::EndPlaceHolderBatch() failed, but ignored");
     }
   }
   
-  return RememberEndingSelection();
+  nsresult rv = RememberEndingSelection();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "PlaceholderTransaction::RememberEndingSelection() failed");
+  return rv;
 }
 
-NS_IMETHODIMP
+NS_IMETHODIMP_(void)
 PlaceholderTransaction::ForwardEndBatchTo(
     nsIAbsorbingTransaction* aForwardingAddress) {
   mForwarding = do_GetWeakReference(aForwardingAddress);
-  return NS_OK;
 }
 
-NS_IMETHODIMP
-PlaceholderTransaction::Commit() {
-  mCommitted = true;
-  return NS_OK;
-}
+NS_IMETHODIMP_(void) PlaceholderTransaction::Commit() { mCommitted = true; }
 
 nsresult PlaceholderTransaction::RememberEndingSelection() {
   if (NS_WARN_IF(!mEditorBase)) {
@@ -221,7 +262,9 @@ nsresult PlaceholderTransaction::RememberEndingSelection() {
   }
 
   RefPtr<Selection> selection = mEditorBase->GetSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
   mEndSel.SaveSelection(selection);
   return NS_OK;
 }
