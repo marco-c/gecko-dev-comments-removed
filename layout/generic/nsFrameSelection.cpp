@@ -330,7 +330,7 @@ nsFrameSelection::nsFrameSelection(PresShell* aPresShell, nsIContent* aLimiter,
 
   mPresShell = aPresShell;
   mDragState = false;
-  mDesiredPosSet = false;
+  mDesiredPos.mIsSet = false;
   mLimiters.mLimiter = aLimiter;
   mCaret.mMovementStyle =
       Preferences::GetInt("bidi.edit.caret_movement_style", 2);
@@ -416,8 +416,8 @@ nsresult nsFrameSelection::FetchDesiredPos(nsPoint& aDesiredPos) {
     NS_ERROR("fetch desired position failed");
     return NS_ERROR_FAILURE;
   }
-  if (mDesiredPosSet) {
-    aDesiredPos = mDesiredPos;
+  if (mDesiredPos.mIsSet) {
+    aDesiredPos = mDesiredPos.mValue;
     return NS_OK;
   }
 
@@ -446,13 +446,14 @@ nsresult nsFrameSelection::FetchDesiredPos(nsPoint& aDesiredPos) {
 
 void nsFrameSelection::InvalidateDesiredPos()  
                                                
+                                               
 {
-  mDesiredPosSet = false;
+  mDesiredPos.mIsSet = false;
 }
 
 void nsFrameSelection::SetDesiredPos(nsPoint aPos) {
-  mDesiredPos = aPos;
-  mDesiredPosSet = true;
+  mDesiredPos.mValue = aPos;
+  mDesiredPos.mIsSet = true;
 }
 
 nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
@@ -1325,10 +1326,10 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
       mBatching = batching;
       mChangesDuringBatching = changes;
     } else {
-      bool oldDesiredPosSet = mDesiredPosSet;  
-                                               
+      bool oldDesiredPosSet = mDesiredPos.mIsSet;  
+                                                   
       mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
-      mDesiredPosSet = oldDesiredPosSet;  
+      mDesiredPos.mIsSet = oldDesiredPosSet;  
       mBatching = batching;
       mChangesDuringBatching = changes;
     }

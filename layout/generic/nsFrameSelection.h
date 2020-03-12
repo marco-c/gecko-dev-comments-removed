@@ -776,8 +776,8 @@ class nsFrameSelection final {
   nsresult FetchDesiredPos(
       nsPoint& aDesiredPos);  
                               
-  void
-  InvalidateDesiredPos();  
+  void InvalidateDesiredPos();  
+                                
   void SetDesiredPos(nsPoint aPos);  
 
   uint32_t GetBatching() const { return mBatching; }
@@ -906,7 +906,13 @@ class nsFrameSelection final {
 
   nsBidiLevel mKbdBidiLevel = NSBIDI_LTR;
 
-  nsPoint mDesiredPos;
+  
+  struct DesiredPos {
+    nsPoint mValue;
+    bool mIsSet = false;
+  };
+
+  DesiredPos mDesiredPos;
 
   struct DelayedMouseEvent {
     bool mIsValid = false;
@@ -920,7 +926,6 @@ class nsFrameSelection final {
 
   bool mChangesDuringBatching = false;
   bool mDragState = false;  
-  bool mDesiredPosSet = false;
   bool mAccessibleCaretEnabled = false;
 
   static bool sSelectionEventsOnTextControlsEnabled;
