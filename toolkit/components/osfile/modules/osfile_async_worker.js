@@ -29,23 +29,7 @@ if (this.Components) {
 
   let worker = new PromiseWorker.AbstractWorker();
   worker.dispatch = function(method, args = []) {
-    let prefix = "OS.File " + method;
-    performance.mark(prefix + "-start");
-    try {
-      return Agent[method](...args);
-    } finally {
-      let name = prefix;
-      if (args.length && args[0].string) {
-        
-        
-        
-        
-        
-        
-        name += " — " + args[0].string;
-      }
-      performance.measure(name, prefix + "-start");
-    }
+    return Agent[method](...args);
   };
   worker.log = LOG;
   worker.postMessage = function(message, ...transfers) {
