@@ -9,8 +9,11 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "nsIChannel.h"
+#include "nsIPermission.h"
 #include "nsIURI.h"
 #include "nsPIDOMWindow.h"
+
+#define ANTITRACKING_PERM_KEY "3rdPartyStorage"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -57,4 +60,65 @@ already_AddRefed<nsIURI> AntiTrackingUtils::MaybeGetDocumentURIBeingLoaded(
     }
   }
   return uriBeingLoaded.forget();
+}
+
+
+void AntiTrackingUtils::CreateStoragePermissionKey(
+    const nsCString& aTrackingOrigin, nsACString& aPermissionKey) {
+  MOZ_ASSERT(aPermissionKey.IsEmpty());
+
+  static const nsLiteralCString prefix =
+      NS_LITERAL_CSTRING(ANTITRACKING_PERM_KEY "^");
+
+  aPermissionKey.SetCapacity(prefix.Length() + aTrackingOrigin.Length());
+  aPermissionKey.Append(prefix);
+  aPermissionKey.Append(aTrackingOrigin);
+}
+
+
+bool AntiTrackingUtils::CreateStoragePermissionKey(nsIPrincipal* aPrincipal,
+                                                   nsACString& aKey) {
+  if (!aPrincipal) {
+    return false;
+  }
+
+  nsAutoCString origin;
+  nsresult rv = aPrincipal->GetOriginNoSuffix(origin);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  CreateStoragePermissionKey(origin, aKey);
+  return true;
+}
+
+
+bool AntiTrackingUtils::IsStorageAccessPermission(nsIPermission* aPermission,
+                                                  nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(aPermission);
+  MOZ_ASSERT(aPrincipal);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString permissionKey;
+  bool result = CreateStoragePermissionKey(aPrincipal, permissionKey);
+  if (NS_WARN_IF(!result)) {
+    return false;
+  }
+
+  nsAutoCString type;
+  nsresult rv = aPermission->GetType(type);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  return StringBeginsWith(type, permissionKey);
 }
