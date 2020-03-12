@@ -3887,27 +3887,10 @@ static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nscoord ResolveFlexContainerMainSize(
+nscoord nsFlexContainerFrame::ComputeMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
     nscoord aTentativeMainSize, nscoord aAvailableBSizeForContent,
-    const FlexLine* aFirstLine, nsReflowStatus& aStatus) {
+    const FlexLine* aFirstLine, nsReflowStatus& aStatus) const {
   MOZ_ASSERT(aFirstLine, "null first line pointer");
 
   if (aAxisTracker.IsRowOriented()) {
@@ -3961,7 +3944,7 @@ static nscoord ResolveFlexContainerMainSize(
 nscoord nsFlexContainerFrame::ComputeCrossSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
     nscoord aSumLineCrossSizes, nscoord aAvailableBSizeForContent,
-    bool* aIsDefinite, nsReflowStatus& aStatus) {
+    bool* aIsDefinite, nsReflowStatus& aStatus) const {
   MOZ_ASSERT(aIsDefinite, "outparam pointer must be non-null");
 
   if (aAxisTracker.IsColumnOriented()) {
@@ -4593,9 +4576,9 @@ void nsFlexContainerFrame::DoFlexLayout(
     ComputeFlexDirections(*containerInfo, aAxisTracker);
   }
 
-  aContentBoxMainSize = ResolveFlexContainerMainSize(
-      aReflowInput, aAxisTracker, aContentBoxMainSize,
-      aAvailableBSizeForContent, lines.getFirst(), aStatus);
+  aContentBoxMainSize =
+      ComputeMainSize(aReflowInput, aAxisTracker, aContentBoxMainSize,
+                      aAvailableBSizeForContent, lines.getFirst(), aStatus);
 
   uint32_t lineIndex = 0;
   for (FlexLine* line = lines.getFirst(); line;

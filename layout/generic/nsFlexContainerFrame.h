@@ -387,11 +387,36 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   nscoord GetMainSizeFromReflowInput(const ReflowInput& aReflowInput,
                                      const FlexboxAxisTracker& aAxisTracker);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nscoord ComputeMainSize(const ReflowInput& aReflowInput,
+                          const FlexboxAxisTracker& aAxisTracker,
+                          nscoord aTentativeMainSize,
+                          nscoord aAvailableBSizeForContent,
+                          const FlexLine* aFirstLine,
+                          nsReflowStatus& aStatus) const;
+
   nscoord ComputeCrossSize(const ReflowInput& aReflowInput,
                            const FlexboxAxisTracker& aAxisTracker,
                            nscoord aSumLineCrossSizes,
                            nscoord aAvailableBSizeForContent, bool* aIsDefinite,
-                           nsReflowStatus& aStatus);
+                           nsReflowStatus& aStatus) const;
 
   void SizeItemInCrossAxis(ReflowInput& aChildReflowInput, FlexItem& aItem);
 
