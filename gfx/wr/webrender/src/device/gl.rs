@@ -270,21 +270,8 @@ fn build_shader_prefix_string<F: FnMut(&str)>(
     
     output(gl_version_string);
 
-    let mut features_key = String::new();
-    for feat in features.lines() {
-        const PREFIX: &'static str = "#define WR_FEATURE_";
-        if let Some(i) = feat.find(PREFIX) {
-            if i + PREFIX.len() < feat.len() {
-                if !features_key.is_empty() {
-                    features_key.push_str("_");
-                }
-                features_key.push_str(&feat[i + PREFIX.len() ..]);
-            }
-        }
-    }
-
     
-    let name_string = format!("// shader: {} {}\n", base_filename, features_key);
+    let name_string = format!("// {}\n", base_filename);
     output(&name_string);
 
     
@@ -1032,11 +1019,6 @@ enum TexStorageUsage {
 }
 
 
-
-
-
-const RESERVE_DEPTH_BITS: i32 = 2;
-
 pub struct Device {
     gl: Rc<dyn gl::Gl>,
 
@@ -1066,7 +1048,6 @@ pub struct Device {
     color_formats: TextureFormatPair<ImageFormat>,
     bgra_formats: TextureFormatPair<gl::GLuint>,
     swizzle_settings: SwizzleSettings,
-    depth_format: gl::GLuint,
 
     
     
@@ -1415,19 +1396,13 @@ impl Device {
         let is_emulator = renderer_name.starts_with("Android Emulator");
         let avoid_tex_image = is_emulator;
 
-        let supports_texture_storage = allow_texture_storage_support &&
-            match gl.get_type() {
-                gl::GlType::Gl => supports_extension(&extensions, "GL_ARB_texture_storage"),
-                
-                
-                gl::GlType::Gles => supports_extension(&extensions, "GL_EXT_texture_storage"),
-            };
-        let supports_texture_swizzle = allow_texture_swizzling &&
-            (gl.get_type() == gl::GlType::Gles || supports_extension(&extensions, "GL_ARB_texture_swizzle"));
-
         let (color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage) = match gl.get_type() {
             
-            gl::GlType::Gl if supports_texture_storage && supports_texture_swizzle => (
+            gl::GlType::Gl if
+                allow_texture_storage_support &&
+                allow_texture_swizzling &&
+                supports_extension(&extensions, "GL_ARB_texture_storage")
+            => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
                 Swizzle::Bgra, 
@@ -1441,7 +1416,7 @@ impl Device {
                 TexStorageUsage::Never
             ),
             
-            gl::GlType::Gles if supports_gles_bgra && supports_texture_storage => (
+            gl::GlType::Gles if supports_gles_bgra && allow_texture_storage_support && supports_extension(&extensions, "GL_EXT_texture_storage") => (
                 TextureFormatPair::from(ImageFormat::BGRA8),
                 TextureFormatPair { internal: gl::BGRA8_EXT, external: gl::BGRA_EXT },
                 Swizzle::Rgba, 
@@ -1459,7 +1434,7 @@ impl Device {
             ),
             
             
-            gl::GlType::Gles if supports_texture_swizzle => (
+            gl::GlType::Gles if allow_texture_swizzling => (
                 TextureFormatPair::from(ImageFormat::RGBA8),
                 TextureFormatPair { internal: gl::RGBA8, external: gl::RGBA },
                 Swizzle::Bgra, 
@@ -1474,14 +1449,8 @@ impl Device {
             ),
         };
 
-        let (depth_format, upload_method) = if renderer_name.starts_with("Software WebRender") {
-            (gl::DEPTH_COMPONENT16, UploadMethod::Immediate)
-        } else {
-            (gl::DEPTH_COMPONENT24, upload_method)
-        };
-
-        info!("GL texture cache {:?}, bgra {:?} swizzle {:?}, texture storage {:?}, depth {:?}",
-            color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage, depth_format);
+        info!("GL texture cache {:?}, bgra {:?} swizzle {:?}, texture storage {:?}",
+            color_formats, bgra_formats, bgra8_sampling_swizzle, texture_storage_usage);
         let supports_copy_image_sub_data = supports_extension(&extensions, "GL_EXT_copy_image") ||
             supports_extension(&extensions, "GL_ARB_copy_image");
 
@@ -1508,6 +1477,10 @@ impl Device {
         let supports_advanced_blend_equation =
             supports_extension(&extensions, "GL_KHR_blend_equation_advanced") &&
             !is_adreno;
+
+        let supports_texture_swizzle = allow_texture_swizzling &&
+            (gl.get_type() == gl::GlType::Gles || supports_extension(&extensions, "GL_ARB_texture_storage"));
+
 
         
         
@@ -1553,7 +1526,6 @@ impl Device {
             swizzle_settings: SwizzleSettings {
                 bgra8_sampling_swizzle,
             },
-            depth_format,
 
             depth_targets: FastHashMap::default(),
 
@@ -1632,28 +1604,6 @@ impl Device {
         } else {
             None
         }
-    }
-
-    pub fn depth_bits(&self) -> i32 {
-        match self.depth_format {
-            gl::DEPTH_COMPONENT16 => 16,
-            gl::DEPTH_COMPONENT24 => 24,
-            _ => panic!("Unknown depth format {:?}", self.depth_format),
-        }
-    }
-
-    
-    
-    pub fn max_depth_ids(&self) -> i32 {
-        return 1 << (self.depth_bits() - RESERVE_DEPTH_BITS);
-    }
-
-    pub fn ortho_near_plane(&self) -> f32 {
-        return -self.max_depth_ids() as f32;
-    }
-
-    pub fn ortho_far_plane(&self) -> f32 {
-        return (self.max_depth_ids() - 1) as f32;
     }
 
     pub fn optimal_pbo_stride(&self) -> NonZeroUsize {
@@ -2452,14 +2402,13 @@ impl Device {
 
     fn acquire_depth_target(&mut self, dimensions: DeviceIntSize) -> RBOId {
         let gl = &self.gl;
-        let depth_format = self.depth_format;
         let target = self.depth_targets.entry(dimensions).or_insert_with(|| {
             let renderbuffer_ids = gl.gen_renderbuffers(1);
             let depth_rb = renderbuffer_ids[0];
             gl.bind_renderbuffer(gl::RENDERBUFFER, depth_rb);
             gl.renderbuffer_storage(
                 gl::RENDERBUFFER,
-                depth_format,
+                gl::DEPTH_COMPONENT24,
                 dimensions.width as _,
                 dimensions.height as _,
             );
