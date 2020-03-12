@@ -49,7 +49,8 @@ nsAtom* HTMLFormAccessible::LandmarkRole() const {
   
   nsAutoString name;
   const_cast<HTMLFormAccessible*>(this)->Name(name);
-  return name.IsEmpty() ? nullptr : nsGkAtoms::form;
+  return name.IsEmpty() ? HyperTextAccessibleWrap::LandmarkRole()
+                        : nsGkAtoms::form;
 }
 
 
