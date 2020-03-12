@@ -182,16 +182,12 @@ class ObjectOpResult {
 
 
 
-
-
-
-
-  bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id,
-                                 bool strict) {
-    if (ok()) {
+  bool checkStrictModeError(JSContext* cx, HandleObject obj, HandleId id,
+                            bool strict) {
+    if (ok() || !strict) {
       return true;
     }
-    return reportStrictErrorOrWarning(cx, obj, id, strict);
+    return reportError(cx, obj, id);
   }
 
   
@@ -200,43 +196,32 @@ class ObjectOpResult {
 
 
 
-  bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict) {
-    return ok() || reportStrictErrorOrWarning(cx, obj, strict);
+  bool checkStrictModeError(JSContext* cx, HandleObject obj, bool strict) {
+    if (ok() || !strict) {
+      return true;
+    }
+    return reportError(cx, obj);
   }
 
   
-  bool reportError(JSContext* cx, HandleObject obj, HandleId id) {
-    return reportStrictErrorOrWarning(cx, obj, id, true);
-  }
+  bool reportError(JSContext* cx, HandleObject obj, HandleId id);
 
   
 
 
 
-  bool reportError(JSContext* cx, HandleObject obj) {
-    return reportStrictErrorOrWarning(cx, obj, true);
-  }
+  bool reportError(JSContext* cx, HandleObject obj);
 
   
-  JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj,
-                                                HandleId id, bool strict);
-  JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj,
-                                                bool strict);
-
   
-
-
-
   bool checkStrict(JSContext* cx, HandleObject obj, HandleId id) {
-    return checkStrictErrorOrWarning(cx, obj, id, true);
+    return checkStrictModeError(cx, obj, id, true);
   }
 
   
-
-
-
+  
   bool checkStrict(JSContext* cx, HandleObject obj) {
-    return checkStrictErrorOrWarning(cx, obj, true);
+    return checkStrictModeError(cx, obj, true);
   }
 };
 
