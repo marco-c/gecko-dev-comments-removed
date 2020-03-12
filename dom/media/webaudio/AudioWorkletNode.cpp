@@ -97,8 +97,13 @@ class WorkletNodeEngine final : public AudioNodeEngine {
     Vector<Channels, 1> mPorts;
     JS::PersistentRooted<JSObject*> mJSArray;
   };
+  struct ParameterValues {
+    Vector<JS::PersistentRooted<JSObject*>> mFloat32Arrays;
+    JS::PersistentRooted<JSObject*> mJSObject;
+  };
 
  private:
+  size_t ParameterCount() { return mParamTimelines.Length(); }
   void SendProcessorError();
   bool CallProcess(AudioNodeTrack* aTrack, JSContext* aCx,
                    JS::Handle<JS::Value> aCallable);
@@ -107,8 +112,10 @@ class WorkletNodeEngine final : public AudioNodeEngine {
   void ReleaseJSResources() {
     mInputs.mPorts.clearAndFree();
     mOutputs.mPorts.clearAndFree();
+    mParameters.mFloat32Arrays.clearAndFree();
     mInputs.mJSArray.reset();
     mOutputs.mJSArray.reset();
+    mParameters.mJSObject.reset();
     mGlobal = nullptr;
     
     mProcessor.reset();
@@ -134,6 +141,7 @@ class WorkletNodeEngine final : public AudioNodeEngine {
   
   Ports mInputs;
   Ports mOutputs;
+  ParameterValues mParameters;
 
   RefPtr<AudioWorkletGlobalScope> mGlobal;
   JS::PersistentRooted<JSObject*> mProcessor;
@@ -172,7 +180,12 @@ void WorkletNodeEngine::ConstructProcessor(
   MOZ_ASSERT(mInputs.mPorts.empty() && mOutputs.mPorts.empty());
   RefPtr<AudioWorkletGlobalScope> global = aWorkletImpl->GetGlobalScope();
   MOZ_ASSERT(global);  
-  JS::RootingContext* cx = RootingCx();
+  AutoJSAPI api;
+  if (NS_WARN_IF(!api.Init(global))) {
+    SendProcessorError();
+    return;
+  }
+  JSContext* cx = api.cx();
   mProcessor.init(cx);
   if (!global->ConstructProcessor(aName, aSerializedOptions, aPortIdentifier,
                                   &mProcessor) ||
@@ -191,6 +204,39 @@ void WorkletNodeEngine::ConstructProcessor(
   }
   for (auto& port : mOutputs.mPorts) {
     port.mJSArray.init(cx);
+  }
+  JSObject* object = JS_NewPlainObject(cx);
+  if (NS_WARN_IF(!object)) {
+    SendProcessorError();
+    return;
+  }
+
+  mParameters.mJSObject.init(cx, object);
+  if (NS_WARN_IF(!mParameters.mFloat32Arrays.growBy(ParameterCount()))) {
+    SendProcessorError();
+    return;
+  }
+  for (size_t i = 0; i < mParamTimelines.Length(); i++) {
+    auto& float32ArraysRef = mParameters.mFloat32Arrays;
+    float32ArraysRef[i].init(cx);
+    JSObject* array = JS_NewFloat32Array(cx, WEBAUDIO_BLOCK_SIZE);
+    if (NS_WARN_IF(!array)) {
+      SendProcessorError();
+      return;
+    }
+
+    float32ArraysRef[i] = array;
+    if (NS_WARN_IF(!JS_DefineUCProperty(
+            cx, mParameters.mJSObject, mParamTimelines[i].mName.get(),
+            mParamTimelines[i].mName.Length(), float32ArraysRef[i],
+            JSPROP_ENUMERATE))) {
+      SendProcessorError();
+      return;
+    }
+  }
+  if (NS_WARN_IF(!JS_FreezeObject(cx, mParameters.mJSObject))) {
+    SendProcessorError();
+    return;
   }
 }
 
