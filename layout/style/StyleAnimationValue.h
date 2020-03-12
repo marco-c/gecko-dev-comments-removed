@@ -29,8 +29,6 @@ class gfx3DMatrix;
 
 namespace mozilla {
 
-class ComputedStyle;
-
 namespace css {
 class StyleRule;
 }  
@@ -108,11 +106,8 @@ struct AnimationValue {
                           const AnimationValue& aToValue) const;
 
   
-  
-  
   double ComputeDistance(nsCSSPropertyID aProperty,
-                         const AnimationValue& aOther,
-                         ComputedStyle* aComputedStyle) const;
+                         const AnimationValue& aOther) const;
 
   
   

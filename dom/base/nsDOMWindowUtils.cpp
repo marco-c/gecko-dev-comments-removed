@@ -2573,9 +2573,7 @@ nsDOMWindowUtils::ComputeAnimationDistance(Element* aElement,
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
-  RefPtr<ComputedStyle> computedStyle =
-      nsComputedDOMStyle::GetComputedStyle(aElement, nullptr);
-  *aResult = v1.ComputeDistance(property, v2, computedStyle);
+  *aResult = v1.ComputeDistance(property, v2);
   return NS_OK;
 }
 
@@ -3714,24 +3712,6 @@ nsDOMWindowUtils::PostRestyleSelfEvent(Element* aElement) {
 
   nsLayoutUtils::PostRestyleEvent(aElement, RestyleHint::RESTYLE_SELF,
                                   nsChangeHint(0));
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::GetMediaSuspend(uint32_t* aSuspend) {
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
-  NS_ENSURE_STATE(window);
-
-  *aSuspend = window->GetMediaSuspend();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SetMediaSuspend(uint32_t aSuspend) {
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
-  NS_ENSURE_STATE(window);
-
-  window->SetMediaSuspend(aSuspend);
   return NS_OK;
 }
 
