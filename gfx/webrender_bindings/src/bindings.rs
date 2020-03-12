@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use gleam::gl;
 use std::cell::RefCell;
@@ -50,17 +50,17 @@ extern "C" {
     fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
 }
 
-
+/// The unique id for WR resource identification.
 static NEXT_NAMESPACE_ID: AtomicUsize = AtomicUsize::new(1);
 
-
+/// Special value handled in this wrapper layer to signify a redundant clip chain.
 pub const ROOT_CLIP_CHAIN: u64 = !0;
 
 fn next_namespace_id() -> IdNamespace {
     IdNamespace(NEXT_NAMESPACE_ID.fetch_add(1, Ordering::Relaxed) as u32)
 }
 
-
+/// Whether a border should be antialiased.
 #[repr(C)]
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum AntialiasBorder {
@@ -68,7 +68,7 @@ pub enum AntialiasBorder {
     Yes,
 }
 
-
+/// Used to indicate if an image is opaque, or has an alpha channel.
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum OpacityType {
@@ -144,7 +144,7 @@ pub struct WrSpaceAndClipChain {
 
 impl WrSpaceAndClipChain {
     fn to_webrender(&self, pipeline_id: WrPipelineId) -> SpaceAndClipInfo {
-        
+        //Warning: special case here to support dummy clip chain
         SpaceAndClipInfo {
             spatial_id: self.space.to_webrender(pipeline_id),
             clip_id: clip_chain_id_to_webrender(self.clip_chain, pipeline_id),
@@ -220,12 +220,12 @@ impl WrVecU8 {
         unsafe { Vec::from_raw_parts(self.data, self.length, self.capacity) }
     }
 
-    
+    // Equivalent to `to_vec` but clears self instead of consuming the value.
     fn flush_into_vec(&mut self) -> Vec<u8> {
         self.convert_into_vec::<u8>()
     }
 
-    
+    // Like flush_into_vec, but also does an unsafe conversion to the desired type.
     fn convert_into_vec<T>(&mut self) -> Vec<T> {
         let vec = unsafe {
             Vec::from_raw_parts(
@@ -318,7 +318,7 @@ pub struct WrImageDescriptor {
     pub height: i32,
     pub stride: i32,
     pub opacity: OpacityType,
-    
+    // TODO(gw): Remove this flag (use prim flags instead).
     pub prefer_compositor_surface: bool,
 }
 
@@ -352,15 +352,15 @@ enum WrExternalImageType {
 struct WrExternalImage {
     image_type: WrExternalImageType,
 
-    
+    // external texture handle
     handle: u32,
-    
+    // external texture coordinate
     u0: f32,
     v0: f32,
     u1: f32,
     v1: f32,
 
-    
+    // external image buffer
     buff: *const u8,
     size: usize,
 }
@@ -405,7 +405,7 @@ impl ExternalImageHandler for WrExternalImageHandler {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-
+// Used for ComponentTransfer only
 pub struct WrFilterData {
     funcR_type: ComponentTransferFuncType,
     R_values: *mut c_float,
@@ -473,7 +473,7 @@ fn get_proc_address(glcontext_ptr: *mut c_void, name: &str) -> *const c_void {
     let symbol = unsafe { get_proc_address_from_glcontext(glcontext_ptr, symbol_name.as_ptr()) };
 
     if symbol.is_null() {
-        
+        // XXX Bug 1322949 Make whitelist for extensions
         warn!("Could not find symbol {:?} by glcontext", symbol_name);
     }
 
@@ -493,16 +493,16 @@ extern "C" {
     fn is_in_main_thread() -> bool;
     fn is_glcontext_gles(glcontext_ptr: *mut c_void) -> bool;
     fn is_glcontext_angle(glcontext_ptr: *mut c_void) -> bool;
-    
-    
-    
-    
-    
+    // Enables binary recording that can be used with `wrench replay`
+    // Outputs a wr-record-*.bin file for each window that is shown
+    // Note: wrench will panic if external images are used, they can
+    // be disabled in WebRenderBridgeParent::ProcessWebRenderCommands
+    // by commenting out the path that adds an external image ID
     fn gfx_use_wrench() -> bool;
     fn gfx_wr_resource_path_override() -> *const c_char;
-    
-    
-    
+    // TODO: make gfx_critical_error() work.
+    // We still have problem to pass the error message from render/render_backend
+    // thread to main thread now.
     #[allow(dead_code)]
     fn gfx_critical_error(msg: *const c_char);
     fn gfx_critical_note(msg: *const c_char);
@@ -521,7 +521,7 @@ extern "C" {
     fn wr_notifier_nop_frame_done(window_id: WrWindowId);
     fn wr_notifier_external_event(window_id: WrWindowId, raw_event: usize);
     fn wr_schedule_render(window_id: WrWindowId, document_id_array: *const WrDocumentId, document_id_count: usize);
-    
+    // NOTE: This moves away from pipeline_info.
     fn wr_finished_scene_build(
         window_id: WrWindowId,
         document_id_array: *const WrDocumentId,
@@ -706,7 +706,7 @@ pub extern "C" fn wr_renderer_release_profiler_structures(renderer: &mut Rendere
     renderer.release_profiler_structures();
 }
 
-
+// Call wr_renderer_render() before calling this function.
 #[no_mangle]
 pub unsafe extern "C" fn wr_renderer_readback(
     renderer: &mut Renderer,
@@ -726,7 +726,7 @@ pub unsafe extern "C" fn wr_renderer_readback(
 pub unsafe extern "C" fn wr_renderer_delete(renderer: *mut Renderer) {
     let renderer = Box::from_raw(renderer);
     renderer.deinit();
-    
+    // let renderer go out of scope and get dropped
 }
 
 #[no_mangle]
@@ -734,8 +734,8 @@ pub unsafe extern "C" fn wr_renderer_accumulate_memory_report(renderer: &mut Ren
     *report += renderer.report_memory();
 }
 
-
-
+// cbindgen doesn't support tuples, so we have a little struct instead, with
+// an Into implementation to convert from the tuple to the struct.
 #[repr(C)]
 pub struct WrPipelineEpoch {
     pipeline_id: WrPipelineId,
@@ -770,17 +770,17 @@ impl<'a> From<&'a (WrPipelineId, WrDocumentId)> for WrRemovedPipeline {
 
 #[repr(C)]
 pub struct WrPipelineInfo {
-    
-    
-    
-    
+    /// This contains an entry for each pipeline that was rendered, along with
+    /// the epoch at which it was rendered. Rendered pipelines include the root
+    /// pipeline and any other pipelines that were reachable via IFrame display
+    /// items from the root pipeline.
     epochs: ThinVec<WrPipelineEpoch>,
-    
-    
-    
-    
-    
-    
+    /// This contains an entry for each pipeline that was removed during the
+    /// last transaction. These pipelines would have been explicitly removed by
+    /// calling remove_pipeline on the transaction object; the pipeline showing
+    /// up in this array means that the data structures have been torn down on
+    /// the webrender side, and so any remaining data structures on the caller
+    /// side can now be torn down also.
     removed_pipelines: ThinVec<WrRemovedPipeline>,
 }
 
@@ -811,8 +811,8 @@ extern "C" {
     pub fn gecko_profiler_thread_is_being_profiled() -> bool;
 }
 
-
-
+/// Simple implementation of the WR ProfilerHooks trait to allow profile
+/// markers to be seen in the Gecko profiler.
 struct GeckoProfilerHooks;
 
 impl ProfilerHooks for GeckoProfilerHooks {
@@ -830,7 +830,7 @@ impl ProfilerHooks for GeckoProfilerHooks {
 
     fn add_text_marker(&self, label: &CStr, text: &str, duration: Duration) {
         unsafe {
-            
+            // NB: This can be as_micros() once we require Rust 1.33.
             let micros = duration.subsec_micros() as u64 + duration.as_secs() * 1000 * 1000;
             let text_bytes = text.as_bytes();
             gecko_profiler_add_text_marker(
@@ -849,18 +849,18 @@ impl ProfilerHooks for GeckoProfilerHooks {
 
 static PROFILER_HOOKS: GeckoProfilerHooks = GeckoProfilerHooks {};
 
-#[allow(improper_ctypes)] 
+#[allow(improper_ctypes)] // this is needed so that rustc doesn't complain about passing the &mut Transaction to an extern function
 extern "C" {
-    
-    
+    // These callbacks are invoked from the scene builder thread (aka the APZ
+    // updater thread)
     fn apz_register_updater(window_id: WrWindowId);
     fn apz_pre_scene_swap(window_id: WrWindowId);
     fn apz_post_scene_swap(window_id: WrWindowId, pipeline_info: &WrPipelineInfo);
     fn apz_run_updater(window_id: WrWindowId);
     fn apz_deregister_updater(window_id: WrWindowId);
 
-    
-    
+    // These callbacks are invoked from the render backend thread (aka the APZ
+    // sampler thread)
     fn apz_register_sampler(window_id: WrWindowId);
     fn apz_sample_transforms(window_id: WrWindowId, transaction: &mut Transaction, document_id: WrDocumentId);
     fn apz_deregister_sampler(window_id: WrWindowId);
@@ -901,9 +901,9 @@ impl SceneBuilderHooks for APZCallbacks {
             apz_post_scene_swap(self.window_id, &info);
         }
 
-        
-        
-        
+        // After a scene swap we should schedule a render for the next vsync,
+        // otherwise there's no guarantee that the new scene will get rendered
+        // anytime soon
         unsafe { wr_finished_scene_build(self.window_id, document_ids.as_ptr(), document_ids.len(), &mut info) }
         unsafe {
             gecko_profiler_end_marker(b"SceneBuilding\0".as_ptr() as *const c_char);
@@ -950,7 +950,7 @@ impl AsyncPropertySampler for SamplerCallback {
     fn sample(&self, document_id: DocumentId) -> Vec<FrameMsg> {
         let mut transaction = Transaction::new();
         unsafe { apz_sample_transforms(self.window_id, &mut transaction, document_id) };
-        
+        // TODO: also omta_sample_transforms(...)
         transaction.get_frame_ops()
     }
 
@@ -959,14 +959,14 @@ impl AsyncPropertySampler for SamplerCallback {
     }
 }
 
-
-
-
-
-
-
-
-
+// cbindgen's parser currently does not handle the dyn keyword.
+// We work around it by wrapping the referece counted pointer into
+// a struct and boxing it.
+//
+// See https://github.com/eqrion/cbindgen/issues/385
+//
+// Once this is fixed we should be able to pass `*mut dyn ApiHitTester`
+// and avoid the extra indirection.
 pub struct WrHitTester {
     ptr: Arc<dyn ApiHitTester>,
 }
@@ -1001,9 +1001,9 @@ pub extern "C" fn wr_hit_tester_hit_test(
     );
 
     for item in &result.items {
-        
-        
-        
+        // For now we should never be getting results back for which the tag is
+        // 0 (== CompositorHitTestInvisibleToHit). In the future if we allow this,
+        // we'll want to |continue| on the loop in this scenario.
         debug_assert!(item.tag.1 != 0);
         *out_pipeline_id = item.pipeline;
         *out_scroll_id = item.tag.0;
@@ -1036,7 +1036,7 @@ impl ThreadListener for GeckoProfilerThreadListener {
     fn thread_started(&self, thread_name: &str) {
         let name = CString::new(thread_name).unwrap();
         unsafe {
-            
+            // gecko_profiler_register_thread copies the passed name here.
             gecko_profiler_register_thread(name.as_ptr());
         }
     }
@@ -1052,9 +1052,9 @@ pub struct WrThreadPool(Arc<rayon::ThreadPool>);
 
 #[no_mangle]
 pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
-    
-    
-    
+    // Clamp the number of workers between 1 and 8. We get diminishing returns
+    // with high worker counts and extra overhead because of rayon and font
+    // management.
     let num_threads = num_cpus::get().max(2).min(8);
 
     let priority_tag = if low_priority { "LP" } else { "" };
@@ -1075,11 +1075,11 @@ pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
 
     let workers = Arc::new(worker.unwrap());
 
-    
-    
-    
-    
-    
+    // This effectively leaks the thread pool. Not great but we only create one and it lives
+    // for as long as the browser.
+    // Do this to avoid intermittent race conditions with nsThreadManager shutdown.
+    // A better fix would involve removing the dependency between implicit nsThreadManager
+    // and webrender's threads, or be able to synchronously terminate rayon's thread pool.
     mem::forget(Arc::clone(&workers));
 
     Box::into_raw(Box::new(WrThreadPool(workers)))
@@ -1127,12 +1127,12 @@ pub extern "C" fn wr_renderer_update_program_cache(renderer: &mut Renderer, prog
     renderer.update_program_cache(program_cache);
 }
 
-
+// This matches IsEnvSet in gfxEnv.h
 fn env_var_to_bool(key: &'static str) -> bool {
     env::var(key).ok().map_or(false, |v| !v.is_empty())
 }
 
-
+// Call MakeCurrent before this.
 fn wr_device_new(gl_context: *mut c_void, pc: Option<&mut WrProgramCache>) -> Device {
     assert!(unsafe { is_in_render_thread() });
 
@@ -1216,6 +1216,7 @@ extern "C" {
         compositor: *mut c_void,
         enable: bool,
     );
+    fn wr_compositor_deinit(compositor: *mut c_void);
     fn wr_compositor_get_capabilities(
         compositor: *mut c_void,
     ) -> CompositorCapabilities;
@@ -1310,6 +1311,12 @@ impl Compositor for WrCompositor {
         }
     }
 
+    fn deinit(&mut self) {
+        unsafe {
+            wr_compositor_deinit(self.0);
+        }
+    }
+
     fn get_capabilities(&self) -> CompositorCapabilities {
         unsafe {
             wr_compositor_get_capabilities(self.0)
@@ -1317,7 +1324,7 @@ impl Compositor for WrCompositor {
     }
 }
 
-
+// Call MakeCurrent before this.
 #[no_mangle]
 pub extern "C" fn wr_window_new(
     window_id: WrWindowId,
@@ -1393,7 +1400,7 @@ pub extern "C" fn wr_window_new(
     };
 
     let color = if cfg!(target_os = "android") {
-        
+        // The color is for avoiding black flash before receiving display list.
         ColorF::new(1.0, 1.0, 1.0, 1.0)
     } else {
         ColorF::new(0.0, 0.0, 0.0, 0.0)
@@ -1441,7 +1448,7 @@ pub extern "C" fn wr_window_new(
         upload_method,
         scene_builder_hooks: Some(Box::new(APZCallbacks::new(window_id))),
         sampler: Some(Box::new(SamplerCallback::new(window_id))),
-        max_texture_size: Some(8192), 
+        max_texture_size: Some(8192), // Moz2D doesn't like textures bigger than this
         clear_color: Some(color),
         precache_flags,
         namespace_alloc_by_client: true,
@@ -1455,7 +1462,7 @@ pub extern "C" fn wr_window_new(
         ..Default::default()
     };
 
-    
+    // Ensure the WR profiler callbacks are hooked up to the Gecko profiler.
     set_profiler_hooks(Some(&PROFILER_HOOKS));
 
     let window_size = DeviceIntSize::new(window_width, window_height);
@@ -1568,9 +1575,9 @@ pub unsafe extern "C" fn wr_api_set_batching_lookback(dh: &mut DocumentHandle, c
 
 fn make_transaction(do_async: bool) -> Transaction {
     let mut transaction = Transaction::new();
-    
-    
-    
+    // Ensure that we either use async scene building or not based on the
+    // gecko pref, regardless of what the default is. We can remove this once
+    // the scene builder thread is enabled everywhere and working well.
     if do_async {
         transaction.use_scene_builder_thread();
     } else {
@@ -1654,9 +1661,9 @@ pub extern "C" fn wr_transaction_set_display_list(
 ) {
     let color = if background.a == 0.0 { None } else { Some(background) };
 
-    
-    
-    
+    // See the documentation of set_display_list in api.rs. I don't think
+    // it makes a difference in gecko at the moment(until APZ is figured out)
+    // but I suppose it is a good default.
     let preserve_frame_state = true;
 
     let dl_vec = dl_data.flush_into_vec();
@@ -2033,10 +2040,10 @@ pub extern "C" fn wr_api_capture(dh: &mut DocumentHandle, path: *const c_char, b
 
     #[cfg(target_os = "android")]
     {
-        
-        
-        
-        
+        // On Android we need to write into a particular folder on external
+        // storage so that (a) it can be written without requiring permissions
+        // and (b) it can be pulled off via `adb pull`. This env var is set
+        // in GeckoLoader.java.
         if let Ok(storage_path) = env::var("PUBLIC_STORAGE") {
             path = PathBuf::from(storage_path).join(path);
         }
@@ -2049,7 +2056,7 @@ pub extern "C" fn wr_api_capture(dh: &mut DocumentHandle, path: *const c_char, b
         }
     }
 
-    
+    // Increment the extension until we find a fresh path
     while path.is_dir() {
         let count: u32 = path
             .extension()
@@ -2059,14 +2066,14 @@ pub extern "C" fn wr_api_capture(dh: &mut DocumentHandle, path: *const c_char, b
         path.set_extension((count + 1).to_string());
     }
 
-    
+    // Use warn! so that it gets emitted to logcat on android as well
     let border = "--------------------------\n";
     warn!("{} Capturing WR state to: {:?}\n{}", &border, &path, &border);
 
     let _ = create_dir_all(&path);
     match File::create(path.join("wr.txt")) {
         Ok(mut file) => {
-            
+            // The Gecko HG revision is available at compile time
             if let Some(moz_revision) = option_env!("GECKO_HEAD_REV") {
                 writeln!(file, "mozilla-central {}", moz_revision).unwrap();
             }
@@ -2173,16 +2180,16 @@ pub unsafe extern "C" fn wr_api_flush_scene_builder(dh: &mut DocumentHandle) {
     dh.api.flush_scene_builder();
 }
 
-
-
-
-
-
-
-
-
-
-
+// RenderThread WIP notes:
+// In order to separate the compositor thread (or ipc receiver) and the render
+// thread, some of the logic below needs to be rewritten. In particular
+// the WrWindowState and Notifier implementations aren't designed to work with
+// a separate render thread.
+// As part of that I am moving the bindings closer to WebRender's API boundary,
+// and moving more of the logic in C++ land.
+// This work is tracked by bug 1328602.
+//
+// See RenderThread.h for some notes about how the pieces fit together.
 
 pub struct WebRenderFrameBuilder {
     pub root_pipeline_id: WrPipelineId,
@@ -2260,8 +2267,8 @@ pub enum WrReferenceFrameKind {
     Perspective,
 }
 
-
-
+/// IMPORTANT: If you add fields to this struct, you need to also add initializers
+/// for those fields in WebRenderAPI.h.
 #[repr(C)]
 pub struct WrStackingContextParams {
     pub clip: WrStackingContextClip,
@@ -2271,11 +2278,11 @@ pub struct WrStackingContextParams {
     pub reference_frame_kind: WrReferenceFrameKind,
     pub scrolling_relative_to: *const u64,
     pub prim_flags: PrimitiveFlags,
-    
+    /// True if picture caching should be enabled for this stacking context.
     pub cache_tiles: bool,
     pub mix_blend_mode: MixBlendMode,
-    
-    
+    /// True if this stacking context is a backdrop root.
+    /// https://drafts.fxtf.org/filter-effects-2/#BackdropRoot
     pub is_backdrop_root: bool,
 }
 
@@ -2328,10 +2335,10 @@ pub extern "C" fn wr_dp_push_stacking_context(
                 filters.push(FilterOp::Opacity(
                     PropertyBinding::Binding(
                         PropertyBindingKey::new(anim.id),
-                        
-                        
-                        
-                        
+                        // We have to set the static opacity value as
+                        // the value for the case where the animation is
+                        // in not in-effect (e.g. in the delay phase
+                        // with no corresponding fill mode).
                         opacity_ref.cloned().unwrap_or(1.0),
                     ),
                     1.0,
@@ -2341,7 +2348,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
             WrAnimationType::Transform => {
                 transform_binding = Some(PropertyBinding::Binding(
                     PropertyBindingKey::new(anim.id),
-                    
+                    // Same as above opacity case.
                     transform_ref.cloned().unwrap_or(LayoutTransform::identity()),
                 ));
             }
@@ -2358,10 +2365,10 @@ pub extern "C" fn wr_dp_push_stacking_context(
     let mut wr_spatial_id = spatial_id.to_webrender(state.pipeline_id);
     let wr_clip_id = params.clip.to_webrender(state.pipeline_id);
 
-    
-    
-    
-    
+    // Note: 0 has special meaning in WR land, standing for ROOT_REFERENCE_FRAME.
+    // However, it is never returned by `push_reference_frame`, and we need to return
+    // an option here across FFI, so we take that 0 value for the None semantics.
+    // This is resolved into proper `Maybe<WrSpatialId>` inside `WebRenderAPI::PushStackingContext`.
     let mut result = WrSpatialId { id: 0 };
     if let Some(transform_binding) = transform_binding {
         let scrolling_relative_to = match unsafe { params.scrolling_relative_to.as_ref() } {
@@ -2536,8 +2543,8 @@ pub extern "C" fn wr_dp_define_scroll_layer(
         vec![],
         None,
         ScrollSensitivity::Script,
-        
-        
+        // TODO(gw): We should also update the Gecko-side APIs to provide
+        //           this as a vector rather than a point.
         scroll_offset.to_vector(),
     );
 
@@ -2565,7 +2572,7 @@ pub extern "C" fn wr_dp_push_iframe(
     );
 }
 
-
+// A helper fn to construct a PrimitiveFlags
 fn prim_flags(
     is_backface_visible: bool,
     prefer_compositor_surface: bool,
@@ -2594,13 +2601,13 @@ fn common_item_properties_for_rect(
     let clip_rect = clip.intersection(&rect);
 
     CommonItemProperties {
-        
-        
-        
+        // NB: the damp-e10s talos-test will frequently crash on startup if we
+        // early-return here for empty rects. I couldn't figure out why, but
+        // it's pretty harmless to feed these through, so, uh, we do?
         clip_rect: clip_rect.unwrap_or(LayoutRect::zero()),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     }
@@ -2671,7 +2678,7 @@ pub extern "C" fn wr_dp_push_rect_with_parent_clip(
         clip_rect: clip_rect.unwrap(),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2722,7 +2729,7 @@ pub extern "C" fn wr_dp_push_backdrop_filter_with_parent_clip(
         clip_rect: clip_rect.unwrap(),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2753,7 +2760,7 @@ pub extern "C" fn wr_dp_push_clear_rect(
         clip_rect: clip_rect.unwrap(),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(true,  false),
+        flags: prim_flags(true, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2782,7 +2789,7 @@ pub extern "C" fn wr_dp_push_hit_test(
         clip_rect: clip_rect.unwrap(),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2810,7 +2817,7 @@ pub extern "C" fn wr_dp_push_clear_rect_with_parent_clip(
         clip_rect: clip_rect.unwrap(),
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(true,  false),
+        flags: prim_flags(true, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2876,7 +2883,7 @@ pub extern "C" fn wr_dp_push_repeating_image(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -2899,7 +2906,7 @@ pub extern "C" fn wr_dp_push_repeating_image(
     );
 }
 
-
+/// Push a 3 planar yuv image.
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
                                               bounds: LayoutRect,
@@ -2938,7 +2945,7 @@ pub extern "C" fn wr_dp_push_yuv_planar_image(state: &mut WrState,
     );
 }
 
-
+/// Push a 2 planar NV12 image.
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
                                             bounds: LayoutRect,
@@ -2976,7 +2983,7 @@ pub extern "C" fn wr_dp_push_yuv_NV12_image(state: &mut WrState,
     );
 }
 
-
+/// Push a yuv interleaved image.
 #[no_mangle]
 pub extern "C" fn wr_dp_push_yuv_interleaved_image(state: &mut WrState,
                                                    bounds: LayoutRect,
@@ -3036,7 +3043,7 @@ pub extern "C" fn wr_dp_push_text(
         clip_rect: clip,
         spatial_id: space_and_clip.spatial_id,
         clip_id: space_and_clip.clip_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3094,7 +3101,7 @@ pub extern "C" fn wr_dp_push_line(
         clip_rect: *clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3137,7 +3144,7 @@ pub extern "C" fn wr_dp_push_border(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3187,7 +3194,7 @@ pub extern "C" fn wr_dp_push_border_image(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3246,7 +3253,7 @@ pub extern "C" fn wr_dp_push_border_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3309,7 +3316,7 @@ pub extern "C" fn wr_dp_push_border_radial_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3371,7 +3378,7 @@ pub extern "C" fn wr_dp_push_border_conic_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3415,7 +3422,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3459,7 +3466,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3502,7 +3509,7 @@ pub extern "C" fn wr_dp_push_conic_gradient(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3536,7 +3543,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
         clip_rect: clip,
         clip_id: space_and_clip.clip_id,
         spatial_id: space_and_clip.spatial_id,
-        flags: prim_flags(is_backface_visible,  false),
+        flags: prim_flags(is_backface_visible, /* prefer_compositor_surface */ false),
         hit_info: state.current_tag,
         item_key: state.current_item_key,
     };
@@ -3600,13 +3607,13 @@ pub extern "C" fn wr_dump_display_list(
         .dl_builder
         .emit_display_list(indent, range, &mut sink);
 
-    
-    
+    // For Android, dump to logcat instead of stderr. This is the same as
+    // what printf_stderr does on the C++ side.
 
     #[cfg(target_os = "android")]
     unsafe {
         __android_log_write(
-            4, 
+            4, /* info */
             CString::new("Gecko").unwrap().as_ptr(),
             CString::new(sink.into_inner()).unwrap().as_ptr(),
         );
@@ -3661,9 +3668,9 @@ pub extern "C" fn wr_api_hit_test(
 ) -> bool {
     let result = dh.api.hit_test(dh.document_id, None, point, HitTestFlags::empty());
     for item in &result.items {
-        
-        
-        
+        // For now we should never be getting results back for which the tag is
+        // 0 (== CompositorHitTestInvisibleToHit). In the future if we allow this,
+        // we'll want to |continue| on the loop in this scenario.
         debug_assert!(item.tag.1 != 0);
         *out_pipeline_id = item.pipeline;
         *out_scroll_id = item.tag.0;
@@ -3686,11 +3693,11 @@ pub unsafe extern "C" fn wr_dec_ref_arc(arc: *const VecU8) {
     Arc::from_raw(arc);
 }
 
-
-
-
+// TODO: nical
+// Update for the new blob image interface changes.
+//
 extern "C" {
-    
+    // TODO: figure out the API for tiled blob images.
     pub fn wr_moz2d_render_cb(
         blob: ByteSlice,
         format: ImageFormat,
@@ -3705,8 +3712,8 @@ extern "C" {
 
 #[no_mangle]
 pub extern "C" fn wr_root_scroll_node_id() -> WrSpatialId {
-    
-    
+    // The PipelineId doesn't matter here, since we just want the numeric part of the id
+    // produced for any given root reference frame.
     WrSpatialId {
         id: SpatialId::root_scroll_node(PipelineId(0, 0)).0,
     }
@@ -3714,8 +3721,8 @@ pub extern "C" fn wr_root_scroll_node_id() -> WrSpatialId {
 
 #[no_mangle]
 pub extern "C" fn wr_root_clip_id() -> WrClipId {
-    
-    
+    // The PipelineId doesn't matter here, since we just want the numeric part of the id
+    // produced for any given root reference frame.
     WrClipId::from_webrender(ClipId::root(PipelineId(0, 0)))
 }
 
@@ -3755,7 +3762,7 @@ pub unsafe extern "C" fn wr_device_delete(device: *mut Device) {
     Box::from_raw(device);
 }
 
-
+// Call MakeCurrent before this.
 #[no_mangle]
 pub extern "C" fn wr_shaders_new(
     gl_context: *mut c_void,
@@ -3803,7 +3810,7 @@ pub unsafe extern "C" fn wr_shaders_delete(shaders: *mut WrShaders, gl_context: 
     if let Ok(shaders) = Rc::try_unwrap(shaders.shaders) {
         shaders.into_inner().deinit(&mut device);
     }
-    
+    // let shaders go out of scope and get dropped
 }
 
 #[no_mangle]
