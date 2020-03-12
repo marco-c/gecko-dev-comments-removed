@@ -789,17 +789,16 @@ toolbarspring {
   max-width: 112px;
 }
 
-:root[customizing] toolbarpaletteitem[place=toolbar][id^=wrapper-customizableui-special-spring],
-:root[customizing] toolbarspring {
+#nav-bar toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
+#nav-bar toolbarspring {
+  -moz-box-flex: 80;
   
+
 
   min-width: 10px;
 }
 
-#nav-bar:not([customizing]) toolbarpaletteitem[id^=wrapper-customizableui-special-spring],
 #nav-bar:not([customizing]) toolbarspring {
-  
-  -moz-box-flex: 80;
   min-width: 1px;
 }
 
