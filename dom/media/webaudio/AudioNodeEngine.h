@@ -324,7 +324,7 @@ class AudioNodeEngine {
 
 
 
-  virtual void ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
+  virtual void ProcessBlocksOnPorts(AudioNodeTrack* aTrack, GraphTime aFrom,
                                     Span<const AudioBlock> aInput,
                                     Span<AudioBlock> aOutput, bool* aFinished);
 
