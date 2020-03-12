@@ -15,12 +15,23 @@ add_task(async function test_doorhanger_dismissal_un() {
       
       
 
+      let passwordFilledPromise = listenForTestNotification(
+        "PasswordEditedOrGenerated"
+      );
       await changeContentFormValues(browser, {
         "#form-basic-password": "123",
         
         
         "#form-basic-username": "4111111111111111",
       });
+      info("Waiting for passwordFilledPromise");
+      await passwordFilledPromise;
+      
+      await cleanupDoorhanger();
+      await cleanupPasswordNotifications();
+      
+      
+      await clearMessageCache(browser);
 
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
@@ -49,6 +60,9 @@ add_task(async function test_doorhanger_dismissal_pw() {
       
       
 
+      let passwordFilledPromise = listenForTestNotification(
+        "PasswordEditedOrGenerated"
+      );
       await changeContentFormValues(browser, {
         "#form-basic-password": "4111111111111111",
         "#form-basic-username": "aaa",
@@ -58,6 +72,13 @@ add_task(async function test_doorhanger_dismissal_pw() {
           .getElementById("form-basic-password")
           .setAttribute("autocomplete", "cc-number");
       });
+      await passwordFilledPromise;
+      
+      await cleanupDoorhanger();
+      await cleanupPasswordNotifications();
+      
+      
+      await clearMessageCache(browser);
 
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
@@ -84,10 +105,21 @@ add_task(async function test_doorhanger_shown_on_un_with_invalid_ccnumber() {
       
       
 
+      let passwordFilledPromise = listenForTestNotification(
+        "PasswordEditedOrGenerated"
+      );
       await changeContentFormValues(browser, {
         "#form-basic-password": "411",
         "#form-basic-username": "1234123412341234",
       });
+
+      await passwordFilledPromise;
+      
+      await cleanupDoorhanger();
+      await cleanupPasswordNotifications();
+      
+      
+      await clearMessageCache(browser);
 
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
@@ -130,10 +162,21 @@ add_task(async function test_doorhanger_dismissal_on_change() {
       );
       Services.logins.addLogin(login);
 
+      let passwordFilledPromise = listenForTestNotification(
+        "PasswordEditedOrGenerated"
+      );
+
       await changeContentFormValues(browser, {
         "#form-basic-password": "222", 
         "#form-basic-username": "4111111111111111",
       });
+      await passwordFilledPromise;
+      
+      await cleanupDoorhanger();
+      await cleanupPasswordNotifications();
+      
+      
+      await clearMessageCache(browser);
 
       let processedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async () => {
