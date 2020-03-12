@@ -936,16 +936,13 @@ bool _evaluate(NPP npp, NPObject* npobj, NPString* script, NPVariant* result) {
 
   nsIPrincipal* principal = doc->NodePrincipal();
 
-  nsAutoCString specStr;
+  nsCString specStr;
   const char* spec;
 
-  nsCOMPtr<nsIURI> uri;
-  principal->GetURI(getter_AddRefs(uri));
+  principal->GetAsciiSpec(specStr);
+  spec = specStr.get();
 
-  if (uri) {
-    uri->GetSpec(specStr);
-    spec = specStr.get();
-  } else {
+  if (specStr.IsEmpty()) {
     
     
     
@@ -953,8 +950,7 @@ bool _evaluate(NPP npp, NPObject* npobj, NPString* script, NPVariant* result) {
     
     
     
-
-    uri = doc->GetDocumentURI();
+    nsCOMPtr<nsIURI> uri = doc->GetDocumentURI();
     if (uri && uri->SchemeIs("chrome")) {
       uri->GetSpec(specStr);
       spec = specStr.get();
