@@ -44,7 +44,7 @@ class nsUrlClassifierStreamUpdater final
 
  private:
   
-  ~nsUrlClassifierStreamUpdater() {}
+  ~nsUrlClassifierStreamUpdater() = default;
 
   
   

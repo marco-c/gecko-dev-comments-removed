@@ -63,7 +63,7 @@ class nsNavHistoryQuery final : public nsINavHistoryQuery {
   nsresult Clone(nsNavHistoryQuery** _clone);
 
  private:
-  ~nsNavHistoryQuery() {}
+  ~nsNavHistoryQuery() = default;
 
  protected:
   
@@ -121,7 +121,7 @@ class nsNavHistoryQueryOptions final : public nsINavHistoryQueryOptions {
   nsresult Clone(nsNavHistoryQueryOptions** _clone);
 
  private:
-  ~nsNavHistoryQueryOptions() {}
+  ~nsNavHistoryQueryOptions() = default;
 
   
   

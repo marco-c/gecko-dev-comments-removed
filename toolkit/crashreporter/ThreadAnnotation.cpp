@@ -116,9 +116,9 @@ class ThreadAnnotationSpan {
 
 class ThreadAnnotationData {
  public:
-  ThreadAnnotationData() {}
+  ThreadAnnotationData() = default;
 
-  ~ThreadAnnotationData() {}
+  ~ThreadAnnotationData() = default;
 
   
   

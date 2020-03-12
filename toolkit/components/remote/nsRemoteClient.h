@@ -16,7 +16,7 @@
 
 class nsRemoteClient {
  public:
-  virtual ~nsRemoteClient(){};
+  virtual ~nsRemoteClient() = default;
 
   
 

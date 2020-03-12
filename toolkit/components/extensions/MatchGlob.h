@@ -76,7 +76,7 @@ class MatchGlobSet final : public nsTArray<RefPtr<MatchGlob>> {
  public:
   
   
-  MatchGlobSet() {}
+  MatchGlobSet() = default;
   explicit MatchGlobSet(size_type aCapacity) : nsTArray(aCapacity) {}
   explicit MatchGlobSet(const nsTArray& aOther) : nsTArray(aOther) {}
   MOZ_IMPLICIT MatchGlobSet(nsTArray&& aOther) : nsTArray(std::move(aOther)) {}

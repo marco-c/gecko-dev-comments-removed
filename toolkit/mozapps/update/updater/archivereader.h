@@ -19,7 +19,7 @@ typedef char NS_tchar;
 
 class ArchiveReader {
  public:
-  ArchiveReader() {}
+  ArchiveReader() = default;
   ~ArchiveReader() { Close(); }
 
   int Open(const NS_tchar* path);
