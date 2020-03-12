@@ -257,7 +257,7 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
   CompilationInfo& compilationInfo_;
 
   
-  TraceListNode* traceListHead_;
+  FunctionBox* traceListHead_;
 
   
   ParseContext* pc_;
@@ -409,7 +409,7 @@ class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
   class Mark {
     friend class ParserBase;
     LifoAlloc::Mark mark;
-    TraceListNode* traceListHead;
+    FunctionBox* traceListHead;
   };
   Mark mark() const {
     Mark m;
