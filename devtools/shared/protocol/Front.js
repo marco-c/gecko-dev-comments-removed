@@ -212,7 +212,7 @@ class Front extends Pool {
     } else {
       packet.to = this.actorID;
       
-      if (this.conn._transport) {
+      if (this.conn && this.conn._transport) {
         this.conn._transport.send(packet);
       }
     }
@@ -291,6 +291,7 @@ class Front extends Pool {
           } else {
             message = packet.error;
           }
+          message += " from: " + this.actorID;
           const packetError = new Error(message);
           deferred.reject(packetError);
         } else {
