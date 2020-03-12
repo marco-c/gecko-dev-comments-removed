@@ -34,7 +34,8 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 
-const TEST_ONLY_REAUTH = "browser.osKeyStore.unofficialBuildOnlyLogin";
+const TEST_ONLY_REAUTH =
+  "extensions.formautofill.osKeyStore.unofficialBuildOnlyLogin";
 
 var OSKeyStore = {
   
@@ -125,41 +126,7 @@ var OSKeyStore = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async ensureLoggedIn(
-    reauth = false,
-    dialogCaption = "",
-    parentWindow = null,
-    generateKeyIfNotAvailable = true
-  ) {
-    if (
-      (typeof reauth != "boolean" && typeof reauth != "string") ||
-      reauth === true ||
-      reauth === ""
-    ) {
-      throw new Error(
-        "reauth is required to either be `false` or a non-empty string"
-      );
-    }
-
+  async ensureLoggedIn(reauth = false) {
     if (this._pendingUnlockPromise) {
       log.debug("ensureLoggedIn: Has a pending unlock operation");
       return this._pendingUnlockPromise;
@@ -170,52 +137,51 @@ var OSKeyStore = {
     );
 
     let unlockPromise;
-    if (typeof reauth == "string") {
-      if (AppConstants.DEBUG && this._testReauth) {
-        unlockPromise = this._reauthInTests();
-      } else if (
-        AppConstants.platform == "win" ||
-        AppConstants.platform == "macosx"
-      ) {
-        
-        
-        unlockPromise = osReauthenticator
-          .asyncReauthenticateUser(reauth, dialogCaption, parentWindow)
-          .then(reauthResult => {
-            if (typeof reauthResult == "boolean" && !reauthResult) {
-              throw new Components.Exception(
-                "User canceled OS reauth entry",
-                Cr.NS_ERROR_FAILURE
-              );
-            }
-          });
-      } else {
-        log.debug("ensureLoggedIn: Skipping reauth on unsupported platforms");
-        unlockPromise = Promise.resolve();
-      }
+
+    
+    if (!this._reauthEnabledByUser || (typeof reauth == "boolean" && !reauth)) {
+      unlockPromise = Promise.resolve();
+    } else if (!AppConstants.MOZILLA_OFFICIAL && this._testReauth) {
+      unlockPromise = this._reauthInTests();
+    } else if (
+      AppConstants.platform == "win" ||
+      AppConstants.platform == "macosx"
+    ) {
+      let reauthLabel = typeof reauth == "string" ? reauth : "";
+      
+      
+      unlockPromise = osReauthenticator
+        .asyncReauthenticateUser(reauthLabel)
+        .then(reauthResult => {
+          if (typeof reauthResult == "boolean" && !reauthResult) {
+            throw new Components.Exception(
+              "User canceled OS reauth entry",
+              Cr.NS_ERROR_FAILURE
+            );
+          }
+        });
     } else {
+      log.debug("ensureLoggedIn: Skipping reauth on unsupported platforms");
       unlockPromise = Promise.resolve();
     }
 
-    if (generateKeyIfNotAvailable) {
-      unlockPromise = unlockPromise.then(async () => {
-        if (!(await nativeOSKeyStore.asyncSecretAvailable(this.STORE_LABEL))) {
-          log.debug(
-            "ensureLoggedIn: Secret unavailable, attempt to generate new secret."
-          );
-          let recoveryPhrase = await nativeOSKeyStore.asyncGenerateSecret(
-            this.STORE_LABEL
-          );
-          
-          
-          
-          log.debug(
-            "ensureLoggedIn: Secret generated. Recovery phrase length: " +
-              recoveryPhrase.length
-          );
-        }
-      });
-    }
+    unlockPromise = unlockPromise.then(async () => {
+      if (!(await nativeOSKeyStore.asyncSecretAvailable(this.STORE_LABEL))) {
+        log.debug(
+          "ensureLoggedIn: Secret unavailable, attempt to generate new secret."
+        );
+        let recoveryPhrase = await nativeOSKeyStore.asyncGenerateSecret(
+          this.STORE_LABEL
+        );
+        
+        
+        
+        log.debug(
+          "ensureLoggedIn: Secret generated. Recovery phrase length: " +
+            recoveryPhrase.length
+        );
+      }
+    });
 
     unlockPromise = unlockPromise.then(
       () => {
@@ -240,6 +206,7 @@ var OSKeyStore = {
   },
 
   
+
 
 
 
@@ -326,7 +293,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {})
     .ConsoleAPI;
   return new ConsoleAPI({
-    maxLogLevelPref: "browser.osKeyStore.loglevel",
+    maxLogLevelPref: "extensions.formautofill.loglevel",
     prefix: "OSKeyStore",
   });
 });
@@ -336,4 +303,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "_testReauth",
   TEST_ONLY_REAUTH,
   ""
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  OSKeyStore,
+  "_reauthEnabledByUser",
+  "extensions.formautofill.reauth.enabled",
+  false
 );

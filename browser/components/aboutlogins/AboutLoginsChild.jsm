@@ -55,24 +55,12 @@ class AboutLoginsChild extends JSWindowActorChild {
           getLoginOrigin(uriString) {
             return LoginHelper.getLoginOrigin(uriString);
           },
-          
-
-
-
-
-
-
-          async promptForMasterPassword(resolve, messageId) {
+          promptForMasterPassword(resolve) {
             masterPasswordPromise = {
               resolve,
             };
 
-            that.sendAsyncMessage(
-              "AboutLogins:MasterPasswordRequest",
-              messageId
-            );
-
-            return masterPasswordPromise;
+            that.sendAsyncMessage("AboutLogins:MasterPasswordRequest");
           },
           
           masterPasswordEnabled: true,
