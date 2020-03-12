@@ -52,39 +52,40 @@ bool JoinNodeTransaction::CanDoIt() const {
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
-NS_IMETHODIMP
-JoinNodeTransaction::DoTransaction() {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP JoinNodeTransaction::DoTransaction() {
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mLeftNode) ||
       NS_WARN_IF(!mRightNode)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   
-  nsCOMPtr<nsINode> leftParent = mLeftNode->GetParentNode();
-  NS_ENSURE_TRUE(leftParent, NS_ERROR_NULL_POINTER);
+  nsCOMPtr<nsINode> leftNodeParent = mLeftNode->GetParentNode();
+  if (NS_WARN_IF(!leftNodeParent)) {
+    return NS_ERROR_FAILURE;
+  }
 
   
-  if (leftParent != mRightNode->GetParentNode()) {
+  if (leftNodeParent != mRightNode->GetParentNode()) {
     NS_ASSERTION(false, "Nodes do not have same parent");
     return NS_ERROR_INVALID_ARG;
   }
 
   
   
-  mParent = leftParent;
+  mParent = leftNodeParent;
   mOffset = mLeftNode->Length();
 
   RefPtr<EditorBase> editorBase = mEditorBase;
   nsCOMPtr<nsINode> leftNode = mLeftNode;
   nsCOMPtr<nsINode> rightNode = mRightNode;
-  return editorBase->DoJoinNodes(rightNode, leftNode, MOZ_KnownLive(mParent));
+  nsresult rv = editorBase->DoJoinNodes(rightNode, leftNode, leftNodeParent);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::DoJoinNodes() failed");
+  return rv;
 }
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
-NS_IMETHODIMP
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 JoinNodeTransaction::UndoTransaction() {
   if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mLeftNode) ||
       NS_WARN_IF(!mRightNode) || NS_WARN_IF(!mEditorBase)) {
@@ -92,32 +93,38 @@ JoinNodeTransaction::UndoTransaction() {
   }
 
   
-  ErrorResult rv;
+  ErrorResult error;
   if (mRightNode->GetAsText()) {
     RefPtr<EditorBase> editorBase = mEditorBase;
     RefPtr<Text> rightNodeAsText = mRightNode->GetAsText();
-    editorBase->DoDeleteText(*rightNodeAsText, 0, mOffset, rv);
-    if (NS_WARN_IF(rv.Failed())) {
-      return rv.StealNSResult();
+    editorBase->DoDeleteText(*rightNodeAsText, 0, mOffset, error);
+    if (error.Failed()) {
+      NS_WARNING("EditorBase::DoDeleteText() failed");
+      return error.StealNSResult();
     }
   } else {
     nsCOMPtr<nsIContent> child = mRightNode->GetFirstChild();
     for (uint32_t i = 0; i < mOffset; i++) {
-      if (rv.Failed()) {
-        return rv.StealNSResult();
+      if (error.Failed()) {
+        return error.StealNSResult();
       }
       if (!child) {
         return NS_ERROR_NULL_POINTER;
       }
       nsCOMPtr<nsIContent> nextSibling = child->GetNextSibling();
-      mLeftNode->AppendChild(*child, rv);
+      mLeftNode->AppendChild(*child, error);
+      NS_WARNING_ASSERTION(!error.Failed(), "nsINode::AppendChild() failed");
       child = nextSibling;
     }
   }
+
+  NS_WARNING_ASSERTION(!error.Failed(), "The previous error was ignored");
+
   
   nsCOMPtr<nsINode> refNode = mRightNode;
-  mParent->InsertBefore(*mLeftNode, refNode, rv);
-  return rv.StealNSResult();
+  mParent->InsertBefore(*mLeftNode, refNode, error);
+  NS_WARNING_ASSERTION(!error.Failed(), "nsINode::InsertBefore() failed");
+  return error.StealNSResult();
 }
 
 }  
