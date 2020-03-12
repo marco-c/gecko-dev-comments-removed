@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_BrowserChild_h
 #define mozilla_dom_BrowserChild_h
@@ -67,11 +67,11 @@ class AsyncDragMetrics;
 class IAPZCTreeManager;
 class ImageCompositeNotification;
 class PCompositorBridgeChild;
-}  
+}  // namespace layers
 
 namespace widget {
 struct AutoCacheNativeKeyCommands;
-}  
+}  // namespace widget
 
 namespace dom {
 
@@ -113,7 +113,7 @@ class BrowserChildMessageManager : public ContentFrameMessageManager,
     aVisitor.mForceContentDispatch = true;
   }
 
-  
+  // Dispatch a runnable related to the global.
   virtual nsresult Dispatch(mozilla::TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) override;
 
@@ -140,10 +140,10 @@ class ContentListener final : public nsIDOMEventListener {
   BrowserChild* mBrowserChild;
 };
 
-
-
-
-
+/**
+ * BrowserChild implements the child actor part of the PBrowser protocol. See
+ * PBrowser for more information.
+ */
 class BrowserChild final : public nsMessageManagerScriptExecutor,
                            public ipc::MessageManagerCallback,
                            public PBrowserChild,
@@ -171,19 +171,19 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   friend class PBrowserChild;
 
  public:
-  
-
-
-
+  /**
+   * Find BrowserChild of aTabId in the same content process of the
+   * caller.
+   */
   static already_AddRefed<BrowserChild> FindBrowserChild(const TabId& aTabId);
 
-  
+  // Return a list of all active BrowserChildren.
   static nsTArray<RefPtr<BrowserChild>> GetAll();
 
  public:
-  
-
-
+  /**
+   * Create a new BrowserChild object.
+   */
   BrowserChild(ContentChild* aManager, const TabId& aTabId, TabGroup* aTabGroup,
                const TabContext& aContext, BrowsingContext* aBrowsingContext,
                uint32_t aChromeFlags, bool aIsTopLevel);
@@ -191,13 +191,13 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   nsresult Init(mozIDOMWindowProxy* aParent,
                 WindowGlobalChild* aInitialWindowChild);
 
-  
+  /** Return a BrowserChild with the given attributes. */
   static already_AddRefed<BrowserChild> Create(
       ContentChild* aManager, const TabId& aTabId, const TabId& aSameTabGroupAs,
       const TabContext& aContext, BrowsingContext* aBrowsingContext,
       uint32_t aChromeFlags, bool aIsTopLevel);
 
-  
+  // Let managees query if it is safe to send messages.
   bool IsDestroyed() const { return mDestroyed; }
 
   const TabId GetTabId() const {
@@ -227,10 +227,10 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   }
 
   nsIPrincipal* GetPrincipal() { return mPrincipal; }
-  
+  // Get the Document for the top-level window in this tab.
   already_AddRefed<Document> GetTopLevelDocument() const;
 
-  
+  // Get the pres-shell of the document for the top-level window in this tab.
   PresShell* GetTopLevelPresShell() const;
 
   BrowserChildMessageManager* GetMessageManager() {
@@ -239,9 +239,9 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   bool IsTopLevel() const { return mIsTopLevel; }
 
-  
-
-
+  /**
+   * MessageManagerCallback methods that we override.
+   */
   virtual bool DoSendBlockingMessage(JSContext* aCx, const nsAString& aMessage,
                                      StructuredCloneData& aData,
                                      JS::Handle<JSObject*> aCpows,
@@ -450,11 +450,11 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   bool IsVisible();
 
-  
-
-
-
-
+  /**
+   * Signal to this BrowserChild that it should be made visible:
+   * activated widget, retained layer tree, etc.  (Respectively,
+   * made not visible.)
+   */
   MOZ_CAN_RUN_SCRIPT void UpdateVisibility();
   MOZ_CAN_RUN_SCRIPT void MakeVisible();
   void MakeHidden();
@@ -530,9 +530,9 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   mozilla::ipc::IPCResult RecvWillChangeProcess(
       WillChangeProcessResolver&& aResolve);
-  
-
-
+  /**
+   * Native widget remoting protocol for use with windowed plugins with e10s.
+   */
   PPluginWidgetChild* AllocPPluginWidgetChild();
 
   bool DeallocPPluginWidgetChild(PPluginWidgetChild* aActor);
@@ -563,7 +563,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   Maybe<LayoutDeviceIntRect> GetVisibleRect() const;
 
-  
+  // Call RecvShow(nsIntSize(0, 0)) and block future calls to RecvShow().
   void DoFakeShow(const ParentShowInfo&);
 
   void ContentReceivedInputBlock(uint64_t aInputBlockId,
@@ -596,7 +596,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
                   const ScrollableLayerGuid::ViewID& aViewId,
                   const CSSRect& aRect, const uint32_t& aFlags);
 
-  
+  // Request that the docshell be marked as active.
   void PaintWhileInterruptingJS(const layers::LayersObserverEpoch& aEpoch);
 
   nsresult CanCancelContentJS(nsIRemoteTab::NavigationType aNavigationType,
@@ -611,8 +611,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
 #endif
 
-  
-  
+  // These methods return `true` if this BrowserChild is currently awaiting a
+  // Large-Allocation header.
   bool StopAwaitingLargeAlloc();
   bool IsAwaitingLargeAlloc();
 
@@ -631,28 +631,28 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void AddPendingDocShellBlocker();
   void RemovePendingDocShellBlocker();
 
-  
+  // The HANDLE object for the widget this BrowserChild in.
   WindowsHandle WidgetNativeData() { return mWidgetNativeData; }
 
-  
-  
+  // The transform from the coordinate space of this BrowserChild to the
+  // coordinate space of the native window its BrowserParent is in.
   mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
   GetChildToParentConversionMatrix() const;
 
-  
-  
-  
+  // Returns the portion of the visible rect of this remote document in the
+  // top browser window coordinate system.  This is the result of being clipped
+  // by all ancestor viewports.
   mozilla::ScreenRect GetTopLevelViewportVisibleRectInBrowserCoords() const;
 
-  
-  
+  // Similar to above GetTopLevelViewportVisibleRectInBrowserCoords(), but in
+  // this out-of-process document's coordinate system.
   Maybe<LayoutDeviceRect> GetTopLevelViewportVisibleRectInSelfCoords() const;
 
-  
-  
-  
-  
-  
+  // Prepare to dispatch all coalesced mousemove events. We'll move all data
+  // in mCoalescedMouseData to a nsDeque; then we start processing them. We
+  // can't fetch the coalesced event one by one and dispatch it because we may
+  // reentry the event loop and access to the same hashtable. It's called when
+  // dispatching some mouse events other than mousemove.
   void FlushAllCoalescedMouseData();
   void ProcessPendingCoalescedMouseDataAndDispatchEvents();
 
@@ -668,11 +668,11 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
     return sVisibleTabs && !sVisibleTabs->IsEmpty();
   }
 
-  
-  
-  
-  
-  
+  // Returns the set of BrowserChilds that are currently rendering layers. There
+  // can be multiple BrowserChilds in this state if Firefox has multiple windows
+  // open or is warming tabs up. There can also be zero BrowserChilds in this
+  // state. Note that this function should only be called if HasVisibleTabs()
+  // returns true.
   static const nsTHashtable<nsPtrHashKey<BrowserChild>>& GetVisibleTabs() {
     MOZ_ASSERT(HasVisibleTabs());
     return *sVisibleTabs;
@@ -681,26 +681,25 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   bool UpdateSessionStore(uint32_t aFlushId, bool aIsFinal = false);
 
 #ifdef XP_WIN
-  
-  
-  
-  
-  
-  
-  
+  // Check if the window this BrowserChild is associated with supports
+  // protected media (EME) or not.
+  // Returns a promise the will resolve true if the window supports protected
+  // media or false if it does not. The promise will be rejected with an
+  // ResponseRejectReason if the IPC needed to do the check fails. Callers
+  // should treat the reject case as if the window does not support protected
+  // media to ensure robust handling.
   RefPtr<IsWindowSupportingProtectedMediaPromise>
   DoesWindowSupportProtectedMedia();
 #endif
 
-  
-  
-  
+  // Notify the content blocking event in the parent process. This sends an IPC
+  // message to the BrowserParent in the parent. The BrowserParent will find the
+  // top-level WindowGlobalParent and notify the event from it.
   void NotifyContentBlockingEvent(
       uint32_t aEvent, nsIChannel* aChannel, bool aBlocked,
       const nsACString& aTrackingOrigin,
       const nsTArray<nsCString>& aTrackingFullHashes,
-      const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>&
-          aReason);
+      const Maybe<AntiTrackingCommon::StorageAccessGrantedReason>& aReason);
 
  protected:
   virtual ~BrowserChild();
@@ -740,11 +739,11 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
       const WindowsHandle& aWidgetNativeData);
 
  private:
-  
-  
-  
-  
-  
+  // Wraps up a JSON object as a structured clone and sends it to the browser
+  // chrome script.
+  //
+  // XXX/bug 780335: Do the work the browser chrome script does in C++ instead
+  // so we don't need things like this.
   void DispatchMessageManagerMessage(const nsAString& aMessageName,
                                      const nsAString& aJSONData);
 
@@ -755,15 +754,15 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
                        const ScrollableLayerGuid& aGuid);
 
-  
-  
-  
-  
-  
-  
+  // Notify others that our TabContext has been updated.
+  //
+  // You should call this after calling TabContext::SetTabContext().  We also
+  // call this during Init().
+  //
+  // @param aIsPreallocated  true if this is called for Preallocated Tab.
   void NotifyTabContextUpdated(bool aIsPreallocated);
 
-  
+  // Update the frameType on our docshell.
   void UpdateFrameType();
 
   void ActorDestroy(ActorDestroyReason why) override;
@@ -801,9 +800,9 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   void MaybeDispatchCoalescedWheelEvent();
 
-  
-
-
+  /**
+   * Dispatch aEvent on aEvent.mWidget.
+   */
   nsEventStatus DispatchWidgetEventViaAPZ(WidgetGUIEvent& aEvent);
 
   void DispatchWheelEvent(const WidgetWheelEvent& aEvent,
@@ -851,24 +850,24 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   bool mHasValidInnerSize;
   bool mDestroyed;
 
-  
+  // Position of client area relative to the outer window
   LayoutDeviceIntPoint mClientOffset;
-  
+  // Position of tab, relative to parent widget (typically the window)
   LayoutDeviceIntPoint mChromeOffset;
   ScreenIntCoord mDynamicToolbarMaxHeight;
   TabId mUniqueId;
 
-  
-  
+  // Whether or not this browser is the child part of the top level PBrowser
+  // actor in a remote browser.
   bool mIsTopLevel;
 
-  
-  
-  
+  // Whether or not this tab has siblings (other tabs in the same window).
+  // This is one factor used when choosing to allow or deny a non-system
+  // script's attempt to resize the window.
   bool mHasSiblings;
 
-  
-  
+  // Holds the compositor options for the compositor rendering this tab,
+  // once we find out which compositor that is.
   Maybe<mozilla::layers::CompositorOptions> mCompositorOptions;
 
   friend class ContentChild;
@@ -884,18 +883,18 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   bool mSkipKeyPress;
 
-  
-  
-  
+  // Store the end time of the handling of the last repeated keydown/keypress
+  // event so that in case event handling takes time, some repeated events can
+  // be skipped to not flood child process.
   mozilla::TimeStamp mRepeatedKeyEventTime;
 
-  
-  
-  
+  // Similar to mRepeatedKeyEventTime, store the end time (from parent process)
+  // of handling the last repeated wheel event so that in case event handling
+  // takes time, some repeated events can be skipped to not flood child process.
   mozilla::TimeStamp mLastWheelProcessedTimeFromParent;
   mozilla::TimeDuration mLastWheelProcessingDuration;
 
-  
+  // Hash table to track coalesced mousemove events for different pointers.
   nsClassHashtable<nsUint32HashKey, CoalescedMouseData> mCoalescedMouseData;
 
   nsDeque mToBeDispatchedMouseData;
@@ -906,13 +905,13 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   RefPtr<layers::IAPZCTreeManager> mApzcTreeManager;
   RefPtr<TabListener> mSessionStoreListener;
 
-  
+  // The most recently seen layer observer epoch in RecvSetDocShellIsActive.
   layers::LayersObserverEpoch mLayersObserverEpoch;
 
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
-  
+  // The handle associated with the native window that contains this tab
   uintptr_t mNativeWindowHandle;
-#endif  
+#endif  // defined(XP_WIN)
 
 #if defined(ACCESSIBILITY)
   PDocAccessibleChild* mTopLevelDocAccessibleChild;
@@ -921,23 +920,23 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
   bool mShouldSendWebProgressEventsToParent;
 
-  
+  // Whether we are rendering to the compositor or not.
   bool mRenderLayers;
 
-  
-  
-  
-  
-  
-  
-  
+  // In some circumstances, a DocShell might be in a state where it is
+  // "blocked", and we should not attempt to change its active state or
+  // the underlying PresShell state until the DocShell becomes unblocked.
+  // It is possible, however, for the parent process to send commands to
+  // change those states while the DocShell is blocked. We store those
+  // states temporarily as "pending", and only apply them once the DocShell
+  // is no longer blocked.
   bool mPendingDocShellIsActive;
   bool mPendingDocShellReceivedMessage;
   bool mPendingRenderLayers;
   bool mPendingRenderLayersReceivedMessage;
   layers::LayersObserverEpoch mPendingLayersObserverEpoch;
-  
-  
+  // When mPendingDocShellBlockers is greater than 0, the DocShell is blocked,
+  // and once it reaches 0, it is no longer blocked.
   uint32_t mPendingDocShellBlockers;
   int32_t mCancelContentJSEpoch;
 
@@ -947,20 +946,20 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   ScreenRect mTopLevelViewportVisibleRectInBrowserCoords;
 
 #ifdef XP_WIN
-  
+  // Should only be accessed on main thread.
   Maybe<bool> mWindowSupportsProtectedMedia;
 #endif
 
-  
-  
-  
-  
+  // This state is used to keep track of the current visible tabs (the ones
+  // rendering layers). There may be more than one if there are multiple browser
+  // windows open, or tabs are being warmed up. There may be none if this
+  // process does not host any visible or warming tabs.
   static nsTHashtable<nsPtrHashKey<BrowserChild>>* sVisibleTabs;
 
   DISALLOW_EVIL_CONSTRUCTORS(BrowserChild);
 };
 
-}  
-}  
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_BrowserChild_h

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef RTCStatsReport_h_
 #define RTCStatsReport_h_
@@ -10,17 +10,16 @@
 #include "nsWrapperCache.h"
 #include "nsCOMPtr.h"
 
-#include "nsPIDOMWindow.h"               // nsPIDOMWindowInner
-#include "mozilla/dom/ScriptSettings.h"  // AutoEntryScript
+#include "nsPIDOMWindow.h"               
+#include "mozilla/dom/ScriptSettings.h"  
 #include "nsIGlobalObject.h"
-#include "js/RootingAPI.h"  // JS::Rooted
+#include "js/RootingAPI.h"  
 #include "js/Value.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/UniquePtr.h"
-#include "prtime.h"  // PR_Now
-#include "mozilla/MozPromise.h"
+#include "prtime.h"  
 #include "mozilla/TimeStamp.h"
-#include "mozilla/dom/RTCStatsReportBinding.h"  // RTCStatsCollection
+#include "mozilla/dom/RTCStatsReportBinding.h"  
 
 namespace mozilla {
 namespace dom {
@@ -50,8 +49,8 @@ class RTCStatsReport final : public nsWrapperCache {
 
   explicit RTCStatsReport(nsPIDOMWindowInner* aParent);
 
-  // TODO(bug 1586109): Remove this once we no longer have to create empty
-  // RTCStatsReports from JS.
+  
+  
   static already_AddRefed<RTCStatsReport> Constructor(
       const GlobalObject& aGlobal);
 
@@ -78,8 +77,8 @@ class RTCStatsReport final : public nsWrapperCache {
     return NS_OK;
   }
 
-  // We cannot just declare this as SetRTCStats(RTCStats&), because the
-  // conversion function that ToJSValue uses is non-virtual.
+  
+  
   template <typename T>
   nsresult SetRTCStats(T& aValue) {
     static_assert(std::is_base_of<RTCStats, T>::value,
@@ -91,7 +90,7 @@ class RTCStatsReport final : public nsWrapperCache {
 
     const nsString key(aValue.mId.Value());
 
-    // Cargo-culted from dom::Promise; converts aValue to a JSObject
+    
     AutoEntryScript aes(mParent->AsGlobal()->GetGlobalJSObject(),
                         "RTCStatsReport::SetRTCStats");
     JSContext* cx = aes.cx();
@@ -109,7 +108,7 @@ class RTCStatsReport final : public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
 
-#endif  // RTCStatsReport_h_
+#endif  
