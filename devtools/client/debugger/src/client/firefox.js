@@ -23,7 +23,7 @@ export async function onConnect(connection: any, _actions: Object) {
   const { devToolsClient, targetList } = connection;
   actions = _actions;
 
-  setupCommands({ devToolsClient });
+  setupCommands({ devToolsClient, targetList });
   setupEvents({ actions, devToolsClient });
   await targetList.watchTargets(
     targetList.ALL_TYPES,
@@ -98,6 +98,9 @@ async function onTargetAvailable({
 
     await clientCommands.checkIfAlreadyPaused();
   }
+  
+  
+  await actions.updateThreads();
 }
 
 function onTargetDestroyed({ targetFront, isTopLevel }) {
@@ -106,6 +109,9 @@ function onTargetDestroyed({ targetFront, isTopLevel }) {
     targetFront.off("navigate", actions.navigated);
     removeEventsTopTarget(targetFront);
   }
+  
+  
+  actions.updateThreads();
 }
 
 export { clientCommands, clientEvents };

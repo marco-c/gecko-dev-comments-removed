@@ -7,7 +7,7 @@
 import { addThreadEventListeners, attachAllTargets } from "./events";
 import { features } from "../../utils/prefs";
 import { sameOrigin } from "../../utils/url";
-import type { DevToolsClient, Target } from "./types";
+import type { DevToolsClient, TargetList, Target } from "./types";
 
 
 const { defaultThreadOptions } = require("devtools/client/shared/thread-utils");
@@ -17,6 +17,7 @@ type Args = {
   devToolsClient: DevToolsClient,
   targets: { [string]: Target },
   options: Object,
+  targetList: TargetList,
 };
 
 async function attachTargets(targetLists, args) {
@@ -97,6 +98,26 @@ async function listWorkerTargets(args: Args) {
       serviceWorkerRegistrations = registrations.filter(front =>
         sameOrigin(front.url, currentTarget.url)
       );
+
+      
+      
+      const origin = new URL(currentTarget.url).origin;
+      
+      
+      const processes = await devToolsClient.mainRoot.listProcesses();
+      const targets = await Promise.all(
+        processes
+          .filter(descriptor => !descriptor.isParent)
+          .map(descriptor => descriptor.getTarget())
+      );
+      try {
+        await Promise.all(
+          targets.map(t => t.pauseMatchingServiceWorkers({ origin }))
+        );
+      } catch (e) {
+        
+        
+      }
     }
   }
 
@@ -133,37 +154,14 @@ async function listWorkerTargets(args: Args) {
   return workers;
 }
 
-async function getAllProcessTargets(args) {
-  const { devToolsClient } = args;
-  const processes = await devToolsClient.mainRoot.listProcesses();
-  return Promise.all(
-    processes
-      .filter(descriptor => !descriptor.isParent)
-      .map(descriptor => descriptor.getTarget())
-  );
-}
-
 async function listProcessTargets(args: Args) {
-  const { currentTarget } = args;
-  if (!attachAllTargets(currentTarget)) {
-    if (currentTarget.url && features.windowlessServiceWorkers) {
-      
-      
-      const origin = new URL(currentTarget.url).origin;
-      const targets = await getAllProcessTargets(args);
-      try {
-        await Promise.all(
-          targets.map(t => t.pauseMatchingServiceWorkers({ origin }))
-        );
-      } catch (e) {
-        
-        
-      }
-    }
-    return [];
-  }
-
-  return getAllProcessTargets(args);
+  const { targetList } = args;
+  
+  
+  
+  
+  
+  return targetList.getAllTargets(targetList.TYPES.PROCESS);
 }
 
 export async function updateTargets(args: Args) {
