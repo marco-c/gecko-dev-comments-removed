@@ -7,190 +7,95 @@
 const testPage = getRootDirectory(gTestPath) + "file_window_activation.html";
 const testPage2 = getRootDirectory(gTestPath) + "file_window_activation2.html";
 
-var colorChangeNotifications = 0;
-var otherWindow;
-
-var browser1, browser2;
-
 add_task(async function reallyRunTests() {
   let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage);
-  browser1 = tab1.linkedBrowser;
+  let browser1 = tab1.linkedBrowser;
 
   
   
   let tab2 = BrowserTestUtils.addTab(gBrowser, testPage);
-  browser2 = tab2.linkedBrowser;
+  let browser2 = tab2.linkedBrowser;
   await BrowserTestUtils.browserLoaded(browser2);
 
-  browser1.messageManager.loadFrameScript(
-    "data:,(" + childFunction.toString() + ")();",
-    true
+  function failTest() {
+    ok(false, "Test received unexpected activate/deactivate event");
+  }
+
+  
+  
+  BrowserTestUtils.waitForContentEvent(browser1, "activate", true).then(
+    failTest
   );
-  browser2.messageManager.loadFrameScript(
-    "data:,(" + childFunction.toString() + ")();",
-    true
+  BrowserTestUtils.waitForContentEvent(browser2, "activate", true).then(
+    failTest
+  );
+  BrowserTestUtils.waitForContentEvent(browser1, "deactivate", true).then(
+    failTest
+  );
+  BrowserTestUtils.waitForContentEvent(browser2, "deactivate", true).then(
+    failTest
   );
 
   gURLBar.focus();
 
-  let testFinished = {};
-  testFinished.promise = new Promise(
-    resolve => (testFinished.resolve = resolve)
-  );
-
-  
-  
-  
-  
-  
-  window.messageManager.addMessageListener(
-    "Test:BackgroundColorChanged",
-    function(message) {
-      colorChangeNotifications++;
-
-      switch (colorChangeNotifications) {
-        case 1:
-          is(message.data.color, "rgba(0, 0, 0, 0)", "first window initial");
-          break;
-        case 2:
-          is(message.data.color, "rgba(0, 0, 0, 0)", "second window initial");
-          runOtherWindowTests();
-          break;
-        case 3:
-          is(message.data.color, "rgb(255, 0, 0)", "first window lowered");
-          break;
-        case 4:
-          is(message.data.color, "rgb(255, 0, 0)", "second window lowered");
-          sendGetBackgroundRequest(true);
-          otherWindow.close();
-          break;
-        case 5:
-          is(message.data.color, "rgba(0, 0, 0, 0)", "first window raised");
-          break;
-        case 6:
-          is(message.data.color, "rgba(0, 0, 0, 0)", "second window raised");
-          gBrowser.selectedTab = tab2;
-          break;
-        case 7:
-          is(
-            message.data.color,
-            "rgba(0, 0, 0, 0)",
-            "first window after tab switch"
-          );
-          break;
-        case 8:
-          is(
-            message.data.color,
-            "rgba(0, 0, 0, 0)",
-            "second window after tab switch"
-          );
-          testFinished.resolve();
-          break;
-        case 9:
-          ok(false, "too many color change notifications");
-          break;
-      }
-    }
-  );
-
-  window.messageManager.addMessageListener("Test:FocusReceived", function(
-    message
-  ) {
-    
-    if (colorChangeNotifications == 6) {
-      sendGetBackgroundRequest(false);
-    }
-  });
-
-  window.messageManager.addMessageListener("Test:ActivateEvent", function(
-    message
-  ) {
-    ok(message.data.ok, "Test:ActivateEvent");
-  });
-
-  window.messageManager.addMessageListener("Test:DeactivateEvent", function(
-    message
-  ) {
-    ok(message.data.ok, "Test:DeactivateEvent");
-  });
-
   gBrowser.selectedTab = tab1;
 
   
-  sendGetBackgroundRequest(true);
+  
+  
+  
+  
 
-  await testFinished.promise;
+  
+  let colorBrowser1 = await getBackgroundColor(browser1, true);
+  let colorBrowser2 = await getBackgroundColor(browser2, true);
+  is(colorBrowser1, "rgba(0, 0, 0, 0)", "first window initial");
+  is(colorBrowser2, "rgba(0, 0, 0, 0)", "second window initial");
+
+  
+  let otherWindow = window.open(testPage2, "", "chrome");
+  await SimpleTest.promiseFocus(otherWindow);
+  colorBrowser1 = await getBackgroundColor(browser1, true);
+  colorBrowser2 = await getBackgroundColor(browser2, true);
+  is(colorBrowser1, "rgb(255, 0, 0)", "first window lowered");
+  is(colorBrowser2, "rgb(255, 0, 0)", "second window lowered");
+
+  
+  otherWindow.close();
+  colorBrowser1 = await getBackgroundColor(browser1, true);
+  colorBrowser2 = await getBackgroundColor(browser2, true);
+  is(colorBrowser1, "rgba(0, 0, 0, 0)", "first window raised");
+  is(colorBrowser2, "rgba(0, 0, 0, 0)", "second window raised");
+
+  
+  gBrowser.selectedTab = tab2;
+  colorBrowser1 = await getBackgroundColor(browser1, false);
+  colorBrowser2 = await getBackgroundColor(browser2, false);
+  is(colorBrowser1, "rgba(0, 0, 0, 0)", "first window after tab switch");
+  is(colorBrowser2, "rgba(0, 0, 0, 0)", "second window after tab switch");
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
   otherWindow = null;
 });
 
-function sendGetBackgroundRequest(ifChanged) {
-  browser1.messageManager.sendAsyncMessage("Test:GetBackgroundColor", {
-    ifChanged,
+function getBackgroundColor(browser, ifChanged) {
+  return SpecialPowers.spawn(browser, [], () => {
+    return new Promise(resolve => {
+      let oldColor = null;
+      let timer = content.setInterval(() => {
+        let area = content.document.getElementById("area");
+        if (!area) {
+          return; 
+        }
+
+        let color = content.getComputedStyle(area).backgroundColor;
+        if (oldColor != color || !ifChanged) {
+          content.clearInterval(timer);
+          oldColor = color;
+          resolve(color);
+        }
+      }, 20);
+    });
   });
-  browser2.messageManager.sendAsyncMessage("Test:GetBackgroundColor", {
-    ifChanged,
-  });
-}
-
-function runOtherWindowTests() {
-  otherWindow = window.open(testPage2, "", "chrome");
-  waitForFocus(function() {
-    sendGetBackgroundRequest(true);
-  }, otherWindow);
-}
-
-function childFunction() {
-  let oldColor = null;
-
-  let expectingResponse = false;
-  let ifChanged = true;
-
-  addMessageListener("Test:GetBackgroundColor", function(message) {
-    expectingResponse = true;
-    ifChanged = message.data.ifChanged;
-  });
-
-  content.addEventListener("focus", function() {
-    sendAsyncMessage("Test:FocusReceived", {});
-  });
-
-  var windowGotActivate = false;
-  var windowGotDeactivate = false;
-  addEventListener("activate", function() {
-    sendAsyncMessage("Test:ActivateEvent", { ok: !windowGotActivate });
-    windowGotActivate = false;
-  });
-
-  addEventListener("deactivate", function() {
-    sendAsyncMessage("Test:DeactivateEvent", { ok: !windowGotDeactivate });
-    windowGotDeactivate = false;
-  });
-  content.addEventListener("activate", function() {
-    windowGotActivate = true;
-  });
-
-  content.addEventListener("deactivate", function() {
-    windowGotDeactivate = true;
-  });
-
-  content.setInterval(function() {
-    if (!expectingResponse) {
-      return;
-    }
-
-    let area = content.document.getElementById("area");
-    if (!area) {
-      return; 
-    }
-
-    let color = content.getComputedStyle(area).backgroundColor;
-    if (oldColor != color || !ifChanged) {
-      expectingResponse = false;
-      oldColor = color;
-      sendAsyncMessage("Test:BackgroundColorChanged", { color });
-    }
-  }, 20);
 }
