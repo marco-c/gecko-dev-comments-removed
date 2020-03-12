@@ -1,0 +1,12 @@
+
+
+
+
+#![crate_name = "swgl"]
+#![crate_type = "lib"]
+
+extern crate gleam;
+
+mod swgl_fns;
+
+pub use crate::swgl_fns::*;
