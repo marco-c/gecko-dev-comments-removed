@@ -749,7 +749,9 @@ ObjectGroup* BaselineInspector::getTemplateObjectGroup(jsbytecode* pc) {
 }
 
 JSFunction* BaselineInspector::getSingleCallee(jsbytecode* pc) {
-  MOZ_ASSERT(JSOp(*pc) == JSOp::New || JSOp(*pc) == JSOp::SuperCall);
+  MOZ_ASSERT(JSOp(*pc) == JSOp::New || JSOp(*pc) == JSOp::SuperCall ||
+             JSOp(*pc) == JSOp::SpreadNew ||
+             JSOp(*pc) == JSOp::SpreadSuperCall);
 
   const ICEntry& entry = icEntryFromPC(pc);
   ICStub* stub = entry.firstStub();
@@ -1510,6 +1512,11 @@ static MIRType GetCacheIRExpectedInputType(ICCacheIR_Monitored* stub) {
   if (reader.matchOp(CacheOp::GuardType, ValOperandId(0))) {
     ValueType type = reader.valueType();
     return MIRTypeFromValueType(JSValueType(type));
+  }
+  if (reader.matchOp(CacheOp::GuardMagicValue)) {
+    
+    
+    return MIRType::Value;
   }
 
   MOZ_ASSERT_UNREACHABLE("Unexpected instruction");
