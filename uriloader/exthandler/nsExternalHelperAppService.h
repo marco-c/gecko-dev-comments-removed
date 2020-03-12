@@ -432,8 +432,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-
-  void EnsureSuggestedFileName();
+  void EnsureTempFileExtension(const nsString& aFileExt);
 
   typedef enum { kReadError, kWriteError, kLaunchError } ErrorType;
   

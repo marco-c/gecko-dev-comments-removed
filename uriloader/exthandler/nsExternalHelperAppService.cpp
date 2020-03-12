@@ -1179,11 +1179,21 @@ nsExternalAppHandler::nsExternalAppHandler(
   AppendUTF8toUTF16(aTempFileExtension, mTempFileExtension);
 
   
+  nsAutoString originalFileExt;
+  int32_t pos = mSuggestedFileName.RFindChar('.');
+  if (pos != kNotFound) {
+    mSuggestedFileName.Right(originalFileExt,
+                             mSuggestedFileName.Length() - pos);
+  }
+
   
-  mSuggestedFileName.ReplaceChar(KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS,
-                                 '_');
-  mTempFileExtension.ReplaceChar(KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS,
-                                 '_');
+  
+  
+  
+  mSuggestedFileName.ReplaceChar(KNOWN_PATH_SEPARATORS, '_');
+  mSuggestedFileName.ReplaceChar(FILE_ILLEGAL_CHARACTERS, ' ');
+  mTempFileExtension.ReplaceChar(KNOWN_PATH_SEPARATORS, '_');
+  mTempFileExtension.ReplaceChar(FILE_ILLEGAL_CHARACTERS, ' ');
 
   
   
@@ -1205,7 +1215,22 @@ nsExternalAppHandler::nsExternalAppHandler(
   mTempFileExtension.ReplaceChar(unsafeBidiCharacters, '_');
 
   
-  EnsureSuggestedFileName();
+  
+  mSuggestedFileName.CompressWhitespace();
+  mTempFileExtension.CompressWhitespace();
+
+  
+  if (originalFileExt.FindCharInSet(
+          KNOWN_PATH_SEPARATORS FILE_ILLEGAL_CHARACTERS) != kNotFound) {
+    
+    
+    mSuggestedFileName.Append(mTempFileExtension);
+    originalFileExt = mTempFileExtension;
+  }
+
+  
+  
+  EnsureTempFileExtension(originalFileExt);
 
   mBufferSize = Preferences::GetUint("network.buffer.cache.size", 4096);
 }
@@ -1295,20 +1320,14 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
 
 
 
-void nsExternalAppHandler::EnsureSuggestedFileName() {
+void nsExternalAppHandler::EnsureTempFileExtension(const nsString& aFileExt) {
   
   
   
   if (mTempFileExtension.Length() > 1) {
     
-    nsAutoString fileExt;
-    int32_t pos = mSuggestedFileName.RFindChar('.');
-    if (pos != kNotFound)
-      mSuggestedFileName.Right(fileExt, mSuggestedFileName.Length() - pos);
-
-    
-    if (fileExt.Equals(mTempFileExtension,
-                       nsCaseInsensitiveStringComparator())) {
+    if (aFileExt.Equals(mTempFileExtension,
+                        nsCaseInsensitiveStringComparator())) {
       
       mTempFileExtension.Truncate();
     }
@@ -1484,14 +1503,9 @@ nsExternalAppHandler::GetDialogParent() {
     dialogParent = do_QueryInterface(mBrowsingContext->GetDOMWindow());
   }
   if (!dialogParent && mBrowsingContext && XRE_IsParentProcess()) {
-    WindowGlobalParent* parent =
-        mBrowsingContext->Canonical()->GetCurrentWindowGlobal();
-    if (parent) {
-      RefPtr<BrowserParent> browserParent = parent->GetBrowserParent();
-      if (browserParent && browserParent->GetOwnerElement()) {
-        dialogParent = do_QueryInterface(
-            browserParent->GetOwnerElement()->OwnerDoc()->GetWindow());
-      }
+    RefPtr<Element> element = mBrowsingContext->Top()->GetEmbedderElement();
+    if (element) {
+      dialogParent = do_QueryInterface(element->OwnerDoc()->GetWindow());
     }
   }
   return dialogParent.forget();
