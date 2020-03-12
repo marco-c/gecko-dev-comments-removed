@@ -47,6 +47,18 @@ function waitForLoginCountToReach(browser, loginCount) {
 }
 
 add_task(async function test() {
+  
+  
+  
+  is(
+    Services.prefs.getStringPref(
+      "browser.osKeyStore.unofficialBuildOnlyLogin",
+      ""
+    ),
+    "",
+    "Pref should be set to default value of empty string to start the test"
+  );
+
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
   LoginTestUtils.masterPassword.enable();
 
@@ -57,7 +69,7 @@ add_task(async function test() {
   });
   await mpDialogShown;
 
-  registerCleanupFunction(function() {
+  registerCleanupFunction(async function() {
     Services.logins.removeAllLogins();
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
