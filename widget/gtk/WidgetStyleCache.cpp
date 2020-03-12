@@ -760,7 +760,6 @@ GtkWidget* GetWidget(WidgetNodeType aAppearance) {
     
     
     if (!widget) {
-      NS_WARNING(nsPrintfCString("Missing GtkWidget %d\n", aAppearance).get());
       return nullptr;
     }
     
