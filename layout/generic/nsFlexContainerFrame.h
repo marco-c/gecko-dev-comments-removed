@@ -204,26 +204,6 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void CreateOrClearFlexContainerInfo();
-
-  
-
-
-  static void CreateFlexLineAndFlexItemInfo(
-      ComputedFlexContainerInfo& aContainerInfo,
-      const mozilla::LinkedList<FlexLine>& aLines);
-
-  static void ComputeFlexDirections(ComputedFlexContainerInfo& aContainerInfo,
-                                    const FlexboxAxisTracker& aAxisTracker);
-
-  static void UpdateFlexLineAndItemInfo(
-      ComputedFlexContainerInfo& aContainerInfo,
-      const mozilla::LinkedList<FlexLine>& aLines);
-
-  
-
-
-
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -270,6 +250,8 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
   
 
+  
+
 
 
 
@@ -300,6 +282,25 @@ class nsFlexContainerFrame final : public nsContainerFrame {
       nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis);
 
   
+
+
+
+  void CreateOrClearFlexContainerInfo();
+
+  
+
+
+  static void CreateFlexLineAndFlexItemInfo(
+      ComputedFlexContainerInfo& aContainerInfo,
+      const mozilla::LinkedList<FlexLine>& aLines);
+
+  static void ComputeFlexDirections(ComputedFlexContainerInfo& aContainerInfo,
+                                    const FlexboxAxisTracker& aAxisTracker);
+
+  static void UpdateFlexLineAndItemInfo(
+      ComputedFlexContainerInfo& aContainerInfo,
+      const mozilla::LinkedList<FlexLine>& aLines);
+
 #ifdef DEBUG
   void SanityCheckAnonymousFlexItems() const;
 #endif  
