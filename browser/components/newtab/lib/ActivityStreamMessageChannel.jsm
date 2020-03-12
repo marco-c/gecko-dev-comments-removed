@@ -4,12 +4,9 @@
 
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AboutNewTab",
+const { AboutNewTab } = ChromeUtils.import(
   "resource:///modules/AboutNewTab.jsm"
 );
-
 const { RemotePages } = ChromeUtils.import(
   "resource://gre/modules/remotepagemanager/RemotePageManagerParent.jsm"
 );
@@ -205,8 +202,7 @@ this.ActivityStreamMessageChannel = class ActivityStreamMessageChannel {
   createChannel() {
     
     const channel =
-      this.pageURL === ABOUT_NEW_TAB_URL &&
-      AboutNewTab.overridePageListener(true);
+      this.pageURL === ABOUT_NEW_TAB_URL && AboutNewTab.override(true);
     this.channel =
       channel || new RemotePages([ABOUT_HOME_URL, ABOUT_NEW_TAB_URL]);
     this.channel.addMessageListener("RemotePage:Init", this.onNewTabInit);

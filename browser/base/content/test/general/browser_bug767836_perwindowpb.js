@@ -3,13 +3,13 @@
 
 "use strict";
 
-const { AboutNewTab } = ChromeUtils.import(
-  "resource:///modules/AboutNewTab.jsm"
-);
+let gNewTabService = Cc[
+  "@mozilla.org/browser/aboutnewtab-service;1"
+].getService(Ci.nsIAboutNewTabService);
 
 async function doTest(isPrivate) {
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: isPrivate });
-  let defaultURL = AboutNewTab.newTabURL;
+  let defaultURL = gNewTabService.newTabURL;
   let newTabURL;
   let mode;
   let testURL = "http://example.com/";
@@ -30,8 +30,8 @@ async function doTest(isPrivate) {
   );
 
   
-  AboutNewTab.newTabURL = testURL;
-  is(AboutNewTab.newTabURL, testURL, "Custom newtab url is set");
+  gNewTabService.newTabURL = testURL;
+  is(gNewTabService.newTabURL, testURL, "Custom newtab url is set");
 
   
   await openNewTab(win, testURL);
@@ -42,8 +42,8 @@ async function doTest(isPrivate) {
   );
 
   
-  AboutNewTab.resetNewTabURL();
-  is(AboutNewTab.newTabURL, defaultURL, "No custom newtab url is set");
+  gNewTabService.resetNewTabURL();
+  is(gNewTabService.newTabURL, defaultURL, "No custom newtab url is set");
 
   win.gBrowser.removeTab(win.gBrowser.selectedTab);
   win.gBrowser.removeTab(win.gBrowser.selectedTab);
@@ -52,7 +52,7 @@ async function doTest(isPrivate) {
 
 add_task(async function test_newTabService() {
   
-  ok(!AboutNewTab.newTabURLOverridden, "No custom newtab url is set");
+  ok(!gNewTabService.overridden, "No custom newtab url is set");
 
   
   await doTest(false);

@@ -6,31 +6,11 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["AboutNewTabStubService"];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
@@ -38,103 +18,59 @@ const { E10SUtils } = ChromeUtils.import(
   "resource://gre/modules/E10SUtils.jsm"
 );
 
-
-
-
-
-
-
-
-
+ChromeUtils.defineModuleGetter(
+  this,
+  "AboutNewTab",
+  "resource:///modules/AboutNewTab.jsm"
+);
 
 const PREF_SEPARATE_ABOUT_WELCOME = "browser.aboutwelcome.enabled";
 const SEPARATE_ABOUT_WELCOME_URL =
   "resource://activity-stream/aboutwelcome/aboutwelcome.html";
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "isSeparateAboutWelcome",
+  PREF_SEPARATE_ABOUT_WELCOME,
+  false
+);
+
 const TOPIC_APP_QUIT = "quit-application-granted";
 const TOPIC_CONTENT_DOCUMENT_INTERACTIVE = "content-document-interactive";
 
+const ABOUT_URL = "about:newtab";
 const BASE_URL = "resource://activity-stream/";
 const ACTIVITY_STREAM_PAGES = new Set(["home", "newtab", "welcome"]);
 
+const IS_MAIN_PROCESS =
+  Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 const IS_PRIVILEGED_PROCESS =
   Services.appinfo.remoteType === E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
+
+const IS_RELEASE_OR_BETA = AppConstants.RELEASE_OR_BETA;
 
 const PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS =
   "browser.tabs.remote.separatePrivilegedContentProcess";
 const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 
-
-
-
-
-class BaseAboutNewTabService {
-  constructor() {
-    if (!AppConstants.RELEASE_OR_BETA) {
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "activityStreamDebug",
-        PREF_ACTIVITY_STREAM_DEBUG,
-        false
-      );
-    } else {
-      this.activityStreamDebug = false;
-    }
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "isSeparateAboutWelcome",
-      PREF_SEPARATE_ABOUT_WELCOME,
-      false
-    );
-
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "privilegedAboutProcessEnabled",
-      PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS,
-      false
-    );
-
-    this.classID = Components.ID("{cb36c925-3adc-49b3-b720-a5cc49d8a40e}");
-    this.QueryInterface = ChromeUtils.generateQI([
-      Ci.nsIAboutNewTabService,
-      Ci.nsIObserver,
-    ]);
+function AboutNewTabService() {
+  Services.obs.addObserver(this, TOPIC_APP_QUIT);
+  Services.prefs.addObserver(
+    PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS,
+    this
+  );
+  if (!IS_RELEASE_OR_BETA) {
+    Services.prefs.addObserver(PREF_ACTIVITY_STREAM_DEBUG, this);
   }
 
   
+  this.toggleActivityStream(true);
+  this.initialized = true;
 
-
-
-
-
-  get defaultURL() {
-    
-    
-    
-    
-    return [
-      "resource://activity-stream/prerendered/",
-      "activity-stream",
-      
-      this.activityStreamDebug && !this.privilegedAboutProcessEnabled
-        ? "-debug"
-        : "",
-      this.privilegedAboutProcessEnabled ? "-noscripts" : "",
-      ".html",
-    ].join("");
-  }
-
-  
-
-
-
-
-  get welcomeURL() {
-    if (this.isSeparateAboutWelcome) {
-      return SEPARATE_ABOUT_WELCOME_URL;
-    }
-    return this.defaultURL;
+  if (IS_MAIN_PROCESS) {
+    AboutNewTab.init();
+  } else if (IS_PRIVILEGED_PROCESS) {
+    Services.obs.addObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
   }
 }
 
@@ -143,27 +79,63 @@ class BaseAboutNewTabService {
 
 
 
-class AboutNewTabChildService extends BaseAboutNewTabService {
-  constructor() {
-    super();
-    if (this.privilegedAboutProcessEnabled) {
-      Services.obs.addObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
-      Services.obs.addObserver(this, TOPIC_APP_QUIT);
-    }
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AboutNewTabService.prototype = {
+  _newTabURL: ABOUT_URL,
+  _activityStreamEnabled: false,
+  _activityStreamDebug: false,
+  _privilegedAboutContentProcess: false,
+  _overridden: false,
+  willNotifyUser: false,
+
+  classID: Components.ID("{dfcd2adc-7867-4d3a-ba70-17501f208142}"),
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIAboutNewTabService,
+    Ci.nsIObserver,
+  ]),
 
   observe(subject, topic, data) {
     switch (topic) {
-      case TOPIC_APP_QUIT: {
-        Services.obs.removeObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
-        Services.obs.removeObserver(this, TOPIC_APP_QUIT);
-        break;
-      }
-      case TOPIC_CONTENT_DOCUMENT_INTERACTIVE: {
-        if (!this.privilegedAboutProcessEnabled || !IS_PRIVILEGED_PROCESS) {
-          return;
+      case "nsPref:changed":
+        if (data === PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS) {
+          this._privilegedAboutContentProcess = Services.prefs.getBoolPref(
+            PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS
+          );
+          this.notifyChange();
+        } else if (!IS_RELEASE_OR_BETA && data === PREF_ACTIVITY_STREAM_DEBUG) {
+          this._activityStreamDebug = Services.prefs.getBoolPref(
+            PREF_ACTIVITY_STREAM_DEBUG,
+            false
+          );
+          this.notifyChange();
         }
-
+        break;
+      case TOPIC_CONTENT_DOCUMENT_INTERACTIVE: {
         const win = subject.defaultView;
 
         
@@ -172,7 +144,7 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
         
         
         if (win === null) {
-          return;
+          break;
         }
 
         
@@ -182,19 +154,19 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
         
         
         if (!ACTIVITY_STREAM_PAGES.has(win.location.pathname)) {
-          return;
+          break;
         }
 
         
         if (
-          this.isSeparateAboutWelcome &&
+          isSeparateAboutWelcome &&
           win.location.pathname.includes("welcome")
         ) {
-          return;
+          break;
         }
 
         const onLoaded = () => {
-          const debugString = this.activityStreamDebug ? "-dev" : "";
+          const debugString = this._activityStreamDebug ? "-dev" : "";
 
           
           const scripts = [
@@ -225,9 +197,22 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
         win.addEventListener("unload", onUnloaded, { once: true });
         break;
       }
+      case TOPIC_APP_QUIT:
+        this.uninit();
+        if (IS_MAIN_PROCESS) {
+          AboutNewTab.uninit();
+        } else if (IS_PRIVILEGED_PROCESS) {
+          Services.obs.removeObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
+        }
+        break;
     }
-  }
-}
+  },
+
+  notifyChange() {
+    Services.obs.notifyObservers(null, "newtab-url-changed", this._newTabURL);
+  },
+
+  
 
 
 
@@ -235,9 +220,151 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
 
 
 
-function AboutNewTabStubService() {
-  if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT) {
-    return new BaseAboutNewTabService();
-  }
-  return new AboutNewTabChildService();
-}
+
+
+  toggleActivityStream(stateEnabled, forceState = false) {
+    if (
+      !forceState &&
+      (this.overridden || stateEnabled === this.activityStreamEnabled)
+    ) {
+      
+      return false;
+    }
+    if (stateEnabled) {
+      this._activityStreamEnabled = true;
+    } else {
+      this._activityStreamEnabled = false;
+    }
+    this._privilegedAboutContentProcess = Services.prefs.getBoolPref(
+      PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS
+    );
+    if (!IS_RELEASE_OR_BETA) {
+      this._activityStreamDebug = Services.prefs.getBoolPref(
+        PREF_ACTIVITY_STREAM_DEBUG,
+        false
+      );
+    }
+    this._newtabURL = ABOUT_URL;
+    return true;
+  },
+
+  
+
+
+
+
+
+  get defaultURL() {
+    
+    
+    
+    
+    return [
+      "resource://activity-stream/prerendered/",
+      "activity-stream",
+      
+      this._activityStreamDebug && !this._privilegedAboutContentProcess
+        ? "-debug"
+        : "",
+      this._privilegedAboutContentProcess ? "-noscripts" : "",
+      ".html",
+    ].join("");
+  },
+
+  
+
+
+
+
+  get welcomeURL() {
+    if (isSeparateAboutWelcome) {
+      return SEPARATE_ABOUT_WELCOME_URL;
+    }
+    return this.defaultURL;
+  },
+
+  get newTabURL() {
+    return this._newTabURL;
+  },
+
+  set newTabURL(aNewTabURL) {
+    let newTabURL = aNewTabURL.trim();
+    if (newTabURL === ABOUT_URL) {
+      
+      this.resetNewTabURL();
+      return;
+    } else if (newTabURL === "") {
+      newTabURL = "about:blank";
+    }
+
+    this.toggleActivityStream(false);
+    this._newTabURL = newTabURL;
+    this._overridden = true;
+    this.notifyChange();
+  },
+
+  get overridden() {
+    return this._overridden;
+  },
+
+  get activityStreamEnabled() {
+    return this._activityStreamEnabled;
+  },
+
+  get activityStreamDebug() {
+    return this._activityStreamDebug;
+  },
+
+  resetNewTabURL() {
+    this._overridden = false;
+    this._newTabURL = ABOUT_URL;
+    this.toggleActivityStream(true, true);
+    this.notifyChange();
+  },
+
+  uninit() {
+    if (!this.initialized) {
+      return;
+    }
+    Services.obs.removeObserver(this, TOPIC_APP_QUIT);
+    Services.prefs.removeObserver(
+      PREF_SEPARATE_PRIVILEGEDABOUT_CONTENT_PROCESS,
+      this
+    );
+    if (!IS_RELEASE_OR_BETA) {
+      Services.prefs.removeObserver(PREF_ACTIVITY_STREAM_DEBUG, this);
+    }
+    this.initialized = false;
+  },
+};
+
+
+
+
+
+
+
+const AboutNewTabStartupRecorder = {
+  _alreadyRecordedTopsitesPainted: false,
+  _nonDefaultStartup: false,
+
+  noteNonDefaultStartup() {
+    this._nonDefaultStartup = true;
+  },
+
+  maybeRecordTopsitesPainted(timestamp) {
+    if (this._alreadyRecordedTopsitesPainted || this._nonDefaultStartup) {
+      return;
+    }
+
+    const SCALAR_KEY = "timestamps.about_home_topsites_first_paint";
+
+    let startupInfo = Services.startup.getStartupInfo();
+    let processStartTs = startupInfo.process.getTime();
+    let delta = Math.round(timestamp - processStartTs);
+    Services.telemetry.scalarSet(SCALAR_KEY, delta);
+    this._alreadyRecordedTopsitesPainted = true;
+  },
+};
+
+const EXPORTED_SYMBOLS = ["AboutNewTabService", "AboutNewTabStartupRecorder"];

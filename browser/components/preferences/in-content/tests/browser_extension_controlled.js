@@ -7,13 +7,12 @@ ChromeUtils.defineModuleGetter(
   "ExtensionSettingsStore",
   "resource://gre/modules/ExtensionSettingsStore.jsm"
 );
-
-ChromeUtils.defineModuleGetter(
+XPCOMUtils.defineLazyServiceGetter(
   this,
-  "AboutNewTab",
-  "resource:///modules/AboutNewTab.jsm"
+  "aboutNewTabService",
+  "@mozilla.org/browser/aboutnewtab-service;1",
+  "nsIAboutNewTabService"
 );
-
 XPCOMUtils.defineLazyPreferenceGetter(this, "proxyType", PROXY_PREF);
 
 const { AddonTestUtils } = ChromeUtils.import(
@@ -468,7 +467,10 @@ add_task(async function testExtensionControlledNewTab() {
   let controlledContent = doc.getElementById("browserNewTabExtensionContent");
 
   
-  ok(!AboutNewTab.newTabURL.startsWith("moz-extension:"), "new tab is not set");
+  ok(
+    !aboutNewTabService.newTabURL.startsWith("moz-extension:"),
+    "new tab is not set"
+  );
   is(controlledContent.hidden, true, "The extension controlled row is hidden");
 
   
@@ -479,7 +481,7 @@ add_task(async function testExtensionControlledNewTab() {
   
   let controlledLabel = controlledContent.querySelector("description");
   ok(
-    AboutNewTab.newTabURL.startsWith("moz-extension:"),
+    aboutNewTabService.newTabURL.startsWith("moz-extension:"),
     "new tab url is set by extension"
   );
   Assert.deepEqual(
@@ -513,7 +515,7 @@ add_task(async function testExtensionControlledNewTab() {
 
   
   ok(
-    !AboutNewTab.newTabURL.startsWith("moz-extension:"),
+    !aboutNewTabService.newTabURL.startsWith("moz-extension:"),
     "new tab page is set back to default"
   );
   is(controlledContent.hidden, true, "The extension controlled row is shown");
