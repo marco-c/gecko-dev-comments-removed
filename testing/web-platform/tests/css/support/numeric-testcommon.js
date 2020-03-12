@@ -15,44 +15,175 @@
 
 
 
-function test_math_used(testString, expectedString, {base="123px", msg, prop="left"}={}) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function test_math_used(testString, expectedString, {msg, msgExtra, type, prop, prefix, suffix, extraStyle={}}={}) {
+    if(type === undefined) type = "length";
+    if(!prop) {
+        switch(type) {
+            case "number":     prop = "transform"; prefix="scale("; suffix=")"; break;
+            case "integer":    prop = "z-index"; extraStyle.position="absolute"; break;
+            case "length":     prop = "margin-left"; break;
+            case "angle":      prop = "transform"; prefix="rotate("; suffix=")"; break;
+            case "time":       prop = "transition-delay"; break;
+            case "resolution": prop = "image-resolution"; break;
+            case "flex":       prop = "grid-template-rows"; break;
+            default: throw Exception(`Value type '${type}' isn't capable of math.`);
+        }
+
+    }
+    _test_math({stage:'used', testString, expectedString, type, msg, msgExtra, prop, prefix, suffix, extraStyle});
+}
+
+function test_math_computed(testString, expectedString, {msg, msgExtra, type, prop, prefix, suffix, extraStyle={}}={}) {
+    if(type === undefined) type = "length";
+    if(!prop) {
+        switch(type) {
+            case "number":     prop = "transform"; prefix="scale("; suffix=")"; break;
+            case "integer":    prop = "z-index"; extraStyle.position="absolute"; break;
+            case "length":     prop = "flex-basis"; break;
+            case "angle":      prop = "transform"; prefix="rotate("; suffix=")"; break;
+            case "time":       prop = "transition-delay"; break;
+            case "resolution": prop = "image-resolution"; break;
+            case "flex":       prop = "grid-template-rows"; break;
+            default: throw Exception(`Value type '${type}' isn't capable of math.`);
+        }
+
+    }
+    _test_math({stage:'computed', testString, expectedString, type, msg, msgExtra, prop, prefix, suffix, extraStyle});
+}
+
+function test_math_specified(testString, expectedString, {msg, msgExtra, type, prop, prefix, suffix, extraStyle={}}={}) {
+    if(type === undefined) type = "length";
+    const stage = "specified";
+    if(!prop) {
+        switch(type) {
+            case "number":     prop = "transform"; prefix="scale("; suffix=")"; break;
+            case "integer":    prop = "z-index"; extraStyle.position="absolute"; break;
+            case "length":     prop = "flex-basis"; break;
+            case "angle":      prop = "transform"; prefix="rotate("; suffix=")"; break;
+            case "time":       prop = "transition-delay"; break;
+            case "resolution": prop = "image-resolution"; break;
+            case "flex":       prop = "grid-template-rows"; break;
+            default: throw Exception(`Value type '${type}' isn't capable of math.`);
+        }
+
+    }
+    
     const testEl = document.getElementById('target');
-    if(testEl == null) throw "Couldn't find #target element to run tests on."
+    if(testEl == null) throw "Couldn't find #target element to run tests on.";
+    
+    testEl.style = "";
+    for(const p in extraStyle) {
+        testEl.style[p] = extraStyle[p];
+    }
+    if(!msg) {
+        msg = `${testString} should be ${stage}-value-equivalent to ${expectedString}`;
+        if(msgExtra) msg += "; " + msgExtra;
+    }
+    let t = testString;
+    let e = expectedString;
+    if(prefix) {
+        t = prefix + t;
+        e = prefix + e;
+    }
+    if(suffix) {
+        t += suffix;
+        e += suffix;
+    }
     test(()=>{
-        testEl.style[prop] = base;
-        testEl.style[prop] = testString;
-        const usedValue = getComputedStyle(testEl)[prop];
-        assert_not_equals(usedValue, base, `${testString} isn't valid in '${prop}'; got the default value instead.`);
-        testEl.style[prop] = base;
-        testEl.style[prop] = expectedString;
-        const expectedValue = getComputedStyle(testEl)[prop];
-        assert_not_equals(expectedValue, base, `${testString} isn't valid in '${prop}'; got the default value instead.`)
-        assert_equals(usedValue, expectedValue, `${testString} and ${expectedString} serialize to the same thing in used values.`);
-    }, msg || `${testString} should be used-value-equivalent to ${expectedString}`);
+        testEl.style[prop] = '';
+        testEl.style[prop] = t;
+        const usedValue = testEl.style[prop];
+        assert_not_equals(usedValue, '', `${testString} isn't valid in '${prop}'; got the default value instead.`);
+        testEl.style[prop] = '';
+        testEl.style[prop] = e;
+        const expectedValue = testEl.style[prop];
+        assert_not_equals(expectedValue, '', `${expectedString} isn't valid in '${prop}'; got the default value instead.`)
+        assert_equals(usedValue, expectedValue, `${testString} and ${expectedString} serialize to the same thing in ${stage} values.`);
+    }, msg || `${testString} should be ${stage}-value-equivalent to ${expectedString}`);
 }
 
 
 
 
 function test_plus_infinity(testString) {
-    test_math_used(`calc(1px * ${testString})`, "calc(infinity * 1px)",
-        {msg:`${testString} should equal +Infinity.`});
+    test_math_used(testString, "calc(infinity)", {type:"number"});
 }
 function test_minus_infinity(testString) {
-    test_math_used(`calc(1px * ${testString})`, "calc(-infinity * 1px)",
-        {msg:`${testString} should equal -Infinity.`});
+    test_math_used(testString, "calc(-infinity)", {type:"number"});
 }
 function test_plus_zero(testString) {
-    test_math_used(`calc(1px / ${testString})`, "calc(infinity * 1px)",
-        {msg:`${testString} should equal 0⁺.`});
+    test_math_used(`calc(1 / ${testString})`, "calc(infinity)", {type:"number"});
 }
 function test_minus_zero(testString) {
-    test_math_used(`calc(1px / ${testString})`, "calc(-infinity * 1px)",
-        {msg:`${testString} should equal 0⁻.`});
+    test_math_used(`calc(1 / ${testString})`, "calc(-infinity)", {type:"number"});
 }
 function test_nan(testString) {
     
     
-    test_math_used(`calc(1px * ${testString})`, "calc(NaN * 1px)");
-    test_math_used(`calc(-1px * ${testString})`, "calc(NaN * 1px)");
+    test_math_used(testString, "calc(NaN)", {type:"number"});
+    test_math_used(`calc(-1 * ${testString})`, "calc(NaN)", {type:"number"});
+}
+
+
+function _test_math({stage, testEl, testString, expectedString, type, msg, msgExtra, prop, prefix, suffix, extraStyle}={}) {
+    
+    if(!testEl) testEl = document.getElementById('target');
+    if(testEl == null) throw "Couldn't find #target element to run tests on.";
+    
+    testEl.style = "";
+    for(const p in extraStyle) {
+        testEl.style[p] = extraStyle[p];
+    }
+    if(!msg) {
+        msg = `${testString} should be ${stage}-value-equivalent to ${expectedString}`;
+        if(msgExtra) msg += "; " + msgExtra;
+    }
+    let t = testString;
+    let e = expectedString;
+    if(prefix) {
+        t = prefix + t;
+        e = prefix + e;
+    }
+    if(suffix) {
+        t += suffix;
+        e += suffix;
+    }
+    test(()=>{
+        testEl.style[prop] = '';
+        testEl.style[prop] = t;
+        const usedValue = getComputedStyle(testEl)[prop];
+        assert_not_equals(usedValue, '', `${testString} isn't valid in '${prop}'; got the default value instead.`);
+        testEl.style[prop] = '';
+        testEl.style[prop] = e;
+        const expectedValue = getComputedStyle(testEl)[prop];
+        assert_not_equals(expectedValue, '', `${expectedString} isn't valid in '${prop}'; got the default value instead.`)
+        assert_equals(usedValue, expectedValue, `${testString} and ${expectedString} serialize to the same thing in ${stage} values.`);
+    }, msg || `${testString} should be ${stage}-value-equivalent to ${expectedString}`);
 }
