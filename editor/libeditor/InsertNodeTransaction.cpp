@@ -99,22 +99,25 @@ InsertNodeTransaction::DoTransaction() {
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditorBase::ToGenericNSResult(rv);
     }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "EditorBase::MarkElementDirty() failed, but ignored");
   }
 
   ErrorResult error;
   container->InsertBefore(*contentToInsert, refChild, error);
-  error.WouldReportJSException();
-  if (NS_WARN_IF(error.Failed())) {
+  if (error.Failed()) {
+    NS_WARNING("nsINode::InsertBefore() failed");
     return error.StealNSResult();
   }
 
   if (!editorBase->AsHTMLEditor() && contentToInsert->IsText()) {
     uint32_t length = contentToInsert->AsText()->TextLength();
     if (length > 0) {
-      error = MOZ_KnownLive(editorBase->AsTextEditor())
-                  ->DidInsertText(length, 0, length);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
+      nsresult rv = MOZ_KnownLive(editorBase->AsTextEditor())
+                        ->DidInsertText(length, 0, length);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("TextEditor::DidInsertText() failed");
+        return rv;
       }
     }
   }
@@ -133,15 +136,14 @@ InsertNodeTransaction::DoTransaction() {
   DebugOnly<bool> advanced = afterInsertedNode.AdvanceOffset();
   NS_WARNING_ASSERTION(advanced,
                        "Failed to advance offset after the inserted node");
-  selection->Collapse(afterInsertedNode, error);
-  if (NS_WARN_IF(error.Failed())) {
-    error.SuppressException();
-  }
+  IgnoredErrorResult ignoredError;
+  selection->Collapse(afterInsertedNode, ignoredError);
+  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                       "Selection::Collapse() failed, but ignored");
   return NS_OK;
 }
 
-NS_IMETHODIMP
-InsertNodeTransaction::UndoTransaction() {
+NS_IMETHODIMP InsertNodeTransaction::UndoTransaction() {
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mContentToInsert) ||
       NS_WARN_IF(!mPointToInsert.IsSet())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -156,10 +158,8 @@ InsertNodeTransaction::UndoTransaction() {
   
   ErrorResult error;
   mPointToInsert.GetContainer()->RemoveChild(*mContentToInsert, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING("nsINode::RemoveChild() failed");
+  return error.StealNSResult();
 }
 
 }  
