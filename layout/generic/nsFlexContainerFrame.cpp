@@ -4207,21 +4207,24 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   AutoCleanLinkedList<FlexLine> lines;
   AutoTArray<StrutInfo, 1> struts;
-  DoFlexLayout(aDesiredSize, aReflowInput, aStatus, contentBoxMainSize,
-               contentBoxCrossSize, flexContainerAscent,
-               availableBSizeForContent, lines, struts, axisTracker,
-               mainGapSize, crossGapSize, hasLineClampEllipsis, containerInfo);
+  DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
+               flexContainerAscent, availableBSizeForContent, lines, struts,
+               axisTracker, mainGapSize, crossGapSize, hasLineClampEllipsis,
+               containerInfo);
 
   if (!struts.IsEmpty()) {
     
     aStatus.Reset();
     lines.clear();
-    DoFlexLayout(aDesiredSize, aReflowInput, aStatus, contentBoxMainSize,
-                 contentBoxCrossSize, flexContainerAscent,
-                 availableBSizeForContent, lines, struts, axisTracker,
-                 mainGapSize, crossGapSize, hasLineClampEllipsis,
+    DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
+                 flexContainerAscent, availableBSizeForContent, lines, struts,
+                 axisTracker, mainGapSize, crossGapSize, hasLineClampEllipsis,
                  containerInfo);
   }
+
+  ComputeFinalSize(aDesiredSize, aReflowInput, aStatus, contentBoxMainSize,
+                   contentBoxCrossSize, flexContainerAscent, lines,
+                   axisTracker);
 
   
   if (MOZ_UNLIKELY(containerInfo)) {
@@ -4547,12 +4550,12 @@ bool nsFlexContainerFrame::IsUsedFlexBasisContent(
 }
 
 void nsFlexContainerFrame::DoFlexLayout(
-    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
-    nsReflowStatus& aStatus, nscoord& aContentBoxMainSize,
-    nscoord& aContentBoxCrossSize, nscoord& aFlexContainerAscent,
-    nscoord aAvailableBSizeForContent, LinkedList<FlexLine>& aLines,
-    nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
-    nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
+    nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
+    nscoord& aFlexContainerAscent, nscoord aAvailableBSizeForContent,
+    LinkedList<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
+    const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
+    nscoord aCrossGapSize, bool aHasLineClampEllipsis,
     ComputedFlexContainerInfo* const aContainerInfo) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   MOZ_ASSERT(aLines.isEmpty(), "Caller should pass an empty line-list!");
@@ -4780,7 +4783,6 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   
-  const nscoord blockEndContainerBP = containerBP.BEnd(flexWM);
   const LogicalSides skipSides =
       GetLogicalSkipSides(&aReflowInput) | LogicalSides(eLogicalSideBitsBEnd);
   containerBP.ApplySkipSides(skipSides);
@@ -4791,6 +4793,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   LogicalSize logSize = aAxisTracker.LogicalSizeFromFlexRelativeSizes(
       aContentBoxMainSize, aContentBoxCrossSize);
+  
   logSize += aReflowInput.ComputedLogicalBorderPadding().Size(flexWM);
   nsSize containerSize = logSize.GetPhysicalSize(flexWM);
 
@@ -4890,6 +4893,26 @@ void nsFlexContainerFrame::DoFlexLayout(
     ReflowPlaceholders(aReflowInput, placeholderKids, containerContentBoxOrigin,
                        containerSize);
   }
+}
+
+void nsFlexContainerFrame::ComputeFinalSize(
+    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+    nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
+    const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
+    LinkedList<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
+  
+  
+  const WritingMode flexWM = aReflowInput.GetWritingMode();
+  LogicalMargin containerBP = aReflowInput.ComputedLogicalBorderPadding();
+
+  
+  
+  
+  
+  const nscoord blockEndContainerBP = containerBP.BEnd(flexWM);
+  const LogicalSides skipSides =
+      GetLogicalSkipSides(&aReflowInput) | LogicalSides(eLogicalSideBitsBEnd);
+  containerBP.ApplySkipSides(skipSides);
 
   
   

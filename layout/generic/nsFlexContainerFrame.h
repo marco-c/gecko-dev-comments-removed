@@ -273,14 +273,16 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void DoFlexLayout(
-      ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
-      nsReflowStatus& aStatus, nscoord& aContentBoxMainSize,
-      nscoord& aContentBoxCrossSize, nscoord& aFlexContainerAscent,
-      nscoord aAvailableBSizeForContent, mozilla::LinkedList<FlexLine>& aLines,
-      nsTArray<StrutInfo>& aStruts, const FlexboxAxisTracker& aAxisTracker,
-      nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis,
-      ComputedFlexContainerInfo* const aContainerInfo);
+  void DoFlexLayout(const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
+                    nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
+                    nscoord& aFlexContainerAscent,
+                    nscoord aAvailableBSizeForContent,
+                    mozilla::LinkedList<FlexLine>& aLines,
+                    nsTArray<StrutInfo>& aStruts,
+                    const FlexboxAxisTracker& aAxisTracker,
+                    nscoord aMainGapSize, nscoord aCrossGapSize,
+                    bool aHasLineClampEllipsis,
+                    ComputedFlexContainerInfo* const aContainerInfo);
 
   
 
@@ -426,6 +428,27 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                            nsReflowStatus& aStatus) const;
 
   void SizeItemInCrossAxis(ReflowInput& aChildReflowInput, FlexItem& aItem);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void ComputeFinalSize(ReflowOutput& aDesiredSize,
+                        const ReflowInput& aReflowInput,
+                        nsReflowStatus& aStatus,
+                        const nscoord aContentBoxMainSize,
+                        const nscoord aContentBoxCrossSize,
+                        nscoord aFlexContainerAscent,
+                        mozilla::LinkedList<FlexLine>& aLines,
+                        const FlexboxAxisTracker& aAxisTracker);
 
   
 
