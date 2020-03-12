@@ -473,7 +473,7 @@ class ScriptStencil {
 
   
   
-  virtual bool initAtomMap(JSContext* cx, GCPtrAtom* atoms) const = 0;
+  virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
 
   
   

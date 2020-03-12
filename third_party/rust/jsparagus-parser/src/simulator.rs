@@ -4,121 +4,185 @@
 
 
 
-use crate::parser::{Action, Parser};
+use crate::parser::Parser;
 use ast::SourceLocation;
-use generated_parser::{ErrorCode, Result, TerminalId, Token, TABLES};
+use generated_parser::{
+    noop_actions, ParseError, ParserTrait, Result, StackValue, Term, TermValue, TerminalId, Token,
+    TABLES,
+};
 
-pub struct Simulator<'parser> {
+
+
+
+pub struct Simulator<'alloc, 'parser> {
+    
     sp: usize,
-    state: usize,
+    
     state_stack: &'parser [usize],
+    
+    node_stack: &'parser [TermValue<StackValue<'alloc>>],
+    
+    
+    sim_state_stack: Vec<usize>,
+    
+    
+    sim_node_stack: Vec<TermValue<()>>,
+    
+    replay_stack: Vec<TermValue<()>>,
 }
 
-impl<'parser> Simulator<'parser> {
-    pub fn new(state_stack: &'parser [usize]) -> Simulator {
+impl<'alloc, 'parser> ParserTrait<'alloc, ()> for Simulator<'alloc, 'parser> {
+    fn shift(&mut self, tv: TermValue<()>) -> Result<bool> {
+        
+        let mut state = self.state();
+        assert!(state < TABLES.shift_count);
+        let mut tv = tv;
+        loop {
+            let term_index: usize = tv.term.into();
+            assert!(term_index < TABLES.shift_width);
+            let index = state * TABLES.shift_width + term_index;
+            let goto = TABLES.shift_table[index];
+            if goto < 0 {
+                
+                
+                self.try_error_handling(tv)?;
+                tv = self.replay_stack.pop().unwrap();
+                continue;
+            }
+            state = goto as usize;
+            self.sim_state_stack.push(state);
+            self.sim_node_stack.push(tv);
+            
+            while state >= TABLES.shift_count {
+                assert!(state < TABLES.action_count + TABLES.shift_count);
+                if noop_actions(self, state)? {
+                    return Ok(true);
+                }
+                state = self.state();
+            }
+            assert!(state < TABLES.shift_count);
+            if let Some(tv_temp) = self.replay_stack.pop() {
+                tv = tv_temp;
+            } else {
+                break;
+            }
+        }
+        Ok(false)
+    }
+    fn replay(&mut self, tv: TermValue<()>) {
+        self.replay_stack.push(tv)
+    }
+    fn epsilon(&mut self, state: usize) {
+        if self.sim_state_stack.is_empty() {
+            self.sim_state_stack.push(self.state_stack[self.sp]);
+            self.sim_node_stack.push(TermValue {
+                term: self.node_stack[self.sp - 1].term,
+                value: (),
+            });
+            self.sp -= 1;
+        }
+        *self.sim_state_stack.last_mut().unwrap() = state;
+    }
+    fn pop(&mut self) -> TermValue<()> {
+        if let Some(s) = self.sim_node_stack.pop() {
+            self.sim_state_stack.pop();
+            return s;
+        }
+        let t = self.node_stack[self.sp - 1].term;
+        self.sp -= 1;
+        TermValue { term: t, value: () }
+    }
+    fn check_not_on_new_line(&self, _peek: usize) -> Result<bool> {
+        Ok(false)
+    }
+}
+
+impl<'alloc, 'parser> Simulator<'alloc, 'parser> {
+    pub fn new(
+        state_stack: &'parser [usize],
+        node_stack: &'parser [TermValue<StackValue<'alloc>>],
+    ) -> Simulator<'alloc, 'parser> {
         let sp = state_stack.len() - 1;
+        assert_eq!(state_stack.len(), node_stack.len() + 1);
         Simulator {
             sp,
-            state: state_stack[sp],
             state_stack,
+            node_stack,
+            sim_state_stack: vec![],
+            sim_node_stack: vec![],
+            replay_stack: vec![],
         }
     }
 
-    fn action(&self, t: TerminalId) -> Action {
-        Parser::action_at_state(t, self.state)
-    }
-
-    
-    
-    
-    fn reduce_all(&mut self, t: TerminalId) -> Action {
-        let mut action = self.action(t);
-        while action.is_reduce() {
-            let prod_index = action.reduce_prod_index();
-            let (num_pops, nt) = TABLES.reduce_simulator[prod_index];
-            debug_assert!((nt as usize) < TABLES.goto_width);
-            self.sp -= num_pops;
-            let prev_state = self.state_stack[self.sp];
-            let state_after =
-                TABLES.goto_table[prev_state * TABLES.goto_width + nt as usize] as usize;
-            debug_assert!(state_after < TABLES.state_count);
-            self.sp += 1;
-            self.state = state_after;
-            action = self.action(t);
-        }
-        action
-    }
-
-    pub fn write_token<'alloc>(mut self, token: &Token<'alloc>) -> Result<'alloc, ()> {
-        
-        
-        loop {
-            let action = self.reduce_all(token.terminal_id);
-            if action.is_shift() {
-                return Ok(());
-            } else {
-                assert!(action.is_error());
-                self.try_error_handling(token)?;
-            }
-        }
-    }
-
-    pub fn close(mut self, position: usize) -> Result<'static, ()> {
-        
-        loop {
-            let action = self.reduce_all(TerminalId::End);
-            if action.is_accept() {
-                assert_eq!(self.sp, 1);
-                return Ok(());
-            } else {
-                assert!(action.is_error());
-                let loc = SourceLocation::new(position, position);
-                self.try_error_handling(&Token::basic_token(TerminalId::End, loc))?;
-            }
-        }
-    }
-
-    
-    fn try_error_handling<'alloc>(&mut self, t: &Token<'alloc>) -> Result<'alloc, ()> {
-        assert!(t.terminal_id != TerminalId::ErrorToken);
-
-        let action = self.reduce_all(TerminalId::ErrorToken);
-        if action.is_shift() {
-            let error_code = TABLES.error_codes[self.state]
-                .as_ref()
-                .expect("state that accepts an ErrorToken must have an error_code")
-                .clone();
-
-            self.recover(t, error_code, action.shift_state())
+    fn state(&self) -> usize {
+        if let Some(res) = self.sim_state_stack.last() {
+            *res
         } else {
-            assert!(action.is_error());
-            Parser::parse_error(t)
+            self.state_stack[self.sp]
         }
     }
 
-    fn recover<'alloc>(
-        &mut self,
-        t: &Token<'alloc>,
-        error_code: ErrorCode,
-        next_state: usize,
-    ) -> Result<'alloc, ()> {
-        match error_code {
-            ErrorCode::Asi => {
-                if t.is_on_new_line
-                    || t.terminal_id == TerminalId::End
-                    || t.terminal_id == TerminalId::CloseBrace
-                {
-                    
-                    self.state = next_state;
-                    Ok(())
-                } else {
-                    Parser::parse_error(t)
-                }
+    pub fn write_token(&mut self, token: &Token) -> Result<()> {
+        
+        let accept = self.shift(TermValue {
+            term: Term::Terminal(token.terminal_id),
+            value: (),
+        })?;
+        
+        
+        assert!(!accept);
+        Ok(())
+    }
+
+    pub fn close(&mut self, _position: usize) -> Result<()> {
+        
+        let accept = self.shift(TermValue {
+            term: Term::Terminal(TerminalId::End),
+            value: (),
+        })?;
+        
+        
+        
+        assert!(accept);
+
+        
+        
+        assert!(self.sp + self.sim_node_stack.len() >= 1);
+        Ok(())
+    }
+
+    
+    fn try_error_handling(&mut self, t: TermValue<()>) -> Result<bool> {
+        if let Term::Terminal(term) = t.term {
+            let bogus_loc = SourceLocation::new(0, 0);
+            let token = &Token::basic_token(term, bogus_loc);
+
+            
+            
+            
+            
+            
+            if t.term == Term::Terminal(TerminalId::ErrorToken) {
+                return Err(Parser::parse_error(token));
             }
-            ErrorCode::DoWhileAsi => {
-                self.state = next_state;
-                Ok(())
+
+            
+            
+            let state = self.state();
+            assert!(state < TABLES.shift_count);
+            let error_code = TABLES.error_codes[state];
+            if let Some(error_code) = error_code {
+                Parser::recover(token, error_code)?;
+                self.replay(t);
+                self.replay(TermValue {
+                    term: Term::Terminal(TerminalId::ErrorToken),
+                    value: (),
+                });
+                return Ok(false);
             }
+            return Err(Parser::parse_error(token));
         }
+        
+        Err(ParseError::ParserCannotUnpackToken)
     }
 }

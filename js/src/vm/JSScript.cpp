@@ -5179,9 +5179,7 @@ bool RuntimeScriptData::InitFromStencil(
   js::RuntimeScriptData* data = script->sharedData();
 
   
-  if (!stencil.initAtomMap(cx, data->atoms())) {
-    return false;
-  }
+  stencil.initAtomMap(data->atoms());
 
   return ImmutableScriptData::InitFromStencil(cx, script, stencil);
 }

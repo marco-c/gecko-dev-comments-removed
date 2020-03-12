@@ -260,7 +260,7 @@ class JSLexer(jsparagus.lexer.FlatStringLexer):
             
             
             point = match.start(1)
-            if self.parser.can_accept_terminal('RegularExpressionLiteral'):
+            if self.parser.can_accept_terminal(self, 'RegularExpressionLiteral'):
                 match = REGEXP_RE.match(self.src, point)
                 if match is None:
                     if closing:

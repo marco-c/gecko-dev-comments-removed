@@ -1,5 +1,29 @@
 use crate::parser_tables_generated::TerminalId;
+use ast::source_atom_set::SourceAtomSetIndex;
 use ast::SourceLocation;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TokenValue {
+    None,
+    Number(f64),
+    Atom(SourceAtomSetIndex),
+}
+
+impl TokenValue {
+    pub fn as_number(&self) -> f64 {
+        match self {
+            Self::Number(n) => *n,
+            _ => panic!("expected number"),
+        }
+    }
+
+    pub fn as_atom(&self) -> SourceAtomSetIndex {
+        match self {
+            Self::Atom(index) => *index,
+            _ => panic!("expected atom"),
+        }
+    }
+}
 
 
 
@@ -8,7 +32,7 @@ use ast::SourceLocation;
 
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Token<'a> {
+pub struct Token {
     
     pub terminal_id: TerminalId,
 
@@ -40,16 +64,16 @@ pub struct Token<'a> {
     
     
     
-    pub value: Option<&'a str>,
+    pub value: TokenValue,
 }
 
-impl Token<'_> {
+impl Token {
     pub fn basic_token(terminal_id: TerminalId, loc: SourceLocation) -> Self {
         Self {
             terminal_id,
             loc,
             is_on_new_line: false,
-            value: None,
+            value: TokenValue::None,
         }
     }
 }
