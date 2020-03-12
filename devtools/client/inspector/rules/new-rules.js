@@ -190,20 +190,9 @@ class RulesView {
     
     
     
-    try {
-      this.contentViewerFront = await this.currentTarget.getFront(
-        "contentViewer"
-      );
-    } catch (e) {
-      console.error(e);
-    }
-
-    
-    
-    
-    if (!this.contentViewerFront) {
-      this.contentViewerFront = await this.currentTarget.getFront("emulation");
-    }
+    this.contentViewerFront = await this.currentTarget.getFront(
+      "contentViewer"
+    );
 
     if (!this.currentTarget.chrome) {
       this.store.dispatch(updatePrintSimulationHidden(false));
@@ -214,16 +203,10 @@ class RulesView {
     
     
     
-    const isEmulateColorSchemeSupported =
-      (await this.currentTarget.actorHasMethod(
-        "contentViewer",
-        "getEmulatedColorScheme"
-      )) ||
-      
-      (await this.currentTarget.actorHasMethod(
-        "emulation",
-        "getEmulatedColorScheme"
-      ));
+    const isEmulateColorSchemeSupported = await this.currentTarget.actorHasMethod(
+      "contentViewer",
+      "getEmulatedColorScheme"
+    );
 
     if (
       Services.prefs.getBoolPref(

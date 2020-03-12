@@ -137,18 +137,7 @@ class FirefoxConnector {
     await this.addListeners();
 
     
-    try {
-      this.responsiveFront = await this.currentTarget.getFront("responsive");
-    } catch (e) {
-      console.error(e);
-    }
-
-    
-    
-    
-    if (!this.responsiveFront) {
-      this.responsiveFront = await this.currentTarget.getFront("emulation");
-    }
+    this.responsiveFront = await this.currentTarget.getFront("responsive");
 
     
     if (this.actions) {
