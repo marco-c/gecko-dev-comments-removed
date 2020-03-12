@@ -18,7 +18,8 @@ class Document;
 }  
 }  
 
-typedef std::pair<nsCString, mozilla::Maybe<nsString>> FilenameTypeAndDetails;
+typedef mozilla::Pair<nsCString, mozilla::Maybe<nsString>>
+    FilenameTypeAndDetails;
 
 class nsContentSecurityUtils {
  public:

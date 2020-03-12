@@ -146,14 +146,13 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
     nsIFrame* subtreeRoot = subtrees.PopLastElement();
 
     
-    AutoTArray<std::pair<nsIFrame*, ReflowAlreadyScheduled>, 32> stack;
-    stack.AppendElement(
-        std::make_pair(subtreeRoot, ReflowAlreadyScheduled::No));
+    AutoTArray<Pair<nsIFrame*, ReflowAlreadyScheduled>, 32> stack;
+    stack.AppendElement(MakePair(subtreeRoot, ReflowAlreadyScheduled::No));
 
     do {
       auto pair = stack.PopLastElement();
-      nsIFrame* f = pair.first;
-      ReflowAlreadyScheduled alreadyScheduled = pair.second;
+      nsIFrame* f = pair.first();
+      ReflowAlreadyScheduled alreadyScheduled = pair.second();
 
       
       
@@ -187,7 +186,7 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
           nsFrameList::Enumerator childFrames(lists.CurrentList());
           for (; !childFrames.AtEnd(); childFrames.Next()) {
             nsIFrame* kid = childFrames.get();
-            stack.AppendElement(std::make_pair(kid, alreadyScheduled));
+            stack.AppendElement(MakePair(kid, alreadyScheduled));
           }
         }
       }

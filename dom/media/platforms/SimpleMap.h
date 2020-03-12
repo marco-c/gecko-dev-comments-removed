@@ -5,23 +5,22 @@
 #ifndef mozilla_SimpleMap_h
 #define mozilla_SimpleMap_h
 
+#include "mozilla/Pair.h"
 #include "nsTArray.h"
-
-#include <utility>
 
 namespace mozilla {
 
 template <typename T>
 class SimpleMap {
  public:
-  typedef std::pair<int64_t, T> Element;
+  typedef Pair<int64_t, T> Element;
 
   SimpleMap() : mMutex("SimpleMap") {}
 
   
   void Insert(int64_t aKey, const T& aValue) {
     MutexAutoLock lock(mMutex);
-    mMap.AppendElement(std::make_pair(aKey, aValue));
+    mMap.AppendElement(MakePair(aKey, aValue));
   }
   
   
@@ -30,8 +29,8 @@ class SimpleMap {
     MutexAutoLock lock(mMutex);
     for (uint32_t i = 0; i < mMap.Length(); i++) {
       Element& element = mMap[i];
-      if (element.first == aKey) {
-        aValue = element.second;
+      if (element.first() == aKey) {
+        aValue = element.second();
         mMap.RemoveElementAt(i);
         return true;
       }

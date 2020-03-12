@@ -21,38 +21,38 @@ void RemoveCharFromBlocklist(char16_t aChar,
   auto& pair = aBlocklist[pos];
 
   
-  if (pair.second == pair.first) {
+  if (pair.second() == pair.first()) {
     aBlocklist.RemoveElementAt(pos);
     return;
   }
 
   
   
-  if (aChar == pair.first) {
-    pair.first = pair.first + 1;
+  if (aChar == pair.first()) {
+    pair.first() = pair.first() + 1;
     return;
   }
 
   
-  if (aChar == pair.second) {
-    pair.second = pair.second - 1;
+  if (aChar == pair.second()) {
+    pair.second() = pair.second() - 1;
     return;
   }
 
   
   
   
-  char16_t lastElement = pair.second;
-  pair.second = aChar - 1;
-  aBlocklist.InsertElementAt(pos + 1,
-                             std::make_pair(char16_t(aChar + 1), lastElement));
+  char16_t lastElement = pair.second();
+  pair.second() = aChar - 1;
+  aBlocklist.InsertElementAt(
+      pos + 1, mozilla::MakePair(char16_t(aChar + 1), lastElement));
 }
 
 void InitializeBlocklist(nsTArray<BlocklistRange>& aBlocklist) {
   aBlocklist.Clear();
   for (auto const& arr : sBlocklistPairs) {
     
-    aBlocklist.AppendElement(std::make_pair(arr[0], arr[1]));
+    aBlocklist.AppendElement(mozilla::MakePair(arr[0], arr[1]));
   }
 
   nsAutoString extraAllowed;
@@ -73,7 +73,7 @@ void InitializeBlocklist(nsTArray<BlocklistRange>& aBlocklist) {
   if (NS_SUCCEEDED(rv) && !extraBlocked.IsEmpty()) {
     for (size_t i = 0; i < extraBlocked.Length(); ++i) {
       aBlocklist.AppendElement(
-          std::make_pair(extraBlocked[i], extraBlocked[i]));
+          mozilla::MakePair(extraBlocked[i], extraBlocked[i]));
     }
     aBlocklist.Sort(BlocklistEntryComparator());
   }

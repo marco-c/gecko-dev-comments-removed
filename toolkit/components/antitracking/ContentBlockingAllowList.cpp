@@ -129,23 +129,23 @@ nsresult ContentBlockingAllowList::Check(
 
   
   
-  std::pair<const nsLiteralCString, bool> types[] = {
+  Pair<const nsLiteralCString, bool> types[] = {
       {NS_LITERAL_CSTRING("trackingprotection"), false},
       {NS_LITERAL_CSTRING("trackingprotection-pb"), true}};
 
   for (const auto& type : types) {
-    if (aIsPrivateBrowsing != type.second) {
+    if (aIsPrivateBrowsing != type.second()) {
       continue;
     }
 
     uint32_t permissions = nsIPermissionManager::UNKNOWN_ACTION;
     nsresult rv = permManager->TestPermissionFromPrincipal(
-        aContentBlockingAllowListPrincipal, type.first, &permissions);
+        aContentBlockingAllowListPrincipal, type.first(), &permissions);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (permissions == nsIPermissionManager::ALLOW_ACTION) {
       aIsAllowListed = true;
-      LOG(("Found user override type %s", type.first.get()));
+      LOG(("Found user override type %s", type.first().get()));
       
       break;
     }

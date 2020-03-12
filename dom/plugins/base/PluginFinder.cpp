@@ -179,7 +179,7 @@ nsresult PluginFinder::DoFullSearch(const FoundPluginCallback& aCallback) {
     ReadFlashInfo();
     
     
-    nsTArray<std::pair<bool, RefPtr<nsPluginTag>>> arr;
+    nsTArray<mozilla::Pair<bool, RefPtr<nsPluginTag>>> arr;
     mFoundPluginCallback(!!mPlugins, mPlugins, arr);
     
     
@@ -602,8 +602,7 @@ nsresult PluginFinder::ScanPluginsDirectory(nsIFile* pluginsDir,
       pluginFile.FreePluginInfo(info);
 
       
-      mPluginBlocklistRequests.AppendElement(
-          std::make_pair(!seenBefore, pluginTag));
+      mPluginBlocklistRequests.AppendElement(MakePair(!seenBefore, pluginTag));
 
       
       

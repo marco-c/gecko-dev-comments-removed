@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* A namespace class for static content security utilities. */
+
+
+
+
+
+
 
 #include "nsContentSecurityUtils.h"
 
@@ -18,25 +18,25 @@
 #  include <wininet.h>
 #endif
 
-#include "js/Array.h"  // JS::GetArrayLength
+#include "js/Array.h"  
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_dom.h"
 
-/*
- * Performs a Regular Expression match, optionally returning the results.
- * This function is not safe to use OMT.
- *
- * @param aPattern      The regex pattern
- * @param aString       The string to compare against
- * @param aOnlyMatch    Whether we want match results or only a true/false for
- * the match
- * @param aMatchResult  Out param for whether or not the pattern matched
- * @param aRegexResults Out param for the matches of the regex, if requested
- * @returns nsresult indicating correct function operation or error
- */
+
+
+
+
+
+
+
+
+
+
+
+
 nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
                    bool aOnlyMatch, bool& aMatchResult,
                    nsTArray<nsString>* aRegexResults = nullptr) {
@@ -68,12 +68,12 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   }
 
   if (regexResult.isNull()) {
-    // On no match, ExecuteRegExpNoStatics returns Null
+    
     return NS_OK;
   }
   if (aOnlyMatch) {
-    // On match, with aOnlyMatch = true, ExecuteRegExpNoStatics returns boolean
-    // true.
+    
+    
     MOZ_ASSERT(regexResult.isBoolean() && regexResult.toBoolean());
     aMatchResult = true;
     return NS_OK;
@@ -82,7 +82,7 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
     return NS_ERROR_INVALID_ARG;
   }
 
-  // Now we know we have a result, and we need to extract it so we can read it.
+  
   uint32_t length;
   JS::RootedObject regexResultObj(cx, &regexResult.toObject());
   if (!JS::GetArrayLength(cx, regexResultObj, &length)) {
@@ -110,10 +110,10 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
   return NS_OK;
 }
 
-/*
- * Telemetry Events extra data only supports 80 characters, so we optimize the
- * filename to be smaller and collect more data.
- */
+
+
+
+
 nsString OptimizeFileName(const nsAString& aFileName) {
   nsString optimizedName(aFileName);
 
@@ -137,22 +137,22 @@ nsString OptimizeFileName(const nsAString& aFileName) {
   return optimizedName;
 }
 
-/*
- * FilenameToFilenameType takes a fileName and returns a Pair of strings.
- * The First entry is a string indicating the type of fileName
- * The Second entry is a Maybe<string> that can contain additional details to
- * report.
- *
- * The reason we use strings (instead of an int/enum) is because the Telemetry
- * Events API only accepts strings.
- *
- * Function is a static member of the class to enable gtests.
- */
 
-/* static */
+
+
+
+
+
+
+
+
+
+
+
+
 FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     const nsString& fileName, bool collectAdditionalExtensionData) {
-  // These are strings because the Telemetry Events API only accepts strings
+  
   static NS_NAMED_LITERAL_CSTRING(kChromeURI, "chromeuri");
   static NS_NAMED_LITERAL_CSTRING(kResourceURI, "resourceuri");
   static NS_NAMED_LITERAL_CSTRING(kBlobUri, "bloburi");
@@ -175,7 +175,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   static NS_NAMED_LITERAL_STRING(kExtensionRegex, "extensions/(.+)@(.+)!(.+)$");
   static NS_NAMED_LITERAL_STRING(kSingleFileRegex, "^[a-zA-Z0-9.?]+$");
 
-  // resource:// and chrome://
+  
   if (StringBeginsWith(fileName, NS_LITERAL_STRING("chrome://"))) {
     return FilenameTypeAndDetails(kChromeURI, Some(fileName));
   }
@@ -183,7 +183,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kResourceURI, Some(fileName));
   }
 
-  // blob: and data:
+  
   if (StringBeginsWith(fileName, NS_LITERAL_STRING("blob:"))) {
     return FilenameTypeAndDetails(kBlobUri, Nothing());
   }
@@ -192,14 +192,14 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   }
 
   if (!NS_IsMainThread()) {
-    // We can't do Regex matching off the main thread; so just report.
+    
     return FilenameTypeAndDetails(kOtherWorker, Nothing());
   }
 
-  // Extension
+  
   bool regexMatch;
   nsTArray<nsString> regexResults;
-  nsresult rv = RegexEval(kExtensionRegex, fileName, /* aOnlyMatch = */ false,
+  nsresult rv = RegexEval(kExtensionRegex, fileName,  false,
                           regexMatch, &regexResults);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
@@ -215,8 +215,8 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
                                   Some(OptimizeFileName(extensionNameAndPath)));
   }
 
-  // Single File
-  rv = RegexEval(kSingleFileRegex, fileName, /* aOnlyMatch = */ true,
+  
+  rv = RegexEval(kSingleFileRegex, fileName,  true,
                  regexMatch);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
@@ -225,8 +225,8 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
     return FilenameTypeAndDetails(kSingleString, Some(fileName));
   }
 
-  // Suspected userChromeJS script
-  rv = RegexEval(kUCJSRegex, fileName, /* aOnlyMatch = */ true, regexMatch);
+  
+  rv = RegexEval(kUCJSRegex, fileName,  true, regexMatch);
   if (NS_FAILED(rv)) {
     return FilenameTypeAndDetails(kRegexFailure, Nothing());
   }
@@ -257,14 +257,14 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
         nsCOMPtr<nsIURI> uri;
         nsresult rv = NS_NewURI(getter_AddRefs(uri), fileName);
         if (NS_FAILED(rv)) {
-          // Return after adding ://[ so we know we failed here.
+          
           return FilenameTypeAndDetails(kSanitizedWindowsURL,
                                         Some(sanitizedPathAndScheme));
         }
 
         mozilla::extensions::URLInfo url(uri);
         if (NS_IsMainThread()) {
-          // EPS is only usable on main thread
+          
           auto* policy =
               ExtensionPolicyService::GetSingleton().GetByHost(url.Host());
           if (policy) {
@@ -326,50 +326,50 @@ class EvalUsageNotificationRunnable final : public Runnable {
   uint32_t mColumnNumber;
 };
 
-// The Web Extension process pref may be toggled during a session, at which
-// point stuff may be loaded in the parent process but we would send telemetry
-// for it. Avoid this by observing if the pref ever was disabled.
+
+
+
 static bool sWebExtensionsRemoteWasEverDisabled = false;
 
-/* static */
+
 bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
                                            bool aIsSystemPrincipal,
                                            const nsAString& aScript) {
-  // This allowlist contains files that are permanently allowed to use
-  // eval()-like functions. It will ideally be restricted to files that are
-  // exclusively used in testing contexts.
+  
+  
+  
   static nsLiteralCString evalAllowlist[] = {
-      // Test-only third-party library
+      
       NS_LITERAL_CSTRING("resource://testing-common/sinon-7.2.7.js"),
-      // Test-only third-party library
+      
       NS_LITERAL_CSTRING("resource://testing-common/ajv-4.1.1.js"),
-      // Test-only utility
+      
       NS_LITERAL_CSTRING("resource://testing-common/content-task.js"),
 
-      // Tracked by Bug 1584605
+      
       NS_LITERAL_CSTRING("resource:///modules/translation/cld-worker.js"),
 
-      // require.js implements a script loader for workers. It uses eval
-      // to load the script; but injection is only possible in situations
-      // that you could otherwise control script that gets executed, so
-      // it is okay to allow eval() as it adds no additional attack surface.
-      // Bug 1584564 tracks requiring safe usage of require.js
+      
+      
+      
+      
+      
       NS_LITERAL_CSTRING("resource://gre/modules/workers/require.js"),
 
-      // The Browser Toolbox/Console
+      
       NS_LITERAL_CSTRING("debugger"),
   };
 
-  // We also permit two specific idioms in eval()-like contexts. We'd like to
-  // elminate these too; but there are in-the-wild Mozilla privileged extensions
-  // that use them.
+  
+  
+  
   static NS_NAMED_LITERAL_STRING(sAllowedEval1, "this");
   static NS_NAMED_LITERAL_STRING(sAllowedEval2,
                                  "function anonymous(\n) {\nreturn this\n}");
 
   if (MOZ_LIKELY(!aIsSystemPrincipal && !XRE_IsE10sParentProcess())) {
-    // We restrict eval in the system principal and parent process.
-    // Other uses (like web content and null principal) are allowed.
+    
+    
     return true;
   }
 
@@ -395,20 +395,20 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  // We only perform a check of this preference on the Main Thread
-  // (because a String-based preference check is only safe on Main Thread.)
-  // The consequence of this is that if a user is using userChromeJS _and_
-  // the scripts they use start a worker and that worker uses eval - we will
-  // enter this function, skip over this pref check that would normally cause
-  // us to allow the eval usage - and we will block it.
-  // While not ideal, we do not officially support userChromeJS, and hopefully
-  // the usage of workers and eval in workers is even lower that userChromeJS
-  // usage.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (NS_IsMainThread()) {
-    // This preference is a file used for autoconfiguration of Firefox
-    // by administrators. It has also been (ab)used by the userChromeJS
-    // project to run legacy-style 'extensions', some of which use eval,
-    // all of which run in the System Principal context.
+    
+    
+    
+    
     nsAutoString jsConfigPref;
     Preferences::GetString("general.config.filename", jsConfigPref);
     if (!jsConfigPref.IsEmpty()) {
@@ -436,7 +436,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  // We permit these two common idioms to get access to the global JS object
+  
   if (!aScript.IsEmpty() &&
       (aScript == sAllowedEval1 || aScript == sAllowedEval2)) {
     MOZ_LOG(
@@ -447,8 +447,8 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     return true;
   }
 
-  // Check the allowlist for the provided filename. getFilename is a helper
-  // function
+  
+  
   nsAutoCString fileName;
   uint32_t lineNumber = 0, columnNumber = 0;
   JS::AutoFilename rawScriptFilename;
@@ -457,8 +457,8 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     nsDependentCSubstring fileName_(rawScriptFilename.get(),
                                     strlen(rawScriptFilename.get()));
     ToLowerCase(fileName_);
-    // Extract file name alone if scriptFilename contains line number
-    // separated by multiple space delimiters in few cases.
+    
+    
     int32_t fileNameIndex = fileName_.FindChar(' ');
     if (fileNameIndex != -1) {
       fileName_.SetLength(fileNameIndex);
@@ -481,7 +481,7 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     }
   }
 
-  // Send Telemetry and Log to the Console
+  
   uint64_t windowID = nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(cx);
   if (NS_IsMainThread()) {
     nsContentSecurityUtils::NotifyEvalUsage(aIsSystemPrincipal, fileNameA,
@@ -492,14 +492,14 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
     NS_DispatchToMainThread(runnable);
   }
 
-  // Log to MOZ_LOG
+  
   MOZ_LOG(sCSMLog, LogLevel::Warning,
           ("Blocking eval() %s from file %s and script "
            "provided %s",
            (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
            fileName.get(), NS_ConvertUTF16toUTF8(aScript).get()));
 
-  // Maybe Crash
+  
 #ifdef DEBUG
   MOZ_CRASH_UNSAFE_PRINTF(
       "Blocking eval() %s from file %s and script provided "
@@ -511,13 +511,13 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   return true;
 }
 
-/* static */
+
 void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
                                              NS_ConvertUTF8toUTF16& aFileNameA,
                                              uint64_t aWindowID,
                                              uint32_t aLineNumber,
                                              uint32_t aColumnNumber) {
-  // Send Telemetry
+  
   Telemetry::EventID eventType =
       aIsSystemPrincipal ? Telemetry::EventID::Security_Evalusage_Systemcontext
                          : Telemetry::EventID::Security_Evalusage_Parentprocess;
@@ -525,10 +525,10 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   FilenameTypeAndDetails fileNameTypeAndDetails =
       FilenameToFilenameType(aFileNameA, false);
   mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
-  if (fileNameTypeAndDetails.second.isSome()) {
+  if (fileNameTypeAndDetails.second().isSome()) {
     extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
         NS_LITERAL_CSTRING("fileinfo"),
-        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value())}});
+        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second().value())}});
   } else {
     extra = Nothing();
   }
@@ -536,10 +536,10 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
     sTelemetryEventEnabled = true;
     Telemetry::SetEventRecordingEnabled(NS_LITERAL_CSTRING("security"), true);
   }
-  Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
-                         extra);
+  Telemetry::RecordEvent(eventType,
+                         mozilla::Some(fileNameTypeAndDetails.first()), extra);
 
-  // Report an error to console
+  
   nsCOMPtr<nsIConsoleService> console(
       do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (!console) {
@@ -572,14 +572,14 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
   rv = error->InitWithWindowID(message, aFileNameA, EmptyString(), aLineNumber,
                                aColumnNumber, nsIScriptError::errorFlag,
                                "BrowserEvalUsage", aWindowID,
-                               true /* From chrome context */);
+                               true );
   if (NS_FAILED(rv)) {
     return;
   }
   console->LogMessage(error);
 }
 
-/* static */
+
 nsresult nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
     nsIChannel* aChannel, nsIHttpChannel** aHttpChannel) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
@@ -607,24 +607,24 @@ nsresult nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
 }
 
 #if defined(DEBUG)
-/* static */
-void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
-  // We want to get to a point where all about: pages ship with a CSP. This
-  // assertion ensures that we can not deploy new about: pages without a CSP.
-  // Please note that any about: page should not use inline JS or inline CSS,
-  // and instead should load JS and CSS from an external file (*.js, *.css)
-  // which allows us to apply a strong CSP omitting 'unsafe-inline'. Ideally,
-  // the CSP allows precisely the resources that need to be loaded; but it
-  // should at least be as strong as:
-  // <meta http-equiv="Content-Security-Policy" content="default-src chrome:;
-  // object-src 'none'"/>
 
-  // Check if we should skip the assertion
+void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
   if (StaticPrefs::dom_security_skip_about_page_has_csp_assert()) {
     return;
   }
 
-  // Check if we are loading an about: URI at all
+  
   nsCOMPtr<nsIURI> documentURI = aDocument->GetDocumentURI();
   if (!documentURI->SchemeIs("about")) {
     return;
@@ -656,8 +656,8 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
     }
   }
 
-  // Check if we should skip the allowlist and assert right away. Please note
-  // that this pref can and should only be set for automated testing.
+  
+  
   if (StaticPrefs::dom_security_skip_about_page_csp_allowlist_and_assert()) {
     NS_ASSERTION(foundDefaultSrc, "about: page must have a CSP");
     return;
@@ -667,18 +667,18 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   documentURI->GetSpec(aboutSpec);
   ToLowerCase(aboutSpec);
 
-  // This allowlist contains about: pages that are permanently allowed to
-  // render without a CSP applied.
+  
+  
   static nsLiteralCString sAllowedAboutPagesWithNoCSP[] = {
-    // about:blank is a special about page -> no CSP
+    
     NS_LITERAL_CSTRING("about:blank"),
-    // about:srcdoc is a special about page -> no CSP
+    
     NS_LITERAL_CSTRING("about:srcdoc"),
-    // about:sync-log displays plain text only -> no CSP
+    
     NS_LITERAL_CSTRING("about:sync-log"),
-    // about:printpreview displays plain text only -> no CSP
+    
     NS_LITERAL_CSTRING("about:printpreview"),
-    // about:logo just displays the firefox logo -> no CSP
+    
     NS_LITERAL_CSTRING("about:logo"),
 #  if defined(ANDROID)
     NS_LITERAL_CSTRING("about:config"),
@@ -686,9 +686,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
   };
 
   for (const nsLiteralCString& allowlistEntry : sAllowedAboutPagesWithNoCSP) {
-    // please note that we perform a substring match here on purpose,
-    // so we don't have to deal and parse out all the query arguments
-    // the various about pages rely on.
+    
+    
+    
     if (StringBeginsWith(aboutSpec, allowlistEntry)) {
       return;
     }
@@ -700,10 +700,10 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must contain a CSP denying object-src");
 
   if (aDocument->IsExtensionPage()) {
-    // Extensions have two CSP policies applied where the baseline CSP
-    // includes 'unsafe-eval' and 'unsafe-inline', hence we have to skip
-    // the 'unsafe-eval' and 'unsafe-inline' assertions for extension
-    // pages.
+    
+    
+    
+    
     return;
   }
 
@@ -711,15 +711,15 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
              "about: page must not contain a CSP including 'unsafe-eval'");
 
   static nsLiteralCString sLegacyUnsafeInlineAllowList[] = {
-      // Bug 1579160: Remove 'unsafe-inline' from style-src within
-      // about:preferences
+      
+      
       NS_LITERAL_CSTRING("about:preferences"),
-      // Bug 1571346: Remove 'unsafe-inline' from style-src within about:addons
+      
       NS_LITERAL_CSTRING("about:addons"),
-      // Bug 1584485: Remove 'unsafe-inline' from style-src within:
-      // * about:newtab
-      // * about:welcome
-      // * about:home
+      
+      
+      
+      
       NS_LITERAL_CSTRING("about:newtab"),
       NS_LITERAL_CSTRING("about:welcome"),
       NS_LITERAL_CSTRING("about:home"),
@@ -727,9 +727,9 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 
   for (const nsLiteralCString& aUnsafeInlineEntry :
        sLegacyUnsafeInlineAllowList) {
-    // please note that we perform a substring match here on purpose,
-    // so we don't have to deal and parse out all the query arguments
-    // the various about pages rely on.
+    
+    
+    
     if (StringBeginsWith(aboutSpec, aUnsafeInlineEntry)) {
       return;
     }
@@ -740,32 +740,32 @@ void nsContentSecurityUtils::AssertAboutPageHasCSP(Document* aDocument) {
 }
 #endif
 
-/* static */
+
 bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
                                                     bool aIsSystemRealm) {
   static Maybe<bool> sGeneralConfigFilenameSet;
-  // If the pref is permissive, allow everything
+  
   if (StaticPrefs::security_allow_parent_unrestricted_js_loads()) {
     return true;
   }
 
-  // If we're not in the parent process allow everything (presently)
+  
   if (!XRE_IsE10sParentProcess()) {
     return true;
   }
 
-  // We only perform a check of this preference on the Main Thread
-  // (because a String-based preference check is only safe on Main Thread.)
-  // The consequence of this is that if a user is using userChromeJS _and_
-  // the scripts they use start a worker - we will enter this function,
-  // skip over this pref check that would normally cause us to allow the
-  // load - and we will block it.
-  // While not ideal, we do not officially support userChromeJS, and hopefully
-  // the usage of workers is even lower than userChromeJS usage.
+  
+  
+  
+  
+  
+  
+  
+  
   if (NS_IsMainThread()) {
-    // This preference is a file used for autoconfiguration of Firefox
-    // by administrators. It will also run in the parent process and throw
-    // assumptions about what can run where out of the window.
+    
+    
+    
     if (!sGeneralConfigFilenameSet.isSome()) {
       nsAutoString jsConfigPref;
       Preferences::GetString("general.config.filename", jsConfigPref);
@@ -799,33 +799,33 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
 
   NS_ConvertUTF8toUTF16 filenameU(aFilename);
   if (StringBeginsWith(filenameU, NS_LITERAL_STRING("chrome://"))) {
-    // If it's a chrome:// url, allow it
+    
     return true;
   }
   if (StringBeginsWith(filenameU, NS_LITERAL_STRING("resource://"))) {
-    // If it's a resource:// url, allow it
+    
     return true;
   }
   if (StringBeginsWith(filenameU, NS_LITERAL_STRING("file://"))) {
-    // We will temporarily allow all file:// URIs through for now
+    
     return true;
   }
   if (StringBeginsWith(filenameU, NS_LITERAL_STRING("jar:file://"))) {
-    // We will temporarily allow all jar URIs through for now
+    
     return true;
   }
   if (filenameU.Equals(NS_LITERAL_STRING("about:sync-log"))) {
-    // about:sync-log runs in the parent process and displays a directory
-    // listing. The listing has inline javascript that executes on load.
+    
+    
     return true;
   }
 
-  // Log to MOZ_LOG
+  
   MOZ_LOG(sCSMLog, LogLevel::Info,
           ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
            aFilename));
 
-  // Send Telemetry
+  
   FilenameTypeAndDetails fileNameTypeAndDetails =
       FilenameToFilenameType(filenameU, true);
 
@@ -833,10 +833,10 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
       Telemetry::EventID::Security_Javascriptload_Parentprocess;
 
   mozilla::Maybe<nsTArray<EventExtraEntry>> extra;
-  if (fileNameTypeAndDetails.second.isSome()) {
+  if (fileNameTypeAndDetails.second().isSome()) {
     extra = Some<nsTArray<EventExtraEntry>>({EventExtraEntry{
         NS_LITERAL_CSTRING("fileinfo"),
-        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value())}});
+        NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second().value())}});
   } else {
     extra = Nothing();
   }
@@ -845,11 +845,11 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     sTelemetryEventEnabled = true;
     Telemetry::SetEventRecordingEnabled(NS_LITERAL_CSTRING("security"), true);
   }
-  Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
-                         extra);
+  Telemetry::RecordEvent(eventType,
+                         mozilla::Some(fileNameTypeAndDetails.first()), extra);
 
-  // Presently we are not enforcing any restrictions for the script filename,
-  // we're only reporting Telemetry. In the future we will assert in debug
-  // builds and return false to prevent execution in non-debug builds.
+  
+  
+  
   return true;
 }

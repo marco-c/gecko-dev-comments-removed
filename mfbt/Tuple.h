@@ -13,7 +13,7 @@
 
 #include <utility>
 
-#include "mozilla/CompactPair.h"
+#include "mozilla/Pair.h"
 #include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
 
@@ -293,9 +293,9 @@ class Tuple<A, B> : public detail::TupleImpl<0, A, B> {
       : Impl(std::forward<AArg>(aA), std::forward<BArg>(aB)) {}
   Tuple(const Tuple& aOther) : Impl(aOther) {}
   Tuple(Tuple&& aOther) : Impl(std::move(aOther)) {}
-  explicit Tuple(const CompactPair<A, B>& aOther)
+  explicit Tuple(const Pair<A, B>& aOther)
       : Impl(aOther.first(), aOther.second()) {}
-  explicit Tuple(CompactPair<A, B>&& aOther)
+  explicit Tuple(Pair<A, B>&& aOther)
       : Impl(std::forward<A>(aOther.first()),
              std::forward<B>(aOther.second())) {}
   explicit Tuple(const std::pair<A, B>& aOther)
@@ -322,13 +322,13 @@ class Tuple<A, B> : public detail::TupleImpl<0, A, B> {
     return *this;
   }
   template <typename AArg, typename BArg>
-  Tuple& operator=(const CompactPair<AArg, BArg>& aOther) {
+  Tuple& operator=(const Pair<AArg, BArg>& aOther) {
     Impl::Head(*this) = aOther.first();
     Impl::Tail(*this).Head(*this) = aOther.second();
     return *this;
   }
   template <typename AArg, typename BArg>
-  Tuple& operator=(CompactPair<AArg, BArg>&& aOther) {
+  Tuple& operator=(Pair<AArg, BArg>&& aOther) {
     Impl::Head(*this) = std::forward<AArg>(aOther.first());
     Impl::Tail(*this).Head(*this) = std::forward<BArg>(aOther.second());
     return *this;

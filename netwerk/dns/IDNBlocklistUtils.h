@@ -6,7 +6,7 @@
 #ifndef IDNBlocklistUtils_h__
 #define IDNBlocklistUtils_h__
 
-#include <utility>
+#include "mozilla/Pair.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -14,7 +14,7 @@ namespace net {
 
 
 
-typedef std::pair<char16_t, char16_t> BlocklistRange;
+typedef mozilla::Pair<char16_t, char16_t> BlocklistRange;
 
 
 class BlocklistPairToCharComparator {
@@ -22,13 +22,13 @@ class BlocklistPairToCharComparator {
   bool Equals(const BlocklistRange& pair, char16_t needle) const {
     
     
-    return pair.first <= needle && needle <= pair.second;
+    return pair.first() <= needle && needle <= pair.second();
   }
 
   bool LessThan(const BlocklistRange& pair, char16_t needle) const {
     
     
-    return pair.second < needle;
+    return pair.second() < needle;
   }
 };
 
@@ -36,11 +36,11 @@ class BlocklistPairToCharComparator {
 class BlocklistEntryComparator {
  public:
   bool Equals(const BlocklistRange& a, const BlocklistRange& b) const {
-    return a.first == b.first && a.second == b.second;
+    return a.first() == b.first() && a.second() == b.second();
   }
 
   bool LessThan(const BlocklistRange& a, const BlocklistRange& b) const {
-    return a.first < b.first;
+    return a.first() < b.first();
   }
 };
 

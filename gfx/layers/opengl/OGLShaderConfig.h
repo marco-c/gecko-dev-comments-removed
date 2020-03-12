@@ -10,6 +10,7 @@
 #include "gfxTypes.h"
 #include "ImageTypes.h"
 #include "mozilla/Assertions.h"  
+#include "mozilla/Pair.h"        
 #include "mozilla/RefPtr.h"      
 #include "mozilla/gfx/Matrix.h"  
 #include "mozilla/gfx/Rect.h"    
