@@ -298,13 +298,13 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   bool ShouldDisplaySelection();
 
   
+  
+  bool ShouldUseMappedAspectRatio() const;
 
-
+  
   bool UpdateIntrinsicSize();
 
   
-
-
   bool UpdateIntrinsicRatio();
 
   
