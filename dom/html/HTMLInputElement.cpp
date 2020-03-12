@@ -3576,35 +3576,10 @@ nsresult HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor) {
 
 
 
-static bool IgnoreInputEventWithModifier(const WidgetInputEvent& aEvent,
+static bool IgnoreInputEventWithModifier(WidgetInputEvent* aEvent,
                                          bool ignoreControl) {
-  return (ignoreControl && aEvent.IsControl()) || aEvent.IsAltGraph() ||
-         aEvent.IsFn() || aEvent.IsOS();
-}
-
-bool HTMLInputElement::StepsInputValue(const WidgetKeyboardEvent& aEvent) const {
-  if (mType != NS_FORM_INPUT_NUMBER) {
-    return false;
-  }
-  if (aEvent.mMessage != eKeyPress) {
-    return false;
-  }
-  if (!aEvent.IsTrusted()) {
-    return false;
-  }
-  if (aEvent.mKeyCode != NS_VK_UP && aEvent.mKeyCode != NS_VK_DOWN) {
-    return false;
-  }
-  if (IgnoreInputEventWithModifier(aEvent, false)) {
-    return false;
-  }
-  if (aEvent.DefaultPrevented()) {
-    return false;
-  }
-  if (!IsMutable()) {
-    return false;
-  }
-  return true;
+  return (ignoreControl && aEvent->IsControl()) || aEvent->IsAltGraph() ||
+         aEvent->IsFn() || aEvent->IsOS();
 }
 
 nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
@@ -3731,10 +3706,26 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
   if (NS_SUCCEEDED(rv)) {
     WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
-    if (keyEvent && StepsInputValue(*keyEvent)) {
-      StepNumberControlForUserEvent(keyEvent->mKeyCode == NS_VK_UP ? 1 : -1);
-      FireChangeEventIfNeeded();
-      aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+    if (mType == NS_FORM_INPUT_NUMBER && keyEvent &&
+        keyEvent->mMessage == eKeyPress && aVisitor.mEvent->IsTrusted() &&
+        (keyEvent->mKeyCode == NS_VK_UP || keyEvent->mKeyCode == NS_VK_DOWN) &&
+        !IgnoreInputEventWithModifier(keyEvent, false)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!aVisitor.mEvent->DefaultPreventedByContent() && IsMutable()) {
+        StepNumberControlForUserEvent(keyEvent->mKeyCode == NS_VK_UP ? 1 : -1);
+        FireChangeEventIfNeeded();
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
     } else if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
       switch (aVisitor.mEvent->mMessage) {
         case eFocus: {
@@ -3947,7 +3938,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           }
           if (mType == NS_FORM_INPUT_NUMBER && aVisitor.mEvent->IsTrusted()) {
             if (mouseEvent->mButton == MouseButton::eLeft &&
-                !IgnoreInputEventWithModifier(*mouseEvent, false)) {
+                !IgnoreInputEventWithModifier(mouseEvent, false)) {
               nsNumberControlFrame* numberControlFrame =
                   do_QueryFrame(GetPrimaryFrame());
               if (numberControlFrame) {
@@ -4094,7 +4085,7 @@ void HTMLInputElement::PostHandleEventForRangeThumb(
         break;  
       }
       WidgetInputEvent* inputEvent = aVisitor.mEvent->AsInputEvent();
-      if (IgnoreInputEventWithModifier(*inputEvent, true)) {
+      if (IgnoreInputEventWithModifier(inputEvent, true)) {
         break;  
       }
       if (aVisitor.mEvent->mMessage == eMouseDown) {
