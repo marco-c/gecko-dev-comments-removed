@@ -432,7 +432,7 @@
   function jsTestDriverBrowserInit() {
     
     
-    for (var optionName of ["strict", "werror", "strict_mode"]) {
+    for (var optionName of ["werror", "strict_mode"]) {
       if (!HasOwnProperty(SpecialPowersCu, optionName))
         throw "options is out of sync with Components.utils";
 

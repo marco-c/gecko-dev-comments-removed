@@ -1,5 +1,0 @@
-
-
-
-options('strict')
-Function("function y(x,x) { return d; }")

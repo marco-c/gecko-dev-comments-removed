@@ -1,5 +1,4 @@
 
-options('strict');
 evaluate(`
     oomTest(() => {
         offThreadCompileScript("");
