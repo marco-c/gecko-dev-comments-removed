@@ -950,6 +950,15 @@ TextInputListener::HandleEvent(Event* aEvent) {
     return NS_ERROR_UNEXPECTED;
   }
 
+  {
+    auto* input = HTMLInputElement::FromNode(mTxtCtrlElement);
+    if (input && input->StepsInputValue(*widgetKeyEvent)) {
+      
+      
+      return NS_OK;
+    }
+  }
+
   KeyEventHandler* keyHandlers = ShortcutKeys::GetHandlers(
       mTxtCtrlElement->IsTextArea() ? HandlerType::eTextArea
                                     : HandlerType::eInput);

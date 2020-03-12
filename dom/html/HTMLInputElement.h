@@ -667,6 +667,10 @@ class HTMLInputElement final : public TextControlElement,
 
   Decimal GetStep() const;
 
+  
+  
+  bool StepsInputValue(const WidgetKeyboardEvent&) const;
+
   already_AddRefed<nsINodeList> GetLabels();
 
   void Select();
