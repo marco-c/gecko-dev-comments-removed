@@ -25,7 +25,6 @@
 #include "Units.h"
 
 class nsDisplayItem;
-class nsPaintedDisplayItem;
 class nsDisplayTransform;
 
 #undef None
@@ -40,7 +39,6 @@ class CompositorWidget;
 
 namespace layers {
 class CompositorBridgeParent;
-class DisplayItemCache;
 class WebRenderBridgeParent;
 class RenderRootStateManager;
 struct RenderRootDisplayListData;
@@ -413,7 +411,6 @@ class DisplayListBuilder final {
  public:
   DisplayListBuilder(wr::PipelineId aId, const wr::LayoutSize& aContentSize,
                      size_t aCapacity = 0,
-                     layers::DisplayItemCache* aCache = nullptr,
                      RenderRoot aRenderRoot = RenderRoot::Default);
   DisplayListBuilder(DisplayListBuilder&&) = default;
 
@@ -435,7 +432,6 @@ class DisplayListBuilder final {
   bool HasSubBuilder(RenderRoot aRenderRoot);
   DisplayListBuilder& CreateSubBuilder(const wr::LayoutSize& aContentSize,
                                        size_t aCapacity,
-                                       layers::DisplayItemCache* aCache,
                                        RenderRoot aRenderRoot);
   DisplayListBuilder& SubBuilder(RenderRoot aRenderRoot);
 
@@ -626,33 +622,10 @@ class DisplayListBuilder final {
                      const wr::BorderRadius& aBorderRadius,
                      const wr::BoxShadowClipMode& aClipMode);
 
-  
-
-
-
-  void StartGroup(nsPaintedDisplayItem* aItem);
-
-  
-
-
-
-  void CancelGroup();
-
-  
-
-
-
-  void FinishGroup();
-
-  
-
-
-
-
-  bool ReuseItem(nsPaintedDisplayItem* aItem);
-
-  void UpdateCacheState(const bool aPartialDisplayListBuildFailed);
-  void UpdateCacheSize();
+  void StartCachedItem(wr::ItemKey aKey);
+  bool EndCachedItem(wr::ItemKey aKey);
+  void ReuseItem(wr::ItemKey aKey);
+  void SetDisplayListCacheSize(const size_t aCacheSize);
 
   uint64_t CurrentClipChainId() const {
     return mCurrentSpaceAndClipChain.clip_chain;
@@ -758,9 +731,6 @@ class DisplayListBuilder final {
   nsTArray<wr::PipelineId> mRemotePipelineIds;
   RenderRoot mRenderRoot;
   bool mSendSubBuilderDisplayList;
-
-  layers::DisplayItemCache* mDisplayItemCache;
-  Maybe<uint16_t> mCurrentCacheSlot;
 
   friend class WebRenderAPI;
   friend class SpaceAndClipChainHelper;
