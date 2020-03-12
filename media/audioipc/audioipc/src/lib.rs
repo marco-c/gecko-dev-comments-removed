@@ -45,8 +45,6 @@ mod tokio_uds_stream;
 mod tokio_named_pipes;
 
 pub use crate::messages::{ClientMessage, ServerMessage};
-use std::env::temp_dir;
-use std::path::PathBuf;
 
 
 pub const SHM_AREA_SIZE: usize = 2 * 1024 * 1024;
@@ -186,22 +184,6 @@ unsafe fn close_platformhandle(handle: PlatformHandleType) {
 #[cfg(windows)]
 unsafe fn close_platformhandle(handle: PlatformHandleType) {
     winapi::um::handleapi::CloseHandle(handle);
-}
-
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-static SHM_ID: AtomicUsize = AtomicUsize::new(0);
-
-
-
-
-
-pub fn get_shm_path() -> PathBuf {
-    let pid = std::process::id();
-    let shm_id = SHM_ID.fetch_add(1, Ordering::SeqCst);
-    let mut temp = temp_dir();
-    temp.push(&format!("cubeb-shm-{}-{}", pid, shm_id));
-    temp
 }
 
 #[cfg(unix)]
