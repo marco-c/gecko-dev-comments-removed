@@ -147,9 +147,12 @@ class MOZ_STACK_CLASS frontend::SourceAwareCompiler {
                                 toStringEnd, len);
   }
 
-  MOZ_MUST_USE bool handleParseFailure(CompilationInfo& compilationInfo,
-                                       const Directives& newDirectives,
-                                       TokenStreamPosition& startPosition);
+  bool canHandleParseFailure(CompilationInfo& compilationInfo,
+                             const Directives& newDirectives);
+
+  void handleParseFailure(CompilationInfo& compilationInfo,
+                          const Directives& newDirectives,
+                          TokenStreamPosition& startPosition);
 };
 
 template <typename Unit>
@@ -162,6 +165,7 @@ class MOZ_STACK_CLASS frontend::ScriptCompiler
   using Base::sourceBuffer_;
 
   using Base::assertSourceParserAndScriptCreated;
+  using Base::canHandleParseFailure;
   using Base::emplaceEmitter;
   using Base::handleParseFailure;
 
@@ -292,6 +296,7 @@ class MOZ_STACK_CLASS frontend::StandaloneFunctionCompiler final
   using Base = SourceAwareCompiler<Unit>;
 
   using Base::assertSourceAndParserCreated;
+  using Base::canHandleParseFailure;
   using Base::createSourceAndParser;
   using Base::emplaceEmitter;
   using Base::handleParseFailure;
@@ -463,17 +468,30 @@ static bool EmplaceEmitter(CompilationInfo& compilationInfo,
 }
 
 template <typename Unit>
-bool frontend::SourceAwareCompiler<Unit>::handleParseFailure(
+bool frontend::SourceAwareCompiler<Unit>::canHandleParseFailure(
+    CompilationInfo& compilationInfo, const Directives& newDirectives) {
+  
+  if (parser->hadAbortedSyntaxParse()) {
+    return true;
+  }
+
+  
+  
+  return !parser->anyChars.hadError() &&
+         compilationInfo.directives != newDirectives;
+}
+
+template <typename Unit>
+void frontend::SourceAwareCompiler<Unit>::handleParseFailure(
     CompilationInfo& compilationInfo, const Directives& newDirectives,
     TokenStreamPosition& startPosition) {
+  MOZ_ASSERT(canHandleParseFailure(compilationInfo, newDirectives));
+
   if (parser->hadAbortedSyntaxParse()) {
     
     
     
     parser->clearAbortedSyntaxParse();
-  } else if (parser->anyChars.hadError() ||
-             compilationInfo.directives == newDirectives) {
-    return false;
   }
 
   
@@ -483,7 +501,6 @@ bool frontend::SourceAwareCompiler<Unit>::handleParseFailure(
   MOZ_ASSERT_IF(compilationInfo.directives.strict(), newDirectives.strict());
   MOZ_ASSERT_IF(compilationInfo.directives.asmJS(), newDirectives.asmJS());
   compilationInfo.directives = newDirectives;
-  return true;
 }
 
 template <typename Unit>
@@ -533,14 +550,13 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
     }
 
     
-    if (!handleParseFailure(compilationInfo, compilationInfo.directives,
-                            startPosition)) {
-      return nullptr;
-    }
-
     
-    compilationInfo.usedNames.reset();
-    parser->getTreeHolder().resetFunctionTree();
+    
+    
+    MOZ_ASSERT(
+        !canHandleParseFailure(compilationInfo, compilationInfo.directives));
+
+    return nullptr;
   }
 
   
@@ -637,16 +653,23 @@ FunctionNode* frontend::StandaloneFunctionCompiler<Unit>::parse(
   
 
   FunctionNode* fn;
-  do {
+  for (;;) {
     Directives newDirectives = compilationInfo.directives;
     fn = parser->standaloneFunction(fun, enclosingScope, parameterListEnd,
                                     generatorKind, asyncKind,
                                     compilationInfo.directives, &newDirectives);
-    if (!fn &&
-        !handleParseFailure(compilationInfo, newDirectives, startPosition)) {
+    if (fn) {
+      break;
+    }
+
+    
+    
+    if (!canHandleParseFailure(compilationInfo, newDirectives)) {
       return nullptr;
     }
-  } while (!fn);
+
+    handleParseFailure(compilationInfo, newDirectives, startPosition);
+  }
 
   return fn;
 }
