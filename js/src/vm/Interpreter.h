@@ -314,9 +314,10 @@ extern void UnwindAllEnvironmentsInFrame(JSContext* cx, EnvironmentIter& ei);
 extern jsbytecode* UnwindEnvironmentToTryPc(JSScript* script,
                                             const JSTryNote* tn);
 
+namespace detail {
+
 template <class TryNoteFilter>
-class MOZ_STACK_CLASS TryNoteIter {
-  RootedScript script_;
+class MOZ_STACK_CLASS BaseTryNoteIter {
   uint32_t pcOffset_;
   TryNoteFilter isTryNoteValid_;
 
@@ -431,11 +432,9 @@ class MOZ_STACK_CLASS TryNoteIter {
   }
 
  public:
-  TryNoteIter(JSContext* cx, JSScript* script, jsbytecode* pc,
-              TryNoteFilter isTryNoteValid)
-      : script_(cx, script),
-        pcOffset_(script->pcToOffset(pc)),
-        isTryNoteValid_(isTryNoteValid) {
+  BaseTryNoteIter(JSScript* script, jsbytecode* pc,
+                  TryNoteFilter isTryNoteValid)
+      : pcOffset_(script->pcToOffset(pc)), isTryNoteValid_(isTryNoteValid) {
     
     
     auto trynotes = script->trynotes();
@@ -462,16 +461,39 @@ class MOZ_STACK_CLASS TryNoteIter {
   const JSTryNote* operator*() const { return tn_; }
 };
 
+}  
+
+template <class TryNoteFilter>
+class MOZ_STACK_CLASS TryNoteIter
+    : public detail::BaseTryNoteIter<TryNoteFilter> {
+  using Base = detail::BaseTryNoteIter<TryNoteFilter>;
+
+  
+  RootedScript script_;
+
+ public:
+  TryNoteIter(JSContext* cx, JSScript* script, jsbytecode* pc,
+              TryNoteFilter isTryNoteValid)
+      : Base(script, pc, isTryNoteValid), script_(cx, script) {}
+};
+
 class NoOpTryNoteFilter {
  public:
   explicit NoOpTryNoteFilter() = default;
   bool operator()(const JSTryNote*) { return true; }
 };
 
-class TryNoteIterAll : public TryNoteIter<NoOpTryNoteFilter> {
+
+
+
+class MOZ_STACK_CLASS TryNoteIterAllNoGC
+    : public detail::BaseTryNoteIter<NoOpTryNoteFilter> {
+  using Base = detail::BaseTryNoteIter<NoOpTryNoteFilter>;
+  JS::AutoCheckCannotGC nogc;
+
  public:
-  TryNoteIterAll(JSContext* cx, JSScript* script, jsbytecode* pc)
-      : TryNoteIter(cx, script, pc, NoOpTryNoteFilter()) {}
+  TryNoteIterAllNoGC(JSScript* script, jsbytecode* pc)
+      : Base(script, pc, NoOpTryNoteFilter()) {}
 };
 
 bool HandleClosingGeneratorReturn(JSContext* cx, AbstractFramePtr frame,

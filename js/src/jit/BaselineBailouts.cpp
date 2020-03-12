@@ -485,15 +485,15 @@ static jsbytecode* GetResumePC(JSScript* script, jsbytecode* pc,
   return pc;
 }
 
-static bool HasLiveStackValueAtDepth(JSContext* cx, HandleScript script,
-                                     jsbytecode* pc, uint32_t stackSlotIndex,
+static bool HasLiveStackValueAtDepth(HandleScript script, jsbytecode* pc,
+                                     uint32_t stackSlotIndex,
                                      uint32_t stackDepth) {
   
   
 
   MOZ_ASSERT(stackSlotIndex < stackDepth);
 
-  for (TryNoteIterAll tni(cx, script, pc); !tni.done(); ++tni) {
+  for (TryNoteIterAllNoGC tni(script, pc); !tni.done(); ++tni) {
     const JSTryNote& tn = **tni;
 
     switch (tn.kind) {
@@ -1009,7 +1009,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       MOZ_ASSERT(cx->realm()->isDebuggee());
       if (iter.moreFrames() ||
-          HasLiveStackValueAtDepth(cx, script, pc, i, exprStackSlots)) {
+          HasLiveStackValueAtDepth(script, pc, i, exprStackSlots)) {
         v = iter.read();
       } else {
         iter.skip();
@@ -2000,7 +2000,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     
     case Bailout_Inevitable:
     case Bailout_DuringVMCall:
-    case Bailout_NonJSFunctionCallee:
+    case Bailout_TooManyArguments:
     case Bailout_DynamicNameNotFound:
     case Bailout_StringArgumentsEval:
     case Bailout_Overflow:
