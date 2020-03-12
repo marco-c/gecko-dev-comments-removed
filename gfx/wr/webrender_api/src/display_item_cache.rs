@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use crate::display_item::*;
 use crate::display_list::*;
@@ -68,8 +68,8 @@ impl DisplayItemCache {
     ) {
         if capacity > self.items.len() {
             self.items.resize_with(capacity, || None::<CachedDisplayItem>);
-            // println!("Current cache size: {:?}",
-            //     mem::size_of::<CachedDisplayItem>() * capacity);
+            
+            
         }
     }
 
@@ -93,7 +93,7 @@ impl DisplayItemCache {
             items: Vec::new(),
 
             #[cfg(debug_assertions)]
-            /// Used to check that there is only one item per key.
+            
             keys: HashSet::new(),
         }
     }

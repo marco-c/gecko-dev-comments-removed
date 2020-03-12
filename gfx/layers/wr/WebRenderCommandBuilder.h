@@ -255,8 +255,6 @@ class WebRenderCommandBuilder final {
   wr::RenderRootArray<wr::usize> mBuilderDumpIndex;
   wr::usize mDumpIndent;
 
-  DisplayItemCache mDisplayItemCache;
-
  public:
   
   
