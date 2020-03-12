@@ -1,13 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AntiTrackingLog.h"
 #include "AntiTrackingRedirectHeuristic.h"
 #include "AntiTrackingCommon.h"
 #include "ContentBlockingAllowList.h"
+#include "ContentBlockingUserInteraction.h"
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
@@ -54,7 +55,7 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
       !aOldChannel->IsDocument()) {
     LOG_SPEC(("Ignoring redirect for %s because it's not a document", _spec),
              aOldURI);
-    
+    // We care about document redirects only.
     return;
   }
 
@@ -73,14 +74,14 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   bool allowedByPreviousRedirect =
       oldLoadInfo->GetAllowListFutureDocumentsCreatedFromThisRedirectChain();
 
-  
-  
+  // We're looking at the first-party classification flags because we're
+  // interested in first-party redirects.
   uint32_t newClassificationFlags =
       classifiedNewChannel->GetFirstPartyClassificationFlags();
 
   if (net::UrlClassifierCommon::IsTrackingClassificationFlag(
           newClassificationFlags)) {
-    
+    // This is not a tracking -> non-tracking redirect.
     LOG_SPEC2(("Redirect for %s to %s because it's not tracking to "
                "non-tracking. Part of a chain of granted redirects: %d",
                _spec1, _spec2, allowedByPreviousRedirect),
@@ -96,7 +97,7 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   if (!net::UrlClassifierCommon::IsTrackingClassificationFlag(
           oldClassificationFlags) &&
       !allowedByPreviousRedirect) {
-    
+    // This is not a tracking -> non-tracking redirect.
     LOG_SPEC2(
         ("Redirect for %s to %s because it's not tracking to non-tracking.",
          _spec1, _spec2),
@@ -136,7 +137,7 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
     return;
   }
 
-  if (!AntiTrackingCommon::HasUserInteraction(trackingPrincipal)) {
+  if (!ContentBlockingUserInteraction::Exists(trackingPrincipal)) {
     LOG_SPEC2(("Ignoring redirect for %s to %s because no user-interaction on "
                "tracker",
                _spec1, _spec2),
@@ -190,7 +191,7 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   LOG(("Saving the permission: trackingOrigin=%s, grantedOrigin=%s",
        trackingOrigin.get(), redirectedOrigin.get()));
 
-  
+  // Any new redirect from this loadInfo must be considered as granted.
   newLoadInfo->SetAllowListFutureDocumentsCreatedFromThisRedirectChain(true);
 
   uint64_t innerWindowID;
@@ -208,7 +209,7 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
         innerWindowID);
   }
 
-  
+  // We don't care about this promise because the operation is actually sync.
   RefPtr<AntiTrackingCommon::FirstPartyStorageAccessGrantPromise> promise =
       AntiTrackingCommon::
           SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
@@ -219,4 +220,4 @@ void AntiTrackingRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   Unused << promise;
 }
 
-}  
+}  // namespace mozilla
