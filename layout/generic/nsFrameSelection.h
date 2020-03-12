@@ -615,9 +615,9 @@ class nsFrameSelection final {
 
 
 
-  nsIContent* GetLimiter() const { return mLimiter; }
+  nsIContent* GetLimiter() const { return mLimiters.mLimiter; }
 
-  nsIContent* GetAncestorLimiter() const { return mAncestorLimiter; }
+  nsIContent* GetAncestorLimiter() const { return mLimiters.mAncestorLimiter; }
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetAncestorLimiter(nsIContent* aLimiter);
 
   
@@ -878,10 +878,14 @@ class nsFrameSelection final {
   
   int32_t mBatching = 0;
 
-  
-  nsCOMPtr<nsIContent> mLimiter;
-  
-  nsCOMPtr<nsIContent> mAncestorLimiter;
+  struct Limiters {
+    
+    nsCOMPtr<nsIContent> mLimiter;
+    
+    nsCOMPtr<nsIContent> mAncestorLimiter;
+  };
+
+  Limiters mLimiters;
 
   mozilla::PresShell* mPresShell = nullptr;
   
