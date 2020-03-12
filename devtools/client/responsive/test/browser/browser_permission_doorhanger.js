@@ -29,34 +29,39 @@ function waitForGeolocationPrompt(win, browser) {
   });
 }
 
-add_task(async function() {
-  const tab = await addTab(DUMMY_URL);
-  const browser = tab.linkedBrowser;
-  const win = browser.ownerGlobal;
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(DUMMY_URL);
+    const browser = tab.linkedBrowser;
+    const win = browser.ownerGlobal;
 
-  let waitPromptPromise = waitForGeolocationPrompt(win, browser);
+    let waitPromptPromise = waitForGeolocationPrompt(win, browser);
 
-  
-  
-  await load(browser, TEST_SURL);
-  await waitPromptPromise;
+    
+    
+    await load(browser, TEST_SURL);
+    await waitPromptPromise;
 
-  ok(true, "Permission doorhanger appeared without RDM enabled");
+    ok(true, "Permission doorhanger appeared without RDM enabled");
 
-  
-  await load(browser, DUMMY_URL);
-  const { ui } = await openRDM(tab);
-  const newBrowser = ui.getViewportBrowser();
+    
+    await load(browser, DUMMY_URL);
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
 
-  waitPromptPromise = waitForGeolocationPrompt(win, newBrowser);
+    const newBrowser = ui.getViewportBrowser();
+    waitPromptPromise = waitForGeolocationPrompt(win, newBrowser);
 
-  
-  
-  await load(browser, TEST_SURL);
-  await waitPromptPromise;
+    
+    
+    await load(browser, TEST_SURL);
+    await waitPromptPromise;
 
-  ok(true, "Permission doorhanger appeared inside RDM");
+    ok(true, "Permission doorhanger appeared inside RDM");
 
-  await closeRDM(tab);
-  await removeTab(tab);
-});
+    await closeRDM(tab);
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);

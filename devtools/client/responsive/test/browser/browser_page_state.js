@@ -10,73 +10,78 @@ const DUMMY_1_URL = "http://example.com/";
 const TEST_URL = `${URL_ROOT}doc_page_state.html`;
 const DUMMY_2_URL = "http://example.com/browser/";
 
-add_task(async function() {
-  
-  
-  
-  
-  const tab = await addTab(DUMMY_1_URL);
-  const browser = tab.linkedBrowser;
-  await load(browser, TEST_URL);
-  await load(browser, DUMMY_2_URL);
+addRDMTask(
+  null,
+  async function() {
+    
+    
+    
+    
+    const tab = await addTab(DUMMY_1_URL);
+    const browser = tab.linkedBrowser;
+    await load(browser, TEST_URL);
+    await load(browser, DUMMY_2_URL);
 
-  
-  let history = await getSessionHistory(browser);
-  is(history.index - 1, 2, "At page 2 in history");
-  is(history.entries.length, 3, "3 pages in history");
-  is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
-  is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
-  is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
+    
+    let history = await getSessionHistory(browser);
+    is(history.index - 1, 2, "At page 2 in history");
+    is(history.entries.length, 3, "3 pages in history");
+    is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
+    is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
+    is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
-  
-  await back(browser);
+    
+    await back(browser);
 
-  
-  history = await getSessionHistory(browser);
-  is(history.index - 1, 1, "At page 1 in history");
-  is(history.entries.length, 3, "3 pages in history");
-  is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
-  is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
-  is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
+    
+    history = await getSessionHistory(browser);
+    is(history.index - 1, 1, "At page 1 in history");
+    is(history.entries.length, 3, "3 pages in history");
+    is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
+    is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
+    is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser);
+    
+    await BrowserTestUtils.synthesizeMouseAtCenter("body", {}, browser);
 
-  const { ui } = await openRDM(tab);
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
 
-  
-  let color = await spawnViewportTask(ui, {}, function() {
-    return content
-      .getComputedStyle(content.document.body)
-      .getPropertyValue("background-color");
-  });
-  is(
-    color,
-    "rgb(0, 128, 0)",
-    "Content is still modified from click in viewport"
-  );
+    
+    let color = await spawnViewportTask(ui, {}, function() {
+      return content
+        .getComputedStyle(content.document.body)
+        .getPropertyValue("background-color");
+    });
+    is(
+      color,
+      "rgb(0, 128, 0)",
+      "Content is still modified from click in viewport"
+    );
 
-  await closeRDM(tab);
+    await closeRDM(tab);
 
-  
-  color = await SpecialPowers.spawn(browser, [], async function() {
-    return content
-      .getComputedStyle(content.document.body)
-      .getPropertyValue("background-color");
-  });
-  is(
-    color,
-    "rgb(0, 128, 0)",
-    "Content is still modified from click in browser tab"
-  );
+    
+    color = await SpecialPowers.spawn(browser, [], async function() {
+      return content
+        .getComputedStyle(content.document.body)
+        .getPropertyValue("background-color");
+    });
+    is(
+      color,
+      "rgb(0, 128, 0)",
+      "Content is still modified from click in browser tab"
+    );
 
-  
-  history = await getSessionHistory(browser);
-  is(history.index - 1, 1, "At page 1 in history");
-  is(history.entries.length, 3, "3 pages in history");
-  is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
-  is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
-  is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
+    
+    history = await getSessionHistory(browser);
+    is(history.index - 1, 1, "At page 1 in history");
+    is(history.entries.length, 3, "3 pages in history");
+    is(history.entries[0].url, DUMMY_1_URL, "Page 0 URL matches");
+    is(history.entries[1].url, TEST_URL, "Page 1 URL matches");
+    is(history.entries[2].url, DUMMY_2_URL, "Page 2 URL matches");
 
-  await removeTab(tab);
-});
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
