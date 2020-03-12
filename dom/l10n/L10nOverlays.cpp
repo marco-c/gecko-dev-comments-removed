@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "L10nOverlays.h"
 #include "mozilla/dom/HTMLTemplateElement.h"
@@ -29,13 +29,13 @@ bool L10nOverlays::IsAttrNameLocalizable(
   uint32_t nameSpace = aElement->NodeInfo()->NamespaceID();
 
   if (nameSpace == kNameSpaceID_XHTML) {
-    
+    // Is it a globally safe attribute?
     if (nameAtom == nsGkAtoms::title || nameAtom == nsGkAtoms::aria_label ||
         nameAtom == nsGkAtoms::aria_valuetext) {
       return true;
     }
 
-    
+    // Is it allowed on this element?
     if (elemName == nsGkAtoms::a) {
       return nameAtom == nsGkAtoms::download;
     }
@@ -43,7 +43,7 @@ bool L10nOverlays::IsAttrNameLocalizable(
       return nameAtom == nsGkAtoms::download || nameAtom == nsGkAtoms::alt;
     }
     if (elemName == nsGkAtoms::input) {
-      
+      // Special case for value on HTML inputs with type button, reset, submit
       if (nameAtom == nsGkAtoms::value) {
         HTMLInputElement* input = HTMLInputElement::FromNode(aElement);
         if (input) {
@@ -82,14 +82,14 @@ bool L10nOverlays::IsAttrNameLocalizable(
     }
 
   } else if (nameSpace == kNameSpaceID_XUL) {
-    
+    // Is it a globally safe attribute?
     if (nameAtom == nsGkAtoms::accesskey || nameAtom == nsGkAtoms::aria_label ||
         nameAtom == nsGkAtoms::aria_valuetext || nameAtom == nsGkAtoms::label ||
         nameAtom == nsGkAtoms::title || nameAtom == nsGkAtoms::tooltiptext) {
       return true;
     }
 
-    
+    // Is it allowed on this element?
     if (elemName == nsGkAtoms::description) {
       return nameAtom == nsGkAtoms::value;
     }
@@ -120,7 +120,7 @@ class AttributeNameValueComparator {
  public:
   bool Equals(const AttributeNameValue& aAttribute,
               const nsAttrName* aAttrName) const {
-    return aAttrName->Equals(NS_ConvertUTF8toUTF16(aAttribute.mName));
+    return aAttrName->Equals(aAttribute.mName);
   }
 };
 
@@ -164,9 +164,10 @@ void L10nOverlays::OverlayAttributes(
   }
 
   for (auto& attribute : aTranslation.Value()) {
-    RefPtr<nsAtom> nameAtom = NS_Atomize(attribute.mName);
+    nsString attrName = attribute.mName;
+    RefPtr<nsAtom> nameAtom = NS_Atomize(attrName);
     if (IsAttrNameLocalizable(nameAtom, aToElement, &explicitlyAllowed)) {
-      NS_ConvertUTF8toUTF16 value(attribute.mValue);
+      nsString value = attribute.mValue;
       if (!aToElement->AttrValueIs(kNameSpaceID_None, nameAtom, value,
                                    eCaseMatters)) {
         aToElement->SetAttr(nameAtom, value, aRv);
@@ -193,11 +194,8 @@ void L10nOverlays::OverlayAttributes(Element* aFromElement, Element* aToElement,
       AttributeNameValue* attr = sequence.AppendElement(fallible);
       MOZ_ASSERT(info.mName->NamespaceEquals(kNameSpaceID_None),
                  "No namespaced attributes allowed.");
-      info.mName->LocalName()->ToUTF8String(attr->mName);
-
-      nsAutoString value;
-      info.mValue->ToString(value);
-      attr->mValue.Assign(NS_ConvertUTF16toUTF8(value));
+      info.mName->LocalName()->ToString(attr->mName);
+      info.mValue->ToString(attr->mValue);
     }
 
     attributes.SetValue(sequence);
@@ -260,8 +258,8 @@ already_AddRefed<nsINode> L10nOverlays::GetNodeForNamedElement(
   nsAtom* sourceChildName = sourceChild->NodeInfo()->NameAtom();
   nsAtom* translatedChildName = aTranslatedChild->NodeInfo()->NameAtom();
   if (sourceChildName != translatedChildName &&
-      
-      
+      // Create a specific exception for img vs. image mismatches,
+      // see bug 1543493
       !(translatedChildName == nsGkAtoms::img &&
         sourceChildName == nsGkAtoms::image)) {
     L10nOverlaysError error;
@@ -315,8 +313,8 @@ bool L10nOverlays::IsElementAllowed(Element* aElement) {
 
 already_AddRefed<Element> L10nOverlays::CreateSanitizedElement(
     Element* aElement, ErrorResult& aRv) {
-  
-  
+  // Start with an empty element of the same type to remove nested children
+  // and non-localizable attributes defined by the translation.
 
   nsAutoString nameSpaceURI;
   aElement->NodeInfo()->GetNamespaceURI(nameSpaceURI);
@@ -343,7 +341,7 @@ void L10nOverlays::OverlayChildNodes(DocumentFragment* aFromFragment,
     nsINode* childNode = childNodes->Item(i);
 
     if (!childNode->IsElement()) {
-      
+      // Keep the translated text node.
       continue;
     }
 
@@ -380,7 +378,7 @@ void L10nOverlays::OverlayChildNodes(DocumentFragment* aFromFragment,
         childElement->NodeInfo()->LocalName());
     aErrors.AppendElement(error);
 
-    
+    // If all else fails, replace the element with its text content.
     RefPtr<nsINode> textNode = CreateTextNodeFromTextContent(childElement, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
@@ -420,25 +418,26 @@ void L10nOverlays::TranslateElement(
   }
 }
 
-bool L10nOverlays::ContainsMarkup(const nsACString& aStr) {
-  
-  
-  
-  
-  const char* start = aStr.BeginReading();
-  const char* end = aStr.EndReading();
+bool L10nOverlays::ContainsMarkup(const nsAString& aStr) {
+  // We use our custom ContainsMarkup rather than the
+  // one from FragmentOrElement.cpp, because we don't
+  // want to trigger HTML parsing on every `Preferences & Options`
+  // type of string.
+  const char16_t* start = aStr.BeginReading();
+  const char16_t* end = aStr.EndReading();
 
   while (start != end) {
-    char c = *start;
-    if (c == '<') {
+    char16_t c = *start;
+    if (c == char16_t('<')) {
       return true;
     }
     ++start;
 
-    if (c == '&' && start != end) {
+    if (c == char16_t('&') && start != end) {
       c = *start;
-      if (c == '#' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') ||
-          (c >= 'A' && c <= 'Z')) {
+      if (c == char16_t('#') || (c >= char16_t('0') && c <= char16_t('9')) ||
+          (c >= char16_t('a') && c <= char16_t('z')) ||
+          (c >= char16_t('A') && c <= char16_t('Z'))) {
         return true;
       }
       ++start;
@@ -456,25 +455,25 @@ void L10nOverlays::TranslateElement(Element& aElement,
     NodeInfo* nodeInfo = aElement.NodeInfo();
     if (nodeInfo->NameAtom() == nsGkAtoms::title &&
         nodeInfo->NamespaceID() == kNameSpaceID_XHTML) {
-      
-      aElement.SetTextContent(NS_ConvertUTF8toUTF16(aTranslation.mValue), aRv);
+      // A special case for the HTML title element whose content must be text.
+      aElement.SetTextContent(aTranslation.mValue, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
     } else if (!ContainsMarkup(aTranslation.mValue)) {
-      
-      aElement.SetTextContent(NS_ConvertUTF8toUTF16(aTranslation.mValue), aRv);
+      // If the translation doesn't contain any markup skip the overlay logic.
+      aElement.SetTextContent(aTranslation.mValue, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
     } else {
-      
-      
+      // Else parse the translation's HTML into a DocumentFragment,
+      // sanitize it and replace the element's content.
       RefPtr<DocumentFragment> fragment =
           new DocumentFragment(aElement.OwnerDoc()->NodeInfoManager());
-      nsContentUtils::ParseFragmentHTML(
-          NS_ConvertUTF8toUTF16(aTranslation.mValue), fragment,
-          nsGkAtoms::_template, kNameSpaceID_XHTML, false, true);
+      nsContentUtils::ParseFragmentHTML(aTranslation.mValue, fragment,
+                                        nsGkAtoms::_template,
+                                        kNameSpaceID_XHTML, false, true);
       if (NS_WARN_IF(aRv.Failed())) {
         return;
       }
@@ -486,9 +485,9 @@ void L10nOverlays::TranslateElement(Element& aElement,
     }
   }
 
-  
-  
-  
+  // Even if the translation doesn't define any localizable attributes, run
+  // overlayAttributes to remove any localizable attributes set by previous
+  // translations.
   OverlayAttributes(aTranslation.mAttributes, &aElement, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;

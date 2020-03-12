@@ -113,7 +113,7 @@ class L10nOverlays {
   
 
 
-  static bool ContainsMarkup(const nsACString& aStr);
+  static bool ContainsMarkup(const nsAString& aStr);
 };
 
 }  
