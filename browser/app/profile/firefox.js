@@ -2245,14 +2245,13 @@ pref("devtools.responsive.metaViewport.enabled", true);
 
 pref("devtools.responsive.userAgent", "");
 
+pref("devtools.responsive.browserUI.enabled", false);
 
 
 #if defined(NIGHTLY_BUILD)
   pref("devtools.responsive.showUserAgentInput", true);
-  pref("devtools.responsive.browserUI.enabled", true);
 #else
   pref("devtools.responsive.showUserAgentInput", false);
-  pref("devtools.responsive.browserUI.enabled", false);
 #endif
 
 
