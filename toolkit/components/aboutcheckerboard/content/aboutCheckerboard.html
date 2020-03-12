@@ -1,13 +1,12 @@
-<?xml version="1.0"?>
 
-<!-- This Source Code Form is subject to the terms of the Mozilla Public
-   - License, v. 2.0. If a copy of the MPL was not distributed with this
-   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+
+<!DOCTYPE html>
+<html>
  <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src chrome:; object-src 'none'" />
-  <meta name="viewport" content="width=device-width"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src chrome:; object-src 'none'">
+  <meta name="viewport" content="width=device-width">
+  <meta charset="utf-8">
   <title>Checkerboard Analyzer</title>
   <link rel="stylesheet" href="chrome://global/content/aboutCheckerboard.css" type="text/css"/>
  </head>
@@ -28,28 +27,28 @@
    </tr>
   </table>
 
-  <hr/>
+  <hr>
 
   <div id="player">
    <div id="controls">
-    <button id="rewindButton">&#171;</button><!-- rewind button -->
-    <button id="stepBackButton">&lt;</button><!-- step back button -->
-    <button id="pauseButton">|| &#9654;</button><!-- pause button -->
-    <button id="stopButton">&#9744;</button><!-- stop button -->
-    <button id="stepForwardButton">&gt;</button><!-- step forward button -->
-    <button id="forwardButton">&#187;</button><!-- forward button -->
+    <button id="rewindButton">&#171;</button>
+    <button id="stepBackButton">&lt;</button>
+    <button id="pauseButton">|| &#9654;</button>
+    <button id="stopButton">&#9744;</button>
+    <button id="stepForwardButton">&gt;</button>
+    <button id="forwardButton">&#187;</button>
    </div>
    <canvas id="canvas" width="800" height="600">Canvas not supported!</canvas>
    <pre id="active">(Details for currently visible replay frame)</pre>
   </div>
 
-  <hr/>
+  <hr>
 
   <div id="raw">
-   Raw log:<br/>
+   Raw log:<br>
    <textarea id="trace" rows="10"></textarea>
    <div>
-    <input type="checkbox" id="excludePageFromZoom"/><label for="excludePageFromZoom">Exclude page coordinates from zoom calculations</label><br/>
+    <input type="checkbox" id="excludePageFromZoom"/><label for="excludePageFromZoom">Exclude page coordinates from zoom calculations</label><br>
    </div>
   </div>
  </body>
