@@ -64,7 +64,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
   
   
   
-  void OnImageIsAnimated(imgIRequest* aRequest);
+  nsresult OnImageIsAnimated(imgIRequest* aRequest);
 
   
   already_AddRefed<nsTreeColumns> Columns() const {

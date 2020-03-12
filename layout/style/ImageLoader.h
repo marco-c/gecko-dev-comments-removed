@@ -90,7 +90,7 @@ class ImageLoader final {
 
   
   
-  void Notify(imgIRequest*, int32_t aType, const nsIntRect* aData);
+  nsresult Notify(imgIRequest*, int32_t aType, const nsIntRect* aData);
 
  private:
   
@@ -155,11 +155,11 @@ class ImageLoader final {
   void RequestReflowIfNeeded(FrameSet* aFrameSet, imgIRequest* aRequest);
   void RequestReflowOnFrame(FrameWithFlags* aFwf, imgIRequest* aRequest);
 
-  void OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
-  void OnFrameComplete(imgIRequest* aRequest);
-  void OnImageIsAnimated(imgIRequest* aRequest);
-  void OnFrameUpdate(imgIRequest* aRequest);
-  void OnLoadComplete(imgIRequest* aRequest);
+  nsresult OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage);
+  nsresult OnFrameComplete(imgIRequest* aRequest);
+  nsresult OnImageIsAnimated(imgIRequest* aRequest);
+  nsresult OnFrameUpdate(imgIRequest* aRequest);
+  nsresult OnLoadComplete(imgIRequest* aRequest);
 
   
   void RemoveRequestToFrameMapping(imgIRequest* aRequest, nsIFrame* aFrame);
