@@ -1,0 +1,3 @@
+
+
+var foo = "Some string"; function bar(x) { x.trySomething(); }
