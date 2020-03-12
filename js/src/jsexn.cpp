@@ -174,6 +174,9 @@ static UniquePtr<T> CopyErrorHelper(JSContext* cx, T* report) {
   MOZ_ASSERT(cursor == (uint8_t*)copy.get() + mallocSize);
 
   
+  copy->errorMessageName = report->errorMessageName;
+
+  
   copy->sourceId = report->sourceId;
   copy->lineno = report->lineno;
   copy->column = report->column;

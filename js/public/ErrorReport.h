@@ -106,6 +106,10 @@ class JSErrorBase {
   
   unsigned errorNumber;
 
+  
+  
+  const char* errorMessageName;
+
  private:
   bool ownsMessage_ : 1;
 
@@ -116,6 +120,7 @@ class JSErrorBase {
         lineno(0),
         column(0),
         errorNumber(0),
+        errorMessageName(nullptr),
         ownsMessage_(false) {}
 
   ~JSErrorBase() { freeMessage(); }
