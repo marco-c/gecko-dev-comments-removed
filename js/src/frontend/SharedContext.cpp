@@ -168,7 +168,7 @@ FunctionBox::FunctionBox(JSContext* cx, FunctionBox* traceListHead,
     : FunctionBox(cx, traceListHead, toStringStart, compilationInfo, directives,
                   extraWarnings, generatorKind, asyncKind, fun->explicitName(),
                   fun->flags()) {
-  gcThing = fun;
+  object_ = fun;
   
   
   
