@@ -75,3 +75,6 @@ pref("security.webauth.webauthn_enable_android_fido2", false);
 
 
 pref("media.geckoview.autoplay.request", true);
+
+
+pref("media.eme.require-app-approval", true);

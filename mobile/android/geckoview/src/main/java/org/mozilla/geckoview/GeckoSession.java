@@ -735,6 +735,8 @@ public class GeckoSession implements Parcelable {
                         type = PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE;
                     } else if ("autoplay-media-audible".equals(typeString)) {
                         type = PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE;
+                    } else if ("media-key-system-access".equals(typeString)) {
+                        type = PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
                     } else {
                         throw new IllegalArgumentException("Unknown permission request: " + typeString);
                     }
@@ -5109,6 +5111,11 @@ public class GeckoSession implements Parcelable {
         
 
 
+        int PERMISSION_MEDIA_KEY_SYSTEM_ACCESS = 6;
+
+        
+
+
         interface Callback {
             
 
@@ -5359,7 +5366,8 @@ public class GeckoSession implements Parcelable {
             PermissionDelegate.PERMISSION_PERSISTENT_STORAGE,
             PermissionDelegate.PERMISSION_XR,
             PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE,
-            PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE})
+            PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE,
+            PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS})
      @interface Permission {}
 
     
