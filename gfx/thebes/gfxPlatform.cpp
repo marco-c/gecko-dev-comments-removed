@@ -2950,10 +2950,6 @@ void gfxPlatform::InitWebRenderConfig() {
         gfxConfig::IsEnabled(Feature::WEBRENDER));
   }
 
-  if (Preferences::GetBool("gfx.webrender.software", false)) {
-    gfxVars::SetUseSoftwareWebRender(gfxConfig::IsEnabled(Feature::WEBRENDER));
-  }
-
   
   
   if (gfxConfig::IsEnabled(Feature::WEBRENDER)) {
