@@ -121,12 +121,6 @@ class SyntaxParseHandler {
     
     
     
-    
-    
-    
-    
-    
-    
     NodeUnparenthesizedAssignment,
 
     
@@ -669,7 +663,6 @@ class SyntaxParseHandler {
   MOZ_MUST_USE NodeType setLikelyIIFE(NodeType node) {
     return node;  
   }
-  void setInDirectivePrologue(UnaryNodeType exprStmt) {}
 
   bool isName(Node node) {
     return node == NodeName || node == NodeArgumentsName ||

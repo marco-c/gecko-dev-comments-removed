@@ -566,8 +566,6 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
 
 
 
-
-
 #define FOR_EACH_PARSENODE_SUBCLASS(MACRO)                                   \
   MACRO(BinaryNode, BinaryNodeType, asBinary)                                \
   MACRO(AssignmentNode, AssignmentNodeType, asAssignment)                    \
@@ -884,11 +882,10 @@ inline bool ParseNode::isName(PropertyName* name) const {
 
 class UnaryNode : public ParseNode {
   ParseNode* kid_;
-  bool prologue; 
 
  public:
   UnaryNode(ParseNodeKind kind, const TokenPos& pos, ParseNode* kid)
-      : ParseNode(kind, pos), kid_(kid), prologue(false) {
+      : ParseNode(kind, pos), kid_(kid) {
     MOZ_ASSERT(is<UnaryNode>());
   }
 
@@ -913,11 +910,6 @@ class UnaryNode : public ParseNode {
 #endif
 
   ParseNode* kid() const { return kid_; }
-
-  
-  bool isDirectivePrologueMember() const { return prologue; }
-
-  void setIsDirectivePrologueMember() { prologue = true; }
 
   
 
@@ -2292,7 +2284,6 @@ inline bool ParseNode::isConstant() {
 enum ParseReportKind {
   ParseError,
   ParseWarning,
-  ParseExtraWarning,
   ParseStrictError
 };
 
