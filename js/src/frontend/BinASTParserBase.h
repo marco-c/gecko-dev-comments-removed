@@ -37,6 +37,9 @@ class BinASTParserBase : public ParserSharedBase {
     TraceListNode::TraceList(trc, traceListHead_);
     doTrace(trc);
   }
+
+  
+  ObjectBox* newObjectBox(JSObject* obj);
 };
 
 }  

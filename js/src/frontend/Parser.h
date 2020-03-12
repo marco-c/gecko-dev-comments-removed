@@ -277,18 +277,8 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
                                               JS::AutoGCRooter* parser);
 #endif  
 
- private:
-  
-  template <typename BoxT, typename ArgT>
-  BoxT* newTraceListNode(ArgT* arg);
-
-  void cleanupTraceList();
-
  public:
   CompilationInfo& getCompilationInfo() { return compilationInfo_; }
-
-  
-  ObjectBox* newObjectBox(JSObject* obj);
 };
 
 class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
