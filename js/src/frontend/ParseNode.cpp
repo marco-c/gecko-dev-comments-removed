@@ -408,25 +408,6 @@ RegExpObject* RegExpLiteral::getOrCreate(
   return compilationInfo.regExpData[index_].createRegExp(cx);
 }
 
-
-void FunctionBox::TraceList(JSTracer* trc, FunctionBox* listHead) {
-  for (FunctionBox* node = listHead; node; node = node->traceLink) {
-    node->trace(trc);
-  }
-}
-
-void FunctionBox::trace(JSTracer* trc) {
-  if (object_) {
-    TraceRoot(trc, &object_, "funbox-object");
-  }
-  if (enclosingScope_) {
-    enclosingScope_.trace(trc);
-  }
-  if (explicitName_) {
-    TraceRoot(trc, &explicitName_, "funbox-explicitName");
-  }
-}
-
 bool js::frontend::IsAnonymousFunctionDefinition(ParseNode* pn) {
   
   
