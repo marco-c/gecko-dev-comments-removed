@@ -11,14 +11,22 @@ from __future__ import absolute_import
 from subprocess import Popen, PIPE
 import os
 import platform
+import re
 import sys
 
+
+
+line_re = re.compile("#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
 
 fix_stacks = None
 
 
 def fixSymbols(line, jsonMode=False):
     global fix_stacks
+
+    result = line_re.search(line)
+    if result is None:
+        return line
 
     if not fix_stacks:
         
@@ -44,9 +52,19 @@ def fixSymbols(line, jsonMode=False):
 
         fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=None)
 
+    
+    
+    
+    
+    is_missing_newline = not line.endswith('\n')
+    if is_missing_newline:
+        line = line + "\n"
     fix_stacks.stdin.write(line)
     fix_stacks.stdin.flush()
-    return fix_stacks.stdout.readline()
+    out = fix_stacks.stdout.readline()
+    if is_missing_newline:
+        out = out[:-1]
+    return out
 
 
 if __name__ == "__main__":
