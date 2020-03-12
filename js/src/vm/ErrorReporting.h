@@ -98,9 +98,6 @@ extern void ReportCompileErrorUTF8(JSContext* cx, ErrorMetadata&& metadata,
 
 
 
-
-
-
 extern MOZ_MUST_USE bool ReportCompileWarning(
     JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
     unsigned flags, unsigned errorNumber, va_list* args);

@@ -1,5 +1,4 @@
 
-options('werror');
 
 g = newGlobal({newCompartment: true});
 g.parent = this;
