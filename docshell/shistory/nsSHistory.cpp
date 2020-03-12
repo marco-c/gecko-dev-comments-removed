@@ -32,6 +32,9 @@
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/TabGroup.h"
+#include "nsIWebNavigation.h"
+#include "nsDocShellLoadTypes.h"
+#include "base/process.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -62,6 +65,8 @@ static uint32_t gTouchCounter = 0;
 LazyLogModule gSHistoryLog("nsSHistory");
 
 #define LOG(format) MOZ_LOG(gSHistoryLog, mozilla::LogLevel::Debug, format)
+
+extern mozilla::LazyLogModule gPageCacheLog;
 
 
 
@@ -363,7 +368,7 @@ already_AddRefed<nsISHEntry> nsSHistory::GetRootSHEntry(nsISHEntry* aEntry) {
 
 
 nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
-                                        nsDocShell* aRootShell,
+                                        BrowsingContext* aBC,
                                         WalkHistoryEntriesFunc aCallback,
                                         void* aData) {
   NS_ENSURE_TRUE(aRootEntry, NS_ERROR_FAILURE);
@@ -380,24 +385,30 @@ nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
       continue;
     }
 
-    nsDocShell* childShell = nullptr;
-    if (aRootShell) {
-      
-      
-      int32_t length;
-      aRootShell->GetInProcessChildCount(&length);
-      for (int32_t i = 0; i < length; i++) {
-        nsCOMPtr<nsIDocShellTreeItem> item;
-        nsresult rv = aRootShell->GetInProcessChildAt(i, getter_AddRefs(item));
-        NS_ENSURE_SUCCESS(rv, rv);
-        nsDocShell* child = static_cast<nsDocShell*>(item.get());
-        if (child->HasHistoryEntry(childEntry)) {
-          childShell = child;
-          break;
+    BrowsingContext* childBC = nullptr;
+    if (aBC) {
+      for (BrowsingContext* child : aBC->GetChildren()) {
+        
+        
+        if (StaticPrefs::fission_sessionHistoryInParent() ||
+            XRE_IsParentProcess()) {
+          
+          
+          if (child->Canonical()->HasHistoryEntry(childEntry)) {
+            childBC = child;
+            break;
+          }
+        } else {
+          nsDocShell* docshell = static_cast<nsDocShell*>(child->GetDocShell());
+          if (docshell && docshell->HasHistoryEntry(childEntry)) {
+            childBC = docshell->GetBrowsingContext();
+            break;
+          }
         }
       }
     }
-    nsresult rv = aCallback(childEntry, childShell, i, aData);
+
+    nsresult rv = aCallback(childEntry, childBC, i, aData);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -407,32 +418,42 @@ nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
 
 struct MOZ_STACK_CLASS CloneAndReplaceData {
   CloneAndReplaceData(uint32_t aCloneID, nsISHEntry* aReplaceEntry,
-                      bool aCloneChildren, nsISHEntry* aDestTreeParent)
+                      bool aCloneChildren, nsISHEntry* aDestTreeParent,
+                      uint64_t aOtherPid,
+                      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate)
       : cloneID(aCloneID),
         cloneChildren(aCloneChildren),
         replaceEntry(aReplaceEntry),
-        destTreeParent(aDestTreeParent) {}
+        destTreeParent(aDestTreeParent),
+        otherPid(aOtherPid),
+        entriesToUpdate(aEntriesToUpdate) {}
 
   uint32_t cloneID;
   bool cloneChildren;
   nsISHEntry* replaceEntry;
   nsISHEntry* destTreeParent;
   nsCOMPtr<nsISHEntry> resultEntry;
+  uint64_t otherPid;
+  
+  nsTArray<EntriesAndBrowsingContextData>* entriesToUpdate;
 };
 
-
 nsresult nsSHistory::CloneAndReplaceChild(nsISHEntry* aEntry,
-                                          nsDocShell* aShell,
-                                          int32_t aEntryIndex, void* aData) {
+                                          BrowsingContext* aOwnerBC,
+                                          int32_t aChildIndex, void* aData) {
+  MOZ_ASSERT(
+      XRE_IsParentProcess() || !StaticPrefs::fission_sessionHistoryInParent(),
+      "We should be in the parent process, or SH pref should be off");
   nsCOMPtr<nsISHEntry> dest;
 
   CloneAndReplaceData* data = static_cast<CloneAndReplaceData*>(aData);
   uint32_t cloneID = data->cloneID;
   nsISHEntry* replaceEntry = data->replaceEntry;
+  base::ProcessId otherPid = data->otherPid;
 
   if (!aEntry) {
     if (data->destTreeParent) {
-      data->destTreeParent->AddChild(nullptr, aEntryIndex);
+      data->destTreeParent->AddChild(nullptr, aChildIndex);
     }
     return NS_OK;
   }
@@ -453,47 +474,108 @@ nsresult nsSHistory::CloneAndReplaceChild(nsISHEntry* aEntry,
   if (srcID != cloneID || data->cloneChildren) {
     
     CloneAndReplaceData childData(cloneID, replaceEntry, data->cloneChildren,
-                                  dest);
-    rv = WalkHistoryEntries(aEntry, aShell, CloneAndReplaceChild, &childData);
+                                  dest, otherPid, data->entriesToUpdate);
+    rv = nsSHistory::WalkHistoryEntries(aEntry, aOwnerBC, CloneAndReplaceChild,
+                                        &childData);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (srcID != cloneID && aShell) {
-    aShell->SwapHistoryEntries(aEntry, dest);
+  if (srcID != cloneID && aOwnerBC) {
+    nsSHistory::HandleEntriesToSwapInDocShell(aOwnerBC, aEntry, dest,
+                                              data->entriesToUpdate, otherPid);
   }
 
   if (data->destTreeParent) {
-    data->destTreeParent->AddChild(dest, aEntryIndex);
+    data->destTreeParent->AddChild(dest, aChildIndex);
   }
-
   data->resultEntry = dest;
   return rv;
 }
 
 
-nsresult nsSHistory::CloneAndReplace(nsISHEntry* aSrcEntry,
-                                     nsDocShell* aSrcShell, uint32_t aCloneID,
-                                     nsISHEntry* aReplaceEntry,
-                                     bool aCloneChildren,
-                                     nsISHEntry** aResultEntry) {
-  NS_ENSURE_ARG_POINTER(aResultEntry);
+nsresult nsSHistory::CloneAndReplace(
+    nsISHEntry* aSrcEntry, BrowsingContext* aOwnerBC, uint32_t aCloneID,
+    nsISHEntry* aReplaceEntry, bool aCloneChildren, nsISHEntry** aDestEntry,
+    uint64_t aOtherPid,
+    nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate) {
+  NS_ENSURE_ARG_POINTER(aDestEntry);
   NS_ENSURE_TRUE(aReplaceEntry, NS_ERROR_FAILURE);
-
-  CloneAndReplaceData data(aCloneID, aReplaceEntry, aCloneChildren, nullptr);
-  nsresult rv = CloneAndReplaceChild(aSrcEntry, aSrcShell, 0, &data);
-
-  data.resultEntry.swap(*aResultEntry);
+  CloneAndReplaceData data(aCloneID, aReplaceEntry, aCloneChildren, nullptr,
+                           aOtherPid, aEntriesToUpdate);
+  nsresult rv = CloneAndReplaceChild(aSrcEntry, aOwnerBC, 0, &data);
+  data.resultEntry.swap(*aDestEntry);
   return rv;
 }
 
+NS_IMETHODIMP
+nsSHistory::AddChildSHEntryHelper(nsISHEntry* aCloneRef, nsISHEntry* aNewEntry,
+                                  BrowsingContext* aBC, bool aCloneChildren) {
+  nsCOMPtr<nsISHEntry> child;
+  int32_t entriesPurged;
+  nsresult rv = AddChildSHEntryHelper(
+      aCloneRef, aNewEntry, aBC, aCloneChildren,
+      0 
+
+      ,
+      nullptr 
+
+
+      ,
+      &entriesPurged 
+
+      ,
+      getter_AddRefs(child));
+  if (NS_SUCCEEDED(rv)) {
+    child->SetDocshellID(aBC->GetHistoryID());
+  }
+  return rv;
+}
+
+nsresult nsSHistory::AddChildSHEntryHelper(
+    nsISHEntry* aCloneRef, nsISHEntry* aNewEntry, BrowsingContext* aBC,
+    bool aCloneChildren, uint64_t aOtherPid,
+    nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
+    int32_t* aEntriesPurged, nsISHEntry** aNextEntry) {
+  
+
+
+
+
+
+
+  nsCOMPtr<nsISHEntry> currentHE;
+  int32_t index = mIndex;
+  if (index < 0) {
+    return NS_ERROR_FAILURE;
+  }
+
+  GetEntryAtIndex(index, getter_AddRefs(currentHE));
+  NS_ENSURE_TRUE(currentHE, NS_ERROR_FAILURE);
+
+  nsresult rv = NS_OK;
+  uint32_t cloneID = aCloneRef->GetID();
+  rv = nsSHistory::CloneAndReplace(currentHE, aBC, cloneID, aNewEntry,
+                                   aCloneChildren, aNextEntry, aOtherPid,
+                                   aEntriesToUpdate);
+  if (NS_SUCCEEDED(rv)) {
+    rv = AddEntry(*aNextEntry, true, aEntriesPurged);
+  }
+  return rv;
+}
 
 nsresult nsSHistory::SetChildHistoryEntry(nsISHEntry* aEntry,
-                                          nsDocShell* aShell,
+                                          BrowsingContext* aBC,
                                           int32_t aEntryIndex, void* aData) {
+  MOZ_ASSERT(
+      XRE_IsParentProcess() || !StaticPrefs::fission_sessionHistoryInParent(),
+      "We should be in the parent process, or 'SH in parent' pref should be "
+      "off");
   SwapEntriesData* data = static_cast<SwapEntriesData*>(aData);
-  nsDocShell* ignoreShell = data->ignoreShell;
+  uint64_t otherPid = data->otherPid;
+  MOZ_ASSERT(data->entriesToUpdate || otherPid == 0,
+             "entriesToUpdate can't be null if we were called over IPC");
 
-  if (!aShell || aShell == ignoreShell) {
+  if (!aBC || aBC == data->ignoreBC) {
     return NS_OK;
   }
 
@@ -533,11 +615,125 @@ nsresult nsSHistory::SetChildHistoryEntry(nsISHEntry* aEntry,
     destEntry = destTreeRoot;
   }
 
-  aShell->SwapHistoryEntries(aEntry, destEntry);
+  nsSHistory::HandleEntriesToSwapInDocShell(aBC, aEntry, destEntry,
+                                            data->entriesToUpdate, otherPid);
+  
+  SwapEntriesData childData = {data->ignoreBC, destTreeRoot, destEntry,
+                               otherPid, data->entriesToUpdate};
+  return nsSHistory::WalkHistoryEntries(aEntry, aBC, SetChildHistoryEntry,
+                                        &childData);
+}
+
+
+void nsSHistory::HandleEntriesToSwapInDocShell(
+    mozilla::dom::BrowsingContext* aBC, nsISHEntry* aOldEntry,
+    nsISHEntry* aNewEntry,
+    nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
+    uint64_t aOtherPid) {
+  bool shPref = StaticPrefs::fission_sessionHistoryInParent();
+  if (XRE_IsParentProcess()) {
+    aBC->Canonical()->SwapHistoryEntries(aOldEntry, aNewEntry);
+  }
+  if (aBC->IsInProcess() || !shPref) {
+    nsDocShell* docshell = static_cast<nsDocShell*>(aBC->GetDocShell());
+    if (docshell) {
+      docshell->SwapHistoryEntries(aOldEntry, aNewEntry);
+    }
+  } else if (aBC->Canonical()->IsOwnedByProcess(aOtherPid)) {
+    EntriesAndBrowsingContextData* toUpdate = aEntriesToUpdate->AppendElement();
+    toUpdate->oldEntry = aOldEntry;
+    toUpdate->newEntry = aNewEntry;
+    toUpdate->context = aBC;
+  } else {
+    
+
+    
+    
+    ContentParent* cp = aBC->Canonical()->GetContentParent();
+
+    auto convert = [](auto entry) {
+      return static_cast<CrossProcessSHEntry*>(
+          static_cast<LegacySHEntry*>(static_cast<nsSHEntry*>(entry)));
+    };
+
+    
+    Unused << cp->SendUpdateSHEntriesInDocShell(convert(aOldEntry),
+                                                convert(aNewEntry), aBC);
+  }
+}
+
+NS_IMETHODIMP
+nsSHistory::AddToRootSessionHistory(bool aCloneChildren, nsISHEntry* aOSHE,
+                                    BrowsingContext* aBC, nsISHEntry* aEntry,
+                                    uint32_t aLoadType, bool aShouldPersist,
+                                    Maybe<int32_t>* aPreviousEntryIndex,
+                                    Maybe<int32_t>* aLoadedEntryIndex) {
+  int32_t entriesPurged;
+  nsresult rv = AddToRootSessionHistory(
+      aCloneChildren, aOSHE, aBC, aEntry, aLoadType, aShouldPersist,
+      0 ,
+      aPreviousEntryIndex, aLoadedEntryIndex,
+      nullptr 
+
+      ,
+      &entriesPurged
+      );
+
+  if (NS_SUCCEEDED(rv)) {
+    aEntry->SetDocshellID(aBC->GetHistoryID());
+  }
+  return rv;
+}
+nsresult nsSHistory::AddToRootSessionHistory(
+    bool aCloneChildren, nsISHEntry* aOSHE, BrowsingContext* aBC,
+    nsISHEntry* aEntry, uint32_t aLoadType, bool aShouldPersist,
+    uint64_t aOtherPid, Maybe<int32_t>* previousEntryIndex,
+    Maybe<int32_t>* aLoadedEntryIndex,
+    nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate,
+    int32_t* aEntriesPurged) {
+  nsresult rv = NS_OK;
 
   
-  SwapEntriesData childData = {ignoreShell, destTreeRoot, destEntry};
-  return WalkHistoryEntries(aEntry, aShell, SetChildHistoryEntry, &childData);
+  
+  if (aCloneChildren && aOSHE) {
+    uint32_t cloneID = aOSHE->GetID();
+    nsCOMPtr<nsISHEntry> newEntry;
+    nsSHistory::CloneAndReplace(aOSHE, aBC, cloneID, aEntry, true,
+                                getter_AddRefs(newEntry), aOtherPid,
+                                aEntriesToUpdate);
+    NS_ASSERTION(aEntry == newEntry,
+                 "The new session history should be in the new entry");
+  }
+  
+  bool addToSHistory = !LOAD_TYPE_HAS_FLAGS(
+      aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY);
+  if (!addToSHistory) {
+    
+    
+    
+    int32_t index = mRequestedIndex;
+    if (index == -1) {
+      index = mIndex;
+    }
+
+    
+    if (index >= 0) {
+      rv = ReplaceEntry(index, aEntry);
+    } else {
+      
+      addToSHistory = true;
+    }
+  }
+  if (addToSHistory) {
+    
+    *previousEntryIndex = Some(mIndex);
+    rv = AddEntry(aEntry, aShouldPersist, aEntriesPurged);
+    *aLoadedEntryIndex = Some(mIndex);
+    MOZ_LOG(gPageCacheLog, LogLevel::Verbose,
+            ("Previous index: %d, Loaded index: %d",
+             previousEntryIndex->value(), aLoadedEntryIndex->value()));
+  }
+  return rv;
 }
 
 
@@ -552,6 +748,7 @@ nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist) {
 nsresult nsSHistory::AddEntry(nsISHEntry* aSHEntry, bool aPersist,
                               int32_t* aEntriesPurged) {
   NS_ENSURE_ARG(aSHEntry);
+  *aEntriesPurged = 0;
 
   nsCOMPtr<nsISHistory> shistoryOfEntry = aSHEntry->GetShistory();
   if (shistoryOfEntry != this) {

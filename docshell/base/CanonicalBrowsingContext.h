@@ -16,6 +16,7 @@
 #include "nsTHashtable.h"
 #include "nsHashKeys.h"
 #include "nsISHistory.h"
+#include "nsISHEntry.h"
 
 namespace mozilla {
 namespace dom {
@@ -110,6 +111,25 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   MediaController* GetMediaController();
 
+  bool HasHistoryEntry(nsISHEntry* aEntry) const {
+    return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
+  }
+
+  void UpdateSHEntries(nsISHEntry* aNewLSHE, nsISHEntry* aNewOSHE) {
+    mLSHE = aNewLSHE;
+    mOSHE = aNewOSHE;
+  }
+
+  void SwapHistoryEntries(nsISHEntry* aOldEntry, nsISHEntry* aNewEntry) {
+    if (aOldEntry == mOSHE) {
+      mOSHE = aNewEntry;
+    }
+
+    if (aOldEntry == mLSHE) {
+      mLSHE = aNewEntry;
+    }
+  }
+
  protected:
   
   void CanonicalDiscard();
@@ -171,6 +191,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   RefPtr<MediaController> mTabMediaController;
+
+  
+  nsCOMPtr<nsISHEntry> mOSHE;
+  nsCOMPtr<nsISHEntry> mLSHE;
 };
 
 }  

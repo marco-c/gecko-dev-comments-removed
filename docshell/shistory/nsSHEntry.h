@@ -28,6 +28,17 @@ class nsIInputStream;
 class nsIURI;
 class nsIReferrerInfo;
 
+
+
+
+
+
+struct EntriesAndBrowsingContextData {
+  nsCOMPtr<nsISHEntry> oldEntry;
+  nsCOMPtr<nsISHEntry> newEntry;
+  mozilla::dom::BrowsingContext* context;
+};
+
 class nsSHEntry : public nsISHEntry {
  public:
   NS_DECL_ISUPPORTS
@@ -37,6 +48,11 @@ class nsSHEntry : public nsISHEntry {
 
   static nsresult Startup();
   static void Shutdown();
+  void SyncTreesForSubframeNavigation(
+      uint64_t aOtherPid, nsISHEntry* aEntry,
+      mozilla::dom::BrowsingContext* aTopBC,
+      mozilla::dom::BrowsingContext* aIgnoreBC,
+      nsTArray<EntriesAndBrowsingContextData>* aEntriesToUpdate);
 
  protected:
   explicit nsSHEntry(mozilla::dom::SHEntrySharedParentState* aState);
