@@ -168,6 +168,7 @@ class MessageLogger(object):
         self.logger = logger
         self.structured = structured
         self.gecko_id = 'GECKO'
+        self.is_test_running = False
 
         
         
@@ -262,7 +263,8 @@ class MessageLogger(object):
         """Processes a structured message. Takes into account buffering, errors, ..."""
         
         if message['action'] == 'buffering_on':
-            self.buffering = True
+            if self.is_test_running:
+                self.buffering = True
             return
         if message['action'] == 'buffering_off':
             self.buffering = False
@@ -296,11 +298,14 @@ class MessageLogger(object):
 
         
         if message['action'] == 'test_end':
+            self.is_test_running = False
             self.buffered_messages = []
             self.restore_buffering = self.restore_buffering or self.buffering
             self.buffering = False
 
         if message['action'] == 'test_start':
+            self.is_test_running = True
+
             if self.restore_buffering:
                 self.restore_buffering = False
                 self.buffering = True
