@@ -1107,7 +1107,8 @@ StyleEditorUI.prototype = {
     await ResponsiveUIManager.openIfNeeded(win, tab, {
       trigger: "style_editor",
     });
-    ResponsiveUIManager.getResponsiveUIForTab(tab).setViewportSize(options);
+
+    this.emit("responsive-mode-opened", options);
   },
 
   
