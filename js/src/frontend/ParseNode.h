@@ -53,7 +53,6 @@ class ParserSharedBase;
 class FullParseHandler;
 class FunctionBox;
 class ObjectBox;
-class BigIntBox;
 
 #define FOR_EACH_PARSE_NODE_KIND(F)                              \
   F(EmptyStmt, NullaryNode)                                      \
@@ -250,6 +249,7 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
 
 
 
@@ -2290,7 +2290,7 @@ class TraceListNode {
   friend class ParserSharedBase;
 
  protected:
-  enum NodeType { Object, BigInt, Function, LastNodeType };
+  enum NodeType { Object, Function, LastNodeType };
 
   js::gc::Cell* gcThing;
   TraceListNode* traceLink;
@@ -2298,24 +2298,16 @@ class TraceListNode {
 
   TraceListNode(js::gc::Cell* gcThing, TraceListNode* traceLink, NodeType type);
 
-  bool isBigIntBox() const { return type_ == NodeType::BigInt; }
   bool isObjectBox() const {
     return type_ == NodeType::Object || type_ == NodeType::Function;
   }
 
-  BigIntBox* asBigIntBox();
   ObjectBox* asObjectBox();
 
   virtual void trace(JSTracer* trc);
 
  public:
   static void TraceList(JSTracer* trc, TraceListNode* listHead);
-};
-
-class BigIntBox : public TraceListNode {
- public:
-  BigIntBox(JS::BigInt* bi, TraceListNode* link);
-  JS::BigInt* value() const { return gcThing->as<JS::BigInt>(); }
 };
 
 class ObjectBox : public TraceListNode {

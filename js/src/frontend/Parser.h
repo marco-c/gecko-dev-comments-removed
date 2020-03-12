@@ -289,9 +289,6 @@ class MOZ_STACK_CLASS ParserSharedBase : private JS::AutoGCRooter {
 
   
   ObjectBox* newObjectBox(JSObject* obj);
-
-  
-  BigIntBox* newBigIntBox(BigInt* val);
 };
 
 class MOZ_STACK_CLASS ParserBase : public ParserSharedBase,
