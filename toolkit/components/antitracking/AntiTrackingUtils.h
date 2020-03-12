@@ -18,6 +18,10 @@ class AntiTrackingUtils final {
  public:
   static already_AddRefed<nsPIDOMWindowOuter> GetTopWindow(
       nsPIDOMWindowInner* aWindow);
+
+  
+  static already_AddRefed<nsIURI> MaybeGetDocumentURIBeingLoaded(
+      nsIChannel* aChannel);
 };
 
 }  
