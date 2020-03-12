@@ -361,12 +361,6 @@
 
       this._hasAnyPlayingMediaBeenBlocked = false;
 
-      
-
-
-
-      this._shouldSendUnselectedTabHover = false;
-
       this._unselectedTabHoverMessageListenerCount = 0;
 
       this._securityUI = null;
@@ -876,7 +870,11 @@
     }
 
     get shouldHandleUnselectedTabHover() {
-      return this._shouldSendUnselectedTabHover;
+      return this._unselectedTabHoverMessageListenerCount > 0;
+    }
+
+    set shouldHandleUnselectedTabHover(value) {
+      this._unselectedTabHoverMessageListenerCount += value ? 1 : -1;
     }
 
     get securityUI() {
@@ -1149,31 +1147,6 @@
       context.notifyMediaMutedChanged(false);
     }
 
-    pauseMedia(disposable) {
-      let suspendedReason;
-      if (disposable) {
-        suspendedReason = "mediaControlPaused";
-      } else {
-        suspendedReason = "lostAudioFocusTransiently";
-      }
-
-      this.sendMessageToActor(
-        "AudioPlayback",
-        { type: suspendedReason },
-        "AudioPlayback",
-        "roots"
-      );
-    }
-
-    stopMedia() {
-      this.sendMessageToActor(
-        "AudioPlayback",
-        { type: "mediaControlStopped" },
-        "AudioPlayback",
-        "roots"
-      );
-    }
-
     resumeMedia() {
       this.frameLoader.browsingContext.notifyStartDelayedAutoplayMedia();
       if (this._hasAnyPlayingMediaBeenBlocked) {
@@ -1185,12 +1158,17 @@
     }
 
     unselectedTabHover(hovered) {
-      if (!this._shouldSendUnselectedTabHover) {
+      if (!this.shouldHandleUnselectedTabHover) {
         return;
       }
-      this.messageManager.sendAsyncMessage("Browser:UnselectedTabHover", {
-        hovered,
-      });
+      this.sendMessageToActor(
+        "Browser:UnselectedTabHover",
+        {
+          hovered,
+        },
+        "UnselectedTabHover",
+        "roots"
+      );
     }
 
     didStartLoadSinceLastUserTyping() {
@@ -1319,13 +1297,6 @@
 
         this.addEventListener("pagehide", this.onPageHide, true);
       }
-
-      if (this.messageManager) {
-        this.messageManager.addMessageListener(
-          "UnselectedTabHover:Toggle",
-          this
-        );
-      }
     }
 
     
@@ -1377,39 +1348,20 @@
       }
     }
 
-    
-
-
-
-    _receiveMessage(aMessage) {
-      let data = aMessage.data;
-      switch (aMessage.name) {
-        case "UnselectedTabHover:Toggle":
-          this._shouldSendUnselectedTabHover = data.enable
-            ? ++this._unselectedTabHoverMessageListenerCount > 0
-            : --this._unselectedTabHoverMessageListenerCount == 0;
-          break;
-      }
-      return undefined;
-    }
-
     receiveMessage(aMessage) {
-      if (!this.isRemoteBrowser) {
-        return this._receiveMessage(aMessage);
+      if (this.isRemoteBrowser) {
+        const data = aMessage.data;
+        switch (aMessage.name) {
+          case "Browser:Init":
+            this._outerWindowID = data.outerWindowID;
+            break;
+          case "DOMTitleChanged":
+            this._contentTitle = data.title;
+            break;
+          default:
+            break;
+        }
       }
-
-      let data = aMessage.data;
-      switch (aMessage.name) {
-        case "Browser:Init":
-          this._outerWindowID = data.outerWindowID;
-          break;
-        case "DOMTitleChanged":
-          this._contentTitle = data.title;
-          break;
-        default:
-          return this._receiveMessage(aMessage);
-      }
-      return undefined;
     }
 
     enableDisableCommandsRemoteOnly(
