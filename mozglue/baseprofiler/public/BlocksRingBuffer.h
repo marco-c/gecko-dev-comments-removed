@@ -93,8 +93,9 @@ class BlocksRingBuffer {
   
   
   
+  
   template <typename T>
-  struct Serializer;
+  struct Deserializer;
 
   
   
@@ -107,9 +108,8 @@ class BlocksRingBuffer {
   
   
   
-  
   template <typename T>
-  struct Deserializer;
+  struct Serializer;
 
   enum class ThreadSafety { WithoutMutex, WithMutex };
 
