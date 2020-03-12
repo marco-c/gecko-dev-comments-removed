@@ -12,7 +12,6 @@ use crate::internal_types::{FastHashMap, LayerIndex, RenderTargetInfo, Swizzle, 
 use crate::util::round_up_to_multiple;
 use crate::profiler;
 use log::Level;
-use sha2::{Digest, Sha256};
 use smallvec::SmallVec;
 use std::{
     borrow::Cow,
@@ -759,6 +758,7 @@ impl ProgramSourceInfo {
         name: &'static str,
         features: String,
     ) -> Self {
+
         
         
         
@@ -771,14 +771,17 @@ impl ProgramSourceInfo {
         
         
 
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::Hasher;
+
         
-        let mut hasher = Sha256::new();
+        let mut hasher = DefaultHasher::new();
         let version_str = get_shader_version(&*device.gl());
         let override_path = device.resource_override_path.as_ref();
         let source_and_digest = SHADERS.get(&name).expect("Shader not found");
 
         
-        hasher.input(device.renderer_name.as_bytes());
+        hasher.write(device.renderer_name.as_bytes());
 
         
         build_shader_prefix_string(
@@ -786,20 +789,20 @@ impl ProgramSourceInfo {
             &features,
             &"DUMMY",
             &name,
-            &mut |s| hasher.input(s.as_bytes()),
+            &mut |s| hasher.write(s.as_bytes()),
         );
 
         
         
         if override_path.is_some() || cfg!(debug_assertions) {
-            let mut h = Sha256::new();
-            build_shader_main_string(&name, override_path, &mut |s| h.input(s.as_bytes()));
+            let mut h = DefaultHasher::new();
+            build_shader_main_string(&name, override_path, &mut |s| h.write(s.as_bytes()));
             let d: ProgramSourceDigest = h.into();
             let digest = format!("{}", d);
             debug_assert!(override_path.is_some() || digest == source_and_digest.digest);
-            hasher.input(digest.as_bytes());
+            hasher.write(digest.as_bytes());
         } else {
-            hasher.input(source_and_digest.digest.as_bytes());
+            hasher.write(source_and_digest.digest.as_bytes());
         };
 
         
