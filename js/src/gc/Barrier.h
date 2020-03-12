@@ -7,10 +7,13 @@
 #ifndef gc_Barrier_h
 #define gc_Barrier_h
 
+#include <type_traits>  
+
 #include "NamespaceImports.h"
 
 #include "gc/Cell.h"
 #include "gc/StoreBuffer.h"
+#include "js/ComparisonOperators.h"  
 #include "js/HeapAPI.h"
 #include "js/Id.h"
 #include "js/RootingAPI.h"
@@ -516,6 +519,23 @@ class PreBarriered : public WriteBarriered<T> {
   }
 };
 
+}  
+
+namespace JS {
+
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<js::PreBarriered<T>> : std::true_type {
+  static const T& get(const js::PreBarriered<T>& v) { return v.get(); }
+};
+
+}  
+
+}  
+
+namespace js {
+
 
 
 
@@ -590,6 +610,23 @@ class GCPtr : public WriteBarriered<T> {
   GCPtr(GCPtr<T>&&) = delete;
   GCPtr<T>& operator=(GCPtr<T>&&) = delete;
 };
+
+}  
+
+namespace JS {
+
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<js::GCPtr<T>> : std::true_type {
+  static const T& get(const js::GCPtr<T>& v) { return v.get(); }
+};
+
+}  
+
+}  
+
+namespace js {
 
 
 
@@ -672,6 +709,23 @@ class HeapPtr : public WriteBarriered<T> {
     return tmp;
   }
 };
+
+}  
+
+namespace JS {
+
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<js::HeapPtr<T>> : std::true_type {
+  static const T& get(const js::HeapPtr<T>& v) { return v.get(); }
+};
+
+}  
+
+}  
+
+namespace js {
 
 
 template <typename T>
@@ -766,6 +820,25 @@ class WeakHeapPtr : public ReadBarriered<T>,
   }
 };
 
+}  
+
+namespace JS {
+
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<js::WeakHeapPtr<T>> : std::true_type {
+  static const T& get(const js::WeakHeapPtr<T>& v) {
+    return v.unbarrieredGet();
+  }
+};
+
+}  
+
+}  
+
+namespace js {
+
 
 
 template <typename T>
@@ -815,6 +888,23 @@ class HeapSlot : public WriteBarriered<Value> {
     }
   }
 };
+
+}  
+
+namespace JS {
+
+namespace detail {
+
+template <>
+struct DefineComparisonOps<js::HeapSlot> : std::true_type {
+  static const Value& get(const js::HeapSlot& v) { return v.get(); }
+};
+
+}  
+
+}  
+
+namespace js {
 
 class HeapSlotArray {
   HeapSlot* array;
@@ -1095,35 +1185,6 @@ using HeapPtrJitCode = HeapPtr<jit::JitCode*>;
 using HeapPtrObject = HeapPtr<JSObject*>;
 using HeapPtrRegExpShared = HeapPtr<RegExpShared*>;
 using HeapPtrValue = HeapPtr<Value>;
-
-namespace detail {
-
-template <typename T>
-struct DefineComparisonOps<PreBarriered<T>> : mozilla::TrueType {
-  static const T& get(const PreBarriered<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<GCPtr<T>> : mozilla::TrueType {
-  static const T& get(const GCPtr<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<HeapPtr<T>> : mozilla::TrueType {
-  static const T& get(const HeapPtr<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<WeakHeapPtr<T>> : mozilla::TrueType {
-  static const T& get(const WeakHeapPtr<T>& v) { return v.unbarrieredGet(); }
-};
-
-template <>
-struct DefineComparisonOps<HeapSlot> : mozilla::TrueType {
-  static const Value& get(const HeapSlot& v) { return v.get(); }
-};
-
-} 
 
 } 
 

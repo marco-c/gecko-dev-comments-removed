@@ -18,6 +18,7 @@
 
 #include "jspubtd.h"
 
+#include "js/ComparisonOperators.h"  
 #include "js/GCAnnotations.h"
 #include "js/GCPolicyAPI.h"
 #include "js/GCTypeMacros.h"  
@@ -199,11 +200,6 @@ struct PersistentRootedMarker;
 
 namespace JS {
 
-template <typename T>
-class Rooted;
-template <typename T>
-class PersistentRooted;
-
 JS_FRIEND_API void HeapObjectPostWriteBarrier(JSObject** objp, JSObject* prev,
                                               JSObject* next);
 JS_FRIEND_API void HeapStringPostWriteBarrier(JSString** objp, JSString* prev,
@@ -372,6 +368,15 @@ class MOZ_NON_MEMMOVABLE Heap : public js::HeapBase<T, Heap<T>> {
   T ptr;
 };
 
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<Heap<T>> : std::true_type {
+  static const T& get(const Heap<T>& v) { return v.unbarrieredGet(); }
+};
+
+}  
+
 static MOZ_ALWAYS_INLINE bool ObjectIsTenured(JSObject* obj) {
   return !js::gc::IsInsideNursery(reinterpret_cast<js::gc::Cell*>(obj));
 }
@@ -525,6 +530,15 @@ class TenuredHeap : public js::HeapBase<T, TenuredHeap<T>> {
   uintptr_t bits;
 };
 
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<TenuredHeap<T>> : std::true_type {
+  static const T get(const TenuredHeap<T>& v) { return v.unbarrieredGetPtr(); }
+};
+
+}  
+
 
 
 template <typename T>
@@ -546,6 +560,13 @@ static MOZ_ALWAYS_INLINE bool ObjectIsMarkedGray(
   return ObjectIsMarkedGray(obj.unbarrieredGetPtr());
 }
 
+template <typename T>
+class MutableHandle;
+template <typename T>
+class Rooted;
+template <typename T>
+class PersistentRooted;
+
 
 
 
@@ -556,7 +577,7 @@ static MOZ_ALWAYS_INLINE bool ObjectIsMarkedGray(
 
 template <typename T>
 class MOZ_NONHEAP_CLASS Handle : public js::HandleBase<T, Handle<T>> {
-  friend class JS::MutableHandle<T>;
+  friend class MutableHandle<T>;
 
  public:
   using ElementType = T;
@@ -638,6 +659,15 @@ class MOZ_NONHEAP_CLASS Handle : public js::HandleBase<T, Handle<T>> {
   const T* ptr;
 };
 
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<Handle<T>> : std::true_type {
+  static const T& get(const Handle<T>& v) { return v.get(); }
+};
+
+}  
+
 
 
 
@@ -692,6 +722,15 @@ class MOZ_STACK_CLASS MutableHandle
 
   T* ptr;
 };
+
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<MutableHandle<T>> : std::true_type {
+  static const T& get(const MutableHandle<T>& v) { return v.get(); }
+};
+
+}  
 
 } 
 
@@ -1116,6 +1155,15 @@ class MOZ_RAII Rooted : public js::RootedBase<T, Rooted<T>> {
   Rooted(const Rooted&) = delete;
 } JS_HAZ_ROOTED;
 
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<Rooted<T>> : std::true_type {
+  static const T& get(const Rooted<T>& v) { return v.get(); }
+};
+
+}  
+
 } 
 
 namespace js {
@@ -1389,6 +1437,15 @@ class PersistentRooted
   detail::MaybeWrapped<T> ptr;
 } JS_HAZ_ROOTED;
 
+namespace detail {
+
+template <typename T>
+struct DefineComparisonOps<PersistentRooted<T>> : std::true_type {
+  static const T& get(const PersistentRooted<T>& v) { return v.get(); }
+};
+
+}  
+
 } 
 
 namespace js {
@@ -1435,192 +1492,6 @@ void CallTraceCallbackOnNonHeap(T* v, const TraceCallbacks& aCallbacks,
 
 } 
 
-namespace detail {
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct DefineComparisonOps : mozilla::FalseType {};
-
-template <typename T>
-struct DefineComparisonOps<JS::Heap<T>> : mozilla::TrueType {
-  static const T& get(const JS::Heap<T>& v) { return v.unbarrieredGet(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<JS::TenuredHeap<T>> : mozilla::TrueType {
-  static const T get(const JS::TenuredHeap<T>& v) {
-    return v.unbarrieredGetPtr();
-  }
-};
-
-template <typename T>
-struct DefineComparisonOps<JS::Rooted<T>> : mozilla::TrueType {
-  static const T& get(const JS::Rooted<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<JS::Handle<T>> : mozilla::TrueType {
-  static const T& get(const JS::Handle<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<JS::MutableHandle<T>> : mozilla::TrueType {
-  static const T& get(const JS::MutableHandle<T>& v) { return v.get(); }
-};
-
-template <typename T>
-struct DefineComparisonOps<JS::PersistentRooted<T>> : mozilla::TrueType {
-  static const T& get(const JS::PersistentRooted<T>& v) { return v.get(); }
-};
-
 } 
-} 
-
-
-
-
-
-
-
-
-template <typename T, typename U>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value &&
-                               js::detail::DefineComparisonOps<U>::value,
-                           bool>::Type
-operator==(const T& a, const U& b) {
-  return js::detail::DefineComparisonOps<T>::get(a) ==
-         js::detail::DefineComparisonOps<U>::get(b);
-}
-
-template <typename T, typename U>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value &&
-                               js::detail::DefineComparisonOps<U>::value,
-                           bool>::Type
-operator!=(const T& a, const U& b) {
-  return !(a == b);
-}
-
-
-
-template <typename T>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value,
-                           bool>::Type
-operator==(const T& a, const typename T::ElementType& b) {
-  return js::detail::DefineComparisonOps<T>::get(a) == b;
-}
-
-template <typename T>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value,
-                           bool>::Type
-operator!=(const T& a, const typename T::ElementType& b) {
-  return !(a == b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value,
-                           bool>::Type
-operator==(const typename T::ElementType& a, const T& b) {
-  return a == js::detail::DefineComparisonOps<T>::get(b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<js::detail::DefineComparisonOps<T>::value,
-                           bool>::Type
-operator!=(const typename T::ElementType& a, const T& b) {
-  return !(a == b);
-}
-
-
-
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator==(
-    const typename mozilla::RemovePointer<typename T::ElementType>::Type* a,
-    const T& b) {
-  return a == js::detail::DefineComparisonOps<T>::get(b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator!=(
-    const typename mozilla::RemovePointer<typename T::ElementType>::Type* a,
-    const T& b) {
-  return !(a == b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator==(
-    const T& a,
-    const typename mozilla::RemovePointer<typename T::ElementType>::Type* b) {
-  return js::detail::DefineComparisonOps<T>::get(a) == b;
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator!=(
-    const T& a,
-    const typename mozilla::RemovePointer<typename T::ElementType>::Type* b) {
-  return !(a == b);
-}
-
-
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator==(std::nullptr_t a, const T& b) {
-  return a == js::detail::DefineComparisonOps<T>::get(b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator!=(std::nullptr_t a, const T& b) {
-  return !(a == b);
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator==(const T& a, std::nullptr_t b) {
-  return js::detail::DefineComparisonOps<T>::get(a) == b;
-}
-
-template <typename T>
-typename mozilla::EnableIf<
-    js::detail::DefineComparisonOps<T>::value &&
-        mozilla::IsPointer<typename T::ElementType>::value,
-    bool>::Type
-operator!=(const T& a, std::nullptr_t b) {
-  return !(a == b);
-}
 
 #endif
