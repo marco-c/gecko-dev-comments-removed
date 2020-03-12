@@ -471,12 +471,6 @@ template <typename Unit>
 bool frontend::SourceAwareCompiler<Unit>::canHandleParseFailure(
     CompilationInfo& compilationInfo, const Directives& newDirectives) {
   
-  if (parser->hadAbortedSyntaxParse()) {
-    return true;
-  }
-
-  
-  
   return !parser->anyChars.hadError() &&
          compilationInfo.directives != newDirectives;
 }
@@ -486,13 +480,6 @@ void frontend::SourceAwareCompiler<Unit>::handleParseFailure(
     CompilationInfo& compilationInfo, const Directives& newDirectives,
     TokenStreamPosition& startPosition) {
   MOZ_ASSERT(canHandleParseFailure(compilationInfo, newDirectives));
-
-  if (parser->hadAbortedSyntaxParse()) {
-    
-    
-    
-    parser->clearAbortedSyntaxParse();
-  }
 
   
   parser->tokenStream.rewind(startPosition);
@@ -549,8 +536,6 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
       break;
     }
 
-    
-    
     
     
     MOZ_ASSERT(
@@ -662,7 +647,6 @@ FunctionNode* frontend::StandaloneFunctionCompiler<Unit>::parse(
       break;
     }
 
-    
     
     if (!canHandleParseFailure(compilationInfo, newDirectives)) {
       return nullptr;
