@@ -215,7 +215,7 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
 
     
     video_stream.temporal_layer_thresholds_bps.clear();
-    if (config.number_of_streams > 1) {
+    if (streamCount > 1) {
       
       
       
