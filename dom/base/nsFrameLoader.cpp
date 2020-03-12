@@ -460,11 +460,6 @@ void nsFrameLoader::LoadFrame(bool aOriginalSrc) {
     return;
   }
 
-  if (doc->IsLoadedAsInteractiveData()) {
-    
-    return;
-  }
-
   nsIURI* base_uri = mOwnerContent->GetBaseURI();
   auto encoding = doc->GetDocumentCharacterSet();
 
@@ -529,7 +524,7 @@ nsresult nsFrameLoader::LoadURI(nsIURI* aURI,
 
 void nsFrameLoader::ResumeLoad(uint64_t aPendingSwitchID) {
   Document* doc = mOwnerContent->OwnerDoc();
-  if (doc->IsStaticDocument() || doc->IsLoadedAsInteractiveData()) {
+  if (doc->IsStaticDocument()) {
     
     return;
   }
@@ -3066,6 +3061,19 @@ nsIFrame* nsFrameLoader::GetDetachedSubdocFrame(
 }
 
 void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
+  
+  
+  
+  
+  
+  BrowsingContext* context = GetExtantBrowsingContext();
+  if (!context) {
+    MOZ_ASSERT(!IsRemoteFrame(),
+               "cannot apply sandbox flags to an uninitialized "
+               "initially-remote frame");
+    return;
+  }
+
   uint32_t parentSandboxFlags = mOwnerContent->OwnerDoc()->GetSandboxFlags();
 
   
@@ -3082,9 +3090,8 @@ void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
       sandboxFlags |= SANDBOXED_AUXILIARY_NAVIGATION;
     }
   }
-  if (BrowsingContext* context = GetBrowsingContext()) {
-    context->SetSandboxFlags(sandboxFlags);
-  }
+
+  context->SetSandboxFlags(sandboxFlags);
 }
 
 

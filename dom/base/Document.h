@@ -1017,9 +1017,6 @@ class Document : public nsINode,
   void SetIsInitialDocument(bool aIsInitialDocument);
 
   void SetLoadedAsData(bool aLoadedAsData) { mLoadedAsData = aLoadedAsData; }
-  void SetLoadedAsInteractiveData(bool aLoadedAsInteractiveData) {
-    mLoadedAsInteractiveData = aLoadedAsInteractiveData;
-  }
 
   
 
@@ -2148,9 +2145,7 @@ class Document : public nsINode,
   bool IsHTMLOrXHTML() const { return mType == eHTML || mType == eXHTML; }
   bool IsXMLDocument() const { return !IsHTMLDocument(); }
   bool IsSVGDocument() const { return mType == eSVG; }
-  bool IsUnstyledDocument() {
-    return IsLoadedAsData() || IsLoadedAsInteractiveData();
-  }
+  bool IsUnstyledDocument() { return IsLoadedAsData(); }
   bool LoadsFullXULStyleSheetUpFront() {
     if (IsSVGDocument()) {
       return false;
@@ -2489,8 +2484,6 @@ class Document : public nsINode,
   }
 
   bool IsLoadedAsData() { return mLoadedAsData; }
-
-  bool IsLoadedAsInteractiveData() { return mLoadedAsInteractiveData; }
 
   bool MayStartLayout() { return mMayStartLayout; }
 
@@ -4325,11 +4318,6 @@ class Document : public nsINode,
   
   
   bool mLoadedAsData : 1;
-
-  
-  
-  
-  bool mLoadedAsInteractiveData : 1;
 
   
   
