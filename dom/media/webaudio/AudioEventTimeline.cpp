@@ -101,13 +101,6 @@ AudioTimelineEvent::AudioTimelineEvent(const AudioTimelineEvent& rhs) {
 }
 
 AudioTimelineEvent::~AudioTimelineEvent() {
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread() || !mTrack, "Track reference on the render thread should have been dropped when inserting the event in the timeline.");
   if (mType == AudioTimelineEvent::SetValueCurve) {
     delete[] mCurve;
   }
