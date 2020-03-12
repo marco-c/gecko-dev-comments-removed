@@ -3505,6 +3505,16 @@ void BrowserParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch,
   
   
   
+  
+  
+  
+  if (GetBrowserBridgeParent()) {
+    return;
+  }
+
+  
+  
+  
   if (aEpoch != mLayerTreeEpoch || mIsDestroyed) {
     return;
   }
