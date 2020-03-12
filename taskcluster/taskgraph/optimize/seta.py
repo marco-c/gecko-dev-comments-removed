@@ -18,7 +18,7 @@ from taskgraph.optimize import OptimizationStrategy, register_strategy
 logger = logging.getLogger(__name__)
 
 
-SETA_PROJECTS = ['mozilla-inbound', 'autoland']
+SETA_PROJECTS = ['autoland']
 SETA_HIGH_PRIORITY = 1
 SETA_LOW_PRIORITY = 5
 
@@ -57,7 +57,7 @@ class SETA(object):
     def query_low_value_tasks(self, project):
         
         
-        low_value_tasks = []
+        low_value_tasks = set()
 
         
         url_low = SETA_ENDPOINT % (project, 'taskcluster', SETA_LOW_PRIORITY)
@@ -83,7 +83,7 @@ class SETA(object):
                              kwargs={'timeout': 60, 'headers': ''})
             task_list = json.loads(response.content).get('jobtypes', '')
 
-            high_value_tasks = set([])
+            high_value_tasks = set()
             if type(task_list) == dict and len(task_list) > 0:
                 if type(task_list.values()[0]) == list and len(task_list.values()[0]) > 0:
                     high_value_tasks = set(task_list.values()[0])
@@ -92,21 +92,15 @@ class SETA(object):
             def only_android_raptor(task):
                 return task.startswith('test-android') and 'raptor' in task
 
-            high_value_android_tasks = list(filter(only_android_raptor, high_value_tasks))
+            high_value_android_tasks = set(filter(only_android_raptor, high_value_tasks))
             low_value_tasks.update(high_value_android_tasks)
 
             seta_conversions = {
                 
-                'test-linux32/opt': 'test-linux32-shippable/opt',
                 'test-linux64/opt': 'test-linux64-shippable/opt',
-                'test-linux64-pgo/opt': 'test-linux64-shippable/opt',
-                'test-linux64-pgo-qr/opt': 'test-linux64-shippable-qr/opt',
                 'test-linux64-qr/opt': 'test-linux64-shippable-qr/opt',
                 'test-windows7-32/opt': 'test-windows7-32-shippable/opt',
-                'test-windows7-32-pgo/opt': 'test-windows7-32-shippable/opt',
                 'test-windows10-64/opt': 'test-windows10-64-shippable/opt',
-                'test-windows10-64-pgo/opt': 'test-windows10-64-shippable/opt',
-                'test-windows10-64-pgo-qr/opt': 'test-windows10-64-shippable-qr/opt',
                 'test-windows10-64-qr/opt': 'test-windows10-64-shippable-qr/opt',
                 }
             
@@ -134,14 +128,14 @@ class SETA(object):
                 return False
 
             
-            low_value_tasks = set([x for x in low_value_tasks if not new_as_old_is_high_value(x)])
+            low_value_tasks = {
+                x for x in low_value_tasks if not new_as_old_is_high_value(x)
+            }
 
             
-            low_value_tasks = set([x for x in low_value_tasks
-                                   if 'build' not in x or 'fuzzing' in x])
-
-            
-            low_value_tasks = list(set(low_value_tasks))
+            low_value_tasks = {
+                x for x in low_value_tasks if 'build' not in x or 'fuzzing' in x
+            }
 
         
         except exceptions.Timeout:
@@ -272,17 +266,9 @@ class SkipLowValue(OptimizationStrategy):
         self.time_interval = time_interval
 
     def should_remove_task(self, task, params, _):
-        label = task.label
-
         
-        
-        if is_low_value_task(label,
-                             params.get('project'),
-                             params.get('pushlog_id'),
-                             params.get('pushdate'),
-                             self.push_interval,
-                             self.time_interval):
-            
-            return True
-        else:
-            return False
+        return is_low_value_task(task.label, params.get('project'),
+                                 params.get('pushlog_id'),
+                                 params.get('pushdate'),
+                                 self.push_interval,
+                                 self.time_interval)
