@@ -19,32 +19,8 @@ const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function tick() {
-  return new Promise(resolve =>
-    requestAnimationFrame(() => requestAnimationFrame(resolve))
-  );
+  return new Promise(resolve => requestAnimationFrame(resolve));
 }
 
 
@@ -641,17 +617,4 @@ function setupGetRecordingState(document) {
     throw new Error("Could not find the redux store on the window object.");
   }
   return () => selectors.getRecordingState(store.getState());
-}
-
-
-
-
-
-function profilerButtonIsVisiblyInactive() {
-  const button = document.getElementById("profiler-button");
-  return !button.style.fill;
-}
-
-function profilerButtonIsVisiblyActive() {
-  return !profilerButtonIsVisiblyInactive();
 }
