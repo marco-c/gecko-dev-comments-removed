@@ -25,6 +25,10 @@ namespace mozilla {
 
 class OriginAttributes;
 
+namespace dom {
+class BrowsingContext;
+}
+
 class ContentBlocking final {
  public:
   
@@ -80,12 +84,13 @@ class ContentBlocking final {
   
   
   
+  
   typedef MozPromise<int, bool, true> StorageAccessFinalCheckPromise;
   typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()>
       PerformFinalChecks;
   typedef MozPromise<int, bool, true> StorageAccessGrantPromise;
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise> AllowAccessFor(
-      nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aParentWindow,
+      nsIPrincipal* aPrincipal, dom::BrowsingContext* aParentContext,
       ContentBlockingNotifier::StorageAccessGrantedReason aReason,
       const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
