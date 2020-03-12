@@ -18,6 +18,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/UniquePtr.h"
 #include "prtime.h"  
+#include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"  
 

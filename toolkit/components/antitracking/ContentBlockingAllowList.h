@@ -47,7 +47,7 @@ class ContentBlockingAllowList final {
   static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
   static bool Check(nsPIDOMWindowInner* aWindow);
 
-  friend class AntiTrackingCommon;
+  friend class ContentBlocking;
 };
 
 }  

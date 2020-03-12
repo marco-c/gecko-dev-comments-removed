@@ -25,14 +25,22 @@ namespace mozilla {
 
 class OriginAttributes;
 
-class AntiTrackingCommon final {
+class ContentBlocking final {
  public:
   
   
   
   
-  typedef std::function<void(const bool&)>
-      FirstPartyStorageAccessGrantedForOriginResolver;
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
+                                   nsIURI* aURI, uint32_t* aRejectedReason);
 
   
   
@@ -40,37 +48,20 @@ class AntiTrackingCommon final {
   
   
   
-  
-  
-  
-  
-  
-  
-  static bool IsFirstPartyStorageAccessGrantedFor(
-      nsPIDOMWindowInner* a3rdPartyTrackingWindow, nsIURI* aURI,
-      uint32_t* aRejectedReason);
-
-  
-  
-  
-  
-  
-  
-  static bool MaybeIsFirstPartyStorageAccessGrantedFor(
+  static bool ApproximateAllowAccessForWithoutChannel(
       nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI);
 
   
   
   
   
-  static bool IsFirstPartyStorageAccessGrantedFor(nsIChannel* aChannel,
-                                                  nsIURI* aURI,
-                                                  uint32_t* aRejectedReason);
+  static bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
+                                   uint32_t* aRejectedReason);
 
   
   
-  static bool IsFirstPartyStorageAccessGrantedFor(
-      nsIPrincipal* aPrincipal, nsICookieJarSettings* aCookieJarSettings);
+  static bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
+                                   nsICookieJarSettings* aCookieJarSettings);
 
   enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
@@ -93,16 +84,14 @@ class AntiTrackingCommon final {
   typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()>
       PerformFinalChecks;
   typedef MozPromise<int, bool, true> StorageAccessGrantPromise;
-  static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
-  AddFirstPartyStorageAccessGrantedFor(
+  static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise> AllowAccessFor(
       nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aParentWindow,
       ContentBlockingNotifier::StorageAccessGrantedReason aReason,
       const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
   
-  typedef MozPromise<nsresult, bool, true> FirstPartyStorageAccessGrantPromise;
-  static RefPtr<FirstPartyStorageAccessGrantPromise>
-  SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
+  typedef MozPromise<nsresult, bool, true> ParentAccessGrantPromise;
+  static RefPtr<ParentAccessGrantPromise> SaveAccessForOriginOnParentProcess(
       nsIPrincipal* aPrincipal, nsIPrincipal* aTrackingPrinciapl,
       const nsCString& aTrackingOrigin, int aAllowMode,
       uint64_t aExpirationTime =

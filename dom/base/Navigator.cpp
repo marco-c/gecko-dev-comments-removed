@@ -1,17 +1,17 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Needs to be first.
+
+
+
+
+
+
 #include "base/basictypes.h"
 
 #include "Navigator.h"
 #include "nsIXULAppInfo.h"
 #include "nsPluginArray.h"
 #include "nsMimeTypeArray.h"
-#include "mozilla/AntiTrackingCommon.h"
+#include "mozilla/ContentBlocking.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/BodyExtractor.h"
@@ -57,7 +57,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticPtr.h"
 #include "Connection.h"
-#include "mozilla/dom/Event.h"  // for Event
+#include "mozilla/dom/Event.h"  
 #include "nsGlobalWindow.h"
 #include "nsIPermissionManager.h"
 #include "nsMimeTypes.h"
@@ -116,7 +116,7 @@ static uint32_t sMaxVibrateListLen = 0;
 static const nsLiteralCString kVibrationPermissionType =
     NS_LITERAL_CSTRING("vibration");
 
-/* static */
+
 void Navigator::Init() {
   Preferences::AddBoolVarCache(&sVibratorEnabled, "dom.vibrator.enabled", true);
   Preferences::AddUintVarCache(&sMaxVibrateMS, "dom.vibrator.max_vibrate_ms",
@@ -175,8 +175,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(Navigator)
 
 void Navigator::Invalidate() {
-  // Don't clear mWindow here so we know we've got a non-null mWindow
-  // until we're unlinked.
+  
+  
 
   mMimeTypes = nullptr;
 
@@ -189,7 +189,7 @@ void Navigator::Invalidate() {
 
   mStorageManager = nullptr;
 
-  // If there is a page transition, make sure delete the geolocation object.
+  
   if (mGeolocation) {
     mGeolocation->Shutdown();
     mGeolocation = nullptr;
@@ -299,7 +299,7 @@ void Navigator::GetAppVersion(nsAString& aAppVersion, CallerType aCallerType,
 
   nsresult rv = GetAppVersion(
       aAppVersion, doc ? doc->NodePrincipal() : nullptr,
-      /* aUsePrefOverriddenValue = */ aCallerType != CallerType::System);
+       aCallerType != CallerType::System);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
   }
@@ -309,42 +309,42 @@ void Navigator::GetAppName(nsAString& aAppName, CallerType aCallerType) const {
   nsCOMPtr<Document> doc = mWindow->GetExtantDoc();
 
   AppName(aAppName, doc ? doc->NodePrincipal() : nullptr,
-          /* aUsePrefOverriddenValue = */ aCallerType != CallerType::System);
+           aCallerType != CallerType::System);
 }
 
-/**
- * Returns the value of Accept-Languages (HTTP header) as a nsTArray of
- * languages. The value is set in the preference by the user ("Content
- * Languages").
- *
- * "en", "en-US" and "i-cherokee" and "" are valid languages tokens.
- *
- * An empty array will be returned if there is no valid languages.
- */
-/* static */
+
+
+
+
+
+
+
+
+
+
 void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   MOZ_ASSERT(NS_IsMainThread());
 
   aLanguages.Clear();
 
-  // E.g. "de-de, en-us,en".
+  
   nsAutoString acceptLang;
   Preferences::GetLocalizedString("intl.accept_languages", acceptLang);
 
-  // Split values on commas.
+  
   nsCharSeparatedTokenizer langTokenizer(acceptLang, ',');
   while (langTokenizer.hasMoreTokens()) {
     nsDependentSubstring lang = langTokenizer.nextToken();
 
-    // Replace "_" with "-" to avoid POSIX/Windows "en_US" notation.
-    // NOTE: we should probably rely on the pref being set correctly.
+    
+    
     if (lang.Length() > 2 && lang[2] == char16_t('_')) {
       lang.Replace(2, 1, char16_t('-'));
     }
 
-    // Use uppercase for country part, e.g. "en-US", not "en-us", see BCP47
-    // only uppercase 2-letter country codes, not "zh-Hant", "de-DE-x-goethe".
-    // NOTE: we should probably rely on the pref being set correctly.
+    
+    
+    
     if (lang.Length() > 2) {
       nsCharSeparatedTokenizer localeTokenizer(lang, '-');
       int32_t pos = 0;
@@ -358,7 +358,7 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
           lang.Replace(pos, code.Length(), upper);
         }
 
-        pos += code.Length() + 1;  // 1 is the separator
+        pos += code.Length() + 1;  
         first = false;
       }
     }
@@ -367,13 +367,13 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   }
 }
 
-/**
- * Do not use UI language (chosen app locale) here but the first value set in
- * the Accept Languages header, see ::GetAcceptLanguages().
- *
- * See RFC 2616, Section 15.1.4 "Privacy Issues Connected to Accept Headers" for
- * the reasons why.
- */
+
+
+
+
+
+
+
 void Navigator::GetLanguage(nsAString& aLanguage) {
   nsTArray<nsString> languages;
   GetLanguages(languages);
@@ -387,10 +387,10 @@ void Navigator::GetLanguage(nsAString& aLanguage) {
 void Navigator::GetLanguages(nsTArray<nsString>& aLanguages) {
   GetAcceptLanguages(aLanguages);
 
-  // The returned value is cached by the binding code. The window listen to the
-  // accept languages change and will clear the cache when needed. It has to
-  // take care of dispatching the DOM event already and the invalidation and the
-  // event has to be timed correctly.
+  
+  
+  
+  
 }
 
 void Navigator::GetPlatform(nsAString& aPlatform, CallerType aCallerType,
@@ -399,7 +399,7 @@ void Navigator::GetPlatform(nsAString& aPlatform, CallerType aCallerType,
 
   nsresult rv = GetPlatform(
       aPlatform, doc ? doc->NodePrincipal() : nullptr,
-      /* aUsePrefOverriddenValue = */ aCallerType != CallerType::System);
+       aCallerType != CallerType::System);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
   }
@@ -408,8 +408,8 @@ void Navigator::GetPlatform(nsAString& aPlatform, CallerType aCallerType,
 void Navigator::GetOscpu(nsAString& aOSCPU, CallerType aCallerType,
                          ErrorResult& aRv) const {
   if (aCallerType != CallerType::System) {
-    // If fingerprinting resistance is on, we will spoof this value. See
-    // nsRFPService.h for details about spoofed values.
+    
+    
     if (nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
       aOSCPU.AssignLiteral(SPOOFED_OSCPU);
       return;
@@ -450,7 +450,7 @@ void Navigator::GetProduct(nsAString& aProduct) {
 }
 
 void Navigator::GetProductSub(nsAString& aProductSub) {
-  // Legacy build date hardcoded for backward compatibility (bug 776376)
+  
   aProductSub.AssignLiteral(LEGACY_UA_GECKO_TRAIL);
 }
 
@@ -506,9 +506,9 @@ bool Navigator::CookieEnabled() {
   bool cookieEnabled = (StaticPrefs::network_cookie_cookieBehavior() !=
                         nsICookieService::BEHAVIOR_REJECT);
 
-  // Check whether an exception overrides the global cookie behavior
-  // Note that the code for getting the URI here matches that in
-  // nsHTMLDocument::SetCookie.
+  
+  
+  
   if (!mWindow || !mWindow->GetDocShell()) {
     return cookieEnabled;
   }
@@ -522,14 +522,14 @@ bool Navigator::CookieEnabled() {
   doc->NodePrincipal()->GetURI(getter_AddRefs(contentURI));
 
   if (!contentURI) {
-    // Not a content, so technically can't set cookies, but let's
-    // just return the default value.
+    
+    
     return cookieEnabled;
   }
 
   uint32_t rejectedReason = 0;
-  bool granted = AntiTrackingCommon::IsFirstPartyStorageAccessGrantedFor(
-      mWindow, contentURI, &rejectedReason);
+  bool granted = ContentBlocking::ShouldAllowAccessFor(mWindow, contentURI,
+                                                       &rejectedReason);
 
   ContentBlockingNotifier::OnDecision(
       mWindow,
@@ -544,8 +544,8 @@ bool Navigator::OnLine() { return !NS_IsOffline(); }
 void Navigator::GetBuildID(nsAString& aBuildID, CallerType aCallerType,
                            ErrorResult& aRv) const {
   if (aCallerType != CallerType::System) {
-    // If fingerprinting resistance is on, we will spoof this value. See
-    // nsRFPService.h for details about spoofed values.
+    
+    
     if (nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
       aBuildID.AssignLiteral(LEGACY_BUILD_ID);
       return;
@@ -573,7 +573,7 @@ void Navigator::GetBuildID(nsAString& aBuildID, CallerType aCallerType,
       }
     }
 
-    // Spoof the buildID on pages not loaded from "https://*.mozilla.org".
+    
     if (!isHTTPS || !StringEndsWith(host, NS_LITERAL_CSTRING(".mozilla.org"))) {
       aBuildID.AssignLiteral(LEGACY_BUILD_ID);
       return;
@@ -637,9 +637,9 @@ class VibrateWindowListener : public nsIDOMEventListener {
     mDocument = do_GetWeakReference(aDocument);
 
     NS_NAMED_LITERAL_STRING(visibilitychange, "visibilitychange");
-    aDocument->AddSystemEventListener(visibilitychange, this, /* listener */
-                                      true,                   /* use capture */
-                                      false /* wants untrusted */);
+    aDocument->AddSystemEventListener(visibilitychange, this, 
+                                      true,                   
+                                      false );
   }
 
   void RemoveListener();
@@ -659,7 +659,7 @@ NS_IMPL_ISUPPORTS(VibrateWindowListener, nsIDOMEventListener)
 StaticRefPtr<VibrateWindowListener> gVibrateWindowListener;
 
 static bool MayVibrate(Document* doc) {
-  // Hidden documents cannot start or stop a vibration.
+  
   return (doc && !doc->Hidden());
 }
 
@@ -668,15 +668,15 @@ VibrateWindowListener::HandleEvent(Event* aEvent) {
   nsCOMPtr<Document> doc = do_QueryInterface(aEvent->GetTarget());
 
   if (!MayVibrate(doc)) {
-    // It's important that we call CancelVibrate(), not Vibrate() with an
-    // empty list, because Vibrate() will fail if we're no longer focused, but
-    // CancelVibrate() will succeed, so long as nobody else has started a new
-    // vibration pattern.
+    
+    
+    
+    
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryReferent(mWindow);
     hal::CancelVibrate(window);
     RemoveListener();
     gVibrateWindowListener = nullptr;
-    // Careful: The line above might have deleted |this|!
+    
   }
 
   return NS_OK;
@@ -689,10 +689,10 @@ void VibrateWindowListener::RemoveListener() {
   }
   NS_NAMED_LITERAL_STRING(visibilitychange, "visibilitychange");
   target->RemoveSystemEventListener(visibilitychange, this,
-                                    true /* use capture */);
+                                    true );
 }
 
-}  // namespace
+}  
 
 void Navigator::SetVibrationPermission(bool aPermitted, bool aPersistent) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -711,12 +711,12 @@ void Navigator::SetVibrationPermission(bool aPermitted, bool aPersistent) {
   }
 
   if (aPermitted) {
-    // Add a listener to cancel the vibration if the document becomes hidden,
-    // and remove the old visibility listener, if there was one.
+    
+    
     if (!gVibrateWindowListener) {
-      // If gVibrateWindowListener is null, this is the first time we've
-      // vibrated, and we need to register a listener to clear
-      // gVibrateWindowListener on shutdown.
+      
+      
+      
       ClearOnShutdown(&gVibrateWindowListener);
     } else {
       gVibrateWindowListener->RemoveListener();
@@ -766,8 +766,8 @@ bool Navigator::Vibrate(const nsTArray<uint32_t>& aPattern) {
     pattern[i] = std::min(sMaxVibrateMS, pattern[i]);
   }
 
-  // The spec says we check sVibratorEnabled after we've done the sanity
-  // checking on the pattern.
+  
+  
   if (!sVibratorEnabled) {
     return true;
   }
@@ -786,8 +786,8 @@ bool Navigator::Vibrate(const nsTArray<uint32_t>& aPattern) {
                                    false);
 
   if (permission == nsIPermissionManager::DENY_ACTION) {
-    // Abort without observer service or on denied session permission.
-    SetVibrationPermission(false /* permitted */, false /* persistent */);
+    
+    SetVibrationPermission(false , false );
     return false;
   }
 
@@ -795,12 +795,12 @@ bool Navigator::Vibrate(const nsTArray<uint32_t>& aPattern) {
       mRequestedVibrationPattern.IsEmpty() ||
       (mRequestedVibrationPattern.Length() == 1 &&
        mRequestedVibrationPattern[0] == 0)) {
-    // Always allow cancelling vibration and respect session permissions.
-    SetVibrationPermission(true /* permitted */, false /* persistent */);
+    
+    SetVibrationPermission(true , false );
     return true;
   }
 
-  // Request user permission.
+  
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (!obs) {
     return true;
@@ -811,13 +811,13 @@ bool Navigator::Vibrate(const nsTArray<uint32_t>& aPattern) {
   return true;
 }
 
-//*****************************************************************************
-//  Pointer Events interface
-//*****************************************************************************
+
+
+
 
 uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
-  // The maxTouchPoints is going to reveal the detail of users' hardware. So,
-  // we will spoof it into 0 if fingerprinting resistance is on.
+  
+  
   if (aCallerType != CallerType::System &&
       nsContentUtils::ShouldResistFingerprinting(GetDocShell())) {
     return 0;
@@ -830,18 +830,18 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
   return widget->GetMaxTouchPoints();
 }
 
-//*****************************************************************************
-//    Navigator::nsIDOMClientInformation
-//*****************************************************************************
+
+
+
 
 void Navigator::RegisterContentHandler(const nsAString& aMIMEType,
                                        const nsAString& aURI,
                                        const nsAString& aTitle,
                                        ErrorResult& aRv) {}
 
-// This list should be kept up-to-date with the spec:
-// https://html.spec.whatwg.org/multipage/system-state.html#custom-handlers
-// If you change this list, please also update the copy in E10SUtils.jsm.
+
+
+
 static const char* const kSafeSchemes[] = {
     "bitcoin", "geo",  "im",   "irc",         "ircs", "magnet", "mailto",
     "mms",     "news", "nntp", "openpgp4fpr", "sip",  "sms",    "smsto",
@@ -873,14 +873,14 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
 
   nsCString spec;
   aHandlerURI->GetSpec(spec);
-  // If the uri doesn't contain '%s', it won't be a good handler - the %s
-  // gets replaced with the handled URI.
+  
+  
   if (!FindInReadable(NS_LITERAL_CSTRING("%s"), spec)) {
     aRv.ThrowSyntaxError("Handler URI does not contain \"%s\".");
     return;
   }
 
-  // For security reasons we reject non-http(s) urls (see bug 354316),
+  
   nsAutoCString docScheme;
   nsAutoCString handlerScheme;
   aDocumentURI->GetScheme(docScheme);
@@ -892,7 +892,7 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
     return;
   }
 
-  // Should be same-origin:
+  
   nsAutoCString handlerHost;
   aHandlerURI->GetHostPort(handlerHost);
   nsAutoCString documentHost;
@@ -902,17 +902,17 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
     return;
   }
 
-  // Having checked the handler URI, check the scheme:
+  
   nsAutoCString scheme;
   ToLowerCase(NS_ConvertUTF16toUTF8(aScheme), scheme);
   if (StringBeginsWith(scheme, NS_LITERAL_CSTRING("web+"))) {
-    // Check for non-ascii
+    
     nsReadingIterator<char> iter;
     nsReadingIterator<char> iterEnd;
-    auto remainingScheme = Substring(scheme, 4 /* web+ */);
+    auto remainingScheme = Substring(scheme, 4 );
     remainingScheme.BeginReading(iter);
     remainingScheme.EndReading(iterEnd);
-    // Scheme suffix must be non-empty
+    
     if (iter == iterEnd) {
       raisePermissionDeniedScheme();
       return;
@@ -945,16 +945,16 @@ void Navigator::CheckProtocolHandlerAllowed(const nsAString& aScheme,
     return;
   }
 
-  // Check to make sure this isn't already handled internally (we don't
-  // want to let them take over, say "chrome"). In theory, the checks above
-  // should have already taken care of this.
+  
+  
+  
   nsCOMPtr<nsIExternalProtocolHandler> externalHandler =
       do_QueryInterface(handler);
   MOZ_RELEASE_ASSERT(
       externalHandler,
       "We should never allow overriding a builtin protocol handler");
 
-  // check if we have prefs set saying not to add this.
+  
   bool defaultExternal =
       Preferences::GetBool("network.protocol-handler.external-default");
   nsPrintfCString specificPref("network.protocol-handler.external.%s",
@@ -975,8 +975,8 @@ void Navigator::RegisterProtocolHandler(const nsAString& aScheme,
   }
   nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
   if (loadContext->UsePrivateBrowsing()) {
-    // If we're a private window, don't alert the user or webpage. We log to the
-    // console so that web developers have some way to tell what's going wrong.
+    
+    
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM"),
         mWindow->GetDoc(), nsContentUtils::eDOM_PROPERTIES,
@@ -986,7 +986,7 @@ void Navigator::RegisterProtocolHandler(const nsAString& aScheme,
 
   nsCOMPtr<Document> doc = mWindow->GetDoc();
 
-  // Determine if doc is allowed to assign this handler
+  
   nsIURI* docURI = doc->GetDocumentURIObject();
   nsCOMPtr<nsIURI> handlerURI;
   NS_NewURI(getter_AddRefs(handlerURI), NS_ConvertUTF16toUTF8(aURI),
@@ -1053,7 +1053,7 @@ NS_IMPL_ISUPPORTS(BeaconStreamListener, nsIStreamListener, nsIRequestObserver)
 
 NS_IMETHODIMP
 BeaconStreamListener::OnStartRequest(nsIRequest* aRequest) {
-  // release the loadgroup first
+  
   mLoadGroup = nullptr;
 
   return NS_ERROR_ABORT;
@@ -1143,14 +1143,14 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     return false;
   }
 
-  // Spec disallows any schemes save for HTTP/HTTPs
+  
   if (!uri->SchemeIs("http") && !uri->SchemeIs("https")) {
     aRv.ThrowTypeError<MSG_INVALID_URL_SCHEME>("Beacon",
                                                uri->GetSpecOrDefault());
     return false;
   }
 
-  // No need to use CORS for sendBeacon unless it's a BLOB
+  
   nsSecurityFlags securityFlags =
       aType == eBeaconTypeBlob
           ? nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS
@@ -1168,7 +1168,7 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
   if (!httpChannel) {
-    // Beacon spec only supports HTTP requests at this time
+    
     aRv.Throw(NS_ERROR_DOM_BAD_URI);
     return false;
   }
@@ -1213,8 +1213,8 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
     cos->AddClassFlags(nsIClassOfService::Background);
   }
 
-  // The channel needs to have a loadgroup associated with it, so that we can
-  // cancel the channel and any redirected channels it may create.
+  
+  
   nsCOMPtr<nsILoadGroup> loadGroup = do_CreateInstance(NS_LOADGROUP_CONTRACTID);
   nsCOMPtr<nsIInterfaceRequestor> callbacks =
       do_QueryInterface(mWindow->GetDocShell());
@@ -1223,11 +1223,11 @@ bool Navigator::SendBeaconInternal(const nsAString& aUrl,
 
   RefPtr<BeaconStreamListener> beaconListener = new BeaconStreamListener();
   rv = channel->AsyncOpen(beaconListener);
-  // do not throw if security checks fail within asyncOpen
+  
   NS_ENSURE_SUCCESS(rv, false);
 
-  // make the beaconListener hold a strong reference to the loadgroup
-  // which is released in ::OnStartRequest
+  
+  
   beaconListener->SetLoadGroup(loadGroup);
 
   return true;
@@ -1271,7 +1271,7 @@ void Navigator::MozGetUserMedia(const MediaStreamConstraints& aConstraints,
             nsCOMPtr<nsPIDOMWindowInner> window = do_QueryReferent(weakWindow);
             if (!window || !window->GetOuterWindow() ||
                 window->GetOuterWindow()->GetCurrentInnerWindow() != window) {
-              return;  // Leave Promise pending after navigation by design.
+              return;  
             }
             MediaManager::CallOnSuccess(*onsuccess, *aStream);
           },
@@ -1280,7 +1280,7 @@ void Navigator::MozGetUserMedia(const MediaStreamConstraints& aConstraints,
             nsCOMPtr<nsPIDOMWindowInner> window = do_QueryReferent(weakWindow);
             if (!window || !window->GetOuterWindow() ||
                 window->GetOuterWindow()->GetCurrentInnerWindow() != window) {
-              return;  // Leave Promise pending after navigation by design.
+              return;  
             }
             auto error = MakeRefPtr<MediaStreamError>(window, *aError);
             MediaManager::CallOnError(*onerror, *error);
@@ -1310,15 +1310,15 @@ void Navigator::MozGetUserMediaDevices(
     }
   }
   RefPtr<MediaManager> manager = MediaManager::Get();
-  // XXXbz aOnError seems to be unused?
+  
   nsCOMPtr<nsPIDOMWindowInner> window(mWindow);
   aRv = manager->GetUserMediaDevices(window, aConstraints, aOnSuccess,
                                      aInnerWindowID, aCallID);
 }
 
-//*****************************************************************************
-//    Navigator::nsINavigatorBattery
-//*****************************************************************************
+
+
+
 
 Promise* Navigator::GetBattery(ErrorResult& aRv) {
   if (mBatteryPromise) {
@@ -1346,9 +1346,9 @@ Promise* Navigator::GetBattery(ErrorResult& aRv) {
   return mBatteryPromise;
 }
 
-//*****************************************************************************
-//    Navigator::Share() - Web Share API
-//*****************************************************************************
+
+
+
 
 Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   if (NS_WARN_IF(!mWindow || !mWindow->GetDocShell() ||
@@ -1363,8 +1363,8 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     return nullptr;
   }
 
-  // If none of data's members title, text, or url are present, reject p with
-  // TypeError, and abort these steps.
+  
+  
   bool someMemberPassed = aData.mTitle.WasPassed() || aData.mText.WasPassed() ||
                           aData.mUrl.WasPassed();
   if (!someMemberPassed) {
@@ -1373,10 +1373,10 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     return nullptr;
   }
 
-  // null checked above
+  
   auto doc = mWindow->GetExtantDoc();
 
-  // If data's url member is present, try to resolve it...
+  
   nsCOMPtr<nsIURI> url;
   if (aData.mUrl.WasPassed()) {
     auto result = doc->ResolveWithBaseURI(aData.mUrl.Value());
@@ -1388,7 +1388,7 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     url = result.unwrap();
   }
 
-  // Process the title member...
+  
   nsCString title;
   if (aData.mTitle.WasPassed()) {
     title.Assign(NS_ConvertUTF16toUTF8(aData.mTitle.Value()));
@@ -1396,7 +1396,7 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     title.SetIsVoid(true);
   }
 
-  // Process the text member...
+  
   nsCString text;
   if (aData.mText.WasPassed()) {
     text.Assign(NS_ConvertUTF16toUTF8(aData.mText.Value()));
@@ -1404,9 +1404,9 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     text.SetIsVoid(true);
   }
 
-  // The spec does the "triggered by user activation" after the data checks.
-  // Unfortunately, both Chrome and Safari behave this way, so interop wins.
-  // https://github.com/w3c/web-share/pull/118
+  
+  
+  
   if (StaticPrefs::dom_webshare_requireinteraction() &&
       !UserActivation::IsHandlingUserInput()) {
     NS_WARNING("Attempt to share not triggered by user activation");
@@ -1414,7 +1414,7 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
     return nullptr;
   }
 
-  // Let mSharePromise be a new promise.
+  
   mSharePromise = Promise::Create(mWindow->AsGlobal(), aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -1439,13 +1439,13 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
 
   auto shareRejector = [self = RefPtr<Navigator>(this)](
                            mozilla::ipc::ResponseRejectReason&& aReason) {
-    // IPC died or maybe page navigated...
+    
     if (self->mSharePromise) {
       self->mSharePromise = nullptr;
     }
   };
 
-  // Do the share
+  
   wgc->SendShare(data, shareResolver, shareRejector);
   return mSharePromise;
 }
@@ -1514,22 +1514,22 @@ already_AddRefed<Promise> Navigator::GetVRDisplays(ErrorResult& aRv) {
 
 void Navigator::FinishGetVRDisplays(bool isWebVRSupportedInwindow, Promise* p) {
   if (!isWebVRSupportedInwindow) {
-    // WebVR in this window is not supported, so resolve the promise
-    // with no displays available
+    
+    
     nsTArray<RefPtr<VRDisplay>> vrDisplaysEmpty;
     p->MaybeResolve(vrDisplaysEmpty);
     return;
   }
 
-  // Since FinishGetVRDisplays can be called asynchronously after an IPC
-  // response, it's possible that the Window can be torn down before this
-  // call. In that case, the Window's cyclic references to VR objects are
-  // also torn down and should not be recreated via
-  // NotifyHasXRSession.
+  
+  
+  
+  
+  
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
   if (win->IsDying()) {
-    // The Window has been torn down, so there is no further work that can
-    // be done.
+    
+    
     p->MaybeRejectWithTypeError(
         "Unable to return VRDisplays for a closed window.");
     return;
@@ -1542,11 +1542,11 @@ void Navigator::FinishGetVRDisplays(bool isWebVRSupportedInwindow, Promise* p) {
 void Navigator::OnXRPermissionRequestAllow() {
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
 
-  // We pass mWindow's id to RefreshVRDisplays, so NotifyVRDisplaysUpdated will
-  // be called asynchronously, resolving the promises in mVRGetDisplaysPromises.
+  
+  
   if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
     for (auto& p : mVRGetDisplaysPromises) {
-      // Failed to refresh, reject the promise now
+      
       p->MaybeRejectWithTypeError("Failed to find attached VR displays.");
     }
   }
@@ -1555,8 +1555,8 @@ void Navigator::OnXRPermissionRequestAllow() {
 void Navigator::OnXRPermissionRequestCancel() {
   nsTArray<RefPtr<VRDisplay>> vrDisplays;
   for (auto& p : mVRGetDisplaysPromises) {
-    // Resolve the promise with no vr displays when
-    // the user blocks access.
+    
+    
     p->MaybeResolve(vrDisplays);
   }
   mVRGetDisplaysPromises.Clear();
@@ -1564,17 +1564,17 @@ void Navigator::OnXRPermissionRequestCancel() {
 
 void Navigator::GetActiveVRDisplays(
     nsTArray<RefPtr<VRDisplay>>& aDisplays) const {
-  /**
-   * Get only the active VR displays.
-   * GetActiveVRDisplays should only enumerate displays that
-   * are already active without causing any other hardware to be
-   * activated.
-   * We must not call nsGlobalWindow::NotifyHasXRSession here,
-   * as that would cause enumeration and activation of other VR hardware.
-   * Activating VR hardware is intrusive to the end user, as it may
-   * involve physically powering on devices that the user did not
-   * intend to use.
-   */
+  
+
+
+
+
+
+
+
+
+
+
   if (!mWindow || !mWindow->GetDocShell()) {
     return;
   }
@@ -1590,8 +1590,8 @@ void Navigator::GetActiveVRDisplays(
 }
 
 void Navigator::NotifyVRDisplaysUpdated() {
-  // Synchronize the VR devices and resolve the promises in
-  // mVRGetDisplaysPromises
+  
+  
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
 
   nsTArray<RefPtr<VRDisplay>> vrDisplays;
@@ -1612,7 +1612,7 @@ void Navigator::NotifyActiveVRDisplaysChanged() {
 }
 
 VRServiceTest* Navigator::RequestVRServiceTest() {
-  // Ensure that the Mock VR devices are not released prematurely
+  
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
   win->NotifyHasXRSession();
 
@@ -1676,10 +1676,10 @@ size_t Navigator::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
-  // TODO: add SizeOfIncludingThis() to nsMimeTypeArray, bug 674113.
-  // TODO: add SizeOfIncludingThis() to nsPluginArray, bug 674114.
-  // TODO: add SizeOfIncludingThis() to Geolocation, bug 674115.
-  // TODO: add SizeOfIncludingThis() to DesktopNotificationCenter, bug 674116.
+  
+  
+  
+  
 
   return n;
 }
@@ -1693,7 +1693,7 @@ void Navigator::OnNavigation() {
     return;
   }
 
-  // If MediaManager is open let it inform any live streams or pending callbacks
+  
   MediaManager* manager = MediaManager::GetIfExists();
   if (manager) {
     manager->OnNavigation(mWindow->WindowID());
@@ -1705,30 +1705,30 @@ JSObject* Navigator::WrapObject(JSContext* cx,
   return Navigator_Binding::Wrap(cx, this, aGivenProto);
 }
 
-/* static */
+
 bool Navigator::HasUserMediaSupport(JSContext* cx, JSObject* obj) {
-  // Make enabling peerconnection enable getUserMedia() as well.
-  // Emulate [SecureContext] unless media.devices.insecure.enabled=true
+  
+  
   return (StaticPrefs::media_navigator_enabled() ||
           StaticPrefs::media_peerconnection_enabled()) &&
          (IsSecureContextOrObjectIsFromSecureContext(cx, obj) ||
           StaticPrefs::media_devices_insecure_enabled());
 }
 
-/* static */
+
 bool Navigator::HasShareSupport(JSContext* cx, JSObject* obj) {
   if (!Preferences::GetBool("dom.webshare.enabled")) {
     return false;
   }
 #if defined(XP_WIN) && !defined(__MINGW32__)
-  // The first public build that supports ShareCanceled API
+  
   return IsWindows10BuildOrLater(18956);
 #else
   return true;
 #endif
 }
 
-/* static */
+
 already_AddRefed<nsPIDOMWindowInner> Navigator::GetWindowFromGlobal(
     JSObject* aGlobal) {
   nsCOMPtr<nsPIDOMWindowInner> win = xpc::WindowOrNull(aGlobal);
@@ -1741,8 +1741,8 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
-    // If fingerprinting resistance is on, we will spoof this value. See
-    // nsRFPService.h for details about spoofed values.
+    
+    
     if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
       aPlatform.AssignLiteral(SPOOFED_PLATFORM);
       return NS_OK;
@@ -1763,8 +1763,8 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http", &rv));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Sorry for the #if platform ugliness, but Communicator is likewise
-  // hardcoded and we are seeking backward compatibility here (bug 47080).
+  
+  
 #if defined(WIN32)
   aPlatform.AssignLiteral("Win32");
 #elif defined(XP_MACOSX) && defined(__ppc__)
@@ -1774,9 +1774,9 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
 #elif defined(XP_MACOSX) && defined(__x86_64__)
   aPlatform.AssignLiteral("MacIntel");
 #else
-  // XXX Communicator uses compiled-in build-time string defines
-  // to indicate the platform it was compiled *for*, not what it is
-  // currently running *on* which is what this does.
+  
+  
+  
   nsAutoCString plat;
   rv = service->GetOscpu(plat);
   CopyASCIItoUTF16(plat, aPlatform);
@@ -1785,15 +1785,15 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform,
   return rv;
 }
 
-/* static */
+
 nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
                                   nsIPrincipal* aCallerPrincipal,
                                   bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
-    // If fingerprinting resistance is on, we will spoof this value. See
-    // nsRFPService.h for details about spoofed values.
+    
+    
     if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
       aAppVersion.AssignLiteral(SPOOFED_APPVERSION);
       return NS_OK;
@@ -1830,14 +1830,14 @@ nsresult Navigator::GetAppVersion(nsAString& aAppVersion,
   return rv;
 }
 
-/* static */
+
 void Navigator::AppName(nsAString& aAppName, nsIPrincipal* aCallerPrincipal,
                         bool aUsePrefOverriddenValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aUsePrefOverriddenValue) {
-    // If fingerprinting resistance is on, we will spoof this value. See
-    // nsRFPService.h for details about spoofed values.
+    
+    
     if (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
       aAppName.AssignLiteral(SPOOFED_APPNAME);
       return;
@@ -1865,8 +1865,8 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
                                  bool aIsCallerChrome, nsAString& aUserAgent) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // We will skip the override and pass to httpHandler to get spoofed userAgent
-  // when 'privacy.resistFingerprinting' is true.
+  
+  
   if (!aIsCallerChrome &&
       !nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
     nsAutoString override;
@@ -1879,9 +1879,9 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
     }
   }
 
-  // When the caller is content and 'privacy.resistFingerprinting' is true,
-  // return a spoofed userAgent which reveals the platform but not the
-  // specific OS version, etc.
+  
+  
+  
   if (!aIsCallerChrome &&
       nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal)) {
     nsAutoCString spoofedUA;
@@ -1905,17 +1905,17 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
 
   CopyASCIItoUTF16(ua, aUserAgent);
 
-  // When the caller is content, we will always return spoofed userAgent and
-  // ignore the User-Agent header from the document channel when
-  // 'privacy.resistFingerprinting' is true.
+  
+  
+  
   if (!aWindow ||
       (nsContentUtils::ShouldResistFingerprinting(aCallerPrincipal) &&
        !aIsCallerChrome)) {
     return NS_OK;
   }
 
-  // Copy the User-Agent header from the document channel which has already been
-  // subject to UA overrides.
+  
+  
   nsCOMPtr<Document> doc = aWindow->GetExtantDoc();
   if (!doc) {
     return NS_OK;
@@ -2060,10 +2060,10 @@ webgpu::Instance* Navigator::Gpu() {
   return mWebGpu;
 }
 
-/* static */
+
 bool Navigator::Webdriver() {
   return Preferences::GetBool("marionette.enabled", false);
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
