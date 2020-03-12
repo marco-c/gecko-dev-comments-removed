@@ -1919,6 +1919,12 @@ MediaConduitErrorCode WebrtcVideoConduit::SendVideoFrame(
     }
   }
 
+  
+  
+  if (cropWidth == 0 || cropHeight == 0) {
+    return kMediaConduitNoError;
+  }
+
   int cropX = (frame.width() - cropWidth) / 2;
   int cropY = (frame.height() - cropHeight) / 2;
 
