@@ -19,6 +19,7 @@
 #include "vm/JSContext.h"       
 #include "vm/JSScript.h"        
 #include "vm/Realm.h"           
+#include "vm/Warnings.h"        
 
 #include "vm/Realm-inl.h"  
 
@@ -77,9 +78,8 @@ bool EnterDebuggeeNoExecute::reportIfFoundInStack(JSContext* cx,
       SprintfLiteral(linenoStr, "%u", script->lineno());
       
       if (warning) {
-        return JS_ReportErrorFlagsAndNumberLatin1(
-            cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
-            JSMSG_DEBUGGEE_WOULD_RUN, filename, linenoStr);
+        return WarnNumberLatin1(cx, JSMSG_DEBUGGEE_WOULD_RUN, filename,
+                                linenoStr);
       }
 
       JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr,

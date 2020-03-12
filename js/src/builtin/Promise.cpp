@@ -28,6 +28,7 @@
 #include "vm/PromiseLookup.h"  
 #include "vm/PromiseObject.h"  
 #include "vm/SelfHosting.h"
+#include "vm/Warnings.h"  
 
 #include "debugger/DebugAPI-inl.h"
 #include "vm/Compartment-inl.h"
@@ -4423,9 +4424,7 @@ MOZ_MUST_USE bool js::AsyncFunctionThrown(JSContext* cx,
   if (resultPromise->state() != JS::PromiseState::Pending) {
     
     
-    if (!JS_ReportErrorFlagsAndNumberASCII(
-            cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
-            JSMSG_UNHANDLABLE_PROMISE_REJECTION_WARNING)) {
+    if (!WarnNumberASCII(cx, JSMSG_UNHANDLABLE_PROMISE_REJECTION_WARNING)) {
       if (cx->isExceptionPending()) {
         cx->clearPendingException();
       }

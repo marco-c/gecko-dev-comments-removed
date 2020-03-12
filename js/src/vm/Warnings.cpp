@@ -5,11 +5,13 @@
 
 
 #include "js/Warnings.h"
+#include "vm/Warnings.h"
 
 #include <stdarg.h>  
 
-#include "jsapi.h"    
-#include "jstypes.h"  
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
+#include "jstypes.h"      
 
 #include "js/ErrorReport.h"  
 #include "vm/JSContext.h"  
@@ -18,6 +20,7 @@ using js::ArgumentsAreASCII;
 using js::ArgumentsAreLatin1;
 using js::ArgumentsAreUTF8;
 using js::AssertHeapIsIdle;
+using js::GetErrorMessage;
 using js::ReportErrorVA;
 
 JS_PUBLIC_API bool JS::WarnASCII(JSContext* cx, const char* format, ...) {
@@ -62,4 +65,40 @@ JS_PUBLIC_API JS::WarningReporter JS::SetWarningReporter(
   WarningReporter older = cx->runtime()->warningReporter;
   cx->runtime()->warningReporter = reporter;
   return older;
+}
+
+bool js::WarnNumberASCII(JSContext* cx, const unsigned errorNumber, ...) {
+  va_list ap;
+  va_start(ap, errorNumber);
+  bool ok = ReportErrorNumberVA(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
+                                errorNumber, ArgumentsAreASCII, ap);
+  va_end(ap);
+  return ok;
+}
+
+bool js::WarnNumberLatin1(JSContext* cx, const unsigned errorNumber, ...) {
+  va_list ap;
+  va_start(ap, errorNumber);
+  bool ok = ReportErrorNumberVA(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
+                                errorNumber, ArgumentsAreLatin1, ap);
+  va_end(ap);
+  return ok;
+}
+
+bool js::WarnNumberUTF8(JSContext* cx, const unsigned errorNumber, ...) {
+  va_list ap;
+  va_start(ap, errorNumber);
+  bool ok = ReportErrorNumberVA(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
+                                errorNumber, ArgumentsAreUTF8, ap);
+  va_end(ap);
+  return ok;
+}
+
+bool js::WarnNumberUC(JSContext* cx, const unsigned errorNumber, ...) {
+  va_list ap;
+  va_start(ap, errorNumber);
+  bool ok = ReportErrorNumberVA(cx, JSREPORT_WARNING, GetErrorMessage, nullptr,
+                                errorNumber, ArgumentsAreUnicode, ap);
+  va_end(ap);
+  return ok;
 }
