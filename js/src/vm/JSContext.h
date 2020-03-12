@@ -1137,19 +1137,10 @@ extern void ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx,
 
 
 
-
-extern bool ReportValueErrorFlags(JSContext* cx, unsigned flags,
-                                  const unsigned errorNumber, int spindex,
-                                  HandleValue v, HandleString fallback,
-                                  const char* arg1, const char* arg2);
-
-inline void ReportValueError(JSContext* cx, const unsigned errorNumber,
+extern bool ReportValueError(JSContext* cx, const unsigned errorNumber,
                              int spindex, HandleValue v, HandleString fallback,
                              const char* arg1 = nullptr,
-                             const char* arg2 = nullptr) {
-  ReportValueErrorFlags(cx, JSREPORT_ERROR, errorNumber, spindex, v, fallback,
-                        arg1, arg2);
-}
+                             const char* arg2 = nullptr);
 
 JSObject* CreateErrorNotesArray(JSContext* cx, JSErrorReport* report);
 
