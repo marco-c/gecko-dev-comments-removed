@@ -1498,10 +1498,10 @@ nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {
 
 
 #ifdef XP_MACOSX
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
   
   
-  if (fm->GetActiveWindow() && aSelectionType == SelectionType::eNormal) {
+  Document* doc = mPresShell->GetDocument();
+  if (doc && IsInActiveTab(doc) && aSelectionType == SelectionType::eNormal) {
     UpdateSelectionCacheOnRepaintSelection(mDomSelections[index]);
   }
 #endif
@@ -3002,10 +3002,9 @@ void AutoCopyListener::OnSelectionChange(Document* aDocument,
   MOZ_ASSERT(IsValidClipboardID(sClipboardID));
 
   if (sClipboardID == nsIClipboard::kSelectionCache) {
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
     
     
-    if (!fm->GetActiveWindow()) {
+    if (!aDocument || !IsInActiveTab(aDocument)) {
       return;
     }
   }
