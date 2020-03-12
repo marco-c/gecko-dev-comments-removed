@@ -20,7 +20,7 @@ from mozterm import Terminal
 from ..cli import BaseTryParser
 from ..tasks import generate_tasks, filter_tasks_by_paths
 from ..push import check_working_directory, push_to_try, generate_try_task_config
-from ..util.estimates import download_task_history_data, make_trimmed_taskgraph_cache
+from ..util.manage_estimates import download_task_history_data, make_trimmed_taskgraph_cache
 
 terminal = Terminal()
 
@@ -61,7 +61,7 @@ editor integrations, download the appropriate binary and put it on your $PATH:
 FZF_VERSION_FAILED = """
 Could not obtain the 'fzf' version.
 
-The 'mach try fuzzy' command depends on fzf, and requires version > 0.18.0
+The 'mach try fuzzy' command depends on fzf, and requires version > 0.20.0
 for some of the features. Please install it following the appropriate
 instructions for your platform:
 
@@ -204,7 +204,7 @@ def should_force_fzf_update(fzf_bin):
 
     
     
-    if StrictVersion(fzf_version) < StrictVersion('0.18.0'):
+    if StrictVersion(fzf_version) < StrictVersion('0.20.0'):
         print("fzf version is old, forcing update.")
         return True
     return False
@@ -341,12 +341,12 @@ def run(update=False, query=None, intersect_query=None, try_config=None, full=Fa
 
     if show_estimates:
         base_cmd.extend([
-            '--preview', 'python {} -g {} -s -c {} "{{+}}"'.format(
+            '--preview', 'python {} -g {} -s -c {} -t "{{+f}}"'.format(
                 PREVIEW_SCRIPT, dep_cache, cache_dir),
         ])
     else:
         base_cmd.extend([
-            '--preview', 'python {} "{{+}}"'.format(PREVIEW_SCRIPT),
+            '--preview', 'python {} -t "{{+f}}"'.format(PREVIEW_SCRIPT),
         ])
 
     if exact:
