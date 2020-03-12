@@ -1,3 +1,6 @@
 
 
-var foo = "Some string"; function bar(x) { x.trySomething(); }
+var foo = "Some string";
+function bar(x) {
+  x.trySomething();
+}
