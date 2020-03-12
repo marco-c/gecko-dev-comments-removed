@@ -238,14 +238,6 @@ void gfxAndroidPlatform::ReadSystemFontList(
   gfxFT2FontList::PlatformFontList()->ReadSystemFontList(aFontList);
 }
 
-gfxFontGroup* gfxAndroidPlatform::CreateFontGroup(
-    const FontFamilyList& aFontFamilyList, const gfxFontStyle* aStyle,
-    gfxTextPerfMetrics* aTextPerf, gfxUserFontSet* aUserFontSet,
-    gfxFloat aDevToCssSize) {
-  return new gfxFontGroup(aFontFamilyList, aStyle, aTextPerf, aUserFontSet,
-                          aDevToCssSize);
-}
-
 bool gfxAndroidPlatform::FontHintingEnabled() {
   
   

@@ -370,10 +370,11 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  virtual gfxFontGroup* CreateFontGroup(
-      const mozilla::FontFamilyList& aFontFamilyList,
-      const gfxFontStyle* aStyle, gfxTextPerfMetrics* aTextPerf,
-      gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize) = 0;
+  gfxFontGroup* CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+                                const gfxFontStyle* aStyle,
+                                gfxTextPerfMetrics* aTextPerf,
+                                gfxUserFontSet* aUserFontSet,
+                                gfxFloat aDevToCssSize) const;
 
   
 

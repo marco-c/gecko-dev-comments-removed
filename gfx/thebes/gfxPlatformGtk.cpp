@@ -259,14 +259,6 @@ gfxPlatformFontList* gfxPlatformGtk::CreatePlatformFontList() {
   return nullptr;
 }
 
-gfxFontGroup* gfxPlatformGtk::CreateFontGroup(
-    const FontFamilyList& aFontFamilyList, const gfxFontStyle* aStyle,
-    gfxTextPerfMetrics* aTextPerf, gfxUserFontSet* aUserFontSet,
-    gfxFloat aDevToCssSize) {
-  return new gfxFontGroup(aFontFamilyList, aStyle, aTextPerf, aUserFontSet,
-                          aDevToCssSize);
-}
-
 
 
 static int32_t sDPI = 0;
