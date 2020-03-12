@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use api::{AlphaType, DocumentLayer, PremultipliedColorF, YuvFormat, YuvColorSpace};
 use api::units::*;
@@ -15,7 +15,7 @@ use crate::util::{TransformedRectKind, MatrixHelpers};
 use crate::glyph_rasterizer::SubpixelDirection;
 use crate::util::pack_as_float;
 
-
+// Contains type that must exactly match the same structures declared in GLSL.
 
 pub const VECS_PER_TRANSFORM: usize = 8;
 
@@ -25,12 +25,7 @@ pub const VECS_PER_TRANSFORM: usize = 8;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ZBufferId(pub i32);
 
-
-
-
-
 const MAX_DOCUMENT_LAYERS : i8 = 1 << 3;
-const MAX_ITEMS_PER_DOCUMENT_LAYER : i32 = 1 << 19;
 const MAX_DOCUMENT_LAYER_VALUE : i8 = MAX_DOCUMENT_LAYERS / 2 - 1;
 const MIN_DOCUMENT_LAYER_VALUE : i8 = -MAX_DOCUMENT_LAYERS / 2;
 
@@ -46,32 +41,35 @@ impl ZBufferId {
 pub struct ZBufferIdGenerator {
     base: i32,
     next: i32,
+    max_items_per_document_layer: i32,
 }
 
 impl ZBufferIdGenerator {
-    pub fn new(layer: DocumentLayer) -> Self {
+    pub fn new(layer: DocumentLayer, max_depth_ids: i32) -> Self {
         debug_assert!(layer >= MIN_DOCUMENT_LAYER_VALUE);
         debug_assert!(layer <= MAX_DOCUMENT_LAYER_VALUE);
+        let max_items_per_document_layer = max_depth_ids / MAX_DOCUMENT_LAYERS as i32;
         ZBufferIdGenerator {
-            base: layer as i32 * MAX_ITEMS_PER_DOCUMENT_LAYER,
-            next: 0
+            base: layer as i32 * max_items_per_document_layer,
+            next: 0,
+            max_items_per_document_layer,
         }
     }
 
     pub fn next(&mut self) -> ZBufferId {
-        debug_assert!(self.next < MAX_ITEMS_PER_DOCUMENT_LAYER);
+        debug_assert!(self.next < self.max_items_per_document_layer);
         let id = ZBufferId(self.next + self.base);
         self.next += 1;
         id
     }
 }
 
-
-
-
-
-
-
+/// A shader kind identifier that can be used by a generic-shader to select the behavior at runtime.
+///
+/// Not all brush kinds need to be present in this enum, only those we want to support in the generic
+/// brush shader.
+/// Do not use the 24 lowest bits. This will be packed with other information in the vertex attributes.
+/// The constants must match the corresponding defines in brush_multi.glsl.
 #[repr(i32)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BrushShaderKind {
@@ -179,9 +177,9 @@ pub struct BorderInstance {
     pub clip_params: [f32; 8],
 }
 
-
-
-
+/// A clipping primitive drawn into the clipping mask.
+/// Could be an image or a rectangle, which defines the
+/// way `address` is treated.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -199,7 +197,7 @@ pub struct ClipMaskInstance {
     pub device_pixel_scale: f32,
 }
 
-
+/// A border corner dot or dash drawn into the clipping mask.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -209,7 +207,7 @@ pub struct ClipMaskBorderCornerDotDash {
     pub dot_dash_data: [f32; 8],
 }
 
-
+// 16 bytes per instance should be enough for anyone!
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -217,7 +215,7 @@ pub struct PrimitiveInstanceData {
     data: [i32; 4],
 }
 
-
+/// Vertex format for resolve style operations with pixel local storage.
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct ResolveInstanceData {
@@ -237,27 +235,27 @@ impl ResolveInstanceData {
     }
 }
 
-
+/// Vertex format for picture cache composite shader.
 #[derive(Debug, Clone)]
 #[repr(C)]
 pub struct CompositeInstance {
-    
+    // Device space rectangle of surface
     rect: DeviceRect,
-    
+    // Device space clip rect for this surface
     clip_rect: DeviceRect,
-    
+    // Color for solid color tiles, white otherwise
     color: PremultipliedColorF,
 
-    
+    // Packed into a single vec4 (aParams)
     z_id: f32,
-    yuv_color_space: f32,       
-    yuv_format: f32,            
+    yuv_color_space: f32,       // YuvColorSpace
+    yuv_format: f32,            // YuvFormat
     yuv_rescale: f32,
 
-    
+    // UV rectangles (pixel space) for color / yuv texture planes
     uv_rects: [TexelRect; 3],
 
-    
+    // Texture array layers for color / yuv texture planes
     texture_layers: [f32; 3],
 }
 
@@ -316,9 +314,9 @@ pub struct PrimitiveHeaderIndex(pub i32);
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct PrimitiveHeaders {
-    
+    // The integer-type headers for a primitive.
     pub headers_int: Vec<PrimitiveHeaderI>,
-    
+    // The float-type headers for a primitive.
     pub headers_float: Vec<PrimitiveHeaderF>,
 }
 
@@ -330,7 +328,7 @@ impl PrimitiveHeaders {
         }
     }
 
-    
+    // Add a new primitive header.
     pub fn push(
         &mut self,
         prim_header: &PrimitiveHeader,
@@ -357,8 +355,8 @@ impl PrimitiveHeaders {
     }
 }
 
-
-
+// This is a convenience type used to make it easier to pass
+// the common parts around during batching.
 #[derive(Debug)]
 pub struct PrimitiveHeader {
     pub local_rect: LayoutRect,
@@ -367,7 +365,7 @@ pub struct PrimitiveHeader {
     pub transform_id: TransformPaletteId,
 }
 
-
+// f32 parts of a primitive header
 #[derive(Debug)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -377,8 +375,8 @@ pub struct PrimitiveHeaderF {
     pub local_clip_rect: LayoutRect,
 }
 
-
-
+// i32 parts of a primitive header
+// TODO(gw): Compress parts of these down to u16
 #[derive(Debug)]
 #[repr(C)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -387,7 +385,7 @@ pub struct PrimitiveHeaderI {
     pub z: ZBufferId,
     pub specific_prim_address: i32,
     pub transform_id: TransformPaletteId,
-    pub unused: i32,                    
+    pub unused: i32,                    // To ensure required 16 byte alignment of vertex textures
     pub user_data: [i32; 4],
 }
 
@@ -404,9 +402,9 @@ impl GlyphInstance {
         }
     }
 
-    
-    
-    
+    // TODO(gw): Some of these fields can be moved to the primitive
+    //           header since they are constant, and some can be
+    //           compressed to a smaller size.
     pub fn build(&self,
         render_task: RenderTaskAddress,
         clip_task: RenderTaskAddress,
@@ -477,7 +475,7 @@ bitflags! {
     }
 }
 
-
+/// Convenience structure to encode into PrimitiveInstanceData.
 pub struct BrushInstance {
     pub prim_header_index: PrimitiveHeaderIndex,
     pub render_task_address: RenderTaskAddress,
@@ -506,7 +504,7 @@ impl From<BrushInstance> for PrimitiveInstanceData {
     }
 }
 
-
+/// Convenience structure to encode into the image brush's user data.
 #[derive(Copy, Clone, Debug)]
 pub struct ImageBrushData {
     pub color_mode: ShaderColorMode,
@@ -527,12 +525,12 @@ impl ImageBrushData {
     }
 }
 
-
-
-
-
-
-
+// Represents the information about a transform palette
+// entry that is passed to shaders. It includes an index
+// into the transform palette, and a set of flags. The
+// only flag currently used determines whether the
+// transform is axis-aligned (and this should have
+// pixel snapping applied).
 #[derive(Copy, Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -540,10 +538,10 @@ impl ImageBrushData {
 pub struct TransformPaletteId(pub u32);
 
 impl TransformPaletteId {
-    
+    /// Identity transform ID.
     pub const IDENTITY: Self = TransformPaletteId(0);
 
-    
+    /// Extract the transform kind from the id.
     pub fn transform_kind(&self) -> TransformedRectKind {
         if (self.0 >> 24) == 0 {
             TransformedRectKind::AxisAligned
@@ -553,7 +551,7 @@ impl TransformPaletteId {
     }
 }
 
-
+/// The GPU data payload for a transform palette entry.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -572,7 +570,7 @@ impl TransformData {
     }
 }
 
-
+// Extra data stored about each transform palette entry.
 #[derive(Clone)]
 pub struct TransformMetadata {
     transform_kind: TransformedRectKind,
@@ -592,13 +590,13 @@ struct RelativeTransformKey {
     to_index: SpatialNodeIndex,
 }
 
-
-
-
-
-
-
-
+// Stores a contiguous list of TransformData structs, that
+// are ready for upload to the GPU.
+// TODO(gw): For now, this only stores the complete local
+//           to world transform for each spatial node. In
+//           the future, the transform palette will support
+//           specifying a coordinate system that the transform
+//           should be relative to.
 pub struct TransformPalette {
     transforms: Vec<TransformData>,
     metadata: Vec<TransformMetadata>,
@@ -629,7 +627,7 @@ impl TransformPalette {
             &mut self.transforms,
             index,
             ROOT_SPATIAL_NODE_INDEX,
-            
+            // We know the root picture space == world space
             transform.with_destination::<PicturePixel>(),
         );
     }
@@ -674,10 +672,10 @@ impl TransformPalette {
         }
     }
 
-    
-    
-    
-    
+    // Get a transform palette id for the given spatial node.
+    // TODO(gw): In the future, it will be possible to specify
+    //           a coordinate system id here, to allow retrieving
+    //           transforms in the local space of a given spatial node.
     pub fn get_id(
         &mut self,
         from_index: SpatialNodeIndex,
@@ -697,21 +695,21 @@ impl TransformPalette {
     }
 }
 
-
-
-
-
+// Texture cache resources can be either a simple rect, or define
+// a polygon within a rect by specifying a UV coordinate for each
+// corner. This is useful for rendering screen-space rasterized
+// off-screen surfaces.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum UvRectKind {
-    
-    
+    // The 2d bounds of the texture cache entry define the
+    // valid UV space for this texture cache entry.
     Rect,
-    
-    
-    
-    
+    // The four vertices below define a quad within
+    // the texture cache entry rect. The shader can
+    // use a bilerp() to correctly interpolate a
+    // UV coord in the vertex shader.
     Quad {
         top_left: DeviceHomogeneousVector,
         top_right: DeviceHomogeneousVector,
@@ -733,8 +731,8 @@ pub struct ImageSource {
 
 impl ImageSource {
     pub fn write_gpu_blocks(&self, request: &mut GpuDataRequest) {
-        
-        
+        // see fetch_image_resource in GLSL
+        // has to be VECS_PER_IMAGE_RESOURCE vectors
         request.push([
             self.p0.x,
             self.p0.y,
@@ -748,10 +746,10 @@ impl ImageSource {
             self.user_data[2],
         ]);
 
-        
+        // If this is a polygon uv kind, then upload the four vertices.
         if let UvRectKind::Quad { top_left, top_right, bottom_left, bottom_right } = self.uv_rect_kind {
-            
-            
+            // see fetch_image_resource_extra in GLSL
+            //Note: we really need only 3 components per point here: X, Y, and W
             request.push(top_left);
             request.push(top_right);
             request.push(bottom_left);
@@ -760,8 +758,8 @@ impl ImageSource {
     }
 }
 
-
-
+// Set the local -> world transform for a given spatial
+// node in the transform palette.
 fn register_transform(
     metadatas: &mut Vec<TransformMetadata>,
     transforms: &mut Vec<TransformData>,
@@ -769,8 +767,8 @@ fn register_transform(
     to_index: SpatialNodeIndex,
     transform: LayoutToPictureTransform,
 ) -> usize {
-    
-    
+    // TODO: refactor the calling code to not even try
+    // registering a non-invertible transform.
     let inv_transform = transform
         .inverse()
         .unwrap_or_else(PictureToLayoutTransform::identity);
