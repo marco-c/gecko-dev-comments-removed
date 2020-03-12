@@ -44,7 +44,7 @@ async function testEarlyDebuggerStatement(client, tab, targetFront) {
   client.off("paused", onPaused);
 
   
-  const [, threadFront] = await targetFront.attachThread();
+  const threadFront = await targetFront.attachThread();
   await threadFront.resume();
   ok(true, "Pause wasn't called before we've attached.");
 
