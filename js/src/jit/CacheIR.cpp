@@ -2592,7 +2592,7 @@ static bool NeedEnvironmentShapeGuard(JSObject* envObj) {
   
   CallObject* callObj = &envObj->as<CallObject>();
   JSFunction* fun = &callObj->callee();
-  if (!fun->hasBytecode() || fun->baseScript()->funHasExtensibleScope()) {
+  if (!fun->hasBaseScript() || fun->baseScript()->funHasExtensibleScope()) {
     return true;
   }
 
