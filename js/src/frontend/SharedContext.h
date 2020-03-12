@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef frontend_SharedContext_h
 #define frontend_SharedContext_h
@@ -42,7 +42,7 @@ enum class StatementKind : uint8_t {
   WhileLoop,
   Class,
 
-  // Used only by BytecodeEmitter.
+  
   Spread,
   YieldStar,
 };
@@ -58,8 +58,8 @@ static inline bool StatementKindIsUnlabeledBreakTarget(StatementKind kind) {
   return StatementKindIsLoop(kind) || kind == StatementKind::Switch;
 }
 
-// List of directives that may be encountered in a Directive Prologue
-// (ES5 15.1).
+
+
 class Directives {
   bool strict_;
   bool asmJS_;
@@ -85,20 +85,20 @@ class Directives {
   bool operator!=(const Directives& rhs) const { return !(*this == rhs); }
 };
 
-// The kind of this-binding for the current scope. Note that arrow functions
-// have a lexical this-binding so their ThisBinding is the same as the
-// ThisBinding of their enclosing scope and can be any value.
+
+
+
 enum class ThisBinding : uint8_t { Global, Function, Module };
 
 class GlobalSharedContext;
 class EvalSharedContext;
 class ModuleSharedContext;
 
-/*
- * The struct SharedContext is part of the current parser context (see
- * ParseContext). It stores information that is reused between the parser and
- * the bytecode emitter.
- */
+
+
+
+
+
 class SharedContext {
  public:
   JSContext* const cx_;
@@ -125,38 +125,38 @@ class SharedContext {
   bool inWith_ : 1;
   bool needsThisTDZChecks_ : 1;
 
-  // True if "use strict"; appears in the body instead of being inherited.
+  
   bool hasExplicitUseStrict_ : 1;
 
-  // The (static) bindings of this script need to support dynamic name
-  // read/write access. Here, 'dynamic' means dynamic dictionary lookup on
-  // the scope chain for a dynamic set of keys. The primary examples are:
-  //  - direct eval
-  //  - function::
-  //  - with
-  // since both effectively allow any name to be accessed. Non-examples are:
-  //  - upvars of nested functions
-  //  - function statement
-  // since the set of assigned name is known dynamically.
-  //
-  // Note: access through the arguments object is not considered dynamic
-  // binding access since it does not go through the normal name lookup
-  // mechanism. This is debatable and could be changed (although care must be
-  // taken not to turn off the whole 'arguments' optimization). To answer the
-  // more general "is this argument aliased" question, script->needsArgsObj
-  // should be tested (see JSScript::argIsAliased).
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool bindingsAccessedDynamically_ : 1;
 
-  // A direct eval occurs in the body of the script.
+  
   bool hasDirectEval_ : 1;
 
-  // True if a tagged template exists in the body.
+  
   bool hasCallSiteObj_ : 1;
 
-  // Script is being parsed with a goal of Module.
+  
   bool hasModuleGoal_ : 1;
 
-  // Whether this script has nested functions.
+  
   bool hasInnerFunctions_ : 1;
 
   void computeAllowSyntax(Scope* scope);
@@ -186,8 +186,8 @@ class SharedContext {
         hasModuleGoal_(false),
         hasInnerFunctions_(false) {}
 
-  // If this is the outermost SharedContext, the Scope that encloses
-  // it. Otherwise nullptr.
+  
+  
   virtual Scope* compilationEnclosingScope() const = 0;
 
   bool isFunctionBox() const { return kind_ == Kind::FunctionBox; }
@@ -248,7 +248,7 @@ class SharedContext {
     return retVal;
   }
 
-  // JSOPTION_EXTRA_WARNINGS warnings or strict mode errors.
+  
   bool needStrictChecks() const { return strict() || extraWarnings; }
 };
 
@@ -303,40 +303,40 @@ enum class HasHeritage : bool { No, Yes };
 class FunctionBox : public SharedContext {
   friend struct GCThingList;
 
-  // The parser handles tracing the fields below via the FunctionBox linked
-  // list represented by |traceLink|.
+  
+  
 
-  JSObject* object_;
+  JSFunction* object_;
   FunctionBox* traceLink;
   FunctionBox* emitLink;
 
-  // This field is used for two purposes:
-  //   * If this FunctionBox refers to the function being compiled, this field
-  //     holds its enclosing scope, used for compilation.
-  //   * If this FunctionBox refers to a lazy child of the function being
-  //     compiled, this field holds the child's immediately enclosing scope.
-  //     Once compilation succeeds, we will store it in the child's
-  //     LazyScript.  (Debugger may become confused if LazyScripts refer to
-  //     partially initialized enclosing scopes, so we must avoid storing the
-  //     scope in the LazyScript until compilation has completed
-  //     successfully.)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   AbstractScope enclosingScope_;
 
-  // Names from the named lambda scope, if a named lambda.
+  
   LexicalScope::Data* namedLambdaBindings_;
 
-  // Names from the function scope.
+  
   FunctionScope::Data* functionScopeBindings_;
 
-  // Names from the extra 'var' scope of the function, if the parameter list
-  // has expressions.
+  
+  
   VarScope::Data* extraVarScopeBindings_;
 
-  // Index into funcData, which lives inside of compilationInfo, for the
-  // functionCreationData associated with this functionBox. If there is not a
-  // functionCreationData associated with this functionBox, as in the case of
-  // the function box representing an already allocated function, then
-  // this index will be mozilla::Nothing.
+  
+  
+  
+  
+  
   mozilla::Maybe<size_t> funcDataIndex_;
 
   FunctionBox(JSContext* cx, FunctionBox* traceListHead, uint32_t toStringStart,
@@ -355,83 +355,83 @@ class FunctionBox : public SharedContext {
   mozilla::Maybe<size_t>& functionCreationDataIndex() { return funcDataIndex_; }
 
  public:
-  // Back pointer used by asm.js for error messages.
+  
   FunctionNode* functionNode;
 
   SourceExtent extent;
 
   uint16_t length;
 
-  bool isGenerator_ : 1;           /* generator function or async generator */
-  bool isAsync_ : 1;               /* async function or async generator */
-  bool hasDestructuringArgs : 1;   /* parameter list contains destructuring
-                                      expression */
-  bool hasParameterExprs : 1;      /* parameter list contains expressions */
-  bool hasDuplicateParameters : 1; /* parameter list contains duplicate names */
-  bool useAsm : 1;                 /* see useAsmOrInsideUseAsm */
-  bool isAnnexB : 1;     /* need to emit a synthesized Annex B assignment */
-  bool wasEmitted : 1;   /* Bytecode has been emitted for this function. */
-  bool emitBytecode : 1; /* need to generate bytecode for this function. */
+  bool isGenerator_ : 1;           
+  bool isAsync_ : 1;               
+  bool hasDestructuringArgs : 1;   
 
-  // Fields for use in heuristics.
-  bool declaredArguments : 1; /* the Parser declared 'arguments' */
-  bool usesArguments : 1;     /* contains a free use of 'arguments' */
-  bool usesApply : 1;         /* contains an f.apply() call */
-  bool usesThis : 1;          /* contains 'this' */
-  bool usesReturn : 1;        /* contains a 'return' statement */
-  bool hasRest_ : 1;          /* has rest parameter */
-  bool hasExprBody_ : 1;      /* arrow function with expression
-                               * body like: () => 1
-                               * Only used by Reflect.parse */
+  bool hasParameterExprs : 1;      
+  bool hasDuplicateParameters : 1; 
+  bool useAsm : 1;                 
+  bool isAnnexB : 1;     
+  bool wasEmitted : 1;   
+  bool emitBytecode : 1; 
 
-  // This function does something that can extend the set of bindings in its
-  // call objects --- it does a direct eval in non-strict code, or includes a
-  // function statement (as opposed to a function definition).
-  //
-  // This flag is *not* inherited by enclosed or enclosing functions; it
-  // applies only to the function in whose flags it appears.
-  //
+  
+  bool declaredArguments : 1; 
+  bool usesArguments : 1;     
+  bool usesApply : 1;         
+  bool usesThis : 1;          
+  bool usesReturn : 1;        
+  bool hasRest_ : 1;          
+  bool hasExprBody_ : 1;      
+
+
+
+  
+  
+  
+  
+  
+  
+  
   bool hasExtensibleScope_ : 1;
 
-  // Technically, every function has a binding named 'arguments'. Internally,
-  // this binding is only added when 'arguments' is mentioned by the function
-  // body. This flag indicates whether 'arguments' has been bound either
-  // through implicit use:
-  //   function f() { return arguments }
-  // or explicit redeclaration:
-  //   function f() { var arguments; return arguments }
-  //
-  // Note 1: overwritten arguments (function() { arguments = 3 }) will cause
-  // this flag to be set but otherwise require no special handling:
-  // 'arguments' is just a local variable and uses of 'arguments' will just
-  // read the local's current slot which may have been assigned. The only
-  // special semantics is that the initial value of 'arguments' is the
-  // arguments object (not undefined, like normal locals).
-  //
-  // Note 2: if 'arguments' is bound as a formal parameter, there will be an
-  // 'arguments' in Bindings, but, as the "LOCAL" in the name indicates, this
-  // flag will not be set. This is because, as a formal, 'arguments' will
-  // have no special semantics: the initial value is unconditionally the
-  // actual argument (or undefined if nactual < nformal).
-  //
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool argumentsHasLocalBinding_ : 1;
 
-  // In many cases where 'arguments' has a local binding (as described above)
-  // we do not need to actually create an arguments object in the function
-  // prologue: instead we can analyze how 'arguments' is used (using the
-  // simple dataflow analysis in analyzeSSA) to determine that uses of
-  // 'arguments' can just read from the stack frame directly. However, the
-  // dataflow analysis only looks at how JSOp::Arguments is used, so it will
-  // be unsound in several cases. The frontend filters out such cases by
-  // setting this flag which eagerly sets script->needsArgsObj to true.
-  //
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool definitelyNeedsArgsObj_ : 1;
 
   bool needsHomeObject_ : 1;
   bool isDerivedClassConstructor_ : 1;
 
-  // Whether this function has a .this binding. If true, we need to emit
-  // JSOp::FunctionThis in the prologue to initialize it.
+  
+  
   bool hasThisBinding_ : 1;
 
   uint16_t nargs_;
@@ -501,14 +501,14 @@ class FunctionBox : public SharedContext {
       const AbstractScope& enclosingScope);
   void finish();
 
-  // Clear any function creation data which will no longer be used.
+  
   void clearFunctionCreationData() { functionCreationDataIndex().reset(); }
 
   bool hasObject() const { return object_ != nullptr; }
 
-  JSFunction* function() const { return &object_->as<JSFunction>(); }
+  JSFunction* function() const { return object_; }
 
-  // Initialize FunctionBox with a deferred allocation Function
+  
   void initializeFunction(JSFunction* fun) {
     clobberFunction(fun);
     synchronizeArgCount();
@@ -516,23 +516,23 @@ class FunctionBox : public SharedContext {
 
   void clobberFunction(JSFunction* function) {
     object_ = function;
-    // After clobbering, these flags need to be updated
+    
     setIsInterpreted(function->isInterpreted());
   }
 
   Scope* compilationEnclosingScope() const override {
-    // This is used when emitting code for the current FunctionBox and therefore
-    // the enclosingScope_ must have be set correctly during initalization.
+    
+    
 
     MOZ_ASSERT(enclosingScope_);
     return enclosingScope_.scope();
   }
 
   bool needsCallObjectRegardlessOfBindings() const {
-    // Always create a CallObject if:
-    // - The scope is extensible at runtime due to sloppy eval.
-    // - The function is a generator or async function. (The debugger reads the
-    //   generator object directly from the frame.)
+    
+    
+    
+    
 
     return hasExtensibleScope() || isGenerator() || isAsync();
   }
@@ -642,19 +642,19 @@ class FunctionBox : public SharedContext {
   }
 
   bool shouldSuppressRunOnce() const {
-    // These heuristics suppress the run-once optimization if we expect that
-    // script-cloning will have more impact than TI type-precision would gain.
-    //
-    // See also: Bug 864218
+    
+    
+    
+    
     return explicitName() || argumentsHasLocalBinding() || isGenerator() ||
            isAsync();
   }
 
-  // Return whether this or an enclosing function is being parsed and
-  // validated as asm.js. Note: if asm.js validation fails, this will be false
-  // while the function is being reparsed. This flag can be used to disable
-  // certain parsing features that are necessary in general, but unnecessary
-  // for validated asm.js.
+  
+  
+  
+  
+  
   bool useAsmOrInsideUseAsm() const { return useAsm; }
 
   void setStart(uint32_t offset, uint32_t line, uint32_t column) {
@@ -664,9 +664,9 @@ class FunctionBox : public SharedContext {
   }
 
   void setEnd(uint32_t end) {
-    // For all functions except class constructors, the buffer and
-    // toString ending positions are the same. Class constructors override
-    // the toString ending position with the end of the class definition.
+    
+    
+    
     extent.sourceEnd = extent.toStringEnd = end;
   }
 
@@ -674,8 +674,8 @@ class FunctionBox : public SharedContext {
 
   size_t nargs() { return nargs_; }
 
-  // Flush the acquired argCount to the associated function.
-  // If the function doesn't exist yet, this of course isn't necessary;
+  
+  
   void synchronizeArgCount() {
     if (hasObject()) {
       function()->setArgCount(nargs_);
@@ -735,19 +735,19 @@ inline FunctionBox* SharedContext::asFunctionBox() {
   return static_cast<FunctionBox*>(this);
 }
 
-// In generators, we treat all bindings as closed so that they get stored on
-// the heap.  This way there is less information to copy off the stack when
-// suspending, and back on when resuming.  It also avoids the need to create
-// and invalidate DebugScope proxies for unaliased locals in a generator
-// frame, as the generator frame will be copied out to the heap and released
-// only by GC.
+
+
+
+
+
+
 inline bool SharedContext::allBindingsClosedOver() {
   return bindingsAccessedDynamically() ||
          (isFunctionBox() &&
           (asFunctionBox()->isGenerator() || asFunctionBox()->isAsync()));
 }
 
-}  // namespace frontend
-}  // namespace js
+}  
+}  
 
-#endif /* frontend_SharedContext_h */
+#endif 
