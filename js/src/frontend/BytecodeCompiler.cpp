@@ -509,10 +509,11 @@ JSScript* frontend::ScriptCompiler<Unit>::compileScript(
       }
     }
 
-    
-    AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
-                                       JS::ProfilingCategoryPair::JS_Parsing);
     if (pn) {
+      
+      AutoGeckoProfilerEntry pseudoFrame(cx, "script emit",
+                                         JS::ProfilingCategoryPair::JS_Parsing);
+
       
       if (!parser->publishDeferredFunctions()) {
         return nullptr;
