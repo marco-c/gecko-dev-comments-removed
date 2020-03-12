@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "prio.h"
 #include "PLDHashTable.h"
@@ -72,13 +72,13 @@ StartupCache::CollectReports(nsIHandleReportCallback* aHandleReport,
 }
 
 static const uint8_t MAGIC[] = "startupcache0002";
-// This is a heuristic value for how much to reserve for mTable to avoid
-// rehashing. This is not a hard limit in release builds, but it is in
-// debug builds as it should be stable. If we exceed this number we should
-// just increase it.
+
+
+
+
 static const size_t STARTUP_CACHE_RESERVE_CAPACITY = 450;
-// This is a hard limit which we will assert on, to ensure that we don't
-// have some bug causing runaway cache growth.
+
+
 static const size_t STARTUP_CACHE_MAX_CAPACITY = 5000;
 
 #define STARTUP_CACHE_NAME "startupCache." SC_WORDSIZE "." SC_ENDIAN
@@ -156,15 +156,15 @@ StartupCache::~StartupCache() {
 }
 
 nsresult StartupCache::Init() {
-  // workaround for bug 653936
+  
   nsCOMPtr<nsIProtocolHandler> jarInitializer(
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "jar"));
 
   nsresult rv;
 
-  // This allows to override the startup cache filename
-  // which is useful from xpcshell, when there is no ProfLDS directory to keep
-  // cache in.
+  
+  
+  
   char* env = PR_GetEnv("MOZ_STARTUP_CACHE");
   if (env && *env) {
     rv = NS_NewLocalFile(NS_ConvertUTF8toUTF16(env), false,
@@ -173,14 +173,14 @@ nsresult StartupCache::Init() {
     nsCOMPtr<nsIFile> file;
     rv = NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(file));
     if (NS_FAILED(rv)) {
-      // return silently, this will fail in mochitests's xpcshell process.
+      
       return rv;
     }
 
     rv = file->AppendNative(NS_LITERAL_CSTRING("startupCache"));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    // Try to create the directory if it's not there yet
+    
     rv = file->Create(nsIFile::DIRECTORY_TYPE, 0777);
     if (NS_FAILED(rv) && rv != NS_ERROR_FILE_ALREADY_EXISTS) return rv;
 
@@ -211,8 +211,8 @@ nsresult StartupCache::Init() {
   auto result = LoadArchive();
   rv = result.isErr() ? result.unwrapErr() : NS_OK;
 
-  // Sometimes we don't have a cache yet, that's ok.
-  // If it's corrupted, just remove it and start over.
+  
+  
   if (gIgnoreDiskCache || (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND)) {
     NS_WARNING("Failed to load startupcache file correctly, removing!");
     InvalidateCache();
@@ -225,18 +225,18 @@ nsresult StartupCache::Init() {
 }
 
 void StartupCache::StartPrefetchMemoryThread() {
-  // XXX: It would be great for this to not create its own thread, unfortunately
-  // there doesn't seem to be an existing thread that makes sense for this, so
-  // barring a coordinated global scheduling system this is the best we get.
+  
+  
+  
   mPrefetchThread = PR_CreateThread(
       PR_USER_THREAD, StartupCache::ThreadedPrefetch, this, PR_PRIORITY_NORMAL,
       PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 256 * 1024);
 }
 
-/**
- * LoadArchive can be called from the main thread or while reloading cache on
- * write thread.
- */
+
+
+
+
 Result<Ok, nsresult> StartupCache::LoadArchive() {
   if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
 
@@ -297,16 +297,16 @@ Result<Ok, nsresult> StartupCache::LoadArchive() {
         return Err(NS_ERROR_UNEXPECTED);
       }
 
-      // Make sure offsets match what we'd expect based on script ordering and
-      // size, as a basic sanity check.
+      
+      
       if (offset != currentOffset) {
         return Err(NS_ERROR_UNEXPECTED);
       }
       currentOffset += compressedSize;
 
-      // We could use mTable.putNew if we knew the file we're loading weren't
-      // corrupt. However, we don't know that, so check if the key already
-      // exists. If it does, we know the file must be corrupt.
+      
+      
+      
       decltype(mTable)::AddPtr p = mTable.lookupForAdd(key);
       if (p) {
         return Err(NS_ERROR_UNEXPECTED);
@@ -398,15 +398,15 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     ResetStartupWriteTimerCheckingReadCount();
   }
 
-  // Track that something holds a reference into mTable, so we know to hold
-  // onto it in case the cache is invalidated.
+  
+  
   mCurTableReferenced = true;
   *outbuf = value.mData.get();
   *length = value.mUncompressedSize;
   return NS_OK;
 }
 
-// Makes a copy of the buffer, client retains ownership of inbuf.
+
 nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
                                  uint32_t len) {
   NS_ASSERTION(NS_IsMainThread(),
@@ -420,13 +420,13 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
 
   if (exists) {
     NS_WARNING("Existing entry in StartupCache.");
-    // Double-caching is undesirable but not an error.
+    
     return NS_OK;
   }
 
-  // putNew returns false on alloc failure - in the very unlikely event we hit
-  // that and aren't going to crash elsewhere, there's no reason we need to
-  // crash here.
+  
+  
+  
   if (mTable.putNew(nsCString(id), StartupCacheEntry(std::move(inbuf), len,
                                                      ++mRequestedCount))) {
     return ResetStartupWriteTimer();
@@ -438,8 +438,8 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
 
 size_t StartupCache::HeapSizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
-  // This function could measure more members, but they haven't been found by
-  // DMD to be significant.  They can be added later if necessary.
+  
+  
 
   size_t n = aMallocSizeOf(this);
 
@@ -454,11 +454,11 @@ size_t StartupCache::HeapSizeOfIncludingThis(
   return n;
 }
 
-/**
- * WriteToDisk writes the cache out to disk. Callers of WriteToDisk need to call
- * WaitOnWriteThread to make sure there isn't a write happening on another
- * thread
- */
+
+
+
+
+
 Result<Ok, nsresult> StartupCache::WriteToDisk() {
   mStartupWriteInitiated = true;
   if (!mDirty || mWrittenOnce) {
@@ -473,10 +473,11 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   MOZ_TRY(mFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
                                   0644, &fd.rwget()));
 
-  nsTArray<Pair<const nsCString*, StartupCacheEntry*>> entries;
+  nsTArray<std::pair<const nsCString*, StartupCacheEntry*>> entries;
   for (auto iter = mTable.iter(); !iter.done(); iter.next()) {
     if (iter.get().value().mRequested) {
-      entries.AppendElement(MakePair(&iter.get().key(), &iter.get().value()));
+      entries.AppendElement(
+          std::make_pair(&iter.get().key(), &iter.get().value()));
     }
   }
 
@@ -487,13 +488,13 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   entries.Sort(StartupCacheEntry::Comparator());
   loader::OutputBuffer buf;
   for (auto& e : entries) {
-    auto key = e.first();
-    auto value = e.second();
+    auto key = e.first;
+    auto value = e.second;
     auto uncompressedSize = value->mUncompressedSize;
-    // Set the mHeaderOffsetInFile so we can go back and edit the offset.
+    
     value->mHeaderOffsetInFile = buf.cursor();
-    // Write a 0 offset/compressed size as a placeholder until we get the real
-    // offset after compressing.
+    
+    
     buf.codeUint32(0);
     buf.codeUint32(0);
     buf.codeUint32(uncompressedSize);
@@ -512,16 +513,16 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   size_t offset = 0;
 
   const size_t chunkSize = 1024 * 16;
-  LZ4FrameCompressionContext ctx(6,         /* aCompressionLevel */
-                                 chunkSize, /* aReadBufLen */
-                                 true,      /* aChecksum */
-                                 true);     /* aStableSrc */
+  LZ4FrameCompressionContext ctx(6,         
+                                 chunkSize, 
+                                 true,      
+                                 true);     
   size_t writeBufLen = ctx.GetRequiredWriteBufferLength();
   auto writeBuffer = MakeUnique<char[]>(writeBufLen);
   auto writeSpan = MakeSpan(writeBuffer.get(), writeBufLen);
 
   for (auto& e : entries) {
-    auto value = e.second();
+    auto value = e.second;
     value->mOffset = offset;
     Span<const char> result;
     MOZ_TRY_VAR(result,
@@ -546,7 +547,7 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
   }
 
   for (auto& e : entries) {
-    auto value = e.second();
+    auto value = e.second;
     uint8_t* headerEntry = buf.Get() + value->mHeaderOffsetInFile;
     LittleEndian::writeUint32(headerEntry, value->mOffset);
     LittleEndian::writeUint32(headerEntry + sizeof(value->mOffset),
@@ -572,8 +573,8 @@ void StartupCache::InvalidateCache(bool memoryOnly) {
     }
   }
   if (mCurTableReferenced) {
-    // There should be no way for this assert to fail other than a user manually
-    // sending startupcache-invalidate messages through the Browser Toolbox.
+    
+    
     MOZ_DIAGNOSTIC_ASSERT(xpc::IsInAutomation() || mOldTables.Length() < 10,
                           "Startup cache invalidated too many times.");
     mOldTables.AppendElement(std::move(mTable));
@@ -612,12 +613,12 @@ void StartupCache::IgnoreDiskCache() {
   if (gStartupCache) gStartupCache->InvalidateCache();
 }
 
-/*
- * WaitOnWriteThread() is called from a main thread to wait for the worker
- * thread to finish. However since the same code is used in the worker thread
- * and main thread, the worker thread can also call WaitOnWriteThread() which is
- * a no-op.
- */
+
+
+
+
+
+
 void StartupCache::WaitOnWriteThread() {
   NS_ASSERTION(NS_IsMainThread(),
                "Startup cache should only wait for io thread on main thread");
@@ -648,13 +649,13 @@ void StartupCache::ThreadedWrite(void* aClosure) {
   AUTO_PROFILER_REGISTER_THREAD("StartupCache");
   NS_SetCurrentThreadName("StartupCache");
   mozilla::IOInterposer::RegisterCurrentThread();
-  /*
-   * It is safe to use the pointer passed in aClosure to reference the
-   * StartupCache object because the thread's lifetime is tightly coupled to
-   * the lifetime of the StartupCache object; this thread is joined in the
-   * StartupCache destructor, guaranteeing that this function runs if and only
-   * if the StartupCache object is valid.
-   */
+  
+
+
+
+
+
+
   StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
   auto result = startupCacheObj->WriteToDisk();
   Unused << NS_WARN_IF(result.isErr());
@@ -662,34 +663,34 @@ void StartupCache::ThreadedWrite(void* aClosure) {
 }
 
 bool StartupCache::ShouldCompactCache() {
-  // If we've requested less than 4/5 of the startup cache, then we should
-  // probably compact it down. This can happen quite easily after the first run,
-  // which seems to request quite a few more things than subsequent runs.
+  
+  
+  
   CheckedInt<uint32_t> threshold = CheckedInt<uint32_t>(mTable.count()) * 4 / 5;
   MOZ_RELEASE_ASSERT(threshold.isValid(), "Runaway StartupCache size");
   return mRequestedCount < threshold.value();
 }
 
-/*
- * The write-thread is spawned on a timeout(which is reset with every write).
- * This can avoid a slow shutdown. After writing out the cache, the zipreader is
- * reloaded on the worker thread.
- */
+
+
+
+
+
 void StartupCache::WriteTimeout(nsITimer* aTimer, void* aClosure) {
-  /*
-   * It is safe to use the pointer passed in aClosure to reference the
-   * StartupCache object because the timer's lifetime is tightly coupled to
-   * the lifetime of the StartupCache object; this timer is canceled in the
-   * StartupCache destructor, guaranteeing that this function runs if and only
-   * if the StartupCache object is valid.
-   */
+  
+
+
+
+
+
+
   StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
   startupCacheObj->MaybeSpawnWriteThread();
 }
 
-/*
- * See StartupCache::WriteTimeout above - this is just the non-static body.
- */
+
+
+
 void StartupCache::MaybeSpawnWriteThread() {
   if (mWriteThread || mWrittenOnce) {
     return;
@@ -708,8 +709,8 @@ void StartupCache::MaybeSpawnWriteThread() {
                                  PR_JOINABLE_THREAD, 512 * 1024);
 }
 
-// We don't want to refcount StartupCache, so we'll just
-// hold a ref to this and pass it to observerService instead.
+
+
 NS_IMPL_ISUPPORTS(StartupCacheListener, nsIObserver)
 
 nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
@@ -718,7 +719,7 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
   if (!sc) return NS_OK;
 
   if (strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
-    // Do not leave the thread running past xpcom shutdown
+    
     sc->WaitOnWriteThread();
     sc->WaitOnPrefetchThread();
     StartupCache::gShutdownInitiated = true;
@@ -748,7 +749,7 @@ nsresult StartupCache::ResetStartupWriteTimerCheckingReadCount() {
   else
     rv = mTimer->Cancel();
   NS_ENSURE_SUCCESS(rv, rv);
-  // Wait for 10 seconds, then write out the cache.
+  
   mTimer->InitWithNamedFuncCallback(StartupCache::WriteTimeout, this, 60000,
                                     nsITimer::TYPE_ONE_SHOT,
                                     "StartupCache::WriteTimeout");
@@ -764,7 +765,7 @@ nsresult StartupCache::ResetStartupWriteTimer() {
   else
     rv = mTimer->Cancel();
   NS_ENSURE_SUCCESS(rv, rv);
-  // Wait for 10 seconds, then write out the cache.
+  
   mTimer->InitWithNamedFuncCallback(StartupCache::WriteTimeout, this, 60000,
                                     nsITimer::TYPE_ONE_SHOT,
                                     "StartupCache::WriteTimeout");
@@ -776,7 +777,7 @@ bool StartupCache::StartupWriteComplete() {
   return mStartupWriteInitiated && !mDirty;
 }
 
-// StartupCacheDebugOutputStream implementation
+
 #ifdef DEBUG
 NS_IMPL_ISUPPORTS(StartupCacheDebugOutputStream, nsIObjectOutputStream,
                   nsIBinaryOutputStream, nsIOutputStream)
@@ -807,7 +808,7 @@ bool StartupCacheDebugOutputStream::CheckReferences(nsISupports* aObject) {
   return true;
 }
 
-// nsIObjectOutputStream implementation
+
 nsresult StartupCacheDebugOutputStream::WriteObject(nsISupports* aObject,
                                                     bool aIsStrongRef) {
   nsCOMPtr<nsISupports> rootObject(do_QueryInterface(aObject));
@@ -857,7 +858,7 @@ char* StartupCacheDebugOutputStream::GetBuffer(uint32_t aLength,
 void StartupCacheDebugOutputStream::PutBuffer(char* aBuffer, uint32_t aLength) {
   mBinaryStream->PutBuffer(aBuffer, aLength);
 }
-#endif  // DEBUG
+#endif  
 
-}  // namespace scache
-}  // namespace mozilla
+}  
+}  

@@ -10,7 +10,6 @@
 #include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Pair.h"
 #include "mozilla/Services.h"
 #include "mozilla/SystemGroup.h"
 #include "nsPermissionManager.h"
@@ -3279,21 +3278,21 @@ void nsPermissionManager::GetKeyForPermission(nsIPrincipal* aPrincipal,
 }
 
 
-nsTArray<Pair<nsCString, nsCString>>
+nsTArray<std::pair<nsCString, nsCString>>
 nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
   MOZ_ASSERT(aPrincipal);
 
-  nsTArray<Pair<nsCString, nsCString>> pairs;
+  nsTArray<std::pair<nsCString, nsCString>> pairs;
   nsCOMPtr<nsIPrincipal> prin = aPrincipal;
   while (prin) {
     
-    Pair<nsCString, nsCString>* pair =
-        pairs.AppendElement(MakePair(EmptyCString(), EmptyCString()));
+    std::pair<nsCString, nsCString>* pair =
+        pairs.AppendElement(std::make_pair(EmptyCString(), EmptyCString()));
     
     
-    GetKeyForPrincipal(prin, false, pair->first());
+    GetKeyForPrincipal(prin, false, pair->first);
 
-    Unused << GetOriginFromPrincipal(prin, false, pair->second());
+    Unused << GetOriginFromPrincipal(prin, false, pair->second);
 
     
     prin = GetNextSubDomainPrincipal(prin);
@@ -3353,13 +3352,13 @@ void nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
   nsTArray<RefPtr<GenericNonExclusivePromise>> promises;
   for (auto& pair : GetAllKeysForPrincipal(aPrincipal)) {
     RefPtr<GenericNonExclusivePromise::Private> promise;
-    if (!mPermissionKeyPromiseMap.Get(pair.first(), getter_AddRefs(promise))) {
+    if (!mPermissionKeyPromiseMap.Get(pair.first, getter_AddRefs(promise))) {
       
       
       
       
       promise = new GenericNonExclusivePromise::Private(__func__);
-      mPermissionKeyPromiseMap.Put(pair.first(), RefPtr{promise});
+      mPermissionKeyPromiseMap.Put(pair.first, RefPtr{promise});
     }
 
     if (promise) {

@@ -6,8 +6,8 @@
 
 
 
-#ifndef mozilla_Pair_h
-#define mozilla_Pair_h
+#ifndef mozilla_CompactPair_h
+#define mozilla_CompactPair_h
 
 #include <utility>
 
@@ -34,13 +34,13 @@ template <
                                   !std::is_base_of<B, A>::value
                               ? detail::AsBase
                               : detail::AsMember>
-struct PairHelper;
+struct CompactPairHelper;
 
 template <typename A, typename B>
-struct PairHelper<A, B, AsMember, AsMember> {
+struct CompactPairHelper<A, B, AsMember, AsMember> {
  protected:
   template <typename AArg, typename BArg>
-  PairHelper(AArg&& aA, BArg&& aB)
+  CompactPairHelper(AArg&& aA, BArg&& aB)
       : mFirstA(std::forward<AArg>(aA)), mSecondB(std::forward<BArg>(aB)) {}
 
   A& first() { return mFirstA; }
@@ -48,7 +48,7 @@ struct PairHelper<A, B, AsMember, AsMember> {
   B& second() { return mSecondB; }
   const B& second() const { return mSecondB; }
 
-  void swap(PairHelper& aOther) {
+  void swap(CompactPairHelper& aOther) {
     std::swap(mFirstA, aOther.mFirstA);
     std::swap(mSecondB, aOther.mSecondB);
   }
@@ -59,10 +59,10 @@ struct PairHelper<A, B, AsMember, AsMember> {
 };
 
 template <typename A, typename B>
-struct PairHelper<A, B, AsMember, AsBase> : private B {
+struct CompactPairHelper<A, B, AsMember, AsBase> : private B {
  protected:
   template <typename AArg, typename BArg>
-  PairHelper(AArg&& aA, BArg&& aB)
+  CompactPairHelper(AArg&& aA, BArg&& aB)
       : B(std::forward<BArg>(aB)), mFirstA(std::forward<AArg>(aA)) {}
 
   A& first() { return mFirstA; }
@@ -70,7 +70,7 @@ struct PairHelper<A, B, AsMember, AsBase> : private B {
   B& second() { return *this; }
   const B& second() const { return *this; }
 
-  void swap(PairHelper& aOther) {
+  void swap(CompactPairHelper& aOther) {
     std::swap(mFirstA, aOther.mFirstA);
     std::swap(static_cast<B&>(*this), static_cast<B&>(aOther));
   }
@@ -80,10 +80,10 @@ struct PairHelper<A, B, AsMember, AsBase> : private B {
 };
 
 template <typename A, typename B>
-struct PairHelper<A, B, AsBase, AsMember> : private A {
+struct CompactPairHelper<A, B, AsBase, AsMember> : private A {
  protected:
   template <typename AArg, typename BArg>
-  PairHelper(AArg&& aA, BArg&& aB)
+  CompactPairHelper(AArg&& aA, BArg&& aB)
       : A(std::forward<AArg>(aA)), mSecondB(std::forward<BArg>(aB)) {}
 
   A& first() { return *this; }
@@ -91,7 +91,7 @@ struct PairHelper<A, B, AsBase, AsMember> : private A {
   B& second() { return mSecondB; }
   const B& second() const { return mSecondB; }
 
-  void swap(PairHelper& aOther) {
+  void swap(CompactPairHelper& aOther) {
     std::swap(static_cast<A&>(*this), static_cast<A&>(aOther));
     std::swap(mSecondB, aOther.mSecondB);
   }
@@ -101,10 +101,10 @@ struct PairHelper<A, B, AsBase, AsMember> : private A {
 };
 
 template <typename A, typename B>
-struct PairHelper<A, B, AsBase, AsBase> : private A, private B {
+struct CompactPairHelper<A, B, AsBase, AsBase> : private A, private B {
  protected:
   template <typename AArg, typename BArg>
-  PairHelper(AArg&& aA, BArg&& aB)
+  CompactPairHelper(AArg&& aA, BArg&& aB)
       : A(std::forward<AArg>(aA)), B(std::forward<BArg>(aB)) {}
 
   A& first() { return static_cast<A&>(*this); }
@@ -112,7 +112,7 @@ struct PairHelper<A, B, AsBase, AsBase> : private A, private B {
   B& second() { return static_cast<B&>(*this); }
   const B& second() const { return static_cast<B&>(*this); }
 
-  void swap(PairHelper& aOther) {
+  void swap(CompactPairHelper& aOther) {
     std::swap(static_cast<A&>(*this), static_cast<A&>(aOther));
     std::swap(static_cast<B&>(*this), static_cast<B&>(aOther));
   }
@@ -133,20 +133,23 @@ struct PairHelper<A, B, AsBase, AsBase> : private A, private B {
 
 
 
+
+
+
 template <typename A, typename B>
-struct Pair : private detail::PairHelper<A, B> {
-  typedef typename detail::PairHelper<A, B> Base;
+struct CompactPair : private detail::CompactPairHelper<A, B> {
+  typedef typename detail::CompactPairHelper<A, B> Base;
 
  public:
   template <typename AArg, typename BArg>
-  Pair(AArg&& aA, BArg&& aB)
+  CompactPair(AArg&& aA, BArg&& aB)
       : Base(std::forward<AArg>(aA), std::forward<BArg>(aB)) {}
 
-  Pair(Pair&& aOther) = default;
-  Pair(const Pair& aOther) = default;
+  CompactPair(CompactPair&& aOther) = default;
+  CompactPair(const CompactPair& aOther) = default;
 
-  Pair& operator=(Pair&& aOther) = default;
-  Pair& operator=(const Pair& aOther) = default;
+  CompactPair& operator=(CompactPair&& aOther) = default;
+  CompactPair& operator=(const CompactPair& aOther) = default;
 
   
   using Base::first;
@@ -154,7 +157,7 @@ struct Pair : private detail::PairHelper<A, B> {
   using Base::second;
 
   
-  void swap(Pair& aOther) { Base::swap(aOther); }
+  void swap(CompactPair& aOther) { Base::swap(aOther); }
 };
 
 
@@ -166,11 +169,12 @@ struct Pair : private detail::PairHelper<A, B> {
 
 
 template <typename A, typename B>
-Pair<typename RemoveCV<typename RemoveReference<A>::Type>::Type,
-     typename RemoveCV<typename RemoveReference<B>::Type>::Type>
-MakePair(A&& aA, B&& aB) {
-  return Pair<typename RemoveCV<typename RemoveReference<A>::Type>::Type,
-              typename RemoveCV<typename RemoveReference<B>::Type>::Type>(
+CompactPair<typename RemoveCV<typename RemoveReference<A>::Type>::Type,
+            typename RemoveCV<typename RemoveReference<B>::Type>::Type>
+MakeCompactPair(A&& aA, B&& aB) {
+  return CompactPair<
+      typename RemoveCV<typename RemoveReference<A>::Type>::Type,
+      typename RemoveCV<typename RemoveReference<B>::Type>::Type>(
       std::forward<A>(aA), std::forward<B>(aB));
 }
 
@@ -179,7 +183,7 @@ MakePair(A&& aA, B&& aB) {
 namespace std {
 
 template <typename A, class B>
-void swap(mozilla::Pair<A, B>& aX, mozilla::Pair<A, B>& aY) {
+void swap(mozilla::CompactPair<A, B>& aX, mozilla::CompactPair<A, B>& aY) {
   aX.swap(aY);
 }
 

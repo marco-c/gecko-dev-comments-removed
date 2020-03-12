@@ -31,6 +31,8 @@
 #include "nsStubMutationObserver.h"
 #include "MediaSegment.h"  
 
+#include <utility>
+
 
 #ifdef CurrentTime
 #  undef CurrentTime
@@ -735,7 +737,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   void GetSinkId(nsString& aSinkId) {
     MOZ_ASSERT(NS_IsMainThread());
-    aSinkId = mSink.first();
+    aSinkId = mSink.first;
   }
 
   
@@ -1902,7 +1904,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   
-  Pair<nsString, RefPtr<AudioDeviceInfo>> mSink;
+  std::pair<nsString, RefPtr<AudioDeviceInfo>> mSink;
 
   
   

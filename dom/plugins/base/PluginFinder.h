@@ -59,8 +59,8 @@ class PluginFinder final : public nsIRunnable, public nsIAsyncShutdownBlocker {
 
   typedef std::function<void(
       bool , RefPtr<nsPluginTag> ,
-      nsTArray<mozilla::Pair<
-          bool, RefPtr<nsPluginTag>>>&) >
+      nsTArray<
+          std::pair<bool, RefPtr<nsPluginTag>>>&) >
       FoundPluginCallback;
   typedef std::function<void(bool )> PluginChangeCallback;
 
@@ -109,7 +109,7 @@ class PluginFinder final : public nsIRunnable, public nsIAsyncShutdownBlocker {
   
   
   
-  nsTArray<mozilla::Pair<bool, RefPtr<nsPluginTag>>> mPluginBlocklistRequests;
+  nsTArray<std::pair<bool, RefPtr<nsPluginTag>>> mPluginBlocklistRequests;
 
   FoundPluginCallback mFoundPluginCallback;
   PluginChangeCallback mChangeCallback;
