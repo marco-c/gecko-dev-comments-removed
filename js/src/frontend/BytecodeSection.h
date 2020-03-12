@@ -44,7 +44,7 @@ using BigIntVector = JS::GCVector<js::BigInt*>;
 namespace frontend {
 
 class BigIntLiteral;
-class ObjectBox;
+class FunctionBox;
 
 struct MOZ_STACK_CLASS GCThingList {
   using ListType =
@@ -54,7 +54,7 @@ struct MOZ_STACK_CLASS GCThingList {
   JS::RootedVector<ListType> vector;
 
   
-  ObjectBox* lastbox = nullptr;
+  FunctionBox* lastbox = nullptr;
 
   
   mozilla::Maybe<uint32_t> firstScopeIndex;
@@ -98,7 +98,7 @@ struct MOZ_STACK_CLASS GCThingList {
     *index = vector.length();
     return vector.append(mozilla::AsVariant(std::move(objlit)));
   }
-  MOZ_MUST_USE bool append(ObjectBox* obj, uint32_t* index);
+  MOZ_MUST_USE bool append(FunctionBox* funbox, uint32_t* index);
 
   uint32_t length() const { return vector.length(); }
   MOZ_MUST_USE bool finish(JSContext* cx, CompilationInfo& compilationInfo,
