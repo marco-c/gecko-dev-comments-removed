@@ -70,6 +70,11 @@ class NewRenderer : public RendererEvent {
     *mUseDComp = compositor->UseDComp();
     *mUseTripleBuffering = compositor->UseTripleBuffering();
 
+    void* swCtx = nullptr;
+    if (gfx::gfxVars::UseSoftwareWebRender()) {
+      swCtx = wr_swgl_create_context();
+    }
+
     
     
     
@@ -98,7 +103,7 @@ class NewRenderer : public RendererEvent {
 #else
             false,
 #endif
-            compositor->gl(), compositor->SurfaceOriginIsTopLeft(),
+            swCtx, compositor->gl(), compositor->SurfaceOriginIsTopLeft(),
             aRenderThread.GetProgramCache()
                 ? aRenderThread.GetProgramCache()->Raw()
                 : nullptr,
@@ -116,6 +121,9 @@ class NewRenderer : public RendererEvent {
             StaticPrefs::gfx_webrender_enable_gpu_markers_AtStartup(),
             panic_on_gl_error)) {
       
+      if (swCtx) {
+        wr_swgl_destroy_context(swCtx);
+      }
       return;
     }
     MOZ_ASSERT(wrRenderer);
@@ -123,7 +131,7 @@ class NewRenderer : public RendererEvent {
     RefPtr<RenderThread> thread = &aRenderThread;
     auto renderer =
         MakeUnique<RendererOGL>(std::move(thread), std::move(compositor),
-                                aWindowId, wrRenderer, mBridge);
+                                aWindowId, wrRenderer, mBridge, swCtx);
     if (wrRenderer && renderer) {
       wr::WrExternalImageHandler handler = renderer->GetExternalImageHandler();
       wr_renderer_set_external_image_handler(wrRenderer, &handler);
