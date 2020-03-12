@@ -10,6 +10,7 @@
 #include <functional>
 
 #include "mozilla/UniquePtr.h"
+#include "mozilla/ipc/Shmem.h"
 #include "base/process.h"
 #include "nsExceptionHandler.h"
 #include "nsThreadUtils.h"
@@ -22,11 +23,13 @@ namespace ipc {
 
 
 
+
 class CrashReporterHost {
+  typedef mozilla::ipc::Shmem Shmem;
   typedef CrashReporter::AnnotationTable AnnotationTable;
 
  public:
-  CrashReporterHost(GeckoProcessType aProcessType,
+  CrashReporterHost(GeckoProcessType aProcessType, const Shmem& aShmem,
                     CrashReporter::ThreadId aThreadId);
 
   
@@ -110,6 +113,7 @@ class CrashReporterHost {
 
  private:
   GeckoProcessType mProcessType;
+  Shmem mShmem;
   CrashReporter::ThreadId mThreadId;
   time_t mStartTime;
   AnnotationTable mExtraAnnotations;

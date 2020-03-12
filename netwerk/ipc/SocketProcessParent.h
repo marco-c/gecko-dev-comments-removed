@@ -19,6 +19,10 @@ class MemoryReport;
 class MemoryReportRequestHost;
 }  
 
+namespace ipc {
+class CrashReporterHost;
+}  
+
 namespace net {
 
 class SocketProcessHost;
