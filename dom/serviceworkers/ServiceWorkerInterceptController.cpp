@@ -25,8 +25,6 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
-  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-
   
   
   
@@ -34,30 +32,7 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   if (!nsContentUtils::IsNonSubresourceRequest(aChannel)) {
     const Maybe<ServiceWorkerDescriptor>& controller =
         loadInfo->GetController();
-    
-    if (!ServiceWorkerParentInterceptEnabled()) {
-      *aShouldIntercept = controller.isSome();
-      return NS_OK;
-    }
-
-    
-    if (controller.isSome()) {
-      *aShouldIntercept = controller.ref().HandlesFetch();
-
-      
-      
-      
-      
-      if (!*aShouldIntercept && swm) {
-        RefPtr<ServiceWorkerRegistrationInfo> registration =
-            swm->GetRegistration(controller.ref().GetPrincipal().get(),
-                                 controller.ref().Scope());
-        MOZ_ASSERT(registration);
-        registration->MaybeScheduleTimeCheckAndUpdate();
-      }
-    } else {
-      *aShouldIntercept = false;
-    }
+    *aShouldIntercept = controller.isSome();
     return NS_OK;
   }
 
@@ -65,7 +40,8 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
       aURI, loadInfo->GetOriginAttributes());
 
   
-  if (!swm || !swm->IsAvailable(principal, aURI, aChannel)) {
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  if (!swm || !swm->IsAvailable(principal, aURI)) {
     return NS_OK;
   }
 

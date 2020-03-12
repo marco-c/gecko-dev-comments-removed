@@ -82,10 +82,6 @@ class ServiceWorkerDescriptor final {
 
   void SetRegistrationVersion(uint64_t aVersion);
 
-  bool HandlesFetch() const;
-
-  void SetHandlesFetch(bool aHandlesFetch);
-
   
   
   bool Matches(const ServiceWorkerDescriptor& aDescriptor) const;
