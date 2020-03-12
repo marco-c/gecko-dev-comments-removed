@@ -1592,8 +1592,7 @@ class BigIntLiteral : public ParseNode {
   BigIntIndex index() { return index_; }
 
   
-  
-  BigInt* getOrCreate(JSContext* cx);
+  BigInt* create(JSContext* cx);
 
   
   JSAtom* toAtom(JSContext* cx);
@@ -1880,8 +1879,8 @@ class RegExpLiteral : public ParseNode {
   RegExpLiteral(RegExpIndex dataIndex, const TokenPos& pos)
       : ParseNode(ParseNodeKind::RegExpExpr, pos), index_(dataIndex) {}
 
-  RegExpObject* getOrCreate(JSContext* cx,
-                            CompilationInfo& compilationInfo) const;
+  
+  RegExpObject* create(JSContext* cx, CompilationInfo& compilationInfo) const;
 
 #ifdef DEBUG
   void dumpImpl(GenericPrinter& out, int indent);
