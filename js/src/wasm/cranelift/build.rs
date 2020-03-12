@@ -32,6 +32,7 @@ fn main() {
 
     let mut generator = bindgen::builder()
         .disable_name_namespacing()
+        .size_t_is_usize(true)
         
         .whitelist_function("env_.*")
         .whitelist_function("global_.*")
