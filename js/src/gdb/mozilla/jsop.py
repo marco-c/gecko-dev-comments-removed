@@ -18,13 +18,6 @@ class JSOpTypeCache(object):
     def __init__(self, cache):
         self.tJSOp = gdb.lookup_type('JSOp')
 
-        
-        
-        d = gdb.types.make_enum_dict(self.tJSOp)
-        self.jsop_names = list(range(max(d.values()) + 1))
-        for (k, v) in d.items():
-            self.jsop_names[v] = k
-
     @classmethod
     def get_or_create(cls, cache):
         if not cache.mod_JSOp:
@@ -44,10 +37,12 @@ class JSOp(object):
         
         
         
-        idx = int(self.value) & 0xff
-        if idx < len(self.jotc.jsop_names):
-            return self.jotc.jsop_names[idx]
-        return "JSOP_UNUSED_{}".format(idx)
+        idx = int(self.value.cast(self.jotc.tJSOp.target()))
+        assert 0 <= idx and idx <= 255
+        fields = self.jotc.tJSOp.fields()
+        if idx < len(fields):
+            return fields[idx].name
+        return "(JSOp) {:d}".format(idx)
 
 
 @ptr_pretty_printer('jsbytecode')
