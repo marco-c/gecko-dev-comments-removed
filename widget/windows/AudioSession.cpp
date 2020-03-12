@@ -277,14 +277,11 @@ void AudioSession::StopInternal() {
     mAudioSessionControl->UnregisterAudioSessionNotification(this);
   }
 
-  
-  if (mAudioSessionControl && !IsWin8OrLater()) {
+  if (mAudioSessionControl) {
     
     
     
     SpawnASCReleaseThread(std::move(mAudioSessionControl));
-  } else {
-    mAudioSessionControl = nullptr;
   }
 }
 
