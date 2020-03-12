@@ -1,9 +1,9 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
 
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "DocumentChannelChild.h"
 
@@ -16,8 +16,8 @@ extern mozilla::LazyLogModule gDocumentChannelLog;
 namespace mozilla {
 namespace net {
 
-
-
+//-----------------------------------------------------------------------------
+// DocumentChannelChild::nsISupports
 
 NS_INTERFACE_MAP_BEGIN(DocumentChannelChild)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncVerifyRedirectCallback)
@@ -29,11 +29,10 @@ NS_IMPL_RELEASE_INHERITED(DocumentChannelChild, DocumentChannel)
 DocumentChannelChild::DocumentChannelChild(nsDocShellLoadState* aLoadState,
                                            net::LoadInfo* aLoadInfo,
                                            nsLoadFlags aLoadFlags,
-                                           uint32_t aLoadType,
                                            uint32_t aCacheKey, bool aIsActive,
                                            bool aIsTopLevelDoc)
-    : DocumentChannel(aLoadState, aLoadInfo, aLoadFlags, aLoadType, aCacheKey,
-                      aIsActive, aIsTopLevelDoc) {
+    : DocumentChannel(aLoadState, aLoadInfo, aLoadFlags, aCacheKey, aIsActive,
+                      aIsTopLevelDoc) {
   LOG(("DocumentChannelChild ctor [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
 }
@@ -55,22 +54,22 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   NS_ENSURE_TRUE(!mIsPending, NS_ERROR_IN_PROGRESS);
   NS_ENSURE_TRUE(!mWasOpened, NS_ERROR_ALREADY_OPENED);
 
-  
-  
+  // Port checked in parent, but duplicate here so we can return with error
+  // immediately, as we've done since before e10s.
   rv = NS_CheckPortSafety(mURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
+  // add ourselves to the load group.
   if (mLoadGroup) {
-    
-    
+    // During this call, we can re-enter back into the DocumentChannelChild to
+    // call SetNavigationTiming.
     mLoadGroup->AddRequest(this, nullptr);
   }
 
   if (mCanceled) {
-    
-    
-    
+    // We may have been canceled already, either by on-modify-request
+    // listeners or by load group observers; in that case, don't create IPDL
+    // connection. See nsHttpChannel::AsyncOpen().
     return mStatus;
   }
 
@@ -86,7 +85,6 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
 
   args.loadInfo() = *maybeArgs;
   args.loadFlags() = mLoadFlags;
-  args.loadType() = mLoadType;
   args.cacheKey() = mCacheKey;
   args.isActive() = mIsActive;
   args.isTopLevelDoc() = mIsTopLevelDoc;
@@ -149,7 +147,7 @@ void DocumentChannelChild::ShutdownListeners(nsresult aStatusCode) {
 
   mIsPending = false;
 
-  l = mListener;  
+  l = mListener;  // it might have changed!
   if (l) {
     l->OnStopRequest(this, aStatusCode);
   }
@@ -170,9 +168,9 @@ IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
     const nsresult& aStatus, const nsresult& aLoadGroupStatus) {
   MOZ_ASSERT(NS_FAILED(aStatus));
   mStatus = aLoadGroupStatus;
-  
-  
-  
+  // Make sure we remove from the load group before
+  // setting mStatus, as existing tests expect the
+  // status to be successful when we disconnect.
   if (mLoadGroup) {
     mLoadGroup->RemoveRequest(this, nullptr, aStatus);
     mLoadGroup = nullptr;
@@ -183,8 +181,8 @@ IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
 }
 
 IPCResult DocumentChannelChild::RecvDeleteSelf() {
-  
-  
+  // This calls NeckoChild::DeallocPGenericChannel(), which deletes |this| if
+  // IPDL holds the last reference.  Don't rely on |this| existing after here!
   Send__delete__(this);
   return IPC_OK();
 }
@@ -195,12 +193,12 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
   LOG(("DocumentChannelChild RecvRedirectToRealChannel [this=%p, uri=%s]", this,
        aArgs.uri()->GetSpecOrDefault().get()));
 
-  
-  
-  
-  
-  
-  
+  // The document that created the cspToInherit.
+  // This is used when deserializing LoadInfo from the parent
+  // process, since we can't serialize Documents directly.
+  // TODO: For a fission OOP iframe this will be unavailable,
+  // as will the loadingContext computed in LoadInfoArgsToLoadInfo.
+  // Figure out if we need these for cross-origin subdocs.
   RefPtr<dom::Document> cspToInheritLoadingDocument;
   nsCOMPtr<nsIContentSecurityPolicy> policy = mLoadState->Csp();
   if (policy) {
@@ -227,8 +225,8 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     newChannel->SetLoadGroup(mLoadGroup);
   }
 
-  
-  
+  // This is used to report any errors back to the parent by calling
+  // CrossProcessRedirectFinished.
   auto scopeExit = MakeScopeExit([&]() {
     mRedirectResolver(rv);
     mRedirectResolver = nullptr;
@@ -276,23 +274,23 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
         *aArgs.contentDispositionFilename());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // transfer any properties. This appears to be entirely a content-side
+  // interface and isn't copied across to the parent. Copying the values
+  // for this from this into the new actor will work, since the parent
+  // won't have the right details anyway.
+  // TODO: What about the process switch equivalent
+  // (ContentChild::RecvCrossProcessRedirect)? In that case there is no local
+  // existing actor in the destination process... We really need all information
+  // to go up to the parent, and then come down to the new child actor.
   if (nsCOMPtr<nsIWritablePropertyBag> bag = do_QueryInterface(newChannel)) {
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
 
-  
+  // connect parent.
   nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(newChannel);
   if (childChannel) {
     rv = childChannel->ConnectParent(
-        aArgs.registrarId());  
+        aArgs.registrarId());  // creates parent channel
     if (NS_FAILED(rv)) {
       return IPC_OK();
     }
@@ -306,7 +304,7 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     scopeExit.release();
   }
 
-  
+  // scopeExit will call CrossProcessRedirectFinished(rv) here
   return IPC_OK();
 }
 
@@ -319,8 +317,8 @@ DocumentChannelChild::OnRedirectVerifyCallback(nsresult aStatusCode) {
   nsCOMPtr<nsIChannel> redirectChannel = std::move(mRedirectChannel);
   RedirectToRealChannelResolver redirectResolver = std::move(mRedirectResolver);
 
-  
-  
+  // If we've already shut down, then just notify the parent that
+  // we're done.
   if (NS_FAILED(mStatus)) {
     redirectChannel->SetNotificationCallbacks(nullptr);
     redirectResolver(aStatusCode);
@@ -352,8 +350,8 @@ DocumentChannelChild::OnRedirectVerifyCallback(nsresult aStatusCode) {
   mCallbacks = nullptr;
   mListener = nullptr;
 
-  
-  
+  // This calls NeckoChild::DeallocPDocumentChannel(), which deletes |this| if
+  // IPDL holds the last reference.  Don't rely on |this| existing after here!
   if (CanSend()) {
     Send__delete__(this);
   }
@@ -364,10 +362,10 @@ DocumentChannelChild::OnRedirectVerifyCallback(nsresult aStatusCode) {
 IPCResult DocumentChannelChild::RecvConfirmRedirect(
     LoadInfoArgs&& aLoadInfo, nsIURI* aNewUri,
     ConfirmRedirectResolver&& aResolve) {
-  
-  
-  
-  
+  // This is effectively the same as AsyncOnChannelRedirect, except since we're
+  // not propagating the redirect into this process, we don't have an nsIChannel
+  // for the redirection and we have to do the checks manually.
+  // This just checks CSP thus far, hopefully there's not much else needed.
   RefPtr<dom::Document> cspToInheritLoadingDocument;
   nsCOMPtr<nsIContentSecurityPolicy> policy = mLoadState->Csp();
   if (policy) {
@@ -411,7 +409,7 @@ DocumentChannelChild::Cancel(nsresult aStatusCode) {
   return NS_OK;
 }
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
 #undef LOG
