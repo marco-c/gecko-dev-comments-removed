@@ -780,9 +780,9 @@ class nsFrameSelection final {
                                 
   void SetDesiredPos(nsPoint aPos);  
 
-  uint32_t GetBatching() const { return mBatching; }
+  uint32_t GetBatching() const { return mBatching.mCounter; }
   void SetDirty(bool aDirty = true) {
-    if (mBatching) mChangesDuringBatching = aDirty;
+    if (mBatching.mCounter) mBatching.mChangesDuringBatching = aDirty;
   }
 
   
@@ -875,8 +875,12 @@ class nsFrameSelection final {
 
   MaintainedRange mMaintainedRange;
 
-  
-  int32_t mBatching = 0;
+  struct Batching {
+    uint32_t mCounter = 0;
+    bool mChangesDuringBatching = false;
+  };
+
+  Batching mBatching;
 
   struct Limiters {
     
@@ -924,7 +928,6 @@ class nsFrameSelection final {
 
   DelayedMouseEvent mDelayedMouseEvent;
 
-  bool mChangesDuringBatching = false;
   bool mDragState = false;  
   bool mAccessibleCaretEnabled = false;
 

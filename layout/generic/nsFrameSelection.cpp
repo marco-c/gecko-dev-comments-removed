@@ -1305,9 +1305,8 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
   
   if (aFocusMode !=
       FocusMode::kExtendSelection) {  
-    uint32_t batching = mBatching;    
-    bool changes = mChangesDuringBatching;
-    mBatching = 1;
+    const Batching saveBatching = mBatching;  
+    mBatching.mCounter = 1;
 
     if (aFocusMode == FocusMode::kMultiRangeSelection) {
       
@@ -1323,15 +1322,13 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
       MOZ_ASSERT(newRange);
       mDomSelections[index]->AddRangeAndSelectFramesAndNotifyListeners(
           *newRange, IgnoreErrors());
-      mBatching = batching;
-      mChangesDuringBatching = changes;
+      mBatching = saveBatching;
     } else {
       bool oldDesiredPosSet = mDesiredPos.mIsSet;  
                                                    
       mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
       mDesiredPos.mIsSet = oldDesiredPosSet;  
-      mBatching = batching;
-      mChangesDuringBatching = changes;
+      mBatching = saveBatching;
     }
     if (aContentEndOffset != aContentOffset) {
       mDomSelections[index]->Extend(aNewFocus, aContentEndOffset);
@@ -2007,15 +2004,15 @@ nsresult nsFrameSelection::SelectAll() {
 
 
 
-void nsFrameSelection::StartBatchChanges() { mBatching++; }
+void nsFrameSelection::StartBatchChanges() { mBatching.mCounter++; }
 
 void nsFrameSelection::EndBatchChanges(int16_t aReasons) {
-  mBatching--;
-  NS_ASSERTION(mBatching >= 0, "Bad mBatching");
+  MOZ_ASSERT(mBatching.mCounter > 0, "Bad mBatching.mCounter");
+  mBatching.mCounter--;
 
-  if (mBatching == 0 && mChangesDuringBatching) {
+  if (mBatching.mCounter == 0 && mBatching.mChangesDuringBatching) {
     AddChangeReasons(aReasons);
-    mChangesDuringBatching = false;
+    mBatching.mChangesDuringBatching = false;
     
     NotifySelectionListeners(SelectionType::eNormal);
   }
