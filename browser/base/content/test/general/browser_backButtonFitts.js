@@ -10,18 +10,6 @@ add_task(async function() {
   await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     
     content.history.pushState("page2", "page2", "page2");
-
-    
-    
-    content.addEventListener(
-      "popstate",
-      function() {
-        sendAsyncMessage("Test:PopStateOccurred", {
-          location: content.document.location.href,
-        });
-      },
-      { once: true }
-    );
   });
 
   window.maximize();
@@ -32,23 +20,15 @@ add_task(async function() {
   var yPixel = boundingRect.top + Math.floor(boundingRect.height / 2);
   var xPixel = 0; 
 
-  let resultLocation = await new Promise(resolve => {
-    window.messageManager.addMessageListener(
-      "Test:PopStateOccurred",
-      function statePopped(message) {
-        window.messageManager.removeMessageListener(
-          "Test:PopStateOccurred",
-          statePopped
-        );
-        resolve(message.data.location);
-      }
-    );
-
-    EventUtils.synthesizeMouseAtPoint(xPixel, yPixel, {}, window);
-  });
+  let popStatePromise = BrowserTestUtils.waitForContentEvent(
+    gBrowser.selectedBrowser,
+    "popstate"
+  );
+  EventUtils.synthesizeMouseAtPoint(xPixel, yPixel, {}, window);
+  await popStatePromise;
 
   is(
-    resultLocation,
+    gBrowser.selectedBrowser.currentURI.spec,
     firstLocation,
     "Clicking the first pixel should have navigated back."
   );
