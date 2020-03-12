@@ -28,7 +28,17 @@ class CacheStats {
   void Reset() { mCached = mReused = mTotal = 0; }
 
   void Print() {
-    printf("Cached: %zu, Reused: %zu, Total: %zu\n", mCached, mReused, mTotal);
+    static uint64_t avgC = 1;
+    static uint64_t avgR = 1;
+    static uint64_t avgT = 1;
+
+    avgC += mCached;
+    avgR += mReused;
+    avgT += mTotal;
+
+    printf("Cached: %zu (avg: %f), Reused: %zu (avg: %f), Total: %zu\n",
+           mCached, (double)avgC / (double)avgT, mReused,
+           (double)avgR / (double)avgT, mTotal);
   }
 
   void AddCached() { mCached++; }
@@ -52,9 +62,24 @@ class CacheStats {
 
 class DisplayItemCache final {
  public:
-  DisplayItemCache() : mMaxCacheSize(0), mNextIndex(0) {}
+  DisplayItemCache();
 
-  bool IsEnabled() const { return mMaxCacheSize > 0; }
+  
+
+
+  bool IsEnabled() const { return mMaximumSize > 0; }
+
+  
+
+
+  bool IsEmpty() const { return mFreeSlots.Length() == CurrentSize(); }
+
+  
+
+
+  bool IsFull() const {
+    return mFreeSlots.IsEmpty() && CurrentSize() == mMaximumSize;
+  }
 
   
 
@@ -69,9 +94,20 @@ class DisplayItemCache final {
   
 
 
-  size_t CurrentCacheSize() const {
-    return IsEnabled() ? mCachedItemState.Length() : 0;
-  }
+  size_t CurrentSize() const { return mSlots.Length(); }
+
+  
+
+
+
+  Maybe<uint16_t> AssignSlot(nsPaintedDisplayItem* aItem);
+
+  
+
+
+
+  void MarkSlotOccupied(uint16_t slotIndex,
+                        const wr::WrSpaceAndClipChain& aSpaceAndClip);
 
   
 
@@ -79,59 +115,29 @@ class DisplayItemCache final {
 
 
 
-  void SetCapacity(const size_t aInitialSize, const size_t aMaxSize) {
-    mMaxCacheSize = aMaxSize;
-    mCachedItemState.SetCapacity(aMaxSize);
-    mCachedItemState.SetLength(aInitialSize);
-    mFreeList.SetCapacity(aMaxSize);
-  }
-
-  
-
-
-
-
-
-
-  void MaybeStartCaching(nsPaintedDisplayItem* aItem,
-                         wr::DisplayListBuilder& aBuilder);
-
-  
-
-
-
-
-  void MaybeEndCaching(wr::DisplayListBuilder& aBuilder);
-
-  
-
-
-
-
-  bool ReuseItem(nsPaintedDisplayItem* aItem, wr::DisplayListBuilder& aBuilder);
+  Maybe<uint16_t> CanReuseItem(nsPaintedDisplayItem* aItem,
+                               const wr::WrSpaceAndClipChain& aSpaceAndClip);
 
   CacheStats& Stats() { return mCacheStats; }
 
  private:
-  struct CacheEntry {
+  struct Slot {
+    Slot() : mSpaceAndClip{}, mOccupied(false), mUsed(false) {}
+
     wr::WrSpaceAndClipChain mSpaceAndClip;
-    bool mCached;
+    bool mOccupied;
     bool mUsed;
   };
 
-  Maybe<uint16_t> GetNextCacheIndex() {
-    if (mFreeList.IsEmpty()) {
-      return Nothing();
-    }
-
-    return Some(mFreeList.PopLastElement());
-  }
+  void ClearCache();
+  void FreeUnusedSlots();
+  bool GrowIfPossible();
+  Maybe<uint16_t> GetNextFreeSlot();
 
   
 
 
-
-  void PopulateFreeList(const bool aAddAll);
+  void SetCapacity(const size_t aInitialSize, const size_t aMaximumSize);
 
   
 
@@ -143,12 +149,11 @@ class DisplayItemCache final {
     return !isSame;
   }
 
-  nsTArray<CacheEntry> mCachedItemState;
-  nsTArray<uint16_t> mFreeList;
-  size_t mMaxCacheSize;
-  uint16_t mNextIndex;
-  Maybe<uint16_t> mCurrentIndex;
+  size_t mMaximumSize;
+  nsTArray<Slot> mSlots;
+  nsTArray<uint16_t> mFreeSlots;
   Maybe<wr::PipelineId> mPreviousPipelineId;
+  size_t mConsecutivePartialDisplayLists;
   CacheStats mCacheStats;
 };
 

@@ -9,134 +9,157 @@
 namespace mozilla {
 namespace layers {
 
+static const size_t kInitialCacheSize = 1024;
+static const size_t kMaximumCacheSize = 10240;
+static const size_t kCacheThreshold = 1;
+
+DisplayItemCache::DisplayItemCache()
+    : mMaximumSize(0), mConsecutivePartialDisplayLists(0) {
+  if (XRE_IsContentProcess() &&
+      StaticPrefs::gfx_webrender_enable_item_cache_AtStartup()) {
+    SetCapacity(kInitialCacheSize, kMaximumCacheSize);
+  }
+}
+
+void DisplayItemCache::ClearCache() {
+  memset(mSlots.Elements(), 0, mSlots.Length() * sizeof(Slot));
+  mFreeSlots.ClearAndRetainStorage();
+
+  for (size_t i = 0; i < CurrentSize(); ++i) {
+    mFreeSlots.AppendElement(i);
+  }
+}
+
+Maybe<uint16_t> DisplayItemCache::GetNextFreeSlot() {
+  if (mFreeSlots.IsEmpty() && !GrowIfPossible()) {
+    return Nothing();
+  }
+
+  return Some(mFreeSlots.PopLastElement());
+}
+
+bool DisplayItemCache::GrowIfPossible() {
+  if (IsFull()) {
+    return false;
+  }
+
+  const auto currentSize = CurrentSize();
+  MOZ_ASSERT(currentSize <= mMaximumSize);
+
+  
+  
+  mSlots.AppendElement();
+  mFreeSlots.AppendElement(currentSize);
+  return true;
+}
+
+void DisplayItemCache::FreeUnusedSlots() {
+  for (size_t i = 0; i < CurrentSize(); ++i) {
+    auto& slot = mSlots[i];
+
+    if (!slot.mUsed && slot.mOccupied) {
+      
+      slot.mOccupied = false;
+      mFreeSlots.AppendElement(i);
+    }
+
+    slot.mUsed = false;
+  }
+}
+
+void DisplayItemCache::SetCapacity(const size_t aInitialSize,
+                                   const size_t aMaximumSize) {
+  mMaximumSize = aMaximumSize;
+  mSlots.SetCapacity(aMaximumSize);
+  mSlots.SetLength(aInitialSize);
+  mFreeSlots.SetCapacity(aMaximumSize);
+  ClearCache();
+}
+
+Maybe<uint16_t> DisplayItemCache::AssignSlot(nsPaintedDisplayItem* aItem) {
+  if (kCacheThreshold > mConsecutivePartialDisplayLists) {
+    
+    
+    
+    
+    return Nothing();
+  }
+
+  if (!aItem->CanBeReused()) {
+    
+    return Nothing();
+  }
+
+  auto& slot = aItem->CacheIndex();
+  if (!slot) {
+    slot = GetNextFreeSlot();
+    if (!slot) {
+      
+      return Nothing();
+    }
+  }
+
+  MOZ_ASSERT(slot && CurrentSize() > *slot);
+  return slot;
+}
+
+void DisplayItemCache::MarkSlotOccupied(
+    uint16_t aSlotIndex, const wr::WrSpaceAndClipChain& aSpaceAndClip) {
+  
+  auto& slot = mSlots[aSlotIndex];
+  MOZ_ASSERT(!slot.mOccupied);
+  slot.mOccupied = true;
+  MOZ_ASSERT(!slot.mUsed);
+  slot.mUsed = true;
+  slot.mSpaceAndClip = aSpaceAndClip;
+}
+
+Maybe<uint16_t> DisplayItemCache::CanReuseItem(
+    nsPaintedDisplayItem* aItem, const wr::WrSpaceAndClipChain& aSpaceAndClip) {
+  auto& slotIndex = aItem->CacheIndex();
+  if (!slotIndex) {
+    return Nothing();
+  }
+
+  MOZ_ASSERT(slotIndex && CurrentSize() > *slotIndex);
+
+  auto& slot = mSlots[*slotIndex];
+  if (!slot.mOccupied) {
+    
+    return Nothing();
+  }
+
+  
+  if (!(aSpaceAndClip == slot.mSpaceAndClip)) {
+    
+    slot.mOccupied = false;
+    return Nothing();
+  }
+
+  slot.mUsed = true;
+  return slotIndex;
+}
+
 void DisplayItemCache::UpdateState(const bool aPartialDisplayListBuildFailed,
                                    const wr::PipelineId& aPipelineId) {
-  if (!IsEnabled()) {
+  const bool pipelineIdChanged = UpdatePipelineId(aPipelineId);
+  const bool invalidate = pipelineIdChanged || aPartialDisplayListBuildFailed;
+
+  mConsecutivePartialDisplayLists =
+      invalidate ? 0 : mConsecutivePartialDisplayLists + 1;
+
+  if (IsEmpty()) {
+    
     return;
   }
 
   
   
-  const bool clearCache =
-      UpdatePipelineId(aPipelineId) || aPartialDisplayListBuildFailed;
-
-  if (clearCache) {
-    memset(mCachedItemState.Elements(), 0,
-           mCachedItemState.Length() * sizeof(CacheEntry));
-    mNextIndex = 0;
-    mFreeList.Clear();
+  if (invalidate) {
+    ClearCache();
+  } else {
+    FreeUnusedSlots();
   }
-
-  PopulateFreeList(clearCache);
-}
-
-void DisplayItemCache::PopulateFreeList(const bool aAddAll) {
-  uint16_t index = 0;
-  for (auto& state : mCachedItemState) {
-    if (aAddAll || (!state.mUsed && state.mCached)) {
-      
-      state.mCached = false;
-      mFreeList.AppendElement(index);
-    }
-
-    state.mUsed = false;
-    index++;
-  }
-}
-
-static bool CanCacheItem(const nsPaintedDisplayItem* aItem) {
-  
-  if (!aItem->CanBeReused()) {
-    return false;
-  }
-
-  return aItem->CanBeCached();
-}
-
-void DisplayItemCache::MaybeStartCaching(nsPaintedDisplayItem* aItem,
-                                         wr::DisplayListBuilder& aBuilder) {
-  if (!IsEnabled()) {
-    return;
-  }
-
-  Stats().AddTotal();
-
-  auto& index = aItem->CacheIndex();
-  if (!index) {
-    if (!CanCacheItem(aItem)) {
-      
-      return;
-    }
-
-    index = GetNextCacheIndex();
-    if (!index) {
-      
-      return;
-    }
-  }
-
-  
-  MOZ_ASSERT(!mCurrentIndex);
-  mCurrentIndex = index;
-
-  MOZ_ASSERT(CanCacheItem(aItem));
-  MOZ_ASSERT(mCurrentIndex && CurrentCacheSize() > *mCurrentIndex);
-
-  aBuilder.StartCachedItem(*mCurrentIndex);
-}
-
-void DisplayItemCache::MaybeEndCaching(wr::DisplayListBuilder& aBuilder) {
-  if (!IsEnabled() || !mCurrentIndex) {
-    return;
-  }
-
-  if (aBuilder.EndCachedItem(*mCurrentIndex)) {
-    
-    auto& state = mCachedItemState[*mCurrentIndex];
-    MOZ_ASSERT(!state.mCached);
-    state.mCached = true;
-    MOZ_ASSERT(!state.mUsed);
-    state.mUsed = true;
-    state.mSpaceAndClip = aBuilder.CurrentSpaceAndClipChain();
-
-    Stats().AddCached();
-  }
-
-  mCurrentIndex = Nothing();
-}
-
-bool DisplayItemCache::ReuseItem(nsPaintedDisplayItem* aItem,
-                                 wr::DisplayListBuilder& aBuilder) {
-  if (!IsEnabled()) {
-    return false;
-  }
-
-  auto& index = aItem->CacheIndex();
-  if (!index) {
-    return false;
-  }
-
-  auto& state = mCachedItemState[*index];
-  if (!state.mCached) {
-    
-    return false;  
-  }
-
-  
-  if (!(aBuilder.CurrentSpaceAndClipChain() == state.mSpaceAndClip)) {
-    
-    
-    
-    state.mCached = false;
-    return false;
-  }
-
-  Stats().AddReused();
-  Stats().AddTotal();
-
-  state.mUsed = true;
-  aBuilder.ReuseItem(*index);
-  return true;
 }
 
 }  
