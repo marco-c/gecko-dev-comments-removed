@@ -165,4 +165,6 @@ struct StructuredCloneReadInfo {
 }  
 }  
 
+DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::indexedDB::StructuredCloneReadInfo);
+
 #endif  
