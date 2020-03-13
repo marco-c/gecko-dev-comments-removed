@@ -1473,7 +1473,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
   }
 
   
-  setFlag(MutableFlags::HasScriptCounts);
+  setHasScriptCounts();
 
   
   
@@ -1655,10 +1655,6 @@ void JSScript::addIonCounts(jit::IonScriptCounts* ionCounts) {
 
 jit::IonScriptCounts* JSScript::getIonCounts() {
   return getScriptCounts().ionCounts_;
-}
-
-void JSScript::clearHasScriptCounts() {
-  clearFlag(MutableFlags::HasScriptCounts);
 }
 
 void JSScript::releaseScriptCounts(ScriptCounts* counts) {
