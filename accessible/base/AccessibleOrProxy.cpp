@@ -5,6 +5,9 @@
 
 
 #include "AccessibleOrProxy.h"
+#include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/a11y/OuterDocAccessible.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 
 namespace mozilla {
 namespace a11y {
@@ -25,6 +28,20 @@ AccessibleOrProxy AccessibleOrProxy::Parent() const {
 
   
   return proxy->OuterDocOfRemoteBrowser();
+}
+
+ProxyAccessible* AccessibleOrProxy::RemoteChildDoc() const {
+  
+  
+  
+  if (!StaticPrefs::accessibility_xpcom_traverse_outerdoc() || IsProxy()) {
+    return nullptr;
+  }
+  OuterDocAccessible* outerDoc = AsAccessible()->AsOuterDoc();
+  if (!outerDoc) {
+    return nullptr;
+  }
+  return outerDoc->RemoteChildDoc();
 }
 
 }  
