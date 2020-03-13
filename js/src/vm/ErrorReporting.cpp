@@ -57,7 +57,7 @@ bool js::ReportExceptionClosure::operator()(JSContext* cx) {
 }
 
 bool js::ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata,
-                              UniquePtr<JSErrorNotes> notes, unsigned flags,
+                              UniquePtr<JSErrorNotes> notes,
                               unsigned errorNumber, va_list* args) {
   
   
@@ -69,7 +69,7 @@ bool js::ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata,
   }
 
   err->notes = std::move(notes);
-  err->flags = flags;
+  err->flags = JSREPORT_WARNING;
   err->errorNumber = errorNumber;
 
   err->filename = metadata.filename;
