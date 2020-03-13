@@ -42,6 +42,7 @@ var StarUI = {
   
   get panel() {
     delete this.panel;
+    this._createPanelIfNeeded();
     var element = this._element("editBookmarkPanel");
     
     
@@ -297,6 +298,15 @@ var StarUI = {
     });
 
     this.panel.openPopup(this._anchorElement, "bottomcenter topright");
+  },
+
+  _createPanelIfNeeded() {
+    
+    if (!this._element("editBookmarkPanel")) {
+      let template = this._element("editBookmarkPanelTemplate");
+      let clone = template.content.cloneNode(true);
+      template.replaceWith(clone);
+    }
   },
 
   _setIconAndPreviewImage() {
@@ -1672,6 +1682,8 @@ var BookmarkingUI = {
     if (!this.star) {
       
       
+      
+      this.updateBookmarkPageMenuItem(true);
       return;
     }
 
@@ -1686,6 +1698,9 @@ var BookmarkingUI = {
       l10nArgs
     );
 
+    
+    this.updateBookmarkPageMenuItem();
+
     Services.obs.notifyObservers(
       null,
       "bookmark-icon-updated",
@@ -1697,88 +1712,73 @@ var BookmarkingUI = {
 
 
 
-  updateBookmarkPageMenuItem: function BUI_updateBookmarkPageMenuItem(
-    forceReset
-  ) {
-    let menuItem = document.getElementById("menu_bookmarkThisPage");
-    
-    if (!menuItem) {
-      
-      return;
-    }
 
-    
-    if (!document.location.href.includes("browser.xhtml")) {
-      
-      document.l10n.setAttributes(menuItem, "menu-bookmark-this-page");
-      return;
-    }
 
+  updateBookmarkPageMenuItem(forceReset = false) {
     let isStarred = !forceReset && this._itemGuids.size > 0;
-
     
     
     let menuItemL10nId = isStarred
       ? "menu-bookmark-edit"
       : "menu-bookmark-this-page";
 
-    
-    document.l10n.setAttributes(menuItem, menuItemL10nId);
+    let menuItem = document.getElementById("menu_bookmarkThisPage");
+    if (menuItem) {
+      
+      document.l10n.setAttributes(menuItem, menuItemL10nId);
+    }
 
     let panelMenuToolbarButton = document.getElementById(
       "panelMenuBookmarkThisPage"
     );
-
-    
-    if (!panelMenuToolbarButton) {
-      return;
+    if (panelMenuToolbarButton) {
+      document.l10n.setAttributes(panelMenuToolbarButton, menuItemL10nId);
     }
-
-    
-    document.l10n.setAttributes(panelMenuToolbarButton, menuItemL10nId);
 
     
     let contextItem = document.getElementById("context-bookmarkpage");
-    let shortcutElem = document.getElementById(this.BOOKMARK_BUTTON_SHORTCUT);
-
-    if (shortcutElem) {
-      let shortcut = ShortcutUtils.prettifyShortcut(shortcutElem);
-      let contextItemL10nId = isStarred
-        ? "main-context-menu-bookmark-change-with-shortcut"
-        : "main-context-menu-bookmark-add-with-shortcut";
-      let l10nArgs = { shortcut };
-      document.l10n.setAttributes(contextItem, contextItemL10nId, l10nArgs);
-    } else {
-      let contextItemL10nId = isStarred
-        ? "main-context-menu-bookmark-change"
-        : "main-context-menu-bookmark-add";
-      document.l10n.setAttributes(contextItem, contextItemL10nId);
+    if (contextItem) {
+      let shortcutElem = document.getElementById(this.BOOKMARK_BUTTON_SHORTCUT);
+      if (shortcutElem) {
+        let shortcut = ShortcutUtils.prettifyShortcut(shortcutElem);
+        let contextItemL10nId = isStarred
+          ? "main-context-menu-bookmark-change-with-shortcut"
+          : "main-context-menu-bookmark-add-with-shortcut";
+        let l10nArgs = { shortcut };
+        document.l10n.setAttributes(contextItem, contextItemL10nId, l10nArgs);
+      } else {
+        let contextItemL10nId = isStarred
+          ? "main-context-menu-bookmark-change"
+          : "main-context-menu-bookmark-add";
+        document.l10n.setAttributes(contextItem, contextItemL10nId);
+      }
     }
 
     
-    
-    
-    
-    this._latestMenuItemL10nId = menuItemL10nId;
-    document.l10n.formatMessages([{ id: menuItemL10nId }]).then(l10n => {
+    if (document.getElementById("page-action-buttons")) {
       
       
       
-      if (this._latestMenuItemL10nId != menuItemL10nId) {
-        return;
-      }
+      
+      this._latestMenuItemL10nId = menuItemL10nId;
+      document.l10n.formatMessages([{ id: menuItemL10nId }]).then(l10n => {
+        
+        
+        
+        if (this._latestMenuItemL10nId != menuItemL10nId) {
+          return;
+        }
 
-      
-      let label = l10n[0].attributes[0].value;
+        
+        let label = l10n[0].attributes[0].value;
 
-      
-      PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).setTitle(
-        label,
-        window
-      );
-    });
-
-    this._updateStar();
+        
+        PageActions.actionForID(PageActions.ACTION_ID_BOOKMARK).setTitle(
+          label,
+          window
+        );
+      });
+    }
   },
 
   onMainMenuPopupShowing: function BUI_onMainMenuPopupShowing(event) {
@@ -1787,7 +1787,6 @@ var BookmarkingUI = {
       return;
     }
 
-    this.updateBookmarkPageMenuItem();
     this._initMobileBookmarks(document.getElementById("menu_mobileBookmarks"));
   },
 
@@ -1855,10 +1854,6 @@ var BookmarkingUI = {
     }
   },
 
-  onCurrentPageContextPopupShowing() {
-    this.updateBookmarkPageMenuItem();
-  },
-
   handleEvent: function BUI_handleEvent(aEvent) {
     switch (aEvent.type) {
       case "mouseover":
@@ -1875,8 +1870,6 @@ var BookmarkingUI = {
 
   onPanelMenuViewShowing: function BUI_onViewShowing(aEvent) {
     let panelview = aEvent.target;
-
-    this.updateBookmarkPageMenuItem();
 
     
     let staticButtons = panelview.getElementsByTagName("toolbarbutton");
