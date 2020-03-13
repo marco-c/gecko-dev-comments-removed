@@ -21,9 +21,17 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "OSKeyStore",
+  "resource:///modules/OSKeyStore.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "SiteDataManager",
   "resource:///modules/SiteDataManager.jsm"
 );
+XPCOMUtils.defineLazyGetter(this, "L10n", () => {
+  return new Localization(["browser/preferences/preferences.ftl"]);
+});
 
 var { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
@@ -1846,7 +1854,7 @@ var gPrivacyPane = {
 
 
 
-  updateMasterPasswordButton() {
+  async updateMasterPasswordButton() {
     var checkbox = document.getElementById("useMasterPassword");
     var button = document.getElementById("changeMasterPassword");
     button.disabled = !checkbox.checked;
@@ -1857,9 +1865,9 @@ var gPrivacyPane = {
     
     
     if (!checkbox.checked) {
-      this._removeMasterPassword();
+      await this._removeMasterPassword();
     } else {
-      this.changeMasterPassword();
+      await this.changeMasterPassword();
     }
 
     this._initMasterPasswordUI();
@@ -1870,7 +1878,7 @@ var gPrivacyPane = {
 
 
 
-  _removeMasterPassword() {
+  async _removeMasterPassword() {
     var secmodDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
       Ci.nsIPKCS11ModuleDB
     );
@@ -1892,7 +1900,26 @@ var gPrivacyPane = {
   
 
 
-  changeMasterPassword() {
+  async changeMasterPassword() {
+    
+    if (!LoginHelper.isMasterPasswordSet()) {
+      let messageId = "master-password-os-auth-dialog-message";
+      if (AppConstants.platform == "macosx") {
+        
+        
+        messageId += "-macosx";
+      }
+      let [messageText] = await L10n.formatMessages([
+        {
+          id: messageId,
+        },
+      ]);
+      let loggedIn = await OSKeyStore.ensureLoggedIn(messageText.value, false);
+      if (!loggedIn) {
+        return;
+      }
+    }
+
     gSubDialog.open(
       "chrome://mozapps/content/preferences/changemp.xhtml",
       "resizable=no",
