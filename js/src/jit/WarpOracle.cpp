@@ -16,6 +16,7 @@
 
 #include "vm/BytecodeIterator-inl.h"
 #include "vm/BytecodeLocation-inl.h"
+#include "vm/EnvironmentObject-inl.h"
 
 using namespace js;
 using namespace js::jit;
@@ -65,6 +66,59 @@ static MOZ_MUST_USE bool AddOpSnapshot(TempAllocator& alloc,
   return true;
 }
 
+AbortReasonOr<WarpEnvironment> WarpOracle::createEnvironment(
+    HandleScript script) {
+  WarpEnvironment env;
+
+  
+  
+  
+  
+  if (!script->jitScript()->usesEnvironmentChain() && !script->needsArgsObj()) {
+    MOZ_ASSERT(env.kind() == WarpEnvironment::Kind::None);
+    return env;
+  }
+
+  if (ModuleObject* module = script->module()) {
+    env.initConstantObject(&module->initialEnvironment());
+    return env;
+  }
+
+  JSFunction* fun = script->function();
+  if (!fun) {
+    
+    
+    MOZ_ASSERT(!script->isForEval());
+    MOZ_ASSERT(!script->hasNonSyntacticScope());
+    env.initConstantObject(&script->global().lexicalEnvironment());
+    return env;
+  }
+
+  
+  
+  if (fun->needsExtraBodyVarEnvironment()) {
+    return abort(AbortReason::Disable, "Extra var environment unsupported");
+  }
+
+  JSObject* templateEnv = script->jitScript()->templateEnvironment();
+
+  CallObject* callObjectTemplate = nullptr;
+  if (fun->needsCallObject()) {
+    callObjectTemplate = &templateEnv->as<CallObject>();
+  }
+
+  LexicalEnvironmentObject* namedLambdaTemplate = nullptr;
+  if (fun->needsNamedLambdaEnvironment()) {
+    if (callObjectTemplate) {
+      templateEnv = templateEnv->enclosingEnvironment();
+    }
+    namedLambdaTemplate = &templateEnv->as<LexicalEnvironmentObject>();
+  }
+
+  env.initFunction(callObjectTemplate, namedLambdaTemplate);
+  return env;
+}
+
 AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
     HandleScript script) {
   MOZ_ASSERT(script->hasJitScript());
@@ -72,6 +126,9 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
   if (!script->jitScript()->ensureHasCachedIonData(cx_, script)) {
     return abort(AbortReason::Error);
   }
+
+  WarpEnvironment environment;
+  MOZ_TRY_VAR(environment, createEnvironment(script));
 
   
   
@@ -132,7 +189,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
   }
 
   auto* scriptSnapshot = new (alloc_.fallible())
-      WarpScriptSnapshot(script, std::move(opSnapshots));
+      WarpScriptSnapshot(script, environment, std::move(opSnapshots));
   if (!scriptSnapshot) {
     return abort(AbortReason::Alloc);
   }

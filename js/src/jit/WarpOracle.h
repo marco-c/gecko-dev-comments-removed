@@ -86,15 +86,81 @@ class WarpRegExp : public WarpOpSnapshot {
 };
 
 
+
+class WarpEnvironment {
+ public:
+  enum class Kind {
+    
+    
+    None,
+
+    
+    ConstantObject,
+
+    
+    
+    
+    Function,
+  };
+
+ private:
+  Kind kind_ = Kind::None;
+
+  union {
+    
+    JSObject* constantObject_;
+    
+    
+    struct {
+      CallObject* callObjectTemplate_;
+      LexicalEnvironmentObject* namedLambdaTemplate_;
+    } fun;
+  };
+
+ public:
+  void initConstantObject(JSObject* obj) {
+    kind_ = Kind::ConstantObject;
+    MOZ_ASSERT(obj);
+    constantObject_ = obj;
+  }
+  void initFunction(CallObject* callObjectTemplate,
+                    LexicalEnvironmentObject* namedLambdaTemplate) {
+    kind_ = Kind::Function;
+    fun.callObjectTemplate_ = callObjectTemplate;
+    fun.namedLambdaTemplate_ = namedLambdaTemplate;
+  }
+
+  Kind kind() const { return kind_; }
+
+  JSObject* constantObject() const {
+    MOZ_ASSERT(kind_ == Kind::ConstantObject);
+    return constantObject_;
+  }
+  CallObject* maybeCallObjectTemplate() const {
+    MOZ_ASSERT(kind_ == Kind::Function);
+    return fun.callObjectTemplate_;
+  }
+  LexicalEnvironmentObject* maybeNamedLambdaTemplate() const {
+    MOZ_ASSERT(kind_ == Kind::Function);
+    return fun.namedLambdaTemplate_;
+  }
+};
+
+
 class WarpScriptSnapshot : public TempObject {
   JSScript* script_;
+  WarpEnvironment environment_;
   WarpOpSnapshotList opSnapshots_;
 
  public:
-  WarpScriptSnapshot(JSScript* script, WarpOpSnapshotList&& opSnapshots)
-      : script_(script), opSnapshots_(std::move(opSnapshots)) {}
+  WarpScriptSnapshot(JSScript* script, const WarpEnvironment& env,
+                     WarpOpSnapshotList&& opSnapshots)
+      : script_(script),
+        environment_(env),
+        opSnapshots_(std::move(opSnapshots)) {}
 
   JSScript* script() const { return script_; }
+  const WarpEnvironment& environment() const { return environment_; }
   const WarpOpSnapshotList& opSnapshots() const { return opSnapshots_; }
 };
 
@@ -126,6 +192,7 @@ class MOZ_STACK_CLASS WarpOracle {
   mozilla::GenericErrorResult<AbortReason> abort(AbortReason r,
                                                  const char* message, ...);
 
+  AbortReasonOr<WarpEnvironment> createEnvironment(HandleScript script);
   AbortReasonOr<WarpScriptSnapshot*> createScriptSnapshot(HandleScript script);
 
  public:
