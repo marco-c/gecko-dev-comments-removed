@@ -8,7 +8,6 @@
 
 
 
-StarUI._createPanelIfNeeded();
 const bookmarkPanel = document.getElementById("editBookmarkPanel");
 let folders;
 

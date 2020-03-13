@@ -42,7 +42,6 @@ var StarUI = {
   
   get panel() {
     delete this.panel;
-    this._createPanelIfNeeded();
     var element = this._element("editBookmarkPanel");
     
     
@@ -298,15 +297,6 @@ var StarUI = {
     });
 
     this.panel.openPopup(this._anchorElement, "bottomcenter topright");
-  },
-
-  _createPanelIfNeeded() {
-    
-    if (!this._element("editBookmarkPanel")) {
-      let template = this._element("editBookmarkPanelTemplate");
-      let clone = template.content.cloneNode(true);
-      template.replaceWith(clone);
-    }
   },
 
   _setIconAndPreviewImage() {

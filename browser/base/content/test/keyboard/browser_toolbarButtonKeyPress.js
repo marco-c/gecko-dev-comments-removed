@@ -1,11 +1,11 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+ * http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
-
+/**
+ * Test the behavior of key presses on various toolbar buttons.
+ */
 
 function waitForLocationChange() {
   let promise = new Promise(resolve => {
@@ -26,8 +26,8 @@ add_task(async function setPref() {
   });
 });
 
-
-
+// Test activation of the app menu button from the keyboard.
+// The app menu should appear and focus should move inside it.
 add_task(async function testAppMenuButtonPress() {
   let button = document.getElementById("PanelUI-menu-button");
   forceFocus(button);
@@ -47,8 +47,8 @@ add_task(async function testAppMenuButtonPress() {
   await hidden;
 });
 
-
-
+// Test that the app menu doesn't open when a key other than space or enter is
+// pressed .
 add_task(async function testAppMenuButtonWrongKey() {
   let button = document.getElementById("PanelUI-menu-button");
   forceFocus(button);
@@ -57,8 +57,8 @@ add_task(async function testAppMenuButtonWrongKey() {
   is(window.PanelUI.panel.state, "closed", "App menu is closed after tab");
 });
 
-
-
+// Test activation of the Library button from the keyboard.
+// The Library menu should appear and focus should move inside it.
 add_task(async function testLibraryButtonPress() {
   let button = document.getElementById("library-button");
   forceFocus(button);
@@ -72,9 +72,9 @@ add_task(async function testLibraryButtonPress() {
   await hidden;
 });
 
-
-
-
+// Test activation of the Developer button from the keyboard.
+// This is a customizable widget of type "view".
+// The Developer menu should appear and focus should move inside it.
 add_task(async function testDeveloperButtonPress() {
   CustomizableUI.addWidgetToArea(
     "developer-button",
@@ -93,8 +93,8 @@ add_task(async function testDeveloperButtonPress() {
   CustomizableUI.reset();
 });
 
-
-
+// Test that the Developer menu doesn't open when a key other than space or
+// enter is pressed .
 add_task(async function testDeveloperButtonWrongKey() {
   CustomizableUI.addWidgetToArea(
     "developer-button",
@@ -109,8 +109,8 @@ add_task(async function testDeveloperButtonWrongKey() {
   CustomizableUI.reset();
 });
 
-
-
+// Test activation of the Page actions button from the keyboard.
+// The Page Actions menu should appear and focus should move inside it.
 add_task(async function testPageActionsButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     let button = document.getElementById("pageActionButton");
@@ -126,7 +126,7 @@ add_task(async function testPageActionsButtonPress() {
   });
 });
 
-
+// Test activation of the Back and Forward buttons from the keyboard.
 add_task(async function testBackForwardButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com/1", async function(
     aBrowser
@@ -150,9 +150,9 @@ add_task(async function testBackForwardButtonPress() {
   });
 });
 
-
-
-
+// Test activation of the Send Tab to Device button from the keyboard.
+// This is a page action button built at runtime by PageActions.
+// The Send Tab to Device menu should appear and focus should move inside it.
 add_task(async function testSendTabToDeviceButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     PageActions.actionForID("sendToDevice").pinnedToUrlbar = true;
@@ -176,9 +176,9 @@ add_task(async function testSendTabToDeviceButtonPress() {
   });
 });
 
-
-
-
+// Test activation of the Reload button from the keyboard.
+// This is a toolbarbutton with a click handler and no command handler, but
+// the toolbar keyboard navigation code should handle keyboard activation.
 add_task(async function testReloadButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function(
     aBrowser
@@ -193,8 +193,8 @@ add_task(async function testReloadButtonPress() {
   });
 });
 
-
-
+// Test activation of the Sidebars button from the keyboard.
+// This is a toolbarbutton with a command handler.
 add_task(async function testSidebarsButtonPress() {
   let button = document.getElementById("sidebar-button");
   ok(!button.checked, "Sidebars button not checked at start of test");
@@ -205,10 +205,10 @@ add_task(async function testSidebarsButtonPress() {
   await TestUtils.waitForCondition(() => button.checked);
   ok(true, "Sidebars button checked after press");
   ok(!sidebarBox.hidden, "Sidebar visible after press");
-  
-  
-  
-  
+  // Make sure the sidebar is fully loaded before we hide it.
+  // Otherwise, the unload event might call JS which isn't loaded yet.
+  // We can't use BrowserTestUtils.browserLoaded because it fails on non-tab
+  // docs. Instead, wait for something in the JS script.
   let sidebarWin = document.getElementById("sidebar").contentWindow;
   await TestUtils.waitForCondition(() => sidebarWin.PlacesUIUtils);
   forceFocus(button);
@@ -218,20 +218,19 @@ add_task(async function testSidebarsButtonPress() {
   ok(sidebarBox.hidden, "Sidebar hidden after press");
 });
 
-
-
-
+// Test activation of the Bookmark this page button from the keyboard.
+// This is an image with a click handler on its parent and no command handler,
+// but the toolbar keyboard navigation code should handle keyboard activation.
 add_task(async function testBookmarkButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function(
     aBrowser
   ) {
     let button = document.getElementById("star-button");
     forceFocus(button);
-    StarUI._createPanelIfNeeded();
     let panel = document.getElementById("editBookmarkPanel");
     let focused = BrowserTestUtils.waitForEvent(panel, "focus", true);
-    
-    
+    // The button ignores activation while the bookmarked status is being
+    // updated. So, wait for it to finish updating.
     await TestUtils.waitForCondition(
       () => BookmarkingUI.status != BookmarkingUI.STATUS_UPDATING
     );
@@ -244,9 +243,9 @@ add_task(async function testBookmarkButtonPress() {
   });
 });
 
-
-
-
+// Test activation of the Bookmarks Menu button from the keyboard.
+// This is a button with type="menu".
+// The Bookmarks Menu should appear.
 add_task(async function testBookmarksmenuButtonPress() {
   CustomizableUI.addWidgetToArea(
     "bookmarks-menu-button",
@@ -265,10 +264,10 @@ add_task(async function testBookmarksmenuButtonPress() {
   CustomizableUI.reset();
 });
 
-
-
+// Test activation of the overflow button from the keyboard.
+// The overflow menu should appear and focus should move inside it.
 add_task(async function testOverflowButtonPress() {
-  
+  // Move something to the overflow menu to make the button appear.
   CustomizableUI.addWidgetToArea(
     "developer-button",
     CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
@@ -287,8 +286,8 @@ add_task(async function testOverflowButtonPress() {
   CustomizableUI.reset();
 });
 
-
-
+// Test activation of the Downloads button from the keyboard.
+// The Downloads panel should appear and focus should move inside it.
 add_task(async function testDownloadsButtonPress() {
   DownloadsButton.unhide();
   let button = document.getElementById("downloads-button");
@@ -304,17 +303,17 @@ add_task(async function testDownloadsButtonPress() {
   DownloadsButton.hide();
 });
 
-
-
-
+// Test activation of the Save to Pocket button from the keyboard.
+// This is a page action button which shows an iframe (wantsIframe: true).
+// The Pocket iframe should appear and focus should move inside it.
 add_task(async function testPocketButtonPress() {
   await BrowserTestUtils.withNewTab("https://example.com", async function(
     aBrowser
   ) {
     let button = document.getElementById("pocket-button");
     forceFocus(button);
-    
-    
+    // The panel is created on the fly, so we can't simply wait for focus
+    // inside it.
     let showing = BrowserTestUtils.waitForEvent(document, "popupshowing", true);
     EventUtils.synthesizeKey(" ");
     let event = await showing;

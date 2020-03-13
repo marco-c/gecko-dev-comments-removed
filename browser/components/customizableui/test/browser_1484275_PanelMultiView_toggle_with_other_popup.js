@@ -53,7 +53,6 @@ add_task(async function test_PanelMultiView_toggle_with_other_popup() {
       await gCUITestUtils.openMainMenu();
 
       
-      StarUI._createPanelIfNeeded();
       let bookmarkPanel = document.getElementById("editBookmarkPanel");
       let shown = BrowserTestUtils.waitForEvent(bookmarkPanel, "popupshown");
       let hidden = BrowserTestUtils.waitForEvent(bookmarkPanel, "popuphidden");
