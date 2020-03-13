@@ -41,6 +41,9 @@ public final class RuntimeTelemetry {
 
 
 
+
+
+    @Deprecated
     @AnyThread
     public @NonNull GeckoResult<JSONObject> getSnapshots(final boolean clear) {
         final GeckoBundle msg = new GeckoBundle(1);
