@@ -305,7 +305,25 @@ class InitializedDefines(ContextDerivedValue, OrderedDict):
         for define in context.config.substs.get('MOZ_DEBUG_DEFINES', ()):
             self[define] = 1
         if value:
+            if not isinstance(value, OrderedDict):
+                raise ValueError('Can only initialize with another OrderedDict')
             self.update(value)
+
+    def update(self, *other, **kwargs):
+        
+        
+        
+        
+        
+        
+        if kwargs:
+            raise ValueError('Cannot call update() with kwargs')
+        if other:
+            if not isinstance(other[0], OrderedDict):
+                raise ValueError(
+                    'Can only call update() with another OrderedDict')
+            return super(InitializedDefines, self).update(*other, **kwargs)
+        raise ValueError('No arguments passed to update()')
 
 
 class BaseCompileFlags(ContextDerivedValue, dict):
@@ -1474,14 +1492,7 @@ VARIABLES = {
 
         This will result in the compiler flags ``-DNS_NO_XPCOM``,
         ``-DMOZ_EXTENSIONS_DB_SCHEMA=15``, and ``-DDLL_SUFFIX='".so"'``,
-        respectively. These could also be combined into a single
-        update::
-
-           DEFINES.update({
-               'NS_NO_XPCOM': True,
-               'MOZ_EXTENSIONS_DB_SCHEMA': 15,
-               'DLL_SUFFIX': '".so"',
-           })
+        respectively.
         """
         ),
 

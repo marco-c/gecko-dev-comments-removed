@@ -250,16 +250,9 @@ class FileAvoidWrite(BytesIO):
         underlying file was changed, ``.diff`` will be populated with the diff
         of the result.
         """
-        if self._binary_mode or six.PY2:
-            
-            
-            
-            
-            buf = self.getvalue()
-        else:
-            
-            
-            buf = self.getvalue().decode('utf-8')
+        
+        ensure = six.ensure_binary if self._binary_mode else six.ensure_text
+        buf = ensure(self.getvalue())
 
         BytesIO.close(self)
         existed = False
