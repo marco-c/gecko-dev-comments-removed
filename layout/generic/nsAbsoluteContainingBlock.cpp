@@ -221,8 +221,7 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
         if (!nextFrame) {
           nextFrame = aPresContext->PresShell()
                           ->FrameConstructor()
-                          ->CreateContinuingFrame(aPresContext, kidFrame,
-                                                  aDelegatingFrame);
+                          ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
         }
         
         

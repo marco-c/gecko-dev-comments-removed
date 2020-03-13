@@ -74,8 +74,7 @@ class nsFirstLetterFrame final : public nsContainerFrame {
   
   
   
-  void CreateContinuationForFloatingParent(nsPresContext* aPresContext,
-                                           nsIFrame* aChild,
+  void CreateContinuationForFloatingParent(nsIFrame* aChild,
                                            nsIFrame** aContinuation,
                                            bool aIsFluid);
 

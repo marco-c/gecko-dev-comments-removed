@@ -763,7 +763,7 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
       if (!nextFrame) {
         nextFrame = aPresContext->PresShell()
                         ->FrameConstructor()
-                        ->CreateContinuingFrame(aPresContext, kidFrame, this);
+                        ->CreateContinuingFrame(kidFrame, this);
         SetOverflowFrames(nsFrameList(nextFrame, nextFrame));
         
         
