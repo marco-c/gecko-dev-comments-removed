@@ -1,41 +1,41 @@
-
-
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set sts=2 sw=2 et tw=80: */
 "use strict";
 
+/* exported CustomizableUI makeWidgetId focusWindow forceGC
+ *          getBrowserActionWidget
+ *          clickBrowserAction clickPageAction clickPageActionInPanel
+ *          triggerPageActionWithKeyboard triggerPageActionWithKeyboardInPanel
+ *          triggerBrowserActionWithKeyboard
+ *          getBrowserActionPopup getPageActionPopup getPageActionButton
+ *          openBrowserActionPanel
+ *          closeBrowserAction closePageAction
+ *          promisePopupShown promisePopupHidden promisePopupNotificationShown
+ *          toggleBookmarksToolbar
+ *          openContextMenu closeContextMenu
+ *          openContextMenuInSidebar openContextMenuInPopup
+ *          openExtensionContextMenu closeExtensionContextMenu
+ *          openActionContextMenu openSubmenu closeActionContextMenu
+ *          openTabContextMenu closeTabContextMenu
+ *          openToolsMenu closeToolsMenu
+ *          imageBuffer imageBufferFromDataURI
+ *          getInlineOptionsBrowser
+ *          getListStyleImage getPanelForNode
+ *          awaitExtensionPanel awaitPopupResize
+ *          promiseContentDimensions alterContent
+ *          promisePrefChangeObserved openContextMenuInFrame
+ *          promiseAnimationFrame getCustomizableUIPanelID
+ *          awaitEvent BrowserWindowIterator
+ *          navigateTab historyPushState promiseWindowRestored
+ *          getIncognitoWindow startIncognitoMonitorExtension
+ *          loadTestSubscript
+ */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// There are shutdown issues for which multiple rejections are left uncaught.
+// This bug should be fixed, but for the moment this directory is whitelisted.
+//
+// NOTE: Entire directory whitelisting should be kept to a minimum. Normally you
+//       should use "expectUncaughtRejection" to flag individual failures.
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
@@ -61,7 +61,7 @@ XPCOMUtils.defineLazyGetter(this, "Management", () => {
   return Management;
 });
 
-
+// The extension tests can run a lot slower under ASAN.
 if (AppConstants.ASAN) {
   SimpleTest.requestLongerTimeout(10);
 }
@@ -70,24 +70,24 @@ function loadTestSubscript(filePath) {
   Services.scriptloader.loadSubScript(new URL(filePath, gTestPath).href, this);
 }
 
-
+// Don't try to create screenshots of sites we load during tests.
 Services.prefs
   .getDefaultBranch("browser.newtabpage.activity-stream.")
   .setBoolPref("feeds.topsites", false);
 
 {
-  
-  
+  // Touch the recipeParentPromise lazy getter so we don't get
+  // `this._recipeManager is undefined` errors during tests.
   const { LoginManagerParent } = ChromeUtils.import(
     "resource://gre/modules/LoginManagerParent.jsm"
   );
   void LoginManagerParent.recipeParentPromise;
 }
 
-
-
-
-
+// Bug 1239884: Our tests occasionally hit a long GC pause at unpredictable
+// times in debug builds, which results in intermittent timeouts. Until we have
+// a better solution, we force a GC after certain strategic tests, which tend to
+// accumulate a high number of unreaped windows.
 function forceGC() {
   if (AppConstants.DEBUG) {
     Cu.forceGC();
@@ -175,17 +175,17 @@ function promisePopupHidden(popup) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Wait for the given PopupNotification to display
+ *
+ * @param {string} name
+ *        The name of the notification to wait for.
+ * @param {Window} [win]
+ *        The chrome window in which to wait for the notification.
+ *
+ * @returns {Promise}
+ *          Resolves with the notification window.
+ */
 function promisePopupNotificationShown(name, win = window) {
   return new Promise(resolve => {
     function popupshown() {
@@ -251,11 +251,11 @@ function delay(ms = 0) {
 }
 
 async function promiseContentDimensions(browser) {
-  
-  
-  
-  
-  
+  // For remote browsers, each resize operation requires an asynchronous
+  // round-trip to resize the content window. Since there's a certain amount of
+  // unpredictability in the timing, mainly due to the unpredictability of
+  // reflows, we need to wait until the content window dimensions match the
+  // <browser> dimensions before returning data.
 
   let dims = await promisePossiblyInaccurateContentDimensions(browser);
   while (
@@ -396,7 +396,7 @@ async function triggerBrowserActionWithKeyboard(
   if (group.areaType == CustomizableUI.TYPE_TOOLBAR) {
     await focusButtonAndPressKey(key, node, modifiers);
   } else if (group.areaType == CustomizableUI.TYPE_MENU_PANEL) {
-    
+    // Use key navigation so that the PanelMultiView doesn't ignore key events
     let panel = win.document.getElementById("widget-overflow");
     while (win.document.activeElement != node) {
       EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -442,8 +442,8 @@ async function openContextMenuInPopup(extension, selector = "body") {
   );
   let browser = await awaitExtensionPanel(extension);
 
-  
-  
+  // Ensure that the document layout has been flushed before triggering the mouse event
+  // (See Bug 1519808 for a rationale).
   await browser.ownerGlobal.promiseDocumentFlushed(() => {});
   let popupShownPromise = BrowserTestUtils.waitForEvent(
     contentAreaContextMenu,
@@ -545,7 +545,7 @@ async function openExtensionContextMenu(selector = "#img1") {
     "top-level-menu"
   );
 
-  
+  // Return null if the extension only has one item and therefore no extension menu.
   if (!topLevelMenu.length) {
     return null;
   }
@@ -575,7 +575,7 @@ async function closeExtensionContextMenu(itemToSelect, modifiers = {}) {
   }
   await popupHiddenPromise;
 
-  
+  // Bug 1351638: parent menu fails to close intermittently, make sure it does.
   contentAreaContextMenu.hidePopup();
 }
 
@@ -584,7 +584,7 @@ async function openToolsMenu(win = window) {
   const menu = win.document.getElementById("menu_ToolsPopup");
   const shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
   if (AppConstants.platform === "macosx") {
-    
+    // We can't open menubar items on OSX, so mocking instead.
     menu.dispatchEvent(new MouseEvent("popupshowing"));
     menu.dispatchEvent(new MouseEvent("popupshown"));
   } else {
@@ -598,7 +598,7 @@ function closeToolsMenu(itemToSelect, win = window) {
   const menu = win.document.getElementById("menu_ToolsPopup");
   const hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
   if (AppConstants.platform === "macosx") {
-    
+    // Mocking on OSX, see above.
     if (itemToSelect) {
       itemToSelect.doCommand();
     }
@@ -641,8 +641,8 @@ function closeChromeContextMenu(menuId, itemToSelect, win = window) {
 }
 
 async function openActionContextMenu(extension, kind, win = window) {
-  
-  SetPageProxyState("valid");
+  // See comment from getPageActionButton below.
+  win.gURLBar.setPageProxyState("valid");
   await promiseAnimationFrame(win);
   let buttonID;
   let menuID;
@@ -667,8 +667,8 @@ function closeActionContextMenu(itemToSelect, kind, win = window) {
 }
 
 function openTabContextMenu(win = window) {
-  
-  
+  // The TabContextMenu initializes its strings only on a focus or mouseover event.
+  // Calls focus event on the TabContextMenu before opening.
   gBrowser.selectedTab.focus();
   return openChromeContextMenu(
     "tabContextMenu",
@@ -687,18 +687,18 @@ function getPageActionPopup(extension, win = window) {
 }
 
 async function getPageActionButton(extension, win = window) {
-  
-  
-  
-  
-  
-  
-  SetPageProxyState("valid");
+  // This would normally be set automatically on navigation, and cleared
+  // when the user types a value into the URL bar, to show and hide page
+  // identity info and icons such as page action buttons.
+  //
+  // Unfortunately, that doesn't happen automatically in browser chrome
+  // tests.
+  win.gURLBar.setPageProxyState("valid");
 
-  
-  
-  
-  
+  // If the current tab is blank and the previously selected tab was an internal
+  // page, the urlbar will now be showing the internal identity box due to the
+  // setPageProxyState call above.  The page action button is hidden in that
+  // case, so make sure we're not showing the internal identity box.
   gIdentityHandler._identityBox.classList.remove("chromeUI");
 
   await promiseAnimationFrame(win);
@@ -716,11 +716,11 @@ async function clickPageAction(extension, win = window, modifiers = {}) {
   return new Promise(SimpleTest.executeSoon);
 }
 
-
-
+// Shows the popup for the page action which for lists
+// all available page actions
 async function showPageActionsPanel(win = window) {
-  
-  SetPageProxyState("valid");
+  // See the comment at getPageActionButton
+  win.gURLBar.setPageProxyState("valid");
   await promiseAnimationFrame(win);
 
   let pageActionsPopup = win.document.getElementById("pageActionPanel");
@@ -782,7 +782,7 @@ async function triggerPageActionWithKeyboardInPanel(
     return new Promise(SimpleTest.executeSoon);
   }
 
-  
+  // Use key navigation so that the PanelMultiView doesn't ignore key events
   while (win.document.activeElement != widgetButton) {
     EventUtils.synthesizeKey("KEY_ArrowDown");
     ok(
@@ -862,16 +862,16 @@ function historyPushState(tab, url) {
   });
 }
 
-
-
+// This monitor extension runs with incognito: not_allowed, if it receives any
+// events with incognito data it fails.
 async function startIncognitoMonitorExtension() {
   function background() {
-    
-    
-    
-    
+    // Bug 1513220 - We're unable to get the tab during onRemoved, so we track
+    // valid tabs in "seen" so we can at least validate tabs that we have "seen"
+    // during onRemoved.  This means that the monitor extension must be started
+    // prior to creating any tabs that will be removed.
 
-    
+    // Map<tabId -> tab>
     let seenTabs = new Map();
     function getTabById(tabId) {
       return seenTabs.has(tabId)
@@ -935,7 +935,7 @@ async function startIncognitoMonitorExtension() {
       await testTabInfo(removedTabId, "onReplaced (removedTabId)");
     });
 
-    
+    // Map<windowId -> window>
     let seenWindows = new Map();
     function getWindowById(windowId) {
       return seenWindows.has(windowId)
@@ -969,7 +969,7 @@ async function startIncognitoMonitorExtension() {
       if (windowId == browser.windows.WINDOW_ID_NONE) {
         return;
       }
-      
+      // onFocusChanged will also fire for blur so check actual window.incognito value.
       let window;
       try {
         window = await getWindowById(windowId);
@@ -999,8 +999,8 @@ async function startIncognitoMonitorExtension() {
 }
 
 async function getIncognitoWindow(url = "about:privatebrowsing") {
-  
-  
+  // Since events will be limited based on incognito, we need a
+  // spanning extension to get the tab id so we can test access failure.
 
   function background(expectUrl) {
     browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
