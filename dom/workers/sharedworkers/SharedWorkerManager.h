@@ -8,7 +8,6 @@
 #define mozilla_dom_SharedWorkerManager_h
 
 #include "mozilla/dom/RemoteWorkerController.h"
-#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
@@ -26,8 +25,7 @@ class SharedWorkerParent;
 
 
 
-class SharedWorkerManagerHolder final
-    : public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
+class SharedWorkerManagerHolder final {
  public:
   NS_INLINE_DECL_REFCOUNTING(SharedWorkerManagerHolder);
 
@@ -41,8 +39,8 @@ class SharedWorkerManagerHolder final
  private:
   ~SharedWorkerManagerHolder();
 
-  const RefPtr<SharedWorkerManager> mManager;
-  const RefPtr<SharedWorkerService> mService;
+  RefPtr<SharedWorkerManager> mManager;
+  RefPtr<SharedWorkerService> mService;
 };
 
 
@@ -126,23 +124,23 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
   nsCOMPtr<nsIEventTarget> mPBackgroundEventTarget;
 
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
-  const nsCString mDomain;
-  const OriginAttributes mStoragePrincipalAttrs;
-  const nsCOMPtr<nsIURI> mResolvedScriptURL;
-  const nsString mName;
-  const bool mIsSecureContext;
+  nsCString mDomain;
+  OriginAttributes mStoragePrincipalAttrs;
+  nsCOMPtr<nsIURI> mResolvedScriptURL;
+  nsString mName;
+  bool mIsSecureContext;
   bool mSuspended;
   bool mFrozen;
 
   
   
-  nsTArray<CheckedUnsafePtr<SharedWorkerParent>> mActors;
+  nsTArray<SharedWorkerParent*> mActors;
 
   RefPtr<RemoteWorkerController> mRemoteWorkerController;
 
   
   
-  nsTArray<CheckedUnsafePtr<SharedWorkerManagerHolder>> mHolders;
+  nsTArray<SharedWorkerManagerHolder*> mHolders;
 };
 
 }  
