@@ -104,8 +104,8 @@ namespace js {
 
 
 
-using ProfileStringMap = HashMap<JSScript*, UniqueChars,
-                                 DefaultHasher<JSScript*>, SystemAllocPolicy>;
+using ProfileStringMap = HashMap<BaseScript*, UniqueChars,
+                                 DefaultHasher<BaseScript*>, SystemAllocPolicy>;
 
 class GeckoProfilerRuntime {
   JSRuntime* rt;
@@ -125,10 +125,10 @@ class GeckoProfilerRuntime {
 
   void setEventMarker(void (*fn)(const char*));
 
-  static UniqueChars allocProfileString(JSContext* cx, JSScript* script);
-  const char* profileString(JSContext* cx, JSScript* script);
+  static UniqueChars allocProfileString(JSContext* cx, BaseScript* script);
+  const char* profileString(JSContext* cx, BaseScript* script);
 
-  void onScriptFinalized(JSScript* script);
+  void onScriptFinalized(BaseScript* script);
 
   void markEvent(const char* event);
 
