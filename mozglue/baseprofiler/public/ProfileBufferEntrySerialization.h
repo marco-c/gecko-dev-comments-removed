@@ -245,13 +245,10 @@ class ProfileBufferEntryReader {
 
   
   
-  void ReadIntoObjects() {}
-
   
-  template <typename T0, typename... Ts>
-  void ReadIntoObjects(T0& aT0, Ts&... aTs) {
-    ReadIntoObject(aT0);
-    ReadIntoObjects(aTs...);
+  template <typename... Ts>
+  void ReadIntoObjects(Ts&... aTs) {
+    (ReadIntoObject(aTs), ...);
   }
 
   
@@ -441,12 +438,9 @@ class ProfileBufferEntryWriter {
   }
 
   
-  static MOZ_MUST_USE Length SumBytes() { return 0; }
-
-  
-  template <typename T0, typename... Ts>
-  static MOZ_MUST_USE Length SumBytes(const T0& aT0, const Ts&... aTs) {
-    return Serializer<T0>::Bytes(aT0) + SumBytes(aTs...);
+  template <typename... Ts>
+  static MOZ_MUST_USE Length SumBytes(const Ts&... aTs) {
+    return (0 + ... + Serializer<Ts>::Bytes(aTs));
   }
 
   
@@ -501,13 +495,10 @@ class ProfileBufferEntryWriter {
 
   
   
-  void WriteObjects() {}
-
   
-  template <typename T0, typename... Ts>
-  void WriteObjects(const T0& aT0, const Ts&... aTs) {
-    WriteObject(aT0);
-    WriteObjects(aTs...);
+  template <typename... Ts>
+  void WriteObjects(const Ts&... aTs) {
+    (WriteObject(aTs), ...);
   }
 
  private:
@@ -897,32 +888,14 @@ struct ProfileBufferEntryWriter::Serializer<std::tuple<Ts...>> {
   template <size_t... Is>
   static Length TupleBytes(const std::tuple<Ts...>& aTuple,
                            std::index_sequence<Is...>) {
-    Length bytes = 0;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Unused << std::initializer_list<int>{
-        (bytes += SumBytes(std::get<Is>(aTuple)), 0)...};
-    return bytes;
+    return (0 + ... + SumBytes(std::get<Is>(aTuple)));
   }
 
   template <size_t... Is>
   static void TupleWrite(ProfileBufferEntryWriter& aEW,
                          const std::tuple<Ts...>& aTuple,
                          std::index_sequence<Is...>) {
-    
-    Unused << std::initializer_list<int>{
-        (aEW.WriteObject(std::get<Is>(aTuple)), 0)...};
+    (aEW.WriteObject(std::get<Is>(aTuple)), ...);
   }
 
  public:
@@ -977,20 +950,14 @@ struct ProfileBufferEntryWriter::Serializer<Tuple<Ts...>> {
   template <size_t... Is>
   static Length TupleBytes(const Tuple<Ts...>& aTuple,
                            std::index_sequence<Is...>) {
-    Length bytes = 0;
-    
-    Unused << std::initializer_list<int>{
-        (bytes += SumBytes(Get<Is>(aTuple)), 0)...};
-    return bytes;
+    return (0 + ... + SumBytes(Get<Is>(aTuple)));
   }
 
   template <size_t... Is>
   static void TupleWrite(ProfileBufferEntryWriter& aEW,
                          const Tuple<Ts...>& aTuple,
                          std::index_sequence<Is...>) {
-    
-    Unused << std::initializer_list<int>{
-        (aEW.WriteObject(Get<Is>(aTuple)), 0)...};
+    (aEW.WriteObject(Get<Is>(aTuple)), ...);
   }
 
  public:
@@ -1139,9 +1106,7 @@ struct ProfileBufferEntryWriter::Serializer<Variant<Ts...>> {
   static Length VariantBytes(const Variant<Ts...>& aVariantTs,
                              std::index_sequence<Is...>) {
     Length bytes = 0;
-    
-    Unused << std::initializer_list<int>{
-        (VariantIBytes<Is>(aVariantTs, bytes), 0)...};
+    (VariantIBytes<Is>(aVariantTs, bytes), ...);
     MOZ_ASSERT(bytes != 0);
     return bytes;
   }
@@ -1164,9 +1129,7 @@ struct ProfileBufferEntryWriter::Serializer<Variant<Ts...>> {
   static void VariantWrite(ProfileBufferEntryWriter& aEW,
                            const Variant<Ts...>& aVariantTs,
                            std::index_sequence<Is...>) {
-    
-    Unused << std::initializer_list<int>{
-        (VariantIWrite<Is>(aEW, aVariantTs), 0)...};
+    (VariantIWrite<Is>(aEW, aVariantTs), ...);
   }
 
  public:
@@ -1205,9 +1168,7 @@ struct ProfileBufferEntryReader::Deserializer<Variant<Ts...>> {
                               Variant<Ts...>& aVariantTs,
                               std::index_sequence<Is...>) {
     unsigned tag = aER.ReadULEB128<unsigned>();
-    
-    Unused << std::initializer_list<int>{
-        (VariantIReadInto<Is>(aER, aVariantTs, tag), 0)...};
+    (VariantIReadInto<Is>(aER, aVariantTs, tag), ...);
   }
 
  public:
