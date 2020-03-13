@@ -1196,16 +1196,3 @@ async function toggleBlockedUrl(element, monitor, store, action = "block") {
   await onRequestComplete;
   info(`Selected request is now ${action}ed`);
 }
-
-
-
-
-
-
-
-
-
-
-function clickElement(element, monitor) {
-  EventUtils.synthesizeMouseAtCenter(element, {}, monitor.panelWin);
-}

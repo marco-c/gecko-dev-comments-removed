@@ -3,6 +3,7 @@
 
 
 "use strict";
+
 const { Component } = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const {
@@ -13,7 +14,8 @@ const Editor = require("devtools/client/shared/sourceeditor/editor");
 const {
   setTargetSearchResult,
 } = require("devtools/client/netmonitor/src/actions/search");
-const { div, pre } = dom;
+const { div } = dom;
+
 
 
 
@@ -25,58 +27,16 @@ class SourcePreview extends Component {
       
       text: PropTypes.string,
       
-      targetSearchResult: PropTypes.object,
+      targetSearchResult: PropTypes.string,
       
       
       resetTargetSearchResult: PropTypes.func,
-      
-      limit: PropTypes.number,
     };
   }
 
   componentDidMount() {
     const { mode, text } = this.props;
-    if (!this.isOverSizeLimit(text)) {
-      this.loadEditor(mode, text);
-    }
-  }
 
-  shouldComponentUpdate(nextProps) {
-    return (
-      nextProps.mode !== this.props.mode ||
-      nextProps.text !== this.props.text ||
-      nextProps.targetSearchResult !== this.props.targetSearchResult
-    );
-  }
-
-  componentDidUpdate(prevProps) {
-    const { mode, targetSearchResult, text } = this.props;
-
-    if (prevProps.text !== text) {
-      
-      
-      if (this.isOverSizeLimit(text)) {
-        this.unloadEditor();
-        return;
-      }
-
-      if (!this.editor || this.editor.isDestroyed()) {
-        
-        this.loadEditor(mode, text);
-      } else {
-        
-        this.updateEditor(mode, text);
-      }
-    } else if (prevProps.targetSearchResult !== targetSearchResult) {
-      this.findSearchResult();
-    }
-  }
-
-  componentWillUnmount() {
-    this.unloadEditor();
-  }
-
-  loadEditor(mode, text) {
     this.editor = new Editor({
       lineNumbers: true,
       lineWrapping: false,
@@ -102,33 +62,49 @@ class SourcePreview extends Component {
     });
   }
 
-  updateEditor(mode, text) {
-    
-    
-    this.editor.setMode(null);
-    this.editor.setText(text);
-
-    if (this.editorSetModeTimeout) {
-      clearTimeout(this.editorSetModeTimeout);
-    }
-
-    
-    
-    
-    this.editorSetModeTimeout = setTimeout(() => {
-      this.editorSetModeTimeout = null;
-      this.editor.setMode(mode);
-      this.findSearchResult();
-    });
+  shouldComponentUpdate(nextProps) {
+    return (
+      nextProps.mode !== this.props.mode ||
+      nextProps.text !== this.props.text ||
+      nextProps.targetSearchResult !== this.props.targetSearchResult
+    );
   }
 
-  unloadEditor() {
+  componentDidUpdate(prevProps) {
+    const { mode, targetSearchResult, text } = this.props;
+
+    
+    if (this.editor.isDestroyed()) {
+      return;
+    }
+
+    if (prevProps.text !== text) {
+      
+      
+      this.editor.setMode(null);
+      this.editor.setText(text);
+
+      if (this.editorSetModeTimeout) {
+        clearTimeout(this.editorSetModeTimeout);
+      }
+
+      
+      
+      
+      this.editorSetModeTimeout = setTimeout(() => {
+        this.editorSetModeTimeout = null;
+        this.editor.setMode(mode);
+        this.findSearchResult();
+      });
+    } else if (prevProps.targetSearchResult !== targetSearchResult) {
+      this.findSearchResult();
+    }
+  }
+
+  componentWillUnmount() {
     clearTimeout(this.editorTimeout);
     clearTimeout(this.editorSetModeTimeout);
-    if (this.editor) {
-      this.editor.destroy();
-      this.editor = null;
-    }
+    this.editor.destroy();
   }
 
   findSearchResult() {
@@ -138,71 +114,17 @@ class SourcePreview extends Component {
       const { line } = targetSearchResult;
       
       
-      if (this.editor) {
-        this.editor.setCursor({ line: line - 1 }, "center");
-      }
+      this.editor.setCursor({ line: line - 1 }, "center");
     }
 
     resetTargetSearchResult();
   }
 
-  
-  scrollToLine(element) {
-    const { targetSearchResult, resetTargetSearchResult } = this.props;
-
-    
-    
-    
-    
-    
-    if (element && targetSearchResult && targetSearchResult.line) {
-      const child = element.children[targetSearchResult.line - 1];
-      if (child) {
-        const range = document.createRange();
-        range.selectNode(child);
-        document.getSelection().addRange(range);
-        child.scrollIntoView({ block: "center" });
-      }
-      resetTargetSearchResult();
-    }
-  }
-
-  isOverSizeLimit(text) {
-    const { limit } = this.props;
-    return text && text.length > limit;
-  }
-
-  renderPre(text) {
-    return div(
-      { className: "responseTextContainer" },
-      pre(
-        { ref: element => this.scrollToLine(element) },
-        text.split(/\r\n|\r|\n/).map((line, index) => {
-          return div({ key: index }, line);
-        })
-      )
-    );
-  }
-
-  renderEditor() {
-    return div(
-      { className: "editor-row-container" },
-      div({
-        ref: "editorElement",
-        className: "source-editor-mount devtools-monospace",
-      })
-    );
-  }
-
   render() {
-    const { text } = this.props;
-    
-    
-    const isOverSize = this.isOverSizeLimit(text);
-    return div(
-      { key: "EDITOR_CONFIG", className: "editor-row-container" },
-      isOverSize ? this.renderPre(text) : this.renderEditor()
-    );
+    return div({
+      ref: "editorElement",
+      className: "source-editor-mount devtools-monospace",
+    });
   }
 }
 
