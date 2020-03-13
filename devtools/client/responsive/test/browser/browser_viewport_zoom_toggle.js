@@ -49,9 +49,7 @@ addRDMTask(
     
     
     const { ui } = await openRDM(tab);
-
-    
-    await message.wait(ui.toolWindow, "post-init");
+    await waitForDeviceAndViewportState(ui);
 
     const uiDocShell = ui.toolWindow.docShell;
 

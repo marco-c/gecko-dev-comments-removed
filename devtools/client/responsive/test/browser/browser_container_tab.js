@@ -7,21 +7,25 @@
 
 const TEST_URL = "http://example.com/";
 
-add_task(async function() {
-  
-  const tab = await addTab(BROWSER_NEW_TAB_URL, {
-    userContextId: 2,
-  });
-  is(tab.userContextId, 2, "Tab's container ID is correct");
-  const browser = tab.linkedBrowser;
+addRDMTask(
+  null,
+  async function() {
+    
+    const tab = await addTab(BROWSER_NEW_TAB_URL, {
+      userContextId: 2,
+    });
+    is(tab.userContextId, 2, "Tab's container ID is correct");
+    const browser = tab.linkedBrowser;
 
-  
-  const { ui } = await openRDM(tab);
-  const loaded = waitForFrameLoad(ui, TEST_URL);
-  await load(browser, TEST_URL);
-  await loaded;
-  ok(true, "Test URL navigated successfully");
+    
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
 
-  await closeRDM(tab);
-  await removeTab(tab);
-});
+    await load(browser, TEST_URL);
+    ok(true, "Test URL navigated successfully");
+
+    await closeRDM(tab);
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);

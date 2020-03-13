@@ -51,25 +51,31 @@ const DATA = [
   },
 ];
 
-add_task(async function() {
-  
-  Services.telemetry.clearEvents();
+addRDMTask(
+  null,
+  async function() {
+    
+    Services.telemetry.clearEvents();
 
-  
-  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
-  ok(!snapshot.parent, "No events have been logged for the main process");
+    
+    const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
+    ok(!snapshot.parent, "No events have been logged for the main process");
 
-  const tab = await addTab(URL);
-  const target = await TargetFactory.forTab(tab);
+    const tab = await addTab(URL);
+    const target = await TargetFactory.forTab(tab);
 
-  await openCloseRDM(tab);
-  await gDevTools.showToolbox(target, "inspector");
-  await openCloseRDM(tab);
-  await checkResults();
-});
+    await openCloseRDM(tab);
+    await gDevTools.showToolbox(target, "inspector");
+    await openCloseRDM(tab);
+    await checkResults();
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
 
 async function openCloseRDM(tab) {
   const { ui } = await openRDM(tab);
+  await waitForDeviceAndViewportState(ui);
+
   const clientClosed = waitForClientClose(ui);
 
   closeRDM(tab, {

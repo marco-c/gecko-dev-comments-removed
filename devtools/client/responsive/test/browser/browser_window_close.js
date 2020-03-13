@@ -3,25 +3,30 @@
 
 "use strict";
 
-add_task(async function() {
-  const newWindowPromise = BrowserTestUtils.waitForNewWindow();
-  window.open("data:text/html;charset=utf-8,", "_blank", "noopener,all");
-  const newWindow = await newWindowPromise;
+addRDMTask(
+  null,
+  async function() {
+    const newWindowPromise = BrowserTestUtils.waitForNewWindow();
+    window.open("data:text/html;charset=utf-8,", "_blank", "noopener,all");
+    const newWindow = await newWindowPromise;
 
-  newWindow.focus();
-  await BrowserTestUtils.browserLoaded(newWindow.gBrowser.selectedBrowser);
+    newWindow.focus();
+    await BrowserTestUtils.browserLoaded(newWindow.gBrowser.selectedBrowser);
 
-  const tab = newWindow.gBrowser.selectedTab;
-  await openRDM(tab);
+    const tab = newWindow.gBrowser.selectedTab;
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
 
-  
-  
-  
-  ok(
-    ResponsiveUIManager.isActiveForTab(tab),
-    "ResponsiveUI should be active for tab when the window is closed"
-  );
-  const offPromise = once(ResponsiveUIManager, "off");
-  await BrowserTestUtils.closeWindow(newWindow);
-  await offPromise;
-});
+    
+    
+    
+    ok(
+      ResponsiveUIManager.isActiveForTab(tab),
+      "ResponsiveUI should be active for tab when the window is closed"
+    );
+    const offPromise = once(ResponsiveUIManager, "off");
+    await BrowserTestUtils.closeWindow(newWindow);
+    await offPromise;
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);

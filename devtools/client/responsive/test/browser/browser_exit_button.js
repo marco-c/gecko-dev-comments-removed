@@ -12,37 +12,41 @@ addRDMTask(TEST_URL, async function(...args) {
 
 
 
-add_task(async function() {
-  let tab = await addTab(TEST_URL);
-  const { ui, manager } = await openRDM(tab);
+addRDMTask(
+  null,
+  async function() {
+    let tab = await addTab(TEST_URL);
+    const { ui, manager } = await openRDM(tab);
 
-  await waitBootstrap(ui);
+    await waitBootstrap(ui);
 
-  const waitTabIsDetached = Promise.all([
-    once(tab, "TabClose"),
-    once(tab.linkedBrowser, "SwapDocShells"),
-  ]);
+    const waitTabIsDetached = Promise.all([
+      once(tab, "TabClose"),
+      once(tab.linkedBrowser, "SwapDocShells"),
+    ]);
 
-  
-  const newWindow = gBrowser.replaceTabWithWindow(tab);
+    
+    const newWindow = gBrowser.replaceTabWithWindow(tab);
 
-  
-  await waitTabIsDetached;
-  await newWindow.delayedStartupPromise;
+    
+    await waitTabIsDetached;
+    await newWindow.delayedStartupPromise;
 
-  
-  tab = newWindow.gBrowser.tabs[0];
+    
+    tab = newWindow.gBrowser.tabs[0];
 
-  
-  ok(
-    !manager.isActiveForTab(tab),
-    "Responsive Design Mode is not active for the tab"
-  );
+    
+    ok(
+      !manager.isActiveForTab(tab),
+      "Responsive Design Mode is not active for the tab"
+    );
 
-  
-  await testExitButton(await openRDM(tab));
-  await BrowserTestUtils.closeWindow(newWindow);
-});
+    
+    await testExitButton(await openRDM(tab));
+    await BrowserTestUtils.closeWindow(newWindow);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
 
 async function waitBootstrap(ui) {
   const { toolWindow, tab } = ui;

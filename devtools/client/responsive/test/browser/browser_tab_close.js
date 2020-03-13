@@ -7,37 +7,47 @@
 
 const TEST_URL = "http://example.com/";
 
-add_task(async function() {
-  const tab = await addTab(TEST_URL);
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(TEST_URL);
 
-  const { ui } = await openRDM(tab);
-  const clientClosed = waitForClientClose(ui);
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
+    const clientClosed = waitForClientClose(ui);
 
-  closeRDM(tab, {
-    reason: "TabClose",
-  });
+    closeRDM(tab, {
+      reason: "TabClose",
+    });
 
-  
-  
-  
-  is(ui.destroyed, true, "RDM closed synchronously");
+    
+    
+    
+    is(ui.destroyed, true, "RDM closed synchronously");
 
-  await clientClosed;
-  await removeTab(tab);
-});
+    await clientClosed;
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
 
-add_task(async function() {
-  const tab = await addTab(TEST_URL);
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(TEST_URL);
 
-  const { ui } = await openRDM(tab);
-  const clientClosed = waitForClientClose(ui);
+    const { ui } = await openRDM(tab);
+    await waitForDeviceAndViewportState(ui);
+    const clientClosed = waitForClientClose(ui);
 
-  await removeTab(tab);
+    await removeTab(tab);
 
-  
-  
-  
-  is(ui.destroyed, true, "RDM closed synchronously");
+    
+    
+    
+    is(ui.destroyed, true, "RDM closed synchronously");
 
-  await clientClosed;
-});
+    await clientClosed;
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);

@@ -6,31 +6,28 @@
 
 
 const TEST_URL = "http://example.org/";
+addRDMTask(
+  TEST_URL,
+  async function({ ui }) {
+    const browser = ui.getViewportBrowser();
 
-addRDMTask(TEST_URL, async function({ ui }) {
-  const store = ui.toolWindow.store;
+    is(
+      ui.toolWindow.getComputedStyle(browser).getPropertyValue("width"),
+      "320px",
+      "Viewport has default width"
+    );
+    is(
+      ui.toolWindow.getComputedStyle(browser).getPropertyValue("height"),
+      "480px",
+      "Viewport has default height"
+    );
 
-  
-  await waitUntilState(store, state => state.viewports.length == 1);
-
-  
-  const viewport = ui.toolWindow.document.querySelector(".viewport-content");
-
-  is(
-    ui.toolWindow.getComputedStyle(viewport).getPropertyValue("width"),
-    "320px",
-    "Viewport has default width"
-  );
-  is(
-    ui.toolWindow.getComputedStyle(viewport).getPropertyValue("height"),
-    "480px",
-    "Viewport has default height"
-  );
-
-  
-  await waitForFrameLoad(ui, TEST_URL);
-  const location = await spawnViewportTask(ui, {}, function() {
-    return content.location.href; 
-  });
-  is(location, TEST_URL, "Viewport location matches");
-});
+    
+    await load(browser, TEST_URL);
+    const location = await spawnViewportTask(ui, {}, function() {
+      return content.location.href; 
+    });
+    is(location, TEST_URL, "Viewport location matches");
+  },
+  { usingBrowserUI: true }
+);
