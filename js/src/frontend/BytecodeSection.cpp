@@ -1,36 +1,39 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "frontend/BytecodeSection.h"
 
-#include "mozilla/Assertions.h"       
-#include "mozilla/PodOperations.h"    
-#include "mozilla/ReverseIterator.h"  
+#include "mozilla/Assertions.h"       // MOZ_ASSERT
+#include "mozilla/PodOperations.h"    // PodZero
+#include "mozilla/ReverseIterator.h"  // mozilla::Reversed
 
 #include "frontend/CompilationInfo.h"
-#include "frontend/SharedContext.h"  
-#include "frontend/Stencil.h"        
-#include "vm/BytecodeUtil.h"         
-#include "vm/JSContext.h"            
-#include "vm/RegExpObject.h"         
+#include "frontend/SharedContext.h"  // FunctionBox
+#include "frontend/Stencil.h"        // ScopeCreationData
+#include "vm/BytecodeUtil.h"         // INDEX_LIMIT, StackUses, StackDefs
+#include "vm/JSContext.h"            // JSContext
+#include "vm/RegExpObject.h"         // RegexpObject
 
 using namespace js;
 using namespace js::frontend;
 
 bool GCThingList::append(FunctionBox* funbox, uint32_t* index) {
-  
-  
-  
+  // Append the function to the vector and return the index in *index. Also add
+  // the FunctionBox to the |lastbox| linked list for finishInnerFunctions
+  // below.
 
   MOZ_ASSERT(!funbox->emitLink_);
   funbox->emitLink_ = lastbox;
   lastbox = funbox;
 
   *index = vector.length();
-  return vector.append(mozilla::AsVariant(JS::GCCellPtr(funbox->function())));
+  // To avoid circular include issues, funbox can't return a FunctionIndex, so
+  // instead it returns a size_t, which we wrap in FunctionIndex here to
+  // disambiguate the variant.
+  return vector.append(mozilla::AsVariant(FunctionIndex(funbox->index())));
 }
 
 void GCThingList::finishInnerFunctions() {
@@ -99,6 +102,17 @@ bool js::frontend::EmitScriptThingsVector(JSContext* cx,
       output[i] = JS::GCCellPtr(scope);
       return true;
     }
+
+    bool operator()(const FunctionIndex& index) {
+      MutableHandle<FunctionType> data = compilationInfo.funcData[index];
+      // We should have already converted this data to a JSFunction as part
+      // of publishDeferredFunctions, which currently happens before BCE begins.
+      // Once we can do LazyScriptCreationData::create without referencing the
+      // functionbox, then we should be able to do JSFunction allocation here.
+      MOZ_ASSERT(!data.is<FunctionCreationData>());
+      output[i] = JS::GCCellPtr(data.as<JSFunction*>());
+      return true;
+    }
   };
 
   for (uint32_t i = 0; i < objects.length(); i++) {
@@ -114,8 +128,8 @@ bool CGTryNoteList::append(JSTryNoteKind kind, uint32_t stackDepth,
                            BytecodeOffset start, BytecodeOffset end) {
   MOZ_ASSERT(start <= end);
 
-  
-  
+  // Offsets are given relative to sections, but we only expect main-section
+  // to have TryNotes. In finish() we will fixup base offset.
 
   JSTryNote note;
   note.kind = kind;
@@ -139,8 +153,8 @@ bool CGScopeNoteList::append(uint32_t scopeIndex, BytecodeOffset offset,
   CGScopeNote note;
   mozilla::PodZero(&note);
 
-  
-  
+  // Offsets are given relative to sections. In finish() we will fixup base
+  // offset if needed.
 
   note.index = scopeIndex;
   note.start = offset.toUint32();

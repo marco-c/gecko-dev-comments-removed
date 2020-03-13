@@ -7121,13 +7121,6 @@ static bool DoCompileAsmJS(JSContext* cx, AsmJSParser<Unit>& parser,
 
   
   
-  
-  if (funbox->hasFunctionCreationIndex()) {
-    funbox->clearFunctionCreationData();
-  }
-
-  
-  
   *validated = true;
   SuccessfulValidation(parser, time);
   return NoExceptionPending(cx);

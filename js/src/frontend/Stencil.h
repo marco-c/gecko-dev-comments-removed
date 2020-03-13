@@ -62,6 +62,17 @@ class FunctionBox;
 enum class FunctionSyntaxKind : uint8_t;
 
 
+class FunctionIndexType;
+
+
+
+class FunctionIndex : public TypedIndex<FunctionIndexType> {
+  
+  using Base = TypedIndex<FunctionIndexType>;
+  using Base::Base;
+};
+
+
 struct LazyScriptCreationData {
   frontend::AtomVector closedOverBindings;
 
@@ -424,7 +435,7 @@ class ScopeCreationData {
 
 using ScriptThingVariant =
     mozilla::Variant<JS::GCCellPtr, BigIntIndex, ObjLiteralCreationData,
-                     RegExpIndex, ScopeIndex>;
+                     RegExpIndex, ScopeIndex, FunctionIndex>;
 
 
 using ScriptThingsVector = GCVector<ScriptThingVariant>;
@@ -526,5 +537,9 @@ struct GCPolicy<js::frontend::ScopeCreationData*> {
 template <typename T>
 struct GCPolicy<js::frontend::TypedIndex<T>>
     : JS::IgnoreGCPolicy<js::frontend::TypedIndex<T>> {};
+
+template <>
+struct GCPolicy<js::frontend::FunctionIndex>
+    : JS::IgnoreGCPolicy<js::frontend::FunctionIndex> {};
 }  
 #endif 
