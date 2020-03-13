@@ -1211,7 +1211,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void CancelDocumentFlushedResolvers();
 
   
-  void FireFrameLoadEvent(bool aIsTrusted);
+  void FireFrameLoadEvent();
 
  public:
   

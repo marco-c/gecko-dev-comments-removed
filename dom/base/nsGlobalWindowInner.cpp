@@ -1889,7 +1889,7 @@ bool nsGlobalWindowInner::DialogsAreBeingAbused() {
   return false;
 }
 
-void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
+void nsGlobalWindowInner::FireFrameLoadEvent() {
   
   
   if (GetBrowsingContext()->IsTopContent() ||
@@ -1904,7 +1904,7 @@ void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
   RefPtr<Element> element = GetBrowsingContext()->GetEmbedderElement();
   if (element) {
     nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetEvent event(aIsTrusted, eLoad);
+    WidgetEvent event( true, eLoad);
     event.mFlags.mBubbles = false;
     event.mFlags.mCancelable = false;
 
@@ -1942,7 +1942,7 @@ void nsGlobalWindowInner::FireFrameLoadEvent(bool aIsTrusted) {
     }
 
     mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
-        aIsTrusted,  true);
+         true);
   }
 }
 
@@ -2001,7 +2001,8 @@ nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
     mTimeoutManager->OnDocumentLoaded();
 
-    FireFrameLoadEvent(aVisitor.mEvent->IsTrusted());
+    MOZ_ASSERT(aVisitor.mEvent->IsTrusted());
+    FireFrameLoadEvent();
 
     if (mVREventObserver) {
       mVREventObserver->NotifyAfterLoad();
