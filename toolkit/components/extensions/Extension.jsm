@@ -1426,7 +1426,15 @@ class ExtensionData {
 
 
 
-  static formatPermissionStrings(info, bundle) {
+
+
+
+
+  static formatPermissionStrings(
+    info,
+    bundle,
+    { collapseOrigins = false } = {}
+  ) {
     let result = {};
 
     let perms = info.permissions || { origins: [], permissions: [] };
@@ -1476,7 +1484,7 @@ class ExtensionData {
             ...items.map(item => bundle.formatStringFromName(itemKey, [item]))
           );
         }
-        if (list.length < 5) {
+        if (list.length < 5 || !collapseOrigins) {
           formatItems(list);
         } else {
           formatItems(list.slice(0, 3));
