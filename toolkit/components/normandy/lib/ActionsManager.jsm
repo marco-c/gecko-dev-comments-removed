@@ -42,23 +42,15 @@ const actionConstructors = {
 };
 
 
-const actionAliases = {};
-
-
 
 
 class ActionsManager {
   constructor() {
     this.finalized = false;
 
-    
-    
     this.localActions = {};
     for (const [name, Constructor] of Object.entries(actionConstructors)) {
       this.localActions[name] = new Constructor();
-    }
-    for (const [alias, target] of Object.entries(actionAliases)) {
-      this.localActions[alias] = this.localActions[target];
     }
   }
 
@@ -67,9 +59,6 @@ class ActionsManager {
     let capabilities = new Set();
     for (const actionName of Object.keys(actionConstructors)) {
       capabilities.add(`action.${actionName}`);
-    }
-    for (const actionAlias of Object.keys(actionAliases)) {
-      capabilities.add(`action.${actionAlias}`);
     }
     return capabilities;
   }
@@ -100,7 +89,7 @@ class ActionsManager {
     this.finalized = true;
 
     
-    for (const action of new Set(Object.values(this.localActions))) {
+    for (const action of Object.values(this.localActions)) {
       action.finalize();
     }
   }
