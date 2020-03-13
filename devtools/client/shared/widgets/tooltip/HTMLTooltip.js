@@ -141,7 +141,6 @@ const calculateVerticalPosition = (
   
   const availableHeight = pos === TOP ? availableTop : availableBottom;
   height = Math.min(height, availableHeight - offset);
-  height = Math.floor(height);
 
   
   let top =
@@ -152,7 +151,11 @@ const calculateVerticalPosition = (
   
   top += viewportRect.top;
 
-  return { top, height, computedPosition: pos };
+  return {
+    top: Math.round(top),
+    height: Math.round(height),
+    computedPosition: pos,
+  };
 };
 
 
@@ -276,7 +279,11 @@ const calculateHorizontalPosition = (
       ? arrowStart
       : tooltipWidth - arrowWidth - arrowStart;
 
-  return { left, width: tooltipWidth, arrowLeft };
+  return {
+    left: Math.round(left),
+    width: Math.round(tooltipWidth),
+    arrowLeft: Math.round(arrowLeft),
+  };
 };
 
 
