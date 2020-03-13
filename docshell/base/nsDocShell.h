@@ -499,6 +499,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   static bool CreateAndConfigureRealChannelForLoadState(
+      mozilla::dom::BrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, mozilla::net::LoadInfo* aLoadInfo,
       nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
       const mozilla::OriginAttributes& aOriginAttributes,
