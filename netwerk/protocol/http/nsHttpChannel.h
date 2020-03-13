@@ -826,6 +826,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   bool mNetworkTriggered = false;
   bool mWaitingForProxy = false;
+  bool mStaleRevalidation = false;
   
   
   Atomic<bool> mRaceCacheWithNetwork;
