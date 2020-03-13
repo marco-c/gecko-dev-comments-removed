@@ -1024,7 +1024,7 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   
-  pref("security.sandbox.content.level", 5);
+  pref("security.sandbox.content.level", 6);
 
   
   
