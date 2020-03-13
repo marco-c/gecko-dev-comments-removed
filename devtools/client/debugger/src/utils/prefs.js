@@ -119,6 +119,11 @@ export const prefs = new PrefsHelper("devtools", {
   logEventBreakpoints: ["Bool", "debugger.log-event-breakpoints"],
 });
 
+
+
+
+prefs.cursorBlinkRate = Services.prefs.getIntPref("ui.caretBlinkTime", 530);
+
 export const features = new PrefsHelper("devtools.debugger.features", {
   asyncStepping: ["Bool", "async-stepping"],
   wasm: ["Bool", "wasm"],
