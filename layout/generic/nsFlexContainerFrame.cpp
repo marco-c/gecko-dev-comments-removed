@@ -1726,10 +1726,10 @@ class nsFlexContainerFrame::CachedMeasuringReflowResult {
 
  public:
   CachedMeasuringReflowResult(const ReflowInput& aReflowInput,
-                              const ReflowOutput& aDesiredSize)
+                              const ReflowOutput& aReflowOutput)
       : mKey(aReflowInput),
-        mBSize(aDesiredSize.BSize(aReflowInput.GetWritingMode())),
-        mAscent(aDesiredSize.BlockStartAscent()) {}
+        mBSize(aReflowOutput.BSize(aReflowInput.GetWritingMode())),
+        mAscent(aReflowOutput.BlockStartAscent()) {}
 
   
 
@@ -1767,7 +1767,7 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
         "[perf] MeasureAscentAndBSizeForFlexItem didn't have a cached value");
   }
 
-  ReflowOutput childDesiredSize(aChildReflowInput);
+  ReflowOutput childReflowOutput(aChildReflowInput);
   nsReflowStatus childReflowStatus;
 
   const ReflowChildFlags flags = ReflowChildFlags::NoMoveFrame;
@@ -1777,9 +1777,9 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
 
   
   
-  ReflowChild(aItem.Frame(), PresContext(), childDesiredSize, aChildReflowInput,
-              outerWM, dummyPosition, dummyContainerSize, flags,
-              childReflowStatus);
+  ReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
+              aChildReflowInput, outerWM, dummyPosition, dummyContainerSize,
+              flags, childReflowStatus);
   aItem.SetHadMeasuringReflow();
 
   
@@ -1791,12 +1791,12 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
 
   
   
-  FinishReflowChild(aItem.Frame(), PresContext(), childDesiredSize,
+  FinishReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
                     &aChildReflowInput, outerWM, dummyPosition,
                     dummyContainerSize, flags);
 
   auto result =
-      new CachedMeasuringReflowResult(aChildReflowInput, childDesiredSize);
+      new CachedMeasuringReflowResult(aChildReflowInput, childReflowOutput);
 
   aItem.Frame()->SetProperty(CachedFlexMeasuringReflow(), result);
   return *result;
@@ -4125,18 +4125,18 @@ void FlexLine::PositionItemsInCrossAxis(
 }
 
 void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
-                                  ReflowOutput& aDesiredSize,
+                                  ReflowOutput& aReflowOutput,
                                   const ReflowInput& aReflowInput,
                                   nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsFlexContainerFrame");
-  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
+  DISPLAY_REFLOW(aPresContext, this, aReflowInput, aReflowOutput, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
   MOZ_ASSERT(aPresContext == PresContext());
 
   FLEX_LOG("Reflow() for nsFlexContainerFrame %p", this);
 
-  if (IsFrameTreeTooDeep(aReflowInput, aDesiredSize, aStatus)) {
+  if (IsFrameTreeTooDeep(aReflowInput, aReflowOutput, aStatus)) {
     return;
   }
 
@@ -4228,7 +4228,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                  flexContainerAscent, lines, placeholders, axisTracker,
                  hasLineClampEllipsis);
 
-  ComputeFinalSize(aDesiredSize, aReflowInput, aStatus, contentBoxMainSize,
+  ComputeFinalSize(aReflowOutput, aReflowInput, aStatus, contentBoxMainSize,
                    contentBoxCrossSize, flexContainerAscent, lines,
                    axisTracker);
 
@@ -4907,7 +4907,7 @@ void nsFlexContainerFrame::ReflowChildren(
 }
 
 void nsFlexContainerFrame::ComputeFinalSize(
-    ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+    ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
     nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
     const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
     LinkedList<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
@@ -4927,12 +4927,12 @@ void nsFlexContainerFrame::ComputeFinalSize(
 
   
   
-  LogicalSize desiredSizeInFlexWM =
+  LogicalSize reflowOutputInFlexWM =
       aAxisTracker.LogicalSizeFromFlexRelativeSizes(aContentBoxMainSize,
                                                     aContentBoxCrossSize);
   
-  desiredSizeInFlexWM.ISize(flexWM) += containerBP.IStartEnd(flexWM);
-  desiredSizeInFlexWM.BSize(flexWM) += containerBP.BStartEnd(flexWM);
+  reflowOutputInFlexWM.ISize(flexWM) += containerBP.IStartEnd(flexWM);
+  reflowOutputInFlexWM.BSize(flexWM) += containerBP.BStartEnd(flexWM);
 
   if (aFlexContainerAscent == nscoord_MIN) {
     
@@ -4948,17 +4948,17 @@ void nsFlexContainerFrame::ComputeFinalSize(
     
     
     
-    aFlexContainerAscent = desiredSizeInFlexWM.BSize(flexWM);
+    aFlexContainerAscent = reflowOutputInFlexWM.BSize(flexWM);
   }
 
   if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
     
     
-    aDesiredSize.SetBlockStartAscent(ReflowOutput::ASK_FOR_BASELINE);
+    aReflowOutput.SetBlockStartAscent(ReflowOutput::ASK_FOR_BASELINE);
   } else {
     
     
-    aDesiredSize.SetBlockStartAscent(aFlexContainerAscent);
+    aReflowOutput.SetBlockStartAscent(aFlexContainerAscent);
   }
 
   
@@ -4970,14 +4970,14 @@ void nsFlexContainerFrame::ComputeFinalSize(
   
   if (aStatus.IsComplete()) {
     nscoord desiredBSizeWithBEndBP =
-        desiredSizeInFlexWM.BSize(flexWM) + blockEndContainerBP;
+        reflowOutputInFlexWM.BSize(flexWM) + blockEndContainerBP;
 
     if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE ||
-        desiredSizeInFlexWM.BSize(flexWM) == 0 ||
+        reflowOutputInFlexWM.BSize(flexWM) == 0 ||
         desiredBSizeWithBEndBP <= aReflowInput.AvailableBSize() ||
         aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
       
-      desiredSizeInFlexWM.BSize(flexWM) = desiredBSizeWithBEndBP;
+      reflowOutputInFlexWM.BSize(flexWM) = desiredBSizeWithBEndBP;
     } else {
       
       aStatus.SetIncomplete();
@@ -4991,22 +4991,23 @@ void nsFlexContainerFrame::ComputeFinalSize(
     
     
     mLastBaselineFromLastReflow =
-        desiredSizeInFlexWM.BSize(flexWM) - aFlexContainerAscent;
+        reflowOutputInFlexWM.BSize(flexWM) - aFlexContainerAscent;
   }
 
   
-  aDesiredSize.SetSize(flexWM, desiredSizeInFlexWM);
+  
+  aReflowOutput.SetSize(flexWM, reflowOutputInFlexWM);
 
   
-  aDesiredSize.SetOverflowAreasToDesiredBounds();
+  aReflowOutput.SetOverflowAreasToDesiredBounds();
   for (nsIFrame* childFrame : mFrames) {
-    ConsiderChildOverflow(aDesiredSize.mOverflowAreas, childFrame);
+    ConsiderChildOverflow(aReflowOutput.mOverflowAreas, childFrame);
   }
 
-  FinishReflowWithAbsoluteFrames(PresContext(), aDesiredSize, aReflowInput,
+  FinishReflowWithAbsoluteFrames(PresContext(), aReflowOutput, aReflowInput,
                                  aStatus);
 
-  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize)
+  NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aReflowOutput)
 }
 
 void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
@@ -5121,9 +5122,9 @@ void nsFlexContainerFrame::ReflowFlexItem(
   
   
 
-  ReflowOutput childDesiredSize(childReflowInput);
+  ReflowOutput childReflowOutput(childReflowInput);
   nsReflowStatus childReflowStatus;
-  ReflowChild(aItem.Frame(), PresContext(), childDesiredSize, childReflowInput,
+  ReflowChild(aItem.Frame(), PresContext(), childReflowOutput, childReflowInput,
               outerWM, aFramePos, aContainerSize, ReflowChildFlags::Default,
               childReflowStatus);
 
@@ -5137,11 +5138,11 @@ void nsFlexContainerFrame::ReflowFlexItem(
              "We gave flex item unconstrained available height, so it "
              "should be complete");
 
-  FinishReflowChild(aItem.Frame(), PresContext(), childDesiredSize,
+  FinishReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
                     &childReflowInput, outerWM, aFramePos, aContainerSize,
                     ReflowChildFlags::ApplyRelativePositioning);
 
-  aItem.SetAscent(childDesiredSize.BlockStartAscent());
+  aItem.SetAscent(childReflowOutput.BlockStartAscent());
 }
 
 void nsFlexContainerFrame::ReflowPlaceholders(
@@ -5160,13 +5161,13 @@ void nsFlexContainerFrame::ReflowPlaceholders(
                                  availSize);
     
     
-    ReflowOutput childDesiredSize(childReflowInput);
+    ReflowOutput childReflowOutput(childReflowInput);
     nsReflowStatus childReflowStatus;
-    ReflowChild(placeholder, PresContext(), childDesiredSize, childReflowInput,
+    ReflowChild(placeholder, PresContext(), childReflowOutput, childReflowInput,
                 outerWM, aContentBoxOrigin, aContainerSize,
                 ReflowChildFlags::Default, childReflowStatus);
 
-    FinishReflowChild(placeholder, PresContext(), childDesiredSize,
+    FinishReflowChild(placeholder, PresContext(), childReflowOutput,
                       &childReflowInput, outerWM, aContentBoxOrigin,
                       aContainerSize, ReflowChildFlags::Default);
 
