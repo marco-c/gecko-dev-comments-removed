@@ -1047,8 +1047,7 @@ void TextInputListener::HandleValueChanged(nsTextControlFrame* aFrame) {
   }
 
   if (!mSettingValue) {
-    mTxtCtrlElement->OnValueChanged( true,
-                                    ValueChangeKind::UserInteraction);
+    mTxtCtrlElement->OnValueChanged(ValueChangeKind::UserInteraction);
   }
 }
 
@@ -1249,7 +1248,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
       if (!(mSetValueFlags & TextControlState::eSetValue_Notify)) {
         
         
-        mTextControlState.ValueWasChanged(true);
+        mTextControlState.ValueWasChanged();
       }
     }
     if (!IsOriginalTextControlFrameAlive()) {
@@ -2687,10 +2686,7 @@ bool TextControlState::SetValue(const nsAString& aValue,
   auto changeKind = (aFlags & eSetValue_Internal) ? ValueChangeKind::Internal
                                                   : ValueChangeKind::Script;
 
-  
-  
-  handlingSetValue.GetTextControlElement()->OnValueChanged(
-       !!mBoundFrame, changeKind);
+  handlingSetValue.GetTextControlElement()->OnValueChanged(changeKind);
   return true;
 }
 
@@ -2976,7 +2972,7 @@ bool TextControlState::SetValueWithoutTextEditor(
       
       
       aHandlingSetValue.GetTextControlElement()->OnValueChanged(
-          true, ValueChangeKind::UserInteraction);
+          ValueChangeKind::UserInteraction);
 
       MOZ_ASSERT(!aHandlingSetValue.GetSettingValue().IsVoid());
       DebugOnly<nsresult> rvIgnored = nsContentUtils::DispatchInputEvent(
@@ -2997,9 +2993,7 @@ bool TextControlState::SetValueWithoutTextEditor(
     }
   }
 
-  
-  
-  ValueWasChanged(!!mBoundFrame);
+  ValueWasChanged();
   return true;
 }
 
@@ -3034,9 +3028,7 @@ void TextControlState::InitializeKeyboardEventListeners() {
   mSelCon->SetScrollableFrame(mBoundFrame->GetScrollTargetFrame());
 }
 
-void TextControlState::ValueWasChanged(bool aNotify) {
-  UpdateOverlayTextVisibility(aNotify);
-}
+void TextControlState::ValueWasChanged() { UpdateOverlayTextVisibility(true); }
 
 void TextControlState::SetPreviewText(const nsAString& aValue, bool aNotify) {
   
