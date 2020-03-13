@@ -11,6 +11,10 @@ add_task(async function test() {
     return;
   }
 
+  
+  
+  BackgroundJSM.changePreset("aboutprofiling", "web-developer");
+
   await withDevToolsPanel(async document => {
     {
       const presets = await getNearestInputFromText(document, "Settings");

@@ -852,8 +852,14 @@ pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com
 
 
 
-pref("devtools.performance.recording.preset", "web-developer");
-pref("devtools.performance.recording.preset.remote", "web-developer");
+#if defined(NIGHTLY_BUILD) || !defined(MOZILLA_OFFICIAL)
+  
+  pref("devtools.performance.recording.preset", "firefox-platform");
+  pref("devtools.performance.recording.preset.remote", "firefox-platform");
+#else
+  pref("devtools.performance.recording.preset", "web-developer");
+  pref("devtools.performance.recording.preset.remote", "web-developer");
+#endif
 
 
 pref("devtools.performance.recording.entries", 10000000);

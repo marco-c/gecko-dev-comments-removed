@@ -3,12 +3,12 @@
 
 "use strict";
 
+const BackgroundJSM = ChromeUtils.import(
+  "resource://devtools/client/performance-new/popup/background.jsm.js"
+);
+
 registerCleanupFunction(() => {
-  
-  const { revertRecordingPreferences } = ChromeUtils.import(
-    "resource://devtools/client/performance-new/popup/background.jsm.js"
-  );
-  revertRecordingPreferences();
+  BackgroundJSM.revertRecordingPreferences();
 });
 
 
@@ -387,9 +387,7 @@ async function withDevToolsPanel(callback) {
 
 
 function getActiveConfiguration() {
-  const { startProfiler, stopProfiler } = ChromeUtils.import(
-    "resource://devtools/client/performance-new/popup/background.jsm.js"
-  );
+  const { startProfiler, stopProfiler } = BackgroundJSM;
 
   info("Start the profiler with the current about:profiling configuration.");
   startProfiler("aboutprofiling");

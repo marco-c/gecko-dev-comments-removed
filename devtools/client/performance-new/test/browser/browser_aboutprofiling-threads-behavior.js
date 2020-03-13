@@ -8,6 +8,10 @@ add_task(async function test() {
     "Test the behavior of thread toggling and the text summary works as expected."
   );
 
+  
+  
+  BackgroundJSM.changePreset("aboutprofiling", "web-developer");
+
   await withAboutProfiling(async document => {
     const threadTextEl = await getNearestInputFromText(
       document,
