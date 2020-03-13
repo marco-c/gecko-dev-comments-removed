@@ -15,6 +15,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "frontend/UsedNameTracker.h"
+#include "js/GCVariant.h"
 #include "js/GCVector.h"
 #include "js/RealmOptions.h"
 #include "js/SourceText.h"
@@ -24,6 +25,8 @@
 
 namespace js {
 namespace frontend {
+
+using FunctionType = mozilla::Variant<JSFunction*, FunctionCreationData>;
 
 
 
@@ -53,8 +56,7 @@ struct MOZ_RAII CompilationInfo {
 
   
   
-  
-  JS::RootedVector<FunctionCreationData> funcData;
+  JS::RootedVector<FunctionType> funcData;
 
   
   
@@ -105,5 +107,4 @@ struct MOZ_RAII CompilationInfo {
 
 }  
 }  
-
 #endif
