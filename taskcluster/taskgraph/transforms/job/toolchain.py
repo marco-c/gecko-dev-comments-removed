@@ -61,9 +61,11 @@ toolchain_run_schema = Schema({
     
     Required('toolchain-artifact'): text_type,
 
-    
-    
-    Optional('toolchain-alias'): text_type,
+    Optional(
+        "toolchain-alias",
+        description="An alias that can be used instead of the real toolchain job name in "
+        "fetch stanzas for jobs.",
+    ): text_type,
 
     
     Required('workdir'): text_type,
