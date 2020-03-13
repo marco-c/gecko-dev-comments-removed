@@ -530,11 +530,6 @@ class ContentChild final
       PContentPermissionRequestChild* actor);
 
   
-  mozilla::ipc::IPCResult RecvSetAudioSessionData(const nsID& aId,
-                                                  const nsString& aDisplayName,
-                                                  const nsString& aIconPath);
-
-  
   
   void CreateGetFilesRequest(const nsAString& aDirectoryPath,
                              bool aRecursiveFlag, nsID& aUUID,
