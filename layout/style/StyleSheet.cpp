@@ -579,20 +579,39 @@ void StyleSheet::SetSourceURL(const nsAString& aSourceURL) {
 
 css::Rule* StyleSheet::GetDOMOwnerRule() const { return mOwnerRule; }
 
+
+
 uint32_t StyleSheet::InsertRule(const nsAString& aRule, uint32_t aIndex,
                                 nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv) {
   if (IsReadOnly() || !AreRulesAvailable(aSubjectPrincipal, aRv)) {
     return 0;
   }
+
+  if (ModificationDisallowed()) {
+    aRv.ThrowNotAllowedError(
+        "This method can only be called on "
+        "modifiable style sheets");
+    return 0;
+  }
+
   return InsertRuleInternal(aRule, aIndex, aRv);
 }
+
+
 
 void StyleSheet::DeleteRule(uint32_t aIndex, nsIPrincipal& aSubjectPrincipal,
                             ErrorResult& aRv) {
   if (IsReadOnly() || !AreRulesAvailable(aSubjectPrincipal, aRv)) {
     return;
   }
+
+  if (ModificationDisallowed()) {
+    return aRv.ThrowNotAllowedError(
+        "This method can only be called on "
+        "modifiable style sheets");
+  }
+
   return DeleteRuleInternal(aIndex, aRv);
 }
 
@@ -718,31 +737,19 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
 
   
   
-  
-  auto disabledLoader = MakeRefPtr<css::Loader>();
-  disabledLoader->SetEnabled(false);
+  auto* loader = mConstructorDocument->CSSLoader();
   SetURLExtraData();
   RefPtr<const RawServoStyleSheetContents> rawContent =
       Servo_StyleSheet_FromUTF8Bytes(
-          disabledLoader, this,
+          loader, this,
            nullptr, &aText, mParsingMode, Inner().mURLData,
            0,
           mConstructorDocument->GetCompatibilityMode(),
            nullptr,
           mConstructorDocument->GetStyleUseCounters(),
-          StyleSanitizationKind::None,
+          StyleAllowImportRules::No, StyleSanitizationKind::None,
            nullptr)
           .Consume();
-
-  
-  
-  
-  
-  if (Servo_StyleSheet_HasImportRules(rawContent)) {
-    return aRv.ThrowNotAllowedError(
-        "@import rules are not allowed. Use the async replace() method "
-        "instead.");
-  }
 
   
   DropRuleList();
@@ -833,6 +840,10 @@ nsresult StyleSheet::InsertRuleIntoGroup(const nsAString& aRule,
 
   if (IsReadOnly()) {
     return NS_OK;
+  }
+
+  if (ModificationDisallowed()) {
+    return NS_ERROR_DOM_NOT_ALLOWED_ERR;
   }
 
   WillDirty();
@@ -1142,13 +1153,18 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
   const StyleUseCounters* useCounters =
       aLoader.GetDocument() ? aLoader.GetDocument()->GetStyleUseCounters()
                             : nullptr;
-
+  
+  
+  
+  auto allowImportRules = SelfOrAncestorIsConstructed()
+                              ? StyleAllowImportRules::No
+                              : StyleAllowImportRules::Yes;
   if (!AllowParallelParse(aLoader, GetSheetURI())) {
     RefPtr<RawServoStyleSheetContents> contents =
         Servo_StyleSheet_FromUTF8Bytes(
             &aLoader, this, &aLoadData, &aBytes, mParsingMode, Inner().mURLData,
             aLoadData.mLineNumber, aLoader.GetCompatibilityMode(),
-             nullptr, useCounters,
+             nullptr, useCounters, allowImportRules,
             StyleSanitizationKind::None,
              nullptr)
             .Consume();
@@ -1158,7 +1174,7 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
     Servo_StyleSheet_FromUTF8BytesAsync(
         holder, Inner().mURLData, &aBytes, mParsingMode, aLoadData.mLineNumber,
         aLoader.GetCompatibilityMode(),
-         !!useCounters);
+         !!useCounters, allowImportRules);
   }
 
   return p;
@@ -1185,13 +1201,17 @@ void StyleSheet::ParseSheetSync(
           ? aLoader->GetDocument()->GetStyleUseCounters()
           : nullptr;
 
+  auto allowImportRules = SelfOrAncestorIsConstructed()
+                              ? StyleAllowImportRules::No
+                              : StyleAllowImportRules::Yes;
+
   SetURLExtraData();
   Inner().mContents =
-      Servo_StyleSheet_FromUTF8Bytes(aLoader, this, aLoadData, &aBytes,
-                                     mParsingMode, Inner().mURLData,
-                                     aLineNumber, compatMode, aReusableSheets,
-                                     useCounters, StyleSanitizationKind::None,
-                                      nullptr)
+      Servo_StyleSheet_FromUTF8Bytes(
+          aLoader, this, aLoadData, &aBytes, mParsingMode, Inner().mURLData,
+          aLineNumber, compatMode, aReusableSheets, useCounters,
+          allowImportRules, StyleSanitizationKind::None,
+           nullptr)
           .Consume();
 
   FinishParse();
@@ -1322,6 +1342,7 @@ ServoCSSRuleList* StyleSheet::GetCssRulesInternal() {
 uint32_t StyleSheet::InsertRuleInternal(const nsAString& aRule, uint32_t aIndex,
                                         ErrorResult& aRv) {
   MOZ_ASSERT(!IsReadOnly());
+  MOZ_ASSERT(!ModificationDisallowed());
 
   
   GetCssRulesInternal();
@@ -1341,6 +1362,7 @@ uint32_t StyleSheet::InsertRuleInternal(const nsAString& aRule, uint32_t aIndex,
 
 void StyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv) {
   MOZ_ASSERT(!IsReadOnly());
+  MOZ_ASSERT(!ModificationDisallowed());
 
   
   GetCssRulesInternal();

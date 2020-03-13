@@ -167,6 +167,9 @@ nsresult ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex) {
   NS_ConvertUTF16toUTF8 rule(aRule);
   bool nested = !!mParentRule;
   css::Loader* loader = nullptr;
+  auto allowImportRules = mStyleSheet->SelfOrAncestorIsConstructed()
+                              ? StyleAllowImportRules::No
+                              : StyleAllowImportRules::Yes;
 
   
   
@@ -177,9 +180,9 @@ nsresult ServoCSSRuleList::InsertRule(const nsAString& aRule, uint32_t aIndex) {
     loader = doc->CSSLoader();
   }
   uint16_t type;
-  nsresult rv =
-      Servo_CssRules_InsertRule(mRawRules, mStyleSheet->RawContents(), &rule,
-                                aIndex, nested, loader, mStyleSheet, &type);
+  nsresult rv = Servo_CssRules_InsertRule(mRawRules, mStyleSheet->RawContents(),
+                                          &rule, aIndex, nested, loader,
+                                          allowImportRules, mStyleSheet, &type);
   if (NS_FAILED(rv)) {
     return rv;
   }

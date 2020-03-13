@@ -1092,7 +1092,8 @@ void nsTreeSanitizer::SanitizeStyleSheet(const nsAString& aOriginal,
           css::SheetParsingMode::eAuthorSheetFeatures, extraData.get(),
            0, aDocument->GetCompatibilityMode(),
            nullptr,
-           nullptr, sanitizationKind, &aSanitized)
+           nullptr, StyleAllowImportRules::Yes,
+          sanitizationKind, &aSanitized)
           .Consume();
 
   if (mLogRemovals && aSanitized.Length() != aOriginal.Length()) {
