@@ -25,38 +25,20 @@ class Accordion extends Component {
         PropTypes.shape({
           buttons: PropTypes.arrayOf(PropTypes.object),
           className: PropTypes.string,
-          component: PropTypes.object,
+          component: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
           componentProps: PropTypes.object,
           contentClassName: PropTypes.string,
           header: PropTypes.string.isRequired,
           id: PropTypes.string.isRequired,
           onToggle: PropTypes.func,
+          
           opened: PropTypes.bool.isRequired,
+          
+          
+          shouldOpen: PropTypes.func,
         })
       ).isRequired,
     };
-  }
-
-  
-
-
-
-  static getDerivedStateFromProps(props, state) {
-    const newItems = props.items.filter(
-      ({ id }) => typeof state.opened[id] !== "boolean"
-    );
-
-    if (newItems.length) {
-      const everOpened = { ...state.everOpened };
-      const opened = { ...state.opened };
-      for (const item of newItems) {
-        everOpened[item.id] = item.opened;
-        opened[item.id] = item.opened;
-      }
-      return { everOpened, opened };
-    }
-
-    return null;
   }
 
   constructor(props) {
@@ -68,28 +50,92 @@ class Accordion extends Component {
 
     this.onHeaderClick = this.onHeaderClick.bind(this);
     this.onHeaderKeyDown = this.onHeaderKeyDown.bind(this);
+    this.setInitialState = this.setInitialState.bind(this);
+    this.updateCurrentState = this.updateCurrentState.bind(this);
+  }
+
+  componentDidMount() {
+    this.setInitialState();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.items !== this.props.items) {
+      this.updateCurrentState();
+    }
+  }
+
+  setInitialState() {
+    
+
+
+
+    const newItems = this.props.items.filter(
+      ({ id }) => typeof this.state.opened[id] !== "boolean"
+    );
+
+    if (newItems.length) {
+      const everOpened = { ...this.state.everOpened };
+      const opened = { ...this.state.opened };
+      for (const item of newItems) {
+        everOpened[item.id] = item.opened;
+        opened[item.id] = item.opened;
+      }
+
+      this.setState({ everOpened, opened });
+    }
+  }
+
+  updateCurrentState() {
+    
+
+
+
+
+
+    const updatedItems = this.props.items.filter(item => {
+      const notExist = typeof this.state.opened[item.id] !== "boolean";
+      if (typeof item.shouldOpen == "function") {
+        return notExist || this.state.opened[item.id] !== item.shouldOpen(item);
+      }
+      return notExist;
+    });
+
+    if (updatedItems.length) {
+      const everOpened = { ...this.state.everOpened };
+      const opened = { ...this.state.opened };
+      for (const item of updatedItems) {
+        let itemOpen = item.opened;
+        if (typeof item.shouldOpen == "function") {
+          itemOpen = item.shouldOpen(item);
+        }
+        everOpened[item.id] = itemOpen;
+        opened[item.id] = itemOpen;
+      }
+      this.setState({ everOpened, opened });
+    }
   }
 
   
 
 
-  onHeaderClick(event) {
+
+  onHeaderClick(event, item) {
     event.preventDefault();
     
     
     
     event.stopPropagation();
-    this.toggleItem(event.currentTarget.parentElement.id);
+    this.toggleItem(item);
   }
 
   
 
 
 
-  onHeaderKeyDown(event) {
+  onHeaderKeyDown(event, item) {
     if (event.key === " " || event.key === "Enter") {
       event.preventDefault();
-      this.toggleItem(event.currentTarget.parentElement.id);
+      this.toggleItem(item);
     }
   }
 
@@ -97,27 +143,22 @@ class Accordion extends Component {
 
 
 
-  toggleItem(id) {
-    const item = this.props.items.find(x => x.id === id);
-    const opened = !this.state.opened[id];
-    
-    if (!item) {
-      return;
-    }
+  toggleItem(item) {
+    const opened = !this.state.opened[item.id];
 
     this.setState({
       everOpened: {
         ...this.state.everOpened,
-        [id]: true,
+        [item.id]: true,
       },
       opened: {
         ...this.state.opened,
-        [id]: opened,
+        [item.id]: opened,
       },
     });
 
     if (typeof item.onToggle === "function") {
-      item.onToggle(opened);
+      item.onToggle(opened, item);
     }
   }
 
@@ -131,6 +172,7 @@ class Accordion extends Component {
       header,
       id,
     } = item;
+
     const headerId = `${id}-header`;
     const opened = this.state.opened[id];
     let itemContent;
@@ -138,7 +180,7 @@ class Accordion extends Component {
     
     
     
-    if (this.state.everOpened[id]) {
+    if (this.state.everOpened && this.state.everOpened[id]) {
       if (typeof component === "function") {
         itemContent = createElement(component, componentProps);
       } else if (typeof component === "object") {
@@ -150,7 +192,9 @@ class Accordion extends Component {
       {
         key: id,
         id,
-        className: `accordion-item ${className}`.trim(),
+        className: `accordion-item ${
+          opened ? "accordion-open" : ""
+        } ${className} `.trim(),
         "aria-labelledby": headerId,
       },
       h2(
@@ -162,8 +206,8 @@ class Accordion extends Component {
           
           
           "aria-label": header,
-          onKeyDown: this.onHeaderKeyDown,
-          onClick: this.onHeaderClick,
+          onKeyDown: event => this.onHeaderKeyDown(event, item),
+          onClick: event => this.onHeaderClick(event, item),
         },
         span({
           className: `theme-twisty${opened ? " open" : ""}`,
