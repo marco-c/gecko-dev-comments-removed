@@ -17,7 +17,8 @@
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
-class nsQueryActor;
+class nsQueryActorChild;
+class nsQueryActorParent;
 
 namespace mozilla {
 namespace dom {
@@ -87,7 +88,8 @@ class JSWindowActor : public nsISupports, public nsWrapperCache {
   void InvokeCallback(CallbackFunction willDestroy);
 
  private:
-  friend class ::nsQueryActor;  
+  friend class ::nsQueryActorChild;   
+  friend class ::nsQueryActorParent;  
 
   nsresult QueryInterfaceActor(const nsIID& aIID, void** aPtr);
 

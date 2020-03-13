@@ -16,6 +16,9 @@
 #include "nsLayoutCID.h"
 #include "nsContentCID.h"
 #include "nsString.h"
+#include "nsFrameLoaderOwner.h"
+#include "nsFrameLoader.h"
+#include "nsQueryActor.h"
 #include "nsGlobalWindow.h"
 #include "nsFocusManager.h"
 #include "nsIContent.h"
@@ -164,6 +167,57 @@ nsresult nsWindowRoot::GetControllerForCommand(const char* aCommand,
                                                nsIController** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   *_retval = nullptr;
+
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    nsFocusManager* fm = nsFocusManager::GetFocusManager();
+    if (!fm) {
+      return NS_ERROR_FAILURE;
+    }
+
+    
+    
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
+    nsIContent* focusedContent = nsFocusManager::GetFocusedDescendant(
+        mWindow, nsFocusManager::eIncludeAllDescendants,
+        getter_AddRefs(focusedWindow));
+    RefPtr<nsFrameLoaderOwner> loaderOwner = do_QueryObject(focusedContent);
+    if (loaderOwner) {
+      
+      
+      RefPtr<nsFrameLoader> frameLoader = loaderOwner->GetFrameLoader();
+      if (frameLoader && frameLoader->IsRemoteFrame()) {
+        
+        
+        
+        BrowsingContext* focusedBC =
+            fm->GetActiveBrowsingContextInChrome()
+                ? fm->GetFocusedBrowsingContextInChrome()
+                : nullptr;
+        CanonicalBrowsingContext* canonicalFocusedBC =
+            CanonicalBrowsingContext::Cast(focusedBC);
+        if (canonicalFocusedBC) {
+          
+          
+          nsCOMPtr<nsIController> controller =
+              do_QueryActor(u"Controllers", canonicalFocusedBC);
+          if (controller) {
+            bool supported;
+            controller->SupportsCommand(aCommand, &supported);
+            if (supported) {
+              controller.forget(_retval);
+              return NS_OK;
+            }
+          }
+        }
+      }
+    }
+  }
 
   {
     nsCOMPtr<nsIControllers> controllers;
