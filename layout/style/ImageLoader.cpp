@@ -630,13 +630,12 @@ void ImageLoader::RequestReflowOnFrame(FrameWithFlags* aFwf,
   parent->PresShell()->PostReflowCallback(unblocker);
 }
 
-NS_IMETHODIMP
-GlobalImageObserver::Notify(imgIRequest* aRequest, int32_t aType,
-                            const nsIntRect* aData) {
+void GlobalImageObserver::Notify(imgIRequest* aRequest, int32_t aType,
+                                 const nsIntRect* aData) {
   auto entry = sImages->Lookup(aRequest);
   MOZ_DIAGNOSTIC_ASSERT(entry);
   if (MOZ_UNLIKELY(!entry)) {
-    return NS_OK;
+    return;
   }
 
   auto& loaders = entry.Data()->mImageLoaders;
@@ -647,11 +646,10 @@ GlobalImageObserver::Notify(imgIRequest* aRequest, int32_t aType,
   for (auto& loader : loadersToNotify) {
     loader->Notify(aRequest, aType, aData);
   }
-  return NS_OK;
 }
 
-nsresult ImageLoader::Notify(imgIRequest* aRequest, int32_t aType,
-                             const nsIntRect* aData) {
+void ImageLoader::Notify(imgIRequest* aRequest, int32_t aType,
+                         const nsIntRect* aData) {
 #ifdef MOZ_GECKO_PROFILER
   nsCString uriString;
   if (profiler_is_active()) {
@@ -695,22 +693,20 @@ nsresult ImageLoader::Notify(imgIRequest* aRequest, int32_t aType,
   if (aType == imgINotificationObserver::LOAD_COMPLETE) {
     return OnLoadComplete(aRequest);
   }
-
-  return NS_OK;
 }
 
-nsresult ImageLoader::OnSizeAvailable(imgIRequest* aRequest,
-                                      imgIContainer* aImage) {
+void ImageLoader::OnSizeAvailable(imgIRequest* aRequest,
+                                  imgIContainer* aImage) {
   nsPresContext* presContext = GetPresContext();
   if (!presContext) {
-    return NS_OK;
+    return;
   }
 
   aImage->SetAnimationMode(presContext->ImageAnimationMode());
 
   FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
   if (!frameSet) {
-    return NS_OK;
+    return;
   }
 
   for (const FrameWithFlags& fwf : *frameSet) {
@@ -718,18 +714,16 @@ nsresult ImageLoader::OnSizeAvailable(imgIRequest* aRequest,
       fwf.mFrame->SchedulePaint();
     }
   }
-
-  return NS_OK;
 }
 
-nsresult ImageLoader::OnImageIsAnimated(imgIRequest* aRequest) {
+void ImageLoader::OnImageIsAnimated(imgIRequest* aRequest) {
   if (!mDocument) {
-    return NS_OK;
+    return;
   }
 
   FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
   if (!frameSet) {
-    return NS_OK;
+    return;
   }
 
   
@@ -738,18 +732,16 @@ nsresult ImageLoader::OnImageIsAnimated(imgIRequest* aRequest) {
   if (presContext) {
     nsLayoutUtils::RegisterImageRequest(presContext, aRequest, nullptr);
   }
-
-  return NS_OK;
 }
 
-nsresult ImageLoader::OnFrameComplete(imgIRequest* aRequest) {
+void ImageLoader::OnFrameComplete(imgIRequest* aRequest) {
   if (!mDocument) {
-    return NS_OK;
+    return;
   }
 
   FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
   if (!frameSet) {
-    return NS_OK;
+    return;
   }
 
   
@@ -759,33 +751,29 @@ nsresult ImageLoader::OnFrameComplete(imgIRequest* aRequest) {
   
   
   RequestPaintIfNeeded(frameSet, aRequest,  true);
-
-  return NS_OK;
 }
 
-nsresult ImageLoader::OnFrameUpdate(imgIRequest* aRequest) {
+void ImageLoader::OnFrameUpdate(imgIRequest* aRequest) {
   if (!mDocument) {
-    return NS_OK;
+    return;
   }
 
   FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
   if (!frameSet) {
-    return NS_OK;
+    return;
   }
 
   RequestPaintIfNeeded(frameSet, aRequest,  false);
-
-  return NS_OK;
 }
 
-nsresult ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
+void ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
   if (!mDocument) {
-    return NS_OK;
+    return;
   }
 
   FrameSet* frameSet = mRequestToFrameMap.Get(aRequest);
   if (!frameSet) {
-    return NS_OK;
+    return;
   }
 
   
@@ -803,8 +791,6 @@ nsresult ImageLoader::OnLoadComplete(imgIRequest* aRequest) {
       }
     }
   }
-
-  return NS_OK;
 }
 
 bool ImageLoader::ImageReflowCallback::ReflowFinished() {
