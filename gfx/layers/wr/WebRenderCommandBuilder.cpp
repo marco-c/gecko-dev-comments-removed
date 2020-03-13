@@ -2236,7 +2236,9 @@ WebRenderCommandBuilder::GenerateFallbackData(
   }
 
   auto visibleSize = visibleRect.Size();
-  if (visibleSize.IsEmpty()) {
+  
+  
+  if (visibleSize.IsEmpty() || dtRect.IsEmpty()) {
     return nullptr;
   }
 
