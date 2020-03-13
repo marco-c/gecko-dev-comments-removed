@@ -7,6 +7,9 @@ const { ASRouterTriggerListeners } = ChromeUtils.import(
 const { ASRouter } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouter.jsm"
 );
+const { CFRMessageProvider } = ChromeUtils.import(
+  "resource://activity-stream/lib/CFRMessageProvider.jsm"
+);
 
 const createDummyRecommendation = ({
   action,
@@ -440,16 +443,7 @@ add_task(async function test_cfr_addon_install() {
     "Should try to install the addon"
   );
 
-  
-  while (PopupNotifications._currentNotifications.length) {
-    PopupNotifications.remove(PopupNotifications._currentNotifications[0]);
-  }
-  
-  Assert.equal(
-    PopupNotifications._currentNotifications.length,
-    0,
-    "Should have removed the notification"
-  );
+  clearNotifications();
 });
 
 add_task(async function test_cfr_pin_tab_notification_show() {
@@ -931,6 +925,23 @@ add_task(async function test_cfr_notification_keyboard() {
   EventUtils.synthesizeKey("KEY_Escape");
   await hidden;
   Assert.ok(true, "Panel hidden after Escape pressed");
+
+  const showPanel = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+  
+  document.getElementById("contextual-feature-recommendation").click();
+  await showPanel;
+
+  const hidePanel = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popuphidden"
+  );
+  document
+    .getElementById("contextual-feature-recommendation-notification")
+    .button.click();
+  await hidePanel;
 });
 
 add_task(function test_updateCycleForProviders() {
@@ -943,3 +954,47 @@ add_task(function test_updateCycleForProviders() {
       }
     });
 });
+
+add_task(async function test_heartbeat_tactic_2() {
+  clearNotifications();
+  registerCleanupFunction(() => {
+    
+    gBrowser.removeCurrentTab();
+    clearNotifications();
+  });
+
+  const msg = CFRMessageProvider.getMessages().find(
+    m => m.id === "HEARTBEAT_TACTIC_2"
+  );
+  const shown = await CFRPageActions.addRecommendation(
+    gBrowser.selectedBrowser,
+    null,
+    {
+      ...msg,
+      id: `HEARTBEAT_MOCHITEST_${Date.now()}`,
+      groups: ["mochitest-group"],
+      targeting: true,
+      
+      content: { ...msg.content, delay: 0 },
+    },
+    
+    ASRouter.dispatch
+  );
+
+  Assert.ok(shown, "Heartbeat CFR added");
+
+  
+  BrowserTestUtils.waitForCondition(
+    () => document.getElementById("contextual-feature-recommendation"),
+    "Heartbeat button exists"
+  );
+
+  document.getElementById("contextual-feature-recommendation").click();
+
+  
+  await BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    Services.urlFormatter.formatURL(msg.content.action.url)
+  );
+}).only();
