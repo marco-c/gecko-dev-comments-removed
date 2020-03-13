@@ -5,9 +5,6 @@
 "use strict";
 
 module.exports = {
-  appinfo: {
-    OS: "",
-  },
   prefs: {
     getBoolPref: (pref, defaultValue) => {
       

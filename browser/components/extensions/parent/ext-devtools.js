@@ -40,49 +40,27 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 global.getDevToolsTargetForContext = async context => {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (!context._onTargetAvailable) {
-    if (!context.devToolsToolbox) {
+  if (!context.devToolsTargetPromise) {
+    if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
       throw new Error(
         "Unable to get a Target for a context not associated to any toolbox"
       );
     }
 
-    context._onTargetAvailable = (({ targetFront, isTopLevel }) => {
-      if (isTopLevel) {
-        context._targetFront = targetFront;
-      }
-    });
+    if (!context.devToolsToolbox.target.isLocalTab) {
+      throw new Error(
+        "Unexpected target type: only local tabs are currently supported."
+      );
+    }
 
-    await context.devToolsToolbox.targetList.watchTargets(
-      [context.devToolsToolbox.targetList.TYPES.FRAME],
-      context._onTargetAvailable,
-    );
+    const tab = context.devToolsToolbox.target.localTab;
+    context.devToolsTargetPromise = DevToolsShim.createTargetForTab(tab);
   }
 
-  
-  
+  const target = await context.devToolsTargetPromise;
+  await target.attach();
 
-  
-  return context._targetFront;
+  return target;
 };
 
 

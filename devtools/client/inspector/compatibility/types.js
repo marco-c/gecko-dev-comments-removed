@@ -22,8 +22,6 @@ const browser = {
   version: PropTypes.string.isRequired,
 };
 
-const node = PropTypes.object;
-
 const issue = {
   
   type: PropTypes.string.isRequired,
@@ -37,10 +35,7 @@ const issue = {
   experimental: PropTypes.bool.isRequired,
   
   unsupportedBrowsers: PropTypes.arrayOf(PropTypes.shape(browser)).isRequired,
-  
-  nodes: PropTypes.arrayOf(node),
 };
 
 exports.browser = browser;
 exports.issue = issue;
-exports.node = node;
