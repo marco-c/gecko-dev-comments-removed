@@ -29,9 +29,6 @@ class PresShell;
 
 
 
-
-
-
 class nsFrameManager {
   typedef mozilla::PresShell PresShell;
   typedef mozilla::layout::FrameChildListID ChildListID;
