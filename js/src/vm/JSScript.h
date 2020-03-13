@@ -78,6 +78,8 @@ class DebugAPI;
 class DebugScript;
 
 namespace frontend {
+struct CompilationInfo;
+class FunctionIndex;
 class FunctionBox;
 class ModuleSharedContext;
 class ScriptStencil;
@@ -3187,9 +3189,10 @@ class LazyScript : public BaseScript {
   
   
   static LazyScript* Create(
-      JSContext* cx, HandleFunction fun, HandleScriptSourceObject sourceObject,
+      JSContext* cx, const frontend::CompilationInfo& compilationInfo,
+      HandleFunction fun, HandleScriptSourceObject sourceObject,
       const frontend::AtomVector& closedOverBindings,
-      const frontend::FunctionBoxVector& innerFunctionBoxes,
+      const Vector<frontend::FunctionIndex>& innerFunctionIndexes,
       const SourceExtent& extent);
 
   

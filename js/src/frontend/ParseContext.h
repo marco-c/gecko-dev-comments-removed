@@ -307,7 +307,7 @@ class ParseContext : public Nestable<ParseContext> {
   
   
   
-  FunctionBoxVector innerFunctionBoxesForLazy;
+  Vector<FunctionIndex> innerFunctionIndexesForLazy;
 
   
   
