@@ -1527,17 +1527,25 @@ var PlacesUtils = {
 
 
 
-  promiseFaviconData(aPageUrl) {
+
+
+
+
+  promiseFaviconData(aPageUrl, preferredWidth = 0) {
     return new Promise((resolve, reject) => {
+      if (!(aPageUrl instanceof Ci.nsIURI)) {
+        aPageUrl = PlacesUtils.toURI(aPageUrl);
+      }
       PlacesUtils.favicons.getFaviconDataForPage(
-        NetUtil.newURI(aPageUrl),
-        function(uri, dataLen, data, mimeType) {
+        aPageUrl,
+        function(uri, dataLen, data, mimeType, size) {
           if (uri) {
-            resolve({ uri, dataLen, data, mimeType });
+            resolve({ uri, dataLen, data, mimeType, size });
           } else {
             reject();
           }
-        }
+        },
+        preferredWidth
       );
     });
   },
