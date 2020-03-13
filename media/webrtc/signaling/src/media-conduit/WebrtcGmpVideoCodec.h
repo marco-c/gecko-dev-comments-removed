@@ -126,6 +126,8 @@ class GMPDecodeData {
         mRenderTimeMs(aRenderTimeMs) {
     
     
+    MOZ_RELEASE_ASSERT(aInputImage._length <
+                       (std::numeric_limits<size_t>::max() >> 1));
     mImage._length = aInputImage._length;
     mImage._size =
         aInputImage._length +
