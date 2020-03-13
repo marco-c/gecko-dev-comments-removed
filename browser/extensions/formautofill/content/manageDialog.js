@@ -371,7 +371,7 @@ class ManageCreditCards extends ManageRecords {
     
     if (
       !creditCard ||
-      (await OSKeyStore.ensureLoggedIn(reauthPasswordPromptMessage))
+      (await FormAutofillUtils.ensureLoggedIn(reauthPasswordPromptMessage))
     ) {
       let decryptedCCNumObj = {};
       if (creditCard && creditCard["cc-number-encrypted"]) {

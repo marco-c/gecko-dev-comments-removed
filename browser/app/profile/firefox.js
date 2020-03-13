@@ -1788,6 +1788,8 @@ pref("extensions.formautofill.reauth.enabled", false);
 pref("extensions.formautofill.section.enabled", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
+pref("browser.osKeyStore.loglevel", "Warn");
+
 #ifdef NIGHTLY_BUILD
   
   pref("extensions.formautofill.supportedCountries", "US,CA,DE");
