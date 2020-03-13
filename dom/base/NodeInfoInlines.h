@@ -60,17 +60,22 @@ inline bool NodeInfo::QualifiedNameEquals(const nsAtom* aNameAtom) const {
 
 inline void CheckValidNodeInfo(uint16_t aNodeType, const nsAtom* aName,
                                int32_t aNamespaceID, const nsAtom* aExtraName) {
-  MOZ_ASSERT(aNodeType == nsINode::ELEMENT_NODE ||
-                 aNodeType == nsINode::ATTRIBUTE_NODE ||
-                 aNodeType == nsINode::TEXT_NODE ||
-                 aNodeType == nsINode::CDATA_SECTION_NODE ||
-                 aNodeType == nsINode::PROCESSING_INSTRUCTION_NODE ||
-                 aNodeType == nsINode::COMMENT_NODE ||
-                 aNodeType == nsINode::DOCUMENT_NODE ||
-                 aNodeType == nsINode::DOCUMENT_TYPE_NODE ||
-                 aNodeType == nsINode::DOCUMENT_FRAGMENT_NODE ||
-                 aNodeType == UINT16_MAX,
-             "Invalid nodeType");
+  MOZ_ASSERT(
+      aNodeType == nsINode::ELEMENT_NODE ||
+          aNodeType == nsINode::ATTRIBUTE_NODE ||
+          aNodeType == nsINode::TEXT_NODE ||
+          aNodeType == nsINode::CDATA_SECTION_NODE ||
+          aNodeType == nsINode::PROCESSING_INSTRUCTION_NODE ||
+          aNodeType == nsINode::COMMENT_NODE ||
+          aNodeType == nsINode::DOCUMENT_NODE ||
+          aNodeType == nsINode::DOCUMENT_TYPE_NODE ||
+          aNodeType == nsINode::DOCUMENT_FRAGMENT_NODE ||
+          aNodeType == UINT16_MAX,
+      
+      
+      
+      
+      "Invalid nodeType");
   MOZ_ASSERT((aNodeType == nsINode::PROCESSING_INSTRUCTION_NODE ||
               aNodeType == nsINode::DOCUMENT_TYPE_NODE) == !!aExtraName,
              "Supply aExtraName for and only for PIs and doctypes");

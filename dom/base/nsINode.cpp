@@ -82,6 +82,7 @@
 #include "nsObjectLoadingContent.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
+#include "nsPrintfCString.h"
 #include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"
@@ -723,10 +724,36 @@ void nsINode::GetNodeValueInternal(nsAString& aNodeValue) {
   SetDOMStringToNull(aNodeValue);
 }
 
+static const char* NodeTypeAsString(nsINode* aNode) {
+  static const char* NodeTypeStrings[] = {
+      "",  
+      "an Element",
+      "an Attribute",
+      "a Text",
+      "a CDATASection",
+      "an EntityReference",
+      "an Entity",
+      "a ProcessingInstruction",
+      "a Comment",
+      "a Document",
+      "a DocumentType",
+      "a DocumentFragment",
+      "a Notation",
+  };
+  static_assert(ArrayLength(NodeTypeStrings) == nsINode::MAX_NODE_TYPE + 1,
+                "Max node type out of range for our array");
+
+  uint16_t nodeType = aNode->NodeType();
+  MOZ_RELEASE_ASSERT(nodeType < ArrayLength(NodeTypeStrings),
+                     "Uknown out-of-range node type");
+  return NodeTypeStrings[nodeType];
+}
+
 nsINode* nsINode::RemoveChild(nsINode& aOldChild, ErrorResult& aError) {
   if (!aOldChild.IsContent()) {
     
-    aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
+    aError.ThrowNotFoundError(
+        "The node to be removed is not a child of this node");
     return nullptr;
   }
 
@@ -739,7 +766,8 @@ nsINode* nsINode::RemoveChild(nsINode& aOldChild, ErrorResult& aError) {
   if (aOldChild.AsContent()->IsRootOfAnonymousSubtree() ||
       aOldChild.GetParentNode() != this) {
     
-    aError.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
+    aError.ThrowNotFoundError(
+        "The node to be removed is not a child of this node");
     return nullptr;
   }
 
@@ -2052,19 +2080,33 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         (aNewChild->IsElement() && aNewChild->AsElement()->GetShadowRoot())) &&
        nsContentUtils::ContentIsHostIncludingDescendantOf(aParent,
                                                           aNewChild))) {
-    aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    aRv.ThrowHierarchyRequestError(
+        "The new child is an ancestor of the parent");
     return;
   }
 
   
   if (aRefChild && aRefChild->GetParentNode() != aParent) {
-    aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
+    if (aIsReplace) {
+      if (aNewChild->GetParentNode() == aParent) {
+        aRv.ThrowNotFoundError(
+            "New child already has this parent and old child does not. Please "
+            "check the order of replaceChild's arguments.");
+      } else {
+        aRv.ThrowNotFoundError(
+            "Child to be replaced is not a child of this node");
+      }
+    } else {
+      aRv.ThrowNotFoundError(
+          "Child to insert before is not a child of this node");
+    }
     return;
   }
 
   
   if (!aNewChild->IsContent()) {
-    aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    aRv.ThrowHierarchyRequestError(nsPrintfCString(
+        "May not add %s as a child", NodeTypeAsString(aNewChild)));
     return;
   }
 
@@ -2080,7 +2122,9 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
     case nsINode::ENTITY_REFERENCE_NODE:
       
       if (aParent->NodeType() == nsINode::DOCUMENT_NODE) {
-        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aRv.ThrowHierarchyRequestError(
+            nsPrintfCString("Cannot insert %s as a child of a Document",
+                            NodeTypeAsString(aNewChild)));
       }
       return;
     case nsINode::ELEMENT_NODE: {
@@ -2095,7 +2139,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         
         
         if (!aIsReplace || rootElement != aRefChild) {
-          aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+          aRv.ThrowHierarchyRequestError(
+              "Cannot have more than one Element child of a Document");
         }
         return;
       }
@@ -2122,14 +2167,17 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
       bool ok = aIsReplace ? (insertIndex >= doctypeIndex)
                            : insertIndex > doctypeIndex;
       if (!ok) {
-        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aRv.ThrowHierarchyRequestError(
+            "Cannot insert a root element before the doctype");
       }
       return;
     }
     case nsINode::DOCUMENT_TYPE_NODE: {
       if (!aParent->IsDocument()) {
         
-        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aRv.ThrowHierarchyRequestError(
+            nsPrintfCString("Cannot insert a DocumentType as a child of %s",
+                            NodeTypeAsString(aParent)));
         return;
       }
 
@@ -2138,7 +2186,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
       if (docTypeContent) {
         
         if (!aIsReplace || docTypeContent != aRefChild) {
-          aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+          aRv.ThrowHierarchyRequestError(
+              "Cannot have more than one DocumentType child of a Document");
         }
         return;
       }
@@ -2153,7 +2202,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
 
       if (!aRefChild) {
         
-        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aRv.ThrowHierarchyRequestError(
+            "Cannot have a DocumentType node after the root element");
         return;
       }
 
@@ -2164,7 +2214,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
       
       
       if (insertIndex > rootIndex) {
-        aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aRv.ThrowHierarchyRequestError(
+            "Cannot have a DocumentType node after the root element");
       }
       return;
     }
@@ -2185,7 +2236,8 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         if (child->IsElement()) {
           if (sawElement) {
             
-            aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+            aRv.ThrowHierarchyRequestError(
+                "Cannot have more than one Element child of a Document");
             return;
           }
           sawElement = true;
@@ -2208,7 +2260,10 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
       break;
   }
 
-  aRv.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+  
+  aRv.ThrowHierarchyRequestError(nsPrintfCString("Cannot insert %s inside %s",
+                                                 NodeTypeAsString(aNewChild),
+                                                 NodeTypeAsString(aParent)));
 }
 
 
@@ -2228,7 +2283,8 @@ void nsINode::EnsurePreInsertionValidity(nsINode& aNewChild, nsINode* aRefChild,
 
 void nsINode::EnsurePreInsertionValidity1(ErrorResult& aError) {
   if (!IsDocument() && !IsDocumentFragment() && !IsElement()) {
-    aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+    aError.ThrowHierarchyRequestError(
+        nsPrintfCString("Cannot add children to %s", NodeTypeAsString(this)));
     return;
   }
 }
@@ -2241,7 +2297,8 @@ void nsINode::EnsurePreInsertionValidity2(bool aReplace, nsINode& aNewChild,
     
     
     
-    aError.Throw(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    aError.ThrowNotSupportedError(
+        "Inserting anonymous content manually is not supported");
     return;
   }
 
@@ -2358,7 +2415,8 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
 
       
       if (newContent->GetParentNode()) {
-        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aError.ThrowHierarchyRequestError(
+            "New child was inserted somewhere else");
         return nullptr;
       }
 
@@ -2427,14 +2485,15 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
       
       
       if (nodeToInsertBefore && nodeToInsertBefore->GetParent() != this) {
-        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aError.ThrowHierarchyRequestError("Don't know where to insert child");
         return nullptr;
       }
 
       
       for (uint32_t i = 0; i < count; ++i) {
         if (fragChildren->ElementAt(i)->GetParentNode()) {
-          aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+          aError.ThrowHierarchyRequestError(
+              "New child was inserted somewhere else");
           return nullptr;
         }
       }
@@ -2446,7 +2505,7 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
 
       
       if (aRefChild && aRefChild->GetParent() != this) {
-        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+        aError.ThrowHierarchyRequestError("Don't know where to insert child");
         return nullptr;
       }
 
@@ -2469,7 +2528,8 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
           if (child->IsElement()) {
             if (sawElement) {
               
-              aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
+              aError.ThrowHierarchyRequestError(
+                  "Cannot have more than one Element child of a Document");
               return nullptr;
             }
             sawElement = true;
