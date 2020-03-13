@@ -2622,7 +2622,22 @@
 
 
  \
-    MACRO(CheckLexical, check_lexical, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME) \
+    MACRO(CheckLexical, check_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME) \
     
 
 
@@ -3460,7 +3475,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(236)                                   \
   MACRO(237)                                   \
   MACRO(238)                                   \
   MACRO(239)                                   \
