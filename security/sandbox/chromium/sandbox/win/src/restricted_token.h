@@ -7,7 +7,6 @@
 
 #include <windows.h>
 
-#include <tuple>
 #include <vector>
 
 #include "base/macros.h"
@@ -174,12 +173,6 @@ class RestrictedToken {
   
   void SetLockdownDefaultDacl();
 
-  
-  
-  DWORD AddDefaultDaclSid(const Sid& sid,
-                          ACCESS_MODE access_mode,
-                          ACCESS_MASK access);
-
  private:
   
   std::vector<Sid> sids_to_restrict_;
@@ -187,8 +180,6 @@ class RestrictedToken {
   std::vector<LUID> privileges_to_disable_;
   
   std::vector<Sid> sids_for_deny_only_;
-  
-  std::vector<std::tuple<Sid, ACCESS_MODE, ACCESS_MASK>> sids_for_default_dacl_;
   
   base::win::ScopedHandle effective_token_;
   

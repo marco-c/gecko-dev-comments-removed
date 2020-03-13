@@ -86,31 +86,17 @@ static void PopulateRegsFromContext(Registers& aRegs, CONTEXT* aContext) {
   aRegs.mLR = 0;
 }
 
-
-
-
-static HANDLE GetRealCurrentThreadHandleForProfiling() {
-  HANDLE realCurrentThreadHandle;
-  if (!::DuplicateHandle(
-          ::GetCurrentProcess(), ::GetCurrentThread(), ::GetCurrentProcess(),
-          &realCurrentThreadHandle,
-          THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME | THREAD_QUERY_INFORMATION,
-          false, 0)) {
-    return nullptr;
-  }
-
-  return realCurrentThreadHandle;
-}
-
 class PlatformData {
  public:
   
   
   
+  
+  
   explicit PlatformData(int aThreadId)
-      : mProfiledThread(GetRealCurrentThreadHandleForProfiling()) {
-    MOZ_ASSERT(aThreadId == ::GetCurrentThreadId());
-  }
+      : mProfiledThread(OpenThread(THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME |
+                                       THREAD_QUERY_INFORMATION,
+                                   false, aThreadId)) {}
 
   ~PlatformData() {
     if (mProfiledThread != nullptr) {

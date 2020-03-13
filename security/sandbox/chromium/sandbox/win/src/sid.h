@@ -52,8 +52,6 @@ class Sid {
                                 PDWORD sub_authorities);
   
   static Sid AllRestrictedApplicationPackages();
-  
-  static Sid GenerateRandomSid();
 
   
   PSID GetPSID() const;

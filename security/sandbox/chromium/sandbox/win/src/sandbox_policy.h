@@ -259,10 +259,6 @@ class TargetPolicy {
   virtual void SetLockdownDefaultDacl() = 0;
 
   
-  
-  virtual void AddRestrictingRandomSid() = 0;
-
-  
   virtual void SetEnableOPMRedirection() = 0;
   
   virtual bool GetEnableOPMRedirection() = 0;
