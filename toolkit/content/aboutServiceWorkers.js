@@ -81,7 +81,9 @@ async function display(info, pushService) {
     let bold = document.createElement("strong");
     bold.setAttribute("data-l10n-name", "item-label");
     item.appendChild(bold);
-    if (!value) {
+    
+    
+    if (value === undefined) {
       document.l10n.setAttributes(item, l10nId);
     } else if (makeLink) {
       let link = document.createElement("a");
