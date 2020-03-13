@@ -2648,7 +2648,8 @@ nsLocalFile::IsReadable(bool* aResult) {
 }
 
 NS_IMETHODIMP
-nsLocalFile::IsExecutable(bool* aResult) {
+nsLocalFile::LookupExtensionIn(const char* const* aExtensionsArray,
+                               size_t aArrayLength, bool* aResult) {
   
   CHECK_mWorkingPath();
 
@@ -2700,8 +2701,8 @@ nsLocalFile::IsExecutable(bool* aResult) {
     }
 
     nsDependentSubstring ext = Substring(path, dotIdx);
-    for (size_t i = 0; i < ArrayLength(sExecutableExts); ++i) {
-      if (ext.EqualsASCII(sExecutableExts[i])) {
+    for (size_t i = 0; i < aArrayLength; ++i) {
+      if (ext.EqualsASCII(aExtensionsArray[i])) {
         
         *aResult = true;
         break;
@@ -2710,6 +2711,12 @@ nsLocalFile::IsExecutable(bool* aResult) {
   }
 
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsLocalFile::IsExecutable(bool* aResult) {
+  return LookupExtensionIn(sExecutableExts, ArrayLength(sExecutableExts),
+                           aResult);
 }
 
 NS_IMETHODIMP
@@ -3008,21 +3015,63 @@ nsLocalFile::Launch() {
   
   
   
-  mozilla::LauncherVoidResult shellExecuteOk = mozilla::ShellExecuteByExplorer(
-      execPath, args, verbDefault, workingDirectoryPtr, showCmd);
-  if (shellExecuteOk.isErr()) {
-    SHELLEXECUTEINFOW seinfo = {sizeof(SHELLEXECUTEINFOW)};
-    seinfo.fMask = SEE_MASK_ASYNCOK;
-    seinfo.hwnd = GetMostRecentNavigatorHWND();
-    seinfo.lpVerb = nullptr;
-    seinfo.lpFile = mResolvedPath.get();
-    seinfo.lpParameters = nullptr;
-    seinfo.lpDirectory = workingDirectoryPtr;
-    seinfo.nShow = SW_SHOWNORMAL;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    if (!ShellExecuteExW(&seinfo)) {
-      return NS_ERROR_FILE_EXECUTION_FAILED;
+  static const char* const onlyExeExt[] = {".exe"};
+  bool isExecutable;
+  rv = LookupExtensionIn(onlyExeExt, ArrayLength(onlyExeExt), &isExecutable);
+  if (NS_FAILED(rv)) {
+    isExecutable = false;
+  }
+
+  
+  
+  
+  if (!isExecutable) {
+    mozilla::LauncherVoidResult shellExecuteOk =
+        mozilla::ShellExecuteByExplorer(execPath, args, verbDefault,
+                                        workingDirectoryPtr, showCmd);
+    if (shellExecuteOk.isOk()) {
+      return NS_OK;
     }
+  }
+
+  SHELLEXECUTEINFOW seinfo = {sizeof(SHELLEXECUTEINFOW)};
+  seinfo.fMask = SEE_MASK_ASYNCOK;
+  seinfo.hwnd = GetMostRecentNavigatorHWND();
+  seinfo.lpVerb = nullptr;
+  seinfo.lpFile = mResolvedPath.get();
+  seinfo.lpParameters = nullptr;
+  seinfo.lpDirectory = workingDirectoryPtr;
+  seinfo.nShow = SW_SHOWNORMAL;
+
+  if (!ShellExecuteExW(&seinfo)) {
+    return NS_ERROR_FILE_EXECUTION_FAILED;
   }
 
   return NS_OK;
