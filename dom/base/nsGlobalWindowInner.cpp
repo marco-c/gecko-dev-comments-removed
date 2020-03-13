@@ -173,7 +173,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
 #include "nsFrameLoader.h"
-#include "nsFrameLoaderOwner.h"
 #include "nsXPCOMCID.h"
 #include "mozilla/Logging.h"
 #include "prenv.h"
@@ -1899,73 +1898,29 @@ void nsGlobalWindowInner::FireFrameLoadEvent() {
   }
 
   
+  
+  
+  
   RefPtr<Element> element = GetBrowsingContext()->GetEmbedderElement();
   if (element) {
+    nsEventStatus status = nsEventStatus_eIgnore;
+    WidgetEvent event( true, eLoad);
+    event.mFlags.mBubbles = false;
+    event.mFlags.mCancelable = false;
+
     if (mozilla::dom::DocGroup::TryToLoadIframesInBackground()) {
       nsDocShell* ds = nsDocShell::Cast(GetDocShell());
 
-      if (!ds || ds->HasFakeOnLoadDispatched()) {
-        return;
+      if (ds && !ds->HasFakeOnLoadDispatched()) {
+        EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
       }
-    }
-
-    RefPtr<nsFrameLoaderOwner> loaderOwner(do_QueryObject(element));
-    if (!loaderOwner) {
-      
-      MOZ_ASSERT(false, "How did we get here?");
-      return;
-    }
-
-    
-    
-    
-    
-    
-    RefPtr<nsFrameLoader> loader = loaderOwner->GetFrameLoader();
-    if (!loader) {
-      
-      return;
-    }
-
-    auto fireLoadEvent = [loader]() -> void {
-      RefPtr<Element> currentElement = loader->GetOwnerElement();
-      if (!currentElement) {
-        
-        return;
-      }
-      nsEventStatus status = nsEventStatus_eIgnore;
-      WidgetEvent event( true, eLoad);
-      event.mFlags.mBubbles = false;
-      event.mFlags.mCancelable = false;
-
-      
-      
-      
-      
-      
-      EventDispatcher::Dispatch(currentElement, nullptr, &event, nullptr,
-                                &status);
-    };
-
-    if (GetDocGroup() == element->GetDocGroup() ||
-        !StaticPrefs::dom_cross_docgroup_iframe_async_load_event()) {
-      fireLoadEvent();
     } else {
       
       
-      RefPtr<Document> doc = element->OwnerDoc();
-      doc->BlockOnload();
-      RefPtr<Runnable> fireEvent = NS_NewRunnableFunction(
-          "Cross-docgroup frame load", [doc, fireLoadEvent]() -> void {
-            fireLoadEvent();
-            
-            
-            
-            
-            
-            doc->UnblockOnload(true);
-          });
-      doc->Dispatch(TaskCategory::Network, fireEvent.forget());
+      
+      
+      
+      EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
     }
     return;
   }
