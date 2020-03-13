@@ -35,9 +35,13 @@ async function openCompatibilityView() {
   const panel = inspector.panelDoc.querySelector(
     "#compatibilityview-panel .inspector-tabpanel"
   );
-  return { inspector, panel };
-}
 
+  const selectedElementPane = panel.querySelector(
+    "#compatibility-app--selected-element-pane"
+  );
+
+  return { inspector, panel, selectedElementPane };
+}
 
 
 
