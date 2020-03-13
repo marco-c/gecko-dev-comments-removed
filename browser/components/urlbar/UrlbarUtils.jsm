@@ -332,7 +332,11 @@ var UrlbarUtils = {
       if (!found) {
         if (!compareIgnoringDiacritics) {
           if (!this._compareIgnoringDiacritics) {
-            this._compareIgnoringDiacritics = new Intl.Collator(undefined, {
+            
+            
+            
+            
+            this._compareIgnoringDiacritics = new Intl.Collator("en", {
               sensitivity: "base",
             }).compare;
           }
