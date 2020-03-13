@@ -142,8 +142,11 @@ var OSKeyStore = {
 
 
 
+
+
   async ensureLoggedIn(
     reauth = false,
+    dialogCaption = "",
     parentWindow = null,
     generateKeyIfNotAvailable = true
   ) {
@@ -177,7 +180,7 @@ var OSKeyStore = {
         
         
         unlockPromise = osReauthenticator
-          .asyncReauthenticateUser(reauth, parentWindow)
+          .asyncReauthenticateUser(reauth, dialogCaption, parentWindow)
           .then(reauthResult => {
             if (typeof reauthResult == "boolean" && !reauthResult) {
               throw new Components.Exception(
