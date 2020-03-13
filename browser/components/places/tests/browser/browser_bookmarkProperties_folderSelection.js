@@ -21,6 +21,7 @@ add_task(async function setup() {
   
   win.StarUI._autoCloseTimeout = 6000000;
 
+  win.StarUI._createPanelIfNeeded();
   bookmarkPanel = win.document.getElementById("editBookmarkPanel");
   bookmarkPanel.setAttribute("animate", false);
 
