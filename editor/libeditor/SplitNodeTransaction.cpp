@@ -60,29 +60,33 @@ SplitNodeTransaction::DoTransaction() {
   
   ErrorResult error;
   
-  nsCOMPtr<nsINode> clone =
+  nsCOMPtr<nsINode> cloneOfRightContainer =
       mStartOfRightNode.GetContainer()->CloneNode(false, error);
-  if (NS_WARN_IF(error.Failed())) {
+  if (error.Failed()) {
+    NS_WARNING("nsINode::CloneNode() failed");
     return error.StealNSResult();
   }
-  if (NS_WARN_IF(!clone)) {
+  if (NS_WARN_IF(!cloneOfRightContainer)) {
     return NS_ERROR_UNEXPECTED;
   }
 
   RefPtr<EditorBase> editorBase(mEditorBase);
 
-  mNewLeftNode = dont_AddRef(clone.forget().take()->AsContent());
+  mNewLeftNode = cloneOfRightContainer->AsContent();
   if (RefPtr<Element> startOfRightNode =
           mStartOfRightNode.GetContainerAsElement()) {
     nsresult rv = editorBase->MarkElementDirty(*startOfRightNode);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditorBase::ToGenericNSResult(rv);
     }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "EditorBase::MarkElementDirty() failed, but ignored");
   }
 
   
-  mParent = mStartOfRightNode.GetContainer()->GetParentNode();
-  if (NS_WARN_IF(!mParent)) {
+  mParent = mStartOfRightNode.GetContainerParent();
+  if (!mParent) {
+    NS_WARNING("Right container was an orphan node");
     return NS_ERROR_FAILURE;
   }
 
@@ -90,7 +94,8 @@ SplitNodeTransaction::DoTransaction() {
   nsCOMPtr<nsIContent> newLeftNode = mNewLeftNode;
   editorBase->DoSplitNode(EditorDOMPoint(mStartOfRightNode), *newLeftNode,
                           error);
-  if (NS_WARN_IF(error.Failed())) {
+  if (error.Failed()) {
+    NS_WARNING("EditorBase::DoSplitNode() failed");
     return error.StealNSResult();
   }
 
@@ -106,21 +111,13 @@ SplitNodeTransaction::DoTransaction() {
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-  if (NS_WARN_IF(error.Failed())) {
-    
-    error.SuppressException();
-  }
-  EditorRawDOMPoint atEndOfLeftNode;
-  atEndOfLeftNode.SetToEndOf(mNewLeftNode);
+  EditorRawDOMPoint atEndOfLeftNode(EditorRawDOMPoint::AtEndOf(mNewLeftNode));
   selection->Collapse(atEndOfLeftNode, error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(!error.Failed(), "Selection::Collapse() failed");
+  return error.StealNSResult();
 }
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
-NS_IMETHODIMP
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 SplitNodeTransaction::UndoTransaction() {
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mNewLeftNode) ||
       NS_WARN_IF(!mParent) || NS_WARN_IF(!mStartOfRightNode.IsSet())) {
@@ -134,15 +131,16 @@ SplitNodeTransaction::UndoTransaction() {
   nsCOMPtr<nsINode> container = mStartOfRightNode.GetContainer();
   nsCOMPtr<nsINode> newLeftNode = mNewLeftNode;
   nsCOMPtr<nsINode> parent = mParent;
-  return editorBase->DoJoinNodes(container, newLeftNode, parent);
+  nsresult rv = editorBase->DoJoinNodes(container, newLeftNode, parent);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::DoJoinNodes() failed");
+  return rv;
 }
 
 
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
-NS_IMETHODIMP
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 SplitNodeTransaction::RedoTransaction() {
   if (NS_WARN_IF(!mNewLeftNode) || NS_WARN_IF(!mParent) ||
       NS_WARN_IF(!mStartOfRightNode.IsSet()) || NS_WARN_IF(!mEditorBase)) {
@@ -150,20 +148,22 @@ SplitNodeTransaction::RedoTransaction() {
   }
 
   
+  ErrorResult error;
   if (mStartOfRightNode.IsInTextNode()) {
     RefPtr<EditorBase> editorBase = mEditorBase;
     RefPtr<Text> rightNodeAsText = mStartOfRightNode.GetContainerAsText();
     MOZ_DIAGNOSTIC_ASSERT(rightNodeAsText);
-    ErrorResult error;
     editorBase->DoDeleteText(*rightNodeAsText, 0, mStartOfRightNode.Offset(),
                              error);
-    if (NS_WARN_IF(error.Failed())) {
+    if (error.Failed()) {
+      NS_WARNING("EditorBase::DoDeleteText() failed");
       return error.StealNSResult();
     }
   } else {
     nsCOMPtr<nsIContent> child =
         mStartOfRightNode.GetContainer()->GetFirstChild();
     nsCOMPtr<nsIContent> nextSibling;
+    ErrorResult error;
     for (uint32_t i = 0; i < mStartOfRightNode.Offset(); i++) {
       
       
@@ -174,25 +174,24 @@ SplitNodeTransaction::RedoTransaction() {
         return NS_ERROR_NULL_POINTER;
       }
       nextSibling = child->GetNextSibling();
-      ErrorResult error;
       mStartOfRightNode.GetContainer()->RemoveChild(*child, error);
-      if (NS_WARN_IF(error.Failed())) {
+      if (error.Failed()) {
+        NS_WARNING("nsINode::RemoveChild() failed");
         return error.StealNSResult();
       }
       mNewLeftNode->AppendChild(*child, error);
-      if (NS_WARN_IF(error.Failed())) {
+      if (error.Failed()) {
+        NS_WARNING("nsINode::AppendChild() failed");
         return error.StealNSResult();
       }
       child = nextSibling;
     }
   }
+  MOZ_ASSERT(!error.Failed());
   
-  ErrorResult error;
   mParent->InsertBefore(*mNewLeftNode, mStartOfRightNode.GetContainer(), error);
-  if (NS_WARN_IF(error.Failed())) {
-    return error.StealNSResult();
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(!error.Failed(), "nsINode::InsertBefore() failed");
+  return error.StealNSResult();
 }
 
 nsIContent* SplitNodeTransaction::GetNewNode() { return mNewLeftNode; }
