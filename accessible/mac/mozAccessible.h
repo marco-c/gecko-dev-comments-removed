@@ -130,6 +130,8 @@ static const uintptr_t IS_PROXY = 1;
 
 - (id)childAt:(uint32_t)i;
 
+- (uint64_t)state;
+
 #pragma mark -
 
 
