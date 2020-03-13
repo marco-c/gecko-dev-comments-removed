@@ -434,14 +434,6 @@ class Object {
   
   inline bool IsException(Isolate*) const { return !value_.toBoolean(); }
 
-  
-  
-  
-  
-  
-  Object(Address bits);
-  Address ptr() const;
-
  protected:
   JS::Value value_;
 };
@@ -588,14 +580,6 @@ class AllowHeapAllocation {
  public:
   
   AllowHeapAllocation() {}
-};
-
-class DisallowJavascriptExecution {
- public:
-  DisallowJavascriptExecution(Isolate* isolate);
-
- private:
-  js::AutoAssertNoContentJS nojs_;
 };
 
 
@@ -856,9 +840,6 @@ class Isolate {
 
   Handle<ByteArray> NewByteArray(
       int length, AllocationType allocation = AllocationType::kYoung);
-  MOZ_MUST_USE MaybeHandle<String> NewStringFromOneByte(
-      const Vector<const uint8_t>& str,
-      AllocationType allocation = AllocationType::kYoung);
 
   
   Handle<FixedArray> NewFixedArray(
@@ -911,38 +892,6 @@ class Code {
   Address address();
 
   static Code cast(Object object);
-};
-
-
-
-
-
-
-template <typename Return, typename... Args>
-class GeneratedCode {
- public:
-  using Signature = Return(Args...);
-
-  static GeneratedCode FromCode(Code code);  
-  Return Call(Args... args) { return fn_ptr_(args...); }
-
- private:
-  friend class GeneratedCode<Return(Args...)>;
-  Isolate* isolate_;
-  Signature* fn_ptr_;
-  GeneratedCode(Isolate* isolate, Signature* fn_ptr)
-      : isolate_(isolate), fn_ptr_(fn_ptr) {}
-};
-
-
-
-template <typename Return, typename... Args>
-class GeneratedCode<Return(Args...)> : public GeneratedCode<Return, Args...> {
- public:
-  
-  
-  GeneratedCode(GeneratedCode<Return, Args...> other)
-      : GeneratedCode<Return, Args...>(other.isolate_, other.fn_ptr_) {}
 };
 
 enum class MessageTemplate { kStackOverflow };
