@@ -57,6 +57,12 @@ GFX2D_API SwizzleRowFn PremultiplyRow(SurfaceFormat aSrcFormat,
 
 
 
+GFX2D_API SwizzleRowFn UnpremultiplyRow(SurfaceFormat aSrcFormat,
+                                        SurfaceFormat aDstFormat);
+
+
+
+
 GFX2D_API SwizzleRowFn SwizzleRow(SurfaceFormat aSrcFormat,
                                   SurfaceFormat aDstFormat);
 
