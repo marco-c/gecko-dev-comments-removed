@@ -603,6 +603,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
         
       case __NR_prctl: {
+        
+        
+        
+        
+
         if (SandboxInfo::Get().Test(SandboxInfo::kHasSeccompTSync)) {
           return PrctlPolicy();
         }
@@ -1536,12 +1541,14 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
     }
   }
 
+  ResultExpr PrctlPolicy() const override {
+    
+    return Allow();
+  }
+
   ResultExpr EvaluateSyscall(int sysno) const override {
     switch (sysno) {
       case __NR_getrusage:
-        return Allow();
-
-      case __NR_prctl:
         return Allow();
 
       case __NR_ioctl: {
