@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function test() {
   waitForExplicitFinish();
@@ -25,10 +25,10 @@ function checkMainAction(notification, disabled = false) {
 }
 
 function promiseElementVisible(element) {
-  
-  
-  
-  return BrowserTestUtils.waitForCondition(
+  // HTMLElement.offsetParent is null when the element is not visisble
+  // (or if the element has |position: fixed|). See:
+  // https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/offsetParent
+  return TestUtils.waitForCondition(
     () => element.offsetParent !== null,
     "Waiting for element to be visible"
   );
@@ -37,7 +37,7 @@ function promiseElementVisible(element) {
 var gNotification;
 
 var tests = [
-  
+  // Test that passing the checkbox field shows the checkbox.
   {
     id: "show_checkbox",
     run() {
@@ -56,7 +56,7 @@ var tests = [
     onHidden() {},
   },
 
-  
+  // Test checkbox being checked by default
   {
     id: "checkbox_checked",
     run() {
@@ -76,7 +76,7 @@ var tests = [
     onHidden() {},
   },
 
-  
+  // Test checkbox passing the checkbox state on mainAction
   {
     id: "checkbox_passCheckboxChecked_mainAction",
     run() {
@@ -107,7 +107,7 @@ var tests = [
     },
   },
 
-  
+  // Test checkbox passing the checkbox state on secondaryAction
   {
     id: "checkbox_passCheckboxChecked_secondaryAction",
     run() {
@@ -144,7 +144,7 @@ var tests = [
     },
   },
 
-  
+  // Test checkbox preserving its state through re-opening the doorhanger
   {
     id: "checkbox_reopen",
     run() {
@@ -180,7 +180,7 @@ var tests = [
     },
   },
 
-  
+  // Test no checkbox hides warning label
   {
     id: "no_checkbox",
     run() {
@@ -199,7 +199,7 @@ var tests = [
   },
 ];
 
-
+// Test checkbox disabling the main action in different combinations
 ["checkedState", "uncheckedState"].forEach(function(state) {
   [true, false].forEach(function(checked) {
     tests.push({
@@ -236,7 +236,7 @@ var tests = [
         checkCheckbox(checkbox, "This is a checkbox", checked);
         checkMainAction(notification, disabled);
 
-        
+        // Unblock the main command if it's currently disabled.
         if (disabled) {
           EventUtils.synthesizeMouseAtCenter(checkbox, {});
         }
