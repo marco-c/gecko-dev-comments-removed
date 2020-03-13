@@ -155,6 +155,8 @@ function Editor(config) {
     
     disableSearchAddon: false,
     maxHighlightLength: 1000,
+    
+    cursorBlinkRate: 0,
   };
 
   
@@ -240,15 +242,6 @@ function Editor(config) {
   if (this.config.cssProperties) {
     
     this.config.autocompleteOpts.cssProperties = this.config.cssProperties;
-  }
-
-  
-  
-  if (Services.prefs.prefHasUserValue(CARET_BLINK_TIME)) {
-    this.config.cursorBlinkRate = Services.prefs.getIntPref(
-      CARET_BLINK_TIME,
-      530
-    );
   }
 
   EventEmitter.decorate(this);
@@ -470,6 +463,23 @@ Editor.prototype = {
         replaceAll: null,
       });
     }
+
+    
+    
+    let cursorBlinkingRate = win.CodeMirror.defaults.cursorBlinkRate;
+    if (Services.prefs.prefHasUserValue(CARET_BLINK_TIME)) {
+      cursorBlinkingRate = Services.prefs.getIntPref(
+        CARET_BLINK_TIME,
+        cursorBlinkingRate
+      );
+    }
+    
+    
+    
+    cm.getWrapperElement().style.setProperty(
+      "--caret-blink-time",
+      `${Math.max(0, cursorBlinkingRate)}ms`
+    );
 
     editors.set(this, cm);
 
