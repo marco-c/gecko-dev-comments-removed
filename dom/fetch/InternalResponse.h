@@ -331,7 +331,6 @@ class InternalResponse final {
   already_AddRefed<InternalResponse> CreateIncompleteCopy();
 
   ResponseType mType;
-  nsCString mTerminationReason;
   
   
   
