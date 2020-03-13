@@ -15,7 +15,6 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/File.h"
-#include "mozilla/dom/FileListBinding.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindow.h"
@@ -41,18 +40,6 @@ enum StackScopedCloneTags {
   SCTAG_BLOB,
   SCTAG_FUNCTION,
 };
-
-
-
-
-
-
-
-
-
-
-
-bool IsFileList(JSObject* obj) { return IS_INSTANCE_OF(FileList, obj); }
 
 class MOZ_STACK_CLASS StackScopedCloneData : public StructuredCloneHolderBase {
  public:
@@ -156,8 +143,7 @@ class MOZ_STACK_CLASS StackScopedCloneData : public StructuredCloneHolderBase {
       }
     }
 
-    if ((mOptions->wrapReflectors && IsReflector(aObj, aCx)) ||
-        IsFileList(aObj)) {
+    if (mOptions->wrapReflectors && IsReflector(aObj, aCx)) {
       if (!mReflectors.append(aObj)) {
         return false;
       }
