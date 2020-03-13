@@ -63,80 +63,83 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   TreatAsRunOnce = 1 << 2,
+
+  
+  ForceStrict = 1 << 3,
   
 
   
-  Strict = 1 << 3,
+  Strict = 1 << 4,
 
   
   
   
-  HasNonSyntacticScope = 1 << 4,
+  HasNonSyntacticScope = 1 << 5,
 
   
-  BindingsAccessedDynamically = 1 << 5,
-  FunHasExtensibleScope = 1 << 6,
-
-  
-  
-  HasCallSiteObj = 1 << 7,
+  BindingsAccessedDynamically = 1 << 6,
+  FunHasExtensibleScope = 1 << 7,
 
   
   
-  HasModuleGoal = 1 << 8,
-
-  FunctionHasThisBinding = 1 << 9,
-  FunctionHasExtraBodyVarScope = 1 << 10,
+  HasCallSiteObj = 1 << 8,
 
   
   
-  HasMappedArgsObj = 1 << 11,
+  HasModuleGoal = 1 << 9,
+
+  FunctionHasThisBinding = 1 << 10,
+  FunctionHasExtraBodyVarScope = 1 << 11,
 
   
   
-  HasInnerFunctions = 1 << 12,
-
-  NeedsHomeObject = 1 << 13,
-
-  IsDerivedClassConstructor = 1 << 14,
+  HasMappedArgsObj = 1 << 12,
 
   
   
-  IsLikelyConstructorWrapper = 1 << 15,
+  HasInnerFunctions = 1 << 13,
 
-  
-  IsGenerator = 1 << 16,
+  NeedsHomeObject = 1 << 14,
 
-  
-  IsAsync = 1 << 17,
-
-  
-  HasRest = 1 << 18,
-
-  
-  ArgumentsHasVarBinding = 1 << 19,
-
-  
-  IsForEval = 1 << 20,
-
-  
-  IsModule = 1 << 21,
-
-  
-  NeedsFunctionEnvironmentObjects = 1 << 22,
-
-  
-  ShouldDeclareArguments = 1 << 23,
-
-  
-  IsFunction = 1 << 24,
-
-  
-  HasDirectEval = 1 << 25,
+  IsDerivedClassConstructor = 1 << 15,
 
   
   
-  IsLazyScript = 1 << 26,
+  IsLikelyConstructorWrapper = 1 << 16,
+
+  
+  IsGenerator = 1 << 17,
+
+  
+  IsAsync = 1 << 18,
+
+  
+  HasRest = 1 << 19,
+
+  
+  ArgumentsHasVarBinding = 1 << 20,
+
+  
+  IsForEval = 1 << 21,
+
+  
+  IsModule = 1 << 22,
+
+  
+  NeedsFunctionEnvironmentObjects = 1 << 23,
+
+  
+  ShouldDeclareArguments = 1 << 24,
+
+  
+  IsFunction = 1 << 25,
+
+  
+  HasDirectEval = 1 << 26,
+
+  
+  
+  IsLazyScript = 1 << 27,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
@@ -165,6 +168,8 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
     isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval, options.noScriptRval);
     isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
     isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce, options.isRunOnce);
+    isf.setFlag(ImmutableScriptFlagsEnum::ForceStrict,
+                options.forceStrictMode());
     return isf;
   };
 
@@ -176,6 +181,8 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
     isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
     isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce,
                  false);
+    isf.setFlag(ImmutableScriptFlagsEnum::ForceStrict,
+                options.forceStrictMode());
     return isf;
   };
 };

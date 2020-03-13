@@ -4323,6 +4323,9 @@ JSScript* JSScript::Create(JSContext* cx, js::HandleObject functionOrGlobal,
   }
 
   
+  if (lazy->forceStrict()) {
+    script->setForceStrict();
+  }
   if (lazy->isLikelyConstructorWrapper()) {
     script->setIsLikelyConstructorWrapper();
   }
