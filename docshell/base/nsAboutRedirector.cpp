@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsAboutRedirector.h"
 #include "nsNetUtil.h"
@@ -47,17 +47,17 @@ class CrashChannel final : public nsBaseChannel {
   virtual ~CrashChannel() = default;
 };
 
+/*
+  Entries which do not have URI_SAFE_FOR_UNTRUSTED_CONTENT will run with chrome
+  privileges. This is potentially dangerous. Please use
+  URI_SAFE_FOR_UNTRUSTED_CONTENT in the third argument to each map item below
+  unless your about: page really needs chrome privileges. Security review is
+  required before adding new map entries without
+  URI_SAFE_FOR_UNTRUSTED_CONTENT.
 
-
-
-
-
-
-
-
-
-
-
+  URI_SAFE_FOR_UNTRUSTED_CONTENT is not enough to let web pages load that page,
+  for that you need MAKE_LINKABLE.
+ */
 static const RedirEntry kRedirMap[] = {
     {"about", "chrome://global/content/aboutAbout.html", 0},
     {"addons", "chrome://mozapps/content/extensions/extensions.xhtml",
@@ -79,7 +79,7 @@ static const RedirEntry kRedirMap[] = {
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT},
     {"logo", "chrome://branding/content/about.png",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
-         
+         // Linkable for testing reasons.
          nsIAboutModule::MAKE_LINKABLE},
     {"memory", "chrome://global/content/aboutMemory.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
@@ -100,19 +100,27 @@ static const RedirEntry kRedirMap[] = {
      nsIAboutModule::ALLOW_SCRIPT},
     {"plugins", "chrome://global/content/plugins.html",
      nsIAboutModule::URI_MUST_LOAD_IN_CHILD},
+    // about:serviceworkers always wants to load in the parent process because
+    // when dom.serviceWorkers.parent_intercept is set to true (the new default)
+    // then the only place nsIServiceWorkerManager has any data is in the
+    // parent process.
+    //
+    // There is overlap without about:debugging, but about:debugging is not
+    // available on mobile at this time, and it's useful to be able to know if
+    // a ServiceWorker is registered directly from the mobile browser without
+    // having to connect the device to a desktop machine and all that entails.
     {"serviceworkers", "chrome://global/content/aboutServiceWorkers.xhtml",
-     nsIAboutModule::URI_CAN_LOAD_IN_CHILD |
-         nsIAboutModule::URI_MUST_LOAD_IN_CHILD | nsIAboutModule::ALLOW_SCRIPT},
+     nsIAboutModule::ALLOW_SCRIPT},
 #ifndef ANDROID
     {"profiles", "chrome://global/content/aboutProfiles.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
 #endif
-    
-    
+    // about:srcdoc is unresolvable by specification.  It is included here
+    // because the security manager would disallow srcdoc iframes otherwise.
     {"srcdoc", "about:blank",
      nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT |
          nsIAboutModule::HIDE_FROM_ABOUTABOUT |
-         
+         // Needs to be linkable so content can touch its own srcdoc frames
          nsIAboutModule::MAKE_LINKABLE | nsIAboutModule::URI_CAN_LOAD_IN_CHILD},
     {"support", "chrome://global/content/aboutSupport.xhtml",
      nsIAboutModule::ALLOW_SCRIPT},
@@ -176,10 +184,10 @@ nsAboutRedirector::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
                                  aLoadInfo);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      
-      
-      
-      
+      // If tempURI links to an external URI (i.e. something other than
+      // chrome:// or resource://) then set result principal URI on the
+      // load info which forces the channel principal to reflect the displayed
+      // URL rather then being the systemPrincipal.
       bool isUIResource = false;
       rv = NS_URIChainHasFlags(tempURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
                                &isUIResource);
