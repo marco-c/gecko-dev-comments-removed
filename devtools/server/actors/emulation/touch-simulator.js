@@ -68,6 +68,16 @@ TouchSimulator.prototype = {
       
       return;
     }
+
+    
+    if (
+      Services.prefs.getBoolPref(
+        "devtools.responsive.touchGestureSimulation.enabled"
+      )
+    ) {
+      this.events.push("dblclick");
+    }
+
     this.events.forEach(evt => {
       
       
@@ -293,6 +303,19 @@ TouchSimulator.prototype = {
           this
         );
         return;
+      case "dblclick":
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        const win = this.getContent(evt.target);
+
+        
+        
+        setTimeout(() => {
+          this.synthesizeNativeTap(win, evt.clientX, evt.clientY);
+          this.synthesizeNativeTap(win, evt.clientX, evt.clientY);
+        }, this.getDelayBeforeMouseEvent(evt));
+
+        return;
     }
 
     const target = eventTarget || this.target;
@@ -341,6 +364,63 @@ TouchSimulator.prototype = {
     }, clickHoldDelay);
 
     return timeout;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  synthesizeNativeTap(win, x, y) {
+    const pt = this.coordinatesRelativeToScreen(win, x, y);
+    const utils = win.windowUtils;
+
+    
+    
+    
+    
+    
+    utils.sendNativeTouchTap(pt.x, pt.y, false, null);
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  coordinatesRelativeToScreen(win, x, y) {
+    const utils = win.windowUtils;
+    
+    
+    
+    const deviceScale = utils.screenPixelsPerCSSPixelNoOverride;
+
+    const resolution = utils.getResolution();
+    const offsetX = {};
+    const offsetY = {};
+
+    utils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
+
+    return {
+      x: (win.mozInnerScreenX + (x - offsetX.value) * resolution) * deviceScale,
+      y: (win.mozInnerScreenY + (y - offsetY.value) * resolution) * deviceScale,
+    };
   },
 
   sendTouchEvent(evt, target, name) {
