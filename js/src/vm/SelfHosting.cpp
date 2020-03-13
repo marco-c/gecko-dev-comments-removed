@@ -532,8 +532,6 @@ static bool intrinsic_MakeDefaultConstructor(JSContext* cx, unsigned argc,
 
   RootedFunction ctor(cx, &args[0].toObject().as<JSFunction>());
 
-  ctor->baseScript()->setIsDefaultClassConstructor();
-
   
   
   

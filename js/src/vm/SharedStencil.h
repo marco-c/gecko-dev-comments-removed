@@ -99,45 +99,44 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   NeedsHomeObject = 1 << 13,
 
   IsDerivedClassConstructor = 1 << 14,
-  IsDefaultClassConstructor = 1 << 15,
 
   
   
-  IsLikelyConstructorWrapper = 1 << 16,
+  IsLikelyConstructorWrapper = 1 << 15,
 
   
-  IsGenerator = 1 << 17,
+  IsGenerator = 1 << 16,
 
   
-  IsAsync = 1 << 18,
+  IsAsync = 1 << 17,
 
   
-  HasRest = 1 << 19,
+  HasRest = 1 << 18,
 
   
-  ArgumentsHasVarBinding = 1 << 20,
+  ArgumentsHasVarBinding = 1 << 19,
 
   
-  IsForEval = 1 << 21,
+  IsForEval = 1 << 20,
 
   
-  IsModule = 1 << 22,
+  IsModule = 1 << 21,
 
   
-  NeedsFunctionEnvironmentObjects = 1 << 23,
+  NeedsFunctionEnvironmentObjects = 1 << 22,
 
   
-  ShouldDeclareArguments = 1 << 24,
+  ShouldDeclareArguments = 1 << 23,
 
   
-  IsFunction = 1 << 25,
+  IsFunction = 1 << 24,
 
   
-  HasDirectEval = 1 << 26,
+  HasDirectEval = 1 << 25,
 
   
   
-  IsLazyScript = 1 << 27,
+  IsLazyScript = 1 << 26,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
