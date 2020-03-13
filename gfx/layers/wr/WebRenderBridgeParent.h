@@ -52,6 +52,42 @@ class CompositorVsyncScheduler;
 class AsyncImagePipelineManager;
 class WebRenderImageHost;
 
+class PipelineIdAndEpochHashEntry : public PLDHashEntryHdr {
+ public:
+  typedef const std::pair<wr::PipelineId, wr::Epoch>& KeyType;
+  typedef const std::pair<wr::PipelineId, wr::Epoch>* KeyTypePointer;
+  enum { ALLOW_MEMMOVE = true };
+
+  explicit PipelineIdAndEpochHashEntry(wr::PipelineId aPipelineId,
+                                       wr::Epoch aEpoch)
+      : mValue(aPipelineId, aEpoch) {}
+
+  PipelineIdAndEpochHashEntry(PipelineIdAndEpochHashEntry&& aOther) = default;
+
+  explicit PipelineIdAndEpochHashEntry(KeyTypePointer aKey)
+      : mValue(aKey->first, aKey->second) {}
+
+  ~PipelineIdAndEpochHashEntry() {}
+
+  KeyType GetKey() const { return mValue; }
+
+  bool KeyEquals(KeyTypePointer aKey) const {
+    return mValue.first.mHandle == aKey->first.mHandle &&
+           mValue.first.mNamespace == aKey->first.mNamespace &&
+           mValue.second.mHandle == aKey->second.mHandle;
+  };
+
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
+    return mozilla::HashGeneric(aKey->first.mHandle, aKey->first.mNamespace,
+                                aKey->second.mHandle);
+  }
+
+ private:
+  std::pair<wr::PipelineId, wr::Epoch> mValue;
+};
+
 class WebRenderBridgeParent final
     : public PWebRenderBridgeParent,
       public CompositorVsyncSchedulerOwner,
@@ -320,6 +356,15 @@ class WebRenderBridgeParent final
   RefPtr<wr::WebRenderAPI::GetCollectedFramesPromise> GetCollectedFrames();
 
   void DisableNativeCompositor();
+  void AddPendingScrollPayload(
+      CompositionPayload& aPayload,
+      const std::pair<wr::PipelineId, wr::Epoch>& aKey);
+
+  nsTArray<CompositionPayload>* GetPendingScrollPayload(
+      const std::pair<wr::PipelineId, wr::Epoch>& aKey);
+
+  bool RemovePendingScrollPayload(
+      const std::pair<wr::PipelineId, wr::Epoch>& aKey);
 
  private:
   class ScheduleSharedSurfaceRelease;
@@ -427,7 +472,8 @@ class WebRenderBridgeParent final
   bool AdvanceAnimations();
   bool SampleAnimations(
       wr::RenderRootArray<nsTArray<wr::WrOpacityProperty>>& aOpacityArrays,
-      wr::RenderRootArray<nsTArray<wr::WrTransformProperty>>& aTransformArrays);
+      wr::RenderRootArray<nsTArray<wr::WrTransformProperty>>& aTransformArrays,
+      wr::RenderRootArray<nsTArray<wr::WrColorProperty>>& aColorArrays);
 
   CompositorBridgeParent* GetRootCompositorBridgeParent() const;
 
@@ -579,6 +625,10 @@ class WebRenderBridgeParent final
   bool mReceivedDisplayList;
   bool mIsFirstPaint;
   bool mSkippedComposite;
+  
+  DataMutex<nsClassHashtable<PipelineIdAndEpochHashEntry,
+                             nsTArray<CompositionPayload>>>
+      mPendingScrollPayloads;
 };
 
 }  
