@@ -2071,6 +2071,23 @@ class WindowManagerBase {
   }
 
   
+
+
+
+
+
+
+
+
+
+  canAccessWindow(window, context) {
+    return (
+      (context && context.canAccessWindow(window)) ||
+      this.extension.canAccessWindow(window)
+    );
+  }
+
+  
   
   
   
