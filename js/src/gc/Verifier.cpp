@@ -112,7 +112,11 @@ class js::VerifyPreTracer final : public JS::CallbackTracer {
         curnode(nullptr),
         root(nullptr),
         edgeptr(nullptr),
-        term(nullptr) {}
+        term(nullptr) {
+    
+    
+    setTraceWeakEdges(false);
+  }
 
   ~VerifyPreTracer() { js_free(root); }
 };
