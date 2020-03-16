@@ -151,6 +151,9 @@ class nsDocShell final : public nsDocLoader,
 
     
     INTERNAL_LOAD_FLAGS_IS_USER_TRIGGERED = 0x1000,
+
+    
+    INTERNAL_LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE = 0x2000,
   };
 
   
