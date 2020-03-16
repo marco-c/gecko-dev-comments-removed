@@ -568,12 +568,16 @@ void WebGLContext::Resize(uvec2 requestedSize) {
   }
 
   
-  PresentScreenBuffer();
-
-  if (IsContextLost()) {
-    GenerateWarning("WebGL context was lost due to swap failure.");
-    return;
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  mShouldPresent = true;
+  if (requestedSize == mRequestedSize) return;
 
   
   mRequestedSize = requestedSize;
