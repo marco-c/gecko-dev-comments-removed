@@ -18,7 +18,7 @@ from taskgraph.optimize import OptimizationStrategy, register_strategy
 logger = logging.getLogger(__name__)
 
 
-SETA_PROJECTS = ['autoland']
+SETA_PROJECTS = ['autoland', 'try']
 SETA_HIGH_PRIORITY = 1
 SETA_LOW_PRIORITY = 5
 
@@ -235,17 +235,23 @@ class SETA(object):
             return False
 
         
-        if int(pushlog_id) % push_interval == 0:
-            return False
+        if project != 'try':
+            
+            if int(pushlog_id) % push_interval == 0:
+                return False
 
-        
-        
-        if self.minutes_between_pushes(
-                project,
-                int(pushlog_id),
-                int(push_date),
-                time_interval) >= time_interval:
-            return False
+            
+            
+            if self.minutes_between_pushes(
+                    project,
+                    int(pushlog_id),
+                    int(push_date),
+                    time_interval) >= time_interval:
+                return False
+
+        else:
+            
+            project = 'autoland'
 
         
         if project not in self.low_value_tasks:
