@@ -84,6 +84,10 @@ pub trait ProfilerHooks : Send + Sync {
 
     
     
+    fn event_marker(&self, label: &CStr);
+
+    
+    
     
     
     
@@ -119,6 +123,15 @@ pub fn add_text_marker(label: &CStr, text: &str, duration: Duration) {
     unsafe {
         if let Some(ref hooks) = PROFILER_HOOKS {
             hooks.add_text_marker(label, text, duration);
+        }
+    }
+}
+
+
+pub fn add_event_marker(label: &CStr) {
+    unsafe {
+        if let Some(ref hooks) = PROFILER_HOOKS {
+            hooks.event_marker(label);
         }
     }
 }
