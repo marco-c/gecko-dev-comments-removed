@@ -21,6 +21,7 @@ var gReplacedWindow = null;
 var gAlertListener = null;
 var gAlertTextClickable = false;
 var gAlertCookie = "";
+var gIsActive = false;
 var gIsReplaced = false;
 var gRequireInteraction = false;
 
@@ -234,6 +235,8 @@ function onAlertLoad() {
   alertSettings.addEventListener("focus", onAlertSettingsFocus);
   alertSettings.addEventListener("click", onAlertSettingsClick);
 
+  gIsActive = true;
+
   let ev = new CustomEvent("AlertActive", { bubbles: true, cancelable: true });
   document.documentElement.dispatchEvent(ev);
 
@@ -248,6 +251,9 @@ function moveWindowToReplace(aReplacedAlert) {
   
   if (heightDelta != 0) {
     for (let alertWindow of Services.wm.getEnumerator("alert:alert")) {
+      if (!alertWindow.gIsActive) {
+        continue;
+      }
       
       let alertIsAfter =
         gOrigin & NS_ALERT_TOP
@@ -284,7 +290,7 @@ function moveWindowToEnd() {
 
   
   for (let alertWindow of Services.wm.getEnumerator("alert:alert")) {
-    if (alertWindow != window) {
+    if (alertWindow != window && alertWindow.gIsActive) {
       if (gOrigin & NS_ALERT_TOP) {
         y = Math.max(
           y,
@@ -311,7 +317,7 @@ function onAlertBeforeUnload() {
     
     let heightDelta = window.outerHeight + WINDOW_MARGIN - WINDOW_SHADOW_SPREAD;
     for (let alertWindow of Services.wm.getEnumerator("alert:alert")) {
-      if (alertWindow != window) {
+      if (alertWindow != window && alertWindow.gIsActive) {
         if (gOrigin & NS_ALERT_TOP) {
           if (alertWindow.screenY > window.screenY) {
             alertWindow.moveTo(
