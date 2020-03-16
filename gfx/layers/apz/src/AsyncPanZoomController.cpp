@@ -4322,6 +4322,78 @@ CSSRect AsyncPanZoomController::GetVisibleRect(
   return visible;
 }
 
+ParentLayerRect AsyncPanZoomController::RecursivelyClipCompBounds(
+    const ParentLayerRect& aChildCompBounds) const {
+  
+  
+  LayerRect compBoundsInLayerSpace = ViewAs<LayerPixel>(
+      aChildCompBounds, PixelCastJustification::MovingDownToChildren);
+
+  
+  
+  AsyncTransform appliesToLayer =
+      GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
+  ParentLayerRect compBoundsInParentSpace =
+      (compBoundsInLayerSpace * appliesToLayer.mScale) +
+      appliesToLayer.mTranslation;
+
+  {  
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    compBoundsInParentSpace =
+        compBoundsInParentSpace.Intersect(Metrics().GetCompositionBounds());
+  }
+
+  
+  if (mParent) {
+    
+    mRecursiveMutex.AssertNotCurrentThreadIn();
+    compBoundsInParentSpace =
+        mParent->RecursivelyClipCompBounds(compBoundsInParentSpace);
+  }
+
+  
+  
+  compBoundsInLayerSpace =
+      (compBoundsInParentSpace - appliesToLayer.mTranslation) /
+      appliesToLayer.mScale;
+  return ViewAs<ParentLayerPixel>(compBoundsInLayerSpace,
+                                  PixelCastJustification::MovingDownToChildren);
+}
+
+CSSRect AsyncPanZoomController::GetRecursivelyVisibleRect() const {
+  CSSRect visible;
+  ParentLayerRect compBounds;
+  CSSToParentLayerScale2D zoom;
+
+  {  
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    visible = GetVisibleRect(lock);  
+    compBounds = Metrics().GetCompositionBounds();
+    zoom = Metrics().GetZoom();
+  }
+
+  if (mParent) {
+    
+    ParentLayerRect clippedCompBounds =
+        mParent->RecursivelyClipCompBounds(compBounds);
+
+    
+    ParentLayerRect visiblePartOfCompBoundsRelativeToItself =
+        clippedCompBounds - compBounds.TopLeft();
+
+    CSSRect visiblePartOfCompBoundsRelativeToItselfInCssSpace =
+        (visiblePartOfCompBoundsRelativeToItself / zoom);
+
+    
+    CSSRect visiblePartOfCompBoundsInCssSpace =
+        visiblePartOfCompBoundsRelativeToItselfInCssSpace + visible.TopLeft();
+
+    visible = visible.Intersect(visiblePartOfCompBoundsInCssSpace);
+  }
+
+  return visible;
+}
+
 uint32_t AsyncPanZoomController::GetCheckerboardMagnitude() const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
@@ -4398,22 +4470,21 @@ void AsyncPanZoomController::FlushActiveCheckerboardReport() {
 }
 
 bool AsyncPanZoomController::IsCurrentlyCheckerboarding() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
-
-  if (mScrollMetadata.IsApzForceDisabled()) {
-    return false;
+  CSSRect painted;
+  {  
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    painted = mLastContentPaintMetrics.GetDisplayPort() +
+              mLastContentPaintMetrics.GetScrollOffset();
   }
 
-  CSSRect painted = mLastContentPaintMetrics.GetDisplayPort() +
-                    mLastContentPaintMetrics.GetScrollOffset();
   painted.Inflate(CSSMargin::FromAppUnits(
       nsMargin(1, 1, 1, 1)));  
-  CSSRect visible = GetVisibleRect(lock);
-  if (painted.Contains(visible)) {
+  CSSRect visible = GetRecursivelyVisibleRect();
+  if (visible.IsEmpty() || painted.Contains(visible)) {
     return false;
   }
   APZC_LOG_FM(Metrics(),
-              "%p is currently checkerboarding (painted %s visble %s)", this,
+              "%p is currently checkerboarding (painted %s visible %s)", this,
               Stringify(painted).c_str(), Stringify(visible).c_str());
   return true;
 }

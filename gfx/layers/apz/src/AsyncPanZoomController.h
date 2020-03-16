@@ -1212,6 +1212,25 @@ class AsyncPanZoomController {
 
 
   CSSRect GetVisibleRect(const RecursiveMutexAutoLock& aProofOfLock) const;
+  
+
+
+
+
+
+
+
+
+
+
+  ParentLayerRect RecursivelyClipCompBounds(
+      const ParentLayerRect& aChildCompBounds) const;
+  
+
+
+
+
+  CSSRect GetRecursivelyVisibleRect() const;
 
  private:
   friend class AutoApplyAsyncTestAttributes;
