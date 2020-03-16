@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "VRParent.h"
 #include "VRGPUParent.h"
@@ -48,7 +48,7 @@ IPCResult VRParent::RecvInit(nsTArray<GfxVarUpdate>&& vars,
     gfxVars::ApplyUpdate(var);
   }
 
-  // Inherit device preferences.
+  
   gfxConfig::Inherit(Feature::HW_COMPOSITING, devicePrefs.hwCompositing());
   gfxConfig::Inherit(Feature::D3D11_COMPOSITING,
                      devicePrefs.d3d11Compositing());
@@ -87,7 +87,7 @@ mozilla::ipc::IPCResult VRParent::RecvOpenVRControllerActionPathToVR(
 }
 
 mozilla::ipc::IPCResult VRParent::RecvOpenVRControllerManifestPathToVR(
-    const OpenVRControllerType& aType, const nsCString& aPath) {
+    const VRControllerType& aType, const nsCString& aPath) {
   mOpenVRControllerManifest.Put(static_cast<uint32_t>(aType), aPath);
   return IPC_OK();
 }
@@ -120,8 +120,8 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
   mVRGPUParent = nullptr;
 
 #ifndef NS_FREE_PERMANENT_DATA
-  // No point in going through XPCOM shutdown because we don't keep persistent
-  // state.
+  
+  
   ProcessChild::QuickExit();
 #endif
 
@@ -131,38 +131,38 @@ void VRParent::ActorDestroy(ActorDestroyReason aWhy) {
   gfxVars::Shutdown();
   gfxConfig::Shutdown();
   CrashReporterClient::DestroySingleton();
-  // Only calling XRE_ShutdownChildProcess() at the child process
-  // instead of the main process. Otherwise, it will close all child processes
-  // that are spawned from the main process.
+  
+  
+  
   XRE_ShutdownChildProcess();
 }
 
 bool VRParent::Init(base::ProcessId aParentPid, const char* aParentBuildID,
                     MessageLoop* aIOLoop, UniquePtr<IPC::Channel> aChannel) {
-  // Initialize the thread manager before starting IPC. Otherwise, messages
-  // may be posted to the main thread and we won't be able to process them.
+  
+  
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
     return false;
   }
 
-  // Now it's safe to start IPC.
+  
   if (NS_WARN_IF(!Open(std::move(aChannel), aParentPid, aIOLoop))) {
     return false;
   }
 
   nsDebugImpl::SetMultiprocessMode("VR");
 
-  // This must be checked before any IPDL message, which may hit sentinel
-  // errors due to parent and content processes having different
-  // versions.
+  
+  
+  
   MessageChannel* channel = GetIPCChannel();
   if (channel && !channel->SendBuildIDsMatchMessage(aParentBuildID)) {
-    // We need to quit this process if the buildID doesn't match the parent's.
-    // This can occur when an update occurred in the background.
+    
+    
     ProcessChild::QuickExit();
   }
 
-  // Init crash reporter support.
+  
   CrashReporterClient::InitSingleton(this);
 
   gfxConfig::Init();
@@ -187,10 +187,10 @@ bool VRParent::GetOpenVRControllerActionPath(nsCString* aPath) {
   return false;
 }
 
-bool VRParent::GetOpenVRControllerManifestPath(OpenVRControllerType aType,
+bool VRParent::GetOpenVRControllerManifestPath(VRControllerType aType,
                                                nsCString* aPath) {
   return mOpenVRControllerManifest.Get(static_cast<uint32_t>(aType), aPath);
 }
 
-}  // namespace gfx
-}  // namespace mozilla
+}  
+}  
