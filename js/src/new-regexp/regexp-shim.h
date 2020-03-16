@@ -859,15 +859,25 @@ class JSRegExp : public HeapObject {
   
   
   
-  void TierUpTick();
-  bool MarkedForTierUp() const;
+  void TierUpTick() {  }
+  bool MarkedForTierUp() const {
+    return false; 
+  }
 
-  Object Code(bool is_latin1) const;
-  Object Bytecode(bool is_latin1) const;
+  
+  Object Code(bool is_latin1) const { return Object(JS::UndefinedValue()); }
+  Object Bytecode(bool is_latin1) const { return Object(JS::UndefinedValue()); }
 
-  uint32_t BacktrackLimit() const;
+  uint32_t BacktrackLimit() const {
+    return 0; 
+  }
 
-  static JSRegExp cast(Object object);
+  static JSRegExp cast(Object object) {
+    JSRegExp regexp;
+    MOZ_ASSERT(JS::Value(object).toGCThing()->is<js::RegExpShared>());
+    regexp.value_ = JS::PrivateGCThingValue(JS::Value(object).toGCThing());
+    return regexp;
+  }
 
   
   
@@ -909,6 +919,11 @@ class JSRegExp : public HeapObject {
   static constexpr int kFlagCount = 6;
 
   static constexpr int kNoBacktrackLimit = 0;
+
+private:
+  js::RegExpShared* inner() {
+    return value_.toGCThing()->as<js::RegExpShared>();
+  }
 };
 
 class Histogram {
