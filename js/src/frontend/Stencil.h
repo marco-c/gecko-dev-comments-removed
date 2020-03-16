@@ -444,6 +444,8 @@ using ScriptThingsVector = GCVector<ScriptThingVariant>;
 
 class ScriptStencil {
  public:
+  js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
+
   
   unsigned lineno = 0;
   unsigned column = 0;
@@ -453,23 +455,6 @@ class ScriptStencil {
 
   
   uint32_t ngcthings = 0;
-
-  
-  uint32_t numResumeOffsets = 0;
-
-  
-  uint32_t numScopeNotes = 0;
-
-  
-  uint32_t numTryNotes = 0;
-
-  
-  uint32_t mainOffset = 0;
-  uint32_t nfixed = 0;
-  uint32_t nslots = 0;
-  uint32_t bodyScopeIndex = 0;
-  uint32_t numICEntries = 0;
-  uint32_t numBytecodeTypeSets = 0;
 
   
   bool strict = false;
@@ -482,12 +467,6 @@ class ScriptStencil {
   bool needsFunctionEnvironmentObjects = false;
   bool hasModuleGoal = false;
   bool hasInnerFunctions = false;
-
-  
-  
-
-  mozilla::Span<const jsbytecode> code;
-  mozilla::Span<const jssrcnote> notes;
 
   ScriptThingsVector gcThings;
 
@@ -503,19 +482,6 @@ class ScriptStencil {
   
   
   virtual void initAtomMap(GCPtrAtom* atoms) const = 0;
-
-  
-  
-  virtual void finishResumeOffsets(
-      mozilla::Span<uint32_t> resumeOffsets) const = 0;
-
-  
-  
-  virtual void finishScopeNotes(mozilla::Span<ScopeNote> scopeNotes) const = 0;
-
-  
-  
-  virtual void finishTryNotes(mozilla::Span<JSTryNote> tryNotes) const = 0;
 
   
   virtual void finishInnerFunctions() const = 0;
