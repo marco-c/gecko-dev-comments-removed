@@ -134,10 +134,6 @@ void js::ThrowTypeErrorBehavior(JSContext* cx) {
 static bool IsSloppyNormalFunction(JSFunction* fun) {
   
   if (fun->kind() == FunctionFlags::NormalFunction) {
-    if (!fun->isInterpreted()) {
-      return false;
-    }
-
     if (fun->isBuiltin() || fun->isBoundFunction()) {
       return false;
     }
@@ -146,7 +142,13 @@ static bool IsSloppyNormalFunction(JSFunction* fun) {
       return false;
     }
 
+    MOZ_ASSERT(fun->isInterpreted());
     return !fun->strict();
+  }
+
+  
+  if (fun->kind() == FunctionFlags::AsmJS) {
+    return !IsAsmJSStrictModeModuleOrFunction(fun);
   }
 
   return false;
@@ -159,6 +161,8 @@ static bool IsSloppyNormalFunction(JSFunction* fun) {
 
 
 static bool ArgumentsRestrictions(JSContext* cx, HandleFunction fun) {
+  
+  
   
   if (!IsSloppyNormalFunction(fun)) {
     ThrowTypeErrorBehavior(cx);
@@ -231,6 +235,8 @@ static bool ArgumentsSetter(JSContext* cx, unsigned argc, Value* vp) {
 
 
 static bool CallerRestrictions(JSContext* cx, HandleFunction fun) {
+  
+  
   
   if (!IsSloppyNormalFunction(fun)) {
     ThrowTypeErrorBehavior(cx);
