@@ -310,6 +310,7 @@ import_sibling_modules()
 register_strategy('test', args=('skip-unless-schedules', 'seta'))(Either)
 register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-try', args=('skip-unless-schedules',))(Alias)
+register_strategy('fuzzing-builds', args=('skip-unless-schedules', 'seta'))(Either)
 
 
 
@@ -317,4 +318,10 @@ register_strategy('test-try', args=('skip-unless-schedules',))(Alias)
 
 relevant_tests = {
     'test': Either('skip-unless-schedules', 'skip-unless-has-relevant-tests'),
+}
+
+
+
+bugbug_push_schedules = {
+    'test': Either('skip-unless-schedules', 'bugbug-push-schedules'),
 }
