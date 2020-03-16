@@ -332,10 +332,6 @@ class ParseContext : public Nestable<ParseContext> {
 
   
   
-  bool isStandaloneFunctionBody_;
-
-  
-  
   bool superScopeNeedsHomeObject_;
 
  public:
@@ -440,10 +436,6 @@ class ParseContext : public Nestable<ParseContext> {
   
   
   bool atTopLevel() { return atBodyLevel() && sc_->isTopLevelContext(); }
-
-  void setIsStandaloneFunctionBody() { isStandaloneFunctionBody_ = true; }
-
-  bool isStandaloneFunctionBody() const { return isStandaloneFunctionBody_; }
 
   void setSuperScopeNeedsHomeObject() {
     MOZ_ASSERT(sc_->allowSuperProperty());
