@@ -1182,7 +1182,7 @@ function invokeFromWorker(workerType, isDataUrl, workerOptions,
       if (workerType === "worker") {
         const worker = new Worker(url, workerOptions);
         worker.postMessage({subresource: subresource,
-                           sourceContextList: sourceContextList.slice(1)});
+                            sourceContextList: sourceContextList.slice(1)});
         return bindEvents2(worker, "message", worker, "error", window, "error");
       } else if (workerType === "sharedworker") {
         const worker = new SharedWorker(url, workerOptions);
