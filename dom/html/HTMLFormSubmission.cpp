@@ -282,7 +282,13 @@ nsresult FSURLEncoded::GetEncodedSubmission(nsIURI* aURI,
 
     nsCOMPtr<nsIURL> url = do_QueryInterface(aURI);
     if (url) {
-      rv = NS_MutateURI(aURI).SetQuery(mQueryString).Finalize(aOutURI);
+      
+      
+      
+      rv = NS_MutateURI(aURI)
+               .SetQuery(mQueryString.IsEmpty() ? NS_LITERAL_CSTRING("?")
+                                                : mQueryString)
+               .Finalize(aOutURI);
     } else {
       nsAutoCString path;
       rv = aURI->GetPathQueryRef(path);
