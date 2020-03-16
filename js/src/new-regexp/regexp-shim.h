@@ -480,18 +480,52 @@ class FixedArray : public HeapObject {
   }
 };
 
+class ByteArrayData {
+public:
+  uint32_t length;
+  uint8_t* data();
+};
 
+
+
+
+
+
+
+
+inline uint8_t* ByteArrayData::data() {
+  static_assert(alignof(uint8_t) <= alignof(ByteArrayData),
+                "The trailing data must be aligned to start immediately "
+                "after the header with no padding.");
+  ByteArrayData* immediatelyAfter = this + 1;
+  return reinterpret_cast<uint8_t*>(immediatelyAfter);
+}
 
 
 class ByteArray : public HeapObject {
- public:
-  uint8_t get(uint32_t index);
-  void set(uint32_t index, uint8_t val);
-  uint32_t length();
-  byte* GetDataStartAddress();
-  byte* GetDataEndAddress();
+  ByteArrayData* inner() const {
+    return static_cast<ByteArrayData*>(value_.toPrivate());
+  }
+  PseudoHandle<ByteArrayData> takeOwnership(Isolate* isolate);
 
-  static ByteArray cast(Object object);
+  friend class SMRegExpMacroAssembler;
+public:
+  byte get(uint32_t index) {
+    MOZ_ASSERT(index < length());
+    return inner()->data()[index];
+  }
+  void set(uint32_t index, byte val) {
+    MOZ_ASSERT(index < length());
+    inner()->data()[index] = val;
+  }
+  uint32_t length() const { return inner()->length; }
+  byte* GetDataStartAddress() { return inner()->data(); }
+
+  static ByteArray cast(Object object) {
+    ByteArray b;
+    b.value_ = JS::Value(object);
+    return b;
+  }
 };
 
 
