@@ -17,6 +17,7 @@
 #include "mozilla/a11y/DocManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowserParent.h"
 
 namespace mozilla {
@@ -392,8 +393,17 @@ nsINode* FocusManager::FocusedDOMNode() const {
   }
 
   
-  nsPIDOMWindowOuter* focusedWnd = DOMFocusManager->GetFocusedWindow();
-  return focusedWnd ? focusedWnd->GetExtantDoc() : nullptr;
+  dom::BrowsingContext* context = DOMFocusManager->GetFocusedBrowsingContext();
+  if (context) {
+    
+    nsIDocShell* shell = context->GetDocShell();
+    if (shell) {
+      return shell->GetDocument();
+    }
+  }
+
+  
+  return nullptr;
 }
 
 dom::Document* FocusManager::FocusedDOMDocument() const {
