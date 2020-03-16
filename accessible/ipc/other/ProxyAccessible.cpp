@@ -770,14 +770,38 @@ ProxyAccessible* ProxyAccessible::FocusedChild() {
 
 ProxyAccessible* ProxyAccessible::ChildAtPoint(
     int32_t aX, int32_t aY, Accessible::EWhichChildAtPoint aWhichChild) {
-  PDocAccessibleParent* resultDoc = nullptr;
-  uint64_t resultID = 0;
-  Unused << mDoc->SendAccessibleAtPoint(mID, aX, aY, false,
-                                        static_cast<uint32_t>(aWhichChild),
-                                        &resultDoc, &resultID);
-  auto useDoc = static_cast<DocAccessibleParent*>(resultDoc);
-  
-  return resultDoc ? useDoc->GetAccessible(resultID) : nullptr;
+  ProxyAccessible* target = this;
+  do {
+    if (target->mOuterDoc) {
+      MOZ_ASSERT(target->ChildrenCount() == 1);
+      DocAccessibleParent* childDoc = target->ChildAt(0)->AsDoc();
+      MOZ_ASSERT(childDoc);
+      if (childDoc->IsTopLevelInContentProcess()) {
+        
+        
+        if (aWhichChild == Accessible::eDirectChild) {
+          
+          nsIntRect docRect = target->Bounds();
+          if (docRect.Contains(aX, aY)) {
+            return childDoc;
+          }
+          return nullptr;
+        }
+        
+        target = childDoc;
+      }
+    }
+    PDocAccessibleParent* resultDoc = nullptr;
+    uint64_t resultID = 0;
+    Unused << target->mDoc->SendAccessibleAtPoint(
+        target->mID, aX, aY, false, static_cast<uint32_t>(aWhichChild),
+        &resultDoc, &resultID);
+    
+    auto useDoc = static_cast<DocAccessibleParent*>(resultDoc);
+    target = resultDoc ? useDoc->GetAccessible(resultID) : nullptr;
+  } while (target && target->mOuterDoc &&
+           aWhichChild == Accessible::eDeepestChild);
+  return target;
 }
 
 nsIntRect ProxyAccessible::Bounds() {
