@@ -160,7 +160,7 @@ class Browser extends PureComponent {
     
     
     return dom.iframe({
-      allowFullScreen: "true",
+      allowFullScreen: true,
       className: "browser",
       height: "100%",
       mozbrowser: "true",
