@@ -1,7 +1,14 @@
 
+const numMillisecondsWait = 50;
+
+
 
 
 const numFramesWaiting = 3;
+
+function waitTime(t) {
+  return new Promise(resolve => t.step_timeout(resolve, numMillisecondsWait));
+}
 
 function waitForAnimationFrames(count) {
   return new Promise(resolve => {
@@ -15,8 +22,11 @@ function waitForAnimationFrames(count) {
   });
 }
 
-function assertNoFirstContentfulPaint() {
-  return waitForAnimationFrames(numFramesWaiting).then(() => {
+
+function assertNoFirstContentfulPaint(t) {
+  return waitTime(t).then(() => {
+    return waitForAnimationFrames(numFramesWaiting);
+  }).then(() => {
     return new Promise((resolve, reject) => {
       const observer = new PerformanceObserver(entryList =>{
         const entries = entryList.getEntriesByName('first-contentful-paint');
@@ -33,8 +43,12 @@ function assertNoFirstContentfulPaint() {
   });
 }
 
-function assertFirstContentfulPaint() {
-  return waitForAnimationFrames(numFramesWaiting).then(() => {
+
+
+function assertFirstContentfulPaint(t) {
+  return waitTime(t).then(() => {
+    return waitForAnimationFrames(numFramesWaiting);
+  }).then(() => {
     return new Promise((resolve, reject) => {
       const observer = new PerformanceObserver(entryList =>{
         const entries = entryList.getEntriesByName('first-contentful-paint');
