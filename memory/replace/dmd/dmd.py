@@ -217,10 +217,10 @@ def fixStackTraces(inputFilename, isZipped, opener):
     bpsyms = os.environ.get('BREAKPAD_SYMBOLS_PATH', None)
     sysname = platform.system()
     if bpsyms and os.path.exists(bpsyms):
-        import fix_stack_using_bpsyms as fixModule
+        import fix_stacks as fixModule
 
         def fix(line):
-            return fixModule.fixSymbols(line, bpsyms, jsonEscape=True)
+            return fixModule.fixSymbols(line, jsonMode=True, breakpadSymsDir=bpsyms)
 
     elif sysname in ('Linux', 'Darwin', 'Windows'):
         import fix_stacks as fixModule
@@ -338,11 +338,28 @@ def getDigestFromFile(args, inputFile):
             
             
             
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            dmd_frame_matches = 0
             for frameKey in frameKeys:
                 frameDesc = frameTable[frameKey]
-                expected = ('DMD.cpp', 'dmd.cpp', 'SmokeDMD')
-                if any(ex in frameDesc for ex in expected):
-                    return [fmt.format(1, ': ... DMD.cpp ...')]
+                if 'DMD' in frameDesc:
+                    dmd_frame_matches += 1
+                    if dmd_frame_matches >= 3:
+                        return [fmt.format(1, ': ... DMD.cpp ...')]
 
         
         
