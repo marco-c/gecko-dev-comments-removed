@@ -213,6 +213,8 @@ struct RepaintRequest {
   
   
   
+  
+  
   ParentLayerRect mCompositionBounds;
 
   
