@@ -110,21 +110,10 @@ add_task(async function test_edit_password() {
           "#form-basic-password": "",
         });
 
-        let passwordEditedPromise = listenForTestNotification(
-          "PasswordEditedOrGenerated"
-        );
         info("Editing the form");
         await changeContentFormValues(browser, {
           "#form-basic-password": testCase.passwordInPage,
         });
-        info("Waiting for passwordEditedPromise");
-        await passwordEditedPromise;
-
-        
-        await cleanupDoorhanger();
-        await cleanupPasswordNotifications();
-        
-        await clearMessageCache(browser);
 
         
         
