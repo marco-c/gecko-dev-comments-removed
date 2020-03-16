@@ -2859,9 +2859,7 @@ bool DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub,
   
   if (op == JSOp::FunApply && argc == 2 &&
       callArgs[1].isMagic(JS_OPTIMIZED_ARGUMENTS)) {
-    if (!GuardFunApplyArgumentsOptimization(cx, frame, callArgs)) {
-      return false;
-    }
+    GuardFunApplyArgumentsOptimization(cx, frame, callArgs);
   }
 
   
