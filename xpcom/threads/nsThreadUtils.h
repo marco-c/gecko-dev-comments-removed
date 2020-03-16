@@ -1753,8 +1753,8 @@ extern nsresult NS_DispatchBackgroundTask(
 
 
 
-extern nsresult NS_CreateBackgroundTaskQueue(const char* aName,
-                                             nsISerialEventTarget** aTarget);
+extern "C" nsresult NS_CreateBackgroundTaskQueue(
+    const char* aName, nsISerialEventTarget** aTarget);
 
 namespace mozilla {
 
