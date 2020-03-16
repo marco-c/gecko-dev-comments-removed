@@ -532,17 +532,12 @@ class HeapObject : public Object {
 
 
 
+
+
 class FixedArray : public HeapObject {
  public:
-  inline void set(uint32_t index, Object value) {
-    JS::Value(*this).toObject().as<js::NativeObject>().setDenseElement(index,
-                                                                       value);
-  }
-  inline static FixedArray cast(Object object) {
-    FixedArray f;
-    f.value_ = JS::Value(object);
-    return f;
-  }
+  inline void set(uint32_t index, Object value) {}
+  inline static FixedArray cast(Object object) { MOZ_CRASH("TODO"); }
 };
 
 class ByteArrayData {
@@ -1021,8 +1016,7 @@ public:
       int length, AllocationType allocation = AllocationType::kYoung);
 
   
-  Handle<FixedArray> NewFixedArray(
-      int length, AllocationType allocation = AllocationType::kYoung);
+  Handle<FixedArray> NewFixedArray(int length);
 
   template <typename Char>
   Handle<String> InternalizeString(const Vector<const Char>& str);
