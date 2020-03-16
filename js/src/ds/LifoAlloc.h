@@ -959,38 +959,28 @@ class MOZ_NON_TEMPORARY_CLASS LifoAllocScope {
   LifoAlloc* lifoAlloc;
   LifoAlloc::Mark mark;
   LifoAlloc::AutoFallibleScope fallibleScope;
-  bool shouldRelease;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
  public:
   explicit LifoAllocScope(LifoAlloc* lifoAlloc MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : lifoAlloc(lifoAlloc),
         mark(lifoAlloc->mark()),
-        fallibleScope(lifoAlloc),
-        shouldRelease(true) {
+        fallibleScope(lifoAlloc) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
   ~LifoAllocScope() {
-    if (shouldRelease) {
-      lifoAlloc->release(mark);
+    lifoAlloc->release(mark);
 
-      
-
+    
 
 
 
-      lifoAlloc->freeAllIfHugeAndUnused();
-    }
+
+    lifoAlloc->freeAllIfHugeAndUnused();
   }
 
   LifoAlloc& alloc() { return *lifoAlloc; }
-
-  void releaseEarly() {
-    MOZ_ASSERT(shouldRelease);
-    lifoAlloc->release(mark);
-    shouldRelease = false;
-  }
 };
 
 enum Fallibility { Fallible, Infallible };
