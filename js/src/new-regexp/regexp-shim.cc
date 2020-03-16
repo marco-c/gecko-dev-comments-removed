@@ -8,6 +8,8 @@
 
 
 
+#include <iostream>
+
 #include "new-regexp/regexp-shim.h"
 
 namespace v8 {
@@ -27,6 +29,13 @@ void PrintF(FILE* out, const char* format, ...) {
   va_end(arguments);
 }
 
+StdoutStream::operator std::ostream&() const { return std::cerr; }
+
+template <typename T>
+std::ostream& StdoutStream::operator<<(T t) { return std::cerr << t; }
+
+template std::ostream& StdoutStream::operator<<(char const* c);
+
 
 
 
@@ -37,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, const AsUC16& c) {
   bool isPrint = 0x20 < v && v <= 0x7e;
   char buf[10];
   const char* format = isPrint ? "%c" : (v <= 0xFF) ? "\\x%02x" : "\\u%04x";
-  snprintf(buf, sizeof(buf), format, v);
+  SprintfLiteral(buf, format, v);
   return os << buf;
 }
 std::ostream& operator<<(std::ostream& os, const AsUC32& c) {
@@ -46,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, const AsUC32& c) {
     return os << AsUC16(v);
   }
   char buf[13];
-  snprintf(buf, sizeof(buf), "\\u{%06x}", v);
+  SprintfLiteral(buf, "\\u{%06x}", v);
   return os << buf;
 }
 

@@ -19,6 +19,7 @@
 #include "mozilla/Types.h"
 
 #include <algorithm>
+#include <cctype>
 
 #include "jit/Label.h"
 #include "js/Value.h"
@@ -394,10 +395,20 @@ struct AsUC32 {
   int32_t value;
 };
 
-class StdoutStream : public std::ostream {};
-
 std::ostream& operator<<(std::ostream& os, const AsUC16& c);
 std::ostream& operator<<(std::ostream& os, const AsUC32& c);
+
+
+
+
+
+
+
+class StdoutStream {
+public:
+  operator std::ostream&() const;
+  template <typename T> std::ostream& operator<<(T t);
+};
 
 
 using mozilla::Maybe;
