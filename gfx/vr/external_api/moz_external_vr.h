@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.7"
-static const int32_t kVRExternalVersion = 14;
+#define SHMEM_VERSION "0.0.8"
+static const int32_t kVRExternalVersion = 15;
 
 
 
@@ -130,6 +130,16 @@ enum class ControllerCapabilityFlags : uint16_t {
 };
 
 #endif  
+
+enum class VRControllerType : uint8_t {
+  _empty,
+  Vive,
+  WMR,
+  Knuckles,
+  Cosmos,
+  OculusTouch,
+  _end
+};
 
 enum class TargetRayMode : uint8_t { Gaze, TrackedPointer, Screen };
 
@@ -341,6 +351,9 @@ struct VRControllerState {
 #else
   ControllerHand hand;
 #endif
+  
+  
+  VRControllerType type;
   
   TargetRayMode targetRayMode;
 

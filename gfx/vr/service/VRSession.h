@@ -34,6 +34,8 @@ class VRSession {
   virtual ~VRSession() = default;
 #endif
 
+  static void UpdateTrigger(VRControllerState& aState, uint32_t aButtonIndex,
+                            float aValue, float aThreshold);
   
 
 
@@ -82,8 +84,6 @@ class VRSession {
   virtual bool SubmitFrame(const mozilla::gfx::VRLayer_Stereo_Immersive& aLayer,
                            const VRLayerTextureHandle& aTexture) = 0;
 #endif
-  void UpdateTrigger(VRControllerState& aState, uint32_t aButtonIndex,
-                     float aValue, float aThreshold);
 };
 
 }  
