@@ -53,8 +53,6 @@ class CompositorVsyncDispatcher final {
   
   void NotifyVsync(const VsyncEvent& aVsync);
 
-  void MoveToSource(const RefPtr<gfx::VsyncSource>& aVsyncSource);
-
   
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
   void Shutdown();
