@@ -728,8 +728,13 @@ async function raptorRunner() {
 async function delayedstart() {
   
   
-  setTimeout(function() {
-    raptorRunner();
+  setTimeout(async () => {
+    try {
+      await raptorRunner();
+    } catch (e) {
+      await postToControlServer("error", [e.message, e.stack]);
+      await postToControlServer("shutdownBrowser");
+    }
   }, 5000);
 }
 
