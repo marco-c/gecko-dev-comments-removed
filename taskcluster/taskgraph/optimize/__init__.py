@@ -325,3 +325,9 @@ relevant_tests = {
 bugbug_push_schedules = {
     'test': Either('skip-unless-schedules', 'bugbug-push-schedules'),
 }
+
+
+
+seta = {
+    'test': Either('skip-unless-schedules', 'seta'),
+}
