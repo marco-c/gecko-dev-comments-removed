@@ -94,11 +94,7 @@ bool net_IsAbsoluteURL(const nsACString& inURL);
 nsresult net_ExtractURLScheme(const nsACString& inURI, nsACString& scheme);
 
 
-bool net_IsValidScheme(const char* scheme, uint32_t schemeLen);
-
-inline bool net_IsValidScheme(const nsCString& scheme) {
-  return net_IsValidScheme(scheme.get(), scheme.Length());
-}
+bool net_IsValidScheme(const nsACString& scheme);
 
 
 
