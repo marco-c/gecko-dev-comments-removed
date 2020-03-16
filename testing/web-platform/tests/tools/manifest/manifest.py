@@ -391,7 +391,7 @@ def write(manifest, manifest_path):
     dir_name = os.path.dirname(manifest_path)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
-    with open(manifest_path, "wb") as f:
+    with open(manifest_path, "w") as f:
         
         
         json.dump(manifest.to_json(caller_owns_obj=True), f,

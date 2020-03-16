@@ -63,7 +63,7 @@ class GitHasher(object):
         assert self.git is not None
         
         
-        cmd = [b"diff-index", b"--relative", b"--no-renames", b"--name-only", b"-z", b"HEAD"]
+        cmd = ["diff-index", "--relative", "--no-renames", "--name-only", "-z", "HEAD"]
         data = self.git(*cmd)
         return set(data.split("\0"))
 
