@@ -1287,6 +1287,12 @@ var gProtectionsHandler = {
       "tracking-protection-icon-tooltip-label"
     ));
   },
+  get _trackingProtectionIconContainer() {
+    delete this._trackingProtectionIconContainer;
+    return (this._trackingProtectionIconContainer = document.getElementById(
+      "tracking-protection-icon-container"
+    ));
+  },
 
   get noTrackersDetectedDescription() {
     delete this.noTrackersDetectedDescription;
@@ -1549,10 +1555,7 @@ var gProtectionsHandler = {
 
       
       
-      gIdentityHandler._trackingProtectionIconContainer.setAttribute(
-        "open",
-        "true"
-      );
+      this._trackingProtectionIconContainer.setAttribute("open", "true");
 
       
       
@@ -1571,7 +1574,7 @@ var gProtectionsHandler = {
   onPopupHidden(event) {
     if (event.target == this._protectionsPopup) {
       window.removeEventListener("focus", this, true);
-      gIdentityHandler._trackingProtectionIconContainer.removeAttribute("open");
+      this._trackingProtectionIconContainer.removeAttribute("open");
     }
   },
 
@@ -1629,10 +1632,10 @@ var gProtectionsHandler = {
       
       
       
-      gIdentityHandler._trackingProtectionIconContainer.hidden = true;
+      this._trackingProtectionIconContainer.hidden = true;
       return;
     }
-    gIdentityHandler._trackingProtectionIconContainer.hidden = false;
+    this._trackingProtectionIconContainer.hidden = false;
 
     
     let hasException = ContentBlockingAllowList.includes(
@@ -2112,7 +2115,7 @@ var gProtectionsHandler = {
 
   showDisabledTooltipForTPIcon() {
     this._trackingProtectionIconTooltipLabel.textContent = this.strings.disabledTooltipText;
-    gIdentityHandler._trackingProtectionIconContainer.setAttribute(
+    this._trackingProtectionIconContainer.setAttribute(
       "aria-label",
       this.strings.disabledTooltipText
     );
@@ -2120,7 +2123,7 @@ var gProtectionsHandler = {
 
   showActiveTooltipForTPIcon() {
     this._trackingProtectionIconTooltipLabel.textContent = this.strings.activeTooltipText;
-    gIdentityHandler._trackingProtectionIconContainer.setAttribute(
+    this._trackingProtectionIconContainer.setAttribute(
       "aria-label",
       this.strings.activeTooltipText
     );
@@ -2128,7 +2131,7 @@ var gProtectionsHandler = {
 
   showNoTrackerTooltipForTPIcon() {
     this._trackingProtectionIconTooltipLabel.textContent = this.strings.noTrackerTooltipText;
-    gIdentityHandler._trackingProtectionIconContainer.setAttribute(
+    this._trackingProtectionIconContainer.setAttribute(
       "aria-label",
       this.strings.noTrackerTooltipText
     );
@@ -2181,10 +2184,7 @@ var gProtectionsHandler = {
 
     
     
-    gIdentityHandler._trackingProtectionIconContainer.setAttribute(
-      "open",
-      "true"
-    );
+    this._trackingProtectionIconContainer.setAttribute("open", "true");
 
     
     if (gIdentityHandler._identityPopup.state != "closed") {
@@ -2194,7 +2194,7 @@ var gProtectionsHandler = {
     
     PanelMultiView.openPopup(
       this._protectionsPopup,
-      gIdentityHandler._trackingProtectionIconContainer,
+      this._trackingProtectionIconContainer,
       {
         position: "bottomcenter topleft",
         triggerEvent: event,
