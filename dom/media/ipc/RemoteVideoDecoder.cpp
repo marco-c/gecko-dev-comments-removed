@@ -265,10 +265,6 @@ RemoteVideoDecoderParent::RemoteVideoDecoderParent(
   }
 
   RefPtr<layers::ImageContainer> container = new layers::ImageContainer();
-  if (mKnowsCompositor && XRE_IsRDDProcess()) {
-    
-    container->EnsureRecycleAllocatorForRDD(mKnowsCompositor);
-  }
 
   CreateDecoderParams params(mVideoInfo);
   params.mTaskQueue = mDecodeTaskQueue;
