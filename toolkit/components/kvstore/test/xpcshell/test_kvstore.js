@@ -368,7 +368,11 @@ add_task(async function writeManyPutDelete() {
     ["key5", "val5"],
   ]);
 
-  await database.writeMany([["key2", "val2"], ["key4", null], ["key5", null]]);
+  await database.writeMany([
+    ["key2", "val2"],
+    ["key4", null],
+    ["key5", null],
+  ]);
 
   Assert.strictEqual(await database.get("key1"), "val1");
   Assert.strictEqual(await database.get("key2"), "val2");
@@ -546,7 +550,10 @@ add_task(async function enumeration() {
 
   
   
-  await test(null, "int-key", [["bool-key", true], ["double-key", 56.78]]);
+  await test(null, "int-key", [
+    ["bool-key", true],
+    ["double-key", 56.78],
+  ]);
 
   
   

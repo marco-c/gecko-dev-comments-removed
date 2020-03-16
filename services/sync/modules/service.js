@@ -269,9 +269,9 @@ Sync11Service.prototype = {
     
     let cryptoKeys = new CryptoWrapper(CRYPTO_COLLECTION, KEYS_WBO);
     try {
-      let cryptoResp = (await cryptoKeys.fetch(
-        this.resource(this.cryptoKeysURL)
-      )).response;
+      let cryptoResp = (
+        await cryptoKeys.fetch(this.resource(this.cryptoKeysURL))
+      ).response;
 
       
       
@@ -711,9 +711,9 @@ Sync11Service.prototype = {
         if (infoCollections && CRYPTO_COLLECTION in infoCollections) {
           try {
             cryptoKeys = new CryptoWrapper(CRYPTO_COLLECTION, KEYS_WBO);
-            let cryptoResp = (await cryptoKeys.fetch(
-              this.resource(this.cryptoKeysURL)
-            )).response;
+            let cryptoResp = (
+              await cryptoKeys.fetch(this.resource(this.cryptoKeysURL))
+            ).response;
 
             if (cryptoResp.success) {
               await this.handleFetchedKeys(syncKeyBundle, cryptoKeys);

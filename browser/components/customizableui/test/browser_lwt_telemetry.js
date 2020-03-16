@@ -56,7 +56,10 @@ add_task(async function testCustomize() {
   
   Assert.deepEqual(
     relatedEvents,
-    [["link", "customize", "manageThemes"], ["link", "customize", "getThemes"]],
+    [
+      ["link", "customize", "manageThemes"],
+      ["link", "customize", "getThemes"],
+    ],
     "The events are recorded correctly"
   );
 

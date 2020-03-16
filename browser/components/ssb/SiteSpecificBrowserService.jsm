@@ -206,25 +206,27 @@ async function buildManifestForBrowser(browser) {
 
   
   
-  manifest.icons = (await Promise.all(
-    manifest.icons.map(async icon => {
-      if (icon.src.startsWith("data:")) {
+  manifest.icons = (
+    await Promise.all(
+      manifest.icons.map(async icon => {
+        if (icon.src.startsWith("data:")) {
+          return icon;
+        }
+
+        let actor = browser.browsingContext.currentWindowGlobal.getActor(
+          "SiteSpecificBrowser"
+        );
+        try {
+          icon.src = await actor.sendQuery("LoadIcon", icon.src);
+        } catch (e) {
+          
+          return null;
+        }
+
         return icon;
-      }
-
-      let actor = browser.browsingContext.currentWindowGlobal.getActor(
-        "SiteSpecificBrowser"
-      );
-      try {
-        icon.src = await actor.sendQuery("LoadIcon", icon.src);
-      } catch (e) {
-        
-        return null;
-      }
-
-      return icon;
-    })
-  )).filter(icon => icon);
+      })
+    )
+  ).filter(icon => icon);
 
   
   if (!manifest.icons.length) {

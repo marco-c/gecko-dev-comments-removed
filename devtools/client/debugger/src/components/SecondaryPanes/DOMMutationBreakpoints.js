@@ -152,15 +152,12 @@ class DomMutationBreakpoints extends Component<Props> {
   }
 }
 
-export default connect(
-  undefined,
-  {
-    
-    
-    openElementInInspector: actions.openElementInInspectorCommand,
-    highlightDomElement: actions.highlightDomElement,
-    unHighlightDomElement: actions.unHighlightDomElement,
-    setSkipPausing: actions.setSkipPausing,
-    openInspector: actions.openInspector,
-  }
-)(DomMutationBreakpoints);
+export default connect(undefined, {
+  
+  
+  openElementInInspector: actions.openElementInInspectorCommand,
+  highlightDomElement: actions.highlightDomElement,
+  unHighlightDomElement: actions.unHighlightDomElement,
+  setSkipPausing: actions.setSkipPausing,
+  openInspector: actions.openInspector,
+})(DomMutationBreakpoints);

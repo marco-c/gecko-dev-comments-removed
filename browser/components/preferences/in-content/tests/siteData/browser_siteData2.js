@@ -277,7 +277,10 @@ add_task(async function() {
   let searchBox = frameDoc.getElementById("searchBox");
   searchBox.value = "xyz";
   searchBox.doCommand();
-  assertSitesListed(doc, hosts.filter(host => host.includes("xyz")));
+  assertSitesListed(
+    doc,
+    hosts.filter(host => host.includes("xyz"))
+  );
 
   
   updatePromise = promiseSiteDataManagerSitesUpdated();
@@ -294,7 +297,10 @@ add_task(async function() {
   await settingsDialogClosePromise;
   await updatePromise;
   await openSiteDataSettingsDialog();
-  assertSitesListed(doc, hosts.filter(host => !host.includes("xyz")));
+  assertSitesListed(
+    doc,
+    hosts.filter(host => !host.includes("xyz"))
+  );
 
   await SiteDataTestUtils.clear();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

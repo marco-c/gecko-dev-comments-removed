@@ -97,7 +97,10 @@ function fetchSourceMap(generatedSource: SourceMapInput): SourceMapConsumer {
   const req = _resolveAndFetch(generatedSource);
   
   
-  setSourceMap(generatedSource.id, req.catch(() => null));
+  setSourceMap(
+    generatedSource.id,
+    req.catch(() => null)
+  );
   return req;
 }
 

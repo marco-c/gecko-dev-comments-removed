@@ -2071,7 +2071,7 @@
       
       
       
-      b.permanentKey = new (Cu.getGlobalForObject(Services)).Object();
+      b.permanentKey = new (Cu.getGlobalForObject(Services).Object)();
 
       const defaultBrowserAttributes = {
         contextmenu: "contentAreaContextMenu",

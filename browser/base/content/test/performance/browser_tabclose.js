@@ -43,24 +43,26 @@ add_task(async function() {
         filter: rects =>
           rects.filter(
             r =>
-              !
-              (
-                r.y1 >= tabStripRect.top &&
-                r.y2 <= tabStripRect.bottom &&
-                r.x1 >= tabStripRect.left &&
-                r.x2 <= tabStripRect.right &&
+              !(
                 
-                
-                
-                
-                ((r.w > gBrowser.selectedTab.clientWidth &&
-                  r.x2 <= newTabButtonRect.right) ||
+                (
+                  r.y1 >= tabStripRect.top &&
+                  r.y2 <= tabStripRect.bottom &&
+                  r.x1 >= tabStripRect.left &&
+                  r.x2 <= tabStripRect.right &&
                   
                   
                   
-                  (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
                   
-                  (r.h == 2 && r.w == 2))
+                  ((r.w > gBrowser.selectedTab.clientWidth &&
+                    r.x2 <= newTabButtonRect.right) ||
+                    
+                    
+                    
+                    (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
+                    
+                    (r.h == 2 && r.w == 2))
+                )
               )
           ),
         exceptions: [

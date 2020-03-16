@@ -20,10 +20,16 @@ add_task(async function() {
 
   info("test state before delete");
   const beforeState = [
-    [["localStorage", "http://test1.example.org"], ["key", "ls1", "ls2"]],
+    [
+      ["localStorage", "http://test1.example.org"],
+      ["key", "ls1", "ls2"],
+    ],
     [["localStorage", "http://sectest1.example.org"], ["iframe-u-ls1"]],
     [["localStorage", "https://sectest1.example.org"], ["iframe-s-ls1"]],
-    [["sessionStorage", "http://test1.example.org"], ["key", "ss1"]],
+    [
+      ["sessionStorage", "http://test1.example.org"],
+      ["key", "ss1"],
+    ],
     [
       ["sessionStorage", "http://sectest1.example.org"],
       ["iframe-u-ss1", "iframe-u-ss2"],
@@ -84,10 +90,16 @@ add_task(async function() {
   const afterState = [
     
     
-    [["localStorage", "http://test1.example.org"], ["key", "ls1", "ls2"]],
+    [
+      ["localStorage", "http://test1.example.org"],
+      ["key", "ls1", "ls2"],
+    ],
     [["localStorage", "http://sectest1.example.org"], ["iframe-u-ls1"]],
     [["localStorage", "https://sectest1.example.org"], []],
-    [["sessionStorage", "http://test1.example.org"], ["key", "ss1"]],
+    [
+      ["sessionStorage", "http://test1.example.org"],
+      ["key", "ss1"],
+    ],
     [
       ["sessionStorage", "http://sectest1.example.org"],
       ["iframe-u-ss1", "iframe-u-ss2"],

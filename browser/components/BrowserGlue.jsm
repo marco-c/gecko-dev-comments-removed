@@ -3589,7 +3589,12 @@ BrowserGlue.prototype = {
     
     if (prefValue) {
       let buckets = PlacesUtils.convertMatchBucketsStringToArray(prefValue);
-      if (ObjectUtils.deepEqual(buckets, [["suggestion", 4], ["general", 5]])) {
+      if (
+        ObjectUtils.deepEqual(buckets, [
+          ["suggestion", 4],
+          ["general", 5],
+        ])
+      ) {
         return;
       }
     }

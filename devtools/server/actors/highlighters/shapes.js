@@ -2645,13 +2645,25 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       
       this._updateEllipseShape(width, height, zoom);
       
-      this._drawMarkers([[cx, cy], [cx + rx, cy]], width, height, zoom);
+      this._drawMarkers(
+        [
+          [cx, cy],
+          [cx + rx, cy],
+        ],
+        width,
+        height,
+        zoom
+      );
     } else if (this.shapeType === "ellipse") {
       const { rx, ry, cx, cy } = this.coordinates;
       this._updateEllipseShape(width, height, zoom);
       
       this._drawMarkers(
-        [[cx, cy], [cx + rx, cy], [cx, cy + ry]],
+        [
+          [cx, cy],
+          [cx + rx, cy],
+          [cx, cy + ry],
+        ],
         width,
         height,
         zoom

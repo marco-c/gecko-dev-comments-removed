@@ -448,7 +448,10 @@ function truncateToDays(aMsec) {
 
 
 function promiseRejects(promise) {
-  return promise.then(() => false, () => true);
+  return promise.then(
+    () => false,
+    () => true
+  );
 }
 
 
@@ -561,6 +564,9 @@ if (runningInParent) {
 TelemetryController.testInitLogging();
 
 
-fakeSchedulerTimer(() => {}, () => {});
+fakeSchedulerTimer(
+  () => {},
+  () => {}
+);
 
 fakeMidnightPingFuzzingDelay(0);

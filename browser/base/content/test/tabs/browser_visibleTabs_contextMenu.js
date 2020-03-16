@@ -2,7 +2,10 @@
 
 
 
-const remoteClientsFixture = [{ id: 1, name: "Foo" }, { id: 2, name: "Bar" }];
+const remoteClientsFixture = [
+  { id: 1, name: "Foo" },
+  { id: 2, name: "Bar" },
+];
 
 add_task(async function test() {
   

@@ -558,7 +558,10 @@ add_task(async function test_midnightPingSendFuzzing() {
 
   
   fakeMidnightPingFuzzingDelay(0);
-  fakePingSendTimer(() => {}, () => {});
+  fakePingSendTimer(
+    () => {},
+    () => {}
+  );
 });
 
 add_task(async function test_changePingAfterSubmission() {

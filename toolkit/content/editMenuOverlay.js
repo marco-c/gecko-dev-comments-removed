@@ -11,7 +11,7 @@ function goUpdateGlobalEditMenuItems(force) {
   
   
   
-  if (!force && (typeof gEditUIVisible != "undefined" && !gEditUIVisible)) {
+  if (!force && typeof gEditUIVisible != "undefined" && !gEditUIVisible) {
     return;
   }
 

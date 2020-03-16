@@ -26,8 +26,18 @@ const LOADED_MODULES = {
 const N_MODULES = Object.keys(LOADED_MODULES).length;
 
 
-const STACK1 = [[0, 0], [1, 1], [2, 2], [3, 3]];
-const STACK2 = [[0, 0], [1, 5], [2, 10], [3, 15]];
+const STACK1 = [
+  [0, 0],
+  [1, 1],
+  [2, 2],
+  [3, 3],
+];
+const STACK2 = [
+  [0, 0],
+  [1, 5],
+  [2, 10],
+  [3, 15],
+];
 
 const STACK_BOGUS = [];
 

@@ -2096,9 +2096,11 @@ add_task(async function test_pullChanges_import_html() {
   
   
   
-  let toolbarSubfolder = (await PlacesUtils.bookmarks.search({
-    title: "Bookmarks Toolbar",
-  })).find(item => item.guid != PlacesUtils.bookmarks.toolbarGuid);
+  let toolbarSubfolder = (
+    await PlacesUtils.bookmarks.search({
+      title: "Bookmarks Toolbar",
+    })
+  ).find(item => item.guid != PlacesUtils.bookmarks.toolbarGuid);
   let importedFields = await PlacesTestUtils.fetchBookmarkSyncFields(
     mozBmk.guid,
     fxBmk.guid,

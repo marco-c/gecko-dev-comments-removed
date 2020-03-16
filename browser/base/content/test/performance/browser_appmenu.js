@@ -1,5 +1,5 @@
 "use strict";
-
+/* global PanelUI */
 
 ChromeUtils.import(
   "resource://testing-common/CustomizableUITestUtils.jsm",
@@ -7,15 +7,15 @@ ChromeUtils.import(
 );
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
-
-
-
-
-
-
-
-
-
+/**
+ * WHOA THERE: We should never be adding new things to
+ * EXPECTED_APPMENU_OPEN_REFLOWS. This is a whitelist that should slowly go
+ * away as we improve the performance of the front-end. Instead of adding more
+ * reflows to the whitelist, you should be modifying your code to avoid the reflow.
+ *
+ * See https://developer.mozilla.org/en-US/Firefox/Performance_best_practices_for_Firefox_fe_engineers
+ * for tips on how to do that.
+ */
 const EXPECTED_APPMENU_OPEN_REFLOWS = [
   {
     stack: [
@@ -29,7 +29,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "on_popuppositioned@chrome://global/content/elements/panel.js",
     ],
 
-    maxCount: 22, 
+    maxCount: 22, // This number should only ever go down - never up.
   },
 
   {
@@ -38,7 +38,7 @@ const EXPECTED_APPMENU_OPEN_REFLOWS = [
       "handleEvent@resource:///modules/PanelMultiView.jsm",
     ],
 
-    maxCount: 7, 
+    maxCount: 7, // This number should only ever go down - never up.
   },
 ];
 
@@ -59,15 +59,17 @@ add_task(async function() {
     filter: rects =>
       rects.filter(
         r =>
-          !
-          (
-            r.y1 >= menuButtonRect.top &&
-            r.y2 <= menuButtonRect.bottom &&
-            r.x1 >= menuButtonRect.left &&
-            r.x2 <= menuButtonRect.right
+          !(
+            // We expect the menu button to get into the active state.
+            (
+              r.y1 >= menuButtonRect.top &&
+              r.y2 <= menuButtonRect.bottom &&
+              r.x1 >= menuButtonRect.left &&
+              r.x2 <= menuButtonRect.right
+            )
           )
-        
-        
+        // XXX For some reason the menu panel isn't in our screenshots,
+        // but that's where we actually expect many changes.
       ),
     exceptions: [
       {
@@ -97,24 +99,24 @@ add_task(async function() {
     ],
   };
 
-  
+  // First, open the appmenu.
   await withPerfObserver(() => gCUITestUtils.openMainMenu(), {
     expectedReflows: EXPECTED_APPMENU_OPEN_REFLOWS,
     frames: frameExpectations,
   });
 
-  
-  
+  // Now open a series of subviews, and then close the appmenu. We
+  // should not reflow during any of this.
   await withPerfObserver(
     async function() {
-      
-      
-      
-      
-      
+      // This recursive function will take the current main or subview,
+      // find all of the buttons that navigate to subviews inside it,
+      // and click each one individually. Upon entering the new view,
+      // we recurse. When the subviews within a view have been
+      // exhausted, we go back up a level.
       async function openSubViewsRecursively(currentView) {
         let navButtons = Array.from(
-          
+          // Ensure that only enabled buttons are tested
           currentView.querySelectorAll(".subviewbutton-nav:not([disabled])")
         );
         if (!navButtons) {
@@ -130,7 +132,7 @@ add_task(async function() {
           button.click();
           let viewShownEvent = await promiseViewShown;
 
-          
+          // Workaround until bug 1363756 is fixed, then this can be removed.
           let container = PanelUI.multiView.querySelector(
             ".panel-viewcontainer"
           );
@@ -147,7 +149,7 @@ add_task(async function() {
           PanelUI.multiView.goBack();
           await promiseViewShown;
 
-          
+          // Workaround until bug 1363756 is fixed, then this can be removed.
           await BrowserTestUtils.waitForCondition(() => {
             return !container.hasAttribute("width");
           });

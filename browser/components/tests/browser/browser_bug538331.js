@@ -91,7 +91,10 @@ add_task(async function test_bug538331() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [[PREF_MSTONE, originalMstone], [PREF_OVERRIDE_URL, DEFAULT_PREF_URL]],
+    set: [
+      [PREF_MSTONE, originalMstone],
+      [PREF_OVERRIDE_URL, DEFAULT_PREF_URL],
+    ],
   });
 
   registerCleanupFunction(async () => {

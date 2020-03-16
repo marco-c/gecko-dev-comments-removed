@@ -806,9 +806,9 @@ add_task(async function checkAllTheFiles() {
   
   
   
-  let nonWebextManifests = (await Promise.all(
-    jsonManifests.map(parseJsonManifest)
-  )).filter(uri => !!uri);
+  let nonWebextManifests = (
+    await Promise.all(jsonManifests.map(parseJsonManifest))
+  ).filter(uri => !!uri);
   uris.push(...nonWebextManifests);
 
   addActorModules();

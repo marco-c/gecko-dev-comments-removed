@@ -29,7 +29,10 @@ function md5Hash(text) {
   gCryptoHash.init(gCryptoHash.MD5);
 
   
-  gCryptoHash.update(text.split("").map(c => c.charCodeAt(0)), text.length);
+  gCryptoHash.update(
+    text.split("").map(c => c.charCodeAt(0)),
+    text.length
+  );
 
   
   return gCryptoHash.finish(true);

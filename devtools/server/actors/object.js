@@ -484,8 +484,8 @@ const proto = {
         
         if (
           getterValue &&
-          (getterValue.class == "Promise" &&
-            getterValue.promiseState == "rejected")
+          getterValue.class == "Promise" &&
+          getterValue.promiseState == "rejected"
         ) {
           
           

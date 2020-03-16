@@ -680,11 +680,13 @@ var MigrationUtils = Object.freeze({
   async createImportedBookmarksFolder(sourceNameStr, parentGuid) {
     let source = this.getLocalizedString("sourceName" + sourceNameStr);
     let title = this.getLocalizedString("importedBookmarksFolder", [source]);
-    return (await PlacesUtils.bookmarks.insert({
-      type: PlacesUtils.bookmarks.TYPE_FOLDER,
-      parentGuid,
-      title,
-    })).guid;
+    return (
+      await PlacesUtils.bookmarks.insert({
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+        parentGuid,
+        title,
+      })
+    ).guid;
   },
 
   
@@ -1210,7 +1212,11 @@ var MigrationUtils = Object.freeze({
 
   initializeUndoData() {
     gKeepUndoData = true;
-    gUndoData = new Map([["bookmarks", []], ["visits", []], ["logins", []]]);
+    gUndoData = new Map([
+      ["bookmarks", []],
+      ["visits", []],
+      ["logins", []],
+    ]);
   },
 
   async _postProcessUndoData(state) {
@@ -1225,9 +1231,10 @@ var MigrationUtils = Object.freeze({
     let bmPromises = bookmarkFolders.map(({ guid }) => {
       
       
-      return PlacesUtils.bookmarks
-        .fetch(guid)
-        .then(bm => bm && bookmarkFolderData.push(bm), () => {});
+      return PlacesUtils.bookmarks.fetch(guid).then(
+        bm => bm && bookmarkFolderData.push(bm),
+        () => {}
+      );
     });
 
     await Promise.all(bmPromises);

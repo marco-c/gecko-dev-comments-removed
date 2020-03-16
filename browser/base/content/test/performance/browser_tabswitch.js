@@ -56,19 +56,21 @@ add_task(async function() {
         filter: rects =>
           rects.filter(
             r =>
-              !
-              (
-                r.y1 >= tabStripRect.top &&
-                r.y2 <= tabStripRect.bottom &&
-                r.x1 >= tabStripRect.left &&
-                r.x2 <= tabStripRect.right &&
+              !(
                 
-                
-                
-                inRange(
-                  r.w,
-                  (origTab.clientWidth - 1) * 2, 
-                  origTab.clientWidth * 2
+                (
+                  r.y1 >= tabStripRect.top &&
+                  r.y2 <= tabStripRect.bottom &&
+                  r.x1 >= tabStripRect.left &&
+                  r.x2 <= tabStripRect.right &&
+                  
+                  
+                  
+                  inRange(
+                    r.w,
+                    (origTab.clientWidth - 1) * 2, 
+                    origTab.clientWidth * 2
+                  )
                 )
               )
           ),

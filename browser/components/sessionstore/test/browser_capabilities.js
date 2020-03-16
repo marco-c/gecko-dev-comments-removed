@@ -19,7 +19,10 @@ add_task(async function docshell_capabilities() {
   
   let state = JSON.parse(ss.getTabState(tab));
   ok(!("disallow" in state), "everything allowed by default");
-  ok(flags.every(f => docShell[f]), "all flags set to true");
+  ok(
+    flags.every(f => docShell[f]),
+    "all flags set to true"
+  );
 
   
   docShell.allowImages = false;
@@ -52,7 +55,10 @@ add_task(async function docshell_capabilities() {
   
   state = JSON.parse(ss.getTabState(tab));
   ok(!("disallow" in state), "everything allowed again");
-  ok(flags.every(f => docShell[f]), "all flags set to true");
+  ok(
+    flags.every(f => docShell[f]),
+    "all flags set to true"
+  );
 
   
   await promiseTabState(tab, disallowedState);

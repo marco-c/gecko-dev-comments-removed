@@ -467,10 +467,9 @@ function checkFocusedAttribute(attrName, editMode) {
 
 
 var getAttributesFromEditor = async function(selector, inspector) {
-  const nodeList = (await getContainerForSelector(
-    selector,
-    inspector
-  )).tagLine.querySelectorAll("[data-attr]");
+  const nodeList = (
+    await getContainerForSelector(selector, inspector)
+  ).tagLine.querySelectorAll("[data-attr]");
 
   return [...nodeList].map(node => node.getAttribute("data-attr"));
 };

@@ -2588,7 +2588,11 @@ add_task(async function test_duplicate_local_tags() {
   
   
   info("Manually insert local tags for A");
-  for (let [tag, dupes] of [["one", 2], ["two", 1], ["three", 2]]) {
+  for (let [tag, dupes] of [
+    ["one", 2],
+    ["two", 1],
+    ["three", 2],
+  ]) {
     let tagFolderInfo = await PlacesUtils.bookmarks.insert({
       parentGuid: PlacesUtils.bookmarks.tagsGuid,
       title: tag,

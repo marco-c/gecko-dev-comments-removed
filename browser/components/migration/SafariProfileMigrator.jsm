@@ -153,11 +153,15 @@ Bookmarks.prototype = {
         
         
         
-        folderGuid = (await MigrationUtils.insertBookmarkWrapper({
-          parentGuid: PlacesUtils.bookmarks.menuGuid,
-          type: PlacesUtils.bookmarks.TYPE_FOLDER,
-          title: MigrationUtils.getLocalizedString("importedSafariReadingList"),
-        })).guid;
+        folderGuid = (
+          await MigrationUtils.insertBookmarkWrapper({
+            parentGuid: PlacesUtils.bookmarks.menuGuid,
+            type: PlacesUtils.bookmarks.TYPE_FOLDER,
+            title: MigrationUtils.getLocalizedString(
+              "importedSafariReadingList"
+            ),
+          })
+        ).guid;
         break;
       }
       default:

@@ -183,7 +183,10 @@ add_task(async function test_subsessionsChaining() {
   
   
   let schedulerTickCallback = null;
-  fakeSchedulerTimer(callback => (schedulerTickCallback = callback), () => {});
+  fakeSchedulerTimer(
+    callback => (schedulerTickCallback = callback),
+    () => {}
+  );
   await TelemetryController.testReset();
   moveClockForward(6);
   

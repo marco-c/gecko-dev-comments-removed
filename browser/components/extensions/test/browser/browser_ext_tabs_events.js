@@ -91,10 +91,12 @@ add_task(async function test_tab_events_incognito_monitored() {
 
       
       await expectEvents(["onCreated", "onCreated"]);
-      let initialTab = (await browser.tabs.query({
-        active: true,
-        windowId: otherWindowId,
-      }))[0];
+      let initialTab = (
+        await browser.tabs.query({
+          active: true,
+          windowId: otherWindowId,
+        })
+      )[0];
 
       browser.test.log("Create tab in window 1");
       let tab = await browser.tabs.create({

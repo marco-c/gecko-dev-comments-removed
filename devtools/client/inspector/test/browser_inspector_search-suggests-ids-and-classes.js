@@ -14,18 +14,74 @@
 
 
 const KEY_STATES = [
-  ["s", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["p", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["a", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["n", [["span", 1], [".span", 1], ["#span", 1]]],
+  [
+    "s",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "p",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "a",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "n",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
   [" ", [["span div", 1]]],
   
   ["d", [["span div", 1]]],
   ["VK_BACK_SPACE", [["span div", 1]]],
-  ["VK_BACK_SPACE", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["VK_BACK_SPACE", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["VK_BACK_SPACE", [["span", 1], [".span", 1], ["#span", 1]]],
-  ["VK_BACK_SPACE", [["span", 1], [".span", 1], ["#span", 1]]],
+  [
+    "VK_BACK_SPACE",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "VK_BACK_SPACE",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "VK_BACK_SPACE",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
+  [
+    "VK_BACK_SPACE",
+    [
+      ["span", 1],
+      [".span", 1],
+      ["#span", 1],
+    ],
+  ],
   ["VK_BACK_SPACE", []],
   
   

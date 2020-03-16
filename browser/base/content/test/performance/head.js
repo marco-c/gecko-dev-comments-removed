@@ -798,18 +798,20 @@ async function runUrlbarTest(
       filter: rects =>
         rects.filter(
           r =>
-            !
-            (
-              (r.x1 >= Math.floor(textBoxRect.left) &&
-                r.x2 <= Math.ceil(textBoxRect.right) &&
-                r.y1 >= Math.floor(textBoxRect.top) &&
-                r.y2 <= Math.ceil(textBoxRect.bottom)) ||
+            !(
               
-              
-              (r.x1 >= Math.floor(dropmarkerRect.left) &&
-                r.x2 <= Math.ceil(dropmarkerRect.right) &&
-                r.y1 >= Math.floor(dropmarkerRect.top) &&
-                r.y2 <= Math.ceil(dropmarkerRect.bottom))
+              (
+                (r.x1 >= Math.floor(textBoxRect.left) &&
+                  r.x2 <= Math.ceil(textBoxRect.right) &&
+                  r.y1 >= Math.floor(textBoxRect.top) &&
+                  r.y2 <= Math.ceil(textBoxRect.bottom)) ||
+                
+                
+                (r.x1 >= Math.floor(dropmarkerRect.left) &&
+                  r.x2 <= Math.ceil(dropmarkerRect.right) &&
+                  r.y1 >= Math.floor(dropmarkerRect.top) &&
+                  r.y2 <= Math.ceil(dropmarkerRect.bottom))
+              )
             )
         ),
     };

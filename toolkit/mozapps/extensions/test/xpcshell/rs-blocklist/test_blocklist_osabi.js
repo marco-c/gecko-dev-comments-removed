@@ -13,7 +13,10 @@ const ADDONS = [
     version: "1.0",
 
     
-    notBlocklisted: [["1", "1.9"], [null, null]],
+    notBlocklisted: [
+      ["1", "1.9"],
+      [null, null],
+    ],
   },
   {
     id: "test_bug393285_2@tests.mozilla.org",
@@ -21,7 +24,10 @@ const ADDONS = [
     version: "1.0",
 
     
-    blocklisted: [["1", "1.9"], [null, null]],
+    blocklisted: [
+      ["1", "1.9"],
+      [null, null],
+    ],
   },
   {
     id: "test_bug393285_3a@tests.mozilla.org",
@@ -29,7 +35,10 @@ const ADDONS = [
     version: "1.0",
 
     
-    blocklisted: [["1", "1.9"], [null, null]],
+    blocklisted: [
+      ["1", "1.9"],
+      [null, null],
+    ],
   },
   {
     id: "test_bug393285_3b@tests.mozilla.org",
@@ -45,7 +54,10 @@ const ADDONS = [
     version: "1.0",
 
     
-    blocklisted: [["1", "1.9"], [null, null]],
+    blocklisted: [
+      ["1", "1.9"],
+      [null, null],
+    ],
     notBlocklisted: [["2", "1.9"]],
   },
   {

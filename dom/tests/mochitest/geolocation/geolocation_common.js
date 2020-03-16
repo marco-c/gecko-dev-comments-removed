@@ -8,9 +8,9 @@ var BASE_URL =
   "/dom/tests/mochitest/geolocation/network_geolocation.sjs";
 
 function set_geo_wifi_uri(uri, callback) {
-  // Disable NetworkGeolocationProvider.js request cache because the cache
-  // does not remember from which location service it came from. We expect
-  // different results when we change the provider URL (geo.provider.network.url).
+  
+  
+  
   set_network_request_cache_enabled(false, () => {
     SpecialPowers.pushPrefEnv(
       { set: [["geo.provider.network.url", uri]] },
@@ -27,7 +27,10 @@ function sleep(delay) {
 function force_prompt(allow, callback) {
   SpecialPowers.pushPrefEnv(
     {
-      set: [["geo.prompt.testing", true], ["geo.prompt.testing.allow", allow]],
+      set: [
+        ["geo.prompt.testing", true],
+        ["geo.prompt.testing.allow", allow],
+      ],
     },
     callback
   );
@@ -35,7 +38,7 @@ function force_prompt(allow, callback) {
 
 function start_sending_garbage(callback) {
   set_geo_wifi_uri(BASE_URL + "?action=respond-garbage", () => {
-    // we need to be sure that all location data has been purged/set.
+    
     sleep(1000);
     callback.call();
   });
@@ -43,7 +46,7 @@ function start_sending_garbage(callback) {
 
 function stop_sending_garbage(callback) {
   set_geo_wifi_uri(BASE_URL + "", () => {
-    // we need to be sure that all location data has been purged/set.
+    
     sleep(1000);
     callback.call();
   });
@@ -51,7 +54,7 @@ function stop_sending_garbage(callback) {
 
 function stop_geolocationProvider(callback) {
   set_geo_wifi_uri(BASE_URL + "?action=stop-responding", () => {
-    // we need to be sure that all location data has been purged/set.
+    
     sleep(1000);
     callback.call();
   });
@@ -88,7 +91,7 @@ function check_geolocation(location) {
   ok(IsNumber(timestamp), "check timestamp type");
   ok(timestamp > 0, "check timestamp range");
 
-  // eventually, coords may be optional (eg, when civic addresses are supported)
+  
   ok("coords" in location, "Check to see if this location has a coords");
 
   const {

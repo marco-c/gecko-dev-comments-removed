@@ -148,9 +148,11 @@ add_task(async function test_bookmarks() {
 
   
   let lastModified = PlacesUtils.toPRTime(
-    (await PlacesUtils.bookmarks.fetch(
-      await PlacesUtils.promiseItemGuid(newId)
-    )).lastModified
+    (
+      await PlacesUtils.bookmarks.fetch(
+        await PlacesUtils.promiseItemGuid(newId)
+      )
+    ).lastModified
   );
 
   
@@ -170,9 +172,11 @@ add_task(async function test_bookmarks() {
 
   
   let lastModified2 = PlacesUtils.toPRTime(
-    (await PlacesUtils.bookmarks.fetch(
-      await PlacesUtils.promiseItemGuid(newId)
-    )).lastModified
+    (
+      await PlacesUtils.bookmarks.fetch(
+        await PlacesUtils.promiseItemGuid(newId)
+      )
+    ).lastModified
   );
   info("test setItemTitle");
   info("beforeSetTitle = " + beforeSetTitle);
@@ -460,9 +464,11 @@ add_task(async function test_bookmarks() {
   );
   bs.setItemLastModified(newId14, 1234000000000000);
   let fakeLastModified = PlacesUtils.toPRTime(
-    (await PlacesUtils.bookmarks.fetch(
-      await PlacesUtils.promiseItemGuid(newId14)
-    )).lastModified
+    (
+      await PlacesUtils.bookmarks.fetch(
+        await PlacesUtils.promiseItemGuid(newId14)
+      )
+    ).lastModified
   );
   Assert.equal(fakeLastModified, 1234000000000000);
 

@@ -58,19 +58,21 @@ add_task(async function() {
         filter: rects =>
           rects.filter(
             r =>
-              !
-              (
-                r.y1 >= tabStripRect.top &&
-                r.y2 <= tabStripRect.bottom &&
-                r.x1 >= tabStripRect.left &&
-                r.x2 <= tabStripRect.right &&
+              !(
                 
-                
-                
-                
-                r.w <=
-                  (gBrowser.tabs.length - 1) *
-                    Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+                (
+                  r.y1 >= tabStripRect.top &&
+                  r.y2 <= tabStripRect.bottom &&
+                  r.x1 >= tabStripRect.left &&
+                  r.x2 <= tabStripRect.right &&
+                  
+                  
+                  
+                  
+                  r.w <=
+                    (gBrowser.tabs.length - 1) *
+                      Math.ceil(tabStripRect.width / gBrowser.tabs.length)
+                )
               )
           ),
       },

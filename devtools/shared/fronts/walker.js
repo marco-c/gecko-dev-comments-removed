@@ -486,9 +486,9 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
     const parentWalker = (await parentTarget.getFront("inspector")).walker;
     
     
-    const parentNode = (await parentWalker.getEmbedderElement(
-      descriptorFront.id
-    )).node;
+    const parentNode = (
+      await parentWalker.getEmbedderElement(descriptorFront.id)
+    ).node;
 
     
     const documentNode = await this.getRootNode();

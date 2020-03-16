@@ -198,7 +198,10 @@ add_task(async function test_sendOnTimeout() {
   let PING_TYPE = "ping-on-timeout";
 
   
-  fakePingSendTimer(() => {}, () => {});
+  fakePingSendTimer(
+    () => {},
+    () => {}
+  );
 
   
   fakeSendSubmissionTimeout(2);

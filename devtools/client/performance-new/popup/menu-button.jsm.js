@@ -103,7 +103,7 @@ function toggle(document) {
     
     
     const element = document.getElementById("PanelUI-profiler");
-    delete  (element)._addedEventListeners;
+    delete ( (element._addedEventListeners));
   }
 }
 

@@ -314,7 +314,10 @@ BingRequest.prototype = {
       );
 
       
-      let headers = [["Content-type", "text/xml"], ["Authorization", auth]];
+      let headers = [
+        ["Content-type", "text/xml"],
+        ["Authorization", auth],
+      ];
 
       
       let requestString =

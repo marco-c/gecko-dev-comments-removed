@@ -19,7 +19,11 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Deprecated.jsm"
 );
 
-const kAutoDetectors = [["off", ""], ["ru", "ruprob"], ["uk", "ukprob"]];
+const kAutoDetectors = [
+  ["off", ""],
+  ["ru", "ruprob"],
+  ["uk", "ukprob"],
+];
 
 
 

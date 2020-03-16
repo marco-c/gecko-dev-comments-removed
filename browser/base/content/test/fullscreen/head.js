@@ -94,10 +94,9 @@ async function jsWindowOpen(browser, iframeId) {
     let destWin = content;
     if (args.iframeId) {
       
-      destWin = (await content.wrappedJSObject.createIframe(
-        args.iframeId,
-        true
-      )).contentWindow;
+      destWin = (
+        await content.wrappedJSObject.createIframe(args.iframeId, true)
+      ).contentWindow;
     }
     
     await content.wrappedJSObject.sendMessage(destWin, "open");

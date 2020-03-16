@@ -96,7 +96,7 @@ var DebuggerSocket = {};
 DebuggerSocket.connect = async function(settings) {
   
   if (!settings.authenticator) {
-    settings.authenticator = new (Authenticators.get()).Client();
+    settings.authenticator = new (Authenticators.get().Client)();
   }
   _validateSettings(settings);
   
@@ -435,7 +435,7 @@ function SocketListener(devToolsServer, socketOptions) {
   
   this._socketOptions = {
     authenticator:
-      socketOptions.authenticator || new (Authenticators.get()).Server(),
+      socketOptions.authenticator || new (Authenticators.get().Server)(),
     discoverable: !!socketOptions.discoverable,
     encryption: !!socketOptions.encryption,
     portOrPath: socketOptions.portOrPath || null,

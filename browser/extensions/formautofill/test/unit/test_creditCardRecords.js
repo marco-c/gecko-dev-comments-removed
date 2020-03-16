@@ -754,9 +754,11 @@ add_task(async function test_mergeToStorage() {
 
   
   Assert.equal(
-    (await profileStorage.creditCards.mergeToStorage(
-      TEST_CREDIT_CARD_WITH_EMPTY_COMPUTED_FIELD
-    )).length,
+    (
+      await profileStorage.creditCards.mergeToStorage(
+        TEST_CREDIT_CARD_WITH_EMPTY_COMPUTED_FIELD
+      )
+    ).length,
     0
   );
 });
