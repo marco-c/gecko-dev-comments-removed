@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/SegmentedVector.h"
 #include "mozilla/Types.h"
 
 #include <algorithm>
@@ -358,6 +359,10 @@ mozilla::Nothing Nothing() {
 }
 
 
+template <typename T>
+using PseudoHandle = mozilla::UniquePtr<T, JS::FreePolicy>;
+
+
 
 
 
@@ -452,10 +457,12 @@ class Smi : public Object {
 
 
 class HeapObject : public Object {
-public:
-  
-  
-  int Size() const;
+ public:
+  inline static HeapObject cast(Object object) {
+    HeapObject h;
+    h.value_ = JS::Value(object);
+    return h;
+  }
 };
 
 
@@ -465,6 +472,11 @@ class FixedArray : public HeapObject {
   inline void set(uint32_t index, Object value) {
     JS::Value(*this).toObject().as<js::NativeObject>().setDenseElement(index,
                                                                        value);
+  }
+  inline static FixedArray cast(Object object) {
+    FixedArray f;
+    f.value_ = JS::Value(object);
+    return f;
   }
 };
 
@@ -490,39 +502,88 @@ class ByteArray : public HeapObject {
 
 
 
-class HandleScope {
- public:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS HandleScope {
+public:
   HandleScope(Isolate* isolate);
+ ~HandleScope();
+
+ private:
+  size_t level_;
+  size_t non_gc_level_;
+  Isolate* isolate_;
+
+  friend class Isolate;
 };
 
 
 
 template <typename T>
-class Handle {
+class MOZ_NONHEAP_CLASS Handle {
  public:
-  Handle();
+  Handle() : location_(nullptr) {}
   Handle(T object, Isolate* isolate);
+  Handle(JS::Value value, Isolate* isolate);
 
   
   template <typename S, typename = typename std::enable_if<
                             std::is_convertible<S*, T*>::value>::type>
-   Handle(Handle<S> handle);
+  inline Handle(Handle<S> handle) : location_(handle.location_) {}
 
   template <typename S>
-   static const Handle<T> cast(Handle<S> that);
+  inline static const Handle<T> cast(Handle<S> that) {
+    return Handle<T>(that.location_);
+  }
 
-  T* operator->() const;
-  T operator*() const;
+  inline bool is_null() const { return location_ == nullptr; }
 
-  bool is_null() const;
+  inline T operator*() const {
+    return T::cast(Object(*location_));
+  };
 
-  Address address();
+  
+  
+  
+  
+  
+  
+  
+  class MOZ_TEMPORARY_CLASS ObjectRef {
+   public:
+    T* operator->() { return &object_; }
+
+   private:
+    friend class Handle;
+    explicit ObjectRef(T object) : object_(object) {}
+
+    T object_;
+  };
+  inline ObjectRef operator->() const { return ObjectRef{**this}; }
 
  private:
+  Handle(JS::Value* location) : location_(location) {}
+
   template <typename>
   friend class Handle;
   template <typename>
   friend class MaybeHandle;
+
+  JS::Value* location_;
 };
 
 
@@ -535,21 +596,35 @@ class Handle {
 
 
 template <typename T>
-class MaybeHandle final {
+class MOZ_NONHEAP_CLASS MaybeHandle final {
  public:
-  MaybeHandle() = default;
+  MaybeHandle() : location_(nullptr) {}
 
   
   
   template <typename S, typename = typename std::enable_if<
                             std::is_convertible<S*, T*>::value>::type>
-  MaybeHandle(Handle<S> handle);
+  MaybeHandle(Handle<S> handle) : location_(handle.location_) {}
 
-   Handle<T> ToHandleChecked() const;
+  inline Handle<T> ToHandleChecked() const {
+    MOZ_RELEASE_ASSERT(location_);
+    return Handle<T>(location_);
+  }
 
   
   template <typename S>
-   bool ToHandle(Handle<S>* out) const;
+  inline bool ToHandle(Handle<S>* out) const {
+    if (location_) {
+      *out = Handle<T>(location_);
+      return true;
+    } else {
+      *out = Handle<T>();
+      return false;
+    }
+  }
+
+private:
+  JS::Value* location_;
 };
 
 
@@ -831,7 +906,37 @@ class Isolate {
 
   JSContext* cx() const { return cx_; }
 
+  void trace(JSTracer* trc);
+
+  
+
+  JS::Value* getHandleLocation(JS::Value value);
+
  private:
+
+  mozilla::SegmentedVector<JS::Value> handleArena_;
+  mozilla::SegmentedVector<PseudoHandle<void>> uniquePtrArena_;
+
+  void* allocatePseudoHandle(size_t bytes);
+
+public:
+  template <typename T>
+  PseudoHandle<T> takeOwnership(void* ptr);
+
+private:
+  void openHandleScope(HandleScope& scope) {
+    scope.level_ = handleArena_.Length();
+    scope.non_gc_level_ = uniquePtrArena_.Length();
+  }
+  void closeHandleScope(size_t prevLevel, size_t prevUniqueLevel) {
+    size_t currLevel = handleArena_.Length();
+    handleArena_.PopLastN(currLevel - prevLevel);
+
+    size_t currUniqueLevel = uniquePtrArena_.Length();
+    uniquePtrArena_.PopLastN(currUniqueLevel - prevUniqueLevel);
+  }
+  friend class HandleScope;
+
   JSContext* cx_;
   RegExpStack* regexp_stack_;
   Counters counters_;
