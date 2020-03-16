@@ -1867,10 +1867,9 @@ void BrowserParent::SendRealTouchEvent(WidgetTouchEvent& aEvent) {
     }
   }
 
-  ScrollableLayerGuid guid;
-  uint64_t blockId;
-  nsEventStatus apzResponse;
-  ApzAwareEventRoutingToChild(&guid, &blockId, &apzResponse);
+  APZData apzData;
+  ApzAwareEventRoutingToChild(&apzData.guid, &apzData.blockId,
+                              &apzData.apzResponse);
 
   if (mIsDestroyed) {
     return;
@@ -1881,28 +1880,121 @@ void BrowserParent::SendRealTouchEvent(WidgetTouchEvent& aEvent) {
         TransformParentToChild(aEvent.mTouches[i]->mRefPoint);
   }
 
-  bool inputPriorityEventEnabled = Manager()->IsInputPriorityEventEnabled();
-
+  static uint32_t sConsecutiveTouchMoveCount = 0;
   if (aEvent.mMessage == eTouchMove) {
-    DebugOnly<bool> ret =
-        inputPriorityEventEnabled
-            ? PBrowserParent::SendRealTouchMoveEvent(aEvent, guid, blockId,
-                                                     apzResponse)
-            : PBrowserParent::SendNormalPriorityRealTouchMoveEvent(
-                  aEvent, guid, blockId, apzResponse);
-
-    NS_WARNING_ASSERTION(ret,
-                         "PBrowserParent::SendRealTouchMoveEvent() failed");
-    MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
+    ++sConsecutiveTouchMoveCount;
+    SendRealTouchMoveEvent(aEvent, apzData, sConsecutiveTouchMoveCount);
     return;
   }
-  DebugOnly<bool> ret = inputPriorityEventEnabled
-                            ? PBrowserParent::SendRealTouchEvent(
-                                  aEvent, guid, blockId, apzResponse)
-                            : PBrowserParent::SendNormalPriorityRealTouchEvent(
-                                  aEvent, guid, blockId, apzResponse);
+
+  sConsecutiveTouchMoveCount = 0;
+  DebugOnly<bool> ret =
+      Manager()->IsInputPriorityEventEnabled()
+          ? PBrowserParent::SendRealTouchEvent(
+                aEvent, apzData.guid, apzData.blockId, apzData.apzResponse)
+          : PBrowserParent::SendNormalPriorityRealTouchEvent(
+                aEvent, apzData.guid, apzData.blockId, apzData.apzResponse);
 
   NS_WARNING_ASSERTION(ret, "PBrowserParent::SendRealTouchEvent() failed");
+  MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
+}
+
+void BrowserParent::SendRealTouchMoveEvent(
+    WidgetTouchEvent& aEvent, APZData& aAPZData,
+    uint32_t aConsecutiveTouchMoveCount) {
+  
+  
+  
+  
+  static bool sIPCMessageType1 = true;
+  static TabId sLastTargetBrowserParent(0);
+  static Maybe<APZData> sPreviousAPZData;
+  
+  
+  const uint32_t kMaxTouchMoveIdentifiers = 10;
+  static Maybe<int32_t> sLastTouchMoveIdentifiers[kMaxTouchMoveIdentifiers];
+
+  
+  
+  auto LastTouchMoveIdentifiersContainedIn =
+      [&](const nsTArray<int32_t>& aIdentifiers) -> bool {
+    for (Maybe<int32_t>& entry : sLastTouchMoveIdentifiers) {
+      if (entry.isSome() && !aIdentifiers.Contains(entry.value())) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  
+  
+  auto SetLastTouchMoveIdentifiers =
+      [&](const nsTArray<int32_t>& aIdentifiers) {
+        for (Maybe<int32_t>& entry : sLastTouchMoveIdentifiers) {
+          entry.reset();
+        }
+
+        MOZ_ASSERT(aIdentifiers.Length() <= kMaxTouchMoveIdentifiers);
+        for (uint32_t j = 0; j < aIdentifiers.Length(); ++j) {
+          sLastTouchMoveIdentifiers[j].emplace(aIdentifiers[j]);
+        }
+      };
+
+  AutoTArray<int32_t, kMaxTouchMoveIdentifiers> changedTouches;
+  bool preventCompression = !StaticPrefs::dom_events_compress_touchmove() ||
+                            
+                            
+                            
+                            aConsecutiveTouchMoveCount < 3 ||
+                            sPreviousAPZData.isNothing() ||
+                            sPreviousAPZData.value() != aAPZData ||
+                            sLastTargetBrowserParent != GetTabId() ||
+                            aEvent.mTouches.Length() > kMaxTouchMoveIdentifiers;
+
+  if (!preventCompression) {
+    for (RefPtr<Touch>& touch : aEvent.mTouches) {
+      if (touch->mChanged) {
+        changedTouches.AppendElement(touch->mIdentifier);
+      }
+    }
+
+    
+    
+    preventCompression = !LastTouchMoveIdentifiersContainedIn(changedTouches);
+  }
+
+  if (preventCompression) {
+    sIPCMessageType1 = !sIPCMessageType1;
+  }
+
+  
+  
+  
+  SetLastTouchMoveIdentifiers(changedTouches);
+  sPreviousAPZData.reset();
+  sPreviousAPZData.emplace(aAPZData);
+  sLastTargetBrowserParent = GetTabId();
+
+  DebugOnly<bool> ret = true;
+  if (sIPCMessageType1) {
+    ret =
+        Manager()->IsInputPriorityEventEnabled()
+            ? PBrowserParent::SendRealTouchMoveEvent(
+                  aEvent, aAPZData.guid, aAPZData.blockId, aAPZData.apzResponse)
+            : PBrowserParent::SendNormalPriorityRealTouchMoveEvent(
+                  aEvent, aAPZData.guid, aAPZData.blockId,
+                  aAPZData.apzResponse);
+  } else {
+    ret =
+        Manager()->IsInputPriorityEventEnabled()
+            ? PBrowserParent::SendRealTouchMoveEvent2(
+                  aEvent, aAPZData.guid, aAPZData.blockId, aAPZData.apzResponse)
+            : PBrowserParent::SendNormalPriorityRealTouchMoveEvent2(
+                  aEvent, aAPZData.guid, aAPZData.blockId,
+                  aAPZData.apzResponse);
+  }
+
+  NS_WARNING_ASSERTION(ret, "PBrowserParent::SendRealTouchMoveEvent() failed");
   MOZ_ASSERT(!ret || aEvent.HasBeenPostedToRemoteProcess());
 }
 
