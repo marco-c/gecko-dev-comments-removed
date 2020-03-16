@@ -1729,31 +1729,6 @@ var glErrorShouldBe = function(gl, glErrors, opt_msg) {
 
 
 
-var framebufferStatusShouldBe = function(gl, target, glStatuses, opt_msg) {
-  if (!glStatuses.length) {
-    glStatuses = [glStatuses];
-  }
-  opt_msg = opt_msg || "";
-  const status = gl.checkFramebufferStatus(target);
-  const ndx = glStatuses.indexOf(status);
-  const expected = glStatuses.map((status) => {
-    return glEnumToString(gl, status);
-  }).join(' or ');
-  if (ndx < 0) {
-    var msg = "checkFramebufferStatus expected" + ((glStatuses.length > 1) ? " one of: " : ": ");
-    testFailed(msg + expected +  ". Was " + glEnumToString(gl, status) + " : " + opt_msg);
-  } else {
-    var msg = "checkFramebufferStatus was " + ((glStatuses.length > 1) ? "one of: " : "expected value: ");
-    testPassed(msg + expected + " : " + opt_msg);
-  }
-  return status;
-}
-
-
-
-
-
-
 
 
 var glErrorShouldBeImpl = function(gl, glErrors, reportSuccesses, opt_msg) {
@@ -3183,13 +3158,6 @@ var getRelativePath = function(path) {
   return relparts.join("/");
 }
 
-function chooseUrlForCrossOriginImage(imgUrl, localUrl) {
-    if (runningOnLocalhost())
-      return getLocalCrossOrigin() + getRelativePath(localUrl);
-
-    return img.src = getUrlOptions().imgUrl || imgUrl;
-}
-
 var setupImageForCrossOriginTest = function(img, imgUrl, localUrl, callback) {
   window.addEventListener("load", function() {
     if (typeof(img) == "string")
@@ -3200,7 +3168,10 @@ var setupImageForCrossOriginTest = function(img, imgUrl, localUrl, callback) {
     img.addEventListener("load", callback, false);
     img.addEventListener("error", callback, false);
 
-    img.src = chooseUrlForCrossOriginImage(imgUrl, localUrl);
+    if (runningOnLocalhost())
+      img.src = getLocalCrossOrigin() + getRelativePath(localUrl);
+    else
+      img.src = getUrlOptions().imgUrl || imgUrl;
   }, false);
 }
 
@@ -3338,14 +3309,6 @@ function createImageFromPixel(buf, width, height) {
     return img;
 }
 
-async function awaitTimeout(ms) {
-  await new Promise(res => {
-    setTimeout(() => {
-      res();
-    }, ms);
-  });
-}
-
 var API = {
   addShaderSource: addShaderSource,
   addShaderSources: addShaderSources,
@@ -3379,7 +3342,6 @@ var API = {
   endsWith: endsWith,
   failIfGLError: failIfGLError,
   fillTexture: fillTexture,
-  framebufferStatusShouldBe: framebufferStatusShouldBe,
   getBytesPerComponent: getBytesPerComponent,
   getDefault3DContextVersion: getDefault3DContextVersion,
   getExtensionPrefixedNames: getExtensionPrefixedNames,
@@ -3472,9 +3434,7 @@ var API = {
   runningOnLocalhost: runningOnLocalhost,
   getLocalCrossOrigin: getLocalCrossOrigin,
   getRelativePath: getRelativePath,
-  chooseUrlForCrossOriginImage: chooseUrlForCrossOriginImage,
   setupImageForCrossOriginTest: setupImageForCrossOriginTest,
-  awaitTimeout: awaitTimeout,
 
   none: false
 };
