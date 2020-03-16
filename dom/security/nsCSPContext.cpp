@@ -1529,6 +1529,7 @@ nsresult nsCSPContext::AsyncReportViolation(
 NS_IMETHODIMP
 nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
                               bool* outPermitsAncestry) {
+  MOZ_ASSERT(XRE_IsParentProcess(), "frame-ancestor check only in parent");
   nsresult rv;
 
   *outPermitsAncestry = true;
@@ -1542,16 +1543,9 @@ nsCSPContext::PermitsAncestry(nsILoadInfo* aLoadInfo,
 
   while (ctx) {
     nsCOMPtr<nsIURI> currentURI;
-    
-    
-    
-    if (XRE_IsParentProcess()) {
-      WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
-      if (window) {
-        currentURI = window->GetDocumentURI();
-      }
-    } else if (nsPIDOMWindowOuter* windowOuter = ctx->GetDOMWindow()) {
-      currentURI = windowOuter->GetDocumentURI();
+    WindowGlobalParent* window = ctx->Canonical()->GetCurrentWindowGlobal();
+    if (window) {
+      currentURI = window->GetDocumentURI();
     }
 
     if (currentURI) {
