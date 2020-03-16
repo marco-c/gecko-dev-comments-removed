@@ -668,52 +668,18 @@ struct AssertionConditionType {
 
 
 
+#define MOZ_ALWAYS_TRUE(expr)     \
+  do {                            \
+    if (MOZ_LIKELY(expr)) {       \
+      /* Silence MOZ_MUST_USE. */ \
+    } else {                      \
+      MOZ_ASSERT(false, #expr);   \
+    }                             \
+  } while (false)
 
-#ifdef DEBUG
-#  define MOZ_ALWAYS_TRUE(expr)   \
-    do {                          \
-      if ((expr)) {               \
-        /* Do nothing. */         \
-      } else {                    \
-        MOZ_ASSERT(false, #expr); \
-      }                           \
-    } while (false)
-#  define MOZ_ALWAYS_FALSE(expr)  \
-    do {                          \
-      if ((expr)) {               \
-        MOZ_ASSERT(false, #expr); \
-      } else {                    \
-        /* Do nothing. */         \
-      }                           \
-    } while (false)
-#  define MOZ_ALWAYS_OK(expr) MOZ_ASSERT((expr).isOk())
-#  define MOZ_ALWAYS_ERR(expr) MOZ_ASSERT((expr).isErr())
-#else
-#  define MOZ_ALWAYS_TRUE(expr)     \
-    do {                            \
-      if ((expr)) {                 \
-        /* Silence MOZ_MUST_USE. */ \
-      }                             \
-    } while (false)
-#  define MOZ_ALWAYS_FALSE(expr)    \
-    do {                            \
-      if ((expr)) {                 \
-        /* Silence MOZ_MUST_USE. */ \
-      }                             \
-    } while (false)
-#  define MOZ_ALWAYS_OK(expr)       \
-    do {                            \
-      if ((expr).isOk()) {          \
-        /* Silence MOZ_MUST_USE. */ \
-      }                             \
-    } while (false)
-#  define MOZ_ALWAYS_ERR(expr)      \
-    do {                            \
-      if ((expr).isErr()) {         \
-        /* Silence MOZ_MUST_USE. */ \
-      }                             \
-    } while (false)
-#endif
+#define MOZ_ALWAYS_FALSE(expr) MOZ_ALWAYS_TRUE(!(expr))
+#define MOZ_ALWAYS_OK(expr) MOZ_ALWAYS_TRUE((expr).isOk())
+#define MOZ_ALWAYS_ERR(expr) MOZ_ALWAYS_TRUE((expr).isErr())
 
 
 
