@@ -4,11 +4,17 @@
 
 
 
-from os.path import abspath
+from os.path import abspath, relpath
 
 from mozbuild.action.zip import main as create_zip
 
-def main(output, input_dir):
+def main(output, input_dir, *files):
     output.close()
 
-    return create_zip(['-C', input_dir, abspath(output.name), '**'])
+    if files:
+      
+      in_files = [relpath(file, input_dir) for file in files]
+
+      return create_zip(['-C', input_dir, abspath(output.name)] + in_files)
+    else:
+      return create_zip(['-C', input_dir, abspath(output.name), '**'])
