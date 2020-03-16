@@ -1207,6 +1207,12 @@ class AsyncPanZoomController {
   CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const;
   CSSToParentLayerScale2D GetEffectiveZoom(AsyncTransformConsumer aMode) const;
 
+  
+
+
+
+  CSSRect GetVisibleRect(const RecursiveMutexAutoLock& aProofOfLock) const;
+
  private:
   friend class AutoApplyAsyncTestAttributes;
 
