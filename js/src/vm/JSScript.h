@@ -184,13 +184,18 @@ struct ScopeNote {
   
   static const uint32_t NoScopeNoteIndex = UINT32_MAX;
 
-  uint32_t index;   
-                    
-                    
-  uint32_t start;   
-                    
-  uint32_t length;  
-  uint32_t parent;  
+  
+  
+  uint32_t index = 0;
+
+  
+  uint32_t start = 0;
+
+  
+  uint32_t length = 0;
+
+  
+  uint32_t parent = 0;
 
   template <js::XDRMode mode>
   js::XDRResult XDR(js::XDRState<mode>* xdr);

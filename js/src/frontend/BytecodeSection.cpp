@@ -7,7 +7,6 @@
 #include "frontend/BytecodeSection.h"
 
 #include "mozilla/Assertions.h"       
-#include "mozilla/PodOperations.h"    
 #include "mozilla/ReverseIterator.h"  
 
 #include "frontend/CompilationInfo.h"
@@ -143,13 +142,9 @@ bool CGTryNoteList::append(JSTryNoteKind kind, uint32_t stackDepth,
 bool CGScopeNoteList::append(uint32_t scopeIndex, BytecodeOffset offset,
                              uint32_t parent) {
   ScopeNote note;
-  mozilla::PodZero(&note);
-
-  
-  
-
   note.index = scopeIndex;
   note.start = offset.toUint32();
+  note.length = 0;
   note.parent = parent;
 
   return list.append(note);
