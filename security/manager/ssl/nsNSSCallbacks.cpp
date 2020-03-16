@@ -265,6 +265,11 @@ OCSPRequest::Run() {
                         nsIChannel::LOAD_BYPASS_SERVICE_WORKER |
                         nsIChannel::LOAD_BYPASS_URL_CLASSIFIER);
 
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+
+  
+  loadInfo->SetHttpsOnlyNoUpgrade(true);
+
   
   
   
@@ -277,7 +282,6 @@ OCSPRequest::Run() {
     attrs.mFirstPartyDomain = mOriginAttributes.mFirstPartyDomain;
     attrs.mPrivateBrowsingId = mOriginAttributes.mPrivateBrowsingId;
 
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
     rv = loadInfo->SetOriginAttributes(attrs);
     if (NS_FAILED(rv)) {
       return NotifyDone(rv, lock);
