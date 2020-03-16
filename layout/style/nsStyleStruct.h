@@ -224,7 +224,7 @@ struct nsStyleImageLayers {
     
     
     
-    uint8_t mBlendMode;  
+    mozilla::StyleBlend mBlendMode;
 
     
     
@@ -1854,7 +1854,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
   }
 
   bool HasMixBlendMode() const {
-    return mMixBlendMode != NS_STYLE_BLEND_NORMAL;
+    return mMixBlendMode != mozilla::StyleBlend::Normal;
   }
 
   mozilla::StyleOwnedSlice<mozilla::StyleFilter> mFilters;
@@ -1862,7 +1862,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects {
   mozilla::StyleOwnedSlice<mozilla::StyleFilter> mBackdropFilters;
   mozilla::StyleClipRectOrAuto mClip;  
   float mOpacity;
-  uint8_t mMixBlendMode;  
+  mozilla::StyleBlend mMixBlendMode;
 };
 
 #define STATIC_ASSERT_TYPE_LAYOUTS_MATCH(T1, T2)           \
