@@ -74,6 +74,8 @@ static inline JSScript* ScriptFromCalleeToken(CalleeToken token) {
   MOZ_CRASH("invalid callee token tag");
 }
 
+JSScript* MaybeForwardedScriptFromCalleeToken(CalleeToken token);
+
 
 
 
