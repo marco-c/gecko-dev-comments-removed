@@ -210,7 +210,8 @@ def taskgraph_decision(options, parameters=None):
     write_artifact('runnable-jobs.json', full_task_graph_to_runnable_jobs(full_task_json))
 
     
-    write_artifact('manifests-by-task.json', full_task_graph_to_manifests_by_task(full_task_json))
+    write_artifact('manifests-by-task.json.gz',
+                   full_task_graph_to_manifests_by_task(full_task_json))
 
     
     _, _ = TaskGraph.from_json(full_task_json)
