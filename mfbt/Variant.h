@@ -182,12 +182,22 @@ struct VariantImplementation<Tag, N, T> {
 
   template <typename Matcher, typename ConcreteVariant>
   static decltype(auto) match(Matcher&& aMatcher, ConcreteVariant& aV) {
-    return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+    if constexpr (std::is_invocable_v<Matcher, Tag,
+                                      decltype(aV.template as<N>())>) {
+      return std::forward<Matcher>(aMatcher)(Tag(N), aV.template as<N>());
+    } else {
+      return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+    }
   }
 
   template <typename ConcreteVariant, typename Matcher>
   static decltype(auto) matchN(ConcreteVariant& aV, Matcher&& aMatcher) {
-    return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+    if constexpr (std::is_invocable_v<Matcher, Tag,
+                                      decltype(aV.template as<N>())>) {
+      return std::forward<Matcher>(aMatcher)(Tag(N), aV.template as<N>());
+    } else {
+      return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+    }
   }
 };
 
@@ -242,7 +252,12 @@ struct VariantImplementation<Tag, N, T, Ts...> {
   template <typename Matcher, typename ConcreteVariant>
   static decltype(auto) match(Matcher&& aMatcher, ConcreteVariant& aV) {
     if (aV.template is<N>()) {
-      return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+      if constexpr (std::is_invocable_v<Matcher, Tag,
+                                        decltype(aV.template as<N>())>) {
+        return std::forward<Matcher>(aMatcher)(Tag(N), aV.template as<N>());
+      } else {
+        return std::forward<Matcher>(aMatcher)(aV.template as<N>());
+      }
     } else {
       
       
@@ -260,7 +275,12 @@ struct VariantImplementation<Tag, N, T, Ts...> {
   template <typename ConcreteVariant, typename Mi, typename... Ms>
   static decltype(auto) matchN(ConcreteVariant& aV, Mi&& aMi, Ms&&... aMs) {
     if (aV.template is<N>()) {
-      return std::forward<Mi>(aMi)(aV.template as<N>());
+      if constexpr (std::is_invocable_v<Mi, Tag,
+                                        decltype(aV.template as<N>())>) {
+        return std::forward<Mi>(aMi)(Tag(N), aV.template as<N>());
+      } else {
+        return std::forward<Mi>(aMi)(aV.template as<N>());
+      }
     } else {
       
       
@@ -311,6 +331,16 @@ template <size_t N>
 struct VariantIndex {
   static constexpr size_t index = N;
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
