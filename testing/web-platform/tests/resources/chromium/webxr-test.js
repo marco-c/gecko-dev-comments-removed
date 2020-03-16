@@ -239,6 +239,8 @@ class MockRuntime {
     
     this.hitTestSubscriptions_ = new Map();
     
+    this.transientHitTestSubscriptions_ = new Map();
+    
     this.next_hit_test_id_ = 1;
 
     let supportedModes = [];
@@ -687,6 +689,25 @@ class MockRuntime {
     });
   }
 
+  subscribeToHitTestForTransientInput(profileName, entityTypes, ray){
+    if (!this.supportedModes_.includes(device.mojom.XRSessionMode.kImmersiveAr)) {
+      
+      return Promise.resolve({
+        result : device.mojom.SubscribeToHitTestResult.FAILURE_GENERIC,
+        subscriptionId : 0
+      });
+    }
+
+    
+    const id = this.next_hit_test_id_++;
+    this.transientHitTestSubscriptions_.set(id, { profileName, entityTypes, ray });
+
+    return Promise.resolve({
+      result : device.mojom.SubscribeToHitTestResult.SUCCESS,
+      subscriptionId : id
+    });
+  }
+
   
   requestRuntimeSession(sessionOptions) {
     return this.runtimeSupportsSession(sessionOptions).then((result) => {
@@ -769,11 +790,10 @@ class MockRuntime {
       const mojo_from_native_origin = this._getMojoFromNativeOrigin(subscription.nativeOriginInformation);
       if (!mojo_from_native_origin) continue;
 
-      const ray_origin = {x: subscription.ray.origin.x, y: subscription.ray.origin.y, z: subscription.ray.origin.z, w: 1};
-      const ray_direction = {x: subscription.ray.direction.x, y: subscription.ray.direction.y, z: subscription.ray.direction.z, w: 0};
-
-      const mojo_ray_origin = XRMathHelper.transform_by_matrix(mojo_from_native_origin, ray_origin);
-      const mojo_ray_direction = XRMathHelper.transform_by_matrix(mojo_from_native_origin, ray_direction);
+      const [mojo_ray_origin, mojo_ray_direction] = this._transformRayToMojoSpace(
+        subscription.ray,
+        mojo_from_native_origin
+      );
 
       const results = this._hitTestWorld(mojo_ray_origin, mojo_ray_direction, subscription.entityTypes);
 
@@ -783,6 +803,60 @@ class MockRuntime {
 
       frameData.hitTestSubscriptionResults.results.push(result);
     }
+
+    
+    const mojo_from_viewer = this._getMojoFromViewer();
+
+    for (const [id, subscription] of this.transientHitTestSubscriptions_) {
+      const result = new device.mojom.XRHitTestTransientInputSubscriptionResultData();
+      result.subscriptionId = id;
+      result.inputSourceIdToHitTestResults = new Map();
+
+      
+      const matching_input_sources = Array.from(this.input_sources_.values())
+                                                        .filter(input_source => input_source.profiles_.includes(subscription.profileName));
+
+      for (const input_source of matching_input_sources) {
+        const mojo_from_native_origin = this._getMojoFromInputSource(mojo_from_viewer, input_source);
+
+        const [mojo_ray_origin, mojo_ray_direction] = this._transformRayToMojoSpace(
+          subscription.ray,
+          mojo_from_native_origin
+        );
+
+        const results = this._hitTestWorld(mojo_ray_origin, mojo_ray_direction, subscription.entityTypes);
+
+        result.inputSourceIdToHitTestResults.set(input_source.source_id_, results);
+      }
+
+      frameData.hitTestSubscriptionResults.transientInputResults.push(result);
+    }
+  }
+
+  
+  
+  _transformRayToMojoSpace(ray, mojo_from_native_origin) {
+    const ray_origin = {
+      x: ray.origin.x,
+      y: ray.origin.y,
+      z: ray.origin.z,
+      w: 1
+    };
+    const ray_direction = {
+      x: ray.direction.x,
+      y: ray.direction.y,
+      z: ray.direction.z,
+      w: 0
+    };
+
+    const mojo_ray_origin = XRMathHelper.transform_by_matrix(
+      mojo_from_native_origin,
+      ray_origin);
+    const mojo_ray_direction = XRMathHelper.transform_by_matrix(
+      mojo_from_native_origin,
+      ray_direction);
+
+    return [mojo_ray_origin, mojo_ray_direction];
   }
 
   
@@ -933,17 +1007,17 @@ class MockRuntime {
   }
 
   _getMojoFromInputSource(mojo_from_viewer, input_source) {
-    if(input_source.target_ray_mode_ === 'gaze') {  
+    if (input_source.target_ray_mode_ === 'gaze') {  
       
       
       return mojo_from_viewer;
-    } else if(input_source.target_ray_mode_ === 'tracked-pointer') {  
+    } else if (input_source.target_ray_mode_ === 'tracked-pointer') {  
       
       
       return XRMathHelper.mul4x4(
         input_source.mojo_from_input_.matrix,
         input_source.input_from_pointer_.matrix);
-    } else if(input_source.target_ray_mode_ === 'screen') { 
+    } else if (input_source.target_ray_mode_ === 'screen') { 
       
       
       
@@ -951,20 +1025,11 @@ class MockRuntime {
         mojo_from_viewer,
         input_source.input_from_pointer_.matrix);
     } else {
-      return null
+      return null;
     }
   }
 
-  _getMojoFromNativeOrigin(nativeOriginInformation) {
-    const identity = function() {
-      return [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-      ];
-    };
-
+  _getMojoFromViewer() {
     const transform = {
       position: [
         this.pose_.position.x,
@@ -977,7 +1042,20 @@ class MockRuntime {
         this.pose_.orientation.w],
     };
 
-    const mojo_from_viewer = getMatrixFromTransform(transform)
+    return getMatrixFromTransform(transform);
+  }
+
+  _getMojoFromNativeOrigin(nativeOriginInformation) {
+    const identity = function() {
+      return [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+      ];
+    };
+
+    const mojo_from_viewer = this._getMojoFromViewer();
 
     if (nativeOriginInformation.$tag == device.mojom.XRNativeOriginInformation.Tags.inputSourceId) {
       if (!this.input_sources_.has(nativeOriginInformation.inputSourceId)) {
@@ -1026,7 +1104,7 @@ class MockXRInputSource {
     this.handedness_ = fakeInputSourceInit.handedness;
     this.target_ray_mode_ = fakeInputSourceInit.targetRayMode;
 
-    if(fakeInputSourceInit.pointerOrigin == null) {
+    if (fakeInputSourceInit.pointerOrigin == null) {
       throw new TypeError("FakeXRInputSourceInit.pointerOrigin is required.");
     }
 
