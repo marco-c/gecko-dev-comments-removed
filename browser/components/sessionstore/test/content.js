@@ -48,9 +48,13 @@ if (sessionHistory) {
 
 
 
-addEventListener("hashchange", function() {
-  sendAsyncMessage("ss-test:hashchange");
-});
+addEventListener(
+  "hashchange",
+  function() {
+    sendAsyncMessage("ss-test:hashchange");
+  },
+  true
+);
 
 addMessageListener("ss-test:getStyleSheets", function(msg) {
   let sheets = content.document.styleSheets;
