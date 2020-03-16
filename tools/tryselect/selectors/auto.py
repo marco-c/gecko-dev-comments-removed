@@ -16,12 +16,19 @@ class AutoParser(BaseTryParser):
         "env",
         "chemspill-prio",
         "disable-pgo",
+        "strategy",
         "worker-overrides",
     ]
 
 
 def run(message='{msg}', push=True, closed_tree=False, try_config=None):
     msg = message.format(msg='Tasks automatically selected.')
+    try_config = try_config or {}
+
+    
+    
+    try_config.setdefault('optimize-strategies', 'taskgraph.optimize:bugbug_push_schedules')
+
     task_config = {
         'version': 2,
         'parameters': {
