@@ -43,10 +43,6 @@ function scriptErrorFlagsToKind(flags) {
     kind = "error";
   }
 
-  if (flags & Ci.nsIScriptError.strictFlag) {
-    kind = "strict " + kind;
-  }
-
   return kind;
 }
 
@@ -87,10 +83,7 @@ var listener = {
       DevToolsServer.xpcInspector.exitNestedEventLoop();
     }
 
-    
-    if (!(message.flags & Ci.nsIScriptError.strictFlag)) {
-      do_throw("head_dbg.js got console message: " + string + "\n");
-    }
+    do_throw("head_dbg.js got console message: " + string + "\n");
   },
 };
 
