@@ -87,6 +87,9 @@ class DeviceManagerDx final {
   
   nsTArray<DXGI_OUTPUT_DESC1> EnumerateOutputs();
 
+  
+  bool CheckHardwareStretchingSupport();
+
   bool CreateCompositorDevices();
   void CreateContentDevices();
   void CreateDirectCompositionDevice();
