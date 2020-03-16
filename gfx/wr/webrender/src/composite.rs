@@ -758,6 +758,9 @@ pub trait Compositor {
     fn enable_native_compositor(&mut self, enable: bool);
 
     
+    fn deinit(&mut self);
+
+    
     
     
     fn get_capabilities(&self) -> CompositorCapabilities;
