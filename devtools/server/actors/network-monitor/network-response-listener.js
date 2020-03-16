@@ -215,6 +215,7 @@ NetworkResponseListener.prototype = {
 
 
   onStartRequest: function(request) {
+    request = request.QueryInterface(Ci.nsIChannel);
     
     if (this.request) {
       return;
