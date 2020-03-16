@@ -143,8 +143,8 @@ class nsCoreUtils {
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
-                                    uint32_t aScrollType);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
+      nsIFrame* aFrame, nsRange* aRange, uint32_t aScrollType);
 
   
 
@@ -156,9 +156,9 @@ class nsCoreUtils {
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
-                                    mozilla::ScrollAxis aVertical,
-                                    mozilla::ScrollAxis aHorizontal);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
+      nsIFrame* aFrame, nsRange* aRange, mozilla::ScrollAxis aVertical,
+      mozilla::ScrollAxis aHorizontal);
 
   
 

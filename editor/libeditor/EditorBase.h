@@ -2582,7 +2582,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  nsresult AppendNodeToSelectionAsRange(nsINode* aNode);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  AppendNodeToSelectionAsRange(nsINode* aNode);
 
   
 
