@@ -136,10 +136,6 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   HasDirectEval = 1 << 26,
-
-  
-  
-  IsLazyScript = 1 << 27,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
@@ -249,7 +245,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   SpewEnabled = 1 << 27,
 
   
-  WrappedByDebugger = 1 << 28,
+  IsLazyScript = 1 << 28,
 };
 
 class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {

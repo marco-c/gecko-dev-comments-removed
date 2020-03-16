@@ -912,6 +912,8 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
 #ifdef DEBUG
   
   
+  
+  
   constexpr uint32_t NonLazyFlagsMask =
       uint32_t(BaseScript::ImmutableFlags::HasNonSyntacticScope) |
       uint32_t(BaseScript::ImmutableFlags::FunctionHasExtraBodyVarScope) |
@@ -923,10 +925,7 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
   
   
   
-  
-  
   constexpr uint32_t CustomFlagsMask =
-      uint32_t(BaseScript::ImmutableFlags::IsLazyScript) |
       uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce);
 
   
@@ -934,6 +933,13 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
 
   MOZ_ASSERT((lazy & NonLazyFlagsMask) == 0);
   MOZ_ASSERT((lazy & MatchedFlagsMask) == (nonLazy & MatchedFlagsMask));
+
+  
+  
+  
+  
+  MOZ_ASSERT_IF(nonLazy & uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce),
+                lazy & uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce));
 #endif  
 }
 
@@ -1001,10 +1007,8 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
     return false;
   }
 
-  Rooted<JSScript*> script(cx, JSScript::CreateFromLazy(cx, lazy));
-  if (!script) {
-    return false;
-  }
+  Rooted<JSScript*> script(cx, JSScript::CastFromLazy(lazy));
+  uint32_t lazyFlags = lazy->immutableFlags();
 
   FieldInitializers fieldInitializers = FieldInitializers::Invalid();
   if (fun->isClassConstructor()) {
@@ -1022,7 +1026,7 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
     return false;
   }
 
-  CheckFlagsOnDelazification(lazy->immutableFlags(), script->immutableFlags());
+  CheckFlagsOnDelazification(lazyFlags, script->immutableFlags());
 
   assertException.reset();
   return true;
@@ -1067,10 +1071,7 @@ static bool CompileLazyBinASTFunctionImpl(JSContext* cx,
   CompilationInfo compilationInfo(cx, allocScope, options);
   compilationInfo.initFromSourceObject(lazy->sourceObject());
 
-  RootedScript script(cx, JSScript::CreateFromLazy(cx, lazy));
-  if (!script) {
-    return false;
-  }
+  RootedScript script(cx, JSScript::CastFromLazy(lazy));
 
   frontend::BinASTParser<ParserT> parser(cx, compilationInfo, options,
                                          compilationInfo.sourceObject, lazy);

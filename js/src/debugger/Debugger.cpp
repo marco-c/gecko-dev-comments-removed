@@ -5269,7 +5269,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     }
 
     
-    if (lazyScript->maybeScript()) {
+    if (lazyScript->hasBytecode()) {
       return;
     }
 
@@ -5447,7 +5447,7 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
     }
 
     
-    if (lazyScript->maybeScript()) {
+    if (lazyScript->hasBytecode()) {
       return;
     }
 
@@ -6061,65 +6061,12 @@ typename Map::WrapperType* Debugger::wrapVariantReferent(
 
 DebuggerScript* Debugger::wrapVariantReferent(
     JSContext* cx, Handle<DebuggerScriptReferent> referent) {
-  DebuggerScript* obj;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   if (referent.is<BaseScript*>()) {
-    Rooted<BaseScript*> base(cx, referent.as<BaseScript*>());
-    if (!base->isLazyScript()) {
-      RootedScript untaggedReferent(cx, base->asJSScript());
-      if (untaggedReferent->maybeLazyScript()) {
-        
-        Rooted<LazyScript*> lazyScript(cx, untaggedReferent->maybeLazyScript());
-        return wrapScript(cx, lazyScript);
-      }
-      
-      obj = wrapVariantReferent<BaseScript>(cx, scripts, referent);
-    } else {
-      Rooted<LazyScript*> untaggedReferent(
-          cx, static_cast<LazyScript*>(base.get()));
-      if (untaggedReferent->maybeScript()) {
-        RootedScript script(cx, untaggedReferent->maybeScript());
-        if (!script->maybeLazyScript()) {
-          
-          
-          
-          MOZ_ASSERT(!untaggedReferent->isWrappedByDebugger());
-          return wrapScript(cx, script);
-        }
-      }
-      
-      
-      untaggedReferent->setWrappedByDebugger();
-      obj = wrapVariantReferent<BaseScript>(cx, scripts, referent);
-    }
-  } else {
-    obj = wrapVariantReferent<WasmInstanceObject>(cx, wasmInstanceScripts,
-                                                  referent);
+    return wrapVariantReferent<BaseScript>(cx, scripts, referent);
   }
-  MOZ_ASSERT_IF(obj, obj->getReferent() == referent);
-  return obj;
+
+  return wrapVariantReferent<WasmInstanceObject>(cx, wasmInstanceScripts,
+                                                 referent);
 }
 
 DebuggerScript* Debugger::wrapScript(JSContext* cx,

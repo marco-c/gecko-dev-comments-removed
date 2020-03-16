@@ -315,66 +315,6 @@ XDRResult LazyScript::XDRScriptData(XDRState<mode>* xdr,
   return Ok();
 }
 
-
-template <XDRMode mode>
-static XDRResult XDRRelazificationInfo(XDRState<mode>* xdr, HandleFunction fun,
-                                       HandleScript script,
-                                       HandleScope enclosingScope,
-                                       MutableHandle<LazyScript*> lazy) {
-  MOZ_ASSERT_IF(mode == XDR_ENCODE, script->maybeLazyScript());
-  MOZ_ASSERT_IF(mode == XDR_ENCODE, !lazy->hasInnerFunctions());
-
-  JSContext* cx = xdr->cx();
-
-  RootedScriptSourceObject sourceObject(cx, script->sourceObject());
-
-  uint32_t immutableFlags;
-  uint32_t ngcthings;
-  {
-    uint32_t sourceStart = script->sourceStart();
-    uint32_t sourceEnd = script->sourceEnd();
-    uint32_t toStringStart = script->toStringStart();
-    uint32_t toStringEnd = script->toStringEnd();
-    uint32_t lineno = script->lineno();
-    uint32_t column = script->column();
-
-    if (mode == XDR_ENCODE) {
-      immutableFlags = lazy->immutableFlags();
-      ngcthings = lazy->gcthings().size();
-      MOZ_ASSERT(sourceStart == lazy->sourceStart());
-      MOZ_ASSERT(sourceEnd == lazy->sourceEnd());
-      MOZ_ASSERT(toStringStart == lazy->toStringStart());
-      MOZ_ASSERT(toStringEnd == lazy->toStringEnd());
-      MOZ_ASSERT(lineno == lazy->lineno());
-      MOZ_ASSERT(column == lazy->column());
-    }
-
-    MOZ_TRY(xdr->codeUint32(&immutableFlags));
-    MOZ_TRY(xdr->codeUint32(&ngcthings));
-
-    if (mode == XDR_DECODE) {
-      lazy.set(LazyScript::CreateForXDR(
-          cx, ngcthings, fun, script, enclosingScope, sourceObject,
-          immutableFlags, sourceStart, sourceEnd, toStringStart, toStringEnd,
-          lineno, column));
-      if (!lazy) {
-        return xdr->fail(JS::TranscodeResult_Throw);
-      }
-    }
-  }
-
-  
-  
-  MOZ_ASSERT(!lazy->hasInnerFunctions());
-
-  bool hasFieldInitializers = fun->isClassConstructor();
-
-  MOZ_TRY(
-      LazyScript::XDRScriptData(xdr, sourceObject, lazy, hasFieldInitializers));
-
-  return Ok();
-}
-
 template <XDRMode mode>
 XDRResult JSTryNote::XDR(XDRState<mode>* xdr) {
   MOZ_TRY(xdr->codeUint32(&kind));
@@ -655,6 +595,10 @@ static XDRResult XDRScriptGCThing(XDRState<mode>* xdr, PrivateScriptData* data,
   return Ok();
 }
 
+bool js::BaseScript::isUsingInterpreterTrampoline(JSRuntime* rt) const {
+  return jitCodeRaw_ == rt->jitRuntime()->interpreterStub().value;
+}
+
 js::ScriptSource* js::BaseScript::maybeForwardedScriptSource() const {
   JSObject* source = MaybeForwarded(sourceObject());
 
@@ -717,6 +661,12 @@ void js::BaseScript::finalize(JSFreeOp* fop) {
   }
 
   freeSharedData();
+}
+
+js::Scope* js::BaseScript::releaseEnclosingScope() {
+  Scope* enclosing = warmUpData_.toEnclosingScope();
+  warmUpData_.clearEnclosingScope();
+  return enclosing;
 }
 
 void js::BaseScript::swapData(UniquePtr<PrivateScriptData>& other) {
@@ -1306,17 +1256,7 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
   }
 
   if (xdrFlags & HasLazyScript) {
-    Rooted<LazyScript*> lazy(cx);
-    if (mode == XDR_ENCODE) {
-      lazy = script->maybeLazyScript();
-    }
-
-    RootedFunction fun(cx, &funOrMod->as<JSFunction>());
-    MOZ_TRY(
-        XDRRelazificationInfo(xdr, fun, script, scriptEnclosingScope, &lazy));
-
     if (mode == XDR_DECODE) {
-      script->setLazyScript(lazy);
       script->setAllowRelazify();
     }
   }
@@ -4146,6 +4086,46 @@ bool JSScript::createImmutableScriptData(JSContext* cx, uint32_t codeLength,
   return true;
 }
 
+void JSScript::relazify(JSRuntime* rt) {
+  js::Scope* scope = enclosingScope();
+  UniquePtr<PrivateScriptData> scriptData;
+
+#ifndef JS_CODEGEN_NONE
+  
+  
+  MOZ_ASSERT(isUsingInterpreterTrampoline(rt));
+#endif
+
+  
+  
+  
+  
+  swapData(scriptData);
+  freeSharedData();
+
+  
+  
+  
+  
+  clearFlag(ImmutableFlags::HasNonSyntacticScope);
+  clearFlag(ImmutableFlags::FunctionHasExtraBodyVarScope);
+  clearFlag(ImmutableFlags::NeedsFunctionEnvironmentObjects);
+
+  
+  
+  
+  MOZ_ASSERT(!hasScriptCounts());
+  MOZ_ASSERT(!hasDebugScript());
+
+  
+  MOZ_ASSERT(warmUpData_.isWarmUpCount(),
+             "JitScript should already be released");
+  warmUpData_.resetWarmUpCount(0);
+  warmUpData_.initEnclosingScope(scope);
+
+  setIsLazyScript();
+}
+
 
 
 
@@ -4337,29 +4317,6 @@ JSScript* JSScript::Create(JSContext* cx, js::HandleObject functionOrGlobal,
   return script;
 }
 
- JSScript* JSScript::CreateFromLazy(JSContext* cx,
-                                                Handle<BaseScript*> lazy) {
-  RootedScriptSourceObject sourceObject(cx, lazy->sourceObject());
-  RootedObject fun(cx, lazy->function());
-  RootedScript script(cx, JSScript::New(cx, fun, sourceObject, lazy->extent()));
-  if (!script) {
-    return nullptr;
-  }
-
-  
-  if (lazy->forceStrict()) {
-    script->setForceStrict();
-  }
-  if (lazy->isLikelyConstructorWrapper()) {
-    script->setIsLikelyConstructorWrapper();
-  }
-  if (lazy->hasBeenCloned()) {
-    script->setHasBeenCloned();
-  }
-
-  return script;
-}
-
 #ifdef MOZ_VTUNE
 uint32_t JSScript::vtuneMethodID() {
   if (!zone()->scriptVTuneIdMap) {
@@ -4431,13 +4388,55 @@ void JSScript::initFromFunctionBox(frontend::FunctionBox* funbox) {
 
 bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
                                     const frontend::ScriptStencil& stencil) {
-  MOZ_ASSERT(!script->data_, "JSScript already initialized");
+  ImmutableScriptFlags lazyFlags;
+  MutableScriptFlags lazyMutableFlags;
+  RootedScope lazyEnclosingScope(cx);
 
   
   
   
-  auto scriptDataGuard =
-      mozilla::MakeScopeExit([&] { script->freeSharedData(); });
+  
+  
+  
+  
+  
+  
+  
+  Rooted<UniquePtr<PrivateScriptData>> lazyData(cx);
+
+#ifndef JS_CODEGEN_NONE
+  
+  
+  MOZ_ASSERT(script->isUsingInterpreterTrampoline(cx->runtime()));
+#endif
+
+  
+  
+  if (script->isLazyScript()) {
+    lazyFlags = script->immutableScriptFlags_;
+    lazyMutableFlags = script->mutableFlags_;
+    lazyEnclosingScope = script->releaseEnclosingScope();
+    script->swapData(lazyData.get());
+    MOZ_ASSERT(script->sharedData_ == nullptr);
+
+    script->clearIsLazyScript();
+  }
+
+  
+  
+  auto rollbackGuard = mozilla::MakeScopeExit([&] {
+    if (lazyEnclosingScope) {
+      script->immutableScriptFlags_ = lazyFlags;
+      script->mutableFlags_ = lazyMutableFlags;
+      script->warmUpData_.initEnclosingScope(lazyEnclosingScope);
+      script->swapData(lazyData.get());
+      script->sharedData_ = nullptr;
+
+      MOZ_ASSERT(script->isLazyScript());
+    } else {
+      script->sharedData_ = nullptr;
+    }
+  });
 
   
   MOZ_ASSERT(stencil.natoms <= INDEX_LIMIT);
@@ -4479,14 +4478,19 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
   }
 
   
+  rollbackGuard.release();
 
   
   if (stencil.isFunction) {
     JSFunction* fun = stencil.functionBox->function();
     if (fun->isIncomplete()) {
       fun->initScript(script);
+    } else if (fun->hasSelfHostedLazyScript()) {
+      fun->clearSelfHostedLazyScript();
+      fun->initScript(script);
     } else {
-      fun->setUnlazifiedScript(script);
+      
+      MOZ_ASSERT(fun->baseScript() == script);
     }
   }
 
@@ -4511,7 +4515,6 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
     }
   }
 
-  scriptDataGuard.release();
   return true;
 }
 
@@ -5124,7 +5127,8 @@ JSScript* js::CloneScriptIntoFunction(
     fun->initScript(dst);
   } else {
     MOZ_ASSERT(fun->hasSelfHostedLazyScript());
-    fun->setUnlazifiedScript(dst);
+    fun->clearSelfHostedLazyScript();
+    fun->initScript(dst);
   }
 
   if (coverage::IsLCovEnabled()) {
@@ -5466,12 +5470,6 @@ bool JSScript::formalLivesInArgumentsObject(unsigned argSlot) {
   return argsObjAliasesFormals() && !formalIsAliased(argSlot);
 }
 
-void LazyScript::initScript(JSScript* script) {
-  MOZ_ASSERT(script);
-  MOZ_ASSERT(!u.script_.unbarrieredGet());
-  u.script_.set(script);
-}
-
 
 LazyScript* LazyScript::CreateRaw(JSContext* cx, uint32_t ngcthings,
                                   HandleFunction fun,
@@ -5496,9 +5494,7 @@ LazyScript* LazyScript::CreateRaw(JSContext* cx, uint32_t ngcthings,
   }
 
   
-  
-  lazy->setFlag(ImmutableFlags::IsLazyScript);
-  new (&lazy->u.script_) WeakHeapPtrScript(nullptr);
+  lazy->setIsLazyScript();
 
   
   
@@ -5586,11 +5582,6 @@ LazyScript* LazyScript::CreateForXDR(
   
   if (enclosingScope) {
     lazy->setEnclosingScope(enclosingScope);
-  }
-
-  MOZ_ASSERT(!lazy->hasScript());
-  if (script) {
-    lazy->initScript(script);
   }
 
   return lazy;

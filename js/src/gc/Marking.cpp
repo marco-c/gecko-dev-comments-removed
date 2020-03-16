@@ -1119,18 +1119,6 @@ void BaseScript::traceChildren(JSTracer* trc) {
     }
   }
 
-  
-  
-  if (isLazyScript()) {
-    if (trc->traceWeakEdges()) {
-      TraceNullableEdge(trc, &u.script_, "script");
-    }
-  } else {
-    if (u.lazyScript) {
-      TraceManuallyBarrieredEdge(trc, &u.lazyScript, "lazyScript");
-    }
-  }
-
   if (trc->isMarkingTracer()) {
     GCMarker::fromTracer(trc)->markImplicitEdges(this);
   }

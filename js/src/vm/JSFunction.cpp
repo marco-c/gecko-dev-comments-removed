@@ -1546,7 +1546,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
                                               HandleFunction fun) {
   Rooted<LazyScript*> lazy(cx, fun->lazyScript());
 
-  MOZ_ASSERT(!lazy->maybeScript(), "Script is already compiled!");
+  MOZ_ASSERT(lazy->isLazyScript(), "Script is already compiled!");
   MOZ_ASSERT(lazy->function() == fun);
 
   ScriptSource* ss = lazy->scriptSource();
@@ -1559,7 +1559,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
     if (!frontend::CompileLazyBinASTFunction(
             cx, lazy, ss->binASTSource() + sourceStart, sourceLength)) {
       MOZ_ASSERT(fun->baseScript() == lazy);
-      MOZ_ASSERT(!lazy->hasScript());
+      MOZ_ASSERT(lazy->isLazyScript());
       return false;
     }
 #else
@@ -1583,7 +1583,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
         
         
         MOZ_ASSERT(fun->baseScript() == lazy);
-        MOZ_ASSERT(!lazy->hasScript());
+        MOZ_ASSERT(lazy->isLazyScript());
         return false;
       }
     } else {
@@ -1600,29 +1600,18 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
         
         
         MOZ_ASSERT(fun->baseScript() == lazy);
-        MOZ_ASSERT(!lazy->hasScript());
+        MOZ_ASSERT(lazy->isLazyScript());
         return false;
       }
     }
   }
 
   RootedScript script(cx, fun->nonLazyScript());
-  MOZ_ASSERT(lazy->maybeScript() == script);
 
   
   
   if (script->isRelazifiable() && !hadLazyScriptData) {
-    
-    
-    script->setLazyScript(lazy);
     script->setAllowRelazify();
-  } else if (lazy->isWrappedByDebugger()) {
-    
-    
-    
-    
-    
-    script->setLazyScript(lazy);
   }
 
   
@@ -1659,16 +1648,13 @@ bool JSFunction::delazifyLazilyInterpretedFunction(JSContext* cx,
       return false;
     }
 
-    fun->setUnlazifiedScript(script);
+    
+    
+    MOZ_ASSERT(fun->hasBytecode());
     return true;
   }
 
-  
-  
-  if (lazy->hasScript()) {
-    fun->setUnlazifiedScript(lazy->maybeScript());
-    return true;
-  }
+  MOZ_ASSERT(lazy->isLazyScript());
 
   
   return DelazifyCanonicalScriptedFunction(cx, fun);
@@ -1735,19 +1721,10 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
     return;
   }
 
-  BaseScript* lazy = script->maybeLazyScript();
-  if (lazy) {
-    u.scripted.s.script_ = lazy;
-    MOZ_ASSERT(hasBaseScript());
+  if (isSelfHostedBuiltin()) {
+    initSelfHostedLazyScript(&rt->selfHostedLazyScript.ref());
   } else {
-    
-    
-    flags_.clearBaseScript();
-    flags_.setSelfHostedLazy();
-    u.scripted.s.selfHostedLazy_ = &rt->selfHostedLazyScript.ref();
-    MOZ_ASSERT(isSelfHostedBuiltin());
-    MOZ_ASSERT(isExtended());
-    MOZ_ASSERT(GetClonedSelfHostedFunctionName(this));
+    script->relazify(rt);
   }
 
   realm->scheduleDelazificationForDebugger();

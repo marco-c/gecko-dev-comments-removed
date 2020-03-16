@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "vm/Realm-inl.h"
 
@@ -70,7 +70,7 @@ Realm::~Realm() {
   MOZ_ASSERT(!hasBeenEnteredIgnoringJit());
   MOZ_ASSERT(!isDebuggee());
 
-  
+  // Write the code coverage information in a file.
   if (lcovRealm_) {
     runtime_->lcovOutput().writeLCovResult(*lcovRealm_);
   }
@@ -91,12 +91,12 @@ bool ObjectRealm::init(JSContext* cx) {
 }
 
 bool Realm::init(JSContext* cx, JSPrincipals* principals) {
-  
-
-
-
-
-
+  /*
+   * As a hack, we clear our timezone cache every time we create a new realm.
+   * This ensures that the cache is always relatively fresh, but shouldn't
+   * interfere with benchmarks that create tons of date objects (unless they
+   * also create tons of iframes, which seems unlikely).
+   */
   js::ResetTimeZoneInternal(ResetTimeZoneMode::DontResetIfOffsetUnchanged);
 
   if (!objects_.init(cx)) {
@@ -104,8 +104,8 @@ bool Realm::init(JSContext* cx, JSPrincipals* principals) {
   }
 
   if (principals) {
-    
-    
+    // Any realm with the trusted principals -- and there can be
+    // multiple -- is a system realm.
     isSystem_ = (principals == cx->runtime()->trustedPrincipals());
     JS_HoldPrincipals(principals);
     principals_ = principals;
@@ -127,7 +127,7 @@ bool JSRuntime::createJitRuntime(JSContext* cx) {
   MOZ_ASSERT(!jitRuntime_);
 
   if (!CanLikelyAllocateMoreExecutableMemory()) {
-    
+    // Try to release memory first instead of potentially reporting OOM below.
     if (OnLargeAllocationFailure) {
       OnLargeAllocationFailure();
     }
@@ -138,8 +138,8 @@ bool JSRuntime::createJitRuntime(JSContext* cx) {
     return false;
   }
 
-  
-  
+  // Unfortunately, initialization depends on jitRuntime_ being non-null, so
+  // we can't just wait to assign jitRuntime_.
   jitRuntime_ = jrt;
 
   if (!jitRuntime_->initialize(cx)) {
@@ -181,7 +181,7 @@ void js::DtoaCache::checkCacheAfterMovingGC() {
   MOZ_ASSERT(!s || !IsForwarded(s));
 }
 
-#endif  
+#endif  // JSGC_HASH_TABLE_CHECKS
 
 LexicalEnvironmentObject*
 ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
@@ -220,25 +220,25 @@ ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
 LexicalEnvironmentObject*
 ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
                                                        HandleObject enclosing) {
-  
-  
+  // If a wrapped WithEnvironmentObject was passed in, unwrap it, as we may
+  // be creating different WithEnvironmentObject wrappers each time.
   RootedObject key(cx, enclosing);
   if (enclosing->is<WithEnvironmentObject>()) {
     MOZ_ASSERT(!enclosing->as<WithEnvironmentObject>().isSyntactic());
     key = &enclosing->as<WithEnvironmentObject>().object();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // NOTE: The default global |this| value is set to key for compatibility
+  // with existing users of the lexical environment cache.
+  //  - When used by shared-global JSM loader, |this| must be the
+  //    NonSyntacticVariablesObject passed as enclosing.
+  //  - When used by SubscriptLoader, |this| must be the target object of
+  //    the WithEnvironmentObject wrapper.
+  //  - When used by XBL/DOM Events, we execute directly as a function and
+  //    do not access the |this| value.
+  // See js::GetFunctionThis / js::GetNonSyntacticGlobalThis
   return getOrCreateNonSyntacticLexicalEnvironment(cx, enclosing, key,
-                                                    key);
+                                                   /*thisv = */ key);
 }
 
 LexicalEnvironmentObject* ObjectRealm::getNonSyntacticLexicalEnvironment(
@@ -248,8 +248,8 @@ LexicalEnvironmentObject* ObjectRealm::getNonSyntacticLexicalEnvironment(
   if (!nonSyntacticLexicalEnvironments_) {
     return nullptr;
   }
-  
-  
+  // If a wrapped WithEnvironmentObject was passed in, unwrap it as in
+  // getOrCreateNonSyntacticLexicalEnvironment.
   if (key->is<WithEnvironmentObject>()) {
     MOZ_ASSERT(!key->as<WithEnvironmentObject>().isSyntactic());
     key = &key->as<WithEnvironmentObject>().object();
@@ -273,8 +273,8 @@ bool Realm::addToVarNames(JSContext* cx, JS::Handle<JSAtom*> name) {
 }
 
 void Realm::traceGlobal(JSTracer* trc) {
-  
-  
+  // Trace things reachable from the realm's global. Note that these edges
+  // must be swept too in case the realm is live but the global is not.
 
   TraceEdge(trc, &lexicalEnv_, "realm-global-lexical");
 
@@ -282,7 +282,7 @@ void Realm::traceGlobal(JSTracer* trc) {
 
   DebugAPI::traceFromRealm(trc, this);
 
-  
+  // Atoms are always tenured.
   if (!JS::RuntimeHeapIsMinorCollecting()) {
     varNames_.trace(trc);
   }
@@ -306,25 +306,25 @@ void Realm::traceRoots(JSTracer* trc,
   }
 
   if (!JS::RuntimeHeapIsMinorCollecting()) {
-    
-    
-    
-    
-    
+    // The global is never nursery allocated, so we don't need to
+    // trace it when doing a minor collection.
+    //
+    // If a realm is on-stack, we mark its global so that
+    // JSContext::global() remains valid.
     if (shouldTraceGlobal() && global_.unbarrieredGet()) {
       TraceRoot(trc, global_.unsafeUnbarrieredForTracing(),
                 "on-stack realm global");
     }
   }
 
-  
-  
+  // Nothing below here needs to be treated as a root if we aren't marking
+  // this zone for a collection.
   if (traceOrMark == js::gc::GCRuntime::MarkRuntime &&
       !zone()->isCollectingFromAnyThread()) {
     return;
   }
 
-  
+  /* Mark debug scopes, if present */
   if (debugEnvs_) {
     debugEnvs_->trace(trc);
   }
@@ -388,11 +388,11 @@ void Realm::traceWeakEdgesInJitRealm(JSTracer* trc) {
 }
 
 void Realm::traceWeakRegExps(JSTracer* trc) {
-  
-
-
-
-
+  /*
+   * JIT code increments activeWarmUpCounter for any RegExpShared used by jit
+   * code for the lifetime of the JIT script. Thus, we must perform
+   * sweeping after clearing jit code.
+   */
   regExps.traceWeak(trc);
 }
 
@@ -403,7 +403,7 @@ void Realm::sweepDebugEnvironments() {
 }
 
 void ObjectRealm::traceWeakNativeIterators(JSTracer* trc) {
-  
+  /* Sweep list of native iterators. */
   NativeIterator* ni = enumerators->next();
   while (ni != enumerators) {
     JSObject* iterObj = ni->iterObj();
@@ -471,8 +471,8 @@ void Realm::clearTables() {
   global_.set(nullptr);
   lexicalEnv_.set(nullptr);
 
-  
-  
+  // No scripts should have run in this realm. This is used when merging
+  // a realm that has been used off thread into another realm and zone.
   compartment()->assertNoCrossCompartmentWrappers();
   MOZ_ASSERT(!jitRealm_);
   MOZ_ASSERT(!debugEnvs_);
@@ -483,26 +483,26 @@ void Realm::clearTables() {
   varNames_.clear();
 }
 
-
-
-
+// Check to see if this individual realm is recording allocations. Debuggers or
+// runtimes can try and record allocations, so this method can check to see if
+// any initialization is needed.
 bool Realm::isRecordingAllocations() { return !!allocationMetadataBuilder_; }
 
 void Realm::setAllocationMetadataBuilder(
     const js::AllocationMetadataBuilder* builder) {
-  
-  
+  // Clear any jitcode in the runtime, which behaves differently depending on
+  // whether there is a creation callback.
   ReleaseAllJITCode(runtime_->defaultFreeOp());
 
   allocationMetadataBuilder_ = builder;
 }
 
 void Realm::forgetAllocationMetadataBuilder() {
-  
-  
-  
-  
-  
+  // Unlike setAllocationMetadataBuilder, we don't have to discard all JIT
+  // code here (code is still valid, just a bit slower because it doesn't do
+  // inline GC allocations when a metadata builder is present), but we do want
+  // to cancel off-thread Ion compilations to avoid races when Ion calls
+  // hasAllocationMetadataBuilder off-thread.
   CancelOffThreadIonCompile(this);
 
   allocationMetadataBuilder_ = nullptr;
@@ -560,22 +560,22 @@ static bool AddInnerLazyFunctionsFromScript(
 static bool AddLazyFunctionsForRealm(JSContext* cx,
                                      MutableHandleObjectVector lazyFunctions,
                                      gc::AllocKind kind) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Find all live root lazy functions in the realm: those which have a
+  // non-lazy enclosing script, and which do not have an uncompiled enclosing
+  // script. The last condition is so that we don't compile lazy scripts
+  // whose enclosing scripts failed to compile, indicating that the lazy
+  // script did not escape the script.
+  //
+  // Some LazyScripts have a non-null |JSScript* script| pointer. We still
+  // want to delazify in that case: this pointer is weak so the JSScript
+  // could be destroyed at the next GC.
 
   for (auto i = cx->zone()->cellIter<JSObject>(kind); !i.done(); i.next()) {
     JSFunction* fun = &i->as<JSFunction>();
 
-    
-    
-    
+    // When iterating over the GC-heap, we may encounter function objects that
+    // are incomplete (missing a BaseScript when we expect one). We must check
+    // for this case before we can call JSFunction::hasBytecode().
     if (fun->isIncomplete()) {
       continue;
     }
@@ -606,34 +606,31 @@ static bool CreateLazyScriptsForRealm(JSContext* cx) {
     return false;
   }
 
-  
-  
+  // Methods, for instance {get method() {}}, are extended functions that can
+  // be relazified, so we need to handle those as well.
   if (!AddLazyFunctionsForRealm(cx, &lazyFunctions,
                                 gc::AllocKind::FUNCTION_EXTENDED)) {
     return false;
   }
 
-  
-  
-  
+  // Create scripts for each lazy function, updating the list of functions to
+  // process with any newly exposed inner functions in created scripts.
+  // A function cannot be delazified until its outer script exists.
   RootedFunction fun(cx);
   for (size_t i = 0; i < lazyFunctions.length(); i++) {
     fun = &lazyFunctions[i]->as<JSFunction>();
 
-    
-    
+    // lazyFunctions may have been populated with multiple functions for
+    // a lazy script.
     if (!fun->isInterpreted() || fun->hasBytecode()) {
       continue;
     }
-
-    bool lazyScriptHadNoScript = !fun->lazyScript()->maybeScript();
 
     JSScript* script = JSFunction::getOrCreateScript(cx, fun);
     if (!script) {
       return false;
     }
-    if (lazyScriptHadNoScript &&
-        !AddInnerLazyFunctionsFromScript(script, &lazyFunctions)) {
+    if (!AddInnerLazyFunctionsFromScript(script, &lazyFunctions)) {
       return false;
     }
   }
@@ -701,8 +698,8 @@ void Realm::updateDebuggerObservesCoverage() {
   }
 
   if (debuggerObservesCoverage()) {
-    
-    
+    // Interrupt any running interpreter frame. The scriptCounts are
+    // allocated on demand when a script resumes its execution.
     JSContext* cx = TlsContext.get();
     for (ActivationIterator iter(cx); !iter.done(); ++iter) {
       if (iter->isInterpreter()) {
@@ -715,7 +712,7 @@ void Realm::updateDebuggerObservesCoverage() {
 
   runtime_->decrementNumDebuggeeRealmsObservingCoverage();
 
-  
+  // If code coverage is enabled by any other means, keep it.
   if (collectCoverage()) {
     return;
   }
@@ -805,30 +802,30 @@ AutoSetNewObjectMetadata::AutoSetNewObjectMetadata(
 }
 
 AutoSetNewObjectMetadata::~AutoSetNewObjectMetadata() {
-  
-  
+  // If we don't have a cx, we didn't change the metadata state, so no need to
+  // reset it here.
   if (!cx_) {
     return;
   }
 
   if (!cx_->isExceptionPending() && cx_->realm()->hasObjectPendingMetadata()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // This destructor often runs upon exit from a function that is
+    // returning an unrooted pointer to a Cell. The allocation metadata
+    // callback often allocates; if it causes a GC, then the Cell pointer
+    // being returned won't be traced or relocated.
+    //
+    // The only extant callbacks are those internal to SpiderMonkey that
+    // capture the JS stack. In fact, we're considering removing general
+    // callbacks altogther in bug 1236748. Since it's not running arbitrary
+    // code, it's adequate to simply suppress GC while we run the callback.
     gc::AutoSuppressGC autoSuppressGC(cx_);
 
     JSObject* obj = cx_->realm()->objectMetadataState_.as<PendingMetadata>();
 
-    
-    
-    
-    
+    // Make sure to restore the previous state before setting the object's
+    // metadata. SetNewObjectMetadata asserts that the state is not
+    // PendingMetadata in order to ensure that metadata callbacks are called
+    // in order.
     cx_->realm()->objectMetadataState_ = prevState_;
 
     obj = SetNewObjectMetadata(cx_, obj);
@@ -839,13 +836,13 @@ AutoSetNewObjectMetadata::~AutoSetNewObjectMetadata() {
 
 JS_PUBLIC_API void gc::TraceRealm(JSTracer* trc, JS::Realm* realm,
                                   const char* name) {
-  
-  
-  
-  
-  
-  
-  
+  // The way GC works with compartments is basically incomprehensible.
+  // For Realms, what we want is very simple: each Realm has a strong
+  // reference to its GlobalObject, and vice versa.
+  //
+  // Here we simply trace our side of that edge. During GC,
+  // GCRuntime::traceRuntimeCommon() marks all other realm roots, for
+  // all realms.
   realm->traceGlobal(trc);
 }
 
@@ -917,8 +914,8 @@ JS_PUBLIC_API JSObject* JS::GetRealmIteratorPrototype(JSContext* cx) {
 }
 
 JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
-  
-  
+  // https://tc39.github.io/ecma262/#sec-getfunctionrealm
+  // 7.3.22 GetFunctionRealm ( obj )
 
   CHECK_THREAD(cx);
   cx->check(objArg);
@@ -931,11 +928,11 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
       return nullptr;
     }
 
-    
+    // Step 1.
     MOZ_ASSERT(IsCallable(obj));
 
-    
-    
+    // Steps 2 and 3. We use a loop instead of recursion to unwrap bound
+    // functions.
     if (obj->is<JSFunction>()) {
       JSFunction* fun = &obj->as<JSFunction>();
       if (!fun->isBoundFunction()) {
@@ -946,9 +943,9 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
       continue;
     }
 
-    
+    // Step 4.
     if (IsScriptedProxy(obj)) {
-      
+      // Steps 4.a-b.
       JSObject* proxyTarget = GetProxyTargetObject(obj);
       if (!proxyTarget) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -956,12 +953,12 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
         return nullptr;
       }
 
-      
+      // Step 4.c.
       obj = proxyTarget;
       continue;
     }
 
-    
+    // Step 5.
     return cx->realm();
   }
 }
