@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --card-padding: 24px;
@@ -12,19 +12,19 @@
   --fingerprinter-color: #FFA436;
   --cryptominer-color: #ADADBC;
 
-  
+  /* Highlight colors for trackers */
   --social-highlight-color: #7B4CDB;
   --cookie-highlight-color: #0081DB;
   --tracker-highlight-color: #23A488;
   --fingerprinter-highlight-color: #D37F17;
   --cryptominer-highlight-color: #9292A0;
 
-  --tab-highlight: var(--social-color); 
+  --tab-highlight: var(--social-color); /* start with social selected */
   --column-width: 16px;
   --graph-empty: #CECECF;
   --graph-curve: cubic-bezier(.66,.75,.59,.91);
 
-  
+  /* Colors for the loading indicator */
   --protection-report-loader-color-stop: #AEAEAE3D;
   --protection-report-loader-gradient-opacity: 0.95;
 }
@@ -107,7 +107,7 @@ h2 {
   grid-area: 1 / 1 / 1 / -1;
 }
 
-
+/* We want to hide certain components depending on its state. */
 .no-logins .monitor-scanned-wrapper,
 .etp-card.custom-not-blocking .card-body,
 .etp-card.custom-not-blocking #protection-details,
@@ -206,21 +206,14 @@ a.hidden,
   position: absolute;
   width: var(--exit-icon-size);
   height: var(--exit-icon-size);
+  top: var(--exit-icon-position);
+  inset-inline-end: var(--exit-icon-position);
   background-image: url(chrome://browser/skin/stop.svg);
   background-size: calc(var(--exit-icon-size) - 2px);
   background-position: center;
   background-repeat: no-repeat;
-  top: var(--exit-icon-position);
   -moz-context-properties: fill;
   fill: var(--in-content-deemphasized-text);
-}
-
-.exit-icon:dir(ltr) {
-  right: var(--exit-icon-position);
-}
-
-.exit-icon:dir(rtl) {
-  left: var(--exit-icon-position);
 }
 
 .exit-icon:hover {
@@ -240,6 +233,7 @@ a.hidden,
 }
 
 #protection-details {
+  margin-block: 24px 0;
   padding-inline: 24px 3px;
   -moz-context-properties: fill;
   fill: currentColor;
@@ -247,7 +241,6 @@ a.hidden,
   font-size: 0.75em;
   cursor: default;
   width: max-content;
-  margin-block: 24px 0;
 }
 
 #protection-details:dir(rtl) {
@@ -317,7 +310,7 @@ a.hidden,
   display: none;
 }
 
-
+/* Graph Bars */
 .graph-bar {
   grid-row: 2 / -2;
   align-self: flex-end;
@@ -405,7 +398,7 @@ a.hidden,
   opacity: 1;
 }
 
-
+/* Legend */
 #graphLegendDescription {
   position: absolute;
   opacity: 0;
@@ -582,7 +575,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   grid-template-rows: 20% auto auto;
 }
 
-
+/* Lockwise Card */
 
 #lockwise-body-content > .no-logins,
 #lockwise-body-content > .has-logins,
@@ -634,7 +627,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   margin-inline-start: 10px;
 }
 
-
+/* Monitor card */
 
 #monitor-body-content .monitor-breached-passwords {
   grid: 1fr / repeat(7, 1fr);
@@ -726,7 +719,6 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   -moz-context-properties: fill,fill-opacity;
   fill: white;
   fill-opacity: 0.65;
-  display: block;
   padding: 5px;
   display: inline-block;
   vertical-align: middle;
