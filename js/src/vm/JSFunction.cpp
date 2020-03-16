@@ -1552,6 +1552,7 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
   ScriptSource* ss = lazy->scriptSource();
   size_t sourceStart = lazy->sourceStart();
   size_t sourceLength = lazy->sourceEnd() - lazy->sourceStart();
+  bool hadLazyScriptData = lazy->hasPrivateScriptData();
 
   if (ss->hasBinASTSource()) {
 #if defined(JS_BUILD_BINAST)
@@ -1608,8 +1609,9 @@ static bool DelazifyCanonicalScriptedFunction(JSContext* cx,
   RootedScript script(cx, fun->nonLazyScript());
   MOZ_ASSERT(lazy->maybeScript() == script);
 
-  if (script->isRelazifiable()) {
-    
+  
+  
+  if (script->isRelazifiable() && !hadLazyScriptData) {
     
     
     script->setLazyScript(lazy);
