@@ -952,7 +952,7 @@ interface nsIDOMWindowUtils : nsISupports {
   readonly attribute float screenPixelsPerCSSPixel;
 
   /**
-   * Get the number of screen pixels per CSS pixel, 
+   * Get the number of screen pixels per CSS pixel,
    * not taking into account any override of the device pixel scale
    * that's imposed by Responsive Design Mode.
    *
@@ -1457,6 +1457,15 @@ interface nsIDOMWindowUtils : nsISupports {
   bool flushApzRepaints();
 
   /**
+   * Sets a flag on the element to forcibly disable APZ on it. This affects
+   * the result of nsLayoutUtils::ShouldDisableApzForElement when called on
+   * this element. This function also schedules a repaint to ensure that the
+   * change takes effect. Note that this is not reversible; it is intended for
+   * use by test code only.
+   */
+  void disableApzForElement(in Element aElement);
+
+  /**
    * Ask APZ to pan and zoom to the focused input element.
    */
   [can_run_script] void zoomToFocusedInput();
@@ -1771,12 +1780,6 @@ interface nsIDOMWindowUtils : nsISupports {
    * Posts an RestyleHint::RESTYLE_SELF restyle event for the given element.
    */
   void postRestyleSelfEvent(in Element aElement);
-
-  /**
-   * Used to pause or resume all media in this window. Use-cases are audio
-   * competing, remote media control and to prevent auto-playing media.
-   */
-  attribute uint32_t mediaSuspend;
 
   /**
    * This method doesn't do anything useful.  It was solely added for the
