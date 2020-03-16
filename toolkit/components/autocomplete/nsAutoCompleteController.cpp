@@ -420,12 +420,13 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
       aKey == dom::KeyboardEvent_Binding::DOM_VK_DOWN ||
       aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP ||
       aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_DOWN) {
+    
+    
+    *_retval = true;
+
     bool isOpen = false;
     input->GetPopupOpen(&isOpen);
     if (isOpen) {
-      
-      
-      *_retval = true;
       bool reverse = aKey == dom::KeyboardEvent_Binding::DOM_VK_UP ||
                              aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP
                          ? true
@@ -487,71 +488,59 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
         }
       }
     } else {
+#ifdef XP_MACOSX
       
       
       
-      if (aKey == dom::KeyboardEvent_Binding::DOM_VK_UP ||
-          aKey == dom::KeyboardEvent_Binding::DOM_VK_DOWN) {
-        const bool isUp = aKey == dom::KeyboardEvent_Binding::DOM_VK_UP;
-
-        int32_t start, end;
+      
+      int32_t start, end;
+      if (aKey == dom::KeyboardEvent_Binding::DOM_VK_UP) {
         input->GetSelectionStart(&start);
         input->GetSelectionEnd(&end);
+        if (start > 0 || start != end) *_retval = false;
+      } else if (aKey == dom::KeyboardEvent_Binding::DOM_VK_DOWN) {
+        nsAutoString text;
+        input->GetTextValue(text);
+        input->GetSelectionStart(&start);
+        input->GetSelectionEnd(&end);
+        if (start != end || end < (int32_t)text.Length()) *_retval = false;
+      }
+#endif
+      if (*_retval) {
+        nsAutoString oldSearchString;
+        uint16_t oldResult = 0;
 
-        if (isUp) {
-          if (start > 0 || start != end) {
-            return NS_OK;
+        
+        
+        if (!mResults.IsEmpty() &&
+            NS_SUCCEEDED(mResults[0]->GetSearchResult(&oldResult)) &&
+            oldResult != nsIAutoCompleteResult::RESULT_FAILURE &&
+            NS_SUCCEEDED(mResults[0]->GetSearchString(oldSearchString)) &&
+            oldSearchString.Equals(mSearchString,
+                                   nsCaseInsensitiveStringComparator())) {
+          if (mMatchCount) {
+            OpenPopup();
           }
         } else {
-          nsAutoString text;
-          input->GetTextValue(text);
-          if (start != end || end < (int32_t)text.Length()) {
+          
+          StopSearch();
+
+          if (!mInput) {
+            
+            
+            
             return NS_OK;
           }
-        }
-      }
 
-      nsAutoString oldSearchString;
-      uint16_t oldResult = 0;
-
-      
-      
-      if (!mResults.IsEmpty() &&
-          NS_SUCCEEDED(mResults[0]->GetSearchResult(&oldResult)) &&
-          oldResult != nsIAutoCompleteResult::RESULT_FAILURE &&
-          NS_SUCCEEDED(mResults[0]->GetSearchString(oldSearchString)) &&
-          oldSearchString.Equals(mSearchString,
-                                 nsCaseInsensitiveStringComparator())) {
-        if (mMatchCount) {
-          OpenPopup();
-        }
-      } else {
-        
-        StopSearch();
-
-        if (!mInput) {
           
           
           
-          return NS_OK;
+          nsAutoString value;
+          input->GetTextValue(value);
+          SetSearchStringInternal(value);
+
+          StartSearches();
         }
-
-        
-        
-        
-        nsAutoString value;
-        input->GetTextValue(value);
-        SetSearchStringInternal(value);
-
-        StartSearches();
-      }
-
-      bool isOpen = false;
-      input->GetPopupOpen(&isOpen);
-      if (isOpen) {
-        
-        
-        *_retval = true;
       }
     }
   } else if (aKey == dom::KeyboardEvent_Binding::DOM_VK_LEFT ||
@@ -997,9 +986,7 @@ nsresult nsAutoCompleteController::StartSearch(uint16_t aSearchType) {
 
 void nsAutoCompleteController::AfterSearches() {
   mResultCache.Clear();
-  if (mSearchesFailed == mSearches.Length()) {
-    PostSearchCleanup();
-  }
+  if (mSearchesFailed == mSearches.Length()) PostSearchCleanup();
 }
 
 NS_IMETHODIMP
