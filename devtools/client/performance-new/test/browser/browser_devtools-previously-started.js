@@ -19,10 +19,15 @@ add_task(async function test() {
   await withDevToolsPanel(async document => {
     const getRecordingState = setupGetRecordingState(document);
 
-    is(
-      getRecordingState(),
-      "not-yet-known",
-      "The component starts out in an unknown state."
+    
+    
+    
+    
+    
+    ok(
+      getRecordingState() === "not-yet-known" ||
+        getRecordingState() === "recording",
+      "The component starts out in an unknown state or in a recording state."
     );
 
     const cancelRecording = await getActiveButtonFromText(
