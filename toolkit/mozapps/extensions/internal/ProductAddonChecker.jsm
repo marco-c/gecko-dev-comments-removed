@@ -312,10 +312,7 @@ function downloadLocalConfig() {
 
 
 
-
-
-
-function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
+function downloadFile(url) {
   return new Promise((resolve, reject) => {
     let xhr = new XMLHttpRequest();
     xhr.onload = function(response) {
@@ -355,7 +352,6 @@ function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
     xhr.responseType = "arraybuffer";
     try {
       xhr.open("GET", url);
-      xhr.channel.loadInfo.httpsOnlyNoUpgrade = options.httpsOnlyNoUpgrade;
       
       
       if (xhr.channel instanceof Ci.nsIHttpChannelInternal) {
@@ -487,11 +483,8 @@ const ProductAddonChecker = {
 
 
 
-
-
-
-  async downloadAddon(addon, options = { httpsOnlyNoUpgrade: false }) {
-    let path = await downloadFile(addon.URL, options);
+  async downloadAddon(addon) {
+    let path = await downloadFile(addon.URL);
     try {
       await verifyFile(addon, path);
       return path;
