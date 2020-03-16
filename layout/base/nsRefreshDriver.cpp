@@ -467,9 +467,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     mVsyncRate = mVsyncChild->GetVsyncRate();
   }
 
-  
-  
-  
   explicit VsyncRefreshDriverTimer(const RefPtr<gfx::VsyncSource>& aVsyncSource)
       : mVsyncChild(nullptr) {
     MOZ_ASSERT(XRE_IsParentProcess());
@@ -828,8 +825,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     Tick(aId, aTimeStamp);
   }
 
-  
-  
   
   
   RefPtr<gfx::VsyncSource> mVsyncSource;
