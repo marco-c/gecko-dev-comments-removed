@@ -1519,6 +1519,20 @@ impl PrimitiveVisibilityMask {
     pub const MAX_DIRTY_REGIONS: usize = 8 * mem::size_of::<PrimitiveVisibilityMask>();
 }
 
+bitflags! {
+    /// A set of bitflags that can be set in the visibility information
+    /// for a primitive instance. This can be used to control how primitives
+    /// are treated during batching.
+    // TODO(gw): We should also move `is_compositor_surface` to be part of
+    //           this flags struct.
+    #[cfg_attr(feature = "capture", derive(Serialize))]
+    pub struct PrimitiveVisibilityFlags: u16 {
+        /// Implies that this primitive covers the entire picture cache slice,
+        /// and can thus be dropped during batching and drawn with clear color.
+        const IS_BACKDROP = 1;
+    }
+}
+
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -1538,6 +1552,10 @@ pub struct PrimitiveVisibility {
     
     
     pub clip_task_index: ClipTaskIndex,
+
+    
+    
+    pub flags: PrimitiveVisibilityFlags,
 
     
     pub visibility_mask: PrimitiveVisibilityMask,
@@ -2095,6 +2113,7 @@ impl PrimitiveStore {
                             clip_task_index: ClipTaskIndex::INVALID,
                             combined_local_clip_rect: LayoutRect::zero(),
                             visibility_mask: PrimitiveVisibilityMask::empty(),
+                            flags: PrimitiveVisibilityFlags::empty(),
                         }
                     );
 
@@ -2156,11 +2175,16 @@ impl PrimitiveStore {
                             prim_instance.is_chased(),
                         );
 
+                    
+                    
+                    
+                    let mut vis_flags = PrimitiveVisibilityFlags::empty();
+
                     if let Some(ref mut tile_cache) = frame_state.tile_cache {
                         
                         
                         
-                        if !tile_cache.update_prim_dependencies(
+                        match tile_cache.update_prim_dependencies(
                             prim_instance,
                             cluster.spatial_node_index,
                             clip_chain.as_ref(),
@@ -2176,11 +2200,16 @@ impl PrimitiveStore {
                             &frame_state.surface_stack,
                             &mut frame_state.composite_state,
                         ) {
-                            prim_instance.visibility_info = PrimitiveVisibilityIndex::INVALID;
-                            
-                            
-                            frame_state.clip_chain_stack.pop_clip();
-                            continue;
+                            Some(flags) => {
+                                vis_flags = flags;
+                            }
+                            None => {
+                                prim_instance.visibility_info = PrimitiveVisibilityIndex::INVALID;
+                                
+                                
+                                frame_state.clip_chain_stack.pop_clip();
+                                continue;
+                            }
                         }
                     }
 
@@ -2308,6 +2337,7 @@ impl PrimitiveStore {
                             clip_task_index: ClipTaskIndex::INVALID,
                             combined_local_clip_rect,
                             visibility_mask: PrimitiveVisibilityMask::empty(),
+                            flags: vis_flags,
                         }
                     );
 
