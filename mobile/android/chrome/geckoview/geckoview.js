@@ -599,6 +599,12 @@ function startup() {
 
     
     
+    InitLater(() => {
+      Services.obs.notifyObservers(window, "extensions-late-startup");
+    });
+
+    
+    
     
 
     
