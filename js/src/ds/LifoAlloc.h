@@ -848,24 +848,13 @@ class LifoAlloc {
   }
 
   
-  size_t computedSizeOfExcludingThis() const {
-    size_t n = 0;
-    for (const detail::BumpChunk& chunk : chunks_) {
-      n += chunk.computedSizeOfIncludingThis();
-    }
-    for (const detail::BumpChunk& chunk : oversize_) {
-      n += chunk.computedSizeOfIncludingThis();
-    }
-    for (const detail::BumpChunk& chunk : unused_) {
-      n += chunk.computedSizeOfIncludingThis();
-    }
-    return n;
-  }
-
-  
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
   }
+
+  
+  
+  size_t computedSizeOfExcludingThis() const { return curSize_; }
 
   
   
