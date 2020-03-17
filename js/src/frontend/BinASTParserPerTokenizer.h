@@ -69,7 +69,6 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
                            const JS::ReadOnlyCompileOptions& options,
                            HandleScriptSourceObject sourceObject,
                            Handle<BaseScript*> lazyScript = nullptr);
-  ~BinASTParserPerTokenizer() {}
 
   
 

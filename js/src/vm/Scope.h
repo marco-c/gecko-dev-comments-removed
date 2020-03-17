@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_Scope_h
 #define vm_Scope_h
@@ -20,7 +20,7 @@
 #include "util/Poison.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/JSObject.h"
-#include "vm/Printer.h"  
+#include "vm/Printer.h"  // GenericPrinter
 #include "vm/ScopeKind.h"
 #include "vm/Xdr.h"
 
@@ -29,7 +29,7 @@ namespace js {
 namespace frontend {
 class ScopeCreationData;
 class EnvironmentShapeCreationData;
-};  
+};  // namespace frontend
 
 class BaseScopeData;
 class ModuleObject;
@@ -42,8 +42,8 @@ enum class BindingKind : uint8_t {
   Let,
   Const,
 
-  
-  
+  // So you think named lambda callee names are consts? Nope! They don't
+  // throw when being assigned to in sloppy mode.
   NamedLambdaCallee
 };
 
@@ -68,15 +68,15 @@ const char* BindingKindString(BindingKind kind);
 const char* ScopeKindString(ScopeKind kind);
 
 class BindingName {
-  
-  
-  
-  
+  // A JSAtom* with its low bit used as a tag for the:
+  //  * whether it is closed over (i.e., exists in the environment shape)
+  //  * whether it is a top-level function binding in global or eval scope,
+  //    instead of var binding (both are in the same range in Scope data)
   uintptr_t bits_;
 
   static const uintptr_t ClosedOverFlag = 0x1;
-  
-  
+  // TODO: We should reuse this bit for let vs class distinction to
+  //       show the better redeclaration error message (bug 1428672).
   static const uintptr_t TopLevelFunctionFlag = 0x2;
   static const uintptr_t FlagMask = 0x3;
 
@@ -88,7 +88,7 @@ class BindingName {
               (isTopLevelFunction ? TopLevelFunctionFlag : 0x0)) {}
 
  private:
-  
+  // For fromXDR.
   BindingName(JSAtom* name, uint8_t flags) : bits_(uintptr_t(name) | flags) {
     static_assert(FlagMask < alignof(JSAtom),
                   "Flags should fit into unused bits of JSAtom pointer");
@@ -108,41 +108,41 @@ class BindingName {
 
  private:
   friend class BindingIter;
-  
-  
+  // This method should be called only for binding names in `vars` range in
+  // BindingIter.
   bool isTopLevelFunction() const { return bits_ & TopLevelFunctionFlag; }
 
  public:
   void trace(JSTracer* trc);
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * The various {Global,Module,...}Scope::Data classes consist of always-present
+ * bits, then a trailing array of BindingNames.  The various Data classes all
+ * end in a TrailingNamesArray that contains sized/aligned space for *one*
+ * BindingName.  Data instances that contain N BindingNames, are then allocated
+ * in sizeof(Data) + (space for (N - 1) BindingNames).  Because this class's
+ * |data_| field is properly sized/aligned, the N-BindingName array can start
+ * at |data_|.
+ *
+ * This is concededly a very low-level representation, but we want to only
+ * allocate once for data+bindings both, and this does so approximately as
+ * elegantly as C++ allows.
+ */
 class TrailingNamesArray {
  private:
   alignas(BindingName) unsigned char data_[sizeof(BindingName)];
 
  private:
-  
-  
-  
-  
+  // Some versions of GCC treat it as a -Wstrict-aliasing violation (ergo a
+  // -Werror compile error) to reinterpret_cast<> |data_| to |T*|, even
+  // through |void*|.  Placing the latter cast in these separate functions
+  // breaks the chain such that affected GCC versions no longer warn/error.
   void* ptr() { return data_; }
 
  public:
-  
-  
+  // Explicitly ensure no one accidentally allocates scope data without
+  // poisoning its trailing names.
   TrailingNamesArray() = delete;
 
   explicit TrailingNamesArray(size_t nameCount) {
@@ -224,9 +224,9 @@ class BindingLocation {
   }
 };
 
-
-
-
+//
+// Allow using is<T> and as<T> on Rooted<Scope*> and Handle<Scope*>.
+//
 template <typename Wrapper>
 class WrappedPtrOperations<Scope*, Wrapper> {
  public:
@@ -239,21 +239,21 @@ class WrappedPtrOperations<Scope*, Wrapper> {
   }
 };
 
-
-
-
+//
+// The base class of all Scopes.
+//
 class Scope : public js::gc::TenuredCell {
   friend class GCMarker;
   friend class frontend::ScopeCreationData;
 
-  
+  // The enclosing scope or nullptr.
   const GCPtrScope enclosing_;
 
-  
+  // The kind determines data_.
   const ScopeKind kind_;
 
-  
-  
+  // If there are any aliased bindings, the shape for the
+  // EnvironmentObject. Otherwise nullptr.
   const GCPtrShape environmentShape_;
 
  protected:
@@ -320,7 +320,7 @@ class Scope : public js::gc::TenuredCell {
       case ScopeKind::NonSyntactic:
         return true;
       default:
-        
+        // If there's a shape, an environment must be created for this scope.
         return environmentShape;
     }
   }
@@ -362,10 +362,10 @@ class Scope : public js::gc::TenuredCell {
 #if defined(DEBUG) || defined(JS_JITSPEW)
   static bool dumpForDisassemble(JSContext* cx, JS::Handle<Scope*> scope,
                                  GenericPrinter& out, const char* indent);
-#endif 
+#endif /* defined(DEBUG) || defined(JS_JITSPEW) */
 };
 
-
+/** Empty base class for scope Data classes to inherit from. */
 class BaseScopeData {};
 
 template <class Data>
@@ -377,27 +377,27 @@ inline size_t SizeOfData(uint32_t numBindings) {
          (numBindings ? numBindings - 1 : 0) * sizeof(BindingName);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// A lexical scope that holds let and const bindings. There are 4 kinds of
+// LexicalScopes.
+//
+// Lexical
+//   A plain lexical scope.
+//
+// SimpleCatch
+//   Holds the single catch parameter of a catch block.
+//
+// Catch
+//   Holds the catch parameters (and only the catch parameters) of a catch
+//   block.
+//
+// NamedLambda
+// StrictNamedLambda
+//   Holds the single name of the callee for a named lambda expression.
+//
+// All kinds of LexicalScopes correspond to LexicalEnvironmentObjects on the
+// environment chain.
+//
 class LexicalScope : public Scope {
   friend class Scope;
   friend class BindingIter;
@@ -405,21 +405,21 @@ class LexicalScope : public Scope {
   friend class frontend::ScopeCreationData;
 
  public:
-  
-  
+  // Data is public because it is created by the frontend. See
+  // Parser<FullParseHandler>::newLexicalScopeData.
   struct Data : public BaseScopeData {
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
-    
+    // Bindings are sorted by kind in both frames and environments.
+    //
+    //   lets - [0, constStart)
+    // consts - [constStart, length)
     uint32_t constStart = 0;
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -456,8 +456,8 @@ class LexicalScope : public Scope {
 
   uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
 
-  
-  
+  // Returns an empty shape for extensible global and non-syntactic lexical
+  // scopes.
   static Shape* getEmptyExtensibleEnvironmentShape(JSContext* cx);
 };
 
@@ -469,24 +469,24 @@ inline bool Scope::is<LexicalScope>() const {
          kind_ == ScopeKind::FunctionLexical;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// Scope corresponding to a function. Holds formal parameter names, special
+// internal names (see FunctionScope::isSpecialName), and, if the function
+// parameters contain no expressions that might possibly be evaluated, the
+// function's var bindings. For example, in these functions, the FunctionScope
+// will store a/b/c bindings but not d/e/f bindings:
+//
+//   function f1(a, b) {
+//     var c;
+//     let e;
+//     const f = 3;
+//   }
+//   function f2([a], b = 4, ...c) {
+//     var d, e, f; // stored in VarScope
+//   }
+//
+// Corresponds to CallObject on environment chain.
+//
 class FunctionScope : public Scope {
   friend class GCMarker;
   friend class BindingIter;
@@ -496,57 +496,57 @@ class FunctionScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::Function;
 
  public:
-  
-  
+  // Data is public because it is created by the
+  // frontend. See Parser<FullParseHandler>::newFunctionScopeData.
   struct Data : public BaseScopeData {
-    
-    
-    
+    // The canonical function of the scope, as during a scope walk we
+    // often query properties of the JSFunction (e.g., is the function an
+    // arrow).
     GCPtrFunction canonicalFunction = {};
 
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
+    // If parameter expressions are present, parameters act like lexical
+    // bindings.
     bool hasParameterExprs = false;
 
-    
+    // Yes if the corresponding function is a field initializer lambda.
     IsFieldInitializer isFieldInitializer = IsFieldInitializer::No;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // Bindings are sorted by kind in both frames and environments.
+    //
+    // Positional formal parameter names are those that are not
+    // destructured. They may be referred to by argument slots if
+    // !script()->hasParameterExprs().
+    //
+    // An argument slot that needs to be skipped due to being destructured
+    // or having defaults will have a nullptr name in the name array to
+    // advance the argument slot.
+    //
+    // Rest parameter binding is also included in positional formals.
+    // This also becomes nullptr if destructuring.
+    //
+    // The number of positional formals is equal to function.length if
+    // there's no rest, function.length+1 otherwise.
+    //
+    // Destructuring parameters and destructuring rest are included in
+    // "other formals" below.
+    //
+    // "vars" contains the following:
+    //   * function's top level vars if !script()->hasParameterExprs()
+    //   * special internal names (arguments, .this, .generator) if
+    //     they're used.
+    //
+    // positional formals - [0, nonPositionalFormalStart)
+    //      other formals - [nonPositionalParamStart, varStart)
+    //               vars - [varStart, length)
     uint16_t nonPositionalFormalStart = 0;
     uint16_t varStart = 0;
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -611,15 +611,15 @@ class FunctionScope : public Scope {
   static Shape* getEmptyEnvironmentShape(JSContext* cx);
 };
 
-
-
-
-
-
-
-
-
-
+//
+// Scope holding only vars. There is a single kind of VarScopes.
+//
+// FunctionBodyVar
+//   Corresponds to the extra var scope present in functions with parameter
+//   expressions. See examples in comment above FunctionScope.
+//
+// Corresponds to VarEnvironmentObject on environment chain.
+//
 class VarScope : public Scope {
   friend class GCMarker;
   friend class BindingIter;
@@ -627,19 +627,19 @@ class VarScope : public Scope {
   friend class frontend::ScopeCreationData;
 
  public:
-  
-  
+  // Data is public because it is created by the
+  // frontend. See Parser<FullParseHandler>::newVarScopeData.
   struct Data : public BaseScopeData {
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
+    // All bindings are vars.
+    //
+    //            vars - [0, length)
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -689,46 +689,46 @@ inline bool Scope::is<VarScope>() const {
   return kind_ == ScopeKind::FunctionBodyVar;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// Scope corresponding to both the global object scope and the global lexical
+// scope.
+//
+// Both are extensible and are singletons across <script> tags, so these
+// scopes are a fragment of the names in global scope. In other words, two
+// global scripts may have two different GlobalScopes despite having the same
+// GlobalObject.
+//
+// There are 2 kinds of GlobalScopes.
+//
+// Global
+//   Corresponds to a GlobalObject and its global LexicalEnvironmentObject on
+//   the environment chain.
+//
+// NonSyntactic
+//   Corresponds to a non-GlobalObject created by the embedding on the
+//   environment chain. This distinction is important for optimizations.
+//
 class GlobalScope : public Scope {
   friend class Scope;
   friend class BindingIter;
   friend class GCMarker;
 
  public:
-  
-  
+  // Data is public because it is created by the frontend. See
+  // Parser<FullParseHandler>::newGlobalScopeData.
   struct Data : BaseScopeData {
-    
-    
-    
-    
-    
-    
-    
+    // Bindings are sorted by kind.
+    // `vars` includes top-level functions which is distinguished by a bit
+    // on the BindingName.
+    //
+    //            vars - [0, letStart)
+    //            lets - [letStart, constStart)
+    //          consts - [constStart, length)
     uint32_t letStart = 0;
     uint32_t constStart = 0;
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -769,10 +769,10 @@ inline bool Scope::is<GlobalScope>() const {
   return kind_ == ScopeKind::Global || kind_ == ScopeKind::NonSyntactic;
 }
 
-
-
-
-
+//
+// Scope of a 'with' statement. Has no bindings.
+//
+// Corresponds to a WithEnvironmentObject on the environment chain.
 class WithScope : public Scope {
   friend class Scope;
   friend class AbstractScopePtr;
@@ -786,18 +786,18 @@ class WithScope : public Scope {
                        MutableHandleScope scope);
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// Scope of an eval. Holds var bindings. There are 2 kinds of EvalScopes.
+//
+// StrictEval
+//   A strict eval. Corresponds to a VarEnvironmentObject, where its var
+//   bindings lives.
+//
+// Eval
+//   A sloppy eval. This is an empty scope, used only in the frontend, to
+//   detect redeclaration errors. It has no Environment. Any `var`s declared
+//   in the eval code are bound on the nearest enclosing var environment.
+//
 class EvalScope : public Scope {
   friend class Scope;
   friend class BindingIter;
@@ -805,23 +805,23 @@ class EvalScope : public Scope {
   friend class frontend::ScopeCreationData;
 
  public:
-  
-  
+  // Data is public because it is created by the frontend. See
+  // Parser<FullParseHandler>::newEvalScopeData.
   struct Data : public BaseScopeData {
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
-    
-    
-    
-    
+    // All bindings in an eval script are 'var' bindings. The implicit
+    // lexical scope around the eval is present regardless of strictness
+    // and is its own LexicalScope.
+    // `vars` includes top-level functions which is distinguished by a bit
+    // on the BindingName.
+    //
+    //            vars - [0, length)
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -856,8 +856,8 @@ class EvalScope : public Scope {
   const Data& data() const { return *static_cast<Data*>(data_); }
 
  public:
-  
-  
+  // Starting a scope, the nearest var scope that a direct eval can
+  // introduce vars on.
   static Scope* nearestVarScopeForDirectEval(Scope* scope);
 
   uint32_t nextFrameSlot() const { return data().nextFrameSlot; }
@@ -881,14 +881,14 @@ inline bool Scope::is<EvalScope>() const {
   return kind_ == ScopeKind::Eval || kind_ == ScopeKind::StrictEval;
 }
 
-
-
-
-
-
-
-
-
+//
+// Scope corresponding to the toplevel script in an ES module.
+//
+// Like GlobalScopes, these scopes contain both vars and lexical bindings, as
+// the treating of imports and exports requires putting them in one scope.
+//
+// Corresponds to a ModuleEnvironmentObject on the environment chain.
+//
 class ModuleScope : public Scope {
   friend class GCMarker;
   friend class BindingIter;
@@ -898,28 +898,28 @@ class ModuleScope : public Scope {
   static const ScopeKind classScopeKind_ = ScopeKind::Module;
 
  public:
-  
-  
+  // Data is public because it is created by the frontend. See
+  // Parser<FullParseHandler>::newModuleScopeData.
   struct Data : BaseScopeData {
-    
+    // The module of the scope.
     GCPtr<ModuleObject*> module = {};
 
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
-    
-    
-    
+    // Bindings are sorted by kind.
+    //
+    // imports - [0, varStart)
+    //    vars - [varStart, letStart)
+    //    lets - [letStart, constStart)
+    //  consts - [constStart, length)
     uint32_t varStart = 0;
     uint32_t letStart = 0;
     uint32_t constStart = 0;
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -971,21 +971,21 @@ class WasmInstanceScope : public Scope {
 
  public:
   struct Data : public BaseScopeData {
-    
+    // The wasm instance of the scope.
     GCPtr<WasmInstanceObject*> instance = {};
 
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
-    
+    // Bindings list the WASM memories and globals.
+    //
+    // memories - [0, globalsStart)
+    //  globals - [globalsStart, length)
     uint32_t globalsStart = 0;
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -1013,9 +1013,9 @@ class WasmInstanceScope : public Scope {
   static Shape* getEmptyEnvironmentShape(JSContext* cx);
 };
 
-
-
-
+// Scope corresponding to the wasm function. A WasmFunctionScope is used by
+// Debugger only, and not for wasm execution.
+//
 class WasmFunctionScope : public Scope {
   friend class BindingIter;
   friend class Scope;
@@ -1025,16 +1025,16 @@ class WasmFunctionScope : public Scope {
 
  public:
   struct Data : public BaseScopeData {
-    
-    
+    // Frame slots [0, nextFrameSlot) are live when this is the innermost
+    // scope.
     uint32_t nextFrameSlot = 0;
 
-    
-    
-    
+    // Bindings are the local variable names.
+    //
+    //    vars - [0, length)
     uint32_t length = 0;
 
-    
+    // Tagged JSAtom* names, allocated beyond the end of the struct.
     TrailingNamesArray trailingNames;
 
     explicit Data(size_t nameCount) : trailingNames(nameCount) {}
@@ -1073,7 +1073,7 @@ void Scope::applyScopeDataTyped(F&& f) {
         f(&as<LexicalScope>().data());
         break;
       case ScopeKind::With:
-        
+        // With scopes do not have data.
         break;
       case ScopeKind::Eval:
       case ScopeKind::StrictEval:
@@ -1098,49 +1098,49 @@ void Scope::applyScopeDataTyped(F&& f) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+//
+// An iterator for a Scope's bindings. This is the source of truth for frame
+// and environment object layout.
+//
+// It may be placed in GC containers; for example:
+//
+//   for (Rooted<BindingIter> bi(cx, BindingIter(scope)); bi; bi++) {
+//     use(bi);
+//     SomeMayGCOperation();
+//     use(bi);
+//   }
+//
 class BindingIter {
  protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // Bindings are sorted by kind. Because different Scopes have differently
+  // laid out Data for packing, BindingIter must handle all binding kinds.
+  //
+  // Kind ranges:
+  //
+  //            imports - [0, positionalFormalStart)
+  // positional formals - [positionalFormalStart, nonPositionalFormalStart)
+  //      other formals - [nonPositionalParamStart, varStart)
+  //               vars - [varStart, letStart)
+  //               lets - [letStart, constStart)
+  //             consts - [constStart, length)
+  //
+  // Access method when not closed over:
+  //
+  //            imports - name
+  // positional formals - argument slot
+  //      other formals - frame slot
+  //               vars - frame slot
+  //               lets - frame slot
+  //             consts - frame slot
+  //
+  // Access method when closed over:
+  //
+  //            imports - name
+  // positional formals - environment slot or name
+  //      other formals - environment slot or name
+  //               vars - environment slot or name
+  //               lets - environment slot or name
+  //             consts - environment slot or name
   MOZ_INIT_OUTSIDE_CTOR uint32_t positionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t nonPositionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t varStart_;
@@ -1156,11 +1156,11 @@ class BindingIter {
     CanHaveFrameSlots = 1 << 1,
     CanHaveEnvironmentSlots = 1 << 2,
 
-    
+    // See comment in settle below.
     HasFormalParameterExprs = 1 << 3,
     IgnoreDestructuredFormalParameters = 1 << 4,
 
-    
+    // Truly I hate named lambdas.
     IsNamedLambda = 1 << 5
   };
 
@@ -1223,15 +1223,15 @@ class BindingIter {
         }
       }
       if (closedOver()) {
-        
-        
+        // Imports must not be given known slots. They are
+        // indirect bindings.
         MOZ_ASSERT(kind() != BindingKind::Import);
         MOZ_ASSERT(canHaveEnvironmentSlots());
         environmentSlot_++;
       } else if (canHaveFrameSlots()) {
-        
-        
-        
+        // Usually positional formal parameters don't have frame
+        // slots, except when there are parameter expressions, in
+        // which case they act like lets.
         if (index_ >= nonPositionalFormalStart_ ||
             (hasFormalParameterExprs() && name())) {
           frameSlot_++;
@@ -1337,8 +1337,8 @@ class BindingIter {
       return BindingKind::Import;
     }
     if (index_ < varStart_) {
-      
-      
+      // When the parameter list has expressions, the parameters act
+      // like lexical bindings and have TDZ.
       if (hasFormalParameterExprs()) {
         return BindingKind::Let;
       }
@@ -1396,10 +1396,10 @@ JSAtom* FrameSlotName(JSScript* script, jsbytecode* pc);
 Shape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
                              uint32_t numSlots, uint32_t baseShapeFlags);
 
-
-
-
-
+//
+// A refinement BindingIter that only iterates over positional formal
+// parameters of a function.
+//
 class PositionalFormalParameterIter : public BindingIter {
   void settle() {
     if (index_ >= nonPositionalFormalStart_) {
@@ -1419,17 +1419,17 @@ class PositionalFormalParameterIter : public BindingIter {
   bool isDestructured() const { return !name(); }
 };
 
-
-
-
-
-
-
-
-
-
-
-
+//
+// Iterator for walking the scope chain.
+//
+// It may be placed in GC containers; for example:
+//
+//   for (Rooted<ScopeIter> si(cx, ScopeIter(scope)); si; si++) {
+//     use(si);
+//     SomeMayGCOperation();
+//     use(si);
+//   }
+//
 class MOZ_STACK_CLASS ScopeIter {
   Scope* scope_;
 
@@ -1438,7 +1438,7 @@ class MOZ_STACK_CLASS ScopeIter {
 
   explicit ScopeIter(JSScript* script);
 
-  explicit ScopeIter(const ScopeIter& si) : scope_(si.scope_) {}
+  explicit ScopeIter(const ScopeIter& si) = default;
 
   bool done() const { return !scope_; }
 
@@ -1459,13 +1459,13 @@ class MOZ_STACK_CLASS ScopeIter {
     return scope_->kind();
   }
 
-  
-  
+  // Returns the shape of the environment if it is known. It is possible to
+  // hasSyntacticEnvironment and to have no known shape, e.g., eval.
   Shape* environmentShape() const { return scope()->environmentShape(); }
 
-  
-  
-  
+  // Returns whether this scope has a syntactic environment (i.e., an
+  // Environment that isn't a non-syntactic With or NonSyntacticVariables)
+  // on the environment chain.
   bool hasSyntacticEnvironment() const;
 
   void trace(JSTracer* trc) {
@@ -1475,9 +1475,9 @@ class MOZ_STACK_CLASS ScopeIter {
   }
 };
 
-
-
-
+//
+// Specializations of Rooted containers for the iterators.
+//
 
 template <typename Wrapper>
 class WrappedPtrOperations<BindingIter, Wrapper> {
@@ -1547,7 +1547,7 @@ Shape* CreateEnvironmentShape(JSContext* cx, BindingIter& bi,
 Shape* EmptyEnvironmentShape(JSContext* cx, const JSClass* cls,
                              uint32_t numSlots, uint32_t baseShapeFlags);
 
-}  
+}  // namespace js
 
 namespace JS {
 
@@ -1575,7 +1575,7 @@ DEFINE_SCOPE_DATA_GCPOLICY(js::WasmFunctionScope::Data);
 
 #undef DEFINE_SCOPE_DATA_GCPOLICY
 
-
+// Scope data that contain GCPtrs must use the correct DeletePolicy.
 
 template <>
 struct DeletePolicy<js::FunctionScope::Data>
@@ -1609,7 +1609,7 @@ class Concrete<js::Scope> : TracerConcrete<js::Scope> {
   static const char16_t concreteTypeName[];
 };
 
-}  
-}  
+}  // namespace ubi
+}  // namespace JS
 
-#endif  
+#endif  // vm_Scope_h

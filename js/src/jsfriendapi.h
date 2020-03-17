@@ -2342,7 +2342,7 @@ class MOZ_RAII JS_FRIEND_API AutoCTypesActivityCallback {
 
 
 struct AllocationMetadataBuilder {
-  AllocationMetadataBuilder() {}
+  AllocationMetadataBuilder() = default;
 
   
   

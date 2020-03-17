@@ -20,14 +20,14 @@ struct JSStructuredCloneWriter;
 
 struct JSPrincipals {
   
-  mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent> refcount;
+  mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent> refcount{0};
 
 #ifdef JS_DEBUG
   
   uint32_t debugToken;
 #endif
 
-  JSPrincipals() : refcount(0) {}
+  JSPrincipals() = default;
 
   void setDebugToken(uint32_t token) {
 #ifdef JS_DEBUG

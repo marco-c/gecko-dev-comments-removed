@@ -181,7 +181,7 @@ class ZoneAllCellIter<TenuredCell> {
 
  protected:
   
-  ZoneAllCellIter() {}
+  ZoneAllCellIter() = default;
 
   void init(JS::Zone* zone, AllocKind kind) {
     MOZ_ASSERT_IF(IsNurseryAllocable(kind),

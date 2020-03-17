@@ -139,7 +139,7 @@ class SymbolRegistry
     : public GCHashSet<WeakHeapPtrSymbol, HashSymbolsByDescription,
                        SystemAllocPolicy> {
  public:
-  SymbolRegistry() {}
+  SymbolRegistry() = default;
 };
 
 

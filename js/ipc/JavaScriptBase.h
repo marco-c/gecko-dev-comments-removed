@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sw=2 et tw=80:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #ifndef mozilla_jsipc_JavaScriptBase_h__
 #define mozilla_jsipc_JavaScriptBase_h__
@@ -21,13 +21,13 @@ class JavaScriptBase : public WrapperOwner, public WrapperAnswer, public Base {
   using Answer = WrapperAnswer;
 
  public:
-  virtual ~JavaScriptBase() {}
+  virtual ~JavaScriptBase() = default;
 
   virtual void ActorDestroy(WrapperOwner::ActorDestroyReason why) override {
     WrapperOwner::ActorDestroy(why);
   }
 
-  /*** IPC handlers ***/
+  
 
   mozilla::ipc::IPCResult RecvPreventExtensions(const uint64_t& objId,
                                                 ReturnStatus* rs) override {
@@ -235,7 +235,7 @@ class JavaScriptBase : public WrapperOwner, public WrapperAnswer, public Base {
     return IPC_OK();
   }
 
-  /*** Dummy call handlers ***/
+  
 
   bool SendDropObject(const ObjectId& objId) override {
     return Base::SendDropObject(objId.serialize());
@@ -335,7 +335,7 @@ class JavaScriptBase : public WrapperOwner, public WrapperAnswer, public Base {
                                    instanceof);
   }
 
-  /* The following code is needed to suppress a bogus MSVC warning (C4250). */
+  
 
   virtual bool toObjectVariant(JSContext* cx, JSObject* obj,
                                ObjectVariant* objVarp) override {
@@ -347,7 +347,7 @@ class JavaScriptBase : public WrapperOwner, public WrapperAnswer, public Base {
   }
 };
 
-}  // namespace jsipc
-}  // namespace mozilla
+}  
+}  
 
 #endif

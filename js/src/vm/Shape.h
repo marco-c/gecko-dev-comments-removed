@@ -183,6 +183,8 @@ class DictionaryShapeLink {
   uintptr_t bits = 0;
 
  public:
+  
+  
   DictionaryShapeLink() {}
   explicit DictionaryShapeLink(JSObject* obj) { setObject(obj); }
   explicit DictionaryShapeLink(Shape* shape) { setShape(shape); }
