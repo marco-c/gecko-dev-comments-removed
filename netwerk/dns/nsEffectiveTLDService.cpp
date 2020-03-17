@@ -164,7 +164,21 @@ nsEffectiveTLDService::GetPublicSuffix(nsIURI* aURI,
     return rv;
   }
 
-  return GetBaseDomainInternal(host, 0, aPublicSuffix);
+  return GetBaseDomainInternal(host, 0, false, aPublicSuffix);
+}
+
+NS_IMETHODIMP
+nsEffectiveTLDService::GetKnownPublicSuffix(nsIURI* aURI,
+                                            nsACString& aPublicSuffix) {
+  NS_ENSURE_ARG_POINTER(aURI);
+
+  nsAutoCString host;
+  nsresult rv = NS_GetInnermostURIHost(aURI, host);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  return GetBaseDomainInternal(host, 0, true, aPublicSuffix);
 }
 
 
@@ -182,7 +196,7 @@ nsEffectiveTLDService::GetBaseDomain(nsIURI* aURI, uint32_t aAdditionalParts,
     return rv;
   }
 
-  return GetBaseDomainInternal(host, aAdditionalParts + 1, aBaseDomain);
+  return GetBaseDomainInternal(host, aAdditionalParts + 1, false, aBaseDomain);
 }
 
 
@@ -196,7 +210,19 @@ nsEffectiveTLDService::GetPublicSuffixFromHost(const nsACString& aHostname,
   nsresult rv = NormalizeHostname(normHostname);
   if (NS_FAILED(rv)) return rv;
 
-  return GetBaseDomainInternal(normHostname, 0, aPublicSuffix);
+  return GetBaseDomainInternal(normHostname, 0, false, aPublicSuffix);
+}
+
+NS_IMETHODIMP
+nsEffectiveTLDService::GetKnownPublicSuffixFromHost(const nsACString& aHostname,
+                                                    nsACString& aPublicSuffix) {
+  
+  
+  nsAutoCString normHostname(aHostname);
+  nsresult rv = NormalizeHostname(normHostname);
+  if (NS_FAILED(rv)) return rv;
+
+  return GetBaseDomainInternal(normHostname, 0, true, aPublicSuffix);
 }
 
 
@@ -214,7 +240,8 @@ nsEffectiveTLDService::GetBaseDomainFromHost(const nsACString& aHostname,
   nsresult rv = NormalizeHostname(normHostname);
   if (NS_FAILED(rv)) return rv;
 
-  return GetBaseDomainInternal(normHostname, aAdditionalParts + 1, aBaseDomain);
+  return GetBaseDomainInternal(normHostname, aAdditionalParts + 1, false,
+                               aBaseDomain);
 }
 
 NS_IMETHODIMP
@@ -226,7 +253,7 @@ nsEffectiveTLDService::GetNextSubDomain(const nsACString& aHostname,
   nsresult rv = NormalizeHostname(normHostname);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return GetBaseDomainInternal(normHostname, -1, aBaseDomain);
+  return GetBaseDomainInternal(normHostname, -1, false, aBaseDomain);
 }
 
 
@@ -234,9 +261,9 @@ nsEffectiveTLDService::GetNextSubDomain(const nsACString& aHostname,
 
 
 
-nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString& aHostname,
-                                                      int32_t aAdditionalParts,
-                                                      nsACString& aBaseDomain) {
+nsresult nsEffectiveTLDService::GetBaseDomainInternal(
+    nsCString& aHostname, int32_t aAdditionalParts, bool aOnlyKnownPublicSuffix,
+    nsACString& aBaseDomain) {
   const int kExceptionRule = 1;
   const int kWildcardRule = 2;
 
@@ -295,6 +322,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString& aHostname,
   const char* end = currDomain + aHostname.Length();
   
   const char* eTLD = nullptr;
+  bool hasKnownPublicSuffix = false;
   while (true) {
     
     
@@ -316,6 +344,7 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString& aHostname,
       result = mGraph->Lookup(Substring(currDomain, end));
     }
     if (result != Dafsa::kKeyNotFound) {
+      hasKnownPublicSuffix = true;
       if (result == kWildcardRule && prevDomain) {
         
         eTLD = prevDomain;
@@ -342,6 +371,11 @@ nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString& aHostname,
     prevDomain = currDomain;
     currDomain = nextDot + 1;
     nextDot = strchr(currDomain, '.');
+  }
+
+  if (aOnlyKnownPublicSuffix && !hasKnownPublicSuffix) {
+    aBaseDomain.Truncate();
+    return NS_OK;
   }
 
   const char *begin, *iter;
