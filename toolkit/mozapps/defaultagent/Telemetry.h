@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#ifndef __DEFAULT_BROWSER_TELEMETRY_H__
+#define __DEFAULT_BROWSER_TELEMETRY_H__
+
+#include <windows.h>
+
+HRESULT SendDefaultBrowserPing();
+
+#endif  
