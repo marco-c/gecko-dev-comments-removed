@@ -1,0 +1,5 @@
+
+verifyprebarriers();
+offThreadCompileScript('');
+var dbg = new Debugger();
+var objects = dbg.findObjects();

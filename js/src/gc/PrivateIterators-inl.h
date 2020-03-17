@@ -28,7 +28,7 @@ class ArenaCellIterUnderGC : public ArenaCellIter {
 class ArenaCellIterUnderFinalize : public ArenaCellIter {
  public:
   explicit ArenaCellIterUnderFinalize(Arena* arena) : ArenaCellIter(arena) {
-    MOZ_ASSERT(CurrentThreadIsGCSweeping());
+    MOZ_ASSERT(CurrentThreadIsGCFinalizing());
   }
 };
 
@@ -53,7 +53,7 @@ class GCZonesIter {
   explicit GCZonesIter(GCRuntime* gc, ZoneSelector selector = WithAtoms)
       : zone(gc, selector) {
     MOZ_ASSERT(JS::RuntimeHeapIsBusy());
-    MOZ_ASSERT_IF(gc->atomsZone->isCollectingFromAnyThread(),
+    MOZ_ASSERT_IF(gc->atomsZone->wasGCStarted(),
                   !gc->rt->hasHelperThreadZones());
 
     if (!done() && !zone->isCollectingFromAnyThread()) {
