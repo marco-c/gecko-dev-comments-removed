@@ -48,7 +48,7 @@ async function attachTargets(targetLists, args) {
       
       
       if (!threadFront) {
-        [, threadFront] = await targetFront.attachThread({
+        threadFront = await targetFront.attachThread({
           ...defaultThreadOptions(),
           ...args.options,
         });
