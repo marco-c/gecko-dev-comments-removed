@@ -1241,7 +1241,7 @@ class AsyncPanZoomController {
 
 
 
-  void ApplyAsyncTestAttributes();
+  void ApplyAsyncTestAttributes(const RecursiveMutexAutoLock& aProofOfLock);
 
   
 
