@@ -8,6 +8,7 @@
 #define frontend_Stencil_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/CheckedInt.h"  
 #include "mozilla/Maybe.h"       
 #include "mozilla/Range.h"       
 #include "mozilla/Span.h"        
@@ -88,6 +89,15 @@ struct LazyScriptCreationData {
   bool init(JSContext* cx, const frontend::AtomVector& COB,
             Vector<FunctionIndex>&& innerIndexes, bool isForceStrict,
             bool isStrict) {
+    
+    mozilla::CheckedUint32 ngcthings =
+        mozilla::CheckedUint32(COB.length()) +
+        mozilla::CheckedUint32(innerIndexes.length());
+    if (!ngcthings.isValid()) {
+      ReportAllocationOverflow(cx);
+      return false;
+    }
+
     forceStrict = isForceStrict;
     strict = isStrict;
     innerFunctionIndexes = std::move(innerIndexes);
