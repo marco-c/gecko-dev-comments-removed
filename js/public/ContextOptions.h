@@ -38,6 +38,7 @@ class JS_PUBLIC_API ContextOptions {
         dumpStackOnDebuggeeWouldRun_(false),
         strictMode_(false),
 #ifdef JS_ENABLE_SMOOSH
+        trackNotImplemented_(false),
         trySmoosh_(false),
 #endif
         fuzzing_(false) {
@@ -170,12 +171,20 @@ class JS_PUBLIC_API ContextOptions {
 
 #ifdef JS_ENABLE_SMOOSH
   
+  bool trackNotImplemented() const { return trackNotImplemented_; }
+  ContextOptions& setTrackNotImplemented(bool flag) {
+    trackNotImplemented_ = flag;
+    return *this;
+  }
+
+  
   
   bool trySmoosh() const { return trySmoosh_; }
   ContextOptions& setTrySmoosh(bool flag) {
     trySmoosh_ = flag;
     return *this;
   }
+
 #endif  
 
   bool fuzzing() const { return fuzzing_; }
@@ -211,6 +220,7 @@ class JS_PUBLIC_API ContextOptions {
   bool dumpStackOnDebuggeeWouldRun_ : 1;
   bool strictMode_ : 1;
 #ifdef JS_ENABLE_SMOOSH
+  bool trackNotImplemented_ : 1;
   bool trySmoosh_ : 1;
 #endif
   bool fuzzing_ : 1;
