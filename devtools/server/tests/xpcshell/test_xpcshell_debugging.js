@@ -38,7 +38,7 @@ add_task(async function() {
   
   const targetDescriptor = await client.mainRoot.getMainProcess();
   const front = await targetDescriptor.getTarget();
-  const [, threadFront] = await front.attachThread();
+  const threadFront = await front.attachThread();
 
   
   
