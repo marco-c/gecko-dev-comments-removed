@@ -33,7 +33,7 @@ class Pool extends EventEmitter {
   
 
 
-  parent() {
+  getParent() {
     return this.conn.poolFor(this.actorID);
   }
 
@@ -74,7 +74,7 @@ class Pool extends EventEmitter {
       
       
 
-      const parent = actor.parent();
+      const parent = actor.getParent();
       if (parent) {
         parent.unmanage(actor);
       }
@@ -143,7 +143,7 @@ class Pool extends EventEmitter {
 
 
   destroy() {
-    const parent = this.parent();
+    const parent = this.getParent();
     if (parent) {
       parent.unmanage(this);
     }

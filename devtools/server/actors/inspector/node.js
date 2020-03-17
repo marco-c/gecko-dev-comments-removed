@@ -455,7 +455,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   get _hasEventListeners() {
     
     
-    const dbg = this.parent().targetActor.makeDebugger();
+    const dbg = this.getParent().targetActor.makeDebugger();
     return this._eventCollector.hasEventListeners(this.rawNode, dbg);
   },
 
@@ -519,7 +519,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
     
     const global = Cu.getGlobalForObject(customElement);
 
-    const dbg = this.parent().targetActor.makeDebugger();
+    const dbg = this.getParent().targetActor.makeDebugger();
 
     
     

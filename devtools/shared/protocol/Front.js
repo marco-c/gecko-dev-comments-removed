@@ -55,7 +55,7 @@ class Front extends Pool {
   
 
 
-  parent() {
+  getParent() {
     return this.parentFront && this.parentFront.actorID
       ? this.parentFront
       : null;
