@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/MediaSession.h"
 
@@ -11,7 +11,7 @@
 namespace mozilla {
 namespace dom {
 
-// Only needed for refcounted objects.
+
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(MediaSession, mParent, mMediaMetadata)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(MediaSession)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(MediaSession)
@@ -45,8 +45,22 @@ void MediaSession::SetPlaybackState(
     return;
   }
   mDeclaredPlaybackState = aPlaybackState;
-  // TODO : propagate declared state to the media controller in chrome process
-  // in order to call `media session actions update algorithm`.
+
+  RefPtr<BrowsingContext> currentBC = GetParentObject()->GetBrowsingContext();
+  MOZ_ASSERT(currentBC,
+             "Update session playback state after context destroyed!");
+  if (XRE_IsContentProcess()) {
+    ContentChild* contentChild = ContentChild::GetSingleton();
+    Unused << contentChild->SendNotifyMediaSessionPlaybackStateChanged(
+        currentBC, mDeclaredPlaybackState);
+    return;
+  }
+  
+  if (RefPtr<MediaController> controller =
+          currentBC->Canonical()->GetMediaController()) {
+    controller->SetDeclaredPlaybackState(currentBC->Id(),
+                                         mDeclaredPlaybackState);
+  }
 }
 
 MediaSessionPlaybackState MediaSession::PlaybackState() const {
@@ -133,12 +147,12 @@ void MediaSession::NotifyMetadataUpdated() {
     Unused << contentChild->SendNotifyUpdateMediaMetadata(currentBC, metadata);
     return;
   }
-  // This would only happen when we disable e10s.
+  
   if (RefPtr<MediaController> controller =
           currentBC->Canonical()->GetMediaController()) {
     controller->UpdateMetadata(currentBC->Id(), metadata);
   }
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  

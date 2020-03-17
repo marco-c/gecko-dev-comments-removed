@@ -82,6 +82,15 @@ class MediaSessionController {
     return mMetadataChangedEvent;
   }
 
+  
+  
+  virtual void SetDeclaredPlaybackState(uint64_t aSessionContextId,
+                                        MediaSessionPlaybackState aState);
+
+  
+  
+  MediaSessionPlaybackState GetCurrentDeclaredPlaybackState() const;
+
  protected:
   ~MediaSessionController() = default;
   uint64_t mTopLevelBCId;
