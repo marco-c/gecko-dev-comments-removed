@@ -59,11 +59,13 @@ class MediaControlService final : public nsIObserver {
   }
 
   
-  void GenerateMediaControlKeysTestEvent(MediaControlKeysEvent aEvent);
 
-  
-  
+
+
+
+  void GenerateMediaControlKeysTestEvent(MediaControlKeysEvent aEvent);
   MediaMetadataBase GetMainControllerMediaMetadata() const;
+  MediaSessionPlaybackState GetMainControllerPlaybackState() const;
 
  private:
   MediaControlService();

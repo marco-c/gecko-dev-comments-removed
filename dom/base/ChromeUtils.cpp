@@ -28,6 +28,8 @@
 #include "mozilla/dom/JSWindowActorService.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/MediaControlService.h"
+#include "mozilla/dom/MediaMetadata.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReportingHeader.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -1183,6 +1185,45 @@ void ChromeUtils::GenerateMediaControlKeysTestEvent(
     service->GenerateMediaControlKeysTestEvent(
         ConvertMediaControlKeysTestEventToMediaControlKeysEvent(aEvent));
   }
+}
+
+
+void ChromeUtils::GetCurrentActiveMediaMetadata(const GlobalObject& aGlobal,
+                                                MediaMetadataInit& aMetadata) {
+  if (RefPtr<MediaControlService> service = MediaControlService::GetService()) {
+    MediaMetadataBase metadata = service->GetMainControllerMediaMetadata();
+    aMetadata.mTitle = metadata.mTitle;
+    aMetadata.mArtist = metadata.mArtist;
+    aMetadata.mAlbum = metadata.mAlbum;
+    for (const auto& artwork : metadata.mArtwork) {
+      
+      
+      
+      if (MediaImage* image = aMetadata.mArtwork.AppendElement(fallible)) {
+        image->mSrc = artwork.mSrc;
+        image->mSizes = artwork.mSizes;
+        image->mType = artwork.mType;
+      }
+    }
+  }
+}
+
+
+MediaSessionPlaybackTestState ChromeUtils::GetCurrentMediaSessionPlaybackState(
+    GlobalObject& aGlobal) {
+  static_assert(int(MediaSessionPlaybackState::None) ==
+                    int(MediaSessionPlaybackTestState::None) &&
+                int(MediaSessionPlaybackState::Paused) ==
+                    int(MediaSessionPlaybackTestState::Paused) &&
+                int(MediaSessionPlaybackState::Playing) ==
+                    int(MediaSessionPlaybackTestState::Playing) &&
+                MediaSessionPlaybackStateValues::Count ==
+                    MediaSessionPlaybackTestStateValues::Count);
+  if (RefPtr<MediaControlService> service = MediaControlService::GetService()) {
+    return ConvertToMediaSessionPlaybackTestState(
+        service->GetMainControllerPlaybackState());
+  }
+  return MediaSessionPlaybackTestState::None;
 }
 
 }  
