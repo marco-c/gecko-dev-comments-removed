@@ -277,10 +277,13 @@ static bool AncestorChainCrossesShadowBoundary(nsIContent* aDescendant,
 
 
 
+
+
 static bool DoesNotParticipateInAutoDirection(const nsIContent* aContent) {
   mozilla::dom::NodeInfo* nodeInfo = aContent->NodeInfo();
   return ((!aContent->IsHTMLElement() || nodeInfo->Equals(nsGkAtoms::script) ||
            nodeInfo->Equals(nsGkAtoms::style) ||
+           nodeInfo->Equals(nsGkAtoms::input) ||
            nodeInfo->Equals(nsGkAtoms::textarea) ||
            aContent->IsInAnonymousSubtree())) &&
          !aContent->IsShadowRoot();
