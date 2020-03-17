@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "FileInfo.h"
 
@@ -44,10 +44,10 @@ void FileInfo::GetReferences(int32_t* aRefCnt, int32_t* aDBRefCnt,
 }
 
 void FileInfo::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount, int32_t aDelta,
-                                CustomCleanupCallback* aCustomCleanupCallback) {
-  
-  
-  
+                                bool aSyncDeleteFile) {
+  // XXX This can go away once DOM objects no longer hold FileInfo objects...
+  //     Looking at you, BlobImplBase...
+  //     BlobImplBase is being addressed in bug 1068975.
   if (IndexedDatabaseManager::IsClosed()) {
     MOZ_ASSERT(&aRefCount == &mRefCnt);
     MOZ_ASSERT(aDelta == 1 || aDelta == -1);
@@ -82,10 +82,10 @@ void FileInfo::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount, int32_t aDelta,
   }
 
   if (needsCleanup) {
-    if (aCustomCleanupCallback) {
-      nsresult rv = aCustomCleanupCallback->Cleanup(mFileManager, Id());
+    if (aSyncDeleteFile) {
+      nsresult rv = mFileManager->SyncDeleteFile(Id());
       if (NS_FAILED(rv)) {
-        NS_WARNING("Custom cleanup failed!");
+        NS_WARNING("FileManager cleanup failed!");
       }
     } else {
       Cleanup();
@@ -106,8 +106,8 @@ bool FileInfo::LockedClearDBRefs() {
     return true;
   }
 
-  
-  
+  // In this case, we are not responsible for removing the file info from the
+  // hashtable. It's up to FileManager which is the only caller of this method.
 
   MOZ_ASSERT(mFileManager->Invalidated());
 
@@ -140,6 +140,6 @@ nsCOMPtr<nsIFile> FileInfo::GetFileForFileInfo() const {
   return file;
 }
 
-}  
-}  
-}  
+}  // namespace indexedDB
+}  // namespace dom
+}  // namespace mozilla
