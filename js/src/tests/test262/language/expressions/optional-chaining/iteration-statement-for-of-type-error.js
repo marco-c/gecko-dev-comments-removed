@@ -10,7 +10,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   for (const key of {}?.a) ;
 });

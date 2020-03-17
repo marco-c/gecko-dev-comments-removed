@@ -11,7 +11,6 @@
 
 
 
-
 let count;
 const obj = {a: true};
 for (count = 0; obj?.a; count++) {

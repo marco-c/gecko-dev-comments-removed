@@ -11,7 +11,6 @@
 
 
 
-
 const newTargetContext = (function() { return this; })();
 
 let called = false;

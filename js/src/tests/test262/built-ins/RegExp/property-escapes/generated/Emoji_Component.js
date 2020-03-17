@@ -35,6 +35,11 @@ testPropertyEscapes(
   matchSymbols,
   "\\p{Emoji_Component}"
 );
+testPropertyEscapes(
+  /^\p{EComp}+$/u,
+  matchSymbols,
+  "\\p{EComp}"
+);
 
 const nonMatchSymbols = buildString({
   loneCodePoints: [],
@@ -58,6 +63,11 @@ testPropertyEscapes(
   /^\P{Emoji_Component}+$/u,
   nonMatchSymbols,
   "\\P{Emoji_Component}"
+);
+testPropertyEscapes(
+  /^\P{EComp}+$/u,
+  nonMatchSymbols,
+  "\\P{EComp}"
 );
 
 reportCompare(0, 0);

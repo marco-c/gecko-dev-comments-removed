@@ -18,6 +18,7 @@
 
 var C = function() {
   Object.defineProperty(this, '0', {
+    writable: true,
     configurable: false
   });
 };

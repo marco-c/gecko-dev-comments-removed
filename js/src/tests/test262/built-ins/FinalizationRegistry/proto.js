@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(FinalizationRegistry),
+  Function.prototype,
+  'Object.getPrototypeOf(FinalizationRegistry) returns the value of `Function.prototype`'
+);
+
+reportCompare(0, 0);

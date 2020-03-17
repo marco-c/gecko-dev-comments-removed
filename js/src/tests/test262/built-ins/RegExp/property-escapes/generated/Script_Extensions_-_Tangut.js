@@ -20,7 +20,8 @@ const matchSymbols = buildString({
   ],
   ranges: [
     [0x017000, 0x0187F7],
-    [0x018800, 0x018AF2]
+    [0x018800, 0x018AFF],
+    [0x018D00, 0x018D08]
   ]
 });
 testPropertyEscapes(
@@ -52,7 +53,8 @@ const nonMatchSymbols = buildString({
     [0x00E000, 0x016FDF],
     [0x016FE1, 0x016FFF],
     [0x0187F8, 0x0187FF],
-    [0x018AF3, 0x10FFFF]
+    [0x018B00, 0x018CFF],
+    [0x018D09, 0x10FFFF]
   ]
 });
 testPropertyEscapes(

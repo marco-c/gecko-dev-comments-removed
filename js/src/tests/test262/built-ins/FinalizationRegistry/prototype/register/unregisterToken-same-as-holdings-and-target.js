@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var finalizationRegistry = new FinalizationRegistry(function() {});
+
+var target = {};
+assert.throws(TypeError, () => finalizationRegistry.register(target, target, target));
+
+reportCompare(0, 0);

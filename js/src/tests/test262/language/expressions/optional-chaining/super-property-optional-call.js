@@ -11,7 +11,6 @@
 
 
 
-
 let called = false;
 let context;
 class Base {

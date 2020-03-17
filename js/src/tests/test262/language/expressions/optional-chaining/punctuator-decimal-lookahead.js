@@ -11,7 +11,6 @@
 
 
 
-
 const value = true ?.30 : false;
 assert.sameValue(.30, value);
 

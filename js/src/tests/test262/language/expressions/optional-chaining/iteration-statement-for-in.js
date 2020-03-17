@@ -9,7 +9,6 @@
 
 
 
-
 const obj = {
   inner: {
     a: 1,

@@ -14,8 +14,6 @@
 
 
 
-
-
 var evaluatedArg = false;
 var caught;
 class C extends Object {
@@ -40,8 +38,6 @@ try {
 
 assert.sameValue(typeof caught, 'object');
 assert.sameValue(caught.constructor, TypeError);
-assert.sameValue(
-  evaluatedArg, false, 'did not perform ArgumentsListEvaluation'
-);
+assert(evaluatedArg, 'performs ArgumentsListEvaluation');
 
 reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof FinalizationRegistry, 'function',
+  'typeof FinalizationRegistry is function'
+);
+
+reportCompare(0, 0);

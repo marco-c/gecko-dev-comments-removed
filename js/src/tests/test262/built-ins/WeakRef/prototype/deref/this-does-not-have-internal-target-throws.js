@@ -34,10 +34,10 @@ assert.throws(TypeError, function() {
   deref.call(WeakRef);
 }, 'WeakRef does not have a [[Target]] internal slot');
 
-var fg = new FinalizationGroup(function() {});
+var finalizationRegistry = new FinalizationRegistry(function() {});
 assert.throws(TypeError, function() {
-  deref.call(fg);
-}, 'FinalizationGroup instance');
+  deref.call(finalizationRegistry);
+}, 'FinalizationRegistry instance');
 
 var wm = new WeakMap();
 assert.throws(TypeError, function() {

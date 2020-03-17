@@ -11,7 +11,7 @@
 
 
 
-const timezoneOffsetMS = new Date().getTimezoneOffset() * 60000;
+const timezoneOffsetMS = new Date(0).getTimezoneOffset() * 60000;
 
 assert.sameValue(Date.parse('1970-01-01T00:00:00'), timezoneOffsetMS);
 assert.sameValue(Date.parse('1970-01-01'), 0);

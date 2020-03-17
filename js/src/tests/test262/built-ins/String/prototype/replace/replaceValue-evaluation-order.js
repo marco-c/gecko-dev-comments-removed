@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var calls = 0;
+var replaceValue = {
+  toString: function() {
+    calls += 1;
+    return "b";
+  },
+};
+
+var newString = "".replace("a", replaceValue);
+assert.sameValue(newString, "");
+assert.sameValue(calls, 1);
+
+reportCompare(0, 0);

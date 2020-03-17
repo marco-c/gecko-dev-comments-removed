@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var finalizationRegistry = new FinalizationRegistry(function() {});
+assert.sameValue(Object.getPrototypeOf(finalizationRegistry), FinalizationRegistry.prototype);
+
+reportCompare(0, 0);

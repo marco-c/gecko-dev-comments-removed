@@ -7,6 +7,7 @@
 
 
 
+
 var target = new Promise(function() {});
 var returnValue = {};
 var callCount = 0;
@@ -27,8 +28,6 @@ target.then = function(a, b) {
 };
 
 var originalFinallyHandler = function() {};
-var anonName = Object(function() {}).name;
-
 var result = Promise.prototype.finally.call(target, originalFinallyHandler, 2, 3);
 
 assert.sameValue(callCount, 1, 'Invokes `then` method exactly once');
@@ -45,7 +44,8 @@ assert.sameValue(
 );
 assert.notSameValue(firstArg, originalFinallyHandler, 'Invokes `then` method with a different fulfillment handler');
 assert.sameValue(firstArg.length, 1, 'fulfillment handler has a length of 1');
-assert.sameValue(firstArg.name, anonName, 'fulfillment handler is anonymous');
+assert.sameValue(firstArg.name, '', 'fulfillment handler is anonymous');
+assert(!isConstructor(firstArg), 'fulfillment handler is not constructor');
 
 assert.sameValue(
   typeof secondArg,
@@ -54,7 +54,8 @@ assert.sameValue(
 );
 assert.notSameValue(secondArg, originalFinallyHandler, 'Invokes `then` method with a different rejection handler');
 assert.sameValue(secondArg.length, 1, 'rejection handler has a length of 1');
-assert.sameValue(secondArg.name, anonName, 'rejection handler is anonymous');
+assert.sameValue(secondArg.name, '', 'rejection handler is anonymous');
+assert(!isConstructor(secondArg), 'rejection handler is not constructor');
 
 assert.sameValue(result, returnValue, 'Returns the result of the invocation of `then`');
 
