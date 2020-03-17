@@ -354,14 +354,14 @@ function TargetMixin(parentClass) {
 
 
     async attachThread(options = {}) {
-      if (!this.targetForm || !this.targetForm.threadActor) {
+      if (!this._threadActor) {
         throw new Error(
-          "TargetMixin sub class should set targetForm.threadActor before calling " +
+          "TargetMixin sub class should set _threadActor before calling " +
             "attachThread"
         );
       }
       this.threadFront = await this.getFront("thread");
-      await this.threadFront.attach(options);
+      const result = await this.threadFront.attach(options);
 
       this.threadFront.on("newSource", this._onNewSource);
 
@@ -369,7 +369,7 @@ function TargetMixin(parentClass) {
       
       this._resolveOnThreadAttached();
 
-      return this.threadFront;
+      return [result, this.threadFront];
     }
 
     

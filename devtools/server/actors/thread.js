@@ -4,10 +4,6 @@
 
 "use strict";
 
-
-
-
-
 const DebuggerNotificationObserver = require("DebuggerNotificationObserver");
 const Services = require("Services");
 const { Cr, Ci } = require("chrome");
@@ -345,14 +341,14 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
   onAttach: function({ options }) {
     if (this.state === "exited") {
-      throw {
+      return {
         error: "exited",
         message: "threadActor has exited",
       };
     }
 
     if (this.state !== "detached") {
-      throw {
+      return {
         error: "wrongState",
         message: "Current state is " + this.state,
       };
@@ -399,7 +395,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       const packet = this._paused();
       if (!packet) {
-        throw {
+        return {
           error: "notAttached",
           message: "cannot attach, could not create pause packet",
         };
@@ -417,10 +413,10 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
       
       
-      
+      return null;
     } catch (e) {
       reportException("DBG-SERVER", e);
-      throw {
+      return {
         error: "notAttached",
         message: e.toString(),
       };
