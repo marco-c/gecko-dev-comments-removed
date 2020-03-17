@@ -44,7 +44,6 @@
 #include "nsIHttpHeaderVisitor.h"
 #include "nsQueryObject.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -784,8 +783,8 @@ nsCORSListenerProxy::CheckListenerChain() {
 
 
 
-bool CheckInsecureUpgradePreventsCORS(nsIPrincipal* aRequestingPrincipal,
-                                      nsIChannel* aChannel) {
+bool CheckUpgradeInsecureRequestsPreventsCORS(
+    nsIPrincipal* aRequestingPrincipal, nsIChannel* aChannel) {
   nsCOMPtr<nsIURI> channelURI;
   nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(channelURI));
   NS_ENSURE_SUCCESS(rv, false);
@@ -818,7 +817,11 @@ bool CheckInsecureUpgradePreventsCORS(nsIPrincipal* aRequestingPrincipal,
     return false;
   }
 
-  return true;
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  
+  
+  return loadInfo->GetUpgradeInsecureRequests() ||
+         loadInfo->GetBrowserUpgradeInsecureRequests();
 }
 
 nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
@@ -883,17 +886,9 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   
   
   
-  if (CheckInsecureUpgradePreventsCORS(mRequestingPrincipal, aChannel)) {
-    
-    if (!loadInfo->GetHttpsOnlyNoUpgrade() &&
-        StaticPrefs::dom_security_https_only_mode()) {
-      return NS_OK;
-    }
-    
-    if (loadInfo->GetUpgradeInsecureRequests() ||
-        loadInfo->GetBrowserUpgradeInsecureRequests()) {
-      return NS_OK;
-    }
+  if (CheckUpgradeInsecureRequestsPreventsCORS(mRequestingPrincipal,
+                                               aChannel)) {
+    return NS_OK;
   }
 
   

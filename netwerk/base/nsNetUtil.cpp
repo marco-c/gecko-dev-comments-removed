@@ -69,7 +69,6 @@
 #include "plstr.h"
 #include "nsINestedURI.h"
 #include "mozilla/dom/nsCSPUtils.h"
-#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/net/HttpBaseChannel.h"
@@ -2832,12 +2831,6 @@ nsresult NS_ShouldSecureUpgrade(
   if (!isHttps &&
       !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackURL(aURI)) {
     if (aLoadInfo) {
-      
-      if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo)) {
-        aShouldUpgrade = true;
-        return NS_OK;
-      }
-
       
       
       
