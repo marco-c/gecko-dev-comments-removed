@@ -8,6 +8,8 @@ module.exports = {
     "camelcase": "off",
     "block-scoped-var": "off",
     
+    "mozilla/balanced-observers": 0,
+    
     "mozilla/reject-some-requires": "off",
   }
 };

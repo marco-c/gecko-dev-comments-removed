@@ -24,6 +24,8 @@ module.exports = {
     
     "camelcase": "off",
     
+    "mozilla/balanced-observers": 0,
+    
     "mozilla/reject-some-requires": 0,
   },
 };

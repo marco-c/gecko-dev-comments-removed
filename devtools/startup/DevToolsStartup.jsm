@@ -375,11 +375,29 @@ DevToolsStartup.prototype = {
 
       
       this.devtoolsFlag = flags.devtools;
+
+      
+      
+
       
       Services.obs.addObserver(
         this.onWindowReady,
         "browser-delayed-startup-finished"
       );
+
+      
+      Services.prefs.addObserver(
+        DEVTOOLS_ENABLED_PREF,
+        this.onEnabledPrefChanged
+      );
+
+      
+      
+      Services.prefs.addObserver(
+        PROFILER_POPUP_ENABLED_PREF,
+        this.toggleProfilerKeyShortcuts
+      );
+      
 
       if (!this.isDisabledByPolicy()) {
         if (AppConstants.MOZ_DEV_EDITION) {
@@ -390,12 +408,6 @@ DevToolsStartup.prototype = {
 
         this.hookProfilerRecordingButton();
       }
-
-      
-      Services.prefs.addObserver(
-        DEVTOOLS_ENABLED_PREF,
-        this.onEnabledPrefChanged
-      );
     }
 
     if (flags.console) {
@@ -658,7 +670,12 @@ DevToolsStartup.prototype = {
     
     
     const urlPref = "devtools.performance.recording.ui-base-url";
+
+    
+    
+    
     Services.prefs.addObserver(urlPref, registerWebChannel);
+
     registerWebChannel();
 
     function registerWebChannel() {
@@ -781,13 +798,6 @@ DevToolsStartup.prototype = {
     
     const mainKeyset = doc.getElementById("mainKeyset");
     mainKeyset.parentNode.insertBefore(keyset, mainKeyset);
-
-    
-    
-    Services.prefs.addObserver(
-      PROFILER_POPUP_ENABLED_PREF,
-      this.toggleProfilerKeyShortcuts
-    );
   },
 
   

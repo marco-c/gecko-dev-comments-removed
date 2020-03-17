@@ -152,6 +152,7 @@ module.exports = {
     
 
     
+    "mozilla/balanced-observers": "error",
     "mozilla/no-aArgs": "error",
     
     "mozilla/reject-importGlobalProperties": ["error", "everything"],
