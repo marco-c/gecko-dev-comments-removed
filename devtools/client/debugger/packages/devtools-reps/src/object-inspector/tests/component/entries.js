@@ -78,10 +78,6 @@ describe("ObjectInspector - entries", () => {
 
     wrapper.update();
     expect(formatObjectInspector(wrapper)).toMatchSnapshot();
-
-    
-    
-    expect(enumEntries.mock.calls).toHaveLength(0);
   });
 
   it("calls ObjectFront.enumEntries when expected", async () => {
