@@ -63,7 +63,7 @@ extern mozilla::LazyLogModule gWidgetLog;
 
 nsLookAndFeel::nsLookAndFeel() = default;
 
-nsLookAndFeel::~nsLookAndFeel() {}
+nsLookAndFeel::~nsLookAndFeel() = default;
 
 
 

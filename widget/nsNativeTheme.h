@@ -32,7 +32,7 @@ class EventStates;
 
 class nsNativeTheme : public nsITimerCallback, public nsINamed {
  protected:
-  virtual ~nsNativeTheme() {}
+  virtual ~nsNativeTheme() = default;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
@@ -69,7 +69,7 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   
   static bool IsFrameRTL(nsIFrame* aFrame);
 
-  bool IsHTMLContent(nsIFrame* aFrame);
+  static bool IsHTMLContent(nsIFrame* aFrame);
 
   
   bool IsDefaultButton(nsIFrame* aFrame) {
