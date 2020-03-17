@@ -693,9 +693,6 @@ class JSFunction : public js::NativeObject {
   
   
   
-  
-  
-  
 
   static JSScript* getOrCreateScript(JSContext* cx, js::HandleFunction fun) {
     MOZ_ASSERT(fun->isInterpreted());

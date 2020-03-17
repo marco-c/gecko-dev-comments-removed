@@ -1126,8 +1126,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
       xdrFlags |= OwnSource;
     }
     
-    
-    
     if (script->allowRelazify()) {
       xdrFlags |= HasLazyScript;
     }

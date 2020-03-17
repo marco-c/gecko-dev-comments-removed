@@ -517,7 +517,6 @@ class MOZ_STACK_CLASS PerHandlerParser : public ParserBase {
   bool noteUsedName(HandlePropertyName name) {
     
     
-    
     if (handler_.canSkipLazyClosedOverBindings()) {
       return true;
     }

@@ -451,10 +451,6 @@ using Env = JSObject;
 
 
 
-
-
-
-
 typedef mozilla::Variant<BaseScript*, WasmInstanceObject*>
     DebuggerScriptReferent;
 

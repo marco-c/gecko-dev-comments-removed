@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/BinASTParserPerTokenizer.h"
 
@@ -30,62 +30,62 @@
 #include "frontend/SharedContext-inl.h"
 #include "vm/JSContext-inl.h"
 
-// # About compliance with EcmaScript
-//
-// For the moment, this parser implements ES5. Future versions will be extended
-// to ES6 and further on.
-//
-// By design, it does NOT implement Annex B.3.3. If possible, we would like
-// to avoid going down that rabbit hole.
-//
-//
-// # About the AST
-//
-// At this stage of experimentation, the AST specifications change often. This
-// version of the parser attempts to implement
-// https://gist.github.com/Yoric/2390f0367515c079172be2526349b294
-//
-//
-// # About validating the AST
-//
-// Normally, this implementation validates all properties of the AST *except*
-// the order of fields, which is partially constrained by the AST spec (e.g. in
-// a block, field `scope` must appear before field `body`, etc.).
-//
-//
-// # About names and scopes
-//
-// One of the key objectives of the BinAST syntax is to be able to entirely skip
-// parsing inner functions until they are needed. With a purely syntactic AST,
-// this is generally impossible, as we would need to walk the AST to find
-// lexically-bound/var-bound variables, instances of direct eval, etc.
-//
-// To achieve this, BinAST files contain scope data, as instances of
-// `BinJS:Scope` nodes. Rather than walking the AST to assign bindings
-// to scopes, we extract data from the `BinJS:Scope` and check it lazily,
-// once we actually need to walk the AST.
-//
-// WARNING: The current implementation DOES NOT perform the check yet. It
-// is therefore unsafe.
-//
-// # About directives
-//
-// Currently, directives are ignored and treated as regular strings.
-//
-// They should be treated lazily (whenever we open a subscope), like bindings.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 namespace js::frontend {
 
 using UsedNamePtr = UsedNameTracker::UsedNameMap::Ptr;
 
-// ------------- Toplevel constructions
+
 
 template <typename Tok>
 BinASTParserPerTokenizer<Tok>::BinASTParserPerTokenizer(
     JSContext* cx, CompilationInfo& compilationInfo,
     const JS::ReadOnlyCompileOptions& options,
     HandleScriptSourceObject sourceObject,
-    Handle<BaseScript*> lazyScript /* = nullptr */)
+    Handle<BaseScript*> lazyScript )
     : BinASTParserBase(cx, compilationInfo, sourceObject),
       options_(options),
       lazyScript_(cx, lazyScript),
@@ -108,7 +108,7 @@ JS::Result<ParseNode*> BinASTParserPerTokenizer<Tok>::parse(
     GlobalSharedContext* globalsc, const uint8_t* start, const size_t length,
     BinASTSourceMetadata** metadataPtr) {
   auto result = parseAux(globalsc, start, length, metadataPtr);
-  poison();  // Make sure that the parser is never used again accidentally.
+  poison();  
   return result;
 }
 
@@ -121,7 +121,7 @@ JS::Result<ParseNode*> BinASTParserPerTokenizer<Tok>::parseAux(
   tokenizer_.emplace(cx_, this, start, length);
 
   BinASTParseContext globalpc(cx_, this, globalsc,
-                              /* newDirectives = */ nullptr);
+                               nullptr);
   if (MOZ_UNLIKELY(!globalpc.init())) {
     return cx_->alreadyReportedError();
   }
@@ -150,7 +150,7 @@ JS::Result<ParseNode*> BinASTParserPerTokenizer<Tok>::parseAux(
     *metadataPtr = tokenizer_->takeMetadata();
   }
 
-  return result;  // Magic conversion to Ok.
+  return result;  
 }
 
 template <typename Tok>
@@ -166,16 +166,16 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
 
   tokenizer_->seek(firstOffset);
 
-  // For now, only function declarations and function expression are supported.
+  
   RootedFunction func(cx_, lazyScript_->function());
   bool isExpr = func->isLambda();
   MOZ_ASSERT(func->kind() == FunctionFlags::FunctionKind::NormalFunction);
 
-  // Poison the tokenizer when we leave to ensure that it's not used again by
-  // accident.
+  
+  
   auto onExit = mozilla::MakeScopeExit([&]() { poison(); });
 
-  // TODO: This should be actually shared with the auto-generated version.
+  
 
   auto syntaxKind =
       isExpr ? FunctionSyntaxKind::Expression : FunctionSyntaxKind::Statement;
@@ -183,9 +183,9 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
       funbox, buildFunctionBox(lazyScript_->generatorKind(),
                                lazyScript_->asyncKind(), syntaxKind, nullptr));
 
-  // Push a new ParseContext. It will be used to parse `scope`, the arguments,
-  // the function.
-  BinASTParseContext funpc(cx_, this, funbox, /* newDirectives = */ nullptr);
+  
+  
+  BinASTParseContext funpc(cx_, this, funbox,  nullptr);
   BINJS_TRY(funpc.init());
   pc_->functionScope().useAsVarScope(pc_);
   MOZ_ASSERT(pc_->isFunctionBox());
@@ -197,8 +197,8 @@ JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::parseLazyFunction(
   auto parseFunc = isExpr ? &FinalParser::parseFunctionExpressionContents
                           : &FinalParser::parseFunctionOrMethodContents;
 
-  // Inject a toplevel context (i.e. no parent) to parse the lazy content.
-  // In the future, we may move this to a more specific context.
+  
+  
   const auto context = FieldOrRootContext(RootContext());
   MOZ_TRY(
       (asFinalParser()->*parseFunc)(func->nargs(), &params, &tmpBody, context));
@@ -237,7 +237,7 @@ JS::Result<FunctionBox*> BinASTParserPerTokenizer<Tok>::buildFunctionBox(
 
   RootedAtom atom(cx_);
 
-  // Name might be any of {Identifier,ComputedPropertyName,LiteralPropertyName}
+  
   if (name && name->is<NameNode>()) {
     atom = name->as<NameNode>().atom();
   }
@@ -259,7 +259,7 @@ JS::Result<FunctionBox*> BinASTParserPerTokenizer<Tok>::buildFunctionBox(
     }
   }
 
-  // Allocate the function before walking down the tree.
+  
   RootedFunction fun(cx_);
   if (pc_) {
     Rooted<FunctionCreationData> fcd(
@@ -285,7 +285,7 @@ JS::Result<FunctionBox*> BinASTParserPerTokenizer<Tok>::buildFunctionBox(
   }
 
   auto* funbox = alloc_.new_<FunctionBox>(
-      cx_, traceListHead_, /* toStringStart = */ 0, getCompilationInfo(),
+      cx_, traceListHead_,  0, getCompilationInfo(),
       *directives, generatorKind, functionAsyncKind, fun->displayAtom(),
       fun->flags(), index);
   if (MOZ_UNLIKELY(!funbox)) {
@@ -306,7 +306,7 @@ template <typename Tok>
 JS::Result<FunctionNode*> BinASTParserPerTokenizer<Tok>::makeEmptyFunctionNode(
     const size_t start, const FunctionSyntaxKind syntaxKind,
     FunctionBox* funbox) {
-  // LazyScript compilation requires basically none of the fields filled out.
+  
   TokenPos pos = tokenizer_->pos(start);
 
   BINJS_TRY_DECL(result, handler_.newFunction(syntaxKind, pos));
@@ -329,8 +329,8 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::setFunctionParametersAndBody(
 template <typename Tok>
 JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishEagerFunction(
     FunctionBox* funbox, uint32_t nargs) {
-  // If this is delazification of a canonical function, the JSFunction object
-  // already has correct `nargs_`.
+  
+  
   if (!lazyScript_ || lazyScript_->function() != funbox->function()) {
     funbox->setArgCount(nargs);
     funbox->synchronizeArgCount();
@@ -339,7 +339,7 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishEagerFunction(
     funbox->setArgCount(nargs);
   }
 
-  // BCE will need to generate bytecode for this.
+  
   funbox->emitBytecode = true;
 
   const bool canSkipLazyClosedOverBindings = false;
@@ -348,12 +348,12 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishEagerFunction(
   BINJS_TRY(
       pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings));
 
-  // Check all our bindings after maybe adding function metavars.
+  
   MOZ_TRY(checkFunctionClosedVars());
 
   BINJS_TRY_DECL(bindings,
                  NewFunctionScopeData(cx_, pc_->functionScope(),
-                                      /* hasParameterExprs = */ false,
+                                       false,
                                       IsFieldInitializer::No, alloc_, pc_));
 
   funbox->functionScopeBindings().set(*bindings);
@@ -378,7 +378,7 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishLazyFunction(
   funbox->synchronizeArgCount();
 
   SourceExtent extent(start, end, start, end,
-                      /* lineno = */ 0, start);
+                       0, start);
   BINJS_TRY_DECL(lazy, BaseScript::CreateLazy(
                            cx_, this->getCompilationInfo(), fun, sourceObject_,
                            pc_->closedOverBindingsForLazy(),
@@ -486,7 +486,7 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::getBoundScope(
 
 template <typename Tok>
 JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkBinding(JSAtom* name) {
-  // Check that the variable appears in the corresponding scope.
+  
   ParseContext::Scope& scope =
       variableDeclarationKind_ == VariableDeclarationKind::Var
           ? pc_->varScope()
@@ -500,22 +500,22 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkBinding(JSAtom* name) {
   return Ok();
 }
 
-// Binary AST (revision 8eab67e0c434929a66ff6abe99ff790bca087dda)
-// 3.1.5 CheckPositionalParameterIndices.
+
+
 template <typename Tok>
 JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
     Handle<GCVector<JSAtom*>> positionalParams, ListNode* params) {
-  // positionalParams should have the corresponding entry up to the last
-  // positional parameter.
+  
+  
 
-  // `positionalParams` corresponds to `expectedParams` parameter in the spec.
-  // `params` corresponds to `parseTree` in 3.1.9 CheckAssertedScope, and
-  // `positionalParamNames` parameter
+  
+  
+  
 
-  // Steps 1-3.
-  // PositionalParameterNames (3.1.9 CheckAssertedScope step 5.d) and
-  // CreatePositionalParameterIndices (3.1.5 CheckPositionalParameterIndices
-  // step 1) are done implicitly.
+  
+  
+  
+  
   uint32_t i = 0;
   const bool hasRest = pc_->functionBox()->hasRest();
   for (ParseNode* param : params->contents()) {
@@ -523,12 +523,12 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
       param = param->as<AssignmentNode>().left();
     }
 
-    // At this point, function body is not part of params list.
+    
     const bool isRest = hasRest && !param->pn_next;
     if (isRest) {
-      // Rest parameter
+      
 
-      // Step 3.
+      
       if (i >= positionalParams.get().length()) {
         continue;
       }
@@ -539,9 +539,9 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
             "AssertedParameterScope.paramNames, got rest parameter");
       }
     } else if (param->isKind(ParseNodeKind::Name)) {
-      // Simple or default parameter.
+      
 
-      // Step 2.a.
+      
       if (MOZ_UNLIKELY(i >= positionalParams.get().length())) {
         return raiseError(
             "AssertedParameterScope.paramNames doesn't have corresponding "
@@ -550,29 +550,29 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
 
       JSAtom* name = positionalParams.get()[i];
       if (MOZ_UNLIKELY(!name)) {
-        // Step 2.a.ii.1.
+        
         return raiseError(
             "Expected destructuring/rest parameter per "
             "AssertedParameterScope.paramNames, got positional parameter");
       }
 
-      // Step 2.a.i.
+      
       if (MOZ_UNLIKELY(param->as<NameNode>().name() != name)) {
-        // Step 2.a.ii.1.
+        
         return raiseError(
             "Name mismatch between AssertedPositionalParameterName in "
             "AssertedParameterScope.paramNames and actual parameter");
       }
 
-      // Step 2.a.i.1.
-      // Implicitly done.
+      
+      
     } else {
-      // Destructuring parameter.
+      
 
       MOZ_ASSERT(param->isKind(ParseNodeKind::ObjectExpr) ||
                  param->isKind(ParseNodeKind::ArrayExpr));
 
-      // Step 3.
+      
       if (i >= positionalParams.get().length()) {
         continue;
       }
@@ -587,9 +587,9 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
     i++;
   }
 
-  // Step 3.
+  
   if (MOZ_UNLIKELY(positionalParams.get().length() > params->count())) {
-    // `positionalParams` has unchecked entries.
+    
     return raiseError(
         "AssertedParameterScope.paramNames has unmatching items than the "
         "actual parameters");
@@ -598,8 +598,8 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkPositionalParameterIndices(
   return Ok();
 }
 
-// Binary AST (revision 8eab67e0c434929a66ff6abe99ff790bca087dda)
-// 3.1.13 CheckFunctionLength.
+
+
 template <typename Tok>
 JS::Result<Ok> BinASTParserPerTokenizer<Tok>::checkFunctionLength(
     uint32_t expectedLength) {
@@ -659,8 +659,8 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::prependDirectivesImpl(
     ListNode* body, ParseNode* directive) {
   BINJS_TRY(CheckRecursionLimit(cx_));
 
-  // Prepend in the reverse order by using stack, so that the directives are
-  // prepended in the original order.
+  
+  
   if (ParseNode* next = directive->pn_next) {
     MOZ_TRY(prependDirectivesImpl(body, next));
   }
@@ -682,8 +682,8 @@ template <typename Tok>
 mozilla::GenericErrorResult<JS::Error&>
 BinASTParserPerTokenizer<Tok>::raiseMissingVariableInAssertedScope(
     JSAtom* name) {
-  // For the moment, we don't trust inputs sufficiently to put the name
-  // in an error message.
+  
+  
   return raiseError("Missing variable in AssertedScope");
 }
 
@@ -797,8 +797,8 @@ void BinASTParserPerTokenizer<Tok>::doTrace(JSTracer* trc) {
 template <typename Tok>
 inline typename BinASTParserPerTokenizer<Tok>::FinalParser*
 BinASTParserPerTokenizer<Tok>::asFinalParser() {
-  // Same as GeneralParser::asFinalParser, verify the inheritance to
-  // make sure the static downcast works.
+  
+  
   static_assert(
       std::is_base_of<BinASTParserPerTokenizer<Tok>, FinalParser>::value,
       "inheritance relationship required by the static_cast<> below");
@@ -816,10 +816,10 @@ BinASTParserPerTokenizer<Tok>::asFinalParser() const {
   return static_cast<const FinalParser*>(this);
 }
 
-// Force class instantiation.
-// This ensures that the symbols are built, without having to export all our
-// code (and its baggage of #include and macros) in the header.
+
+
+
 template class BinASTParserPerTokenizer<BinASTTokenReaderContext>;
 template class BinASTParserPerTokenizer<BinASTTokenReaderMultipart>;
 
-}  // namespace js::frontend
+}  

@@ -2149,7 +2149,6 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  
   void setPositions(uint32_t sourceStart, uint32_t sourceEnd,
                     uint32_t toStringStart, uint32_t toStringEnd) {
     MOZ_ASSERT(toStringStart <= sourceStart);
@@ -3162,8 +3161,6 @@ JSScript* CloneGlobalScript(JSContext* cx, ScopeKind scopeKind,
                             HandleScript src);
 
 } 
-
-
 
 namespace JS {
 namespace ubi {

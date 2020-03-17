@@ -219,11 +219,9 @@ class AutoLockScriptData;
 
 
 
-
 struct SelfHostedLazyScript {
   SelfHostedLazyScript() = default;
 
-  
   
   
   uint8_t* jitCodeRaw_ = nullptr;

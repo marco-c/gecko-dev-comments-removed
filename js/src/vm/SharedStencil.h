@@ -1,33 +1,33 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 
-#include <stddef.h>  
-#include <stdint.h>  
+#include <stddef.h>  // size_t
+#include <stdint.h>  // uint32_t
 
 #include "jstypes.h"
 #include "js/CompileOptions.h"
 
-
-
-
+/*
+ * Data shared between the vm and stencil structures.
+ */
 
 namespace js {
 class BaseScript;
 
 template <typename EnumType>
 class ScriptFlagBase {
-  
+  // To allow cross-checking offsetof assert.
   friend class js::BaseScript;
 
  protected:
-  
-  
+  // Stored as a uint32_t to make access more predictable from
+  // JIT code.
   uint32_t flags_ = 0;
 
  public:
@@ -48,104 +48,104 @@ class ScriptFlagBase {
 };
 
 enum class ImmutableScriptFlagsEnum : uint32_t {
-  
-  
-  
-  
+  // Input Flags
+  //
+  // Flags that come from CompileOptions.
+  // ----
 
-  
+  // No need for result value of last expression statement.
   NoScriptRval = 1 << 0,
 
-  
+  // See Parser::selfHostingMode.
   SelfHosted = 1 << 1,
 
-  
-  
-  
+  // Script is a lambda to treat as running once or a global or eval script
+  // that will only run once.  Which one it is can be disambiguated by
+  // checking whether function() is null.
   TreatAsRunOnce = 1 << 2,
 
-  
+  // Code was forced into strict mode using CompileOptions.
   ForceStrict = 1 << 3,
-  
+  // ----
 
-  
+  // Code is in strict mode.
   Strict = 1 << 4,
 
-  
-  
-  
+  // True if the script has a non-syntactic scope on its dynamic scope chain.
+  // That is, there are objects about which we know nothing between the
+  // outermost syntactic scope and the global.
   HasNonSyntacticScope = 1 << 5,
 
-  
+  // See FunctionBox.
   BindingsAccessedDynamically = 1 << 6,
   FunHasExtensibleScope = 1 << 7,
 
-  
-  
+  // Bytecode contains JSOp::CallSiteObj
+  // (We don't relazify functions with template strings, due to observability)
   HasCallSiteObj = 1 << 8,
 
-  
-  
+  // Script is parsed with a top-level goal of Module. This may be a top-level
+  // or an inner-function script.
   HasModuleGoal = 1 << 9,
 
   FunctionHasThisBinding = 1 << 10,
   FunctionHasExtraBodyVarScope = 1 << 11,
 
-  
-  
+  // Whether the arguments object for this script, if it needs one, should be
+  // mapped (alias formal parameters).
   HasMappedArgsObj = 1 << 12,
 
-  
-  
+  // Script contains inner functions. Used to check if we can relazify the
+  // script.
   HasInnerFunctions = 1 << 13,
 
   NeedsHomeObject = 1 << 14,
 
   IsDerivedClassConstructor = 1 << 15,
 
-  
-  
+  // 'this', 'arguments' and f.apply() are used. This is likely to be a
+  // wrapper.
   IsLikelyConstructorWrapper = 1 << 16,
 
-  
+  // Set if this function is a generator function or async generator.
   IsGenerator = 1 << 17,
 
-  
+  // Set if this function is an async function or async generator.
   IsAsync = 1 << 18,
 
-  
+  // Set if this function has a rest parameter.
   HasRest = 1 << 19,
 
-  
+  // See comments below.
   ArgumentsHasVarBinding = 1 << 20,
 
-  
+  // Script came from eval().
   IsForEval = 1 << 21,
 
-  
+  // Whether this is a top-level module script.
   IsModule = 1 << 22,
 
-  
+  // Whether this function needs a call object or named lambda environment.
   NeedsFunctionEnvironmentObjects = 1 << 23,
 
-  
+  // Whether the Parser declared 'arguments'.
   ShouldDeclareArguments = 1 << 24,
 
-  
+  // Script is for function.
   IsFunction = 1 << 25,
 
-  
+  // Whether this script contains a direct eval statement.
   HasDirectEval = 1 << 26,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
-  
-  
-  
-  
-  
-  
-  
+  // Immutable flags should not be modified after the JSScript that contains
+  // them has been initialized. These flags should likely be preserved when
+  // serializing (XDR) or copying (CopyScript) the script. This is only public
+  // for the JITs.
+  //
+  // Specific accessors for flag values are defined with
+  // IMMUTABLE_FLAG_* macros below.
  public:
   ImmutableScriptFlags() = default;
 
@@ -173,10 +173,10 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
       const JS::TransitiveCompileOptions& options) {
     ImmutableScriptFlags isf;
     isf.setFlag(ImmutableScriptFlagsEnum::NoScriptRval,
-                 false);
+                /* noScriptRval (non-transitive compile option) = */ false);
     isf.setFlag(ImmutableScriptFlagsEnum::SelfHosted, options.selfHostingMode);
     isf.setFlag(ImmutableScriptFlagsEnum::TreatAsRunOnce,
-                 false);
+                /* isRunOnce (non-transitive compile option) = */ false);
     isf.setFlag(ImmutableScriptFlagsEnum::ForceStrict,
                 options.forceStrictMode());
     return isf;
@@ -184,67 +184,68 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
-  
-  
+  // Number of times the |warmUpCount| was forcibly discarded. The counter is
+  // reset when a script is successfully jit-compiled.
   WarmupResets_MASK = 0xFF,
 
-  
+  // (1 << 8) is unused
 
-  
+  // If treatAsRunOnce, whether script has executed.
   HasRunOnce = 1 << 9,
 
-  
+  // Script has been reused for a clone.
   HasBeenCloned = 1 << 10,
 
-  
+  // Script has an entry in Realm::scriptCountsMap.
   HasScriptCounts = 1 << 12,
 
-  
+  // Script has an entry in Realm::debugScriptMap.
   HasDebugScript = 1 << 13,
 
-  
-  
-  
+  // Script supports relazification where it releases bytecode and gcthings to
+  // save memory. This process is opt-in since various complexities may disallow
+  // this for some scripts.
+  // NOTE: Must check for isRelazifiable() before setting this flag.
   AllowRelazify = 1 << 14,
 
-  
+  // IonMonkey compilation hints.
 
-  
+  // Script has had hoisted bounds checks fail.
   FailedBoundsCheck = 1 << 15,
 
-  
+  // Script has had hoisted shape guard fail.
   FailedShapeGuard = 1 << 16,
 
   HadFrequentBailouts = 1 << 17,
   HadOverflowBailout = 1 << 18,
 
-  
-  
-  
-  
+  // Whether Baseline or Ion compilation has been disabled for this script.
+  // IonDisabled is equivalent to |jitScript->canIonCompile() == false| but
+  // JitScript can be discarded on GC and we don't want this to affect
+  // observable behavior (see ArgumentsGetterImpl comment).
   BaselineDisabled = 1 << 19,
   IonDisabled = 1 << 20,
 
-  
+  // Explicitly marked as uninlineable.
   Uninlineable = 1 << 21,
 
-  
+  // Idempotent cache has triggered invalidation.
   InvalidatedIdempotentCache = 1 << 22,
 
-  
+  // Lexical check did fail and bail out.
   FailedLexicalCheck = 1 << 23,
 
-  
+  // See comments below.
   NeedsArgsAnalysis = 1 << 24,
   NeedsArgsObj = 1 << 25,
 
-  
+  // Set if the debugger's onNewScript hook has not yet been called.
   HideScriptFromDebugger = 1 << 26,
 
-  
+  // Set if the script has opted into spew
   SpewEnabled = 1 << 27,
 
-  
+  // Set if this is a lazy script.
   IsLazyScript = 1 << 28,
 };
 
@@ -270,6 +271,6 @@ class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
   }
 };
 
-}  
+}  // namespace js
 
-#endif 
+#endif /* vm_SharedStencil_h */
