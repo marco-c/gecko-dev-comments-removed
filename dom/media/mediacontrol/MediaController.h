@@ -97,7 +97,7 @@ class MediaController final : public MediaSessionController {
   void Activate();
   void Deactivate();
 
-  void SetPlayState(PlaybackState aState);
+  void SetGuessedPlayState(PlaybackState aState);
 
   bool mAudible = false;
   bool mIsRegisteredToService = false;
@@ -105,7 +105,14 @@ class MediaController final : public MediaSessionController {
   int64_t mPlayingControlledMediaNum = 0;
   bool mShutdown = false;
 
-  PlaybackState mState = PlaybackState::eStopped;
+  
+  
+  
+  
+  
+  
+  
+  PlaybackState mGuessedPlaybackState = PlaybackState::eStopped;
   MediaEventProducer<PlaybackState> mPlaybackStateChangedEvent;
 };
 
