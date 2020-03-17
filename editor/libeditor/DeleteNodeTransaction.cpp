@@ -65,7 +65,7 @@ NS_IMETHODIMP DeleteNodeTransaction::DoTransaction() {
   
   
   
-  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(mNodeToDelete);
+  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(*mNodeToDelete);
 
   ErrorResult error;
   mParentNode->RemoveChild(*mNodeToDelete, error);
@@ -116,7 +116,7 @@ NS_IMETHODIMP DeleteNodeTransaction::RedoTransaction() {
     }
   }
 
-  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(mNodeToDelete);
+  mEditorBase->RangeUpdaterRef().SelAdjDeleteNode(*mNodeToDelete);
 
   ErrorResult error;
   mParentNode->RemoveChild(*mNodeToDelete, error);

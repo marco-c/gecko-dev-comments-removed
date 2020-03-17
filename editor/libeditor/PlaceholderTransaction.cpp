@@ -70,7 +70,7 @@ NS_IMETHODIMP PlaceholderTransaction::UndoTransaction() {
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-  rv = mStartSel.RestoreSelection(selection);
+  rv = mStartSel.RestoreSelection(*selection);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "SelectionState::RestoreSelection() failed");
   return rv;
@@ -93,7 +93,7 @@ NS_IMETHODIMP PlaceholderTransaction::RedoTransaction() {
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-  rv = mEndSel.RestoreSelection(selection);
+  rv = mEndSel.RestoreSelection(*selection);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "SelectionState::RestoreSelection() failed");
   return rv;
@@ -223,7 +223,7 @@ PlaceholderTransaction::StartSelectionEquals(SelectionState& aSelectionState) {
   
   
   return mStartSel.IsCollapsed() && aSelectionState.IsCollapsed() &&
-         mStartSel.IsEqual(&aSelectionState);
+         mStartSel.Equals(aSelectionState);
 }
 
 NS_IMETHODIMP PlaceholderTransaction::EndPlaceHolderBatch() {
@@ -265,7 +265,7 @@ nsresult PlaceholderTransaction::RememberEndingSelection() {
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-  mEndSel.SaveSelection(selection);
+  mEndSel.SaveSelection(*selection);
   return NS_OK;
 }
 
