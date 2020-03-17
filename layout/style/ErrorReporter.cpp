@@ -118,29 +118,23 @@ void ErrorReporter::ReleaseGlobals() {
   NS_IF_RELEASE(sSpecCache);
 }
 
-static uint64_t FindInnerWindowID(const StyleSheet* aSheet,
-                                  const Loader* aLoader) {
-  uint64_t innerWindowID = 0;
+uint64_t ErrorReporter::FindInnerWindowId(const StyleSheet* aSheet,
+                                          const Loader* aLoader) {
   if (aSheet) {
-    innerWindowID = aSheet->FindOwningWindowInnerID();
-  }
-  if (innerWindowID == 0 && aLoader) {
-    if (Document* doc = aLoader->GetDocument()) {
-      innerWindowID = doc->InnerWindowID();
+    if (uint64_t id = aSheet->FindOwningWindowInnerID()) {
+      return id;
     }
   }
-  return innerWindowID;
+  if (aLoader) {
+    if (Document* doc = aLoader->GetDocument()) {
+      return doc->InnerWindowID();
+    }
+  }
+  return 0;
 }
 
-ErrorReporter::ErrorReporter(const StyleSheet* aSheet, const Loader* aLoader,
-                             nsIURI* aURI)
-    : mSheet(aSheet),
-      mLoader(aLoader),
-      mURI(aURI),
-      mErrorLineNumber(0),
-      mPrevErrorLineNumber(0),
-      mErrorColNumber(0) {
-  MOZ_ASSERT(ShouldReportErrors(mSheet, mLoader));
+ErrorReporter::ErrorReporter(uint64_t aInnerWindowId)
+    : mInnerWindowId(aInnerWindowId) {
   EnsureGlobalsInitialized();
 }
 
@@ -205,25 +199,35 @@ bool ErrorReporter::ShouldReportErrors(const StyleSheet* aSheet,
   return false;
 }
 
-void ErrorReporter::OutputError() {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(ShouldReportErrors(mSheet, mLoader));
+void ErrorReporter::OutputError(const nsACString& aSourceLine,
+                                const nsACString& aSelectors,
+                                uint32_t aLineNumber, uint32_t aColNumber,
+                                nsIURI* aURI) {
+  nsAutoString errorLine;
+  
+  
+  if (!AppendUTF8toUTF16(aSourceLine, errorLine, fallible)) {
+    errorLine.Truncate();
+  }
+
+  nsAutoString selectors;
+  if (!AppendUTF8toUTF16(aSelectors, selectors, fallible)) {
+    selectors.Truncate();
+  }
 
   if (mError.IsEmpty()) {
     return;
   }
 
-  if (mFileName.IsEmpty()) {
-    if (mURI) {
-      if (!sSpecCache) {
-        sSpecCache = new ShortTermURISpecCache;
-        NS_ADDREF(sSpecCache);
-      }
-      mFileName = sSpecCache->GetSpec(mURI);
-      mURI = nullptr;
-    } else {
-      mFileName.AssignLiteral("from DOM");
+  nsAutoString fileName;
+  if (aURI) {
+    if (!sSpecCache) {
+      sSpecCache = new ShortTermURISpecCache;
+      NS_ADDREF(sSpecCache);
     }
+    fileName = sSpecCache->GetSpec(aURI);
+  } else {
+    fileName.AssignLiteral("from DOM");
   }
 
   nsresult rv;
@@ -234,57 +238,19 @@ void ErrorReporter::OutputError() {
     
     
     rv = errorObject->InitWithSanitizedSource(
-        mError, mFileName, mErrorLine, mErrorLineNumber, mErrorColNumber,
-        nsIScriptError::warningFlag, "CSS Parser",
-        FindInnerWindowID(mSheet, mLoader));
+        mError, fileName, errorLine, aLineNumber, aColNumber,
+        nsIScriptError::warningFlag, "CSS Parser", mInnerWindowId);
 
     if (NS_SUCCEEDED(rv)) {
-      errorObject->SetCssSelectors(mSelectors);
+      errorObject->SetCssSelectors(selectors);
       sConsoleService->LogMessage(errorObject);
     }
   }
 
-  ClearError();
+  mError.Truncate();
 }
-
-
-
-
-
-
-
-void ErrorReporter::OutputError(uint32_t aLineNumber, uint32_t aColNumber,
-                                const nsACString& aSourceLine,
-                                const nsACString& aSelectors) {
-  mErrorLineNumber = aLineNumber;
-  mErrorColNumber = aColNumber;
-
-  
-  
-  
-  if (mErrorLine.IsEmpty() || mErrorLineNumber != mPrevErrorLineNumber) {
-    mErrorLine.Truncate();
-    
-    
-    if (!AppendUTF8toUTF16(aSourceLine, mErrorLine, fallible)) {
-      mErrorLine.Truncate();
-    }
-
-    mPrevErrorLineNumber = aLineNumber;
-  }
-
-  if (!AppendUTF8toUTF16(aSelectors, mSelectors, fallible)) {
-    mSelectors.Truncate();
-  }
-
-  OutputError();
-}
-
-void ErrorReporter::ClearError() { mError.Truncate(); }
 
 void ErrorReporter::AddToError(const nsString& aErrorText) {
-  MOZ_ASSERT(ShouldReportErrors(mSheet, mLoader));
-
   if (mError.IsEmpty()) {
     mError = aErrorText;
   } else {
@@ -294,8 +260,6 @@ void ErrorReporter::AddToError(const nsString& aErrorText) {
 }
 
 void ErrorReporter::ReportUnexpected(const char* aMessage) {
-  MOZ_ASSERT(ShouldReportErrors(mSheet, mLoader));
-
   nsAutoString str;
   sStringBundle->GetStringFromName(aMessage, str);
   AddToError(str);
@@ -303,8 +267,6 @@ void ErrorReporter::ReportUnexpected(const char* aMessage) {
 
 void ErrorReporter::ReportUnexpectedUnescaped(
     const char* aMessage, const nsTArray<nsString>& aParam) {
-  MOZ_ASSERT(ShouldReportErrors(mSheet, mLoader));
-
   nsAutoString str;
   sStringBundle->FormatStringFromName(aMessage, aParam, str);
   AddToError(str);
