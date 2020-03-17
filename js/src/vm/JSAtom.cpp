@@ -1039,12 +1039,10 @@ template <typename CharsT>
 JSAtom* AtomizeUTF8OrWTF8Chars(JSContext* cx, const char* utf8Chars,
                                size_t utf8ByteLength) {
   {
+    
+    
+    
     StaticStrings& statics = cx->staticStrings();
-
-    
-    
-    
-    
 
     
     if (JSAtom* s = statics.lookup(utf8Chars, utf8ByteLength)) {
@@ -1055,18 +1053,25 @@ JSAtom* AtomizeUTF8OrWTF8Chars(JSContext* cx, const char* utf8Chars,
     
     
     
-    if (utf8ByteLength == 2 && !mozilla::IsAscii(utf8Chars[0])) {
-      MOZ_ASSERT(
-          (static_cast<uint8_t>(utf8Chars[0]) & 0b1110'0000) == 0b1100'0000,
-          "expected length-2 leading UTF-8 unit");
-      MOZ_ASSERT(mozilla::IsTrailingUnit(mozilla::Utf8Unit(utf8Chars[1])),
-                 "expected UTF-8 trailing unit");
-      char16_t unit =
-          ((static_cast<uint8_t>(utf8Chars[0]) & 0b0001'1111) << 6) |
-          (static_cast<uint8_t>(utf8Chars[1]) & 0b0011'1111);
-      if (StaticStrings::hasUnit(unit)) {
-        return statics.getUnit(unit);
+    
+    
+    
+    
+    if (utf8ByteLength == 2) {
+      auto first = static_cast<uint8_t>(utf8Chars[0]);
+      if ((first & 0b1111'1110) == 0b1100'0010) {
+        auto second = static_cast<uint8_t>(utf8Chars[1]);
+        if (mozilla::IsTrailingUnit(mozilla::Utf8Unit(second))) {
+          uint8_t unit =
+              static_cast<uint8_t>(first << 6) | (second & 0b0011'1111);
+
+          MOZ_ASSERT(StaticStrings::hasUnit(unit));
+          return statics.getUnit(unit);
+        }
       }
+
+      
+      
     }
   }
 
