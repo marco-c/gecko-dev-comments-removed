@@ -14,6 +14,29 @@
 namespace mozilla {
 namespace dom {
 
+class MediaSessionInfo {
+ public:
+  MediaSessionInfo() = default;
+
+  explicit MediaSessionInfo(MediaMetadataBase& aMetadata) {
+    mMetadata.emplace(aMetadata);
+  }
+
+  MediaSessionInfo(MediaMetadataBase& aMetadata,
+                   MediaSessionPlaybackState& aState) {
+    mMetadata.emplace(aMetadata);
+    mDeclaredPlaybackState = aState;
+  }
+
+  static MediaSessionInfo EmptyInfo() { return MediaSessionInfo(); }
+
+  
+  
+  Maybe<MediaMetadataBase> mMetadata;
+  MediaSessionPlaybackState mDeclaredPlaybackState =
+      MediaSessionPlaybackState::None;
+};
+
 
 
 
@@ -73,7 +96,7 @@ class MediaSessionController {
 
   void UpdateActiveMediaSessionContextId();
 
-  nsDataHashtable<nsUint64HashKey, Maybe<MediaMetadataBase>> mMetadataMap;
+  nsDataHashtable<nsUint64HashKey, MediaSessionInfo> mMediaSessionInfoMap;
   MediaEventProducer<MediaMetadataBase> mMetadataChangedEvent;
 };
 
