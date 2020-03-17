@@ -68,7 +68,6 @@ class JitScript;
 }  
 
 class AutoSweepJitScript;
-class LazyScript;
 class ModuleObject;
 class RegExpObject;
 class ScriptSourceHolder;
@@ -2084,6 +2083,21 @@ class BaseScript : public gc::TenuredCell {
   }
 
  public:
+  
+  static BaseScript* CreateRawLazy(JSContext* cx, uint32_t ngcthings,
+                                   HandleFunction fun,
+                                   HandleScriptSourceObject sourceObject,
+                                   const SourceExtent& extent);
+
+  
+  
+  static BaseScript* CreateLazy(
+      JSContext* cx, const frontend::CompilationInfo& compilationInfo,
+      HandleFunction fun, HandleScriptSourceObject sourceObject,
+      const frontend::AtomVector& closedOverBindings,
+      const Vector<frontend::FunctionIndex>& innerFunctionIndexes,
+      const SourceExtent& extent);
+
   uint8_t* jitCodeRaw() const { return jitCodeRaw_; }
   bool isUsingInterpreterTrampoline(JSRuntime* rt) const;
 
@@ -3073,108 +3087,6 @@ class JSScript : public js::BaseScript {
 };
 
 namespace js {
-
-
-
-class LazyScript : public BaseScript {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  using BaseScript::BaseScript;
-
- public:
-  
-  
-  
-  static LazyScript* CreateRaw(JSContext* cx, uint32_t ngcthings,
-                               HandleFunction fun,
-                               HandleScriptSourceObject sourceObject,
-                               const SourceExtent& extent);
-
-  
-  
-  static LazyScript* Create(
-      JSContext* cx, const frontend::CompilationInfo& compilationInfo,
-      HandleFunction fun, HandleScriptSourceObject sourceObject,
-      const frontend::AtomVector& closedOverBindings,
-      const Vector<frontend::FunctionIndex>& innerFunctionIndexes,
-      const SourceExtent& extent);
-};
 
 struct ScriptAndCounts {
   
