@@ -813,6 +813,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
+  if (StaticPrefs::dom_security_https_only_mode()) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
+  
   
   
   
