@@ -39,13 +39,36 @@ class MediaSession final : public nsISupports, public nsWrapperCache {
 
   void SetMetadata(MediaMetadata* aMetadata);
 
+  void SetPlaybackState(const MediaSessionPlaybackState& aPlaybackState);
+
+  MediaSessionPlaybackState PlaybackState() const;
+
   void SetActionHandler(MediaSessionAction aAction,
                         MediaSessionActionHandler* aHandler);
 
-  MOZ_CAN_RUN_SCRIPT
+  bool IsSupportedAction(MediaSessionAction aAction) const;
+
+  
   void NotifyHandler(const MediaSessionActionDetails& aDetails);
+  void NotifyHandler(MediaSessionAction aAction);
+
+  void Shutdown();
 
  private:
+  
+  
+  enum class SessionStatus : bool {
+    eDestroyed = false,
+    eCreated = true,
+  };
+  void NotifyMediaSessionStatus(SessionStatus aState);
+
+  void NotifyMetadataUpdated();
+
+  void DispatchNotifyHandler(const MediaSessionActionDetails& aDetails);
+
+  MediaSessionActionHandler* GetActionHandler(MediaSessionAction aAction) const;
+
   ~MediaSession() = default;
 
   nsCOMPtr<nsPIDOMWindowInner> mParent;
@@ -53,6 +76,12 @@ class MediaSession final : public nsISupports, public nsWrapperCache {
   RefPtr<MediaMetadata> mMediaMetadata;
   static const size_t ACTIONS = MediaSessionActionValues::Count;
   RefPtr<MediaSessionActionHandler> mActionHandlers[ACTIONS] = {nullptr};
+
+  
+  
+  
+  MediaSessionPlaybackState mDeclaredPlaybackState =
+      MediaSessionPlaybackState::None;
 };
 
 }  
