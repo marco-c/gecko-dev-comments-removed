@@ -53,6 +53,8 @@ class CompositorVsyncDispatcher final {
   
   void NotifyVsync(const VsyncEvent& aVsync);
 
+  void MoveToSource(const RefPtr<gfx::VsyncSource>& aVsyncSource);
+
   
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
   void Shutdown();
@@ -99,7 +101,6 @@ class RefreshTimerVsyncDispatcher final {
   
   
   gfx::VsyncSource::Display* mDisplay;
-  Mutex mDisplayLock;
   Mutex mRefreshTimersLock;
   RefPtr<VsyncObserver> mParentRefreshTimer;
   nsTArray<RefPtr<VsyncObserver>> mChildRefreshTimers;
