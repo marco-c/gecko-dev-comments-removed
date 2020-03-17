@@ -1271,7 +1271,7 @@ StorageAccessPermissionPrompt.prototype = {
 
   prettifyHostPort(uri) {
     try {
-      uri = Services.uriFixup.createExposableURI(uri);
+      uri = Services.io.createExposableURI(uri);
     } catch (e) {
       
     }

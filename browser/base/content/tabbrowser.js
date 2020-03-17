@@ -929,7 +929,7 @@
       
       try {
         if (docElement.getAttribute("chromehidden").includes("location")) {
-          const uri = Services.uriFixup.createExposableURI(aBrowser.currentURI);
+          const uri = Services.io.createExposableURI(aBrowser.currentURI);
           let prefix = uri.prePath;
           if (uri.scheme == "about") {
             prefix = uri.spec;
@@ -1482,7 +1482,7 @@
         
         if (browser.currentURI.displaySpec) {
           try {
-            title = Services.uriFixup.createExposableURI(browser.currentURI)
+            title = Services.io.createExposableURI(browser.currentURI)
               .displaySpec;
           } catch (ex) {
             title = browser.currentURI.displaySpec;

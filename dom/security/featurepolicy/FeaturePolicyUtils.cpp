@@ -5,7 +5,7 @@
 
 
 #include "FeaturePolicyUtils.h"
-#include "nsIURIFixup.h"
+#include "nsIOService.h"
 
 #include "mozilla/dom/DOMTypes.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
@@ -210,19 +210,9 @@ void FeaturePolicyUtils::ReportViolation(Document* aDocument,
 
   
   
-  nsCOMPtr<nsIURIFixup> urifixup = services::GetURIFixup();
-  if (NS_WARN_IF(!urifixup)) {
-    return;
-  }
-
-  nsCOMPtr<nsIURI> exposableURI;
-  nsresult rv = urifixup->CreateExposableURI(uri, getter_AddRefs(exposableURI));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
+  nsCOMPtr<nsIURI> exposableURI = net::nsIOService::CreateExposableURI(uri);
   nsAutoCString spec;
-  rv = exposableURI->GetSpec(spec);
+  nsresult rv = exposableURI->GetSpec(spec);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }

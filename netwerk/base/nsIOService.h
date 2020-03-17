@@ -104,6 +104,10 @@ class nsIOService final : public nsIIOService,
   static bool BlockToplevelDataUriNavigations();
 
   
+  
+  static already_AddRefed<nsIURI> CreateExposableURI(nsIURI*);
+
+  
   void IncrementRequestNumber() { mTotalRequests++; }
   uint32_t GetTotalRequestNumber() { return mTotalRequests; }
   
