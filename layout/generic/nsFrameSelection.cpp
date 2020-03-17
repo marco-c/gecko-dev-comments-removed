@@ -1286,8 +1286,6 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
     return NS_ERROR_FAILURE;
   }
 
-  mPresShell->FrameSelectionWillTakeFocus(*this);
-
   
   mTableSelection.mMode = TableSelectionMode::None;
   mTableSelection.mDragSelectingCells = false;
