@@ -1994,6 +1994,8 @@ using RuntimeScriptDataTable =
 
 
 struct SourceExtent {
+  SourceExtent() = default;
+
   SourceExtent(uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
                uint32_t toStringEnd, uint32_t lineno, uint32_t column)
       : sourceStart(sourceStart),
@@ -3149,6 +3151,7 @@ class LazyScript : public BaseScript {
 
   using BaseScript::BaseScript;
 
+ public:
   
   
   
@@ -3157,7 +3160,6 @@ class LazyScript : public BaseScript {
                                HandleScriptSourceObject sourceObject,
                                const SourceExtent& extent);
 
- public:
   
   
   static LazyScript* Create(
@@ -3166,24 +3168,6 @@ class LazyScript : public BaseScript {
       const frontend::AtomVector& closedOverBindings,
       const Vector<frontend::FunctionIndex>& innerFunctionIndexes,
       const SourceExtent& extent);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static LazyScript* CreateForXDR(JSContext* cx, uint32_t ngcthings,
-                                  HandleFunction fun, HandleScript script,
-                                  HandleScope enclosingScope,
-                                  HandleScriptSourceObject sourceObject,
-                                  uint32_t immutableFlags, uint32_t sourceStart,
-                                  uint32_t sourceEnd, uint32_t toStringStart,
-                                  uint32_t toStringEnd, uint32_t lineno,
-                                  uint32_t column);
 
   template <XDRMode mode>
   static XDRResult XDRScriptData(XDRState<mode>* xdr,
