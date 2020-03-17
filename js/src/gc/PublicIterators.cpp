@@ -111,38 +111,38 @@ static void TraverseInnerLazyScriptsForLazyScript(
 }
 
 static inline void DoScriptCallback(JSContext* cx, void* data,
-                                    LazyScript* lazyScript,
-                                    IterateScriptCallback lazyScriptCallback,
+                                    BaseScript* script,
+                                    IterateScriptCallback callback,
                                     const JS::AutoRequireNoGC& nogc) {
-  
-  
-  
-  
-  
-  if (!lazyScript->enclosingScriptHasEverBeenCompiled()) {
-    return;
+  if (script->isLazyScript()) {
+    
+    
+    
+    
+    
+    if (!script->enclosingScriptHasEverBeenCompiled()) {
+      return;
+    }
+  } else {
+    
+    
+    
+    if (static_cast<JSScript*>(script)->isUncompleted()) {
+      return;
+    }
   }
 
-  lazyScriptCallback(cx->runtime(), data, lazyScript, nogc);
+  
+  callback(cx->runtime(), data, script, nogc);
 
-  TraverseInnerLazyScriptsForLazyScript(cx, data, lazyScript,
-                                        lazyScriptCallback, nogc);
-}
-
-static inline void DoScriptCallback(JSContext* cx, void* data, JSScript* script,
-                                    IterateScriptCallback scriptCallback,
-                                    const JS::AutoRequireNoGC& nogc) {
   
   
-  
-  if (script->isUncompleted()) {
-    return;
+  if (script->isLazyScript()) {
+    TraverseInnerLazyScriptsForLazyScript(cx, data, script, callback, nogc);
   }
-
-  scriptCallback(cx->runtime(), data, script, nogc);
 }
 
-template <typename T>
+template <bool MatchLazy>
 static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
                                IterateScriptCallback scriptCallback) {
   MOZ_ASSERT(!cx->suppressGC);
@@ -153,24 +153,22 @@ static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
     Zone* zone = realm->zone();
     for (auto iter = zone->cellIter<BaseScript>(prep); !iter.done();
          iter.next()) {
-      if (mozilla::IsSame<T, LazyScript>::value != iter->isLazyScript()) {
+      if (MatchLazy != iter->isLazyScript()) {
         continue;
       }
-      T* script = static_cast<T*>(iter.get());
-      if (script->realm() != realm) {
+      if (iter->realm() != realm) {
         continue;
       }
-      DoScriptCallback(cx, data, script, scriptCallback, nogc);
+      DoScriptCallback(cx, data, iter.get(), scriptCallback, nogc);
     }
   } else {
     for (ZonesIter zone(cx->runtime(), SkipAtoms); !zone.done(); zone.next()) {
       for (auto iter = zone->cellIter<BaseScript>(prep); !iter.done();
            iter.next()) {
-        if (mozilla::IsSame<T, LazyScript>::value != iter->isLazyScript()) {
+        if (MatchLazy != iter->isLazyScript()) {
           continue;
         }
-        T* script = static_cast<T*>(iter.get());
-        DoScriptCallback(cx, data, script, scriptCallback, nogc);
+        DoScriptCallback(cx, data, iter.get(), scriptCallback, nogc);
       }
     }
   }
@@ -178,12 +176,12 @@ static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
 
 void js::IterateScripts(JSContext* cx, Realm* realm, void* data,
                         IterateScriptCallback scriptCallback) {
-  IterateScriptsImpl<JSScript>(cx, realm, data, scriptCallback);
+  IterateScriptsImpl< false>(cx, realm, data, scriptCallback);
 }
 
 void js::IterateLazyScripts(JSContext* cx, Realm* realm, void* data,
                             IterateScriptCallback scriptCallback) {
-  IterateScriptsImpl<LazyScript>(cx, realm, data, scriptCallback);
+  IterateScriptsImpl< true>(cx, realm, data, scriptCallback);
 }
 
 static void IterateGrayObjects(Zone* zone, GCThingCallback cellCallback,
