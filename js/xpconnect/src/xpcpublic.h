@@ -415,7 +415,7 @@ void SetLocationForGlobal(JSObject* global, nsIURI* locationURI);
 
 class ZoneStatsExtras {
  public:
-  ZoneStatsExtras() = default;
+  ZoneStatsExtras() {}
 
   nsCString pathPrefix;
 
@@ -428,7 +428,7 @@ class ZoneStatsExtras {
 
 class RealmStatsExtras {
  public:
-  RealmStatsExtras() = default;
+  RealmStatsExtras() {}
 
   nsCString jsPathPrefix;
   nsCString domPathPrefix;
@@ -613,7 +613,7 @@ class ErrorReport : public ErrorBase {
   void LogToStderr();
 
  private:
-  ~ErrorReport() = default;
+  ~ErrorReport() {}
 };
 
 void DispatchScriptErrorEvent(nsPIDOMWindowInner* win,

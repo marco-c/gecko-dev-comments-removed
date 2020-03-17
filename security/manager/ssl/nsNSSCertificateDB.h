@@ -33,7 +33,7 @@ class nsNSSCertificateDB final : public nsIX509CertDB
       nsTArray<RefPtr<nsIX509Cert>>& aCertListOut);
 
  protected:
-  virtual ~nsNSSCertificateDB() = default;
+  virtual ~nsNSSCertificateDB() {}
 
  private:
   

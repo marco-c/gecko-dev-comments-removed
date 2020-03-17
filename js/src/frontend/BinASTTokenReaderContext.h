@@ -313,7 +313,7 @@ class SingleEntryHuffmanTable {
 
 class TwoEntriesHuffmanTable {
  public:
-  TwoEntriesHuffmanTable() = default;
+  TwoEntriesHuffmanTable() {}
   TwoEntriesHuffmanTable(TwoEntriesHuffmanTable&& other) noexcept = default;
 
   
@@ -921,7 +921,7 @@ class TemporaryStorageItem {
     
     T entries_[1];
 
-    Chunk() = default;
+    Chunk() {}
   };
 
   
@@ -931,7 +931,7 @@ class TemporaryStorageItem {
   Chunk* head_ = nullptr;
 
  public:
-  TemporaryStorageItem() = default;
+  TemporaryStorageItem() {}
 
   ~TemporaryStorageItem() {
     Chunk* chunk = head_;
@@ -968,7 +968,7 @@ class TemporaryStorage {
   TemporaryStorageItem<TwoLookupsHuffmanTable> twoTables_;
 
  public:
-  TemporaryStorage() = default;
+  TemporaryStorage() {}
 
   
   
@@ -1303,7 +1303,7 @@ class HuffmanDictionary {
   };
 
  public:
-  HuffmanDictionary() = default;
+  HuffmanDictionary() {}
   ~HuffmanDictionary();
 
   bool isUnreachable(TableIdentity i) const {

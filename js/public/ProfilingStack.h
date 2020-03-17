@@ -387,7 +387,7 @@ JS_FRIEND_API void SetProfilingThreadCallbacks(
 
 class JS_FRIEND_API ProfilingStack final {
  public:
-  ProfilingStack() = default;
+  ProfilingStack() : stackPointer(0) {}
 
   ~ProfilingStack();
 
@@ -495,7 +495,7 @@ class JS_FRIEND_API ProfilingStack final {
   
   
   
-  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer{0};
+  mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> stackPointer;
 };
 
 namespace js {

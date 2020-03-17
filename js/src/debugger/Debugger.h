@@ -1294,7 +1294,7 @@ class DebuggerDebuggeeLink : public NativeObject {
 
 
 struct Handler {
-  virtual ~Handler() = default;
+  virtual ~Handler() {}
 
   
 
@@ -1378,8 +1378,8 @@ class BreakpointSite {
   BreakpointList breakpoints;
 
  protected:
-  BreakpointSite() = default;
-  virtual ~BreakpointSite() = default;
+  BreakpointSite(){};
+  virtual ~BreakpointSite() {}
   void finalize(JSFreeOp* fop);
   virtual gc::Cell* owningCell() = 0;
 

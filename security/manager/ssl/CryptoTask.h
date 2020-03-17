@@ -28,7 +28,7 @@ class CryptoTask : public Runnable {
  protected:
   CryptoTask() : Runnable("CryptoTask"), mRv(NS_ERROR_NOT_INITIALIZED) {}
 
-  virtual ~CryptoTask() = default;
+  virtual ~CryptoTask() {}
 
   
 

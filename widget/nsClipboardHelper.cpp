@@ -23,7 +23,7 @@ NS_IMPL_ISUPPORTS(nsClipboardHelper, nsIClipboardHelper)
 
 
 
-nsClipboardHelper::nsClipboardHelper() = default;
+nsClipboardHelper::nsClipboardHelper() {}
 
 nsClipboardHelper::~nsClipboardHelper() {
   

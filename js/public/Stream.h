@@ -78,7 +78,7 @@ namespace JS {
 
 class JS_PUBLIC_API ReadableStreamUnderlyingSource {
  public:
-  virtual ~ReadableStreamUnderlyingSource() = default;
+  virtual ~ReadableStreamUnderlyingSource() {}
 
   
 
@@ -487,7 +487,7 @@ extern JS_PUBLIC_API JSObject* ReadableStreamDefaultReaderRead(
 
 class JS_PUBLIC_API WritableStreamUnderlyingSink {
  public:
-  virtual ~WritableStreamUnderlyingSink() = default;
+  virtual ~WritableStreamUnderlyingSink() {}
 
   
 

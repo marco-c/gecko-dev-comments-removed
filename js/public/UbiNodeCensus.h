@@ -94,8 +94,8 @@ using CountBasePtr = js::UniquePtr<CountBase, CountDeleter>;
 
 
 struct CountType {
-  explicit CountType() = default;
-  virtual ~CountType() = default;
+  explicit CountType() {}
+  virtual ~CountType() {}
 
   
   virtual void destructCount(CountBase& count) = 0;
@@ -130,7 +130,7 @@ class CountBase {
   CountType& type;
 
  protected:
-  ~CountBase() = default;
+  ~CountBase() {}
 
  public:
   explicit CountBase(CountType& type)

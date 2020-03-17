@@ -78,14 +78,14 @@ inline ClippedTime TimeClip(double time);
 
 
 class ClippedTime {
-  double t = mozilla::UnspecifiedNaN<double>();
+  double t;
 
   explicit ClippedTime(double time) : t(time) {}
   friend ClippedTime TimeClip(double time);
 
  public:
   
-  ClippedTime() = default;
+  ClippedTime() : t(mozilla::UnspecifiedNaN<double>()) {}
 
   
   

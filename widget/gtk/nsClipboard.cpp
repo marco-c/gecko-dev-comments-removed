@@ -74,7 +74,7 @@ int GetGeckoClipboardType(GtkClipboard* aGtkClipboard) {
     return -1;  
 }
 
-nsClipboard::nsClipboard() = default;
+nsClipboard::nsClipboard() {}
 
 nsClipboard::~nsClipboard() {
   

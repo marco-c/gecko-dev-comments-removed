@@ -233,7 +233,7 @@ class LiveRange : public TempObject {
     
     CodePosition to;
 
-    Range() = default;
+    Range() {}
 
     Range(CodePosition from, CodePosition to) : from(from), to(to) {
       MOZ_ASSERT(!empty());
