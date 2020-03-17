@@ -69,6 +69,9 @@ class MediaController final : public MediaSessionController {
     return mPlaybackStateChangedEvent;
   }
 
+  void SetDeclaredPlaybackState(uint64_t aSessionContextId,
+                                MediaSessionPlaybackState aState) override;
+
   
   
   void NotifyMediaStateChanged(ControlledMediaState aState);
@@ -89,6 +92,11 @@ class MediaController final : public MediaSessionController {
 
   void SetGuessedPlayState(MediaSessionPlaybackState aState);
 
+  
+  
+  
+  void UpdateActualPlaybackState();
+
   bool mAudible = false;
   bool mIsRegisteredToService = false;
   int64_t mControlledMediaNum = 0;
@@ -104,6 +112,13 @@ class MediaController final : public MediaSessionController {
   
   MediaSessionPlaybackState mGuessedPlaybackState =
       MediaSessionPlaybackState::None;
+
+  
+  
+  
+  MediaSessionPlaybackState mActualPlaybackState =
+      MediaSessionPlaybackState::None;
+
   MediaEventProducer<MediaSessionPlaybackState> mPlaybackStateChangedEvent;
 };
 
