@@ -1321,6 +1321,9 @@ pref("trailhead.firstrun.branches", "");
 
 pref("browser.aboutwelcome.enabled", false);
 
+pref("browser.aboutwelcome.temp.testExperiment.slug", "");
+pref("browser.aboutwelcome.temp.testExperiment.branch", "control");
+
 pref("browser.aboutwelcome.log", "warn");
 
 
