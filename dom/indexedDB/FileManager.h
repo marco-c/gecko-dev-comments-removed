@@ -1,19 +1,15 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_dom_indexeddb_filemanager_h__
 #define mozilla_dom_indexeddb_filemanager_h__
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Mutex.h"
 #include "mozilla/dom/quota/PersistenceType.h"
-#include "nsDataHashtable.h"
-#include "nsHashKeys.h"
-#include "nsISupportsImpl.h"
-#include "FlippedOnce.h"
+#include "FileManagerBase.h"
+#include "IndexedDatabaseManager.h"
 #include "InitializedOnce.h"
 
 class nsIFile;
@@ -23,10 +19,9 @@ namespace mozilla {
 namespace dom {
 namespace indexedDB {
 
-class FileInfo;
-
-
-class FileManager final {
+// Implemented in ActorsParent.cpp.
+class FileManager final
+    : public FileManagerBase<FileManager, dom::IndexedDatabaseManager> {
   typedef mozilla::dom::quota::PersistenceType PersistenceType;
 
   const PersistenceType mPersistenceType;
@@ -37,13 +32,7 @@ class FileManager final {
   InitializedOnce<const nsString, LazyInit::Allow> mDirectoryPath;
   InitializedOnce<const nsString, LazyInit::Allow> mJournalDirectoryPath;
 
-  int64_t mLastFileId;
-
-  
-  nsDataHashtable<nsUint64HashKey, FileInfo*> mFileInfos;
-
   const bool mEnforcingQuota;
-  FlippedOnce<false> mInvalidated;
 
  public:
   static MOZ_MUST_USE nsCOMPtr<nsIFile> GetFileForId(nsIFile* aDirectory,
@@ -74,11 +63,7 @@ class FileManager final {
 
   bool EnforcingQuota() const { return mEnforcingQuota; }
 
-  bool Invalidated() const { return mInvalidated; }
-
   nsresult Init(nsIFile* aDirectory, mozIStorageConnection* aConnection);
-
-  nsresult Invalidate();
 
   MOZ_MUST_USE nsCOMPtr<nsIFile> GetDirectory();
 
@@ -87,12 +72,6 @@ class FileManager final {
   MOZ_MUST_USE nsCOMPtr<nsIFile> GetJournalDirectory();
 
   MOZ_MUST_USE nsCOMPtr<nsIFile> EnsureJournalDirectory();
-
-  MOZ_MUST_USE RefPtr<FileInfo> GetFileInfo(int64_t aId) const;
-
-  MOZ_MUST_USE RefPtr<FileInfo> CreateFileInfo();
-
-  void RemoveFileInfo(int64_t aId, const MutexAutoLock& aFilesMutexLock);
 
   MOZ_MUST_USE nsresult SyncDeleteFile(int64_t aId);
 
@@ -104,8 +83,8 @@ class FileManager final {
   ~FileManager() = default;
 };
 
-}  
-}  
-}  
+}  // namespace indexedDB
+}  // namespace dom
+}  // namespace mozilla
 
-#endif  
+#endif  // mozilla_dom_indexeddb_filemanager_h__
