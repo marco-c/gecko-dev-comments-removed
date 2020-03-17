@@ -16,7 +16,7 @@ namespace widget {
 
 class WindowSurface {
  public:
-  virtual ~WindowSurface() {}
+  virtual ~WindowSurface() = default;
 
   
   
