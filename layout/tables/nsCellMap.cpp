@@ -2466,7 +2466,7 @@ nsTableCellFrame* nsCellMapColumnIterator::GetNextFrame(int32_t* aRow,
     return nullptr;
   }
 
-  while (1) {
+  while (true) {
     NS_ASSERTION(mCurMapRow < mCurMapRelevantRowCount, "Bogus mOrigCells?");
     
     
