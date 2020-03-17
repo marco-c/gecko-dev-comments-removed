@@ -738,6 +738,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   virtual void ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData);
 
+  
+
+
+
+
+  nsTArray<uint8_t> GetCMSOutputProfileData();
+
   bool HasVariationFontSupport() const { return mHasVariationFontSupport; }
 
   bool HasNativeColrFontSupport() const { return mHasNativeColrFontSupport; }
@@ -879,8 +886,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static void InitOpenGLConfig();
   static void CreateCMSOutputProfile();
 
-  static nsTArray<uint8_t> GetCMSOutputProfileData();
-
   friend void RecordingPrefChanged(const char* aPrefName, void* aClosure);
 
   virtual nsTArray<uint8_t> GetPlatformCMSOutputProfileData();
@@ -947,6 +952,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   
   int64_t mScreenPixels;
+
+  
+  nsTArray<uint8_t> mCachedOutputColorProfile;
 
   
   
