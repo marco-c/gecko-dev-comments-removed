@@ -21,6 +21,12 @@ namespace utils {
 
 NSString* LocalizedString(const nsString& aString);
 
+
+
+
+
+
+NSString* GetAccAttr(mozAccessible* aNativeAccessible, const char* aAttrName);
 }
 }
 }
