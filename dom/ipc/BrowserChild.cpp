@@ -3608,6 +3608,13 @@ NS_IMETHODIMP BrowserChild::OnStateChange(nsIWebProgress* aWebProgress,
     return NS_OK;
   }
 
+  
+  
+  
+  if (aStateFlags & nsIWebProgressListener::STATE_IS_REDIRECTED_DOCUMENT) {
+    return NS_OK;
+  }
+
   RefPtr<Document> document;
   if (nsCOMPtr<nsPIDOMWindowOuter> outerWindow = do_GetInterface(docShell)) {
     document = outerWindow->GetExtantDoc();

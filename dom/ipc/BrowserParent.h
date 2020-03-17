@@ -738,7 +738,13 @@ class BrowserParent final : public PBrowserParent,
                           uint32_t aPresShellId);
   void StopApzAutoscroll(nsViewID aScrollId, uint32_t aPresShellId);
 
-  void SetDestroyingForProcessSwitch() { mIsDestroyingForProcessSwitch = true; }
+  
+  
+  
+  
+  void SuspendProgressEventsUntilAfterNextLoadStarts() {
+    mSuspendedProgressEvents = true;
+  }
 
  protected:
   friend BrowserBridgeParent;
@@ -1004,7 +1010,8 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  bool mIsDestroyingForProcessSwitch : 1;
+  
+  bool mSuspendedProgressEvents : 1;
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {

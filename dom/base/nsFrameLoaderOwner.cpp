@@ -129,6 +129,14 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
 
   
   
+  
+  if (aSwitchingInProgressLoad && mFrameLoader->GetBrowserParent()) {
+    mFrameLoader->GetBrowserParent()
+        ->SuspendProgressEventsUntilAfterNextLoadStarts();
+  }
+
+  
+  
   if (nsSubDocumentFrame* ourFrame = do_QueryFrame(owner->GetPrimaryFrame())) {
     ourFrame->ResetFrameLoader();
   }

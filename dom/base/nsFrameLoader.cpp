@@ -1807,7 +1807,9 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   if (auto* browserParent = GetBrowserParent()) {
     browserParent->RemoveWindowListeners();
     if (aForProcessSwitch) {
-      browserParent->SetDestroyingForProcessSwitch();
+      
+      
+      browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
     }
   }
 
@@ -2657,6 +2659,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   if (!mRemoteBrowser) {
     return false;
   }
+
   
   
   

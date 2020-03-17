@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nspr.h"
 #include "mozilla/dom/BrowserChild.h"
@@ -52,17 +52,17 @@ using mozilla::dom::BrowserChild;
 using mozilla::dom::BrowsingContext;
 using mozilla::dom::Document;
 
-//
-// Log module for nsIDocumentLoader logging...
-//
-// To enable logging (see mozilla/Logging.h for full details):
-//
-//    set MOZ_LOG=DocLoader:5
-//    set MOZ_LOG_FILE=debug.log
-//
-// this enables LogLevel::Debug level information and places all output in
-// the file 'debug.log'.
-//
+
+
+
+
+
+
+
+
+
+
+
 mozilla::LazyLogModule gDocLoaderLog("DocLoader");
 
 #if defined(DEBUG)
@@ -72,11 +72,11 @@ void GetURIStringFromRequest(nsIRequest* request, nsACString& name) {
   else
     name.AssignLiteral("???");
 }
-#endif /* DEBUG */
+#endif 
 
 void nsDocLoader::RequestInfoHashInitEntry(PLDHashEntryHdr* entry,
                                            const void* key) {
-  // Initialize the entry with placement new
+  
   new (entry) nsRequestInfo(key);
 }
 
@@ -86,7 +86,7 @@ void nsDocLoader::RequestInfoHashClearEntry(PLDHashTable* table,
   info->~nsRequestInfo();
 }
 
-// this is used for mListenerInfoList.Contains()
+
 template <>
 class nsDefaultComparator<nsDocLoader::nsListenerInfo,
                           nsIWebProgressListener*> {
@@ -99,7 +99,7 @@ class nsDefaultComparator<nsDocLoader::nsListenerInfo,
   }
 };
 
-/* static */ const PLDHashTableOps nsDocLoader::sRequestInfoHashOps = {
+ const PLDHashTableOps nsDocLoader::sRequestInfoHashOps = {
     PLDHashTable::HashVoidPtrKeyStub, PLDHashTable::MatchEntryStub,
     PLDHashTable::MoveEntryStub, nsDocLoader::RequestInfoHashClearEntry,
     nsDocLoader::RequestInfoHashInitEntry};
@@ -142,19 +142,19 @@ nsresult nsDocLoader::Init() {
 }
 
 nsDocLoader::~nsDocLoader() {
-  /*
-          |ClearWeakReferences()| here is intended to prevent people holding
-     weak references from re-entering this destructor since |QueryReferent()|
-     will |AddRef()| me, and the subsequent |Release()| will try to destroy me.
-     At this point there should be only weak references remaining (otherwise, we
-     wouldn't be getting destroyed).
+  
 
-          An alternative would be incrementing our refcount (consider it a
-     compressed flag saying "Don't re-destroy.").  I haven't yet decided which
-     is better. [scc]
-  */
-  // XXXbz now that NS_IMPL_RELEASE stabilizes by setting refcount to 1, is
-  // this needed?
+
+
+
+
+
+
+
+
+
+  
+  
   ClearWeakReferences();
 
   Destroy();
@@ -162,9 +162,9 @@ nsDocLoader::~nsDocLoader() {
   MOZ_LOG(gDocLoaderLog, LogLevel::Debug, ("DocLoader:%p: deleted.\n", this));
 }
 
-/*
- * Implementation of ISupports methods...
- */
+
+
+
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDocLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDocLoader)
 
@@ -183,9 +183,9 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_WEAK(nsDocLoader, mChildrenInOnload)
 
-/*
- * Implementation of nsIInterfaceRequestor methods...
- */
+
+
+
 NS_IMETHODIMP nsDocLoader::GetInterface(const nsIID& aIID, void** aSink) {
   nsresult rv = NS_ERROR_NO_INTERFACE;
 
@@ -202,14 +202,14 @@ NS_IMETHODIMP nsDocLoader::GetInterface(const nsIID& aIID, void** aSink) {
   return rv;
 }
 
-/* static */
+
 already_AddRefed<nsDocLoader> nsDocLoader::GetAsDocLoader(
     nsISupports* aSupports) {
   RefPtr<nsDocLoader> ret = do_QueryObject(aSupports);
   return ret.forget();
 }
 
-/* static */
+
 nsresult nsDocLoader::AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader) {
   nsCOMPtr<nsIDocumentLoader> docLoaderService =
       components::DocLoader::Service();
@@ -232,26 +232,26 @@ nsDocLoader::Stop(void) {
 
   if (mLoadGroup) rv = mLoadGroup->Cancel(NS_BINDING_ABORTED);
 
-  // Don't report that we're flushing layout so IsBusy returns false after a
-  // Stop call.
+  
+  
   mIsFlushingLayout = false;
 
-  // Clear out mChildrenInOnload.  We want to make sure to fire our
-  // onload at this point, and there's no issue with mChildrenInOnload
-  // after this, since mDocumentRequest will be null after the
-  // DocLoaderIsEmpty() call.
+  
+  
+  
+  
   mChildrenInOnload.Clear();
   mOOPChildrenLoading.Clear();
 
-  // Make sure to call DocLoaderIsEmpty now so that we reset mDocumentRequest,
-  // etc, as needed.  We could be getting into here from a subframe onload, in
-  // which case the call to DocLoaderIsEmpty() is coming but hasn't quite
-  // happened yet, Canceling the loadgroup did nothing (because it was already
-  // empty), and we're about to start a new load (which is what triggered this
-  // Stop() call).
+  
+  
+  
+  
+  
+  
 
-  // XXXbz If the child frame loadgroups were requests in mLoadgroup, I suspect
-  // we wouldn't need the call here....
+  
+  
 
   NS_ASSERTION(!IsBusy(), "Shouldn't be busy here");
   DocLoaderIsEmpty(false);
@@ -266,27 +266,27 @@ void nsDocLoader::SetBackgroundLoadIframe() { mTreatAsBackgroundLoad = true; }
 bool nsDocLoader::IsBusy() {
   nsresult rv;
 
-  //
-  // A document loader is busy if either:
-  //
-  //   1. One of its children is in the middle of an onload handler.  Note that
-  //      the handler may have already removed this child from mChildList!
-  //   2. It is currently loading a document and either has parts of it still
-  //      loading, or has a busy child docloader.
-  //   3. It's currently flushing layout in DocLoaderIsEmpty().
-  //
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (!mChildrenInOnload.IsEmpty() || !mOOPChildrenLoading.IsEmpty() ||
       mIsFlushingLayout) {
     return true;
   }
 
-  /* Is this document loader busy? */
+  
   if (!IsBlockingLoadEvent()) {
     return false;
   }
 
-  // Check if any in-process sub-document is awaiting its 'load' event:
+  
   bool busy;
   rv = mLoadGroup->IsPending(&busy);
   if (NS_FAILED(rv)) {
@@ -296,18 +296,18 @@ bool nsDocLoader::IsBusy() {
     return true;
   }
 
-  /* check its child document loaders... */
+  
   uint32_t count = mChildList.Length();
   for (uint32_t i = 0; i < count; i++) {
     nsIDocumentLoader* loader = ChildAt(i);
 
-    // If 'dom.cross_origin_iframes_loaded_in_background' is set, the parent
-    // document treats cross domain iframes as background loading frame
+    
+    
     if (loader && static_cast<nsDocLoader*>(loader)->TreatAsBackgroundLoad()) {
       continue;
     }
-    // This is a safe cast, because we only put nsDocLoader objects into the
-    // array
+    
+    
     if (loader && static_cast<nsDocLoader*>(loader)->IsBusy()) return true;
   }
 
@@ -337,13 +337,13 @@ nsDocLoader::GetLoadGroup(nsILoadGroup** aResult) {
 void nsDocLoader::Destroy() {
   Stop();
 
-  // Remove the document loader from the parent list of loaders...
+  
   if (mParent) {
     DebugOnly<nsresult> rv = mParent->RemoveChildLoader(this);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RemoveChildLoader failed");
   }
 
-  // Release all the information about network requests...
+  
   ClearRequestInfoHash();
 
   mListenerInfoList.Clear();
@@ -358,15 +358,15 @@ void nsDocLoader::Destroy() {
 
 void nsDocLoader::DestroyChildren() {
   uint32_t count = mChildList.Length();
-  // if the doc loader still has children...we need to enumerate the
-  // children and make them null out their back ptr to the parent doc
-  // loader
+  
+  
+  
   for (uint32_t i = 0; i < count; i++) {
     nsIDocumentLoader* loader = ChildAt(i);
 
     if (loader) {
-      // This is a safe cast, as we only put nsDocLoader objects into the
-      // array
+      
+      
       DebugOnly<nsresult> rv =
           static_cast<nsDocLoader*>(loader)->SetDocLoaderParent(nullptr);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetDocLoaderParent failed");
@@ -377,7 +377,7 @@ void nsDocLoader::DestroyChildren() {
 
 NS_IMETHODIMP
 nsDocLoader::OnStartRequest(nsIRequest* request) {
-  // called each time a request is added to the group.
+  
 
   if (MOZ_LOG_TEST(gDocLoaderLog, LogLevel::Debug)) {
     nsAutoCString name;
@@ -402,43 +402,43 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
     bJustStartedLoading = true;
     mIsLoadingDocument = true;
     mDocumentOpenedButNotLoaded = false;
-    ClearInternalProgress();  // only clear our progress if we are starting a
-                              // new load....
+    ClearInternalProgress();  
+                              
   }
 
-  //
-  // Create a new nsRequestInfo for the request that is starting to
-  // load...
-  //
+  
+  
+  
+  
   AddRequestInfo(request);
 
-  //
-  // Only fire a doStartDocumentLoad(...) if the document loader
-  // has initiated a load...  Otherwise, this notification has
-  // resulted from a request being added to the load group.
-  //
+  
+  
+  
+  
+  
   if (mIsLoadingDocument) {
     if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
-      //
-      // Make sure that the document channel is null at this point...
-      // (unless its been redirected)
-      //
+      
+      
+      
+      
       NS_ASSERTION(
           (loadFlags & nsIChannel::LOAD_REPLACE) || !(mDocumentRequest.get()),
           "Overwriting an existing document channel!");
 
-      // This request is associated with the entire document...
+      
       mDocumentRequest = request;
       mLoadGroup->SetDefaultLoadRequest(request);
 
-      // Only fire the start document load notification for the first
-      // document URI...  Do not fire it again for redirections
-      //
+      
+      
+      
       if (bJustStartedLoading) {
-        // Update the progress status state
+        
         mProgressStateFlags = nsIWebProgressListener::STATE_START;
 
-        // Fire the start document load notification
+        
         doStartDocumentLoad();
         return NS_OK;
       }
@@ -448,16 +448,16 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   NS_ASSERTION(!mIsLoadingDocument || mDocumentRequest,
                "mDocumentRequest MUST be set for the duration of a page load!");
 
-  // This is the only way to catch document request start event after a redirect
-  // has occured without changing inherited Firefox behaviour significantly.
-  // Problem description:
-  // The combination of |STATE_START + STATE_IS_DOCUMENT| is only sent for
-  // initial request (see |doStartDocumentLoad| call above).
-  // And |STATE_REDIRECTING + STATE_IS_DOCUMENT| is sent with old channel, which
-  // makes it impossible to filter by destination URL (see
-  // |AsyncOnChannelRedirect| implementation).
-  // Fixing any of those bugs may cause unpredictable consequences in any part
-  // of the browser, so we just add a custom flag for this exact situation.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   int32_t extraFlags = 0;
   if (mIsLoadingDocument && !bJustStartedLoading &&
       (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) &&
@@ -491,65 +491,65 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
 
   bool bFireTransferring = false;
 
-  //
-  // Set the Maximum progress to the same value as the current progress.
-  // Since the URI has finished loading, all the data is there.  Also,
-  // this will allow a more accurate estimation of the max progress (in case
-  // the old value was unknown ie. -1)
-  //
+  
+  
+  
+  
+  
+  
   nsRequestInfo* info = GetRequestInfo(aRequest);
   if (info) {
-    // Null out mLastStatus now so we don't find it when looking for
-    // status from now on.  This destroys the nsStatusInfo and hence
-    // removes it from our list.
+    
+    
+    
     info->mLastStatus = nullptr;
 
     int64_t oldMax = info->mMaxProgress;
 
     info->mMaxProgress = info->mCurrentProgress;
 
-    //
-    // If a request whose content-length was previously unknown has just
-    // finished loading, then use this new data to try to calculate a
-    // mMaxSelfProgress...
-    //
+    
+    
+    
+    
+    
     if ((oldMax < int64_t(0)) && (mMaxSelfProgress < int64_t(0))) {
       mMaxSelfProgress = CalculateMaxProgress();
     }
 
-    // As we know the total progress of this request now, save it to be part
-    // of CalculateMaxProgress() result. We need to remove the info from the
-    // hash, see bug 480713.
+    
+    
+    
     mCompletedTotalProgress += info->mMaxProgress;
 
-    //
-    // Determine whether a STATE_TRANSFERRING notification should be
-    // 'synthesized'.
-    //
-    // If nsRequestInfo::mMaxProgress (as stored in oldMax) and
-    // nsRequestInfo::mCurrentProgress are both 0, then the
-    // STATE_TRANSFERRING notification has not been fired yet...
-    //
+    
+    
+    
+    
+    
+    
+    
+    
     if ((oldMax == 0) && (info->mCurrentProgress == 0)) {
       nsCOMPtr<nsIChannel> channel(do_QueryInterface(aRequest));
 
-      // Only fire a TRANSFERRING notification if the request is also a
-      // channel -- data transfer requires a nsIChannel!
-      //
+      
+      
+      
       if (channel) {
         if (NS_SUCCEEDED(aStatus)) {
           bFireTransferring = true;
         }
-        //
-        // If the request failed (for any reason other than being
-        // redirected or retargeted), the TRANSFERRING notification can
-        // still be fired if a HTTP connection was established to a server.
-        //
+        
+        
+        
+        
+        
         else if (aStatus != NS_BINDING_REDIRECTED &&
                  aStatus != NS_BINDING_RETARGETED) {
-          //
-          // Only if the load has been targeted (see bug 268483)...
-          //
+          
+          
+          
           uint32_t lf;
           channel->GetLoadFlags(&lf);
           if (lf & nsIChannel::LOAD_TARGETED) {
@@ -558,11 +558,11 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
               uint32_t responseCode;
               rv = httpChannel->GetResponseStatus(&responseCode);
               if (NS_SUCCEEDED(rv)) {
-                //
-                // A valid server status indicates that a connection was
-                // established to the server... So, fire the notification
-                // even though a failure occurred later...
-                //
+                
+                
+                
+                
+                
                 bFireTransferring = true;
               }
             }
@@ -573,43 +573,43 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   }
 
   if (bFireTransferring) {
-    // Send a STATE_TRANSFERRING notification for the request.
+    
     int32_t flags;
 
     flags = nsIWebProgressListener::STATE_TRANSFERRING |
             nsIWebProgressListener::STATE_IS_REQUEST;
-    //
-    // Move the WebProgress into the STATE_TRANSFERRING state if necessary...
-    //
+    
+    
+    
     if (mProgressStateFlags & nsIWebProgressListener::STATE_START) {
       mProgressStateFlags = nsIWebProgressListener::STATE_TRANSFERRING;
 
-      // Send STATE_TRANSFERRING for the document too...
+      
       flags |= nsIWebProgressListener::STATE_IS_DOCUMENT;
     }
 
     FireOnStateChange(this, aRequest, flags, NS_OK);
   }
 
-  //
-  // Fire the OnStateChange(...) notification for stop request
-  //
+  
+  
+  
   doStopURLLoad(aRequest, aStatus);
 
-  // Clear this request out of the hash to avoid bypass of FireOnStateChange
-  // when address of the request is reused.
+  
+  
   RemoveRequestInfo(aRequest);
 
-  //
-  // Only fire the DocLoaderIsEmpty(...) if we may need to fire onload.
-  //
+  
+  
+  
   if (IsBlockingLoadEvent()) {
     nsCOMPtr<nsIDocShell> ds =
         do_QueryInterface(static_cast<nsIRequestObserver*>(this));
     bool doNotFlushLayout = false;
     if (ds) {
-      // Don't do unexpected layout flushes while we're in process of restoring
-      // a document from the bfcache.
+      
+      
       ds->GetRestoringDocument(&doNotFlushLayout);
     }
     DocLoaderIsEmpty(!doNotFlushLayout);
@@ -642,32 +642,32 @@ NS_IMETHODIMP nsDocLoader::GetDocumentChannel(nsIChannel** aChannel) {
 
 void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
   if (IsBlockingLoadEvent()) {
-    /* In the unimagineably rude circumstance that onload event handlers
-       triggered by this function actually kill the window ... ok, it's
-       not unimagineable; it's happened ... this deathgrip keeps this object
-       alive long enough to survive this function call. */
+    
+
+
+
     nsCOMPtr<nsIDocumentLoader> kungFuDeathGrip(this);
 
-    // Don't flush layout if we're still busy.
+    
     if (IsBusy()) {
       return;
     }
 
     NS_ASSERTION(!mIsFlushingLayout, "Someone screwed up");
-    // We may not have a document request if we are in a
-    // document.open() situation.
+    
+    
     NS_ASSERTION(mDocumentRequest || mDocumentOpenedButNotLoaded,
                  "No Document Request!");
 
-    // The load group for this DocumentLoader is idle.  Flush if we need to.
+    
     if (aFlushLayout && !mDontFlushLayout) {
       nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
       if (doc) {
-        // We start loads from style resolution, so we need to flush out style
-        // no matter what.  If we have user fonts, we also need to flush layout,
-        // since the reflow is what starts font loads.
+        
+        
+        
         mozilla::FlushType flushType = mozilla::FlushType::Style;
-        // Be safe in case this presshell is in teardown now
+        
         doc->FlushUserFontSet();
         if (doc->GetUserFontSet()) {
           flushType = mozilla::FlushType::Layout;
@@ -678,18 +678,18 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
       }
     }
 
-    // And now check whether we're really busy; that might have changed with
-    // the layout flush.
-    //
-    // Note, mDocumentRequest can be null while mDocumentOpenedButNotLoaded is
-    // false if the flushing above re-entered this method.
+    
+    
+    
+    
+    
     if (IsBusy() || (!mDocumentRequest && !mDocumentOpenedButNotLoaded)) {
       return;
     }
 
     if (mDocumentRequest) {
-      // Clear out our request info hash, now that our load really is done and
-      // we don't need it anymore to CalculateMaxProgress().
+      
+      
       ClearInternalProgress();
 
       MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
@@ -700,30 +700,30 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
       mDocumentRequest = nullptr;
       mIsLoadingDocument = false;
 
-      // Update the progress status state - the document is done
+      
       mProgressStateFlags = nsIWebProgressListener::STATE_STOP;
 
       nsresult loadGroupStatus = NS_OK;
       mLoadGroup->GetStatus(&loadGroupStatus);
 
-      //
-      // New code to break the circular reference between
-      // the load group and the docloader...
-      //
+      
+      
+      
+      
       mLoadGroup->SetDefaultLoadRequest(nullptr);
 
-      // Take a ref to our parent now so that we can call ChildDoneWithOnload()
-      // on it even if our onload handler removes us from the docloader tree.
+      
+      
       RefPtr<nsDocLoader> parent = mParent;
 
-      // Note that if calling ChildEnteringOnload() on the parent returns false
-      // then calling our onload handler is not safe.  That can only happen on
-      // OOM, so that's ok.
+      
+      
+      
       if (!parent || parent->ChildEnteringOnload(this)) {
-        // Do nothing with our state after firing the
-        // OnEndDocumentLoad(...). The document loader may be loading a *new*
-        // document - if LoadDocument() was called from a handler!
-        //
+        
+        
+        
+        
         doStopDocumentLoad(docRequest, loadGroupStatus);
 
         NotifyDoneWithOnload(parent);
@@ -732,23 +732,23 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
       MOZ_ASSERT(mDocumentOpenedButNotLoaded);
       mDocumentOpenedButNotLoaded = false;
 
-      // Make sure we do the ChildEnteringOnload/ChildDoneWithOnload even if we
-      // plan to skip firing our own load event, because otherwise we might
-      // never end up firing our parent's load event.
+      
+      
+      
       RefPtr<nsDocLoader> parent = mParent;
       if (!parent || parent->ChildEnteringOnload(this)) {
         nsresult loadGroupStatus = NS_OK;
         mLoadGroup->GetStatus(&loadGroupStatus);
-        // Make sure we're not canceling the loadgroup.  If we are, then just
-        // like the normal navigation case we should not fire a load event.
+        
+        
         if (NS_SUCCEEDED(loadGroupStatus) ||
             loadGroupStatus == NS_ERROR_PARSED_DATA_CACHED) {
-          // Can "doc" or "window" ever come back null here?  Our state machine
-          // is complicated enough I wouldn't bet against it...
+          
+          
           nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this));
           if (doc) {
             doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
-                                       /* updateTimingInformation = */ false);
+                                        false);
 
             nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
             if (window && !doc->SkipLoadEventAfterClose()) {
@@ -759,15 +759,15 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
                         ("DocLoader:%p: Firing load event for document.open\n",
                          this));
 
-                // This is a very cut-down version of
-                // nsDocumentViewer::LoadComplete that doesn't do various things
-                // that are not relevant here because this wasn't an actual
-                // navigation.
+                
+                
+                
+                
                 WidgetEvent event(true, eLoad);
                 event.mFlags.mBubbles = false;
                 event.mFlags.mCancelable = false;
-                // Dispatching to |window|, but using |document| as the target,
-                // per spec.
+                
+                
                 event.mTarget = doc;
                 nsEventStatus unused = nsEventStatus_eIgnore;
                 doc->SetLoadEventFiring(true);
@@ -775,8 +775,8 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
                                           &unused);
                 doc->SetLoadEventFiring(false);
 
-                // Now unsuppress painting on the presshell, if we
-                // haven't done that yet.
+                
+                
                 RefPtr<PresShell> presShell = doc->GetPresShell();
                 if (presShell && !presShell->IsDestroying()) {
                   presShell->UnsuppressPainting();
@@ -797,7 +797,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout) {
 
 void nsDocLoader::NotifyDoneWithOnload(nsDocLoader* aParent) {
   if (aParent) {
-    // In-process parent:
+    
     aParent->ChildDoneWithOnload(this);
   }
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(this);
@@ -808,7 +808,7 @@ void nsDocLoader::NotifyDoneWithOnload(nsDocLoader* aParent) {
   if (bc->IsContentSubframe() && !bc->GetParent()->IsInProcess()) {
     if (BrowserChild* browserChild = BrowserChild::GetFrom(docShell)) {
       mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
-          /*aFireLoadAtEmbeddingElement*/ false);
+           false);
     }
   }
 }
@@ -823,11 +823,11 @@ void nsDocLoader::doStartDocumentLoad(void) {
       ("DocLoader:%p: ++ Firing OnStateChange for start document load (...)."
        "\tURI: %s \n",
        this, buffer.get()));
-#endif /* DEBUG */
+#endif 
 
-  // Fire an OnStatus(...) notification STATE_START.  This indicates
-  // that the document represented by mDocumentRequest has started to
-  // load...
+  
+  
+  
   FireOnStateChange(this, mDocumentRequest,
                     nsIWebProgressListener::STATE_START |
                         nsIWebProgressListener::STATE_IS_DOCUMENT |
@@ -846,7 +846,7 @@ void nsDocLoader::doStartURLLoad(nsIRequest* request, int32_t aExtraFlags) {
           ("DocLoader:%p: ++ Firing OnStateChange start url load (...)."
            "\tURI: %s\n",
            this, buffer.get()));
-#endif /* DEBUG */
+#endif 
 
   FireOnStateChange(this, request,
                     nsIWebProgressListener::STATE_START |
@@ -863,15 +863,15 @@ void nsDocLoader::doStopURLLoad(nsIRequest* request, nsresult aStatus) {
           ("DocLoader:%p: ++ Firing OnStateChange for end url load (...)."
            "\tURI: %s status=%" PRIx32 "\n",
            this, buffer.get(), static_cast<uint32_t>(aStatus)));
-#endif /* DEBUG */
+#endif 
 
   FireOnStateChange(this, request,
                     nsIWebProgressListener::STATE_STOP |
                         nsIWebProgressListener::STATE_IS_REQUEST,
                     aStatus);
 
-  // Fire a status change message for the most recent unfinished
-  // request to make sure that the displayed status is not outdated.
+  
+  
   if (!mStatusInfoList.isEmpty()) {
     nsStatusInfo* statusInfo = mStatusInfoList.getFirst();
     FireOnStatusChange(this, statusInfo->mRequest, statusInfo->mStatusCode,
@@ -888,29 +888,29 @@ void nsDocLoader::doStopDocumentLoad(nsIRequest* request, nsresult aStatus) {
           ("DocLoader:%p: ++ Firing OnStateChange for end document load (...)."
            "\tURI: %s Status=%" PRIx32 "\n",
            this, buffer.get(), static_cast<uint32_t>(aStatus)));
-#endif /* DEBUG */
+#endif 
 
-  // Firing STATE_STOP|STATE_IS_DOCUMENT will fire onload handlers.
-  // Grab our parent chain before doing that so we can still dispatch
-  // STATE_STOP|STATE_IS_WINDW_STATE_IS_NETWORK to them all, even if
-  // the onload handlers rearrange the docshell tree.
+  
+  
+  
+  
   WebProgressList list;
   GatherAncestorWebProgresses(list);
 
-  //
-  // Fire an OnStateChange(...) notification indicating the the
-  // current document has finished loading...
-  //
+  
+  
+  
+  
   int32_t flags = nsIWebProgressListener::STATE_STOP |
                   nsIWebProgressListener::STATE_IS_DOCUMENT;
   for (uint32_t i = 0; i < list.Length(); ++i) {
     list[i]->DoFireOnStateChange(this, request, flags, aStatus);
   }
 
-  //
-  // Fire a final OnStateChange(...) notification indicating the the
-  // current document has finished loading...
-  //
+  
+  
+  
+  
   flags = nsIWebProgressListener::STATE_STOP |
           nsIWebProgressListener::STATE_IS_WINDOW |
           nsIWebProgressListener::STATE_IS_NETWORK;
@@ -919,15 +919,15 @@ void nsDocLoader::doStopDocumentLoad(nsIRequest* request, nsresult aStatus) {
   }
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// The following section contains support for nsIWebProgress and related stuff
-////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 NS_IMETHODIMP
 nsDocLoader::AddProgressListener(nsIWebProgressListener* aListener,
                                  uint32_t aNotifyMask) {
   if (mListenerInfoList.Contains(aListener)) {
-    // The listener is already registered!
+    
     return NS_ERROR_FAILURE;
   }
 
@@ -978,7 +978,7 @@ nsDocLoader::GetInnerDOMWindowID(uint64_t* aResult) {
 
   nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow();
   if (!inner) {
-    // If we don't have an inner window, return 0.
+    
     return NS_OK;
   }
 
@@ -1045,11 +1045,11 @@ int64_t nsDocLoader::GetMaxTotalProgress() {
     int64_t individualProgress = 0;
     nsIDocumentLoader* docloader = ChildAt(i);
     if (docloader) {
-      // Cast is safe since all children are nsDocLoader too
+      
       individualProgress = ((nsDocLoader*)docloader)->GetMaxTotalProgress();
     }
-    if (individualProgress < int64_t(0))  // if one of the elements doesn't know
-                                          // it's size then none of them do
+    if (individualProgress < int64_t(0))  
+                                          
     {
       newMaxTotal = int64_t(-1);
       break;
@@ -1064,37 +1064,37 @@ int64_t nsDocLoader::GetMaxTotalProgress() {
   return progress;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// The following section contains support for nsIProgressEventSink which is used
-// to pass progress and status between the actual request and the doc loader.
-// The doc loader then turns around and makes the right web progress calls based
-// on this information.
-////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
 
 NS_IMETHODIMP nsDocLoader::OnProgress(nsIRequest* aRequest, nsISupports* ctxt,
                                       int64_t aProgress, int64_t aProgressMax) {
   int64_t progressDelta = 0;
 
-  //
-  // Update the RequestInfo entry with the new progress data
-  //
+  
+  
+  
   if (nsRequestInfo* info = GetRequestInfo(aRequest)) {
-    // Update info->mCurrentProgress before we call FireOnStateChange,
-    // since that can make the "info" pointer invalid.
+    
+    
     int64_t oldCurrentProgress = info->mCurrentProgress;
     progressDelta = aProgress - oldCurrentProgress;
     info->mCurrentProgress = aProgress;
 
-    // suppress sending STATE_TRANSFERRING if this is upload progress (see bug
-    // 240053)
+    
+    
     if (!info->mUploading && (int64_t(0) == oldCurrentProgress) &&
         (int64_t(0) == info->mMaxProgress)) {
-      //
-      // If we receive an OnProgress event from a toplevel channel that the URI
-      // Loader has not yet targeted, then we must suppress the event.  This is
-      // necessary to ensure that webprogresslisteners do not get confused when
-      // the channel is finally targeted.  See bug 257308.
-      //
+      
+      
+      
+      
+      
+      
       nsLoadFlags lf = 0;
       aRequest->GetLoadFlags(&lf);
       if ((lf & nsIChannel::LOAD_DOCUMENT_URI) &&
@@ -1106,12 +1106,12 @@ NS_IMETHODIMP nsDocLoader::OnProgress(nsIRequest* aRequest, nsISupports* ctxt,
         return NS_OK;
       }
 
-      //
-      // This is the first progress notification for the entry.  If
-      // (aMaxProgress != -1) then the content-length of the data is known,
-      // so update mMaxSelfProgress...  Otherwise, set it to -1 to indicate
-      // that the content-length is no longer known.
-      //
+      
+      
+      
+      
+      
+      
       if (aProgressMax != -1) {
         mMaxSelfProgress += aProgressMax;
         info->mMaxProgress = aProgressMax;
@@ -1120,31 +1120,31 @@ NS_IMETHODIMP nsDocLoader::OnProgress(nsIRequest* aRequest, nsISupports* ctxt,
         info->mMaxProgress = int64_t(-1);
       }
 
-      // Send a STATE_TRANSFERRING notification for the request.
+      
       int32_t flags;
 
       flags = nsIWebProgressListener::STATE_TRANSFERRING |
               nsIWebProgressListener::STATE_IS_REQUEST;
-      //
-      // Move the WebProgress into the STATE_TRANSFERRING state if necessary...
-      //
+      
+      
+      
       if (mProgressStateFlags & nsIWebProgressListener::STATE_START) {
         mProgressStateFlags = nsIWebProgressListener::STATE_TRANSFERRING;
 
-        // Send STATE_TRANSFERRING for the document too...
+        
         flags |= nsIWebProgressListener::STATE_IS_DOCUMENT;
       }
 
       FireOnStateChange(this, aRequest, flags, NS_OK);
     }
 
-    // Update our overall current progress count.
+    
     mCurrentSelfProgress += progressDelta;
   }
-  //
-  // The request is not part of the load group, so ignore its progress
-  // information...
-  //
+  
+  
+  
+  
   else {
 #if defined(DEBUG)
     nsAutoCString buffer;
@@ -1153,14 +1153,14 @@ NS_IMETHODIMP nsDocLoader::OnProgress(nsIRequest* aRequest, nsISupports* ctxt,
     MOZ_LOG(
         gDocLoaderLog, LogLevel::Debug,
         ("DocLoader:%p OOPS - No Request Info for: %s\n", this, buffer.get()));
-#endif /* DEBUG */
+#endif 
 
     return NS_OK;
   }
 
-  //
-  // Fire progress notifications out to any registered nsIWebProgressListeners
-  //
+  
+  
+  
   FireOnProgressChange(this, aRequest, aProgress, aProgressMax, progressDelta,
                        mCurrentTotalProgress, mMaxTotalProgress);
 
@@ -1170,20 +1170,20 @@ NS_IMETHODIMP nsDocLoader::OnProgress(nsIRequest* aRequest, nsISupports* ctxt,
 NS_IMETHODIMP nsDocLoader::OnStatus(nsIRequest* aRequest, nsISupports* ctxt,
                                     nsresult aStatus,
                                     const char16_t* aStatusArg) {
-  //
-  // Fire progress notifications out to any registered nsIWebProgressListeners
-  //
+  
+  
+  
   if (aStatus != NS_OK) {
-    // Remember the current status for this request
+    
     nsRequestInfo* info;
     info = GetRequestInfo(aRequest);
     if (info) {
       bool uploading = (aStatus == NS_NET_STATUS_WRITING ||
                         aStatus == NS_NET_STATUS_SENDING_TO);
-      // If switching from uploading to downloading (or vice versa), then we
-      // need to reset our progress counts.  This is designed with HTTP form
-      // submission in mind, where an upload is performed followed by download
-      // of possibly several documents.
+      
+      
+      
+      
       if (info->mUploading != uploading) {
         mCurrentSelfProgress = mMaxSelfProgress = 0;
         mCurrentTotalProgress = mMaxTotalProgress = 0;
@@ -1201,21 +1201,21 @@ NS_IMETHODIMP nsDocLoader::OnStatus(nsIRequest* aRequest, nsISupports* ctxt,
     nsresult rv = sbs->FormatStatusMessage(aStatus, aStatusArg, msg);
     if (NS_FAILED(rv)) return rv;
 
-    // Keep around the message. In case a request finishes, we need to make sure
-    // to send the status message of another request to our user to that we
-    // don't display, for example, "Transferring" messages for requests that are
-    // already done.
+    
+    
+    
+    
     if (info) {
       if (!info->mLastStatus) {
         info->mLastStatus = new nsStatusInfo(aRequest);
       } else {
-        // We're going to move it to the front of the list, so remove
-        // it from wherever it is now.
+        
+        
         info->mLastStatus->remove();
       }
       info->mLastStatus->mStatusMessage = msg;
       info->mLastStatus->mStatusCode = aStatus;
-      // Put the info at the front of the list
+      
       mStatusInfoList.insertFront(info->mLastStatus);
     }
     FireOnStatusChange(this, aRequest, aStatus, msg.get());
@@ -1233,10 +1233,10 @@ void nsDocLoader::ClearInternalProgress() {
   mProgressStateFlags = nsIWebProgressListener::STATE_STOP;
 }
 
-/**
- * |_code| is executed for every listener matching |_flag|
- * |listener| should be used inside |_code| as the nsIWebProgressListener var.
- */
+
+
+
+
 #define NOTIFY_LISTENERS(_flag, _code)                     \
   PR_BEGIN_MACRO                                           \
   nsCOMPtr<nsIWebProgressListener> listener;               \
@@ -1279,16 +1279,16 @@ void nsDocLoader::FireOnProgressChange(nsDocLoader* aLoadInitiator,
            " curTotal: %" PRId64 " maxTotal %" PRId64 "\n",
            this, buffer.get(), aProgress, aProgressMax, aTotalProgress,
            aMaxTotalProgress));
-#endif /* DEBUG */
+#endif 
 
   NOTIFY_LISTENERS(
       nsIWebProgress::NOTIFY_PROGRESS,
-      // XXX truncates 64-bit to 32-bit
+      
       listener->OnProgressChange(aLoadInitiator, request, int32_t(aProgress),
                                  int32_t(aProgressMax), int32_t(aTotalProgress),
                                  int32_t(aMaxTotalProgress)););
 
-  // Pass the notification up to the parent...
+  
   if (mParent) {
     mParent->FireOnProgressChange(aLoadInitiator, request, aProgress,
                                   aProgressMax, aProgressDelta, aTotalProgress,
@@ -1316,20 +1316,20 @@ void nsDocLoader::DoFireOnStateChange(nsIWebProgress* const aProgress,
                                       nsIRequest* const aRequest,
                                       int32_t& aStateFlags,
                                       const nsresult aStatus) {
-  //
-  // Remove the STATE_IS_NETWORK bit if necessary.
-  //
-  // The rule is to remove this bit, if the notification has been passed
-  // up from a child WebProgress, and the current WebProgress is already
-  // active...
-  //
+  
+  
+  
+  
+  
+  
+  
   if (mIsLoadingDocument &&
       (aStateFlags & nsIWebProgressListener::STATE_IS_NETWORK) &&
       (this != aProgress)) {
     aStateFlags &= ~nsIWebProgressListener::STATE_IS_NETWORK;
   }
 
-  // Add the STATE_RESTORING bit if necessary.
+  
   if (mIsRestoringDocument)
     aStateFlags |= nsIWebProgressListener::STATE_RESTORING;
 
@@ -1340,7 +1340,7 @@ void nsDocLoader::DoFireOnStateChange(nsIWebProgress* const aProgress,
   MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
           ("DocLoader:%p: Status (%s): code: %x\n", this, buffer.get(),
            aStateFlags));
-#endif /* DEBUG */
+#endif 
 
   NS_ASSERTION(aRequest,
                "Firing OnStateChange(...) notification with a NULL request!");
@@ -1356,11 +1356,11 @@ void nsDocLoader::FireOnLocationChange(nsIWebProgress* aWebProgress,
   NOTIFY_LISTENERS(
       nsIWebProgress::NOTIFY_LOCATION,
       MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
-              ("DocLoader [%p] calling %p->OnLocationChange", this,
-               listener.get()));
+              ("DocLoader [%p] calling %p->OnLocationChange to %s %x", this,
+               listener.get(), aUri->GetSpecOrDefault().get(), aFlags));
       listener->OnLocationChange(aWebProgress, aRequest, aUri, aFlags););
 
-  // Pass the notification up to the parent...
+  
   if (mParent) {
     mParent->FireOnLocationChange(aWebProgress, aRequest, aUri, aFlags);
   }
@@ -1373,7 +1373,7 @@ void nsDocLoader::FireOnStatusChange(nsIWebProgress* aWebProgress,
       nsIWebProgress::NOTIFY_STATUS,
       listener->OnStatusChange(aWebProgress, aRequest, aStatus, aMessage););
 
-  // Pass the notification up to the parent...
+  
   if (mParent) {
     mParent->FireOnStatusChange(aWebProgress, aRequest, aStatus, aMessage);
   }
@@ -1381,10 +1381,10 @@ void nsDocLoader::FireOnStatusChange(nsIWebProgress* aWebProgress,
 
 bool nsDocLoader::RefreshAttempted(nsIWebProgress* aWebProgress, nsIURI* aURI,
                                    int32_t aDelay, bool aSameURI) {
-  /*
-   * Returns true if the refresh may proceed,
-   * false if the refresh should be blocked.
-   */
+  
+
+
+
   bool allowRefresh = true;
 
   NOTIFY_LISTENERS(
@@ -1400,7 +1400,7 @@ bool nsDocLoader::RefreshAttempted(nsIWebProgress* aWebProgress, nsIURI* aURI,
 
       allowRefresh = allowRefresh && listenerAllowedRefresh;);
 
-  // Pass the notification up to the parent...
+  
   if (mParent) {
     allowRefresh = allowRefresh && mParent->RefreshAttempted(aWebProgress, aURI,
                                                              aDelay, aSameURI);
@@ -1457,7 +1457,7 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
     nsCOMPtr<nsIURI> newURI;
     nsCOMPtr<nsILoadInfo> info = nullptr;
     if (delegate) {
-      // No point in getting the URI if we don't have a LoadURIDelegate.
+      
       aNewChannel->GetURI(getter_AddRefs(newURI));
       info = aNewChannel->LoadInfo();
     }
@@ -1472,7 +1472,7 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
       bool loadURIHandled = false;
       nsresult rv = delegate->LoadURI(
           newURI, where, nsIWebNavigation::LOAD_FLAGS_IS_REDIRECT,
-          /* triggering principal */ nullptr, &loadURIHandled);
+           nullptr, &loadURIHandled);
       if (NS_SUCCEEDED(rv) && loadURIHandled) {
         aOldChannel->Cancel(NS_ERROR_ABORT);
         cb->OnRedirectVerifyCallback(NS_ERROR_ABORT);
@@ -1487,19 +1487,19 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
                          nsIWebProgressListener::STATE_IS_REQUEST;
 
     aOldChannel->GetLoadFlags(&loadFlags);
-    // If the document channel is being redirected, then indicate that the
-    // document is being redirected in the notification...
+    
+    
     if (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) {
       stateFlags |= nsIWebProgressListener::STATE_IS_DOCUMENT;
 
 #if defined(DEBUG)
-      // We only set mDocumentRequest in OnStartRequest(), but its possible
-      // to get a redirect before that for service worker interception.
+      
+      
       if (mDocumentRequest) {
         nsCOMPtr<nsIRequest> request(aOldChannel);
         NS_ASSERTION(request == mDocumentRequest, "Wrong Document Channel");
       }
-#endif /* DEBUG */
+#endif 
     }
 
     OnRedirectStateChange(aOldChannel, aNewChannel, aFlags, stateFlags);
@@ -1511,9 +1511,9 @@ NS_IMETHODIMP nsDocLoader::AsyncOnChannelRedirect(
 }
 
 void nsDocLoader::OnSecurityChange(nsISupports* aContext, uint32_t aState) {
-  //
-  // Fire progress notifications out to any registered nsIWebProgressListeners.
-  //
+  
+  
+  
 
   nsCOMPtr<nsIRequest> request = do_QueryInterface(aContext);
   nsIWebProgress* webProgress = static_cast<nsIWebProgress*>(this);
@@ -1521,20 +1521,20 @@ void nsDocLoader::OnSecurityChange(nsISupports* aContext, uint32_t aState) {
   NOTIFY_LISTENERS(nsIWebProgress::NOTIFY_SECURITY,
                    listener->OnSecurityChange(webProgress, request, aState););
 
-  // Pass the notification up to the parent...
+  
   if (mParent) {
     mParent->OnSecurityChange(aContext, aState);
   }
 }
 
-/*
- * Implementation of nsISupportsPriority methods...
- *
- * The priority of the DocLoader _is_ the priority of its LoadGroup.
- *
- * XXX(darin): Once we start storing loadgroups in loadgroups, this code will
- * go away.
- */
+
+
+
+
+
+
+
+
 
 NS_IMETHODIMP nsDocLoader::GetPriority(int32_t* aPriority) {
   nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(mLoadGroup);
@@ -1594,7 +1594,7 @@ void nsDocLoader::DumpChannelInfo()
     printf("  [%d] current=%d  max=%d [%s]\n", i,
            info->mCurrentProgress,
            info->mMaxProgress, buffer.get());
-#  endif /* DEBUG */
+#  endif 
 
     current += info->mCurrentProgress;
     if (max >= 0) {
@@ -1608,4 +1608,4 @@ void nsDocLoader::DumpChannelInfo()
 
   printf("\nCurrent=%d   Total=%d\n====\n", current, max);
 }
-#endif   /* 0 */
+#endif   

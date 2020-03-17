@@ -224,7 +224,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
-      mIsDestroyingForProcessSwitch(false) {
+      mSuspendedProgressEvents(false) {
   MOZ_ASSERT(aManager);
   
   
@@ -2599,14 +2599,22 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnStateChange(
     const RequestData& aRequestData, const uint32_t aStateFlags,
     const nsresult aStatus,
     const Maybe<WebProgressStateChangeData>& aStateChangeData) {
-  
-  
-  
-  
-  uint32_t stopFlags = nsIWebProgressListener::STATE_STOP |
-                       nsIWebProgressListener::STATE_IS_WINDOW |
-                       nsIWebProgressListener::STATE_IS_NETWORK;
-  if (mIsDestroyingForProcessSwitch && (aStateFlags & stopFlags) == stopFlags) {
+  if (mSuspendedProgressEvents) {
+    nsCOMPtr<nsIURI> uri = aRequestData.requestURI();
+    const uint32_t startDocumentFlags =
+        nsIWebProgressListener::STATE_START |
+        nsIWebProgressListener::STATE_IS_DOCUMENT |
+        nsIWebProgressListener::STATE_IS_REQUEST |
+        nsIWebProgressListener::STATE_IS_WINDOW |
+        nsIWebProgressListener::STATE_IS_NETWORK;
+    
+    
+    if ((aStateFlags & startDocumentFlags) == startDocumentFlags &&
+        (aWebProgressData && aWebProgressData->isTopLevel()) &&
+        (!uri || !NS_IsAboutBlank(uri))) {
+      mSuspendedProgressEvents = false;
+    }
+
     return IPC_OK();
   }
 
@@ -2651,6 +2659,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnProgressChange(
     const RequestData& aRequestData, const int32_t aCurSelfProgress,
     const int32_t aMaxSelfProgress, const int32_t aCurTotalProgress,
     const int32_t aMaxTotalProgress) {
+  if (mSuspendedProgressEvents) {
+    return IPC_OK();
+  }
+
   nsCOMPtr<nsIBrowser> browser;
   nsCOMPtr<nsIWebProgress> manager;
   nsCOMPtr<nsIWebProgressListener> managerAsListener;
@@ -2677,6 +2689,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnLocationChange(
     const RequestData& aRequestData, nsIURI* aLocation, const uint32_t aFlags,
     const bool aCanGoBack, const bool aCanGoForward,
     const Maybe<WebProgressLocationChangeData>& aLocationChangeData) {
+  if (mSuspendedProgressEvents) {
+    return IPC_OK();
+  }
+
   nsCOMPtr<nsIBrowser> browser;
   nsCOMPtr<nsIWebProgress> manager;
   nsCOMPtr<nsIWebProgressListener> managerAsListener;
@@ -2724,6 +2740,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvOnStatusChange(
     const Maybe<WebProgressData>& aWebProgressData,
     const RequestData& aRequestData, const nsresult aStatus,
     const nsString& aMessage) {
+  if (mSuspendedProgressEvents) {
+    return IPC_OK();
+  }
+
   nsCOMPtr<nsIBrowser> browser;
   nsCOMPtr<nsIWebProgress> manager;
   nsCOMPtr<nsIWebProgressListener> managerAsListener;

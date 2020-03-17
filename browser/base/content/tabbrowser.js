@@ -1872,6 +1872,7 @@
       let listener = this._tabListeners.get(tab);
       aBrowser.webProgress.removeProgressListener(filter);
       filter.removeProgressListener(listener);
+      let stateFlags = listener.mStateFlags;
 
       
       listener.destroy();
@@ -1925,6 +1926,7 @@
         aBrowser.removeAttribute("remoteType");
       }
 
+      let switchingInProgressLoad = !!redirectLoadSwitchId;
       if (!rebuildFrameLoaders) {
         parent.appendChild(aBrowser);
       } else {
@@ -1934,7 +1936,7 @@
         aBrowser.changeRemoteness({
           remoteType,
           replaceBrowsingContext,
-          switchingInProgressLoad: redirectLoadSwitchId != null,
+          switchingInProgressLoad,
         });
         
         
@@ -1959,7 +1961,21 @@
       
       
       
-      listener = new TabProgressListener(tab, aBrowser, true, false);
+      let expectInitialAboutBlank = !switchingInProgressLoad;
+      if (expectInitialAboutBlank) {
+        stateFlags = 0;
+      }
+
+      
+      
+      
+      listener = new TabProgressListener(
+        tab,
+        aBrowser,
+        expectInitialAboutBlank,
+        false,
+        stateFlags
+      );
       this._tabListeners.set(tab, listener);
       filter.addProgressListener(listener, Ci.nsIWebProgress.NOTIFY_ALL);
 
