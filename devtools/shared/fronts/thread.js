@@ -208,15 +208,9 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
 
 
   async attach(options) {
-    let response;
-    try {
-      const onPaused = this.once("paused");
-      response = await super.attach(options);
-      await onPaused;
-    } catch (e) {
-      throw new Error(e);
-    }
-    return response;
+    const onPaused = this.once("paused");
+    await super.attach(options);
+    await onPaused;
   }
 
   
