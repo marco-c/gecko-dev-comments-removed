@@ -652,8 +652,7 @@ class ValueDeserializationHelper {
 
 
 
-      const nsCOMPtr<nsIFile> file =
-          FileInfo::GetFileForFileInfo(aFile.FileInfo());
+      const nsCOMPtr<nsIFile> file = aFile.FileInfo().GetFileForFileInfo();
       if (!file) {
         return nullptr;
       }
