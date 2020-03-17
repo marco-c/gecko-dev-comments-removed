@@ -50,7 +50,8 @@ class WindowsSMTCProvider final
   
   bool SetControlAttributes(SMTCControlAttributes aAttributes);
 
-  void SetPlaybackState(mozilla::dom::PlaybackState aState) override;
+  void SetPlaybackState(
+      mozilla::dom::MediaSessionPlaybackState aState) override;
 
   
   

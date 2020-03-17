@@ -23,16 +23,6 @@ enum class MediaControlKeysEvent : uint32_t;
 
 
 
-enum class PlaybackState : uint8_t {
-  ePlaying,
-  ePaused,
-  eStopped,
-};
-
-
-
-
-
 
 
 
@@ -73,9 +63,9 @@ class MediaController final : public MediaSessionController {
 
   bool IsAudible() const;
   uint64_t ControlledMediaNum() const;
-  PlaybackState GetState() const;
+  MediaSessionPlaybackState GetState() const;
 
-  MediaEventSource<PlaybackState>& PlaybackStateChangedEvent() {
+  MediaEventSource<MediaSessionPlaybackState>& PlaybackStateChangedEvent() {
     return mPlaybackStateChangedEvent;
   }
 
@@ -97,7 +87,7 @@ class MediaController final : public MediaSessionController {
   void Activate();
   void Deactivate();
 
-  void SetGuessedPlayState(PlaybackState aState);
+  void SetGuessedPlayState(MediaSessionPlaybackState aState);
 
   bool mAudible = false;
   bool mIsRegisteredToService = false;
@@ -112,8 +102,9 @@ class MediaController final : public MediaSessionController {
   
   
   
-  PlaybackState mGuessedPlaybackState = PlaybackState::eStopped;
-  MediaEventProducer<PlaybackState> mPlaybackStateChangedEvent;
+  MediaSessionPlaybackState mGuessedPlaybackState =
+      MediaSessionPlaybackState::None;
+  MediaEventProducer<MediaSessionPlaybackState> mPlaybackStateChangedEvent;
 };
 
 }  

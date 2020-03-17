@@ -61,7 +61,7 @@ class MPRISServiceHandler final : public dom::MediaControlKeysEventSource {
   bool IsOpened() const override;
 
   
-  void SetPlaybackState(dom::PlaybackState aState) override;
+  void SetPlaybackState(dom::MediaSessionPlaybackState aState) override;
 
   
   

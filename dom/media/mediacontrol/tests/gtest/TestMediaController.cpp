@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include "MediaControlService.h"
 #include "MediaController.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 
 using namespace mozilla::dom;
 
@@ -15,7 +16,7 @@ TEST(MediaController, DefaultValueCheck)
   RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
   ASSERT_TRUE(controller->ControlledMediaNum() == 0);
   ASSERT_TRUE(controller->Id() == CONTROLLER_ID);
-  ASSERT_TRUE(controller->GetState() == PlaybackState::eStopped);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::None);
   ASSERT_TRUE(!controller->IsAudible());
 }
 
@@ -89,19 +90,19 @@ TEST(MediaController, AlwaysInaudibleIfControllerIsNotPlaying)
 TEST(MediaController, ChangePlayingStateViaPlayPauseStop)
 {
   RefPtr<MediaController> controller = new MediaController(CONTROLLER_ID);
-  ASSERT_TRUE(controller->GetState() == PlaybackState::eStopped);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::None);
 
   controller->Play();
-  ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
   controller->Pause();
-  ASSERT_TRUE(controller->GetState() == PlaybackState::ePaused);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Paused);
 
   controller->Play();
-  ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
   controller->Stop();
-  ASSERT_TRUE(controller->GetState() == PlaybackState::eStopped);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::None);
 }
 
 class FakeControlledMedia final {
@@ -140,20 +141,20 @@ TEST(MediaController, PlayingStateChangeViaControlledMedia)
   
   {
     FakeControlledMedia foo(controller);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::eStopped);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::None);
 
     foo.SetPlaying(true);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
     foo.SetPlaying(false);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePaused);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Paused);
 
     foo.SetPlaying(true);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
   }
 
   
-  ASSERT_TRUE(controller->GetState() == PlaybackState::ePaused);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Paused);
 }
 
 TEST(MediaController, ControllerShouldRemainPlayingIfAnyPlayingMediaExists)
@@ -162,27 +163,27 @@ TEST(MediaController, ControllerShouldRemainPlayingIfAnyPlayingMediaExists)
 
   {
     FakeControlledMedia foo(controller);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::eStopped);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::None);
 
     foo.SetPlaying(true);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
     
     FakeControlledMedia bar(controller);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
     bar.SetPlaying(true);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
     
     
     bar.SetPlaying(false);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePlaying);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Playing);
 
     foo.SetPlaying(false);
-    ASSERT_TRUE(controller->GetState() == PlaybackState::ePaused);
+    ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Paused);
   }
 
   
-  ASSERT_TRUE(controller->GetState() == PlaybackState::ePaused);
+  ASSERT_TRUE(controller->GetState() == MediaSessionPlaybackState::Paused);
 }

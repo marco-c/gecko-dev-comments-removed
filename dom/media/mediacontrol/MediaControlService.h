@@ -61,6 +61,10 @@ class MediaControlService final : public nsIObserver {
   
   void GenerateMediaControlKeysTestEvent(MediaControlKeysEvent aEvent);
 
+  
+  
+  MediaMetadataBase GetMainControllerMediaMetadata() const;
+
  private:
   MediaControlService();
   ~MediaControlService();
@@ -96,10 +100,13 @@ class MediaControlService final : public nsIObserver {
     uint64_t GetControllersNum() const;
 
     
-    void ControllerPlaybackStateChanged(PlaybackState aState);
+    void ControllerPlaybackStateChanged(MediaSessionPlaybackState aState);
+    void ControllerMetadataChanged(const MediaMetadataBase& aMetadata);
 
    private:
     void UpdateMainController(MediaController* aController);
+    void ConnectToMainControllerEvents();
+    void DisconnectMainControllerEvents();
 
     nsTArray<RefPtr<MediaController>> mControllers;
     RefPtr<MediaController> mMainController;
@@ -108,6 +115,7 @@ class MediaControlService final : public nsIObserver {
     
     RefPtr<MediaControlKeysEventSource> mSource;
     MediaEventListener mPlayStateChangedListener;
+    MediaEventListener mMetadataChangedListener;
   };
 
   void Init();

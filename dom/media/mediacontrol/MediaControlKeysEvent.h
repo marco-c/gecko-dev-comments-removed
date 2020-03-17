@@ -5,6 +5,8 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSEVENT_H_
 #define DOM_MEDIA_MEDIACONTROL_MEDIACONTROLKEYSEVENT_H_
 
+#include "mozilla/dom/MediaMetadata.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
@@ -60,8 +62,6 @@ class MediaControlKeysHandler final : public MediaControlKeysEventListener {
   virtual ~MediaControlKeysHandler() = default;
 };
 
-enum class PlaybackState : uint8_t;
-
 
 
 
@@ -82,13 +82,16 @@ class MediaControlKeysEventSource {
   virtual void Close();
   virtual bool IsOpened() const = 0;
 
-  virtual void SetPlaybackState(PlaybackState aState);
-  virtual PlaybackState GetPlaybackState() const;
+  virtual void SetPlaybackState(MediaSessionPlaybackState aState);
+  virtual MediaSessionPlaybackState GetPlaybackState() const;
+
+  
+  virtual void SetMediaMetadata(const MediaMetadataBase& aMetadata) {}
 
  protected:
   virtual ~MediaControlKeysEventSource() = default;
   nsTArray<RefPtr<MediaControlKeysEventListener>> mListeners;
-  PlaybackState mPlaybackState;
+  MediaSessionPlaybackState mPlaybackState;
 };
 
 }  
