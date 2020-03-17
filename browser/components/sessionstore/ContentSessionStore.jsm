@@ -21,8 +21,8 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
-  "SessionHistoryListener",
-  "resource:///modules/sessionstore/SessionHistoryListener.jsm"
+  "SessionHistory",
+  "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 
 
@@ -30,6 +30,9 @@ ChromeUtils.defineModuleGetter(
 const TIMEOUT_DISABLED_PREF = "browser.sessionstore.debug.no_auto_updates";
 
 const PREF_INTERVAL = "browser.sessionstore.interval";
+
+const kNoIndex = Number.MAX_SAFE_INTEGER;
+const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
 
 class Handler {
   constructor(store) {
@@ -51,7 +54,82 @@ class Handler {
   get messageQueue() {
     return this.store.messageQueue;
   }
+
+  get stateChangeNotifier() {
+    return this.store.stateChangeNotifier;
+  }
 }
+
+
+
+
+
+class StateChangeNotifier extends Handler {
+  constructor(store) {
+    super(store);
+
+    this._observers = new Set();
+    let ifreq = this.mm.docShell.QueryInterface(Ci.nsIInterfaceRequestor);
+    let webProgress = ifreq.getInterface(Ci.nsIWebProgress);
+    webProgress.addProgressListener(
+      this,
+      Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+    );
+  }
+
+  
+
+
+
+
+
+  addObserver(obs) {
+    this._observers.add(obs);
+  }
+
+  
+
+
+
+
+  notifyObservers(method) {
+    for (let obs of this._observers) {
+      if (typeof obs[method] == "function") {
+        obs[method]();
+      }
+    }
+  }
+
+  
+
+
+  onStateChange(webProgress, request, stateFlags, status) {
+    
+    
+    if (!webProgress.isTopLevel || webProgress.DOMWindow != this.mm.content) {
+      return;
+    }
+
+    
+    
+    
+    
+    
+    if (!this.mm.docShell.hasLoadedNonBlankURI) {
+      return;
+    }
+
+    if (stateFlags & Ci.nsIWebProgressListener.STATE_START) {
+      this.notifyObservers("onPageLoadStarted");
+    } else if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
+      this.notifyObservers("onPageLoadCompleted");
+    }
+  }
+}
+StateChangeNotifier.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsIWebProgressListener,
+  Ci.nsISupportsWeakReference,
+]);
 
 
 
@@ -98,6 +176,139 @@ class EventListener extends Handler {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+class SessionHistoryListener extends Handler {
+  constructor(store) {
+    super(store);
+
+    this._fromIdx = kNoIndex;
+
+    
+    
+    
+    this.stateChangeNotifier.addObserver(this);
+
+    
+    
+    
+    
+    
+    this.mm.docShell
+      .QueryInterface(Ci.nsIWebNavigation)
+      .sessionHistory.legacySHistory.addSHistoryListener(this);
+
+    
+    if (!SessionHistory.isEmpty(this.mm.docShell)) {
+      this.collect();
+      
+      
+      
+      
+      
+      
+      this.messageQueue.send();
+    }
+
+    
+    this.mm.addEventListener("DOMTitleChanged", this);
+  }
+
+  uninit() {
+    let sessionHistory = this.mm.docShell.QueryInterface(Ci.nsIWebNavigation)
+      .sessionHistory;
+    if (sessionHistory) {
+      sessionHistory.legacySHistory.removeSHistoryListener(this);
+    }
+  }
+
+  collect() {
+    
+    
+    
+    
+    if (this.mm.docShell) {
+      this.collectFrom(-1);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  collectFrom(idx) {
+    if (this._fromIdx <= idx) {
+      
+      
+      
+      
+      
+      return;
+    }
+
+    this._fromIdx = idx;
+    this.messageQueue.push("historychange", () => {
+      if (this._fromIdx === kNoIndex) {
+        return null;
+      }
+
+      let history = SessionHistory.collect(this.mm.docShell, this._fromIdx);
+      this._fromIdx = kNoIndex;
+      return history;
+    });
+  }
+
+  handleEvent(event) {
+    this.collect();
+  }
+
+  onPageLoadCompleted() {
+    this.collect();
+  }
+
+  onPageLoadStarted() {
+    this.collect();
+  }
+
+  OnHistoryNewEntry(newURI, oldIndex) {
+    
+    this.collectFrom(oldIndex);
+  }
+
+  OnHistoryGotoIndex() {
+    
+    this.collectFrom(kLastIndex);
+  }
+
+  OnHistoryPurge() {
+    this.collect();
+  }
+
+  OnHistoryReload() {
+    this.collect();
+    return true;
+  }
+
+  OnHistoryReplaceEntry() {
+    this.collect();
+  }
+}
+SessionHistoryListener.prototype.QueryInterface = ChromeUtils.generateQI([
+  Ci.nsISHistoryListener,
+  Ci.nsISupportsWeakReference,
+]);
 
 
 
@@ -339,9 +550,6 @@ class MessageQueue extends Handler {
 
 const MESSAGES = [
   "SessionStore:restoreHistory",
-  "SessionStore:finishRestoreHistory",
-  "SessionStore:OnHistoryReload",
-  "SessionStore:OnHistoryNewEntry",
   "SessionStore:restoreTabContent",
   "SessionStore:resetRestore",
   "SessionStore:flush",
@@ -352,30 +560,23 @@ class ContentSessionStore {
   constructor(mm) {
     this.mm = mm;
     this.messageQueue = new MessageQueue(this);
+    this.stateChangeNotifier = new StateChangeNotifier(this);
 
     this.epoch = 0;
 
     this.contentRestoreInitialized = false;
-
-    this.waitRestoreSHistoryInParent = false;
-    this.restoreTabContentData = null;
 
     XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
       this.contentRestoreInitialized = true;
       return new ContentRestore(mm);
     });
 
-    this.handlers = [new EventListener(this), this.messageQueue];
-
-    this._shistoryInParent = Services.prefs.getBoolPref(
-      "fission.sessionHistoryInParent",
-      false
-    );
-    if (this._shistoryInParent) {
-      this.mm.sendAsyncMessage("SessionStore:addSHistoryListener");
-    } else {
-      this.handlers.push(new SessionHistoryListener(this));
-    }
+    this.handlers = [
+      new EventListener(this),
+      new SessionHistoryListener(this),
+      this.stateChangeNotifier,
+      this.messageQueue,
+    ];
 
     MESSAGES.forEach(m => mm.addMessageListener(m, this));
 
@@ -396,7 +597,7 @@ class ContentSessionStore {
     
     
     
-    if (data && data.epoch && data.epoch != this.epoch) {
+    if (data.epoch && data.epoch != this.epoch) {
       this.epoch = data.epoch;
     }
 
@@ -404,45 +605,8 @@ class ContentSessionStore {
       case "SessionStore:restoreHistory":
         this.restoreHistory(data);
         break;
-      case "SessionStore:finishRestoreHistory":
-        this.finishRestoreHistory();
-        break;
-      case "SessionStore:OnHistoryNewEntry":
-        this.contentRestore.restoreOnNewEntry(data.uri);
-        break;
-      case "SessionStore:OnHistoryReload":
-        
-        this.contentRestore.restoreTabContent(
-          null,
-          false,
-          () => {
-            
-            
-            this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-              epoch: this.epoch,
-            });
-          },
-          () => {
-            
-            this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-              epoch: this.epoch,
-            });
-          },
-          () => {
-            
-            this.mm.sendAsyncMessage("SessionStore:reloadCurrentEntry", {
-              epoch: this.epoch,
-            });
-          }
-        );
-        break;
       case "SessionStore:restoreTabContent":
-        if (this.waitRestoreSHistoryInParent) {
-          
-          this.restoreTabContentData = data;
-        } else {
-          this.restoreTabContent(data);
-        }
+        this.restoreTabContent(data);
         break;
       case "SessionStore:resetRestore":
         this.contentRestore.resetRestore();
@@ -451,9 +615,7 @@ class ContentSessionStore {
         this.flush(data);
         break;
       case "SessionStore:becomeActiveProcess":
-        if (!this._shistoryInParent) {
-          SessionHistoryListener.collect();
-        }
+        SessionHistoryListener.collect();
         break;
       default:
         debug("received unknown message '" + name + "'");
@@ -462,55 +624,27 @@ class ContentSessionStore {
   }
 
   restoreHistory({ epoch, tabData, loadArguments, isRemotenessUpdate }) {
-    this.contentRestore.restoreHistory(
-      tabData,
-      loadArguments,
-      {
+    this.contentRestore.restoreHistory(tabData, loadArguments, {
+      
+      
+      
+      
+
+      onLoadStarted: () => {
         
-        
-        
-        
-
-        onLoadStarted: () => {
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
-            epoch,
-          });
-        },
-
-        onLoadFinished: () => {
-          
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-            epoch,
-          });
-        },
-
-        removeRestoreListener: () => {
-          if (!this._shistoryInParent) {
-            return;
-          }
-
-          
-          this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-            epoch,
-          });
-        },
-
-        requestRestoreSHistory: () => {
-          if (!this._shistoryInParent) {
-            return;
-          }
-
-          this.waitRestoreSHistoryInParent = true;
-          
-          this.mm.sendAsyncMessage("SessionStore:restoreSHistoryInParent", {
-            epoch,
-          });
-        },
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
+          epoch,
+        });
       },
-      this._shistoryInParent
-    );
+
+      onLoadFinished: () => {
+        
+        
+        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
+          epoch,
+        });
+      },
+    });
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_DEFAULT) {
       
@@ -527,55 +661,12 @@ class ContentSessionStore {
         epoch,
         isRemotenessUpdate,
       });
-    } else if (!this._shistoryInParent) {
+    } else {
       this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", {
         epoch,
         isRemotenessUpdate,
       });
     }
-  }
-
-  finishRestoreHistory() {
-    this.contentRestore.finishRestoreHistory({
-      
-      
-      
-      
-      onLoadStarted: () => {
-        
-        this.mm.sendAsyncMessage("SessionStore:restoreTabContentStarted", {
-          epoch: this.epoch,
-        });
-      },
-
-      onLoadFinished: () => {
-        
-        
-        this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
-          epoch: this.epoch,
-        });
-      },
-
-      removeRestoreListener: () => {
-        if (!this._shistoryInParent) {
-          return;
-        }
-
-        
-        this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-          epoch: this.epoch,
-        });
-      },
-    });
-
-    this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", {
-      epoch: this.epoch,
-    });
-    if (this.restoreTabContentData) {
-      this.restoreTabContent(this.restoreTabContentData);
-      this.restoreTabContentData = null;
-    }
-    this.waitRestoreSHistoryInParent = false;
   }
 
   restoreTabContent({ loadArguments, isRemotenessUpdate, reason }) {
@@ -591,17 +682,6 @@ class ContentSessionStore {
         this.mm.sendAsyncMessage("SessionStore:restoreTabContentComplete", {
           epoch,
           isRemotenessUpdate,
-        });
-      },
-      () => {
-        
-        this.mm.sendAsyncMessage("SessionStore:removeRestoreListener", {
-          epoch,
-        });
-      },
-      () => {
-        this.mm.sendAsyncMessage("SessionStore:reloadCurrentEntry", {
-          epoch,
         });
       }
     );

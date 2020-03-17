@@ -32,21 +32,7 @@ function restoreClosedTabWithValue(rval) {
   return ss.undoCloseTab(window, index);
 }
 
-function promiseNewLocationAndHistoryEntryReplaced(tab, snippet) {
-  let browser = tab.linkedBrowser;
-
-  if (Services.prefs.getBoolPref("fission.sessionHistoryInParent", false)) {
-    SpecialPowers.spawn(browser, [snippet], async function(codeSnippet) {
-      
-      
-      let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
-      
-      
-      eval(codeSnippet);
-    });
-    return promiseOnHistoryReplaceEntry(tab);
-  }
-
+function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
   return SpecialPowers.spawn(browser, [snippet], async function(codeSnippet) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let shistory = webNavigation.sessionHistory.legacySHistory;
@@ -135,7 +121,7 @@ add_task(async function save_worthy_tabs_remote_final() {
   let snippet =
     'webNavigation.loadURI("https://example.com/",\
     {triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal()})';
-  await promiseNewLocationAndHistoryEntryReplaced(tab, snippet);
+  await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   
   ok(browser.isRemoteBrowser, "browser is still remote");
@@ -178,10 +164,11 @@ add_task(async function save_worthy_tabs_nonremote_final() {
 
 add_task(async function dont_save_empty_tabs_final() {
   let { tab, r } = await createTabWithRandomValue("https://example.com/");
+  let browser = tab.linkedBrowser;
 
   
   let snippet = 'content.location.replace("about:blank")';
-  await promiseNewLocationAndHistoryEntryReplaced(tab, snippet);
+  await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   
   let promise = promiseRemoveTabAndSessionState(tab);
