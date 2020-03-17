@@ -306,7 +306,7 @@ nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   
   
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     
     return EditorBase::HandleKeyPressEvent(aKeyboardEvent);
   }
@@ -1420,7 +1420,7 @@ TextEditor::GetTextLength(int32_t* aCount) {
 }
 
 nsresult TextEditor::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
-  if (aCount == 0 || IsReadonly() || IsDisabled()) {
+  if (aCount == 0 || IsReadonly()) {
     return NS_OK;
   }
 
@@ -1498,7 +1498,7 @@ nsresult TextEditor::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
 }
 
 nsresult TextEditor::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
-  if (aCount == 0 || IsReadonly() || IsDisabled()) {
+  if (aCount == 0 || IsReadonly()) {
     return NS_OK;
   }
 
@@ -1917,7 +1917,7 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
     const nsAString& aQuotedText) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 

@@ -69,8 +69,8 @@ class nsCopySupport {
 
 
 
-  static nsIContent* GetSelectionForCopy(mozilla::dom::Document* aDocument,
-                                         mozilla::dom::Selection** aSelection);
+  static already_AddRefed<mozilla::dom::Selection> GetSelectionForCopy(
+      mozilla::dom::Document* aDocument);
 
   
 
