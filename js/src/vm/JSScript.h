@@ -2326,7 +2326,8 @@ setterLevel:                                                                  \
   
   
   
-  bool enclosingScriptHasEverBeenCompiled() const {
+  
+  bool isReadyForDelazification() const {
     return warmUpData_.isEnclosingScope();
   }
 

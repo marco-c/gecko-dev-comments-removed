@@ -114,22 +114,14 @@ static inline void DoScriptCallback(JSContext* cx, void* data,
                                     BaseScript* script,
                                     IterateScriptCallback callback,
                                     const JS::AutoRequireNoGC& nogc) {
-  if (script->isLazyScript()) {
-    
-    
-    
-    
-    
-    if (!script->enclosingScriptHasEverBeenCompiled()) {
-      return;
-    }
-  } else {
-    
-    
-    
-    if (static_cast<JSScript*>(script)->isUncompleted()) {
-      return;
-    }
+  
+  
+  
+  
+  
+  
+  if (!script->hasBytecode() && !script->isReadyForDelazification()) {
+    return;
   }
 
   
@@ -137,12 +129,12 @@ static inline void DoScriptCallback(JSContext* cx, void* data,
 
   
   
-  if (script->isLazyScript()) {
+  if (!script->hasBytecode()) {
     TraverseInnerLazyScriptsForLazyScript(cx, data, script, callback, nogc);
   }
 }
 
-template <bool MatchLazy>
+template <bool HasBytecode>
 static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
                                IterateScriptCallback scriptCallback) {
   MOZ_ASSERT(!cx->suppressGC);
@@ -153,10 +145,10 @@ static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
     Zone* zone = realm->zone();
     for (auto iter = zone->cellIter<BaseScript>(prep); !iter.done();
          iter.next()) {
-      if (MatchLazy != iter->isLazyScript()) {
+      if (iter->realm() != realm) {
         continue;
       }
-      if (iter->realm() != realm) {
+      if (HasBytecode != iter->hasBytecode()) {
         continue;
       }
       DoScriptCallback(cx, data, iter.get(), scriptCallback, nogc);
@@ -165,7 +157,7 @@ static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
     for (ZonesIter zone(cx->runtime(), SkipAtoms); !zone.done(); zone.next()) {
       for (auto iter = zone->cellIter<BaseScript>(prep); !iter.done();
            iter.next()) {
-        if (MatchLazy != iter->isLazyScript()) {
+        if (HasBytecode != iter->hasBytecode()) {
           continue;
         }
         DoScriptCallback(cx, data, iter.get(), scriptCallback, nogc);
@@ -176,12 +168,12 @@ static void IterateScriptsImpl(JSContext* cx, Realm* realm, void* data,
 
 void js::IterateScripts(JSContext* cx, Realm* realm, void* data,
                         IterateScriptCallback scriptCallback) {
-  IterateScriptsImpl< false>(cx, realm, data, scriptCallback);
+  IterateScriptsImpl< true>(cx, realm, data, scriptCallback);
 }
 
 void js::IterateLazyScripts(JSContext* cx, Realm* realm, void* data,
                             IterateScriptCallback scriptCallback) {
-  IterateScriptsImpl< true>(cx, realm, data, scriptCallback);
+  IterateScriptsImpl< false>(cx, realm, data, scriptCallback);
 }
 
 static void IterateGrayObjects(Zone* zone, GCThingCallback cellCallback,

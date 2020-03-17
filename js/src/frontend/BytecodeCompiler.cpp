@@ -959,8 +959,7 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
   
   
   
-  MOZ_ASSERT(lazy->enclosingScriptHasEverBeenCompiled());
-
+  MOZ_ASSERT(lazy->isReadyForDelazification());
   MOZ_ASSERT(!lazy->isBinAST());
 
   AutoAssertReportedException assertException(cx);
@@ -1061,7 +1060,7 @@ static bool CompileLazyBinASTFunctionImpl(JSContext* cx,
   
   
   
-  MOZ_ASSERT(lazy->enclosingScriptHasEverBeenCompiled());
+  MOZ_ASSERT(lazy->isReadyForDelazification());
   MOZ_ASSERT(lazy->isBinAST());
 
   AutoAssertReportedException assertException(cx);
