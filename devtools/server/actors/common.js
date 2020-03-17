@@ -39,15 +39,10 @@ ActorPool.prototype = {
   addActor: function APAddActor(actor) {
     actor.conn = this.conn;
     if (!actor.actorID) {
-      
-      const prefix = actor.actorPrefix || actor.typeName;
-      if (!prefix) {
-        throw new Error(
-          "Actor should precify either `actorPrefix` or `typeName` " +
-            "attribute"
-        );
+      if (!actor.typeName) {
+        throw new Error("Actor should a specify a `typeName` attribute");
       }
-      actor.actorID = this.conn.allocID(prefix || undefined);
+      actor.actorID = this.conn.allocID(actor.typeName);
     }
 
     

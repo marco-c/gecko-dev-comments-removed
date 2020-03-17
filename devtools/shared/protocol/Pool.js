@@ -68,7 +68,7 @@ class Pool extends EventEmitter {
 
   manage(actor) {
     if (!actor.actorID) {
-      actor.actorID = this.conn.allocID(actor.actorPrefix || actor.typeName);
+      actor.actorID = this.conn.allocID(actor.typeName);
     } else {
       
       

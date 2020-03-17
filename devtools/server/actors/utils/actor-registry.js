@@ -292,7 +292,6 @@ const ActorRegistry = {
 
 
 
-
   addTargetScopedActor(options, name) {
     if (!name) {
       throw Error("addTargetScopedActor requires the `name` argument");
@@ -348,7 +347,6 @@ const ActorRegistry = {
   },
 
   
-
 
 
 
