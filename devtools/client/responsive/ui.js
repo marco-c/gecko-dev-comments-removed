@@ -161,6 +161,10 @@ class ResponsiveUI {
 
     if (this.isBrowserUIEnabled) {
       this.initRDMFrame();
+
+      
+      
+      this.hideBrowserUI();
     }
 
     
@@ -235,6 +239,9 @@ class ResponsiveUI {
 
     
     await this.restoreUIState();
+
+    
+    this.showBrowserUI();
 
     if (!this.isBrowserUIEnabled) {
       
@@ -385,6 +392,9 @@ class ResponsiveUI {
       if (this.isBrowserUIEnabled) {
         await this.responsiveFront.setDocumentInRDMPane(false);
         await this.responsiveFront.setFloatingScrollbars(false);
+
+        
+        this.hideBrowserUI();
       }
 
       this.targetList.unwatchTargets(
@@ -440,6 +450,9 @@ class ResponsiveUI {
         this.getViewportBrowser().reload();
       }
     }
+
+    
+    this.showBrowserUI();
 
     
     const swap = this.swap;
@@ -508,6 +521,20 @@ class ResponsiveUI {
     this.showReloadNotification();
     const pref = RELOAD_CONDITION_PREF_PREFIX + id;
     return Services.prefs.getBoolPref(pref, false);
+  }
+
+  hideBrowserUI() {
+    if (this.isBrowserUIEnabled) {
+      this.tab.linkedBrowser.style.visibility = "hidden";
+      this.resizeHandle.style.visibility = "hidden";
+    }
+  }
+
+  showBrowserUI() {
+    if (this.isBrowserUIEnabled) {
+      this.tab.linkedBrowser.style.removeProperty("visibility");
+      this.resizeHandle.style.removeProperty("visibility");
+    }
   }
 
   handleEvent(event) {
@@ -857,13 +884,6 @@ class ResponsiveUI {
       );
 
       this.updateUIAlignment(leftAlignmentEnabled);
-    }
-
-    const hasDeviceState = await this.hasDeviceState();
-    if (hasDeviceState) {
-      
-      
-      return;
     }
 
     const height = Services.prefs.getIntPref(
