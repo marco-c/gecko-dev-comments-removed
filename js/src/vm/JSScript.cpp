@@ -4097,7 +4097,7 @@ void JSScript::relazify(JSRuntime* rt) {
   warmUpData_.resetWarmUpCount(0);
   warmUpData_.initEnclosingScope(scope);
 
-  setIsLazyScript();
+  MOZ_ASSERT(isReadyForDelazification());
 }
 
 
@@ -4392,8 +4392,6 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
     lazyEnclosingScope = script->releaseEnclosingScope();
     script->swapData(lazyData.get());
     MOZ_ASSERT(script->sharedData_ == nullptr);
-
-    script->clearIsLazyScript();
   }
 
   
@@ -5471,9 +5469,6 @@ BaseScript* BaseScript::CreateRawLazy(JSContext* cx, uint32_t ngcthings,
   if (!lazy) {
     return nullptr;
   }
-
-  
-  lazy->setIsLazyScript();
 
   
   
