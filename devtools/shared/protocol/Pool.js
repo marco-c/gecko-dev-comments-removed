@@ -74,9 +74,7 @@ class Pool extends EventEmitter {
       
       
 
-      
-      
-      const parent = this.poolFor(actor.actorID);
+      const parent = actor.parent();
       if (parent) {
         parent.unmanage(actor);
       }
