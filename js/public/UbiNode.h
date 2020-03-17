@@ -874,7 +874,7 @@ using EdgeName = UniqueTwoByteChars;
 
 class Edge {
  public:
-  Edge() : name(nullptr), referent() {}
+  Edge() = default;
 
   
   Edge(char16_t* name, const Node& referent) : name(name), referent(referent) {}
@@ -902,7 +902,7 @@ class Edge {
   
   
   
-  EdgeName name;
+  EdgeName name = nullptr;
 
   
   Node referent;
@@ -924,7 +924,7 @@ class EdgeRange {
   EdgeRange() : front_(nullptr) {}
 
  public:
-  virtual ~EdgeRange() {}
+  virtual ~EdgeRange() = default;
 
   
   bool empty() const { return !front_; }

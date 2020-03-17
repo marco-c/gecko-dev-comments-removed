@@ -1,18 +1,18 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef frontend_BinASTParserPerTokenizer_h
 #define frontend_BinASTParserPerTokenizer_h
 
-/**
- * A Binary AST parser.
- *
- * At the time of this writing, this parser implements the grammar of ES5
- * and trusts its input (in particular, variable declarations).
- */
+
+
+
+
+
+
 
 #include "mozilla/Maybe.h"
 
@@ -40,12 +40,12 @@ namespace frontend {
 template <typename Tok>
 class BinASTParser;
 
-/**
- * The parser for a Binary AST.
- *
- * By design, this parser never needs to backtrack or look ahead. Errors are not
- * recoverable.
- */
+
+
+
+
+
+
 template <typename Tok>
 class BinASTParserPerTokenizer : public BinASTParserBase,
                                  public ErrorReporter,
@@ -60,7 +60,7 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   using FieldOrRootContext = BinASTTokenReaderBase::FieldOrRootContext;
 
  public:
-  // Auto-generated types.
+  
   using AssertedDeclaredKind = binast::AssertedDeclaredKind;
   using VariableDeclarationKind = binast::VariableDeclarationKind;
 
@@ -69,18 +69,18 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
                            const JS::ReadOnlyCompileOptions& options,
                            HandleScriptSourceObject sourceObject,
                            Handle<BaseScript*> lazyScript = nullptr);
-  ~BinASTParserPerTokenizer() {}
+  ~BinASTParserPerTokenizer() = default;
 
-  /**
-   * Parse a buffer, returning a node (which may be nullptr) in case of success
-   * or Nothing() in case of error.
-   *
-   * The instance of `ParseNode` MAY NOT survive the
-   * `BinASTParserPerTokenizer`. Indeed, destruction of the
-   * `BinASTParserPerTokenizer` will also destroy the `ParseNode`.
-   *
-   * In case of error, the parser reports the JS error.
-   */
+  
+
+
+
+
+
+
+
+
+
   JS::Result<ParseNode*> parse(GlobalSharedContext* globalsc,
                                const uint8_t* start, const size_t length,
                                BinASTSourceMetadata** metadataPtr = nullptr);
@@ -96,9 +96,9 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
       GlobalSharedContext* globalsc, const uint8_t* start, const size_t length,
       BinASTSourceMetadata** metadataPtr = nullptr);
 
-  // --- Raise errors.
-  //
-  // These methods return a (failed) JS::Result for convenience.
+  
+  
+  
 
   MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseInvalidClosedVar(
       JSAtom* name);
@@ -120,10 +120,10 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   MOZ_MUST_USE mozilla::GenericErrorResult<JS::Error&> raiseError(
       BinASTKind kind, const char* description);
 
-  // Ensure that this parser will never be used again.
+  
   void poison();
 
-  // The owner or the target of Asserted*Scope.
+  
   enum class AssertedScopeKind {
     Block,
     Catch,
@@ -132,10 +132,10 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
     Var,
   };
 
-  // --- Auxiliary parsing functions
+  
 
-  // Build a function object for a function-producing production. Called AFTER
-  // creating the scope.
+  
+  
   JS::Result<FunctionBox*> buildFunctionBox(GeneratorKind generatorKind,
                                             FunctionAsyncKind functionAsyncKind,
                                             FunctionSyntaxKind syntax,
@@ -154,16 +154,16 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
                                                  uint32_t nargs, size_t start,
                                                  size_t end);
 
-  // Add name to a given scope.
+  
   MOZ_MUST_USE JS::Result<Ok> addScopeName(
       AssertedScopeKind scopeKind, HandleAtom name, ParseContext::Scope* scope,
       DeclarationKind declKind, bool isCaptured, bool allowDuplicateName);
 
   void captureFunctionName();
 
-  // Map AssertedScopeKind and AssertedDeclaredKind for single binding to
-  // corresponding ParseContext::Scope to store the binding, and
-  // DeclarationKind for the binding.
+  
+  
+  
   MOZ_MUST_USE JS::Result<Ok> getDeclaredScope(AssertedScopeKind scopeKind,
                                                AssertedDeclaredKind kind,
                                                ParseContext::Scope*& scope,
@@ -179,15 +179,15 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
 
   MOZ_MUST_USE JS::Result<Ok> checkFunctionLength(uint32_t expectedLength);
 
-  // When leaving a scope, check that none of its bindings are known closed over
-  // and un-marked.
+  
+  
   MOZ_MUST_USE JS::Result<Ok> checkClosedVars(ParseContext::Scope& scope);
 
-  // As a convenience, a helper that checks the body, parameter, and recursive
-  // binding scopes.
+  
+  
   MOZ_MUST_USE JS::Result<Ok> checkFunctionClosedVars();
 
-  // --- Utilities.
+  
 
   MOZ_MUST_USE JS::Result<Ok> prependDirectivesToBody(ListNode* body,
                                                       ListNode* directives);
@@ -195,13 +195,13 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   MOZ_MUST_USE JS::Result<Ok> prependDirectivesImpl(ListNode* body,
                                                     ParseNode* directive);
 
-  // Optionally force a strict context without restarting the parse when we see
-  // a strict directive.
+  
+  
   void forceStrictIfNecessary(SharedContext* sc, ListNode* directives);
 
-  // Whether invalid BinASTKind/BinASTVariant can be encoded in the file.
-  // This is used to avoid generating unnecessary branches for more
-  // optimized format.
+  
+  
+  
   static constexpr bool isInvalidKindPossible() {
     return mozilla::IsSame<Tok, BinASTTokenReaderMultipart>::value;
   }
@@ -210,7 +210,7 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   }
 
  protected:
-  // Implement ErrorReportMixin.
+  
   const JS::ReadOnlyCompileOptions& options_;
 
   const JS::ReadOnlyCompileOptions& options() const override {
@@ -234,7 +234,7 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   virtual FullParseHandler& astGenerator() override { return handler_; }
 
  public:
-  // Implement ErrorReporter.
+  
 
   virtual void lineAndColumnAt(size_t offset, uint32_t* line,
                                uint32_t* column) const override {
@@ -284,7 +284,7 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   friend class BinASTParseContext;
   friend class AutoVariableDeclarationKind;
 
-  // Helper class: Restore field `variableDeclarationKind` upon leaving a scope.
+  
   class MOZ_RAII AutoVariableDeclarationKind {
    public:
     explicit AutoVariableDeclarationKind(
@@ -339,10 +339,10 @@ class BinASTParserPerTokenizer : public BinASTParserBase,
   }
 
  private:
-  // Some methods in this class require access to auto-generated methods in
-  // BinASTParser which derives this class.
-  // asFinalParser methods provide the access to BinASTParser class methods
-  // of this instance.
+  
+  
+  
+  
   using FinalParser = BinASTParser<Tok>;
 
   inline FinalParser* asFinalParser();
@@ -355,7 +355,7 @@ class BinASTParseContext : public ParseContext {
   BinASTParseContext(JSContext* cx, BinASTParserPerTokenizer<Tok>* parser,
                      SharedContext* sc, Directives* newDirectives)
       : ParseContext(cx, parser->pc_, sc, *parser, parser->getCompilationInfo(),
-                     newDirectives, /* isFull = */ true) {}
+                     newDirectives,  true) {}
 };
 
 void TraceBinASTParser(JSTracer* trc, JS::AutoGCRooter* parser);
@@ -363,7 +363,7 @@ void TraceBinASTParser(JSTracer* trc, JS::AutoGCRooter* parser);
 extern template class BinASTParserPerTokenizer<BinASTTokenReaderContext>;
 extern template class BinASTParserPerTokenizer<BinASTTokenReaderMultipart>;
 
-}  // namespace frontend
-}  // namespace js
+}  
+}  
 
-#endif  // frontend_BinASTParserPerTokenizer_h
+#endif  
