@@ -17,7 +17,7 @@ namespace mozilla {
 class SandboxInfo {
  public:
   
-  SandboxInfo(const SandboxInfo& aOther) : mFlags(aOther.mFlags) {}
+  SandboxInfo(const SandboxInfo& aOther) = default;
 
   
   static const SandboxInfo& Get() { return sSingleton; }

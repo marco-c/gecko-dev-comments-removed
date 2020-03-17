@@ -34,7 +34,7 @@ class AbstractOSKeyStore {
   virtual nsresult Lock() = 0;
   
   virtual nsresult Unlock() = 0;
-  virtual ~AbstractOSKeyStore() {}
+  virtual ~AbstractOSKeyStore() = default;
 
   
   
