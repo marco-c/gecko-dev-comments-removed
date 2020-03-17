@@ -3,7 +3,9 @@
 
 
 use super::{PendingTransition, ResourceState, Unit};
-use crate::{id::BufferId, resource::BufferUsage};
+use crate::id::BufferId;
+
+use wgt::BufferUsage;
 
 
 pub type BufferState = Unit<BufferUsage>;
@@ -112,7 +114,7 @@ impl ResourceState for BufferState {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{id::TypedId, Backend};
+    use crate::{id::TypedId};
 
     #[test]
     fn change() {
@@ -120,7 +122,7 @@ mod test {
             first: Some(BufferUsage::INDEX),
             last: BufferUsage::STORAGE,
         };
-        let id = TypedId::zip(0, 0, Backend::Empty);
+        let id = TypedId::zip(0, 0, wgt::Backend::Empty);
         assert!(bs.change(id, (), BufferUsage::VERTEX, None).is_err());
         bs.change(id, (), BufferUsage::VERTEX, Some(&mut Vec::new()))
             .unwrap();
