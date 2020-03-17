@@ -808,33 +808,32 @@ JSFunction* FrameIter::callee(JSContext* cx) const {
 }
 
 bool FrameIter::matchCallee(JSContext* cx, JS::Handle<JSFunction*> fun) const {
+  
+  
+  
   Rooted<JSFunction*> currentCallee(cx, calleeTemplate());
 
-  
-  
-  MOZ_ASSERT(fun->hasBaseScript());
+  if (currentCallee->nargs() != fun->nargs()) {
+    return false;
+  }
 
-  
-  
-  
-  if (((currentCallee->flags().toRaw() ^ fun->flags().toRaw()) &
-       FunctionFlags::STABLE_ACROSS_CLONES) != 0 ||
-      currentCallee->nargs() != fun->nargs()) {
+  if (currentCallee->flags().stableAcrossClones() !=
+      fun->flags().stableAcrossClones()) {
     return false;
   }
 
   
   
   
-  Rooted<JSObject*> global(cx, &fun->global());
-  bool useSameScript =
-      CanReuseScriptForClone(fun->realm(), currentCallee, global);
-  if (useSameScript && (currentCallee->baseScript() != fun->baseScript())) {
-    return false;
+  
+  
+  
+  if (currentCallee->hasBaseScript()) {
+    if (currentCallee->baseScript() != fun->baseScript()) {
+      return false;
+    }
   }
 
-  
-  
   return callee(cx) == fun;
 }
 
