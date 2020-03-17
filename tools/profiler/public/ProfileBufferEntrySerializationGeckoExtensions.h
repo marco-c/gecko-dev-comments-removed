@@ -4,10 +4,10 @@
 
 
 
-#ifndef BlocksRingBufferGeckoExtensions_h
-#define BlocksRingBufferGeckoExtensions_h
+#ifndef ProfileBufferEntrySerializationGeckoExtensions_h
+#define ProfileBufferEntrySerializationGeckoExtensions_h
 
-#include "mozilla/BlocksRingBuffer.h"
+#include "mozilla/ProfileBufferEntrySerialization.h"
 
 #include "js/AllocPolicy.h"
 #include "js/Utility.h"

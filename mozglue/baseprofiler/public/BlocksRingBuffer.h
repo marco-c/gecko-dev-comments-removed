@@ -194,16 +194,6 @@ class BlocksRingBuffer {
                                : 0};
   }
 
-  
-  static Length SumBytes() { return 0; }
-
-  
-  template <typename T0, typename... Ts>
-  static Length SumBytes(const T0& aT0, const Ts&... aTs) {
-    return ProfileBufferEntryWriter::Serializer<T0>::Bytes(aT0) +
-           SumBytes(aTs...);
-  }
-
   class Reader;
 
   
@@ -496,15 +486,16 @@ class BlocksRingBuffer {
   ProfileBufferBlockIndex PutObjects(const Ts&... aTs) {
     static_assert(sizeof...(Ts) > 0,
                   "PutObjects must be given at least one object.");
-    return ReserveAndPut([&]() { return SumBytes(aTs...); },
-                         [&](ProfileBufferEntryWriter* aEntryWriter) {
-                           if (MOZ_UNLIKELY(!aEntryWriter)) {
-                             
-                             return ProfileBufferBlockIndex{};
-                           }
-                           aEntryWriter->WriteObjects(aTs...);
-                           return aEntryWriter->CurrentBlockIndex();
-                         });
+    return ReserveAndPut(
+        [&]() { return ProfileBufferEntryWriter::SumBytes(aTs...); },
+        [&](ProfileBufferEntryWriter* aEntryWriter) {
+          if (MOZ_UNLIKELY(!aEntryWriter)) {
+            
+            return ProfileBufferBlockIndex{};
+          }
+          aEntryWriter->WriteObjects(aTs...);
+          return aEntryWriter->CurrentBlockIndex();
+        });
   }
 
   
@@ -896,7 +887,7 @@ struct ProfileBufferEntryReader::Deserializer<BlocksRingBuffer> {
     
     MOZ_ASSERT(aBuffer.GetState().mRangeStart == aBuffer.GetState().mRangeEnd);
     
-    const auto len = aER.ReadULEB128<BlocksRingBuffer::Length>();
+    const auto len = aER.ReadULEB128<Length>();
     if (len == 0) {
       
       return;
@@ -908,7 +899,7 @@ struct ProfileBufferEntryReader::Deserializer<BlocksRingBuffer> {
       MOZ_RELEASE_ASSERT(aBuffer.BufferLength()->Value() >= len);
     } else {
       
-      aBuffer.Set(PowerOfTwo<BlocksRingBuffer::Length>(len));
+      aBuffer.Set(PowerOfTwo<Length>(len));
       MOZ_ASSERT(aBuffer.BufferLength()->Value() >= len);
     }
     
@@ -980,7 +971,7 @@ struct ProfileBufferEntryReader::Deserializer<UniquePtr<BlocksRingBuffer>> {
     
     ProfileBufferEntryReader readerBeforeLen = aER;
     
-    const auto len = aER.ReadULEB128<BlocksRingBuffer::Length>();
+    const auto len = aER.ReadULEB128<Length>();
     if (len == 0) {
       
       return bufferUPtr;
