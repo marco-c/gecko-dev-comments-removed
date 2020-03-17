@@ -354,9 +354,9 @@ function TargetMixin(parentClass) {
 
 
     async attachThread(options = {}) {
-      if (!this._threadActor) {
+      if (!this.targetForm || !this.targetForm.threadActor) {
         throw new Error(
-          "TargetMixin sub class should set _threadActor before calling " +
+          "TargetMixin sub class should set targetForm.threadActor before calling " +
             "attachThread"
         );
       }
