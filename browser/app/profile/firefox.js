@@ -2310,10 +2310,3 @@ pref("devtools.whatsnew.feature-enabled", true);
 
 
 pref("first-startup.timeout", 30000);
-
-
-
-
-#ifdef XP_WIN
-  pref("default-browser-agent.enabled", true);
-#endif
