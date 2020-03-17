@@ -39,8 +39,22 @@ var SessionHistory = Object.freeze({
     return SessionHistoryInternal.collect(docShell, aFromIdx);
   },
 
+  collectFromParent(uri, body, history, userContextId, aFromIdx = -1) {
+    return SessionHistoryInternal.collectCommon(
+      uri,
+      body,
+      history,
+      userContextId,
+      aFromIdx
+    );
+  },
+
   restore(docShell, tabData) {
     return SessionHistoryInternal.restore(docShell, tabData);
+  },
+
+  restoreFromParent(history, tabData) {
+    return SessionHistoryInternal.restoreCommon(history, tabData);
   },
 });
 
@@ -81,12 +95,24 @@ var SessionHistoryInternal = {
   collect(docShell, aFromIdx = -1) {
     let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
+    let uri = webNavigation.currentURI.displaySpec;
+    let body = webNavigation.document.body;
     let history = webNavigation.sessionHistory;
+    let userContextId = loadContext.originAttributes.userContextId;
+    return this.collectCommon(
+      uri,
+      body,
+      history.legacySHistory,
+      userContextId,
+      aFromIdx
+    );
+  },
 
+  collectCommon(uri, body, shistory, userContextId, aFromIdx) {
     let data = {
       entries: [],
-      userContextId: loadContext.originAttributes.userContextId,
-      requestedIndex: history.legacySHistory.requestedIndex + 1,
+      userContextId,
+      requestedIndex: shistory.requestedIndex + 1,
     };
 
     
@@ -95,8 +121,7 @@ var SessionHistoryInternal = {
     let skippedCount = 0,
       entryCount = 0;
 
-    if (history && history.count > 0) {
-      let shistory = history.legacySHistory.QueryInterface(Ci.nsISHistory);
+    if (shistory && shistory.count > 0) {
       let count = shistory.count;
       for (; entryCount < count; entryCount++) {
         let shEntry = shistory.getEntryAtIndex(entryCount);
@@ -109,15 +134,13 @@ var SessionHistoryInternal = {
       }
 
       
-      data.index = Math.min(history.index + 1, entryCount);
+      data.index = Math.min(shistory.index + 1, entryCount);
     }
 
     
     
     
     if (!data.entries.length && (skippedCount != entryCount || aFromIdx < 0)) {
-      let uri = webNavigation.currentURI.displaySpec;
-      let body = webNavigation.document.body;
       
       
       
@@ -337,6 +360,10 @@ var SessionHistoryInternal = {
   restore(docShell, tabData) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.legacySHistory;
+    this.restoreCommon(history, tabData);
+  },
+
+  restoreCommon(history, tabData) {
     if (history.count > 0) {
       history.PurgeHistory(history.count);
     }

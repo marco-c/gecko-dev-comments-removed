@@ -97,6 +97,22 @@ const MESSAGES = [
 
   
   "SessionStore:error",
+
+  
+  
+  "SessionStore:addSHistoryListener",
+
+  
+  
+  "SessionStore:removeRestoreListener",
+
+  
+  
+  "SessionStore:restoreSHistoryInParent",
+
+  
+  
+  "SessionStore:reloadCurrentEntry",
 ];
 
 
@@ -112,6 +128,9 @@ const NOTAB_MESSAGES = new Set([
 
   
   "SessionStore:error",
+
+  
+  "SessionStore:addSHistoryListener",
 ]);
 
 
@@ -122,6 +141,9 @@ const NOEPOCH_MESSAGES = new Set([
 
   
   "SessionStore:error",
+
+  
+  "SessionStore:addSHistoryListener",
 ]);
 
 
@@ -175,12 +197,22 @@ const RESTORE_TAB_CONTENT_REASON = {
 
 const BROWSER_STARTUP_RESUME_SESSION = 3;
 
+
+const kNoIndex = Number.MAX_SAFE_INTEGER;
+const kLastIndex = Number.MAX_SAFE_INTEGER - 1;
+
 ChromeUtils.import("resource://gre/modules/PrivateBrowsingUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/Services.jsm", this);
 ChromeUtils.import("resource://gre/modules/TelemetryTimestamps.jsm", this);
 ChromeUtils.import("resource://gre/modules/Timer.jsm", this);
 ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
 ChromeUtils.import("resource://gre/modules/osfile.jsm", this);
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "SessionHistory",
+  "resource://gre/modules/sessionstore/SessionHistory.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetters(this, {
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
@@ -500,6 +532,15 @@ var SessionStoreInternal = {
   
   
   _restoreCount: -1,
+
+  
+  _browserSHistoryListener: new WeakMap(),
+
+  
+  _browserSHistoryListenerForRestore: new WeakMap(),
+
+  
+  _shistoryToRestore: new WeakMap(),
 
   
   _browserEpochs: new WeakMap(),
@@ -824,6 +865,11 @@ var SessionStoreInternal = {
       "privacy.resistFingerprinting"
     );
     Services.prefs.addObserver("privacy.resistFingerprinting", this);
+
+    this._shistoryInParent = Services.prefs.getBoolPref(
+      "fission.sessionHistoryInParent",
+      false
+    );
   },
 
   
@@ -907,6 +953,205 @@ var SessionStoreInternal = {
     }
   },
 
+  
+  
+  addSHistoryListener(aBrowser) {
+    function SHistoryListener(browser) {
+      browser.frameLoader.browsingContext.sessionHistory.addSHistoryListener(
+        this
+      );
+
+      this.browser = browser;
+      this.frameLoader = browser.frameLoader;
+      this._fromIdx = kNoIndex;
+      this._sHistoryChanges = false;
+      if (this.browser.currentURI && this.browser.ownerGlobal) {
+        this._lastKnownUri = browser.currentURI.displaySpec;
+        this._lastKnownBody = browser.ownerGlobal.document.body;
+        this._lastKnownUserContextId =
+          browser.contentPrincipal.originAttributes.userContextId;
+      }
+    }
+    SHistoryListener.prototype = {
+      QueryInterface: ChromeUtils.generateQI([
+        Ci.nsISHistoryListener,
+        Ci.nsISupportsWeakReference,
+      ]),
+
+      notifySHistoryChanges(index) {
+        if (this._fromIdx <= index) {
+          
+          
+          
+          
+          
+          return;
+        }
+
+        if (!this._sHistoryChanges) {
+          this.frameLoader.requestSHistoryUpdate( false);
+          this._sHistoryChanges = true;
+        }
+        this._fromIdx = index;
+        if (this.browser.currentURI && this.browser.ownerGlobal) {
+          this._lastKnownUri = this.browser.currentURI.displaySpec;
+          this._lastKnownBody = this.browser.ownerGlobal.document.body;
+          this._lastKnownUserContextId = this.browser.contentPrincipal.originAttributes.userContextId;
+        }
+      },
+
+      uninstall() {
+        if (this.frameLoader.browsingContext) {
+          let shistory = this.frameLoader.browsingContext.sessionHistory;
+          if (shistory) {
+            shistory.removeSHistoryListener(this);
+          }
+        }
+      },
+
+      OnHistoryNewEntry(newURI, oldIndex) {
+        this.notifySHistoryChanges(oldIndex);
+      },
+
+      OnHistoryGotoIndex() {
+        this.notifySHistoryChanges(kLastIndex);
+      },
+      OnHistoryPurge() {
+        this.notifySHistoryChanges(-1);
+      },
+
+      OnHistoryReload() {
+        this.notifySHistoryChanges(-1);
+        return true;
+      },
+
+      OnHistoryReplaceEntry() {
+        this.notifySHistoryChanges(-1);
+
+        let win = this.browser.ownerGlobal;
+        let tab = win ? win.gBrowser.getTabForBrowser(this.browser) : null;
+        if (tab) {
+          let event = tab.ownerDocument.createEvent("CustomEvent");
+          event.initCustomEvent("SSHistoryReplaceEntry", true, false);
+          tab.dispatchEvent(event);
+        }
+      },
+    };
+
+    let spec = null;
+    if (aBrowser.currentURI) {
+      spec = aBrowser.currentURI.displaySpec;
+    }
+
+    if (!aBrowser.frameLoader) {
+      debug(
+        "addSHistoryListener(), aBrowser.frameLoader doesn't exist" +
+          ",browser.currentURI.displaySpec=" +
+          spec
+      );
+      return;
+    }
+    if (!aBrowser.frameLoader.browsingContext) {
+      debug(
+        "addSHistoryListener(), aBrowser.fl.browsingContext doesn't exists" +
+          ",browser.currentURI.displaySpec=" +
+          spec
+      );
+      return;
+    }
+    if (!aBrowser.frameLoader.browsingContext.sessionHistory) {
+      debug(
+        "addSHistoryListener(), aBrowser.fl.bc.sessionHistory doesn't exists" +
+          ",browser.currentURI.displaySpec=" +
+          spec
+      );
+      return;
+    }
+
+    let listener = new SHistoryListener(aBrowser);
+    this._browserSHistoryListener.set(aBrowser.permanentKey, listener);
+
+    
+    let uri = aBrowser.currentURI.displaySpec;
+    let history = aBrowser.frameLoader.browsingContext.sessionHistory;
+    if (uri != "about:blank" || history.count != 0) {
+      aBrowser.frameLoader.requestSHistoryUpdate( true);
+    }
+  },
+
+  
+
+
+
+
+  addSHistoryListenerForRestore(aBrowser) {
+    function SHistoryListener(browser) {
+      browser.frameLoader.browsingContext.sessionHistory.addSHistoryListener(
+        this
+      );
+      this.browser = browser;
+    }
+    SHistoryListener.prototype = {
+      QueryInterface: ChromeUtils.generateQI([
+        Ci.nsISHistoryListener,
+        Ci.nsISupportsWeakReference,
+      ]),
+
+      uninstall() {
+        let shistory = this.browser.frameLoader.browsingContext.sessionHistory;
+        if (shistory) {
+          shistory.removeSHistoryListener(this);
+        }
+      },
+
+      OnHistoryGotoIndex() {},
+      OnHistoryPurge() {},
+      OnHistoryReplaceEntry() {},
+
+      
+      
+      OnHistoryNewEntry(newURI) {
+        let currentURI = this.browser.currentURI;
+
+        
+        
+        
+        if (currentURI && currentURI.displaySpec == newURI.spec) {
+          return;
+        }
+
+        
+        this.browser.messageManager.sendAsyncMessage(
+          "SessionStore:OnHistoryNewEntry",
+          { uri: newURI.spec }
+        );
+      },
+
+      OnHistoryReload() {
+        
+        this.browser.messageManager.sendAsyncMessage(
+          "SessionStore:OnHistoryReload"
+        );
+        
+        return false;
+      },
+    };
+
+    if (
+      !aBrowser.frameLoader ||
+      !aBrowser.frameLoader.browsingContext ||
+      !aBrowser.frameLoader.browsingContext.sessionHistory
+    ) {
+      return;
+    }
+
+    let listener = new SHistoryListener(aBrowser);
+    this._browserSHistoryListenerForRestore.set(
+      aBrowser.permanentKey,
+      listener
+    );
+  },
+
   updateSessionStoreFromTablistener(aBrowser, aData) {
     if (aBrowser.permanentKey == undefined) {
       return;
@@ -915,6 +1160,72 @@ var SessionStoreInternal = {
     
     if (!this.isCurrentEpoch(aBrowser, aData.epoch)) {
       return;
+    }
+
+    let sHistoryChangedInListener = false;
+    let listener = this._browserSHistoryListener.get(aBrowser.permanentKey);
+    if (listener) {
+      sHistoryChangedInListener = listener._sHistoryChanges;
+    }
+
+    if (aData.sHistoryNeeded || sHistoryChangedInListener) {
+      if (!listener) {
+        debug(
+          "updateSessionStoreFromTablistener() with aData.sHistoryNeeded, but no SHlistener. Add again!!!"
+        );
+        this.addSHistoryListener(aBrowser);
+        listener = this._browserSHistoryListener.get(aBrowser.permanentKey);
+      }
+
+      if (listener) {
+        if (!aData.sHistoryNeeded && listener._fromIdx == kNoIndex) {
+          
+          listener._sHistoryChanges = false;
+        } else {
+          
+          
+          
+          let frameLoader =
+            aBrowser.frameLoader ||
+            this._lastKnownFrameLoader.get(aBrowser.permanentKey);
+          if (
+            frameLoader &&
+            frameLoader.browsingContext &&
+            frameLoader.browsingContext.sessionHistory
+          ) {
+            let uri = aBrowser.currentURI
+              ? aBrowser.currentURI.displaySpec
+              : listener._lastKnownUri;
+            let body = aBrowser.ownerGlobal
+              ? aBrowser.ownerGlobal.document.body
+              : listener._lastKnownBody;
+            let userContextId = aBrowser.contentPrincipal
+              ? aBrowser.contentPrincipal.originAttributes.userContextId
+              : listener._lastKnownUserContextId;
+            aData.data.historychange = SessionHistory.collectFromParent(
+              uri,
+              body,
+              frameLoader.browsingContext.sessionHistory,
+              userContextId,
+              listener._sHistoryChanges ? listener._fromIdx : -1
+            );
+            listener._sHistoryChanges = false;
+            listener._fromIdx = kNoIndex;
+          } else {
+            debug(
+              "updateSessionStoreFromTablistener() with sHistoryNeeded, but no fL.bC.sessionHistory."
+            );
+          }
+        }
+      } else {
+        debug(
+          "updateSessionStoreFromTablistener() with sHistoryNeeded, but no sHlistener."
+        );
+      }
+    }
+
+    if ("sHistoryNeeded" in aData) {
+      delete aData.sHistoryNeeded;
     }
 
     TabState.update(aBrowser, aData);
@@ -965,6 +1276,34 @@ var SessionStoreInternal = {
     }
 
     switch (aMessage.name) {
+      case "SessionStore:addSHistoryListener":
+        this.addSHistoryListener(browser);
+        break;
+      case "SessionStore:restoreSHistoryInParent":
+        if (
+          browser.frameLoader &&
+          browser.frameLoader.browsingContext &&
+          browser.frameLoader.browsingContext.sessionHistory
+        ) {
+          let tabData = this._shistoryToRestore.get(browser.permanentKey);
+          if (tabData) {
+            this._shistoryToRestore.delete(browser.permanentKey);
+            SessionHistory.restoreFromParent(
+              browser.frameLoader.browsingContext.sessionHistory,
+              tabData
+            );
+          }
+          this.addSHistoryListenerForRestore(browser);
+        } else {
+          debug(
+            "receive SessionStore:restoreSHistoryInParent: but cannot find sessionHistory from bc."
+          );
+        }
+        browser.messageManager.sendAsyncMessage(
+          "SessionStore:finishRestoreHistory"
+        );
+        break;
+
       case "SessionStore:update":
         
         
@@ -984,6 +1323,13 @@ var SessionStoreInternal = {
           
           
           TabStateFlusher.resolveAll(browser);
+          let listener = this._browserSHistoryListener.get(
+            browser.permanentKey
+          );
+          if (listener) {
+            listener.uninstall();
+            this._browserSHistoryListener.delete(browser.permanentKey);
+          }
         } else if (aMessage.data.flushID) {
           
           
@@ -1073,6 +1419,39 @@ var SessionStoreInternal = {
         tab.dispatchEvent(event);
         break;
       }
+      case "SessionStore:removeRestoreListener":
+        let listener = this._browserSHistoryListenerForRestore.get(
+          browser.permanentKey
+        );
+        if (listener) {
+          listener.uninstall();
+          this._browserSHistoryListenerForRestore.delete(browser.permanentKey);
+        }
+        break;
+      case "SessionStore:reloadCurrentEntry":
+        let fL =
+          browser.frameLoader ||
+          this._lastKnownFrameLoader.get(browser.permanentKey);
+        if (fL) {
+          if (fL.browsingContext) {
+            if (fL.browsingContext.sessionHistory) {
+              fL.browsingContext.sessionHistory.reloadCurrentEntry();
+            } else {
+              debug(
+                "receive SessionStore:reloadCurrentEntry browser.fL.bC.sessionHistory is null."
+              );
+            }
+          } else {
+            debug(
+              "receive SessionStore:reloadCurrentEntry browser.fL.browsingContext is null."
+            );
+          }
+        } else {
+          debug(
+            "receive SessionStore:reloadCurrentEntry browser.frameLoader is null."
+          );
+        }
+        break;
       case "SessionStore:restoreTabContentStarted":
         if (TAB_STATE_FOR_BROWSER.get(browser) == TAB_STATE_NEEDS_RESTORE) {
           
@@ -1213,6 +1592,11 @@ var SessionStoreInternal = {
             epoch: newEpoch,
           }
         );
+
+        let listener = this._browserSHistoryListener.get(target.permanentKey);
+        if (listener) {
+          listener.notifySHistoryChanges(-1);
+        }
         break;
       default:
         throw new Error(`unhandled event ${aEvent.type}?`);
@@ -5797,6 +6181,11 @@ var SessionStoreInternal = {
           console.error(e);
         }
       }
+    }
+
+    if (this._shistoryInParent) {
+      
+      this._shistoryToRestore.set(browser.permanentKey, options.tabData);
     }
 
     browser.messageManager.sendAsyncMessage(
