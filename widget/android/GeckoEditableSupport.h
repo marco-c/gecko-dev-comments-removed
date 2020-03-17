@@ -240,6 +240,9 @@ class GeckoEditableSupport final
 
   
   void OnImeRequestCursorUpdates(int aRequestMode);
+
+  
+  void OnImeRequestCommit();
 };
 
 }  

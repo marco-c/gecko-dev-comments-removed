@@ -318,29 +318,11 @@ import android.view.inputmethod.EditorInfo;
 
 
         private boolean isDiscardingComposition() {
-            boolean wasComposing = false;
-            Object[] spans = mShadowText.getSpans(0, mShadowText.length(), Object.class);
-            for (final Object span : spans) {
-                if ((mShadowText.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                    wasComposing = true;
-                    break;
-                }
-            }
-
-            if (!wasComposing) {
+            if (!isComposing(mShadowText)) {
                 return false;
             }
 
-            boolean isComposing = false;
-            spans = mCurrentText.getSpans(0, mCurrentText.length(), Object.class);
-            for (final Object span : spans) {
-                if ((mCurrentText.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                    isComposing = true;
-                    break;
-                }
-            }
-
-            return !isComposing;
+            return !isComposing(mCurrentText);
         }
 
         public synchronized void syncShadowText(
@@ -1071,6 +1053,24 @@ import android.view.inputmethod.EditorInfo;
 
         mInBatchMode = inBatchMode;
 
+        if (!inBatchMode && mFocusedChild != null) {
+            
+            
+            
+            
+            
+            
+            final Editable editable = getEditable();
+            if (editable != null && !isComposing(editable)) {
+                try {
+                    mFocusedChild.onImeRequestCommit();
+                } catch (final RemoteException e) {
+                    Log.e(LOGTAG, "Remote call failed", e);
+                }
+            }
+            
+        }
+
         if (!inBatchMode && mNeedSync) {
             icSyncShadowText();
         }
@@ -1380,13 +1380,9 @@ import android.view.inputmethod.EditorInfo;
                 
                 
                 
-                final Spanned text = mText.getShadowText();
-                final Object[] spans = text.getSpans(0, text.length(), Object.class);
-                for (final Object span : spans) {
-                    if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
-                        
-                        return; 
-                    }
+                if (isComposing(mText.getShadowText())) {
+                    
+                    return; 
                 }
                 
                 icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
@@ -2198,6 +2194,17 @@ import android.view.inputmethod.EditorInfo;
                 return false;
         }
         return true;
+    }
+
+    private static boolean isComposing(final Spanned text) {
+        final Object[] spans = text.getSpans(0, text.length(), Object.class);
+        for (final Object span : spans) {
+            if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

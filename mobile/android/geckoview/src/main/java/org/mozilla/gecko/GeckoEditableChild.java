@@ -75,6 +75,11 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
         public void onImeRequestCursorUpdates(final int requestMode) {
             GeckoEditableChild.this.onImeRequestCursorUpdates(requestMode);
         }
+
+        @Override 
+        public void onImeRequestCommit() {
+            GeckoEditableChild.this.onImeRequestCommit();
+        }
     }
 
     private final IGeckoEditableChild mEditableChild;
@@ -147,6 +152,9 @@ public final class GeckoEditableChild extends JNIObject implements IGeckoEditabl
 
     @WrapForJNI(dispatchTo = "proxy") @Override 
     public native void onImeRequestCursorUpdates(int requestMode);
+
+    @WrapForJNI(dispatchTo = "proxy") @Override 
+    public native void onImeRequestCommit();
 
     @Override 
     protected void disposeNative() {
