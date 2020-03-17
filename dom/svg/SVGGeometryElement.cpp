@@ -93,8 +93,12 @@ void SVGGeometryElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {}
 already_AddRefed<Path> SVGGeometryElement::GetOrBuildPath(
     const DrawTarget* aDrawTarget, FillRule aFillRule) {
   
-  bool cacheable = aDrawTarget->GetBackendType() ==
-                   gfxPlatform::GetPlatform()->GetDefaultContentBackend();
+  
+  
+  
+  bool cacheable = (aDrawTarget->GetBackendType() ==
+                    gfxPlatform::GetPlatform()->GetDefaultContentBackend()) &&
+                   !aDrawTarget->IsCaptureDT();
 
   if (cacheable && mCachedPath && mCachedPath->GetFillRule() == aFillRule &&
       aDrawTarget->GetBackendType() == mCachedPath->GetBackendType()) {
