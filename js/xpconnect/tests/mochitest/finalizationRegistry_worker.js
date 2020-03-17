@@ -19,28 +19,28 @@ onmessage = (event) => {
 
 function startTest() {
   
-  let group1 = new FinalizationGroup(i => holdings1 = [...i]);
+  let registry1 = new FinalizationRegistry(i => holdings1 = [...i]);
 
   
-  let group2 = new FinalizationGroup(i => holdings2 = [...i]);
-  group2.register({}, 1);
-  group2.register({}, 2);
-  group2.register({}, 3);
+  let registry2 = new FinalizationRegistry(i => holdings2 = [...i]);
+  registry2.register({}, 1);
+  registry2.register({}, 2);
+  registry2.register({}, 3);
 
   
-  let group3 = new FinalizationGroup(i => holdings3 = [...i]);
+  let registry3 = new FinalizationRegistry(i => holdings3 = [...i]);
   let token3 = {}
-  group3.register({}, 1, token3);
-  group3.unregister(token3);
+  registry3.register({}, 1, token3);
+  registry3.unregister(token3);
 
   
-  let group4 = new FinalizationGroup(i => holdings4 = [...i]);
+  let registry4 = new FinalizationRegistry(i => holdings4 = [...i]);
   let object4 = {};
-  group4.register(object4, 1);
+  registry4.register(object4, 1);
 
   
-  let group5 = new FinalizationGroup(i => holdings5 = [...i]);
-  group5.register(makeJSCycle(4), 5);
+  let registry5 = new FinalizationRegistry(i => holdings5 = [...i]);
+  registry5.register(makeJSCycle(4), 5);
 
   const { gc } = getJSTestingFunctions();
   gc();

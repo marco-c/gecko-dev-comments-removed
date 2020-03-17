@@ -6,14 +6,14 @@
 let finalizeRan = false;
 let promiseRan = false;
 
-let fg = new FinalizationGroup(() => {
+let fr = new FinalizationRegistry(() => {
   finalizeRan = true;
   Promise.resolve().then(() => {
     promiseRan = true;
   });
 });
 
-fg.register({}, {});
+fr.register({}, {});
 
 gc();
 

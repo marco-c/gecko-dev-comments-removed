@@ -1,0 +1,12 @@
+
+
+
+target = {};
+registry = new FinalizationRegistry(iterator => undefined);
+registry.register(target, 1);
+grayRoot()[0] = registry;
+registry = undefined;
+gc(); 
+target = undefined;
+gc(); 
+drainJobQueue();

@@ -20,25 +20,25 @@ function assertThrowsTypeError(thunk) {
 }
 
 
-assertEq(typeof this.FinalizationGroup, "function");
+assertEq(typeof this.FinalizationRegistry, "function");
 
 
-assertThrowsTypeError(() => new FinalizationGroup());
-assertThrowsTypeError(() => new FinalizationGroup(1));
-new FinalizationGroup(x => 0);
+assertThrowsTypeError(() => new FinalizationRegistry());
+assertThrowsTypeError(() => new FinalizationRegistry(1));
+new FinalizationRegistry(x => 0);
 
 
-assertEq(Object.getPrototypeOf(FinalizationGroup), Function.prototype);
+assertEq(Object.getPrototypeOf(FinalizationRegistry), Function.prototype);
 
 
-checkPropertyDescriptor(FinalizationGroup, 'prototype', false, false, false);
+checkPropertyDescriptor(FinalizationRegistry, 'prototype', false, false, false);
 
 
-let proto = FinalizationGroup.prototype;
+let proto = FinalizationRegistry.prototype;
 assertEq(Object.getPrototypeOf(proto), Object.prototype);
 
 
-assertEq(proto.constructor, FinalizationGroup);
+assertEq(proto.constructor, FinalizationRegistry);
 
 
 assertEq(proto.hasOwnProperty('register'), true);
@@ -53,21 +53,21 @@ assertEq(proto.hasOwnProperty('cleanupSome'), true);
 assertEq(typeof proto.cleanupSome, 'function');
 
 
-assertEq(proto[Symbol.toStringTag], "FinalizationGroup");
+assertEq(proto[Symbol.toStringTag], "FinalizationRegistry");
 checkPropertyDescriptor(proto, Symbol.toStringTag, false, false, true);
 
 
-let group = new FinalizationGroup(x => 0);
-assertEq(Object.getPrototypeOf(group), proto);
-assertEq(Object.getOwnPropertyNames(group).length, 0);
+let registry = new FinalizationRegistry(x => 0);
+assertEq(Object.getPrototypeOf(registry), proto);
+assertEq(Object.getOwnPropertyNames(registry).length, 0);
 
 
 let iterator;
-group = new FinalizationGroup(it => iterator = it);
-group.register({}, 0);
+registry = new FinalizationRegistry(it => iterator = it);
+registry.register({}, 0);
 gc();
 drainJobQueue();
-assertEq(typeof group, 'object');
+assertEq(typeof registry, 'object');
 assertEq(typeof iterator, 'object');
 
 
@@ -82,20 +82,20 @@ assertEq(proto.hasOwnProperty("next"), true);
 assertEq(typeof proto.next, "function");
 
 
-assertEq(proto[Symbol.toStringTag], "FinalizationGroup Cleanup Iterator");
+assertEq(proto[Symbol.toStringTag], "FinalizationRegistry Cleanup Iterator");
 checkPropertyDescriptor(proto, Symbol.toStringTag, false, false, true);
 
 
 assertEq(Object.getOwnPropertyNames(iterator).length, 0);
 
 let heldValues = [];
-group = new FinalizationGroup(iterator => {
+registry = new FinalizationRegistry(iterator => {
   heldValues.push(...iterator);
 });
 
 
 heldValues = [];
-group.register({}, 42);
+registry.register({}, 42);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 1);
@@ -104,7 +104,7 @@ assertEq(heldValues[0], 42);
 
 heldValues = [];
 for (let i = 0; i < 100; i++) {
-  group.register({}, i);
+  registry.register({}, i);
 }
 gc();
 drainJobQueue();
@@ -117,13 +117,13 @@ for (let i = 0; i < 100; i++) {
 
 heldValues = [];
 let heldValues2 = [];
-let group2 = new FinalizationGroup(iterator => {
+let registry2 = new FinalizationRegistry(iterator => {
   heldValues2.push(...iterator);
 });
 {
   let object = {};
-  group.register(object, 1);
-  group2.register(object, 2);
+  registry.register(object, 1);
+  registry2.register(object, 2);
   object = null;
 }
 gc();
@@ -136,8 +136,8 @@ assertEq(heldValues2[0], 2);
 
 heldValues = [];
 let token = {};
-group.register({}, 1, token);
-group.unregister(token);
+registry.register({}, 1, token);
+registry.unregister(token);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 0);
@@ -145,11 +145,11 @@ assertEq(heldValues.length, 0);
 
 heldValues = [];
 let token2 = {};
-group.register({}, 1, token);
-group.register({}, 2, token2);
-group.register({}, 3, token);
-group.register({}, 4, token2);
-group.unregister(token);
+registry.register({}, 1, token);
+registry.register({}, 2, token2);
+registry.register({}, 3, token);
+registry.register({}, 4, token2);
+registry.unregister(token);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 2);
@@ -160,7 +160,7 @@ assertEq(heldValues[1], 4);
 
 let other = newGlobal({newCompartment: true});
 heldValues = [];
-group.register(evalcx('({})', other), 1);
+registry.register(evalcx('({})', other), 1);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 1);
@@ -169,7 +169,7 @@ assertEq(heldValues[0], 1);
 
 let heldValue = evalcx('{}', other);
 heldValues = [];
-group.register({}, heldValue);
+registry.register({}, heldValue);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 1);
@@ -178,29 +178,29 @@ assertEq(heldValues[0], heldValue);
 
 token = evalcx('({})', other);
 heldValues = [];
-group.register({}, 1, token);
+registry.register({}, 1, token);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 1);
 assertEq(heldValues[0], 1);
 heldValues = [];
-group.register({}, 1, token);
-group.unregister(token);
+registry.register({}, 1, token);
+registry.unregister(token);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 0);
 
 
-class MyGroup extends FinalizationGroup {
+class MyRegistry extends FinalizationRegistry {
   constructor(callback) {
     super(callback);
   }
 }
-let g2 = new MyGroup(iterator => {
+let r2 = new MyRegistry(iterator => {
   heldValues.push(...iterator);
 });
 heldValues = [];
-g2.register({}, 42);
+r2.register({}, 42);
 gc();
 drainJobQueue();
 assertEq(heldValues.length, 1);
@@ -208,29 +208,29 @@ assertEq(heldValues[0], 42);
 
 
 iterator = undefined;
-let g3 = new FinalizationGroup(i => iterator = i);
-g3.register({}, 1);
+let r3 = new FinalizationRegistry(i => iterator = i);
+r3.register({}, 1);
 gc();
 drainJobQueue();
 assertEq(typeof iterator, 'object');
 assertThrowsTypeError(() => iterator.next());
 
 
-let g4 = new FinalizationGroup(x => {
+let r4 = new FinalizationRegistry(x => {
   assertThrowsTypeError(() => iterator.next());
 });
-g4.register({}, 1);
+r4.register({}, 1);
 gc();
 drainJobQueue();
 
 
 heldValues = [];
-let g5 = new FinalizationGroup(i => heldValues = [...i]);
-g5.register({}, 1);
-g5.register({}, 2);
-g5.register({}, 3);
+let r5 = new FinalizationRegistry(i => heldValues = [...i]);
+r5.register({}, 1);
+r5.register({}, 2);
+r5.register({}, 3);
 gc();
-g5.cleanupSome();
+r5.cleanupSome();
 assertEq(heldValues.length, 3);
 heldValues = heldValues.sort((a, b) => a - b);
 assertEq(heldValues[0], 1);
@@ -238,19 +238,19 @@ assertEq(heldValues[1], 2);
 assertEq(heldValues[2], 3);
 
 
-let g6 = new FinalizationGroup(x => {
-  assertThrowsTypeError(() => g6.cleanupSome());
+let r6 = new FinalizationRegistry(x => {
+  assertThrowsTypeError(() => r6.cleanupSome());
 });
-g6.register({}, 1);
+r6.register({}, 1);
 gc();
 drainJobQueue();
 
 
 let target = {};
-group = new FinalizationGroup(iterator => undefined);
-group.register(target, 1);
-let weakRef = new WeakRef(group);
-group = undefined;
+registry = new FinalizationRegistry(iterator => undefined);
+registry.register(target, 1);
+let weakRef = new WeakRef(registry);
+registry = undefined;
 assertEq(typeof weakRef.deref(), 'object');
 drainJobQueue();
 gc();
@@ -259,10 +259,10 @@ assertEq(typeof target, 'object');
 
 
 
-group = new FinalizationGroup(iterator => undefined);
-group.register(target, 1, target);
-weakRef = new WeakRef(group);
-group = undefined;
+registry = new FinalizationRegistry(iterator => undefined);
+registry.register(target, 1, target);
+weakRef = new WeakRef(registry);
+registry = undefined;
 assertEq(typeof weakRef.deref(), 'object');
 drainJobQueue();
 gc();
@@ -271,7 +271,7 @@ assertEq(typeof target, 'object');
 
 
 heldValues = [];
-new FinalizationGroup(iterator => {
+new FinalizationRegistry(iterator => {
   heldValues.push(...iterator);
 }).register({}, 1);
 gc();

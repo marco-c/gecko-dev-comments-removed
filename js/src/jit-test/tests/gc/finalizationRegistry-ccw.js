@@ -10,17 +10,17 @@ function ccwToObject() {
     return evalcx('({})', newGlobal({newCompartment: true}));
 }
 
-function newGroup() {
-  return new FinalizationGroup(iterator => {
+function newRegistry() {
+  return new FinalizationRegistry(iterator => {
     heldValues.push(...iterator);
   });
 }
 
-function ccwToGroup() {
+function ccwToRegistry() {
   let global = newGlobal({newCompartment: true});
   global.heldValues = heldValues;
   return global.eval(
-    `new FinalizationGroup(iterator => heldValues.push(...iterator))`);
+    `new FinalizationRegistry(iterator => heldValues.push(...iterator))`);
 }
 
 function incrementalGC() {
@@ -35,13 +35,13 @@ for (let w of [false, true]) {
   for (let x of [false, true]) {
     for (let y of [false, true]) {
       for (let z of [false, true]) {
-        let group = w ? ccwToGroup(w) : newGroup();
+        let registry = w ? ccwToRegistry(w) : newRegistry();
         let target = x ? ccwToObject() : {};
         let heldValue = y ? ccwToObject() : {};
         let token = z ? ccwToObject() : {};
-        group.register(target, heldValue, token);
-        group.unregister(token);
-        group.register(target, heldValue, token);
+        registry.register(target, heldValue, token);
+        registry.unregister(token);
+        registry.register(target, heldValue, token);
         target = undefined;
         token = undefined;
         heldValue = undefined;
@@ -59,17 +59,17 @@ for (let w of [false, true]) {
   for (let x of [false, true]) {
     for (let y of [false, true]) {
       for (let z of [false, true]) {
-        let group = w ? ccwToGroup(w) : newGroup();
+        let registry = w ? ccwToRegistry(w) : newRegistry();
         let target = x ? ccwToObject() : {};
         let heldValue = y ? ccwToObject() : {};
         let token = z ? ccwToObject() : {};
-        group.register(target, heldValue, token);
-        group.unregister(token);
-        group.register(target, heldValue, token);
+        registry.register(target, heldValue, token);
+        registry.unregister(token);
+        registry.register(target, heldValue, token);
         target = undefined;
         token = undefined;
         heldValue = undefined;
-        group = undefined; 
+        registry = undefined; 
         incrementalGC();
         heldValues.length = 0;
         drainJobQueue();
