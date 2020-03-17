@@ -428,6 +428,12 @@ var Policies = {
     },
   },
 
+  DisableDefaultBrowserAgent: {
+    
+    
+    
+  },
+
   DisableDeveloperTools: {
     onBeforeAddons(manager, param) {
       if (param) {
