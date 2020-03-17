@@ -3109,24 +3109,8 @@ bool HttpBaseChannel::ShouldRewriteRedirectToGET(
 HttpBaseChannel::ReplacementChannelConfig
 HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
                                                uint32_t aRedirectFlags,
-                                               ReplacementReason aReason,
-                                               uint32_t aExtraLoadFlags) {
+                                               ReplacementReason aReason) {
   ReplacementChannelConfig config;
-  config.loadFlags = mLoadFlags;
-  config.loadFlags |= aExtraLoadFlags;
-
-  
-  
-  
-  
-  
-  
-  if (mURI->SchemeIs("https")) {
-    config.loadFlags &= ~INHIBIT_PERSISTENT_CACHING;
-  }
-
-  
-  config.loadFlags &= ~nsICachingChannel::LOAD_CHECK_OFFLINE_CACHE;
   config.redirectFlags = aRedirectFlags;
   config.classOfService = mClassOfService;
 
@@ -3240,8 +3224,6 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
  void HttpBaseChannel::ConfigureReplacementChannel(
     nsIChannel* newChannel, const ReplacementChannelConfig& config,
     ReplacementReason aReason) {
-  newChannel->SetLoadFlags(config.loadFlags);
-
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(newChannel));
   if (cos) {
     cos->SetClassFlags(config.classOfService);
@@ -3411,7 +3393,6 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
 
 HttpBaseChannel::ReplacementChannelConfig::ReplacementChannelConfig(
     const dom::ReplacementChannelConfigInit& aInit) {
-  loadFlags = aInit.loadFlags();
   redirectFlags = aInit.redirectFlags();
   classOfService = aInit.classOfService();
   privateBrowsing = aInit.privateBrowsing();
@@ -3427,7 +3408,6 @@ HttpBaseChannel::ReplacementChannelConfig::ReplacementChannelConfig(
 dom::ReplacementChannelConfigInit
 HttpBaseChannel::ReplacementChannelConfig::Serialize() {
   dom::ReplacementChannelConfigInit config;
-  config.loadFlags() = loadFlags;
   config.redirectFlags() = redirectFlags;
   config.classOfService() = classOfService;
   config.privateBrowsing() = privateBrowsing;
@@ -3471,6 +3451,23 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  nsLoadFlags loadFlags = mLoadFlags;
+  loadFlags |= LOAD_REPLACE;
+
+  
+  
+  
+  
+  
+  
+  if (mURI->SchemeIs("https")) {
+    loadFlags &= ~INHIBIT_PERSISTENT_CACHING;
+  }
+
+  
+  loadFlags &= ~nsICachingChannel::LOAD_CHECK_OFFLINE_CACHE;
+  newChannel->SetLoadFlags(loadFlags);
+
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(newChannel);
 
   ReplacementReason redirectType =
@@ -3478,7 +3475,7 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
           ? ReplacementReason::InternalRedirect
           : ReplacementReason::Redirect;
   ReplacementChannelConfig config = CloneReplacementChannelConfig(
-      preserveMethod, redirectFlags, redirectType, LOAD_REPLACE);
+      preserveMethod, redirectFlags, redirectType);
   ConfigureReplacementChannel(newChannel, config, redirectType);
 
   
