@@ -8,7 +8,7 @@
 
 
 
-#include "builtin/FinalizationGroupObject.h"
+#include "builtin/FinalizationRegistryObject.h"
 #include "gc/GCRuntime.h"
 #include "gc/Zone.h"
 
@@ -17,9 +17,9 @@
 using namespace js;
 using namespace js::gc;
 
-bool GCRuntime::registerWithFinalizationGroup(JSContext* cx,
-                                              HandleObject target,
-                                              HandleObject record) {
+bool GCRuntime::registerWithFinalizationRegistry(JSContext* cx,
+                                                 HandleObject target,
+                                                 HandleObject record) {
   MOZ_ASSERT(!IsCrossCompartmentWrapper(target));
   MOZ_ASSERT(
       UncheckedUnwrapWithoutExpose(record)->is<FinalizationRecordObject>());
@@ -40,7 +40,7 @@ bool GCRuntime::registerWithFinalizationGroup(JSContext* cx,
   return true;
 }
 
-void GCRuntime::markFinalizationGroupRoots(JSTracer* trc) {
+void GCRuntime::markFinalizationRegistryRoots(JSTracer* trc) {
   
   
   
@@ -63,7 +63,7 @@ static FinalizationRecordObject* UnwrapFinalizationRecord(JSObject* obj) {
   return &obj->as<FinalizationRecordObject>();
 }
 
-void GCRuntime::sweepFinalizationGroups(Zone* zone) {
+void GCRuntime::sweepFinalizationRegistries(Zone* zone) {
   
   
 
@@ -88,27 +88,27 @@ void GCRuntime::sweepFinalizationGroups(Zone* zone) {
     if (IsAboutToBeFinalized(&e.front().mutableKey())) {
       for (JSObject* obj : records) {
         FinalizationRecordObject* record = UnwrapFinalizationRecord(obj);
-        FinalizationGroupObject* group = record->groupDuringGC(this);
-        group->queueRecordToBeCleanedUp(record);
-        queueFinalizationGroupForCleanup(group);
+        FinalizationRegistryObject* registry = record->registryDuringGC(this);
+        registry->queueRecordToBeCleanedUp(record);
+        queueFinalizationRegistryForCleanup(registry);
       }
       e.removeFront();
     }
   }
 }
 
-void GCRuntime::queueFinalizationGroupForCleanup(
-    FinalizationGroupObject* group) {
+void GCRuntime::queueFinalizationRegistryForCleanup(
+    FinalizationRegistryObject* registry) {
   
-  if (!group->isQueuedForCleanup()) {
-    callHostCleanupFinalizationGroupCallback(group);
-    group->setQueuedForCleanup(true);
+  if (!registry->isQueuedForCleanup()) {
+    callHostCleanupFinalizationRegistryCallback(registry);
+    registry->setQueuedForCleanup(true);
   }
 }
 
-bool GCRuntime::cleanupQueuedFinalizationGroup(
-    JSContext* cx, HandleFinalizationGroupObject group) {
-  group->setQueuedForCleanup(false);
-  bool ok = FinalizationGroupObject::cleanupQueuedRecords(cx, group);
+bool GCRuntime::cleanupQueuedFinalizationRegistry(
+    JSContext* cx, HandleFinalizationRegistryObject registry) {
+  registry->setQueuedForCleanup(false);
+  bool ok = FinalizationRegistryObject::cleanupQueuedRecords(cx, registry);
   return ok;
 }

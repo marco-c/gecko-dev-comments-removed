@@ -3142,8 +3142,8 @@ extern JS_PUBLIC_API bool IsUnwrappedSavedFrame(JSObject* obj);
 
 
 
-extern JS_PUBLIC_API bool CleanupQueuedFinalizationGroup(JSContext* cx,
-                                                         HandleObject group);
+extern JS_PUBLIC_API bool CleanupQueuedFinalizationRegistry(
+    JSContext* cx, HandleObject registry);
 
 } 
 

@@ -74,8 +74,8 @@
 
 
 
-#ifndef builtin_FinalizationGroupObject_h
-#define builtin_FinalizationGroupObject_h
+#ifndef builtin_FinalizationRegistryObject_h
+#define builtin_FinalizationRegistryObject_h
 
 #include "gc/Barrier.h"
 #include "js/GCVector.h"
@@ -83,14 +83,14 @@
 
 namespace js {
 
-class FinalizationGroupObject;
+class FinalizationRegistryObject;
 class FinalizationIteratorObject;
 class FinalizationRecordObject;
 class ObjectWeakMap;
 
-using HandleFinalizationGroupObject = Handle<FinalizationGroupObject*>;
+using HandleFinalizationRegistryObject = Handle<FinalizationRegistryObject*>;
 using HandleFinalizationRecordObject = Handle<FinalizationRecordObject*>;
-using RootedFinalizationGroupObject = Rooted<FinalizationGroupObject*>;
+using RootedFinalizationRegistryObject = Rooted<FinalizationRegistryObject*>;
 using RootedFinalizationIteratorObject = Rooted<FinalizationIteratorObject*>;
 using RootedFinalizationRecordObject = Rooted<FinalizationRecordObject*>;
 
@@ -105,18 +105,18 @@ using RootedFinalizationRecordObject = Rooted<FinalizationRecordObject*>;
 
 
 class FinalizationRecordObject : public NativeObject {
-  enum { WeakGroupSlot = 0, HeldValueSlot, SlotCount };
+  enum { WeakRegistrySlot = 0, HeldValueSlot, SlotCount };
 
  public:
   static const JSClass class_;
 
   
-  static FinalizationRecordObject* create(JSContext* cx,
-                                          HandleFinalizationGroupObject group,
-                                          HandleValue heldValue);
+  static FinalizationRecordObject* create(
+      JSContext* cx, HandleFinalizationRegistryObject registry,
+      HandleValue heldValue);
 
   
-  FinalizationGroupObject* groupDuringGC(gc::GCRuntime* gc) const;
+  FinalizationRegistryObject* registryDuringGC(gc::GCRuntime* gc) const;
 
   Value heldValue() const;
   bool isActive() const;
@@ -128,7 +128,7 @@ class FinalizationRecordObject : public NativeObject {
 
   static void trace(JSTracer* trc, JSObject* obj);
 
-  FinalizationGroupObject* groupUnbarriered() const;
+  FinalizationRegistryObject* registryUnbarriered() const;
 };
 
 
@@ -166,7 +166,7 @@ using FinalizationRecordSet =
     GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
 
 
-class FinalizationGroupObject : public NativeObject {
+class FinalizationRegistryObject : public NativeObject {
   enum {
     CleanupCallbackSlot = 0,
     RegistrationsSlot,
@@ -193,7 +193,7 @@ class FinalizationGroupObject : public NativeObject {
   void setCleanupJobActive(bool value);
 
   static bool cleanupQueuedRecords(JSContext* cx,
-                                   HandleFinalizationGroupObject group,
+                                   HandleFinalizationRegistryObject registry,
                                    HandleObject callback = nullptr);
 
  private:
@@ -208,36 +208,36 @@ class FinalizationGroupObject : public NativeObject {
   static bool cleanupSome(JSContext* cx, unsigned argc, Value* vp);
 
   static bool addRegistration(JSContext* cx,
-                              HandleFinalizationGroupObject group,
+                              HandleFinalizationRegistryObject registry,
                               HandleObject unregisterToken,
                               HandleFinalizationRecordObject record);
-  static void removeRegistrationOnError(HandleFinalizationGroupObject group,
-                                        HandleObject unregisterToken,
-                                        HandleFinalizationRecordObject record);
+  static void removeRegistrationOnError(
+      HandleFinalizationRegistryObject registry, HandleObject unregisterToken,
+      HandleFinalizationRecordObject record);
 
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JSFreeOp* fop, JSObject* obj);
 
   static bool hasRegisteredRecordsToBeCleanedUp(
-      HandleFinalizationGroupObject group);
+      HandleFinalizationRegistryObject registry);
 };
 
 
 
 class FinalizationIteratorObject : public NativeObject {
-  enum { FinalizationGroupSlot = 0, IndexSlot, SlotCount };
+  enum { FinalizationRegistrySlot = 0, IndexSlot, SlotCount };
 
  public:
   static const JSClass class_;
 
   static FinalizationIteratorObject* create(
-      JSContext* cx, HandleFinalizationGroupObject group);
+      JSContext* cx, HandleFinalizationRegistryObject registry);
 
-  FinalizationGroupObject* finalizationGroup() const;
+  FinalizationRegistryObject* finalizationRegistry() const;
   size_t index() const;
 
   void setIndex(size_t index);
-  void clearFinalizationGroup();
+  void clearFinalizationRegistry();
 
  private:
   friend class GlobalObject;

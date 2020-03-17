@@ -235,7 +235,7 @@ struct ShellContext {
 
   
   using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;
-  JS::PersistentRooted<ObjectVector> finalizationGroupsToCleanUp;
+  JS::PersistentRooted<ObjectVector> finalizationRegistriesToCleanUp;
 };
 
 extern ShellContext* GetShellContext(JSContext* cx);

@@ -401,8 +401,8 @@ typedef void (*JSWeakPointerCompartmentCallback)(JSContext* cx,
 
 
 
-using JSHostCleanupFinalizationGroupCallback = void (*)(JSObject* group,
-                                                        void* data);
+using JSHostCleanupFinalizationRegistryCallback = void (*)(JSObject* registry,
+                                                           void* data);
 
 
 
@@ -1105,8 +1105,8 @@ extern JS_PUBLIC_API bool IsIdleGCTaskNeeded(JSRuntime* rt);
 
 extern JS_PUBLIC_API void RunIdleTimeGCTask(JSRuntime* rt);
 
-extern JS_PUBLIC_API void SetHostCleanupFinalizationGroupCallback(
-    JSContext* cx, JSHostCleanupFinalizationGroupCallback cb, void* data);
+extern JS_PUBLIC_API void SetHostCleanupFinalizationRegistryCallback(
+    JSContext* cx, JSHostCleanupFinalizationRegistryCallback cb, void* data);
 
 
 
