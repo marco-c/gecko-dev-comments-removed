@@ -450,6 +450,11 @@ void BroadcastChannel::MessageReceived(const MessageData& aData) {
     return;
   }
 
+  
+  if (mState != StateActive) {
+    return;
+  }
+
   nsCOMPtr<nsIGlobalObject> globalObject;
 
   if (NS_IsMainThread()) {
