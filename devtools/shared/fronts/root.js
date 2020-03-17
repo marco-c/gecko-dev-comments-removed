@@ -31,16 +31,8 @@ loader.lazyRequireGetter(
 );
 
 class RootFront extends FrontClassWithSpec(rootSpec) {
-  constructor(client, form) {
-    super(client);
-
-    
-    
-    
-    this.actorID = form.from;
-
-    this.applicationType = form.applicationType;
-    this.traits = form.traits;
+  constructor(client, targetFront, parentFront) {
+    super(client, targetFront, parentFront);
 
     
     Object.defineProperty(this, "rootForm", {
@@ -57,6 +49,16 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     this.fronts = new Map();
 
     this._client = client;
+  }
+
+  form(form) {
+    
+    
+    
+    this.actorID = form.from;
+
+    this.applicationType = form.applicationType;
+    this.traits = form.traits;
   }
 
   

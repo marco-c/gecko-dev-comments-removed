@@ -558,13 +558,7 @@ exports.registerFront = function(cls) {
 
 
 
-
-
-
-
-
-
-async function getFront(client, typeName, form, target = null) {
+function createFront(client, typeName, target = null) {
   const type = types.getType(typeName);
   if (!type) {
     throw new Error(`No spec for front type '${typeName}'.`);
@@ -575,14 +569,34 @@ async function getFront(client, typeName, form, target = null) {
   
   
   const Class = type.frontClass;
-  const instance = new Class(client, target, target);
-  const { formAttributeName } = instance;
+  return new Class(client, target, target);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getFront(client, typeName, form, target = null) {
+  const front = createFront(client, typeName, target);
+  const { formAttributeName } = front;
   if (!formAttributeName) {
     throw new Error(`Can't find the form attribute name for ${typeName}`);
   }
   
-  instance.actorID = form[formAttributeName];
-  if (!instance.actorID) {
+  front.actorID = form[formAttributeName];
+  if (!front.actorID) {
     throw new Error(
       `Can't find the actor ID for ${typeName} from root or target` +
         ` actor's form.`
@@ -590,11 +604,31 @@ async function getFront(client, typeName, form, target = null) {
   }
 
   if (!target) {
-    await instance.manage(instance);
+    await front.manage(front);
   } else {
-    await target.manage(instance);
+    await target.manage(front);
   }
 
-  return instance;
+  return front;
 }
 exports.getFront = getFront;
+
+
+
+
+
+
+
+
+
+function createRootFront(client, packet) {
+  const rootFront = createFront(client, "root");
+  rootFront.form(packet);
+
+  
+  
+  rootFront.manage(rootFront);
+
+  return rootFront;
+}
+exports.createRootFront = createRootFront;
