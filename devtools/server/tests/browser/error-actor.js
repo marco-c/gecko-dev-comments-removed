@@ -3,24 +3,24 @@
 
 "use strict";
 
+const { Actor } = require("devtools/shared/protocol/Actor");
 
 
 
 
-function ErrorActor(conn, tab) {
-  this.conn = conn;
-  this.tab = tab;
+
+class ErrorActor extends Actor {
+  constructor(conn, tab) {
+    super(conn);
+    this.tab = tab;
+    this.typeName = "error";
+    this.requestTypes = {
+      error: this.onError,
+    };
+  }
+  onError() {
+    throw new Error("error");
+  }
 }
 
-ErrorActor.prototype = {
-  actorPrefix: "error",
-
-  onError: function() {
-    throw new Error("error");
-  },
-};
-
-ErrorActor.prototype.requestTypes = {
-  error: ErrorActor.prototype.onError,
-};
 exports.ErrorActor = ErrorActor;

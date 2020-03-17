@@ -3,19 +3,21 @@
 
 "use strict";
 
+const { Actor } = require("devtools/shared/protocol/Actor");
 
+class PostInitTargetScopedActor extends Actor {
+  constructor(conn) {
+    super(conn);
 
+    this.typeName = "postInitTargetScoped";
+    this.requestTypes = {
+      ping: this.onPing,
+    };
+  }
 
-function PostInitTargetScopedActor(connection) {}
-
-PostInitTargetScopedActor.prototype = {
-  actorPostfix: "postInitTargetScoped",
-  onPing(request) {
+  onPing() {
     return { message: "pong" };
-  },
-};
+  }
+}
 
-PostInitTargetScopedActor.prototype.requestTypes = {
-  ping: PostInitTargetScopedActor.prototype.onPing,
-};
 exports.PostInitTargetScopedActor = PostInitTargetScopedActor;

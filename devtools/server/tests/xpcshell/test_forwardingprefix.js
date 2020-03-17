@@ -177,20 +177,25 @@ function TestForwardPrefix12OnlyRoot() {
 
 
 
-function EchoActor(connection) {
-  this.conn = connection;
+const { Actor } = require("devtools/shared/protocol/Actor");
+class EchoActor extends Actor {
+  constructor(conn) {
+    super(conn);
+
+    this.typeName = "EchoActor";
+    this.requestTypes = {
+      echo: EchoActor.prototype.onEcho,
+    };
+  }
+
+  onEcho(request) {
+    
+
+
+
+    return JSON.parse(JSON.stringify(request));
+  }
 }
-EchoActor.prototype.actorPrefix = "EchoActor";
-EchoActor.prototype.onEcho = function(request) {
-  
-
-
-
-  return JSON.parse(JSON.stringify(request));
-};
-EchoActor.prototype.requestTypes = {
-  echo: EchoActor.prototype.onEcho,
-};
 
 function TestForwardPrefix12WithActor1() {
   const actor = new EchoActor(gSubconnection1);

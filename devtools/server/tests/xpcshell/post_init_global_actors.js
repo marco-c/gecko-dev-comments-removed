@@ -3,19 +3,21 @@
 
 "use strict";
 
+const { Actor } = require("devtools/shared/protocol/Actor");
 
+class PostInitGlobalActor extends Actor {
+  constructor(conn) {
+    super(conn);
 
+    this.typeName = "postInitGlobal";
+    this.requestTypes = {
+      ping: this.onPing,
+    };
+  }
 
-function PostInitGlobalActor(connection) {}
-
-PostInitGlobalActor.prototype = {
-  actorPrefix: "postInitGlobal",
-  onPing(request) {
+  onPing() {
     return { message: "pong" };
-  },
-};
+  }
+}
 
-PostInitGlobalActor.prototype.requestTypes = {
-  ping: PostInitGlobalActor.prototype.onPing,
-};
 exports.PostInitGlobalActor = PostInitGlobalActor;

@@ -3,19 +3,21 @@
 
 "use strict";
 
+const { Actor } = require("devtools/shared/protocol/Actor");
 
+class PreInitTargetScopedActor extends Actor {
+  constructor(conn) {
+    super(conn);
 
+    this.typeName = "preInitTargetScoped";
+    this.requestTypes = {
+      ping: this.onPing,
+    };
+  }
 
-function PreInitTargetScopedActor(connection) {}
-
-PreInitTargetScopedActor.prototype = {
-  actorPrefix: "preInitTargetScoped",
-  onPing(request) {
+  onPing() {
     return { message: "pong" };
-  },
-};
+  }
+}
 
-PreInitTargetScopedActor.prototype.requestTypes = {
-  ping: PreInitTargetScopedActor.prototype.onPing,
-};
 exports.PreInitTargetScopedActor = PreInitTargetScopedActor;
