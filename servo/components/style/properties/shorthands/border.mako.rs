@@ -70,11 +70,10 @@ pub fn parse_border<'i, 't>(
     let mut width = None;
     let mut any = false;
     loop {
-        if color.is_none() {
-            if let Ok(value) = input.try(|i| Color::parse(context, i)) {
-                color = Some(value);
+        if width.is_none() {
+            if let Ok(value) = input.try(|i| BorderSideWidth::parse(context, i)) {
+                width = Some(value);
                 any = true;
-                continue
             }
         }
         if style.is_none() {
@@ -84,9 +83,9 @@ pub fn parse_border<'i, 't>(
                 continue
             }
         }
-        if width.is_none() {
-            if let Ok(value) = input.try(|i| BorderSideWidth::parse(context, i)) {
-                width = Some(value);
+        if color.is_none() {
+            if let Ok(value) = input.try(|i| Color::parse(context, i)) {
+                color = Some(value);
                 any = true;
                 continue
             }
@@ -181,8 +180,8 @@ pub fn parse_border<'i, 't>(
         fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result where W: fmt::Write {
             use crate::properties::longhands;
 
-            // If any of the border-image longhands differ from their initial specified values we should not
-            // invoke serialize_directional_border(), so there is no point in continuing on to compute all_equal.
+            
+            
             % for name in "outset repeat slice source width".split():
                 if *self.border_image_${name} != longhands::border_image_${name}::get_initial_specified_value() {
                     return Ok(());
@@ -209,8 +208,8 @@ pub fn parse_border<'i, 't>(
                 border_bottom_color == border_left_color
             };
 
-            // If all longhands are all present, then all sides should be the same,
-            // so we can just one set of color/style/width
+            
+            
             if all_equal {
                 super::serialize_directional_border(
                     dest,
@@ -224,8 +223,8 @@ pub fn parse_border<'i, 't>(
         }
     }
 
-    // Just use the same as border-left. The border shorthand can't accept
-    // any value that the sub-shorthand couldn't.
+    
+    
     <%
         border_left = "<crate::properties::shorthands::border_left::Longhands as SpecifiedValueInfo>"
     %>
@@ -310,15 +309,15 @@ pub fn parse_border<'i, 't>(
                 if slice.is_none() {
                     if let Ok(value) = input.try(|input| border_image_slice::parse(context, input)) {
                         slice = Some(value);
-                        // Parse border image width and outset, if applicable.
+                        
                         let maybe_width_outset: Result<_, ParseError> = input.try(|input| {
                             input.expect_delim('/')?;
 
-                            // Parse border image width, if applicable.
+                            
                             let w = input.try(|input|
                                 border_image_width::parse(context, input)).ok();
 
-                            // Parse border image outset if applicable.
+                            
                             let o = input.try(|input| {
                                 input.expect_delim('/')?;
                                 border_image_outset::parse(context, input)
