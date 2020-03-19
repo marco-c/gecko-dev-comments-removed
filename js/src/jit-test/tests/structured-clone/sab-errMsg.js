@@ -1,7 +1,6 @@
 
 
 
-
 var g = newGlobal();
 var ex;
 const sab = new SharedArrayBuffer();
