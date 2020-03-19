@@ -10165,16 +10165,24 @@ nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
   }
 
   (void)aChannel->SetLoadFlags(loadFlags);
+  uint32_t openFlags = ComputeURILoaderFlags(mBrowsingContext, mLoadType);
+
+  return OpenInitializedChannel(aChannel, aURILoader, openFlags);
+}
+
+ uint32_t nsDocShell::ComputeURILoaderFlags(
+    BrowsingContext* aBrowsingContext, uint32_t aLoadType) {
+  MOZ_ASSERT(aBrowsingContext);
 
   uint32_t openFlags = 0;
-  if (mLoadType == LOAD_LINK) {
+  if (aLoadType == LOAD_LINK) {
     openFlags |= nsIURILoader::IS_CONTENT_PREFERRED;
   }
-  if (!mBrowsingContext->GetAllowContentRetargeting()) {
+  if (!aBrowsingContext->GetAllowContentRetargeting()) {
     openFlags |= nsIURILoader::DONT_RETARGET;
   }
 
-  return OpenInitializedChannel(aChannel, aURILoader, openFlags);
+  return openFlags;
 }
 
 nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
@@ -10210,8 +10218,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   
   RefPtr<net::DocumentChannel> docChannel = do_QueryObject(aChannel);
   if (docChannel && XRE_IsContentProcess()) {
-    docChannel->SetDocumentOpenFlags(aOpenFlags);
-    
     
     
     aOpenFlags |= nsIURILoader::DONT_RETARGET;
