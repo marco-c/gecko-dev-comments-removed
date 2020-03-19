@@ -27,7 +27,7 @@ class FileManagerBase {
   using MutexType = StaticMutex;
   using AutoLock = mozilla::detail::BaseAutoLock<MutexType&>;
 
-  MOZ_MUST_USE RefPtr<FileInfo> GetFileInfo(int64_t aId) const {
+  MOZ_MUST_USE SafeRefPtr<FileInfo> GetFileInfo(int64_t aId) const {
     if (!AssertValid()) {
       
       return nullptr;
@@ -42,10 +42,10 @@ class FileManagerBase {
       fileInfo = mFileInfos.Get(aId);
     }
 
-    return fileInfo;
+    return {fileInfo, AcquireStrongRefFromRawPtr{}};
   }
 
-  MOZ_MUST_USE RefPtr<FileInfo> CreateFileInfo() {
+  MOZ_MUST_USE SafeRefPtr<FileInfo> CreateFileInfo() {
     if (!AssertValid()) {
       
       return nullptr;
@@ -68,7 +68,7 @@ class FileManagerBase {
       mFileInfos.Put(id, fileInfo);
     }
 
-    return fileInfo;
+    return {fileInfo, AcquireStrongRefFromRawPtr{}};
   }
 
   void RemoveFileInfo(const int64_t aId, const AutoLock& aFileMutexLock) {
