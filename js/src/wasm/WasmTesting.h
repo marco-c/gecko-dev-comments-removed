@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef wasm_testing_h
+#define wasm_testing_h
+
+namespace js {
+namespace wasm {
+
+
+
+
+
+extern MOZ_MUST_USE bool TextToBinary(const char16_t* text, size_t textLen,
+                                      Bytes* bytes, UniqueChars* error);
+
+
+
+
+
+
+
+extern void CodeOffsets(const uint8_t* bytes, size_t bytesLen,
+                        Uint32Vector* offsets);
+
+}  
+}  
+
+#endif  
