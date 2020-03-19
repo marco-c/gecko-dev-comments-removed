@@ -4688,9 +4688,6 @@ pref("dom.noopener.newprocess.enabled", true);
 
 pref("general.document_open_conversion_depth_limit", 20);
 
-
-pref("dom.datatransfer.mozAtAPIs", false);
-
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
 
 
