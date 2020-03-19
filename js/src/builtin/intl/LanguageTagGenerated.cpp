@@ -414,8 +414,10 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
     }
     else if (language().equalTo("ab") ||
              language().equalTo("ka") ||
+             (language().equalTo("ku") && script().equalTo("Yezi")) ||
              language().equalTo("os") ||
              (language().equalTo("und") && script().equalTo("Geor")) ||
+             (language().equalTo("und") && script().equalTo("Yezi")) ||
              language().equalTo("xmf")) {
       setRegion("GE");
     }
@@ -446,8 +448,10 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
     else if (language().equalTo("kaa") ||
              language().equalTo("sog") ||
              (language().equalTo("und") && script().equalTo("Sogd")) ||
+             (language().equalTo("und") && script().equalTo("Chrs")) ||
              (language().equalTo("und") && script().equalTo("Sogo")) ||
-             language().equalTo("uz")) {
+             language().equalTo("uz") ||
+             language().equalTo("xco")) {
       setRegion("UZ");
     }
     else {
@@ -521,8 +525,10 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
     }
     else if (language().equalTo("ab") ||
              language().equalTo("ka") ||
+             (language().equalTo("ku") && script().equalTo("Yezi")) ||
              language().equalTo("os") ||
              (language().equalTo("und") && script().equalTo("Geor")) ||
+             (language().equalTo("und") && script().equalTo("Yezi")) ||
              language().equalTo("xmf")) {
       setRegion("GE");
     }
@@ -561,8 +567,10 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
     else if (language().equalTo("kaa") ||
              language().equalTo("sog") ||
              (language().equalTo("und") && script().equalTo("Sogd")) ||
+             (language().equalTo("und") && script().equalTo("Chrs")) ||
              (language().equalTo("und") && script().equalTo("Sogo")) ||
-             language().equalTo("uz")) {
+             language().equalTo("uz") ||
+             language().equalTo("xco")) {
       setRegion("UZ");
     }
     else {
