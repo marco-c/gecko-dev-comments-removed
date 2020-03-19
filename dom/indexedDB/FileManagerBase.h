@@ -107,7 +107,11 @@ class FileManagerBase {
     return true;
   }
 
+#ifdef DEBUG
+  ~FileManagerBase() { MOZ_ASSERT(mFileInfos.IsEmpty()); }
+#else
   ~FileManagerBase() = default;
+#endif
 
   
   
