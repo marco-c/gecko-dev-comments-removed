@@ -131,11 +131,6 @@ var gIdentityHandler = {
     );
   },
 
-  get _hasInsecureLoginForms() {
-    
-    return false;
-  },
-
   
   get _identityPopup() {
     delete this._identityPopup;
@@ -205,12 +200,7 @@ var gIdentityHandler = {
       ...document.querySelectorAll(".identity-popup-mcb-learn-more"),
     ]);
   },
-  get _identityPopupInsecureLoginFormsLearnMore() {
-    delete this._identityPopupInsecureLoginFormsLearnMore;
-    return (this._identityPopupInsecureLoginFormsLearnMore = document.getElementById(
-      "identity-popup-insecure-login-forms-learn-more"
-    ));
-  },
+
   get _identityIconLabels() {
     delete this._identityIconLabels;
     return (this._identityIconLabels = document.getElementById(
@@ -551,19 +541,6 @@ var gIdentityHandler = {
     }
   },
 
-  
-
-
-
-  refreshForInsecureLoginForms() {
-    
-    
-    if (!this._uri) {
-      return;
-    }
-    this.refreshIdentityBlock();
-  },
-
   updateSharingIndicator() {
     let tab = gBrowser.selectedTab;
     this._sharingState = tab._sharingState;
@@ -818,11 +795,6 @@ var gIdentityHandler = {
         icon_label = gNavigatorBundle.getString("identity.notSecure.label");
         this._identityBox.classList.add("notSecureText");
       }
-      if (this._hasInsecureLoginForms) {
-        
-        
-        this._identityBox.classList.add("insecureLoginForms");
-      }
     }
 
     if (this._isCertUserOverridden) {
@@ -959,10 +931,7 @@ var gIdentityHandler = {
     this._identityPopupMixedContentLearnMore.forEach(e =>
       e.setAttribute("href", baseURL + "mixed-content")
     );
-    this._identityPopupInsecureLoginFormsLearnMore.setAttribute(
-      "href",
-      baseURL + "insecure-password"
-    );
+
     this._identityPopupCustomRootLearnMore.setAttribute(
       "href",
       baseURL + "enterprise-roots"
@@ -992,12 +961,6 @@ var gIdentityHandler = {
       customRoot = this._hasCustomRoot();
     } else if (this._isAboutCertErrorPage) {
       connection = "cert-error-page";
-    }
-
-    
-    let loginforms = "secure";
-    if (this._hasInsecureLoginForms) {
-      loginforms = "insecure";
     }
 
     
@@ -1037,7 +1000,6 @@ var gIdentityHandler = {
     for (let id of elementIDs) {
       let element = document.getElementById(id);
       this._updateAttribute(element, "connection", connection);
-      this._updateAttribute(element, "loginforms", loginforms);
       this._updateAttribute(element, "ciphers", ciphers);
       this._updateAttribute(element, "mixedcontent", mixedcontent);
       this._updateAttribute(element, "isbroken", this._isBrokenConnection);
