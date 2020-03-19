@@ -7,6 +7,12 @@ let { LoginBreaches } = ChromeUtils.import(
 let { RemoteSettings } = ChromeUtils.import(
   "resource://services-settings/remote-settings.js"
 );
+let { _AboutLogins } = ChromeUtils.import(
+  "resource:///actors/AboutLoginsParent.jsm"
+);
+let { OSKeyStoreTestUtils } = ChromeUtils.import(
+  "resource://testing-common/OSKeyStoreTestUtils.jsm"
+);
 
 let nsLoginInfo = new Components.Constructor(
   "@mozilla.org/login-manager/loginInfo;1",
@@ -135,3 +141,17 @@ add_task(async function setup() {
     SpecialPowers.postConsoleSentinel();
   });
 });
+
+
+
+
+
+
+
+
+
+function forceAuthTimeoutAndWaitForOSKeyStoreLogin({ loginResult }) {
+  const AUTH_TIMEOUT_MS = 5 * 60 * 1000; 
+  _AboutLogins._authExpirationTime -= AUTH_TIMEOUT_MS + 1;
+  return OSKeyStoreTestUtils.waitForOSKeyStoreLogin(loginResult);
+}
