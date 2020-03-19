@@ -20,4 +20,12 @@
   return (Debugger*)obj->as<NativeObject>().getPrivate();
 }
 
+inline bool js::Debugger::isHookCallAllowed(JSContext* cx) const {
+  
+  
+  
+  return !cx->insideDebuggerEvaluationWithOnNativeCallHook ||
+         this == cx->insideDebuggerEvaluationWithOnNativeCallHook;
+}
+
 #endif 
