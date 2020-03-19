@@ -236,22 +236,14 @@ class WebRenderAPI final {
   wr::WindowId GetId() const { return mId; }
 
   
-  bool HitTest(const wr::WorldPoint& aPoint, wr::WrPipelineId& aOutPipelineId,
+  bool HitTest(const wr::WorldPoint& aPoint,
+               wr::WrPipelineId& aOutPipelineId,
                layers::ScrollableLayerGuid::ViewID& aOutScrollId,
                gfx::CompositorHitTestInfo& aOutHitInfo, SideBits& aOutSideBits);
 
   
   
   
-  
-  
-  
-  
-  bool FastHitTest(const wr::WorldPoint& aPoint,
-                   wr::WrPipelineId& aOutPipelineId,
-                   layers::ScrollableLayerGuid::ViewID& aOutScrollId,
-                   gfx::CompositorHitTestInfo& aOutHitInfo,
-                   SideBits& aOutSideBits);
 
   void SendTransaction(TransactionBuilder& aTxn);
 
@@ -342,8 +334,6 @@ class WebRenderAPI final {
   
   RefPtr<wr::WebRenderAPI> mRootApi;
   RefPtr<wr::WebRenderAPI> mRootDocumentApi;
-
-  WrHitTester* mFastHitTester;
 
   friend class DisplayListBuilder;
   friend class layers::WebRenderBridgeParent;

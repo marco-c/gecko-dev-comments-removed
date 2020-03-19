@@ -6,7 +6,7 @@
 
 extern crate serde_bytes;
 
-use crate::channel::{self, MsgSender, Payload, PayloadSender};
+use crate::channel::{self, MsgReceiver, MsgSender, Payload, PayloadSender};
 use peek_poke::PeekPoke;
 use std::cell::Cell;
 use std::fmt;
@@ -1684,13 +1684,14 @@ impl RenderApi {
     }
 
     
-    pub fn request_hit_tester(&self, document_id: DocumentId) -> Arc<dyn ApiHitTester> {
+    pub fn request_hit_tester(&self, document_id: DocumentId) -> HitTesterRequest {
         let (tx, rx) = channel::msg_channel().unwrap();
         self.send_frame_msg(
             document_id,
             FrameMsg::RequestHitTester(tx)
         );
-        rx.recv().unwrap()
+
+        HitTesterRequest { rx }
     }
 
     
@@ -1778,6 +1779,20 @@ impl Drop for RenderApi {
     fn drop(&mut self) {
         let msg = ApiMsg::ClearNamespace(self.namespace_id);
         let _ = self.api_sender.send(msg);
+    }
+}
+
+
+
+
+pub struct HitTesterRequest {
+    rx: MsgReceiver<Arc<dyn ApiHitTester>>,
+}
+
+impl HitTesterRequest {
+    
+    pub fn resolve(self) -> Arc<dyn ApiHitTester> {
+        self.rx.recv().unwrap()
     }
 }
 
