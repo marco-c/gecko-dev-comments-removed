@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -87,7 +88,7 @@ class PageAction {
 
     this._popupStateChange = this._popupStateChange.bind(this);
     this._collapse = this._collapse.bind(this);
-    this._cfrUrlbarButtonClick = this._cfrUrlbarButtonClick.bind(this);
+    this._showPopupOnClick = this._showPopupOnClick.bind(this);
     this._executeNotifierAction = this._executeNotifierAction.bind(this);
     this.dispatchUserAction = this.dispatchUserAction.bind(this);
 
@@ -168,7 +169,11 @@ class PageAction {
     );
     this.urlbarinput.style.setProperty("--cfr-label-width", `${width}px`);
 
-    this.container.addEventListener("click", this._cfrUrlbarButtonClick);
+    if (this.shouldShowDoorhanger(recommendation)) {
+      this.container.addEventListener("click", this._showPopupOnClick);
+    } else {
+      this.container.addEventListener("click", this._executeNotifierAction);
+    }
     
     
     this.urlbar.addEventListener("focus", this._collapse);
@@ -194,7 +199,8 @@ class PageAction {
     this.container.hidden = true;
     this._clearScheduledStateChanges();
     this.urlbarinput.removeAttribute("cfr-recommendation-state");
-    this.container.removeEventListener("click", this._cfrUrlbarButtonClick);
+    this.container.removeEventListener("click", this._showPopupOnClick);
+    this.container.removeEventListener("click", this._executeNotifierAction);
     this.urlbar.removeEventListener("focus", this._collapse);
     if (this.currentNotification) {
       this.window.PopupNotifications.remove(this.currentNotification);
@@ -866,7 +872,13 @@ class PageAction {
     );
   }
 
-  _executeNotifierAction(browser, message) {
+  _executeNotifierAction(event) {
+    const browser = this.window.gBrowser.selectedBrowser;
+    if (!RecommendationMap.has(browser)) {
+      return;
+    }
+    const message = RecommendationMap.get(browser);
+
     switch (message.content.layout) {
       case "chiclet_open_url":
         this._dispatchToASRouter(
@@ -885,7 +897,6 @@ class PageAction {
         break;
     }
 
-    this._blockMessage(message.id);
     this.hideAddressBarNotifier();
     RecommendationMap.delete(browser);
   }
@@ -894,7 +905,7 @@ class PageAction {
 
 
 
-  async _cfrUrlbarButtonClick(event) {
+  async _showPopupOnClick(event) {
     const browser = this.window.gBrowser.selectedBrowser;
     if (!RecommendationMap.has(browser)) {
       
@@ -903,7 +914,23 @@ class PageAction {
       return;
     }
     const message = RecommendationMap.get(browser);
+
+    
+    
+    this._clearScheduledStateChanges(browser, message);
+
+    await this.showPopup();
+  }
+
+  async showPopup() {
+    const browser = this.window.gBrowser.selectedBrowser;
+    const message = RecommendationMap.get(browser);
     const { id, content, modelVersion } = message;
+
+    
+    
+    browser.cfrpopupnotificationanchor =
+      this.window.document.getElementById(content.anchor_id) || this.container;
 
     this._sendTelemetry({
       message_id: id,
@@ -911,27 +938,6 @@ class PageAction {
       event: "CLICK_DOORHANGER",
       ...(modelVersion ? { event_context: { modelVersion } } : {}),
     });
-
-    if (this.shouldShowDoorhanger(message)) {
-      
-      
-      this._clearScheduledStateChanges(browser, message);
-      await this.showPopup();
-    } else {
-      await this._executeNotifierAction(browser, message);
-    }
-  }
-
-  async showPopup() {
-    const browser = this.window.gBrowser.selectedBrowser;
-    const message = RecommendationMap.get(browser);
-    const { content } = message;
-
-    
-    
-    browser.cfrpopupnotificationanchor =
-      this.window.document.getElementById(content.anchor_id) || this.container;
-
     await this._renderPopup(message, browser);
   }
 
@@ -1134,7 +1140,15 @@ const CFRPageActions = {
       await PageActionMap.get(win).showPopup();
       PageActionMap.get(win).addImpression(recommendation);
     } else {
-      await PageActionMap.get(win).showAddressBarNotifier(recommendation, true);
+      const pageAction = PageActionMap.get(win);
+      if (content.delay) {
+        setTimeout(
+          () => pageAction.showAddressBarNotifier(recommendation, true),
+          content.delay
+        );
+      } else {
+        await pageAction.showAddressBarNotifier(recommendation, true);
+      }
     }
     return true;
   },
