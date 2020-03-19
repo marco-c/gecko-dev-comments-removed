@@ -20,8 +20,8 @@ loader.lazyRequireGetter(
 
 
 const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
-  initialize(symbol) {
-    protocol.Actor.prototype.initialize.call(this);
+  initialize(conn, symbol) {
+    protocol.Actor.prototype.initialize.call(this, conn);
     this.symbol = symbol;
   },
 
@@ -47,7 +47,7 @@ const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
     const name = getSymbolName(this.symbol);
     if (name !== undefined) {
       
-      form.name = createValueGrip(name, this.registeredPool);
+      form.name = createValueGrip(name, this.getParent());
     }
     return form;
   },
@@ -60,13 +60,14 @@ const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
     
     
     this._releaseActor();
-    this.registeredPool.removeActor(this);
+    this.destroy();
     return {};
   },
 
   _releaseActor: function() {
-    if (this.registeredPool && this.registeredPool.symbolActors) {
-      delete this.registeredPool.symbolActors[this.symbol];
+    const parent = this.getParent();
+    if (parent && parent.symbolActors) {
+      delete parent.symbolActors[this.symbol];
     }
   },
 });
@@ -95,8 +96,8 @@ function symbolGrip(sym, pool) {
     return pool.symbolActors[sym].form();
   }
 
-  const actor = new SymbolActor(sym);
-  pool.addActor(actor);
+  const actor = new SymbolActor(pool.conn, sym);
+  pool.manage(actor);
   pool.symbolActors[sym] = actor;
   return actor.form();
 }

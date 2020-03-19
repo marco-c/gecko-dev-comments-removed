@@ -93,6 +93,10 @@ function unwrapDebuggeeValue(value) {
 
 
 
+
+
+
+
 function createValueGrip(value, pool, makeObjectGrip) {
   switch (typeof value) {
     case "boolean":
@@ -107,7 +111,7 @@ function createValueGrip(value, pool, makeObjectGrip) {
         }
 
         const actor = new LongStringActor(pool.conn, value);
-        pool.addActor(actor);
+        pool.manage(actor);
         return actor.form();
       }
       return value;

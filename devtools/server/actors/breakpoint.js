@@ -240,9 +240,9 @@ BreakpointActor.prototype = {
   delete: function() {
     
     this.threadActor.breakpointActorMap.deleteActor(this.location);
-    this.threadActor.threadLifetimePool.removeActor(this);
     
     this.removeScripts();
+    this.destroy();
   },
 };
 
