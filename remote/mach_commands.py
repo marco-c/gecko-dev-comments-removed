@@ -207,7 +207,12 @@ class MochaOutputHandler(object):
         if m:
             status, test_name = m.groups()
             status = self.status_map.get(status, status)
-            expected = self.expected.get(test_name, ["PASS"])
+            
+            
+            if status == "SKIP":
+                expected = ["SKIP"]
+            else:
+                expected = self.expected.get(test_name, ["PASS"])
             known_intermittent = expected[1:]
             expected_status = expected[0]
 
