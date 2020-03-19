@@ -89,6 +89,26 @@ static nsresult ReauthenticateUserWindows(const nsACString& aMessageText,
   reauthenticated = false;
 
   
+  DWORD usernameLength = CREDUI_MAX_USERNAME_LENGTH + 1;
+  WCHAR username[CREDUI_MAX_USERNAME_LENGTH + 1] = {0};
+  if (GetUserName(username, &usernameLength)) {
+    HANDLE logonUserHandle = nullptr;
+    bool result = LogonUser(username, L".", L"", LOGON32_LOGON_INTERACTIVE,
+                            LOGON32_PROVIDER_DEFAULT, &logonUserHandle);
+    
+    
+    
+    
+    if (result || GetLastError() == ERROR_ACCOUNT_RESTRICTION) {
+      if (logonUserHandle && logonUserHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(logonUserHandle);
+      }
+      reauthenticated = true;
+      return NS_OK;
+    }
+  }
+
+  
   DWORD err = 0;
   uint8_t numAttempts = 3;
   std::unique_ptr<char[]> userTokenInfo = GetUserTokenInfo();
