@@ -370,110 +370,98 @@ class CompileInfo {
     return needsBodyEnvironmentObject_;
   }
 
+  enum class SlotObservableKind {
+    
+    
+    ObservableNotRecoverable,
+
+    
+    
+    ObservableRecoverable,
+
+    
+    NotObservable,
+  };
+
+  inline SlotObservableKind getSlotObservableKind(uint32_t slot) const {
+    
+    if (slot >= firstLocalSlot()) {
+      
+      
+      
+      
+      
+      if (thisSlotForDerivedClassConstructor_ &&
+          *thisSlotForDerivedClassConstructor_ == slot) {
+        return SlotObservableKind::ObservableNotRecoverable;
+      }
+      return SlotObservableKind::NotObservable;
+    }
+
+    
+    if (slot >= firstArgSlot()) {
+      MOZ_ASSERT(funMaybeLazy());
+      MOZ_ASSERT(slot - firstArgSlot() < nargs());
+
+      
+      
+      if (!hasArguments() && script()->strict()) {
+        return SlotObservableKind::NotObservable;
+      }
+      if (needsArgsObj()) {
+        return SlotObservableKind::ObservableNotRecoverable;
+      }
+      return SlotObservableKind::ObservableRecoverable;
+    }
+
+    
+    if (funMaybeLazy() && slot == thisSlot()) {
+      return SlotObservableKind::ObservableRecoverable;
+    }
+
+    
+    if (slot == environmentChainSlot()) {
+      
+      
+      if (needsBodyEnvironmentObject()) {
+        return SlotObservableKind::ObservableNotRecoverable;
+      }
+      
+      
+      
+      if (funNeedsSomeEnvironmentObject_ || hasArguments()) {
+        return SlotObservableKind::ObservableRecoverable;
+      }
+      return SlotObservableKind::NotObservable;
+    }
+
+    
+    if (hasArguments() && slot == argsObjSlot()) {
+      MOZ_ASSERT(funMaybeLazy());
+      return SlotObservableKind::ObservableNotRecoverable;
+    }
+
+    MOZ_ASSERT(slot == returnValueSlot());
+    return SlotObservableKind::NotObservable;
+  }
+
   
   
   
   
   inline bool isObservableSlot(uint32_t slot) const {
-    if (slot >= firstLocalSlot()) {
-      
-      if (thisSlotForDerivedClassConstructor_) {
-        return *thisSlotForDerivedClassConstructor_ == slot;
-      }
-      return false;
-    }
-
-    if (slot < firstArgSlot()) {
-      return isObservableFrameSlot(slot);
-    }
-
-    return isObservableArgumentSlot(slot);
-  }
-
-  bool isObservableFrameSlot(uint32_t slot) const {
-    
-    
-    if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
-      return true;
-    }
-
-    if (!funMaybeLazy()) {
-      return false;
-    }
-
-    
-    if (slot == thisSlot()) {
-      return true;
-    }
-
-    
-    
-    
-    
-    if (thisSlotForDerivedClassConstructor_ &&
-        *thisSlotForDerivedClassConstructor_ == slot) {
-      return true;
-    }
-
-    if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot()) {
-      return true;
-    }
-
-    
-    
-    
-    
-    if (hasArguments() &&
-        (slot == environmentChainSlot() || slot == argsObjSlot())) {
-      return true;
-    }
-
-    return false;
-  }
-
-  bool isObservableArgumentSlot(uint32_t slot) const {
-    if (!funMaybeLazy()) {
-      return false;
-    }
-
-    
-    
-    if ((hasArguments() || !script()->strict()) && firstArgSlot() <= slot &&
-        slot - firstArgSlot() < nargs()) {
-      return true;
-    }
-
-    return false;
+    SlotObservableKind kind = getSlotObservableKind(slot);
+    return (kind == SlotObservableKind::ObservableNotRecoverable ||
+            kind == SlotObservableKind::ObservableRecoverable);
   }
 
   
   
   
   bool isRecoverableOperand(uint32_t slot) const {
-    
-    
-    if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
-      return false;
-    }
-
-    if (!funMaybeLazy()) {
-      return true;
-    }
-
-    
-    if (slot == thisSlot() || slot == environmentChainSlot()) {
-      return true;
-    }
-
-    if (isObservableFrameSlot(slot)) {
-      return false;
-    }
-
-    if (needsArgsObj() && isObservableArgumentSlot(slot)) {
-      return false;
-    }
-
-    return true;
+    SlotObservableKind kind = getSlotObservableKind(slot);
+    return (kind == SlotObservableKind::ObservableRecoverable ||
+            kind == SlotObservableKind::NotObservable);
   }
 
   
