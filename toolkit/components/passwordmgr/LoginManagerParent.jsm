@@ -134,6 +134,11 @@ class LoginManagerParent extends JSWindowActorParent {
   }
 
   
+  static get _recipeManager() {
+    return gRecipeManager;
+  }
+
+  
   static getGeneratedPasswordsByPrincipalOrigin() {
     return gGeneratedPasswordsByPrincipalOrigin;
   }

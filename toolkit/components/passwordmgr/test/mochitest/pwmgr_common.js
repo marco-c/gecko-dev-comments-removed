@@ -570,7 +570,9 @@ SimpleTest.registerCleanupFunction(() => {
     );
     authMgr.clearAll();
 
-    if (LoginManagerParent._recipeManager) {
+    
+    
+    if (LoginManagerParent._recipeManager !== null) {
       LoginManagerParent._recipeManager.reset();
     }
 
