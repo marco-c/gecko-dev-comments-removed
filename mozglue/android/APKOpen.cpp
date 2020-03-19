@@ -30,6 +30,7 @@
 #include <sys/prctl.h>
 #include "sqlite3.h"
 #include "Linker.h"
+#include "BaseProfiler.h"
 #include "application.ini.h"
 
 #include "mozilla/arm.h"
@@ -188,6 +189,29 @@ static void* dlopenLibrary(const char* libraryName) {
                        RTLD_GLOBAL | RTLD_LAZY);
 }
 
+static void EnsureBaseProfilerInitialized() {
+  
+  
+  
+  
+  
+  
+  
+  static bool sInitialized = false;
+  if (sInitialized) {
+    return;
+  }
+
+#ifdef MOZ_BASE_PROFILER
+  
+  
+  
+  int stackBase = 5;
+  mozilla::baseprofiler::profiler_init(&stackBase);
+#endif
+  sInitialized = true;
+}
+
 static mozglueresult loadGeckoLibs() {
   TimeStamp t0 = TimeStamp::Now();
   struct rusage usage1_thread, usage1;
@@ -289,6 +313,8 @@ static mozglueresult loadNSSLibs() {
 extern "C" APKOPEN_EXPORT void MOZ_JNICALL
 Java_org_mozilla_gecko_mozglue_GeckoLoader_loadGeckoLibsNative(
     JNIEnv* jenv, jclass jGeckoAppShellClass) {
+  EnsureBaseProfilerInitialized();
+
   jenv->GetJavaVM(&sJavaVM);
 
   int res = loadGeckoLibs();
@@ -300,6 +326,8 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_loadGeckoLibsNative(
 extern "C" APKOPEN_EXPORT void MOZ_JNICALL
 Java_org_mozilla_gecko_mozglue_GeckoLoader_loadSQLiteLibsNative(
     JNIEnv* jenv, jclass jGeckoAppShellClass) {
+  EnsureBaseProfilerInitialized();
+
   __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load sqlite start\n");
   mozglueresult rv = loadSQLiteLibs();
   if (rv != SUCCESS) {
@@ -311,6 +339,8 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_loadSQLiteLibsNative(
 extern "C" APKOPEN_EXPORT void MOZ_JNICALL
 Java_org_mozilla_gecko_mozglue_GeckoLoader_loadNSSLibsNative(
     JNIEnv* jenv, jclass jGeckoAppShellClass) {
+  EnsureBaseProfilerInitialized();
+
   __android_log_print(ANDROID_LOG_ERROR, "GeckoLibLoad", "Load nss start\n");
   mozglueresult rv = loadNSSLibs();
   if (rv != SUCCESS) {
@@ -361,6 +391,8 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_nativeRun(JNIEnv* jenv, jclass jc,
                                                      int prefsFd, int prefMapFd,
                                                      int ipcFd, int crashFd,
                                                      int crashAnnotationFd) {
+  EnsureBaseProfilerInitialized();
+
   int argc = 0;
   char** argv = CreateArgvFromObjectArray(jenv, jargs, &argc);
 
@@ -397,6 +429,8 @@ Java_org_mozilla_gecko_mozglue_GeckoLoader_nativeRun(JNIEnv* jenv, jclass jc,
 
 extern "C" APKOPEN_EXPORT mozglueresult ChildProcessInit(int argc,
                                                          char* argv[]) {
+  EnsureBaseProfilerInitialized();
+
   if (loadNSSLibs() != SUCCESS) {
     return FAILURE;
   }
