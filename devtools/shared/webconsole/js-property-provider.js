@@ -112,11 +112,12 @@ function JSPropertyProvider({
   }
 
   let {
+    lastStatement,
+    isElementAccess,
     mainExpression,
     matchProp,
     isPropertyAccess,
-  } = splitInputAtLastPropertyAccess(inputAnalysis);
-  const { lastStatement, isElementAccess } = inputAnalysis;
+  } = inputAnalysis;
 
   
   
@@ -393,62 +394,6 @@ function shouldInputBeAutocompleted(inputAnalysisState) {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function splitInputAtLastPropertyAccess(inputAnalysisState) {
-  const { lastStatement, isElementAccess } = inputAnalysisState;
-  const lastDotIndex = lastStatement.lastIndexOf(".");
-  const lastOpeningBracketIndex = isElementAccess
-    ? lastStatement.lastIndexOf("[")
-    : -1;
-  const lastCompletionCharIndex = Math.max(
-    lastDotIndex,
-    lastOpeningBracketIndex
-  );
-
-  const matchProp = lastStatement.slice(lastCompletionCharIndex + 1).trimLeft();
-  const matchPropPrefix = lastStatement.slice(0, lastCompletionCharIndex + 1);
-
-  const optionalChainingElementAccessRegex = /\s*\?\.\s*\[\s*$/;
-  const isPropertyAccess = lastCompletionCharIndex > 0;
-
-  let mainExpression;
-  if (!isPropertyAccess) {
-    mainExpression = matchProp;
-  } else if (
-    isElementAccess &&
-    optionalChainingElementAccessRegex.test(matchPropPrefix)
-  ) {
-    
-    mainExpression = matchPropPrefix.replace(
-      optionalChainingElementAccessRegex,
-      ""
-    );
-  } else if (!isElementAccess && matchPropPrefix.endsWith("?.")) {
-    mainExpression = matchPropPrefix.slice(0, matchPropPrefix.length - 2);
-  } else {
-    mainExpression = matchPropPrefix.slice(0, matchPropPrefix.length - 1);
-  }
-  mainExpression = mainExpression.trim();
-
-  return {
-    mainExpression,
-    matchProp,
-    isPropertyAccess,
-  };
-}
-
 function hasArrayIndex(str) {
   return /\[\d+\]$/.test(str);
 }
@@ -497,14 +442,23 @@ const OPERATOR_CHARS_SET = new Set(";,:=<>+-*%|&^~!".split(""));
 
 
 
+
+
+
+
+
+
+
+
 function analyzeInputString(str) {
   
   const bodyStack = [];
   let state = STATE_NORMAL;
   let previousNonWhitespaceChar;
   let lastStatement = "";
+  let currentIndex = -1;
+  let dotIndex;
   let pendingWhitespaceChars = "";
-
   const TIMEOUT = 2500;
   const startingTime = Date.now();
 
@@ -520,9 +474,9 @@ function analyzeInputString(str) {
       };
     }
 
+    currentIndex += 1;
     let resetLastStatement = false;
     const isWhitespaceChar = c.trim() === "";
-
     switch (state) {
       
       case STATE_NORMAL:
@@ -530,6 +484,11 @@ function analyzeInputString(str) {
           
           
           lastStatement = "";
+        }
+
+        
+        if (c === ".") {
+          dotIndex = currentIndex;
         }
 
         
@@ -576,6 +535,7 @@ function analyzeInputString(str) {
           bodyStack.push({
             token: c,
             lastStatement,
+            index: currentIndex,
           });
           
           resetLastStatement = true;
@@ -675,6 +635,8 @@ function analyzeInputString(str) {
           
           
           lastStatement = "";
+        } else {
+          dotIndex = currentIndex;
         }
         break;
     }
@@ -682,7 +644,6 @@ function analyzeInputString(str) {
     if (!isWhitespaceChar) {
       previousNonWhitespaceChar = c;
     }
-
     if (resetLastStatement) {
       lastStatement = "";
     } else {
@@ -698,9 +659,12 @@ function analyzeInputString(str) {
   }
 
   let isElementAccess = false;
+  let lastOpeningBracketIndex = -1;
   if (bodyStack.length === 1 && bodyStack[0].token === "[") {
     lastStatement = bodyStack[0].lastStatement;
+    lastOpeningBracketIndex = bodyStack[0].index;
     isElementAccess = true;
+
     if (
       state === STATE_DQUOTE ||
       state === STATE_QUOTE ||
@@ -713,10 +677,64 @@ function analyzeInputString(str) {
     lastStatement = "";
   }
 
+  const lastCompletionCharIndex = isElementAccess
+    ? lastOpeningBracketIndex
+    : dotIndex;
+
+  const stringBeforeLastCompletionChar = str.slice(0, lastCompletionCharIndex);
+
+  const isPropertyAccess =
+    lastCompletionCharIndex && lastCompletionCharIndex > 0;
+
+  
+  
+  
+  
+  const optionalElementAccessRegex = /\?\.\s*$/;
+  const isOptionalAccess = isElementAccess
+    ? optionalElementAccessRegex.test(stringBeforeLastCompletionChar)
+    : isPropertyAccess &&
+      str.slice(lastCompletionCharIndex - 1, lastCompletionCharIndex + 1) ===
+        "?.";
+
+  
+  const matchProp = isPropertyAccess
+    ? str.slice(lastCompletionCharIndex + 1).trimLeft()
+    : null;
+
+  const expressionBeforePropertyAccess = isPropertyAccess
+    ? str.slice(
+        0,
+        
+        isOptionalAccess
+          ? stringBeforeLastCompletionChar.lastIndexOf("?")
+          : lastCompletionCharIndex
+      )
+    : str;
+
+  let mainExpression = lastStatement;
+  if (isPropertyAccess) {
+    if (isOptionalAccess) {
+      
+      mainExpression = mainExpression.slice(0, mainExpression.lastIndexOf("?"));
+    } else {
+      mainExpression = mainExpression.slice(
+        0,
+        -1 * (str.length - lastCompletionCharIndex)
+      );
+    }
+  }
+
+  mainExpression = mainExpression.trim();
+
   return {
     state,
-    lastStatement,
     isElementAccess,
+    isPropertyAccess,
+    expressionBeforePropertyAccess,
+    lastStatement,
+    mainExpression,
+    matchProp,
   };
 }
 
@@ -1138,3 +1156,6 @@ exports.JSPropertyProvider = DevToolsUtils.makeInfallible(JSPropertyProvider);
 
 
 exports.FallibleJSPropertyProvider = JSPropertyProvider;
+
+
+exports.analyzeInputString = analyzeInputString;
