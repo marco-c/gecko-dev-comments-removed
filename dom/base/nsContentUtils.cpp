@@ -1720,7 +1720,7 @@ bool nsContentUtils::OfflineAppAllowed(nsIPrincipal* aPrincipal) {
   return NS_SUCCEEDED(rv) && allowed;
 }
 
-bool nsContentUtils::IsErrorPage(nsIURI* aURI) {
+static bool IsErrorPage(nsIURI* aURI) {
   if (!aURI) {
     return false;
   }
@@ -1735,6 +1735,45 @@ bool nsContentUtils::IsErrorPage(nsIURI* aURI) {
 
   return name.EqualsLiteral("certerror") || name.EqualsLiteral("neterror") ||
          name.EqualsLiteral("blocked");
+}
+
+
+bool nsContentUtils::PrincipalAllowsL10n(nsIPrincipal& aPrincipal,
+                                         nsIURI* aDocumentURI) {
+  if (IsErrorPage(aDocumentURI)) {
+    return true;
+  }
+
+  
+  if (aPrincipal.IsSystemPrincipal()) {
+    return true;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aPrincipal.GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, false);
+
+  bool hasFlags;
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_DANGEROUS_TO_LOAD,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (hasFlags) {
+    return true;
+  }
+
+  
+  rv = NS_URIChainHasFlags(uri, nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (hasFlags) {
+    return true;
+  }
+
+  auto& principal = BasePrincipal::Cast(aPrincipal);
+  auto policy = principal.AddonPolicy();
+  return (policy && policy->IsPrivileged());
 }
 
 
@@ -5851,6 +5890,26 @@ SameOriginCheckerImpl::GetInterface(const nsIID& aIID, void** aResult) {
 }
 
 
+nsresult nsContentUtils::GetASCIIOrigin(nsIPrincipal* aPrincipal,
+                                        nsACString& aOrigin) {
+  MOZ_ASSERT(aPrincipal, "missing principal");
+
+  aOrigin.Truncate();
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (uri) {
+    return GetASCIIOrigin(uri, aOrigin);
+  }
+
+  aOrigin.AssignLiteral("null");
+
+  return NS_OK;
+}
+
+
 nsresult nsContentUtils::GetASCIIOrigin(nsIURI* aURI, nsACString& aOrigin) {
   MOZ_ASSERT(aURI, "missing uri");
 
@@ -5907,7 +5966,7 @@ nsresult nsContentUtils::GetUTFOrigin(nsIPrincipal* aPrincipal,
   aOrigin.Truncate();
   nsAutoCString asciiOrigin;
 
-  nsresult rv = aPrincipal->GetAsciiOrigin(asciiOrigin);
+  nsresult rv = GetASCIIOrigin(aPrincipal, asciiOrigin);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aOrigin = NS_ConvertUTF8toUTF16(asciiOrigin);
@@ -6389,10 +6448,10 @@ bool nsContentUtils::IsPDFJS(nsIPrincipal* aPrincipal) {
   if (!aPrincipal) {
     return false;
   }
-  nsAutoCString spec;
-  nsresult rv = aPrincipal->GetAsciiSpec(spec);
-  NS_ENSURE_SUCCESS(rv, false);
-  return spec.EqualsLiteral("resource://pdf.js/web/viewer.html");
+  nsCOMPtr<nsIURI> uri;
+  aPrincipal->GetURI(getter_AddRefs(uri));
+  return uri && uri->GetSpecOrDefault().EqualsLiteral(
+                    "resource://pdf.js/web/viewer.html");
 }
 
 already_AddRefed<nsIDocumentLoaderFactory>
@@ -8822,16 +8881,20 @@ bool nsContentUtils::IsSpecificAboutPage(JSObject* aGlobal, const char* aUri) {
 
   nsCOMPtr<nsIPrincipal> principal = win->GetPrincipal();
   NS_ENSURE_TRUE(principal, false);
+  nsCOMPtr<nsIURI> uri;
+  principal->GetURI(getter_AddRefs(uri));
+  if (!uri) {
+    return false;
+  }
 
   
   if (!principal->SchemeIs("about")) {
     return false;
   }
 
-  bool matches = false;
+  
   nsAutoCString spec;
-  principal->GetAsciiSpec(spec);
-
+  uri->GetSpecIgnoringRef(spec);
   return spec.EqualsASCII(aUri);
 }
 
