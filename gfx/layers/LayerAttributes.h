@@ -134,7 +134,6 @@ struct ScrollbarData {
 
 
 
-
 class SimpleLayerAttributes final {
   friend struct IPC::ParamTraits<mozilla::layers::SimpleLayerAttributes>;
 
@@ -388,6 +387,8 @@ class SimpleLayerAttributes final {
     SideBits mSides;
   };
   Maybe<FixedPositionData> mFixedPositionData;
+  friend struct IPC::ParamTraits<
+      mozilla::layers::SimpleLayerAttributes::FixedPositionData>;
 
   struct StickyPositionData {
     ScrollableLayerGuid::ViewID mScrollId;
@@ -395,11 +396,11 @@ class SimpleLayerAttributes final {
     LayerRectAbsolute mInner;
   };
   Maybe<StickyPositionData> mStickyPositionData;
+  friend struct IPC::ParamTraits<
+      mozilla::layers::SimpleLayerAttributes::StickyPositionData>;
 
   
-
-
-
+  
 };
 
 }  
