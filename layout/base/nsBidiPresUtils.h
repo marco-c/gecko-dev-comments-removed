@@ -149,7 +149,7 @@ class nsBidiPresUtils {
 
   class BidiProcessor {
    public:
-    virtual ~BidiProcessor() {}
+    virtual ~BidiProcessor() = default;
 
     
 

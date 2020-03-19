@@ -973,7 +973,7 @@ void nsXULPopupManager::HidePopup(nsIContent* aPopup, bool aHideChain,
 
 class TransitionEnder final : public nsIDOMEventListener {
  protected:
-  virtual ~TransitionEnder() {}
+  virtual ~TransitionEnder() = default;
 
  public:
   nsCOMPtr<nsIContent> mContent;

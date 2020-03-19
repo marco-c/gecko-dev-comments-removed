@@ -435,7 +435,7 @@ class nsMathMLmathBlockFrame final : public nsBlockFrame {
     
     
   }
-  virtual ~nsMathMLmathBlockFrame() {}
+  virtual ~nsMathMLmathBlockFrame() = default;
 };
 
 
@@ -498,7 +498,7 @@ class nsMathMLmathInlineFrame final : public nsInlineFrame,
                                    nsPresContext* aPresContext)
       : nsInlineFrame(aStyle, aPresContext, kClassID) {}
 
-  virtual ~nsMathMLmathInlineFrame() {}
+  virtual ~nsMathMLmathInlineFrame() = default;
 };
 
 #endif 

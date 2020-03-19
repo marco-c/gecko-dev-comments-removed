@@ -80,8 +80,7 @@ class nsFrameList {
     VerifyList();
   }
 
-  nsFrameList(const nsFrameList& aOther)
-      : mFirstChild(aOther.mFirstChild), mLastChild(aOther.mLastChild) {}
+  nsFrameList(const nsFrameList& aOther) = default;
 
   
 
@@ -359,14 +358,7 @@ class nsFrameList {
           mEnd(aEnd) {
     }
 
-    Slice(const Slice& aOther)
-        :
-#ifdef DEBUG
-          mList(aOther.mList),
-#endif
-          mStart(aOther.mStart),
-          mEnd(aOther.mEnd) {
-    }
+    Slice(const Slice& aOther) = default;
 
    private:
 #ifdef DEBUG
@@ -388,14 +380,7 @@ class nsFrameList {
           mEnd(aSlice.mEnd) {
     }
 
-    Enumerator(const Enumerator& aOther)
-        :
-#ifdef DEBUG
-          mSlice(aOther.mSlice),
-#endif
-          mFrame(aOther.mFrame),
-          mEnd(aOther.mEnd) {
-    }
+    Enumerator(const Enumerator& aOther) = default;
 
     bool AtEnd() const {
       
@@ -466,8 +451,7 @@ class nsFrameList {
     explicit FrameLinkEnumerator(const nsFrameList& aList)
         : Enumerator(aList), mPrev(nullptr) {}
 
-    FrameLinkEnumerator(const FrameLinkEnumerator& aOther)
-        : Enumerator(aOther), mPrev(aOther.mPrev) {}
+    FrameLinkEnumerator(const FrameLinkEnumerator& aOther) = default;
 
     
 
@@ -509,8 +493,7 @@ class nsFrameList {
     Iterator(const nsFrameList& aList, nsIFrame* aCurrent)
         : mList(aList), mCurrent(aCurrent) {}
 
-    Iterator(const Iterator& aOther)
-        : mList(aOther.mList), mCurrent(aOther.mCurrent) {}
+    Iterator(const Iterator& aOther) = default;
 
     nsIFrame* operator*() const { return mCurrent; }
 

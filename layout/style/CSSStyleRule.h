@@ -91,7 +91,7 @@ class CSSStyleRule final : public BindingStyleRule,
 #endif
 
  private:
-  ~CSSStyleRule() {}
+  ~CSSStyleRule() = default;
 
   
   friend class CSSStyleRuleDeclaration;

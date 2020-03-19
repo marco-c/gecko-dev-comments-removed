@@ -88,7 +88,7 @@ nsComboboxControlFrame::RedisplayTextEvent::Run() {
 
 class nsComboButtonListener final : public nsIDOMEventListener {
  private:
-  virtual ~nsComboButtonListener() {}
+  virtual ~nsComboButtonListener() = default;
 
  public:
   NS_DECL_ISUPPORTS
@@ -374,7 +374,7 @@ class nsResizeDropdownAtFinalPosition final : public nsIReflowCallback,
       : mozilla::Runnable("nsResizeDropdownAtFinalPosition"), mFrame(aFrame) {}
 
  protected:
-  ~nsResizeDropdownAtFinalPosition() {}
+  ~nsResizeDropdownAtFinalPosition() = default;
 
  public:
   virtual bool ReflowFinished() override {
@@ -698,6 +698,8 @@ static void printSize(char* aDesc, nscoord aSize) {
 
 bool nsComboboxControlFrame::HasDropDownButton() const {
   const nsStyleDisplay* disp = StyleDisplay();
+  
+  
   return disp->mAppearance == StyleAppearance::Menulist &&
          (!IsThemed(disp) ||
           PresContext()->Theme()->ThemeNeedsComboboxDropmarker());

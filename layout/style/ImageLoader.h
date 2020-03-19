@@ -111,7 +111,7 @@ class ImageLoader final {
     void ReflowCallbackCanceled() override;
   };
 
-  ~ImageLoader() {}
+  ~ImageLoader() = default;
 
   
   

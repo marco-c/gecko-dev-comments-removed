@@ -181,7 +181,7 @@ struct nsStyleImageLayers {
     mozilla::StyleImageLayerRepeat mXRepeat, mYRepeat;
 
     
-    Repeat() {}
+    Repeat() = default;
 
     bool IsInitialValue() const {
       return mXRepeat == mozilla::StyleImageLayerRepeat::Repeat &&
@@ -1952,9 +1952,11 @@ class nsTArray_Simple {
   T* mBuffer;
 
  public:
-  
-  
-  ~nsTArray_Simple(){};
+  ~nsTArray_Simple() {
+    
+    
+    
+  }
 };
 
 STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsTArray<nsStyleImageLayers::Layer>,

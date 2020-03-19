@@ -41,7 +41,7 @@ struct nsTransformedCharStyle final {
   bool mMaskPassword = false;
 
  private:
-  ~nsTransformedCharStyle() {}
+  ~nsTransformedCharStyle() = default;
   nsTransformedCharStyle(const nsTransformedCharStyle& aOther) = delete;
   nsTransformedCharStyle& operator=(const nsTransformedCharStyle& aOther) =
       delete;
@@ -49,7 +49,7 @@ struct nsTransformedCharStyle final {
 
 class nsTransformingTextRunFactory {
  public:
-  virtual ~nsTransformingTextRunFactory() {}
+  virtual ~nsTransformingTextRunFactory() = default;
 
   
   already_AddRefed<nsTransformedTextRun> MakeTextRun(

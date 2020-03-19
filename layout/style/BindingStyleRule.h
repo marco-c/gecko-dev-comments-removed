@@ -30,8 +30,8 @@ class BindingStyleRule : public css::Rule {
   BindingStyleRule(StyleSheet* aSheet, css::Rule* aParentRule,
                    uint32_t aLineNumber, uint32_t aColumnNumber)
       : css::Rule(aSheet, aParentRule, aLineNumber, aColumnNumber) {}
-  BindingStyleRule(const BindingStyleRule& aCopy) : css::Rule(aCopy) {}
-  virtual ~BindingStyleRule() {}
+  BindingStyleRule(const BindingStyleRule& aCopy) = default;
+  virtual ~BindingStyleRule() = default;
 
  public:
   

@@ -42,7 +42,7 @@ nsIFrame* NS_NewMathMLmfracFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
 
-nsMathMLmfracFrame::~nsMathMLmfracFrame() {}
+nsMathMLmfracFrame::~nsMathMLmfracFrame() = default;
 
 eMathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
   

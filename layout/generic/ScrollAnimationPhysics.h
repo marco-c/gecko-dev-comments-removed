@@ -29,7 +29,7 @@ class ScrollAnimationPhysics {
 
   virtual bool IsFinished(const TimeStamp& aTime) = 0;
 
-  virtual ~ScrollAnimationPhysics() {}
+  virtual ~ScrollAnimationPhysics() = default;
 };
 
 

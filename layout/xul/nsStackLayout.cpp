@@ -42,7 +42,7 @@ nsresult NS_NewStackLayout(nsCOMPtr<nsBoxLayout>& aNewLayout) {
 
 void nsStackLayout::Shutdown() { NS_IF_RELEASE(gInstance); }
 
-nsStackLayout::nsStackLayout() {}
+nsStackLayout::nsStackLayout() = default;
 
 
 

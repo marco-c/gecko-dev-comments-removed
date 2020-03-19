@@ -26,7 +26,7 @@ FixedTableLayoutStrategy::FixedTableLayoutStrategy(nsTableFrame* aTableFrame)
 }
 
 
-FixedTableLayoutStrategy::~FixedTableLayoutStrategy() {}
+FixedTableLayoutStrategy::~FixedTableLayoutStrategy() = default;
 
 
 nscoord FixedTableLayoutStrategy::GetMinISize(gfxContext* aRenderingContext) {

@@ -34,7 +34,7 @@ class ViewportFrame : public nsContainerFrame {
   explicit ViewportFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : ViewportFrame(aStyle, aPresContext, kClassID) {}
 
-  virtual ~ViewportFrame() {}  
+  virtual ~ViewportFrame() = default;  
 
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
                     nsIFrame* aPrevInFlow) override;

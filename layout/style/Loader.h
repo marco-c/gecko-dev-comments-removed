@@ -53,7 +53,7 @@ class ImportRule;
 
 class MOZ_RAII LoaderReusableStyleSheets {
  public:
-  LoaderReusableStyleSheets() {}
+  LoaderReusableStyleSheets() = default;
 
   
 
