@@ -58,12 +58,14 @@ static int32_t GetCSSFloatValue(nsComputedDOMStyle* aComputedStyle,
   nsAutoString value;
   nsresult rv = aComputedStyle->GetPropertyValue(aProperty, value);
   if (NS_FAILED(rv)) {
+    NS_WARNING("nsComputedDOMStyle::GetPropertyValue() failed");
     return 0;
   }
 
   
   
   int32_t val = value.ToInteger(&rv);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsAString::ToInteger() failed");
   return NS_SUCCEEDED(rv) ? val : 0;
 }
 
@@ -129,37 +131,38 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     return nullptr;
   }
 
-  RefPtr<Document> doc = GetDocument();
-  if (NS_WARN_IF(!doc)) {
+  if (NS_WARN_IF(!GetDocument())) {
     return nullptr;
   }
 
-  
   RefPtr<PresShell> presShell = GetPresShell();
   if (NS_WARN_IF(!presShell)) {
     return nullptr;
   }
 
   
-  RefPtr<Element> newContentRaw = CreateHTMLContent(aTag);
-  if (NS_WARN_IF(!newContentRaw)) {
+  RefPtr<Element> newElement = CreateHTMLContent(aTag);
+  if (!newElement) {
+    NS_WARNING("EditorBase::CreateHTMLContent() failed");
     return nullptr;
   }
 
   
   if (aIsCreatedHidden) {
-    nsresult rv = newContentRaw->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                         NS_LITERAL_STRING("hidden"), true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    nsresult rv = newElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+                                      NS_LITERAL_STRING("hidden"), true);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Element::SetAttr(nsGkAtoms::_class, hidden) failed");
       return nullptr;
     }
   }
 
   
   if (!aAnonClass.IsEmpty()) {
-    nsresult rv = newContentRaw->SetAttr(
+    nsresult rv = newElement->SetAttr(
         kNameSpaceID_None, nsGkAtoms::_moz_anonclass, aAnonClass, true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING("Element::SetAttr(nsGkAtoms::_moz_anonclass) failed");
       return nullptr;
     }
   }
@@ -168,46 +171,47 @@ ManualNACPtr HTMLEditor::CreateAnonymousElement(nsAtom* aTag,
     nsAutoScriptBlocker scriptBlocker;
 
     
-    newContentRaw->SetIsNativeAnonymousRoot();
+    newElement->SetIsNativeAnonymousRoot();
     BindContext context(*aParentContent.AsElement(),
                         BindContext::ForNativeAnonymous);
-    nsresult rv = newContentRaw->BindToTree(context, aParentContent);
+    nsresult rv = newElement->BindToTree(context, aParentContent);
     if (NS_FAILED(rv)) {
-      newContentRaw->UnbindFromTree();
+      NS_WARNING("Element::BindToTree(BindContext::ForNativeAnonymous) failed");
+      newElement->UnbindFromTree();
       return nullptr;
     }
   }
 
-  ManualNACPtr newContent(newContentRaw.forget());
+  ManualNACPtr newNativeAnonymousContent(newElement.forget());
 
   
   
   ServoStyleSet* styleSet = presShell->StyleSet();
   
   
-  if (ServoStyleSet::MayTraverseFrom(newContent)) {
-    styleSet->StyleNewSubtree(newContent);
+  if (ServoStyleSet::MayTraverseFrom(newNativeAnonymousContent)) {
+    styleSet->StyleNewSubtree(newNativeAnonymousContent);
   }
 
-  ElementDeletionObserver* observer =
-      new ElementDeletionObserver(newContent, aParentContent.AsElement());
+  ElementDeletionObserver* observer = new ElementDeletionObserver(
+      newNativeAnonymousContent, aParentContent.AsElement());
   NS_ADDREF(observer);  
   aParentContent.AddMutationObserver(observer);
-  newContent->AddMutationObserver(observer);
+  newNativeAnonymousContent->AddMutationObserver(observer);
 
 #ifdef DEBUG
   
   
   
   
-  newContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
-                          reinterpret_cast<void*>(true));
+  newNativeAnonymousContent->SetProperty(nsGkAtoms::restylableAnonymousNode,
+                                         reinterpret_cast<void*>(true));
 #endif  
 
   
-  presShell->PostRecreateFramesFor(newContent);
+  presShell->PostRecreateFramesFor(newNativeAnonymousContent);
 
-  return newContent;
+  return newNativeAnonymousContent;
 }
 
 
@@ -233,8 +237,7 @@ void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
     return;
   }
 
-  nsIContent* parentContent = aContent->GetParent();
-  if (NS_WARN_IF(!parentContent)) {
+  if (NS_WARN_IF(!aContent->GetParent())) {
     
     return;
   }
@@ -258,16 +261,22 @@ void HTMLEditor::DeleteRefToAnonymousNode(ManualNACPtr aContent,
 void HTMLEditor::HideAnonymousEditingUIs() {
   if (mAbsolutelyPositionedObject) {
     HideGrabberInternal();
-    NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
+    NS_ASSERTION(!mAbsolutelyPositionedObject,
+                 "HTMLEditor::HideGrabberInternal() failed, but ignored");
   }
   if (mInlineEditedCell) {
     HideInlineTableEditingUIInternal();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
+    NS_ASSERTION(
+        !mInlineEditedCell,
+        "HTMLEditor::HideInlineTableEditingUIInternal() failed, but ignored");
   }
   if (mResizedObject) {
-    DebugOnly<nsresult> rv = HideResizersInternal();
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizersInternal() failed");
-    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
+    DebugOnly<nsresult> rvIgnored = HideResizersInternal();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "HTMLEditor::HideResizersInternal() failed, but ignored");
+    NS_ASSERTION(!mResizedObject,
+                 "HTMLEditor::HideResizersInternal() failed, but ignored");
   }
 }
 
@@ -279,35 +288,39 @@ void HTMLEditor::HideAnonymousEditingUIsIfUnnecessary() {
     
     
     HideGrabberInternal();
-    NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
+    NS_ASSERTION(!mAbsolutelyPositionedObject,
+                 "HTMLEditor::HideGrabberInternal() failed, but ignored");
   }
   if (!IsInlineTableEditorEnabled() && mInlineEditedCell) {
     
     
     HideInlineTableEditingUIInternal();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
+    NS_ASSERTION(
+        !mInlineEditedCell,
+        "HTMLEditor::HideInlineTableEditingUIInternal() failed, but ignored");
   }
   if (!IsObjectResizerEnabled() && mResizedObject) {
     
     
-    DebugOnly<nsresult> rv = HideResizersInternal();
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HideResizersInternal() failed");
-    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
+    DebugOnly<nsresult> rvIgnored = HideResizersInternal();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "HTMLEditor::HideResizersInternal() failed, but ignored");
+    NS_ASSERTION(!mResizedObject,
+                 "HTMLEditor::HideResizersInternal() failed, but ignored");
   }
 }
 
-NS_IMETHODIMP
-HTMLEditor::CheckSelectionStateForAnonymousButtons() {
+NS_IMETHODIMP HTMLEditor::CheckSelectionStateForAnonymousButtons() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
   nsresult rv = RefreshEditingUI();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return EditorBase::ToGenericNSResult(rv);
-  }
-  return NS_OK;
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::RefereshEditingUI() failed");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 nsresult HTMLEditor::RefreshEditingUI() {
@@ -329,17 +342,18 @@ nsresult HTMLEditor::RefreshEditingUI() {
   }
 
   
-  RefPtr<Element> focusElement = GetSelectionContainerElement();
-  if (NS_WARN_IF(!focusElement)) {
+  RefPtr<Element> selectionContainerElement = GetSelectionContainerElement();
+  if (NS_WARN_IF(!selectionContainerElement)) {
     return NS_OK;
   }
 
   
-  if (!focusElement->IsInUncomposedDoc()) {
+  if (!selectionContainerElement->IsInUncomposedDoc()) {
     return NS_OK;
   }
 
   
+  RefPtr<Element> focusElement = std::move(selectionContainerElement);
   nsAtom* focusTagAtom = focusElement->NodeInfo()->NameAtom();
 
   RefPtr<Element> absPosElement;
@@ -389,7 +403,8 @@ nsresult HTMLEditor::RefreshEditingUI() {
   if (IsAbsolutePositionEditorEnabled() && mAbsolutelyPositionedObject &&
       absPosElement != mAbsolutelyPositionedObject) {
     HideGrabberInternal();
-    NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
+    NS_ASSERTION(!mAbsolutelyPositionedObject,
+                 "HTMLEditor::HideGrabberInternal() failed, but ignored");
   }
 
   if (IsObjectResizerEnabled() && mResizedObject &&
@@ -398,16 +413,20 @@ nsresult HTMLEditor::RefreshEditingUI() {
     
     
     nsresult rv = HideResizersInternal();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    if (NS_FAILED(rv)) {
+      NS_WARNING("HTMLEditor::HideResizersInternal() failed");
       return rv;
     }
-    NS_ASSERTION(!mResizedObject, "HideResizersInternal() failed");
+    NS_ASSERTION(!mResizedObject,
+                 "HTMLEditor::HideResizersInternal() failed, but ignored");
   }
 
   if (IsInlineTableEditorEnabled() && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
     HideInlineTableEditingUIInternal();
-    NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUIInternal failed");
+    NS_ASSERTION(
+        !mInlineEditedCell,
+        "HTMLEditor::HideInlineTableEditingUIInternal failed, but ignored");
   }
 
   
@@ -420,12 +439,14 @@ nsresult HTMLEditor::RefreshEditingUI() {
     }
     if (mResizedObject) {
       nsresult rv = RefreshResizersInternal();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::RefreshResizersInternal() failed");
         return rv;
       }
     } else {
       nsresult rv = ShowResizersInternal(*focusElement);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::ShowResizersInternal() failed");
         return rv;
       }
     }
@@ -435,12 +456,14 @@ nsresult HTMLEditor::RefreshEditingUI() {
       IsModifiableNode(*absPosElement) && absPosElement != hostContent) {
     if (mAbsolutelyPositionedObject) {
       nsresult rv = RefreshGrabberInternal();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::RefreshGrabberInternal() failed");
         return rv;
       }
     } else {
       nsresult rv = ShowGrabberInternal(*absPosElement);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::ShowGrabberInternal() failed");
         return rv;
       }
     }
@@ -450,12 +473,14 @@ nsresult HTMLEditor::RefreshEditingUI() {
       IsModifiableNode(*cellElement) && cellElement != hostContent) {
     if (mInlineEditedCell) {
       nsresult rv = RefreshInlineTableEditingUIInternal();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::RefreshInlineTableEditingUIInternal() failed");
         return rv;
       }
     } else {
       nsresult rv = ShowInlineTableEditingUIInternal(*cellElement);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
+      if (NS_FAILED(rv)) {
+        NS_WARNING("HTMLEditor::ShowInlineTableEditingUIInternal() failed");
         return rv;
       }
     }
@@ -477,10 +502,13 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
       aElement.HasAttr(kNameSpaceID_None, nsGkAtoms::_moz_abspos);
   if (!isPositioned) {
     
-    nsAutoString positionStr;
-    CSSEditUtils::GetComputedProperty(aElement, *nsGkAtoms::position,
-                                      positionStr);
-    isPositioned = positionStr.EqualsLiteral("absolute");
+    nsAutoString positionValue;
+    DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
+        aElement, *nsGkAtoms::position, positionValue);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
+                         "position) failed, but ignored");
+    isPositioned = positionValue.EqualsLiteral("absolute");
   }
 
   if (isPositioned) {
@@ -488,23 +516,27 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
     mResizedObjectIsAbsolutelyPositioned = true;
 
     
-    RefPtr<nsComputedDOMStyle> cssDecl =
+    RefPtr<nsComputedDOMStyle> computedDOMStyle =
         CSSEditUtils::GetComputedStyle(&aElement);
-    NS_ENSURE_STATE(cssDecl);
+    if (NS_WARN_IF(!computedDOMStyle)) {
+      return NS_ERROR_FAILURE;
+    }
 
-    aBorderLeft =
-        GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("border-left-width"));
-    aBorderTop =
-        GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("border-top-width"));
-    aMarginLeft = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("margin-left"));
-    aMarginTop = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("margin-top"));
+    aBorderLeft = GetCSSFloatValue(computedDOMStyle,
+                                   NS_LITERAL_CSTRING("border-left-width"));
+    aBorderTop = GetCSSFloatValue(computedDOMStyle,
+                                  NS_LITERAL_CSTRING("border-top-width"));
+    aMarginLeft =
+        GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("margin-left"));
+    aMarginTop =
+        GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("margin-top"));
 
-    aX = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("left")) + aMarginLeft +
-         aBorderLeft;
-    aY = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("top")) + aMarginTop +
-         aBorderTop;
-    aW = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("width"));
-    aH = GetCSSFloatValue(cssDecl, NS_LITERAL_CSTRING("height"));
+    aX = GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("left")) +
+         aMarginLeft + aBorderLeft;
+    aY = GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("top")) +
+         aMarginTop + aBorderTop;
+    aW = GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("width"));
+    aH = GetCSSFloatValue(computedDOMStyle, NS_LITERAL_CSTRING("height"));
   } else {
     mResizedObjectIsAbsolutelyPositioned = false;
     RefPtr<nsGenericHTMLElement> htmlElement =
@@ -512,7 +544,9 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
     if (!htmlElement) {
       return NS_ERROR_NULL_POINTER;
     }
-    GetElementOrigin(aElement, aX, aY);
+    DebugOnly<nsresult> rvIgnored = GetElementOrigin(aElement, aX, aY);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "HTMLEditor::GetElementOrigin() failed, but ignored");
 
     aW = htmlElement->OffsetWidth();
     aH = htmlElement->OffsetHeight();
@@ -528,8 +562,17 @@ nsresult HTMLEditor::GetPositionAndDimensions(Element& aElement, int32_t& aX,
 
 void HTMLEditor::SetAnonymousElementPosition(int32_t aX, int32_t aY,
                                              Element* aElement) {
-  mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::left, aX);
-  mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::top, aY);
+  DebugOnly<nsresult> rvIgnored = NS_OK;
+  rvIgnored =
+      mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::left, aX);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "CSSEditUtils::SetCSSPropertyPixels(nsGkAtoms::left) "
+                       "failed, but ignored");
+  rvIgnored =
+      mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::top, aY);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "CSSEditUtils::SetCSSPropertyPixels(nsGkAtoms::top) "
+                       "failed, but ignored");
 }
 
 }  
