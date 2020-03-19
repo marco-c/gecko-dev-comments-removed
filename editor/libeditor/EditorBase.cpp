@@ -6096,6 +6096,9 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
   
   if (mParentData) {
     mSelection = mParentData->mSelection;
+    MOZ_ASSERT(!mSelection ||
+               (mSelection->GetType() == SelectionType::eNormal));
+
     
     
     
@@ -6115,6 +6118,9 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
     if (NS_WARN_IF(!mSelection)) {
       return;
     }
+
+    MOZ_ASSERT(mSelection->GetType() == SelectionType::eNormal);
+
     mEditAction = aEditAction;
     mDirectionOfTopLevelEditSubAction = eNone;
     if (mEditorBase.mIsHTMLEditorClass) {
