@@ -550,13 +550,12 @@ class RemoteSettingsClient extends EventEmitter {
         } else {
           
           
-          const strategy = Kinto.syncStrategy.PULL_ONLY;
           const startSyncDB = Cu.now() * 1000;
-          syncResult = await kintoCollection.sync({
-            remote: Utils.SERVER_URL,
-            strategy,
-            expectedTimestamp,
-          });
+          syncResult = await this._importChanges(
+            kintoCollection,
+            collectionLastModified,
+            expectedTimestamp
+          );
           if (gTimingEnabled) {
             const endSyncDB = Cu.now() * 1000;
             PerformanceCounters.storeExecutionTime(
@@ -584,7 +583,9 @@ class RemoteSettingsClient extends EventEmitter {
               importedById.set(u.old.id, u.new);
             }
           });
-          syncResult.add("created", Array.from(importedById.values()));
+          syncResult.created = syncResult.created.concat(
+            Array.from(importedById.values())
+          );
         }
       } catch (e) {
         if (e instanceof RemoteSettingsClient.InvalidSignatureError) {
@@ -729,6 +730,36 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     return reportStatus;
+  }
+
+  async _importChanges(
+    kintoCollection,
+    collectionLastModified,
+    expectedTimestamp
+  ) {
+    const syncResult = {
+      add(type, entries) {
+        
+        this[type] = (this[type] || []).concat(entries);
+      },
+      ok: true,
+      created: [],
+      updated: [],
+      deleted: [],
+    };
+    
+    const options = {
+      lastModified: collectionLastModified,
+      strategy: Kinto.syncStrategy.PULL_ONLY,
+      expectedTimestamp,
+    };
+    const httpClient = this.httpClient();
+    await kintoCollection.pullMetadata(httpClient, options);
+    
+    await kintoCollection.pullChanges(httpClient, syncResult, options);
+    const { lastModified } = syncResult;
+    await kintoCollection.db.saveLastModified(lastModified);
+    return syncResult;
   }
 
   
