@@ -1,18 +1,18 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
-/* eslint-disable dot-notation */
-/* vim: set ts=2 sw=2 sts=2 et: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Utility function. Returns true if the given boolean pref...
-//  (a) exists and (b) is set to true.
-// Otherwise, returns false.
-//
-// This function also reports a test failure if the pref isn't set at all. This
-// ensures that we remove pref-checks from mochitests (instead of accidentally
-// disabling the tests that are controlled by that check) when we remove a
-// mature feature's pref from the rest of the codebase.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function IsCSSPropertyPrefEnabled(prefName) {
   try {
     if (SpecialPowers.getBoolPref(prefName)) {
@@ -32,60 +32,60 @@ function IsCSSPropertyPrefEnabled(prefName) {
   return false;
 }
 
-// True longhand properties.
+
 const CSS_TYPE_LONGHAND = 0;
 
-// True shorthand properties.
+
 const CSS_TYPE_TRUE_SHORTHAND = 1;
 
-// Properties that we handle as shorthands but were longhands either in
-// the current spec or earlier versions of the spec.
+
+
 const CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
 
-// Legacy shorthand properties, that behave mostly like an alias
-// (CSS_TYPE_SHORTHAND_AND_LONGHAND) but not quite because their syntax may not
-// match, plus they shouldn't serialize in cssText.
+
+
+
 const CSS_TYPE_LEGACY_SHORTHAND = 3;
 
-// Each property has the following fields:
-//   domProp: The name of the relevant member of nsIDOM[NS]CSS2Properties
-//   inherited: Whether the property is inherited by default (stated as
-//     yes or no in the property header in all CSS specs)
-//   type: see above
-//   alias_for: optional, indicates that the property is an alias for
-//     some other property that is the preferred serialization.  (Type
-//     must not be CSS_TYPE_LONGHAND.)
-//   logical: optional, indicates that the property is a logical directional
-//     property.  (Type must be CSS_TYPE_LONGHAND.)
-//   axis: optional, indicates that the property is an axis-related logical
-//     directional property.  (Type must be CSS_TYPE_LONGHAND and 'logical'
-//     must be true.)
-//   initial_values: Values whose computed value should be the same as the
-//     computed value for the property's initial value.
-//   other_values: Values whose computed value should be different from the
-//     computed value for the property's initial value.
-//   XXX Should have a third field for values whose computed value may or
-//     may not be the same as for the property's initial value.
-//   invalid_values: Things that are not values for the property and
-//     should be rejected, but which are balanced and should not absorb
-//     what follows
-//   quirks_values: Values that should be accepted in quirks mode only,
-//     mapped to the values they are equivalent to.
-//   unbalanced_values: Things that are not values for the property and
-//     should be rejected, and which also contain unbalanced constructs
-//     that should absorb what follows
-//
-// Note: By default, an alias is assumed to accept/reject the same values as
-// the property that it aliases, and to have the same prerequisites. So, if
-// "alias_for" is set, the "*_values" and "prerequisites" fields can simply
-// be omitted, and they'll be populated automatically to match the aliased
-// property's fields.
 
-// Helper functions used to construct gCSSProperties.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function initial_font_family_is_sans_serif() {
-  // The initial value of 'font-family' might be 'serif' or
-  // 'sans-serif'.
+  
+  
   const meta = document.createElement("meta");
   meta.setAttribute("style", "font: initial;");
   document.documentElement.appendChild(meta);
@@ -96,13 +96,13 @@ function initial_font_family_is_sans_serif() {
 
 var gInitialFontFamilyIsSansSerif = initial_font_family_is_sans_serif();
 
-// shared by background-image and border-image-source
+
 var validGradientAndElementValues = [
   "-moz-element(#a)",
   "-moz-element(  #a  )",
   "-moz-element(#a-1)",
   "-moz-element(#a\\:1)",
-  /* gradient torture test */
+  
   "linear-gradient(red, blue)",
   "linear-gradient(red, yellow, blue)",
   "linear-gradient(red 1px, yellow 20%, blue 24em, green)",
@@ -151,7 +151,7 @@ var validGradientAndElementValues = [
   "linear-gradient(red 0% 50%, 0%, blue 50%)",
   "linear-gradient(red 0% 50%, 0%, blue 50% 100%)",
 
-  /* Unitless 0 is valid as an <angle> */
+  
   "linear-gradient(0, red, blue)",
 
   "radial-gradient(red, blue)",
@@ -237,7 +237,7 @@ var validGradientAndElementValues = [
   "repeating-radial-gradient(50px 60px at 15% 20%, red, blue)",
   "repeating-radial-gradient(7em 8em at 45px, red, blue)",
 
-  // When that happens this should be moved to the `invalid` list.
+  
   "repeating-radial-gradient(circle closest-side at left 0px bottom 7in, hsl(2,2%,5%), rgb(1,6,0))",
 
   "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 2, 10, 10, 2)",
@@ -259,7 +259,7 @@ var validGradientAndElementValues = [
 
   ...(IsCSSPropertyPrefEnabled("layout.css.conic-gradient.enabled")
     ? [
-        // Conic gradient
+        
         "conic-gradient(red, blue)",
         "conic-gradient(red,blue,yellow)",
         "conic-gradient(  red  ,  blue,   yellow)",
@@ -342,23 +342,23 @@ var validGradientAndElementValues = [
       ]
     : []),
 
-  // 2008 GRADIENTS: -webkit-gradient()
-  // ----------------------------------
-  // linear w/ no color stops (valid) and a variety of position values:
+  
+  
+  
   "-webkit-gradient(linear, 1 2, 3 4)",
-  "-webkit-gradient(linear,1 2,3 4)", // (no extra space)
-  "-webkit-gradient(linear  ,  1   2  ,  3   4  )", // (lots of extra space)
-  "-webkit-gradient(linear, 1 10% , 0% 4)", // percentages
-  "-webkit-gradient(linear, +1.0 -2%, +5.3% -0)", // (+/- & decimals are valid)
-  "-webkit-gradient(linear, left top, right bottom)", // keywords
+  "-webkit-gradient(linear,1 2,3 4)", 
+  "-webkit-gradient(linear  ,  1   2  ,  3   4  )", 
+  "-webkit-gradient(linear, 1 10% , 0% 4)", 
+  "-webkit-gradient(linear, +1.0 -2%, +5.3% -0)", 
+  "-webkit-gradient(linear, left top, right bottom)", 
   "-webkit-gradient(linear, right center, center top)",
   "-webkit-gradient(linear, center center, center center)",
-  "-webkit-gradient(linear, center 5%, 30 top)", // keywords mixed w/ nums
+  "-webkit-gradient(linear, center 5%, 30 top)", 
 
-  // linear w/ just 1 color stop:
+  
   "-webkit-gradient(linear, 1 2, 3 4, from(lime))",
   "-webkit-gradient(linear, 1 2, 3 4, to(lime))",
-  // * testing the various allowable stop values (<number> & <percent>):
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(-0, lime))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30, lime))",
@@ -369,7 +369,7 @@ var validGradientAndElementValues = [
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(9999%, lime))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(-.5%, lime))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(+0%, lime))",
-  // * testing the various color values:
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, transparent))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgb(1,2,3)))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, #00ff00))",
@@ -377,52 +377,52 @@ var validGradientAndElementValues = [
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, hsla(240, 30%, 50%, 0.8)))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, rgba(255, 230, 10, 0.5)))",
 
-  // linear w/ multiple color stops:
-  // * using from()/to() -- note that out-of-order is OK:
+  
+  
   "-webkit-gradient(linear, 1 2, 3 4, from(lime), from(blue))",
   "-webkit-gradient(linear, 1 2, 3 4, to(lime),   to(blue))",
   "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue))",
   "-webkit-gradient(linear, 1 2, 3 4, to(lime),   from(blue))",
   "-webkit-gradient(linear, 1 2, 3 4, from(lime), to(blue), from(purple))",
-  // * using color-stop():
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0, lime), color-stop(30%, blue), color-stop(100%, purple))",
-  // * using color-stop() intermixed with from()/to() functions:
+  
   "-webkit-gradient(linear, 1 2, 3 4, from(lime), color-stop(30%, blue))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, blue), to(lime))",
-  // * overshooting endpoints (0 & 1.0)
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(-30%, lime), color-stop(.4, blue), color-stop(1.5, purple))",
-  // * repeating a stop position (valid)
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(30%, lime), color-stop(30%, blue))",
-  // * stops out of order (valid)
+  
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(70%, lime), color-stop(20%, blue), color-stop(40%, purple))",
 
-  // radial w/ no color stops (valid) and a several different radius values:
+  
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9)",
   "-webkit-gradient(radial, 0 0, 10, 0 0, 5)",
 
-  // radial w/ color stops
-  // (mostly leaning on more-robust 'linear' tests above; just testing a few
-  // examples w/ radial as a sanity-check):
+  
+  
+  
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(lime))",
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9, to(blue))",
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9, color-stop(0.5, #00f), color-stop(0.8, rgba(100, 200, 0, 0.5)))",
 
-  // 2011 GRADIENTS: -webkit-linear-gradient(), -webkit-radial -gradient()
-  // ---------------------------------------------------------------------
-  // Basic linear-gradient syntax (valid when prefixed or unprefixed):
+  
+  
+  
   "-webkit-linear-gradient(red, green, blue)",
 
-  // Angled linear-gradients (valid when prefixed or unprefixed):
+  
   "-webkit-linear-gradient(135deg, red, blue)",
   "-webkit-linear-gradient( 135deg  , red  , blue )",
   "-webkit-linear-gradient(280deg, red 60%, blue)",
 
-  // Linear-gradient with unitless-0 <angle> (normally invalid for <angle>
-  // but accepted here for better webkit emulation):
+  
+  
   "-webkit-linear-gradient(0, red, blue)",
 
-  // Linear-gradient with calc expression (bug 1363349)
+  
   "-webkit-gradient(linear, calc(5 + 5) top, calc(10 + 10) top, from(blue), to(lime))",
   "-webkit-gradient(linear, calc(5 - 5) top, calc(10 + 10) top, from(blue), to(lime))",
   "-webkit-gradient(linear, calc(5 * 5) top, calc(10 + 10) top, from(blue), to(lime))",
@@ -430,7 +430,7 @@ var validGradientAndElementValues = [
   "-webkit-gradient(linear, left calc(25% - 10%), right calc(75% + 10%), from(blue), to(lime))",
   "-webkit-gradient(linear, calc(1) 2, 3 4)",
 
-  // Radial-gradient with calc expression (bug 1363349)
+  
   "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1 + 5), from(blue), to(lime))",
   "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5), from(blue), to(lime))",
   "-webkit-gradient(radial, 1 2, calc(1 - 2), 3 4, calc(1 + 5), from(blue), to(lime))",
@@ -439,19 +439,19 @@ var validGradientAndElementValues = [
   "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1 + 2), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
   "-webkit-gradient(radial, 1 2, calc(8), 3 4, 9)",
 
-  // Basic radial-gradient syntax (valid when prefixed or unprefixed):
+  
   "-webkit-radial-gradient(circle, white, black)",
   "-webkit-radial-gradient(circle, white, black)",
   "-webkit-radial-gradient(ellipse closest-side, white, black)",
   "-webkit-radial-gradient(circle farthest-corner, white, black)",
 
-  // Contain/cover keywords (valid only for -moz/-webkit prefixed):
+  
   "-webkit-radial-gradient(cover, red, blue)",
   "-webkit-radial-gradient(cover circle, red, blue)",
   "-webkit-radial-gradient(contain, red, blue)",
   "-webkit-radial-gradient(contain ellipse, red, blue)",
 
-  // Initial side/corner/point (valid only for -moz/-webkit prefixed):
+  
   "-webkit-linear-gradient(top, red, blue)",
   "-webkit-linear-gradient(left, red, blue)",
   "-webkit-linear-gradient(bottom, red, blue)",
@@ -468,12 +468,12 @@ var validGradientAndElementValues = [
   "-webkit-radial-gradient(20px top, red, blue)",
   "-webkit-radial-gradient(20em 30%, red, blue)",
 
-  // Point + keyword-sized shape (valid only for -moz/-webkit prefixed):
+  
   "-webkit-radial-gradient(center, circle closest-corner, red, blue)",
   "-webkit-radial-gradient(10px 20px, cover circle, red, blue)",
   "-webkit-radial-gradient(5em 50%, ellipse contain, red, blue)",
 
-  // Repeating examples:
+  
   "-webkit-repeating-linear-gradient(red 10%, blue 30%)",
   "-webkit-repeating-linear-gradient(30deg, pink 20px, orange 70px)",
   "-webkit-repeating-linear-gradient(left, red, blue)",
@@ -488,19 +488,19 @@ var invalidGradientAndElementValues = [
   "-moz-element(#a a)",
   "-moz-element(#a+a)",
   "-moz-element(#a())",
-  /* no quirks mode colors */
+  
   "linear-gradient(red, ff00ff)",
-  /* no quirks mode colors */
+  
   "radial-gradient(at 10% bottom, ffffff, black) scroll no-repeat",
-  /* no quirks mode lengths */
+  
   "linear-gradient(red -99, yellow, green, blue 120%)",
-  /* Unitless nonzero numbers are valid as an <angle> */
+  
   "linear-gradient(30, red, blue)",
-  /* There must be a comma between gradient-line (e.g. <angle>) and colors */
+  
   "linear-gradient(30deg red, blue)",
   "linear-gradient(to top left red, blue)",
   "linear-gradient(to right red, blue)",
-  /* Invalid color, calc() or -moz-image-rect() function */
+  
   "linear-gradient(red, rgb(0, rubbish, 0) 50%, red)",
   "linear-gradient(red, red calc(50% + rubbish), red)",
   "linear-gradient(to top calc(50% + rubbish), red, blue)",
@@ -513,7 +513,7 @@ var invalidGradientAndElementValues = [
   "radial-gradient(circle 50%, red, blue)",
   "radial-gradient(50% circle, red, blue)",
 
-  /* Invalid units */
+  
   "conic-gradient(red, blue 50px, yellow 30px)",
   "conic-gradient(from 0%, black, white)",
   "conic-gradient(from 60%, black, white)",
@@ -522,11 +522,11 @@ var invalidGradientAndElementValues = [
   "conic-gradient(at 50deg, black, white)",
   "conic-gradient(from 40deg at 50deg, black, white)",
   "conic-gradient(from 40deg at 50deg 60deg, black, white)",
-  /* Invalid keywords (or ordering) */
+  
   "conic-gradient(at 40% from 50deg, black, white)",
   "conic-gradient(to 50deg, black, white)",
 
-  /* Used to be valid only when prefixed */
+  
   "linear-gradient(top left, red, blue)",
   "linear-gradient(0 0, red, blue)",
   "linear-gradient(20% bottom, red, blue)",
@@ -590,7 +590,7 @@ var invalidGradientAndElementValues = [
   "radial-gradient(45px 399grad, farthest-side circle, red, blue)",
   "radial-gradient(circle red, blue)",
 
-  /* don't allow more than two positions with multi-position syntax */
+  
   "linear-gradient(red 0% 50% 100%)",
   "linear-gradient(red 0% 50% 75%, blue 75%)",
   "linear-gradient(to bottom, red 0% 50% 100%)",
@@ -608,10 +608,10 @@ var invalidGradientAndElementValues = [
   "-moz-linear-gradient(unset, 10px 10px, blue 0)",
   "-moz-repeating-linear-gradient(unset, 10px 10px, blue 0)",
 
-  // 2008 GRADIENTS: -webkit-gradient()
-  // https://www.webkit.org/blog/175/introducing-css-gradients/
-  // ----------------------------------
-  // Mostly-empty expressions (missing most required pieces):
+  
+  
+  
+  
   "-webkit-gradient()",
   "-webkit-gradient( )",
   "-webkit-gradient(,)",
@@ -622,53 +622,53 @@ var invalidGradientAndElementValues = [
   "-webkit-gradient(radial)",
   "-webkit-gradient(radial,)",
 
-  // linear w/ partial/missing <point> expression(s)
-  "-webkit-gradient(linear, 1)", // Incomplete <point>
-  "-webkit-gradient(linear, left)", // Incomplete <point>
-  "-webkit-gradient(linear, center)", // Incomplete <point>
-  "-webkit-gradient(linear, top)", // Incomplete <point>
-  "-webkit-gradient(linear, 5%)", // Incomplete <point>
-  "-webkit-gradient(linear, 1 2)", // Missing 2nd <point>
-  "-webkit-gradient(linear, 1, 3)", // 2 incomplete <point>s
-  "-webkit-gradient(linear, 1, 3 4)", // Incomplete 1st <point>
-  "-webkit-gradient(linear, 1 2, 3)", // Incomplete 2nd <point>
-  "-webkit-gradient(linear, 1 2, 3, 4)", // Comma inside <point>
-  "-webkit-gradient(linear, 1, 2, 3 4)", // Comma inside <point>
-  "-webkit-gradient(linear, 1, 2, 3, 4)", // Comma inside <point>
+  
+  "-webkit-gradient(linear, 1)", 
+  "-webkit-gradient(linear, left)", 
+  "-webkit-gradient(linear, center)", 
+  "-webkit-gradient(linear, top)", 
+  "-webkit-gradient(linear, 5%)", 
+  "-webkit-gradient(linear, 1 2)", 
+  "-webkit-gradient(linear, 1, 3)", 
+  "-webkit-gradient(linear, 1, 3 4)", 
+  "-webkit-gradient(linear, 1 2, 3)", 
+  "-webkit-gradient(linear, 1 2, 3, 4)", 
+  "-webkit-gradient(linear, 1, 2, 3 4)", 
+  "-webkit-gradient(linear, 1, 2, 3, 4)", 
 
-  // linear w/ invalid units in <point> expression
+  
   "-webkit-gradient(linear, 1px 2, 3 4)",
   "-webkit-gradient(linear, 1 2, 3 4px)",
   "-webkit-gradient(linear, 1px 2px, 3px 4px)",
   "-webkit-gradient(linear, 1 2em, 3 4)",
 
-  // linear w/ <radius> (only valid for radial)
+  
   "-webkit-gradient(linear, 1 2, 8, 3 4, 9)",
 
-  // linear w/ out-of-order position keywords in <point> expression
-  // (horizontal keyword is supposed to come first, for "x" coord)
+  
+  
   "-webkit-gradient(linear, 0 0, top right)",
   "-webkit-gradient(linear, bottom center, 0 0)",
   "-webkit-gradient(linear, top bottom, 0 0)",
   "-webkit-gradient(linear, bottom top, 0 0)",
   "-webkit-gradient(linear, bottom top, 0 0)",
 
-  // linear w/ trailing comma (which implies missing color-stops):
+  
   "-webkit-gradient(linear, 1 2, 3 4,)",
 
-  // linear w/ invalid color values:
+  
   "-webkit-gradient(linear, 1 2, 3 4, from(invalidcolorname))",
   "-webkit-gradient(linear, 1 2, 3 4, from(inherit))",
   "-webkit-gradient(linear, 1 2, 3 4, from(initial))",
   "-webkit-gradient(linear, 1 2, 3 4, from(currentColor))",
   "-webkit-gradient(linear, 1 2, 3 4, from(00ff00))",
   "-webkit-gradient(linear, 1 2, 3 4, from(##00ff00))",
-  "-webkit-gradient(linear, 1 2, 3 4, from(#00fff))", // wrong num hex digits
-  "-webkit-gradient(linear, 1 2, 3 4, from(xyz(0,0,0)))", // bogus color func
-  // Mixing <number> and <percentage> is invalid.
+  "-webkit-gradient(linear, 1 2, 3 4, from(#00fff))", 
+  "-webkit-gradient(linear, 1 2, 3 4, from(xyz(0,0,0)))", 
+  
   "-webkit-gradient(linear, 1 2, 3 4, from(rgb(100, 100%, 30)))",
 
-  // linear w/ color stops that have comma issues
+  
   "-webkit-gradient(linear, 1 2, 3 4 from(lime))",
   "-webkit-gradient(linear, 1 2, 3 4, from(lime,))",
   "-webkit-gradient(linear, 1 2, 3 4, from(lime),)",
@@ -678,96 +678,96 @@ var invalidGradientAndElementValues = [
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0 lime))",
   "-webkit-gradient(linear, 1 2, 3 4, color-stop(0,, lime))",
 
-  // radial w/ broken <point>/radius expression(s)
-  "-webkit-gradient(radial, 1)", // Incomplete <point>
-  "-webkit-gradient(radial, 1 2)", // Missing radius + 2nd <point>
-  "-webkit-gradient(radial, 1 2, 8)", // Missing 2nd <point>
-  "-webkit-gradient(radial, 1 2, 8, 3)", // Incomplete 2nd <point>
-  "-webkit-gradient(radial, 1 2, 8, 3 4)", // Missing 2nd radius
-  "-webkit-gradient(radial, 1 2, 3 4, 9)", // Missing 1st radius
-  "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)", // Negative radius
+  
+  "-webkit-gradient(radial, 1)", 
+  "-webkit-gradient(radial, 1 2)", 
+  "-webkit-gradient(radial, 1 2, 8)", 
+  "-webkit-gradient(radial, 1 2, 8, 3)", 
+  "-webkit-gradient(radial, 1 2, 8, 3 4)", 
+  "-webkit-gradient(radial, 1 2, 3 4, 9)", 
+  "-webkit-gradient(radial, 1 2, -1.5, center center, +99999.9999)", 
 
-  // radial w/ incorrect units on radius (invalid; expecting <number>)
+  
   "-webkit-gradient(radial, 1 2, 8%,      3 4, 9)",
   "-webkit-gradient(radial, 1 2, 8px,     3 4, 9)",
   "-webkit-gradient(radial, 1 2, 8em,     3 4, 9)",
   "-webkit-gradient(radial, 1 2, top,     3 4, 9)",
 
-  // radial w/ trailing comma (which implies missing color-stops):
+  
   "-webkit-gradient(linear, 1 2, 8, 3 4, 9,)",
 
-  // radial w/ invalid color value (mostly leaning on 'linear' test above):
+  
   "-webkit-gradient(radial, 1 2, 8, 3 4, 9, from(invalidcolorname))",
 
-  // 2011 GRADIENTS: -webkit-linear-gradient(), -webkit-radial -gradient()
-  // ---------------------------------------------------------------------
-  // Syntax that's invalid for all types of gradients:
-  // * empty gradient expressions:
+  
+  
+  
+  
   "-webkit-linear-gradient()",
   "-webkit-radial-gradient()",
   "-webkit-repeating-linear-gradient()",
   "-webkit-repeating-radial-gradient()",
 
-  // * missing comma between <legacy-gradient-line> and color list:
+  
   "-webkit-linear-gradient(0 red, blue)",
   "-webkit-linear-gradient(30deg red, blue)",
   "-webkit-linear-gradient(top right red, blue)",
   "-webkit-linear-gradient(bottom red, blue)",
 
-  // Linear-gradient with calc expression containing mixed units or division
-  // by zero (bug 1363349)
+  
+  
   "-webkit-gradient(linear, calc(5 + 5%) top, calc(10 + 10) top, from(blue), to(lime))",
   "-webkit-gradient(linear, left calc(25 - 10%), right calc(75% + 10%), from(blue), to(lime))",
   "-webkit-gradient(linear, calc(1 / 0) 2, 3 4)",
 
-  // Radial-gradient with calc expression containing mixed units, division
-  // by zero, or a percentage in the radius (bug 1363349)
+  
+  
   "-webkit-gradient(radial, 1 2, 0, 3 4, calc(1% + 5%), from(blue), to(lime))",
   "-webkit-gradient(radial, 1 2, calc(1 + 2), 3 4, calc(1 + 5%), from(blue), to(lime))",
   "-webkit-gradient(radial, calc(0 + 1) calc(1 + 1), calc(1% + 2%), calc(1 + 2) 4, calc(1 + 5), from(blue), to(lime))",
   "-webkit-gradient(radial, 1 2, calc(8 / 0), 3 4, 9)",
 
-  // Linear syntax that's invalid for both -webkit & unprefixed, but valid
-  // for -moz:
-  // * initial <legacy-gradient-line> which includes a length:
+  
+  
+  
   "-webkit-linear-gradient(10px, red, blue)",
   "-webkit-linear-gradient(10px top, red, blue)",
-  // * initial <legacy-gradient-line> which includes a side *and* an angle:
+  
   "-webkit-linear-gradient(bottom 30deg, red, blue)",
   "-webkit-linear-gradient(30deg bottom, red, blue)",
   "-webkit-linear-gradient(10px top 50deg, red, blue)",
   "-webkit-linear-gradient(50deg 10px top, red, blue)",
-  // * initial <legacy-gradient-line> which includes explicit "center":
+  
   "-webkit-linear-gradient(center, red, blue)",
   "-webkit-linear-gradient(left center, red, blue)",
   "-webkit-linear-gradient(top center, red, blue)",
   "-webkit-linear-gradient(center top, red, blue)",
 
-  // Linear syntax that's invalid for -webkit, but valid for -moz & unprefixed:
-  // * "to" syntax:
+  
+  
   "-webkit-linear-gradient(to top, red, blue)",
 
-  // * <shape> followed by angle:
+  
   "-webkit-radial-gradient(circle 10deg, red, blue)",
 
-  // Radial syntax that's invalid for both -webkit & -moz, but valid for
-  // unprefixed:
-  // * "<shape> at <position>" syntax:
+  
+  
+  
   "-webkit-radial-gradient(circle at left bottom, red, blue)",
-  // * explicitly-sized shape:
+  
   "-webkit-radial-gradient(circle 10px, red, blue)",
   "-webkit-radial-gradient(ellipse 40px 20px, red, blue)",
 
-  // Radial syntax that's invalid for both -webkit & unprefixed, but valid
-  // for -moz:
-  // * initial angle
+  
+  
+  
   "-webkit-radial-gradient(30deg, red, blue)",
-  // * initial angle/position combo
+  
   "-webkit-radial-gradient(top 30deg, red, blue)",
   "-webkit-radial-gradient(left top 30deg, red, blue)",
   "-webkit-radial-gradient(10px 20px 30deg, red, blue)",
 
-  // Conic gradients should not support prefixed syntax
+  
   "-webkit-gradient(conic, 1 2, 3 4, color-stop(0, lime))",
   "-webkit-conic-gradient(red, blue)",
   "-moz-conic-gradient(red, blue)",
@@ -955,9 +955,9 @@ var basicShapeUnbalancedValues = [
   "inset(1px 2px 3px 4px round 5px / 6px",
 ];
 
-if (/* mozGradientsEnabled */ true) {
-  // Maybe one day :(
-  // Extend gradient lists with valid/invalid moz-prefixed expressions:
+if ( true) {
+  
+  
   validGradientAndElementValues.push(
     "-moz-linear-gradient(red, blue)",
     "-moz-linear-gradient(red, yellow, blue)",
@@ -1081,10 +1081,10 @@ if (/* mozGradientsEnabled */ true) {
   );
 
   invalidGradientAndElementValues.push(
-    // The entries in this block used to be valid with the older more-complex
-    // -moz prefixed gradient syntax, but we've since simplified the syntax for
-    // consistency with -webkit prefixed gradients, in a way that makes these
-    // invalid now.
+    
+    
+    
+    
     "-moz-linear-gradient(center 0%, red, blue)",
     "-moz-linear-gradient(50% top, red, blue)",
     "-moz-linear-gradient(50% 0%, red, blue)",
@@ -1140,24 +1140,24 @@ if (/* mozGradientsEnabled */ true) {
     "-moz-repeating-linear-gradient(10deg 20px, red, blue)",
     "-moz-repeating-linear-gradient(.414rad bottom, red, blue)",
 
-    /* Negative radii */
+    
     "-moz-radial-gradient(40%, -100px -10%, red, blue)",
 
-    /* no quirks mode colors */
+    
     "-moz-radial-gradient(10% bottom, ffffff, black) scroll no-repeat",
-    /* no quirks mode lengths */
+    
     "-moz-linear-gradient(10 10px -45deg, red, blue) repeat",
     "-moz-linear-gradient(10px 10 -45deg, red, blue) repeat",
-    /* Unitless 0 is invalid as an <angle> */
+    
     "-moz-linear-gradient(top left 0, red, blue)",
     "-moz-linear-gradient(5px 5px 0, red, blue)",
-    /* There must be a comma between gradient-line (e.g. <angle>) and colors */
+    
     "-moz-linear-gradient(30deg red, blue)",
     "-moz-linear-gradient(5px 5px 30deg red, blue)",
     "-moz-linear-gradient(5px 5px red, blue)",
     "-moz-linear-gradient(top left 30deg red, blue)",
 
-    /* Old syntax */
+    
     "-moz-linear-gradient(10px 10px, 20px, 30px 30px, 40px, from(blue), to(red))",
     "-moz-radial-gradient(20px 20px, 10px 10px, from(green), to(#ff00ff))",
     "-moz-radial-gradient(10px 10px, 20%, 40px 40px, 10px, from(green), to(#ff00ff))",
@@ -1168,7 +1168,7 @@ if (/* mozGradientsEnabled */ true) {
     "-moz-radial-gradient(left top, center, 20px 20px, 10px, from(blue), to(red))",
     "-moz-linear-gradient(left left, top top, from(blue))",
     "-moz-linear-gradient(inherit, 10px 10px, from(blue))",
-    /* New syntax */
+    
     "-moz-linear-gradient(10px 10px, 20px, 30px 30px, 40px, blue 0, red 100%)",
     "-moz-radial-gradient(20px 20px, 10px 10px, from(green), to(#ff00ff))",
     "-moz-radial-gradient(10px 10px, 20%, 40px 40px, 10px, from(green), to(#ff00ff))",
@@ -1293,7 +1293,7 @@ if (/* mozGradientsEnabled */ true) {
     "-moz-repeating-radial-gradient(ellipse at 45px closest-corner, red, blue)",
     "-moz-repeating-radial-gradient(circle at 45px farthest-side, red, blue)",
 
-    /* Valid only when unprefixed */
+    
     "-moz-radial-gradient(at top left, red, blue)",
     "-moz-radial-gradient(at 20% bottom, red, blue)",
     "-moz-radial-gradient(at center 20%, red, blue)",
@@ -1493,8 +1493,8 @@ var gCSSProperties = {
       "1, infinite",
       "calc(1 + 2.0)",
     ],
-    // negatives forbidden per
-    // http://lists.w3.org/Archives/Public/www-style/2011Mar/0355.html
+    
+    
     invalid_values: ["none", "-1", "-0.5", "-1, infinite", "infinite, -3"],
   },
   "animation-name": {
@@ -1694,7 +1694,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -1946,7 +1946,7 @@ var gCSSProperties = {
       "2em",
       "3em 2px",
       "2pt 3% 4em",
-      "2px 2px 2px 2px", // circular
+      "2px 2px 2px 2px", 
       "3% / 2%",
       "1px / 4px",
       "2em / 1em",
@@ -1954,7 +1954,7 @@ var gCSSProperties = {
       "2pt 3% 4em / 4pt 1% 5em",
       "2px 2px 2px 2px / 4px 4px 4px 4px",
       "1pt / 2pt 3pt",
-      "4pt 5pt / 3pt", // elliptical
+      "4pt 5pt / 3pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -1996,10 +1996,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2034,10 +2034,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2072,10 +2072,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2110,10 +2110,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2149,10 +2149,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2188,10 +2188,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2227,10 +2227,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2266,10 +2266,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -2336,7 +2336,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -2496,7 +2496,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     initial_values: ["auto"],
     other_values: ["1", "17"],
-    // negative and zero invalid per editor's draft
+    
     invalid_values: ["-1", "0", "3px"],
   },
   "column-fill": {
@@ -2546,7 +2546,7 @@ var gCSSProperties = {
     other_values: [
       "thin",
       "15px",
-      /* valid calc() values */
+      
       "calc(-2px)",
       "calc(2px)",
       "calc(3em)",
@@ -2587,7 +2587,7 @@ var gCSSProperties = {
       "calc(50px/2)",
       "calc(50px/(2 - 1))",
       "calc(-3px)",
-      /* numeric reduction cases */
+      
       "calc(5 * 3 * 2em)",
       "calc(2em * 5 * 3)",
       "calc((5 * 3) * 2em)",
@@ -2643,15 +2643,15 @@ var gCSSProperties = {
       "calc(max(5px))",
       "calc(max(5px,2em))",
 
-      // Valid cases with unitless zero (which is never
-      // a length).
+      
+      
       "calc(0 * 2em)",
       "calc(2em * 0)",
       "calc(3em + 0 * 2em)",
       "calc(3em + 2em * 0)",
       "calc((0 + 2) * 2em)",
       "calc((2 + 0) * 2em)",
-      // And test zero lengths while we're here.
+      
       "calc(2 * 0px)",
       "calc(0 * 0px)",
       "calc(2 * 0em)",
@@ -2664,7 +2664,7 @@ var gCSSProperties = {
       "-1px",
       "red",
       "50%",
-      /* invalid calc() values */
+      
       "calc(2em+ 2px)",
       "calc(2em +2px)",
       "calc(2em+2px)",
@@ -2690,8 +2690,8 @@ var gCSSProperties = {
       "calc(4 * (3 / 2em))",
       "calc(4 / (3 * 2em))",
 
-      // Tests for handling of unitless zero, which cannot
-      // be a length inside calc().
+      
+      
       "calc(0)",
       "calc(0 + 2em)",
       "calc(2em + 0)",
@@ -2818,8 +2818,8 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* no subproperties */
-    /* auto may or may not be initial */
+    
+    
     initial_values: [
       "0",
       "0px",
@@ -2862,8 +2862,8 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* no subproperties */
-    /* auto may or may not be initial */
+    
+    
     initial_values: [
       "0",
       "0px",
@@ -2904,7 +2904,7 @@ var gCSSProperties = {
     domProp: "mask",
     inherited: false,
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-    /* FIXME: All mask-border-* should be added when we implement them. */
+    
     subproperties: [
       "mask-clip",
       "mask-image",
@@ -2974,13 +2974,13 @@ var gCSSProperties = {
       "radial-gradient(at 10% bottom, #ffffff, black) add no-repeat",
       "repeating-radial-gradient(at 10% bottom, #ffffff, black) no-repeat",
       "-moz-element(#test) alpha",
-      /* multiple mask-image */
+      
       "url(404.png), url(404.png)",
       "repeat-x, subtract, none",
       "0% top url(404.png), url(404.png) 50% top",
       "subtract repeat-y top left url(404.png), repeat-x alpha",
       "top left / contain, bottom right / cover",
-      /* test cases with clip+origin in the shorthand */
+      
       "url(404.png) alpha padding-box",
       "url(404.png) border-box alpha",
       "content-box url(404.png)",
@@ -2991,14 +2991,14 @@ var gCSSProperties = {
       "alpha padding-box url(404.png) padding-box",
     ],
     invalid_values: [
-      /* mixes with keywords have to be in correct order */
+      
       "50% left",
       "top 50%",
-      /* no quirks mode colors */
+      
       "radial-gradient(at 10% bottom, ffffff, black) add no-repeat",
-      /* no quirks mode lengths */
+      
       "linear-gradient(red -99, yellow, green, blue 120%)",
-      /* bug 258080: don't accept background-position separated */
+      
       "left url(404.png) top",
       "top url(404.png) left",
       "-moz-element(#a rubbish)",
@@ -3381,7 +3381,7 @@ var gCSSProperties = {
       "2em",
       "3em 2px",
       "2pt 3% 4em",
-      "2px 2px 2px 2px", // circular
+      "2px 2px 2px 2px", 
       "3% / 2%",
       "1px / 4px",
       "2em / 1em",
@@ -3389,7 +3389,7 @@ var gCSSProperties = {
       "2pt 3% 4em / 4pt 1% 5em",
       "2px 2px 2px 2px / 4px 4px 4px 4px",
       "1pt / 2pt 3pt",
-      "4pt 5pt / 3pt", // elliptical
+      "4pt 5pt / 3pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -3429,10 +3429,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -3465,10 +3465,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -3501,10 +3501,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -3537,10 +3537,10 @@ var gCSSProperties = {
       "0%",
       "3%",
       "1px",
-      "2em", // circular
+      "2em", 
       "3% 2%",
       "1px 4px",
-      "2em 2pt", // elliptical
+      "2em 2pt", 
       "calc(-1%)",
       "calc(2px)",
       "calc(50%)",
@@ -3568,9 +3568,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     logical: true,
-    /* no subproperties */
+    
     initial_values: [
       "0",
       "0px",
@@ -3599,9 +3599,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     logical: true,
-    /* no subproperties */
+    
     initial_values: [
       "0",
       "0px",
@@ -3629,7 +3629,7 @@ var gCSSProperties = {
     domProp: "resize",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     prerequisites: { display: "block", overflow: "auto" },
     initial_values: ["none"],
     other_values: ["both", "horizontal", "vertical", "inline", "block"],
@@ -3727,7 +3727,7 @@ var gCSSProperties = {
       "translate(3%, 5px)",
       "translate(5px, 3%)",
       "matrix(1, 2, 3, 4, 5, 6)",
-      /* valid calc() values */
+      
       "translatex(calc(5px + 10%))",
       "translatey(calc(0.25 * 5px + 10% / 3))",
       "translate(calc(5px - 10% * 3))",
@@ -3787,7 +3787,7 @@ var gCSSProperties = {
       "matrix(1, 2, 3, 4, 5%, 6px)",
       "matrix(1, 2, 3, 4, 5%, 6%)",
       "matrix(1, 2, 3, 4, 5px, 6em)",
-      /* invalid calc() values */
+      
       "translatey(-moz-min(5px,10%))",
       "translatex(-moz-max(5px,10%))",
       "matrix(1, 0, 0, 1, max(5px * 3), calc(10% - 3px))",
@@ -3808,7 +3808,7 @@ var gCSSProperties = {
     domProp: "transformOrigin",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* no subproperties */
+    
     prerequisites: { width: "10px", height: "10px", display: "block" },
     initial_values: ["50% 50%", "center", "center center"],
     other_values: [
@@ -3864,7 +3864,7 @@ var gCSSProperties = {
     domProp: "perspectiveOrigin",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* no subproperties */
+    
     prerequisites: { width: "10px", height: "10px", display: "block" },
     initial_values: ["50% 50%", "center", "center center"],
     other_values: [
@@ -4026,7 +4026,7 @@ var gCSSProperties = {
       "padding-box border-box",
     ],
     other_values: [
-      /* without multiple backgrounds */
+      
       "green",
       "none green repeat scroll left top",
       "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==)",
@@ -4057,7 +4057,7 @@ var gCSSProperties = {
       "radial-gradient(at 10% bottom, #ffffff, black) scroll no-repeat",
       "repeating-radial-gradient(at 10% bottom, #ffffff, black) scroll no-repeat",
       "-moz-element(#test) lime",
-      /* multiple backgrounds */
+      
       "url(404.png), url(404.png)",
       "url(404.png), url(404.png) transparent",
       "url(404.png), url(404.png) red",
@@ -4065,7 +4065,7 @@ var gCSSProperties = {
       "0% top url(404.png), url(404.png) 0% top",
       "fixed repeat-y top left url(404.png), repeat-x green",
       "top left / contain, bottom right / cover",
-      /* test cases with clip+origin in the shorthand */
+      
       "url(404.png) green padding-box",
       "url(404.png) border-box transparent",
       "content-box url(404.png) blue",
@@ -4074,27 +4074,27 @@ var gCSSProperties = {
       "content-box border-box url(404.png) blue",
       "url(404.png) green padding-box text",
       "content-box text url(404.png) blue",
-      /* clip and origin separated in the shorthand */
+      
       "url(404.png) padding-box green border-box",
       "url(404.png) padding-box green padding-box",
       "transparent padding-box url(404.png) border-box",
       "transparent padding-box url(404.png) padding-box",
-      /* text */
+      
       "text",
       "text border-box",
     ],
     invalid_values: [
-      /* mixes with keywords have to be in correct order */
+      
       "50% left",
       "top 50%",
-      /* no quirks mode colors */
+      
       "radial-gradient(at 10% bottom, ffffff, black) scroll no-repeat",
-      /* no quirks mode lengths */
+      
       "linear-gradient(red -99, yellow, green, blue 120%)",
-      /* bug 258080: don't accept background-position separated */
+      
       "left url(404.png) top",
       "top url(404.png) left",
-      /* not allowed to have color in non-bottom layer */
+      
       "url(404.png) transparent, url(404.png)",
       "url(404.png) red, url(404.png)",
       "url(404.png) transparent, url(404.png) transparent",
@@ -4105,7 +4105,7 @@ var gCSSProperties = {
       "url(404.png) rgba(0, 0, 0, 0), url(404.png) rgba(0, 0, 0, 0)",
       "url(404.png) rgba(0, 0, 0, 0) rgb(255, 0, 0), url(404.png) rgba(0, 0, 0, 0) rgb(255, 0, 0)",
       "url(404.png) rgb(255, 0, 0), url(404.png) rgb(255, 0, 0)",
-      /* error inside functions */
+      
       "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), rubbish, 50%, 30%, 0) transparent",
       "-moz-element(#a rubbish) black",
       "content-box text text",
@@ -4160,10 +4160,10 @@ var gCSSProperties = {
     invalid_values: ["none", "10px", "multiply multiply"],
   },
   "background-clip": {
-    /*
-     * When we rename this to 'background-clip', we also
-     * need to rename the values to match the spec.
-     */
+    
+
+
+
     domProp: "backgroundClip",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
@@ -4659,7 +4659,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -4790,7 +4790,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -4871,7 +4871,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -4964,7 +4964,7 @@ var gCSSProperties = {
       "border-bottom-style",
       "border-left-style",
     ],
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: [
       "none",
       "none none",
@@ -5029,7 +5029,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -5095,9 +5095,9 @@ var gCSSProperties = {
     domProp: "bottom",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -5134,8 +5134,8 @@ var gCSSProperties = {
       "3px 0 0 0",
       "inset 2px 2px 3px 4px black",
       "2px -2px green inset, 4px 4px 3px blue, inset 2px 2px",
-      /* calc() values */
-      "2px 2px calc(-5px)" /* clamped */,
+      
+      "2px 2px calc(-5px)" ,
       "calc(3em - 2px) 2px green",
       "green calc(3em - 2px) 2px",
       "2px calc(2px + 0.2em)",
@@ -5185,9 +5185,9 @@ var gCSSProperties = {
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     prerequisites: { color: "black" },
-    // Though "auto" is an independent computed-value time keyword value,
-    // it is not distinguishable from currentcolor because getComputedStyle
-    // always returns used value for <color>.
+    
+    
+    
     initial_values: ["auto", "currentcolor", "black", "rgb(0,0,0)"],
     other_values: ["green", "transparent", "rgba(128,128,128,.5)", "#123"],
     invalid_values: ["#0", "#00", "#00000", "cc00ff"],
@@ -5224,7 +5224,7 @@ var gCSSProperties = {
     applies_to_marker: true,
     applies_to_placeholder: true,
     applies_to_cue: true,
-    /* XXX should test currentColor, but may or may not be initial */
+    
     initial_values: [
       "black",
       "#000",
@@ -5233,26 +5233,26 @@ var gCSSProperties = {
       "-moz-default-color",
       "rgb(0, 0, 0)",
       "rgb(0%, 0%, 0%)",
-      /* css-color-4: */
-      /* rgb() and rgba() are aliases of each other. */
+      
+      
       "rgb(0, 0, 0)",
       "rgba(0, 0, 0)",
       "rgb(0, 0, 0, 1)",
       "rgba(0, 0, 0, 1)",
-      /* hsl() and hsla() are aliases of each other. */
+      
       "hsl(0, 0%, 0%)",
       "hsla(0, 0%, 0%)",
       "hsl(0, 0%, 0%, 1)",
       "hsla(0, 0%, 0%, 1)",
-      /* rgb() and rgba() functions now accept <number> rather than <integer>. */
+      
       "rgb(0.0, 0.0, 0.0)",
       "rgba(0.0, 0.0, 0.0)",
       "rgb(0.0, 0.0, 0.0, 1)",
       "rgba(0.0, 0.0, 0.0, 1)",
-      /* <alpha-value> now accepts <percentage> as well as <number> in rgba() and hsla(). */
+      
       "rgb(0.0, 0.0, 0.0, 100%)",
       "hsl(0, 0%, 0%, 100%)",
-      /* rgb() and hsl() now support comma-less expression. */
+      
       "rgb(0 0 0)",
       "rgb(0 0 0 / 1)",
       "rgb(0/* comment */0/* comment */0)",
@@ -5261,7 +5261,7 @@ var gCSSProperties = {
       "hsl(0 0% 0% / 1)",
       "hsl(0/* comment */0%/* comment */0%)",
       "hsl(0/* comment */0%/* comment */0%/1)",
-      /* Support <angle> for hsl() hue component. */
+      
       "hsl(0deg, 0%, 0%)",
       "hsl(360deg, 0%, 0%)",
       "hsl(0grad, 0%, 0%)",
@@ -5269,6 +5269,10 @@ var gCSSProperties = {
       "hsl(0rad, 0%, 0%)",
       "hsl(0turn, 0%, 0%)",
       "hsl(1turn, 0%, 0%)",
+      
+      "canvastext",
+      
+      "-moz-default-color",
     ],
     other_values: [
       "green",
@@ -5280,7 +5284,7 @@ var gCSSProperties = {
       "rgba(255,128,0,0.5)",
       "#e0fc",
       "#10fcee72",
-      /* css-color-4: */
+      
       "rgb(100, 100.0, 100)",
       "rgb(300 300 300 / 200%)",
       "rgb(300.0 300.0 300.0 / 2.0)",
@@ -5292,6 +5296,21 @@ var gCSSProperties = {
       "hsl(33rad 100% 90% / 4)",
       "hsl(0.33turn, 40%, 40%, 10%)",
       "hsl(63e292, 41%, 34%)",
+      
+      "canvas",
+      "linktext",
+      "visitedtext",
+      "activetext",
+      "buttonface",
+      "field",
+      "highlight",
+      "highlighttext",
+      "graytext",
+      
+      "-moz-activehyperlinktext",
+      "-moz-default-background-color",
+      "-moz-hyperlinktext",
+      "-moz-visitedhyperlinktext",
     ],
     invalid_values: [
       "#f",
@@ -5303,13 +5322,13 @@ var gCSSProperties = {
       "rgba(100, 0, 100%, 30%)",
       "hsl(0, 0, 0%)",
       "hsla(0%, 0%, 0%, 0.1)",
-      /* trailing commas */
+      
       "rgb(0, 0, 0,)",
       "rgba(0, 0, 0, 0,)",
       "hsl(0, 0%, 0%,)",
       "hsla(0, 0%, 0%, 1,)",
-      /* css-color-4: */
-      /* comma and comma-less expressions should not mix together. */
+      
+      
       "rgb(0, 0, 0 / 1)",
       "rgb(0 0 0, 1)",
       "rgb(0, 0 0, 1)",
@@ -5318,7 +5337,7 @@ var gCSSProperties = {
       "hsl(0 0% 0%, 1)",
       "hsl(0 0% 0%, 1)",
       "hsl(0 0%, 0% / 1)",
-      /* trailing slash */
+      
       "rgb(0 0 0 /)",
       "rgb(0, 0, 0 /)",
       "hsl(0 0% 0% /)",
@@ -5336,7 +5355,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_marker: true,
-    // XXX This really depends on pseudo-element-ness.
+    
     initial_values: ["normal", "none"],
     other_values: [
       '""',
@@ -5526,9 +5545,9 @@ var gCSSProperties = {
     domProp: "display",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: ["inline"],
-    /* XXX none will really mess with other properties */
+    
     prerequisites: { float: "none", position: "static", contain: "none" },
     other_values: [
       "block",
@@ -5609,14 +5628,14 @@ var gCSSProperties = {
       "condensed bold italic small-caps 24px/1.4 Times New Roman, serif",
       "small inherit roman",
       "small roman inherit",
-      // system fonts
+      
       "caption",
       "icon",
       "menu",
       "message-box",
       "small-caption",
       "status-bar",
-      // Gecko-specific system fonts
+      
       "-moz-window",
       "-moz-document",
       "-moz-desktop",
@@ -5627,7 +5646,7 @@ var gCSSProperties = {
       "-moz-list",
       "-moz-field",
       "-moz-workspace",
-      // line-height with calc()
+      
       "condensed bold italic small-caps 24px/calc(2px) Times New Roman, serif",
       "condensed bold italic small-caps 24px/calc(50%) Times New Roman, serif",
       "condensed bold italic small-caps 24px/calc(3*25px) Times New Roman, serif",
@@ -5638,7 +5657,7 @@ var gCSSProperties = {
     invalid_values: [
       "9 fantasy",
       "-2px fantasy",
-      // line-height with calc()
+      
       "condensed bold italic small-caps 24px/calc(1 + 2px) Times New Roman, serif",
       "condensed bold italic small-caps 24px/calc(100% + 0.1) Times New Roman, serif",
     ],
@@ -6108,9 +6127,9 @@ var gCSSProperties = {
     domProp: "height",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* FIXME: test zero, and test calc clamping */
+    
     initial_values: [" auto"],
-    /* computed value tests for height test more with display:block */
+    
     prerequisites: { display: "block" },
     other_values: [
       "15px",
@@ -6120,7 +6139,7 @@ var gCSSProperties = {
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(2px)",
@@ -6144,9 +6163,9 @@ var gCSSProperties = {
     domProp: "left",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -6199,13 +6218,13 @@ var gCSSProperties = {
     applies_to_first_line: true,
     applies_to_placeholder: true,
     applies_to_cue: true,
-    /*
-     * Inheritance tests require consistent font size, since
-     * getComputedStyle (which uses the CSS2 computed value, or
-     * CSS2.1 used value) doesn't match what the CSS2.1 computed
-     * value is.  And they even require consistent font metrics for
-     * computation of 'normal'.
-     */
+    
+
+
+
+
+
+
     prerequisites: {
       "font-size": "19px",
       "font-size-adjust": "none",
@@ -6315,7 +6334,7 @@ var gCSSProperties = {
     initial_values: ["none"],
     other_values: [
       'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==")',
-      // Add some tests for interesting url() values here to test serialization, etc.
+      
       "url('data:text/plain,\"')",
       'url("data:text/plain,\'")',
       "url('data:text/plain,\\'')",
@@ -6441,7 +6460,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -6462,7 +6481,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -6507,7 +6526,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -6528,7 +6547,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -6558,7 +6577,7 @@ var gCSSProperties = {
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(2px)",
@@ -6582,14 +6601,14 @@ var gCSSProperties = {
       "30px",
       "50%",
       "0",
-      // these four keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(2px)",
@@ -6616,7 +6635,7 @@ var gCSSProperties = {
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(-1%)",
@@ -6638,14 +6657,14 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      // these four keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(-1%)",
@@ -6755,8 +6774,8 @@ var gCSSProperties = {
       "none",
       "medium",
       "thin",
-      // XXX Should be invert, but currently currentcolor.
-      //"invert", "none medium invert"
+      
+      
       "currentColor",
       "none medium currentcolor",
     ],
@@ -6775,7 +6794,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_cue: true,
     prerequisites: { color: "black" },
-    initial_values: ["currentColor"], // XXX should be invert
+    initial_values: ["currentColor"], 
     other_values: ["green", "rgba(255,128,0,0.5)", "transparent"],
     invalid_values: [
       "#0",
@@ -6813,7 +6832,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_cue: true,
-    // XXX Should 'hidden' be the same as initial?
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -6880,7 +6899,7 @@ var gCSSProperties = {
     domProp: "overflowX",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     prerequisites: {
       display: "block",
       "overflow-y": "visible",
@@ -6894,7 +6913,7 @@ var gCSSProperties = {
     domProp: "overflowY",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     prerequisites: {
       display: "block",
       "overflow-x": "visible",
@@ -6909,7 +6928,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     prerequisites: {
       display: "block",
       "overflow-block": "visible",
@@ -6924,7 +6943,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     prerequisites: {
       display: "block",
       "overflow-inline": "visible",
@@ -6980,7 +6999,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: [
       "0",
       "0px",
@@ -7008,7 +7027,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: [
       "0",
       "0px",
@@ -7036,7 +7055,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: [
       "0",
       "0px",
@@ -7064,7 +7083,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: [
       "0",
       "0px",
@@ -7161,7 +7180,7 @@ var gCSSProperties = {
     domProp: "pointerEvents",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     initial_values: ["auto"],
     other_values: [
       "visiblePainted",
@@ -7202,9 +7221,9 @@ var gCSSProperties = {
     domProp: "right",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -7599,7 +7618,7 @@ var gCSSProperties = {
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     applies_to_placeholder: true,
-    // don't know whether left and right are same as start
+    
     initial_values: ["start"],
     other_values: ["center", "justify", "end", "match-parent"],
     invalid_values: [
@@ -8050,8 +8069,8 @@ var gCSSProperties = {
       "green 2px 2px, blue 1px 3px 4px",
       "currentColor 3px 3px",
       "blue 2px 2px, currentColor 1px 2px",
-      /* calc() values */
-      "2px 2px calc(-5px)" /* clamped */,
+      
+      "2px 2px calc(-5px)" ,
       "calc(3em - 2px) 2px green",
       "green calc(3em - 2px) 2px",
       "2px calc(2px + 0.2em)",
@@ -8111,9 +8130,9 @@ var gCSSProperties = {
     domProp: "top",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -8389,31 +8408,31 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     prerequisites: {
-      // computed value tests for width test more with display:block
+      
       display: "block",
-      // add some margin to avoid the initial "auto" value getting
-      // resolved to the same length as the parent element.
+      
+      
       "margin-left": "5px",
     },
     initial_values: [" auto"],
-    /* XXX these have prerequisites */
+    
     other_values: [
       "15px",
       "3em",
       "15%",
-      // these three keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
-      // whether -moz-available computes to the initial value depends on
-      // the container size, and for the container size we're testing
-      // with, it does
-      // "-moz-available",
+      
+      
+      
+      
       "3e1px",
       "3e+1px",
       "3e0px",
@@ -8438,7 +8457,7 @@ var gCSSProperties = {
       "3.2e+0%",
       "3.2e-0%",
       "3.2e-1%",
-      /* valid calc() values */
+      
       "calc(-2px)",
       "calc(2px)",
       "calc(50%)",
@@ -8476,8 +8495,8 @@ var gCSSProperties = {
     invalid_values: [
       "none",
       "-2px",
-      "content" /* (valid for 'flex-basis' but not 'width') */,
-      /* invalid calc() values */
+      "content" ,
+      
       "calc(50%+ 2px)",
       "calc(50% +2px)",
       "calc(50%+2px)",
@@ -8490,12 +8509,12 @@ var gCSSProperties = {
       "-moz-min(5px,2em)",
       "-moz-max(5px,2em)",
       "calc(50px/(2 - 2))",
-      /* If we ever support division by values, which is
-       * complicated for the reasons described in
-       * http://lists.w3.org/Archives/Public/www-style/2010Jan/0007.html
-       * , we should support all 4 of these as described in
-       * http://lists.w3.org/Archives/Public/www-style/2009Dec/0296.html
-       */
+      
+
+
+
+
+
       "calc((3em / 100%) * 3em)",
       "calc(3em / 100% * 3em)",
       "calc(3em * (3em / 100%))",
@@ -8585,7 +8604,7 @@ var gCSSProperties = {
     domProp: "zIndex",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* XXX requires position */
+    
     initial_values: ["auto"],
     other_values: ["0", "3", "-7000", "12000"],
     invalid_values: ["3.0", "17.5", "3e1"],
@@ -8695,19 +8714,19 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     initial_values: ["none"],
     other_values: [
-      // SVG reference filters
+      
       "url(#my-filter)",
       "url(#my-filter-1) url(#my-filter-2)",
 
-      // Filter functions
+      
       "opacity(50%) saturate(1.0)",
       "invert(50%) sepia(0.1) brightness(90%)",
 
-      // Mixed SVG reference filters and filter functions
+      
       "grayscale(1) url(#my-filter-1)",
       "url(#my-filter-1) brightness(50%) contrast(0.9)",
 
-      // Bad URLs
+      
       "url('badscheme:badurl')",
       "blur(3px) url('badscheme:badurl') grayscale(50%)",
 
@@ -8718,7 +8737,7 @@ var gCSSProperties = {
       "blur(3px)",
       "blur(100px)",
       "blur(0.1em)",
-      "blur(calc(-1px))", // Parses and becomes blur(0px).
+      "blur(calc(-1px))", 
       "blur(calc(0px))",
       "blur(calc(5px))",
       "blur(calc(2 * 5px))",
@@ -8748,7 +8767,7 @@ var gCSSProperties = {
       "drop-shadow(green 2px 2px)",
       "drop-shadow(green 2px 2px 1px)",
       "drop-shadow(currentColor 3px 3px)",
-      "drop-shadow(2px 2px calc(-5px))" /* clamped */,
+      "drop-shadow(2px 2px calc(-5px))" ,
       "drop-shadow(calc(3em - 2px) 2px green)",
       "drop-shadow(green calc(3em - 2px) 2px)",
       "drop-shadow(2px calc(2px + 0.2em))",
@@ -8817,31 +8836,31 @@ var gCSSProperties = {
       "sepia(4.567)",
     ],
     invalid_values: [
-      // none
+      
       "none none",
       "url(#my-filter) none",
       "none url(#my-filter)",
       "blur(2px) none url(#my-filter)",
 
-      // Nested filters
+      
       "grayscale(invert(1.0))",
 
-      // Comma delimited filters
+      
       "url(#my-filter),",
       "invert(50%), url(#my-filter), brightness(90%)",
 
-      // Test the following situations for each filter function:
-      // - Invalid number of arguments
-      // - Comma delimited arguments
-      // - Wrong argument type
-      // - Argument value out of range
+      
+      
+      
+      
+      
       "blur(3px 5px)",
       "blur(3px,)",
       "blur(3px, 5px)",
       "blur(#my-filter)",
       "blur(0.5)",
       "blur(50%)",
-      "blur(calc(0))", // Unitless zero in calc is not a valid length.
+      "blur(calc(0))", 
       "blur(calc(0.1))",
       "blur(calc(10%))",
       "blur(calc(20px - 5%))",
@@ -9676,11 +9695,11 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: [" auto"],
-    // NOTE: Besides "content", this is cribbed directly from the "width"
-    // chunk, since this property takes the exact same values as width
-    // (plus 'content' & with different semantics on 'auto').
-    // XXXdholbert (Maybe these should get separated out into
-    // a reusable array defined at the top of this file?)
+    
+    
+    
+    
+    
     other_values: [
       "content",
       "15px",
@@ -9692,7 +9711,7 @@ var gCSSProperties = {
       "-moz-min-content",
       "-moz-fit-content",
       "-moz-available",
-      // valid calc() values
+      
       "calc(-2px)",
       "calc(2px)",
       "calc(50%)",
@@ -9730,7 +9749,7 @@ var gCSSProperties = {
     invalid_values: [
       "none",
       "-2px",
-      // invalid calc() values
+      
       "calc(50%+ 2px)",
       "calc(50% +2px)",
       "calc(50%+2px)",
@@ -9743,11 +9762,11 @@ var gCSSProperties = {
       "-moz-min(5px,2em)",
       "-moz-max(5px,2em)",
       "calc(50px/(2 - 2))",
-      // If we ever support division by values, which is
-      // complicated for the reasons described in
-      // http://lists.w3.org/Archives/Public/www-style/2010Jan/0007.html
-      // , we should support all 4 of these as described in
-      // http://lists.w3.org/Archives/Public/www-style/2009Dec/0296.html
+      
+      
+      
+      
+      
       "calc((3em / 100%) * 3em)",
       "calc(3em / 100% * 3em)",
       "calc(3em * (3em / 100%))",
@@ -9769,33 +9788,33 @@ var gCSSProperties = {
     subproperties: ["flex-direction", "flex-wrap"],
     initial_values: ["row nowrap", "nowrap row", "row", "nowrap"],
     other_values: [
-      // only specifying one property:
+      
       "column",
       "wrap",
       "wrap-reverse",
-      // specifying both properties, 'flex-direction' first:
+      
       "row wrap",
       "row wrap-reverse",
       "column wrap",
       "column wrap-reverse",
-      // specifying both properties, 'flex-wrap' first:
+      
       "wrap row",
       "wrap column",
       "wrap-reverse row",
       "wrap-reverse column",
     ],
     invalid_values: [
-      // specifying flex-direction twice (invalid):
+      
       "row column",
       "row column nowrap",
       "row nowrap column",
       "nowrap row column",
-      // specifying flex-wrap twice (invalid):
+      
       "nowrap wrap-reverse",
       "nowrap wrap-reverse row",
       "nowrap row wrap-reverse",
       "row nowrap wrap-reverse",
-      // Invalid data-type / invalid keyword type:
+      
       "1px",
       "5%",
       "justify",
@@ -9835,7 +9854,7 @@ var gCSSProperties = {
     invalid_values: ["0px", "1.0", "1.", "1%", "0.2", "3em", "stretch"],
   },
 
-  // Aliases
+  
   "word-wrap": {
     domProp: "wordWrap",
     inherited: true,
@@ -10041,7 +10060,7 @@ var gCSSProperties = {
     alias_for: "hyphens",
     subproperties: ["hyphens"],
   },
-  // vertical text properties
+  
   "writing-mode": {
     domProp: "writingMode",
     inherited: true,
@@ -10066,12 +10085,12 @@ var gCSSProperties = {
       "upright",
       "sideways",
       "sideways-right",
-    ] /* sideways-right alias for backward compatibility */,
+    ] ,
     invalid_values: [
       "none",
       "3em",
       "sideways-left",
-    ] /* sideways-left removed from CSS Writing Modes */,
+    ] ,
   },
   "block-size": {
     domProp: "blockSize",
@@ -10079,14 +10098,14 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     logical: true,
     axis: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["auto"],
     prerequisites: { display: "block" },
     other_values: [
       "15px",
       "3em",
       "15%",
-      // These keywords are treated as initial value.
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
@@ -10201,7 +10220,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -10307,7 +10326,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX hidden is sometimes the same as initial */
+    
     initial_values: ["none"],
     other_values: [
       "solid",
@@ -10421,31 +10440,31 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     logical: true,
     axis: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["auto"],
     prerequisites: {
       display: "block",
-      // add some margin to avoid the initial "auto" value getting
-      // resolved to the same length as the parent element.
+      
+      
       "margin-left": "5px",
     },
     other_values: [
       "15px",
       "3em",
       "15%",
-      // these three keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
-      // whether -moz-available computes to the initial value depends on
-      // the container size, and for the container size we're testing
-      // with, it does
-      // "-moz-available",
+      
+      
+      
+      
       "calc(2px)",
       "calc(50%)",
       "calc(3*25px)",
@@ -10493,7 +10512,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -10527,7 +10546,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     logical: true,
-    /* XXX testing auto has prerequisites */
+    
     initial_values: ["0", "0px", "0%", "calc(0pt)", "calc(0% + 0px)"],
     other_values: [
       "1px",
@@ -10582,7 +10601,7 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      // These keywords are treated as initial value.
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
@@ -10608,14 +10627,14 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      // these four keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(2px)",
@@ -10637,7 +10656,7 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      // These keywords are treated as initial value.
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
@@ -10664,14 +10683,14 @@ var gCSSProperties = {
     other_values: [
       "30px",
       "50%",
-      // these four keywords compute to the initial value only when the
-      // writing mode is vertical, and we're testing with a horizontal
-      // writing mode
+      
+      
+      
       "max-content",
       "min-content",
       "-moz-fit-content",
       "-moz-available",
-      // these two keywords are the aliases of above first two.
+      
       "-moz-max-content",
       "-moz-min-content",
       "calc(-1%)",
@@ -10688,7 +10707,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_TRUE_SHORTHAND,
     subproperties: ["top", "right", "bottom", "left"],
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
     initial_values: ["auto"],
     other_values: [
@@ -10705,7 +10724,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_TRUE_SHORTHAND,
     subproperties: ["inset-block-start", "inset-block-end"],
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
     initial_values: ["auto", "auto auto"],
     other_values: [
@@ -10735,9 +10754,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -10757,9 +10776,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -10779,7 +10798,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_TRUE_SHORTHAND,
     subproperties: ["inset-inline-start", "inset-inline-end"],
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
     initial_values: ["auto", "auto auto"],
     other_values: [
@@ -10809,9 +10828,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -10831,9 +10850,9 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     logical: true,
-    /* FIXME: run tests with multiple prerequisites */
+    
     prerequisites: { position: "relative" },
-    /* XXX 0 may or may not be equal to auto */
+    
     initial_values: ["auto"],
     other_values: [
       "32px",
@@ -10853,7 +10872,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     logical: true,
     initial_values: [
       "0",
@@ -10881,7 +10900,7 @@ var gCSSProperties = {
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
-    // No applies_to_placeholder because we have a !important rule in forms.css.
+    
     logical: true,
     initial_values: [
       "0",
@@ -11500,10 +11519,10 @@ var gCSSProperties = {
     alias_for: "mask-size",
     subproperties: ["mask-size"],
   },
-}; // end of gCSSProperties
+}; 
 
-// Get the computed value for a property.  For shorthands, return the
-// computed values of all the subproperties, delimited by " ; ".
+
+
 function get_computed_value(cs, property) {
   var info = gCSSProperties[property];
   if (
@@ -11545,7 +11564,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "10rad x",
       "10rad y",
       "10rad z",
-      /* valid calc() values */
+      
       "calc(1) 0 0 calc(45deg + 5rad)",
       "0 1 0 calc(400grad + 1rad)",
       "calc(0.5turn + 10deg)",
@@ -11563,7 +11582,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "0 0 1 z 10rad",
       "z 0 0 1 10rad",
       "0 0 z 1 10rad",
-      /* invalid calc() values */
+      
       "0.5 1 0 calc(45deg + 10)",
       "calc(0.5turn + 10%)",
     ],
@@ -11584,7 +11603,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "4px 5px",
       "50% 5px 6px",
       "50% 10% 6em",
-      /* valid calc() values */
+      
       "calc(5px + 10%)",
       "calc(0.25 * 5px + 10% / 3)",
       "calc(5px - 10% * 3)",
@@ -11598,7 +11617,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "4px, 5px, 6px",
       "3px 4px 1px 7px",
       "4px 5px 10%",
-      /* invalid calc() values */
+      
       "calc(max(5px,10%) 10%)",
       "calc(nonsense)",
     ],
@@ -11624,7 +11643,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "-10% 20% -30%",
       "-10 20% -30",
       "0 2.0",
-      /* valid calc() values */
+      
       "calc(1 + 2)",
       "calc(10) calc(20) 30",
     ],
@@ -11632,7 +11651,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.individual-transform.enabled")) {
       "10px",
       "10deg",
       "10, 20, 30",
-      /* invalid calc() values */
+      
       "calc(1 + 20%)",
       "10 calc(1 + 10px)",
     ],
@@ -11746,22 +11765,22 @@ if (IsCSSPropertyPrefEnabled("layout.css.font-variations.enabled")) {
     ],
     invalid_values: [
       "wdth",
-      "wdth 1", // unquoted tags
+      "wdth 1", 
       "'wdth'",
       "'wdth' 'wght'",
-      "'wdth', 'wght'", // missing values
+      "'wdth', 'wght'", 
       "'' 1",
       "'wid' 1",
-      "'width' 1", // incorrect tag lengths
-      "'wd\th' 1", // non-graphic character in tag
-      "'wdth' 1 'wght' 2", // missing comma between pairs
-      "'wdth' 1,", // trailing comma
-      "'wdth' 1 , , 'wght' 2", // extra comma
-      "'wdth', 1", // comma within pair
+      "'width' 1", 
+      "'wd\th' 1", 
+      "'wdth' 1 'wght' 2", 
+      "'wdth' 1,", 
+      "'wdth' 1 , , 'wght' 2", 
+      "'wdth', 1", 
     ],
     unbalanced_values: [
       "'wdth\" 1",
-      "\"wdth' 1", // mismatched quotes
+      "\"wdth' 1", 
     ],
   };
   gCSSProperties["font"].subproperties.push("font-variation-settings");
@@ -11887,7 +11906,7 @@ gCSSProperties["grid-template-columns"] = {
     "40px MinMax(min-content, calc(20px + 10%)) max-content",
     "40px 2em",
     "[] 40px [-foo] 2em [bar baz This is one ident]",
-    // TODO bug 978478: "[a] repeat(3, [b] 20px [c] 40px [d]) [e]",
+    
     "repeat(1, 20px)",
     "repeat(1, [a] 20px)",
     "[a] Repeat(4, [a] 20px [] auto [b c]) [d]",
@@ -11981,7 +12000,7 @@ gCSSProperties["grid-template-columns"] = {
 };
 if (isGridTemplateSubgridValueEnabled) {
   gCSSProperties["grid-template-columns"].other_values.push(
-    // See https://bugzilla.mozilla.org/show_bug.cgi?id=981300
+    
     "[none subgrid min-content max-content foo] 40px",
 
     "subgrid",
@@ -12067,12 +12086,12 @@ gCSSProperties["grid-template"] = {
   ],
   initial_values: ["none", "none / none"],
   other_values: [
-    // <'grid-template-rows'> / <'grid-template-columns'>
+    
     "40px / 100px",
     "[foo] 40px [bar] / [baz] repeat(auto-fill,100px) [fizz]",
     " none/100px",
     "40px/none",
-    // [ <line-names>? <string> <track-size>? <line-names>? ]+ [ / <explicit-track-list> ]?
+    
     "'fizz'",
     "[bar] 'fizz'",
     "'fizz' / [foo] 40px",
@@ -12226,8 +12245,8 @@ gCSSProperties["grid-row-end"] = {
   invalid_values: gridLineInvalidValues,
 };
 
-// The grid-column and grid-row shorthands take values of the form
-//   <grid-line> [ / <grid-line> ]?
+
+
 var gridColumnRowOtherValues = [].concat(gridLineOtherValues);
 gridLineOtherValues.concat(["auto"]).forEach(function(val) {
   gridColumnRowOtherValues.push(" foo / " + val);
@@ -12642,10 +12661,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.webkit-line-clamp.enabled")) {
 }
 
 if (false) {
-  // TODO These properties are chrome-only, and are not exposed via CSSOM.
-  // We may still want to find a way to test them. See bug 1206999.
+  
+  
   gCSSProperties["-moz-window-shadow"] = {
-    //domProp: "MozWindowShadow",
+    
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: ["default"],
@@ -12654,7 +12673,7 @@ if (false) {
   };
 
   gCSSProperties["-moz-window-opacity"] = {
-    // domProp: "MozWindowOpacity",
+    
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     initial_values: [
@@ -12673,7 +12692,7 @@ if (false) {
   };
 
   gCSSProperties["-moz-window-transform"] = {
-    // domProp: "MozWindowTransform",
+    
     inherited: false,
     type: CSS_TYPE_LONGHAND,
     prerequisites: { width: "300px", height: "50px" },
@@ -12729,7 +12748,7 @@ if (false) {
       "translate(3%, 5px)",
       "translate(5px, 3%)",
       "matrix(1, 2, 3, 4, 5, 6)",
-      /* valid calc() values */
+      
       "translatex(calc(5px + 10%))",
       "translatey(calc(0.25 * 5px + 10% / 3))",
       "translate(calc(5px - 10% * 3))",
@@ -12788,7 +12807,7 @@ if (false) {
       "matrix(1, 2, 3, 4, 5%, 6px)",
       "matrix(1, 2, 3, 4, 5%, 6%)",
       "matrix(1, 2, 3, 4, 5px, 6em)",
-      /* invalid calc() values */
+      
       "translatey(-moz-min(5px,10%))",
       "translatex(-moz-max(5px,10%))",
       "matrix(1, 0, 0, 1, max(5px * 3), calc(10% - 3px))",
@@ -12807,10 +12826,10 @@ if (false) {
   };
 
   gCSSProperties["-moz-window-transform-origin"] = {
-    // domProp: "MozWindowTransformOrigin",
+    
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    /* no subproperties */
+    
     prerequisites: { width: "10px", height: "10px", display: "block" },
     initial_values: ["50% 50%", "center", "center center"],
     other_values: [
@@ -12864,7 +12883,7 @@ if (false) {
   };
 
   gCSSProperties["-moz-context-properties"] = {
-    //domProp: "MozContextProperties",
+    
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     initial_values: ["none"],
@@ -12888,7 +12907,7 @@ if (false) {
   };
 
   gCSSProperties["-moz-font-smoothing-background-color"] = {
-    // domProp: "MozFontSmoothingBackgroundColor",
+    
     inherited: true,
     type: CSS_TYPE_LONGHAND,
     initial_values: ["transparent"],
@@ -13189,9 +13208,9 @@ if (IsCSSPropertyPrefEnabled("layout.css.prefixes.columns")) {
   };
 }
 
-// Copy aliased properties' fields from their alias targets. Keep this logic
-// at the bottom of this file to ensure all the aliased properties are
-// processed.
+
+
+
 for (var prop in gCSSProperties) {
   var entry = gCSSProperties[prop];
   if (entry.alias_for) {
@@ -13207,7 +13226,7 @@ for (var prop in gCSSProperties) {
           "must be set to a recognized CSS property in gCSSProperties"
       );
     } else {
-      // Copy 'values' fields & 'prerequisites' field from aliasTargetEntry:
+      
       var fieldsToCopy = [
         "initial_values",
         "other_values",
@@ -13218,8 +13237,8 @@ for (var prop in gCSSProperties) {
       ];
 
       fieldsToCopy.forEach(function(fieldName) {
-        // (Don't copy the field if the alias already has something there,
-        // or if the aliased property doesn't have anything to copy.)
+        
+        
         if (!(fieldName in entry) && fieldName in aliasTargetEntry) {
           entry[fieldName] = aliasTargetEntry[fieldName];
         }
