@@ -37,24 +37,34 @@ class ParallelWorker : public GCParallelTask {
 
   ParallelWorker(GCRuntime* gc, WorkFunc func, WorkItemIterator& work,
                  const SliceBudget& budget, AutoLockHelperThreadState& lock)
-      : GCParallelTask(gc), func_(func), work_(work), budget_(budget) {}
+      : GCParallelTask(gc),
+        func_(func),
+        work_(work),
+        budget_(budget),
+        item_(work.get()) {
+    
+    
+    work.next();
+  }
 
   void run() {
     
     AutoDisableProxyCheck noProxyCheck;
 
-    AutoLockHelperThreadState lock;
-    while (!work().done()) {
-      WorkItem item = work().get();
-      work().next();
-
-      AutoUnlockHelperThreadState unlock(lock);
-      size_t steps = func_(gc, item);
-
+    for (;;) {
+      size_t steps = func_(gc, item_);
       budget_.step(steps);
       if (budget_.isOverBudget()) {
         break;
       }
+
+      AutoLockHelperThreadState lock;
+      if (work().done()) {
+        break;
+      }
+
+      item_ = work().get();
+      work().next();
     }
   }
 
@@ -69,6 +79,9 @@ class ParallelWorker : public GCParallelTask {
 
   
   SliceBudget budget_;
+
+  
+  WorkItem item_;
 };
 
 static constexpr size_t MaxParallelWorkers = 8;
