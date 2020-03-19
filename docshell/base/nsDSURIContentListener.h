@@ -31,9 +31,6 @@ class MaybeCloseWindowHelper final : public nsITimerCallback {
 
 
 
-
-
-
   mozilla::dom::BrowsingContext* MaybeCloseWindow();
 
   void SetShouldCloseWindow(bool aShouldCloseWindow);
@@ -42,9 +39,6 @@ class MaybeCloseWindowHelper final : public nsITimerCallback {
   ~MaybeCloseWindowHelper();
 
  private:
-  already_AddRefed<mozilla::dom::BrowsingContext> ChooseNewBrowsingContext(
-      mozilla::dom::BrowsingContext* aBC);
-
   
 
 
