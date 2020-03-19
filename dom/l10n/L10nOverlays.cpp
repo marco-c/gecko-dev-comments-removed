@@ -471,7 +471,8 @@ void L10nOverlays::TranslateElement(Element& aElement,
       
       
       RefPtr<DocumentFragment> fragment =
-          new DocumentFragment(aElement.OwnerDoc()->NodeInfoManager());
+          new (aElement.OwnerDoc()->NodeInfoManager())
+              DocumentFragment(aElement.OwnerDoc()->NodeInfoManager());
       nsContentUtils::ParseFragmentHTML(
           NS_ConvertUTF8toUTF16(aTranslation.mValue), fragment,
           nsGkAtoms::_template, kNameSpaceID_XHTML, false, true);

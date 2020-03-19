@@ -1592,7 +1592,8 @@ nsresult nsRange::CutContents(DocumentFragment** aFragment) {
   
   RefPtr<DocumentFragment> retval;
   if (aFragment) {
-    retval = new DocumentFragment(doc->NodeInfoManager());
+    retval =
+        new (doc->NodeInfoManager()) DocumentFragment(doc->NodeInfoManager());
   }
   nsCOMPtr<nsINode> commonCloneAncestor = retval.get();
 
@@ -2021,7 +2022,7 @@ already_AddRefed<DocumentFragment> nsRange::CloneContents(ErrorResult& aRv) {
   
 
   RefPtr<DocumentFragment> clonedFrag =
-      new DocumentFragment(doc->NodeInfoManager());
+      new (doc->NodeInfoManager()) DocumentFragment(doc->NodeInfoManager());
 
   if (Collapsed()) {
     return clonedFrag.forget();
