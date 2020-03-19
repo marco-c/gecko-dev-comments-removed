@@ -1,11 +1,11 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Set the MOZ_CONFIGURE_OPTIONS variable with all the options that
-# were passed somehow (environment, command line, mozconfig)
+
+
+
+
+
+
+
 @dependable
 @imports(_from='mozbuild.shellutil', _import='quote')
 @imports(_from='mozbuild.util', _import='ensure_unicode')
@@ -16,32 +16,32 @@ def all_configure_options():
     result = []
     previous = None
     for option in itervalues(__sandbox__._options):
-        # __sandbox__._options contains items for both option.name and
-        # option.env. But it's also an OrderedDict, meaning both are
-        # consecutive.
-        # Also ignore OLD_CONFIGURE and MOZCONFIG because they're not
-        # interesting.
+        
+        
+        
+        
+        
         if option == previous or option.env in ('OLD_CONFIGURE', 'MOZCONFIG'):
             continue
         previous = option
         value = __sandbox__._value_for(option)
-        # We only want options that were explicitly given on the command
-        # line, the environment, or mozconfig, and that differ from the
-        # defaults.
+        
+        
+        
         if (value is not None and value.origin not in ('default', 'implied') and
                 value != option.default):
             result.append(ensure_unicode(__sandbox__._raw_options[option],
                                          system_encoding))
-        # We however always include options that are sent to old configure
-        # because we don't know their actual defaults. (Keep the conditions
-        # separate for ease of understanding and ease of removal)
+        
+        
+        
         elif (option.help == 'Help missing for old configure options' and
                 option in __sandbox__._raw_options):
             result.append(ensure_unicode(__sandbox__._raw_options[option],
                                          system_encoding))
 
-    # We shouldn't need this, but currently, quote will return a byte string
-    # if result is empty, and that's not wanted here.
+    
+    
     if not result:
         return ''
 
@@ -50,10 +50,10 @@ def all_configure_options():
 
 set_config('MOZ_CONFIGURE_OPTIONS', all_configure_options)
 
-# Profiling
-# ==============================================================
-# Some of the options here imply an option from js/moz.configure,
-# so, need to be declared before the include.
+
+
+
+
 
 option('--enable-jprof', env='MOZ_JPROF',
        help='Enable jprof profiling tool (needs mozilla/tools/jprof)')
@@ -84,34 +84,34 @@ set_config('MOZ_GECKO_PROFILER', gecko_profiler_define)
 set_define('MOZ_GECKO_PROFILER', gecko_profiler_define)
 
 
-# Whether code to parse ELF binaries should be compiled for the Gecko profiler
-# (for symbol table dumping).
+
+
 @depends(gecko_profiler, target)
 def gecko_profiler_parse_elf(value, target):
-    # Currently we only want to build this code on Linux (including Android).
-    # For Android, this is in order to dump symbols from Android system, where
-    # on other platforms there exist alternatives that don't require bloating
-    # up our binary size. For Linux more generally, we use this in profile
-    # pre-symbolication support, since MozDescribeCodeAddress doesn't do
-    # anything useful on that platform. (Ideally, we would update
-    # MozDescribeCodeAddress to call into some Rust crates that parse ELF and
-    # DWARF data, but build system issues currently prevent Rust from being
-    # used in mozglue.)
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if value and target.kernel == 'Linux':
         return True
 
 set_config('MOZ_GECKO_PROFILER_PARSE_ELF', gecko_profiler_parse_elf)
 set_define('MOZ_GECKO_PROFILER_PARSE_ELF', gecko_profiler_parse_elf)
 
-# enable this by default if the profiler is enabled
-# Note: also requires jemalloc
+
+
 set_config('MOZ_PROFILER_MEMORY', gecko_profiler_define)
 set_define('MOZ_PROFILER_MEMORY', gecko_profiler_define)
 
 
 @depends('--enable-debug', milestone, build_project,
-         # Artifact builds are included because the downloaded artifacts can
-         # have DMD enabled.
+         
+         
          when=artifact_builds | depends(when='--enable-replace-malloc')(lambda: True))
 def dmd_default(debug, milestone, build_project):
     return bool(build_project == 'browser' and (debug or milestone.is_nightly))
@@ -135,8 +135,8 @@ imply_option('--enable-profiling', dmd)
 imply_option('--enable-jemalloc', dmd, when=compile_environment)
 imply_option('--enable-replace-malloc', dmd, when=compile_environment)
 
-# ALSA cubeb backend
-# ==============================================================
+
+
 option('--enable-alsa', env='MOZ_ALSA',
        help='Enable ALSA audio backend.')
 
@@ -145,8 +145,8 @@ alsa = pkg_check_modules('MOZ_ALSA', 'alsa', when='--enable-alsa')
 set_config('MOZ_ALSA', depends_if(alsa)(lambda _: True))
 set_define('MOZ_ALSA', depends_if(alsa)(lambda _: True))
 
-# JACK cubeb backend
-# ==============================================================
+
+
 option('--enable-jack', env='MOZ_JACK',
        help='Enable JACK audio backend.')
 
@@ -155,8 +155,8 @@ jack = pkg_check_modules('MOZ_JACK', 'jack', when='--enable-jack')
 set_config('MOZ_JACK', depends_if(jack)(lambda _: True))
 set_define('MOZ_JACK', depends_if(jack)(lambda _: True))
 
-# PulseAudio cubeb backend
-# ==============================================================
+
+
 @depends(target)
 def pulseaudio_default(target):
     return target.os not in ('WINNT', 'OSX', 'iOS', 'Android', 'OpenBSD')
@@ -169,8 +169,8 @@ pulseaudio = pkg_check_modules('MOZ_PULSEAUDIO', 'libpulse', when='--enable-puls
 set_config('MOZ_PULSEAUDIO', depends_if(pulseaudio)(lambda _: True))
 set_define('MOZ_PULSEAUDIO', depends_if(pulseaudio)(lambda _: True))
 
-# AudioUnit cubeb Rust backend
-# ==============================================================
+
+
 @depends(target)
 def enable_audiounit_rust(target):
     return target.os == 'OSX' and target.kernel == 'Darwin'
@@ -178,17 +178,17 @@ def enable_audiounit_rust(target):
 set_config('MOZ_AUDIOUNIT_RUST', True, when=enable_audiounit_rust)
 set_define('MOZ_AUDIOUNIT_RUST', True, when=enable_audiounit_rust)
 
-# Javascript engine
-# ==============================================================
+
+
 include('../js/moz.configure')
 
 
-# NodeJS
-# ==============================================================
+
+
 include('../build/moz.configure/node.configure')
 
-# L10N
-# ==============================================================
+
+
 option('--with-l10n-base', nargs=1, env='L10NBASEDIR',
        help='Path to l10n repositories')
 
@@ -214,8 +214,8 @@ def l10n_base(value, automation, build_env):
 set_config('L10NBASEDIR', l10n_base)
 
 
-# Default toolkit
-# ==============================================================
+
+
 @depends(target)
 def toolkit_choices(target):
     if target.os == 'WINNT':
@@ -267,8 +267,8 @@ set_config('MOZ_X11', True, when=toolkit_gtk)
 set_define('MOZ_X11', True, when=toolkit_gtk)
 add_old_configure_assignment('MOZ_X11', True, when=toolkit_gtk)
 
-# Wayland support
-# ==============================================================
+
+
 wayland_headers = pkg_check_modules(
     'MOZ_WAYLAND', 'gtk+-wayland-3.0 >= 3.10 xkbcommon >= 0.4.1 libdrm >= 2.4',
     allow_missing=depends(full_toolkit)(lambda t: t == 'cairo-gtk3'),
@@ -285,8 +285,8 @@ def wayland_headers(wayland, toolkit_gtk, artifacts):
 set_config('MOZ_WAYLAND', depends_if(wayland_headers)(lambda _: True))
 set_define('MOZ_WAYLAND', depends_if(wayland_headers)(lambda _: True))
 
-# GL Provider
-# ==============================================================
+
+
 option('--with-gl-provider', nargs=1, help='Set GL provider backend type')
 
 @depends('--with-gl-provider')
@@ -321,8 +321,8 @@ def gl_provider_define(provider):
 set_define(gl_provider_define, True)
 
 
-# PDF printing
-# ==============================================================
+
+
 @depends(toolkit)
 def pdf_printing(toolkit):
     if toolkit in ('windows', 'gtk', 'android'):
@@ -333,15 +333,15 @@ def pdf_surface_feature(pdf_printing):
     if pdf_printing:
         return '#define CAIRO_HAS_PDF_SURFACE 1'
     else:
-        # CONFIGURE_SUBST_FILES need explicit empty values.
+        
         return ''
 
 set_config('MOZ_PDF_PRINTING', pdf_printing)
 set_config('PDF_SURFACE_FEATURE', pdf_surface_feature)
 
 
-# Event loop instrumentation
-# ==============================================================
+
+
 option(env='MOZ_INSTRUMENT_EVENT_LOOP',
        help='Force-enable event loop instrumentation')
 
@@ -355,8 +355,8 @@ set_config('MOZ_INSTRUMENT_EVENT_LOOP', instrument_event_loop)
 set_define('MOZ_INSTRUMENT_EVENT_LOOP', instrument_event_loop)
 
 
-# Fontconfig Freetype
-# ==============================================================
+
+
 option(env='USE_FC_FREETYPE',
        help='Force-enable the use of fontconfig freetype')
 
@@ -368,14 +368,14 @@ def fc_freetype(value, toolkit):
 
 add_old_configure_assignment('USE_FC_FREETYPE', fc_freetype)
 
-# Pango
-# ==============================================================
+
+
 pkg_check_modules('MOZ_PANGO',
                   'pango >= 1.22.0 pangoft2 >= 1.22.0 pangocairo >= 1.22.0',
                   when=toolkit_gtk)
 
-# Fontconfig
-# ==============================================================
+
+
 fontconfig_info = pkg_check_modules('_FONTCONFIG', 'fontconfig >= 2.7.0',
                                     when=fc_freetype)
 
@@ -384,7 +384,7 @@ def check_for_freetype2(fc_freetype):
     if fc_freetype:
         return True
 
-# Check for freetype2. Flags are combined with fontconfig flags.
+
 freetype2_info = pkg_check_modules('_FT2', 'freetype2 >= 6.1.0',
                                    when=check_for_freetype2)
 
@@ -402,8 +402,8 @@ def freetype2_combined_info(fontconfig_info, freetype2_info):
 add_old_configure_assignment('_HAVE_FREETYPE2',
                              depends_if(freetype2_info)(lambda _: True))
 
-# Apple platform decoder support
-# ==============================================================
+
+
 @depends(toolkit)
 def applemedia(toolkit):
     if toolkit in ('cocoa', 'uikit'):
@@ -413,8 +413,8 @@ set_config('MOZ_APPLEMEDIA', applemedia)
 set_define('MOZ_APPLEMEDIA', applemedia)
 add_old_configure_assignment('MOZ_APPLEMEDIA', applemedia)
 
-# Windows Media Foundation support
-# ==============================================================
+
+
 option('--disable-wmf',
        help='Disable support for Windows Media Foundation')
 
@@ -422,9 +422,9 @@ option('--disable-wmf',
 def wmf(value, target):
     enabled = bool(value)
     if value.origin == 'default':
-        # Enable Windows Media Foundation support by default.
-        # Note our minimum SDK version is Windows 7 SDK, so we are (currently)
-        # guaranteed to have a recent-enough SDK to build WMF.
+        
+        
+        
         enabled = target.os == 'WINNT'
     if enabled and target.os != 'WINNT':
         die('Cannot enable Windows Media Foundation support on %s', target.os)
@@ -434,8 +434,8 @@ def wmf(value, target):
 set_config('MOZ_WMF', wmf)
 set_define('MOZ_WMF', wmf)
 
-# FFmpeg H264/AAC Decoding Support
-# ==============================================================
+
+
 option('--disable-ffmpeg',
        help='Disable FFmpeg for fragmented H264/AAC decoding')
 
@@ -451,8 +451,8 @@ set_config('MOZ_FFMPEG', ffmpeg)
 set_define('MOZ_FFMPEG', ffmpeg)
 imply_option('--enable-fmp4', ffmpeg, '--enable-ffmpeg')
 
-# AV1 Video Codec Support
-# ==============================================================
+
+
 option('--disable-av1',
         help='Disable av1 video support')
 
@@ -478,8 +478,8 @@ set_define('MOZ_DAV1D_ASM', dav1d_asm)
 set_config('MOZ_AV1', av1)
 set_define('MOZ_AV1', av1)
 
-# Built-in fragmented MP4 support.
-# ==============================================================
+
+
 option('--disable-fmp4', env='MOZ_FMP4',
        help='Disable support for in built Fragmented MP4 parsing')
 
@@ -487,7 +487,7 @@ option('--disable-fmp4', env='MOZ_FMP4',
 def fmp4(value, target, wmf, applemedia):
     enabled = bool(value)
     if value.origin == 'default':
-        # target.os == 'Android' includes all B2G versions
+        
         enabled = wmf or applemedia or target.os == 'Android'
     if enabled:
         return True
@@ -498,9 +498,9 @@ add_old_configure_assignment('MOZ_FMP4', fmp4)
 
 @depends(target)
 def sample_type_is_s16(target):
-    # Use integers over floats for audio on Android regardless of the CPU
-    # architecture, because audio backends for Android don't support floats.
-    # We also use integers on ARM because it's more efficient.
+    
+    
+    
     if target.os == 'Android' or target.cpu == 'arm':
         return True
 
@@ -519,8 +519,8 @@ set_config('MOZ_VORBIS', sample_type_is_float)
 set_define('MOZ_TREMOR', sample_type_is_s16)
 set_config('MOZ_TREMOR', sample_type_is_s16)
 
-# OpenMAX IL Decoding Support
-# ==============================================================
+
+
 option('--enable-openmax',
        help='Enable OpenMAX IL for video/audio decoding')
 
@@ -533,8 +533,8 @@ def openmax(value):
 set_config('MOZ_OMX', openmax)
 set_define('MOZ_OMX', openmax)
 
-# EME Support
-# ==============================================================
+
+
 @depends(target)
 def eme_choices(target):
     if (target.kernel in ('Darwin', 'WINNT', 'Linux') and
@@ -545,8 +545,8 @@ def eme_choices(target):
         return ('widevine',)
 
 
-# Widevine is enabled by default in desktop browser builds, except
-# on aarch64 Windows.
+
+
 @depends(build_project, eme_choices, target)
 def eme_default(build_project, choices, target):
     if build_project == 'browser':
@@ -574,8 +574,8 @@ def eme_modules(value):
     return value
 
 
-# Fallback to an empty list when eme_choices is empty, setting eme_modules to
-# None.
+
+
 set_config('MOZ_EME_MODULES', eme_modules | dependable([]))
 
 
@@ -601,8 +601,8 @@ set_config('MOZ_PACKAGER_FORMAT', packager_format)
 
 @depends(host, build_project)
 def jar_maker_format(host, build_project):
-    # Multilocales for mobile/android use the same mergedirs for all locales,
-    # so we can't use symlinks for those builds.
+    
+    
     if host.os == 'WINNT' or build_project == 'mobile/android':
         return 'flat'
     return 'symlink'
@@ -611,10 +611,10 @@ set_config('MOZ_JAR_MAKER_FILE_FORMAT', jar_maker_format)
 
 @depends(toolkit)
 def omnijar_name(toolkit):
-    # Fennec's static resources live in the assets/ folder of the
-    # APK.  Adding a path to the name here works because we only
-    # have one omnijar file in the final package (which is not the
-    # case on desktop).
+    
+    
+    
+    
     return 'assets/omni.ja' if toolkit == 'android' else 'omni.ja'
 
 set_config('OMNIJAR_NAME', omnijar_name)
@@ -670,8 +670,8 @@ def telemetry_on_by_default(reporting, is_nightly, fennec_nightly):
 set_define('MOZ_TELEMETRY_ON_BY_DEFAULT', True, when=telemetry_on_by_default)
 
 
-# gpsd support
-# ==============================================================
+
+
 option('--enable-gpsd', env='MOZ_GPSD',
        help='Enable gpsd support')
 
@@ -684,16 +684,16 @@ system_gpsd = pkg_check_modules('MOZ_GPSD', 'libgps >= 3.11',
 
 set_config('MOZ_GPSD', depends_if(system_gpsd)(lambda _: True))
 
-# Miscellaneous programs
-# ==============================================================
+
+
 
 check_prog('TAR', ('gnutar', 'gtar', 'tar'))
 check_prog('UNZIP', ('unzip',))
 check_prog('ZIP', ('zip',))
 check_prog('GN', ('gn',), allow_missing=True)
 
-# Key files
-# ==============================================================
+
+
 include('../build/moz.configure/keyfiles.configure')
 
 simple_keyfile('Mozilla API')
@@ -711,8 +711,8 @@ id_and_secret_keyfile('Leanplum SDK')
 simple_keyfile('Pocket API')
 
 
-# WebRender Debugger integration
-# ==============================================================
+
+
 
 option('--enable-webrender-debugger',
        help='Build the websocket debug server in WebRender')
@@ -720,8 +720,8 @@ option('--enable-webrender-debugger',
 set_config('MOZ_WEBRENDER_DEBUGGER',
            depends_if('--enable-webrender-debugger')(lambda _: True))
 
-# Additional system headers defined at the application level
-# ==============================================================
+
+
 
 option('--enable-app-system-headers', env='MOZ_APP_SYSTEM_HEADERS',
        help='Use additional system headers defined in $MOZ_BUILD_APP/app-system-headers.mozbuild')
@@ -734,8 +734,8 @@ def app_system_headers(value):
 set_config('MOZ_APP_SYSTEM_HEADERS', app_system_headers)
 set_define('MOZ_APP_SYSTEM_HEADERS', app_system_headers)
 
-# Printing
-# ==============================================================
+
+
 @depends(target)
 def ios_disable_printing(target):
     if target.os == 'iOS':
@@ -754,8 +754,8 @@ set_config('NS_PRINTING', printing)
 set_define('NS_PRINTING', printing)
 set_define('NS_PRINT_PREVIEW', printing)
 
-# Speech-dispatcher support
-# ==============================================================
+
+
 @depends(toolkit)
 def no_speechd_on_non_gtk(toolkit):
     if toolkit != 'gtk':
@@ -769,8 +769,8 @@ option('--disable-synth-speechd', help='Disable speech-dispatcher support')
 set_config('MOZ_SYNTH_SPEECHD',
            depends_if('--disable-synth-speechd')(lambda _: True))
 
-# Speech API
-# ==============================================================
+
+
 option('--disable-webspeech', help='Disable support for HTML Speech API')
 
 @depends('--disable-webspeech')
@@ -782,8 +782,8 @@ set_config('MOZ_WEBSPEECH', webspeech)
 set_define('MOZ_WEBSPEECH', webspeech)
 add_old_configure_assignment('MOZ_WEBSPEECH', webspeech)
 
-# Speech API test backend
-# ==============================================================
+
+
 option('--enable-webspeechtestbackend', default=webspeech,
        help='{Enable|Disable} support for HTML Speech API Test Backend')
 
@@ -794,15 +794,15 @@ def webspeech_test_backend(value):
 set_config('MOZ_WEBSPEECH_TEST_BACKEND', webspeech_test_backend)
 set_define('MOZ_WEBSPEECH_TEST_BACKEND', webspeech_test_backend)
 
-# Enable IPDL's "expensive" unit tests
-# ==============================================================
+
+
 option('--enable-ipdl-tests', help='Enable expensive IPDL tests')
 
 set_config('MOZ_IPDL_TESTS',
            depends_if('--enable-ipdl-tests')(lambda _: True))
 
-# Graphics
-# ==============================================================
+
+
 option('--disable-skia', help='Disable use of Skia')
 
 @depends('--disable-skia')
@@ -878,8 +878,8 @@ system_webp = pkg_check_modules('MOZ_WEBP', 'libwebp >= 1.0.2 libwebpdemux >= 1.
 
 set_config('MOZ_SYSTEM_WEBP', depends(when=system_webp)(lambda: True))
 
-# Build Freetype in the tree
-# ==============================================================
+
+
 @depends(target, skia_pdf)
 def tree_freetype(target, skia_pdf):
     if target.os == 'Android' or (skia_pdf and target.os == 'WINNT'):
@@ -908,21 +908,21 @@ add_old_configure_assignment('FT2_CFLAGS',
                              ft2_info.cflags)
 
 
-# Remote agent
-# (partial implementation of Chromium Remote Debugging Protocol)
-# ==============================================================
-#
-# See https://firefox-source-docs.mozilla.org/remote/ for more.
-# The source code lives under ../remote.
+
+
+
+
+
+
 
 @depends(target, build_project, milestone)
 def remote_default(target, project, milestone):
-    # no support for Android
+    
     if target.os == 'Android':
         return False
 
-    # enable on Firefox Nightly channel only
-    # TODO(ato): https://bugzil.la/1544393
+    
+    
     return project == 'browser' and milestone.is_nightly
 
 option('--enable-cdp', default=remote_default,
@@ -937,22 +937,22 @@ set_config('ENABLE_REMOTE_AGENT', remote)
 set_define('ENABLE_REMOTE_AGENT', remote)
 
 
-# Marionette remote protocol
-# ==============================================================
-#
-# Marionette is the Gecko remote protocol used for various remote control,
-# automation, and testing purposes throughout Gecko, Firefox, and Fennec.
-# Marionette lives in ../testing/marionette.
-#
-# Marionette is not really a toolkit feature, as much as a Gecko
-# engine feature.  But it is enabled based on the toolkit, so here it
-# lives.
-#
-# It also backs ../testing/geckodriver, which is Mozilla's WebDriver
-# implementation.
-#
-# For more information, see
-# https://developer.mozilla.org/en-US/docs/Mozilla/QA/Marionette.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 option('--disable-marionette',
        help='Disable Marionette remote protocol')
@@ -965,18 +965,18 @@ def marionette(value):
 set_config('ENABLE_MARIONETTE', marionette)
 
 
-# geckodriver WebDriver implementation
-# ==============================================================
-#
-# Turn off geckodriver for build configs we don't handle yet,
-# but allow --enable-geckodriver to override when compile environment is available.
-# --disable-tests implies disabling geckodriver.
+
+
+
+
+
+
 
 @depends('--enable-tests', target, cross_compiling, hazard_analysis, asan)
 def geckodriver_default(enable_tests, target, cross_compile, hazard, asan):
     if not enable_tests:
         return False
-    # geckodriver depends on winapi 0.2.8, which doesn't work with AArch64.
+    
     if target.os == 'WINNT' and target.cpu == 'aarch64':
         return False
     if hazard or target.os == 'Android' or (asan and cross_compile):
@@ -995,12 +995,12 @@ def geckodriver(enabled):
 set_config('ENABLE_GECKODRIVER', geckodriver)
 
 
-# WebRTC
-# ========================================================
+
+
 @depends(target)
 def webrtc_default(target):
-    # Turn off webrtc for OS's we don't handle yet, but allow
-    # --enable-webrtc to override.
+    
+    
     os_match = False
     for os_fragment in ('linux', 'mingw', 'android', 'linuxandroid',
                         'dragonfly', 'freebsd', 'netbsd', 'openbsd',
@@ -1036,8 +1036,8 @@ set_config('MOZ_WEBRTC_SIGNALING', webrtc)
 set_define('MOZ_WEBRTC_SIGNALING', webrtc)
 set_config('MOZ_PEERCONNECTION', webrtc)
 set_define('MOZ_PEERCONNECTION', webrtc)
-# MOZ_WEBRTC_ASSERT_ALWAYS turns on a number of safety asserts in
-# opt/production builds (via MOZ_CRASH())
+
+
 set_config('MOZ_WEBRTC_ASSERT_ALWAYS', webrtc)
 set_define('MOZ_WEBRTC_ASSERT_ALWAYS', webrtc)
 
@@ -1049,8 +1049,8 @@ set_config('MOZ_WEBRTC_HARDWARE_AEC_NS',
 set_define('MOZ_WEBRTC_HARDWARE_AEC_NS',
            depends_if('--enable-hardware-aec-ns', when=webrtc)(lambda _: True))
 
-# RAW media
-# ==============================================================
+
+
 
 @depends(target, webrtc)
 def raw_media_default(target, webrtc):
@@ -1066,8 +1066,8 @@ option('--enable-raw',
 set_config('MOZ_RAW', depends_if('--enable-raw')(lambda _: True))
 set_define('MOZ_RAW', depends_if('--enable-raw')(lambda _: True))
 
-# ASan Reporter Addon
-# ==============================================================
+
+
 option('--enable-address-sanitizer-reporter',
        help='Enable Address Sanitizer Reporter Extension')
 
@@ -1080,8 +1080,8 @@ set_config('MOZ_ASAN_REPORTER', enable_asan_reporter)
 set_define('MOZ_ASAN_REPORTER', enable_asan_reporter)
 add_old_configure_assignment('MOZ_ASAN_REPORTER', enable_asan_reporter)
 
-# Elfhack
-# ==============================================================
+
+
 with only_when('--enable-compile-environment'):
     @depends(host, target)
     def has_elfhack(host, target):
@@ -1112,8 +1112,8 @@ set_config('WEBIDL_ROOT', idl_roots.webidl_root)
 set_config('IPDL_ROOT', idl_roots.ipdl_root)
 set_config('XPCOM_ROOT', idl_roots.xpcom_root)
 
-# Proxy bypass protection
-# ==============================================================
+
+
 
 option('--enable-proxy-bypass-protection',
        help='Prevent suspected or confirmed proxy bypasses')
@@ -1125,13 +1125,13 @@ def proxy_bypass_protection(_):
 set_config('MOZ_PROXY_BYPASS_PROTECTION', proxy_bypass_protection)
 set_define('MOZ_PROXY_BYPASS_PROTECTION', proxy_bypass_protection)
 
-# MIDL
-# ==============================================================
+
+
 
 @depends(c_compiler, toolchain_prefix)
 def midl_names(c_compiler, toolchain_prefix):
     if c_compiler and c_compiler.type in ['gcc', 'clang']:
-        # mingw
+        
         widl = ('widl', )
         if toolchain_prefix:
             prefixed = tuple('%s%s' % (p, 'widl') for p in toolchain_prefix)
@@ -1168,18 +1168,18 @@ def midl_flags(c_compiler, target, host):
         if host.os == 'WINNT':
             return flags + ['-cpp_cmd', c_compiler.compiler]
         else:
-            # If cross-compiling, for now, we'll assume we can find the
-            # Windows version of clang-cl in the PATH. It is required because
-            # while Wine is able to spawn Linux processes from Windows
-            # programs(!), the calling program doesn't have access to the process
-            # output and can't wait for it to finish. Midl runs clang-cl as
-            # a preprocessor and expects to read its output...
+            
+            
+            
+            
+            
+            
             clang_cl_exe = find_program('clang-cl.exe')
             if not clang_cl_exe:
                 die("Cannot find clang-cl.exe")
             return flags + ['-cpp_cmd', clang_cl_exe]
 
-    # mingw
+    
     return {
         'x86': ['--win32', '-m32'],
         'x86_64': ['--win64', '-m64'],
@@ -1188,8 +1188,8 @@ def midl_flags(c_compiler, target, host):
 
 set_config('MIDL_FLAGS', midl_flags)
 
-# Accessibility
-# ==============================================================
+
+
 
 option('--disable-accessibility', help='Disable accessibility support')
 
@@ -1216,8 +1216,8 @@ set_config('ACCESSIBILITY', accessibility)
 set_define('ACCESSIBILITY', accessibility)
 add_old_configure_assignment('ACCESSIBILITY', accessibility)
 
-# Addon signing
-# ==============================================================
+
+
 
 option('--with-unsigned-addon-scopes',
        nargs='+', choices=('app', 'system'),
@@ -1233,8 +1233,8 @@ def unsigned_addon_scopes(scopes):
 set_config('MOZ_UNSIGNED_APP_SCOPE', unsigned_addon_scopes.app)
 set_config('MOZ_UNSIGNED_SYSTEM_SCOPE', unsigned_addon_scopes.system)
 
-# Addon sideloading
-# ==============================================================
+
+
 
 @depends(update_channel)
 def addon_sideload_allowed_default(update_channel):
@@ -1252,8 +1252,8 @@ def addon_sideload_allowed(value):
 
 set_config('MOZ_ALLOW_ADDON_SIDELOAD', addon_sideload_allowed)
 
-# Launcher process (Windows only)
-# ==============================================================
+
+
 
 @depends(target)
 def launcher_process_default(target):
@@ -1273,8 +1273,8 @@ def launcher(value, target):
 set_config('MOZ_LAUNCHER_PROCESS', launcher)
 set_define('MOZ_LAUNCHER_PROCESS', launcher)
 
-# llvm-dlltool (Windows only)
-# ==============================================================
+
+
 
 @depends(build_project, target, '--enable-compile-environment')
 def check_for_llvm_dlltool(build_project, target, compile_environment):
@@ -1302,8 +1302,8 @@ def llvm_dlltool_flags(target):
 
 set_config('LLVM_DLLTOOL_FLAGS', llvm_dlltool_flags)
 
-# Maintenance service (Windows only)
-# ==============================================================
+
+
 
 option('--enable-maintenance-service',
        when=target_is_windows, default=target_is_windows,
@@ -1316,10 +1316,10 @@ set_config('MOZ_MAINTENANCE_SERVICE',
            depends_if('--enable-maintenance-service',
                       when=target_is_windows)(lambda _: True))
 
-# Update agent (currently Windows only)
-# This is an independent task that runs on a schedule to
-# check for, download, and install updates.
-# ==============================================================
+
+
+
+
 
 option('--enable-update-agent',
         when=target_is_windows, default=False,
@@ -1333,8 +1333,8 @@ set_config('MOZ_UPDATE_AGENT',
            depends_if('--enable-update-agent',
                       when=target_is_windows)(lambda _: True))
 
-# BITS download (Windows only)
-# ==============================================================
+
+
 
 option('--enable-bits-download',
        when=target_is_windows, default=target_is_windows,
@@ -1347,8 +1347,8 @@ set_config('MOZ_BITS_DOWNLOAD',
            depends_if('--enable-bits-download',
                       when=target_is_windows)(lambda _: True))
 
-# Bundled fonts on desktop platform
-# ==============================================================
+
+
 
 @depends(target)
 def bundled_fonts_default(target):
@@ -1365,8 +1365,8 @@ option('--enable-bundled-fonts', default=bundled_fonts_default,
 set_define('MOZ_BUNDLED_FONTS',
            depends_if('--enable-bundled-fonts', when=allow_bundled_fonts)(lambda _: True))
 
-# Verify MAR signatures
-# ==============================================================
+
+
 
 option('--disable-verify-mar', help='Disable verifying MAR signatures')
 
@@ -1375,16 +1375,16 @@ set_define('MOZ_VERIFY_MAR_SIGNATURE',
 set_config('MOZ_VERIFY_MAR_SIGNATURE',
            depends_if('--enable-verify-mar')(lambda _: True))
 
-# TaskTracer
-# ==============================================================
+
+
 
 option('--enable-tasktracer', help='Enable TaskTracer')
 
 set_define('MOZ_TASK_TRACER', depends_if('--enable-tasktracer')(lambda _: True))
 set_config('MOZ_TASK_TRACER', depends_if('--enable-tasktracer')(lambda _: True))
 
-# Reflow counting
-# ==============================================================
+
+
 
 @depends(moz_debug)
 def reflow_perf(debug):
@@ -1395,13 +1395,13 @@ option('--enable-reflow-perf',
        default=reflow_perf,
        help='{Enable|Disable} reflow performance tracing')
 
-# The difference in conditions here comes from the initial implementation
-# in old-configure, which was unexplained there as well.
+
+
 set_define('MOZ_REFLOW_PERF', depends_if('--enable-reflow-perf')(lambda _: True))
 set_define('MOZ_REFLOW_PERF_DSP', reflow_perf)
 
-# Layout debugger
-# ==============================================================
+
+
 
 @depends(moz_debug)
 def layout_debugger(debug):
@@ -1415,8 +1415,8 @@ option('--enable-layout-debugger',
 set_config('MOZ_LAYOUT_DEBUGGER', depends_if('--enable-layout-debugger')(lambda _: True))
 
 
-# Shader Compiler for Windows (and MinGW Cross Compile)
-# ==============================================================
+
+
 
 with only_when(compile_environment):
     fxc = check_prog('FXC', ('fxc.exe', 'fxc2.exe'), when=depends(target)
@@ -1424,8 +1424,8 @@ with only_when(compile_environment):
                      paths=sdk_bin_path)
 
 
-# VPX
-# ===
+
+
 
 with only_when(compile_environment):
     option('--with-system-libvpx',
@@ -1464,17 +1464,17 @@ with only_when(compile_environment):
         return namespace(arm_asm=arm_asm, use_yasm=use_yasm, need_yasm=need_yasm)
 
 
-    # Building with -mfpu=neon requires either the "softfp" or the
-    # "hardfp" ABI. Depending on the compiler's default target, and the
-    # CFLAGS, the default ABI might be neither, in which case it is the
-    # "softfloat" ABI.
-    # The "softfloat" ABI is binary-compatible with the "softfp" ABI, so
-    # we can safely mix code built with both ABIs. So, if we detect
-    # that compiling uses the "softfloat" ABI, force the use of the
-    # "softfp" ABI instead.
-    # Confusingly, the __SOFTFP__ preprocessor variable indicates the
-    # "softfloat" ABI, not the "softfp" ABI.
-    # Note: VPX_ASFLAGS is also used in CFLAGS.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     softfp = cxx_compiler.try_compile(body='''
         #ifndef __SOFTFP__
         #error "compiler target supports -mfpu=neon, so we don't have to add extra flags"
@@ -1485,8 +1485,8 @@ with only_when(compile_environment):
     def vpx_as_flags(vpx, softfp, target):
         flags = []
         if vpx and vpx.arm_asm:
-            # These flags are a lie; they're just used to enable the requisite
-            # opcodes; actual arch detection is done at runtime.
+            
+            
             flags = ['-march=armv7-a', '-mfpu=neon']
             if softfp:
                 flags.append('-mfloat-abi=softfp')
@@ -1499,8 +1499,8 @@ with only_when(compile_environment):
     set_config('VPX_ASFLAGS', vpx_as_flags)
 
 
-# JPEG
-# ====
+
+
 
 with only_when(compile_environment):
     option('--with-system-jpeg', nargs='?',
@@ -1601,8 +1601,8 @@ with only_when(compile_environment):
     set_config('LIBJPEG_TURBO_ASFLAGS', in_tree_jpeg.flags)
 
 
-# Libav-fft Support
-# ==============================================================
+
+
 with only_when(compile_environment):
     @depends(target)
     def libav_fft(target):
@@ -1631,9 +1631,9 @@ with only_when(compile_environment):
     set_config('LIBAV_FFT_ASFLAGS', libav_fft.flags)
 
 
-# FFmpeg's ffvpx configuration
-# ==============================================================
-# Artifact builds need MOZ_FFVPX defined as if compilation happened.
+
+
+
 with only_when(compile_environment | artifact_builds):
     @depends_if(yasm_version)
     def yasm_has_avx2(yasm_version):
@@ -1655,18 +1655,18 @@ with only_when(compile_environment | artifact_builds):
                 flags.extend(libav_fft.flags)
                 if target.kernel == 'WINNT':
                     if target.cpu == 'x86':
-                        # 32-bit windows need to prefix symbols with an underscore.
+                        
                         flags.extend(('-DPREFIX', '-Pconfig_win32.asm'))
                     elif target.cpu == 'aarch64':
                         use_yasm = False
                     else:
                         flags.append('-Pconfig_win64.asm')
                 elif target.kernel == 'Darwin':
-                    # 32/64-bit macosx assemblers need to prefix symbols with an
-                    # underscore.
+                    
+                    
                     flags.extend(('-DPREFIX', '-Pconfig_darwin64.asm'))
                 else:
-                    # Default to unix.
+                    
                     flags.append('-Pconfig_unix64.asm')
             else:
                 flac_only = True
@@ -1677,7 +1677,7 @@ with only_when(compile_environment | artifact_builds):
                 flags.extend(vpx_as_flags)
 
         if use_yasm:
-            # default disabled components
+            
             flags.append('-Pdefaults_disabled.asm')
             if not yasm_has_avx2:
                 flags.extend((
@@ -1707,7 +1707,7 @@ with only_when(compile_environment | artifact_builds):
 @imports(_from='__builtin__', _import='sorted')
 def valid_yasm_version(yasm_version, for_vpx, for_jpeg, for_libav,
                        for_ffvpx=False):
-    # Note: the default for for_ffvpx above only matters for unit tests.
+    
     requires = {
         'vpx': for_vpx,
         'jpeg': for_jpeg,
@@ -1733,8 +1733,8 @@ def valid_yasm_version(yasm_version, for_vpx, for_jpeg, for_libav,
                 % (version, what))
 
 
-# ANGLE OpenGL->D3D translator for WebGL
-# ==============================================================
+
+
 
 with only_when(compile_environment & target_is_windows):
     def d3d_compiler_dll_result(value):
@@ -1753,7 +1753,7 @@ with only_when(compile_environment & target_is_windows):
         name = 'd3dcompiler_47.dll'
 
         if target.cpu == 'aarch64':
-            # AArch64 Windows comes with d3dcompiler_47.dll installed
+            
             return namespace(name=name, path=None)
 
         if windows_sdk_dir:
@@ -1773,8 +1773,8 @@ with only_when(compile_environment & target_is_windows):
                when=d3d_compiler_dll.path)
     set_config('MOZ_D3DCOMPILER_VISTA_DLL_PATH', d3d_compiler_dll.path)
 
-# Remoting protocol support
-# ==============================================================
+
+
 
 @depends(toolkit)
 def has_remote(toolkit):
@@ -1784,8 +1784,8 @@ def has_remote(toolkit):
 set_config('MOZ_HAS_REMOTE', has_remote)
 set_define('MOZ_HAS_REMOTE', has_remote)
 
-# RLBox Library Sandboxing wasm support
-# ==============================================================
+
+
 
 def wasm_sandboxing_libraries():
     return ('graphite',)
@@ -1904,10 +1904,10 @@ with only_when(requires_wasm_sandboxing & compile_environment):
             return value
     set_config('WASM_LDFLAGS', wasm_ldflags)
 
-    # This function is returning "ldflags" that lucetc will use when invoking
-    # the linker, but really lucetc is going to be invoking the compiler, since
-    # the compiler handles lots of details for us (like finding the linker in
-    # cross-compilation scenarios).
+    
+    
+    
+    
     @depends(target)
     def lucetc_ldflags(target):
         if target.kernel == 'Linux':
@@ -1927,8 +1927,8 @@ with only_when(requires_wasm_sandboxing & compile_environment):
 
     set_config('LUCETC_LDFLAGS', lucetc_ldflags)
 
-    # Re-using the Rust target triple here is not exactly correct, but it is an
-    # excellent approximation for the platforms we currently support
+    
+    
     set_config('LUCETC_TARGET', rust_target_triple)
 
 
@@ -1937,7 +1937,7 @@ def wasm_sandboxing(libraries, target):
     if not libraries:
         return
 
-    # Wasm sandboxing is only enabled on specific targets.
+    
     if not (target.cpu in ('x86_64',) and \
             (target.kernel == 'Linux' and target.os != 'Android') or \
             target.kernel == 'Darwin'):
@@ -1954,8 +1954,8 @@ def wasm_sandboxing_config_defines():
 wasm_sandboxing_config_defines()
 
 
-# new XULStore implementation
-# ==============================================================
+
+
 
 @depends(milestone)
 def new_xulstore(milestone):
@@ -1966,8 +1966,8 @@ set_config('MOZ_NEW_XULSTORE', True, when=new_xulstore)
 set_define('MOZ_NEW_XULSTORE', True, when=new_xulstore)
 
 
-# new Notification Store implementation
-# ==============================================================
+
+
 
 @depends(milestone)
 def new_notification_store(milestone):
@@ -1978,8 +1978,8 @@ set_config('MOZ_NEW_NOTIFICATION_STORE', True, when=new_notification_store)
 set_define('MOZ_NEW_NOTIFICATION_STORE', True, when=new_notification_store)
 
 
-# FOGotype prototype Glean SDK Integration Crate
-# ==============================================================
+
+
 
 @depends(milestone)
 def fogotype(milestone):
@@ -1989,14 +1989,17 @@ def fogotype(milestone):
 set_config('MOZ_FOGOTYPE', True, when=fogotype)
 set_define('MOZ_FOGOTYPE', True, when=fogotype)
 
-# dump_syms
-# ==============================================================
+
+
 
 check_prog('DUMP_SYMS', ['dump_syms'], allow_missing=True, paths=toolchain_search_path,
            when=compile_environment & target_is_windows)
 
 
-# Fork server
+check_prog('PDBSTR', ['pdbstr.exe'], allow_missing=True, paths=toolchain_search_path,
+           when=compile_environment & target_is_windows)
+
+
 @depends(target, build_project)
 def forkserver_default(target, build_project):
     return build_project == 'browser' and \
@@ -2017,8 +2020,8 @@ def forkserver_flag(value, target):
 set_config('MOZ_ENABLE_FORKSERVER', forkserver_flag)
 set_define('MOZ_ENABLE_FORKSERVER', forkserver_flag, forkserver_flag)
 
-# new cert storage implementation
-# ==============================================================
+
+
 option('--disable-new-cert-storage', env='MOZ_NEW_CERT_STORAGE',
        help='{Enable|Disable} new certificate storage')
 
@@ -2026,9 +2029,9 @@ set_config('MOZ_NEW_CERT_STORAGE', True, when='--enable-new-cert-storage')
 set_define('MOZ_NEW_CERT_STORAGE', True, when='--enable-new-cert-storage')
 
 
-# Enable or disable the default browser agent, which monitors the user's default
-# browser setting on Windows.
-# ==============================================================================
+
+
+
 
 @depends(target)
 def default_browser_agent_default(target):
