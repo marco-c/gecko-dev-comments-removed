@@ -458,7 +458,7 @@ void nsFrameSelection::SetDesiredPos(nsPoint aPos) {
 
 nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
     nsIFrame* aFrame, const nsPoint& aPoint, nsIFrame** aRetFrame,
-    nsPoint& aRetPoint) {
+    nsPoint& aRetPoint) const {
   
   
   
@@ -472,7 +472,9 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   
   
 
-  if (!aFrame || !aRetFrame) return NS_ERROR_NULL_POINTER;
+  if (!aFrame || !aRetFrame) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   *aRetFrame = aFrame;
   aRetPoint = aPoint;
@@ -482,11 +484,15 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
   
 
   int8_t index = GetIndexFromSelectionType(SelectionType::eNormal);
-  if (!mDomSelections[index]) return NS_ERROR_NULL_POINTER;
+  if (!mDomSelections[index]) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   nsCOMPtr<nsIContent> anchorContent =
       do_QueryInterface(mDomSelections[index]->GetAnchorNode());
-  if (!anchorContent) return NS_ERROR_FAILURE;
+  if (!anchorContent) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
@@ -550,7 +556,9 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
 
   *aRetFrame = anchorRoot->GetPrimaryFrame();
 
-  if (!*aRetFrame) return NS_ERROR_FAILURE;
+  if (!*aRetFrame) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   
