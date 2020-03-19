@@ -83,10 +83,6 @@ void FileInfoT<FileManager>::UpdateReferences(ThreadSafeAutoRefCnt& aRefCount,
 
     mFileManager->RemoveFileInfo(Id(), lock);
 
-    
-    
-    
-    
     needsCleanup = !mFileManager->Invalidated();
   }
 
