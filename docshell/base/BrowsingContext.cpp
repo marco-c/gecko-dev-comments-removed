@@ -125,25 +125,24 @@ CanonicalBrowsingContext* BrowsingContext::Canonical() {
   return CanonicalBrowsingContext::Cast(this);
 }
 
-static bool OpenerAndOpenerTopAreSameOrigin(BrowsingContext* aOpener) {
+bool BrowsingContext::SameOriginWithTop() {
+  MOZ_ASSERT(IsInProcess());
   
-  
-  
-  if (!aOpener->Top()->IsInProcess()) {
+  if (!Top()->IsInProcess()) {
     return false;
   }
 
-  nsIDocShell* openerDocShell = aOpener->GetDocShell();
-  if (!openerDocShell) {
+  nsIDocShell* docShell = GetDocShell();
+  if (!docShell) {
     return false;
   }
-  Document* openerDoc = openerDocShell->GetDocument();
-  if (!openerDoc) {
+  Document* doc = docShell->GetDocument();
+  if (!doc) {
     return false;
   }
-  nsIPrincipal* openerPrincipal = openerDoc->NodePrincipal();
+  nsIPrincipal* principal = doc->NodePrincipal();
 
-  nsIDocShell* topDocShell = aOpener->Top()->GetDocShell();
+  nsIDocShell* topDocShell = Top()->GetDocShell();
   if (!topDocShell) {
     return false;
   }
@@ -151,9 +150,9 @@ static bool OpenerAndOpenerTopAreSameOrigin(BrowsingContext* aOpener) {
   if (!topDoc) {
     return false;
   }
-  nsIPrincipal* openerTopPrincipal = topDoc->NodePrincipal();
+  nsIPrincipal* topPrincipal = topDoc->NodePrincipal();
 
-  return openerPrincipal->Equals(openerTopPrincipal);
+  return principal->Equals(topPrincipal);
 }
 
 
@@ -200,7 +199,8 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE);
 
-  if (aOpener && OpenerAndOpenerTopAreSameOrigin(aOpener)) {
+  if (aOpener && aOpener->SameOriginWithTop()) {
+    
     
     
     context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(

@@ -306,6 +306,9 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   bool HadOriginalOpener() const { return GetHadOriginalOpener(); }
 
   
+  bool SameOriginWithTop();
+
+  
 
 
 
