@@ -759,11 +759,6 @@ class nsFrameSelection final {
   friend class mozilla::dom::Selection;
   friend class mozilla::SelectionChangeEventDispatcher;
   friend struct mozilla::AutoPrepareFocusRange;
-#ifdef DEBUG
-  void printSelection();  
-#endif                    
-
-  void ResizeBuffer(uint32_t aNewBufSize);
 
   
   
