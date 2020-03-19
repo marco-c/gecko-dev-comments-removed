@@ -2618,9 +2618,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
       
       
       
-      
-      if (!StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) &&
-          !aPrincipal->IsSystemPrincipal()) {
+      if (!StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://"))) {
         return true;
       }
 
@@ -5162,8 +5160,7 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
   uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
 
   bool toBeSent =
-      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) ||
-      aPrincipal->IsSystemPrincipal();
+      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://"));
 
   nsCString uri(aURI);
   IPC::Principal principal(aPrincipal);
@@ -5201,8 +5198,7 @@ void ContentParent::BroadcastBlobURLUnregistration(
   uint64_t originHash = ComputeLoadedOriginHash(aPrincipal);
 
   bool toBeSent =
-      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://")) ||
-      aPrincipal->IsSystemPrincipal();
+      StringBeginsWith(origin, NS_LITERAL_CSTRING("moz-extension://"));
 
   nsCString uri(aURI);
 
