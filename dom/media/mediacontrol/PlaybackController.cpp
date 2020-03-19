@@ -66,19 +66,15 @@ void PlaybackController::Pause() {
 }
 
 void PlaybackController::SeekBackward() {
-  const MediaSessionAction action = MediaSessionAction::Seekbackward;
-  if (RefPtr<MediaSession> session = GetMediaSession();
-      session && session->IsSupportedAction(action)) {
-    session->NotifyHandler(action);
-  }
+  
+  
+  return;
 }
 
 void PlaybackController::SeekForward() {
-  const MediaSessionAction action = MediaSessionAction::Seekforward;
-  if (RefPtr<MediaSession> session = GetMediaSession();
-      session && session->IsSupportedAction(action)) {
-    session->NotifyHandler(action);
-  }
+  
+  
+  return;
 }
 
 void PlaybackController::PreviousTrack() {
