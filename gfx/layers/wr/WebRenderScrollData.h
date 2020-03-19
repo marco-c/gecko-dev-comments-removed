@@ -273,16 +273,6 @@ template <>
 struct ParamTraits<mozilla::layers::RenderRootBoundary>
     : public PlainOldDataSerializer<mozilla::layers::RenderRootBoundary> {};
 
-
-
-
-
-
-
-template <>
-struct ParamTraits<mozilla::layers::ScrollbarData>
-    : public PlainOldDataSerializer<mozilla::layers::ScrollbarData> {};
-
 template <>
 struct ParamTraits<mozilla::layers::WebRenderLayerScrollData> {
   typedef mozilla::layers::WebRenderLayerScrollData paramType;
