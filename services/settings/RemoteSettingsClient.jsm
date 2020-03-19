@@ -816,7 +816,7 @@ class RemoteSettingsClient extends EventEmitter {
       await this.db.clear();
     } else {
       
-      await this.db.deleteAll(toDelete);
+      await this.db.deleteBulk(toDelete);
     }
     
     await this.db.importBulk(toInsert);
