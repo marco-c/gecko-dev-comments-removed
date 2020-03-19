@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+function getParentChromeFlags(win) {
+  return win.docShell.treeOwner
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIAppWindow).chromeFlags;
+}
