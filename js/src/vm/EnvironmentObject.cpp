@@ -1101,6 +1101,10 @@ Value LexicalEnvironmentObject::thisValue() const {
   
   MOZ_ASSERT_IF(v.isObject(), !IsWindow(&v.toObject()));
 
+  
+  
+  MOZ_ASSERT_IF(isGlobal() && v.isGCThing(), v.toGCThing()->isTenured());
+
   return v;
 }
 

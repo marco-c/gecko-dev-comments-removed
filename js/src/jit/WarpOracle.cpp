@@ -45,13 +45,18 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
   WarpScriptSnapshot* scriptSnapshot;
   MOZ_TRY_VAR(scriptSnapshot, createScriptSnapshot(script_));
 
-  auto* snapshot = new (alloc_.fallible()) WarpSnapshot(scriptSnapshot);
+  auto* snapshot = new (alloc_.fallible()) WarpSnapshot(cx_, scriptSnapshot);
   if (!snapshot) {
     return abort(AbortReason::Alloc);
   }
 
   return snapshot;
 }
+
+WarpSnapshot::WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script)
+    : script_(script),
+      globalLexicalEnv_(&cx->global()->lexicalEnvironment()),
+      globalLexicalEnvThis_(globalLexicalEnv_->thisValue()) {}
 
 template <typename T, typename... Args>
 static MOZ_MUST_USE bool AddOpSnapshot(TempAllocator& alloc,
@@ -182,6 +187,26 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
         }
         break;
       }
+
+      case JSOp::FunctionThis:
+        if (!script->strict() && script->hasNonSyntacticScope()) {
+          
+          
+          
+          
+          return abort(AbortReason::Disable,
+                       "JSOp::FunctionThis with non-syntactic scope");
+        }
+        break;
+
+      case JSOp::GlobalThis:
+        if (script->hasNonSyntacticScope()) {
+          
+          
+          return abort(AbortReason::Disable,
+                       "JSOp::GlobalThis with non-syntactic scope");
+        }
+        break;
 
       default:
         break;

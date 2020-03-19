@@ -174,10 +174,21 @@ class WarpSnapshot : public TempObject {
   
   WarpScriptSnapshot* script_;
 
+  
+  
+  
+  LexicalEnvironmentObject* globalLexicalEnv_;
+  Value globalLexicalEnvThis_;
+
  public:
-  explicit WarpSnapshot(WarpScriptSnapshot* script) : script_(script) {}
+  explicit WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script);
 
   WarpScriptSnapshot* script() const { return script_; }
+
+  LexicalEnvironmentObject* globalLexicalEnv() const {
+    return globalLexicalEnv_;
+  }
+  Value globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
 };
 
 
