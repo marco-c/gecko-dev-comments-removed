@@ -3593,7 +3593,8 @@ void Preferences::DeserializePreferences(char* aStr, size_t aPrefsLen) {
 
 namespace StaticPrefs {
 
-static void InitAll(bool aIsStartup);
+static void InitAll();
+static void StartObservingAlwaysPrefs();
 static void InitOncePrefs();
 static void InitStaticPrefsFromShared();
 static void RegisterOncePrefs(SharedPrefMapBuilder& aBuilder);
@@ -4432,14 +4433,17 @@ struct Internals {
 nsresult Preferences::InitInitialObjects(bool aIsStartup) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  
-  
-  StaticPrefs::InitAll(aIsStartup);
-
   if (!XRE_IsParentProcess()) {
     MOZ_DIAGNOSTIC_ASSERT(gSharedMap);
+    if (aIsStartup) {
+      StaticPrefs::StartObservingAlwaysPrefs();
+    }
     return NS_OK;
   }
+
+  
+  
+  StaticPrefs::InitAll();
 
   
   
@@ -4610,6 +4614,14 @@ nsresult Preferences::InitInitialObjects(bool aIsStartup) {
 
   if (XRE_IsParentProcess()) {
     SetupTelemetryPref();
+  }
+
+  if (aIsStartup) {
+    
+    
+    
+    
+    StaticPrefs::StartObservingAlwaysPrefs();
   }
 
   NS_CreateServicesFromCategory(NS_PREFSERVICE_APPDEFAULTS_TOPIC_ID, nullptr,
@@ -5269,22 +5281,12 @@ static void InitPref(const char* aName, float aDefaultValue) {
 
 template <typename T>
 static void InitAlwaysPref(const nsCString& aName, T* aCache,
-                           StripAtomic<T> aDefaultValue, bool aIsStartup,
-                           bool aIsParent) {
+                           StripAtomic<T> aDefaultValue) {
   
   
   
-  
-  
-  if (aIsParent) {
-    InitPref(aName.get(), aDefaultValue);
-    *aCache = aDefaultValue;
-  }
-
-  
-  if (MOZ_LIKELY(aIsStartup)) {
-    AddMirrorCallback(aCache, aName);
-  }
+  InitPref(aName.get(), aDefaultValue);
+  *aCache = aDefaultValue;
 }
 
 static Atomic<bool> sOncePrefRead(false);
@@ -5322,34 +5324,37 @@ void MaybeInitOncePrefs() {
 #undef ALWAYS_PREF
 #undef ONCE_PREF
 
-static void InitAll(bool aIsStartup) {
+static void InitAll() {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
-  bool isParent = XRE_IsParentProcess();
-
   
   
   
   
   
   
-  
-  
-  
-  if (isParent) {
 #define NEVER_PREF(name, cpp_type, value) InitPref_##cpp_type(name, value);
-#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)
+#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
+  InitAlwaysPref(NS_LITERAL_CSTRING(name), &sMirror_##full_id, value);
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value) \
   InitPref_##cpp_type(name, value);
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
 #undef ALWAYS_PREF
 #undef ONCE_PREF
-  }
+}
+
+static void StartObservingAlwaysPrefs() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
 #define NEVER_PREF(name, cpp_type, value)
-#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)          \
-  InitAlwaysPref(NS_LITERAL_CSTRING(name), &sMirror_##full_id, value, \
-                 aIsStartup, isParent);
+#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
+  AddMirror(&sMirror_##full_id, NS_LITERAL_CSTRING(name), sMirror_##full_id);
 #define ONCE_PREF(name, base_id, full_id, cpp_type, value)
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
