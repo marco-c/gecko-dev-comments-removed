@@ -217,19 +217,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 var gDebuggingEnabled = false;
 
-var _log;
-function log() {
-  if (!_log) {
-    var enabled = Services.prefs.getBoolPref("browser.sessionstore.debug");
-    _log = console.createInstance({
-      prefix: "SessionStore",
-      maxLogLevel: enabled ? "Debug" : "Warn",
-    });
-  }
-
-  return _log;
-}
-
 
 
 
@@ -577,6 +564,8 @@ var SessionStoreInternal = {
   
   _tabsRestoringCount: 0,
 
+  _log: null,
+
   
   
   
@@ -786,7 +775,7 @@ var SessionStoreInternal = {
           });
         }
       } catch (ex) {
-        log().error("The session file is invalid: " + ex);
+        this._log.error("The session file is invalid: " + ex);
       }
     }
 
@@ -810,6 +799,11 @@ var SessionStoreInternal = {
 
     Services.prefs.addObserver("browser.sessionstore.debug", () => {
       gDebuggingEnabled = this._prefBranch.getBoolPref("sessionstore.debug");
+    });
+
+    this._log = console.createInstance({
+      prefix: "SessionStore",
+      maxLogLevel: gDebuggingEnabled ? "Debug" : "Warn",
     });
 
     this._max_tabs_undo = this._prefBranch.getIntPref(
@@ -4365,7 +4359,7 @@ var SessionStoreInternal = {
       root = typeof aState == "string" ? JSON.parse(aState) : aState;
     } catch (ex) {
       
-      log().error(ex);
+      this._log.error(ex);
       this._sendRestoreCompletedNotifications();
       return;
     }
