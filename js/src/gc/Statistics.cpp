@@ -787,20 +787,12 @@ Statistics::Statistics(GCRuntime* gc)
 
 #ifdef DEBUG
   for (const auto& duration : totalTimes_) {
-#  if defined(XP_WIN) || defined(XP_MACOSX) || \
-      (defined(XP_UNIX) && !defined(__clang__))
-    
-    
-    
-    
-    
     using ElementType =
         typename mozilla::RemoveReference<decltype(duration)>::Type;
     static_assert(!std::is_trivially_constructible<ElementType>::value,
                   "Statistics::Statistics will only initialize "
                   "totalTimes_'s elements if their default constructor is "
                   "non-trivial");
-#  endif  
     MOZ_ASSERT(duration.IsZero(),
                "totalTimes_ default-initialization should have "
                "default-initialized every element of totalTimes_ to zero");
