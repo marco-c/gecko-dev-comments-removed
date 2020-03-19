@@ -333,7 +333,7 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
   JS::Rooted<JSObject*> options(aCx, &deserializedOptions.toObject());
   RefPtr<AudioWorkletProcessor> processor = processorCtor->Construct(
       options, rv, "AudioWorkletProcessor construction",
-      CallbackFunction::eReportExceptions);
+      CallbackFunction::eRethrowExceptions);
   
   mPortForProcessor = nullptr;
   if (rv.MaybeSetPendingException(aCx)) {
