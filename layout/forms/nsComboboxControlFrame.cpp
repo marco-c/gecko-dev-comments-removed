@@ -1152,7 +1152,7 @@ nsresult nsComboboxControlFrame::CreateAnonymousContent(
 
   nsNodeInfoManager* nimgr = mContent->NodeInfo()->NodeInfoManager();
 
-  mDisplayContent = new nsTextNode(nimgr);
+  mDisplayContent = new (nimgr) nsTextNode(nimgr);
 
   
   mDisplayedIndex = mListControlFrame->GetSelectedIndex();

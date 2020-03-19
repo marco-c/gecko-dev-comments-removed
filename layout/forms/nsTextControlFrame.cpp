@@ -394,8 +394,8 @@ nsTextControlFrame::CreateEmptyAnonymousDivWithTextNode(
   RefPtr<Element> divElement = CreateEmptyAnonymousDiv(aAnonymousDivType);
 
   
-  RefPtr<nsTextNode> textNode =
-      new nsTextNode(divElement->OwnerDoc()->NodeInfoManager());
+  RefPtr<nsTextNode> textNode = new (divElement->OwnerDoc()->NodeInfoManager())
+      nsTextNode(divElement->OwnerDoc()->NodeInfoManager());
   
   
   
@@ -1257,8 +1257,8 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   Text* textContent;
   if (!childContent) {
     
-    RefPtr<nsTextNode> textNode =
-        new nsTextNode(mContent->NodeInfo()->NodeInfoManager());
+    RefPtr<nsTextNode> textNode = new (mContent->NodeInfo()->NodeInfoManager())
+        nsTextNode(mContent->NodeInfo()->NodeInfoManager());
     textNode->MarkAsMaybeModifiedFrequently();
     if (IsPasswordTextControl()) {
       textNode->MarkAsMaybeMasked();

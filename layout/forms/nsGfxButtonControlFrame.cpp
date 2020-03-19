@@ -47,7 +47,8 @@ nsresult nsGfxButtonControlFrame::CreateAnonymousContent(
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  mTextContent = new nsTextNode(mContent->NodeInfo()->NodeInfoManager());
+  mTextContent = new (mContent->NodeInfo()->NodeInfoManager())
+      nsTextNode(mContent->NodeInfo()->NodeInfoManager());
 
   
   mTextContent->SetText(label, false);
