@@ -878,10 +878,10 @@ BrowserChild::GetInterface(const nsIID& aIID, void** aSink) {
 
 NS_IMETHODIMP
 BrowserChild::ProvideWindow(mozIDOMWindowProxy* aParent, uint32_t aChromeFlags,
-                            bool aCalledFromJS, bool aWidthSpecified,
-                            nsIURI* aURI, const nsAString& aName,
-                            const nsACString& aFeatures, bool aForceNoOpener,
-                            bool aForceNoReferrer,
+                            bool aCalledFromJS, bool aPositionSpecified,
+                            bool aSizeSpecified, nsIURI* aURI,
+                            const nsAString& aName, const nsACString& aFeatures,
+                            bool aForceNoOpener, bool aForceNoReferrer,
                             nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
                             BrowsingContext** aReturn) {
   *aReturn = nullptr;
@@ -899,7 +899,7 @@ BrowserChild::ProvideWindow(mozIDOMWindowProxy* aParent, uint32_t aChromeFlags,
   if (!iframeMoz) {
     int32_t openLocation = nsWindowWatcher::GetWindowOpenLocation(
         nsPIDOMWindowOuter::From(aParent), aChromeFlags, aCalledFromJS,
-        aWidthSpecified);
+        aPositionSpecified, aSizeSpecified);
 
     
     
@@ -921,10 +921,10 @@ BrowserChild::ProvideWindow(mozIDOMWindowProxy* aParent, uint32_t aChromeFlags,
   
   
   ContentChild* cc = ContentChild::GetSingleton();
-  return cc->ProvideWindowCommon(this, aParent, iframeMoz, aChromeFlags,
-                                 aCalledFromJS, aWidthSpecified, aURI, aName,
-                                 aFeatures, aForceNoOpener, aForceNoReferrer,
-                                 aLoadState, aWindowIsNew, aReturn);
+  return cc->ProvideWindowCommon(
+      this, aParent, iframeMoz, aChromeFlags, aCalledFromJS, aPositionSpecified,
+      aSizeSpecified, aURI, aName, aFeatures, aForceNoOpener, aForceNoReferrer,
+      aLoadState, aWindowIsNew, aReturn);
 }
 
 void BrowserChild::DestroyWindow() {

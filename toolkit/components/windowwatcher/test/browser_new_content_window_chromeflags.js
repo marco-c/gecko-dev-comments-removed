@@ -9,6 +9,43 @@
 
 
 
+
+
+const ALLOWED = {
+  toolbar: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_TOOLBAR,
+    defaults_to: true,
+  },
+  personalbar: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_PERSONAL_TOOLBAR,
+    defaults_to: true,
+  },
+  menubar: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_MENUBAR,
+    defaults_to: true,
+  },
+  scrollbars: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_SCROLLBARS,
+    defaults_to: false,
+  },
+  minimizable: {
+    flag: Ci.nsIWebBrowserChrome.CHROME_WINDOW_MIN,
+    defaults_to: true,
+  },
+};
+
+
+
+const ALLOWED_STRING = Object.keys(ALLOWED)
+  .map(feature => {
+    let toValue = ALLOWED[feature].defaults_to ? "no" : "yes";
+    return `${feature}=${toValue}`;
+  })
+  .join(",");
+
+
+
+
 const DISALLOWED = {
   location: {
     flag: Ci.nsIWebBrowserChrome.CHROME_LOCATIONBAR,
@@ -111,6 +148,21 @@ registerCleanupFunction(() => {
 
 
 
+
+function getParentChromeFlags(win) {
+  return win.docShell.treeOwner
+    .QueryInterface(Ci.nsIInterfaceRequestor)
+    .getInterface(Ci.nsIAppWindow).chromeFlags;
+}
+
+
+
+
+
+
+
+
+
 function getContentChromeFlags(win) {
   let b = win.gBrowser.selectedBrowser;
   return SpecialPowers.spawn(b, [], async function() {
@@ -138,7 +190,28 @@ function getContentChromeFlags(win) {
 
 
 
-function assertContentFlags(chromeFlags, isPopup) {
+
+function assertContentFlags(chromeFlags) {
+  for (let feature in ALLOWED) {
+    let flag = ALLOWED[feature].flag;
+
+    if (ALLOWED[feature].defaults_to) {
+      
+      
+      Assert.ok(
+        !(chromeFlags & flag),
+        `Expected feature ${feature} to be disabled`
+      );
+    } else {
+      
+      
+      Assert.ok(
+        chromeFlags & flag,
+        `Expected feature ${feature} to be enabled`
+      );
+    }
+  }
+
   for (let feature in DISALLOWED) {
     let flag = DISALLOWED[feature].flag;
     Assert.ok(flag, "Expected flag to be a non-zeroish value");
@@ -165,7 +238,8 @@ function assertContentFlags(chromeFlags, isPopup) {
 
 
 
-add_task(async function test_disallowed_flags() {
+
+add_task(async function test_new_remote_window_flags() {
   
   
   const DISALLOWED_STRING = Object.keys(DISALLOWED)
@@ -175,7 +249,7 @@ add_task(async function test_disallowed_flags() {
     })
     .join(",");
 
-  const FEATURES = [DISALLOWED_STRING].join(",");
+  const FEATURES = [ALLOWED_STRING, DISALLOWED_STRING].join(",");
 
   const SCRIPT_PAGE = `data:text/html,<script>window.open("about:blank", "_blank", "${FEATURES}");</script>`;
   const SCRIPT_PAGE_FOR_CHROME_ALL = `data:text/html,<script>window.open("about:blank", "_blank", "all");</script>`;
