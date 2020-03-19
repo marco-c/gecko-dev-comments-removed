@@ -287,11 +287,11 @@ static nsresult DoCheckLoadURIChecks(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
       nsIContentPolicy::TYPE_INTERNAL_DTD) {
     RefPtr<Document> doc;
     aLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
-    return nsContentUtils::PrincipalAllowsL10n(
-               *aLoadInfo->TriggeringPrincipal(),
-               doc ? doc->GetDocumentURI() : nullptr)
-               ? NS_OK
-               : NS_ERROR_DOM_BAD_URI;
+    bool allowed = false;
+    aLoadInfo->TriggeringPrincipal()->IsL10nAllowed(
+        doc ? doc->GetDocumentURI() : nullptr, &allowed);
+
+    return allowed ? NS_OK : NS_ERROR_DOM_BAD_URI;
   }
 
   
@@ -794,7 +794,6 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   
   
   
-  
   if (contentPolicyType == nsIContentPolicy::TYPE_SCRIPT) {
     if (StaticPrefs::
             dom_security_skip_remote_script_assertion_in_system_priv_context()) {
@@ -818,31 +817,6 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     return NS_OK;
   }
 
-  
-  
-  static nsAutoCString sDiscoveryPrePath;
-  static bool recvdPrefValues = false;
-  if (!recvdPrefValues) {
-    nsAutoCString discoveryURLString;
-    Preferences::GetCString("extensions.webservice.discoverURL",
-                            discoveryURLString);
-    
-    
-    nsCOMPtr<nsIURI> discoveryURL;
-    NS_NewURI(getter_AddRefs(discoveryURL), discoveryURLString);
-    if (discoveryURL) {
-      discoveryURL->GetPrePath(sDiscoveryPrePath);
-    }
-    recvdPrefValues = true;
-  }
-  nsAutoCString requestedPrePath;
-  finalURI->GetPrePath(requestedPrePath);
-
-  if (requestedPrePath.Equals(sDiscoveryPrePath)) {
-    return NS_OK;
-  }
-  nsAutoCString requestedURL;
-  finalURI->GetAsciiSpec(requestedURL);
   if (xpc::AreNonLocalConnectionsDisabled()) {
     bool disallowSystemPrincipalRemoteDocuments = Preferences::GetBool(
         "security.disallow_non_local_systemprincipal_in_tests");
@@ -855,6 +829,9 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     
     return NS_OK;
   }
+
+  nsAutoCString requestedURL;
+  finalURI->GetAsciiSpec(requestedURL);
   MOZ_LOG(
       sCSMLog, LogLevel::Warning,
       ("SystemPrincipal must not load remote documents. URL: %s", requestedURL)
