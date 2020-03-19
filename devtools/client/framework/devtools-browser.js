@@ -57,12 +57,6 @@ loader.lazyRequireGetter(
   "ResponsiveUIManager",
   "devtools/client/responsive/manager"
 );
-loader.lazyRequireGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm",
-  true
-);
 loader.lazyImporter(
   this,
   "BrowserToolboxLauncher",
@@ -144,29 +138,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       "menu_browserContentToolbox",
       remoteEnabled && win.gMultiProcessBrowser
     );
-
-    
-    
-    
-    
-    
-    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
-      "devtools.performance.popup.feature-flag",
-      AppConstants.NIGHTLY_BUILD
-    );
-    
-    toggleMenuItem("menu_toggleProfilerButtonMenu", isPopupFeatureFlagEnabled);
-
-    if (isPopupFeatureFlagEnabled) {
-      
-      
-      if (
-        Services.prefs.getBoolPref("devtools.performance.popup.enabled", false)
-      ) {
-        const cmd = doc.getElementById("menu_toggleProfilerButtonMenu");
-        cmd.setAttribute("checked", "true");
-      }
-    }
   },
 
   
