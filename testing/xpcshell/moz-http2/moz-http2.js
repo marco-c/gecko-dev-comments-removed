@@ -580,6 +580,30 @@ function handleRequest(req, res) {
       responseIP = "5.5.5.5";
     }
 
+    let redirect = u.query.redirect;
+    if (redirect) {
+      responseIP = redirect;
+      if (u.query.dns) {
+        res.setHeader(
+          "Location",
+          "https://localhost:" +
+            serverPort +
+            "/doh?responseIP=" +
+            responseIP +
+            "&dns=" +
+            u.query.dns
+        );
+      } else {
+        res.setHeader(
+          "Location",
+          "https://localhost:" + serverPort + "/doh?responseIP=" + responseIP
+        );
+      }
+      res.writeHead(307);
+      res.end("");
+      return;
+    }
+
     if (u.query.auth) {
       
       
@@ -758,7 +782,10 @@ function handleRequest(req, res) {
       payload = Buffer.concat([payload, chunk]);
     });
     req.on("end", function finishedData() {
-      emitResponse(res, payload);
+      
+      if (payload.length) {
+        emitResponse(res, payload);
+      }
     });
     return;
   } else if (u.pathname === "/dns-cname-a") {
