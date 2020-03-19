@@ -8225,7 +8225,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     
     upgradeKey = NS_LITERAL_CSTRING("disabledNoReason");
     
-    if (nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent()) {
+    if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
       if (mLoadInfo->GetBrowserUpgradeInsecureRequests()) {
         
         upgradeKey = NS_LITERAL_CSTRING("enabledUpgrade");
@@ -8243,7 +8243,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
     upgradeKey = NS_LITERAL_CSTRING("disabledUpgrade");
   } else {
     
-    upgradeKey = nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent()
+    upgradeKey = StaticPrefs::security_mixed_content_upgrade_display_content()
                      ? NS_LITERAL_CSTRING("enabledWont")
                      : NS_LITERAL_CSTRING("disabledWont");
   }
