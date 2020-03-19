@@ -59,6 +59,7 @@ void MediaControlKeysManager::StartMonitoringControlKeys() {
     LOG("StartMonitoringControlKeys");
     if (mEventSource->Open()) {
       mEventSource->SetPlaybackState(mPlaybackState);
+      mEventSource->SetMediaMetadata(mMetadata);
       mEventSource->AddListener(this);
     }
   }
@@ -102,6 +103,17 @@ MediaSessionPlaybackState MediaControlKeysManager::GetPlaybackState() const {
   return (mEventSource && mEventSource->IsOpened())
              ? mEventSource->GetPlaybackState()
              : mPlaybackState;
+}
+
+void MediaControlKeysManager::SetMediaMetadata(
+    const MediaMetadataBase& aMetadata) {
+  if (mEventSource && mEventSource->IsOpened()) {
+    mEventSource->SetMediaMetadata(aMetadata);
+  } else {
+    
+    
+    mMetadata = aMetadata;
+  }
 }
 
 }  

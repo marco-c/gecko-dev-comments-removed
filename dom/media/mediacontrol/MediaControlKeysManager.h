@@ -40,12 +40,15 @@ class MediaControlKeysManager final : public MediaControlKeysEventSource,
   
   void ControllerAmountChanged(uint64_t aControllerAmount);
 
+  void SetMediaMetadata(const MediaMetadataBase& aMetadata) override;
+
  private:
   ~MediaControlKeysManager();
   void StartMonitoringControlKeys();
   void StopMonitoringControlKeys();
   RefPtr<MediaControlKeysEventSource> mEventSource;
   MediaEventListener mControllerAmountChangedListener;
+  MediaMetadataBase mMetadata;
 };
 
 }  
