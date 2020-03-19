@@ -426,6 +426,7 @@ impl<'alloc> Lexer<'alloc> {
                 "delete" => TerminalId::Delete,
                 "do" => TerminalId::Do,
                 "else" => TerminalId::Else,
+                "enum" => TerminalId::Enum,
                 "export" => TerminalId::Export,
                 "extends" => TerminalId::Extends,
                 "finally" => TerminalId::Finally,
@@ -610,17 +611,17 @@ impl<'alloc> Lexer<'alloc> {
                 self.chars.next();
             }
             if !self.decimal_digits()? {
-                // require at least one digit
+                
                 return Err(self.unexpected_err());
             }
         }
         Ok(())
     }
 
-    /// ```text
-    /// HexDigit :: one of
-    ///     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
-    /// ```
+    
+    
+    
+    
     fn hex_digit(&mut self) -> Result<u32> {
         match self.chars.next() {
             None => Err(ParseError::InvalidEscapeSequence),
@@ -641,10 +642,10 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
-    /// ```text
-    /// Hex4Digits ::
-    ///     HexDigit HexDigit HexDigit HexDigit
-    /// ```
+    
+    
+    
+    
     fn hex_4_digits(&mut self) -> Result<char> {
         let mut value = 0;
         for _ in 0..4 {
@@ -653,14 +654,14 @@ impl<'alloc> Lexer<'alloc> {
         Self::code_point_to_char(value)
     }
 
-    /// ```text
-    /// CodePoint ::
-    ///     HexDigits but only if MV of HexDigits ≤ 0x10FFFF
-    ///
-    /// HexDigits ::
-    ///    HexDigit
-    ///    HexDigits HexDigit
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
     fn code_point(&mut self) -> Result<char> {
         let mut value = self.hex_digit()?;
 
@@ -684,40 +685,40 @@ impl<'alloc> Lexer<'alloc> {
         Self::code_point_to_char(value)
     }
 
-    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
-    /// having already consumed the first character, which was `0`.
-    ///
-    /// ```text
-    /// NumericLiteral ::
-    ///     DecimalLiteral
-    ///     DecimalBigIntegerLiteral
-    ///     NonDecimalIntegerLiteral
-    ///     NonDecimalIntegerLiteral BigIntLiteralSuffix
-    ///
-    /// DecimalBigIntegerLiteral ::
-    ///     `0` BigIntLiteralSuffix
-    ///     NonZeroDigit DecimalDigits? BigIntLiteralSuffix
-    ///
-    /// NonDecimalIntegerLiteral ::
-    ///     BinaryIntegerLiteral
-    ///     OctalIntegerLiteral
-    ///     HexIntegerLiteral
-    ///
-    /// BigIntLiteralSuffix ::
-    ///     `n`
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn numeric_literal_starting_with_zero(&mut self) -> Result<NumericType> {
         match self.peek() {
-            // BinaryIntegerLiteral ::
-            //     `0b` BinaryDigits
-            //     `0B` BinaryDigits
-            //
-            // BinaryDigits ::
-            //     BinaryDigit
-            //     BinaryDigits NumericLiteralSeparator? BinaryDigit
-            //
-            // BinaryDigit :: one of
-            //     `0` `1`
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             Some('b') | Some('B') => {
                 self.chars.next();
 
@@ -752,17 +753,17 @@ impl<'alloc> Lexer<'alloc> {
                 }
             }
 
-            // OctalIntegerLiteral ::
-            //     `0o` OctalDigits
-            //     `0O` OctalDigits
-            //
-            // OctalDigits ::
-            //     OctalDigit
-            //     OctalDigits NumericLiteralSeparator? OctalDigit
-            //
-            // OctalDigit :: one of
-            //     `0` `1` `2` `3` `4` `5` `6` `7`
-            //
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             Some('o') | Some('O') => {
                 self.chars.next();
 
@@ -797,16 +798,16 @@ impl<'alloc> Lexer<'alloc> {
                 }
             }
 
-            // HexIntegerLiteral ::
-            //     `0x` HexDigits
-            //     `0X` HexDigits
-            //
-            // HexDigits ::
-            //     HexDigit
-            //     HexDigits NumericLiteralSeparator? HexDigit
-            //
-            // HexDigit :: one of
-            //     `0` `1` `2` `3` `4` `5` `6` `7` `8` `9` `a` `b` `c` `d` `e` `f` `A` `B` `C` `D` `E` `F`
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             Some('x') | Some('X') => {
                 self.chars.next();
 
@@ -853,41 +854,41 @@ impl<'alloc> Lexer<'alloc> {
             }
 
             Some('0'..='9') => {
-                // This is almost always the token `0` in practice.
-                //
-                // In nonstrict code, as a legacy feature, other numbers
-                // starting with `0` are allowed. If /0[0-7]+/ matches, it's a
-                // LegacyOctalIntegerLiteral; but if we see an `8` or `9` in
-                // the number, it's decimal. Decimal numbers can have a decimal
-                // point and/or ExponentPart; octals can't.
-                //
-                // Neither is allowed with a BigIntLiteralSuffix `n`.
-                //
-                // LegacyOctalIntegerLiteral ::
-                //     `0` OctalDigit
-                //     LegacyOctalIntegerLiteral OctalDigit
-                //
-                // NonOctalDecimalIntegerLiteral ::
-                //     `0` NonOctalDigit
-                //     LegacyOctalLikeDecimalIntegerLiteral NonOctalDigit
-                //     NonOctalDecimalIntegerLiteral DecimalDigit
-                //
-                // LegacyOctalLikeDecimalIntegerLiteral ::
-                //     `0` OctalDigit
-                //     LegacyOctalLikeDecimalIntegerLiteral OctalDigit
-                //
-                // NonOctalDigit :: one of
-                //     `8` `9`
-                //
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
 
-                // TODO: implement `strict_mode` check
-                // let strict_mode = true;
-                // if !strict_mode {
-                //     // TODO: Distinguish between Octal and NonOctalDecimal.
-                //     // TODO: Support NonOctalDecimal followed by a decimal
-                //     //       point and/or ExponentPart.
-                //     self.decimal_digits()?;
-                // }
+                
+                
+                
+                
+                
+                
+                
+                
                 return Err(ParseError::NotImplemented("LegacyOctalIntegerLiteral"));
             }
 
@@ -898,29 +899,29 @@ impl<'alloc> Lexer<'alloc> {
         Ok(NumericType::Normal)
     }
 
-    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1).
+    
     fn decimal_literal(&mut self) -> Result<NumericType> {
-        // DecimalLiteral ::
-        //     DecimalIntegerLiteral `.` DecimalDigits? ExponentPart?
-        //     `.` DecimalDigits ExponentPart?
-        //     DecimalIntegerLiteral ExponentPart?
-        //
-        // DecimalIntegerLiteral ::
-        //     `0`   #see `numeric_literal_starting_with_zero`
-        //     NonZeroDigit
-        //     NonZeroDigit NumericLiteralSeparator? DecimalDigits
-        //     NonOctalDecimalIntegerLiteral  #see `numeric_literal_
-        //                                    #     starting_with_zero`
-        //
-        // NonZeroDigit :: one of
-        //     `1` `2` `3` `4` `5` `6` `7` `8` `9`
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         self.decimal_digits()?;
         self.decimal_literal_after_digits()
     }
 
-    /// Scan a NumericLiteral (defined in 11.8.3, extended by B.1.1) after
-    /// having already consumed the first character, which is a decimal digit.
+    
+    
     fn decimal_literal_after_first_digit(&mut self) -> Result<NumericType> {
         self.decimal_digits_after_first_digit()?;
         self.decimal_literal_after_digits()
@@ -945,9 +946,9 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     fn check_after_numeric_literal(&self) -> Result<()> {
-        // The SourceCharacter immediately following a
-        // NumericLiteral must not be an IdentifierStart or
-        // DecimalDigit. (11.8.3)
+        
+        
+        
         if let Some(ch) = self.peek() {
             if is_identifier_start(ch) || ch.is_digit(10) {
                 return Err(ParseError::IllegalCharacter(ch));
@@ -957,42 +958,42 @@ impl<'alloc> Lexer<'alloc> {
         Ok(())
     }
 
-    // ------------------------------------------------------------------------
-    // 11.8.4 String Literals (as extended by B.1.2)
+    
+    
 
-    /// Scan an LineContinuation or EscapeSequence in a string literal, having
-    /// already consumed the initial backslash character.
-    ///
-    /// ```text
-    /// LineContinuation ::
-    ///     `\` LineTerminatorSequence
-    ///
-    /// EscapeSequence ::
-    ///     CharacterEscapeSequence
-    ///     (in strict mode code) `0` [lookahead ∉ DecimalDigit]
-    ///     (in non-strict code) LegacyOctalEscapeSequence
-    ///     HexEscapeSequence
-    ///     UnicodeEscapeSequence
-    ///
-    /// CharacterEscapeSequence ::
-    ///     SingleEscapeCharacter
-    ///     NonEscapeCharacter
-    ///
-    /// SingleEscapeCharacter :: one of
-    ///     `'` `"` `\` `b` `f` `n` `r` `t` `v`
-    ///
-    /// LegacyOctalEscapeSequence ::
-    ///     OctalDigit [lookahead ∉ OctalDigit]
-    ///     ZeroToThree OctalDigit [lookahead ∉ OctalDigit]
-    ///     FourToSeven OctalDigit
-    ///     ZeroToThree OctalDigit OctalDigit
-    ///
-    /// ZeroToThree :: one of
-    ///     `0` `1` `2` `3`
-    ///
-    /// FourToSeven :: one of
-    ///     `4` `5` `6` `7`
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<()> {
         match self.chars.next() {
             None => {
@@ -1000,16 +1001,16 @@ impl<'alloc> Lexer<'alloc> {
             }
             Some(c) => match c {
                 LF | LS | PS => {
-                    // LineContinuation. Ignore it.
-                    //
-                    // Don't set is_on_new_line because this LineContinuation
-                    // has no bearing on whether the current string literal was
-                    // the first token on the line where it started.
+                    
+                    
+                    
+                    
+                    
                 }
 
                 CR => {
-                    // LineContinuation. Check for the sequence \r\n; otherwise
-                    // ignore it.
+                    
+                    
                     if self.peek() == Some(LF) {
                         self.chars.next();
                     }
@@ -1044,8 +1045,8 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 'x' => {
-                    // HexEscapeSequence ::
-                    //     `x` HexDigit HexDigit
+                    
+                    
                     let mut value = self.hex_digit()?;
                     value = (value << 4) | self.hex_digit()?;
                     match char::try_from(value) {
@@ -1064,14 +1065,14 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 '0' => {
-                    // In strict mode code and in template literals, the
-                    // relevant production is
-                    //
-                    //     EscapeSequence ::
-                    //         `0` [lookahead <! DecimalDigit]
-                    //
-                    // In non-strict StringLiterals, `\0` begins a
-                    // LegacyOctalEscapeSequence which may contain more digits.
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     match self.peek() {
                         Some('0'..='7') => {
                             return Err(ParseError::NotImplemented(
@@ -1095,9 +1096,9 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 other => {
-                    // "\8" and "\9" are invalid per spec, but SpiderMonkey and
-                    // V8 accept them, and JSC accepts them in non-strict mode.
-                    // "\8" is "8" and "\9" is "9".
+                    
+                    
+                    
                     text.push(other);
                 }
             },
@@ -1105,34 +1106,34 @@ impl<'alloc> Lexer<'alloc> {
         Ok(())
     }
 
-    /// Scan a string literal, having already consumed the starting quote
-    /// character `delimiter`.
-    ///
-    /// ```text
-    /// StringLiteral ::
-    ///     `"` DoubleStringCharacters? `"`
-    ///     `'` SingleStringCharacters? `'`
-    ///
-    /// DoubleStringCharacters ::
-    ///     DoubleStringCharacter DoubleStringCharacters?
-    ///
-    /// SingleStringCharacters ::
-    ///     SingleStringCharacter SingleStringCharacters?
-    ///
-    /// DoubleStringCharacter ::
-    ///     SourceCharacter but not one of `"` or `\` or LineTerminator
-    ///     <LS>
-    ///     <PS>
-    ///     `\` EscapeSequence
-    ///     LineContinuation
-    ///
-    /// SingleStringCharacter ::
-    ///     SourceCharacter but not one of `'` or `\` or LineTerminator
-    ///     <LS>
-    ///     <PS>
-    ///     `\` EscapeSequence
-    ///     LineContinuation
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn string_literal(
         &mut self,
         delimiter: char,
@@ -1163,22 +1164,22 @@ impl<'alloc> Lexer<'alloc> {
                 }
 
                 Some(other) => {
-                    // NonEscapeCharacter ::
-                    //     SourceCharacter but not one of EscapeCharacter or LineTerminator
-                    //
-                    // EscapeCharacter ::
-                    //     SingleEscapeCharacter
-                    //     DecimalDigit
-                    //     `x`
-                    //     `u`
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     builder.push_matching(other);
                 }
             }
         }
     }
 
-    // ------------------------------------------------------------------------
-    // 11.8.5 Regular Expression Literals
+    
+    
 
     fn regular_expression_backslash_sequence(&mut self, text: &mut String<'alloc>) -> Result<()> {
         text.push('\\');
@@ -1191,7 +1192,7 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
-    // See 12.2.8 and 11.8.5 sections.
+    
     fn regular_expression_literal(
         &mut self,
         builder: &mut AutoCow<'alloc>,
@@ -1207,7 +1208,7 @@ impl<'alloc> Lexer<'alloc> {
                     break;
                 }
                 Some('[') => {
-                    // RegularExpressionClass.
+                    
                     builder.push_matching('[');
                     loop {
                         match self.chars.next() {
@@ -1250,10 +1251,10 @@ impl<'alloc> Lexer<'alloc> {
             }
         }
 
-        // 12.2.8.2.1 Assert literal is a RegularExpressionLiteral.
+        
         let literal = builder.finish(&self);
 
-        // 12.2.8.2.2 Check that only gimsuy flags are mentioned at most once.
+        
         let gimsuy_mask: u32 = ['g', 'i', 'm', 's', 'u', 'y']
             .iter()
             .map(|x| 1 << ((*x as u8) - ('a' as u8)))
@@ -1279,8 +1280,8 @@ impl<'alloc> Lexer<'alloc> {
             flag_text_set |= ch_mask;
         }
 
-        // TODO: 12.2.8.2.4 and 12.2.8.2.5 Check that the body matches the
-        // grammar defined in 21.2.1.
+        
+        
 
         Ok((
             SourceLocation::new(offset, self.offset()),
@@ -1289,30 +1290,30 @@ impl<'alloc> Lexer<'alloc> {
         ))
     }
 
-    // ------------------------------------------------------------------------
-    // 11.8.6 Template Literal Lexical Components
+    
+    
 
-    /// Parse a template literal component token, having already consumed the
-    /// starting `` ` `` or `}` character. On success, the `id` of the returned
-    /// `Token` is `subst` (if the token ends with `${`) or `tail` (if the
-    /// token ends with `` ` ``).
-    ///
-    /// ```text
-    /// NoSubstitutionTemplate ::
-    ///   ``` TemplateCharacters? ```
-    ///
-    /// TemplateHead ::
-    ///   ``` TemplateCharacters? `${`
-    ///
-    /// TemplateMiddle ::
-    ///   `}` TemplateCharacters? `${`
-    ///
-    /// TemplateTail ::
-    ///   `}` TemplateCharacters? ```
-    ///
-    /// TemplateCharacters ::
-    ///   TemplateCharacter TemplateCharacters?
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn template_part(
         &mut self,
         start: usize,
@@ -1321,32 +1322,32 @@ impl<'alloc> Lexer<'alloc> {
     ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         while let Some(ch) = self.chars.next() {
-            // TemplateCharacter ::
-            //   `$` [lookahead != `{` ]
-            //   `\` EscapeSequence
-            //   `\` NotEscapeSequence
-            //   LineContinuation
-            //   LineTerminatorSequence
-            //   SourceCharacter but not one of ``` or `\` or `$` or LineTerminator
-            //
-            // NotEscapeSequence ::
-            //   `0` DecimalDigit
-            //   DecimalDigit but not `0`
-            //   `x` [lookahead <! HexDigit]
-            //   `x` HexDigit [lookahead <! HexDigit]
-            //   `u` [lookahead <! HexDigit] [lookahead != `{`]
-            //   `u` HexDigit [lookahead <! HexDigit]
-            //   `u` HexDigit HexDigit [lookahead <! HexDigit]
-            //   `u` HexDigit HexDigit HexDigit [lookahead <! HexDigit]
-            //   `u` `{` [lookahead <! HexDigit]
-            //   `u` `{` NotCodePoint [lookahead <! HexDigit]
-            //   `u` `{` CodePoint [lookahead <! HexDigit] [lookahead != `}`]
-            //
-            // NotCodePoint ::
-            //   HexDigits [> but only if MV of |HexDigits| > 0x10FFFF ]
-            //
-            // CodePoint ::
-            //   HexDigits [> but only if MV of |HexDigits| ≤ 0x10FFFF ]
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             if ch == '$' && self.peek() == Some('{') {
                 self.chars.next();
                 return Ok((
@@ -1362,7 +1363,7 @@ impl<'alloc> Lexer<'alloc> {
                     tail,
                 ));
             }
-            // TODO: Support escape sequences.
+            
             if ch == '\\' {
                 let text = builder.get_mut_string_without_current_ascii_char(&self);
                 self.escape_sequence(text)?;
@@ -1381,44 +1382,44 @@ impl<'alloc> Lexer<'alloc> {
         let mut start = self.offset();
         while let Some(c) = self.chars.next() {
             match c {
-                // 11.2 White Space
-                //
-                // WhiteSpace ::
-                //     <TAB>
-                //     <VT>
-                //     <FF>
-                //     <SP>
-                //     <NBSP>
-                //     <ZWNBSP>
-                //     <USP>
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 TAB |
                 VT |
                 FF |
                 SP |
                 NBSP |
                 ZWNBSP |
-                '\u{1680}' | // Ogham space mark (in <USP>)
-                '\u{2000}' ..= '\u{200a}' | // typesetting spaces (in <USP>)
-                '\u{202f}' | // Narrow no-break space (in <USP>)
-                '\u{205f}' | // Medium mathematical space (in <USP>)
-                '\u{3000}' // Ideographic space (in <USP>)
+                '\u{1680}' | 
+                '\u{2000}' ..= '\u{200a}' | 
+                '\u{202f}' | 
+                '\u{205f}' | 
+                '\u{3000}' 
                     => {
-                    // TODO - The spec uses <USP> to stand for any character
-                    // with category "Space_Separator" (Zs). New Unicode
-                    // standards may add characters to this set. This should therefore be
-                    // implemented using the Unicode database somehow.
+                    
+                    
+                    
+                    
                     builder = AutoCow::new(&self);
                     start = self.offset();
                     continue;
                 }
 
-                // 11.3 Line Terminators
-                //
-                // LineTerminator ::
-                //     <LF>
-                //     <CR>
-                //     <LS>
-                //     <PS>
+                
+                
+                
+                
+                
+                
+                
                 LF | CR | LS | PS => {
                     self.is_on_new_line = true;
                     builder = AutoCow::new(&self);
@@ -1541,8 +1542,8 @@ impl<'alloc> Lexer<'alloc> {
                         self.chars.next();
                         match self.peek() {
                             Some('>') if self.is_on_new_line => {
-                                // B.1.3 SingleLineHTMLCloseComment
-                                // TODO: Limit this to Script (not Module).
+                                
+                                
                                 self.skip_single_line_comment(&mut builder);
                                 continue;
                             }
@@ -1571,9 +1572,9 @@ impl<'alloc> Lexer<'alloc> {
                         self.decimal_digits()?;
                         self.optional_exponent()?;
 
-                        // The SourceCharacter immediately following a
-                        // NumericLiteral must not be an IdentifierStart or
-                        // DecimalDigit. (11.8.3)
+                        
+                        
+                        
                         if let Some(ch) = self.peek() {
                             if is_identifier_start(ch) || ch.is_digit(10) {
                                 return Err(ParseError::IllegalCharacter(ch));
@@ -1587,7 +1588,7 @@ impl<'alloc> Lexer<'alloc> {
 
                 '/' => match self.peek() {
                     Some('/') => {
-                        // SingleLineComment :: `//` SingleLineCommentChars?
+                        
                         self.chars.next();
                         self.skip_single_line_comment(&mut builder);
                         start = self.offset();
@@ -1637,12 +1638,12 @@ impl<'alloc> Lexer<'alloc> {
                         return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::LessThanOrEqualTo));
                     }
                     Some('!') if self.is_looking_at("!--") => {
-                        // B.1.3 SingleLineHTMLOpenComment. Note that the above
-                        // `is_looking_at` test peeked ahead at the next three
-                        // characters of input. This lookahead is necessary
-                        // because `x<!--` has a comment but `x<!-y` does not.
-                        //
-                        // TODO: Limit this to Script (not Module).
+                        
+                        
+                        
+                        
+                        
+                        
                         self.skip_single_line_comment(&mut builder);
                         start = self.offset();
                         continue;
@@ -1741,7 +1742,7 @@ impl<'alloc> Lexer<'alloc> {
                 '{' => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::OpenBrace)),
                 '~' => return Ok((SourceLocation::new(start, self.offset()), None, TerminalId::BitwiseNot)),
 
-                // Idents
+                
                 '$' | '_' | 'a'..='z' | 'A'..='Z' => {
                     builder.push_matching(c);
                     return self.identifier_tail(start, builder);

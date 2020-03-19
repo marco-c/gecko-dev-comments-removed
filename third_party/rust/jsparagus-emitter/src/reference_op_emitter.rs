@@ -1,11 +1,17 @@
 use crate::ast_emitter::AstEmitter;
 use crate::emitter::EmitError;
+use crate::emitter_scope::NameLocation;
+use crate::frame_slot::FrameSlot;
+use crate::scope::BindingKind;
 use crate::script_atom_set::ScriptAtomSetIndex;
 use ast::source_atom_set::SourceAtomSetIndex;
 
 #[derive(Debug, PartialEq)]
 enum AssignmentReferenceKind {
-    GlobalName(ScriptAtomSetIndex),
+    GlobalVar(ScriptAtomSetIndex),
+    GlobalLexical(ScriptAtomSetIndex),
+    FrameSlot(FrameSlot),
+    Dynamic(ScriptAtomSetIndex),
     #[allow(dead_code)]
     Prop(ScriptAtomSetIndex),
     #[allow(dead_code)]
@@ -26,10 +32,33 @@ impl AssignmentReference {
 
     fn stack_slots(&self) -> usize {
         match self.kind {
-            AssignmentReferenceKind::GlobalName(_) => 1,
+            AssignmentReferenceKind::GlobalVar(_) => 1,
+            AssignmentReferenceKind::GlobalLexical(_) => 1,
+            AssignmentReferenceKind::FrameSlot(_) => 0,
+            AssignmentReferenceKind::Dynamic(_) => 1,
             AssignmentReferenceKind::Prop(_) => 1,
             AssignmentReferenceKind::Elem => 2,
         }
+    }
+}
+
+#[derive(Debug, PartialEq)]
+enum DeclarationReferenceKind {
+    GlobalVar(ScriptAtomSetIndex),
+    GlobalLexical(ScriptAtomSetIndex),
+    FrameSlot(FrameSlot),
+}
+
+
+
+#[derive(Debug)]
+#[must_use]
+pub struct DeclarationReference {
+    kind: DeclarationReferenceKind,
+}
+impl DeclarationReference {
+    fn new(kind: DeclarationReferenceKind) -> Self {
+        Self { kind }
     }
 }
 
@@ -59,12 +88,24 @@ pub struct GetNameEmitter {
 impl GetNameEmitter {
     pub fn emit(self, emitter: &mut AstEmitter) {
         let name_index = emitter.emit.get_atom_index(self.name);
+        let loc = emitter.lookup_name(self.name);
 
         
 
-        
-        emitter.emit.get_g_name(name_index);
-        
+        match loc {
+            NameLocation::Global(_kind) => {
+                emitter.emit.get_g_name(name_index);
+                
+            }
+            NameLocation::Dynamic => {
+                emitter.emit.get_name(name_index);
+                
+            }
+            NameLocation::FrameSlot(slot, _kind) => {
+                emitter.emit.get_local(slot.into());
+                
+            }
+        }
     }
 }
 
@@ -213,30 +254,92 @@ pub struct NameReferenceEmitter {
 impl NameReferenceEmitter {
     pub fn emit_for_call(self, emitter: &mut AstEmitter) -> CallReference {
         let name_index = emitter.emit.get_atom_index(self.name);
+        let loc = emitter.lookup_name(self.name);
 
         
 
-        
-        emitter.emit.get_g_name(name_index);
-        
+        match loc {
+            NameLocation::Global(_kind) => {
+                emitter.emit.get_g_name(name_index);
+                
 
-        
-        emitter.emit.g_implicit_this(name_index);
-        
+                emitter.emit.g_implicit_this(name_index);
+                
+            }
+            NameLocation::Dynamic => {
+                emitter.emit.get_name(name_index);
+                
+
+                emitter.emit.g_implicit_this(name_index);
+                
+            }
+            NameLocation::FrameSlot(slot, _kind) => {
+                emitter.emit.get_local(slot.into());
+                
+
+                emitter.emit.undefined();
+                
+            }
+        }
 
         CallReference::new(CallKind::Normal)
     }
 
     pub fn emit_for_assignment(self, emitter: &mut AstEmitter) -> AssignmentReference {
         let name_index = emitter.emit.get_atom_index(self.name);
+        let loc = emitter.lookup_name(self.name);
 
         
 
-        
-        emitter.emit.bind_g_name(name_index);
+        match loc {
+            NameLocation::Global(kind) => match kind {
+                BindingKind::Var => {
+                    emitter.emit.bind_g_name(name_index);
+                    
+                    AssignmentReference::new(AssignmentReferenceKind::GlobalVar(name_index))
+                }
+                BindingKind::Let | BindingKind::Const => {
+                    emitter.emit.bind_g_name(name_index);
+                    
+                    AssignmentReference::new(AssignmentReferenceKind::GlobalLexical(name_index))
+                }
+            },
+            NameLocation::Dynamic => {
+                emitter.emit.bind_name(name_index);
+                
+
+                AssignmentReference::new(AssignmentReferenceKind::Dynamic(name_index))
+            }
+            NameLocation::FrameSlot(slot, _kind) => {
+                AssignmentReference::new(AssignmentReferenceKind::FrameSlot(slot))
+            }
+        }
+    }
+
+    pub fn emit_for_declaration(self, emitter: &mut AstEmitter) -> DeclarationReference {
+        let name_index = emitter.emit.get_atom_index(self.name);
+        let loc = emitter.lookup_name(self.name);
+
         
 
-        AssignmentReference::new(AssignmentReferenceKind::GlobalName(name_index))
+        match loc {
+            NameLocation::Global(kind) => match kind {
+                BindingKind::Var => {
+                    emitter.emit.bind_g_name(name_index);
+                    
+                    DeclarationReference::new(DeclarationReferenceKind::GlobalVar(name_index))
+                }
+                BindingKind::Let | BindingKind::Const => {
+                    DeclarationReference::new(DeclarationReferenceKind::GlobalLexical(name_index))
+                }
+            },
+            NameLocation::Dynamic => {
+                panic!("declaration should have non-dynamic location");
+            }
+            NameLocation::FrameSlot(slot, _kind) => {
+                DeclarationReference::new(DeclarationReferenceKind::FrameSlot(slot))
+            }
+        }
     }
 }
 
@@ -464,11 +567,28 @@ where
         
 
         match reference.kind {
-            AssignmentReferenceKind::GlobalName(name_index) => {
+            AssignmentReferenceKind::GlobalVar(name_index) => {
                 
 
-                
                 emitter.emit.set_g_name(name_index);
+                
+            }
+            AssignmentReferenceKind::GlobalLexical(name_index) => {
+                
+
+                emitter.emit.set_g_name(name_index);
+                
+            }
+            AssignmentReferenceKind::Dynamic(name_index) => {
+                
+
+                emitter.emit.set_name(name_index);
+                
+            }
+            AssignmentReferenceKind::FrameSlot(slot) => {
+                
+
+                emitter.emit.set_local(slot.into());
                 
             }
             AssignmentReferenceKind::Prop(key_index) => {
@@ -491,6 +611,50 @@ where
     }
 
     
+}
+
+
+pub struct DeclarationEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<DeclarationReference, EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub lhs: F1,
+    pub rhs: F2,
+}
+impl<F1, F2> DeclarationEmitter<F1, F2>
+where
+    F1: Fn(&mut AstEmitter) -> Result<DeclarationReference, EmitError>,
+    F2: Fn(&mut AstEmitter) -> Result<(), EmitError>,
+{
+    pub fn emit(self, emitter: &mut AstEmitter) -> Result<(), EmitError> {
+        let reference = (self.lhs)(emitter)?;
+
+        (self.rhs)(emitter)?;
+
+        match reference.kind {
+            DeclarationReferenceKind::GlobalVar(name_index) => {
+                
+
+                emitter.emit.set_g_name(name_index);
+                
+            }
+            DeclarationReferenceKind::GlobalLexical(name_index) => {
+                
+
+                emitter.emit.init_g_lexical(name_index);
+                
+            }
+            DeclarationReferenceKind::FrameSlot(slot) => {
+                
+
+                emitter.emit.init_lexical(slot.into());
+                
+            }
+        }
+
+        Ok(())
+    }
 }
 
 

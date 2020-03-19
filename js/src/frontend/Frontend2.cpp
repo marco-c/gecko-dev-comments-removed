@@ -6,22 +6,28 @@
 
 #include "frontend/Frontend2.h"
 
-#include "mozilla/Span.h"  
+#include "mozilla/Maybe.h"                  
+#include "mozilla/OperatorNewExtensions.h"  
+#include "mozilla/Span.h"                   
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jsapi.h"
 
-#include "frontend/CompilationInfo.h"  
+#include "frontend/AbstractScopePtr.h"  
+#include "frontend/CompilationInfo.h"   
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"  
+#include "frontend/Stencil.h"      
 #include "gc/Rooting.h"            
 #include "js/HeapAPI.h"            
 #include "js/RootingAPI.h"         
 #include "js/TypeDecls.h"          
 #include "vm/JSAtom.h"             
 #include "vm/JSScript.h"           
+#include "vm/Scope.h"              
+#include "vm/ScopeKind.h"          
 
 #include "vm/JSContext-inl.h"  
 
@@ -51,7 +57,19 @@ class SmooshScriptStencil : public ScriptStencil {
 
     natoms = result_.atoms.len;
 
-    ngcthings = 1;
+    ngcthings = result_.gcthings.len;
+
+    Vector<ScopeNote, 0, SystemAllocPolicy> scopeNotes;
+    if (!scopeNotes.resize(result_.scope_notes.len)) {
+      return false;
+    }
+    for (size_t i = 0; i < result_.scope_notes.len; i++) {
+      SmooshScopeNote& scopeNote = result_.scope_notes.data[i];
+      scopeNotes[i].index = scopeNote.index;
+      scopeNotes[i].start = scopeNote.start;
+      scopeNotes[i].length = scopeNote.length;
+      scopeNotes[i].parent = scopeNote.parent;
+    }
 
     uint32_t nfixed = result_.max_fixed_slots;
     uint64_t nslots64 =
@@ -67,7 +85,7 @@ class SmooshScriptStencil : public ScriptStencil {
         result_.is_function,  0,
         mozilla::MakeSpan(result_.bytecode.data, result_.bytecode.len),
         mozilla::Span<const jssrcnote>(), mozilla::Span<const uint32_t>(),
-        mozilla::Span<const ScopeNote>(), mozilla::Span<const JSTryNote>());
+        scopeNotes, mozilla::Span<const JSTryNote>());
     if (!immutableScriptData) {
       return false;
     }
@@ -86,12 +104,40 @@ class SmooshScriptStencil : public ScriptStencil {
     if (!createAtoms(cx)) {
       return false;
     }
+
+    if (!createScopeCreationData(cx)) {
+      return false;
+    }
+
     return true;
   }
 
   virtual bool finishGCThings(JSContext* cx,
                               mozilla::Span<JS::GCCellPtr> output) const {
-    output[0] = JS::GCCellPtr(&cx->global()->emptyGlobalScope());
+    MOZ_ASSERT(output.Length() == ngcthings);
+
+    for (size_t i = 0; i < ngcthings; i++) {
+      SmooshGCThing& item = result_.gcthings.data[i];
+
+      switch (item.kind) {
+        case SmooshGCThingKind::ScopeIndex: {
+          
+          
+          
+          MutableHandle<ScopeCreationData> data =
+              compilationInfo_.scopeCreationData[item.scope_index];
+          Scope* scope = data.get().createScope(cx);
+          if (!scope) {
+            return false;
+          }
+
+          output[i] = JS::GCCellPtr(scope);
+
+          break;
+        }
+      }
+    }
+
     return true;
   }
 
@@ -127,14 +173,82 @@ class SmooshScriptStencil : public ScriptStencil {
   }
 
  public:
-  virtual void finishResumeOffsets(
-      mozilla::Span<uint32_t> resumeOffsets) const {}
-
-  virtual void finishScopeNotes(mozilla::Span<ScopeNote> scopeNotes) const {}
-
-  virtual void finishTryNotes(mozilla::Span<JSTryNote> tryNotes) const {}
-
   virtual void finishInnerFunctions() const {}
+
+ private:
+  
+  
+  bool createScopeCreationData(JSContext* cx) {
+    auto& alloc = compilationInfo_.allocScope.alloc();
+
+    for (size_t i = 0; i < result_.scopes.len; i++) {
+      SmooshScopeData& scopeData = result_.scopes.data[i];
+      size_t numBindings = scopeData.bindings.len;
+      ScopeIndex index;
+
+      switch (scopeData.kind) {
+        case SmooshScopeDataKind::Global: {
+          JS::Rooted<GlobalScope::Data*> data(
+              cx, NewEmptyGlobalScopeData(cx, alloc, numBindings));
+          if (!data) {
+            return false;
+          }
+
+          copyBindingNames(scopeData.bindings, data->trailingNames.start());
+
+          data->letStart = scopeData.let_start;
+          data->constStart = scopeData.const_start;
+          data->length = numBindings;
+
+          if (!ScopeCreationData::create(cx, compilationInfo_,
+                                         ScopeKind::Global, data, &index)) {
+            return false;
+          }
+          break;
+        }
+        case SmooshScopeDataKind::Lexical: {
+          JS::Rooted<LexicalScope::Data*> data(
+              cx, NewEmptyLexicalScopeData(cx, alloc, numBindings));
+          if (!data) {
+            return false;
+          }
+
+          copyBindingNames(scopeData.bindings, data->trailingNames.start());
+
+          
+
+          data->constStart = scopeData.const_start;
+          data->length = numBindings;
+
+          uint32_t firstFrameSlot = scopeData.first_frame_slot;
+          ScopeIndex enclosingIndex(scopeData.enclosing);
+          Rooted<AbstractScopePtr> enclosing(
+              cx, AbstractScopePtr(compilationInfo_, enclosingIndex));
+          if (!ScopeCreationData::create(cx, compilationInfo_,
+                                         ScopeKind::Lexical, data,
+                                         firstFrameSlot, enclosing, &index)) {
+            return false;
+          }
+          break;
+        }
+      }
+
+      
+      MOZ_ASSERT(index == i);
+    }
+
+    return true;
+  }
+
+  void copyBindingNames(CVec<SmooshBindingName>& from, BindingName* to) {
+    size_t numBindings = from.len;
+    for (size_t i = 0; i < numBindings; i++) {
+      SmooshBindingName& name = from.data[i];
+      new (mozilla::KnownNotNull, &to[i])
+          BindingName(allAtoms_[name.name], name.is_closed_over,
+                      name.is_top_level_function);
+    }
+  }
 };
 
 

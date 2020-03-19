@@ -1,0 +1,3528 @@
+
+
+
+
+
+
+
+#ifndef vm_Opcodes_h
+#define vm_Opcodes_h
+
+#include "mozilla/Attributes.h"
+
+#include <stddef.h>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define FOR_EACH_OPCODE(MACRO)
+
+
+
+
+
+
+ \
+    MACRO(Undefined, undefined, "", 1, 0, 1, JOF_BYTE) \
+    /*
+     * Push `null`.
+     *
+     *   Category: Constants
+     *   Operands:
+     *   Stack: => null
+     */ \
+    MACRO(Null, null, js_null_str, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(False, false_, js_false_str, 1, 0, 1, JOF_BYTE) \
+    MACRO(True, true_, js_true_str, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(Int32, int32, NULL, 5, 0, 1, JOF_INT32) \
+    
+
+
+
+
+
+ \
+    MACRO(Zero, zero, "0", 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(One, one, "1", 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(Int8, int8, NULL, 2, 0, 1, JOF_INT8) \
+    
+
+
+
+
+
+ \
+    MACRO(Uint16, uint16, NULL, 3, 0, 1, JOF_UINT16) \
+    
+
+
+
+
+
+ \
+    MACRO(Uint24, uint24, NULL, 4, 0, 1, JOF_UINT24) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(Double, double_, NULL, 9, 0, 1, JOF_DOUBLE) \
+    
+
+
+
+
+
+ \
+    MACRO(BigInt, big_int, NULL, 5, 0, 1, JOF_BIGINT) \
+    
+
+
+
+
+
+ \
+    MACRO(String, string, NULL, 5, 0, 1, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(Symbol, symbol, NULL, 2, 0, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Void, void_, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Typeof, typeof_, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    MACRO(TypeofExpr, typeof_expr, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Pos, pos, "+ ", 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Neg, neg, "- ", 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(BitNot, bit_not, "~", 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Not, not_, "!", 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(BitOr, bit_or, "|",  1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(BitXor, bit_xor, "^", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(BitAnd, bit_and, "&", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Eq, eq, "==", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Ne, ne, "!=", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictEq, strict_eq, "===", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(StrictNe, strict_ne, "!==", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Lt, lt, "<",  1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Gt, gt, ">",  1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Le, le, "<=", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Ge, ge, ">=", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Instanceof, instanceof, js_instanceof_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(In, in_, js_in_str, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Lsh, lsh, "<<", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Rsh, rsh, ">>", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Ursh, ursh, ">>>", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Add, add, "+", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Sub, sub, "-", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Inc, inc, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Dec, dec, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Mul, mul, "*", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Div, div, "/", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    MACRO(Mod, mod, "%", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Pow, pow, "**", 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ToId, to_id, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ToString, to_string, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GlobalThis, global_this, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(NewTarget, new_target, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DynamicImport, dynamic_import, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(ImportMeta, import_meta, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    MACRO(NewInit, new_init, NULL, 1, 0, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(NewObject, new_object, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
+    MACRO(NewObjectWithGroup, new_object_with_group, NULL, 5, 0, 1, JOF_OBJECT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Object, object, NULL, 5, 0, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(ObjWithProto, obj_with_proto, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitProp, init_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitHiddenProp, init_hidden_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitLockedProp, init_locked_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElem, init_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    MACRO(InitHiddenElem, init_hidden_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitPropGetter, init_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
+    MACRO(InitHiddenPropGetter, init_hidden_prop_getter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemGetter, init_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
+    MACRO(InitHiddenElemGetter, init_hidden_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitPropSetter, init_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
+    MACRO(InitHiddenPropSetter, init_hidden_prop_setter, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemSetter, init_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
+    MACRO(InitHiddenElemSetter, init_hidden_elem_setter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetProp, get_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
+    MACRO(CallProp, call_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetElem, get_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
+    MACRO(CallElem, call_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Length, length, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetProp, set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetProp, strict_set_prop, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetElem, set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetElem, strict_set_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DelProp, del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSLOPPY) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(StrictDelProp, strict_del_prop, NULL, 5, 1, 1, JOF_ATOM|JOF_PROP|JOF_CHECKSTRICT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DelElem, del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSLOPPY) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(StrictDelElem, strict_del_elem, NULL, 1, 2, 1, JOF_BYTE|JOF_ELEM|JOF_CHECKSTRICT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(HasOwn, has_own, NULL, 1, 2, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SuperBase, super_base, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetPropSuper, get_prop_super, NULL, 5, 2, 1, JOF_ATOM|JOF_PROP|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetElemSuper, get_elem_super, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetPropSuper, set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSLOPPY) \
+    
+
+
+
+
+
+
+ \
+    MACRO(StrictSetPropSuper, strict_set_prop_super, NULL, 5, 3, 1, JOF_ATOM|JOF_PROP|JOF_PROPSET|JOF_CHECKSTRICT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetElemSuper, set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSLOPPY) \
+    
+
+
+
+
+
+
+ \
+    MACRO(StrictSetElemSuper, strict_set_elem_super, NULL, 1, 4, 1, JOF_BYTE|JOF_ELEM|JOF_PROPSET|JOF_CHECKSTRICT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Iter, iter, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(MoreIter, more_iter, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(IsNoIter, is_no_iter, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(IterNext, iter_next, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(EndIter, end_iter, NULL, 1, 2, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckIsObj, check_is_obj, NULL, 2, 1, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckIsCallable, check_is_callable, NULL, 2, 1, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckObjCoercible, check_obj_coercible, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ToAsyncIter, to_async_iter, NULL, 1, 2, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(MutateProto, mutate_proto, NULL, 1, 2, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(NewArray, new_array, NULL, 5, 0, 1, JOF_UINT32|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemArray, init_elem_array, NULL, 5, 2, 1, JOF_UINT32|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitElemInc, init_elem_inc, NULL, 1, 3, 2, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Hole, hole, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(NewArrayCopyOnWrite, new_array_copy_on_write, NULL, 5, 0, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Lambda, lambda, NULL, 5, 0, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(LambdaArrow, lambda_arrow, NULL, 5, 1, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetFunName, set_fun_name, NULL, 2, 2, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+ \
+    MACRO(InitHomeObject, init_home_object, NULL, 1, 2, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckClassHeritage, check_class_heritage, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(FunWithProto, fun_with_proto, NULL, 5, 1, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR) \
+    
+
+
+
+
+
+
+ \
+    MACRO(BuiltinProto, builtin_proto, NULL, 2, 0, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Call, call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    MACRO(CallIter, call_iter, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    MACRO(FunApply, fun_apply, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    MACRO(FunCall, fun_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    MACRO(CallIgnoresRv, call_ignores_rv, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SpreadCall, spread_call, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Eval, eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(SpreadEval, spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+ \
+    MACRO(StrictEval, strict_eval, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSpreadEval, strict_spread_eval, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE|JOF_SPREAD|JOF_TYPESET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GImplicitThis, g_implicit_this, "", 5, 0, 1, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CallSiteObj, call_site_obj, NULL, 5, 0, 1, JOF_OBJECT) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(IsConstructing, is_constructing, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(New, new_, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC) \
+    MACRO(SuperCall, super_call, NULL, 3, -1, 1, JOF_ARGC|JOF_INVOKE|JOF_CONSTRUCT|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SpreadNew, spread_new, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC) \
+    MACRO(SpreadSuperCall, spread_super_call, NULL, 1, 4, 1, JOF_BYTE|JOF_INVOKE|JOF_CONSTRUCT|JOF_SPREAD|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SuperFun, super_fun, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckThisReinit, check_this_reinit, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(Generator, generator, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitialYield, initial_yield, NULL, 4, 1, 3, JOF_RESUMEINDEX) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(AfterYield, after_yield, NULL, 5, 0, 0, JOF_ICINDEX) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(FinalYieldRval, final_yield_rval, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Yield, yield, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(IsGenClosing, is_gen_closing, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(AsyncAwait, async_await, NULL, 1, 2, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(AsyncResolve, async_resolve, NULL, 2, 2, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(TrySkipAwait, try_skip_await, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    MACRO(ResumeKind, resume_kind, NULL, 2, 0, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(Resume, resume, NULL, 1, 3, 1, JOF_BYTE|JOF_INVOKE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(JumpTarget, jump_target, NULL, 5, 0, 0, JOF_ICINDEX) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(LoopHead, loop_head, NULL, 6, 0, 0, JOF_LOOPHEAD) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(Goto, goto_, NULL, 5, 0, 0, JOF_JUMP) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(IfEq, if_eq, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(IfNe, if_ne, NULL, 5, 1, 0, JOF_JUMP|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(And, and_, NULL, 5, 1, 1, JOF_JUMP|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Or, or_, NULL, 5, 1, 1, JOF_JUMP|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Coalesce, coalesce, NULL, 5, 1, 1, JOF_JUMP) \
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Case, case_, NULL, 5, 2, 1, JOF_JUMP) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Default, default_, NULL, 5, 1, 0, JOF_JUMP) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(TableSwitch, table_switch, NULL, 16, 1, 0, JOF_TABLESWITCH) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Return, return_, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetRval, get_rval, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    MACRO(SetRval, set_rval, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(RetRval, ret_rval, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckReturn, check_return, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Throw, throw_, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(ThrowMsg, throw_msg, NULL, 3, 0, 0, JOF_UINT16) \
+    
+
+
+
+
+
+
+ \
+    MACRO(ThrowSetConst, throw_set_const, NULL, 5, 0, 0, JOF_ATOM|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Try, try_, NULL, 5, 0, 0, JOF_CODE_OFFSET) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(TryDestructuring, try_destructuring, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Exception, exception, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(ResumeIndex, resume_index, NULL, 4, 0, 1, JOF_RESUMEINDEX) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Gosub, gosub, NULL, 5, 2, 0, JOF_JUMP) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Finally, finally, NULL, 1, 0, 2, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Retsub, retsub, NULL, 1, 2, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Uninitialized, uninitialized, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitLexical, init_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitGLexical, init_g_lexical, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_PROPINIT|JOF_GNAME|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPINIT) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckLexical, check_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(CheckThis, check_this, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(BindGName, bind_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_GNAME|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(BindName, bind_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetName, get_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetGName, get_g_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_GNAME|JOF_IC) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(GetArg, get_arg, NULL, 3, 0, 1, JOF_QARG|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetLocal, get_local, NULL, 4, 0, 1, JOF_LOCAL|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+ \
+    MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetBoundName, get_bound_name, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(GetIntrinsic, get_intrinsic, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Callee, callee, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(EnvCallee, env_callee, NULL, 2, 0, 1, JOF_UINT8) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetName, set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetName, strict_set_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(SetGName, set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_GNAME|JOF_CHECKSLOPPY|JOF_IC) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(StrictSetGName, strict_set_g_name, NULL, 5, 2, 1, JOF_ATOM|JOF_NAME|JOF_PROPSET|JOF_GNAME|JOF_CHECKSTRICT|JOF_IC) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(SetArg, set_arg, NULL, 3, 1, 1, JOF_QARG|JOF_NAME) \
+    
+
+
+
+
+
+
+ \
+    MACRO(SetLocal, set_local, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_NAME|JOF_PROPSET) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(SetIntrinsic, set_intrinsic, NULL, 5, 1, 1, JOF_ATOM|JOF_NAME) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(PopLexicalEnv, pop_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DebugLeaveLexicalEnv, debug_leave_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(PushVarEnv, push_var_env, NULL, 5, 0, 0, JOF_SCOPE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(EnterWith, enter_with, NULL, 5, 1, 0, JOF_SCOPE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(LeaveWith, leave_with, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(BindVar, bind_var, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DefVar, def_var, NULL, 5, 0, 0, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DefFun, def_fun, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DefLet, def_let, NULL, 5, 0, 0, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DefConst, def_const, NULL, 5, 0, 0, JOF_ATOM) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(DelName, del_name, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME|JOF_CHECKSLOPPY) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(Rest, rest, NULL, 1, 0, 1, JOF_BYTE|JOF_TYPESET|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(FunctionThis, function_this, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(Pop, pop, NULL, 1, 1, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+ \
+    MACRO(PopN, pop_n, NULL, 3, -1, 0, JOF_UINT16) \
+    
+
+
+
+
+
+ \
+    MACRO(Dup, dup, NULL, 1, 1, 2, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(Dup2, dup2, NULL, 1, 2, 4, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    MACRO(DupAt, dup_at, NULL, 4, 0, 1, JOF_UINT24) \
+    
+
+
+
+
+
+ \
+    MACRO(Swap, swap, NULL, 1, 2, 2, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(Pick, pick, NULL, 2, 0, 0, JOF_UINT8) \
+    
+
+
+
+
+
+
+ \
+    MACRO(Unpick, unpick, NULL, 2, 0, 0, JOF_UINT8) \
+    
+
+
+
+
+
+
+ \
+    MACRO(Nop, nop, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(Lineno, lineno, NULL, 5, 0, 0, JOF_UINT32) \
+    
+
+
+
+
+
+
+ \
+    MACRO(NopDestructuring, nop_destructuring, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(ForceInterpreter, force_interpreter, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+ \
+    MACRO(DebugCheckSelfHosted, debug_check_self_hosted, NULL, 1, 1, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(InstrumentationActive, instrumentation_active, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(InstrumentationCallback, instrumentation_callback, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    MACRO(InstrumentationScriptId, instrumentation_script_id, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(Debugger, debugger, NULL, 1, 0, 0, JOF_BYTE)
+
+
+
+
+
+
+
+#define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+  MACRO(237)                                   \
+  MACRO(238)                                   \
+  MACRO(239)                                   \
+  MACRO(240)                                   \
+  MACRO(241)                                   \
+  MACRO(242)                                   \
+  MACRO(243)                                   \
+  MACRO(244)                                   \
+  MACRO(245)                                   \
+  MACRO(246)                                   \
+  MACRO(247)                                   \
+  MACRO(248)                                   \
+  MACRO(249)                                   \
+  MACRO(250)                                   \
+  MACRO(251)                                   \
+  MACRO(252)                                   \
+  MACRO(253)                                   \
+  MACRO(254)                                   \
+  MACRO(255)
+
+namespace js {
+
+
+
+
+
+
+#define PLUS_ONE(...) \
+    + 1
+constexpr int JSOP_LIMIT = 0 FOR_EACH_OPCODE(PLUS_ONE);
+#undef PLUS_ONE
+
+#define TRAILING_VALUE_AND_VALUE_PLUS_ONE(val) \
+    val) && (val + 1 ==
+static_assert((JSOP_LIMIT ==
+               FOR_EACH_TRAILING_UNUSED_OPCODE(TRAILING_VALUE_AND_VALUE_PLUS_ONE)
+               256),
+              "trailing unused opcode values monotonically increase "
+              "from JSOP_LIMIT to 255");
+#undef TRAILING_VALUE_AND_VALUE_PLUS_ONE
+
+
+
+#define DEFINE_LENGTH_CONSTANT(op, op_snake, image, len, ...) \
+  constexpr size_t JSOpLength_##op = len;
+FOR_EACH_OPCODE(DEFINE_LENGTH_CONSTANT)
+#undef DEFINE_LENGTH_CONSTANT
+
+}  
+
+#endif  

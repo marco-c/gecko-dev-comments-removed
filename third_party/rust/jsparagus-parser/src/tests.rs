@@ -3,9 +3,12 @@ use std::iter;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::{parse_script, ParseOptions};
+use ast::source_atom_set::SourceAtomSet;
 use ast::{arena, source_location::SourceLocation, types::*};
 use bumpalo::{self, Bump};
 use generated_parser::{self, AstBuilder, ParseError, Result, TerminalId};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[cfg(all(feature = "unstable", test))]
 mod benchmarks {
@@ -66,7 +69,8 @@ where
 {
     let buf = arena::alloc_str(allocator, &chunks_to_string(code));
     let options = ParseOptions::new();
-    parse_script(allocator, &buf, &options)
+    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    parse_script(allocator, &buf, &options, atoms.clone())
 }
 
 fn assert_parses<'alloc, T: IntoChunks<'alloc>>(code: T) {
@@ -128,11 +132,12 @@ fn assert_incomplete<'alloc, T: IntoChunks<'alloc>>(code: T) {
 
 fn assert_same_tokens<'alloc>(left: &str, right: &str) {
     let allocator = &Bump::new();
-    let mut left_lexer = Lexer::new(allocator, left.chars());
-    let mut right_lexer = Lexer::new(allocator, right.chars());
+    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    let mut left_lexer = Lexer::new(allocator, left.chars(), atoms.clone());
+    let mut right_lexer = Lexer::new(allocator, right.chars(), atoms.clone());
 
     let mut parser = Parser::new(
-        AstBuilder::new(allocator),
+        AstBuilder::new(allocator, atoms.clone()),
         generated_parser::START_STATE_MODULE,
     );
 
@@ -163,9 +168,10 @@ fn assert_same_tokens<'alloc>(left: &str, right: &str) {
 fn assert_can_close_after<'alloc, T: IntoChunks<'alloc>>(code: T) {
     let allocator = &Bump::new();
     let buf = chunks_to_string(code);
-    let mut lexer = Lexer::new(allocator, buf.chars());
+    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
+    let mut lexer = Lexer::new(allocator, buf.chars(), atoms.clone());
     let mut parser = Parser::new(
-        AstBuilder::new(allocator),
+        AstBuilder::new(allocator, atoms.clone()),
         generated_parser::START_STATE_SCRIPT,
     );
     loop {
@@ -438,6 +444,7 @@ fn test_awkward_chunks() {
 
     let allocator = &Bump::new();
     let actual = try_parse(allocator, &vec!["x/", "=2;"]).unwrap();
+    let atoms = Rc::new(RefCell::new(SourceAtomSet::new()));
     let expected = Script {
         directives: arena::Vec::new_in(allocator),
         statements: bumpalo::vec![
@@ -451,7 +458,7 @@ fn test_awkward_chunks() {
                     binding: SimpleAssignmentTarget::AssignmentTargetIdentifier(
                         AssignmentTargetIdentifier {
                             name: Identifier {
-                                value: "x",
+                                value: atoms.borrow_mut().insert("x"),
                                 loc: SourceLocation::new(0, 1),
                             },
                             loc: SourceLocation::new(0, 1),
@@ -459,10 +466,10 @@ fn test_awkward_chunks() {
                     ),
                     expression: arena::alloc(
                         allocator,
-                        Expression::LiteralNumericExpression {
+                        Expression::LiteralNumericExpression(NumericLiteral {
                             value: 2.0,
                             loc: SourceLocation::new(3, 4),
-                        },
+                        }),
                     ),
                     loc: SourceLocation::new(0, 4),
                 },
@@ -488,14 +495,14 @@ fn test_regex() {
     assert_parses("x = /x/");
     assert_parses("x = /x/g");
 
-    // FIXME: Unexpected flag
-    // assert_parses("x = /x/wow_flags_can_be_$$anything$$");
+    
+    
     assert_not_implemented("x = /x/wow_flags_can_be_$$anything$$");
 
-    // TODO: Should the lexer running out of input throw an incomplete error, or a lexer error?
+    
     assert_error_eq("/x", ParseError::UnterminatedRegExp);
-    assert_incomplete("x = //"); // comment
-    assert_error_eq("x = /*/", ParseError::UnterminatedMultiLineComment); /*/ comment */
+    assert_incomplete("x = //"); 
+    assert_error_eq("x = /*/", ParseError::UnterminatedMultiLineComment); 
     assert_error_eq("x =/= 2", ParseError::UnterminatedRegExp);
     assert_parses("x /= 2");
     assert_parses("x = /[]/");
@@ -536,13 +543,13 @@ fn test_can_close_with_asi() {
 
 #[test]
 fn test_conditional_keywords() {
-    // property names
+    
     assert_parses("const obj = {if: 3, function: 4};");
     assert_parses("const obj = {true: 1, false: 0, null: NaN};");
     assert_parses("assert(obj.if == 3);");
     assert_parses("assert(obj.true + obj.false + obj.null == NaN);");
 
-    // method names
+    
     assert_parses(
         "
         class C {
@@ -552,18 +559,18 @@ fn test_conditional_keywords() {
         ",
     );
 
-    // FIXME: let (multitoken lookahead):
+    
     assert_not_implemented("let a = 1;");
-    /*
-    // let as identifier
-    assert_parses("var let = [new Date];");
-    // let as keyword, then identifier
-    assert_parses("let v = let;");
-    // `let .` -> ExpressionStatement
-    assert_parses("let.length;");
-    // `let [` -> LexicalDeclaration
-    assert_syntax_error("let[0].getYear();");
-     */
+    
+
+
+
+
+
+
+
+
+
 
     assert_parses(
         "
@@ -572,37 +579,37 @@ fn test_conditional_keywords() {
         ",
     );
 
-    // Not implemented:
-    // assert_parses("var of, let, private, target;");
+    
+    
 
     assert_parses("class X { get y() {} }");
 
-    // Not implemented:
-    // assert_parses("async: { break async; }");
+    
+    
 
     assert_parses("var get = { get get() {}, set get(v) {}, set: 3 };");
 
-    // Not implemented (requires hack; grammar is not LR(1)):
-    // assert_parses("for (async of => {};;) {}");
-    // assert_parses("for (async of []) {}");
+    
+    
+    
 }
 
 #[test]
 fn test_async_arrows() {
-    // FIXME: async (multiple lookahead)
+    
     assert_not_implemented("const a = async a => 1;");
-    /*
-    assert_parses("let f = async arg => body;");
-    assert_parses("f = async (a1, a2) => {};");
-    assert_parses("f = async (a1 = b + c, ...a2) => {};");
+    
 
-    assert_error_eq("f = async (a, b + c) => {};", ParseError::InvalidParameter);
-    assert_error_eq(
-        "f = async (...a1, a2) => {};",
-        ParseError::ArrowParametersWithNonFinalRest,
-    );
-    assert_error_eq("obj.async() => {}", ParseError::ArrowHeadInvalid);
-    */
+
+
+
+
+
+
+
+
+
+
 
     assert_error_eq("foo(a, b) => {}", ParseError::ArrowHeadInvalid);
 }
@@ -615,7 +622,7 @@ fn test_coalesce() {
 
 #[test]
 fn test_no_line_terminator_here() {
-    // Parse `code` as a Script and compute some function of the resulting AST.
+    
     fn parse_then<F, R>(code: &str, f: F) -> R
     where
         F: FnOnce(&Script) -> R,
@@ -629,24 +636,24 @@ fn test_no_line_terminator_here() {
         }
     }
 
-    // Parse `code` as a Script and return the number of top-level
-    // StatementListItems.
+    
+    
     fn count_items(code: &str) -> usize {
         parse_then(code, |script| script.statements.len())
     }
 
-    // Without a newline, labelled `break` in loop.  But a line break changes
-    // the meaning -- then it's a plain `break` statement, followed by
-    // ExpressionStatement `LOOP;`
+    
+    
+    
     assert_eq!(count_items("LOOP: while (true) break LOOP;"), 1);
     assert_eq!(count_items("LOOP: while (true) break \n LOOP;"), 2);
 
-    // The same, but for `continue`.
+    
     assert_eq!(count_items("LOOP: while (true) continue LOOP;"), 1);
     assert_eq!(count_items("LOOP: while (true) continue \n LOOP;"), 2);
 
-    // Parse `code` as a Script, expected to contain a single function
-    // declaration, and return the number of statements in the function body.
+    
+    
     fn count_statements_in_function(code: &str) -> usize {
         parse_then(code, |script| {
             assert_eq!(
@@ -677,7 +684,7 @@ fn test_no_line_terminator_here() {
     assert_parses("throw fit;");
     assert_syntax_error("throw\nfit;");
 
-    // Alternative ways of spelling LineTerminator
+    
     assert_syntax_error("throw//\nfit;");
     assert_syntax_error("throw/*\n*/fit;");
     assert_syntax_error("throw\rfit;");

@@ -1,0 +1,6 @@
+
+
+#[macro_export]
+macro_rules! grammar_extension {
+    ( $($_:tt)* ) => {};
+}
