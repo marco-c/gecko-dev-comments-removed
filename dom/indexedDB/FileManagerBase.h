@@ -28,6 +28,11 @@ class FileManagerBase {
   using AutoLock = mozilla::detail::BaseAutoLock<MutexType&>;
 
   MOZ_MUST_USE RefPtr<FileInfo> GetFileInfo(int64_t aId) const {
+    if (!AssertValid()) {
+      
+      return nullptr;
+    }
+
     
     
     
@@ -41,6 +46,11 @@ class FileManagerBase {
   }
 
   MOZ_MUST_USE RefPtr<FileInfo> CreateFileInfo() {
+    if (!AssertValid()) {
+      
+      return nullptr;
+    }
+
     
     
     
@@ -88,6 +98,15 @@ class FileManagerBase {
   };
 
  protected:
+  bool AssertValid() const {
+    if (NS_WARN_IF(static_cast<const FileManager*>(this)->Invalidated())) {
+      MOZ_ASSERT(false);
+      return false;
+    }
+
+    return true;
+  }
+
   ~FileManagerBase() = default;
 
   
