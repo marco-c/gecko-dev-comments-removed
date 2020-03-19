@@ -24,7 +24,7 @@
 #include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"        
 
-#include "builtin/streams/MiscellaneousOperations-inl.h"  
+#include "builtin/Promise-inl.h" 
 #include "vm/Compartment-inl.h"  
 #include "vm/List-inl.h"         
 #include "vm/Realm-inl.h"        
@@ -113,7 +113,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     }
 
     
-    SetSettledPromiseIsHandled(cx, promise);
+    js::SetSettledPromiseIsHandled(cx, promise);
   }
 
   if (!promise) {
@@ -211,7 +211,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
   }
 
   
-  SetSettledPromiseIsHandled(cx, unwrappedClosedPromise);
+  js::SetSettledPromiseIsHandled(cx, unwrappedClosedPromise);
 
   
   unwrappedStream->clearReader();

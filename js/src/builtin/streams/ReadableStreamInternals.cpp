@@ -33,6 +33,7 @@
 #include "vm/Realm.h"          
 #include "vm/StringType.h"     
 
+#include "builtin/Promise-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"                        
@@ -354,7 +355,7 @@ MOZ_MUST_USE bool js::ReadableStreamErrorInternal(
   
   
   Rooted<JSObject*> closedPromise(cx, unwrappedReader->closedPromise());
-  SetSettledPromiseIsHandled(cx, closedPromise.as<PromiseObject>());
+  js::SetSettledPromiseIsHandled(cx, closedPromise.as<PromiseObject>());
 
   if (unwrappedStream->mode() == JS::ReadableStreamMode::ExternalSource) {
     

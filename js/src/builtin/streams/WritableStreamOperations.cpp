@@ -30,6 +30,7 @@
 #include "vm/List.h"           
 #include "vm/PromiseObject.h"  
 
+#include "builtin/Promise-inl.h"  
 #include "builtin/streams/HandlerFunction-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
@@ -862,7 +863,7 @@ MOZ_MUST_USE bool js::WritableStreamRejectCloseAndClosedPromiseIfNeeded(
       return false;
     }
 
-    SetSettledPromiseIsHandled(cx, unwrappedClosedPromise);
+    js::SetSettledPromiseIsHandled(cx, unwrappedClosedPromise);
   }
 
   return true;

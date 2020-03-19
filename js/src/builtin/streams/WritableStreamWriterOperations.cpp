@@ -27,6 +27,7 @@
 #include "vm/JSContext.h"      
 #include "vm/PromiseObject.h"  
 
+#include "builtin/Promise-inl.h"  
 #include "builtin/streams/MiscellaneousOperations-inl.h"  
 #include "builtin/streams/WritableStream-inl.h"  
 #include "builtin/streams/WritableStreamDefaultWriter-inl.h"  
@@ -185,7 +186,7 @@ static bool EnsurePromiseRejected(
   }
 
   
-  SetSettledPromiseIsHandled(cx, unwrappedPromise);
+  js::SetSettledPromiseIsHandled(cx, unwrappedPromise);
   return true;
 }
 

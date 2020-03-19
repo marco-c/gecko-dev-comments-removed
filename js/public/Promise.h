@@ -359,6 +359,14 @@ extern JS_PUBLIC_API bool GetPromiseIsHandled(JS::HandleObject promise);
 
 
 
+
+extern JS_PUBLIC_API void SetSettledPromiseIsHandled(JSContext* cx,
+                                                     JS::HandleObject promise);
+
+
+
+
+
 extern JS_PUBLIC_API JSObject* GetPromiseAllocationSite(
     JS::HandleObject promise);
 

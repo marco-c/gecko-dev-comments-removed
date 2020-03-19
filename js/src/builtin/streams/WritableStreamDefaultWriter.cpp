@@ -28,7 +28,7 @@
 #include "vm/JSContext.h"      
 #include "vm/PromiseObject.h"  
 
-#include "builtin/streams/MiscellaneousOperations-inl.h"  
+#include "builtin/Promise-inl.h" 
 #include "vm/Compartment-inl.h"  
 #include "vm/JSObject-inl.h"      
 #include "vm/NativeObject-inl.h"  
@@ -147,7 +147,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
+      js::SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       JSObject* closedPromise = PromiseObject::createSkippingExecutor(cx);
@@ -175,7 +175,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setReadyPromise(promise);
 
       
-      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
+      js::SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
 
       
       
@@ -187,7 +187,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
       writer->setClosedPromise(promise);
 
       
-      SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
+      js::SetSettledPromiseIsHandled(cx, promise.as<PromiseObject>());
     }
   }
 
