@@ -7424,14 +7424,12 @@ static bool CompareCrossOriginOpenerPolicies(
     return true;
   }
 
-  if (documentPolicy != resultPolicy) {
+  if (documentPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE ||
+      resultPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE) {
     return false;
   }
-  
 
-  
-  if ((documentPolicy & nsILoadInfo::OPENER_POLICY_SAME_ORIGIN) &&
-      documentOrigin->Equals(resultOrigin)) {
+  if (documentPolicy == resultPolicy && documentOrigin->Equals(resultOrigin)) {
     return true;
   }
 
