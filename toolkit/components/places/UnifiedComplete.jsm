@@ -61,10 +61,6 @@ const QUERYINDEX_FRECENCY = 10;
 
 
 
-const DISALLOWED_URLLIKE_PREFIXES = ["http", "https", "ftp"];
-
-
-
 
 
 const SQL_BOOKMARK_TAGS_FRAGMENT = `EXISTS(SELECT 1 FROM moz_bookmarks WHERE fk = h.id) AS bookmarked,
@@ -1587,6 +1583,15 @@ Search.prototype = {
       .catch(Cu.reportError);
   },
 
+  
+
+
+
+
+
+
+
+
   _prohibitSearchSuggestionsFor(searchString) {
     if (this._prohibitSearchSuggestions) {
       return true;
@@ -1611,19 +1616,6 @@ Search.prototype = {
       this._searchTokens.length == 1 &&
       this._searchTokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
       Services.uriFixup.isDomainWhitelisted(this._searchTokens[0].value, -1)
-    ) {
-      return true;
-    }
-
-    
-    
-    if (
-      DISALLOWED_URLLIKE_PREFIXES.some(
-        prefix => this._trimmedOriginalSearchString == prefix
-      ) ||
-      DISALLOWED_URLLIKE_PREFIXES.some(prefix =>
-        this._trimmedOriginalSearchString.startsWith(prefix + ":")
-      )
     ) {
       return true;
     }
