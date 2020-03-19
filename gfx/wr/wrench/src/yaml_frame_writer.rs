@@ -1002,7 +1002,13 @@ impl YamlFrameWriter {
                 DisplayItem::Rectangle(item) => {
                     str_node(&mut v, "type", "rect");
                     common_node(&mut v, clip_id_mapper, &item.common);
-                    color_node(&mut v, "color", item.color);
+
+                    let key_label = match item.color {
+                        PropertyBinding::Value(..) => "color",
+                        PropertyBinding::Binding(..) => "animating-color",
+                    };
+                    color_node(&mut v, key_label,
+                               scene.properties.resolve_color(&item.color));
                 }
                 DisplayItem::HitTest(item) => {
                     str_node(&mut v, "type", "hit-test");
@@ -1492,8 +1498,12 @@ impl YamlFrameWriter {
                 DisplayItem::PopAllShadows => {
                     str_node(&mut v, "type", "pop-all-shadows");
                 }
-                DisplayItem::ReuseItem(key) => {
-                    str_node(&mut v, "type", "reuse-item");
+                DisplayItem::ReuseItems(key) => {
+                    str_node(&mut v, "type", "reuse-items");
+                    usize_node(&mut v, "key", key as usize);
+                }
+                DisplayItem::RetainedItems(key) => {
+                    str_node(&mut v, "type", "retained-items");
                     usize_node(&mut v, "key", key as usize);
                 }
             }

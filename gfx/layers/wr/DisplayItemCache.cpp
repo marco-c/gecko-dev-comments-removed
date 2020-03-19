@@ -85,7 +85,7 @@ Maybe<uint16_t> DisplayItemCache::AssignSlot(nsPaintedDisplayItem* aItem) {
     return Nothing();
   }
 
-  if (!aItem->CanBeReused()) {
+  if (!aItem->CanBeReused() || !aItem->CanBeCached()) {
     
     return Nothing();
   }
@@ -129,14 +129,16 @@ Maybe<uint16_t> DisplayItemCache::CanReuseItem(
     return Nothing();
   }
 
-  
   if (!(aSpaceAndClip == slot.mSpaceAndClip)) {
     
+    
     slot.mOccupied = false;
-    return Nothing();
+    aItem->SetCantBeCached();
+    slotIndex = Nothing();
+  } else {
+    slot.mUsed = true;
   }
 
-  slot.mUsed = true;
   return slotIndex;
 }
 
