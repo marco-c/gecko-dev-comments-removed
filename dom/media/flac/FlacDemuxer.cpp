@@ -109,6 +109,7 @@ class FrameHeader {
     
     mIndex = mVariableBlockSize ? frame_or_sample_num
                                 : frame_or_sample_num * mBlocksize;
+    mFrameOrSampleNum = frame_or_sample_num;
 
     
     if (sr_code < 12) {
@@ -154,6 +155,11 @@ class FrameHeader {
     FLAC_CHMODE_MID_SIDE,
   };
   AudioInfo mInfo;
+  
+  
+  
+  
+  uint64_t mFrameOrSampleNum = 0;
   
   int64_t mIndex = 0;
   bool mVariableBlockSize = false;
@@ -306,6 +312,17 @@ class Frame {
     }
   }
 
+  void ResetStartTimeIfNeeded(const Frame& aReferenceFrame) {
+    if (Header().mVariableBlockSize ||
+        aReferenceFrame.Header().mVariableBlockSize ||
+        aReferenceFrame.Header().mBlocksize <= Header().mBlocksize) {
+      
+      return;
+    }
+    mHeader.mIndex =
+        Header().mFrameOrSampleNum * aReferenceFrame.Header().mBlocksize;
+  }
+
   uint32_t Size() const { return mSize; }
 
   TimeUnit Time() const {
@@ -384,6 +401,13 @@ class FrameParser {
     if (mFrame.IsValid()) {
       if (mNextFrame.EOS()) {
         mFrame.SetEndOffset(aResource.Tell());
+        
+        
+        
+        
+        
+        
+        mFrame.ResetStartTimeIfNeeded(mFirstFrame);
       } else if (mNextFrame.IsValid()) {
         mFrame.SetEndOffset(mNextFrame.Offset());
         mFrame.SetEndTime(mNextFrame.Header().Index());
