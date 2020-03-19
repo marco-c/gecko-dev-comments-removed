@@ -55,18 +55,16 @@ const lazyPopupPanel = requireLazy(() =>
   ))
 );
 
+
+const BUTTON_ENABLED_PREF = "devtools.performance.popup.enabled";
 const WIDGET_ID = "profiler-button";
 
 
 
 
-
-
-
-function addToNavbar(document) {
-  const { CustomizableUI } = lazyCustomizableUI();
-
-  CustomizableUI.addWidgetToArea(WIDGET_ID, CustomizableUI.AREA_NAVBAR);
+function isEnabled() {
+  const { Services } = lazyServices();
+  return Services.prefs.getBoolPref(BUTTON_ENABLED_PREF, false);
 }
 
 
@@ -74,35 +72,39 @@ function addToNavbar(document) {
 
 
 
-
-function remove() {
-  const { CustomizableUI } = lazyCustomizableUI();
-  CustomizableUI.removeWidgetFromArea(WIDGET_ID);
-}
-
-
-
-
-
-
-
-function isInNavbar() {
-  const { CustomizableUI } = lazyCustomizableUI();
-  return Boolean(CustomizableUI.getPlacementOfWidget("profiler-button"));
-}
-
-
-
-
-
-function openPopup(document) {
-  
-  
-  const button = document.querySelector("#profiler-button");
-  if (!button) {
-    throw new Error("Could not find the profiler button.");
+function setMenuItemChecked(document, isChecked) {
+  const menuItem = document.querySelector("#menu_toggleProfilerButtonMenu");
+  if (!menuItem) {
+    return;
   }
-  button.click();
+  menuItem.setAttribute("checked", isChecked.toString());
+}
+
+
+
+
+
+
+
+function toggle(document) {
+  const { CustomizableUI } = lazyCustomizableUI();
+  const { Services } = lazyServices();
+
+  const toggledValue = !isEnabled();
+  Services.prefs.setBoolPref(BUTTON_ENABLED_PREF, toggledValue);
+
+  if (toggledValue) {
+    initialize();
+    CustomizableUI.addWidgetToArea(WIDGET_ID, CustomizableUI.AREA_NAVBAR);
+  } else {
+    setMenuItemChecked(document, false);
+    CustomizableUI.destroyWidget(WIDGET_ID);
+
+    
+    
+    const element = document.getElementById("PanelUI-profiler");
+    delete ( (element._addedEventListeners));
+  }
 }
 
 
@@ -120,24 +122,6 @@ function updateButtonColorForElement(buttonElement) {
     
     buttonElement.style.fill = isRunning ? "#0060df" : "";
   };
-}
-
-
-
-
-
-
-
-function handleCustomizationChange() {
-  if (!isInNavbar()) {
-    
-    
-    
-    const popupIntroDisplayedPref =
-      "devtools.performance.popup.intro-displayed";
-    const { Services } = lazyServices();
-    Services.prefs.setBoolPref(popupIntroDisplayedPref, false);
-  }
 }
 
 
@@ -235,15 +219,7 @@ function initialize() {
         Services.prefs.setBoolPref(popupIntroDisplayedPref, true);
       }
 
-      
-      
-      const window = document.defaultView;
-      if (window) {
-         (window).gNavToolbox.addEventListener(
-          "customizationchange",
-          handleCustomizationChange
-        );
-      }
+      setMenuItemChecked(document, true);
     },
 
     
@@ -257,19 +233,11 @@ function initialize() {
       observer();
     },
 
-    
-    onDestroyed: document => {
+    onDestroyed: () => {
       if (observer) {
         Services.obs.removeObserver(observer, "profiler-started");
         Services.obs.removeObserver(observer, "profiler-stopped");
         observer = null;
-      }
-      const window = document.defaultView;
-      if (window) {
-         (window).gNavToolbox.removeEventListener(
-          "customizationchange",
-          handleCustomizationChange
-        );
       }
     },
   };
@@ -278,13 +246,7 @@ function initialize() {
   CustomizableWidgets.push(item);
 }
 
-const ProfilerMenuButton = {
-  initialize,
-  addToNavbar,
-  isInNavbar,
-  openPopup,
-  remove,
-};
+const ProfilerMenuButton = { toggle, initialize, isEnabled };
 
 exports.ProfilerMenuButton = ProfilerMenuButton;
 

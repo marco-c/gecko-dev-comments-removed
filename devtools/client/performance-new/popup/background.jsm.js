@@ -502,7 +502,7 @@ function handleWebChannelMessage(channel, id, message, target) {
       channel.send(
         {
           type: "STATUS_RESPONSE",
-          menuButtonIsEnabled: ProfilerMenuButton.isInNavbar(),
+          menuButtonIsEnabled: ProfilerMenuButton.isEnabled(),
           requestId,
         },
         target
@@ -510,22 +510,22 @@ function handleWebChannelMessage(channel, id, message, target) {
       break;
     }
     case "ENABLE_MENU_BUTTON": {
-      const { ownerDocument } = target.browser;
-      if (!ownerDocument) {
-        throw new Error(
-          "Could not find the owner document for the current browser while enabling " +
-            "the profiler menu button"
-        );
-      }
-      
-      Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
-
       
       const { ProfilerMenuButton } = lazyProfilerMenuButton();
-      ProfilerMenuButton.addToNavbar(ownerDocument);
+      if (!ProfilerMenuButton.isEnabled()) {
+        const { ownerDocument } = target.browser;
+        if (!ownerDocument) {
+          throw new Error(
+            "Could not find the owner document for the current browser while enabling " +
+              "the profiler menu button"
+          );
+        }
+        
+        
+        Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
 
-      
-      ProfilerMenuButton.openPopup(ownerDocument);
+        ProfilerMenuButton.toggle(ownerDocument);
+      }
 
       
       channel.send(

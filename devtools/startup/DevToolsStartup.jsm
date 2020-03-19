@@ -30,6 +30,7 @@ const kDebuggerPrefs = [
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
+const PROFILER_POPUP_ENABLED_PREF = "devtools.performance.popup.enabled";
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -220,18 +221,6 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
       shortcut: getLocalizedKeyShortcut("accessibilityF12.commandkey"),
       modifiers: "shift",
     },
-    
-    {
-      id: "profilerStartStop",
-      shortcut: getLocalizedKeyShortcut("profilerStartStop.commandkey"),
-      modifiers: "control,shift",
-    },
-    
-    {
-      id: "profilerCapture",
-      shortcut: getLocalizedKeyShortcut("profilerCapture.commandkey"),
-      modifiers: "control,shift",
-    },
   ];
 
   if (isMac) {
@@ -245,8 +234,37 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     });
   }
 
+  if (isProfilerButtonEnabled()) {
+    shortcuts.push(...getProfilerKeyShortcuts());
+  }
+
   return shortcuts;
 });
+
+function getProfilerKeyShortcuts() {
+  return [
+    
+    {
+      id: "profilerStartStop",
+      shortcut: getLocalizedKeyShortcut("profilerStartStop.commandkey"),
+      modifiers: "control,shift",
+    },
+    
+    {
+      id: "profilerCapture",
+      shortcut: getLocalizedKeyShortcut("profilerCapture.commandkey"),
+      modifiers: "control,shift",
+    },
+  ];
+}
+
+
+
+
+
+function isProfilerButtonEnabled() {
+  return Services.prefs.getBoolPref(PROFILER_POPUP_ENABLED_PREF, false);
+}
 
 
 
@@ -302,6 +320,7 @@ XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
 function DevToolsStartup() {
   this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
   this.onWindowReady = this.onWindowReady.bind(this);
+  this.toggleProfilerKeyShortcuts = this.toggleProfilerKeyShortcuts.bind(this);
 }
 
 DevToolsStartup.prototype = {
@@ -370,6 +389,13 @@ DevToolsStartup.prototype = {
       Services.prefs.addObserver(
         DEVTOOLS_ENABLED_PREF,
         this.onEnabledPrefChanged
+      );
+
+      
+      
+      Services.prefs.addObserver(
+        PROFILER_POPUP_ENABLED_PREF,
+        this.toggleProfilerKeyShortcuts
       );
       
 
@@ -602,32 +628,34 @@ DevToolsStartup.prototype = {
 
 
 
+
   hookProfilerRecordingButton() {
     if (this.profilerRecordingButtonCreated) {
       return;
     }
-    const featureFlagPref = "devtools.performance.popup.feature-flag";
-    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
-      featureFlagPref
-    );
     this.profilerRecordingButtonCreated = true;
+
+    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
+      "devtools.performance.popup.feature-flag",
+      AppConstants.NIGHTLY_BUILD
+    );
 
     
     
     
     this.initializeProfilerWebChannel();
 
-    if (isPopupFeatureFlagEnabled) {
+    if (!isPopupFeatureFlagEnabled) {
       
+      
+      
+      
+      
+      return;
+    }
+
+    if (isProfilerButtonEnabled()) {
       ProfilerMenuButton.initialize();
-    } else {
-      
-      
-      const enable = () => {
-        ProfilerMenuButton.initialize();
-        Services.prefs.removeObserver(featureFlagPref, enable);
-      };
-      Services.prefs.addObserver(featureFlagPref, enable);
     }
   },
 
@@ -801,25 +829,50 @@ DevToolsStartup.prototype = {
     }
   },
 
+  
+
+
+
+  toggleProfilerKeyShortcuts() {
+    const isEnabled = isProfilerButtonEnabled();
+    const profilerKeyShortcuts = getProfilerKeyShortcuts();
+    for (const { document } of Services.wm.getEnumerator(null)) {
+      const devtoolsKeyset = document.getElementById("devtoolsKeyset");
+      const mainKeyset = document.getElementById("mainKeyset");
+
+      if (!devtoolsKeyset || !mainKeyset) {
+        
+        continue;
+      }
+
+      if (isEnabled) {
+        this.attachKeys(document, profilerKeyShortcuts);
+      } else {
+        this.removeKeys(document, profilerKeyShortcuts);
+      }
+      
+      
+      
+      mainKeyset.parentNode.insertBefore(devtoolsKeyset, mainKeyset);
+    }
+
+    if (!isEnabled) {
+      
+      ProfilerPopupBackground.stopProfiler();
+    }
+  },
+
   async onKey(window, key) {
     try {
       
       
       switch (key.id) {
         case "profilerStartStop": {
-          
-          
-          if (ProfilerMenuButton.isInNavbar()) {
-            ProfilerPopupBackground.toggleProfiler("aboutprofiling");
-          }
+          ProfilerPopupBackground.toggleProfiler("aboutprofiling");
           return;
         }
         case "profilerCapture": {
-          
-          
-          if (ProfilerMenuButton.isInNavbar()) {
-            ProfilerPopupBackground.captureProfile();
-          }
+          ProfilerPopupBackground.captureProfile();
           return;
         }
       }
