@@ -165,10 +165,12 @@ var ModuleManager = {
     
     
     
-    const sessionState = await this.getActor("GeckoViewContent").sendQuery(
+    const { history } = await this.getActor("GeckoViewContent").sendQuery(
       "CollectSessionState"
     );
-    const { history } = sessionState;
+    
+    
+    const sessionState = { history };
 
     
     
