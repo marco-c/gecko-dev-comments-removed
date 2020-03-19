@@ -373,75 +373,81 @@ NS_INTERFACE_MAP_END
 }  
 
 nsresult FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
-                                  uint32_t aBufferSize, uint32_t* aRead) {
+                                  uint32_t aBufferSize,
+                                  uint32_t* aTotalBytesRead) {
   MOZ_ASSERT(aStream);
   MOZ_ASSERT(aBuffer);
-  MOZ_ASSERT(aRead);
-
-  
-  nsresult rv = aStream->Read(aBuffer, aBufferSize, aRead);
-
-  
-  if (rv == NS_BASE_STREAM_CLOSED || (NS_SUCCEEDED(rv) && *aRead == 0)) {
-    return NS_OK;
-  }
-
-  
-  if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-    return rv;
-  }
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    
-    if (*aRead != aBufferSize) {
-      uint32_t byteRead = 0;
-      rv = SyncRead(aStream, aBuffer + *aRead, aBufferSize - *aRead, &byteRead);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      *aRead += byteRead;
-    }
-
-    return NS_OK;
-  }
-
-  
-  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aStream);
-  if (!asyncStream) {
-    return rv;
-  }
+  MOZ_ASSERT(aTotalBytesRead);
 
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
-  AutoSyncLoopHolder syncLoop(workerPrivate, Canceling);
+  *aTotalBytesRead = 0;
 
-  nsCOMPtr<nsIEventTarget> syncLoopTarget = syncLoop.GetEventTarget();
-  if (!syncLoopTarget) {
+  nsCOMPtr<nsIAsyncInputStream> asyncStream;
+  nsCOMPtr<nsIEventTarget> target;
+
+  while (*aTotalBytesRead < aBufferSize) {
+    uint32_t currentBytesRead = 0;
+
     
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
+    nsresult rv =
+        aStream->Read(aBuffer + *aTotalBytesRead,
+                      aBufferSize - *aTotalBytesRead, &currentBytesRead);
+
+    
+    if (rv == NS_BASE_STREAM_CLOSED ||
+        (NS_SUCCEEDED(rv) && currentBytesRead == 0)) {
+      return NS_OK;
+    }
+
+    
+    if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
+      return rv;
+    }
+
+    
+    if (NS_SUCCEEDED(rv)) {
+      *aTotalBytesRead += currentBytesRead;
+      continue;
+    }
+
+    
+    if (!asyncStream) {
+      asyncStream = do_QueryInterface(aStream);
+      if (!asyncStream) {
+        return rv;
+      }
+    }
+
+    AutoSyncLoopHolder syncLoop(workerPrivate, Canceling);
+
+    nsCOMPtr<nsIEventTarget> syncLoopTarget = syncLoop.GetEventTarget();
+    if (!syncLoopTarget) {
+      
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    }
+
+    RefPtr<ReadCallback> callback =
+        new ReadCallback(workerPrivate, syncLoopTarget);
+
+    if (!target) {
+      target = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+      MOZ_ASSERT(target);
+    }
+
+    rv = asyncStream->AsyncWait(callback, 0, aBufferSize - *aTotalBytesRead,
+                                target);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+
+    if (!syncLoop.Run()) {
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
+    }
   }
 
-  RefPtr<ReadCallback> callback =
-      new ReadCallback(workerPrivate, syncLoopTarget);
-
-  nsCOMPtr<nsIEventTarget> target =
-      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
-  MOZ_ASSERT(target);
-
-  rv = asyncStream->AsyncWait(callback, 0, aBufferSize, target);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (!syncLoop.Run()) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
-  }
-
-  
-  return SyncRead(aStream, aBuffer, aBufferSize, aRead);
+  return NS_OK;
 }
 
 nsresult FileReaderSync::ConvertAsyncToSyncStream(
