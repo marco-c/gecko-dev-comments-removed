@@ -2037,16 +2037,36 @@ class BootstrapScope {
       this.addon.version,
       newAddon.version
     );
+
+    let callUpdate = this.addon.isWebExtension && newAddon.isWebExtension;
+
+    
+    
+    
+    let existingAddon = this.addon;
+
+    if (callUpdate) {
+      if (this.addon instanceof XPIState) {
+        
+        existingAddon = await XPIDatabase.getAddonByID(this.addon.id);
+      }
+
+      if (newAddon instanceof XPIState) {
+        newAddon = await XPIInstall.loadManifestFromFile(
+          newAddon.file,
+          newAddon.location
+        );
+      }
+    }
+
     let extraArgs = {
-      oldVersion: this.addon.version,
+      oldVersion: existingAddon.version,
       newVersion: newAddon.version,
       userPermissions: newAddon.userPermissions,
       optionalPermissions: newAddon.optionalPermissions,
-      oldPermissions: this.addon.userPermissions,
-      oldOptionalPermissions: this.addon.optionalPermissions,
+      oldPermissions: existingAddon.userPermissions,
+      oldOptionalPermissions: existingAddon.optionalPermissions,
     };
-
-    let callUpdate = this.addon.isWebExtension && newAddon.isWebExtension;
 
     await this._uninstall(reason, callUpdate, extraArgs);
 
@@ -2653,16 +2673,10 @@ var XPIProvider = {
 
       let promise;
       if (existing) {
-        
-        promise = XPIInstall.loadManifestFromFile(
-          existing.file,
-          existing.location
-        ).then(existingAddon =>
-          bootstrap.update(existingAddon, false, () => {
-            cleanup();
-            XPIDatabase.makeAddonLocationVisible(id, existing.location);
-          })
-        );
+        promise = bootstrap.update(existing, false, () => {
+          cleanup();
+          XPIDatabase.makeAddonLocationVisible(id, existing.location);
+        });
       } else {
         promise = bootstrap.uninstall().then(cleanup);
       }
