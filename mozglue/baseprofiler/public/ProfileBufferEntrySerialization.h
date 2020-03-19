@@ -1088,60 +1088,19 @@ struct ProfileBufferEntryReader::Deserializer<Maybe<T>> {
 
 template <typename... Ts>
 struct ProfileBufferEntryWriter::Serializer<Variant<Ts...>> {
- private:
-  
-  
-  template <size_t I>
-  static void VariantIBytes(const Variant<Ts...>& aVariantTs,
-                            Length& aOutBytes) {
-    if (aVariantTs.template is<I>()) {
-      aOutBytes = ProfileBufferEntryWriter::ULEB128Size(I) +
-                  SumBytes(aVariantTs.template as<I>());
-    }
-  }
-
-  
-  
-  template <size_t... Is>
-  static Length VariantBytes(const Variant<Ts...>& aVariantTs,
-                             std::index_sequence<Is...>) {
-    Length bytes = 0;
-    (VariantIBytes<Is>(aVariantTs, bytes), ...);
-    MOZ_ASSERT(bytes != 0);
-    return bytes;
-  }
-
-  
-  
-  template <size_t I>
-  static void VariantIWrite(ProfileBufferEntryWriter& aEW,
-                            const Variant<Ts...>& aVariantTs) {
-    if (aVariantTs.template is<I>()) {
-      aEW.WriteULEB128(I);
-      
-      aEW.WriteObject(aVariantTs.template as<I>());
-    }
-  }
-
-  
-  
-  template <size_t... Is>
-  static void VariantWrite(ProfileBufferEntryWriter& aEW,
-                           const Variant<Ts...>& aVariantTs,
-                           std::index_sequence<Is...>) {
-    (VariantIWrite<Is>(aEW, aVariantTs), ...);
-  }
-
  public:
   static Length Bytes(const Variant<Ts...>& aVariantTs) {
-    
-    return VariantBytes(aVariantTs, std::index_sequence_for<Ts...>());
+    return aVariantTs.match([](auto aIndex, const auto& aAlternative) {
+      return ULEB128Size(aIndex) + SumBytes(aAlternative);
+    });
   }
 
   static void Write(ProfileBufferEntryWriter& aEW,
                     const Variant<Ts...>& aVariantTs) {
-    
-    VariantWrite(aEW, aVariantTs, std::index_sequence_for<Ts...>());
+    aVariantTs.match([&aEW](auto aIndex, const auto& aAlternative) {
+      aEW.WriteULEB128(aIndex);
+      aEW.WriteObject(aAlternative);
+    });
   }
 };
 
