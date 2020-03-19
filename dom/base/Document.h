@@ -9,7 +9,6 @@
 #include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"    
 #include "mozilla/MozPromise.h"   
-#include "mozilla/Pair.h"         
 #include "mozilla/Saturate.h"     
 #include "nsAutoPtr.h"            
 #include "nsCOMArray.h"           

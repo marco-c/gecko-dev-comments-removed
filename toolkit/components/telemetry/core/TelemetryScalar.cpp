@@ -847,7 +847,7 @@ ScalarBase* internal_ScalarAllocate(const BaseScalarInfo& aInfo) {
 
 class KeyedScalar {
  public:
-  typedef mozilla::Pair<nsCString, nsCOMPtr<nsIVariant>> KeyValuePair;
+  typedef std::pair<nsCString, nsCOMPtr<nsIVariant>> KeyValuePair;
 
   
   
@@ -1032,8 +1032,7 @@ nsresult KeyedScalar::GetValue(const nsACString& aStoreName, bool aClearStorage,
     }
 
     
-    aValues.AppendElement(
-        mozilla::MakePair(nsCString(iter.Key()), scalarValue));
+    aValues.AppendElement(std::make_pair(nsCString(iter.Key()), scalarValue));
   }
 
   return NS_OK;
@@ -3292,13 +3291,13 @@ nsresult TelemetryScalar::CreateKeyedSnapshots(
         
         JS::Rooted<JS::Value> keyJsValue(aCx);
         nsresult rv = nsContentUtils::XPConnect()->VariantToJS(
-            aCx, keyedScalarObj, keyData.second(), &keyJsValue);
+            aCx, keyedScalarObj, keyData.second, &keyJsValue);
         if (NS_FAILED(rv)) {
           return rv;
         }
 
         
-        const NS_ConvertUTF8toUTF16 key(keyData.first());
+        const NS_ConvertUTF8toUTF16 key(keyData.first);
         if (!JS_DefineUCProperty(aCx, keyedScalarObj, key.Data(), key.Length(),
                                  keyJsValue, JSPROP_ENUMERATE)) {
           return NS_ERROR_FAILURE;
@@ -3867,8 +3866,8 @@ nsresult TelemetryScalar::SerializeKeyedScalars(mozilla::JSONWriter& aWriter) {
       for (const KeyedScalar::KeyValuePair& keyData : keyProps) {
         nsresult rv = WriteVariantToJSONWriter(
             mozilla::Get<2>(keyedScalarData) ,
-            keyData.second() ,
-            PromiseFlatCString(keyData.first()).get() ,
+            keyData.second ,
+            PromiseFlatCString(keyData.first).get() ,
             aWriter );
         if (NS_FAILED(rv)) {
           
@@ -3900,7 +3899,7 @@ nsresult TelemetryScalar::DeserializePersistedScalars(JSContext* aCx,
     return NS_ERROR_FAILURE;
   }
 
-  typedef mozilla::Pair<nsCString, nsCOMPtr<nsIVariant>> PersistedScalarPair;
+  typedef std::pair<nsCString, nsCOMPtr<nsIVariant>> PersistedScalarPair;
   typedef nsTArray<PersistedScalarPair> PersistedScalarArray;
   typedef nsDataHashtable<ProcessIDHashKey, PersistedScalarArray>
       PeristedScalarStorage;
@@ -4003,7 +4002,7 @@ nsresult TelemetryScalar::DeserializePersistedScalars(JSContext* aCx,
       
       PersistedScalarArray& processScalars =
           scalarsToUpdate.GetOrInsert(static_cast<uint32_t>(processID));
-      processScalars.AppendElement(mozilla::MakePair(
+      processScalars.AppendElement(std::make_pair(
           nsCString(NS_ConvertUTF16toUTF8(scalarName)), unpackedVal));
     }
   }
@@ -4017,9 +4016,8 @@ nsresult TelemetryScalar::DeserializePersistedScalars(JSContext* aCx,
       for (PersistedScalarArray::size_type i = 0; i < processScalars.Length();
            i++) {
         mozilla::Unused << internal_UpdateScalar(
-            lock, processScalars[i].first(), ScalarActionType::eSet,
-            processScalars[i].second(), ProcessID(iter.Key()),
-            true );
+            lock, processScalars[i].first, ScalarActionType::eSet,
+            processScalars[i].second, ProcessID(iter.Key()), true );
       }
     }
   }

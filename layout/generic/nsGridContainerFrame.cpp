@@ -1190,12 +1190,12 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       return getImplicitSize(index - mExpandedTracks.Length());
     }
     auto& indices = mExpandedTracks[index];
-    const TrackListValue& value = mTrackListValues[indices.first()];
+    const TrackListValue& value = mTrackListValues[indices.first];
     if (value.IsTrackSize()) {
-      MOZ_ASSERT(indices.second() == 0);
+      MOZ_ASSERT(indices.second == 0);
       return value.AsTrackSize();
     }
-    return value.AsTrackRepeat().track_sizes.AsSpan()[indices.second()];
+    return value.AsTrackRepeat().track_sizes.AsSpan()[indices.second];
   }
   const StyleTrackBreadth& MaxSizingFor(uint32_t aTrackIndex) const {
     return SizingFor(aTrackIndex).GetMax();
@@ -1222,7 +1222,7 @@ struct nsGridContainerFrame::TrackSizingFunctions {
     for (size_t i = 0; i < mTrackListValues.Length(); ++i) {
       auto& value = mTrackListValues[i];
       if (value.IsTrackSize()) {
-        mExpandedTracks.AppendElement(MakePair(i, size_t(0)));
+        mExpandedTracks.AppendElement(std::make_pair(i, size_t(0)));
         continue;
       }
       auto& repeat = value.AsTrackRepeat();
@@ -1232,14 +1232,14 @@ struct nsGridContainerFrame::TrackSizingFunctions {
         
         
         mRepeatAutoEnd = mRepeatAutoStart + 1;
-        mExpandedTracks.AppendElement(MakePair(i, size_t(0)));
+        mExpandedTracks.AppendElement(std::make_pair(i, size_t(0)));
         continue;
       }
       for (auto j : IntegerRange(repeat.count.AsNumber())) {
         Unused << j;
         size_t trackSizesCount = repeat.track_sizes.Length();
         for (auto k : IntegerRange(trackSizesCount)) {
-          mExpandedTracks.AppendElement(MakePair(i, k));
+          mExpandedTracks.AppendElement(std::make_pair(i, k));
         }
       }
     }
@@ -1262,7 +1262,7 @@ struct nsGridContainerFrame::TrackSizingFunctions {
   
   
   
-  nsTArray<Pair<size_t, size_t>> mExpandedTracks;
+  nsTArray<std::pair<size_t, size_t>> mExpandedTracks;
   
   uint32_t mExplicitGridOffset;
   

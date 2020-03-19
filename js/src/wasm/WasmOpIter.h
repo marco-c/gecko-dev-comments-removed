@@ -19,7 +19,7 @@
 #ifndef wasm_op_iter_h
 #define wasm_op_iter_h
 
-#include "mozilla/Pair.h"
+#include "mozilla/CompactPair.h"
 #include "mozilla/Poison.h"
 
 #include "jit/AtomicOp.h"
@@ -492,7 +492,7 @@ struct LinearMemoryAddress {
 template <typename ControlItem>
 class ControlStackEntry {
   
-  mozilla::Pair<BlockType, ControlItem> typeAndItem_;
+  mozilla::CompactPair<BlockType, ControlItem> typeAndItem_;
 
   
   
@@ -532,7 +532,7 @@ class ControlStackEntry {
 template <typename Value>
 class TypeAndValueT {
   
-  mozilla::Pair<StackType, Value> tv_;
+  mozilla::CompactPair<StackType, Value> tv_;
 
  public:
   TypeAndValueT() : tv_(StackType::bottom(), Value()) {}
