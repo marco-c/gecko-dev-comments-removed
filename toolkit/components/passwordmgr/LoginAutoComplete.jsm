@@ -222,9 +222,18 @@ class GeneratedPasswordAutocompleteItem extends AutocompleteItem {
 }
 
 class LoginsFooterAutocompleteItem extends AutocompleteItem {
-  constructor(hostname) {
+  constructor(formHostname, telemetryEventData) {
     super("loginsFooter");
-    this.comment = hostname;
+    XPCOMUtils.defineLazyGetter(this, "comment", () => {
+      
+      
+      
+      
+      return JSON.stringify({
+        ...telemetryEventData,
+        formHostname,
+      });
+    });
 
     XPCOMUtils.defineLazyGetter(this, "label", () => {
       return getLocalizedString("viewSavedLogins.label");
@@ -244,6 +253,7 @@ function LoginAutoCompleteResult(
     actor,
     isPasswordField,
     hostname,
+    telemetryEventData,
   }
 ) {
   let hidingFooterOnPWFieldAutoOpened = false;
@@ -315,7 +325,9 @@ function LoginAutoCompleteResult(
         )
       );
     }
-    this._rows.push(new LoginsFooterAutocompleteItem(hostname));
+    this._rows.push(
+      new LoginsFooterAutocompleteItem(hostname, telemetryEventData)
+    );
   }
 
   
@@ -441,6 +453,8 @@ LoginAutoComplete.prototype = {
       return;
     }
 
+    let searchStartTimeMS = Services.telemetry.msSystemNow();
+
     
     let isSecure = !isNullPrincipal;
     
@@ -486,6 +500,15 @@ LoginAutoComplete.prototype = {
         return;
       }
 
+      let telemetryEventData = {
+        acFieldName: aElement.getAutocompleteInfo().fieldName,
+        hadPrevious: !!aPreviousResult,
+        typeWasPassword: aElement.hasBeenTypePassword,
+        fieldType: aElement.type,
+        searchStartTimeMS,
+        stringLength: aSearchString.length,
+      };
+
       this._autoCompleteLookupPromise = null;
       let results = new LoginAutoCompleteResult(
         aSearchString,
@@ -498,6 +521,7 @@ LoginAutoComplete.prototype = {
           isSecure,
           isPasswordField,
           hostname,
+          telemetryEventData,
         }
       );
       aCallback.onSearchCompletion(results);

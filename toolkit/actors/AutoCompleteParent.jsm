@@ -254,14 +254,73 @@ class AutoCompleteParent extends JSWindowActorParent {
       false
     );
     this.openedPopup.invalidate();
-    this._maybeRecordPasswordGenerationShownTelemetryEvent(results);
+    this._maybeRecordTelemetryEvents(results);
   }
 
-  _maybeRecordPasswordGenerationShownTelemetryEvent(results) {
+  
+
+
+  _maybeRecordTelemetryEvents(results) {
     let actor = this.browsingContext.currentWindowGlobal.getActor(
       "LoginManager"
     );
     actor.maybeRecordPasswordGenerationShownTelemetryEvent(results);
+
+    
+    let lastResult = results[results.length - 1];
+    if (lastResult.style != "loginsFooter") {
+      return;
+    }
+
+    
+    
+    
+    
+    let rawExtraData = JSON.parse(lastResult.comment);
+    if (!rawExtraData.searchStartTimeMS) {
+      throw new Error("Invalid autocomplete search start time");
+    }
+
+    if (rawExtraData.stringLength > 1) {
+      
+      return;
+    }
+
+    let duration =
+      Services.telemetry.msSystemNow() - rawExtraData.searchStartTimeMS;
+    delete rawExtraData.searchStartTimeMS;
+
+    delete rawExtraData.formHostname;
+
+    
+    results.reduce((accumulated, r) => {
+      
+      let truncatedStyle = r.style.substring(0, 15);
+      accumulated[truncatedStyle] = (accumulated[truncatedStyle] || 0) + 1;
+      return accumulated;
+    }, rawExtraData);
+
+    
+    let extraStrings = Object.fromEntries(
+      Object.entries(rawExtraData).map(([key, val]) => {
+        let stringVal = "";
+        if (typeof val == "boolean") {
+          stringVal += val ? "1" : "0";
+        } else {
+          stringVal += val;
+        }
+        return [key, stringVal];
+      })
+    );
+
+    Services.telemetry.recordEvent(
+      "form_autocomplete",
+      "show",
+      "logins",
+      
+      duration + "",
+      extraStrings
+    );
   }
 
   invalidate(results) {
@@ -274,7 +333,7 @@ class AutoCompleteParent extends JSWindowActorParent {
     } else {
       AutoCompleteResultView.setResults(this, results);
       this.openedPopup.invalidate();
-      this._maybeRecordPasswordGenerationShownTelemetryEvent(results);
+      this._maybeRecordTelemetryEvents(results);
     }
   }
 

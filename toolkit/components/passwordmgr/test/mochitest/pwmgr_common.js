@@ -587,6 +587,9 @@ SimpleTest.registerCleanupFunction(() => {
         note.remove();
       }
     }
+
+    
+    Services.telemetry.clearEvents();
   });
 });
 
