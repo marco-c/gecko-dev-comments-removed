@@ -185,6 +185,16 @@ impl TrackRepeat<LengthPercentage, Integer> {
 
                             values.push(track_size);
                             names.push(current_names);
+                            if is_auto {
+                                
+                                
+                                
+                                
+                                
+                                
+                                names.push(input.try(parse_line_names).unwrap_or_default());
+                                break;
+                            }
                         } else {
                             if values.is_empty() {
                                 
