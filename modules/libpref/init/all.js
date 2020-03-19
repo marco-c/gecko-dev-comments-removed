@@ -4179,10 +4179,6 @@ pref("full-screen-api.warning.delay", 500);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
-pref("dom.vibrator.enabled", true);
-pref("dom.vibrator.max_vibrate_ms", 10000);
-pref("dom.vibrator.max_vibrate_list_len", 128);
-
 
 
 pref("dom.push.loglevel", "Error");
