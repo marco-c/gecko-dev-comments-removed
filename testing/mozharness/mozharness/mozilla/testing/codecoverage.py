@@ -110,15 +110,14 @@ class CodeCoverageMixin(SingleTestMixin):
     def _setup_cpp_js_coverage_tools(self):
         if mozinfo.os == 'linux' or mozinfo.os == 'mac':
             self.prefix = '/builds/worker/checkouts/gecko'
-            strip_count = len(filter(None, self.prefix.split('/')))
         elif mozinfo.os == 'win':
+            
+            
             self.prefix = 'z:/build/build/src/'
-            
-            
-            strip_count = self.prefix.count('/') + 1
         else:
             raise Exception('Unexpected OS: {}'.format(mozinfo.os))
 
+        strip_count = len(filter(None, self.prefix.split('/')))
         os.environ['GCOV_PREFIX_STRIP'] = str(strip_count)
 
         
