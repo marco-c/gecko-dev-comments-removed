@@ -1,9 +1,7 @@
 
 
 
-let { OSKeyStoreTestUtils } = ChromeUtils.import(
-  "resource://testing-common/OSKeyStoreTestUtils.jsm"
-);
+ChromeUtils.import("resource://testing-common/OSKeyStoreTestUtils.jsm", this);
 
 add_task(async function setup() {
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
