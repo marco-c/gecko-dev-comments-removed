@@ -4838,10 +4838,13 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
 
   
   
-  pref("services.sync.maxResyncs", 5);
+  pref("services.sync.maxResyncs", 1);
 
   
   pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
+
+  
+  pref("services.sync.extension-storage.skipPercentageChance", 20);
 #endif // MOZ_SERVICES_SYNC
 
 

@@ -980,6 +980,17 @@ SyncEngine.prototype = {
   
 
 
+
+
+
+
+  shouldSkipSync(syncReason) {
+    return false;
+  },
+
+  
+
+
   async getLastSync() {
     return this._lastSync;
   },
