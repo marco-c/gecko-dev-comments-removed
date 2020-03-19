@@ -1280,9 +1280,6 @@ static void DoEHABIBacktrace(PSLockRef aLock,
   
 
   const mcontext_t* mcontext = &aRegs.mContext->uc_mcontext;
-  mcontext_t savedContext;
-  const ProfilingStack& profilingStack =
-      aRegisteredThread.RacyRegisteredThread().ProfilingStack();
 
   
   aNativeStack.mCount +=
