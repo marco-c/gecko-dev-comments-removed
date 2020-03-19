@@ -95,14 +95,10 @@ interface nsIWindowProvider : nsISupports
 
 
 
-
-
-
   BrowsingContext provideWindow(in mozIDOMWindowProxy aParent,
                                 in unsigned long aChromeFlags,
                                 in boolean aCalledFromJS,
-                                in boolean aPositionSpecified,
-                                in boolean aSizeSpecified,
+                                in boolean aWidthSpecified,
                                 in nsIURI aURI,
                                 in AString aName,
                                 in AUTF8String aFeatures,

@@ -343,9 +343,14 @@ struct SizeSpec {
 
   bool PositionSpecified() const { return mLeftSpecified || mTopSpecified; }
 
-  bool SizeSpecified() const {
-    return mOuterWidthSpecified || mOuterHeightSpecified ||
-           mInnerWidthSpecified || mInnerHeightSpecified;
+  bool SizeSpecified() const { return WidthSpecified() || HeightSpecified(); }
+
+  bool WidthSpecified() const {
+    return mOuterWidthSpecified || mInnerWidthSpecified;
+  }
+
+  bool HeightSpecified() const {
+    return mOuterHeightSpecified || mInnerHeightSpecified;
   }
 };
 
@@ -517,7 +522,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
-  uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures);
+  SizeSpec sizeSpec;
+  CalcSizeSpec(aFeatures, sizeSpec);
+
+  uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures, sizeSpec);
 
   
   
@@ -564,8 +572,6 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
 
   MaybeDisablePersistence(aFeatures, chromeTreeOwner);
 
-  SizeSpec sizeSpec;
-  CalcSizeSpec(aFeatures, sizeSpec);
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
                    Some(aOpenerFullZoom));
 
@@ -685,16 +691,19 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
+  SizeSpec sizeSpec;
+  CalcSizeSpec(features, sizeSpec);
+
   
   
   
   
   if (isCallerChrome && XRE_IsParentProcess()) {
-    chromeFlags = CalculateChromeFlagsForParent(aParent, features, aDialog,
-                                                uriToLoadIsChrome,
+    chromeFlags = CalculateChromeFlagsForParent(aParent, features, sizeSpec,
+                                                aDialog, uriToLoadIsChrome,
                                                 hasChromeParent, aCalledFromJS);
   } else {
-    chromeFlags = CalculateChromeFlagsForChild(features);
+    chromeFlags = CalculateChromeFlagsForChild(features, sizeSpec);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -715,9 +724,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       }
     }
   }
-
-  SizeSpec sizeSpec;
-  CalcSizeSpec(features, sizeSpec);
 
   
   
@@ -803,9 +809,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
       if (provider) {
         rv = provider->ProvideWindow(
-            aParent, chromeFlags, aCalledFromJS, sizeSpec.PositionSpecified(),
-            sizeSpec.SizeSpecified(), uriToLoad, name, features, aForceNoOpener,
-            aForceNoReferrer, aLoadState, &windowIsNew, getter_AddRefs(newBC));
+            aParent, chromeFlags, aCalledFromJS, sizeSpec.WidthSpecified(),
+            uriToLoad, name, features, aForceNoOpener, aForceNoReferrer,
+            aLoadState, &windowIsNew, getter_AddRefs(newBC));
 
         if (NS_SUCCEEDED(rv) && newBC) {
           nsCOMPtr<nsIDocShell> newDocShell = newBC->GetDocShell();
@@ -1646,37 +1652,17 @@ nsresult nsWindowWatcher::URIfromURL(const char* aURL,
   return NS_NewURI(aURI, aURL, baseURI);
 }
 
-#define NS_CALCULATE_CHROME_FLAG_FOR(feature, flag)                    \
-  prefBranch->GetBoolPref(feature, &forceEnable);                      \
-  if (forceEnable && !aDialog && !aHasChromeParent && !aChromeURL) {   \
-    chromeFlags |= flag;                                               \
-  } else {                                                             \
-    chromeFlags |=                                                     \
-        WinHasOption(aFeatures, feature, 0, &presenceFlag) ? flag : 0; \
-  }
-
+#define NS_CALCULATE_CHROME_FLAG_FOR(feature, flag) \
+  chromeFlags |=                                    \
+      WinHasOption(aFeatures, (feature), 0, &presenceFlag) ? (flag) : 0;
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
-    uint32_t aInitialFlags, const nsACString& aFeatures, bool& presenceFlag,
-    bool aDialog, bool aHasChromeParent, bool aChromeURL) {
+    uint32_t aInitialFlags, const nsACString& aFeatures,
+    const SizeSpec& aSizeSpec, bool& presenceFlag, bool aHasChromeParent) {
   uint32_t chromeFlags = aInitialFlags;
 
-  nsresult rv;
-  nsCOMPtr<nsIPrefBranch> prefBranch;
-  nsCOMPtr<nsIPrefService> prefs =
-      do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
-
-  NS_ENSURE_SUCCESS(rv, nsIWebBrowserChrome::CHROME_DEFAULT);
-
-  rv = prefs->GetBranch("dom.disable_window_open_feature.",
-                        getter_AddRefs(prefBranch));
-
-  NS_ENSURE_SUCCESS(rv, nsIWebBrowserChrome::CHROME_DEFAULT);
-
   
   
-  
-  bool forceEnable = false;
 
   NS_CALCULATE_CHROME_FLAG_FOR("titlebar",
                                nsIWebBrowserChrome::CHROME_TITLEBAR);
@@ -1702,7 +1688,33 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
   }
   presenceFlag = presenceFlag || scrollbarsPresent;
 
-  return chromeFlags;
+  if (aHasChromeParent) {
+    return chromeFlags;
+  }
+
+  
+  
+  
+  
+  
+
+  if (ShouldOpenPopup(aFeatures, aSizeSpec)) {
+    
+    
+    
+    
+    return aInitialFlags | nsIWebBrowserChrome::CHROME_TITLEBAR |
+           nsIWebBrowserChrome::CHROME_WINDOW_CLOSE |
+           nsIWebBrowserChrome::CHROME_LOCATIONBAR |
+           nsIWebBrowserChrome::CHROME_STATUSBAR |
+           nsIWebBrowserChrome::CHROME_WINDOW_RESIZE |
+           nsIWebBrowserChrome::CHROME_WINDOW_MIN |
+           nsIWebBrowserChrome::CHROME_SCROLLBARS;
+  }
+
+  
+  
+  return aInitialFlags | nsIWebBrowserChrome::CHROME_ALL;
 }
 
 
@@ -1730,6 +1742,50 @@ uint32_t nsWindowWatcher::EnsureFlagsSafeForContent(uint32_t aChromeFlags,
 }
 
 
+bool nsWindowWatcher::ShouldOpenPopup(const nsACString& aFeatures,
+                                      const SizeSpec& aSizeSpec) {
+  if (aFeatures.IsVoid()) {
+    return false;
+  }
+
+  
+  
+  bool unused;
+  if (!WinHasOption(aFeatures, "location", 0, &unused) &&
+      !WinHasOption(aFeatures, "toolbar", 0, &unused)) {
+    return true;
+  }
+
+  if (!WinHasOption(aFeatures, "menubar", 0, &unused)) {
+    return true;
+  }
+
+  
+  
+  bool resizablePresent = false;
+  if (!WinHasOption(aFeatures, "resizable", 0, &resizablePresent) &&
+      resizablePresent) {
+    return true;
+  }
+
+  if (!WinHasOption(aFeatures, "scrollbars", 0, &unused)) {
+    return true;
+  }
+
+  if (!WinHasOption(aFeatures, "status", 0, &unused)) {
+    return true;
+  }
+
+  
+  if (aSizeSpec.WidthSpecified()) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
 
 
 
@@ -1738,14 +1794,15 @@ uint32_t nsWindowWatcher::EnsureFlagsSafeForContent(uint32_t aChromeFlags,
 
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
-    const nsACString& aFeatures) {
+    const nsACString& aFeatures, const SizeSpec& aSizeSpec) {
   if (aFeatures.IsVoid()) {
     return nsIWebBrowserChrome::CHROME_ALL;
   }
 
   bool presenceFlag = false;
-  uint32_t chromeFlags = CalculateChromeFlagsHelper(
-      nsIWebBrowserChrome::CHROME_WINDOW_BORDERS, aFeatures, presenceFlag);
+  uint32_t chromeFlags =
+      CalculateChromeFlagsHelper(nsIWebBrowserChrome::CHROME_WINDOW_BORDERS,
+                                 aFeatures, aSizeSpec, presenceFlag);
 
   return EnsureFlagsSafeForContent(chromeFlags);
 }
@@ -1763,8 +1820,9 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
 
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
-    mozIDOMWindowProxy* aParent, const nsACString& aFeatures, bool aDialog,
-    bool aChromeURL, bool aHasChromeParent, bool aCalledFromJS) {
+    mozIDOMWindowProxy* aParent, const nsACString& aFeatures,
+    const SizeSpec& aSizeSpec, bool aDialog, bool aChromeURL,
+    bool aHasChromeParent, bool aCalledFromJS) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(nsContentUtils::LegacyIsCallerChromeOrNativeCode());
 
@@ -1796,9 +1854,8 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
   }
 
   
-  chromeFlags =
-      CalculateChromeFlagsHelper(chromeFlags, aFeatures, presenceFlag, aDialog,
-                                 aHasChromeParent, aChromeURL);
+  chromeFlags = CalculateChromeFlagsHelper(chromeFlags, aFeatures, aSizeSpec,
+                                           presenceFlag, aHasChromeParent);
 
   
   chromeFlags |= WinHasOption(aFeatures, "private", 0, &presenceFlag)
@@ -2402,8 +2459,7 @@ void nsWindowWatcher::GetWindowTreeOwner(nsPIDOMWindowOuter* aWindow,
 int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                                                uint32_t aChromeFlags,
                                                bool aCalledFromJS,
-                                               bool aPositionSpecified,
-                                               bool aSizeSpecified) {
+                                               bool aWidthSpecified) {
   bool isFullScreen = aParent->GetFullScreen();
 
   
@@ -2462,8 +2518,7 @@ int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                          nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
                          nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW |
                          nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME);
-      if (uiChromeFlags != nsIWebBrowserChrome::CHROME_ALL ||
-          aPositionSpecified || aSizeSpecified) {
+      if (uiChromeFlags != nsIWebBrowserChrome::CHROME_ALL || aWidthSpecified) {
         return nsIBrowserDOMWindow::OPEN_NEWWINDOW;
       }
     }
