@@ -346,6 +346,13 @@ ubidi_writeReverse(const UChar *src, int32_t srcLength,
     return u_terminateUChars(dest, destSize, destLength, pErrorCode);
 }
 
+
+
+
+
+#if (defined(_MSC_VER) && (defined(_M_ARM64)) && (_MSC_VER < 1924))
+#pragma optimize( "", off )
+#endif
 U_CAPI int32_t U_EXPORT2
 ubidi_writeReordered(UBiDi *pBiDi,
                      UChar *dest, int32_t destSize,
@@ -638,3 +645,6 @@ ubidi_writeReordered(UBiDi *pBiDi,
 
     return u_terminateUChars(saveDest, destCapacity, destCapacity-destSize, pErrorCode);
 }
+#if (defined(_MSC_VER) && (defined(_M_ARM64)) && (_MSC_VER < 1924))
+#pragma optimize( "", on )
+#endif

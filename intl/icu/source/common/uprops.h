@@ -137,8 +137,15 @@ enum {
 #define UPROPS_AGE_SHIFT        24
 
 
-#define UPROPS_SCRIPT_X_MASK    0x00c000ff
+#define UPROPS_SCRIPT_X_MASK    0x00f000ff
 #define UPROPS_SCRIPT_X_SHIFT   22
+
+
+
+
+#define UPROPS_SCRIPT_HIGH_MASK    0x00300000
+#define UPROPS_SCRIPT_HIGH_SHIFT   12
+#define UPROPS_MAX_SCRIPT          0x3ff
 
 #define UPROPS_EA_MASK          0x000e0000
 #define UPROPS_EA_SHIFT         17
@@ -146,12 +153,26 @@ enum {
 #define UPROPS_BLOCK_MASK       0x0001ff00
 #define UPROPS_BLOCK_SHIFT      8
 
-#define UPROPS_SCRIPT_MASK      0x000000ff
+#define UPROPS_SCRIPT_LOW_MASK  0x000000ff
 
 
 #define UPROPS_SCRIPT_X_WITH_COMMON     0x400000
 #define UPROPS_SCRIPT_X_WITH_INHERITED  0x800000
 #define UPROPS_SCRIPT_X_WITH_OTHER      0xc00000
+
+#ifdef __cplusplus
+
+namespace {
+
+inline uint32_t uprops_mergeScriptCodeOrIndex(uint32_t scriptX) {
+    return
+        ((scriptX & UPROPS_SCRIPT_HIGH_MASK) >> UPROPS_SCRIPT_HIGH_SHIFT) |
+        (scriptX & UPROPS_SCRIPT_LOW_MASK);
+}
+
+}  
+
+#endif  
 
 
 

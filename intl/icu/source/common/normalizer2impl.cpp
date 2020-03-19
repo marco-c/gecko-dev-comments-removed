@@ -2089,6 +2089,13 @@ uint8_t Normalizer2Impl::getPreviousTrailCC(const uint8_t *start, const uint8_t 
 
 
 
+
+
+
+#if (defined(_MSC_VER) && (defined(_M_ARM64)) && (_MSC_VER < 1924))
+#pragma optimize( "", off )
+#endif
+
 uint16_t Normalizer2Impl::getFCD16FromNormData(UChar32 c) const {
     uint16_t norm16=getNorm16(c);
     if (norm16 >= limitNoNo) {
@@ -2121,6 +2128,9 @@ uint16_t Normalizer2Impl::getFCD16FromNormData(UChar32 c) const {
     }
     return norm16;
 }
+#if (defined(_MSC_VER) && (defined(_M_ARM64)) && (_MSC_VER < 1924))
+#pragma optimize( "", on )
+#endif
 
 
 

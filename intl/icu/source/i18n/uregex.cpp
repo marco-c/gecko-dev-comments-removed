@@ -1508,7 +1508,8 @@ int32_t RegexCImpl::appendReplacement(RegularExpression    *regexp,
                         (c32 >= 0x31 && c32 <= 0x39)) {       
                     groupName.append(c32);
                 } else if (c32 == RIGHTBRACKET) {
-                    groupNum = uhash_geti(regexp->fPat->fNamedCaptureMap, &groupName);
+                    groupNum = regexp->fPat->fNamedCaptureMap ?
+                            uhash_geti(regexp->fPat->fNamedCaptureMap, &groupName) : 0;
                     if (groupNum == 0) {
                         
                         *status = U_REGEX_INVALID_CAPTURE_GROUP_NAME;

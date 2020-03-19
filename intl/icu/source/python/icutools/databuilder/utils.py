@@ -52,6 +52,19 @@ def get_local_dirname(dirname):
     exit(1)
 
 
+ALL_TREES = [
+    "locales",
+    "curr",
+    "lang",
+    "region",
+    "zone",
+    "unit",
+    "coll",
+    "brkitr",
+    "rbnf",
+]
+
+
 def concat_dicts(*dicts):
     
     new_dict = {}

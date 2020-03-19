@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "12.1"
+#define U_UNICODE_VERSION "13.0"
 
 
 
@@ -1788,6 +1788,25 @@ enum UBlockCode {
     
     UBLOCK_WANCHO = 300, 
 
+    
+
+    
+    UBLOCK_CHORASMIAN = 301, 
+    
+    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G = 302, 
+    
+    UBLOCK_DIVES_AKURU = 303, 
+    
+    UBLOCK_KHITAN_SMALL_SCRIPT = 304, 
+    
+    UBLOCK_LISU_SUPPLEMENT = 305, 
+    
+    UBLOCK_SYMBOLS_FOR_LEGACY_COMPUTING = 306, 
+    
+    UBLOCK_TANGUT_SUPPLEMENT = 307, 
+    
+    UBLOCK_YEZIDI = 308, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1795,7 +1814,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 301,
+    UBLOCK_COUNT = 309,
 #endif  
 
     
@@ -2436,6 +2455,8 @@ typedef enum UIndicPositionalCategory {
     U_INPC_TOP_AND_RIGHT,
     
     U_INPC_VISUAL_ORDER_LEFT,
+    
+    U_INPC_TOP_AND_BOTTOM_AND_LEFT,
 } UIndicPositionalCategory;
 
 

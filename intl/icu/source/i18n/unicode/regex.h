@@ -635,8 +635,9 @@ private:
     
     
     
-    void        init();            
-    void        zap();             
+    void        init();                 
+    bool        initNamedCaptureMap();  
+    void        zap();                  
 
     void        dumpOp(int32_t index) const;
 
