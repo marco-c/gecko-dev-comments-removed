@@ -1088,6 +1088,16 @@ class FuncType {
   }
   
   
+  bool temporarilyUnsupportedResultCountForEntry() const {
+    return results().length() > 1;
+  }
+  
+  
+  bool temporarilyUnsupportedResultCountForExit() const {
+    return results().length() > 1;
+  }
+  
+  
   bool temporarilyUnsupportedReftypeForEntry() const {
     for (ValType arg : args()) {
       if (arg.isReference() && !arg.isAnyRef()) {

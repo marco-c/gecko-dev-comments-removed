@@ -11,6 +11,7 @@
 
 
 #include "mozilla/Array.h"
+#include "mozilla/Casting.h"
 
 #include "jit/Bailouts.h"
 #include "jit/FixedList.h"
@@ -30,8 +31,11 @@ class LUse;
 class LGeneralReg;
 class LFloatReg;
 class LStackSlot;
+class LStackArea;
 class LArgument;
 class LConstantIndex;
+class LInstruction;
+class LDefinition;
 class MBasicBlock;
 class MIRGenerator;
 
@@ -79,24 +83,48 @@ class LAllocation : public TempObject {
     GPR,         
     FPU,         
     STACK_SLOT,  
+    STACK_AREA,  
     ARGUMENT_SLOT  
   };
 
   static const uintptr_t DATA_MASK = (1 << DATA_BITS) - 1;
 
  protected:
-  uint32_t data() const { return uint32_t(bits_) >> DATA_SHIFT; }
-  void setData(uint32_t data) {
+  uint32_t data() const {
+    MOZ_ASSERT(!hasIns());
+    return mozilla::AssertedCast<uint32_t>(bits_ >> DATA_SHIFT);
+  }
+  void setData(uintptr_t data) {
+    MOZ_ASSERT(!hasIns());
     MOZ_ASSERT(data <= DATA_MASK);
     bits_ &= ~(DATA_MASK << DATA_SHIFT);
     bits_ |= (data << DATA_SHIFT);
   }
-  void setKindAndData(Kind kind, uint32_t data) {
+  void setKindAndData(Kind kind, uintptr_t data) {
     MOZ_ASSERT(data <= DATA_MASK);
-    bits_ = (uint32_t(kind) << KIND_SHIFT) | data << DATA_SHIFT;
+    bits_ = (uintptr_t(kind) << KIND_SHIFT) | data << DATA_SHIFT;
+    MOZ_ASSERT(!hasIns());
   }
 
-  LAllocation(Kind kind, uint32_t data) { setKindAndData(kind, data); }
+  bool hasIns() const { return isStackArea(); }
+  const LInstruction* ins() const {
+    MOZ_ASSERT(hasIns());
+    return reinterpret_cast<const LInstruction*>(bits_ &
+                                                 ~(KIND_MASK << KIND_SHIFT));
+  }
+  LInstruction* ins() {
+    MOZ_ASSERT(hasIns());
+    return reinterpret_cast<LInstruction*>(bits_ & ~(KIND_MASK << KIND_SHIFT));
+  }
+  void setKindAndIns(Kind kind, LInstruction* ins) {
+    uintptr_t data = reinterpret_cast<uintptr_t>(ins);
+    MOZ_ASSERT((data & (KIND_MASK << KIND_SHIFT)) == 0);
+    bits_ = data | (uintptr_t(kind) << KIND_SHIFT);
+    MOZ_ASSERT(hasIns());
+  }
+
+  LAllocation(Kind kind, uintptr_t data) { setKindAndData(kind, data); }
+  LAllocation(Kind kind, LInstruction* ins) { setKindAndIns(kind, ins); }
   explicit LAllocation(Kind kind) { setKindAndData(kind, 0); }
 
  public:
@@ -121,6 +149,7 @@ class LAllocation : public TempObject {
   bool isGeneralReg() const { return kind() == GPR; }
   bool isFloatReg() const { return kind() == FPU; }
   bool isStackSlot() const { return kind() == STACK_SLOT; }
+  bool isStackArea() const { return kind() == STACK_AREA; }
   bool isArgument() const { return kind() == ARGUMENT_SLOT; }
   bool isRegister() const { return isGeneralReg() || isFloatReg(); }
   bool isRegister(bool needFloat) const {
@@ -133,6 +162,8 @@ class LAllocation : public TempObject {
   inline const LGeneralReg* toGeneralReg() const;
   inline const LFloatReg* toFloatReg() const;
   inline const LStackSlot* toStackSlot() const;
+  inline LStackArea* toStackArea();
+  inline const LStackArea* toStackArea() const;
   inline const LArgument* toArgument() const;
   inline const LConstantIndex* toConstantIndex() const;
   inline AnyRegister toRegister() const;
@@ -195,6 +226,10 @@ class LUse : public LAllocation {
     
     
     KEEPALIVE,
+
+    
+    
+    STACK,
 
     
     
@@ -342,6 +377,42 @@ class LStackSlot : public LAllocation {
 };
 
 
+
+class LStackArea : public LAllocation {
+ public:
+  explicit LStackArea(LInstruction* stackArea)
+      : LAllocation(STACK_AREA, stackArea) {}
+
+  
+  
+  inline uint32_t base() const;
+  inline void setBase(uint32_t base);
+
+  
+  inline uint32_t size() const;
+  inline uint32_t alignment() const { return 8; }
+
+  class ResultIterator {
+    const LStackArea& alloc_;
+    uint32_t idx_;
+
+   public:
+    explicit ResultIterator(const LStackArea& alloc) : alloc_(alloc), idx_(0) {}
+
+    inline bool done() const;
+    inline void next();
+    inline LAllocation alloc() const;
+    inline bool isGcPointer() const;
+
+    explicit operator bool() const { return !done(); }
+  };
+
+  ResultIterator results() const { return ResultIterator(*this); }
+
+  inline LStackSlot resultAlloc(LInstruction* lir, LDefinition* def) const;
+};
+
+
 class LArgument : public LAllocation {
  public:
   explicit LArgument(uint32_t index) : LAllocation(ARGUMENT_SLOT, index) {}
@@ -395,6 +466,10 @@ class LDefinition {
 
     
     REGISTER,
+
+    
+    
+    STACK,
 
     
     
@@ -579,7 +654,6 @@ LIR_OPCODE_LIST(LIROP)
 
 class LSnapshot;
 class LSafepoint;
-class LInstruction;
 class LElementVisitor;
 
 constexpr size_t MaxNumLInstructionOperands = 63;
@@ -1484,6 +1558,18 @@ class LSafepoint : public TempObject {
     return false;
   }
 
+  
+  
+  bool hasAllGcPointersFromStackArea(LAllocation alloc) const {
+    for (LStackArea::ResultIterator iter = alloc.toStackArea()->results(); iter;
+         iter.next()) {
+      if (iter.isGcPointer() && !hasGcPointer(iter.alloc())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   MOZ_MUST_USE bool addValueSlot(bool stack, uint32_t slot) {
     bool result = valueSlots_.append(SlotEntry(stack, slot));
     if (result) {
@@ -1890,6 +1976,8 @@ LALLOC_CONST_CAST(Use)
 LALLOC_CONST_CAST(GeneralReg)
 LALLOC_CONST_CAST(FloatReg)
 LALLOC_CONST_CAST(StackSlot)
+LALLOC_CAST(StackArea)
+LALLOC_CONST_CAST(StackArea)
 LALLOC_CONST_CAST(Argument)
 LALLOC_CONST_CAST(ConstantIndex)
 
