@@ -30,11 +30,9 @@ const Agent = {
 
 
 
-
-
-  async canonicalStringify(localRecords, remoteRecords, timestamp) {
+  async canonicalStringify(records, timestamp) {
     
-    let allRecords = localRecords.concat(remoteRecords).sort((a, b) => {
+    let allRecords = records.sort((a, b) => {
       if (a.id < b.id) {
         return -1;
       }

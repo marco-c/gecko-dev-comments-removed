@@ -450,9 +450,11 @@ class RemoteSettingsClient extends EventEmitter {
         metadata = await this.httpClient().getData();
         await this.db.saveMetadata(metadata);
       }
-      await this._validateCollectionSignature([], timestamp, metadata, {
+      await this._validateCollectionSignature(
         localRecords,
-      });
+        timestamp,
+        metadata
+      );
     }
 
     await this.db.close();
@@ -527,6 +529,7 @@ class RemoteSettingsClient extends EventEmitter {
       
       let collectionLastModified = await this.db.getLastModified();
       const allData = await this.db.list();
+      
       let localRecords = allData.map(r => this._cleanLocalFields(r));
 
       
@@ -542,10 +545,11 @@ class RemoteSettingsClient extends EventEmitter {
               `${this.identifier} ${imported} records loaded from JSON dump`
             );
             importedFromDump = await this.db.list();
+            
+            
+            localRecords = importedFromDump;
           }
           collectionLastModified = await this.db.getLastModified();
-          const afterDump = await this.db.list();
-          localRecords = afterDump.map(r => this._cleanLocalFields(r));
         } catch (e) {
           
           Cu.reportError(e);
@@ -577,10 +581,9 @@ class RemoteSettingsClient extends EventEmitter {
                 `${this.identifier} verify signature of local data`
               );
               await this._validateCollectionSignature(
-                [],
+                localRecords,
                 collectionLastModified,
-                metadata,
-                { localRecords }
+                metadata
               );
             }
           }
@@ -600,10 +603,11 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           const startSyncDB = Cu.now() * 1000;
-          syncResult = await this._importChanges(expectedTimestamp, {
-            localTimestamp: collectionLastModified,
+          syncResult = await this._importChanges(
             localRecords,
-          });
+            collectionLastModified,
+            expectedTimestamp
+          );
           if (gTimingEnabled) {
             const endSyncDB = Cu.now() * 1000;
             PerformanceCounters.storeExecutionTime(
@@ -643,11 +647,12 @@ class RemoteSettingsClient extends EventEmitter {
             console.warn(
               `Signature verified failed for ${this.identifier}. Retry from scratch`
             );
-            syncResult = await this._importChanges(expectedTimestamp, {
-              clear: true,
-              localTimestamp: collectionLastModified,
+            syncResult = await this._importChanges(
               localRecords,
-            });
+              collectionLastModified,
+              expectedTimestamp,
+              { clear: true }
+            );
           } catch (e) {
             
             
@@ -800,15 +805,7 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
-
-  async _validateCollectionSignature(
-    remoteRecords,
-    timestamp,
-    metadata,
-    options = {}
-  ) {
-    const { localRecords = [] } = options;
+  async _validateCollectionSignature(records, timestamp, metadata) {
     const start = Cu.now() * 1000;
 
     if (!metadata || !metadata.signature) {
@@ -828,8 +825,7 @@ class RemoteSettingsClient extends EventEmitter {
     const certChain = await (await fetch(x5u)).text();
     
     const serialized = await RemoteSettingsWorker.canonicalStringify(
-      localRecords,
-      remoteRecords,
+      records,
       timestamp
     );
     if (
@@ -862,8 +858,19 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-  async _importChanges(expectedTimestamp, options = {}) {
-    const { clear = false, localRecords, localTimestamp } = options;
+
+
+
+
+
+
+  async _importChanges(
+    localRecords,
+    localTimestamp,
+    expectedTimestamp,
+    options = {}
+  ) {
+    const { clear = false } = options;
 
     
     const client = this.httpClient();
@@ -883,7 +890,12 @@ class RemoteSettingsClient extends EventEmitter {
     });
 
     
-    const syncResult = { created: [], updated: [], deleted: [] };
+    const syncResult = {
+      current: localRecords,
+      created: [],
+      updated: [],
+      deleted: [],
+    };
     
     
     console.debug(
@@ -893,9 +905,9 @@ class RemoteSettingsClient extends EventEmitter {
       return syncResult;
     }
 
+    
     const toDelete = remoteRecords.filter(r => r.deleted);
     const toInsert = remoteRecords.filter(r => !r.deleted);
-
     console.debug(
       `${this.identifier} ${toDelete.length} to delete, ${toInsert.length} to insert`
     );
@@ -927,17 +939,19 @@ class RemoteSettingsClient extends EventEmitter {
     
     const newLocal = await this.db.list();
     let newRecords = newLocal.map(r => this._cleanLocalFields(r));
-
     
     if (this.verifySignature) {
-      await this._validateCollectionSignature([], remoteTimestamp, metadata, {
-        localRecords: newRecords,
-      });
+      await this._validateCollectionSignature(
+        newRecords,
+        remoteTimestamp,
+        metadata
+      );
     } else {
       console.warn(`${this.identifier} has signature disabled`);
     }
 
     
+    syncResult.current = newRecords;
     const oldById = new Map(localRecords.map(e => [e.id, e]));
     for (const r of newRecords) {
       const old = oldById.get(r.id);
@@ -976,6 +990,7 @@ class RemoteSettingsClient extends EventEmitter {
     
     
     const {
+      current: allData,
       created: allCreated,
       updated: allUpdated,
       deleted: allDeleted,
@@ -995,7 +1010,6 @@ class RemoteSettingsClient extends EventEmitter {
       return null;
     }
     
-    const allData = await this.db.list();
     const current = await this._filterEntries(allData);
     return { created, updated, deleted, current };
   }
