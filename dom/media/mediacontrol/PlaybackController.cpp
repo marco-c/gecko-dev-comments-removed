@@ -4,8 +4,9 @@
 
 #include "PlaybackController.h"
 
-#include "nsIAudioChannelAgent.h"
 #include "MediaControlUtils.h"
+#include "mozilla/dom/MediaSession.h"
+#include "mozilla/dom/Navigator.h"
 
 
 #undef LOG
@@ -21,77 +22,102 @@ PlaybackController::PlaybackController(BrowsingContext* aContext) {
   mBC = aContext;
 }
 
+MediaSession* PlaybackController::GetMediaSession() {
+  RefPtr<nsPIDOMWindowOuter> window = mBC->GetDOMWindow();
+  if (!window) {
+    return nullptr;
+  }
+
+  RefPtr<Navigator> navigator = window->GetNavigator();
+  return navigator->HasCreatedMediaSession() ? navigator->MediaSession()
+                                             : nullptr;
+}
+
 void PlaybackController::Play() {
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-  
-  LOG("Handle 'play' in default behavior");
-  RefPtr<ContentControlKeyEventReceiver> receiver =
-      ContentControlKeyEventReceiver::Get(mBC);
-  if (receiver) {
-    receiver->OnKeyPressed(MediaControlKeysEvent::ePlay);
+  const MediaSessionAction action = MediaSessionAction::Play;
+  RefPtr<MediaSession> session = GetMediaSession();
+  if (!session || !session->IsSupportedAction(action)) {
+    
+    
+    LOG("Handle 'play' in default behavior");
+    if (RefPtr<ContentControlKeyEventReceiver> receiver =
+            ContentControlKeyEventReceiver::Get(mBC)) {
+      receiver->OnKeyPressed(MediaControlKeysEvent::ePlay);
+    }
+  } else {
+    session->NotifyHandler(action);
   }
 };
 
 void PlaybackController::Pause() {
-  
-  
-  LOG("Handle 'pause' in default behavior");
-  RefPtr<ContentControlKeyEventReceiver> receiver =
-      ContentControlKeyEventReceiver::Get(mBC);
-  if (receiver) {
-    receiver->OnKeyPressed(MediaControlKeysEvent::ePause);
+  const MediaSessionAction action = MediaSessionAction::Pause;
+  RefPtr<MediaSession> session = GetMediaSession();
+  if (!session || !session->IsSupportedAction(action)) {
+    
+    
+    LOG("Handle 'pause' in default behavior");
+    if (RefPtr<ContentControlKeyEventReceiver> receiver =
+            ContentControlKeyEventReceiver::Get(mBC)) {
+      receiver->OnKeyPressed(MediaControlKeysEvent::ePause);
+    }
+  } else {
+    session->NotifyHandler(action);
   }
 }
 
 void PlaybackController::SeekBackward() {
-  
-  return;
+  const MediaSessionAction action = MediaSessionAction::Seekbackward;
+  if (RefPtr<MediaSession> session = GetMediaSession();
+      session && session->IsSupportedAction(action)) {
+    session->NotifyHandler(action);
+  }
 }
 
 void PlaybackController::SeekForward() {
-  
-  return;
+  const MediaSessionAction action = MediaSessionAction::Seekforward;
+  if (RefPtr<MediaSession> session = GetMediaSession();
+      session && session->IsSupportedAction(action)) {
+    session->NotifyHandler(action);
+  }
 }
 
 void PlaybackController::PreviousTrack() {
-  
-  return;
+  if (RefPtr<MediaSession> session = GetMediaSession()) {
+    session->NotifyHandler(MediaSessionAction::Previoustrack);
+  }
 }
 
 void PlaybackController::NextTrack() {
-  
-  return;
+  if (RefPtr<MediaSession> session = GetMediaSession()) {
+    session->NotifyHandler(MediaSessionAction::Nexttrack);
+  }
 }
 
 void PlaybackController::SkipAd() {
+  
   
   return;
 }
 
 void PlaybackController::Stop() {
-  
-  
-  LOG("Handle 'stop' in default behavior");
-  RefPtr<ContentControlKeyEventReceiver> receiver =
-      ContentControlKeyEventReceiver::Get(mBC);
-  if (receiver) {
-    receiver->OnKeyPressed(MediaControlKeysEvent::eStop);
+  const MediaSessionAction action = MediaSessionAction::Stop;
+  RefPtr<MediaSession> session = GetMediaSession();
+  if (!session || !session->IsSupportedAction(action)) {
+    
+    
+    LOG("Handle 'stop' in default behavior");
+    RefPtr<ContentControlKeyEventReceiver> receiver =
+        ContentControlKeyEventReceiver::Get(mBC);
+    if (receiver) {
+      receiver->OnKeyPressed(MediaControlKeysEvent::eStop);
+    }
+  } else {
+    session->NotifyHandler(action);
   }
 }
 
 void PlaybackController::SeekTo() {
+  
   
   return;
 }
