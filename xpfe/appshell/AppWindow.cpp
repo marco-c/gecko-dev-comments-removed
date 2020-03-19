@@ -600,13 +600,14 @@ NS_IMETHODIMP AppWindow::Create() {
 }
 
 NS_IMETHODIMP AppWindow::Destroy() {
+  nsCOMPtr<nsIAppWindow> kungFuDeathGrip(this);
+
   nsresult rv;
   nsCOMPtr<nsIWebProgress> webProgress(do_GetInterface(mDocShell, &rv));
   if (webProgress) {
     webProgress->RemoveProgressListener(this);
   }
 
-  nsCOMPtr<nsIAppWindow> kungFuDeathGrip(this);
   {
     MutexAutoLock lock(mSPTimerLock);
     if (mSPTimer) {
@@ -632,16 +633,6 @@ NS_IMETHODIMP AppWindow::Destroy() {
 
   nsCOMPtr<nsIAppWindow> parentWindow(do_QueryReferent(mParentWindow));
   if (parentWindow) parentWindow->RemoveChildWindow(this);
-
-  
-  
-  
-
-  
-  
-  
-
-  nsCOMPtr<nsIAppWindow> placeHolder = this;
 
   
   
