@@ -51,7 +51,7 @@ class DataMigrationAbortedError extends Error {
   }
 }
 
-var DataMigrationTelemetry = {
+var ErrorsTelemetry = {
   initialized: false,
 
   lazyInit() {
@@ -117,7 +117,7 @@ var DataMigrationTelemetry = {
 
 
 
-  recordResult(telemetryData) {
+  recordDataMigrationResult(telemetryData) {
     try {
       const {
         backend,
@@ -163,6 +163,29 @@ var DataMigrationTelemetry = {
       
       Cu.reportError(err);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  recordStorageLocalError({ extensionId, storageMethod, error }) {
+    this.lazyInit();
+
+    Services.telemetry.recordEvent(
+      "extensions.data",
+      "storageLocalError",
+      storageMethod,
+      getTrimmedString(extensionId),
+      { error_name: this.getErrorName(error) }
+    );
   },
 };
 
@@ -428,7 +451,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
       `storage.local data migration cancelled, unable to open IDB connection: ${err.message}::${err.stack}`
     );
 
-    DataMigrationTelemetry.recordResult({
+    ErrorsTelemetry.recordDataMigrationResult({
       backend: "JSONFile",
       extensionId: extension.id,
       error: err,
@@ -485,7 +508,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
     );
 
     if (oldStorageExists && !dataMigrateCompleted) {
-      DataMigrationTelemetry.recordResult({
+      ErrorsTelemetry.recordDataMigrationResult({
         backend: "JSONFile",
         dataMigrated: dataMigrateCompleted,
         extensionId: extension.id,
@@ -539,7 +562,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 
   ExtensionStorageIDB.setMigratedExtensionPref(extension, true);
 
-  DataMigrationTelemetry.recordResult({
+  ErrorsTelemetry.recordDataMigrationResult({
     backend: "IndexedDB",
     dataMigrated: dataMigrateCompleted,
     extensionId: extension.id,
@@ -778,7 +801,13 @@ this.ExtensionStorageIDB = {
 
 
 
-  normalizeStorageError(error) {
+
+
+
+
+
+
+  normalizeStorageError({ error, extensionId, storageMethod }) {
     const { ExtensionError } = ExtensionUtils;
 
     if (error instanceof ExtensionError) {
@@ -802,6 +831,12 @@ this.ExtensionStorageIDB = {
       Cu.reportError(error);
 
       errorMessage = "An unexpected error occurred";
+
+      ErrorsTelemetry.recordStorageLocalError({
+        error,
+        extensionId,
+        storageMethod,
+      });
     }
 
     return new ExtensionError(errorMessage);
