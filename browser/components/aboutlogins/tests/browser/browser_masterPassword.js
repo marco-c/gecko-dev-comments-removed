@@ -2,6 +2,33 @@
 
 
 ChromeUtils.import("resource://testing-common/LoginTestUtils.jsm", this);
+const BRAND_BUNDLE = Services.strings.createBundle(
+  "chrome://branding/locale/brand.properties"
+);
+const BRAND_FULL_NAME = BRAND_BUNDLE.GetStringFromName("brandFullName");
+
+
+
+
+
+
+function waitForMPDialog(action) {
+  let dialogShown = TestUtils.topicObserved("common-dialog-loaded");
+  return dialogShown.then(function([subject]) {
+    let dialog = subject.Dialog;
+    let expected = "Password Required - " + BRAND_FULL_NAME;
+    is(dialog.args.title, expected, "Dialog is the Master Password dialog");
+    if (action == "authenticate") {
+      SpecialPowers.wrap(dialog.ui.password1Textbox).setUserInput(
+        LoginTestUtils.masterPassword.masterPassword
+      );
+      dialog.ui.button0.click();
+    } else if (action == "cancel") {
+      dialog.ui.button1.click();
+    }
+    return BrowserTestUtils.waitForEvent(window, "DOMModalDialogClosed");
+  });
+}
 
 function waitForLoginCountToReach(browser, loginCount) {
   return SpecialPowers.spawn(
@@ -35,7 +62,7 @@ add_task(async function test() {
   TEST_LOGIN1 = await addLogin(TEST_LOGIN1);
   LoginTestUtils.masterPassword.enable();
 
-  let mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("cancel");
+  let mpDialogShown = waitForMPDialog("cancel");
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",
@@ -74,7 +101,7 @@ add_task(async function test() {
 
   let refreshPromise = BrowserTestUtils.browserLoaded(browser);
   
-  mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("authenticate");
+  mpDialogShown = waitForMPDialog("authenticate");
   
   buttons[0].click();
   await refreshPromise;
@@ -87,7 +114,7 @@ add_task(async function test() {
   is(logins, 1, "Logins should be displayed when MP is set and authenticated");
 
   
-  mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("cancel");
+  mpDialogShown = waitForMPDialog("cancel");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let loginItem = content.document.querySelector("login-item");
     let copyButton = loginItem.shadowRoot.querySelector(
@@ -97,7 +124,7 @@ add_task(async function test() {
   });
   await mpDialogShown;
   info("Master Password dialog shown and canceled");
-  mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("authenticate");
+  mpDialogShown = waitForMPDialog("authenticate");
   info("Clicking copy password button again");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let loginItem = content.document.querySelector("login-item");
@@ -120,7 +147,7 @@ add_task(async function test() {
   });
 
   
-  mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("cancel");
+  mpDialogShown = waitForMPDialog("cancel");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let loginItem = content.document.querySelector("login-item");
     let revealCheckbox = loginItem.shadowRoot.querySelector(
@@ -140,7 +167,7 @@ add_task(async function test() {
       "reveal checkbox should be unchecked if MP dialog canceled"
     );
   });
-  mpDialogShown = forceAuthTimeoutAndWaitForMPDialog("authenticate");
+  mpDialogShown = waitForMPDialog("authenticate");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     let loginItem = content.document.querySelector("login-item");
     let revealCheckbox = loginItem.shadowRoot.querySelector(
