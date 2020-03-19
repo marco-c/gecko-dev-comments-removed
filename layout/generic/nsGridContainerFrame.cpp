@@ -1370,9 +1370,16 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
       if (mHasRepeatAuto) {
         const auto& lineNameLists = styleSubgrid->names;
         int32_t extraAutoFillLineCount = mClampMaxLine - lineNameLists.Length();
+        
+        
+        const uint32_t possibleRepeatLength = std::max<int32_t>(
+            0, extraAutoFillLineCount + styleSubgrid->fill_len);
+        MOZ_ASSERT(styleSubgrid->fill_len > 0);
+        const uint32_t repeatRemainder =
+            possibleRepeatLength % styleSubgrid->fill_len;
         mRepeatAutoStart = fillStart;
         mRepeatAutoEnd =
-            mRepeatAutoStart + std::max(0, extraAutoFillLineCount + 1);
+            mRepeatAutoStart + possibleRepeatLength - repeatRemainder;
       }
     } else {
       mClampMinLine = kMinLine;
@@ -1400,18 +1407,31 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
     const NameList* nameListToMerge = nullptr;
     
     SmallPointerArray<const NameList> names;
-    uint32_t end =
-        std::min<uint32_t>(lineNameLists.Length(), mClampMaxLine + 1);
+    
+    
+    const uint32_t subgridRepeatDelta =
+        (aIsSubgrid && mHasRepeatAuto)
+            ? (aTracks.mTemplate.AsSubgrid()->fill_len - 1)
+            : 0;
+    const uint32_t end = std::min<uint32_t>(
+        lineNameLists.Length() - subgridRepeatDelta, mClampMaxLine + 1);
     for (uint32_t i = 0; i < end; ++i) {
       if (aIsSubgrid) {
         if (MOZ_UNLIKELY(mHasRepeatAuto && i == mRepeatAutoStart)) {
           
           
+          const auto& styleSubgrid = aTracks.mTemplate.AsSubgrid();
+          MOZ_ASSERT(styleSubgrid->fill_len > 0);
           for (auto j = i; j < mRepeatAutoEnd; ++j) {
-            names.AppendElement(&lineNameLists[i]);
+            const auto repeatIndex = (j - i) % styleSubgrid->fill_len;
+            names.AppendElement(
+                &lineNameLists[styleSubgrid->fill_start + repeatIndex]);
             mExpandedLineNames.AppendElement(std::move(names));
           }
-          mHasRepeatAuto = false;
+        } else if (mHasRepeatAuto && i > mRepeatAutoStart) {
+          const auto& styleSubgrid = aTracks.mTemplate.AsSubgrid();
+          names.AppendElement(&lineNameLists[i + styleSubgrid->fill_len - 1]);
+          mExpandedLineNames.AppendElement(std::move(names));
         } else {
           names.AppendElement(&lineNameLists[i]);
           mExpandedLineNames.AppendElement(std::move(names));
@@ -1429,20 +1449,21 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
         mExpandedLineNames.AppendElement(std::move(names));
         continue;
       }
-      auto& value = trackListValues[i];
+      const auto& value = trackListValues[i];
       if (value.IsTrackSize()) {
         mExpandedLineNames.AppendElement(std::move(names));
         continue;
       }
-      auto& repeat = value.AsTrackRepeat();
+      const auto& repeat = value.AsTrackRepeat();
       if (!repeat.count.IsNumber()) {
+        const auto repeatNames = repeat.line_names.AsSpan();
         MOZ_ASSERT(mRepeatAutoStart == mExpandedLineNames.Length());
-        auto repeatNames = repeat.line_names.AsSpan();
-        MOZ_ASSERT(repeatNames.Length() == 2);
-
-        names.AppendElement(&repeatNames[0]);
-        nameListToMerge = &repeatNames[1];
-        mExpandedLineNames.AppendElement(std::move(names));
+        MOZ_ASSERT(repeatNames.Length() >= 2);
+        for (const auto j : IntegerRange(repeatNames.Length() - 1)) {
+          names.AppendElement(&repeatNames[j]);
+          mExpandedLineNames.AppendElement(std::move(names));
+        }
+        nameListToMerge = &repeatNames[repeatNames.Length() - 1];
         continue;
       }
       for (auto j : IntegerRange(repeat.count.AsNumber())) {
@@ -1595,54 +1616,14 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
 
   nsTArray<RefPtr<nsAtom>> GetExplicitLineNamesAtIndex(uint32_t aIndex) const {
     nsTArray<RefPtr<nsAtom>> lineNames;
-    auto AppendElements =
-        [&lineNames](const SmallPointerArray<const NameList>& aNames) {
-          for (auto* list : aNames) {
-            for (auto& ident : list->AsSpan()) {
-              lineNames.AppendElement(ident.AsAtom());
-            }
-          }
-        };
-
-    
-    
-    
-    
-    const auto* repeatAuto =
-        HasRepeatAuto() && !mTrackAutoRepeatLineNames.IsEmpty()
-            ? &mTrackAutoRepeatLineNames
-            : nullptr;
-    const auto& lineNameLists = ExpandedLineNames();
-    if (!repeatAuto || aIndex <= RepeatAutoStart()) {
-      if (aIndex < lineNameLists.Length()) {
-        AppendElements(lineNameLists[aIndex]);
-      }
-    }
-
-    if (repeatAuto) {
-      const uint32_t repeatAutoStart = RepeatAutoStart();
-      const uint32_t repeatTrackCount = NumRepeatTracks();
-      const uint32_t repeatAutoEnd = (repeatAutoStart + repeatTrackCount);
-      const int32_t repeatEndDelta = int32_t(repeatTrackCount - 1);
-
-      if (aIndex <= repeatAutoEnd && aIndex > repeatAutoStart) {
-        for (auto& name : (*repeatAuto)[1].AsSpan()) {
+    if (aIndex < mTemplateLinesEnd) {
+      const auto nameLists = GetLineNamesAt(aIndex);
+      for (const NameList* nameList : nameLists) {
+        for (const auto& name : nameList->AsSpan()) {
           lineNames.AppendElement(name.AsAtom());
         }
       }
-      if (aIndex < repeatAutoEnd && aIndex >= repeatAutoStart) {
-        for (auto& name : (*repeatAuto)[0].AsSpan()) {
-          lineNames.AppendElement(name.AsAtom());
-        }
-      }
-      if (aIndex > repeatAutoEnd && aIndex > repeatAutoStart) {
-        uint32_t i = aIndex - repeatEndDelta;
-        if (i < lineNameLists.Length()) {
-          AppendElements(lineNameLists[i]);
-        }
-      }
     }
-
     return lineNames;
   }
 
@@ -1769,35 +1750,64 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   }
 
   
-  bool HasNameAt(uint32_t aIndex, nsAtom* aName) const {
-    auto ContainsNonAutoRepeat = [&](uint32_t aIndex) {
-      const auto& expanded = mExpandedLineNames[aIndex];
-      for (auto* list : expanded) {
-        if (Contains(list->AsSpan(), aName)) {
-          return true;
-        }
+  bool HasNameAt(const uint32_t aIndex, nsAtom* const aName) const {
+    const auto nameLists = GetLineNamesAt(aIndex);
+    for (const NameList* nameList : nameLists) {
+      if (Contains(nameList->AsSpan(), aName)) {
+        return true;
       }
-      return false;
-    };
+    }
+    return false;
+  }
 
-    if (!mHasRepeatAuto) {
-      return ContainsNonAutoRepeat(aIndex);
+  
+  
+  
+  
+  SmallPointerArray<const NameList> GetLineNamesAt(
+      const uint32_t aIndex) const {
+    SmallPointerArray<const NameList> names;
+    
+    
+    uint32_t repeatAdjustedIndex = aIndex;
+    if (mHasRepeatAuto) {
+      
+      
+      
+      
+      
+      
+      
+      const uint32_t maxRepeatLine = mTrackAutoRepeatLineNames.Length() - 1;
+      if (aIndex > mRepeatAutoStart && aIndex < mRepeatAutoEnd) {
+        
+        
+        
+        const uint32_t repeatIndex =
+            (aIndex - mRepeatAutoStart) % maxRepeatLine;
+        names.AppendElement(&mTrackAutoRepeatLineNames[repeatIndex]);
+        if (repeatIndex == 0) {
+          
+          
+          
+          
+          names.AppendElement(&mTrackAutoRepeatLineNames[maxRepeatLine]);
+        }
+        return names;
+      }
+      if (aIndex >= mRepeatAutoEnd) {
+        
+        repeatAdjustedIndex -= mRepeatEndDelta;
+        repeatAdjustedIndex += mTrackAutoRepeatLineNames.Length() - 2;
+      }
     }
-    auto repeat_names = mTrackAutoRepeatLineNames;
-    if (aIndex < mRepeatAutoEnd && aIndex >= mRepeatAutoStart &&
-        Contains(repeat_names[0].AsSpan(), aName)) {
-      return true;
+    MOZ_ASSERT(names.IsEmpty());
+    
+    const auto& nameLists = mExpandedLineNames[repeatAdjustedIndex];
+    for (const NameList* nameList : nameLists) {
+      names.AppendElement(nameList);
     }
-    if (aIndex <= mRepeatAutoEnd && aIndex > mRepeatAutoStart &&
-        Contains(repeat_names[1].AsSpan(), aName)) {
-      return true;
-    }
-    if (aIndex <= mRepeatAutoStart) {
-      return ContainsNonAutoRepeat(aIndex) ||
-             (aIndex == mRepeatAutoEnd && ContainsNonAutoRepeat(aIndex + 1));
-    }
-    return aIndex >= mRepeatAutoEnd &&
-           ContainsNonAutoRepeat(aIndex - mRepeatEndDelta);
+    return names;
   }
 
   
