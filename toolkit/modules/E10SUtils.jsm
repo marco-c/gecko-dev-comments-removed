@@ -299,6 +299,20 @@ var E10SUtils = {
     return documentChannel;
   },
 
+  _log: null,
+  log: function log() {
+    if (!this._log) {
+      this._log = console.createInstance({
+        prefix: "ProcessSwitch",
+        maxLogLevel: "Error", 
+      });
+
+      this._log.debug("Setup logger");
+    }
+
+    return this._log;
+  },
+
   
 
 
