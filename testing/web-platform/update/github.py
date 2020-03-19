@@ -3,7 +3,7 @@
 
 
 import json
-from urlparse import urljoin
+from six.moves.urllib.parse import urljoin
 requests = None
 
 class GitHubError(Exception):
