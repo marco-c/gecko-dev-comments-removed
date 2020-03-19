@@ -20,13 +20,16 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 
 
+
+
 class Pool extends EventEmitter {
-  constructor(conn) {
+  constructor(conn, label) {
     super();
 
     if (conn) {
       this.conn = conn;
     }
+    this._label = label;
     this.__poolMap = null;
   }
 
