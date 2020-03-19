@@ -3233,6 +3233,19 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
         }
       }
     }
+
+    
+    
+    
+    
+    if (mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
+      if (!newDoc->NodeInfoManager()->HasAllocated()) {
+        if (DocGroup* docGroup = newDoc->GetDocGroup()) {
+          newDoc->NodeInfoManager()->SetArenaAllocator(
+              docGroup->ArenaAllocator());
+        }
+      }
+    }
   }
 
   if (aDeep && (!aClone || !aNode->IsAttr())) {

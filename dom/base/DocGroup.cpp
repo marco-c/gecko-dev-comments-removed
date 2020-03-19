@@ -53,6 +53,10 @@ DocGroup::DocGroup(TabGroup* aTabGroup, const nsACString& aKey,
     : mKey(aKey), mTabGroup(aTabGroup), mAgentClusterId(aAgentClusterId) {
   
   
+  if (StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
+    mArena = new mozilla::dom::DOMArena();
+  }
+
   mPerformanceCounter =
       new mozilla::PerformanceCounter(NS_LITERAL_CSTRING("DocGroup:") + aKey);
 }

@@ -3582,6 +3582,8 @@ class Document : public nsINode,
     return mDocGroup;
   }
 
+  DocGroup* GetDocGroupOrCreate();
+
   
 
 
