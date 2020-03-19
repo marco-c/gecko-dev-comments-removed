@@ -7798,7 +7798,8 @@ already_AddRefed<CDATASection> Document::CreateCDATASection(
     return nullptr;
   }
 
-  RefPtr<CDATASection> cdata = new CDATASection(mNodeInfoManager);
+  RefPtr<CDATASection> cdata =
+      new (mNodeInfoManager) CDATASection(mNodeInfoManager);
 
   
   cdata->SetText(aData, false);
