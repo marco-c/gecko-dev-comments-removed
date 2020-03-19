@@ -1277,9 +1277,7 @@ struct nsGridContainerFrame::TrackSizingFunctions {
       if (!repeat.count.IsNumber()) {
         MOZ_ASSERT(i == mRepeatAutoStart);
         mRepeatAutoStart = mExpandedTracks.Length();
-        
-        
-        mRepeatAutoEnd = mRepeatAutoStart + 1;
+        mRepeatAutoEnd = mRepeatAutoStart + repeat.track_sizes.Length();
         mExpandedTracks.AppendElement(std::make_pair(i, size_t(0)));
         continue;
       }
