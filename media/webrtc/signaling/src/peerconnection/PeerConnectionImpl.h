@@ -621,8 +621,6 @@ class PeerConnectionImpl final
   
   mozilla::TimeStamp mIceStartTime;
   
-  bool mIceFinished = false;
-  
   static std::map<std::string, PeerConnectionAutoTimer> mAutoTimers;
 
   bool mHaveConfiguredCodecs;
