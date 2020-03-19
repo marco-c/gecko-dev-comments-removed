@@ -36,6 +36,9 @@ class FrameHeader {
   bool IsValid() const { return mValid; }
 
   
+  int64_t Index() const { return mIndex; }
+
+  
   
   
   
@@ -82,11 +85,11 @@ class FrameHeader {
     }
 
     
-    int64_t frameOrSampleNum = br.ReadUTF8();
-    if (frameOrSampleNum < 0) {
+    int64_t frame_or_sample_num = br.ReadUTF8();
+    if (frame_or_sample_num < 0) {
+      
       return false;
     }
-    mFrameOrSampleNum = frameOrSampleNum;
 
     
     if (bs_code == 0) {
@@ -99,6 +102,13 @@ class FrameHeader {
     } else {
       mBlocksize = FlacBlocksizeTable[bs_code];
     }
+
+    
+    
+    
+    
+    mIndex = mVariableBlockSize ? frame_or_sample_num
+                                : frame_or_sample_num * mBlocksize;
 
     
     if (sr_code < 12) {
@@ -145,13 +155,9 @@ class FrameHeader {
   };
   AudioInfo mInfo;
   
-  
-  
-  
-  uint64_t mFrameOrSampleNum = 0;
+  int64_t mIndex = 0;
   bool mVariableBlockSize = false;
   uint32_t mBlocksize = 0;
-  ;
   uint32_t mSize = 0;
   bool mValid = false;
 
@@ -244,8 +250,6 @@ class Frame {
   bool FindNext(MediaResourceIndex& aResource) {
     static const int BUFFER_SIZE = 4096;
 
-    uint32_t previousBlocksize = Header().mBlocksize;
-
     Reset();
 
     nsTArray<char> buffer;
@@ -268,7 +272,6 @@ class Frame {
 
       if (foundOffset >= 0) {
         SetOffset(aResource, foundOffset + offset);
-        SetIndex(previousBlocksize);
         return true;
       }
 
@@ -297,12 +300,9 @@ class Frame {
 
   void SetEndOffset(int64_t aOffset) { mSize = aOffset - mOffset; }
 
-  
-  uint64_t Index() const { return mIndex; }
-
-  void SetEndTime(uint64_t aIndex) {
-    if (aIndex > Index()) {
-      mDuration = aIndex - Index();
+  void SetEndTime(int64_t aIndex) {
+    if (aIndex > Header().mIndex) {
+      mDuration = aIndex - Header().mIndex;
     }
   }
 
@@ -313,7 +313,7 @@ class Frame {
       return TimeUnit::Invalid();
     }
     MOZ_ASSERT(Header().Info().mRate, "Invalid Frame. Need Header");
-    return FramesToTimeUnit(Index(), Header().Info().mRate);
+    return FramesToTimeUnit(Header().mIndex, Header().Info().mRate);
   }
 
   TimeUnit Duration() const {
@@ -346,23 +346,6 @@ class Frame {
     aResource.Seek(SEEK_SET, mOffset);
   }
 
-  void SetIndex(uint32_t aPreviousBlocksize) {
-    
-    MOZ_ASSERT(Header().mBlocksize);
-
-    
-    
-    
-    
-    
-    mIndex = Header().mVariableBlockSize
-                 ? Header().mFrameOrSampleNum
-                 : Header().mFrameOrSampleNum *
-                       std::max(Header().mBlocksize, aPreviousBlocksize);
-  }
-
-  
-  uint64_t mIndex = 0;
   
   int64_t mOffset = 0;
   uint32_t mSize = 0;
@@ -403,7 +386,7 @@ class FrameParser {
         mFrame.SetEndOffset(aResource.Tell());
       } else if (mNextFrame.IsValid()) {
         mFrame.SetEndOffset(mNextFrame.Offset());
-        mFrame.SetEndTime(mNextFrame.Index());
+        mFrame.SetEndTime(mNextFrame.Header().Index());
       }
     }
 
