@@ -175,12 +175,10 @@ def windows_toolchain(config, job, taskdesc):
 
     worker = taskdesc['worker'] = job['worker']
 
-    
-    worker.setdefault('artifacts', [{
+    worker['artifacts'] = [{
         'path': r'public\build',
         'type': 'directory',
-    }])
-
+    }]
     worker['chain-of-trust'] = True
 
     
@@ -188,7 +186,7 @@ def windows_toolchain(config, job, taskdesc):
     
     run['use-caches'] = False
 
-    env = worker.setdefault('env', {})
+    env = worker['env']
     env.update({
         'MOZ_BUILD_DATE': config.params['moz_build_date'],
         'MOZ_SCM_LEVEL': config.params['level'],
