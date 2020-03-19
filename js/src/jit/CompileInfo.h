@@ -405,13 +405,11 @@ class CompileInfo {
 
       
       
-      if (!hasArguments() && script()->strict()) {
-        return SlotObservableKind::NotObservable;
+      
+      if (mayReadFrameArgsDirectly_ || !script()->strict()) {
+        return SlotObservableKind::ObservableRecoverable;
       }
-      if (needsArgsObj()) {
-        return SlotObservableKind::ObservableNotRecoverable;
-      }
-      return SlotObservableKind::ObservableRecoverable;
+      return SlotObservableKind::NotObservable;
     }
 
     
