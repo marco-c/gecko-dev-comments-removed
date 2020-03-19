@@ -770,21 +770,22 @@ class RemoteSettingsClient extends EventEmitter {
     const { retry = false } = options;
 
     
-    const client = this.httpClient();
-    const metadata = await client.getData({
-      query: { _expected: expectedTimestamp },
-    });
-
     
-    const {
-      data: remoteRecords,
-      last_modified: remoteTimestamp,
-    } = await client.listRecords({
-      filters: {
-        _expected: expectedTimestamp,
-      },
-      since: retry || !localTimestamp ? undefined : `${localTimestamp}`,
-    });
+    const client = this.httpClient();
+    const [
+      metadata,
+      { data: remoteRecords, last_modified: remoteTimestamp },
+    ] = await Promise.all([
+      client.getData({
+        query: { _expected: expectedTimestamp },
+      }),
+      client.listRecords({
+        filters: {
+          _expected: expectedTimestamp,
+        },
+        since: retry || !localTimestamp ? undefined : `${localTimestamp}`,
+      }),
+    ]);
 
     
     const syncResult = {
