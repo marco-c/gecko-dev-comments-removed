@@ -2479,6 +2479,10 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   if (!widget) {
     return NS_OK;
   }
+
+  
+  
+  
   
   if (!widget->AsyncPanZoomEnabled()) {
     return NS_OK;
@@ -2489,44 +2493,18 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIContent> content = fm->GetFocusedElement();
-  if (!content) {
+  RefPtr<Element> element = fm->GetFocusedElement();
+  if (!element) {
     return NS_OK;
   }
 
   RefPtr<PresShell> presShell =
-      APZCCallbackHelper::GetRootContentDocumentPresShellForContent(content);
+      APZCCallbackHelper::GetRootContentDocumentPresShellForContent(element);
   if (!presShell) {
     return NS_OK;
   }
 
-  nsIScrollableFrame* rootScrollFrame =
-      presShell->GetRootScrollFrameAsScrollable();
-  if (!rootScrollFrame) {
-    return NS_OK;
-  }
-
-  nsIFrame* currentFrame = content->GetPrimaryFrame();
-  nsIFrame* rootFrame = presShell->GetRootFrame();
-  nsIFrame* scrolledFrame = rootScrollFrame->GetScrolledFrame();
-  bool isFixedPos = true;
-
-  while (currentFrame) {
-    if (currentFrame == rootFrame) {
-      break;
-    }
-    if (currentFrame == scrolledFrame) {
-      
-      isFixedPos = false;
-      break;
-    }
-    currentFrame = nsLayoutUtils::GetCrossDocParentFrame(currentFrame);
-  }
-
-  if (isFixedPos) {
-    
-    
-    
+  if (!element->GetPrimaryFrame()) {
     return NS_OK;
   }
 
@@ -2537,34 +2515,42 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
 
   uint32_t presShellId;
   ScrollableLayerGuid::ViewID viewId;
-  if (APZCCallbackHelper::GetOrCreateScrollIdentifiers(
+  if (!APZCCallbackHelper::GetOrCreateScrollIdentifiers(
           document->GetDocumentElement(), &presShellId, &viewId)) {
-    uint32_t flags = layers::DISABLE_ZOOM_OUT;
-    if (!Preferences::GetBool("formhelper.autozoom")) {
-      flags |= layers::PAN_INTO_VIEW_ONLY;
-    } else {
-      flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
-    }
-
-    
-    
-    
-    
-    presShell->ScrollContentIntoView(
-        content, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-        ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
-        ScrollFlags::ScrollOverflowHidden);
-
-    CSSRect bounds =
-        nsLayoutUtils::GetBoundingContentRect(content, rootScrollFrame);
-    if (bounds.IsEmpty()) {
-      
-      return NS_OK;
-    }
-    bounds.Inflate(15.0f, 0.0f);
-    widget->ZoomToRect(presShellId, viewId, bounds, flags);
+    return NS_OK;
   }
 
+  uint32_t flags = layers::DISABLE_ZOOM_OUT;
+  if (!Preferences::GetBool("formhelper.autozoom")) {
+    flags |= layers::PAN_INTO_VIEW_ONLY;
+  } else {
+    flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
+  }
+
+  
+  
+  
+  
+  presShell->ScrollContentIntoView(
+      element, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+      ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
+      ScrollFlags::ScrollOverflowHidden);
+
+  nsIScrollableFrame* rootScrollFrame =
+      presShell->GetRootScrollFrameAsScrollable();
+  if (!rootScrollFrame) {
+    return NS_OK;
+  }
+
+  CSSRect bounds =
+      nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
+  if (bounds.IsEmpty()) {
+    
+    return NS_OK;
+  }
+
+  bounds.Inflate(15.0f, 0.0f);
+  widget->ZoomToRect(presShellId, viewId, bounds, flags);
   return NS_OK;
 }
 
