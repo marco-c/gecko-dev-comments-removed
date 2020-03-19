@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 use api::{AddFont, BlobImageResources, AsyncBlobImageRasterizer, ResourceUpdate};
 use api::{BlobImageDescriptor, BlobImageHandler, BlobImageRequest, RasterizedBlobImage};
@@ -44,7 +44,7 @@ use std::os::raw::c_void;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use std::path::PathBuf;
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::SystemTime;
 use std::u32;
 use crate::texture_cache::{TextureCache, TextureCacheHandle, Eviction};
@@ -52,8 +52,8 @@ use crate::util::drain_filter;
 
 const DEFAULT_TILE_SIZE: TileSize = 512;
 
-// Counter for generating unique native surface ids
-static NEXT_NATIVE_SURFACE_ID: AtomicU64 = AtomicU64::new(0);
+
+static NEXT_NATIVE_SURFACE_ID: AtomicUsize = AtomicUsize::new(0);
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -62,15 +62,15 @@ pub struct GlyphFetchResult {
     pub uv_rect_address: GpuCacheAddress,
 }
 
-// These coordinates are always in texels.
-// They are converted to normalized ST
-// values in the vertex shader. The reason
-// for this is that the texture may change
-// dimensions (e.g. the pages in a texture
-// atlas can grow). When this happens, by
-// storing the coordinates as texel values
-// we don't need to go through and update
-// various CPU-side structures.
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -92,20 +92,20 @@ impl CacheItem {
     }
 }
 
-/// Represents the backing store of an image in the cache.
-/// This storage can take several forms.
+
+
 #[derive(Clone, Debug)]
 pub enum CachedImageData {
-    /// A simple series of bytes, provided by the embedding and owned by WebRender.
-    /// The format is stored out-of-band, currently in ImageDescriptor.
+    
+    
     Raw(Arc<Vec<u8>>),
-    /// An series of commands that can be rasterized into an image via an
-    /// embedding-provided callback.
-    ///
-    /// The commands are stored elsewhere and this variant is used as a placeholder.
+    
+    
+    
+    
     Blob,
-    /// An image owned by the embedding, and referenced by WebRender. This may
-    /// take the form of a texture or a heap-allocated buffer.
+    
+    
     External(ExternalImageData),
 }
 
@@ -119,7 +119,7 @@ impl From<ImageData> for CachedImageData {
 }
 
 impl CachedImageData {
-    /// Returns true if this represents a blob.
+    
     #[inline]
     pub fn is_blob(&self) -> bool {
         match *self {
@@ -128,8 +128,8 @@ impl CachedImageData {
         }
     }
 
-    /// Returns true if this variant of CachedImageData should go through the texture
-    /// cache.
+    
+    
     #[inline]
     pub fn uses_texture_cache(&self) -> bool {
         match *self {
@@ -150,8 +150,8 @@ pub struct ImageProperties {
     pub descriptor: ImageDescriptor,
     pub external_image: Option<ExternalImageData>,
     pub tiling: Option<TileSize>,
-    // Potentially a subset of the image's total rectangle. This rectangle is what
-    // we map to the (layout space) display item bounds.
+    
+    
     pub visible_rect: DeviceIntRect,
 }
 
@@ -162,26 +162,26 @@ enum State {
     QueryResources,
 }
 
-/// Post scene building state.
+
 enum RasterizedBlob {
     Tiled(FastHashMap<TileOffset, RasterizedBlobImage>),
     NonTiled(Vec<RasterizedBlobImage>),
 }
 
-/// Pre scene building state.
-/// We use this to generate the async blob rendering requests.
+
+
 struct BlobImageTemplate {
     descriptor: ImageDescriptor,
     tiling: Option<TileSize>,
     dirty_rect: BlobDirtyRect,
-    /// See ImageResource::visible_rect.
+    
     visible_rect: DeviceIntRect,
-    // If the active rect of the blob changes, this represents the
-    // range of tiles that remain valid. This must be taken into
-    // account in addition to the valid rect when submitting blob
-    // rasterization requests.
-    // `None` means the bounds have not changed (tiles are still valid).
-    // `Some(TileRange::zero())` means all of the tiles are invalid.
+    
+    
+    
+    
+    
+    
     valid_tiles_after_bounds_change: Option<TileRange>,
 }
 
@@ -198,8 +198,8 @@ struct ImageResource {
     data: CachedImageData,
     descriptor: ImageDescriptor,
     tiling: Option<TileSize>,
-    /// This is used to express images that are virtually very large
-    /// but with only a visible sub-set that is valid at a given time.
+    
+    
     visible_rect: DeviceIntRect,
     generation: ImageGeneration,
 }
@@ -393,7 +393,7 @@ enum ImageResult {
 }
 
 impl ImageResult {
-    /// Releases any texture cache entries held alive by this ImageResult.
+    
     fn drop_from_cache(&mut self, texture_cache: &mut TextureCache) {
         match *self {
             ImageResult::UntiledAuto(ref mut entry) => {
@@ -442,39 +442,39 @@ impl BlobImageResources for Resources {
     }
 }
 
-// We only use this to report glyph dimensions to the user of the API, so using
-// the font instance key should be enough. If we start using it to cache dimensions
-// for internal font instances we should change the hash key accordingly.
+
+
+
 pub type GlyphDimensionsCache = FastHashMap<(FontInstanceKey, GlyphIndex), Option<GlyphDimensions>>;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BlobImageRasterizerEpoch(usize);
 
-/// Stores parameters for clearing blob image tiles.
-///
-/// TODO(nical) this can be removed.
+
+
+
 #[derive(Clone, Copy, Debug)]
 pub struct BlobImageClearParams {
     pub key: BlobImageKey,
-    /// Originally requested tile range to rasterize.
+    
     pub original_tile_range: TileRange,
-    /// Actual tile range that is requested to rasterize by
-    /// AsyncBlobImageRasterizer.
+    
+    
     pub actual_tile_range: TileRange,
 }
 
-/// Information attached to AsyncBlobImageRasterizer.
+
 #[derive(Clone, Debug)]
 pub struct AsyncBlobImageInfo {
     pub epoch: BlobImageRasterizerEpoch,
     pub clear_requests: Vec<BlobImageClearParams>,
 }
 
-/// High-level container for resources managed by the `RenderBackend`.
-///
-/// This includes a variety of things, including images, fonts, and glyphs,
-/// which may be stored as memory buffers, GPU textures, or handles to resources
-/// managed by the OS or other parts of WebRender.
+
+
+
+
+
 pub struct ResourceCache {
     cached_glyphs: GlyphCache,
     cached_images: ImageCache,
@@ -486,38 +486,38 @@ pub struct ResourceCache {
 
     pub texture_cache: TextureCache,
 
-    /// TODO(gw): We should expire (parts of) this cache semi-regularly!
+    
     cached_glyph_dimensions: GlyphDimensionsCache,
     glyph_rasterizer: GlyphRasterizer,
 
-    /// The set of images that aren't present or valid in the texture cache,
-    /// and need to be rasterized and/or uploaded this frame. This includes
-    /// both blobs and regular images.
+    
+    
+    
     pending_image_requests: FastHashSet<ImageRequest>,
 
     blob_image_handler: Option<Box<dyn BlobImageHandler>>,
     rasterized_blob_images: FastHashMap<BlobImageKey, RasterizedBlob>,
     blob_image_templates: FastHashMap<BlobImageKey, BlobImageTemplate>,
 
-    /// If while building a frame we encounter blobs that we didn't already
-    /// rasterize, add them to this list and rasterize them synchronously.
+    
+    
     missing_blob_images: Vec<BlobImageParams>,
-    /// The rasterizer associated with the current scene.
+    
     blob_image_rasterizer: Option<Box<dyn AsyncBlobImageRasterizer>>,
-    /// An epoch of the stored blob image rasterizer, used to skip the ones
-    /// coming from low-priority scene builds if the current one is newer.
-    /// This is to be removed when we get rid of the whole "missed" blob
-    /// images concept.
-    /// The produced one gets bumped whenever we produce a rasteriezer,
-    /// which then travels through the scene building and eventually gets
-    /// consumed back by us, bumping the consumed epoch.
+    
+    
+    
+    
+    
+    
+    
     blob_image_rasterizer_produced_epoch: BlobImageRasterizerEpoch,
     blob_image_rasterizer_consumed_epoch: BlobImageRasterizerEpoch,
-    /// A log of the last three frames worth of deleted image keys kept
-    /// for debugging purposes.
+    
+    
     deleted_blob_keys: VecDeque<Vec<BlobImageKey>>,
 
-    /// A list of queued compositor surface updates to apply next frame.
+    
     pending_native_surface_updates: Vec<NativeSurfaceOperation>,
 }
 
@@ -546,7 +546,7 @@ impl ResourceCache {
             blob_image_rasterizer: None,
             blob_image_rasterizer_produced_epoch: BlobImageRasterizerEpoch(0),
             blob_image_rasterizer_consumed_epoch: BlobImageRasterizerEpoch(0),
-            // We want to keep three frames worth of delete blob keys
+            
             deleted_blob_keys: vec![Vec::new(), Vec::new(), Vec::new()].into(),
             pending_native_surface_updates: Vec::new(),
         }
@@ -568,18 +568,18 @@ impl ResourceCache {
         match *data {
             CachedImageData::Raw(_) | CachedImageData::Blob => size_check,
             CachedImageData::External(info) => {
-                // External handles already represent existing textures so it does
-                // not make sense to tile them into smaller ones.
+                
+                
                 info.image_type == ExternalImageType::Buffer && size_check
             }
         }
     }
 
-    // Request the texture cache item for a cacheable render
-    // task. If the item is already cached, the texture cache
-    // handle will be returned. Otherwise, the user supplied
-    // closure will be invoked to generate the render task
-    // chain that is required to draw this task.
+    
+    
+    
+    
+    
     pub fn request_render_task<F>(
         &mut self,
         key: RenderTaskCacheKey,
@@ -608,9 +608,9 @@ impl ResourceCache {
         updates: Vec<ResourceUpdate>,
         profile_counters: &mut ResourceProfileCounters,
     ) {
-        // TODO, there is potential for optimization here, by processing updates in
-        // bulk rather than one by one (for example by sorting allocations by size or
-        // in a way that reduces fragmentation in the atlas).
+        
+        
+        
 
         for update in updates {
             match update {
@@ -647,7 +647,7 @@ impl ResourceCache {
                             &img.dirty_rect
                         ),
                     );
-                    self.discard_tiles_outside_visible_area(img.key, &img.visible_rect); // TODO: remove?
+                    self.discard_tiles_outside_visible_area(img.key, &img.visible_rect); 
                     self.set_image_visible_rect(img.key.as_image(), &img.visible_rect);
                 }
                 ResourceUpdate::DeleteImage(img) => {
@@ -665,7 +665,7 @@ impl ResourceCache {
                 }
                 ResourceUpdate::AddFont(_) |
                 ResourceUpdate::AddFontInstance(_) => {
-                    // Handled in update_resources_pre_scene_building
+                    
                 }
             }
         }
@@ -711,7 +711,7 @@ impl ResourceCache {
                 ResourceUpdate::AddFontInstance(_) => true,
                 _ => false,
             },
-            // Updates that were moved out of the array:
+            
             |update: ResourceUpdate| match update {
                 ResourceUpdate::AddFont(font) => {
                     match font {
@@ -765,8 +765,8 @@ impl ResourceCache {
 
             texture_cache_profile.rasterized_blob_pixels.inc(data.rasterized_rect.area() as usize);
 
-            // First make sure we have an entry for this key (using a placeholder
-            // if need be).
+            
+            
             let image = self.rasterized_blob_images.entry(request.key).or_insert_with(
                 || { RasterizedBlob::Tiled(FastHashMap::default()) }
             );
@@ -783,7 +783,7 @@ impl ResourceCache {
                 match self.cached_images.try_get_mut(&request.key.as_image()) {
                     Some(&mut ImageResult::Multi(ref mut entries)) => {
                         let cached_key = CachedImageKey {
-                            rendering: ImageRendering::Auto, // TODO(nical)
+                            rendering: ImageRendering::Auto, 
                             tile: Some(tile),
                         };
                         if let Some(entry) = entries.try_get_mut(&cached_key) {
@@ -794,7 +794,7 @@ impl ResourceCache {
                 }
 
             } else if let RasterizedBlob::NonTiled(ref mut queue) = *image {
-                // If our new rasterized rect overwrites items in the queue, discard them.
+                
                 queue.retain(|img| {
                     !data.rasterized_rect.contains_rect(&img.rasterized_rect)
                 });
@@ -807,8 +807,8 @@ impl ResourceCache {
     }
 
     pub fn add_font_template(&mut self, font_key: FontKey, template: FontTemplate) {
-        // Push the new font to the font renderer, and also store
-        // it locally for glyph metric requests.
+        
+        
         self.glyph_rasterizer.add_font(font_key, template.clone());
         self.resources.font_templates.insert(font_key, template);
     }
@@ -884,8 +884,8 @@ impl ResourceCache {
         mut tiling: Option<TileSize>,
     ) {
         if tiling.is_none() && Self::should_tile(self.max_texture_size(), &descriptor, &data) {
-            // We aren't going to be able to upload a texture this big, so tile it, even
-            // if tiling was not requested.
+            
+            
             tiling = Some(DEFAULT_TILE_SIZE);
         }
 
@@ -918,15 +918,15 @@ impl ResourceCache {
             tiling = Some(DEFAULT_TILE_SIZE);
         }
 
-        // Each cache entry stores its own copy of the image's dirty rect. This allows them to be
-        // updated independently.
+        
+        
         match self.cached_images.try_get_mut(&image_key) {
             Some(&mut ImageResult::UntiledAuto(ref mut entry)) => {
                 entry.dirty_rect = entry.dirty_rect.union(dirty_rect);
             }
             Some(&mut ImageResult::Multi(ref mut entries)) => {
                 for (key, entry) in entries.iter_mut() {
-                    // We want the dirty rect relative to the tile and not the whole image.
+                    
                     let local_dirty_rect = match (tiling, key.tile) {
                         (Some(tile_size), Some(tile)) => {
                             dirty_rect.map(|mut rect|{
@@ -955,7 +955,7 @@ impl ResourceCache {
         }
 
         if image.descriptor.format != descriptor.format {
-            // could be a stronger warning/error?
+            
             trace!("Format change {:?} -> {:?}", image.descriptor.format, descriptor.format);
         }
         *image = ImageResource {
@@ -967,7 +967,7 @@ impl ResourceCache {
         };
     }
 
-    // Happens before scene building.
+    
     pub fn add_blob_image(
         &mut self,
         key: BlobImageKey,
@@ -993,7 +993,7 @@ impl ResourceCache {
         );
     }
 
-    // Happens before scene building.
+    
     pub fn update_blob_image(
         &mut self,
         key: BlobImageKey,
@@ -1038,8 +1038,8 @@ impl ResourceCache {
         if let Some(descriptor) = descriptor {
             image.descriptor = *descriptor;
         } else {
-            // make sure the descriptor size matches the visible rect.
-            // This might not be necessary but let's stay on the safe side.
+            
+            
             image.descriptor.size = blob_size;
         }
 
@@ -1053,10 +1053,10 @@ impl ResourceCache {
     }
 
     pub fn delete_image_template(&mut self, image_key: ImageKey) {
-        // Remove the template.
+        
         let value = self.resources.image_templates.remove(image_key);
 
-        // Release the corresponding texture cache entry, if any.
+        
         if let Some(mut cached) = self.cached_images.remove(&image_key) {
             cached.drop_from_cache(&mut self.texture_cache);
         }
@@ -1076,7 +1076,7 @@ impl ResourceCache {
         }
     }
 
-    /// Return the current generation of an image template
+    
     pub fn get_image_generation(&self, key: ImageKey) -> ImageGeneration {
         self.resources
             .image_templates
@@ -1100,7 +1100,7 @@ impl ResourceCache {
             }
         };
 
-        // Images that don't use the texture cache can early out.
+        
         if !template.data.uses_texture_cache() {
             return;
         }
@@ -1109,7 +1109,7 @@ impl ResourceCache {
             template.tiling.map_or(cmp::max(template.descriptor.size.width, template.descriptor.size.height),
                                    |tile_size| tile_size as i32);
         if side_size > self.texture_cache.max_texture_size() {
-            // The image or tiling size is too big for hardware texture size.
+            
             warn!("Dropping image, image:(w:{},h:{}, tile:{}) is too big for hardware!",
                   template.descriptor.size.width, template.descriptor.size.height, template.tiling.unwrap_or(0));
             self.cached_images.insert(request.key, ImageResult::Err(ImageCacheError::OverLimitSize));
@@ -1118,10 +1118,10 @@ impl ResourceCache {
 
         let storage = match self.cached_images.entry(request.key) {
             Occupied(e) => {
-                // We might have an existing untiled entry, and need to insert
-                // a second entry. In such cases we need to move the old entry
-                // out first, replacing it with a dummy entry, and then creating
-                // the tiled/multi-entry variant.
+                
+                
+                
+                
                 let entry = e.into_mut();
                 if !request.is_untiled_auto() {
                     let untiled_entry = match entry {
@@ -1160,8 +1160,8 @@ impl ResourceCache {
             }
         };
 
-        // If this image exists in the texture cache, *and* the dirty rect
-        // in the cache is empty, then it is valid to use as-is.
+        
+        
         let entry = match *storage {
             ImageResult::UntiledAuto(ref mut entry) => entry,
             ImageResult::Multi(ref mut entries) => {
@@ -1193,8 +1193,8 @@ impl ResourceCache {
                 _ => true,
             };
 
-            // For some reason the blob image is missing. We'll fall back to
-            // rasterizing it on the render backend thread.
+            
+            
             if missing {
                 let descriptor = BlobImageDescriptor {
                     rect: match template.tiling {
@@ -1241,15 +1241,15 @@ impl ResourceCache {
             let template = self.blob_image_templates.get_mut(key).unwrap();
 
             if let Some(tile_size) = template.tiling {
-                // If we know that only a portion of the blob image is in the viewport,
-                // only request these visible tiles since blob images can be huge.
+                
+                
                 let tiles = compute_tile_range(
                     &template.visible_rect,
                     tile_size,
                 );
 
                 let image_dirty_rect = to_image_dirty_rect(&template.dirty_rect);
-                // Don't request tiles that weren't invalidated.
+                
                 let dirty_tiles = match image_dirty_rect {
                     DirtyRect::Partial(dirty_rect) => {
                         let dirty_rect = DeviceIntRect {
@@ -1290,9 +1290,9 @@ impl ResourceCache {
                     };
 
                     assert!(descriptor.rect.size.width > 0 && descriptor.rect.size.height > 0);
-                    // TODO: We only track dirty rects for non-tiled blobs but we
-                    // should also do it with tiled ones unless we settle for a small
-                    // tile size.
+                    
+                    
+                    
                     blob_request_params.push(
                         BlobImageParams {
                             request: BlobImageRequest {
@@ -1314,16 +1314,16 @@ impl ResourceCache {
                     _ => true,
                 };
 
-                // If the queue of rasterized updates is growing it probably means that
-                // the texture is not getting uploaded because the display item is off-screen.
-                // In that case we are better off
-                // - Either not kicking rasterization for that image (avoid wasted cpu work
-                //   but will jank next time the item is visible because of lazy rasterization.
-                // - Clobber the update queue by pushing an update with a larger dirty rect
-                //   to prevent it from accumulating.
-                //
-                // We do the latter here but it's not ideal and might want to revisit and do
-                // the former instead.
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 match self.rasterized_blob_images.get(key) {
                     Some(RasterizedBlob::NonTiled(ref queue)) => {
                         if queue.len() > 2 {
@@ -1334,7 +1334,7 @@ impl ResourceCache {
                 };
 
                 let dirty_rect = if needs_upload {
-                    // The texture cache entry has been evicted, treat it as all dirty.
+                    
                     DirtyRect::All
                 } else {
                     template.dirty_rect
@@ -1375,7 +1375,7 @@ impl ResourceCache {
         let template = match self.blob_image_templates.get(&key) {
             Some(template) => template,
             None => {
-                //println!("Missing image template (key={:?})!", key);
+                
                 return;
             }
         };
@@ -1527,8 +1527,8 @@ impl ResourceCache {
 
     #[inline]
     fn get_image_info(&self, request: ImageRequest) -> Result<&CachedImageInfo, ()> {
-        // TODO(Jerry): add a debug option to visualize the corresponding area for
-        // the Err() case of CacheItem.
+        
+        
         match *self.cached_images.get(&request.key) {
             ImageResult::UntiledAuto(ref image_info) => Ok(image_info),
             ImageResult::Multi(ref entries) => Ok(entries.get(&request.into())),
@@ -1548,10 +1548,10 @@ impl ResourceCache {
             let external_image = match image_template.data {
                 CachedImageData::External(ext_image) => match ext_image.image_type {
                     ExternalImageType::TextureHandle(_) => Some(ext_image),
-                    // external buffer uses resource_cache.
+                    
                     ExternalImageType::Buffer => None,
                 },
-                // raw and blob image are all using resource_cache.
+                
                 CachedImageData::Raw(..) | CachedImageData::Blob => None,
             };
 
@@ -1589,7 +1589,7 @@ impl ResourceCache {
         self.cached_render_tasks.begin_frame(&mut self.texture_cache);
         self.current_frame_id = stamp.frame_id();
 
-        // pop the old frame and push a new one
+        
         self.deleted_blob_keys.pop_front();
         self.deleted_blob_keys.push_back(Vec::new());
     }
@@ -1616,7 +1616,7 @@ impl ResourceCache {
 
         self.rasterize_missing_blob_images(texture_cache_profile);
 
-        // Apply any updates of new / updated images (incl. blobs) to the texture cache.
+        
         self.update_texture_cache(gpu_cache);
     }
 
@@ -1659,8 +1659,8 @@ impl ResourceCache {
 
             match image_template.data {
                 CachedImageData::Raw(..) | CachedImageData::External(..) => {
-                    // Safe to clone here since the Raw image data is an
-                    // Arc, and the external image data is small.
+                    
+                    
                     updates.push((image_template.data.clone(), None));
                 }
                 CachedImageData::Blob => {
@@ -1703,13 +1703,13 @@ impl ResourceCache {
                 if let Some(tile) = request.tile {
                     let tile_size = image_template.tiling.unwrap();
                     let clipped_tile_size = compute_tile_size(&image_template.visible_rect, tile_size, tile);
-                    // The tiled image could be stored on the CPU as one large image or be
-                    // already broken up into tiles. This affects the way we compute the stride
-                    // and offset.
+                    
+                    
+                    
                     let tiled_on_cpu = image_template.data.is_blob();
                     if !tiled_on_cpu {
-                        // we don't expect to have partial tiles at the top and left of non-blob
-                        // images.
+                        
+                        
                         debug_assert_eq!(image_template.visible_rect.origin, point2(0, 0));
                         let bpp = descriptor.format.bytes_per_pixel();
                         let stride = descriptor.compute_stride();
@@ -1722,9 +1722,9 @@ impl ResourceCache {
                     descriptor.size = clipped_tile_size;
                 }
 
-                // If we are uploading the dirty region of a blob image we might have several
-                // rects to upload so we use each of these rasterized rects rather than the
-                // overall dirty rect of the image.
+                
+                
+                
                 if let Some(rect) = blob_rasterized_rect {
                     dirty_rect = DirtyRect::Partial(rect);
                 }
@@ -1734,13 +1734,13 @@ impl ResourceCache {
                         TextureFilter::Nearest
                     }
                     ImageRendering::Auto | ImageRendering::CrispEdges => {
-                        // If the texture uses linear filtering, enable mipmaps and
-                        // trilinear filtering, for better image quality. We only
-                        // support this for now on textures that are not placed
-                        // into the shared cache. This accounts for any image
-                        // that is > 512 in either dimension, so it should cover
-                        // the most important use cases. We may want to support
-                        // mip-maps on shared cache items in the future.
+                        
+                        
+                        
+                        
+                        
+                        
+                        
                         if descriptor.allow_mipmaps() &&
                            descriptor.size.width > 512 &&
                            descriptor.size.height > 512 &&
@@ -1762,7 +1762,7 @@ impl ResourceCache {
                     Eviction::Auto
                 };
 
-                //Note: at this point, the dirty rectangle is local to the descriptor space
+                
                 self.texture_cache.update(
                     &mut entry.texture_cache_handle,
                     descriptor,
@@ -1779,15 +1779,15 @@ impl ResourceCache {
         }
     }
 
-    /// Queue up allocation of a new OS native compositor surface with the
-    /// specified tile size.
+    
+    
     pub fn create_compositor_surface(
         &mut self,
         virtual_offset: DeviceIntPoint,
         tile_size: DeviceIntSize,
         is_opaque: bool,
     ) -> NativeSurfaceId {
-        let id = NativeSurfaceId(NEXT_NATIVE_SURFACE_ID.fetch_add(1, Ordering::Relaxed));
+        let id = NativeSurfaceId(NEXT_NATIVE_SURFACE_ID.fetch_add(1, Ordering::Relaxed) as u64);
 
         self.pending_native_surface_updates.push(
             NativeSurfaceOperation {
@@ -1803,8 +1803,8 @@ impl ResourceCache {
         id
     }
 
-    /// Queue up destruction of an existing native OS surface. This is used when
-    /// a picture cache surface is dropped or resized.
+    
+    
     pub fn destroy_compositor_surface(
         &mut self,
         id: NativeSurfaceId,
@@ -1818,7 +1818,7 @@ impl ResourceCache {
         );
     }
 
-    /// Queue construction of a native compositor tile on a given surface.
+    
     pub fn create_compositor_tile(
         &mut self,
         id: NativeTileId,
@@ -1832,7 +1832,7 @@ impl ResourceCache {
         );
     }
 
-    /// Queue destruction of a native compositor tile.
+    
     pub fn destroy_compositor_tile(
         &mut self,
         id: NativeTileId,
@@ -1901,26 +1901,26 @@ impl ResourceCache {
         }
     }
 
-    /// Reports the CPU heap usage of this ResourceCache.
-    ///
-    /// NB: It would be much better to use the derive(MallocSizeOf) machinery
-    /// here, but the Arcs complicate things. The two ways to handle that would
-    /// be to either (a) Implement MallocSizeOf manually for the things that own
-    /// them and manually avoid double-counting, or (b) Use the "seen this pointer
-    /// yet" machinery from the proper malloc_size_of crate. We can do this if/when
-    /// more accurate memory reporting on these resources becomes a priority.
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn report_memory(&self, op: VoidPtrToSizeFn) -> MemoryReport {
         let mut report = MemoryReport::default();
 
-        // Measure fonts. We only need the templates here, because the instances
-        // don't have big buffers.
+        
+        
         for (_, font) in self.resources.font_templates.iter() {
             if let FontTemplate::Raw(ref raw, _) = font {
                 report.fonts += unsafe { op(raw.as_ptr() as *const c_void) };
             }
         }
 
-        // Measure images.
+        
         for (_, image) in self.resources.image_templates.images.iter() {
             report.images += match image.data {
                 CachedImageData::Raw(ref v) => unsafe { op(v.as_ptr() as *const c_void) },
@@ -1928,25 +1928,25 @@ impl ResourceCache {
             }
         }
 
-        // Mesure rasterized blobs.
-        // TODO(gw): Temporarily disabled while we roll back a crash. We can re-enable
-        //           these when that crash is fixed.
-        /*
-        for (_, image) in self.rasterized_blob_images.iter() {
-            let mut accumulate = |b: &RasterizedBlobImage| {
-                report.rasterized_blobs += unsafe { op(b.data.as_ptr() as *const c_void) };
-            };
-            match image {
-                RasterizedBlob::Tiled(map) => map.values().for_each(&mut accumulate),
-                RasterizedBlob::NonTiled(vec) => vec.iter().for_each(&mut accumulate),
-            };
-        }
-        */
+        
+        
+        
+        
+
+
+
+
+
+
+
+
+
+
 
         report
     }
 
-    /// Properly deletes all images matching the predicate.
+    
     fn clear_images<F: Fn(&ImageKey) -> bool>(&mut self, f: F) {
         let keys = self.resources.image_templates.images.keys().filter(|k| f(*k))
             .cloned().collect::<SmallVec<[ImageKey; 16]>>();
@@ -2042,7 +2042,7 @@ pub struct PlainCacheOwn {
 #[cfg(feature = "replay")]
 const NATIVE_FONT: &'static [u8] = include_bytes!("../res/Proggy.ttf");
 
-// This currently only casts the unit but will soon apply an offset
+
 fn to_image_dirty_rect(blob_dirty_rect: &BlobDirtyRect) -> ImageDirtyRect {
     match *blob_dirty_rect {
         DirtyRect::Partial(rect) => DirtyRect::Partial(
@@ -2139,8 +2139,8 @@ impl ResourceCache {
                         BlobImageParams {
                             request: BlobImageRequest {
                                 key: BlobImageKey(key),
-                                //TODO: support tiled blob images
-                                // https://github.com/servo/webrender/issues/2236
+                                
+                                
                                 tile: template.tiling.map(|_| TileOffset::origin()),
                             },
                             descriptor: BlobImageDescriptor {
@@ -2273,9 +2273,9 @@ impl ResourceCache {
         use std::{fs, path::Path};
 
         info!("loading resource cache");
-        //TODO: instead of filling the local path to Arc<data> map as we process
-        // each of the resource types, we could go through all of the local paths
-        // and fill out the map as the first step.
+        
+        
+        
         let mut raw_map = FastHashMap::<String, Arc<Vec<u8>>>::default();
 
         self.clear(ClearCache::all());
@@ -2376,10 +2376,10 @@ impl ResourceCache {
     }
 }
 
-/// For now the blob's coordinate space have the same pixel sizes as the
-/// rendered texture's device space (only a translation is applied).
-/// So going from one to the other is only a matter of casting away the unit
-/// for sizes.
+
+
+
+
 #[inline]
 fn blob_size(device_size: DeviceIntSize) -> LayoutIntSize {
     size2(device_size.width, device_size.height)
