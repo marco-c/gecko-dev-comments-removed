@@ -27,6 +27,8 @@ async function enableServiceWorkerDebugging() {
 
   
   await pushPref("devtools.debugger.features.windowless-service-workers", true);
+  
+  await pushPref("dom.ipc.processPrelaunch.enabled", false);
 
   
   Services.ppmm.releaseCachedProcesses();
@@ -64,7 +66,7 @@ async function openNewTabAndApplicationPanel(url) {
   return { panel, tab, target, toolbox };
 }
 
-async function unregisterAllWorkers(client) {
+async function unregisterAllWorkers(client, doc) {
   info("Wait until all workers have a valid registrationFront");
   let workers;
   await asyncWaitUntil(async function() {
@@ -79,6 +81,9 @@ async function unregisterAllWorkers(client) {
   for (const worker of workers.service) {
     await worker.registrationFront.unregister();
   }
+
+  
+  waitUntil(() => getWorkerContainers(doc).length === 0);
 }
 
 async function waitForWorkerRegistration(swTab) {

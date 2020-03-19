@@ -4,6 +4,8 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
+
 const {
   DEBUG_TARGETS,
   REQUEST_WORKERS_SUCCESS,
@@ -29,7 +31,7 @@ const workerComponentDataMiddleware = store => next => action => {
 };
 
 function getServiceWorkerStatus(worker) {
-  const isActive = worker.active;
+  const isActive = worker.state === Ci.nsIServiceWorkerInfo.STATE_ACTIVATED;
   const isRunning = !!worker.workerTargetFront;
 
   if (isActive && isRunning) {
@@ -37,6 +39,7 @@ function getServiceWorkerStatus(worker) {
   } else if (isActive) {
     return SERVICE_WORKER_STATUSES.STOPPED;
   }
+
   
   
   

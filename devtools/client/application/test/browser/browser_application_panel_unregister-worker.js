@@ -28,7 +28,8 @@ add_task(async function() {
   ok(true, "Service worker list is empty");
 
   
-  await unregisterAllWorkers(target.client);
+  await unregisterAllWorkers(target.client, doc);
+
   
   info("Closing the tab.");
   await BrowserTestUtils.removeTab(tab);
