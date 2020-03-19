@@ -10210,9 +10210,7 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
   
   RefPtr<net::DocumentChannel> docChannel = do_QueryObject(aChannel);
   if (docChannel && XRE_IsContentProcess()) {
-    bool pluginsAllowed = true;
-    GetAllowPlugins(&pluginsAllowed);
-    docChannel->SetDocumentOpenFlags(aOpenFlags, pluginsAllowed);
+    docChannel->SetDocumentOpenFlags(aOpenFlags);
     
     
     
