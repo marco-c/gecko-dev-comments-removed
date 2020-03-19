@@ -1,10 +1,32 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 async function createTabAndLoad(url, inputWindow = null) {
   const browser = inputWindow ? inputWindow.gBrowser : window.gBrowser;
   let tab = await BrowserTestUtils.openNewForegroundTab(browser, url);
   return tab;
 }
+
+
+
+
+
+
+
+
+
+
 
 function checkOrWaitUntilMediaStartedPlaying(tab, elementId) {
   return SpecialPowers.spawn(tab.linkedBrowser, [elementId], Id => {
@@ -28,6 +50,16 @@ function checkOrWaitUntilMediaStartedPlaying(tab, elementId) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
 function checkOrWaitUntilMediaStoppedPlaying(tab, elementId) {
   return SpecialPowers.spawn(tab.linkedBrowser, [elementId], Id => {
     return new Promise(resolve => {
@@ -50,6 +82,9 @@ function checkOrWaitUntilMediaStoppedPlaying(tab, elementId) {
   });
 }
 
+
+
+
 function isCurrentMetadataEmpty() {
   const current = ChromeUtils.getCurrentActiveMediaMetadata();
   is(current.title, "", `current title should be empty`);
@@ -57,6 +92,12 @@ function isCurrentMetadataEmpty() {
   is(current.album, "", `current album should be empty`);
   is(current.artwork.length, 0, `current artwork should be empty`);
 }
+
+
+
+
+
+
 
 function isCurrentMetadataEqualTo(metadata) {
   const current = ChromeUtils.getCurrentActiveMediaMetadata();
@@ -101,13 +142,36 @@ function isCurrentMetadataEqualTo(metadata) {
   }
 }
 
+
+
+
+
+
+
+
+
 function waitUntilMainMediaControllerPlaybackChanged() {
   return BrowserUtils.promiseObserved("main-media-controller-playback-changed");
 }
 
+
+
+
+
+
+
+
 function waitUntilMainMediaControllerChanged() {
   return BrowserUtils.promiseObserved("main-media-controller-changed");
 }
+
+
+
+
+
+
+
+
 
 function waitUntilControllerMetadataChanged() {
   return BrowserUtils.promiseObserved(
