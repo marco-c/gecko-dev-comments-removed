@@ -19,6 +19,7 @@ import org.mozilla.gecko.IGeckoEditableChild;
 import org.mozilla.gecko.IGeckoEditableParent;
 import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.util.GamepadUtils;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
@@ -1662,7 +1663,18 @@ import android.view.inputmethod.EditorInfo;
                     session.getTextInput().getDelegate().hideSoftInput(session);
                     return;
                 }
-                session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", null);
+                {
+                    final GeckoBundle bundle = new GeckoBundle();
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    bundle.putBoolean("force", !force);
+                    session.getEventDispatcher().dispatch("GeckoView:ZoomToInput", bundle);
+                }
                 session.getTextInput().getDelegate().showSoftInput(session);
             }
         });

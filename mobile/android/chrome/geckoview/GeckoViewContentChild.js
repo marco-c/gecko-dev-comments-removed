@@ -176,6 +176,8 @@ class GeckoViewContentChild extends GeckoViewChildModule {
           }, "apz-repaints-flushed");
         };
 
+        let { force } = aMsg.data;
+
         let gotResize = false;
         let onResize = function() {
           gotResize = true;
@@ -203,7 +205,7 @@ class GeckoViewContentChild extends GeckoViewChildModule {
         
         content.setTimeout(() => {
           removeEventListener("resize", onResize, { capture: true });
-          if (!gotResize) {
+          if (!gotResize && force) {
             onResize();
           }
         }, 500);
@@ -298,11 +300,6 @@ class GeckoViewContentChild extends GeckoViewChildModule {
             this.lastViewportFit = "";
             this.notifyParentOfViewportFit();
           }
-        }
-        if (content && aMsg.data.suspendMedia) {
-          content.windowUtils.mediaSuspend = aMsg.data.active
-            ? Ci.nsISuspendedTypes.NONE_SUSPENDED
-            : Ci.nsISuspendedTypes.SUSPENDED_PAUSE;
         }
         break;
 
