@@ -887,8 +887,10 @@ void RenderCompositorANGLE::EnableNativeCompositor(bool aEnable) {
 }
 
 void RenderCompositorANGLE::InitializeUsePartialPresent() {
-  if (UseCompositor() || !mSwapChain1 ||
-      mWidget->AsWindows()->HasFxrOutputHandler() ||
+  
+  
+  
+  if (UseCompositor() || mWidget->AsWindows()->HasFxrOutputHandler() ||
       gfx::gfxVars::WebRenderMaxPartialPresentRects() <= 0) {
     mUsePartialPresent = false;
   } else {
