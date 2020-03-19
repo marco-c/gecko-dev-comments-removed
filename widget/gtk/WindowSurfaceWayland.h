@@ -262,7 +262,13 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  LayoutDeviceIntRect mBufferScreenRect;
+  LayoutDeviceIntRect mLockedScreenRect;
+
+  
+  
+  
+  
+  LayoutDeviceIntRect mWidgetRect;
   nsWaylandDisplay* mWaylandDisplay;
 
   
@@ -326,9 +332,6 @@ class WindowSurfaceWayland : public WindowSurface {
   bool mBufferNeedsClear;
 
   bool mIsMainThread;
-
-  
-  RenderingCacheMode mRenderingCacheMode;
 
   static bool UseDMABufBackend();
   static bool mUseDMABufInitialized;
