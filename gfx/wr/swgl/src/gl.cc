@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -52,7 +52,7 @@ struct IntRect {
 };
 
 struct VertexAttrib {
-  size_t size = 0;  // in bytes
+  size_t size = 0;  
   GLenum type = 0;
   bool normalized = false;
   GLsizei stride = 0;
@@ -61,8 +61,8 @@ struct VertexAttrib {
   GLuint divisor = 0;
   int vertex_array = 0;
   int vertex_buffer = 0;
-  char* buf = nullptr;  // XXX: this can easily dangle
-  size_t buf_size = 0;  // this will let us bounds check
+  char* buf = nullptr;  
+  size_t buf_size = 0;  
 };
 
 static int bytes_for_internal_format(GLenum internal_format) {
@@ -291,7 +291,7 @@ struct Program {
   }
 };
 
-// for GL defines to fully expand
+
 #define CONCAT_KEY(prefix, x, y, z, w, ...) prefix##x##y##z##w
 #define BLEND_KEY(...) CONCAT_KEY(BLEND_, __VA_ARGS__, 0, 0)
 #define FOR_EACH_BLEND_KEY(macro)                                              \
@@ -329,7 +329,7 @@ template <typename O>
 struct ObjectStore {
   O** objects = nullptr;
   size_t size = 0;
-  // reserve object 0 as null
+  
   size_t first_free = 1;
   O invalid;
 
@@ -522,8 +522,8 @@ static inline void init_sampler(S* s, Texture& t) {
   int bpp = t.bpp();
   s->stride = t.stride(bpp);
   if (bpp >= 4) s->stride /= 4;
-  // Use uint32_t* for easier sampling, but need to cast to uint8_t* for formats
-  // with bpp < 4.
+  
+  
   s->buf = (uint32_t*)t.buf;
   s->format = gl_format_to_texture_format(t.internal_format);
 }
@@ -1056,7 +1056,7 @@ GLint GetUniformLocation(GLuint program, char* name) {
   Program& p = ctx->programs[program];
   assert(p.impl);
   GLint loc = p.impl->get_uniform(name);
-  // debugf("location: %d\n", loc);
+  
   return loc;
 }
 
@@ -1438,7 +1438,7 @@ void DeleteFramebuffer(GLuint n) {
 
 void RenderbufferStorage(GLenum target, GLenum internal_format, GLsizei width,
                          GLsizei height) {
-  // Just refer a renderbuffer to a texture to simplify things for now...
+  
   Renderbuffer& r = ctx->renderbuffers[ctx->get_binding(target)];
   if (!r.texture) {
     GenTextures(1, &r.texture);
@@ -1447,7 +1447,7 @@ void RenderbufferStorage(GLenum target, GLenum internal_format, GLsizei width,
     case GL_DEPTH_COMPONENT:
     case GL_DEPTH_COMPONENT24:
     case GL_DEPTH_COMPONENT32:
-      // Force depth format to 16 bits...
+      
       internal_format = GL_DEPTH_COMPONENT16;
       break;
   }
@@ -1456,7 +1456,7 @@ void RenderbufferStorage(GLenum target, GLenum internal_format, GLsizei width,
 
 void VertexAttribPointer(GLuint index, GLint size, GLenum type, bool normalized,
                          GLsizei stride, GLuint offset) {
-  // debugf("cva: %d\n", ctx->current_vertex_array);
+  
   VertexArray& v = ctx->vertex_arrays[ctx->current_vertex_array];
   if (index >= NULL_ATTRIB) {
     assert(0);
@@ -1468,7 +1468,7 @@ void VertexAttribPointer(GLuint index, GLint size, GLenum type, bool normalized,
   va.normalized = normalized;
   va.stride = stride;
   va.offset = offset;
-  // Buffer &vertex_buf = ctx->buffers[ctx->array_buffer_binding];
+  
   va.vertex_buffer = ctx->array_buffer_binding;
   va.vertex_array = ctx->current_vertex_array;
   ctx->validate_vertex_array = true;
@@ -1476,7 +1476,7 @@ void VertexAttribPointer(GLuint index, GLint size, GLenum type, bool normalized,
 
 void VertexAttribIPointer(GLuint index, GLint size, GLenum type, GLsizei stride,
                           GLuint offset) {
-  // debugf("cva: %d\n", ctx->current_vertex_array);
+  
   VertexArray& v = ctx->vertex_arrays[ctx->current_vertex_array];
   if (index >= NULL_ATTRIB) {
     assert(0);
@@ -1488,7 +1488,7 @@ void VertexAttribIPointer(GLuint index, GLint size, GLenum type, GLsizei stride,
   va.normalized = false;
   va.stride = stride;
   va.offset = offset;
-  // Buffer &vertex_buf = ctx->buffers[ctx->array_buffer_binding];
+  
   va.vertex_buffer = ctx->array_buffer_binding;
   va.vertex_array = ctx->current_vertex_array;
   ctx->validate_vertex_array = true;
@@ -1570,7 +1570,7 @@ GLboolean UnmapBuffer(GLenum target) {
 }
 
 void Uniform1i(GLint location, GLint V0) {
-  // debugf("tex: %d\n", (int)ctx->textures.size);
+  
   if (!program_impl->set_sampler(location, V0)) {
     vertex_shader->set_uniform_1i(location, V0);
     fragment_shader->set_uniform_1i(location, V0);
@@ -1632,7 +1632,7 @@ void FramebufferRenderbuffer(GLenum target, GLenum attachment,
   }
 }
 
-}  // extern "C"
+}  
 
 static inline Framebuffer* get_framebuffer(GLenum target) {
   if (target == GL_FRAMEBUFFER) {
@@ -1915,8 +1915,8 @@ void ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
   Texture& t = ctx->textures[fb->color_attachment];
   if (!t.buf) return;
   prepare_texture(t);
-  // debugf("read pixels %d, %d, %d, %d from fb %d with format %x\n", x, y,
-  // width, height, ctx->read_framebuffer_binding, t.internal_format);
+  
+  
   assert(x + width <= t.width);
   assert(y + height <= t.height);
   if (internal_format_for_data(format, type) != t.internal_format) {
@@ -2009,6 +2009,74 @@ void CopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset,
                    xoffset, yoffset, 0, width, height, 1);
 }
 
+} 
+
+template <typename P>
+static void scale_row(P* dst, int dstWidth, const P* src, int srcWidth) {
+    int frac = 0;
+    for (int x = 0; x < dstWidth; x++) {
+        *dst = *src;
+        dst++;
+        frac += srcWidth;
+        while (frac >= dstWidth) {
+            frac -= dstWidth;
+            src++;
+        }
+    }
+}
+
+static void scale_blit(GLuint srcName, GLint srcX, GLint srcY, GLint srcZ,
+                       GLsizei srcWidth, GLsizei srcHeight,
+                       GLuint dstName, GLint dstX, GLint dstY, GLint dstZ,
+                       GLsizei dstWidth, GLsizei dstHeight) {
+  Texture& srctex = ctx->textures[srcName];
+  if (!srctex.buf) return;
+  prepare_texture(srctex);
+  Texture& dsttex = ctx->textures[dstName];
+  if (!dsttex.buf) return;
+  IntRect skip = {dstX, dstY, dstWidth, abs(dstHeight)};
+  prepare_texture(dsttex, &skip);
+  assert(srctex.internal_format == dsttex.internal_format);
+  assert(srcX + srcWidth <= srctex.width);
+  assert(srcY + srcHeight <= srctex.height);
+  assert(srcZ < max(srctex.depth, 1));
+  assert(dstX + dstWidth <= dsttex.width);
+  assert(max(dstY, dstY + dstHeight) <= dsttex.height);
+  assert(dstZ < max(dsttex.depth, 1));
+  int bpp = srctex.bpp();
+  int srcStride = srctex.stride(bpp);
+  int destStride = dsttex.stride(bpp);
+  char* dest = dsttex.buf + (dsttex.height * dstZ + dstY) * destStride +
+               dstX * bpp;
+  char* src = srctex.buf + (srctex.height * srcZ + srcY) * srcStride +
+              srcX * bpp;
+  if (dstHeight < 0) {
+    dest -= destStride;
+    destStride = -destStride;
+    dstHeight = -dstHeight;
+  }
+  int frac = 0;
+  for (int y = 0; y < dstHeight; y++) {
+    if (srcWidth == dstWidth) {
+      memcpy(dest, src, srcWidth * bpp);
+    } else {
+      switch (bpp) {
+        case 1: scale_row((uint8_t*)dest, dstWidth, (uint8_t*)src, srcWidth); break;
+        case 2: scale_row((uint16_t*)dest, dstWidth, (uint16_t*)src, srcWidth); break;
+        case 4: scale_row((uint32_t*)dest, dstWidth, (uint32_t*)src, srcWidth); break;
+      }
+    }
+    dest += destStride;
+    frac += srcHeight;
+    while (frac >= dstHeight) {
+      frac -= dstHeight;
+      src += srcStride;
+    }
+  }
+}
+
+extern "C" {
+
 void BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
                      GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
                      GLbitfield mask, GLenum filter) {
@@ -2017,16 +2085,14 @@ void BlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
   if (!srcfb) return;
   Framebuffer* dstfb = get_framebuffer(GL_DRAW_FRAMEBUFFER);
   if (!dstfb) return;
-  int dstWidth = dstX1 - dstX0;
-  int dstHeight = dstY1 - dstY0;
-  assert(srcX1 - srcX0 == dstWidth && srcY1 - srcY0 == abs(dstHeight));
-  CopyImageSubData(srcfb->color_attachment, GL_TEXTURE_2D_ARRAY, 0, srcX0,
-                   srcY0, srcfb->layer, dstfb->color_attachment,
-                   GL_TEXTURE_2D_ARRAY, 0, dstX0, dstY0, dstfb->layer, dstWidth,
-                   dstHeight, 1);
+  
+  scale_blit(srcfb->color_attachment, srcX0, srcY0, srcfb->layer,
+             srcX1 - srcX0, srcY1 - srcY0,
+             dstfb->color_attachment, dstX0, dstY0, dstfb->layer,
+             dstX1 - dstX0, dstY1 - dstY0);
 }
 
-}  // extern "C"
+}  
 
 using PackedRGBA8 = V16<uint8_t>;
 using WideRGBA8 = V16<uint16_t>;
@@ -2120,12 +2186,12 @@ static ALWAYS_INLINE int check_depth8(uint16_t z, uint16_t* zbuf,
                                       ZMask8& outmask) {
   ZMask8 dest = unaligned_load<ZMask8>(zbuf);
   ZMask8 src = int16_t(z);
-  // Invert the depth test to check which pixels failed and should be discarded.
+  
   ZMask8 mask = FUNC == GL_LEQUAL ?
-                                  // GL_LEQUAL: Not(LessEqual) = Greater
+                                  
                     ZMask8(src > dest)
                                   :
-                                  // GL_LESS: Not(Less) = GreaterEqual
+                                  
                     ZMask8(src >= dest);
   switch (zmask_code(mask)) {
     case ZMASK_NONE_PASSED:
@@ -2149,13 +2215,13 @@ static ALWAYS_INLINE bool check_depth4(uint16_t z, uint16_t* zbuf,
                                        ZMask4& outmask, int span = 0) {
   ZMask4 dest = unaligned_load<ZMask4>(zbuf);
   ZMask4 src = int16_t(z);
-  // Invert the depth test to check which pixels failed and should be discarded.
+  
   ZMask4 mask = ctx->depthfunc == GL_LEQUAL
                     ?
-                    // GL_LEQUAL: Not(LessEqual) = Greater
+                    
                     ZMask4(src > dest)
                     :
-                    // GL_LESS: Not(Less) = GreaterEqual
+                    
                     ZMask4(src >= dest);
   if (!FULL_SPANS) {
     mask |= ZMask4(span) < ZMask4{1, 2, 3, 4};
@@ -2220,7 +2286,7 @@ static inline PackedRGBA8 pack_span(uint32_t*) {
   return pack(pack_pixels_RGBA8());
 }
 
-// (x*y + x) >> 8, cheap approximation of (x*y) / 255
+
 template <typename T>
 static inline T muldiv255(T x, T y) {
   return (x * y + x) >> 8;
@@ -2269,7 +2335,7 @@ static inline WideRGBA8 blend_pixels_RGBA8(PackedRGBA8 pdst, WideRGBA8 src) {
     }
     default:
       UNREACHABLE;
-      // return src;
+      
   }
 }
 
@@ -2389,7 +2455,7 @@ static inline WideR8 blend_pixels_R8(WideR8 dst, WideR8 src) {
       return src;
     default:
       UNREACHABLE;
-      // return src;
+      
   }
 }
 
@@ -2618,9 +2684,9 @@ static inline void draw_quad_spans(int nump, Point p[4], uint16_t z,
     r0 = p[r0i];
     l1 = p[l1i];
     r1 = p[r1i];
-    //    debugf("l0: %d(%f,%f), r0: %d(%f,%f) -> l1: %d(%f,%f), r1:
-    //    %d(%f,%f)\n", l0i, l0.x, l0.y, r0i, r0.x, r0.y, l1i, l1.x, l1.y, r1i,
-    //    r1.x, r1.y);
+    
+    
+    
   }
 
   float lx = l0.x;
@@ -2833,8 +2899,8 @@ static void draw_quad(int nump, Texture& colortex, int layer,
     top_left = min(top_left, p[3]);
     bot_right = max(bot_right, p[3]);
   }
-  // debugf("bbox: %f %f %f %f\n", top_left.x, top_left.y, bot_right.x,
-  // bot_right.y);
+  
+  
 
   float fx0 = 0;
   float fy0 = 0;
@@ -2852,7 +2918,7 @@ static void draw_quad(int nump, Texture& colortex, int layer,
     return;
   }
 
-  // SSE2 does not support unsigned comparison, so bias Z to be negative.
+  
   uint16_t z = uint16_t(0xFFFF * screen.z.x) - 0x8000;
   fragment_shader->gl_FragCoordZW.x = screen.z.x;
   fragment_shader->gl_FragCoordZW.y = w.x;
@@ -2875,12 +2941,12 @@ void VertexArray::validate() {
   for (int i = 0; i <= max_attrib; i++) {
     if (attribs[i].enabled) {
       VertexAttrib& attr = attribs[i];
-      // VertexArray &v = ctx->vertex_arrays[attr.vertex_array];
+      
       Buffer& vertex_buf = ctx->buffers[attr.vertex_buffer];
       attr.buf = vertex_buf.buf;
       attr.buf_size = vertex_buf.size;
-      // debugf("%d %x %d %d %d %d\n", i, attr.type, attr.size, attr.stride,
-      // attr.offset, attr.divisor);
+      
+      
       last_enabled = i;
     }
   }
@@ -2918,8 +2984,8 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
     return;
   }
 
-  // debugf("current_vertex_array %d\n", ctx->current_vertex_array);
-  // debugf("indices size: %d\n", indices_buf.size);
+  
+  
   VertexArray& v = ctx->vertex_arrays[ctx->current_vertex_array];
   if (ctx->validate_vertex_array) {
     ctx->validate_vertex_array = false;
@@ -2927,7 +2993,7 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
   }
 
 #ifndef NDEBUG
-  // uint64_t start = get_time_value();
+  
 #endif
 
   ctx->shaded_rows = 0;
@@ -2953,8 +3019,8 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
   if (count == 6 && indices[3] == indices[2] && indices[4] == indices[1]) {
     uint16_t quad_indices[4] = {indices[0], indices[1], indices[5], indices[2]};
     vertex_shader->load_attribs(program_impl, v.attribs, quad_indices, 0, 0, 4);
-    // debugf("emulate quad %d %d %d %d\n", indices[0], indices[1], indices[5],
-    // indices[2]);
+    
+    
     draw_quad(4, colortex, fb.layer, depthtex);
     for (GLsizei instance = 1; instance < instancecount; instance++) {
       vertex_shader->load_attribs(program_impl, v.attribs, nullptr, 0, instance,
@@ -2967,8 +3033,8 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
         for (GLsizei i = 0; i + 4 <= count; i += 4) {
           vertex_shader->load_attribs(program_impl, v.attribs, indices, i,
                                       instance, 4);
-          // debugf("native quad %d %d %d %d\n", indices[i], indices[i+1],
-          // indices[i+2], indices[i+3]);
+          
+          
           draw_quad(4, colortex, fb.layer, depthtex);
         }
       else
@@ -2979,15 +3045,15 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
                                         indices[i + 5], indices[i + 2]};
             vertex_shader->load_attribs(program_impl, v.attribs, quad_indices,
                                         0, instance, 4);
-            // debugf("emulate quad %d %d %d %d\n", indices[i], indices[i+1],
-            // indices[i+5], indices[i+2]);
+            
+            
             draw_quad(4, colortex, fb.layer, depthtex);
             i += 3;
           } else {
             vertex_shader->load_attribs(program_impl, v.attribs, indices, i,
                                         instance, 3);
-            // debugf("triangle %d %d %d %d\n", indices[i], indices[i+1],
-            // indices[i+2]);
+            
+            
             draw_quad(3, colortex, fb.layer, depthtex);
           }
         }
@@ -3004,12 +3070,12 @@ void DrawElementsInstanced(GLenum mode, GLsizei count, GLenum type,
   }
 
 #ifndef NDEBUG
-  // uint64_t end = get_time_value();
-  // debugf("draw(%d): %fms for %d pixels in %d rows (avg %f pixels/row, %f
-  // ns/pixel)\n", instancecount, double(end - start)/(1000.*1000.),
-  // ctx->shaded_pixels, ctx->shaded_rows,
-  // double(ctx->shaded_pixels)/ctx->shaded_rows, double(end -
-  // start)/max(ctx->shaded_pixels, 1));
+  
+  
+  
+  
+  
+  
 #endif
 }
 
@@ -3117,4 +3183,4 @@ void Composite(GLuint srcId, GLint srcX, GLint srcY, GLsizei srcWidth,
   }
 }
 
-}  // extern "C"
+}  
