@@ -213,10 +213,7 @@ class UrlbarResult {
           url = BrowserUtils.trimURL(url);
         }
       }
-      payloadInfo.displayUrl[0] = Services.textToSubURI.unEscapeURIForUI(
-        "UTF-8",
-        url
-      );
+      payloadInfo.displayUrl[0] = Services.textToSubURI.unEscapeURIForUI(url);
     }
 
     

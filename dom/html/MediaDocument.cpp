@@ -258,15 +258,12 @@ void MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel) {
   url->GetFileName(fileName);
   if (fileName.IsEmpty()) return;
 
-  nsAutoCString docCharset;
   
   
   
   
   
-  if (mCharacterSetSource != kCharsetUninitialized) {
-    mCharacterSet->Name(docCharset);
-  } else {
+  if (mCharacterSetSource == kCharsetUninitialized) {
     
     SetDocumentCharacterSet(UTF_8_ENCODING);
   }
@@ -276,7 +273,7 @@ void MediaDocument::GetFileName(nsAString& aResult, nsIChannel* aChannel) {
       do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv)) {
     
-    textToSubURI->UnEscapeURIForUI(docCharset, fileName, aResult);
+    textToSubURI->UnEscapeURIForUI(fileName, aResult);
   } else {
     CopyUTF8toUTF16(fileName, aResult);
   }

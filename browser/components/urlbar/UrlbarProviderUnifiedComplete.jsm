@@ -223,10 +223,7 @@ function makeUrlbarResult(tokens, info) {
         if (!title) {
           
           
-          title = Services.textToSubURI.unEscapeURIForUI(
-            "UTF-8",
-            action.params.url
-          );
+          title = Services.textToSubURI.unEscapeURIForUI(action.params.url);
         } else if (tokens && tokens.length > 1) {
           title = UrlbarUtils.strings.formatStringFromName(
             "bookmarkKeywordSearch",

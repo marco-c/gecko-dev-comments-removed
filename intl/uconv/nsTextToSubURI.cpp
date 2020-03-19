@@ -101,8 +101,7 @@ nsresult nsTextToSubURI::convertURItoUnicode(const nsCString& aCharset,
   return encoding->DecodeWithoutBOMHandlingAndWithoutReplacement(aURI, aOut);
 }
 
-NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aCharset,
-                                               const nsACString& aURIFragment,
+NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aURIFragment,
                                                nsAString& _retval) {
   nsAutoCString unescapedSpec;
   
@@ -112,7 +111,7 @@ NS_IMETHODIMP nsTextToSubURI::UnEscapeURIForUI(const nsACString& aCharset,
   
   
   
-  if (convertURItoUnicode(PromiseFlatCString(aCharset), unescapedSpec,
+  if (convertURItoUnicode(NS_LITERAL_CSTRING("UTF-8"), unescapedSpec,
                           _retval) != NS_OK) {
     
     CopyUTF8toUTF16(aURIFragment, _retval);

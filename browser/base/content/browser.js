@@ -5018,7 +5018,7 @@ var XULBrowserWindow = {
 
   setOverLink(url) {
     if (url) {
-      url = Services.textToSubURI.unEscapeURIForUI("UTF-8", url);
+      url = Services.textToSubURI.unEscapeURIForUI(url);
 
       
       

@@ -661,7 +661,6 @@ function Search(
   this._originalSearchString = searchString;
   this._trimmedOriginalSearchString = searchString.trim();
   let unescapedSearchString = Services.textToSubURI.unEscapeURIForUI(
-    "UTF-8",
     this._trimmedOriginalSearchString
   );
   let [prefix, suffix] = stripPrefix(unescapedSearchString);
@@ -2050,10 +2049,7 @@ Search.prototype = {
     
     
     let escapedURL = uri.displaySpec;
-    let displayURL = Services.textToSubURI.unEscapeURIForUI(
-      "UTF-8",
-      escapedURL
-    );
+    let displayURL = Services.textToSubURI.unEscapeURIForUI(escapedURL);
 
     let value = makeActionUrl("visiturl", {
       url: escapedURL,
