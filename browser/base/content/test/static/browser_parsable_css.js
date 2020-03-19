@@ -89,19 +89,6 @@ if (
   });
 }
 
-if (
-  !Services.prefs.getBoolPref(
-    "layout.css.line-height-moz-block-height.content.enabled"
-  )
-) {
-  
-  whitelist.push({
-    sourceName: /(?:res|gre-resources)\/forms\.css$/i,
-    errorMessage: /Error in parsing value for \u2018line-height\u2019/iu,
-    isFromDevTools: false,
-  });
-}
-
 if (!Services.prefs.getBoolPref("layout.css.scrollbar-width.enabled")) {
   whitelist.push({
     sourceName: /(?:res|gre-resources)\/forms\.css$/i,
