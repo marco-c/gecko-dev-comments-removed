@@ -101,8 +101,6 @@ namespace {
 
 NS_DEFINE_IID(kIDBPrivateRequestIID, PRIVATE_IDBREQUEST_IID);
 
-const uint32_t kDeleteTimeoutMs = 1000;
-
 
 
 
