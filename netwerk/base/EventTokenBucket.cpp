@@ -216,7 +216,7 @@ nsresult EventTokenBucket::SubmitEvent(ATokenBucketEvent* event,
   
   
 
-  NS_ADDREF(*cancelable = cancelEvent.get());
+  *cancelable = do_AddRef(cancelEvent).take();
 
   if (mPaused || !TryImmediateDispatch(cancelEvent.get())) {
     

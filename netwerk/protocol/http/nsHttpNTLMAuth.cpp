@@ -217,9 +217,8 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
       if (!*sessionState) {
         
         
-        *sessionState = new nsNTLMSessionState();
-        if (!*sessionState) return NS_ERROR_OUT_OF_MEMORY;
-        NS_ADDREF(*sessionState);
+        RefPtr<nsNTLMSessionState> state = new nsNTLMSessionState();
+        state.forget(sessionState);
       }
 
       
