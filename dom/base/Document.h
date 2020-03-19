@@ -490,6 +490,10 @@ class Document : public nsINode,
   typedef dom::ReferrerPolicy ReferrerPolicyEnum;
 
   
+  
+  void* operator new(size_t aSize) { return ::operator new(aSize); }
+
+  
 
 
   static void Shutdown();
