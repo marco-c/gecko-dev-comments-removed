@@ -251,7 +251,8 @@ class AsyncPanZoomController {
 
   bool AdvanceAnimations(const TimeStamp& aSampleTime);
 
-  bool UpdateAnimation(const TimeStamp& aSampleTime,
+  bool UpdateAnimation(const RecursiveMutexAutoLock& aProofOfLock,
+                       const TimeStamp& aSampleTime,
                        nsTArray<RefPtr<Runnable>>* aOutDeferredTasks);
 
   
@@ -1195,7 +1196,8 @@ class AsyncPanZoomController {
 
 
 
-  bool SampleCompositedAsyncTransform();
+  bool SampleCompositedAsyncTransform(
+      const RecursiveMutexAutoLock& aProofOfLock);
 
   
 
@@ -1241,14 +1243,15 @@ class AsyncPanZoomController {
 
 
 
-  void ApplyAsyncTestAttributes();
+  void ApplyAsyncTestAttributes(const RecursiveMutexAutoLock& aProofOfLock);
 
   
 
 
 
 
-  void UnapplyAsyncTestAttributes(const FrameMetrics& aPrevFrameMetrics);
+  void UnapplyAsyncTestAttributes(const RecursiveMutexAutoLock& aProofOfLock,
+                                  const FrameMetrics& aPrevFrameMetrics);
 
   
 
