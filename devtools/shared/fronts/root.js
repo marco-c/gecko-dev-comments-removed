@@ -171,28 +171,23 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
   
   async listAllWorkerTargets() {
     
-    
-    const parentWorkerListPromise = this.listWorkers();
+    let { workers } = await this.listWorkers();
 
     
     const processes = await this.listProcesses();
-    const processWorkers = await Promise.all(
-      processes.map(async processDescriptorFront => {
-        
-        if (processDescriptorFront.isParent) {
-          return [];
-        }
-        const front = await processDescriptorFront.getTarget();
-        if (!front) {
-          return [];
-        }
+    for (const processDescriptorFront of processes) {
+      
+      if (processDescriptorFront.isParent) {
+        continue;
+      }
+      const front = await processDescriptorFront.getTarget();
+      if (front) {
         const response = await front.listWorkers();
-        return response.workers;
-      })
-    );
+        workers = workers.concat(response.workers);
+      }
+    }
 
-    const { workers } = await parentWorkerListPromise;
-    return workers.concat(processWorkers.flat());
+    return workers;
   }
 
   
