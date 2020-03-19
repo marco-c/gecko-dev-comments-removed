@@ -7778,7 +7778,8 @@ already_AddRefed<DocumentFragment> Document::CreateDocumentFragment() const {
 
 already_AddRefed<dom::Comment> Document::CreateComment(
     const nsAString& aData) const {
-  RefPtr<dom::Comment> comment = new dom::Comment(mNodeInfoManager);
+  RefPtr<dom::Comment> comment =
+      new (mNodeInfoManager) dom::Comment(mNodeInfoManager);
 
   
   comment->SetText(aData, false);
