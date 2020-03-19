@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set sw=2 ts=8 et tw=80 ft=c: */
 
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 include protocol PHttpChannel;
 include protocol PFTPChannel;
@@ -27,9 +27,9 @@ using refcounted class nsDOMNavigationTiming from "nsDOMNavigationTiming.h";
 namespace mozilla {
 namespace net {
 
-//-----------------------------------------------------------------------------
-// CookieJarSettings IPDL structs
-//-----------------------------------------------------------------------------
+
+
+
 
 struct CookiePermissionData
 {
@@ -39,15 +39,15 @@ struct CookiePermissionData
 
 struct CookieJarSettingsArgs
 {
-  // Copy of the cookie behavior and permissions for the top-level document.
+  
   uint32_t cookieBehavior;
   CookiePermissionData[] cookiePermissions;
   bool isFixed;
 };
 
-//-----------------------------------------------------------------------------
-// Preferrer alternative data type
-//-----------------------------------------------------------------------------
+
+
+
 
 struct PreferredAlternativeDataTypeParams
 {
@@ -56,9 +56,9 @@ struct PreferredAlternativeDataTypeParams
   bool deliverAltData;
 };
 
-//-----------------------------------------------------------------------------
-// LoadInfo IPDL structs
-//-----------------------------------------------------------------------------
+
+
+
 
 struct RedirectHistoryEntryInfo
 {
@@ -104,34 +104,34 @@ struct LoadInfoArgs
   RedirectHistoryEntryInfo[]  redirectChainIncludingInternalRedirects;
   RedirectHistoryEntryInfo[]  redirectChain;
 
-  /**
-   * Ancestor data for use with the WebRequest API.
-   * See nsILoadInfo.idl for details.
-   */
+  
+
+
+
   PrincipalInfo[]             ancestorPrincipals;
   uint64_t[]                  ancestorOuterWindowIDs;
 
-  /**
-   * ClientInfo structure representing the window or worker that triggered
-   * this network request.  May be Nothing if its a system internal request.
-   */
+  
+
+
+
   IPCClientInfo?              clientInfo;
 
-  /**
-   * Non-subresource requests will result in the creation of a window or
-   * worker client.  The reserved and initial ClientInfo values represent
-   * this resulting client.  An initial ClientInfo represents an initial
-   * about:blank window that will be re-used while a reserved ClientInfo
-   * represents a to-be-newly-created window/worker.
-   */
+  
+
+
+
+
+
+
   IPCClientInfo?              reservedClientInfo;
   IPCClientInfo?              initialClientInfo;
 
-  /**
-   * Subresource loads may have a controller set based on their owning
-   * window/worker client.  We must send this across IPC to support
-   * performing interception in the parent.
-   */
+  
+
+
+
+
   IPCServiceWorkerDescriptor? controller;
 
   nsCString[]                 corsUnsafeHeaders;
@@ -150,41 +150,41 @@ struct LoadInfoArgs
   CSPInfo?                    cspToInheritInfo;
 };
 
-/**
- * This structure is used to carry selected properties of a LoadInfo
- * object to child processes to merge LoadInfo changes from the parent
- * process.  We don't want to use LoadInfoArgs for that since it's
- * too huge and we only care about small subpart of properties anyway.
- */
+
+
+
+
+
+
 struct ParentLoadInfoForwarderArgs
 {
-  // WebExtextensions' WebRequest API allows extensions to intercept and
-  // redirect a channel to a data URI. This modifications happens in
-  // the parent and needs to be mirrored to the child so that security
-  // checks can pass.
+  
+  
+  
+  
   bool allowInsecureRedirectToDataURI;
 
-  // WebExtextensions WebRequest API allows extentions to redirect a channel
-  // Before the CORS-preflight was fetched, which can lead into unexpeced CORS blocks.
-  // We can set this to skip the Cors Checks for the old Channel.
+  
+  
+  
   bool bypassCORSChecks;
 
-  // The ServiceWorker controller that may be set in the parent when
-  // interception occurs.
+  
+  
   IPCServiceWorkerDescriptor? controller;
 
-  // The service worker may synthesize a Response with a particular
-  // tainting value.
+  
+  
   uint32_t tainting;
 
 
-  // This flag is used for any browsing context where we should not sniff
-  // the content type. E.g if an iframe has the XCTO nosniff header, then
-  // that flag is set to true so we skip content sniffing for that browsing
+  
+  
+  
   bool skipContentSniffing;
 
-  // We must also note that the tainting value was explicitly set
-  // by the service worker.
+  
+  
   bool serviceWorkerTaintingSynthesized;
 
   bool documentHasUserInteracted;
@@ -195,35 +195,35 @@ struct ParentLoadInfoForwarderArgs
 
   uint32_t requestBlockingReason;
 
-  // IMPORTANT: when you add new properites here you must also update
-  // LoadInfoToParentLoadInfoForwarder and MergeParentLoadInfoForwarder
-  // in BackgroundUtils.cpp/.h!
+  
+  
+  
 };
 
-/**
- * This structure is used to carry selected properties of a LoadInfo
- * object to the parent process that might have changed in the child
- * during a redirect.  We don't want to use LoadInfoArgs for that since
- * it's too huge and we only care about small subpart of properties
- * anyway.
- */
+
+
+
+
+
+
+
 struct ChildLoadInfoForwarderArgs
 {
-  // The reserved and initial ClientInfo values may change during a
-  // redirect if the new channel is cross-origin to the old channel.
+  
+  
   IPCClientInfo? reservedClientInfo;
   IPCClientInfo? initialClientInfo;
 
-  // The ServiceWorker controller may be cleared in the child during
-  // a redirect.
+  
+  
   IPCServiceWorkerDescriptor? controller;
 
   uint32_t requestBlockingReason;
 };
 
-//-----------------------------------------------------------------------------
-// HTTP IPDL structs
-//-----------------------------------------------------------------------------
+
+
+
 
 struct CorsPreflightArgs
 {
@@ -233,9 +233,9 @@ struct CorsPreflightArgs
 struct HttpChannelOpenArgs
 {
   URIParams                   uri;
-  // - TODO: bug 571161: unclear if any HTTP channel clients ever
-  // set originalURI != uri (about:credits?); also not clear if
-  // chrome channel would ever need to know.  Get rid of next arg?
+  
+  
+  
   URIParams?                  original;
   URIParams?                  doc;
   nsIReferrerInfo             referrerInfo;
@@ -299,8 +299,8 @@ struct HttpChannelConnectArgs
 
 union HttpChannelCreationArgs
 {
-  HttpChannelOpenArgs;      // For AsyncOpen: the common case.
-  HttpChannelConnectArgs;   // Used for redirected-to channels
+  HttpChannelOpenArgs;      
+  HttpChannelConnectArgs;   
 };
 
 struct ProxyInfoCloneArgs
@@ -328,7 +328,7 @@ struct HttpConnectionInfoCloneArgs
   nsCString routedHost;
   int32_t routedPort;
   bool anonymous;
-  bool aPrivate; // use prefix to avoid code generation error
+  bool aPrivate; 
   bool insecureScheme;
   bool noSpdy;
   bool beConservative;
@@ -354,9 +354,9 @@ struct ConsoleReportCollected {
   nsString[] stringParams;
 };
 
-//-----------------------------------------------------------------------------
-// FTP IPDL structs
-//-----------------------------------------------------------------------------
+
+
+
 
 struct FTPChannelOpenArgs
 {
@@ -375,8 +375,8 @@ struct FTPChannelConnectArgs
 
 union FTPChannelCreationArgs
 {
-  FTPChannelOpenArgs;      // For AsyncOpen: the common case.
-  FTPChannelConnectArgs;   // Used for redirected-to channels
+  FTPChannelOpenArgs;      
+  FTPChannelConnectArgs;   
 };
 
 struct HttpChannelDiverterArgs
@@ -485,9 +485,9 @@ struct ResourceTimingStructArgs {
   uint64_t encodedBodySize;
   nsCString protocolVersion;
 
-  // Not actually part of resource timing, but not part of the transaction
-  // timings either. These need to be passed to HttpChannelChild along with
-  // the rest of the timings so the timing information in the child is complete.
+  
+  
+  
   TimeStamp cacheReadStart;
   TimeStamp cacheReadEnd;
 };
@@ -512,5 +512,12 @@ struct TransactionObserverResult
   nsresult closeReason;
 };
 
-} // namespace net
-} // namespace mozilla
+struct SpeculativeConnectionOverriderArgs {
+  uint32_t parallelSpeculativeConnectLimit;
+  bool ignoreIdle;
+  bool isFromPredictor;
+  bool allow1918;
+};
+
+} 
+} 
