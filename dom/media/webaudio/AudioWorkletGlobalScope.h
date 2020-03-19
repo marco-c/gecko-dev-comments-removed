@@ -49,7 +49,7 @@ class AudioWorkletGlobalScope final : public WorkletGlobalScope {
   
   
   MOZ_CAN_RUN_SCRIPT
-  bool ConstructProcessor(const nsAString& aName,
+  bool ConstructProcessor(JSContext* aCx, const nsAString& aName,
                           NotNull<StructuredCloneHolder*> aSerializedOptions,
                           UniqueMessagePortId& aPortIdentifier,
                           JS::MutableHandle<JSObject*> aRetProcessor);
