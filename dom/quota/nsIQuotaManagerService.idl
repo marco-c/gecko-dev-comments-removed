@@ -18,10 +18,16 @@ interface nsIQuotaManagerService : nsISupports
   
 
 
+
+
+
   [must_use] nsIQuotaRequest
   storageInitialized();
 
   
+
+
+
 
 
   [must_use] nsIQuotaRequest
