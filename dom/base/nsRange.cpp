@@ -930,32 +930,33 @@ static int32_t IndexOf(nsINode* aChild) {
   return parent ? parent->ComputeIndexOf(aChild) : -1;
 }
 
-void nsRange::SetSelection(mozilla::dom::Selection* aSelection) {
-  if (mSelection == aSelection) {
+void nsRange::RegisterSelection(Selection& aSelection) {
+  
+  MOZ_ASSERT(!mSelection);
+
+  if (mSelection == &aSelection) {
     return;
   }
 
   
-  
-  
-  
-  MOZ_ASSERT(!aSelection || !mSelection);
-
-  
-  
-  RefPtr<nsRange> range{this};
-  if (aSelection && mSelection) {
-    RefPtr<Selection> selection{mSelection};
+  if (mSelection) {
+    const RefPtr<nsRange> range{this};
+    const RefPtr<Selection> selection{mSelection};
     selection->RemoveRangeAndUnselectFramesAndNotifyListeners(*range,
                                                               IgnoreErrors());
   }
 
-  mSelection = aSelection;
-  if (mSelection) {
-    nsINode* commonAncestor = GetClosestCommonInclusiveAncestor();
-    NS_ASSERTION(commonAncestor, "unexpected disconnected nodes");
-    RegisterClosestCommonInclusiveAncestor(commonAncestor);
-  } else if (mRegisteredClosestCommonInclusiveAncestor) {
+  mSelection = &aSelection;
+
+  nsINode* commonAncestor = GetClosestCommonInclusiveAncestor();
+  MOZ_ASSERT(commonAncestor, "unexpected disconnected nodes");
+  RegisterClosestCommonInclusiveAncestor(commonAncestor);
+}
+
+void nsRange::UnregisterSelection() {
+  mSelection = nullptr;
+
+  if (mRegisteredClosestCommonInclusiveAncestor) {
     UnregisterClosestCommonInclusiveAncestor(
         mRegisteredClosestCommonInclusiveAncestor, false);
     MOZ_DIAGNOSTIC_ASSERT(

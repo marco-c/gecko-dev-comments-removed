@@ -98,11 +98,10 @@ class nsRange final : public mozilla::dom::AbstractRange,
   bool IsInSelection() const { return !!mSelection; }
 
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void RegisterSelection(
+      mozilla::dom::Selection& aSelection);
 
-
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SetSelection(
-      mozilla::dom::Selection* aSelection);
+  void UnregisterSelection();
 
   
 
