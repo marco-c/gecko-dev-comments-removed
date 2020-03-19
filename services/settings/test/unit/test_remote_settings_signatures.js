@@ -625,14 +625,13 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   
   
-  const kintoCol = await client.openCollection();
-  await kintoCol.clear();
-  await kintoCol.create(
+  await client.db.clear();
+  await client.db.create(
     { ...RECORD2, last_modified: 1234567890, serialNumber: "abc" },
     { synced: true, useRecordId: true }
   );
   const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
-  await kintoCol.create({ id: localId }, { synced: true, useRecordId: true });
+  await client.db.create({ id: localId }, { synced: true, useRecordId: true });
 
   let syncData = null;
   client.on("sync", ({ data }) => {

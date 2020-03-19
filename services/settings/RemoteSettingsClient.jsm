@@ -12,6 +12,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  CommonUtils: "resource://services-common/utils.js",
   ClientEnvironmentBase:
     "resource://gre/modules/components-utils/ClientEnvironment.jsm",
   Downloader: "resource://services-settings/Attachments.jsm",
@@ -188,6 +189,87 @@ class AttachmentDownloader extends Downloader {
   }
 }
 
+
+
+
+
+
+class Database {
+  constructor(identifier) {
+    this._idb = new Kinto.adapters.IDB(identifier, {
+      dbName: DB_NAME,
+      migrateOldData: false,
+    });
+  }
+
+  async list(options) {
+    return this._idb.list(options);
+  }
+
+  async importBulk(toInsert) {
+    return this._idb.importBulk(toInsert);
+  }
+
+  async deleteAll(toDelete) {
+    return this._idb.execute(transaction => {
+      toDelete.forEach(r => {
+        transaction.delete(r.id);
+      });
+    });
+  }
+
+  async getLastModified() {
+    return this._idb.getLastModified();
+  }
+
+  async saveLastModified(remoteTimestamp) {
+    return this._idb.saveLastModified(remoteTimestamp);
+  }
+
+  async getMetadata() {
+    return this._idb.getMetadata();
+  }
+
+  async saveMetadata(metadata) {
+    return this._idb.saveMetadata(metadata);
+  }
+
+  async clear() {
+    await this._idb.clear();
+    await this._idb.saveLastModified(null);
+    await this._idb.saveMetadata(null);
+  }
+
+  async close() {
+    return this._idb.close();
+  }
+
+  
+
+
+
+  async create(record) {
+    if (!("id" in record)) {
+      record = { ...record, id: CommonUtils.generateUUID() };
+    }
+    return this._idb.execute(transaction => {
+      transaction.create(record);
+    });
+  }
+
+  async update(record) {
+    return this._idb.execute(transaction => {
+      transaction.update(record);
+    });
+  }
+
+  async delete(recordId) {
+    return this._idb.execute(transaction => {
+      transaction.delete(recordId);
+    });
+  }
+}
+
 class RemoteSettingsClient extends EventEmitter {
   static get NetworkOfflineError() {
     return NetworkOfflineError;
@@ -235,12 +317,11 @@ class RemoteSettingsClient extends EventEmitter {
       this.bucketNamePref
     );
 
-    XPCOMUtils.defineLazyGetter(this, "db", () => {
-      return new Kinto.adapters.IDB(this.identifier, {
-        dbName: DB_NAME,
-        migrateOldData: false,
-      });
-    });
+    XPCOMUtils.defineLazyGetter(
+      this,
+      "db",
+      () => new Database(this.identifier)
+    );
 
     XPCOMUtils.defineLazyGetter(
       this,
@@ -290,19 +371,10 @@ class RemoteSettingsClient extends EventEmitter {
   
 
 
-  async clear() {
-    await this.db.clear();
-    await this.db.saveLastModified(null);
-    await this.db.saveMetadata(null);
-    await this.db.close();
-  }
-
-  
-
-
   async openCollection() {
     
     
+    console.warn("RemoteSettingsClient.openCollection() is deprecated");
     const kinto = new Kinto({
       bucket: this.bucketName,
       adapter: Kinto.adapters.IDB,
@@ -822,9 +894,7 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     const toDelete = remoteRecords.filter(r => r.deleted);
-    const toInsert = remoteRecords
-      .filter(r => !r.deleted)
-      .map(r => ({ ...r, _status: "synced" }));
+    const toInsert = remoteRecords.filter(r => !r.deleted);
 
     console.debug(
       `${this.identifier} ${toDelete.length} to delete, ${toInsert.length} to insert`
@@ -835,14 +905,10 @@ class RemoteSettingsClient extends EventEmitter {
       
       
       console.debug(`${this.identifier} clear local data`);
-      await this.clear();
+      await this.db.clear();
     } else {
       
-      await this.db.execute(transaction => {
-        toDelete.forEach(r => {
-          transaction.delete(r.id);
-        });
-      });
+      await this.db.deleteAll(toDelete);
     }
     
     await this.db.importBulk(toInsert);
