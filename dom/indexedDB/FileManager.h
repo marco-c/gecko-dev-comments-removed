@@ -1,15 +1,14 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_indexeddb_filemanager_h__
 #define mozilla_dom_indexeddb_filemanager_h__
 
 #include "mozilla/dom/quota/PersistenceType.h"
 #include "FileManagerBase.h"
-#include "IndexedDatabaseManager.h"
 #include "InitializedOnce.h"
 
 class nsIFile;
@@ -19,10 +18,10 @@ namespace mozilla {
 namespace dom {
 namespace indexedDB {
 
-// Implemented in ActorsParent.cpp.
-class FileManager final
-    : public FileManagerBase<FileManager, dom::IndexedDatabaseManager> {
-  typedef mozilla::dom::quota::PersistenceType PersistenceType;
+
+class FileManager final : public FileManagerBase<FileManager> {
+  using PersistenceType = mozilla::dom::quota::PersistenceType;
+  using FileManagerBase<FileManager>::MutexType;
 
   const PersistenceType mPersistenceType;
   const nsCString mGroup;
@@ -33,6 +32,11 @@ class FileManager final
   InitializedOnce<const nsString, LazyInit::Allow> mJournalDirectoryPath;
 
   const bool mEnforcingQuota;
+
+  
+  
+  
+  static MutexType sMutex;
 
  public:
   static MOZ_MUST_USE nsCOMPtr<nsIFile> GetFileForId(nsIFile* aDirectory,
@@ -79,12 +83,14 @@ class FileManager final
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FileManager)
 
+  static StaticMutex& Mutex() { return sMutex; }
+
  private:
   ~FileManager() = default;
 };
 
-}  // namespace indexedDB
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
+}  
 
-#endif  // mozilla_dom_indexeddb_filemanager_h__
+#endif  

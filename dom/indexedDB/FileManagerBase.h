@@ -9,36 +9,31 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/StaticMutex.h"
 #include "nsDataHashtable.h"
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
+#include "FileInfoT.h"
 #include "FlippedOnce.h"
 
 namespace mozilla {
 namespace dom {
 namespace indexedDB {
 
-class FileInfo;
-
-template <typename FileManager, typename IndexedDatabaseManager>
+template <typename FileManager>
 class FileManagerBase {
  public:
-  using FileInfo = indexedDB::FileInfo;
-  using MutexType = decltype(IndexedDatabaseManager::FileMutex());
-  using AutoLock = mozilla::detail::BaseAutoLock<MutexType>;
+  using FileInfo = FileInfoT<FileManager>;
+  using MutexType = StaticMutex;
+  using AutoLock = mozilla::detail::BaseAutoLock<MutexType&>;
 
   MOZ_MUST_USE RefPtr<FileInfo> GetFileInfo(int64_t aId) const {
-    if (IndexedDatabaseManager::IsClosed()) {
-      MOZ_ASSERT(false, "Shouldn't be called after shutdown!");
-      return nullptr;
-    }
-
     
     
     
     FileInfo* fileInfo;
     {
-      AutoLock lock(IndexedDatabaseManager::FileMutex());
+      AutoLock lock(FileManager::Mutex());
       fileInfo = mFileInfos.Get(aId);
     }
 
@@ -46,18 +41,17 @@ class FileManagerBase {
   }
 
   MOZ_MUST_USE RefPtr<FileInfo> CreateFileInfo() {
-    MOZ_ASSERT(!IndexedDatabaseManager::IsClosed());
-
     
     
     
     FileInfo* fileInfo;
     {
-      AutoLock lock(IndexedDatabaseManager::FileMutex());
+      AutoLock lock(FileManager::Mutex());
 
       const int64_t id = ++mLastFileId;
 
-      fileInfo = new FileInfo(static_cast<FileManager*>(this), id);
+      fileInfo =
+          new FileInfo(FileManagerGuard{}, static_cast<FileManager*>(this), id);
 
       mFileInfos.Put(id, fileInfo);
     }
@@ -65,20 +59,15 @@ class FileManagerBase {
     return fileInfo;
   }
 
-  void RemoveFileInfo(const int64_t aId, const AutoLock& aFilesMutexLock) {
+  void RemoveFileInfo(const int64_t aId, const AutoLock& aFileMutexLock) {
 #ifdef DEBUG
-    aFilesMutexLock.AssertOwns(IndexedDatabaseManager::FileMutex());
+    aFileMutexLock.AssertOwns(FileManager::Mutex());
 #endif
     mFileInfos.Remove(aId);
   }
 
   nsresult Invalidate() {
-    if (IndexedDatabaseManager::IsClosed()) {
-      MOZ_ASSERT(false, "Shouldn't be called after shutdown!");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    AutoLock lock(IndexedDatabaseManager::FileMutex());
+    AutoLock lock(FileManager::Mutex());
 
     mInvalidated.Flip();
 
@@ -86,7 +75,7 @@ class FileManagerBase {
       FileInfo* info = iter.Data();
       MOZ_ASSERT(info);
 
-      return !info->LockedClearDBRefs();
+      return !info->LockedClearDBRefs(FileManagerGuard{});
     });
 
     return NS_OK;
