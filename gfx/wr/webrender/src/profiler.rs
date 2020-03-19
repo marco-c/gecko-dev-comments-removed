@@ -84,6 +84,10 @@ pub trait ProfilerHooks : Send + Sync {
 
     
     
+    fn event_marker(&self, label: &CStr);
+
+    
+    
     
     
     
@@ -119,6 +123,15 @@ pub fn add_text_marker(label: &CStr, text: &str, duration: Duration) {
     unsafe {
         if let Some(ref hooks) = PROFILER_HOOKS {
             hooks.add_text_marker(label, text, duration);
+        }
+    }
+}
+
+
+pub fn add_event_marker(label: &CStr) {
+    unsafe {
+        if let Some(ref hooks) = PROFILER_HOOKS {
+            hooks.event_marker(label);
         }
     }
 }
@@ -1156,7 +1169,7 @@ impl GpuFrameCollection {
             y0 = y1;
         }
 
-        // Add a legend to see which color correspond to what primitive.
+        
         const LEGEND_SIZE: f32 = 20.0;
         const PADDED_LEGEND_SIZE: f32 = 25.0;
         if !tags_present.is_empty() {
@@ -1257,8 +1270,8 @@ impl Profiler {
         }
     }
 
-    // If we have an array of "cooldown" counters, then only display profiles that
-    // are out of the ordinary and keep displaying them until the cooldown is over.
+    
+    
     fn draw_counters<T: ProfileCounter + ?Sized>(
         counters: &[&T],
         mut cooldowns: Option<&mut [i32]>,
@@ -1277,10 +1290,10 @@ impl Profiler {
         let line_height = debug_renderer.line_height();
 
         let colors = [
-            // Regular values,
+            
             ColorU::new(255, 255, 255, 255),
             ColorU::new(255, 255, 0, 255),
-            // Unexpected values,
+            
             ColorU::new(255, 80, 0, 255),
             ColorU::new(255, 0, 0, 255),
         ];
@@ -1605,8 +1618,8 @@ impl Profiler {
 
         if !gpu_samplers.is_empty() {
             let mut samplers = Vec::<PercentageProfileCounter>::new();
-            // Gathering unique GPU samplers. This has O(N^2) complexity,
-            // but we only have a few samplers per target.
+            
+            
             let mut total = 0.0;
             for sampler in gpu_samplers {
                 let value = sampler.count as f32 * screen_fraction;

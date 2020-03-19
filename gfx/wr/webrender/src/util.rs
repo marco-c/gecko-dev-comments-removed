@@ -132,16 +132,16 @@ impl ScaleOffset {
         }
     }
 
-    // Construct a ScaleOffset from a transform. Returns
-    // None if the matrix is not a pure scale / translation.
+    
+    
     pub fn from_transform<F, T>(
         m: &Transform3D<f32, F, T>,
     ) -> Option<ScaleOffset> {
 
-        // To check that we have a pure scale / translation:
-        // Every field must match an identity matrix, except:
-        //  - Any value present in tx,ty
-        //  - Any non-neg value present in sx,sy (avoid negative for reflection/rotation)
+        
+        
+        
+        
 
         if m.m11 < 0.0 ||
            m.m12.abs() > NEARLY_ZERO ||
@@ -204,9 +204,9 @@ impl ScaleOffset {
         )
     }
 
-    /// Produce a ScaleOffset that includes both self and other.
-    /// The 'self' ScaleOffset is applied after other.
-    /// This is equivalent to `Transform3D::pre_transform`.
+    
+    
+    
     pub fn accumulate(&self, other: &ScaleOffset) -> Self {
         ScaleOffset {
             scale: Vector2D::new(
@@ -285,29 +285,29 @@ impl ScaleOffset {
     }
 }
 
-// TODO: Implement these in euclid!
+
 pub trait MatrixHelpers<Src, Dst> {
-    /// A port of the preserves2dAxisAlignment function in Skia.
-    /// Defined in the SkMatrix44 class.
+    
+    
     fn preserves_2d_axis_alignment(&self) -> bool;
     fn has_perspective_component(&self) -> bool;
     fn has_2d_inverse(&self) -> bool;
-    /// Check if the matrix post-scaling on either the X or Y axes could cause geometry
-    /// transformed by this matrix to have scaling exceeding the supplied limit.
+    
+    
     fn exceeds_2d_scale(&self, limit: f64) -> bool;
     fn inverse_project(&self, target: &Point2D<f32, Dst>) -> Option<Point2D<f32, Src>>;
     fn inverse_rect_footprint(&self, rect: &Rect<f32, Dst>) -> Option<Rect<f32, Src>>;
     fn transform_kind(&self) -> TransformedRectKind;
     fn is_simple_translation(&self) -> bool;
     fn is_simple_2d_translation(&self) -> bool;
-    /// Return the determinant of the 2D part of the matrix.
+    
     fn determinant_2d(&self) -> f32;
-    /// This function returns a point in the `Src` space that projects into zero XY.
-    /// It ignores the Z coordinate and is usable for "flattened" transformations,
-    /// since they are not generally inversible.
+    
+    
+    
     fn inverse_project_2d_origin(&self) -> Option<Point2D<f32, Src>>;
-    /// Turn Z transformation into identity. This is useful when crossing "flat"
-    /// transform styled stacking contexts upon traversing the coordinate systems.
+    
+    
     fn flatten_z_output(&mut self);
 }
 
@@ -527,9 +527,9 @@ fn extract_inner_rect_impl<U>(
     radii: &BorderRadius,
     k: f32,
 ) -> Option<Rect<f32, U>> {
-    // `k` defines how much border is taken into account
-    // We enforce the offsets to be rounded to pixel boundaries
-    // by `ceil`-ing and `floor`-ing them
+    
+    
+    
 
     let xl = (k * radii.top_left.width.max(radii.bottom_left.width)).ceil();
     let xr = (rect.size.width - k * radii.top_right.width.max(radii.bottom_right.width)).floor();
@@ -547,14 +547,14 @@ fn extract_inner_rect_impl<U>(
     }
 }
 
-/// Return an aligned rectangle that is inside the clip region and doesn't intersect
-/// any of the bounding rectangles of the rounded corners.
+
+
 pub fn extract_inner_rect_safe<U>(
     rect: &Rect<f32, U>,
     radii: &BorderRadius,
 ) -> Option<Rect<f32, U>> {
-    // value of `k==1.0` is used for extraction of the corner rectangles
-    // see `SEGMENT_CORNER_*` in `clip_shared.glsl`
+    
+    
     extract_inner_rect_impl(rect, radii, 1.0)
 }
 
@@ -569,10 +569,10 @@ pub mod test {
     fn inverse_project() {
         let m0 = Transform3D::identity();
         let p0 = Point2D::new(1.0, 2.0);
-        // an identical transform doesn't need any inverse projection
+        
         assert_eq!(m0.inverse_project(&p0), Some(p0));
         let m1 = Transform3D::create_rotation(0.0, 1.0, 0.0, Angle::radians(PI / 3.0));
-        // rotation by 60 degrees would imply scaling of X component by a factor of 2
+        
         assert_eq!(m1.inverse_project(&p0), Some(Point2D::new(2.0, 2.0)));
     }
 
@@ -678,12 +678,12 @@ impl MaxRect for DeviceIntRect {
 
 impl<U> MaxRect for Rect<f32, U> {
     fn max_rect() -> Self {
-        // Having an unlimited bounding box is fine up until we try
-        // to cast it to `i32`, where we get `-2147483648` for any
-        // values larger than or equal to 2^31.
-        //
-        // Note: clamping to i32::MIN and i32::MAX is not a solution,
-        // with explanation left as an exercise for the reader.
+        
+        
+        
+        
+        
+        
         const MAX_COORD: f32 = 1.0e9;
 
         Rect::new(
@@ -693,14 +693,14 @@ impl<U> MaxRect for Rect<f32, U> {
     }
 }
 
-/// An enum that tries to avoid expensive transformation matrix calculations
-/// when possible when dealing with non-perspective axis-aligned transformations.
+
+
 #[derive(Debug, MallocSizeOf)]
 pub enum FastTransform<Src, Dst> {
-    /// A simple offset, which can be used without doing any matrix math.
+    
     Offset(Vector2D<f32, Src>),
 
-    /// A 2D transformation with an inverse.
+    
     Transform {
         transform: Transform3D<f32, Src, Dst>,
         inverse: Option<Transform3D<f32, Dst, Src>>,
@@ -756,7 +756,7 @@ impl<Src, Dst> FastTransform<Src, Dst> {
         }
     }
 
-    /// Return true if this is an identity transform
+    
     #[allow(unused)]
     pub fn is_identity(&self)-> bool {
         match *self {
@@ -837,8 +837,8 @@ impl<Src, Dst> FastTransform<Src, Dst> {
         match *self {
             FastTransform::Offset(..) => false,
             FastTransform::Transform { inverse: None, .. } => false,
-            //TODO: fix this properly by taking "det|M33| * det|M34| > 0"
-            // see https://www.w3.org/Bugs/Public/show_bug.cgi?id=23014
+            
+            
             FastTransform::Transform { inverse: Some(ref inverse), .. } => inverse.m33 < 0.0,
         }
     }
@@ -900,8 +900,8 @@ pub fn project_rect<F, T>(
         transform.transform_point2d_homogeneous(rect.bottom_right()),
     ];
 
-    // Note: we only do the full frustum collision when the polygon approaches the camera plane.
-    // Otherwise, it will be clamped to the screen bounds anyway.
+    
+    
     if homogens.iter().any(|h| h.w <= 0.0 || h.w.is_nan()) {
         let mut clipper = Clipper::new();
         let polygon = Polygon::from_rect(*rect, 1);
@@ -925,16 +925,16 @@ pub fn project_rect<F, T>(
 
         Some(Rect::from_points(results
             .into_iter()
-            // filter out parts behind the view plane
+            
             .flat_map(|poly| &poly.points)
             .map(|p| {
                 let mut homo = transform.transform_point2d_homogeneous(p.to_2d());
-                homo.w = homo.w.max(0.00000001); // avoid infinite values
+                homo.w = homo.w.max(0.00000001); 
                 homo.to_point2d().unwrap()
             })
         ))
     } else {
-        // we just checked for all the points to be in positive hemisphere, so `unwrap` is valid
+        
         Some(Rect::from_points(&[
             homogens[0].to_point2d().unwrap(),
             homogens[1].to_point2d().unwrap(),
@@ -953,47 +953,47 @@ pub fn raster_rect_to_device_pixels(
     device_rect.round_out()
 }
 
-/// Run the first callback over all elements in the array. If the callback returns true,
-/// the element is removed from the array and moved to a second callback.
-///
-/// This is a simple implementation waiting for Vec::drain_filter to be stable.
-/// When that happens, code like:
-///
-/// let filter = |op| {
-///     match *op {
-///         Enum::Foo | Enum::Bar => true,
-///         Enum::Baz => false,
-///     }
-/// };
-/// drain_filter(
-///     &mut ops,
-///     filter,
-///     |op| {
-///         match op {
-///             Enum::Foo => { foo(); }
-///             Enum::Bar => { bar(); }
-///             Enum::Baz => { unreachable!(); }
-///         }
-///     },
-/// );
-///
-/// Can be rewritten as:
-///
-/// let filter = |op| {
-///     match *op {
-///         Enum::Foo | Enum::Bar => true,
-///         Enum::Baz => false,
-///     }
-/// };
-/// for op in ops.drain_filter(filter) {
-///     match op {
-///         Enum::Foo => { foo(); }
-///         Enum::Bar => { bar(); }
-///         Enum::Baz => { unreachable!(); }
-///     }
-/// }
-///
-/// See https://doc.rust-lang.org/std/vec/struct.Vec.html#method.drain_filter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub fn drain_filter<T, Filter, Action>(
     vec: &mut Vec<T>,
     mut filter: Filter,
@@ -1020,12 +1020,12 @@ pub struct Recycler {
 }
 
 impl Recycler {
-    /// Maximum extra capacity that a recycled vector is allowed to have. If the actual capacity
-    /// is larger, we re-allocate the vector storage with lower capacity.
+    
+    
     const MAX_EXTRA_CAPACITY_PERCENT: usize = 200;
-    /// Minimum extra capacity to keep when re-allocating the vector storage.
+    
     const MIN_EXTRA_CAPACITY_PERCENT: usize = 20;
-    /// Minimum sensible vector length to consider for re-allocation.
+    
     const MIN_VECTOR_LENGTH: usize = 16;
 
     pub fn new() -> Self {
@@ -1034,16 +1034,16 @@ impl Recycler {
         }
     }
 
-    /// Clear a vector for re-use, while retaining the backing memory buffer. May shrink the buffer
-    /// if it's currently much larger than was actually used.
+    
+    
     pub fn recycle_vec<T>(&mut self, vec: &mut Vec<T>) {
         let extra_capacity = (vec.capacity() - vec.len()) * 100 / vec.len().max(Self::MIN_VECTOR_LENGTH);
 
         if extra_capacity > Self::MAX_EXTRA_CAPACITY_PERCENT {
-            // Reduce capacity of the buffer if it is a lot larger than it needs to be. This prevents
-            // a frame with exceptionally large allocations to cause subsequent frames to retain
-            // more memory than they need.
-            //TODO: use `shrink_to` when it's stable
+            
+            
+            
+            
             *vec = Vec::with_capacity(vec.len() + vec.len() * Self::MIN_EXTRA_CAPACITY_PERCENT / 100);
             self.num_allocations += 1;
         } else {
@@ -1052,18 +1052,18 @@ impl Recycler {
     }
 }
 
-/// Arc wrapper to support measurement via MallocSizeOf.
-///
-/// Memory reporting for Arcs is tricky because of the risk of double-counting.
-/// One way to measure them is to keep a table of pointers that have already been
-/// traversed. The other way is to use knowledge of the program structure to
-/// identify which Arc instances should be measured and which should be skipped to
-/// avoid double-counting.
-///
-/// This struct implements the second approach. It identifies the "main" pointer
-/// to the Arc-ed resource, and measures the buffer as if it were an owned pointer.
-/// The programmer should ensure that there is at most one PrimaryArc for a given
-/// underlying ArcInner.
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
@@ -1178,3 +1178,13 @@ pub fn round_up_to_multiple(val: usize, mul: NonZeroUsize) -> usize {
     }
 }
 
+
+#[macro_export]
+macro_rules! c_str {
+    ($lit:expr) => {
+        unsafe {
+            std::ffi::CStr::from_ptr(concat!($lit, "\0").as_ptr()
+                                     as *const std::os::raw::c_char)
+        }
+    }
+}
