@@ -42,7 +42,6 @@ var openInspector = async function(hostType) {
     await inspector.once("inspector-updated");
   }
 
-  await registerTestActor(toolbox.target.client);
   const testActor = await getTestActor(toolbox);
 
   return { toolbox, inspector, testActor };

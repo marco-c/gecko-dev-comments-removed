@@ -4,51 +4,9 @@
 "use strict";
 
 (function(exports) {
-  const CC = Components.Constructor;
-
   const { require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  const { fetch } = require("devtools/shared/DevToolsUtils");
-
-  const TEST_URL_ROOT =
-    "chrome://mochitests/content/browser/devtools/client/shared/test/";
-  const ACTOR_URL = TEST_URL_ROOT + "test-actor.js";
-
-  
-  exports.registerTestActor = async function(client) {
-    
-    const registryFront = await client.mainRoot.getFront("actorRegistry");
-
-    
-    const options = {
-      type: { target: true },
-      constructor: "TestActor",
-      prefix: "testActor",
-    };
-    const testActorFront = await registryFront.registerActor(
-      ACTOR_URL,
-      options
-    );
-    return testActorFront;
-  };
-
-  
-  const loadFront = async function() {
-    const sourceText = await request(ACTOR_URL);
-    const principal = CC("@mozilla.org/systemprincipal;1", "nsIPrincipal")();
-    const sandbox = Cu.Sandbox(principal);
-    sandbox.exports = {};
-    sandbox.require = require;
-    Cu.evalInSandbox(sourceText, sandbox, "1.8", ACTOR_URL, 1);
-    return sandbox.exports;
-  };
-
-  
-  
-  const getUpdatedForm = function(client, tab) {
-    return client.mainRoot.getTab({ tab: tab }).then(front => front.targetForm);
-  };
 
   
   exports.getTestActor = async function(toolbox) {
@@ -77,33 +35,21 @@
     
     await client.mainRoot.getTab({ tab });
 
-    
-    await exports.registerTestActor(client);
-
     return getTestActor(client, tab);
-  };
-
-  
-  const request = function(uri) {
-    return fetch(uri).then(({ content }) => content);
   };
 
   const getTestActor = async function(client, tab, toolbox = null) {
     
     
-    const form = await getUpdatedForm(client, tab);
-    const { TestActorFront } = await loadFront();
+    const targetFront = await client.mainRoot.getTab({ tab });
+    const testActorFront = await targetFront.getFront("test");
 
     let highlighter;
     if (toolbox) {
       highlighter = (await toolbox.target.getFront("inspector")).highlighter;
+      testActorFront.setHighlighter(highlighter);
     }
 
-    const front = new TestActorFront(client, highlighter);
-    
-    
-    front.actorID = form.testActor;
-    front.manage(front);
-    return front;
+    return testActorFront;
   };
 })(this);

@@ -131,6 +131,14 @@ var DevToolsServer = {
 
     this._initialized = true;
     this._onSocketListenerAccepted = this._onSocketListenerAccepted.bind(this);
+
+    if (!isWorker) {
+      
+      
+      
+      const subject = { wrappedJSObject: ActorRegistry };
+      Services.obs.notifyObservers(subject, "devtools-server-initialized");
+    }
   },
 
   get protocol() {
