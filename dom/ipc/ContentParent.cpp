@@ -633,10 +633,6 @@ static const char* sObserverTopics[] = {
     NS_NETWORK_LINK_TYPE_TOPIC,
 };
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-bool ContentParent::sEarlySandboxInit = false;
-#endif
-
 
 
  RefPtr<ContentParent::LaunchPromise>
@@ -2110,11 +2106,8 @@ bool ContentParent::BeginSubprocessLaunch(bool aIsSync,
   }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  bool sandboxEnabled = IsContentSandboxEnabled();
-  if (sandboxEnabled && sEarlySandboxInit) {
+  if (IsContentSandboxEnabled()) {
     AppendSandboxParams(extraArgs);
-  }
-  if (sandboxEnabled) {
     mSubprocess->DisableOSActivityMode();
   }
 #endif
@@ -2293,17 +2286,6 @@ ContentParent::ContentParent(ContentParent* aOpener,
   NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
   bool isFile = mRemoteType.EqualsLiteral(FILE_REMOTE_TYPE);
   mSubprocess = new GeckoChildProcessHost(GeckoProcessType_Content, isFile);
-
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-  
-  
-  
-  
-  if (!ContentParent::sEarlySandboxInit) {
-    ContentParent::sEarlySandboxInit =
-        Preferences::GetBool("security.sandbox.content.mac.earlyinit");
-  }
-#endif
 }
 
 ContentParent::~ContentParent() {

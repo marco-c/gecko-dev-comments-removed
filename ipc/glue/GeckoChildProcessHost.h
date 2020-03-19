@@ -154,11 +154,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
-  
-  
-  static bool StaticFillMacSandboxInfo(MacSandboxInfo& aInfo);
-
-  
   static bool StartMacSandbox(int aArgc, char** aArgv,
                               std::string& aErrorMessage);
 

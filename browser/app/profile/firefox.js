@@ -1050,10 +1050,6 @@ pref("dom.ipc.shims.enabledWarnings", false);
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
   
-  pref("security.sandbox.content.mac.earlyinit", true);
-
-  
-  
   
   
   
