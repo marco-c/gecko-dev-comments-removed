@@ -13,22 +13,7 @@ const { ASRouter } = ChromeUtils.import(
 
 const HOMEPAGE_OVERRIDE_PREF = "browser.startup.homepage_override.once";
 
-async function clearTestSetup() {
-  
-  const previousMessageCount = ASRouter.state.messages.length;
-  await BrowserTestUtils.waitForCondition(async () => {
-    await ASRouter.loadMessagesFromAllProviders();
-    return ASRouter.state.messages.length < previousMessageCount;
-  }, "ASRouter messages should have been removed");
-  await SpecialPowers.popPrefEnv();
-  
-  await ASRouter._updateMessageProviders();
-  
-  Services.prefs.clearUserPref(HOMEPAGE_OVERRIDE_PREF);
-}
-
 add_task(async function test_with_rs_messages() {
-  registerCleanupFunction(clearTestSetup);
   
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -43,15 +28,15 @@ add_task(async function test_with_rs_messages() {
   );
   const initialMessageCount = ASRouter.state.messages.length;
   const client = RemoteSettings("cfr");
-  const collection = await client.openCollection();
-  await collection.clear();
-  await collection.create(
+  await client.db.clear();
+  await client.db.create({
     
     
-    { ...msg, id: `MOMENTS_MOCHITEST_${Date.now()}`, targeting: "true" },
-    { useRecordId: true }
-  );
-  await collection.db.saveLastModified(42); 
+    ...msg,
+    id: `MOMENTS_MOCHITEST_${Date.now()}`,
+    targeting: "true",
+  });
+  await client.db.saveLastModified(42); 
 
   
   await ASRouter._updateMessageProviders();
@@ -75,7 +60,7 @@ add_task(async function test_with_rs_messages() {
 
   
   msg.content.action.data.url = "https://www.mozilla.org/#mochitest";
-  await collection.create(
+  await client.db.create(
     
     {
       ...msg,
@@ -112,5 +97,14 @@ add_task(async function test_with_rs_messages() {
     "Correct value set for higher priority message"
   );
 
-  await collection.clear();
+  await client.db.clear();
+  
+  const previousMessageCount = ASRouter.state.messages.length;
+  await BrowserTestUtils.waitForCondition(async () => {
+    await ASRouter.loadMessagesFromAllProviders();
+    return ASRouter.state.messages.length < previousMessageCount;
+  }, "ASRouter messages should have been removed");
+  await SpecialPowers.popPrefEnv();
+  
+  await ASRouter._updateMessageProviders();
 });

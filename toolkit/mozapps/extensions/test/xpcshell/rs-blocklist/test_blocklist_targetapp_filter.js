@@ -13,16 +13,14 @@ let client;
 
 async function clear_state() {
   
-  const collection = await client.openCollection();
-  await collection.clear();
+  await client.db.clear();
 }
 
 async function createRecords(records) {
-  const collection = await client.openCollection();
   for (const record of records) {
-    await collection.create(record);
+    await client.db.create(record);
   }
-  collection.db.saveLastModified(42); 
+  client.db.saveLastModified(42); 
 }
 
 function run_test() {

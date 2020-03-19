@@ -295,9 +295,9 @@ let JSONBlocklistWrapper = {
         }
       }
       await blocklistObj.ensureInitialized();
-      let collection = await blocklistObj._client.openCollection();
-      await collection.clear();
-      await collection.loadDump(newData);
+      let db = await blocklistObj._client.db;
+      await db.clear();
+      await db.importBulk(newData);
       
       
       await blocklistObj._onUpdate();

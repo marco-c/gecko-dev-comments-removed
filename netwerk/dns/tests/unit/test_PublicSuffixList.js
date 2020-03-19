@@ -87,16 +87,12 @@ const resetMockDownload = () => {
 add_task(async () => {
   info("File path sent when record is in DB.");
 
-  const collection = await CLIENT.openCollection();
-  await collection.clear(); 
-  await collection.create(
-    {
-      id: "tld-dafsa",
-      "commit-hash": "fake-commit-hash",
-      attachment: {},
-    },
-    { synced: true }
-  );
+  await CLIENT.db.clear(); 
+  await CLIENT.db.create({
+    id: "tld-dafsa",
+    "commit-hash": "fake-commit-hash",
+    attachment: {},
+  });
 
   mockDownload();
 
@@ -109,7 +105,7 @@ add_task(async () => {
     mockedFilePath,
     "File path sent when record is in DB."
   );
-  await collection.clear(); 
+  await CLIENT.db.clear(); 
   resetMockDownload();
 });
 

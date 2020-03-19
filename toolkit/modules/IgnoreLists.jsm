@@ -81,9 +81,8 @@ class IgnoreListsManager {
         firstTime
       ) {
         
-        const collection = await this._ignoreListSettings.openCollection();
-        await collection.clear();
-        await collection.db.close();
+        await this._ignoreListSettings.db.clear();
+        await this._ignoreListSettings.db.close();
         
         return this._getIgnoreListSettings(false);
       }

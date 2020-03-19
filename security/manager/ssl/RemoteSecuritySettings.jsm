@@ -424,22 +424,11 @@ class IntermediatePreloads {
         }
       );
     });
-    let col;
-    try {
-      col = await this.client.openCollection();
-    } catch (err) {
-      log.warn(`Unable to open intermediate preloading collection: ${err}`);
-      
-      Services.telemetry
-        .getHistogramById(INTERMEDIATES_ERRORS_TELEMETRY)
-        .add("emptyAttachment");
-      return;
-    }
     
     if (!hasPriorCertData) {
       let current;
       try {
-        current = (await col.list({ order: "" })).data; 
+        current = await this.client.db.list();
       } catch (err) {
         log.warn(`Unable to list intermediate preloading collection: ${err}`);
         
@@ -450,11 +439,9 @@ class IntermediatePreloads {
       }
       const toReset = current.filter(record => record.cert_import_complete);
       try {
-        await col.db.execute(transaction => {
-          toReset.forEach(record => {
-            transaction.update({ ...record, cert_import_complete: false });
-          });
-        });
+        await this.client.db.importBulk(
+          toReset.map(r => ({ ...r, cert_import_complete: false }))
+        );
       } catch (err) {
         log.warn(`Unable to update intermediate preloading collection: ${err}`);
         
@@ -466,7 +453,7 @@ class IntermediatePreloads {
     }
     let current;
     try {
-      current = (await col.list({ order: "" })).data; 
+      current = await this.client.db.list();
     } catch (err) {
       log.warn(`Unable to list intermediate preloading collection: ${err}`);
       
@@ -519,11 +506,9 @@ class IntermediatePreloads {
       return;
     }
     try {
-      await col.db.execute(transaction => {
-        recordsToUpdate.forEach(record => {
-          transaction.update({ ...record, cert_import_complete: true });
-        });
-      });
+      await this.client.db.importBulk(
+        recordsToUpdate.map(r => ({ ...r, cert_import_complete: true }))
+      );
     } catch (err) {
       log.warn(`Unable to update intermediate preloading collection: ${err}`);
       
@@ -535,7 +520,7 @@ class IntermediatePreloads {
 
     let finalCurrent;
     try {
-      finalCurrent = (await col.list({ order: "" })).data; 
+      finalCurrent = await this.client.db.list();
     } catch (err) {
       log.warn(`Unable to list intermediate preloading collection: ${err}`);
       
@@ -780,8 +765,7 @@ class CRLiteFilters {
       );
       return;
     }
-    let col = await this.client.openCollection();
-    let { data: current } = await col.list();
+    let current = await this.client.db.list();
     let fullFilters = current.filter(filter => !filter.incremental);
     if (fullFilters.length < 1) {
       log.debug("no full CRLite filters to download?");
