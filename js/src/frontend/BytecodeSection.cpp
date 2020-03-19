@@ -13,8 +13,9 @@
 #include "frontend/SharedContext.h"  
 #include "frontend/Stencil.h"        
 #include "vm/BytecodeUtil.h"         
-#include "vm/JSContext.h"            
-#include "vm/RegExpObject.h"         
+#include "vm/GlobalObject.h"
+#include "vm/JSContext.h"     
+#include "vm/RegExpObject.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -41,6 +42,16 @@ void GCThingList::finishInnerFunctions() {
     funbox->finish();
     funbox = funbox->emitLink_;
   }
+}
+
+AbstractScopePtr GCThingList::getScope(size_t index) const {
+  auto& elem = vector[index].get();
+  if (elem.is<JS::GCCellPtr>()) {
+    return AbstractScopePtr(&elem.as<JS::GCCellPtr>().as<Scope>());
+  } else if (elem.is<EmptyGlobalScopeType>()) {
+    return AbstractScopePtr(&compilationInfo.cx->global()->emptyGlobalScope());
+  }
+  return AbstractScopePtr(compilationInfo, elem.as<ScopeIndex>());
 }
 
 bool js::frontend::EmitScriptThingsVector(JSContext* cx,
@@ -110,6 +121,12 @@ bool js::frontend::EmitScriptThingsVector(JSContext* cx,
       
       MOZ_ASSERT(!data.is<FunctionCreationData>());
       output[i] = JS::GCCellPtr(data.as<JSFunction*>());
+      return true;
+    }
+
+    bool operator()(const EmptyGlobalScopeType& emptyGlobalScope) {
+      Scope* scope = &cx->global()->emptyGlobalScope();
+      output[i] = JS::GCCellPtr(scope);
       return true;
     }
   };

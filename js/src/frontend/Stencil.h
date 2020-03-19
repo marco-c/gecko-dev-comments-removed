@@ -441,12 +441,15 @@ class ScopeCreationData {
   }
 };
 
+class EmptyGlobalScopeType {};
+
 
 
 
 using ScriptThingVariant =
     mozilla::Variant<JS::GCCellPtr, BigIntIndex, ObjLiteralCreationData,
-                     RegExpIndex, ScopeIndex, FunctionIndex>;
+                     RegExpIndex, ScopeIndex, FunctionIndex,
+                     EmptyGlobalScopeType>;
 
 
 using ScriptThingsVector = GCVector<ScriptThingVariant>;
@@ -518,5 +521,9 @@ struct GCPolicy<js::frontend::TypedIndex<T>>
 template <>
 struct GCPolicy<js::frontend::FunctionIndex>
     : JS::IgnoreGCPolicy<js::frontend::FunctionIndex> {};
+
+template <>
+struct GCPolicy<js::frontend::EmptyGlobalScopeType>
+    : JS::IgnoreGCPolicy<js::frontend::EmptyGlobalScopeType> {};
 }  
 #endif 
