@@ -406,7 +406,7 @@ nsresult nsCopySupport::GetTransferableForNode(
   
   
   
-  RefPtr<Selection> selection = new Selection(nullptr);
+  RefPtr<Selection> selection = new Selection(SelectionType::eNormal, nullptr);
   RefPtr<nsRange> range = nsRange::Create(aNode);
   ErrorResult result;
   range->SelectNode(*aNode, result);

@@ -1378,7 +1378,7 @@ nsHTMLCopyEncoder::SetSelection(Selection* aSelection) {
   
   
   
-  mEncodingScope.mSelection = new Selection(nullptr);
+  mEncodingScope.mSelection = new Selection(SelectionType::eNormal, nullptr);
 
   
   for (uint32_t rangeIdx = 0; rangeIdx < rangeCount; ++rangeIdx) {
