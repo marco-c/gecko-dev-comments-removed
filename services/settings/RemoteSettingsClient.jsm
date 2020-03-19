@@ -180,9 +180,8 @@ class AttachmentDownloader extends Downloader {
 
 
   async deleteAll() {
-    const kintoCol = await this._client.openCollection();
-    const allRecords = await kintoCol.db.list();
-    await kintoCol.db.close();
+    const allRecords = await this._client.db.list();
+    await this._client.db.close();
     return Promise.all(
       allRecords.filter(r => !!r.attachment).map(r => this.delete(r))
     );
@@ -236,16 +235,12 @@ class RemoteSettingsClient extends EventEmitter {
       this.bucketNamePref
     );
 
-    XPCOMUtils.defineLazyGetter(
-      this,
-      "_kinto",
-      () =>
-        new Kinto({
-          bucket: this.bucketName,
-          adapter: Kinto.adapters.IDB,
-          adapterOptions: { dbName: DB_NAME, migrateOldData: false },
-        })
-    );
+    XPCOMUtils.defineLazyGetter(this, "db", () => {
+      return new Kinto.adapters.IDB(this.identifier, {
+        dbName: DB_NAME,
+        migrateOldData: false,
+      });
+    });
 
     XPCOMUtils.defineLazyGetter(
       this,
@@ -280,9 +275,8 @@ class RemoteSettingsClient extends EventEmitter {
   async getLastModified() {
     let timestamp = -1;
     try {
-      const kintoCollection = await this.openCollection();
-      timestamp = await kintoCollection.db.getLastModified();
-      await kintoCollection.db.close();
+      timestamp = await this.db.getLastModified();
+      await this.db.close();
     } catch (err) {
       console.warn(
         `Error retrieving the getLastModified timestamp from ${this.identifier} RemoteSettingClient`,
@@ -296,12 +290,29 @@ class RemoteSettingsClient extends EventEmitter {
   
 
 
+  async clear() {
+    await this.db.clear();
+    await this.db.saveLastModified(null);
+    await this.db.saveMetadata(null);
+    await this.db.close();
+  }
+
+  
+
+
   async openCollection() {
+    
+    
+    const kinto = new Kinto({
+      bucket: this.bucketName,
+      adapter: Kinto.adapters.IDB,
+      adapterOptions: { dbName: DB_NAME, migrateOldData: false },
+    });
     const options = {
       localFields: this.localFields,
       bucket: this.bucketName,
     };
-    return this._kinto.collection(this.collectionName, options);
+    return kinto.collection(this.collectionName, options);
   }
 
   
@@ -347,8 +358,7 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     
-    const kintoCollection = await this.openCollection();
-    const data = await kintoCollection.db.list({ filters, order });
+    const data = await this.db.list({ filters, order });
 
     if (verifySignature) {
       console.debug(
@@ -356,24 +366,24 @@ class RemoteSettingsClient extends EventEmitter {
       );
       const allData = ObjectUtils.isEmpty(filters)
         ? data
-        : await kintoCollection.db.list();
+        : await this.db.list();
       const localRecords = allData.map(r => this._cleanLocalFields(r));
-      const timestamp = await kintoCollection.db.getLastModified();
-      let metadata = await kintoCollection.db.getMetadata();
+      const timestamp = await this.db.getLastModified();
+      let metadata = await this.db.getMetadata();
       if (syncIfEmpty && ObjectUtils.isEmpty(metadata)) {
         
         console.debug(
           `Required metadata for ${this.identifier}, fetching from server.`
         );
         metadata = await this.httpClient().getData();
-        await kintoCollection.db.saveMetadata(metadata);
+        await this.db.saveMetadata(metadata);
       }
       await this._validateCollectionSignature([], timestamp, metadata, {
         localRecords,
       });
     }
 
-    await kintoCollection.db.close();
+    await this.db.close();
 
     
     return this._filterEntries(data);
@@ -436,7 +446,6 @@ class RemoteSettingsClient extends EventEmitter {
     const startedAt = new Date();
     let reportStatus = null;
     let thrownError = null;
-    let kintoCollection = null;
     try {
       
       if (Utils.isOffline) {
@@ -444,9 +453,8 @@ class RemoteSettingsClient extends EventEmitter {
       }
 
       
-      kintoCollection = await this.openCollection();
-      let collectionLastModified = await kintoCollection.db.getLastModified();
-      const allData = await kintoCollection.db.list();
+      let collectionLastModified = await this.db.getLastModified();
+      const allData = await this.db.list();
       let localRecords = allData.map(r => this._cleanLocalFields(r));
 
       
@@ -461,12 +469,10 @@ class RemoteSettingsClient extends EventEmitter {
             console.debug(
               `${this.identifier} ${imported} records loaded from JSON dump`
             );
-            ({ data: importedFromDump } = await kintoCollection.list({
-              order: "",
-            }));
+            importedFromDump = await this.db.list();
           }
-          collectionLastModified = await kintoCollection.db.getLastModified();
-          const afterDump = await kintoCollection.db.list();
+          collectionLastModified = await this.db.getLastModified();
+          const afterDump = await this.db.list();
           localRecords = afterDump.map(r => this._cleanLocalFields(r));
         } catch (e) {
           
@@ -485,13 +491,13 @@ class RemoteSettingsClient extends EventEmitter {
           
           if (
             this.verifySignature &&
-            ObjectUtils.isEmpty(await kintoCollection.db.getMetadata())
+            ObjectUtils.isEmpty(await this.db.getMetadata())
           ) {
             console.debug(`${this.identifier} pull collection metadata`);
             const metadata = await this.httpClient().getData({
               query: { _expected: expectedTimestamp },
             });
-            await kintoCollection.db.saveMetadata(metadata);
+            await this.db.saveMetadata(metadata);
             
             
             if (this.verifySignature && importedFromDump.length == 0) {
@@ -522,11 +528,10 @@ class RemoteSettingsClient extends EventEmitter {
           
           
           const startSyncDB = Cu.now() * 1000;
-          syncResult = await this._importChanges(
-            kintoCollection,
-            expectedTimestamp,
-            { localTimestamp: collectionLastModified, localRecords }
-          );
+          syncResult = await this._importChanges(expectedTimestamp, {
+            localTimestamp: collectionLastModified,
+            localRecords,
+          });
           if (gTimingEnabled) {
             const endSyncDB = Cu.now() * 1000;
             PerformanceCounters.storeExecutionTime(
@@ -566,15 +571,11 @@ class RemoteSettingsClient extends EventEmitter {
             console.warn(
               `Signature verified failed for ${this.identifier}. Retry from scratch`
             );
-            syncResult = await this._importChanges(
-              kintoCollection,
-              expectedTimestamp,
-              {
-                clear: true,
-                localTimestamp: collectionLastModified,
-                localRecords,
-              }
-            );
+            syncResult = await this._importChanges(expectedTimestamp, {
+              clear: true,
+              localTimestamp: collectionLastModified,
+              localRecords,
+            });
           } catch (e) {
             
             
@@ -591,10 +592,7 @@ class RemoteSettingsClient extends EventEmitter {
         }
       }
       
-      const filteredSyncResult = await this._filterSyncResult(
-        kintoCollection,
-        syncResult
-      );
+      const filteredSyncResult = await this._filterSyncResult(syncResult);
       
       if (filteredSyncResult) {
         try {
@@ -624,9 +622,7 @@ class RemoteSettingsClient extends EventEmitter {
       }
       throw e;
     } finally {
-      if (kintoCollection) {
-        await kintoCollection.db.close();
-      }
+      await this.db.close();
       const durationMilliseconds = new Date() - startedAt;
       
       if (reportStatus === null) {
@@ -794,8 +790,7 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
-  async _importChanges(kintoCollection, expectedTimestamp, options = {}) {
+  async _importChanges(expectedTimestamp, options = {}) {
     const { clear = false, localRecords, localTimestamp } = options;
 
     
@@ -840,21 +835,19 @@ class RemoteSettingsClient extends EventEmitter {
       
       
       console.debug(`${this.identifier} clear local data`);
-      await kintoCollection.db.clear();
-      await kintoCollection.db.saveLastModified(null);
-      await kintoCollection.db.saveMetadata(null);
+      await this.clear();
     } else {
       
-      await kintoCollection.db.execute(transaction => {
+      await this.db.execute(transaction => {
         toDelete.forEach(r => {
           transaction.delete(r.id);
         });
       });
     }
     
-    await kintoCollection.db.importBulk(toInsert);
-    await kintoCollection.db.saveLastModified(remoteTimestamp);
-    await kintoCollection.db.saveMetadata(metadata);
+    await this.db.importBulk(toInsert);
+    await this.db.saveLastModified(remoteTimestamp);
+    await this.db.saveMetadata(metadata);
     if (gTimingEnabled) {
       const end = Cu.now() * 1000;
       PerformanceCounters.storeExecutionTime(
@@ -866,7 +859,7 @@ class RemoteSettingsClient extends EventEmitter {
     }
 
     
-    const newLocal = await kintoCollection.db.list();
+    const newLocal = await this.db.list();
     let newRecords = newLocal.map(r => this._cleanLocalFields(r));
 
     
@@ -913,8 +906,7 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
-  async _filterSyncResult(kintoCollection, syncResult) {
+  async _filterSyncResult(syncResult) {
     
     
     const {
@@ -937,7 +929,7 @@ class RemoteSettingsClient extends EventEmitter {
       return null;
     }
     
-    const allData = await kintoCollection.db.list();
+    const allData = await this.db.list();
     const current = await this._filterEntries(allData);
     return { created, updated, deleted, current };
   }
