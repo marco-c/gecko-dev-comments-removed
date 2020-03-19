@@ -16,6 +16,18 @@ add_task(async function test() {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });
 
+  info(
+    `updatechannel: ${UpdateUtils.getUpdateChannel(false)}; platform: ${
+      AppConstants.platform
+    }`
+  );
+  if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
+    ok(
+      true,
+      `skipping test since oskeystore cannot be automated in this environment`
+    );
+  }
+
   
   let osAuthDialogShown = OSKeyStoreTestUtils.waitForOSKeyStoreLogin(false);
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
