@@ -16,6 +16,7 @@ function run_test() {
 function test_component(contractid) {
 
   
+  info("Testing " + contractid);
   var o = Cc[contractid].createInstance(Ci["nsIXPCTestParams"]);
 
   
@@ -228,4 +229,9 @@ function test_component(contractid) {
   ret = o.testOptionalSequence([1, 2, 3]);
   Assert.ok(Array.isArray(ret));
   Assert.equal(ret.length, 3);
+
+  o.testOmittedOptionalOut();
+  ret = {};
+  o.testOmittedOptionalOut(ret);
+  Assert.equal(ret.value.spec, "http://example.com/")
 }

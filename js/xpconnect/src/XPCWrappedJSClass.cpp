@@ -559,6 +559,11 @@ void nsXPCWrappedJS::CleanupOutparams(const nsXPTMethodInfo* info,
     MOZ_ASSERT(param.IsIndirect(), "Outparams are always indirect");
 
     
+    if (param.IsOptional() && !nativeParams[i].val.p) {
+      continue;
+    }
+
+    
     
     
     
@@ -891,7 +896,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
     RootedValue val(cx, NullValue());
 
     
-    if (param.IsOut() && !nativeParams[i].val.p) {
+    if (param.IsOut() && !nativeParams[i].val.p && !param.IsOptional()) {
       retval = NS_ERROR_INVALID_ARG;
       goto pre_call_clean_up;
     }
@@ -996,7 +1001,7 @@ pre_call_clean_up:
   for (i = 0; i < paramCount; i++) {
     const nsXPTParamInfo& param = info->GetParam(i);
     MOZ_ASSERT(!param.IsShared(), "[shared] implies [noscript]!");
-    if (!param.IsOut()) {
+    if (!param.IsOut() || !nativeParams[i].val.p) {
       continue;
     }
 
