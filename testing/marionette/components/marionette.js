@@ -337,10 +337,6 @@ class MarionetteParentProcess {
         Services.obs.addObserver(this, "command-line-startup");
         Services.obs.addObserver(this, "toplevel-window-ready");
         Services.obs.addObserver(this, "marionette-startup-requested");
-
-        for (let [pref, value] of EnvironmentPrefs.from(ENV_PRESERVE_PREFS)) {
-          Preferences.set(pref, value);
-        }
         break;
 
       
@@ -354,10 +350,18 @@ class MarionetteParentProcess {
           this.enabled = true;
         }
 
-        
-        
-        if (this.enabled && Services.appinfo.inSafeMode) {
-          Services.obs.addObserver(this, "domwindowopened");
+        if (this.enabled) {
+          
+          
+          for (let [pref, value] of EnvironmentPrefs.from(ENV_PRESERVE_PREFS)) {
+            Preferences.set(pref, value);
+          }
+
+          
+          
+          if (Services.appinfo.inSafeMode) {
+            Services.obs.addObserver(this, "domwindowopened");
+          }
         }
 
         break;
