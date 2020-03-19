@@ -2610,18 +2610,13 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
     
     
     
-
     
-    nsCOMPtr<nsPIDOMWindowOuter> active(mActiveWindow);
+
     nsCOMPtr<nsPIDOMWindowOuter> window(aWindow);
     RefPtr<nsFocusManager> self(this);
     NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "nsFocusManager::RaiseWindow", [self, active, window]() -> void {
-          if (active) {
-            self->WindowLowered(active);
-          }
-          self->WindowRaised(window);
-        }));
+        "nsFocusManager::RaiseWindow",
+        [self, window]() -> void { self->WindowRaised(window); }));
     return;
   }
 
