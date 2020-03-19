@@ -336,8 +336,7 @@ bool AudioWorkletGlobalScope::ConstructProcessor(
       CallbackFunction::eReportExceptions);
   
   mPortForProcessor = nullptr;
-  if (rv.Failed()) {
-    rv.SuppressException();  
+  if (rv.MaybeSetPendingException(aCx)) {
     return false;
   }
   JS::Rooted<JS::Value> processorVal(aCx);
