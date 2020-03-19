@@ -54,6 +54,8 @@ class Client {
     return LS;
   }
 
+  static bool IsValidType(Type aType);
+
   static bool TypeToText(Type aType, nsAString& aText, const fallible_t&);
 
   static void TypeToText(Type aType, nsAString& aText);
@@ -127,7 +129,7 @@ class Client {
   virtual void ShutdownWorkThreads() = 0;
 
  protected:
-  virtual ~Client() {}
+  virtual ~Client() = default;
 };
 
 END_QUOTA_NAMESPACE
