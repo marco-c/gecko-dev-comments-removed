@@ -17,7 +17,6 @@ const TEST_URI = `data:text/html;charset=utf8,
 
 
 add_task(async function() {
-  await pushPref("devtools.webconsole.input.eagerEvaluation", true);
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm, toolbox } = hud;
   const { autocompletePopup } = jsterm;

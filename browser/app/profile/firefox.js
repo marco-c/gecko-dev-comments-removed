@@ -2147,11 +2147,7 @@ pref("devtools.webconsole.input.context", false);
 
 
 
-#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
-  pref("devtools.webconsole.input.eagerEvaluation", true);
-#else
-  pref("devtools.webconsole.input.eagerEvaluation", false);
-#endif
+pref("devtools.webconsole.input.eagerEvaluation", true);
 
 
 pref("devtools.browserconsole.filter.error", true);

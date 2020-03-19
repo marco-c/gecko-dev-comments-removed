@@ -23,7 +23,6 @@ const EAGER_EVALUATION_PREF = "devtools.webconsole.input.eagerEvaluation";
 
 
 add_task(async function() {
-  await pushPref(EAGER_EVALUATION_PREF, true);
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
@@ -228,7 +227,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await pushPref(EAGER_EVALUATION_PREF, true);
   const hud = await openNewTabAndConsole(TEST_URI);
   const { jsterm } = hud;
 
@@ -281,12 +279,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  
-  if (!AppConstants.NIGHTLY_BUILD) {
-    ok(true);
-    return;
-  }
-
   
   await pushPref(EAGER_EVALUATION_PREF, false);
   const hud = await openNewTabAndConsole(TEST_URI);
