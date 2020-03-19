@@ -30,8 +30,8 @@
 
 #if defined(MOZ_LINKER)
 #  include "AutoObjectMapper.h"
-#  include "Linker.h"  
-#elif defined(GP_OS_linux) || defined(GP_OS_android)
+#endif
+#if defined(GP_OS_linux) || defined(GP_OS_android)
 #  include <link.h>  
 #else
 #  error "Unexpected configuration"
