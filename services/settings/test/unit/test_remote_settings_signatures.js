@@ -658,7 +658,24 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   
   
+  
 
+  const RESPONSE_ONLY_RECORD4 = {
+    comment: "Delete RECORD3, create RECORD4",
+    sampleHeaders: [
+      "Content-Type: application/json; charset=UTF-8",
+      'ETag: "6000"',
+    ],
+    status: { status: 200, statusText: "OK" },
+    responseBody: JSON.stringify({
+      data: [
+        {
+          id: "f765df30-b2f1-42f6-9803-7bd5a07b5098",
+          last_modified: 6000,
+        },
+      ],
+    }),
+  };
   const allBadSigResponses = {
     
     "GET:/v1/buckets/main/collections/signed?_expected=6000": [
@@ -671,9 +688,8 @@ add_task(async function test_check_synchronization_with_signatures() {
       RESPONSE_EMPTY_NO_UPDATE,
     ],
     
-    
     "GET:/v1/buckets/main/collections/signed/records?_expected=6000&_sort=-last_modified": [
-      RESPONSE_COMPLETE_INITIAL,
+      RESPONSE_ONLY_RECORD4,
     ],
   };
 
@@ -683,13 +699,47 @@ add_task(async function test_check_synchronization_with_signatures() {
     await client.maybeSync(6000);
     do_throw("Sync should fail (the signature is intentionally bad)");
   } catch (e) {
-    equal((await client.get()).length, 2);
+    ok(true, "Sync failed as expected (bad signature after retry)");
   }
 
   
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   expectedIncrements = { [UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR]: 1 };
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
+
+  
+  
+  ok(
+    arrayEqual(
+      (await client.get()).map(r => r.id),
+      [RECORD3.id, RECORD2.id]
+    ),
+    "Remote changes were not changed"
+  );
+  
+  await client.get({ verifySignature: true }); 
+
+  
+  
+  
+  
+  
+  
+
+  await client.db.create({
+    id: "c6b19c67-2e0e-4a82-b7f7-1777b05f3e81",
+    last_modified: 42,
+    tampered: true,
+  });
+
+  try {
+    await client.maybeSync(6000);
+    do_throw("Sync should fail (the signature is intentionally bad)");
+  } catch (e) {
+    ok(true, "Sync failed as expected (bad signature after retry)");
+  }
+  
+  equal((await client.get()).length, 0, "Local database is now empty.");
 
   
   
@@ -719,13 +769,16 @@ add_task(async function test_check_synchronization_with_signatures() {
     ],
   };
 
+  
+  equal((await client.get()).length, 0);
+
   startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   registerHandlers(missingSigResponses);
   try {
     await client.maybeSync(6000);
     do_throw("Sync should fail (the signature is missing)");
   } catch (e) {
-    equal((await client.get()).length, 2);
+    equal((await client.get()).length, 0, "Local remains empty");
   }
 
   

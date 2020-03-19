@@ -427,6 +427,7 @@ class RemoteSettingsClient extends EventEmitter {
       const allData = await this.db.list();
       
       let localRecords = allData.map(r => this._cleanLocalFields(r));
+      const localMetadata = await this.db.getMetadata();
 
       
       
@@ -461,10 +462,7 @@ class RemoteSettingsClient extends EventEmitter {
 
           
           
-          if (
-            this.verifySignature &&
-            ObjectUtils.isEmpty(await this.db.getMetadata())
-          ) {
+          if (this.verifySignature && ObjectUtils.isEmpty(localMetadata)) {
             console.debug(`${this.identifier} pull collection metadata`);
             const metadata = await this.httpClient().getData({
               query: { _expected: expectedTimestamp },
@@ -502,6 +500,7 @@ class RemoteSettingsClient extends EventEmitter {
           syncResult = await this._importChanges(
             localRecords,
             collectionLastModified,
+            localMetadata,
             expectedTimestamp
           );
           if (gTimingEnabled) {
@@ -546,8 +545,9 @@ class RemoteSettingsClient extends EventEmitter {
             syncResult = await this._importChanges(
               localRecords,
               collectionLastModified,
+              localMetadata,
               expectedTimestamp,
-              { clear: true }
+              { retry: true }
             );
           } catch (e) {
             
@@ -763,10 +763,11 @@ class RemoteSettingsClient extends EventEmitter {
   async _importChanges(
     localRecords,
     localTimestamp,
+    localMetadata,
     expectedTimestamp,
     options = {}
   ) {
-    const { clear = false } = options;
+    const { retry = false } = options;
 
     
     const client = this.httpClient();
@@ -782,7 +783,7 @@ class RemoteSettingsClient extends EventEmitter {
       filters: {
         _expected: expectedTimestamp,
       },
-      since: clear || !localTimestamp ? undefined : `${localTimestamp}`,
+      since: retry || !localTimestamp ? undefined : `${localTimestamp}`,
     });
 
     
@@ -809,15 +810,8 @@ class RemoteSettingsClient extends EventEmitter {
     );
 
     const start = Cu.now() * 1000;
-    if (clear) {
-      
-      
-      console.debug(`${this.identifier} clear local data`);
-      await this.db.clear();
-    } else {
-      
-      await this.db.deleteBulk(toDelete);
-    }
+    
+    await this.db.deleteBulk(toDelete);
     
     await this.db.importBulk(toInsert);
     await this.db.saveLastModified(remoteTimestamp);
@@ -834,14 +828,45 @@ class RemoteSettingsClient extends EventEmitter {
 
     
     const newLocal = await this.db.list();
-    let newRecords = newLocal.map(r => this._cleanLocalFields(r));
+    const newRecords = newLocal.map(r => this._cleanLocalFields(r));
     
     if (this.verifySignature) {
-      await this._validateCollectionSignature(
-        newRecords,
-        remoteTimestamp,
-        metadata
-      );
+      try {
+        await this._validateCollectionSignature(
+          newRecords,
+          remoteTimestamp,
+          metadata
+        );
+      } catch (e) {
+        
+        console.debug(`${this.identifier} clear local data`);
+        await this.db.clear();
+
+        
+        
+        if (retry) {
+          try {
+            
+            await this._validateCollectionSignature(
+              localRecords,
+              localTimestamp,
+              localMetadata
+            );
+            
+            await this.db.importBulk(localRecords);
+            await this.db.saveLastModified(localTimestamp);
+            await this.db.saveMetadata(localMetadata);
+          } catch (_) {
+            
+            if (
+              await Utils.hasLocalDump(this.bucketName, this.collectionName)
+            ) {
+              await this._importJSONDump();
+            }
+          }
+        }
+        throw e;
+      }
     } else {
       console.warn(`${this.identifier} has signature disabled`);
     }
