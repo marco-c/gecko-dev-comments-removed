@@ -1,9 +1,9 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#
-# This module needs to stay Python 2 and 3 compatible
-#
+
+
+
+
+
+
 from __future__ import absolute_import
 from __future__ import print_function
 
@@ -26,7 +26,7 @@ import mozlog
 from condprof import progress
 
 
-TASK_CLUSTER = "TASKCLUSTER_WORKER_TYPE" in os.environ.keys()
+TASK_CLUSTER = "TASK_ID" in os.environ.keys()
 DOWNLOAD_TIMEOUT = 30
 
 
@@ -59,7 +59,7 @@ class BridgeLogger:
         self.logger = logger
 
     def _find(self, text, *names):
-        # structlog's ConsoleRenderer pads values
+        
         for name in names:
             if name + " " * STRUCTLOG_PAD_SIZE in text:
                 return True
@@ -71,7 +71,7 @@ class BridgeLogger:
     def info(self, message, *args, **kw):
         if not isinstance(message, str):
             message = str(message)
-        # converting Arsenic request/response struct log
+        
         if self._find(message, "request", "response"):
             self.logger.debug(self._convert(message), *args, **kw)
         else:
@@ -95,10 +95,10 @@ def get_logger():
     if new_logger is None:
         new_logger = mozlog.unstructured.getLogger("condprof")
 
-    # wrap the logger into the BridgeLogger
+    
     new_logger = BridgeLogger(new_logger)
 
-    # bridge for Arsenic
+    
     if sys.version_info.major == 3:
         try:
             from arsenic import connection
@@ -106,20 +106,20 @@ def get_logger():
 
             connection.log = wrap_logger(new_logger)
         except ImportError:
-            # Arsenic is not installed for client-only usage
+            
             pass
     logger = new_logger
     return logger
 
 
-# initializing the logger right away
+
 get_logger()
 
 
 def fresh_profile(profile, customization_data):
-    from mozprofile import create_profile  # NOQA
+    from mozprofile import create_profile  
 
-    # XXX on android we mgiht need to run it on the device?
+    
     logger.info("Creating a fresh profile")
     new_profile = create_profile(app="firefox")
     prefs = customization_data["prefs"]
@@ -168,17 +168,21 @@ def check_exists(archive, server=None):
     if server is not None:
         archive = server + "/" + archive
     try:
-        resp = requests.head(archive)
+        logger.info("Getting headers at %s" % archive)
+        resp = requests.head(archive, timeout=DOWNLOAD_TIMEOUT)
     except ConnectionError:
         return False, {}
 
     if resp.status_code in (302, 303):
+        logger.info("Redirected")
         return check_exists(resp.headers["Location"])
 
-    # see Bug 1574854
+    
     if resp.status_code == 200 and "text/html" in resp.headers["Content-Type"]:
+        logger.info("Got an html page back")
         exists = False
     else:
+        logger.info("Response code is %d" % resp.status_code)
         exists = resp.status_code
 
     return exists, resp.headers
@@ -195,15 +199,15 @@ def download_file(url, target=None):
         target = url.split("/")[-1]
 
     if os.path.exists(target):
-        # XXX for now, reusing downloads without checking them
-        # when we don't have an .etag file
+        
+        
         if etag is None or not os.path.exists(target + ".etag"):
             return target
         with open(target + ".etag") as f:
             current_etag = f.read()
         if etag == current_etag:
             logger.info("Already Downloaded.")
-            # should at least check the size?
+            
             return target
         else:
             logger.info("Changed!")
@@ -261,17 +265,17 @@ def extract_from_dmg(dmg, target):
 def latest_nightly(binary=None):
 
     if binary is None:
-        # we want to use the latest nightly
+        
         nightly_archive = get_firefox_download_link()
         logger.info("Downloading %s" % nightly_archive)
         target = download_file(nightly_archive)
-        # on macOs we just mount the DMG
-        # XXX replace with extract_from_dmg
+        
+        
         if platform.system() == "Darwin":
             cmd = "hdiutil attach -mountpoint /Volumes/Nightly %s"
             os.system(cmd % target)
             binary = "/Volumes/Nightly/Firefox Nightly.app/Contents/MacOS/firefox"
-        # on linux we unpack it
+        
         elif platform.system() == "Linux":
             cmd = "bunzip2 %s" % target
             os.system(cmd)
@@ -285,14 +289,14 @@ def latest_nightly(binary=None):
     try:
         yield binary
     finally:
-        # XXX replace with extract_from_dmg
+        
         if mounted:
             if platform.system() == "Darwin":
                 logger.info("Unmounting Firefox")
                 time.sleep(10)
                 os.system("hdiutil detach /Volumes/Nightly")
             elif platform.system() == "Linux":
-                # XXX we should keep it for next time
+                
                 shutil.rmtree("firefox")
 
 
@@ -385,7 +389,7 @@ _DEFAULT_SERVER = "https://firefox-ci-tc.services.mozilla.com"
 
 
 def get_tc_secret():
-    if "TASK_ID" not in os.environ:
+    if not TASK_CLUSTER:
         raise OSError("Not running in Taskcluster")
     session = requests.Session()
     retry = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
@@ -397,7 +401,7 @@ def get_tc_secret():
         "%2F",
         os.environ.get("MOZ_SCM_LEVEL", "1"),
     )
-    res = session.get(secrets_url)
+    res = session.get(secrets_url, timeout=DOWNLOAD_TIMEOUT)
     res.raise_for_status()
     return res.json()["secret"]
 
@@ -406,6 +410,8 @@ _CACHED = {}
 
 
 def obfuscate(text):
+    if "CONDPROF_RUNNER" not in os.environ:
+        return True, text
     username, password = get_credentials()
     if username is None:
         return False, text
@@ -417,6 +423,8 @@ def obfuscate(text):
 
 
 def obfuscate_file(path):
+    if "CONDPROF_RUNNER" not in os.environ:
+        return
     with open(path) as f:
         data = f.read()
     hit, data = obfuscate(data)
@@ -432,12 +440,9 @@ def get_credentials():
     password = os.environ.get("FXA_PASSWORD")
     username = os.environ.get("FXA_USERNAME")
     if username is None or password is None:
-        if "TASK_ID" not in os.environ:
+        if not TASK_CLUSTER:
             return None, None
-        try:
-            secret = get_tc_secret()
-        except Exception:
-            return None, None
+        secret = get_tc_secret()
         password = secret["password"]
         username = secret["username"]
     _CACHED["creds"] = username, password
