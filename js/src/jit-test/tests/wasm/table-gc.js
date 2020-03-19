@@ -15,7 +15,7 @@ var callee = i => `(func $f${i} (type $v2i) (i32.const ${i}))`;
 
 
 resetFinalizeCount();
-var i = wasmEvalText(`(module (table 2 funcref) (export "tbl" table) (elem (i32.const 0) $f0) ${callee(0)} ${caller})`);
+var i = wasmEvalText(`(module (table 2 funcref) (export "tbl" (table 0)) (elem (i32.const 0) $f0) ${callee(0)} ${caller})`);
 var e = i.exports;
 var t = e.tbl;
 var f = t.get(0);
@@ -53,7 +53,7 @@ assertEq(finalizeCount(), 3);
 
 
 resetFinalizeCount();
-var i = wasmEvalText(`(module (table 1 funcref) (export "tbl" table) (elem (i32.const 0) $f0) ${callee(0)} ${caller})`);
+var i = wasmEvalText(`(module (table 1 funcref) (export "tbl" (table 0)) (elem (i32.const 0) $f0) ${callee(0)} ${caller})`);
 var e = i.exports;
 var t = e.tbl;
 var f = t.get(0);
@@ -78,7 +78,7 @@ assertEq(finalizeCount(), 3);
 
 
 resetFinalizeCount();
-var i = wasmEvalText(`(module (table 2 funcref) (export "tbl" table) ${caller})`);
+var i = wasmEvalText(`(module (table 2 funcref) (export "tbl" (table 0)) ${caller})`);
 var e = i.exports;
 var t = e.tbl;
 i.edge = makeFinalizeObserver();
