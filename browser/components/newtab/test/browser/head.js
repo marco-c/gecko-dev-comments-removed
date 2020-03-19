@@ -11,6 +11,10 @@ ChromeUtils.defineModuleGetter(
   "resource://activity-stream/lib/ASRouterTargeting.jsm"
 );
 
+
+
+const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+
 function popPrefs() {
   return SpecialPowers.popPrefEnv();
 }
