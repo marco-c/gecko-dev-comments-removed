@@ -3877,7 +3877,10 @@ void HTMLEditor::SetSelectionAfterTableEdit(Element* aTable, int32_t aRow,
   }
   
   
-  SetSelectionAtDocumentStart();
+  DebugOnly<nsresult> rvIgnored = SetSelectionAtDocumentStart();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "HTMLEditor::SetSelectionAtDocumentStart() failed, but ignored");
 }
 
 NS_IMETHODIMP
