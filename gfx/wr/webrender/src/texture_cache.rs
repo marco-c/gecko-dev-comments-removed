@@ -725,31 +725,33 @@ impl TextureCache {
         color_formats: TextureFormatPair<ImageFormat>,
         swizzle: Option<SwizzleSettings>,
     ) -> Self {
-        if cfg!(target_os = "macos") {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            max_texture_layers = max_texture_layers.min(32);
-        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        max_texture_layers = max_texture_layers.min(32);
 
         let mut pending_updates = TextureUpdateList::new();
 
