@@ -293,6 +293,10 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nsHtml5OwningUTF16Buffer::Release\n"
 
          
+         "race:makeOwnBaseShape\n"
+         "race:numDynamicSlots\n"
+
+         
          "race:nsHtml5ExecutorFlusher::Run\n"
          "race:geckoservo::glue::traverse_subtree\n"
 
