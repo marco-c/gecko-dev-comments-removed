@@ -3,7 +3,7 @@
 
 
 
-@namespace url(http:
+@namespace url(http://www.w3.org/1999/xhtml); 
 
 
 
@@ -15,11 +15,6 @@
 
 *|*::-moz-canvas {
   cursor: text;
-}
-
-input:-moz-read-write > .anonymous-div:-moz-read-only,
-textarea:-moz-read-write > .anonymous-div:-moz-read-only {
-  user-select: text;
 }
 
 

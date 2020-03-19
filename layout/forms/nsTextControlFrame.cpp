@@ -337,61 +337,24 @@ nsresult nsTextControlFrame::EnsureEditorInitialized() {
 }
 
 already_AddRefed<Element> nsTextControlFrame::CreateEmptyAnonymousDiv(
-    AnonymousDivType aAnonymousDivType) const {
+    PseudoStyleType aPseudoType) const {
+  MOZ_ASSERT(aPseudoType != PseudoStyleType::NotPseudo);
   Document* doc = PresContext()->Document();
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
+  RefPtr<NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
       nsGkAtoms::div, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
-
-  RefPtr<Element> divElement = NS_NewHTMLDivElement(nodeInfo.forget());
-  switch (aAnonymousDivType) {
-    case AnonymousDivType::Root: {
-      
-      divElement->SetFlags(NODE_IS_EDITABLE);
-
-      
-      
-      
-      
-      nsAutoString classValue;
-      classValue.AppendLiteral("anonymous-div");
-
-      if (!IsSingleLineTextControl()) {
-        
-        
-        
-        
-        const nsStyleDisplay* disp = StyleDisplay();
-        if (disp->mOverflowX != StyleOverflow::Visible &&
-            disp->mOverflowX != StyleOverflow::MozHiddenUnscrollable) {
-          classValue.AppendLiteral(" inherit-overflow");
-        }
-      }
-      nsresult rv = divElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                                        classValue, false);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return nullptr;
-      }
-      break;
-    }
-    case AnonymousDivType::Placeholder:
-      
-      divElement->SetPseudoElementType(PseudoStyleType::placeholder);
-      break;
-    case AnonymousDivType::Preview:
-      divElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
-                          NS_LITERAL_STRING("preview-div"), false);
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unknown anonymous div creation request");
-      break;
+  RefPtr<Element> div = NS_NewHTMLDivElement(nodeInfo.forget());
+  div->SetPseudoElementType(aPseudoType);
+  if (aPseudoType == PseudoStyleType::mozTextControlEditingRoot) {
+    
+    div->SetFlags(NODE_IS_EDITABLE);
   }
-  return divElement.forget();
+  return div.forget();
 }
 
 already_AddRefed<Element>
 nsTextControlFrame::CreateEmptyAnonymousDivWithTextNode(
-    AnonymousDivType aAnonymousDivType) const {
-  RefPtr<Element> divElement = CreateEmptyAnonymousDiv(aAnonymousDivType);
+    PseudoStyleType aPseudoType) const {
+  RefPtr<Element> divElement = CreateEmptyAnonymousDiv(aPseudoType);
 
   
   RefPtr<nsTextNode> textNode = new (divElement->OwnerDoc()->NodeInfoManager())
@@ -399,7 +362,7 @@ nsTextControlFrame::CreateEmptyAnonymousDivWithTextNode(
   
   
   
-  if (aAnonymousDivType != AnonymousDivType::Placeholder) {
+  if (aPseudoType != PseudoStyleType::placeholder) {
     textNode->MarkAsMaybeModifiedFrequently();
     
     
@@ -421,7 +384,8 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   RefPtr<TextControlElement> textControlElement =
       TextControlElement::FromNode(GetContent());
   MOZ_ASSERT(textControlElement);
-  mRootNode = CreateEmptyAnonymousDiv(AnonymousDivType::Root);
+  mRootNode =
+      CreateEmptyAnonymousDiv(PseudoStyleType::mozTextControlEditingRoot);
   if (NS_WARN_IF(!mRootNode)) {
     return NS_ERROR_FAILURE;
   }
@@ -520,7 +484,7 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
   }
 
   mPlaceholderDiv =
-      CreateEmptyAnonymousDivWithTextNode(AnonymousDivType::Placeholder);
+      CreateEmptyAnonymousDivWithTextNode(PseudoStyleType::placeholder);
   mPlaceholderDiv->GetFirstChild()->AsText()->SetText(placeholderTxt, false);
 }
 
@@ -532,7 +496,8 @@ void nsTextControlFrame::CreatePreviewIfNeeded() {
     return;
   }
 
-  mPreviewDiv = CreateEmptyAnonymousDivWithTextNode(AnonymousDivType::Preview);
+  mPreviewDiv = CreateEmptyAnonymousDivWithTextNode(
+      PseudoStyleType::mozTextControlPreview);
 }
 
 void nsTextControlFrame::AppendAnonymousContentTo(

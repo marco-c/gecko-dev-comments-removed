@@ -102,7 +102,7 @@ input {
   overflow-clip-box: padding-box content-box;
 }
 
-input .anonymous-div,
+input::-moz-text-control-editing-root,
 input::placeholder {
   word-wrap: normal;
   
@@ -144,12 +144,12 @@ textarea > scrollbar {
   cursor: default;
 }
 
-textarea .anonymous-div,
-input .anonymous-div,
+textarea::-moz-text-control-editing-root,
+input::-moz-text-control-editing-root,
 input::placeholder,
 textarea::placeholder,
-input .preview-div,
-textarea .preview-div {
+input::-moz-text-control-preview,
+textarea::-moz-text-control-preview {
   overflow: auto;
   border: 0px;
   padding: inherit;
@@ -163,14 +163,14 @@ textarea .preview-div {
   overflow-clip-box: inherit;
 }
 
-input .anonymous-div,
+input::-moz-text-control-editing-root,
 input::placeholder,
-input .preview-div {
+input::-moz-text-control-preview {
   white-space: pre;
 }
 
-input[type=password] .anonymous-div,
-input[type=password] .preview-div {
+input[type=password]::-moz-text-control-editing-root,
+input[type=password]::-moz-text-control-preview {
   
 
 
@@ -180,19 +180,17 @@ input[type=password] .preview-div {
   unicode-bidi: bidi-override;
 }
 
-textarea > .anonymous-div {
+textarea::-moz-text-control-editing-root {
   scroll-behavior: inherit;
   overscroll-behavior: inherit;
-}
-
-textarea > .anonymous-div.inherit-overflow {
+  
   overflow: inherit;
 }
 
 input::placeholder,
 textarea::placeholder,
-input .preview-div,
-textarea .preview-div {
+input::-moz-text-control-preview,
+textarea::-moz-text-control-preview {
   
 
 
@@ -218,7 +216,7 @@ textarea::placeholder {
 }
 
 textarea::placeholder,
-textarea .preview-div {
+textarea::-moz-text-control-preview {
   white-space: pre-wrap !important;
 }
 
@@ -784,8 +782,8 @@ input[type="submit"]:disabled {
 
 
 
-textarea .anonymous-div,
-input .anonymous-div,
+textarea::-moz-text-control-editing-root,
+input::-moz-text-control-editing-root,
 input::placeholder,
 textarea::placeholder,
 *|*::-moz-button-content,
@@ -989,12 +987,15 @@ input[type=number]::-moz-number-wrapper {
   block-size: 100%;
 }
 
-input[type=number] .anonymous-div {
+input[type=number]::-moz-text-control-editing-root {
   display: block; 
 
 
   flex: 1;
   min-inline-size: 0;
+  align-self: center;
+  
+  padding-inline: 0;
 }
 
 input[type=number]::-moz-number-spin-box {

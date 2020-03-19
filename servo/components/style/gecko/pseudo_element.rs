@@ -136,12 +136,6 @@ impl PseudoElement {
 
     
     #[inline]
-    pub fn is_fieldset_content(&self) -> bool {
-        *self == PseudoElement::FieldsetContent
-    }
-
-    
-    #[inline]
     pub fn is_color_swatch(&self) -> bool {
         *self == PseudoElement::MozColorSwatch
     }

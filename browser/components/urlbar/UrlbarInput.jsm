@@ -2119,9 +2119,8 @@ class UrlbarInput {
   }
 
   _on_overflow(event) {
-    const targetIsPlaceholder = !event.originalTarget.classList.contains(
-      "anonymous-div"
-    );
+    const targetIsPlaceholder =
+      event.originalTarget.implementedPseudoElement == "::placeholder";
     
     
     if (targetIsPlaceholder) {
@@ -2132,9 +2131,8 @@ class UrlbarInput {
   }
 
   _on_underflow(event) {
-    const targetIsPlaceholder = !event.originalTarget.classList.contains(
-      "anonymous-div"
-    );
+    const targetIsPlaceholder =
+      event.originalTarget.implementedPseudoElement == "::placeholder";
     
     
     if (targetIsPlaceholder) {
