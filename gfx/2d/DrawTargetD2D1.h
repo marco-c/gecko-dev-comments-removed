@@ -244,7 +244,7 @@ class DrawTargetD2D1 : public DrawTarget {
 
   
   
-  bool IsDeviceContextValid();
+  bool IsDeviceContextValid() const;
 
   IntSize mSize;
 
