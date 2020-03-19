@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 if CONFIG['MOZ_BUILD_APP'] == 'browser':
     DEFINES['MOZ_BUILD_APP_IS_BROWSER'] = True
@@ -12,7 +12,7 @@ BROWSER_CHROME_MANIFESTS += ['test/browser/browser.ini']
 XPCSHELL_TESTS_MANIFESTS += ['test/unit/xpcshell.ini']
 
 TESTING_JS_MODULES += [
-    # Make this file available from the "resource:" URI of the test environment.
+    
     'test/browser/form_basic.html',
     'test/LoginTestUtils.jsm',
 ]
@@ -33,7 +33,7 @@ XPIDL_MODULE = 'loginmgr'
 EXTRA_JS_MODULES += [
     'crypto-SDR.js',
     'InsecurePasswordUtils.jsm',
-    'LoginAutoCompleteResult.jsm',
+    'LoginAutoComplete.jsm',
     'LoginFormFactory.jsm',
     'LoginHelper.jsm',
     'LoginInfo.jsm',
