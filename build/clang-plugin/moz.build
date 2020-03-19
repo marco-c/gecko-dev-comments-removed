@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 HostSharedLibrary('clang-plugin')
 
@@ -49,7 +49,7 @@ HOST_SOURCES += [
     'VariableUsageHelpers.cpp',
 ]
 
-# Ideally, we wouldn't have compile-time choices wrt checkes. bug 1617153.
+
 if CONFIG['OS_ARCH'] == 'WINNT':
     HOST_DEFINES['TARGET_IS_WINDOWS'] = True
     HOST_SOURCES += [
@@ -80,12 +80,12 @@ GeneratedFile('ThreadAllows.h', script="ThreadAllows.py",
 HOST_COMPILE_FLAGS['STL'] = []
 HOST_COMPILE_FLAGS['VISIBILITY'] = []
 
-# libc++ is required to build plugins against clang on OS X.
+
 if CONFIG['HOST_OS_ARCH'] == 'Darwin':
     HOST_CXXFLAGS += ['-stdlib=libc++']
 
-# As of clang 8, llvm-config doesn't output the flags used to build clang
-# itself, so we don't end up with -fPIC as a side effect. llvm.org/PR8220
+
+
 if CONFIG['HOST_OS_ARCH'] != 'WINNT':
     HOST_CXXFLAGS += ['-fPIC']
 
@@ -95,8 +95,12 @@ DIRS += [
 
 include('external/sources.mozbuild')
 
-# In the current moz.build world, we need to override essentially every
-# variable to limit ourselves to what we need to build the clang plugin.
+if CONFIG['ENABLE_CLANG_PLUGIN_ALPHA']:
+    HOST_DEFINES["MOZ_CLANG_PLUGIN_ALPHA"] = "1"
+    include('alpha/sources.mozbuild')
+
+
+
 if CONFIG['HOST_OS_ARCH'] == 'WINNT':
     extra_cxxflags = ['-GR-', '-EHsc']
 else:
@@ -105,6 +109,6 @@ else:
 if CONFIG['LLVM_CXXFLAGS']:
     HOST_COMPILE_FLAGS['HOST_CXXFLAGS'] = CONFIG['LLVM_CXXFLAGS'] + extra_cxxflags
 
-# Avoid -DDEBUG=1 on the command line, which conflicts with a #define
-# DEBUG(...) in llvm headers.
+
+
 DEFINES['DEBUG'] = False
