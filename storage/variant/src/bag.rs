@@ -2,11 +2,15 @@
 
 
 
-use nserror::{nsresult, NS_OK};
+use nserror::{nsresult, NS_ERROR_CANNOT_CONVERT_DATA, NS_OK};
 use nsstring::nsString;
-use xpcom::{getter_addrefs, interfaces::nsIWritablePropertyBag, RefPtr};
+use xpcom::{
+    getter_addrefs,
+    interfaces::{nsIProperty, nsIPropertyBag, nsIWritablePropertyBag},
+    RefPtr, XpCom,
+};
 
-use crate::VariantType;
+use crate::{NsIVariantExt, VariantType};
 
 extern "C" {
     fn NS_NewHashPropertyBag(bag: *mut *const nsIWritablePropertyBag) -> libc::c_void;
@@ -14,6 +18,13 @@ extern "C" {
 
 
 pub struct HashPropertyBag(RefPtr<nsIWritablePropertyBag>);
+
+
+
+
+
+unsafe impl Send for HashPropertyBag {}
+unsafe impl Sync for HashPropertyBag {}
 
 impl Default for HashPropertyBag {
     fn default() -> HashPropertyBag {
@@ -30,8 +41,37 @@ impl Default for HashPropertyBag {
 impl HashPropertyBag {
     
     #[inline]
-    pub fn new() -> HashPropertyBag {
-        HashPropertyBag::default()
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clone_from_bag(source: &nsIPropertyBag) -> Result<Self, nsresult> {
+        let enumerator = getter_addrefs(|p| unsafe { source.GetEnumerator(p) })?;
+        let b = HashPropertyBag::new();
+        while {
+            let mut has_more = false;
+            unsafe { enumerator.HasMoreElements(&mut has_more) }.to_result()?;
+            has_more
+        } {
+            let element = getter_addrefs(|p| unsafe { enumerator.GetNext(p) })?;
+            let property = element
+                .query_interface::<nsIProperty>()
+                .ok_or(NS_ERROR_CANNOT_CONVERT_DATA)?;
+            let mut name = nsString::new();
+            unsafe { property.GetName(&mut *name) }.to_result()?;
+            let value = getter_addrefs(|p| unsafe { property.GetValue(p) })?;
+            unsafe { b.0.SetProperty(&*name, value.try_clone()?.coerce()) }.to_result()?;
+        }
+        Ok(b)
     }
 
     
