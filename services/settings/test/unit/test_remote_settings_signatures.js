@@ -63,6 +63,8 @@ function run_test() {
   
   client = RemoteSettings("signed", { signerName: SIGNER_NAME });
 
+  Services.prefs.setCharPref("services.settings.loglevel", "debug");
+
   
   setRoot();
 
@@ -294,23 +296,11 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({ data: [] }),
   };
 
+  
   const RESPONSE_BODY_META_EMPTY_SIG = makeMetaResponseBody(
     1000,
     "vxuAg5rDCB-1pul4a91vqSBQRXJG_j7WOYUTswxRSMltdYmbhLRH8R8brQ9YKuNDF56F-w6pn4HWxb076qgKPwgcEBtUeZAO_RtaHXRkRUUgVzAr86yQL4-aJTbv3D6u"
   );
-
-  const RESPONSE_META_NO_SIG = {
-    sampleHeaders: [
-      "Content-Type: application/json; charset=UTF-8",
-      `ETag: \"123456\"`,
-    ],
-    status: { status: 200, statusText: "OK" },
-    responseBody: JSON.stringify({
-      data: {
-        last_modified: 123456,
-      },
-    }),
-  };
 
   
   
@@ -335,6 +325,12 @@ add_task(async function test_check_synchronization_with_signatures() {
   };
 
   
+  
+  
+  
+  
+
+  
   registerHandlers(emptyCollectionResponses);
 
   let startHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
@@ -343,12 +339,19 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   await client.maybeSync(1000);
 
+  equal((await client.get()).length, 0);
+
   let endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
   
   let expectedIncrements = { [UptakeTelemetry.STATUS.SUCCESS]: 1 };
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
 
+  
+  
+  
+  
+  
   
   
 
@@ -386,6 +389,13 @@ add_task(async function test_check_synchronization_with_signatures() {
   registerHandlers(twoItemsResponses);
   await client.maybeSync(3000);
 
+  equal((await client.get()).length, 2);
+
+  
+  
+  
+  
+  
   
   
 
@@ -423,6 +433,13 @@ add_task(async function test_check_synchronization_with_signatures() {
   registerHandlers(oneAddedOneRemovedResponses);
   await client.maybeSync(4000);
 
+  equal((await client.get()).length, 2);
+
+  
+  
+  
+  
+  
   
 
   
@@ -447,10 +464,20 @@ add_task(async function test_check_synchronization_with_signatures() {
   registerHandlers(noOpResponses);
   await client.maybeSync(4100);
 
-  
+  equal((await client.get()).length, 2);
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   const RESPONSE_COMPLETE_INITIAL = {
     comment: "RESPONSE_COMPLETE_INITIAL ",
     sampleHeaders: [
@@ -461,21 +488,12 @@ add_task(async function test_check_synchronization_with_signatures() {
     responseBody: JSON.stringify({ data: [RECORD2, RECORD3] }),
   };
 
-  const RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID = {
-    comment: "RESPONSE_COMPLETE_INITIAL ",
-    sampleHeaders: [
-      "Content-Type: application/json; charset=UTF-8",
-      'ETag: "4000"',
-    ],
-    status: { status: 200, statusText: "OK" },
-    responseBody: JSON.stringify({ data: [RECORD3, RECORD2] }),
-  };
-
+  
+  
   const RESPONSE_BODY_META_BAD_SIG = makeMetaResponseBody(
     4000,
     "aW52YWxpZCBzaWduYXR1cmUK"
   );
-
   const RESPONSE_META_BAD_SIG = makeMetaResponse(
     4000,
     RESPONSE_BODY_META_BAD_SIG,
@@ -498,13 +516,8 @@ add_task(async function test_check_synchronization_with_signatures() {
     ],
     
     
-    "GET:/v1/buckets/main/collections/signed/records?_sort=-last_modified": [
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified": [
       RESPONSE_COMPLETE_INITIAL,
-    ],
-    
-    
-    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id": [
-      RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID,
     ],
   };
 
@@ -519,6 +532,8 @@ add_task(async function test_check_synchronization_with_signatures() {
 
   await client.maybeSync(5000);
 
+  equal((await client.get()).length, 2);
+
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
 
   
@@ -530,6 +545,18 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   expectedIncrements = { [UptakeTelemetry.STATUS.SIGNATURE_ERROR]: 1 };
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   const badSigGoodOldResponses = {
     
@@ -548,7 +575,7 @@ add_task(async function test_check_synchronization_with_signatures() {
     
     
     
-    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id": [
+    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified": [
       RESPONSE_EMPTY_INITIAL,
     ],
   };
@@ -569,6 +596,14 @@ add_task(async function test_check_synchronization_with_signatures() {
   
   equal(syncEventSent, false);
 
+  
+  
+  
+  
+  
+  
+  
+
   const badLocalContentGoodSigResponses = {
     
     
@@ -582,15 +617,11 @@ add_task(async function test_check_synchronization_with_signatures() {
     "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=-last_modified": [
       RESPONSE_COMPLETE_INITIAL,
     ],
-    
-    
-    "GET:/v1/buckets/main/collections/signed/records?_expected=5000&_sort=id": [
-      RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID,
-    ],
   };
 
   registerHandlers(badLocalContentGoodSigResponses);
 
+  
   
   
   
@@ -603,13 +634,15 @@ add_task(async function test_check_synchronization_with_signatures() {
   const localId = "0602b1b2-12ab-4d3a-b6fb-593244e7b035";
   await kintoCol.create({ id: localId }, { synced: true, useRecordId: true });
 
-  let syncData;
+  let syncData = null;
   client.on("sync", ({ data }) => {
     syncData = data;
   });
 
   await client.maybeSync(5000);
 
+  
+  
   
   equal(syncData.current.length, 2);
   equal(syncData.created.length, 1);
@@ -619,6 +652,13 @@ add_task(async function test_check_synchronization_with_signatures() {
   equal(syncData.updated[0].new.serialNumber, RECORD2.serialNumber);
   equal(syncData.deleted.length, 1);
   equal(syncData.deleted[0].id, localId);
+
+  
+  
+  
+  
+  
+  
 
   const allBadSigResponses = {
     
@@ -633,8 +673,8 @@ add_task(async function test_check_synchronization_with_signatures() {
     ],
     
     
-    "GET:/v1/buckets/main/collections/signed/records?_expected=6000&_sort=id": [
-      RESPONSE_COMPLETE_INITIAL_SORTED_BY_ID,
+    "GET:/v1/buckets/main/collections/signed/records?_expected=6000&_sort=-last_modified": [
+      RESPONSE_COMPLETE_INITIAL,
     ],
   };
 
@@ -651,6 +691,26 @@ add_task(async function test_check_synchronization_with_signatures() {
   endHistogram = getUptakeTelemetrySnapshot(TELEMETRY_HISTOGRAM_KEY);
   expectedIncrements = { [UptakeTelemetry.STATUS.SIGNATURE_RETRY_ERROR]: 1 };
   checkUptakeTelemetry(startHistogram, endHistogram, expectedIncrements);
+
+  
+  
+  
+  
+  
+  
+
+  const RESPONSE_META_NO_SIG = {
+    sampleHeaders: [
+      "Content-Type: application/json; charset=UTF-8",
+      `ETag: \"123456\"`,
+    ],
+    status: { status: 200, statusText: "OK" },
+    responseBody: JSON.stringify({
+      data: {
+        last_modified: 123456,
+      },
+    }),
+  };
 
   const missingSigResponses = {
     
