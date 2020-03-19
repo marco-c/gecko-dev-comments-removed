@@ -2040,19 +2040,6 @@ pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 
 
 
-#ifdef MOZ_WIDGET_ANDROID
-  
-  
-  
-  
-  pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", true);
-#else
-  pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false);
-#endif // MOZ_WIDGET_ANDROID
-
-
-
-
 
 pref("intl.ime.remove_placeholder_character_at_commit", false);
 
