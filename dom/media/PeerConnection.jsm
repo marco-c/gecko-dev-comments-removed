@@ -318,11 +318,6 @@ setupPrototype(RTCSessionDescription, {
 
 class PeerConnectionTelemetry {
   
-  recordGetStats() {
-    Services.telemetry.scalarAdd("webrtc.peerconnection.promise_stats_used", 1);
-    this.recordGetStats = () => {};
-  }
-  
   recordConnected() {
     Services.telemetry.scalarAdd("webrtc.peerconnection.connected", 1);
     this.recordConnected = () => {};
@@ -1861,13 +1856,6 @@ class RTCPeerConnection {
           "InvalidAccessError"
         );
       }
-    }
-
-    if (
-      this._iceConnectionState === "completed" ||
-      this._iceConnectionState === "connected"
-    ) {
-      this._pcTelemetry.recordGetStats();
     }
 
     return this._auto(onSucc, onErr, () => this._impl.getStats(selector));
