@@ -1190,10 +1190,47 @@ struct nsGridContainerFrame::TrackSizingFunctions {
                              int32_t(mExplicitGridOffset));
     }
     uint32_t index = aTrackIndex - mExplicitGridOffset;
+    MOZ_ASSERT(mRepeatAutoStart <= mRepeatAutoEnd);
+
     if (index >= mRepeatAutoStart) {
       if (index < mRepeatAutoEnd) {
-        index = mRepeatAutoStart;
+        
+        const auto& indices = mExpandedTracks[mRepeatAutoStart];
+        const TrackListValue& value = mTrackListValues[indices.first];
+
+        
+        MOZ_ASSERT(indices.second == 0);
+
+        const auto& repeatTracks = value.AsTrackRepeat().track_sizes.AsSpan();
+
+        
+        const uint32_t finalRepeatIndex = (index - mRepeatAutoStart);
+        uint32_t repeatWithCollapsed = 0;
+        
+        
+        
+        if (mRemovedRepeatTracks.IsEmpty()) {
+          repeatWithCollapsed = finalRepeatIndex;
+        } else {
+          
+          
+          for (uint32_t repeatNoCollapsed = 0;
+               repeatNoCollapsed < finalRepeatIndex; repeatWithCollapsed++) {
+            if (!mRemovedRepeatTracks[repeatWithCollapsed]) {
+              repeatNoCollapsed++;
+            }
+          }
+          
+          
+          while (mRemovedRepeatTracks[repeatWithCollapsed]) {
+            repeatWithCollapsed++;
+          }
+        }
+        return repeatTracks[repeatWithCollapsed % repeatTracks.Length()];
       } else {
+        
+        
+        
         index -= RepeatEndDelta();
       }
     }
