@@ -118,11 +118,19 @@ def lint(paths, config, **lintargs):
         tools/lint/mach_commands.py.
         """
         
+        config.setdefault('exclude', [])
         if lintargs.get('use_filters', True):
-            config.setdefault('exclude', []).extend(self.options.exclude)
+            config['exclude'].extend(self.options.exclude)
+
+        
+        
+        
+        
+        
+        filtered = [p for p in paths if not any(p.startswith(e) for e in config['exclude'])]
 
         self.options.exclude = None
-        self.args = self.args + list(expand_exclusions(paths, config, root))
+        self.args = self.args + list(expand_exclusions(filtered, config, root))
 
         if not self.args:
             raise NothingToLint
