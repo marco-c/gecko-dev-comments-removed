@@ -41,39 +41,47 @@
 #include <stdint.h>
 #include <string>
 
-bool BaseProfilerLogTest(int aLevelToTest);
+namespace mozilla {
+namespace baseprofiler {
+bool LogTest(int aLevelToTest);
+void PrintToConsole(const char* aFmt, ...) MOZ_FORMAT_PRINTF(1, 2);
+}  
+}  
 
 
 
-#define LOG_TEST BaseProfilerLogTest(3)
-#define LOG(arg, ...)                                                       \
-  do {                                                                      \
-    if (LOG_TEST) {                                                         \
-      fprintf(stderr, "[I %d/%d] " arg "\n", profiler_current_process_id(), \
-              profiler_current_thread_id(), ##__VA_ARGS__);                 \
-    }                                                                       \
+#define LOG_TEST ::mozilla::baseprofiler::LogTest(3)
+#define LOG(arg, ...)                                           \
+  do {                                                          \
+    if (LOG_TEST) {                                             \
+      ::mozilla::baseprofiler::PrintToConsole(                  \
+          "[I %d/%d] " arg "\n", profiler_current_process_id(), \
+          profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                           \
   } while (0)
 
 
 
-#define DEBUG_LOG_TEST BaseProfilerLogTest(4)
-#define DEBUG_LOG(arg, ...)                                                 \
-  do {                                                                      \
-    if (DEBUG_LOG_TEST) {                                                   \
-      fprintf(stderr, "[D %d/%d] " arg "\n", profiler_current_process_id(), \
-              profiler_current_thread_id(), ##__VA_ARGS__);                 \
-    }                                                                       \
+#define DEBUG_LOG_TEST ::mozilla::baseprofiler::LogTest(4)
+#define DEBUG_LOG(arg, ...)                                     \
+  do {                                                          \
+    if (DEBUG_LOG_TEST) {                                       \
+      ::mozilla::baseprofiler::PrintToConsole(                  \
+          "[D %d/%d] " arg "\n", profiler_current_process_id(), \
+          profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                           \
   } while (0)
 
 
 
-#define VERBOSE_LOG_TEST BaseProfilerLogTest(5)
-#define VERBOSE_LOG(arg, ...)                                               \
-  do {                                                                      \
-    if (VERBOSE_LOG_TEST) {                                                 \
-      fprintf(stderr, "[V %d/%d] " arg "\n", profiler_current_process_id(), \
-              profiler_current_thread_id(), ##__VA_ARGS__);                 \
-    }                                                                       \
+#define VERBOSE_LOG_TEST ::mozilla::baseprofiler::LogTest(5)
+#define VERBOSE_LOG(arg, ...)                                   \
+  do {                                                          \
+    if (VERBOSE_LOG_TEST) {                                     \
+      ::mozilla::baseprofiler::PrintToConsole(                  \
+          "[V %d/%d] " arg "\n", profiler_current_process_id(), \
+          profiler_current_thread_id(), ##__VA_ARGS__);         \
+    }                                                           \
   } while (0)
 
 namespace mozilla {
