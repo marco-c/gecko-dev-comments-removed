@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -27,15 +27,18 @@ private const val SCREEN_HEIGHT = 200
 class DynamicToolbarTest : BaseSessionTest() {
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
+    
     fun outOfRangeValue() {
-        try {
-            sessionRule.display?.run { setDynamicToolbarMaxHeight(SCREEN_HEIGHT + 1) }
-            fail("Request should have failed")
-        } catch (e: AssertionError) {
-            assertThat("Throws an exception when setting values greater than the client height",
-                       e.toString(), containsString("maximum height of the dynamic toolbar"))
-        }
+        val dynamicToolbarMaxHeight = SCREEN_HEIGHT + 1
+        sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
+
+        
+        mainSession.setActive(true)
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
     }
+
 
     private fun assertScreenshotResult(result: GeckoResult<Bitmap>, comparisonImage: Bitmap) {
         sessionRule.waitForResult(result).let {
@@ -62,10 +65,10 @@ class DynamicToolbarTest : BaseSessionTest() {
         }
     }
 
-    /**
-     * Returns a whole green Bitmap.
-     * This Bitmap would be a reference image of tests in this file.
-     */
+    
+
+
+
     private fun getComparisonScreenshot(width: Int, height: Int): Bitmap {
         val screenshotFile = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(screenshotFile)
@@ -75,9 +78,9 @@ class DynamicToolbarTest : BaseSessionTest() {
         return screenshotFile
     }
 
-    // With the dynamic toolbar max height vh units values exceed
-    // the top most window height. This is a test case that exceeded area
-    // is rendered properly (on the compositor).
+    
+    
+    
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun positionFixedElementClipping() {
@@ -85,21 +88,21 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         val reference = getComparisonScreenshot(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        // FIXED_VH is an HTML file which has a position:fixed element whose
-        // style is "width: 100%; height: 200vh" and the document is scaled by
-        // minimum-scale 0.5, so that the height of the element exceeds the
-        // window height.
+        
+        
+        
+        
         mainSession.loadTestPath(BaseSessionTest.FIXED_VH)
         mainSession.waitForPageStop()
 
-        // Scroll down bit, if we correctly render the document, the position
-        // fixed element still covers whole the document area.
+        
+        
         mainSession.evaluateJS("window.scrollTo({ top: 100, behevior: 'instant' })")
 
-        // Wait a while to make sure the scrolling result is composited on the compositor
-        // since capturePixels() takes a snapshot directly from the compositor without
-        // waiting for a corresponding MozAfterPaint on the main-thread so it's possible
-        // to take a stale snapshot even if it's a result of syncronous scrolling.
+        
+        
+        
+        
         mainSession.evaluateJS("new Promise(resolve => window.setTimeout(resolve, 1000))")
 
         sessionRule.display?.let {
@@ -107,11 +110,11 @@ class DynamicToolbarTest : BaseSessionTest() {
         }
     }
 
-    // Asynchronous scrolling with the dynamic toolbar max height causes
-    // situations where the visual viewport size gets bigger than the layout
-    // viewport on the compositor thread because of 200vh position:fixed
-    // elements.  This is a test case that a 200vh position element is
-    // properly rendered its positions.
+    
+    
+    
+    
+    
     @WithDisplay(height = SCREEN_HEIGHT, width = SCREEN_WIDTH)
     @Test
     fun layoutViewportExpansion() {
@@ -124,7 +127,7 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         mainSession.evaluateJS("window.scrollTo(0, 100)")
 
-        // Scroll back to the original position by asynchronous scrolling.
+        
         mainSession.evaluateJS("window.scrollTo({ top: 0, behavior: 'smooth' })")
 
         mainSession.evaluateJS("new Promise(resolve => window.setTimeout(resolve, 1000))")
@@ -140,7 +143,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
-        // Set active since setVerticalClipping call affects only for forground tab.
+        
         mainSession.setActive(true)
 
         mainSession.loadTestPath(BaseSessionTest.FIXED_VH)
@@ -150,7 +153,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         val scale = sessionRule.session.evaluateJS("window.visualViewport.scale") as Double
 
         for (i in 1..dynamicToolbarMaxHeight) {
-          // Simulate the dynamic toolbar is going to be hidden.
+          
           sessionRule.display?.run { setVerticalClipping(-i) }
 
           val expectedViewportHeight = (SCREEN_HEIGHT - dynamicToolbarMaxHeight + i) / scale / pixelRatio
@@ -171,7 +174,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
-        // Set active since setVerticalClipping call affects only for forground tab.
+        
         mainSession.setActive(true)
 
         mainSession.loadTestPath(BaseSessionTest.FIXED_PERCENT)
@@ -181,7 +184,7 @@ class DynamicToolbarTest : BaseSessionTest() {
             getComputedStyle(document.querySelector('#fixed-element')).height
         """.trimIndent()) as String
 
-        // Set the vertical clipping value to the middle of toolbar transition.
+        
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 2) }
 
         var height = mainSession.evaluateJS("""
@@ -191,7 +194,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         assertThat("The %-based height should be the static in the middle of toolbar tansition",
                    height, equalTo(originalHeight))
 
-        // Set the vertical clipping value to hide the toolbar completely.
+        
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
         height = mainSession.evaluateJS("""
             getComputedStyle(document.querySelector('#fixed-element')).height
@@ -209,7 +212,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
-        // Set active since setVerticalClipping call affects only for forground tab.
+        
         mainSession.setActive(true)
 
         mainSession.loadTestPath(BaseSessionTest.FIXED_VH)
@@ -220,14 +223,14 @@ class DynamicToolbarTest : BaseSessionTest() {
                 new Promise(resolve => {
                     let fired = false;
                     window.addEventListener('resize', () => { fired = true; }, { once: true });
-                    // Note that `resize` event is fired just before rAF callbacks, so under ideal
-                    // circumstances waiting for a rAF should be sufficient, even if it's not sufficient
-                    // unexpected resize event(s) will be caught in the next loop.
+                    
+                    
+                    
                     requestAnimationFrame(() => { resolve(fired); });
                 });
             """.trimIndent())
 
-            // Simulate the dynamic toolbar is going to be hidden.
+            
             sessionRule.display?.run { setVerticalClipping(-i) }
             assertThat("'resize' event on window should not be fired in response to the dynamc toolbar transition",
                        promise.value as Boolean, equalTo(false));
@@ -250,12 +253,12 @@ class DynamicToolbarTest : BaseSessionTest() {
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
-        // Set active since setVerticalClipping call affects only for forground tab.
+        
         mainSession.setActive(true)
 
-        // We intentionally use FIXED_BOTTOM instead of FIXED_VH in this test since
-        // FIXED_VH has `minimum-scale=0.5` thus we can't properly test window.innerHeight
-        // with FXIED_VH for now due to bug 1598487.
+        
+        
+        
         mainSession.loadTestPath(BaseSessionTest.FIXED_BOTTOM)
         mainSession.waitForPageStop()
 
@@ -268,7 +271,7 @@ class DynamicToolbarTest : BaseSessionTest() {
                });
             """.trimIndent())
 
-            // Simulate the dynamic toolbar is going to be hidden.
+            
             sessionRule.display?.run { setVerticalClipping(-i) }
             assertThat("window.innerHeight should not be changed in response to the dynamc toolbar transition",
                        promise.value as Double, closeTo(SCREEN_HEIGHT / 2 / pixelRatio, .01))
@@ -291,7 +294,7 @@ class DynamicToolbarTest : BaseSessionTest() {
         val dynamicToolbarMaxHeight = SCREEN_HEIGHT / 2
         sessionRule.display?.run { setDynamicToolbarMaxHeight(dynamicToolbarMaxHeight) }
 
-        // Set active since setVerticalClipping call affects only for forground tab.
+        
         mainSession.setActive(true)
 
         mainSession.loadTestPath(BaseSessionTest.FIXED_VH)
@@ -301,7 +304,7 @@ class DynamicToolbarTest : BaseSessionTest() {
             new Promise(resolve => window.addEventListener('resize', () => resolve(true)));
         """.trimIndent())
 
-        // Do some setVerticalClipping calls that we might try to queue two window resize events.
+        
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight + 1) }
         sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight) }

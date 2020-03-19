@@ -8484,7 +8484,6 @@ bool nsLayoutUtils::GetContentViewerSize(nsPresContext* aPresContext,
 
   if (aPresContext->HasDynamicToolbar() && !bounds.IsEmpty()) {
     MOZ_ASSERT(aPresContext->IsRootContentDocumentCrossProcess());
-    MOZ_ASSERT(bounds.height > aPresContext->GetDynamicToolbarMaxHeight());
     bounds.height -= aPresContext->GetDynamicToolbarMaxHeight();
     
     
