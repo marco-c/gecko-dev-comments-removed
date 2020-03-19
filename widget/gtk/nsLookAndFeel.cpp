@@ -433,9 +433,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
       aColor = mMozScrollbar;
       break;
 
-    case ColorID::Threedlightshadow:
-      
-      
     case ColorID::Threedface:
     case ColorID::Buttonface:
       
@@ -461,9 +458,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
       aColor = mFrameInnerDarkBorder;
       break;
 
+    case ColorID::Threedlightshadow:
+      aColor = NS_RGB(0xE0, 0xE0, 0xE0);
+      break;
     case ColorID::Threeddarkshadow:
-      
-      aColor = NS_RGB(0x00, 0x00, 0x00);
+      aColor = NS_RGB(0xDC, 0xDC, 0xDC);
       break;
 
     case ColorID::MozEventreerow:
