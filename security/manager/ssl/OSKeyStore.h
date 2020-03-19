@@ -11,9 +11,7 @@
 #define OSKeyStore_h
 
 #include "nsCOMPtr.h"
-#include "nsIObserver.h"
 #include "nsIOSKeyStore.h"
-#include "nsIThread.h"
 #include "nsString.h"
 #include "ScopedNSSTypes.h"
 
@@ -74,10 +72,9 @@ class AbstractOSKeyStore {
 nsresult GetPromise(JSContext* aCx,
                      RefPtr<mozilla::dom::Promise>& aPromise);
 
-class OSKeyStore final : public nsIOSKeyStore, public nsIObserver {
+class OSKeyStore final : public nsIOSKeyStore {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSIOBSERVER
   NS_DECL_NSIOSKEYSTORE
 
   OSKeyStore();
@@ -101,20 +98,7 @@ class OSKeyStore final : public nsIOSKeyStore, public nsIObserver {
  private:
   ~OSKeyStore() = default;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   std::unique_ptr<AbstractOSKeyStore> mKs;
-  nsCOMPtr<nsIThread> mKsThread;
-
   bool mKsIsNSSKeyStore;
   const nsCString mLabelPrefix =
       NS_LITERAL_CSTRING("org.mozilla.nss.keystore.");
