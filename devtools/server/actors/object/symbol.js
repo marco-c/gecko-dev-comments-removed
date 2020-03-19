@@ -34,6 +34,7 @@ const SymbolActor = protocol.ActorClassWithSpec(symbolSpec, {
     
     
     this._releaseActor();
+    protocol.Actor.prototype.destroy.call(this);
   },
 
   
