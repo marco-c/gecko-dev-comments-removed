@@ -784,6 +784,10 @@ void GCMarker::markImplicitEdgesHelper(T markedThing) {
   }
   WeakEntryVector& markables = p->value;
 
+  
+  
+  AutoClearTracingSource acts(this);
+
   markEphemeronValues(markedThing, markables);
   markables.clear();  
 }
