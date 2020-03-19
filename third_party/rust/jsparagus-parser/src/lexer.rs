@@ -73,7 +73,7 @@ impl<'alloc> Lexer<'alloc> {
         chars.next()
     }
 
-    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<Token> {
+    pub fn next<'parser>(&mut self, parser: &Parser<'parser>) -> Result<'alloc, Token> {
         let (loc, value, terminal_id) = self.advance_impl(parser)?;
         let value = match terminal_id {
             TerminalId::NumericLiteral => {
@@ -103,7 +103,7 @@ impl<'alloc> Lexer<'alloc> {
         })
     }
 
-    fn unexpected_err(&mut self) -> ParseError {
+    fn unexpected_err(&mut self) -> ParseError<'alloc> {
         if let Some(ch) = self.peek() {
             ParseError::IllegalCharacter(ch)
         } else {
@@ -194,7 +194,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) -> Result<()> {
+    fn skip_multi_line_comment(&mut self, builder: &mut AutoCow<'alloc>) -> Result<'alloc, ()> {
         while let Some(ch) = self.chars.next() {
             match ch {
                 '*' if self.peek() == Some('/') => {
@@ -299,7 +299,7 @@ impl<'alloc> Lexer<'alloc> {
     fn identifier_name_tail(
         &mut self,
         mut builder: AutoCow<'alloc>,
-    ) -> Result<(bool, &'alloc str)> {
+    ) -> Result<'alloc, (bool, &'alloc str)> {
         while let Some(ch) = self.peek() {
             if !is_identifier_part(ch) {
                 if ch == '\\' {
@@ -324,7 +324,7 @@ impl<'alloc> Lexer<'alloc> {
         Ok((has_different, builder.finish(&self)))
     }
 
-    fn identifier_name(&mut self, mut builder: AutoCow<'alloc>) -> Result<&'alloc str> {
+    fn identifier_name(&mut self, mut builder: AutoCow<'alloc>) -> Result<'alloc, &'alloc str> {
         match self.chars.next() {
             None => {
                 return Err(ParseError::UnexpectedEnd);
@@ -386,7 +386,7 @@ impl<'alloc> Lexer<'alloc> {
         &mut self,
         start: usize,
         builder: AutoCow<'alloc>,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let (has_different, text) = self.identifier_name_tail(builder)?;
 
         
@@ -489,7 +489,7 @@ impl<'alloc> Lexer<'alloc> {
         &mut self,
         start: usize,
         builder: AutoCow<'alloc>,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let name = self.identifier_name(builder)?;
         Ok((
             SourceLocation::new(start, self.offset()),
@@ -503,7 +503,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn unicode_escape_sequence_after_backslash(&mut self) -> Result<char> {
+    fn unicode_escape_sequence_after_backslash(&mut self) -> Result<'alloc, char> {
         match self.chars.next() {
             Some('u') => {}
             _ => {
@@ -513,7 +513,7 @@ impl<'alloc> Lexer<'alloc> {
         self.unicode_escape_sequence_after_backslash_and_u()
     }
 
-    fn unicode_escape_sequence_after_backslash_and_u(&mut self) -> Result<char> {
+    fn unicode_escape_sequence_after_backslash_and_u(&mut self) -> Result<'alloc, char> {
         let value = match self.peek() {
             Some('{') => {
                 self.chars.next();
@@ -557,7 +557,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn decimal_digits(&mut self) -> Result<bool> {
+    fn decimal_digits(&mut self) -> Result<'alloc, bool> {
         if let Some('0'..='9') = self.peek() {
             self.chars.next();
         } else {
@@ -568,7 +568,7 @@ impl<'alloc> Lexer<'alloc> {
         Ok(true)
     }
 
-    fn decimal_digits_after_first_digit(&mut self) -> Result<()> {
+    fn decimal_digits_after_first_digit(&mut self) -> Result<'alloc, ()> {
         while let Some(next) = self.peek() {
             match next {
                 '_' => {
@@ -603,7 +603,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn optional_exponent(&mut self) -> Result<()> {
+    fn optional_exponent(&mut self) -> Result<'alloc, ()> {
         if let Some('e') | Some('E') = self.peek() {
             self.chars.next();
 
@@ -622,7 +622,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn hex_digit(&mut self) -> Result<u32> {
+    fn hex_digit(&mut self) -> Result<'alloc, u32> {
         match self.chars.next() {
             None => Err(ParseError::InvalidEscapeSequence),
             Some(c @ '0'..='9') => Ok(c as u32 - '0' as u32),
@@ -632,7 +632,7 @@ impl<'alloc> Lexer<'alloc> {
         }
     }
 
-    fn code_point_to_char(value: u32) -> Result<char> {
+    fn code_point_to_char(value: u32) -> Result<'alloc, char> {
         if 0xd800 <= value && value <= 0xdfff {
             Err(ParseError::NotImplemented(
                 "unicode escape sequences (surrogates)",
@@ -646,7 +646,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn hex_4_digits(&mut self) -> Result<char> {
+    fn hex_4_digits(&mut self) -> Result<'alloc, char> {
         let mut value = 0;
         for _ in 0..4 {
             value = (value << 4) | self.hex_digit()?;
@@ -662,7 +662,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn code_point(&mut self) -> Result<char> {
+    fn code_point(&mut self) -> Result<'alloc, char> {
         let mut value = self.hex_digit()?;
 
         loop {
@@ -707,7 +707,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn numeric_literal_starting_with_zero(&mut self) -> Result<NumericType> {
+    fn numeric_literal_starting_with_zero(&mut self) -> Result<'alloc, NumericType> {
         match self.peek() {
             
             
@@ -900,7 +900,7 @@ impl<'alloc> Lexer<'alloc> {
     }
 
     
-    fn decimal_literal(&mut self) -> Result<NumericType> {
+    fn decimal_literal(&mut self) -> Result<'alloc, NumericType> {
         
         
         
@@ -922,12 +922,12 @@ impl<'alloc> Lexer<'alloc> {
 
     
     
-    fn decimal_literal_after_first_digit(&mut self) -> Result<NumericType> {
+    fn decimal_literal_after_first_digit(&mut self) -> Result<'alloc, NumericType> {
         self.decimal_digits_after_first_digit()?;
         self.decimal_literal_after_digits()
     }
 
-    fn decimal_literal_after_digits(&mut self) -> Result<NumericType> {
+    fn decimal_literal_after_digits(&mut self) -> Result<'alloc, NumericType> {
         match self.peek() {
             Some('.') => {
                 self.chars.next();
@@ -945,7 +945,7 @@ impl<'alloc> Lexer<'alloc> {
         Ok(NumericType::Normal)
     }
 
-    fn check_after_numeric_literal(&self) -> Result<()> {
+    fn check_after_numeric_literal(&self) -> Result<'alloc, ()> {
         
         
         
@@ -994,7 +994,7 @@ impl<'alloc> Lexer<'alloc> {
     
     
     
-    fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<()> {
+    fn escape_sequence(&mut self, text: &mut String<'alloc>) -> Result<'alloc, ()> {
         match self.chars.next() {
             None => {
                 return Err(ParseError::UnterminatedString);
@@ -1137,7 +1137,7 @@ impl<'alloc> Lexer<'alloc> {
     fn string_literal(
         &mut self,
         delimiter: char,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let offset = self.offset() - 1;
         let mut builder = AutoCow::new(&self);
         loop {
@@ -1181,7 +1181,10 @@ impl<'alloc> Lexer<'alloc> {
     
     
 
-    fn regular_expression_backslash_sequence(&mut self, text: &mut String<'alloc>) -> Result<()> {
+    fn regular_expression_backslash_sequence(
+        &mut self,
+        text: &mut String<'alloc>,
+    ) -> Result<'alloc, ()> {
         text.push('\\');
         match self.chars.next() {
             None | Some(CR) | Some(LF) | Some(LS) | Some(PS) => Err(ParseError::UnterminatedRegExp),
@@ -1196,7 +1199,7 @@ impl<'alloc> Lexer<'alloc> {
     fn regular_expression_literal(
         &mut self,
         builder: &mut AutoCow<'alloc>,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let offset = self.offset();
 
         loop {
@@ -1319,7 +1322,7 @@ impl<'alloc> Lexer<'alloc> {
         start: usize,
         subst: TerminalId,
         tail: TerminalId,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         while let Some(ch) = self.chars.next() {
             
@@ -1377,7 +1380,7 @@ impl<'alloc> Lexer<'alloc> {
     fn advance_impl<'parser>(
         &mut self,
         parser: &Parser<'parser>,
-    ) -> Result<(SourceLocation, Option<&'alloc str>, TerminalId)> {
+    ) -> Result<'alloc, (SourceLocation, Option<&'alloc str>, TerminalId)> {
         let mut builder = AutoCow::new(&self);
         let mut start = self.offset();
         while let Some(c) = self.chars.next() {
