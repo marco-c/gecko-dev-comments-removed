@@ -6816,13 +6816,6 @@ inline bool LStackArea::ResultIterator::isGcPointer() const {
   MOZ_ASSERT(!done());
   MWasmStackResultArea* area = alloc_.ins()->toWasmStackResultArea()->mir();
   MIRType type = area->result(idx_).type();
-#ifndef JS_PUNBOX64
-  
-  
-  if (type == MIRType::Int64) {
-    return false;
-  }
-#endif
   return LDefinition::TypeFrom(type) == LDefinition::OBJECT;
 }
 
