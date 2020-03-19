@@ -34,8 +34,8 @@ class ComputePassEncoder final : public ObjectBase,
 
   ffi::WGPURawPass mRaw;
   
-  std::vector<RefPtr<const BindGroup>> mUsedBindGroups;
-  std::vector<RefPtr<const ComputePipeline>> mUsedPipelines;
+  nsTArray<RefPtr<const BindGroup>> mUsedBindGroups;
+  nsTArray<RefPtr<const ComputePipeline>> mUsedPipelines;
 
  public:
   void SetBindGroup(uint32_t aSlot, const BindGroup& aBindGroup,
