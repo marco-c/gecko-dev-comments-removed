@@ -1048,6 +1048,13 @@ pref("dom.select_popup_in_parent.enabled", false);
 pref("dom.cycle_collector.incremental", true);
 
 
+#ifdef NIGHTLY_BUILD
+  pref("dom.use_components_shim", false);
+#else // NIGHTLY_BUILD
+  pref("dom.use_components_shim", true);
+#endif // NIGHTLY_BUILD
+
+
 
 
 
@@ -2040,6 +2047,19 @@ pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 
 
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", true);
+#else
+  pref("intl.ime.hack.on_ime_unaware_apps.fire_key_events_for_composition", false);
+#endif // MOZ_WIDGET_ANDROID
+
+
+
+
 
 pref("intl.ime.remove_placeholder_character_at_commit", false);
 
@@ -2273,6 +2293,16 @@ pref("security.notification_enable_delay", 500);
   
   pref("security.disallow_non_local_systemprincipal_in_tests", false);
 #endif
+
+
+pref("security.mixed_content.block_active_content", false);
+pref("security.mixed_content.block_display_content", false);
+
+
+pref("security.mixed_content.upgrade_display_content", false);
+
+
+pref("security.mixed_content.block_object_subrequest", false);
 
 
 pref("security.sri.enable", true);
@@ -2552,6 +2582,9 @@ pref("layout.testing.overlay-scrollbars.always-visible", false);
 
 
 pref("layout.spammy_warnings.enabled", false);
+
+
+pref("dom.animations.offscreen-throttling", true);
 
 
 pref("plugin.override_internal_types", false);
@@ -4149,6 +4182,10 @@ pref("full-screen-api.warning.delay", 500);
 
 pref("pointer-lock-api.warning.timeout", 3000);
 
+pref("dom.vibrator.enabled", true);
+pref("dom.vibrator.max_vibrate_ms", 10000);
+pref("dom.vibrator.max_vibrate_list_len", 128);
+
 
 
 pref("dom.push.loglevel", "Error");
@@ -4188,6 +4225,9 @@ pref("dom.push.requestTimeout", 10000);
 pref("dom.push.http2.reset_retry_count_after_ms", 60000);
 pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
+
+
+pref("dom.w3c_pointer_events.implicit_capture", false);
 
 
 pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
@@ -4596,6 +4636,13 @@ pref("dom.maxHardwareConcurrency", 16);
 
 
 
+
+
+pref("security.data_uri.unique_opaque_origin", true);
+
+
+
+
 pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 pref("dom.storageManager.prompt.testing", false);
@@ -4661,6 +4708,12 @@ pref("dom.noopener.newprocess.enabled", true);
 
 
 pref("general.document_open_conversion_depth_limit", 20);
+
+
+pref("dom.events.testing.asyncClipboard", false);
+
+
+pref("dom.datatransfer.mozAtAPIs", false);
 
 pref("fission.rebuild_frameloaders_on_remoteness_change", true);
 

@@ -37,6 +37,10 @@ class PointerEventHandler final {
  public:
   
   
+  static void Initialize();
+
+  
+  
   static void InitializeStatics();
   static void ReleaseStatics();
 
