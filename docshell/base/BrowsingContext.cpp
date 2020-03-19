@@ -125,6 +125,37 @@ CanonicalBrowsingContext* BrowsingContext::Canonical() {
   return CanonicalBrowsingContext::Cast(this);
 }
 
+static bool OpenerAndOpenerTopAreSameOrigin(BrowsingContext* aOpener) {
+  
+  
+  
+  if (!aOpener->Top()->IsInProcess()) {
+    return false;
+  }
+
+  nsIDocShell* openerDocShell = aOpener->GetDocShell();
+  if (!openerDocShell) {
+    return false;
+  }
+  Document* openerDoc = openerDocShell->GetDocument();
+  if (!openerDoc) {
+    return false;
+  }
+  nsIPrincipal* openerPrincipal = openerDoc->NodePrincipal();
+
+  nsIDocShell* topDocShell = aOpener->Top()->GetDocShell();
+  if (!topDocShell) {
+    return false;
+  }
+  Document* topDoc = topDocShell->GetDocument();
+  if (!topDoc) {
+    return false;
+  }
+  nsIPrincipal* openerTopPrincipal = topDoc->NodePrincipal();
+
+  return openerPrincipal->Equals(openerTopPrincipal);
+}
+
 
 already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     BrowsingContext* aParent, BrowsingContext* aOpener, const nsAString& aName,
@@ -169,10 +200,21 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE);
 
+  if (aOpener && OpenerAndOpenerTopAreSameOrigin(aOpener)) {
+    
+    
+    context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
+        aOpener->Top()->GetOpenerPolicy());
+  } else if (aOpener) {
+    
+    auto topPolicy = aOpener->Top()->GetOpenerPolicy();
+    MOZ_RELEASE_ASSERT(topPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE ||
+                       topPolicy ==
+                           nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_ALLOW_POPUPS);
+  }
+
   BrowsingContext* inherit = aParent ? aParent : aOpener;
   if (inherit) {
-    context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
-        inherit->Top()->GetOpenerPolicy());
     
     context->mFields.SetWithoutSyncing<IDX_EmbedderPolicy>(
         inherit->GetEmbedderPolicy());
