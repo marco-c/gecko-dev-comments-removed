@@ -67,6 +67,8 @@ pub struct SentPacket {
     pub tokens: Vec<RecoveryToken>,
 
     pub time_declared_lost: Option<Instant>,
+    
+    pto: bool,
 
     pub in_flight: bool,
     pub size: usize,
@@ -85,8 +87,20 @@ impl SentPacket {
             ack_eliciting,
             tokens,
             time_declared_lost: None,
+            pto: false,
             size,
             in_flight,
+        }
+    }
+
+    
+    
+    pub fn pto(&mut self) -> bool {
+        if self.pto {
+            false
+        } else {
+            self.pto = true;
+            true
         }
     }
 }
