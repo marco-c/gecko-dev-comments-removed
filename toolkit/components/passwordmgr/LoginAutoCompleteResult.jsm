@@ -460,6 +460,9 @@ LoginAutoComplete.prototype = {
     let loginManagerActor = LoginManagerChild.forWindow(aElement.ownerGlobal);
 
     let completeSearch = async autoCompleteLookupPromise => {
+      
+      this._autoCompleteLookupPromise = autoCompleteLookupPromise;
+
       let {
         generatedPassword,
         logins,
@@ -471,7 +474,7 @@ LoginAutoComplete.prototype = {
       
       
       if (this._autoCompleteLookupPromise !== autoCompleteLookupPromise) {
-        log.info("ignoring result from previous search");
+        log.debug("ignoring result from previous search");
         return;
       }
 
@@ -498,10 +501,7 @@ LoginAutoComplete.prototype = {
     if (isNullPrincipal) {
       
       
-      let acLookupPromise = (this._autoCompleteLookupPromise = Promise.resolve({
-        logins: [],
-      }));
-      completeSearch(acLookupPromise);
+      completeSearch(Promise.resolve({ logins: [] }));
       return;
     }
 
@@ -512,18 +512,12 @@ LoginAutoComplete.prototype = {
     ) {
       
       
-      let acLookupPromise = (this._autoCompleteLookupPromise = Promise.resolve({
-        logins: [],
-      }));
-      completeSearch(acLookupPromise);
+      completeSearch(Promise.resolve({ logins: [] }));
       return;
     }
 
     if (!LoginHelper.enabled) {
-      let acLookupPromise = (this._autoCompleteLookupPromise = Promise.resolve({
-        logins: [],
-      }));
-      completeSearch(acLookupPromise);
+      completeSearch(Promise.resolve({ logins: [] }));
       return;
     }
 
@@ -539,11 +533,11 @@ LoginAutoComplete.prototype = {
       previousResult = null;
     }
 
-    let acLookupPromise = (this._autoCompleteLookupPromise = loginManagerActor._autoCompleteSearchAsync(
+    let acLookupPromise = loginManagerActor._autoCompleteSearchAsync(
       aSearchString,
       previousResult,
       aElement
-    ));
+    );
     completeSearch(acLookupPromise).catch(log.error.bind(log));
   },
 
