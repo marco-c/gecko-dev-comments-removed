@@ -37,6 +37,8 @@ function URLFetcher(url, timeout) {
   xhr.channel.setTRRMode(Ci.nsIRequest.TRR_DISABLED_MODE);
   
   xhr.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
+  
+  xhr.channel.loadInfo.httpsOnlyNoUpgrade = true;
 
   
   xhr.channel.QueryInterface(Ci.nsIHttpChannel).redirectionLimit = 0;
