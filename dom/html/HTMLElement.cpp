@@ -47,7 +47,9 @@ JSObject* HTMLElement::WrapNode(JSContext* aCx,
 nsGenericHTMLElement* NS_NewHTMLElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
-  return new mozilla::dom::HTMLElement(std::move(aNodeInfo));
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
+  auto* nim = nodeInfo->NodeInfoManager();
+  return new (nim) mozilla::dom::HTMLElement(nodeInfo.forget());
 }
 
 
@@ -55,5 +57,7 @@ nsGenericHTMLElement* NS_NewHTMLElement(
 nsGenericHTMLElement* NS_NewCustomElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
-  return new mozilla::dom::HTMLElement(std::move(aNodeInfo));
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
+  auto* nim = nodeInfo->NodeInfoManager();
+  return new (nim) mozilla::dom::HTMLElement(nodeInfo.forget());
 }

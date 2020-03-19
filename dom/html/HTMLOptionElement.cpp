@@ -306,7 +306,9 @@ already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
       nsGkAtoms::option, nullptr, kNameSpaceID_XHTML, ELEMENT_NODE);
 
-  RefPtr<HTMLOptionElement> option = new HTMLOptionElement(nodeInfo.forget());
+  auto* nim = nodeInfo->NodeInfoManager();
+  RefPtr<HTMLOptionElement> option =
+      new (nim) HTMLOptionElement(nodeInfo.forget());
 
   if (!aText.IsEmpty()) {
     
