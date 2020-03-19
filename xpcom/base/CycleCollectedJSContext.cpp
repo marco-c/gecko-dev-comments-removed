@@ -417,24 +417,27 @@ void CycleCollectedJSContext::CleanupIDBTransactions(uint32_t aRecursionDepth) {
   nsTArray<PendingIDBTransactionData> localQueue =
       std::move(mPendingIDBTransactions);
 
-  for (uint32_t i = 0; i < localQueue.Length(); ++i) {
-    PendingIDBTransactionData& data = localQueue[i];
-    if (data.mRecursionDepth != aRecursionDepth) {
-      continue;
-    }
+  localQueue.RemoveElementsAt(
+      std::remove_if(localQueue.begin(), localQueue.end(),
+                     [aRecursionDepth](PendingIDBTransactionData& data) {
+                       if (data.mRecursionDepth != aRecursionDepth) {
+                         return false;
+                       }
 
-    {
-      nsCOMPtr<nsIRunnable> transaction = std::move(data.mTransaction);
-      transaction->Run();
-    }
+                       {
+                         nsCOMPtr<nsIRunnable> transaction =
+                             std::move(data.mTransaction);
+                         transaction->Run();
+                       }
 
-    localQueue.RemoveElementAt(i--);
-  }
+                       return true;
+                     }),
+      localQueue.end());
 
   
   
-  localQueue.AppendElements(mPendingIDBTransactions);
-  localQueue.SwapElements(mPendingIDBTransactions);
+  localQueue.AppendElements(std::move(mPendingIDBTransactions));
+  mPendingIDBTransactions = std::move(localQueue);
   mDoingStableStates = false;
 }
 
