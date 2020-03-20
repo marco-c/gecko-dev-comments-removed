@@ -1,16 +1,16 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 @depends(build_project, '--enable-smoosh')
 def cbindgen_is_needed(build_project, js_enable_smoosh):
     if build_project != 'js':
-        # cbindgen is needed by the style system build and webrender.
+        
         return True
 
-    # cbindgen is needed by SmooshMonkey.
+    
     return js_enable_smoosh
 
 option(env='CBINDGEN', nargs=1, when=cbindgen_is_needed,
@@ -23,7 +23,7 @@ def check_cbindgen_version(cbindgen, fatal=False):
 
     cbindgen_min_version = Version('0.13.1')
 
-    # cbindgen x.y.z
+    
     version = Version(check_cmd_output(cbindgen, '--version').strip().split(" ")[1])
     log.debug("%s has version %s" % (cbindgen, version))
     if version >= cbindgen_min_version:
@@ -67,7 +67,7 @@ def cbindgen(cbindgen_override, toolchain_search_path):
 
 set_config('CBINDGEN', cbindgen)
 
-# Bindgen can use rustfmt to format Rust file, but it's not required.
+
 js_option(env='RUSTFMT', nargs=1, help='Path to the rustfmt program')
 
 rustfmt = check_prog('RUSTFMT', ['rustfmt'], paths=toolchain_search_path,
@@ -85,7 +85,7 @@ js_option('--with-clang-path', nargs=1,
 @checking('for clang for bindgen', lambda x: x.path if x else 'not found')
 def bindgen_clang_compiler(clang_path, c_compiler, cxx_compiler,
                            toolchain_search_path, target, macos_sdk):
-    # When the target compiler is clang, use that, including flags.
+    
     if cxx_compiler.type == 'clang':
         if clang_path and clang_path[0] not in (c_compiler.compiler,
                                                 cxx_compiler.compiler):
@@ -95,8 +95,8 @@ def bindgen_clang_compiler(clang_path, c_compiler, cxx_compiler,
             path=cxx_compiler.compiler,
             flags=cxx_compiler.flags,
         )
-    # When the target compiler is clang-cl, use clang in the same directory,
-    # and figure the right flags to use.
+    
+    
     if cxx_compiler.type == 'clang-cl':
         if clang_path and os.path.dirname(clang_path[0]) != \
                 os.path.dirname(cxx_compiler.compiler):
@@ -110,7 +110,7 @@ def bindgen_clang_compiler(clang_path, c_compiler, cxx_compiler,
                               toolchain_search_path)
     if not clang_path:
         return
-    # Hack before bug 1617793: if the compiler is clang-cl, hack the target
+    
     if cxx_compiler.type == 'clang-cl':
         target = split_triplet('%s-pc-windows-msvc' % target.raw_cpu, allow_msvc=True)
     flags = prepare_flags(target, macos_sdk)
@@ -135,45 +135,45 @@ def bindgen_libclang_path(libclang_path, clang, library_name_info, host):
                 'for bindgen')
         return
 
-    # Try to ensure that the clang shared library that bindgen is going
-    # to look for is actually present.  The files that we search for
-    # mirror the logic in clang-sys/build.rs.
+    
+    
+    
     libclang_choices = []
     if host.os == 'WINNT':
         libclang_choices.append('libclang.dll')
     libclang_choices.append('%sclang%s' % (library_name_info.dll.prefix,
                                            library_name_info.dll.suffix))
     if host.kernel == 'Linux':
-        libclang_choices.append('libclang.so.1')
+        libclang_choices.append('libclang.so.*')
 
     if host.os == 'OpenBSD':
         libclang_choices.append('libclang.so.*.*')
 
     candidates = []
     if not libclang_path:
-        # Try to find libclang_path based on clang search dirs.
+        
         clang_search_dirs = check_cmd_output(clang.path, '-print-search-dirs')
         for line in clang_search_dirs.splitlines():
             name, _, value = line.partition(': =')
             if host.os == 'WINNT' and name == 'programs':
-                # On Windows, libclang.dll is in bin/ rather than lib/,
-                # so scan the programs search dirs.
-                # To make matters complicated, clang before version 9 uses `:`
-                # separate between paths (and `;` in newer versions)
+                
+                
+                
+                
                 if pathsep in value:
                     candidates.extend(value.split(pathsep))
                 else:
                     for part in value.split(':'):
-                        # Assume that if previous "candidate" was of length 1,
-                        # it's a drive letter and the current part is the rest of
-                        # the corresponding full path.
+                        
+                        
+                        
                         if candidates and len(candidates[-1]) == 1:
                             candidates[-1] += ':' + part
                         else:
                             candidates.append(part)
             elif host.os != 'WINNT' and name == 'libraries':
-                # On other platforms, use the directories from the libraries
-                # search dirs that looks like $something/clang/$version.
+                
+                
                 for dir in value.split(pathsep):
                     dir, version = pathsplit(dir)
                     if re.match(r'[0-9.]+', version):
@@ -193,11 +193,11 @@ def bindgen_libclang_path(libclang_path, clang, library_name_info, host):
 
 @depends(bindgen_clang_compiler, bindgen_libclang_path, build_project)
 def bindgen_config_paths(clang, libclang, build_project):
-    # XXX: we want this code to be run for both Gecko and JS, but we don't
-    # necessarily want to force a bindgen/Rust dependency on JS just yet.
-    # Actually, we don't want to force an error if we're not building the
-    # browser generally.  We therefore whitelist the projects that require
-    # bindgen facilities at this point and leave it at that.
+    
+    
+    
+    
+    
     if build_project in ('browser', 'mobile/android'):
         if not clang:
             die('Could not find clang to generate run bindings for C/C++. '
@@ -225,8 +225,8 @@ def bindgen_config_paths(clang, libclang, build_project):
 def min_libclang_version(libclang):
     try:
         lib = CDLL(libclang.encode('utf-8'))
-        # We want at least 4.0. The API we test below is enough for that.
-        # Just accessing it should throw if not found.
+        
+        
         fun = lib.clang_EvalResult_getAsLongLong
         return True
     except:
@@ -276,13 +276,13 @@ def basic_bindgen_cflags(target, is_unix, compiler_info, android_cflags,
 
     if compiler_info.type == 'clang-cl':
         args += [
-            # To enable the builtin __builtin_offsetof so that CRT wouldn't
-            # use reinterpret_cast in offsetof() which is not allowed inside
-            # static_assert().
+            
+            
+            
             '-D_CRT_USE_BUILTIN_OFFSETOF',
-            # Enable hidden attribute (which is not supported by MSVC and
-            # thus not enabled by default with a MSVC-compatibile build)
-            # to exclude hidden symbols from the generated file.
+            
+            
+            
             '-DHAVE_VISIBILITY_HIDDEN_ATTRIBUTE=1',
         ]
 
