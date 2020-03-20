@@ -20,6 +20,10 @@
 
 
 
+
+
+
+
 var { Ci, Cu, Cr, Cc } = require("chrome");
 var Services = require("Services");
 const ChromeUtils = require("ChromeUtils");
@@ -988,7 +992,9 @@ const browsingContextTargetPrototype = {
 
   attach(request) {
     if (this.exited) {
-      return { type: "exited" };
+      throw {
+        error: "exited",
+      };
     }
 
     this._attach();
