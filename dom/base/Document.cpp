@@ -3835,10 +3835,12 @@ void Document::SetContentType(const nsAString& aContentType) {
 
 bool Document::GetAllowPlugins() {
   
-  auto* browsingContext = GetBrowsingContext();
+  nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
 
-  if (browsingContext) {
-    if (!browsingContext->GetAllowPlugins()) {
+  if (docShell) {
+    bool allowPlugins = false;
+    docShell->GetAllowPlugins(&allowPlugins);
+    if (!allowPlugins) {
       return false;
     }
 
