@@ -1,10 +1,28 @@
 
+function stripUrlForUseAsReferrer(url, originOnly) {
+  
+  const parsedUrl = new URL(url);
 
+  if (["about:", "blob:", "data:"].includes(parsedUrl.protocol))
+    return undefined;
 
+  
+  parsedUrl.username = '';
 
+  
+  parsedUrl.password = '';
 
-function stripUrlForUseAsReferrer(url) {
-  return url.replace(/#.*$/, "");
+  
+  parsedUrl.hash = '';
+
+  
+  if (originOnly) {
+    
+    parsedUrl.pathname = '';
+    
+    parsedUrl.search = '';
+  }
+  return parsedUrl.href;
 }
 
 function invokeScenario(scenario) {
@@ -27,10 +45,10 @@ const referrerUrlResolver = {
     return undefined;
   },
   "origin": function(sourceUrl) {
-    return new URL(sourceUrl).origin + "/";
+    return stripUrlForUseAsReferrer(sourceUrl, true);
   },
   "stripped-referrer": function(sourceUrl) {
-    return stripUrlForUseAsReferrer(sourceUrl);
+    return stripUrlForUseAsReferrer(sourceUrl, false);
   }
 };
 
