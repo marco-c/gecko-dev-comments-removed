@@ -809,12 +809,24 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   mutable mozilla::Mutex mMapLock;
+
+  
+
+
+
+  struct ApzcMapData {
+    
+    RefPtr<AsyncPanZoomController> apzc;
+    
+    Maybe<ScrollableLayerGuid> parent;
+  };
+
   
 
 
 
 
-  std::unordered_map<ScrollableLayerGuid, RefPtr<AsyncPanZoomController>,
+  std::unordered_map<ScrollableLayerGuid, ApzcMapData,
                      ScrollableLayerGuid::HashIgnoringPresShellFn,
                      ScrollableLayerGuid::EqualIgnoringPresShellFn>
       mApzcMap;

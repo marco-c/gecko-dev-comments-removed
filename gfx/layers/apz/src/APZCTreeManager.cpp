@@ -111,7 +111,7 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  std::unordered_map<ScrollableLayerGuid, RefPtr<AsyncPanZoomController>,
+  std::unordered_map<ScrollableLayerGuid, ApzcMapData,
                      ScrollableLayerGuid::HashIgnoringPresShellFn,
                      ScrollableLayerGuid::EqualIgnoringPresShellFn>
       mApzcMap;
@@ -612,6 +612,12 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
     
     MutexAutoLock lock(mMapLock);
     mApzcMap = std::move(state.mApzcMap);
+
+    for (auto& mapping : mApzcMap) {
+      AsyncPanZoomController* parent = mapping.second.apzc->GetParent();
+      mapping.second.parent = parent ? Some(parent->GetGuid()) : Nothing();
+    }
+
     mScrollThumbInfo.clear();
     
     
@@ -713,7 +719,7 @@ void APZCTreeManager::SampleForWebRender(
 
   
   for (const auto& mapping : mApzcMap) {
-    AsyncPanZoomController* apzc = mapping.second;
+    AsyncPanZoomController* apzc = mapping.second.apzc;
     if (apzc->GetRenderRoot() != aRenderRoot) {
       
       continue;
@@ -809,7 +815,7 @@ void APZCTreeManager::SampleForWebRender(
       
       continue;
     }
-    AsyncPanZoomController* scrollTargetApzc = it->second;
+    AsyncPanZoomController* scrollTargetApzc = it->second.apzc;
     MOZ_ASSERT(scrollTargetApzc);
     if (scrollTargetApzc->GetRenderRoot() != aRenderRoot) {
       
@@ -890,7 +896,7 @@ bool APZCTreeManager::AdvanceAnimationsInternal(
     const TimeStamp& aSampleTime) {
   bool activeAnimations = false;
   for (const auto& mapping : mApzcMap) {
-    AsyncPanZoomController* apzc = mapping.second;
+    AsyncPanZoomController* apzc = mapping.second.apzc;
     if (aRenderRoot && apzc->GetRenderRoot() != *aRenderRoot) {
       
       continue;
@@ -1155,10 +1161,11 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
   
   ScrollableLayerGuid guid(aLayersId, aMetrics.GetPresShellId(),
                            aMetrics.GetScrollId());
-  auto insertResult = aState.mApzcMap.insert(
-      std::make_pair(guid, static_cast<AsyncPanZoomController*>(nullptr)));
+  auto insertResult = aState.mApzcMap.insert(std::make_pair(
+      guid,
+      ApzcMapData{static_cast<AsyncPanZoomController*>(nullptr), Nothing()}));
   if (!insertResult.second) {
-    apzc = insertResult.first->second;
+    apzc = insertResult.first->second.apzc;
     PrintAPZCInfo(aLayer, apzc);
   }
   APZCTM_LOG("Found APZC %p for layer %p with identifiers %" PRIx64 " %" PRId64
@@ -1310,7 +1317,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
     }
 
     
-    insertResult.first->second = apzc;
+    insertResult.first->second.apzc = apzc;
   } else {
     
     
@@ -2729,7 +2736,7 @@ already_AddRefed<AsyncPanZoomController> APZCTreeManager::GetTargetAPZC(
   ScrollableLayerGuid guid(aLayersId, 0, aScrollId);
   auto it = mApzcMap.find(guid);
   RefPtr<AsyncPanZoomController> apzc =
-      (it != mApzcMap.end() ? it->second : nullptr);
+      (it != mApzcMap.end() ? it->second.apzc : nullptr);
   return apzc.forget();
 }
 
@@ -3587,7 +3594,7 @@ bool APZCTreeManager::GetAPZTestData(LayersId aLayersId,
       if (mapping.first.mLayersId != aLayersId) {
         continue;
       }
-      AsyncPanZoomController* apzc = mapping.second;
+      AsyncPanZoomController* apzc = mapping.second.apzc;
       std::string viewId = std::to_string(mapping.first.mScrollId);
       std::string apzcState;
       if (apzc->IsCurrentlyCheckerboarding()) {
