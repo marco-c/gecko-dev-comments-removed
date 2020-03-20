@@ -43,8 +43,6 @@ const defaultOriginAttributes = {};
 function run_test() {
   do_test_pending();
   prefs.setBoolPref("network.dns.offline-localhost", false);
-  
-  prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
   ioService.offline = true;
   try {
     dns.asyncResolve(
@@ -99,5 +97,4 @@ function test3Continued() {
 
 function cleanup() {
   prefs.clearUserPref("network.dns.offline-localhost");
-  prefs.clearUserPref("network.proxy.allow_hijacking_localhost");
 }

@@ -49,8 +49,6 @@ function run_test() {
   
   
   ps.setBoolPref("network.notify.changed", false);
-  
-  ps.setBoolPref("network.proxy.allow_hijacking_localhost", true);
 
   registerCleanupFunction(function() {
     ps.clearUserPref("network.notify.changed");

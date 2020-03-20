@@ -36,9 +36,7 @@
 #include "nsISystemProxySettings.h"
 #include "nsINetworkLinkService.h"
 #include "nsIHttpChannelInternal.h"
-#include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/Logging.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/Unused.h"
 
@@ -772,6 +770,7 @@ nsProtocolProxyService::nsProtocolProxyService()
       mSOCKSProxyRemoteDNS(false),
       mProxyOverTLS(true),
       mWPADOverDHCPEnabled(false),
+      mAllowHijackingLocalhost(false),
       mPACMan(nullptr),
       mSessionStart(PR_Now()),
       mFailedProxyTimeout(30 * 60)  
@@ -1019,6 +1018,11 @@ void nsProtocolProxyService::PrefsChanged(nsIPrefBranch* prefBranch,
     reloadPAC = reloadPAC || mProxyConfig == PROXYCONFIG_WPAD;
   }
 
+  if (!pref || !strcmp(pref, PROXY_PREF("allow_hijacking_localhost"))) {
+    proxy_GetBoolPref(prefBranch, PROXY_PREF("allow_hijacking_localhost"),
+                      mAllowHijackingLocalhost);
+  }
+
   if (!pref || !strcmp(pref, PROXY_PREF("failover_timeout")))
     proxy_GetIntPref(prefBranch, PROXY_PREF("failover_timeout"),
                      mFailedProxyTimeout);
@@ -1092,12 +1096,9 @@ bool nsProtocolProxyService::CanUseProxy(nsIURI* aURI, int32_t defaultPort) {
 
   
   if ((!is_ipaddr && mFilterLocalHosts && !host.Contains('.')) ||
-      
-      
-      
-      
-      (!StaticPrefs::network_proxy_allow_hijacking_localhost() &&
-       nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(host))) {
+      (!mAllowHijackingLocalhost &&
+       (host.EqualsLiteral("127.0.0.1") || host.EqualsLiteral("::1") ||
+        host.EqualsLiteral("localhost")))) {
     LOG(("Not using proxy for this local host [%s]!\n", host.get()));
     return false;  
   }
