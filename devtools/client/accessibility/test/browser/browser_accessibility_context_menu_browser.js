@@ -39,6 +39,9 @@ addA11YPanelTask(
   "Test show accessibility properties context menu in browser.",
   TEST_URI,
   async function({ panel, toolbox, browser }) {
+    
+    await toolbox.loadTool("inspector");
+
     const headerSelector = "#h1";
 
     const contextMenu = document.getElementById("contentAreaContextMenu");

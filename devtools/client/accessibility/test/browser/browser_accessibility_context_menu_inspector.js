@@ -83,6 +83,9 @@ addA11YPanelTask(
   "Test show accessibility properties context menu.",
   TEST_URI,
   async function testShowAccessibilityPropertiesContextMenu(env) {
+    
+    await env.toolbox.loadTool("inspector");
+
     let allMenuItems = await openContextMenuForNode(env);
     let showA11YPropertiesNode = checkShowA11YPropertiesNode(
       allMenuItems,

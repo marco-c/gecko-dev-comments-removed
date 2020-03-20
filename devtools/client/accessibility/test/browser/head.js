@@ -140,10 +140,6 @@ async function addTestTab(url) {
       state.details.accessible.role === "document"
   );
 
-  
-  
-  await panel._toolbox.loadTool("inspector");
-
   return {
     tab,
     browser: tab.linkedBrowser,
