@@ -4399,21 +4399,52 @@ CSSRect AsyncPanZoomController::GetRecursivelyVisibleRect() const {
   return visible;
 }
 
-uint32_t AsyncPanZoomController::GetCheckerboardMagnitude() const {
+uint32_t AsyncPanZoomController::GetCheckerboardMagnitude(
+    const ParentLayerRect& aClippedCompositionBounds) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
   CSSRect painted = mLastContentPaintMetrics.GetDisplayPort() +
                     mLastContentPaintMetrics.GetScrollOffset();
-  CSSRect visible = GetVisibleRect(lock);
+  painted.Inflate(CSSMargin::FromAppUnits(
+      nsMargin(1, 1, 1, 1)));  
+
+  CSSRect visible = GetVisibleRect(lock);  
+  if (visible.IsEmpty() || painted.Contains(visible)) {
+    
+    return 0;
+  }
+
+  
+  
+  
+  ParentLayerRect visiblePartOfCompBoundsRelativeToItself =
+      aClippedCompositionBounds - Metrics().GetCompositionBounds().TopLeft();
+
+  CSSRect visiblePartOfCompBoundsRelativeToItselfInCssSpace =
+      (visiblePartOfCompBoundsRelativeToItself / Metrics().GetZoom());
+
+  
+  CSSRect visiblePartOfCompBoundsInCssSpace =
+      visiblePartOfCompBoundsRelativeToItselfInCssSpace + visible.TopLeft();
+
+  visible = visible.Intersect(visiblePartOfCompBoundsInCssSpace);
 
   CSSIntRegion checkerboard;
   
   
   checkerboard.Sub(RoundedIn(visible), RoundedOut(painted));
-  return checkerboard.Area();
+  uint32_t area = checkerboard.Area();
+  if (area) {
+    APZC_LOG_FM(Metrics(),
+                "%p is currently checkerboarding (painted %s visible %s)", this,
+                Stringify(painted).c_str(), Stringify(visible).c_str());
+  }
+  return area;
 }
 
-void AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime) {
+void AsyncPanZoomController::ReportCheckerboard(
+    const TimeStamp& aSampleTime,
+    const ParentLayerRect& aClippedCompositionBounds) {
   if (mLastCheckerboardReport == aSampleTime) {
     
     
@@ -4424,7 +4455,7 @@ void AsyncPanZoomController::ReportCheckerboard(const TimeStamp& aSampleTime) {
 
   bool recordTrace = StaticPrefs::apz_record_checkerboarding();
   bool forTelemetry = Telemetry::CanRecordExtended();
-  uint32_t magnitude = GetCheckerboardMagnitude();
+  uint32_t magnitude = GetCheckerboardMagnitude(aClippedCompositionBounds);
 
   
   

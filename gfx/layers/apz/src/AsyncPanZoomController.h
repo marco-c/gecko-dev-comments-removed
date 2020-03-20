@@ -311,12 +311,18 @@ class AsyncPanZoomController {
 
 
 
-  uint32_t GetCheckerboardMagnitude() const;
+
+
+  uint32_t GetCheckerboardMagnitude(
+      const ParentLayerRect& aClippedCompositionBounds) const;
 
   
 
 
-  void ReportCheckerboard(const TimeStamp& aSampleTime);
+
+
+  void ReportCheckerboard(const TimeStamp& aSampleTime,
+                          const ParentLayerRect& aClippedCompositionBounds);
 
   
 

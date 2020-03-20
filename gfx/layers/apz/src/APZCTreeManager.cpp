@@ -891,9 +891,68 @@ bool APZCTreeManager::AdvanceAnimations(Maybe<wr::RenderRoot> aRenderRoot,
   return AdvanceAnimationsInternal(lock, std::move(aRenderRoot), aSampleTime);
 }
 
+ParentLayerRect APZCTreeManager::ComputeClippedCompositionBounds(
+    const MutexAutoLock& aProofOfMapLock, ClippedCompositionBoundsMap& aDestMap,
+    ScrollableLayerGuid aGuid) {
+  auto insertResult = aDestMap.insert(std::make_pair(aGuid, ParentLayerRect()));
+  if (!insertResult.second) {
+    
+    
+    
+    
+    
+    return insertResult.first->second;
+  }
+
+  ParentLayerRect bounds = mApzcMap[aGuid].apzc->GetCompositionBounds();
+  const auto& mapEntry = mApzcMap.find(aGuid);
+  MOZ_ASSERT(mapEntry != mApzcMap.end());
+  if (mapEntry->second.parent.isNothing()) {
+    
+    
+    
+    insertResult.first->second = bounds;
+    return bounds;
+  }
+
+  ScrollableLayerGuid parentGuid = mapEntry->second.parent.value();
+  auto parentBoundsEntry = aDestMap.find(parentGuid);
+  
+  
+  ParentLayerRect parentClippedBounds =
+      (parentBoundsEntry == aDestMap.end())
+          ? ComputeClippedCompositionBounds(aProofOfMapLock, aDestMap,
+                                            parentGuid)
+          : parentBoundsEntry->second;
+
+  
+  
+  
+  
+  
+  AsyncTransform appliesToLayer =
+      mApzcMap[parentGuid].apzc->GetCurrentAsyncTransform(
+          AsyncPanZoomController::eForCompositing);
+
+  
+  LayerRect parentClippedBoundsInParentLayerSpace =
+      (parentClippedBounds - appliesToLayer.mTranslation) /
+      appliesToLayer.mScale;
+
+  
+  bounds = bounds.Intersect(
+      ViewAs<ParentLayerPixel>(parentClippedBoundsInParentLayerSpace,
+                               PixelCastJustification::MovingDownToChildren));
+
+  
+  insertResult.first->second = bounds;
+  return bounds;
+}
+
 bool APZCTreeManager::AdvanceAnimationsInternal(
     const MutexAutoLock& aProofOfMapLock, Maybe<wr::RenderRoot> aRenderRoot,
     const TimeStamp& aSampleTime) {
+  ClippedCompositionBoundsMap clippedCompBounds;
   bool activeAnimations = false;
   for (const auto& mapping : mApzcMap) {
     AsyncPanZoomController* apzc = mapping.second.apzc;
@@ -901,7 +960,14 @@ bool APZCTreeManager::AdvanceAnimationsInternal(
       
       continue;
     }
-    apzc->ReportCheckerboard(aSampleTime);
+
+    
+    
+    
+    ParentLayerRect clippedBounds = ComputeClippedCompositionBounds(
+        aProofOfMapLock, clippedCompBounds, mapping.first);
+
+    apzc->ReportCheckerboard(aSampleTime, clippedBounds);
     activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
   }
   return activeAnimations;

@@ -755,6 +755,19 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                                  Maybe<wr::RenderRoot> aRenderRoot,
                                  const TimeStamp& aSampleTime);
 
+  using ClippedCompositionBoundsMap =
+      std::unordered_map<ScrollableLayerGuid, ParentLayerRect,
+                         ScrollableLayerGuid::HashIgnoringPresShellFn,
+                         ScrollableLayerGuid::EqualIgnoringPresShellFn>;
+  
+  
+  
+  
+  
+  ParentLayerRect ComputeClippedCompositionBounds(
+      const MutexAutoLock& aProofOfMapLock,
+      ClippedCompositionBoundsMap& aDestMap, ScrollableLayerGuid aGuid);
+
  protected:
   
 
