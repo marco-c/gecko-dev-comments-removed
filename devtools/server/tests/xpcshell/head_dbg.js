@@ -275,18 +275,16 @@ function testExceptionHook(ex) {
 }
 
 
-function scriptErrorFlagsToKind(flags) {
-  let kind;
-  if (flags & Ci.nsIScriptError.warningFlag) {
-    kind = "warning";
+function scriptErrorLogLevel(message) {
+  switch (message.logLevel) {
+    case Ci.nsIConsoleMessage.info:
+      return "info";
+    case Ci.nsIConsoleMessage.warn:
+      return "warning";
+    default:
+      Assert.equal(message.logLevel, Ci.nsIConsoleMessage.error);
+      return "error";
   }
-  if (flags & Ci.nsIScriptError.exceptionFlag) {
-    kind = "exception";
-  } else {
-    kind = "error";
-  }
-
-  return kind;
 }
 
 
@@ -306,7 +304,7 @@ var listener = {
             ":" +
             message.lineNumber +
             ": " +
-            scriptErrorFlagsToKind(message.flags) +
+            scriptErrorLogLevel(message) +
             ": " +
             message.errorMessage
         );
