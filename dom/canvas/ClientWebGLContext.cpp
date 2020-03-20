@@ -3404,12 +3404,19 @@ Range<T> SubRange(const Range<T>& full, const size_t offset,
   return Range<T>{newBegin, newBegin + length};
 }
 
+static inline size_t SizeOfViewElem(const dom::ArrayBufferView& view) {
+  const auto& elemType = view.Type();
+  if (elemType == js::Scalar::MaxTypedArrayViewType)  
+    return 1;
+
+  return js::Scalar::byteSize(elemType);
+}
+
 Maybe<Range<const uint8_t>> GetRangeFromView(const dom::ArrayBufferView& view,
                                              GLuint elemOffset,
                                              GLuint elemCountOverride) {
   const auto byteRange = MakeRangeAbv(view);  
-  const auto& elemType = view.Type();
-  const auto bytesPerElem = js::Scalar::byteSize(elemType);
+  const auto bytesPerElem = SizeOfViewElem(view);
 
   auto elemCount = byteRange.length() / bytesPerElem;
   if (elemOffset > elemCount) return {};
@@ -3980,6 +3987,8 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
 
 bool ClientWebGLContext::ReadPixels_SharedPrecheck(
     CallerType aCallerType, ErrorResult& out_error) const {
+  if (IsContextLost()) return false;
+
   if (mCanvasElement && mCanvasElement->IsWriteOnly() &&
       aCallerType != CallerType::System) {
     JsWarning("readPixels: Not allowed");
@@ -5270,14 +5279,6 @@ const webgl::LinkResult& ClientWebGLContext::GetLinkResult(
 #undef RPROC
 
 
-
-static inline size_t SizeOfViewElem(const dom::ArrayBufferView& view) {
-  const auto& elemType = view.Type();
-  if (elemType == js::Scalar::MaxTypedArrayViewType)  
-    return 1;
-
-  return js::Scalar::byteSize(elemType);
-}
 
 bool ClientWebGLContext::ValidateArrayBufferView(
     const dom::ArrayBufferView& view, GLuint elemOffset,
