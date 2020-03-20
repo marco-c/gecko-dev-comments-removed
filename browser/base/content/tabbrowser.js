@@ -2845,6 +2845,10 @@
           }
           if (fromExternal) {
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FROM_EXTERNAL;
+          } else if (!triggeringPrincipal.isSystemPrincipal) {
+            
+            
+            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_FIRST_LOAD;
           }
           if (allowMixedContent) {
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT;

@@ -10,7 +10,9 @@
 #include "nsServiceManagerUtils.h"
 #include "nsDocShellCID.h"
 #include "nsIWebNavigationInfo.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/Unused.h"
 #include "nsError.h"
 #include "nsContentSecurityManager.h"
 #include "nsDocShellLoadTypes.h"
@@ -41,23 +43,52 @@ void MaybeCloseWindowHelper::SetShouldCloseWindow(bool aShouldCloseWindow) {
 }
 
 BrowsingContext* MaybeCloseWindowHelper::MaybeCloseWindow() {
-  if (mShouldCloseWindow) {
-    
-    
-    RefPtr<BrowsingContext> opener = mBrowsingContext->GetOpener();
-
-    if (opener && !opener->IsDiscarded()) {
-      mBCToClose = mBrowsingContext;
-      mBrowsingContext = opener;
-
-      
-      
-      NS_ASSERTION(!mTimer, "mTimer was already initialized once!");
-      NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, 0,
-                              nsITimer::TYPE_ONE_SHOT);
-    }
+  if (!mShouldCloseWindow) {
+    return mBrowsingContext;
   }
+
+  
+  
+  mShouldCloseWindow = false;
+
+  
+  
+  RefPtr<BrowsingContext> newBC = ChooseNewBrowsingContext(mBrowsingContext);
+
+  if (newBC != mBrowsingContext && newBC && !newBC->IsDiscarded()) {
+    mBCToClose = mBrowsingContext;
+    mBrowsingContext = newBC;
+
+    
+    
+    NS_ASSERTION(!mTimer, "mTimer was already initialized once!");
+    NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, 0,
+                            nsITimer::TYPE_ONE_SHOT);
+  }
+
   return mBrowsingContext;
+}
+
+already_AddRefed<BrowsingContext>
+MaybeCloseWindowHelper::ChooseNewBrowsingContext(BrowsingContext* aBC) {
+  RefPtr<BrowsingContext> bc = aBC;
+
+  RefPtr<BrowsingContext> opener = bc->GetOpener();
+  if (opener && !opener->IsDiscarded()) {
+    return opener.forget();
+  }
+
+  if (!XRE_IsParentProcess()) {
+    return bc.forget();
+  }
+
+  CanonicalBrowsingContext* cbc = CanonicalBrowsingContext::Cast(aBC);
+  RefPtr<WindowGlobalParent> wgp = cbc->GetEmbedderWindowGlobal();
+  if (!wgp) {
+    return bc.forget();
+  }
+
+  return do_AddRef(wgp->BrowsingContext());
 }
 
 NS_IMETHODIMP
@@ -135,7 +166,7 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
         RefPtr<MaybeCloseWindowHelper> maybeCloseWindowHelper =
             new MaybeCloseWindowHelper(mDocShell->GetBrowsingContext());
         maybeCloseWindowHelper->SetShouldCloseWindow(true);
-        maybeCloseWindowHelper->MaybeCloseWindow();
+        Unused << maybeCloseWindowHelper->MaybeCloseWindow();
       }
       return NS_OK;
     }
