@@ -1,6 +1,10 @@
 
 
 
+const { TabStateFlusher } = ChromeUtils.import(
+  "resource:///modules/sessionstore/TabStateFlusher.jsm"
+);
+
 add_task(async function test_blank() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
@@ -16,36 +20,34 @@ add_task(async function test_newtab() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function(browser) {
-      let tab = gBrowser.getTabForBrowser(browser);
-
       
-      BrowserTestUtils.loadURI(browser, "about:newtab");
-      
-      
-      await BrowserTestUtils.browserStopped(browser, "about:newtab");
-
-      let { mustChangeProcess } = E10SUtils.shouldLoadURIInBrowser(
-        browser,
-        "http://example.com"
-      );
-
-      BrowserTestUtils.loadURI(browser, "http://example.com");
-
-      let stopped = BrowserTestUtils.browserStopped(browser);
-
-      if (mustChangeProcess) {
-        
-        
-        await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
-      }
-
+      let stopped = BrowserTestUtils.browserStopped(browser, "about:newtab");
+      await BrowserTestUtils.loadURI(browser, "about:newtab");
       await stopped;
 
-      is(
-        gBrowser.canGoBack,
-        true,
-        "about:newtab was added to the session history when AS was enabled."
+      stopped = BrowserTestUtils.browserStopped(browser, "http://example.com/");
+      await BrowserTestUtils.loadURI(browser, "http://example.com/");
+      await stopped;
+
+      
+      
+      await TabStateFlusher.flush(browser);
+
+      let tab = gBrowser.getTabForBrowser(browser);
+      let tabState = JSON.parse(SessionStore.getTabState(tab));
+      Assert.equal(
+        tabState.entries.length,
+        2,
+        "We should have 2 entries in the session history."
       );
+
+      Assert.equal(
+        tabState.entries[0].url,
+        "about:newtab",
+        "about:newtab should be the first entry."
+      );
+
+      Assert.ok(gBrowser.canGoBack, "Should be able to browse back.");
     }
   );
 });
