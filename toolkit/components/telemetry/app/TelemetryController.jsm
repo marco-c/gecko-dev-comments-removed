@@ -852,10 +852,7 @@ var Impl = {
 
             
             
-            if (
-              AppConstants.EARLY_BETA_OR_EARLIER &&
-              AppConstants.platform == "win"
-            ) {
+            if (AppConstants.platform == "win") {
               TelemetryUntrustedModulesPing.start();
             }
           }

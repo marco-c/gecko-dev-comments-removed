@@ -104,16 +104,12 @@ bool UntrustedModulesProcessor::IsSupportedProcessType() {
 
 
 RefPtr<UntrustedModulesProcessor> UntrustedModulesProcessor::Create() {
-#if defined(EARLY_BETA_OR_EARLIER)
   if (!IsSupportedProcessType()) {
     return nullptr;
   }
 
   RefPtr<UntrustedModulesProcessor> result(new UntrustedModulesProcessor());
   return result.forget();
-#else
-  return nullptr;
-#endif  
 }
 
 NS_IMPL_ISUPPORTS(UntrustedModulesProcessor, nsIObserver)
