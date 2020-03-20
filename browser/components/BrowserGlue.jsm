@@ -2,7 +2,11 @@
 
 
 
-var EXPORTED_SYMBOLS = ["BrowserGlue", "ContentPermissionPrompt"];
+var EXPORTED_SYMBOLS = [
+  "BrowserGlue",
+  "ContentPermissionPrompt",
+  "DefaultBrowserCheck",
+];
 
 const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
@@ -2161,7 +2165,7 @@ BrowserGlue.prototype = {
 
       {
         task: () => {
-          this._checkForDefaultBrowser();
+          this._maybeShowDefaultBrowserPrompt();
         },
       },
 
@@ -3428,96 +3432,15 @@ BrowserGlue.prototype = {
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
   },
 
-  _checkForDefaultBrowser() {
-    
-    if (!ShellService) {
+  _maybeShowDefaultBrowserPrompt() {
+    const willPrompt = DefaultBrowserCheck.willCheckDefaultBrowser(
+       true
+    );
+    if (!willPrompt) {
       return;
     }
 
-    let shouldCheck =
-      !AppConstants.DEBUG && ShellService.shouldCheckDefaultBrowser;
-
-    const skipDefaultBrowserCheck =
-      Services.prefs.getBoolPref(
-        "browser.shell.skipDefaultBrowserCheckOnFirstRun"
-      ) &&
-      !Services.prefs.getBoolPref(
-        "browser.shell.didSkipDefaultBrowserCheckOnFirstRun"
-      );
-
-    const usePromptLimit = !AppConstants.RELEASE_OR_BETA;
-    let promptCount = usePromptLimit
-      ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount")
-      : 0;
-
-    let willRecoverSession =
-      SessionStartup.sessionType == SessionStartup.RECOVER_SESSION;
-
-    
-    let isDefault = false;
-    let isDefaultError = false;
-    try {
-      isDefault = ShellService.isDefaultBrowser(true, false);
-    } catch (ex) {
-      isDefaultError = true;
-    }
-
-    if (isDefault) {
-      let now = Math.floor(Date.now() / 1000).toString();
-      Services.prefs.setCharPref(
-        "browser.shell.mostRecentDateSetAsDefault",
-        now
-      );
-    }
-
-    let willPrompt = shouldCheck && !isDefault && !willRecoverSession;
-
-    
-    
-    if (willPrompt) {
-      if (skipDefaultBrowserCheck) {
-        Services.prefs.setBoolPref(
-          "browser.shell.didSkipDefaultBrowserCheckOnFirstRun",
-          true
-        );
-        willPrompt = false;
-      } else {
-        promptCount++;
-      }
-      if (usePromptLimit && promptCount > 3) {
-        willPrompt = false;
-      }
-    }
-
-    if (usePromptLimit && willPrompt) {
-      Services.prefs.setIntPref(
-        "browser.shell.defaultBrowserCheckCount",
-        promptCount
-      );
-    }
-
-    try {
-      
-      
-      Services.telemetry
-        .getHistogramById("BROWSER_IS_USER_DEFAULT")
-        .add(isDefault);
-      Services.telemetry
-        .getHistogramById("BROWSER_IS_USER_DEFAULT_ERROR")
-        .add(isDefaultError);
-      Services.telemetry
-        .getHistogramById("BROWSER_SET_DEFAULT_ALWAYS_CHECK")
-        .add(shouldCheck);
-      Services.telemetry
-        .getHistogramById("BROWSER_SET_DEFAULT_DIALOG_PROMPT_RAWCOUNT")
-        .add(promptCount);
-    } catch (ex) {
-      
-    }
-
-    if (willPrompt) {
-      DefaultBrowserCheck.prompt(BrowserWindowTracker.getTopWindow());
-    }
+    DefaultBrowserCheck.prompt(BrowserWindowTracker.getTopWindow());
   },
 
   async _migrateMatchBucketsPrefForUI66() {
@@ -4504,6 +4427,113 @@ var DefaultBrowserCheck = {
       popup.remove();
       delete this._notification;
     }
+  },
+
+  
+
+
+
+
+
+  willCheckDefaultBrowser(isStartupCheck) {
+    
+    if (!ShellService) {
+      return false;
+    }
+
+    let shouldCheck =
+      !AppConstants.DEBUG && ShellService.shouldCheckDefaultBrowser;
+
+    
+    
+    if (!shouldCheck && !isStartupCheck) {
+      return false;
+    }
+
+    
+    
+    const skipDefaultBrowserCheck =
+      Services.prefs.getBoolPref(
+        "browser.shell.skipDefaultBrowserCheckOnFirstRun"
+      ) &&
+      !Services.prefs.getBoolPref(
+        "browser.shell.didSkipDefaultBrowserCheckOnFirstRun"
+      );
+
+    const usePromptLimit = !AppConstants.RELEASE_OR_BETA;
+    let promptCount = usePromptLimit
+      ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount")
+      : 0;
+
+    let willRecoverSession =
+      SessionStartup.sessionType == SessionStartup.RECOVER_SESSION;
+
+    
+    let isDefault = false;
+    let isDefaultError = false;
+    try {
+      isDefault = ShellService.isDefaultBrowser(isStartupCheck, false);
+    } catch (ex) {
+      isDefaultError = true;
+    }
+
+    if (isDefault && isStartupCheck) {
+      let now = Math.floor(Date.now() / 1000).toString();
+      Services.prefs.setCharPref(
+        "browser.shell.mostRecentDateSetAsDefault",
+        now
+      );
+    }
+
+    let willPrompt = shouldCheck && !isDefault && !willRecoverSession;
+
+    if (willPrompt) {
+      if (skipDefaultBrowserCheck) {
+        if (isStartupCheck) {
+          Services.prefs.setBoolPref(
+            "browser.shell.didSkipDefaultBrowserCheckOnFirstRun",
+            true
+          );
+        }
+        willPrompt = false;
+      }
+
+      if (usePromptLimit) {
+        promptCount++;
+        if (isStartupCheck) {
+          Services.prefs.setIntPref(
+            "browser.shell.defaultBrowserCheckCount",
+            promptCount
+          );
+        }
+        if (promptCount > 3) {
+          willPrompt = false;
+        }
+      }
+    }
+
+    if (isStartupCheck) {
+      try {
+        
+        
+        Services.telemetry
+          .getHistogramById("BROWSER_IS_USER_DEFAULT")
+          .add(isDefault);
+        Services.telemetry
+          .getHistogramById("BROWSER_IS_USER_DEFAULT_ERROR")
+          .add(isDefaultError);
+        Services.telemetry
+          .getHistogramById("BROWSER_SET_DEFAULT_ALWAYS_CHECK")
+          .add(shouldCheck);
+        Services.telemetry
+          .getHistogramById("BROWSER_SET_DEFAULT_DIALOG_PROMPT_RAWCOUNT")
+          .add(promptCount);
+      } catch (ex) {
+        
+      }
+    }
+
+    return willPrompt;
   },
 };
 

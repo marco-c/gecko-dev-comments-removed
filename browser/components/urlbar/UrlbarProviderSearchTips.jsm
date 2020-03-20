@@ -17,6 +17,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
+  DefaultBrowserCheck: "resource:///modules/BrowserGlue.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Log: "resource://gre/modules/Log.jsm",
   ProfileAge: "resource://gre/modules/ProfileAge.jsm",
@@ -415,6 +416,16 @@ function isBrowserShowingNotification() {
     if (node.getAttribute("open") == "true") {
       return true;
     }
+  }
+
+  
+  
+  
+  const willPrompt = DefaultBrowserCheck.willCheckDefaultBrowser(
+     false
+  );
+  if (willPrompt) {
+    return true;
   }
 
   return false;
