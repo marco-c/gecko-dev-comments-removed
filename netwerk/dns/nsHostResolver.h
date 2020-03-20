@@ -440,6 +440,14 @@ class nsHostResolver : public nsISupports, public AHostResolver {
                        uint16_t flags, uint16_t af,
                        nsResolveHostCallback* callback);
 
+  nsHostRecord* InitRecord(const nsHostKey& key);
+
+  
+
+
+  already_AddRefed<nsHostRecord> InitLoopbackRecord(const nsHostKey& key,
+                                                    nsresult* aRv);
+
   
 
 
