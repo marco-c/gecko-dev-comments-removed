@@ -184,8 +184,12 @@ var OSKeyStore = {
         unlockPromise = this._reauthInTests();
       } else if (
         AppConstants.platform == "win" ||
-        AppConstants.platform == "macosx"
+        (AppConstants.platform == "macosx" &&
+          AppConstants.isPlatformAndVersionAtLeast("macosx", "16"))
       ) {
+        
+        
+
         
         
         unlockPromise = osReauthenticator
