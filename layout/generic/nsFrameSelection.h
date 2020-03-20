@@ -205,11 +205,6 @@ enum class TableSelectionMode : uint32_t {
 }  
 class nsIScrollableFrame;
 
-
-
-
-
-
 class nsFrameSelection final {
  public:
   typedef mozilla::CaretAssociationHint CaretAssociateHint;
@@ -261,7 +256,8 @@ class nsFrameSelection final {
 
 
   
-  void HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HandleDrag(nsIFrame* aFrame,
+                                              const nsPoint& aPoint);
 
   
 
@@ -288,9 +284,10 @@ class nsFrameSelection final {
 
 
   
-  nsresult HandleTableSelection(nsINode* aParentContent, int32_t aContentOffset,
-                                mozilla::TableSelectionMode aTarget,
-                                mozilla::WidgetMouseEvent* aMouseEvent);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  HandleTableSelection(nsINode* aParentContent, int32_t aContentOffset,
+                       mozilla::TableSelectionMode aTarget,
+                       mozilla::WidgetMouseEvent* aMouseEvent);
 
   
 
@@ -418,9 +415,9 @@ class nsFrameSelection final {
 
 
   
-  nsresult ScrollSelectionIntoView(mozilla::SelectionType aSelectionType,
-                                   SelectionRegion aRegion,
-                                   int16_t aFlags) const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  ScrollSelectionIntoView(mozilla::SelectionType aSelectionType,
+                          SelectionRegion aRegion, int16_t aFlags) const;
 
   
 
@@ -820,13 +817,11 @@ class nsFrameSelection final {
     
     nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    nsresult HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
-                             mozilla::TableSelectionMode aTarget,
-                             mozilla::WidgetMouseEvent* aMouseEvent,
-                             bool aDragState,
-                             mozilla::dom::Selection& aNormalSelection);
+    MOZ_CAN_RUN_SCRIPT nsresult
+    HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
+                    mozilla::TableSelectionMode aTarget,
+                    mozilla::WidgetMouseEvent* aMouseEvent, bool aDragState,
+                    mozilla::dom::Selection& aNormalSelection);
 
     
     MOZ_CAN_RUN_SCRIPT_BOUNDARY
