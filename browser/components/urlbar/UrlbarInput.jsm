@@ -648,6 +648,7 @@ class UrlbarInput {
 
         if (
           result.heuristic &&
+          this.window.gKeywordURIFixup &&
           UrlbarUtils.looksLikeSingleWordHost(originalUntrimmedValue)
         ) {
           
