@@ -1,20 +1,20 @@
 
-function TestCase(scenario, description) {
-  const urls = getRequestURLs(scenario.subresource,
-                              scenario.origin,
-                              scenario.redirection);
-  const checkResult = _ => {
-    
-    return xhrRequest(urls.assertUrl)
-      .then(assertResult => {
-          
-          
-          assert_equals(assertResult.status, scenario.expectation,
-            "The resource request should be '" + scenario.expectation + "'.");
-        });
-  };
+function TestCase(scenarios) {
+  function runTest(scenario) {
+    const urls = getRequestURLs(scenario.subresource,
+                                scenario.origin,
+                                scenario.redirection);
+    const checkResult = _ => {
+      
+      return xhrRequest(urls.assertUrl)
+        .then(assertResult => {
+            
+            
+            assert_equals(assertResult.status, scenario.expectation,
+              "The resource request should be '" + scenario.expectation + "'.");
+          });
+    };
 
-  function runTest() {
     
     const subresource = {
       subresourceType: scenario.subresource,
@@ -30,8 +30,14 @@ function TestCase(scenario, description) {
         
         
         .then(checkResult, checkResult);
-      }, description);
+      }, scenario.test_description);
   }  
 
-  return {start: runTest};
+  function runTests() {
+    for (const scenario of scenarios) {
+      runTest(scenario);
+    }
+  }
+
+  return {start: runTests};
 }
