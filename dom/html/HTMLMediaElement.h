@@ -1926,6 +1926,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   void StartListeningMediaControlEventIfNeeded();
   void StopListeningMediaControlEventIfNeeded();
   RefPtr<MediaControlEventListener> mMediaControlEventListener;
+
+  
+  bool IsBeingUsedInPictureInPictureMode() const;
 };
 
 
