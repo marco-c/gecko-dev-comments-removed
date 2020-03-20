@@ -1023,10 +1023,23 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
+
     function dom(selector) {
         return new DomLhs(selector);
     }
 
+    
+
+
+
+
+
+
+
+
+    function element(selector) {
+        return new ElementLhs(selector);
+    }
 
     
 
@@ -1161,9 +1174,16 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         constructor(selector) {
             super();
             if (selector === undefined) {
-                throw new Error('A querySelector()-style selector is required as the argument to dom().');
+                throw new Error('A querySelector()-style selector is required as the argument to ' + this._callName() + '().');
             }
             this.selector = selector;
+        }
+
+        
+
+
+        _callName() {
+            return 'dom';
         }
 
         clone() {
@@ -1171,17 +1191,26 @@ this.EXPORTED_SYMBOLS = ["fathom"];
         }
 
         fnodes(ruleset) {
-            const ret = [];
-            const matches = ruleset.doc.querySelectorAll(this.selector);
-            for (let i = 0; i < matches.length; i++) {
-                ret.push(ruleset.fnodeForElement(matches[i]));
+            return this._domNodesToFilteredFnodes(
+                ruleset,
+                ruleset.doc.querySelectorAll(this.selector));
+        }
+
+        
+
+
+
+        _domNodesToFilteredFnodes(ruleset, domNodes) {
+            let ret = [];
+            for (let i = 0; i < domNodes.length; i++) {
+                ret.push(ruleset.fnodeForElement(domNodes[i]));
             }
             return super.fnodesSatisfyingWhen(ret);
         }
 
         checkFact(fact) {
             if (fact.type === undefined) {
-                throw new Error(`The right-hand side of a dom() rule failed to specify a type. This means there is no way for its output to be used by later rules. All it specified was ${fact}.`);
+                throw new Error(`The right-hand side of a ${this._callName()}() rule failed to specify a type. This means there is no way for its output to be used by later rules. All it specified was ${fact}.`);
             }
         }
 
@@ -1195,6 +1224,18 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
         typesMentioned() {
             return new NiceSet();
+        }
+    }
+
+    class ElementLhs extends DomLhs {
+        _callName() {
+            return 'element';
+        }
+
+        fnodes(ruleset) {
+            return this._domNodesToFilteredFnodes(
+                ruleset,
+                ruleset.doc.matches(this.selector) ? [ruleset.doc] : []);
         }
     }
 
@@ -2452,6 +2493,9 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
+
+
+
         against(doc) {
             return new BoundRuleset(doc,
                                     this._inRules,
@@ -2666,12 +2710,13 @@ this.EXPORTED_SYMBOLS = ["fathom"];
 
 
 
-    const version = '3.2.1';
+    const version = '3.3';
 
     exports.and = and;
     exports.atMost = atMost;
     exports.clusters = clusters$1;
     exports.dom = dom;
+    exports.element = element;
     exports.nearest = nearest;
     exports.note = note;
     exports.out = out;
