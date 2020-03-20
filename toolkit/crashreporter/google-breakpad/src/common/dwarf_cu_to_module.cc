@@ -225,6 +225,10 @@ struct DwarfCUToModule::CUContext {
   
   
   vector<Module::Function *> functions;
+
+  
+  
+  std::map<uint64_t, Module::Function *> forward_ref_die_to_func;
 };
 
 
@@ -256,7 +260,8 @@ class DwarfCUToModule::GenericDIEHandler: public dwarf2reader::DIEHandler {
         parent_context_(parent_context),
         offset_(offset),
         declaration_(false),
-        specification_(NULL) { }
+        specification_(NULL),
+        forward_ref_die_offset_(0) { }
 
   
   
@@ -310,6 +315,11 @@ class DwarfCUToModule::GenericDIEHandler: public dwarf2reader::DIEHandler {
 
   
   
+  
+  uint64_t forward_ref_die_offset_;
+
+  
+  
   string name_attribute_;
 
   
@@ -354,12 +364,9 @@ void DwarfCUToModule::GenericDIEHandler::ProcessAttributeReference(
       SpecificationByOffset::iterator spec = specifications->find(data);
       if (spec != specifications->end()) {
         specification_ = &spec->second;
+      } else if (data > offset_) {
+        forward_ref_die_offset_ = data;
       } else {
-        
-        
-        
-        
-        
         cu_context_->reporter->UnknownSpecification(offset_, data);
       }
       break;
@@ -684,6 +691,8 @@ void DwarfCUToModule::FuncHandler::ProcessAttributeReference(
       AbstractOriginByOffset::const_iterator origin = origins.find(data);
       if (origin != origins.end()) {
         abstract_origin_ = &(origin->second);
+      } else if (data > offset_) {
+        forward_ref_die_offset_ = data;
       } else {
         cu_context_->reporter->UnknownAbstractOrigin(offset_, data);
       }
@@ -716,6 +725,15 @@ static bool IsEmptyRange(const vector<Module::Range>& ranges) {
 
 void DwarfCUToModule::FuncHandler::Finish() {
   vector<Module::Range> ranges;
+
+  
+  
+  
+  if (!name_.empty()) {
+    auto iter = cu_context_->forward_ref_die_to_func.find(offset_);
+    if (iter != cu_context_->forward_ref_die_to_func.end())
+      iter->second->name = name_;
+  }
 
   if (!ranges_) {
     
@@ -752,7 +770,11 @@ void DwarfCUToModule::FuncHandler::Finish() {
     if (!name_.empty()) {
       name = name_;
     } else {
-      cu_context_->reporter->UnnamedFunction(offset_);
+      
+      
+      
+      if (forward_ref_die_offset_ == 0)
+        cu_context_->reporter->UnnamedFunction(offset_);
       name = "<name omitted>";
     }
 
@@ -762,10 +784,20 @@ void DwarfCUToModule::FuncHandler::Finish() {
     func->ranges = ranges;
     func->parameter_size = 0;
     if (func->address) {
-       
-       
-       cu_context_->functions.push_back(func.release());
-     }
+      
+      
+      cu_context_->functions.push_back(func.release());
+      if (forward_ref_die_offset_ != 0) {
+        auto iter =
+            cu_context_->forward_ref_die_to_func.find(forward_ref_die_offset_);
+        if (iter == cu_context_->forward_ref_die_to_func.end()) {
+          cu_context_->reporter->UnknownSpecification(offset_,
+                                                      forward_ref_die_offset_);
+        } else {
+          iter->second = cu_context_->functions.back();
+        }
+      }
+    }
   } else if (inline_) {
     AbstractOrigin origin(name_);
     cu_context_->file_context->file_private_->origins[offset_] = origin;
@@ -839,8 +871,8 @@ void DwarfCUToModule::WarningReporter::UnknownSpecification(uint64 offset,
                                                             uint64 target) {
   CUHeading();
   fprintf(stderr, "%s: the DIE at offset 0x%llx has a DW_AT_specification"
-          " attribute referring to the die at offset 0x%llx, which either"
-          " was not marked as a declaration, or comes later in the file\n",
+          " attribute referring to the DIE at offset 0x%llx, which was not"
+          " marked as a declaration\n",
           filename_.c_str(), offset, target);
 }
 
@@ -848,8 +880,8 @@ void DwarfCUToModule::WarningReporter::UnknownAbstractOrigin(uint64 offset,
                                                              uint64 target) {
   CUHeading();
   fprintf(stderr, "%s: the DIE at offset 0x%llx has a DW_AT_abstract_origin"
-          " attribute referring to the die at offset 0x%llx, which either"
-          " was not marked as an inline, or comes later in the file\n",
+          " attribute referring to the DIE at offset 0x%llx, which was not"
+          " marked as an inline\n",
           filename_.c_str(), offset, target);
 }
 

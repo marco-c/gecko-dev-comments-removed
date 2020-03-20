@@ -87,6 +87,8 @@ typedef enum {
       
   MD_EXCEPTION_CODE_MAC_MEMORY_ERROR       = 10,
       
+  MD_EXCEPTION_CODE_MAC_CODESIGN_ERROR     = 50,
+      
 
   
   MD_EXCEPTION_CODE_MAC_BAD_SYSCALL  = 0x00010000,  

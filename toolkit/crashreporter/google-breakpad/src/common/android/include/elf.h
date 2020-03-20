@@ -110,17 +110,6 @@ typedef struct {
 
 
 
-#ifndef __WORDSIZE
-#if defined(__i386__) ||  defined(__ARM_EABI__) || defined(__mips__)
-#define __WORDSIZE 32
-#elif defined(__x86_64__) || defined(__aarch64__)
-#define __WORDSIZE 64
-#else
-#error "Unsupported Android CPU ABI"
-#endif
-#endif
-
-
 #ifndef EM_X86_64
 #define EM_X86_64  62
 #endif

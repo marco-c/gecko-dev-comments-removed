@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 if CONFIG['MOZ_GECKO_PROFILER']:
     DEFINES['MOZ_REPLACE_MALLOC_PREFIX'] = 'profiler'
@@ -39,7 +39,7 @@ if CONFIG['MOZ_GECKO_PROFILER']:
     ]
     if CONFIG['MOZ_REPLACE_MALLOC'] and CONFIG['MOZ_PROFILER_MEMORY']:
         SOURCES += [
-            'core/memory_hooks.cpp', # Non-unified because of order of #includes
+            'core/memory_hooks.cpp', 
         ]
 
     XPCOM_MANIFESTS += [
@@ -47,10 +47,10 @@ if CONFIG['MOZ_GECKO_PROFILER']:
     ]
 
     if CONFIG['OS_TARGET'] == 'Darwin':
-        # This file cannot be built in unified mode because it includes
-        # "nsLocalFile.h", which pulls in a system header which uses a type
-        # called TextRange, which conflicts with mozilla::TextRange due to
-        # a "using namespace mozilla;" declaration from a different file.
+        
+        
+        
+        
         SOURCES += [
             'gecko/nsProfiler.cpp',
         ]
@@ -70,7 +70,7 @@ if CONFIG['MOZ_GECKO_PROFILER']:
                 'lul/LulMain.cpp',
                 'lul/platform-linux-lul.cpp',
             ]
-        # These files cannot be built in unified mode because of name clashes with mozglue headers on Android.
+        
         SOURCES += [
             'core/shared-libraries-linux.cc',
         ]
@@ -81,6 +81,8 @@ if CONFIG['MOZ_GECKO_PROFILER']:
                 '/toolkit/crashreporter/google-breakpad/src/common/linux/linux_libc_support.cc',
                 '/toolkit/crashreporter/google-breakpad/src/common/linux/memory_mapped_file.cc',
             ]
+            if not CONFIG['HAVE_GETCONTEXT']:
+                SOURCES += ['/toolkit/crashreporter/google-breakpad/src/common/linux/breakpad_getcontext.S']
         if CONFIG['CPU_ARCH'] == 'arm':
             SOURCES += [
                 'core/EHABIStackWalk.cpp',
@@ -111,13 +113,10 @@ if CONFIG['MOZ_GECKO_PROFILER']:
         DEFINES['ANDROID_NDK_MAJOR_VERSION'] = CONFIG['ANDROID_NDK_MAJOR_VERSION']
         DEFINES['ANDROID_NDK_MINOR_VERSION'] = CONFIG['ANDROID_NDK_MINOR_VERSION']
         LOCAL_INCLUDES += [
-            # We need access to Breakpad's getcontext(3) which is suitable for Android
+            
             '/toolkit/crashreporter/google-breakpad/src/common/android/include',
             'lul',
         ]
-
-    if not CONFIG['MOZ_CRASHREPORTER'] and CONFIG['OS_TARGET'] == 'Android':
-        SOURCES += ['/toolkit/crashreporter/google-breakpad/src/common/android/breakpad_getcontext.S']
 
     if CONFIG['ENABLE_TESTS']:
         DIRS += ['tests/gtest']
@@ -131,16 +130,16 @@ IPDL_SOURCES += [
 
 include('/ipc/chromium/chromium-config.mozbuild')
 
-# GeckoProfiler.h and ProfilerCounts.h are the only code that's visible in
-# non-MOZ_GECKO_PROFILER builds, and they only contains no-op macros in that
-# case.
+
+
+
 EXPORTS += [
     'public/GeckoProfiler.h',
 ]
 
 EXPORTS.mozilla += [
     'public/ProfileBufferEntrySerializationGeckoExtensions.h',
-    # vm/GeckoProfiler.h needs to include this and doesn't like #include "ProfilerCounts.h"
+    
     'public/ProfilerCounts.h',
 ]
 
@@ -170,7 +169,7 @@ BROWSER_CHROME_MANIFESTS += ['tests/browser/browser.ini']
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += [
         '-Wno-error=shadow',
-        '-Wno-ignored-qualifiers', # due to use of breakpad headers
+        '-Wno-ignored-qualifiers', 
     ]
 
 with Files('**'):

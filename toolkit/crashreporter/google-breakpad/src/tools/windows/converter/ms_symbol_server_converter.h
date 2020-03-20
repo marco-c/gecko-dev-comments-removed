@@ -177,6 +177,22 @@ class MSSymbolServerConverter {
                                           string *symbol_file,
                                           string *pe_file);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LocateResult LocateAndConvertPEFile(const MissingSymbolInfo &missing,
+      bool keep_pe_file,
+      string *converted_symbol_file,
+      string *pe_file);
+
  private:
   
   

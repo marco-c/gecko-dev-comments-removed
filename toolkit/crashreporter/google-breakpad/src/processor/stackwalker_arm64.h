@@ -69,6 +69,9 @@ class StackwalkerARM64 : public Stackwalker {
 
  private:
   
+  uint64_t PtrauthStrip(uint64_t ptr);
+
+  
   virtual StackFrame* GetContextFrame();
   virtual StackFrame* GetCallerFrame(const CallStack* stack,
                                      bool stack_scan_allowed);
@@ -89,12 +92,23 @@ class StackwalkerARM64 : public Stackwalker {
 
   
   
+  
+  
+  void CorrectRegLRByFramePointer(const vector<StackFrame*>& frames,
+                                  StackFrameARM64* last_frame);
+
+  
+  
   const MDRawContextARM64* context_;
 
   
   
   
   uint64_t context_frame_validity_;
+
+  
+  
+  uint64_t address_range_mask_;
 };
 
 

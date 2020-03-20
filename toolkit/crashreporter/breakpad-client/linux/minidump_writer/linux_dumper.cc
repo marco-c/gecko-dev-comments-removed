@@ -441,49 +441,6 @@ bool LinuxDumper::GetMappingAbsolutePath(const MappingInfo& mapping,
 }
 
 namespace {
-bool ElfFileSoNameFromMappedFile(
-    const void* elf_base, char* soname, size_t soname_size) {
-  if (!IsValidElf(elf_base)) {
-    
-    return false;
-  }
-
-  const void* segment_start;
-  size_t segment_size;
-  if (!FindElfSection(elf_base, ".dynamic", SHT_DYNAMIC, &segment_start,
-                      &segment_size)) {
-    
-    return false;
-  }
-
-  const void* dynstr_start;
-  size_t dynstr_size;
-  if (!FindElfSection(elf_base, ".dynstr", SHT_STRTAB, &dynstr_start,
-                      &dynstr_size)) {
-    
-    return false;
-  }
-
-  const ElfW(Dyn)* dynamic = static_cast<const ElfW(Dyn)*>(segment_start);
-  size_t dcount = segment_size / sizeof(ElfW(Dyn));
-  for (const ElfW(Dyn)* dyn = dynamic; dyn < dynamic + dcount; ++dyn) {
-    if (dyn->d_tag == DT_SONAME) {
-      const char* dynstr = static_cast<const char*>(dynstr_start);
-      if (dyn->d_un.d_val >= dynstr_size) {
-        
-        return false;
-      }
-      const char* str = dynstr + dyn->d_un.d_val;
-      const size_t maxsize = dynstr_size - dyn->d_un.d_val;
-      my_strlcpy(soname, str, maxsize < soname_size ? maxsize : soname_size);
-      return true;
-    }
-  }
-
-  
-  return false;
-}
-
 
 
 
@@ -522,13 +479,20 @@ void LinuxDumper::GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
   
   
   
-  bool mapped_from_archive = false;
-  if (mapping.exec && mapping.offset != 0) {
-    mapped_from_archive =
-        ElfFileSoName(*this, mapping, file_name, file_name_size);
+
+  
+  if (!ElfFileSoName(*this, mapping, file_name, file_name_size)) {
+    
+    
+    const char* basename = my_strrchr(file_path, '/');
+    basename = basename == NULL ? file_path : (basename + 1);
+    my_strlcpy(file_name, basename, file_name_size);
+    return;
   }
 
-  if (mapped_from_archive) {
+  if (mapping.exec && mapping.offset != 0) {
+    
+    
     
     
     
@@ -539,11 +503,14 @@ void LinuxDumper::GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
     }
   } else {
     
-    
-    
-    const char* basename = my_strrchr(file_path, '/');
-    basename = basename == NULL ? file_path : (basename + 1);
-    my_strlcpy(file_name, basename, file_name_size);
+    char* basename = const_cast<char*>(my_strrchr(file_path, '/'));
+    if (basename) {
+      my_strlcpy(basename + 1, file_name,
+                 file_path_size - my_strlen(file_path) +
+                     my_strlen(basename + 1));
+    } else {
+      my_strlcpy(file_path, file_name, file_path_size);
+    }
   }
 }
 

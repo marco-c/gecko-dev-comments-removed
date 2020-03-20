@@ -1,0 +1,346 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <limits.h>
+#include <stdio.h>
+
+#include "processor/range_map-inl.h"
+
+#include "breakpad_googletest_includes.h"
+#include "processor/linked_ptr.h"
+#include "processor/logging.h"
+
+namespace {
+
+using google_breakpad::linked_ptr;
+using google_breakpad::MergeRangeStrategy;
+using google_breakpad::RangeMap;
+
+
+
+class CountedObject {
+ public:
+  explicit CountedObject(int id) : id_(id) { ++count_; }
+  ~CountedObject() { --count_; }
+
+  static int count() { return count_; }
+  int id() const { return id_; }
+
+ private:
+  static int count_;
+  int id_;
+};
+
+int CountedObject::count_;
+
+typedef int AddressType;
+typedef RangeMap<AddressType, linked_ptr<CountedObject>> TestMap;
+
+
+TEST(RangeMapTruncateLower, SameRange) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 100 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_FALSE(
+      range_map.StoreRange(0 , 100 , object_2));
+}
+
+
+
+TEST(RangeMapTruncateLower, CompletelyContained) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 100 , object_1));
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(10 , 80 , object_2));
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  
+  EXPECT_FALSE(range_map.RetrieveRange(90, &object, &retrieved_base,
+                                       &retrieved_delta, &retrieved_size));
+  EXPECT_FALSE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                       &retrieved_delta, &retrieved_size));
+  EXPECT_TRUE(range_map.RetrieveRange(9, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(10, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(10, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(10, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(80, retrieved_size);
+}
+
+
+TEST(RangeMapTruncateLower, CompletelyContained_LargerAddedSecond) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(10 , 80 , object_1));
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 100 , object_2));
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  
+  EXPECT_FALSE(range_map.RetrieveRange(90, &object, &retrieved_base,
+                                       &retrieved_delta, &retrieved_size));
+  EXPECT_FALSE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                       &retrieved_delta, &retrieved_size));
+  EXPECT_TRUE(range_map.RetrieveRange(9, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(10, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(10, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(10, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(80, retrieved_size);
+}
+
+TEST(RangeMapTruncateLower, PartialOverlap_AtBeginning) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 100 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(90 , 110 , object_2));
+
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  EXPECT_TRUE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(90, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(110, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(89, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(90, retrieved_size);
+}
+
+TEST(RangeMapTruncateLower, PartialOverlap_AtEnd) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(50 , 50 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 70 , object_2));
+
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  EXPECT_TRUE(range_map.RetrieveRange(69, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(50, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(50, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(49, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(50, retrieved_size);
+}
+
+
+
+
+TEST(RangeMapTruncateLower, OverlapAtBothEnds) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 100 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(100 , 100 , object_2));
+
+  
+  linked_ptr<CountedObject> object_3(new CountedObject(3));
+  EXPECT_TRUE(
+      range_map.StoreRange(50 , 100 , object_3));
+
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  EXPECT_TRUE(range_map.RetrieveRange(0, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(50, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(150, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(100, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(100, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(3, object->id());
+  EXPECT_EQ(50, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(50, retrieved_size);
+}
+
+TEST(RangeMapTruncateLower, MultipleConflicts) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(10 , 90 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(100 , 100 , object_2));
+
+  
+  linked_ptr<CountedObject> object_3(new CountedObject(3));
+  EXPECT_TRUE(
+      range_map.StoreRange(0 , 300 , object_3));
+
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  EXPECT_TRUE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(10, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(90, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(199, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(100, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(100, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(9, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(3, object->id());
+  EXPECT_EQ(0, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(10, retrieved_size);
+}
+
+
+
+TEST(RangeMapTruncateLower, NoConflicts) {
+  TestMap range_map;
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateLower);
+  
+  linked_ptr<CountedObject> object_1(new CountedObject(1));
+  EXPECT_TRUE(
+      range_map.StoreRange(10 , 90 , object_1));
+
+  
+  linked_ptr<CountedObject> object_2(new CountedObject(2));
+  EXPECT_TRUE(
+      range_map.StoreRange(110 , 90 , object_2));
+
+  linked_ptr<CountedObject> object;
+  AddressType retrieved_base = AddressType();
+  AddressType retrieved_delta = AddressType();
+  AddressType retrieved_size = AddressType();
+  
+  EXPECT_TRUE(range_map.RetrieveRange(99, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(1, object->id());
+  EXPECT_EQ(10, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(90, retrieved_size);
+  
+  EXPECT_TRUE(range_map.RetrieveRange(199, &object, &retrieved_base,
+                                      &retrieved_delta, &retrieved_size));
+  EXPECT_EQ(2, object->id());
+  EXPECT_EQ(110, retrieved_base);
+  EXPECT_EQ(0, retrieved_delta);
+  EXPECT_EQ(90, retrieved_size);
+}
+
+}  

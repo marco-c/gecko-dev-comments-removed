@@ -35,9 +35,10 @@
 
 #include <atlcomcli.h>
 
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 
+#include "common/windows/module_info.h"
 #include "common/windows/omap.h"
 
 struct IDiaEnumLineNumbers;
@@ -48,41 +49,6 @@ namespace google_breakpad {
 
 using std::wstring;
 using std::unordered_map;
-
-
-struct PDBModuleInfo {
- public:
-  
-  wstring debug_file;
-
-  
-  
-  
-  
-  
-  
-  
-  wstring debug_identifier;
-
-  
-  
-  wstring cpu;
-};
-
-
-
-struct PEModuleInfo {
-  
-  wstring code_file;
-
-  
-  
-  
-  
-  
-  
-  wstring code_identifier;
-};
 
 class PDBSourceLineWriter {
  public:
@@ -102,6 +68,9 @@ class PDBSourceLineWriter {
   bool Open(const wstring &file, FileFormat format);
 
   
+  void Close();
+
+  
   
   
   
@@ -112,10 +81,7 @@ class PDBSourceLineWriter {
 
   
   
-  bool WriteMap(FILE *map_file);
-
-  
-  void Close();
+  bool WriteSymbols(FILE *symbol_file);
 
   
   

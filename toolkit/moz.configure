@@ -2031,6 +2031,15 @@ set_define('MOZ_NEW_CERT_STORAGE', True, when='--enable-new-cert-storage')
 
 
 
+with only_when(compile_environment & target_is_linux):
+    
+    getcontext = check_symbol('getcontext')
+    set_config('HAVE_GETCONTEXT', getcontext)
+    set_define('HAVE_GETCONTEXT', getcontext)
+
+
+
+
 
 
 @depends(target)

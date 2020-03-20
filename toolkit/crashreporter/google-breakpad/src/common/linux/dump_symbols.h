@@ -62,7 +62,9 @@ struct DumpOptions {
 
 
 
-bool WriteSymbolFile(const string &obj_file,
+bool WriteSymbolFile(const string &load_path,
+                     const string &obj_file,
+                     const string &obj_os,
                      const std::vector<string>& debug_dirs,
                      const DumpOptions& options,
                      std::ostream &sym_stream);
@@ -70,13 +72,18 @@ bool WriteSymbolFile(const string &obj_file,
 
 
 
-bool WriteSymbolFileHeader(const string& obj_file,
+
+bool WriteSymbolFileHeader(const string& load_path,
+                           const string& obj_file,
+                           const string& obj_os,
                            std::ostream &sym_stream);
 
 
 
 
-bool ReadSymbolData(const string& obj_file,
+bool ReadSymbolData(const string& load_path,
+                    const string& obj_file,
+                    const string& obj_os,
                     const std::vector<string>& debug_dirs,
                     const DumpOptions& options,
                     Module** module);

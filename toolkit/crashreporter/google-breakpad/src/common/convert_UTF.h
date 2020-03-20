@@ -106,6 +106,8 @@
 
 
 
+namespace google_breakpad {
+
 typedef unsigned long	UTF32;	
 typedef unsigned short	UTF16;	
 typedef unsigned char	UTF8;	
@@ -130,11 +132,6 @@ typedef enum {
 	lenientConversion
 } ConversionFlags;
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 ConversionResult ConvertUTF8toUTF16 (const UTF8** sourceStart, const UTF8* sourceEnd,
                                      UTF16** targetStart, UTF16* targetEnd, ConversionFlags flags);
 
@@ -155,9 +152,7 @@ ConversionResult ConvertUTF32toUTF16 (const UTF32** sourceStart, const UTF32* so
 
 Boolean isLegalUTF8Sequence(const UTF8 *source, const UTF8 *sourceEnd);
 
-#ifdef __cplusplus
-}
-#endif
+}  
 
 
 

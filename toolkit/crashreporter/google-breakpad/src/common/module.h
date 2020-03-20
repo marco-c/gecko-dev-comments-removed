@@ -106,7 +106,7 @@ class Module {
     }
 
     
-    const string name;
+    string name;
 
     
     const Address address;
@@ -215,6 +215,14 @@ class Module {
   
   
   
+  
+  
+  
+  void SetAddressRanges(const vector<Range>& ranges);
+
+  
+  
+  
   void AddFunction(Function *function);
 
   
@@ -314,12 +322,20 @@ class Module {
   static bool WriteRuleMap(const RuleMap &rule_map, std::ostream &stream);
 
   
+  
+  bool AddressIsInModule(Address address) const;
+
+  
   string name_, os_, architecture_, id_, code_id_;
 
   
   
   
   Address load_address_;
+
+  
+  
+  vector<Range> address_ranges_;
 
   
   

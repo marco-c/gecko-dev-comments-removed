@@ -49,18 +49,29 @@ namespace google_breakpad {
 
 template<class, class> class RangeMapSerializer;
 
-template<typename AddressType, typename EntryType>
-class RangeMap {
- public:
-  RangeMap() : enable_shrink_down_(false), map_() {}
+
+enum class MergeRangeStrategy {
+  
+  
+  kExclusiveRanges,
 
   
   
+  kTruncateLower,
+
   
   
-  
-  void SetEnableShrinkDown(bool enable_shrink_down);
-  bool IsShrinkDownEnabled() const;
+  kTruncateUpper
+};
+
+template<typename AddressType, typename EntryType>
+class RangeMap {
+ public:
+  RangeMap() : merge_strategy_(MergeRangeStrategy::kExclusiveRanges), map_() {}
+
+  void SetMergeStrategy(MergeRangeStrategy strat) { merge_strategy_ = strat; }
+
+  MergeRangeStrategy GetMergeStrategy() const { return merge_strategy_; }
 
   
   
@@ -147,8 +158,7 @@ class RangeMap {
   typedef typename AddressToRangeMap::const_iterator MapConstIterator;
   typedef typename AddressToRangeMap::value_type MapValue;
 
-  
-  bool enable_shrink_down_;
+  MergeRangeStrategy merge_strategy_;
 
   
   AddressToRangeMap map_;

@@ -1,0 +1,56 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef GOOGLE_BREAKPAD_COMMON_LINUX_INCLUDE_UCONTEXT_H
+#define GOOGLE_BREAKPAD_COMMON_LINUX_INCLUDE_UCONTEXT_H
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#ifndef HAVE_GETCONTEXT
+
+#include <signal.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+int breakpad_getcontext(ucontext_t* ucp);
+
+#define getcontext(x)   breakpad_getcontext(x)
+
+#ifdef __cplusplus
+}  
+#endif  
+
+#endif  
+
+#endif  

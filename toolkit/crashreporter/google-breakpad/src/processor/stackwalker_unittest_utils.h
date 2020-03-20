@@ -168,11 +168,6 @@ class MockCodeModules: public google_breakpad::CodeModules {
     return std::vector<google_breakpad::linked_ptr<const CodeModule> >();
   }
 
-  
-  bool IsModuleShrinkEnabled() const {
-    return false;
-  }
-
  private:
   typedef std::vector<const MockCodeModule *> ModuleVector;
   ModuleVector modules_;

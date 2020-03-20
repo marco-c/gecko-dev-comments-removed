@@ -38,14 +38,13 @@
 #include "processor/range_map-inl.h"
 
 #include "breakpad_googletest_includes.h"
-#include "common/scoped_ptr.h"
 #include "processor/linked_ptr.h"
 #include "processor/logging.h"
 
 namespace {
 
 using google_breakpad::linked_ptr;
-using google_breakpad::scoped_ptr;
+using google_breakpad::MergeRangeStrategy;
 using google_breakpad::RangeMap;
 
 
@@ -69,9 +68,9 @@ typedef int AddressType;
 typedef RangeMap<AddressType, linked_ptr<CountedObject>> TestMap;
 
 
-TEST(RangeMap, TestShinkDown_SameRange) {
+TEST(RangeMapTruncateUpper, SameRange) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(0 , 100 ,
                                    object_1));
@@ -84,9 +83,9 @@ TEST(RangeMap, TestShinkDown_SameRange) {
 
 
 
-TEST(RangeMap, TestShinkDown_CompletelyContained) {
+TEST(RangeMapTruncateUpper, CompletelyContained) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(0 , 100 ,
@@ -121,9 +120,9 @@ TEST(RangeMap, TestShinkDown_CompletelyContained) {
 }
 
 
-TEST(RangeMap, TestShinkDown_CompletelyContained_LargerAddedSecond) {
+TEST(RangeMapTruncateUpper, CompletelyContained_LargerAddedSecond) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(10 , 80 ,
@@ -157,9 +156,9 @@ TEST(RangeMap, TestShinkDown_CompletelyContained_LargerAddedSecond) {
   EXPECT_EQ(80, retrieved_size);
 }
 
-TEST(RangeMap, TestShinkDown_PartialOverlap_AtBeginning) {
+TEST(RangeMapTruncateUpper, PartialOverlap_AtBeginning) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(0 , 100 ,
                                    object_1));
@@ -190,9 +189,9 @@ TEST(RangeMap, TestShinkDown_PartialOverlap_AtBeginning) {
   EXPECT_EQ(100, retrieved_size);
 }
 
-TEST(RangeMap, TestShinkDown_PartialOverlap_AtEnd) {
+TEST(RangeMapTruncateUpper, PartialOverlap_AtEnd) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(50 , 50 ,
                                    object_1));
@@ -226,9 +225,9 @@ TEST(RangeMap, TestShinkDown_PartialOverlap_AtEnd) {
 
 
 
-TEST(RangeMap, TestShinkDown_OverlapAtBothEnds) {
+TEST(RangeMapTruncateUpper, OverlapAtBothEnds) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(0 , 100 ,
@@ -271,9 +270,9 @@ TEST(RangeMap, TestShinkDown_OverlapAtBothEnds) {
   EXPECT_EQ(50, retrieved_size);
 }
 
-TEST(RangeMap, TestShinkDown_MultipleConflicts) {
+TEST(RangeMapTruncateUpper, MultipleConflicts) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(10 , 90 ,
@@ -319,9 +318,9 @@ TEST(RangeMap, TestShinkDown_MultipleConflicts) {
 
 
 
-TEST(RangeMap, TestShinkDown_NoConflicts) {
+TEST(RangeMapTruncateUpper, NoConflicts) {
   TestMap range_map;
-  range_map.SetEnableShrinkDown(true);
+  range_map.SetMergeStrategy(MergeRangeStrategy::kTruncateUpper);
   
   linked_ptr<CountedObject> object_1(new CountedObject(1));
   EXPECT_TRUE(range_map.StoreRange(10 , 90 ,

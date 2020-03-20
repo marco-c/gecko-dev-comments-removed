@@ -2343,21 +2343,15 @@ bool CallFrameInfo::ReadCIEFields(CIE *cie) {
   }
 
   if (cie->version >= 4) {
-    uint8_t address_size = *cursor++;
-    if (address_size != 8) {
-      
-      reporter_->UnexpectedAddressSize(cie->offset, address_size);
+    cie->address_size = *cursor++;
+    if (cie->address_size != 8 && cie->address_size != 4) {
+      reporter_->UnexpectedAddressSize(cie->offset, cie->address_size);
       return false;
     }
 
-    uint8_t segment_size = *cursor++;
-    if (segment_size != 0) {
-      
-      
-      
-      
-      
-      reporter_->UnexpectedSegmentSize(cie->offset, segment_size);
+    cie->segment_size = *cursor++;
+    if (cie->segment_size != 0) {
+      reporter_->UnexpectedSegmentSize(cie->offset, cie->segment_size);
       return false;
     }
   }
@@ -2618,6 +2612,15 @@ bool CallFrameInfo::Start() {
     }
     if (!ReadCIEFields(&cie))
       continue;
+
+    
+    
+    
+
+    
+    if (cie.version >= 4) {
+      reader_->SetAddressSize(cie.address_size);
+    }
 
     
     cie.cie = &cie;

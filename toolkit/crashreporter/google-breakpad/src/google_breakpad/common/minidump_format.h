@@ -549,6 +549,7 @@ typedef struct {
   uint64_t  exception_information[MD_EXCEPTION_MAXIMUM_PARAMETERS];
 } MDException;  
 
+#include "minidump_exception_fuchsia.h"
 #include "minidump_exception_linux.h"
 #include "minidump_exception_mac.h"
 #include "minidump_exception_ps3.h"
@@ -678,7 +679,8 @@ typedef enum {
   MD_OS_SOLARIS       = 0x8202,  
   MD_OS_ANDROID       = 0x8203,  
   MD_OS_PS3           = 0x8204,  
-  MD_OS_NACL          = 0x8205   
+  MD_OS_NACL          = 0x8205,  
+  MD_OS_FUCHSIA       = 0x8206   
 } MDOSPlatform;
 
 typedef struct {

@@ -142,8 +142,7 @@ class DumpSymbols {
 
   
   
-  
-  bool ReadDwarf(google_breakpad::Module *module,
+  void ReadDwarf(google_breakpad::Module *module,
                  const mach_o::Reader &macho_reader,
                  const mach_o::SectionMap &dwarf_sections,
                  bool handle_inter_cu_refs) const;

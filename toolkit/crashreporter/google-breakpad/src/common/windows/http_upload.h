@@ -42,14 +42,11 @@
 #include <wininet.h>
 
 #include <map>
-#include <string>
-#include <vector>
 
 namespace google_breakpad {
 
 using std::map;
 using std::string;
-using std::vector;
 using std::wstring;
 
 class HTTPUpload {
@@ -61,53 +58,58 @@ class HTTPUpload {
   
   
   
+  static bool SendPutRequest(
+      const wstring& url,
+      const wstring& path,
+      int* timeout_ms,
+      wstring* response_body,
+      int* response_code);
+
   
   
   
-  static bool SendRequest(const wstring &url,
-                          const string &parameters,
-                          const map<wstring, wstring> &files,
-                          int *timeout,
-                          wstring *response_body,
-                          int *response_code);
+  
+  
+  
+  static bool SendGetRequest(
+      const wstring& url,
+      int* timeout_ms,
+      wstring* response_body,
+      int* response_code);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool SendMultipartPostRequest(
+      const wstring& url,
+      const string& parameters,
+      const map<wstring, wstring>& files,
+      int *timeout_ms,
+      wstring *response_body,
+      int *response_code);
+
+  
+  
+  
+  
+  
+  
+  static bool SendSimplePostRequest(
+      const wstring& url,
+      const wstring& body,
+      const wstring& content_type,
+      int *timeout_ms,
+      wstring *response_body,
+      int *response_code);
 
  private:
-  class AutoInternetHandle;
-
-  
-  
-  
-  
-  static bool ReadResponse(HINTERNET request, wstring* response);
-
-  
-  static wstring GenerateMultipartBoundary();
-
-  
-  static wstring GenerateRequestHeader(const wstring &boundary);
-
-  
-  
-  
-  static bool GenerateRequestBody(const string &parameters,
-                                  const map<wstring, wstring> &files,
-                                  const wstring &boundary,
-                                  string *request_body);
-
-  
-  static bool GetFileContents(const wstring &filename, vector<char> *contents);
-
-  
-  static wstring UTF8ToWide(const string &utf8);
-
-  
-  static string WideToUTF8(const wstring &wide) {
-      return WideToMBCP(wide, CP_UTF8);
-  }
-
-  
-  static string WideToMBCP(const wstring &wide, unsigned int cp);
-
   
   
   HTTPUpload();

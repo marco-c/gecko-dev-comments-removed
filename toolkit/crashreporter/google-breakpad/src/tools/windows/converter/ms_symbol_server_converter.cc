@@ -36,12 +36,14 @@
 
 #include <windows.h>
 #include <dbghelp.h>
+#include <pathcch.h>
 
 #include <cassert>
 #include <cstdio>
 
 #include "tools/windows/converter/ms_symbol_server_converter.h"
 #include "common/windows/pdb_source_line_writer.h"
+#include "common/windows/pe_source_line_writer.h"
 #include "common/windows/string_utils-inl.h"
 
 
@@ -51,6 +53,31 @@
 #ifndef SYMOPT_NO_PROMPTS
 #define SYMOPT_NO_PROMPTS 0x00080000
 #endif  
+
+namespace {
+
+std::wstring GetExeDirectory() {
+  wchar_t directory[MAX_PATH];
+
+  
+  DWORD result = GetModuleFileName(nullptr, directory, MAX_PATH);
+  if (result <= 0 || result == MAX_PATH) {
+    fprintf(stderr,
+        "GetExeDirectory: failed to get path to process exe.\n");
+    return L"";
+  }
+  HRESULT hr = PathCchRemoveFileSpec(directory, result + 1);
+  if (hr != S_OK) {
+    fprintf(stderr,
+        "GetExeDirectory: failed to remove basename from path '%ls'.\n",
+        directory);
+    return L"";
+  }
+
+  return std::wstring(directory);
+}
+
+}  
 
 namespace google_breakpad {
 
@@ -153,12 +180,40 @@ class AutoSymSrv {
     if (!Cleanup()) {
       
       
-      fprintf(stderr, "~AutoSymSrv: SymCleanup: error %d\n", GetLastError());
+      fprintf(stderr, "~AutoSymSrv: SymCleanup: error %lu\n", GetLastError());
     }
   }
 
   bool Initialize(HANDLE process, char *path, bool invade_process) {
     process_ = process;
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static HMODULE dbghelp_module = [] () -> HMODULE {
+      std::wstring exe_directory = GetExeDirectory();
+      if (exe_directory.empty()) {
+        return nullptr;
+      }
+      std::wstring dbghelp_path = exe_directory + L"\\dbghelp.dll";
+      return LoadLibrary(dbghelp_path.c_str());
+    }();
+    if (dbghelp_module == nullptr) {
+      fprintf(stderr,
+          "AutoSymSrv::Initialize: failed to load dbghelp.dll beside exe.");
+      return false;
+    }
+
     initialized_ = SymInitialize(process, path, invade_process) == TRUE;
     return initialized_;
   }
@@ -237,7 +292,7 @@ MSSymbolServerConverter::LocateFile(const string &debug_or_code_file,
   if (!symsrv.Initialize(process,
                          const_cast<char *>(symbol_path_.c_str()),
                          false)) {
-    fprintf(stderr, "LocateFile: SymInitialize: error %d for %s %s %s\n",
+    fprintf(stderr, "LocateFile: SymInitialize: error %lu for %s %s %s\n",
             GetLastError(),
             debug_or_code_file.c_str(),
             debug_or_code_id.c_str(),
@@ -248,7 +303,7 @@ MSSymbolServerConverter::LocateFile(const string &debug_or_code_file,
   if (!SymRegisterCallback64(process, SymCallback,
                              reinterpret_cast<ULONG64>(this))) {
     fprintf(stderr,
-            "LocateFile: SymRegisterCallback64: error %d for %s %s %s\n",
+            "LocateFile: SymRegisterCallback64: error %lu for %s %s %s\n",
             GetLastError(),
             debug_or_code_file.c_str(),
             debug_or_code_id.c_str(),
@@ -303,7 +358,7 @@ MSSymbolServerConverter::LocateFile(const string &debug_or_code_file,
     }
 
     fprintf(stderr,
-            "LocateFile: SymFindFileInPath: error %d for %s %s %s\n",
+            "LocateFile: SymFindFileInPath: error %lu for %s %s %s\n",
             error,
             debug_or_code_file.c_str(),
             debug_or_code_id.c_str(),
@@ -321,7 +376,7 @@ MSSymbolServerConverter::LocateFile(const string &debug_or_code_file,
   
   
   if (!symsrv.Cleanup()) {
-    fprintf(stderr, "LocateFile: SymCleanup: error %d for %s %s %s\n",
+    fprintf(stderr, "LocateFile: SymCleanup: error %lu for %s %s %s\n",
             GetLastError(),
             debug_or_code_file.c_str(),
             debug_or_code_id.c_str(),
@@ -404,7 +459,8 @@ BOOL CALLBACK MSSymbolServerConverter::SymCallback(HANDLE process,
       };
 
       for (int desc_action_index = 0;
-           desc_action_index < sizeof(desc_actions) / sizeof(desc_action);
+           desc_action_index <
+           static_cast<int>(sizeof(desc_actions) / sizeof(desc_action));
            ++desc_action_index) {
         if (desc.find(desc_actions[desc_action_index].desc) != string::npos) {
           *(desc_actions[desc_action_index].action) = true;
@@ -445,7 +501,10 @@ MSSymbolServerConverter::LocateAndConvertSymbolFile(
   string pdb_file;
   LocateResult result = LocateSymbolFile(missing, &pdb_file);
   if (result != LOCATE_SUCCESS) {
-    return result;
+    fprintf(stderr, "Fallback to PE-only symbol generation for: %s\n",
+        missing.debug_file.c_str());
+    return LocateAndConvertPEFile(missing, keep_pe_file, converted_symbol_file,
+        out_pe_file);
   }
 
   if (symbol_file && keep_symbol_file) {
@@ -525,7 +584,7 @@ MSSymbolServerConverter::LocateAndConvertSymbolFile(
 #if _MSC_VER >= 1400  
   errno_t err;
   if ((err = fopen_s(&converted_output, converted_symbol_file->c_str(), "w"))
-      != 0) {
+    != 0) {
 #else
 
 
@@ -536,18 +595,18 @@ MSSymbolServerConverter::LocateAndConvertSymbolFile(
     err = -1;
 #endif
     fprintf(stderr, "LocateAndConvertSymbolFile: "
-            "fopen_s: error %d for %s %s %s %s\n",
-            err,
-            missing.debug_file.c_str(),
-            missing.debug_identifier.c_str(),
-            missing.version.c_str(),
-            converted_symbol_file->c_str());
+        "fopen_s: error %d for %s %s %s %s\n",
+        err,
+        missing.debug_file.c_str(),
+        missing.debug_identifier.c_str(),
+        missing.version.c_str(),
+        converted_symbol_file->c_str());
     return LOCATE_FAILURE;
   }
 
   AutoDeleter sym_deleter(*converted_symbol_file);
 
-  bool success = writer.WriteMap(converted_output);
+  bool success = writer.WriteSymbols(converted_output);
   fclose(converted_output);
 
   if (!success) {
@@ -562,6 +621,123 @@ MSSymbolServerConverter::LocateAndConvertSymbolFile(
 
   if (keep_symbol_file) {
     pdb_deleter.Release();
+  }
+
+  if (keep_pe_file) {
+    pe_deleter.Release();
+  }
+
+  sym_deleter.Release();
+
+  return LOCATE_SUCCESS;
+}
+
+MSSymbolServerConverter::LocateResult
+MSSymbolServerConverter::LocateAndConvertPEFile(
+    const MissingSymbolInfo &missing,
+    bool keep_pe_file,
+    string *converted_symbol_file,
+    string *out_pe_file) {
+  assert(converted_symbol_file);
+  converted_symbol_file->clear();
+
+  string pe_file;
+  MSSymbolServerConverter::LocateResult result = LocatePEFile(missing,
+      &pe_file);
+  if (result != LOCATE_SUCCESS) {
+    fprintf(stderr, "WARNING: Could not download: %s\n", pe_file.c_str());
+    return result;
+  }
+
+  if (out_pe_file && keep_pe_file) {
+    *out_pe_file = pe_file;
+  }
+
+  
+  
+  
+  
+  AutoDeleter pe_deleter(pe_file);
+
+  
+  
+  string pe_extension = pe_file.substr(pe_file.length() - 4);
+  
+  if (_stricmp(pe_extension.c_str(), ".exe") != 0 &&
+    _stricmp(pe_extension.c_str(), ".dll") != 0) {
+    fprintf(stderr, "LocateAndConvertPEFile: "
+        "no .dll/.exe extension for %s %s %s %s\n",
+        missing.debug_file.c_str(),
+        missing.debug_identifier.c_str(),
+        missing.version.c_str(),
+        pe_file.c_str());
+    return LOCATE_FAILURE;
+  }
+
+  *converted_symbol_file = pe_file.substr(0, pe_file.length() - 4) + ".sym";
+
+  FILE *converted_output = NULL;
+#if _MSC_VER >= 1400  
+  errno_t err;
+  if ((err = fopen_s(&converted_output, converted_symbol_file->c_str(), "w"))
+      != 0) {
+#else
+
+
+
+
+  int err;
+  if (!(converted_output = fopen(converted_symbol_file->c_str(), "w"))) {
+    err = -1;
+#endif
+    fprintf(stderr, "LocateAndConvertPEFile: "
+        "fopen_s: error %d for %s %s %s %s\n",
+        err,
+        missing.debug_file.c_str(),
+        missing.debug_identifier.c_str(),
+        missing.version.c_str(),
+        converted_symbol_file->c_str());
+    return LOCATE_FAILURE;
+  }
+  AutoDeleter sym_deleter(*converted_symbol_file);
+
+  wstring pe_file_w;
+  if (!WindowsStringUtils::safe_mbstowcs(pe_file, &pe_file_w)) {
+    fprintf(stderr,
+        "LocateAndConvertPEFile: "
+        "WindowsStringUtils::safe_mbstowcs failed for %s\n",
+        pe_file.c_str());
+    return LOCATE_FAILURE;
+  }
+  PESourceLineWriter writer(pe_file_w);
+  PDBModuleInfo module_info;
+  if (!writer.GetModuleInfo(&module_info)) {
+    fprintf(stderr, "LocateAndConvertPEFile: "
+        "PESourceLineWriter::GetModuleInfo failed for %s %s %s %s\n",
+        missing.debug_file.c_str(),
+        missing.debug_identifier.c_str(),
+        missing.version.c_str(),
+        pe_file.c_str());
+    return LOCATE_FAILURE;
+  }
+  if (module_info.cpu.compare(L"x86_64") != 0) {
+    
+    
+    pe_deleter.Release();
+    return LOCATE_FAILURE;
+  }
+
+  bool success = writer.WriteSymbols(converted_output);
+  fclose(converted_output);
+
+  if (!success) {
+    fprintf(stderr, "LocateAndConvertPEFile: "
+        "PESourceLineWriter::WriteMap failed for %s %s %s %s\n",
+        missing.debug_file.c_str(),
+        missing.debug_identifier.c_str(),
+        missing.version.c_str(),
+        pe_file.c_str());
+    return LOCATE_FAILURE;
   }
 
   if (keep_pe_file) {

@@ -101,9 +101,6 @@ class CodeModules {
   
   virtual std::vector<linked_ptr<const CodeModule> >
   GetShrunkRangeModules() const = 0;
-
-  
-  virtual bool IsModuleShrinkEnabled() const = 0;
 };
 
 }  

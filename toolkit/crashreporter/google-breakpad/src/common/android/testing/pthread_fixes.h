@@ -89,11 +89,6 @@ int pthread_barrier_destroy(pthread_barrier_t *barrier) {
 
 #endif  
 
-int pthread_yield(void) {
-  sched_yield();
-  return 0;
-}
-
 }  
 
 #endif  

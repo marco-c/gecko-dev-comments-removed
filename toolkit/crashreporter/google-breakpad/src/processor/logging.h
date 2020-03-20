@@ -67,18 +67,6 @@
 #include BP_LOGGING_INCLUDE
 #endif  
 
-#ifndef THIRD_PARTY_BREAKPAD_GOOGLE_GLUE_LOGGING_H_
-namespace base_logging {
-
-
-
-
-
-typedef std::ostream LogMessage;
-
-}  
-#endif  
-
 namespace google_breakpad {
 
 
@@ -128,7 +116,7 @@ class LogMessageVoidify {
 
   
   
-  void operator&(base_logging::LogMessage &) {}
+  void operator&(std::ostream &) {}
 };
 
 

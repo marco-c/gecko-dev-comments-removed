@@ -47,17 +47,6 @@
 namespace google_breakpad {
 
 template<typename AddressType, typename EntryType>
-void RangeMap<AddressType, EntryType>::SetEnableShrinkDown(
-    bool enable_shrink_down) {
-  enable_shrink_down_ = enable_shrink_down;
-}
-
-template<typename AddressType, typename EntryType>
-bool RangeMap<AddressType, EntryType>::IsShrinkDownEnabled() const {
-  return enable_shrink_down_;
-}
-
-template<typename AddressType, typename EntryType>
 bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
                                                   const AddressType &size,
                                                   const EntryType &entry) {
@@ -90,9 +79,26 @@ bool RangeMap<AddressType, EntryType>::StoreRangeInternal(
   if (iterator_base != iterator_high) {
     
     
-    
-    
-    if (enable_shrink_down_) {
+    if (merge_strategy_ == MergeRangeStrategy::kTruncateLower) {
+      
+      AddressType other_base = iterator_base->second.base();
+      if (base < other_base) {
+        return StoreRangeInternal(base, delta, other_base - base, entry);
+      } else if (other_base < base) {
+        EntryType other_entry;
+        AddressType other_high, other_size, other_delta;
+        other_high = iterator_base->first;
+        RetrieveRange(other_high, &other_entry, &other_base, &other_delta,
+                      &other_size);
+        map_.erase(iterator_base);
+        map_.insert(
+            MapValue(base - 1, Range(other_base, other_delta, other_entry)));
+        return StoreRangeInternal(base, delta, size, entry);
+      } else {
+        return false;
+      }
+    } else if (merge_strategy_ == MergeRangeStrategy::kTruncateUpper) {
+      
       AddressType additional_delta = iterator_base->first - base + 1;
       return StoreRangeInternal(base + additional_delta,
                                 delta + additional_delta,
@@ -112,44 +118,57 @@ bool RangeMap<AddressType, EntryType>::StoreRangeInternal(
     }
   }
 
-  if (iterator_high != map_.end()) {
-    if (iterator_high->second.base() <= high) {
-      
-      
-      
-      
-      if (enable_shrink_down_ && iterator_high->first > high) {
-        
-        AddressType other_high = iterator_high->first;
-        AddressType additional_delta =
-            high - iterator_high->second.base() + 1;
+  if (iterator_high != map_.end() && iterator_high->second.base() <= high) {
+    
+    
+    
+    if (merge_strategy_ == MergeRangeStrategy::kTruncateLower) {
+      AddressType other_base = iterator_high->second.base();
+      if (base < other_base) {
+        return StoreRangeInternal(base, delta, other_base - base, entry);
+      } else if (other_base < base) {
         EntryType other_entry;
-        AddressType other_base = AddressType();
-        AddressType other_size = AddressType();
-        AddressType other_delta = AddressType();
+        AddressType other_high, other_size, other_delta;
+        other_high = iterator_high->first;
         RetrieveRange(other_high, &other_entry, &other_base, &other_delta,
                       &other_size);
         map_.erase(iterator_high);
-        map_.insert(MapValue(other_high,
-                             Range(other_base + additional_delta,
-                                   other_delta + additional_delta,
-                                   other_entry)));
-        
+        map_.insert(
+            MapValue(base - 1, Range(other_base, other_delta, other_entry)));
         return StoreRangeInternal(base, delta, size, entry);
       } else {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         return false;
       }
+    } else if (merge_strategy_ == MergeRangeStrategy::kTruncateUpper &&
+               iterator_high->first > high) {
+      
+      AddressType other_high = iterator_high->first;
+      AddressType additional_delta = high - iterator_high->second.base() + 1;
+      EntryType other_entry;
+      AddressType other_base = AddressType();
+      AddressType other_size = AddressType();
+      AddressType other_delta = AddressType();
+      RetrieveRange(other_high, &other_entry, &other_base, &other_delta,
+                    &other_size);
+      map_.erase(iterator_high);
+      map_.insert(MapValue(other_high,
+                           Range(other_base + additional_delta,
+                                 other_delta + additional_delta, other_entry)));
+      
+      return StoreRangeInternal(base, delta, size, entry);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return false;
     }
   }
 

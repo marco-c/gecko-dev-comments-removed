@@ -27,14 +27,18 @@
 
 
 
-#if defined(__x86_64__)
+
+
+#if defined(__ANDROID__) && defined(__x86_64__)
 #include <asm/sigcontext.h>
 #endif
 
 #include <sys/ucontext.h>
 
+#include <type_traits>
+
 #include "breakpad_googletest_includes.h"
-#include "common/android/ucontext_constants.h"
+#include "common/linux/ucontext_constants.h"
 
 template <int left, int right>
 struct CompileAssertEquals {
@@ -139,6 +143,8 @@ TEST(AndroidUContext, GRegsOffset) {
   
   COMPILE_ASSERT_EQ(offsetof(mcontext_t,fpregs),
                     offsetof(sigcontext,fpstate), sigcontext_fpstate);
+
+#if defined(__ANDROID__)
   
   
   COMPILE_ASSERT_EQ(sizeof(_libc_fpstate), sizeof(_fpstate),
@@ -164,13 +170,15 @@ TEST(AndroidUContext, GRegsOffset) {
                     sigcontext_fpstate_stspace);
   COMPILE_ASSERT_EQ(offsetof(_libc_fpstate,_xmm), offsetof(_fpstate,xmm_space),
                     sigcontext_fpstate_xmm_space);
+#endif
 
   COMPILE_ASSERT_EQ(MCONTEXT_FPREGS_PTR,
                     offsetof(ucontext_t,uc_mcontext.fpregs),
                     mcontext_fpregs_ptr);
   COMPILE_ASSERT_EQ(MCONTEXT_FPREGS_MEM, offsetof(ucontext_t,__fpregs_mem),
                     mcontext_fpregs_mem);
-  COMPILE_ASSERT_EQ(FPREGS_OFFSET_MXCSR, offsetof(_libc_fpstate,mxcsr),
+  COMPILE_ASSERT_EQ(FPREGS_OFFSET_MXCSR,
+                    offsetof(std::remove_pointer<fpregset_t>::type,mxcsr),
                     fpregs_offset_mxcsr);
   COMPILE_ASSERT_EQ(UCONTEXT_SIGMASK_OFFSET, offsetof(ucontext_t, uc_sigmask),
                     ucontext_sigmask);

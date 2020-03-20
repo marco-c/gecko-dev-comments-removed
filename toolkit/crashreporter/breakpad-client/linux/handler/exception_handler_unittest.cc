@@ -27,12 +27,12 @@
 
 
 
+#include <poll.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/mman.h>
-#include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <sys/wait.h>
@@ -421,6 +421,10 @@ TEST(ExceptionHandlerTest, RedeliveryToDefaultHandler) {
 
   const pid_t child = fork();
   if (child == 0) {
+    
+    
+    signal(SIGSEGV, SIG_DFL);
+
     CrashWithCallbacks(FilterCallbackReturnFalse, NULL, temp_dir.path());
   }
 
@@ -876,10 +880,30 @@ TEST(ExceptionHandlerTest, InstructionPointerMemoryNullPointer) {
   ASSERT_TRUE(minidump.Read());
 
   MinidumpException* exception = minidump.GetException();
-  MinidumpMemoryList* memory_list = minidump.GetMemoryList();
   ASSERT_TRUE(exception);
+
+  MinidumpContext* exception_context = exception->GetContext();
+  ASSERT_TRUE(exception_context);
+
+  uint64_t instruction_pointer;
+  ASSERT_TRUE(exception_context->GetInstructionPointer(&instruction_pointer));
+  EXPECT_EQ(instruction_pointer, 0u);
+
+  MinidumpMemoryList* memory_list = minidump.GetMemoryList();
   ASSERT_TRUE(memory_list);
-  ASSERT_EQ(static_cast<unsigned int>(1), memory_list->region_count());
+
+  unsigned int region_count = memory_list->region_count();
+  ASSERT_GE(region_count, 1u);
+
+  for (unsigned int region_index = 0;
+       region_index < region_count;
+       ++region_index) {
+    MinidumpMemoryRegion* region =
+        memory_list->GetMemoryRegionAtIndex(region_index);
+    uint64_t region_base = region->GetBase();
+    EXPECT_FALSE(instruction_pointer >= region_base &&
+                 instruction_pointer < region_base + region->GetSize());
+  }
 
   unlink(minidump_path.c_str());
 }

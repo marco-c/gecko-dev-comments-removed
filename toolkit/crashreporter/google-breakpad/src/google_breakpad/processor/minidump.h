@@ -524,9 +524,6 @@ class MinidumpModuleList : public MinidumpStream,
   virtual vector<linked_ptr<const CodeModule> > GetShrunkRangeModules() const;
 
   
-  virtual bool IsModuleShrinkEnabled() const;
-
-  
   void Print();
 
  protected:
@@ -847,7 +844,6 @@ class MinidumpUnloadedModuleList : public MinidumpStream,
       GetModuleAtIndex(unsigned int index) const override;
   const CodeModules* Copy() const override;
   vector<linked_ptr<const CodeModule>> GetShrunkRangeModules() const override;
-  bool IsModuleShrinkEnabled() const override;
 
  protected:
   explicit MinidumpUnloadedModuleList(Minidump* minidump_);
@@ -1267,6 +1263,10 @@ class Minidump {
 
   
   bool IsAndroid();
+
+  
+  
+  bool GetPlatform(MDOSPlatform* platform);
 
   
   unsigned int HexdumpMode() const { return hexdump_ ? hexdump_width_ : 0; }
