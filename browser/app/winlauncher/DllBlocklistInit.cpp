@@ -152,8 +152,22 @@ LauncherVoidResultWithLineInfo InitializeDllBlocklistOOP(
   
   
   
+  
   if (!(gBlocklistInitFlags & eDllBlocklistInitFlagWasBootstrapped)) {
-    return Ok();
+    HMODULE exeImageBase;
+#  if defined(_MSC_VER)
+    exeImageBase = reinterpret_cast<HMODULE>(&__ImageBase);
+#  else
+    exeImageBase = ::GetModuleHandleW(nullptr);
+#  endif  
+
+    mozilla::nt::PEHeaders localImage(exeImageBase);
+    if (!localImage) {
+      return LAUNCHER_ERROR_FROM_WIN32(ERROR_BAD_EXE_FORMAT);
+    }
+
+    return RestoreImportDirectory(aFullImagePath, localImage, aChildProcess,
+                                  exeImageBase);
   }
 
   return InitializeDllBlocklistOOPInternal(aFullImagePath, aChildProcess);
