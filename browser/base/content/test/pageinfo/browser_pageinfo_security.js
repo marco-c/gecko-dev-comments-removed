@@ -21,7 +21,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
-// Test opening the correct certificate information when clicking "Show certificate".
+
 add_task(async function test_ShowCertificate() {
   SpecialPowers.pushPrefEnv({
     set: [["security.aboutcertificate.enabled", true]],
@@ -80,7 +80,7 @@ add_task(async function test_ShowCertificate() {
       );
     });
 
-    gBrowser.removeCurrentTab(); // closes about:certificate
+    gBrowser.removeCurrentTab(); 
   }
 
   await openAboutCertificate();
@@ -94,7 +94,7 @@ add_task(async function test_ShowCertificate() {
   BrowserTestUtils.removeTab(tab2);
 });
 
-// Test displaying website identity information when loading images.
+
 add_task(async function test_image() {
   let url = TEST_PATH + "moz.png";
   await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
@@ -134,7 +134,7 @@ add_task(async function test_image() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-// Test displaying website identity information on certificate error pages.
+
 add_task(async function test_CertificateError() {
   let browser;
   let pageLoaded;
@@ -186,7 +186,7 @@ add_task(async function test_CertificateError() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-// Test displaying website identity information on http pages.
+
 add_task(async function test_SecurityHTTP() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_HTTP_ORIGIN);
 
@@ -222,7 +222,43 @@ add_task(async function test_SecurityHTTP() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-// Test displaying and removing quota managed data.
+
+add_task(async function test_ValidCert() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_ORIGIN);
+
+  let pageInfo = BrowserPageInfo(TEST_ORIGIN, "securityTab");
+  await BrowserTestUtils.waitForEvent(pageInfo, "load");
+  let pageInfoDoc = pageInfo.document;
+  let securityTab = pageInfoDoc.getElementById("securityTab");
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.is_visible(securityTab),
+    "Security tab should be visible."
+  );
+
+  let owner = pageInfoDoc.getElementById("security-identity-owner-value");
+  let verifier = pageInfoDoc.getElementById("security-identity-verifier-value");
+  let domain = pageInfoDoc.getElementById("security-identity-domain-value");
+
+  await TestUtils.waitForCondition(
+    () => owner.value === "This website does not supply ownership information.",
+    `Value of owner should be "This website does not supply ownership information.", got "${owner.value}".`
+  );
+
+  await TestUtils.waitForCondition(
+    () => verifier.value === "Mozilla Testing",
+    `Value of verifier should be "Mozilla Testing", got "${verifier.value}".`
+  );
+
+  await TestUtils.waitForCondition(
+    () => domain.value === gBrowser.selectedBrowser.currentURI.displayHost,
+    `Value of domain should be ${gBrowser.selectedBrowser.currentURI.displayHost}, instead got "${domain.value}".`
+  );
+
+  pageInfo.close();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
 add_task(async function test_SiteData() {
   await SiteDataTestUtils.addToIndexedDB(TEST_ORIGIN);
 
@@ -239,10 +275,10 @@ add_task(async function test_SiteData() {
 
     let size = DownloadUtils.convertByteUnits(totalUsage);
 
-    // The usage details are filled asynchronously, so we assert that they're present by
-    // waiting for them to be filled in.
-    // We only wait for the right unit to appear, since this number is intermittently
-    // varying by slight amounts on infra machines.
+    
+    
+    
+    
     await TestUtils.waitForCondition(
       () => label.textContent.includes(size[1]),
       "Should show site data usage in the security section."
@@ -272,9 +308,9 @@ add_task(async function test_SiteData() {
   });
 });
 
-// Test displaying and removing cookies.
+
 add_task(async function test_Cookies() {
-  // Add some test cookies.
+  
   SiteDataTestUtils.addToCookies(TEST_ORIGIN, "test1", "1");
   SiteDataTestUtils.addToCookies(TEST_ORIGIN, "test2", "2");
   SiteDataTestUtils.addToCookies(TEST_SUB_ORIGIN, "test1", "1");
@@ -288,8 +324,8 @@ add_task(async function test_Cookies() {
     let label = pageInfoDoc.getElementById("security-privacy-sitedata-value");
     let clearButton = pageInfoDoc.getElementById("security-clear-sitedata");
 
-    // The usage details are filled asynchronously, so we assert that they're present by
-    // waiting for them to be filled in.
+    
+    
     await TestUtils.waitForCondition(
       () => label.textContent.includes("cookies"),
       "Should show cookies in the security section."
@@ -325,7 +361,7 @@ add_task(async function test_Cookies() {
   });
 });
 
-// Clean up in case we missed anything...
+
 add_task(async function cleanup() {
   await SiteDataTestUtils.clear();
 });
