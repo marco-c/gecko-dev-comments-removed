@@ -822,19 +822,21 @@ var E10SUtils = {
 
   shouldLoadURIInThisProcess(aURI, aRemoteSubframes) {
     let remoteType = Services.appinfo.remoteType;
-    return (
-      remoteType ==
-      this.getRemoteTypeForURIObject(
-        aURI,
-         true,
-        aRemoteSubframes,
-        remoteType
-      )
+    let wantRemoteType = this.getRemoteTypeForURIObject(
+      aURI,
+       true,
+      aRemoteSubframes,
+      remoteType
     );
+    this.log().info(
+      `shouldLoadURIInThisProcess: have ${remoteType} want ${wantRemoteType}`
+    );
+    return remoteType == wantRemoteType;
   },
 
   shouldLoadURI(aDocShell, aURI, aHasPostData) {
     let { useRemoteSubframes } = aDocShell;
+    this.log().debug(`shouldLoadURI(${this._uriStr(aURI)})`);
 
     
     
@@ -886,32 +888,38 @@ var E10SUtils = {
       !aDocShell.awaitingLargeAlloc &&
       isOnlyToplevelBrowsingContext
     ) {
+      this.log().info(
+        "returning false to throw away large allocation process\n"
+      );
       return false;
     }
 
     
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
     if (requestedIndex >= 0) {
+      this.log().debug("Checking history case\n");
       if (
         sessionHistory.legacySHistory.getEntryAtIndex(requestedIndex)
           .loadedInThisProcess
       ) {
+        this.log().info("History entry loaded in this process");
         return true;
       }
 
       
       
       let remoteType = Services.appinfo.remoteType;
-      return (
-        remoteType ==
-        this.getRemoteTypeForURIObject(
-          aURI,
-          true,
-          useRemoteSubframes,
-          remoteType,
-          webNav.currentURI
-        )
+      let wantRemoteType = this.getRemoteTypeForURIObject(
+        aURI,
+        true,
+        useRemoteSubframes,
+        remoteType,
+        webNav.currentURI
       );
+      this.log().debug(
+        `Checking remote type, got: ${remoteType} want: ${wantRemoteType}\n`
+      );
+      return remoteType == wantRemoteType;
     }
 
     
