@@ -496,9 +496,24 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     );
   },
 
+  
+  
+  
+  _maybeClearPriorPause(location) {
+    if (!this._priorPause) {
+      return;
+    }
+
+    const { where } = this._priorPause.frame;
+    if (where.line === location.line && where.column === location.column) {
+      this._priorPause = null;
+    }
+  },
+
   setBreakpoint: async function(location, options) {
     const actor = this.breakpointActorMap.getOrCreateBreakpointActor(location);
     actor.setOptions(options);
+    this._maybeClearPriorPause(location);
 
     if (location.sourceUrl) {
       
@@ -519,6 +534,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
   removeBreakpoint(location) {
     const actor = this.breakpointActorMap.getOrCreateBreakpointActor(location);
+    this._maybeClearPriorPause(location);
     actor.delete();
   },
 

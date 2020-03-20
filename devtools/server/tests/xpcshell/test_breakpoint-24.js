@@ -8,12 +8,17 @@
 
 
 
+
+
+
 add_task(
   threadFrontTest(async props => {
     await testDebuggerStatements(props);
     await testBreakpoints(props);
     await testBreakpointsAndDebuggerStatements(props);
     await testLoops(props);
+    await testRemovingBreakpoint(props);
+    await testAddingBreakpoint(props);
   })
 );
 
@@ -168,6 +173,78 @@ async function testLoops({ threadFront, targetFront }) {
       "resume",
     ],
   ]);
+}
+
+
+
+
+
+async function testRemovingBreakpoint({ threadFront, targetFront }) {
+  const consoleFront = await targetFront.getFront("console");
+  consoleFront.evaluateJSAsync(
+    `function foo(stop) {
+      debugger;
+    }
+    foo();
+    foo();
+    //# sourceURL=http://example.com/testRemovingBreakpoint.js`
+  );
+
+  const location = {
+    sourceUrl: "http://example.com/testRemovingBreakpoint.js",
+    line: 2,
+    column: 6,
+  };
+
+  threadFront.setBreakpoint(location, {});
+
+  info("paused at the breakpoint at the first debugger statement");
+  const packet = await waitForEvent(threadFront, "paused");
+  Assert.equal(packet.frame.where.line, 2);
+  Assert.equal(packet.why.type, "breakpoint");
+  threadFront.removeBreakpoint(location);
+  await threadFront.resume();
+
+  info("paused at the first debugger statement");
+  const packet2 = await waitForEvent(threadFront, "paused");
+  Assert.equal(packet2.frame.where.line, 2);
+  Assert.equal(packet2.why.type, "debuggerStatement");
+  await threadFront.resume();
+}
+
+
+
+
+
+async function testAddingBreakpoint({ threadFront, targetFront }) {
+  const consoleFront = await targetFront.getFront("console");
+  consoleFront.evaluateJSAsync(
+    `function foo(stop) {
+      debugger;
+    }
+    foo();
+    foo();
+    //# sourceURL=http://example.com/testAddingBreakpoint.js`
+  );
+
+  const location = {
+    sourceUrl: "http://example.com/testAddingBreakpoint.js",
+    line: 2,
+    column: 6,
+  };
+
+  info("paused at the first debugger statement");
+  const packet = await waitForEvent(threadFront, "paused");
+  Assert.equal(packet.frame.where.line, 2);
+  Assert.equal(packet.why.type, "debuggerStatement");
+  threadFront.setBreakpoint(location, {});
+  await threadFront.resume();
+
+  info("paused at the breakpoint at the first debugger statement");
+  const packet2 = await waitForEvent(threadFront, "paused");
+  Assert.equal(packet2.frame.where.line, 2);
+  Assert.equal(packet2.why.type, "breakpoint");
+  await threadFront.resume();
 }
 
 async function performActions(threadFront, actions) {
