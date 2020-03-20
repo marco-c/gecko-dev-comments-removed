@@ -133,8 +133,6 @@ class SearchConfigTest {
       Services.search.wrappedJSObject._engineSelector ||
       new SearchEngineSelector();
 
-    await engineSelector.init();
-
     
     
     Assert.ok(

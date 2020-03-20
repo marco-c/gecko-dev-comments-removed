@@ -11,16 +11,12 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
+  RemoteSettings: "resource://services-settings/remote-settings.js",
+  RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
-
-const EXT_SEARCH_PREFIX = "resource://search-extensions/";
-const DEFAULT_CONFIG_URL = `${EXT_SEARCH_PREFIX}engines.json`;
-const ENGINE_CONFIG_PREF = "search.config.url";
 
 const USER_LOCALE = "$USER_LOCALE";
 
@@ -87,17 +83,32 @@ class SearchEngineSelector {
   
 
 
-  async init(url = DEFAULT_CONFIG_URL) {
-    let configUrl = Services.prefs.getStringPref(ENGINE_CONFIG_PREF, url);
-    this.configuration = await this.getEngineConfiguration(configUrl);
+
+  constructor(listener) {
+    this.QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
+    this._remoteConfig = RemoteSettings(SearchUtils.SETTINGS_KEY);
+    this._listenerAdded = false;
+    this._onConfigurationUpdated = this._onConfigurationUpdated.bind(this);
+    this._changeListener = listener;
   }
 
   
 
 
-  async getEngineConfiguration(url) {
-    const response = await fetch(url);
-    return (await response.json()).data;
+  async getEngineConfiguration() {
+    if (this._getConfigurationPromise) {
+      return this._getConfigurationPromise;
+    }
+
+    this._configuration = await (this._getConfigurationPromise = this._getConfiguration());
+    delete this._getConfigurationPromise;
+
+    if (!this._listenerAdded) {
+      this._remoteConfig.on("sync", this._onConfigurationUpdated);
+      this._listenerAdded = true;
+    }
+
+    return this._configuration;
   }
 
   
@@ -110,7 +121,60 @@ class SearchEngineSelector {
 
 
 
-  fetchEngineConfiguration(locale, region, channel, distroID) {
+
+
+
+
+
+
+  async _getConfiguration(firstTime = true) {
+    let result = [];
+    try {
+      result = await this._remoteConfig.get();
+    } catch (ex) {
+      if (
+        ex instanceof RemoteSettingsClient.InvalidSignatureError &&
+        firstTime
+      ) {
+        
+        await this._remoteConfig.db.clear();
+        await this._remoteConfig.db.close();
+        
+        return this._getConfiguration(false);
+      }
+      
+      
+      Cu.reportError(ex);
+    }
+    return result;
+  }
+
+  
+
+
+
+  _onConfigurationUpdated({ data: { current } }) {
+    this._configuration = current;
+
+    if (this._changeListener) {
+      this._changeListener();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async fetchEngineConfiguration(locale, region, channel, distroID) {
+    if (!this._configuration) {
+      await this.getEngineConfiguration();
+    }
     let cohort = Services.prefs.getCharPref("browser.search.cohort", null);
     let name = getAppInfo("name");
     let version = getAppInfo("version");
@@ -120,7 +184,7 @@ class SearchEngineSelector {
     let engines = [];
     const lcLocale = locale.toLowerCase();
     const lcRegion = region.toLowerCase();
-    for (let config of this.configuration) {
+    for (let config of this._configuration) {
       const appliesTo = config.appliesTo || [];
       const applies = appliesTo.filter(section => {
         if ("cohort" in section && cohort != section.cohort) {

@@ -90,6 +90,10 @@ const SEARCH_GEO_DEFAULT_UPDATE_INTERVAL = 2592000;
 
 
 
+const REINIT_IDLE_TIME_SEC = 5 * 60;
+
+
+
 
 const MULTI_LOCALE_ENGINES = [
   "amazon",
@@ -539,6 +543,9 @@ SearchService.prototype = {
   
   _initStarted: null,
 
+  
+  _engineSelector: null,
+
   _ensureKnownRegionPromise: null,
 
   
@@ -715,6 +722,13 @@ SearchService.prototype = {
     );
 
     try {
+      if (gModernConfig) {
+        
+        this._engineSelector = new SearchEngineSelector(
+          this._handleConfigurationUpdated.bind(this)
+        );
+      }
+
       
       let cache = await this._readCacheFile();
 
@@ -866,6 +880,20 @@ SearchService.prototype = {
       return true;
     }
     return false;
+  },
+
+  
+
+
+
+  _handleConfigurationUpdated() {
+    if (this._queuedIdle) {
+      return;
+    }
+
+    this._queuedIdle = true;
+
+    this.idleService.addIdleObserver(this, REINIT_IDLE_TIME_SEC);
   },
 
   setGlobalAttr(name, val) {
@@ -1459,7 +1487,7 @@ SearchService.prototype = {
       this.defaultPrivateEngine !== prevPrivateEngine
     ) {
       SearchUtils.notifyAction(
-        this._currentEngine,
+        this._currentPrivateEngine,
         SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
@@ -1482,8 +1510,23 @@ SearchService.prototype = {
     
     gInitialized = false;
 
+    
+    Services.obs.notifyObservers(
+      null,
+      SearchUtils.TOPIC_SEARCH_SERVICE,
+      "reinit-started"
+    );
+
     (async () => {
       try {
+        
+        
+        if (gModernConfig && !this._engineSelector) {
+          this._engineSelector = new SearchEngineSelector(
+            this._handleConfigurationUpdated.bind(this)
+          );
+        }
+
         this._initObservers = PromiseUtils.defer();
         if (this._batchTask) {
           SearchUtils.log("finalizing batch task");
@@ -1847,15 +1890,16 @@ SearchService.prototype = {
   async _findEngineSelectorEngines() {
     SearchUtils.log("_findEngineSelectorEngines: init");
 
-    let engineSelector = new SearchEngineSelector();
     let locale = Services.locale.appLocaleAsBCP47;
     let region = Services.prefs.getCharPref("browser.search.region", "default");
 
-    await engineSelector.init();
     let channel = AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")
       ? "esr"
       : AppConstants.MOZ_UPDATE_CHANNEL;
-    let { engines, privateDefault } = engineSelector.fetchEngineConfiguration(
+    let {
+      engines,
+      privateDefault,
+    } = await this._engineSelector.fetchEngineConfiguration(
       locale,
       region,
       channel,
@@ -3542,6 +3586,13 @@ SearchService.prototype = {
         }
         break;
 
+      case "idle": {
+        this.idleService.removeIdleObserver(this, REINIT_IDLE_TIME_SEC);
+        this._queuedIdle = false;
+        this._maybeReloadEngines().catch(Cu.reportError);
+        break;
+      }
+
       case QUIT_APPLICATION_TOPIC:
         this._removeObservers();
         break;
@@ -3689,6 +3740,10 @@ SearchService.prototype = {
       IgnoreLists.unsubscribe(this._ignoreListListener);
       delete this._ignoreListListener;
     }
+    if (this._queuedIdle) {
+      this.idleService.removeIdleObserver(this, REINIT_IDLE_TIME_SEC);
+      this._queuedIdle = false;
+    }
 
     Services.obs.removeObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
@@ -3771,5 +3826,12 @@ var engineUpdateService = {
     }
   },
 };
+
+XPCOMUtils.defineLazyServiceGetter(
+  SearchService.prototype,
+  "idleService",
+  "@mozilla.org/widget/idleservice;1",
+  "nsIIdleService"
+);
 
 var EXPORTED_SYMBOLS = ["SearchService"];
