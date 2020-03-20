@@ -788,8 +788,6 @@ void APZCTreeManager::SampleForWebRender(
                               apzc->GetGuid().mScrollId,
                               wr::ToLayoutPoint(asyncScrollDelta));
 
-    apzc->ReportCheckerboard(aSampleTime);
-
 #if defined(MOZ_WIDGET_ANDROID)
     
     RefPtr<UiCompositorControllerParent> uiController =
@@ -866,15 +864,8 @@ void APZCTreeManager::SampleForWebRender(
   
   
   
-  bool activeAnimations = false;
-  for (const auto& mapping : mApzcMap) {
-    AsyncPanZoomController* apzc = mapping.second;
-    if (apzc->GetRenderRoot() != aRenderRoot) {
-      
-      continue;
-    }
-    activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
-  }
+  bool activeAnimations =
+      AdvanceAnimationsInternal(lock, Some(aRenderRoot), aSampleTime);
   if (activeAnimations) {
     RefPtr<CompositorController> controller;
     CompositorBridgeParent::CallWithIndirectShadowTree(
@@ -886,6 +877,28 @@ void APZCTreeManager::SampleForWebRender(
           wr::RenderRootSet(aRenderRoot));
     }
   }
+}
+
+bool APZCTreeManager::AdvanceAnimations(Maybe<wr::RenderRoot> aRenderRoot,
+                                        const TimeStamp& aSampleTime) {
+  MutexAutoLock lock(mMapLock);
+  return AdvanceAnimationsInternal(lock, std::move(aRenderRoot), aSampleTime);
+}
+
+bool APZCTreeManager::AdvanceAnimationsInternal(
+    const MutexAutoLock& aProofOfMapLock, Maybe<wr::RenderRoot> aRenderRoot,
+    const TimeStamp& aSampleTime) {
+  bool activeAnimations = false;
+  for (const auto& mapping : mApzcMap) {
+    AsyncPanZoomController* apzc = mapping.second;
+    if (aRenderRoot && apzc->GetRenderRoot() != *aRenderRoot) {
+      
+      continue;
+    }
+    apzc->ReportCheckerboard(aSampleTime);
+    activeAnimations |= apzc->AdvanceAnimations(aSampleTime);
+  }
+  return activeAnimations;
 }
 
 

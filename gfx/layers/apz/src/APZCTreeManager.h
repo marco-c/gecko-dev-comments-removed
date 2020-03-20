@@ -208,6 +208,14 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
+
+  bool AdvanceAnimations(Maybe<wr::RenderRoot> aRenderRoot,
+                         const TimeStamp& aSampleTime);
+
+  
+
+
+
   APZEventResult ReceiveInputEvent(InputData& aEvent) override;
 
   
@@ -742,6 +750,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   static already_AddRefed<GeckoContentController> GetContentController(
       LayersId aLayersId);
+
+  bool AdvanceAnimationsInternal(const MutexAutoLock& aProofOfMapLock,
+                                 Maybe<wr::RenderRoot> aRenderRoot,
+                                 const TimeStamp& aSampleTime);
 
  protected:
   
