@@ -40,7 +40,6 @@
 #ifdef MOZ_ASAN_REPORTER
 #  include "CmdLineAndEnvUtils.h"
 #endif
-#include "ThreadAnnotation.h"
 
 #include "mozilla/Omnijar.h"
 #if defined(XP_MACOSX)
@@ -278,24 +277,6 @@ void XRE_SetProcessType(const char* aProcessTypeString) {
   }
 }
 
-bool
-#if defined(XP_WIN)
-XRE_SetRemoteExceptionHandler(const char* aPipe ,
-                              uintptr_t aCrashTimeAnnotationFile)
-#else
-XRE_SetRemoteExceptionHandler(const char* aPipe )
-#endif
-{
-#if defined(XP_WIN)
-  return CrashReporter::SetRemoteExceptionHandler(nsDependentCString(aPipe),
-                                                  aCrashTimeAnnotationFile);
-#elif defined(XP_MACOSX)
-  return CrashReporter::SetRemoteExceptionHandler(nsDependentCString(aPipe));
-#else
-  return CrashReporter::SetRemoteExceptionHandler();
-#endif
-}
-
 #if defined(XP_WIN)
 void SetTaskbarGroupId(const nsString& aId) {
   if (FAILED(SetCurrentProcessExplicitAppUserModelID(aId.get()))) {
@@ -334,6 +315,17 @@ int GetDebugChildPauseTime() {
   return 10000;  
 #else
   return 0;
+#endif
+}
+
+static bool IsCrashReporterEnabled(const char* aArg) {
+  
+  
+#if defined(XP_MACOSX) || defined(XP_WIN)
+  return 0 != strcmp("-", aArg);
+#else
+  
+  return 0 != strcmp("false", aArg);
 #endif
 }
 
@@ -511,6 +503,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   SetupErrorHandling(aArgv[0]);
 
+  bool exceptionHandlerIsSet = false;
   if (!CrashReporter::IsDummy()) {
 #if defined(XP_WIN)
     if (aArgc < 1) {
@@ -524,35 +517,23 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     if (aArgc < 1) return NS_ERROR_FAILURE;
     const char* const crashReporterArg = aArgv[--aArgc];
 
+    if (IsCrashReporterEnabled(crashReporterArg)) {
 #if defined(XP_MACOSX)
-    
-    
-    
-    if (0 != strcmp("-", crashReporterArg) &&
-        !XRE_SetRemoteExceptionHandler(crashReporterArg)) {
-      
-      NS_WARNING("Could not setup crash reporting\n");
-    }
+      exceptionHandlerIsSet =
+          CrashReporter::SetRemoteExceptionHandler(crashReporterArg);
 #elif defined(XP_WIN)
-    if (0 != strcmp("-", crashReporterArg) &&
-        !XRE_SetRemoteExceptionHandler(crashReporterArg,
-                                       crashTimeAnnotationFile)) {
-      
-      NS_WARNING("Could not setup crash reporting\n");
-    }
+      exceptionHandlerIsSet = CrashReporter::SetRemoteExceptionHandler(
+          crashReporterArg, crashTimeAnnotationFile);
 #else
-    
-    
-    if (0 != strcmp("false", crashReporterArg) &&
-        !XRE_SetRemoteExceptionHandler(nullptr)) {
-      
-      NS_WARNING("Could not setup crash reporting\n");
-    }
+      exceptionHandlerIsSet = CrashReporter::SetRemoteExceptionHandler();
 #endif
-  }
 
-  
-  CrashReporter::InitThreadAnnotationRAII annotation;
+      if (!exceptionHandlerIsSet) {
+        
+        NS_WARNING("Could not setup crash reporting\n");
+      }
+    }
+  }
 
   gArgv = aArgv;
   gArgc = aArgc;
@@ -770,6 +751,10 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
       mozilla::ipc::SharedMemoryBasic::Shutdown();
 #endif
     }
+  }
+
+  if (exceptionHandlerIsSet) {
+    CrashReporter::UnsetRemoteExceptionHandler();
   }
 
   return XRE_DeinitCommandLine();

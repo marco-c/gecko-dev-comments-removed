@@ -3488,37 +3488,7 @@ void DeregisterChildCrashAnnotationFileDescriptor(ProcessId aProcess) {
   }
 }
 
-#if defined(XP_WIN)
-
-bool SetRemoteExceptionHandler(const nsACString& crashPipe,
-                               uintptr_t aCrashTimeAnnotationFile) {
-  
-  if (crashPipe.Equals(kNullNotifyPipe)) return true;
-
-  MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
-
-  gExceptionHandler = new google_breakpad::ExceptionHandler(
-      L"", ChildFPEFilter,
-      nullptr,  
-      reinterpret_cast<void*>(aCrashTimeAnnotationFile),
-      google_breakpad::ExceptionHandler::HANDLER_ALL, GetMinidumpType(),
-      NS_ConvertASCIItoUTF16(crashPipe).get(), nullptr);
-  gExceptionHandler->set_handle_debug_exceptions(true);
-
-#  if defined(HAVE_64BIT_BUILD)
-  SetJitExceptionHandler();
-#  endif
-
-  mozalloc_set_oom_abort_handler(AnnotateOOMAllocationSize);
-
-  oldTerminateHandler = std::set_terminate(&TerminateHandler);
-
-  
-  return gExceptionHandler->IsOutOfProcess();
-}
-
-
-#elif defined(XP_LINUX)
+#if defined(XP_LINUX)
 
 
 bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd) {
@@ -3536,10 +3506,25 @@ bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd) {
   return true;
 }
 
+#endif  
 
-bool SetRemoteExceptionHandler() {
+bool SetRemoteExceptionHandler(const char* aCrashPipe,
+                               uintptr_t aCrashTimeAnnotationFile) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
 
+#if defined(XP_WIN)
+  gExceptionHandler = new google_breakpad::ExceptionHandler(
+      L"", ChildFPEFilter,
+      nullptr,  
+      reinterpret_cast<void*>(aCrashTimeAnnotationFile),
+      google_breakpad::ExceptionHandler::HANDLER_ALL, GetMinidumpType(),
+      NS_ConvertASCIItoUTF16(aCrashPipe).get(), nullptr);
+  gExceptionHandler->set_handle_debug_exceptions(true);
+
+#  if defined(HAVE_64BIT_BUILD)
+  SetJitExceptionHandler();
+#  endif
+#elif defined(XP_LINUX)
   
   google_breakpad::MinidumpDescriptor path(".");
 
@@ -3549,39 +3534,24 @@ bool SetRemoteExceptionHandler() {
                                             nullptr,  
                                             true,     
                                             gMagicChildCrashReportFd);
-
-  mozalloc_set_oom_abort_handler(AnnotateOOMAllocationSize);
-
-  oldTerminateHandler = std::set_terminate(&TerminateHandler);
-
-  
-  return gExceptionHandler->IsOutOfProcess();
-}
-
-
 #elif defined(XP_MACOSX)
-
-bool SetRemoteExceptionHandler(const nsACString& crashPipe) {
-  
-  if (crashPipe.Equals(kNullNotifyPipe)) return true;
-
-  MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
-
   gExceptionHandler =
       new google_breakpad::ExceptionHandler("", ChildFilter,
                                             nullptr,  
                                             nullptr,  
                                             true,     
-                                            crashPipe.BeginReading());
+                                            aCrashPipe);
+#endif
 
   mozalloc_set_oom_abort_handler(AnnotateOOMAllocationSize);
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
+  InitThreadAnnotation();
+
   
   return gExceptionHandler->IsOutOfProcess();
 }
-#endif  
 
 void GetAnnotation(uint32_t childPid, Annotation annotation,
                    nsACString& outStr) {
@@ -3903,9 +3873,15 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
 }
 
 bool UnsetRemoteExceptionHandler() {
+  
+  
+  
+#if !defined(XP_LINUX) || !defined(MOZ_SANDBOX)
   std::set_terminate(oldTerminateHandler);
   delete gExceptionHandler;
   gExceptionHandler = nullptr;
+#endif
+  ShutdownThreadAnnotation();
   return true;
 }
 

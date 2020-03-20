@@ -400,16 +400,6 @@ XRE_API(void, XRE_SetAndroidChildFds,
 
 XRE_API(void, XRE_SetProcessType, (const char* aProcessTypeString))
 
-
-#if defined(XP_WIN)
-
-
-XRE_API(bool, XRE_SetRemoteExceptionHandler,
-        (const char* aPipe, uintptr_t aCrashTimeAnnotationFile))
-#else
-XRE_API(bool, XRE_SetRemoteExceptionHandler, (const char* aPipe))
-#endif
-
 XRE_API(nsresult, XRE_InitChildProcess,
         (int aArgc, char* aArgv[], const XREChildData* aChildData))
 
