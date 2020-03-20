@@ -5,6 +5,11 @@
 
 "use strict";
 
+require("@babel/register")({
+  
+  ignore: [/node_modules/],
+});
+
 const mcRoot = `${__dirname}/../../../../../`;
 const getModule = mcPath =>
   `module.exports = require("${(mcRoot + mcPath).replace(/\\/gi, "/")}");`;
