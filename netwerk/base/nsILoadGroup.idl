@@ -95,4 +95,11 @@ interface nsILoadGroup : nsIRequest
 
 
     attribute nsLoadFlags defaultLoadFlags;
+
+    
+
+
+
+    [infallible]
+    readonly attribute boolean isBrowsingContextDiscarded;
 };
