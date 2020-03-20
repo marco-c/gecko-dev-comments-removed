@@ -1146,7 +1146,7 @@ class FlowGraphSummary {
         
         
         
-        for (const JSTryNote& tn : script->trynotes()) {
+        for (const TryNote& tn : script->trynotes()) {
           if (tn.start == r.frontOffset() + JSOpLength_Try) {
             uint32_t catchOffset = tn.start + tn.length;
             if (tn.kind == JSTRY_CATCH || tn.kind == JSTRY_FINALLY) {
@@ -2241,7 +2241,7 @@ class DebuggerScript::IsInCatchScopeMatcher {
       return false;
     }
 
-    for (const JSTryNote& tn : script->trynotes()) {
+    for (const TryNote& tn : script->trynotes()) {
       if (tn.start <= offset_ && offset_ < tn.start + tn.length &&
           tn.kind == JSTRY_CATCH) {
         isInCatch_ = true;

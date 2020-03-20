@@ -17,6 +17,7 @@
 
 
 
+namespace js {
 
 
 
@@ -42,7 +43,8 @@
 
 
 
-enum JSTryNoteKind {
+
+enum TryNoteKind {
   JSTRY_CATCH,
   JSTRY_FINALLY,
   JSTRY_FOR_IN,
@@ -55,12 +57,17 @@ enum JSTryNoteKind {
 
 
 
-struct JSTryNote {
+struct TryNote {
   uint32_t kind;       
   uint32_t stackDepth; 
   uint32_t start;      
 
   uint32_t length;     
+
+  TryNote(uint32_t kind, uint32_t stackDepth, uint32_t start, uint32_t length)
+      : kind(kind), stackDepth(stackDepth), start(start), length(length) {}
+
+  TryNote() = default;
 
   bool isLoop() const {
     switch (kind) {
@@ -78,7 +85,6 @@ struct JSTryNote {
   }
 };
 
-namespace js {
 
 
 
@@ -542,7 +548,7 @@ class alignas(uint32_t) ImmutableScriptData final {
       mozilla::Span<const jssrcnote> notes,
       mozilla::Span<const uint32_t> resumeOffsets,
       mozilla::Span<const ScopeNote> scopeNotes,
-      mozilla::Span<const JSTryNote> tryNotes);
+      mozilla::Span<const TryNote> tryNotes);
 
   static js::UniquePtr<ImmutableScriptData> new_(
       JSContext* cx, uint32_t codeLength, uint32_t noteLength,
@@ -592,9 +598,9 @@ class alignas(uint32_t) ImmutableScriptData final {
     return mozilla::MakeSpan(offsetToPointer<ScopeNote>(scopeNotesOffset()),
                              offsetToPointer<ScopeNote>(tryNotesOffset()));
   }
-  mozilla::Span<JSTryNote> tryNotes() {
-    return mozilla::MakeSpan(offsetToPointer<JSTryNote>(tryNotesOffset()),
-                             offsetToPointer<JSTryNote>(endOffset()));
+  mozilla::Span<TryNote> tryNotes() {
+    return mozilla::MakeSpan(offsetToPointer<TryNote>(tryNotesOffset()),
+                             offsetToPointer<TryNote>(endOffset()));
   }
 
   static constexpr size_t offsetOfCode() {

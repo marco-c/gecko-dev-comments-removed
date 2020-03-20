@@ -749,7 +749,7 @@ XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
 
   size += numResumeOffsets * sizeof(uint32_t);
   size += numScopeNotes * sizeof(ScopeNote);
-  size += numTryNotes * sizeof(JSTryNote);
+  size += numTryNotes * sizeof(TryNote);
 
   return size;
 }
@@ -821,10 +821,10 @@ void ImmutableScriptData::initOptionalArrays(size_t* pcursor,
   
   MOZ_ASSERT(tryNotesOffset() == cursor);
   if (numTryNotes > 0) {
-    static_assert(sizeof(ScopeNote) >= alignof(JSTryNote),
+    static_assert(sizeof(ScopeNote) >= alignof(TryNote),
                   "Incompatible alignment");
-    initElements<JSTryNote>(cursor, numTryNotes);
-    cursor += numTryNotes * sizeof(JSTryNote);
+    initElements<TryNote>(cursor, numTryNotes);
+    cursor += numTryNotes * sizeof(TryNote);
     setOptionalOffset(++offsetIndex, cursor);
   }
   flags->tryNotesEndIndex = offsetIndex;
@@ -941,7 +941,7 @@ XDRResult ImmutableScriptData::XDR(XDRState<mode>* xdr,
     MOZ_TRY(xdr->codeUint32(&elem.parent));
   }
 
-  for (JSTryNote& elem : isd->tryNotes()) {
+  for (TryNote& elem : isd->tryNotes()) {
     MOZ_TRY(xdr->codeUint32(&elem.kind));
     MOZ_TRY(xdr->codeUint32(&elem.stackDepth));
     MOZ_TRY(xdr->codeUint32(&elem.start));
@@ -4528,7 +4528,7 @@ void JSScript::assertValidJumpTargets() const {
   }
 
   
-  for (const JSTryNote& tn : trynotes()) {
+  for (const TryNote& tn : trynotes()) {
     if (tn.kind != JSTRY_CATCH && tn.kind != JSTRY_FINALLY) {
       continue;
     }
@@ -5112,7 +5112,7 @@ js::UniquePtr<ImmutableScriptData> ImmutableScriptData::new_(
     mozilla::Span<const jsbytecode> code, mozilla::Span<const jssrcnote> notes,
     mozilla::Span<const uint32_t> resumeOffsets,
     mozilla::Span<const ScopeNote> scopeNotes,
-    mozilla::Span<const JSTryNote> tryNotes) {
+    mozilla::Span<const TryNote> tryNotes) {
   MOZ_RELEASE_ASSERT(code.Length() <= frontend::MaxBytecodeLength);
 
   
@@ -5548,7 +5548,7 @@ void JSScript::updateJitCodeRaw(JSRuntime* rt) {
 }
 
 bool JSScript::hasLoops() {
-  for (const JSTryNote& tn : trynotes()) {
+  for (const TryNote& tn : trynotes()) {
     if (tn.isLoop()) {
       return true;
     }

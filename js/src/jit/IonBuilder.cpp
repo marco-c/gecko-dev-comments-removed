@@ -7572,7 +7572,7 @@ AbortReasonOr<MBasicBlock*> IonBuilder::newPendingLoopHeader(
   bool emptyStack = block->stackDepth() == info().firstStackSlot();
   if (!emptyStack) {
     for (TryNoteIterAllNoGC tni(script(), pc); !tni.done(); ++tni) {
-      const JSTryNote& tn = **tni;
+      const TryNote& tn = **tni;
 
       
       
