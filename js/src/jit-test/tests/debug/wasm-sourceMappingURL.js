@@ -52,12 +52,12 @@ function appendSourceMappingURL(wasmBytes, url) {
 g.toWasm = (wast, url) => appendSourceMappingURL(wasmTextToBinary(wast), url);
 
 
-g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "" (func 0)))')));`);
+g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "" 0))')));`);
 assertEq(gotScript.format, "wasm");
 assertEq(gotScript.source.sourceMapURL, null);
 
 
-g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "a" (func 0)))', 'http://example.org/test')));`);
+g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "a" 0))', 'http://example.org/test')));`);
 assertEq(gotScript.format, "wasm");
 assertEq(gotScript.source.sourceMapURL, 'http://example.org/test');
 
@@ -67,6 +67,6 @@ assertThrowsInstanceOf(() => gotScript.source.sourceMapURL = 'foo', Error);
 
 
 dbg.allowWasmBinarySource = false;
-g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "a" (func 0)))', 'http://example.org/test2')));`);
+g.eval(`o = new WebAssembly.Instance(new WebAssembly.Module(toWasm('(module (func) (export "a" 0))', 'http://example.org/test2')));`);
 assertEq(gotScript.format, "wasm");
 assertEq(gotScript.source.sourceMapURL, 'http://example.org/test2');

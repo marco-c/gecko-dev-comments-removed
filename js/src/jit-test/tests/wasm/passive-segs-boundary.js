@@ -243,7 +243,7 @@ mem_test("data.drop 1 (i32.const 42)", "",
 
 mem_test("(memory.init 1 (i32.const 1) (i32.const 1) (i32.const 1) (i32.const 1))",
          "",
-         WebAssembly.CompileError, /unused values/);
+         SyntaxError, /parsing wasm text at/);
 
 
 mem_test("(memory.init 1 (i32.const 1) (i32.const 1))", "",
@@ -369,7 +369,7 @@ tab_test("elem.drop 1 (i32.const 42)", "",
 
 tab_test("(table.init 1 (i32.const 1) (i32.const 1) (i32.const 1) (i32.const 1))",
          "",
-         WebAssembly.CompileError, /unused values/);
+         SyntaxError, /parsing wasm text at/);
 
 
 tab_test("(table.init 1 (i32.const 1) (i32.const 1))", "",
