@@ -127,9 +127,11 @@ def handle_deliveries(policy_deliveries):
     return {"meta": meta, "headers": headers}
 
 
-def generate_selection(spec_directory, test_helper_filenames, spec_json,
-                       selection, spec, test_html_template_basename):
-    test_filename = get_test_filename(spec_directory, spec_json, selection)
+def generate_selection(spec_json, selection):
+    '''
+    Returns a scenario object (with a top-level source_context_list entry,
+    which will be removed in generate_test_file() later).
+    '''
 
     target_policy_delivery = util.PolicyDelivery(selection['delivery_type'],
                                                  selection['delivery_key'],
@@ -165,29 +167,50 @@ def generate_selection(spec_directory, test_helper_filenames, spec_json,
             ['supported_delivery_type'][selection['subresource']])
 
     
+    selection['test_description'] = spec_json[
+        'test_description_template'] % selection
+
+    return selection
+
+
+def generate_test_file(spec_directory, test_helper_filenames,
+                       test_html_template_basename, test_filename, scenarios):
+    '''
+    Generates a test HTML file (and possibly its associated .headers file)
+    from `scenarios`.
+    '''
+
     
-    top_source_context = selection['source_context_list'].pop(0)
+    
+    
+    
+    
+    for scenario in scenarios:
+        assert (scenario['source_context_list'] == scenarios[0]
+                ['source_context_list'])
+
+    
+    
+    top_source_context = scenarios[0]['source_context_list'].pop(0)
     assert (top_source_context.source_context_type == 'top')
+    for scenario in scenarios[1:]:
+        assert (scenario['source_context_list'].pop(0) == top_source_context)
 
-    
-    indent = "\n" + " " * 8
-    selection['scenario'] = dump_test_parameters(selection).replace(
-        "\n", indent)
+    parameters = {}
 
-    selection['test_page_title'] = spec_json['test_page_title_template'] % spec
-    selection['spec_description'] = spec['description']
-    selection['spec_specification_url'] = spec['specification_url']
+    parameters['scenarios'] = dump_test_parameters(scenarios).replace(
+        "\n", "\n" + " " * 8)
 
     test_directory = os.path.dirname(test_filename)
 
-    selection['helper_js'] = ""
+    parameters['helper_js'] = ""
     for test_helper_filename in test_helper_filenames:
-        selection['helper_js'] += '    <script src="%s"></script>\n' % (
+        parameters['helper_js'] += '    <script src="%s"></script>\n' % (
             os.path.relpath(test_helper_filename, test_directory))
-    selection['sanity_checker_js'] = os.path.relpath(
+    parameters['sanity_checker_js'] = os.path.relpath(
         os.path.join(spec_directory, 'generic', 'sanity-checker.js'),
         test_directory)
-    selection['spec_json_js'] = os.path.relpath(
+    parameters['spec_json_js'] = os.path.relpath(
         os.path.join(spec_directory, 'generic', 'spec_json.js'),
         test_directory)
 
@@ -205,11 +228,7 @@ def generate_selection(spec_directory, test_helper_filenames, spec_json,
                                              util.test_root_directory)}
 
     
-    selection['generated_disclaimer'] = generated_disclaimer.rstrip()
-    selection['test_description'] = spec_json[
-        'test_description_template'] % selection
-    selection['test_description'] = \
-        selection['test_description'].rstrip().replace("\n", "\n" + " " * 33)
+    parameters['generated_disclaimer'] = generated_disclaimer.rstrip()
 
     
     try:
@@ -224,14 +243,14 @@ def generate_selection(spec_directory, test_helper_filenames, spec_json,
             for header in delivery['headers']:
                 f.write('%s: %s\n' % (header, delivery['headers'][header]))
 
-    selection['meta_delivery_method'] = delivery['meta']
+    parameters['meta_delivery_method'] = delivery['meta']
     
-    if len(selection['meta_delivery_method']) > 0:
-        selection['meta_delivery_method'] = "\n    " + \
-                                            selection['meta_delivery_method']
+    if len(parameters['meta_delivery_method']) > 0:
+        parameters['meta_delivery_method'] = "\n    " + \
+                                            parameters['meta_delivery_method']
 
     
-    util.write_file(test_filename, test_html_template % selection)
+    util.write_file(test_filename, test_html_template % parameters)
 
 
 def generate_test_source_files(spec_directory, test_helper_filenames,
@@ -268,6 +287,10 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
             excluded_selection['delivery_key'] = spec_json['delivery_key']
             exclusion_dict.add(excluded_selection_pattern % excluded_selection)
 
+    
+    
+    scenarios = {}
+
     for spec in specification:
         
         
@@ -295,10 +318,17 @@ def generate_test_source_files(spec_directory, test_helper_filenames,
                 print('Excluding selection:', selection_path)
                 continue
             try:
-                generate_selection(spec_directory, test_helper_filenames,
-                                   spec_json, selection, spec, html_template)
+                test_filename = get_test_filename(spec_directory, spec_json,
+                                                  selection)
+                scenario = generate_selection(spec_json, selection)
+                scenarios[test_filename] = scenarios.get(test_filename,
+                                                         []) + [scenario]
             except util.ShouldSkip:
                 continue
+
+    for filename in scenarios:
+        generate_test_file(spec_directory, test_helper_filenames,
+                           html_template, filename, scenarios[filename])
 
 
 def merge_json(base, child):
