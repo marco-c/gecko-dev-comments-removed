@@ -5165,7 +5165,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
     if (NS_WARN_IF(!document)) {
       return NS_ERROR_FAILURE;
     }
-    nsCopySupport::GetSelectionForCopy(document, getter_AddRefs(selection));
+    selection = nsCopySupport::GetSelectionForCopy(document);
     if (NS_WARN_IF(!selection)) {
       return NS_ERROR_FAILURE;
     }
@@ -5214,8 +5214,7 @@ nsresult EventStateManager::HandleMiddleClickPaste(
   }
 
   
-  if (aTextEditor->Destroyed() || aTextEditor->IsReadonly() ||
-      aTextEditor->IsDisabled()) {
+  if (aTextEditor->Destroyed() || aTextEditor->IsReadonly()) {
     
     
     return NS_OK;

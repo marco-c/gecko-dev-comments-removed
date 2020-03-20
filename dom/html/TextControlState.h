@@ -274,7 +274,6 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   void SetPreviewText(const nsAString& aValue, bool aNotify);
   void GetPreviewText(nsAString& aValue);
   bool GetPreviewVisibility() { return mPreviewVisibility; }
-  void HideSelectionIfBlurred();
 
   struct SelectionProperties {
    public:
@@ -315,7 +314,6 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   bool IsSelectionCached() const { return mSelectionCached; }
   SelectionProperties& GetSelectionProperties() { return mSelectionProperties; }
   MOZ_CAN_RUN_SCRIPT void SetSelectionProperties(SelectionProperties& aProps);
-  void WillInitEagerly() { mSelectionRestoreEagerInit = true; }
   bool HasNeverInitializedBefore() const { return !mEverInited; }
   
   
@@ -456,8 +454,6 @@ class TextControlState final : public SupportsWeakPtr<TextControlState> {
   bool mValueTransferInProgress;  
                                   
   bool mSelectionCached;          
-  mutable bool mSelectionRestoreEagerInit;  
-                                            
   bool mPlaceholderVisibility;
   bool mPreviewVisibility;
 

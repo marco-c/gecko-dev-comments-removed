@@ -2629,7 +2629,7 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char* mimeType,
   
   RefPtr<Selection> sel;
   if (selectionOnly) {
-    nsCopySupport::GetSelectionForCopy(mDocument, getter_AddRefs(sel));
+    sel = nsCopySupport::GetSelectionForCopy(mDocument);
     NS_ENSURE_TRUE(sel, NS_ERROR_FAILURE);
 
     if (sel->IsCollapsed()) {

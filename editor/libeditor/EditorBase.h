@@ -491,10 +491,6 @@ class EditorBase : public nsIEditor,
     return (mFlags & nsIEditor::eEditorReadonlyMask) != 0;
   }
 
-  bool IsDisabled() const {
-    return (mFlags & nsIEditor::eEditorDisabledMask) != 0;
-  }
-
   bool IsInputFiltered() const {
     return (mFlags & nsIEditor::eEditorFilterInputMask) != 0;
   }
@@ -2565,8 +2561,7 @@ class EditorBase : public nsIEditor,
     
     
     
-    return !IsPasswordEditor() && !IsReadonly() && !IsDisabled() &&
-           !ShouldSkipSpellCheck();
+    return !IsPasswordEditor() && !IsReadonly() && !ShouldSkipSpellCheck();
   }
 
   

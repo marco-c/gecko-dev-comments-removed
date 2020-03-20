@@ -559,6 +559,12 @@ class PresShell final : public nsStubDocumentObserver,
   void ClearFrameRefs(nsIFrame* aFrame);
 
   
+  void FrameSelectionWillTakeFocus(nsFrameSelection&);
+
+  
+  void FrameSelectionWillLoseFocus(nsFrameSelection&);
+
+  
 
 
 
@@ -626,19 +632,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<nsISelectionController>
-  GetSelectionControllerForFocusedContent(
-      nsIContent** aFocusedContent = nullptr);
+  nsFrameSelection* GetLastFocusedFrameSelection();
 
   
 
@@ -1272,6 +1266,8 @@ class PresShell final : public nsStubDocumentObserver,
                                      SelectionRegion aRegion,
                                      int16_t aFlags) override;
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
+  void SelectionWillTakeFocus() override;
+  void SelectionWillLoseFocus() override;
 
   
 
@@ -2832,6 +2828,10 @@ class PresShell final : public nsStubDocumentObserver,
   UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
   nsViewManager* mViewManager;  
   RefPtr<nsFrameSelection> mSelection;
+  
+  
+  
+  RefPtr<nsFrameSelection> mFocusedFrameSelection;
   RefPtr<nsCaret> mCaret;
   RefPtr<nsCaret> mOriginalCaret;
   RefPtr<AccessibleCaretEventHub> mAccessibleCaretEventHub;

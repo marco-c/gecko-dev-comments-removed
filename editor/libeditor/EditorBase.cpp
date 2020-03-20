@@ -285,12 +285,6 @@ nsresult EditorBase::Init(Document& aDocument, Element* aRoot,
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "nsISelectionController::SetCaretReadOnly(false) failed, but ignored");
-  rvIgnored = selectionController->SetDisplaySelection(
-      nsISelectionController::SELECTION_ON);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "nsISelectionController::SetDisplaySelection(nsISelectionController::"
-      "SELECTION_ON) failed, but ignored");
   
   rvIgnored =
       selectionController->SetSelectionFlags(nsISelectionDisplay::DISPLAY_ALL);
@@ -2505,7 +2499,7 @@ nsresult EditorBase::GetPreferredIMEState(IMEState* aState) {
   aState->mEnabled = IMEState::ENABLED;
   aState->mOpen = IMEState::DONT_CHANGE_OPEN_STATE;
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     aState->mEnabled = IMEState::DISABLED;
     return NS_OK;
   }
@@ -5039,7 +5033,7 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
              "HandleKeyPressEvent gets non-keypress event");
 
   
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     
     
     if (aKeyboardEvent->mKeyCode == NS_VK_BACK) {
@@ -5134,21 +5128,13 @@ nsresult EditorBase::InitializeSelection(EventTarget* aFocusEventTarget) {
   caret->SetIgnoreUserModify(targetNode->OwnerDoc()->HasFlag(NODE_IS_EDITABLE));
 
   
-  rvIgnored = selectionController->SetDisplaySelection(
-      nsISelectionController::SELECTION_ON);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "nsISelectionController::SetDisplaySelection() failed, but ignored");
   rvIgnored =
       selectionController->SetSelectionFlags(nsISelectionDisplay::DISPLAY_ALL);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rvIgnored),
       "nsISelectionController::SetSelectionFlags() failed, but ignored");
-  rvIgnored = selectionController->RepaintSelection(
-      nsISelectionController::SELECTION_NORMAL);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "nsISelectionController::RepaintSelection() failed, but ignored");
+
+  selectionController->SelectionWillTakeFocus();
 
   
   
@@ -5192,26 +5178,6 @@ nsresult EditorBase::InitializeSelection(EventTarget* aFocusEventTarget) {
   return NS_OK;
 }
 
-class RepaintSelectionRunner final : public Runnable {
- public:
-  explicit RepaintSelectionRunner(nsISelectionController* aSelectionController)
-      : Runnable("RepaintSelectionRunner"),
-        mSelectionController(aSelectionController) {}
-
-  NS_IMETHOD Run() override {
-    DebugOnly<nsresult> rvIgnored = mSelectionController->RepaintSelection(
-        nsISelectionController::SELECTION_NORMAL);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "nsISelectionController::RepaintSelection(nsISelectionController::"
-        "SELECTION_NORMAL) failed, but ignored");
-    return NS_OK;
-  }
-
- private:
-  nsCOMPtr<nsISelectionController> mSelectionController;
-};
-
 nsresult EditorBase::FinalizeSelection() {
   nsCOMPtr<nsISelectionController> selectionController =
       GetSelectionController();
@@ -5243,58 +5209,11 @@ nsresult EditorBase::FinalizeSelection() {
     return NS_ERROR_NOT_INITIALIZED;
   }
   focusManager->UpdateCaretForCaretBrowsingMode();
-
-  if (!HasIndependentSelection()) {
-    
-    
-    
-    
-    RefPtr<Document> doc = GetDocument();
-    ErrorResult ret;
-    if (!doc || !doc->HasFocus(ret)) {
-      
-      DebugOnly<nsresult> rvIgnored = selectionController->SetDisplaySelection(
-          nsISelectionController::SELECTION_DISABLED);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "nsISelectionController::SetDisplaySelection(nsISelectionController::"
-          "SELECTION_DISABLED) failed, but ignored");
-    } else {
-      
-      
-      
-      DebugOnly<nsresult> rvIgnored = selectionController->SetDisplaySelection(
-          nsISelectionController::SELECTION_ON);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "nsISelectionController::SetDisplaySelection(nsISelectionController::"
-          "SELECTION_ON) failed, but ignored");
+  if (nsCOMPtr<nsINode> node = do_QueryInterface(GetDOMEventTarget())) {
+    if (node->OwnerDoc()->GetUnretargetedFocusedContent() != node) {
+      selectionController->SelectionWillLoseFocus();
     }
-  } else if (IsFormWidget() || IsPasswordEditor() || IsReadonly() ||
-             IsDisabled() || IsInputFiltered()) {
-    
-    
-    DebugOnly<nsresult> rvIgnored = selectionController->SetDisplaySelection(
-        nsISelectionController::SELECTION_HIDDEN);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "nsISelectionController::SetDisplaySelection(nsISelectionController::"
-        "SELECTION_HIDDEN) failed, but ignored");
-  } else {
-    
-    
-    DebugOnly<nsresult> rvIgnored = selectionController->SetDisplaySelection(
-        nsISelectionController::SELECTION_DISABLED);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "nsISelectionController::SetDisplaySelection(nsISelectionController::"
-        "SELECTION_DISABLED) failed, but ignored");
   }
-
-  
-  
-  nsContentUtils::AddScriptRunner(
-      new RepaintSelectionRunner(selectionController));
   return NS_OK;
 }
 

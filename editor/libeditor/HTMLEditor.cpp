@@ -662,7 +662,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   
   
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     
     
     nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
@@ -1675,7 +1675,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
                        "EditorBase::CommitComposition() failed, but ignored");
 
   
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
@@ -5349,7 +5349,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) {
 nsresult HTMLEditor::GetPreferredIMEState(IMEState* aState) {
   
   aState->mOpen = IMEState::DONT_CHANGE_OPEN_STATE;
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     aState->mEnabled = IMEState::DISABLED;
   } else {
     aState->mEnabled = IMEState::ENABLED;

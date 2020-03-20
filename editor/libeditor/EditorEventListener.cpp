@@ -670,7 +670,7 @@ nsresult EditorEventListener::MouseClick(WidgetMouseEvent* aMouseClickEvent) {
   }
   
   RefPtr<TextEditor> textEditor = mEditorBase->AsTextEditor();
-  if (textEditor->IsReadonly() || textEditor->IsDisabled() ||
+  if (textEditor->IsReadonly() ||
       !textEditor->IsAcceptableInputEvent(aMouseClickEvent)) {
     return NS_OK;
   }
@@ -840,8 +840,8 @@ nsresult EditorEventListener::DragOverOrDrop(DragEvent* aDragEvent) {
     return NS_OK;
   }
 
-  bool notEditable = !dropParentContent->IsEditable() ||
-                     mEditorBase->IsReadonly() || mEditorBase->IsDisabled();
+  bool notEditable =
+      !dropParentContent->IsEditable() || mEditorBase->IsReadonly();
 
   
   
@@ -977,7 +977,7 @@ bool EditorEventListener::DragEventHasSupportingData(
 bool EditorEventListener::CanInsertAtDropPosition(DragEvent* aDragEvent) {
   MOZ_ASSERT(
       !DetachedFromEditorOrDefaultPrevented(aDragEvent->WidgetEventPtr()));
-  MOZ_ASSERT(!mEditorBase->IsReadonly() && !mEditorBase->IsDisabled());
+  MOZ_ASSERT(!mEditorBase->IsReadonly());
   MOZ_ASSERT(DragEventHasSupportingData(aDragEvent));
 
   
@@ -1087,7 +1087,7 @@ nsresult EditorEventListener::HandleChangeComposition(
   }
 
   
-  if (textEditor->IsReadonly() || textEditor->IsDisabled()) {
+  if (textEditor->IsReadonly()) {
     return NS_OK;
   }
 
@@ -1117,11 +1117,7 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
     return NS_OK;
   }
 
-  
   RefPtr<EditorBase> editorBase(mEditorBase);
-  if (editorBase->IsDisabled()) {
-    return NS_OK;
-  }
 
   
   SpellCheckIfNeeded();

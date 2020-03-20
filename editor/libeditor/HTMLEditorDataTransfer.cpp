@@ -341,7 +341,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
   }
 
   
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
@@ -1979,7 +1979,7 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   MOZ_ASSERT(aClipboardType == nsIClipboard::kGlobalClipboard ||
              aClipboardType == nsIClipboard::kSelectionClipboard);
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
@@ -2162,7 +2162,7 @@ nsresult HTMLEditor::InsertWithQuotationsAsSubAction(
     const nsAString& aQuotedText) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
@@ -2405,7 +2405,7 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     *aNodeInserted = nullptr;
   }
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
@@ -2656,7 +2656,7 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!IsPlaintextEditor());
 
-  if (IsReadonly() || IsDisabled()) {
+  if (IsReadonly()) {
     return NS_OK;
   }
 
