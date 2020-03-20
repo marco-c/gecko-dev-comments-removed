@@ -44,6 +44,23 @@ def test_linter_types(lint, linter, files, path):
     assert issue.linter.lower().startswith(name)
 
 
+def test_linter_missing_files(lint, linter, filedir):
+    
+    
+    
+    lint.read(linter)
+    files = [
+        os.path.join(filedir, 'missing.js'),
+        os.path.join(filedir, 'missing.py'),
+    ]
+    result = lint.roll(files)
+    assert result.returncode == 0
+
+    lint.mock_vcs(files)
+    result = lint.roll(outgoing=True)
+    assert result.returncode == 0
+
+
 def test_no_filter(lint, lintdir, files):
     lint.read(os.path.join(lintdir, 'explicit_path.yml'))
     result = lint.roll(files)
