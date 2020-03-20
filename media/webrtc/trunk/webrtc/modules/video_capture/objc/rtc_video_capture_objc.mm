@@ -1,12 +1,12 @@
-/*
- *  Copyright (c) 2013 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
+
+
+
+
+
+
+
+
+
 
 #if !defined(__has_feature) || !__has_feature(objc_arc)
 #error "This file requires ARC support."
@@ -35,7 +35,7 @@ using namespace webrtc::videocapturemodule;
   AVCaptureSession* _captureSession;
   BOOL _orientationHasChanged;
   AVCaptureConnection* _connection;
-  BOOL _captureChanging;  // Guarded by _captureChangingCondition.
+  BOOL _captureChanging;  
   NSCondition* _captureChangingCondition;
 }
 
@@ -55,7 +55,7 @@ using namespace webrtc::videocapturemodule;
       return nil;
     }
 
-    // create and configure a new output (using callbacks)
+    
     AVCaptureVideoDataOutput* captureOutput = [[AVCaptureVideoDataOutput alloc] init];
     NSString* key = (NSString*)kCVPixelBufferPixelFormatTypeKey;
 
@@ -63,7 +63,7 @@ using namespace webrtc::videocapturemodule;
     NSDictionary* videoSettings = [NSDictionary dictionaryWithObject:val forKey:key];
     captureOutput.videoSettings = videoSettings;
 
-    // add new output
+    
     if ([_captureSession canAddOutput:captureOutput]) {
       [_captureSession addOutput:captureOutput];
     } else {
@@ -109,7 +109,7 @@ using namespace webrtc::videocapturemodule;
 
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId {
   [self waitForCaptureChangeToFinish];
-  // check to see if the camera is already set
+  
   if (_captureSession) {
     NSArray* currentInputs = [NSArray arrayWithArray:[_captureSession inputs]];
     if ([currentInputs count] > 0) {
@@ -129,7 +129,7 @@ using namespace webrtc::videocapturemodule;
     return NO;
   }
 
-  // check limits of the resolution
+  
   if (capability.maxFPS < 0 || capability.maxFPS > 60) {
     return NO;
   }
@@ -179,16 +179,16 @@ using namespace webrtc::videocapturemodule;
     captureQuality = [NSString stringWithString:AVCaptureSessionPreset352x288];
   }
 
-  // begin configuration for the AVCaptureSession
+  
   [_captureSession beginConfiguration];
 
-  // picture resolution
+  
   [_captureSession setSessionPreset:captureQuality];
 
   _connection = [currentOutput connectionWithMediaType:AVMediaTypeVideo];
   [self setRelativeVideoOrientation];
 
-  // finished configuring, commit settings to AVCaptureSession.
+  
   [_captureSession commitConfiguration];
 
   [_captureSession startRunning];
@@ -229,7 +229,7 @@ using namespace webrtc::videocapturemodule;
 
 - (void)onVideoError:(NSNotification*)notification {
   NSLog(@"onVideoError: %@", notification);
-  // TODO(sjlee): make the specific error handling with this notification.
+  
   RTC_LOG(LS_ERROR) << __FUNCTION__ << ": [AVCaptureSession startRunning] error.";
 }
 
@@ -240,6 +240,7 @@ using namespace webrtc::videocapturemodule;
   _orientationHasChanged = NO;
   [self waitForCaptureChangeToFinish];
   [self directOutputToNil];
+  _owner = NULL;
 
   if (!_captureSession) {
     return NO;
@@ -255,15 +256,15 @@ using namespace webrtc::videocapturemodule;
 - (BOOL)changeCaptureInputByUniqueId:(NSString*)uniqueId {
   [self waitForCaptureChangeToFinish];
   NSArray* currentInputs = [_captureSession inputs];
-  // remove current input
+  
   if ([currentInputs count] > 0) {
     AVCaptureInput* currentInput = (AVCaptureInput*)[currentInputs objectAtIndex:0];
 
     [_captureSession removeInput:currentInput];
   }
 
-  // Look for input device with the name requested (as our input param)
-  // get list of available capture devices
+  
+  
   int captureDeviceCount = [DeviceInfoIosObjC captureDeviceCount];
   if (captureDeviceCount <= 0) {
     return NO;
@@ -275,7 +276,7 @@ using namespace webrtc::videocapturemodule;
     return NO;
   }
 
-  // now create capture session input out of AVCaptureDevice
+  
   NSError* deviceError = nil;
   AVCaptureDeviceInput* newCaptureInput =
       [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&deviceError];
@@ -288,7 +289,7 @@ using namespace webrtc::videocapturemodule;
     return NO;
   }
 
-  // try to add our new capture device to the capture session
+  
   [_captureSession beginConfiguration];
 
   BOOL addedCaptureInput = NO;
@@ -325,7 +326,9 @@ using namespace webrtc::videocapturemodule;
   tempCaptureCapability.maxFPS = _capability.maxFPS;
   tempCaptureCapability.videoType = VideoType::kUYVY;
 
-  _owner->IncomingFrame(baseAddress, frameSize, tempCaptureCapability, 0);
+  if (_owner) {
+    _owner->IncomingFrame(baseAddress, frameSize, tempCaptureCapability, 0);
+  }
 
   CVPixelBufferUnlockBaseAddress(videoFrame, kFlags);
 }
