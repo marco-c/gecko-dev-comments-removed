@@ -28,6 +28,67 @@ async function createTabAndLoad(url, inputWindow = null) {
 
 
 
+
+
+function playMedia(tab, elementId) {
+  const playPromise = SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [elementId],
+    Id => {
+      const video = content.document.getElementById(Id);
+      if (!video) {
+        ok(false, `can't get the media element!`);
+      }
+      return video.play();
+    }
+  );
+  return Promise.all([
+    playPromise,
+    waitUntilMainMediaControllerPlaybackChanged(),
+  ]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function pauseMedia(tab, elementId) {
+  const pausePromise = SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [elementId],
+    Id => {
+      const video = content.document.getElementById(Id);
+      if (!video) {
+        ok(false, `can't get the media element!`);
+      }
+      ok(!video.paused, `video is playing before calling pause`);
+      video.pause();
+    }
+  );
+  return Promise.all([
+    pausePromise,
+    waitUntilMainMediaControllerPlaybackChanged(),
+  ]);
+}
+
+
+
+
+
+
+
+
+
+
+
 function checkOrWaitUntilMediaStartedPlaying(tab, elementId) {
   return SpecialPowers.spawn(tab.linkedBrowser, [elementId], Id => {
     return new Promise(resolve => {
