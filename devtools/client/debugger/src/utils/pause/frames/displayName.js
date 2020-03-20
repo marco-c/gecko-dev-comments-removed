@@ -6,7 +6,6 @@
 
 
 import type { Frame } from "../../../types";
-import { getFilename } from "../../source";
 
 
 
@@ -102,7 +101,7 @@ export function formatCopyName(frame: Frame, l10n: typeof L10N): string {
   if (!frame.source) {
     throw new Error("no frame source");
   }
-  const fileName = getFilename(frame.source);
+  const fileName = frame.source.url || frame.source.id;
   const frameLocation = frame.location.line;
 
   return `${displayName} (${fileName}#${frameLocation})`;
