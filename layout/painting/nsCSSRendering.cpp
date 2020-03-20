@@ -3960,12 +3960,6 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
     clipParams.lineSize.width =
         (dir * (endIntercept - startIntercept)) - (2.0 * aPadding);
 
-    if (aParams.vertical) {
-      aRect.height = clipParams.lineSize.width;
-    } else {
-      aRect.width = clipParams.lineSize.width;
-    }
-
     
     
     if (clipParams.lineSize.width < std::max(aPadding * 0.5, 1.0)) {
@@ -3974,13 +3968,18 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
 
     
     
+    
     if (aParams.vertical) {
       clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + aPadding
                                              : startIntercept + aPadding;
-      aRect.y = clipParams.pt.y;
+      aRect.y = std::floor(clipParams.pt.y + 0.5);
+      aRect.SetBottomEdge(
+          std::floor(clipParams.pt.y + clipParams.lineSize.width + 0.5));
     } else {
       clipParams.pt.x = startIntercept + aPadding;
-      aRect.x = clipParams.pt.x;
+      aRect.x = std::floor(clipParams.pt.x + 0.5);
+      aRect.SetRightEdge(
+          std::floor(clipParams.pt.x + clipParams.lineSize.width + 0.5));
     }
 
     nsCSSRendering::PaintDecorationLineInternal(aFrame, aDrawTarget, clipParams,
