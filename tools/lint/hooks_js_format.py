@@ -11,7 +11,7 @@ import sys
 here = os.path.dirname(os.path.realpath(__file__))
 topsrcdir = os.path.join(here, os.pardir, os.pardir)
 
-EXTRA_PATHS = ("python/mozversioncontrol", "python/mozbuild",)
+EXTRA_PATHS = ("python/mozversioncontrol", "python/mozbuild", "testing/mozbase/mozfile",)
 sys.path[:0] = [os.path.join(topsrcdir, p) for p in EXTRA_PATHS]
 
 from mozversioncontrol import get_repository_object, InvalidRepoPath
@@ -31,7 +31,7 @@ def run_js_format(hooktype, changedFiles):
     path_list = []
     for filename in sorted(changedFiles):
         
-        if filename.endswith(extensions):
+        if filename.decode().endswith(extensions):
             path_list.append(filename)
 
     if not path_list:
