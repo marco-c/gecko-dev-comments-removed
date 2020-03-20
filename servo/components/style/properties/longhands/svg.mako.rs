@@ -15,7 +15,7 @@ ${helpers.single_keyword(
     spec="https://www.w3.org/TR/SVGTiny12/painting.html#VectorEffectProperty",
 )}
 
-// Section 13 - Gradients and Patterns
+
 
 ${helpers.predefined_type(
     "stop-color",
@@ -35,7 +35,7 @@ ${helpers.predefined_type(
     spec="https://svgwg.org/svg2-draft/pservers.html#StopOpacityProperty",
 )}
 
-// Section 15 - Filter Effects
+
 
 ${helpers.predefined_type(
     "flood-color",
@@ -64,8 +64,8 @@ ${helpers.predefined_type(
     spec="https://www.w3.org/TR/SVG/filters.html#LightingColorProperty",
 )}
 
-// CSS Masking Module Level 1
-// https://drafts.fxtf.org/css-masking
+
+
 ${helpers.single_keyword(
     "mask-type",
     "luminance alpha",
@@ -165,6 +165,7 @@ ${helpers.single_keyword(
     "mask-composite",
     "add subtract intersect exclude",
     engines="gecko",
+    gecko_enum_prefix="StyleMaskComposite",
     vector=True,
     extra_prefixes="webkit",
     animation_value_type="discrete",

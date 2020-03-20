@@ -229,7 +229,7 @@ struct nsStyleImageLayers {
     
     
     
-    uint8_t mComposite;  
+    mozilla::StyleMaskComposite mComposite;
 
     
     
