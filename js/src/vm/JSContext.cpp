@@ -226,23 +226,13 @@ bool AutoResolving::alreadyStartedSlow() const {
 
 static void ReportError(JSContext* cx, JSErrorReport* reportp,
                         JSErrorCallback callback, void* userRef) {
-  
-
-
-
-
-
-  MOZ_ASSERT(reportp);
-  if ((!callback || callback == GetErrorMessage) &&
-      reportp->errorNumber == JSMSG_UNCAUGHT_EXCEPTION) {
-    reportp->flags |= JSREPORT_EXCEPTION;
-  }
-
   if (JSREPORT_IS_WARNING(reportp->flags)) {
     CallWarningReporter(cx, reportp);
     return;
   }
 
+  
+  
   ErrorToException(cx, reportp, callback, userRef);
 }
 

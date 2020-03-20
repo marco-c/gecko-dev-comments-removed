@@ -40,14 +40,6 @@ void js::CompileError::throwError(JSContext* cx) {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   ErrorToException(cx, this, nullptr, nullptr);
 }
 

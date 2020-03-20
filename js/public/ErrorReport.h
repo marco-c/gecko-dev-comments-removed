@@ -266,20 +266,11 @@ class JSErrorReport : public JSErrorBase {
 
 
 
-#define JSREPORT_ERROR 0x0     /* pseudo-flag for default case */
-#define JSREPORT_WARNING 0x1   /* reported via JS::Warn* */
-#define JSREPORT_EXCEPTION 0x2 /* exception was thrown */
+#define JSREPORT_ERROR 0x0   /* pseudo-flag for default case */
+#define JSREPORT_WARNING 0x1 /* reported via JS::Warn* */
 
 #define JSREPORT_USER_1 0x8 /* user-defined flag */
 
-
-
-
-
-
-
-
 #define JSREPORT_IS_WARNING(flags) (((flags)&JSREPORT_WARNING) != 0)
-#define JSREPORT_IS_EXCEPTION(flags) (((flags)&JSREPORT_EXCEPTION) != 0)
 
 #endif 

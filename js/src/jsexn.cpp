@@ -96,8 +96,6 @@ bool CopyExtraData(JSContext* cx, uint8_t** cursor, JSErrorReport* copy,
   
   copy->isMuted = report->isMuted;
   copy->exnType = report->exnType;
-
-  
   copy->flags = report->flags;
 
   
@@ -347,9 +345,6 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
     nstack = &stack->as<SavedFrame>();
   }
   cx->setPendingException(errValue, nstack);
-
-  
-  reportp->flags |= JSREPORT_EXCEPTION;
 }
 
 using SniffingBehavior = js::ErrorReport::SniffingBehavior;
@@ -617,8 +612,6 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
     }
   } else {
     toStringResult_ = JS::ConstUTF8CharsZ(utf8Message, strlen(utf8Message));
-    
-    reportp->flags |= JSREPORT_EXCEPTION;
   }
 
   return true;
