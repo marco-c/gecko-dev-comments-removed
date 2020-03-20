@@ -500,8 +500,10 @@ class nsFrameSelection final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult PhysicalMove(int16_t aDirection, int16_t aAmount, bool aExtend);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult PhysicalMove(int16_t aDirection,
+                                                    int16_t aAmount,
+                                                    bool aExtend);
 
   
 
@@ -511,39 +513,22 @@ class nsFrameSelection final {
 
 
   
-  nsresult CharacterMove(bool aForward, bool aExtend);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult CharacterMove(bool aForward,
+                                                     bool aExtend);
 
   
 
 
 
   
-  nsresult CharacterExtendForDelete();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult CharacterExtendForDelete();
 
   
 
 
 
   
-  nsresult CharacterExtendForBackspace();
-
-  
-
-
-
-
-
-
-  
-  nsresult WordMove(bool aForward, bool aExtend);
-
-  
-
-
-
-
-  
-  nsresult WordExtendForDelete(bool aForward);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult CharacterExtendForBackspace();
 
   
 
@@ -553,7 +538,15 @@ class nsFrameSelection final {
 
 
   
-  nsresult LineMove(bool aForward, bool aExtend);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult WordMove(bool aForward, bool aExtend);
+
+  
+
+
+
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult WordExtendForDelete(bool aForward);
 
   
 
@@ -563,7 +556,18 @@ class nsFrameSelection final {
 
 
   
-  nsresult IntraLineMove(bool aForward, bool aExtend);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult LineMove(bool aForward, bool aExtend);
+
+  
+
+
+
+
+
+
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult IntraLineMove(bool aForward,
+                                                     bool aExtend);
 
   
 
@@ -764,10 +768,10 @@ class nsFrameSelection final {
   
   
   enum CaretMovementStyle { eLogical, eVisual, eUsePrefStyle };
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult MoveCaret(nsDirection aDirection, bool aContinueSelection,
-                     nsSelectionAmount aAmount,
-                     CaretMovementStyle aMovementStyle);
+  MOZ_CAN_RUN_SCRIPT nsresult MoveCaret(nsDirection aDirection,
+                                        bool aContinueSelection,
+                                        nsSelectionAmount aAmount,
+                                        CaretMovementStyle aMovementStyle);
 
   nsresult FetchDesiredPos(
       nsPoint& aDesiredPos);  
