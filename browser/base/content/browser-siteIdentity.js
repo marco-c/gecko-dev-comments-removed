@@ -1739,9 +1739,13 @@ var gIdentityHandler = {
     indicator.appendChild(icon);
     indicator.appendChild(text);
 
-    document
-      .getElementById("identity-popup-geo-container")
-      .appendChild(indicator);
+    let geoContainer = document.getElementById("identity-popup-geo-container");
+
+    
+    
+    if (geoContainer) {
+      geoContainer.appendChild(indicator);
+    }
   },
 
   _createBlockedPopupIndicator(aTotalBlockedPopups) {
