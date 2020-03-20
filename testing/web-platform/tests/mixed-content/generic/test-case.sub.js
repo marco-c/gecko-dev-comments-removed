@@ -15,24 +15,24 @@
 
 
 
-function TestCase(scenario, description, sanityChecker) {
-  sanityChecker.checkScenario(scenario, subresourceMap);
+function TestCase(scenarios, sanityChecker) {
+  function runTest(scenario) {
+    sanityChecker.checkScenario(scenario, subresourceMap);
 
-  const urls = getRequestURLs(scenario.subresource,
-                              scenario.origin,
-                              scenario.redirection);
-  const checkResult = _ => {
-    
-    return xhrRequest(urls.assertUrl)
-      .then(assertResult => {
-          
-          
-          assert_equals(assertResult.status, scenario.expectation,
-            "The resource request should be '" + scenario.expectation + "'.");
-        });
-  };
+    const urls = getRequestURLs(scenario.subresource,
+                                scenario.origin,
+                                scenario.redirection);
+    const checkResult = _ => {
+      
+      return xhrRequest(urls.assertUrl)
+        .then(assertResult => {
+            
+            
+            assert_equals(assertResult.status, scenario.expectation,
+              "The resource request should be '" + scenario.expectation + "'.");
+          });
+    };
 
-  function runTest() {
     
     const subresource = {
       subresourceType: scenario.subresource,
@@ -48,8 +48,14 @@ function TestCase(scenario, description, sanityChecker) {
         
         
         .then(checkResult, checkResult);
-      }, description);
+      }, scenario.test_description);
   }  
 
-  return {start: runTest};
+  function runTests() {
+    for (const scenario of scenarios) {
+      runTest(scenario);
+    }
+  }
+
+  return {start: runTests};
 }
