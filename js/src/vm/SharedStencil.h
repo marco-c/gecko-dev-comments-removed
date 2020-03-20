@@ -62,9 +62,6 @@ struct JSTryNote {
 
   uint32_t length;     
 
-  template <js::XDRMode mode>
-  js::XDRResult XDR(js::XDRState<mode>* xdr);
-
   bool isLoop() const {
     switch (kind) {
       case JSTRY_LOOP:
@@ -82,7 +79,6 @@ struct JSTryNote {
 };
 
 namespace js {
-
 
 
 
@@ -115,9 +111,6 @@ struct ScopeNote {
 
   
   uint32_t parent = 0;
-
-  template <js::XDRMode mode>
-  js::XDRResult XDR(js::XDRState<mode>* xdr);
 };
 
 template <typename EnumType>
