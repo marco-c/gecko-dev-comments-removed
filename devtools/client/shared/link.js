@@ -14,12 +14,12 @@ const { TargetFactory } = require("devtools/client/framework/target");
 function _getTopWindow() {
   
   let win = Services.wm.getMostRecentWindow(gDevTools.chromeWindowType);
-  if (win && win.openWebLinkIn && win.openTrustedLinkIn) {
+  if (win?.openWebLinkIn && win?.openTrustedLinkIn) {
     return win;
   }
   
   win = Services.wm.getMostRecentWindow(null);
-  if (win && win.openWebLinkIn && win.openTrustedLinkIn) {
+  if (win?.openWebLinkIn && win?.openTrustedLinkIn) {
     return win;
   }
   return null;

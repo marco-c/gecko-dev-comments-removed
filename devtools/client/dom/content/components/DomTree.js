@@ -124,7 +124,7 @@ class DomTree extends Component {
       });
 
       
-      if (props && props.object && props.object.getGrip) {
+      if (props?.object?.getGrip) {
         repProps.object = props.object.getGrip();
       }
 

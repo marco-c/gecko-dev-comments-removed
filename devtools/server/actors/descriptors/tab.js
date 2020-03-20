@@ -186,7 +186,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     
     const tabbrowser = this._tabbrowser;
     const tab = tabbrowser ? tabbrowser.getTabForBrowser(this._browser) : null;
-    return tab && tab.hasAttribute && tab.hasAttribute("pending");
+    return tab?.hasAttribute && tab.hasAttribute("pending");
   },
 
   

@@ -178,7 +178,7 @@ class SmartTrace extends Component {
       }
 
       this.setState(state => {
-        const stacktrace = (state && state.stacktrace) || this.props.stacktrace;
+        const stacktrace = state?.stacktrace || this.props.stacktrace;
         const frame = { ...stacktrace[index] };
         
         delete frame.sourceId;

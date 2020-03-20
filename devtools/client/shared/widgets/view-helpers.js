@@ -115,7 +115,7 @@ exports.ViewHelpers = {
 
 
   isEventEmitter: function(object) {
-    return object && object.on && object.off && object.once && object.emit;
+    return object?.on && object?.off && object?.once && object?.emit;
   },
 
   

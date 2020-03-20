@@ -326,7 +326,7 @@ OOBCert.Client.prototype = {
     const closeDialog = () => {
       
       
-      if (activeSendDialog && activeSendDialog.close) {
+      if (activeSendDialog?.close) {
         activeSendDialog.close();
         activeSendDialog = null;
       }

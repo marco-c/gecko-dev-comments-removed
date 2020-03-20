@@ -595,11 +595,7 @@ const browsingContextTargetPrototype = {
     } catch (e) {
       
     }
-    if (
-      metadata &&
-      metadata["inner-window-id"] &&
-      metadata["inner-window-id"] == id
-    ) {
+    if (metadata?.["inner-window-id"] && metadata["inner-window-id"] == id) {
       return true;
     }
 
@@ -1033,7 +1029,7 @@ const browsingContextTargetPrototype = {
 
 
   reload(request) {
-    const force = request && request.options && request.options.force;
+    const force = request?.options?.force;
     
     
     Services.tm.dispatchToMainThread(

@@ -96,7 +96,7 @@ define(function(require, exports, module) {
       
       
       renderValue = renderValue || defaultRenderValue;
-      if (decorator && decorator.renderValue) {
+      if (decorator?.renderValue) {
         renderValue = decorator.renderValue(member.object, id) || renderValue;
       }
 

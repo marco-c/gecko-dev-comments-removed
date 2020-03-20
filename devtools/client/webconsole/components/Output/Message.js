@@ -268,7 +268,7 @@ class Message extends Component {
                       this.props.message,
                       function(key, value) {
                         
-                        if (value && value.getGrip) {
+                        if (value?.getGrip) {
                           return value.getGrip();
                         }
                         return value;

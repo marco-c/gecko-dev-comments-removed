@@ -157,11 +157,7 @@ class PropertiesView extends Component {
     
 
 
-    if (
-      typeof member.value === "object" &&
-      member.value &&
-      member.value.value
-    ) {
+    if (typeof member.value === "object" && member.value?.value) {
       return null;
     }
 

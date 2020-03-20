@@ -367,7 +367,7 @@ BrowserTabList.prototype.getTab = function(
     
     const window = Services.wm.getOuterWindowWithId(outerWindowID);
     
-    if (window && window.isChromeWindow) {
+    if (window?.isChromeWindow) {
       return Promise.reject({
         error: "forbidden",
         message: "Window with outerWindowID '" + outerWindowID + "' is chrome",
@@ -394,8 +394,7 @@ BrowserTabList.prototype.getTab = function(
     
     for (const browser of this._getBrowsers()) {
       if (
-        browser.frameLoader &&
-        browser.frameLoader.remoteTab &&
+        browser.frameLoader?.remoteTab &&
         browser.frameLoader.remoteTab.tabId === tabId
       ) {
         return this._getActorForBrowser(browser, browserActorOptions);

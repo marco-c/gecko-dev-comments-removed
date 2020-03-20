@@ -6,7 +6,6 @@
 
 import type { AstLocation, AstPosition } from "./types";
 
-import get from "lodash/get";
 import findIndex from "lodash/findIndex";
 import findLastIndex from "lodash/findLastIndex";
 
@@ -30,7 +29,7 @@ function getLocation(func) {
 
   
   
-  const identifierEnd = get(func, "identifier.loc.end");
+  const identifierEnd = func?.identifier?.loc?.end;
   if (identifierEnd) {
     location.start = identifierEnd;
   }

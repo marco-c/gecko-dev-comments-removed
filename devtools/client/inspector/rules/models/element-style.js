@@ -188,7 +188,7 @@ class ElementStyle {
 
         
         for (const r of existingRules) {
-          if (r && r.editor) {
+          if (r?.editor) {
             r.editor.destroy();
           }
 

@@ -313,19 +313,14 @@ class FontEditor extends PureComponent {
     const { fonts, axes, instance, properties, warning } = fontEditor;
     
     const font = fonts[0];
-    const hasFontAxes = font && font.variationAxes;
-    const hasFontInstances =
-      font && font.variationInstances && font.variationInstances.length > 0;
-    const hasSlantOrItalicAxis =
-      hasFontAxes &&
-      font.variationAxes.find(axis => {
-        return axis.tag === "slnt" || axis.tag === "ital";
-      });
-    const hasWeightAxis =
-      hasFontAxes &&
-      font.variationAxes.find(axis => {
-        return axis.tag === "wght";
-      });
+    const hasFontAxes = font?.variationAxes;
+    const hasFontInstances = font?.variationInstances?.length > 0;
+    const hasSlantOrItalicAxis = font?.variationAxes?.find(axis => {
+      return axis.tag === "slnt" || axis.tag === "ital";
+    });
+    const hasWeightAxis = font?.variationAxes?.find(axis => {
+      return axis.tag === "wght";
+    });
 
     
     if (!font) {

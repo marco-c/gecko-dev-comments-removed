@@ -224,7 +224,7 @@ function enumObjectProperties(objectActor, options) {
         
         
       }
-      if (desc && desc.value && String(desc.value).includes(query)) {
+      if (desc?.value && String(desc.value).includes(query)) {
         return true;
       }
       return false;

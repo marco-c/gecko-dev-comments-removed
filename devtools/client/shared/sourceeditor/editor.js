@@ -212,7 +212,7 @@ function Editor(config) {
   
   
   this.config.extraKeys.Tab = cm => {
-    if (config.extraKeys && config.extraKeys.Tab) {
+    if (config.extraKeys?.Tab) {
       
       
       
@@ -259,7 +259,7 @@ Editor.prototype = {
 
   get CodeMirror() {
     const codeMirror = editors.get(this);
-    return codeMirror && codeMirror.constructor;
+    return codeMirror?.constructor;
   },
 
   
@@ -1436,7 +1436,7 @@ Editor.prototype = {
 
     
     const cm = editors.get(this);
-    if (cm && cm.doc) {
+    if (cm?.doc) {
       cm.doc.cm = null;
     }
 

@@ -70,7 +70,7 @@ function initializeAutoCompletion(ctx, options = {}) {
   });
 
   const cycle = reverse => {
-    if (popup && popup.isOpen) {
+    if (popup?.isOpen) {
       
       cycleSuggestions(ed, reverse == true);
       return null;
@@ -337,7 +337,7 @@ function getPopup({ ed }) {
 function getInfoAt({ ed }, caret) {
   if (autocompleteMap.has(ed)) {
     const completer = autocompleteMap.get(ed).completer;
-    if (completer && completer.getInfoAt) {
+    if (completer?.getInfoAt) {
       return completer.getInfoAt(ed.getText(), caret);
     }
   }

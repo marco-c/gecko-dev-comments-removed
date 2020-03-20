@@ -190,7 +190,7 @@ BreakpointActor.prototype = {
 
     
     
-    const locationAtFinish = frame.onPop && frame.onPop.location;
+    const locationAtFinish = frame.onPop?.location;
     if (
       locationAtFinish &&
       locationAtFinish.line === location.line &&

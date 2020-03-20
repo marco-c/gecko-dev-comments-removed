@@ -182,7 +182,7 @@ class LayoutApp extends PureComponent {
     
     
     
-    if (flexItemContainer && flexItemContainer.actorID) {
+    if (flexItemContainer?.actorID) {
       items.splice(
         this.props.flexbox.initiatedByMarkupViewSelection ? 1 : 0,
         0,

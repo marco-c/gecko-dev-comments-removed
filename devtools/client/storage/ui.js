@@ -893,7 +893,7 @@ class StorageUI {
     let value;
 
     
-    if (item && item.name && item.valueActor) {
+    if (item?.name && item?.valueActor) {
       value = await item.valueActor.string();
     }
 
@@ -943,7 +943,7 @@ class StorageUI {
         );
         for (const prop of otherProps) {
           const column = this.table.columns.get(prop);
-          if (column && column.private) {
+          if (column?.private) {
             continue;
           }
 
@@ -958,7 +958,7 @@ class StorageUI {
       
       for (const key in item) {
         const column = this.table.columns.get(key);
-        if (column && column.private) {
+        if (column?.private) {
           continue;
         }
 

@@ -157,7 +157,7 @@ ConsoleServiceListener.prototype = {
         ) {
           return false;
         }
-      } else if (ids && ids[0]) {
+      } else if (ids?.[0]) {
         
         
         return false;

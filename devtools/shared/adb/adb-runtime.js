@@ -24,7 +24,7 @@ class AdbRuntime {
     
     
     const matches = versionNameString.match(/versionName=(.*)\n/);
-    if (matches && matches[1]) {
+    if (matches?.[1]) {
       this._versionName = matches[1];
     }
   }

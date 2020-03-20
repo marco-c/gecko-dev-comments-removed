@@ -23,8 +23,7 @@ exports.getDOMWindowUtils = getDOMWindowUtils;
 
 
 
-const isStartupFinished = window =>
-  window.gBrowserInit && window.gBrowserInit.delayedStartupFinished;
+const isStartupFinished = window => window.gBrowserInit?.delayedStartupFinished;
 
 function startup(window) {
   return new Promise(resolve => {

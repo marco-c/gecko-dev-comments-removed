@@ -252,7 +252,7 @@ function closeCustomRequest(state) {
   return {
     ...state,
     
-    [removedRequest && removedRequest.isCustom && "requests"]: requests.filter(
+    [removedRequest?.isCustom && "requests"]: requests.filter(
       item => item.id !== selectedId
     ),
     preselectedId: hasPreselectedId ? null : preselectedId,

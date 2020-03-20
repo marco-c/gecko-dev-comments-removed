@@ -91,7 +91,7 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
         installingWorker,
         waitingWorker,
         activeWorker,
-        fetch: newestWorker && newestWorker.fetch,
+        fetch: newestWorker?.fetch,
         
         
         active: isMultiE10sWithOldImplementation ? true : !!activeWorker,

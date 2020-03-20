@@ -36,7 +36,7 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     
     
     let front;
-    if (filter && filter.tab && filter.tab.tagName == "tab") {
+    if (filter?.tab?.tagName == "tab") {
       front = new LocalTabTargetFront(this._client, null, this, filter.tab);
     } else {
       front = new BrowsingContextTargetFront(this._client, null, this);

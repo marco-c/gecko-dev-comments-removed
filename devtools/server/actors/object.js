@@ -150,7 +150,7 @@ const proto = {
       return g;
     }
 
-    if (unwrapped && unwrapped.isProxy) {
+    if (unwrapped?.isProxy) {
       
       
       g.class = "Proxy";

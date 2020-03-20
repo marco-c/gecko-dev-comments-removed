@@ -2119,7 +2119,7 @@ Toolbox.prototype = {
     const button = this.pickerButton;
     const currentPanel = this.getCurrentPanel();
 
-    if (currentPanel && currentPanel.updatePickerButton) {
+    if (currentPanel?.updatePickerButton) {
       currentPanel.updatePickerButton();
     } else {
       
@@ -2523,8 +2523,7 @@ Toolbox.prototype = {
 
 
   setIframeDocumentDir: function(iframe) {
-    const docEl =
-      iframe.contentWindow && iframe.contentWindow.document.documentElement;
+    const docEl = iframe.contentWindow?.document.documentElement;
     if (!docEl || docEl.namespaceURI !== HTML_NS) {
       
       
@@ -3514,8 +3513,9 @@ Toolbox.prototype = {
   },
 
   inspectObjectActor: async function(objectActor, inspectFromAnnotation) {
-    const objectGrip =
-      objectActor && objectActor.getGrip ? objectActor.getGrip() : objectActor;
+    const objectGrip = objectActor?.getGrip
+      ? objectActor.getGrip()
+      : objectActor;
 
     if (
       objectGrip.preview &&

@@ -121,7 +121,7 @@ StackTraceCollector.prototype = {
         
         
         let frame = components.stack;
-        if (frame && frame.caller) {
+        if (frame?.caller) {
           frame = frame.caller;
           while (frame) {
             stacktrace.push({
