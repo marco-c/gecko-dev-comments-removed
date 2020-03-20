@@ -7763,6 +7763,20 @@ void HTMLMediaElement::CreateStopMediaControlTimerIfNeeded() {
       !mMediaControlEventListener->IsStarted()) {
     return;
   }
+
+  
+  
+  
+  if (IsBeingUsedInPictureInPictureMode()) {
+    MEDIACONTROL_LOG("No need to create a timer for PIP video.");
+    return;
+  }
+
+  if (!Paused()) {
+    MEDIACONTROL_LOG("No need to create a timer for playing media.");
+    return;
+  }
+
   MEDIACONTROL_LOG("Start stop media control timer");
   NS_NewTimerWithFuncCallback(
       getter_AddRefs(mStopMediaControlTimer), StopMediaControlTimerCallback,
