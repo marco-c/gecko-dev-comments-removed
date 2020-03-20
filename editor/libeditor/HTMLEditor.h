@@ -4128,8 +4128,15 @@ class HTMLEditor final : public TextEditor,
                                                        nsAtom* aProperty,
                                                        nsAtom* aAttribute);
 
-  bool IsAtFrontOfNode(nsINode& aNode, int32_t aOffset);
-  bool IsAtEndOfNode(nsINode& aNode, int32_t aOffset);
+  
+
+
+
+  bool IsStartOfContainerOrBeforeFirstEditableChild(
+      const EditorRawDOMPoint& aPoint) const;
+  bool IsEndOfContainerOrEqualsOrAfterLastEditableChild(
+      const EditorRawDOMPoint& aPoint) const;
+
   bool IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute);
 
   
