@@ -65,23 +65,23 @@ function mkdirs(filePath) {
   }
 }
 
-const deps = [__filename, _path.resolve(__dirname, "babel.js")];
-const outputDir = process.argv[process.argv.length - 1];
-mkdirs(outputDir);
-
-for (let i = 2; i < process.argv.length - 1; i++) {
-  const srcPath = process.argv[i];
-  const code = transform(srcPath);
-  const fullPath = _path.join(outputDir, _path.basename(srcPath));
-  fs.writeFileSync(fullPath, code);
-  deps.push(srcPath);
-}
-
 if (false) {
   const code = transform("devtools/client/debugger/src/utils/prefs.js");
   console.log(code.slice(0, 1500));
+} else {
+  const deps = [__filename, _path.resolve(__dirname, "babel.js")];
+  const outputDir = process.argv[process.argv.length - 1];
+  mkdirs(outputDir);
+
+  for (let i = 2; i < process.argv.length - 1; i++) {
+    const srcPath = process.argv[i];
+    const code = transform(srcPath);
+    const fullPath = _path.join(outputDir, _path.basename(srcPath));
+    fs.writeFileSync(fullPath, code);
+    deps.push(srcPath);
+  }
+
+  
+  
+  console.log(deps.map(file => "dep:" + file).join("\n"));
 }
-
-
-
-console.log(deps.map(file => "dep:" + file).join("\n"));
