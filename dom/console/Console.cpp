@@ -359,12 +359,7 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
     }
 
     JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*arguments));
-
-    if (NS_WARN_IF(!Write(aCx, value))) {
-      return false;
-    }
-
-    return true;
+    return WriteData(aCx, value);
   }
 
   void ProcessCallData(JSContext* aCx, Console* aConsole,
@@ -438,12 +433,7 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
     }
 
     JS::Rooted<JS::Value> value(aCx, JS::ObjectValue(*arguments));
-
-    if (NS_WARN_IF(!Write(aCx, value))) {
-      return false;
-    }
-
-    return true;
+    return WriteData(aCx, value);
   }
 
   void ProcessProfileData(JSContext* aCx, Console::MethodName aMethodName,
@@ -486,6 +476,24 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
     }
 
     Console::ProfileMethodMainthread(aCx, aAction, arguments);
+  }
+
+  bool WriteData(JSContext* aCx, JS::Handle<JS::Value> aValue) {
+    
+    
+    
+    
+    JS::CloneDataPolicy cloneDataPolicy;
+    cloneDataPolicy.allowIntraClusterClonableSharedObjects();
+    cloneDataPolicy.allowSharedMemoryObjects();
+
+    if (NS_WARN_IF(
+            !Write(aCx, aValue, JS::UndefinedHandleValue, cloneDataPolicy))) {
+      MOZ_CRASH("We should support any kind of data!");
+      return false;
+    }
+
+    return true;
   }
 
   ConsoleStructuredCloneData mClonedData;
