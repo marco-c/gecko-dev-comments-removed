@@ -269,21 +269,18 @@ fn build_shader_prefix_string<F: FnMut(&str)>(
     
     output(gl_version_string);
 
-    let mut features_key = String::new();
+    
+    let mut name_string = format!("// shader: {}", base_filename);
     for feat in features.lines() {
         const PREFIX: &'static str = "#define WR_FEATURE_";
         if let Some(i) = feat.find(PREFIX) {
             if i + PREFIX.len() < feat.len() {
-                if !features_key.is_empty() {
-                    features_key.push_str("_");
-                }
-                features_key.push_str(&feat[i + PREFIX.len() ..]);
+                name_string.push('_');
+                name_string.push_str(&feat[i + PREFIX.len() ..]);
             }
         }
     }
-
-    
-    let name_string = format!("// shader: {} {}\n", base_filename, features_key);
+    name_string.push('\n');
     output(&name_string);
 
     
