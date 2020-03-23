@@ -23,6 +23,9 @@
 #  if defined(MOZ_LINKER)
 #    include <dlfcn.h>
 #    include "mozilla/Types.h"
+#    if defined(ANDROID)
+#      include <sys/system_properties.h>
+#    endif
 
 
 
@@ -96,6 +99,22 @@ bool AutoObjectMapperPOSIX::Map( void** start,  size_t* length,
 }
 
 #  if defined(MOZ_LINKER)
+#    if defined(ANDROID)
+int GetAndroidSDKVersion() {
+  static int version = 0;
+  if (version) {
+    return version;
+  }
+
+  char version_string[PROP_VALUE_MAX] = {'\0'};
+  int len = __system_property_get("ro.build.version.sdk", version_string);
+  if (len) {
+    version = static_cast<int>(strtol(version_string, nullptr, 10));
+  }
+  return version;
+}
+#    endif
+
 AutoObjectMapperFaultyLib::AutoObjectMapperFaultyLib(void (*aLog)(const char*))
     : AutoObjectMapperPOSIX(aLog), mHdl(nullptr) {}
 
@@ -122,6 +141,13 @@ bool AutoObjectMapperFaultyLib::Map( void** start,
                                      size_t* length,
                                     std::string fileName) {
   MOZ_ASSERT(!mHdl);
+
+#    if defined(ANDROID)
+  if (GetAndroidSDKVersion() >= 23) {
+    return AutoObjectMapperPOSIX::Map(start, length, fileName);
+  }
+#    endif
+
   return false;
 }
 
