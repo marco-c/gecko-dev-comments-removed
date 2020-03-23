@@ -130,17 +130,15 @@ var Fingerprinting = {
       return null;
     }
 
-    let uri = Services.io.newURI(origin);
-
     let listItem = document.createXULElement("hbox");
     listItem.className = "protections-popup-list-item";
     listItem.classList.toggle("allowed", isAllowed);
     
     
-    listItem.tooltipText = uri.host;
+    listItem.tooltipText = origin;
 
     let label = document.createXULElement("label");
-    label.value = uri.host;
+    label.value = origin;
     label.className = "protections-popup-list-host-label";
     label.setAttribute("crop", "end");
     listItem.append(label);
@@ -260,17 +258,15 @@ var Cryptomining = {
       return null;
     }
 
-    let uri = Services.io.newURI(origin);
-
     let listItem = document.createXULElement("hbox");
     listItem.className = "protections-popup-list-item";
     listItem.classList.toggle("allowed", isAllowed);
     
     
-    listItem.tooltipText = uri.host;
+    listItem.tooltipText = origin;
 
     let label = document.createXULElement("label");
-    label.value = uri.host;
+    label.value = origin;
     label.className = "protections-popup-list-host-label";
     label.setAttribute("crop", "end");
     listItem.append(label);
@@ -490,8 +486,6 @@ var TrackingProtection = {
       return null;
     }
 
-    let uri = Services.io.newURI(origin);
-
     
     
     
@@ -513,10 +507,10 @@ var TrackingProtection = {
     listItem.classList.toggle("allowed", isAllowed);
     
     
-    listItem.tooltipText = uri.host;
+    listItem.tooltipText = origin;
 
     let label = document.createXULElement("label");
-    label.value = uri.host;
+    label.value = origin;
     label.className = "protections-popup-list-host-label";
     label.setAttribute("crop", "end");
     listItem.append(label);
@@ -1115,17 +1109,15 @@ var SocialTracking = {
       return null;
     }
 
-    let uri = Services.io.newURI(origin);
-
     let listItem = document.createXULElement("hbox");
     listItem.className = "protections-popup-list-item";
     listItem.classList.toggle("allowed", isAllowed);
     
     
-    listItem.tooltipText = uri.host;
+    listItem.tooltipText = origin;
 
     let label = document.createXULElement("label");
-    label.value = uri.host;
+    label.value = origin;
     label.className = "protections-popup-list-host-label";
     label.setAttribute("crop", "end");
     listItem.append(label);
