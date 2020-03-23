@@ -714,7 +714,7 @@ jsbytecode* BaselineScript::approximatePcForNativeAddress(
 
   
   
-  MOZ_ASSERT(retAddrEntries().size() > 0);
+  MOZ_ASSERT(!retAddrEntries().empty());
   const RetAddrEntry& lastEntry = retAddrEntries()[retAddrEntries().size() - 1];
   return script->offsetToPC(lastEntry.pcOffset());
 }
