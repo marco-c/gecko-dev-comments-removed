@@ -1,5 +1,11 @@
 
 
 
+"use strict";
 
 
+
+
+self.onfetch = function(event) {
+  
+};
