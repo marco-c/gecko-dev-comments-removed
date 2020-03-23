@@ -524,7 +524,7 @@ SearchService.prototype = {
   
   
   get CACHE_VERSION() {
-    return gModernConfig ? 4 : 3;
+    return gModernConfig ? 5 : 3;
   },
 
   
@@ -1080,11 +1080,23 @@ SearchService.prototype = {
 
     if (gModernConfig) {
       cache.builtInEngineList = this._searchOrder;
+      
+      
+      cache.engines = [...this._engines.values()].map(engine => {
+        if (!engine._isBuiltin) {
+          return engine;
+        }
+        return {
+          _name: engine.name,
+          _isBuiltin: true,
+          _metaData: engine._metaData,
+        };
+      });
     } else {
       cache.visibleDefaultEngines = this._visibleDefaultEngines;
+      cache.engines = [...this._engines.values()];
     }
     cache.metaData = this._metaData;
-    cache.engines = [...this._engines.values()];
 
     try {
       if (!cache.engines.length) {
@@ -1224,7 +1236,18 @@ SearchService.prototype = {
 
     if (!rebuildCache) {
       SearchUtils.log("_loadEngines: loading from cache directories");
-      this._loadEnginesFromCache(cache);
+      if (gModernConfig) {
+        const newEngines = await this._loadEnginesFromConfig(engines, isReload);
+        for (let engine of newEngines) {
+          this._addEngineToStore(engine);
+        }
+        
+        
+        this._loadEnginesFromCache(cache, true);
+        this._loadEnginesMetadataFromCache(cache);
+      } else {
+        this._loadEnginesFromCache(cache);
+      }
       if (this._engines.size) {
         SearchUtils.log("_loadEngines: done using existing cache");
         return;
