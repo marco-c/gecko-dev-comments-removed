@@ -49,6 +49,8 @@ ShutdownPhase GetShutdownPhaseFromPrefValue(int32_t aPrefValue) {
       return ShutdownPhase::ShutdownPostLastCycleCollection;
     case 2:
       return ShutdownPhase::ShutdownThreads;
+    case 3:
+      return ShutdownPhase::Shutdown;
       
       
       
