@@ -39,7 +39,14 @@ function installAddonEngine(name = "engine-addon") {
 
 
 
-function installDistributionEngine() {
+
+
+
+
+function installDistributionEngine(
+  sourcePath = "data/engine-override.xml",
+  targetName = "basic.xml"
+) {
   const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
 
   
@@ -56,7 +63,7 @@ function installDistributionEngine() {
   dir.append("common");
   dir.create(dir.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
 
-  do_get_file("data/engine-override.xml").copyTo(dir, "basic.xml");
+  do_get_file(sourcePath).copyTo(dir, targetName);
 
   Services.dirsvc.registerProvider({
     getFile(aProp, aPersistent) {

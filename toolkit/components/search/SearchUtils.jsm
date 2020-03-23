@@ -169,7 +169,25 @@ var SearchUtils = {
   isPartnerBuild() {
     return SearchUtils.distroID && !SearchUtils.distroID.startsWith("mozilla");
   },
+
+  
+
+
+
+
+
+
+  get CACHE_VERSION() {
+    return this.gModernConfig ? 5 : 3;
+  },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  SearchUtils,
+  "gModernConfig",
+  SearchUtils.BROWSER_SEARCH_PREF + "modernConfig",
+  false
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   SearchUtils,

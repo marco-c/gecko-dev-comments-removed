@@ -523,12 +523,6 @@ SearchService.prototype = {
 
   
   
-  get CACHE_VERSION() {
-    return gModernConfig ? 5 : 3;
-  },
-
-  
-  
   _initRV: Cr.NS_OK,
 
   
@@ -1067,7 +1061,7 @@ SearchService.prototype = {
     let appVersion = Services.appinfo.version;
 
     
-    cache.version = this.CACHE_VERSION;
+    cache.version = SearchUtils.CACHE_VERSION;
     
     
     
@@ -1178,7 +1172,7 @@ SearchService.prototype = {
     let rebuildCache =
       gEnvironment.get("RELOAD_ENGINES") ||
       !cache.engines ||
-      cache.version != this.CACHE_VERSION ||
+      cache.version != SearchUtils.CACHE_VERSION ||
       cache.locale != Services.locale.requestedLocale ||
       cache.buildID != buildID;
 
@@ -1199,8 +1193,13 @@ SearchService.prototype = {
           cache.builtInEngineList.length != engines.length ||
           engines.some(notInCacheEngines);
 
+        
+        
+        
+        
         if (
           !rebuildCache &&
+          SearchUtils.distroID == "" &&
           cache.engines.filter(e => e._isBuiltin).length !=
             cache.builtInEngineList.length
         ) {
@@ -1211,15 +1210,17 @@ SearchService.prototype = {
         function notInCacheVisibleEngines(engineName) {
           return !cache.visibleDefaultEngines.includes(engineName);
         }
-
         
         rebuildCache =
           cache.visibleDefaultEngines.length !=
             this._visibleDefaultEngines.length ||
           this._visibleDefaultEngines.some(notInCacheVisibleEngines);
 
+        
+        
         if (
           !rebuildCache &&
+          SearchUtils.distroID == "" &&
           cache.engines.filter(e => e._isBuiltin).length !=
             cache.visibleDefaultEngines.length
         ) {
