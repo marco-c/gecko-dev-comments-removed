@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "mozilla/CheckedInt.h"
+#include "NumericTools.h"
 
 #include "2D.h"
 #include "DataSurfaceHelpers.h"
@@ -507,11 +508,20 @@ void AlphaBoxBlur::Init(const Rect& aRect, const IntSize& aSpreadRadius,
     skipRect.Deflate(Size(aBlurRadius + aSpreadRadius));
     mSkipRect = RoundedIn(skipRect);
     mSkipRect = mSkipRect.Intersect(mRect);
-    if (mSkipRect.IsEqualInterior(mRect)) return;
+    if (mSkipRect.IsEqualInterior(mRect)) {
+      return;
+    }
 
     mSkipRect -= mRect.TopLeft();
+    
+    
+    mSkipRect.SetLeftEdge(RoundUpToMultiple(mSkipRect.X(), 4));
+    mSkipRect.SetRightEdge(RoundDownToMultiple(mSkipRect.XMost(), 4));
+    if (mSkipRect.IsEmpty()) {
+      mSkipRect = IntRect();
+    }
   } else {
-    mSkipRect = IntRect(0, 0, 0, 0);
+    mSkipRect = IntRect();
   }
 
   CheckedInt<int32_t> stride = RoundUpToMultipleOf4(mRect.Width());

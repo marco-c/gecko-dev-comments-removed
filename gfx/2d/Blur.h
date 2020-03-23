@@ -151,6 +151,8 @@ class GFX2D_API AlphaBoxBlur final {
 
 
 
+
+
   IntRect mSkipRect;
 
   
