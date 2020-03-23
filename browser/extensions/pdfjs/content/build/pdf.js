@@ -1,24 +1,24 @@
-/**
- * @licstart The following is the entire license notice for the
- * Javascript code in this page
- *
- * Copyright 2020 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @licend The above is the entire license notice for the
- * Javascript code in this page
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -30,101 +30,101 @@
 	else
 		root["pdfjs-dist/build/pdf"] = root.pdfjsLib = factory();
 })(this, function() {
-return /******/ (function(modules) { // webpackBootstrap
-/******/ 	// The module cache
-/******/ 	var installedModules = {};
-/******/
-/******/ 	// The require function
-/******/ 	function __w_pdfjs_require__(moduleId) {
-/******/
-/******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId]) {
-/******/ 			return installedModules[moduleId].exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = installedModules[moduleId] = {
-/******/ 			i: moduleId,
-/******/ 			l: false,
-/******/ 			exports: {}
-/******/ 		};
-/******/
-/******/ 		// Execute the module function
-/******/ 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
-/******/
-/******/ 		// Flag the module as loaded
-/******/ 		module.l = true;
-/******/
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/
-/******/
-/******/ 	// expose the modules object (__webpack_modules__)
-/******/ 	__w_pdfjs_require__.m = modules;
-/******/
-/******/ 	// expose the module cache
-/******/ 	__w_pdfjs_require__.c = installedModules;
-/******/
-/******/ 	// define getter function for harmony exports
-/******/ 	__w_pdfjs_require__.d = function(exports, name, getter) {
-/******/ 		if(!__w_pdfjs_require__.o(exports, name)) {
-/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
-/******/ 		}
-/******/ 	};
-/******/
-/******/ 	// define __esModule on exports
-/******/ 	__w_pdfjs_require__.r = function(exports) {
-/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 		}
-/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 	};
-/******/
-/******/ 	// create a fake namespace object
-/******/ 	// mode & 1: value is a module id, require it
-/******/ 	// mode & 2: merge all properties of value into the ns
-/******/ 	// mode & 4: return value when already ns object
-/******/ 	// mode & 8|1: behave like require
-/******/ 	__w_pdfjs_require__.t = function(value, mode) {
-/******/ 		if(mode & 1) value = __w_pdfjs_require__(value);
-/******/ 		if(mode & 8) return value;
-/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
-/******/ 		var ns = Object.create(null);
-/******/ 		__w_pdfjs_require__.r(ns);
-/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
-/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __w_pdfjs_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
-/******/ 		return ns;
-/******/ 	};
-/******/
-/******/ 	// getDefaultExport function for compatibility with non-harmony modules
-/******/ 	__w_pdfjs_require__.n = function(module) {
-/******/ 		var getter = module && module.__esModule ?
-/******/ 			function getDefault() { return module['default']; } :
-/******/ 			function getModuleExports() { return module; };
-/******/ 		__w_pdfjs_require__.d(getter, 'a', getter);
-/******/ 		return getter;
-/******/ 	};
-/******/
-/******/ 	// Object.prototype.hasOwnProperty.call
-/******/ 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-/******/
-/******/ 	// __webpack_public_path__
-/******/ 	__w_pdfjs_require__.p = "";
-/******/
-/******/
-/******/ 	// Load entry module and return exports
-/******/ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 0);
-/******/ })
-/************************************************************************/
-/******/ ([
-/* 0 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+return  (function(modules) { 
+ 	
+ 	var installedModules = {};
+
+ 	
+ 	function __w_pdfjs_require__(moduleId) {
+
+ 		
+ 		if(installedModules[moduleId]) {
+ 			return installedModules[moduleId].exports;
+ 		}
+ 		
+ 		var module = installedModules[moduleId] = {
+ 			i: moduleId,
+ 			l: false,
+ 			exports: {}
+ 		};
+
+ 		
+ 		modules[moduleId].call(module.exports, module, module.exports, __w_pdfjs_require__);
+
+ 		
+ 		module.l = true;
+
+ 		
+ 		return module.exports;
+ 	}
+
+
+ 	
+ 	__w_pdfjs_require__.m = modules;
+
+ 	
+ 	__w_pdfjs_require__.c = installedModules;
+
+ 	
+ 	__w_pdfjs_require__.d = function(exports, name, getter) {
+ 		if(!__w_pdfjs_require__.o(exports, name)) {
+ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+ 		}
+ 	};
+
+ 	
+ 	__w_pdfjs_require__.r = function(exports) {
+ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+ 		}
+ 		Object.defineProperty(exports, '__esModule', { value: true });
+ 	};
+
+ 	
+ 	
+ 	
+ 	
+ 	
+ 	__w_pdfjs_require__.t = function(value, mode) {
+ 		if(mode & 1) value = __w_pdfjs_require__(value);
+ 		if(mode & 8) return value;
+ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+ 		var ns = Object.create(null);
+ 		__w_pdfjs_require__.r(ns);
+ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+ 		if(mode & 2 && typeof value != 'string') for(var key in value) __w_pdfjs_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+ 		return ns;
+ 	};
+
+ 	
+ 	__w_pdfjs_require__.n = function(module) {
+ 		var getter = module && module.__esModule ?
+ 			function getDefault() { return module['default']; } :
+ 			function getModuleExports() { return module; };
+ 		__w_pdfjs_require__.d(getter, 'a', getter);
+ 		return getter;
+ 	};
+
+ 	
+ 	__w_pdfjs_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+
+ 	
+ 	__w_pdfjs_require__.p = "";
+
+
+ 	
+ 	return __w_pdfjs_require__(__w_pdfjs_require__.s = 0);
+ })
+
+ ([
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
-var pdfjsVersion = '2.4.407';
-var pdfjsBuild = '25693c6b';
+var pdfjsVersion = '2.4.445';
+var pdfjsBuild = '1bc5cef2b';
 
 var pdfjsSharedUtil = __w_pdfjs_require__(1);
 
@@ -177,9 +177,9 @@ exports.PDFDateString = pdfjsDisplayDisplayUtils.PDFDateString;
 exports.GlobalWorkerOptions = pdfjsDisplayWorkerOptions.GlobalWorkerOptions;
 exports.apiCompatibilityParams = pdfjsDisplayAPICompatibility.apiCompatibilityParams;
 
-/***/ }),
-/* 1 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -202,8 +202,6 @@ exports.isNum = isNum;
 exports.isString = isString;
 exports.isSameOrigin = isSameOrigin;
 exports.createValidAbsoluteUrl = createValidAbsoluteUrl;
-exports.isLittleEndian = isLittleEndian;
-exports.isEvalSupported = isEvalSupported;
 exports.removeNullCharacters = removeNullCharacters;
 exports.setVerbosityLevel = setVerbosityLevel;
 exports.shadow = shadow;
@@ -214,7 +212,7 @@ exports.stringToUTF8String = stringToUTF8String;
 exports.utf8StringToString = utf8StringToString;
 exports.warn = warn;
 exports.unreachable = unreachable;
-exports.createObjectURL = exports.FormatError = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.PermissionFlag = exports.PasswordResponses = exports.PasswordException = exports.NativeImageDecoding = exports.MissingPDFException = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationStateModelType = exports.AnnotationReviewState = exports.AnnotationReplyType = exports.AnnotationMarkedState = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VerbosityLevel = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = exports.BaseException = void 0;
+exports.IsEvalSupportedCached = exports.IsLittleEndianCached = exports.createObjectURL = exports.FormatError = exports.Util = exports.UnknownErrorException = exports.UnexpectedResponseException = exports.TextRenderingMode = exports.StreamType = exports.PermissionFlag = exports.PasswordResponses = exports.PasswordException = exports.NativeImageDecoding = exports.MissingPDFException = exports.InvalidPDFException = exports.AbortException = exports.CMapCompressionType = exports.ImageKind = exports.FontType = exports.AnnotationType = exports.AnnotationStateModelType = exports.AnnotationReviewState = exports.AnnotationReplyType = exports.AnnotationMarkedState = exports.AnnotationFlag = exports.AnnotationFieldFlag = exports.AnnotationBorderStyleType = exports.UNSUPPORTED_FEATURES = exports.VerbosityLevel = exports.OPS = exports.IDENTITY_MATRIX = exports.FONT_IDENTITY_MATRIX = exports.BaseException = void 0;
 
 __w_pdfjs_require__(2);
 
@@ -755,6 +753,14 @@ function isLittleEndian() {
   return view32[0] === 1;
 }
 
+const IsLittleEndianCached = {
+  get value() {
+    return shadow(this, "value", isLittleEndian());
+  }
+
+};
+exports.IsLittleEndianCached = IsLittleEndianCached;
+
 function isEvalSupported() {
   try {
     new Function("");
@@ -764,6 +770,13 @@ function isEvalSupported() {
   }
 }
 
+const IsEvalSupportedCached = {
+  get value() {
+    return shadow(this, "value", isEvalSupported());
+  }
+
+};
+exports.IsEvalSupportedCached = IsEvalSupportedCached;
 const rgbBuf = ["rgb(", 0, ",", 0, ",", 0, ")"];
 
 class Util {
@@ -986,18 +999,18 @@ const createObjectURL = function createObjectURLClosure() {
 
 exports.createObjectURL = createObjectURL;
 
-/***/ }),
-/* 2 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
 
 ;
 
-/***/ }),
-/* 3 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -1205,7 +1218,7 @@ function _fetchDocument(worker, source, pdfDataRangeTransport, docId) {
 
   return worker.messageHandler.sendWithPromise("GetDocRequest", {
     docId,
-    apiVersion: '2.4.407',
+    apiVersion: '2.4.445',
     source: {
       data: source.data,
       url: source.url,
@@ -1391,8 +1404,15 @@ class PDFDocumentProxy {
     return this._transport.getViewerPreferences();
   }
 
+  getOpenAction() {
+    return this._transport.getOpenAction();
+  }
+
   getOpenActionDestination() {
-    return this._transport.getOpenActionDestination();
+    (0, _display_utils.deprecated)("getOpenActionDestination, use getOpenAction instead.");
+    return this.getOpenAction().then(function (openAction) {
+      return openAction && openAction.dest ? openAction.dest : null;
+    });
   }
 
   getAttachments() {
@@ -2837,8 +2857,8 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetViewerPreferences", null);
   }
 
-  getOpenActionDestination() {
-    return this.messageHandler.sendWithPromise("GetOpenActionDestination", null);
+  getOpenAction() {
+    return this.messageHandler.sendWithPromise("GetOpenAction", null);
   }
 
   getAttachments() {
@@ -3150,14 +3170,14 @@ const InternalRenderTask = function InternalRenderTaskClosure() {
   return InternalRenderTask;
 }();
 
-const version = '2.4.407';
+const version = '2.4.445';
 exports.version = version;
-const build = '25693c6b';
+const build = '1bc5cef2b';
 exports.build = build;
 
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3622,9 +3642,9 @@ class PDFDateString {
 
 exports.PDFDateString = PDFDateString;
 
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3683,7 +3703,7 @@ class BaseFontLoader {
 
   async bind(font) {
     if (font.attached || font.missingFile) {
-      return undefined;
+      return;
     }
 
     font.attached = true;
@@ -3707,7 +3727,7 @@ class BaseFontLoader {
         }
       }
 
-      return undefined;
+      return;
     }
 
     const rule = font.createFontFaceRule();
@@ -3716,17 +3736,15 @@ class BaseFontLoader {
       this.insertRule(rule);
 
       if (this.isSyncFontLoadingSupported) {
-        return undefined;
+        return;
       }
 
-      return new Promise(resolve => {
+      await new Promise(resolve => {
         const request = this._queueLoadingCallback(resolve);
 
         this._prepareFontLoadEvent([rule], [font], request);
       });
     }
-
-    return undefined;
   }
 
   _queueLoadingCallback(callback) {
@@ -3762,12 +3780,6 @@ exports.FontLoader = FontLoader;
 
   };
 }
-const IsEvalSupportedCached = {
-  get value() {
-    return (0, _util.shadow)(this, "value", (0, _util.isEvalSupported)());
-  }
-
-};
 
 class FontFaceObject {
   constructor(translatedData, {
@@ -3844,7 +3856,7 @@ class FontFaceObject {
       return this.compiledGlyphs[character] = function (c, size) {};
     }
 
-    if (this.isEvalSupported && IsEvalSupportedCached.value) {
+    if (this.isEvalSupported && _util.IsEvalSupportedCached.value) {
       let args,
           js = "";
 
@@ -3880,9 +3892,9 @@ class FontFaceObject {
 
 exports.FontFaceObject = FontFaceObject;
 
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3891,9 +3903,9 @@ const compatibilityParams = Object.create(null);
 ;
 exports.apiCompatibilityParams = Object.freeze(compatibilityParams);
 
-/***/ }),
-/* 7 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -3914,12 +3926,6 @@ var MIN_WIDTH_FACTOR = 0.65;
 var COMPILE_TYPE3_GLYPHS = true;
 var MAX_SIZE_TO_COMPILE = 1000;
 var FULL_CHUNK_HEIGHT = 16;
-var IsLittleEndianCached = {
-  get value() {
-    return (0, _util.shadow)(IsLittleEndianCached, "value", (0, _util.isLittleEndian)());
-  }
-
-};
 
 function addContextCurrentTransform(ctx) {
   if (!ctx.mozCurrentTransform) {
@@ -4328,7 +4334,7 @@ var CanvasGraphics = function CanvasGraphicsClosure() {
       var dest32DataLength = dest32.length;
       var fullSrcDiff = width + 7 >> 3;
       var white = 0xffffffff;
-      var black = IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
+      var black = _util.IsLittleEndianCached.value ? 0xff000000 : 0x000000ff;
 
       for (i = 0; i < totalChunks; i++) {
         thisChunkHeight = i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
@@ -5970,9 +5976,9 @@ var CanvasGraphics = function CanvasGraphicsClosure() {
 
 exports.CanvasGraphics = CanvasGraphics;
 
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6451,9 +6457,9 @@ var TilingPattern = function TilingPatternClosure() {
 
 exports.TilingPattern = TilingPattern;
 
-/***/ }),
-/* 9 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6467,9 +6473,9 @@ exports.GlobalWorkerOptions = GlobalWorkerOptions;
 GlobalWorkerOptions.workerPort = GlobalWorkerOptions.workerPort === undefined ? null : GlobalWorkerOptions.workerPort;
 GlobalWorkerOptions.workerSrc = GlobalWorkerOptions.workerSrc === undefined ? "" : GlobalWorkerOptions.workerSrc;
 
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6481,9 +6487,9 @@ exports.isNodeJS = void 0;
 const isNodeJS = typeof process === "object" && process + "" === "[object process]" && !process.versions["nw"] && !process.versions["electron"];
 exports.isNodeJS = isNodeJS;
 
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -6982,9 +6988,9 @@ class MessageHandler {
 
 exports.MessageHandler = MessageHandler;
 
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7110,9 +7116,9 @@ class Metadata {
 
 exports.Metadata = Metadata;
 
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7553,9 +7559,9 @@ class SimpleXMLParser extends XMLParserBase {
 
 exports.SimpleXMLParser = SimpleXMLParser;
 
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -7908,9 +7914,9 @@ class PDFDataTransportStreamRangeReader {
 
 }
 
-/***/ }),
-/* 15 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -8355,9 +8361,9 @@ var WebGLUtils = function WebGLUtilsClosure() {
   };
 }();
 
-/***/ }),
-/* 16 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -9038,9 +9044,9 @@ var renderTextLayer = function renderTextLayerClosure() {
 
 exports.renderTextLayer = renderTextLayer;
 
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10071,9 +10077,9 @@ class AnnotationLayer {
 
 exports.AnnotationLayer = AnnotationLayer;
 
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __w_pdfjs_require__) {
+ }),
+
+ (function(module, exports, __w_pdfjs_require__) {
 
 "use strict";
 
@@ -10096,6 +10102,6 @@ let SVGGraphics = function () {
 exports.SVGGraphics = SVGGraphics;
 ;
 
-/***/ })
-/******/ ]);
+ })
+ ]);
 });
