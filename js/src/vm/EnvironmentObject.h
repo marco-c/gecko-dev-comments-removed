@@ -7,6 +7,8 @@
 #ifndef vm_EnvironmentObject_h
 #define vm_EnvironmentObject_h
 
+#include <type_traits>
+
 #include "builtin/ModuleObject.h"
 #include "frontend/NameAnalysisTypes.h"
 #include "gc/Barrier.h"
@@ -1118,27 +1120,29 @@ inline bool IsFrameInitialEnvironment(AbstractFramePtr frame,
 
   
   
-  if (mozilla::IsSame<SpecificEnvironment, CallObject>::value) {
+  if constexpr (std::is_same_v<SpecificEnvironment, CallObject>) {
     return true;
   }
 
   
   
-  if (mozilla::IsSame<SpecificEnvironment, VarEnvironmentObject>::value &&
-      frame.isEvalFrame()) {
-    return true;
+  if constexpr (std::is_same_v<SpecificEnvironment, VarEnvironmentObject>) {
+    if (frame.isEvalFrame()) {
+      return true;
+    }
   }
 
   
   
   
-  if (mozilla::IsSame<SpecificEnvironment, NamedLambdaObject>::value &&
-      frame.isFunctionFrame() &&
-      frame.callee()->needsNamedLambdaEnvironment() &&
-      !frame.callee()->needsCallObject()) {
-    LexicalScope* namedLambdaScope = frame.script()->maybeNamedLambdaScope();
-    return &env.template as<LexicalEnvironmentObject>().scope() ==
-           namedLambdaScope;
+  if constexpr (std::is_same_v<SpecificEnvironment, NamedLambdaObject>) {
+    if (frame.isFunctionFrame() &&
+        frame.callee()->needsNamedLambdaEnvironment() &&
+        !frame.callee()->needsCallObject()) {
+      LexicalScope* namedLambdaScope = frame.script()->maybeNamedLambdaScope();
+      return &env.template as<LexicalEnvironmentObject>().scope() ==
+             namedLambdaScope;
+    }
   }
 
   return false;
