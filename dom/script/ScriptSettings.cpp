@@ -444,7 +444,7 @@ bool AutoJSAPI::Init(nsGlobalWindowInner* aWindow) {
 
 
 void WarningOnlyErrorReporter(JSContext* aCx, JSErrorReport* aRep) {
-  MOZ_ASSERT(JSREPORT_IS_WARNING(aRep->flags));
+  MOZ_ASSERT(aRep->isWarning());
   if (!NS_IsMainThread()) {
     
     
