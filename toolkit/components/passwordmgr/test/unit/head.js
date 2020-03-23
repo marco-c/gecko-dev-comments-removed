@@ -50,6 +50,9 @@ const LoginInfo = Components.Constructor(
 const TestData = LoginTestUtils.testData;
 const newPropertyBag = LoginHelper.newPropertyBag;
 
+const NEW_PASSWORD_HEURISTIC_ENABLED_PREF =
+  "signon.generation.confidenceThreshold";
+
 
 
 
@@ -88,6 +91,10 @@ add_task(async function test_common_initialize() {
 
   
   await Services.logins.initializationPromise;
+});
+
+add_task(async function test_common_prefs() {
+  Services.prefs.setStringPref(NEW_PASSWORD_HEURISTIC_ENABLED_PREF, "0.5");
 });
 
 
