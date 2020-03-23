@@ -76,6 +76,7 @@ var TabCrashHandler = {
   browserMap: new BrowserWeakMap(),
   unseenCrashedChildIDs: [],
   crashedBrowserQueues: new Map(),
+  restartRequiredBrowsers: new WeakSet(),
   testBuildIDMismatch: false,
 
   get prefs() {
@@ -249,9 +250,12 @@ var TabCrashHandler = {
 
     let sentBrowser = false;
     for (let weakBrowser of browserQueue) {
-      let browser = weakBrowser.browser.get();
+      let browser = weakBrowser.get();
       if (browser) {
-        if (weakBrowser.restartRequired || this.testBuildIDMismatch) {
+        if (
+          this.restartRequiredBrowsers.has(browser) ||
+          this.testBuildIDMismatch
+        ) {
           this.sendToRestartRequiredPage(browser);
         } else {
           this.sendToTabCrashedPage(browser);
@@ -284,6 +288,7 @@ var TabCrashHandler = {
     }
 
     let childID = browser.frameLoader.childID;
+
     let browserQueue = this.crashedBrowserQueues.get(childID);
     if (!browserQueue) {
       browserQueue = [];
@@ -295,10 +300,45 @@ var TabCrashHandler = {
     
     
     
-    browserQueue.push({
-      browser: Cu.getWeakReference(browser),
-      restartRequired,
+    browserQueue.push(Cu.getWeakReference(browser));
+
+    if (restartRequired) {
+      this.restartRequiredBrowsers.add(browser);
+    }
+
+    
+    
+    
+    
+    if (childID == 0) {
+      this.flushCrashedBrowserQueue(0);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  onBackgroundBrowserCrash(browser, restartRequired) {
+    if (restartRequired) {
+      this.restartRequiredBrowsers.add(browser);
+    }
+
+    let gBrowser = browser.getTabBrowser();
+    let tab = gBrowser.getTabForBrowser(browser);
+
+    gBrowser.updateBrowserRemoteness(browser, {
+      remoteType: E10SUtils.NOT_REMOTE,
     });
+
+    SessionStore.reviveCrashedTab(tab);
   },
 
   
@@ -335,6 +375,13 @@ var TabCrashHandler = {
         this.sendToTabCrashedPage(browser);
         return true;
       }
+    } else if (childID === 0) {
+      if (this.restartRequiredBrowsers.has(browser)) {
+        this.sendToRestartRequiredPage(browser);
+      } else {
+        this.sendToTabCrashedPage(browser);
+      }
+      return true;
     }
 
     return false;
@@ -612,6 +659,21 @@ var TabCrashHandler = {
     }
 
     return this.childMap.get(this.browserMap.get(browser));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  get queuedCrashedBrowsers() {
+    return this.crashedBrowserQueues.size;
   },
 };
 
