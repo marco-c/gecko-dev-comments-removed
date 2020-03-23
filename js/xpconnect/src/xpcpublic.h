@@ -612,6 +612,8 @@ class ErrorReport : public ErrorBase {
   
   void LogToStderr();
 
+  bool IsWarning() const { return !!(mFlags & JSREPORT_WARNING); };
+
  private:
   ~ErrorReport() = default;
 };
