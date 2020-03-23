@@ -1174,7 +1174,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mCurrentContainerASR(nullptr),
       mCurrentFrame(aReferenceFrame),
       mCurrentReferenceFrame(aReferenceFrame),
-      mNeedsDisplayListBuild{},
       mRootAGR(AnimatedGeometryRoot::CreateAGRForFrame(
           aReferenceFrame, nullptr, true, aRetainingDisplayList)),
       mCurrentAGR(mRootAGR),
@@ -1266,9 +1265,6 @@ void nsDisplayListBuilder::BeginFrame() {
   mInTransform = false;
   mInFilter = false;
   mSyncDecodeImages = false;
-  for (auto& needsDisplayListBuild : mNeedsDisplayListBuild) {
-    needsDisplayListBuild = false;
-  }
 
   for (auto& renderRootRect : mRenderRootRects) {
     renderRootRect = LayoutDeviceRect();
@@ -7055,127 +7051,6 @@ void nsDisplayOwnLayer::WriteDebugInfo(std::stringstream& aStream) {
   aStream << nsPrintfCString(" (flags 0x%x) (scrolltarget %" PRIu64 ")",
                              (int)mFlags, mScrollbarData.mTargetViewId)
                  .get();
-}
-
-nsDisplayRenderRoot::nsDisplayRenderRoot(
-    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
-    const ActiveScrolledRoot* aActiveScrolledRoot, wr::RenderRoot aRenderRoot)
-    : nsDisplayWrapList(aBuilder, aFrame, aList, aActiveScrolledRoot, true),
-      mRenderRoot(aRenderRoot),
-      mBuiltWRCommands(false) {
-  MOZ_ASSERT(aRenderRoot != wr::RenderRoot::Default);
-  MOZ_ASSERT(false);
-  ExpandDisplayListBuilderRenderRootRect(aBuilder);
-  MOZ_COUNT_CTOR(nsDisplayRenderRoot);
-}
-
-void nsDisplayRenderRoot::Destroy(nsDisplayListBuilder* aBuilder) {
-  if (mBuiltWRCommands && aBuilder) {
-    aBuilder->SetNeedsDisplayListBuild(mRenderRoot);
-  }
-  nsDisplayWrapList::Destroy(aBuilder);
-}
-
-void nsDisplayRenderRoot::NotifyUsed(nsDisplayListBuilder* aBuilder) {
-  ExpandDisplayListBuilderRenderRootRect(aBuilder);
-  nsDisplayWrapList::SetReused(aBuilder);
-}
-
-void nsDisplayRenderRoot::InvalidateCachedChildInfo(
-    nsDisplayListBuilder* aBuilder) {
-  if (mBuiltWRCommands && aBuilder) {
-    aBuilder->SetNeedsDisplayListBuild(mRenderRoot);
-    mBuiltWRCommands = false;
-  }
-}
-
-bool nsDisplayRenderRoot::UpdateScrollData(
-    mozilla::layers::WebRenderScrollData* aData,
-    mozilla::layers::WebRenderLayerScrollData* aLayerData) {
-  
-  
-  
-  
-  if (aLayerData) {
-    if (mBoundary) {
-      
-      
-      MOZ_ASSERT(aLayerData->GetDescendantCount() == 0);
-      aLayerData->SetReferentRenderRoot(*mBoundary);
-    }
-  }
-  return true;
-}
-
-bool nsDisplayRenderRoot::CreateWebRenderCommands(
-    mozilla::wr::DisplayListBuilder& aBuilder,
-    mozilla::wr::IpcResourceUpdateQueue& aResources,
-    const StackingContextHelper& aSc, RenderRootStateManager* aManager,
-    nsDisplayListBuilder* aDisplayListBuilder) {
-  
-  
-  
-  RefPtr<WebRenderRenderRootData> userData =
-      aManager->CommandBuilder()
-          .CreateOrRecycleWebRenderUserData<WebRenderRenderRootData>(
-              this, aBuilder.GetRenderRoot());
-  
-  
-  
-  userData->SetUsed(true);
-
-  if (!aDisplayListBuilder->GetNeedsDisplayListBuild(mRenderRoot) &&
-      mBuiltWRCommands) {
-    return true;
-  }
-  if (aBuilder.GetRenderRoot() == mRenderRoot) {
-    nsDisplayWrapList::CreateWebRenderCommands(aBuilder, aResources, aSc,
-                                               aManager, aDisplayListBuilder);
-  } else {
-    mBoundary = Some(userData->EnsureHasBoundary(mRenderRoot));
-
-    WebRenderCommandBuilder::ScrollDataBoundaryWrapper wrapper(
-        aManager->CommandBuilder(), *mBoundary);
-
-    aBuilder.SetSendSubBuilderDisplayList(mRenderRoot);
-    wr::DisplayListBuilder& builder = aBuilder.SubBuilder(mRenderRoot);
-    wr::IpcResourceUpdateQueue& resources = aResources.SubQueue(mRenderRoot);
-
-    wr::StackingContextParams params;
-    params.clip =
-        wr::WrStackingContextClip::ClipChain(builder.CurrentClipChainId());
-    LayoutDeviceRect rrRect =
-        aDisplayListBuilder->GetRenderRootRect(mRenderRoot);
-    LayoutDevicePoint scOrigin = aSc.GetOrigin();
-    
-    
-    
-    
-    
-    
-    scOrigin.x -= rrRect.x;
-    scOrigin.y -= rrRect.y;
-    StackingContextHelper sc(
-        aManager->CommandBuilder().GetRootStackingContextHelper(mRenderRoot),
-        nullptr, nullptr, nullptr, builder, params,
-        LayoutDeviceRect(scOrigin, LayoutDeviceSize()));
-
-    nsDisplayWrapList::CreateWebRenderCommands(builder, resources, sc, aManager,
-                                               aDisplayListBuilder);
-  }
-  mBuiltWRCommands = true;
-  return true;
-}
-
-void nsDisplayRenderRoot::ExpandDisplayListBuilderRenderRootRect(
-    nsDisplayListBuilder* aBuilder) {
-  if (mFrame->GetRect().IsEmpty()) {
-    return;
-  }
-  mozilla::LayoutDeviceRect rect = mozilla::LayoutDeviceRect::FromAppUnits(
-      mFrame->GetRectRelativeToSelf() + ToReferenceFrame(),
-      mFrame->PresContext()->AppUnitsPerDevPixel());
-  aBuilder->ExpandRenderRootRect(rect, mRenderRoot);
 }
 
 nsDisplaySubDocument::nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
