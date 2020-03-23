@@ -50,8 +50,6 @@ class WorkerErrorReport : public WorkerErrorBase, public SerializedStackHolder {
 
   void AssignErrorReport(JSErrorReport* aReport);
 
-  bool IsWarning() { return !!(mFlags & JSREPORT_WARNING); }
-
   
   
   

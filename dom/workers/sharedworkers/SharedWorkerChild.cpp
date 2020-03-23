@@ -66,7 +66,7 @@ IPCResult SharedWorkerChild::RecvError(const ErrorValue& aValue) {
   }
 
   if (aValue.type() == ErrorValue::TErrorData &&
-      aValue.get_ErrorData().isWarning()) {
+      JSREPORT_IS_WARNING(aValue.get_ErrorData().flags())) {
     
     
     WorkerErrorReport::LogErrorToConsole(aValue.get_ErrorData(), 0);
