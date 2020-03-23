@@ -14,6 +14,7 @@
 #include "nsISupportsImpl.h"
 #include "mozilla/dom/RTCRtpSourcesBinding.h"
 #include "webrtc/modules/rtp_rtcp/include/rtp_packet_observer.h"
+#include "RTCStatsReport.h"
 
 
 namespace test {
@@ -29,7 +30,8 @@ namespace mozilla {
 
 class RtpSourceObserver : public webrtc::RtpPacketObserver {
  public:
-  RtpSourceObserver();
+  explicit RtpSourceObserver(
+      const dom::RTCStatsTimestampMaker& aTimestampMaker);
 
   virtual ~RtpSourceObserver(){};
 
@@ -41,17 +43,8 @@ class RtpSourceObserver : public webrtc::RtpPacketObserver {
 
 
 
-  static int64_t NowInReportClockTime();
 
-  
-
-
-
-
-
-
-  void GetRtpSources(const int64_t aTimeNow,
-                     nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
+  void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
 
  private:
   
@@ -59,7 +52,7 @@ class RtpSourceObserver : public webrtc::RtpPacketObserver {
     RtpSourceEntry() = default;
     void Update(const int64_t aTimestamp, const uint32_t aRtpTimestamp,
                 const bool aHasAudioLevel, const uint8_t aAudioLevel) {
-      jitterAdjustedTimestamp = aTimestamp;
+      predictedPlayoutTime = aTimestamp;
       rtpTimestamp = aRtpTimestamp;
       
       hasAudioLevel = aHasAudioLevel && !(aAudioLevel & 0x80);
@@ -69,12 +62,19 @@ class RtpSourceObserver : public webrtc::RtpPacketObserver {
     
     double ToLinearAudioLevel() const;
     
-    int64_t jitterAdjustedTimestamp = 0;
+    int64_t predictedPlayoutTime = 0;
     
     uint32_t rtpTimestamp = 0;
     bool hasAudioLevel = false;
     uint8_t audioLevel = 0;
   };
+
+  
+
+
+
+
+
   
 
 
@@ -166,6 +166,7 @@ class RtpSourceObserver : public webrtc::RtpPacketObserver {
   int64_t mMaxJitterWindow;
   
   mutable Mutex mLevelGuard;
+  dom::RTCStatsTimestampMaker mTimestampMaker;
 
   
   friend test::RtpSourcesTest;

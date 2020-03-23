@@ -1,4 +1,5 @@
 #include <RtpSourceObserver.h>
+#include "RTCStatsReport.h"
 #include "webrtc/modules/include/module_common_types.h"
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
@@ -19,7 +20,7 @@ class RtpSourcesTest : public ::testing::Test {
     EXPECT_EQ(history.mDetailedHistory.size(), static_cast<size_t>(0));
     const auto& e = history.mLatestEviction;
     EXPECT_FALSE(history.mHasEvictedEntry);
-    EXPECT_EQ(e.jitterAdjustedTimestamp, 0);
+    EXPECT_EQ(e.predictedPlayoutTime, 0);
     EXPECT_FALSE(e.hasAudioLevel);
     EXPECT_EQ(e.audioLevel, 0);
   }
@@ -40,7 +41,7 @@ class RtpSourcesTest : public ::testing::Test {
       auto entry = history.FindClosestNotAfter(i + jitter);
       ASSERT_NE(entry, nullptr);
       if (entry) {
-        EXPECT_EQ(entry->jitterAdjustedTimestamp, i + jitter);
+        EXPECT_EQ(entry->predictedPlayoutTime, i + jitter);
         EXPECT_EQ(entry->hasAudioLevel, hasAudioLevel);
         EXPECT_EQ(entry->audioLevel, audioLevel);
       }
@@ -74,25 +75,25 @@ class RtpSourcesTest : public ::testing::Test {
     history.Insert(timeNow, time1, 1, true, 0);
     
     EXPECT_TRUE(history.Empty());
-    ASSERT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time1);
+    ASSERT_EQ(history.mLatestEviction.predictedPlayoutTime, time1);
     EXPECT_TRUE(history.mHasEvictedEntry);
 
     
     history.Insert(timeNow, time2, 2, true, 0);
     EXPECT_TRUE(history.Empty());
-    ASSERT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time2);
+    ASSERT_EQ(history.mLatestEviction.predictedPlayoutTime, time2);
     EXPECT_TRUE(history.mHasEvictedEntry);
 
     
     history.Insert(timeNow, time3, 3, true, 0);
     EXPECT_TRUE(history.Empty());
-    ASSERT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time2);
+    ASSERT_EQ(history.mLatestEviction.predictedPlayoutTime, time2);
     EXPECT_TRUE(history.mHasEvictedEntry);
 
     
     history.Prune(pruneTime0);
     EXPECT_TRUE(history.Empty());
-    ASSERT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time2);
+    ASSERT_EQ(history.mLatestEviction.predictedPlayoutTime, time2);
     EXPECT_TRUE(history.mHasEvictedEntry);
 
     
@@ -134,7 +135,7 @@ class RtpSourcesTest : public ::testing::Test {
     ASSERT_EQ(history.mMaxJitterWindow, jitterWindow);
     EXPECT_EQ(history.mDetailedHistory.size(), static_cast<size_t>(1));
     EXPECT_TRUE(history.mHasEvictedEntry);
-    ASSERT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time0);
+    ASSERT_EQ(history.mLatestEviction.predictedPlayoutTime, time0);
     ASSERT_EQ(history.mLatestEviction.hasAudioLevel, false);
     ASSERT_EQ(history.mLatestEviction.audioLevel, 1);
 
@@ -143,7 +144,7 @@ class RtpSourcesTest : public ::testing::Test {
     EXPECT_EQ(history.mMaxJitterWindow, jitterWindow);
     EXPECT_EQ(history.mDetailedHistory.size(), static_cast<size_t>(0));
     EXPECT_TRUE(history.mHasEvictedEntry);
-    EXPECT_EQ(history.mLatestEviction.jitterAdjustedTimestamp, time1);
+    EXPECT_EQ(history.mLatestEviction.predictedPlayoutTime, time1);
     EXPECT_EQ(history.mLatestEviction.hasAudioLevel, true);
     EXPECT_EQ(history.mLatestEviction.audioLevel, 2);
   }
@@ -217,7 +218,7 @@ class RtpSourcesTest : public ::testing::Test {
     history.Prune(timeNow + (jitter * 3) + 1);
     EXPECT_EQ(history.mDetailedHistory.size(), static_cast<size_t>(0));
     EXPECT_TRUE(history.mHasEvictedEntry);
-    EXPECT_EQ(jitterAdjusted, history.mLatestEviction.jitterAdjustedTimestamp);
+    EXPECT_EQ(jitterAdjusted, history.mLatestEviction.predictedPlayoutTime);
   }
 
   
@@ -242,7 +243,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveOneCsrc() {
-    RtpSourceObserver observer;
+    RtpSourceObserver observer =
+        RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
     constexpr unsigned int ssrc = 857265;
     constexpr unsigned int csrc = 3268365;
@@ -257,7 +259,7 @@ class RtpSourcesTest : public ::testing::Test {
     
     EXPECT_EQ(observer.mRtpSources.size(), static_cast<size_t>(2));
     nsTArray<dom::RTCRtpSourceEntry> outLevels;
-    observer.GetRtpSources(timestamp, outLevels);
+    observer.GetRtpSources(outLevels);
     EXPECT_EQ(outLevels.Length(), static_cast<size_t>(2));
     bool ssrcFound = false;
     bool csrcFound = true;
@@ -278,7 +280,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveTwoCsrcs() {
-    RtpSourceObserver observer;
+    RtpSourceObserver observer =
+        RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
     constexpr unsigned int ssrc = 239485;
     constexpr unsigned int csrc0 = 3425;
@@ -295,7 +298,7 @@ class RtpSourcesTest : public ::testing::Test {
     
     EXPECT_EQ(observer.mRtpSources.size(), static_cast<size_t>(3));
     nsTArray<dom::RTCRtpSourceEntry> outLevels;
-    observer.GetRtpSources(timestamp, outLevels);
+    observer.GetRtpSources(outLevels);
     EXPECT_EQ(outLevels.Length(), static_cast<size_t>(3));
     bool ssrcFound = false;
     bool csrc0Found = true;
@@ -322,7 +325,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveCsrcWithAudioLevel() {
-    RtpSourceObserver observer;
+    RtpSourceObserver observer =
+        RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
   }
 };
