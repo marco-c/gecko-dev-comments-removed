@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef GFX_WEBRENDERCOMMANDBUILDER_H
 #define GFX_WEBRENDERCOMMANDBUILDER_H
@@ -136,7 +136,7 @@ class WebRenderCommandBuilder final {
       const StackingContextHelper& aSc, wr::DisplayListBuilder& aBuilder,
       wr::IpcResourceUpdateQueue& aResources);
 
-  // aWrappingItem has to be non-null.
+  
   void DoGroupingForDisplayList(nsDisplayList* aDisplayList,
                                 nsDisplayItem* aWrappingItem,
                                 nsDisplayListBuilder* aDisplayListBuilder,
@@ -164,10 +164,10 @@ class WebRenderCommandBuilder final {
     return *(*mRootStackingContexts)[aRenderRoot];
   }
 
-  // Those are data that we kept between transactions. We used to cache some
-  // data in the layer. But in layers free mode, we don't have layer which
-  // means we need some other place to cached the data between transaction.
-  // We store the data in frame's property.
+  
+  
+  
+  
   template <class T>
   already_AddRefed<T> CreateOrRecycleWebRenderUserData(
       nsDisplayItem* aItem, wr::RenderRoot aRenderRoot,
@@ -199,8 +199,8 @@ class WebRenderCommandBuilder final {
     MOZ_ASSERT(data);
     MOZ_ASSERT(data->GetType() == T::Type());
 
-    // Mark the data as being used. We will remove unused user data in the end
-    // of EndTransaction.
+    
+    
     data->SetUsed(true);
 
     if (T::Type() == WebRenderUserData::UserDataType::eCanvas) {
@@ -211,19 +211,6 @@ class WebRenderCommandBuilder final {
   }
 
   WebRenderLayerManager* mManager;
-
-  class MOZ_RAII ScrollDataBoundaryWrapper {
-   public:
-    ScrollDataBoundaryWrapper(WebRenderCommandBuilder& aBuilder,
-                              RenderRootBoundary& aBoundary);
-    ~ScrollDataBoundaryWrapper();
-
-   private:
-    WebRenderCommandBuilder& mBuilder;
-    RenderRootBoundary mBoundary;
-    size_t mLayerCountBeforeRecursing;
-  };
-  friend class ScrollDataBoundaryWrapper;
 
  private:
   RenderRootStateManager* GetRenderRootStateManager(wr::RenderRoot aRenderRoot);
@@ -237,35 +224,35 @@ class WebRenderCommandBuilder final {
   wr::RenderRootArray<ClipManager> mClipManagers;
   ClipManager* mCurrentClipManager;
 
-  // We use this as a temporary data structure while building the mScrollData
-  // inside a layers-free transaction.
+  
+  
   WebRenderScrollDataCollection mLayerScrollDatas;
-  // We use this as a temporary data structure to track the current display
-  // item's ASR as we recurse in CreateWebRenderCommandsFromDisplayList. We
-  // need this so that WebRenderLayerScrollData items that deeper in the
-  // tree don't duplicate scroll metadata that their ancestors already have.
+  
+  
+  
+  
   std::vector<const ActiveScrolledRoot*> mAsrStack;
   const ActiveScrolledRoot* mLastAsr;
 
   WebRenderUserDataRefTable mWebRenderUserDatas;
 
-  // Store of WebRenderCanvasData objects for use in empty transactions
+  
   CanvasDataSet mLastCanvasDatas;
 
   wr::RenderRootArray<wr::usize> mBuilderDumpIndex;
   wr::usize mDumpIndent;
 
  public:
-  // Whether consecutive inactive display items should be grouped into one
-  // blob image.
+  
+  
   bool mDoGrouping;
 
-  // True if the most recently build display list contained an svg that
-  // we did grouping for.
+  
+  
   bool mContainsSVGGroup;
 };
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  
 
-#endif /* GFX_WEBRENDERCOMMANDBUILDER_H */
+#endif 
