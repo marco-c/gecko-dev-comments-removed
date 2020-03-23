@@ -293,7 +293,7 @@ impl SharedTextures {
             array_color8_linear: TextureArray::new(
                 color_formats.clone(),
                 TextureFilter::Linear,
-                4,
+                16,
             ),
             
             
@@ -751,7 +751,7 @@ impl TextureCache {
         
         
         
-        max_texture_layers = max_texture_layers.min(32);
+        max_texture_layers = max_texture_layers.min(16);
 
         let mut pending_updates = TextureUpdateList::new();
 
