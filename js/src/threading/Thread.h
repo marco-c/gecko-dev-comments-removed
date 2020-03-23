@@ -184,7 +184,7 @@ class ThreadTrampoline {
   
   
   
-  mozilla::Tuple<typename mozilla::Decay<Args>::Type...> args;
+  mozilla::Tuple<std::decay_t<Args>...> args;
 
   
   Mutex createMutex;
