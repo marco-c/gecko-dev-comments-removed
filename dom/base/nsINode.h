@@ -1376,7 +1376,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  bool IsSelectionDescendant() const {
+  bool IsMaybeSelected() const {
     return IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection() ||
            IsClosestCommonInclusiveAncestorForRangeInSelection();
   }
