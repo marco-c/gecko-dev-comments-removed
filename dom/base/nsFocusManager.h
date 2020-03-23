@@ -38,6 +38,8 @@ class ContentParent;
 
 struct nsDelayedBlurOrFocusEvent;
 
+MOZ_DECLARE_COPY_CONSTRUCTIBLE(nsDelayedBlurOrFocusEvent)
+
 
 
 

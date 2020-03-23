@@ -273,7 +273,8 @@ void LoadContextOptions(const char* aPrefName, void* ) {
 
   
   JS::ContextOptions contextOptions;
-  contextOptions.setAsmJS(GetWorkerPref<bool>(NS_LITERAL_CSTRING("asmjs")))
+  contextOptions
+      .setAsmJS(GetWorkerPref<bool>(NS_LITERAL_CSTRING("asmjs")))
 #ifdef FUZZING
       .setFuzzing(GetWorkerPref<bool>(NS_LITERAL_CSTRING("fuzzing.enabled")))
 #endif
@@ -1096,11 +1097,6 @@ void PlatformOverrideChanged(const char* ,
 }
 
 } 
-
-struct RuntimeService::IdleThreadInfo {
-  RefPtr<WorkerThread> mThread;
-  mozilla::TimeStamp mExpirationTime;
-};
 
 
 JSSettings RuntimeService::sDefaultJSSettings;
