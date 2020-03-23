@@ -217,38 +217,16 @@ void HttpConnectionUDP::Close(nsresult reason, bool aIsShutdown) {
     }
   }
 
-  if (NS_FAILED(reason)) {
-    
-    
-    if (((reason == NS_ERROR_NET_RESET) ||
-         (NS_ERROR_GET_MODULE(reason) == NS_ERROR_MODULE_SECURITY)) &&
-        mConnInfo && !(mTransactionCaps & NS_HTTP_ERROR_SOFTLY)) {
-      gHttpHandler->ClearHostMapping(mConnInfo);
+  if (mSocketTransport) {
+    mSocketTransport->SetEventSink(nullptr, nullptr);
+    mSocketTransport->SetSecurityCallbacks(nullptr);
+    mSocketTransport->Close(reason);
+    if (mSocketOut) {
+      mSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
     }
 
-    if (mSocketTransport) {
-      mSocketTransport->SetEventSink(nullptr, nullptr);
-
-      
-      
-      
-      
-      
-      
-      if (mSocketIn && !aIsShutdown) {
-        char buffer[4000];
-        uint32_t count, total = 0;
-        nsresult rv;
-        do {
-          rv = mSocketIn->Read(buffer, 4000, &count);
-          if (NS_SUCCEEDED(rv)) total += count;
-        } while (NS_SUCCEEDED(rv) && count > 0 && total < 64000);
-        LOG(("HttpConnectionUDP::Close drained %d bytes\n", total));
-      }
-
-      mSocketTransport->SetSecurityCallbacks(nullptr);
-      mSocketTransport->Close(reason);
-      if (mSocketOut) mSocketOut->AsyncWait(nullptr, 0, 0, nullptr);
+    if (mSocketIn) {
+      mSocketIn->AsyncWait(nullptr, 0, 0, nullptr);
     }
   }
 }
@@ -500,12 +478,28 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
   MOZ_ASSERT(trans == mHttp3Session);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  
-  if (reason == NS_BASE_STREAM_CLOSED) reason = NS_OK;
+  if (NS_SUCCEEDED(reason) || (reason == NS_BASE_STREAM_CLOSED)) {
+    MOZ_ASSERT(false);
+    return;
+  }
 
-  DontReuse();
+  
+  
+  if (((reason == NS_ERROR_NET_RESET) ||
+       (NS_ERROR_GET_MODULE(reason) == NS_ERROR_MODULE_SECURITY)) &&
+       mConnInfo && !(mTransactionCaps & NS_HTTP_ERROR_SOFTLY)) {
+    gHttpHandler->ClearHostMapping(mConnInfo);
+  }
+
+  mDontReuse = true;
   mHttp3Session->SetCleanShutdown(aIsShutdown);
   mHttp3Session->Close(reason);
+  if (!mHttp3Session->IsClosed()) {
+    
+    
+    return;
+  }
+
   mHttp3Session = nullptr;
 
   {
@@ -513,9 +507,7 @@ void HttpConnectionUDP::CloseTransaction(nsAHttpTransaction* trans,
     mCallbacks = nullptr;
   }
 
-  if (NS_FAILED(reason) && (reason != NS_BINDING_RETARGETED)) {
-    Close(reason, aIsShutdown);
-  }
+  Close(reason, aIsShutdown);
 
   
   
