@@ -93,7 +93,7 @@ class _SphinxManager(object):
         self.trees, self.python_package_dirs = read_build_config(app.srcdir)
 
         logger.info('Staging static documentation')
-        self._synchronize_docs()
+        self._synchronize_docs(app)
 
         logger.info('Generating Python API documentation')
         self._generate_python_api_docs()
@@ -146,7 +146,7 @@ class _SphinxManager(object):
                 
                 m.add_link(markdown_file, dest)
 
-    def _synchronize_docs(self):
+    def _synchronize_docs(self, app):
         m = InstallManifest()
 
         with open(os.path.join(MAIN_DOC_PATH, 'config.yml'), 'r') as fh:
@@ -195,16 +195,21 @@ class _SphinxManager(object):
         for t in tree_config:
             CATEGORIES[t] = format_paths(tree_config[t])
 
-        indexes = set([os.path.normpath(os.path.join(p, 'index')) for p in toplevel_trees.keys()])
         
-        cats = '\n'.join(CATEGORIES.values()).split("\n")
         
-        cats = [os.path.normpath(x.strip()) for x in cats]
-        indexes = tuple(set(indexes) - set(cats))
-        if indexes:
+        
+        if app.srcdir == self.topsrcdir:
+            indexes = set([os.path.normpath(os.path.join(p, 'index'))
+                           for p in toplevel_trees.keys()])
             
-            print(indexes)
-            raise Exception("Uncategorized documentation. Please add it in docs/config.yml")
+            cats = '\n'.join(CATEGORIES.values()).split("\n")
+            
+            cats = [os.path.normpath(x.strip()) for x in cats]
+            indexes = tuple(set(indexes) - set(cats))
+            if indexes:
+                
+                print(indexes)
+                raise Exception("Uncategorized documentation. Please add it in docs/config.yml")
 
         data = data.format(**CATEGORIES)
 
