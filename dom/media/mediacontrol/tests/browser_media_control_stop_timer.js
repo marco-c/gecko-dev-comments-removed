@@ -16,10 +16,10 @@ add_task(async function setupTestingPref() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["media.mediacontrol.testingevents.enabled", true],
-
-
-
-
+      
+      
+      
+      
       ["media.mediacontrol.stopcontrol.timer.ms", 2000],
     ],
   });
@@ -56,7 +56,7 @@ add_task(async function testNotToStopMediaControlForPIPVideo() {
   await playMedia(tab, testVideoId);
 
   info(`trigger PIP mode`);
-  let pipWin = await triggerPictureInPicture(tab.linkedBrowser, testVideoId);
+  await triggerPictureInPicture(tab.linkedBrowser, testVideoId);
 
   info(`pause media and the stop timer would not stop media control`);
   await pauseMedia(tab, testVideoId);
