@@ -961,38 +961,22 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
     return NS_ERROR_DOM_BAD_URI;
   }
 
-  
-  
-  
-  
-  rv = NS_URIChainHasFlags(
-      aTargetBaseURI, nsIProtocolHandler::URI_LOADABLE_BY_ANYONE, &hasFlags);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  
-  
-  bool hasSubsumersFlag = false;
-  rv = NS_URIChainHasFlags(aTargetBaseURI,
-                           nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
-                           &hasSubsumersFlag);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!hasFlags && !hasSubsumersFlag) {
-    nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
-    if (bundle) {
-      nsAutoString message;
-      AutoTArray<nsString, 1> formatStrings;
-      CopyASCIItoUTF16(targetScheme, *formatStrings.AppendElement());
-      rv = bundle->FormatStringFromName("ProtocolFlagError", formatStrings,
-                                        message);
-      if (NS_SUCCEEDED(rv)) {
-        nsCOMPtr<nsIConsoleService> console(
-            do_GetService("@mozilla.org/consoleservice;1"));
-        NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
-
-        console->LogStringMessage(message.get());
-      }
-    }
+#ifdef DEBUG
+  {
+    
+    
+    bool hasSubsumersFlag = false;
+    NS_URIChainHasFlags(aTargetBaseURI,
+                        nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
+                        &hasSubsumersFlag);
+    bool hasLoadableByAnyone = false;
+    NS_URIChainHasFlags(aTargetBaseURI,
+                        nsIProtocolHandler::URI_LOADABLE_BY_ANYONE,
+                        &hasLoadableByAnyone);
+    MOZ_ASSERT(hasLoadableByAnyone || hasSubsumersFlag,
+               "why do we get here and do not have any of the two flags set?");
   }
+#endif
 
   return NS_OK;
 }
