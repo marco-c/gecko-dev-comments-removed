@@ -622,7 +622,7 @@ class nsIContent : public nsINode {
 
 
 
-  bool HasIndependentSelection();
+  bool HasIndependentSelection() const;
 
   
 
