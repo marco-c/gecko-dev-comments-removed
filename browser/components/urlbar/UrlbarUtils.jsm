@@ -704,6 +704,26 @@ class UrlbarProvider {
 
 
 
+
+
+
+  tryMethod(methodName, ...args) {
+    try {
+      return this[methodName](...args);
+    } catch (ex) {
+      Cu.reportError(ex);
+    }
+    return undefined;
+  }
+
+  
+
+
+
+
+
+
+
   isActive(queryContext) {
     throw new Error("Trying to access the base class, must be overridden");
   }
