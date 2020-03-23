@@ -5,7 +5,6 @@
 
 
 
-#include "mozilla/TypeTraits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 
@@ -574,7 +573,7 @@ bool TestGCPtrCopyConstruction(HandleObject obj) {
 
   {
     
-    gc::AutoSetThreadIsSweeping threadIsSweeping;
+    gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj);
     GCPtrObject wrapper2(wrapper1);
@@ -595,7 +594,7 @@ bool TestGCPtrAssignment(HandleObject obj1, HandleObject obj2) {
 
   {
     
-    gc::AutoSetThreadIsSweeping threadIsSweeping;
+    gc::AutoSetThreadIsFinalizing threadIsFinalizing;
 
     GCPtrObject wrapper1(obj1);
     GCPtrObject wrapper2(obj2);

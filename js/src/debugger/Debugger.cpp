@@ -15,7 +15,6 @@
 #include "mozilla/ScopeExit.h"         
 #include "mozilla/ThreadLocal.h"       
 #include "mozilla/TimeStamp.h"         
-#include "mozilla/TypeTraits.h"        
 #include "mozilla/UniquePtr.h"         
 #include "mozilla/Variant.h"           
 #include "mozilla/Vector.h"            
