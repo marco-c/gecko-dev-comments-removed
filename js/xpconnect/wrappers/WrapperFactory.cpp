@@ -826,6 +826,11 @@ static void NukeXrayWaiver(JSContext* cx, JS::HandleObject obj) {
   scope->mWaiverWrapperMap->Remove(key);
 
   js::NukeNonCCWProxy(cx, waiver);
+
+  
+  if (!JS_RefreshCrossCompartmentWrappers(cx, waiver)) {
+    MOZ_CRASH();
+  }
 }
 
 JSObject* TransplantObjectNukingXrayWaiver(JSContext* cx,
