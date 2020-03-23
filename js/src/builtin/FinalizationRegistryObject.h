@@ -137,6 +137,8 @@ using FinalizationRecordVector =
 
 
 
+
+
 class FinalizationRecordVectorObject : public NativeObject {
   enum { RecordsSlot = 0, SlotCount };
 
@@ -152,6 +154,8 @@ class FinalizationRecordVectorObject : public NativeObject {
 
   bool append(HandleFinalizationRecordObject record);
   void remove(HandleFinalizationRecordObject record);
+
+  void sweep();
 
  private:
   static const JSClassOps classOps_;
@@ -191,6 +195,8 @@ class FinalizationRegistryObject : public NativeObject {
   void queueRecordToBeCleanedUp(FinalizationRecordObject* record);
   void setQueuedForCleanup(bool value);
   void setCleanupJobActive(bool value);
+
+  void sweep();
 
   static bool cleanupQueuedRecords(JSContext* cx,
                                    HandleFinalizationRegistryObject registry,

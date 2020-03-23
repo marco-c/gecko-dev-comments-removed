@@ -151,7 +151,7 @@ const JSClassOps FinalizationRecordVectorObject::classOps_ = {
     nullptr,                                   
     nullptr,                                   
     nullptr,                                   
-    FinalizationRecordVectorObject::trace,     
+    nullptr,                                   
 };
 
 
@@ -172,14 +172,6 @@ FinalizationRecordVectorObject* FinalizationRecordVectorObject::create(
                    MemoryUse::FinalizationRecordVector);
 
   return object;
-}
-
-
-void FinalizationRecordVectorObject::trace(JSTracer* trc, JSObject* obj) {
-  auto rv = &obj->as<FinalizationRecordVectorObject>();
-  if (auto* records = rv->records()) {
-    records->trace(trc);
-  }
 }
 
 
@@ -222,6 +214,11 @@ inline void FinalizationRecordVectorObject::remove(
     HandleFinalizationRecordObject record) {
   MOZ_ASSERT(records());
   records()->eraseIfEqual(record);
+}
+
+inline void FinalizationRecordVectorObject::sweep() {
+  MOZ_ASSERT(records());
+  return records()->sweep();
 }
 
 
@@ -329,6 +326,10 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
   registry->initReservedSlot(IsQueuedForCleanupSlot, BooleanValue(false));
   registry->initReservedSlot(IsCleanupJobActiveSlot, BooleanValue(false));
 
+  if (!cx->runtime()->gc.addFinalizationRegistry(cx, registry)) {
+    return false;
+  }
+
   args.rval().setObject(*registry);
   return true;
 }
@@ -336,14 +337,37 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
 
 void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   auto registry = &obj->as<FinalizationRegistryObject>();
+
+  
+  
+  
   if (ObjectWeakMap* registrations = registry->registrations()) {
     registrations->trace(trc);
   }
-  if (FinalizationRecordSet* records = registry->activeRecords()) {
-    records->trace(trc);
-  }
+
+  
+
   if (FinalizationRecordVector* records = registry->recordsToBeCleanedUp()) {
     records->trace(trc);
+  }
+}
+
+void FinalizationRegistryObject::sweep() {
+  
+  
+  MOZ_ASSERT(activeRecords());
+  activeRecords()->sweep();
+
+  
+  MOZ_ASSERT(registrations());
+  for (ObjectValueWeakMap::Enum e(registrations()->valueMap()); !e.empty();
+       e.popFront()) {
+    auto registrations =
+        &e.front().value().toObject().as<FinalizationRecordVectorObject>();
+    registrations->sweep();
+    if (registrations->isEmpty()) {
+      e.removeFront();
+    }
   }
 }
 

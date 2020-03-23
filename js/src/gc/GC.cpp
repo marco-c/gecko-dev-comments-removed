@@ -4956,8 +4956,9 @@ void GCRuntime::sweepWeakRefs() {
 void GCRuntime::sweepFinalizationRegistriesOnMainThread() {
   
   
-  gcstats::AutoPhase ap(stats(),
-                        gcstats::PhaseKind::SWEEP_FINALIZATION_REGISTRIES);
+  gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::SWEEP_COMPARTMENTS);
+  gcstats::AutoPhase ap2(stats(),
+                         gcstats::PhaseKind::SWEEP_FINALIZATION_REGISTRIES);
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
     sweepFinalizationRegistries(zone);
   }
@@ -5242,7 +5243,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
     {
       AutoUnlockHelperThreadState unlock(lock);
       sweepJitDataOnMainThread(fop);
-      sweepFinalizationRegistriesOnMainThread();
     }
 
     for (auto& task : sweepCacheTasks) {
@@ -5253,6 +5253,10 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
   if (sweepingAtoms) {
     startSweepingAtomsTable();
   }
+
+  
+  
+  sweepFinalizationRegistriesOnMainThread();
 
   
   
