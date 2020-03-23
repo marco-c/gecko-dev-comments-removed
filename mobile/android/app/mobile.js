@@ -151,7 +151,6 @@ pref("signon.expireMasterPassword", false);
 pref("signon.debug", false);
 
 
-pref("formhelper.mode", 2);  
 pref("formhelper.autozoom", true);
 
 
