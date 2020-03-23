@@ -513,7 +513,11 @@ void BrowsingContext::Detach(bool aFromIPC) {
         
         
         
-        if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID())) {
+        
+        
+        
+        if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
+            !Canonical()->IsOwnedByProcess(aParent->ChildID())) {
           aParent->SendDetachBrowsingContext(Id(), callback, callback);
         }
       });
