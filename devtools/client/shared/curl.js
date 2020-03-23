@@ -86,6 +86,12 @@ const Curl = {
     
     addParam(data.url);
 
+    
+    
+    if (data.url.includes("[") || data.url.includes("]")) {
+      addParam("--globoff");
+    }
+
     let postDataText = null;
     const multipartRequest = utils.isMultipartRequest(data);
 
