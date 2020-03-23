@@ -44,8 +44,12 @@ const EXPORTED_SYMBOLS = ["BroadcastConduit", "ConduitsParent"];
 
 
 
+
+
+
+
 const {
-  ExtensionUtils: { DefaultMap, DefaultWeakMap },
+  ExtensionUtils: { DefaultWeakMap },
 } = ChromeUtils.import("resource://gre/modules/ExtensionUtils.jsm");
 
 const { BaseConduit } = ChromeUtils.import(
@@ -72,7 +76,7 @@ const Hub = {
   byActor: new DefaultWeakMap(() => new Set()),
 
   
-  onRemoteClosed: new DefaultMap(() => new Set()),
+  reportOnClosed: new Map(),
 
   
 
@@ -151,8 +155,10 @@ const Hub = {
     this.byActor.get(remote.actor).delete(remote);
 
     remote.actor = null;
-    for (let conduit of this.onRemoteClosed.get(remote.id)) {
-      conduit.subject.recvConduitClosed(remote);
+    for (let [key, conduit] of Hub.reportOnClosed.entries()) {
+      if (remote[key]) {
+        conduit.subject.recvConduitClosed(remote);
+      }
     }
   },
 
@@ -161,6 +167,11 @@ const Hub = {
 
 
   actorClosed(actor) {
+    for (let remote of this.byActor.get(actor)) {
+      
+      
+      this.remotes.delete(remote.id);
+    }
     for (let remote of this.byActor.get(actor)) {
       this.recvConduitClosed(remote);
     }
@@ -179,6 +190,17 @@ class BroadcastConduit extends BaseConduit {
 
   constructor(subject, address) {
     super(subject, address);
+
+    
+    for (let name of address.cast || []) {
+      this[`cast${name}`] = this._cast.bind(this, name);
+    }
+
+    
+    
+    if (address.reportOnClosed) {
+      Hub.reportOnClosed.set(address.reportOnClosed, this);
+    }
 
     this.open = true;
     Hub.openConduit(this);
@@ -211,8 +233,36 @@ class BroadcastConduit extends BaseConduit {
 
 
 
-  reportOnClosed(target) {
-    Hub.onRemoteClosed.get(target).add(this);
+
+
+
+  _cast(method, kind, arg) {
+    let filters = {
+      
+      port: remote =>
+        remote.portId === arg.portId &&
+        (arg.source == null || remote.source === arg.source),
+
+      
+      messenger: r =>
+        r.verified &&
+        r.recv.includes(method) &&
+        r.id !== arg.sender.contextId &&
+        r.extensionId === arg.extensionId &&
+        
+        (r.envType === "addon_child" || arg.sender.envType !== "content_child"),
+
+      
+      tab: remote =>
+        remote.recv.includes(method) &&
+        remote.extensionId === arg.extensionId &&
+        remote.actor.manager.browsingContext.top.id === arg.topBC &&
+        (arg.frameId == null || remote.frameId === arg.frameId),
+    };
+
+    let targets = Array.from(Hub.remotes.values()).filter(filters[kind]);
+    let responses = targets.map(c => this._send(method, true, c.id, arg));
+    return Promise.allSettled(responses);
   }
 
   async close() {
