@@ -466,6 +466,17 @@ class WebConsoleUI {
           if (!this.connected) {
             this.connected = true;
             syntaxHighlightNode(this);
+
+            
+            
+            
+            this.observer = new win.MutationObserver((mutations, observer) => {
+              observer.disconnect();
+              syntaxHighlightNode(this);
+              observer.observe(this, { childList: true });
+            });
+
+            this.observer.observe(this, { childList: true });
           }
         }
       }
