@@ -9,7 +9,6 @@
 
 #include "mozilla/EndianUtils.h"
 #include "mozilla/MaybeOneOf.h"
-#include "mozilla/TypeTraits.h"
 #include "mozilla/Utf8.h"
 
 #include <type_traits>
@@ -346,9 +345,7 @@ class XDRState : public XDRCoderBase {
 
 
   template <typename T>
-  XDRResult codeEnum32(
-      T* val,
-      std::enable_if_t<mozilla::IsEnum<T>::value>* = nullptr) {
+  XDRResult codeEnum32(T* val, std::enable_if_t<std::is_enum_v<T>>* = nullptr) {
     
     
     
