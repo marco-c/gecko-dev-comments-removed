@@ -13,6 +13,7 @@
 #include "nscore.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
+#include "nsFrameSelection.h"
 #include "nsString.h"
 #include "nsReadableUtils.h"
 #include "nsIContent.h"
@@ -3397,26 +3398,27 @@ nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
   RefPtr<PresShell> presShell = mDocViewer->GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
-  int16_t selectionStatus;
-  presShell->GetDisplaySelection(&selectionStatus);
-
+  RefPtr<nsFrameSelection> selection =
+      presShell->GetLastFocusedFrameSelection();
+  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
+  auto selectionStatus = selection->GetDisplaySelection();
   nsAutoString eventType;
   aEvent->GetType(eventType);
   if (eventType.EqualsLiteral("focus")) {
     
     if (selectionStatus == nsISelectionController::SELECTION_DISABLED ||
         selectionStatus == nsISelectionController::SELECTION_HIDDEN) {
-      presShell->SetDisplaySelection(nsISelectionController::SELECTION_ON);
-      presShell->RepaintSelection(nsISelectionController::SELECTION_NORMAL);
+      selection->SetDisplaySelection(nsISelectionController::SELECTION_ON);
+      selection->RepaintSelection(SelectionType::eNormal);
     }
   } else {
     MOZ_ASSERT(eventType.EqualsLiteral("blur"), "Unexpected event type");
     
     if (selectionStatus == nsISelectionController::SELECTION_ON ||
         selectionStatus == nsISelectionController::SELECTION_ATTENTION) {
-      presShell->SetDisplaySelection(
+      selection->SetDisplaySelection(
           nsISelectionController::SELECTION_DISABLED);
-      presShell->RepaintSelection(nsISelectionController::SELECTION_NORMAL);
+      selection->RepaintSelection(SelectionType::eNormal);
     }
   }
 
