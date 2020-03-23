@@ -193,12 +193,20 @@ void checkasm_checked_call(void *func, ...);
 
 
 void checkasm_stack_clobber(uint64_t clobber, ...);
+
+
+
+
+
+
+void checkasm_simd_warmup(void);
 #define declare_new(ret, ...)\
     ret (*checked_call)(void *, int, int, int, int, int, __VA_ARGS__) =\
     (void *)checkasm_checked_call;
 #define CLOB (UINT64_C(0xdeadbeefdeadbeef))
 #define call_new(...)\
     (checkasm_set_signal_handler_state(1),\
+     checkasm_simd_warmup(),\
      checkasm_stack_clobber(CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB,\
                             CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB,\
                             CLOB, CLOB, CLOB, CLOB, CLOB, CLOB, CLOB),\

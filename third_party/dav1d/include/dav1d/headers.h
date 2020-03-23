@@ -318,8 +318,8 @@ typedef struct Dav1dFilmGrainData {
     int scaling_shift;
     int ar_coeff_lag;
     int8_t ar_coeffs_y[24];
-    int8_t ar_coeffs_uv[2][25];
-    int ar_coeff_shift;
+    int8_t ar_coeffs_uv[2][25 + 3 ];
+    uint64_t ar_coeff_shift;
     int grain_scale_shift;
     int uv_mult[2];
     int uv_luma_mult[2];
@@ -329,13 +329,13 @@ typedef struct Dav1dFilmGrainData {
 } Dav1dFilmGrainData;
 
 typedef struct Dav1dFrameHeader {
+    struct {
+        Dav1dFilmGrainData data;
+        int present, update;
+    } film_grain; 
     enum Dav1dFrameType frame_type; 
     int width[2 ], height;
     int frame_offset; 
-    struct {
-        int present, update;
-        Dav1dFilmGrainData data;
-    } film_grain; 
     int temporal_id, spatial_id; 
 
     int show_existing_frame;

@@ -44,14 +44,17 @@
 
 #if ARCH_X86_64
 
+#define ALIGN_64_VAL 64
 #define ALIGN_32_VAL 32
 #define ALIGN_16_VAL 16
 #elif ARCH_X86_32 || ARCH_ARM || ARCH_AARCH64 || ARCH_PPC64LE
 
+#define ALIGN_64_VAL 16
 #define ALIGN_32_VAL 16
 #define ALIGN_16_VAL 16
 #else
 
+#define ALIGN_64_VAL 8
 #define ALIGN_32_VAL 8
 #define ALIGN_16_VAL 8
 #endif
@@ -76,9 +79,10 @@
 
 
 
+#define ALIGN_STK_64(type, var, sz1d, sznd) \
+    ALIGN(type var[sz1d]sznd, ALIGN_64_VAL)
 #define ALIGN_STK_32(type, var, sz1d, sznd) \
     ALIGN(type var[sz1d]sznd, ALIGN_32_VAL)
-
 #define ALIGN_STK_16(type, var, sz1d, sznd) \
     ALIGN(type var[sz1d]sznd, ALIGN_16_VAL)
 
@@ -91,6 +95,12 @@
 #else 
 #define NOINLINE __attribute__((noinline))
 #endif 
+
+#ifdef __clang__
+#define NO_SANITIZE(x) __attribute__((no_sanitize(x)))
+#else
+#define NO_SANITIZE(x)
+#endif
 
 #if defined(NDEBUG) && (defined(__GNUC__) || defined(__clang__))
 #define assert(x) do { if (!(x)) __builtin_unreachable(); } while (0)

@@ -216,12 +216,14 @@ struct Dav1dFrameContext {
         Av1Filter *mask;
         Av1Restoration *lr_mask;
         int top_pre_cdef_toggle;
-        int mask_sz , lr_mask_sz, line_sz , lr_line_sz, re_sz ;
+        int mask_sz , lr_mask_sz, cdef_line_sz[2] ;
+        int lr_line_sz, re_sz ;
         ALIGN(Av1FilterLUT lim_lut, 16);
         int last_sharpness;
         uint8_t lvl[8 ][4 ][8 ][2 ];
         uint8_t *tx_lpf_right_edge[2];
-        pixel *cdef_line[2 ][3 ][2 ];
+        uint8_t *cdef_line_buf;
+        pixel *cdef_line[2 ][3 ];
         pixel *lr_lpf_line[3 ];
 
         
@@ -288,7 +290,7 @@ struct Dav1dTileContext {
     uint16_t al_pal[2 ][32 ][3 ][8 ];
     uint8_t pal_sz_uv[2 ][32 ];
     uint8_t txtp_map[32 * 32]; 
-    ALIGN(union, 32) {
+    ALIGN(union, 64) {
         struct {
             union {
                 uint8_t  lap_8bpc [128 * 32];
