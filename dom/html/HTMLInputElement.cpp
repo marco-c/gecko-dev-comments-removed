@@ -1441,7 +1441,7 @@ void HTMLInputElement::GetValue(nsAString& aValue, CallerType aCallerType) {
   GetValueInternal(aValue, aCallerType);
 
   if (SanitizesOnValueGetter()) {
-    SanitizeValue(aValue);
+    SanitizeValue(aValue, ForValueGetter::Yes);
   }
 }
 
@@ -4495,7 +4495,8 @@ void HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify) {
   }
 }
 
-void HTMLInputElement::SanitizeValue(nsAString& aValue) {
+void HTMLInputElement::SanitizeValue(nsAString& aValue,
+                                     ForValueGetter aForGetter) {
   NS_ASSERTION(mDoneCreating, "The element creation should be finished!");
 
   switch (mType) {
@@ -4517,7 +4518,40 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue) {
       bool ok = mInputType->ConvertStringToNumber(aValue, value);
       if (!ok) {
         aValue.Truncate();
+        return;
       }
+
+      nsAutoString sanitizedValue;
+      if (aForGetter == ForValueGetter::Yes) {
+        
+        
+        
+        
+        
+        
+        if (StringToDecimal(aValue).isFinite()) {
+          return;
+        }
+        
+        
+        
+        char buf[32];
+        DebugOnly<bool> ok = value.toString(buf, ArrayLength(buf));
+        sanitizedValue.AssignASCII(buf);
+        MOZ_ASSERT(ok, "buf not big enough");
+      } else {
+        mInputType->ConvertNumberToString(value, sanitizedValue);
+        
+        
+        
+        
+        
+        
+        if (StringToDecimal(sanitizedValue).isFinite()) {
+          return;
+        }
+      }
+      aValue.Assign(sanitizedValue);
     } break;
     case NS_FORM_INPUT_RANGE: {
       Decimal minimum = GetMinimum();

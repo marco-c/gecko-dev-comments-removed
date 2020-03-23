@@ -1085,12 +1085,14 @@ class HTMLInputElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT
   void HandleTypeChange(uint8_t aNewType, bool aNotify);
 
+  enum class ForValueGetter { No, Yes };
+
   
 
 
 
 
-  void SanitizeValue(nsAString& aValue);
+  void SanitizeValue(nsAString& aValue, ForValueGetter = ForValueGetter::No);
 
   
 
