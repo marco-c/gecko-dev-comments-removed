@@ -13,7 +13,7 @@ var EventEmitter = require("devtools/shared/event-emitter");
 var { LongStringActor } = require("devtools/server/actors/string");
 
 
-require("devtools/client/fronts/string");
+require("devtools/shared/fronts/string");
 
 function simpleHello() {
   return {

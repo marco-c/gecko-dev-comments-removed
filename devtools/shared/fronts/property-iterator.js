@@ -13,7 +13,7 @@ const {
 } = require("devtools/shared/specs/property-iterator");
 const {
   getAdHocFrontOrPrimitiveGrip,
-} = require("devtools/client/fronts/object");
+} = require("devtools/shared/fronts/object");
 
 
 

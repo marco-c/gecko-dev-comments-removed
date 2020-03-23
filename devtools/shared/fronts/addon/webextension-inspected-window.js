@@ -15,7 +15,7 @@ const {
 
 const {
   getAdHocFrontOrPrimitiveGrip,
-} = require("devtools/client/fronts/object");
+} = require("devtools/shared/fronts/object");
 
 
 
