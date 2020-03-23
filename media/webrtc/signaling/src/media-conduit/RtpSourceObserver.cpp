@@ -24,52 +24,52 @@ double RtpSourceObserver::RtpSourceEntry::ToLinearAudioLevel() const {
 
 RtpSourceObserver::RtpSourceObserver(
     const dom::RTCStatsTimestampMaker& aTimestampMaker)
-    : mMaxJitterWindow(0),
-      mLevelGuard("RtpSourceObserver::mLevelGuard"),
-      mTimestampMaker(aTimestampMaker) {}
+    : mMaxJitterWindow(0), mTimestampMaker(aTimestampMaker) {}
 
 void RtpSourceObserver::OnRtpPacket(const webrtc::RTPHeader& aHeader,
-                                    const int64_t aTimestamp,
                                     const uint32_t aJitter) {
-  MutexAutoLock lock(mLevelGuard);
-  {
-    
-    
-    DOMHighResTimeStamp jsNow = mTimestampMaker.GetNow();
-    mMaxJitterWindow =
-        std::max(mMaxJitterWindow, static_cast<int64_t>(aJitter) * 2);
-    
-    
-    
-    
-    
-    
-    
-    
-    const auto predictedPlayoutTime = jsNow + aJitter;
-    auto& hist = mRtpSources[GetKey(aHeader.ssrc, EntryType::Synchronization)];
-    hist.Prune(jsNow);
-    
-    hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp,
-                aHeader.extension.hasAudioLevel, aHeader.extension.audioLevel);
+  DOMHighResTimeStamp jsNow = mTimestampMaker.GetNow();
 
-    
-    const auto& list = aHeader.extension.csrcAudioLevels;
-    for (uint8_t i = 0; i < aHeader.numCSRCs; i++) {
-      const uint32_t& csrc = aHeader.arrOfCSRCs[i];
-      auto& hist = mRtpSources[GetKey(csrc, EntryType::Contributing)];
-      hist.Prune(jsNow);
-      bool hasLevel = i < list.numAudioLevels;
-      uint8_t level = hasLevel ? list.arrOfAudioLevels[i] : 0;
-      hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp, hasLevel,
-                  level);
-    }
-  }
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "RtpSourceObserver::OnRtpPacket",
+      [this, self = RefPtr<RtpSourceObserver>(this), aHeader, aJitter,
+       jsNow]() {
+        mMaxJitterWindow =
+            std::max(mMaxJitterWindow, static_cast<int64_t>(aJitter) * 2);
+        
+        
+        
+        
+        
+        
+        
+        
+        const auto predictedPlayoutTime = jsNow + aJitter;
+        auto& hist =
+            mRtpSources[GetKey(aHeader.ssrc, EntryType::Synchronization)];
+        hist.Prune(jsNow);
+        
+        hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp,
+                    aHeader.extension.hasAudioLevel,
+                    aHeader.extension.audioLevel);
+
+        
+        const auto& list = aHeader.extension.csrcAudioLevels;
+        for (uint8_t i = 0; i < aHeader.numCSRCs; i++) {
+          const uint32_t& csrc = aHeader.arrOfCSRCs[i];
+          auto& hist = mRtpSources[GetKey(csrc, EntryType::Contributing)];
+          hist.Prune(jsNow);
+          bool hasLevel = i < list.numAudioLevels;
+          uint8_t level = hasLevel ? list.arrOfAudioLevels[i] : 0;
+          hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp, hasLevel,
+                      level);
+        }
+      }));
 }
 
 void RtpSourceObserver::GetRtpSources(
     nsTArray<dom::RTCRtpSourceEntry>& outSources) const {
-  MutexAutoLock lock(mLevelGuard);
+  MOZ_ASSERT(NS_IsMainThread());
   outSources.Clear();
   for (const auto& it : mRtpSources) {
     const RtpSourceEntry* entry =
@@ -90,6 +90,7 @@ void RtpSourceObserver::GetRtpSources(
 
 const RtpSourceObserver::RtpSourceEntry*
 RtpSourceObserver::RtpSourceHistory::FindClosestNotAfter(int64_t aTime) const {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   
@@ -117,6 +118,7 @@ RtpSourceObserver::RtpSourceHistory::FindClosestNotAfter(int64_t aTime) const {
 }
 
 void RtpSourceObserver::RtpSourceHistory::Prune(const int64_t aTimeNow) {
+  MOZ_ASSERT(NS_IsMainThread());
   const auto aTimeT = aTimeNow - mMaxJitterWindow;
   const auto aTimePrehistory = aTimeNow - kHistoryWindow;
   bool found = false;
@@ -151,12 +153,14 @@ void RtpSourceObserver::RtpSourceHistory::Insert(const int64_t aTimeNow,
                                                  const uint32_t aRtpTimestamp,
                                                  const bool aHasAudioLevel,
                                                  const uint8_t aAudioLevel) {
+  MOZ_ASSERT(NS_IsMainThread());
   Insert(aTimeNow, aTimestamp)
       .Update(aTimestamp, aRtpTimestamp, aHasAudioLevel, aAudioLevel);
 }
 
 RtpSourceObserver::RtpSourceEntry& RtpSourceObserver::RtpSourceHistory::Insert(
     const int64_t aTimeNow, const int64_t aTimestamp) {
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   
