@@ -16,6 +16,16 @@ class ControllersParent extends JSWindowActorParent {
     this.supportedCommands = {};
   }
 
+  get browser() {
+    let browser = this.browsingContext.top.embedderElement;
+    if (browser) {
+      if (browser.outerBrowser) {
+        browser = browser.outerBrowser; 
+      }
+    }
+    return browser;
+  }
+
   
   enableDisableCommands(aAction, aEnabledCommands, aDisabledCommands) {
     
@@ -29,12 +39,8 @@ class ControllersParent extends JSWindowActorParent {
       this.supportedCommands[command] = false;
     }
 
-    let browser = this.browsingContext.top.embedderElement;
+    let browser = this.browser;
     if (browser) {
-      if (browser.outerBrowser) {
-        browser = browser.outerBrowser; 
-      }
-
       browser.ownerGlobal.updateCommands(aAction);
     }
   }
@@ -64,8 +70,9 @@ class ControllersParent extends JSWindowActorParent {
       
       
       
-      let rect = this._browser.getBoundingClientRect();
-      let scale = this._browser.ownerGlobal.devicePixelRatio;
+      let browser = this.browser;
+      let rect = browser.getBoundingClientRect();
+      let scale = browser.ownerGlobal.devicePixelRatio;
       cmd.params = {
         x: {
           type: "long",
