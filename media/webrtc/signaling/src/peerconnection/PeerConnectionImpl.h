@@ -170,9 +170,6 @@ class PeerConnectionImpl final
       const mozilla::dom::GlobalObject& aGlobal);
   static PeerConnectionImpl* CreatePeerConnection();
 
-  nsresult CreateRemoteSourceStreamInfo(RefPtr<RemoteSourceStreamInfo>* aInfo,
-                                        const std::string& aId);
-
   
   void NotifyDataChannel(already_AddRefed<mozilla::DataChannel> aChannel)
       
@@ -263,6 +260,8 @@ class PeerConnectionImpl final
 
   already_AddRefed<dom::Promise> GetStats(dom::MediaStreamTrack* aSelector);
 
+  void GetRemoteStreams(nsTArray<RefPtr<DOMMediaStream>>& aStreamsOut) const;
+
   NS_IMETHODIMP AddIceCandidate(const char* aCandidate, const char* aMid,
                                 const char* aUfrag,
                                 const dom::Nullable<unsigned short>& aLevel);
@@ -285,9 +284,6 @@ class PeerConnectionImpl final
   already_AddRefed<TransceiverImpl> CreateTransceiverImpl(
       const nsAString& aKind, dom::MediaStreamTrack* aSendTrack,
       ErrorResult& rv);
-
-  OwningNonNull<dom::MediaStreamTrack> CreateReceiveTrack(
-      SdpMediaSection::MediaType type, nsIPrincipal* aPrincipal);
 
   bool CheckNegotiationNeeded(ErrorResult& rv);
 
@@ -376,6 +372,10 @@ class PeerConnectionImpl final
     return mPrivacyRequested.isSome() && *mPrivacyRequested;
   }
 
+  bool PrivacyNeeded() const {
+    return mPrivacyRequested.isSome() && *mPrivacyRequested;
+  }
+
   NS_IMETHODIMP GetFingerprint(char** fingerprint);
   void GetFingerprint(nsAString& fingerprint) {
     char* tmp;
@@ -449,7 +449,7 @@ class PeerConnectionImpl final
   
   dom::RTCSignalingState GetSignalingState() const;
 
-  void OnSetDescriptionSuccess(bool rollback);
+  void OnSetDescriptionSuccess(bool rollback, bool remote);
 
   bool IsClosed() const;
   
@@ -663,6 +663,12 @@ class PeerConnectionImpl final
   dom::RTCStatsTimestampMaker mTimestampMaker;
 
   RefPtr<RTCStatsIdGenerator> mIdGenerator;
+  
+  
+  nsTArray<RefPtr<DOMMediaStream>> mReceiveStreams;
+
+  DOMMediaStream* GetReceiveStream(const std::string& aId) const;
+  DOMMediaStream* CreateReceiveStream(const std::string& aId);
 
  public:
   
