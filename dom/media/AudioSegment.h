@@ -23,7 +23,7 @@ namespace mozilla {
 struct AudioChunk;
 class AudioSegment;
 }  
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioChunk)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::AudioChunk)
 
 
 
@@ -33,7 +33,7 @@ DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioChunk)
 
 
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioSegment)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::AudioSegment)
 
 namespace mozilla {
 

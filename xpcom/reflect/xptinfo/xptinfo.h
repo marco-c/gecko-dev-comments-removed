@@ -558,7 +558,7 @@ namespace detail {
 
 
 class UntypedTArray : public nsTArray_base<nsTArrayFallibleAllocator,
-                                           nsTArray_CopyWithMemutils> {
+                                           nsTArray_RelocateUsingMemutils> {
  public:
   void* Elements() const { return static_cast<void*>(Hdr() + 1); }
 

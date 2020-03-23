@@ -238,15 +238,15 @@ JSObject* StructuredCloneReadCallback(
 }  
 }  
 
-DECLARE_USE_COPY_CONSTRUCTORS(
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::StructuredCloneReadInfo<
         mozilla::dom::indexedDB::StructuredCloneFileChild>);
-DECLARE_USE_COPY_CONSTRUCTORS(
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::StructuredCloneReadInfo<
         mozilla::dom::indexedDB::StructuredCloneFileParent>);
-DECLARE_USE_COPY_CONSTRUCTORS(
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::StructuredCloneReadInfoChild);
-DECLARE_USE_COPY_CONSTRUCTORS(
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::StructuredCloneReadInfoParent);
 
 #endif  

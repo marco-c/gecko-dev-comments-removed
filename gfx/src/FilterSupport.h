@@ -22,7 +22,8 @@ class FilterPrimitiveDescription;
 }  
 }  
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::gfx::FilterPrimitiveDescription)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
+    mozilla::gfx::FilterPrimitiveDescription)
 
 extern const float gsRGBToLinearRGBMap[256];
 

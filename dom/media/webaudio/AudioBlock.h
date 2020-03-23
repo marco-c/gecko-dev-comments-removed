@@ -130,6 +130,6 @@ class AudioBlock : private AudioChunk {
 
 }  
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::AudioBlock)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::AudioBlock)
 
 #endif  

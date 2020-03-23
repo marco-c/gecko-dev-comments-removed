@@ -688,7 +688,7 @@ struct ContentEntry final {
 };  
 };  
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::ContentEntry);
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::ContentEntry);
 
 namespace mozilla {
 namespace {

@@ -40,7 +40,8 @@ struct MessagePortService::NextParent {
 
 
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::dom::MessagePortService::NextParent);
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
+    mozilla::dom::MessagePortService::NextParent);
 
 namespace mozilla {
 namespace dom {

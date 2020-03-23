@@ -59,7 +59,8 @@ typedef MaybeVariant<int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t,
 }  
 }  
 
-DECLARE_USE_COPY_CONSTRUCTORS(mozilla::plugins::internal::IpdlTupleElement)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
+    mozilla::plugins::internal::IpdlTupleElement)
 
 namespace mozilla {
 namespace plugins {
