@@ -17,13 +17,11 @@ class Builder:
         self.max_urls = options.get("max_urls", 150)
 
         
-        if "gecko" in self.platform:
-            self.max_urls = max(self.max_urls, 30)
-        
-        elif "fennec" in self.platform:
-            self.max_urls = max(self.max_urls, 5)
-        elif self.mobile:
-            self.max_urls = max(self.max_urls, 150)
+        if self.mobile:
+            self.max_urls = min(self.max_urls, 30)
+
+        logger.info("platform: %s" % self.platform)
+        logger.info("max_urls: %s" % self.max_urls)
 
         
         self.syncing = not self.mobile
