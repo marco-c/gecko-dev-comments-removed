@@ -18,6 +18,7 @@ const PC_ICE_CONTRACT = "@mozilla.org/dom/rtcicecandidate;1";
 const PC_SESSION_CONTRACT = "@mozilla.org/dom/rtcsessiondescription;1";
 const PC_STATIC_CONTRACT = "@mozilla.org/dom/peerconnectionstatic;1";
 const PC_SENDER_CONTRACT = "@mozilla.org/dom/rtpsender;1";
+const PC_RECEIVER_CONTRACT = "@mozilla.org/dom/rtpreceiver;1";
 const PC_TRANSCEIVER_CONTRACT = "@mozilla.org/dom/rtptransceiver;1";
 const PC_COREQUEST_CONTRACT = "@mozilla.org/dom/createofferrequest;1";
 const PC_DTMF_SENDER_CONTRACT = "@mozilla.org/dom/rtcdtmfsender;1";
@@ -29,6 +30,7 @@ const PC_SESSION_CID = Components.ID("{1775081b-b62d-4954-8ffe-a067bbf508a7}");
 const PC_MANAGER_CID = Components.ID("{7293e901-2be3-4c02-b4bd-cbef6fc24f78}");
 const PC_STATIC_CID = Components.ID("{0fb47c47-a205-4583-a9fc-cbadf8c95880}");
 const PC_SENDER_CID = Components.ID("{4fff5d46-d827-4cd4-a970-8fd53977440e}");
+const PC_RECEIVER_CID = Components.ID("{d974b814-8fde-411c-8c45-b86791b81030}");
 const PC_TRANSCEIVER_CID = Components.ID(
   "{09475754-103a-41f5-a2d0-e1f27eb0b537}"
 );
@@ -366,8 +368,28 @@ class PeerConnectionTelemetry {
   }
 }
 
+
+
+class RTCRtpSourceCache {
+  constructor() {
+    
+    this.tsNowInRtpSourceTime = null;
+    
+    this.jsTimestamp = null;
+    
+    this.timestampOffset = null;
+    
+    this.rtpSourcesByTrackId = new Map();
+    
+    this.scheduledClear = null;
+  }
+}
+
 class RTCPeerConnection {
   constructor() {
+    this._receiveStreams = new Map();
+    
+    this._newStreams = [];
     this._transceivers = [];
 
     this._pc = null;
@@ -384,6 +406,10 @@ class RTCPeerConnection {
 
     this._hasStunServer = this._hasTurnServer = false;
     this._iceGatheredRelayCandidates = false;
+    
+    this._storedRtpSourceReferenceTime = null;
+    
+    this._rtpSourceCache = new RTCRtpSourceCache();
     
     this._pcTelemetry = new PeerConnectionTelemetry();
   }
@@ -1184,6 +1210,8 @@ class RTCPeerConnection {
               ""
             );
           });
+          this._processTrackAdditionsAndRemovals();
+          this._fireLegacyAddStreamEvents();
           this._transceivers = this._transceivers.filter(t => !t.shouldRemove);
           this._updateCanTrickle();
         }
@@ -1195,6 +1223,8 @@ class RTCPeerConnection {
           this._impl.setRemoteDescription(this._actions[type], sdp);
         });
         await p;
+        this._processTrackAdditionsAndRemovals();
+        this._fireLegacyAddStreamEvents();
         this._transceivers = this._transceivers.filter(t => !t.shouldRemove);
         this._updateCanTrickle();
       })();
@@ -1446,6 +1476,48 @@ class RTCPeerConnection {
     this._transceivers.push(transceiver);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  _getRtpSources(receiver) {
+    let cache = this._rtpSourceCache;
+    
+    if (!cache.scheduledClear) {
+      cache.scheduledClear = true;
+      Promise.resolve().then(() => {
+        this._rtpSourceCache = new RTCRtpSourceCache();
+      });
+    }
+    
+    
+    if (cache.tsNowInRtpSourceTime !== undefined) {
+      cache.tsNowInRtpSourceTime = this._impl.getNowInRtpSourceReferenceTime();
+      cache.jsTimestamp =
+        this._win.performance.now() + this._win.performance.timeOrigin;
+      cache.timestampOffset = cache.jsTimestamp - cache.tsNowInRtpSourceTime;
+    }
+    let id = receiver.track.id;
+    if (cache.rtpSourcesByTrackId[id] === undefined) {
+      cache.rtpSourcesByTrackId[id] = this._impl.getRtpSources(
+        receiver.track,
+        cache.tsNowInRtpSourceTime
+      );
+    }
+    return {
+      sources: cache.rtpSourcesByTrackId[id],
+      sourceClockOffset: cache.timestampOffset,
+      jsTimestamp: cache.jsTimestamp,
+    };
+  }
+
   addTransceiver(sendTrackOrKind, init) {
     this._checkClosed();
     let transceiver = this._addTransceiverNoEvents(sendTrackOrKind, init);
@@ -1480,6 +1552,79 @@ class RTCPeerConnection {
         this.dispatchEvent(new this._win.Event("negotiationneeded"));
       });
     });
+  }
+
+  _processTrackAdditionsAndRemovals() {
+    const removeList = [];
+    const addList = [];
+    const muteTransceiverReceiveTracks = [];
+    const trackEventInits = [];
+
+    for (const transceiver of this._transceivers) {
+      transceiver.receiver.processTrackAdditionsAndRemovals(transceiver, {
+        removeList,
+        addList,
+        muteTransceiverReceiveTracks,
+        trackEventInits,
+      });
+    }
+
+    muteTransceiverReceiveTracks.forEach(transceiver => {
+      
+      transceiver.setReceiveTrackMuted(true);
+    });
+
+    for (const { stream, track } of removeList) {
+      
+      if (stream.getTracks().includes(track)) {
+        stream.removeTrack(track);
+        
+        
+        stream.dispatchEvent(
+          new this._win.MediaStreamTrackEvent("removetrack", { track })
+        );
+      }
+    }
+
+    for (const { stream, track } of addList) {
+      
+      if (!stream.getTracks().includes(track)) {
+        stream.addTrack(track);
+        
+        
+        stream.dispatchEvent(
+          new this._win.MediaStreamTrackEvent("addtrack", { track })
+        );
+      }
+    }
+
+    trackEventInits.forEach(init => {
+      this.dispatchEvent(new this._win.RTCTrackEvent("track", init));
+      
+      this.dispatchEvent(
+        new this._win.MediaStreamTrackEvent("addtrack", { track: init.track })
+      );
+    });
+  }
+
+  
+  _fireLegacyAddStreamEvents() {
+    for (let stream of this._newStreams) {
+      let ev = new this._win.MediaStreamEvent("addstream", { stream });
+      this.dispatchEvent(ev);
+    }
+    this._newStreams = [];
+  }
+
+  _getOrCreateStream(id) {
+    if (!this._receiveStreams.has(id)) {
+      let stream = new this._win.MediaStream();
+      stream.assignId(id);
+      this._newStreams.push(stream);
+      this._receiveStreams.set(id, stream);
+    }
+
+    return this._receiveStreams.get(id);
   }
 
   _insertDTMF(transceiverImpl, tones, duration, interToneGap) {
@@ -1532,7 +1677,7 @@ class RTCPeerConnection {
 
   getRemoteStreams() {
     this._checkClosed();
-    return this._impl.getRemoteStreams();
+    return [...this._receiveStreams.values()];
   }
 
   getSenders() {
@@ -1545,6 +1690,38 @@ class RTCPeerConnection {
     return this.getTransceivers()
       .filter(transceiver => !transceiver.stopped)
       .map(transceiver => transceiver.receiver);
+  }
+
+  
+  mozGetNowInRtpSourceReferenceTime() {
+    return this._impl.getNowInRtpSourceReferenceTime();
+  }
+
+  
+  mozInsertAudioLevelForContributingSource(
+    receiver,
+    source,
+    timestamp,
+    rtpTimestamp,
+    hasLevel,
+    level
+  ) {
+    this._impl.insertAudioLevelForContributingSource(
+      receiver.track,
+      source,
+      timestamp,
+      rtpTimestamp,
+      hasLevel,
+      level
+    );
+  }
+
+  mozAddRIDExtension(receiver, extensionId) {
+    this._impl.addRIDExtension(receiver.track, extensionId);
+  }
+
+  mozAddRIDFilter(receiver, rid) {
+    this._impl.addRIDFilter(receiver.track, rid);
   }
 
   mozSetPacketCallback(callback) {
@@ -1962,32 +2139,6 @@ class PeerConnectionObserver {
     );
   }
 
-  fireTrackEvent(receiver, streams) {
-    const pc = this._dompc;
-    const transceiver = pc.getTransceivers().find(t => t.receiver == receiver);
-    if (!transceiver) {
-      return;
-    }
-    const track = receiver.track;
-    this.dispatchEvent(
-      new this._win.RTCTrackEvent("track", {
-        transceiver,
-        receiver,
-        track,
-        streams,
-      })
-    );
-    
-    this.dispatchEvent(
-      new this._win.MediaStreamTrackEvent("addtrack", { track })
-    );
-  }
-
-  fireStreamEvent(stream) {
-    const ev = new this._win.MediaStreamEvent("addstream", { stream });
-    this.dispatchEvent(ev);
-  }
-
   onDTMFToneChange(track, tone) {
     var pc = this._dompc;
     var sender = pc.getSenders().find(sender => sender.track == track);
@@ -2203,9 +2354,162 @@ setupPrototype(RTCRtpSender, {
   QueryInterface: ChromeUtils.generateQI([]),
 });
 
+class RTCRtpReceiver {
+  constructor(pc, transceiverImpl) {
+    Object.assign(this, {
+      _pc: pc,
+      _transceiverImpl: transceiverImpl,
+      track: transceiverImpl.getReceiveTrack(),
+      _recvBit: false,
+      _oldRecvBit: false,
+      _streams: [],
+      _oldstreams: [],
+      
+      
+      
+      _rtpSources: new Map(),
+      _rtpSourcesJsTimestamp: null,
+    });
+  }
+
+  
+  
+  getStats() {
+    return this._pc._async(async () => this._pc.getStats(this.track));
+  }
+
+  _getRtpSource(source, type) {
+    this._fetchRtpSources();
+    return this._rtpSources.get(type + source).entry;
+  }
+
+  
+
+
+  _fetchRtpSources() {
+    if (this._rtpSourcesJsTimestamp !== null) {
+      return;
+    }
+    
+    Promise.resolve().then(() => (this._rtpSourcesJsTimestamp = null));
+    let { sources, sourceClockOffset, jsTimestamp } = this._pc._getRtpSources(
+      this
+    );
+    this._rtpSourcesJsTimestamp = jsTimestamp;
+    for (let entry of sources) {
+      
+      entry.sourceClockOffset = sourceClockOffset;
+      
+      let key = entry.source + entry.sourceType;
+      let cached = this._rtpSources.get(key);
+      if (cached === undefined) {
+        this._rtpSources.set(key, entry);
+      } else if (cached.timestamp != entry.timestamp) {
+        
+        
+        
+        
+        this._rtpSources.set(key, entry);
+      }
+    }
+    
+    let cutoffTime = this._rtpSourcesJsTimestamp - 10 * 1000;
+    let removeKeys = [];
+    for (let entry of this._rtpSources.values()) {
+      if (entry.timestamp + entry.sourceClockOffset < cutoffTime) {
+        removeKeys.push(entry.source + entry.sourceType);
+      }
+    }
+    for (let delKey of removeKeys) {
+      this._rtpSources.delete(delKey);
+    }
+  }
+
+  _getRtpSourcesByType(type) {
+    this._fetchRtpSources();
+    
+    const cutoffTime = this._rtpSourcesJsTimestamp - 10 * 1000;
+    return [...this._rtpSources.values()]
+      .filter(entry => {
+        return (
+          entry.sourceType == type &&
+          entry.timestamp + entry.sourceClockOffset >= cutoffTime
+        );
+      })
+      .map(e => {
+        const newEntry = {
+          source: e.source,
+          timestamp: e.timestamp + e.sourceClockOffset,
+          rtpTimestamp: e.rtpTimestamp,
+          audioLevel: e.audioLevel,
+        };
+        if (e.voiceActivityFlag !== undefined) {
+          Object.assign(newEntry, { voiceActivityFlag: e.voiceActivityFlag });
+        }
+        return newEntry;
+      })
+      .sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  getContributingSources() {
+    return this._getRtpSourcesByType("contributing");
+  }
+
+  getSynchronizationSources() {
+    return this._getRtpSourcesByType("synchronization");
+  }
+
+  setStreamIds(streamIds) {
+    this._streams = streamIds.map(id => this._pc._getOrCreateStream(id));
+  }
+
+  setRecvBit(recvBit) {
+    this._recvBit = recvBit;
+  }
+
+  processTrackAdditionsAndRemovals(
+    transceiver,
+    { removeList, addList, muteTransceiverReceiveTracks, trackEventInits }
+  ) {
+    const receiver = this.__DOM_IMPL__;
+    const track = this.track;
+    const streams = this._streams;
+    const streamsAdded = streams.filter(s => !this._oldstreams.includes(s));
+    const streamsRemoved = this._oldstreams.filter(s => !streams.includes(s));
+
+    addList.push(...streamsAdded.map(stream => ({ stream, track })));
+    removeList.push(...streamsRemoved.map(stream => ({ stream, track })));
+    this._oldstreams = this._streams;
+
+    let needsTrackEvent = streamsAdded.length != 0;
+
+    if (this._recvBit != this._oldRecvBit) {
+      this._oldRecvBit = this._recvBit;
+      if (this._recvBit) {
+        
+        needsTrackEvent = true;
+      } else {
+        muteTransceiverReceiveTracks.push(this._transceiverImpl);
+      }
+    }
+
+    if (needsTrackEvent) {
+      trackEventInits.push({ track, streams, receiver, transceiver });
+    }
+  }
+}
+setupPrototype(RTCRtpReceiver, {
+  classID: PC_RECEIVER_CID,
+  contractID: PC_RECEIVER_CONTRACT,
+  QueryInterface: ChromeUtils.generateQI([]),
+});
+
 class RTCRtpTransceiver {
   constructor(pc, transceiverImpl, init, kind, sendTrack) {
-    let receiver = transceiverImpl.receiver;
+    let receiver = pc._win.RTCRtpReceiver._create(
+      pc._win,
+      new RTCRtpReceiver(pc, transceiverImpl)
+    );
     let streams = (init && init.streams) || [];
     let sender = pc._win.RTCRtpSender._create(
       pc._win,
@@ -2381,6 +2685,7 @@ var EXPORTED_SYMBOLS = [
   "RTCSessionDescription",
   "RTCPeerConnection",
   "RTCPeerConnectionStatic",
+  "RTCRtpReceiver",
   "RTCRtpSender",
   "RTCRtpTransceiver",
   "PeerConnectionObserver",

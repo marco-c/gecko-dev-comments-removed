@@ -10,10 +10,10 @@
 #include <vector>
 #include <map>
 
+#include "mozilla/Mutex.h"
 #include "nsISupportsImpl.h"
 #include "mozilla/dom/RTCRtpSourcesBinding.h"
-#include "webrtc/common_types.h"
-#include "RTCStatsReport.h"
+#include "webrtc/modules/rtp_rtcp/include/rtp_packet_observer.h"
 
 
 namespace test {
@@ -27,14 +27,21 @@ namespace mozilla {
 
 
 
-class RtpSourceObserver {
+class RtpSourceObserver : public webrtc::RtpPacketObserver {
  public:
-  explicit RtpSourceObserver(
-      const dom::RTCStatsTimestampMaker& aTimestampMaker);
+  RtpSourceObserver();
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RtpSourceObserver)
+  virtual ~RtpSourceObserver(){};
 
-  void OnRtpPacket(const webrtc::RTPHeader& aHeader, const uint32_t aJitter);
+  void OnRtpPacket(const webrtc::RTPHeader& aRtpHeader,
+                   const int64_t aTimestamp, const uint32_t aJitter) override;
+
+  
+
+
+
+
+  static int64_t NowInReportClockTime();
 
   
 
@@ -42,16 +49,17 @@ class RtpSourceObserver {
 
 
 
-  void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
+
+  void GetRtpSources(const int64_t aTimeNow,
+                     nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
 
  private:
-  virtual ~RtpSourceObserver() = default;
-
+  
   struct RtpSourceEntry {
     RtpSourceEntry() = default;
     void Update(const int64_t aTimestamp, const uint32_t aRtpTimestamp,
                 const bool aHasAudioLevel, const uint8_t aAudioLevel) {
-      predictedPlayoutTime = aTimestamp;
+      jitterAdjustedTimestamp = aTimestamp;
       rtpTimestamp = aRtpTimestamp;
       
       hasAudioLevel = aHasAudioLevel && !(aAudioLevel & 0x80);
@@ -61,19 +69,12 @@ class RtpSourceObserver {
     
     double ToLinearAudioLevel() const;
     
-    int64_t predictedPlayoutTime = 0;
+    int64_t jitterAdjustedTimestamp = 0;
     
     uint32_t rtpTimestamp = 0;
     bool hasAudioLevel = false;
     uint8_t audioLevel = 0;
   };
-
-  
-
-
-
-
-
   
 
 
@@ -163,7 +164,8 @@ class RtpSourceObserver {
   std::map<uint64_t, RtpSourceHistory> mRtpSources;
   
   int64_t mMaxJitterWindow;
-  dom::RTCStatsTimestampMaker mTimestampMaker;
+  
+  mutable Mutex mLevelGuard;
 
   
   friend test::RtpSourcesTest;

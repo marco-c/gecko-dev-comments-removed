@@ -22,71 +22,49 @@ double RtpSourceObserver::RtpSourceEntry::ToLinearAudioLevel() const {
   return std::pow(10, -static_cast<double>(audioLevel) / 20);
 }
 
-RtpSourceObserver::RtpSourceObserver(
-    const dom::RTCStatsTimestampMaker& aTimestampMaker)
-    : mMaxJitterWindow(0), mTimestampMaker(aTimestampMaker) {}
+RtpSourceObserver::RtpSourceObserver()
+    : mMaxJitterWindow(0), mLevelGuard("RtpSourceObserver::mLevelGuard") {}
 
 void RtpSourceObserver::OnRtpPacket(const webrtc::RTPHeader& aHeader,
+                                    const int64_t aTimestamp,
                                     const uint32_t aJitter) {
-  DOMHighResTimeStamp jsNow = mTimestampMaker.GetNow();
-
-  RefPtr<Runnable> runnable = NS_NewRunnableFunction(
-      "RtpSourceObserver::OnRtpPacket",
-      [this, self = RefPtr<RtpSourceObserver>(this), aHeader, aJitter,
-       jsNow]() {
-        mMaxJitterWindow =
-            std::max(mMaxJitterWindow, static_cast<int64_t>(aJitter) * 2);
-        
-        
-        
-        
-        
-        
-        
-        
-        const auto predictedPlayoutTime = jsNow + aJitter;
-        auto& hist =
-            mRtpSources[GetKey(aHeader.ssrc, EntryType::Synchronization)];
-        hist.Prune(jsNow);
-        
-        hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp,
-                    aHeader.extension.hasAudioLevel,
-                    aHeader.extension.audioLevel);
-
-        
-        const auto& list = aHeader.extension.csrcAudioLevels;
-        for (uint8_t i = 0; i < aHeader.numCSRCs; i++) {
-          const uint32_t& csrc = aHeader.arrOfCSRCs[i];
-          auto& hist = mRtpSources[GetKey(csrc, EntryType::Contributing)];
-          hist.Prune(jsNow);
-          bool hasLevel = i < list.numAudioLevels;
-          uint8_t level = hasLevel ? list.arrOfAudioLevels[i] : 0;
-          hist.Insert(jsNow, predictedPlayoutTime, aHeader.timestamp, hasLevel,
-                      level);
-        }
-      });
-
-  if (NS_IsMainThread()) {
+  MutexAutoLock lock(mLevelGuard);
+  {
+    mMaxJitterWindow =
+        std::max(mMaxJitterWindow, static_cast<int64_t>(aJitter) * 2);
+    const auto jitterAdjusted = aTimestamp + aJitter;
+    auto& hist = mRtpSources[GetKey(aHeader.ssrc, EntryType::Synchronization)];
+    hist.Prune(aTimestamp);
     
+    hist.Insert(aTimestamp, jitterAdjusted, aHeader.timestamp,
+                aHeader.extension.hasAudioLevel, aHeader.extension.audioLevel);
+
     
-    runnable->Run();
-  } else {
-    NS_DispatchToMainThread(runnable);
+    const auto& list = aHeader.extension.csrcAudioLevels;
+    for (uint8_t i = 0; i < aHeader.numCSRCs; i++) {
+      const uint32_t& csrc = aHeader.arrOfCSRCs[i];
+      auto& hist = mRtpSources[GetKey(csrc, EntryType::Contributing)];
+      hist.Prune(aTimestamp);
+      bool hasLevel = i < list.numAudioLevels;
+      uint8_t level = hasLevel ? list.arrOfAudioLevels[i] : 0;
+      hist.Insert(aTimestamp, jitterAdjusted, aHeader.timestamp, hasLevel,
+                  level);
+    }
   }
 }
 
 void RtpSourceObserver::GetRtpSources(
+    const int64_t aTimeNow,
     nsTArray<dom::RTCRtpSourceEntry>& outSources) const {
-  MOZ_ASSERT(NS_IsMainThread());
+  MutexAutoLock lock(mLevelGuard);
   outSources.Clear();
   for (const auto& it : mRtpSources) {
-    const RtpSourceEntry* entry =
-        it.second.FindClosestNotAfter(mTimestampMaker.GetNow());
+    const RtpSourceEntry* entry = it.second.FindClosestNotAfter(aTimeNow);
     if (entry) {
       dom::RTCRtpSourceEntry domEntry;
       domEntry.mSource = GetSourceFromKey(it.first);
       domEntry.mSourceType = GetTypeFromKey(it.first);
-      domEntry.mTimestamp = entry->predictedPlayoutTime;
+      domEntry.mTimestamp = entry->jitterAdjustedTimestamp;
       domEntry.mRtpTimestamp = entry->rtpTimestamp;
       if (entry->hasAudioLevel) {
         domEntry.mAudioLevel.Construct(entry->ToLinearAudioLevel());
@@ -96,9 +74,12 @@ void RtpSourceObserver::GetRtpSources(
   }
 }
 
+int64_t RtpSourceObserver::NowInReportClockTime() {
+  return webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds();
+}
+
 const RtpSourceObserver::RtpSourceEntry*
 RtpSourceObserver::RtpSourceHistory::FindClosestNotAfter(int64_t aTime) const {
-  MOZ_ASSERT(NS_IsMainThread());
   
   
   
@@ -107,7 +88,7 @@ RtpSourceObserver::RtpSourceHistory::FindClosestNotAfter(int64_t aTime) const {
   auto lastFound = mDetailedHistory.cbegin();
   bool found = false;
   for (const auto& it : mDetailedHistory) {
-    if (it.second.predictedPlayoutTime > aTime) {
+    if (it.second.jitterAdjustedTimestamp > aTime) {
       break;
     }
     
@@ -119,21 +100,20 @@ RtpSourceObserver::RtpSourceHistory::FindClosestNotAfter(int64_t aTime) const {
   if (found) {
     return &lastFound->second;
   }
-  if (HasEvicted() && aTime >= mLatestEviction.predictedPlayoutTime) {
+  if (HasEvicted() && aTime >= mLatestEviction.jitterAdjustedTimestamp) {
     return &mLatestEviction;
   }
   return nullptr;
 }
 
 void RtpSourceObserver::RtpSourceHistory::Prune(const int64_t aTimeNow) {
-  MOZ_ASSERT(NS_IsMainThread());
   const auto aTimeT = aTimeNow - mMaxJitterWindow;
   const auto aTimePrehistory = aTimeNow - kHistoryWindow;
   bool found = false;
   
   auto lower = mDetailedHistory.begin();
   for (auto& it : mDetailedHistory) {
-    if (it.second.predictedPlayoutTime > aTimeT) {
+    if (it.second.jitterAdjustedTimestamp > aTimeT) {
       found = true;
       break;
     }
@@ -143,7 +123,7 @@ void RtpSourceObserver::RtpSourceHistory::Prune(const int64_t aTimeNow) {
     found = true;
   }
   if (found) {
-    if (lower->second.predictedPlayoutTime > aTimePrehistory) {
+    if (lower->second.jitterAdjustedTimestamp > aTimePrehistory) {
       mLatestEviction = lower->second;
       mHasEvictedEntry = true;
     }
@@ -151,7 +131,7 @@ void RtpSourceObserver::RtpSourceHistory::Prune(const int64_t aTimeNow) {
     mDetailedHistory.erase(mDetailedHistory.begin(), lower);
   }
   if (HasEvicted() &&
-      (mLatestEviction.predictedPlayoutTime + kHistoryWindow) < aTimeNow) {
+      (mLatestEviction.jitterAdjustedTimestamp + kHistoryWindow) < aTimeNow) {
     mHasEvictedEntry = false;
   }
 }
@@ -161,14 +141,12 @@ void RtpSourceObserver::RtpSourceHistory::Insert(const int64_t aTimeNow,
                                                  const uint32_t aRtpTimestamp,
                                                  const bool aHasAudioLevel,
                                                  const uint8_t aAudioLevel) {
-  MOZ_ASSERT(NS_IsMainThread());
   Insert(aTimeNow, aTimestamp)
       .Update(aTimestamp, aRtpTimestamp, aHasAudioLevel, aAudioLevel);
 }
 
 RtpSourceObserver::RtpSourceEntry& RtpSourceObserver::RtpSourceHistory::Insert(
     const int64_t aTimeNow, const int64_t aTimestamp) {
-  MOZ_ASSERT(NS_IsMainThread());
   
   
   
@@ -178,7 +156,7 @@ RtpSourceObserver::RtpSourceEntry& RtpSourceObserver::RtpSourceHistory::Insert(
   
   
   if ((aTimestamp + kHistoryWindow) < aTimeNow ||
-      aTimestamp < mLatestEviction.predictedPlayoutTime) {
+      aTimestamp < mLatestEviction.jitterAdjustedTimestamp) {
     return mPrehistory;  
   }
   mMaxJitterWindow = std::max(mMaxJitterWindow, (aTimestamp - aTimeNow) * 2);

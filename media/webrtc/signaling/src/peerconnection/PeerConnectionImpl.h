@@ -170,6 +170,9 @@ class PeerConnectionImpl final
       const mozilla::dom::GlobalObject& aGlobal);
   static PeerConnectionImpl* CreatePeerConnection();
 
+  nsresult CreateRemoteSourceStreamInfo(RefPtr<RemoteSourceStreamInfo>* aInfo,
+                                        const std::string& aId);
+
   
   void NotifyDataChannel(already_AddRefed<mozilla::DataChannel> aChannel)
       
@@ -260,8 +263,6 @@ class PeerConnectionImpl final
 
   already_AddRefed<dom::Promise> GetStats(dom::MediaStreamTrack* aSelector);
 
-  void GetRemoteStreams(nsTArray<RefPtr<DOMMediaStream>>& aStreamsOut) const;
-
   NS_IMETHODIMP AddIceCandidate(const char* aCandidate, const char* aMid,
                                 const char* aUfrag,
                                 const dom::Nullable<unsigned short>& aLevel);
@@ -285,6 +286,9 @@ class PeerConnectionImpl final
       const nsAString& aKind, dom::MediaStreamTrack* aSendTrack,
       ErrorResult& rv);
 
+  OwningNonNull<dom::MediaStreamTrack> CreateReceiveTrack(
+      SdpMediaSection::MediaType type, nsIPrincipal* aPrincipal);
+
   bool CheckNegotiationNeeded(ErrorResult& rv);
 
   NS_IMETHODIMP_TO_ERRORRESULT(InsertDTMF, ErrorResult& rv,
@@ -300,10 +304,45 @@ class PeerConnectionImpl final
     rv = GetDTMFToneBuffer(sender, outToneBuffer);
   }
 
+  NS_IMETHODIMP_TO_ERRORRESULT(
+      GetRtpSources, ErrorResult& rv, dom::MediaStreamTrack& aRecvTrack,
+      DOMHighResTimeStamp aRtpSourceNow,
+      nsTArray<dom::RTCRtpSourceEntry>& outRtpSources) {
+    rv = GetRtpSources(aRecvTrack, aRtpSourceNow, outRtpSources);
+  }
+
+  DOMHighResTimeStamp GetNowInRtpSourceReferenceTime();
+
   NS_IMETHODIMP_TO_ERRORRESULT(ReplaceTrackNoRenegotiation, ErrorResult& rv,
                                TransceiverImpl& aTransceiver,
                                mozilla::dom::MediaStreamTrack* aWithTrack) {
     rv = ReplaceTrackNoRenegotiation(aTransceiver, aWithTrack);
+  }
+
+  
+  NS_IMETHODIMP_TO_ERRORRESULT(InsertAudioLevelForContributingSource,
+                               ErrorResult& rv,
+                               const dom::MediaStreamTrack& aRecvTrack,
+                               const unsigned long aSource,
+                               const DOMHighResTimeStamp aTimestamp,
+                               const unsigned long aRtpTimestamp,
+                               const bool aHasLevel, const uint8_t aLevel) {
+    rv = InsertAudioLevelForContributingSource(
+        aRecvTrack, aSource, aTimestamp, aRtpTimestamp, aHasLevel, aLevel);
+  }
+
+  
+  NS_IMETHODIMP_TO_ERRORRESULT(AddRIDExtension, ErrorResult& rv,
+                               dom::MediaStreamTrack& aRecvTrack,
+                               unsigned short aExtensionId) {
+    rv = AddRIDExtension(aRecvTrack, aExtensionId);
+  }
+
+  
+  NS_IMETHODIMP_TO_ERRORRESULT(AddRIDFilter, ErrorResult& rv,
+                               dom::MediaStreamTrack& aRecvTrack,
+                               const nsAString& aRid) {
+    rv = AddRIDFilter(aRecvTrack, aRid);
   }
 
   
@@ -343,10 +382,6 @@ class PeerConnectionImpl final
 
   
   bool PrivacyRequested() const {
-    return mPrivacyRequested.isSome() && *mPrivacyRequested;
-  }
-
-  bool PrivacyNeeded() const {
     return mPrivacyRequested.isSome() && *mPrivacyRequested;
   }
 
@@ -423,7 +458,7 @@ class PeerConnectionImpl final
   
   dom::RTCSignalingState GetSignalingState() const;
 
-  void OnSetDescriptionSuccess(bool rollback, bool remote);
+  void OnSetDescriptionSuccess(bool rollback);
 
   bool IsClosed() const;
   
@@ -637,12 +672,6 @@ class PeerConnectionImpl final
   dom::RTCStatsTimestampMaker mTimestampMaker;
 
   RefPtr<RTCStatsIdGenerator> mIdGenerator;
-  
-  
-  nsTArray<RefPtr<DOMMediaStream>> mReceiveStreams;
-
-  DOMMediaStream* GetReceiveStream(const std::string& aId) const;
-  DOMMediaStream* CreateReceiveStream(const std::string& aId);
 
  public:
   
