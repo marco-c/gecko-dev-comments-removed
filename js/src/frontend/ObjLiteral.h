@@ -567,15 +567,4 @@ class ObjLiteralCreationData {
 };
 
 }  
-
-namespace JS {
-
-
-
-
-template <>
-struct GCPolicy<js::ObjLiteralCreationData>
-    : JS::IgnoreGCPolicy<js::ObjLiteralCreationData> {};
-}  
-
 #endif  

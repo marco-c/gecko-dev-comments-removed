@@ -445,14 +445,12 @@ class EmptyGlobalScopeType {};
 
 
 
-
 using ScriptThingVariant =
-    mozilla::Variant<JS::GCCellPtr, BigIntIndex, ObjLiteralCreationData,
-                     RegExpIndex, ScopeIndex, FunctionIndex,
-                     EmptyGlobalScopeType>;
+    mozilla::Variant<BigIntIndex, ObjLiteralCreationData, RegExpIndex,
+                     ScopeIndex, FunctionIndex, EmptyGlobalScopeType>;
 
 
-using ScriptThingsVector = GCVector<ScriptThingVariant>;
+using ScriptThingsVector = Vector<ScriptThingVariant>;
 
 
 class ScriptStencil {
@@ -485,7 +483,7 @@ class ScriptStencil {
 
   js::frontend::FunctionBox* functionBox = nullptr;
 
-  ScriptStencil(JSContext* cx) : gcThings(cx) {}
+  explicit ScriptStencil(JSContext* cx) : gcThings(cx) {}
 
   
   
@@ -498,8 +496,6 @@ class ScriptStencil {
 
   
   virtual void finishInnerFunctions() const = 0;
-
-  void trace(JSTracer* trc) { gcThings.trace(trc); }
 };
 
 } 
@@ -513,17 +509,5 @@ struct GCPolicy<js::frontend::ScopeCreationData*> {
     (*data)->trace(trc);
   }
 };
-
-template <typename T>
-struct GCPolicy<js::frontend::TypedIndex<T>>
-    : JS::IgnoreGCPolicy<js::frontend::TypedIndex<T>> {};
-
-template <>
-struct GCPolicy<js::frontend::FunctionIndex>
-    : JS::IgnoreGCPolicy<js::frontend::FunctionIndex> {};
-
-template <>
-struct GCPolicy<js::frontend::EmptyGlobalScopeType>
-    : JS::IgnoreGCPolicy<js::frontend::EmptyGlobalScopeType> {};
 }  
 #endif 
