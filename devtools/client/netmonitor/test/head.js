@@ -225,64 +225,6 @@ function waitForTimelineMarkers(monitor) {
   });
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function waitForAllRequestsFinished(monitor) {
-  const window = monitor.panelWin;
-  const { connector } = window;
-  const { getNetworkRequest } = connector;
-
-  return new Promise(resolve => {
-    
-    const requests = new Map();
-
-    function onRequest(id) {
-      const networkInfo = getNetworkRequest(id);
-      const { url } = networkInfo.request;
-      info(`Request ${id} for ${url} not yet done, keep waiting...`);
-      requests.set(id, false);
-    }
-
-    function onTimings(id) {
-      const networkInfo = getNetworkRequest(id);
-      const { url } = networkInfo.request;
-      info(`Request ${id} for ${url} done`);
-      requests.set(id, true);
-      maybeResolve();
-    }
-
-    function maybeResolve() {
-      
-      if (![...requests.values()].every(finished => finished)) {
-        return;
-      }
-
-      
-      window.api.off(TEST_EVENTS.NETWORK_EVENT, onRequest);
-      window.api.off(EVENTS.PAYLOAD_READY, onTimings);
-      info("All requests finished");
-      resolve();
-    }
-
-    window.api.on(TEST_EVENTS.NETWORK_EVENT, onRequest);
-    window.api.on(EVENTS.PAYLOAD_READY, onTimings);
-  });
-}
-
 let finishedQueue = {};
 const updatingTypes = [
   "NetMonitor:NetworkEventUpdating:RequestCookies",
@@ -338,8 +280,15 @@ async function waitForAllNetworkUpdateEvents() {
   finishedQueue = {};
 }
 
-function initNetMonitor(url, enableCache) {
+function initNetMonitor(url, { requestCount, enableCache = false }) {
   info("Initializing a network monitor pane.");
+
+  if (!requestCount) {
+    ok(
+      false,
+      "initNetMonitor should be given a number of requests the page will perform"
+    );
+  }
 
   return (async function() {
     const tab = await addTab(url);
@@ -362,7 +311,8 @@ function initNetMonitor(url, enableCache) {
       );
 
       info("Disabling cache and reloading page.");
-      const requestsDone = waitForAllRequestsFinished(monitor);
+
+      const requestsDone = waitForNetworkEvents(monitor, requestCount);
       const markersDone = waitForTimelineMarkers(monitor);
       await toggleCache(target, true);
       await Promise.all([requestsDone, markersDone]);
@@ -390,12 +340,12 @@ function initNetMonitor(url, enableCache) {
   })();
 }
 
-function restartNetMonitor(monitor, newUrl) {
+function restartNetMonitor(monitor, { requestCount }) {
   info("Restarting the specified network monitor.");
 
   return (async function() {
     const tab = monitor.toolbox.target.localTab;
-    const url = newUrl || tab.linkedBrowser.currentURI.spec;
+    const url = tab.linkedBrowser.currentURI.spec;
 
     await waitForAllNetworkUpdateEvents();
     info("All pending requests finished.");
@@ -404,7 +354,7 @@ function restartNetMonitor(monitor, newUrl) {
     await removeTab(tab);
     await onDestroyed;
 
-    return initNetMonitor(url);
+    return initNetMonitor(url, { requestCount });
   })();
 }
 

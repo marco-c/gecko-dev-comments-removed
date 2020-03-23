@@ -12,7 +12,9 @@ add_task(async function() {
   
   Services.prefs.setIntPref("devtools.toolbox.footer.height", 600);
 
-  const { tab, monitor } = await initNetMonitor(POST_DATA_URL);
+  const { tab, monitor } = await initNetMonitor(POST_DATA_URL, {
+    requestCount: 1,
+  });
   info("Starting test... ");
 
   const { document, store, windowRequire } = monitor.panelWin;

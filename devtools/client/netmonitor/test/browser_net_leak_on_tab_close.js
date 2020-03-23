@@ -11,7 +11,10 @@ add_task(async function() {
   
   
   
-  const { monitor } = await initNetMonitor("about:config", true);
+  const { monitor } = await initNetMonitor("about:config", {
+    enableCache: true,
+    requestCount: 1,
+  });
   ok(monitor, "The network monitor was opened");
   await teardown(monitor);
 });

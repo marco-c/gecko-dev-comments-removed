@@ -7,7 +7,9 @@
 
 
 add_task(async function() {
-  const { tab, monitor } = await initNetMonitor(SET_COOKIE_SAME_SITE_SJS);
+  const { tab, monitor } = await initNetMonitor(SET_COOKIE_SAME_SITE_SJS, {
+    requestCount: 1,
+  });
   info("Starting test... ");
 
   const { document, store, windowRequire } = monitor.panelWin;

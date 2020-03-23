@@ -26,18 +26,17 @@ add_task(async function() {
 
   
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    await content.wrappedJSObject.openConnection(3);
     await content.wrappedJSObject.openConnection(1);
   });
 
   const requests = document.querySelectorAll(".request-list-item");
-  is(requests.length, 2, "There should be two requests");
+  is(requests.length, 1, "There should be one request");
 
   
   const wait = waitForDOM(
     document,
     "#messages-panel .ws-frames-list-table .ws-frame-list-item",
-    6
+    2
   );
 
   
@@ -56,7 +55,7 @@ add_task(async function() {
   );
 
   
-  is(frames.length, 6, "There should be six frames");
+  is(frames.length, 2, "There should be two frames");
 
   
   const type = string => {
@@ -68,7 +67,7 @@ add_task(async function() {
     "#messages-panel .devtools-filterinput"
   );
   filterInput.focus();
-  type("Payload 2");
+  type("/Payload [0-9]+/");
 
   
   await waitUntil(() => getDisplayedFrames(store.getState()).length == 2);
@@ -77,21 +76,6 @@ add_task(async function() {
     "#messages-panel .ws-frames-list-table .ws-frame-list-item"
   );
   is(filteredFrames.length, 2, "There should be two frames");
-
-  
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
-  
-  await waitUntil(
-    () =>
-      document.querySelectorAll(
-        "#messages-panel .ws-frames-list-table .ws-frame-list-item"
-      ).length == 2
-  );
-  const secondRequestFrames = document.querySelectorAll(
-    "#messages-panel .ws-frames-list-table .ws-frame-list-item"
-  );
-  is(secondRequestFrames.length, 2, "There should be two frames");
-  is(filterInput.value, "", "The filter input is cleared");
 
   
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {

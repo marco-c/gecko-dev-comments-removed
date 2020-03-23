@@ -20,7 +20,9 @@ add_task(async function() {
   
   await pushPref("javascript.options.asyncstack", true);
 
-  const { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL);
+  const { tab, monitor, toolbox } = await initNetMonitor(POST_DATA_URL, {
+    requestCount: 1,
+  });
   info("Starting test... ");
 
   const { document, store, windowRequire } = monitor.panelWin;
