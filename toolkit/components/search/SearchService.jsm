@@ -63,7 +63,6 @@ const NS_APP_DISTRIBUTION_SEARCH_DIR_LIST = "SrchPluginsDistDL";
 
 
 const EXT_SEARCH_PREFIX = "resource://search-extensions/";
-const APP_SEARCH_PREFIX = "resource://search-plugins/";
 
 
 const EXT_SIGNING_ADDRESS = "search.mozilla.org";
@@ -344,14 +343,6 @@ function convertGoogleEngines(engineNames) {
     "google-2018": "google-b-1-d",
   };
 
-  let mobileOverrides = {
-    google: "google-b-m",
-    "google-2018": "google-b-1-m",
-  };
-
-  if (AppConstants.platform == "android") {
-    overrides = mobileOverrides;
-  }
   for (let engine in overrides) {
     let index = engineNames.indexOf(engine);
     if (index > -1) {
@@ -799,6 +790,8 @@ SearchService.prototype = {
 
 
 
+
+
   async _setupRemoteSettings() {
     
     this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
@@ -918,10 +911,7 @@ SearchService.prototype = {
     return val;
   },
 
-  _listJSONURL:
-    (AppConstants.platform == "android"
-      ? APP_SEARCH_PREFIX
-      : EXT_SEARCH_PREFIX) + "list.json",
+  _listJSONURL: `${EXT_SEARCH_PREFIX}list.json`,
 
   get _sortedEngines() {
     if (!this.__sortedEngines) {
@@ -1251,31 +1241,26 @@ SearchService.prototype = {
       let enginesFromDir = await this._loadEnginesFromDir(loadDir);
       enginesFromDir.forEach(this._addEngineToStore, this);
     }
-    if (AppConstants.platform == "android") {
-      let enginesFromURLs = await this._loadFromChromeURLs(engines, isReload);
-      enginesFromURLs.forEach(this._addEngineToStore, this);
+    if (gModernConfig) {
+      let newEngines = await this._loadEnginesFromConfig(engines, isReload);
+      newEngines.forEach(this._addEngineToStore, this);
     } else {
-      if (gModernConfig) {
-        let newEngines = await this._loadEnginesFromConfig(engines, isReload);
-        newEngines.forEach(this._addEngineToStore, this);
-      } else {
-        let engineList = this._enginesToLocales(engines);
-        for (let [id, locales] of engineList) {
-          await this.ensureBuiltinExtension(id, locales, isReload);
-        }
+      let engineList = this._enginesToLocales(engines);
+      for (let [id, locales] of engineList) {
+        await this.ensureBuiltinExtension(id, locales, isReload);
       }
-      SearchUtils.log(
-        "_loadEngines: loading " +
-          this._startupExtensions.size +
-          " engines reported by AddonManager startup"
+    }
+    SearchUtils.log(
+      "_loadEngines: loading " +
+        this._startupExtensions.size +
+        " engines reported by AddonManager startup"
+    );
+    for (let extension of this._startupExtensions) {
+      await this._installExtensionEngine(
+        extension,
+        [SearchUtils.DEFAULT_TAG],
+        true
       );
-      for (let extension of this._startupExtensions) {
-        await this._installExtensionEngine(
-          extension,
-          [SearchUtils.DEFAULT_TAG],
-          true
-        );
-      }
     }
 
     SearchUtils.log(
@@ -1845,43 +1830,6 @@ SearchService.prototype = {
         SearchUtils.log(
           "_loadEnginesFromDir: Failed to load " + osfile.path + "!\n" + ex
         );
-      }
-    }
-    return engines;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  async _loadFromChromeURLs(urls, isReload = false) {
-    let engines = [];
-    for (let url of urls) {
-      try {
-        SearchUtils.log(
-          "_loadFromChromeURLs: loading engine from chrome url: " + url
-        );
-        let uri = Services.io.newURI(APP_SEARCH_PREFIX + url + ".xml");
-        let engine = new SearchEngine({
-          uri,
-          readOnly: true,
-        });
-        await engine._initFromURI(uri);
-        
-        
-        
-        if (isReload && this._engines.has(engine.name)) {
-          engine._engineToUpdate = this._engines.get(engine.name);
-        }
-        engines.push(engine);
-      } catch (ex) {
-        SearchUtils.log("_loadFromChromeURLs: failed to load engine: " + ex);
       }
     }
     return engines;
