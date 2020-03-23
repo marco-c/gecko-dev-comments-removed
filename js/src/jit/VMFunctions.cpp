@@ -679,9 +679,11 @@ bool GetIntrinsicValue(JSContext* cx, HandlePropertyName name,
   
   
   
-  jsbytecode* pc;
-  JSScript* script = cx->currentScript(&pc);
-  JitScript::MonitorBytecodeType(cx, script, pc, rval);
+  if (!JitOptions.warpBuilder) {
+    jsbytecode* pc;
+    JSScript* script = cx->currentScript(&pc);
+    JitScript::MonitorBytecodeType(cx, script, pc, rval);
+  }
 
   return true;
 }

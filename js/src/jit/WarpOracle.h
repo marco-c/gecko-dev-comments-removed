@@ -19,7 +19,9 @@ class MIRGenerator;
 
 #define WARP_OP_SNAPSHOT_LIST(_) \
   _(WarpArguments)               \
-  _(WarpRegExp)
+  _(WarpRegExp)                  \
+  _(WarpBuiltinProto)            \
+  _(WarpGetIntrinsic)
 
 
 
@@ -83,6 +85,34 @@ class WarpRegExp : public WarpOpSnapshot {
   WarpRegExp(uint32_t offset, bool hasShared)
       : WarpOpSnapshot(ThisKind, offset), hasShared_(hasShared) {}
   bool hasShared() const { return hasShared_; }
+};
+
+
+class WarpBuiltinProto : public WarpOpSnapshot {
+  
+  JSObject* proto_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpBuiltinProto;
+
+  WarpBuiltinProto(uint32_t offset, JSObject* proto)
+      : WarpOpSnapshot(ThisKind, offset), proto_(proto) {
+    MOZ_ASSERT(proto);
+  }
+  JSObject* proto() const { return proto_; }
+};
+
+
+class WarpGetIntrinsic : public WarpOpSnapshot {
+  
+  Value intrinsic_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpGetIntrinsic;
+
+  WarpGetIntrinsic(uint32_t offset, const Value& intrinsic)
+      : WarpOpSnapshot(ThisKind, offset), intrinsic_(intrinsic) {}
+  Value intrinsic() const { return intrinsic_; }
 };
 
 
@@ -152,16 +182,23 @@ class WarpScriptSnapshot : public TempObject {
   WarpEnvironment environment_;
   WarpOpSnapshotList opSnapshots_;
 
+  
+  
+  ModuleObject* moduleObject_;
+
  public:
   WarpScriptSnapshot(JSScript* script, const WarpEnvironment& env,
-                     WarpOpSnapshotList&& opSnapshots)
+                     WarpOpSnapshotList&& opSnapshots,
+                     ModuleObject* moduleObject)
       : script_(script),
         environment_(env),
-        opSnapshots_(std::move(opSnapshots)) {}
+        opSnapshots_(std::move(opSnapshots)),
+        moduleObject_(moduleObject) {}
 
   JSScript* script() const { return script_; }
   const WarpEnvironment& environment() const { return environment_; }
   const WarpOpSnapshotList& opSnapshots() const { return opSnapshots_; }
+  ModuleObject* moduleObject() const { return moduleObject_; }
 };
 
 
