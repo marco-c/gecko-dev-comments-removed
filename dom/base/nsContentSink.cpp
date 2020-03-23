@@ -1132,6 +1132,12 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
 
   mDeferredLayoutStart = false;
 
+  if (aIgnorePendingSheets) {
+    nsContentUtils::ReportToConsole(
+        nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Layout"), mDocument,
+        nsContentUtils::eLAYOUT_PROPERTIES, "ForcedLayoutStart");
+  }
+
   
   
   
