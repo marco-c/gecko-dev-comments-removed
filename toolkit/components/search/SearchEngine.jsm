@@ -758,11 +758,12 @@ EngineURL.prototype = {
 
 
 
+
 function SearchEngine(options = {}) {
-  if (!("readOnly" in options)) {
-    throw new Error("readOnly missing from options.");
+  if (!("isBuiltin" in options)) {
+    throw new Error("isBuiltin missing from options.");
   }
-  this._readOnly = options.readOnly;
+  this._isBuiltin = options.isBuiltin;
   this._urls = [];
   this._metaData = {};
 
@@ -818,7 +819,7 @@ function SearchEngine(options = {}) {
       shortName = file.leafName;
     } else if (uri && uri instanceof Ci.nsIURL) {
       if (
-        this._readOnly ||
+        this._isBuiltin ||
         (gEnvironment.get("XPCSHELL_TEST_PROFILE_DIR") &&
           uri.scheme == "resource")
       ) {
@@ -830,7 +831,7 @@ function SearchEngine(options = {}) {
     }
     this._loadPath = this.getAnonymizedLoadPath(file, uri);
 
-    if (!shortName && !this._readOnly) {
+    if (!shortName && !this._isBuiltin) {
       
       
       return;
@@ -846,7 +847,7 @@ function SearchEngine(options = {}) {
       
       
       this._id = "[app]/" + this._shortName + ".xml";
-    } else if (!this._readOnly) {
+    } else if (!this._isBuiltin) {
       this._id = "[profile]/" + this._shortName + ".xml";
     } else {
       
@@ -864,8 +865,6 @@ SearchEngine.prototype = {
   _metaData: null,
   
   _data: null,
-  
-  _readOnly: true,
   
   
   
@@ -1498,7 +1497,6 @@ SearchEngine.prototype = {
   _initFromMetadata(engineName, params) {
     this._extensionID = params.extensionID;
     this._locale = params.locale;
-    this._isBuiltin = !!params.isBuiltin;
     this._orderHint = params.orderHint;
     this._telemetryId = params.telemetryId;
 
@@ -1767,11 +1765,9 @@ SearchEngine.prototype = {
     this._updateInterval = json._updateInterval || null;
     this._updateURL = json._updateURL || null;
     this._iconUpdateURL = json._iconUpdateURL || null;
-    this._readOnly = json._readOnly == undefined;
     this._iconURI = SearchUtils.makeURI(json._iconURL);
     this._iconMapObj = json._iconMapObj;
     this._metaData = json._metaData || {};
-    this._isBuiltin = json._isBuiltin;
     this._orderHint = json._orderHint || null;
     this._telemetryId = json._telemetryId || null;
     if (json.filePath) {
@@ -1831,9 +1827,6 @@ SearchEngine.prototype = {
     }
     if (this.queryCharset != SearchUtils.DEFAULT_QUERY_CHARSET) {
       json.queryCharset = this.queryCharset;
-    }
-    if (!this._readOnly) {
-      json._readOnly = this._readOnly;
     }
     if (this._filePath) {
       
@@ -2140,8 +2133,8 @@ SearchEngine.prototype = {
       SearchUtils.fail("missing name or value for nsISearchEngine::addParam!");
     }
     ENSURE_WARN(
-      !this._readOnly,
-      "called nsISearchEngine::addParam on a read-only engine!",
+      !this._isBuiltin,
+      "called nsISearchEngine::addParam on a built-in engine!",
       Cr.NS_ERROR_FAILURE
     );
     if (!responseType) {
