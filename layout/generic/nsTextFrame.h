@@ -656,6 +656,8 @@ class nsTextFrame : public nsFrame {
 
   nscolor GetCaretColorAt(int32_t aOffset) final;
 
+  
+  
   int16_t GetSelectionStatus(int16_t* aSelectionFlags);
 
   int32_t GetContentOffset() const { return mContentOffset; }
