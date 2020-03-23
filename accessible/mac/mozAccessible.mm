@@ -1,7 +1,7 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import "mozAccessible.h"
 
@@ -46,18 +46,18 @@ using namespace mozilla::a11y;
 #define NSAccessibilityMathLineThicknessAttribute @"AXMathLineThickness"
 #define NSAccessibilityScrollToVisibleAction @"AXScrollToVisible"
 
-// XXX WebKit also defines the following attributes.
-// See bugs 1176970 and 1176983.
-// - NSAccessibilityMathFencedOpenAttribute @"AXMathFencedOpen"
-// - NSAccessibilityMathFencedCloseAttribute @"AXMathFencedClose"
-// - NSAccessibilityMathPrescriptsAttribute @"AXMathPrescripts"
-// - NSAccessibilityMathPostscriptsAttribute @"AXMathPostscripts"
 
-// convert an array of Gecko accessibles to an NSArray of native accessibles
+
+
+
+
+
+
+
 static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
-  // iterate through the list, and get each native accessible.
+  
   size_t totalCount = aArray.Length();
   for (size_t i = 0; i < totalCount; i++) {
     Accessible* curAccessible = aArray.ElementAt(i);
@@ -68,11 +68,11 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<Accessible*>& aArray) {
   return nativeArray;
 }
 
-// convert an array of Gecko proxy accessibles to an NSArray of native accessibles
+
 static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArray) {
   NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
 
-  // iterate through the list, and get each native accessible.
+  
   size_t totalCount = aArray.Length();
   for (size_t i = 0; i < totalCount; i++) {
     ProxyAccessible* curAccessible = aArray.ElementAt(i);
@@ -113,14 +113,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 }
 
 - (mozilla::a11y::AccessibleWrap*)getGeckoAccessible {
-  // Check if mGeckoAccessible points at a proxy
+  
   if (mGeckoAccessible & IS_PROXY) return nil;
 
   return reinterpret_cast<AccessibleWrap*>(mGeckoAccessible);
 }
 
 - (mozilla::a11y::ProxyAccessible*)getProxyAccessible {
-  // Check if mGeckoAccessible points at a proxy
+  
   if (!(mGeckoAccessible & IS_PROXY)) return nil;
 
   return reinterpret_cast<ProxyAccessible*>(mGeckoAccessible & ~IS_PROXY);
@@ -131,8 +131,8 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 - (BOOL)accessibilityIsIgnored {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_RETURN;
 
-  // unknown (either unimplemented, or irrelevant) elements are marked as ignored
-  // as well as expired elements.
+  
+  
 
   return [[self role] isEqualToString:NSAccessibilityUnknownRole] &&
          ([self state] & states::FOCUSABLE);
@@ -170,14 +170,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       [additional addObject:NSAccessibilityMathUnderAttribute];
       [additional addObject:NSAccessibilityMathOverAttribute];
       break;
-    // XXX bug 1176983
-    // roles::MATHML_MULTISCRIPTS should also have the following attributes:
-    // - NSAccessibilityMathPrescriptsAttribute
-    // - NSAccessibilityMathPostscriptsAttribute
-    // XXX bug 1176970
-    // roles::MATHML_FENCED should also have the following attributes:
-    // - NSAccessibilityMathFencedOpenAttribute
-    // - NSAccessibilityMathFencedCloseAttribute
+    
+    
+    
+    
+    
+    
+    
+    
     default:
       break;
   }
@@ -188,7 +188,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 - (NSArray*)accessibilityAttributeNames {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // if we're expired, we don't support any attributes.
+  
   AccessibleWrap* accWrap = [self getGeckoAccessible];
   ProxyAccessible* proxy = [self getProxyAccessible];
   if (!accWrap && !proxy) return [NSArray array];
@@ -196,7 +196,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   static NSArray* generalAttributes = nil;
 
   if (!generalAttributes) {
-    // standard attributes that are shared and supported by all generic elements.
+    
     generalAttributes = [[NSArray alloc]
         initWithObjects:NSAccessibilityChildrenAttribute, NSAccessibilityParentAttribute,
                         NSAccessibilityRoleAttribute, NSAccessibilityTitleAttribute,
@@ -292,9 +292,9 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   if ([attribute isEqualToString:NSAccessibilityTopLevelUIElementAttribute]) return [self window];
   if ([attribute isEqualToString:NSAccessibilityTitleAttribute]) return [self title];
   if ([attribute isEqualToString:NSAccessibilityTitleUIElementAttribute]) {
-    /* If our accessible is labelled by more than one item, its label
-     * should be set by accessibilityLabel instead of here, so we return nil.
-     */
+    
+
+
     if (accWrap) {
       Relation rel = accWrap->RelationByType(RelationType::LABELLED_BY);
       Accessible* tempAcc = rel.Next();
@@ -341,14 +341,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       if ([attribute isEqualToString:NSAccessibilityMathFractionDenominatorAttribute])
         return [self childAt:1];
       if ([attribute isEqualToString:NSAccessibilityMathLineThicknessAttribute]) {
-        // WebKit sets line thickness to some logical value parsed in the
-        // renderer object of the <mfrac> element. It's not clear whether the
-        // exact value is relevant to assistive technologies. From a semantic
-        // point of view, the only important point is to distinguish between
-        // <mfrac> elements that have a fraction bar and those that do not.
-        // Per the MathML 3 spec, the latter happens iff the linethickness
-        // attribute is of the form [zero-float][optional-unit]. In that case we
-        // set line thickness to zero and in the other cases we set it to one.
+        
+        
+        
+        
+        
+        
+        
+        
         if (NSString* thickness = utils::GetAccAttr(self, "thickness")) {
           NSNumberFormatter* formatter = [[[NSNumberFormatter alloc] init] autorelease];
           NSNumber* value = [formatter numberFromString:thickness];
@@ -400,14 +400,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       if ([attribute isEqualToString:NSAccessibilityMathUnderAttribute]) return [self childAt:1];
       if ([attribute isEqualToString:NSAccessibilityMathOverAttribute]) return [self childAt:2];
       break;
-    // XXX bug 1176983
-    // roles::MATHML_MULTISCRIPTS should also have the following attributes:
-    // - NSAccessibilityMathPrescriptsAttribute
-    // - NSAccessibilityMathPostscriptsAttribute
-    // XXX bug 1176970
-    // roles::MATHML_FENCED should also have the following attributes:
-    // - NSAccessibilityMathFencedOpenAttribute
-    // - NSAccessibilityMathFencedCloseAttribute
+    
+    
+    
+    
+    
+    
+    
+    
     default:
       break;
   }
@@ -437,7 +437,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   NSLog(@"[%@] %@='%@'", self, attribute, value);
 #endif
 
-  // we only support focusing elements so far.
+  
   if ([attribute isEqualToString:NSAccessibilityFocusedAttribute] && [value boolValue])
     [self focus];
 
@@ -449,9 +449,9 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   ProxyAccessible* proxy = [self getProxyAccessible];
   if (!accWrap && !proxy) return nil;
 
-  // Convert the given screen-global point in the cocoa coordinate system (with
-  // origin in the bottom-left corner of the screen) into point in the Gecko
-  // coordinate system (with origin in a top-left screen point).
+  
+  
+  
   NSScreen* mainView = [[NSScreen screens] objectAtIndex:0];
   NSPoint tmpPoint = NSMakePoint(point.x, [mainView frame].size.height - point.y);
   LayoutDeviceIntPoint geckoPoint =
@@ -461,7 +461,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   if (accWrap) {
     Accessible* child =
         accWrap->ChildAtPoint(geckoPoint.x, geckoPoint.y, Accessible::eDeepestChild);
-    // If this is an outer doc, drill down further into proxies to find deepest remote child.
+    
     if (OuterDocAccessible* docOwner = child->AsOuterDoc()) {
       if (ProxyAccessible* proxyDoc = docOwner->RemoteChildDoc()) {
         mozAccessible* nativeRemoteChild = GetNativeFromProxy(proxyDoc);
@@ -478,7 +478,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 
   if (nativeChild) return nativeChild;
 
-  // if we didn't find anything, return ourself or child view.
+  
   return GetObjectOrRepresentedView(self);
 }
 
@@ -487,8 +487,8 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 }
 
 - (NSString*)accessibilityActionDescription:(NSString*)action {
-  // by default we return whatever the MacOS API know about.
-  // if you have custom actions, override.
+  
+  
   return NSAccessibilityActionDescription(action);
 }
 
@@ -501,12 +501,12 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 
   nsAutoString name;
 
-  /* If our accessible is:
-   * 1. Named by invisible text, or
-   * 2. Has more than one labeling relation, or
-   * 3. Is a grouping
-   *   ... return its name as a label (AXDescription).
-   */
+  
+
+
+
+
+
   if (accWrap) {
     ENameValueFlag flag = accWrap->Name(name);
     if (flag == eNameFromSubtree) {
@@ -575,7 +575,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 
   if (focusedChild) return GetObjectOrRepresentedView(focusedChild);
 
-  // return ourself if we can't get a native focused child.
+  
   return GetObjectOrRepresentedView(self);
 }
 
@@ -590,7 +590,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
     if (accessibleParent) nativeParent = GetNativeFromGeckoAccessible(accessibleParent);
     if (nativeParent) return GetObjectOrRepresentedView(nativeParent);
 
-    // Return native of root accessible if we have no direct parent
+    
     nativeParent = GetNativeFromGeckoAccessible(accWrap->RootAccessible());
   } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
     if (ProxyAccessible* proxyParent = proxy->Parent()) {
@@ -624,14 +624,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   return NO;
 }
 
-// gets our native children lazily.
-// returns nil when there are no children.
+
+
 - (NSArray*)children {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if (mChildren) return mChildren;
 
-  // get the array of children.
+  
   mChildren = [[NSMutableArray alloc] init];
 
   AccessibleWrap* accWrap = [self getGeckoAccessible];
@@ -642,7 +642,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       if (nativeChild) [mChildren addObject:nativeChild];
     }
 
-    // children from child if this is an outerdoc
+    
     OuterDocAccessible* docOwner = accWrap->AsOuterDoc();
     if (docOwner) {
       if (ProxyAccessible* proxyDoc = docOwner->RemoteChildDoc()) {
@@ -733,14 +733,14 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
   AccessibleWrap* accWrap = [self getGeckoAccessible];
   ProxyAccessible* proxy = [self getProxyAccessible];
 
-  // Deal with landmarks first
+  
   nsAtom* landmark = nullptr;
   if (accWrap)
     landmark = accWrap->LandmarkRole();
   else if (proxy)
     landmark = proxy->LandmarkRole();
 
-  // HTML Elements treated as landmarks, and ARIA landmarks.
+  
   if (landmark) {
     if (landmark == nsGkAtoms::application) return @"AXLandmarkApplication";
     if (landmark == nsGkAtoms::banner) return @"AXLandmarkBanner";
@@ -753,12 +753,12 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
     if (landmark == nsGkAtoms::searchbox) return @"AXSearchField";
   }
 
-  // macOS groups the specific landmark types of DPub ARIA into two broad
-  // categories with corresponding subroles: Navigation and region/container.
+  
+  
   if (mRole == roles::NAVIGATION) return @"AXLandmarkNavigation";
   if (mRole == roles::LANDMARK) return @"AXLandmarkRegion";
 
-  // Now, deal with widget roles
+  
   nsStaticAtom* roleAtom = nullptr;
   if (accWrap && accWrap->HasARIARole()) {
     const nsRoleMapEntry* roleMap = accWrap->ARIARoleMap();
@@ -785,7 +785,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 
   switch (mRole) {
     case roles::LIST:
-      return @"AXContentList";  // 10.6+ NSAccessibilityContentListSubrole;
+      return @"AXContentList";  
 
     case roles::ENTRY:
       if ((accWrap && accWrap->IsSearchbox()) || (proxy && proxy->IsSearchbox()))
@@ -793,7 +793,7 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       break;
 
     case roles::DEFINITION_LIST:
-      return @"AXDefinitionList";  // 10.6+ NSAccessibilityDefinitionListSubrole;
+      return @"AXDefinitionList";  
 
     case roles::TERM:
       return @"AXTerm";
@@ -808,10 +808,10 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
       return @"AXMathFraction";
 
     case roles::MATHML_FENCED:
-      // XXX bug 1176970
-      // This should be AXMathFence, but doing so without implementing the
-      // whole fence interface seems to make VoiceOver crash, so we present it
-      // as a row for now.
+      
+      
+      
+      
       return @"AXMathRow";
 
     case roles::MATHML_SUB:
@@ -853,13 +853,13 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
     case roles::MATHML_CELL:
       return @"AXMathTableCell";
 
-    // XXX: NSAccessibility also uses subroles AXMathSeparatorOperator and
-    // AXMathFenceOperator. We should use the NS_MATHML_OPERATOR_FENCE and
-    // NS_MATHML_OPERATOR_SEPARATOR bits of nsOperatorFlags, but currently they
-    // are only available from the MathML layout code. Hence we just fallback
-    // to subrole AXMathOperator for now.
-    // XXX bug 1175747 WebKit also creates anonymous operators for <mfenced>
-    // which have subroles AXMathSeparatorOperator and AXMathFenceOperator.
+    
+    
+    
+    
+    
+    
+    
     case roles::MATHML_OPERATOR:
       return @"AXMathOperator";
 
@@ -893,9 +893,9 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
     case roles::NON_NATIVE_DOCUMENT:
       return @"AXDocument";
 
-    // macOS added an AXSubrole value to distinguish generic AXGroup objects
-    // from those which are AXGroups as a result of an explicit ARIA role,
-    // such as the non-landmark, non-listitem text containers in DPub ARIA.
+    
+    
+    
     case roles::FOOTNOTE:
     case roles::SECTION:
       if (roleAtom) return @"AXApplicationGroup";
@@ -981,7 +981,7 @@ struct RoleDescrComparator {
 - (NSString*)title {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // If this is a grouping we provide the name in the label (AXDescription).
+  
   if (mRole == roles::GROUPING || mRole == roles::RADIO_GROUP) {
     return nil;
   }
@@ -1017,14 +1017,14 @@ struct RoleDescrComparator {
 #ifdef DEBUG_hakan
   NSLog(@"%@'s value changed!", self);
 #endif
-  // sending out a notification is expensive, so we don't do it other than for really important
-  // objects, like mozTextAccessible.
+  
+  
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 - (void)selectedTextDidChange {
-  // Do nothing. mozTextAccessible will.
+  
 }
 
 - (void)documentLoadComplete {
@@ -1047,8 +1047,8 @@ struct RoleDescrComparator {
 - (NSString*)help {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // What needs to go here is actually the accDescription of an item.
-  // The MSAA acc_help method has nothing to do with this one.
+  
+  
   nsAutoString helpText;
   if (AccessibleWrap* accWrap = [self getGeckoAccessible])
     accWrap->Description(helpText);
@@ -1078,7 +1078,7 @@ struct RoleDescrComparator {
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-// objc-style description (from NSObject); not to be confused with the accessible description above.
+
 - (NSString*)description {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -1092,7 +1092,7 @@ struct RoleDescrComparator {
     return FocusMgr()->IsFocused(accWrap);
   }
 
-  return false;  // XXX: proxy implementation is needed.
+  return false;  
 }
 
 - (BOOL)canBeFocused {
@@ -1114,8 +1114,8 @@ struct RoleDescrComparator {
   return (([self state] & states::UNAVAILABLE) == 0);
 }
 
-// The root accessible calls this when the focused node was
-// changed to us.
+
+
 - (void)didReceiveFocus {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -1131,7 +1131,7 @@ struct RoleDescrComparator {
 - (void)selectionDidChange {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  // One of our selected children changed.
+  
   NSAccessibilityPostNotification(GetObjectOrRepresentedView(self),
                                   NSAccessibilitySelectedChildrenChangedNotification);
 
@@ -1141,7 +1141,7 @@ struct RoleDescrComparator {
 - (NSWindow*)window {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // Get a pointer to the native window (NSWindow) we reside in.
+  
   NSWindow* nativeWindow = nil;
   DocAccessible* docAcc = nullptr;
   if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
@@ -1162,7 +1162,7 @@ struct RoleDescrComparator {
 - (void)invalidateChildren {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  // make room for new children
+  
   [mChildren release];
   mChildren = nil;
 
@@ -1170,7 +1170,7 @@ struct RoleDescrComparator {
 }
 
 - (void)appendChild:(Accessible*)aAccessible {
-  // if mChildren is nil, then we don't even need to bother
+  
   if (!mChildren) return;
 
   mozAccessible* curNative = GetNativeFromGeckoAccessible(aAccessible);
@@ -1184,11 +1184,11 @@ struct RoleDescrComparator {
 - (void)expire {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  NSAccessibilityPostNotification(self, NSAccessibilityUIElementDestroyedNotification);
-
   [self invalidateChildren];
 
   mGeckoAccessible = 0;
+
+  NSAccessibilityPostNotification(self, NSAccessibilityUIElementDestroyedNotification);
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -1203,8 +1203,8 @@ struct RoleDescrComparator {
 
 #ifdef DEBUG
 
-// will check that our children actually reference us as their
-// parent.
+
+
 - (void)sanityCheckChildren:(NSArray*)children {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -1245,14 +1245,14 @@ struct RoleDescrComparator {
 
   NSAssert(![self isExpired], @"!!! trying to print hierarchy of expired object!");
 
-  // print this node
+  
   NSMutableString* indent = [NSMutableString stringWithCapacity:level];
   unsigned i = 0;
   for (; i < level; i++) [indent appendString:@" "];
 
   NSLog(@"%@(#%i) %@", indent, level, self);
 
-  // use |children| method to make sure our children are lazily fetched first.
+  
   NSArray* children = [self children];
   if (!children) return;
 
@@ -1262,13 +1262,13 @@ struct RoleDescrComparator {
   mozAccessible* object = nil;
 
   while (iter && (object = [iter nextObject]))
-    // print every child node's subtree, increasing the indenting
-    // by two for every level.
+    
+    
     [object printHierarchyWithLevel:(level + 1)];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-#endif /* DEBUG */
+#endif 
 
 @end
