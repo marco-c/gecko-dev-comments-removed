@@ -32,10 +32,9 @@ uint32_t nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
   
   
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aWebNav));
-  bool pluginsAllowed = true;
-  if (docShell) {
-    docShell->GetAllowPlugins(&pluginsAllowed);
-  }
+  auto* browsingContext = docShell ? docShell->GetBrowsingContext() : nullptr;
+  bool pluginsAllowed =
+      browsingContext ? browsingContext->GetAllowPlugins() : true;
 
   return IsTypeSupported(aType, pluginsAllowed);
 }
