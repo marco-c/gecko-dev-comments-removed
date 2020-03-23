@@ -141,6 +141,12 @@ class Http3Stream final : public nsAHttpSegmentReader,
   RefPtr<nsISocketTransport> mSocketTransport;
 
   
+  
+  
+  
+  bool mActivatingFailed;
+
+  
   uint64_t mTotalSent;
   uint64_t mTotalRead;
 
