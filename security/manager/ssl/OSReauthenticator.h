@@ -28,7 +28,7 @@ class OSReauthenticator : public nsIOSReauthenticator {
 };
 
 #ifdef XP_MACOSX
-nsresult ReauthenticateUserMacOS(const nsACString& aPrompt,
+nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
                                   bool& aReauthenticated);
 #endif  
 
