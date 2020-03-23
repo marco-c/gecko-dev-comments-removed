@@ -1332,9 +1332,8 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-  NS_IMETHOD SetSelectionFlags(int16_t aInEnable) override;
-  NS_IMETHOD GetSelectionFlags(int16_t* aOutEnable) override;
+  NS_IMETHOD SetSelectionFlags(int16_t aFlags) override;
+  NS_IMETHOD GetSelectionFlags(int16_t* aFlags) override;
 
   
 
@@ -3021,6 +3020,7 @@ class PresShell final : public nsStubDocumentObserver,
   uint32_t mFontSizeInflationMinTwips;
   uint32_t mFontSizeInflationLineThreshold;
 
+  
   int16_t mSelectionFlags;
 
   
