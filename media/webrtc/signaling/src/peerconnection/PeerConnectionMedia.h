@@ -84,26 +84,20 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   nsresult AddTransceiver(JsepTransceiver* aJsepTransceiver,
-                          dom::MediaStreamTrack& aReceiveTrack,
                           dom::MediaStreamTrack* aSendTrack,
-                          const PrincipalHandle& aPrincipalHandle,
                           RefPtr<TransceiverImpl>* aTransceiverImpl);
 
   void GetTransmitPipelinesMatching(
       const dom::MediaStreamTrack* aTrack,
       nsTArray<RefPtr<MediaPipelineTransmit>>* aPipelines);
 
-  void GetReceivePipelinesMatching(
-      const dom::MediaStreamTrack* aTrack,
-      nsTArray<RefPtr<MediaPipelineReceive>>* aPipelines);
-
-  std::string GetTransportIdMatching(const dom::MediaStreamTrack& aTrack) const;
-
   nsresult AddRIDExtension(dom::MediaStreamTrack& aRecvTrack,
                            unsigned short aExtensionId);
 
   nsresult AddRIDFilter(dom::MediaStreamTrack& aRecvTrack,
                         const nsAString& aRid);
+  std::string GetTransportIdMatchingSendTrack(
+      const dom::MediaStreamTrack& aTrack) const;
 
   
   
