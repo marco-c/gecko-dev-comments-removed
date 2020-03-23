@@ -58,12 +58,11 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   
   NS_IMETHOD GetDocumentIsEmpty(bool* aDocumentIsEmpty) override;
 
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD DeleteSelection(EDirection aAction,
-                             EStripWrappers aStripWrappers) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  DeleteSelection(EDirection aAction, EStripWrappers aStripWrappers) override;
 
-  MOZ_CAN_RUN_SCRIPT
-  NS_IMETHOD SetDocumentCharacterSet(const nsACString& characterSet) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
+  SetDocumentCharacterSet(const nsACString& characterSet) override;
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
@@ -157,10 +156,10 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   virtual bool CanPasteTransferable(nsITransferable* aTransferable);
 
   
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult Init(Document& aDoc, Element* aRoot,
-                        nsISelectionController* aSelCon, uint32_t aFlags,
-                        const nsAString& aValue) override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Init(Document& aDoc, Element* aRoot,
+                                           nsISelectionController* aSelCon,
+                                           uint32_t aFlags,
+                                           const nsAString& aValue) override;
 
   
 
@@ -169,8 +168,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   virtual bool IsEmpty() const;
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult HandleKeyPressEvent(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
       WidgetKeyboardEvent* aKeyboardEvent) override;
 
   virtual dom::EventTarget* GetDOMEventTarget() override;
@@ -284,23 +282,22 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  void OnCompositionEnd(WidgetCompositionEvent& aCompositionEndEvent);
+  MOZ_CAN_RUN_SCRIPT void OnCompositionEnd(
+      WidgetCompositionEvent& aCompositionEndEvent);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult OnDrop(dom::DragEvent* aDropEvent);
+  MOZ_CAN_RUN_SCRIPT nsresult OnDrop(dom::DragEvent* aDropEvent);
 
   
 
@@ -370,15 +367,12 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
   
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult RemoveAttributeOrEquivalent(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult RemoveAttributeOrEquivalent(
       Element* aElement, nsAtom* aAttribute,
       bool aSuppressTransaction) override;
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
-                                            nsAtom* aAttribute,
-                                            const nsAString& aValue,
-                                            bool aSuppressTransaction) override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetAttributeOrEquivalent(
+      Element* aElement, nsAtom* aAttribute, const nsAString& aValue,
+      bool aSuppressTransaction) override;
   using EditorBase::RemoveAttributeOrEquivalent;
   using EditorBase::SetAttributeOrEquivalent;
 
@@ -391,9 +385,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult DeleteSelectionAsSubAction(EDirection aDirection,
-                                      EStripWrappers aStripWrappers);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteSelectionAsSubAction(
+      EDirection aDirection, EStripWrappers aStripWrappers);
 
   
 
@@ -410,8 +403,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult DeleteSelectionWithTransaction(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult DeleteSelectionWithTransaction(
       EDirection aAction, EStripWrappers aStripWrappers);
 
   
@@ -428,8 +420,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult ReplaceSelectionAsSubAction(const nsAString& aString);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  ReplaceSelectionAsSubAction(const nsAString& aString);
 
   
 
@@ -696,8 +688,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SelectEntireDocument() override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SelectEntireDocument() override;
 
   
 
@@ -719,9 +710,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult PrepareToInsertContent(const EditorDOMPoint& aPointToInsert,
-                                  bool aDoDeleteSelection);
+  MOZ_CAN_RUN_SCRIPT nsresult PrepareToInsertContent(
+      const EditorDOMPoint& aPointToInsert, bool aDoDeleteSelection);
 
   
 
@@ -731,10 +721,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult InsertTextAt(const nsAString& aStringToInsert,
-                        const EditorDOMPoint& aPointToInsert,
-                        bool aDoDeleteSelection);
+  MOZ_CAN_RUN_SCRIPT nsresult InsertTextAt(const nsAString& aStringToInsert,
+                                           const EditorDOMPoint& aPointToInsert,
+                                           bool aDoDeleteSelection);
 
   
 
@@ -794,8 +783,8 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> DeleteSelectionAndCreateElement(nsAtom& aTag);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> DeleteSelectionAndCreateElement(
+      nsAtom& aTag);
 
   
 

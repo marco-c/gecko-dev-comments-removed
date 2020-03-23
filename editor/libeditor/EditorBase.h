@@ -180,10 +180,10 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult Init(Document& doc, Element* aRoot,
-                        nsISelectionController* aSelCon, uint32_t aFlags,
-                        const nsAString& aInitialValue);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Init(Document& doc, Element* aRoot,
+                                           nsISelectionController* aSelCon,
+                                           uint32_t aFlags,
+                                           const nsAString& aInitialValue);
 
   
 
@@ -326,8 +326,7 @@ class EditorBase : public nsIEditor,
     eLTR,
     eRTL,
   };
-  MOZ_CAN_RUN_SCRIPT
-  void SwitchTextDirectionTo(TextDirection aTextDirection);
+  MOZ_CAN_RUN_SCRIPT void SwitchTextDirectionTo(TextDirection aTextDirection);
 
   
 
@@ -421,8 +420,8 @@ class EditorBase : public nsIEditor,
     return mTransactionManager->RemoveTransactionListener(aListener);
   }
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
+      WidgetKeyboardEvent* aKeyboardEvent);
 
   virtual dom::EventTarget* GetDOMEventTarget() = 0;
 
@@ -1383,8 +1382,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult InsertTextWithTransaction(
+  MOZ_CAN_RUN_SCRIPT virtual nsresult InsertTextWithTransaction(
       Document& aDocument, const nsAString& aStringToInsert,
       const EditorRawDOMPoint& aPointToInsert,
       EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
@@ -1453,8 +1451,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> ReplaceContainerWithTransaction(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> ReplaceContainerWithTransaction(
       Element& aOldContainer, nsAtom& aTagName) {
     return ReplaceContainerWithTransactionInternal(
         aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), false);
@@ -1470,9 +1467,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> ReplaceContainerAndCloneAttributesWithTransaction(
-      Element& aOldContainer, nsAtom& aTagName) {
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
+  ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
+                                                    nsAtom& aTagName) {
     return ReplaceContainerWithTransactionInternal(
         aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), true);
   }
@@ -1489,8 +1486,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> ReplaceContainerWithTransaction(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> ReplaceContainerWithTransaction(
       Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
       const nsAString& aAttributeValue) {
     return ReplaceContainerWithTransactionInternal(
@@ -1502,9 +1498,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  void CloneAttributesWithTransaction(Element& aDestElement,
-                                      Element& aSourceElement);
+  MOZ_CAN_RUN_SCRIPT void CloneAttributesWithTransaction(
+      Element& aDestElement, Element& aSourceElement);
 
   
 
@@ -1512,8 +1507,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveContainerWithTransaction(Element& aElement);
+  MOZ_CAN_RUN_SCRIPT nsresult RemoveContainerWithTransaction(Element& aElement);
 
   
 
@@ -1529,9 +1523,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> InsertContainerWithTransaction(nsIContent& aContent,
-                                                           nsAtom& aTagName) {
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
+      nsIContent& aContent, nsAtom& aTagName) {
     return InsertContainerWithTransactionInternal(
         aContent, aTagName, *nsGkAtoms::_empty, EmptyString());
   }
@@ -1553,8 +1546,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> InsertContainerWithTransaction(
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> InsertContainerWithTransaction(
       nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
       const nsAString& aAttributeValue) {
     return InsertContainerWithTransactionInternal(aContent, aTagName,
@@ -1586,8 +1578,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult JoinNodesWithTransaction(nsINode& aLeftNode, nsINode& aRightNode);
+  MOZ_CAN_RUN_SCRIPT nsresult JoinNodesWithTransaction(nsINode& aLeftNode,
+                                                       nsINode& aRightNode);
 
   
 
@@ -1604,9 +1596,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult MoveNodeToEndWithTransaction(nsIContent& aContent,
-                                        nsINode& aNewContainer) {
+  MOZ_CAN_RUN_SCRIPT nsresult
+  MoveNodeToEndWithTransaction(nsIContent& aContent, nsINode& aNewContainer) {
     EditorDOMPoint pointToInsert;
     pointToInsert.SetToEndOf(&aNewContainer);
     return MoveNodeWithTransaction(aContent, pointToInsert);
@@ -1678,10 +1669,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult CloneAttributeWithTransaction(nsAtom& aAttribute,
-                                         Element& aDestElement,
-                                         Element& aSourceElement);
+  MOZ_CAN_RUN_SCRIPT nsresult CloneAttributeWithTransaction(
+      nsAtom& aAttribute, Element& aDestElement, Element& aSourceElement);
 
   
 
@@ -1689,14 +1678,11 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveAttributeWithTransaction(Element& aElement,
-                                          nsAtom& aAttribute);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveAttributeWithTransaction(Element& aElement, nsAtom& aAttribute);
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult RemoveAttributeOrEquivalent(Element* aElement,
-                                               nsAtom* aAttribute,
-                                               bool aSuppressTransaction) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult RemoveAttributeOrEquivalent(
+      Element* aElement, nsAtom* aAttribute, bool aSuppressTransaction) = 0;
 
   
 
@@ -1705,15 +1691,12 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  nsresult SetAttributeWithTransaction(Element& aElement, nsAtom& aAttribute,
-                                       const nsAString& aValue);
+  MOZ_CAN_RUN_SCRIPT nsresult SetAttributeWithTransaction(
+      Element& aElement, nsAtom& aAttribute, const nsAString& aValue);
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SetAttributeOrEquivalent(Element* aElement,
-                                            nsAtom* aAttribute,
-                                            const nsAString& aValue,
-                                            bool aSuppressTransaction) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SetAttributeOrEquivalent(
+      Element* aElement, nsAtom* aAttribute, const nsAString& aValue,
+      bool aSuppressTransaction) = 0;
 
   
 
@@ -1824,10 +1807,11 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> ReplaceContainerWithTransactionInternal(
-      Element& aElement, nsAtom& aTagName, nsAtom& aAttribute,
-      const nsAString& aAttributeValue, bool aCloneAllAttributes);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
+  ReplaceContainerWithTransactionInternal(Element& aElement, nsAtom& aTagName,
+                                          nsAtom& aAttribute,
+                                          const nsAString& aAttributeValue,
+                                          bool aCloneAllAttributes);
 
   
 
@@ -1847,10 +1831,10 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Element> InsertContainerWithTransactionInternal(
-      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
-      const nsAString& aAttributeValue);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
+  InsertContainerWithTransactionInternal(nsIContent& aContent, nsAtom& aTagName,
+                                         nsAtom& aAttribute,
+                                         const nsAString& aAttributeValue);
 
   
 
@@ -1925,9 +1909,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  EditorDOMPoint JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
-                                              nsIContent& aRightNode);
+  MOZ_CAN_RUN_SCRIPT EditorDOMPoint
+  JoinNodesDeepWithTransaction(nsIContent& aLeftNode, nsIContent& aRightNode);
 
   
 
@@ -2430,8 +2413,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SelectAllInternal();
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SelectAllInternal();
 
   nsresult DetermineCurrentDirection();
 
@@ -2471,8 +2453,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT
-  virtual nsresult SelectEntireDocument() = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult SelectEntireDocument() = 0;
 
   
 
@@ -2609,8 +2590,8 @@ class EditorBase : public nsIEditor,
     eNotifyEditorObserversOfBefore,
     eNotifyEditorObserversOfCancel
   };
-  MOZ_CAN_RUN_SCRIPT
-  void NotifyEditorObservers(NotificationForEditorObservers aNotification);
+  MOZ_CAN_RUN_SCRIPT void NotifyEditorObservers(
+      NotificationForEditorObservers aNotification);
 
   
 
