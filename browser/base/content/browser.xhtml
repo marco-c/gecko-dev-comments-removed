@@ -6,14 +6,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-<!-- The "global.css" stylesheet is imported first to allow other stylesheets to
-     override rules using selectors with the same specificity. This applies to
-     both "content" and "skin" packages, which bug 1385444 will unify later. -->
+
+
+
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
 
-<!-- While these stylesheets are defined in Toolkit, they are only used in the
-     main browser window, so we can load them here. Bug 1474241 is on file to
-     consider moving these widgets to the "browser" folder. -->
+
+
+
 <?xml-stylesheet href="chrome://global/content/tabprompts.css" type="text/css"?>
 <?xml-stylesheet href="chrome://global/skin/tabprompts.css" type="text/css"?>
 
@@ -192,8 +192,8 @@
                 oncommand="gBrowser.removeMultiSelectedTabs();"/>
     </menupopup>
 
-    <!-- bug 415444/582485: event.stopPropagation is here for the cloned version
-         of this menupopup -->
+    
+
     <menupopup id="backForwardMenu"
                onpopupshowing="return FillHistoryMenu(event.target);"
                oncommand="gotoHistoryIndex(event); event.stopPropagation();"
@@ -204,7 +204,7 @@
     <menupopup id="new-tab-button-popup"
                onpopupshowing="return CreateContainerTabMenu(event);"
                onclick="checkForMiddleClick(this, event);"/>
-    <!-- for search and content formfill/pw manager -->
+    
 
     <panel is="autocomplete-richlistbox-popup"
            type="autocomplete-richlistbox"
@@ -216,7 +216,7 @@
            norolluponanchor="true"
            nomaxresults="true" />
 
-    <!-- for search with one-off buttons -->
+    
     <panel is="search-autocomplete-richlistbox-popup"
            type="autocomplete-richlistbox"
            id="PopupSearchAutoComplete"
@@ -224,8 +224,8 @@
            noautofocus="true"
            hidden="true" />
 
-    <!-- for date/time picker. consumeoutsideclicks is set to never, so that
-         clicks on the anchored input box are never consumed. -->
+    
+
     <panel id="DateTimePickerPanel"
            type="arrow"
            hidden="true"
@@ -237,10 +237,10 @@
            tabspecific="true">
     </panel>
 
-    <!-- for select dropdowns. The menupopup is what shows the list of options,
-         and the popuponly menulist makes things like the menuactive attributes
-         work correctly on the menupopup. ContentSelectDropdown expects the
-         popuponly menulist to be its immediate parent. -->
+    
+
+
+
     <menulist popuponly="true" id="ContentSelectDropdown" hidden="true">
       <menupopup rolluponmousewheel="true"
                  activateontab="true" position="after_start"
@@ -251,7 +251,7 @@
         />
     </menulist>
 
-    <!-- for invalid form error message -->
+    
     <panel id="invalid-form-popup" type="arrow" orient="vertical" noautofocus="true" hidden="true" level="parent">
       <description/>
     </panel>
@@ -312,7 +312,7 @@
       </panel>
     </html:template>
 
-    <!-- UI tour experience -->
+    
     <panel id="UITourTooltip"
            type="arrow"
            hidden="true"
@@ -336,7 +336,7 @@
       <hbox id="UITourTooltipButtons" flex="1" align="center"/>
      </vbox>
     </panel>
-    <!-- type="default" forces frames to be created so that the panel's size can be determined -->
+    
     <panel id="UITourHighlightContainer"
            type="default"
            hidden="true"
@@ -373,7 +373,7 @@
                      class="subviewbutton subviewbutton-iconic sync-ui-item"
                      oncommand="SidebarUI.show('viewTabsSidebar');"/>
       <toolbarseparator/>
-      <!-- Extension toolbarbuttons go here. -->
+      
       <toolbarseparator id="sidebar-extensions-separator"/>
       <toolbarbutton id="sidebar-reverse-position"
                      class="subviewbutton"
@@ -444,12 +444,12 @@
                 observes="History:UndoCloseTab"/>
       <menuseparator/>
       <menuseparator id="viewToolbarsMenuSeparator"/>
-      <!-- XXXgijs: we're using oncommand handler here to avoid the event being
-                    redirected to the command element, thus preventing
-                    listeners on the menupopup or further up the tree from
-                    seeing the command event pass by. The observes attribute is
-                    here so that the menuitem is still disabled and re-enabled
-                    correctly. -->
+      
+
+
+
+
+
       <menuitem oncommand="gCustomizeMode.enter()"
                 observes="cmd_CustomizeToolbars"
                 class="viewCustomizeToolbar"
@@ -655,7 +655,7 @@
                 id="syncedTabsRefreshFilter"/>
     </menupopup>
 
-    <hbox id="statuspanel" inactive="true" renderroot="content">
+    <hbox id="statuspanel" inactive="true">
       <hbox id="statuspanel-inner">
         <label id="statuspanel-label"
                role="status"
@@ -667,13 +667,13 @@
   </popupset>
   <box id="appMenu-viewCache" hidden="true"/>
 
-  <!-- Temporary wrapper until we move away from XUL flex to allow a negative
-       margin-top to slide the toolbox off screen in fullscreen layout.-->
+  
+
   <box>
   <toolbox id="navigator-toolbox" flex="1">
 
     <vbox id="titlebar">
-      <!-- Menu -->
+      
       <toolbar type="menubar" id="toolbar-menubar"
                class="browser-toolbar chromeclass-menubar titlebar-color"
                customizable="true"
@@ -760,8 +760,8 @@
 #include titlebar-items.inc.xhtml
 
 #ifdef XP_MACOSX
-        <!-- OS X does not natively support RTL for its titlebar items, so we prevent this secondary
-             buttonbox from reversing order in RTL by forcing an LTR direction. -->
+        
+
         <hbox id="titlebar-secondary-buttonbox" dir="ltr">
           <button class="accessibility-indicator" tooltiptext="&accessibilityIndicator.tooltip;" aria-live="polite"/>
           <hbox class="private-browsing-indicator"/>
@@ -849,8 +849,8 @@
                   pageproxystate="invalid">
               <box id="urlbar-search-button"
                    class="chromeclass-toolbar-additional"/>
-              <!-- Use onclick instead of normal popup= syntax since the popup
-                   code fires onmousedown, and hence eats our favicon drag events. -->
+              
+
               <box id="tracking-protection-icon-container" align="center"
                    role="button"
                    onclick="gProtectionsHandler.handleProtectionsButtonEvent(event);"
@@ -1058,9 +1058,9 @@
 
         <toolbarspring cui-areatype="toolbar" class="chromeclass-toolbar-additional"/>
 
-        <!-- This is a placeholder for the Downloads Indicator.  It is visible
-             during the customization of the toolbar, in the palette, and before
-             the Downloads Indicator overlay is loaded. -->
+        
+
+
         <toolbarbutton id="downloads-button"
                        class="toolbarbutton-1 chromeclass-toolbar-additional"
                        badged="true"
@@ -1077,10 +1077,10 @@
                        hidden="true"
                        tooltip="dynamic-shortcut-tooltip"
                        indicator="true">
-            <!-- The panel's anchor area is smaller than the outer button, but must
-                 always be visible and must not move or resize when the indicator
-                 state changes, otherwise the panel could change its position or lose
-                 its arrow unexpectedly. -->
+            
+
+
+
             <stack id="downloads-indicator-anchor"
                    consumeanchor="downloads-button">
               <box id="downloads-indicator-icon"/>
@@ -1276,7 +1276,7 @@
                     label-show="&viewBookmarksSidebar2.label;"
                     label-hide="&hideBookmarksSidebar.label;"
                     oncommand="SidebarUI.toggle('viewBookmarksSidebar');"/>
-          <!-- NB: temporary solution for bug 985024, this should go away soon. -->
+          
           <menuitem id="BMB_bookmarksShowAllTop"
                     class="menuitem-iconic subviewbutton"
                     label="&showAllBookmarks2.label;"
@@ -1301,7 +1301,7 @@
                         label-hide="&hideBookmarksToolbar.label;"
                         oncommand="BookmarkingUI.toggleBookmarksToolbar();"/>
               <menuseparator/>
-              <!-- Bookmarks toolbar items -->
+              
             </menupopup>
           </menu>
           <menu id="BMB_unsortedBookmarks"
@@ -1333,7 +1333,7 @@
           </menu>
 
           <menuseparator/>
-          <!-- Bookmarks menu items will go here -->
+          
           <menuitem id="BMB_bookmarksShowAll"
                     class="subviewbutton panel-subview-footer"
                     label="&showAllBookmarks2.label;"
@@ -1358,7 +1358,7 @@
 
   <hbox id="fullscr-toggler" hidden="true"/>
 
-  <hbox flex="1" id="browser" renderroot="content">
+  <hbox flex="1" id="browser">
     <vbox id="browser-border-start" hidden="true" layer="true"/>
     <vbox id="sidebar-box" hidden="true" class="chromeclass-extrachrome">
       <box id="sidebar-header" align="center">
@@ -1381,7 +1381,7 @@
 
     <splitter id="sidebar-splitter" class="chromeclass-extrachrome sidebar-splitter" hidden="true"/>
     <vbox id="appcontent" flex="1">
-      <!-- gHighPriorityNotificationBox will be added here lazily. -->
+      
       <tabbox id="tabbrowser-tabbox"
               flex="1" tabcontainer="tabbrowser-tabs">
         <tabpanels id="tabbrowser-tabpanels"
@@ -1391,17 +1391,44 @@
     <vbox id="browser-border-end" hidden="true" layer="true"/>
   </hbox>
 
-  <box id="customization-container" flex="1" renderroot="content" hidden="true"><![CDATA[
+  <box id="customization-container" flex="1" hidden="true"><![CDATA[
 #include ../../components/customizableui/content/customizeMode.inc.xhtml
   ]]></box>
 
-# Everything that needs to straddle the line between chrome and content, without being
-# its own widget-level window, needs to go in here, and set the renderroot="popover"
-# attribute, or it will fail to render properly in WebRender.
-#include popovers.inc
+  <html:div id="fullscreen-and-pointerlock-wrapper">
+    <html:div id="fullscreen-warning" class="pointerlockfswarning" hidden="true">
+      <html:div class="pointerlockfswarning-domain-text">
+        &fullscreenWarning.beforeDomain.label;
+        <html:span class="pointerlockfswarning-domain"/>
+        &fullscreenWarning.afterDomain.label;
+      </html:div>
+      <html:div class="pointerlockfswarning-generic-text">
+        &fullscreenWarning.generic.label;
+      </html:div>
+      <html:button id="fullscreen-exit-button"
+                   onclick="FullScreen.exitDomFullScreen();">
+#ifdef XP_MACOSX
+              &exitDOMFullscreenMac.button;
+#else
+              &exitDOMFullscreen.button;
+#endif
+      </html:button>
+    </html:div>
 
-  <vbox id="browser-bottombox" layer="true" renderroot="content">
-    <!-- gNotificationBox will be added here lazily. -->
+    <html:div id="pointerlock-warning" class="pointerlockfswarning" hidden="true">
+      <html:div class="pointerlockfswarning-domain-text">
+        &pointerlockWarning.beforeDomain.label;
+        <html:span class="pointerlockfswarning-domain"/>
+        &pointerlockWarning.afterDomain.label;
+      </html:div>
+      <html:div class="pointerlockfswarning-generic-text">
+        &pointerlockWarning.generic.label;
+      </html:div>
+    </html:div>
+  </html:div>
+
+  <vbox id="browser-bottombox" layer="true">
+    
   </vbox>
 
   <html:div id="a11y-announcement" role="alert"/>
