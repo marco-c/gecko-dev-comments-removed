@@ -11,3 +11,16 @@ async function reloadTab(tab) {
   gBrowser.reloadTab(tab);
   await tabReloaded;
 }
+
+
+const mockGetLoginDataWithSyncedDevices = (
+  deviceCount,
+  mobileDeviceConnected = false
+) => async () => {
+  return {
+    hasFxa: true,
+    numLogins: Services.logins.countLogins("", "", ""),
+    numSyncedDevices: deviceCount,
+    mobileDeviceConnected: deviceCount && mobileDeviceConnected,
+  };
+};
