@@ -1,0 +1,10 @@
+
+
+
+
+
+
+DevToolsModules(
+    'addons.js',
+    'webextension-inspected-window.js',
+)
