@@ -5,6 +5,7 @@
 
 
 #include "CrashReporterHost.h"
+#include "CrashReporterMetadataShmem.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/SyncRunnable.h"
@@ -57,8 +58,10 @@ namespace mozilla {
 namespace ipc {
 
 CrashReporterHost::CrashReporterHost(GeckoProcessType aProcessType,
+                                     const Shmem& aShmem,
                                      CrashReporter::ThreadId aThreadId)
     : mProcessType(aProcessType),
+      mShmem(aShmem),
       mThreadId(aThreadId),
       mStartTime(::time(nullptr)),
       mFinalized(false) {}
@@ -109,14 +112,22 @@ bool CrashReporterHost::FinalizeCrashReport() {
   MOZ_ASSERT(!mFinalized);
   MOZ_ASSERT(HasMinidump());
 
-  mExtraAnnotations[CrashReporter::Annotation::ProcessType] =
+  CrashReporter::AnnotationTable annotations;
+
+  annotations[CrashReporter::Annotation::ProcessType] =
       XRE_ChildProcessTypeToAnnotation(mProcessType);
 
   char startTime[32];
   SprintfLiteral(startTime, "%lld", static_cast<long long>(mStartTime));
-  mExtraAnnotations[CrashReporter::Annotation::StartupTime] =
+  annotations[CrashReporter::Annotation::StartupTime] =
       nsDependentCString(startTime);
 
+  
+  if (mShmem.IsReadable()) {
+    CrashReporterMetadataShmem::ReadAppNotes(mShmem, annotations);
+  }
+
+  MergeCrashAnnotations(mExtraAnnotations, annotations);
   CrashReporter::WriteExtraFile(mDumpID, mExtraAnnotations);
 
   RecordCrash(mProcessType, GetCrashType(), mDumpID);
