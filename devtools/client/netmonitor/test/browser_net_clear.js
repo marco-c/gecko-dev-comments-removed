@@ -21,9 +21,9 @@ add_task(async function() {
   assertNoRequestState();
 
   
-  let onMonitorUpdated = waitForAllRequestsFinished(monitor);
+  let wait = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
-  await onMonitorUpdated;
+  await wait;
 
   assertSingleRequestState();
 
@@ -32,9 +32,9 @@ add_task(async function() {
   assertNoRequestState();
 
   
-  onMonitorUpdated = waitForAllRequestsFinished(monitor);
+  wait = waitForNetworkEvents(monitor, 1);
   tab.linkedBrowser.reload();
-  await onMonitorUpdated;
+  await wait;
 
   assertSingleRequestState();
 
