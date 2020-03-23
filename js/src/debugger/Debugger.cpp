@@ -1694,7 +1694,7 @@ static MOZ_MUST_USE bool AdjustGeneratorResumptionValue(JSContext* cx,
     
     
     if (!genObj->is<AsyncGeneratorObject>()) {
-      JSObject* pair = CreateIterResultObject(cx, vp, true);
+      PlainObject* pair = CreateIterResultObject(cx, vp, true);
       if (!pair) {
         return false;
       }

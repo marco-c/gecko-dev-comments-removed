@@ -56,7 +56,6 @@
 #include "vm/JSAtom.h"
 #include "vm/JSScript.h"
 #include "vm/OffThreadPromiseRuntimeState.h"  
-#include "vm/PromiseObject.h"                 
 #include "vm/Scope.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/Stack.h"

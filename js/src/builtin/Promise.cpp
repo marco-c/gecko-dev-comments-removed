@@ -1865,7 +1865,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
       bool done =
           handlerNum == PromiseHandlerAsyncFromSyncIteratorValueUnwrapDone;
       
-      JSObject* resultObj = CreateIterResultObject(cx, argument, done);
+      PlainObject* resultObj = CreateIterResultObject(cx, argument, done);
       if (!resultObj) {
         return false;
       }
@@ -4579,7 +4579,7 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
     
     if (func.isNullOrUndefined()) {
       
-      JSObject* resultObj = CreateIterResultObject(cx, args.get(0), true);
+      PlainObject* resultObj = CreateIterResultObject(cx, args.get(0), true);
       if (!resultObj) {
         return AbruptRejectPromise(cx, args, resultPromise, nullptr);
       }

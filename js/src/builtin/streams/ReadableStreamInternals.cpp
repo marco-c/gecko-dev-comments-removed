@@ -41,8 +41,6 @@
 #include "vm/List-inl.h"  
 #include "vm/Realm-inl.h"  
 
-using js::ReadableStream;
-
 using JS::BooleanValue;
 using JS::CallArgs;
 using JS::CallArgsFromVp;
@@ -52,6 +50,9 @@ using JS::ResolvePromise;
 using JS::Rooted;
 using JS::UndefinedHandleValue;
 using JS::Value;
+
+using js::PlainObject;
+using js::ReadableStream;
 
 
 
@@ -249,12 +250,12 @@ MOZ_MUST_USE bool js::ReadableStreamCloseInternal(
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamCreateReadResult(
+MOZ_MUST_USE PlainObject* js::ReadableStreamCreateReadResult(
     JSContext* cx, Handle<Value> value, bool done,
     ForAuthorCodeBool forAuthorCode) {
   
   
-  Rooted<JSObject*> templateObject(
+  Rooted<PlainObject*> templateObject(
       cx,
       forAuthorCode == ForAuthorCodeBool::Yes
           ? cx->realm()->getOrCreateIterResultTemplateObject(cx)
@@ -267,9 +268,9 @@ MOZ_MUST_USE JSObject* js::ReadableStreamCreateReadResult(
   
 
   
-  NativeObject* obj;
+  PlainObject* obj;
   JS_TRY_VAR_OR_RETURN_NULL(
-      cx, obj, NativeObject::createWithTemplate(cx, templateObject));
+      cx, obj, PlainObject::createWithTemplate(cx, templateObject));
 
   
   obj->setSlot(Realm::IterResultObjectValueSlot, value);
@@ -411,12 +412,12 @@ MOZ_MUST_USE bool js::ReadableStreamFulfillReadOrReadIntoRequest(
   
   
   
-  Rooted<JSObject*> iterResult(
-      cx, ReadableStreamCreateReadResult(cx, chunk, done,
-                                         unwrappedReader->forAuthorCode()));
+  PlainObject* iterResult = ReadableStreamCreateReadResult(
+      cx, chunk, done, unwrappedReader->forAuthorCode());
   if (!iterResult) {
     return false;
   }
+
   Rooted<Value> val(cx, ObjectValue(*iterResult));
   return ResolvePromise(cx, readIntoRequest, val);
 }
