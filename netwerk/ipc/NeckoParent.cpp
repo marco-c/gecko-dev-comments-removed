@@ -409,8 +409,17 @@ mozilla::ipc::IPCResult NeckoParent::RecvPFTPChannelConstructor(
 
 already_AddRefed<PDocumentChannelParent>
 NeckoParent::AllocPDocumentChannelParent(
-    PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
+    PBrowserParent* aBrowser, const MaybeDiscarded<BrowsingContext>& aContext,
+    const SerializedLoadContext& aSerialized,
     const DocumentChannelCreationArgs& args) {
+  
+  
+  
+  CanonicalBrowsingContext* context = nullptr;
+  if (!aContext.IsNullOrDiscarded()) {
+    context = aContext.get_canonical();
+  }
+
   nsCOMPtr<nsIPrincipal> requestingPrincipal =
       GetRequestingPrincipal(Some(args.loadInfo()));
 
@@ -422,21 +431,24 @@ NeckoParent::AllocPDocumentChannelParent(
   }
   PBOverrideStatus overrideStatus =
       PBOverrideStatusFromLoadContext(aSerialized);
-  RefPtr<dom::BrowserParent> browser =
-      static_cast<dom::BrowserParent*>(aBrowser);
   RefPtr<DocumentChannelParent> p =
-      new DocumentChannelParent(browser, loadContext, overrideStatus);
+      new DocumentChannelParent(context, loadContext, overrideStatus);
   return p.forget();
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvPDocumentChannelConstructor(
     PDocumentChannelParent* aActor, PBrowserParent* aBrowser,
+    const MaybeDiscarded<BrowsingContext>& aContext,
     const SerializedLoadContext& aSerialized,
     const DocumentChannelCreationArgs& aArgs) {
   DocumentChannelParent* p = static_cast<DocumentChannelParent*>(aActor);
-  RefPtr<dom::BrowserParent> browser =
-      static_cast<dom::BrowserParent*>(aBrowser);
-  if (!p->Init(browser, aArgs)) {
+
+  if (aContext.IsNullOrDiscarded()) {
+    Unused << p->SendFailedAsyncOpen(NS_ERROR_FAILURE);
+    return IPC_OK();
+  }
+
+  if (!p->Init(aArgs)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
@@ -619,15 +631,17 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDNSRequestConstructor(
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvSpeculativeConnect(
-    const URIParams& aURI, nsIPrincipal* aPrincipal, const bool& aAnonymous) {
+    nsIURI* aURI, nsIPrincipal* aPrincipal, const bool& aAnonymous) {
   nsCOMPtr<nsISpeculativeConnect> speculator(gIOService);
-  nsCOMPtr<nsIURI> uri = DeserializeURI(aURI);
   nsCOMPtr<nsIPrincipal> principal(aPrincipal);
-  if (uri && speculator) {
+  if (!aURI) {
+    return IPC_FAIL(this, "aURI must not be null");
+  }
+  if (aURI && speculator) {
     if (aAnonymous) {
-      speculator->SpeculativeAnonymousConnect(uri, principal, nullptr);
+      speculator->SpeculativeAnonymousConnect(aURI, principal, nullptr);
     } else {
-      speculator->SpeculativeConnect(uri, principal, nullptr);
+      speculator->SpeculativeConnect(aURI, principal, nullptr);
     }
   }
   return IPC_OK();
@@ -842,10 +856,9 @@ mozilla::ipc::IPCResult NeckoParent::RecvRemoveRequestContext(
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvGetExtensionStream(
-    const URIParams& aURI, GetExtensionStreamResolver&& aResolve) {
-  nsCOMPtr<nsIURI> deserializedURI = DeserializeURI(aURI);
-  if (!deserializedURI) {
-    return IPC_FAIL_NO_REASON(this);
+    nsIURI* aURI, GetExtensionStreamResolver&& aResolve) {
+  if (!aURI) {
+    return IPC_FAIL(this, "aURI must not be null");
   }
 
   RefPtr<ExtensionProtocolHandler> ph(ExtensionProtocolHandler::GetSingleton());
@@ -861,7 +874,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetExtensionStream(
   
   nsCOMPtr<nsIInputStream> inputStream;
   bool terminateSender = true;
-  auto inputStreamOrReason = ph->NewStream(deserializedURI, &terminateSender);
+  auto inputStreamOrReason = ph->NewStream(aURI, &terminateSender);
   if (inputStreamOrReason.isOk()) {
     inputStream = inputStreamOrReason.unwrap();
   }
@@ -878,10 +891,9 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetExtensionStream(
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvGetExtensionFD(
-    const URIParams& aURI, GetExtensionFDResolver&& aResolve) {
-  nsCOMPtr<nsIURI> deserializedURI = DeserializeURI(aURI);
-  if (!deserializedURI) {
-    return IPC_FAIL_NO_REASON(this);
+    nsIURI* aURI, GetExtensionFDResolver&& aResolve) {
+  if (!aURI) {
+    return IPC_FAIL(this, "aURI must not be null");
   }
 
   RefPtr<ExtensionProtocolHandler> ph(ExtensionProtocolHandler::GetSingleton());
@@ -896,7 +908,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvGetExtensionFD(
   
   
   bool terminateSender = true;
-  auto result = ph->NewFD(deserializedURI, &terminateSender, aResolve);
+  auto result = ph->NewFD(aURI, &terminateSender, aResolve);
 
   if (result.isErr() && terminateSender) {
     return IPC_FAIL_NO_REASON(this);
