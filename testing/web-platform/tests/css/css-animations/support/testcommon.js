@@ -196,6 +196,15 @@ function waitForAnimationFrames(frameCount, onFrame) {
 
 
 
+function fastEventsTimeout() {
+  return waitForAnimationFrames(2);
+};
+
+
+
+
+
+
 function waitForAllAnimations(animations) {
   return Promise.all(animations.map(animation => animation.ready));
 }
