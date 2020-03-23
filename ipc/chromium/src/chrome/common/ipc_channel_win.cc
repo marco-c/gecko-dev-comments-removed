@@ -17,6 +17,7 @@
 #include "base/win_util.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
+#include "mozilla/LateWriteChecks.h"
 
 #ifdef FUZZING
 #  include "mozilla/ipc/Faulty.h"
@@ -496,8 +497,15 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages(
   }
 
   Pickle::BufferList::IterImpl& iter = partial_write_iter_.ref();
+
+  
+  
+  
+  mozilla::PushSuspendLateWriteChecks();
   BOOL ok = WriteFile(pipe_, iter.Data(), iter.RemainingInSegment(),
                       &bytes_written, &output_state_.context.overlapped);
+  mozilla::PopSuspendLateWriteChecks();
+
   if (!ok) {
     DWORD err = GetLastError();
     if (err == ERROR_IO_PENDING) {
