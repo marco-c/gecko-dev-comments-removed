@@ -271,7 +271,7 @@ class ScriptLoader final : public nsISupports {
 
   void BeginDeferringScripts() {
     mDeferEnabled = true;
-    if (mDocumentParsingDone) {
+    if (mDeferCheckpointReached) {
       
       
       
@@ -280,7 +280,7 @@ class ScriptLoader final : public nsISupports {
       
       
       
-      mDocumentParsingDone = false;
+      mDeferCheckpointReached = false;
     } else {
       if (mDocument) {
         mDocument->BlockOnload();
@@ -293,11 +293,21 @@ class ScriptLoader final : public nsISupports {
 
 
 
-
-
-
-
   void ParsingComplete(bool aTerminated);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void DeferCheckpointReached();
 
   
 
@@ -634,7 +644,7 @@ class ScriptLoader final : public nsISupports {
   uint32_t mNumberOfProcessors;
   bool mEnabled;
   bool mDeferEnabled;
-  bool mDocumentParsingDone;
+  bool mDeferCheckpointReached;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;
   bool mGiveUpEncoding;

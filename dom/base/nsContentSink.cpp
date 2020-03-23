@@ -181,30 +181,36 @@ NS_IMETHODIMP
 nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
                                 nsresult aStatus) {
   MOZ_ASSERT(!mRunsToCompletion, "How come a fragment parser observed sheets?");
-  if (!aWasDeferred) {
-    MOZ_ASSERT(mPendingSheetCount > 0, "How'd that happen?");
-    --mPendingSheetCount;
+  if (aWasDeferred) {
+    return NS_OK;
+  }
+  MOZ_ASSERT(mPendingSheetCount > 0, "How'd that happen?");
+  --mPendingSheetCount;
 
-    if (mPendingSheetCount == 0 &&
-        (mDeferredLayoutStart || mDeferredFlushTags)) {
-      if (mDeferredFlushTags) {
-        FlushTags();
-      }
-      if (mDeferredLayoutStart) {
-        
-        
-        
-        
-        
-        
-        StartLayout(false);
-      }
-
+  const bool loadedAllSheets = !mPendingSheetCount;
+  if (loadedAllSheets && (mDeferredLayoutStart || mDeferredFlushTags)) {
+    if (mDeferredFlushTags) {
+      FlushTags();
+    }
+    if (mDeferredLayoutStart) {
       
-      ScrollToRef();
+      
+      
+      
+      
+      
+      StartLayout(false);
     }
 
-    mScriptLoader->RemoveParserBlockingScriptExecutionBlocker();
+    
+    ScrollToRef();
+  }
+
+  mScriptLoader->RemoveParserBlockingScriptExecutionBlocker();
+
+  if (loadedAllSheets &&
+      mDocument->GetReadyStateEnum() >= Document::READYSTATE_INTERACTIVE) {
+    mScriptLoader->DeferCheckpointReached();
   }
 
   return NS_OK;
@@ -1376,15 +1382,16 @@ void nsContentSink::EndUpdate(Document* aDocument) {
 }
 
 void nsContentSink::DidBuildModelImpl(bool aTerminated) {
-  if (mDocument) {
-    MOZ_ASSERT(aTerminated || mDocument->GetReadyStateEnum() ==
-                                  Document::READYSTATE_LOADING,
-               "Bad readyState");
-    mDocument->SetReadyStateInternal(Document::READYSTATE_INTERACTIVE);
-  }
+  MOZ_ASSERT(aTerminated ||
+                 mDocument->GetReadyStateEnum() == Document::READYSTATE_LOADING,
+             "Bad readyState");
+  mDocument->SetReadyStateInternal(Document::READYSTATE_INTERACTIVE);
 
   if (mScriptLoader) {
     mScriptLoader->ParsingComplete(aTerminated);
+    if (!mPendingSheetCount) {
+      mScriptLoader->DeferCheckpointReached();
+    }
   }
 
   if (!mDocument->HaveFiredDOMTitleChange()) {

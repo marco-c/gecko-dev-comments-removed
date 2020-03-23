@@ -139,7 +139,7 @@ ScriptLoader::ScriptLoader(Document* aDocument)
       mNumberOfProcessors(0),
       mEnabled(true),
       mDeferEnabled(false),
-      mDocumentParsingDone(false),
+      mDeferCheckpointReached(false),
       mBlockingDOMContentLoaded(false),
       mLoadEventFired(false),
       mGiveUpEncoding(false),
@@ -3113,7 +3113,7 @@ void ScriptLoader::ProcessPendingRequests() {
     ProcessRequest(request);
   }
 
-  if (mDocumentParsingDone && mXSLTRequests.isEmpty()) {
+  if (mDeferCheckpointReached && mXSLTRequests.isEmpty()) {
     while (ReadyToExecuteScripts() && !mDeferRequests.isEmpty() &&
            mDeferRequests.getFirst()->IsReadyToRun()) {
       request = mDeferRequests.StealFirst();
@@ -3128,21 +3128,21 @@ void ScriptLoader::ProcessPendingRequests() {
     child->RemoveParserBlockingScriptExecutionBlocker();
   }
 
-  if (mDocumentParsingDone && mDocument && !mParserBlockingRequest &&
+  if (mDeferCheckpointReached && mDocument && !mParserBlockingRequest &&
       mNonAsyncExternalScriptInsertedRequests.isEmpty() &&
       mXSLTRequests.isEmpty() && mDeferRequests.isEmpty() &&
       MaybeRemovedDeferRequests()) {
     return ProcessPendingRequests();
   }
 
-  if (mDocumentParsingDone && mDocument && !mParserBlockingRequest &&
+  if (mDeferCheckpointReached && mDocument && !mParserBlockingRequest &&
       mLoadingAsyncRequests.isEmpty() && mLoadedAsyncRequests.isEmpty() &&
       mNonAsyncExternalScriptInsertedRequests.isEmpty() &&
       mXSLTRequests.isEmpty() && mDeferRequests.isEmpty()) {
     
     
     
-    mDocumentParsingDone = false;
+    mDeferCheckpointReached = false;
     mDocument->UnblockOnload(true);
   }
 }
@@ -3685,39 +3685,45 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
   return NS_OK;
 }
 
-void ScriptLoader::ParsingComplete(bool aTerminated) {
+void ScriptLoader::DeferCheckpointReached() {
   if (mDeferEnabled) {
     
     
-    mDocumentParsingDone = true;
+    mDeferCheckpointReached = true;
   }
+
   mDeferEnabled = false;
-  if (aTerminated) {
-    mDeferRequests.Clear();
-    mLoadingAsyncRequests.Clear();
-    mLoadedAsyncRequests.Clear();
-    mNonAsyncExternalScriptInsertedRequests.Clear();
-    mXSLTRequests.Clear();
+  ProcessPendingRequests();
+}
 
-    for (ScriptLoadRequest* req = mDynamicImportRequests.getFirst(); req;
-         req = req->getNext()) {
-      req->Cancel();
-      
-      
-      
-      FinishDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
-    }
-    mDynamicImportRequests.Clear();
+void ScriptLoader::ParsingComplete(bool aTerminated) {
+  if (!aTerminated) {
+    return;
+  }
+  mDeferRequests.Clear();
+  mLoadingAsyncRequests.Clear();
+  mLoadedAsyncRequests.Clear();
+  mNonAsyncExternalScriptInsertedRequests.Clear();
+  mXSLTRequests.Clear();
 
-    if (mParserBlockingRequest) {
-      mParserBlockingRequest->Cancel();
-      mParserBlockingRequest = nullptr;
-    }
+  for (ScriptLoadRequest* req = mDynamicImportRequests.getFirst(); req;
+       req = req->getNext()) {
+    req->Cancel();
+    
+    
+    
+    FinishDynamicImport(req->AsModuleRequest(), NS_ERROR_ABORT);
+  }
+  mDynamicImportRequests.Clear();
+
+  if (mParserBlockingRequest) {
+    mParserBlockingRequest->Cancel();
+    mParserBlockingRequest = nullptr;
   }
 
   
   
-  ProcessPendingRequests();
+  DeferCheckpointReached();
 }
 
 void ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
