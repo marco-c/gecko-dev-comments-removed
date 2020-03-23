@@ -336,19 +336,18 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         }
 
         
+        
         Label bailout;
-        Label* onZero = mul->canBeNegativeZero() ? &bailout : nullptr;
         Label* onOverflow = mul->canOverflow() ? &bailout : nullptr;
 
-        vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-        const Register scratch = temps.AcquireW().asUnsized();
+        masm.move32(Imm32(constant), destreg);
+        masm.mul32(lhsreg, destreg, destreg, onOverflow);
 
-        masm.move32(Imm32(constant), scratch);
-        masm.mul32(lhsreg, scratch, destreg, onOverflow, onZero);
-        if (onZero || onOverflow) {
+        if (onOverflow) {
+          MOZ_ASSERT(lhsreg != destreg);
           bailoutFrom(&bailout, ins->snapshot());
         }
-        return;  
+        return;
     }
 
     
@@ -357,14 +356,44 @@ void CodeGenerator::visitMulI(LMulI* ins) {
     }
   } else {
     Register rhsreg = ToRegister(rhs);
+    const ARMRegister rhsreg32 = ARMRegister(rhsreg, 32);
 
     Label bailout;
-    
-    Label* onZero = mul->canBeNegativeZero() ? &bailout : nullptr;
     Label* onOverflow = mul->canOverflow() ? &bailout : nullptr;
 
-    masm.mul32(lhsreg, rhsreg, destreg, onOverflow, onZero);
-    if (onZero || onOverflow) {
+    if (mul->canBeNegativeZero()) {
+      
+      
+      
+      
+      
+      
+
+      
+      
+      MOZ_ASSERT(destreg != lhsreg);
+      MOZ_ASSERT(destreg != rhsreg);
+
+      
+      masm.mul32(lhsreg, rhsreg, destreg, onOverflow);
+
+      
+      masm.test32(destreg, destreg);
+
+      
+      
+      
+      
+      
+      masm.Ccmn(lhsreg32, rhsreg32, vixl::NoFlag, Assembler::Zero);
+
+      
+      bailoutIf(Assembler::LessThan, ins->snapshot());
+
+    } else {
+      masm.mul32(lhsreg, rhsreg, destreg, onOverflow);
+    }
+    if (onOverflow) {
       bailoutFrom(&bailout, ins->snapshot());
     }
   }
@@ -1011,7 +1040,11 @@ MoveOperand CodeGeneratorARM64::toMoveOperand(const LAllocation a) const {
   if (a.isFloatReg()) {
     return MoveOperand(ToFloatRegister(a));
   }
-  return MoveOperand(AsRegister(masm.getStackPointer()), ToStackOffset(a));
+  MoveOperand::Kind kind =
+      a.isStackArea() ? MoveOperand::EFFECTIVE_ADDRESS : MoveOperand::MEMORY;
+
+  return MoveOperand(AsRegister(masm.getStackPointer()), ToStackOffset(a),
+                     kind);
 }
 
 class js::jit::OutOfLineTableSwitch
