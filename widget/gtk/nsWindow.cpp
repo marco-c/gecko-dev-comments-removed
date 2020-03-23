@@ -3533,7 +3533,8 @@ void nsWindow::OnWindowStateEvent(GtkWidget* aWidget,
   
   
   
-  if (gtk_check_version(3, 24, 0) != nullptr) {
+  
+  if (mIsX11Display) {
     if (!mIsShown) {
       aEvent->changed_mask = static_cast<GdkWindowState>(
           aEvent->changed_mask & ~GDK_WINDOW_STATE_MAXIMIZED);
