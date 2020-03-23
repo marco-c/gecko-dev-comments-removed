@@ -1241,184 +1241,174 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "privacy.popups.maxReported"
 );
 
-function doURIFixup(browser, fixupInfo) {
-  
-  
-  
-  let alternativeURI = fixupInfo.fixedURI;
-  if (
-    !fixupInfo.keywordProviderName ||
-    !alternativeURI ||
-    !alternativeURI.host
-  ) {
-    return;
-  }
-
-  let contentPrincipal = browser.contentPrincipal;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  let previousURI = browser.currentURI;
-  let preferredURI = fixupInfo.preferredURI;
-
-  
-  
-  let weakBrowser = Cu.getWeakReference(browser);
-  browser = null;
-
-  
-  let hostName = alternativeURI.displayHost;
-  
-  let asciiHost = alternativeURI.asciiHost;
-  
-  
-  
-  
-  if (asciiHost.indexOf(".") == asciiHost.length - 1) {
-    asciiHost = asciiHost.slice(0, -1);
-  }
-
-  let isIPv4Address = host => {
-    let parts = host.split(".");
-    if (parts.length != 4) {
-      return false;
-    }
-    return parts.every(part => {
-      let n = parseInt(part, 10);
-      return n >= 0 && n <= 255;
-    });
-  };
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (isIPv4Address(asciiHost) || /^(?:\d+|0x[a-f0-9]+)$/i.test(asciiHost)) {
-    return;
-  }
-
-  let onLookupCompleteListener = {
-    onLookupComplete(request, record, status) {
-      let browserRef = weakBrowser.get();
-      if (!Components.isSuccessCode(status) || !browserRef) {
-        return;
-      }
-
-      let currentURI = browserRef.currentURI;
-      
-      if (!currentURI.equals(previousURI) && !currentURI.equals(preferredURI)) {
-        return;
-      }
-
-      
-      let notificationBox = gBrowser.getNotificationBox(browserRef);
-      if (notificationBox.getNotificationWithValue("keyword-uri-fixup")) {
-        return;
-      }
-
-      let message = gNavigatorBundle.getFormattedString(
-        "keywordURIFixup.message",
-        [hostName]
-      );
-      let yesMessage = gNavigatorBundle.getFormattedString(
-        "keywordURIFixup.goTo",
-        [hostName]
-      );
-
-      let buttons = [
-        {
-          label: yesMessage,
-          accessKey: gNavigatorBundle.getString(
-            "keywordURIFixup.goTo.accesskey"
-          ),
-          callback() {
-            
-            if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
-              let pref = "browser.fixup.domainwhitelist." + asciiHost;
-              Services.prefs.setBoolPref(pref, true);
-            }
-            openTrustedLinkIn(alternativeURI.spec, "current");
-          },
-        },
-        {
-          label: gNavigatorBundle.getString("keywordURIFixup.dismiss"),
-          accessKey: gNavigatorBundle.getString(
-            "keywordURIFixup.dismiss.accesskey"
-          ),
-          callback() {
-            let notification = notificationBox.getNotificationWithValue(
-              "keyword-uri-fixup"
-            );
-            notificationBox.removeNotification(notification, true);
-          },
-        },
-      ];
-      let notification = notificationBox.appendNotification(
-        message,
-        "keyword-uri-fixup",
-        null,
-        notificationBox.PRIORITY_INFO_HIGH,
-        buttons
-      );
-      notification.persistence = 1;
-    },
-  };
-
-  try {
-    gDNSService.asyncResolve(
-      hostName,
-      0,
-      onLookupCompleteListener,
-      Services.tm.mainThread,
-      contentPrincipal.originAttributes
-    );
-  } catch (ex) {
+var gKeywordURIFixup = {
+  check(browser, { fixedURI, keywordProviderName, preferredURI }) {
     
-    if (ex.result != Cr.NS_ERROR_UNKNOWN_HOST) {
+    
+    
+    if (!keywordProviderName || !fixedURI || !fixedURI.host) {
+      return;
+    }
+
+    let contentPrincipal = browser.contentPrincipal;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let previousURI = browser.currentURI;
+
+    
+    
+    let weakBrowser = Cu.getWeakReference(browser);
+    browser = null;
+
+    
+    let hostName = fixedURI.displayHost;
+    
+    let asciiHost = fixedURI.asciiHost;
+    
+    
+    
+    
+    if (asciiHost.indexOf(".") == asciiHost.length - 1) {
+      asciiHost = asciiHost.slice(0, -1);
+    }
+
+    let isIPv4Address = host => {
+      let parts = host.split(".");
+      if (parts.length != 4) {
+        return false;
+      }
+      return parts.every(part => {
+        let n = parseInt(part, 10);
+        return n >= 0 && n <= 255;
+      });
+    };
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (isIPv4Address(asciiHost) || /^(?:\d+|0x[a-f0-9]+)$/i.test(asciiHost)) {
+      return;
+    }
+
+    let onLookupCompleteListener = {
+      onLookupComplete(request, record, status) {
+        let browserRef = weakBrowser.get();
+        if (!Components.isSuccessCode(status) || !browserRef) {
+          return;
+        }
+
+        let currentURI = browserRef.currentURI;
+        
+        if (
+          !currentURI.equals(previousURI) &&
+          !currentURI.equals(preferredURI)
+        ) {
+          return;
+        }
+
+        
+        let notificationBox = gBrowser.getNotificationBox(browserRef);
+        if (notificationBox.getNotificationWithValue("keyword-uri-fixup")) {
+          return;
+        }
+
+        let message = gNavigatorBundle.getFormattedString(
+          "keywordURIFixup.message",
+          [hostName]
+        );
+        let yesMessage = gNavigatorBundle.getFormattedString(
+          "keywordURIFixup.goTo",
+          [hostName]
+        );
+
+        let buttons = [
+          {
+            label: yesMessage,
+            accessKey: gNavigatorBundle.getString(
+              "keywordURIFixup.goTo.accesskey"
+            ),
+            callback() {
+              
+              if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
+                let pref = "browser.fixup.domainwhitelist." + asciiHost;
+                Services.prefs.setBoolPref(pref, true);
+              }
+              openTrustedLinkIn(fixedURI.spec, "current");
+            },
+          },
+          {
+            label: gNavigatorBundle.getString("keywordURIFixup.dismiss"),
+            accessKey: gNavigatorBundle.getString(
+              "keywordURIFixup.dismiss.accesskey"
+            ),
+            callback() {
+              let notification = notificationBox.getNotificationWithValue(
+                "keyword-uri-fixup"
+              );
+              notificationBox.removeNotification(notification, true);
+            },
+          },
+        ];
+        let notification = notificationBox.appendNotification(
+          message,
+          "keyword-uri-fixup",
+          null,
+          notificationBox.PRIORITY_INFO_HIGH,
+          buttons
+        );
+        notification.persistence = 1;
+      },
+    };
+
+    try {
+      gDNSService.asyncResolve(
+        hostName,
+        0,
+        onLookupCompleteListener,
+        Services.tm.mainThread,
+        contentPrincipal.originAttributes
+      );
+    } catch (ex) {
       
-      Cu.reportError(ex);
+      if (ex.result != Cr.NS_ERROR_UNKNOWN_HOST) {
+        
+        Cu.reportError(ex);
+      }
     }
-  }
-}
+  },
 
-function gKeywordURIFixupObs(fixupInfo, topic, data) {
-  fixupInfo.QueryInterface(Ci.nsIURIFixupInfo);
+  observe(fixupInfo, topic, data) {
+    fixupInfo.QueryInterface(Ci.nsIURIFixupInfo);
 
-  if (!fixupInfo.consumer || fixupInfo.consumer.ownerGlobal != window) {
-    return;
-  }
-
-  doURIFixup(fixupInfo.consumer, {
-    fixedURI: fixupInfo.fixedURI,
-    keywordProviderName: fixupInfo.keywordProviderName,
-    preferredURI: fixupInfo.preferredURI,
-  });
-}
-
-function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
-  let deserializeURI = url => {
-    if (url instanceof Ci.nsIURI) {
-      return url;
+    if (!fixupInfo.consumer || fixupInfo.consumer.ownerGlobal != window) {
+      return;
     }
-    return url ? makeURI(url) : null;
-  };
 
-  doURIFixup(browser, {
-    fixedURI: deserializeURI(fixupInfo.fixedURI),
-    keywordProviderName: fixupInfo.keywordProviderName,
-    preferredURI: deserializeURI(fixupInfo.preferredURI),
-  });
-}
+    this.check(fixupInfo.consumer, fixupInfo);
+  },
+
+  receiveMessage({ target: browser, data: fixupInfo }) {
+    
+    
+    this.check(browser, {
+      fixedURI: makeURI(fixupInfo.fixedURI),
+      keywordProviderName: fixupInfo.keywordProviderName,
+      preferredURI: makeURI(fixupInfo.preferredURI),
+    });
+  },
+};
 
 function serializeInputStream(aStream) {
   let data = {
@@ -1973,7 +1963,7 @@ var gBrowserInit = {
       "Browser:URIFixup",
       gKeywordURIFixup
     );
-    Services.obs.addObserver(gKeywordURIFixupObs, "keyword-uri-fixup");
+    Services.obs.addObserver(gKeywordURIFixup, "keyword-uri-fixup");
 
     BrowserOffline.init();
     IndexedDBPromptHelper.init();
@@ -2504,7 +2494,7 @@ var gBrowserInit = {
         "Browser:URIFixup",
         gKeywordURIFixup
       );
-      Services.obs.removeObserver(gKeywordURIFixupObs, "keyword-uri-fixup");
+      Services.obs.removeObserver(gKeywordURIFixup, "keyword-uri-fixup");
 
       if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
         MenuTouchModeObserver.uninit();
