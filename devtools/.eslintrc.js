@@ -87,15 +87,11 @@ module.exports = {
     },
     {
       
-      files: [
-        "server/**",
-        
-        
-        
-        "shared/!(fronts)/**",
-        
-        "shared/*.**",
-      ],
+      
+      files: ["server/**", "shared/**"],
+      
+      
+      excludedFiles: ["shared/client/devtools-client.js"],
       rules: {
         "mozilla/reject-some-requires": [
           "error",
