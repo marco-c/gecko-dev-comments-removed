@@ -1597,7 +1597,7 @@ fn is_aggregate_device(device_info: &ffi::cubeb_device_info) -> bool {
     }
 }
 
-fn audiounit_device_destroy(device: &mut ffi::cubeb_device_info) {
+fn destroy_cubeb_device_info(device: &mut ffi::cubeb_device_info) {
     
     
     unsafe {
@@ -1696,12 +1696,12 @@ extern "C" fn audiounit_collection_changed_callback(
 ) -> OSStatus {
     let context = unsafe { &mut *(in_client_data as *mut AudioUnitContext) };
 
-    let queue = context.serial_queue;
+    let queue = context.serial_queue.clone();
     let mutexed_context = Arc::new(Mutex::new(context));
     let also_mutexed_context = Arc::clone(&mutexed_context);
 
     
-    async_dispatch(queue, move || {
+    queue.run_async(move || {
         let ctx_guard = also_mutexed_context.lock().unwrap();
         let ctx_ptr = *ctx_guard as *const AudioUnitContext;
 
@@ -1849,10 +1849,7 @@ pub const OPS: Ops = capi_new!(AudioUnitContext, AudioUnitStream);
 #[derive(Debug)]
 pub struct AudioUnitContext {
     _ops: *const Ops,
-    
-    
-    
-    serial_queue: dispatch_queue_t,
+    serial_queue: Queue,
     latency_controller: Mutex<LatencyController>,
     devices: Mutex<SharedDevices>,
 }
@@ -1861,7 +1858,7 @@ impl AudioUnitContext {
     fn new() -> Self {
         Self {
             _ops: &OPS as *const _,
-            serial_queue: create_dispatch_queue(DISPATCH_QUEUE_LABEL, DISPATCH_QUEUE_SERIAL),
+            serial_queue: Queue::new(DISPATCH_QUEUE_LABEL),
             latency_controller: Mutex::new(LatencyController::default()),
             devices: Mutex::new(SharedDevices::default()),
         }
@@ -2098,7 +2095,7 @@ impl ContextOps for AudioUnitContext {
 
         let mut devices = retake_forgotten_vec(coll.device, coll.count);
         for device in &mut devices {
-            audiounit_device_destroy(device);
+            destroy_cubeb_device_info(device);
         }
         drop(devices); 
         coll.device = ptr::null_mut();
@@ -2168,6 +2165,10 @@ impl ContextOps for AudioUnitContext {
             global_latency_frames,
         ));
 
+        
+        let queue_label = format!("{}.{:p}", DISPATCH_QUEUE_LABEL, boxed_stream.as_ref());
+        boxed_stream.queue = Queue::new(queue_label.as_str());
+
         boxed_stream.core_stream_data =
             CoreStreamData::new(boxed_stream.as_ref(), in_stm_settings, out_stm_settings);
 
@@ -2219,10 +2220,13 @@ impl Drop for AudioUnitContext {
         }
 
         
-        self.remove_devices_changed_listener(DeviceType::INPUT);
-        self.remove_devices_changed_listener(DeviceType::OUTPUT);
-
-        release_dispatch_queue(self.serial_queue);
+        
+        let queue = self.serial_queue.clone();
+        queue.run_final(|| {
+            
+            self.remove_devices_changed_listener(DeviceType::INPUT);
+            self.remove_devices_changed_listener(DeviceType::OUTPUT);
+        });
     }
 }
 
@@ -3071,6 +3075,8 @@ impl<'ctx> Drop for CoreStreamData<'ctx> {
 struct AudioUnitStream<'ctx> {
     context: &'ctx mut AudioUnitContext,
     user_ptr: *mut c_void,
+    
+    queue: Queue,
 
     data_callback: ffi::cubeb_data_callback,
     state_callback: ffi::cubeb_state_callback,
@@ -3107,6 +3113,7 @@ impl<'ctx> AudioUnitStream<'ctx> {
         AudioUnitStream {
             context,
             user_ptr,
+            queue: Queue::new(DISPATCH_QUEUE_LABEL),
             data_callback,
             state_callback,
             device_changed_callback: Mutex::new(None),
@@ -3266,12 +3273,12 @@ impl<'ctx> AudioUnitStream<'ctx> {
             return;
         }
 
-        let queue = self.context.serial_queue;
+        let queue = self.queue.clone();
         let mutexed_stm = Arc::new(Mutex::new(self));
         let also_mutexed_stm = Arc::clone(&mutexed_stm);
         
         
-        async_dispatch(queue, move || {
+        queue.run_async(move || {
             let mut stm_guard = also_mutexed_stm.lock().unwrap();
             let stm_ptr = *stm_guard as *const AudioUnitStream;
             if stm_guard.destroy_pending.load(Ordering::SeqCst) {
@@ -3327,12 +3334,12 @@ impl<'ctx> AudioUnitStream<'ctx> {
         
         self.destroy_pending.store(true, Ordering::SeqCst);
 
-        let queue = self.context.serial_queue;
+        let queue = self.queue.clone();
 
         let stream_ptr = self as *const AudioUnitStream;
         
         
-        sync_dispatch(queue, move || {
+        queue.run_final(move || {
             
             
             
@@ -3361,11 +3368,10 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         self.draining.store(false, Ordering::SeqCst);
 
         
-        let queue = self.context.serial_queue;
         let mut result = Err(Error::error());
         let started = &mut result;
         let stream = &self;
-        sync_dispatch(queue, move || {
+        self.queue.run_sync(move || {
             *started = stream.core_stream_data.start_audiounits();
         });
 
@@ -3385,9 +3391,8 @@ impl<'ctx> StreamOps for AudioUnitStream<'ctx> {
         self.shutdown.store(true, Ordering::SeqCst);
 
         
-        let queue = self.context.serial_queue;
         let stream = &self;
-        sync_dispatch(queue, move || {
+        self.queue.run_sync(move || {
             stream.core_stream_data.stop_audiounits();
         });
 
