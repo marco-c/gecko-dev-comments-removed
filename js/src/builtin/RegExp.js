@@ -5,7 +5,6 @@
 
 
 
-
 function $RegExpFlagsGetter() {
     
     var R = this;
@@ -26,10 +25,6 @@ function $RegExpFlagsGetter() {
     
     if (R.multiline)
         result += "m";
-
-    
-    if (R.dotAll)
-        result += "s";
 
     
     if (R.unicode)
@@ -225,7 +220,6 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
         n++;
     }
 }
-
 
 
 
