@@ -28,6 +28,7 @@
 #include "vm/JSScript.h"           
 #include "vm/Scope.h"              
 #include "vm/ScopeKind.h"          
+#include "vm/SharedStencil.h"      
 
 #include "vm/JSContext-inl.h"  
 
