@@ -6,7 +6,9 @@
 
 "use strict";
 
-const espree = require("espree");
+const parser = require("babel-eslint");
+const { analyze } = require("eslint-scope");
+const { KEYS: defaultVisitorKeys } = require("eslint-visitor-keys");
 const estraverse = require("estraverse");
 const path = require("path");
 const fs = require("fs");
@@ -81,12 +83,27 @@ module.exports = {
 
 
 
-  getAST(sourceText, astOptions = {}) {
+
+
+  parseCode(sourceText, astOptions = {}) {
     
     
     let config = { ...this.getPermissiveConfig(), ...astOptions };
 
-    return espree.parse(sourceText, config);
+    let parseResult =
+      "parseForESLint" in parser
+        ? parser.parseForESLint(sourceText, config)
+        : { ast: parser.parse(sourceText, config) };
+
+    let visitorKeys = parseResult.visitorKeys || defaultVisitorKeys;
+    visitorKeys.ExperimentalRestProperty = visitorKeys.RestElement;
+    visitorKeys.ExperimentalSpreadProperty = visitorKeys.SpreadElement;
+
+    return {
+      ast: parseResult.ast,
+      scopeManager: parseResult.scopeManager || analyze(parseResult.ast),
+      visitorKeys,
+    };
   },
 
   
@@ -159,7 +176,9 @@ module.exports = {
 
 
 
-  walkAST(ast, listener) {
+
+
+  walkAST(ast, visitorKeys, listener) {
     let parents = [];
 
     estraverse.traverse(ast, {
@@ -175,6 +194,8 @@ module.exports = {
         }
         parents.pop();
       },
+
+      keys: visitorKeys,
     });
     if (parents.length) {
       throw new Error("Entered more nodes than left.");

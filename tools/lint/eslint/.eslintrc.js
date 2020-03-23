@@ -5,8 +5,15 @@
 "use strict";
 
 module.exports = {
+  
+  
   env: {
+    browser: false,
     node: true,
+  },
+  parser: "espree",
+  parserOptions: {
+    ecmaVersion: 10,
   },
 
   rules: {
