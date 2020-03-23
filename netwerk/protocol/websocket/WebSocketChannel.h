@@ -136,7 +136,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   friend class CallAcknowledge;
 
   
-  MOZ_MUST_USE nsresult SendMsgCommon(const nsACString* aMsg, bool isBinary,
+  MOZ_MUST_USE nsresult SendMsgCommon(const nsACString& aMsg, bool isBinary,
                                       uint32_t length,
                                       nsIInputStream* aStream = nullptr);
 
