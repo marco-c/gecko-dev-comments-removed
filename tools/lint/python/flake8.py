@@ -95,6 +95,7 @@ def lint(paths, config, **lintargs):
 
     
     app = Application()
+    log.debug("flake8 version={}".format(app.version))
 
     output_file = mozfile.NamedTemporaryFile(mode='r')
     flake8_cmd = [
