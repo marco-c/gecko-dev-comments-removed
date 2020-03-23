@@ -243,8 +243,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveOneCsrc() {
-    RtpSourceObserver observer =
-        RtpSourceObserver(dom::RTCStatsTimestampMaker());
+    RefPtr<RtpSourceObserver> observer =
+        new RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
     constexpr unsigned int ssrc = 857265;
     constexpr unsigned int csrc = 3268365;
@@ -253,12 +253,12 @@ class RtpSourcesTest : public ::testing::Test {
     header.ssrc = ssrc;
     header.numCSRCs = 1;
     header.arrOfCSRCs[0] = csrc;
-    observer.OnRtpPacket(header, jitter);
+    observer->OnRtpPacket(header, jitter);
 
     
-    EXPECT_EQ(observer.mRtpSources.size(), static_cast<size_t>(2));
+    EXPECT_EQ(observer->mRtpSources.size(), static_cast<size_t>(2));
     nsTArray<dom::RTCRtpSourceEntry> outLevels;
-    observer.GetRtpSources(outLevels);
+    observer->GetRtpSources(outLevels);
     EXPECT_EQ(outLevels.Length(), static_cast<size_t>(2));
     bool ssrcFound = false;
     bool csrcFound = true;
@@ -279,8 +279,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveTwoCsrcs() {
-    RtpSourceObserver observer =
-        RtpSourceObserver(dom::RTCStatsTimestampMaker());
+    RefPtr<RtpSourceObserver> observer =
+        new RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
     constexpr unsigned int ssrc = 239485;
     constexpr unsigned int csrc0 = 3425;
@@ -291,12 +291,12 @@ class RtpSourcesTest : public ::testing::Test {
     header.numCSRCs = 2;
     header.arrOfCSRCs[0] = csrc0;
     header.arrOfCSRCs[1] = csrc1;
-    observer.OnRtpPacket(header, jitter);
+    observer->OnRtpPacket(header, jitter);
 
     
-    EXPECT_EQ(observer.mRtpSources.size(), static_cast<size_t>(3));
+    EXPECT_EQ(observer->mRtpSources.size(), static_cast<size_t>(3));
     nsTArray<dom::RTCRtpSourceEntry> outLevels;
-    observer.GetRtpSources(outLevels);
+    observer->GetRtpSources(outLevels);
     EXPECT_EQ(outLevels.Length(), static_cast<size_t>(3));
     bool ssrcFound = false;
     bool csrc0Found = true;
@@ -323,8 +323,8 @@ class RtpSourcesTest : public ::testing::Test {
 
   
   void TestObserveCsrcWithAudioLevel() {
-    RtpSourceObserver observer =
-        RtpSourceObserver(dom::RTCStatsTimestampMaker());
+    RefPtr<RtpSourceObserver> observer =
+        new RtpSourceObserver(dom::RTCStatsTimestampMaker());
     webrtc::RTPHeader header;
   }
 };
