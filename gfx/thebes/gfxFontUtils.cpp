@@ -1812,7 +1812,6 @@ void gfxFontUtils::GetVariationData(
           0 ||  
                 
       axisSize != 20 ||      
-      instanceCount == 0 ||  
       
       (instanceSize != axisCount * sizeof(int32_t) + 4 &&
        instanceSize != axisCount * sizeof(int32_t) + 6)) {
