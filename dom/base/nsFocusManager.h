@@ -195,9 +195,13 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
+
+
   nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
                                        nsIContent* aStart, int32_t aType,
                                        bool aNoParentTraversal,
+                                       bool aNavigateByKey,
                                        nsIContent** aNextContent);
 
   
@@ -520,9 +524,12 @@ class nsFocusManager final : public nsIFocusManager,
       nsIContent* aOwner, nsIContent* aStartContent,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
-      bool aForDocumentNavigation, bool aSkipOwner);
+      bool aForDocumentNavigation, bool aNavigateByKey, bool aSkipOwner);
 
   
+
+
+
 
 
 
@@ -559,9 +566,12 @@ class nsFocusManager final : public nsIFocusManager,
       nsIContent* aStartOwner, nsIContent** aStartContent,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t* aCurrentTabIndex, bool aIgnoreTabIndex,
-      bool aForDocumentNavigation);
+      bool aForDocumentNavigation, bool aNavigateByKey);
 
   
+
+
+
 
 
 
@@ -593,7 +603,8 @@ class nsFocusManager final : public nsIFocusManager,
       mozilla::PresShell* aPresShell, nsIContent* aRootContent,
       nsIContent* aOriginalStartContent, nsIContent* aStartContent,
       bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
-      bool aForDocumentNavigation, nsIContent** aResultContent);
+      bool aForDocumentNavigation, bool aNavigateByKey,
+      nsIContent** aResultContent);
 
   
 
@@ -683,6 +694,7 @@ class nsFocusManager final : public nsIFocusManager,
   bool TryToMoveFocusToSubDocument(nsIContent* aCurrentContent,
                                    nsIContent* aOriginalStartContent,
                                    bool aForward, bool aForDocumentNavigation,
+                                   bool aNavigateByKey,
                                    nsIContent** aResultContent);
 
   
