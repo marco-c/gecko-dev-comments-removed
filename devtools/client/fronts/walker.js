@@ -22,15 +22,6 @@ loader.lazyRequireGetter(
 
 
 class WalkerFront extends FrontClassWithSpec(walkerSpec) {
-  
-
-
-
-  async pick() {
-    const response = await super.pick();
-    return response.node;
-  }
-
   constructor(client, targetFront, parentFront) {
     super(client, targetFront, parentFront);
     this._createRootNodePromise();
