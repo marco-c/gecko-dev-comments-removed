@@ -109,7 +109,6 @@ class SignRunnable : public Runnable {
   nsresult mRv;                                              
   nsCString mSignature;                                      
 
- private:
   SignRunnable(const SignRunnable&) = delete;
   void operator=(const SignRunnable&) = delete;
 };
