@@ -99,8 +99,7 @@ class ConsoleCallData final {
         mIDType(eUnknown),
         mOuterIDNumber(0),
         mInnerIDNumber(0),
-        mMethodString(aString),
-        mStatus(eUnused) {}
+        mMethodString(aString) {}
 
   void SetIDs(uint64_t aOuterID, uint64_t aInnerID) {
     MOZ_ASSERT(mIDType == eUnknown);
@@ -195,22 +194,8 @@ class ConsoleCallData final {
   Maybe<nsTArray<ConsoleStackEntry>> mReifiedStack;
   nsCOMPtr<nsIStackFrame> mStack;
 
-  
-  enum {
-    
-    
-    eUnused,
-
-    
-    
-    eInUse
-  } mStatus;
-
  private:
-  ~ConsoleCallData() {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mStatus != eInUse);
-  }
+  ~ConsoleCallData() { AssertIsOnOwningThread(); }
 };
 
 
@@ -317,13 +302,6 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
     MOZ_ASSERT(values.Length() == length);
 
     aConsole->ProcessCallData(aCx, aCallData, values);
-  }
-
-  void ReleaseCallData(Console* aConsole, ConsoleCallData* aCallData) {
-    aConsole->AssertIsOnOwningThread();
-
-    MOZ_ASSERT(aCallData->mStatus == ConsoleCallData::eInUse);
-    aCallData->mStatus = ConsoleCallData::eUnused;
   }
 
   
@@ -484,9 +462,6 @@ class ConsoleCallDataWorkletRunnable final : public ConsoleWorkletRunnable {
 
     const WorkletLoadInfo& loadInfo = mWorkletImpl->LoadInfo();
     mCallData->SetIDs(loadInfo.OuterWindowID(), loadInfo.InnerWindowID());
-
-    
-    mCallData->mStatus = ConsoleCallData::eInUse;
   }
 
   ~ConsoleCallDataWorkletRunnable() override { MOZ_ASSERT(!mCallData); }
@@ -513,10 +488,7 @@ class ConsoleCallDataWorkletRunnable final : public ConsoleWorkletRunnable {
     ProcessCallData(cx, mConsole, mCallData);
   }
 
-  virtual void ReleaseData() override {
-    ReleaseCallData(mConsole, mCallData);
-    mCallData = nullptr;
-  }
+  virtual void ReleaseData() override { mCallData = nullptr; }
 
   RefPtr<ConsoleCallData> mCallData;
 };
@@ -653,9 +625,6 @@ class ConsoleCallDataWorkerRunnable final : public ConsoleWorkerRunnable {
       : ConsoleWorkerRunnable(aConsole), mCallData(aCallData) {
     MOZ_ASSERT(aCallData);
     mCallData->AssertIsOnOwningThread();
-
-    
-    mCallData->mStatus = ConsoleCallData::eInUse;
   }
 
  private:
@@ -703,10 +672,7 @@ class ConsoleCallDataWorkerRunnable final : public ConsoleWorkerRunnable {
     mClonedData.mGlobal = nullptr;
   }
 
-  virtual void ReleaseData() override {
-    ReleaseCallData(mConsole, mCallData);
-    mCallData = nullptr;
-  }
+  virtual void ReleaseData() override { mCallData = nullptr; }
 
   RefPtr<ConsoleCallData> mCallData;
 };
