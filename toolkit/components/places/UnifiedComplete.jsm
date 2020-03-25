@@ -469,7 +469,7 @@ XPCOMUtils.defineLazyGetter(this, "sourceToBehaviorMap", () => {
 
 
 
-function stripPrefix(str) {
+function stripAnyPrefix(str) {
   let match = REGEXP_STRIP_PREFIX.exec(str);
   if (!match) {
     return ["", str];
@@ -490,17 +490,41 @@ function stripPrefix(str) {
 
 
 
-function stripHttpAndTrim(spec, trimSlash = true) {
-  if (spec.startsWith("http://")) {
+
+
+
+
+
+
+
+
+
+
+
+
+function stripPrefixAndTrim(spec, options = {}) {
+  let prefix = "";
+  let suffix = "";
+  if (options.stripHttp && spec.startsWith("http://")) {
     spec = spec.slice(7);
+    prefix = "http://";
+  } else if (options.stripHttps && spec.startsWith("https://")) {
+    spec = spec.slice(8);
+    prefix = "https://";
   }
-  if (spec.endsWith("?")) {
+  if (options.stripWww && spec.startsWith("www.")) {
+    spec = spec.slice(4);
+    prefix += "www.";
+  }
+  if (options.trimSlash && spec.endsWith("/")) {
     spec = spec.slice(0, -1);
+    suffix += "/";
   }
-  if (trimSlash && spec.endsWith("/")) {
+  if (options.trimEmptyQuery && spec.endsWith("?")) {
     spec = spec.slice(0, -1);
+    suffix += "?";
   }
-  return spec;
+  return [spec, prefix, suffix];
 }
 
 
@@ -518,16 +542,31 @@ function stripHttpAndTrim(spec, trimSlash = true) {
 function makeKeyForMatch(match) {
   
   
+  let key, prefix;
   if (match.style && match.style.includes("autofill")) {
-    return [stripHttpAndTrim(match.comment), null];
+    [key, prefix] = stripPrefixAndTrim(match.finalCompleteValue, {
+      stripHttp: true,
+      stripHttps: true,
+      stripWww: true,
+      trimEmptyQuery: true,
+      trimSlash: true,
+    });
+
+    return [key, prefix, null];
   }
 
   let action = PlacesUtils.parseActionUrl(match.value);
   if (!action) {
-    return [stripHttpAndTrim(match.value), null];
+    [key, prefix] = stripPrefixAndTrim(match.value, {
+      stripHttp: true,
+      stripHttps: true,
+      stripWww: true,
+      trimEmptyQuery: true,
+      trimSlash: true,
+    });
+    return [key, prefix, null];
   }
 
-  let key;
   switch (action.type) {
     case "searchengine":
       
@@ -542,11 +581,17 @@ function makeKeyForMatch(match) {
       ];
       break;
     default:
-      key = stripHttpAndTrim(action.params.url || match.value);
+      [key, prefix] = stripPrefixAndTrim(action.params.url || match.value, {
+        stripHttp: true,
+        stripHttps: true,
+        stripWww: true,
+        trimEmptyQuery: true,
+        trimSlash: true,
+      });
       break;
   }
 
-  return [key, action];
+  return [key, prefix, action];
 }
 
 
@@ -663,7 +708,7 @@ function Search(
   let unescapedSearchString = Services.textToSubURI.unEscapeURIForUI(
     this._trimmedOriginalSearchString
   );
-  let [prefix, suffix] = stripPrefix(unescapedSearchString);
+  let [prefix, suffix] = stripAnyPrefix(unescapedSearchString);
   this._searchString = suffix;
   this._strippedPrefix = prefix.toLowerCase();
 
@@ -1346,7 +1391,7 @@ Search.prototype = {
     this._result.setDefaultIndex(0);
 
     let url = matchedSite.uri.spec;
-    let value = stripPrefix(url)[1];
+    let value = stripAnyPrefix(url)[1];
     value = value.substr(value.indexOf(this._searchString));
 
     this._addAutofillMatch(value, url, Infinity, ["preloaded-top-site"]);
@@ -2193,16 +2238,34 @@ Search.prototype = {
     this.notifyResult(true, match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC);
   },
 
+  
+  
+  
+  
+  _getPrefixRank(prefix) {
+    return ["http://www.", "http://", "https://www.", "https://"].indexOf(
+      prefix
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _getInsertIndexForMatch(match) {
-    
-    
-    
-    
-    
-    
-    
-    
-    let [urlMapKey, action] = makeKeyForMatch(match);
+    let [urlMapKey, prefix, action] = makeKeyForMatch(match);
     if (
       (match.placeId && this._usedPlaceIds.has(match.placeId)) ||
       this._usedURLs.some(e => ObjectUtils.deepEqual(e.key, urlMapKey))
@@ -2233,13 +2296,112 @@ Search.prototype = {
               continue;
             }
             if (!matchAction || action.type == "switchtab") {
-              this._usedURLs[i] = { key: urlMapKey, action, type: match.type };
+              this._usedURLs[i] = {
+                key: urlMapKey,
+                action,
+                type: match.type,
+                prefix,
+                comment: match.comment,
+              };
               return { index: i, replace: true };
             }
             break; 
           }
         }
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let prefixRank = this._getPrefixRank(prefix);
+        for (let i = 0; i < this._usedURLs.length; ++i) {
+          if (!this._usedURLs[i]) {
+            
+            continue;
+          }
+
+          let {
+            key: existingKey,
+            prefix: existingPrefix,
+            type: existingType,
+            comment: existingComment,
+          } = this._usedURLs[i];
+
+          let existingPrefixRank = this._getPrefixRank(existingPrefix);
+          if (ObjectUtils.deepEqual(existingKey, urlMapKey)) {
+            isDupe = true;
+
+            if (prefix == existingPrefix) {
+              
+              
+              if (match.type != UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+                break; 
+              } else {
+                this._usedURLs[i] = {
+                  key: urlMapKey,
+                  action,
+                  type: match.type,
+                  prefix,
+                  comment: match.comment,
+                };
+                return { index: i, replace: true };
+              }
+            }
+
+            if (prefix.endsWith("www.") == existingPrefix.endsWith("www.")) {
+              
+
+              if (match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+                isDupe = false;
+                continue;
+              }
+
+              if (prefixRank <= existingPrefixRank) {
+                break; 
+              } else if (existingType != UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+                this._usedURLs[i] = {
+                  key: urlMapKey,
+                  action,
+                  type: match.type,
+                  prefix,
+                  comment: match.comment,
+                };
+                return { index: i, replace: true };
+              } else {
+                isDupe = false;
+                continue;
+              }
+            } else {
+              
+              
+              if (match.comment != existingComment) {
+                isDupe = false;
+                continue;
+              }
+
+              if (prefixRank <= existingPrefixRank) {
+                break; 
+              } else {
+                this._usedURLs[i] = {
+                  key: urlMapKey,
+                  action,
+                  type: match.type,
+                  prefix,
+                  comment: match.comment,
+                };
+                return { index: i, replace: true };
+              }
+            }
+          }
+        }
       }
+
+      
       if (isDupe) {
         return { index: -1, replace: false };
       }
@@ -2313,7 +2475,13 @@ Search.prototype = {
       bucket.insertIndex++;
       break;
     }
-    this._usedURLs[index] = { key: urlMapKey, action, type: match.type };
+    this._usedURLs[index] = {
+      key: urlMapKey,
+      action,
+      type: match.type,
+      prefix,
+      comment: match.comment || "",
+    };
     return { index, replace };
   },
 
@@ -2425,10 +2593,12 @@ Search.prototype = {
     
     
     
-    let comment = stripHttpAndTrim(
-      finalCompleteValue,
-      !this._searchString.includes("/")
-    );
+    let [comment] = stripPrefixAndTrim(finalCompleteValue, {
+      stripHttp: true,
+      trimEmptyQuery: true,
+      trimSlash: !this._searchString.includes("/"),
+    });
+
     this._addMatch({
       value: this._strippedPrefix + autofilledValue,
       finalCompleteValue,
