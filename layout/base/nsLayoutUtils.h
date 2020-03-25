@@ -584,8 +584,8 @@ class nsLayoutUtils {
 
 
   static bool IsProperAncestorFrameCrossDoc(
-      nsIFrame* aAncestorFrame, nsIFrame* aFrame,
-      nsIFrame* aCommonAncestor = nullptr);
+      const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
+      const nsIFrame* aCommonAncestor = nullptr);
 
   
 
@@ -951,8 +951,8 @@ class nsLayoutUtils {
 
 
 
-  static nsIFrame* FindNearestCommonAncestorFrame(nsIFrame* aFrame1,
-                                                  nsIFrame* aFrame2);
+  static const nsIFrame* FindNearestCommonAncestorFrame(
+      const nsIFrame* aFrame1, const nsIFrame* aFrame2);
 
   
 
@@ -978,16 +978,17 @@ class nsLayoutUtils {
 
 
 
-  static TransformResult TransformPoint(nsIFrame* aFromFrame,
-                                        nsIFrame* aToFrame, nsPoint& aPoint);
+  static TransformResult TransformPoint(const nsIFrame* aFromFrame,
+                                        const nsIFrame* aToFrame,
+                                        nsPoint& aPoint);
 
   
 
 
 
 
-  static TransformResult TransformRect(nsIFrame* aFromFrame, nsIFrame* aToFrame,
-                                       nsRect& aRect);
+  static TransformResult TransformRect(const nsIFrame* aFromFrame,
+                                       const nsIFrame* aToFrame, nsRect& aRect);
 
   
 
