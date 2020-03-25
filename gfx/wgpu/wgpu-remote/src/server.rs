@@ -2,23 +2,26 @@
 
 
 
+use crate::identity::IdentityRecyclerFactory;
+
 use core::{gfx_select, id};
 
 use std::slice;
 
-pub type Global = core::hub::Global<()>;
+
+pub type Global = core::hub::Global<IdentityRecyclerFactory>;
 
 #[no_mangle]
-pub extern "C" fn wgpu_server_new() -> *mut Global {
+pub extern "C" fn wgpu_server_new(factory: IdentityRecyclerFactory) -> *mut Global {
     log::info!("Initializing WGPU server");
-    Box::into_raw(Box::new(Global::new("wgpu")))
+    Box::into_raw(Box::new(Global::new("wgpu", factory)))
 }
 
-/// # Safety
-///
-/// This function is unsafe because improper use may lead to memory
-/// problems. For example, a double-free may occur if the function is called
-/// twice on the same raw pointer.
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_delete(global: *mut Global) {
     log::info!("Terminating WGPU server");
@@ -31,15 +34,15 @@ pub extern "C" fn wgpu_server_poll_all_devices(global: &Global, force_wait: bool
     global.poll_all_devices(force_wait);
 }
 
-/// Request an adapter according to the specified options.
-/// Provide the list of IDs to pick from.
-///
-/// Returns the index in this list, or -1 if unable to pick.
-///
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `id_length` elements.
+
+
+
+
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_instance_request_adapter(
     global: &Global,
@@ -90,10 +93,10 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     gfx_select!(self_id => global.device_create_buffer(self_id, desc, new_id));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `size` elements.
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_device_set_buffer_sub_data(
     global: &Global,
@@ -107,10 +110,10 @@ pub unsafe extern "C" fn wgpu_server_device_set_buffer_sub_data(
     gfx_select!(self_id => global.device_set_buffer_sub_data(self_id, buffer_id, offset, slice));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `size` elements.
+
+
+
+
 #[no_mangle]
 pub extern "C" fn wgpu_server_buffer_map_read(
     global: &Global,
@@ -165,10 +168,10 @@ pub extern "C" fn wgpu_server_encoder_destroy(
     gfx_select!(self_id => global.command_encoder_destroy(self_id));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `byte_length` elements.
+
+
+
+
 #[no_mangle]
 pub extern "C" fn wgpu_server_command_buffer_destroy(
     global: &Global,
@@ -212,11 +215,11 @@ pub unsafe extern "C" fn wgpu_server_encoder_copy_buffer_to_texture(
     gfx_select!(self_id => global.command_encoder_copy_buffer_to_texture(self_id, source, destination, size));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointers are
-/// valid for `color_attachments_length` and `command_length` elements,
-/// respectively.
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_encode_compute_pass(
     global: &Global,
@@ -228,11 +231,11 @@ pub unsafe extern "C" fn wgpu_server_encode_compute_pass(
     gfx_select!(self_id => global.command_encoder_run_compute_pass(self_id, raw_data));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointers are
-/// valid for `color_attachments_length` and `command_length` elements,
-/// respectively.
+
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_encode_render_pass(
     global: &Global,
@@ -244,10 +247,10 @@ pub unsafe extern "C" fn wgpu_server_encode_render_pass(
     gfx_select!(self_id => global.command_encoder_run_render_pass(self_id, raw_pass));
 }
 
-/// # Safety
-///
-/// This function is unsafe as there is no guarantee that the given pointer is
-/// valid for `command_buffer_id_length` elements.
+
+
+
+
 #[no_mangle]
 pub unsafe extern "C" fn wgpu_server_queue_submit(
     global: &Global,

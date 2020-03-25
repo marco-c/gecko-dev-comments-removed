@@ -9,7 +9,7 @@ use crate::{
         PhantomSlice,
     },
     device::{all_buffer_stages, BIND_BUFFER_ALIGNMENT},
-    hub::{GfxBackend, Global, Token},
+    hub::{GfxBackend, Global, GlobalIdentityHandlerFactory, Token},
     id,
 };
 
@@ -56,7 +56,7 @@ pub struct ComputePassDescriptor {
 
 
 
-impl<F> Global<F> {
+impl<G: GlobalIdentityHandlerFactory> Global<G> {
     pub fn command_encoder_run_compute_pass<B: GfxBackend>(
         &self,
         encoder_id: id::CommandEncoderId,
@@ -148,7 +148,7 @@ impl<F> Global<F> {
                         raw.bind_compute_pipeline(&pipeline.raw);
                     }
 
-                    // Rebind resources
+                    
                     if binder.pipeline_layout_id != Some(pipeline.layout_id) {
                         let pipeline_layout = &pipeline_layout_guard[pipeline.layout_id];
                         binder.pipeline_layout_id = Some(pipeline.layout_id);
@@ -225,12 +225,12 @@ pub mod compute_ffi {
 use wgt::{BufferAddress, DynamicOffset};
     use std::{convert::TryInto, slice};
 
-    /// # Safety
-    ///
-    /// This function is unsafe as there is no guarantee that the given pointer is
-    /// valid for `offset_length` elements.
-    // TODO: There might be other safety issues, such as using the unsafe
-    // `RawPass::encode` and `RawPass::encode_slice`.
+    
+    
+    
+    
+    
+    
     #[no_mangle]
     pub unsafe extern "C" fn wgpu_compute_pass_set_bind_group(
         pass: &mut RawPass,
@@ -285,14 +285,14 @@ use wgt::{BufferAddress, DynamicOffset};
         _pass: &mut RawPass,
         _label: RawString,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]
     pub extern "C" fn wgpu_compute_pass_pop_debug_group(
         _pass: &mut RawPass,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]
@@ -300,7 +300,7 @@ use wgt::{BufferAddress, DynamicOffset};
         _pass: &mut RawPass,
         _label: RawString,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]

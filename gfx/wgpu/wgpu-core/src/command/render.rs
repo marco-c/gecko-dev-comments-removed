@@ -18,7 +18,7 @@ use crate::{
         MAX_VERTEX_BUFFERS,
         MAX_COLOR_TARGETS,
     },
-    hub::{GfxBackend, Global, Token},
+    hub::{GfxBackend, Global, GlobalIdentityHandlerFactory, Token},
     id,
     pipeline::PipelineFlags,
     resource::TextureViewInner,
@@ -281,7 +281,7 @@ impl State {
 
 
 
-impl<F> Global<F> {
+impl<G: GlobalIdentityHandlerFactory> Global<G> {
     pub fn command_encoder_run_render_pass<B: GfxBackend>(
         &self,
         encoder_id: id::CommandEncoderId,
@@ -395,7 +395,7 @@ impl<F> Global<F> {
                             }
                         };
 
-                        // Using render pass for transition.
+                        
                         let consistent_usage = base_trackers.textures.query(
                             source_id.value,
                             view.range.clone(),
@@ -557,7 +557,7 @@ impl<F> Global<F> {
                 assert!(texture.usage.contains(TextureUsage::OUTPUT_ATTACHMENT));
 
                 let usage = consistent_usage.unwrap_or(TextureUsage::OUTPUT_ATTACHMENT);
-                // this is important to record the `first` state.
+                
                 let _ = trackers.textures.change_replace(
                     source_id.value,
                     &source_id.ref_count,
@@ -565,8 +565,8 @@ impl<F> Global<F> {
                     usage,
                 );
                 if consistent_usage.is_some() {
-                    // If we expect the texture to be transited to a new state by the
-                    // render pass configuration, make the tracker aware of that.
+                    
+                    
                     let _ = trackers.textures.change_replace(
                         source_id.value,
                         &source_id.ref_count,
@@ -649,7 +649,7 @@ impl<F> Global<F> {
             let framebuffer = match used_swap_chain.take() {
                 Some(sc_id) => {
                     assert!(cmb.used_swap_chain.is_none());
-                    // Always create a new framebuffer and delete it after presentation.
+                    
                     let attachments = fb_key.all().map(|&id| match view_guard[id].inner {
                         TextureViewInner::Native { ref raw, .. } => raw,
                         TextureViewInner::SwapChain { ref image, .. } => Borrow::borrow(image),
@@ -664,7 +664,7 @@ impl<F> Global<F> {
                     &mut cmb.used_swap_chain.as_mut().unwrap().1
                 }
                 None => {
-                    // Cache framebuffers by the device.
+                    
                     framebuffer_cache = device.framebuffers.lock();
                     match framebuffer_cache.entry(fb_key) {
                         Entry::Occupied(e) => e.into_mut(),
@@ -710,7 +710,7 @@ impl<F> Global<F> {
                         LoadOp::Load => None,
                         LoadOp::Clear => {
                             use hal::format::ChannelType;
-                            //TODO: validate sign/unsign and normalized ranges of the color values
+                            
                             let value = match key.format.unwrap().base_format().1 {
                                 ChannelType::Unorm
                                 | ChannelType::Snorm
@@ -871,7 +871,7 @@ impl<F> Global<F> {
                         raw.bind_graphics_pipeline(&pipeline.raw);
                     }
 
-                    // Rebind resource
+                    
                     if state.binder.pipeline_layout_id != Some(pipeline.layout_id) {
                         let pipeline_layout = &pipeline_layout_guard[pipeline.layout_id];
                         state.binder.pipeline_layout_id = Some(pipeline.layout_id);
@@ -906,7 +906,7 @@ impl<F> Global<F> {
                         }
                     }
 
-                    // Rebind index buffer if the index format has changed with the pipeline switch
+                    
                     if state.index.format != pipeline.index_format {
                         state.index.format = pipeline.index_format;
                         state.index.update_limit();
@@ -928,7 +928,7 @@ impl<F> Global<F> {
                             }
                         }
                     }
-                    // Update vertex buffer limits
+                    
                     for (vbs, &(stride, rate)) in state
                         .vertex
                         .inputs
@@ -1048,7 +1048,7 @@ impl<F> Global<F> {
                 RenderCommand::DrawIndexed { index_count, instance_count, first_index, base_vertex, first_instance } => {
                     state.is_ready().unwrap();
 
-                    //TODO: validate that base_vertex + max_index() is within the provided range
+                    
                     assert!(
                         first_index + index_count <= state.index.limit,
                         "Index out of range!"
@@ -1133,12 +1133,12 @@ pub mod render_ffi {
     use wgt::{BufferAddress, Color, DynamicOffset};
     use std::{convert::TryInto, slice};
 
-    /// # Safety
-    ///
-    /// This function is unsafe as there is no guarantee that the given pointer is
-    /// valid for `offset_length` elements.
-    // TODO: There might be other safety issues, such as using the unsafe
-    // `RawPass::encode` and `RawPass::encode_slice`.
+    
+    
+    
+    
+    
+    
     #[no_mangle]
     pub unsafe extern "C" fn wgpu_render_pass_set_bind_group(
         pass: &mut RawPass,
@@ -1312,14 +1312,14 @@ pub mod render_ffi {
         _pass: &mut RawPass,
         _label: RawString,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]
     pub extern "C" fn wgpu_render_pass_pop_debug_group(
         _pass: &mut RawPass,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]
@@ -1327,7 +1327,7 @@ pub mod render_ffi {
         _pass: &mut RawPass,
         _label: RawString,
     ) {
-        //TODO
+        
     }
 
     #[no_mangle]
