@@ -1107,11 +1107,6 @@ void nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams) {
                                        aParams.imgParams, opacity);
 }
 
-static float ClampStdDeviation(float aStdDeviation) {
-  
-  return std::min(std::max(0.0f, aStdDeviation), 100.0f);
-}
-
 bool nsSVGIntegrationUtils::CreateWebRenderCSSFilters(
     Span<const StyleFilter> aFilters, nsIFrame* aFrame,
     WrFiltersHolder& aWrFilters) {
@@ -1162,9 +1157,9 @@ bool nsSVGIntegrationUtils::CreateWebRenderCSSFilters(
         
         float appUnitsPerDevPixel =
             aFrame->PresContext()->AppUnitsPerDevPixel();
-        wrFilters.AppendElement(mozilla::wr::FilterOp::Blur(
-            ClampStdDeviation(NSAppUnitsToFloatPixels(
-                filter.AsBlur().ToAppUnits(), appUnitsPerDevPixel))));
+        wrFilters.AppendElement(
+            mozilla::wr::FilterOp::Blur(NSAppUnitsToFloatPixels(
+                filter.AsBlur().ToAppUnits(), appUnitsPerDevPixel)));
         break;
       }
       case StyleFilter::Tag::DropShadow: {
