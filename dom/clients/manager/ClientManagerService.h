@@ -115,6 +115,13 @@ class ClientManagerService final {
 
   bool RemoveSource(ClientSourceParent* aSource);
 
+  
+  bool ExpectFutureSource(const IPCClientInfo& aClientInfo);
+
+  
+  
+  void ForgetFutureSource(const IPCClientInfo& aClientInfo);
+
   RefPtr<SourcePromise> FindSource(
       const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
