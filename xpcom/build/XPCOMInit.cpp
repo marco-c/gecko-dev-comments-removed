@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "XPCOMModule.h"
 
@@ -104,7 +104,7 @@
 using base::AtExitManager;
 using mozilla::ipc::BrowserProcessSubThread;
 
-// From toolkit/library/rust/lib.rs
+
 extern "C" void GkRust_Init();
 extern "C" void GkRust_Shutdown();
 
@@ -116,13 +116,13 @@ static bool sCommandLineWasInitialized;
 static BrowserProcessSubThread* sIOThread;
 static mozilla::BackgroundHangMonitor* sMainHangMonitor;
 
-} /* anonymous namespace */
+} 
 
-// Registry Factory creation function defined in nsRegistry.cpp
-// We hook into this function locally to create and register the registry
-// Since noone outside xpcom needs to know about this and nsRegistry.cpp
-// does not have a local include file, we are putting this definition
-// here rather than in nsIRegistry.h
+
+
+
+
+
 extern nsresult NS_RegistryGetFactory(nsIFactory** aFactory);
 extern nsresult NS_CategoryManagerGetFactory(nsIFactory**);
 
@@ -174,7 +174,7 @@ const mozilla::Module kXPCOMModule = {
     nullptr,
     mozilla::Module::ALLOW_IN_GPU_RDD_VR_AND_SOCKET_PROCESS};
 
-// gDebug will be freed during shutdown.
+
 static nsIDebug2* gDebug = nullptr;
 
 EXPORT_XPCOM_API(nsresult)
@@ -213,7 +213,7 @@ class ICUReporter final : public nsIMemoryReporter,
 
 NS_IMPL_ISUPPORTS(ICUReporter, nsIMemoryReporter)
 
-/* static */ template <>
+ template <>
 mozilla::CountingAllocatorBase<ICUReporter>::AmountType
     mozilla::CountingAllocatorBase<ICUReporter>::sAmount(0);
 
@@ -239,13 +239,13 @@ class OggReporter final : public nsIMemoryReporter,
 
 NS_IMPL_ISUPPORTS(OggReporter, nsIMemoryReporter)
 
-/* static */ template <>
+ template <>
 mozilla::CountingAllocatorBase<OggReporter>::AmountType
     mozilla::CountingAllocatorBase<OggReporter>::sAmount(0);
 
 static bool sInitializedJS = false;
 
-// Note that on OSX, aBinDirectory will point to .app/Contents/Resources/browser
+
 EXPORT_XPCOM_API(nsresult)
 NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
              nsIDirectoryServiceProvider* aAppFileLocationProvider,
@@ -263,30 +263,30 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
 
   NS_InitAtomTable();
 
-  // We don't have the arguments by hand here.  If logging has already been
-  // initialized by a previous call to LogModule::Init with the arguments
-  // passed, passing (0, nullptr) is alright here.
+  
+  
+  
   mozilla::LogModule::Init(0, nullptr);
 
   GkRust_Init();
 
   nsresult rv = NS_OK;
 
-  // We are not shutting down
+  
   gXPCOMShuttingDown = false;
 
 #ifdef XP_UNIX
-  // Discover the current value of the umask, and save it where
-  // nsSystemInfo::Init can retrieve it when necessary.  There is no way
-  // to read the umask without changing it, and the setting is process-
-  // global, so this must be done while we are still single-threaded; the
-  // nsSystemInfo object is typically created much later, when some piece
-  // of chrome JS wants it.  The system call is specified as unable to fail.
+  
+  
+  
+  
+  
+  
   nsSystemInfo::gUserUmask = ::umask(0777);
   ::umask(nsSystemInfo::gUserUmask);
 #endif
 
-  // Set up chromium libs
+  
   NS_ASSERTION(!sExitManager && !sMessageLoop, "Bad logic!");
 
   if (!AtExitManager::AlreadyRegistered()) {
@@ -297,8 +297,8 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   if (!messageLoop) {
     sMessageLoop = new MessageLoopForUI(MessageLoop::TYPE_MOZILLA_PARENT);
     sMessageLoop->set_thread_name("Gecko");
-    // Set experimental values for main thread hangs:
-    // 128ms for transient hangs and 8192ms for permanent hangs
+    
+    
     sMessageLoop->set_hang_timeouts(128, 8192);
   } else if (messageLoop->type() == MessageLoop::TYPE_MOZILLA_CHILD) {
     messageLoop->set_thread_name("Gecko_Child");
@@ -320,25 +320,25 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
     sIOThread = ioThread.release();
   }
 
-  // Establish the main thread here.
+  
   rv = nsThreadManager::get().Init();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   AUTO_PROFILER_INIT2;
 
-  // Init the mozilla::SystemGroup for dispatching main thread runnables.
+  
   mozilla::SystemGroup::InitStatic();
 
-  // Set up the timer globals/timer thread
+  
   rv = nsTimerImpl::Startup();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
 #ifndef ANDROID
-  // If the locale hasn't already been setup by our embedder,
-  // get us out of the "C" locale and into the system
+  
+  
   if (strcmp(setlocale(LC_ALL, nullptr), "C") == 0) {
     setlocale(LC_ALL, "");
   }
@@ -369,7 +369,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
                                     getter_AddRefs(xpcomLib));
   MOZ_ASSERT(xpcomLib);
 
-  // set gGREBinPath
+  
   nsAutoString path;
   xpcomLib->GetPath(path);
   gGREBinPath = ToNewUnicode(path);
@@ -412,32 +412,32 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   NS_ASSERTION(nsComponentManagerImpl::gComponentManager == nullptr,
                "CompMgr not null at init");
 
-  // Create the Component/Service Manager
+  
   nsComponentManagerImpl::gComponentManager = new nsComponentManagerImpl();
   NS_ADDREF(nsComponentManagerImpl::gComponentManager);
 
-  // Global cycle collector initialization.
+  
   if (!nsCycleCollector_init()) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  // And start it up for this thread too.
+  
   nsCycleCollector_startup();
 
-  // Register ICU memory functions.  This really shouldn't be necessary: the
-  // JS engine should do this on its own inside JS_Init, and memory-reporting
-  // code should call a JSAPI function to observe ICU memory usage.  But we
-  // can't define the alloc/free functions in the JS engine, because it can't
-  // depend on the XPCOM-based memory reporting goop.  So for now, we have
-  // this oddness.
+  
+  
+  
+  
+  
+  
   mozilla::SetICUMemoryFunctions();
 
-  // Do the same for libogg.
+  
   ogg_set_mem_functions(
       OggReporter::CountingMalloc, OggReporter::CountingCalloc,
       OggReporter::CountingRealloc, OggReporter::CountingFree);
 
-  // Initialize the JS engine.
+  
   const char* jsInitFailureReason = JS_InitWithFailureDiagnostic();
   if (jsInitFailureReason) {
     MOZ_CRASH_UNSAFE(jsInitFailureReason);
@@ -454,25 +454,25 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
     NS_ADDREF(*aResult = nsComponentManagerImpl::gComponentManager);
   }
 
-  // After autoreg, but before we actually instantiate any components,
-  // add any services listed in the "xpcom-directory-providers" category
-  // to the directory service.
+  
+  
+  
   nsDirectoryService::gService->RegisterCategoryProviders();
 
-  // Init mozilla::SharedThreadPool (which needs the service manager).
+  
   mozilla::SharedThreadPool::InitStatics();
 
   mozilla::scache::StartupCache::GetSingleton();
   mozilla::AvailableMemoryTracker::Init();
 
-  // Notify observers of xpcom autoregistration start
+  
   NS_CreateServicesFromCategory(NS_XPCOM_STARTUP_CATEGORY, nullptr,
                                 NS_XPCOM_STARTUP_OBSERVER_ID);
 #ifdef XP_WIN
   CreateAnonTempFileRemover();
 #endif
 
-  // The memory reporter manager is up and running -- register our reporters.
+  
   RegisterStrongMemoryReporter(new ICUReporter());
   RegisterStrongMemoryReporter(new OggReporter());
 
@@ -500,9 +500,9 @@ NS_InitMinimalXPCOM() {
   NS_LogInit();
   NS_InitAtomTable();
 
-  // We don't have the arguments by hand here.  If logging has already been
-  // initialized by a previous call to LogModule::Init with the arguments
-  // passed, passing (0, nullptr) is alright here.
+  
+  
+  
   mozilla::LogModule::Init(0, nullptr);
 
   GkRust_Init();
@@ -512,16 +512,16 @@ NS_InitMinimalXPCOM() {
     return rv;
   }
 
-  // Init the mozilla::SystemGroup for dispatching main thread runnables.
+  
   mozilla::SystemGroup::InitStatic();
 
-  // Set up the timer globals/timer thread.
+  
   rv = nsTimerImpl::Startup();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  // Create the Component/Service Manager
+  
   nsComponentManagerImpl::gComponentManager = new nsComponentManagerImpl();
   NS_ADDREF(nsComponentManagerImpl::gComponentManager);
 
@@ -531,7 +531,7 @@ NS_InitMinimalXPCOM() {
     return rv;
   }
 
-  // Global cycle collector initialization.
+  
   if (!nsCycleCollector_init()) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -543,27 +543,27 @@ NS_InitMinimalXPCOM() {
   return NS_OK;
 }
 
-//
-// NS_ShutdownXPCOM()
-//
-// The shutdown sequence for xpcom would be
-//
-// - Notify "xpcom-shutdown" for modules to release primary (root) references
-// - Shutdown XPCOM timers
-// - Notify "xpcom-shutdown-threads" for thread joins
-// - Shutdown the event queues
-// - Release the Global Service Manager
-//   - Release all service instances held by the global service manager
-//   - Release the Global Service Manager itself
-// - Release the Component Manager
-//   - Release all factories cached by the Component Manager
-//   - Notify module loaders to shut down
-//   - Unload Libraries
-//   - Release Contractid Cache held by Component Manager
-//   - Release dll abstraction held by Component Manager
-//   - Release the Registry held by Component Manager
-//   - Finally, release the component manager itself
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 EXPORT_XPCOM_API(nsresult)
 NS_ShutdownXPCOM(nsIServiceManager* aServMgr) {
   return mozilla::ShutdownXPCOM(aServMgr);
@@ -583,7 +583,7 @@ void SetICUMemoryFunctions() {
 }
 
 nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
-  // Make sure the hang monitor is enabled for shutdown.
+  
   BackgroundHangMonitor().NotifyActivity();
 
   if (!NS_IsMainThread()) {
@@ -592,10 +592,10 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   nsresult rv;
 
-  // Notify observers of xpcom shutting down
+  
   {
-    // Block it so that the COMPtr will get deleted before we hit
-    // servicemanager shutdown
+    
+    
 
     nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
     if (NS_WARN_IF(!thread)) {
@@ -628,8 +628,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 #endif
     }
 
-    // This must happen after the shutdown of media and widgets, which
-    // are triggered by the NS_XPCOM_SHUTDOWN_OBSERVER_ID notification.
+    
+    
     NS_ProcessPendingEvents(thread);
     gfxPlatform::ShutdownLayersIPC();
     mozilla::RemoteDecoderManagerChild::Shutdown();
@@ -645,15 +645,15 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     gXPCOMThreadsShutDown = true;
     NS_ProcessPendingEvents(thread);
 
-    // Shutdown the timer thread and all timers that might still be alive before
-    // shutting down the component manager
+    
+    
     nsTimerImpl::Shutdown();
 
     NS_ProcessPendingEvents(thread);
 
-    // Shutdown all remaining threads.  This method does not return until
-    // all threads created using the thread manager (with the exception of
-    // the main thread) have exited.
+    
+    
+    
     nsThreadManager::get().Shutdown();
 
     NS_ProcessPendingEvents(thread);
@@ -666,42 +666,42 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     }
   }
 
-  // Free ClearOnShutdown()'ed smart pointers.  This needs to happen *after*
-  // we've finished notifying observers of XPCOM shutdown, because shutdown
-  // observers themselves might call ClearOnShutdown().
+  
+  
+  
   mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
   mozilla::AppShutdown::MaybeFastShutdown(
       mozilla::ShutdownPhase::ShutdownFinal);
 
-  // XPCOM is officially in shutdown mode NOW
-  // Set this only after the observers have been notified as this
-  // will cause servicemanager to become inaccessible.
+  
+  
+  
   mozilla::services::Shutdown();
 
-  // We may have AddRef'd for the caller of NS_InitXPCOM, so release it
-  // here again:
+  
+  
   NS_IF_RELEASE(aServMgr);
 
-  // Shutdown global servicemanager
+  
   if (nsComponentManagerImpl::gComponentManager) {
     nsComponentManagerImpl::gComponentManager->FreeServices();
   }
 
-  // Release the directory service
+  
   nsDirectoryService::gService = nullptr;
 
   free(gGREBinPath);
   gGREBinPath = nullptr;
 
-  // FIXME: This can cause harmless writes from sqlite committing
-  // log files. We have to ignore them before we can move
-  // the mozilla::PoisonWrite call before this point. See bug
-  // 834945 for the details.
+  
+  
+  
+  
   mozJSComponentLoader::Unload();
 
-  // Clear the profiler's JS context before cycle collection. The profiler will
-  // notify the JS engine that it can let go of any data it's holding on to for
-  // profiling purposes.
+  
+  
+  
   PROFILER_CLEAR_JS_CONTEXT();
 
   bool shutdownCollect;
@@ -712,8 +712,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 #endif
   nsCycleCollector_shutdown(shutdownCollect);
 
-  // There can be code trying to refer to global objects during the final cc
-  // shutdown. This is the phase for such global objects to correctly release.
+  
+  
   mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownPostLastCycleCollection);
   mozilla::AppShutdown::MaybeFastShutdown(
       mozilla::ShutdownPhase::ShutdownPostLastCycleCollection);
@@ -722,8 +722,8 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
 
   PROFILER_ADD_MARKER("Shutdown xpcom", OTHER);
 
-  // Shutdown xpcom. This will release all loaders and cause others holding
-  // a refcount to the component manager to release it.
+  
+  
   if (nsComponentManagerImpl::gComponentManager) {
     rv = (nsComponentManagerImpl::gComponentManager)->Shutdown();
     NS_ASSERTION(NS_SUCCEEDED(rv), "Component Manager shutdown failed.");
@@ -732,41 +732,44 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   }
 
   if (sInitializedJS) {
-    // Shut down the JS engine.
+    
     JS_ShutDown();
     sInitializedJS = false;
   }
 
-  // After all threads have been joined and the component manager has been shut
-  // down, any remaining objects that could be holding NSS resources (should)
-  // have been released, so we can safely shut down NSS.
+  
+  
+  
   if (NSS_IsInitialized()) {
     nsNSSComponent::ClearSSLExternalAndInternalSessionCacheNative();
     if (NSS_Shutdown() != SECSuccess) {
-      // If you're seeing this crash and/or warning, some NSS resources are
-      // still in use (see bugs 1417680 and 1230312). Set the environment
-      // variable 'MOZ_IGNORE_NSS_SHUTDOWN_LEAKS' to some value to ignore this.
-      // Also, if leak checking is enabled, report this as a fake leak instead
-      // of crashing.
+      
+      
+      
+      
+      
 #if defined(DEBUG) && !defined(ANDROID)
       if (!getenv("MOZ_IGNORE_NSS_SHUTDOWN_LEAKS") &&
-          !getenv("XPCOM_MEM_BLOAT_LOG")) {
+          !getenv("XPCOM_MEM_BLOAT_LOG") &&
+          !getenv("XPCOM_MEM_LEAK_LOG") &&
+          !getenv("XPCOM_MEM_REFCNT_LOG") &&
+          !getenv("XPCOM_MEM_COMPTR_LOG")) {
         MOZ_CRASH("NSS_Shutdown failed");
       } else {
 #  ifdef NS_BUILD_REFCNT_LOGGING
-        // Create a fake leak.
+        
         NS_LogCtor((void*)0x100, "NSSShutdownFailed", 100);
-#  endif  // NS_BUILD_REFCNT_LOGGING
+#  endif  
         NS_WARNING("NSS_Shutdown failed");
       }
 #else
       NS_WARNING("NSS_Shutdown failed");
-#endif  // defined(DEBUG) && !defined(ANDROID)
+#endif  
     }
   }
 
-  // Finally, release the component manager last because it unloads the
-  // libraries:
+  
+  
   if (nsComponentManagerImpl::gComponentManager) {
     nsrefcnt cnt;
     NS_RELEASE2(nsComponentManagerImpl::gComponentManager, cnt);
@@ -775,21 +778,21 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   nsComponentManagerImpl::gComponentManager = nullptr;
   nsCategoryManager::Destroy();
 
-  // Shut down SystemGroup for main thread dispatching.
+  
   SystemGroup::Shutdown();
 
   GkRust_Shutdown();
 
 #ifdef NS_FREE_PERMANENT_DATA
-  // By the time we're shutting down, there may still be async parse tasks going
-  // on in the Servo thread-pool. This is fairly uncommon, though not
-  // impossible. CSS parsing heavily uses the atom table, so obviously it's not
-  // fine to get rid of it.
-  //
-  // In leak-checking / ASAN / etc. builds, shut down the servo thread-pool,
-  // which will wait for all the work to be done. For other builds, we don't
-  // really want to wait on shutdown for possibly slow tasks. So just leak the
-  // atom table in those.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Servo_ShutdownThreadPool();
   NS_ShutdownAtomTable();
 #endif
@@ -822,4 +825,4 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   return NS_OK;
 }
 
-}  // namespace mozilla
+}  
