@@ -262,8 +262,8 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
     eTimerMaxReached,
   };
 
-  JS::Value CreateTimerError(JSContext* aCx, const nsAString& aTimerLabel,
-                             TimerStatus aStatus) const;
+  static JS::Value CreateTimerError(JSContext* aCx, const nsAString& aLabel,
+                                    TimerStatus aStatus);
 
   
   
@@ -286,8 +286,9 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   
   
   
-  JS::Value CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                                  TimerStatus aTimerStatus) const;
+  static JS::Value CreateStartTimerValue(JSContext* aCx,
+                                         const nsAString& aTimerLabel,
+                                         TimerStatus aTimerStatus);
 
   
   
@@ -311,10 +312,10 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   
   
   
-  JS::Value CreateLogOrEndTimerValue(JSContext* aCx,
-                                     const nsAString& aTimerLabel,
-                                     double aTimerDuration,
-                                     TimerStatus aTimerStatus) const;
+  static JS::Value CreateLogOrEndTimerValue(JSContext* aCx,
+                                            const nsAString& aLabel,
+                                            double aDuration,
+                                            TimerStatus aStatus);
 
   
   bool ArgumentsToValueList(const Sequence<JS::Value>& aData,
