@@ -639,6 +639,7 @@ static void ReportDataCloneError(JSContext* cx,
     MOZ_RELEASE_ASSERT(!cx->isExceptionPending());
 
     JSErrorReport report;
+    report.errorNumber = errorNumber;
     
     if (JS_ExpandErrorArgumentsASCII(cx, GetErrorMessage, errorNumber, &report,
                                      std::forward<Args>(aArgs)...) &&
