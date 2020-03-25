@@ -13,7 +13,10 @@ const {
   createSVGNode,
   isNodeValid,
 } = require("devtools/server/actors/highlighters/utils/markup");
-const { TEXT_NODE } = require("devtools/shared/dom-node-constants");
+const {
+  TEXT_NODE,
+  DOCUMENT_NODE,
+} = require("devtools/shared/dom-node-constants");
 const { setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
 
 loader.lazyRequireGetter(
@@ -154,11 +157,12 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
     this.highlighterEnv.off("will-navigate", this.onWillNavigate);
     this.pageListenerTarget.removeEventListener("pagehide", this.onPageHide);
     this.pageListenerTarget = null;
+
+    AutoRefreshHighlighter.prototype.destroy.call(this);
+
     this.accessibleInfobar.destroy();
     this.accessibleInfobar = null;
-
     this.markup.destroy();
-    AutoRefreshHighlighter.prototype.destroy.call(this);
   }
 
   
@@ -181,7 +185,11 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
 
 
   _isNodeValid(node) {
-    return super._isNodeValid(node) || isNodeValid(node, TEXT_NODE);
+    return (
+      super._isNodeValid(node) ||
+      isNodeValid(node, TEXT_NODE) ||
+      isNodeValid(node, DOCUMENT_NODE)
+    );
   }
 
   
