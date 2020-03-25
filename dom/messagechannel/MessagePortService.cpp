@@ -280,8 +280,13 @@ void MessagePortService::CloseAll(const nsID& aUUID, bool aForced) {
     data->mParent = nullptr;
   }
 
-  for (const auto& parent : data->mNextParents) {
-    parent.mParent->CloseAndDelete();
+  for (auto& nextParent : data->mNextParents) {
+    
+    
+    MessagePortParent* parent = nextParent.mParent;
+    nextParent.mParent = nullptr;
+
+    parent->CloseAndDelete();
   }
 
   nsID destinationUUID = data->mDestinationUUID;
