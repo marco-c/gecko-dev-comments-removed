@@ -1693,9 +1693,15 @@ class nsFlexContainerFrame::CachedMeasuringReflowResult {
  public:
   CachedMeasuringReflowResult(const ReflowInput& aReflowInput,
                               const ReflowOutput& aReflowOutput)
-      : mKey(aReflowInput),
-        mBSize(aReflowOutput.BSize(aReflowInput.GetWritingMode())),
-        mAscent(aReflowOutput.BlockStartAscent()) {}
+      : mKey(aReflowInput), mAscent(aReflowOutput.BlockStartAscent()) {
+    
+    
+    WritingMode itemWM = aReflowInput.GetWritingMode();
+    nscoord borderBoxBSize = aReflowOutput.BSize(itemWM);
+    mBSize = borderBoxBSize -
+             aReflowInput.ComputedLogicalBorderPadding().BStartEnd(itemWM);
+    mBSize = std::max(0, mBSize);
+  }
 
   
 
@@ -1816,14 +1822,7 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
       MeasureAscentAndBSizeForFlexItem(aFlexItem, childRIForMeasuringBSize);
 
   aFlexItem.SetAscent(reflowResult.Ascent());
-
-  
-  
-  nscoord childDesiredBSize =
-      reflowResult.BSize() -
-      childRIForMeasuringBSize.ComputedLogicalBorderPadding().BStartEnd(wm);
-
-  return std::max(0, childDesiredBSize);
+  return reflowResult.BSize();
 }
 
 FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
@@ -4030,25 +4029,7 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(ReflowInput& aChildReflowInput,
   
 
   
-  
-  
-  nscoord crossAxisBorderPadding = aItem.BorderPaddingSizeInCrossAxis();
-  if (reflowResult.BSize() < crossAxisBorderPadding) {
-    
-    
-    
-    
-    
-    
-    NS_WARNING_ASSERTION(
-        aItem.Frame()->Type() == LayoutFrameType::None,
-        "Child should at least request space for border/padding");
-    aItem.SetCrossSize(0);
-  } else {
-    
-    aItem.SetCrossSize(reflowResult.BSize() - crossAxisBorderPadding);
-  }
-
+  aItem.SetCrossSize(reflowResult.BSize());
   aItem.SetAscent(reflowResult.Ascent());
 }
 
