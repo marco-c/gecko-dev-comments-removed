@@ -458,11 +458,77 @@ var RecipeRunner = {
 
 
   async getRecipeSuitability(recipe, signature) {
+    let generator = this.getAllSuitabilities(recipe, signature);
+    
+    
+    
+    
+    let { value: suitability } = await generator.next();
+    switch (suitability) {
+      case BaseAction.suitability.SIGNATURE_ERROR: {
+        await Uptake.reportRecipe(recipe, Uptake.RECIPE_INVALID_SIGNATURE);
+        break;
+      }
+
+      case BaseAction.suitability.CAPABILITES_MISMATCH: {
+        await Uptake.reportRecipe(
+          recipe,
+          Uptake.RECIPE_INCOMPATIBLE_CAPABILITIES
+        );
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_MATCH: {
+        
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_MISMATCH: {
+        
+        
+        
+        await Uptake.reportRecipe(recipe, Uptake.RECIPE_DIDNT_MATCH_FILTER);
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_ERROR: {
+        await Uptake.reportRecipe(recipe, Uptake.RECIPE_FILTER_BROKEN);
+        break;
+      }
+
+      case BaseAction.suitability.ARGUMENTS_INVALID: {
+        
+        
+        throw new Error(`Shouldn't get ${suitability} in RecipeRunner`);
+      }
+
+      default: {
+        throw new Error(`Unexpected recipe suitability ${suitability}`);
+      }
+    }
+
+    return suitability;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async *getAllSuitabilities(recipe, signature) {
     try {
       await NormandyApi.verifyObjectSignature(recipe, signature, "recipe");
     } catch (e) {
-      await Uptake.reportRecipe(recipe, Uptake.RECIPE_INVALID_SIGNATURE);
-      return BaseAction.suitability.SIGNATURE_ERROR;
+      yield BaseAction.suitability.SIGNATURE_ERROR;
     }
 
     const runnerCapabilities = this.getCapabilities();
@@ -476,36 +542,24 @@ var RecipeRunner = {
                 Array.from(runnerCapabilities)
               )}`
           );
-          await Uptake.reportRecipe(
-            recipe,
-            Uptake.RECIPE_INCOMPATIBLE_CAPABILITIES
-          );
-          return BaseAction.suitability.CAPABILITES_MISMATCH;
+          yield BaseAction.suitability.CAPABILITES_MISMATCH;
         }
       }
     }
 
     const context = this.getFilterContext(recipe);
-    let result;
     try {
-      result = await FilterExpressions.eval(recipe.filter_expression, context);
+      if (await FilterExpressions.eval(recipe.filter_expression, context)) {
+        yield BaseAction.suitability.FILTER_MATCH;
+      } else {
+        yield BaseAction.suitability.FILTER_MISMATCH;
+      }
     } catch (err) {
       log.error(
         `Error checking filter for "${recipe.name}". Filter: [${recipe.filter_expression}]. Error: "${err}"`
       );
-      await Uptake.reportRecipe(recipe, Uptake.RECIPE_FILTER_BROKEN);
-      return BaseAction.suitability.FILTER_ERROR;
+      yield BaseAction.suitability.FILTER_ERROR;
     }
-
-    if (!result) {
-      
-      
-      
-      await Uptake.reportRecipe(recipe, Uptake.RECIPE_DIDNT_MATCH_FILTER);
-      return BaseAction.suitability.FILTER_MISMATCH;
-    }
-
-    return BaseAction.suitability.FILTER_MATCH;
   },
 
   
