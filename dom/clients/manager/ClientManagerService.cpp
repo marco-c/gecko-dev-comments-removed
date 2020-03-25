@@ -284,6 +284,19 @@ RefPtr<ClientOpPromise> ClientManagerService::Navigate(
     return ClientOpPromise::CreateAndReject(rv, __func__);
   }
 
+  const IPCServiceWorkerDescriptor& serviceWorker = aArgs.serviceWorker();
+
+  
+  
+  const Maybe<ServiceWorkerDescriptor>& controller = source->GetController();
+  if (controller.isNothing() ||
+      controller.ref().Scope() != serviceWorker.scope() ||
+      controller.ref().Id() != serviceWorker.id()) {
+    CopyableErrorResult rv;
+    rv.ThrowTypeError("Client is not controlled by this Service Worker");
+    return ClientOpPromise::CreateAndReject(rv, __func__);
+  }
+
   PClientManagerParent* manager = source->Manager();
   MOZ_DIAGNOSTIC_ASSERT(manager);
 
