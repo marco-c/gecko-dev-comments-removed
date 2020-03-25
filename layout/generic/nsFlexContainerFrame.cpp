@@ -800,6 +800,12 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
+  
+  
+  bool NeedsFinalReflow() const;
+
+  
+  
   nsBlockFrame* BlockFrame() const;
 
  protected:
@@ -2156,6 +2162,71 @@ bool FlexItem::CanMainSizeInfluenceCrossSize() const {
     
   }
 
+  
+  
+  return true;
+}
+
+
+
+
+
+
+
+static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
+  if (aFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    return true;
+  }
+  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
+       childLists.Next()) {
+    for (nsIFrame* childFrame : childLists.CurrentList()) {
+      if (childFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool FlexItem::NeedsFinalReflow() const {
+  
+  const LogicalSize finalSize = mIsInlineAxisMainAxis
+                                    ? LogicalSize(mWM, mMainSize, mCrossSize)
+                                    : LogicalSize(mWM, mCrossSize, mMainSize);
+
+  if (HadMeasuringReflow()) {
+    
+    
+    
+    if (finalSize !=
+        LogicalSize(mWM, mFrame->GetContentRectRelativeToSelf().Size())) {
+      
+      
+      FLEX_LOG(
+          "[perf] Flex item needed both a measuring reflow and a final "
+          "reflow due to measured size disagreeing with final size");
+      return true;
+    }
+
+    if (FrameHasRelativeBSizeDependency(mFrame)) {
+      
+      
+      
+      FLEX_LOG(
+          "[perf] Flex item needed both a measuring reflow and a final "
+          "reflow due to BSize potentially becoming definite");
+      return true;
+    }
+    
+    
+    
+    return false;
+  }
+
+  
+  
+
+  
   
   
   return true;
@@ -3858,27 +3929,6 @@ static nscoord GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
   return largestLineOuterSize;
 }
 
-
-
-
-
-
-
-static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
-  if (aFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
-    return true;
-  }
-  for (nsIFrame::ChildListIterator childLists(aFrame); !childLists.IsDone();
-       childLists.Next()) {
-    for (nsIFrame* childFrame : childLists.CurrentList()) {
-      if (childFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 nscoord nsFlexContainerFrame::ComputeMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
     nscoord aTentativeMainSize, nscoord aAvailableBSizeForContent,
@@ -4804,49 +4854,23 @@ void nsFlexContainerFrame::ReflowChildren(
       
       
       
-      bool itemNeedsReflow = true;  
-      if (item.HadMeasuringReflow()) {
-        LogicalSize finalFlexItemSize =
-            aAxisTracker.LogicalSizeFromFlexRelativeSizes(item.MainSize(),
-                                                          item.CrossSize());
-        
-        
-        if (finalFlexItemSize ==
-            LogicalSize(flexWM,
-                        item.Frame()->GetContentRectRelativeToSelf().Size())) {
-          
-          
-          
-          
-          if (!FrameHasRelativeBSizeDependency(item.Frame())) {
-            
-            
-            
-            itemNeedsReflow = false;
-            MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
-                                        containerSize);
-          }
-        }
-        if (itemNeedsReflow) {
-          FLEX_LOG(
-              "[perf] Flex item needed both a measuring reflow and a final "
-              "reflow");
-        }
-      }
-      if (itemNeedsReflow) {
+      if (item.NeedsFinalReflow()) {
         ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                        containerSize, aHasLineClampEllipsis);
-      }
-
-      
-      
-      
-      
-      
-      
-      if (!itemNeedsReflow && aHasLineClampEllipsis &&
-          GetLineClampValue() == 0) {
-        item.BlockFrame()->ClearLineClampEllipsis();
+      } else {
+        MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
+                                    containerSize);
+        
+        
+        
+        
+        
+        
+        
+        
+        if (aHasLineClampEllipsis && GetLineClampValue() == 0) {
+          item.BlockFrame()->ClearLineClampEllipsis();
+        }
       }
 
       
