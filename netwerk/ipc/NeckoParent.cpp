@@ -5,7 +5,6 @@
 
 
 
-#include "necko-config.h"
 #include "nsHttp.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentPrincipal.h"
