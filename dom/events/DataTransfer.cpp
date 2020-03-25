@@ -44,8 +44,6 @@
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
 
-#define MOZ_CALLS_ENABLED_PREF "dom.datatransfer.mozAtAPIs"
-
 namespace mozilla {
 namespace dom {
 
@@ -1546,16 +1544,8 @@ void DataTransfer::SetMode(DataTransfer::Mode aMode) {
 
 bool DataTransfer::MozAtAPIsEnabled(JSContext* aCx, JSObject* aObj ) {
   
-  static bool sPrefCached = false;
-  static bool sPrefCacheValue = false;
-
-  if (!sPrefCached) {
-    sPrefCached = true;
-    Preferences::AddBoolVarCache(&sPrefCacheValue, MOZ_CALLS_ENABLED_PREF);
-  }
-
-  
-  return nsContentUtils::IsSystemCaller(aCx) || sPrefCacheValue;
+  return nsContentUtils::IsSystemCaller(aCx) ||
+         StaticPrefs::dom_datatransfer_mozAtAPIs_DoNotUseDirectly();
 }
 
 }  
