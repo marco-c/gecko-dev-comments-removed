@@ -4,6 +4,7 @@
 
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, PrimitiveKeyKind};
 use api::PropertyBinding;
+use api::MAX_BLUR_RADIUS;
 use api::units::*;
 use crate::clip::{ClipItemKey, ClipItemKeyKind};
 use crate::scene_building::SceneBuilder;
@@ -49,10 +50,6 @@ pub struct BoxShadowClipSource {
 
 
 pub const BLUR_SAMPLE_SCALE: f32 = 3.0;
-
-
-
-pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 
 

@@ -96,9 +96,9 @@
 
 use api::{MixBlendMode, PipelineId, PremultipliedColorF, FilterPrimitiveKind};
 use api::{PropertyBinding, PropertyBindingId, FilterPrimitive, FontRenderMode};
-use api::{DebugFlags, RasterSpace, ImageKey, ColorF, ColorU, PrimitiveFlags};
+use api::{DebugFlags, RasterSpace, ImageKey, ColorF, ColorU, PrimitiveFlags, MAX_BLUR_RADIUS};
 use api::units::*;
-use crate::box_shadow::BLUR_SAMPLE_SCALE;
+use crate::box_shadow::{BLUR_SAMPLE_SCALE};
 use crate::clip::{ClipStore, ClipChainInstance, ClipDataHandle, ClipChainId};
 use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX,
     SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace
@@ -133,7 +133,7 @@ use smallvec::SmallVec;
 use std::{mem, u8, marker, u32};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::texture_cache::TextureCacheHandle;
-use crate::util::{MaxRect, VecHelper, RectHelpers, MatrixHelpers};
+use crate::util::{MaxRect, scale_factors, VecHelper, RectHelpers, MatrixHelpers};
 use crate::filterdata::{FilterDataHandle};
 #[cfg(any(feature = "capture", feature = "replay"))]
 use ron;
@@ -169,10 +169,6 @@ use crate::scene_building::{SliceFlags};
 #[cfg(feature = "replay")]
 
 use std::collections::HashMap;
-
-
-
-pub const MAX_BLUR_RADIUS: f32 = 100.;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -401,20 +397,6 @@ fn clamp(value: i32, low: i32, high: i32) -> i32 {
 
 fn clampf(value: f32, low: f32, high: f32) -> f32 {
     value.max(low).min(high)
-}
-
-
-fn clamp_blur_radius(blur_radius: f32, scale_factors: (f32, f32)) -> f32 {
-    
-    
-    
-
-    
-    
-    let largest_scale_factor = f32::max(scale_factors.0, scale_factors.1);
-    let adjusted_blur_radius = blur_radius * largest_scale_factor;
-    let clamped_blur_radius = f32::min(adjusted_blur_radius, MAX_BLUR_RADIUS);
-    clamped_blur_radius / largest_scale_factor
 }
 
 
@@ -3782,8 +3764,6 @@ pub struct SurfaceInfo {
     pub inflation_factor: f32,
     
     pub device_pixel_scale: DevicePixelScale,
-    
-    pub scale_factors: (f32, f32),
 }
 
 impl SurfaceInfo {
@@ -3794,7 +3774,6 @@ impl SurfaceInfo {
         world_rect: WorldRect,
         spatial_tree: &SpatialTree,
         device_pixel_scale: DevicePixelScale,
-        scale_factors: (f32, f32),
     ) -> Self {
         let map_surface_to_world = SpaceMapper::new_with_target(
             ROOT_SPATIAL_NODE_INDEX,
@@ -3820,7 +3799,6 @@ impl SurfaceInfo {
             surface_spatial_node_index,
             inflation_factor,
             device_pixel_scale,
-            scale_factors,
         }
     }
 }
@@ -3883,20 +3861,19 @@ pub enum PictureCompositeMode {
 }
 
 impl PictureCompositeMode {
-    pub fn inflate_picture_rect(&self, picture_rect: PictureRect, scale_factors: (f32, f32)) -> PictureRect {
+    pub fn inflate_picture_rect(&self, picture_rect: PictureRect, inflation_factor: f32) -> PictureRect {
         let mut result_rect = picture_rect;
         match self {
             PictureCompositeMode::Filter(filter) => match filter {
-                Filter::Blur(blur_radius) => {
-                    let inflation_factor = clamp_blur_radius(*blur_radius, scale_factors).ceil() * BLUR_SAMPLE_SCALE;
+                Filter::Blur(_) => {
                     result_rect = picture_rect.inflate(inflation_factor, inflation_factor);
                 },
                 Filter::DropShadows(shadows) => {
                     let mut max_inflation: f32 = 0.0;
                     for shadow in shadows {
-                        max_inflation = max_inflation.max(shadow.blur_radius);
+                        let inflation_factor = shadow.blur_radius.ceil() * BLUR_SAMPLE_SCALE;
+                        max_inflation = max_inflation.max(inflation_factor);
                     }
-                    max_inflation = clamp_blur_radius(max_inflation, scale_factors).ceil() * BLUR_SAMPLE_SCALE;
                     result_rect = picture_rect.inflate(max_inflation, max_inflation);
                 },
                 _ => {}
@@ -4567,10 +4544,6 @@ impl PicturePrimitive {
                     .surfaces[raster_config.surface_index.0]
                     .device_pixel_scale;
 
-                let scale_factors = frame_state
-                    .surfaces[raster_config.surface_index.0]
-                    .scale_factors;
-
                 let (mut clipped, mut unclipped) = match get_raster_rects(
                     pic_rect,
                     &map_pic_to_raster,
@@ -4644,14 +4617,15 @@ impl PicturePrimitive {
 
                 let dep_info = match raster_config.composite_mode {
                     PictureCompositeMode::Filter(Filter::Blur(blur_radius)) => {
-                        let blur_std_deviation = clamp_blur_radius(blur_radius, scale_factors) * device_pixel_scale.0;
+                        let blur_std_deviation = blur_radius * device_pixel_scale.0;
+                        let scale_factors = scale_factors(&transform);
                         let mut blur_std_deviation = DeviceSize::new(
                             blur_std_deviation * scale_factors.0,
                             blur_std_deviation * scale_factors.1
                         );
                         let mut device_rect = if self.options.inflate_if_required {
                             let inflation_factor = frame_state.surfaces[raster_config.surface_index.0].inflation_factor;
-                            let inflation_factor = inflation_factor * device_pixel_scale.0;
+                            let inflation_factor = (inflation_factor * device_pixel_scale.0).ceil();
 
                             
                             
@@ -4664,7 +4638,7 @@ impl PicturePrimitive {
                             
                             
                             let device_rect = clipped.to_f32()
-                                .inflate(inflation_factor * scale_factors.0, inflation_factor * scale_factors.1)
+                                .inflate(inflation_factor, inflation_factor)
                                 .intersection(&unclipped)
                                 .unwrap();
 
@@ -4737,15 +4711,14 @@ impl PicturePrimitive {
                         for shadow in shadows {
                             
                             
-                            max_std_deviation = f32::max(max_std_deviation, shadow.blur_radius);
+                            max_std_deviation = f32::max(max_std_deviation, shadow.blur_radius * device_pixel_scale.0);
                         }
-                        max_std_deviation = clamp_blur_radius(max_std_deviation, scale_factors) * device_pixel_scale.0;
-                        let max_blur_range = max_std_deviation * BLUR_SAMPLE_SCALE;
 
+                        let max_blur_range = (max_std_deviation * BLUR_SAMPLE_SCALE).ceil();
                         
                         
                         let device_rect = clipped.to_f32()
-                                .inflate(max_blur_range * scale_factors.0, max_blur_range * scale_factors.1)
+                                .inflate(max_blur_range, max_blur_range)
                                 .intersection(&unclipped)
                                 .unwrap();
 
@@ -4758,10 +4731,7 @@ impl PicturePrimitive {
 
                         device_rect.size = RenderTask::adjusted_blur_source_size(
                             device_rect.size,
-                            DeviceSize::new(
-                                max_std_deviation * scale_factors.0,
-                                max_std_deviation * scale_factors.1
-                            ),
+                            DeviceSize::new(max_std_deviation, max_std_deviation),
                         );
 
                         if let Some(scale) = adjust_scale_for_max_surface_size(
@@ -4805,12 +4775,14 @@ impl PicturePrimitive {
                         self.extra_gpu_data_handles.resize(shadows.len(), GpuCacheHandle::new());
 
                         let mut blur_render_task_id = picture_task_id;
+                        let scale_factors = scale_factors(&transform);
                         for shadow in shadows {
-                            let blur_radius = clamp_blur_radius(shadow.blur_radius, scale_factors) * device_pixel_scale.0;
+                            
+                            
                             blur_render_task_id = RenderTask::new_blur(
                                 DeviceSize::new(
-                                    blur_radius * scale_factors.0,
-                                    blur_radius * scale_factors.1,
+                                    f32::min(shadow.blur_radius * scale_factors.0, MAX_BLUR_RADIUS) * device_pixel_scale.0,
+                                    f32::min(shadow.blur_radius * scale_factors.1, MAX_BLUR_RADIUS) * device_pixel_scale.0,
                                 ),
                                 picture_task_id,
                                 frame_state.render_tasks,
@@ -5631,6 +5603,33 @@ impl PicturePrimitive {
             let surface_spatial_node_index = self.spatial_node_index;
 
             
+            let inflation_factor = match composite_mode {
+                PictureCompositeMode::Filter(Filter::Blur(blur_radius)) => {
+                    
+                    
+                    if self.options.inflate_if_required {
+                        
+                        
+                        BLUR_SAMPLE_SCALE * blur_radius
+                    } else {
+                        0.0
+                    }
+                }
+                PictureCompositeMode::SvgFilter(ref primitives, _) if self.options.inflate_if_required => {
+                    let mut max = 0.0;
+                    for primitive in primitives {
+                        if let FilterPrimitiveKind::Blur(ref blur) = primitive.kind {
+                            max = f32::max(max, blur.radius * BLUR_SAMPLE_SCALE);
+                        }
+                    }
+                    max
+                }
+                _ => {
+                    0.0
+                }
+            };
+
+            
             let has_svg_filter = if let PictureCompositeMode::SvgFilter(..) = composite_mode {
                 true
             } else {
@@ -5643,49 +5642,17 @@ impl PicturePrimitive {
                 .get_relative_transform(surface_spatial_node_index, parent_raster_node_index)
                 .is_perspective();
 
-            let raster_spatial_node_index = if establishes_raster_root {
-                surface_spatial_node_index
-            } else {
-                parent_raster_node_index
-            };
-
-            let scale_factors = frame_context
-                    .spatial_tree
-                    .get_relative_transform(surface_spatial_node_index, raster_spatial_node_index)
-                    .scale_factors();
-
-            
-            
-            let mut inflation_factor = 0.0;
-            if self.options.inflate_if_required {
-                match composite_mode {
-                    PictureCompositeMode::Filter(Filter::Blur(blur_radius)) => {
-                        let blur_radius = clamp_blur_radius(blur_radius, scale_factors);
-                        
-                        
-                        inflation_factor = blur_radius * BLUR_SAMPLE_SCALE;
-                    }
-                    PictureCompositeMode::SvgFilter(ref primitives, _) => {
-                        let mut max = 0.0;
-                        for primitive in primitives {
-                            if let FilterPrimitiveKind::Blur(ref blur) = primitive.kind {
-                                max = f32::max(max, blur.radius);
-                            }
-                        }
-                        inflation_factor = clamp_blur_radius(max, scale_factors) * BLUR_SAMPLE_SCALE;
-                    }
-                    _ => {}
-                }
-            }
-
             let surface = SurfaceInfo::new(
                 surface_spatial_node_index,
-                raster_spatial_node_index,
+                if establishes_raster_root {
+                    surface_spatial_node_index
+                } else {
+                    parent_raster_node_index
+                },
                 inflation_factor,
                 frame_context.global_screen_world_rect,
                 &frame_context.spatial_tree,
                 frame_context.global_device_pixel_scale,
-                scale_factors,
             );
 
             self.raster_config = Some(RasterConfig {
@@ -5819,7 +5786,7 @@ impl PicturePrimitive {
             
             
             if self.options.inflate_if_required {
-                surface.rect = raster_config.composite_mode.inflate_picture_rect(surface.rect, surface.scale_factors);
+                surface.rect = raster_config.composite_mode.inflate_picture_rect(surface.rect, surface.inflation_factor);
 
                 
                 
