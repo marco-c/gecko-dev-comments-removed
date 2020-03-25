@@ -87,6 +87,10 @@ static bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
                              Sequence<JS::Value>& aSequence,
                              Sequence<nsString>& aStyles);
 
+static JS::Value CreateCounterOrResetCounterValue(JSContext* aCx,
+                                                  const nsAString& aCountLabel,
+                                                  uint32_t aCountValue);
+
 
 
 
@@ -2296,8 +2300,16 @@ uint32_t Console::ResetCounter(JSContext* aCx,
   return MAX_PAGE_COUNTERS;
 }
 
-JS::Value Console::CreateCounterOrResetCounterValue(
-    JSContext* aCx, const nsAString& aCountLabel, uint32_t aCountValue) const {
+
+
+
+
+
+
+
+static JS::Value CreateCounterOrResetCounterValue(JSContext* aCx,
+                                                  const nsAString& aCountLabel,
+                                                  uint32_t aCountValue) {
   ConsoleCommon::ClearException ce(aCx);
 
   if (aCountValue == MAX_PAGE_COUNTERS) {

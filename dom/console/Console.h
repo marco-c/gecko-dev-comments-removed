@@ -346,17 +346,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   uint32_t ResetCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
                         nsAString& aCountLabel);
 
-  
-  
-  
-  
-  
-  
-  
-  JS::Value CreateCounterOrResetCounterValue(JSContext* aCx,
-                                             const nsAString& aCountLabel,
-                                             uint32_t aCountValue) const;
-
   static bool ShouldIncludeStackTrace(MethodName aMethodName);
 
   JSObject* GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
