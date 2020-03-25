@@ -125,6 +125,12 @@ inline uint32_t GetTitlecaseForAll(
 }
 
 inline uint32_t GetFoldedcase(uint32_t aCh) {
+  
+  
+  
+  if (aCh == 0x0130 || aCh == 0x0131) {
+    return 'i';
+  }
   return u_foldCase(aCh, U_FOLD_CASE_DEFAULT);
 }
 
