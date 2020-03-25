@@ -168,73 +168,84 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
 
   
+  
+  
+  
+
+  
   Strict = 1 << 4,
 
   
-  
-  
-  HasNonSyntacticScope = 1 << 5,
-
-  
-  BindingsAccessedDynamically = 1 << 6,
-  FunHasExtensibleScope = 1 << 7,
+  BindingsAccessedDynamically = 1 << 5,
+  FunHasExtensibleScope = 1 << 6,
 
   
   
-  HasCallSiteObj = 1 << 8,
+  HasCallSiteObj = 1 << 7,
 
   
   
-  HasModuleGoal = 1 << 9,
+  HasModuleGoal = 1 << 8,
 
-  FunctionHasThisBinding = 1 << 10,
-  FunctionHasExtraBodyVarScope = 1 << 11,
-
-  
-  
-  HasMappedArgsObj = 1 << 12,
+  FunctionHasThisBinding = 1 << 9,
 
   
   
-  HasInnerFunctions = 1 << 13,
-
-  NeedsHomeObject = 1 << 14,
-
-  IsDerivedClassConstructor = 1 << 15,
+  HasMappedArgsObj = 1 << 10,
 
   
   
-  IsLikelyConstructorWrapper = 1 << 16,
+  HasInnerFunctions = 1 << 11,
+
+  NeedsHomeObject = 1 << 12,
+  IsDerivedClassConstructor = 1 << 13,
 
   
-  IsGenerator = 1 << 17,
+  
+  IsLikelyConstructorWrapper = 1 << 14,
 
   
-  IsAsync = 1 << 18,
+  IsGenerator = 1 << 15,
 
   
-  HasRest = 1 << 19,
+  IsAsync = 1 << 16,
 
   
-  ArgumentsHasVarBinding = 1 << 20,
+  HasRest = 1 << 17,
 
   
-  IsForEval = 1 << 21,
+  ArgumentsHasVarBinding = 1 << 18,
 
   
-  IsModule = 1 << 22,
+  IsForEval = 1 << 19,
 
   
-  NeedsFunctionEnvironmentObjects = 1 << 23,
+  IsModule = 1 << 20,
 
   
-  ShouldDeclareArguments = 1 << 24,
+  ShouldDeclareArguments = 1 << 21,
 
   
-  IsFunction = 1 << 25,
+  IsFunction = 1 << 22,
 
   
-  HasDirectEval = 1 << 26,
+  HasDirectEval = 1 << 23,
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  HasNonSyntacticScope = 1 << 24,
+
+  FunctionHasExtraBodyVarScope = 1 << 25,
+
+  
+  NeedsFunctionEnvironmentObjects = 1 << 26,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
