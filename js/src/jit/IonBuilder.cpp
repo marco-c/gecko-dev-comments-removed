@@ -12707,13 +12707,11 @@ AbortReasonOr<Ok> IonBuilder::jsop_instanceof() {
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_debugger() {
+  
+  
   MDebugger* debugger = MDebugger::New(alloc());
   current->add(debugger);
-
-  
-  
-  
-  return resumeAt(debugger, pc);
+  return resumeAfter(debugger);
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_implicitthis(PropertyName* name) {
