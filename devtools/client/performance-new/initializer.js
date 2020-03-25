@@ -77,17 +77,7 @@ const {
 
 async function gInit(perfFront, pageContext, openAboutProfiling) {
   const store = createStore(reducers);
-  
-  
-  
-  
-  
-  
-  
-  
-  const supportedFeatures = await Promise.resolve(
-    perfFront.getSupportedFeatures()
-  ).catch(() => null);
+  const supportedFeatures = await perfFront.getSupportedFeatures();
 
   if (!openAboutProfiling) {
     openAboutProfiling = () => {
