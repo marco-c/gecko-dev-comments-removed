@@ -36,6 +36,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -45,18 +46,6 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 enum nsMixedContentBlockerMessageType { eBlocked = 0x00, eUserOverride = 0x01 };
-
-
-
-bool nsMixedContentBlocker::sBlockMixedScript = false;
-
-bool nsMixedContentBlocker::sBlockMixedObjectSubrequest = false;
-
-
-bool nsMixedContentBlocker::sBlockMixedDisplay = false;
-
-
-bool nsMixedContentBlocker::sUpgradeMixedDisplay = false;
 
 
 
@@ -216,24 +205,6 @@ class nsMixedContentEvent : public Runnable {
   
   bool mRootHasSecureConnection;
 };
-
-nsMixedContentBlocker::nsMixedContentBlocker() {
-  
-  Preferences::AddBoolVarCache(&sBlockMixedScript,
-                               "security.mixed_content.block_active_content");
-
-  Preferences::AddBoolVarCache(
-      &sBlockMixedObjectSubrequest,
-      "security.mixed_content.block_object_subrequest");
-
-  
-  Preferences::AddBoolVarCache(&sBlockMixedDisplay,
-                               "security.mixed_content.block_display_content");
-
-  
-  Preferences::AddBoolVarCache(
-      &sUpgradeMixedDisplay, "security.mixed_content.upgrade_display_content");
-}
 
 nsMixedContentBlocker::~nsMixedContentBlocker() = default;
 
@@ -541,6 +512,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   
+  
   MOZ_ASSERT(NS_IsMainThread());
 
   bool isPreload = nsContentUtils::IsPreloadType(aContentType);
@@ -647,7 +619,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       classification = eMixedDisplay;
       break;
     case TYPE_OBJECT_SUBREQUEST:
-      if (sBlockMixedObjectSubrequest) {
+      if (StaticPrefs::security_mixed_content_block_object_subrequest()) {
         classification = eMixedScript;
       } else {
         classification = eMixedDisplay;
@@ -865,7 +837,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   bool isUpgradableDisplayType =
       nsContentUtils::IsUpgradableDisplayType(aContentType) &&
-      ShouldUpgradeMixedDisplayContent();
+      StaticPrefs::security_mixed_content_upgrade_display_content();
   if (isHttpScheme && isUpgradableDisplayType) {
     *aDecision = ACCEPT;
     return NS_OK;
@@ -1023,14 +995,15 @@ nsresult nsMixedContentBlocker::ShouldLoad(
 
   
   if (aContentType == TYPE_OBJECT_SUBREQUEST) {
-    if (!sBlockMixedObjectSubrequest) {
+    if (!StaticPrefs::security_mixed_content_block_object_subrequest()) {
       rootDoc->WarnOnceAbout(Document::eMixedDisplayObjectSubrequest);
     }
   }
 
   
   
-  if (sBlockMixedDisplay && classification == eMixedDisplay) {
+  if (StaticPrefs::security_mixed_content_block_display_content() &&
+      classification == eMixedDisplay) {
     if (allowMixedContent) {
       LogMixedContentMessage(classification, aContentLocation, rootDoc,
                              eUserOverride);
@@ -1084,7 +1057,8 @@ nsresult nsMixedContentBlocker::ShouldLoad(
     }
     return NS_OK;
 
-  } else if (sBlockMixedScript && classification == eMixedScript) {
+  } else if (StaticPrefs::security_mixed_content_block_active_content() &&
+             classification == eMixedScript) {
     
     
     if (allowMixedContent) {
@@ -1269,8 +1243,4 @@ void nsMixedContentBlocker::AccumulateMixedContentHSTS(
                             MCB_HSTS_ACTIVE_WITH_HSTS);
     }
   }
-}
-
-bool nsMixedContentBlocker::ShouldUpgradeMixedDisplayContent() {
-  return sUpgradeMixedDisplay;
 }

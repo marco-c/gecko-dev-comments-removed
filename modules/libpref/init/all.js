@@ -2293,16 +2293,6 @@ pref("security.notification_enable_delay", 500);
 #endif
 
 
-pref("security.mixed_content.block_active_content", false);
-pref("security.mixed_content.block_display_content", false);
-
-
-pref("security.mixed_content.upgrade_display_content", false);
-
-
-pref("security.mixed_content.block_object_subrequest", false);
-
-
 pref("security.sri.enable", true);
 
 
