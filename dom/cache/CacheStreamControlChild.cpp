@@ -4,7 +4,7 @@
 
 
 
-#include "CacheStreamControlChild.h"
+#include "mozilla/dom/cache/CacheStreamControlChild.h"
 
 #include "mozilla/Unused.h"
 #include "mozilla/dom/cache/ActorUtils.h"
