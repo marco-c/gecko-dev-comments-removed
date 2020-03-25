@@ -1574,7 +1574,10 @@ def make_job_description(config, tests):
             
             schedules = [category]
         else:
-            schedules = [category, platform_family(test['build-platform'])]
+            schedules = [attributes['unittest_category'], platform_family(test['build-platform'])]
+            component = test.get('schedules-component')
+            if component:
+                schedules.append(component)
 
         if test.get('when'):
             
