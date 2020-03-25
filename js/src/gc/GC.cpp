@@ -2182,11 +2182,23 @@ static void UpdateArenaPointersTyped(MovingTracer* trc, Arena* arena) {
   }
 }
 
+static bool CanUpdateKindInBackground(AllocKind kind) {
+  
+  
+  
+  
+  
+  return js::gc::IsBackgroundFinalized(kind) && !IsShapeAllocKind(kind);
+}
+
 
 
 
 static void UpdateArenaPointers(MovingTracer* trc, Arena* arena) {
   AllocKind kind = arena->getAllocKind();
+
+  MOZ_ASSERT_IF(!CanUpdateKindInBackground(kind),
+                CurrentThreadCanAccessRuntime(trc->runtime()));
 
   switch (kind) {
 #define EXPAND_CASE(allocKind, traceKind, type, sizedType, bgFinal, nursery, \
@@ -2308,19 +2320,6 @@ void ArenasToUpdate::next() {
 
   kind = nextAllocKind(kind);
   settle();
-}
-
-static bool CanUpdateKindInBackground(AllocKind kind) {
-  
-  
-  
-  
-  
-  if (!js::gc::IsBackgroundFinalized(kind) || IsShapeAllocKind(kind)) {
-    return false;
-  }
-
-  return true;
 }
 
 static AllocKinds ForegroundUpdateKinds(AllocKinds kinds) {
