@@ -45,7 +45,7 @@ async function onTargetAvailable({
     
     await targetFront.onThreadAttached;
 
-    const threadFront = targetFront.threadFront;
+    const { threadFront } = targetFront;
     if (!threadFront) {
       return;
     }

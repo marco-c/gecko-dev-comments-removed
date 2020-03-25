@@ -43,7 +43,7 @@ async function attachTargets(targetLists, args) {
       
       
       
-      let threadFront = targetFront.threadFront;
+      let { threadFront } = targetFront;
 
       
       

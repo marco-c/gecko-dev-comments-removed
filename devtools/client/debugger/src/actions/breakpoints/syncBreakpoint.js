@@ -58,7 +58,7 @@ async function findNewLocation(
   const func = symbols ? findFunctionByName(symbols, name, index) : null;
 
   
-  let line = location.line;
+  let { line } = location;
   if (func) {
     line = func.location.start.line + offset.line;
   }

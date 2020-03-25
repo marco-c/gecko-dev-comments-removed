@@ -12,7 +12,7 @@ import Services from "devtools-services";
 
 
 const prefsSchemaVersion = 11;
-const pref = Services.pref;
+const { pref } = Services;
 
 if (isDevelopment()) {
   pref("devtools.browsertoolbox.fission", false);
