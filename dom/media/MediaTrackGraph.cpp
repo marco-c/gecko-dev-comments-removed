@@ -1142,7 +1142,6 @@ void MediaTrackGraphImpl::RunMessageAfterProcessing(
 }
 
 void MediaTrackGraphImpl::RunMessagesInQueue() {
-  TRACE_AUDIO_CALLBACK();
   MOZ_ASSERT(OnGraphThread());
   
   
@@ -1152,6 +1151,7 @@ void MediaTrackGraphImpl::RunMessagesInQueue() {
         mFrontMessageQueue[i].mMessages;
 
     for (uint32_t j = 0; j < messages.Length(); ++j) {
+      TRACE_AUDIO_CALLBACK();
       messages[j]->Run();
     }
   }
@@ -1394,6 +1394,7 @@ auto MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateEnd,
   
   
   if (mGraphRunner || !mRealtime) {
+    TRACE_AUDIO_CALLBACK_COMMENT("MessagePort events");
     NS_ProcessPendingEvents(nullptr);
   }
 
