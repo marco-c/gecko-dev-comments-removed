@@ -323,9 +323,15 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  mozilla::UniquePtr<FlexItem> GenerateFlexItemForChild(
-      nsIFrame* aChildFrame, const ReflowInput& aParentReflowInput,
-      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis);
+
+
+
+
+
+  FlexItem* GenerateFlexItemForChild(FlexLine& aLine, nsIFrame* aChildFrame,
+                                     const ReflowInput& aParentReflowInput,
+                                     const FlexboxAxisTracker& aAxisTracker,
+                                     bool aHasLineClampEllipsis);
 
   
 

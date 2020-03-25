@@ -934,32 +934,30 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   
-  void AddItem(const FlexItem& aItem, nscoord aItemInnerHypotheticalMainSize,
-               nscoord aItemOuterHypotheticalMainSize) {
-    mItems.AppendElement(aItem);
+  
+  void AddLastItemToMainSizeTotals() {
+    const FlexItem& lastItem = Items().LastElement();
 
     
-    if (aItem.IsFrozen()) {
+    if (lastItem.IsFrozen()) {
       mNumFrozenItems++;
     }
 
-    nscoord itemMBP =
-        aItemOuterHypotheticalMainSize - aItemInnerHypotheticalMainSize;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mTotalItemMBP =
+        AddChecked(mTotalItemMBP, lastItem.MarginBorderPaddingSizeInMainAxis());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mTotalItemMBP = AddChecked(mTotalItemMBP, itemMBP);
-
-    mTotalOuterHypotheticalMainSize = AddChecked(
-        mTotalOuterHypotheticalMainSize, aItemOuterHypotheticalMainSize);
+    mTotalOuterHypotheticalMainSize =
+        AddChecked(mTotalOuterHypotheticalMainSize, lastItem.OuterMainSize());
 
     
     
@@ -1205,8 +1203,9 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
   return (alignment | alignmentFlags);
 }
 
-UniquePtr<FlexItem> nsFlexContainerFrame::GenerateFlexItemForChild(
-    nsIFrame* aChildFrame, const ReflowInput& aParentReflowInput,
+FlexItem* nsFlexContainerFrame::GenerateFlexItemForChild(
+    FlexLine& aLine, nsIFrame* aChildFrame,
+    const ReflowInput& aParentReflowInput,
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
   
   
@@ -1312,9 +1311,9 @@ UniquePtr<FlexItem> nsFlexContainerFrame::GenerateFlexItemForChild(
   }
 
   
-  auto item = MakeUnique<FlexItem>(childRI, flexGrow, flexShrink, flexBaseSize,
-                                   mainMinSize, mainMaxSize, tentativeCrossSize,
-                                   crossMinSize, crossMaxSize, aAxisTracker);
+  FlexItem* item = aLine.Items().EmplaceBack(
+      childRI, flexGrow, flexShrink, flexBaseSize, mainMinSize, mainMaxSize,
+      tentativeCrossSize, crossMinSize, crossMaxSize, aAxisTracker);
 
   
   
@@ -3719,35 +3718,32 @@ void nsFlexContainerFrame::GenerateFlexLines(
       curLine = ConstructNewFlexLine();
     }
 
-    UniquePtr<FlexItem> item;
+    FlexItem* item;
     if (useMozBoxCollapseBehavior &&
         (StyleVisibility::Collapse ==
          childFrame->StyleVisibility()->mVisible)) {
       
       
-      item = MakeUnique<FlexItem>(childFrame, 0, aReflowInput.GetWritingMode(),
-                                  aAxisTracker);
+      item = curLine->Items().EmplaceBack(
+          childFrame, 0, aReflowInput.GetWritingMode(), aAxisTracker);
     } else if (nextStrutIdx < aStruts.Length() &&
                aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
       
-      item = MakeUnique<FlexItem>(childFrame,
-                                  aStruts[nextStrutIdx].mStrutCrossSize,
-                                  aReflowInput.GetWritingMode(), aAxisTracker);
+      item = curLine->Items().EmplaceBack(
+          childFrame, aStruts[nextStrutIdx].mStrutCrossSize,
+          aReflowInput.GetWritingMode(), aAxisTracker);
       nextStrutIdx++;
     } else {
-      item = GenerateFlexItemForChild(childFrame, aReflowInput, aAxisTracker,
-                                      aHasLineClampEllipsis);
+      item = GenerateFlexItemForChild(*curLine, childFrame, aReflowInput,
+                                      aAxisTracker, aHasLineClampEllipsis);
     }
 
-    nscoord itemInnerHypotheticalMainSize = item->MainSize();
-    nscoord itemOuterHypotheticalMainSize = item->OuterMainSize();
-
     
     
     
-    if (wrapThreshold != NS_UNCONSTRAINEDSIZE &&  
-                                                  
-        !curLine->IsEmpty()) {  
+    
+    if (wrapThreshold != NS_UNCONSTRAINEDSIZE &&
+        curLine->Items().Length() > 1) {
       
       
       
@@ -3755,20 +3751,26 @@ void nsFlexContainerFrame::GenerateFlexLines(
       
       
       
-      nscoord newOuterSize =
-          AddChecked(curLine->TotalOuterHypotheticalMainSize(),
-                     itemOuterHypotheticalMainSize);
+      
+      nscoord newOuterSize = AddChecked(
+          curLine->TotalOuterHypotheticalMainSize(), item->OuterMainSize());
       
       newOuterSize = AddChecked(newOuterSize, aMainGapSize);
       if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
         curLine = ConstructNewFlexLine();
+
+        
+        
+        FlexLine& prevLine = aLines[aLines.Length() - 2];
+
+        
+        item =
+            curLine->Items().AppendElement(prevLine.Items().PopLastElement());
       }
     }
 
     
-    
-    curLine->AddItem(*item, itemInnerHypotheticalMainSize,
-                     itemOuterHypotheticalMainSize);
+    curLine->AddLastItemToMainSizeTotals();
 
     
     if (!isSingleLine && childFrame->GetNextSibling() &&
