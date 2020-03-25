@@ -82,7 +82,12 @@ class ExecutionContext {
 
 
 
-  evaluate(expression) {
+
+
+
+
+
+  evaluate(expression, returnByValue) {
     let rv = this._debuggee.executeInGlobal(expression);
     if (!rv) {
       return {
@@ -91,12 +96,19 @@ class ExecutionContext {
         },
       };
     }
+
     if (rv.throw) {
       return this._returnError(rv.throw);
     }
-    return {
-      result: this._toRemoteObject(rv.return),
-    };
+
+    let result;
+    if (returnByValue) {
+      result = this._toRemoteObjectByValue(result);
+    } else {
+      result = this._toRemoteObject(rv.return);
+    }
+
+    return { result };
   }
 
   
@@ -252,6 +264,7 @@ class ExecutionContext {
       }
       return this._remoteObjects.get(arg.objectId);
     }
+
     if (arg.unserializableValue) {
       switch (arg.unserializableValue) {
         case "-0":
@@ -262,8 +275,15 @@ class ExecutionContext {
           return -Infinity;
         case "NaN":
           return NaN;
+        default:
+          if (/^\d+n$/.test(arg.unserializableValue)) {
+            
+            return BigInt(arg.unserializableValue.slice(0, -1));
+          }
+          throw new Error("Couldn't parse value object in call argument");
       }
     }
+
     return this._deserialize(arg.value);
   }
 
@@ -404,7 +424,10 @@ class ExecutionContext {
       unserializableValue = "Infinity";
     } else if (Object.is(debuggerObj, -Infinity)) {
       unserializableValue = "-Infinity";
+    } else if (typeof debuggerObj == "bigint") {
+      unserializableValue = `${debuggerObj}n`;
     }
+
     if (unserializableValue) {
       return {
         type,
@@ -422,6 +445,7 @@ class ExecutionContext {
   }
 
   
+
 
 
 
