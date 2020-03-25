@@ -14,7 +14,6 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/WritingModes.h"
@@ -898,7 +897,7 @@ class nsFlexContainerFrame::FlexItem final {
 
 
 
-class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
+class nsFlexContainerFrame::FlexLine final {
  public:
   explicit FlexLine(nscoord aMainGapSize) : mMainGapSize(aMainGapSize) {}
 
@@ -1077,21 +1076,20 @@ struct nsFlexContainerFrame::StrutInfo {
   nscoord mStrutCrossSize;  
 };
 
-static void BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
+static void BuildStrutInfoFromCollapsedItems(const nsTArray<FlexLine>& aLines,
                                              nsTArray<StrutInfo>& aStruts) {
-  MOZ_ASSERT(aFirstLine, "null first line pointer");
   MOZ_ASSERT(aStruts.IsEmpty(),
              "We should only build up StrutInfo once per reflow, so "
              "aStruts should be empty when this is called");
 
   uint32_t itemIdxInContainer = 0;
-  for (const FlexLine* line = aFirstLine; line; line = line->getNext()) {
-    for (const FlexItem& item : line->Items()) {
+  for (const FlexLine& line : aLines) {
+    for (const FlexItem& item : line.Items()) {
       if (StyleVisibility::Collapse ==
           item.Frame()->StyleVisibility()->mVisible) {
         
         aStruts.AppendElement(
-            StrutInfo(itemIdxInContainer, line->LineCrossSize()));
+            StrutInfo(itemIdxInContainer, line.LineCrossSize()));
       }
       itemIdxInContainer++;
     }
@@ -2251,7 +2249,7 @@ class MOZ_STACK_CLASS MainAxisPositionTracker : public PositionTracker {
 
 class MOZ_STACK_CLASS CrossAxisPositionTracker : public PositionTracker {
  public:
-  CrossAxisPositionTracker(FlexLine* aFirstLine,
+  CrossAxisPositionTracker(nsTArray<FlexLine>& aLines,
                            const ReflowInput& aReflowInput,
                            nscoord aContentBoxCrossSize,
                            bool aIsCrossSizeDefinite,
@@ -3051,15 +3049,13 @@ void MainAxisPositionTracker::TraversePackingSpace() {
 }
 
 CrossAxisPositionTracker::CrossAxisPositionTracker(
-    FlexLine* aFirstLine, const ReflowInput& aReflowInput,
+    nsTArray<FlexLine>& aLines, const ReflowInput& aReflowInput,
     nscoord aContentBoxCrossSize, bool aIsCrossSizeDefinite,
     const FlexboxAxisTracker& aAxisTracker, const nscoord aCrossGapSize)
     : PositionTracker(aAxisTracker.GetWritingMode(), aAxisTracker.CrossAxis(),
                       aAxisTracker.IsCrossAxisReversed()),
       mAlignContent(aReflowInput.mStylePosition->mAlignContent),
       mCrossGapSize(aCrossGapSize) {
-  MOZ_ASSERT(aFirstLine, "null first line pointer");
-
   
   StyleAlignFlags alignContentFlags =
       mAlignContent.primary & StyleAlignFlags::FLAG_BITS;
@@ -3073,7 +3069,7 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   const bool isSingleLine =
       StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
   if (isSingleLine) {
-    MOZ_ASSERT(!aFirstLine->getNext(),
+    MOZ_ASSERT(aLines.Length() == 1,
                "If we're styled as single-line, we should only have 1 line");
     
     
@@ -3084,16 +3080,16 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
     
     
     if (aIsCrossSizeDefinite) {
-      aFirstLine->SetLineCrossSize(aContentBoxCrossSize);
+      aLines[0].SetLineCrossSize(aContentBoxCrossSize);
       return;
     }
 
     
     
     
-    aFirstLine->SetLineCrossSize(NS_CSS_MINMAX(
-        aFirstLine->LineCrossSize(), aReflowInput.ComputedMinBSize(),
-        aReflowInput.ComputedMaxBSize()));
+    aLines[0].SetLineCrossSize(NS_CSS_MINMAX(aLines[0].LineCrossSize(),
+                                             aReflowInput.ComputedMinBSize(),
+                                             aReflowInput.ComputedMaxBSize()));
   }
 
   
@@ -3106,8 +3102,8 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
   
   mPackingSpaceRemaining = aContentBoxCrossSize;
   uint32_t numLines = 0;
-  for (FlexLine* line = aFirstLine; line; line = line->getNext()) {
-    mPackingSpaceRemaining -= line->LineCrossSize();
+  for (FlexLine& line : aLines) {
+    mPackingSpaceRemaining -= line.LineCrossSize();
     numLines++;
   }
 
@@ -3195,13 +3191,13 @@ CrossAxisPositionTracker::CrossAxisPositionTracker(
                  "code if we have 0 packing space)");
 
       uint32_t numLinesLeft = numLines;
-      for (FlexLine* line = aFirstLine; line; line = line->getNext()) {
+      for (FlexLine& line : aLines) {
         
         
         MOZ_ASSERT(numLinesLeft > 0, "miscalculated num lines");
         nscoord shareOfExtraSpace = mPackingSpaceRemaining / numLinesLeft;
-        nscoord newSize = line->LineCrossSize() + shareOfExtraSpace;
-        line->SetLineCrossSize(newSize);
+        nscoord newSize = line.LineCrossSize() + shareOfExtraSpace;
+        line.SetLineCrossSize(newSize);
 
         mPackingSpaceRemaining -= shareOfExtraSpace;
         numLinesLeft--;
@@ -3619,16 +3615,17 @@ LogicalSide FlexboxAxisTracker::CrossAxisStartSide() const {
 
 
 
-static FlexLine* AddNewFlexLineToList(LinkedList<FlexLine>& aLines,
+static FlexLine* AddNewFlexLineToList(nsTArray<FlexLine>& aLines,
                                       bool aShouldInsertAtFront,
                                       nscoord aMainGapSize) {
-  FlexLine* newLine = new FlexLine(aMainGapSize);
+  
+  
+  
   if (aShouldInsertAtFront) {
-    aLines.insertFront(newLine);
-  } else {
-    aLines.insertBack(newLine);
+    return aLines.InsertElementAt(0, FlexLine(aMainGapSize));
   }
-  return newLine;
+
+  return aLines.AppendElement(FlexLine(aMainGapSize));
 }
 
 bool nsFlexContainerFrame::ShouldUseMozBoxCollapseBehavior(
@@ -3667,8 +3664,8 @@ void nsFlexContainerFrame::GenerateFlexLines(
     nscoord aAvailableBSizeForContent, const nsTArray<StrutInfo>& aStruts,
     const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
     bool aHasLineClampEllipsis, nsTArray<nsIFrame*>& aPlaceholders, 
-    LinkedList<FlexLine>& aLines ) {
-  MOZ_ASSERT(aLines.isEmpty(), "Expecting outparam to start out empty");
+    nsTArray<FlexLine>& aLines ) {
+  MOZ_ASSERT(aLines.IsEmpty(), "Expecting outparam to start out empty");
 
   const bool isSingleLine =
       StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
@@ -3831,11 +3828,11 @@ nscoord nsFlexContainerFrame::GetMainSizeFromReflowInput(
 
 
 
-static nscoord GetLargestLineMainSize(const FlexLine* aFirstLine) {
+static nscoord GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
   nscoord largestLineOuterSize = 0;
-  for (const FlexLine* line = aFirstLine; line; line = line->getNext()) {
+  for (const FlexLine& line : aLines) {
     largestLineOuterSize =
-        std::max(largestLineOuterSize, line->TotalOuterHypotheticalMainSize());
+        std::max(largestLineOuterSize, line.TotalOuterHypotheticalMainSize());
   }
   return largestLineOuterSize;
 }
@@ -3864,9 +3861,7 @@ static bool FrameHasRelativeBSizeDependency(nsIFrame* aFrame) {
 nscoord nsFlexContainerFrame::ComputeMainSize(
     const ReflowInput& aReflowInput, const FlexboxAxisTracker& aAxisTracker,
     nscoord aTentativeMainSize, nscoord aAvailableBSizeForContent,
-    const FlexLine* aFirstLine, nsReflowStatus& aStatus) const {
-  MOZ_ASSERT(aFirstLine, "null first line pointer");
-
+    nsTArray<FlexLine>& aLines, nsReflowStatus& aStatus) const {
   if (aAxisTracker.IsRowOriented()) {
     
     
@@ -3892,7 +3887,7 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
     
     
     aStatus.SetIncomplete();
-    nscoord largestLineOuterSize = GetLargestLineMainSize(aFirstLine);
+    nscoord largestLineOuterSize = GetLargestLineMainSize(aLines);
 
     if (largestLineOuterSize <= aAvailableBSizeForContent) {
       return aAvailableBSizeForContent;
@@ -3910,7 +3905,7 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
   
   
   
-  nscoord largestLineOuterSize = GetLargestLineMainSize(aFirstLine);
+  nscoord largestLineOuterSize = GetLargestLineMainSize(aLines);
   return NS_CSS_MINMAX(largestLineOuterSize, aReflowInput.ComputedMinBSize(),
                        aReflowInput.ComputedMaxBSize());
 }
@@ -4179,7 +4174,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
         stylePos->mColumnGap, aReflowInput.ComputedISize());
   }
 
-  AutoCleanLinkedList<FlexLine> lines;
+  AutoTArray<FlexLine, 1> lines;
   AutoTArray<StrutInfo, 1> struts;
   AutoTArray<nsIFrame*, 1> placeholders;
   DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
@@ -4190,7 +4185,7 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   if (!struts.IsEmpty()) {
     
     aStatus.Reset();
-    lines.clear();
+    lines.Clear();
     placeholders.Clear();
     DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
                  flexContainerAscent, availableBSizeForContent, lines, struts,
@@ -4327,14 +4322,14 @@ nsFlexContainerFrame::CreateOrClearFlexContainerInfo() {
 
 void nsFlexContainerFrame::CreateFlexLineAndFlexItemInfo(
     ComputedFlexContainerInfo& aContainerInfo,
-    const mozilla::LinkedList<FlexLine>& aLines) {
-  for (const FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
+    const nsTArray<FlexLine>& aLines) {
+  for (const FlexLine& line : aLines) {
     ComputedFlexLineInfo* lineInfo = aContainerInfo.mLines.AppendElement();
     
     
     
     
-    for (const FlexItem& item : line->Items()) {
+    for (const FlexItem& item : line.Items()) {
       nsIFrame* frame = item.Frame();
 
       
@@ -4402,18 +4397,17 @@ void nsFlexContainerFrame::ComputeFlexDirections(
 
 void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
     ComputedFlexContainerInfo& aContainerInfo,
-    const mozilla::LinkedList<FlexLine>& aLines) {
+    const nsTArray<FlexLine>& aLines) {
   uint32_t lineIndex = 0;
-  for (const FlexLine* line = aLines.getFirst(); line;
-       line = line->getNext(), ++lineIndex) {
+  for (const FlexLine& line : aLines) {
     ComputedFlexLineInfo& lineInfo = aContainerInfo.mLines[lineIndex];
 
-    lineInfo.mCrossSize = line->LineCrossSize();
-    lineInfo.mFirstBaselineOffset = line->FirstBaselineOffset();
-    lineInfo.mLastBaselineOffset = line->LastBaselineOffset();
+    lineInfo.mCrossSize = line.LineCrossSize();
+    lineInfo.mFirstBaselineOffset = line.FirstBaselineOffset();
+    lineInfo.mLastBaselineOffset = line.LastBaselineOffset();
 
     uint32_t itemIndex = 0;
-    for (const FlexItem& item : line->Items()) {
+    for (const FlexItem& item : line.Items()) {
       ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
       itemInfo.mFrameRect = item.Frame()->GetRect();
       itemInfo.mMainMinSize = item.MainMinSize();
@@ -4428,6 +4422,7 @@ void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
                      : mozilla::dom::FlexItemClampState::Unclamped);
       ++itemIndex;
     }
+    ++lineIndex;
   }
 }
 
@@ -4532,12 +4527,12 @@ void nsFlexContainerFrame::DoFlexLayout(
     const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
     nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
     nscoord& aFlexContainerAscent, nscoord aAvailableBSizeForContent,
-    LinkedList<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
+    nsTArray<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
     nsTArray<nsIFrame*>& aPlaceholders, const FlexboxAxisTracker& aAxisTracker,
     nscoord aMainGapSize, nscoord aCrossGapSize, bool aHasLineClampEllipsis,
     ComputedFlexContainerInfo* const aContainerInfo) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-  MOZ_ASSERT(aLines.isEmpty(), "Caller should pass an empty line-list!");
+  MOZ_ASSERT(aLines.IsEmpty(), "Caller should pass an empty array for lines!");
   MOZ_ASSERT(aPlaceholders.IsEmpty(),
              "Caller should pass an empty array for placeholders!");
 
@@ -4545,7 +4540,7 @@ void nsFlexContainerFrame::DoFlexLayout(
                     aAvailableBSizeForContent, aStruts, aAxisTracker,
                     aMainGapSize, aHasLineClampEllipsis, aPlaceholders, aLines);
 
-  if ((aLines.getFirst()->IsEmpty() && !aLines.getFirst()->getNext()) ||
+  if ((aLines.Length() == 1 && aLines[0].IsEmpty()) ||
       aReflowInput.mStyleDisplay->IsContainLayout()) {
     
     
@@ -4577,14 +4572,14 @@ void nsFlexContainerFrame::DoFlexLayout(
 
   aContentBoxMainSize =
       ComputeMainSize(aReflowInput, aAxisTracker, aContentBoxMainSize,
-                      aAvailableBSizeForContent, aLines.getFirst(), aStatus);
+                      aAvailableBSizeForContent, aLines, aStatus);
 
   uint32_t lineIndex = 0;
-  for (FlexLine* line = aLines.getFirst(); line;
-       line = line->getNext(), ++lineIndex) {
+  for (FlexLine& line : aLines) {
     ComputedFlexLineInfo* lineInfo =
         aContainerInfo ? &aContainerInfo->mLines[lineIndex] : nullptr;
-    line->ResolveFlexibleLengths(aContentBoxMainSize, lineInfo);
+    line.ResolveFlexibleLengths(aContentBoxMainSize, lineInfo);
+    ++lineIndex;
   }
 
   
@@ -4593,9 +4588,11 @@ void nsFlexContainerFrame::DoFlexLayout(
   
 
   
-  nscoord sumLineCrossSizes = 0;
-  for (FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
-    for (FlexItem& item : line->Items()) {
+  
+  
+  nscoord sumLineCrossSizes = aCrossGapSize * (aLines.Length() - 1);
+  for (FlexLine& line : aLines) {
+    for (FlexItem& item : line.Items()) {
       
       
       if (item.CanMainSizeInfluenceCrossSize()) {
@@ -4633,13 +4630,8 @@ void nsFlexContainerFrame::DoFlexLayout(
       }
     }
     
-    line->ComputeCrossSizeAndBaseline(aAxisTracker);
-    sumLineCrossSizes += line->LineCrossSize();
-
-    
-    if (line->getNext()) {
-      sumLineCrossSizes += aCrossGapSize;
-    }
+    line.ComputeCrossSizeAndBaseline(aAxisTracker);
+    sumLineCrossSizes += line.LineCrossSize();
   }
 
   bool isCrossSizeDefinite;
@@ -4650,8 +4642,8 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   CrossAxisPositionTracker crossAxisPosnTracker(
-      aLines.getFirst(), aReflowInput, aContentBoxCrossSize,
-      isCrossSizeDefinite, aAxisTracker, aCrossGapSize);
+      aLines, aReflowInput, aContentBoxCrossSize, isCrossSizeDefinite,
+      aAxisTracker, aCrossGapSize);
 
   
   
@@ -4659,7 +4651,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   if (aStruts.IsEmpty() &&  
       !ShouldUseMozBoxCollapseBehavior(aReflowInput.mStyleDisplay)) {
-    BuildStrutInfoFromCollapsedItems(aLines.getFirst(), aStruts);
+    BuildStrutInfoFromCollapsedItems(aLines, aStruts);
     if (!aStruts.IsEmpty()) {
       
       return;
@@ -4671,7 +4663,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   if (!aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord firstLineBaselineOffset = aLines.getFirst()->FirstBaselineOffset();
+    nscoord firstLineBaselineOffset = aLines[0].FirstBaselineOffset();
     if (firstLineBaselineOffset == nscoord_MIN) {
       
       
@@ -4700,20 +4692,19 @@ void nsFlexContainerFrame::DoFlexLayout(
     if (rowIsCross) {
       crossAxisPosnTracker.SetCrossGapSize(newBlockGapSize);
     } else {
-      for (FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
-        line->SetMainGapSize(newBlockGapSize);
+      for (FlexLine& line : aLines) {
+        line.SetMainGapSize(newBlockGapSize);
       }
     }
   }
 
   lineIndex = 0;
-  for (FlexLine* line = aLines.getFirst(); line;
-       line = line->getNext(), ++lineIndex) {
+  for (FlexLine& line : aLines) {
     
     
     
-    line->PositionItemsInMainAxis(justifyContent, aContentBoxMainSize,
-                                  aAxisTracker);
+    line.PositionItemsInMainAxis(justifyContent, aContentBoxMainSize,
+                                 aAxisTracker);
 
     
     if (MOZ_UNLIKELY(aContainerInfo)) {
@@ -4724,14 +4715,15 @@ void nsFlexContainerFrame::DoFlexLayout(
     
     
     
-    line->PositionItemsInCrossAxis(crossAxisPosnTracker.Position(),
-                                   aAxisTracker);
-    crossAxisPosnTracker.TraverseLine(*line);
+    line.PositionItemsInCrossAxis(crossAxisPosnTracker.Position(),
+                                  aAxisTracker);
+    crossAxisPosnTracker.TraverseLine(line);
     crossAxisPosnTracker.TraversePackingSpace();
 
-    if (line->getNext()) {
+    if (&line != &aLines.LastElement()) {
       crossAxisPosnTracker.TraverseGap();
     }
+    ++lineIndex;
   }
 
   
@@ -4739,7 +4731,7 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
-    nscoord lastLineBaselineOffset = aLines.getLast()->FirstBaselineOffset();
+    nscoord lastLineBaselineOffset = aLines.LastElement().FirstBaselineOffset();
     if (lastLineBaselineOffset == nscoord_MIN) {
       
       
@@ -4755,7 +4747,7 @@ void nsFlexContainerFrame::DoFlexLayout(
 void nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
     const nscoord aContentBoxCrossSize, nscoord& aFlexContainerAscent,
-    mozilla::LinkedList<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
+    nsTArray<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
     const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
   
   
@@ -4786,15 +4778,14 @@ void nsFlexContainerFrame::ReflowChildren(
   
   const FlexItem* firstItem =
       aAxisTracker.AreAxesInternallyReversed()
-          ? (aLines.getLast()->IsEmpty() ? nullptr
-                                         : &aLines.getLast()->LastItem())
-          : (aLines.getFirst()->IsEmpty() ? nullptr
-                                          : &aLines.getFirst()->FirstItem());
+          ? (aLines.LastElement().IsEmpty() ? nullptr
+                                            : &aLines.LastElement().LastItem())
+          : (aLines[0].IsEmpty() ? nullptr : &aLines[0].FirstItem());
 
   
   
-  for (const FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
-    for (const FlexItem& item : line->Items()) {
+  for (const FlexLine& line : aLines) {
+    for (const FlexItem& item : line.Items()) {
       LogicalPoint framePos = aAxisTracker.LogicalPointFromFlexRelativePoint(
           item.MainPosition(), item.CrossPosition(), aContentBoxMainSize,
           aContentBoxCrossSize);
@@ -4885,7 +4876,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
     ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
     nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
     const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
-    LinkedList<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
+    nsTArray<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
   
   
   const WritingMode flexWM = aReflowInput.GetWritingMode();
@@ -4915,7 +4906,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
     
     
     NS_WARNING_ASSERTION(
-        aLines.getFirst()->IsEmpty(),
+        aLines[0].IsEmpty(),
         "Have flex items but didn't get an ascent - that's odd (or there are "
         "just gigantic sizes involved)");
     
@@ -4961,7 +4952,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
 
   
   mBaselineFromLastReflow = aFlexContainerAscent;
-  mLastBaselineFromLastReflow = aLines.getLast()->LastBaselineOffset();
+  mLastBaselineFromLastReflow = aLines.LastElement().LastBaselineOffset();
   if (mLastBaselineFromLastReflow == nscoord_MIN) {
     
     

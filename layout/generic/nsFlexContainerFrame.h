@@ -14,8 +14,6 @@
 #include "nsContainerFrame.h"
 
 namespace mozilla {
-template <class T>
-class LinkedList;
 class LogicalPoint;
 class PresShell;
 }  
@@ -277,8 +275,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                     nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
                     nscoord& aFlexContainerAscent,
                     nscoord aAvailableBSizeForContent,
-                    mozilla::LinkedList<FlexLine>& aLines,
-                    nsTArray<StrutInfo>& aStruts,
+                    nsTArray<FlexLine>& aLines, nsTArray<StrutInfo>& aStruts,
                     nsTArray<nsIFrame*>& aPlaceholders,
                     const FlexboxAxisTracker& aAxisTracker,
                     nscoord aMainGapSize, nscoord aCrossGapSize,
@@ -301,14 +298,14 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
   static void CreateFlexLineAndFlexItemInfo(
       ComputedFlexContainerInfo& aContainerInfo,
-      const mozilla::LinkedList<FlexLine>& aLines);
+      const nsTArray<FlexLine>& aLines);
 
   static void ComputeFlexDirections(ComputedFlexContainerInfo& aContainerInfo,
                                     const FlexboxAxisTracker& aAxisTracker);
 
   static void UpdateFlexLineAndItemInfo(
       ComputedFlexContainerInfo& aContainerInfo,
-      const mozilla::LinkedList<FlexLine>& aLines);
+      const nsTArray<FlexLine>& aLines);
 
 #ifdef DEBUG
   void SanityCheckAnonymousFlexItems() const;
@@ -392,7 +389,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                          const FlexboxAxisTracker& aAxisTracker,
                          nscoord aMainGapSize, bool aHasLineClampEllipsis,
                          nsTArray<nsIFrame*>& aPlaceholders,
-                         mozilla::LinkedList<FlexLine>& aLines);
+                         nsTArray<FlexLine>& aLines);
 
   nscoord GetMainSizeFromReflowInput(const ReflowInput& aReflowInput,
                                      const FlexboxAxisTracker& aAxisTracker);
@@ -419,7 +416,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                           const FlexboxAxisTracker& aAxisTracker,
                           nscoord aTentativeMainSize,
                           nscoord aAvailableBSizeForContent,
-                          const FlexLine* aFirstLine,
+                          nsTArray<FlexLine>& aLines,
                           nsReflowStatus& aStatus) const;
 
   nscoord ComputeCrossSize(const ReflowInput& aReflowInput,
@@ -442,14 +439,11 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void ComputeFinalSize(ReflowOutput& aReflowOutput,
-                        const ReflowInput& aReflowInput,
-                        nsReflowStatus& aStatus,
-                        const nscoord aContentBoxMainSize,
-                        const nscoord aContentBoxCrossSize,
-                        nscoord aFlexContainerAscent,
-                        mozilla::LinkedList<FlexLine>& aLines,
-                        const FlexboxAxisTracker& aAxisTracker);
+  void ComputeFinalSize(
+      ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
+      nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
+      const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
+      nsTArray<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker);
 
   
 
@@ -465,11 +459,13 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void ReflowChildren(
-      const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-      const nscoord aContentBoxCrossSize, nscoord& aFlexContainerAscent,
-      mozilla::LinkedList<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
-      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis);
+  void ReflowChildren(const ReflowInput& aReflowInput,
+                      const nscoord aContentBoxMainSize,
+                      const nscoord aContentBoxCrossSize,
+                      nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
+                      nsTArray<nsIFrame*>& aPlaceholders,
+                      const FlexboxAxisTracker& aAxisTracker,
+                      bool aHasLineClampEllipsis);
 
   
 
