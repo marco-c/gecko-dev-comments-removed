@@ -812,22 +812,22 @@ class nsFlexContainerFrame::FlexItem final {
 
   
   
-  nsIFrame* const mFrame = nullptr;
-  const float mFlexGrow = 0.0f;
-  const float mFlexShrink = 0.0f;
-  const AspectRatio mIntrinsicRatio;
+  nsIFrame* mFrame = nullptr;
+  float mFlexGrow = 0.0f;
+  float mFlexShrink = 0.0f;
+  AspectRatio mIntrinsicRatio;
 
   
-  const WritingMode mWM;
+  WritingMode mWM;
 
   
-  const WritingMode mCBWM;
+  WritingMode mCBWM;
 
   
-  const LogicalAxis mMainAxis;
+  LogicalAxis mMainAxis;
 
   
-  const LogicalMargin mBorderPadding;
+  LogicalMargin mBorderPadding;
 
   
   
@@ -840,8 +840,9 @@ class nsFlexContainerFrame::FlexItem final {
   nscoord mMainMinSize = 0;
   nscoord mMainMaxSize = 0;
 
-  const nscoord mCrossMinSize = 0;
-  const nscoord mCrossMaxSize = 0;
+  
+  nscoord mCrossMinSize = 0;
+  nscoord mCrossMaxSize = 0;
 
   
   nscoord mMainSize = 0;
@@ -874,7 +875,8 @@ class nsFlexContainerFrame::FlexItem final {
   bool mIsStrut = false;
 
   
-  const bool mIsInlineAxisMainAxis = true;
+  
+  bool mIsInlineAxisMainAxis = true;
 
   
   bool mNeedsMinSizeAutoResolution = false;
@@ -932,18 +934,9 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   
-  
-  void AddItem(const FlexItem& aItem, bool aShouldInsertAtFront,
-               nscoord aItemInnerHypotheticalMainSize,
+  void AddItem(const FlexItem& aItem, nscoord aItemInnerHypotheticalMainSize,
                nscoord aItemOuterHypotheticalMainSize) {
-    if (aShouldInsertAtFront) {
-      
-      
-      
-      mItems.InsertElementAt(0, aItem);
-    } else {
-      mItems.AppendElement(aItem);
-    }
+    mItems.AppendElement(aItem);
 
     
     if (aItem.IsFrozen()) {
@@ -3613,21 +3606,6 @@ LogicalSide FlexboxAxisTracker::CrossAxisStartSide() const {
       CrossAxis(), mIsCrossAxisReversed ? eLogicalEdgeEnd : eLogicalEdgeStart);
 }
 
-
-
-static FlexLine* AddNewFlexLineToList(nsTArray<FlexLine>& aLines,
-                                      bool aShouldInsertAtFront,
-                                      nscoord aMainGapSize) {
-  
-  
-  
-  if (aShouldInsertAtFront) {
-    return aLines.InsertElementAt(0, FlexLine(aMainGapSize));
-  }
-
-  return aLines.AppendElement(FlexLine(aMainGapSize));
-}
-
 bool nsFlexContainerFrame::ShouldUseMozBoxCollapseBehavior(
     const nsStyleDisplay* aFlexStyleDisp) {
   MOZ_ASSERT(StyleDisplay() == aFlexStyleDisp, "wrong StyleDisplay passed in");
@@ -3667,21 +3645,16 @@ void nsFlexContainerFrame::GenerateFlexLines(
     nsTArray<FlexLine>& aLines ) {
   MOZ_ASSERT(aLines.IsEmpty(), "Expecting outparam to start out empty");
 
+  auto ConstructNewFlexLine = [&aLines, aMainGapSize]() {
+    return aLines.EmplaceBack(aMainGapSize);
+  };
+
   const bool isSingleLine =
       StyleFlexWrap::Nowrap == aReflowInput.mStylePosition->mFlexWrap;
 
   
   
-  
-  
-  
-  
-  const bool shouldInsertAtFront = aAxisTracker.AreAxesInternallyReversed();
-
-  
-  
-  FlexLine* curLine =
-      AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
+  FlexLine* curLine = ConstructNewFlexLine();
 
   nscoord wrapThreshold;
   if (isSingleLine) {
@@ -3743,7 +3716,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
     
     if (!isSingleLine && !curLine->IsEmpty() &&
         childFrame->StyleDisplay()->BreakBefore()) {
-      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
+      curLine = ConstructNewFlexLine();
     }
 
     UniquePtr<FlexItem> item;
@@ -3788,22 +3761,31 @@ void nsFlexContainerFrame::GenerateFlexLines(
       
       newOuterSize = AddChecked(newOuterSize, aMainGapSize);
       if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
-        curLine =
-            AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
+        curLine = ConstructNewFlexLine();
       }
     }
 
     
     
-    curLine->AddItem(*item, shouldInsertAtFront, itemInnerHypotheticalMainSize,
+    curLine->AddItem(*item, itemInnerHypotheticalMainSize,
                      itemOuterHypotheticalMainSize);
 
     
     if (!isSingleLine && childFrame->GetNextSibling() &&
         childFrame->StyleDisplay()->BreakAfter()) {
-      curLine = AddNewFlexLineToList(aLines, shouldInsertAtFront, aMainGapSize);
+      curLine = ConstructNewFlexLine();
     }
     itemIdxInContainer++;
+  }
+
+  
+  
+  
+  if (aAxisTracker.AreAxesInternallyReversed()) {
+    for (FlexLine& line : aLines) {
+      line.Items().Reverse();
+    }
+    aLines.Reverse();
   }
 }
 
