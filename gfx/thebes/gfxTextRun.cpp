@@ -2809,9 +2809,19 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   
   
   
-  if (aPrevMatchedFont && IsClusterExtender(aCh) &&
-      aPrevMatchedFont->HasCharacter(aCh)) {
-    return aPrevMatchedFont;
+  if (aPrevMatchedFont && IsClusterExtender(aCh)) {
+    if (aPrevMatchedFont->HasCharacter(aCh)) {
+      return aPrevMatchedFont;
+    }
+    
+    static UErrorCode err = U_ZERO_ERROR;
+    static const UNormalizer2* nfc = unorm2_getNFCInstance(&err);
+    
+    
+    int32_t composed = unorm2_composePair(nfc, aPrevCh, aCh);
+    if (composed > 0 && aPrevMatchedFont->HasCharacter(composed)) {
+      return aPrevMatchedFont;
+    }
   }
 
   
