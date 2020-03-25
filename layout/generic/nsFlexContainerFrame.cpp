@@ -221,7 +221,7 @@ static inline bool IsAutoOrEnumOnBSize(const StyleSize& aSize, bool aIsInline) {
       : (isize_)
 
 
-enum AxisTrackerFlags {
+enum class AxisTrackerFlags {
   eNoFlags = 0x0,
 
   
@@ -237,7 +237,7 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
  public:
   FlexboxAxisTracker(const nsFlexContainerFrame* aFlexContainer,
                      const WritingMode& aWM,
-                     AxisTrackerFlags aFlags = eNoFlags);
+                     AxisTrackerFlags aFlags = AxisTrackerFlags::eNoFlags);
 
   
   LogicalAxis MainAxis() const { return mMainAxis; }
