@@ -253,31 +253,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
       JS::Handle<JSObject*> aTargetScope, JS::MutableHandle<JS::Value> aValue,
       ConsoleCallData* aData, nsTArray<nsString>* aGroupStack);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
-                        Sequence<JS::Value>& aSequence,
-                        Sequence<nsString>& aStyles) const;
-
-  void MakeFormatString(nsCString& aFormat, int32_t aInteger, int32_t aMantissa,
-                        char aCh) const;
-
   enum TimerStatus {
     eTimerUnknown,
     eTimerDone,

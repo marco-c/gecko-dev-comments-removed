@@ -83,6 +83,10 @@ static void ComposeAndStoreGroupName(JSContext* aCx,
                                      nsTArray<nsString>* aGroupStack);
 static bool UnstoreGroupName(nsAString& aName, nsTArray<nsString>* aGroupStack);
 
+static bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
+                             Sequence<JS::Value>& aSequence,
+                             Sequence<nsString>& aStyles);
+
 
 
 
@@ -1748,9 +1752,42 @@ bool FlushOutput(JSContext* aCx, Sequence<JS::Value>& aSequence,
 
 }  
 
-bool Console::ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
-                               Sequence<JS::Value>& aSequence,
-                               Sequence<nsString>& aStyles) const {
+static void MakeFormatString(nsCString& aFormat, int32_t aInteger,
+                             int32_t aMantissa, char aCh) {
+  aFormat.Append('%');
+  if (aInteger >= 0) {
+    aFormat.AppendInt(aInteger);
+  }
+
+  if (aMantissa >= 0) {
+    aFormat.Append('.');
+    aFormat.AppendInt(aMantissa);
+  }
+
+  aFormat.Append(aCh);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
+                             Sequence<JS::Value>& aSequence,
+                             Sequence<nsString>& aStyles) {
   
   
 
@@ -1992,21 +2029,6 @@ bool Console::ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
   }
 
   return true;
-}
-
-void Console::MakeFormatString(nsCString& aFormat, int32_t aInteger,
-                               int32_t aMantissa, char aCh) const {
-  aFormat.Append('%');
-  if (aInteger >= 0) {
-    aFormat.AppendInt(aInteger);
-  }
-
-  if (aMantissa >= 0) {
-    aFormat.Append('.');
-    aFormat.AppendInt(aMantissa);
-  }
-
-  aFormat.Append(aCh);
 }
 
 
