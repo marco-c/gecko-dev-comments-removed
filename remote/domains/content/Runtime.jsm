@@ -96,29 +96,6 @@ class Runtime extends ContentProcessDomain {
     }
   }
 
-  evaluate({ expression, contextId = null } = {}) {
-    let context;
-    if (contextId) {
-      context = this.contexts.get(contextId);
-      if (!context) {
-        throw new Error(
-          `Unable to find execution context with id: ${contextId}`
-        );
-      }
-    } else {
-      context = this._getDefaultContextForWindow();
-    }
-
-    if (typeof expression != "string") {
-      throw new Error(
-        `Expecting 'expression' attribute to be a string. ` +
-          `But was: ${typeof expression}`
-      );
-    }
-
-    return context.evaluate(expression);
-  }
-
   releaseObject({ objectId }) {
     let context = null;
     for (const ctx of this.contexts.values()) {
@@ -133,51 +110,136 @@ class Runtime extends ContentProcessDomain {
     context.releaseObject(objectId);
   }
 
-  callFunctionOn(request) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  callFunctionOn(options = {}) {
+    if (typeof options.functionDeclaration != "string") {
+      throw new TypeError("functionDeclaration: string value expected");
+    }
+    if (
+      typeof options.arguments != "undefined" &&
+      !Array.isArray(options.arguments)
+    ) {
+      throw new TypeError("arguments: array value expected");
+    }
+    if (!["undefined", "boolean"].includes(typeof options.awaitPromise)) {
+      throw new TypeError("awaitPromise: boolean value expected");
+    }
+    if (!["undefined", "number"].includes(typeof options.executionContextId)) {
+      throw new TypeError("executionContextId: number value expected");
+    }
+    if (!["undefined", "string"].includes(typeof options.objectId)) {
+      throw new TypeError("objectId: string value expected");
+    }
+    if (!["undefined", "boolean"].includes(typeof options.returnByValue)) {
+      throw new TypeError("returnByValue: boolean value expected");
+    }
+
+    if (
+      typeof options.executionContextId == "undefined" &&
+      typeof options.objectId == "undefined"
+    ) {
+      throw new Error(
+        "Either objectId or executionContextId must be specified"
+      );
+    }
+
     let context = null;
     
     
-    if (request.objectId) {
+    if (options.objectId) {
       for (const ctx of this.contexts.values()) {
-        if (ctx.hasRemoteObject(request.objectId)) {
+        if (ctx.hasRemoteObject(options.objectId)) {
           context = ctx;
           break;
         }
       }
       if (!context) {
         throw new Error(
-          `Unable to get the context for object with id: ${request.objectId}`
+          `Unable to get the context for object with id: ${options.objectId}`
         );
       }
     } else {
-      context = this.contexts.get(request.executionContextId);
+      context = this.contexts.get(options.executionContextId);
       if (!context) {
-        throw new Error(
-          `Unable to find execution context with id: ${request.executionContextId}`
-        );
+        throw new Error("Cannot find context with specified id");
       }
     }
-    if (typeof request.functionDeclaration != "string") {
-      throw new Error(
-        "Expect 'functionDeclaration' attribute to be passed and be a string"
-      );
-    }
-    if (request.arguments && !Array.isArray(request.arguments)) {
-      throw new Error("Expect 'arguments' to be an array");
-    }
-    if (request.returnByValue && typeof request.returnByValue != "boolean") {
-      throw new Error("Expect 'returnByValue' to be a boolean");
-    }
-    if (request.awaitPromise && typeof request.awaitPromise != "boolean") {
-      throw new Error("Expect 'awaitPromise' to be a boolean");
-    }
+
     return context.callFunctionOn(
-      request.functionDeclaration,
-      request.arguments,
-      request.returnByValue,
-      request.awaitPromise,
-      request.objectId
+      options.functionDeclaration,
+      options.arguments,
+      options.returnByValue,
+      options.awaitPromise,
+      options.objectId
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  evaluate(options = {}) {
+    const { expression, contextId } = options;
+
+    if (typeof expression != "string") {
+      throw new Error("expression: string value expected");
+    }
+
+    let context;
+    if (typeof contextId != "undefined") {
+      context = this.contexts.get(contextId);
+      if (!context) {
+        throw new Error("Cannot find context with specified id");
+      }
+    } else {
+      context = this._getDefaultContextForWindow();
+    }
+
+    return context.evaluate(expression);
   }
 
   getProperties({ objectId, ownProperties }) {
