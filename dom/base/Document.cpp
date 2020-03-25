@@ -5734,7 +5734,7 @@ void Document::GetCookie(nsAString& aCookie, ErrorResult& rv) {
   }
 }
 
-void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
+void Document::SetCookie(const nsAString& aCookie, ErrorResult& aRv) {
   if (mDisableCookieAccess) {
     return;
   }
@@ -5742,7 +5742,7 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
   
   
   if (mSandboxFlags & SANDBOXED_ORIGIN) {
-    rv.Throw(NS_ERROR_DOM_SECURITY_ERR);
+    aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
 
@@ -5761,31 +5761,49 @@ void Document::SetCookie(const nsAString& aCookie, ErrorResult& rv) {
     return;
   }
 
+  if (!mDocumentURI) {
+    return;
+  }
+
+  
+  nsCOMPtr<nsIURI> principalURI;
+  NodePrincipal()->GetURI(getter_AddRefs(principalURI));
+
+  if (!principalURI) {
+    
+    
+
+    return;
+  }
+
+  nsCOMPtr<nsIChannel> channel(mChannel);
+  if (!channel) {
+    channel = CreateDummyChannelForCookies(principalURI);
+    if (!channel) {
+      return;
+    }
+  }
+
   
   nsCOMPtr<nsICookieService> service =
       do_GetService(NS_COOKIESERVICE_CONTRACTID);
-  if (service && mDocumentURI) {
-    
-    nsCOMPtr<nsIURI> principalURI;
-    NodePrincipal()->GetURI(getter_AddRefs(principalURI));
+  if (!service) {
+    return;
+  }
 
-    if (!principalURI) {
-      
-      
+  NS_ConvertUTF16toUTF8 cookie(aCookie);
+  nsresult rv = service->SetCookieString(principalURI, cookie, channel);
 
-      return;
-    }
+  
+  if (NS_FAILED(rv)) {
+    return;
+  }
 
-    nsCOMPtr<nsIChannel> channel(mChannel);
-    if (!channel) {
-      channel = CreateDummyChannelForCookies(principalURI);
-      if (!channel) {
-        return;
-      }
-    }
-
-    NS_ConvertUTF16toUTF8 cookie(aCookie);
-    service->SetCookieString(principalURI, cookie, channel);
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (observerService) {
+    observerService->NotifyObservers(ToSupports(this), "document-set-cookie",
+                                     nsString(aCookie).get());
   }
 }
 
