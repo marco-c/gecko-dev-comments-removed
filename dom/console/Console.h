@@ -251,7 +251,7 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   bool PopulateConsoleNotificationInTheTargetScope(
       JSContext* aCx, const Sequence<JS::Value>& aArguments,
       JS::Handle<JSObject*> aTargetScope, JS::MutableHandle<JS::Value> aValue,
-      ConsoleCallData* aData);
+      ConsoleCallData* aData, nsTArray<nsString>* aGroupStack);
 
   
   
@@ -277,16 +277,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
 
   void MakeFormatString(nsCString& aFormat, int32_t aInteger, int32_t aMantissa,
                         char aCh) const;
-
-  
-  
-  void ComposeAndStoreGroupName(JSContext* aCx,
-                                const Sequence<JS::Value>& aData,
-                                nsAString& aName);
-
-  
-  
-  bool UnstoreGroupName(nsAString& aName);
 
   enum TimerStatus {
     eTimerUnknown,
