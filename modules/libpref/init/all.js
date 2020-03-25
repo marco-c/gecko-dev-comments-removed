@@ -1014,7 +1014,12 @@ pref("dom.storage.enabled", true);
 
 
 
+
+#ifdef EARLY_BETA_OR_EARLIER
 pref("dom.storage.next_gen", true);
+#else
+pref("dom.storage.next_gen", false);
+#endif
 pref("dom.storage.shadow_writes", true);
 pref("dom.storage.snapshot_prefill", 16384);
 pref("dom.storage.snapshot_gradual_prefill", 4096);
