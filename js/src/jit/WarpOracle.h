@@ -25,7 +25,8 @@ class MIRGenerator;
   _(WarpRegExp)                  \
   _(WarpBuiltinProto)            \
   _(WarpGetIntrinsic)            \
-  _(WarpGetImport)
+  _(WarpGetImport)               \
+  _(WarpLambda)
 
 
 
@@ -141,6 +142,28 @@ class WarpGetImport : public WarpOpSnapshot {
   uint32_t numFixedSlots() const { return numFixedSlots_; }
   uint32_t slot() const { return slot_; }
   bool needsLexicalCheck() const { return needsLexicalCheck_; }
+};
+
+
+
+class WarpLambda : public WarpOpSnapshot {
+  
+  BaseScript* baseScript_;
+  FunctionFlags flags_;
+  uint16_t nargs_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpLambda;
+
+  WarpLambda(uint32_t offset, BaseScript* baseScript, FunctionFlags flags,
+             uint16_t nargs)
+      : WarpOpSnapshot(ThisKind, offset),
+        baseScript_(baseScript),
+        flags_(flags),
+        nargs_(nargs) {}
+  BaseScript* baseScript() const { return baseScript_; }
+  FunctionFlags flags() const { return flags_; }
+  uint16_t nargs() const { return nargs_; }
 };
 
 
