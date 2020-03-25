@@ -219,6 +219,35 @@ class ConsoleCallData final {
 };
 
 
+
+
+
+
+class MainThreadConsoleData final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MainThreadConsoleData);
+
+  JSObject* GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
+  
+  void ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
+                       const Sequence<JS::Value>& aArguments);
+
+ private:
+  ~MainThreadConsoleData() {
+    NS_ReleaseOnMainThreadSystemGroup("MainThreadConsoleData::mStorage",
+                                      mStorage.forget());
+    NS_ReleaseOnMainThreadSystemGroup("MainThreadConsoleData::mSandbox",
+                                      mSandbox.forget());
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIConsoleAPIStorage> mStorage;
+  RefPtr<JSObjectHolder> mSandbox;
+  nsTArray<nsString> mGroupStack;
+};
+
+
 class ConsoleRunnable : public StructuredCloneHolderBase {
  public:
   ~ConsoleRunnable() override {
@@ -284,7 +313,7 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
   }
 
   
-  void ProcessCallData(JSContext* aCx, Console* aConsole,
+  void ProcessCallData(JSContext* aCx, MainThreadConsoleData* aConsoleData,
                        ConsoleCallData* aCallData) {
     AssertIsOnMainThread();
 
@@ -321,7 +350,7 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
 
     MOZ_ASSERT(values.Length() == length);
 
-    aConsole->ProcessCallData(aCx, aCallData, values);
+    aConsoleData->ProcessCallData(aCx, aCallData, values);
   }
 
   
@@ -414,9 +443,10 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
 class ConsoleWorkletRunnable : public Runnable, public ConsoleRunnable {
  protected:
   explicit ConsoleWorkletRunnable(Console* aConsole)
-      : Runnable("dom::console::ConsoleWorkletRunnable"), mConsole(aConsole) {
+      : Runnable("dom::console::ConsoleWorkletRunnable"),
+        mConsoleData(aConsole->GetOrCreateMainThreadData()) {
     WorkletThread::AssertIsOnWorkletThread();
-    nsCOMPtr<WorkletGlobalScope> global = do_QueryInterface(mConsole->mGlobal);
+    nsCOMPtr<WorkletGlobalScope> global = do_QueryInterface(aConsole->mGlobal);
     MOZ_ASSERT(global);
     mWorkletImpl = global->Impl();
     MOZ_ASSERT(mWorkletImpl);
@@ -437,7 +467,6 @@ class ConsoleWorkletRunnable : public Runnable, public ConsoleRunnable {
     WorkletThread::AssertIsOnWorkletThread();
 
     ReleaseData();
-    mConsole = nullptr;
     return NS_OK;
   }
 
@@ -448,8 +477,7 @@ class ConsoleWorkletRunnable : public Runnable, public ConsoleRunnable {
   
   virtual void ReleaseData() = 0;
 
-  
-  RefPtr<Console> mConsole;
+  RefPtr<MainThreadConsoleData> mConsoleData;
 
   RefPtr<WorkletImpl> mWorkletImpl;
 };
@@ -490,7 +518,7 @@ class ConsoleCallDataWorkletRunnable final : public ConsoleWorkletRunnable {
     AutoSafeJSContext cx;
 
     JSObject* sandbox =
-        mConsole->GetOrCreateSandbox(cx, mWorkletImpl->Principal());
+        mConsoleData->GetOrCreateSandbox(cx, mWorkletImpl->Principal());
     JS::Rooted<JSObject*> global(cx, sandbox);
     if (NS_WARN_IF(!global)) {
       return;
@@ -505,7 +533,7 @@ class ConsoleCallDataWorkletRunnable final : public ConsoleWorkletRunnable {
     
     
 
-    ProcessCallData(cx, mConsole, mCallData);
+    ProcessCallData(cx, mConsoleData, mCallData);
   }
 
   virtual void ReleaseData() override { mCallData = nullptr; }
@@ -516,7 +544,8 @@ class ConsoleCallDataWorkletRunnable final : public ConsoleWorkletRunnable {
 class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
                               public ConsoleRunnable {
  public:
-  explicit ConsoleWorkerRunnable(Console* aConsole) : mConsole(aConsole) {}
+  explicit ConsoleWorkerRunnable(Console* aConsole)
+      : mConsoleData(aConsole->GetOrCreateMainThreadData()) {}
 
   ~ConsoleWorkerRunnable() override = default;
 
@@ -596,7 +625,7 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
     JSContext* cx = jsapi.cx();
 
     JS::Rooted<JSObject*> global(
-        cx, mConsole->GetOrCreateSandbox(cx, wp->GetPrincipal()));
+        cx, mConsoleData->GetOrCreateSandbox(cx, wp->GetPrincipal()));
     if (NS_WARN_IF(!global)) {
       return;
     }
@@ -619,7 +648,6 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
     MOZ_ASSERT(aWorkerPrivate);
     aWorkerPrivate->AssertIsOnWorkerThread();
     ReleaseData();
-    mConsole = nullptr;
   }
 
   
@@ -633,8 +661,7 @@ class ConsoleWorkerRunnable : public WorkerProxyToMainThreadRunnable,
 
   bool ForMessaging() const override { return true; }
 
-  
-  RefPtr<Console> mConsole;
+  RefPtr<MainThreadConsoleData> mConsoleData;
 };
 
 
@@ -687,7 +714,7 @@ class ConsoleCallDataWorkerRunnable final : public ConsoleWorkerRunnable {
 
     mClonedData.mGlobal = aGlobal;
 
-    ProcessCallData(aCx, mConsole, mCallData);
+    ProcessCallData(aCx, mConsoleData, mCallData);
 
     mClonedData.mGlobal = nullptr;
   }
@@ -728,7 +755,7 @@ class ConsoleProfileWorkletRunnable final : public ConsoleWorkletRunnable {
     AutoSafeJSContext cx;
 
     JSObject* sandbox =
-        mConsole->GetOrCreateSandbox(cx, mWorkletImpl->Principal());
+        mConsoleData->GetOrCreateSandbox(cx, mWorkletImpl->Principal());
     JS::Rooted<JSObject*> global(cx, sandbox);
     if (NS_WARN_IF(!global)) {
       return;
@@ -782,10 +809,6 @@ class ConsoleProfileWorkerRunnable final : public ConsoleWorkerRunnable {
 };
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(Console)
-
-
-
-
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Console)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
@@ -932,9 +955,6 @@ void Console::Shutdown() {
       obs->RemoveObserver(this, "memory-pressure");
     }
   }
-
-  NS_ReleaseOnMainThreadSystemGroup("Console::mStorage", mStorage.forget());
-  NS_ReleaseOnMainThreadSystemGroup("Console::mSandbox", mSandbox.forget());
 
   mTimerRegistry.Clear();
   mCounterRegistry.Clear();
@@ -1437,7 +1457,7 @@ void Console::MethodInternal(JSContext* aCx, MethodName aMethodName,
       callData->SetIDs(NS_LITERAL_STRING("jsm"), filename);
     }
 
-    ProcessCallData(aCx, callData, aData);
+    GetOrCreateMainThreadData()->ProcessCallData(aCx, callData, aData);
 
     
     
@@ -1465,6 +1485,16 @@ void Console::MethodInternal(JSContext* aCx, MethodName aMethodName,
         new ConsoleCallDataWorkerRunnable(this, callData);
     Unused << NS_WARN_IF(!runnable->Dispatch(aCx, aData));
   }
+}
+
+MainThreadConsoleData* Console::GetOrCreateMainThreadData() {
+  AssertIsOnOwningThread();
+
+  if (!mMainThreadData) {
+    mMainThreadData = new MainThreadConsoleData();
+  }
+
+  return mMainThreadData;
 }
 
 
@@ -1503,8 +1533,9 @@ bool LazyStackGetter(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
   return true;
 }
 
-void Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
-                              const Sequence<JS::Value>& aArguments) {
+void MainThreadConsoleData::ProcessCallData(
+    JSContext* aCx, ConsoleCallData* aData,
+    const Sequence<JS::Value>& aArguments) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aData);
 
@@ -1523,7 +1554,7 @@ void Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
 
   
   JS::Rooted<JSObject*> targetScope(aCx, xpc::PrivilegedJunkScope());
-  if (NS_WARN_IF(!PopulateConsoleNotificationInTheTargetScope(
+  if (NS_WARN_IF(!Console::PopulateConsoleNotificationInTheTargetScope(
           aCx, aArguments, targetScope, &eventValue, aData, &mGroupStack))) {
     return;
   }
@@ -1549,7 +1580,7 @@ void Console::ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
     innerID.AppendInt(aData->mInnerIDNumber);
   }
 
-  if (aData->mMethodName == MethodClear) {
+  if (aData->mMethodName == Console::MethodClear) {
     DebugOnly<nsresult> rv = mStorage->ClearEvents(innerID);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "ClearEvents failed");
   }
@@ -2360,8 +2391,8 @@ bool Console::ShouldIncludeStackTrace(MethodName aMethodName) {
   }
 }
 
-JSObject* Console::GetOrCreateSandbox(JSContext* aCx,
-                                      nsIPrincipal* aPrincipal) {
+JSObject* MainThreadConsoleData::GetOrCreateSandbox(JSContext* aCx,
+                                                    nsIPrincipal* aPrincipal) {
   AssertIsOnMainThread();
 
   if (!mSandbox) {

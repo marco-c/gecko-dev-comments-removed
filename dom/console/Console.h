@@ -32,6 +32,7 @@ class ConsoleInstanceDumpCallback;
 class ConsoleRunnable;
 class ConsoleCallDataRunnable;
 class ConsoleProfileRunnable;
+class MainThreadConsoleData;
 
 class Console final : public nsIObserver, public nsSupportsWeakReference {
  public:
@@ -222,9 +223,7 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
                             MethodName aMethodName,
                             const nsAString& aMethodString);
 
-  
-  void ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
-                       const Sequence<JS::Value>& aArguments);
+  MainThreadConsoleData* GetOrCreateMainThreadData();
 
   
   bool StoreCallData(JSContext* aCx, ConsoleCallData* aCallData,
@@ -350,8 +349,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
 
   static bool ShouldIncludeStackTrace(MethodName aMethodName);
 
-  JSObject* GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
-
   void AssertIsOnOwningThread() const;
 
   bool IsShuttingDown() const;
@@ -401,9 +398,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
 
   
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  
-  nsCOMPtr<nsIConsoleAPIStorage> mStorage;
-  RefPtr<JSObjectHolder> mSandbox;
 
   
   nsDataHashtable<nsStringHashKey, DOMHighResTimeStamp> mTimerRegistry;
@@ -419,6 +413,8 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
 
   RefPtr<AnyCallback> mConsoleEventNotifier;
 
+  RefPtr<MainThreadConsoleData> mMainThreadData;
+  
   
   nsTArray<nsString> mGroupStack;
 
@@ -448,6 +444,7 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   friend class ConsoleRunnable;
   friend class ConsoleWorkerRunnable;
   friend class ConsoleWorkletRunnable;
+  friend class MainThreadConsoleData;
 };
 
 }  
