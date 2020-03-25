@@ -103,7 +103,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   class FlexLine;
   class FlexboxAxisTracker;
   struct StrutInfo;
-  class CachedMeasuringReflowResult;
+  class CachedBAxisMeasurement;
 
   
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
@@ -340,7 +340,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  const CachedMeasuringReflowResult& MeasureAscentAndBSizeForFlexItem(
+  const CachedBAxisMeasurement& MeasureAscentAndBSizeForFlexItem(
       FlexItem& aItem, ReflowInput& aChildReflowInput);
 
   

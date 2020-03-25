@@ -35,8 +35,7 @@ using FlexItem = nsFlexContainerFrame::FlexItem;
 using FlexLine = nsFlexContainerFrame::FlexLine;
 using FlexboxAxisTracker = nsFlexContainerFrame::FlexboxAxisTracker;
 using StrutInfo = nsFlexContainerFrame::StrutInfo;
-using CachedMeasuringReflowResult =
-    nsFlexContainerFrame::CachedMeasuringReflowResult;
+using CachedBAxisMeasurement = nsFlexContainerFrame::CachedBAxisMeasurement;
 
 static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 #define FLEX_LOG(...) \
@@ -1664,7 +1663,8 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
 
 
 
-class nsFlexContainerFrame::CachedMeasuringReflowResult {
+
+class nsFlexContainerFrame::CachedBAxisMeasurement {
   struct Key {
     LogicalSize mComputedSize;
     nscoord mComputedMinBSize;
@@ -1691,8 +1691,8 @@ class nsFlexContainerFrame::CachedMeasuringReflowResult {
   nscoord mAscent;
 
  public:
-  CachedMeasuringReflowResult(const ReflowInput& aReflowInput,
-                              const ReflowOutput& aReflowOutput)
+  CachedBAxisMeasurement(const ReflowInput& aReflowInput,
+                         const ReflowOutput& aReflowOutput)
       : mKey(aReflowInput), mAscent(aReflowOutput.BlockStartAscent()) {
     
     
@@ -1718,19 +1718,19 @@ class nsFlexContainerFrame::CachedMeasuringReflowResult {
 
   
   
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, CachedMeasuringReflowResult)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, CachedBAxisMeasurement)
 };
 
 void nsFlexContainerFrame::MarkCachedFlexMeasurementsDirty(
     nsIFrame* aItemFrame) {
-  aItemFrame->RemoveProperty(CachedMeasuringReflowResult::Prop());
+  aItemFrame->RemoveProperty(CachedBAxisMeasurement::Prop());
 }
 
-const CachedMeasuringReflowResult&
+const CachedBAxisMeasurement&
 nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
     FlexItem& aItem, ReflowInput& aChildReflowInput) {
   auto* cachedResult =
-      aItem.Frame()->GetProperty(CachedMeasuringReflowResult::Prop());
+      aItem.Frame()->GetProperty(CachedBAxisMeasurement::Prop());
   if (cachedResult) {
     if (cachedResult->IsValidFor(aChildReflowInput)) {
       return *cachedResult;
@@ -1773,12 +1773,11 @@ nsFlexContainerFrame::MeasureAscentAndBSizeForFlexItem(
   
   if (cachedResult) {
     *cachedResult =
-        CachedMeasuringReflowResult(aChildReflowInput, childReflowOutput);
+        CachedBAxisMeasurement(aChildReflowInput, childReflowOutput);
   } else {
     cachedResult =
-        new CachedMeasuringReflowResult(aChildReflowInput, childReflowOutput);
-    aItem.Frame()->SetProperty(CachedMeasuringReflowResult::Prop(),
-                               cachedResult);
+        new CachedBAxisMeasurement(aChildReflowInput, childReflowOutput);
+    aItem.Frame()->SetProperty(CachedBAxisMeasurement::Prop(), cachedResult);
   }
   return *cachedResult;
 }
@@ -1818,11 +1817,11 @@ nscoord nsFlexContainerFrame::MeasureFlexItemContentBSize(
     childRIForMeasuringBSize.mFlags.mIsBResizeForPercentages = true;
   }
 
-  const CachedMeasuringReflowResult& reflowResult =
+  const CachedBAxisMeasurement& measurement =
       MeasureAscentAndBSizeForFlexItem(aFlexItem, childRIForMeasuringBSize);
 
-  aFlexItem.SetAscent(reflowResult.Ascent());
-  return reflowResult.BSize();
+  aFlexItem.SetAscent(measurement.Ascent());
+  return measurement.BSize();
 }
 
 FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
@@ -4022,15 +4021,15 @@ void nsFlexContainerFrame::SizeItemInCrossAxis(ReflowInput& aChildReflowInput,
   }
 
   
-  const CachedMeasuringReflowResult& reflowResult =
+  const CachedBAxisMeasurement& measurement =
       MeasureAscentAndBSizeForFlexItem(aItem, aChildReflowInput);
 
   
   
 
   
-  aItem.SetCrossSize(reflowResult.BSize());
-  aItem.SetAscent(reflowResult.Ascent());
+  aItem.SetCrossSize(measurement.BSize());
+  aItem.SetAscent(measurement.Ascent());
 }
 
 void FlexLine::PositionItemsInCrossAxis(
