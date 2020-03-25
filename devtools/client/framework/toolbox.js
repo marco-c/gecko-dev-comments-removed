@@ -3498,11 +3498,18 @@ Toolbox.prototype = {
     };
   },
 
-  _onNewSelectedNodeFront: function() {
+  _onNewSelectedNodeFront: async function() {
     
     
     
     this.emit("selection-changed");
+
+    const threadFront = await this.selection?.nodeFront?.targetFront.getFront(
+      "thread"
+    );
+    if (threadFront) {
+      this.selectThread(threadFront.actorID);
+    }
   },
 
   _onInspectObject: function(packet) {
