@@ -2,8 +2,12 @@
 
 
 
+#[macro_use]
+extern crate bitflags;
+
 #[cfg(any(feature = "serde"))]
 #[macro_use]
 extern crate serde;
 
 pub mod shader;
+mod shader_features;
