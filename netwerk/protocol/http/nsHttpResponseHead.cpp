@@ -1078,9 +1078,10 @@ void nsHttpResponseHead::ParseVersion(const char* str) {
 
   LOG(("nsHttpResponseHead::ParseVersion [version=%s]\n", str));
 
+  Tokenizer t(str, nullptr, "");
   
-  if (PL_strncasecmp(str, "HTTP", 4) != 0) {
-    if (PL_strncasecmp(str, "ICY ", 4) == 0) {
+  if (!t.CheckWord("HTTP")) {
+    if (t.CheckWord("ICY ")) {
       
       LOG(("Treating ICY as HTTP 1.0\n"));
       mVersion = HttpVersion::v1_0;
@@ -1090,9 +1091,8 @@ void nsHttpResponseHead::ParseVersion(const char* str) {
     mVersion = HttpVersion::v0_9;
     return;
   }
-  str += 4;
 
-  if (*str != '/') {
+  if (!t.CheckChar('/')) {
     LOG(("server did not send a version number; assuming HTTP/1.0\n"));
     
     
@@ -1100,23 +1100,43 @@ void nsHttpResponseHead::ParseVersion(const char* str) {
     return;
   }
 
-  char* p = PL_strchr(str, '.');
-  if (p == nullptr) {
+  uint32_t major;
+  if (!t.ReadInteger(&major)) {
+    LOG(("server did not send a correct version number; assuming HTTP/1.0"));
+    mVersion = HttpVersion::v1_0;
+    return;
+  }
+
+  if (major == 3) {
+    mVersion = HttpVersion::v3_0;
+    return;
+  }
+
+  if (major == 2) {
+    mVersion = HttpVersion::v2_0;
+    return;
+  }
+
+  if (major != 1) {
+    LOG(("server did not send a correct version number; assuming HTTP/1.0"));
+    mVersion = HttpVersion::v1_0;
+    return;
+  }
+
+  if (!t.CheckChar('.')) {
     LOG(("mal-formed server version; assuming HTTP/1.0\n"));
     mVersion = HttpVersion::v1_0;
     return;
   }
 
-  ++p;  
+  uint32_t minor;
+  if (!t.ReadInteger(&minor)) {
+    LOG(("server did not send a correct version number; assuming HTTP/1.0"));
+    mVersion = HttpVersion::v1_0;
+    return;
+  }
 
-  int major = atoi(str + 1);
-  int minor = atoi(p);
-
-  if ((major > 3) || ((major == 3) && (minor >= 0))) {
-    mVersion = HttpVersion::v3_0;
-  } else if ((major > 2) || ((major == 2) && (minor >= 0))) {
-    mVersion = HttpVersion::v2_0;
-  } else if ((major == 1) && (minor >= 1)) {
+  if (minor >= 1) {
     
     mVersion = HttpVersion::v1_1;
   } else {
