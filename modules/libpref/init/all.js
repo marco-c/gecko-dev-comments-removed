@@ -1998,6 +1998,13 @@ pref("network.online",                      true);
 
 pref("network.cookie.move.interval_sec",    10);
 
+
+
+
+
+
+pref("network.cookie.sameSite.laxByDefault.disabledHosts", "");
+
 pref("network.cookie.maxNumber", 3000);
 pref("network.cookie.maxPerHost", 180);
 
