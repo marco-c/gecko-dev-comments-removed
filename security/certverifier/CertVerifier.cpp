@@ -148,27 +148,15 @@ Result IsCertChainRootBuiltInRoot(const UniqueCERTCertList& chain,
 
 Result IsDelegatedCredentialAcceptable(const DelegatedCredentialInfo& dcInfo,
                                        SECOidTag evOidPolicyTag) {
-  bool isRsa = dcInfo.scheme == ssl_sig_rsa_pss_rsae_sha256 ||
-               dcInfo.scheme == ssl_sig_rsa_pss_rsae_sha384 ||
-               dcInfo.scheme == ssl_sig_rsa_pss_rsae_sha512 ||
-               dcInfo.scheme == ssl_sig_rsa_pss_pss_sha256 ||
-               dcInfo.scheme == ssl_sig_rsa_pss_pss_sha384 ||
-               dcInfo.scheme == ssl_sig_rsa_pss_pss_sha512;
-
   bool isEcdsa = dcInfo.scheme == ssl_sig_ecdsa_secp256r1_sha256 ||
                  dcInfo.scheme == ssl_sig_ecdsa_secp384r1_sha384 ||
                  dcInfo.scheme == ssl_sig_ecdsa_secp521r1_sha512;
 
-  size_t minRsaKeyBits =
-      evOidPolicyTag != SEC_OID_UNKNOWN ? MIN_RSA_BITS : MIN_RSA_BITS_WEAK;
-
-  if (isRsa && dcInfo.authKeyBits < minRsaKeyBits) {
-    return Result::ERROR_INADEQUATE_KEY_SIZE;
-  }
-
   
   
-  if (!isRsa && !isEcdsa) {
+  
+  
+  if (!isEcdsa) {
     return Result::ERROR_INVALID_KEY;
   }
 

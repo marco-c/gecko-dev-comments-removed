@@ -2248,6 +2248,12 @@ static nsresult nsSSLIOLayerSetOptions(PRFileDesc* fd, bool forSTARTTLS,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  
+  
+  
   if (SECSuccess != SSL_SignatureSchemePrefSet(
                         fd, sEnabledSignatureSchemes,
                         mozilla::ArrayLength(sEnabledSignatureSchemes))) {
