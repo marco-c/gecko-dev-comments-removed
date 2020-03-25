@@ -248,10 +248,11 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   
   
   
-  bool PopulateConsoleNotificationInTheTargetScope(
+  static bool PopulateConsoleNotificationInTheTargetScope(
       JSContext* aCx, const Sequence<JS::Value>& aArguments,
-      JS::Handle<JSObject*> aTargetScope, JS::MutableHandle<JS::Value> aValue,
-      ConsoleCallData* aData, nsTArray<nsString>* aGroupStack);
+      JS::Handle<JSObject*> aTargetScope,
+      JS::MutableHandle<JS::Value> aEventValue, ConsoleCallData* aData,
+      nsTArray<nsString>* aGroupStack);
 
   enum TimerStatus {
     eTimerUnknown,
