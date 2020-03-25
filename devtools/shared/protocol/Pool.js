@@ -145,22 +145,6 @@ class Pool extends EventEmitter {
 
 
 
-
-
-
-
-
-
-
-
-  skipDestroy() {
-    return false;
-  }
-
-  
-
-
-
   destroy() {
     const parent = this.getParent();
     if (parent) {
@@ -174,13 +158,6 @@ class Pool extends EventEmitter {
       if (actor === this) {
         continue;
       }
-
-      
-      
-      if (typeof actor.skipDestroy === "function" && actor.skipDestroy()) {
-        continue;
-      }
-
       const destroy = actor.destroy;
       if (destroy) {
         

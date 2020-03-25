@@ -3602,10 +3602,6 @@ Toolbox.prototype = {
   _destroyToolbox: async function() {
     this.emit("destroy");
 
-    
-    
-    this.target.client.isToolboxDestroy = true;
-
     this.off("select", this._onToolSelected);
     this.off("host-changed", this._refreshHostTitle);
 
