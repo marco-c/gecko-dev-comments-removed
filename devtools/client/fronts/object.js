@@ -30,6 +30,13 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
     parentFront.manage(this);
   }
 
+  skipDestroy() {
+    
+    
+    
+    return this.conn && this.conn.isToolboxDestroy;
+  }
+
   getGrip() {
     return this._grip;
   }
