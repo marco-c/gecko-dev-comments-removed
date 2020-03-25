@@ -13,7 +13,11 @@ add_task(async function test() {
   }
   
   
-  BackgroundJSM.changePreset("aboutprofiling", "web-developer");
+  BackgroundJSM.changePreset(
+    "aboutprofiling",
+    "web-developer",
+    Services.profiler.GetFeatures()
+  );
 
   await withAboutProfiling(async document => {
     const webdev = await getNearestInputFromText(document, "Web Developer");

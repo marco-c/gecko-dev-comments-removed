@@ -249,7 +249,9 @@ function startProfiler(pageContext) {
     features,
     threads,
     duration,
-  } = translatePreferencesToState(getRecordingPreferences(pageContext));
+  } = translatePreferencesToState(
+    getRecordingPreferences(pageContext, Services.profiler.GetFeatures())
+  );
 
   
   const { getActiveBrowsingContextID } = lazyRecordingUtils();
@@ -343,7 +345,8 @@ function getPrefPostfix(pageContext) {
 
 
 
-function getRecordingPreferences(pageContext) {
+
+function getRecordingPreferences(pageContext, supportedFeatures) {
   const postfix = getPrefPostfix(pageContext);
 
   
@@ -352,7 +355,11 @@ function getRecordingPreferences(pageContext) {
   const presetName = Services.prefs.getCharPref(PRESET_PREF + postfix);
 
   
-  const recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
+  const recordingPrefs = getRecordingPrefsFromPreset(
+    presetName,
+    supportedFeatures,
+    objdirs
+  );
   if (recordingPrefs) {
     return recordingPrefs;
   }
@@ -364,14 +371,12 @@ function getRecordingPreferences(pageContext) {
   const threads = _getArrayOfStringsPref(THREADS_PREF + postfix);
   const duration = Services.prefs.getIntPref(DURATION_PREF + postfix);
 
-  const supportedFeatures = new Set(Services.profiler.GetFeatures());
-
   return {
     presetName: "custom",
     entries,
     interval,
     
-    features: features.filter(feature => supportedFeatures.has(feature)),
+    features: features.filter(feature => supportedFeatures.includes(feature)),
     threads,
     objdirs,
     duration,
@@ -383,7 +388,8 @@ function getRecordingPreferences(pageContext) {
 
 
 
-function getRecordingPrefsFromPreset(presetName, objdirs) {
+
+function getRecordingPrefsFromPreset(presetName, supportedFeatures, objdirs) {
   if (presetName === "custom") {
     return null;
   }
@@ -394,8 +400,6 @@ function getRecordingPrefsFromPreset(presetName, objdirs) {
     return null;
   }
 
-  const supportedFeatures = new Set(Services.profiler.GetFeatures());
-
   return {
     presetName,
     entries: preset.entries,
@@ -403,7 +407,9 @@ function getRecordingPrefsFromPreset(presetName, objdirs) {
     
     interval: preset.interval * 1000,
     
-    features: preset.features.filter(feature => supportedFeatures.has(feature)),
+    features: preset.features.filter(feature =>
+      supportedFeatures.includes(feature)
+    ),
     threads: preset.threads,
     objdirs,
     duration: preset.duration,
@@ -460,17 +466,22 @@ function revertRecordingPreferences() {
 
 
 
-function changePreset(pageContext, presetName) {
+
+function changePreset(pageContext, presetName, supportedFeatures) {
   const postfix = getPrefPostfix(pageContext);
   const objdirs = _getArrayOfStringsHostPref(OBJDIRS_PREF + postfix);
-  let recordingPrefs = getRecordingPrefsFromPreset(presetName, objdirs);
+  let recordingPrefs = getRecordingPrefsFromPreset(
+    presetName,
+    supportedFeatures,
+    objdirs
+  );
 
   if (!recordingPrefs) {
     
     
     
     Services.prefs.setCharPref(PRESET_PREF + postfix, presetName);
-    recordingPrefs = getRecordingPreferences(pageContext);
+    recordingPrefs = getRecordingPreferences(pageContext, supportedFeatures);
   }
 
   setRecordingPreferences(pageContext, recordingPrefs);

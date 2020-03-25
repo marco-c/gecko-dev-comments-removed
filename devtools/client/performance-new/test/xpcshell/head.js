@@ -3,6 +3,8 @@
 
 "use strict";
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 registerCleanupFunction(() => {
   
   const { revertRecordingPreferences } = ChromeUtils.import(
