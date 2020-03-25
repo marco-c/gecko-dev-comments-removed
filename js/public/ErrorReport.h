@@ -206,16 +206,6 @@ class JSErrorNotes {
 
 
 
-
-
-#define JSREPORT_ERROR 0x0   /* pseudo-flag for default case */
-#define JSREPORT_WARNING 0x1 /* reported via JS::Warn* */
-
-#define JSREPORT_USER_1 0x8 /* user-defined flag */
-
-
-
-
 class JSErrorReport : public JSErrorBase {
  private:
   
@@ -233,13 +223,13 @@ class JSErrorReport : public JSErrorBase {
   js::UniquePtr<JSErrorNotes> notes;
 
   
-  unsigned flags;
-
-  
   int16_t exnType;
 
   
   bool isMuted : 1;
+
+  
+  bool isWarning_ : 1;
 
  private:
   bool ownsLinebuf_ : 1;
@@ -250,9 +240,9 @@ class JSErrorReport : public JSErrorBase {
         linebufLength_(0),
         tokenOffset_(0),
         notes(nullptr),
-        flags(0),
         exnType(0),
         isMuted(false),
+        isWarning_(false),
         ownsLinebuf_(false) {}
 
   ~JSErrorReport() { freeLinebuf(); }
@@ -269,7 +259,7 @@ class JSErrorReport : public JSErrorBase {
   void initBorrowedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
                            size_t tokenOffsetArg);
 
-  bool isWarning() const { return !!(flags & JSREPORT_WARNING); }
+  bool isWarning() const { return isWarning_; }
 
  private:
   void freeLinebuf();

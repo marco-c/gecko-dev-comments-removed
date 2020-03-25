@@ -1057,10 +1057,7 @@ extern void ReportUsageErrorASCII(JSContext* cx, HandleObject callee,
 
 
 
-
-
-
-extern bool PrintError(JSContext* cx, FILE* file,
+extern void PrintError(JSContext* cx, FILE* file,
                        JS::ConstUTF8CharsZ toStringResult,
                        JSErrorReport* report, bool reportWarnings);
 
