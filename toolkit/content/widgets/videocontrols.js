@@ -1823,7 +1823,7 @@ this.VideoControlsImplWidget = class {
 
       get isClosedCaptionAvailable() {
         
-        if (!this.video.videoWidth || !this.video.videoHeight) {
+        if (this.isAudioOnly) {
           return false;
         }
         return this.overlayableTextTracks.length;
