@@ -103,6 +103,7 @@ included_inclnames_to_ignore = set([
     'unicode/uformattedvalue.h',  
     'unicode/ulistformatter.h',  
     'unicode/uloc.h',           
+    'unicode/uniset.h',         
     'unicode/unistr.h',         
     'unicode/unorm2.h',         
     'unicode/unum.h',           
