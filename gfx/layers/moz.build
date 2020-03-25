@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'Graphics: Layers')
@@ -102,8 +102,8 @@ EXPORTS.mozilla.layers += [
     'apz/public/IAPZCTreeManager.h',
     'apz/public/MatrixMessage.h',
     'apz/public/MetricsSharingController.h',
-    # exporting things from apz/src is temporary until we extract a
-    # proper interface for the code there
+    
+    
     'apz/src/APZUtils.h',
     'apz/src/AsyncDragMetrics.h',
     'apz/src/FocusTarget.h',
@@ -258,7 +258,6 @@ EXPORTS.mozilla.layers += [
     'wr/ClipManager.h',
     'wr/DisplayItemCache.h',
     'wr/IpcResourceUpdateQueue.h',
-    'wr/RenderRootBoundary.h',
     'wr/RenderRootStateManager.h',
     'wr/RenderRootTypes.h',
     'wr/StackingContextHelper.h',
@@ -542,8 +541,8 @@ UNIFIED_SOURCES += [
     'wr/WebRenderLayersLogging.cpp',
     'wr/WebRenderScrollData.cpp',
     'wr/WebRenderUserData.cpp',
-    # XXX here are some unified build error.
-    #'wr/WebRenderTextureHost.cpp'
+    
+    
 ]
 
 SOURCES += [
@@ -594,10 +593,10 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
                 inputs=['d3d11/mlgshaders/shaders.manifest'])
 
 LOCAL_INCLUDES += [
-    '/docshell/base',  # for nsDocShell.h
-    '/layout/base',    # for TouchManager.h
-    '/layout/generic', # for nsTextFrame.h
-    '/media/libyuv/libyuv/include', # for libyuv.h
+    '/docshell/base',  
+    '/layout/base',    
+    '/layout/generic', 
+    '/media/libyuv/libyuv/include', 
 ]
 
 FINAL_LIBRARY = 'xul'
@@ -623,7 +622,7 @@ LOCAL_INCLUDES += CONFIG['SKIA_INCLUDES']
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     CXXFLAGS += ['-Wno-error=shadow']
-    # Suppress warnings in third-party code.
+    
     CXXFLAGS += [
         '-Wno-maybe-uninitialized'
     ]
@@ -638,5 +637,5 @@ if CONFIG['FUZZING'] and CONFIG['FUZZING_INTERFACES']:
         'ipc/fuzztest'
     ]
 
-# Add libFuzzer configuration directives
+
 include('/tools/fuzzing/libfuzzer-config.mozbuild')

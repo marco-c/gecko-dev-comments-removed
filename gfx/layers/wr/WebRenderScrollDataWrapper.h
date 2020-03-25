@@ -158,44 +158,6 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
                                         mLayerIndex + 1, subtreeLastIndex);
     }
 
-    if (mLayer->GetReferentRenderRoot()) {
-      MOZ_ASSERT(!mLayer->GetReferentId());
-      MOZ_ASSERT(mLayer->GetReferentRenderRoot()->GetChildType() !=
-                 mWrRootId.mRenderRoot);
-
-      WRRootId newWrRootId = WRRootId(
-          mWrRootId.mLayersId, mLayer->GetReferentRenderRoot()->GetChildType());
-      const WebRenderScrollData* childData =
-          mUpdater->GetScrollData(newWrRootId);
-      if (!childData) {
-        
-        return WebRenderScrollDataWrapper(*mUpdater, newWrRootId);
-      }
-      
-      
-      
-      
-      
-      
-      Maybe<size_t> layerIndex;
-      for (size_t i = 0; i < childData->GetLayerCount(); i++) {
-        const WebRenderLayerScrollData* wrlsd = childData->GetLayerData(i);
-        if (wrlsd->GetBoundaryRoot() == mLayer->GetReferentRenderRoot()) {
-          
-          layerIndex = Some(i);
-          break;
-        }
-      }
-      if (!layerIndex) {
-        
-        
-        return WebRenderScrollDataWrapper(*mUpdater, newWrRootId);
-      }
-      return WebRenderScrollDataWrapper(mUpdater, newWrRootId, childData,
-                                        *layerIndex,
-                                        childData->GetLayerCount());
-    }
-
     
     
     
@@ -326,11 +288,6 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
   Maybe<wr::RenderRoot> GetReferentRenderRoot() const {
     MOZ_ASSERT(IsValid());
 
-    if (AtBottomLayer()) {
-      if (mLayer->GetReferentRenderRoot()) {
-        return Some(mLayer->GetReferentRenderRoot()->GetChildType());
-      }
-    }
     return Nothing();
   }
 
