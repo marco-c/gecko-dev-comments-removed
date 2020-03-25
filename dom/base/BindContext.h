@@ -52,10 +52,7 @@ struct MOZ_STACK_CLASS BindContext final {
       : mDoc(*aParent.OwnerDoc()),
         mInComposedDoc(aParent.IsInComposedDoc()),
         mInUncomposedDoc(aParent.IsInUncomposedDoc()),
-        mSubtreeRootChanges(true),
-        mCollectingDisplayedNodeDataDuringLoad(
-            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
-                                                     aParent)) {}
+        mSubtreeRootChanges(true) {}
 
   
   
@@ -67,10 +64,7 @@ struct MOZ_STACK_CLASS BindContext final {
       : mDoc(*aShadowRoot.OwnerDoc()),
         mInComposedDoc(aShadowRoot.IsInComposedDoc()),
         mInUncomposedDoc(false),
-        mSubtreeRootChanges(false),
-        mCollectingDisplayedNodeDataDuringLoad(
-            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
-                                                     aShadowRoot)) {}
+        mSubtreeRootChanges(false) {}
 
   
   
@@ -79,27 +73,13 @@ struct MOZ_STACK_CLASS BindContext final {
       : mDoc(*aParentElement.OwnerDoc()),
         mInComposedDoc(aParentElement.IsInComposedDoc()),
         mInUncomposedDoc(aParentElement.IsInUncomposedDoc()),
-        mSubtreeRootChanges(true),
-        mCollectingDisplayedNodeDataDuringLoad(
-            ShouldCollectDisplayedNodeDataDuringLoad(mInComposedDoc, mDoc,
-                                                     aParentElement)) {
+        mSubtreeRootChanges(true) {
     MOZ_ASSERT(mInComposedDoc, "Binding NAC in a disconnected subtree?");
-  }
-
-  bool CollectingDisplayedNodeDataDuringLoad() const {
-    return mCollectingDisplayedNodeDataDuringLoad;
   }
 
  private:
   static bool IsLikelyUndisplayed(const nsINode& aParent) {
     return aParent.IsAnyOfHTMLElements(nsGkAtoms::style, nsGkAtoms::script);
-  }
-
-  static bool ShouldCollectDisplayedNodeDataDuringLoad(bool aConnected,
-                                                       Document& aDoc,
-                                                       nsINode& aParent) {
-    return aDoc.GetReadyStateEnum() == Document::READYSTATE_LOADING &&
-           aConnected && !IsLikelyUndisplayed(aParent);
   }
 
   Document& mDoc;
@@ -110,27 +90,6 @@ struct MOZ_STACK_CLASS BindContext final {
   
   
   const bool mSubtreeRootChanges;
-
-  
-  
-  
-  
-  
-  
-  bool mCollectingDisplayedNodeDataDuringLoad;
-};
-
-struct MOZ_STACK_CLASS BindContext::NestingLevel {
-  explicit NestingLevel(BindContext& aContext, const Element& aParent)
-      : mRestoreCollecting(aContext.mCollectingDisplayedNodeDataDuringLoad) {
-    if (aContext.mCollectingDisplayedNodeDataDuringLoad) {
-      aContext.mCollectingDisplayedNodeDataDuringLoad =
-          BindContext::IsLikelyUndisplayed(aParent);
-    }
-  }
-
- private:
-  AutoRestore<bool> mRestoreCollecting;
 };
 
 }  

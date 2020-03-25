@@ -3525,14 +3525,6 @@ class Document : public nsINode,
   void PropagateUseCountersToPage();
   void PropagateUseCounters(Document* aParentDocument);
 
-  void AddToVisibleContentHeuristic(uint32_t aNumber) {
-    mVisibleContentHeuristic += aNumber;
-  }
-
-  uint32_t GetVisibleContentHeuristic() const {
-    return mVisibleContentHeuristic.value();
-  }
-
   
   
   void SetUserHasInteracted();
@@ -4811,16 +4803,6 @@ class Document : public nsINode,
 
   
   UniquePtr<StyleUseCounters> mStyleUseCounters;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  SaturateUint32 mVisibleContentHeuristic{0};
 
   
   bool mUserHasInteracted;

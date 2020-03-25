@@ -1588,7 +1588,6 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   {
-    BindContext::NestingLevel level(aContext, *this);
     for (nsIContent* child = GetFirstChild(); child;
          child = child->GetNextSibling()) {
       rv = child->BindToTree(aContext, *this);
