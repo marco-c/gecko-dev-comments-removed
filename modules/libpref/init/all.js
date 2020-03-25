@@ -1056,13 +1056,6 @@ pref("dom.select_popup_in_parent.enabled", false);
 pref("dom.cycle_collector.incremental", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("dom.use_components_shim", false);
-#else // NIGHTLY_BUILD
-  pref("dom.use_components_shim", true);
-#endif // NIGHTLY_BUILD
-
-
 
 
 
