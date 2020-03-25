@@ -30,6 +30,7 @@ const kDebuggerPrefs = [
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
+const PROFILER_POPUP_ENABLED_PREF = "devtools.performance.popup.enabled";
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -233,7 +234,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     });
   }
 
-  if (ProfilerMenuButton.isInNavbar()) {
+  if (isProfilerButtonEnabled()) {
     shortcuts.push(...getProfilerKeyShortcuts());
   }
 
@@ -255,6 +256,14 @@ function getProfilerKeyShortcuts() {
       modifiers: "control,shift",
     },
   ];
+}
+
+
+
+
+
+function isProfilerButtonEnabled() {
+  return Services.prefs.getBoolPref(PROFILER_POPUP_ENABLED_PREF, false);
 }
 
 
@@ -380,6 +389,13 @@ DevToolsStartup.prototype = {
       Services.prefs.addObserver(
         DEVTOOLS_ENABLED_PREF,
         this.onEnabledPrefChanged
+      );
+
+      
+      
+      Services.prefs.addObserver(
+        PROFILER_POPUP_ENABLED_PREF,
+        this.toggleProfilerKeyShortcuts
       );
       
 
@@ -612,32 +628,34 @@ DevToolsStartup.prototype = {
 
 
 
+
   hookProfilerRecordingButton() {
     if (this.profilerRecordingButtonCreated) {
       return;
     }
-    const featureFlagPref = "devtools.performance.popup.feature-flag";
-    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
-      featureFlagPref
-    );
     this.profilerRecordingButtonCreated = true;
+
+    const isPopupFeatureFlagEnabled = Services.prefs.getBoolPref(
+      "devtools.performance.popup.feature-flag",
+      AppConstants.NIGHTLY_BUILD
+    );
 
     
     
     
     this.initializeProfilerWebChannel();
 
-    if (isPopupFeatureFlagEnabled) {
-      
-      ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
-    } else {
+    if (!isPopupFeatureFlagEnabled) {
       
       
-      const enable = () => {
-        ProfilerMenuButton.initialize(this.toggleProfilerKeyShortcuts);
-        Services.prefs.removeObserver(featureFlagPref, enable);
-      };
-      Services.prefs.addObserver(featureFlagPref, enable);
+      
+      
+      
+      return;
+    }
+
+    if (isProfilerButtonEnabled()) {
+      ProfilerMenuButton.initialize();
     }
   },
 
@@ -815,8 +833,8 @@ DevToolsStartup.prototype = {
 
 
 
-
-  toggleProfilerKeyShortcuts(isEnabled) {
+  toggleProfilerKeyShortcuts() {
+    const isEnabled = isProfilerButtonEnabled();
     const profilerKeyShortcuts = getProfilerKeyShortcuts();
     for (const { document } of Services.wm.getEnumerator(null)) {
       const devtoolsKeyset = document.getElementById("devtoolsKeyset");
@@ -827,13 +845,6 @@ DevToolsStartup.prototype = {
         continue;
       }
 
-      const areProfilerKeysPresent = !!document.getElementById(
-        "key_profilerStartStop"
-      );
-      if (isEnabled === areProfilerKeysPresent) {
-        
-        continue;
-      }
       if (isEnabled) {
         this.attachKeys(document, profilerKeyShortcuts);
       } else {
@@ -843,6 +854,11 @@ DevToolsStartup.prototype = {
       
       
       mainKeyset.parentNode.insertBefore(devtoolsKeyset, mainKeyset);
+    }
+
+    if (!isEnabled) {
+      
+      ProfilerPopupBackground.stopProfiler();
     }
   },
 
