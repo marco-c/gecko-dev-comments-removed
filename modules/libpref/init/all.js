@@ -4642,13 +4642,6 @@ pref("dom.maxHardwareConcurrency", 16);
 
 
 
-
-
-pref("security.data_uri.unique_opaque_origin", true);
-
-
-
-
 pref("security.data_uri.block_toplevel_data_uri_navigations", true);
 
 pref("dom.storageManager.prompt.testing", false);
