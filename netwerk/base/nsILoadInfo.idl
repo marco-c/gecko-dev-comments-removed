@@ -557,8 +557,10 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [noscript, notxpcom]
-  nsContentPolicyType internalContentPolicyType();
+  [noscript, notxpcom, nostdcall, binaryname(InternalContentPolicyType)]
+  nsContentPolicyType binaryInternalContentPolicyType();
+
+  readonly attribute nsContentPolicyType internalContentPolicyType;
 
   
 
