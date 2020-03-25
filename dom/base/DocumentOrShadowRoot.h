@@ -246,6 +246,12 @@ class DocumentOrShadowRoot {
   void ClearAdoptedStyleSheets();
 
   
+
+
+
+  void CloneAdoptedSheetsFrom(DocumentOrShadowRoot&);
+
+  
   already_AddRefed<StyleSheet> RemoveSheet(StyleSheet& aSheet);
   void InsertSheetAt(size_t aIndex, StyleSheet& aSheet);
 

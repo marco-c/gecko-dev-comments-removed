@@ -221,6 +221,13 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
       dom::DocumentOrShadowRoot* aCloneDocumentOrShadowRoot,
       nsINode* aCloneOwningNode) const;
 
+  
+
+
+
+  already_AddRefed<StyleSheet> CloneAdoptedSheet(
+      dom::Document& aConstructorDocument) const;
+
   bool HasForcedUniqueInner() const {
     return bool(mState & State::ForcedUniqueInner);
   }
