@@ -65,7 +65,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
  public:
   explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
                                 nsILoadContext* aLoadContext,
-                                PBOverrideStatus aOverrideStatus,
                                 ADocumentChannelBridge* aBridge);
 
   
@@ -300,8 +299,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<ADocumentChannelBridge> mDocumentChannelBridge;
 
   nsCOMPtr<nsILoadContext> mLoadContext;
-
-  PBOverrideStatus mPBOverride;
 
   
   

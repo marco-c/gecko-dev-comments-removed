@@ -11,6 +11,9 @@
 #include "mozilla/net/DocumentLoadListener.h"
 
 namespace mozilla {
+namespace dom {
+class CanonicalBrowsingContext;
+}
 namespace net {
 
 
@@ -23,12 +26,10 @@ class DocumentChannelParent final : public ADocumentChannelBridge,
  public:
   NS_INLINE_DECL_REFCOUNTING(DocumentChannelParent, override);
 
-  explicit DocumentChannelParent(dom::BrowserParent* aBrowser,
-                                 nsILoadContext* aLoadContext,
-                                 PBOverrideStatus aOverrideStatus);
+  explicit DocumentChannelParent(dom::CanonicalBrowsingContext* aContext,
+                                 nsILoadContext* aLoadContext);
 
-  bool Init(dom::BrowserParent* aBrowser,
-            const DocumentChannelCreationArgs& aArgs);
+  bool Init(const DocumentChannelCreationArgs& aArgs);
 
   
   bool RecvCancel(const nsresult& aStatus) {

@@ -19,14 +19,12 @@ namespace mozilla {
 namespace net {
 
 DocumentChannelParent::DocumentChannelParent(CanonicalBrowsingContext* aContext,
-                                             nsILoadContext* aLoadContext,
-                                             PBOverrideStatus aOverrideStatus) {
+                                             nsILoadContext* aLoadContext) {
   LOG(("DocumentChannelParent ctor [this=%p]", this));
   
   
   if (aContext) {
-    mParent =
-        new DocumentLoadListener(aContext, aLoadContext, aOverrideStatus, this);
+    mParent = new DocumentLoadListener(aContext, aLoadContext, this);
   }
 }
 
