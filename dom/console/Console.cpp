@@ -196,7 +196,6 @@ class ConsoleCallData final {
   nsCOMPtr<nsIStackFrame> mStack;
 
   
-  
   enum {
     
     
@@ -204,15 +203,7 @@ class ConsoleCallData final {
 
     
     
-    
-    eInUse,
-
-    
-    
-    
-    
-    
-    eToBeDeleted
+    eInUse
   } mStatus;
 
  private:
@@ -331,12 +322,8 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
   void ReleaseCallData(Console* aConsole, ConsoleCallData* aCallData) {
     aConsole->AssertIsOnOwningThread();
 
-    if (aCallData->mStatus == ConsoleCallData::eToBeDeleted) {
-      aConsole->ReleaseCallData(aCallData);
-    } else {
-      MOZ_ASSERT(aCallData->mStatus == ConsoleCallData::eInUse);
-      aCallData->mStatus = ConsoleCallData::eUnused;
-    }
+    MOZ_ASSERT(aCallData->mStatus == ConsoleCallData::eInUse);
+    aCallData->mStatus = ConsoleCallData::eUnused;
   }
 
   
@@ -2393,26 +2380,14 @@ bool Console::StoreCallData(JSContext* aCx, ConsoleCallData* aCallData,
 
   MOZ_ASSERT(aCallData);
   MOZ_ASSERT(!mCallDataStorage.Contains(aCallData));
-  MOZ_ASSERT(!mCallDataStoragePending.Contains(aCallData));
 
   mCallDataStorage.AppendElement(aCallData);
 
   MOZ_ASSERT(mCallDataStorage.Length() == mArgumentStorage.length());
 
   if (mCallDataStorage.Length() > STORAGE_MAX_EVENTS) {
-    RefPtr<ConsoleCallData> callData = mCallDataStorage[0];
     mCallDataStorage.RemoveElementAt(0);
     mArgumentStorage.erase(&mArgumentStorage[0]);
-
-    MOZ_ASSERT(callData->mStatus != ConsoleCallData::eToBeDeleted);
-
-    
-    
-    
-    if (callData->mStatus == ConsoleCallData::eInUse) {
-      callData->mStatus = ConsoleCallData::eToBeDeleted;
-      mCallDataStoragePending.AppendElement(callData);
-    }
   }
   return true;
 }
@@ -2422,7 +2397,6 @@ void Console::UnstoreCallData(ConsoleCallData* aCallData) {
 
   MOZ_ASSERT(aCallData);
   MOZ_ASSERT(mCallDataStorage.Length() == mArgumentStorage.length());
-  MOZ_ASSERT(!mCallDataStoragePending.Contains(aCallData));
 
   size_t index = mCallDataStorage.IndexOf(aCallData);
   
@@ -2434,15 +2408,6 @@ void Console::UnstoreCallData(ConsoleCallData* aCallData) {
 
   mCallDataStorage.RemoveElementAt(index);
   mArgumentStorage.erase(&mArgumentStorage[index]);
-}
-
-void Console::ReleaseCallData(ConsoleCallData* aCallData) {
-  AssertIsOnOwningThread();
-  MOZ_ASSERT(aCallData);
-  MOZ_ASSERT(aCallData->mStatus == ConsoleCallData::eToBeDeleted);
-  MOZ_ASSERT(mCallDataStoragePending.Contains(aCallData));
-
-  mCallDataStoragePending.RemoveElement(aCallData);
 }
 
 void Console::NotifyHandler(JSContext* aCx,

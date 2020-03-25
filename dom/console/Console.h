@@ -233,9 +233,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   void UnstoreCallData(ConsoleCallData* aData);
 
   
-  void ReleaseCallData(ConsoleCallData* aCallData);
-
-  
   MOZ_CAN_RUN_SCRIPT
   void NotifyHandler(JSContext* aCx, const Sequence<JS::Value>& aArguments,
                      ConsoleCallData* aData);
@@ -457,17 +454,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   nsDataHashtable<nsStringHashKey, uint32_t> mCounterRegistry;
 
   nsTArray<RefPtr<ConsoleCallData>> mCallDataStorage;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsTArray<RefPtr<ConsoleCallData>> mCallDataStoragePending;
   
   
   
