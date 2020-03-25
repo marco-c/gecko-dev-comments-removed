@@ -98,6 +98,13 @@ require("devtools/client/framework/devtools-browser");
 
 
 
+
+
+
+
+
+
+
 function testActorBootstrap() {
   const TEST_ACTOR_URL =
     "chrome://mochitests/content/browser/devtools/client/shared/test/test-actor.js";
@@ -117,22 +124,25 @@ function testActorBootstrap() {
       type: { target: true },
     });
   };
-
   Services.obs.addObserver(
     actorRegistryObserver,
     "devtools-server-initialized"
   );
 
-  const unloadObserver = function(subject) {
-    if (subject.wrappedJSObject == _require("@loader/unload")) {
-      Services.obs.removeObserver(
-        actorRegistryObserver,
-        "devtools-server-initialized"
-      );
-      Services.obs.removeObserver(unloadObserver, "devtools:loader:destroy");
-    }
+  const unloadListener = () => {
+    Services.cpmm.removeMessageListener(
+      "remove-devtools-testactor-observer",
+      unloadListener
+    );
+    Services.obs.removeObserver(
+      actorRegistryObserver,
+      "devtools-server-initialized"
+    );
   };
-  Services.obs.addObserver(unloadObserver, "devtools:loader:destroy");
+  Services.cpmm.addMessageListener(
+    "remove-devtools-testactor-observer",
+    unloadListener
+  );
 }
 
 const testActorBootstrapScript = "data:,(" + testActorBootstrap + ")()";
@@ -143,6 +153,7 @@ Services.ppmm.loadProcessScript(
 );
 
 registerCleanupFunction(() => {
+  Services.ppmm.broadcastAsyncMessage("remove-devtools-testactor-observer");
   Services.ppmm.removeDelayedProcessScript(testActorBootstrapScript);
 });
 
