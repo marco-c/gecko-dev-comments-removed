@@ -725,6 +725,20 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
                                           nsIFrame* aFrame,
                                           StyleAppearance aAppearance,
                                           LayoutDeviceIntMargin* aResult) {
+  if (aAppearance == StyleAppearance::Menulist ||
+      aAppearance == StyleAppearance::MenulistTextfield ||
+      aAppearance == StyleAppearance::NumberInput ||
+      aAppearance == StyleAppearance::Textarea ||
+      aAppearance == StyleAppearance::Textfield) {
+    
+    
+    if (aFrame->PresContext()->HasAuthorSpecifiedRules(
+            aFrame, NS_AUTHOR_SPECIFIED_PADDING)) {
+      return false;
+    }
+  }
+
+  uint32_t dpi = GetDPIRatio(aFrame);
   switch (aAppearance) {
     
     
@@ -734,21 +748,6 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
     case StyleAppearance::MozMenulistArrowButton:
       aResult->SizeTo(0, 0, 0, 0);
       return true;
-    default:
-      break;
-  }
-
-  
-  
-  
-  
-  if (aFrame->PresContext()->HasAuthorSpecifiedRules(
-          aFrame, NS_AUTHOR_SPECIFIED_PADDING)) {
-    return false;
-  }
-
-  uint32_t dpi = GetDPIRatio(aFrame);
-  switch (aAppearance) {
     case StyleAppearance::Textarea:
     case StyleAppearance::Listbox:
     case StyleAppearance::Menulist:
@@ -768,8 +767,10 @@ bool nsNativeBasicTheme::GetWidgetPadding(nsDeviceContext* aContext,
       aResult->SizeTo(6 * dpi, 7 * dpi, 6 * dpi, 7 * dpi);
       return true;
     default:
-      return false;
+      break;
   }
+
+  return false;
 }
 
 bool nsNativeBasicTheme::GetWidgetOverflow(nsDeviceContext* aContext,
