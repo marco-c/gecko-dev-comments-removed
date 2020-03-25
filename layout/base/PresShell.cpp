@@ -6717,7 +6717,7 @@ nsresult PresShell::EventHandler::HandleEventUsingCoordinates(
            eventTargetData.mFrame->GetContent(), capturingContent))) {
     
     
-    NS_ASSERTION(capturingContent->GetComposedDoc() == GetDocument(),
+    NS_ASSERTION(capturingContent->OwnerDoc() == GetDocument(),
                  "Unexpected document");
     nsIFrame* capturingFrame = capturingContent->GetPrimaryFrame();
     if (capturingFrame) {
@@ -7466,7 +7466,7 @@ PresShell::EventHandler::ComputeRootFrameToHandleEventWithCapturingContent(
 
   
   
-  NS_ASSERTION(aCapturingContent->GetComposedDoc() == GetDocument(),
+  NS_ASSERTION(aCapturingContent->OwnerDoc() == GetDocument(),
                "Unexpected document");
   nsIFrame* captureFrame = aCapturingContent->GetPrimaryFrame();
   if (!captureFrame) {
