@@ -7174,8 +7174,9 @@ bool nsDisplaySubDocument::ComputeVisibility(nsDisplayListBuilder* aBuilder,
   nsRect displayport;
   nsIFrame* rootScrollFrame = mFrame->PresShell()->GetRootScrollFrame();
   MOZ_ASSERT(rootScrollFrame);
-  Unused << nsLayoutUtils::GetDisplayPort(
-      rootScrollFrame->GetContent(), &displayport, RelativeTo::ScrollFrame);
+  Unused << nsLayoutUtils::GetDisplayPort(rootScrollFrame->GetContent(),
+                                          &displayport,
+                                          DisplayportRelativeTo::ScrollFrame);
 
   nsRegion childVisibleRegion;
   

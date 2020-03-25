@@ -1141,7 +1141,7 @@ static void TranslateFromScrollPortToScrollFrame(nsIContent* aContent,
 
 bool nsLayoutUtils::GetDisplayPort(
     nsIContent* aContent, nsRect* aResult,
-    RelativeTo aRelativeTo ,
+    DisplayportRelativeTo aRelativeTo ,
     bool* aOutPainted ) {
   float multiplier = StaticPrefs::layers_low_precision_buffer()
                          ? 1.0f / StaticPrefs::layers_low_precision_resolution()
@@ -1149,7 +1149,8 @@ bool nsLayoutUtils::GetDisplayPort(
   bool usingDisplayPort =
       GetDisplayPortImpl(aContent, aResult, multiplier,
                          MaxSizeExceededBehaviour::Assert, aOutPainted);
-  if (aResult && usingDisplayPort && aRelativeTo == RelativeTo::ScrollFrame) {
+  if (aResult && usingDisplayPort &&
+      aRelativeTo == DisplayportRelativeTo::ScrollFrame) {
     TranslateFromScrollPortToScrollFrame(aContent, aResult);
   }
   return usingDisplayPort;
@@ -1190,7 +1191,8 @@ void nsLayoutUtils::MarkDisplayPortAsPainted(nsIContent* aContent) {
 
 bool nsLayoutUtils::GetDisplayPortForVisibilityTesting(
     nsIContent* aContent, nsRect* aResult,
-    RelativeTo aRelativeTo ) {
+    DisplayportRelativeTo
+        aRelativeTo ) {
   MOZ_ASSERT(aResult);
   
   
@@ -1199,7 +1201,7 @@ bool nsLayoutUtils::GetDisplayPortForVisibilityTesting(
   
   bool usingDisplayPort = GetDisplayPortImpl(aContent, aResult, 1.0f,
                                              MaxSizeExceededBehaviour::Drop);
-  if (usingDisplayPort && aRelativeTo == RelativeTo::ScrollFrame) {
+  if (usingDisplayPort && aRelativeTo == DisplayportRelativeTo::ScrollFrame) {
     TranslateFromScrollPortToScrollFrame(aContent, aResult);
   }
   return usingDisplayPort;
@@ -1383,7 +1385,8 @@ bool nsLayoutUtils::GetHighResolutionDisplayPort(nsIContent* aContent,
   if (StaticPrefs::layers_low_precision_buffer()) {
     return GetCriticalDisplayPort(aContent, aResult, aOutPainted);
   }
-  return GetDisplayPort(aContent, aResult, RelativeTo::ScrollPort, aOutPainted);
+  return GetDisplayPort(aContent, aResult, DisplayportRelativeTo::ScrollPort,
+                        aOutPainted);
 }
 
 void nsLayoutUtils::RemoveDisplayPort(nsIContent* aContent) {

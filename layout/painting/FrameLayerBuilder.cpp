@@ -4264,7 +4264,7 @@ nsRect ContainerState::GetDisplayPortForAnimatedGeometryRoot(
 
   bool usingDisplayport = nsLayoutUtils::GetDisplayPort(
       (*aAnimatedGeometryRoot)->GetContent(), &mLastDisplayPortRect,
-      RelativeTo::ScrollFrame);
+      DisplayportRelativeTo::ScrollFrame);
   if (!usingDisplayport) {
     
     
