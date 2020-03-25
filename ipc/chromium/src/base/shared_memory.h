@@ -122,7 +122,26 @@ class SharedMemory {
   
   
   
-  MOZ_MUST_USE bool Freeze();
+  MOZ_MUST_USE bool Freeze() {
+    Unmap();
+    return ReadOnlyCopy(this);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool ReadOnlyCopy(SharedMemory *ro_out);
 
   
   
