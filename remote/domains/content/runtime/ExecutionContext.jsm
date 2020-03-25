@@ -87,7 +87,10 @@ class ExecutionContext {
 
 
 
-  evaluate(expression, returnByValue) {
+
+
+
+  async evaluate(expression, awaitPromise, returnByValue) {
     let rv = this._debuggee.executeInGlobal(expression);
     if (!rv) {
       return {
@@ -101,11 +104,28 @@ class ExecutionContext {
       return this._returnError(rv.throw);
     }
 
-    let result;
+    let result = rv.return;
+
+    if (result && result.isPromise && awaitPromise) {
+      if (result.promiseState === "fulfilled") {
+        result = result.promiseValue;
+      } else if (result.promiseState === "rejected") {
+        return this._returnError(result.promiseReason);
+      } else {
+        try {
+          const promiseResult = await result.unsafeDereference();
+          result = this._debuggee.makeDebuggeeValue(promiseResult);
+        } catch (e) {
+          
+          return this._returnError(e);
+        }
+      }
+    }
+
     if (returnByValue) {
       result = this._toRemoteObjectByValue(result);
     } else {
-      result = this._toRemoteObject(rv.return);
+      result = this._toRemoteObject(result);
     }
 
     return { result };
