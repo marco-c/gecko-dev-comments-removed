@@ -79,7 +79,7 @@ function createScreenshotDataURL(document, args) {
   }
 
   
-  if (!args.selector) {
+  if (args.fullpage) {
     const winUtils = window.windowUtils;
     const scrollbarHeight = {};
     const scrollbarWidth = {};
