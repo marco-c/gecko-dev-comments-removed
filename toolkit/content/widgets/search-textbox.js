@@ -120,15 +120,11 @@
     set searchButton(val) {
       if (val) {
         this.setAttribute("searchbutton", "true");
+        this._searchButtonIcon.removeAttribute("aria-hidden");
         this.removeAttribute("aria-autocomplete");
-        
-        
-        
-        
-        this._searchButtonIcon.setAttribute("onclick", "true");
       } else {
         this.removeAttribute("searchbutton");
-        this._searchButtonIcon.removeAttribute("onclick");
+        this._searchButtonIcon.setAttribute("aria-hidden", "true");
         this.setAttribute("aria-autocomplete", "list");
       }
       return val;
