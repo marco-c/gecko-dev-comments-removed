@@ -771,6 +771,16 @@ a.learn-more-link.webconsole-learn-more-link {
 
 
 
+.network.message .network-info #response-panel {
+  height: 250px !important;
+}
+
+.network.message .network-info .accordion-item:last-child .accordion-content {
+  position: static;
+}
+
+
+
 .network.message #headers-panel .edit-and-resend-button {
   display: none;
 }
