@@ -116,6 +116,10 @@ const char kHttp3VersionHEX[] = "ff0000001b";
 
 #define NS_HTTP_CALL_CONTENT_SNIFFER (1 << 21)
 
+
+
+#define NS_HTTP_DISALLOW_HTTP3 (1 << 22)
+
 #define NS_HTTP_TRR_FLAGS_FROM_MODE(x) ((static_cast<uint32_t>(x) & 3) << 19)
 
 #define NS_HTTP_TRR_MODE_FROM_FLAGS(x) \
