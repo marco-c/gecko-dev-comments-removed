@@ -3237,32 +3237,6 @@ bool nsCookieService::CanSetCookie(nsIURI* aHostURI, const nsCookieKey& aKey,
   
   bool potentiallyTurstworthy =
       nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
-  Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_SECURITY,
-                        ((aCookieData.isSecure()) ? 0x02 : 0x00) |
-                            ((potentiallyTurstworthy) ? 0x01 : 0x00));
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aThirdPartyUtil) {
-    bool isThirdParty = true;
-
-    if (aChannel) {
-      aThirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isThirdParty);
-    }
-    Telemetry::Accumulate(Telemetry::COOKIE_SCHEME_HTTPS,
-                          (isThirdParty ? 0x04 : 0x00) |
-                              (potentiallyTurstworthy ? 0x02 : 0x00) |
-                              (aCookieData.isSecure() ? 0x01 : 0x00));
-  }
 
   int64_t currentTimeInUsec = PR_Now();
 
