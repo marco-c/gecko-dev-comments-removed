@@ -16,6 +16,7 @@
 
 
 use bumpalo;
+use env_logger;
 use jsparagus::ast::source_atom_set::SourceAtomSet;
 use jsparagus::ast::types::Program;
 use jsparagus::emitter::{
@@ -267,6 +268,20 @@ impl SmooshResult {
 enum SmooshError {
     GenericError(String),
     NotImplemented,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn init_smoosh() {
+    
+    
+    
+    let filter = log::max_level();
+    match env_logger::try_init() {
+        Ok(_) => {}
+        Err(_) => {
+            log::set_max_level(filter);
+        }
+    }
 }
 
 #[no_mangle]

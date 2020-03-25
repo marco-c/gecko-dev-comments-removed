@@ -58,7 +58,7 @@ quick_error! {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FormattedDuration(Duration);
 
 trait OverflowOp: Sized {

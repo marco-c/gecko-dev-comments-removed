@@ -38,6 +38,9 @@ class Smoosh {
 };
 
 
+void InitSmoosh();
+
+
 
 MOZ_MUST_USE bool SmooshParseScript(JSContext* cx, const uint8_t* bytes,
                                     size_t length);
