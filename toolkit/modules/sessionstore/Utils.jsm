@@ -6,36 +6,7 @@
 
 var EXPORTED_SYMBOLS = ["Utils"];
 
-ChromeUtils.import("resource://gre/modules/Services.jsm", this);
-ChromeUtils.import("resource://gre/modules/XPCOMUtils.jsm", this);
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "eTLDService",
-  "@mozilla.org/network/effective-tld-service;1",
-  "nsIEffectiveTLDService"
-);
-
 var Utils = Object.freeze({
-  
-
-
-
-
-
-  hasRootDomain(url, domain) {
-    let host;
-
-    try {
-      host = Services.io.newURI(url).host;
-    } catch (e) {
-      
-      return false;
-    }
-
-    return eTLDService.hasRootDomain(host, domain);
-  },
-
   
 
 

@@ -239,7 +239,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TabState: "resource:///modules/sessionstore/TabState.jsm",
   TabStateCache: "resource:///modules/sessionstore/TabStateCache.jsm",
   TabStateFlusher: "resource:///modules/sessionstore/TabStateFlusher.jsm",
-  Utils: "resource://gre/modules/sessionstore/Utils.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
@@ -2419,10 +2418,16 @@ var SessionStoreInternal = {
 
 
 
-  onPurgeDomainData: function ssi_onPurgeDomainData(aData) {
+  onPurgeDomainData: function ssi_onPurgeDomainData(aDomain) {
     
     function containsDomain(aEntry) {
-      if (Utils.hasRootDomain(aEntry.url, aData)) {
+      let host;
+      try {
+        host = Services.io.newURI(aEntry.url).host;
+      } catch (e) {
+        
+      }
+      if (host && Services.eTLD.hasRootDomain(host, aDomain)) {
         return true;
       }
       return aEntry.children && aEntry.children.some(containsDomain, this);
