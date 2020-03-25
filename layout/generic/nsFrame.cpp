@@ -2299,13 +2299,12 @@ static nsIFrame* GetActiveSelectionFrame(nsPresContext* aPresContext,
   return aFrame;
 }
 
-int16_t nsFrame::DisplaySelection(nsPresContext* aPresContext,
-                                  bool isOkToTurnOn) {
+int16_t nsFrame::DetermineDisplaySelection() {
   int16_t selType = nsISelectionController::SELECTION_OFF;
 
   nsCOMPtr<nsISelectionController> selCon;
   nsresult result =
-      GetSelectionController(aPresContext, getter_AddRefs(selCon));
+      GetSelectionController(PresContext(), getter_AddRefs(selCon));
   if (NS_SUCCEEDED(result) && selCon) {
     result = selCon->GetDisplaySelection(&selType);
     if (NS_SUCCEEDED(result) &&
@@ -2313,12 +2312,7 @@ int16_t nsFrame::DisplaySelection(nsPresContext* aPresContext,
       
       if (!IsSelectable(nullptr)) {
         selType = nsISelectionController::SELECTION_OFF;
-        isOkToTurnOn = false;
       }
-    }
-    if (isOkToTurnOn && (selType == nsISelectionController::SELECTION_OFF)) {
-      selCon->SetDisplaySelection(nsISelectionController::SELECTION_ON);
-      selType = nsISelectionController::SELECTION_ON;
     }
   }
   return selType;
@@ -4788,8 +4782,9 @@ nsresult nsFrame::SelectByTypeAtPoint(nsPresContext* aPresContext,
   NS_ENSURE_ARG_POINTER(aPresContext);
 
   
-  if (DisplaySelection(aPresContext) == nsISelectionController::SELECTION_OFF)
+  if (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
     return NS_OK;
+  }
 
   ContentOffsets offsets = GetContentOffsetsFromPoint(aPoint, SKIP_HIDDEN);
   if (!offsets.content) return NS_ERROR_FAILURE;
@@ -4817,7 +4812,7 @@ nsFrame::HandleMultiplePress(nsPresContext* aPresContext,
   NS_ENSURE_ARG_POINTER(aEventStatus);
 
   if (nsEventStatus_eConsumeNoDefault == *aEventStatus ||
-      DisplaySelection(aPresContext) == nsISelectionController::SELECTION_OFF) {
+      DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
     return NS_OK;
   }
 
@@ -4934,8 +4929,8 @@ NS_IMETHODIMP nsFrame::HandleDrag(nsPresContext* aPresContext,
     
     
     
-    if (DisplaySelection(aPresContext) ==
-        nsISelectionController::SELECTION_OFF) {
+    
+    if (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF) {
       return NS_OK;
     }
   }
@@ -5064,7 +5059,7 @@ NS_IMETHODIMP nsFrame::HandleRelease(nsPresContext* aPresContext,
   PresShell::ReleaseCapturingContent();
 
   bool selectionOff =
-      (DisplaySelection(aPresContext) == nsISelectionController::SELECTION_OFF);
+      (DetermineDisplaySelection() == nsISelectionController::SELECTION_OFF);
 
   RefPtr<nsFrameSelection> frameselection;
   ContentOffsets offsets;
@@ -5098,8 +5093,7 @@ NS_IMETHODIMP nsFrame::HandleRelease(nsPresContext* aPresContext,
   
   RefPtr<nsFrameSelection> frameSelection;
   if (activeFrame != this &&
-      static_cast<nsFrame*>(activeFrame)
-              ->DisplaySelection(activeFrame->PresContext()) !=
+      static_cast<nsFrame*>(activeFrame)->DetermineDisplaySelection() !=
           nsISelectionController::SELECTION_OFF) {
     frameSelection = activeFrame->GetFrameSelection();
   }
