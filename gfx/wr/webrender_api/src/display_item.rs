@@ -14,10 +14,6 @@ use crate::units::*;
 
 
 
-pub const MAX_BLUR_RADIUS: f32 = 300.;
-
-
-
 
 
 
@@ -871,12 +867,6 @@ pub struct BlurPrimitive {
     pub radius: f32,
 }
 
-impl BlurPrimitive {
-    pub fn sanitize(&mut self) {
-        self.radius = self.radius.min(MAX_BLUR_RADIUS);
-    }
-}
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct OpacityPrimitive {
@@ -903,12 +893,6 @@ pub struct ColorMatrixPrimitive {
 pub struct DropShadowPrimitive {
     pub input: FilterPrimitiveInput,
     pub shadow: Shadow,
-}
-
-impl DropShadowPrimitive {
-    pub fn sanitize(&mut self) {
-        self.shadow.blur_radius = self.shadow.blur_radius.min(MAX_BLUR_RADIUS);
-    }
 }
 
 #[repr(C)]
@@ -968,9 +952,7 @@ impl FilterPrimitiveKind {
     pub fn sanitize(&mut self) {
         match self {
             FilterPrimitiveKind::Flood(flood) => flood.sanitize(),
-            FilterPrimitiveKind::Blur(blur) => blur.sanitize(),
             FilterPrimitiveKind::Opacity(opacity) => opacity.sanitize(),
-            FilterPrimitiveKind::DropShadow(drop_shadow) => drop_shadow.sanitize(),
 
             
             FilterPrimitiveKind::Identity(..) |
@@ -978,6 +960,8 @@ impl FilterPrimitiveKind {
             FilterPrimitiveKind::ColorMatrix(..) |
             FilterPrimitiveKind::Offset(..) |
             FilterPrimitiveKind::Composite(..) |
+            FilterPrimitiveKind::Blur(..) |
+            FilterPrimitiveKind::DropShadow(..) |
             
             FilterPrimitiveKind::ComponentTransfer(..) => {}
         }
