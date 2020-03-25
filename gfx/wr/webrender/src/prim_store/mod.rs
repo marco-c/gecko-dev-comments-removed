@@ -82,7 +82,7 @@ pub fn register_prim_chase_id(id: PrimitiveDebugId) {
 pub fn register_prim_chase_id(_: PrimitiveDebugId) {
 }
 
-const MIN_BRUSH_SPLIT_AREA: f32 = 256.0 * 256.0;
+const MIN_BRUSH_SPLIT_AREA: f32 = 128.0 * 128.0;
 pub const VECS_PER_SEGMENT: usize = 2;
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq)]
@@ -3698,15 +3698,9 @@ impl<'a> GpuDataRequest<'a> {
     ) -> bool {
         
         
-        
-        
-        
-        let is_large = prim_local_rect.size.area() > MIN_BRUSH_SPLIT_AREA;
-
-        
-        
-        
-        let mut rect_clips_only = true;
+        if prim_local_rect.size.area() < MIN_BRUSH_SPLIT_AREA {
+            return false;
+        }
 
         segment_builder.initialize(
             prim_local_rect,
@@ -3715,7 +3709,6 @@ impl<'a> GpuDataRequest<'a> {
         );
 
         
-        let mut local_clip_count = 0;
         for i in 0 .. clip_chain.clips_range.count {
             let clip_instance = clip_store
                 .get_instance_from_range(&clip_chain.clips_range, i);
@@ -3730,19 +3723,14 @@ impl<'a> GpuDataRequest<'a> {
                 continue;
             }
 
-            local_clip_count += 1;
-
             let (local_clip_rect, radius, mode) = match clip_node.item.kind {
                 ClipItemKind::RoundedRectangle { rect, radius, mode } => {
-                    rect_clips_only = false;
                     (rect, Some(radius), mode)
                 }
                 ClipItemKind::Rectangle { rect, mode } => {
                     (rect, None, mode)
                 }
                 ClipItemKind::BoxShadow { ref source } => {
-                    rect_clips_only = false;
-
                     
                     
                     
@@ -3781,43 +3769,7 @@ impl<'a> GpuDataRequest<'a> {
             segment_builder.push_clip_rect(local_clip_rect, radius, mode);
         }
 
-        if is_large || rect_clips_only {
-            
-            
-            
-            
-            if local_clip_count == 0 && clip_chain.clips_range.count > 0 {
-                let x_clip_count = cmp::min(8, (prim_local_rect.size.width / 128.0).ceil() as i32);
-                let y_clip_count = cmp::min(8, (prim_local_rect.size.height / 128.0).ceil() as i32);
-
-                for y in 0 .. y_clip_count {
-                    let y0 = prim_local_rect.size.height * y as f32 / y_clip_count as f32;
-                    let y1 = prim_local_rect.size.height * (y+1) as f32 / y_clip_count as f32;
-
-                    for x in 0 .. x_clip_count {
-                        let x0 = prim_local_rect.size.width * x as f32 / x_clip_count as f32;
-                        let x1 = prim_local_rect.size.width * (x+1) as f32 / x_clip_count as f32;
-
-                        let rect = LayoutRect::new(
-                            LayoutPoint::new(
-                                x0 + prim_local_rect.origin.x,
-                                y0 + prim_local_rect.origin.y,
-                            ),
-                            LayoutSize::new(
-                                x1 - x0,
-                                y1 - y0,
-                            ),
-                        );
-
-                        segment_builder.push_mask_region(rect, LayoutRect::zero(), None);
-                    }
-                }
-            }
-
-            return true
-        }
-
-        false
+        true
     }
 
 impl PrimitiveInstance {
