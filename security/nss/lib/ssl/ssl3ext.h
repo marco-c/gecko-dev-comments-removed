@@ -77,6 +77,16 @@ struct TLSExtensionDataStr {
     SSLSignatureScheme *sigSchemes;
     unsigned int numSigSchemes;
 
+    
+
+
+
+
+    SSLSignatureScheme *delegCredSigSchemes;
+    unsigned int numDelegCredSigSchemes;
+    SSLSignatureScheme *delegCredSigSchemesAdvertised;
+    unsigned int numDelegCredSigSchemesAdvertised;
+
     SECItem certReqContext;
     CERTDistNames certReqAuthorities;
 

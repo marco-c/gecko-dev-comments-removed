@@ -150,8 +150,6 @@ PRBool
 tls13_IsVerifyingWithDelegatedCredential(const sslSocket *ss)
 {
     
-
-
     if (ss->sec.isServer ||
         !ss->opt.enableDelegatedCredentials ||
         !ss->xtnData.peerDelegCred) {
@@ -200,12 +198,13 @@ tls13_MaybeSetDelegatedCredential(sslSocket *ss)
     PORT_Assert(ss->sec.isServer);
     PORT_Assert(ss->sec.serverCert);
     PORT_Assert(ss->version >= SSL_LIBRARY_VERSION_TLS_1_3);
-    PORT_Assert(ss->xtnData.sigSchemes);
+    PORT_Assert(ss->xtnData.peerRequestedDelegCred == !!ss->xtnData.delegCredSigSchemes);
 
     
 
 
     if (!ss->xtnData.peerRequestedDelegCred ||
+        !ss->xtnData.delegCredSigSchemes ||
         !ss->sec.serverCert->delegCred.len ||
         !ss->sec.serverCert->delegCredKeyPair) {
         return SECSuccess;
@@ -228,8 +227,8 @@ tls13_MaybeSetDelegatedCredential(sslSocket *ss)
 
     if (!ssl_SignatureSchemeEnabled(ss, scheme) ||
         !ssl_CanUseSignatureScheme(scheme,
-                                   ss->xtnData.sigSchemes,
-                                   ss->xtnData.numSigSchemes,
+                                   ss->xtnData.delegCredSigSchemes,
+                                   ss->xtnData.numDelegCredSigSchemes,
                                    PR_FALSE ,
                                    doesRsaPss)) {
         return SECSuccess;
@@ -380,6 +379,12 @@ tls13_VerifyCredentialSignature(sslSocket *ss, sslDelegatedCredential *dc)
         goto loser;
     }
 
+    SECOidTag spkiAlg = SECOID_GetAlgorithmTag(&(dc->spki->algorithm));
+    if (spkiAlg == SEC_OID_PKCS1_RSA_ENCRYPTION) {
+        FATAL_ERROR(ss, SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM, illegal_parameter);
+        goto loser;
+    }
+
     SECKEY_DestroyPublicKey(pubKey);
     sslBuffer_Clear(&dcBuf);
     return SECSuccess;
@@ -435,8 +440,10 @@ static SECStatus
 tls13_CheckCredentialExpiration(sslSocket *ss, sslDelegatedCredential *dc)
 {
     SECStatus rv;
-    PRTime start, end ;
     CERTCertificate *cert = ss->sec.peerCert;
+    
+    static const PRTime kMaxDcValidity = ((PRTime)7 * 24 * 60 * 60 * PR_USEC_PER_SEC);
+    PRTime start, now, end; 
 
     rv = DER_DecodeTimeChoice(&start, &cert->validity.notBefore);
     if (rv != SECSuccess) {
@@ -445,13 +452,21 @@ tls13_CheckCredentialExpiration(sslSocket *ss, sslDelegatedCredential *dc)
     }
 
     end = start + ((PRTime)dc->validTime * PR_USEC_PER_SEC);
-    if (ssl_Time(ss) > end) {
+    now = ssl_Time(ss);
+    if (now > end || end < 0) {
         FATAL_ERROR(ss, SSL_ERROR_DC_EXPIRED, illegal_parameter);
+        return SECFailure;
+    }
+
+    
+    if (end - now > kMaxDcValidity) {
+        FATAL_ERROR(ss, SSL_ERROR_DC_INAPPROPRIATE_VALIDITY_PERIOD, illegal_parameter);
         return SECFailure;
     }
 
     return SECSuccess;
 }
+
 
 
 
@@ -561,8 +576,6 @@ tls13_MakePssSpki(const SECKEYPublicKey *pub, SECOidTag hashOid)
         goto loser; 
     }
 
-    PORT_Assert(pub->u.rsa.modulus.type == siUnsignedInteger);
-    PORT_Assert(pub->u.rsa.publicExponent.type == siUnsignedInteger);
     SECItem *pubItem = SEC_ASN1EncodeItem(arena, &spki->subjectPublicKey, pub,
                                           SEC_ASN1_GET(SECKEY_RSAPublicKeyTemplate));
     if (!pubItem) {
@@ -587,12 +600,10 @@ tls13_MakeDcSpki(const SECKEYPublicKey *dcPub, SSLSignatureScheme dcCertVerifyAl
                 
 
 
-
                 case ssl_sig_rsa_pss_rsae_sha256:
                 case ssl_sig_rsa_pss_rsae_sha384:
                 case ssl_sig_rsa_pss_rsae_sha512:
                     return SECKEY_CreateSubjectPublicKeyInfo(dcPub);
-
                 case ssl_sig_rsa_pss_pss_sha256:
                     hashOid = SEC_OID_SHA256;
                     break;
@@ -717,6 +728,9 @@ SSLExp_DelegateCredential(const CERTCertificate *cert,
     if (dc->alg == ssl_sig_none) {
         SECOidTag spkiOid = SECOID_GetAlgorithmTag(&cert->subjectPublicKeyInfo.algorithm);
         
+
+
+
 
         if (spkiOid == SEC_OID_PKCS1_RSA_ENCRYPTION) {
             SSLSignatureScheme scheme = ssl_sig_rsa_pss_rsae_sha256;

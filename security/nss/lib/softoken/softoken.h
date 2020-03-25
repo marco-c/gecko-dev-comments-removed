@@ -145,7 +145,9 @@ extern PRBool sftk_fatalError;
 
 
 
-#if defined(XP_UNIX) && !defined(NO_FORK_CHECK)
+
+
+#if defined(XP_UNIX) && defined(DO_FORK_CHECK)
 
 #ifdef DEBUG
 
@@ -258,6 +260,19 @@ extern PRBool sftkForkCheckDisabled;
 #define NO_FORK_CHECK
 #endif
 
+#endif
+
+
+
+
+
+
+
+
+#ifdef NO_FORK_CHECK
+#define NSS_INTERFACE_FLAGS CKF_INTERFACE_FORK_SAFE
+#else
+#define NSS_INTERFACE_FLAGS 0
 #endif
 
 SEC_END_PROTOS

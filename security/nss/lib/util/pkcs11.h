@@ -179,8 +179,12 @@ extern "C" {
 
 #define __PASTE(x, y) x##y
 
+#ifndef CK_PKCS11_3_0
 
-#include "pkcs11p.h"
+#define __NSS_CK_PKCS11_3_IMPLICIT 1
+#define CK_PKCS11_3_0 1
+#endif
+
 
 
 
@@ -228,7 +232,8 @@ extern "C" {
     __PASTE(CK_, name)                \
     name;
 
-struct CK_FUNCTION_LIST {
+#include "pkcs11p.h"
+struct CK_FUNCTION_LIST_3_0 {
 
     CK_VERSION version; 
 
@@ -238,12 +243,29 @@ struct CK_FUNCTION_LIST {
 #include "pkcs11f.h"
 };
 
+#define CK_PKCS11_2_0_ONLY 1
+
+
+struct CK_FUNCTION_LIST {
+
+    CK_VERSION version; 
+
+
+
+
+#include "pkcs11f.h"
+};
+#include "pkcs11u.h"
+
 #undef CK_PKCS11_FUNCTION_INFO
+#undef CK_PKCS11_2_0_ONLY
+
+#ifdef __NSS_CK_PKCS11_3_IMPLICIT
+#undef CK_PKCS11_3_0
+#undef __NSS_CK_PKCS11_3_IMPLICIT
+#endif
 
 #undef __PASTE
-
-
-#include "pkcs11u.h"
 
 #ifdef __cplusplus
 }

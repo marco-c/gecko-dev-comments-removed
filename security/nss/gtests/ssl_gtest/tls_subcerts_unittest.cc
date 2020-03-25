@@ -18,6 +18,7 @@ namespace nss_test {
 
 const std::string kEcdsaDelegatorId = TlsAgent::kDelegatorEcdsa256;
 const std::string kRsaeDelegatorId = TlsAgent::kDelegatorRsae2048;
+const std::string kPssDelegatorId = TlsAgent::kDelegatorRsaPss2048;
 const std::string kDCId = TlsAgent::kServerEcdsa256;
 const SSLSignatureScheme kDCScheme = ssl_sig_ecdsa_secp256r1_sha256;
 const PRUint32 kDCValidFor = 60 * 60 * 24 * 7 ;
@@ -123,6 +124,23 @@ TEST_P(TlsConnectTls13, DCConnectEcdsaP256) {
 }
 
 
+TEST_P(TlsConnectTls13, DCConnectEcdsaP483) {
+  Reset(kEcdsaDelegatorId);
+  client_->EnableDelegatedCredentials();
+  server_->AddDelegatedCredential(TlsAgent::kServerEcdsa384,
+                                  ssl_sig_ecdsa_secp384r1_sha384, kDCValidFor,
+                                  now());
+
+  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
+      client_, ssl_delegated_credentials_xtn);
+  Connect();
+
+  EXPECT_TRUE(cfilter->captured());
+  CheckPeerDelegCred(client_, true, 384);
+  EXPECT_EQ(ssl_sig_ecdsa_secp384r1_sha384, client_->info().signatureScheme);
+}
+
+
 TEST_P(TlsConnectTls13, DCConnectEcdsaP521) {
   Reset(kEcdsaDelegatorId);
   client_->EnableDelegatedCredentials();
@@ -141,45 +159,7 @@ TEST_P(TlsConnectTls13, DCConnectEcdsaP521) {
 }
 
 
-TEST_P(TlsConnectTls13, DCConnectRsaPssRsae) {
-  Reset(kEcdsaDelegatorId);
-  client_->EnableDelegatedCredentials();
-  server_->AddDelegatedCredential(
-      TlsAgent::kServerRsaPss, ssl_sig_rsa_pss_rsae_sha256, kDCValidFor, now());
-
-  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
-      client_, ssl_delegated_credentials_xtn);
-  Connect();
-
-  EXPECT_TRUE(cfilter->captured());
-  CheckPeerDelegCred(client_, true, 1024);
-  EXPECT_EQ(ssl_sig_rsa_pss_rsae_sha256, client_->info().signatureScheme);
-}
-
-
-TEST_P(TlsConnectTls13, DCConnectRsaeDelegator) {
-  Reset(kRsaeDelegatorId);
-
-  static const SSLSignatureScheme kSchemes[] = {ssl_sig_rsa_pss_rsae_sha256,
-                                                ssl_sig_rsa_pss_pss_sha256};
-  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
-  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
-
-  client_->EnableDelegatedCredentials();
-  server_->AddDelegatedCredential(
-      TlsAgent::kServerRsaPss, ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now());
-
-  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
-      client_, ssl_delegated_credentials_xtn);
-  Connect();
-
-  EXPECT_TRUE(cfilter->captured());
-  CheckPeerDelegCred(client_, true, 1024);
-  EXPECT_EQ(ssl_sig_rsa_pss_pss_sha256, client_->info().signatureScheme);
-}
-
-
-TEST_P(TlsConnectTls13, DCConnectRsaPssPss) {
+TEST_P(TlsConnectTls13, DCConnectRsaPssEcdsa) {
   Reset(kEcdsaDelegatorId);
 
   
@@ -199,6 +179,166 @@ TEST_P(TlsConnectTls13, DCConnectRsaPssPss) {
   EXPECT_TRUE(cfilter->captured());
   CheckPeerDelegCred(client_, true, 1024);
   EXPECT_EQ(ssl_sig_rsa_pss_pss_sha256, client_->info().signatureScheme);
+}
+
+
+TEST_P(TlsConnectTls13, DCConnectRsaPssRsaPss) {
+  Reset(kPssDelegatorId);
+
+  
+  static const SSLSignatureScheme kSchemes[] = {ssl_sig_ecdsa_secp256r1_sha256,
+                                                ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+
+  client_->EnableDelegatedCredentials();
+  server_->AddDelegatedCredential(
+      TlsAgent::kServerRsaPss, ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now());
+
+  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
+      client_, ssl_delegated_credentials_xtn);
+  Connect();
+
+  EXPECT_TRUE(cfilter->captured());
+  CheckPeerDelegCred(client_, true, 1024);
+  EXPECT_EQ(ssl_sig_rsa_pss_pss_sha256, client_->info().signatureScheme);
+}
+
+
+TEST_P(TlsConnectTls13, DCConnectEcdsaP256RsaPss) {
+  Reset(kPssDelegatorId);
+
+  
+  static const SSLSignatureScheme kSchemes[] = {ssl_sig_ecdsa_secp256r1_sha256,
+                                                ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+
+  client_->EnableDelegatedCredentials();
+  server_->AddDelegatedCredential(TlsAgent::kServerEcdsa256,
+                                  ssl_sig_ecdsa_secp256r1_sha256, kDCValidFor,
+                                  now());
+
+  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
+      client_, ssl_delegated_credentials_xtn);
+  Connect();
+
+  EXPECT_TRUE(cfilter->captured());
+  CheckPeerDelegCred(client_, true, 256);
+  EXPECT_EQ(ssl_sig_ecdsa_secp256r1_sha256, client_->info().signatureScheme);
+}
+
+
+
+TEST_P(TlsConnectTls13, DCReceiveUnadvertisedScheme) {
+  Reset(kEcdsaDelegatorId);
+  static const SSLSignatureScheme kClientSchemes[] = {
+      ssl_sig_ecdsa_secp256r1_sha256, ssl_sig_ecdsa_secp384r1_sha384};
+  static const SSLSignatureScheme kServerSchemes[] = {
+      ssl_sig_ecdsa_secp384r1_sha384, ssl_sig_ecdsa_secp256r1_sha256};
+  static const SSLSignatureScheme kEcdsaP256Only[] = {
+      ssl_sig_ecdsa_secp256r1_sha256};
+  client_->SetSignatureSchemes(kClientSchemes, PR_ARRAY_SIZE(kClientSchemes));
+  server_->SetSignatureSchemes(kServerSchemes, PR_ARRAY_SIZE(kServerSchemes));
+  client_->EnableDelegatedCredentials();
+  server_->AddDelegatedCredential(TlsAgent::kServerEcdsa384,
+                                  ssl_sig_ecdsa_secp384r1_sha384, kDCValidFor,
+                                  now());
+  StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+                         
+  SECStatus rv = SSLInt_SetDCAdvertisedSigSchemes(
+      client_->ssl_fd(), kEcdsaP256Only, PR_ARRAY_SIZE(kEcdsaP256Only));
+  EXPECT_EQ(SECSuccess, rv);
+  ExpectAlert(client_, kTlsAlertIllegalParameter);
+  Handshake();
+  client_->CheckErrorCode(SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM);
+  server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
+}
+
+
+
+TEST_P(TlsConnectTls13, DCConnectServerRsaeOnly) {
+  Reset(kRsaeDelegatorId);
+  static const SSLSignatureScheme kClientSchemes[] = {
+      ssl_sig_rsa_pss_rsae_sha256, ssl_sig_rsa_pss_pss_sha256};
+  static const SSLSignatureScheme kServerSchemes[] = {
+      ssl_sig_rsa_pss_rsae_sha256};
+  client_->SetSignatureSchemes(kClientSchemes, PR_ARRAY_SIZE(kClientSchemes));
+  server_->SetSignatureSchemes(kServerSchemes, PR_ARRAY_SIZE(kServerSchemes));
+  client_->EnableDelegatedCredentials();
+  Connect();
+
+  CheckPeerDelegCred(client_, false);
+}
+
+
+TEST_P(TlsConnectTls13, DCConnectRsaeDelegator) {
+  Reset(kRsaeDelegatorId);
+
+  static const SSLSignatureScheme kSchemes[] = {ssl_sig_rsa_pss_rsae_sha256,
+                                                ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+
+  client_->EnableDelegatedCredentials();
+  server_->AddDelegatedCredential(
+      TlsAgent::kServerRsaPss, ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now());
+  ConnectExpectAlert(client_, kTlsAlertIllegalParameter);
+  server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
+  client_->CheckErrorCode(SSL_ERROR_UNSUPPORTED_SIGNATURE_ALGORITHM);
+}
+
+
+
+TEST_P(TlsConnectTls13, DCConnectClientRsaeOnly) {
+  Reset(kRsaeDelegatorId);
+  static const SSLSignatureScheme kClientSchemes[] = {
+      ssl_sig_rsa_pss_rsae_sha256};
+  static const SSLSignatureScheme kServerSchemes[] = {
+      ssl_sig_rsa_pss_rsae_sha256, ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kClientSchemes, PR_ARRAY_SIZE(kClientSchemes));
+  server_->SetSignatureSchemes(kServerSchemes, PR_ARRAY_SIZE(kServerSchemes));
+  client_->EnableDelegatedCredentials();
+  auto cfilter = MakeTlsFilter<TlsExtensionCapture>(
+      client_, ssl_delegated_credentials_xtn);
+  Connect();
+  EXPECT_FALSE(cfilter->captured());
+  CheckPeerDelegCred(client_, false);
+}
+
+
+
+
+
+TEST_P(TlsConnectTls13, DCConnectRsaeDcSpki) {
+  Reset(kRsaeDelegatorId);
+
+  static const SSLSignatureScheme kSchemes[] = {ssl_sig_rsa_pss_rsae_sha256,
+                                                ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  client_->EnableDelegatedCredentials();
+
+  EnsureTlsSetup();
+  ScopedSECKEYPublicKey pub;
+  ScopedSECKEYPrivateKey priv;
+  EXPECT_TRUE(
+      TlsAgent::LoadKeyPairFromCert(TlsAgent::kDelegatorRsae2048, &pub, &priv));
+
+  StackSECItem dc;
+  server_->DelegateCredential(server_->name(), pub, ssl_sig_rsa_pss_rsae_sha256,
+                              kDCValidFor, now(), &dc);
+
+  SSLExtraServerCertData extra_data = {ssl_auth_null, nullptr, nullptr,
+                                       nullptr,       &dc,     priv.get()};
+  EXPECT_TRUE(server_->ConfigServerCert(server_->name(), true, &extra_data));
+  auto sfilter = MakeTlsFilter<TlsExtensionCapture>(
+      server_, ssl_delegated_credentials_xtn);
+  Connect();
+  EXPECT_FALSE(sfilter->captured());
+  CheckPeerDelegCred(client_, false);
 }
 
 
@@ -244,8 +384,12 @@ static void GenerateWeakRsaKey(ScopedSECKEYPrivateKey& priv,
 
 
 TEST_P(TlsConnectTls13, DCWeakKey) {
-  Reset(kEcdsaDelegatorId);
+  Reset(kPssDelegatorId);
   EnsureTlsSetup();
+  static const SSLSignatureScheme kSchemes[] = {ssl_sig_rsa_pss_rsae_sha256,
+                                                ssl_sig_rsa_pss_pss_sha256};
+  client_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
+  server_->SetSignatureSchemes(kSchemes, PR_ARRAY_SIZE(kSchemes));
 
   ScopedSECKEYPrivateKey dc_priv;
   ScopedSECKEYPublicKey dc_pub;
@@ -254,14 +398,14 @@ TEST_P(TlsConnectTls13, DCWeakKey) {
 
   
   StackSECItem dc;
-  TlsAgent::DelegateCredential(kEcdsaDelegatorId, dc_pub,
-                               ssl_sig_rsa_pss_rsae_sha256, kDCValidFor, now(),
+  TlsAgent::DelegateCredential(kPssDelegatorId, dc_pub,
+                               ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now(),
                                &dc);
 
   
   SSLExtraServerCertData extra_data = {ssl_auth_null, nullptr, nullptr,
                                        nullptr,       &dc,     dc_priv.get()};
-  EXPECT_TRUE(server_->ConfigServerCert(kEcdsaDelegatorId, true, &extra_data));
+  EXPECT_TRUE(server_->ConfigServerCert(kPssDelegatorId, true, &extra_data));
 
   client_->EnableDelegatedCredentials();
 
@@ -315,7 +459,7 @@ TEST_P(TlsConnectTls13, DCAbortBadSignature) {
   ASSERT_TRUE(dc.data != nullptr);
 
   
-  dc.data[0] ^= 0x01;
+  dc.data[dc.len - 1] ^= 0x01;
 
   SSLExtraServerCertData extra_data = {ssl_auth_null, nullptr, nullptr,
                                        nullptr,       &dc,     priv.get()};
@@ -336,6 +480,17 @@ TEST_P(TlsConnectTls13, DCAbortExpired) {
   AdvanceTime((static_cast<PRTime>(kDCValidFor) + 1) * PR_USEC_PER_SEC);
   ConnectExpectAlert(client_, kTlsAlertIllegalParameter);
   client_->CheckErrorCode(SSL_ERROR_DC_EXPIRED);
+  server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
+}
+
+
+TEST_P(TlsConnectTls13, DCAbortExcessiveTTL) {
+  Reset(kEcdsaDelegatorId);
+  server_->AddDelegatedCredential(kDCId, kDCScheme,
+                                  kDCValidFor + 1 , now());
+  client_->EnableDelegatedCredentials();
+  ConnectExpectAlert(client_, kTlsAlertIllegalParameter);
+  client_->CheckErrorCode(SSL_ERROR_DC_INAPPROPRIATE_VALIDITY_PERIOD);
   server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
 }
 
@@ -529,19 +684,18 @@ TEST_F(DCDelegation, DCDelegations) {
   EXPECT_EQ(SSL_ERROR_INCORRECT_SIGNATURE_ALGORITHM, PORT_GetError());
 
   
-  EXPECT_EQ(SECSuccess,
-            SSL_DelegateCredential(cert.get(), priv.get(), pub_rsa.get(),
-                                   ssl_sig_rsa_pss_rsae_sha256, kDCValidFor,
-                                   now, &dc));
+  EXPECT_EQ(SECSuccess, SSL_DelegateCredential(
+                            cert.get(), priv.get(), pub_rsa.get(),
+                            ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now, &dc));
   
   dc.Reset();
   EXPECT_EQ(SECSuccess, SSL_DelegateCredential(
                             cert.get(), priv.get(), pub_rsa.get(),
-                            ssl_sig_rsa_pss_pss_sha256, kDCValidFor, now, &dc));
+                            ssl_sig_rsa_pss_pss_sha384, kDCValidFor, now, &dc));
   dc.Reset();
   EXPECT_EQ(SECSuccess, SSL_DelegateCredential(
                             cert.get(), priv.get(), pub_rsa.get(),
-                            ssl_sig_rsa_pss_pss_sha384, kDCValidFor, now, &dc));
+                            ssl_sig_rsa_pss_pss_sha512, kDCValidFor, now, &dc));
   dc.Reset();
 
   ScopedSECKEYPublicKey pub_ecdsa;

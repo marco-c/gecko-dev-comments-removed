@@ -76,8 +76,9 @@ class TlsAgent : public PollTarget {
   static const std::string kServerEcdhEcdsa;
   static const std::string kServerEcdhRsa;
   static const std::string kServerDsa;
-  static const std::string kDelegatorEcdsa256;  
-  static const std::string kDelegatorRsae2048;  
+  static const std::string kDelegatorEcdsa256;    
+  static const std::string kDelegatorRsae2048;    
+  static const std::string kDelegatorRsaPss2048;  
 
   TlsAgent(const std::string& name, Role role, SSLProtocolVariant variant);
   virtual ~TlsAgent();

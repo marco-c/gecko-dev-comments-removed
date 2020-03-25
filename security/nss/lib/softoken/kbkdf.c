@@ -605,6 +605,10 @@ kbkdf_CreateKey(CK_MECHANISM_TYPE kdf_mech, CK_SESSION_HANDLE hSession, CK_DERIV
     SFTKSlot *slot = sftk_SlotFromSessionHandle(hSession);
     size_t offset = 0;
 
+    
+
+
+    PR_ASSERT(slot != NULL);
     PR_ASSERT(ret_key != NULL);
     PR_ASSERT(derived_key != NULL);
     PR_ASSERT(derived_key->phKey != NULL);
@@ -657,10 +661,10 @@ kbkdf_FinalizeKey(CK_SESSION_HANDLE hSession, CK_DERIVED_KEY_PTR derived_key, SF
     sessionForKey->wasDerived = PR_TRUE;
 
     session = sftk_SessionFromHandle(hSession);
-    if (session == NULL) {
-        ret = CKR_HOST_MEMORY;
-        goto done;
-    }
+
+    
+
+    PR_ASSERT(session != NULL);
 
     ret = sftk_handleObject(key, session);
     if (ret != CKR_OK) {
