@@ -400,7 +400,7 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
 
 
 
-class nsFlexContainerFrame::FlexItem : public LinkedListElement<FlexItem> {
+class nsFlexContainerFrame::FlexItem final {
  public:
   
   FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
@@ -914,58 +914,40 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
   }
 
   
-  FlexItem* GetFirstItem() {
-    MOZ_ASSERT(mItems.isEmpty() == (NumItems() == 0),
-               "NumItems() bookkeeping is off");
-    return mItems.getFirst();
-  }
+  
+  
+  
+  FlexItem& FirstItem() { return mItems[0]; }
+  const FlexItem& FirstItem() const { return mItems[0]; }
 
-  const FlexItem* GetFirstItem() const {
-    MOZ_ASSERT(mItems.isEmpty() == (NumItems() == 0),
-               "NumItems() bookkeeping is off");
-    return mItems.getFirst();
-  }
+  FlexItem& LastItem() { return mItems.LastElement(); }
+  const FlexItem& LastItem() const { return mItems.LastElement(); }
 
-  FlexItem* GetLastItem() {
-    MOZ_ASSERT(mItems.isEmpty() == (NumItems() == 0),
-               "NumItems() bookkeeping is off");
-    return mItems.getLast();
-  }
+  bool IsEmpty() const { return mItems.IsEmpty(); }
 
-  const FlexItem* GetLastItem() const {
-    MOZ_ASSERT(mItems.isEmpty() == (NumItems() == 0),
-               "NumItems() bookkeeping is off");
-    return mItems.getLast();
-  }
+  uint32_t NumItems() const { return mItems.Length(); }
 
-  bool IsEmpty() const {
-    MOZ_ASSERT(mItems.isEmpty() == (NumItems() == 0),
-               "NumItems() bookkeeping is off");
-    return mItems.isEmpty();
-  }
-
-  uint32_t NumItems() const {
-    MOZ_ASSERT(mItems.isEmpty() == (mNumItems == 0),
-               "NumItems() bookkeeping is off");
-    return mNumItems;
-  }
+  nsTArray<FlexItem>& Items() { return mItems; }
+  const nsTArray<FlexItem>& Items() const { return mItems; }
 
   
   
   
   
-  void AddItem(FlexItem* aItem, bool aShouldInsertAtFront,
+  void AddItem(const FlexItem& aItem, bool aShouldInsertAtFront,
                nscoord aItemInnerHypotheticalMainSize,
                nscoord aItemOuterHypotheticalMainSize) {
     if (aShouldInsertAtFront) {
-      mItems.insertFront(aItem);
+      
+      
+      
+      mItems.InsertElementAt(0, aItem);
     } else {
-      mItems.insertBack(aItem);
+      mItems.AppendElement(aItem);
     }
 
     
-    mNumItems++;
-    if (aItem->IsFrozen()) {
+    if (aItem.IsFrozen()) {
       mNumFrozenItems++;
     }
 
@@ -1060,13 +1042,8 @@ class nsFlexContainerFrame::FlexLine : public LinkedListElement<FlexLine> {
   void FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
                                        bool aIsFinalIteration);
 
-  AutoCleanLinkedList<FlexItem> mItems;  
-
   
-  
-  
-  
-  uint32_t mNumItems = 0;
+  nsTArray<FlexItem> mItems;
 
   
   
@@ -1109,10 +1086,9 @@ static void BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
 
   uint32_t itemIdxInContainer = 0;
   for (const FlexLine* line = aFirstLine; line; line = line->getNext()) {
-    for (const FlexItem* item = line->GetFirstItem(); item;
-         item = item->getNext()) {
+    for (const FlexItem& item : line->Items()) {
       if (StyleVisibility::Collapse ==
-          item->Frame()->StyleVisibility()->mVisible) {
+          item.Frame()->StyleVisibility()->mVisible) {
         
         aStruts.AppendElement(
             StrutInfo(itemIdxInContainer, line->LineCrossSize()));
@@ -2471,36 +2447,39 @@ void FlexLine::FreezeItemsEarly(bool aIsUsingFlexGrow,
   
   
   uint32_t numUnfrozenItemsToBeSeen = NumItems() - mNumFrozenItems;
-  for (FlexItem* item = mItems.getFirst(); numUnfrozenItemsToBeSeen > 0;
-       item = item->getNext()) {
-    MOZ_ASSERT(item, "numUnfrozenItemsToBeSeen says items remain to be seen");
+  for (FlexItem& item : Items()) {
+    if (numUnfrozenItemsToBeSeen == 0) {
+      break;
+    }
 
-    if (!item->IsFrozen()) {
+    if (!item.IsFrozen()) {
       numUnfrozenItemsToBeSeen--;
-      bool shouldFreeze = (0.0f == item->GetFlexFactor(aIsUsingFlexGrow));
+      bool shouldFreeze = (0.0f == item.GetFlexFactor(aIsUsingFlexGrow));
       if (!shouldFreeze) {
         if (aIsUsingFlexGrow) {
-          if (item->FlexBaseSize() > item->MainSize()) {
+          if (item.FlexBaseSize() > item.MainSize()) {
             shouldFreeze = true;
           }
         } else {  
-          if (item->FlexBaseSize() < item->MainSize()) {
+          if (item.FlexBaseSize() < item.MainSize()) {
             shouldFreeze = true;
           }
         }
       }
       if (shouldFreeze) {
         
-        item->Freeze();
-        if (item->FlexBaseSize() < item->MainSize()) {
-          item->SetWasMinClamped();
-        } else if (item->FlexBaseSize() > item->MainSize()) {
-          item->SetWasMaxClamped();
+        item.Freeze();
+        if (item.FlexBaseSize() < item.MainSize()) {
+          item.SetWasMinClamped();
+        } else if (item.FlexBaseSize() > item.MainSize()) {
+          item.SetWasMaxClamped();
         }
         mNumFrozenItems++;
       }
     }
   }
+
+  MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 }
 
 
@@ -2525,30 +2504,32 @@ void FlexLine::FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
   
   
   uint32_t numUnfrozenItemsToBeSeen = NumItems() - mNumFrozenItems;
-  for (FlexItem* item = mItems.getFirst(); numUnfrozenItemsToBeSeen > 0;
-       item = item->getNext()) {
-    MOZ_ASSERT(item, "numUnfrozenItemsToBeSeen says items remain to be seen");
-    if (!item->IsFrozen()) {
+  for (FlexItem& item : Items()) {
+    if (numUnfrozenItemsToBeSeen == 0) {
+      break;
+    }
+
+    if (!item.IsFrozen()) {
       numUnfrozenItemsToBeSeen--;
 
-      MOZ_ASSERT(!item->HadMinViolation() || !item->HadMaxViolation(),
+      MOZ_ASSERT(!item.HadMinViolation() || !item.HadMaxViolation(),
                  "Can have either min or max violation, but not both");
 
-      bool hadMinViolation = item->HadMinViolation();
-      bool hadMaxViolation = item->HadMaxViolation();
+      bool hadMinViolation = item.HadMinViolation();
+      bool hadMaxViolation = item.HadMaxViolation();
       if (eFreezeEverything == freezeType ||
           (eFreezeMinViolations == freezeType && hadMinViolation) ||
           (eFreezeMaxViolations == freezeType && hadMaxViolation)) {
-        MOZ_ASSERT(item->MainSize() >= item->MainMinSize(),
+        MOZ_ASSERT(item.MainSize() >= item.MainMinSize(),
                    "Freezing item at a size below its minimum");
-        MOZ_ASSERT(item->MainSize() <= item->MainMaxSize(),
+        MOZ_ASSERT(item.MainSize() <= item.MainMaxSize(),
                    "Freezing item at a size above its maximum");
 
-        item->Freeze();
+        item.Freeze();
         if (hadMinViolation) {
-          item->SetWasMinClamped();
+          item.SetWasMinClamped();
         } else if (hadMaxViolation) {
-          item->SetWasMaxClamped();
+          item.SetWasMaxClamped();
         }
         mNumFrozenItems++;
       } else if (MOZ_UNLIKELY(aIsFinalIteration)) {
@@ -2557,17 +2538,19 @@ void FlexLine::FreezeOrRestoreEachFlexibleSize(const nscoord aTotalViolation,
         NS_ERROR(
             "Final iteration still has unfrozen items, this shouldn't"
             " happen unless there was nscoord under/overflow.");
-        item->Freeze();
+        item.Freeze();
         mNumFrozenItems++;
       }  
          
 
-      if (!item->IsFrozen()) {
+      if (!item.IsFrozen()) {
         
-        item->ClearViolationFlags();
+        item.ClearViolationFlags();
       }
     }
   }
+
+  MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 }
 
 void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
@@ -2580,10 +2563,10 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   if (aLineInfo) {
     uint32_t itemIndex = 0;
-    for (FlexItem* item = mItems.getFirst(); item;
-         item = item->getNext(), ++itemIndex) {
-      aLineInfo->mItems[itemIndex].mMainBaseSize = item->FlexBaseSize();
+    for (FlexItem& item : Items()) {
+      aLineInfo->mItems[itemIndex].mMainBaseSize = item.FlexBaseSize();
       aLineInfo->mItems[itemIndex].mMainDeltaSize = 0;
+      ++itemIndex;
     }
   }
 
@@ -2631,11 +2614,11 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
     
     
     nscoord availableFreeSpace = spaceAvailableForFlexItemsContentBoxes;
-    for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
-      if (!item->IsFrozen()) {
-        item->SetMainSize(item->FlexBaseSize());
+    for (FlexItem& item : Items()) {
+      if (!item.IsFrozen()) {
+        item.SetMainSize(item.FlexBaseSize());
       }
-      availableFreeSpace -= item->MainSize();
+      availableFreeSpace -= item.MainSize();
     }
 
     FLEX_LOG(" available free space = %d", availableFreeSpace);
@@ -2681,15 +2664,16 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
       
       
       uint32_t numUnfrozenItemsToBeSeen = NumItems() - mNumFrozenItems;
-      for (FlexItem* item = mItems.getFirst(); numUnfrozenItemsToBeSeen > 0;
-           item = item->getNext()) {
-        MOZ_ASSERT(item,
-                   "numUnfrozenItemsToBeSeen says items remain to be seen");
-        if (!item->IsFrozen()) {
+      for (FlexItem& item : Items()) {
+        if (numUnfrozenItemsToBeSeen == 0) {
+          break;
+        }
+
+        if (!item.IsFrozen()) {
           numUnfrozenItemsToBeSeen--;
 
-          float curWeight = item->GetWeight(isUsingFlexGrow);
-          float curFlexFactor = item->GetFlexFactor(isUsingFlexGrow);
+          float curWeight = item.GetWeight(isUsingFlexGrow);
+          float curFlexFactor = item.GetFlexFactor(isUsingFlexGrow);
           MOZ_ASSERT(curWeight >= 0.0f, "weights are non-negative");
           MOZ_ASSERT(curFlexFactor >= 0.0f, "flex factors are non-negative");
 
@@ -2698,9 +2682,9 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
           if (IsFinite(weightSum)) {
             if (curWeight == 0.0f) {
-              item->SetShareOfWeightSoFar(0.0f);
+              item.SetShareOfWeightSoFar(0.0f);
             } else {
-              item->SetShareOfWeightSoFar(curWeight / weightSum);
+              item.SetShareOfWeightSoFar(curWeight / weightSum);
             }
           }  
              
@@ -2716,6 +2700,8 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
           }
         }
       }
+
+      MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 
       if (weightSum != 0.0f) {
         MOZ_ASSERT(flexFactorSum != 0.0f,
@@ -2757,18 +2743,19 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
         
         
         
-        for (FlexItem* item = mItems.getLast(); numUnfrozenItemsToBeSeen > 0;
-             item = item->getPrevious()) {
-          MOZ_ASSERT(item,
-                     "numUnfrozenItemsToBeSeen says items remain to be seen");
-          if (!item->IsFrozen()) {
+        for (FlexItem& item : Reversed(Items())) {
+          if (numUnfrozenItemsToBeSeen == 0) {
+            break;
+          }
+
+          if (!item.IsFrozen()) {
             numUnfrozenItemsToBeSeen--;
 
             
             
             nscoord sizeDelta = 0;
             if (IsFinite(weightSum)) {
-              float myShareOfRemainingSpace = item->ShareOfWeightSoFar();
+              float myShareOfRemainingSpace = item.ShareOfWeightSoFar();
 
               MOZ_ASSERT(myShareOfRemainingSpace >= 0.0f &&
                              myShareOfRemainingSpace <= 1.0f,
@@ -2782,7 +2769,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
                 sizeDelta = NSToCoordRound(availableFreeSpace *
                                            myShareOfRemainingSpace);
               }
-            } else if (item->GetWeight(isUsingFlexGrow) == largestWeight) {
+            } else if (item.GetWeight(isUsingFlexGrow) == largestWeight) {
               
               
               
@@ -2793,11 +2780,13 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
             availableFreeSpace -= sizeDelta;
 
-            item->SetMainSize(item->MainSize() + sizeDelta);
-            FLEX_LOG("  child %p receives %d, for a total of %d", item,
-                     sizeDelta, item->MainSize());
+            item.SetMainSize(item.MainSize() + sizeDelta);
+            FLEX_LOG("  child %p receives %d, for a total of %d", &item,
+                     sizeDelta, item.MainSize());
           }
         }
+
+        MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 
         
         
@@ -2805,9 +2794,8 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
         
         if (aLineInfo) {
           uint32_t itemIndex = 0;
-          for (FlexItem* item = mItems.getFirst(); item;
-               item = item->getNext(), ++itemIndex) {
-            if (!item->IsFrozen()) {
+          for (FlexItem& item : Items()) {
+            if (!item.IsFrozen()) {
               
               
               
@@ -2818,10 +2806,11 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
               
               
               nscoord deltaSize =
-                  item->MainSize() - aLineInfo->mItems[itemIndex].mMainBaseSize;
+                  item.MainSize() - aLineInfo->mItems[itemIndex].mMainBaseSize;
 
               aLineInfo->mItems[itemIndex].mMainDeltaSize = deltaSize;
             }
+            ++itemIndex;
           }
         }
       }
@@ -2834,25 +2823,29 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
     
     
     uint32_t numUnfrozenItemsToBeSeen = NumItems() - mNumFrozenItems;
-    for (FlexItem* item = mItems.getFirst(); numUnfrozenItemsToBeSeen > 0;
-         item = item->getNext()) {
-      MOZ_ASSERT(item, "numUnfrozenItemsToBeSeen says items remain to be seen");
-      if (!item->IsFrozen()) {
+    for (FlexItem& item : Items()) {
+      if (numUnfrozenItemsToBeSeen == 0) {
+        break;
+      }
+
+      if (!item.IsFrozen()) {
         numUnfrozenItemsToBeSeen--;
 
-        if (item->MainSize() < item->MainMinSize()) {
+        if (item.MainSize() < item.MainMinSize()) {
           
-          totalViolation += item->MainMinSize() - item->MainSize();
-          item->SetMainSize(item->MainMinSize());
-          item->SetHadMinViolation();
-        } else if (item->MainSize() > item->MainMaxSize()) {
+          totalViolation += item.MainMinSize() - item.MainSize();
+          item.SetMainSize(item.MainMinSize());
+          item.SetHadMinViolation();
+        } else if (item.MainSize() > item.MainMaxSize()) {
           
-          totalViolation += item->MainMaxSize() - item->MainSize();
-          item->SetMainSize(item->MainMaxSize());
-          item->SetHadMaxViolation();
+          totalViolation += item.MainMaxSize() - item.MainSize();
+          item.SetMainSize(item.MainMaxSize());
+          item.SetHadMaxViolation();
         }
       }
     }
+
+    MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 
     FreezeOrRestoreEachFlexibleSize(totalViolation,
                                     iterationCounter + 1 == NumItems());
@@ -2873,8 +2866,8 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   MOZ_ASSERT(mNumFrozenItems == NumItems(), "All items should be frozen");
 
   
-  for (const FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
-    MOZ_ASSERT(item->IsFrozen(), "All items should be frozen");
+  for (const FlexItem& item : Items()) {
+    MOZ_ASSERT(item.IsFrozen(), "All items should be frozen");
   }
 #endif  
 }
@@ -2906,10 +2899,9 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   
   
-  for (const FlexItem* item = aLine->GetFirstItem(); item;
-       item = item->getNext()) {
-    mPackingSpaceRemaining -= item->OuterMainSize();
-    mNumAutoMarginsInMainAxis += item->NumAutoMarginsInMainAxis();
+  for (const FlexItem& item : aLine->Items()) {
+    mPackingSpaceRemaining -= item.OuterMainSize();
+    mNumAutoMarginsInMainAxis += item.NumAutoMarginsInMainAxis();
   }
 
   
@@ -3255,43 +3247,43 @@ void FlexLine::ComputeCrossSizeAndBaseline(
   nscoord crossStartToFurthestLastBaseline = nscoord_MIN;
   nscoord crossEndToFurthestLastBaseline = nscoord_MIN;
   nscoord largestOuterCrossSize = 0;
-  for (const FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
-    nscoord curOuterCrossSize = item->OuterCrossSize();
+  for (const FlexItem& item : Items()) {
+    nscoord curOuterCrossSize = item.OuterCrossSize();
 
-    if ((item->AlignSelf()._0 == StyleAlignFlags::BASELINE ||
-         item->AlignSelf()._0 == StyleAlignFlags::LAST_BASELINE) &&
-        item->NumAutoMarginsInCrossAxis() == 0) {
-      const bool useFirst = (item->AlignSelf()._0 == StyleAlignFlags::BASELINE);
-      
-      
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    if ((item.AlignSelf()._0 == StyleAlignFlags::BASELINE ||
+         item.AlignSelf()._0 == StyleAlignFlags::LAST_BASELINE) &&
+        item.NumAutoMarginsInCrossAxis() == 0) {
+      const bool useFirst = (item.AlignSelf()._0 == StyleAlignFlags::BASELINE);
       
       
 
-      nscoord crossStartToBaseline = item->BaselineOffsetFromOuterCrossEdge(
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      nscoord crossStartToBaseline = item.BaselineOffsetFromOuterCrossEdge(
           aAxisTracker.CrossAxisPhysicalStartSide(), useFirst);
       nscoord crossEndToBaseline = curOuterCrossSize - crossStartToBaseline;
 
@@ -3806,8 +3798,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
 
     
     
-    curLine->AddItem(item.release(), shouldInsertAtFront,
-                     itemInnerHypotheticalMainSize,
+    curLine->AddItem(*item, shouldInsertAtFront, itemInnerHypotheticalMainSize,
                      itemOuterHypotheticalMainSize);
 
     
@@ -3989,24 +3980,24 @@ void FlexLine::PositionItemsInMainAxis(
     nscoord aContentBoxMainSize, const FlexboxAxisTracker& aAxisTracker) {
   MainAxisPositionTracker mainAxisPosnTracker(
       aAxisTracker, this, aJustifyContent, aContentBoxMainSize);
-  for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
+  for (FlexItem& item : Items()) {
     nscoord itemMainBorderBoxSize =
-        item->MainSize() + item->BorderPaddingSizeInMainAxis();
+        item.MainSize() + item.BorderPaddingSizeInMainAxis();
 
     
-    mainAxisPosnTracker.ResolveAutoMarginsInMainAxis(*item);
+    mainAxisPosnTracker.ResolveAutoMarginsInMainAxis(item);
 
     
     
-    mainAxisPosnTracker.EnterMargin(item->Margin());
+    mainAxisPosnTracker.EnterMargin(item.Margin());
     mainAxisPosnTracker.EnterChildFrame(itemMainBorderBoxSize);
 
-    item->SetMainPosition(mainAxisPosnTracker.Position());
+    item.SetMainPosition(mainAxisPosnTracker.Position());
 
     mainAxisPosnTracker.ExitChildFrame(itemMainBorderBoxSize);
-    mainAxisPosnTracker.ExitMargin(item->Margin());
+    mainAxisPosnTracker.ExitMargin(item.Margin());
     mainAxisPosnTracker.TraversePackingSpace();
-    if (item->getNext()) {
+    if (&item != &Items().LastElement()) {
       mainAxisPosnTracker.TraverseGap(mMainGapSize);
     }
   }
@@ -4086,21 +4077,21 @@ void FlexLine::PositionItemsInCrossAxis(
     nscoord aLineStartPosition, const FlexboxAxisTracker& aAxisTracker) {
   SingleLineCrossAxisPositionTracker lineCrossAxisPosnTracker(aAxisTracker);
 
-  for (FlexItem* item = mItems.getFirst(); item; item = item->getNext()) {
+  for (FlexItem& item : Items()) {
     
     
-    item->ResolveStretchedCrossSize(mLineCrossSize);
-    lineCrossAxisPosnTracker.ResolveAutoMarginsInCrossAxis(*this, *item);
+    item.ResolveStretchedCrossSize(mLineCrossSize);
+    lineCrossAxisPosnTracker.ResolveAutoMarginsInCrossAxis(*this, item);
 
     
     nscoord itemCrossBorderBoxSize =
-        item->CrossSize() + item->BorderPaddingSizeInCrossAxis();
-    lineCrossAxisPosnTracker.EnterAlignPackingSpace(*this, *item, aAxisTracker);
-    lineCrossAxisPosnTracker.EnterMargin(item->Margin());
+        item.CrossSize() + item.BorderPaddingSizeInCrossAxis();
+    lineCrossAxisPosnTracker.EnterAlignPackingSpace(*this, item, aAxisTracker);
+    lineCrossAxisPosnTracker.EnterMargin(item.Margin());
     lineCrossAxisPosnTracker.EnterChildFrame(itemCrossBorderBoxSize);
 
-    item->SetCrossPosition(aLineStartPosition +
-                           lineCrossAxisPosnTracker.Position());
+    item.SetCrossPosition(aLineStartPosition +
+                          lineCrossAxisPosnTracker.Position());
 
     
     lineCrossAxisPosnTracker.ResetPosition();
@@ -4343,9 +4334,8 @@ void nsFlexContainerFrame::CreateFlexLineAndFlexItemInfo(
     
     
     
-    for (const FlexItem* item = line->GetFirstItem(); item;
-         item = item->getNext()) {
-      nsIFrame* frame = item->Frame();
+    for (const FlexItem& item : line->Items()) {
+      nsIFrame* frame = item.Frame();
 
       
       
@@ -4423,20 +4413,20 @@ void nsFlexContainerFrame::UpdateFlexLineAndItemInfo(
     lineInfo.mLastBaselineOffset = line->LastBaselineOffset();
 
     uint32_t itemIndex = 0;
-    for (const FlexItem* item = line->GetFirstItem(); item;
-         item = item->getNext(), ++itemIndex) {
+    for (const FlexItem& item : line->Items()) {
       ComputedFlexItemInfo& itemInfo = lineInfo.mItems[itemIndex];
-      itemInfo.mFrameRect = item->Frame()->GetRect();
-      itemInfo.mMainMinSize = item->MainMinSize();
-      itemInfo.mMainMaxSize = item->MainMaxSize();
-      itemInfo.mCrossMinSize = item->CrossMinSize();
-      itemInfo.mCrossMaxSize = item->CrossMaxSize();
+      itemInfo.mFrameRect = item.Frame()->GetRect();
+      itemInfo.mMainMinSize = item.MainMinSize();
+      itemInfo.mMainMaxSize = item.MainMaxSize();
+      itemInfo.mCrossMinSize = item.CrossMinSize();
+      itemInfo.mCrossMaxSize = item.CrossMaxSize();
       itemInfo.mClampState =
-          item->WasMinClamped()
+          item.WasMinClamped()
               ? mozilla::dom::FlexItemClampState::Clamped_to_min
-              : (item->WasMaxClamped()
+              : (item.WasMaxClamped()
                      ? mozilla::dom::FlexItemClampState::Clamped_to_max
                      : mozilla::dom::FlexItemClampState::Unclamped);
+      ++itemIndex;
     }
   }
 }
@@ -4605,12 +4595,12 @@ void nsFlexContainerFrame::DoFlexLayout(
   
   nscoord sumLineCrossSizes = 0;
   for (FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
-    for (FlexItem* item = line->GetFirstItem(); item; item = item->getNext()) {
+    for (FlexItem& item : line->Items()) {
       
       
-      if (item->CanMainSizeInfluenceCrossSize()) {
+      if (item.CanMainSizeInfluenceCrossSize()) {
         Maybe<AutoFlexItemMainSizeOverride> sizeOverride;
-        if (item->HasIntrinsicRatio()) {
+        if (item.HasIntrinsicRatio()) {
           
           
           
@@ -4618,28 +4608,28 @@ void nsFlexContainerFrame::DoFlexLayout(
           
           
           
-          sizeOverride.emplace(*item);
+          sizeOverride.emplace(item);
         }
 
-        WritingMode wm = item->Frame()->GetWritingMode();
+        WritingMode wm = item.Frame()->GetWritingMode();
         LogicalSize availSize = aReflowInput.ComputedSize(wm);
         availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-        ReflowInput childReflowInput(PresContext(), aReflowInput, item->Frame(),
+        ReflowInput childReflowInput(PresContext(), aReflowInput, item.Frame(),
                                      availSize);
         childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
         if (!sizeOverride) {
           
-          if (item->IsInlineAxisMainAxis()) {
-            childReflowInput.SetComputedISize(item->MainSize());
+          if (item.IsInlineAxisMainAxis()) {
+            childReflowInput.SetComputedISize(item.MainSize());
           } else {
-            childReflowInput.SetComputedBSize(item->MainSize());
-            if (item->TreatBSizeAsIndefinite()) {
+            childReflowInput.SetComputedBSize(item.MainSize());
+            if (item.TreatBSizeAsIndefinite()) {
               childReflowInput.mFlags.mTreatBSizeAsIndefinite = true;
             }
           }
         }
 
-        SizeItemInCrossAxis(childReflowInput, *item);
+        SizeItemInCrossAxis(childReflowInput, item);
       }
     }
     
@@ -4794,17 +4784,19 @@ void nsFlexContainerFrame::ReflowChildren(
   
   
   
-  const FlexItem* const firstItem = aAxisTracker.AreAxesInternallyReversed()
-                                        ? aLines.getLast()->GetLastItem()
-                                        : aLines.getFirst()->GetFirstItem();
+  const FlexItem* firstItem =
+      aAxisTracker.AreAxesInternallyReversed()
+          ? (aLines.getLast()->IsEmpty() ? nullptr
+                                         : &aLines.getLast()->LastItem())
+          : (aLines.getFirst()->IsEmpty() ? nullptr
+                                          : &aLines.getFirst()->FirstItem());
 
   
   
   for (const FlexLine* line = aLines.getFirst(); line; line = line->getNext()) {
-    for (const FlexItem* item = line->GetFirstItem(); item;
-         item = item->getNext()) {
+    for (const FlexItem& item : line->Items()) {
       LogicalPoint framePos = aAxisTracker.LogicalPointFromFlexRelativePoint(
-          item->MainPosition(), item->CrossPosition(), aContentBoxMainSize,
+          item.MainPosition(), item.CrossPosition(), aContentBoxMainSize,
           aContentBoxCrossSize);
       
       
@@ -4819,25 +4811,25 @@ void nsFlexContainerFrame::ReflowChildren(
       
       
       bool itemNeedsReflow = true;  
-      if (item->HadMeasuringReflow()) {
+      if (item.HadMeasuringReflow()) {
         LogicalSize finalFlexItemSize =
-            aAxisTracker.LogicalSizeFromFlexRelativeSizes(item->MainSize(),
-                                                          item->CrossSize());
+            aAxisTracker.LogicalSizeFromFlexRelativeSizes(item.MainSize(),
+                                                          item.CrossSize());
         
         
         if (finalFlexItemSize ==
             LogicalSize(flexWM,
-                        item->Frame()->GetContentRectRelativeToSelf().Size())) {
+                        item.Frame()->GetContentRectRelativeToSelf().Size())) {
           
           
           
           
-          if (!FrameHasRelativeBSizeDependency(item->Frame())) {
+          if (!FrameHasRelativeBSizeDependency(item.Frame())) {
             
             
             
             itemNeedsReflow = false;
-            MoveFlexItemToFinalPosition(aReflowInput, *item, framePos,
+            MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
                                         containerSize);
           }
         }
@@ -4848,7 +4840,7 @@ void nsFlexContainerFrame::ReflowChildren(
         }
       }
       if (itemNeedsReflow) {
-        ReflowFlexItem(aAxisTracker, aReflowInput, *item, framePos,
+        ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                        containerSize, aHasLineClampEllipsis);
       }
 
@@ -4860,16 +4852,16 @@ void nsFlexContainerFrame::ReflowChildren(
       
       if (!itemNeedsReflow && aHasLineClampEllipsis &&
           GetLineClampValue() == 0) {
-        item->BlockFrame()->ClearLineClampEllipsis();
+        item.BlockFrame()->ClearLineClampEllipsis();
       }
 
       
       
-      if (item->HasAnyAutoMargin()) {
+      if (item.HasAnyAutoMargin()) {
         nsMargin* propValue =
-            item->Frame()->GetProperty(nsIFrame::UsedMarginProperty());
+            item.Frame()->GetProperty(nsIFrame::UsedMarginProperty());
         if (propValue) {
-          *propValue = item->PhysicalMargin();
+          *propValue = item.PhysicalMargin();
         }
       }
 
@@ -4877,8 +4869,8 @@ void nsFlexContainerFrame::ReflowChildren(
       
       
       
-      if (item == firstItem && aFlexContainerAscent == nscoord_MIN) {
-        aFlexContainerAscent = itemNormalBPos + item->ResolvedAscent(true);
+      if (&item == firstItem && aFlexContainerAscent == nscoord_MIN) {
+        aFlexContainerAscent = itemNormalBPos + item.ResolvedAscent(true);
       }
     }
   }
