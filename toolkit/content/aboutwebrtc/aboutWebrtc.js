@@ -780,23 +780,26 @@ ICEStats.prototype = {
   },
 
   renderRawICECandidates() {
-    let div = document.createElement("div");
-
-    let tbody = [];
-    let rows = this.generateRawICECandidates();
-    for (let row of rows) {
-      tbody.push([row.local, row.remote]);
+    const div = document.createElement("div");
+    const candidates = direction => {
+      return [
+        ...new Set(
+          direction == "local"
+            ? this._report.rawLocalCandidates.sort()
+            : this._report.rawRemoteCandidates.sort()
+        ),
+      ]
+        .filter(i => `${i}` != "")
+        .map(i => [i]);
+    };
+    for (const direction of ["local", "remote"]) {
+      const statsTable = new SimpleTable(
+        [getString(`raw_${direction}_candidate`)],
+        candidates(direction)
+      ).render();
+      statsTable.className = "raw-candidate";
+      div.appendChild(statsTable);
     }
-
-    let statsTable = new SimpleTable(
-      [getString("raw_local_candidate"), getString("raw_remote_candidate")],
-      tbody
-    ).render();
-
-    
-    statsTable.className = "raw-candidate";
-    div.appendChild(statsTable);
-
     return div;
   },
 
@@ -816,29 +819,6 @@ ICEStats.prototype = {
     section.appendChild(div);
 
     return section;
-  },
-
-  generateRawICECandidates() {
-    let rows = [];
-    let row;
-
-    let rawLocals = this._report.rawLocalCandidates.sort();
-    
-    
-    
-    
-    let rawRemotes = [...new Set(this._report.rawRemoteCandidates)].sort();
-    let rowCount = Math.max(rawLocals.length, rawRemotes.length);
-    for (var i = 0; i < rowCount; i++) {
-      let rawLocal = rawLocals[i];
-      let rawRemote = rawRemotes[i];
-      row = {
-        local: rawLocal || "",
-        remote: rawRemote || "",
-      };
-      rows.push(row);
-    }
-    return rows;
   },
 
   renderIceMetric(labelName, value) {
