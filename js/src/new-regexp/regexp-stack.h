@@ -36,6 +36,9 @@ class RegExpStackScope {
 
 class RegExpStack {
  public:
+  RegExpStack();
+  ~RegExpStack();
+
   
   
   
@@ -75,9 +78,6 @@ class RegExpStack {
   static constexpr size_t kMaximumStackSize = 64 * MB;
 
  private:
-  RegExpStack();
-  ~RegExpStack();
-
   
   static const Address kMemoryTop =
       static_cast<Address>(static_cast<uintptr_t>(-1));

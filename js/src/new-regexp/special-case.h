@@ -6,10 +6,11 @@
 #define V8_REGEXP_SPECIAL_CASE_H_
 
 #ifdef V8_INTL_SUPPORT
-#include "unicode/uversion.h"
-namespace U_ICU_NAMESPACE {
-class UnicodeSet;
-}  
+#include "new-regexp/regexp-shim.h"
+
+#include "unicode/uchar.h"
+#include "unicode/uniset.h"
+#include "unicode/unistr.h"
 
 namespace v8 {
 namespace internal {
@@ -66,10 +67,47 @@ namespace internal {
 
 
 
-icu::UnicodeSet BuildIgnoreSet();
 
 
-icu::UnicodeSet BuildSpecialAddSet();
+
+
+class RegExpCaseFolding final : public AllStatic {
+ public:
+  static const icu::UnicodeSet& IgnoreSet();
+  static const icu::UnicodeSet& SpecialAddSet();
+
+  
+  
+  
+  static UChar32 Canonicalize(UChar32 ch) {
+    
+    CHECK_LE(ch, 0xffff);
+
+    
+    icu::UnicodeString s(ch);
+
+    
+    
+    
+    icu::UnicodeString& u = s.toUpper();
+
+    
+    if (u.length() != 1) {
+      return ch;
+    }
+
+    
+    UChar32 cu = u.char32At(0);
+
+    
+    if (ch >= 128 && cu < 128) {
+      return ch;
+    }
+
+    
+    return cu;
+  }
+};
 
 }  
 }  

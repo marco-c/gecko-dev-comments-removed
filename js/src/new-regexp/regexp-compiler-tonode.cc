@@ -1137,39 +1137,6 @@ Vector<const int> CharacterRange::GetWordBounds() {
   return Vector<const int>(kWordRanges, kWordRangeCount - 1);
 }
 
-#ifdef V8_INTL_SUPPORT
-struct IgnoreSet {
-  IgnoreSet() : set(BuildIgnoreSet()) {}
-  const icu::UnicodeSet set;
-};
-
-struct SpecialAddSet {
-  SpecialAddSet() : set(BuildSpecialAddSet()) {}
-  const icu::UnicodeSet set;
-};
-
-icu::UnicodeSet BuildAsciiAToZSet() {
-  icu::UnicodeSet set('a', 'z');
-  set.add('A', 'Z');
-  set.freeze();
-  return set;
-}
-
-struct AsciiAToZSet {
-  AsciiAToZSet() : set(BuildAsciiAToZSet()) {}
-  const icu::UnicodeSet set;
-};
-
-static base::LazyInstance<IgnoreSet>::type ignore_set =
-    LAZY_INSTANCE_INITIALIZER;
-
-static base::LazyInstance<SpecialAddSet>::type special_add_set =
-    LAZY_INSTANCE_INITIALIZER;
-
-static base::LazyInstance<AsciiAToZSet>::type ascii_a_to_z_set =
-    LAZY_INSTANCE_INITIALIZER;
-#endif  
-
 
 void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
                                         ZoneList<CharacterRange>* ranges,
@@ -1194,73 +1161,20 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   icu::UnicodeSet already_added(others);
-
-  
-  icu::UnicodeSet in_ascii_a_to_z(others);
-  in_ascii_a_to_z.retainAll(ascii_a_to_z_set.Pointer()->set);
-
-  
-  others.removeAll(in_ascii_a_to_z);
-
-  
-  icu::UnicodeSet in_special_add(others);
-  in_special_add.retainAll(special_add_set.Pointer()->set);
-
-  others.removeAll(in_special_add);
-
-  
-  others.removeAll(ignore_set.Pointer()->set);
-
-  
-  
+  others.removeAll(RegExpCaseFolding::IgnoreSet());
   others.closeOver(USET_CASE_INSENSITIVE);
-
-  
-  
-  
-  others.removeAll(ascii_a_to_z_set.Pointer()->set);
-
-  
-  for (int32_t i = 0; i < in_ascii_a_to_z.getRangeCount(); i++) {
-    UChar32 start = in_ascii_a_to_z.getRangeStart(i);
-    UChar32 end = in_ascii_a_to_z.getRangeEnd(i);
-    
-    if (start & 0x0020) {
-      
-      others.add(start & 0x005F, end & 0x005F);
-    } else {
-      
-      others.add(start | 0x0020, end | 0x0020);
-    }
-  }
-
-  
-  for (int32_t i = 0; i < in_special_add.getRangeCount(); i++) {
-    UChar32 end = in_special_add.getRangeEnd(i);
-    for (UChar32 ch = in_special_add.getRangeStart(i); ch <= end; ch++) {
-      
-      
-      
-      
-      if (!u_isupper(ch)) {
-        others.add(u_toupper(ch));
-      }
-      icu::UnicodeSet candidates(ch, ch);
-      candidates.closeOver(USET_CASE_INSENSITIVE);
-      for (int32_t j = 0; j < candidates.getRangeCount(); j++) {
-        UChar32 end2 = candidates.getRangeEnd(j);
-        for (UChar32 ch2 = candidates.getRangeStart(j); ch2 <= end2; ch2++) {
-          
-          if (!u_isupper(ch2)) {
-            others.add(ch2);
-          }
-        }
-      }
-    }
-  }
-
-  
+  others.removeAll(RegExpCaseFolding::IgnoreSet());
   others.removeAll(already_added);
 
   
