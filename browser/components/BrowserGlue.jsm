@@ -3434,14 +3434,14 @@ BrowserGlue.prototype = {
   },
 
   _maybeShowDefaultBrowserPrompt() {
-    const willPrompt = DefaultBrowserCheck.willCheckDefaultBrowser(
-       true
+    DefaultBrowserCheck.willCheckDefaultBrowser( true).then(
+      willPrompt => {
+        if (!willPrompt) {
+          return;
+        }
+        DefaultBrowserCheck.prompt(BrowserWindowTracker.getTopWindow());
+      }
     );
-    if (!willPrompt) {
-      return;
-    }
-
-    DefaultBrowserCheck.prompt(BrowserWindowTracker.getTopWindow());
   },
 
   async _migrateMatchBucketsPrefForUI66() {
@@ -4436,7 +4436,7 @@ var DefaultBrowserCheck = {
 
 
 
-  willCheckDefaultBrowser(isStartupCheck) {
+  async willCheckDefaultBrowser(isStartupCheck) {
     
     if (!ShellService) {
       return false;
@@ -4466,6 +4466,9 @@ var DefaultBrowserCheck = {
       ? Services.prefs.getIntPref("browser.shell.defaultBrowserCheckCount")
       : 0;
 
+    
+    
+    await SessionStartup.onceInitialized;
     let willRecoverSession =
       SessionStartup.sessionType == SessionStartup.RECOVER_SESSION;
 

@@ -312,7 +312,7 @@ class ProviderSearchTips extends UrlbarProvider {
     let ignoreShowLimits = UrlbarPrefs.get("searchTips.test.ignoreShowLimits");
 
     
-    if (isBrowserShowingNotification() && !ignoreShowLimits) {
+    if ((await isBrowserShowingNotification()) && !ignoreShowLimits) {
       return;
     }
 
@@ -370,7 +370,7 @@ class ProviderSearchTips extends UrlbarProvider {
   }
 }
 
-function isBrowserShowingNotification() {
+async function isBrowserShowingNotification() {
   let window = BrowserWindowTracker.getTopWindow();
 
   
@@ -421,7 +421,7 @@ function isBrowserShowingNotification() {
   
   
   
-  const willPrompt = DefaultBrowserCheck.willCheckDefaultBrowser(
+  const willPrompt = await DefaultBrowserCheck.willCheckDefaultBrowser(
      false
   );
   if (willPrompt) {
