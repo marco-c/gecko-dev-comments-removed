@@ -2602,9 +2602,6 @@ pref("layout.testing.overlay-scrollbars.always-visible", false);
 pref("layout.spammy_warnings.enabled", false);
 
 
-pref("dom.animations.offscreen-throttling", true);
-
-
 pref("plugin.override_internal_types", false);
 
 

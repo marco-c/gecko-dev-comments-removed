@@ -76,11 +76,6 @@ class AnimationUtils {
   
 
 
-  static bool IsOffscreenThrottlingEnabled();
-
-  
-
-
   static bool FrameHasAnimatedScale(const nsIFrame* aFrame);
 
   
