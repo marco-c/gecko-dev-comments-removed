@@ -2320,6 +2320,9 @@ int16_t nsFrame::DetermineDisplaySelection() {
 
 class nsDisplaySelectionOverlay : public nsPaintedDisplayItem {
  public:
+  
+
+
   nsDisplaySelectionOverlay(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
                             int16_t aSelectionValue)
       : nsPaintedDisplayItem(aBuilder, aFrame),
@@ -2342,6 +2345,7 @@ class nsDisplaySelectionOverlay : public nsPaintedDisplayItem {
   static DeviceColor ComputeColorFromSelectionStyle(ComputedStyle&);
   static DeviceColor ApplyTransparencyIfNecessary(nscolor);
 
+  
   int16_t mSelectionValue;
 };
 
