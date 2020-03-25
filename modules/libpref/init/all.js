@@ -4220,9 +4220,6 @@ pref("dom.push.http2.maxRetries", 2);
 pref("dom.push.http2.retryInterval", 5000);
 
 
-pref("dom.w3c_pointer_events.implicit_capture", false);
-
-
 pref("media.ondevicechange.fakeDeviceChangeEvent.enabled", false);
 
 
