@@ -1287,10 +1287,14 @@ void IMEStateManager::SetIMEState(const IMEState& aState,
         nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
       aContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::inputmode,
                                      context.mHTMLInputInputmode);
-      if (context.mHTMLInputInputmode.EqualsLiteral("mozAwesomebar") &&
-          !nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
+      if (context.mHTMLInputInputmode.EqualsLiteral("mozAwesomebar")) {
+        if (!nsContentUtils::IsChromeDoc(aContent->OwnerDoc())) {
+          
+          context.mHTMLInputInputmode.Truncate();
+        }
+      } else {
         
-        context.mHTMLInputInputmode.Truncate();
+        ToLowerCase(context.mHTMLInputInputmode);
       }
     }
 
