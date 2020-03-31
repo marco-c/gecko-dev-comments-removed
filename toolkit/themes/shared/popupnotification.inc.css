@@ -2,6 +2,8 @@
 
 
 
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
 .popup-notification-header-container,
 .popup-notification-footer-container {
   display: flex;
