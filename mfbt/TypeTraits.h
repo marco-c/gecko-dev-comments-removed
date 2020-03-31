@@ -295,19 +295,6 @@ struct IsMemberPointer
 
 
 
-template <typename T>
-struct IsScalar
-    : IntegralConstant<bool, IsArithmetic<T>::value || IsEnum<T>::value ||
-                                 IsPointer<T>::value ||
-                                 IsMemberPointer<T>::value> {};
-
-
-
-
-
-
-
-
 
 
 template <typename T>
