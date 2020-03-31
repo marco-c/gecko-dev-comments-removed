@@ -749,7 +749,7 @@ nsresult ProxyAutoConfig::SetupJS() {
         return nullptr;
       }
 
-      return JS::CompileDontInflate(cx, options, srcBuf);
+      return JS::Compile(cx, options, srcBuf);
     }
 
     

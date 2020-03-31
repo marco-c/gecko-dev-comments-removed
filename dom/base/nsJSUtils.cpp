@@ -216,10 +216,9 @@ static JSScript* CompileScript(
   
   
   
-  return aScopeChain.length() == 0
-             ? JS::CompileDontInflate(aCx, aCompileOptions, aSrcBuf)
-             : JS::CompileForNonSyntacticScopeDontInflate(aCx, aCompileOptions,
-                                                          aSrcBuf);
+  return aScopeChain.length() == 0 ? JS::Compile(aCx, aCompileOptions, aSrcBuf)
+                                   : JS::CompileForNonSyntacticScopeDontInflate(
+                                         aCx, aCompileOptions, aSrcBuf);
 }
 
 template <typename Unit>

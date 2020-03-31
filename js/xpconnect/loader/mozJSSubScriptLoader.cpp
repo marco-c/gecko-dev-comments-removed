@@ -145,7 +145,7 @@ static JSScript* PrepareScript(nsIURI* uri, JSContext* cx,
   }
 
   if (wantGlobalScript) {
-    return JS::CompileDontInflate(cx, options, srcBuf);
+    return JS::Compile(cx, options, srcBuf);
   }
   return JS::CompileForNonSyntacticScopeDontInflate(cx, options, srcBuf);
 }

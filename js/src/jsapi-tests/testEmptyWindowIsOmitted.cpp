@@ -100,7 +100,7 @@ JSScript* compile(const char* chars, size_t len) {
       source.init(cx, chars, len, JS::SourceOwnership::Borrowed));
 
   JS::CompileOptions options(cx);
-  return JS::CompileDontInflate(cx, options, source);
+  return JS::Compile(cx, options, source);
 }
 
 template <typename CharT, size_t N>
