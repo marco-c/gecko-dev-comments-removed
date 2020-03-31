@@ -155,6 +155,12 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+  enum class DispatchSelectstartEvent {
+    No,
+    Maybe,
+  };
+
+  
 
 
 
@@ -163,8 +169,11 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  nsresult AddRangesForSelectableNodes(nsRange* aRange, int32_t* aOutIndex,
-                                       bool aNoStartSelect = false);
+
+
+  nsresult AddRangesForSelectableNodes(
+      nsRange* aRange, int32_t* aOutIndex,
+      DispatchSelectstartEvent aDispatchSelectstartEvent);
 
   
 
