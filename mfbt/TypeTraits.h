@@ -140,19 +140,6 @@ struct IsFunction : public detail::IsFunPtr<typename RemoveCV<T>::Type*> {};
 
 
 
-template <typename T>
-struct IsVolatile : FalseType {};
-
-template <typename T>
-struct IsVolatile<volatile T> : TrueType {};
-
-
-
-
-
-
-
-
 
 template <typename T>
 struct IsPod : public FalseType {};
