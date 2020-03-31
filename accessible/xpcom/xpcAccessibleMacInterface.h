@@ -34,6 +34,11 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
 
   
   
+  
+  bool SupportsSelector(SEL aSelector);
+
+  
+  
   nsresult NSObjectToJsValue(id aObj, JSContext* aCx,
                              JS::MutableHandleValue aResult);
   id mNativeObject;

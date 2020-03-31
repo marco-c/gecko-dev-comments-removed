@@ -6,9 +6,180 @@
 
 #include "xpcAccessibleMacInterface.h"
 
+#include "nsCocoaUtils.h"
+#include "nsContentUtils.h"
+#include "mozilla/dom/ToJSValue.h"
+
 #import "mozAccessible.h"
 
 using namespace mozilla::a11y;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static NSDictionary* gAttributeToGetterMap = @{
+  @"AXSize" : @"accessibilityFrame",
+  @"AXFocused" : @"accessibilityFocused",
+  @"AXTopLevelUIElement" : @"accessibilityTopLevelUIElement",
+  @"AXURL" : @"accessibilityURL",
+  @"AXValue" : @"accessibilityValue",
+  @"AXValueDescription" : @"accessibilityValueDescription",
+  @"AXVisibleChildren" : @"accessibilityVisibleChildren",
+  @"AXSubrole" : @"accessibilitySubrole",
+  @"AXTitle" : @"accessibilityTitle",
+  @"AXTitleUIElement" : @"accessibilityTitleUIElement",
+  @"AXNextContents" : @"accessibilityNextContents",
+  @"AXOrientation" : @"accessibilityOrientation",
+  @"AXOverflowButton" : @"accessibilityOverflowButton",
+  @"AXParent" : @"accessibilityParent",
+  @"AXPlaceholderValue" : @"accessibilityPlaceholderValue",
+  @"AXPreviousContents" : @"accessibilityPreviousContents",
+  @"AXRole" : @"accessibilityRole",
+  @"AXRoleDescription" : @"accessibilityRoleDescription",
+  @"AXSearchButton" : @"accessibilitySearchButton",
+  @"AXSearchMenu" : @"accessibilitySearchMenu",
+  @"AXSelected" : @"accessibilitySelected",
+  @"AXSelectedChildren" : @"accessibilitySelectedChildren",
+  @"AXServesAsTitleForUIElements" : @"accessibilityServesAsTitleForUIElements",
+  @"AXShownMenu" : @"accessibilityShownMenu",
+  @"AXMinValue" : @"accessibilityMinValue",
+  @"AXMaxValue" : @"accessibilityMaxValue",
+  @"AXLinkedUIElements" : @"accessibilityLinkedUIElements",
+  @"AXWindow" : @"accessibilityWindow",
+  @"AXIdentifier" : @"accessibilityIdentifier",
+  @"AXHelp" : @"accessibilityHelp",
+  @"AXFilename" : @"accessibilityFilename",
+  @"AXExpanded" : @"accessibilityExpanded",
+  @"AXEdited" : @"accessibilityEdited",
+  @"AXEnabled" : @"accessibilityEnabled",
+  @"AXChildren" : @"accessibilityChildren",
+  @"AXClearButton" : @"accessibilityClearButton",
+  @"AXCancelButton" : @"accessibilityCancelButton",
+  @"AXContainsProtectedContent" : @"accessibilityProtectedContent",
+  @"AXContents" : @"accessibilityContents",
+  @"AXDescription" : @"accessibilityLabel",
+  @"AXAlternateUIVisible" : @"accessibilityAlternateUIVisible",
+  @"AXSharedFocusElements" : @"accessibilitySharedFocusElements",
+  @"AXRequired" : @"accessibilityRequired",
+  @"AXFocusedUIElement" : @"accessibilityApplicationFocusedUIElement",
+  @"AXMainWindow" : @"accessibilityMainWindow",
+  @"AXHidden" : @"accessibilityHidden",
+  @"AXFrontmost" : @"accessibilityFrontmost",
+  @"AXFocusedWindow" : @"accessibilityFocusedWindow",
+  @"AXWindows" : @"accessibilityWindows",
+  @"AXExtrasMenuBar" : @"accessibilityExtrasMenuBar",
+  @"AXMenuBar" : @"accessibilityMenuBar",
+  @"AXColumnTitles" : @"accessibilityColumnTitles",
+  @"AXOrderedByRow" : @"accessibilityOrderedByRow",
+  @"AXHorizontalUnits" : @"accessibilityHorizontalUnits",
+  @"AXVerticalUnits" : @"accessibilityVerticalUnits",
+  @"AXHorizontalUnitDescription" : @"accessibilityHorizontalUnitDescription",
+  @"AXVerticalUnitDescription" : @"accessibilityVerticalUnitDescription",
+  @"AXHandles" : @"accessibilityHandles",
+  @"AXWarningValue" : @"accessibilityWarningValue",
+  @"AXCriticalValue" : @"accessibilityCriticalValue",
+  @"AXDisclosing" : @"accessibilityDisclosed",
+  @"AXDisclosedByRow" : @"accessibilityDisclosedByRow",
+  @"AXDisclosedRows" : @"accessibilityDisclosedRows",
+  @"AXDisclosureLevel" : @"accessibilityDisclosureLevel",
+  @"AXMarkerUIElements" : @"accessibilityMarkerUIElements",
+  @"AXMarkerValues" : @"accessibilityMarkerValues",
+  @"AXMarkerGroupUIElement" : @"accessibilityMarkerGroupUIElement",
+  @"AXUnits" : @"accessibilityUnits",
+  @"AXUnitDescription" : @"accessibilityUnitDescription",
+  @"AXMarkerType" : @"accessibilityRulerMarkerType",
+  @"AXMarkerTypeDescription" : @"accessibilityMarkerTypeDescription",
+  @"AXHorizontalScrollBar" : @"accessibilityHorizontalScrollBar",
+  @"AXVerticalScrollBar" : @"accessibilityVerticalScrollBar",
+  @"AXAllowedValues" : @"accessibilityAllowedValues",
+  @"AXLabelUIElements" : @"accessibilityLabelUIElements",
+  @"AXLabelValue" : @"accessibilityLabelValue",
+  @"AXSplitters" : @"accessibilitySplitters",
+  @"AXDecrementButton" : @"accessibilityDecrementButton",
+  @"AXIncrementButton" : @"accessibilityIncrementButton",
+  @"AXTabs" : @"accessibilityTabs",
+  @"AXHeader" : @"accessibilityHeader",
+  @"AXColumnCount" : @"accessibilityColumnCount",
+  @"AXRowCount" : @"accessibilityRowCount",
+  @"AXIndex" : @"accessibilityIndex",
+  @"AXColumns" : @"accessibilityColumns",
+  @"AXRows" : @"accessibilityRows",
+  @"AXVisibleRows" : @"accessibilityVisibleRows",
+  @"AXSelectedRows" : @"accessibilitySelectedRows",
+  @"AXVisibleColumns" : @"accessibilityVisibleColumns",
+  @"AXSelectedColumns" : @"accessibilitySelectedColumns",
+  @"AXSortDirection" : @"accessibilitySortDirection",
+  @"AXRowHeaderUIElements" : @"accessibilityRowHeaderUIElements",
+  @"AXSelectedCells" : @"accessibilitySelectedCells",
+  @"AXVisibleCells" : @"accessibilityVisibleCells",
+  @"AXColumnHeaderUIElements" : @"accessibilityColumnHeaderUIElements",
+  @"AXRowIndexRange" : @"accessibilityRowIndexRange",
+  @"AXColumnIndexRange" : @"accessibilityColumnIndexRange",
+  @"AXInsertionPointLineNumber" : @"accessibilityInsertionPointLineNumber",
+  @"AXSharedCharacterRange" : @"accessibilitySharedCharacterRange",
+  @"AXSharedTextUIElements" : @"accessibilitySharedTextUIElements",
+  @"AXVisibleCharacterRange" : @"accessibilityVisibleCharacterRange",
+  @"AXNumberOfCharacters" : @"accessibilityNumberOfCharacters",
+  @"AXSelectedText" : @"accessibilitySelectedText",
+  @"AXSelectedTextRange" : @"accessibilitySelectedTextRange",
+  @"AXSelectedTextRanges" : @"accessibilitySelectedTextRanges",
+  @"AXToolbarButton" : @"accessibilityToolbarButton",
+  @"AXModal" : @"accessibilityModal",
+  @"AXProxy" : @"accessibilityProxy",
+  @"AXMain" : @"accessibilityMain",
+  @"AXFullScreenButton" : @"accessibilityFullScreenButton",
+  @"AXGrowArea" : @"accessibilityGrowArea",
+  @"AXDocument" : @"accessibilityDocument",
+  @"AXDefaultButton" : @"accessibilityDefaultButton",
+  @"AXCloseButton" : @"accessibilityCloseButton",
+  @"AXZoomButton" : @"accessibilityZoomButton",
+  @"AXMinimizeButton" : @"accessibilityMinimizeButton",
+  @"AXMinimized" : @"accessibilityMinimized",
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static NSDictionary* gActionToMethodMap = @{
+  @"AXCancel" : @"accessibilityPerformCancel",
+  @"AXConfirm" : @"accessibilityPerformConfirm",
+  @"AXDecrement" : @"accessibilityPerformDecrement",
+  @"AXDelete" : @"accessibilityPerformDelete",
+  @"AXIncrement" : @"accessibilityPerformIncrement",
+  @"AXPick" : @"accessibilityPerformPick",
+  @"AXPress" : @"accessibilityPerformPress",
+  @"AXRaise" : @"accessibilityPerformRaise",
+  @"AXShowAlternateUI" : @"accessibilityPerformShowAlternateUI",
+  @"AXShowDefaultUI" : @"accessibilityPerformShowDefaultUI",
+  @"AXShowMenu" : @"accessibilityPerformShowMenu",
+};
 
 NS_IMPL_ISUPPORTS(xpcAccessibleMacInterface, nsIAccessibleMacInterface)
 
@@ -35,6 +206,13 @@ xpcAccessibleMacInterface::GetAttributeNames(nsTArray<nsString>& aAttributeNames
 
   NSMutableSet* attributeNames =
       [NSMutableSet setWithArray:[mNativeObject accessibilityAttributeNames]];
+
+  for (NSString* key in gAttributeToGetterMap) {
+    if (SupportsSelector(NSSelectorFromString(gAttributeToGetterMap[key]))) {
+      [attributeNames addObject:key];
+    }
+  }
+
   for (NSString* name in attributeNames) {
     nsAutoString attribName;
     nsCocoaUtils::GetStringForNSString(name, attribName);
@@ -55,6 +233,15 @@ xpcAccessibleMacInterface::GetActionNames(nsTArray<nsString>& aActionNames) {
   }
 
   NSMutableSet* actionNames = [NSMutableSet setWithArray:[mNativeObject accessibilityActionNames]];
+
+  for (NSString* key in gActionToMethodMap) {
+    if (SupportsSelector(NSSelectorFromString(gActionToMethodMap[key]))) {
+      [actionNames addObject:key];
+    }
+  }
+
+  
+
   for (NSString* name in actionNames) {
     nsAutoString actionName;
     nsCocoaUtils::GetStringForNSString(name, actionName);
@@ -74,6 +261,15 @@ xpcAccessibleMacInterface::PerformAction(const nsAString& aActionName) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  NSString* actionName = nsCocoaUtils::ToNSString(aActionName);
+  if (NSString* selectorString = gActionToMethodMap[actionName]) {
+    SEL selector = NSSelectorFromString(selectorString);
+    if (SupportsSelector(selector)) {
+      [mNativeObject performSelector:selector];
+      return NS_OK;
+    }
+  }
+
   [mNativeObject accessibilityPerformAction:actionName];
 
   return NS_OK;
@@ -91,9 +287,24 @@ xpcAccessibleMacInterface::GetAttributeValue(const nsAString& aAttributeName, JS
   }
 
   NSString* attribName = nsCocoaUtils::ToNSString(aAttributeName);
+  if (NSString* selectorString = gAttributeToGetterMap[attribName]) {
+    SEL selector = NSSelectorFromString(selectorString);
+    if (SupportsSelector(selector)) {
+      return NSObjectToJsValue([mNativeObject performSelector:selector], aCx, aResult);
+    }
+  }
+
   return NSObjectToJsValue([mNativeObject accessibilityAttributeValue:attribName], aCx, aResult);
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT
+}
+
+bool xpcAccessibleMacInterface::SupportsSelector(SEL aSelector) {
+  
+  
+  return [mNativeObject respondsToSelector:aSelector] &&
+         (![mNativeObject respondsToSelector:@selector(isAccessibilitySelectorAllowed:selector:)] ||
+          [mNativeObject isAccessibilitySelectorAllowed:aSelector]);
 }
 
 nsresult xpcAccessibleMacInterface::NSObjectToJsValue(id aObj, JSContext* aCx,
