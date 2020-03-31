@@ -8,12 +8,42 @@
 
 #if defined(XP_UNIX) && !defined(XP_DARWIN)
 
-#  include "nsZipArchive.h"
-#  include "mozilla/Atomics.h"
-#  include "mozilla/StaticMutex.h"
+#  include "PlatformMutex.h"
 #  include "MainThreadUtils.h"
+#  include "mozilla/Atomics.h"
+#  include "mozilla/GuardObjects.h"
 #  include "mozilla/ThreadLocal.h"
 #  include <signal.h>
+
+class MmapMutex : private mozilla::detail::MutexImpl {
+ public:
+  MmapMutex() : mozilla::detail::MutexImpl() {}
+  void Lock() { mozilla::detail::MutexImpl::lock(); }
+  void Unlock() { mozilla::detail::MutexImpl::unlock(); }
+};
+
+class StaticMmapMutex {
+ public:
+  void Lock() { Mutex()->Lock(); }
+
+  void Unlock() { Mutex()->Unlock(); }
+
+ private:
+  MmapMutex* Mutex() {
+    if (mMutex) {
+      return mMutex;
+    }
+
+    MmapMutex* mutex = new MmapMutex();
+    if (!mMutex.compareExchange(nullptr, mutex)) {
+      delete mutex;
+    }
+
+    return mMutex;
+  }
+
+  mozilla::Atomic<MmapMutex*, mozilla::SequentiallyConsistent> mMutex;
+};
 
 static MOZ_THREAD_LOCAL(MmapAccessScope*) sMmapAccessScope;
 
@@ -31,7 +61,6 @@ static void MmapSIGBUSHandler(int signum, siginfo_t* info, void* context) {
 
     
     siglongjmp(mas->mJmpBuf, signum);
-    return;
   }
 
   
@@ -49,7 +78,20 @@ static void MmapSIGBUSHandler(int signum, siginfo_t* info, void* context) {
 }
 
 mozilla::Atomic<bool> gSIGBUSHandlerInstalled(false);
-mozilla::StaticMutex gSIGBUSHandlerMutex;
+StaticMmapMutex gSIGBUSHandlerMutex;
+
+class MOZ_RAII MmapMutexAutoLock {
+ public:
+  explicit MmapMutexAutoLock(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM) {
+    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+    gSIGBUSHandlerMutex.Lock();
+  }
+
+  ~MmapMutexAutoLock() { gSIGBUSHandlerMutex.Unlock(); }
+
+ private:
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
 
 void InstallMmapFaultHandler() {
   
@@ -60,7 +102,7 @@ void InstallMmapFaultHandler() {
     return;
   }
 
-  mozilla::StaticMutexAutoLock lock(gSIGBUSHandlerMutex);
+  MmapMutexAutoLock lock;
 
   
   
@@ -81,29 +123,15 @@ void InstallMmapFaultHandler() {
   gSIGBUSHandlerInstalled = true;
 }
 
-MmapAccessScope::MmapAccessScope(void* aBuf, uint32_t aBufLen) {
+MmapAccessScope::MmapAccessScope(void* aBuf, uint32_t aBufLen,
+                                 const char* aFilename) {
   
   InstallMmapFaultHandler();
 
   
   mBuf = aBuf;
   mBufLen = aBufLen;
-
-  SetThreadLocalScope();
-}
-
-MmapAccessScope::MmapAccessScope(nsZipHandle* aZipHandle)
-    : mBuf(nullptr), mBufLen(0) {
-  
-  InstallMmapFaultHandler();
-
-  
-  
-  
-  if (aZipHandle && aZipHandle->mMap) {
-    
-    mZipHandle = aZipHandle;
-  }
+  mFilename = aFilename;
 
   SetThreadLocalScope();
 }
@@ -129,48 +157,15 @@ void MmapAccessScope::SetThreadLocalScope() {
 }
 
 bool MmapAccessScope::IsInsideBuffer(void* aPtr) {
-  bool isIn;
-
-  if (mZipHandle) {
-    isIn =
-        aPtr >= mZipHandle->mFileStart &&
-        aPtr < (void*)((char*)mZipHandle->mFileStart + mZipHandle->mTotalLen);
-  } else {
-    isIn = aPtr >= mBuf && aPtr < (void*)((char*)mBuf + mBufLen);
-  }
-
-  return isIn;
+  return aPtr >= mBuf && aPtr < (void*)((char*)mBuf + mBufLen);
 }
 
 void MmapAccessScope::CrashWithInfo(void* aPtr) {
-  if (!mZipHandle) {
-    
-    MOZ_CRASH_UNSAFE_PRINTF(
-        "SIGBUS received when accessing mmaped zip file [buffer=%p, "
-        "buflen=%" PRIu32 ", address=%p]",
-        mBuf, mBufLen, aPtr);
-  }
-
-  nsCOMPtr<nsIFile> file = mZipHandle->mFile.GetBaseFile();
-  nsCString fileName;
-  file->GetNativeLeafName(fileName);
-
   
-  int fileSize = -1;
-  if (PR_Seek64(mZipHandle->mNSPRFileDesc, 0, PR_SEEK_SET) != -1) {
-    fileSize = PR_Available64(mZipHandle->mNSPRFileDesc);
-  }
-
-  
-  
-  fileName.Append(", filesize=");
-  fileName.AppendInt(fileSize);
-
   MOZ_CRASH_UNSAFE_PRINTF(
-      "SIGBUS received when accessing mmaped zip file [file=%s, buffer=%p, "
-      "buflen=%" PRIu32 ", address=%p]",
-      fileName.get(), (char*)mZipHandle->mFileStart, mZipHandle->mTotalLen,
-      aPtr);
+      "SIGBUS received when accessing mmaped file [buffer=%p, "
+      "buflen=%u, address=%p, filename=%s]",
+      mBuf, mBufLen, aPtr, mFilename);
 }
 
 #endif
