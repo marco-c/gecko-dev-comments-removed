@@ -8,9 +8,40 @@
 
 
 
+
+
+
+
 #ifndef RegexpMacroAssemblerArch_h
 #define RegexpMacroAssemblerArch_h
 
-#include "new-regexp/regexp-shim.h"
+#include "jit/MacroAssembler.h"
+#include "new-regexp/regexp-macro-assembler.h"
 
-#endif 
+namespace v8 {
+namespace internal {
+
+class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
+ public:
+  SMRegExpMacroAssembler(JSContext* cx, Isolate* isolate,
+                         js::jit::StackMacroAssembler& masm, Zone* zone,
+                         Mode mode, uint32_t num_capture_registers);
+  virtual ~SMRegExpMacroAssembler() {} 
+
+  virtual int stack_limit_slack();
+  virtual IrregexpImplementation Implementation();
+
+
+private:
+  JSContext* cx_;
+  js::jit::StackMacroAssembler& masm_;
+
+  Mode mode_;
+  int num_registers_;
+  int num_capture_registers_;
+};
+
+}  
+}  
+
+#endif  
