@@ -417,32 +417,6 @@ struct AddRvalueReference : detail::AddRvalueReferenceHelper<T> {};
 
 
 
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct RemoveExtent {
-  typedef T Type;
-};
-
-template <typename T>
-struct RemoveExtent<T[]> {
-  typedef T Type;
-};
-
-template <typename T, decltype(sizeof(1)) N>
-struct RemoveExtent<T[N]> {
-  typedef T Type;
-};
-
-
-
 namespace detail {
 
 template <typename T, typename CVRemoved>
