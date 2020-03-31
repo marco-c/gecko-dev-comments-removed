@@ -37,6 +37,19 @@ class PhabricatorCommandProvider(MachCommandBase):
             )
             sys.exit(1)
 
+        
+        
+        
+        
+        if not shutil.which("pip3"):
+            self.log(
+                logging.ERROR,
+                "pip3_not_installed",
+                {},
+                "`pip3` is not installed. Try running `mach bootstrap`.",
+            )
+            sys.exit(1)
+
         command = ["pip3", "install", "--upgrade", "MozPhab"]
 
         if (
