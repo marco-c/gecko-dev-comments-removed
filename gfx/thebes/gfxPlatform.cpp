@@ -3026,20 +3026,19 @@ void gfxPlatform::InitWebRenderConfig() {
   FeatureState& featureComp =
       gfxConfig::GetFeature(Feature::WEBRENDER_COMPOSITOR);
   featureComp.SetDefaultFromPref("gfx.webrender.compositor", true, false);
-  if (!StaticPrefs::gfx_webrender_picture_caching()) {
-    featureComp.ForceDisable(
-        FeatureStatus::Unavailable, "Picture caching is disabled",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
+
+  if (StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup()) {
+    featureComp.UserForceEnable("Force enabled by pref");
   }
 
   if (!IsFeatureSupported(nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR, false)) {
-    featureComp.ForceDisable(FeatureStatus::Blacklisted, "Blacklisted",
-                             NS_LITERAL_CSTRING("FEATURE_FAILURE_BLACKLIST"));
+    featureComp.Disable(FeatureStatus::Blacklisted, "Blacklisted",
+                        NS_LITERAL_CSTRING("FEATURE_FAILURE_BLACKLIST"));
   }
 
 #ifdef XP_WIN
   if (!gfxVars::UseWebRenderDCompWin()) {
-    featureComp.ForceDisable(
+    featureComp.Disable(
         FeatureStatus::Unavailable, "No DirectComposition usage",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_DIRECTCOMPOSITION"));
   }
@@ -3048,18 +3047,21 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   if (!DeviceManagerDx::Get()->CheckHardwareStretchingSupport()) {
-    featureComp.ForceDisable(
+    featureComp.Disable(
         FeatureStatus::Unavailable, "No hardware stretching support",
         NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_HARDWARE_STRETCHING"));
   }
 
 #endif
 
+  if (!StaticPrefs::gfx_webrender_picture_caching()) {
+    featureComp.ForceDisable(
+        FeatureStatus::Unavailable, "Picture caching is disabled",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_PICTURE_CACHING_DISABLED"));
+  }
+
   if (gfx::gfxConfig::IsEnabled(gfx::Feature::WEBRENDER_COMPOSITOR)) {
     gfxVars::SetUseWebRenderCompositor(true);
-    
-    
-    featureComp.UserEnable("Enabled");
   }
 
   Telemetry::ScalarSet(
