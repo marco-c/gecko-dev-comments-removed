@@ -989,6 +989,7 @@ add_task(async function testExternalThemeUninstall() {
 
   
   let list = doc.querySelector("addon-list");
+  ok(list, "Moved to a list page");
   is(list.type, "theme", "We're on the theme list page");
   card = list.querySelector(`addon-card[addon-id="${id}"]`);
   ok(!card, "The card has been removed");

@@ -1,9 +1,3 @@
-
-
-
-
-
-
 const { AddonTestUtils } = ChromeUtils.import(
   "resource://testing-common/AddonTestUtils.jsm",
   {}
@@ -72,10 +66,7 @@ async function installExtension(manifest = {}) {
 }
 
 function getAddonCard(doc, id) {
-  if (doc.ownerGlobal != gManagerWindow) {
-    return doc.querySelector(`addon-card[addon-id="${id}"]`);
-  }
-  return doc.querySelector(`.addon[value="${id}"]`);
+  return doc.querySelector(`addon-card[addon-id="${id}"]`);
 }
 
 function openDetailView(doc, id) {
@@ -94,8 +85,7 @@ async function enableAndDisable(doc, row) {
 }
 
 async function removeAddonAndUndo(doc, row) {
-  let isHtml = doc.ownerGlobal != gManagerWindow;
-  let id = isHtml ? row.addon.id : row.mAddon.id;
+  let id = row.addon.id;
   let started = AddonTestUtils.promiseWebExtensionStartup(id);
   let removed = BrowserTestUtils.waitForEvent(row, "remove");
   row.querySelector('[action="remove"]').click();
@@ -318,7 +308,7 @@ add_task(async function testExtensionEvents() {
 
   
   waitForNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
-  gManagerWindow.document.getElementById("helpButton").click();
+  doc.getElementById("help-button").click();
   BrowserTestUtils.removeTab(await waitForNewTab);
 
   
@@ -500,9 +490,7 @@ add_task(async function testGeneralActions() {
 add_task(async function testPreferencesLink() {
   assertAboutAddonsTelemetryEvents([]);
 
-  await init("theme");
-
-  let doc = gManagerWindow.document;
+  let doc = await init("theme");
 
   
   let waitForNewTab = BrowserTestUtils.waitForNewTab(

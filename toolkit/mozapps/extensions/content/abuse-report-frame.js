@@ -240,8 +240,7 @@
     }
 
     get promiseHtmlAboutAddons() {
-      const browser = getHtmlBrowser();
-      return htmlBrowserLoaded.then(() => {
+      return promiseHtmlBrowserLoaded().then(browser => {
         return browser.contentWindow;
       });
     }
@@ -288,8 +287,8 @@
       return;
     }
 
-    htmlBrowserLoaded.then(() => {
-      getHtmlBrowser().contentWindow.openAbuseReport({
+    promiseHtmlBrowserLoaded().then(browser => {
+      browser.contentWindow.openAbuseReport({
         addonId,
         reportEntryPoint,
       });

@@ -16,10 +16,10 @@ async function loadShortcutsView() {
   
   
   let win = await loadInitialView("theme");
-  let { managerWindow } = win;
+  let categoryUtils = new CategoryUtilities(win.managerWindow);
 
   is(
-    managerWindow.gCategories.node.value,
+    categoryUtils.getSelectedViewId(),
     "addons://list/theme",
     "The theme category is selected"
   );
@@ -34,7 +34,7 @@ async function loadShortcutsView() {
   await loaded;
 
   is(
-    managerWindow.gCategories.node.value,
+    categoryUtils.getSelectedViewId(),
     "addons://list/extension",
     "The extension category is now selected"
   );

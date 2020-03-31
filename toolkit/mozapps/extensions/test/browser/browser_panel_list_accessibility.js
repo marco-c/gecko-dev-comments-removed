@@ -19,7 +19,8 @@ function setupPanel(win) {
   let anchorButton = doc.createElement("button");
   anchorButton.addEventListener("click", e => panelList.toggle(e));
 
-  doc.body.append(anchorButton, panelList);
+  
+  doc.body.prepend(anchorButton, panelList);
 
   return { anchorButton, panelList, panelItems };
 }

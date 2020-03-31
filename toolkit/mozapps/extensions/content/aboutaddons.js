@@ -432,8 +432,6 @@ let loadViewFn;
 
 
 let replaceWithDefaultViewFn;
-let getCurrentViewIdFn;
-let setCategoryFn;
 
 let _templates = {};
 
@@ -1649,19 +1647,20 @@ class CategoryButton extends HTMLButtonElement {
   }
 
   get badgeCount() {
-    return this.getAttribute("badge-count");
+    return parseInt(this.getAttribute("badge-count"), 10) || 0;
   }
 
   set badgeCount(val) {
-    if (val !== null) {
-      this.setAttribute("badge-count", val);
+    let count = parseInt(val, 10);
+    if (count) {
+      this.setAttribute("badge-count", count);
     } else {
       this.removeAttribute("badge-count");
     }
   }
 
   get selected() {
-    this.hasAttribute("selected");
+    return this.hasAttribute("selected");
   }
 
   set selected(val) {
@@ -1671,6 +1670,10 @@ class CategoryButton extends HTMLButtonElement {
 
   get name() {
     return this.getAttribute("name");
+  }
+
+  get viewId() {
+    return this.getAttribute("viewid");
   }
 
   
@@ -1730,6 +1733,8 @@ class CategoriesBox extends customElements.get("button-group") {
       hiddenUpdated = this.updateHiddenCategories(Array.from(hiddenTypes));
     }
 
+    this.updateAvailableCount();
+
     this.addEventListener("click", e => {
       let button = e.target.closest("[viewid]");
       if (button) {
@@ -1741,6 +1746,23 @@ class CategoriesBox extends customElements.get("button-group") {
     this._resolveRendered();
     await hiddenUpdated;
     this._resolveInitialized();
+  }
+
+  get initialViewId() {
+    let viewId = Services.prefs.getStringPref(PREF_UI_LASTCATEGORY, "");
+    
+    if (this.getButtonByViewId(viewId)) {
+      return viewId;
+    }
+    
+    for (let button of this.children) {
+      if (!button.defaultHidden && !button.hidden && button.isVisible) {
+        return button.viewId;
+      }
+    }
+    
+    
+    throw new Error("Couldn't find initial view to load");
   }
 
   shouldHideCategory(name) {
@@ -1755,6 +1777,24 @@ class CategoriesBox extends customElements.get("button-group") {
     return this.querySelector(`[name="${name}"]`);
   }
 
+  getButtonByViewId(id) {
+    return this.querySelector(`[viewid="${id}"]`);
+  }
+
+  get selectedChild() {
+    return this._selectedChild;
+  }
+
+  set selectedChild(node) {
+    if (node && this.contains(node)) {
+      if (this._selectedChild) {
+        this._selectedChild.selected = false;
+      }
+      this._selectedChild = node;
+      this._selectedChild.selected = true;
+    }
+  }
+
   select(viewId) {
     let button = this.querySelector(`[viewid="${viewId}"]`);
     if (button) {
@@ -1763,6 +1803,10 @@ class CategoriesBox extends customElements.get("button-group") {
       button.hidden = false;
       Services.prefs.setStringPref(PREF_UI_LASTCATEGORY, viewId);
     }
+  }
+
+  selectType(type) {
+    this.select(`addons://list/${type}`);
   }
 
   onInstalled(addon) {
@@ -4237,6 +4281,11 @@ class ListView {
   }
 
   async render() {
+    if (!(this.type in AddonManager.addonTypes)) {
+      replaceWithDefaultViewFn();
+      return;
+    }
+
     let frag = document.createDocumentFragment();
 
     let list = document.createElement("addon-list");
@@ -4297,7 +4346,7 @@ class DetailView {
     let card = document.createElement("addon-card");
 
     
-    setCategoryFn(addon.type);
+    categoriesBox.selectType(addon.type);
 
     
     card.addEventListener("remove", () => loadViewFn(`list/${addon.type}`));
@@ -4372,6 +4421,7 @@ class DiscoveryView {
 
 let mainEl = null;
 let addonPageHeader = null;
+let categoriesBox = null;
 
 
 
@@ -4426,14 +4476,18 @@ var ScrollOffsets = {
 function initialize(opts) {
   mainEl = document.getElementById("main");
   addonPageHeader = document.getElementById("page-header");
+  categoriesBox = document.querySelector("categories-box");
+
   loadViewFn = opts.loadViewFn;
   replaceWithDefaultViewFn = opts.replaceWithDefaultViewFn;
-  setCategoryFn = opts.setCategoryFn;
-  getCurrentViewIdFn = opts.getCurrentViewIdFn;
-  let categoriesBox = document.querySelector("categories-box");
+
+  if (opts.shouldLoadInitialView) {
+    opts.loadInitialViewFn(categoriesBox.initialViewId);
+  }
   categoriesBox.initialize();
-  categoriesBox.select(getCurrentViewIdFn());
+
   AddonManagerListenerHandler.startup();
+
   window.addEventListener(
     "unload",
     () => {
@@ -4455,6 +4509,7 @@ async function show(type, param, { historyEntryId }) {
   let container = document.createElement("div");
   container.setAttribute("current-view", type);
   addonPageHeader.setViewInfo({ type, param });
+  categoriesBox.select(`addons://${type}/${param}`);
   if (type == "list") {
     await new ListView({ param, root: container }).render();
   } else if (type == "detail") {
@@ -4472,13 +4527,14 @@ async function show(type, param, { historyEntryId }) {
   } else if (type == "shortcuts") {
     
     
-    setCategoryFn("extension");
+    categoriesBox.selectType("extension");
     let view = document.createElement("addon-shortcuts");
     await view.render();
     await document.l10n.translateFragment(view);
     container.appendChild(view);
   } else {
-    throw new Error(`Unknown view type: ${type}`);
+    console.warn(`No view for ${type} ${param}, switching to default`);
+    replaceWithDefaultViewFn();
   }
 
   ScrollOffsets.save();
