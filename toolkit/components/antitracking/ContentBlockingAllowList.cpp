@@ -6,8 +6,6 @@
 
 #include "AntiTrackingLog.h"
 #include "ContentBlockingAllowList.h"
-#include "ContentBlockingAllowListCache.h"
-#include "SettingsChangeObserver.h"
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
@@ -17,20 +15,6 @@
 #include "nsPermissionManager.h"
 
 using namespace mozilla;
-
- ContentBlockingAllowListCache& ContentBlockingAllowList::Cache() {
-  static bool initialized = false;
-  static ContentBlockingAllowListCache cache;
-  if (!initialized) {
-    SettingsChangeObserver::OnAntiTrackingSettingsChanged([&] {
-      
-      
-      cache.Clear();
-    });
-    initialized = true;
-  }
-  return cache;
-}
 
  bool ContentBlockingAllowList::Check(
     nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing) {
@@ -49,16 +33,19 @@ using namespace mozilla;
   return false;
 }
 
- bool ContentBlockingAllowList::Check(nsPIDOMWindowInner* aWindow) {
-  ContentBlockingAllowListKey cacheKey(aWindow);
-  auto entry = Cache().Lookup(cacheKey);
-  if (entry) {
-    
-    
-    
-    return entry.Data().mResult;
+ bool ContentBlockingAllowList::Check(
+    nsICookieJarSettings* aCookieJarSettings) {
+  if (!aCookieJarSettings) {
+    LOG(
+        ("Could not check the content blocking allow list because the cookie "
+         "jar settings wasn't available"));
+    return false;
   }
 
+  return aCookieJarSettings->GetIsOnContentBlockingAllowList();
+}
+
+ bool ContentBlockingAllowList::Check(nsPIDOMWindowInner* aWindow) {
   
   
   
@@ -75,46 +62,16 @@ using namespace mozilla;
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings = doc->CookieJarSettings();
 
-  if (!cookieJarSettings) {
-    LOG(
-        ("Could not check the content blocking allow list because the cookie "
-         "jar settings wasn't available"));
-    entry.Set(ContentBlockingAllowListEntry(aWindow, false));
-    return false;
-  }
-
-  const bool result = cookieJarSettings->GetIsOnContentBlockingAllowList();
-  entry.Set(ContentBlockingAllowListEntry(aWindow, result));
-
-  return result;
+  return ContentBlockingAllowList::Check(cookieJarSettings);
 }
 
  bool ContentBlockingAllowList::Check(nsIHttpChannel* aChannel) {
-  ContentBlockingAllowListKey cacheKey(aChannel);
-  auto entry = Cache().Lookup(cacheKey);
-  if (entry) {
-    
-    
-    
-    return entry.Data().mResult;
-  }
-
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
 
   Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
 
-  if (!cookieJarSettings) {
-    LOG(
-        ("Could not check the content blocking allow list because the "
-         "CookieJarSettings of the channel wasn't available"));
-    entry.Set(ContentBlockingAllowListEntry(aChannel, false));
-    return false;
-  }
-
-  const bool result = cookieJarSettings->GetIsOnContentBlockingAllowList();
-  entry.Set(ContentBlockingAllowListEntry(aChannel, result));
-  return result;
+  return ContentBlockingAllowList::Check(cookieJarSettings);
 }
 
 nsresult ContentBlockingAllowList::Check(

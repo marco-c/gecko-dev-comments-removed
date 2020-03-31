@@ -7,6 +7,7 @@
 #ifndef mozilla_contentblockingallowlist_h
 #define mozilla_contentblockingallowlist_h
 
+class nsICookieJarSettings;
 class nsIHttpChannel;
 class nsIPrincipal;
 class nsIURI;
@@ -40,12 +41,9 @@ class ContentBlockingAllowList final {
 
  private:
   
-  
-  static ContentBlockingAllowListCache& Cache();
-
-  
   static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
   static bool Check(nsPIDOMWindowInner* aWindow);
+  static bool Check(nsICookieJarSettings* aCookieJarSettings);
 
   friend class ContentBlocking;
 };
