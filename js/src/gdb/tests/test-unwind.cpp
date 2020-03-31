@@ -69,5 +69,5 @@ FRAGMENT(unwind, simple) {
   }
 
   JS::Rooted<JS::Value> rval(cx);
-  JS::EvaluateDontInflate(cx, opts, srcBuf, &rval);
+  JS::Evaluate(cx, opts, srcBuf, &rval);
 }

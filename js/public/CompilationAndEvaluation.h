@@ -143,24 +143,6 @@ extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
 
 
 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool EvaluateDontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf, MutableHandle<Value> rval);
-
-
-
-
-
-
-
 extern JS_PUBLIC_API bool EvaluateUtf8Path(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename,
     MutableHandle<Value> rval);

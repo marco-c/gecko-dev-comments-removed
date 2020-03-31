@@ -30,7 +30,7 @@ BEGIN_TEST(testBug795104) {
   opts.setNoScriptRval(true);
 
   JS::RootedValue unused(cx);
-  CHECK(JS::EvaluateDontInflate(cx, opts, srcBuf, &unused));
+  CHECK(JS::Evaluate(cx, opts, srcBuf, &unused));
 
   JS::RootedFunction fun(cx);
   JS::RootedObjectVector emptyScopeChain(cx);

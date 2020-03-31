@@ -32,7 +32,7 @@ BEGIN_TEST(testCallArgs_isConstructing_native) {
   JS::SourceText<mozilla::Utf8Unit> srcBuf;
   CHECK(srcBuf.init(cx, code, strlen(code), JS::SourceOwnership::Borrowed));
 
-  CHECK(!JS::EvaluateDontInflate(cx, opts, srcBuf, &result));
+  CHECK(!JS::Evaluate(cx, opts, srcBuf, &result));
 
   CHECK(JS_IsExceptionPending(cx));
   JS_ClearPendingException(cx);

@@ -28,7 +28,7 @@ BEGIN_TEST(testGCOutOfMemory) {
   CHECK(srcBuf.init(cx, source, strlen(source), JS::SourceOwnership::Borrowed));
 
   JS::RootedValue root(cx);
-  bool ok = JS::EvaluateDontInflate(cx, opts, srcBuf, &root);
+  bool ok = JS::Evaluate(cx, opts, srcBuf, &root);
 
   
   CHECK(!ok);

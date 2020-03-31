@@ -321,7 +321,7 @@ BEGIN_TEST(test_JS_GetPendingExceptionStack) {
                     JS::SourceOwnership::Borrowed));
 
   JS::RootedValue val(cx);
-  bool ok = JS::EvaluateDontInflate(cx, opts, srcBuf, &val);
+  bool ok = JS::Evaluate(cx, opts, srcBuf, &val);
 
   CHECK(!ok);
   CHECK(JS_IsExceptionPending(cx));
