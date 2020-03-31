@@ -49,6 +49,9 @@ class MediaControlService final : public nsIObserver {
   uint64_t GetActiveControllersNum() const;
 
   
+  void NotifyControllerPlaybackStateChanged(MediaController* aController);
+
+  
   
   MediaController* GetMainController() const;
 
@@ -94,11 +97,13 @@ class MediaControlService final : public nsIObserver {
 
     bool AddController(MediaController* aController);
     bool RemoveController(MediaController* aController);
+    void UpdateMainController(MediaController* aController);
 
     void Shutdown();
 
     MediaController* GetMainController() const;
     MediaController* GetControllerById(uint64_t aId) const;
+    bool Contains(MediaController* aController) const;
     uint64_t GetControllersNum() const;
 
     
@@ -106,7 +111,7 @@ class MediaControlService final : public nsIObserver {
     void MainControllerMetadataChanged(const MediaMetadataBase& aMetadata);
 
    private:
-    void UpdateMainController(MediaController* aController);
+    void UpdateMainControllerInternal(MediaController* aController);
     void ConnectToMainControllerEvents();
     void DisconnectMainControllerEvents();
 

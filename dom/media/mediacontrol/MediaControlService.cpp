@@ -124,6 +124,36 @@ bool MediaControlService::UnregisterActiveMediaController(
   return true;
 }
 
+void MediaControlService::NotifyControllerPlaybackStateChanged(
+    MediaController* aController) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      mControllerManager,
+      "controller state change happens before initializing service");
+  MOZ_DIAGNOSTIC_ASSERT(aController);
+  
+  if (!mControllerManager->Contains(aController)) {
+    return;
+  }
+
+  
+  if (GetMainController() == aController) {
+    mControllerManager->MainControllerPlaybackStateChanged(
+        aController->GetState());
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  if (GetMainController() != aController &&
+      aController->GetState() == MediaSessionPlaybackState::Playing) {
+    mControllerManager->UpdateMainController(aController);
+  }
+}
+
 uint64_t MediaControlService::GetActiveControllersNum() const {
   MOZ_DIAGNOSTIC_ASSERT(mControllerManager);
   return mControllerManager->GetControllersNum();
@@ -174,7 +204,7 @@ bool MediaControlService::ControllerManager::AddController(
     return false;
   }
   mControllers.insertBack(aController);
-  UpdateMainController(aController);
+  UpdateMainControllerInternal(aController);
   return true;
 }
 
@@ -187,9 +217,29 @@ bool MediaControlService::ControllerManager::RemoveController(
   
   
   aController->remove();
-  UpdateMainController(mControllers.isEmpty() ? nullptr
-                                              : mControllers.getLast());
+  UpdateMainControllerInternal(mControllers.isEmpty() ? nullptr
+                                                      : mControllers.getLast());
   return true;
+}
+
+void MediaControlService::ControllerManager::UpdateMainController(
+    MediaController* aController) {
+  MOZ_DIAGNOSTIC_ASSERT(aController);
+  MOZ_DIAGNOSTIC_ASSERT(mControllers.contains(aController));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  aController->remove();
+  mControllers.insertBack(aController);
+  UpdateMainControllerInternal(aController);
 }
 
 void MediaControlService::ControllerManager::Shutdown() {
@@ -215,7 +265,7 @@ void MediaControlService::ControllerManager::MainControllerMetadataChanged(
   mSource->SetMediaMetadata(aMetadata);
 }
 
-void MediaControlService::ControllerManager::UpdateMainController(
+void MediaControlService::ControllerManager::UpdateMainControllerInternal(
     MediaController* aController) {
   MOZ_ASSERT(NS_IsMainThread());
   mMainController = aController;
@@ -242,11 +292,6 @@ void MediaControlService::ControllerManager::UpdateMainController(
 void MediaControlService::ControllerManager::ConnectToMainControllerEvents() {
   MOZ_ASSERT(mMainController);
   
-  
-  mPlayStateChangedListener =
-      mMainController->PlaybackStateChangedEvent().Connect(
-          AbstractThread::MainThread(), this,
-          &ControllerManager::MainControllerPlaybackStateChanged);
   mMetadataChangedListener = mMainController->MetadataChangedEvent().Connect(
       AbstractThread::MainThread(), this,
       &ControllerManager::MainControllerMetadataChanged);
@@ -257,7 +302,6 @@ void MediaControlService::ControllerManager::ConnectToMainControllerEvents() {
 }
 
 void MediaControlService::ControllerManager::DisconnectMainControllerEvents() {
-  mPlayStateChangedListener.DisconnectIfExists();
   mMetadataChangedListener.DisconnectIfExists();
 }
 
@@ -268,6 +312,11 @@ MediaController* MediaControlService::ControllerManager::GetMainController()
 
 uint64_t MediaControlService::ControllerManager::GetControllersNum() const {
   return mControllers.length();
+}
+
+bool MediaControlService::ControllerManager::Contains(
+    MediaController* aController) const {
+  return mControllers.contains(aController);
 }
 
 }  
