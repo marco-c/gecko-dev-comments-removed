@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 using struct DxgiAdapterDesc from "mozilla/D3DMessageUtils.h";
 using struct mozilla::null_t from "ipc/IPCMessageUtils.h";
@@ -41,9 +41,10 @@ struct ContentDeviceData
 {
   DevicePrefs prefs;
   D3D11DeviceStatus d3d11;
+  uint8_t[] cmsOutputProfileData;
 };
 
-// Represents the state of a feature that has failed to initialize.
+
 struct FeatureFailure
 {
   FeatureStatus status;
@@ -53,8 +54,8 @@ struct FeatureFailure
 
 struct GPUDeviceData
 {
-  // If a feature state has changed from Enabled -> Failure, these will be non-
-  // null.
+  
+  
   FeatureFailure? d3d11Compositing;
   FeatureFailure? oglCompositing;
   FeatureFailure? advancedLayers;
@@ -79,5 +80,5 @@ struct GfxVarUpdate
   GfxVarValue value;
 };
 
-} // namespace gfx
-} // namespace mozilla
+} 
+} 

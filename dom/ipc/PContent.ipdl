@@ -1190,6 +1190,15 @@ parent:
 
 
 
+    sync GetOutputColorProfileData()
+        returns (uint8_t[] aOutputColorProfileData);
+
+    
+
+
+
+
+
 
 
 
