@@ -262,20 +262,6 @@ struct IsEnum : detail::IsEnumHelper<typename RemoveCV<T>::Type> {};
 
 
 
-
-template <typename T>
-struct IsArithmetic : IntegralConstant<bool, IsIntegral<T>::value ||
-                                                 IsFloatingPoint<T>::value> {};
-
-
-
-
-
-
-
-
-
-
 template <typename T>
 struct IsConst : FalseType {};
 
