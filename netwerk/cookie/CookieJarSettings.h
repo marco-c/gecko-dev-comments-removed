@@ -137,6 +137,10 @@ class CookieJarSettings final : public nsICookieJarSettings {
 
   void UpdateIsOnContentBlockingAllowList(nsIChannel* aChannel);
 
+  
+  
+  static bool IsRejectThirdPartyTrackers(uint32_t aCookieBehavior);
+
  private:
   enum State {
     
