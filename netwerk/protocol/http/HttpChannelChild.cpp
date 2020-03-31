@@ -1183,10 +1183,8 @@ void HttpChannelChild::CollectOMTTelemetry() {
   }
 
   
-  nsContentPolicyType type = mLoadInfo ? mLoadInfo->InternalContentPolicyType()
-                                       : nsIContentPolicy::TYPE_OTHER;
-
-  nsAutoCString key(NS_CP_ContentTypeName(type));
+  nsAutoCString key(
+      NS_CP_ContentTypeName(mLoadInfo->InternalContentPolicyType()));
 
   Telemetry::AccumulateCategoricalKeyed(key, mOMTResult);
 }
