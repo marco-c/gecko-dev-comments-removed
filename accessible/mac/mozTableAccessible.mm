@@ -1,14 +1,25 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=2:tabstop=2:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #import "mozTableAccessible.h"
 #import "nsCocoaUtils.h"
 
 @implementation mozTablePartAccessible
+
+- (id)accessibilityAttributeValue:(NSString*)attribute {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+
+  if ([attribute isEqualToString:NSAccessibilityTitleAttribute]) return @"";
+
+  return [super accessibilityAttributeValue:attribute];
+
+  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+}
+
 - (BOOL)isLayoutTablePart;
 {
   if (Accessible* accWrap = [self getGeckoAccessible]) {
@@ -69,7 +80,7 @@
     if ([attribute isEqualToString:NSAccessibilityColumnCountAttribute])
       return @(table->ColCount());
     if ([attribute isEqualToString:NSAccessibilityRowsAttribute]) {
-      // Create a new array with the list of table rows.
+      
       NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
       uint32_t totalCount = accWrap->ChildCount();
       for (uint32_t i = 0; i < totalCount; i++) {
@@ -86,7 +97,7 @@
     if ([attribute isEqualToString:NSAccessibilityColumnCountAttribute])
       return @(proxy->TableColumnCount());
     if ([attribute isEqualToString:NSAccessibilityRowsAttribute]) {
-      // Create a new array with the list of table rows.
+      
       NSMutableArray* nativeArray = [[NSMutableArray alloc] init];
       uint32_t totalCount = proxy->ChildrenCount();
       for (uint32_t i = 0; i < totalCount; i++) {
@@ -128,7 +139,7 @@
 - (id)accessibilityAttributeValue:(NSString*)attribute {
   if (AccessibleWrap* accWrap = [self getGeckoAccessible]) {
     if ([attribute isEqualToString:NSAccessibilityIndexAttribute]) {
-      // Count the number of rows before that one to obtain the row index.
+      
       uint32_t index = 0;
       Accessible* parent = accWrap->Parent();
       if (parent) {
@@ -142,7 +153,7 @@
     }
   } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
     if ([attribute isEqualToString:NSAccessibilityIndexAttribute]) {
-      // Count the number of rows before that one to obtain the row index.
+      
       uint32_t index = 0;
       ProxyAccessible* parent = proxy->Parent();
       if (parent) {
