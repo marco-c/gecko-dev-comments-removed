@@ -103,34 +103,6 @@ struct IsArrayHelper<T[]> : TrueType {};
 template <typename T>
 struct IsArray : detail::IsArrayHelper<typename RemoveCV<T>::Type> {};
 
-namespace detail {
-
-template <typename T>
-struct IsFunPtr;
-
-template <typename>
-struct IsFunPtr : public FalseType {};
-
-template <typename Result, typename... ArgTypes>
-struct IsFunPtr<Result (*)(ArgTypes...)> : public TrueType {};
-
-};  
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsFunction : public detail::IsFunPtr<typename RemoveCV<T>::Type*> {};
-
 
 
 
