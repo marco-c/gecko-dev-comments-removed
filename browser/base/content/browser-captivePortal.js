@@ -22,10 +22,6 @@ var CaptivePortalWatcher = {
   
   _waitingForRecheck: false,
 
-  
-  
-  _previousCaptivePortalTab: null,
-
   get _captivePortalNotification() {
     return gHighPriorityNotificationBox.getNotificationWithValue(
       this.PORTAL_NOTIFICATION_VALUE
@@ -112,45 +108,6 @@ var CaptivePortalWatcher = {
     }
   },
 
-  onLocationChange(browser) {
-    if (!this._previousCaptivePortalTab) {
-      return;
-    }
-
-    let tab = this._previousCaptivePortalTab.get();
-    if (!tab || !tab.linkedBrowser) {
-      return;
-    }
-
-    if (browser != tab.linkedBrowser) {
-      return;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    Services.tm.dispatchToMainThread(() => {
-      if (!this._previousCaptivePortalTab) {
-        return;
-      }
-
-      tab = this._previousCaptivePortalTab.get();
-      let canonicalURI = Services.io.newURI(this.canonicalURL);
-      if (
-        tab &&
-        tab.linkedBrowser.currentURI.equalsExceptRef(canonicalURI) &&
-        (this._cps.state == this._cps.UNLOCKED_PORTAL ||
-          this._cps.state == this._cps.UNKNOWN)
-      ) {
-        gBrowser.removeTab(tab);
-      }
-    });
-  },
-
   _captivePortalDetected() {
     if (this._delayedCaptivePortalDetectedInProgress) {
       return;
@@ -221,16 +178,6 @@ var CaptivePortalWatcher = {
   },
 
   _captivePortalGone() {
-    let tab = this._captivePortalTab.get();
-    let canonicalURI = Services.io.newURI(this.canonicalURL);
-    if (
-      tab &&
-      tab.linkedBrowser &&
-      tab.linkedBrowser.currentURI.equalsExceptRef(canonicalURI)
-    ) {
-      this._previousCaptivePortalTab = null;
-      gBrowser.removeTab(tab);
-    }
     this._captivePortalTab = null;
     this._cancelDelayedCaptivePortal();
     this._removeNotification();
@@ -339,9 +286,28 @@ var CaptivePortalWatcher = {
         disableTRR: true,
       });
       this._captivePortalTab = Cu.getWeakReference(tab);
-      this._previousCaptivePortalTab = Cu.getWeakReference(tab);
     }
 
     gBrowser.selectedTab = tab;
+
+    let canonicalURI = Services.io.newURI(this.canonicalURL);
+
+    
+    let tabCloser = () => {
+      Services.obs.removeObserver(tabCloser, "captive-portal-login-abort");
+      Services.obs.removeObserver(tabCloser, "captive-portal-login-success");
+      if (
+        !tab ||
+        tab.closing ||
+        !tab.parentNode ||
+        !tab.linkedBrowser ||
+        !tab.linkedBrowser.currentURI.equalsExceptRef(canonicalURI)
+      ) {
+        return;
+      }
+      gBrowser.removeTab(tab);
+    };
+    Services.obs.addObserver(tabCloser, "captive-portal-login-abort");
+    Services.obs.addObserver(tabCloser, "captive-portal-login-success");
   },
 };
