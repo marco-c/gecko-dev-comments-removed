@@ -163,6 +163,11 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+  MOZ_MUST_USE nsresult AddRangesForUserSelectableNodes(
+      nsRange* aRange, int32_t* aOutIndex,
+      const DispatchSelectstartEvent aDispatchSelectstartEvent);
+
+  
 
 
 
@@ -171,7 +176,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  nsresult AddRangesForSelectableNodes(
+
+
+  MOZ_MUST_USE nsresult AddRangesForSelectableNodes(
       nsRange* aRange, int32_t* aOutIndex,
       DispatchSelectstartEvent aDispatchSelectstartEvent);
 
