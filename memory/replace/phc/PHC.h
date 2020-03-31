@@ -57,9 +57,6 @@ class AddrInfo {
     
     
     
-    
-    
-    
     GuardPage = 4,
   };
 
@@ -69,8 +66,10 @@ class AddrInfo {
   
   
   
+  
   const void* mBaseAddr;
 
+  
   
   
   
@@ -79,8 +78,10 @@ class AddrInfo {
   
   
   
+  
   mozilla::Maybe<StackTrace> mAllocStack;
 
+  
   
   
   

@@ -1,5 +1,5 @@
-function check(extra, size) {
-  Assert.equal(extra.PHCKind, "FreedPage");
+function check(extra, kind, size, hasFreeStack) {
+  Assert.equal(extra.PHCKind, kind);
 
   
   Assert.ok(/^\d+$/.test(extra.PHCBaseAddress));
@@ -9,7 +9,11 @@ function check(extra, size) {
   
   
   Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCAllocStack));
-  Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCFreeStack));
+  if (hasFreeStack) {
+    Assert.ok(/^(\d+,)*\d+$/.test(extra.PHCFreeStack));
+  } else {
+    Assert.ok(!extra.hasOwnProperty("PHCFreeStack"));
+  }
 }
 
 add_task(async function run_test() {
@@ -26,7 +30,7 @@ add_task(async function run_test() {
     },
     function(mdump, extra) {
       
-      check(extra, 32);
+      check(extra, "FreedPage", 32,  true);
     },
     true
   );
@@ -37,7 +41,18 @@ add_task(async function run_test() {
     },
     function(mdump, extra) {
       
-      check(extra, 64);
+      check(extra, "FreedPage", 64,  true);
+    },
+    true
+  );
+
+  do_crash(
+    function() {
+      crashType = CrashTestUtils.CRASH_PHC_BOUNDS_VIOLATION;
+    },
+    function(mdump, extra) {
+      
+      check(extra, "GuardPage", 96,  false);
     },
     true
   );

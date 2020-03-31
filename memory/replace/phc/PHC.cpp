@@ -67,6 +67,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "PHC.h"
 
 #include <stdlib.h>
@@ -268,10 +290,16 @@ using Delay = uint32_t;
 static const size_t kPageSize = 4096;
 
 
+
+
+
+
+
 static const size_t kNumAllocPages = 64;
+static const size_t kNumAllPages = kNumAllocPages * 2 + 1;
 
 
-static const size_t kAllPagesSize = kPageSize * kNumAllocPages;
+static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 
 
 
@@ -312,6 +340,60 @@ constexpr Delay Rnd64ToDelay(uint64_t aRnd) {
 
   return aRnd % (AvgDelay * 2) + 1;
 }
+
+
+
+
+
+
+
+
+class PtrKind {
+ private:
+  enum class Tag : uint8_t {
+    Nothing,
+    GuardPage,
+    AllocPage,
+  };
+
+  Tag mTag;
+  uintptr_t mIndex;  
+
+ public:
+  
+  
+  
+  PtrKind(const void* aPtr, const uint8_t* aPagesStart,
+          const uint8_t* aPagesLimit) {
+    if (!(aPagesStart <= aPtr && aPtr < aPagesLimit)) {
+      mTag = Tag::Nothing;
+    } else {
+      uintptr_t offset = static_cast<const uint8_t*>(aPtr) - aPagesStart;
+      uintptr_t allPageIndex = offset / kPageSize;
+      MOZ_ASSERT(allPageIndex < kNumAllPages);
+      if (allPageIndex & 1) {
+        
+        uintptr_t allocPageIndex = allPageIndex / 2;
+        MOZ_ASSERT(allocPageIndex < kNumAllocPages);
+        mTag = Tag::AllocPage;
+        mIndex = allocPageIndex;
+      } else {
+        
+        mTag = Tag::GuardPage;
+      }
+    }
+  }
+
+  bool IsNothing() const { return mTag == Tag::Nothing; }
+  bool IsGuardPage() const { return mTag == Tag::GuardPage; }
+
+  
+  
+  uintptr_t AllocPageIndex() const {
+    MOZ_RELEASE_ASSERT(mTag == Tag::AllocPage);
+    return mIndex;
+  }
+};
 
 
 class GAtomic {
@@ -355,7 +437,8 @@ class GConst {
   uint8_t* const mPagesStart;
   uint8_t* const mPagesLimit;
 
-  uint8_t* AllocPages() {
+  
+  uint8_t* AllocAllPages() {
     
     
     
@@ -375,27 +458,26 @@ class GConst {
 
  public:
   GConst()
-      : mPagesStart(AllocPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
-    LOG("AllocPages at %p..%p\n", mPagesStart, mPagesLimit);
+      : mPagesStart(AllocAllPages()), mPagesLimit(mPagesStart + kAllPagesSize) {
+    LOG("AllocAllPages at %p..%p\n", mPagesStart, mPagesLimit);
+  }
+
+  class PtrKind PtrKind(const void* aPtr) {
+    class PtrKind pk(aPtr, mPagesStart, mPagesLimit);
+    return pk;
+  }
+
+  bool IsInFirstGuardPage(const void* aPtr) {
+    return mPagesStart <= aPtr && aPtr < mPagesStart + kPageSize;
   }
 
   
   
-  
-  Maybe<uintptr_t> PageIndex(const void* aPtr) {
-    if (!(mPagesStart <= aPtr && aPtr < mPagesLimit)) {
-      return Nothing();
-    }
-
-    size_t i = (static_cast<const uint8_t*>(aPtr) - mPagesStart) / kPageSize;
-    MOZ_ASSERT(i < kNumAllocPages);
-    return Some(i);
-  }
-
-  
-  uint8_t* AllocPagePtr(size_t aIndex) {
+  uint8_t* AllocPagePtr(uintptr_t aIndex) {
     MOZ_ASSERT(aIndex < kNumAllocPages);
-    return mPagesStart + kPageSize * aIndex;
+    
+    
+    return mPagesStart + (2 * aIndex + 1) * kPageSize;
   }
 };
 
@@ -514,7 +596,7 @@ class GMut {
     AllocPageInfo()
         : mState(AllocPageState::NeverAllocated),
           mArenaId(),
-          mUsableSize(0),
+          mBaseAddr(nullptr),
           mAllocStack(),
           mFreeStack(),
           mReuseTime(0) {}
@@ -545,7 +627,18 @@ class GMut {
     
     
     
-    size_t mUsableSize;
+    
+    uint8_t* mBaseAddr;
+
+    
+    
+    
+    size_t UsableSize() const {
+      return mState == AllocPageState::NeverAllocated
+                 ? 0
+                 : kPageSize - (reinterpret_cast<uintptr_t>(mBaseAddr) &
+                                (kPageSize - 1));
+    }
 
     
     
@@ -601,20 +694,18 @@ class GMut {
     const AllocPageInfo& page = mAllocPages[aIndex];
     AssertAllocPageInUse(aLock, page);
 
-    return page.mUsableSize;
+    return page.UsableSize();
   }
 
   void SetPageInUse(GMutLock aLock, uintptr_t aIndex,
-                    const Maybe<arena_id_t>& aArenaId, size_t aUsableSize,
+                    const Maybe<arena_id_t>& aArenaId, uint8_t* aBaseAddr,
                     const StackTrace& aAllocStack) {
-    MOZ_ASSERT(aUsableSize == sMallocTable.malloc_good_size(aUsableSize));
-
     AllocPageInfo& page = mAllocPages[aIndex];
     AssertAllocPageNotInUse(aLock, page);
 
     page.mState = AllocPageState::InUse;
     page.mArenaId = aArenaId;
-    page.mUsableSize = aUsableSize;
+    page.mBaseAddr = aBaseAddr;
     page.mAllocStack = Some(aAllocStack);
     page.mFreeStack = Nothing();
     page.mReuseTime = kMaxTime;
@@ -624,10 +715,8 @@ class GMut {
   }
 
   void ResizePageInUse(GMutLock aLock, uintptr_t aIndex,
-                       const Maybe<arena_id_t>& aArenaId, size_t aNewUsableSize,
+                       const Maybe<arena_id_t>& aArenaId, uint8_t* aNewBaseAddr,
                        const StackTrace& aAllocStack) {
-    MOZ_ASSERT(aNewUsableSize == sMallocTable.malloc_good_size(aNewUsableSize));
-
     AllocPageInfo& page = mAllocPages[aIndex];
     AssertAllocPageInUse(aLock, page);
 
@@ -636,7 +725,7 @@ class GMut {
       
       MOZ_RELEASE_ASSERT(page.mArenaId == aArenaId);
     }
-    page.mUsableSize = aNewUsableSize;
+    page.mBaseAddr = aNewBaseAddr;
     
     
     page.mAllocStack = Some(aAllocStack);
@@ -672,17 +761,29 @@ class GMut {
     mNumPageAllocs--;
   }
 
-  void EnsureInUse(GMutLock, void* aPtr, uintptr_t aIndex) {
+  static void CrashOnGuardPage(void* aPtr) {
+    
+    
+    
+    LOG("CrashOnGuardPage(%p), bounds violation\n", aPtr);
+    *static_cast<uint8_t*>(aPtr) = 0;
+    MOZ_CRASH("unreachable");
+  }
+
+  void EnsureValidAndInUse(GMutLock, void* aPtr, uintptr_t aIndex) {
     const AllocPageInfo& page = mAllocPages[aIndex];
-    MOZ_RELEASE_ASSERT(page.mState != AllocPageState::NeverAllocated);
+
+    
+    MOZ_RELEASE_ASSERT(page.mBaseAddr == aPtr);
+
     if (page.mState == AllocPageState::Freed) {
-      LOG("EnsureInUse(%p), failure\n", aPtr);
       
       
       
       
       
       
+      LOG("EnsureValidAndInUse(%p), use-after-free\n", aPtr);
       sMutex.Unlock();
       *static_cast<uint8_t*>(aPtr) = 0;
       MOZ_CRASH("unreachable");
@@ -690,26 +791,30 @@ class GMut {
   }
 
   void FillAddrInfo(GMutLock, uintptr_t aIndex, const void* aBaseAddr,
-                    phc::AddrInfo& aOut) {
+                    bool isGuardPage, phc::AddrInfo& aOut) {
     const AllocPageInfo& page = mAllocPages[aIndex];
-    switch (page.mState) {
-      case AllocPageState::NeverAllocated:
-        aOut.mKind = phc::AddrInfo::Kind::NeverAllocatedPage;
-        break;
+    if (isGuardPage) {
+      aOut.mKind = phc::AddrInfo::Kind::GuardPage;
+    } else {
+      switch (page.mState) {
+        case AllocPageState::NeverAllocated:
+          aOut.mKind = phc::AddrInfo::Kind::NeverAllocatedPage;
+          break;
 
-      case AllocPageState::InUse:
-        aOut.mKind = phc::AddrInfo::Kind::InUsePage;
-        break;
+        case AllocPageState::InUse:
+          aOut.mKind = phc::AddrInfo::Kind::InUsePage;
+          break;
 
-      case AllocPageState::Freed:
-        aOut.mKind = phc::AddrInfo::Kind::FreedPage;
-        break;
+        case AllocPageState::Freed:
+          aOut.mKind = phc::AddrInfo::Kind::FreedPage;
+          break;
 
-      default:
-        MOZ_CRASH();
+        default:
+          MOZ_CRASH();
+      }
     }
-    aOut.mBaseAddr = gConst->AllocPagePtr(aIndex);
-    aOut.mUsableSize = page.mUsableSize;
+    aOut.mBaseAddr = page.mBaseAddr;
+    aOut.mUsableSize = page.UsableSize();
     aOut.mAllocStack = page.mAllocStack;
     aOut.mFreeStack = page.mFreeStack;
   }
@@ -724,9 +829,10 @@ class GMut {
       case AllocPageState::InUse: {
         
         
-        uint8_t* pagePtr = gConst->AllocPagePtr(aIndex);
-        if (aPtr < pagePtr + page.mUsableSize) {
-          *aInfo = {TagLiveAlloc, pagePtr, page.mUsableSize,
+        uint8_t* base = page.mBaseAddr;
+        uint8_t* limit = base + page.UsableSize();
+        if (base <= aPtr && aPtr < limit) {
+          *aInfo = {TagLiveAlloc, page.mBaseAddr, page.UsableSize(),
                     page.mArenaId.valueOr(0)};
           return;
         }
@@ -736,10 +842,11 @@ class GMut {
       case AllocPageState::Freed: {
         
         
-        uint8_t* pagePtr = gConst->AllocPagePtr(aIndex);
-        if (aPtr < pagePtr + page.mUsableSize) {
-          *aInfo = {TagFreedAlloc, gConst->AllocPagePtr(aIndex),
-                    page.mUsableSize, page.mArenaId.valueOr(0)};
+        uint8_t* base = page.mBaseAddr;
+        uint8_t* limit = base + page.UsableSize();
+        if (base <= aPtr && aPtr < limit) {
+          *aInfo = {TagFreedAlloc, page.mBaseAddr, page.UsableSize(),
+                    page.mArenaId.valueOr(0)};
           return;
         }
         break;
@@ -749,6 +856,8 @@ class GMut {
         MOZ_CRASH();
     }
 
+    
+    
     *aInfo = {TagUnknown, nullptr, 0, 0};
   }
 
@@ -791,7 +900,8 @@ class GMut {
   void AssertAllocPageInUse(GMutLock, const AllocPageInfo& aPage) {
     MOZ_ASSERT(aPage.mState == AllocPageState::InUse);
     
-    MOZ_ASSERT(aPage.mUsableSize > 0);
+    MOZ_ASSERT(aPage.mBaseAddr);
+    MOZ_ASSERT(aPage.UsableSize() > 0);
     MOZ_ASSERT(aPage.mAllocStack.isSome());
     MOZ_ASSERT(aPage.mFreeStack.isNothing());
     MOZ_ASSERT(aPage.mReuseTime == kMaxTime);
@@ -804,7 +914,7 @@ class GMut {
     bool isFresh = aPage.mState == AllocPageState::NeverAllocated;
     MOZ_ASSERT(isFresh || aPage.mState == AllocPageState::Freed);
     MOZ_ASSERT_IF(isFresh, aPage.mArenaId == Nothing());
-    MOZ_ASSERT(isFresh == (aPage.mUsableSize == 0));
+    MOZ_ASSERT(isFresh == (aPage.mBaseAddr == nullptr));
     MOZ_ASSERT(isFresh == (aPage.mAllocStack.isNothing()));
     MOZ_ASSERT(isFresh == (aPage.mFreeStack.isNothing()));
     MOZ_ASSERT(aPage.mReuseTime != kMaxTime);
@@ -843,7 +953,9 @@ static GMut* gMut;
 
 
 static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
-                            bool aZero) {
+                            size_t aAlignment, bool aZero) {
+  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
+
   if (aReqSize > kPageSize) {
     return nullptr;
   }
@@ -908,13 +1020,15 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   
   
   uint8_t* ptr = nullptr;
+  uint8_t* pagePtr = nullptr;
   for (uintptr_t n = 0, i = size_t(gMut->Random64(lock)) % kNumAllocPages;
        n < kNumAllocPages; n++, i = (i + 1) % kNumAllocPages) {
     if (!gMut->IsPageAllocatable(lock, i, now)) {
       continue;
     }
 
-    uint8_t* pagePtr = gConst->AllocPagePtr(i);
+    pagePtr = gConst->AllocPagePtr(i);
+    MOZ_ASSERT(pagePtr);
     bool ok =
 #ifdef XP_WIN
         !!VirtualAlloc(pagePtr, kPageSize, MEM_COMMIT, PAGE_READWRITE);
@@ -923,8 +1037,18 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #endif
     size_t usableSize = sMallocTable.malloc_good_size(aReqSize);
     if (ok) {
-      gMut->SetPageInUse(lock, i, aArenaId, usableSize, allocStack);
-      ptr = pagePtr;
+      MOZ_ASSERT(usableSize > 0);
+
+      
+      
+      ptr = pagePtr + kPageSize - usableSize;
+      if (aAlignment != 1) {
+        ptr = reinterpret_cast<uint8_t*>(
+            (reinterpret_cast<uintptr_t>(ptr) & ~(aAlignment - 1)));
+      }
+
+      gMut->SetPageInUse(lock, i, aArenaId, ptr, allocStack);
+
       if (aZero) {
         memset(ptr, 0, usableSize);
       } else {
@@ -933,21 +1057,24 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
 #endif
       }
     }
+
     gMut->IncPageAllocHits(lock);
-    LOG("PageAlloc(%zu) -> %p[%zu] (%zu) (z%zu), sAllocDelay <- %zu, "
+    LOG("PageAlloc(%zu, %zu) -> %p[%zu]/%p (%zu) (z%zu), sAllocDelay <- %zu, "
         "fullness %zu/%zu, hits %zu/%zu (%zu%%)\n",
-        aReqSize, ptr, i, usableSize, size_t(aZero), size_t(newAllocDelay),
-        gMut->NumPageAllocs(lock), kNumAllocPages, gMut->PageAllocHits(lock),
-        gMut->PageAllocAttempts(lock), gMut->PageAllocHitRate(lock));
+        aReqSize, aAlignment, pagePtr, i, ptr, usableSize, size_t(aZero),
+        size_t(newAllocDelay), gMut->NumPageAllocs(lock), kNumAllocPages,
+        gMut->PageAllocHits(lock), gMut->PageAllocAttempts(lock),
+        gMut->PageAllocHitRate(lock));
     break;
   }
 
-  if (!ptr) {
+  if (!pagePtr) {
     
     gMut->IncPageAllocMisses(lock);
-    LOG("No PageAlloc(%zu), sAllocDelay <- %zu, fullness %zu/%zu, hits %zu/%zu "
+    LOG("No PageAlloc(%zu, %zu), sAllocDelay <- %zu, fullness %zu/%zu, hits "
+        "%zu/%zu "
         "(%zu%%)\n",
-        aReqSize, size_t(newAllocDelay), gMut->NumPageAllocs(lock),
+        aReqSize, aAlignment, size_t(newAllocDelay), gMut->NumPageAllocs(lock),
         kNumAllocPages, gMut->PageAllocHits(lock),
         gMut->PageAllocAttempts(lock), gMut->PageAllocHitRate(lock));
   }
@@ -958,7 +1085,7 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   return ptr;
 }
 
-static void FreePage(GMutLock aLock, size_t aIndex,
+static void FreePage(GMutLock aLock, uintptr_t aIndex,
                      const Maybe<arena_id_t>& aArenaId,
                      const StackTrace& aFreeStack, Delay aReuseDelay) {
   void* pagePtr = gConst->AllocPagePtr(aIndex);
@@ -983,7 +1110,8 @@ static void FreePage(GMutLock aLock, size_t aIndex,
 
 MOZ_ALWAYS_INLINE static void* PageMalloc(const Maybe<arena_id_t>& aArenaId,
                                           size_t aReqSize) {
-  void* ptr = MaybePageAlloc(aArenaId, aReqSize,  false);
+  void* ptr = MaybePageAlloc(aArenaId, aReqSize,  1,
+                              false);
   return ptr ? ptr
              : (aArenaId.isSome()
                     ? sMallocTable.moz_arena_malloc(*aArenaId, aReqSize)
@@ -1007,7 +1135,8 @@ MOZ_ALWAYS_INLINE static void* PageCalloc(const Maybe<arena_id_t>& aArenaId,
     return nullptr;
   }
 
-  void* ptr = MaybePageAlloc(aArenaId, checkedSize.value(),  true);
+  void* ptr = MaybePageAlloc(aArenaId, checkedSize.value(),  1,
+                              true);
   return ptr ? ptr
              : (aArenaId.isSome()
                     ? sMallocTable.moz_arena_calloc(*aArenaId, aNum, aReqSize)
@@ -1048,13 +1177,20 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
     return PageMalloc(aArenaId, aNewSize);
   }
 
-  Maybe<uintptr_t> i = gConst->PageIndex(aOldPtr);
-  if (i.isNothing()) {
+  PtrKind pk = gConst->PtrKind(aOldPtr);
+  if (pk.IsNothing()) {
     
     return aArenaId.isSome()
                ? sMallocTable.moz_arena_realloc(*aArenaId, aOldPtr, aNewSize)
                : sMallocTable.realloc(aOldPtr, aNewSize);
   }
+
+  if (pk.IsGuardPage()) {
+    GMut::CrashOnGuardPage(aOldPtr);
+  }
+
+  
+  uintptr_t index = pk.AllocPageIndex();
 
   
 
@@ -1073,16 +1209,25 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   MutexAutoLock lock(GMut::sMutex);
 
   
-  gMut->EnsureInUse(lock, aOldPtr, *i);
+  gMut->EnsureValidAndInUse(lock, aOldPtr, index);
 
   if (aNewSize <= kPageSize) {
     
     
     
+    
+    
+    
+    
+    
+    size_t oldUsableSize = gMut->PageUsableSize(lock, index);
     size_t newUsableSize = sMallocTable.malloc_good_size(aNewSize);
-    gMut->ResizePageInUse(lock, *i, aArenaId, newUsableSize, stack);
-    LOG("PageRealloc-Reuse(%p, %zu)\n", aOldPtr, aNewSize);
-    return aOldPtr;
+    uint8_t* pagePtr = gConst->AllocPagePtr(index);
+    uint8_t* newPtr = pagePtr + kPageSize - newUsableSize;
+    memmove(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
+    gMut->ResizePageInUse(lock, index, aArenaId, newPtr, stack);
+    LOG("PageRealloc-Reuse(%p, %zu) -> %p\n", aOldPtr, aNewSize, newPtr);
+    return newPtr;
   }
 
   
@@ -1091,7 +1236,7 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   if (aArenaId.isSome()) {
     newPtr = sMallocTable.moz_arena_malloc(*aArenaId, aNewSize);
   } else {
-    Maybe<arena_id_t> oldArenaId = gMut->PageArena(lock, *i);
+    Maybe<arena_id_t> oldArenaId = gMut->PageArena(lock, index);
     newPtr = (oldArenaId.isSome()
                   ? sMallocTable.moz_arena_malloc(*oldArenaId, aNewSize)
                   : sMallocTable.malloc(aNewSize));
@@ -1107,11 +1252,11 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   
   
   
-  size_t oldUsableSize = gMut->PageUsableSize(lock, *i);
+  size_t oldUsableSize = gMut->PageUsableSize(lock, index);
   memcpy(newPtr, aOldPtr, std::min(oldUsableSize, aNewSize));
-  FreePage(lock, *i, aArenaId, stack, reuseDelay);
+  FreePage(lock, index, aArenaId, stack, reuseDelay);
   LOG("PageRealloc-Free(%p[%zu], %zu) -> %p, %zu delay, reuse at ~%zu\n",
-      aOldPtr, *i, aNewSize, newPtr, size_t(reuseDelay),
+      aOldPtr, index, aNewSize, newPtr, size_t(reuseDelay),
       size_t(GAtomic::Now()) + reuseDelay);
 
   return newPtr;
@@ -1124,12 +1269,19 @@ static void* replace_realloc(void* aOldPtr, size_t aNewSize) {
 
 MOZ_ALWAYS_INLINE static void PageFree(const Maybe<arena_id_t>& aArenaId,
                                        void* aPtr) {
-  Maybe<uintptr_t> i = gConst->PageIndex(aPtr);
-  if (i.isNothing()) {
+  PtrKind pk = gConst->PtrKind(aPtr);
+  if (pk.IsNothing()) {
     
     return aArenaId.isSome() ? sMallocTable.moz_arena_free(*aArenaId, aPtr)
                              : sMallocTable.free(aPtr);
   }
+
+  if (pk.IsGuardPage()) {
+    GMut::CrashOnGuardPage(aPtr);
+  }
+
+  
+  uintptr_t index = pk.AllocPageIndex();
 
   
   Maybe<AutoDisableOnCurrentThread> disable;
@@ -1146,14 +1298,14 @@ MOZ_ALWAYS_INLINE static void PageFree(const Maybe<arena_id_t>& aArenaId,
   MutexAutoLock lock(GMut::sMutex);
 
   
-  gMut->EnsureInUse(lock, aPtr, *i);
+  gMut->EnsureValidAndInUse(lock, aPtr, index);
 
   
   Delay reuseDelay = ReuseDelay(lock);
-  FreePage(lock, *i, aArenaId, freeStack, reuseDelay);
+  FreePage(lock, index, aArenaId, freeStack, reuseDelay);
 
   LOG("PageFree(%p[%zu]), %zu delay, reuse at ~%zu, fullness %zu/%zu\n", aPtr,
-      *i, size_t(reuseDelay), size_t(GAtomic::Now()) + reuseDelay,
+      index, size_t(reuseDelay), size_t(GAtomic::Now()) + reuseDelay,
       gMut->NumPageAllocs(lock), kNumAllocPages);
 }
 
@@ -1163,13 +1315,13 @@ static void replace_free(void* aPtr) { return PageFree(Nothing(), aPtr); }
 MOZ_ALWAYS_INLINE static void* PageMemalign(const Maybe<arena_id_t>& aArenaId,
                                             size_t aAlignment,
                                             size_t aReqSize) {
+  MOZ_RELEASE_ASSERT(IsPowerOfTwo(aAlignment));
+
   
   
-  
-  MOZ_ASSERT(IsPowerOfTwo(aAlignment));
   void* ptr = nullptr;
   if (aAlignment <= kPageSize) {
-    ptr = MaybePageAlloc(aArenaId, aReqSize,  false);
+    ptr = MaybePageAlloc(aArenaId, aReqSize, aAlignment,  false);
   }
   return ptr ? ptr
              : (aArenaId.isSome()
@@ -1183,18 +1335,25 @@ static void* replace_memalign(size_t aAlignment, size_t aReqSize) {
 }
 
 static size_t replace_malloc_usable_size(usable_ptr_t aPtr) {
-  Maybe<uintptr_t> i = gConst->PageIndex(aPtr);
-  if (i.isNothing()) {
+  PtrKind pk = gConst->PtrKind(aPtr);
+  if (pk.IsNothing()) {
     
     return sMallocTable.malloc_usable_size(aPtr);
   }
 
+  if (pk.IsGuardPage()) {
+    GMut::CrashOnGuardPage(const_cast<void*>(aPtr));
+  }
+
+  
+  uintptr_t index = pk.AllocPageIndex();
+
   MutexAutoLock lock(GMut::sMutex);
 
   
-  gMut->EnsureInUse(lock, const_cast<void*>(aPtr), *i);
+  gMut->EnsureValidAndInUse(lock, const_cast<void*>(aPtr), index);
 
-  return gMut->PageUsableSize(lock, *i);
+  return gMut->PageUsableSize(lock, index);
 }
 
 void replace_jemalloc_stats(jemalloc_stats_t* aStats) {
@@ -1235,20 +1394,29 @@ void replace_jemalloc_stats(jemalloc_stats_t* aStats) {
 void replace_jemalloc_ptr_info(const void* aPtr, jemalloc_ptr_info_t* aInfo) {
   
   
-  Maybe<uintptr_t> i = gConst->PageIndex(aPtr);
-  if (i.isNothing()) {
+  PtrKind pk = gConst->PtrKind(aPtr);
+  if (pk.IsNothing()) {
     
     return sMallocTable.jemalloc_ptr_info(aPtr, aInfo);
   }
 
+  if (pk.IsGuardPage()) {
+    
+    *aInfo = {TagUnknown, nullptr, 0, 0};
+    return;
+  }
+
+  
+  uintptr_t index = pk.AllocPageIndex();
+
   MutexAutoLock lock(GMut::sMutex);
 
-  gMut->FillJemallocPtrInfo(lock, aPtr, *i, aInfo);
+  gMut->FillJemallocPtrInfo(lock, aPtr, index, aInfo);
 #if DEBUG
-  LOG("JemallocPtrInfo(%p[%zu]) -> {%zu, %p, %zu, %zu}\n", aPtr, *i,
+  LOG("JemallocPtrInfo(%p[%zu]) -> {%zu, %p, %zu, %zu}\n", aPtr, index,
       size_t(aInfo->tag), aInfo->addr, aInfo->size, aInfo->arenaId);
 #else
-  LOG("JemallocPtrInfo(%p[%zu]) -> {%zu, %p, %zu}\n", aPtr, *i,
+  LOG("JemallocPtrInfo(%p[%zu]) -> {%zu, %p, %zu}\n", aPtr, index,
       size_t(aInfo->tag), aInfo->addr, aInfo->size);
 #endif
 }
@@ -1288,14 +1456,40 @@ void* replace_moz_arena_memalign(arena_id_t aArenaId, size_t aAlignment,
 
 class PHCBridge : public ReplaceMallocBridge {
   virtual bool IsPHCAllocation(const void* aPtr, phc::AddrInfo* aOut) override {
-    Maybe<uintptr_t> i = gConst->PageIndex(aPtr);
-    if (i.isNothing()) {
+    PtrKind pk = gConst->PtrKind(aPtr);
+    if (pk.IsNothing()) {
       return false;
     }
 
+    bool isGuardPage = false;
+    if (pk.IsGuardPage()) {
+      if ((uintptr_t(aPtr) % kPageSize) < (kPageSize / 2)) {
+        
+        
+        
+        if (gConst->IsInFirstGuardPage(aPtr)) {
+          return false;
+        }
+
+        
+        pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
+
+      } else {
+        
+        
+        pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
+      }
+
+      
+      isGuardPage = true;
+    }
+
+    
+    uintptr_t index = pk.AllocPageIndex();
+
     if (aOut) {
       MutexAutoLock lock(GMut::sMutex);
-      gMut->FillAddrInfo(lock, *i, aPtr, *aOut);
+      gMut->FillAddrInfo(lock, index, aPtr, isGuardPage, *aOut);
       LOG("IsPHCAllocation: %zu, %p, %zu, %zu, %zu\n", size_t(aOut->mKind),
           aOut->mBaseAddr, aOut->mUsableSize,
           aOut->mAllocStack.isSome() ? aOut->mAllocStack->mLength : 0,
