@@ -65,16 +65,10 @@ async function addLogin(login) {
       Ci.nsIWritablePropertyBag2
     );
     matchData.setPropertyAsAUTF8String("guid", login.guid);
-
-    let logins = Services.logins.searchLogins(matchData);
-    if (!logins.length) {
+    if (!Services.logins.searchLogins(matchData).length) {
       return;
     }
-    
-    
-    
-    
-    Services.logins.removeLogin(logins[0]);
+    Services.logins.removeLogin(login);
   });
   return login;
 }
