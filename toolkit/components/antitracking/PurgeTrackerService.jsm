@@ -178,33 +178,26 @@ PurgeTrackerService.prototype = {
       return;
     }
 
+    let baseDomainsWithInteraction = new Set();
+    for (let perm of Services.perms.getAllWithTypePrefix("storageAccessAPI")) {
+      baseDomainsWithInteraction.add(perm.principal.baseDomain);
+    }
+
     for (let cookie of cookies) {
       let httpsPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
         "https://" +
           cookie.rawHost +
           ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
       );
-      let httpPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        "http://" +
-          cookie.rawHost +
-          ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
-      );
 
       
-      let interactionPermission =
-        Services.perms.getPermissionObject(
-          httpsPrincipal,
-          "storageAccessAPI",
-          false
-        ) ||
-        Services.perms.getPermissionObject(
-          httpPrincipal,
-          "storageAccessAPI",
-          false
+      if (!baseDomainsWithInteraction.has(httpsPrincipal.baseDomain)) {
+        let httpPrincipal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+          "http://" +
+            cookie.rawHost +
+            ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
         );
 
-      
-      if (!interactionPermission) {
         
         let isTracker =
           (await this.isTracker(httpsPrincipal, feature)) ||
