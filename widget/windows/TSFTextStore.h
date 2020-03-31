@@ -679,7 +679,7 @@ class TSFTextStore final : public ITextStoreACP,
     
     RefPtr<TextRangeArray> mRanges;
     
-    const MSG* mKeyMsg;
+    MSG mKeyMsg;
     
     bool mSelectionReversed;
     
