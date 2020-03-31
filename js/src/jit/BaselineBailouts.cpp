@@ -405,10 +405,6 @@ struct BaselineStackBuilder {
 #  error "Bad architecture!"
 #endif
   }
-
-  void setCheckGlobalDeclarationConflicts() {
-    header_->checkGlobalDeclarationConflicts = true;
-  }
 };
 
 #ifdef DEBUG
@@ -683,8 +679,6 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     flags |= BaselineFrame::DEBUGGEE;
   }
 
-  const bool isPrologueBailout = IsPrologueBailout(iter, excInfo);
-
   
   JSObject* envChain = nullptr;
   Value returnValue = UndefinedValue();
@@ -757,14 +751,6 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
         MOZ_ASSERT(!script->isForEval());
         MOZ_ASSERT(!script->hasNonSyntacticScope());
         envChain = &(script->global().lexicalEnvironment());
-
-        
-        
-        
-        
-        if (isPrologueBailout) {
-          builder.setCheckGlobalDeclarationConflicts();
-        }
       }
     }
 
@@ -1098,7 +1084,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
     
     
     uint8_t* resumeAddr;
-    if (isPrologueBailout) {
+    if (IsPrologueBailout(iter, excInfo)) {
       JitSpew(JitSpew_BaselineBailouts, "      Resuming into prologue.");
       MOZ_ASSERT(pc == script->code());
       blFrame->setInterpreterFieldsForPrologue(script);
@@ -1834,17 +1820,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
   
   if (!EnsureHasEnvironmentObjects(cx, topFrame)) {
     return false;
-  }
-
-  
-  if (bailoutInfo->checkGlobalDeclarationConflicts) {
-    Rooted<LexicalEnvironmentObject*> lexicalEnv(
-        cx, &cx->global()->lexicalEnvironment());
-    RootedScript script(cx, topFrame->script());
-    if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv,
-                                         cx->global())) {
-      return false;
-    }
   }
 
   

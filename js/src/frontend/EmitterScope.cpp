@@ -790,6 +790,11 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
 
   
   if (globalsc->bindings) {
+    
+    if (!bce->emit1(JSOp::CheckGlobalOrEvalDecl)) {
+      return false;
+    }
+
     for (DynamicBindingIter bi(globalsc); bi; bi++) {
       NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       JSAtom* name = bi.name();
@@ -868,6 +873,11 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
     
     
     if (!hasEnvironment() && evalsc->bindings) {
+      
+      if (!bce->emit1(JSOp::CheckGlobalOrEvalDecl)) {
+        return false;
+      }
+
       for (DynamicBindingIter bi(evalsc); bi; bi++) {
         MOZ_ASSERT(bi.bindingOp() == JSOp::DefVar);
 
