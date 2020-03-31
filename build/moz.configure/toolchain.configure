@@ -1635,10 +1635,8 @@ def security_hardening_cflags(hardening_flag, asan, debug, optimize, c_compiler,
             js_ldflags.append("-Wl,--dynamicbase")
 
         
-        
-        
         if c_compiler.type == 'clang-cl' and c_compiler.version >= '8' and \
-           (target.cpu != 'aarch64' or hardening_flag):
+           (target.cpu != 'aarch64' or c_compiler.version >= '8.0.1'):
             flags.append("-guard:cf")
             js_flags.append("-guard:cf")
             
