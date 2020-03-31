@@ -262,7 +262,7 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasCatch()) {
-    if (!bce_->addTryNote(JSTRY_CATCH, depth_, offsetAfterTryOp(),
+    if (!bce_->addTryNote(TryNoteKind::Catch, depth_, offsetAfterTryOp(),
                           tryEnd_.offset)) {
       return false;
     }
@@ -272,7 +272,7 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasFinally()) {
-    if (!bce_->addTryNote(JSTRY_FINALLY, depth_, offsetAfterTryOp(),
+    if (!bce_->addTryNote(TryNoteKind::Finally, depth_, offsetAfterTryOp(),
                           finallyStart_.offset)) {
       return false;
     }

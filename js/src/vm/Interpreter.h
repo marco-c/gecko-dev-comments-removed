@@ -390,15 +390,15 @@ class MOZ_STACK_CLASS BaseTryNoteIter {
 
 
 
-      if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
+      if (tn_->kind() == TryNoteKind::ForOfIterClose) {
         uint32_t iterCloseDepth = 1;
         do {
           ++tn_;
           MOZ_ASSERT(tn_ != tnEnd_);
           if (pcInRange()) {
-            if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
+            if (tn_->kind() == TryNoteKind::ForOfIterClose) {
               iterCloseDepth++;
-            } else if (tn_->kind == JSTRY_FOR_OF) {
+            } else if (tn_->kind() == TryNoteKind::ForOf) {
               iterCloseDepth--;
             }
           }

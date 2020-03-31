@@ -7555,9 +7555,9 @@ AbortReasonOr<MBasicBlock*> IonBuilder::newPendingLoopHeader(
         }
       }
 
-      switch (tn.kind) {
-        case JSTRY_DESTRUCTURING:
-        case JSTRY_FOR_IN: {
+      switch (tn.kind()) {
+        case TryNoteKind::Destructuring:
+        case TryNoteKind::ForIn: {
           
           
           
