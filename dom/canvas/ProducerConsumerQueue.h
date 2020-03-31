@@ -1580,7 +1580,7 @@ struct PcqParamTraits {
 
 
 template <>
-struct IsTriviallySerializable<PcqStatus> : TrueType {};
+struct IsTriviallySerializable<PcqStatus> : std::true_type {};
 
 
 
@@ -2061,7 +2061,7 @@ struct PcqParamTraits<UniquePtr<T>> {
 
 #if defined(OS_WIN)
 template <>
-struct IsTriviallySerializable<base::SharedMemoryHandle> : TrueType {};
+struct IsTriviallySerializable<base::SharedMemoryHandle> : std::true_type {};
 #elif defined(OS_POSIX)
 
 template <>

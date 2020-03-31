@@ -14,6 +14,7 @@
 
 #include <stdint.h>         
 #include <sys/types.h>      
+#include <type_traits>
 #include "LayersLogging.h"  
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"         
@@ -28,7 +29,7 @@ namespace mozilla {
 
 struct TileCoordUnit {};
 template <>
-struct IsPixel<TileCoordUnit> : mozilla::TrueType {};
+struct IsPixel<TileCoordUnit> : std::true_type {};
 
 namespace layers {
 

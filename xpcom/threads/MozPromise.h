@@ -96,7 +96,7 @@ struct IsMozPromise : std::false_type {};
 
 template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
 struct IsMozPromise<MozPromise<ResolveValueT, RejectValueT, IsExclusive>>
-    : TrueType {};
+    : std::true_type {};
 
 
 
