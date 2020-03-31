@@ -742,18 +742,6 @@ class Selection final : public nsSupportsWeakReference,
 
   StyledRange* FindRangeData(nsRange* aRange);
 
-  
-
-
-
-
-
-
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  MaybeAddRangeAndTruncateOverlaps(nsRange* aRange, int32_t* aOutIndex);
-
   Document* GetDocument() const;
   nsPIDOMWindowOuter* GetWindow() const;
   HTMLEditor* GetHTMLEditor() const;
@@ -828,6 +816,18 @@ class Selection final : public nsSupportsWeakReference,
 
     bool HasEqualRangeBoundariesAt(const nsRange& aRange,
                                    int32_t aRangeIndex) const;
+
+    
+
+
+
+
+
+
+    
+    
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaybeAddRangeAndTruncateOverlaps(
+        nsRange* aRange, int32_t* aOutIndex, Selection& aSelection);
 
     
     
