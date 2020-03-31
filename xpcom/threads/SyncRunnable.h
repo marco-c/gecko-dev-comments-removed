@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "mozilla/AbstractThread.h"
+#include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/Monitor.h"
 #include "nsThreadUtils.h"
 
@@ -61,6 +62,10 @@ class SyncRunnable : public Runnable {
     rv = aThread->Dispatch(this, NS_DISPATCH_NORMAL);
     if (NS_SUCCEEDED(rv)) {
       mozilla::MonitorAutoLock lock(mMonitor);
+      
+      
+      dom::AutoYieldJSThreadExecution yield;
+
       while (!mDone) {
         lock.Wait();
       }

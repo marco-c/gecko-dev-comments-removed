@@ -46,6 +46,7 @@ enum WorkerType { WorkerTypeDedicated, WorkerTypeShared, WorkerTypeService };
 class ClientInfo;
 class ClientSource;
 class Function;
+class JSExecutionManager;
 class MessagePort;
 class UniqueMessagePortId;
 class PerformanceStorage;
@@ -170,6 +171,9 @@ class WorkerPrivate : public RelativeTimeline {
 
   void WaitForIsDebuggerRegistered(bool aDebuggerRegistered) {
     AssertIsOnParentThread();
+
+    
+    AutoYieldJSThreadExecution yield;
 
     MOZ_ASSERT(!NS_IsMainThread());
 
@@ -356,17 +360,9 @@ class WorkerPrivate : public RelativeTimeline {
   
   void EndCTypesCall();
 
-  void BeginCTypesCallback() {
-    
-    
-    EndCTypesCall();
-  }
+  void BeginCTypesCallback();
 
-  void EndCTypesCallback() {
-    
-    
-    BeginCTypesCall();
-  }
+  void EndCTypesCallback();
 
   bool ConnectMessagePort(JSContext* aCx, UniqueMessagePortId& aIdentifier);
 
@@ -464,6 +460,15 @@ class WorkerPrivate : public RelativeTimeline {
   Maybe<ClientInfo> GetClientInfo() const;
 
   const ClientState GetClientState() const;
+
+  bool GetExecutionGranted() const;
+  void SetExecutionGranted(bool aGranted);
+
+  void ScheduleTimeSliceExpiration(uint32_t aDelay);
+  void CancelTimeSliceExpiration();
+
+  JSExecutionManager* GetExecutionManager() const;
+  void SetExecutionManager(JSExecutionManager* aManager);
 
   const Maybe<ServiceWorkerDescriptor> GetController();
 
@@ -1173,6 +1178,15 @@ class WorkerPrivate : public RelativeTimeline {
     
     nsCOMPtr<nsIGlobalObject> mCurrentEventLoopGlobal;
 
+    
+    nsCOMPtr<nsITimer> mTSTimer;
+
+    
+    RefPtr<JSExecutionManager> mExecutionManager;
+
+    
+    nsTArray<AutoYieldJSThreadExecution> mYieldJSThreadExecution;
+
     uint32_t mNumWorkerRefsPreventingShutdownStart;
     uint32_t mDebuggerEventLoopLevel;
 
@@ -1185,6 +1199,7 @@ class WorkerPrivate : public RelativeTimeline {
     bool mPeriodicGCTimerRunning;
     bool mIdleGCTimerRunning;
     bool mOnLine;
+    bool mJSThreadExecutionGranted;
   };
   ThreadBound<WorkerThreadAccessible> mWorkerThreadAccessible;
 

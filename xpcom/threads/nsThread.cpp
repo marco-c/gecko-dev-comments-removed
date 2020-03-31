@@ -1096,6 +1096,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     return NS_OK;
   }
 
+  Maybe<dom::AutoNoJSAPI> noJSAPI;
   if (mIsMainThread) {
     DoMainThreadSpecificProcessing(reallyWait);
   }
@@ -1105,7 +1106,6 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
   
   
   
-  Maybe<dom::AutoNoJSAPI> noJSAPI;
   bool callScriptObserver = !!mScriptObserver;
   if (callScriptObserver) {
     noJSAPI.emplace();

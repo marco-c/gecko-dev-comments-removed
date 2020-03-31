@@ -55,6 +55,9 @@ class DocGroup final {
 
   PerformanceCounter* GetPerformanceCounter() { return mPerformanceCounter; }
 
+  JSExecutionManager* GetExecutionManager() const { return mExecutionManager; }
+  void SetExecutionManager(JSExecutionManager*);
+
   RefPtr<PerformanceInfoPromise> ReportPerformanceInfo();
 
   TabGroup* GetTabGroup() { return mTabGroup; }
@@ -129,6 +132,11 @@ class DocGroup final {
 
   RefPtr<mozilla::ThrottledEventQueue> mIframePostMessageQueue;
   nsTHashtable<nsUint64HashKey> mIframesUsedPostMessageQueue;
+
+  
+  
+  
+  RefPtr<JSExecutionManager> mExecutionManager;
 
   
   const nsID mAgentClusterId;

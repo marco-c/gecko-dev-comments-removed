@@ -40,6 +40,7 @@
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/WorkerBinding.h"
+#include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/ThrottledEventQueue.h"
@@ -230,6 +231,9 @@ class WorkerFinishedRunnable final : public WorkerControlRunnable {
 
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override {
+    
+    AutoYieldJSThreadExecution yield;
+
     if (!mFinishedWorker->ProxyReleaseMainThreadObjects()) {
       NS_WARNING("Failed to dispatch, going to leak!");
     }
@@ -2105,7 +2109,8 @@ WorkerPrivate::WorkerThreadAccessible::WorkerThreadAccessible(
       mRunningExpiredTimeouts(false),
       mPeriodicGCTimerRunning(false),
       mIdleGCTimerRunning(false),
-      mOnLine(aParent ? aParent->OnLine() : !NS_IsOffline()) {}
+      mOnLine(aParent ? aParent->OnLine() : !NS_IsOffline()),
+      mJSThreadExecutionGranted(false) {}
 
 namespace {
 
@@ -2762,6 +2767,8 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
   MOZ_ASSERT(mThread);
 
+  MOZ_RELEASE_ASSERT(!GetExecutionManager());
+
   {
     MutexAutoLock lock(mMutex);
     mJSContext = aCx;
@@ -3112,6 +3119,49 @@ const ClientState WorkerPrivate::GetClientState() const {
   return ClientState();
 }
 
+bool WorkerPrivate::GetExecutionGranted() const {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  return data->mJSThreadExecutionGranted;
+}
+
+void WorkerPrivate::SetExecutionGranted(bool aGranted) {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  data->mJSThreadExecutionGranted = aGranted;
+}
+
+void WorkerPrivate::ScheduleTimeSliceExpiration(uint32_t aDelay) {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+
+  if (!data->mTSTimer) {
+    data->mTSTimer = NS_NewTimer();
+    MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->SetTarget(mWorkerControlEventTarget));
+  }
+
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->InitWithNamedFuncCallback(
+      [](nsITimer* Timer, void* aClosure) { return; }, nullptr, aDelay,
+      nsITimer::TYPE_ONE_SHOT, "TimeSliceExpirationTimer"));
+}
+
+void WorkerPrivate::CancelTimeSliceExpiration() {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  MOZ_ALWAYS_SUCCEEDS(data->mTSTimer->Cancel());
+}
+
+JSExecutionManager* WorkerPrivate::GetExecutionManager() const {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  return data->mExecutionManager.get();
+}
+
+void WorkerPrivate::SetExecutionManager(JSExecutionManager* aManager) {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  data->mExecutionManager = aManager;
+}
+
 const Maybe<ServiceWorkerDescriptor> WorkerPrivate::GetController() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
   {
@@ -3245,6 +3295,8 @@ void WorkerPrivate::ShutdownGCTimers() {
 
 bool WorkerPrivate::InterruptCallback(JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+
+  AutoYieldJSThreadExecution yield;
 
   
   
@@ -3434,6 +3486,8 @@ WorkerPrivate::ProcessAllControlRunnablesLocked() {
   AssertIsOnWorkerThread();
   mMutex.AssertCurrentThreadOwns();
 
+  AutoYieldJSThreadExecution yield;
+
   auto result = ProcessAllControlRunnablesResult::Nothing;
 
   for (;;) {
@@ -3498,6 +3552,8 @@ void WorkerPrivate::ClearDebuggerEventQueue() {
 bool WorkerPrivate::FreezeInternal() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
   NS_ASSERTION(!data->mFrozen, "Already frozen!");
+
+  AutoYieldJSThreadExecution yield;
 
   if (data->mClientSource) {
     data->mClientSource->Freeze();
@@ -3767,6 +3823,8 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
 
   SyncLoopInfo* loopInfo = mSyncLoopStack[currentLoopIndex];
 
+  AutoYieldJSThreadExecution yield;
+
   MOZ_ASSERT(loopInfo);
   MOZ_ASSERT(!loopInfo->mHasRun);
   MOZ_ASSERT(!loopInfo->mCompleted);
@@ -3843,6 +3901,8 @@ bool WorkerPrivate::RunCurrentSyncLoop() {
 bool WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
   MOZ_ASSERT(!mSyncLoopStack.IsEmpty());
   MOZ_ASSERT(mSyncLoopStack.Length() - 1 == aLoopIndex);
+
+  AutoYieldJSThreadExecution yield;
 
   
   SyncLoopInfo* loopInfo = mSyncLoopStack[aLoopIndex];
@@ -4096,6 +4156,7 @@ void WorkerPrivate::EnterDebuggerEventLoop() {
   MOZ_ASSERT(cx);
 
   AutoPushEventLoopGlobal eventLoopGlobal(this, cx);
+  AutoYieldJSThreadExecution yield;
 
   CycleCollectedJSContext* ccjscx = CycleCollectedJSContext::Get();
 
@@ -4196,6 +4257,10 @@ void WorkerPrivate::ReportErrorToDebugger(const nsAString& aFilename,
 
 bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+
+  
+  
+  AutoYieldJSThreadExecution yield;
 
   NS_ASSERTION(aStatus > Running && aStatus < Dead, "Bad status!");
 
@@ -4867,16 +4932,39 @@ void WorkerPrivate::ResetWorkerPrivateInWorkerThread() {
 
 void WorkerPrivate::BeginCTypesCall() {
   AssertIsOnWorkerThread();
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
 
   
   SetGCTimerMode(NoTimer);
+
+  data->mYieldJSThreadExecution.EmplaceBack();
 }
 
 void WorkerPrivate::EndCTypesCall() {
   AssertIsOnWorkerThread();
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+
+  data->mYieldJSThreadExecution.RemoveLastElement();
 
   
   SetGCTimerMode(PeriodicTimer);
+}
+
+void WorkerPrivate::BeginCTypesCallback() {
+  AssertIsOnWorkerThread();
+
+  
+  SetGCTimerMode(PeriodicTimer);
+
+  
+  
+}
+
+void WorkerPrivate::EndCTypesCallback() {
+  AssertIsOnWorkerThread();
+
+  
+  SetGCTimerMode(NoTimer);
 }
 
 bool WorkerPrivate::ConnectMessagePort(JSContext* aCx,
