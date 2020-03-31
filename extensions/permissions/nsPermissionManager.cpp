@@ -100,8 +100,7 @@ static const nsLiteralCString kPreloadPermissions[] = {
     
     
     
-    NS_LITERAL_CSTRING("cookie"), NS_LITERAL_CSTRING("trackingprotection"),
-    NS_LITERAL_CSTRING("trackingprotection-pb"),
+    NS_LITERAL_CSTRING("cookie"),
 
     USER_INTERACTION_PERM};
 
