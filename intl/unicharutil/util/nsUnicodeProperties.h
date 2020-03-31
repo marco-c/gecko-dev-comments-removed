@@ -240,8 +240,15 @@ uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
 
 
 
+
+
+
+
+
 inline bool IsCombiningDiacritic(uint32_t aCh) {
-  return u_getCombiningClass(aCh) != 0;
+  uint8_t cc = u_getCombiningClass(aCh);
+  return cc != HB_UNICODE_COMBINING_CLASS_NOT_REORDERED &&
+         cc != HB_UNICODE_COMBINING_CLASS_KANA_VOICING;
 }
 
 

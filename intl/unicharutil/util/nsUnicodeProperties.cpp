@@ -366,6 +366,9 @@ uint32_t GetNaked(uint32_t aCh) {
     }
     if (!IsCombiningDiacritic(nextChar)) {
       
+      
+      
+      
       baseChar = aCh;
     }
   }
