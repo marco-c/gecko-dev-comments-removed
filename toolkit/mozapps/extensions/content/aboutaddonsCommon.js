@@ -10,6 +10,7 @@
 
 
 
+
 const { AddonSettings } = ChromeUtils.import(
   "resource://gre/modules/addons/AddonSettings.jsm"
 );
@@ -32,6 +33,37 @@ ChromeUtils.defineModuleGetter(
   "Extension",
   "resource://gre/modules/Extension.jsm"
 );
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "XPINSTALL_ENABLED",
+  "xpinstall.enabled",
+  true
+);
+
+const PREF_DISCOVERURL = "extensions.webservice.discoverURL";
+const PREF_DISCOVER_ENABLED = "extensions.getAddons.showPane";
+const PREF_UI_LASTCATEGORY = "extensions.ui.lastCategory";
+
+function isDiscoverEnabled() {
+  if (
+    Services.prefs.getPrefType(PREF_DISCOVERURL) == Services.prefs.PREF_INVALID
+  ) {
+    return false;
+  }
+
+  try {
+    if (!Services.prefs.getBoolPref(PREF_DISCOVER_ENABLED)) {
+      return false;
+    }
+  } catch (e) {}
+
+  if (!XPINSTALL_ENABLED) {
+    return false;
+  }
+
+  return true;
+}
 
 function getBrowserElement() {
   return window.docShell.chromeEventHandler;

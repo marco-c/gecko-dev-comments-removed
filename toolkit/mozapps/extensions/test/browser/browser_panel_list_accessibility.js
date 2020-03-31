@@ -5,6 +5,8 @@
 
 function setupPanel(win) {
   let doc = win.document;
+  
+  doc.body.textContent = "";
   let panelList = doc.createElement("panel-list");
   let items = ["one", "two", "three"];
   let panelItems = items.map(item => {
