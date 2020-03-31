@@ -1525,20 +1525,22 @@ bool WindowsProcessLauncher::DoFinishLaunch() {
   }
 
 #  ifdef MOZ_SANDBOX
-  
-  
-  switch (mProcessType) {
-    case GeckoProcessType_Default:
-      MOZ_CRASH("shouldn't be launching a parent process");
-    case GeckoProcessType_Plugin:
-    case GeckoProcessType_IPDLUnitTest:
-      
-      break;
-    default:
-      if (!SandboxBroker::AddTargetPeer(mResults.mHandle)) {
-        NS_WARNING("Failed to add child process as target peer.");
-      }
-      break;
+  if (!mUseSandbox) {
+    
+    
+    switch (mProcessType) {
+      case GeckoProcessType_Default:
+        MOZ_CRASH("shouldn't be launching a parent process");
+      case GeckoProcessType_Plugin:
+      case GeckoProcessType_IPDLUnitTest:
+        
+        break;
+      default:
+        if (!SandboxBroker::AddTargetPeer(mResults.mHandle)) {
+          NS_WARNING("Failed to add child process as target peer.");
+        }
+        break;
+    }
   }
 #  endif  
 
