@@ -4,7 +4,7 @@
 
 
 
-TEST_DIRS += ['httpserver', 'gtest', 'unit']
+TEST_DIRS += ['httpserver', 'gtest', 'unit', 'http3server']
 
 BROWSER_CHROME_MANIFESTS += ['browser/browser.ini']
 MOCHITEST_MANIFESTS += ['mochitests/mochitest.ini']
