@@ -482,7 +482,7 @@ function Loader(options) {
   const mapping = compileMapping(paths);
 
   
-  let modules = {
+  const builtinModuleExports = {
     "@loader/unload": destructor,
     "@loader/options": options,
     chrome: {
@@ -497,8 +497,7 @@ function Loader(options) {
     },
   };
 
-  const builtinModuleExports = modules;
-  modules = {};
+  const modules = {};
   for (const id of Object.keys(builtinModuleExports)) {
     
     const uri = resolveURI(id, mapping);
