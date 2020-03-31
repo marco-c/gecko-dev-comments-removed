@@ -167,13 +167,15 @@ var interfaceNamesInGlobalScope = [
   
   { name: "AudioParam", insecureContext: true },
   
-  { name: "AudioParamMap", insecureContext: false, disabled: true },
+  { name: "AudioParamMap", insecureContext: false, nightly: true },
   
   { name: "AudioProcessingEvent", insecureContext: true },
   
   { name: "AudioScheduledSourceNode", insecureContext: true },
   
-  { name: "AudioWorkletNode", insecureContext: false, disabled: true },
+  { name: "AudioWorklet", insecureContext: false, nightly: true },
+  
+  { name: "AudioWorkletNode", insecureContext: false, nightly: true },
   
   { name: "AuthenticatorAssertionResponse", android: false },
   
@@ -1391,6 +1393,8 @@ var interfaceNamesInGlobalScope = [
   { name: "Window", insecureContext: true },
   
   { name: "Worker", insecureContext: true },
+  
+  { name: "Worklet", insecureContext: false, nightly: true },
   
   { name: "XMLDocument", insecureContext: true },
   
