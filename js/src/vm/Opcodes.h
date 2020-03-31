@@ -1686,7 +1686,7 @@
 
 
  \
-    MACRO(BuiltinProto, builtin_proto, NULL, 2, 0, 1, JOF_UINT8) \
+    MACRO(FunctionProto, function_proto, NULL, 1, 0, 1, JOF_BYTE) \
     
 
 
