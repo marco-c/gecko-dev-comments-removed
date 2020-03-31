@@ -45,9 +45,8 @@ using JS::Value;
 
 
 MOZ_MUST_USE ReadableStreamDefaultReader* js::CreateReadableStreamDefaultReader(
-    JSContext* cx, JS::Handle<ReadableStream*> unwrappedStream,
-    ForAuthorCodeBool forAuthorCode,
-    JS::Handle<JSObject*> proto ) {
+    JSContext* cx, Handle<ReadableStream*> unwrappedStream,
+    ForAuthorCodeBool forAuthorCode, Handle<JSObject*> proto ) {
   Rooted<ReadableStreamDefaultReader*> reader(
       cx, NewObjectWithClassProto<ReadableStreamDefaultReader>(cx, proto));
   if (!reader) {

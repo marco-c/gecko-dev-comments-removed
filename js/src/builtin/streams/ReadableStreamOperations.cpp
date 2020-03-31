@@ -524,7 +524,8 @@ MOZ_MUST_USE bool js::ReadableStreamTee(
 
   
   Rooted<ReadableStreamDefaultReader*> reader(
-      cx, CreateReadableStreamDefaultReader(cx, unwrappedStream));
+      cx, CreateReadableStreamDefaultReader(cx, unwrappedStream,
+                                            ForAuthorCodeBool::No));
   if (!reader) {
     return false;
   }

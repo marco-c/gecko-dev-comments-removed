@@ -76,8 +76,8 @@ using js::PipeToState;
   
   
   {
-    ReadableStreamDefaultReader* reader =
-        CreateReadableStreamDefaultReader(cx, unwrappedSource);
+    ReadableStreamDefaultReader* reader = CreateReadableStreamDefaultReader(
+        cx, unwrappedSource, ForAuthorCodeBool::No);
     if (!reader) {
       return nullptr;
     }

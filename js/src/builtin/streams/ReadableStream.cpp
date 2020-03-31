@@ -314,23 +314,20 @@ static MOZ_MUST_USE bool ReadableStream_getReader(JSContext* cx, unsigned argc,
     }
 
     
-    
     bool equal;
     if (!EqualStrings(cx, mode, cx->names().byob, &equal)) {
       return false;
     }
-    if (equal) {
-      
-      JS_ReportErrorNumberASCII(
-          cx, GetErrorMessage, nullptr,
-          JSMSG_READABLESTREAM_BYTES_TYPE_NOT_IMPLEMENTED);
+    if (!equal) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_READABLESTREAM_INVALID_READER_MODE);
       return false;
     }
 
     
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_INVALID_READER_MODE);
-    return false;
+    
+    reader = CreateReadableStreamBYOBReader(cx, unwrappedStream,
+                                            ForAuthorCodeBool::Yes);
   }
 
   
