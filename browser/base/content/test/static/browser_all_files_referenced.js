@@ -186,15 +186,6 @@ var whitelist = [
   { file: "chrome://marionette/content/test_dialog.properties" },
   { file: "chrome://marionette/content/test_dialog.xhtml" },
   
-  {
-    file: "chrome://mozapps/skin/downloads/buttons.png",
-    platforms: ["macosx"],
-  },
-  {
-    file: "chrome://mozapps/skin/downloads/downloadButtons.png",
-    platforms: ["linux", "win"],
-  },
-  
   { file: "chrome://pippki/content/resetpassword.xhtml" },
   
   { file: "resource://gre/modules/Manifest.jsm" },
