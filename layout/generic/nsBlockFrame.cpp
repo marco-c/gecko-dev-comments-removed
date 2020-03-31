@@ -220,19 +220,22 @@ static nsRect GetLineTextArea(nsLineBox* aLine,
 
 
 
-static nscolor GetBackplateColor(nsIFrame* aFrame) {
+static Maybe<nscolor> GetBackplateColor(nsIFrame* aFrame) {
   for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
+    if (frame->IsThemed()) {
+      return Nothing();
+    }
     auto* bg = frame->StyleBackground();
     if (bg->IsTransparent(frame)) {
       continue;
     }
     nscolor backgroundColor = bg->BackgroundColor(frame);
     if (NS_GET_A(backgroundColor) != 0) {
-      return backgroundColor;
+      return Some(backgroundColor);
     }
     break;
   }
-  return aFrame->PresContext()->DefaultBackgroundColor();
+  return Some(aFrame->PresContext()->DefaultBackgroundColor());
 }
 
 #ifdef DEBUG
@@ -6946,15 +6949,20 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
             aLineArea.Intersects(aBuilder->GetVisibleRect()));
   };
 
-  
-  
-  
-  
-  
-  const bool shouldDrawBackplate =
-      StaticPrefs::browser_display_permit_backplate() &&
-      !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
-      !IsComboboxControlFrame();
+  Maybe<nscolor> backplateColor;
+
+  {
+    
+    
+    
+    
+    
+    if (StaticPrefs::browser_display_permit_backplate() &&
+        !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
+        !IsComboboxControlFrame()) {
+      backplateColor = GetBackplateColor(this);
+    }
+  }
 
   
   
@@ -6971,7 +6979,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   nsLineBox* cursor = (hasDescendantPlaceHolders || textOverflow.isSome() ||
-                       shouldDrawBackplate)
+                       backplateColor)
                           ? nullptr
                           : GetFirstLineContaining(aBuilder->GetDirtyRect().y);
   LineIterator line_end = LinesEnd();
@@ -7001,10 +7009,6 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nscoord lastY = INT32_MIN;
     nscoord lastYMost = INT32_MIN;
     nsRect curBackplateArea;
-    Maybe<nscolor> backplateColor;
-    if (shouldDrawBackplate) {
-      backplateColor = Some(GetBackplateColor(this));
-    }
     
     
     
@@ -7025,7 +7029,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         
         
         
-        MOZ_ASSERT(shouldDrawBackplate,
+        MOZ_ASSERT(backplateColor,
                    "if this master switch is off, curBackplateArea "
                    "must be empty and we shouldn't get here");
         aLists.BorderBackground()->AppendNewToTop<nsDisplaySolidColor>(
@@ -7042,8 +7046,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         }
         lastY = lineArea.y;
         lastYMost = lineArea.YMost();
-        if (lineInLine && shouldDrawBackplate &&
-            LineHasVisibleInlineContent(line)) {
+        if (lineInLine && backplateColor && LineHasVisibleInlineContent(line)) {
           nsRect lineBackplate = GetLineTextArea(line, aBuilder) +
                                  aBuilder->ToReferenceFrame(this);
           if (curBackplateArea.IsEmpty()) {
