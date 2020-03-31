@@ -46,10 +46,19 @@
 
 
 
-
-use std::fmt;
-use std::error::Error;
-use std::result;
+#![no_std]
+cfg_if::cfg_if!{
+    if #[cfg(feature = "std")] {
+        extern crate std;
+        use std::prelude::v1::*;
+        use std::fmt;
+        use std::error::Error;
+        use std::result;
+    } else {
+        use core::result;
+        use core::fmt;
+    }
+}
 
 #[cfg(test)]
 mod tests;
@@ -105,60 +114,79 @@ impl<'a> BitReader<'a> {
 
     
     pub fn read_u8(&mut self, bit_count: u8) -> Result<u8> {
-        let value = try!(self.read_value(bit_count, 8));
+        let value = self.read_value(bit_count, 8)?;
         Ok((value & 0xff) as u8)
     }
 
     
+    
+    
+    pub fn read_u8_slice(&mut self, output_bytes: &mut [u8]) -> Result<()> {
+        let requested = output_bytes.len() as u64 * 8;
+        if requested > self.remaining() {
+            Err(BitReaderError::NotEnoughData {
+                position: self.position,
+                length: (self.bytes.len() * 8) as u64,
+                requested: requested,
+            })
+        } else {
+            for byte in output_bytes.iter_mut() {
+                *byte = self.read_u8(8)?;
+            }
+            Ok(())
+        }
+    }
+
+    
     pub fn read_u16(&mut self, bit_count: u8) -> Result<u16> {
-        let value = try!(self.read_value(bit_count, 16));
+        let value = self.read_value(bit_count, 16)?;
         Ok((value & 0xffff) as u16)
     }
 
     
     pub fn read_u32(&mut self, bit_count: u8) -> Result<u32> {
-        let value = try!(self.read_value(bit_count, 32));
+        let value = self.read_value(bit_count, 32)?;
         Ok((value & 0xffffffff) as u32)
     }
 
     
     pub fn read_u64(&mut self, bit_count: u8) -> Result<u64> {
-        let value = try!(self.read_value(bit_count, 64));
+        let value = self.read_value(bit_count, 64)?;
         Ok(value)
     }
 
     
     
     pub fn read_i8(&mut self, bit_count: u8) -> Result<i8> {
-        let value = try!(self.read_signed_value(bit_count, 8));
+        let value = self.read_signed_value(bit_count, 8)?;
         Ok((value & 0xff) as i8)
     }
 
     
     
     pub fn read_i16(&mut self, bit_count: u8) -> Result<i16> {
-        let value = try!(self.read_signed_value(bit_count, 16));
+        let value = self.read_signed_value(bit_count, 16)?;
         Ok((value & 0xffff) as i16)
     }
 
     
     
     pub fn read_i32(&mut self, bit_count: u8) -> Result<i32> {
-        let value = try!(self.read_signed_value(bit_count, 32));
+        let value = self.read_signed_value(bit_count, 32)?;
         Ok((value & 0xffffffff) as i32)
     }
 
     
     
     pub fn read_i64(&mut self, bit_count: u8) -> Result<i64> {
-        let value = try!(self.read_signed_value(bit_count, 64));
+        let value = self.read_signed_value(bit_count, 64)?;
         Ok(value)
     }
 
     
     
     pub fn read_bool(&mut self) -> Result<bool> {
-        match try!(self.read_value(1, 1)) {
+        match self.read_value(1, 1)? {
             0 => Ok(false),
             _ => Ok(true),
         }
@@ -184,6 +212,12 @@ impl<'a> BitReader<'a> {
     }
 
     
+    pub fn remaining(&self) -> u64 {
+        let total_bits = self.bytes.len() as u64 * 8;
+        total_bits - self.position
+    }
+
+    
     
     
     
@@ -198,7 +232,7 @@ impl<'a> BitReader<'a> {
     }
 
     fn read_signed_value(&mut self, bit_count: u8, maximum_count: u8) -> Result<i64> {
-        let unsigned = try!(self.read_value(bit_count, maximum_count));
+        let unsigned = self.read_value(bit_count, maximum_count)?;
         
         
         let sign_bit = unsigned >> (bit_count - 1) & 1;
@@ -263,6 +297,7 @@ pub enum BitReaderError {
     }
 }
 
+#[cfg(feature = "std")]
 impl Error for BitReaderError {
     fn description(&self) -> &str {
         match *self {
@@ -339,7 +374,7 @@ impl_read_into!(i64, read_i64);
 
 impl ReadInto for bool {
     fn read(reader: &mut BitReader, bits: u8) -> Result<Self> {
-        match try!(reader.read_u8(bits)) {
+        match reader.read_u8(bits)? {
             0 => Ok(false),
             _ => Ok(true),
         }
