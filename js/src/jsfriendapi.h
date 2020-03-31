@@ -1327,13 +1327,8 @@ struct MOZ_STACK_CLASS JS_FRIEND_API ErrorReport {
 
 
 
-
-
-
-
   bool init(JSContext* cx, JS::HandleValue exn,
-            SniffingBehavior sniffingBehavior,
-            JS::HandleObject fallbackStack = nullptr);
+            SniffingBehavior sniffingBehavior);
 
   JSErrorReport* report() { return reportp; }
 
@@ -1346,11 +1341,8 @@ struct MOZ_STACK_CLASS JS_FRIEND_API ErrorReport {
   
   
   
-  bool populateUncaughtExceptionReportUTF8(JSContext* cx,
-                                           JS::HandleObject fallbackStack, ...);
-  bool populateUncaughtExceptionReportUTF8VA(JSContext* cx,
-                                             JS::HandleObject fallbackStack,
-                                             va_list ap);
+  bool populateUncaughtExceptionReportUTF8(JSContext* cx, ...);
+  bool populateUncaughtExceptionReportUTF8VA(JSContext* cx, va_list ap);
 
   
   void ReportAddonExceptionToTelemetry(JSContext* cx);
