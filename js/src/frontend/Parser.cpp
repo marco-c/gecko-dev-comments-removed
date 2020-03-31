@@ -1742,12 +1742,10 @@ bool LazyScriptCreationData::create(JSContext* cx,
   MOZ_ASSERT(function);
   BaseScript* lazy = BaseScript::CreateLazy(
       cx, compilationInfo, function, sourceObject, closedOverBindings,
-      innerFunctionIndexes, funbox->extent);
+      innerFunctionIndexes, funbox->extent, funbox->immutableFlags());
   if (!lazy) {
     return false;
   }
-
-  lazy->inheritFlagsFromParser(funbox->immutableFlags());
 
   
   
