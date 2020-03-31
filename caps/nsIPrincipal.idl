@@ -263,11 +263,6 @@ interface nsIPrincipal : nsISerializable
     
 
 
-     readonly attribute ACString exposableSpec;
-
-    
-
-
 
 
     boolean schemeIs(in string scheme);
