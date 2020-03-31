@@ -4,19 +4,14 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html");
+  const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
 
   
-  const { hud } = await dbg.toolbox.selectTool("webconsole");
-  await evaluateExpressionInConsole(hud, `
-    (() => {
-        setTimeout(() => { debugger; }, 100);
-    })();
-  `);
+  invokeInTab("doEval");
   await waitForPaused(dbg);
 
   
-  await clickElement(dbg, "frame", 3);
+  await clickElement(dbg, "frame", 2);
 
   
   is(countTabs(dbg), 1);
