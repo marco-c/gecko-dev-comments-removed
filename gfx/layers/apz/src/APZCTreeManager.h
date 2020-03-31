@@ -229,7 +229,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void ZoomToRect(const SLGuidAndRenderRoot& aGuid, const CSSRect& aRect,
+  void ZoomToRect(const ScrollableLayerGuid& aGuid, const CSSRect& aRect,
                   const uint32_t aFlags = DEFAULT_BEHAVIOR) override;
 
   
@@ -261,7 +261,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void SetTargetAPZC(uint64_t aInputBlockId,
-                     const nsTArray<SLGuidAndRenderRoot>& aTargets) override;
+                     const nsTArray<ScrollableLayerGuid>& aTargets) override;
 
   
 
@@ -269,7 +269,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   void UpdateZoomConstraints(
-      const SLGuidAndRenderRoot& aGuid,
+      const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) override;
 
   
@@ -410,13 +410,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   ParentLayerPoint DispatchFling(AsyncPanZoomController* aApzc,
                                  const FlingHandoffState& aHandoffState);
 
-  void StartScrollbarDrag(const SLGuidAndRenderRoot& aGuid,
+  void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                           const AsyncDragMetrics& aDragMetrics) override;
 
-  bool StartAutoscroll(const SLGuidAndRenderRoot& aGuid,
+  bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
                        const ScreenPoint& aAnchorLocation) override;
 
-  void StopAutoscroll(const SLGuidAndRenderRoot& aGuid) override;
+  void StopAutoscroll(const ScrollableLayerGuid& aGuid) override;
 
   
 

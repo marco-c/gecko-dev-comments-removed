@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 include LayersSurfaces;
 include LayersMessages;
@@ -15,7 +15,7 @@ include protocol PCompositorBridge;
 include protocol PTexture;
 
 using mozilla::layers::APZTestData from "mozilla/layers/APZTestData.h";
-using struct mozilla::layers::SLGuidAndRenderRoot from "mozilla/layers/APZTypes.h";
+using mozilla::layers::ScrollableLayerGuid from "mozilla/layers/ScrollableLayerGuid.h";
 using struct mozilla::layers::TextureFactoryIdentifier from "mozilla/layers/CompositorTypes.h";
 using struct mozilla::layers::TextureInfo from "mozilla/layers/CompositorTypes.h";
 using mozilla::layers::CompositionPayload from "mozilla/layers/LayersTypes.h";
@@ -68,23 +68,23 @@ parent:
   sync GetSnapshot(PTexture texture);
   async SetLayersObserverEpoch(LayersObserverEpoch childEpoch);
   async ClearCachedResources();
-  // Schedule a composite if one isn't already scheduled.
+  
   async ScheduleComposite();
-  // Save the frame capture to disk
+  
   async Capture();
 
-  // Enable/Disable transaction logging
+  
   async SetTransactionLogging(bool aValue);
 
-  // Replacement for PCompositorBridge::SyncWithCompositor, but for WR. We need
-  // it on PWebRenderBridge because it associated with a particular top-level
-  // window, and PCompositorBridge doesn't allow doing that in a secure manner.
+  
+  
+  
   sync SyncWithCompositor();
 
-  // These correspond exactly to the equivalent APIs in PLayerTransaction -
-  // see those for documentation.
-  async SetConfirmedTargetAPZC(uint64_t aInputBlockId, SLGuidAndRenderRoot[] aTargets);
-  // More copied from PLayerTransaction, but these are only used for testing.
+  
+  
+  async SetConfirmedTargetAPZC(uint64_t aInputBlockId, ScrollableLayerGuid[] aTargets);
+  
   sync SetTestSampleTime(TimeStamp sampleTime);
   sync LeaveTestMode();
   sync GetAnimationValue(uint64_t aCompositorAnimationsId) returns (OMTAValue value);
@@ -101,5 +101,5 @@ child:
   async __delete__();
 };
 
-} // layers
-} // mozilla
+} 
+} 
