@@ -6,12 +6,12 @@
 
 
 include protocol PNecko;
+include URIParams;
 
 
 include NeckoChannelParams;
 
 using PRTime from "prtime.h";
-using refcounted class nsIURI from "mozilla/ipc/URIUtils.h";
 
 namespace mozilla {
 namespace net {
@@ -47,7 +47,7 @@ child:
                        nsCString aContentType,
                        PRTime aLastModified,
                        nsCString aEntityID,
-                       nsIURI aURI);
+                       URIParams aURI);
   async OnDataAvailable(nsresult channelStatus,
                         nsCString data,
                         uint64_t offset,
