@@ -329,7 +329,7 @@ Maybe<wr::FontKey> WebRenderBridgeChild::GetFontKeyForUnscaledFont(
     
     
     
-    if (!aUnscaled->GetWRFontDescriptor(WriteFontDescriptor, &sink) &&
+    if (!aUnscaled->GetFontDescriptor(WriteFontDescriptor, &sink) &&
         !aUnscaled->GetFontFileData(WriteFontFileData, &sink)) {
       return Nothing();
     }
