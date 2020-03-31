@@ -4,11 +4,12 @@
 
 
 
+#include <type_traits>
+
 #include "mozilla/CompactPair.h"
 #include "mozilla/TypeTraits.h"
 
 using mozilla::CompactPair;
-using mozilla::IsSame;
 using mozilla::MakeCompactPair;
 
 
@@ -86,13 +87,13 @@ int main() {
   
   
   static_assert(
-      IsSame<decltype(MakeCompactPair(A(0), B(0))), CompactPair<A, B>>::value,
+      std::is_same_v<decltype(MakeCompactPair(A(0), B(0))), CompactPair<A, B>>,
       "MakeCompactPair should strip rvalue references");
   static_assert(
-      IsSame<decltype(MakeCompactPair(a, b)), CompactPair<A, B>>::value,
+      std::is_same_v<decltype(MakeCompactPair(a, b)), CompactPair<A, B>>,
       "MakeCompactPair should strip lvalue references");
-  static_assert(IsSame<decltype(MakeCompactPair(constA, constB)),
-                       CompactPair<A, B>>::value,
+  static_assert(std::is_same_v<decltype(MakeCompactPair(constA, constB)),
+                               CompactPair<A, B>>,
                 "MakeCompactPair should strip CV-qualifiers");
 
   
