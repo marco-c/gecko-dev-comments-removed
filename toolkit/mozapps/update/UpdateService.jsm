@@ -4843,14 +4843,7 @@ Downloader.prototype = {
 
 
 
-
-
-  onProgress: function Downloader_onProgress(
-    request,
-    context,
-    progress,
-    maxProgress
-  ) {
+  onProgress: function Downloader_onProgress(request, progress, maxProgress) {
     LOG("Downloader:onProgress - progress: " + progress + "/" + maxProgress);
 
     if (progress > this._patch.size) {
@@ -4892,7 +4885,7 @@ Downloader.prototype = {
     for (var i = 0; i < listenerCount; ++i) {
       var listener = listeners[i];
       if (listener instanceof Ci.nsIProgressEventSink) {
-        listener.onProgress(request, context, progress, maxProgress);
+        listener.onProgress(request, progress, maxProgress);
       }
     }
     this.updateService._consecutiveSocketErrors = 0;
@@ -4907,9 +4900,7 @@ Downloader.prototype = {
 
 
 
-
-
-  onStatus: function Downloader_onStatus(request, context, status, statusText) {
+  onStatus: function Downloader_onStatus(request, status, statusText) {
     LOG(
       "Downloader:onStatus - status: " + status + ", statusText: " + statusText
     );
@@ -4920,7 +4911,7 @@ Downloader.prototype = {
     for (var i = 0; i < listenerCount; ++i) {
       var listener = listeners[i];
       if (listener instanceof Ci.nsIProgressEventSink) {
-        listener.onStatus(request, context, status, statusText);
+        listener.onStatus(request, status, statusText);
       }
     }
   },

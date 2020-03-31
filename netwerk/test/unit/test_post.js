@@ -45,14 +45,14 @@ var listenerCallback = {
     throw Cr.NS_ERROR_NO_INTERFACE;
   },
 
-  onProgress(request, context, progress, progressMax) {
+  onProgress(request, progress, progressMax) {
     
     if (progress === progressMax) {
       correctOnProgress = true;
     }
   },
 
-  onStatus(request, context, status, statusArg) {},
+  onStatus(request, status, statusArg) {},
 };
 
 function run_test() {
