@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 #include <inttypes.h>
 #include <stdbool.h>
 #include "kremlin/internal/types.h"
@@ -13,31 +18,31 @@
 
 #include "FStar_UInt_8_16_32_64.h"
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128___proj__Mkuint128__item__low(FStar_UInt128_uint128 projectee)
 {
     return projectee.low;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128___proj__Mkuint128__item__high(FStar_UInt128_uint128 projectee)
 {
     return projectee.high;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_constant_time_carry(uint64_t a, uint64_t b)
 {
     return (a ^ ((a ^ b) | ((a - b) ^ b))) >> (uint32_t)63U;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_carry(uint64_t a, uint64_t b)
 {
     return FStar_UInt128_constant_time_carry(a, b);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_add(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -46,7 +51,7 @@ FStar_UInt128_add(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_add_underspec(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -55,7 +60,7 @@ FStar_UInt128_add_underspec(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_add_mod(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -64,7 +69,7 @@ FStar_UInt128_add_mod(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_sub(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -73,7 +78,7 @@ FStar_UInt128_sub(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_sub_underspec(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -82,7 +87,7 @@ FStar_UInt128_sub_underspec(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_sub_mod_impl(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -91,13 +96,13 @@ FStar_UInt128_sub_mod_impl(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_sub_mod(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return FStar_UInt128_sub_mod_impl(a, b);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_logand(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -106,7 +111,7 @@ FStar_UInt128_logand(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_logxor(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -115,7 +120,7 @@ FStar_UInt128_logxor(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_logor(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -124,7 +129,7 @@ FStar_UInt128_logor(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_lognot(FStar_UInt128_uint128 a)
 {
     FStar_UInt128_uint128 lit;
@@ -135,19 +140,19 @@ FStar_UInt128_lognot(FStar_UInt128_uint128 a)
 
 static uint32_t FStar_UInt128_u32_64 = (uint32_t)64U;
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_add_u64_shift_left(uint64_t hi, uint64_t lo, uint32_t s)
 {
     return (hi << s) + (lo >> (FStar_UInt128_u32_64 - s));
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_add_u64_shift_left_respec(uint64_t hi, uint64_t lo, uint32_t s)
 {
     return FStar_UInt128_add_u64_shift_left(hi, lo, s);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_left_small(FStar_UInt128_uint128 a, uint32_t s)
 {
     if (s == (uint32_t)0U) {
@@ -160,7 +165,7 @@ FStar_UInt128_shift_left_small(FStar_UInt128_uint128 a, uint32_t s)
     }
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_left_large(FStar_UInt128_uint128 a, uint32_t s)
 {
     FStar_UInt128_uint128 lit;
@@ -169,7 +174,7 @@ FStar_UInt128_shift_left_large(FStar_UInt128_uint128 a, uint32_t s)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_left(FStar_UInt128_uint128 a, uint32_t s)
 {
     if (s < FStar_UInt128_u32_64) {
@@ -179,19 +184,19 @@ FStar_UInt128_shift_left(FStar_UInt128_uint128 a, uint32_t s)
     }
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_add_u64_shift_right(uint64_t hi, uint64_t lo, uint32_t s)
 {
     return (lo >> s) + (hi << (FStar_UInt128_u32_64 - s));
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_add_u64_shift_right_respec(uint64_t hi, uint64_t lo, uint32_t s)
 {
     return FStar_UInt128_add_u64_shift_right(hi, lo, s);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_right_small(FStar_UInt128_uint128 a, uint32_t s)
 {
     if (s == (uint32_t)0U) {
@@ -204,7 +209,7 @@ FStar_UInt128_shift_right_small(FStar_UInt128_uint128 a, uint32_t s)
     }
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_right_large(FStar_UInt128_uint128 a, uint32_t s)
 {
     FStar_UInt128_uint128 lit;
@@ -213,7 +218,7 @@ FStar_UInt128_shift_right_large(FStar_UInt128_uint128 a, uint32_t s)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_shift_right(FStar_UInt128_uint128 a, uint32_t s)
 {
     if (s < FStar_UInt128_u32_64) {
@@ -223,37 +228,37 @@ FStar_UInt128_shift_right(FStar_UInt128_uint128 a, uint32_t s)
     }
 }
 
-static inline bool
+inline static bool
 FStar_UInt128_eq(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return a.low == b.low && a.high == b.high;
 }
 
-static inline bool
+inline static bool
 FStar_UInt128_gt(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return a.high > b.high || (a.high == b.high && a.low > b.low);
 }
 
-static inline bool
+inline static bool
 FStar_UInt128_lt(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return a.high < b.high || (a.high == b.high && a.low < b.low);
 }
 
-static inline bool
+inline static bool
 FStar_UInt128_gte(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return a.high > b.high || (a.high == b.high && a.low >= b.low);
 }
 
-static inline bool
+inline static bool
 FStar_UInt128_lte(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     return a.high < b.high || (a.high == b.high && a.low <= b.low);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_eq_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -262,7 +267,7 @@ FStar_UInt128_eq_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_gte_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
 {
     FStar_UInt128_uint128 lit;
@@ -273,7 +278,7 @@ FStar_UInt128_gte_mask(FStar_UInt128_uint128 a, FStar_UInt128_uint128 b)
     return lit;
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_uint64_to_uint128(uint64_t a)
 {
     FStar_UInt128_uint128 lit;
@@ -282,13 +287,13 @@ FStar_UInt128_uint64_to_uint128(uint64_t a)
     return lit;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_uint128_to_uint64(FStar_UInt128_uint128 a)
 {
     return a.low;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_u64_mod_32(uint64_t a)
 {
     return a & (uint64_t)0xffffffffU;
@@ -296,13 +301,13 @@ FStar_UInt128_u64_mod_32(uint64_t a)
 
 static uint32_t FStar_UInt128_u32_32 = (uint32_t)32U;
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_u32_combine(uint64_t hi, uint64_t lo)
 {
     return lo + (hi << FStar_UInt128_u32_32);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_mul32(uint64_t x, uint32_t y)
 {
     FStar_UInt128_uint128 lit;
@@ -314,13 +319,13 @@ FStar_UInt128_mul32(uint64_t x, uint32_t y)
     return lit;
 }
 
-static inline uint64_t
+inline static uint64_t
 FStar_UInt128_u32_combine_(uint64_t hi, uint64_t lo)
 {
     return lo + (hi << FStar_UInt128_u32_32);
 }
 
-static inline FStar_UInt128_uint128
+inline static FStar_UInt128_uint128
 FStar_UInt128_mul_wide(uint64_t x, uint64_t y)
 {
     FStar_UInt128_uint128 lit;
