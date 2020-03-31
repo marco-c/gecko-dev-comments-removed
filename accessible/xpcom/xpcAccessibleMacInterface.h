@@ -32,6 +32,10 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
  protected:
   virtual ~xpcAccessibleMacInterface();
 
+  
+  
+  nsresult NSObjectToJsValue(id aObj, JSContext* aCx,
+                             JS::MutableHandleValue aResult);
   id mNativeObject;
 
  private:
