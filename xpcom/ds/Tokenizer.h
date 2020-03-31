@@ -385,9 +385,9 @@ class TTokenizer : public TokenizerBase<TChar> {
   
 
 
-  template <typename T, typename V = typename EnableIf<
+  template <typename T, typename V = std::enable_if_t<
                             std::is_signed_v<std::remove_pointer_t<T>>,
-                            std::remove_pointer_t<T>>::Type>
+                            std::remove_pointer_t<T>>>
   [[nodiscard]] bool ReadSignedInteger(T* aValue) {
     MOZ_RELEASE_ASSERT(aValue);
 

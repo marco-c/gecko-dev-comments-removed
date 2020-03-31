@@ -269,34 +269,6 @@ struct AddRvalueReferenceHelper<T, TIsNotVoid> {
 template <typename T>
 struct AddRvalueReference : detail::AddRvalueReferenceHelper<T> {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <bool B, typename T = void>
-struct EnableIf {};
-
-template <typename T>
-struct EnableIf<true, T> {
-  typedef T Type;
-};
-
 } 
 
 #endif 
