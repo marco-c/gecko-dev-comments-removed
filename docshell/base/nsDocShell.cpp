@@ -6354,7 +6354,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                aStatus == NS_ERROR_PROXY_GATEWAY_TIMEOUT ||
                aStatus == NS_ERROR_REDIRECT_LOOP ||
                aStatus == NS_ERROR_UNKNOWN_SOCKET_TYPE ||
-               aStatus == NS_ERROR_UNKNOWN_PROTOCOL ||
                aStatus == NS_ERROR_NET_INTERRUPT ||
                aStatus == NS_ERROR_NET_RESET ||
                aStatus == NS_ERROR_PROXY_BAD_GATEWAY ||
@@ -6371,6 +6370,33 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
                NS_ERROR_GET_MODULE(aStatus) == NS_ERROR_MODULE_SECURITY) {
       
       DisplayLoadError(aStatus, url, nullptr, aChannel);
+    } else if (aStatus == NS_ERROR_UNKNOWN_PROTOCOL) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsCOMPtr<nsILoadInfo> info = aChannel->LoadInfo();
+      Document* doc = GetDocument();
+      if (!info->TriggeringPrincipal()->IsSystemPrincipal() &&
+          StaticPrefs::dom_no_unknown_protocol_error_enabled() &&
+          doc && !doc->IsInitialDocument()) {
+        nsTArray<nsString> params;
+        if (NS_FAILED(NS_GetSanitizedURIStringFromURI(
+                url, *params.AppendElement()))) {
+          params.LastElement().AssignLiteral(u"(unknown uri)");
+        }
+        nsContentUtils::ReportToConsole(
+            nsIScriptError::warningFlag, NS_LITERAL_CSTRING("DOM"), doc,
+            nsContentUtils::eDOM_PROPERTIES,
+            "UnknownProtocolNavigationPrevented", params);
+      } else {
+        DisplayLoadError(aStatus, url, nullptr, aChannel);
+      }
     } else if (aStatus == NS_ERROR_DOCUMENT_NOT_CACHED) {
       
       
