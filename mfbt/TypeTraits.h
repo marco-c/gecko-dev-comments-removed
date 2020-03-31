@@ -235,24 +235,6 @@ struct IsPointerHelper<T*> : TrueType {};
 template <typename T>
 struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type> {};
 
-namespace detail {
-
-
-template <typename T>
-struct IsEnumHelper : IntegralConstant<bool, __is_enum(T)> {};
-
-}  
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsEnum : detail::IsEnumHelper<typename RemoveCV<T>::Type> {};
-
 
 
 
