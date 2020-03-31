@@ -2568,8 +2568,7 @@ impl<'a> SceneBuilder<'a> {
                         
                         
                         
-                        let mut blur_filter = Filter::Blur(std_deviation);
-                        blur_filter.sanitize();
+                        let blur_filter = Filter::Blur(std_deviation);
                         let composite_mode = PictureCompositeMode::Filter(blur_filter);
                         let composite_mode_key = Some(composite_mode.clone()).into();
 
@@ -3476,8 +3475,6 @@ impl<'a> SceneBuilder<'a> {
         
         let mut current_filter_data_index = 0;
         for filter in &mut filter_ops {
-            filter.sanitize();
-
             let composite_mode = Some(match *filter {
                 Filter::ComponentTransfer => {
                     let filter_data =
