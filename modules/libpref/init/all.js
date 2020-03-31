@@ -855,6 +855,14 @@ pref("devtools.performance.recording.ui-base-url", "https://profiler.firefox.com
 
 
 
+
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
+  pref("devtools.performance.popup.feature-flag", true);
+#else
+  pref("devtools.performance.popup.feature-flag", false);
+#endif
+
+
 #if defined(NIGHTLY_BUILD) || !defined(MOZILLA_OFFICIAL)
   
   pref("devtools.performance.recording.preset", "firefox-platform");

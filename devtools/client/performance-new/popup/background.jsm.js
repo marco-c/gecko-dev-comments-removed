@@ -127,6 +127,11 @@ const lazyProfilerMenuButton = requireLazy(() =>
   ))
 );
 
+const lazyCustomizableUI = requireLazy(() =>
+  
+  (ChromeUtils.import("resource:///modules/CustomizableUI.jsm"))
+);
+
 
 const presets = {
   "web-developer": {
@@ -513,7 +518,7 @@ function handleWebChannelMessage(channel, id, message, target) {
       channel.send(
         {
           type: "STATUS_RESPONSE",
-          menuButtonIsEnabled: ProfilerMenuButton.isEnabled(),
+          menuButtonIsEnabled: ProfilerMenuButton.isInNavbar(),
           requestId,
         },
         target
@@ -521,22 +526,27 @@ function handleWebChannelMessage(channel, id, message, target) {
       break;
     }
     case "ENABLE_MENU_BUTTON": {
+      const { ownerDocument } = target.browser;
+      if (!ownerDocument) {
+        throw new Error(
+          "Could not find the owner document for the current browser while enabling " +
+            "the profiler menu button"
+        );
+      }
+      
+      Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
+
       
       const { ProfilerMenuButton } = lazyProfilerMenuButton();
-      if (!ProfilerMenuButton.isEnabled()) {
-        const { ownerDocument } = target.browser;
-        if (!ownerDocument) {
-          throw new Error(
-            "Could not find the owner document for the current browser while enabling " +
-              "the profiler menu button"
-          );
-        }
-        
-        
-        Services.prefs.setBoolPref(POPUP_FEATURE_FLAG_PREF, true);
+      ProfilerMenuButton.addToNavbar(ownerDocument);
 
-        ProfilerMenuButton.toggle(ownerDocument);
-      }
+      
+      
+      const { CustomizableUI } = lazyCustomizableUI();
+      CustomizableUI.dispatchToolboxEvent("customizationchange");
+
+      
+      ProfilerMenuButton.openPopup(ownerDocument);
 
       
       channel.send(
