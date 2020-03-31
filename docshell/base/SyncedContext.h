@@ -8,6 +8,7 @@
 #define mozilla_dom_SyncedContext_h
 
 #include "mozilla/dom/MaybeDiscarded.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Tuple.h"
@@ -29,6 +30,8 @@ namespace syncedcontext {
 
 template <size_t I>
 using Index = typename std::integral_constant<size_t, I>;
+
+using IndexSet = EnumSet<size_t, uint64_t>;
 
 template <typename Context>
 class Transaction {
@@ -71,7 +74,10 @@ class Transaction {
   
   
   void Apply(Context* aOwner);
-  bool Validate(Context* aOwner, ContentParent* aSource);
+
+  
+  
+  IndexSet Validate(Context* aOwner, ContentParent* aSource);
 
   using FieldStorage = typename Context::FieldStorage;
   static FieldStorage& GetFieldStorage(Context* aContext) {
@@ -108,16 +114,15 @@ class Transaction {
 
 
 
-
-
-
-
 template <typename, typename... Ts>
 class FieldStorage {
  public:
   using FieldTuple = mozilla::Tuple<Ts...>;
 
   static constexpr size_t fieldCount = sizeof...(Ts);
+  static_assert(fieldCount < 64,
+                "At most 64 synced fields are supported. Please file a bug if "
+                "you need to additional fields.");
 
   const FieldTuple& Fields() const { return mFields; }
 
@@ -179,6 +184,9 @@ class FieldStorage {
   void Set##name(U&& aValue) {                               \
     this->template Set<IDX_##name>(std::forward<U>(aValue)); \
   }
+#define MOZ_DECL_SYNCED_CONTEXT_INDEX_TO_NAME(name, type) \
+  case IDX_##name:                                        \
+    return #name;
 
 
 
@@ -208,6 +216,12 @@ class FieldStorage {
    public:                                                                   \
     eachfield(MOZ_DECL_SYNCED_CONTEXT_TRANSACTION_SET)                       \
   };                                                                         \
+                                                                             \
+  /* Field name getter by field index */                                     \
+  static const char* FieldIndexToName(size_t aIndex) {                       \
+    switch (aIndex) { eachfield(MOZ_DECL_SYNCED_CONTEXT_INDEX_TO_NAME) }     \
+    return "<unknown>";                                                      \
+  }                                                                          \
   eachfield(MOZ_DECL_SYNCED_CONTEXT_FIELD_GETSET)
 
 }  
