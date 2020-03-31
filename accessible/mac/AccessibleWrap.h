@@ -53,6 +53,8 @@ class AccessibleWrap : public Accessible {
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
 
  protected:
+  friend class xpcAccessibleMacInterface;
+
   
 
 
