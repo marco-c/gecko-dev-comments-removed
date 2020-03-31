@@ -206,19 +206,6 @@ struct RemoveVolatile<volatile T> {
   typedef T Type;
 };
 
-
-
-
-
-
-
-
-
-template <typename T>
-struct RemoveCV {
-  typedef typename RemoveConst<typename RemoveVolatile<T>::Type>::Type Type;
-};
-
 } 
 
 #endif 
