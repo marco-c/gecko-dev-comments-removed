@@ -96,7 +96,7 @@ for form in ["infix", "prefix", "suffix"]:
     operatorDictionary[key] = value
 
 
-font = mathfont.create("operators")
+font = mathfont.create("operators", "Copyright (c) 2019 Igalia S.L.")
 
 
 font.math.DisplayOperatorMinHeight = 2 * mathfont.em
