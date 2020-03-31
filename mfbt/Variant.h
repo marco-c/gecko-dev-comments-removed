@@ -115,11 +115,11 @@ struct VariantTag {
   static const size_t TypeCount = sizeof...(Ts);
 
  public:
-  using Type = typename Conditional < TypeCount < 3, bool,
-        typename Conditional<TypeCount<(1 << 8), uint_fast8_t,
-                                       size_t  
-                                               
-                                       >::Type>::Type;
+  using Type = std::conditional_t < TypeCount < 3, bool,
+        std::conditional_t<TypeCount<(1 << 8), uint_fast8_t,
+                                     size_t  
+                                             
+                                     >>;
 };
 
 
