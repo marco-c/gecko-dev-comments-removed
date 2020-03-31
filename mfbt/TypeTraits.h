@@ -267,27 +267,6 @@ template <typename T>
 struct IsArithmetic : IntegralConstant<bool, IsIntegral<T>::value ||
                                                  IsFloatingPoint<T>::value> {};
 
-namespace detail {
-
-template <typename T>
-struct IsMemberPointerHelper : FalseType {};
-
-template <typename T, typename U>
-struct IsMemberPointerHelper<T U::*> : TrueType {};
-
-}  
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsMemberPointer
-    : detail::IsMemberPointerHelper<typename RemoveCV<T>::Type> {};
-
 
 
 
