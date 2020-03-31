@@ -16,6 +16,8 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/NullPrincipal.h"
 
+#include "nsGlobalWindowOuter.h"
+
 using namespace mozilla::ipc;
 
 extern mozilla::LazyLogModule gAutoplayPermissionLog;
@@ -120,6 +122,28 @@ void CanonicalBrowsingContext::GetWindowGlobals(
 
 WindowGlobalParent* CanonicalBrowsingContext::GetCurrentWindowGlobal() const {
   return static_cast<WindowGlobalParent*>(GetCurrentWindowContext());
+}
+
+already_AddRefed<nsIWidget>
+CanonicalBrowsingContext::GetParentProcessWidgetContaining() {
+  
+  
+  
+  nsCOMPtr<nsIWidget> widget;
+  if (nsGlobalWindowOuter* window = nsGlobalWindowOuter::Cast(GetDOMWindow())) {
+    widget = window->GetNearestWidget();
+  } else if (Element* topEmbedder = Top()->GetEmbedderElement()) {
+    widget = nsContentUtils::WidgetForContent(topEmbedder);
+    if (!widget) {
+      widget = nsContentUtils::WidgetForDocument(topEmbedder->OwnerDoc());
+    }
+  }
+
+  if (widget) {
+    widget = widget->GetTopLevelWidget();
+  }
+
+  return widget.forget();
 }
 
 already_AddRefed<WindowGlobalParent>
