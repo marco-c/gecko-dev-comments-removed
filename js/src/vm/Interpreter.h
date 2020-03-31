@@ -13,8 +13,6 @@
 
 #include "jspubtd.h"
 
-#include "vm/CheckIsCallableKind.h"  
-#include "vm/CheckIsObjectKind.h"    
 #include "vm/Iteration.h"
 #include "vm/Stack.h"
 
@@ -390,15 +388,15 @@ class MOZ_STACK_CLASS BaseTryNoteIter {
 
 
 
-      if (tn_->kind() == TryNoteKind::ForOfIterClose) {
+      if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
         uint32_t iterCloseDepth = 1;
         do {
           ++tn_;
           MOZ_ASSERT(tn_ != tnEnd_);
           if (pcInRange()) {
-            if (tn_->kind() == TryNoteKind::ForOfIterClose) {
+            if (tn_->kind == JSTRY_FOR_OF_ITERCLOSE) {
               iterCloseDepth++;
-            } else if (tn_->kind() == TryNoteKind::ForOf) {
+            } else if (tn_->kind == JSTRY_FOR_OF) {
               iterCloseDepth--;
             }
           }
@@ -576,9 +574,9 @@ JSObject* SingletonObjectLiteralOperation(JSContext* cx, HandleScript script,
 
 JSObject* ImportMetaOperation(JSContext* cx, HandleScript script);
 
-JSObject* FunctionProtoOperation(JSContext* cx);
+JSObject* BuiltinProtoOperation(JSContext* cx, jsbytecode* pc);
 
-bool ThrowMsgOperation(JSContext* cx, const unsigned throwMsgKind);
+bool ThrowMsgOperation(JSContext* cx, const unsigned errorNum);
 
 bool GetAndClearException(JSContext* cx, MutableHandleValue res);
 
@@ -649,7 +647,17 @@ void ReportInNotObjectError(JSContext* cx, HandleValue lref, int lindex,
 void ReportRuntimeRedeclaration(JSContext* cx, HandlePropertyName name,
                                 const char* redeclKind);
 
+enum class CheckIsObjectKind : uint8_t {
+  IteratorNext,
+  IteratorReturn,
+  IteratorThrow,
+  GetIterator,
+  GetAsyncIterator
+};
+
 bool ThrowCheckIsObject(JSContext* cx, CheckIsObjectKind kind);
+
+enum class CheckIsCallableKind : uint8_t { IteratorReturn };
 
 bool ThrowCheckIsCallable(JSContext* cx, CheckIsCallableKind kind);
 

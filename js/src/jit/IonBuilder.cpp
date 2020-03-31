@@ -2402,8 +2402,8 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
     case JSOp::ObjWithProto:
       return jsop_objwithproto();
 
-    case JSOp::FunctionProto:
-      return jsop_functionproto();
+    case JSOp::BuiltinProto:
+      return jsop_builtinproto();
 
     case JSOp::CheckReturn:
       return jsop_checkreturn();
@@ -7555,9 +7555,9 @@ AbortReasonOr<MBasicBlock*> IonBuilder::newPendingLoopHeader(
         }
       }
 
-      switch (tn.kind()) {
-        case TryNoteKind::Destructuring:
-        case TryNoteKind::ForIn: {
+      switch (tn.kind) {
+        case JSTRY_DESTRUCTURING:
+        case JSTRY_FOR_IN: {
           
           
           
@@ -12765,8 +12765,9 @@ AbortReasonOr<Ok> IonBuilder::jsop_objwithproto() {
   return resumeAfter(ins);
 }
 
-AbortReasonOr<Ok> IonBuilder::jsop_functionproto() {
-  JSProtoKey key = JSProto_Function;
+AbortReasonOr<Ok> IonBuilder::jsop_builtinproto() {
+  MOZ_ASSERT(GET_UINT8(pc) < JSProto_LIMIT);
+  JSProtoKey key = static_cast<JSProtoKey>(GET_UINT8(pc));
 
   
   if (JSObject* proto = script()->global().maybeGetPrototype(key)) {
@@ -12775,7 +12776,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_functionproto() {
   }
 
   
-  auto* ins = MFunctionProto::New(alloc());
+  auto* ins = MBuiltinProto::New(alloc(), pc);
   current->add(ins);
   current->push(ins);
   return resumeAfter(ins);

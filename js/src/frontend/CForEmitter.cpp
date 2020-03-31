@@ -8,9 +8,10 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/EmitterScope.h"     
+#include "frontend/SourceNotes.h"      
+#include "vm/JSScript.h"               
 #include "vm/Opcodes.h"                
 #include "vm/Scope.h"                  
-#include "vm/TryNoteKind.h"            
 
 using namespace js;
 using namespace js::frontend;
@@ -165,7 +166,7 @@ bool CForEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
   }
 
   
-  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, TryNoteKind::Loop)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, JSTRY_LOOP)) {
     
     return false;
   }

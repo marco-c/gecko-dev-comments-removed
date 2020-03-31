@@ -12,7 +12,6 @@
 
 #include "jstypes.h"
 #include "js/CompileOptions.h"
-#include "vm/TryNoteKind.h"  
 
 
 
@@ -23,30 +22,63 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum TryNoteKind {
+  JSTRY_CATCH,
+  JSTRY_FINALLY,
+  JSTRY_FOR_IN,
+  JSTRY_DESTRUCTURING,
+  JSTRY_FOR_OF,
+  JSTRY_FOR_OF_ITERCLOSE,
+  JSTRY_LOOP
+};
+
+
+
+
 struct TryNote {
-  uint32_t kind_;      
+  uint32_t kind;       
   uint32_t stackDepth; 
   uint32_t start;      
 
   uint32_t length;     
 
   TryNote(uint32_t kind, uint32_t stackDepth, uint32_t start, uint32_t length)
-      : kind_(kind), stackDepth(stackDepth), start(start), length(length) {}
+      : kind(kind), stackDepth(stackDepth), start(start), length(length) {}
 
   TryNote() = default;
 
-  TryNoteKind kind() const { return TryNoteKind(kind_); }
-
   bool isLoop() const {
-    switch (kind()) {
-      case TryNoteKind::Loop:
-      case TryNoteKind::ForIn:
-      case TryNoteKind::ForOf:
+    switch (kind) {
+      case JSTRY_LOOP:
+      case JSTRY_FOR_IN:
+      case JSTRY_FOR_OF:
         return true;
-      case TryNoteKind::Catch:
-      case TryNoteKind::Finally:
-      case TryNoteKind::ForOfIterClose:
-      case TryNoteKind::Destructuring:
+      case JSTRY_CATCH:
+      case JSTRY_FINALLY:
+      case JSTRY_FOR_OF_ITERCLOSE:
+      case JSTRY_DESTRUCTURING:
         return false;
     }
     MOZ_CRASH("Unexpected try note kind");
@@ -520,7 +552,8 @@ class alignas(uint32_t) ImmutableScriptData final {
       JSContext* cx, uint32_t mainOffset, uint32_t nfixed, uint32_t nslots,
       uint32_t bodyScopeIndex, uint32_t numICEntries,
       uint32_t numBytecodeTypeSets, bool isFunction, uint16_t funLength,
-      mozilla::Span<const jsbytecode> code, mozilla::Span<const SrcNote> notes,
+      mozilla::Span<const jsbytecode> code,
+      mozilla::Span<const jssrcnote> notes,
       mozilla::Span<const uint32_t> resumeOffsets,
       mozilla::Span<const ScopeNote> scopeNotes,
       mozilla::Span<const TryNote> tryNotes);
@@ -562,8 +595,8 @@ class alignas(uint32_t) ImmutableScriptData final {
   mozilla::Span<jsbytecode> codeSpan() { return {code(), codeLength()}; }
 
   uint32_t noteLength() const { return optionalOffsetsOffset() - noteOffset(); }
-  SrcNote* notes() { return offsetToPointer<SrcNote>(noteOffset()); }
-  mozilla::Span<SrcNote> notesSpan() { return {notes(), noteLength()}; }
+  jssrcnote* notes() { return offsetToPointer<jssrcnote>(noteOffset()); }
+  mozilla::Span<jssrcnote> notesSpan() { return {notes(), noteLength()}; }
 
   mozilla::Span<uint32_t> resumeOffsets() {
     return mozilla::MakeSpan(offsetToPointer<uint32_t>(resumeOffsetsOffset()),

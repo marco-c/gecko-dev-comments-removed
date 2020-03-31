@@ -20,7 +20,6 @@
 #include "frontend/TDZCheckCache.h"  
 #include "gc/Rooting.h"              
 #include "vm/StringType.h"           
-#include "vm/TryNoteKind.h"          
 
 namespace js {
 namespace frontend {

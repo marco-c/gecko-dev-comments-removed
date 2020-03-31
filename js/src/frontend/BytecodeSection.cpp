@@ -140,8 +140,7 @@ bool CGTryNoteList::append(TryNoteKind kind, uint32_t stackDepth,
   
   
 
-  TryNote note(uint32_t(kind), stackDepth, start.toUint32(),
-               (end - start).toUint32());
+  TryNote note(kind, stackDepth, start.toUint32(), (end - start).toUint32());
 
   return list.append(note);
 }

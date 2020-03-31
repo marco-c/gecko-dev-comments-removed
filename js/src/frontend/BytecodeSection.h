@@ -33,9 +33,8 @@
 #include "js/TypeDecls.h"               
 #include "js/Value.h"                   
 #include "js/Vector.h"                  
+#include "vm/JSScript.h"                
 #include "vm/Opcodes.h"                 
-#include "vm/SharedStencil.h"           
-#include "vm/TryNoteKind.h"             
 
 namespace js {
 
@@ -161,7 +160,7 @@ static constexpr size_t MaxSrcNotesLength = INT32_MAX;
 
 
 typedef Vector<jsbytecode, 64> BytecodeVector;
-typedef Vector<js::SrcNote, 64> SrcNotesVector;
+typedef Vector<jssrcnote, 64> SrcNotesVector;
 
 
 

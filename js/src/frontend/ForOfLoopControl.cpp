@@ -142,7 +142,7 @@ bool ForOfLoopControl::emitIteratorCloseInInnermostScopeWithTryNote(
     return false;
   }
   BytecodeOffset end = bce->bytecodeSection().offset();
-  return bce->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end);
+  return bce->addTryNote(JSTRY_FOR_OF_ITERCLOSE, 0, start, end);
 }
 
 bool ForOfLoopControl::emitIteratorCloseInScope(

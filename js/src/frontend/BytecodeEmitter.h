@@ -42,17 +42,19 @@
 #include "js/RootingAPI.h"                 
 #include "js/TypeDecls.h"                  
 #include "vm/BytecodeUtil.h"               
-#include "vm/CheckIsCallableKind.h"        
-#include "vm/CheckIsObjectKind.h"          
-#include "vm/FunctionPrefixKind.h"         
-#include "vm/GeneratorResumeKind.h"        
 #include "vm/Instrumentation.h"            
-#include "vm/Iteration.h"                  
-#include "vm/JSFunction.h"                 
-#include "vm/JSScript.h"     
-#include "vm/Runtime.h"      
-#include "vm/StringType.h"   
-#include "vm/TryNoteKind.h"  
+#include "vm/Interpreter.h"  
+#include "vm/Iteration.h"    
+#include "vm/JSFunction.h"   
+#include "vm/JSScript.h"  
+#include "vm/Runtime.h"   
+#include "vm/StringType.h"  
+
+namespace js {
+
+enum class GeneratorResumeKind;
+
+}  
 
 namespace js {
 namespace frontend {
@@ -350,10 +352,13 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   MOZ_MUST_USE bool newSrcNote(SrcNoteType type, unsigned* indexp = nullptr);
-  MOZ_MUST_USE bool newSrcNote2(SrcNoteType type, ptrdiff_t operand,
+  MOZ_MUST_USE bool newSrcNote2(SrcNoteType type, ptrdiff_t offset,
                                 unsigned* indexp = nullptr);
+  MOZ_MUST_USE bool newSrcNote3(SrcNoteType type, ptrdiff_t offset1,
+                                ptrdiff_t offset2, unsigned* indexp = nullptr);
 
-  MOZ_MUST_USE bool newSrcNoteOperand(ptrdiff_t operand);
+  MOZ_MUST_USE bool setSrcNoteOffset(unsigned index, unsigned which,
+                                     BytecodeOffsetDiff offset);
 
   
   enum EmitLineNumberNote { EMIT_LINENOTE, SUPPRESS_LINENOTE };

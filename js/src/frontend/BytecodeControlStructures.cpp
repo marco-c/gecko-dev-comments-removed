@@ -8,6 +8,7 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/EmitterScope.h"     
+#include "frontend/SourceNotes.h"      
 #include "vm/Opcodes.h"                
 
 using namespace js;

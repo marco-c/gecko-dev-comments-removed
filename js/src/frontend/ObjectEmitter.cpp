@@ -11,11 +11,11 @@
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/IfEmitter.h"        
 #include "frontend/SharedContext.h"    
+#include "frontend/SourceNotes.h"      
 #include "gc/AllocKind.h"              
 #include "js/Id.h"                     
 #include "js/Value.h"                  
 #include "vm/BytecodeUtil.h"           
-#include "vm/FunctionPrefixKind.h"     
 #include "vm/JSContext.h"              
 #include "vm/NativeObject.h"           
 #include "vm/ObjectGroup.h"            
@@ -542,7 +542,7 @@ bool ClassEmitter::emitDerivedClass(JS::Handle<JSAtom*> name,
     
     return false;
   }
-  if (!bce_->emit1(JSOp::FunctionProto)) {
+  if (!bce_->emit2(JSOp::BuiltinProto, JSProto_Function)) {
     
     return false;
   }

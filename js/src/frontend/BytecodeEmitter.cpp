@@ -51,24 +51,20 @@
 #include "frontend/ParseNode.h"      
 #include "frontend/Parser.h"         
 #include "frontend/PropOpEmitter.h"  
-#include "frontend/SourceNotes.h"    
 #include "frontend/SwitchEmitter.h"  
 #include "frontend/TDZCheckCache.h"  
 #include "frontend/TryEmitter.h"     
 #include "frontend/WhileEmitter.h"   
 #include "js/CompileOptions.h"       
-#include "vm/AsyncFunctionResolveKind.h"  
+#include "vm/AsyncFunction.h"        
 #include "vm/BytecodeUtil.h"  
-#include "vm/FunctionPrefixKind.h"  
-#include "vm/GeneratorObject.h"     
-#include "vm/JSAtom.h"              
-#include "vm/JSContext.h"           
-#include "vm/JSFunction.h"          
+#include "vm/GeneratorObject.h"  
+#include "vm/JSAtom.h"           
+#include "vm/JSContext.h"        
+#include "vm/JSFunction.h"       
 #include "vm/JSScript.h"  
-#include "vm/Opcodes.h"        
-#include "vm/SharedStencil.h"  
-#include "vm/ThrowMsgKind.h"   
-#include "wasm/AsmJS.h"        
+#include "vm/Opcodes.h"  
+#include "wasm/AsmJS.h"  
 
 #include "vm/JSObject-inl.h"  
 
@@ -196,11 +192,11 @@ bool BytecodeEmitter::markStepBreakpoint() {
     return false;
   }
 
-  if (!newSrcNote(SrcNoteType::StepSep)) {
+  if (!newSrcNote(SRC_STEP_SEP)) {
     return false;
   }
 
-  if (!newSrcNote(SrcNoteType::Breakpoint)) {
+  if (!newSrcNote(SRC_BREAKPOINT)) {
     return false;
   }
 
@@ -226,7 +222,7 @@ bool BytecodeEmitter::markSimpleBreakpoint() {
       return false;
     }
 
-    if (!newSrcNote(SrcNoteType::Breakpoint)) {
+    if (!newSrcNote(SRC_BREAKPOINT)) {
       return false;
     }
   }
@@ -507,6 +503,10 @@ bool BytecodeEmitter::emitCheckIsCallable(CheckIsCallableKind kind) {
   return emit2(JSOp::CheckIsCallable, uint8_t(kind));
 }
 
+static inline unsigned LengthOfSetLine(unsigned line) {
+  return 1  + (line > SN_4BYTE_OFFSET_MASK ? 4 : 1);
+}
+
 
 bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
   
@@ -537,14 +537,13 @@ bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
 
 
     bytecodeSection().setCurrentLine(line, offset);
-    if (delta >= SrcNote::SetLine::lengthFor(line)) {
-      if (!newSrcNote2(SrcNoteType::SetLine,
-                       SrcNote::SetLine::toOperand(line))) {
+    if (delta >= LengthOfSetLine(line)) {
+      if (!newSrcNote2(SRC_SETLINE, ptrdiff_t(line))) {
         return false;
       }
     } else {
       do {
-        if (!newSrcNote(SrcNoteType::NewLine)) {
+        if (!newSrcNote(SRC_NEWLINE)) {
           return false;
         }
       } while (--delta != 0);
@@ -575,11 +574,10 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
     
     
     
-    if (!SrcNote::ColSpan::isRepresentable(colspan)) {
+    if (!SN_REPRESENTABLE_COLSPAN(colspan)) {
       return true;
     }
-    if (!newSrcNote2(SrcNoteType::ColSpan,
-                     SrcNote::ColSpan::toOperand(colspan))) {
+    if (!newSrcNote2(SRC_COLSPAN, SN_COLSPAN_TO_OFFSET(colspan))) {
       return false;
     }
     bytecodeSection().setLastColumn(columnIndex, offset);
@@ -833,7 +831,7 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
   
   BytecodeOffset end = bce_->bytecodeSection().offset();
   for (BytecodeOffset start : forOfIterCloseScopeStarts) {
-    if (!bce_->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end)) {
+    if (!bce_->addTryNote(JSTRY_FOR_OF_ITERCLOSE, 0, start, end)) {
       return false;
     }
   }
@@ -1946,7 +1944,7 @@ bool BytecodeEmitter::emitCallIncDec(UnaryNode* incDec) {
 
   
   
-  return emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::AssignToCall));
+  return emitUint16Operand(JSOp::ThrowMsg, JSMSG_ASSIGN_TO_CALL);
 }
 
 bool BytecodeEmitter::emitDouble(double d) {
@@ -3046,7 +3044,7 @@ bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
   }
   BytecodeOffset end = bytecodeSection().offset();
   if (start != end) {
-    return addTryNote(TryNoteKind::Destructuring, iterDepth, start, end);
+    return addTryNote(JSTRY_DESTRUCTURING, iterDepth, start, end);
   }
   return true;
 }
@@ -4205,7 +4203,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
       
       
-      if (!emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::AssignToCall))) {
+      if (!emitUint16Operand(JSOp::ThrowMsg, JSMSG_ASSIGN_TO_CALL)) {
         return false;
       }
 
@@ -4306,7 +4304,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
   
   if (isCompound) {
-    if (!newSrcNote(SrcNoteType::AssignOp)) {
+    if (!newSrcNote(SRC_ASSIGNOP)) {
       return false;
     }
     if (!emit1(compoundOp)) {
@@ -5013,7 +5011,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       return false;
     }
 
-    if (!loopInfo.emitLoopEnd(this, JSOp::Goto, TryNoteKind::ForOf)) {
+    if (!loopInfo.emitLoopEnd(this, JSOp::Goto, JSTRY_FOR_OF)) {
       
       return false;
     }
@@ -6231,7 +6229,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       return false;
     }
     
-    if (!emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::IteratorNoThrow))) {
+    if (!emitUint16Operand(JSOp::ThrowMsg, JSMSG_ITERATOR_NO_THROW)) {
       
       
       return false;
@@ -6475,7 +6473,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  if (!loopInfo.emitLoopEnd(this, JSOp::Goto, TryNoteKind::Loop)) {
+  if (!loopInfo.emitLoopEnd(this, JSOp::Goto, JSTRY_LOOP)) {
     
     return false;
   }
@@ -10454,16 +10452,16 @@ bool BytecodeEmitter::emitTree(
   return true;
 }
 
-static bool AllocSrcNote(JSContext* cx, SrcNotesVector& notes, unsigned size,
+static bool AllocSrcNote(JSContext* cx, SrcNotesVector& notes,
                          unsigned* index) {
   size_t oldLength = notes.length();
 
-  if (MOZ_UNLIKELY(oldLength + size > MaxSrcNotesLength)) {
+  if (MOZ_UNLIKELY(oldLength + 1 > MaxSrcNotesLength)) {
     ReportAllocationOverflow(cx);
     return false;
   }
 
-  if (!notes.growByUninitialized(size)) {
+  if (!notes.growByUninitialized(1)) {
     return false;
   }
 
@@ -10482,6 +10480,9 @@ bool BytecodeEmitter::newSrcNote(SrcNoteType type, unsigned* indexp) {
   MOZ_ASSERT(!inPrologue());
   SrcNotesVector& notes = bytecodeSection().notes();
   unsigned index;
+  if (!AllocSrcNote(cx, notes, &index)) {
+    return false;
+  }
 
   
 
@@ -10490,16 +10491,27 @@ bool BytecodeEmitter::newSrcNote(SrcNoteType type, unsigned* indexp) {
   BytecodeOffset offset = bytecodeSection().offset();
   ptrdiff_t delta = (offset - bytecodeSection().lastNoteOffset()).value();
   bytecodeSection().setLastNoteOffset(offset);
+  if (delta >= SN_DELTA_LIMIT) {
+    do {
+      ptrdiff_t xdelta = std::min(delta, SN_XDELTA_MASK);
+      SN_MAKE_XDELTA(&notes[index], xdelta);
+      delta -= xdelta;
+      if (!AllocSrcNote(cx, notes, &index)) {
+        return false;
+      }
+    } while (delta >= SN_DELTA_LIMIT);
+  }
 
-  auto allocator = [&](unsigned size) -> SrcNote* {
-    if (!AllocSrcNote(cx, notes, size, &index)) {
-      return nullptr;
+  
+
+
+
+
+  SN_MAKE_NOTE(&notes[index], type, delta);
+  for (int n = (int)js_SrcNoteSpec[type].arity; n > 0; n--) {
+    if (!newSrcNote(SRC_NULL)) {
+      return false;
     }
-    return &notes[index];
-  };
-
-  if (!SrcNoteWriter::writeNote(type, delta, allocator)) {
-    return false;
   }
 
   if (indexp) {
@@ -10514,7 +10526,7 @@ bool BytecodeEmitter::newSrcNote2(SrcNoteType type, ptrdiff_t offset,
   if (!newSrcNote(type, &index)) {
     return false;
   }
-  if (!newSrcNoteOperand(offset)) {
+  if (!setSrcNoteOffset(index, 0, BytecodeOffsetDiff(offset))) {
     return false;
   }
   if (indexp) {
@@ -10523,21 +10535,109 @@ bool BytecodeEmitter::newSrcNote2(SrcNoteType type, ptrdiff_t offset,
   return true;
 }
 
-bool BytecodeEmitter::newSrcNoteOperand(ptrdiff_t operand) {
-  if (!SrcNote::isRepresentableOperand(operand)) {
+bool BytecodeEmitter::newSrcNote3(SrcNoteType type, ptrdiff_t offset1,
+                                  ptrdiff_t offset2, unsigned* indexp) {
+  unsigned index;
+  if (!newSrcNote(type, &index)) {
+    return false;
+  }
+  if (!setSrcNoteOffset(index, 0, BytecodeOffsetDiff(offset1))) {
+    return false;
+  }
+  if (!setSrcNoteOffset(index, 1, BytecodeOffsetDiff(offset2))) {
+    return false;
+  }
+  if (indexp) {
+    *indexp = index;
+  }
+  return true;
+}
+
+bool BytecodeEmitter::setSrcNoteOffset(unsigned index, unsigned which,
+                                       BytecodeOffsetDiff offset) {
+  ptrdiff_t offsetValue = offset.value();
+
+  if (!SN_REPRESENTABLE_OFFSET(offsetValue)) {
     reportError(nullptr, JSMSG_NEED_DIET, js_script_str);
     return false;
   }
 
   SrcNotesVector& notes = bytecodeSection().notes();
 
-  auto allocator = [&](unsigned size) -> SrcNote* {
-    unsigned index;
-    if (!AllocSrcNote(cx, notes, size, &index)) {
-      return nullptr;
+  
+  jssrcnote* sn = &notes[index];
+  MOZ_ASSERT(SN_TYPE(sn) != SRC_XDELTA);
+  MOZ_ASSERT((int)which < js_SrcNoteSpec[SN_TYPE(sn)].arity);
+  for (sn++; which; sn++, which--) {
+    if (*sn & SN_4BYTE_OFFSET_FLAG) {
+      sn += 3;
     }
-    return &notes[index];
-  };
+  }
 
-  return SrcNoteWriter::writeOperand(operand, allocator);
+  
+
+
+
+
+  if (offsetValue > (ptrdiff_t)SN_4BYTE_OFFSET_MASK ||
+      (*sn & SN_4BYTE_OFFSET_FLAG)) {
+    
+    if (!(*sn & SN_4BYTE_OFFSET_FLAG)) {
+      
+      if (MOZ_UNLIKELY(notes.length() + 3 > MaxSrcNotesLength)) {
+        ReportAllocationOverflow(cx);
+        return false;
+      }
+      jssrcnote dummy = 0;
+      if (!(sn = notes.insert(sn, dummy)) || !(sn = notes.insert(sn, dummy)) ||
+          !(sn = notes.insert(sn, dummy))) {
+        return false;
+      }
+    }
+    *sn++ = (jssrcnote)(SN_4BYTE_OFFSET_FLAG | (offsetValue >> 24));
+    *sn++ = (jssrcnote)(offsetValue >> 16);
+    *sn++ = (jssrcnote)(offsetValue >> 8);
+  }
+  *sn = (jssrcnote)offsetValue;
+  return true;
+}
+
+const JSSrcNoteSpec js_SrcNoteSpec[] = {
+#define DEFINE_SRC_NOTE_SPEC(sym, name, arity) {name, arity},
+    FOR_EACH_SRC_NOTE_TYPE(DEFINE_SRC_NOTE_SPEC)
+#undef DEFINE_SRC_NOTE_SPEC
+};
+
+static int SrcNoteArity(jssrcnote* sn) {
+  MOZ_ASSERT(SN_TYPE(sn) < SRC_LAST);
+  return js_SrcNoteSpec[SN_TYPE(sn)].arity;
+}
+
+JS_FRIEND_API unsigned js::SrcNoteLength(jssrcnote* sn) {
+  unsigned arity;
+  jssrcnote* base;
+
+  arity = SrcNoteArity(sn);
+  for (base = sn++; arity; sn++, arity--) {
+    if (*sn & SN_4BYTE_OFFSET_FLAG) {
+      sn += 3;
+    }
+  }
+  return sn - base;
+}
+
+JS_FRIEND_API ptrdiff_t js::GetSrcNoteOffset(jssrcnote* sn, unsigned which) {
+  
+  MOZ_ASSERT(SN_TYPE(sn) != SRC_XDELTA);
+  MOZ_ASSERT((int)which < SrcNoteArity(sn));
+  for (sn++; which; sn++, which--) {
+    if (*sn & SN_4BYTE_OFFSET_FLAG) {
+      sn += 3;
+    }
+  }
+  if (*sn & SN_4BYTE_OFFSET_FLAG) {
+    return (ptrdiff_t)(((uint32_t)(sn[0] & SN_4BYTE_OFFSET_MASK) << 24) |
+                       (sn[1] << 16) | (sn[2] << 8) | sn[3]);
+  }
+  return (ptrdiff_t)*sn;
 }

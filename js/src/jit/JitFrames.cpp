@@ -89,10 +89,9 @@ static uint32_t NumArgAndLocalSlots(const InlineFrameIterator& frame) {
 static void CloseLiveIteratorIon(JSContext* cx,
                                  const InlineFrameIterator& frame,
                                  const TryNote* tn) {
-  MOZ_ASSERT(tn->kind() == TryNoteKind::ForIn ||
-             tn->kind() == TryNoteKind::Destructuring);
+  MOZ_ASSERT(tn->kind == JSTRY_FOR_IN || tn->kind == JSTRY_DESTRUCTURING);
 
-  bool isDestructuring = tn->kind() == TryNoteKind::Destructuring;
+  bool isDestructuring = tn->kind == JSTRY_DESTRUCTURING;
   MOZ_ASSERT_IF(!isDestructuring, tn->stackDepth > 0);
   MOZ_ASSERT_IF(isDestructuring, tn->stackDepth > 1);
 
@@ -125,7 +124,7 @@ static void CloseLiveIteratorIon(JSContext* cx,
   }
 
   if (cx->isExceptionPending()) {
-    if (tn->kind() == TryNoteKind::ForIn) {
+    if (tn->kind == JSTRY_FOR_IN) {
       CloseIterator(iterObject);
     } else {
       IteratorCloseForException(cx, iterObject);
@@ -199,13 +198,13 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
 
   for (TryNoteIterIon tni(cx, frame); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
-    switch (tn->kind()) {
-      case TryNoteKind::ForIn:
-      case TryNoteKind::Destructuring:
+    switch (tn->kind) {
+      case JSTRY_FOR_IN:
+      case JSTRY_DESTRUCTURING:
         CloseLiveIteratorIon(cx, frame, tn);
         break;
 
-      case TryNoteKind::Catch:
+      case JSTRY_CATCH:
         if (cx->isExceptionPending()) {
           
           
@@ -235,11 +234,10 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
         }
         break;
 
-      case TryNoteKind::ForOf:
-      case TryNoteKind::Loop:
+      case JSTRY_FOR_OF:
+      case JSTRY_LOOP:
         break;
 
-      
       
       default:
         MOZ_CRASH("Unexpected try note");
@@ -314,8 +312,8 @@ static void CloseLiveIteratorsBaselineForUncatchableException(
     JSContext* cx, const JSJitFrameIter& frame, jsbytecode* pc) {
   for (TryNoteIterBaseline tni(cx, frame, pc); !tni.done(); ++tni) {
     const TryNote* tn = *tni;
-    switch (tn->kind()) {
-      case TryNoteKind::ForIn: {
+    switch (tn->kind) {
+      case JSTRY_FOR_IN: {
         uint8_t* framePointer;
         uint8_t* stackPointer;
         BaselineFrameAndStackPointersFromTryNote(tn, frame, &framePointer,
@@ -344,8 +342,8 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
     const TryNote* tn = *tni;
 
     MOZ_ASSERT(cx->isExceptionPending());
-    switch (tn->kind()) {
-      case TryNoteKind::Catch: {
+    switch (tn->kind) {
+      case JSTRY_CATCH: {
         
         
         if (cx->isClosingGenerator()) {
@@ -368,7 +366,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         return true;
       }
 
-      case TryNoteKind::Finally: {
+      case JSTRY_FINALLY: {
         SettleOnTryNote(cx, tn, frame, ei, rfe, pc);
 
         const BaselineInterpreter& interp =
@@ -386,7 +384,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         return true;
       }
 
-      case TryNoteKind::ForIn: {
+      case JSTRY_FOR_IN: {
         uint8_t* framePointer;
         uint8_t* stackPointer;
         BaselineFrameAndStackPointersFromTryNote(tn, frame, &framePointer,
@@ -397,7 +395,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         break;
       }
 
-      case TryNoteKind::Destructuring: {
+      case JSTRY_DESTRUCTURING: {
         uint8_t* framePointer;
         uint8_t* stackPointer;
         BaselineFrameAndStackPointersFromTryNote(tn, frame, &framePointer,
@@ -418,11 +416,10 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         break;
       }
 
-      case TryNoteKind::ForOf:
-      case TryNoteKind::Loop:
+      case JSTRY_FOR_OF:
+      case JSTRY_LOOP:
         break;
 
-      
       
       default:
         MOZ_CRASH("Invalid try note");

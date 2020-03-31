@@ -17,7 +17,7 @@
 #include "frontend/ParseContext.h"         
 #include "frontend/PropOpEmitter.h"        
 #include "frontend/SharedContext.h"        
-#include "vm/AsyncFunctionResolveKind.h"   
+#include "vm/AsyncFunction.h"              
 #include "vm/JSScript.h"                   
 #include "vm/Opcodes.h"                    
 #include "vm/Scope.h"                      

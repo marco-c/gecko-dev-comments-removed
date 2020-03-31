@@ -10,6 +10,7 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
+#include "frontend/SourceNotes.h"      
 #include "vm/JSScript.h"               
 #include "vm/Opcodes.h"                
 
@@ -262,7 +263,7 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasCatch()) {
-    if (!bce_->addTryNote(TryNoteKind::Catch, depth_, offsetAfterTryOp(),
+    if (!bce_->addTryNote(JSTRY_CATCH, depth_, offsetAfterTryOp(),
                           tryEnd_.offset)) {
       return false;
     }
@@ -272,7 +273,7 @@ bool TryEmitter::emitEnd() {
   
   
   if (hasFinally()) {
-    if (!bce_->addTryNote(TryNoteKind::Finally, depth_, offsetAfterTryOp(),
+    if (!bce_->addTryNote(JSTRY_FINALLY, depth_, offsetAfterTryOp(),
                           finallyStart_.offset)) {
       return false;
     }
