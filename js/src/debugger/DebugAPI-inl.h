@@ -32,22 +32,6 @@ bool DebugAPI::hasAnyBreakpointsOrStepMode(JSScript* script) {
 }
 
 
-void DebugAPI::onNewScript(JSContext* cx, HandleScript script) {
-  
-  
-  MOZ_ASSERT_IF(!script->realm()->creationOptions().invisibleToDebugger() &&
-                    !script->selfHosted(),
-                script->realm()->firedOnNewGlobalObject);
-
-  
-  if (script->hideScriptFromDebugger()) {
-    return;
-  }
-
-  slowPathOnNewScript(cx, script);
-}
-
-
 void DebugAPI::onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global) {
   MOZ_ASSERT(!global->realm()->firedOnNewGlobalObject);
 #ifdef DEBUG

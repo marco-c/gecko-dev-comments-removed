@@ -183,7 +183,7 @@ class DebugAPI {
   
 
   
-  static inline void onNewScript(JSContext* cx, HandleScript script);
+  static void onNewScript(JSContext* cx, HandleScript script);
 
   
   static inline void onNewWasmInstance(
@@ -350,7 +350,6 @@ class DebugAPI {
  private:
   static bool stepModeEnabledSlow(JSScript* script);
   static bool hasBreakpointsAtSlow(JSScript* script, jsbytecode* pc);
-  static void slowPathOnNewScript(JSContext* cx, HandleScript script);
   static void slowPathOnNewGlobalObject(JSContext* cx,
                                         Handle<GlobalObject*> global);
   static void slowPathNotifyParticipatesInGC(uint64_t majorGCNumber,
