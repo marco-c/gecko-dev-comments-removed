@@ -96,6 +96,10 @@ class WebConsole {
     return this.toolbox.targetList;
   }
 
+  get resourceWatcher() {
+    return this.toolbox.resourceWatcher;
+  }
+
   
 
 
