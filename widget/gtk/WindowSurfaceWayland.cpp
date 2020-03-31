@@ -15,7 +15,6 @@
 #include "nsTArray.h"
 #include "base/message_loop.h"  
 #include "base/task.h"          
-#include "mozilla/StaticPrefs_widget.h"
 
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -523,8 +522,7 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow* aWindow)
       mBufferPendingCommit(false),
       mBufferCommitAllowed(false),
       mBufferNeedsClear(false),
-      mIsMainThread(NS_IsMainThread()),
-      mSmoothRendering(StaticPrefs::widget_wayland_smooth_rendering()) {
+      mIsMainThread(NS_IsMainThread()) {
   for (int i = 0; i < BACK_BUFFER_NUM; i++) {
     mShmBackupBuffer[i] = nullptr;
     mDMABackupBuffer[i] = nullptr;
@@ -881,8 +879,9 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     mLockedScreenRect = lockedScreenRect;
   }
 
-  
   LayoutDeviceIntRect size = mWindow->GetMozContainerSize();
+
+  
   mDrawToWaylandBufferDirectly = (size.width == mLockedScreenRect.width &&
                                   size.height == mLockedScreenRect.height);
 
@@ -890,10 +889,8 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
   
   if (mDrawToWaylandBufferDirectly) {
     mDrawToWaylandBufferDirectly =
-        mSmoothRendering
-            ? windowRedraw
-            : (windowRedraw || (lockSize.width * 2 > lockedScreenRect.width &&
-                                lockSize.height * 2 > lockedScreenRect.height));
+        windowRedraw || (lockSize.width * 3 > lockedScreenRect.width &&
+                         lockSize.height * 3 > lockedScreenRect.height);
   }
 
   if (mDrawToWaylandBufferDirectly) {

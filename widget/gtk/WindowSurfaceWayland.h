@@ -331,10 +331,6 @@ class WindowSurfaceWayland : public WindowSurface {
   
   bool mBufferNeedsClear;
 
-  
-  
-  bool mSmoothRendering;
-
   bool mIsMainThread;
 
   static bool UseDMABufBackend();
