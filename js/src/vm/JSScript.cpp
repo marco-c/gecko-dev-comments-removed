@@ -4078,6 +4078,8 @@ void JSScript::relazify(JSRuntime* rt) {
   
   
   
+  
+  MOZ_ASSERT(!coverage::IsLCovEnabled());
   MOZ_ASSERT(!hasScriptCounts());
   MOZ_ASSERT(!hasDebugScript());
 

@@ -1695,13 +1695,14 @@ void JSFunction::maybeRelazify(JSRuntime* rt) {
   MOZ_ASSERT(!realm->isSelfHostingRealm());
 
   
+  
   if (realm->isDebuggee()) {
     return;
   }
 
   
   
-  if (realm->collectCoverageForDebug()) {
+  if (coverage::IsLCovEnabled()) {
     return;
   }
 
