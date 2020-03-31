@@ -237,6 +237,8 @@ pub struct PaintWorklet {
     
     
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
+    #[compute(no_field_bound)]
+    #[resolve(no_field_bound)]
     pub arguments: Vec<Arc<custom_properties::SpecifiedValue>>,
 }
 

@@ -539,7 +539,7 @@ impl TemplateAreas {
         Ok(TemplateAreas {
             areas: areas.into(),
             strings: strings.into(),
-            width: width,
+            width,
         })
     }
 }
@@ -589,7 +589,16 @@ impl Parse for TemplateAreasArc {
 
 
 #[repr(C)]
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 pub struct UnsignedRange {
     
     pub start: u32,
@@ -597,7 +606,16 @@ pub struct UnsignedRange {
     pub end: u32,
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(C)]
 
 

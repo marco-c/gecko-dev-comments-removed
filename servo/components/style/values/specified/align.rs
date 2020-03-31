@@ -556,7 +556,7 @@ impl SpecifiedValueInfo for AlignItems {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem)]
 #[repr(C)]
 pub struct JustifyItems(pub AlignFlags);
 

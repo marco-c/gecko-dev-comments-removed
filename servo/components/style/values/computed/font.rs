@@ -179,7 +179,7 @@ impl ToAnimatedValue for FontSize {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, ToResolvedValue)]
+#[derive(Clone, Debug, Eq, PartialEq, ToComputedValue, ToResolvedValue)]
 #[cfg_attr(feature = "servo", derive(Hash, MallocSizeOf))]
 
 pub struct FontFamily {
@@ -228,7 +228,7 @@ impl ToCss for FontFamily {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 pub struct FamilyName {
@@ -271,7 +271,7 @@ impl ToCss for FamilyName {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 
@@ -286,7 +286,7 @@ pub enum FontFamilyNameSyntax {
     Identifiers,
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToResolvedValue, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize, Hash))]
 
 pub enum SingleFontFamily {
@@ -302,7 +302,7 @@ pub enum SingleFontFamily {
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToResolvedValue, ToShmem,
+    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
@@ -353,19 +353,22 @@ impl SingleFontFamily {
         };
 
         let mut value = first_ident.as_ref().to_owned();
+        let mut serialize_quoted = value.contains(' ');
 
         
         
         if reserved {
             let ident = input.expect_ident()?;
+            serialize_quoted = serialize_quoted || ident.contains(' ');
             value.push(' ');
             value.push_str(&ident);
         }
         while let Ok(ident) = input.try(|i| i.expect_ident_cloned()) {
+            serialize_quoted = serialize_quoted || ident.contains(' ');
             value.push(' ');
             value.push_str(&ident);
         }
-        let syntax = if value.starts_with(' ') || value.ends_with(' ') || value.contains("  ") {
+        let syntax = if serialize_quoted {
             
             
             
@@ -425,16 +428,20 @@ impl SingleFontFamily {
 }
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToResolvedValue, ToShmem)]
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 
 pub struct FontFamilyList(Box<[SingleFontFamily]>);
 
 #[cfg(feature = "gecko")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, ToComputedValue, ToResolvedValue)]
 
 pub enum FontFamilyList {
     
-    SharedFontList(RefPtr<structs::SharedFontList>),
+    SharedFontList(
+        #[compute(no_field_bound)]
+        #[resolve(no_field_bound)]
+        RefPtr<structs::SharedFontList>,
+    ),
     
     Generic(GenericFontFamily),
 }

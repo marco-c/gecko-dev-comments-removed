@@ -408,7 +408,7 @@ impl ToCss for System {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToCss, ToShmem)]
 #[repr(u8)]
 pub enum Symbol {
     
@@ -554,7 +554,7 @@ impl Parse for Fallback {
 }
 
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToShmem)]
+#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToCss, ToShmem)]
 #[repr(C)]
 pub struct Symbols(#[css(iterable)] pub crate::OwnedSlice<Symbol>);
 
