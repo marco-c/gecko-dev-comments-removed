@@ -1628,23 +1628,28 @@ void nsPresContext::CountReflows(const char* aName, nsIFrame* aFrame) {
 
 bool nsPresContext::HasAuthorSpecifiedRules(const nsIFrame* aFrame,
                                             uint32_t aRuleTypeMask) const {
-  MOZ_ASSERT(aFrame->StyleDisplay()->HasAppearance(),
-             "This should only be used to disable native appearance");
-  const bool padding = aRuleTypeMask & NS_AUTHOR_SPECIFIED_PADDING;
-  const bool borderBackground =
-      aRuleTypeMask & NS_AUTHOR_SPECIFIED_BORDER_OR_BACKGROUND;
-  const auto& style = *aFrame->Style();
+  Element* elem = aFrame->GetContent()->AsElement();
 
-  if (padding && style.HasAppearanceAndAuthorSpecifiedPadding()) {
-    return true;
+  
+  
+  if (elem->GetPseudoElementType() != PseudoStyleType::NotPseudo) {
+    MOZ_ASSERT(elem->GetParent(), "Pseudo element has no parent element?");
+    elem = elem->GetParent()->AsElement();
+  }
+  if (MOZ_UNLIKELY(!elem->HasServoData())) {
+    
+    return false;
   }
 
-  if (borderBackground &&
-      style.HasAppearanceAndAuthorSpecifiedBorderOrBackground()) {
-    return true;
+  
+  
+  if (aFrame->Style()->IsAnonBox()) {
+    return false;
   }
 
-  return false;
+  auto* set = PresShell()->StyleSet()->RawSet();
+  return Servo_HasAuthorSpecifiedRules(set, aFrame->Style(), elem,
+                                       aRuleTypeMask);
 }
 
 gfxUserFontSet* nsPresContext::GetUserFontSet() {

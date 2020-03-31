@@ -750,52 +750,6 @@ static ${name}: LonghandIdSet = LonghandIdSet {
 };
 </%def>
 
-<%
-    logical_groups = defaultdict(list)
-    for prop in data.longhands:
-        if prop.logical_group:
-            logical_groups[prop.logical_group].append(prop)
-
-    for group, props in logical_groups.iteritems():
-        logical_count = sum(1 for p in props if p.logical)
-        if logical_count * 2 != len(props):
-            raise RuntimeError("Logical group {} has ".format(group) +
-                               "unbalanced logical / physical properties")
-
-    FIRST_LINE_RESTRICTIONS = PropertyRestrictions.first_line(data)
-    FIRST_LETTER_RESTRICTIONS = PropertyRestrictions.first_letter(data)
-    MARKER_RESTRICTIONS = PropertyRestrictions.marker(data)
-    PLACEHOLDER_RESTRICTIONS = PropertyRestrictions.placeholder(data)
-    CUE_RESTRICTIONS = PropertyRestrictions.cue(data)
-
-    def restriction_flags(property):
-        name = property.name
-        flags = []
-        if name in FIRST_LINE_RESTRICTIONS:
-            flags.append("APPLIES_TO_FIRST_LINE")
-        if name in FIRST_LETTER_RESTRICTIONS:
-            flags.append("APPLIES_TO_FIRST_LETTER")
-        if name in PLACEHOLDER_RESTRICTIONS:
-            flags.append("APPLIES_TO_PLACEHOLDER")
-        if name in MARKER_RESTRICTIONS:
-            flags.append("APPLIES_TO_MARKER")
-        if name in CUE_RESTRICTIONS:
-            flags.append("APPLIES_TO_CUE")
-        return flags
-
-%>
-
-
-
-#[derive(Clone, Copy, Eq, Hash, PartialEq)]
-pub enum LogicalGroup {
-    % for group in logical_groups.iterkeys():
-    
-    ${to_camel_case(group)},
-    % endfor
-}
-
-
 
 #[derive(Clone, Copy, Debug, Default, MallocSizeOf, PartialEq)]
 pub struct LonghandIdSet {
@@ -881,29 +835,6 @@ impl LonghandIdSet {
             lambda p: p.has_effect_on_gecko_scrollbars is False
         )}
         &HAS_NO_EFFECT_ON_SCROLLBARS
-    }
-
-    
-    
-    #[inline]
-    pub fn padding_properties() -> &'static Self {
-        <% assert "padding" in logical_groups %>
-        ${static_longhand_id_set(
-            "PADDING_PROPERTIES",
-            lambda p: p.logical_group == "padding"
-        )}
-        &PADDING_PROPERTIES
-    }
-
-    
-    
-    #[inline]
-    pub fn border_background_properties() -> &'static Self {
-        ${static_longhand_id_set(
-            "BORDER_BACKGROUND_PROPERTIES",
-            lambda p: (p.logical_group and p.logical_group.startswith("border")) or p.name in ["background-color", "background-image"]
-        )}
-        &BORDER_BACKGROUND_PROPERTIES
     }
 
     
@@ -1032,39 +963,84 @@ impl CSSWideKeyword {
 }
 
 bitflags! {
-    
+    /// A set of flags for properties.
     pub struct PropertyFlags: u16 {
-        
+        /// This property requires a stacking context.
         const CREATES_STACKING_CONTEXT = 1 << 0;
-        
-        
+        /// This property has values that can establish a containing block for
+        /// fixed positioned and absolutely positioned elements.
         const FIXPOS_CB = 1 << 1;
-        
-        
+        /// This property has values that can establish a containing block for
+        /// absolutely positioned elements.
         const ABSPOS_CB = 1 << 2;
-        
+        /// This longhand property applies to ::first-letter.
         const APPLIES_TO_FIRST_LETTER = 1 << 3;
-        
+        /// This longhand property applies to ::first-line.
         const APPLIES_TO_FIRST_LINE = 1 << 4;
-        
+        /// This longhand property applies to ::placeholder.
         const APPLIES_TO_PLACEHOLDER = 1 << 5;
-        
+        ///  This longhand property applies to ::cue.
         const APPLIES_TO_CUE = 1 << 6;
-        
+        /// This longhand property applies to ::marker.
         const APPLIES_TO_MARKER = 1 << 7;
-        
-        
-        
+        /// This property is a legacy shorthand.
+        ///
+        /// https://drafts.csswg.org/css-cascade/#legacy-shorthand
         const IS_LEGACY_SHORTHAND = 1 << 8;
 
-        
-
-
-        
+        /* The following flags are currently not used in Rust code, they
+         * only need to be listed in corresponding properties so that
+         * they can be checked in the C++ side via ServoCSSPropList.h. */
+        /// This property can be animated on the compositor.
         const CAN_ANIMATE_ON_COMPOSITOR = 0;
-        
+        /// This shorthand property is accessible from getComputedStyle.
         const SHORTHAND_IN_GETCS = 0;
     }
+}
+
+<%
+    logical_groups = defaultdict(list)
+    for prop in data.longhands:
+        if prop.logical_group:
+            logical_groups[prop.logical_group].append(prop)
+
+    for group, props in logical_groups.iteritems():
+        logical_count = sum(1 for p in props if p.logical)
+        if logical_count * 2 != len(props):
+            raise RuntimeError("Logical group {} has ".format(group) +
+                               "unbalanced logical / physical properties")
+
+    FIRST_LINE_RESTRICTIONS = PropertyRestrictions.first_line(data)
+    FIRST_LETTER_RESTRICTIONS = PropertyRestrictions.first_letter(data)
+    MARKER_RESTRICTIONS = PropertyRestrictions.marker(data)
+    PLACEHOLDER_RESTRICTIONS = PropertyRestrictions.placeholder(data)
+    CUE_RESTRICTIONS = PropertyRestrictions.cue(data)
+
+    def restriction_flags(property):
+        name = property.name
+        flags = []
+        if name in FIRST_LINE_RESTRICTIONS:
+            flags.append("APPLIES_TO_FIRST_LINE")
+        if name in FIRST_LETTER_RESTRICTIONS:
+            flags.append("APPLIES_TO_FIRST_LETTER")
+        if name in PLACEHOLDER_RESTRICTIONS:
+            flags.append("APPLIES_TO_PLACEHOLDER")
+        if name in MARKER_RESTRICTIONS:
+            flags.append("APPLIES_TO_MARKER")
+        if name in CUE_RESTRICTIONS:
+            flags.append("APPLIES_TO_CUE")
+        return flags
+
+%>
+
+
+
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub enum LogicalGroup {
+    % for group in logical_groups.iterkeys():
+    
+    ${to_camel_case(group)},
+    % endfor
 }
 
 
