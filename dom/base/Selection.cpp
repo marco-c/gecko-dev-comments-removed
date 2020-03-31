@@ -863,15 +863,16 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       
       
+
+      
+      
+      
       
       nsCOMPtr<nsINode> selectstartEventTarget =
           DetermineSelectstartEventTarget(
               nsFrameSelection::sSelectionEventsOnTextControlsEnabled, *aRange);
 
       if (selectstartEventTarget) {
-        
-        
-        
         bool defaultAction = true;
 
         nsContentUtils::DispatchTrustedEvent(
