@@ -742,19 +742,6 @@ class Selection final : public nsSupportsWeakReference,
 
   bool HasEqualRangeBoundariesAt(const nsRange& aRange,
                                  int32_t aRangeIndex) const;
-  
-
-
-
-
-
-
-
-  nsresult GetIndicesForInterval(const nsINode* aBeginNode,
-                                 int32_t aBeginOffset, const nsINode* aEndNode,
-                                 int32_t aEndOffset, bool aAllowAdjacent,
-                                 int32_t& aStartIndex,
-                                 int32_t& aEndIndex) const;
   StyledRange* FindRangeData(nsRange* aRange);
 
   
@@ -824,6 +811,20 @@ class Selection final : public nsSupportsWeakReference,
         const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
         int32_t aPointOffset,
         int32_t (*aComparator)(const nsINode&, int32_t, const nsRange&));
+
+    
+
+
+
+
+
+
+
+    nsresult GetIndicesForInterval(const nsINode* aBeginNode,
+                                   int32_t aBeginOffset,
+                                   const nsINode* aEndNode, int32_t aEndOffset,
+                                   bool aAllowAdjacent, int32_t& aStartIndex,
+                                   int32_t& aEndIndex) const;
 
     
     

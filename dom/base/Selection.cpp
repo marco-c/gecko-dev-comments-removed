@@ -958,10 +958,10 @@ nsresult Selection::MaybeAddRangeAndTruncateOverlaps(nsRange* aRange,
   }
 
   int32_t startIndex, endIndex;
-  nsresult rv =
-      GetIndicesForInterval(aRange->GetStartContainer(), aRange->StartOffset(),
-                            aRange->GetEndContainer(), aRange->EndOffset(),
-                            false, startIndex, endIndex);
+  nsresult rv = mStyledRanges.GetIndicesForInterval(
+      aRange->GetStartContainer(), aRange->StartOffset(),
+      aRange->GetEndContainer(), aRange->EndOffset(), false, startIndex,
+      endIndex);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (endIndex == -1) {
@@ -1144,9 +1144,9 @@ nsresult Selection::GetRangesForIntervalArray(
 
   aRanges->Clear();
   int32_t startIndex, endIndex;
-  nsresult res =
-      GetIndicesForInterval(aBeginNode, aBeginOffset, aEndNode, aEndOffset,
-                            aAllowAdjacent, startIndex, endIndex);
+  nsresult res = mStyledRanges.GetIndicesForInterval(
+      aBeginNode, aBeginOffset, aEndNode, aEndOffset, aAllowAdjacent,
+      startIndex, endIndex);
   NS_ENSURE_SUCCESS(res, res);
 
   if (startIndex == -1 || endIndex == -1) return NS_OK;
@@ -1159,7 +1159,7 @@ nsresult Selection::GetRangesForIntervalArray(
   return NS_OK;
 }
 
-nsresult Selection::GetIndicesForInterval(
+nsresult Selection::StyledRanges::GetIndicesForInterval(
     const nsINode* aBeginNode, int32_t aBeginOffset, const nsINode* aEndNode,
     int32_t aEndOffset, bool aAllowAdjacent, int32_t& aStartIndex,
     int32_t& aEndIndex) const {
@@ -1174,18 +1174,18 @@ nsresult Selection::GetIndicesForInterval(
   aStartIndex = -1;
   aEndIndex = -1;
 
-  if (mStyledRanges.mRanges.Length() == 0) return NS_OK;
+  if (mRanges.Length() == 0) return NS_OK;
 
   const bool intervalIsCollapsed =
       aBeginNode == aEndNode && aBeginOffset == aEndOffset;
 
   
   
-  int32_t endsBeforeIndex{StyledRanges::FindInsertionPoint(
-      &mStyledRanges.mRanges, *aEndNode, aEndOffset, &CompareToRangeStart)};
+  int32_t endsBeforeIndex{FindInsertionPoint(&mRanges, *aEndNode, aEndOffset,
+                                             &CompareToRangeStart)};
 
   if (endsBeforeIndex == 0) {
-    const nsRange* endRange = mStyledRanges.mRanges[endsBeforeIndex].mRange;
+    const nsRange* endRange = mRanges[endsBeforeIndex].mRange;
 
     
     
@@ -1203,10 +1203,10 @@ nsresult Selection::GetIndicesForInterval(
   }
   aEndIndex = endsBeforeIndex;
 
-  int32_t beginsAfterIndex{StyledRanges::FindInsertionPoint(
-      &mStyledRanges.mRanges, *aBeginNode, aBeginOffset, &CompareToRangeEnd)};
+  int32_t beginsAfterIndex{FindInsertionPoint(
+      &mRanges, *aBeginNode, aBeginOffset, &CompareToRangeEnd)};
 
-  if (beginsAfterIndex == (int32_t)mStyledRanges.mRanges.Length())
+  if (beginsAfterIndex == (int32_t)mRanges.Length())
     return NS_OK;  
 
   if (aAllowAdjacent) {
@@ -1220,8 +1220,8 @@ nsresult Selection::GetIndicesForInterval(
     
     
     
-    while (endsBeforeIndex < (int32_t)mStyledRanges.mRanges.Length()) {
-      const nsRange* endRange = mStyledRanges.mRanges[endsBeforeIndex].mRange;
+    while (endsBeforeIndex < (int32_t)mRanges.Length()) {
+      const nsRange* endRange = mRanges[endsBeforeIndex].mRange;
       if (!endRange->StartRef().Equals(aEndNode, aEndOffset)) {
         break;
       }
@@ -1239,10 +1239,10 @@ nsresult Selection::GetIndicesForInterval(
     
     
     
-    const nsRange* beginRange = mStyledRanges.mRanges[beginsAfterIndex].mRange;
+    const nsRange* beginRange = mRanges[beginsAfterIndex].mRange;
     if (beginsAfterIndex > 0 && beginRange->Collapsed() &&
         beginRange->EndRef().Equals(aBeginNode, aBeginOffset)) {
-      beginRange = mStyledRanges.mRanges[beginsAfterIndex - 1].mRange;
+      beginRange = mRanges[beginsAfterIndex - 1].mRange;
       if (beginRange->EndRef().Equals(aBeginNode, aBeginOffset)) {
         beginsAfterIndex--;
       }
@@ -1252,7 +1252,7 @@ nsresult Selection::GetIndicesForInterval(
     
     
     
-    const nsRange* beginRange = mStyledRanges.mRanges[beginsAfterIndex].mRange;
+    const nsRange* beginRange = mRanges[beginsAfterIndex].mRange;
     if (beginRange->EndRef().Equals(aBeginNode, aBeginOffset) &&
         !beginRange->Collapsed()) {
       beginsAfterIndex++;
@@ -1262,8 +1262,8 @@ nsresult Selection::GetIndicesForInterval(
     
     
     
-    if (endsBeforeIndex < (int32_t)mStyledRanges.mRanges.Length()) {
-      const nsRange* endRange = mStyledRanges.mRanges[endsBeforeIndex].mRange;
+    if (endsBeforeIndex < (int32_t)mRanges.Length()) {
+      const nsRange* endRange = mRanges[endsBeforeIndex].mRange;
       if (endRange->StartRef().Equals(aEndNode, aEndOffset) &&
           endRange->Collapsed()) {
         endsBeforeIndex++;
@@ -1271,8 +1271,7 @@ nsresult Selection::GetIndicesForInterval(
     }
   }
 
-  NS_ASSERTION(beginsAfterIndex <= endsBeforeIndex,
-               "Is mStyledRanges.mRanges not ordered?");
+  NS_ASSERTION(beginsAfterIndex <= endsBeforeIndex, "Is mRanges not ordered?");
   NS_ENSURE_STATE(beginsAfterIndex <= endsBeforeIndex);
 
   aStartIndex = beginsAfterIndex;
