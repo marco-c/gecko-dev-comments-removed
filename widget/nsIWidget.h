@@ -437,10 +437,10 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult
-  Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
-         const LayoutDeviceIntRect& aRect,
-         nsWidgetInitData* aInitData = nullptr) = 0;
+  [[nodiscard]] virtual nsresult Create(
+      nsIWidget* aParent, nsNativeWidget aNativeParent,
+      const LayoutDeviceIntRect& aRect,
+      nsWidgetInitData* aInitData = nullptr) = 0;
 
   
 
@@ -450,10 +450,10 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                       nsNativeWidget aNativeParent,
-                                       const DesktopIntRect& aRect,
-                                       nsWidgetInitData* aInitData = nullptr) {
+  [[nodiscard]] virtual nsresult Create(nsIWidget* aParent,
+                                        nsNativeWidget aNativeParent,
+                                        const DesktopIntRect& aRect,
+                                        nsWidgetInitData* aInitData = nullptr) {
     LayoutDeviceIntRect devPixRect =
         RoundedToInt(aRect * GetDesktopToDeviceScale());
     return Create(aParent, aNativeParent, devPixRect, aInitData);
@@ -914,8 +914,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult
-  GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
+  [[nodiscard]] virtual nsresult GetRestoredBounds(
+      LayoutDeviceIntRect& aRect) = 0;
 
   
 
@@ -1483,7 +1483,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) = 0;
+  [[nodiscard]] virtual nsresult GetAttention(int32_t aCycleCount) = 0;
 
   
 
@@ -1518,9 +1518,9 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual MOZ_MUST_USE nsresult BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
-                                                int32_t aHorizontal,
-                                                int32_t aVertical) = 0;
+  [[nodiscard]] virtual nsresult BeginResizeDrag(
+      mozilla::WidgetGUIEvent* aEvent, int32_t aHorizontal,
+      int32_t aVertical) = 0;
 
   enum Modifiers {
     CAPS_LOCK = 0x00000001,  
@@ -1824,7 +1824,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult GetSelectionAsPlaintext(nsAString& aResult) {
+  [[nodiscard]] virtual nsresult GetSelectionAsPlaintext(nsAString& aResult) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -1845,9 +1845,9 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult
-  StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
-                 int32_t aPanelX, int32_t aPanelY, nsString& aCommitted) = 0;
+  [[nodiscard]] virtual nsresult StartPluginIME(
+      const mozilla::WidgetKeyboardEvent& aKeyboardEvent, int32_t aPanelX,
+      int32_t aPanelY, nsString& aCommitted) = 0;
 
   
 
@@ -1906,8 +1906,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult
-  AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) = 0;
+  [[nodiscard]] virtual nsresult AttachNativeKeyEvent(
+      mozilla::WidgetKeyboardEvent& aEvent) = 0;
 
   
 
@@ -1934,8 +1934,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual MOZ_MUST_USE nsresult
-  OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
+  [[nodiscard]] virtual nsresult OnDefaultButtonLoaded(
+      const LayoutDeviceIntRect& aButtonRect) = 0;
 
   
 
