@@ -1634,6 +1634,11 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
 
   RootedValue val(context());
 
+  val = BooleanValue(savedFrame->getMutedErrors());
+  if (!startWrite(val)) {
+    return false;
+  }
+
   context()->markAtom(savedFrame->getSource());
   val = StringValue(savedFrame->getSource());
   if (!startWrite(val)) {
@@ -2912,12 +2917,36 @@ JSObject* JSStructuredCloneReader::readSavedFrame(uint32_t principalsTag) {
                               "bad SavedFrame principals");
     return nullptr;
   }
-  savedFrame->initPrincipalsAlreadyHeld(principals);
 
+  RootedValue mutedErrors(context());
   RootedValue source(context());
-  if (!startRead(&source) || !source.isString()) {
-    return nullptr;
+  {
+    
+    
+    
+    
+    if (!startRead(&mutedErrors)) {
+      return nullptr;
+    }
+
+    if (mutedErrors.isBoolean()) {
+      if (!startRead(&source) || !source.isString()) {
+        return nullptr;
+      }
+    } else if (mutedErrors.isString()) {
+      
+      
+      source = mutedErrors;
+      mutedErrors.setBoolean(true);  
+    } else {
+      
+      return nullptr;
+    }
   }
+
+  savedFrame->initPrincipalsAlreadyHeldAndMutedErrors(principals,
+                                                      mutedErrors.toBoolean());
+
   auto atomSource = AtomizeString(context(), source.toString());
   if (!atomSource) {
     return nullptr;
