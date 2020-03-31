@@ -2412,11 +2412,15 @@
         );
       }
 
-      var evt = new CustomEvent("TabBrowserInserted", {
-        bubbles: true,
-        detail: { insertedOnTabCreation: aInsertedOnTabCreation },
-      });
-      aTab.dispatchEvent(evt);
+      
+      
+      if (aTab.isConnected) {
+        var evt = new CustomEvent("TabBrowserInserted", {
+          bubbles: true,
+          detail: { insertedOnTabCreation: aInsertedOnTabCreation },
+        });
+        aTab.dispatchEvent(evt);
+      }
     },
 
     _mayDiscardBrowser(aTab, aForceDiscard) {
@@ -3027,11 +3031,24 @@
         this.tabContainer._setPositionalAttributes();
         TabBarVisibility.update();
 
-        
-        
         for (let tab of tabs) {
-          if (!tab.pinned && (tabToSelect || !tab.selected)) {
-            this._fireTabOpen(tab, {});
+          
+          if (tabToSelect || !tab.selected) {
+            
+            
+            if (!tab.pinned) {
+              this._fireTabOpen(tab, {});
+            }
+
+            
+            
+            if (tab.linkedPanel) {
+              var evt = new CustomEvent("TabBrowserInserted", {
+                bubbles: true,
+                detail: { insertedOnTabCreation: true },
+              });
+              tab.dispatchEvent(evt);
+            }
           }
         }
       }
