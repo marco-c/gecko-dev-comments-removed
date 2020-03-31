@@ -125,7 +125,7 @@ function Sandbox(options) {
 
 
 function load(loader, module) {
-  const { sandboxes, globals } = loader;
+  const { globals } = loader;
   const require = Require(loader, module);
 
   
@@ -174,7 +174,6 @@ function load(loader, module) {
   
   const sandbox = new loader.sharedGlobalSandbox.Object();
   Object.defineProperties(sandbox, descriptors);
-  sandboxes[module.uri] = sandbox;
 
   const originalExports = module.exports;
   try {
@@ -368,8 +367,6 @@ function Require(loader, requirer) {
       } catch (e) {
         
         delete modules[uri];
-        
-        delete loader.sandboxes[uri];
         throw e;
       }
     }
@@ -574,8 +571,6 @@ function Loader(options) {
     
     modules: { enumerable: false, value: modules },
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
-    
-    sandboxes: { enumerable: false, value: {} },
     
     invisibleToDebugger: {
       enumerable: false,
