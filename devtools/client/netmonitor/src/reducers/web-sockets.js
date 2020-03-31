@@ -120,6 +120,8 @@ function clearFrames(state) {
     frames: nextState.frames,
     
     currentChannelId: nextState.currentChannelId,
+    
+    columns: nextState.columns,
     frameFilterType: nextState.frameFilterType,
     frameFilterText: nextState.frameFilterText,
   };
