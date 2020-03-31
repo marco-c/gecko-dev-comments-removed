@@ -2,6 +2,11 @@
 
 
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   --sidebar-width: 320px;
   display: grid;
@@ -9,7 +14,6 @@ body {
   grid-template-rows: 75px 1fr;
   grid-template-areas: "header header"
                        "logins login";
-  height: 100vh;
 }
 
 header {
