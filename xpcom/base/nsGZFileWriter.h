@@ -24,16 +24,17 @@ class nsGZFileWriter final : public nsIGZFileWriter {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGZFILEWRITER
 
-  
+      
 
 
 
 
-  MOZ_MUST_USE nsresult Write(const char* aStr) {
+      [[nodiscard]] nsresult
+      Write(const char* aStr) {
     return nsIGZFileWriter::Write(aStr);
   }
 
-  MOZ_MUST_USE nsresult Write(const char* aStr, uint32_t aLen) {
+  [[nodiscard]] nsresult Write(const char* aStr, uint32_t aLen) {
     return nsIGZFileWriter::Write(aStr, aLen);
   }
 

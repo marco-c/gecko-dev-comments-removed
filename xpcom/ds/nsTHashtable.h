@@ -92,7 +92,7 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
   
 
 
-  ~nsTHashtable();
+  ~nsTHashtable() = default;
 
   nsTHashtable(nsTHashtable<EntryType>&& aOther);
   nsTHashtable<EntryType>& operator=(nsTHashtable<EntryType>&& aOther);
@@ -158,8 +158,7 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
 
 
 
-  MOZ_MUST_USE
-  EntryType* PutEntry(KeyType aKey, const fallible_t&) {
+  [[nodiscard]] EntryType* PutEntry(KeyType aKey, const fallible_t&) {
     return static_cast<EntryType*>(
         mTable.Add(EntryType::KeyToPointer(aKey), mozilla::fallible));
   }
@@ -173,8 +172,8 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
 
 
 
-  MOZ_MUST_USE
-  bool EnsureInserted(KeyType aKey, EntryType** aEntry = nullptr) {
+  [[nodiscard]] bool EnsureInserted(KeyType aKey,
+                                    EntryType** aEntry = nullptr) {
     auto oldCount = Count();
     EntryType* entry = PutEntry(aKey);
     if (aEntry) {
@@ -236,7 +235,7 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
 
     explicit Iterator(nsTHashtable* aTable) : Base(&aTable->mTable) {}
     Iterator(Iterator&& aOther) : Base(aOther.mTable) {}
-    ~Iterator() {}
+    ~Iterator() = default;
 
     EntryType* Get() const { return static_cast<EntryType*>(Base::Get()); }
 
@@ -377,9 +376,6 @@ nsTHashtable<EntryType>& nsTHashtable<EntryType>::operator=(
   mTable = std::move(aOther.mTable);
   return *this;
 }
-
-template <class EntryType>
-nsTHashtable<EntryType>::~nsTHashtable() {}
 
 template <class EntryType>
  const PLDHashTableOps* nsTHashtable<EntryType>::Ops() {
@@ -526,14 +522,12 @@ class nsTHashtable<nsPtrHashKey<T>>
     return reinterpret_cast<EntryType*>(Base::PutEntry(aKey));
   }
 
-  MOZ_MUST_USE
-  EntryType* PutEntry(T* aKey, const mozilla::fallible_t&) {
+  [[nodiscard]] EntryType* PutEntry(T* aKey, const mozilla::fallible_t&) {
     return reinterpret_cast<EntryType*>(
         Base::PutEntry(aKey, mozilla::fallible));
   }
 
-  MOZ_MUST_USE
-  bool EnsureInserted(T* aKey, EntryType** aEntry = nullptr) {
+  [[nodiscard]] bool EnsureInserted(T* aKey, EntryType** aEntry = nullptr) {
     return Base::EnsureInserted(
         aKey, reinterpret_cast<::detail::VoidPtrHashKey**>(aEntry));
   }

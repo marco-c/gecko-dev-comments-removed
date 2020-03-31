@@ -72,8 +72,7 @@ class IncrementalTokenizer : public TokenizerBase<char> {
 
 
 
-  MOZ_MUST_USE
-  bool Next(Token& aToken);
+  [[nodiscard]] bool Next(Token& aToken);
 
   
 

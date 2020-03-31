@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #if !defined(MozPromise_h_)
 #  define MozPromise_h_
@@ -74,7 +74,7 @@ struct MethodTraitsHelper<Ret (ThisType::*)(ArgTypes...) const volatile> {
 template <typename T>
 struct MethodTrait : MethodTraitsHelper<typename RemoveReference<T>::Type> {};
 
-}  // namespace detail
+}  
 
 template <typename MethodType>
 using TakesArgument =
@@ -95,51 +95,51 @@ template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
 struct IsMozPromise<MozPromise<ResolveValueT, RejectValueT, IsExclusive>>
     : TrueType {};
 
-/*
- * A promise manages an asynchronous request that may or may not be able to be
- * fulfilled immediately. When an API returns a promise, the consumer may attach
- * callbacks to be invoked (asynchronously, on a specified thread) when the
- * request is either completed (resolved) or cannot be completed (rejected).
- * Whereas JS promise callbacks are dispatched from Microtask checkpoints,
- * MozPromises resolution/rejection make a normal round-trip through the event
- * loop, which simplifies their ordering semantics relative to other native
- * code.
- *
- * MozPromises attempt to mirror the spirit of JS Promises to the extent that
- * is possible (and desirable) in C++. While the intent is that MozPromises
- * feel familiar to programmers who are accustomed to their JS-implemented
- * cousin, we don't shy away from imposing restrictions and adding features that
- * make sense for the use cases we encounter.
- *
- * A MozPromise is ThreadSafe, and may be ->Then()ed on any thread. The Then()
- * call accepts resolve and reject callbacks, and returns a magic object which
- * will be implicitly converted to a MozPromise::Request or a MozPromise object
- * depending on how the return value is used. The magic object serves several
- * purposes for the consumer.
- *
- *   (1) When converting to a MozPromise::Request, it allows the caller to
- *       cancel the delivery of the resolve/reject value if it has not already
- *       occurred, via Disconnect() (this must be done on the target thread to
- *       avoid racing).
- *
- *   (2) When converting to a MozPromise (which is called a completion promise),
- *       it allows promise chaining so ->Then() can be called again to attach
- *       more resolve and reject callbacks. If the resolve/reject callback
- *       returns a new MozPromise, that promise is chained to the completion
- *       promise, such that its resolve/reject value will be forwarded along
- *       when it arrives. If the resolve/reject callback returns void, the
- *       completion promise is resolved/rejected with the same value that was
- *       passed to the callback.
- *
- * The MozPromise APIs skirt traditional XPCOM convention by returning nsRefPtrs
- * (rather than already_AddRefed) from various methods. This is done to allow
- * elegant chaining of calls without cluttering up the code with intermediate
- * variables, and without introducing separate API variants for callers that
- * want a return value (from, say, ->Then()) from those that don't.
- *
- * When IsExclusive is true, the MozPromise does a release-mode assertion that
- * there is at most one call to either Then(...) or ChainTo(...).
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class MozPromiseRefcountable {
  public:
@@ -161,8 +161,8 @@ template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
 class MozPromise : public MozPromiseBase {
   static const uint32_t sMagic = 0xcecace11;
 
-  // Return a |T&&| to enable move when IsExclusive is true or
-  // a |const T&| to enforce copy otherwise.
+  
+  
   template <typename T,
             typename R = typename Conditional<IsExclusive, T&&, const T&>::Type>
   static R MaybeMove(T& aX) {
@@ -224,8 +224,8 @@ class MozPromise : public MozPromiseBase {
   };
 
  protected:
-  // MozPromise is the public type, and never constructed directly. Construct
-  // a MozPromise::Private, defined below.
+  
+  
   MozPromise(const char* aCreationSite, bool aIsCompletionPromise)
       : mCreationSite(aCreationSite),
         mMutex("MozPromise Mutex"),
@@ -240,18 +240,18 @@ class MozPromise : public MozPromiseBase {
   }
 
  public:
-  // MozPromise::Private allows us to separate the public interface (upon which
-  // consumers of the promise may invoke methods like Then()) from the private
-  // interface (upon which the creator of the promise may invoke Resolve() or
-  // Reject()). APIs should create and store a MozPromise::Private (usually
-  // via a MozPromiseHolder), and return a MozPromise to consumers.
-  //
-  // NB: We can include the definition of this class inline once B2G ICS is
-  // gone.
+  
+  
+  
+  
+  
+  
+  
+  
   class Private;
 
   template <typename ResolveValueType_>
-  static MOZ_MUST_USE RefPtr<MozPromise> CreateAndResolve(
+  [[nodiscard]] static RefPtr<MozPromise> CreateAndResolve(
       ResolveValueType_&& aResolveValue, const char* aResolveSite) {
     static_assert(IsConvertible<ResolveValueType_, ResolveValueT>::value,
                   "Resolve() argument must be implicitly convertible to "
@@ -263,7 +263,7 @@ class MozPromise : public MozPromiseBase {
   }
 
   template <typename RejectValueType_>
-  static MOZ_MUST_USE RefPtr<MozPromise> CreateAndReject(
+  [[nodiscard]] static RefPtr<MozPromise> CreateAndReject(
       RejectValueType_&& aRejectValue, const char* aRejectSite) {
     static_assert(IsConvertible<RejectValueType_, RejectValueT>::value,
                   "Reject() argument must be implicitly convertible to "
@@ -275,7 +275,7 @@ class MozPromise : public MozPromiseBase {
   }
 
   template <typename ResolveOrRejectValueType_>
-  static MOZ_MUST_USE RefPtr<MozPromise> CreateAndResolveOrReject(
+  [[nodiscard]] static RefPtr<MozPromise> CreateAndResolveOrReject(
       ResolveOrRejectValueType_&& aValue, const char* aSite) {
     RefPtr<typename MozPromise::Private> p = new MozPromise::Private(aSite);
     p->ResolveOrReject(std::forward<ResolveOrRejectValueType_>(aValue), aSite);
@@ -297,7 +297,7 @@ class MozPromise : public MozPromiseBase {
 
     void Resolve(size_t aIndex, ResolveValueType&& aResolveValue) {
       if (!mPromise) {
-        // Already rejected.
+        
         return;
       }
 
@@ -317,7 +317,7 @@ class MozPromise : public MozPromiseBase {
 
     void Reject(RejectValueType&& aRejectValue) {
       if (!mPromise) {
-        // Already rejected.
+        
         return;
       }
 
@@ -335,7 +335,7 @@ class MozPromise : public MozPromiseBase {
   };
 
  public:
-  static MOZ_MUST_USE RefPtr<AllPromiseType> All(
+  [[nodiscard]] static RefPtr<AllPromiseType> All(
       nsISerialEventTarget* aProcessingTarget,
       nsTArray<RefPtr<MozPromise>>& aPromises) {
     if (aPromises.Length() == 0) {
@@ -371,12 +371,12 @@ class MozPromise : public MozPromiseBase {
   };
 
  protected:
-  /*
-   * A ThenValue tracks a single consumer waiting on the promise. When a
-   * consumer invokes promise->Then(...), a ThenValue is created. Once the
-   * Promise is resolved or rejected, a {Resolve,Reject}Runnable is dispatched,
-   * which invokes the resolve/reject method and then deletes the ThenValue.
-   */
+  
+
+
+
+
+
   class ThenValueBase : public Request {
     friend class MozPromise;
     static const uint32_t sMagic = 0xfadece11;
@@ -427,13 +427,13 @@ class MozPromise : public MozPromiseBase {
 
     void AssertIsDead() {
       PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic);
-      // We want to assert that this ThenValues is dead - that is to say, that
-      // there are no consumers waiting for the result. In the case of a normal
-      // ThenValue, we check that it has been disconnected, which is the way
-      // that the consumer signals that it no longer wishes to hear about the
-      // result. If this ThenValue has a completion promise (which is mutually
-      // exclusive with being disconnectable), we recursively assert that every
-      // ThenValue associated with the completion promise is dead.
+      
+      
+      
+      
+      
+      
+      
       if (MozPromiseBase* p = CompletionPromise()) {
         p->AssertIsDead();
       } else {
@@ -452,10 +452,10 @@ class MozPromise : public MozPromiseBase {
           aPromise->mValue.IsResolve() ? "Resolving" : "Rejecting", mCallSite,
           r.get(), aPromise, this);
 
-      // Promise consumers are allowed to disconnect the Request object and
-      // then shut down the thread or task queue that the promise result would
-      // be dispatched on. So we unfortunately can't assert that promise
-      // dispatch succeeds. :-(
+      
+      
+      
+      
       mResponseTarget->Dispatch(r.forget());
     }
 
@@ -464,10 +464,10 @@ class MozPromise : public MozPromiseBase {
       MOZ_DIAGNOSTIC_ASSERT(!Request::mComplete);
       Request::mDisconnected = true;
 
-      // We could support rejecting the completion promise on disconnection, but
-      // then we'd need to have some sort of default reject value. The use cases
-      // of disconnection and completion promise chaining seem pretty
-      // orthogonal, so let's use assert against it.
+      
+      
+      
+      
       MOZ_DIAGNOSTIC_ASSERT(!CompletionPromise());
     }
 
@@ -486,12 +486,12 @@ class MozPromise : public MozPromiseBase {
         return;
       }
 
-      // Invoke the resolve or reject method.
+      
       DoResolveOrRejectInternal(aValue);
     }
 
     nsCOMPtr<nsISerialEventTarget>
-        mResponseTarget;  // May be released on any thread.
+        mResponseTarget;  
 #  ifdef PROMISE_DEBUG
     uint32_t mMagic1 = sMagic;
 #  endif
@@ -501,10 +501,10 @@ class MozPromise : public MozPromiseBase {
 #  endif
   };
 
-  /*
-   * We create two overloads for invoking Resolve/Reject Methods so as to
-   * make the resolve/reject value argument "optional".
-   */
+  
+
+
+
   template <typename ThisType, typename MethodType, typename ValueType>
   static typename EnableIf<
       TakesArgument<MethodType>::value,
@@ -521,7 +521,7 @@ class MozPromise : public MozPromiseBase {
     return (aThisVal->*aMethod)();
   }
 
-  // Called when promise chaining is supported.
+  
   template <bool SupportChaining, typename ThisType, typename MethodType,
             typename ValueType, typename CompletionPromiseType>
   static typename EnableIf<SupportChaining, void>::Type InvokeCallbackMethod(
@@ -533,7 +533,7 @@ class MozPromise : public MozPromiseBase {
     }
   }
 
-  // Called when promise chaining is not supported.
+  
   template <bool SupportChaining, typename ThisType, typename MethodType,
             typename ValueType, typename CompletionPromiseType>
   static typename EnableIf<!SupportChaining, void>::Type InvokeCallbackMethod(
@@ -564,8 +564,8 @@ class MozPromise : public MozPromiseBase {
     using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value &&
                                                        IsSame<R1, R2>::value>;
 
-    // Fall back to MozPromise when promise chaining is not supported to make
-    // code compile.
+    
+    
     using PromiseType =
         typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
 
@@ -581,10 +581,10 @@ class MozPromise : public MozPromiseBase {
     void Disconnect() override {
       ThenValueBase::Disconnect();
 
-      // If a Request has been disconnected, we don't guarantee that the
-      // resolve/reject runnable will be dispatched. Null out our refcounted
-      // this-value now so that it's released predictably on the dispatch
-      // thread.
+      
+      
+      
+      
       mThisVal = nullptr;
     }
 
@@ -604,16 +604,16 @@ class MozPromise : public MozPromiseBase {
             std::move(mCompletionPromise));
       }
 
-      // Null out mThisVal after invoking the callback so that any references
-      // are released predictably on the dispatch thread. Otherwise, it would be
-      // released on whatever thread last drops its reference to the ThenValue,
-      // which may or may not be ok.
+      
+      
+      
+      
       mThisVal = nullptr;
     }
 
    private:
     RefPtr<ThisType>
-        mThisVal;  // Only accessed and refcounted on dispatch thread.
+        mThisVal;  
     ResolveMethodType mResolveMethod;
     RejectMethodType mRejectMethod;
     RefPtr<typename PromiseType::Private> mCompletionPromise;
@@ -627,8 +627,8 @@ class MozPromise : public MozPromiseBase {
         ResolveRejectMethodType>::ReturnType>::Type;
     using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value>;
 
-    // Fall back to MozPromise when promise chaining is not supported to make
-    // code compile.
+    
+    
     using PromiseType =
         typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
 
@@ -643,10 +643,10 @@ class MozPromise : public MozPromiseBase {
     void Disconnect() override {
       ThenValueBase::Disconnect();
 
-      // If a Request has been disconnected, we don't guarantee that the
-      // resolve/reject runnable will be dispatched. Null out our refcounted
-      // this-value now so that it's released predictably on the dispatch
-      // thread.
+      
+      
+      
+      
       mThisVal = nullptr;
     }
 
@@ -660,22 +660,22 @@ class MozPromise : public MozPromiseBase {
           mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue),
           std::move(mCompletionPromise));
 
-      // Null out mThisVal after invoking the callback so that any references
-      // are released predictably on the dispatch thread. Otherwise, it would be
-      // released on whatever thread last drops its reference to the ThenValue,
-      // which may or may not be ok.
+      
+      
+      
+      
       mThisVal = nullptr;
     }
 
    private:
     RefPtr<ThisType>
-        mThisVal;  // Only accessed and refcounted on dispatch thread.
+        mThisVal;  
     ResolveRejectMethodType mResolveRejectMethod;
     RefPtr<typename PromiseType::Private> mCompletionPromise;
   };
 
-  // NB: We could use std::function here instead of a template if it were
-  // supported. :-(
+  
+  
   template <typename ResolveFunction, typename RejectFunction>
   class ThenValue<ResolveFunction, RejectFunction> : public ThenValueBase {
     friend class ThenCommand<ThenValue>;
@@ -687,8 +687,8 @@ class MozPromise : public MozPromiseBase {
     using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value &&
                                                        IsSame<R1, R2>::value>;
 
-    // Fall back to MozPromise when promise chaining is not supported to make
-    // code compile.
+    
+    
     using PromiseType =
         typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
 
@@ -704,10 +704,10 @@ class MozPromise : public MozPromiseBase {
     void Disconnect() override {
       ThenValueBase::Disconnect();
 
-      // If a Request has been disconnected, we don't guarantee that the
-      // resolve/reject runnable will be dispatched. Destroy our callbacks
-      // now so that any references in closures are released predictable on
-      // the dispatch thread.
+      
+      
+      
+      
       mResolveFunction.reset();
       mRejectFunction.reset();
     }
@@ -718,11 +718,11 @@ class MozPromise : public MozPromiseBase {
     }
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override {
-      // Note: The usage of InvokeCallbackMethod here requires that
-      // ResolveFunction/RejectFunction are capture-lambdas (i.e. anonymous
-      // classes with ::operator()), since it allows us to share code more
-      // easily. We could fix this if need be, though it's quite easy to work
-      // around by just capturing something.
+      
+      
+      
+      
+      
       if (aValue.IsResolve()) {
         InvokeCallbackMethod<SupportChaining::value>(
             mResolveFunction.ptr(), &ResolveFunction::operator(),
@@ -733,19 +733,19 @@ class MozPromise : public MozPromiseBase {
             MaybeMove(aValue.RejectValue()), std::move(mCompletionPromise));
       }
 
-      // Destroy callbacks after invocation so that any references in closures
-      // are released predictably on the dispatch thread. Otherwise, they would
-      // be released on whatever thread last drops its reference to the
-      // ThenValue, which may or may not be ok.
+      
+      
+      
+      
       mResolveFunction.reset();
       mRejectFunction.reset();
     }
 
    private:
     Maybe<ResolveFunction>
-        mResolveFunction;  // Only accessed and deleted on dispatch thread.
+        mResolveFunction;  
     Maybe<RejectFunction>
-        mRejectFunction;  // Only accessed and deleted on dispatch thread.
+        mRejectFunction;  
     RefPtr<typename PromiseType::Private> mCompletionPromise;
   };
 
@@ -757,8 +757,8 @@ class MozPromise : public MozPromiseBase {
         typename detail::MethodTrait<ResolveRejectFunction>::ReturnType>::Type;
     using SupportChaining = IntegralConstant<bool, IsMozPromise<R1>::value>;
 
-    // Fall back to MozPromise when promise chaining is not supported to make
-    // code compile.
+    
+    
     using PromiseType =
         typename Conditional<SupportChaining::value, R1, MozPromise>::Type;
 
@@ -773,10 +773,10 @@ class MozPromise : public MozPromiseBase {
     void Disconnect() override {
       ThenValueBase::Disconnect();
 
-      // If a Request has been disconnected, we don't guarantee that the
-      // resolve/reject runnable will be dispatched. Destroy our callbacks
-      // now so that any references in closures are released predictable on
-      // the dispatch thread.
+      
+      
+      
+      
       mResolveRejectFunction.reset();
     }
 
@@ -786,26 +786,26 @@ class MozPromise : public MozPromiseBase {
     }
 
     void DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override {
-      // Note: The usage of InvokeCallbackMethod here requires that
-      // ResolveRejectFunction is capture-lambdas (i.e. anonymous
-      // classes with ::operator()), since it allows us to share code more
-      // easily. We could fix this if need be, though it's quite easy to work
-      // around by just capturing something.
+      
+      
+      
+      
+      
       InvokeCallbackMethod<SupportChaining::value>(
           mResolveRejectFunction.ptr(), &ResolveRejectFunction::operator(),
           MaybeMove(aValue), std::move(mCompletionPromise));
 
-      // Destroy callbacks after invocation so that any references in closures
-      // are released predictably on the dispatch thread. Otherwise, they would
-      // be released on whatever thread last drops its reference to the
-      // ThenValue, which may or may not be ok.
+      
+      
+      
+      
       mResolveRejectFunction.reset();
     }
 
    private:
     Maybe<ResolveRejectFunction>
-        mResolveRejectFunction;  // Only accessed and deleted on dispatch
-                                 // thread.
+        mResolveRejectFunction;  
+                                 
     RefPtr<typename PromiseType::Private> mCompletionPromise;
   };
 
@@ -830,19 +830,19 @@ class MozPromise : public MozPromiseBase {
   }
 
  protected:
-  /*
-   * A command object to store all information needed to make a request to
-   * the promise. This allows us to delay the request until further use is
-   * known (whether it is ->Then() again for more promise chaining or ->Track()
-   * to terminate chaining and issue the request).
-   *
-   * This allows a unified syntax for promise chaining and disconnection
-   * and feels more like its JS counterpart.
-   */
+  
+
+
+
+
+
+
+
+
   template <typename ThenValueType>
   class ThenCommand {
-    // Allow Promise1::ThenCommand to access the private constructor,
-    // Promise2::ThenCommand(ThenCommand&&).
+    
+    
     template <typename, typename, bool>
     friend class MozPromise;
 
@@ -858,27 +858,27 @@ class MozPromise : public MozPromiseBase {
 
    public:
     ~ThenCommand() {
-      // Issue the request now if the return value of Then() is not used.
+      
       if (mThenValue) {
         mReceiver->ThenInternal(mThenValue.forget(), mCallSite);
       }
     }
 
-    // Allow RefPtr<MozPromise> p = somePromise->Then();
-    //       p->Then(thread1, ...);
-    //       p->Then(thread2, ...);
+    
+    
+    
     operator RefPtr<PromiseType>() {
       static_assert(
           ThenValueType::SupportChaining::value,
           "The resolve/reject callback needs to return a RefPtr<MozPromise> "
           "in order to do promise chaining.");
 
-      // mCompletionPromise must be created before ThenInternal() to avoid race.
+      
       RefPtr<Private> p =
-          new Private("<completion promise>", true /* aIsCompletionPromise */);
+          new Private("<completion promise>", true );
       mThenValue->mCompletionPromise = p;
-      // Note ThenInternal() might nullify mCompletionPromise before return.
-      // So we need to return p instead of mCompletionPromise.
+      
+      
       mReceiver->ThenInternal(mThenValue.forget(), mCallSite);
       return p;
     }
@@ -895,8 +895,8 @@ class MozPromise : public MozPromiseBase {
       mReceiver->ThenInternal(mThenValue.forget(), mCallSite);
     }
 
-    // Allow calling ->Then() again for more promise chaining or ->Track() to
-    // end chaining and track the request for future disconnection.
+    
+    
     ThenCommand* operator->() { return this; }
 
    private:
@@ -945,8 +945,8 @@ class MozPromise : public MozPromiseBase {
   }
 
 #  ifdef MOZ_WIDGET_ANDROID
-  // Creates a C++ MozPromise from its Java counterpart, GeckoResult.
-  static MOZ_MUST_USE RefPtr<MozPromise> FromGeckoResult(
+  
+  [[nodiscard]] static RefPtr<MozPromise> FromGeckoResult(
       java::GeckoResult::Param aGeckoResult) {
     using jni::GeckoResultCallback;
     RefPtr<Private> p = new Private("GeckoResult Glue", false);
@@ -959,16 +959,16 @@ class MozPromise : public MozPromiseBase {
   }
 #  endif
 
-  // Creates a C++ MozPromise from its JS counterpart, dom::Promise.
-  // FromDomPromise currently only supports primitive types (int8/16/32, float,
-  // double) And the reject value type must be a nsresult.
-  // To use, please include MozPromiseInlines.h
+  
+  
+  
+  
   static RefPtr<MozPromise> FromDomPromise(dom::Promise* aDOMPromise);
 
-  // Note we expose the function AssertIsDead() instead of IsDead() since
-  // checking IsDead() is a data race in the situation where the request is not
-  // dead. Therefore we enforce the form |Assert(IsDead())| by exposing
-  // AssertIsDead() only.
+  
+  
+  
+  
   void AssertIsDead() override {
     PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic &&
                    mMagic3 == sMagic && mMagic4 == &mMutex);
@@ -985,8 +985,8 @@ class MozPromise : public MozPromiseBase {
   bool IsPending() const { return mValue.IsNothing(); }
 
   ResolveOrRejectValue& Value() {
-    // This method should only be called once the value has stabilized. As
-    // such, we don't need to acquire the lock here.
+    
+    
     MOZ_DIAGNOSTIC_ASSERT(!IsPending());
     return mValue;
   }
@@ -1016,8 +1016,8 @@ class MozPromise : public MozPromiseBase {
   virtual ~MozPromise() {
     PROMISE_LOG("MozPromise::~MozPromise [this=%p]", this);
     AssertIsDead();
-    // We can't guarantee a completion promise will always be revolved or
-    // rejected since ResolveOrRejectRunnable might not run when dispatch fails.
+    
+    
     if (!mIsCompletionPromise) {
       MOZ_ASSERT(!IsPending());
       MOZ_ASSERT(mThenValues.IsEmpty());
@@ -1031,14 +1031,14 @@ class MozPromise : public MozPromiseBase {
 #  endif
   };
 
-  const char* mCreationSite;  // For logging
+  const char* mCreationSite;  
   Mutex mMutex;
   ResolveOrRejectValue mValue;
 #  ifdef PROMISE_DEBUG
   uint32_t mMagic1 = sMagic;
 #  endif
-  // Try shows we never have more than 3 elements when IsExclusive is false.
-  // So '3' is a good value to avoid heap allocation in most cases.
+  
+  
   AutoTArray<RefPtr<ThenValueBase>, IsExclusive ? 1 : 3> mThenValues;
 #  ifdef PROMISE_DEBUG
   uint32_t mMagic2 = sMagic;
@@ -1116,18 +1116,18 @@ class MozPromise<ResolveValueT, RejectValueT, IsExclusive>::Private
   }
 };
 
-// A generic promise type that does the trick for simple use cases.
-typedef MozPromise<bool, nsresult, /* IsExclusive = */ true> GenericPromise;
 
-// A generic, non-exclusive promise type that does the trick for simple use
-// cases.
-typedef MozPromise<bool, nsresult, /* IsExclusive = */ false>
+typedef MozPromise<bool, nsresult,  true> GenericPromise;
+
+
+
+typedef MozPromise<bool, nsresult,  false>
     GenericNonExclusivePromise;
 
-/*
- * Class to encapsulate a promise for a particular role. Use this as the member
- * variable for a class whose method returns a promise.
- */
+
+
+
+
 template <typename PromiseType, typename ImplType>
 class MozPromiseHolderBase {
  public:
@@ -1237,7 +1237,7 @@ class MozMonitoredPromiseHolder
     : public MozPromiseHolderBase<PromiseType,
                                   MozMonitoredPromiseHolder<PromiseType>> {
  public:
-  // Provide a Monitor that should always be held when accessing this instance.
+  
   explicit MozMonitoredPromiseHolder(Monitor* const aMonitor)
       : mMonitor(aMonitor) {
     MOZ_ASSERT(aMonitor);
@@ -1253,10 +1253,10 @@ class MozMonitoredPromiseHolder
   Monitor* const mMonitor;
 };
 
-/*
- * Class to encapsulate a MozPromise::Request reference. Use this as the member
- * variable for a class waiting on a MozPromise.
- */
+
+
+
+
 template <typename PromiseType>
 class MozPromiseRequestHolder {
  public:
@@ -1273,8 +1273,8 @@ class MozPromiseRequestHolder {
     mRequest = nullptr;
   }
 
-  // Disconnects and forgets an outstanding promise. The resolve/reject methods
-  // will never be called.
+  
+  
   void Disconnect() {
     MOZ_ASSERT(Exists());
     mRequest->Disconnect();
@@ -1293,20 +1293,20 @@ class MozPromiseRequestHolder {
   RefPtr<typename PromiseType::Request> mRequest;
 };
 
-// Asynchronous Potentially-Cross-Thread Method Calls.
-//
-// This machinery allows callers to schedule a promise-returning function
-// (a method and object, or a function object like a lambda) to be invoked
-// asynchronously on a given thread, while at the same time receiving a
-// promise upon which to invoke Then() immediately. InvokeAsync dispatches a
-// task to invoke the function on the proper thread and also chain the
-// resulting promise to the one that the caller received, so that resolve/
-// reject values are forwarded through.
+
+
+
+
+
+
+
+
+
 
 namespace detail {
 
-// Non-templated base class to allow us to use MOZ_COUNT_{C,D}TOR, which cause
-// assertions when used on templated types.
+
+
 class MethodCallBase {
  public:
   MOZ_COUNTED_DEFAULT_CTOR(MethodCallBase)
@@ -1395,10 +1395,10 @@ constexpr bool Any(T1 a, Ts... aOthers) {
   return a || Any(aOthers...);
 }
 
-}  // namespace detail
+}  
 
-// InvokeAsync with explicitly-specified storages.
-// See ParameterStorage in nsThreadUtils.h for help.
+
+
 template <typename... Storages, typename PromiseType, typename ThisType,
           typename... ArgTypes, typename... ActualArgTypes,
           typename EnableIf<sizeof...(Storages) != 0, int>::Type = 0>
@@ -1416,8 +1416,8 @@ static RefPtr<PromiseType> InvokeAsync(
       std::forward<ActualArgTypes>(aArgs)...);
 }
 
-// InvokeAsync with no explicitly-specified storages, will copy arguments and
-// then move them out of the runnable into the target method parameters.
+
+
 template <typename... Storages, typename PromiseType, typename ThisType,
           typename... ArgTypes, typename... ActualArgTypes,
           typename EnableIf<sizeof...(Storages) == 0, int>::Type = 0>
@@ -1466,19 +1466,19 @@ class ProxyFunctionRunnable : public CancelableRunnable {
   UniquePtr<FunctionStorage> mFunction;
 };
 
-// Note: The following struct and function are not for public consumption (yet?)
-// as we would prefer all calls to pass on-the-spot lambdas (or at least moved
-// function objects). They could be moved outside of detail if really needed.
 
-// We prefer getting function objects by non-lvalue-ref (to avoid copying them
-// and their captures). This struct is a tag that allows the use of objects
-// through lvalue-refs where necessary.
+
+
+
+
+
+
 struct AllowInvokeAsyncFunctionLVRef {};
 
-// Invoke a function object (e.g., lambda or std/mozilla::function)
-// asynchronously; note that the object will be copied if provided by
-// lvalue-ref. Return a promise that the function should eventually resolve or
-// reject.
+
+
+
+
 template <typename Function>
 static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
                         AllowInvokeAsyncFunctionLVRef, Function&& aFunction)
@@ -1499,10 +1499,10 @@ static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
   return p;
 }
 
-}  // namespace detail
+}  
 
-// Invoke a function object (e.g., lambda) asynchronously.
-// Return a promise that the function should eventually resolve or reject.
+
+
 template <typename Function>
 static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
                         Function&& aFunction) -> decltype(aFunction()) {
@@ -1518,6 +1518,6 @@ static auto InvokeAsync(nsISerialEventTarget* aTarget, const char* aCallerName,
 #  undef PROMISE_ASSERT
 #  undef PROMISE_DEBUG
 
-}  // namespace mozilla
+}  
 
 #endif

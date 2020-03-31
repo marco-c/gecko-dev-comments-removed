@@ -27,7 +27,7 @@ class nsInterfaceHashtable
   typedef Interface* UserDataType;
   typedef nsBaseHashtable<KeyClass, nsCOMPtr<Interface>, Interface*> base_type;
 
-  nsInterfaceHashtable() {}
+  nsInterfaceHashtable() = default;
   explicit nsInterfaceHashtable(uint32_t aInitLength)
       : nsBaseHashtable<KeyClass, nsCOMPtr<Interface>, Interface*>(
             aInitLength) {}
@@ -62,8 +62,8 @@ class nsInterfaceHashtable
     }
   }
 
-  MOZ_MUST_USE bool Put(KeyType aKey, already_AddRefed<Interface>&& aData,
-                        const mozilla::fallible_t&);
+  [[nodiscard]] bool Put(KeyType aKey, already_AddRefed<Interface>&& aData,
+                         const mozilla::fallible_t&);
   using base_type::Put;
 
   

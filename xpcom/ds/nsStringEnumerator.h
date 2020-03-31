@@ -59,14 +59,14 @@ class nsStringEnumeratorBase : public nsIStringEnumerator,
 
 
 
-MOZ_MUST_USE nsresult NS_NewStringEnumerator(nsIStringEnumerator** aResult,
-                                             const nsTArray<nsString>* aArray,
-                                             nsISupports* aOwner);
-MOZ_MUST_USE nsresult NS_NewUTF8StringEnumerator(
+[[nodiscard]] nsresult NS_NewStringEnumerator(nsIStringEnumerator** aResult,
+                                              const nsTArray<nsString>* aArray,
+                                              nsISupports* aOwner);
+[[nodiscard]] nsresult NS_NewUTF8StringEnumerator(
     nsIUTF8StringEnumerator** aResult, const nsTArray<nsCString>* aArray);
 
-MOZ_MUST_USE nsresult NS_NewStringEnumerator(nsIStringEnumerator** aResult,
-                                             const nsTArray<nsString>* aArray);
+[[nodiscard]] nsresult NS_NewStringEnumerator(nsIStringEnumerator** aResult,
+                                              const nsTArray<nsString>* aArray);
 
 
 
@@ -77,10 +77,10 @@ MOZ_MUST_USE nsresult NS_NewStringEnumerator(nsIStringEnumerator** aResult,
 
 
 
-MOZ_MUST_USE nsresult NS_NewAdoptingStringEnumerator(
+[[nodiscard]] nsresult NS_NewAdoptingStringEnumerator(
     nsIStringEnumerator** aResult, nsTArray<nsString>* aArray);
 
-MOZ_MUST_USE nsresult NS_NewAdoptingUTF8StringEnumerator(
+[[nodiscard]] nsresult NS_NewAdoptingUTF8StringEnumerator(
     nsIUTF8StringEnumerator** aResult, nsTArray<nsCString>* aArray);
 
 
@@ -95,7 +95,7 @@ MOZ_MUST_USE nsresult NS_NewAdoptingUTF8StringEnumerator(
 
 
 
-MOZ_MUST_USE nsresult NS_NewUTF8StringEnumerator(
+[[nodiscard]] nsresult NS_NewUTF8StringEnumerator(
     nsIUTF8StringEnumerator** aResult, const nsTArray<nsCString>* aArray,
     nsISupports* aOwner);
 

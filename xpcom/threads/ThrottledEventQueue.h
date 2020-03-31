@@ -100,7 +100,7 @@ class ThrottledEventQueue final : public nsISerialEventTarget {
   
   
   
-  MOZ_MUST_USE nsresult SetIsPaused(bool aIsPaused);
+  [[nodiscard]] nsresult SetIsPaused(bool aIsPaused);
 
   
   bool IsPaused() const;

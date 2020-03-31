@@ -184,11 +184,11 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   SizeOfTabFns mSizeOfTabFns;
 
  private:
-  MOZ_MUST_USE nsresult RegisterReporterHelper(nsIMemoryReporter* aReporter,
-                                               bool aForce, bool aStrongRef,
-                                               bool aIsAsync);
+  [[nodiscard]] nsresult RegisterReporterHelper(nsIMemoryReporter* aReporter,
+                                                bool aForce, bool aStrongRef,
+                                                bool aIsAsync);
 
-  MOZ_MUST_USE nsresult StartGettingReports();
+  [[nodiscard]] nsresult StartGettingReports();
   
   nsresult FinishReporting();
 
@@ -274,7 +274,7 @@ class nsMemoryReporterManager final : public nsIMemoryReporterManager,
   nsCOMPtr<nsIEventTarget> mThreadPool;
 
   PendingProcessesState* GetStateForGeneration(uint32_t aGeneration);
-  static MOZ_MUST_USE bool StartChildReport(
+  [[nodiscard]] static bool StartChildReport(
       mozilla::MemoryReportingProcess* aChild,
       const PendingProcessesState* aState);
 };

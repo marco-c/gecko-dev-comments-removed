@@ -134,7 +134,7 @@ class TokenizerBase {
 
 
 
-  MOZ_MUST_USE bool HasFailed() const;
+  [[nodiscard]] bool HasFailed() const;
 
  protected:
   explicit TokenizerBase(const TChar* aWhitespaces = nullptr,
@@ -249,8 +249,7 @@ class TTokenizer : public TokenizerBase<TChar> {
 
 
 
-  MOZ_MUST_USE
-  bool Next(typename base::Token& aToken);
+  [[nodiscard]] bool Next(typename base::Token& aToken);
 
   
 
@@ -258,16 +257,14 @@ class TTokenizer : public TokenizerBase<TChar> {
 
 
 
-  MOZ_MUST_USE
-  bool Check(const typename base::TokenType aTokenType,
-             typename base::Token& aResult);
+  [[nodiscard]] bool Check(const typename base::TokenType aTokenType,
+                           typename base::Token& aResult);
   
 
 
 
 
-  MOZ_MUST_USE
-  bool Check(const typename base::Token& aToken);
+  [[nodiscard]] bool Check(const typename base::Token& aToken);
 
   
 
@@ -301,14 +298,14 @@ class TTokenizer : public TokenizerBase<TChar> {
   
 
 
-  MOZ_MUST_USE
-  bool CheckWhite() { return Check(base::Token::Whitespace()); }
+  [[nodiscard]] bool CheckWhite() { return Check(base::Token::Whitespace()); }
   
 
 
 
-  MOZ_MUST_USE
-  bool CheckChar(const TChar aChar) { return Check(base::Token::Char(aChar)); }
+  [[nodiscard]] bool CheckChar(const TChar aChar) {
+    return Check(base::Token::Char(aChar));
+  }
   
 
 
@@ -316,44 +313,40 @@ class TTokenizer : public TokenizerBase<TChar> {
 
 
 
-  MOZ_MUST_USE
-  bool CheckChar(bool (*aClassifier)(const TChar aChar));
+  [[nodiscard]] bool CheckChar(bool (*aClassifier)(const TChar aChar));
   
 
 
-  MOZ_MUST_USE
-  bool CheckWord(const typename base::TAString& aWord) {
+  [[nodiscard]] bool CheckWord(const typename base::TAString& aWord) {
     return Check(base::Token::Word(aWord));
   }
   
 
 
   template <uint32_t N>
-  MOZ_MUST_USE bool CheckWord(const TChar (&aWord)[N]) {
+  [[nodiscard]] bool CheckWord(const TChar (&aWord)[N]) {
     return Check(
         base::Token::Word(typename base::TDependentString(aWord, N - 1)));
   }
   
 
 
-  MOZ_MUST_USE
-  bool CheckEOL() { return Check(base::Token::NewLine()); }
+  [[nodiscard]] bool CheckEOL() { return Check(base::Token::NewLine()); }
   
 
 
 
-  MOZ_MUST_USE
-  bool CheckEOF() { return Check(base::Token::EndOfFile()); }
+  [[nodiscard]] bool CheckEOF() { return Check(base::Token::EndOfFile()); }
 
   
 
 
 
-  MOZ_MUST_USE bool ReadChar(TChar* aValue);
-  MOZ_MUST_USE bool ReadChar(bool (*aClassifier)(const TChar aChar),
-                             TChar* aValue);
-  MOZ_MUST_USE bool ReadWord(typename base::TAString& aValue);
-  MOZ_MUST_USE bool ReadWord(typename base::TDependentSubstring& aValue);
+  [[nodiscard]] bool ReadChar(TChar* aValue);
+  [[nodiscard]] bool ReadChar(bool (*aClassifier)(const TChar aChar),
+                              TChar* aValue);
+  [[nodiscard]] bool ReadWord(typename base::TAString& aValue);
+  [[nodiscard]] bool ReadWord(typename base::TDependentSubstring& aValue);
 
   
 
@@ -364,7 +357,7 @@ class TTokenizer : public TokenizerBase<TChar> {
 
 
   template <typename T>
-  MOZ_MUST_USE bool ReadInteger(T* aValue) {
+  [[nodiscard]] bool ReadInteger(T* aValue) {
     MOZ_RELEASE_ASSERT(aValue);
 
     typename base::TAString::const_char_iterator rollback = mRollback;
@@ -393,7 +386,7 @@ class TTokenizer : public TokenizerBase<TChar> {
   template <typename T, typename V = typename EnableIf<
                             IsSigned<typename RemovePointer<T>::Type>::value,
                             typename RemovePointer<T>::Type>::Type>
-  MOZ_MUST_USE bool ReadSignedInteger(T* aValue) {
+  [[nodiscard]] bool ReadSignedInteger(T* aValue) {
     MOZ_RELEASE_ASSERT(aValue);
 
     typename base::TAString::const_char_iterator rollback = mRollback;
@@ -483,12 +476,12 @@ class TTokenizer : public TokenizerBase<TChar> {
 
 
 
-  MOZ_MUST_USE bool ReadUntil(typename base::Token const& aToken,
-                              typename base::TDependentSubstring& aResult,
-                              ClaimInclusion aInclude = EXCLUDE_LAST);
-  MOZ_MUST_USE bool ReadUntil(typename base::Token const& aToken,
-                              typename base::TAString& aResult,
-                              ClaimInclusion aInclude = EXCLUDE_LAST);
+  [[nodiscard]] bool ReadUntil(typename base::Token const& aToken,
+                               typename base::TDependentSubstring& aResult,
+                               ClaimInclusion aInclude = EXCLUDE_LAST);
+  [[nodiscard]] bool ReadUntil(typename base::Token const& aToken,
+                               typename base::TAString& aResult,
+                               ClaimInclusion aInclude = EXCLUDE_LAST);
 
  protected:
   

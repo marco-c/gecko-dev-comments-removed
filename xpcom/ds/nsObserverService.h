@@ -36,8 +36,8 @@ class nsObserverService final : public nsIObserverService,
 
   void Shutdown();
 
-  static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, const nsIID& aIID,
-                                      void** aInstancePtr);
+  [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
+                                       void** aInstancePtr);
 
   
   

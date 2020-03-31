@@ -39,7 +39,7 @@
 class nsDequeFunctor {
  public:
   virtual void operator()(void* aObject) = 0;
-  virtual ~nsDequeFunctor() {}
+  virtual ~nsDequeFunctor() = default;
 };
 
 
@@ -99,7 +99,7 @@ class nsDeque {
 
 
 
-  MOZ_MUST_USE bool Push(void* aItem, const fallible_t&);
+  [[nodiscard]] bool Push(void* aItem, const fallible_t&);
 
   
 
@@ -118,7 +118,7 @@ class nsDeque {
 
 
 
-  MOZ_MUST_USE bool PushFront(void* aItem, const fallible_t&);
+  [[nodiscard]] bool PushFront(void* aItem, const fallible_t&);
 
   
 
