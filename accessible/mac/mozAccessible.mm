@@ -10,6 +10,7 @@
 
 #include "Accessible-inl.h"
 #include "nsAccUtils.h"
+#include "xpcAccessibleMacInterface.h"
 #include "nsIPersistentProperties2.h"
 #include "DocAccessibleParent.h"
 #include "Relation.h"
@@ -1176,6 +1177,9 @@ struct RoleDescrComparator {
 }
 
 - (void)postNotification:(NSString*)notification {
+  
+  xpcAccessibleMacInterface::FireEvent(self, notification);
+
   if (gfxPlatform::IsHeadless()) {
     
     

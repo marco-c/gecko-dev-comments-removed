@@ -29,6 +29,11 @@ class xpcAccessibleMacInterface : public nsIAccessibleMacInterface {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIACCESSIBLEMACINTERFACE
 
+  
+  
+  
+  static void FireEvent(id aNativeObj, id aNotification);
+
  protected:
   virtual ~xpcAccessibleMacInterface();
 
