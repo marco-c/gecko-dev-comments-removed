@@ -11,6 +11,8 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 
+#include <type_traits>
+
 namespace mozilla {
 namespace ipc {
 
@@ -232,7 +234,7 @@ struct IPDLParamTraits<nsTArray<T>> {
   
   
   static const bool sUseWriteBytes =
-      (mozilla::IsIntegral<T>::value || mozilla::IsFloatingPoint<T>::value);
+      (mozilla::IsIntegral<T>::value || std::is_floating_point_v<T>);
 };
 
 

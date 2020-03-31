@@ -135,29 +135,6 @@ struct IsSame;
 namespace detail {
 
 template <typename T>
-struct IsFloatingPointHelper
-    : IntegralConstant<bool, IsSame<T, float>::value ||
-                                 IsSame<T, double>::value ||
-                                 IsSame<T, long double>::value> {};
-
-}  
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsFloatingPoint
-    : detail::IsFloatingPointHelper<typename RemoveCV<T>::Type> {};
-
-namespace detail {
-
-template <typename T>
 struct IsArrayHelper : FalseType {};
 
 template <typename T, decltype(sizeof(1)) N>
