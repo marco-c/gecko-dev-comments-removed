@@ -105,9 +105,11 @@ nsresult TRR::DohEncode(nsCString& aBody, bool aDisableECS) {
       
       return NS_ERROR_ILLEGAL_VALUE;
     }
-    aBody += static_cast<unsigned char>(labelLength);
-    nsDependentCSubstring label = Substring(mHost, offset, labelLength);
-    aBody.Append(label);
+    if (labelLength > 0) {
+      aBody += static_cast<unsigned char>(labelLength);
+      nsDependentCSubstring label = Substring(mHost, offset, labelLength);
+      aBody.Append(label);
+    }
     if (!dotFound) {
       aBody += '\0';  
       break;
@@ -859,7 +861,10 @@ nsresult TRR::DohDecode(nsCString& aHost) {
       return NS_ERROR_ILLEGAL_VALUE;
     }
 
-    if (qname.Equals(aHost)) {
+    
+    if (qname.Equals(aHost) ||
+        (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.' &&
+         StringBeginsWith(aHost, qname))) {
       
       
       
