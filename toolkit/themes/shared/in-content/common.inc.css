@@ -467,10 +467,8 @@ xul|search-textbox {
   -moz-appearance: none;
   border: 1px solid var(--in-content-box-border-color);
   border-radius: 2px;
-  
-
-  color: inherit !important;
-  background-color: var(--in-content-box-background) !important;
+  color: inherit;
+  background-color: var(--in-content-box-background);
 }
 
 xul|search-textbox {
