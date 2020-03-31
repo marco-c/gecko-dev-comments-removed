@@ -54,9 +54,6 @@ class CubebDeviceEnumerator final {
     return mOnOutputDeviceListChange;
   }
 
-  
-  RefPtr<AudioDeviceInfo> DefaultDevice(Side aSide);
-
  private:
   CubebDeviceEnumerator();
   ~CubebDeviceEnumerator();
