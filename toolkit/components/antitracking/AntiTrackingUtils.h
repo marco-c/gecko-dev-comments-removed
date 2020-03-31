@@ -40,6 +40,14 @@ class AntiTrackingUtils final {
   
   static bool IsStorageAccessPermission(nsIPermission* aPermission,
                                         nsIPrincipal* aPrincipal);
+
+  
+  
+  static bool CheckStoragePermission(nsIPrincipal* aPrincipal,
+                                     const nsAutoCString& aType,
+                                     bool aIsInPrivateBrowsing,
+                                     uint32_t* aRejectedReason,
+                                     uint32_t aBlockedReason);
 };
 
 }  
