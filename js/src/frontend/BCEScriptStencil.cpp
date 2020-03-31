@@ -9,6 +9,7 @@
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeEmitter.h"   
 #include "frontend/BytecodeSection.h"   
+#include "vm/SharedStencil.h"
 
 using namespace js;
 using namespace js::frontend;
@@ -39,17 +40,16 @@ bool BCEScriptStencil::init(JSContext* cx, uint32_t nslots) {
     return false;
   }
 
-  strict = bce_.sc->strict();
-  bindingsAccessedDynamically = bce_.sc->bindingsAccessedDynamically();
-  hasCallSiteObj = bce_.sc->hasCallSiteObj();
-  isForEval = bce_.sc->isEvalContext();
-  isModule = bce_.sc->isModuleContext();
-  this->isFunction = isFunction;
-  hasNonSyntacticScope =
-      bce_.outermostScope().hasOnChain(ScopeKind::NonSyntactic);
-  needsFunctionEnvironmentObjects = getNeedsFunctionEnvironmentObjects();
-  hasModuleGoal = bce_.sc->hasModuleGoal();
-  hasInnerFunctions = bce_.sc->hasInnerFunctions();
+  immutableFlags = bce_.sc->immutableFlags();
+
+  
+  immutableFlags.setFlag(ImmutableScriptFlagsEnum::Strict, bce_.sc->strict());
+  immutableFlags.setFlag(
+      ImmutableScriptFlagsEnum::NeedsFunctionEnvironmentObjects,
+      getNeedsFunctionEnvironmentObjects());
+  immutableFlags.setFlag(
+      ImmutableScriptFlagsEnum::HasNonSyntacticScope,
+      bce_.outermostScope().hasOnChain(ScopeKind::NonSyntactic));
 
   gcThings = bce_.perScriptData().gcThingList().stealGCThings();
 

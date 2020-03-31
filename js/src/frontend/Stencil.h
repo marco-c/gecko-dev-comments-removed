@@ -35,7 +35,8 @@
 #include "vm/JSScript.h"  
 #include "vm/Runtime.h"  
 #include "vm/Scope.h"  
-#include "vm/ScopeKind.h"  
+#include "vm/ScopeKind.h"      
+#include "vm/SharedStencil.h"  
 
 struct JSContext;
 class JSAtom;
@@ -468,22 +469,17 @@ class ScriptStencil {
   uint32_t ngcthings = 0;
 
   
-  bool strict = false;
-  bool bindingsAccessedDynamically = false;
-  bool hasCallSiteObj = false;
-  bool isForEval = false;
-  bool isModule = false;
-  bool isFunction = false;
-  bool hasNonSyntacticScope = false;
-  bool needsFunctionEnvironmentObjects = false;
-  bool hasModuleGoal = false;
-  bool hasInnerFunctions = false;
+  ImmutableScriptFlags immutableFlags;
 
   ScriptThingsVector gcThings;
 
   js::frontend::FunctionBox* functionBox = nullptr;
 
   explicit ScriptStencil(JSContext* cx) : gcThings(cx) {}
+
+  bool isFunction() const {
+    return immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsFunction);
+  }
 
   
   
