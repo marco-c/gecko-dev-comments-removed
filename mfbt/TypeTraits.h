@@ -138,28 +138,6 @@ struct IsSame : FalseType {};
 template <typename T>
 struct IsSame<T, T> : TrueType {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct RemoveConst {
-  typedef T Type;
-};
-
-template <typename T>
-struct RemoveConst<const T> {
-  typedef T Type;
-};
-
 } 
 
 #endif 

@@ -104,8 +104,7 @@ struct SelectVariantTypeHelper<T, Head, Variants...>
 template <typename T, typename... Variants>
 struct SelectVariantType
     : public SelectVariantTypeHelper<
-          typename RemoveConst<std::remove_reference_t<T>>::Type, Variants...> {
-};
+          std::remove_const_t<std::remove_reference_t<T>>, Variants...> {};
 
 
 
@@ -316,7 +315,7 @@ struct AsVariantTemporary {
   void operator=(const AsVariantTemporary&) = delete;
   void operator=(AsVariantTemporary&&) = delete;
 
-  typename RemoveConst<std::remove_reference_t<T>>::Type mValue;
+  std::remove_const_t<std::remove_reference_t<T>> mValue;
 };
 
 }  
