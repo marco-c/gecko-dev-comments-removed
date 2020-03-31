@@ -3511,17 +3511,7 @@ void WorkerPrivate::ClearMainEventQueue(WorkerRanOrNot aRanOrNot) {
 
   MOZ_ASSERT(mSyncLoopStack.IsEmpty());
   MOZ_ASSERT(!mCancelAllPendingRunnables);
-
   mCancelAllPendingRunnables = true;
-  WorkerGlobalScope* globalScope = GlobalScope();
-  if (globalScope) {
-    
-    
-    
-    globalScope->DisconnectEventTargetObjects();
-
-    globalScope->WorkerPrivateSaysForbidScript();
-  }
 
   if (WorkerNeverRan == aRanOrNot) {
     for (uint32_t count = mPreStartRunnables.Length(), index = 0; index < count;
@@ -3539,9 +3529,6 @@ void WorkerPrivate::ClearMainEventQueue(WorkerRanOrNot aRanOrNot) {
     ReportUseCounters();
   }
 
-  if (globalScope) {
-    globalScope->WorkerPrivateSaysAllowScript();
-  }
   MOZ_ASSERT(mCancelAllPendingRunnables);
   mCancelAllPendingRunnables = false;
 }
@@ -3918,23 +3905,6 @@ bool WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
 
   bool result = loopInfo->mResult;
 
-  auto queue =
-      static_cast<ThreadEventQueue<EventQueue>*>(mThread->EventQueue());
-  queue->PopEventQueue(nestedEventTarget);
-
-  
-  if (mSyncLoopStack.Length() == 1) {
-    if ((mPostSyncLoopOperations & ePendingEventQueueClearing)) {
-      ClearMainEventQueue(WorkerRan);
-    }
-
-    if ((mPostSyncLoopOperations & eDispatchCancelingRunnable)) {
-      DispatchCancelingRunnable();
-    }
-
-    mPostSyncLoopOperations = 0;
-  }
-
   {
     
     
@@ -3944,6 +3914,22 @@ bool WorkerPrivate::DestroySyncLoop(uint32_t aLoopIndex) {
 
     
     mSyncLoopStack.RemoveElementAt(aLoopIndex);
+  }
+
+  auto queue =
+      static_cast<ThreadEventQueue<EventQueue>*>(mThread->EventQueue());
+  queue->PopEventQueue(nestedEventTarget);
+
+  if (mSyncLoopStack.IsEmpty()) {
+    if ((mPostSyncLoopOperations & ePendingEventQueueClearing)) {
+      ClearMainEventQueue(WorkerRan);
+    }
+
+    if ((mPostSyncLoopOperations & eDispatchCancelingRunnable)) {
+      DispatchCancelingRunnable();
+    }
+
+    mPostSyncLoopOperations = 0;
   }
 
   return result;

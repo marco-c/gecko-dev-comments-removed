@@ -51,13 +51,11 @@ class nsIGlobalObject : public nsISupports,
   mozilla::LinkedList<mozilla::DOMEventTargetHelper> mEventTargetObjects;
 
   bool mIsDying;
-  bool mIsScriptForbidden;
 
  protected:
   bool mIsInnerWindow;
 
-  nsIGlobalObject()
-      : mIsDying(false), mIsScriptForbidden(false), mIsInnerWindow(false) {}
+  nsIGlobalObject() : mIsDying(false), mIsInnerWindow(false) {}
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
@@ -77,14 +75,6 @@ class nsIGlobalObject : public nsISupports,
 
 
   bool IsDying() const { return mIsDying; }
-
-  
-
-
-
-
-  bool IsScriptForbidden(JSObject* aCallback,
-                         bool aIsJSImplementedWebIDL = false) const;
 
   
 
@@ -189,9 +179,6 @@ class nsIGlobalObject : public nsISupports,
   virtual ~nsIGlobalObject();
 
   void StartDying() { mIsDying = true; }
-
-  void StartForbiddingScript() { mIsScriptForbidden = true; }
-  void StopForbiddingScript() { mIsScriptForbidden = false; }
 
   void DisconnectEventTargetObjects();
 
