@@ -294,13 +294,5 @@ void DynamicImage::PropagateUseCounters(dom::Document*) {
   
 }
 
-nsresult DynamicImage::GetHotspotX(int32_t* aX) {
-  return Image::GetHotspotX(aX);
-}
-
-nsresult DynamicImage::GetHotspotY(int32_t* aY) {
-  return Image::GetHotspotY(aY);
-}
-
 }  
 }  

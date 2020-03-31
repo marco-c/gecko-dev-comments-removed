@@ -109,16 +109,6 @@ interface imgIContainer : nsISupports
   
 
 
-  readonly attribute int32_t hotspotX;
-
-  
-
-
-  readonly attribute int32_t hotspotY;
-
-  
-
-
 
 
 
