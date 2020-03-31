@@ -160,7 +160,7 @@ static constexpr size_t MaxSrcNotesLength = INT32_MAX;
 
 
 typedef Vector<jsbytecode, 64> BytecodeVector;
-typedef Vector<jssrcnote, 64> SrcNotesVector;
+typedef Vector<js::SrcNote, 64> SrcNotesVector;
 
 
 

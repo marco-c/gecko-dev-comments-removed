@@ -7,12 +7,11 @@
 #ifndef frontend_SourceNotes_h
 #define frontend_SourceNotes_h
 
-#include <stddef.h>  
-#include <stdint.h>
+#include "mozilla/Assertions.h"  
+#include <stddef.h>              
+#include <stdint.h>              
 
 #include "jstypes.h"
-
-using jssrcnote = uint8_t;
 
 namespace js {
 
@@ -36,160 +35,386 @@ namespace js {
 
 
 
+#define FOR_EACH_SRC_NOTE_TYPE(M)
+                                            \
+  M(Null, "null", 0)                                                         \
+  /* += or another assign-op follows. */                                     \
+  M(AssignOp, "assignop", 0)                                                 \
+  /* All notes above here are "gettable".  See SrcNote::isGettable below. */ \
+  M(ColSpan, "colspan", int8_t(SrcNote::ColSpan::Operands::Count))           \
+  /* Bytecode follows a source newline. */                                   \
+  M(NewLine, "newline", 0)                                                   \
+  M(SetLine, "setline", int8_t(SrcNote::SetLine::Operands::Count))           \
+  /* Bytecode is a recommended breakpoint. */                                \
+  M(Breakpoint, "breakpoint", 0)                                             \
+  /* Bytecode is the first in a new steppable area. */                       \
+  M(StepSep, "step-sep", 0)                                                  \
+  M(Unused7, "unused", 0)                                                    \
+  /* 8-15 (0b1xxx) are for extended delta notes. */                          \
+  M(XDelta, "xdelta", 0)
+
+
+
+
+
+enum class SrcNoteType : uint8_t {
+#define DEFINE_SRC_NOTE_TYPE(sym, name, arity) sym,
+  FOR_EACH_SRC_NOTE_TYPE(DEFINE_SRC_NOTE_TYPE)
+#undef DEFINE_SRC_NOTE_TYPE
+
+      Last,
+  LastGettable = AssignOp
+};
+
+static_assert(uint8_t(SrcNoteType::XDelta) == 8, "XDelta should be 8");
+
 class SrcNote {
+  struct Spec {
+    const char* name_;
+    int8_t arity_;
+  };
+
+  static const Spec specs_[];
+
+  static constexpr unsigned TypeBits = 4;
+  static constexpr unsigned DeltaBits = 4;
+  static constexpr unsigned XDeltaBits = 7;
+
+  static constexpr uint8_t TypeMask = js::BitMask(TypeBits) << DeltaBits;
+  static constexpr ptrdiff_t DeltaMask = js::BitMask(DeltaBits);
+  static constexpr ptrdiff_t XDeltaMask = js::BitMask(XDeltaBits);
+
+  static constexpr ptrdiff_t DeltaLimit = js::Bit(DeltaBits);
+  static constexpr ptrdiff_t XDeltaLimit = js::Bit(XDeltaBits);
+
+  static constexpr inline uint8_t toShiftedTypeBits(SrcNoteType type) {
+    return (uint8_t(type) << DeltaBits);
+  }
+
+  static inline uint8_t noteValue(SrcNoteType type, ptrdiff_t delta) {
+    MOZ_ASSERT((delta & DeltaMask) == delta);
+    return noteValueUnchecked(type, delta);
+  }
+
+  static constexpr inline uint8_t noteValueUnchecked(SrcNoteType type,
+                                                     ptrdiff_t delta) {
+    return toShiftedTypeBits(type) | (delta & DeltaMask);
+  }
+
+  static inline uint8_t xDeltaValue(ptrdiff_t delta) {
+    return toShiftedTypeBits(SrcNoteType::XDelta) | (delta & XDeltaMask);
+  }
+
+  uint8_t value_;
+
+  constexpr explicit SrcNote(uint8_t value) : value_(value) {}
+
  public:
+  constexpr SrcNote() : value_(noteValueUnchecked(SrcNoteType::Null, 0)){};
+
+  SrcNote(const SrcNote& other) = default;
+  SrcNote& operator=(const SrcNote& other) = default;
+
+  SrcNote(SrcNote&& other) = default;
+  SrcNote& operator=(SrcNote&& other) = default;
+
+  static constexpr SrcNote terminator() { return SrcNote(); }
+
+ private:
+  inline uint8_t typeBits() const { return (value_ >> DeltaBits); }
+
+  inline bool isXDelta() const {
+    return typeBits() >= uint8_t(SrcNoteType::XDelta);
+  }
+
+  inline bool isFourBytesOperand() const {
+    return value_ & FourBytesOperandFlag;
+  }
+
   
+  inline unsigned arity() const {
+    MOZ_ASSERT(uint8_t(type()) < uint8_t(SrcNoteType::Last));
+    return specs_[uint8_t(type())].arity_;
+  }
+
+ public:
+  inline SrcNoteType type() const {
+    if (isXDelta()) {
+      return SrcNoteType::XDelta;
+    }
+    return SrcNoteType(typeBits());
+  }
+
+  
+  const char* name() const {
+    MOZ_ASSERT(uint8_t(type()) < uint8_t(SrcNoteType::Last));
+    return specs_[uint8_t(type())].name_;
+  }
+
+  inline bool isGettable() const {
+    return uint8_t(type()) <= uint8_t(SrcNoteType::LastGettable);
+  }
+
+  inline bool isTerminator() const {
+    return value_ == uint8_t(SrcNoteType::Null);
+  }
+
+  inline ptrdiff_t delta() const {
+    if (isXDelta()) {
+      return value_ & XDeltaMask;
+    }
+    return value_ & DeltaMask;
+  }
+
+ private:
+  
+
+
+
+
+  static constexpr unsigned FourBytesOperandFlag = 0x80;
+  static constexpr unsigned FourBytesOperandMask = 0x7f;
+
+  static constexpr unsigned OperandBits = 31;
+
+ public:
+  static constexpr size_t MaxOperand = (size_t(1) << OperandBits) - 1;
+
+  static inline bool isRepresentableOperand(ptrdiff_t operand) {
+    return 0 <= operand && size_t(operand) <= MaxOperand;
+  }
+
   class ColSpan {
    public:
-    enum Fields {
+    enum class Operands {
       
       
       Span,
       Count
     };
+
+   private:
+    
+
+
+
+
+
+
+
+
+
+
+
+    static constexpr ptrdiff_t ColSpanSignBit = 1 << (OperandBits - 1);
+    static constexpr ptrdiff_t MinColSpan = -ColSpanSignBit;
+    static constexpr ptrdiff_t MaxColSpan = ColSpanSignBit - 1;
+
+    static inline ptrdiff_t fromOperand(ptrdiff_t operand) {
+      
+      
+      MOZ_ASSERT(!(operand & ~((1U << OperandBits) - 1)));
+
+      
+      return (operand ^ ColSpanSignBit) - ColSpanSignBit;
+    }
+
+   public:
+    static inline bool isRepresentable(ptrdiff_t colspan) {
+      return MinColSpan <= colspan && colspan <= MaxColSpan;
+    }
+
+    static inline ptrdiff_t toOperand(ptrdiff_t colspan) {
+      
+      ptrdiff_t operand = colspan & ((1U << OperandBits) - 1);
+
+      
+      MOZ_ASSERT(fromOperand(operand) == colspan);
+      return operand;
+    }
+
+    static inline ptrdiff_t getSpan(const SrcNote* sn);
   };
-  
+
   class SetLine {
    public:
-    enum Fields {
+    enum class Operands {
       
       Line,
       Count
     };
+
+   private:
+    static inline size_t fromOperand(ptrdiff_t operand) {
+      return size_t(operand);
+    }
+
+   public:
+    static inline unsigned lengthFor(unsigned line) {
+      return 1  + (line > SrcNote::FourBytesOperandMask ? 4 : 1);
+    }
+
+    static inline ptrdiff_t toOperand(size_t line) { return ptrdiff_t(line); }
+
+    static inline size_t getLine(const SrcNote* sn);
   };
+
+  friend class SrcNoteWriter;
+  friend class SrcNoteReader;
+  friend class SrcNoteIterator;
+};
+
+class SrcNoteWriter {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  static bool writeNote(SrcNoteType type, ptrdiff_t delta, T allocator) {
+    while (delta >= SrcNote::DeltaLimit) {
+      ptrdiff_t xdelta = std::min(delta, SrcNote::XDeltaMask);
+      SrcNote* sn = allocator(1);
+      if (!sn) {
+        return false;
+      }
+      sn->value_ = SrcNote::xDeltaValue(xdelta);
+      delta -= xdelta;
+    }
+
+    SrcNote* sn = allocator(1);
+    sn->value_ = SrcNote::noteValue(type, delta);
+    return true;
+  }
+
+  
+  
+  
+  
+  template <typename T>
+  static bool writeOperand(ptrdiff_t operand, T allocator) {
+    if (operand > ptrdiff_t(SrcNote::FourBytesOperandMask)) {
+      SrcNote* sn = allocator(4);
+      if (!sn) {
+        return false;
+      }
+
+      sn[0].value_ = (SrcNote::FourBytesOperandFlag | (operand >> 24));
+      sn[1].value_ = operand >> 16;
+      sn[2].value_ = operand >> 8;
+      sn[3].value_ = operand;
+    } else {
+      SrcNote* sn = allocator(1);
+      if (!sn) {
+        return false;
+      }
+
+      sn[0].value_ = operand;
+    }
+
+    return true;
+  }
+};
+
+class SrcNoteReader {
+  template <typename T>
+  static T getOperandHead(T sn, unsigned which) {
+    MOZ_ASSERT(sn->type() != SrcNoteType::XDelta);
+    MOZ_ASSERT(uint8_t(which) < sn->arity());
+
+    T curr = sn + 1;
+    for (; which; which--) {
+      if (curr->isFourBytesOperand()) {
+        curr += 4;
+      } else {
+        curr++;
+      }
+    }
+    return curr;
+  }
+
+ public:
+  
+  static ptrdiff_t getOperand(const SrcNote* sn, unsigned which) {
+    const SrcNote* head = getOperandHead(sn, which);
+
+    if (head->isFourBytesOperand()) {
+      return ptrdiff_t(
+          (uint32_t(head[0].value_ & SrcNote::FourBytesOperandMask) << 24) |
+          (uint32_t(head[1].value_) << 16) | (uint32_t(head[2].value_) << 8) |
+          uint32_t(head[3].value_));
+    }
+
+    return ptrdiff_t(head[0].value_);
+  }
 };
 
 
-#define FOR_EACH_SRC_NOTE_TYPE(M)                                                                  \
-    M(SRC_NULL,         "null",        0)  /* Terminates a note vector. */                         \
-    M(SRC_ASSIGNOP,     "assignop",    0)  /* += or another assign-op follows. */                  \
-    /* All notes above here are "gettable".  See SN_IS_GETTABLE below. */                          \
-    M(SRC_COLSPAN,      "colspan",     SrcNote::ColSpan::Count) \
-    M(SRC_NEWLINE,      "newline",     0)  /* Bytecode follows a source newline. */                \
-    M(SRC_SETLINE,      "setline",     SrcNote::SetLine::Count) \
-    M(SRC_BREAKPOINT,   "breakpoint",  0)  /* Bytecode is a recommended breakpoint. */             \
-    M(SRC_STEP_SEP,     "step-sep",    0)  /* Bytecode is the first in a new steppable area. */    \
-    M(SRC_UNUSED7,      "unused",      0) \
-    M(SRC_XDELTA,       "xdelta",      0)  /* 8-15 (0b1xxx) are for extended delta notes. */
-    
-    
+inline ptrdiff_t SrcNote::ColSpan::getSpan(const SrcNote* sn) {
+  return fromOperand(SrcNoteReader::getOperand(sn, unsigned(Operands::Span)));
+}
 
 
-enum SrcNoteType {
-#define DEFINE_SRC_NOTE_TYPE(sym, name, arity) sym,
-  FOR_EACH_SRC_NOTE_TYPE(DEFINE_SRC_NOTE_TYPE)
-#undef DEFINE_SRC_NOTE_TYPE
+inline size_t SrcNote::SetLine::getLine(const SrcNote* sn) {
+  return fromOperand(SrcNoteReader::getOperand(sn, unsigned(Operands::Line)));
+}
 
-      SRC_LAST,
-  SRC_LAST_GETTABLE = SRC_ASSIGNOP
+
+
+
+
+
+
+
+class SrcNoteIterator {
+  const SrcNote* current_;
+
+  void next() {
+    unsigned arity = current_->arity();
+    current_++;
+
+    for (; arity; arity--) {
+      if (current_->isFourBytesOperand()) {
+        current_ += 4;
+      } else {
+        current_++;
+      }
+    }
+  }
+
+ public:
+  SrcNoteIterator() = delete;
+
+  SrcNoteIterator(const SrcNoteIterator& other) = delete;
+  SrcNoteIterator& operator=(const SrcNoteIterator& other) = delete;
+
+  SrcNoteIterator(SrcNoteIterator&& other) = default;
+  SrcNoteIterator& operator=(SrcNoteIterator&& other) = default;
+
+  explicit SrcNoteIterator(const SrcNote* sn) : current_(sn) {}
+
+  bool atEnd() const { return current_->isTerminator(); }
+
+  const SrcNote* operator*() const { return current_; }
+
+  
+  SrcNoteIterator& operator++() {
+    next();
+    return *this;
+  }
+
+  
+  SrcNoteIterator operator++(int) = delete;
 };
-
-static_assert(SRC_XDELTA == 8, "SRC_XDELTA should be 8");
-
-
-inline void SN_MAKE_TERMINATOR(jssrcnote* sn) { *sn = SRC_NULL; }
-
-inline bool SN_IS_TERMINATOR(jssrcnote* sn) { return *sn == SRC_NULL; }
 
 }  
 
-#define SN_TYPE_BITS 4
-#define SN_DELTA_BITS 4
-#define SN_XDELTA_BITS 7
-
-#define SN_TYPE_MASK (js::BitMask(SN_TYPE_BITS) << SN_DELTA_BITS)
-#define SN_DELTA_MASK ((ptrdiff_t)js::BitMask(SN_DELTA_BITS))
-#define SN_XDELTA_MASK ((ptrdiff_t)js::BitMask(SN_XDELTA_BITS))
-
-#define SN_MAKE_NOTE(sn, t, d) \
-  (*(sn) = (jssrcnote)(((t) << SN_DELTA_BITS) | ((d)&SN_DELTA_MASK)))
-#define SN_MAKE_XDELTA(sn, d) \
-  (*(sn) = (jssrcnote)((SRC_XDELTA << SN_DELTA_BITS) | ((d)&SN_XDELTA_MASK)))
-
-#define SN_IS_XDELTA(sn) ((*(sn) >> SN_DELTA_BITS) >= SRC_XDELTA)
-#define SN_TYPE(sn) \
-  ((js::SrcNoteType)(SN_IS_XDELTA(sn) ? SRC_XDELTA : *(sn) >> SN_DELTA_BITS))
-#define SN_SET_TYPE(sn, type) SN_MAKE_NOTE(sn, type, SN_DELTA(sn))
-#define SN_IS_GETTABLE(sn) (SN_TYPE(sn) <= SRC_LAST_GETTABLE)
-
-#define SN_DELTA(sn) \
-  ((ptrdiff_t)(SN_IS_XDELTA(sn) ? *(sn)&SN_XDELTA_MASK : *(sn)&SN_DELTA_MASK))
-#define SN_SET_DELTA(sn, delta)                 \
-  (SN_IS_XDELTA(sn) ? SN_MAKE_XDELTA(sn, delta) \
-                    : SN_MAKE_NOTE(sn, SN_TYPE(sn), delta))
-
-#define SN_DELTA_LIMIT ((ptrdiff_t)js::Bit(SN_DELTA_BITS))
-#define SN_XDELTA_LIMIT ((ptrdiff_t)js::Bit(SN_XDELTA_BITS))
-
-
-
-
-
-
-#define SN_4BYTE_OFFSET_FLAG 0x80
-#define SN_4BYTE_OFFSET_MASK 0x7f
-
-#define SN_OFFSET_BITS 31
-#define SN_MAX_OFFSET (((size_t)1 << SN_OFFSET_BITS) - 1)
-
-inline bool SN_REPRESENTABLE_OFFSET(ptrdiff_t offset) {
-  return 0 <= offset && size_t(offset) <= SN_MAX_OFFSET;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-#define SN_COLSPAN_SIGN_BIT (1 << (SN_OFFSET_BITS - 1))
-#define SN_MIN_COLSPAN (-SN_COLSPAN_SIGN_BIT)
-#define SN_MAX_COLSPAN (SN_COLSPAN_SIGN_BIT - 1)
-
-inline bool SN_REPRESENTABLE_COLSPAN(ptrdiff_t colspan) {
-  return SN_MIN_COLSPAN <= colspan && colspan <= SN_MAX_COLSPAN;
-}
-
-inline ptrdiff_t SN_OFFSET_TO_COLSPAN(ptrdiff_t offset) {
-  
-  MOZ_ASSERT(!(offset & ~((1U << SN_OFFSET_BITS) - 1)));
-  
-  return (offset ^ SN_COLSPAN_SIGN_BIT) - SN_COLSPAN_SIGN_BIT;
-}
-
-inline ptrdiff_t SN_COLSPAN_TO_OFFSET(ptrdiff_t colspan) {
-  
-  ptrdiff_t offset = colspan & ((1U << SN_OFFSET_BITS) - 1);
-  
-  MOZ_ASSERT(SN_OFFSET_TO_COLSPAN(offset) == colspan);
-  return offset;
-}
-
-#define SN_LENGTH(sn) \
-  ((js_SrcNoteSpec[SN_TYPE(sn)].arity == 0) ? 1 : js::SrcNoteLength(sn))
-#define SN_NEXT(sn) ((sn) + SN_LENGTH(sn))
-
-struct JSSrcNoteSpec {
-  const char* name; 
-  int8_t arity;     
-};
-
-extern JS_FRIEND_DATA const JSSrcNoteSpec js_SrcNoteSpec[];
-
-namespace js {
-
-extern JS_FRIEND_API unsigned SrcNoteLength(jssrcnote* sn);
-
-
-
-
-extern JS_FRIEND_API ptrdiff_t GetSrcNoteOffset(jssrcnote* sn, unsigned which);
-
-}  
+using jssrcnote = js::SrcNote;
 
 #endif 
