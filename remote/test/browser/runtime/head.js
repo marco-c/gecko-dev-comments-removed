@@ -9,3 +9,19 @@ Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/remote/test/browser/head.js",
   this
 );
+
+async function enableRuntime(client) {
+  const { Runtime } = client;
+
+  
+  await Runtime.enable();
+  info("Runtime domain has been enabled");
+
+  
+  const { context } = await Runtime.executionContextCreated();
+  ok(!!context.id, "The execution context has an id");
+  ok(context.auxData.isDefault, "The execution context is the default one");
+  ok(!!context.auxData.frameId, "The execution context has a frame id set");
+
+  return context.id;
+}
