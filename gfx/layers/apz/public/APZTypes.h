@@ -63,29 +63,6 @@ struct WRRootId {
 
 
 
-
-
-
-struct UpdaterQueueSelector {
-  LayersId mLayersId;
-  wr::RenderRootSet mRenderRoots;
-
-  UpdaterQueueSelector() = default;
-
-  explicit UpdaterQueueSelector(LayersId aLayersId) : mLayersId(aLayersId) {}
-
-  UpdaterQueueSelector(LayersId aLayersId, wr::RenderRoot aRenderRoot)
-      : mLayersId(aLayersId), mRenderRoots(aRenderRoot) {}
-
-  explicit UpdaterQueueSelector(const WRRootId& aNodeId)
-      : mLayersId(aNodeId.mLayersId), mRenderRoots(aNodeId.mRenderRoot) {}
-};
-
-
-
-
-
-
 struct SLGuidAndRenderRoot {
   ScrollableLayerGuid mScrollableLayerGuid;
   wr::RenderRoot mRenderRoot;

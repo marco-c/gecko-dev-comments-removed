@@ -2451,7 +2451,7 @@ void APZCTreeManager::UpdateZoomConstraints(
     
     
     GetUpdater()->RunOnUpdaterThread(
-        UpdaterQueueSelector(aGuid.GetWRRootId()),
+        aGuid.mScrollableLayerGuid.mLayersId,
         NewRunnableMethod<SLGuidAndRenderRoot, Maybe<ZoomConstraints>>(
             "APZCTreeManager::UpdateZoomConstraints", this,
             &APZCTreeManager::UpdateZoomConstraints, aGuid, aConstraints));
