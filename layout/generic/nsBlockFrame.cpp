@@ -2583,7 +2583,8 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
       
       line->MarkDirty();
       line->ClearPreviousMarginDirty();
-    } else if (line->BEnd() + deltaBCoord > aState.mBEndEdge) {
+    } else if (aState.ContentBSize() != NS_UNCONSTRAINEDSIZE &&
+               line->BEnd() + deltaBCoord > aState.ContentBEnd()) {
       
       
       line->MarkDirty();
@@ -4965,8 +4966,9 @@ bool nsBlockFrame::PlaceLine(BlockReflowInput& aState,
   }
 
   
-  if (mLines.front() != aLine && newBCoord > aState.mBEndEdge &&
-      aState.mBEndEdge != NS_UNCONSTRAINEDSIZE) {
+  if (mLines.front() != aLine &&
+      aState.ContentBSize() != NS_UNCONSTRAINEDSIZE &&
+      newBCoord > aState.ContentBEnd()) {
     NS_ASSERTION(aState.mCurrentLine == aLine, "oops");
     if (ShouldAvoidBreakInside(aState.mReflowInput)) {
       

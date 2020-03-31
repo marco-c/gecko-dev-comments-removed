@@ -119,12 +119,12 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
     
     
     
-    mBEndEdge = aReflowInput.AvailableBSize() - mBorderPadding.BEnd(wm);
-    mContentArea.BSize(wm) = std::max(0, mBEndEdge - mBorderPadding.BStart(wm));
+    mContentArea.BSize(wm) = std::max(
+        0, aReflowInput.AvailableBSize() - mBorderPadding.BStartEnd(wm));
   } else {
     
     
-    mContentArea.BSize(wm) = mBEndEdge = NS_UNCONSTRAINEDSIZE;
+    mContentArea.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   }
   mContentArea.IStart(wm) = mBorderPadding.IStart(wm);
   mBCoord = mContentArea.BStart(wm) = mBorderPadding.BStart(wm);

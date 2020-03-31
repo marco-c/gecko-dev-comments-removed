@@ -239,8 +239,6 @@ class BlockReflowInput {
   
   nsFloatManager::SavedState mFloatManagerStateBefore;
 
-  nscoord mBEndEdge;
-
   
   
   
@@ -267,6 +265,9 @@ class BlockReflowInput {
     return mContentArea.BSize(mReflowInput.GetWritingMode());
   }
   nscoord ContentBEnd() const {
+    NS_ASSERTION(
+        ContentBSize() != NS_UNCONSTRAINEDSIZE,
+        "ContentBSize() is unconstrained, so ContentBEnd() may overflow.");
     return mContentArea.BEnd(mReflowInput.GetWritingMode());
   }
   mozilla::LogicalSize ContentSize(mozilla::WritingMode aWM) const {
