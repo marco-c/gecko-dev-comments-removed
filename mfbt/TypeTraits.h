@@ -245,19 +245,6 @@ struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type> {};
 
 
 template <typename T>
-struct IsConst : FalseType {};
-
-template <typename T>
-struct IsConst<const T> : TrueType {};
-
-
-
-
-
-
-
-
-template <typename T>
 struct IsVolatile : FalseType {};
 
 template <typename T>
