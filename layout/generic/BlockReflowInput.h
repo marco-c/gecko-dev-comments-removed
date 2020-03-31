@@ -32,11 +32,9 @@ class BlockReflowInput {
         : mIsBStartMarginRoot(false),
           mIsBEndMarginRoot(false),
           mShouldApplyBStartMargin(false),
-          mIsFirstInflow(false),
           mHasLineAdjacentToTop(false),
           mBlockNeedsFloatManager(false),
           mIsLineLayoutEmpty(false),
-          mIsOverflowContainer(false),
           mIsFloatListInBlockPropertyTable(false),
           mCanHaveOverflowMarkers(false) {}
 
@@ -76,8 +74,6 @@ class BlockReflowInput {
     
     bool mShouldApplyBStartMargin : 1;
 
-    bool mIsFirstInflow : 1;
-
     
     bool mHasLineAdjacentToTop : 1;
 
@@ -87,8 +83,6 @@ class BlockReflowInput {
     
     
     bool mIsLineLayoutEmpty : 1;
-
-    bool mIsOverflowContainer : 1;
 
     
     bool mIsFloatListInBlockPropertyTable : 1;
