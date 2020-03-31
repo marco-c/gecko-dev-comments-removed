@@ -5,6 +5,8 @@
 
 #include "ChromiumCDMCallbackProxy.h"
 
+#include <type_traits>
+
 #include "ChromiumCDMProxy.h"
 #include "content_decryption_module.h"
 
@@ -16,8 +18,8 @@ void ChromiumCDMCallbackProxy::DispatchToMainThread(const char* const aLabel,
                                                     Args&&... aArgs) {
   mMainThread->Dispatch(
       
-      NewRunnableMethod<typename Decay<Args>::Type...>(
-          aLabel, mProxy, aFunc, std::forward<Args>(aArgs)...),
+      NewRunnableMethod<std::decay_t<Args>...>(aLabel, mProxy, aFunc,
+                                               std::forward<Args>(aArgs)...),
       NS_DISPATCH_NORMAL);
 }
 
