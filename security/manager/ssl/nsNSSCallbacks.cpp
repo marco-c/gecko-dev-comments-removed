@@ -268,7 +268,9 @@ OCSPRequest::Run() {
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
 
   
-  loadInfo->SetHttpsOnlyNoUpgrade(true);
+  uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+  httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
+  loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 
   
   
