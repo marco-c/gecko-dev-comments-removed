@@ -2397,7 +2397,7 @@
 
 
  \
-    MACRO(ThrowMsg, throw_msg, NULL, 3, 0, 0, JOF_UINT16) \
+    MACRO(ThrowMsg, throw_msg, NULL, 2, 0, 0, JOF_UINT8) \
     
 
 

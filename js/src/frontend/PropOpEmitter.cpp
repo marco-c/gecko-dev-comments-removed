@@ -10,6 +10,7 @@
 #include "frontend/SharedContext.h"
 #include "vm/Opcodes.h"
 #include "vm/StringType.h"
+#include "vm/ThrowMsgKind.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -148,7 +149,7 @@ bool PropOpEmitter::emitDelete(JSAtom* prop) {
     }
 
     
-    if (!bce_->emitUint16Operand(JSOp::ThrowMsg, JSMSG_CANT_DELETE_SUPER)) {
+    if (!bce_->emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::CantDeleteSuper))) {
       
       return false;
     }
