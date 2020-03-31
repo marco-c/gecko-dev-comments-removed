@@ -83,6 +83,7 @@ static StorageAccess InternalStorageAllowedCheck(
     return StorageAccess::eDeny;
   }
 
+  nsCOMPtr<nsIURI> documentURI;
   if (aWindow) {
     
     Document* document = aWindow->GetExtantDoc();
@@ -94,6 +95,9 @@ static StorageAccess InternalStorageAllowedCheck(
     if (nsContentUtils::IsInPrivateBrowsing(document)) {
       access = StorageAccess::ePrivateBrowsing;
     }
+
+    
+    documentURI = document ? document->GetDocumentURI() : nullptr;
   }
 
   uint32_t lifetimePolicy;
@@ -141,7 +145,13 @@ static StorageAccess InternalStorageAllowedCheck(
   
   
   
-  if ((aURI && aURI->SchemeIs("about")) || aPrincipal->SchemeIs("about")) {
+  
+  
+  
+  
+  if ((aURI && aURI->SchemeIs("about")) ||
+      (documentURI && documentURI->SchemeIs("about")) ||
+      aPrincipal->SchemeIs("about")) {
     return access;
   }
 
