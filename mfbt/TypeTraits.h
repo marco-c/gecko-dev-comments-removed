@@ -690,9 +690,6 @@ struct RemoveReference<T&&> {
   typedef T Type;
 };
 
-template <bool Condition, typename A, typename B>
-struct Conditional;
-
 namespace detail {
 
 enum Voidness { TIsVoid, TIsNotVoid };
@@ -729,95 +726,6 @@ struct AddRvalueReferenceHelper<T, TIsNotVoid> {
 
 template <typename T>
 struct AddRvalueReference : detail::AddRvalueReferenceHelper<T> {};
-
-
-
-template <bool B, typename T = void>
-struct EnableIf;
-
-namespace detail {
-
-template <bool MakeConst, typename T>
-struct WithC : Conditional<MakeConst, const T, T> {};
-
-template <bool MakeVolatile, typename T>
-struct WithV : Conditional<MakeVolatile, volatile T, T> {};
-
-template <bool MakeConst, bool MakeVolatile, typename T>
-struct WithCV : WithC<MakeConst, typename WithV<MakeVolatile, T>::Type> {};
-
-template <typename T>
-struct CorrespondingUnsigned;
-
-template <>
-struct CorrespondingUnsigned<char> {
-  typedef unsigned char Type;
-};
-template <>
-struct CorrespondingUnsigned<signed char> {
-  typedef unsigned char Type;
-};
-template <>
-struct CorrespondingUnsigned<short> {
-  typedef unsigned short Type;
-};
-template <>
-struct CorrespondingUnsigned<int> {
-  typedef unsigned int Type;
-};
-template <>
-struct CorrespondingUnsigned<long> {
-  typedef unsigned long Type;
-};
-template <>
-struct CorrespondingUnsigned<long long> {
-  typedef unsigned long long Type;
-};
-
-template <typename T, typename CVRemoved = typename RemoveCV<T>::Type,
-          bool IsUnsignedIntegerType =
-              IsUnsigned<CVRemoved>::value && !IsSame<char, CVRemoved>::value>
-struct MakeUnsigned;
-
-template <typename T, typename CVRemoved>
-struct MakeUnsigned<T, CVRemoved, true> {
-  typedef T Type;
-};
-
-template <typename T, typename CVRemoved>
-struct MakeUnsigned<T, CVRemoved, false>
-    : WithCV<IsConst<T>::value, IsVolatile<T>::value,
-             typename CorrespondingUnsigned<CVRemoved>::Type> {};
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct MakeUnsigned
-    : EnableIf<IsIntegral<T>::value &&
-                   !IsSame<bool, typename RemoveCV<T>::Type>::value,
-               typename detail::MakeUnsigned<T> >::Type {};
 
 
 
@@ -915,7 +823,7 @@ struct AddPointer {
 
 
 
-template <bool B, typename T>
+template <bool B, typename T = void>
 struct EnableIf {};
 
 template <typename T>
