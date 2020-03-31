@@ -12,7 +12,6 @@
 #include "MainThreadUtils.h"
 #include "mozilla/Likely.h"
 #include "mozilla/SystemGroup.h"
-#include "mozilla/TypeTraits.h"
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
@@ -321,18 +320,11 @@ class MOZ_IS_SMARTPTR_TO_REFCOUNTED nsMainThreadPtrHandle {
   explicit nsMainThreadPtrHandle(
       already_AddRefed<nsMainThreadPtrHolder<T>> aHolder)
       : mPtr(aHolder) {}
-  nsMainThreadPtrHandle(const nsMainThreadPtrHandle& aOther)
-      : mPtr(aOther.mPtr) {}
-  nsMainThreadPtrHandle(nsMainThreadPtrHandle&& aOther)
-      : mPtr(std::move(aOther.mPtr)) {}
-  nsMainThreadPtrHandle& operator=(const nsMainThreadPtrHandle& aOther) {
-    mPtr = aOther.mPtr;
-    return *this;
-  }
-  nsMainThreadPtrHandle& operator=(nsMainThreadPtrHandle&& aOther) {
-    mPtr = std::move(aOther.mPtr);
-    return *this;
-  }
+  nsMainThreadPtrHandle(const nsMainThreadPtrHandle& aOther) = default;
+  nsMainThreadPtrHandle(nsMainThreadPtrHandle&& aOther) = default;
+  nsMainThreadPtrHandle& operator=(const nsMainThreadPtrHandle& aOther) =
+      default;
+  nsMainThreadPtrHandle& operator=(nsMainThreadPtrHandle&& aOther) = default;
   nsMainThreadPtrHandle& operator=(nsMainThreadPtrHolder<T>* aHolder) {
     mPtr = aHolder;
     return *this;

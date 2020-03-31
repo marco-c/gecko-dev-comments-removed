@@ -20,7 +20,6 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/Maybe.h"       
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/TypeTraits.h"  
 #include "nsAnimationManager.h"  
 #include "nsComputedDOMStyle.h"
 #include "nsDOMMutationObserver.h"    

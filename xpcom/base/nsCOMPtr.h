@@ -27,7 +27,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/TypeTraits.h"
 #include "nsCycleCollectionNoteChild.h"
 #include "nsDebug.h"  
 #include "nsISupportsUtils.h"  

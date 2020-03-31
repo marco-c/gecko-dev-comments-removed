@@ -10,7 +10,6 @@
 
 
 #include "mozilla/Attributes.h"
-#include "mozilla/TypeTraits.h"
 
 #include <cstdint>
 
