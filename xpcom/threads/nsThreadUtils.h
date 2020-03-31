@@ -1092,10 +1092,10 @@ struct NonPointerStorageClass
 
 template <typename T>
 struct NonParameterStorageClass
-    : mozilla::Conditional<std::is_pointer_v<T>,
-                           typename PointerStorageClass<
-                               typename mozilla::RemovePointer<T>::Type>::Type,
-                           typename NonPointerStorageClass<T>::Type> {};
+    : mozilla::Conditional<
+          std::is_pointer_v<T>,
+          typename PointerStorageClass<std::remove_pointer_t<T>>::Type,
+          typename NonPointerStorageClass<T>::Type> {};
 
 
 

@@ -20,6 +20,7 @@
 
 
 
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/AlreadyAddRefed.h"
@@ -203,8 +204,7 @@ namespace mozilla {
 
 
 template <class T>
-using PointedToType =
-    typename mozilla::RemovePointer<decltype(&*mozilla::DeclVal<T>())>::Type;
+using PointedToType = std::remove_pointer_t<decltype(&*mozilla::DeclVal<T>())>;
 }  
 
 #ifdef NSCAP_FEATURE_USE_BASE
