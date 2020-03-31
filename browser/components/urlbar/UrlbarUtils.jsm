@@ -59,36 +59,25 @@ var UrlbarUtils = {
   },
 
   
-  
-  
   RESULT_TYPE: {
-    
     
     TAB_SWITCH: 1,
     
-    
     SEARCH: 2,
-    
     
     URL: 3,
     
-    
     KEYWORD: 4,
-    
     
     OMNIBOX: 5,
     
-    
     REMOTE_TAB: 6,
     
-    
-    
-    
-    
-    
-    
-    
     TIP: 7,
+
+    
+    
+    
   },
 
   
@@ -157,6 +146,16 @@ var UrlbarUtils = {
   
   
   REGEXP_SINGLE_WORD: /^[^\s.?@:/]+\.?$/,
+
+  
+
+
+
+
+
+  getPayloadSchema(type) {
+    return UrlbarUtils.RESULT_PAYLOAD_SCHEMA[type];
+  },
 
   
 
@@ -556,6 +555,232 @@ XPCOMUtils.defineLazyGetter(UrlbarUtils, "strings", () => {
     "chrome://global/locale/autocomplete.properties"
   );
 });
+
+
+
+
+
+UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
+  [UrlbarUtils.RESULT_TYPE.TAB_SWITCH]: {
+    type: "object",
+    required: ["url"],
+    properties: {
+      displayUrl: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+      url: {
+        type: "string",
+      },
+      userContextId: {
+        type: "number",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.SEARCH]: {
+    type: "object",
+    properties: {
+      displayUrl: {
+        type: "string",
+      },
+      engine: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      inPrivateWindow: {
+        type: "boolean",
+      },
+      isPrivateEngine: {
+        type: "boolean",
+      },
+      keyword: {
+        type: "string",
+      },
+      keywordOffer: {
+        type: "number", 
+      },
+      query: {
+        type: "string",
+      },
+      suggestion: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+      url: {
+        type: "string",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.URL]: {
+    type: "object",
+    required: ["url"],
+    properties: {
+      displayUrl: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      tags: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+      },
+      title: {
+        type: "string",
+      },
+      url: {
+        type: "string",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.KEYWORD]: {
+    type: "object",
+    required: ["keyword", "url"],
+    properties: {
+      displayUrl: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      input: {
+        type: "string",
+      },
+      keyword: {
+        type: "string",
+      },
+      postData: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+      url: {
+        type: "string",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.OMNIBOX]: {
+    type: "object",
+    required: ["keyword"],
+    properties: {
+      content: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      keyword: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.REMOTE_TAB]: {
+    type: "object",
+    required: ["device", "url"],
+    properties: {
+      device: {
+        type: "string",
+      },
+      displayUrl: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+      url: {
+        type: "string",
+      },
+    },
+  },
+  [UrlbarUtils.RESULT_TYPE.TIP]: {
+    type: "object",
+    required: ["type"],
+    properties: {
+      
+      
+      buttonText: {
+        type: "string",
+      },
+      
+      buttonTextData: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: {
+            type: "string",
+          },
+          args: {
+            type: "array",
+          },
+        },
+      },
+      buttonUrl: {
+        type: "string",
+      },
+      helpUrl: {
+        type: "string",
+      },
+      icon: {
+        type: "string",
+      },
+      
+      
+      text: {
+        type: "string",
+      },
+      
+      textData: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: {
+            type: "string",
+          },
+          args: {
+            type: "array",
+          },
+        },
+      },
+      
+      
+      
+      
+      type: {
+        type: "string",
+        enum: [
+          "extension",
+          "intervention_clear",
+          "intervention_refresh",
+          "intervention_update_ask",
+          "intervention_update_refresh",
+          "intervention_update_restart",
+          "intervention_update_web",
+          "searchTip_onboard",
+          "searchTip_redirect",
+          "test", 
+        ],
+      },
+    },
+  },
+};
 
 
 
