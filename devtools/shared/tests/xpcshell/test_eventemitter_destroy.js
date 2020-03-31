@@ -5,12 +5,9 @@
 "use strict";
 
 add_task(function() {
-  const { DevToolsLoader, require } = ChromeUtils.import(
+  const { DevToolsLoader } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-
-  
-  require("devtools/shared/event-emitter");
 
   const emitterRef = (function() {
     const loader = new DevToolsLoader();
