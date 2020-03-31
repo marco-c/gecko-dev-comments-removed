@@ -90,6 +90,22 @@ public final class ThreadUtils {
         return sUiHandler;
     }
 
+    
+
+
+
+
+
+    public static void runOnUiThread(final Runnable runnable) {
+        
+        if (isOnUiThread()) {
+            runnable.run();
+            return;
+        }
+
+        postToUiThread(runnable);
+    }
+
     public static void postToUiThread(final Runnable runnable) {
         sUiHandler.post(runnable);
     }
