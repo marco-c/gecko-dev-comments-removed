@@ -4058,6 +4058,10 @@ void JSScript::relazify(JSRuntime* rt) {
 
   
   
+  destroyScriptCounts();
+
+  
+  
   
   
   swapData(scriptData);
