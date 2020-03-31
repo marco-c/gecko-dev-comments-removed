@@ -183,12 +183,12 @@ class nsPluginFrame final : public nsFrame,
 
 
 
-  static void BeginSwapDocShells(nsISupports* aSupports, void*);
+  static void BeginSwapDocShells(nsISupports* aSupports);
   
 
 
 
-  static void EndSwapDocShells(nsISupports* aSupports, void*);
+  static void EndSwapDocShells(nsISupports* aSupports);
 
   nsIWidget* GetWidget() override {
     if (!mInnerView) {

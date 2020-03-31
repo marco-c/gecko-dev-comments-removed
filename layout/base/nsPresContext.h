@@ -1070,12 +1070,6 @@ class nsPresContext : public nsISupports,
   
   void UIResolutionChangedInternalScale(double aScale);
 
-  
-  
-  
-  static mozilla::CallState UIResolutionChangedSubdocumentCallback(
-      mozilla::dom::Document&, void* aData);
-
   void SetImgAnimations(nsIContent* aParent, uint16_t aMode);
   void SetSMILAnimations(mozilla::dom::Document* aDoc, uint16_t aNewMode,
                          uint16_t aOldMode);
@@ -1089,11 +1083,6 @@ class nsPresContext : public nsISupports,
   void GetUserPreferences();
 
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
-
-  static mozilla::CallState NotifyDidPaintSubdocumentCallback(
-      mozilla::dom::Document&, void* aData);
-  static mozilla::CallState NotifyRevokingDidPaintSubdocumentCallback(
-      mozilla::dom::Document&, void* aData);
 
  public:
   

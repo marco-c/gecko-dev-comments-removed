@@ -9,7 +9,7 @@
 #include "mozilla/EventStates.h"  
 #include "mozilla/FlushType.h"    
 #include "mozilla/MozPromise.h"   
-#include "mozilla/Saturate.h"     
+#include "mozilla/FunctionRef.h"  
 #include "nsAutoPtr.h"            
 #include "nsCOMArray.h"           
 #include "nsCompatibility.h"      
@@ -296,7 +296,7 @@ class DocHeaderData {
 };
 
 class ExternalResourceMap {
-  typedef CallState (*SubDocEnumFunc)(Document& aDocument, void* aData);
+  using SubDocEnumFunc = FunctionRef<CallState(Document&)>;
 
  public:
   
@@ -339,7 +339,7 @@ class ExternalResourceMap {
 
 
 
-  void EnumerateResources(SubDocEnumFunc aCallback, void* aData);
+  void EnumerateResources(SubDocEnumFunc aCallback);
 
   
 
@@ -2276,8 +2276,8 @@ class Document : public nsINode,
 
 
 
-  typedef CallState (*SubDocEnumFunc)(Document&, void* aData);
-  void EnumerateSubDocuments(SubDocEnumFunc aCallback, void* aData);
+  using SubDocEnumFunc = FunctionRef<CallState(Document&)>;
+  void EnumerateSubDocuments(SubDocEnumFunc aCallback);
 
   
 
@@ -2590,7 +2590,7 @@ class Document : public nsINode,
 
 
 
-  void EnumerateExternalResources(SubDocEnumFunc aCallback, void* aData);
+  void EnumerateExternalResources(SubDocEnumFunc aCallback);
 
   dom::ExternalResourceMap& ExternalResourceMap() {
     return mExternalResourceMap;
@@ -2658,9 +2658,8 @@ class Document : public nsINode,
   void RegisterActivityObserver(nsISupports* aSupports);
   bool UnregisterActivityObserver(nsISupports* aSupports);
   
-  typedef void (*ActivityObserverEnumerator)(nsISupports*, void*);
-  void EnumerateActivityObservers(ActivityObserverEnumerator aEnumerator,
-                                  void* aData);
+  using ActivityObserverEnumerator = FunctionRef<void(nsISupports*)>;
+  void EnumerateActivityObservers(ActivityObserverEnumerator aEnumerator);
 
   
   

@@ -490,31 +490,34 @@ static nsresult EnsureSettingsHasPrinterNameSet(
 #endif
 }
 
-static CallState DocHasPrintCallbackCanvas(Document& aDoc, void* aData) {
+static bool DocHasPrintCallbackCanvas(Document& aDoc) {
   Element* root = aDoc.GetRootElement();
   if (!root) {
-    return CallState::Continue;
+    return false;
   }
+  
+  
   RefPtr<nsContentList> canvases =
       NS_GetContentList(root, kNameSpaceID_XHTML, NS_LITERAL_STRING("canvas"));
   uint32_t canvasCount = canvases->Length(true);
   for (uint32_t i = 0; i < canvasCount; ++i) {
-    HTMLCanvasElement* canvas =
-        HTMLCanvasElement::FromNodeOrNull(canvases->Item(i, false));
+    auto* canvas = HTMLCanvasElement::FromNodeOrNull(canvases->Item(i, false));
     if (canvas && canvas->GetMozPrintCallback()) {
-      
-      
-      *static_cast<bool*>(aData) = true;
-      return CallState::Stop;
+      return true;
     }
   }
-  return CallState::Continue;
-}
 
-static bool AnySubdocHasPrintCallbackCanvas(Document& aDoc) {
   bool result = false;
-  aDoc.EnumerateSubDocuments(DocHasPrintCallbackCanvas,
-                             static_cast<void*>(&result));
+
+  auto checkSubDoc = [&result](Document& aSubDoc) {
+    if (DocHasPrintCallbackCanvas(aSubDoc)) {
+      result = true;
+      return CallState::Stop;
+    }
+    return CallState::Continue;
+  };
+
+  aDoc.EnumerateSubDocuments(checkSubDoc);
   return result;
 }
 
@@ -587,11 +590,7 @@ nsresult nsPrintJob::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
     }
   }
 
-  bool hasMozPrintCallback = false;
-  DocHasPrintCallbackCanvas(*aOriginalDoc,
-                            static_cast<void*>(&hasMozPrintCallback));
-  mHasMozPrintCallback =
-      hasMozPrintCallback || AnySubdocHasPrintCallbackCanvas(*aOriginalDoc);
+  mHasMozPrintCallback = DocHasPrintCallbackCanvas(*aOriginalDoc);
 
   return NS_OK;
 }

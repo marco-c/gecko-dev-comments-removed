@@ -1395,20 +1395,6 @@ void nsPresContext::UIResolutionChangedSync() {
   }
 }
 
-
-CallState nsPresContext::UIResolutionChangedSubdocumentCallback(
-    dom::Document& aDocument, void* aData) {
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    
-    
-    
-    
-    double scale = *static_cast<double*>(aData);
-    pc->UIResolutionChangedInternalScale(scale);
-  }
-  return CallState::Continue;
-}
-
 static void NotifyTabUIResolutionChanged(nsIRemoteTab* aTab, void* aArg) {
   aTab->NotifyResolutionChanged();
 }
@@ -1439,8 +1425,17 @@ void nsPresContext::UIResolutionChangedInternalScale(double aScale) {
     NotifyChildrenUIResolutionChanged(window);
   }
 
-  mDocument->EnumerateSubDocuments(UIResolutionChangedSubdocumentCallback,
-                                   &aScale);
+  auto recurse = [aScale](dom::Document& aSubDoc) {
+    if (nsPresContext* pc = aSubDoc.GetPresContext()) {
+      
+      
+      
+      
+      pc->UIResolutionChangedInternalScale(aScale);
+    }
+    return CallState::Continue;
+  };
+  mDocument->EnumerateSubDocuments(recurse);
 }
 
 void nsPresContext::EmulateMedium(nsAtom* aMediaType) {
@@ -1503,15 +1498,6 @@ void nsPresContext::PostRebuildAllStyleDataEvent(
   RestyleManager()->RebuildAllStyleData(aExtraHint, aRestyleHint);
 }
 
-static CallState MediaFeatureValuesChangedAllDocumentsCallback(
-    Document& aDocument, void* aChange) {
-  auto* change = static_cast<const MediaFeatureChange*>(aChange);
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    pc->MediaFeatureValuesChangedAllDocuments(*change);
-  }
-  return CallState::Continue;
-}
-
 void nsPresContext::MediaFeatureValuesChangedAllDocuments(
     const MediaFeatureChange& aChange) {
   
@@ -1522,9 +1508,13 @@ void nsPresContext::MediaFeatureValuesChangedAllDocuments(
   mDocument->ImageTracker()->MediaFeatureValuesChangedAllDocuments(aChange);
 
   
-  mDocument->EnumerateSubDocuments(
-      MediaFeatureValuesChangedAllDocumentsCallback,
-      const_cast<MediaFeatureChange*>(&aChange));
+  auto recurse = [&aChange](dom::Document& aSubDoc) {
+    if (nsPresContext* pc = aSubDoc.GetPresContext()) {
+      pc->MediaFeatureValuesChangedAllDocuments(aChange);
+    }
+    return CallState::Continue;
+  };
+  mDocument->EnumerateSubDocuments(recurse);
 }
 
 void nsPresContext::FlushPendingMediaFeatureValuesChanged() {
@@ -1811,19 +1801,6 @@ void nsPresContext::FireDOMPaintEvent(
                                     static_cast<Event*>(event), this, nullptr);
 }
 
-static CallState MayHavePaintEventListenerSubdocumentCallback(
-    Document& aDocument, void* aData) {
-  bool* result = static_cast<bool*>(aData);
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    *result = pc->MayHavePaintEventListenerInSubDocument();
-
-    
-    
-    return !*result ? CallState::Continue : CallState::Stop;
-  }
-  return CallState::Continue;
-}
-
 static bool MayHavePaintEventListener(nsPIDOMWindowInner* aInnerWindow) {
   if (!aInnerWindow) return false;
   if (aInnerWindow->HasPaintEventListeners()) return true;
@@ -1872,8 +1849,17 @@ bool nsPresContext::MayHavePaintEventListenerInSubDocument() {
   }
 
   bool result = false;
-  mDocument->EnumerateSubDocuments(MayHavePaintEventListenerSubdocumentCallback,
-                                   &result);
+  auto recurse = [&result](dom::Document& aSubDoc) {
+    if (nsPresContext* pc = aSubDoc.GetPresContext()) {
+      if (pc->MayHavePaintEventListenerInSubDocument()) {
+        result = true;
+        return CallState::Stop;
+      }
+    }
+    return CallState::Continue;
+  };
+
+  mDocument->EnumerateSubDocuments(recurse);
   return result;
 }
 
@@ -1977,30 +1963,6 @@ void nsPresContext::ClearNotifySubDocInvalidationData(
   aContainer->SetUserData(&gNotifySubDocInvalidationData, nullptr);
 }
 
-struct NotifyDidPaintSubdocumentCallbackClosure {
-  TransactionId mTransactionId;
-  const mozilla::TimeStamp& mTimeStamp;
-};
-
-CallState nsPresContext::NotifyDidPaintSubdocumentCallback(
-    dom::Document& aDocument, void* aData) {
-  auto* closure = static_cast<NotifyDidPaintSubdocumentCallbackClosure*>(aData);
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    pc->NotifyDidPaintForSubtree(closure->mTransactionId, closure->mTimeStamp);
-  }
-  return CallState::Continue;
-}
-
-
-CallState nsPresContext::NotifyRevokingDidPaintSubdocumentCallback(
-    dom::Document& aDocument, void* aData) {
-  auto* closure = static_cast<NotifyDidPaintSubdocumentCallbackClosure*>(aData);
-  if (nsPresContext* pc = aDocument.GetPresContext()) {
-    pc->NotifyRevokingDidPaint(closure->mTransactionId);
-  }
-  return CallState::Continue;
-}
-
 class DelayedFireDOMPaintEvent : public Runnable {
  public:
   DelayedFireDOMPaintEvent(
@@ -2064,10 +2026,13 @@ void nsPresContext::NotifyRevokingDidPaint(TransactionId aTransactionId) {
     transaction->mIsWaitingForPreviousTransaction = true;
   }
 
-  NotifyDidPaintSubdocumentCallbackClosure closure = {aTransactionId,
-                                                      mozilla::TimeStamp()};
-  mDocument->EnumerateSubDocuments(
-      nsPresContext::NotifyRevokingDidPaintSubdocumentCallback, &closure);
+  auto recurse = [&aTransactionId](dom::Document& aSubDoc) {
+    if (nsPresContext* pc = aSubDoc.GetPresContext()) {
+      pc->NotifyRevokingDidPaint(aTransactionId);
+    }
+    return CallState::Continue;
+  };
+  mDocument->EnumerateSubDocuments(recurse);
 }
 
 void nsPresContext::NotifyDidPaintForSubtree(
@@ -2131,10 +2096,13 @@ void nsPresContext::NotifyDidPaintForSubtree(
     nsContentUtils::AddScriptRunner(ev);
   }
 
-  NotifyDidPaintSubdocumentCallbackClosure closure = {aTransactionId,
-                                                      aTimeStamp};
-  mDocument->EnumerateSubDocuments(
-      nsPresContext::NotifyDidPaintSubdocumentCallback, &closure);
+  auto recurse = [&aTransactionId, &aTimeStamp](dom::Document& aSubDoc) {
+    if (nsPresContext* pc = aSubDoc.GetPresContext()) {
+      pc->NotifyDidPaintForSubtree(aTransactionId, aTimeStamp);
+    }
+    return CallState::Continue;
+  };
+  mDocument->EnumerateSubDocuments(recurse);
 }
 
 already_AddRefed<nsITimer> nsPresContext::CreateTimer(
