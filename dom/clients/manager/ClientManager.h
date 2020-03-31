@@ -8,7 +8,6 @@
 
 #include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/ClientThing.h"
-#include "mozilla/dom/PClientManagerChild.h"
 
 class nsIPrincipal;
 
@@ -74,29 +73,7 @@ class ClientManager final : public ClientThing<ClientManagerChild> {
   
   mozilla::dom::WorkerPrivate* GetWorkerPrivate() const;
 
-  
-  static bool ExpectOrForgetFutureSource(
-      const ClientInfo& aClientInfo,
-      bool (PClientManagerChild::*aMethod)(const IPCClientInfo&));
-
  public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static bool ExpectFutureSource(const ClientInfo& aClientInfo);
-
-  
-  
-  static bool ForgetFutureSource(const ClientInfo& aClientInfo);
-
   
   
   
