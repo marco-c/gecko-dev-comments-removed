@@ -753,40 +753,6 @@ namespace detail {
 enum Voidness { TIsVoid, TIsNotVoid };
 
 template <typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
-struct AddLvalueReferenceHelper;
-
-template <typename T>
-struct AddLvalueReferenceHelper<T, TIsVoid> {
-  typedef void Type;
-};
-
-template <typename T>
-struct AddLvalueReferenceHelper<T, TIsNotVoid> {
-  typedef T& Type;
-};
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct AddLvalueReference : detail::AddLvalueReferenceHelper<T> {};
-
-namespace detail {
-
-template <typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
 struct AddRvalueReferenceHelper;
 
 template <typename T>
