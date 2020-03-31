@@ -1,27 +1,27 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# /!\ Use js_option() instead of option() in this file. /!\
-# =========================================================
+
+
+
+
+
+
+
 
 @depends(build_project)
 def building_js(build_project):
     return build_project == 'js'
 
-# Exception to the rule above: JS_STANDALONE is a special option that doesn't
-# want the js_option treatment. When we're done merging js/src/configure and
-# top-level configure, it can go away, although the JS_STANDALONE config
-# will still need to be set depending on building_js above.
+
+
+
+
 option(env='JS_STANDALONE', default=building_js,
        help='Reserved for internal use')
 
-# SmooshMonkey (new frontend)
-# ==================================================
 
-# Define here in order to use the option from bindgen.configure.
+
+
+
 js_option('--enable-smoosh', default=False,
           help='Enable SmooshMonkey (new JS engine frontend)')
 
@@ -63,8 +63,8 @@ set_define('JS_PUNBOX64', depends(target)(lambda t: t.bitness == 64 or None))
 set_define('JS_NUNBOX32', depends(target)(lambda t: t.bitness == 32 or None))
 
 
-# SpiderMonkey as a shared library, and how its symbols are exported
-# ==================================================================
+
+
 js_option('--disable-shared-js', when=js_standalone,
           help='{Create|Do not create} a shared library')
 
@@ -109,8 +109,8 @@ js_option(env='NO_RUST_PANIC_HOOK', when=js_standalone,
 set_define('NO_RUST_PANIC_HOOK', True, when='NO_RUST_PANIC_HOOK')
 
 
-# JIT support
-# =======================================================
+
+
 @depends(target)
 def ion_default(target):
     if target.cpu in ('x86', 'x86_64', 'arm', 'aarch64', 'mips32', 'mips64'):
@@ -123,8 +123,8 @@ js_option('--enable-ion',
 
 set_config('ENABLE_ION', depends_if('--enable-ion')(lambda x: True))
 
-# JIT code simulator for cross compiles
-# =======================================================
+
+
 js_option('--enable-simulator', choices=('arm', 'arm64', 'mips32', 'mips64'),
           nargs=1,
           help='Enable a JIT code simulator for the specified architecture')
@@ -187,8 +187,8 @@ set_define('JS_CODEGEN_MIPS64', jit_codegen.mips64)
 set_define('JS_CODEGEN_X86', jit_codegen.x86)
 set_define('JS_CODEGEN_X64', jit_codegen.x64)
 
-# Profiling
-# =======================================================
+
+
 js_option('--enable-instruments', env='MOZ_INSTRUMENTS',
           help='Enable instruments remote profiling')
 
@@ -279,10 +279,10 @@ set_define('JS_GC_ZEAL',
            depends_if('--enable-gczeal')(lambda _: True))
 
 
-# Use a smaller chunk size for GC chunks
-# ========================================================
-# Use large (1MB) chunks by default.  This option can be used to give
-# smaller (currently 256K) chunks.
+
+
+
+
 js_option('--enable-small-chunk-size',
           help='Allocate memory for JS GC things in smaller chunks')
 
@@ -290,8 +290,8 @@ set_define('JS_GC_SMALL_CHUNK_SIZE',
            depends(when='--enable-small-chunk-size')(lambda: True))
 
 
-# Trace logging.
-# =======================================================
+
+
 @depends(milestone)
 def default_trace_logging(milestone):
     return milestone.is_nightly
@@ -307,8 +307,8 @@ set_define('JS_TRACE_LOGGING',
            depends_if('--enable-trace-logging')(lambda x: True))
 
 
-# Enable breakpoint for artificial OOMs
-# =======================================================
+
+
 js_option('--enable-oom-breakpoint',
           help='Enable a breakpoint function for artificial OOMs')
 
@@ -337,7 +337,7 @@ set_define('JS_JITSPEW',
 set_config('JS_JITSPEW',
            depends_if('--enable-jitspew')(lambda _: True))
 
-# Also enable the structured spewer
+
 set_define('JS_STRUCTURED_SPEW',
            depends_if('--enable-jitspew')(lambda _: True))
 set_config('JS_STRUCTURED_SPEW',
@@ -373,10 +373,10 @@ def jit_disasm_arm64(ion_enabled, spew, simulator, target, debug):
 set_config('JS_DISASM_ARM64', jit_disasm_arm64)
 set_define('JS_DISASM_ARM64', jit_disasm_arm64)
 
-# When enabled, masm will generate assumeUnreachable calls that act as
-# assertions in the generated code. This option is worth disabling when you
-# have to track mutated values through the generated code, to avoid constantly
-# dumping registers on and off the stack.
+
+
+
+
 js_option('--enable-masm-verbose',
           default=depends(when=moz_debug)(lambda: True),
           help='{Enable|Disable} MacroAssembler verbosity of generated code.')
@@ -397,8 +397,8 @@ def more_deterministic(value):
 set_define('JS_MORE_DETERMINISTIC', more_deterministic)
 
 
-# CTypes
-# =======================================================
+
+
 @depends(building_js)
 def ctypes_default(building_js):
     return not building_js
@@ -427,8 +427,8 @@ def ctypes_and_compile_environment(ctypes, compile_environment):
 include('ffi.configure', when=ctypes_and_compile_environment)
 
 
-# Enable pipeline operator
-# ===================================================
+
+
 js_option('--enable-pipeline-operator', default=False, help='Enable pipeline operator')
 
 @depends('--enable-pipeline-operator')
@@ -441,8 +441,8 @@ set_define('ENABLE_PIPELINE_OPERATOR', enable_pipeline_operator)
 
 
 
-# Experimental support for BinAST
-# ==============================================================
+
+
 
 @depends(milestone.is_nightly)
 def default_binast(is_nightly):
@@ -456,16 +456,16 @@ set_config('JS_BUILD_BINAST', depends_if('--enable-binast')(lambda x: True))
 set_define('JS_BUILD_BINAST', depends_if('--enable-binast')(lambda x: True))
 
 
-# SIMD acceleration for encoding_rs
-# ==============================================================
+
+
 
 js_option('--enable-rust-simd', env='MOZ_RUST_SIMD',
           help='Enable explicit SIMD in Rust code.')
 
 @depends('--enable-rust-simd', target)
 def rust_simd(value, target):
-    # As of 2019-09-17, the simd-accel feature of encoding_rs has not
-    # been properly set up outside aarch64, armv7, x86 and x86_64.
+    
+    
     if target.cpu in ('aarch64', 'arm', 'x86', 'x86_64') and value:
         return True
 
@@ -473,11 +473,11 @@ set_config('MOZ_RUST_SIMD', rust_simd)
 set_define('MOZ_RUST_SIMD', rust_simd)
 
 
-# Experimental support for wasm code generation with Cranelift
-#
-# Note, you may have to disable features not supported by Cranelift
-# (multi-value, threads) to make Cranelift actually available
-# ==============================================================
+
+
+
+
+
 
 js_option('--enable-cranelift',
           default=milestone.is_nightly,
@@ -487,8 +487,8 @@ set_config('ENABLE_WASM_CRANELIFT', depends_if('--enable-cranelift')(lambda x: T
 set_define('ENABLE_WASM_CRANELIFT', depends_if('--enable-cranelift')(lambda x: True))
 
 
-# Support for debugging code generated by wasm backends
-# =====================================================
+
+
 
 js_option('--enable-wasm-codegen-debug',
           default=depends(when=moz_debug)(lambda: True),
@@ -498,8 +498,8 @@ set_config('WASM_CODEGEN_DEBUG', depends_if('--enable-wasm-codegen-debug')(lambd
 set_define('WASM_CODEGEN_DEBUG', depends_if('--enable-wasm-codegen-debug')(lambda x: True))
 
 
-# Support for typed objects.
-# =====================================================
+
+
 
 @depends(milestone.is_nightly)
 def default_typed_objects(is_nightly):
@@ -513,8 +513,8 @@ set_config('JS_HAS_TYPED_OBJECTS', depends_if('--enable-typed-objects')(lambda x
 set_define('JS_HAS_TYPED_OBJECTS', depends_if('--enable-typed-objects')(lambda x: True))
 
 
-# Support for WebAssembly bulk memory operations.
-# =====================================================
+
+
 
 @depends(milestone.is_nightly)
 def default_wasm_bulk_memory(is_nightly):
@@ -528,8 +528,8 @@ set_config('ENABLE_WASM_BULKMEM_OPS', depends_if('--enable-wasm-bulk-memory')(la
 set_define('ENABLE_WASM_BULKMEM_OPS', depends_if('--enable-wasm-bulk-memory')(lambda x: True))
 
 
-# Support for WebAssembly reference types.
-# =====================================================
+
+
 
 @depends(milestone.is_nightly)
 def default_wasm_reftypes(is_nightly):
@@ -543,8 +543,8 @@ set_config('ENABLE_WASM_REFTYPES', depends_if('--enable-wasm-reftypes')(lambda x
 set_define('ENABLE_WASM_REFTYPES', depends_if('--enable-wasm-reftypes')(lambda x: True))
 
 
-# Support for WebAssembly I64/BigInt conversion
-# ===========================================================================
+
+
 
 @depends(milestone.is_nightly)
 def default_wasm_bigint(is_nightly):
@@ -558,8 +558,8 @@ set_config('ENABLE_WASM_BIGINT', depends_if('--enable-wasm-bigint')(lambda x: Tr
 set_define('ENABLE_WASM_BIGINT', depends_if('--enable-wasm-bigint')(lambda x: True))
 
 
-# Support for WebAssembly GC.
-# ===========================
+
+
 
 @depends(milestone.is_nightly, '--enable-wasm-reftypes')
 def default_wasm_gc(is_nightly, reftypes):
@@ -574,10 +574,10 @@ set_config('ENABLE_WASM_GC', depends_if('--enable-wasm-gc')(lambda x: True))
 set_define('ENABLE_WASM_GC', depends_if('--enable-wasm-gc')(lambda x: True))
 
 
-# Support for WebAssembly private ref types.
-# Prevent (ref T) types from being exposed to JS content so that wasm need do
-# no typechecking at the JS/wasm boundary
-# ===========================================================================
+
+
+
+
 
 @depends(milestone.is_nightly, '--enable-wasm-gc')
 def default_wasm_private_reftypes(is_nightly, gc):
@@ -592,9 +592,9 @@ set_config('WASM_PRIVATE_REFTYPES', depends_if('--enable-wasm-private-reftypes')
 set_define('WASM_PRIVATE_REFTYPES', depends_if('--enable-wasm-private-reftypes')(lambda x: True))
 
 
-# Support for the WebAssembly multi-value proposal.
-# Do not remove until Cranelift supports multi-value.
-# =====================================================
+
+
+
 
 @depends(milestone.is_nightly, building_js)
 def default_wasm_multi_value(is_nightly, building_js):
@@ -609,28 +609,26 @@ set_config('ENABLE_WASM_MULTI_VALUE', depends_if('--enable-wasm-multi-value')(la
 set_define('ENABLE_WASM_MULTI_VALUE', depends_if('--enable-wasm-multi-value')(lambda x: True))
 
 
-# Support for WebAssembly shared memory and atomics.
-#
-# This affects the JS shell only and here to allow the use of
-# Cranelift in the shell.  Once Cranelift supports shared memory
-# and atomics it can go away.
-# =====================================================
-
-@depends(milestone.is_nightly)
-def default_wasm_threads(is_nightly):
-    return is_nightly
-
-js_option('--enable-wasm-threads',
-          default=default_wasm_threads,
-          help='{Enable|Disable} WebAssembly shared memory and atomics')
-
-set_config('ENABLE_WASM_THREADS', depends_if('--enable-wasm-threads')(lambda x: True))
-set_define('ENABLE_WASM_THREADS', depends_if('--enable-wasm-threads')(lambda x: True))
 
 
 
-# Initial support for new regexp engine
-# ==================================================
+
+
+
+
+js_option('--disable-shared-memory', help='Disable JS/WebAssembly shared memory and atomics')
+
+@depends('--disable-shared-memory')
+def enable_shared_memory(value):
+    if value:
+        return True
+
+set_config('ENABLE_SHARED_MEMORY', enable_shared_memory)
+set_define('ENABLE_SHARED_MEMORY', enable_shared_memory)
+
+
+
+
 
 js_option('--enable-new-regexp', default=False, help='Enable new regexp engine')
 
