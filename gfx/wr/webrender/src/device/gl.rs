@@ -1601,10 +1601,6 @@ impl Device {
         &self.gl
     }
 
-    pub fn update_program_cache(&mut self, cached_programs: Rc<ProgramCache>) {
-        self.cached_programs = Some(cached_programs);
-    }
-
     
     
     

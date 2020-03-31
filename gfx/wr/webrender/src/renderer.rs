@@ -2572,12 +2572,6 @@ impl Renderer {
 
     
     
-    pub fn update_program_cache(&mut self, cached_programs: Rc<ProgramCache>) {
-        self.device.update_program_cache(cached_programs);
-    }
-
-    
-    
     
     pub fn update(&mut self) {
         profile_scope!("update");
