@@ -1276,47 +1276,68 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   WSFragment* afterRun =
       aEndObject->FindNearestRun(aEndObject->mScanStartPoint, true);
 
-  
-  if (afterRun && (afterRun->mType & WSType::leadingWS)) {
-    nsresult rv = aEndObject->DeleteRange(aEndObject->mScanStartPoint,
-                                          afterRun->EndPoint());
-    if (NS_FAILED(rv)) {
-      NS_WARNING("WSRunObject::DeleteRange() failed");
-      return rv;
-    }
+  if (!beforeRun && !afterRun) {
+    return NS_OK;
   }
-  
-  if (afterRun && afterRun->mType == WSType::normalWS && !aEndObject->mPRE) {
-    if ((beforeRun && (beforeRun->mType & WSType::leadingWS)) ||
-        (!beforeRun && StartsFromHardLineBreak())) {
+
+  if (afterRun) {
+    
+    if (afterRun->mType & WSType::leadingWS) {
       
       
-      EditorDOMPointInText nextCharOfStartOfEnd =
-          aEndObject->GetNextCharPoint(aEndObject->mScanStartPoint);
-      if (nextCharOfStartOfEnd.IsSet() &&
-          !nextCharOfStartOfEnd.IsEndOfContainer() &&
-          nextCharOfStartOfEnd.IsCharASCIISpace()) {
-        nsresult rv = aEndObject->InsertNBSPAndRemoveFollowingASCIIWhitespaces(
-            nextCharOfStartOfEnd);
-        if (NS_FAILED(rv)) {
-          NS_WARNING(
-              "WSRunObject::InsertNBSPAndRemoveFollowingASCIIWhitespaces() "
-              "failed");
-          return rv;
+      AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
+      nsresult rv = aEndObject->DeleteRange(aEndObject->mScanStartPoint,
+                                            afterRun->EndPoint());
+      if (NS_FAILED(rv)) {
+        NS_WARNING("WSRunObject::DeleteRange() failed");
+        return rv;
+      }
+    }
+    
+    else if (afterRun->mType == WSType::normalWS && !aEndObject->mPRE) {
+      if ((beforeRun && (beforeRun->mType & WSType::leadingWS)) ||
+          (!beforeRun && StartsFromHardLineBreak())) {
+        
+        
+        EditorDOMPointInText nextCharOfStartOfEnd =
+            aEndObject->GetNextCharPoint(aEndObject->mScanStartPoint);
+        if (nextCharOfStartOfEnd.IsSet() &&
+            !nextCharOfStartOfEnd.IsEndOfContainer() &&
+            nextCharOfStartOfEnd.IsCharASCIISpace()) {
+          
+          
+          AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
+          nsresult rv =
+              aEndObject->InsertNBSPAndRemoveFollowingASCIIWhitespaces(
+                  nextCharOfStartOfEnd);
+          if (NS_FAILED(rv)) {
+            NS_WARNING(
+                "WSRunObject::InsertNBSPAndRemoveFollowingASCIIWhitespaces() "
+                "failed");
+            return rv;
+          }
         }
       }
     }
   }
+
+  if (!beforeRun) {
+    return NS_OK;
+  }
+
   
-  if (beforeRun && (beforeRun->mType & WSType::trailingWS)) {
+  if (beforeRun->mType & WSType::trailingWS) {
     nsresult rv = DeleteRange(beforeRun->StartPoint(), mScanStartPoint);
     if (NS_FAILED(rv)) {
       NS_WARNING("WSRunObject::DeleteRange() failed");
       return rv;
     }
-  } else if (beforeRun && beforeRun->mType == WSType::normalWS && !mPRE) {
-    if ((afterRun && (afterRun->mType & WSType::trailingWS)) ||
-        (afterRun && afterRun->mType == WSType::normalWS) ||
+    return NS_OK;
+  }
+
+  if (beforeRun->mType == WSType::normalWS && !mPRE) {
+    if ((afterRun && ((afterRun->mType & WSType::trailingWS) ||
+                      afterRun->mType == WSType::normalWS)) ||
         (!afterRun && aEndObject->EndsByBlockBoundary())) {
       
       
@@ -1362,6 +1383,9 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
     EditorDOMPointInText atNextCharOfStart = GetNextCharPoint(mScanStartPoint);
     if (atNextCharOfStart.IsSet() && !atNextCharOfStart.IsEndOfContainer() &&
         atNextCharOfStart.IsCharASCIISpace()) {
+      
+      
+      AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
       nsresult rv =
           InsertNBSPAndRemoveFollowingASCIIWhitespaces(atNextCharOfStart);
       if (NS_FAILED(rv)) {
