@@ -102,8 +102,8 @@ class MediaControlService final : public nsIObserver {
     uint64_t GetControllersNum() const;
 
     
-    void ControllerPlaybackStateChanged(MediaSessionPlaybackState aState);
-    void ControllerMetadataChanged(const MediaMetadataBase& aMetadata);
+    void MainControllerPlaybackStateChanged(MediaSessionPlaybackState aState);
+    void MainControllerMetadataChanged(const MediaMetadataBase& aMetadata);
 
    private:
     void UpdateMainController(MediaController* aController);
