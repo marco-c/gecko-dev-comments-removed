@@ -79,30 +79,6 @@ struct IsVoidHelper<void> : TrueType {};
 template <typename T>
 struct IsVoid : detail::IsVoidHelper<typename RemoveCV<T>::Type> {};
 
-namespace detail {
-
-template <typename T>
-struct IsArrayHelper : FalseType {};
-
-template <typename T, decltype(sizeof(1)) N>
-struct IsArrayHelper<T[N]> : TrueType {};
-
-template <typename T>
-struct IsArrayHelper<T[]> : TrueType {};
-
-}  
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsArray : detail::IsArrayHelper<typename RemoveCV<T>::Type> {};
-
 
 
 
