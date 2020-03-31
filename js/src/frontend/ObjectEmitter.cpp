@@ -15,6 +15,7 @@
 #include "js/Id.h"                     
 #include "js/Value.h"                  
 #include "vm/BytecodeUtil.h"           
+#include "vm/FunctionPrefixKind.h"     
 #include "vm/JSContext.h"              
 #include "vm/NativeObject.h"           
 #include "vm/ObjectGroup.h"            

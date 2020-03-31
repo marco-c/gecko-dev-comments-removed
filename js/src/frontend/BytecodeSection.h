@@ -33,8 +33,9 @@
 #include "js/TypeDecls.h"               
 #include "js/Value.h"                   
 #include "js/Vector.h"                  
-#include "vm/JSScript.h"                
 #include "vm/Opcodes.h"                 
+#include "vm/SharedStencil.h"           
+#include "vm/TryNoteKind.h"             
 
 namespace js {
 

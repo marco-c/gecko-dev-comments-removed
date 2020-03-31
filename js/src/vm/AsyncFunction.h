@@ -8,6 +8,7 @@
 #define vm_AsyncFunction_h
 
 #include "js/Class.h"
+#include "vm/AsyncFunctionResolveKind.h"  
 #include "vm/GeneratorObject.h"
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
@@ -29,8 +30,6 @@ MOZ_MUST_USE bool AsyncFunctionAwaitedFulfilled(
 MOZ_MUST_USE bool AsyncFunctionAwaitedRejected(
     JSContext* cx, Handle<AsyncFunctionGeneratorObject*> generator,
     HandleValue reason);
-
-enum class AsyncFunctionResolveKind { Fulfill, Reject };
 
 
 

@@ -12,47 +12,13 @@
 
 #include "jstypes.h"
 #include "js/CompileOptions.h"
+#include "vm/TryNoteKind.h"  
 
 
 
 
 
 namespace js {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum TryNoteKind {
-  JSTRY_CATCH,
-  JSTRY_FINALLY,
-  JSTRY_FOR_IN,
-  JSTRY_DESTRUCTURING,
-  JSTRY_FOR_OF,
-  JSTRY_FOR_OF_ITERCLOSE,
-  JSTRY_LOOP
-};
 
 
 

@@ -42,19 +42,17 @@
 #include "js/RootingAPI.h"                 
 #include "js/TypeDecls.h"                  
 #include "vm/BytecodeUtil.h"               
+#include "vm/CheckIsCallableKind.h"        
+#include "vm/CheckIsObjectKind.h"          
+#include "vm/FunctionPrefixKind.h"         
+#include "vm/GeneratorResumeKind.h"        
 #include "vm/Instrumentation.h"            
-#include "vm/Interpreter.h"  
-#include "vm/Iteration.h"    
-#include "vm/JSFunction.h"   
-#include "vm/JSScript.h"  
-#include "vm/Runtime.h"   
-#include "vm/StringType.h"  
-
-namespace js {
-
-enum class GeneratorResumeKind;
-
-}  
+#include "vm/Iteration.h"                  
+#include "vm/JSFunction.h"                 
+#include "vm/JSScript.h"     
+#include "vm/Runtime.h"      
+#include "vm/StringType.h"   
+#include "vm/TryNoteKind.h"  
 
 namespace js {
 namespace frontend {
