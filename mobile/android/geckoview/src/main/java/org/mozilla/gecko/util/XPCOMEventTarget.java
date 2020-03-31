@@ -10,8 +10,6 @@ import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.geckoview.BuildConfig;
 
-import android.support.annotation.NonNull;
-
 
 
 
@@ -38,21 +36,6 @@ public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarg
         return mLauncherThread;
     }
     private static IXPCOMEventTarget mLauncherThread = null;
-
-    
-
-
-
-    public static void runOnLauncherThread(@NonNull final Runnable runnable) {
-        final IXPCOMEventTarget launcherThread = launcherThread();
-        if (launcherThread.isOnCurrentThread()) {
-            
-            runnable.run();
-            return;
-        }
-
-        launcherThread.execute(runnable);
-    }
 
     public static void assertOnLauncherThread() {
         if (BuildConfig.DEBUG && !launcherThread().isOnCurrentThread()) {
