@@ -135,6 +135,8 @@ class CookieJarSettings final : public nsICookieJarSettings {
   
   bool HasBeenChanged() const { return mToBeMerged; }
 
+  void UpdateIsOnContentBlockingAllowList(nsIChannel* aChannel);
+
  private:
   enum State {
     
@@ -150,6 +152,7 @@ class CookieJarSettings final : public nsICookieJarSettings {
 
   uint32_t mCookieBehavior;
   CookiePermissionList mCookiePermissions;
+  bool mIsOnContentBlockingAllowList;
 
   State mState;
 
