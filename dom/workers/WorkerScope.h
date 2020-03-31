@@ -234,6 +234,12 @@ class WorkerGlobalScope : public DOMEventTargetHelper,
   uint64_t WindowID() const;
 
   void FirstPartyStorageAccessGranted();
+
+  
+  
+  friend WorkerPrivate;
+  void WorkerPrivateSaysForbidScript() { StartForbiddingScript(); }
+  void WorkerPrivateSaysAllowScript() { StopForbiddingScript(); }
 };
 
 class DedicatedWorkerGlobalScope final : public WorkerGlobalScope {
