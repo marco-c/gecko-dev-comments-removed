@@ -13,6 +13,8 @@ using namespace mozilla;
 #include <CoreFoundation/CoreFoundation.h>
 #include <LocalAuthentication/LocalAuthentication.h>
 
+static const int32_t kPasswordNotSetErrorCode = -1000;
+
 nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
                                   bool& aReauthenticated) {
   
@@ -24,7 +26,7 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
 
   dispatch_semaphore_t sema = dispatch_semaphore_create(0);
 
-  __block BOOL biometricSuccess;  
+  __block BOOL biometricSuccess = NO;  
 
   
   [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
@@ -35,7 +37,10 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
                         
                         
                         
-                        biometricSuccess = success;
+                        
+                        if (success || [error code] == kPasswordNotSetErrorCode) {
+                          biometricSuccess = YES;
+                        }
                         dispatch_semaphore_signal(sema);
                       });
                     }];
