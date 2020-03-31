@@ -1056,46 +1056,13 @@ var PushServiceWebSocket = {
       return;
     }
 
-    this._mainPushService
-      .getAllUnexpired()
-      .then(
-        records => this._sendHello(records),
-        err => {
-          console.warn(
-            "Error fetching existing records before handshake; assuming none",
-            err
-          );
-          this._sendHello([]);
-        }
-      )
-      .catch(err => {
-        
-        console.warn("Failed to send handshake; reconnecting", err);
-        this._reconnect();
-      });
-  },
-
-  
-
-
-
-
-
-  _sendHello(records) {
     let data = {
       messageType: "hello",
       broadcasts: this._broadcastListeners,
       use_webpush: true,
     };
 
-    if (records.length && this._UAID) {
-      
-      
-      
-      
-      
-      
-      
+    if (this._UAID) {
       data.uaid = this._UAID;
     }
 
