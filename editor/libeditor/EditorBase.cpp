@@ -24,6 +24,7 @@
 #include "JoinNodeTransaction.h"              
 #include "PlaceholderTransaction.h"           
 #include "SplitNodeTransaction.h"             
+#include "mozilla/BasePrincipal.h"            
 #include "mozilla/CheckedInt.h"               
 #include "mozilla/ComposerCommandsUpdater.h"  
 #include "mozilla/ComputedStyle.h"            
@@ -6164,12 +6165,14 @@ nsresult EditorBase::AutoEditActionDataSetter::MaybeDispatchBeforeInputEvent() {
   
   
   
-  
-  
-  
-  
   if (mPrincipal && !mPrincipal->IsSystemPrincipal()) {
-    return NS_OK;
+    
+    
+    
+    
+    if (!mPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
+      return NS_OK;
+    }
   }
 
   
