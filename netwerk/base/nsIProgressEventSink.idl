@@ -43,7 +43,11 @@ interface nsIProgressEventSink : nsISupports
 
 
 
+
+
+
     void onProgress(in nsIRequest aRequest,
+                    in nsISupports aContext,
                     in long long aProgress,
                     in long long aProgressMax);
 
@@ -65,7 +69,11 @@ interface nsIProgressEventSink : nsISupports
 
 
 
+
+
+
     void onStatus(in nsIRequest aRequest,
+                  in nsISupports aContext,
                   in nsresult aStatus,
                   in wstring aStatusArg);
 
