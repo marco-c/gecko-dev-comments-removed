@@ -2,10 +2,6 @@
 
 
 
-
-
-
-
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
@@ -61,11 +57,19 @@ search-textbox:not([searchbutton]) > .textbox-search-sign {
   list-style-image: url(chrome://global/skin/icons/search-textbox.svg);
 }
 
+.textbox-search-sign:-moz-locale-dir(rtl),
+.textbox-search-icon:-moz-locale-dir(rtl) {
+  transform: scaleX(-1);
+}
+
+.textbox-search-icon[searchbutton]:not([disabled]) {
+  cursor: pointer;
+}
+
 .textbox-search-clear {
   list-style-image: url(chrome://global/skin/icons/searchfield-cancel.svg);
 }
 
-.textbox-search-icon[searchbutton]:not([disabled]),
 .textbox-search-clear:not([disabled]) {
-  cursor: pointer;
+  cursor: default;
 }
