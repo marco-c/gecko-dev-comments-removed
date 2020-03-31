@@ -95,7 +95,8 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
   }
 
   uint32_t eventType = aEvent->GetEventType();
-  Accessible* accessible = nullptr;
+
+  mozAccessible* nativeAcc = nil;
 
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_FOCUS:
@@ -106,7 +107,12 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
     case nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE:
     case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
     case nsIAccessibleEvent::EVENT_MENUPOPUP_END:
-      accessible = aEvent->GetAccessible();
+      if (Accessible* accessible = aEvent->GetAccessible()) {
+        accessible->GetNativeInterface((void**)&nativeAcc);
+        if (!nativeAcc) {
+          return NS_ERROR_FAILURE;
+        }
+      }
       break;
     case nsIAccessibleEvent::EVENT_SELECTION:
     case nsIAccessibleEvent::EVENT_SELECTION_ADD:
@@ -114,23 +120,21 @@ nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
       AccSelChangeEvent* selEvent = downcast_accEvent(aEvent);
       
       
-      accessible = selEvent->Widget();
+      if (Accessible* accessible = selEvent->Widget()) {
+        accessible->GetNativeInterface((void**)&nativeAcc);
+        if (!nativeAcc) {
+          return NS_ERROR_FAILURE;
+        }
+      }
       break;
     }
     default:
       break;
   }
 
-  if (!accessible) {
-    
-    return NS_OK;
+  if (nativeAcc) {
+    [nativeAcc firePlatformEvent:eventType];
   }
-
-  mozAccessible* nativeAcc = nil;
-  accessible->GetNativeInterface((void**)&nativeAcc);
-  if (!nativeAcc) return NS_ERROR_FAILURE;
-
-  FireNativeEvent(nativeAcc, eventType);
 
   return NS_OK;
 
@@ -172,47 +176,6 @@ bool AccessibleWrap::AncestorIsFlat() {
   }
   
   return false;
-}
-
-void a11y::FireNativeEvent(mozAccessible* aNativeAcc, uint32_t aEventType) {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  
-  
-  if (gfxPlatform::IsHeadless()) {
-    return;
-  }
-
-  switch (aEventType) {
-    case nsIAccessibleEvent::EVENT_FOCUS:
-      [aNativeAcc didReceiveFocus];
-      break;
-    case nsIAccessibleEvent::EVENT_VALUE_CHANGE:
-    case nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE:
-      [aNativeAcc valueDidChange];
-      break;
-    case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED:
-    case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED:
-      [aNativeAcc selectedTextDidChange];
-      break;
-    case nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE:
-      [aNativeAcc documentLoadComplete];
-      break;
-    case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
-      [aNativeAcc menuOpened];
-      break;
-    case nsIAccessibleEvent::EVENT_MENUPOPUP_END:
-      [aNativeAcc menuClosed];
-      break;
-    case nsIAccessibleEvent::EVENT_SELECTION:
-    case nsIAccessibleEvent::EVENT_SELECTION_ADD:
-    case nsIAccessibleEvent::EVENT_SELECTION_REMOVE: {
-      [aNativeAcc selectionDidChange];
-      break;
-    }
-  }
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 Class a11y::GetTypeFromRole(roles::Role aRole) {

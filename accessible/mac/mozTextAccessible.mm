@@ -1,7 +1,7 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "Accessible-inl.h"
 #include "HyperTextAccessible-inl.h"
@@ -58,12 +58,12 @@ inline NSString* ToNSString(id aValue) {
 
   static NSMutableArray* supportedAttributes = nil;
   if (!supportedAttributes) {
-    // text-specific attributes to supplement the standard one
+    
     supportedAttributes = [[NSMutableArray alloc]
-        initWithObjects:NSAccessibilitySelectedTextAttribute,           // required
-                        NSAccessibilitySelectedTextRangeAttribute,      // required
-                        NSAccessibilityNumberOfCharactersAttribute,     // required
-                        NSAccessibilityVisibleCharacterRangeAttribute,  // required
+        initWithObjects:NSAccessibilitySelectedTextAttribute,           
+                        NSAccessibilitySelectedTextRangeAttribute,      
+                        NSAccessibilityNumberOfCharactersAttribute,     
+                        NSAccessibilityVisibleCharacterRangeAttribute,  
                         NSAccessibilityInsertionPointLineNumberAttribute, @"AXRequired",
                         @"AXInvalid", nil];
     [supportedAttributes addObjectsFromArray:[super accessibilityAttributeNames]];
@@ -90,10 +90,10 @@ inline NSString* ToNSString(id aValue) {
   if ([attribute isEqualToString:NSAccessibilityTitleAttribute]) return @"";
 
   if ([attribute isEqualToString:NSAccessibilityValueAttribute]) {
-    // Apple's SpeechSynthesisServer expects AXValue to return an AXStaticText
-    // object's AXSelectedText attribute. See bug 674612 for details.
-    // Also if there is no selected text, we return the full text.
-    // See bug 369710 for details.
+    
+    
+    
+    
     if ([[self role] isEqualToString:NSAccessibilityStaticTextRole]) {
       NSString* selectedText = [self selectedText];
       return (selectedText && [selectedText length]) ? selectedText : [self text];
@@ -109,29 +109,29 @@ inline NSString* ToNSString(id aValue) {
 
     if ([attribute isEqualToString:@"AXInvalid"]) {
       if (accWrap->State() & states::INVALID) {
-        // If the attribute exists, it has one of four values: true, false,
-        // grammar, or spelling. We query the attribute value here in order
-        // to find the correct string to return.
+        
+        
+        
         HyperTextAccessible* text = accWrap->AsHyperText();
         if (!text || !text->IsTextRole()) {
-          // we can't get the attribute, but we should still respect the
-          // invalid state flag
+          
+          
           return @"true";
         }
         nsAutoString invalidStr;
         nsCOMPtr<nsIPersistentProperties> attributes = text->DefaultTextAttributes();
         nsAccUtils::GetAccAttr(attributes, nsGkAtoms::invalid, invalidStr);
         if (invalidStr.IsEmpty()) {
-          // if the attribute had no value, we should still respect the
-          // invalid state flag.
+          
+          
           return @"true";
         }
         return nsCocoaUtils::ToNSString(invalidStr);
       }
-      // If the flag is not set, we return false.
+      
       return @"false";
     } else {
-      // if the attribute does not exist, we assume
+      
     }
   } else if (ProxyAccessible* proxy = [self getProxyAccessible]) {
     if ([attribute isEqualToString:@"AXRequired"]) {
@@ -140,8 +140,8 @@ inline NSString* ToNSString(id aValue) {
 
     if ([attribute isEqualToString:@"AXInvalid"]) {
       if (proxy->State() & states::INVALID) {
-        // Similar to the accWrap case above, we iterate through our attributes
-        // to find the value for `invalid`.
+        
+        
         AutoTArray<Attribute, 10> attrs;
         proxy->DefaultTextAttributes(&attrs);
         for (size_t i = 0; i < attrs.Length(); i++) {
@@ -153,9 +153,9 @@ inline NSString* ToNSString(id aValue) {
             return nsCocoaUtils::ToNSString(invalidStr);
           }
         }
-        // if we iterated through our attributes and didn't find `invalid`,
-        // or if the invalid attribute had no value, we should still respect
-        // the invalid flag and return true.
+        
+        
+        
         return @"true";
       }
       return @"false";
@@ -165,7 +165,7 @@ inline NSString* ToNSString(id aValue) {
   if ([attribute isEqualToString:NSAccessibilityVisibleCharacterRangeAttribute])
     return [self visibleCharacterRange];
 
-  // let mozAccessible handle all other attributes
+  
   return [super accessibilityAttributeValue:attribute];
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
@@ -173,7 +173,7 @@ inline NSString* ToNSString(id aValue) {
 
 - (NSArray*)accessibilityParameterizedAttributeNames {
   static NSArray* supportedParametrizedAttributes = nil;
-  // text specific parametrized attributes
+  
   if (!supportedParametrizedAttributes) {
     supportedParametrizedAttributes = [[NSArray alloc]
         initWithObjects:NSAccessibilityStringForRangeParameterizedAttribute,
@@ -212,7 +212,7 @@ inline NSString* ToNSString(id aValue) {
   }
 
   if ([attribute isEqualToString:NSAccessibilityRangeForLineParameterizedAttribute]) {
-    // XXX: actually get the integer value for the line #
+    
     return [NSValue valueWithRange:NSMakeRange(0, [self textLength])];
   }
 
@@ -229,7 +229,7 @@ inline NSString* ToNSString(id aValue) {
   }
 
   if ([attribute isEqualToString:NSAccessibilityLineForIndexParameterizedAttribute]) {
-    // XXX: actually return the line #
+    
     return [NSNumber numberWithInt:0];
   }
 
@@ -404,7 +404,7 @@ inline NSString* ToNSString(id aValue) {
   HyperTextAccessible* textAcc = accWrap ? accWrap->AsHyperText() : nullptr;
   if (!textAcc && !proxy) return nil;
 
-  // A password text field returns an empty value
+  
   if (mRole == roles::PASSWORD_TEXT) return @"";
 
   nsAutoString text;
@@ -513,8 +513,8 @@ inline NSString* ToNSString(id aValue) {
 }
 
 - (NSValue*)visibleCharacterRange {
-  // XXX this won't work with Textarea and such as we actually don't give
-  // the visible character range.
+  
+  
   AccessibleWrap* accWrap = [self getGeckoAccessible];
   ProxyAccessible* proxy = [self getProxyAccessible];
   HyperTextAccessible* textAcc = accWrap ? accWrap->AsHyperText() : nullptr;
@@ -524,18 +524,20 @@ inline NSString* ToNSString(id aValue) {
       valueWithRange:NSMakeRange(0, textAcc ? textAcc->CharacterCount() : proxy->CharacterCount())];
 }
 
-- (void)valueDidChange {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  NSAccessibilityPostNotification(GetObjectOrRepresentedView(self),
-                                  NSAccessibilityValueChangedNotification);
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (void)selectedTextDidChange {
-  NSAccessibilityPostNotification(GetObjectOrRepresentedView(self),
-                                  NSAccessibilitySelectedTextChangedNotification);
+- (void)firePlatformEvent:(uint32_t)eventType {
+  switch (eventType) {
+    case nsIAccessibleEvent::EVENT_VALUE_CHANGE:
+    case nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE:
+      [self postNotification:NSAccessibilityValueChangedNotification];
+      break;
+    case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED:
+    case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED:
+      [self postNotification:NSAccessibilitySelectedTextChangedNotification];
+      break;
+    default:
+      [super firePlatformEvent:eventType];
+      break;
+  }
 }
 
 - (NSString*)stringFromRange:(NSRange*)range {
@@ -565,8 +567,8 @@ inline NSString* ToNSString(id aValue) {
   if (!supportedAttributes) {
     supportedAttributes = [[super accessibilityAttributeNames] mutableCopy];
     [supportedAttributes removeObject:NSAccessibilityChildrenAttribute];
-    // We remove our AXTitleUIElement here to avoid an IPC call in the
-    // parent class when locating values for our attributes.
+    
+    
     [supportedAttributes removeObject:NSAccessibilityTitleUIElementAttribute];
   }
 

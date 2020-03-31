@@ -1,8 +1,8 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
@@ -16,7 +16,7 @@
 namespace mozilla {
 namespace a11y {
 
-// Mac a11y whitelisting
+
 static bool sA11yShouldBeEnabled = false;
 
 bool ShouldA11yBeEnabled() {
@@ -30,9 +30,9 @@ void PlatformInit() {}
 void PlatformShutdown() {}
 
 void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
-  // Pass in dummy state for now as retrieving proxy state requires IPC.
-  // Note that we can use ProxyAccessible::IsTable* functions here because they
-  // do not use IPC calls but that might change after bug 1210477.
+  
+  
+  
   Class type;
   if (aProxy->IsTable())
     type = [mozTableAccessible class];
@@ -49,17 +49,17 @@ void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
 
   mozAccessible* nativeParent = nullptr;
   if (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevel()) {
-    // If proxy is top level, the parent we need to invalidate the children of
-    // will be a non-remote accessible.
+    
+    
     Accessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
     if (outerDoc) {
       nativeParent = GetNativeFromGeckoAccessible(outerDoc);
     }
   } else {
-    // Non-top level proxies need proxy parents' children invalidated.
+    
     ProxyAccessible* parent = aProxy->Parent();
     MOZ_ASSERT(parent ||
-                   // It's expected that an OOP iframe might not have a parent yet.
+                   
                    (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevelInContentProcess()),
                "a non-top-level proxy is missing a parent?");
     nativeParent = parent ? GetNativeFromProxy(parent) : nullptr;
@@ -73,17 +73,17 @@ void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
 void ProxyDestroyed(ProxyAccessible* aProxy) {
   mozAccessible* nativeParent = nil;
   if (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevel()) {
-    // Invalidate native parent in parent process's children on proxy destruction
+    
     Accessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
     if (outerDoc) {
       nativeParent = GetNativeFromGeckoAccessible(outerDoc);
     }
   } else {
     if (!aProxy->Document()->IsShutdown()) {
-      // Only do if the document has not been shut down, else parent will return
-      // garbage since we don't shut down children from top down.
+      
+      
       ProxyAccessible* parent = aProxy->Parent();
-      // Invalidate proxy parent's children.
+      
       if (parent) {
         nativeParent = GetNativeFromProxy(parent);
       }
@@ -103,21 +103,21 @@ void ProxyDestroyed(ProxyAccessible* aProxy) {
 void ProxyEvent(ProxyAccessible* aProxy, uint32_t aEventType) {
   if (aEventType == nsIAccessibleEvent::EVENT_REORDER && aProxy->ChildrenCount() == 1 &&
       aProxy->ChildAt(0)->IsDoc()) {
-    // This is a remote OuterDocAccessible. The reorder event indicates that Its
-    // embedded document has been added or changed. If the document itself is
-    // an existing Accessible, ProxyCreated won't have been called, so we won't
-    // have invalidated native children. This can happen for in-process iframes
-    // if the OuterDocAccessible is re-created (e.g. due to layout reflow).
-    // It always happens for out-of-process iframes, as we must always call
-    // ProxyCreated before DocAccessibleParent::AddChildDoc for those.
+    
+    
+    
+    
+    
+    
+    
     mozAccessible* wrapper = GetNativeFromProxy(aProxy);
     if (wrapper) {
       [wrapper invalidateChildren];
     }
   }
 
-  // ignore everything but focus-changed, value-changed, caret and selection
-  // events for now.
+  
+  
   if (aEventType != nsIAccessibleEvent::EVENT_FOCUS &&
       aEventType != nsIAccessibleEvent::EVENT_VALUE_CHANGE &&
       aEventType != nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE &&
@@ -126,16 +126,20 @@ void ProxyEvent(ProxyAccessible* aProxy, uint32_t aEventType) {
     return;
 
   mozAccessible* wrapper = GetNativeFromProxy(aProxy);
-  if (wrapper) FireNativeEvent(wrapper, aEventType);
+  if (wrapper) {
+    [wrapper firePlatformEvent:aEventType];
+  }
 }
 
 void ProxyStateChangeEvent(ProxyAccessible* aProxy, uint64_t, bool) {
-  // mac doesn't care about state change events
+  
 }
 
 void ProxyCaretMoveEvent(ProxyAccessible* aTarget, int32_t aOffset) {
   mozAccessible* wrapper = GetNativeFromProxy(aTarget);
-  if (wrapper) [wrapper selectedTextDidChange];
+  if (wrapper) {
+    [wrapper firePlatformEvent:nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED];
+  }
 }
 
 void ProxyTextChangeEvent(ProxyAccessible*, const nsString&, int32_t, uint32_t, bool, bool) {}
@@ -144,10 +148,12 @@ void ProxyShowHideEvent(ProxyAccessible*, ProxyAccessible*, bool, bool) {}
 
 void ProxySelectionEvent(ProxyAccessible* aTarget, ProxyAccessible* aWidget, uint32_t aEventType) {
   mozAccessible* wrapper = GetNativeFromProxy(aWidget);
-  if (wrapper) FireNativeEvent(wrapper, aEventType);
+  if (wrapper) {
+    [wrapper firePlatformEvent:aEventType];
+  }
 }
-}  // namespace a11y
-}  // namespace mozilla
+}  
+}  
 
 @interface GeckoNSApplication (a11y)
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute;
