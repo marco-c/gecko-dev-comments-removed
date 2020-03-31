@@ -90,11 +90,32 @@ static WritableStream* GetUnwrappedDest(JSContext* cx,
   return UnwrapStreamFromWriter(cx, writer);
 }
 
+
+
 static MOZ_MUST_USE bool ShutdownWithAction(
     JSContext* cx, Handle<PipeToState*> state, Action action,
     Handle<Maybe<Value>> originalError) {
   cx->check(state);
   cx->check(originalError);
+
+  
+  if (state->shuttingDown()) {
+    return true;
+  }
+
+  
+  state->setShuttingDown();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -103,10 +124,28 @@ static MOZ_MUST_USE bool ShutdownWithAction(
   return false;
 }
 
+
+
 static MOZ_MUST_USE bool Shutdown(JSContext* cx, Handle<PipeToState*> state,
                                   Handle<Maybe<Value>> error) {
   cx->check(state);
   cx->check(error);
+
+  
+  if (state->shuttingDown()) {
+    return true;
+  }
+
+  
+  state->setShuttingDown();
+
+  
+  
+  
+  
+  
+  
+  
 
   
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
