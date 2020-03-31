@@ -234,7 +234,7 @@ struct IPDLParamTraits<nsTArray<T>> {
   
   
   static const bool sUseWriteBytes =
-      (mozilla::IsIntegral<T>::value || std::is_floating_point_v<T>);
+      (std::is_integral_v<T> || std::is_floating_point_v<T>);
 };
 
 

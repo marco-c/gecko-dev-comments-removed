@@ -545,7 +545,7 @@ struct ParamTraits<nsTArray<E>> {
   
   
   static const bool sUseWriteBytes =
-      (mozilla::IsIntegral<E>::value || std::is_floating_point_v<E>);
+      (std::is_integral_v<E> || std::is_floating_point_v<E>);
 
   static void Write(Message* aMsg, const paramType& aParam) {
     uint32_t length = aParam.Length();
@@ -648,7 +648,7 @@ struct ParamTraits<mozilla::Vector<E, N, AP>> {
   
   
   static const bool sUseWriteBytes =
-      (mozilla::IsIntegral<E>::value || std::is_floating_point_v<E>);
+      (std::is_integral_v<E> || std::is_floating_point_v<E>);
 
   static void Write(Message* aMsg, const paramType& aParam) {
     uint32_t length = aParam.length();
@@ -729,7 +729,7 @@ struct ParamTraits<std::vector<E>> {
   
   
   static const bool sUseWriteBytes =
-      (mozilla::IsIntegral<E>::value || std::is_floating_point_v<E>);
+      (std::is_integral_v<E> || std::is_floating_point_v<E>);
 
   static void Write(Message* aMsg, const paramType& aParam) {
     uint32_t length = aParam.size();

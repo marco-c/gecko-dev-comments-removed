@@ -10,6 +10,7 @@
 #define mozilla_Saturate_h
 
 #include <limits>
+#include <type_traits>
 #include <utility>
 
 #include "mozilla/Attributes.h"
@@ -41,7 +42,7 @@ class SaturateOp {
     
     
     
-    static_assert(IsIntegral<T>::value,
+    static_assert(std::is_integral_v<T>,
                   "Integral type required in instantiation");
   }
 

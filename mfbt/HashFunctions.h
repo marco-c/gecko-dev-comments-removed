@@ -178,7 +178,7 @@ inline HashNumber AddUintptrToHash<8>(HashNumber aHash, uintptr_t aValue) {
 
 
 
-template <typename T, bool TypeIsNotIntegral = !mozilla::IsIntegral<T>::value,
+template <typename T, bool TypeIsNotIntegral = !std::is_integral_v<T>,
           typename U = typename mozilla::EnableIf<TypeIsNotIntegral>::Type>
 MOZ_MUST_USE inline HashNumber AddToHash(HashNumber aHash, T aA) {
   
@@ -204,8 +204,8 @@ MOZ_MUST_USE inline HashNumber AddToHash(HashNumber aHash, A* aA) {
 
 
 
-template <typename T, typename U = typename mozilla::EnableIf<
-                          mozilla::IsIntegral<T>::value>::Type>
+template <typename T,
+          typename U = typename mozilla::EnableIf<std::is_integral_v<T>>::Type>
 MOZ_MUST_USE constexpr HashNumber AddToHash(HashNumber aHash, T aA) {
   return detail::AddUintptrToHash<sizeof(T)>(aHash, aA);
 }
