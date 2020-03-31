@@ -16,34 +16,13 @@ class ConsoleCommands {
   }
 
   async evaluateJSAsync(expression, options = {}) {
-    const {
-      selectedThreadFront,
-      frameActor,
-      selectedObjectActor,
-      selectedNodeActor,
-    } = options;
+    const { selectedObjectActor, selectedNodeActor, frameActor } = options;
     let front = await this.hud.currentTarget.getFront("console");
-    const selectedActor = selectedObjectActor || selectedNodeActor;
 
-    
-    
-    if (frameActor) {
-      const frameFront = this.getFrontByID(frameActor);
-      if (frameFront) {
-        front = await frameFront.targetFront.getFront("console");
-      }
-    }
+    const selectedActor =
+      selectedObjectActor || selectedNodeActor || frameActor;
 
-    
-    
-    
-    
-
-    
-    
-    if (selectedThreadFront) {
-      front = await selectedThreadFront.targetFront.getFront("console");
-    } else if (selectedActor) {
+    if (selectedActor) {
       const selectedFront = this.getFrontByID(selectedActor);
       if (selectedFront) {
         front = await selectedFront.targetFront.getFront("console");
