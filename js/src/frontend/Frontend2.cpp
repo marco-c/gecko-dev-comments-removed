@@ -85,7 +85,7 @@ class SmooshScriptStencil : public ScriptStencil {
         result_.body_scope_index, result_.num_ic_entries, result_.num_type_sets,
         result_.is_function,  0,
         mozilla::MakeSpan(result_.bytecode.data, result_.bytecode.len),
-        mozilla::Span<const jssrcnote>(), mozilla::Span<const uint32_t>(),
+        mozilla::Span<const SrcNote>(), mozilla::Span<const uint32_t>(),
         scopeNotes, mozilla::Span<const TryNote>());
     if (!immutableScriptData) {
       return false;
