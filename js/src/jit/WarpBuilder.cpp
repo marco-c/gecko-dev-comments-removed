@@ -2442,3 +2442,22 @@ bool WarpBuilder::build_TableSwitch(BytecodeLocation loc) {
   MOZ_ASSERT(hasTerminatedBlock());
   return true;
 }
+
+bool WarpBuilder::build_Rest(BytecodeLocation loc) {
+  
+
+  auto* snapshot = getOpSnapshot<WarpRest>(loc);
+  ArrayObject* templateObject = snapshot->templateObject();
+
+  MArgumentsLength* numActuals = MArgumentsLength::New(alloc());
+  current->add(numActuals);
+
+  
+  
+  unsigned numFormals = info().nargs() - 1;
+  MRest* rest = MRest::New(alloc(),  nullptr, numActuals,
+                           numFormals, templateObject);
+  current->add(rest);
+  current->push(rest);
+  return true;
+}

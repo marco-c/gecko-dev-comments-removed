@@ -26,7 +26,8 @@ class MIRGenerator;
   _(WarpBuiltinProto)            \
   _(WarpGetIntrinsic)            \
   _(WarpGetImport)               \
-  _(WarpLambda)
+  _(WarpLambda)                  \
+  _(WarpRest)
 
 
 
@@ -164,6 +165,19 @@ class WarpLambda : public WarpOpSnapshot {
   BaseScript* baseScript() const { return baseScript_; }
   FunctionFlags flags() const { return flags_; }
   uint16_t nargs() const { return nargs_; }
+};
+
+
+class WarpRest : public WarpOpSnapshot {
+  
+  ArrayObject* templateObject_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpRest;
+
+  WarpRest(uint32_t offset, ArrayObject* templateObject)
+      : WarpOpSnapshot(ThisKind, offset), templateObject_(templateObject) {}
+  ArrayObject* templateObject() const { return templateObject_; }
 };
 
 
