@@ -131,16 +131,6 @@ assertErrorMessage(() => new WebAssembly.Module(
 
 
 
-assertErrorMessage(() => new WebAssembly.Module(
-    moduleWithSections([generalElemSection([{ flag: DeclaredElemExpr,
-                                              typeCode: AnyFuncCode,
-                                              elems: [[RefNullCode]] }])])),
-                   WebAssembly.CompileError,
-                   /declared element segments cannot contain ref.null/);
-
-
-
-
 
 var ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
   (module

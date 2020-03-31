@@ -5,19 +5,11 @@ wasmFullPass(`
 	(module
 		(func $f1)
 		(elem declare $f1)
+		(elem declare funcref (ref.null))
 		(func $run)
 		(export "run" (func $run))
 	)
 `);
-
-
-assertThrowsInstanceOf(() => {
-	new WebAssembly.Module(wasmTextToBinary(`
-		(module
-			(elem declare (ref.null))
-		)
-	`))
-}, WebAssembly.CompileError);
 
 
 function test(ins) {
