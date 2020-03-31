@@ -14,14 +14,22 @@ add_task(async function() {
   await checkHighlighted(toolbox1, true);
   await checkHighlighted(toolbox2, true);
 
-  info("Toggle accessibility panel off an on.");
+  info("Toggle accessibility panel off and on.");
+  const onOtherPanelSelectedInToolbox1 = toolbox1.once("select");
   await toggleAccessibility(options);
   await toggleAccessibility(options);
+
+  
+  
+  
+  
+  info("Wait for another panel to be selected instead of accessibility panel");
+  await onOtherPanelSelectedInToolbox1;
 
   await checkHighlighted(toolbox1, true);
   await checkHighlighted(toolbox2, true);
 
-  info("Toggle accessibility panel off an on again.");
+  info("Toggle accessibility panel off and on again.");
   await toggleAccessibility(options);
   await toggleAccessibility(options);
 
