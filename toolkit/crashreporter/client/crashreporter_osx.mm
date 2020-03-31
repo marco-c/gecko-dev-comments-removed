@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #import <Cocoa/Cocoa.h>
 #import <CoreFoundation/CoreFoundation.h>
@@ -56,7 +56,7 @@ static bool RestartApplication() {
     return false;
   }
 
-  // Set spawn attributes.
+  
   size_t attr_count = sizeof(pref_cpu_types) / sizeof(pref_cpu_types[0]);
   size_t attr_ocount = 0;
   if (posix_spawnattr_setbinpref_np(&spawnattr, attr_count, pref_cpu_types, &attr_ocount) != 0 ||
@@ -111,7 +111,7 @@ static bool RestartApplication() {
   [mViewReportButton setTitle:Str(ST_VIEWREPORT)];
   [mViewReportButton sizeToFit];
   if (gRTLlayout) {
-    // sizeToFit will keep the left side fixed, so realign
+    
     float oldWidth = viewReportFrame.size.width;
     viewReportFrame = [mViewReportButton frame];
     viewReportFrame.origin.x += oldWidth - viewReportFrame.size.width;
@@ -128,12 +128,12 @@ static bool RestartApplication() {
   [[mEmailText cell] setPlaceholderString:Str(ST_EMAILGRAYTEXT)];
 
   if (gQueryParameters.isMember("URL")) {
-    // save the URL value in case the checkbox gets unchecked
+    
     gURLParameter = gQueryParameters["URL"].asString();
   } else {
-    // no URL specified, hide checkbox
+    
     [mIncludeURLButton removeFromSuperview];
-    // shrink window to fit
+    
     NSRect frame = [mWindow frame];
     NSRect includeURLFrame = [mIncludeURLButton frame];
     NSRect emailFrame = [mEmailMeButton frame];
@@ -145,7 +145,7 @@ static bool RestartApplication() {
     [mSubmitReportButton setAutoresizingMask:NSViewMinYMargin];
     [mCommentScrollView setAutoresizingMask:NSViewMinYMargin];
 
-    // remove all the space in between
+    
     frame.size.height -= includeURLFrame.origin.y - emailFrame.origin.y;
     [mWindow setFrame:frame display:true animate:NO];
 
@@ -154,12 +154,12 @@ static bool RestartApplication() {
     [mCommentScrollView setAutoresizingMask:commentScrollMask];
   }
 
-  // resize some buttons horizontally and possibly some controls vertically
+  
   [self doInitialResizing];
 
-  // load default state of submit checkbox
-  // we don't just do this via IB because we want the default to be
-  // off a certain percentage of the time
+  
+  
+  
   BOOL submitChecked = YES;
   NSUserDefaults* userDefaults = [NSUserDefaults standardUserDefaults];
   if (nil != [userDefaults objectForKey:@"submitReport"]) {
@@ -227,7 +227,7 @@ static bool RestartApplication() {
 - (void)maybeSubmitReport {
   if ([mSubmitReportButton state] == NSOnState) {
     [self setStringFitVertically:mProgressText string:Str(ST_REPORTDURINGSUBMIT) resizeWindow:YES];
-    // disable all the controls
+    
     [self enableControls:NO];
     [mSubmitReportButton setEnabled:NO];
     [mRestartButton setEnabled:NO];
@@ -287,18 +287,18 @@ static bool RestartApplication() {
 }
 
 - (void)textDidChange:(NSNotification*)aNotification {
-  // update comment parameter
+  
   if ([[[mCommentText textStorage] mutableString] length] > 0)
     gQueryParameters["Comments"] = [[[mCommentText textStorage] mutableString] UTF8String];
   else
     gQueryParameters.removeMember("Comments");
 }
 
-// Limit the comment field to 500 bytes in UTF-8
+
 - (BOOL)textView:(NSTextView*)aTextView
     shouldChangeTextInRange:(NSRange)affectedCharRange
           replacementString:(NSString*)replacementString {
-  // current string length + replacement text length - replaced range length
+  
   if (([[aTextView string] lengthOfBytesUsingEncoding:NSUTF8StringEncoding] +
        [replacementString lengthOfBytesUsingEncoding:NSUTF8StringEncoding] -
        [[[aTextView string] substringWithRange:affectedCharRange]
@@ -312,12 +312,12 @@ static bool RestartApplication() {
   NSRect windowFrame = [mWindow frame];
   NSRect restartFrame = [mRestartButton frame];
   NSRect closeFrame = [mCloseButton frame];
-  // resize close button to fit text
+  
   float oldCloseWidth = closeFrame.size.width;
   [mCloseButton setTitle:Str(ST_QUIT)];
   [mCloseButton sizeToFit];
   closeFrame = [mCloseButton frame];
-  // move close button left if it grew
+  
   if (!gRTLlayout) {
     closeFrame.origin.x -= closeFrame.size.width - oldCloseWidth;
   }
@@ -334,23 +334,23 @@ static bool RestartApplication() {
     [mCloseButton setKeyEquivalent:@"\r"];
   } else {
     [mRestartButton setTitle:Str(ST_RESTART)];
-    // resize "restart" button
+    
     float oldRestartWidth = restartFrame.size.width;
     [mRestartButton sizeToFit];
     restartFrame = [mRestartButton frame];
     if (!gRTLlayout) {
-      // move left by the amount that the button grew
+      
       restartFrame.origin.x -= restartFrame.size.width - oldRestartWidth;
       closeFrame.origin.x -= restartFrame.size.width - oldRestartWidth;
     } else {
-      // shift the close button right in RTL
+      
       closeFrame.origin.x += restartFrame.size.width - oldRestartWidth;
     }
     [mRestartButton setFrame:restartFrame];
     [mCloseButton setFrame:closeFrame];
-    // possibly resize window if both buttons no longer fit
-    // leave 20 px from either side of the window, and 12 px
-    // between the buttons
+    
+    
+    
     float neededWidth = closeFrame.size.width + restartFrame.size.width + 2 * 20 + 12;
 
     if (neededWidth > windowFrame.size.width) {
@@ -366,13 +366,13 @@ static bool RestartApplication() {
     NSRect frame = [checkboxes[i] frame];
     [checkboxes[i] sizeToFit];
     if (gRTLlayout) {
-      // sizeToFit will keep the left side fixed, so realign
+      
       float oldWidth = frame.size.width;
       frame = [checkboxes[i] frame];
       frame.origin.x += oldWidth - frame.size.width;
       [checkboxes[i] setFrame:frame];
     }
-    // keep existing spacing on left side, + 20 px spare on right
+    
     float neededWidth = frame.origin.x + frame.size.width + 20;
     if (neededWidth > windowFrame.size.width) {
       windowFrame.size.width = neededWidth;
@@ -380,15 +380,15 @@ static bool RestartApplication() {
     }
   }
 
-  // do this down here because we may have made the window wider
-  // up above
+  
+  
   [self setStringFitVertically:mDescriptionLabel
                         string:Str(ST_CRASHREPORTERDESCRIPTION)
                   resizeWindow:YES];
 
-  // now pin all the controls (except quit/submit) in place,
-  // if we lengthen the window after this, it's just to lengthen
-  // the progress text, so nothing above that text should move.
+  
+  
+  
   NSView* views[] = {mSubmitReportButton, mViewReportButton, mCommentScrollView, mIncludeURLButton,
                      mEmailMeButton,      mEmailText,        mProgressIndicator, mProgressText};
   for (unsigned int i = 0; i < sizeof(views) / sizeof(views[0]); i++) {
@@ -399,7 +399,7 @@ static bool RestartApplication() {
 - (float)setStringFitVertically:(NSControl*)control
                          string:(NSString*)str
                    resizeWindow:(BOOL)resizeWindow {
-  // hack to make the text field grow vertically
+  
   NSRect frame = [control frame];
   float oldHeight = frame.size.height;
 
@@ -452,11 +452,11 @@ static bool RestartApplication() {
   if ([mSubmitReportButton state] == NSOnState) {
     [self setStringFitVertically:mProgressText string:Str(ST_REPORTPRESUBMIT) resizeWindow:YES];
     [mProgressText setHidden:NO];
-    // enable all the controls
+    
     [self enableControls:YES];
   } else {
-    // not submitting, disable all the controls under
-    // the submit checkbox, and hide the status text
+    
+    
     [mProgressText setHidden:YES];
     [self enableControls:NO];
   }
@@ -490,7 +490,7 @@ static bool RestartApplication() {
     }
 
     [self setStringFitVertically:mProgressText string:Str(ST_SUBMITFAILED) resizeWindow:YES];
-    // quit after 5 seconds
+    
     [self performSelector:@selector(closeMeDown:) withObject:nil afterDelay:5.0];
   }
 
@@ -531,7 +531,7 @@ static bool RestartApplication() {
     success = false;
     reply = "";
 
-    // if data is nil, we probably logged an error in uploadThread
+    
     if (data != nil && response != nil) {
       ostringstream message;
       message << "Crash report submission failed: server returned status " << [response statusCode];
@@ -566,7 +566,7 @@ static bool RestartApplication() {
   } else {
     [self setStringFitVertically:mProgressText string:Str(ST_SUBMITFAILED) resizeWindow:YES];
   }
-  // quit after 5 seconds
+  
   [self performSelector:@selector(closeMeDown:) withObject:nil afterDelay:5.0];
 }
 
@@ -586,14 +586,14 @@ static bool RestartApplication() {
   [autoreleasepool release];
 }
 
-// to get auto-quit when we close the window
+
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)theApplication {
   return YES;
 }
 
 - (void)applicationWillTerminate:(NSNotification*)aNotification {
-  // since we use [NSApp terminate:] we never return to main,
-  // so do our cleanup here
+  
+  
   if (!gDidTrySend) DeleteDump();
 }
 
@@ -630,7 +630,7 @@ static bool RestartApplication() {
 }
 
 - (void)insertTab:(id)sender {
-  // don't actually want to insert tabs, just tab to next control
+  
   [[self window] selectNextKeyView:sender];
 }
 
@@ -664,7 +664,7 @@ static bool RestartApplication() {
 
 @end
 
-/* === Crashreporter UI Functions === */
+
 
 bool UIInit() {
   gMainPool = [[NSAutoreleasePool alloc] init];
@@ -675,7 +675,9 @@ bool UIInit() {
   if (gAutoSubmit) {
     gUI = [[CrashReporterUI alloc] init];
   } else {
-    [NSBundle loadNibNamed:(gRTLlayout ? @"MainMenuRTL" : @"MainMenu") owner:NSApp];
+    [[NSBundle mainBundle] loadNibNamed:(gRTLlayout ? @"MainMenuRTL" : @"MainMenu")
+                                  owner:NSApp
+                        topLevelObjects:nil];
   }
 
   return true;
@@ -700,7 +702,7 @@ bool UIShowCrashUI(const StringTable& files, const Json::Value& queryParameters,
 
 void UIError_impl(const string& message) {
   if (!gUI) {
-    // UI failed to initialize, printing is the best we can do
+    
     printf("Error: %s\n", message.c_str());
     return;
   }
@@ -730,13 +732,13 @@ bool UIGetSettingsPath(const string& vendor, const string& product, string& sett
   FSRefMakePath(&foundRef, path, sizeof(path));
   NSString* destPath = [NSString stringWithUTF8String:reinterpret_cast<char*>(path)];
 
-  // Note that MacOS ignores the vendor when creating the profile hierarchy -
-  // all application preferences directories live alongside one another in
-  // ~/Library/Application Support/
+  
+  
+  
   destPath = [destPath stringByAppendingPathComponent:NSSTR(product)];
-  // Thunderbird stores its profile in ~/Library/Thunderbird,
-  // but we're going to put stuff in ~/Library/Application Support/Thunderbird
-  // anyway, so we have to ensure that path exists.
+  
+  
+  
   string tempPath = [destPath UTF8String];
   if (!UIEnsurePathExists(tempPath)) return false;
 
