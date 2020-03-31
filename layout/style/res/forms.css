@@ -985,9 +985,6 @@ input[type=number]::-moz-number-wrapper {
   float: none !important;
   position: static !important;
   block-size: 100%;
-  
-
-  overflow: -moz-hidden-unscrollable;
 }
 
 input[type=number]::-moz-text-control-editing-root {
@@ -996,12 +993,9 @@ input[type=number]::-moz-text-control-editing-root {
 
   flex: 1;
   min-inline-size: 0;
-  
-
   align-self: center;
   
-
-  padding: 0;
+  padding-inline: 0;
 }
 
 input[type=number]::-moz-number-spin-box {
