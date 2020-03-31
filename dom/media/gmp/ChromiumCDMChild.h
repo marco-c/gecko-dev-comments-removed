@@ -16,9 +16,7 @@ namespace gmp {
 
 class GMPContentChild;
 
-class ChromiumCDMChild : public PChromiumCDMChild,
-                         public cdm::Host_9,
-                         public cdm::Host_10 {
+class ChromiumCDMChild : public PChromiumCDMChild, public cdm::Host_10 {
  public:
   
   
@@ -62,8 +60,6 @@ class ChromiumCDMChild : public PChromiumCDMChild,
                                     cdm::Status aDecoderStatus) override {}
   void RequestStorageId(uint32_t aVersion) override;
   cdm::FileIO* CreateFileIO(cdm::FileIOClient* aClient) override;
-  
-  
   void OnInitialized(bool aSuccess) override;
   
 
