@@ -2173,9 +2173,6 @@ class JSScript : public js::BaseScript {
                                       JS::Handle<JSScript*> script,
                                       uint32_t ngcthings);
 
- private:
-  void initFromFunctionBox(js::frontend::FunctionBox* funbox);
-
  public:
   static bool fullyInitFromStencil(JSContext* cx, js::HandleScript script,
                                    js::frontend::ScriptStencil& stencil);
@@ -2343,6 +2340,10 @@ class JSScript : public js::BaseScript {
   void setNeedsArgsObj(bool needsArgsObj);
   static void argumentsOptimizationFailed(JSContext* cx,
                                           js::HandleScript script);
+
+  
+  
+  void resetArgsUsageAnalysis();
 
   
 

@@ -4071,6 +4071,7 @@ void JSScript::relazify(JSRuntime* rt) {
   clearFlag(ImmutableFlags::HasNonSyntacticScope);
   clearFlag(ImmutableFlags::FunctionHasExtraBodyVarScope);
   clearFlag(ImmutableFlags::NeedsFunctionEnvironmentObjects);
+  clearFlag(ImmutableFlags::AlwaysNeedsArgsObj);
 
   
   
@@ -4317,27 +4318,6 @@ bool JSScript::createPrivateScriptData(JSContext* cx, HandleScript script,
   return true;
 }
 
-void JSScript::initFromFunctionBox(frontend::FunctionBox* funbox) {
-  
-  
-  
-  addToImmutableFlags(funbox->immutableFlags());
-
-  
-  setFlag(ImmutableFlags::HasMappedArgsObj, funbox->hasMappedArgsObj());
-  setFlag(ImmutableFlags::FunctionHasExtraBodyVarScope,
-          funbox->hasExtraBodyVarScope());
-
-  if (funbox->argumentsHasLocalBinding()) {
-    setArgumentsHasVarBinding();
-    if (funbox->definitelyNeedsArgsObj()) {
-      setNeedsArgsObj(true);
-    }
-  } else {
-    MOZ_ASSERT(!funbox->definitelyNeedsArgsObj());
-  }
-}
-
 
 bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
                                     frontend::ScriptStencil& stencil) {
@@ -4395,13 +4375,10 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
   MOZ_ASSERT(script->extent_.lineno == stencil.lineno);
   MOZ_ASSERT(script->extent_.column == stencil.column);
 
-  
-  if (stencil.isFunction()) {
-    script->initFromFunctionBox(stencil.functionBox);
-  }
+  script->addToImmutableFlags(stencil.immutableFlags);
 
   
-  script->addToImmutableFlags(stencil.immutableFlags);
+  script->resetArgsUsageAnalysis();
 
   
   if (!PrivateScriptData::InitFromStencil(cx, script, stencil)) {
@@ -4455,6 +4432,16 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
   }
 
   return true;
+}
+
+void JSScript::resetArgsUsageAnalysis() {
+  bool alwaysNeedsArgsObj =
+      immutableFlags_.hasFlag(ImmutableFlags::AlwaysNeedsArgsObj);
+  MOZ_ASSERT_IF(alwaysNeedsArgsObj, argumentsHasVarBinding());
+  if (argumentsHasVarBinding()) {
+    mutableFlags_.setFlag(MutableFlags::NeedsArgsObj, alwaysNeedsArgsObj);
+    mutableFlags_.setFlag(MutableFlags::NeedsArgsAnalysis, !alwaysNeedsArgsObj);
+  }
 }
 
 #ifdef DEBUG

@@ -41,9 +41,23 @@ void BCEScriptStencil::init() {
 
   gcThings = bce_.perScriptData().gcThingList().stealGCThings();
 
+  
   if (isFunction()) {
     functionBox = bce_.sc->asFunctionBox();
-  }
+
+    
+    
+    immutableFlags.setFlag(ImmutableScriptFlagsEnum::HasMappedArgsObj,
+                           functionBox->hasMappedArgsObj());
+    immutableFlags.setFlag(
+        ImmutableScriptFlagsEnum::FunctionHasExtraBodyVarScope,
+        functionBox->hasExtraBodyVarScope());
+    immutableFlags.setFlag(ImmutableScriptFlagsEnum::AlwaysNeedsArgsObj,
+                           functionBox->definitelyNeedsArgsObj());
+    immutableFlags.setFlag(ImmutableScriptFlagsEnum::ArgumentsHasVarBinding,
+                           functionBox->argumentsHasLocalBinding());
+
+  } 
 }
 
 bool BCEScriptStencil::getNeedsFunctionEnvironmentObjects() const {

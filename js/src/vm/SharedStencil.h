@@ -250,6 +250,10 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   NeedsFunctionEnvironmentObjects = 1 << 26,
+
+  
+  
+  AlwaysNeedsArgsObj = 1 << 27,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
