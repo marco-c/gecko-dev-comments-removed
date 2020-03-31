@@ -66,7 +66,7 @@ struct BaseRect {
   
   bool IsFinite() const {
     using FloatType =
-        std::conditional_t<mozilla::IsSame<T, float>::value, float, double>;
+        std::conditional_t<std::is_same_v<T, float>, float, double>;
     return (mozilla::IsFinite(FloatType(x)) &&
             mozilla::IsFinite(FloatType(y)) &&
             mozilla::IsFinite(FloatType(width)) &&
