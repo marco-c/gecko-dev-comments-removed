@@ -92,7 +92,7 @@ class ConsoleOutput extends Component {
   }
 
   componentWillUpdate(nextProps, nextState) {
-    const outputNode = this.outputNode;
+    const { outputNode } = this;
     if (!outputNode || !outputNode.lastChild) {
       
       
@@ -108,7 +108,7 @@ class ConsoleOutput extends Component {
     
     
 
-    const lastChild = outputNode.lastChild;
+    const { lastChild } = outputNode;
     const visibleMessagesDelta =
       nextProps.visibleMessages.length - this.props.visibleMessages.length;
     const messagesDelta = nextProps.messages.size - this.props.messages.size;

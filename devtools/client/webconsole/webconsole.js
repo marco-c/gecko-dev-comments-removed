@@ -236,7 +236,7 @@ class WebConsole {
 
 
   viewSourceInStyleEditor(sourceURL, sourceLine) {
-    const toolbox = this.toolbox;
+    const { toolbox } = this;
     if (!toolbox) {
       this.viewSource(sourceURL, sourceLine);
       return;
@@ -259,7 +259,7 @@ class WebConsole {
 
 
   async viewSourceInDebugger(sourceURL, sourceLine, sourceColumn) {
-    const toolbox = this.toolbox;
+    const { toolbox } = this;
     if (!toolbox) {
       this.viewSource(sourceURL, sourceLine, sourceColumn);
       return;
@@ -283,7 +283,7 @@ class WebConsole {
 
 
   getDebuggerFrames() {
-    const toolbox = this.toolbox;
+    const { toolbox } = this;
     if (!toolbox) {
       return null;
     }
@@ -312,7 +312,7 @@ class WebConsole {
 
 
   getMappedExpression(expression) {
-    const toolbox = this.toolbox;
+    const { toolbox } = this;
 
     
     
@@ -367,7 +367,7 @@ class WebConsole {
 
 
   getInspectorSelection() {
-    const toolbox = this.toolbox;
+    const { toolbox } = this;
     if (!toolbox) {
       return null;
     }

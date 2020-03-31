@@ -180,7 +180,7 @@ class JSTerm extends Component {
     };
 
     const doc = this.webConsoleUI.document;
-    const toolbox = this.webConsoleUI.wrapper.toolbox;
+    const { toolbox } = this.webConsoleUI.wrapper;
     const tooltipDoc = toolbox ? toolbox.doc : doc;
     
     
