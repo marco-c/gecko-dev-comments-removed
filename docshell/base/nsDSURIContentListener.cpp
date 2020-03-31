@@ -119,24 +119,6 @@ NS_INTERFACE_MAP_BEGIN(nsDSURIContentListener)
 NS_INTERFACE_MAP_END
 
 NS_IMETHODIMP
-nsDSURIContentListener::OnStartURIOpen(nsIURI* aURI, bool* aAbortOpen) {
-  
-  
-  if (!mDocShell) {
-    *aAbortOpen = true;
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIURIContentListener> parentListener;
-  GetParentContentListener(getter_AddRefs(parentListener));
-  if (parentListener) {
-    return parentListener->OnStartURIOpen(aURI, aAbortOpen);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDSURIContentListener::DoContent(const nsACString& aContentType,
                                   bool aIsContentPreferred,
                                   nsIRequest* aRequest,

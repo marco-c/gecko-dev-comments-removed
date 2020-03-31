@@ -9322,32 +9322,14 @@ static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
 
  nsresult nsDocShell::CreateRealChannelForDocument(
     nsIChannel** aChannel, nsIURI* aURI, nsILoadInfo* aLoadInfo,
-    nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
+    nsIInterfaceRequestor* aCallbacks,
     nsLoadFlags aLoadFlags, const nsAString& aSrcdoc, nsIURI* aBaseURI) {
   nsCOMPtr<nsIChannel> channel;
-  nsresult rv;
   if (aSrcdoc.IsVoid()) {
-    rv = NS_NewChannelInternal(getter_AddRefs(channel), aURI, aLoadInfo,
-                               nullptr,  
-                               nullptr,  
-                               aCallbacks, aLoadFlags);
-
-    if (NS_FAILED(rv)) {
-      if (rv == NS_ERROR_UNKNOWN_PROTOCOL && aDocShell) {
-        
-        
-        
-        
-        bool abort = false;
-        if (NS_SUCCEEDED(
-                aDocShell->mContentListener->OnStartURIOpen(aURI, &abort)) &&
-            abort) {
-          
-          return NS_OK;
-        }
-      }
-      return rv;
-    }
+    MOZ_TRY(NS_NewChannelInternal(getter_AddRefs(channel), aURI, aLoadInfo,
+                                  nullptr,  
+                                  nullptr,  
+                                  aCallbacks, aLoadFlags));
 
     if (aBaseURI) {
       nsCOMPtr<nsIViewSourceChannel> vsc = do_QueryInterface(channel);
@@ -9458,7 +9440,7 @@ static bool SchemeUsesDocChannel(nsIURI* aURI) {
 
   nsCOMPtr<nsIChannel> channel;
   aRv = CreateRealChannelForDocument(getter_AddRefs(channel), aLoadState->URI(),
-                                     aLoadInfo, aCallbacks, aDocShell,
+                                     aLoadInfo, aCallbacks,
                                      aLoadFlags, srcdoc, aLoadState->BaseURI());
   NS_ENSURE_SUCCESS(aRv, false);
 

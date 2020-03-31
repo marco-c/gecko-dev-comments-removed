@@ -766,24 +766,6 @@ nsresult nsURILoader::OpenChannel(nsIChannel* channel, uint32_t aFlags,
     LOG(("nsURILoader::OpenChannel for %s", spec.get()));
   }
 
-  
-  
-  nsCOMPtr<nsIURIContentListener> winContextListener(
-      do_GetInterface(aWindowContext));
-  if (winContextListener) {
-    nsCOMPtr<nsIURI> uri;
-    channel->GetURI(getter_AddRefs(uri));
-    if (uri) {
-      bool doAbort = false;
-      winContextListener->OnStartURIOpen(uri, &doAbort);
-
-      if (doAbort) {
-        LOG(("  OnStartURIOpen aborted load"));
-        return NS_ERROR_WONT_HANDLE_CONTENT;
-      }
-    }
-  }
-
   static bool once = InitPreferences();
   mozilla::Unused << once;
 

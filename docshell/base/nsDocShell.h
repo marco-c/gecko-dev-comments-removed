@@ -491,7 +491,7 @@ class nsDocShell final : public nsDocLoader,
   
   static nsresult CreateRealChannelForDocument(
       nsIChannel** aChannel, nsIURI* aURI, nsILoadInfo* aLoadInfo,
-      nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
+      nsIInterfaceRequestor* aCallbacks,
       nsLoadFlags aLoadFlags, const nsAString& aSrcdoc, nsIURI* aBaseURI);
 
   
