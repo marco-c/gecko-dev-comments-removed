@@ -16,8 +16,10 @@ add_task(async function() {
   await waitForPaused(dbg);
 
   
-  await clickElement(dbg, "frame", 2);
+  await clickElement(dbg, "frame", 3);
 
   
   is(countTabs(dbg), 1);
+
+  await resume(dbg);
 });
