@@ -4,10 +4,10 @@
 
 
 
-from pyasn1.type import univ
+from pyasn1 import error
 from pyasn1.codec.ber import decoder
 from pyasn1.compat.octets import oct2int
-from pyasn1 import error
+from pyasn1.type import univ
 
 __all__ = ['decode']
 
@@ -32,7 +32,7 @@ class BooleanDecoder(decoder.AbstractSimpleDecoder):
             value = 0
         else:
             raise error.PyAsn1Error('Unexpected Boolean payload: %s' % byte)
-        return self._createComponent(asn1Spec, tagSet, value), tail
+        return self._createComponent(asn1Spec, tagSet, value, **options), tail
 
 
 BitStringDecoder = decoder.BitStringDecoder
@@ -59,6 +59,30 @@ for typeDecoder in tagMap.values():
 
 class Decoder(decoder.Decoder):
     pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

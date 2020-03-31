@@ -4,9 +4,9 @@
 
 
 
-from sys import version_info
-from datetime import datetime
 import time
+from datetime import datetime
+from sys import version_info
 
 __all__ = ['strptime']
 

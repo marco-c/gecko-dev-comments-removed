@@ -4,8 +4,8 @@
 
 
 
-from pyasn1.type import univ
 from pyasn1.codec.cer import decoder
+from pyasn1.type import univ
 
 __all__ = ['decode']
 
@@ -39,6 +39,30 @@ for typeDecoder in tagMap.values():
 
 class Decoder(decoder.Decoder):
     supportIndefLength = False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

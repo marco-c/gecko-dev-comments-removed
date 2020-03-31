@@ -5,8 +5,10 @@
 
 
 import sys
+
 try:
     import platform
+
     implementation = platform.python_implementation()
 
 except (ImportError, AttributeError):

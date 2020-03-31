@@ -4,17 +4,17 @@
 
 
 
-from pyasn1.type import univ
-from pyasn1.type import useful
+from pyasn1 import error
 from pyasn1.codec.ber import encoder
 from pyasn1.compat.octets import str2octs, null
-from pyasn1 import error
+from pyasn1.type import univ
+from pyasn1.type import useful
 
 __all__ = ['encode']
 
 
 class BooleanEncoder(encoder.IntegerEncoder):
-    def encodeValue(self, value, encodeFun, **options):
+    def encodeValue(self, value, asn1Spec, encodeFun, **options):
         if value == 0:
             substrate = (0,)
         else:
@@ -31,14 +31,17 @@ class RealEncoder(encoder.RealEncoder):
 
 
 class TimeEncoderMixIn(object):
-    zchar, = str2octs('Z')
-    pluschar, = str2octs('+')
-    minuschar, = str2octs('-')
-    commachar, = str2octs(',')
-    minLength = 12
-    maxLength = 19
+    Z_CHAR = ord('Z')
+    PLUS_CHAR = ord('+')
+    MINUS_CHAR = ord('-')
+    COMMA_CHAR = ord(',')
+    DOT_CHAR = ord('.')
+    ZERO_CHAR = ord('0')
 
-    def encodeValue(self, value, encodeFun, **options):
+    MIN_LENGTH = 12
+    MAX_LENGTH = 19
+
+    def encodeValue(self, value, asn1Spec, encodeFun, **options):
         
         
         
@@ -46,120 +49,189 @@ class TimeEncoderMixIn(object):
         
         
 
-        octets = value.asOctets()
+        if asn1Spec is not None:
+            value = asn1Spec.clone(value)
 
-        if not self.minLength < len(octets) < self.maxLength:
-            raise error.PyAsn1Error('Length constraint violated: %r' % value)
+        numbers = value.asNumbers()
 
-        if self.pluschar in octets or self.minuschar in octets:
-            raise error.PyAsn1Error('Must be UTC time: %r' % octets)
+        if self.PLUS_CHAR in numbers or self.MINUS_CHAR in numbers:
+            raise error.PyAsn1Error('Must be UTC time: %r' % value)
 
-        if octets[-1] != self.zchar:
-            raise error.PyAsn1Error('Missing "Z" time zone specifier: %r' % octets)
+        if numbers[-1] != self.Z_CHAR:
+            raise error.PyAsn1Error('Missing "Z" time zone specifier: %r' % value)
 
-        if self.commachar in octets:
+        if self.COMMA_CHAR in numbers:
             raise error.PyAsn1Error('Comma in fractions disallowed: %r' % value)
+
+        if self.DOT_CHAR in numbers:
+
+            isModified = False
+
+            numbers = list(numbers)
+
+            searchIndex = min(numbers.index(self.DOT_CHAR) + 4, len(numbers) - 1)
+
+            while numbers[searchIndex] != self.DOT_CHAR:
+                if numbers[searchIndex] == self.ZERO_CHAR:
+                    del numbers[searchIndex]
+                    isModified = True
+
+                searchIndex -= 1
+
+            searchIndex += 1
+
+            if searchIndex < len(numbers):
+                if numbers[searchIndex] == self.Z_CHAR:
+                    
+                    del numbers[searchIndex - 1]
+                    isModified = True
+
+            if isModified:
+                value = value.clone(numbers)
+
+        if not self.MIN_LENGTH < len(numbers) < self.MAX_LENGTH:
+            raise error.PyAsn1Error('Length constraint violated: %r' % value)
 
         options.update(maxChunkSize=1000)
 
         return encoder.OctetStringEncoder.encodeValue(
-            self, value, encodeFun, **options
+            self, value, asn1Spec, encodeFun, **options
         )
 
 
 class GeneralizedTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder):
-    minLength = 12
-    maxLength = 19
+    MIN_LENGTH = 12
+    MAX_LENGTH = 20
 
 
 class UTCTimeEncoder(TimeEncoderMixIn, encoder.OctetStringEncoder):
-    minLength = 10
-    maxLength = 14
+    MIN_LENGTH = 10
+    MAX_LENGTH = 14
 
 
 class SetOfEncoder(encoder.SequenceOfEncoder):
-    @staticmethod
-    def _sortComponents(components):
+    def encodeValue(self, value, asn1Spec, encodeFun, **options):
+        chunks = self._encodeComponents(
+            value, asn1Spec, encodeFun, **options)
+
         
-        return sorted(components, key=lambda x: isinstance(x, univ.Choice) and x.minTagSet or x.tagSet)
+        if len(chunks) > 1:
+            zero = str2octs('\x00')
+            maxLen = max(map(len, chunks))
+            paddedChunks = [
+                (x.ljust(maxLen, zero), x) for x in chunks
+            ]
+            paddedChunks.sort(key=lambda x: x[0])
 
-    def encodeValue(self, value, encodeFun, **options):
-        value.verifySizeSpec()
-        substrate = null
-        idx = len(value)
-        if value.typeId == univ.Set.typeId:
-            namedTypes = value.componentType
-            comps = []
-            compsMap = {}
-            while idx > 0:
-                idx -= 1
-                if namedTypes:
-                    if namedTypes[idx].isOptional and not value[idx].isValue:
-                        continue
-                    if namedTypes[idx].isDefaulted and value[idx] == namedTypes[idx].asn1Object:
-                        continue
+            chunks = [x[1] for x in paddedChunks]
 
-                comps.append(value[idx])
-                compsMap[id(value[idx])] = namedTypes and namedTypes[idx].isOptional
+        return null.join(chunks), True, True
 
-            for comp in self._sortComponents(comps):
-                options.update(ifNotEmpty=compsMap[id(comp)])
-                substrate += encodeFun(comp, **options)
+
+class SequenceOfEncoder(encoder.SequenceOfEncoder):
+    def encodeValue(self, value, asn1Spec, encodeFun, **options):
+
+        if options.get('ifNotEmpty', False) and not len(value):
+            return null, True, True
+
+        chunks = self._encodeComponents(
+            value, asn1Spec, encodeFun, **options)
+
+        return null.join(chunks), True, True
+
+
+class SetEncoder(encoder.SequenceEncoder):
+    @staticmethod
+    def _componentSortKey(componentAndType):
+        """Sort SET components by tag
+
+        Sort regardless of the Choice value (static sort)
+        """
+        component, asn1Spec = componentAndType
+
+        if asn1Spec is None:
+            asn1Spec = component
+
+        if asn1Spec.typeId == univ.Choice.typeId and not asn1Spec.tagSet:
+            if asn1Spec.tagSet:
+                return asn1Spec.tagSet
+            else:
+                return asn1Spec.componentType.minTagSet
         else:
-            components = [encodeFun(x, **options) for x in value]
+            return asn1Spec.tagSet
+
+    def encodeValue(self, value, asn1Spec, encodeFun, **options):
+
+        substrate = null
+
+        comps = []
+        compsMap = {}
+
+        if asn1Spec is None:
+            
+            inconsistency = value.isInconsistent
+            if inconsistency:
+                raise inconsistency
+
+            namedTypes = value.componentType
+
+            for idx, component in enumerate(value.values()):
+                if namedTypes:
+                    namedType = namedTypes[idx]
+
+                    if namedType.isOptional and not component.isValue:
+                            continue
+
+                    if namedType.isDefaulted and component == namedType.asn1Object:
+                            continue
+
+                    compsMap[id(component)] = namedType
+
+                else:
+                    compsMap[id(component)] = None
+
+                comps.append((component, asn1Spec))
+
+        else:
+            
+            for idx, namedType in enumerate(asn1Spec.componentType.namedTypes):
+
+                try:
+                    component = value[namedType.name]
+
+                except KeyError:
+                    raise error.PyAsn1Error('Component name "%s" not found in %r' % (namedType.name, value))
+
+                if namedType.isOptional and namedType.name not in value:
+                    continue
+
+                if namedType.isDefaulted and component == namedType.asn1Object:
+                    continue
+
+                compsMap[id(component)] = namedType
+                comps.append((component, asn1Spec[idx]))
+
+        for comp, compType in sorted(comps, key=self._componentSortKey):
+            namedType = compsMap[id(comp)]
+
+            if namedType:
+                options.update(ifNotEmpty=namedType.isOptional)
+
+            chunk = encodeFun(comp, compType, **options)
 
             
-            if len(components) > 1:
-                zero = str2octs('\x00')
-                maxLen = max(map(len, components))
-                paddedComponents = [
-                    (x.ljust(maxLen, zero), x) for x in components
-                ]
-                paddedComponents.sort(key=lambda x: x[0])
+            if namedType and namedType.openType:
+                wrapType = namedType.asn1Object
+                if wrapType.tagSet and not wrapType.isSameTypeWith(comp):
+                    chunk = encodeFun(chunk, wrapType, **options)
 
-                components = [x[1] for x in paddedComponents]
-
-            substrate = null.join(components)
+            substrate += chunk
 
         return substrate, True, True
 
 
 class SequenceEncoder(encoder.SequenceEncoder):
-    def encodeValue(self, value, encodeFun, **options):
-        value.verifySizeSpec()
-
-        namedTypes = value.componentType
-        substrate = null
-
-        idx = len(value)
-        while idx > 0:
-            idx -= 1
-            if namedTypes:
-                if namedTypes[idx].isOptional and not value[idx].isValue:
-                    continue
-                if namedTypes[idx].isDefaulted and value[idx] == namedTypes[idx].asn1Object:
-                    continue
-
-            options.update(ifNotEmpty=namedTypes and namedTypes[idx].isOptional)
-
-            substrate = encodeFun(value[idx], **options) + substrate
-
-        return substrate, True, True
-
-
-class SequenceOfEncoder(encoder.SequenceOfEncoder):
-    def encodeValue(self, value, encodeFun, **options):
-        substrate = null
-        idx = len(value)
-
-        if options.get('ifNotEmpty', False) and not idx:
-            return substrate, True, True
-
-        value.verifySizeSpec()
-        while idx > 0:
-            idx -= 1
-            substrate = encodeFun(value[idx], **options) + substrate
-        return substrate, True, True
+    omitEmptyOptionals = True
 
 
 tagMap = encoder.tagMap.copy()
@@ -180,7 +252,7 @@ typeMap.update({
     useful.GeneralizedTime.typeId: GeneralizedTimeEncoder(),
     useful.UTCTime.typeId: UTCTimeEncoder(),
     
-    univ.Set.typeId: SetOfEncoder(),
+    univ.Set.typeId: SetEncoder(),
     univ.SetOf.typeId: SetOfEncoder(),
     univ.Sequence.typeId: SequenceEncoder(),
     univ.SequenceOf.typeId: SequenceOfEncoder()
@@ -190,6 +262,26 @@ typeMap.update({
 class Encoder(encoder.Encoder):
     fixedDefLengthMode = False
     fixedChunkSize = 1000
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
