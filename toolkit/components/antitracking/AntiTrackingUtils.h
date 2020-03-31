@@ -48,6 +48,10 @@ class AntiTrackingUtils final {
                                      bool aIsInPrivateBrowsing,
                                      uint32_t* aRejectedReason,
                                      uint32_t aBlockedReason);
+
+  
+  
+  static bool HasStoragePermissionInParent(nsIChannel* aChannel);
 };
 
 }  
