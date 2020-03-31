@@ -3287,23 +3287,26 @@ already_AddRefed<Animation> Element::Animate(
 }
 
 void Element::GetAnimations(const GetAnimationsOptions& aOptions,
-                            nsTArray<RefPtr<Animation>>& aAnimations,
-                            Flush aFlush) {
-  if (aFlush == Flush::Yes) {
-    if (Document* doc = GetComposedDoc()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      doc->FlushPendingNotifications(
-          ChangesToFlush(FlushType::Style, false ));
-    }
+                            nsTArray<RefPtr<Animation>>& aAnimations) {
+  if (Document* doc = GetComposedDoc()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    doc->FlushPendingNotifications(
+        ChangesToFlush(FlushType::Style, false ));
   }
 
+  GetAnimationsWithoutFlush(aOptions, aAnimations);
+}
+
+void Element::GetAnimationsWithoutFlush(
+    const GetAnimationsOptions& aOptions,
+    nsTArray<RefPtr<Animation>>& aAnimations) {
   Element* elem = this;
   PseudoStyleType pseudoType = PseudoStyleType::NotPseudo;
   
