@@ -124,6 +124,19 @@ class ComputedStyle {
 
   
   
+  bool HasAuthorSpecifiedPadding() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_PADDING);
+  }
+
+  
+  
+  
+  bool HasAuthorSpecifiedBorderOrBackground() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
+  }
+
+  
+  
   
   
   bool HasTextDecorationLines() const {

@@ -1630,7 +1630,7 @@ pub enum Appearance {
     RadioLabel,
     
     Range,
-    RangeThumb,
+    RangeThumb, 
     
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
@@ -1854,6 +1854,14 @@ pub enum Appearance {
     
     #[css(skip)]
     Count,
+}
+
+impl Appearance {
+    
+    #[inline]
+    pub fn is_none(self) -> bool {
+        self == Appearance::None
+    }
 }
 
 
