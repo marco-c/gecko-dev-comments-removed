@@ -826,6 +826,8 @@ class PageAction {
             event,
             ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
+          
+          this._collapse();
         },
       };
     };
