@@ -9,6 +9,7 @@
 #include "mozilla/TypedEnumBits.h"
 
 #include <stdint.h>
+#include <type_traits>
 
 
 
@@ -111,16 +112,14 @@ MAKE_STANDARD_BITFIELD_FOR_TYPE(unsigned_long_long)
 
 template <typename T>
 void TestNonConvertibilityForOneType() {
-  using mozilla::IsConvertible;
-
-  static_assert(!IsConvertible<T, bool>::value, "should not be convertible");
-  static_assert(!IsConvertible<T, int>::value, "should not be convertible");
-  static_assert(!IsConvertible<T, uint64_t>::value,
+  static_assert(!std::is_convertible_v<T, bool>, "should not be convertible");
+  static_assert(!std::is_convertible_v<T, int>, "should not be convertible");
+  static_assert(!std::is_convertible_v<T, uint64_t>,
                 "should not be convertible");
 
-  static_assert(!IsConvertible<bool, T>::value, "should not be convertible");
-  static_assert(!IsConvertible<int, T>::value, "should not be convertible");
-  static_assert(!IsConvertible<uint64_t, T>::value,
+  static_assert(!std::is_convertible_v<bool, T>, "should not be convertible");
+  static_assert(!std::is_convertible_v<int, T>, "should not be convertible");
+  static_assert(!std::is_convertible_v<uint64_t, T>,
                 "should not be convertible");
 }
 
@@ -372,32 +371,32 @@ void TestTypedEnumBitField() {
 
 
 void TestNoConversionsBetweenUnrelatedTypes() {
-  using mozilla::IsConvertible;
-
   
   
   typedef CharEnumBitField T1;
   typedef Nested::CharEnumBitField T2;
 
-  static_assert(!IsConvertible<T1, T2>::value, "should not be convertible");
-  static_assert(!IsConvertible<T1, decltype(T2::A)>::value,
+  static_assert(!std::is_convertible_v<T1, T2>, "should not be convertible");
+  static_assert(!std::is_convertible_v<T1, decltype(T2::A)>,
                 "should not be convertible");
-  static_assert(!IsConvertible<T1, decltype(T2::A | T2::B)>::value,
-                "should not be convertible");
-
-  static_assert(!IsConvertible<decltype(T1::A), T2>::value,
-                "should not be convertible");
-  static_assert(!IsConvertible<decltype(T1::A), decltype(T2::A)>::value,
-                "should not be convertible");
-  static_assert(!IsConvertible<decltype(T1::A), decltype(T2::A | T2::B)>::value,
+  static_assert(!std::is_convertible_v<T1, decltype(T2::A | T2::B)>,
                 "should not be convertible");
 
-  static_assert(!IsConvertible<decltype(T1::A | T1::B), T2>::value,
+  static_assert(!std::is_convertible_v<decltype(T1::A), T2>,
                 "should not be convertible");
-  static_assert(!IsConvertible<decltype(T1::A | T1::B), decltype(T2::A)>::value,
+  static_assert(!std::is_convertible_v<decltype(T1::A), decltype(T2::A)>,
                 "should not be convertible");
   static_assert(
-      !IsConvertible<decltype(T1::A | T1::B), decltype(T2::A | T2::B)>::value,
+      !std::is_convertible_v<decltype(T1::A), decltype(T2::A | T2::B)>,
+      "should not be convertible");
+
+  static_assert(!std::is_convertible_v<decltype(T1::A | T1::B), T2>,
+                "should not be convertible");
+  static_assert(
+      !std::is_convertible_v<decltype(T1::A | T1::B), decltype(T2::A)>,
+      "should not be convertible");
+  static_assert(
+      !std::is_convertible_v<decltype(T1::A | T1::B), decltype(T2::A | T2::B)>,
       "should not be convertible");
 }
 
