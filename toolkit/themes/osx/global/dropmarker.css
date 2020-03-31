@@ -2,8 +2,8 @@
 
 
 
-dropmarker {
-  -moz-appearance: -moz-menulist-button;
+:host {
+  -moz-appearance: -moz-menulist-arrow-button;
   width: 16px;
   
 
