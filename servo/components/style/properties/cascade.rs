@@ -372,13 +372,12 @@ fn tweak_when_ignoring_colors(
         
         
         PropertyDeclaration::BackgroundColor(ref color) => {
-            if color.is_transparent() {
-                return;
+            if !color.is_transparent() {
+                let color = builder.device.default_background_color();
+                declarations_to_apply_unless_overriden.push(
+                    PropertyDeclaration::BackgroundColor(color.into())
+                )
             }
-            let color = builder.device.default_background_color();
-            declarations_to_apply_unless_overriden.push(
-                PropertyDeclaration::BackgroundColor(color.into())
-            )
         }
         PropertyDeclaration::Color(ref color) => {
             
