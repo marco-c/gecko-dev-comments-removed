@@ -131,16 +131,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
     return nsPIDOMWindowOuter::GetFromCurrentInner(GetOwner());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   nsresult CheckCurrentGlobalCorrectness() const;
 
   nsPIDOMWindowInner* GetOwner() const { return mOwnerWindow; }
