@@ -83,7 +83,7 @@ nsTreeBodyFrame* XULTreeElement::GetTreeBodyFrame(FlushType aFlushType) {
   MOZ_ASSERT(aFlushType == FlushType::Frames ||
              aFlushType == FlushType::Layout || aFlushType == FlushType::None);
   nsCOMPtr<nsIContent> kungFuDeathGrip = this;  
-  RefPtr<Document> doc = GetUncomposedDoc();
+  RefPtr<Document> doc = GetComposedDoc();
 
   
   
