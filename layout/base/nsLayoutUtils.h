@@ -2955,7 +2955,8 @@ class nsLayoutUtils {
 
   
   
-  static uint8_t ControlCharVisibilityDefault();
+  static mozilla::StyleControlCharacterVisibility
+  ControlCharVisibilityDefault();
 
   
   

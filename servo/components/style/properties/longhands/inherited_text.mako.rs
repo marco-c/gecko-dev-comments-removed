@@ -26,7 +26,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow"
 )}
 
-// CSS Text Module Level 3
+
 
 ${helpers.predefined_type(
     "text-transform",
@@ -48,7 +48,7 @@ ${helpers.single_keyword(
     spec="https://drafts.csswg.org/css-text/#propdef-hyphens",
 )}
 
-// TODO: Support <percentage>
+
 ${helpers.single_keyword(
     "-moz-text-size-adjust",
     "auto none",
@@ -72,8 +72,8 @@ ${helpers.predefined_type(
     servo_restyle_damage = "reflow",
 )}
 
-// Also known as "word-wrap" (which is more popular because of IE), but this is
-// the preferred name per CSS-TEXT 6.2.
+
+
 ${helpers.predefined_type(
     "overflow-wrap",
     "OverflowWrap",
@@ -99,7 +99,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="rebuild_and_reflow",
 )}
 
-// TODO(pcwalton): Support `text-justify: distribute`.
+
 <%helpers:single_keyword
     name="text-justify"
     values="auto none inter-word"
@@ -124,7 +124,7 @@ ${helpers.predefined_type(
                 % for value in "Auto None InterCharacter InterWord".split():
                 SpecifiedValue::${value} => computed_value::T::${value},
                 % endfor
-                // https://drafts.csswg.org/css-text-3/#valdef-text-justify-distribute
+                
                 SpecifiedValue::Distribute => computed_value::T::InterCharacter,
             }
         }
@@ -151,7 +151,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-text/#propdef-text-align-last",
 )}
 
-// TODO make this a shorthand and implement text-align-last/text-align-all
+
 ${helpers.predefined_type(
     "text-align",
     "TextAlign",
@@ -292,8 +292,8 @@ ${helpers.predefined_type(
     needs_context=False,
 )}
 
-// CSS Compatibility
-// https://compat.spec.whatwg.org
+
+
 ${helpers.predefined_type(
     "-webkit-text-fill-color",
     "Color",
@@ -326,8 +326,8 @@ ${helpers.predefined_type(
     animation_value_type="discrete",
 )}
 
-// CSS Ruby Layout Module Level 1
-// https://drafts.csswg.org/css-ruby/
+
+
 ${helpers.single_keyword(
     "ruby-align",
     "space-around start center space-between",
@@ -346,8 +346,8 @@ ${helpers.single_keyword(
     gecko_enum_prefix="StyleRubyPosition",
 )}
 
-// CSS Writing Modes Module Level 3
-// https://drafts.csswg.org/css-writing-modes-3/
+
+
 
 ${helpers.single_keyword(
     "text-combine-upright",
@@ -357,7 +357,7 @@ ${helpers.single_keyword(
     spec="https://drafts.csswg.org/css-writing-modes-3/#text-combine-upright",
 )}
 
-// SVG 1.1: Section 11 - Painting: Filling, Stroking and Marker Symbols
+
 ${helpers.single_keyword(
     "text-rendering",
     "auto optimizespeed optimizelegibility geometricprecision",
@@ -368,19 +368,19 @@ ${helpers.single_keyword(
     servo_restyle_damage="rebuild_and_reflow",
 )}
 
-// FIXME Firefox expects the initial value of this property to change depending
-// on the value of the layout.css.control-characters.visible pref.
+
+
 ${helpers.single_keyword(
     "-moz-control-character-visibility",
     "hidden visible",
     engines="gecko",
-    gecko_constant_prefix="NS_STYLE_CONTROL_CHARACTER_VISIBILITY",
+    gecko_enum_prefix="StyleControlCharacterVisibility",
     animation_value_type="none",
     gecko_ffi_name="mControlCharacterVisibility",
     spec="Nonstandard",
 )}
 
-// text underline offset
+
 ${helpers.predefined_type(
     "text-underline-offset",
     "LengthPercentageOrAuto",
@@ -392,7 +392,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-text-decor-4/#underline-offset",
 )}
 
-// text underline position
+
 ${helpers.predefined_type(
     "text-underline-position",
     "TextUnderlinePosition",
@@ -404,7 +404,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-text-decor-3/#text-underline-position-property",
 )}
 
-// text decoration skip ink
+
 ${helpers.predefined_type(
     "text-decoration-skip-ink",
     "TextDecorationSkipInk",
