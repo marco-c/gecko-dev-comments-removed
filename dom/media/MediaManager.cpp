@@ -4368,9 +4368,38 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
               return DeviceOperationPromise::CreateAndResolve(NS_OK, __func__);
             }
 
+            nsString inputDeviceGroupId;
+            state.mDevice->GetRawGroupId(inputDeviceGroupId);
+
             return MediaManager::PostTask<DeviceOperationPromise>(
-                __func__, [self, device = state.mDevice, aEnable](
+                __func__, [self, device = state.mDevice, aEnable, inputDeviceGroupId](
                               MozPromiseHolder<DeviceOperationPromise>& h) {
+                  
+                  
+                  
+                  
+                  if (device->mKind == dom::MediaDeviceKind::Audioinput && !aEnable) {
+                    
+                    
+                    CubebDeviceEnumerator* enumerator = CubebDeviceEnumerator::GetInstance();
+                    
+                    
+                    RefPtr<AudioDeviceInfo> outputDevice =
+                      enumerator->DefaultDevice(CubebDeviceEnumerator::Side::OUTPUT);
+                    if (outputDevice->GroupID().Equals(inputDeviceGroupId)) {
+                      LOG("Device group id match when %s, "
+                          "not turning the input device off (%s)",
+                          aEnable ? "unmuting" : "muting",
+                          NS_ConvertUTF16toUTF8(outputDevice->GroupID()).get());
+                      h.Resolve(NS_OK, __func__);
+                      return;
+                    }
+                  }
+
+                  LOG("Device group id don't match when %s, "
+                      "not turning the audio input device off (%s)",
+                      aEnable ? "unmuting" : "muting",
+                      NS_ConvertUTF16toUTF8(inputDeviceGroupId).get());
                   h.Resolve(aEnable ? device->Start() : device->Stop(),
                             __func__);
                 });
