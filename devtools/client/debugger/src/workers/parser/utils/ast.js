@@ -71,7 +71,7 @@ export function parse(text: ?string, opts?: Object): any {
 
 
 function htmlParser({ source, line }) {
-  return parse(source, { startLine: line });
+  return parse(source, { startLine: line, ...sourceOptions.generated });
 }
 
 const VUE_COMPONENT_START = /^\s*</;
