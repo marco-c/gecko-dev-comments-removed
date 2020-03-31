@@ -435,12 +435,12 @@ appUpdater.prototype = {
   
 
 
-  onStatus(aRequest, aStatus, aStatusArg) {},
+  onStatus(aRequest, aContext, aStatus, aStatusArg) {},
 
   
 
 
-  onProgress(aRequest, aProgress, aProgressMax) {
+  onProgress(aRequest, aContext, aProgress, aProgressMax) {
     this.downloadStatus.textContent = DownloadUtils.getTransferTotal(
       aProgress,
       aProgressMax

@@ -339,12 +339,12 @@ class AppUpdater {
   
 
 
-  onStatus(aRequest, aStatus, aStatusArg) {}
+  onStatus(aRequest, aContext, aStatus, aStatusArg) {}
 
   
 
 
-  onProgress(aRequest, aProgress, aProgressMax) {
+  onProgress(aRequest, aContext, aProgress, aProgressMax) {
     this._setStatus(AppUpdater.STATUS.DOWNLOADING, aProgress, aProgressMax);
   }
 

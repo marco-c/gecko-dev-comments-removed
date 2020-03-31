@@ -190,8 +190,8 @@ loadListener.prototype = {
   },
 
   
-  onProgress(request, progress, progressMax) {},
-  onStatus(request, status, statusArg) {},
+  onProgress(request, context, progress, progressMax) {},
+  onStatus(request, context, status, statusArg) {},
 };
 
 
