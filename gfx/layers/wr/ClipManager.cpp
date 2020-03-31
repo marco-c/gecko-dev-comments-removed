@@ -208,6 +208,7 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayItem* aItem) {
     leafmostASR = ActiveScrolledRoot::PickDescendant(leafmostASR, clip->mASR);
   }
   Maybe<wr::WrSpaceAndClip> leafmostId = DefineScrollLayers(leafmostASR, aItem);
+  Unused << leafmostId;
 
   
   

@@ -592,7 +592,6 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
 
   
   auto bindings = funbox->functionScopeBindings();
-  Maybe<uint32_t> lastLexicalSlot;
   if (bindings) {
     NameLocationMap& cache = *nameCache_;
 
