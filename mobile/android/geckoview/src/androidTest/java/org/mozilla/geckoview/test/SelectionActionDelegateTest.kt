@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -69,7 +69,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Generic tests for each content type. */
+    
 
     @Test fun request() {
         if (editable) {
@@ -126,7 +126,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
     @Test fun selectAll() {
         if (type == ContentType.DIV && !editable) {
-            // "Select all" for non-editable div means selecting the whole document.
+            
             testThat(selectedContent, withResponse(ACTION_SELECT_ALL), changesSelectionTo(
                     both(containsString(selectedContent.initialContent))
                             .and(not(equalTo(selectedContent.initialContent)))))
@@ -158,12 +158,12 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
     @Test fun pagehide() {
-        // Navigating to another page should hide selection action.
+        
         testThat(selectedContent, { mainSession.loadTestPath(HELLO_HTML_PATH) }, clearsSelection())
     }
 
     @Test fun deactivate() {
-        // Blurring the window should hide selection action.
+        
         testThat(selectedContent, { mainSession.setFocused(false) }, clearsSelection())
         mainSession.setFocused(true)
     }
@@ -183,7 +183,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Interface that defines behavior for a particular type of content */
+    
     private interface SelectedContent {
         fun focus() {}
         fun select() {}
@@ -192,7 +192,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         val selectionOffsets: Pair<Int, Int>
     }
 
-    /** Main method that performs test logic. */
+    
     private fun testThat(content: SelectedContent,
                          respondingWith: (Selection) -> Unit,
                          result: (SelectedContent) -> Unit,
@@ -203,8 +203,8 @@ class SelectionActionDelegateTest : BaseSessionTest() {
 
         content.focus()
 
-        // Show selection actions for collapsed selections, so we can test them.
-        // Also, always show accessible carets / selection actions for changes due to JS calls.
+        
+        
         sessionRule.setPrefsUntilTestEnd(mapOf(
                 "geckoview.selection_action.show_on_focus" to true,
                 "layout.accessiblecaret.script_change_update_mode" to 2))
@@ -229,7 +229,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Helpers. */
+    
 
     private val clipboard by lazy {
         InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(Context.CLIPBOARD_SERVICE)
@@ -239,7 +239,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     private fun withClipboard(content: String = "", lambda: () -> Unit) {
         val oldClip = clipboard.primaryClip
         try {
-            clipboard.primaryClip = ClipData.newPlainText("", content)
+            clipboard.setPrimaryClip(ClipData.newPlainText("", content))
 
             sessionRule.addExternalDelegateUntilTestEnd(
                     ClipboardManager.OnPrimaryClipChangedListener::class,
@@ -248,7 +248,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
                     ClipboardManager.OnPrimaryClipChangedListener {})
             lambda()
         } finally {
-            clipboard.primaryClip = oldClip ?: ClipData.newPlainText("", "")
+            clipboard.setPrimaryClip(oldClip ?: ClipData.newPlainText("", ""))
         }
     }
 
@@ -259,7 +259,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Behavior objects for different content types */
+    
 
     open inner class SelectedDiv(val id: String,
                                  override val initialContent: String) : SelectedContent {
@@ -358,7 +358,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Lambda for responding with certain actions. */
+    
 
     private fun withResponse(vararg actions: String): (Selection) -> Unit {
         var responded = false
@@ -371,7 +371,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
     }
 
 
-    /** Lambdas for asserting the results of actions. */
+    
 
     private fun hasShowActionRequest(expectedFlags: Int,
                                      expectedActions: Array<out String>) = { it: SelectedContent ->
