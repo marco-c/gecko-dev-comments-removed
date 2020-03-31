@@ -90,9 +90,8 @@ var Policies = {
   },
 
   AppUpdateURL: {
-    onBeforeAddons(manager, param) {
-      setDefaultPref("app.update.url", param.href);
-    },
+    
+    
   },
 
   Authentication: {
