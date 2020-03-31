@@ -167,7 +167,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "AudioParam", insecureContext: true },
   
-  { name: "AudioParamMap", insecureContext: true, disabled: true },
+  { name: "AudioParamMap", insecureContext: false, disabled: true },
   
   { name: "AudioProcessingEvent", insecureContext: true },
   
