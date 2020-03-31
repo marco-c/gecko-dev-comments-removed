@@ -4982,7 +4982,7 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
     
     
     if (aParentFrame && aParentFrame->GetContent() != aElement.GetParent()) {
-      return nullptr;
+      return &sSuppressData;
     }
 
     
