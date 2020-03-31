@@ -1,23 +1,23 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 include('util.configure')
 include('checks.configure')
 
-# Make `toolkit` available when toolkit/moz.configure is not included.
+
 toolkit = dependable(None)
-# Likewise with `bindgen_config_paths` when
-# build/moz.configure/bindgen.configure is not included.
+
+
 bindgen_config_paths = dependable(None)
 
 option(env='DIST', nargs=1, help='DIST directory')
 
 
-# Do not allow objdir == srcdir builds.
-# ==============================================================
+
+
 @depends('--help', 'DIST')
 @imports(_from='__builtin__', _import='open')
 @imports(_from='os.path', _import='exists')
@@ -41,14 +41,14 @@ def check_build_environment(help, dist):
     if help:
         return result
 
-    # This limitation has mostly to do with GNU make. Since make can't represent
-    # variables with spaces without correct quoting and many paths are used
-    # without proper quoting, using paths with spaces commonly results in
-    # targets or dependencies being treated as multiple paths. This, of course,
-    # undermines the ability for make to perform up-to-date checks and makes
-    # the build system not work very efficiently. In theory, a non-make build
-    # backend will make this limitation go away. But there is likely a long tail
-    # of things that will need fixing due to e.g. lack of proper path quoting.
+    
+    
+    
+    
+    
+    
+    
+    
     if len(topsrcdir.split()) > 1:
         die('Source directory cannot be located in a path with spaces: %s' %
             topsrcdir)
@@ -68,7 +68,7 @@ def check_build_environment(help, dist):
             '  ***'
             )
 
-    # Check for CRLF line endings.
+    
     with open(os.path.join(topsrcdir, 'configure.py'), 'r') as fh:
         data = ensure_text(fh.read())
         if '\r' in data:
@@ -91,7 +91,7 @@ def check_build_environment(help, dist):
                 ' * usage information for that tool for more.\n'
                 ' ***')
 
-    # Check for a couple representative files in the source tree
+    
     conflict_files = [
         '*         %s' % f for f in ('Makefile', 'config/autoconf.mk')
         if exists(os.path.join(topsrcdir, f))
@@ -148,11 +148,11 @@ def external_source_dir(value):
 set_config('EXTERNAL_SOURCE_DIR', external_source_dir)
 add_old_configure_assignment('EXTERNAL_SOURCE_DIR', external_source_dir)
 
-# Read user mozconfig
-# ==============================================================
-# Note: the dependency on --help is only there to always read the mozconfig,
-# even when --help is passed. Without this dependency, the function wouldn't
-# be called when --help is passed, and the mozconfig wouldn't be read.
+
+
+
+
+
 
 
 @depends('MOZCONFIG', 'OLD_CONFIGURE',
@@ -164,22 +164,22 @@ def mozconfig(mozconfig, old_configure, build_env,
     if not old_configure and not help:
         die('The OLD_CONFIGURE environment variable must be set')
 
-    # Don't read the mozconfig for the js configure (yay backwards
-    # compatibility)
-    # While the long term goal is that js and top-level use the same configure
-    # and the same overall setup, including the possibility to use mozconfigs,
-    # figuring out what we want to do wrt mozconfig vs. command line and
-    # environment variable is not a clear-cut case, and it's more important to
-    # fix the immediate problem mozconfig causes to js developers by
-    # "temporarily" returning to the previous behavior of not loading the
-    # mozconfig for the js configure.
-    # Separately to the immediate problem for js developers, there is also the
-    # need to not load a mozconfig when running js configure as a subconfigure.
-    # Unfortunately, there is no direct way to tell whether the running
-    # configure is the js configure. The indirect way is to look at the
-    # OLD_CONFIGURE path, which points to js/src/old-configure.
-    # I expect we'll have figured things out for mozconfigs well before
-    # old-configure dies.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if old_configure and os.path.dirname(os.path.abspath(old_configure[0])).endswith('/js/src'):
         return {'path': None}
 
@@ -197,15 +197,15 @@ def mozconfig(mozconfig, old_configure, build_env,
 set_config('MOZCONFIG', depends(mozconfig)(lambda m: m['path']))
 
 
-# Mozilla-Build
-# ==============================================================
+
+
 option(env='MOZILLABUILD', nargs=1,
        help='Path to Mozilla Build (Windows-only)')
 
 option(env='CONFIG_SHELL', nargs=1, help='Path to a POSIX shell')
 
-# It feels dirty replicating this from python/mozbuild/mozbuild/mozconfig.py,
-# but the end goal being that the configure script would go away...
+
+
 
 
 @depends('CONFIG_SHELL', 'MOZILLABUILD')
@@ -222,8 +222,8 @@ def shell(value, mozillabuild):
     return find_program(shell)
 
 
-# This defines a reasonable shell for when running with --help.
-# If one was passed in the environment, though, fall back to that.
+
+
 @depends('--help', 'CONFIG_SHELL')
 def help_shell(help, shell):
     if help and not shell:
@@ -233,8 +233,8 @@ def help_shell(help, shell):
 shell = help_shell | shell
 
 
-# Python 2
-# ========
+
+
 
 option(env='PYTHON', nargs=1, help='Python 2.7 interpreter')
 
@@ -256,24 +256,24 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
     if help:
         return
 
-    # NOTE: We cannot assume the Python we are calling this code with is the
-    # Python we want to set up a virtualenv for.
-    #
-    # We also cannot assume that the Python the caller is configuring meets our
-    # build requirements.
-    #
-    # Because of this the code is written to re-execute itself with the correct
-    # interpreter if required.
+    
+    
+    
+    
+    
+    
+    
+    
 
     log.debug("python2: running with pid %r" % os.getpid())
     log.debug("python2: sys.executable: %r" % sys.executable)
 
     python = env_python[0] if env_python else None
 
-    # Did our python come from mozconfig? Overrides environment setting.
-    # Ideally we'd rely on the mozconfig injection from mozconfig_options,
-    # but we'd rather avoid the verbosity when we need to reexecute with
-    # a different python.
+    
+    
+    
+    
     if mozconfig['path']:
         if 'PYTHON' in mozconfig['env']['added']:
             python = mozconfig['env']['added']['PYTHON']
@@ -299,8 +299,8 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
             os.path.join(virtualenvs_root, 'init'), out,
             os.path.join(topsrcdir, 'build', 'virtualenv_packages.txt'))
 
-    # If we're not in the virtualenv, we need to update the path to include some
-    # necessary modules for find_program.
+    
+    
     if normsep(sys.executable) != normsep(manager.python_path):
         sys.path.insert(
             0, os.path.join(topsrcdir, 'testing', 'mozbase', 'mozfile'))
@@ -319,7 +319,7 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
             raise FatalCheckError(
                 'could not determine version of given PYTHON: %s' % e)
     elif mozillabuild:
-        # MozillaBuild provides a Python 2.
+        
         python = normsep('%s/python/python2.exe' % mozillabuild)
 
         try:
@@ -353,12 +353,12 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
 
     python = normsep(manager.python_path)
 
-    # The currently running interpreter could be Python 2 or Python 3. We make the
-    # part of the code that re-executes everything with the virtualenv's Python
-    # conditional on running the same major version as the current interpreter. If we
-    # don't do this then the configure code for the Py 2 and Py 3 virtualenvs could
-    # activate each other from inside the other's virtualenv.  We can't guarantee
-    # how the virtualenvs would interact if that happens.
+    
+    
+    
+    
+    
+    
     if PY2:
         if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
             log.debug("python2: executing as %s, should be running as %s" % (
@@ -366,11 +366,11 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
             log.info('Reexecuting in the virtualenv')
             if env_python:
                 del os.environ['PYTHON']
-            # One would prefer to use os.execl, but that's completely borked on
-            # Windows.
+            
+            
             sys.exit(subprocess.call([python] + sys.argv))
 
-        # We are now in the virtualenv
+        
         if not distutils.sysconfig.get_python_lib():
             die('Could not determine python site packages directory')
 
@@ -381,20 +381,21 @@ set_config('PYTHON', virtualenv_python2)
 add_old_configure_assignment('PYTHON', virtualenv_python2)
 
 
-# Inject mozconfig options
-# ==============================================================
-# All options defined above this point can't be injected in mozconfig_options
-# below, so collect them.
+
+
+
+
 
 
 @template
 def early_options():
     @dependable
     @imports('__sandbox__')
+    @imports(_from='six', _import='itervalues')
     def early_options():
         return set(
             option.env
-            for option in __sandbox__._options.itervalues()
+            for option in itervalues(__sandbox__._options)
             if option.env
         )
     return early_options
@@ -404,7 +405,7 @@ early_options = early_options()
 
 
 @depends(mozconfig, 'MOZ_AUTOMATION', '--help')
-# This gives access to the sandbox. Don't copy this blindly.
+
 @imports('__sandbox__')
 @imports('os')
 @imports('six')
@@ -422,9 +423,9 @@ def mozconfig_options(mozconfig, automation, help):
         log.info('Adding configure options from %s' % mozconfig['path'])
         for arg in mozconfig['configure_args']:
             log.info('  %s' % arg)
-            # We could be using imply_option() here, but it has other
-            # contraints that don't really apply to the command-line
-            # emulation that mozconfig provides.
+            
+            
+            
             helper.add(arg, origin='mozconfig', args=helper._args)
 
         def add(key, value):
@@ -445,8 +446,8 @@ def mozconfig_options(mozconfig, automation, help):
             add(key, value)
 
 
-# Python 3
-# ========
+
+
 
 option(env='PYTHON3', nargs=1, help='Python 3 interpreter (3.5 or later)')
 
@@ -471,28 +472,28 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
     if help:
         return
 
-    # NOTE: We cannot assume the Python we are calling this code with is the
-    # Python we want to set up a virtualenv for.
-    #
-    # We also cannot assume that the Python the caller is configuring meets our
-    # build requirements.
-    #
-    # Because of this the code is written to re-execute itself with the correct
-    # interpreter if required.
+    
+    
+    
+    
+    
+    
+    
+    
 
     log.debug("python3: running with pid %r" % os.getpid())
     log.debug("python3: sys.executable: %r" % sys.executable)
 
-    # Verify that the Python version we executed this code with is the minimum
-    # required version to handle all project code.
+    
+    
     with LineIO(lambda l: log.error(l)) as out:
         verify_python_version(out)
 
     python = env_python[0] if env_python else None
 
-    # Ideally we'd rely on the mozconfig injection from mozconfig_options,
-    # but we'd rather avoid the verbosity when we need to reexecute with
-    # a different python.
+    
+    
+    
     if mozconfig['path']:
         if 'PYTHON3' in mozconfig['env']['added']:
             python = mozconfig['env']['added']['PYTHON3']
@@ -505,18 +506,18 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
 
     log.debug("python3: executable from configuration: %r" % python)
 
-    # If this is a mozilla-central build, we'll find the virtualenv in the top
-    # source directory. If this is a SpiderMonkey build, we assume we're at
-    # js/src and try to find the virtualenv from the mozilla-central root.
-    # See mozilla-central changeset d2cce982a7c809815d86d5daecefe2e7a563ecca
-    # Bug 784841
+    
+    
+    
+    
+    
     topsrcdir, topobjdir = build_env.topsrcdir, build_env.topobjdir
     if topobjdir.endswith('/js/src'):
         topobjdir = topobjdir[:-7]
 
-    # If we know the Python executable the caller is asking for then verify its
-    # version. If the caller did not ask for a specific executable then find
-    # a reasonable default.
+    
+    
+    
     if python:
         try:
             version = python_executable_version(python).version
@@ -524,7 +525,7 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
             raise FatalCheckError('could not determine version of PYTHON '
                                   '(%s): %s' % (python, e))
     elif mozillabuild:
-        # MozillaBuild provides a Python 3.
+        
         python = normsep('%s/python3/python3.exe' % mozillabuild)
 
         try:
@@ -533,10 +534,10 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
             raise FatalCheckError('could not determine version of '
                                   'MozillaBuild python: %s' % e)
     else:
-        # Fall back to the search routine.
+        
         python, version = find_python3_executable(min_version='3.5.0')
 
-        # The API returns a bytes whereas everything in configure is unicode.
+        
         if python:
             python = ensure_text(python)
 
@@ -570,12 +571,12 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
 
     python = normsep(manager.python_path)
 
-    # The currently running interpreter could be Python 2 or Python 3. We make the
-    # part of the code that re-executes everything with the virtualenv's Python
-    # conditional on running the same major version as the current interpreter. If we
-    # don't do this then the configure code for the Py 2 and Py 3 virtualenvs could
-    # activate each other from inside the other's virtualenv.  We can't guarantee
-    # how the virtualenvs would interact if that happens.
+    
+    
+    
+    
+    
+    
     if PY3:
         if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
             log.debug("python3: executing as %s, should be running as %s" % (
@@ -583,11 +584,15 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
             log.info('Re-executing in the virtualenv')
             if env_python:
                 del os.environ['PYTHON3']
-            # One would prefer to use os.execl, but that's completely borked on
-            # Windows.
+            
+            
+            
+            os.environ['PYTHONEXECUTABLE'] = python
+            
+            
             sys.exit(subprocess.call([python] + sys.argv))
 
-        # We are now in the virtualenv
+        
         if not distutils.sysconfig.get_python_lib():
             die('Could not determine python site packages directory')
 
@@ -606,8 +611,8 @@ set_config(
     depends(virtualenv_python3)(lambda p: p.str_version))
 
 
-# Source checkout and version control integration.
-# ================================================
+
+
 
 
 @depends(check_build_environment, 'MOZ_AUTOMATION', '--help')
@@ -623,10 +628,10 @@ def vcs_checkout_type(build_env, automation, help):
                               'from a source checkout when MOZ_AUTOMATION '
                               'is set')
 
-# Resolve VCS binary for detected repository type.
 
 
-# TODO remove hg.exe once bug 1382940 addresses ambiguous executables case.
+
+
 hg = check_prog('HG', ('hg.exe', 'hg',), allow_missing=True,
                 when=depends(vcs_checkout_type)(lambda x: x == 'hg'))
 git = check_prog('GIT', ('git',), allow_missing=True,
@@ -638,8 +643,8 @@ git = check_prog('GIT', ('git',), allow_missing=True,
 @imports('os')
 @imports('re')
 def hg_version(hg):
-    # HGPLAIN in Mercurial 1.5+ forces stable output, regardless of set
-    # locale or encoding.
+    
+    
     env = dict(os.environ)
     env['HGPLAIN'] = '1'
 
@@ -651,14 +656,14 @@ def hg_version(hg):
         raise FatalCheckError(
             'unable to determine Mercurial version: %s' % out)
 
-    # The version string may be "unknown" for Mercurial run out of its own
-    # source checkout or for bad builds. But LooseVersion handles it.
+    
+    
 
     return Version(match.group(1))
 
-# Resolve Mercurial config items so other checks have easy access.
-# Do NOT set this in the config because it may contain sensitive data
-# like API keys.
+
+
+
 
 
 @depends_all(check_build_environment, hg, hg_version)
@@ -667,9 +672,9 @@ def hg_config(build_env, hg, version):
     env = dict(os.environ)
     env['HGPLAIN'] = '1'
 
-    # Warnings may get sent to stderr. But check_cmd_output() ignores
-    # stderr if exit code is 0. And the command should always succeed if
-    # `hg version` worked.
+    
+    
+    
     out = check_cmd_output(hg, 'config', env=env, cwd=build_env.topsrcdir)
 
     config = {}
@@ -694,9 +699,9 @@ def git_version(git):
 
     return Version(match.group(1))
 
-# Only set VCS_CHECKOUT_TYPE if we resolved the VCS binary.
-# Require resolved VCS info when running in automation so automation's
-# environment is more well-defined.
+
+
+
 
 
 @depends(vcs_checkout_type, hg_version, git_version, 'MOZ_AUTOMATION')
@@ -720,7 +725,7 @@ def exposed_vcs_checkout_type(vcs_checkout_type, hg, git, automation):
 
 set_config('VCS_CHECKOUT_TYPE', exposed_vcs_checkout_type)
 
-# Obtain a Repository interface for the current VCS repository.
+
 
 
 @depends(check_build_environment, exposed_vcs_checkout_type, hg, git)
@@ -742,8 +747,8 @@ def vcs_sparse_checkout(repo):
 
 set_config('VCS_SPARSE_CHECKOUT', vcs_sparse_checkout)
 
-# The application/project to build
-# ==============================================================
+
+
 option('--enable-application', nargs=1, env='MOZ_BUILD_APP',
        help='Application to build. Same as --enable-project.')
 
@@ -768,8 +773,8 @@ option('--enable-project', nargs=1, default=default_project,
        help='Project to build')
 
 
-# Host and target systems
-# ==============================================================
+
+
 option('--host', nargs=1, help='Define the system type performing the build')
 
 option('--target', nargs=1,
@@ -784,14 +789,14 @@ option('--target', nargs=1,
 @imports(_from='mozbuild.configure.constants', _import='OS')
 @imports(_from='__builtin__', _import='ValueError')
 def split_triplet(triplet, allow_msvc=False):
-    # The standard triplet is defined as
-    #   CPU_TYPE-VENDOR-OPERATING_SYSTEM
-    # There is also a quartet form:
-    #   CPU_TYPE-VENDOR-KERNEL-OPERATING_SYSTEM
-    # But we can consider the "KERNEL-OPERATING_SYSTEM" as one.
-    # Additionally, some may omit "unknown" when the vendor
-    # is not specified and emit
-    #   CPU_TYPE-OPERATING_SYSTEM
+    
+    
+    
+    
+    
+    
+    
+    
     vendor = 'unknown'
     parts = triplet.split('-', 2)
     if len(parts) == 3:
@@ -801,15 +806,15 @@ def split_triplet(triplet, allow_msvc=False):
     else:
         raise ValueError("Unexpected triplet string: %s" % triplet)
 
-    # Autoconf uses config.sub to validate and canonicalize those triplets,
-    # but the granularity of its results has never been satisfying to our
-    # use, so we've had our own, different, canonicalization. We've also
-    # historically not been very consistent with how we use the canonicalized
-    # values. Hopefully, this will help us make things better.
-    # The tests are inherited from our decades-old autoconf-based configure,
-    # which can probably be improved/cleaned up because they are based on a
-    # mix of uname and config.guess output, while we now only use the latter,
-    # which presumably has a cleaner and leaner output. Let's refine later.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     os = os.replace('/', '_')
     if 'android' in os:
         canonical_os = 'Android'
@@ -823,8 +828,8 @@ def split_triplet(triplet, allow_msvc=False):
     elif os.startswith('gnu'):
         canonical_os = canonical_kernel = 'GNU'
     elif os.startswith('mingw') or (allow_msvc and os == 'windows-msvc'):
-        # windows-msvc is only opt-in for the caller of this function until
-        # full support in bug 1617793.
+        
+        
         canonical_os = canonical_kernel = 'WINNT'
     elif os.startswith('darwin'):
         canonical_kernel = 'Darwin'
@@ -845,8 +850,8 @@ def split_triplet(triplet, allow_msvc=False):
     else:
         raise ValueError('Unknown OS: %s' % os)
 
-    # The CPU granularity is probably not enough. Moving more things from
-    # old-configure will tell us if we need more
+    
+    
     if cpu.endswith('86') or (cpu.startswith('i') and '86' in cpu):
         canonical_cpu = 'x86'
         endianness = 'little'
@@ -892,9 +897,9 @@ def split_triplet(triplet, allow_msvc=False):
     else:
         raise ValueError('Unknown CPU type: %s' % cpu)
 
-    # Toolchains, most notably for cross compilation may use cpu-os
-    # prefixes. We need to be more specific about the LLVM target on Mac
-    # so cross-language LTO will work correctly.
+    
+    
+    
 
     if os.startswith('darwin'):
         toolchain = '%s-apple-%s' % (cpu, os)
@@ -917,9 +922,9 @@ def split_triplet(triplet, allow_msvc=False):
     )
 
 
-# This defines a fake target/host namespace for when running with --help
-# If either --host or --target is passed on the command line, then fall
-# back to the real deal.
+
+
+
 @depends('--help', '--host', '--target')
 def help_host_target(help, host, target):
     if help and not host and not target:
@@ -982,12 +987,12 @@ host = help_host_target | real_host
 @checking('for target system type', lambda t: t.alias)
 @imports(_from='__builtin__', _import='ValueError')
 def real_target(value, host, shell, project, application):
-    # Because --enable-project is implied by --enable-application, and
-    # implied options are not currently handled during --help, which is
-    # used get the build target in mozbuild.base, we manually check
-    # whether --enable-application was given, and fall back to
-    # --enable-project if not. Both can't be given contradictory values
-    # under normal circumstances, so it's fine.
+    
+    
+    
+    
+    
+    
     if application:
         project = application[0]
     elif project:
@@ -996,9 +1001,9 @@ def real_target(value, host, shell, project, application):
         if project == 'mobile/android':
             return split_triplet('arm-unknown-linux-androideabi')
         return host
-    # If --target was only given a cpu arch, expand it with the
-    # non-cpu part of the host. For mobile/android, expand it with
-    # unknown-linux-android.
+    
+    
+    
     target = value[0]
     if '-' not in target:
         if project == 'mobile/android':
@@ -1053,7 +1058,7 @@ def host_os_kernel_major_version(host):
 
 set_config('HOST_MAJOR_VERSION', host_os_kernel_major_version)
 
-# Autoconf needs these set
+
 
 
 @depends(host)
@@ -1067,8 +1072,8 @@ add_old_configure_arg(host_for_old_configure)
 @depends(target)
 def target_for_old_configure(target):
     target_alias = target.alias
-    # old-configure does plenty of tests against $target and $target_os
-    # and expects darwin for iOS, so make it happy.
+    
+    
     if target.os == 'iOS':
         target_alias = target_alias.replace('-ios', '-darwin')
     return '--target=%s' % target_alias
@@ -1077,8 +1082,8 @@ def target_for_old_configure(target):
 add_old_configure_arg(target_for_old_configure)
 
 
-# These variables are for compatibility with the current moz.builds and
-# old-configure. Eventually, we'll want to canonicalize better.
+
+
 @depends(target)
 def target_variables(target):
     if target.kernel == 'kFreeBSD':
@@ -1265,9 +1270,9 @@ set_define('MOZ_BUILD_APP', build_project)
 add_old_configure_assignment('MOZ_BUILD_APP', build_project)
 
 
-# This is temporary until js/src/configure and configure are merged.
-# Use instead of option() in js/moz.configure and more generally, for
-# options that are shared between configure and js/src/configure.
+
+
+
 @template
 def js_option(*args, **kwargs):
     opt = option(*args, **kwargs)
@@ -1295,7 +1300,7 @@ set_define('MOZILLA_OFFICIAL', mozilla_official)
 add_old_configure_assignment('MOZILLA_OFFICIAL', mozilla_official)
 
 
-# Allow specifying custom paths to the version files used by the milestone() function below.
+
 option('--with-version-file-path',
        nargs=1,
        help='Specify a custom path to app version files instead of auto-detecting',
@@ -1305,11 +1310,11 @@ option('--with-version-file-path',
 def version_path(path):
     return path
 
-# set RELEASE_OR_BETA and NIGHTLY_BUILD variables depending on the cycle we're in
-# The logic works like this:
-# - if we have "a1" in GRE_MILESTONE, we're building Nightly (define NIGHTLY_BUILD)
-# - otherwise, if we have "a" in GRE_MILESTONE, we're building Nightly or Aurora
-# - otherwise, we're building Release/Beta (define RELEASE_OR_BETA)
+
+
+
+
+
 @depends(check_build_environment, build_project, version_path, '--help')
 @imports(_from='__builtin__', _import='open')
 @imports('os')
@@ -1343,12 +1348,12 @@ def milestone(build_env, build_project, version_path, _):
 
     milestone, firefox_version, firefox_version_display = versions[:3]
 
-    # version.txt content from the project directory if there is one, otherwise
-    # the firefox version.
+    
+    
     app_version = versions[3] if len(versions) > 3 else firefox_version
-    # version_display.txt content from the project directory if there is one,
-    # otherwise version.txt content from the project directory, otherwise the
-    # firefox version for display.
+    
+    
+    
     app_version_display = versions[-1] if len(versions) > 3 else firefox_version_display
 
     is_nightly = is_release_or_beta = is_early_beta_or_earlier = None
@@ -1376,11 +1381,11 @@ def milestone(build_env, build_project, version_path, _):
             if value:
                 is_early_beta_or_earlier = True
 
-    # Only expose the major version milestone in the UA string and hide the
-    # patch leve (bugs 572659 and 870868).
-    #
-    # Only expose major milestone and alpha version in the symbolversion
-    # string; as the name suggests, we use it for symbol versioning on Linux.
+    
+    
+    
+    
+    
     return namespace(version=milestone,
                      uaversion='%s.0' % major_version,
                      symbolversion='%s%s' % (major_version, ab_patch),
@@ -1407,7 +1412,7 @@ set_config('MOZILLA_VERSION', milestone.version)
 set_define('MOZILLA_VERSION_U', milestone.version)
 set_define('MOZILLA_UAVERSION', depends(milestone)(lambda m: '"%s"' % m.uaversion))
 set_config('MOZILLA_SYMBOLVERSION', milestone.symbolversion)
-# JS configure still wants to look at these.
+
 add_old_configure_assignment('MOZILLA_VERSION', milestone.version)
 add_old_configure_assignment('MOZILLA_SYMBOLVERSION', milestone.symbolversion)
 
@@ -1416,16 +1421,16 @@ set_config('MOZ_APP_VERSION_DISPLAY', milestone.app_version_display)
 add_old_configure_assignment('MOZ_APP_VERSION', milestone.app_version)
 
 
-# Dummy function for availability in toolkit/moz.configure. Overridden in
-# mobile/android/moz.configure.
+
+
 @depends(milestone.is_nightly)
 def fennec_nightly(is_nightly):
     return is_nightly
 
 
-# The app update channel is 'default' when not supplied. The value is used in
-# the application's confvars.sh (and is made available to a project specific
-# moz.configure).
+
+
+
 option('--enable-update-channel',
        nargs=1,
        help='Select application update channel',
@@ -1457,14 +1462,14 @@ def mozbuild_state_path(path, _):
     return os.path.expanduser(os.path.join('~', '.mozbuild'))
 
 
-# A template providing a shorthand for setting a variable. The created
-# option will only be settable with imply_option.
-# It is expected that a project-specific moz.configure will call imply_option
-# to set a value other than the default.
-# If required, the set_as_define and set_for_old_configure arguments
-# will additionally cause the variable to be set using set_define and
-# add_old_configure_assignment. util.configure would be an appropriate place for
-# this, but it uses add_old_configure_assignment, which is defined in this file.
+
+
+
+
+
+
+
+
 @template
 def project_flag(env=None, set_for_old_configure=False,
                  set_as_define=False, **kwargs):
@@ -1488,7 +1493,7 @@ def project_flag(env=None, set_for_old_configure=False,
     if set_for_old_configure:
         add_old_configure_assignment(env, option_implementation)
 
-# milestone.is_nightly corresponds to cases NIGHTLY_BUILD is set.
+
 
 
 @depends(milestone)
