@@ -1424,6 +1424,10 @@ class Document : public nsINode,
   bool StorageAccessSandboxed() const;
 
   
+  
+  static bool StorageAccessSandboxed(uint32_t aSandboxFlags);
+
+  
   nsICookieJarSettings* CookieJarSettings();
 
   
