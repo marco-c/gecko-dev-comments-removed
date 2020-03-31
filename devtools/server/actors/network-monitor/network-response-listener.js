@@ -379,7 +379,7 @@ NetworkResponseListener.prototype = {
 
 
 
-  onProgress: function(request, context, progress, progressMax) {
+  onProgress: function(request, progress, progressMax) {
     this.transferredSize = progress;
     
     
