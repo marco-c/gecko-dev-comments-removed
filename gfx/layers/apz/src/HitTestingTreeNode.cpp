@@ -52,6 +52,9 @@ void HitTestingTreeNode::RecycleWith(
   MOZ_ASSERT(!mApzc || mApzc->GetLayersId() == mLayersId);
   
   
+  
+  
+  
 }
 
 HitTestingTreeNode::~HitTestingTreeNode() = default;
