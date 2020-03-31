@@ -1141,9 +1141,8 @@ struct nsGridContainerFrame::TrackSizingFunctions {
     
     
     MOZ_ASSERT(numTracks >= NumRepeatTracks());
-    MOZ_ASSERT(kMaxLine > numTracks - NumRepeatTracks());
-    const uint32_t maxRepeatTrackCount =
-        kMaxLine - (numTracks - NumRepeatTracks());
+    MOZ_ASSERT(kMaxLine > numTracks);
+    const uint32_t maxRepeatTrackCount = kMaxLine - numTracks;
     const uint32_t maxRepetitions = maxRepeatTrackCount / NumRepeatTracks();
     return std::min(numRepeatTracks, maxRepetitions);
   }
