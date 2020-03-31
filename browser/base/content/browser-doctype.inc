@@ -16,5 +16,3 @@
 %syncBrandDTD;
 <!ENTITY % brandingsDTD SYSTEM "chrome:
 %brandingsDTD;
-<!ENTITY % editBookmarkOverlayDTD SYSTEM "chrome:
-%editBookmarkOverlayDTD;
