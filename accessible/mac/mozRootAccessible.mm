@@ -1,7 +1,7 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "RootAccessibleWrap.h"
 
@@ -9,7 +9,7 @@
 
 #import "mozView.h"
 
-// This must be included last:
+
 #include "nsObjCExceptions.h"
 
 using namespace mozilla::a11y;
@@ -28,10 +28,10 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
 - (NSArray*)accessibilityAttributeNames {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
-  // if we're expired, we don't support any attributes.
+  
   if (![self getGeckoAccessible]) return [NSArray array];
 
-  // standard attributes that are shared and supported by root accessible (AXMain) elements.
+  
   static NSMutableArray* attributes = nil;
 
   if (!attributes) {
@@ -58,7 +58,7 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-// return the AXParent that our parallell NSView tells us about.
+
 - (id)parent {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -84,12 +84,16 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
       filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(mozAccessible* child,
                                                                         NSDictionary* bindings) {
         AccessibleWrap* childAcc = [child getGeckoAccessible];
-        if (childAcc && childAcc->Role() == roles::MENUPOPUP &&
-            ((childAcc->VisibilityState() & states::INVISIBLE) != 0)) {
-          // Filter out all invisible XUL popup menus. Invisible elements in our browser
-          // chrome are unique in the sense that we want screen readers to ignore them.
-          // These only exist in the top level process so we don't do a similar check on proxies.
-          return NO;
+        if (childAcc) {
+          role r = childAcc->Role();
+          if ((r == roles::MENUPOPUP || r == roles::DIALOG || r == roles::ALERT) &&
+              ((childAcc->VisibilityState() & states::INVISIBLE) != 0)) {
+            
+            
+            
+            
+            return NO;
+          }
         }
 
         return YES;
@@ -98,7 +102,7 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-// this will return our parallell NSView. see mozDocAccessible.h
+
 - (id)representedView {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
