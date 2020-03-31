@@ -29,7 +29,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::image;
 
 static already_AddRefed<SourceSurface> CheckDecoderState(
-    const ImageTestCase& aTestCase, Decoder* aDecoder) {
+    const ImageTestCase& aTestCase, image::Decoder* aDecoder) {
   
   EXPECT_NE(aDecoder->GetType(), DecoderType::UNKNOWN);
   EXPECT_EQ(aDecoder->GetType(),
@@ -75,7 +75,7 @@ static already_AddRefed<SourceSurface> CheckDecoderState(
 }
 
 static void CheckDecoderResults(const ImageTestCase& aTestCase,
-                                Decoder* aDecoder) {
+                                image::Decoder* aDecoder) {
   RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
   if (!surface) {
     return;
@@ -111,7 +111,7 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
 
   
   DecoderType decoderType = DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+  RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
       decoderType, sourceBuffer, aOutputSize, DecoderFlags::FIRST_FRAME_ONLY,
       DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
@@ -126,7 +126,7 @@ void WithSingleChunkDecode(const ImageTestCase& aTestCase,
 }
 
 static void CheckDecoderSingleChunk(const ImageTestCase& aTestCase) {
-  WithSingleChunkDecode(aTestCase, Nothing(), [&](Decoder* aDecoder) {
+  WithSingleChunkDecode(aTestCase, Nothing(), [&](image::Decoder* aDecoder) {
     CheckDecoderResults(aTestCase, aDecoder);
   });
 }
@@ -148,7 +148,7 @@ void WithDelayedChunkDecode(const ImageTestCase& aTestCase,
 
   
   DecoderType decoderType = DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+  RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
       decoderType, sourceBuffer, aOutputSize, DecoderFlags::FIRST_FRAME_ONLY,
       DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
@@ -173,7 +173,7 @@ void WithDelayedChunkDecode(const ImageTestCase& aTestCase,
 }
 
 static void CheckDecoderDelayedChunk(const ImageTestCase& aTestCase) {
-  WithDelayedChunkDecode(aTestCase, Nothing(), [&](Decoder* aDecoder) {
+  WithDelayedChunkDecode(aTestCase, Nothing(), [&](image::Decoder* aDecoder) {
     CheckDecoderResults(aTestCase, aDecoder);
   });
 }
@@ -192,7 +192,7 @@ static void CheckDecoderMultiChunk(const ImageTestCase& aTestCase,
   auto sourceBuffer = MakeNotNull<RefPtr<SourceBuffer>>();
   sourceBuffer->ExpectLength(length);
   DecoderType decoderType = DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+  RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
       decoderType, sourceBuffer, Nothing(), DecoderFlags::FIRST_FRAME_ONLY,
       DefaultSurfaceFlags());
   ASSERT_TRUE(decoder != nullptr);
@@ -232,35 +232,37 @@ static void CheckDownscaleDuringDecode(const ImageTestCase& aTestCase) {
   
   IntSize outputSize(20, 20);
 
-  WithSingleChunkDecode(aTestCase, Some(outputSize), [&](Decoder* aDecoder) {
-    RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
+  WithSingleChunkDecode(
+      aTestCase, Some(outputSize), [&](image::Decoder* aDecoder) {
+        RefPtr<SourceSurface> surface = CheckDecoderState(aTestCase, aDecoder);
 
-    
-    
-    EXPECT_TRUE(surface != nullptr);
+        
+        
+        EXPECT_TRUE(surface != nullptr);
 
-    if (aTestCase.mFlags & TEST_CASE_IGNORE_OUTPUT) {
-      return;
-    }
+        if (aTestCase.mFlags & TEST_CASE_IGNORE_OUTPUT) {
+          return;
+        }
 
-    
-    
-    
-    
-    EXPECT_TRUE(
-        RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),  47));
-    EXPECT_TRUE(
-        RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),  27));
-    EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),
-                                   47));
-    EXPECT_TRUE(
-        RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),  27));
-  });
+        
+        
+        
+        
+        
+        EXPECT_TRUE(RowsAreSolidColor(surface, 0, 4, BGRAColor::Green(),
+                                       47));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 6, 3, BGRAColor::Red(),
+                                       27));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 11, 3, BGRAColor::Green(),
+                                       47));
+        EXPECT_TRUE(RowsAreSolidColor(surface, 16, 4, BGRAColor::Red(),
+                                       27));
+      });
 }
 
 static void CheckAnimationDecoderResults(const ImageTestCase& aTestCase,
                                          AnimationSurfaceProvider* aProvider,
-                                         Decoder* aDecoder) {
+                                         image::Decoder* aDecoder) {
   EXPECT_TRUE(aDecoder->GetDecodeDone());
   EXPECT_EQ(bool(aTestCase.mFlags & TEST_CASE_HAS_ERROR), aDecoder->HasError());
 
@@ -344,7 +346,7 @@ static void WithSingleChunkAnimationDecode(const ImageTestCase& aTestCase,
   
   DecoderFlags decoderFlags = DefaultDecoderFlags();
   SurfaceFlags surfaceFlags = DefaultSurfaceFlags();
-  RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+  RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
       decoderType, sourceBuffer, Nothing(), decoderFlags, surfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
 
@@ -365,7 +367,8 @@ static void WithSingleChunkAnimationDecode(const ImageTestCase& aTestCase,
 
 static void CheckAnimationDecoderSingleChunk(const ImageTestCase& aTestCase) {
   WithSingleChunkAnimationDecode(
-      aTestCase, [&](AnimationSurfaceProvider* aProvider, Decoder* aDecoder) {
+      aTestCase,
+      [&](AnimationSurfaceProvider* aProvider, image::Decoder* aDecoder) {
         CheckAnimationDecoderResults(aTestCase, aProvider, aDecoder);
       });
 }

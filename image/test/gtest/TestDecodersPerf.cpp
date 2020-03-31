@@ -19,7 +19,8 @@ using namespace mozilla::image;
 
 namespace {
 
-static void CheckDecoderState(const ImageTestCase& aTestCase, Decoder* aDecoder,
+static void CheckDecoderState(const ImageTestCase& aTestCase,
+                              image::Decoder* aDecoder,
                               const IntSize& aOutputSize) {
   
   EXPECT_NE(aDecoder->GetType(), DecoderType::UNKNOWN);
@@ -68,7 +69,7 @@ static void WithSingleChunkDecode(const ImageTestCase& aTestCase,
 
   
   DecoderType decoderType = DecoderFactory::GetDecoderType(aTestCase.mMimeType);
-  RefPtr<Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
+  RefPtr<image::Decoder> decoder = DecoderFactory::CreateAnonymousDecoder(
       decoderType, sourceBuffer, aOutputSize, DecoderFlags::FIRST_FRAME_ONLY,
       aTestCase.mSurfaceFlags);
   ASSERT_TRUE(decoder != nullptr);
@@ -85,7 +86,7 @@ static void WithSingleChunkDecode(const ImageTestCase& aTestCase,
 static void CheckDecode(const ImageTestCase& aTestCase,
                         SourceBuffer* aSourceBuffer) {
   WithSingleChunkDecode(
-      aTestCase, aSourceBuffer, Nothing(), [&](Decoder* aDecoder) {
+      aTestCase, aSourceBuffer, Nothing(), [&](image::Decoder* aDecoder) {
         CheckDecoderState(aTestCase, aDecoder, aTestCase.mSize);
       });
 }
@@ -94,7 +95,7 @@ static void CheckDownscaleDuringDecode(const ImageTestCase& aTestCase,
                                        SourceBuffer* aSourceBuffer) {
   IntSize outputSize(20, 20);
   WithSingleChunkDecode(aTestCase, aSourceBuffer, Some(outputSize),
-                        [&](Decoder* aDecoder) {
+                        [&](image::Decoder* aDecoder) {
                           CheckDecoderState(aTestCase, aDecoder, outputSize);
                         });
 }
