@@ -81,7 +81,11 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-  void NotifyAutoCopy() { mNotifyAutoCopy = true; }
+  void NotifyAutoCopy() {
+    MOZ_ASSERT(mSelectionType == SelectionType::eNormal);
+
+    mNotifyAutoCopy = true;
+  }
 
   
 
