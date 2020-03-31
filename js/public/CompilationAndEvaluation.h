@@ -169,25 +169,6 @@ extern JS_PUBLIC_API bool EvaluateUtf8Path(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool EvaluateUtf8PathDontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename,
-    MutableHandle<Value> rval);
-
-
-
-
-
 extern JS_PUBLIC_API JSScript* Compile(JSContext* cx,
                                        const ReadOnlyCompileOptions& options,
                                        SourceText<char16_t>& srcBuf);
