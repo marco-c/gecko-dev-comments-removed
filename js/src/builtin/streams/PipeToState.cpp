@@ -90,6 +90,11 @@ static WritableStream* GetUnwrappedDest(JSContext* cx,
   return UnwrapStreamFromWriter(cx, writer);
 }
 
+static bool WritableAndNotClosing(const WritableStream* unwrappedDest) {
+  return unwrappedDest->writable() &&
+         WritableStreamCloseQueuedOrInFlight(unwrappedDest);
+}
+
 
 
 static MOZ_MUST_USE bool ShutdownWithAction(
@@ -108,10 +113,17 @@ static MOZ_MUST_USE bool ShutdownWithAction(
 
   
   
-  
-  
-  
-  
+  WritableStream* unwrappedDest = GetUnwrappedDest(cx, state);
+  if (!unwrappedDest) {
+    return false;
+  }
+  if (WritableAndNotClosing(unwrappedDest)) {
+    
+    
+    
+    
+  }
+
   
   
   
@@ -141,10 +153,17 @@ static MOZ_MUST_USE bool Shutdown(JSContext* cx, Handle<PipeToState*> state,
 
   
   
-  
-  
-  
-  
+  WritableStream* unwrappedDest = GetUnwrappedDest(cx, state);
+  if (!unwrappedDest) {
+    return false;
+  }
+  if (WritableAndNotClosing(unwrappedDest)) {
+    
+    
+    
+    
+  }
+
   
 
   
