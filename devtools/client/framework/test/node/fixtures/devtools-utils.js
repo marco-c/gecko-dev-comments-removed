@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+module.exports = {
+  getTopWindow(win) {
+    return win.top;
+  },
+};
