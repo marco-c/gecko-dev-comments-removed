@@ -11,6 +11,7 @@
 
 #include "mozilla/Types.h"
 
+#include <type_traits>
 #include <utility>
 
 
@@ -24,19 +25,8 @@ namespace mozilla {
 
 
 
-
-
-
-template <typename T, T Value>
-struct IntegralConstant {
-  static constexpr T value = Value;
-  typedef T ValueType;
-  typedef IntegralConstant<T, Value> Type;
-};
-
-
-typedef IntegralConstant<bool, true> TrueType;
-typedef IntegralConstant<bool, false> FalseType;
+typedef std::integral_constant<bool, true> TrueType;
+typedef std::integral_constant<bool, false> FalseType;
 
 
 
