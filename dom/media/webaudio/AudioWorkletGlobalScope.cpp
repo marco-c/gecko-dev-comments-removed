@@ -125,26 +125,38 @@ void AudioWorkletGlobalScope::RegisterProcessor(
     aRv.NoteJSContextException(aCx);
     return;
   }
+
+  AudioParamDescriptorMap map;
   
 
 
+  if (!descriptors.isUndefined()) {
+    
 
 
-  JS::ForOfIterator iter(aCx);
-  if (!iter.init(descriptors, JS::ForOfIterator::AllowNonIterable)) {
-    aRv.NoteJSContextException(aCx);
-    return;
-  }
-  if (!iter.valueIsIterable()) {
-    aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(
-        "AudioWorkletProcessor.parameterDescriptors");
-    return;
+
+
+    JS::Rooted<JS::Value> objectValue(aCx, descriptors);
+    JS::ForOfIterator iter(aCx);
+    if (!iter.init(objectValue, JS::ForOfIterator::AllowNonIterable)) {
+      aRv.NoteJSContextException(aCx);
+      return;
+    }
+    if (!iter.valueIsIterable()) {
+      aRv.ThrowTypeError<MSG_NOT_SEQUENCE>(
+          "AudioWorkletProcessor.parameterDescriptors");
+      return;
+    }
+    
+
+
+    map = DescriptorsFromJS(aCx, &iter, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
   }
 
   
-
-
-
 
 
 
@@ -157,11 +169,6 @@ void AudioWorkletGlobalScope::RegisterProcessor(
 
 
 
-
-  AudioParamDescriptorMap map = DescriptorsFromJS(aCx, &iter, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "AudioWorkletGlobalScope: parameter descriptors",
