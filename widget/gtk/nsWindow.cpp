@@ -3689,6 +3689,26 @@ void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {
   
   
   OnSizeAllocate(aAllocation);
+
+  
+  
+  
+  
+  if (mCSDSupportLevel == CSD_SUPPORT_CLIENT) {
+    if (!mIsX11Display || (mIsX11Display && mDrawInTitlebar)) {
+      UpdateClientOffsetFromCSDWindow();
+    }
+  }
+
+#ifdef MOZ_WAYLAND
+  
+  
+  if (mContainer && moz_container_has_wl_egl_window(mContainer)) {
+    moz_container_set_scale_factor(mContainer);
+    LayoutDeviceIntRegion tmpRegion;
+    UpdateOpaqueRegion(tmpRegion);
+  }
+#endif
 }
 
 void nsWindow::DispatchDragEvent(EventMessage aMsg,
@@ -7618,12 +7638,7 @@ void nsWindow::GetCompositorWidgetInitData(
 #ifdef MOZ_WAYLAND
 wl_surface* nsWindow::GetWaylandSurface() {
   if (mContainer) {
-    struct wl_surface* surface =
-        moz_container_get_wl_surface(MOZ_CONTAINER(mContainer));
-    if (surface != NULL) {
-      wl_surface_set_buffer_scale(surface, GdkScaleFactor());
-    }
-    return surface;
+    return moz_container_get_wl_surface(MOZ_CONTAINER(mContainer));
   }
 
   NS_WARNING(
