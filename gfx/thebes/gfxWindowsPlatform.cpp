@@ -1905,9 +1905,6 @@ void gfxWindowsPlatform::ImportContentDeviceData(
     DeviceManagerDx* dm = DeviceManagerDx::Get();
     dm->ImportDeviceInfo(aData.d3d11());
   }
-
-  
-  
 }
 
 void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
@@ -1924,9 +1921,6 @@ void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {
     DeviceManagerDx* dm = DeviceManagerDx::Get();
     dm->ExportDeviceInfo(&aOut->d3d11());
   }
-
-  aOut->cmsOutputProfileData() =
-      gfxPlatform::GetPlatform()->GetCMSOutputProfileData();
 }
 
 bool gfxWindowsPlatform::CheckVariationFontSupport() {
