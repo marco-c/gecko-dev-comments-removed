@@ -49,7 +49,8 @@ class BigInt final : public js::gc::CellWithLengthAndFlags<js::gc::Cell> {
 
  private:
   
-  static constexpr uintptr_t SignBit = js::Bit(Base::NumFlagBitsReservedForGC);
+  static constexpr uintptr_t SignBit =
+      js::Bit(js::gc::CellFlagBitsReservedForGC);
 
   static constexpr size_t InlineDigitsLength =
       (js::gc::MinCellSize - sizeof(Base)) / sizeof(Digit);

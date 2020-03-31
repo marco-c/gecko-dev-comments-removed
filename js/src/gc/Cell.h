@@ -34,6 +34,9 @@ extern bool RuntimeFromMainThreadIsHeapMajorCollecting(
 
 
 extern bool CurrentThreadIsIonCompiling();
+
+extern bool CurrentThreadIsGCMarking();
+
 #endif
 
 extern void TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc,
@@ -47,10 +50,6 @@ enum class AllocKind : uint8_t;
 struct Chunk;
 class StoreBuffer;
 class TenuredCell;
-
-#ifdef DEBUG
-extern bool CurrentThreadIsGCMarking();
-#endif
 
 
 
@@ -113,13 +112,15 @@ class CellColor {
 
 
 
-
 struct alignas(gc::CellAlignBytes) Cell {
  public:
-  
-  static constexpr int ReservedBits = 3;
-  static constexpr uintptr_t RESERVED_MASK = BitMask(ReservedBits);
+  static_assert(gc::CellFlagBitsReservedForGC >= 3,
+                "Not enough flag bits reserved for GC");
 
+  static constexpr uintptr_t RESERVED_MASK =
+      BitMask(gc::CellFlagBitsReservedForGC);
+
+  
   
   static constexpr uintptr_t FORWARD_BIT = Bit(0);
 
@@ -564,8 +565,6 @@ class CellWithLengthAndFlags : public BaseCell {
 #endif
 
  protected:
-  static constexpr size_t NumFlagBitsReservedForGC = Cell::ReservedBits;
-
   uint32_t lengthField() const {
 #if JS_BITS_PER_WORD == 32
     return length_;

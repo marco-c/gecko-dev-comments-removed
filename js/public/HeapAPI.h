@@ -76,6 +76,14 @@ const size_t ArenaHeaderSize =
 
 
 
+const size_t CellFlagBitsReservedForGC = 3;
+
+
+
+const size_t JSClassAlignBytes = size_t(1) << CellFlagBitsReservedForGC;
+
+
+
 
 
 
