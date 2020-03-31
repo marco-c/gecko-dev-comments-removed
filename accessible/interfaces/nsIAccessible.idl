@@ -175,6 +175,11 @@ interface nsIAccessible : nsISupports
   
 
 
+  readonly attribute nsISupports nativeInterface;
+
+  
+
+
 
 
 
