@@ -6455,7 +6455,9 @@ class MThrowRuntimeLexicalError : public MNullaryInstruction {
 
   unsigned errorNumber() const { return errorNumber_; }
 
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::ExceptionState);
+  }
 };
 
 
