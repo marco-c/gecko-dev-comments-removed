@@ -166,9 +166,10 @@ namespace detail {
 template <typename Pointer>
 struct PointedTo {
   
-  using Type = std::remove_reference_t<decltype(*DeclVal<Pointer>())>;
+  using Type = std::remove_reference_t<decltype(*std::declval<Pointer>())>;
   using NonConstType = typename RemoveConst<Type>::Type;
 };
+
 
 
 

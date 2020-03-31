@@ -11,6 +11,8 @@
 
 #include "mozilla/Types.h"
 
+#include <utility>
+
 
 
 
@@ -23,19 +25,6 @@ namespace mozilla {
 
 template <typename>
 struct RemoveCV;
-template <typename>
-struct AddRvalueReference;
-
-
-
-
-
-
-
-
-
-template <typename T>
-typename AddRvalueReference<T>::Type DeclVal();
 
 
 
@@ -130,7 +119,7 @@ struct IsPod<T*> : TrueType {};
 namespace detail {
 
 struct DoIsDestructibleImpl {
-  template <typename T, typename = decltype(DeclVal<T&>().~T())>
+  template <typename T, typename = decltype(std::declval<T&>().~T())>
   static TrueType test(int);
   template <typename T>
   static FalseType test(...);
