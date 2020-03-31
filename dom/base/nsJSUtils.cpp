@@ -458,21 +458,6 @@ nsresult nsJSUtils::ExecutionContext::ExecScript(
   return NS_OK;
 }
 
-static JSObject* CompileModule(JSContext* aCx,
-                               JS::CompileOptions& aCompileOptions,
-                               JS::SourceText<char16_t>& aSrcBuf) {
-  return JS::CompileModule(aCx, aCompileOptions, aSrcBuf);
-}
-
-static JSObject* CompileModule(JSContext* aCx,
-                               JS::CompileOptions& aCompileOptions,
-                               JS::SourceText<Utf8Unit>& aSrcBuf) {
-  
-  
-  
-  return JS::CompileModuleDontInflate(aCx, aCompileOptions, aSrcBuf);
-}
-
 template <typename Unit>
 static nsresult CompileJSModule(JSContext* aCx, JS::SourceText<Unit>& aSrcBuf,
                                 JS::Handle<JSObject*> aEvaluationGlobal,
@@ -489,7 +474,7 @@ static nsresult CompileJSModule(JSContext* aCx, JS::SourceText<Unit>& aSrcBuf,
 
   NS_ENSURE_TRUE(xpc::Scriptability::Get(aEvaluationGlobal).Allowed(), NS_OK);
 
-  JSObject* module = CompileModule(aCx, aCompileOptions, aSrcBuf);
+  JSObject* module = JS::CompileModule(aCx, aCompileOptions, aSrcBuf);
   if (!module) {
     return NS_ERROR_FAILURE;
   }
