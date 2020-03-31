@@ -1158,7 +1158,16 @@ class ResponsiveUI {
       return;
     }
 
-    const { width, height } = size;
+    
+    let { width, height } = size;
+    if (!size.width) {
+      width = this.getViewportSize().width;
+    }
+
+    if (!size.height) {
+      height = this.getViewportSize().height;
+    }
+
     this.rdmFrame.contentWindow.setViewportSize({ width, height });
     this.updateViewportSize(width, height);
   }
