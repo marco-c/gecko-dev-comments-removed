@@ -6402,24 +6402,22 @@ bool BaselineCodeGen<Handler>::emit_InitHomeObject() {
 }
 
 template <>
-bool BaselineCompilerCodeGen::emit_BuiltinProto() {
+bool BaselineCompilerCodeGen::emit_FunctionProto() {
   
-  JSObject* builtin = BuiltinProtoOperation(cx, handler.pc());
-  if (!builtin) {
+  JSObject* funProto = FunctionProtoOperation(cx);
+  if (!funProto) {
     return false;
   }
-  frame.push(ObjectValue(*builtin));
+  frame.push(ObjectValue(*funProto));
   return true;
 }
 
 template <>
-bool BaselineInterpreterCodeGen::emit_BuiltinProto() {
+bool BaselineInterpreterCodeGen::emit_FunctionProto() {
   prepareVMCall();
 
-  pushBytecodePCArg();
-
-  using Fn = JSObject* (*)(JSContext*, jsbytecode*);
-  if (!callVM<Fn, BuiltinProtoOperation>()) {
+  using Fn = JSObject* (*)(JSContext*);
+  if (!callVM<Fn, FunctionProtoOperation>()) {
     return false;
   }
 
