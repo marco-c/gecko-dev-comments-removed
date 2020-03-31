@@ -340,7 +340,13 @@ ContentBlocking::AllowAccessFor(
   }
 
   
-  if (ContentBlockingAllowList::Check(parentInner)) {
+  bool isInAllowList = false;
+  if (NS_FAILED(
+          ContentBlockingAllowList::Check(aParentContext, isInAllowList))) {
+    return StorageAccessGrantPromise::CreateAndReject(false, __func__);
+  }
+
+  if (isInAllowList) {
     return StorageAccessGrantPromise::CreateAndResolve(true, __func__);
   }
 
