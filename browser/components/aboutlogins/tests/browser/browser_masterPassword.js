@@ -25,7 +25,7 @@ add_task(async function test() {
   
   is(
     Services.prefs.getStringPref(
-      "browser.osKeyStore.unofficialBuildOnlyLogin",
+      "toolkit.osKeyStore.unofficialBuildOnlyLogin",
       ""
     ),
     "",

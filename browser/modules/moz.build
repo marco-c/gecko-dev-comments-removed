@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Firefox", "General")
@@ -121,8 +121,6 @@ with Files("webrtcUI.jsm"):
 with Files("ZoomUI.jsm"):
     BUG_COMPONENT = ("Firefox", "Toolbars and Customization")
 
-TESTING_JS_MODULES += ['test/OSKeyStoreTestUtils.jsm']
-
 BROWSER_CHROME_MANIFESTS += [
     'test/browser/browser.ini',
     'test/browser/formValidation/browser.ini',
@@ -147,7 +145,6 @@ EXTRA_JS_MODULES += [
     'LiveBookmarkMigrator.jsm',
     'NewTabPagePreloading.jsm',
     'OpenInTabsUtils.jsm',
-    'OSKeyStore.jsm',
     'PageActions.jsm',
     'PermissionUI.jsm',
     'PingCentre.jsm',

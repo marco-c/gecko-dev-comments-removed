@@ -102,7 +102,7 @@ add_task(async function() {
   
   is(
     Services.prefs.getStringPref(
-      "browser.osKeyStore.unofficialBuildOnlyLogin",
+      "toolkit.osKeyStore.unofficialBuildOnlyLogin",
       ""
     ),
     "",

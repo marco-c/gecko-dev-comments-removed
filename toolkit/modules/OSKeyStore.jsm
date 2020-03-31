@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 
-const TEST_ONLY_REAUTH = "browser.osKeyStore.unofficialBuildOnlyLogin";
+const TEST_ONLY_REAUTH = "toolkit.osKeyStore.unofficialBuildOnlyLogin";
 
 var OSKeyStore = {
   
