@@ -2708,16 +2708,10 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   GetClientSetCorsPreflightParameters(optionalCorsPreflightArgs);
 
   
-  
   nsCOMPtr<nsIURI> uri;
   GetTopWindowURI(mURI, getter_AddRefs(uri));
 
   SerializeURI(mTopWindowURI, openArgs.topWindowURI());
-
-  openArgs.contentBlockingAllowListPrincipal() =
-      mContentBlockingAllowListPrincipal
-          ? Some(RefPtr<nsIPrincipal>(mContentBlockingAllowListPrincipal))
-          : Nothing();
 
   openArgs.preflightArgs() = optionalCorsPreflightArgs;
 
