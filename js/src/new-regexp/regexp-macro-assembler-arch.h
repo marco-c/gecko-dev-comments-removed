@@ -38,6 +38,11 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void PopCurrentPosition();
   virtual void PushCurrentPosition();
 
+  virtual void Backtrack();
+  virtual void Bind(Label* label);
+  virtual void GoTo(Label* label);
+  virtual void PushBacktrack(Label* label);
+
 
  private:
   
@@ -45,6 +50,18 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   
   void Pop(js::jit::Register target);
+
+  void JumpOrBacktrack(Label* to);
+
+  
+  
+  
+  
+  inline js::jit::Label* LabelOrBacktrack(Label* to) {
+    return to ? to->inner() : &backtrack_label_;
+  }
+
+  void CheckBacktrackStackLimit();
 
   inline int char_size() { return static_cast<int>(mode_); }
   inline js::jit::Scale factor() {
@@ -86,8 +103,11 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   js::jit::Label entry_label_;
   js::jit::Label start_label_;
+  js::jit::Label backtrack_label_;
   js::jit::Label success_label_;
   js::jit::Label exit_label_;
+  js::jit::Label stack_overflow_label_;
+  js::jit::Label exit_with_exception_label_;
 
   Mode mode_;
   int num_registers_;
