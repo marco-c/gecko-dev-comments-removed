@@ -50,16 +50,22 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
 
     @property
     def browsertime_args(self):
-        args_list = [
-            "--browser", "firefox",
-            "--android",
-            
-            
-            
-            "--firefox.binaryPath", self.browsertime_node,
-            "--firefox.android.package", self.config["binary"],
-            "--firefox.android.activity", self.config["activity"],
-        ]
+        if self.config['app'] == 'chrome-m':
+            args_list = [
+                '--browser', 'chrome',
+                '--android',
+            ]
+        else:
+            args_list = [
+                "--browser", "firefox",
+                "--android",
+                
+                
+                
+                "--firefox.binaryPath", self.browsertime_node,
+                "--firefox.android.package", self.config["binary"],
+                "--firefox.android.activity", self.config["activity"],
+            ]
 
         
         if self.config["app"] == "fenix" and self.config.get("intent") is not None:
@@ -69,6 +75,30 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
             )
             args_list.extend(["--firefox.android.intentArgument=-d"])
             args_list.extend(["--firefox.android.intentArgument", str("about:blank")])
+
+        return args_list
+
+    def setup_chrome_args(self, test):
+        chrome_args = ["--use-mock-keychain", "--no-default-browser-check", "--no-first-run"]
+
+        if test.get("playback", False):
+            pb_args = [
+                "--proxy-server=%s:%d" % (self.playback.host, self.playback.port),
+                "--proxy-bypass-list=localhost;127.0.0.1",
+                "--ignore-certificate-errors",
+            ]
+
+            if not self.is_localhost:
+                pb_args[0] = pb_args[0].replace("127.0.0.1", self.config["host"])
+
+            chrome_args.extend(pb_args)
+
+        if self.debug_mode:
+            chrome_args.extend(["--auto-open-devtools-for-tabs"])
+
+        args_list = []
+        for arg in chrome_args:
+            args_list.extend(["--chrome.args=" + str(arg.replace("'", '"'))])
 
         return args_list
 
@@ -107,6 +137,10 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
 
     def run_tests(self, tests, test_names):
         self.setup_adb_device()
+
+        if self.config['app'] == "chrome-m":
+            
+            self.device.shell_output("pm enable com.android.chrome", root=True)
 
         return super(BrowsertimeAndroid, self).run_tests(tests, test_names)
 

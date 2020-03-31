@@ -1,10 +1,10 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# Originally taken from /talos/mach_commands.py
 
-# Integrates raptor mozharness with mach
+
+
+
+
+
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -27,7 +27,7 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 BENCHMARK_REPOSITORY = 'https://github.com/mozilla/perf-automation'
 BENCHMARK_REVISION = 'e19a0865c946ae2f9a64dd25614b1c275a3996b2'
 
-FIREFOX_ANDROID_BROWSERS = ["fennec", "geckoview", "refbrow", "fenix"]
+ANDROID_BROWSERS = ["fennec", "geckoview", "refbrow", "fenix", "chrome-m"]
 
 
 class RaptorRunner(MozbuildObject):
@@ -60,7 +60,7 @@ class RaptorRunner(MozbuildObject):
         self.cpu_test = kwargs['cpu_test']
         self.device_name = kwargs['device_name']
 
-        if Conditions.is_android(self) or kwargs["app"] in FIREFOX_ANDROID_BROWSERS:
+        if Conditions.is_android(self) or kwargs["app"] in ANDROID_BROWSERS:
             self.binary_path = None
         else:
             self.binary_path = kwargs.get("binary") or self.get_binary_path()
@@ -103,7 +103,7 @@ class RaptorRunner(MozbuildObject):
 
         subprocess.check_call(['git', 'checkout', BENCHMARK_REVISION], cwd=external_repo_path)
 
-        # Link or copy benchmarks to the objdir
+        
         benchmark_paths = (
             os.path.join(external_repo_path, 'benchmarks'),
             os.path.join(self.topsrcdir, 'third_party', 'webkit', 'PerformanceTests'),
@@ -124,7 +124,7 @@ class RaptorRunner(MozbuildObject):
                     if not os.path.exists(dest):
                         os.symlink(path, dest)
                 else:
-                    # Clobber the benchmark in case a recent update removed any files.
+                    
                     mozfile.remove(dest)
                     shutil.copytree(path, dest)
 
@@ -163,11 +163,11 @@ class RaptorRunner(MozbuildObject):
         sys.path.insert(0, os.path.join(self.topsrcdir, 'tools', 'browsertime'))
         try:
             import mach_commands as browsertime
-            # We don't set `browsertime_{chromedriver,geckodriver} -- those will be found by
-            # browsertime in its `node_modules` directory, which is appropriate for local builds.
-            # We don't set `browsertime_ffmpeg` yet: it will need to be on the path.  There is code
-            # to configure the environment including the path in
-            # `tools/browsertime/mach_commands.py` but integrating it here will take more effort.
+            
+            
+            
+            
+            
             self.config.update({
                 'browsertime_node': browsertime.node_path(),
                 'browsertime_browsertimejs': browsertime.browsertime_path(),
@@ -200,7 +200,7 @@ class RaptorRunner(MozbuildObject):
 
 
 def create_parser():
-    sys.path.insert(0, HERE)  # allow to import the raptor package
+    sys.path.insert(0, HERE)  
     from raptor.cmdline import create_parser
     return create_parser(mach_interface=True)
 
@@ -214,7 +214,7 @@ class MachRaptor(MachCommandBase):
         build_obj = self
 
         is_android = Conditions.is_android(build_obj) or \
-            kwargs['app'] in FIREFOX_ANDROID_BROWSERS
+            kwargs['app'] in ANDROID_BROWSERS
 
         if is_android:
             from mozrunner.devices.android_device import (verify_android_device, InstallIntent)
@@ -222,7 +222,7 @@ class MachRaptor(MachCommandBase):
             install = InstallIntent.NO if kwargs.pop('noinstall', False) else InstallIntent.YES
             if not verify_android_device(build_obj, install=install,
                                          app=kwargs['binary'],
-                                         xre=True):  # Equivalent to 'run_local' = True.
+                                         xre=True):  
                 return 1
 
         debug_command = '--debug-command'
