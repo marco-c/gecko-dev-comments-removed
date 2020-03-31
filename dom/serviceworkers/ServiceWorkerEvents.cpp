@@ -120,7 +120,7 @@ FetchEvent::FetchEvent(EventTarget* aOwner)
       mPreventDefaultColumnNumber(0),
       mWaitToRespond(false) {}
 
-FetchEvent::~FetchEvent() {}
+FetchEvent::~FetchEvent() = default;
 
 void FetchEvent::PostInit(
     nsMainThreadPtrHandle<nsIInterceptedChannel>& aChannel,
@@ -209,7 +209,7 @@ class FinishResponse final : public Runnable {
 class BodyCopyHandle final : public nsIInterceptedBodyCallback {
   UniquePtr<RespondWithClosure> mClosure;
 
-  ~BodyCopyHandle() {}
+  ~BodyCopyHandle() = default;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -871,7 +871,7 @@ class WaitUntilHandler final : public PromiseNativeHandler {
   uint32_t mColumn;
   nsString mRejectValue;
 
-  ~WaitUntilHandler() {}
+  ~WaitUntilHandler() = default;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -1067,7 +1067,7 @@ PushMessageData::PushMessageData(nsIGlobalObject* aOwner,
                                  nsTArray<uint8_t>&& aBytes)
     : mOwner(aOwner), mBytes(std::move(aBytes)) {}
 
-PushMessageData::~PushMessageData() {}
+PushMessageData::~PushMessageData() = default;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PushMessageData, mOwner)
 
@@ -1253,7 +1253,7 @@ void ExtendableMessageEvent::GetPorts(nsTArray<RefPtr<MessagePort>>& aPorts) {
   aPorts = mPorts;
 }
 
-NS_IMPL_CYCLE_COLLECTION_CLASS(ExtendableMessageEvent)
+NS_IMPL_CYCLE_COLLECTION_MULTI_ZONE_JSHOLDER_CLASS(ExtendableMessageEvent)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ExtendableMessageEvent, Event)
   tmp->mData.setUndefined();
