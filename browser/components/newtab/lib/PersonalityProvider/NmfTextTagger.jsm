@@ -1,15 +1,18 @@
 
 
 
+
 "use strict";
 
-const { toksToTfIdfVector } = ChromeUtils.import(
-  "resource://activity-stream/lib/Tokenize.jsm"
-);
 
-this.NmfTextTagger = class NmfTextTagger {
-  constructor(model) {
+
+
+var EXPORTED_SYMBOLS = ["NmfTextTagger"];
+
+const NmfTextTagger = class NmfTextTagger {
+  constructor(model, toksToTfIdfVector) {
     this.model = model;
+    this.toksToTfIdfVector = toksToTfIdfVector;
   }
 
   
@@ -20,7 +23,7 @@ this.NmfTextTagger = class NmfTextTagger {
 
 
   tagTokens(tokens) {
-    let fv = toksToTfIdfVector(tokens, this.model.vocab_idfs);
+    let fv = this.toksToTfIdfVector(tokens, this.model.vocab_idfs);
     let fve = Object.values(fv);
 
     
@@ -60,5 +63,3 @@ this.NmfTextTagger = class NmfTextTagger {
     return predictions;
   }
 };
-
-const EXPORTED_SYMBOLS = ["NmfTextTagger"];

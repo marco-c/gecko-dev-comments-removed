@@ -1,15 +1,18 @@
 
 
 
+
 "use strict";
 
-const { toksToTfIdfVector } = ChromeUtils.import(
-  "resource://activity-stream/lib/Tokenize.jsm"
-);
 
-this.NaiveBayesTextTagger = class NaiveBayesTextTagger {
-  constructor(model) {
+
+
+var EXPORTED_SYMBOLS = ["NaiveBayesTextTagger"];
+
+const NaiveBayesTextTagger = class NaiveBayesTextTagger {
+  constructor(model, toksToTfIdfVector) {
     this.model = model;
+    this.toksToTfIdfVector = toksToTfIdfVector;
   }
 
   
@@ -20,7 +23,7 @@ this.NaiveBayesTextTagger = class NaiveBayesTextTagger {
 
 
   tagTokens(tokens) {
-    let fv = toksToTfIdfVector(tokens, this.model.vocab_idfs);
+    let fv = this.toksToTfIdfVector(tokens, this.model.vocab_idfs);
 
     let bestLogProb = null;
     let bestClassId = -1;
@@ -62,5 +65,3 @@ this.NaiveBayesTextTagger = class NaiveBayesTextTagger {
     };
   }
 };
-
-const EXPORTED_SYMBOLS = ["NaiveBayesTextTagger"];

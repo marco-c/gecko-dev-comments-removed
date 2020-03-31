@@ -6,6 +6,11 @@
 
 
 
+var EXPORTED_SYMBOLS = ["tokenize", "toksToTfIdfVector"];
+
+
+
+
 
 
 
@@ -82,5 +87,3 @@ function toksToTfIdfVector(tokens, vocab_idfs) {
 
   return tfidfs;
 }
-
-const EXPORTED_SYMBOLS = ["tokenize", "toksToTfIdfVector"];
