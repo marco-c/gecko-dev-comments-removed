@@ -67,6 +67,7 @@
 #include "vm/JSScript.h"  
 #include "vm/Opcodes.h"        
 #include "vm/SharedStencil.h"  
+#include "vm/ThrowMsgKind.h"   
 #include "wasm/AsmJS.h"        
 
 #include "vm/JSObject-inl.h"  
@@ -1945,7 +1946,7 @@ bool BytecodeEmitter::emitCallIncDec(UnaryNode* incDec) {
 
   
   
-  return emitUint16Operand(JSOp::ThrowMsg, JSMSG_ASSIGN_TO_CALL);
+  return emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::AssignToCall));
 }
 
 bool BytecodeEmitter::emitDouble(double d) {
@@ -4204,7 +4205,7 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
       
       
-      if (!emitUint16Operand(JSOp::ThrowMsg, JSMSG_ASSIGN_TO_CALL)) {
+      if (!emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::AssignToCall))) {
         return false;
       }
 
@@ -6230,7 +6231,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
       return false;
     }
     
-    if (!emitUint16Operand(JSOp::ThrowMsg, JSMSG_ITERATOR_NO_THROW)) {
+    if (!emit2(JSOp::ThrowMsg, uint8_t(ThrowMsgKind::IteratorNoThrow))) {
       
       
       return false;
