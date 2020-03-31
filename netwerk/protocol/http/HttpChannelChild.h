@@ -352,7 +352,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   RefPtr<InterceptStreamListener> mInterceptListener;
   
   nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
-  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
 
   
   void ReleaseMainThreadOnlyReferences();

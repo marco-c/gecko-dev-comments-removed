@@ -374,7 +374,7 @@ NS_IMETHODIMP nsExtProtocolChannel::ConnectParent(uint32_t registrarId) {
 }
 
 NS_IMETHODIMP nsExtProtocolChannel::CompleteRedirectSetup(
-    nsIStreamListener* listener, nsISupports* context) {
+    nsIStreamListener* listener) {
   
   
   
