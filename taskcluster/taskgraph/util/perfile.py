@@ -83,4 +83,11 @@ def perfile_number_of_chunks(is_try, try_task_config, head_repository, head_rev,
                     test_count += 1
 
     chunks = test_count/tests_per_chunk
-    return int(math.ceil(chunks))
+    chunks = int(math.ceil(chunks))
+
+    
+    
+    if is_try and chunks == 0:
+        chunks = 1
+
+    return chunks
