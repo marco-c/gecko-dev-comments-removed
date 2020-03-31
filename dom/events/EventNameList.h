@@ -346,9 +346,6 @@ WINDOW_ONLY_EVENT(vrdisplaydisconnect, eVRDisplayDisconnect, EventNameType_None,
 WINDOW_ONLY_EVENT(vrdisplaypresentchange, eVRDisplayPresentChange,
                   EventNameType_None, eBasicEventClass)
 
-WINDOW_ONLY_EVENT(appinstalled, eAppInstalled, EventNameType_None,
-                  eBasicEventClass)
-
 TOUCH_EVENT(touchstart, eTouchStart, EventNameType_All, eTouchEventClass)
 TOUCH_EVENT(touchend, eTouchEnd, EventNameType_All, eTouchEventClass)
 TOUCH_EVENT(touchmove, eTouchMove, EventNameType_All, eTouchEventClass)
