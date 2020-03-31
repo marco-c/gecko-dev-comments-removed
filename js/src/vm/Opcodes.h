@@ -1985,9 +1985,32 @@
 
 
 
+
+
+
+
  \
     MACRO(Generator, generator, NULL, 1, 0, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2011,6 +2034,9 @@
 
 
 
+
+
+
  \
     MACRO(AfterYield, after_yield, NULL, 5, 0, 0, JOF_ICINDEX) \
     
@@ -2021,9 +2047,34 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(FinalYieldRval, final_yield_rval, NULL, 1, 1, 0, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2056,9 +2107,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(AsyncAwait, async_await, NULL, 1, 2, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2081,9 +2158,53 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  \
     MACRO(Await, await, NULL, 4, 2, 3, JOF_RESUMEINDEX) \
     
+
+
+
+
 
 
 
@@ -2115,9 +2236,22 @@
 
 
 
+
+
+
  \
     MACRO(CheckResumeKind, check_resume_kind, NULL, 1, 3, 1, JOF_BYTE) \
     
+
+
+
+
+
+
+
+
+
+
 
 
 
