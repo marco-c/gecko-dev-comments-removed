@@ -149,49 +149,14 @@ function defineLazyServiceGetter(object, name, contract, interfaceName) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function defineLazyModuleGetter(
-  object,
-  name,
-  resource,
-  symbol,
-  preLambda,
-  postLambda,
-  proxy
-) {
-  proxy = proxy || {};
-
-  if (typeof preLambda === "function") {
-    preLambda.apply(proxy);
-  }
-
+function defineLazyModuleGetter(object, name, resource) {
   defineLazyGetter(object, name, function() {
-    let temp = {};
     try {
-      temp = ChromeUtils.import(resource);
-
-      if (typeof postLambda === "function") {
-        postLambda.apply(proxy);
-      }
+      return ChromeUtils.import(resource)[name];
     } catch (ex) {
       Cu.reportError("Failed to load module " + resource + ".");
       throw ex;
     }
-    return temp[symbol || name];
   });
 }
 
@@ -210,26 +175,10 @@ function defineLazyModuleGetter(
 
 
 function lazyRequireGetter(obj, property, module, destructure) {
-  Object.defineProperty(obj, property, {
-    get: () => {
-      
-      
-      
-      
-      delete obj[property];
-      const value = destructure
-        ? require(module)[property]
-        : require(module || property);
-      Object.defineProperty(obj, property, {
-        value,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      });
-      return value;
-    },
-    configurable: true,
-    enumerable: true,
+  defineLazyGetter(obj, property, () => {
+    return destructure
+      ? require(module)[property]
+      : require(module || property);
   });
 }
 
