@@ -8293,7 +8293,16 @@ bool nsDisplayBackgroundColor::CanUseAsyncAnimations(
 
 auto nsDisplayTransform::ShouldPrerenderTransformedContent(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect)
-    -> PrerenderDecision {
+    -> PrerenderInfo {
+  PrerenderInfo result;
+  
+  
+  if ((aFrame->Extend3DContext() ||
+       aFrame->Combines3DTransformWithAncestors()) &&
+      !aBuilder->GetPreserves3DAllowAsyncAnimation()) {
+    return result;
+  }
+
   
   
   
@@ -8308,7 +8317,13 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
         AnimationPerformanceWarning(
             AnimationPerformanceWarning::Type::TransformFrameInactive));
 
-    return PrerenderDecision::No;
+    
+    
+    
+    
+    
+    result.mHasAnimations = false;
+    return result;
   }
 
   
@@ -8334,7 +8349,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
        container = nsLayoutUtils::GetCrossDocParentFrame(container)) {
     const nsStyleSVGReset* svgReset = container->StyleSVGReset();
     if (svgReset->HasMask() || svgReset->HasClipPath()) {
-      return PrerenderDecision::No;
+      return result;
     }
   }
 
@@ -8342,7 +8357,8 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
   if (aDirtyRect->Contains(overflow)) {
-    return PrerenderDecision::Full;
+    result.mDecision = PrerenderDecision::Full;
+    return result;
   }
 
   float viewportRatioX =
@@ -8376,29 +8392,15 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   uint64_t frameArea = uint64_t(frameSize.width) * frameSize.height;
   if (frameArea <= maxLimitArea && frameSize <= absoluteLimit) {
     *aDirtyRect = overflow;
-    return PrerenderDecision::Full;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aFrame->Extend3DContext() || aFrame->Combines3DTransformWithAncestors()) {
-    
-    *aDirtyRect = overflow;
-    return PrerenderDecision::Full;
+    result.mDecision = PrerenderDecision::Full;
+    return result;
   }
 
   if (StaticPrefs::layout_animation_prerender_partial()) {
     *aDirtyRect = nsLayoutUtils::ComputePartialPrerenderArea(*aDirtyRect,
                                                              overflow, maxSize);
-    return PrerenderDecision::Partial;
+    result.mDecision = PrerenderDecision::Partial;
+    return result;
   }
 
   if (frameArea > maxLimitArea) {
@@ -8426,7 +8428,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
             }));
   }
 
-  return PrerenderDecision::No;
+  return result;
 }
 
 

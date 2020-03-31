@@ -3210,10 +3210,11 @@ void nsIFrame::BuildDisplayListForStackingContext(
   bool allowAsyncAnimation = false;
   bool inTransform = aBuilder->IsInTransform();
   if (isTransformed) {
-    nsDisplayTransform::PrerenderDecision decision =
+    nsDisplayTransform::PrerenderInfo decision =
         nsDisplayTransform::ShouldPrerenderTransformedContent(aBuilder, this,
                                                               &dirtyRect);
-    switch (decision) {
+
+    switch (decision.mDecision) {
       case nsDisplayTransform::PrerenderDecision::Full:
         allowAsyncAnimation = true;
         visibleRect = dirtyRect;
@@ -3224,13 +3225,20 @@ void nsIFrame::BuildDisplayListForStackingContext(
         [[fallthrough]];
         
       case nsDisplayTransform::PrerenderDecision::No: {
+        
+        
+        
+        if ((extend3DContext || combines3DTransformWithAncestors) &&
+            decision.mDecision == nsDisplayTransform::PrerenderDecision::No &&
+            decision.mHasAnimations) {
+          aBuilder->SavePreserves3DAllowAsyncAnimation(false);
+        }
+
         const nsRect overflow = GetVisualOverflowRectRelativeToSelf();
         if (overflow.IsEmpty() && !extend3DContext) {
           return;
         }
 
-        
-        
         
         
         if (combines3DTransformWithAncestors) {
@@ -3702,6 +3710,22 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
     buildingDisplayList.SetReferenceFrameAndCurrentOffset(
         outerReferenceFrame, GetOffsetToCrossDoc(outerReferenceFrame));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ((extend3DContext || combines3DTransformWithAncestors) &&
+        allowAsyncAnimation) {
+      
+      
+      allowAsyncAnimation = aBuilder->GetPreserves3DAllowAsyncAnimation();
+    }
 
     nsDisplayTransform* transformItem = MakeDisplayItem<nsDisplayTransform>(
         aBuilder, this, &resultList, visibleRect, 0, allowAsyncAnimation);

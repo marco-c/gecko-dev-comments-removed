@@ -402,13 +402,15 @@ class nsDisplayListBuilder {
    public:
     typedef mozilla::gfx::Matrix4x4 Matrix4x4;
 
-    Preserves3DContext() : mAccumulatedRectLevels(0) {}
+    Preserves3DContext()
+        : mAccumulatedRectLevels(0), mAllowAsyncAnimation(true) {}
 
     Preserves3DContext(const Preserves3DContext& aOther)
         : mAccumulatedTransform(),
           mAccumulatedRect(),
           mAccumulatedRectLevels(0),
-          mVisibleRect(aOther.mVisibleRect) {}
+          mVisibleRect(aOther.mVisibleRect),
+          mAllowAsyncAnimation(aOther.mAllowAsyncAnimation) {}
 
     
     Matrix4x4 mAccumulatedTransform;
@@ -417,6 +419,8 @@ class nsDisplayListBuilder {
     
     int mAccumulatedRectLevels;
     nsRect mVisibleRect;
+    
+    bool mAllowAsyncAnimation;
   };
 
   
@@ -1715,6 +1719,14 @@ class nsDisplayListBuilder {
   }
 
   void SavePreserves3DRect() { mPreserves3DCtx.mVisibleRect = mVisibleRect; }
+
+  void SavePreserves3DAllowAsyncAnimation(bool aValue) {
+    mPreserves3DCtx.mAllowAsyncAnimation = aValue;
+  }
+
+  bool GetPreserves3DAllowAsyncAnimation() const {
+    return mPreserves3DCtx.mAllowAsyncAnimation;
+  }
 
   bool IsBuildingInvisibleItems() const { return mBuildingInvisibleItems; }
 
@@ -7105,6 +7117,11 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   static Matrix4x4 GetResultingTransformMatrix(
       const FrameTransformProperties& aProperties, TransformReferenceBox&,
       const nsPoint& aOrigin, float aAppUnitsPerPixel, uint32_t aFlags);
+
+  struct PrerenderInfo {
+    PrerenderDecision mDecision = PrerenderDecision::No;
+    bool mHasAnimations = true;
+  };
   
 
 
@@ -7113,8 +7130,12 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
 
 
 
-  static PrerenderDecision ShouldPrerenderTransformedContent(
+
+
+
+  static PrerenderInfo ShouldPrerenderTransformedContent(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect);
+
   bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder,
