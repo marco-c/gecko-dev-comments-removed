@@ -13,7 +13,7 @@ use crate::media_queries::Device;
 use crate::properties::{ComputedValues, StyleBuilder};
 use crate::properties::{LonghandId, LonghandIdSet, CSSWideKeyword};
 use crate::properties::{PropertyDeclaration, PropertyDeclarationId, DeclarationImportanceIterator};
-use crate::properties::CASCADE_PROPERTY;
+use crate::properties::{CASCADE_PROPERTY, ComputedValueFlags};
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_tree::StrongRuleNode;
 use crate::selector_parser::PseudoElement;
@@ -360,17 +360,17 @@ fn tweak_when_ignoring_colors(
         return;
     }
 
-    // Don't override background-color on ::-moz-color-swatch. It is set as an
-    // author style (via the style attribute), but it's pretty important for it
-    // to show up for obvious reasons :)
+    
+    
+    
     if builder.pseudo.map_or(false, |p| p.is_color_swatch()) && longhand_id == LonghandId::BackgroundColor {
         return;
     }
 
-    // A few special-cases ahead.
+    
     match **declaration {
-        // We honor color and background-color: transparent, and
-        // "revert-or-initial" otherwise.
+        
+        
         PropertyDeclaration::BackgroundColor(ref color) => {
             if color.is_transparent() {
                 return;
@@ -381,7 +381,7 @@ fn tweak_when_ignoring_colors(
             )
         }
         PropertyDeclaration::Color(ref color) => {
-            // otherwise.
+            
             if color.0.is_transparent() {
                 return;
             }
@@ -390,7 +390,7 @@ fn tweak_when_ignoring_colors(
                 PropertyDeclaration::Color(specified::ColorPropertyValue(color.into()))
             )
         },
-        // We honor url background-images if backplating.
+        
         #[cfg(feature = "gecko")]
         PropertyDeclaration::BackgroundImage(ref bkg) => {
             use crate::values::generics::image::Image;
@@ -411,6 +411,7 @@ struct Cascade<'a, 'b: 'a> {
     context: &'a mut computed::Context<'b>,
     cascade_mode: CascadeMode<'a>,
     seen: LonghandIdSet,
+    author_specified: LonghandIdSet,
     reverted: PerOrigin<LonghandIdSet>,
 }
 
@@ -420,6 +421,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             context,
             cascade_mode,
             seen: LonghandIdSet::default(),
+            author_specified: LonghandIdSet::default(),
             reverted: Default::default(),
         }
     }
@@ -454,11 +456,11 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         longhand_id: LonghandId,
         declaration: &PropertyDeclaration,
     ) {
-        // We could (and used to) use a pattern match here, but that bloats this
-        // function to over 100K of compiled code!
-        //
-        // To improve i-cache behavior, we outline the individual functions and
-        // use virtual dispatch instead.
+        
+        
+        
+        
+        
         let discriminant = longhand_id as usize;
         (CASCADE_PROPERTY[discriminant])(declaration, &mut self.context);
     }
@@ -515,9 +517,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 continue;
             }
 
-            // Only a few properties are allowed to depend on the visited state
-            // of links.  When cascading visited styles, we can save time by
-            // only processing these properties.
+            
+            
+            
             if matches!(self.cascade_mode, CascadeMode::Visited { .. }) &&
                 !physical_longhand_id.is_visited_dependent()
             {
@@ -526,8 +528,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             let mut declaration = self.substitute_variables_if_needed(declaration);
 
-            // When document colors are disabled, do special handling of
-            // properties that are marked as ignored in that mode.
+            
+            
             if ignore_colors {
                 tweak_when_ignoring_colors(
                     &self.context.builder,
@@ -545,9 +547,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             let css_wide_keyword = declaration.get_css_wide_keyword();
             if let Some(CSSWideKeyword::Revert) = css_wide_keyword {
-                // We intentionally don't want to insert it into `self.seen`,
-                // `reverted` takes care of rejecting other declarations as
-                // needed.
+                
+                
+                
                 for origin in origin.following_including() {
                     self.reverted
                         .borrow_mut_for_origin(&origin)
@@ -557,6 +559,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             }
 
             self.seen.insert(physical_longhand_id);
+            if origin == Origin::Author {
+                self.author_specified.insert(physical_longhand_id);
+            }
 
             let unset = css_wide_keyword.map_or(false, |css_wide_keyword| {
                 match css_wide_keyword {
@@ -571,9 +576,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 continue;
             }
 
-            // FIXME(emilio): We should avoid generating code for logical
-            // longhands and just use the physical ones, then rename
-            // physical_longhand_id to just longhand_id.
+            
+            
+            
             self.apply_declaration(longhand_id, &*declaration);
         }
 
@@ -643,8 +648,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
         let writing_mode = self.context.builder.writing_mode;
 
-        // We could call apply_declarations directly, but that'd cause
-        // another instantiation of this function which is not great.
+        
+        
         let style = cascade_rules(
             self.context.builder.device,
             self.context.builder.pseudo,
@@ -656,11 +661,11 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             self.context.font_metrics_provider,
             CascadeMode::Visited { writing_mode },
             self.context.quirks_mode,
-            // The rule cache doesn't care about caching :visited
-            // styles, we cache the unvisited style instead. We still do
-            // need to set the caching dependencies properly if present
-            // though, so the cache conditions need to match.
-            /* rule_cache = */ None,
+            
+            
+            
+            
+             None,
             &mut *self.context.rule_cache_conditions.borrow_mut(),
             element,
         );
@@ -678,6 +683,15 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
             if let Some(svg) = builder.get_svg_if_mutated() {
                 svg.fill_arrays();
+            }
+
+            if !builder.get_box().clone__moz_appearance().is_none() {
+                if self.author_specified.contains_any(LonghandIdSet::border_background_properties()) {
+                    builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
+                }
+                if self.author_specified.contains_any(LonghandIdSet::padding_properties()) {
+                    builder.add_flags(ComputedValueFlags::HAS_AUTHOR_SPECIFIED_PADDING);
+                }
             }
         }
 
@@ -699,21 +713,35 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             None => return false,
         };
 
-        let cached_style = match cache.find(guards, &self.context.builder) {
+        let builder = &mut self.context.builder;
+
+        let cached_style = match cache.find(guards, &builder) {
             Some(style) => style,
             None => return false,
         };
 
-        self.context.builder.copy_reset_from(cached_style);
+        builder.copy_reset_from(cached_style);
+
+        
+        
+        
+        
+        
+        
+        let reset_props_bits =
+            ComputedValueFlags::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND |
+            ComputedValueFlags::HAS_AUTHOR_SPECIFIED_PADDING;
+        builder.add_flags(cached_style.flags & reset_props_bits);
+
         true
     }
 
-    /// The default font type (which is stored in FontFamilyList's
-    /// `mDefaultFontType`) depends on the current lang group and generic font
-    /// family, so we may need to recompute it if or the family changed.
-    ///
-    /// Also, we prioritize non-document fonts here if we need to (see the pref
-    /// `browser.display.use_document_fonts`).
+    
+    
+    
+    
+    
+    
     #[inline]
     #[cfg(feature = "gecko")]
     fn recompute_default_font_family_type_if_needed(&mut self) {
@@ -730,8 +758,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         let (default_font_type, prioritize_user_fonts) = {
             let font = builder.get_font().gecko();
 
-            // System fonts are all right, and should have the default font type
-            // set to none already, so bail out early.
+            
+            
             if font.mFont.systemFont {
                 debug_assert_eq!(font.mFont.fontlist.mDefaultFontType, GenericFontFamily::None);
                 return;
@@ -745,10 +773,10 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 )
             };
 
-            // We prioritize user fonts over document fonts if the pref is set,
-            // and we don't have a generic family already (or we're using
-            // cursive or fantasy, since they're ignored, see bug 789788), and
-            // we have a generic family to actually replace it with.
+            
+            
+            
+            
             let prioritize_user_fonts =
                 !use_document_fonts &&
                 matches!(
@@ -760,7 +788,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
                 default_font_type != GenericFontFamily::None;
 
             if !prioritize_user_fonts && default_font_type == font.mFont.fontlist.mDefaultFontType {
-                // Nothing to do.
+                
                 return;
             }
             (default_font_type, prioritize_user_fonts)
@@ -775,7 +803,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         }
     }
 
-    /// Some keyword sizes depend on the font family and language.
+    
     #[cfg(feature = "gecko")]
     fn recompute_keyword_font_size_if_needed(&mut self) {
         use crate::values::computed::ToComputedValue;
@@ -807,8 +835,8 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         self.context.builder.mutate_font().set_font_size(new_size);
     }
 
-    /// Some properties, plus setting font-size itself, may make us go out of
-    /// our minimum font-size range.
+    
+    
     #[cfg(feature = "gecko")]
     fn constrain_font_size_if_needed(&mut self) {
         use crate::gecko_bindings::bindings;
@@ -840,13 +868,13 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         builder.mutate_font().gecko_mut().mFont.size = min_font_size;
     }
 
-    /// <svg:text> is not affected by text zoom, and it uses a preshint
-    /// to disable it. We fix up the struct when this happens by
-    /// unzooming its contained font values, which will have been zoomed
-    /// in the parent.
-    ///
-    /// FIXME(emilio): Also, why doing this _before_ handling font-size? That
-    /// sounds wrong.
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
     fn unzoom_fonts_if_needed(&mut self) {
         if !self.seen.contains(LonghandId::XTextZoom) {
@@ -868,12 +896,12 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         builder.mutate_font().unzoom_fonts(device);
     }
 
-    /// MathML script* attributes do some very weird shit with font-size.
-    ///
-    /// Handle them specially here, separate from other font-size stuff.
-    ///
-    /// How this should interact with lang="" and font-family-dependent sizes is
-    /// not clear to me. For now just pretend those don't exist here.
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "gecko")]
     fn handle_mathml_scriptlevel_if_needed(&mut self) {
         use app_units::Au;
@@ -885,7 +913,7 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             return;
         }
 
-        // If the user specifies a font-size, just let it be.
+        
         if self.seen.contains(LonghandId::FontSize) {
             return;
         }
@@ -914,21 +942,21 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             let new_unconstrained_size = parent_unconstrained_size.scale_by(scale);
 
             if scale <= 1. {
-                // The parent size can be smaller than scriptminsize, e.g. if it
-                // was specified explicitly. Don't scale in this case, but we
-                // don't want to set it to scriptminsize either since that will
-                // make it larger.
+                
+                
+                
+                
                 if parent_size <= min {
                     (parent_size, new_unconstrained_size)
                 } else {
                     (cmp::max(min, new_size), new_unconstrained_size)
                 }
             } else {
-                // If the new unconstrained size is larger than the min size,
-                // this means we have escaped the grasp of scriptminsize and can
-                // revert to using the unconstrained size.
-                // However, if the new size is even larger (perhaps due to usage
-                // of em units), use that instead.
+                
+                
+                
+                
+                
                 (
                     cmp::min(new_size, cmp::max(new_unconstrained_size, min)),
                     new_unconstrained_size
@@ -941,10 +969,10 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         font.mScriptUnconstrainedSize = new_unconstrained_size.0;
     }
 
-    /// Various properties affect how font-size and font-family are computed.
-    ///
-    /// These need to be handled here, since relative lengths and ex / ch units
-    /// for late properties depend on these.
+    
+    
+    
+    
     fn fixup_font_stuff(&mut self) {
         #[cfg(feature = "gecko")]
         {
