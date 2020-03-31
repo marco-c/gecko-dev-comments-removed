@@ -652,6 +652,11 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   MOZ_RELEASE_ASSERT(
       sandbox::SBOX_ALL_OK == result,
       "With these static arguments AddRule should never fail, what happened?");
+  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
+                            sandbox::TargetPolicy::HANDLES_DUP_ANY, L"File");
+  MOZ_RELEASE_ASSERT(
+      sandbox::SBOX_ALL_OK == result,
+      "With these static arguments AddRule should never fail, what happened?");
 
   
   
@@ -908,7 +913,8 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
       result,
       "SetJobLevel should never fail with these arguments, what happened?");
 
-  result = mPolicy->SetTokenLevel(sandbox::USER_LIMITED, sandbox::USER_LIMITED);
+  result = mPolicy->SetTokenLevel(sandbox::USER_RESTRICTED_SAME_ACCESS,
+                                  sandbox::USER_LIMITED);
   SANDBOX_ENSURE_SUCCESS(
       result,
       "SetTokenLevel should never fail with these arguments, what happened?");
@@ -929,6 +935,9 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
   SANDBOX_ENSURE_SUCCESS(result,
                          "SetDelayedIntegrityLevel should never fail with "
                          "these arguments, what happened?");
+
+  mPolicy->SetLockdownDefaultDacl();
+  mPolicy->AddRestrictingRandomSid();
 
   sandbox::MitigationFlags mitigations =
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
