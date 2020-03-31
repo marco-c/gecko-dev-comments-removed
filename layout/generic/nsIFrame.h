@@ -2154,14 +2154,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-
-
-
-  virtual void ContentStatesChanged(mozilla::EventStates aStates);
-
-  
-
-
   virtual nsIFrame* GetPrevContinuation() const = 0;
   virtual void SetPrevContinuation(nsIFrame*) = 0;
   virtual nsIFrame* GetNextContinuation() const = 0;
