@@ -84,6 +84,7 @@
 #include <fstream>
 #include <ostream>
 #include <sstream>
+#include <type_traits>
 
 #ifdef MOZ_TASK_TRACER
 #  include "GeckoTaskTracer.h"
@@ -2790,8 +2791,8 @@ class SamplerThread {
     
     
     static_assert(
-        IsSame<decltype(aCallbacks),
-               UniquePtr<PostSamplingCallbackListItem>>::value,
+        std::is_same_v<decltype(aCallbacks),
+                       UniquePtr<PostSamplingCallbackListItem>>,
         "We need to capture the list by-value, to implicitly destroy it");
   }
 

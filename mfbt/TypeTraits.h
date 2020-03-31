@@ -102,26 +102,6 @@ struct IsDestructibleImpl : public DoIsDestructibleImpl {
 template <typename T>
 struct IsDestructible : public detail::IsDestructibleImpl<T>::Type {};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename U>
-struct IsSame : std::false_type {};
-
-template <typename T>
-struct IsSame<T, T> : std::true_type {};
-
 } 
 
 #endif 
