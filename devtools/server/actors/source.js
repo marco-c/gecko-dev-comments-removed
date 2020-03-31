@@ -218,13 +218,6 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     
     
     
-    if (this.dbg.replaying) {
-      return this.dbg.replayingContent(this.url);
-    }
-
-    
-    
-    
     
     
     

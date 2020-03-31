@@ -168,24 +168,6 @@ class ThreadFront extends FrontClassWithSpec(threadSpec) {
   
 
 
-
-
-
-  timeWarp(target) {
-    const warp = () => {
-      this._doResume({ type: "warp", target }, true);
-    };
-    if (this.paused) {
-      return warp();
-    }
-
-    this.interrupt();
-    return this.once("paused", warp);
-  }
-
-  
-
-
   _doInterrupt(when) {
     return super.interrupt(when);
   }

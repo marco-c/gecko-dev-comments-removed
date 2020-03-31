@@ -91,8 +91,6 @@ AutoRefreshHighlighter.prototype = {
   
 
 
-
-
   get win() {
     if (!this.highlighterEnv) {
       return null;

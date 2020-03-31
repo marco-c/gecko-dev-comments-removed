@@ -147,11 +147,6 @@ class WebConsole {
     return this.ui ? this.ui.jsterm : null;
   }
 
-  canRewind() {
-    const traits = this.currentTarget && this.currentTarget.traits;
-    return traits && traits.canRewind;
-  }
-
   
 
 

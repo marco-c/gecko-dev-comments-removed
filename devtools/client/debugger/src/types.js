@@ -117,20 +117,6 @@ export type PendingLocation = {
   +sourceUrl?: string,
 };
 
-export type ExecutionPoint = {
-  +checkpoint: number,
-  +location: PendingLocation,
-  +position: ExecutionPointPosition,
-  +progress: number,
-};
-
-export type ExecutionPointPosition = {
-  +frameIndex: number,
-  +kind: string,
-  +offset: number,
-  +script: number,
-};
-
 
 
 

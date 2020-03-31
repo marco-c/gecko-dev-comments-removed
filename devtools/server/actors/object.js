@@ -230,7 +230,6 @@ const proto = {
 
     
     
-    
     if (raw && Cu) {
       raw = Cu.unwaiveXrays(raw);
     }
