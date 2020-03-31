@@ -1292,6 +1292,23 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       case __NR_get_mempolicy:
         return Allow();
 
+        
+        
+        
+      case __NR_kcmp: {
+        
+        
+        
+        
+        static const int kKcmpFile = 0;
+        const pid_t myPid = getpid();
+        Arg<pid_t> pid1(0), pid2(1);
+        Arg<int> type(2);
+        return If(AllOf(pid1 == myPid, pid2 == myPid, type == kKcmpFile),
+                  Allow())
+            .Else(InvalidSyscall());
+      }
+
 #endif  
 
         
