@@ -6824,7 +6824,7 @@ class nsDisplayTransform : public nsDisplayHitTestInfoBase {
   using TransformReferenceBox = nsStyleTransformMatrix::TransformReferenceBox;
 
  public:
-  enum PrerenderDecision { NoPrerender, FullPrerender, PartialPrerender };
+  enum class PrerenderDecision { No, Full, Partial };
 
   
 

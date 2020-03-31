@@ -8308,7 +8308,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
         AnimationPerformanceWarning(
             AnimationPerformanceWarning::Type::TransformFrameInactive));
 
-    return NoPrerender;
+    return PrerenderDecision::No;
   }
 
   
@@ -8334,7 +8334,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
        container = nsLayoutUtils::GetCrossDocParentFrame(container)) {
     const nsStyleSVGReset* svgReset = container->StyleSVGReset();
     if (svgReset->HasMask() || svgReset->HasClipPath()) {
-      return NoPrerender;
+      return PrerenderDecision::No;
     }
   }
 
@@ -8342,7 +8342,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   
   nsRect overflow = aFrame->GetVisualOverflowRectRelativeToSelf();
   if (aDirtyRect->Contains(overflow)) {
-    return FullPrerender;
+    return PrerenderDecision::Full;
   }
 
   float viewportRatioX =
@@ -8376,7 +8376,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   uint64_t frameArea = uint64_t(frameSize.width) * frameSize.height;
   if (frameArea <= maxLimitArea && frameSize <= absoluteLimit) {
     *aDirtyRect = overflow;
-    return FullPrerender;
+    return PrerenderDecision::Full;
   }
 
   
@@ -8392,13 +8392,13 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
   if (aFrame->Extend3DContext() || aFrame->Combines3DTransformWithAncestors()) {
     
     *aDirtyRect = overflow;
-    return FullPrerender;
+    return PrerenderDecision::Full;
   }
 
   if (StaticPrefs::layout_animation_prerender_partial()) {
     *aDirtyRect = nsLayoutUtils::ComputePartialPrerenderArea(*aDirtyRect,
                                                              overflow, maxSize);
-    return PartialPrerender;
+    return PrerenderDecision::Partial;
   }
 
   if (frameArea > maxLimitArea) {
@@ -8426,7 +8426,7 @@ auto nsDisplayTransform::ShouldPrerenderTransformedContent(
             }));
   }
 
-  return NoPrerender;
+  return PrerenderDecision::No;
 }
 
 
