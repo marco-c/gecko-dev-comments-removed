@@ -227,19 +227,6 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
     
     
-    if (mIsMainThread && !aIsJSImplementedWebIDL) {
-      
-      
-      if (!xpc::Scriptability::Get(realCallback).Allowed()) {
-        aRv.ThrowNotSupportedError(
-            "Refusing to execute function from global in which script is "
-            "disabled.");
-        return;
-      }
-    }
-
-    
-    
     nsGlobalWindowInner* win = mIsMainThread && !aIsJSImplementedWebIDL
                                    ? xpc::WindowGlobalOrNull(realCallback)
                                    : nullptr;
@@ -257,6 +244,15 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       
       globalObject = xpc::NativeGlobal(realCallback);
       MOZ_ASSERT(globalObject);
+    }
+
+    
+    
+    if (globalObject->IsScriptForbidden(realCallback, aIsJSImplementedWebIDL)) {
+      aRv.ThrowNotSupportedError(
+          "Refusing to execute function from global in which script is "
+          "disabled.");
+      return;
     }
   }
 
