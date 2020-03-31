@@ -83,9 +83,6 @@ add_task(async function test_text_input_spellcheck() {
     ],
     {
       waitForSpellCheck: true,
-      
-      
-      
       async preCheckContextMenuFn() {
         await SpecialPowers.spawn(
           gBrowser.selectedBrowser,
@@ -264,6 +261,7 @@ add_task(async function test_password_input() {
       
       
       
+      
       async preCheckContextMenuFn() {
         await SpecialPowers.spawn(
           gBrowser.selectedBrowser,
@@ -283,7 +281,7 @@ add_task(async function test_password_input() {
           async function() {
             let doc = content.document;
             let input = doc.getElementById("input_password");
-            input.type = "text";
+            input.outerHTML = `<input id=\"input_password\">`;
             input.clientTop; 
           }
         );

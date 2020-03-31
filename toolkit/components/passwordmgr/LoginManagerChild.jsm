@@ -280,49 +280,53 @@ const observer = {
 
       case "input": {
         let field = aEvent.target;
-        let isPasswordInput = field.hasBeenTypePassword;
+        let { hasBeenTypePassword } = field;
         
         if (docState.generatedPasswordFields.has(field)) {
           LoginManagerChild.forWindow(
             window
           )._maybeStopTreatingAsGeneratedPasswordField(aEvent);
         }
-        
-        if (isPasswordInput || LoginHelper.isUsernameFieldType(field)) {
-          let formLikeRoot = FormLikeFactory.findRootForField(field);
 
-          if (formLikeRoot !== aEvent.currentTarget) {
+        if (!hasBeenTypePassword && !LoginHelper.isUsernameFieldType(field)) {
+          break;
+        }
+
+        
+        let formLikeRoot = FormLikeFactory.findRootForField(field);
+
+        if (formLikeRoot !== aEvent.currentTarget) {
+          break;
+        }
+        
+        let alreadyModified = docState.fieldModificationsByRootElement.get(
+          formLikeRoot
+        );
+        let { login: filledLogin, userTriggered: fillWasUserTriggered } =
+          docState.fillsByRootElement.get(formLikeRoot) || {};
+
+        
+        let isAutofillInput = filledLogin && !fillWasUserTriggered;
+        if (!alreadyModified && isAutofillInput) {
+          if (hasBeenTypePassword && filledLogin.password == field.value) {
+            log(
+              "Ignoring password input event that doesn't change autofilled values"
+            );
             break;
           }
-          
-          let alreadyModified = docState.fieldModificationsByRootElement.get(
-            formLikeRoot
-          );
-          let { login: filledLogin, userTriggered: fillWasUserTriggered } =
-            docState.fillsByRootElement.get(formLikeRoot) || {};
-
-          
-          let isAutofillInput = filledLogin && !fillWasUserTriggered;
-          if (!alreadyModified && isAutofillInput) {
-            if (isPasswordInput && filledLogin.password == field.value) {
-              log(
-                "Ignoring password input event that doesn't change autofilled values"
-              );
-              break;
-            }
-            if (
-              !isPasswordInput &&
-              filledLogin.usernameField &&
-              filledLogin.username == field.value
-            ) {
-              log(
-                "Ignoring username input event that doesn't change autofilled values"
-              );
-              break;
-            }
+          if (
+            !hasBeenTypePassword &&
+            filledLogin.usernameField &&
+            filledLogin.username == field.value
+          ) {
+            log(
+              "Ignoring username input event that doesn't change autofilled values"
+            );
+            break;
           }
-          docState.fieldModificationsByRootElement.set(formLikeRoot, true);
         }
+        docState.fieldModificationsByRootElement.set(formLikeRoot, true);
+
         break;
       }
 
@@ -341,7 +345,7 @@ const observer = {
 
       case "focus": {
         if (
-          aEvent.target.type == "password" &&
+          aEvent.target.hasBeenTypePassword &&
           docState.generatedPasswordFields.has(aEvent.target)
         ) {
           
@@ -943,7 +947,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     let clobberUsername = true;
     let form = LoginFormFactory.createFromField(inputElement);
-    if (inputElement.type == "password") {
+    if (inputElement.hasBeenTypePassword) {
       clobberUsername = false;
     }
 
@@ -974,7 +978,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
   _onUsernameFocus(event) {
     let focusedField = event.target;
-    if (!focusedField.mozIsTextField(true) || focusedField.readOnly) {
+    if (
+      !focusedField.mozIsTextField(true) ||
+      focusedField.hasBeenTypePassword ||
+      focusedField.readOnly
+    ) {
       return;
     }
 
@@ -1112,7 +1120,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       let element = form.elements[i];
       if (
         ChromeUtils.getClassName(element) !== "HTMLInputElement" ||
-        element.type != "password" ||
+        !element.hasBeenTypePassword ||
         !element.isConnected
       ) {
         continue;
@@ -1870,7 +1878,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       
       
       if (inputElement) {
-        if (inputElement.type == "password") {
+        if (inputElement.hasBeenTypePassword) {
           passwordField = inputElement;
           if (!clobberUsername) {
             usernameField = null;
@@ -2245,17 +2253,24 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
   getUserNameAndPasswordFields(aField) {
+    let noResult = [null, null, null];
+    if (ChromeUtils.getClassName(aField) !== "HTMLInputElement") {
+      throw new Error("getUserNameAndPasswordFields: input element required");
+    }
+
+    if (aField.nodePrincipal.isNullPrincipal || !aField.isConnected) {
+      return noResult;
+    }
+
     
     if (
-      ChromeUtils.getClassName(aField) !== "HTMLInputElement" ||
-      (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
-      aField.nodePrincipal.isNullPrincipal ||
-      !aField.ownerDocument
+      !aField.hasBeenTypePassword &&
+      !LoginHelper.isUsernameFieldType(aField)
     ) {
-      return [null, null, null];
+      return noResult;
     }
-    let form = LoginFormFactory.createFromField(aField);
 
+    let form = LoginFormFactory.createFromField(aField);
     let doc = aField.ownerDocument;
     let formOrigin = LoginHelper.getLoginOrigin(doc.documentURI);
     let recipes = LoginRecipesContent.getRecipes(
@@ -2282,7 +2297,8 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     
     if (
       ChromeUtils.getClassName(aField) !== "HTMLInputElement" ||
-      (aField.type != "password" && !LoginHelper.isUsernameFieldType(aField)) ||
+      (!aField.hasBeenTypePassword &&
+        !LoginHelper.isUsernameFieldType(aField)) ||
       aField.nodePrincipal.isNullPrincipal ||
       aField.nodePrincipal.schemeIs("about") ||
       !aField.ownerDocument
@@ -2296,7 +2312,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     
     
-    if (aField.type != "password") {
+    if (!aField.hasBeenTypePassword) {
       usernameField = aField;
     }
 
