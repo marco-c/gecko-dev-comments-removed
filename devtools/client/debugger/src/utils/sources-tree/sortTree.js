@@ -7,6 +7,7 @@
 import { nodeHasChildren, isExactUrlMatch } from "./utils";
 
 import type { TreeDirectory } from "./types";
+import type { URL } from "../../types";
 
 
 
@@ -14,7 +15,7 @@ import type { TreeDirectory } from "./types";
 
 
 
-export function sortTree(tree: TreeDirectory, debuggeeUrl: string = "") {
+export function sortTree(tree: TreeDirectory, debuggeeUrl: URL = "") {
   return (tree.contents: any).sort((previousNode, currentNode) => {
     const currentNodeIsDir = nodeHasChildren(currentNode);
     const previousNodeIsDir = nodeHasChildren(previousNode);

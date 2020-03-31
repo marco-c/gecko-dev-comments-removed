@@ -5,7 +5,7 @@
 
 
 import type { Action } from "../actions/types";
-import type { SourceId, ThreadId } from "../types";
+import type { SourceId, ThreadId, URL } from "../types";
 import {
   asSettled,
   type AsyncValue,
@@ -45,15 +45,15 @@ export type SourceActor = {|
   +isBlackBoxed: boolean,
 
   
-  +sourceMapURL: string | null,
+  +sourceMapURL: URL | null,
 
   
   
-  +url: string | null,
+  +url: URL | null,
 
   
   
-  +introductionUrl: string | null,
+  +introductionUrl: URL | null,
 
   
   

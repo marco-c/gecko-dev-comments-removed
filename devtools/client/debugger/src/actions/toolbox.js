@@ -5,13 +5,13 @@
 
 
 import type { ThunkArgs } from "./types";
-import type { Grip } from "../types";
+import type { Grip, URL } from "../types";
 
 
 
 
 
-export function openLink(url: string) {
+export function openLink(url: URL) {
   return async function({ panel }: ThunkArgs) {
     return panel.openLink(url);
   };

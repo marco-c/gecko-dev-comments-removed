@@ -49,9 +49,7 @@ function makeBookmark({ breakpoint }, { onClick, onContextMenu }) {
 
   bp.setAttribute("title", logValue || condition || "");
   bp.onclick = onClick;
-
-  
-  (bp: any).oncontextmenu = onContextMenu;
+  bp.oncontextmenu = onContextMenu;
 
   return bp;
 }
