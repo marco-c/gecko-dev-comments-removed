@@ -483,7 +483,45 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 }
 
 - (NSArray*)accessibilityActionNames {
-  return @[ NSAccessibilityScrollToVisibleAction ];
+  AccessibleWrap* accWrap = [self getGeckoAccessible];
+  ProxyAccessible* proxy = [self getProxyAccessible];
+  
+  NSMutableArray* actions = [NSMutableArray new];
+  if (!accWrap && !proxy) return actions;
+
+  uint8_t count = 0;
+  if (accWrap) {
+    count = accWrap->ActionCount();
+  } else if (proxy) {
+    count = proxy->ActionCount();
+  }
+
+  
+  
+  
+  if (count) {
+    nsAutoString name;
+    if (accWrap) {
+      accWrap->ActionNameAt(0, name);
+    } else if (proxy) {
+      proxy->ActionNameAt(0, name);
+    }
+    if (name.EqualsLiteral("select")) {
+      [actions addObject:NSAccessibilityPickAction];
+    } else {
+      [actions addObject:NSAccessibilityPressAction];
+    }
+  }
+
+  
+  
+  
+  
+  [actions addObject:NSAccessibilityScrollToVisibleAction];
+  
+  
+
+  return actions;
 }
 
 - (NSString*)accessibilityActionDescription:(NSString*)action {
@@ -537,13 +575,20 @@ static inline NSMutableArray* ConvertToNSArray(nsTArray<ProxyAccessible*>& aArra
 }
 
 - (void)accessibilityPerformAction:(NSString*)action {
+  RefPtr<AccessibleWrap> accWrap = [self getGeckoAccessible];
+  ProxyAccessible* proxy = [self getProxyAccessible];
+
   if ([action isEqualToString:NSAccessibilityScrollToVisibleAction]) {
-    RefPtr<AccessibleWrap> accWrap = [self getGeckoAccessible];
-    ProxyAccessible* proxy = [self getProxyAccessible];
     if (accWrap) {
       accWrap->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
     } else if (proxy) {
       proxy->ScrollTo(nsIAccessibleScrollType::SCROLL_TYPE_ANYWHERE);
+    }
+  } else {
+    if (accWrap) {
+      accWrap->DoAction(0);
+    } else if (proxy) {
+      proxy->DoAction(0);
     }
   }
 }
