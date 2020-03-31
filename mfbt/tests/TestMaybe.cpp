@@ -139,10 +139,10 @@ struct UnmovableValue {
 
   Status GetStatus() { return mStatus; }
 
- private:
   UnmovableValue(UnmovableValue&& aOther) = delete;
   UnmovableValue& operator=(UnmovableValue&& aOther) = delete;
 
+ private:
   Status mStatus;
 };
 
@@ -300,20 +300,19 @@ static bool TestCopyAndMove() {
   MOZ_RELEASE_ASSERT(mayBasicValue3->GetStatus() == eWasMovedFrom);
 
   
+  Maybe<UnmovableValue> mayUnmovableValue = Some(UnmovableValue());
+  MOZ_RELEASE_ASSERT(mayUnmovableValue->GetStatus() == eWasCopyConstructed);
+  mayUnmovableValue = Some(UnmovableValue());
+  MOZ_RELEASE_ASSERT(mayUnmovableValue->GetStatus() == eWasCopyAssigned);
+  mayUnmovableValue.reset();
+  mayUnmovableValue.emplace(UnmovableValue());
+  MOZ_RELEASE_ASSERT(mayUnmovableValue->GetStatus() == eWasCopyConstructed);
+
+  static_assert(std::is_copy_constructible_v<Maybe<UnmovableValue>>);
+  static_assert(std::is_copy_assignable_v<Maybe<UnmovableValue>>);
   
   
   
-  
-  
-  
-
-
-
-
-
-
-
-
 
   
   Maybe<UncopyableValue> mayUncopyableValue = Some(UncopyableValue());
@@ -323,6 +322,12 @@ static bool TestCopyAndMove() {
   mayUncopyableValue.reset();
   mayUncopyableValue.emplace(UncopyableValue());
   MOZ_RELEASE_ASSERT(mayUncopyableValue->GetStatus() == eWasMoveConstructed);
+  mayUncopyableValue = Nothing();
+
+  static_assert(!std::is_copy_constructible_v<Maybe<UncopyableValue>>);
+  static_assert(!std::is_copy_assignable_v<Maybe<UncopyableValue>>);
+  static_assert(std::is_move_constructible_v<Maybe<UncopyableValue>>);
+  static_assert(std::is_move_assignable_v<Maybe<UncopyableValue>>);
 
   
   Maybe<UncopyableUnmovableValue> mayUncopyableUnmovableValue;
@@ -333,6 +338,12 @@ static bool TestCopyAndMove() {
   mayUncopyableUnmovableValue.emplace(0);
   MOZ_RELEASE_ASSERT(mayUncopyableUnmovableValue->GetStatus() ==
                      eWasConstructed);
+  mayUncopyableUnmovableValue = Nothing();
+
+  static_assert(!std::is_copy_constructible_v<Maybe<UncopyableUnmovableValue>>);
+  static_assert(!std::is_copy_assignable_v<Maybe<UncopyableUnmovableValue>>);
+  static_assert(!std::is_move_constructible_v<Maybe<UncopyableUnmovableValue>>);
+  static_assert(!std::is_move_assignable_v<Maybe<UncopyableUnmovableValue>>);
 
   return true;
 }

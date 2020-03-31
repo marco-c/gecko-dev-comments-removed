@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nullptr; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "mozilla/layers/SurfacePoolCA.h"
 
@@ -27,11 +27,11 @@ using gfx::IntRegion;
 using gl::GLContext;
 using gl::GLContextCGL;
 
-/* static */ RefPtr<SurfacePool> SurfacePool::Create(size_t aPoolSizeLimit) {
+ RefPtr<SurfacePool> SurfacePool::Create(size_t aPoolSizeLimit) {
   return new SurfacePoolCA(aPoolSizeLimit);
 }
 
-// SurfacePoolCA::LockedPool
+
 
 SurfacePoolCA::LockedPool::LockedPool(size_t aPoolSizeLimit) : mPoolSizeLimit(aPoolSizeLimit) {}
 
@@ -40,7 +40,7 @@ SurfacePoolCA::LockedPool::~LockedPool() {
                      "Any outstanding wrappers should have kept the surface pool alive");
   MOZ_RELEASE_ASSERT(mInUseEntries.empty(),
                      "Leak! No more surfaces should be in use at this point.");
-  // Remove all entries in mPendingEntries and mAvailableEntries.
+  
   MutateEntryStorage("Clear", {}, [&]() {
     mPendingEntries.Clear();
     mAvailableEntries.Clear();
@@ -59,7 +59,7 @@ RefPtr<SurfacePoolCAWrapperForGL> SurfacePoolCA::LockedPool::GetWrapperForGL(Sur
 void SurfacePoolCA::LockedPool::DestroyGLResourcesForContext(GLContext* aGL) {
   ForEachEntry([&](SurfacePoolEntry& entry) {
     if (entry.mGLResources && entry.mGLResources->mGLContext == aGL) {
-      entry.mGLResources = {};
+      entry.mGLResources = Nothing();
     }
   });
   mDepthBuffers.RemoveElementsBy(
@@ -141,15 +141,15 @@ bool SurfacePoolCA::LockedPool::CanRecycleSurfaceForRequest(const SurfacePoolEnt
 
 CFTypeRefPtr<IOSurfaceRef> SurfacePoolCA::LockedPool::ObtainSurfaceFromPool(const IntSize& aSize,
                                                                             GLContext* aGL) {
-  // Do a linear scan through mAvailableEntries to find an eligible suface, going from oldest to
-  // newest. The size of this array is limited, so the linear scan is fast.
+  
+  
   auto iterToRecycle = std::find_if(mAvailableEntries.begin(), mAvailableEntries.end(),
                                     [&](const SurfacePoolEntry& aEntry) {
                                       return CanRecycleSurfaceForRequest(aEntry, aSize, aGL);
                                     });
   if (iterToRecycle != mAvailableEntries.end()) {
     CFTypeRefPtr<IOSurfaceRef> surface = iterToRecycle->mIOSurface;
-    // Move the entry from mAvailableEntries to mInUseEntries.
+    
     MutateEntryStorage("Recycle", aSize, [&]() {
       mInUseEntries.insert({surface, std::move(*iterToRecycle)});
       mAvailableEntries.RemoveElementAt(iterToRecycle);
@@ -167,7 +167,7 @@ CFTypeRefPtr<IOSurfaceRef> SurfacePoolCA::LockedPool::ObtainSurfaceFromPool(cons
         (__bridge NSString*)kIOSurfaceBytesPerElement : @(4),
       }));
   if (surface) {
-    // Create a new entry in mInUseEntries.
+    
     MutateEntryStorage("Create", aSize, [&]() {
       mInUseEntries.insert({surface, SurfacePoolEntry{aSize, surface, {}}});
     });
@@ -179,14 +179,14 @@ void SurfacePoolCA::LockedPool::ReturnSurfaceToPool(CFTypeRefPtr<IOSurfaceRef> a
   auto inUseEntryIter = mInUseEntries.find(aSurface);
   MOZ_RELEASE_ASSERT(inUseEntryIter != mInUseEntries.end());
   if (IOSurfaceIsInUse(aSurface.get())) {
-    // Move the entry from mInUseEntries to mPendingEntries.
+    
     MutateEntryStorage("Start waiting for", IntSize(inUseEntryIter->second.mSize), [&]() {
       mPendingEntries.AppendElement(
           PendingSurfaceEntry{std::move(inUseEntryIter->second), mCollectionGeneration, 0});
       mInUseEntries.erase(inUseEntryIter);
     });
   } else {
-    // Move the entry from mInUseEntries to mAvailableEntries.
+    
     MutateEntryStorage("Retain", IntSize(inUseEntryIter->second.mSize), [&]() {
       mAvailableEntries.AppendElement(std::move(inUseEntryIter->second));
       mInUseEntries.erase(inUseEntryIter);
@@ -195,7 +195,7 @@ void SurfacePoolCA::LockedPool::ReturnSurfaceToPool(CFTypeRefPtr<IOSurfaceRef> a
 }
 
 void SurfacePoolCA::LockedPool::EnforcePoolSizeLimit() {
-  // Enforce the pool size limit, removing least-recently-used entries as necessary.
+  
   while (mAvailableEntries.Length() > mPoolSizeLimit) {
     MutateEntryStorage("Evict", IntSize(mAvailableEntries[0].mSize),
                        [&]() { mAvailableEntries.RemoveElementAt(0); });
@@ -205,8 +205,8 @@ void SurfacePoolCA::LockedPool::EnforcePoolSizeLimit() {
 uint64_t SurfacePoolCA::LockedPool::CollectPendingSurfaces(uint64_t aCheckGenerationsUpTo) {
   mCollectionGeneration++;
 
-  // Loop from back to front, potentially deleting items as we iterate.
-  // mPendingEntries is used as a set; the order of its items is not meaningful.
+  
+  
   size_t i = mPendingEntries.Length();
   while (i) {
     i -= 1;
@@ -214,24 +214,24 @@ uint64_t SurfacePoolCA::LockedPool::CollectPendingSurfaces(uint64_t aCheckGenera
     if (pendingSurf.mPreviousCheckGeneration > aCheckGenerationsUpTo) {
       continue;
     }
-    // Check if the window server is still using the surface. As long as it is doing that, we cannot
-    // move the surface to mAvailableSurfaces because anything we draw to it could reach the screen
-    // in a place where we don't expect it.
+    
+    
+    
     if (IOSurfaceIsInUse(pendingSurf.mEntry.mIOSurface.get())) {
-      // The surface is still in use. Update mPreviousCheckGeneration and mCheckCount.
+      
       pendingSurf.mPreviousCheckGeneration = mCollectionGeneration;
       pendingSurf.mCheckCount++;
       if (pendingSurf.mCheckCount >= 30) {
-        // The window server has been holding on to this surface for an unreasonably long time. This
-        // is known to happen sometimes, for example in occluded windows or after a GPU switch. In
-        // that case, release our references to the surface so that it's Not Our Problem anymore.
-        // Remove the entry from mPendingEntries.
+        
+        
+        
+        
         MutateEntryStorage("Eject", IntSize(pendingSurf.mEntry.mSize),
                            [&]() { mPendingEntries.RemoveElementAt(i); });
       }
     } else {
-      // The surface has become unused!
-      // Move the entry from mPendingEntries to mAvailableEntries.
+      
+      
       MutateEntryStorage("Stop waiting for", IntSize(pendingSurf.mEntry.mSize), [&]() {
         mAvailableEntries.AppendElement(std::move(pendingSurf.mEntry));
         mPendingEntries.RemoveElementAt(i);
@@ -263,7 +263,7 @@ Maybe<GLuint> SurfacePoolCA::LockedPool::GetFramebufferForSurface(
 
   SurfacePoolEntry& entry = inUseEntryIter->second;
   if (entry.mGLResources) {
-    // We have an existing framebuffer.
+    
     MOZ_RELEASE_ASSERT(entry.mGLResources->mGLContext == aGL,
                        "Recycled surface that still had GL resources from a different GL context. "
                        "This shouldn't happen.");
@@ -272,7 +272,7 @@ Maybe<GLuint> SurfacePoolCA::LockedPool::GetFramebufferForSurface(
     }
   }
 
-  // No usable existing framebuffer, we need to create one.
+  
 
 #ifdef MOZ_GECKO_PROFILER
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(
@@ -284,7 +284,7 @@ Maybe<GLuint> SurfacePoolCA::LockedPool::GetFramebufferForSurface(
   MOZ_RELEASE_ASSERT(cgl, "Unexpected GLContext type");
 
   if (!aGL->MakeCurrent()) {
-    // Context may have been destroyed.
+    
     return {};
   }
 
@@ -298,7 +298,7 @@ Maybe<GLuint> SurfacePoolCA::LockedPool::GetFramebufferForSurface(
 
   auto fb = CreateFramebufferForTexture(aGL, entry.mSize, tex, aNeedsDepthBuffer);
   if (!fb) {
-    // Framebuffer completeness check may have failed.
+    
     return {};
   }
 
@@ -309,7 +309,7 @@ Maybe<GLuint> SurfacePoolCA::LockedPool::GetFramebufferForSurface(
 
 RefPtr<gl::DepthAndStencilBuffer> SurfacePoolCA::LockedPool::GetDepthBufferForSharing(
     GLContext* aGL, const IntSize& aSize) {
-  // Clean out entries for which the weak pointer has become null.
+  
   mDepthBuffers.RemoveElementsBy([&](const DepthBufferEntry& entry) { return !entry.mBuffer; });
 
   for (const auto& entry : mDepthBuffers) {
@@ -323,15 +323,15 @@ RefPtr<gl::DepthAndStencilBuffer> SurfacePoolCA::LockedPool::GetDepthBufferForSh
 UniquePtr<gl::MozFramebuffer> SurfacePoolCA::LockedPool::CreateFramebufferForTexture(
     GLContext* aGL, const IntSize& aSize, GLuint aTexture, bool aNeedsDepthBuffer) {
   if (aNeedsDepthBuffer) {
-    // Try to find an existing depth buffer of aSize in aGL and create a framebuffer that shares it.
+    
     if (auto buffer = GetDepthBufferForSharing(aGL, aSize)) {
       return gl::MozFramebuffer::CreateForBackingWithSharedDepthAndStencil(
           aSize, 0, LOCAL_GL_TEXTURE_RECTANGLE_ARB, aTexture, buffer);
     }
   }
 
-  // No depth buffer needed or we didn't find one. Create a framebuffer with a new depth buffer and
-  // store a weak pointer to the new depth buffer in mDepthBuffers.
+  
+  
   UniquePtr<gl::MozFramebuffer> fb = gl::MozFramebuffer::CreateForBacking(
       aGL, aSize, 0, aNeedsDepthBuffer, LOCAL_GL_TEXTURE_RECTANGLE_ARB, aTexture);
   if (fb && fb->GetDepthAndStencilBuffer()) {
@@ -341,7 +341,7 @@ UniquePtr<gl::MozFramebuffer> SurfacePoolCA::LockedPool::CreateFramebufferForTex
   return fb;
 }
 
-// SurfacePoolHandleCA
+
 
 SurfacePoolHandleCA::SurfacePoolHandleCA(RefPtr<SurfacePoolCAWrapperForGL>&& aPoolWrapper,
                                          uint64_t aCurrentCollectionGeneration)
@@ -375,7 +375,7 @@ Maybe<GLuint> SurfacePoolHandleCA::GetFramebufferForSurface(CFTypeRefPtr<IOSurfa
                                                        aNeedsDepthBuffer);
 }
 
-// SurfacePoolCA
+
 
 SurfacePoolCA::SurfacePoolCA(size_t aPoolSizeLimit)
     : mPool(LockedPool(aPoolSizeLimit), "SurfacePoolCA::mPool") {}
@@ -391,8 +391,8 @@ RefPtr<SurfacePoolHandle> SurfacePoolCA::GetHandleForGL(GLContext* aGL) {
     collectionGeneration = pool->mCollectionGeneration;
   }
 
-  // Run the SurfacePoolHandleCA constructor outside of the lock so that the
-  // mPool lock and the handle's lock are always ordered the same way.
+  
+  
   return new SurfacePoolHandleCA(std::move(wrapper), collectionGeneration);
 }
 
@@ -432,5 +432,5 @@ void SurfacePoolCA::OnWrapperDestroyed(gl::GLContext* aGL, SurfacePoolCAWrapperF
   return pool->OnWrapperDestroyed(aGL, aWrapper);
 }
 
-}  // namespace layers
-}  // namespace mozilla
+}  
+}  
