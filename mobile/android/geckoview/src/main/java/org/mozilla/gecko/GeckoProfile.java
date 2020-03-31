@@ -12,11 +12,13 @@ import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 import android.util.Log;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.GeckoProfileDirectories.NoMozillaDirectoryException;
 import org.mozilla.gecko.GeckoProfileDirectories.NoSuchProfileException;
 import org.mozilla.gecko.annotation.RobocopTarget;
+import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.INIParser;
 import org.mozilla.gecko.util.INISection;
@@ -24,10 +26,13 @@ import org.mozilla.gecko.util.INISection;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -45,14 +50,32 @@ public final class GeckoProfile {
     private static final String CANARY_CLIENT_ID = "c0ffeec0-ffee-c0ff-eec0-ffeec0ffeec0";
 
     private static final String TIMES_PATH = "times.json";
+    private static final String PROFILE_CREATION_DATE_JSON_ATTR = "created";
 
     
     
     private static volatile boolean sAcceptDirectoryChanges = true;
 
+    @RobocopTarget
+    public static void enableDirectoryChanges() {
+        Log.w(LOGTAG, "Directory changes should only be enabled for tests. And even then it's a bad idea.");
+        sAcceptDirectoryChanges = true;
+    }
+
     public static final String DEFAULT_PROFILE = "default";
     
     public static final String CUSTOM_PROFILE = "";
+
+    public static final String GUEST_PROFILE_DIR = "guest";
+    public static final String GUEST_MODE_PREF = "guestMode";
+
+    
+    private static final String SESSION_FILE = "sessionstore.js";
+    private static final String SESSION_FILE_BACKUP = "sessionstore.bak";
+    private static final String SESSION_FILE_PREVIOUS = "sessionstore.old";
+    private static final long MAX_PREVIOUS_FILE_AGE = 1000 * 3600 * 24; 
+
+    private boolean mOldSessionDataProcessed = false;
 
     private static final ConcurrentHashMap<String, GeckoProfile> sProfileCache =
             new ConcurrentHashMap<String, GeckoProfile>(
@@ -73,7 +96,45 @@ public final class GeckoProfile {
 
     private File mProfileDir;
 
+    private Boolean mInGuestMode;
+
+    public static boolean shouldUseGuestMode(final Context context) {
+        return GeckoSharedPrefs.forApp(context).getBoolean(GUEST_MODE_PREF, false);
+    }
+
+    public static void enterGuestMode(final Context context) {
+        GeckoSharedPrefs.forApp(context).edit().putBoolean(GUEST_MODE_PREF, true).commit();
+    }
+
+    public static void leaveGuestMode(final Context context) {
+        GeckoSharedPrefs.forApp(context).edit().putBoolean(GUEST_MODE_PREF, false).commit();
+    }
+
+    public static void setIntentArgs(final String intentArgs) {
+        sIntentArgs = intentArgs;
+    }
+
     public static GeckoProfile initFromArgs(final Context context, final String args) {
+        if (shouldUseGuestMode(context)) {
+            final GeckoProfile guestProfile = getGuestProfile(context);
+            if (guestProfile != null) {
+                return guestProfile;
+            }
+            
+            leaveGuestMode(context);
+        }
+
+        
+        
+        
+        
+        if (getGuestDir(context).isDirectory()) {
+            final GeckoProfile guestProfile = getGuestProfile(context);
+            if (guestProfile != null) {
+                removeProfile(context, guestProfile);
+            }
+        }
+
         String profileName = null;
         String profilePath = null;
 
@@ -111,6 +172,10 @@ public final class GeckoProfile {
             Log.wtf(LOGTAG, "Unable to get default profile name.", e);
             throw new RuntimeException(e);
         }
+    }
+
+    public static GeckoProfile get(final Context context) {
+        return get(context, null, (File) null);
     }
 
     public static GeckoProfile get(final Context context, final String profileName) {
@@ -244,6 +309,43 @@ public final class GeckoProfile {
         }
     }
 
+    
+    @RobocopTarget
+    public static boolean removeProfile(final Context context, final GeckoProfile profile) {
+        final boolean success = profile.remove();
+
+        if (success) {
+            
+            GeckoSharedPrefs.forProfileName(context, profile.getName())
+                            .edit().clear().apply();
+        }
+
+        return success;
+    }
+
+    private static File getGuestDir(final Context context) {
+        return context.getFileStreamPath(GUEST_PROFILE_DIR);
+    }
+
+    @RobocopTarget
+    public static GeckoProfile getGuestProfile(final Context context) {
+        return get(context, CUSTOM_PROFILE, getGuestDir(context));
+    }
+
+    public static boolean isGuestProfile(final Context context, final String profileName,
+                                         final File profileDir) {
+        
+        if (profileDir == null || !CUSTOM_PROFILE.equals(profileName)) {
+            return false;
+        }
+
+        try {
+            return profileDir.getCanonicalPath().equals(getGuestDir(context).getCanonicalPath());
+        } catch (final IOException e) {
+            return false;
+        }
+    }
+
     private GeckoProfile(final Context context, final String profileName, final File profileDir)
             throws NoMozillaDirectoryException {
         if (profileName == null) {
@@ -283,10 +385,39 @@ public final class GeckoProfile {
         }
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+    public Object getData() {
+        return mData;
+    }
+
+    
+
+
+
+
+
+
+
+    public void setData(final Object data) {
+        mData = data;
+    }
+
     private void setDir(final File dir) {
         if (dir != null && dir.exists() && dir.isDirectory()) {
             synchronized (this) {
                 mProfileDir = dir;
+                mInGuestMode = null;
             }
         }
     }
@@ -298,6 +429,15 @@ public final class GeckoProfile {
 
     public boolean isCustomProfile() {
         return CUSTOM_PROFILE.equals(mName);
+    }
+
+    @RobocopTarget
+    public boolean inGuestMode() {
+        if (mInGuestMode == null) {
+            mInGuestMode = isGuestProfile(GeckoAppShell.getApplicationContext(),
+                                          mName, mProfileDir);
+        }
+        return mInGuestMode;
     }
 
     
@@ -350,8 +490,72 @@ public final class GeckoProfile {
         return new File(f, aFile);
     }
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    @WorkerThread
+    public String getClientId() throws IOException {
+        String clientId = "";
+        try {
+            clientId = getClientIdFromDisk(CLIENT_ID_FILE_PATH);
+        } catch (final IOException e) {
+            
+            Log.d(LOGTAG, "Could not get client ID - creating a new one: " + e.getLocalizedMessage());
+        }
+
+        if (isClientIdValid(clientId)) {
+            return clientId;
+        } else {
+            String newClientId = generateNewClientId();
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            persistNewClientId(clientId, newClientId);
+        }
+
+        return getClientIdFromDisk(CLIENT_ID_FILE_PATH);
+    }
+
+    @WorkerThread
+    public boolean getIfHadCanaryClientId() throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(CLIENT_ID_FILE_PATH);
+        return obj.optBoolean(HAD_CANARY_CLIENT_ID_JSON_ATTR);
+    }
+
     protected static String generateNewClientId() {
         return UUID.randomUUID().toString();
+    }
+
+    
+
+
+
+    @WorkerThread
+    private String getClientIdFromDisk(final String filePath) throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(filePath);
+        return obj.optString(CLIENT_ID_JSON_ATTR);
     }
 
     
@@ -377,8 +581,175 @@ public final class GeckoProfile {
         writeFile(CLIENT_ID_FILE_PATH, obj.toString()); 
     }
 
+    
+    public static boolean isClientIdValid(@Nullable final String clientId) {
+        
+        if (TextUtils.isEmpty(clientId)) {
+            return false;
+        }
+
+        if (CANARY_CLIENT_ID.equals(clientId)) {
+            return false;
+        }
+
+        return clientId.matches("(?i:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})");
+    }
+
     private static boolean isCanaryClientId(@Nullable final String clientId) {
         return CANARY_CLIENT_ID.equals(clientId);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @WorkerThread
+    public long getAndPersistProfileCreationDate(final Context context) {
+        try {
+            return getProfileCreationDateFromTimesFile();
+        } catch (final IOException e) {
+            Log.d(LOGTAG, "Unable to retrieve profile creation date from times.json. Getting from system...");
+            final long packageInstallMillis = org.mozilla.gecko.util.ContextUtils.getCurrentPackageInfo(context).firstInstallTime;
+            try {
+                persistProfileCreationDateToTimesFile(packageInstallMillis);
+            } catch (final IOException ioEx) {
+                
+                
+                Log.w(LOGTAG, "Unable to persist profile creation date - returning -1");
+                return -1;
+            }
+
+            return packageInstallMillis;
+        }
+    }
+
+    @WorkerThread
+    private long getProfileCreationDateFromTimesFile() throws IOException {
+        final JSONObject obj = readJSONObjectFromFile(TIMES_PATH);
+        try {
+            return obj.getLong(PROFILE_CREATION_DATE_JSON_ATTR);
+        } catch (final JSONException e) {
+            
+            throw new IOException("Profile creation does not exist in JSONObject");
+        }
+    }
+
+    @WorkerThread
+    private void persistProfileCreationDateToTimesFile(final long profileCreationMillis) throws IOException {
+        final JSONObject obj = new JSONObject();
+        try {
+            obj.put(PROFILE_CREATION_DATE_JSON_ATTR, profileCreationMillis);
+        } catch (final JSONException e) {
+            
+            throw new IOException("Unable to persist profile creation date to times file");
+        }
+        Log.d(LOGTAG, "Attempting to write new profile creation date");
+        writeFile(TIMES_PATH, obj.toString()); 
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public void updateSessionFile(final boolean shouldRestore) {
+        File sessionFilePrevious = getFile(SESSION_FILE_PREVIOUS);
+        if (!shouldRestore) {
+            File sessionFile = getFile(SESSION_FILE);
+            if (sessionFile != null && sessionFile.exists()) {
+                sessionFile.renameTo(sessionFilePrevious);
+            }
+        } else {
+            if (sessionFilePrevious != null && sessionFilePrevious.exists() &&
+                    System.currentTimeMillis() - sessionFilePrevious.lastModified() > MAX_PREVIOUS_FILE_AGE) {
+                sessionFilePrevious.delete();
+            }
+        }
+        synchronized (this) {
+            mOldSessionDataProcessed = true;
+            notifyAll();
+        }
+    }
+
+    public void waitForOldSessionDataProcessing() {
+        synchronized (this) {
+            while (!mOldSessionDataProcessed) {
+                try {
+                    wait();
+                } catch (final InterruptedException e) {
+                    
+                }
+            }
+        }
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    public String readSessionFile(final boolean readBackup) {
+        return readSessionFile(readBackup ? SESSION_FILE_BACKUP : SESSION_FILE);
+    }
+
+    
+
+
+
+
+
+
+
+    public String readPreviousSessionFile() {
+        return readSessionFile(SESSION_FILE_PREVIOUS);
+    }
+
+    private String readSessionFile(final String fileName) {
+        File sessionFile = getFile(fileName);
+
+        try {
+            if (sessionFile != null && sessionFile.exists()) {
+                return readFile(sessionFile);
+            }
+        } catch (IOException ioe) {
+            Log.e(LOGTAG, "Unable to read session file", ioe);
+        }
+        return null;
+    }
+
+    
+
+
+    public boolean sessionFileExists() {
+        File sessionFile = getFile(SESSION_FILE);
+
+        return sessionFile != null && sessionFile.exists();
     }
 
     
@@ -411,6 +782,151 @@ public final class GeckoProfile {
             } catch (IOException e) {
                 Log.e(LOGTAG, "Error closing writer while writing to file", e);
             }
+        }
+    }
+
+    @WorkerThread
+    public JSONObject readJSONObjectFromFile(final String filename) throws IOException {
+        final String fileContents;
+        try {
+            fileContents = readFile(filename);
+        } catch (final IOException e) {
+            
+            throw new IOException("Could not access given file to retrieve JSONObject");
+        }
+
+        try {
+            return new JSONObject(fileContents);
+        } catch (final JSONException e) {
+            
+            throw new IOException("Could not parse JSON to retrieve JSONObject");
+        }
+    }
+
+    public JSONArray readJSONArrayFromFile(final String filename) {
+        String fileContent;
+        try {
+            fileContent = readFile(filename);
+        } catch (IOException expected) {
+            return new JSONArray();
+        }
+
+        JSONArray jsonArray;
+        try {
+            jsonArray = new JSONArray(fileContent);
+        } catch (JSONException e) {
+            jsonArray = new JSONArray();
+        }
+        return jsonArray;
+    }
+
+    public String readFile(final String filename) throws IOException {
+        File dir = getDir();
+        if (dir == null) {
+            throw new IOException("No profile directory found");
+        }
+        File target = new File(dir, filename);
+        return readFile(target);
+    }
+
+    private String readFile(final File target) throws IOException {
+        FileReader fr = new FileReader(target);
+        try {
+            StringBuilder sb = new StringBuilder();
+            char[] buf = new char[8192];
+            int read = fr.read(buf);
+            while (read >= 0) {
+                sb.append(buf, 0, read);
+                read = fr.read(buf);
+            }
+            return sb.toString();
+        } finally {
+            fr.close();
+        }
+    }
+
+    public boolean deleteFileFromProfileDir(final String fileName) throws IllegalArgumentException {
+        if (TextUtils.isEmpty(fileName)) {
+            throw new IllegalArgumentException("Filename cannot be empty.");
+        }
+        File file = new File(getDir(), fileName);
+        return file.delete();
+    }
+
+    private boolean remove() {
+        try {
+            synchronized (this) {
+                if (mProfileDir != null && mProfileDir.exists()) {
+                    FileUtils.delete(mProfileDir);
+                }
+
+                if (isCustomProfile()) {
+                    
+                    return true;
+                }
+
+                try {
+                    
+                    
+                    
+                    findProfileDir();
+                    mProfileDir = null;
+
+                } catch (final NoSuchProfileException e) {
+                    
+                    
+                    
+                    return true;
+                }
+            }
+
+            final INIParser parser = GeckoProfileDirectories.getProfilesINI(mMozillaDir);
+            final Hashtable<String, INISection> sections = parser.getSections();
+            if (sections == null) {
+                return false;
+            }
+            for (Enumeration<INISection> e = sections.elements(); e.hasMoreElements();) {
+                final INISection section = e.nextElement();
+                String name = section.getStringProperty("Name");
+
+                if (name == null || !name.equals(mName)) {
+                    continue;
+                }
+
+                if (section.getName().startsWith("Profile")) {
+                    
+                    try {
+                        int sectionNumber = Integer.parseInt(section.getName().substring("Profile".length()));
+                        String curSection = "Profile" + sectionNumber;
+                        String nextSection = "Profile" + (sectionNumber + 1);
+
+                        sections.remove(curSection);
+
+                        while (sections.containsKey(nextSection)) {
+                            parser.renameSection(nextSection, curSection);
+                            sectionNumber++;
+
+                            curSection = nextSection;
+                            nextSection = "Profile" + (sectionNumber + 1);
+                        }
+                    } catch (NumberFormatException nex) {
+                        
+                        Log.e(LOGTAG, "Malformed section name in profiles.ini: " + section.getName());
+                        return false;
+                    }
+                } else {
+                    
+                    parser.removeSection(mName);
+                }
+
+                break;
+            }
+
+            parser.write();
+            return true;
+        } catch (IOException ex) {
+            Log.w(LOGTAG, "Failed to remove profile.", ex);
+            return false;
         }
     }
 
