@@ -62,14 +62,6 @@ interface nsINSSComponent : nsISupports {
 
 
 
-
-  void addEnterpriseIntermediate(in Array<octet> intermediateBytes);
-
-  
-
-
-
-
   [noscript] void blockUntilLoadableCertsLoaded();
 
   
