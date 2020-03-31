@@ -9,6 +9,8 @@
 #include "builtin/streams/PipeToState.h"
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"  
 
 #include "jsapi.h"        
 #include "jsfriendapi.h"  
@@ -18,6 +20,7 @@
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
+#include "builtin/streams/WritableStreamOperations.h"  
 #include "js/Class.h"          
 #include "js/RootingAPI.h"     
 #include "vm/PromiseObject.h"  
@@ -25,12 +28,273 @@
 #include "vm/JSContext-inl.h"  
 #include "vm/JSObject-inl.h"   
 
+using mozilla::Maybe;
+using mozilla::Nothing;
+using mozilla::Some;
+
 using JS::Handle;
 using JS::Int32Value;
 using JS::ObjectValue;
 using JS::Rooted;
+using JS::Value;
 
+using js::GetErrorMessage;
 using js::PipeToState;
+using js::ReadableStream;
+using js::WritableStream;
+
+
+
+using Action = bool (*)(JSContext*, Handle<PipeToState*> state);
+
+static MOZ_MUST_USE bool DummyAction(JSContext* cx,
+                                     Handle<PipeToState*> state) {
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "pipeTo dummy action");
+  return false;
+}
+
+static MOZ_MUST_USE bool ShutdownWithAction(
+    JSContext* cx, Handle<PipeToState*> state, Action action,
+    Handle<Maybe<Value>> originalError) {
+  cx->check(state);
+  cx->check(originalError);
+
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "pipeTo shutdown with action");
+  return false;
+}
+
+static MOZ_MUST_USE bool Shutdown(JSContext* cx, Handle<PipeToState*> state,
+                                  Handle<Maybe<Value>> error) {
+  cx->check(state);
+  cx->check(error);
+
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "pipeTo shutdown");
+  return false;
+}
+
+
+
+
+
+
+static MOZ_MUST_USE bool OnSourceErrored(
+    JSContext* cx, Handle<PipeToState*> state,
+    Handle<ReadableStream*> unwrappedSource) {
+  cx->check(state);
+
+  Rooted<Maybe<Value>> storedError(cx, Some(unwrappedSource->storedError()));
+  if (!cx->compartment()->wrap(cx, &storedError)) {
+    return false;
+  }
+
+  
+  
+  if (state->preventAbort()) {
+    if (!Shutdown(cx, state, storedError)) {
+      return false;
+    }
+  }
+  
+  
+  
+  else {
+    if (!ShutdownWithAction(cx, state, DummyAction, storedError)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+static MOZ_MUST_USE bool OnDestErrored(JSContext* cx,
+                                       Handle<PipeToState*> state,
+                                       Handle<WritableStream*> unwrappedDest) {
+  cx->check(state);
+
+  Rooted<Maybe<Value>> storedError(cx, Some(unwrappedDest->storedError()));
+  if (!cx->compartment()->wrap(cx, &storedError)) {
+    return false;
+  }
+
+  
+  
+  if (state->preventCancel()) {
+    if (!Shutdown(cx, state, storedError)) {
+      return false;
+    }
+  }
+  
+  
+  
+  else {
+    if (!ShutdownWithAction(cx, state, DummyAction, storedError)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+static MOZ_MUST_USE bool OnSourceClosed(JSContext* cx,
+                                        Handle<PipeToState*> state) {
+  cx->check(state);
+
+  Rooted<Maybe<Value>> noError(cx, Nothing());
+
+  
+  if (state->preventClose()) {
+    if (!Shutdown(cx, state, noError)) {
+      return false;
+    }
+  }
+  
+  
+  else {
+    if (!ShutdownWithAction(cx, state, DummyAction, noError)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+static MOZ_MUST_USE bool OnDestClosed(JSContext* cx,
+                                      Handle<PipeToState*> state) {
+  cx->check(state);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  Rooted<Maybe<Value>> destClosed(cx, Nothing());
+  {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WRITABLESTREAM_WRITE_CLOSING_OR_CLOSED);
+    Rooted<Value> v(cx);
+    if (!cx->isExceptionPending() || !GetAndClearException(cx, &v)) {
+      return false;
+    }
+
+    destClosed = Some(v.get());
+  }
+
+  
+  if (state->preventCancel()) {
+    if (!Shutdown(cx, state, destClosed)) {
+      return false;
+    }
+  }
+  
+  
+  else {
+    if (!ShutdownWithAction(cx, state, DummyAction, destClosed)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+static MOZ_MUST_USE bool CanPipeStreams(JSContext* cx,
+                                        Handle<PipeToState*> state,
+                                        Handle<ReadableStream*> unwrappedSource,
+                                        Handle<WritableStream*> unwrappedDest,
+                                        bool* shouldStart) {
+  cx->check(state);
+
+  
+  
+  
+  *shouldStart = false;
+
+  
+  
+  if (unwrappedSource->errored()) {
+    return OnSourceErrored(cx, state, unwrappedSource);
+  }
+
+  
+  
+  if (unwrappedDest->errored()) {
+    return OnDestErrored(cx, state, unwrappedDest);
+  }
+
+  
+  
+  if (unwrappedSource->closed()) {
+    return OnSourceClosed(cx, state);
+  }
+
+  
+  
+  
+  if (WritableStreamCloseQueuedOrInFlight(unwrappedDest) ||
+      unwrappedDest->closed()) {
+    return OnDestClosed(cx, state);
+  }
+
+  *shouldStart = true;
+  return true;
+}
+
+static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
+                                     Handle<ReadableStream*> unwrappedSource,
+                                     Handle<WritableStream*> unwrappedDest) {
+  cx->check(state);
+
+  bool shouldStart;
+  if (!CanPipeStreams(cx, state, unwrappedSource, unwrappedDest,
+                      &shouldStart)) {
+    return false;
+  }
+  if (!shouldStart) {
+    return true;
+  }
+
+  
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
+                            "pipeTo");
+  return false;
+}
 
 
 
@@ -117,10 +381,11 @@ using js::PipeToState;
 
   
   
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "pipeTo");
-  return nullptr;
+  if (!StartPiping(cx, state, unwrappedSource, unwrappedDest)) {
+    return nullptr;
+  }
+
+  return state;
 }
 
 const JSClass PipeToState::class_ = {"PipeToState",
