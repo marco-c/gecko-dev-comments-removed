@@ -145,7 +145,7 @@ struct LoadInfoArgs
   bool allowListFutureDocumentsCreatedFromThisRedirectChain;
   nsString                    cspNonce;
   bool                        skipContentSniffing;
-  bool                        httpsOnlyNoUpgrade;
+  uint32_t                    httpsOnlyStatus;
   bool                        isFromProcessingFrameAttributes;
   CookieJarSettingsArgs       cookieJarSettings;
   uint32_t                    requestBlockingReason;
@@ -185,8 +185,7 @@ struct ParentLoadInfoForwarderArgs
   bool skipContentSniffing;
 
   
-  
-  bool httpsOnlyNoUpgrade;
+  uint32_t httpsOnlyStatus;
 
   
   
