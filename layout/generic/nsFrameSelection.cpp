@@ -1284,7 +1284,7 @@ void nsFrameSelection::StopAutoScrollTimer() {
 
 
 
-nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
+nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
                                      uint32_t aContentOffset,
                                      uint32_t aContentEndOffset,
                                      CaretAssociateHint aHint,
@@ -1316,66 +1316,70 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
   }
 
   
-  if (aFocusMode !=
-      FocusMode::kExtendSelection) {  
-    const Batching saveBatching = mBatching;  
-    mBatching.mCounter = 1;
-
-    if (aFocusMode == FocusMode::kMultiRangeSelection) {
+  switch (aFocusMode) {
+    case FocusMode::kCollapseToNewPoint:
+      [[fallthrough]];
+    case FocusMode::kMultiRangeSelection: {
       
-      
-      mDomSelections[index]->RemoveCollapsedRanges();
+      const Batching saveBatching =
+          mBatching;  
+      mBatching.mCounter = 1;
 
-      ErrorResult error;
-      RefPtr<nsRange> newRange = nsRange::Create(
-          aNewFocus, aContentOffset, aNewFocus, aContentOffset, error);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
+      if (aFocusMode == FocusMode::kMultiRangeSelection) {
+        
+        
+        mDomSelections[index]->RemoveCollapsedRanges();
+
+        ErrorResult error;
+        RefPtr<nsRange> newRange = nsRange::Create(
+            aNewFocus, aContentOffset, aNewFocus, aContentOffset, error);
+        if (NS_WARN_IF(error.Failed())) {
+          return error.StealNSResult();
+        }
+        MOZ_ASSERT(newRange);
+        const RefPtr<Selection> selection{mDomSelections[index]};
+        selection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
+                                                             IgnoreErrors());
+        mBatching = saveBatching;
+      } else {
+        bool oldDesiredPosSet = mDesiredPos.mIsSet;  
+                                                     
+        mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
+        mDesiredPos.mIsSet = oldDesiredPosSet;  
+        mBatching = saveBatching;
       }
-      MOZ_ASSERT(newRange);
-      const RefPtr<Selection> selection{mDomSelections[index]};
-      selection->AddRangeAndSelectFramesAndNotifyListeners(*newRange,
-                                                           IgnoreErrors());
-      mBatching = saveBatching;
-    } else {
-      bool oldDesiredPosSet = mDesiredPos.mIsSet;  
-                                                   
-      mDomSelections[index]->Collapse(aNewFocus, aContentOffset);
-      mDesiredPos.mIsSet = oldDesiredPosSet;  
-      mBatching = saveBatching;
-    }
-    if (aContentEndOffset != aContentOffset) {
-      mDomSelections[index]->Extend(aNewFocus, aContentEndOffset);
-    }
+      if (aContentEndOffset != aContentOffset) {
+        mDomSelections[index]->Extend(aNewFocus, aContentEndOffset);
+      }
 
-    
-    
-    
-    
-    
+      
+      
+      
+      
 
-    NS_ENSURE_STATE(mPresShell);
-    bool editableCell = false;
-    mTableSelection.mCellParent = nullptr;
-    RefPtr<nsPresContext> context = mPresShell->GetPresContext();
-    if (context) {
-      RefPtr<HTMLEditor> htmlEditor = nsContentUtils::GetHTMLEditor(context);
-      if (htmlEditor) {
-        nsINode* cellparent = GetCellParent(aNewFocus);
-        nsCOMPtr<nsINode> editorHostNode = htmlEditor->GetActiveEditingHost();
-        editableCell = cellparent && editorHostNode &&
-                       cellparent->IsInclusiveDescendantOf(editorHostNode);
-        if (editableCell) {
-          mTableSelection.mCellParent = cellparent;
+      NS_ENSURE_STATE(mPresShell);
+      bool editableCell = false;
+      mTableSelection.mCellParent = nullptr;
+      RefPtr<nsPresContext> context = mPresShell->GetPresContext();
+      if (context) {
+        RefPtr<HTMLEditor> htmlEditor = nsContentUtils::GetHTMLEditor(context);
+        if (htmlEditor) {
+          nsINode* cellparent = GetCellParent(aNewFocus);
+          nsCOMPtr<nsINode> editorHostNode = htmlEditor->GetActiveEditingHost();
+          editableCell = cellparent && editorHostNode &&
+                         cellparent->IsInclusiveDescendantOf(editorHostNode);
+          if (editableCell) {
+            mTableSelection.mCellParent = cellparent;
 #ifdef DEBUG_TABLE_SELECTION
-          printf(" * TakeFocus - Collapsing into new cell\n");
+            printf(" * TakeFocus - Collapsing into new cell\n");
 #endif
+          }
         }
       }
+      break;
     }
-  } else {
-    
-    if ((aFocusMode == FocusMode::kExtendSelection) && aNewFocus) {
+    case FocusMode::kExtendSelection: {
+      
       int32_t offset;
       nsINode* cellparent = GetCellParent(aNewFocus);
       if (mTableSelection.mCellParent && cellparent &&
@@ -1390,9 +1394,10 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
 
         
         nsINode* parent = ParentOffset(mTableSelection.mCellParent, &offset);
-        if (parent)
+        if (parent) {
           HandleTableSelection(parent, offset, TableSelectionMode::Cell,
                                &event);
+        }
 
         
         parent = ParentOffset(cellparent, &offset);
@@ -1418,6 +1423,7 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* aNewFocus,
         } else
           mDomSelections[index]->Extend(aNewFocus, aContentOffset);
       }
+      break;
     }
   }
 
