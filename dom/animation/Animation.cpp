@@ -537,10 +537,12 @@ void Animation::Cancel(PostRestyleMode aPostRestyle) {
 void Animation::Finish(ErrorResult& aRv) {
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
-  if (effectivePlaybackRate == 0 ||
-      (effectivePlaybackRate > 0 && EffectEnd() == TimeDuration::Forever())) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
+  if (effectivePlaybackRate == 0) {
+    return aRv.ThrowInvalidStateError(
+        "Can't finish animation with zero playback rate");
+  }
+  if (effectivePlaybackRate > 0 && EffectEnd() == TimeDuration::Forever()) {
+    return aRv.ThrowInvalidStateError("Can't finish infinite animation");
   }
 
   AutoMutationBatchForAnimation mb(*this);
@@ -596,9 +598,13 @@ void Animation::Play(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
 
 
 void Animation::Reverse(ErrorResult& aRv) {
-  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
+  if (!mTimeline) {
+    return aRv.ThrowInvalidStateError(
+        "Can't reverse an animation with no associated timeline");
+  }
+  if (mTimeline->GetCurrentTimeAsDuration().IsNull()) {
+    return aRv.ThrowInvalidStateError(
+        "Can't reverse an animation associated with an inactive timeline");
   }
 
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
@@ -659,32 +665,30 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   }
 
   if (target.mPseudoType != PseudoStyleType::NotPseudo) {
-    aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
-    return;
+    return aRv.ThrowNoModificationAllowedError(
+        "Can't commit styles of a pseudo-element");
   }
 
   
   nsCOMPtr<nsStyledElement> styledElement = do_QueryInterface(target.mElement);
   if (!styledElement) {
-    aRv.Throw(NS_ERROR_DOM_NO_MODIFICATION_ALLOWED_ERR);
-    return;
+    return aRv.ThrowNoModificationAllowedError(
+        "Target is not capable of having a style attribute");
   }
 
+  
   
   
   if (Document* doc = target.mElement->GetComposedDoc()) {
-    doc->FlushPendingNotifications(FlushType::Style);
+    doc->FlushPendingNotifications(FlushType::Frames);
   }
   if (!target.mElement->IsRendered()) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
+    return aRv.ThrowInvalidStateError("Target is not rendered");
   }
-
   nsPresContext* presContext =
       nsContentUtils::GetContextForContent(target.mElement);
   if (!presContext) {
-    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
+    return aRv.ThrowInvalidStateError("Target is not rendered");
   }
 
   
@@ -1310,8 +1314,8 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
                (currentTime.Value() <= TimeDuration() ||
                 currentTime.Value() > EffectEnd())))) {
     if (EffectEnd() == TimeDuration::Forever()) {
-      aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-      return;
+      return aRv.ThrowInvalidStateError(
+          "Can't rewind animation with infinite effect end");
     }
     mHoldTime.SetValue(TimeDuration(EffectEnd()));
   } else if (effectivePlaybackRate == 0.0 && currentTime.IsNull()) {
@@ -1394,8 +1398,7 @@ void Animation::Pause(ErrorResult& aRv) {
       mHoldTime.SetValue(TimeDuration(0));
     } else {
       if (EffectEnd() == TimeDuration::Forever()) {
-        aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-        return;
+        return aRv.ThrowInvalidStateError("Can't seek to infinite effect end");
       }
       mHoldTime.SetValue(TimeDuration(EffectEnd()));
     }
