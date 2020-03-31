@@ -214,18 +214,6 @@ extern JS_PUBLIC_API JSScript* CompileUtf8File(
 
 
 
-
-
-
-extern JS_PUBLIC_API JSScript* CompileUtf8FileDontInflate(
-    JSContext* cx, const ReadOnlyCompileOptions& options, FILE* file);
-
-
-
-
-
-
-
 extern JS_PUBLIC_API JSScript* CompileUtf8Path(
     JSContext* cx, const ReadOnlyCompileOptions& options, const char* filename);
 
