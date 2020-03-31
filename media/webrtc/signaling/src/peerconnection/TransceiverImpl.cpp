@@ -25,6 +25,7 @@
 #include "mozilla/dom/RTCRtpTransceiverBinding.h"
 #include "mozilla/dom/TransceiverImplBinding.h"
 #include "RTCRtpReceiver.h"
+#include "RTCDTMFSender.h"
 
 namespace mozilla {
 
@@ -33,7 +34,7 @@ MOZ_MTLOG_MODULE("transceiverimpl")
 using LocalDirection = MediaSessionConduitLocalDirection;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransceiverImpl, mWindow, mSendTrack,
-                                      mReceiver)
+                                      mReceiver, mDtmf)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TransceiverImpl)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TransceiverImpl)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransceiverImpl)
@@ -71,6 +72,11 @@ TransceiverImpl::TransceiverImpl(
   mReceiver =
       new RTCRtpReceiver(aWindow, aPrivacyNeeded, aPCHandle, aTransportHandler,
                          aJsepTransceiver, aMainThread, aStsThread, mConduit);
+
+  if (!IsVideo()) {
+    mDtmf = new RTCDTMFSender(
+        aWindow, this, static_cast<AudioSessionConduit*>(mConduit.get()));
+  }
 
   mTransmitPipeline =
       new MediaPipelineTransmit(mPCHandle, mTransportHandler, mMainThread.get(),
@@ -428,8 +434,8 @@ void TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
   
   
   if (mJsepTransceiver->HasLevel() && mJsepTransceiver->IsNegotiated()) {
-    if (mJsepTransceiver->mRecvTrack.GetActive()) {
-      if (mJsepTransceiver->mSendTrack.GetActive()) {
+    if (IsReceiving()) {
+      if (IsSending()) {
         aJsTransceiver.SetCurrentDirection(
             dom::RTCRtpTransceiverDirection::Sendrecv, aRv);
       } else {
@@ -437,7 +443,7 @@ void TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
             dom::RTCRtpTransceiverDirection::Recvonly, aRv);
       }
     } else {
-      if (mJsepTransceiver->mSendTrack.GetActive()) {
+      if (IsSending()) {
         aJsTransceiver.SetCurrentDirection(
             dom::RTCRtpTransceiverDirection::Sendonly, aRv);
       } else {
@@ -465,18 +471,39 @@ void TransceiverImpl::SyncWithJS(dom::RTCRtpTransceiver& aJsTransceiver,
   }
 }
 
-void TransceiverImpl::InsertDTMFTone(int tone, uint32_t duration) {
-  if (mJsepTransceiver->IsStopped()) {
-    return;
+bool TransceiverImpl::CanSendDTMF() const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!IsSending() || !mSendTrack) {
+    return false;
   }
 
-  MOZ_ASSERT(mConduit->type() == MediaSessionConduit::AUDIO);
+  
+  
+  JsepTrackNegotiatedDetails* details =
+      mJsepTransceiver->mSendTrack.GetNegotiatedDetails();
+  if (NS_WARN_IF(!details || !details->GetEncodingCount())) {
+    
+    return false;
+  }
 
-  RefPtr<AudioSessionConduit> conduit(
-      static_cast<AudioSessionConduit*>(mConduit.get()));
-  
-  
-  conduit->InsertDTMFTone(0, tone, true, duration, 6);
+  for (size_t i = 0; i < details->GetEncodingCount(); ++i) {
+    const auto& encoding = details->GetEncoding(i);
+    for (const auto& codec : encoding.GetCodecs()) {
+      if (codec->mName == "telephone-event") {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 JSObject* TransceiverImpl::WrapObject(JSContext* aCx,
@@ -784,6 +811,10 @@ void TransceiverImpl::Stop() {
     mConduit->DeleteStreams();
   }
   mConduit = nullptr;
+
+  if (mDtmf) {
+    mDtmf->StopPlayout();
+  }
 }
 
 bool TransceiverImpl::IsVideo() const {
