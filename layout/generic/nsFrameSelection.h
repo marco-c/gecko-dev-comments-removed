@@ -284,7 +284,7 @@ class nsFrameSelection final {
 
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   HandleTableSelection(nsINode* aParentContent, int32_t aContentOffset,
                        mozilla::TableSelectionMode aTarget,
                        mozilla::WidgetMouseEvent* aMouseEvent);
@@ -817,7 +817,7 @@ class nsFrameSelection final {
     
     nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
 
-    MOZ_CAN_RUN_SCRIPT nsresult
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
     HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
                     mozilla::TableSelectionMode aTarget,
                     mozilla::WidgetMouseEvent* aMouseEvent, bool aDragState,

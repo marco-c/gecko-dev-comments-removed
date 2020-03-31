@@ -1395,8 +1395,11 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
         
         nsINode* parent = ParentOffset(mTableSelection.mCellParent, &offset);
         if (parent) {
-          HandleTableSelection(parent, offset, TableSelectionMode::Cell,
-                               &event);
+          const nsresult result = HandleTableSelection(
+              parent, offset, TableSelectionMode::Cell, &event);
+          if (NS_WARN_IF(NS_FAILED(result))) {
+            return result;
+          }
         }
 
         
@@ -1408,8 +1411,11 @@ nsresult nsFrameSelection::TakeFocus(nsIContent* const aNewFocus,
         if (parent) {
           mTableSelection.mCellParent = cellparent;
           
-          HandleTableSelection(parent, offset, TableSelectionMode::Cell,
-                               &event);
+          const nsresult result = HandleTableSelection(
+              parent, offset, TableSelectionMode::Cell, &event);
+          if (NS_WARN_IF(NS_FAILED(result))) {
+            return result;
+          }
         }
       } else {
         
