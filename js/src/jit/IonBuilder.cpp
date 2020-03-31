@@ -3329,42 +3329,12 @@ AbortReasonOr<Ok> IonBuilder::visitReturn(JSOp op) {
 AbortReasonOr<Ok> IonBuilder::visitThrow() {
   MDefinition* def = current->pop();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MNop* nop = MNop::New(alloc());
-  current->add(nop);
-
-  MOZ_TRY(resumeAfter(nop));
-
   MThrow* ins = MThrow::New(alloc(), def);
-  current->end(ins);
+  current->add(ins);
+  MOZ_TRY(resumeAfter(ins));
 
+  
+  current->end(MUnreachable::New(alloc()));
   setTerminatedBlock();
 
   return Ok();
