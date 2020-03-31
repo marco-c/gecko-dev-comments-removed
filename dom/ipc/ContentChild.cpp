@@ -4197,6 +4197,12 @@ mozilla::ipc::IPCResult ContentChild::RecvLoadURI(
     return IPC_OK();
   }
   BrowsingContext* context = aContext.get();
+  if (!context->IsInProcess()) {
+    
+    
+    
+    return IPC_OK();
+  }
 
   context->LoadURI(nullptr, aLoadState, aSetNavigating);
 
