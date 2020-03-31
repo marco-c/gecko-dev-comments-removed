@@ -77,6 +77,45 @@ pub fn create_background_task_queue(
 }
 
 
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DispatchOptions(u32);
+
+impl Default for DispatchOptions {
+    #[inline]
+    fn default() -> Self {
+        DispatchOptions(nsIEventTarget::DISPATCH_NORMAL as u32)
+    }
+}
+
+impl DispatchOptions {
+    
+    
+    #[inline]
+    pub fn new() -> Self {
+        DispatchOptions::default()
+    }
+
+    
+    
+    
+    #[inline]
+    pub fn may_block(self, may_block: bool) -> DispatchOptions {
+        const FLAG: u32 = nsIEventTarget::DISPATCH_EVENT_MAY_BLOCK as u32;
+        if may_block {
+            DispatchOptions(self.flags() | FLAG)
+        } else {
+            DispatchOptions(self.flags() & !FLAG)
+        }
+    }
+
+    
+    #[inline]
+    fn flags(self) -> u32 {
+        self.0
+    }
+}
+
+
 
 pub trait Task {
     fn run(&self);
@@ -113,11 +152,17 @@ impl TaskRunnable {
         }))
     }
 
+    #[inline]
     pub fn dispatch(&self, target_thread: &nsIEventTarget) -> Result<(), nsresult> {
-        unsafe {
-            target_thread.DispatchFromScript(self.coerce(), nsIEventTarget::DISPATCH_NORMAL as u32)
-        }
-        .to_result()
+        self.dispatch_with_options(target_thread, DispatchOptions::default())
+    }
+
+    pub fn dispatch_with_options(
+        &self,
+        target_thread: &nsIEventTarget,
+        options: DispatchOptions,
+    ) -> Result<(), nsresult> {
+        unsafe { target_thread.DispatchFromScript(self.coerce(), options.flags()) }.to_result()
     }
 
     xpcom_method!(run => Run());
