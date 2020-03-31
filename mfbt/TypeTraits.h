@@ -23,11 +23,6 @@ namespace mozilla {
 
 
 
-template <typename>
-struct RemoveCV;
-
-
-
 
 
 
@@ -44,29 +39,6 @@ typedef IntegralConstant<bool, true> TrueType;
 typedef IntegralConstant<bool, false> FalseType;
 
 
-
-
-
-namespace detail {
-
-template <typename T>
-struct IsVoidHelper : FalseType {};
-
-template <>
-struct IsVoidHelper<void> : TrueType {};
-
-}  
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsVoid : detail::IsVoidHelper<typename RemoveCV<T>::Type> {};
 
 
 
