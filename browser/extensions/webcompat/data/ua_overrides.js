@@ -7,8 +7,8 @@
 
 
 
-if (typeof getMatchPatternsForGoogleURL === "undefined") {
-  var getMatchPatternsForGoogleURL = require("../lib/google");
+if (typeof InterventionHelpers === "undefined") {
+  var InterventionHelpers = require("../lib/intervention_helpers");
 }
 
 
@@ -31,32 +31,6 @@ const AVAILABLE_UA_OVERRIDES = [
           UAHelpers.getPrefix(originalUA) +
           " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.98 Safari/537.36 for WebCompat"
         );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-    id: "bug1564594",
-    platform: "android",
-    domain: "Enhanced Search",
-    bug: "1567945",
-    config: {
-      matches: [
-        ...getMatchPatternsForGoogleURL("images.google"),
-        ...getMatchPatternsForGoogleURL("maps.google"),
-        ...getMatchPatternsForGoogleURL("news.google"),
-        ...getMatchPatternsForGoogleURL("www.google"),
-      ],
-      blocks: [...getMatchPatternsForGoogleURL("www.google", "serviceworker")],
-      permanentPref: "enable_enhanced_search",
-      telemetryKey: "enhancedSearch",
-      experiment: ["enhanced-search", "enhanced-search-control"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -241,7 +215,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://zhidao.baidu.com/*",
       ],
       uaTransformer: originalUA => {
-        return originalUA + " AppleWebKit/537.36 (KHTML, like Gecko)";
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -456,28 +430,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1577240",
-    platform: "android",
-    domain: "heb.com",
-    bug: "1577240",
-    config: {
-      matches: ["*://*.heb.com/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.111 Mobile Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1577250",
     platform: "android",
     domain: "homebook.pl",
@@ -601,14 +553,79 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1442050",
+    id: "bug1621065",
     platform: "android",
-    domain: "nintendo.com",
-    bug: "1442050",
+    domain: "bracketchallenge.ncaa.com",
+    bug: "1621065",
     config: {
-      matches: ["*://my.nintendo.com/*"],
+      matches: ["*://bracketchallenge.ncaa.com/*"],
       uaTransformer: originalUA => {
-        return originalUA + " AppleWebKit";
+        return originalUA + " Chrome";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1622063",
+    platform: "android",
+    domain: "wp1-ext.usps.gov",
+    bug: "1622063",
+    config: {
+      matches: ["*://wp1-ext.usps.gov/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+
+
+
+    id: "bug1622059",
+    platform: "android",
+    domain: "img.weblogssl.com",
+    bug: "1622059",
+    config: {
+      matches: [
+        "*://www.genbeta.com/*",
+        "*://www.xataka.com/*",
+        "*://www.xatakandroid.com/*",
+      ],
+      uaTransformer: originalUA => {
+        return originalUA + " Version/99.0";
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1622081",
+    platform: "android",
+    domain: "m2.bmo.com",
+    bug: "1622081",
+    config: {
+      matches: ["*://m2.bmo.com/*"],
+      uaTransformer: originalUA => {
+        return originalUA + " Chrome";
       },
     },
   },
