@@ -3010,48 +3010,53 @@ void nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState) {
   }
 
   
-  if (HasOutsideMarker() && mLines.empty()) {
-    ReflowOutput metrics(aState.mReflowInput);
-    nsIFrame* marker = GetOutsideMarker();
-    WritingMode wm = aState.mReflowInput.GetWritingMode();
-    ReflowOutsideMarker(
-        marker, aState, metrics,
-        aState.mReflowInput.ComputedPhysicalBorderPadding().top);
-    NS_ASSERTION(!MarkerIsEmpty() || metrics.BSize(wm) == 0,
-                 "empty ::marker frame took up space");
+  if (mLines.empty()) {
+    if (HasOutsideMarker()) {
+      ReflowOutput metrics(aState.mReflowInput);
+      nsIFrame* marker = GetOutsideMarker();
+      WritingMode wm = aState.mReflowInput.GetWritingMode();
+      ReflowOutsideMarker(
+          marker, aState, metrics,
+          aState.mReflowInput.ComputedPhysicalBorderPadding().top);
+      NS_ASSERTION(!MarkerIsEmpty() || metrics.BSize(wm) == 0,
+                   "empty ::marker frame took up space");
 
-    if (!MarkerIsEmpty()) {
-      
-      
-      
-      
-      
-      if (!aState.mReflowInput.mStyleDisplay->IsContainLayout() &&
-          metrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
-        nscoord ascent;
-        WritingMode wm = aState.mReflowInput.GetWritingMode();
-        if (nsLayoutUtils::GetFirstLineBaseline(wm, marker, &ascent)) {
-          metrics.SetBlockStartAscent(ascent);
-        } else {
-          metrics.SetBlockStartAscent(metrics.BSize(wm));
+      if (!MarkerIsEmpty()) {
+        
+        
+        
+        
+        
+        if (!aState.mReflowInput.mStyleDisplay->IsContainLayout() &&
+            metrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
+          nscoord ascent;
+          WritingMode wm = aState.mReflowInput.GetWritingMode();
+          if (nsLayoutUtils::GetFirstLineBaseline(wm, marker, &ascent)) {
+            metrics.SetBlockStartAscent(ascent);
+          } else {
+            metrics.SetBlockStartAscent(metrics.BSize(wm));
+          }
+        }
+
+        RefPtr<nsFontMetrics> fm =
+            nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+
+        nscoord minAscent = nsLayoutUtils::GetCenteredFontBaseline(
+            fm, aState.mMinLineHeight, wm.IsLineInverted());
+        nscoord minDescent = aState.mMinLineHeight - minAscent;
+
+        aState.mBCoord += std::max(minAscent, metrics.BlockStartAscent()) +
+                          std::max(minDescent, metrics.BSize(wm) -
+                                                   metrics.BlockStartAscent());
+
+        nscoord offset = minAscent - metrics.BlockStartAscent();
+        if (offset > 0) {
+          marker->SetRect(marker->GetRect() + nsPoint(0, offset));
         }
       }
-
-      RefPtr<nsFontMetrics> fm =
-          nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
-
-      nscoord minAscent = nsLayoutUtils::GetCenteredFontBaseline(
-          fm, aState.mMinLineHeight, wm.IsLineInverted());
-      nscoord minDescent = aState.mMinLineHeight - minAscent;
-
-      aState.mBCoord +=
-          std::max(minAscent, metrics.BlockStartAscent()) +
-          std::max(minDescent, metrics.BSize(wm) - metrics.BlockStartAscent());
-
-      nscoord offset = minAscent - metrics.BlockStartAscent();
-      if (offset > 0) {
-        marker->SetRect(marker->GetRect() + nsPoint(0, offset));
-      }
+    } else if (!Style()->IsAnonBox() &&
+               StyleUI()->mUserModify != StyleUserModify::ReadOnly) {
+      aState.mBCoord += aState.mMinLineHeight;
     }
   }
 
