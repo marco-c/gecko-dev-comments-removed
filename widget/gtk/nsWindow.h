@@ -420,7 +420,7 @@ class nsWindow final : public nsBaseWidget {
 
 
 
-  static CSDSupportLevel GetSystemCSDSupportLevel();
+  static CSDSupportLevel GetSystemCSDSupportLevel(bool aIsPIPWindow = false);
 
   static bool HideTitlebarByDefault();
   static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
