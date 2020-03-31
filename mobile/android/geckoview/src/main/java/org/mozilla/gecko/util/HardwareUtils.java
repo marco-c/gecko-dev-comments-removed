@@ -6,13 +6,10 @@
 package org.mozilla.gecko.util;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.system.Os;
 import android.util.Log;
-
-import org.mozilla.geckoview.BuildConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,17 +19,11 @@ import java.io.IOException;
 public final class HardwareUtils {
     private static final String LOGTAG = "GeckoHardwareUtils";
 
-    private static final boolean IS_AMAZON_DEVICE = Build.MANUFACTURER.equalsIgnoreCase("Amazon");
-    public static final boolean IS_KINDLE_DEVICE = IS_AMAZON_DEVICE &&
-                                                   (Build.MODEL.equals("Kindle Fire") ||
-                                                    Build.MODEL.startsWith("KF"));
-
     private static volatile boolean sInited;
 
     
     private static volatile boolean sIsLargeTablet;
     private static volatile boolean sIsSmallTablet;
-    private static volatile boolean sIsTelevision;
 
     private static volatile File sLibDir;
     private static volatile int sMachineType = -1;
@@ -52,11 +43,6 @@ public final class HardwareUtils {
         } else if (screenLayoutSize == Configuration.SCREENLAYOUT_SIZE_LARGE) {
             sIsSmallTablet = true;
         }
-        if (Build.VERSION.SDK_INT >= 16) {
-            if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEVISION)) {
-                sIsTelevision = true;
-            }
-        }
 
         sLibDir = new File(context.getApplicationInfo().nativeLibraryDir);
         sInited = true;
@@ -64,18 +50,6 @@ public final class HardwareUtils {
 
     public static boolean isTablet() {
         return sIsLargeTablet || sIsSmallTablet;
-    }
-
-    public static boolean isLargeTablet() {
-        return sIsLargeTablet;
-    }
-
-    public static boolean isSmallTablet() {
-        return sIsSmallTablet;
-    }
-
-    public static boolean isTelevision() {
-        return sIsTelevision;
     }
 
     private static String getPreferredAbi() {
@@ -182,41 +156,5 @@ public final class HardwareUtils {
         initMachineType();
 
         return machineTypeToString(sMachineType);
-    }
-
-    
-
-
-    public static boolean isSupportedSystem() {
-        
-        
-        if (Build.VERSION.SDK_INT < BuildConfig.MIN_SDK_VERSION) {
-            return false;
-        }
-
-        initMachineType();
-
-        
-        final boolean isSystemX86 = isX86System();
-        final boolean isSystemARM = !isSystemX86 && isARMSystem();
-        final boolean isSystemARM64 = isARM64System();
-
-        final boolean isAppARM = sMachineType == ELF_MACHINE_ARM;
-        final boolean isAppARM64 = sMachineType == ELF_MACHINE_AARCH64;
-        final boolean isAppX86 = sMachineType == ELF_MACHINE_X86;
-
-        
-        if ((isSystemX86 && isAppARM) || (isSystemARM && isAppX86)) {
-            return false;
-        }
-
-        if ((isSystemX86 && isAppX86) || (isSystemARM && isAppARM) ||
-            (isSystemARM64 && (isAppARM64 || isAppARM))) {
-            return true;
-        }
-
-        Log.w(LOGTAG, "Unknown app/system ABI combination: " +
-                      machineTypeToString(sMachineType) + " / " + getRealAbi());
-        return true;
     }
 }
