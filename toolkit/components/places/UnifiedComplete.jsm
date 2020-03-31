@@ -688,15 +688,12 @@ function makeActionUrl(type, params) {
 
 
 
-
-
 function Search(
   searchString,
   searchParam,
   autocompleteListener,
   autocompleteSearch,
   prohibitSearchSuggestions,
-  previousResult,
   queryContext
 ) {
   
@@ -820,11 +817,9 @@ function Search(
 
   
   
-  let result =
-    previousResult ||
-    Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
-      Ci.nsIAutoCompleteSimpleResult
-    );
+  let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
+    Ci.nsIAutoCompleteSimpleResult
+  );
   result.setSearchString(searchString);
   result.setListener({
     onValueRemoved(result, spec, removeFromDB) {
@@ -840,31 +835,12 @@ function Search(
   result.setDefaultIndex(-1);
   this._result = result;
 
-  this._previousSearchMatchTypes = [];
-  for (let i = 0; previousResult && i < previousResult.matchCount; ++i) {
-    let style = previousResult.getStyleAt(i);
-    if (style.includes("heuristic")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.HEURISTIC);
-    } else if (style.includes("suggestion")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.SUGGESTION);
-    } else if (style.includes("extension")) {
-      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.EXTENSION);
-    } else {
-      this._previousSearchMatchTypes.push(UrlbarUtils.RESULT_GROUP.GENERAL);
-    }
-  }
-
   
   this._adaptiveCount = 0;
   this._extraAdaptiveRows = [];
 
   
   this._extraRemoteTabRows = [];
-
-  
-  
-  
-  this._currentMatchCount = 0;
 
   
   this._usedURLs = [];
@@ -1069,7 +1045,6 @@ Search.prototype = {
     if (this._trimmedOriginalSearchString == "@") {
       let added = await this._addSearchEngineTokenAliasMatches();
       if (added) {
-        this._cleanUpNonCurrentMatches(null);
         this._autocompleteSearch.finishSearch(true);
         return;
       }
@@ -1081,7 +1056,6 @@ Search.prototype = {
     this._addingHeuristicFirstMatch = true;
     let hasHeuristic = await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
-    this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.HEURISTIC);
     if (!this.pending) {
       return;
     }
@@ -1114,7 +1088,6 @@ Search.prototype = {
         this._leadingRestrictionToken == UrlbarTokenizer.RESTRICT.SEARCH &&
         /\s*\S?$/.test(this._trimmedOriginalSearchString);
       if (emptySearchRestriction || emptyQueryTokenAlias) {
-        this._cleanUpNonCurrentMatches(null, false);
         this._autocompleteSearch.finishSearch(true);
         return;
       }
@@ -1194,15 +1167,9 @@ Search.prototype = {
     ) {
       
       await searchSuggestionsCompletePromise;
-      this._cleanUpNonCurrentMatches(null);
       this._autocompleteSearch.finishSearch(true);
       return;
     }
-
-    
-    searchSuggestionsCompletePromise.then(() => {
-      this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.SUGGESTION);
-    });
 
     
     await conn.executeCached(
@@ -1243,7 +1210,7 @@ Search.prototype = {
     
     while (
       this._extraAdaptiveRows.length &&
-      this._currentMatchCount < this._maxResults
+      this._result.matchCount < this._maxResults
     ) {
       this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
     }
@@ -1251,14 +1218,10 @@ Search.prototype = {
     
     while (
       this._extraRemoteTabRows.length &&
-      this._currentMatchCount < this._maxResults
+      this._result.matchCount < this._maxResults
     ) {
       this._addMatch(this._extraRemoteTabRows.shift());
     }
-
-    
-    
-    this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.GENERAL);
 
     this._matchAboutPages();
 
@@ -1963,14 +1926,6 @@ Search.prototype = {
         this._addExtensionMatch(content, suggestion.description);
       }
     });
-    
-    
-    
-    
-    setTimeout(
-      () => this._cleanUpNonCurrentMatches(UrlbarUtils.RESULT_GROUP.EXTENSION),
-      100
-    );
 
     
     
@@ -2229,7 +2184,6 @@ Search.prototype = {
       match.style,
       match.finalCompleteValue
     );
-    this._currentMatchCount++;
     this._counts[match.type]++;
 
     this.notifyResult(true, match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC);
@@ -2435,22 +2389,6 @@ Search.prototype = {
         insertIndex: 0,
         count: 0,
       }));
-
-      
-      
-      
-      
-      
-      if (this._previousSearchMatchTypes.length) {
-        for (let type of this._previousSearchMatchTypes) {
-          for (let bucket of this._buckets) {
-            if (type == bucket.type && bucket.count < bucket.available) {
-              bucket.count++;
-              break;
-            }
-          }
-        }
-      }
     }
 
     let replace = 0;
@@ -2480,67 +2418,6 @@ Search.prototype = {
       comment: match.comment || "",
     };
     return { index, replace };
-  },
-
-  
-
-
-
-
-
-
-
-
-  _cleanUpNonCurrentMatches(type, notify = true) {
-    if (!this._previousSearchMatchTypes.length || !this.pending) {
-      return;
-    }
-
-    let index = 0;
-    let changed = false;
-    if (!this._buckets) {
-      
-      
-      while (
-        this._previousSearchMatchTypes.length &&
-        (!type || this._previousSearchMatchTypes[0] == type)
-      ) {
-        this._previousSearchMatchTypes.shift();
-        this._result.removeMatchAt(0);
-        changed = true;
-      }
-    } else {
-      for (let bucket of this._buckets) {
-        if (type && bucket.type != type) {
-          index += bucket.count;
-          continue;
-        }
-        index += bucket.insertIndex;
-
-        while (bucket.count > bucket.insertIndex) {
-          this._result.removeMatchAt(index);
-          changed = true;
-          bucket.count--;
-        }
-      }
-    }
-    if (changed && notify) {
-      this.notifyResult(true);
-    }
-  },
-
-  
-
-
-  cleanUpRestrictNonCurrentMatches() {
-    if (this.hasBehavior("restrict") && this._previousSearchMatchTypes.length) {
-      for (let type of new Set(this._previousSearchMatchTypes)) {
-        if (this._counts[type] == 0) {
-          
-          this._cleanUpNonCurrentMatches(type, false);
-        }
-      }
-    }
   },
 
   _addOriginAutofillMatch(row) {
@@ -2971,7 +2848,7 @@ Search.prototype = {
         return;
       }
       this._notifyDelaysCount = 0;
-      let resultCode = this._currentMatchCount
+      let resultCode = this._result.matchCount
         ? "RESULT_SUCCESS"
         : "RESULT_NOMATCH";
       if (searchOngoing) {
@@ -3122,30 +2999,12 @@ UnifiedComplete.prototype = {
       searchString.length > this._lastLowResultsSearchSuggestion.length &&
       searchString.startsWith(this._lastLowResultsSearchSuggestion);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let previousResult = null;
-
     let search = (this._currentSearch = new Search(
       searchString,
       searchParam,
       listener,
       this,
       prohibitSearchSuggestions,
-      previousResult,
       queryContext
     ));
     this.getDatabaseHandle()
@@ -3192,11 +3051,6 @@ UnifiedComplete.prototype = {
     if (!notify || !search.pending) {
       return;
     }
-
-    
-    
-    
-    search.cleanUpRestrictNonCurrentMatches();
 
     
     
