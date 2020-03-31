@@ -583,8 +583,7 @@ private:
   
   
   template<typename T2 = T>
-  inline std::unique_ptr<T_CopyAndVerifyRangeEl[]> copy_and_verify_range_helper(
-    std::size_t count) const
+  inline const void* verify_range_helper(std::size_t count) const
   {
     static_assert(std::is_pointer_v<T>);
     static_assert(detail::is_fundamental_or_enum_v<T_CopyAndVerifyRangeEl>);
@@ -600,6 +599,18 @@ private:
 
     detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(
       start, count * sizeof(T_CopyAndVerifyRangeEl));
+
+    return start;
+  }
+
+  template<typename T2 = T>
+  inline std::unique_ptr<T_CopyAndVerifyRangeEl[]> copy_and_verify_range_helper(
+    std::size_t count) const
+  {
+    const void* start = verify_range_helper(count);
+    if (start == nullptr) {
+      return nullptr;
+    }
 
     auto target = std::make_unique<T_CopyAndVerifyRangeEl[]>(count);
 
@@ -691,6 +702,29 @@ public:
     static_assert(std::is_pointer_v<T>,
                   "copy_and_verify_address must be used on pointers");
     auto val = reinterpret_cast<uintptr_t>(impl().get_raw_value());
+    return verifier(val);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<typename T_Func>
+  inline auto copy_and_verify_buffer_address(T_Func verifier, std::size_t size)
+  {
+    static_assert(std::is_pointer_v<T>,
+                  "copy_and_verify_address must be used on pointers");
+    auto val = reinterpret_cast<uintptr_t>(verify_range_helper(size));
     return verifier(val);
   }
 };
