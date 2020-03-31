@@ -58,6 +58,16 @@ pub struct SignatureIndex(u32);
 entity_impl!(SignatureIndex);
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct DataIndex(u32);
+entity_impl!(DataIndex);
+
+
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
+pub struct ElemIndex(u32);
+entity_impl!(ElemIndex);
+
+
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct Global {
     

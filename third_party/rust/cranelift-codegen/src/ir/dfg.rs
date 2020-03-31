@@ -393,7 +393,7 @@ impl ValueDef {
     pub fn unwrap_block(&self) -> Block {
         match *self {
             Self::Param(block, _) => block,
-            _ => panic!("Value is not an block parameter"),
+            _ => panic!("Value is not a block parameter"),
         }
     }
 
@@ -809,7 +809,7 @@ impl DataFlowGraph {
         let (block, num) = if let ValueData::Param { num, block, .. } = self.values[val] {
             (block, num)
         } else {
-            panic!("{} must be an block parameter", val);
+            panic!("{} must be a block parameter", val);
         };
         self.blocks[block]
             .params
@@ -826,7 +826,7 @@ impl DataFlowGraph {
             {
                 *old_num = num;
             } else {
-                panic!("{} should be an Block parameter", last_arg_val);
+                panic!("{} should be a Block parameter", last_arg_val);
             }
         }
         num as usize
@@ -838,7 +838,7 @@ impl DataFlowGraph {
         let (block, num) = if let ValueData::Param { num, block, .. } = self.values[val] {
             (block, num)
         } else {
-            panic!("{} must be an block parameter", val);
+            panic!("{} must be a block parameter", val);
         };
         self.blocks[block]
             .params
@@ -853,7 +853,7 @@ impl DataFlowGraph {
                     *num -= 1;
                 }
                 _ => panic!(
-                    "{} must be an block parameter",
+                    "{} must be a block parameter",
                     self.blocks[block]
                         .params
                         .get(index as usize, &self.value_lists)
@@ -894,7 +894,7 @@ impl DataFlowGraph {
         let (block, num) = if let ValueData::Param { num, block, .. } = self.values[old_value] {
             (block, num)
         } else {
-            panic!("{} must be an block parameter", old_value);
+            panic!("{} must be a block parameter", old_value);
         };
         let new_arg = self.make_value(ValueData::Param {
             ty: new_type,

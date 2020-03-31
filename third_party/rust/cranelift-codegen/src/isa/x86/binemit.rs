@@ -4,10 +4,12 @@ use super::enc_tables::{needs_offset, needs_sib_byte};
 use super::registers::RU;
 use crate::binemit::{bad_encoding, CodeSink, Reloc};
 use crate::ir::condcodes::{CondCode, FloatCC, IntCC};
-use crate::ir::{Block, Constant, Function, Inst, InstructionData, JumpTable, Opcode, TrapCode};
+use crate::ir::{
+    Block, Constant, ExternalName, Function, Inst, InstructionData, JumpTable, LibCall, Opcode,
+    TrapCode,
+};
 use crate::isa::{RegUnit, StackBase, StackBaseMask, StackRef, TargetIsa};
 use crate::regalloc::RegDiversions;
-
 use cranelift_codegen_shared::isa::x86::EncodingBits;
 
 include!(concat!(env!("OUT_DIR"), "/binemit-x86.rs"));
@@ -59,6 +61,17 @@ fn rex3(rm: RegUnit, reg: RegUnit, index: RegUnit) -> u8 {
     let r = ((reg >> 3) & 1) as u8;
     let x = ((index >> 3) & 1) as u8;
     BASE_REX | b | (x << 1) | (r << 2)
+}
+
+
+
+
+fn evex2(rm: RegUnit, reg: RegUnit) -> u8 {
+    let b = (!(rm >> 3) & 1) as u8;
+    let x = (!(rm >> 4) & 1) as u8;
+    let r = (!(reg >> 3) & 1) as u8;
+    let r_ = (!(reg >> 4) & 1) as u8;
+    0x00 | r_ | (b << 1) | (x << 2) | (r << 3)
 }
 
 
@@ -204,6 +217,168 @@ fn put_rexmp3<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     sink.put1(0x0f);
     sink.put1(OP3_BYTE2[(enc.mm() - 2) as usize]);
     sink.put1(bits as u8);
+}
+
+
+fn put_dynrexmp3<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
+    debug_assert_eq!(
+        bits & 0x0800,
+        0x0800,
+        "Invalid encoding bits for DynRexMp3*"
+    );
+    let enc = EncodingBits::from(bits);
+    sink.put1(PREFIX[(enc.pp() - 1) as usize]);
+    if needs_rex(bits, rex) {
+        rex_prefix(bits, rex, sink);
+    }
+    sink.put1(0x0f);
+    sink.put1(OP3_BYTE2[(enc.mm() - 2) as usize]);
+    sink.put1(bits as u8);
+}
+
+
+
+
+
+
+#[allow(dead_code)]
+enum EvexContext {
+    RoundingRegToRegFP {
+        rc: EvexRoundingControl,
+    },
+    NoRoundingFP {
+        sae: bool,
+        length: EvexVectorLength,
+    },
+    MemoryOp {
+        broadcast: bool,
+        length: EvexVectorLength,
+    },
+    Other {
+        length: EvexVectorLength,
+    },
+}
+
+impl EvexContext {
+    
+    fn bits(&self) -> u8 {
+        match self {
+            Self::RoundingRegToRegFP { rc } => 0b001 | rc.bits() << 1,
+            Self::NoRoundingFP { sae, length } => (*sae as u8) | length.bits() << 1,
+            Self::MemoryOp { broadcast, length } => (*broadcast as u8) | length.bits() << 1,
+            Self::Other { length } => length.bits() << 1,
+        }
+    }
+}
+
+
+enum EvexVectorLength {
+    V128,
+    V256,
+    V512,
+}
+
+impl EvexVectorLength {
+    
+    fn bits(&self) -> u8 {
+        match self {
+            Self::V128 => 0b00,
+            Self::V256 => 0b01,
+            Self::V512 => 0b10,
+            
+        }
+    }
+}
+
+
+enum EvexRoundingControl {
+    RNE,
+    RD,
+    RU,
+    RZ,
+}
+
+impl EvexRoundingControl {
+    
+    fn bits(&self) -> u8 {
+        match self {
+            Self::RNE => 0b00,
+            Self::RD => 0b01,
+            Self::RU => 0b10,
+            Self::RZ => 0b11,
+        }
+    }
+}
+
+
+
+#[allow(dead_code)]
+enum EvexMasking {
+    None,
+    Merging { k: u8 },
+    Zeroing { k: u8 },
+}
+
+impl EvexMasking {
+    
+    fn z_bit(&self) -> u8 {
+        match self {
+            Self::None | Self::Merging { .. } => 0,
+            Self::Zeroing { .. } => 1,
+        }
+    }
+
+    
+    fn aaa_bits(&self) -> u8 {
+        match self {
+            Self::None => 0b000,
+            Self::Merging { k } | Self::Zeroing { k } => {
+                debug_assert!(*k <= 7);
+                *k
+            }
+        }
+    }
+}
+
+
+
+
+
+
+fn put_evex<CS: CodeSink + ?Sized>(
+    bits: u16,
+    reg: RegUnit,
+    vvvvv: RegUnit,
+    rm: RegUnit,
+    context: EvexContext,
+    masking: EvexMasking,
+    sink: &mut CS,
+) {
+    let enc = EncodingBits::from(bits);
+
+    
+    sink.put1(0x62);
+
+    debug_assert!(enc.mm() < 0b100);
+    let mut p0 = enc.mm() & 0b11;
+    p0 |= evex2(rm, reg) << 4; 
+    sink.put1(p0);
+
+    let mut p1 = enc.pp() | 0b100; 
+    p1 |= (!(vvvvv as u8) & 0b1111) << 3;
+    p1 |= (enc.rex_w() & 0b1) << 7;
+    sink.put1(p1);
+
+    let mut p2 = masking.aaa_bits();
+    p2 |= (!(vvvvv as u8 >> 4) & 0b1) << 3;
+    p2 |= context.bits() << 4;
+    p2 |= masking.z_bit() << 7;
+    sink.put1(p2);
+
+    
+    sink.put1(enc.opcode_byte());
+
+    
 }
 
 

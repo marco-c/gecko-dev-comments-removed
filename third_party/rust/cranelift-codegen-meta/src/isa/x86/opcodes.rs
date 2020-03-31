@@ -79,6 +79,10 @@ pub static CMPPS: [u8; 2] = [0x0f, 0xc2];
 
 
 
+pub static CVTDQ2PS: [u8; 2] = [0x0f, 0x5b];
+
+
+
 pub static CVTSD2SS: [u8; 3] = [0xf2, 0x0f, 0x5a];
 
 
@@ -318,6 +322,12 @@ pub static PAND: [u8; 3] = [0x66, 0x0f, 0xdb];
 pub static PANDN: [u8; 3] = [0x66, 0x0f, 0xdf];
 
 
+pub static PAVGB: [u8; 3] = [0x66, 0x0f, 0xE0];
+
+
+pub static PAVGW: [u8; 3] = [0x66, 0x0f, 0xE3];
+
+
 pub static PCMPEQB: [u8; 3] = [0x66, 0x0f, 0x74];
 
 
@@ -414,6 +424,10 @@ pub static PMULLW: [u8; 3] = [0x66, 0x0f, 0xd5];
 
 
 pub static PMULLD: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
+
+
+
+pub static PMULLQ: [u8; 4] = [0x66, 0x0f, 0x38, 0x40];
 
 
 pub static POP_REG: [u8; 1] = [0x58];

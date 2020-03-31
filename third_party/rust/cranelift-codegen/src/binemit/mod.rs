@@ -56,6 +56,12 @@ pub enum Reloc {
     Arm64Call,
     
     RiscvCall,
+
+    
+    ElfX86_64TlsGd,
+
+    
+    MachOX86_64Tlv,
 }
 
 impl fmt::Display for Reloc {
@@ -71,6 +77,9 @@ impl fmt::Display for Reloc {
             Self::X86CallPLTRel4 => write!(f, "CallPLTRel4"),
             Self::X86GOTPCRel4 => write!(f, "GOTPCRel4"),
             Self::Arm32Call | Self::Arm64Call | Self::RiscvCall => write!(f, "Call"),
+
+            Self::ElfX86_64TlsGd => write!(f, "ElfX86_64TlsGd"),
+            Self::MachOX86_64Tlv => write!(f, "MachOX86_64Tlv"),
         }
     }
 }

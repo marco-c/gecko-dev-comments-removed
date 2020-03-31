@@ -94,16 +94,16 @@ mod locations;
 #[derive(Error, Debug, PartialEq, Eq, Clone)]
 #[error("{}{}: {}", .location, format_context(.context), .message)]
 pub struct VerifierError {
-    /// The entity causing the verifier error.
+    
     pub location: AnyEntity,
-    /// Optionally provide some context for the given location; e.g., for `inst42` provide
-    /// `Some("v3 = iconst.i32 0")` for more comprehensible errors.
+    
+    
     pub context: Option<String>,
-    /// The error message.
+    
     pub message: String,
 }
 
-/// Helper for formatting Verifier::Error context.
+
 fn format_context(context: &Option<String>) -> String {
     match context {
         None => "".to_string(),
@@ -111,16 +111,16 @@ fn format_context(context: &Option<String>) -> String {
     }
 }
 
-/// Convenience converter for making error-reporting less verbose.
-///
-/// Converts a tuple of `(location, context, message)` to a `VerifierError`.
-/// ```
-/// use cranelift_codegen::verifier::VerifierErrors;
-/// use cranelift_codegen::ir::Inst;
-/// let mut errors = VerifierErrors::new();
-/// errors.report((Inst::from_u32(42), "v3 = iadd v1, v2", "iadd cannot be used with values of this type"));
-/// // note the double parenthenses to use this syntax
-/// ```
+
+
+
+
+
+
+
+
+
+
 impl<L, C, M> From<(L, C, M)> for VerifierError
 where
     L: Into<AnyEntity>,
@@ -137,9 +137,9 @@ where
     }
 }
 
-/// Convenience converter for making error-reporting less verbose.
-///
-/// Same as above but without `context`.
+
+
+
 impl<L, M> From<(L, M)> for VerifierError
 where
     L: Into<AnyEntity>,
@@ -155,49 +155,49 @@ where
     }
 }
 
-/// Result of a step in the verification process.
-///
-/// Functions that return `VerifierStepResult<()>` should also take a
-/// mutable reference to `VerifierErrors` as argument in order to report
-/// errors.
-///
-/// Here, `Ok` represents a step that **did not lead to a fatal error**,
-/// meaning that the verification process may continue. However, other (non-fatal)
-/// errors might have been reported through the previously mentioned `VerifierErrors`
-/// argument.
+
+
+
+
+
+
+
+
+
+
 pub type VerifierStepResult<T> = Result<T, ()>;
 
-/// Result of a verification operation.
-///
-/// Unlike `VerifierStepResult<()>` which may be `Ok` while still having reported
-/// errors, this type always returns `Err` if an error (fatal or not) was reported.
+
+
+
+
 pub type VerifierResult<T> = Result<T, VerifierErrors>;
 
-/// List of verifier errors.
+
 #[derive(Error, Debug, Default, PartialEq, Eq, Clone)]
 pub struct VerifierErrors(pub Vec<VerifierError>);
 
 impl VerifierErrors {
-    /// Return a new `VerifierErrors` struct.
+    
     #[inline]
     pub fn new() -> Self {
         Self(Vec::new())
     }
 
-    /// Return whether no errors were reported.
+    
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
-    /// Return whether one or more errors were reported.
+    
     #[inline]
     pub fn has_error(&self) -> bool {
         !self.0.is_empty()
     }
 
-    /// Return a `VerifierStepResult` that is fatal if at least one error was reported,
-    /// and non-fatal otherwise.
+    
+    
     #[inline]
     pub fn as_result(&self) -> VerifierStepResult<()> {
         if self.is_empty() {
@@ -207,18 +207,18 @@ impl VerifierErrors {
         }
     }
 
-    /// Report an error, adding it to the list of errors.
+    
     pub fn report(&mut self, error: impl Into<VerifierError>) {
         self.0.push(error.into());
     }
 
-    /// Report a fatal error and return `Err`.
+    
     pub fn fatal(&mut self, error: impl Into<VerifierError>) -> VerifierStepResult<()> {
         self.report(error);
         Err(())
     }
 
-    /// Report a non-fatal error and return `Ok`.
+    
     pub fn nonfatal(&mut self, error: impl Into<VerifierError>) -> VerifierStepResult<()> {
         self.report(error);
         Ok(())
@@ -256,7 +256,7 @@ impl Display for VerifierErrors {
     }
 }
 
-/// Verify `func`.
+
 pub fn verify_function<'a, FOI: Into<FlagsOrIsa<'a>>>(
     func: &Function,
     fisa: FOI,
@@ -273,8 +273,8 @@ pub fn verify_function<'a, FOI: Into<FlagsOrIsa<'a>>>(
     }
 }
 
-/// Verify `func` after checking the integrity of associated context data structures `cfg` and
-/// `domtree`.
+
+
 pub fn verify_context<'a, FOI: Into<FlagsOrIsa<'a>>>(
     func: &Function,
     cfg: &ControlFlowGraph,
@@ -312,15 +312,15 @@ impl<'a> Verifier<'a> {
         }
     }
 
-    /// Determine a contextual error string for an instruction.
+    
     #[inline]
     fn context(&self, inst: Inst) -> String {
         self.func.dfg.display_inst(inst, self.isa).to_string()
     }
 
-    // Check for:
-    //  - cycles in the global value declarations.
-    //  - use of 'vmctx' when no special parameter declares it.
+    
+    
+    
     fn verify_global_values(&self, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
         let mut cycle_seen = false;
         let mut seen = SparseSet::new();
@@ -340,7 +340,7 @@ impl<'a> Verifier<'a> {
                                     gv,
                                     format!("global value cycle: {}", DisplayList(seen.as_slice())),
                                 ));
-                                // ensures we don't report the cycle multiple times
+                                
                                 cycle_seen = true;
                             }
                             continue 'gvs;
@@ -402,7 +402,7 @@ impl<'a> Verifier<'a> {
             }
         }
 
-        // Invalid global values shouldn't stop us from verifying the rest of the function
+        
         Ok(())
     }
 
@@ -502,8 +502,8 @@ impl<'a> Verifier<'a> {
         Ok(())
     }
 
-    /// Check that the given block can be encoded as a BB, by checking that only
-    /// branching instructions are ending the block.
+    
+    
     fn encodable_as_bb(&self, block: Block, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
         match self.func.is_block_basic(block) {
             Ok(()) => Ok(()),
@@ -521,7 +521,7 @@ impl<'a> Verifier<'a> {
         let is_last_inst = self.func.layout.last_inst(block) == Some(inst);
 
         if is_terminator && !is_last_inst {
-            // Terminating instructions only occur at the end of blocks.
+            
             return errors.fatal((
                 inst,
                 self.context(inst),
@@ -535,7 +535,7 @@ impl<'a> Verifier<'a> {
             return errors.fatal((block, "block does not end in a terminator instruction"));
         }
 
-        // Instructions belong to the correct block.
+        
         let inst_block = self.func.layout.inst_block(inst);
         if inst_block != Some(block) {
             return errors.fatal((
@@ -545,7 +545,7 @@ impl<'a> Verifier<'a> {
             ));
         }
 
-        // Parameters belong to the correct block.
+        
         for &arg in self.func.dfg.block_params(block) {
             match self.func.dfg.value_def(arg) {
                 ValueDef::Param(arg_block, _) => {
@@ -570,7 +570,7 @@ impl<'a> Verifier<'a> {
         let inst_data = &self.func.dfg[inst];
         let dfg = &self.func.dfg;
 
-        // The instruction format matches the opcode
+        
         if inst_data.opcode().format() != InstructionFormat::from(inst_data) {
             return errors.fatal((
                 inst,
@@ -580,13 +580,13 @@ impl<'a> Verifier<'a> {
         }
 
         let num_fixed_results = inst_data.opcode().constraints().num_fixed_results();
-        // var_results is 0 if we aren't a call instruction
+        
         let var_results = dfg
             .call_signature(inst)
             .map_or(0, |sig| dfg.signatures[sig].returns.len());
         let total_results = num_fixed_results + var_results;
 
-        // All result values for multi-valued instructions are created
+        
         let got_results = dfg.inst_results(inst).len();
         if got_results != total_results {
             return errors.fatal((
@@ -612,7 +612,7 @@ impl<'a> Verifier<'a> {
         for &arg in self.func.dfg.inst_args(inst) {
             self.verify_inst_arg(inst, arg, errors)?;
 
-            // All used values must be attached to something.
+            
             let original = self.func.dfg.resolve_aliases(arg);
             if !self.func.dfg.value_is_attached(original) {
                 errors.report((
@@ -741,7 +741,7 @@ impl<'a> Verifier<'a> {
                 self.verify_bitcast(inst, arg, errors)?;
             }
 
-            // Exhaustive list so we can't forget to add new formats
+            
             Unary { .. }
             | UnaryImm { .. }
             | UnaryIeee32 { .. }
@@ -950,10 +950,10 @@ impl<'a> Verifier<'a> {
         let loc_block = self.func.layout.pp_block(loc_inst);
         let is_reachable = self.expected_domtree.is_reachable(loc_block);
 
-        // SSA form
+        
         match dfg.value_def(v) {
             ValueDef::Result(def_inst, _) => {
-                // Value is defined by an instruction that exists.
+                
                 if !dfg.inst_is_valid(def_inst) {
                     return errors.fatal((
                         loc_inst,
@@ -961,7 +961,7 @@ impl<'a> Verifier<'a> {
                         format!("{} is defined by invalid instruction {}", v, def_inst),
                     ));
                 }
-                // Defining instruction is inserted in an block.
+                
                 if self.func.layout.inst_block(def_inst) == None {
                     return errors.fatal((
                         loc_inst,
@@ -969,7 +969,7 @@ impl<'a> Verifier<'a> {
                         format!("{} is defined by {} which has no block", v, def_inst),
                     ));
                 }
-                // Defining instruction dominates the instruction that uses the value.
+                
                 if is_reachable {
                     if !self
                         .expected_domtree
@@ -991,7 +991,7 @@ impl<'a> Verifier<'a> {
                 }
             }
             ValueDef::Param(block, _) => {
-                // Value is defined by an existing block.
+                
                 if !dfg.block_is_valid(block) {
                     return errors.fatal((
                         loc_inst,
@@ -999,7 +999,7 @@ impl<'a> Verifier<'a> {
                         format!("{} is defined by invalid block {}", v, block),
                     ));
                 }
-                // Defining block is inserted in the layout
+                
                 if !self.func.layout.is_block_inserted(block) {
                     return errors.fatal((
                         loc_inst,
@@ -1007,7 +1007,7 @@ impl<'a> Verifier<'a> {
                         format!("{} is defined by {} which is not in the layout", v, block),
                     ));
                 }
-                // The defining block dominates the instruction using this value.
+                
                 if is_reachable
                     && !self
                         .expected_domtree
@@ -1080,9 +1080,9 @@ impl<'a> Verifier<'a> {
         domtree: &DominatorTree,
         errors: &mut VerifierErrors,
     ) -> VerifierStepResult<()> {
-        // We consider two `DominatorTree`s to be equal if they return the same immediate
-        // dominator for each block. Therefore the current domtree is valid if it matches the freshly
-        // computed one.
+        
+        
+        
         for block in self.func.layout.blocks() {
             let expected = self.expected_domtree.idom(block);
             let got = domtree.idom(block);
@@ -1096,7 +1096,7 @@ impl<'a> Verifier<'a> {
                 ));
             }
         }
-        // We also verify if the postorder defined by `DominatorTree` is sane
+        
         if domtree.cfg_postorder().len() != self.expected_domtree.cfg_postorder().len() {
             return errors.fatal((
                 AnyEntity::Function,
@@ -1119,7 +1119,7 @@ impl<'a> Verifier<'a> {
                 ));
             }
         }
-        // We verify rpo_cmp on pairs of adjacent blocks in the postorder
+        
         for (&prev_block, &next_block) in domtree.cfg_postorder().iter().adjacent_pairs() {
             if self
                 .expected_domtree
@@ -1176,7 +1176,7 @@ impl<'a> Verifier<'a> {
         let constraints = inst_data.opcode().constraints();
 
         let ctrl_type = if let Some(value_typeset) = constraints.ctrl_typeset() {
-            // For polymorphic opcodes, determine the controlling type variable first.
+            
             let ctrl_type = self.func.dfg.ctrl_typevar(inst);
 
             if !value_typeset.contains(ctrl_type) {
@@ -1189,19 +1189,19 @@ impl<'a> Verifier<'a> {
 
             ctrl_type
         } else {
-            // Non-polymorphic instructions don't check the controlling type variable, so `Option`
-            // is unnecessary and we can just make it `INVALID`.
+            
+            
             types::INVALID
         };
 
-        // Typechecking instructions is never fatal
+        
         let _ = self.typecheck_results(inst, ctrl_type, errors);
         let _ = self.typecheck_fixed_args(inst, ctrl_type, errors);
         let _ = self.typecheck_variable_args(inst, errors);
         let _ = self.typecheck_return(inst, errors);
         let _ = self.typecheck_special(inst, ctrl_type, errors);
 
-        // Misuses of copy_nop instructions are fatal
+        
         self.typecheck_copy_nop(inst, errors)?;
 
         Ok(())
@@ -1238,7 +1238,7 @@ impl<'a> Verifier<'a> {
             i += 1;
         }
 
-        // There aren't any more result types left.
+        
         if self.func.dfg.compute_result_type(inst, i, ctrl_type) != None {
             return errors.nonfatal((
                 inst,
@@ -1369,7 +1369,7 @@ impl<'a> Verifier<'a> {
 
         for expected_type in iter {
             if i >= variable_args.len() {
-                // Result count mismatch handled below, we want the full argument count first though
+                
                 i += 1;
                 continue;
             }
@@ -1402,10 +1402,10 @@ impl<'a> Verifier<'a> {
         Ok(())
     }
 
-    /// Check the locations assigned to outgoing call arguments.
-    ///
-    /// When a signature has been legalized, all values passed as outgoing arguments on the stack
-    /// must be assigned to a matching `OutgoingArg` stack slot.
+    
+    
+    
+    
     fn check_outgoing_args(
         &self,
         inst: Inst,
@@ -1418,11 +1418,11 @@ impl<'a> Verifier<'a> {
         let expected_args = &sig.params[..];
 
         for (&arg, &abi) in args.iter().zip(expected_args) {
-            // Value types have already been checked by `typecheck_variable_args_iterator()`.
+            
             if let ArgumentLoc::Stack(offset) = abi.location {
                 let arg_loc = self.func.locations[arg];
                 if let ValueLoc::Stack(ss) = arg_loc {
-                    // Argument value is assigned to a stack slot as expected.
+                    
                     self.verify_stack_slot(inst, ss, errors)?;
                     let slot = &self.func.stack_slots[ss];
                     if slot.kind != StackSlotKind::OutgoingArg {
@@ -1500,8 +1500,8 @@ impl<'a> Verifier<'a> {
         Ok(())
     }
 
-    // Check special-purpose type constraints that can't be expressed in the normal opcode
-    // constraints.
+    
+    
     fn typecheck_special(
         &self,
         inst: Inst,
@@ -1725,13 +1725,13 @@ impl<'a> Verifier<'a> {
         errors.as_result()
     }
 
-    /// If the verifier has been set up with an ISA, make sure that the recorded encoding for the
-    /// instruction (if any) matches how the ISA would encode it.
+    
+    
     fn verify_encoding(&self, inst: Inst, errors: &mut VerifierErrors) -> VerifierStepResult<()> {
-        // When the encodings table is empty, we don't require any instructions to be encoded.
-        //
-        // Once some instructions are encoded, we require all side-effecting instructions to have a
-        // legal encoding.
+        
+        
+        
+        
         if self.func.encodings.is_empty() {
             return Ok(());
         }
@@ -1807,12 +1807,12 @@ impl<'a> Verifier<'a> {
             return Ok(());
         }
 
-        // Instruction is not encoded, so it is a ghost instruction.
-        // Instructions with side effects are not allowed to be ghost instructions.
+        
+        
         let opcode = self.func.dfg[inst].opcode();
 
-        // The `fallthrough`, `fallthrough_return`, and `safepoint` instructions are not required
-        // to have an encoding.
+        
+        
         if opcode == Opcode::Fallthrough
             || opcode == Opcode::FallthroughReturn
             || opcode == Opcode::Safepoint
@@ -1820,7 +1820,7 @@ impl<'a> Verifier<'a> {
             return Ok(());
         }
 
-        // Check if this opcode must be encoded.
+        
         let mut needs_enc = None;
         if opcode.is_branch() {
             needs_enc = Some("Branch");
@@ -1837,8 +1837,8 @@ impl<'a> Verifier<'a> {
         }
 
         if let Some(text) = needs_enc {
-            // This instruction needs an encoding, so generate an error.
-            // Provide the ISA default encoding as a hint.
+            
+            
             match self.func.encode(inst, isa) {
                 Ok(enc) => {
                     return errors.nonfatal((
@@ -1896,8 +1896,8 @@ impl<'a> Verifier<'a> {
                 args: [arg, _],
                 ..
             } => {
-                // We must be specific about the opcodes above because other instructions are using
-                // the ExtractLane/InsertLane formats.
+                
+                
                 let ty = self.func.dfg.value_type(arg);
                 if u16::from(lane) >= ty.lane_count() {
                     errors.fatal((
@@ -2095,12 +2095,12 @@ mod tests {
 
     #[test]
     fn test_printing_contextual_errors() {
-        // Build function.
+        
         let mut func = Function::new();
         let block0 = func.dfg.make_block();
         func.layout.append_block(block0);
 
-        // Build instruction: v0, v1 = iconst 42
+        
         let inst = func.dfg.make_inst(InstructionData::UnaryImm {
             opcode: Opcode::Iconst,
             imm: 42.into(),
@@ -2109,13 +2109,13 @@ mod tests {
         func.dfg.append_result(inst, types::I32);
         func.layout.append_inst(inst, block0);
 
-        // Setup verifier.
+        
         let mut errors = VerifierErrors::default();
         let flags = &settings::Flags::new(settings::builder());
         let verifier = Verifier::new(&func, flags.into());
 
-        // Now the error message, when printed, should contain the instruction sequence causing the
-        // error (i.e. v0, v1 = iconst.i32 42) and not only its entity value (i.e. inst0)
+        
+        
         let _ = verifier.typecheck_results(inst, types::I32, &mut errors);
         assert_eq!(
             format!("{}", errors.0[0]),

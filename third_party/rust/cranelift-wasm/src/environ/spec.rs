@@ -8,7 +8,8 @@
 
 use crate::state::{FuncTranslationState, ModuleTranslationState};
 use crate::translation_utils::{
-    FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex, Table, TableIndex,
+    DataIndex, ElemIndex, FuncIndex, Global, GlobalIndex, Memory, MemoryIndex, SignatureIndex,
+    Table, TableIndex,
 };
 use core::convert::From;
 use cranelift_codegen::cursor::FuncCursor;
@@ -54,7 +55,7 @@ pub enum WasmError {
     #[error("Invalid input WebAssembly code at offset {offset}: {message}")]
     InvalidWebAssembly {
         
-        message: &'static str,
+        message: std::string::String,
         
         offset: usize,
     },
@@ -89,8 +90,10 @@ macro_rules! wasm_unsupported {
 impl From<BinaryReaderError> for WasmError {
     
     fn from(e: BinaryReaderError) -> Self {
-        let BinaryReaderError { message, offset } = e;
-        Self::InvalidWebAssembly { message, offset }
+        Self::InvalidWebAssembly {
+            message: e.message().into(),
+            offset: e.offset(),
+        }
     }
 }
 
@@ -601,6 +604,25 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
     ) -> WasmResult<()>;
 
     
+    fn declare_passive_element(
+        &mut self,
+        index: ElemIndex,
+        elements: Box<[FuncIndex]>,
+    ) -> WasmResult<()>;
+
+    
+    
+    
+    
+    fn reserve_passive_data(&mut self, count: u32) -> WasmResult<()> {
+        let _ = count;
+        Ok(())
+    }
+
+    
+    fn declare_passive_data(&mut self, data_index: DataIndex, data: &'data [u8]) -> WasmResult<()>;
+
+    
     
     
     
@@ -625,6 +647,14 @@ pub trait ModuleEnvironment<'data>: TargetEnvironment {
         offset: usize,
         data: &'data [u8],
     ) -> WasmResult<()>;
+
+    
+    
+    
+    
+    fn declare_module_name(&mut self, _name: &'data str) -> WasmResult<()> {
+        Ok(())
+    }
 
     
     
