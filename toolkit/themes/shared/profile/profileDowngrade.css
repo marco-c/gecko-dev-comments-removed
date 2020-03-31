@@ -2,6 +2,10 @@
 
 
 
+dialog::part(button-spacer) {
+  display: none;
+}
+
 #info {
   list-style-image: url("chrome://mozapps/skin/profile/information.svg");
   width: 32px;

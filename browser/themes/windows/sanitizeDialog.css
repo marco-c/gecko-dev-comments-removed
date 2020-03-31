@@ -38,12 +38,3 @@
   padding: 0 16px;
   margin: 0;
 }
-
-
-
-.dialog-button-box {
-  margin-inline-end: 0;
-}
-.dialog-button[dlgtype="cancel"] {
-  margin-inline-end: 0;
-}

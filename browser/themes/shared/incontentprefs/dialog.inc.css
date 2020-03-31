@@ -17,13 +17,14 @@ dialog {
   -moz-box-flex: 1;
 }
 
-.contentPane {
+.contentPane,
+dialog::part(content-box) {
   
-
   padding: 4px;
 }
 
-.contentPane.doScroll {
+.contentPane.doScroll,
+dialog.doScroll::part(content-box) {
   overflow-y: auto;
 }
 
