@@ -350,10 +350,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   NeedsArgsObj = 1 << 25,
 
   
-  HideScriptFromDebugger = 1 << 26,
-
-  
-  SpewEnabled = 1 << 27,
+  SpewEnabled = 1 << 26,
 };
 
 class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
