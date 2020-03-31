@@ -253,29 +253,6 @@ struct IsEnumHelper : IntegralConstant<bool, __is_enum(T)> {};
 template <typename T>
 struct IsEnum : detail::IsEnumHelper<typename RemoveCV<T>::Type> {};
 
-namespace detail {
-
-
-
-
-
-template <typename T>
-struct IsClassHelper : IntegralConstant<bool, __is_class(T)> {};
-
-}  
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsClass : detail::IsClassHelper<typename RemoveCV<T>::Type> {};
-
 
 
 
