@@ -740,22 +740,6 @@ class Selection final : public nsSupportsWeakReference,
                                                      bool* aDidAddRange,
                                                      int32_t* aOutIndex);
 
-  
-
-
-
-
-
-
-
-
-
-
-  static int32_t FindInsertionPoint(
-      const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
-      int32_t aPointOffset,
-      int32_t (*aComparator)(const nsINode&, int32_t, const nsRange&));
-
   bool HasEqualRangeBoundariesAt(const nsRange& aRange,
                                  int32_t aRangeIndex) const;
   
@@ -824,6 +808,22 @@ class Selection final : public nsSupportsWeakReference,
 
   struct StyledRanges {
     nsresult RemoveRangeAndUnregisterSelection(nsRange& aRange);
+
+    
+
+
+
+
+
+
+
+
+
+
+    static int32_t FindInsertionPoint(
+        const nsTArray<StyledRange>* aElementArray, const nsINode& aPointNode,
+        int32_t aPointOffset,
+        int32_t (*aComparator)(const nsINode&, int32_t, const nsRange&));
 
     
     
