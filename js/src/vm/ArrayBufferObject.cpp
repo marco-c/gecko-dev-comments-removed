@@ -15,6 +15,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/TaggedAnonymousMemory.h"
 
 #include <algorithm>
@@ -132,14 +133,20 @@ void* js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize) {
   MOZ_ASSERT(initialCommittedSize % gc::SystemPageSize() == 0);
   MOZ_ASSERT(initialCommittedSize <= mappedSize);
 
+  auto decrement = mozilla::MakeScopeExit([&] { liveBufferCount--; });
+  if (wasm::IsHugeMemoryEnabled()) {
+    liveBufferCount++;
+  } else {
+    decrement.release();
+  }
+
   
   
-  if (++liveBufferCount >= MaximumLiveMappedBuffers) {
+  if (liveBufferCount >= MaximumLiveMappedBuffers) {
     if (OnLargeAllocationFailure) {
       OnLargeAllocationFailure();
     }
     if (liveBufferCount >= MaximumLiveMappedBuffers) {
-      liveBufferCount--;
       return nullptr;
     }
   }
@@ -147,13 +154,11 @@ void* js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize) {
 #ifdef XP_WIN
   void* data = VirtualAlloc(nullptr, mappedSize, MEM_RESERVE, PAGE_NOACCESS);
   if (!data) {
-    liveBufferCount--;
     return nullptr;
   }
 
   if (!VirtualAlloc(data, initialCommittedSize, MEM_COMMIT, PAGE_READWRITE)) {
     VirtualFree(data, 0, MEM_RELEASE);
-    liveBufferCount--;
     return nullptr;
   }
 #else   
@@ -161,14 +166,12 @@ void* js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize) {
       MozTaggedAnonymousMmap(nullptr, mappedSize, PROT_NONE,
                              MAP_PRIVATE | MAP_ANON, -1, 0, "wasm-reserved");
   if (data == MAP_FAILED) {
-    liveBufferCount--;
     return nullptr;
   }
 
   
   if (mprotect(data, initialCommittedSize, PROT_READ | PROT_WRITE)) {
     munmap(data, mappedSize);
-    liveBufferCount--;
     return nullptr;
   }
 #endif  
@@ -180,6 +183,7 @@ void* js::MapBufferMemory(size_t mappedSize, size_t initialCommittedSize) {
       mappedSize - initialCommittedSize);
 #endif
 
+  decrement.release();
   return data;
 }
 
@@ -246,9 +250,11 @@ void js::UnmapBufferMemory(void* base, size_t mappedSize) {
                                                 mappedSize);
 #endif
 
-  
-  
-  liveBufferCount--;
+  if (wasm::IsHugeMemoryEnabled()) {
+    
+    
+    --liveBufferCount;
+  }
 }
 
 
