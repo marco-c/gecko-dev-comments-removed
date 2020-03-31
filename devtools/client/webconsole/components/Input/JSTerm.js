@@ -750,6 +750,18 @@ class JSTerm extends Component {
     const { from, to, origin, text } = change;
     const isAddedText =
       from.line === to.line && from.ch === to.ch && origin === "+input";
+
+    
+    
+    if (
+      !isAddedText &&
+      origin === "+delete" &&
+      from.line === to.line &&
+      from.ch === to.ch
+    ) {
+      return;
+    }
+
     const addedText = text.join("");
     const completionText = this.getAutoCompletionText();
 
