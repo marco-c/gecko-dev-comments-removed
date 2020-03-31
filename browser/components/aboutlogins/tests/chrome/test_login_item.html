@@ -135,7 +135,7 @@ add_task(async function test_update_breaches() {
   let correspondingBreach = TEST_BREACHES_MAP.get(gLoginItem._login.guid);
   let breachAlert = gLoginItem.shadowRoot.querySelector(".breach-alert");
   ok(!isHidden(breachAlert), "Breach alert should be visible");
-  is(breachAlert.querySelector(".breach-alert-link").getAttribute("href"), correspondingBreach.breachAlertURL, "Breach alert link should be equal to the correspondingBreach.breachAlertURL.");
+  is(breachAlert.querySelector(".alert-link").getAttribute("href"), correspondingBreach.breachAlertURL, "Breach alert link should be equal to the correspondingBreach.breachAlertURL.");
 });
 
 add_task(async function test_breach_alert_is_correctly_hidden() {
@@ -278,7 +278,6 @@ add_task(async function test_set_login_empty() {
   ok(originInput.matches(":invalid"), "origin value is required");
   is(originInput.value, "", "origin input should be blank at start");
 
-  originInput.focus();
   for (let originTuple of [
     ["ftp://ftp.example.com/", "ftp://ftp.example.com/"],
     ["https://example.com/", "https://example.com/"],
