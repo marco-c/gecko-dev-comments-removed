@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef vm_FunctionPrefixKind_h
+#define vm_FunctionPrefixKind_h
+
+#include <stdint.h>  
+
+namespace js {
+
+enum class FunctionPrefixKind : uint8_t { None, Get, Set };
+
+}  
+
+#endif 
