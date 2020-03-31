@@ -124,42 +124,36 @@ function Sandbox(options) {
 
 
 
+
+
+
+
+
+function define(factory) {
+  factory(this.require, this.exports, this.module);
+}
+
+
+
 function load(loader, module) {
-  const { globals } = loader;
   const require = Require(loader, module);
 
   
   
   
-  const descriptors = {
-    require: {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value: require,
-    },
-    module: {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value: module,
-    },
-    exports: {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value: module.exports,
-    },
+  const properties = {
+    require,
+    module,
+    exports: module.exports,
   };
-  const define = Object.getOwnPropertyDescriptor(globals, "define");
-  if (define?.value) {
-    descriptors.define = define;
+  if (loader.supportAMDModules) {
+    properties.define = define;
   }
 
   
   
   const sandbox = new loader.sharedGlobalSandbox.Object();
-  Object.defineProperties(sandbox, descriptors);
+  Object.assign(sandbox, properties);
 
   const originalExports = module.exports;
   try {
@@ -557,6 +551,10 @@ function Loader(options) {
     
     modules: { enumerable: false, value: modules },
     sharedGlobalSandbox: { enumerable: false, value: sharedGlobalSandbox },
+    supportAMDModules: {
+      enumerable: false,
+      value: options.supportAMDModules || false,
+    },
     
     invisibleToDebugger: {
       enumerable: false,

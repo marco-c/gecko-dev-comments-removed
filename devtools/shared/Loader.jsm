@@ -83,6 +83,19 @@ function DevToolsLoader({
     invisibleToDebugger,
     freshCompartment,
     sandboxName: "DevTools (Module loader)",
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    supportAMDModules: true,
     requireHook: (id, require) => {
       if (id.startsWith("raw!") || id.startsWith("theme-loader!")) {
         return requireRawId(id, require);

@@ -285,22 +285,6 @@ exports.globals = {
   BrowsingContext,
   console,
   CSS,
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  define(factory) {
-    factory(this.require, this.exports, this.module);
-  },
   DOMParser,
   DOMPoint,
   DOMQuad,

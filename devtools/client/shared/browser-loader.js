@@ -136,6 +136,20 @@ function BrowserLoaderBuilder({
     sandboxName: "DevTools (UI loader)",
     paths: Object.assign({}, dynamicPaths, loaderOptions.paths),
     invisibleToDebugger: loaderOptions.invisibleToDebugger,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    supportAMDModules: true,
     requireHook: (id, require) => {
       
       
@@ -174,22 +188,6 @@ function BrowserLoaderBuilder({
       
       
       console: window.console,
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      define(factory) {
-        factory(this.require, this.exports, this.module);
-      },
       
       loader: {
         lazyGetter: loader.lazyGetter,
