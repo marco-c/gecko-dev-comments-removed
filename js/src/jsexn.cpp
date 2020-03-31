@@ -28,6 +28,7 @@
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
 #include "js/Conversions.h"
+#include "js/SavedFrameAPI.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"
 #include "js/Warnings.h"  
@@ -56,6 +57,8 @@
 #include "vm/SavedStacks-inl.h"
 
 using namespace js;
+
+using JS::SavedFrameSelfHosted;
 
 size_t ExtraMallocSize(JSErrorReport* report) {
   if (report->linebuf()) {
@@ -465,7 +468,8 @@ ErrorReport::ErrorReport(JSContext* cx) : reportp(nullptr), exnObject(cx) {}
 ErrorReport::~ErrorReport() = default;
 
 bool ErrorReport::init(JSContext* cx, HandleValue exn,
-                       SniffingBehavior sniffingBehavior) {
+                       SniffingBehavior sniffingBehavior,
+                       HandleObject fallbackStack) {
   MOZ_ASSERT(!cx->isExceptionPending());
   MOZ_ASSERT(!reportp);
 
@@ -604,7 +608,7 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
     
     
     
-    if (!populateUncaughtExceptionReportUTF8(cx, utf8Message)) {
+    if (!populateUncaughtExceptionReportUTF8(cx, fallbackStack, utf8Message)) {
       
       
       return false;
@@ -616,31 +620,51 @@ bool ErrorReport::init(JSContext* cx, HandleValue exn,
   return true;
 }
 
-bool ErrorReport::populateUncaughtExceptionReportUTF8(JSContext* cx, ...) {
+bool ErrorReport::populateUncaughtExceptionReportUTF8(
+    JSContext* cx, HandleObject fallbackStack, ...) {
   va_list ap;
-  va_start(ap, cx);
-  bool ok = populateUncaughtExceptionReportUTF8VA(cx, ap);
+  va_start(ap, fallbackStack);
+  bool ok = populateUncaughtExceptionReportUTF8VA(cx, fallbackStack, ap);
   va_end(ap);
   return ok;
 }
 
-bool ErrorReport::populateUncaughtExceptionReportUTF8VA(JSContext* cx,
-                                                        va_list ap) {
+bool ErrorReport::populateUncaughtExceptionReportUTF8VA(
+    JSContext* cx, HandleObject fallbackStack, va_list ap) {
   new (&ownedReport) JSErrorReport();
   ownedReport.isWarning_ = false;
   ownedReport.errorNumber = JSMSG_UNCAUGHT_EXCEPTION;
-  
-  
-  
-  NonBuiltinFrameIter iter(cx, cx->realm()->principals());
-  if (!iter.done()) {
-    ownedReport.filename = iter.filename();
-    uint32_t column;
-    ownedReport.sourceId =
-        iter.hasScript() ? iter.script()->scriptSource()->id() : 0;
-    ownedReport.lineno = iter.computeLine(&column);
-    ownedReport.column = FixupColumnForDisplay(column);
-    ownedReport.isMuted = iter.mutedErrors();
+
+  bool skippedAsync;
+  RootedSavedFrame frame(
+      cx, UnwrapSavedFrame(cx, cx->realm()->principals(), fallbackStack,
+                           SavedFrameSelfHosted::Exclude, skippedAsync));
+  if (frame) {
+    filename = StringToNewUTF8CharsZ(cx, *frame->getSource());
+    if (!filename) {
+      return false;
+    }
+
+    
+    ownedReport.filename = filename.get();
+    ownedReport.sourceId = frame->getSourceId();
+    ownedReport.lineno = frame->getLine();
+    
+    ownedReport.column = frame->isWasm() ? 1 : frame->getColumn();
+    ownedReport.isMuted = frame->getMutedErrors();
+  } else {
+    
+    
+    NonBuiltinFrameIter iter(cx, cx->realm()->principals());
+    if (!iter.done()) {
+      ownedReport.filename = iter.filename();
+      uint32_t column;
+      ownedReport.sourceId =
+          iter.hasScript() ? iter.script()->scriptSource()->id() : 0;
+      ownedReport.lineno = iter.computeLine(&column);
+      ownedReport.column = FixupColumnForDisplay(column);
+      ownedReport.isMuted = iter.mutedErrors();
+    }
   }
 
   if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr,
