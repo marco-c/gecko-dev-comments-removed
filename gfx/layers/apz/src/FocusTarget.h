@@ -31,21 +31,10 @@ class FocusTarget final {
  public:
   struct ScrollTargets {
     ScrollableLayerGuid::ViewID mHorizontal;
-    Maybe<wr::RenderRoot> mHorizontalRenderRoot;
     ScrollableLayerGuid::ViewID mVertical;
-    Maybe<wr::RenderRoot> mVerticalRenderRoot;
 
     bool operator==(const ScrollTargets& aRhs) const {
-      bool ret =
-          (mHorizontal == aRhs.mHorizontal && mVertical == aRhs.mVertical);
-      if (ret) {
-        
-        
-        
-        MOZ_ASSERT(mHorizontalRenderRoot == aRhs.mHorizontalRenderRoot &&
-                   mVerticalRenderRoot == aRhs.mVerticalRenderRoot);
-      }
-      return ret;
+      return (mHorizontal == aRhs.mHorizontal && mVertical == aRhs.mVertical);
     }
   };
 
