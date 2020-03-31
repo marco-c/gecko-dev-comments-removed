@@ -478,13 +478,6 @@ interface nsIPrincipal : nsISerializable
     
 
 
-
-
-    [infallible] readonly attribute nsIPrincipal nextSubDomainPrincipal;
-
-    
-
-
     [infallible] readonly attribute boolean isIpAddress;
 };
 
