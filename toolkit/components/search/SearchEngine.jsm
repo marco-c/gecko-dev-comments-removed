@@ -759,6 +759,7 @@ EngineURL.prototype = {
 
 
 
+
 function SearchEngine(options = {}) {
   if (!("isBuiltin" in options)) {
     throw new Error("isBuiltin missing from options.");
@@ -769,11 +770,9 @@ function SearchEngine(options = {}) {
 
   let file, uri;
   if ("name" in options) {
-    if ("sanitizeName" in options && options.sanitizeName) {
-      this._shortName = sanitizeName(options.name);
-    } else {
-      this._shortName = options.name;
-    }
+    this._shortName = sanitizeName(options.name);
+  } else if ("shortName" in options) {
+    this._shortName = options.shortName;
   } else if ("fileURI" in options && options.fileURI instanceof Ci.nsIFile) {
     file = options.fileURI;
   } else if ("uri" in options) {
