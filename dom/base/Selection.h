@@ -749,8 +749,10 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  nsresult MaybeAddRangeAndTruncateOverlaps(nsRange* aRange,
-                                            int32_t* aOutIndex);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  MaybeAddRangeAndTruncateOverlaps(nsRange* aRange, int32_t* aOutIndex);
 
   Document* GetDocument() const;
   nsPIDOMWindowOuter* GetWindow() const;
