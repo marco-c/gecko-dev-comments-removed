@@ -55,8 +55,7 @@ struct PointerTypeImpl<T, D, false> {
 
 template <class T, class D>
 struct PointerType {
-  typedef
-      typename PointerTypeImpl<T, typename RemoveReference<D>::Type>::Type Type;
+  typedef typename PointerTypeImpl<T, std::remove_reference_t<D>>::Type Type;
 };
 
 }  
@@ -224,29 +223,7 @@ class UniquePtr {
             typename Conditional<std::is_reference_v<D>, D, const D&>::Type aD1)
       : mTuple(aPtr, aD1) {}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  UniquePtr(Pointer aPtr, typename RemoveReference<D>::Type&& aD2)
+  UniquePtr(Pointer aPtr, std::remove_reference_t<D>&& aD2)
       : mTuple(aPtr, std::move(aD2)) {
     static_assert(!std::is_reference_v<D>,
                   "rvalue deleter can't be stored by reference");
@@ -378,11 +355,7 @@ class UniquePtr<T[], D> {
             typename Conditional<std::is_reference_v<D>, D, const D&>::Type aD1)
       : mTuple(aPtr, aD1) {}
 
-  
-  
-  
-  
-  UniquePtr(Pointer aPtr, typename RemoveReference<D>::Type&& aD2)
+  UniquePtr(Pointer aPtr, std::remove_reference_t<D>&& aD2)
       : mTuple(aPtr, std::move(aD2)) {
     static_assert(!std::is_reference_v<D>,
                   "rvalue deleter can't be stored by reference");
