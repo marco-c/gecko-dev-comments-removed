@@ -143,7 +143,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
   bool OffsetsToDOMRange(int32_t aStartOffset, int32_t aEndOffset,
-                         nsRange* aRange);
+                         nsRange* aRange) const;
 
   
 
@@ -152,7 +152,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  DOMPoint OffsetToDOMPoint(int32_t aOffset);
+  DOMPoint OffsetToDOMPoint(int32_t aOffset) const;
 
   
 
@@ -530,7 +530,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
   DOMPoint ClosestNotGeneratedDOMPoint(const DOMPoint& aDOMPoint,
-                                       nsIContent* aElementContent);
+                                       nsIContent* aElementContent) const;
 
   
   nsresult GetDOMPointByFrameOffset(nsIFrame* aFrame, int32_t aOffset,
