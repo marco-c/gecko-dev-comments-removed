@@ -182,11 +182,6 @@ class Selection final : public nsSupportsWeakReference,
       nsRange* aRange, int32_t* aOutIndex,
       DispatchSelectstartEvent aDispatchSelectstartEvent);
 
-  
-
-
-  nsresult RemoveRangeInternal(nsRange& aRange);
-
  public:
   nsresult RemoveCollapsedRanges();
   nsresult Clear(nsPresContext* aPresContext);
@@ -828,6 +823,8 @@ class Selection final : public nsSupportsWeakReference,
   void Disconnect();
 
   struct StyledRanges {
+    nsresult RemoveRangeAndUnregisterSelection(nsRange& aRange);
+
     
     
     
