@@ -1524,6 +1524,7 @@ void GeckoEditableSupport::SetInputContext(const InputContext& aContext,
   mInputContext = aContext;
 
   if (mInputContext.mIMEState.mEnabled != IMEState::DISABLED &&
+      !mInputContext.mHTMLInputInputmode.EqualsLiteral("none") &&
       aAction.UserMightRequestOpenVKB()) {
     
     mEditable->NotifyIME(EditableListener::NOTIFY_IME_OPEN_VKB);

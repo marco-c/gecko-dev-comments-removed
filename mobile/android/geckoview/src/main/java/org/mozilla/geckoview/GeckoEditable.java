@@ -1441,11 +1441,12 @@ import android.view.inputmethod.EditorInfo;
         
         
         int state;
-        if (typeHint != null && (typeHint.equalsIgnoreCase("date") ||
-                                 typeHint.equalsIgnoreCase("time") ||
-                                 typeHint.equalsIgnoreCase("month") ||
-                                 typeHint.equalsIgnoreCase("week") ||
-                                 typeHint.equalsIgnoreCase("datetime-local"))) {
+        if ((typeHint != null && (typeHint.equalsIgnoreCase("date") ||
+                                  typeHint.equalsIgnoreCase("time") ||
+                                  typeHint.equalsIgnoreCase("month") ||
+                                  typeHint.equalsIgnoreCase("week") ||
+                                  typeHint.equalsIgnoreCase("datetime-local"))) ||
+            (modeHint != null && modeHint.equals("none"))) {
             state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
         } else {
             state = originalState;
@@ -1532,6 +1533,13 @@ import android.view.inputmethod.EditorInfo;
         
         outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;
         outAttrs.actionLabel = null;
+
+        if (modeHint.equals("none")) {
+            
+            outAttrs.inputType = InputType.TYPE_NULL;
+            toggleSoftInput( true, SessionTextInput.EditableListener.IME_STATE_DISABLED);
+            return;
+        }
 
         if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
             outAttrs.inputType = InputType.TYPE_NULL;
