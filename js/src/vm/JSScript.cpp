@@ -4366,7 +4366,7 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
   
   
   if (script->isReadyForDelazification()) {
-    lazyFlags = script->immutableScriptFlags_;
+    lazyFlags = script->immutableFlags_;
     lazyMutableFlags = script->mutableFlags_;
     lazyEnclosingScope = script->releaseEnclosingScope();
     script->swapData(lazyData.get());
@@ -4377,7 +4377,7 @@ bool JSScript::fullyInitFromStencil(JSContext* cx, HandleScript script,
   
   auto rollbackGuard = mozilla::MakeScopeExit([&] {
     if (lazyEnclosingScope) {
-      script->immutableScriptFlags_ = lazyFlags;
+      script->immutableFlags_ = lazyFlags;
       script->mutableFlags_ = lazyMutableFlags;
       script->warmUpData_.initEnclosingScope(lazyEnclosingScope);
       script->swapData(lazyData.get());

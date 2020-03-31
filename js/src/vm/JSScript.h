@@ -1697,7 +1697,7 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  ImmutableScriptFlags immutableScriptFlags_;
+  ImmutableScriptFlags immutableFlags_;
   
   
   
@@ -1714,7 +1714,7 @@ class BaseScript : public gc::TenuredCell {
         functionOrGlobal_(functionOrGlobal),
         sourceObject_(sourceObject),
         extent_(extent),
-        immutableScriptFlags_(immutableFlags) {
+        immutableFlags_(immutableFlags) {
     MOZ_ASSERT(functionOrGlobal->compartment() == sourceObject->compartment());
     MOZ_ASSERT(extent_.toStringStart <= extent_.sourceStart);
     MOZ_ASSERT(extent_.sourceStart <= extent_.sourceEnd);
@@ -1814,20 +1814,20 @@ class BaseScript : public gc::TenuredCell {
   uint32_t column() const { return extent_.column; }
 
  public:
-  ImmutableScriptFlags immutableFlags() const { return immutableScriptFlags_; }
+  ImmutableScriptFlags immutableFlags() const { return immutableFlags_; }
 
   void addToImmutableFlags(const ImmutableScriptFlags& flags) {
-    immutableScriptFlags_ |= flags;
+    immutableFlags_ |= flags;
   }
 
   
   MOZ_MUST_USE bool hasFlag(ImmutableFlags flag) const {
-    return immutableScriptFlags_.hasFlag(flag);
+    return immutableFlags_.hasFlag(flag);
   }
   void setFlag(ImmutableFlags flag, bool b = true) {
-    immutableScriptFlags_.setFlag(flag, b);
+    immutableFlags_.setFlag(flag, b);
   }
-  void clearFlag(ImmutableFlags flag) { immutableScriptFlags_.clearFlag(flag); }
+  void clearFlag(ImmutableFlags flag) { immutableFlags_.clearFlag(flag); }
 
   
   MOZ_MUST_USE bool hasFlag(MutableFlags flag) const {
@@ -2062,7 +2062,7 @@ setterLevel:                                                                  \
   static size_t offsetOfImmutableFlags() {
     static_assert(offsetof(ImmutableScriptFlags, flags_) == 0,
                   "Required for JIT flag access");
-    return offsetof(BaseScript, immutableScriptFlags_);
+    return offsetof(BaseScript, immutableFlags_);
   }
   static constexpr size_t offsetOfMutableFlags() {
     return offsetof(BaseScript, mutableFlags_);
