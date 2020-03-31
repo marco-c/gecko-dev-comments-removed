@@ -55,10 +55,16 @@ bool nsFrameLoaderOwner::ShouldPreserveBrowsingContext(
     return false;
   }
 
-  
-  
-  if (XRE_IsParentProcess() && aOptions.mRemoteType.IsVoid()) {
-    return false;
+  if (XRE_IsParentProcess()) {
+    
+    if (aOptions.mRemoteType.IsVoid()) {
+      return false;
+    }
+
+    
+    if (mFrameLoader && !mFrameLoader->IsRemoteFrame()) {
+      return false;
+    }
   }
 
   
