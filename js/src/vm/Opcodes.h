@@ -929,10 +929,14 @@
 
 
 
+
+
  \
     MACRO(InitElem, init_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     MACRO(InitHiddenElem, init_hidden_elem, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT|JOF_IC) \
     
+
+
 
 
 
@@ -958,10 +962,14 @@
 
 
 
+
+
  \
     MACRO(InitElemGetter, init_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
     MACRO(InitHiddenElemGetter, init_hidden_elem_getter, NULL, 1, 3, 1, JOF_BYTE|JOF_ELEM|JOF_PROPINIT) \
     
+
+
 
 
 
@@ -1604,6 +1612,10 @@
 
 
 
+
+
+
+
  \
     MACRO(InitHomeObject, init_home_object, NULL, 1, 2, 1, JOF_BYTE) \
     
@@ -1656,6 +1668,8 @@
 
 
 
+
+
  \
     MACRO(ClassConstructor, class_constructor, NULL, 13, 0, 1, JOF_CLASS_CTOR) \
     
@@ -1679,6 +1693,9 @@
  \
     MACRO(DerivedConstructor, derived_constructor, NULL, 13, 1, 1, JOF_CLASS_CTOR) \
     
+
+
+
 
 
 
@@ -1754,6 +1771,9 @@
  \
     MACRO(OptimizeSpreadCall, optimize_spread_call, NULL, 1, 1, 2, JOF_BYTE) \
     
+
+
+
 
 
 
@@ -2315,6 +2335,9 @@
 
 
 
+
+
+
  \
     MACRO(SetRval, set_rval, NULL, 1, 1, 0, JOF_BYTE) \
     
@@ -2425,6 +2448,9 @@
  \
     MACRO(Try, try_, NULL, 5, 0, 0, JOF_CODE_OFFSET) \
     
+
+
+
 
 
 
@@ -2578,6 +2604,10 @@
  \
     MACRO(InitLexical, init_lexical, NULL, 4, 1, 1, JOF_LOCAL|JOF_NAME) \
     
+
+
+
+
 
 
 
@@ -2768,8 +2798,6 @@
 
 
 
-
-
  \
     MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_NAME|JOF_TYPESET|JOF_IC) \
     
@@ -2840,6 +2868,7 @@
  \
     MACRO(Callee, callee, NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -3044,9 +3073,13 @@
 
 
 
+
+
  \
     MACRO(RecreateLexicalEnv, recreate_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
     
+
+
 
 
 
@@ -3215,10 +3248,6 @@
 
 
 
-
-
-
-
  \
     MACRO(DefConst, def_const, NULL, 5, 0, 0, JOF_ATOM) \
     
@@ -3301,6 +3330,7 @@
  \
     MACRO(Arguments, arguments, NULL, 1, 0, 1, JOF_BYTE) \
     
+
 
 
 
@@ -3418,9 +3448,20 @@
 
 
 
+
+
+
+
  \
     MACRO(Lineno, lineno, NULL, 5, 0, 0, JOF_UINT32) \
     
+
+
+
+
+
+
+
 
 
 
