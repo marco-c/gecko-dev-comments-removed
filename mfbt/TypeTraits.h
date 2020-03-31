@@ -486,21 +486,6 @@ struct RemovePointer
 
 
 
-template <typename T>
-struct AddPointer {
-  typedef typename RemoveReference<T>::Type* Type;
-};
-
-
-
-
-
-
-
-
-
-
-
 
 
 
