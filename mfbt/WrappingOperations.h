@@ -105,7 +105,7 @@ template <typename T>
 constexpr T ToResult(std::make_unsigned_t<T> aUnsigned) {
   
   
-  return IsSigned<T>::value ? WrapToSigned(aUnsigned) : aUnsigned;
+  return std::is_signed_v<T> ? WrapToSigned(aUnsigned) : aUnsigned;
 }
 
 template <typename T>
