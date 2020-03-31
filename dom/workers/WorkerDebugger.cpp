@@ -92,11 +92,6 @@ class CompileDebuggerScriptRunnable final : public WorkerDebuggerRunnable {
       return false;
     }
 
-    
-    
-    aWorkerPrivate->EnsurePerformanceStorage();
-    aWorkerPrivate->EnsurePerformanceCounter();
-
     JS::Rooted<JSObject*> global(aCx, globalScope->GetWrapper());
 
     ErrorResult rv;
@@ -137,7 +132,7 @@ class WorkerDebugger::PostDebuggerMessageRunnable final : public Runnable {
         mMessage(aMessage) {}
 
  private:
-  ~PostDebuggerMessageRunnable() {}
+  ~PostDebuggerMessageRunnable() = default;
 
   NS_IMETHOD
   Run() override {
@@ -164,7 +159,7 @@ class WorkerDebugger::ReportDebuggerErrorRunnable final : public Runnable {
         mMessage(aMessage) {}
 
  private:
-  ~ReportDebuggerErrorRunnable() {}
+  ~ReportDebuggerErrorRunnable() = default;
 
   NS_IMETHOD
   Run() override {

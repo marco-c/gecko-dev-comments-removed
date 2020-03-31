@@ -2222,15 +2222,6 @@ WorkerThreadPrimaryRunnable::Run() {
 
   using mozilla::ipc::BackgroundChild;
 
-  
-  
-  
-  bool ipcReady = true;
-  if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
-    
-    ipcReady = false;
-  }
-
   class MOZ_STACK_CLASS SetThreadHelper final {
     
     WorkerPrivate* mWorkerPrivate;
@@ -2264,7 +2255,12 @@ WorkerThreadPrimaryRunnable::Run() {
 
   mWorkerPrivate->AssertIsOnWorkerThread();
 
-  if (!ipcReady) {
+  
+  
+  mWorkerPrivate->EnsurePerformanceStorage();
+  mWorkerPrivate->EnsurePerformanceCounter();
+
+  if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
     WorkerErrorReport::CreateAndDispatchGenericErrorRunnableToParent(
         mWorkerPrivate);
     return NS_ERROR_FAILURE;

@@ -339,13 +339,6 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
       return false;
     }
 
-    
-    
-    
-    
-    aWorkerPrivate->EnsurePerformanceStorage();
-    aWorkerPrivate->EnsurePerformanceCounter();
-
     ErrorResult rv;
     workerinternals::LoadMainScript(aWorkerPrivate, std::move(mOriginStack),
                                     mScriptURL, WorkerScript, rv);
