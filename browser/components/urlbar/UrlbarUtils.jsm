@@ -31,16 +31,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 var UrlbarUtils = {
   
-  INSERTMETHOD: {
-    
-    APPEND: 0,
-    
-    MERGE_RELATED: 1,
-    
-    MERGE: 2,
-  },
-
-  
   
   
   

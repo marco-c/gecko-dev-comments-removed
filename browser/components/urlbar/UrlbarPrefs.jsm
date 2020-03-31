@@ -71,10 +71,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["formatting.enabled", false],
 
   
-  
-  ["insertMethod", UrlbarUtils.INSERTMETHOD.MERGE_RELATED],
-
-  
   ["matchBuckets", "suggestion:4,general:Infinity"],
 
   

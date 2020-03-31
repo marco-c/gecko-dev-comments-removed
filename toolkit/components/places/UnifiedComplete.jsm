@@ -35,9 +35,6 @@ const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
 const REGEXP_MAX_RESULTS = /(?:^| )max-results:(\d+)/;
 
 
-const REGEXP_INSERT_METHOD = /(?:^| )insert-method:(\d+)/;
-
-
 const REGEXP_SPACES = /\s+/;
 
 
@@ -3140,35 +3137,7 @@ UnifiedComplete.prototype = {
     
     
     
-
-    
-    let insertMethod = UrlbarUtils.INSERTMETHOD.APPEND;
-    if (!queryContext) {
-      insertMethod = searchParam.match(REGEXP_INSERT_METHOD);
-      insertMethod = insertMethod
-        ? parseInt(insertMethod[1])
-        : UrlbarPrefs.get("insertMethod");
-    }
-
     let previousResult = null;
-    if (
-      this._currentSearch &&
-      insertMethod != UrlbarUtils.INSERTMETHOD.APPEND
-    ) {
-      let result = this._currentSearch._result;
-      
-      
-      
-      let previousSearchString = result.searchString;
-      let stringsRelated =
-        !!previousSearchString.length &&
-        !!searchString.length &&
-        (previousSearchString.includes(searchString) ||
-          searchString.includes(previousSearchString));
-      if (insertMethod == UrlbarUtils.INSERTMETHOD.MERGE || stringsRelated) {
-        previousResult = result;
-      }
-    }
 
     let search = (this._currentSearch = new Search(
       searchString,
