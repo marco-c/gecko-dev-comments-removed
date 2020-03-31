@@ -21,6 +21,20 @@
 namespace v8 {
 namespace internal {
 
+struct FrameData {
+  
+  
+  size_t inputStart;
+
+  
+  
+  void* backtrackStackBase;
+
+  
+  int32_t* matches;   
+  int32_t numMatches; 
+};
+
 class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
  public:
   SMRegExpMacroAssembler(JSContext* cx, Isolate* isolate,
@@ -37,6 +51,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void AdvanceCurrentPosition(int by);
   virtual void PopCurrentPosition();
   virtual void PushCurrentPosition();
+  virtual void SetCurrentPositionFromEnd(int by);
 
   virtual void Backtrack();
   virtual void Bind(Label* label);
@@ -57,6 +72,13 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void CheckCharacterInRange(uc16 from, uc16 to, Label* on_in_range);
   virtual void CheckCharacterNotInRange(uc16 from, uc16 to,
                                         Label* on_not_in_range);
+  virtual void CheckAtStart(int cp_offset, Label* on_at_start);
+  virtual void CheckNotAtStart(int cp_offset, Label* on_not_at_start);
+  virtual void CheckPosition(int cp_offset, Label* on_outside_input);
+
+  virtual void LoadCurrentCharacterImpl(int cp_offset, Label* on_end_of_input,
+                                        bool check_bounds, int characters,
+                                        int eats_at_least);
 
 
  private:
@@ -75,6 +97,8 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   void CheckCharacterInRangeImpl(uc16 from, uc16 to, Label* on_cond,
                                  js::jit::Assembler::Condition cond);
 
+  void LoadCurrentCharacterUnchecked(int cp_offset, int characters);
+
   void JumpOrBacktrack(Label* to);
 
   
@@ -90,6 +114,23 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   inline int char_size() { return static_cast<int>(mode_); }
   inline js::jit::Scale factor() {
     return mode_ == UC16 ? js::jit::TimesTwo : js::jit::TimesOne;
+  }
+
+  js::jit::Address inputStart() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, inputStart));
+  }
+  js::jit::Address backtrackStackBase() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, backtrackStackBase));
+  }
+  js::jit::Address matches() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, matches));
+  }
+  js::jit::Address numMatches() {
+    return js::jit::Address(masm_.getStackPointer(),
+                            offsetof(FrameData, numMatches));
   }
 
   JSContext* cx_;
