@@ -400,61 +400,6 @@ struct IsPod<T*> : TrueType {};
 
 namespace detail {
 
-
-
-
-
-template <typename T>
-struct IsEmptyHelper
-    : IntegralConstant<bool, IsClass<T>::value&& __is_empty(T)> {};
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsEmpty : detail::IsEmptyHelper<typename RemoveCV<T>::Type> {};
-
-namespace detail {
-
 template <typename T, bool = IsFloatingPoint<T>::value,
           bool = IsIntegral<T>::value,
           typename NoCV = typename RemoveCV<T>::Type>
