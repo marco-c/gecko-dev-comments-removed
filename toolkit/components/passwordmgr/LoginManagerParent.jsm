@@ -417,8 +417,8 @@ class LoginManagerParent extends JSWindowActorParent {
     searchString,
     previousResult,
     forcePasswordGeneration,
+    hasBeenTypePassword,
     isSecure,
-    isPasswordField,
     isProbablyANewPasswordField,
   }) {
     
@@ -477,7 +477,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       
-      if (isPasswordField) {
+      if (hasBeenTypePassword) {
         return true;
       }
       return match && match.toLowerCase().startsWith(searchStringLower);

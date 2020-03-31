@@ -647,9 +647,8 @@ nsFormFillController::GetNoRollupOnCaretMove(bool* aNoRollupOnCaretMove) {
 
 NS_IMETHODIMP
 nsFormFillController::GetNoRollupOnEmptySearch(bool* aNoRollupOnEmptySearch) {
-  if (mFocusedInput &&
-      (mPwmgrInputs.Get(mFocusedInput) ||
-       mFocusedInput->ControlType() == NS_FORM_INPUT_PASSWORD)) {
+  if (mFocusedInput && (mPwmgrInputs.Get(mFocusedInput) ||
+                        mFocusedInput->HasBeenTypePassword())) {
     
     *aNoRollupOnEmptySearch = true;
   } else {
@@ -680,9 +679,8 @@ nsFormFillController::StartSearch(const nsAString& aSearchString,
   
   
   
-  if (mFocusedInput &&
-      (mPwmgrInputs.Get(mFocusedInput) ||
-       mFocusedInput->ControlType() == NS_FORM_INPUT_PASSWORD)) {
+  if (mFocusedInput && (mPwmgrInputs.Get(mFocusedInput) ||
+                        mFocusedInput->HasBeenTypePassword())) {
     MOZ_LOG(sLogger, LogLevel::Debug, ("StartSearch: login field"));
 
     
@@ -941,8 +939,7 @@ void nsFormFillController::MaybeStartControllingInput(
   bool hasList = !!aInput->GetList();
 
   bool isPwmgrInput = false;
-  if (mPwmgrInputs.Get(aInput) ||
-      aInput->ControlType() == NS_FORM_INPUT_PASSWORD) {
+  if (mPwmgrInputs.Get(aInput) || aInput->HasBeenTypePassword()) {
     isPwmgrInput = true;
   }
 
@@ -958,7 +955,7 @@ void nsFormFillController::MaybeStartControllingInput(
 #ifdef NIGHTLY_BUILD
   
   
-  if (aInput->ControlType() == NS_FORM_INPUT_PASSWORD) {
+  if (aInput->HasBeenTypePassword()) {
     StartQueryLoginReputation(aInput);
   }
 #endif
@@ -981,7 +978,7 @@ nsresult nsFormFillController::HandleFocus(HTMLInputElement* aInput) {
   
   
 
-  if (mFocusedInput->ControlType() != NS_FORM_INPUT_PASSWORD) {
+  if (!mFocusedInput->HasBeenTypePassword()) {
     return NS_OK;
   }
 
