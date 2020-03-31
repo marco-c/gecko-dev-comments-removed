@@ -10,6 +10,7 @@
 #include <sched.h>
 #include <setjmp.h>
 #include <signal.h>
+#include <sys/prctl.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -591,6 +592,7 @@ pid_t SandboxFork::Fork() {
   
   
   
+  prctl(PR_SET_NAME, "Sandbox Forked");
 
   
   
@@ -620,6 +622,7 @@ void SandboxFork::StartChrootServer() {
   if (pid > 0) {
     return;
   }
+  prctl(PR_SET_NAME, "Chroot Helper");
 
   LinuxCapabilities caps;
   caps.Effective(CAP_SYS_CHROOT) = true;
