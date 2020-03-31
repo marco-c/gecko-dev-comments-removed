@@ -909,7 +909,7 @@ namespace detail {
 
 
 template <typename T, typename U, typename V = int>
-struct IsCompareMethod : mozilla::FalseType {};
+struct IsCompareMethod : std::false_type {};
 
 template <typename T, typename U>
 struct IsCompareMethod<

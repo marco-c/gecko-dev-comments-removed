@@ -26,7 +26,6 @@ namespace mozilla {
 
 
 typedef std::integral_constant<bool, true> TrueType;
-typedef std::integral_constant<bool, false> FalseType;
 
 
 
@@ -41,7 +40,7 @@ typedef std::integral_constant<bool, false> FalseType;
 
 
 template <typename T>
-struct IsPod : public FalseType {};
+struct IsPod : public std::false_type {};
 
 template <>
 struct IsPod<char> : TrueType {};
@@ -84,7 +83,7 @@ struct DoIsDestructibleImpl {
   template <typename T, typename = decltype(std::declval<T&>().~T())>
   static TrueType test(int);
   template <typename T>
-  static FalseType test(...);
+  static std::false_type test(...);
 };
 
 template <typename T>
@@ -123,7 +122,7 @@ struct IsDestructible : public detail::IsDestructibleImpl<T>::Type {};
 
 
 template <typename T, typename U>
-struct IsSame : FalseType {};
+struct IsSame : std::false_type {};
 
 template <typename T>
 struct IsSame<T, T> : TrueType {};
