@@ -228,7 +228,7 @@ def fzf_bootstrap(update=False):
 
     
     
-    if update and not fzf_bin.startswith(fzf_path):
+    if fzf_bin and update and not fzf_bin.startswith(fzf_path):
         print("fzf installed somewhere other than {}, please update manually".format(fzf_path))
         sys.exit(1)
 
