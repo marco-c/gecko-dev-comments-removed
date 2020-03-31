@@ -111,6 +111,46 @@ var SiteDataTestUtils = {
 
 
 
+  addToLocalStorage(origin, key = "foo", value = "bar") {
+    let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      origin
+    );
+    let storage = Services.domStorageManager.createStorage(
+      null,
+      principal,
+      principal,
+      ""
+    );
+    storage.setItem("key", "value");
+  },
+
+  
+
+
+
+
+
+
+  hasLocalStorage(origin) {
+    let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      origin
+    );
+    let storage = Services.domStorageManager.createStorage(
+      null,
+      principal,
+      principal,
+      ""
+    );
+    return !!storage.length;
+  },
+
+  
+
+
+
+
+
+
 
   addServiceWorker(path) {
     let uri = Services.io.newURI(path);
