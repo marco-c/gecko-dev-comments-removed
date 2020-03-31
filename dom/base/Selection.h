@@ -746,39 +746,6 @@ class Selection final : public nsSupportsWeakReference,
   nsPIDOMWindowOuter* GetWindow() const;
   HTMLEditor* GetHTMLEditor() const;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Element* GetCommonEditingHostForAllRanges();
-
   void Disconnect();
 
   struct StyledRanges {
@@ -828,6 +795,39 @@ class Selection final : public nsSupportsWeakReference,
     
     MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaybeAddRangeAndTruncateOverlaps(
         nsRange* aRange, int32_t* aOutIndex, Selection& aSelection);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Element* GetCommonEditingHostForAllRanges();
 
     
     
