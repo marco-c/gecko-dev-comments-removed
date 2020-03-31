@@ -957,6 +957,17 @@ class nsIFrame : public nsQueryFrame {
   nsRect GetRectRelativeToSelf() const {
     return nsRect(nsPoint(0, 0), mRect.Size());
   }
+
+  
+
+
+
+  nsRect GetPaddingRect() const;
+  nsRect GetPaddingRectRelativeToSelf() const;
+  nsRect GetContentRect() const;
+  nsRect GetContentRectRelativeToSelf() const;
+  nsRect GetMarginRectRelativeToSelf() const;
+
   
 
 
@@ -1325,16 +1336,6 @@ class nsIFrame : public nsQueryFrame {
       mozilla::WritingMode aWritingMode) const {
     return mozilla::LogicalMargin(aWritingMode, GetUsedBorderAndPadding());
   }
-
-  
-
-
-
-  nsRect GetPaddingRect() const;
-  nsRect GetPaddingRectRelativeToSelf() const;
-  nsRect GetContentRect() const;
-  nsRect GetContentRectRelativeToSelf() const;
-  nsRect GetMarginRectRelativeToSelf() const;
 
   
 
