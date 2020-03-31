@@ -5,20 +5,79 @@
 
 
 #include "DisplayItemCache.h"
+#include "nsDisplayList.h"
 
 namespace mozilla {
 namespace layers {
 
-static const size_t kInitialCacheSize = 1024;
-static const size_t kMaximumCacheSize = 10240;
-static const size_t kCacheThreshold = 1;
-
 DisplayItemCache::DisplayItemCache()
-    : mMaximumSize(0), mConsecutivePartialDisplayLists(0) {
-  if (XRE_IsContentProcess() &&
-      StaticPrefs::gfx_webrender_enable_item_cache_AtStartup()) {
-    SetCapacity(kInitialCacheSize, kMaximumCacheSize);
+    : mDisplayList(nullptr),
+      mMaximumSize(0),
+      mPipelineId{},
+      mCaching(false),
+      mInvalid(false) {}
+
+void DisplayItemCache::SetDisplayList(nsDisplayListBuilder* aBuilder,
+                                      nsDisplayList* aList) {
+  if (!IsEnabled()) {
+    return;
   }
+
+  MOZ_ASSERT(aBuilder);
+  MOZ_ASSERT(aList);
+
+  const bool listChanged = mDisplayList != aList;
+  const bool partialBuild = !aBuilder->PartialBuildFailed();
+
+  if (listChanged && partialBuild) {
+    
+    
+    mDisplayList = nullptr;
+    return;
+  }
+
+  if (listChanged || !partialBuild) {
+    
+    mDisplayList = aList;
+    mInvalid = true;
+  }
+
+  UpdateState();
+}
+
+void DisplayItemCache::SetPipelineId(const wr::PipelineId& aPipelineId) {
+  mInvalid = mInvalid || !(mPipelineId == aPipelineId);
+  mPipelineId = aPipelineId;
+}
+
+void DisplayItemCache::UpdateState() {
+  
+  
+  
+  
+  
+  
+  mCaching = !mInvalid;
+
+#if 0
+  Stats().Print();
+  Stats().Reset();
+#endif
+
+  if (IsEmpty()) {
+    
+    mInvalid = false;
+    return;
+  }
+
+  
+  if (mInvalid) {
+    ClearCache();
+  } else {
+    FreeUnusedSlots();
+  }
+
+  mInvalid = false;
 }
 
 void DisplayItemCache::ClearCache() {
@@ -77,20 +136,12 @@ void DisplayItemCache::SetCapacity(const size_t aInitialSize,
 }
 
 Maybe<uint16_t> DisplayItemCache::AssignSlot(nsPaintedDisplayItem* aItem) {
-  if (kCacheThreshold > mConsecutivePartialDisplayLists) {
-    
-    
-    
-    
-    return Nothing();
-  }
-
-  if (!aItem->CanBeReused() || !aItem->CanBeCached()) {
-    
+  if (!mCaching || !aItem->CanBeReused() || !aItem->CanBeCached()) {
     return Nothing();
   }
 
   auto& slot = aItem->CacheIndex();
+
   if (!slot) {
     slot = GetNextFreeSlot();
     if (!slot) {
@@ -140,28 +191,6 @@ Maybe<uint16_t> DisplayItemCache::CanReuseItem(
   }
 
   return slotIndex;
-}
-
-void DisplayItemCache::UpdateState(const bool aPartialDisplayListBuildFailed,
-                                   const wr::PipelineId& aPipelineId) {
-  const bool pipelineIdChanged = UpdatePipelineId(aPipelineId);
-  const bool invalidate = pipelineIdChanged || aPartialDisplayListBuildFailed;
-
-  mConsecutivePartialDisplayLists =
-      invalidate ? 0 : mConsecutivePartialDisplayLists + 1;
-
-  if (IsEmpty()) {
-    
-    return;
-  }
-
-  
-  
-  if (invalidate) {
-    ClearCache();
-  } else {
-    FreeUnusedSlots();
-  }
 }
 
 }  

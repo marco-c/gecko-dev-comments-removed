@@ -8,9 +8,10 @@
 #define GFX_DISPLAY_ITEM_CACHE_H
 
 #include "mozilla/webrender/WebRenderAPI.h"
-#include "mozilla/Maybe.h"
 #include "nsTArray.h"
 
+class nsDisplayList;
+class nsDisplayListBuilder;
 class nsPaintedDisplayItem;
 
 namespace mozilla {
@@ -67,6 +68,28 @@ class DisplayItemCache final {
   
 
 
+  void SetCapacity(const size_t aInitialSize, const size_t aMaximumSize);
+
+  
+
+
+  void SetDisplayList(nsDisplayListBuilder* aBuilder, nsDisplayList* aList);
+
+  
+
+
+  void SetPipelineId(const wr::PipelineId& aPipelineId);
+
+  
+
+
+  void SkipWaitingForPartialDisplayList() {
+    mCaching = mDisplayList && !mInvalid;
+  }
+
+  
+
+
   bool IsEnabled() const { return mMaximumSize > 0; }
 
   
@@ -80,16 +103,6 @@ class DisplayItemCache final {
   bool IsFull() const {
     return mFreeSlots.IsEmpty() && CurrentSize() == mMaximumSize;
   }
-
-  
-
-
-
-
-
-
-  void UpdateState(const bool aPartialDisplayListBuildFailed,
-                   const wr::PipelineId& aPipelineId);
 
   
 
@@ -131,29 +144,23 @@ class DisplayItemCache final {
 
   void ClearCache();
   void FreeUnusedSlots();
-  bool GrowIfPossible();
   Maybe<uint16_t> GetNextFreeSlot();
+  bool GrowIfPossible();
+  void UpdateState();
 
   
-
-
-  void SetCapacity(const size_t aInitialSize, const size_t aMaximumSize);
-
   
-
-
-
-  bool UpdatePipelineId(const wr::PipelineId& aPipelineId) {
-    const bool isSame = mPreviousPipelineId.refOr(aPipelineId) == aPipelineId;
-    mPreviousPipelineId = Some(aPipelineId);
-    return !isSame;
-  }
+  
+  nsDisplayList* mDisplayList;
 
   size_t mMaximumSize;
   nsTArray<Slot> mSlots;
   nsTArray<uint16_t> mFreeSlots;
-  Maybe<wr::PipelineId> mPreviousPipelineId;
-  size_t mConsecutivePartialDisplayLists;
+
+  wr::PipelineId mPipelineId;
+  bool mCaching;
+  bool mInvalid;
+
   CacheStats mCacheStats;
 };
 
