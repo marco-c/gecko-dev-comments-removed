@@ -833,7 +833,7 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
   
   BytecodeOffset end = bce_->bytecodeSection().offset();
   for (BytecodeOffset start : forOfIterCloseScopeStarts) {
-    if (!bce_->addTryNote(JSTRY_FOR_OF_ITERCLOSE, 0, start, end)) {
+    if (!bce_->addTryNote(TryNoteKind::ForOfIterClose, 0, start, end)) {
       return false;
     }
   }
@@ -3046,7 +3046,7 @@ bool BytecodeEmitter::wrapWithDestructuringTryNote(int32_t iterDepth,
   }
   BytecodeOffset end = bytecodeSection().offset();
   if (start != end) {
-    return addTryNote(JSTRY_DESTRUCTURING, iterDepth, start, end);
+    return addTryNote(TryNoteKind::Destructuring, iterDepth, start, end);
   }
   return true;
 }
@@ -5013,7 +5013,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       return false;
     }
 
-    if (!loopInfo.emitLoopEnd(this, JSOp::Goto, JSTRY_FOR_OF)) {
+    if (!loopInfo.emitLoopEnd(this, JSOp::Goto, TryNoteKind::ForOf)) {
       
       return false;
     }
@@ -6475,7 +6475,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     return false;
   }
-  if (!loopInfo.emitLoopEnd(this, JSOp::Goto, JSTRY_LOOP)) {
+  if (!loopInfo.emitLoopEnd(this, JSOp::Goto, TryNoteKind::Loop)) {
     
     return false;
   }

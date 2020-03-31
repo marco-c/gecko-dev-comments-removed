@@ -12,6 +12,7 @@
 #include "frontend/SourceNotes.h"
 #include "vm/Opcodes.h"
 #include "vm/Scope.h"
+#include "vm/TryNoteKind.h"  
 
 using namespace js;
 using namespace js::frontend;
@@ -195,7 +196,7 @@ bool ForOfEmitter::emitEnd(const Maybe<uint32_t>& iteratedPos) {
     return false;
   }
 
-  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, JSTRY_FOR_OF)) {
+  if (!loopInfo_->emitLoopEnd(bce_, JSOp::Goto, TryNoteKind::ForOf)) {
     
     return false;
   }

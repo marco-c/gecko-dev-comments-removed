@@ -7,6 +7,8 @@
 #ifndef vm_TryNoteKind_h
 #define vm_TryNoteKind_h
 
+#include <stdint.h>  
+
 namespace js {
 
 
@@ -34,14 +36,14 @@ namespace js {
 
 
 
-enum TryNoteKind {
-  JSTRY_CATCH,
-  JSTRY_FINALLY,
-  JSTRY_FOR_IN,
-  JSTRY_DESTRUCTURING,
-  JSTRY_FOR_OF,
-  JSTRY_FOR_OF_ITERCLOSE,
-  JSTRY_LOOP
+enum class TryNoteKind : uint8_t {
+  Catch,
+  Finally,
+  ForIn,
+  Destructuring,
+  ForOf,
+  ForOfIterClose,
+  Loop
 };
 
 }  
