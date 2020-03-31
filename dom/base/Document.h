@@ -1431,6 +1431,9 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
+  bool HasStoragePermission() { return mHasStoragePermission; }
+
+  
   inline void Changed() { ++mGeneration; }
 
   
@@ -5036,6 +5039,8 @@ class Document : public nsINode,
   bool mPendingInitialTranslation;
 
   nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
+
+  bool mHasStoragePermission;
 
   
   int32_t mGeneration;
