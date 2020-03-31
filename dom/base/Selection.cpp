@@ -806,6 +806,24 @@ static void UserSelectRangesToAdd(nsRange* aItem,
   }
 }
 
+static nsINode* DetermineSelectstartEventTarget(
+    const bool aSelectionEventsOnTextControlsEnabled, const nsRange& aRange) {
+  nsINode* target = aRange.GetStartContainer();
+  if (aSelectionEventsOnTextControlsEnabled) {
+    
+    while (target && target->IsInNativeAnonymousSubtree()) {
+      target = target->GetParent();
+    }
+  } else {
+    if (target->IsInNativeAnonymousSubtree()) {
+      
+      
+      target = nullptr;
+    }
+  }
+  return target;
+}
+
 nsresult Selection::AddRangesForUserSelectableNodes(
     nsRange* aRange, int32_t* aOutIndex,
     const DispatchSelectstartEvent aDispatchSelectstartEvent) {
@@ -845,31 +863,21 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       
       
-      bool defaultAction = true;
+      
+      nsCOMPtr<nsINode> selectstartEventTarget =
+          DetermineSelectstartEventTarget(
+              nsFrameSelection::sSelectionEventsOnTextControlsEnabled, *aRange);
 
-      
-      
-      
-      
-      bool dispatchEvent = true;
-      nsCOMPtr<nsINode> target = aRange->GetStartContainer();
-      if (nsFrameSelection::sSelectionEventsOnTextControlsEnabled) {
+      if (selectstartEventTarget) {
         
-        while (target && target->IsInNativeAnonymousSubtree()) {
-          target = target->GetParent();
-        }
-      } else {
-        if (target->IsInNativeAnonymousSubtree()) {
-          
-          
-          dispatchEvent = false;
-        }
-      }
+        
+        
+        bool defaultAction = true;
 
-      if (dispatchEvent) {
         nsContentUtils::DispatchTrustedEvent(
-            GetDocument(), target, NS_LITERAL_STRING("selectstart"),
-            CanBubble::eYes, Cancelable::eYes, &defaultAction);
+            GetDocument(), selectstartEventTarget,
+            NS_LITERAL_STRING("selectstart"), CanBubble::eYes, Cancelable::eYes,
+            &defaultAction);
 
         if (!defaultAction) {
           return NS_OK;
