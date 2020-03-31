@@ -300,38 +300,6 @@ already_AddRefed<nsIURI> GetNextSubDomainURI(nsIURI* aURI) {
   return uri.forget();
 }
 
-
-
-
-already_AddRefed<nsIPrincipal> GetNextSubDomainPrincipal(
-    nsIPrincipal* aPrincipal) {
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv) || !uri) {
-    return nullptr;
-  }
-
-  
-  
-  nsCOMPtr<nsIURI> newURI = GetNextSubDomainURI(uri);
-  if (!newURI) {
-    return nullptr;
-  }
-
-  
-  mozilla::OriginAttributes attrs = aPrincipal->OriginAttributesRef();
-
-  if (!StaticPrefs::permissions_isolateBy_userContext()) {
-    
-    attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID);
-  }
-
-  nsCOMPtr<nsIPrincipal> principal =
-      mozilla::BasePrincipal::CreateContentPrincipal(newURI, attrs);
-
-  return principal.forget();
-}
-
 class MOZ_STACK_CLASS UpgradeHostToOriginHelper {
  public:
   virtual nsresult Insert(const nsACString& aOrigin, const nsCString& aType,
@@ -2433,7 +2401,8 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
   
   
   if (!aExactHostMatch) {
-    nsCOMPtr<nsIPrincipal> principal = GetNextSubDomainPrincipal(aPrincipal);
+    nsCOMPtr<nsIPrincipal> principal;
+    aPrincipal->GetNextSubDomainPrincipal(getter_AddRefs(principal));
     if (principal) {
       return GetPermissionHashKey(principal, aType, aExactHostMatch);
     }
@@ -3283,6 +3252,7 @@ nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
 
   nsTArray<std::pair<nsCString, nsCString>> pairs;
   nsCOMPtr<nsIPrincipal> prin = aPrincipal;
+  nsresult rv = NS_OK;
   while (prin) {
     
     std::pair<nsCString, nsCString>* pair =
@@ -3292,9 +3262,12 @@ nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     GetKeyForPrincipal(prin, false, pair->first);
 
     Unused << GetOriginFromPrincipal(prin, false, pair->second);
-
+    nsCOMPtr<nsIPrincipal> subDomainPrin;
     
-    prin = GetNextSubDomainPrincipal(prin);
+    rv = prin->GetNextSubDomainPrincipal(getter_AddRefs(subDomainPrin));
+    if (NS_SUCCEEDED(rv)) {
+      prin = subDomainPrin;
+    }
   }
 
   MOZ_ASSERT(pairs.Length() >= 1,
