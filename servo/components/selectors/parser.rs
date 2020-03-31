@@ -2013,27 +2013,45 @@ where
     input.skip_whitespace();
 
     let mut empty = true;
-    if !parse_type_selector(parser, input, builder)? {
-        if let Some(url) = parser.default_namespace() {
-            
-            
-            
-            builder.push_simple_selector(Component::DefaultNamespace(url))
-        }
-    } else {
+    if parse_type_selector(parser, input, builder)? {
         empty = false;
     }
 
     let mut state = SelectorParsingState::empty();
     loop {
-        let parse_result = match parse_one_simple_selector(parser, input, state)? {
+        let result = match parse_one_simple_selector(parser, input, state)? {
             None => break,
             Some(result) => result,
         };
 
+        if empty {
+            if let Some(url) = parser.default_namespace() {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if !matches!(result, SimpleSelectorParseResult::SimpleSelector(Component::Host(..))) {
+                    builder.push_simple_selector(Component::DefaultNamespace(url));
+                }
+            }
+        }
+
         empty = false;
 
-        match parse_result {
+        match result {
             SimpleSelectorParseResult::SimpleSelector(s) => {
                 builder.push_simple_selector(s);
             },
