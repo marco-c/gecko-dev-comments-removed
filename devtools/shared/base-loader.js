@@ -32,8 +32,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/NetUtil.jsm"
 );
 
-const { defineLazyGetter } = XPCOMUtils;
-
 
 const bind = Function.call.bind(Function.bind);
 function* getOwnIdentifiers(x) {
@@ -153,19 +151,6 @@ function load(loader, module) {
       value: module.exports,
     },
   };
-
-  
-  
-  const sandbox = new loader.sharedGlobalSandbox.Object();
-  descriptors.lazyRequire = {
-    configurable: true,
-    value: lazyRequire.bind(sandbox),
-  };
-  descriptors.lazyRequireModule = {
-    configurable: true,
-    value: lazyRequireModule.bind(sandbox),
-  };
-
   if ("console" in globals) {
     descriptors.console = {
       configurable: true,
@@ -184,6 +169,10 @@ function load(loader, module) {
       "DOMParser"
     );
   }
+
+  
+  
+  const sandbox = new loader.sharedGlobalSandbox.Object();
   Object.defineProperties(sandbox, descriptors);
   sandboxes[module.uri] = sandbox;
 
@@ -309,58 +298,6 @@ function resolveURI(id, mapping) {
   }
 
   return normalizeExt(mapping(id));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function lazyRequire(obj, moduleId, ...args) {
-  let module;
-  const getModule = () => {
-    if (!module) {
-      module = this.require(moduleId);
-    }
-    return module;
-  };
-
-  for (let props of args) {
-    if (typeof props !== "object") {
-      props = { [props]: props };
-    }
-
-    for (const [fromName, toName] of Object.entries(props)) {
-      defineLazyGetter(obj, toName, () => getModule()[fromName]);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function lazyRequireModule(obj, moduleId, prop = moduleId) {
-  defineLazyGetter(obj, prop, () => this.require(moduleId));
 }
 
 
