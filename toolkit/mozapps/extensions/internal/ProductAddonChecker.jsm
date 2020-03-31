@@ -355,10 +355,7 @@ function downloadFile(url, options = { httpsOnlyNoUpgrade: false }) {
     xhr.responseType = "arraybuffer";
     try {
       xhr.open("GET", url);
-      if (options.httpsOnlyNoUpgrade) {
-        xhr.channel.loadInfo.httpsOnlyStatus |=
-          Ci.nsILoadInfo.HTTPS_ONLY_EXEMPT;
-      }
+      xhr.channel.loadInfo.httpsOnlyNoUpgrade = options.httpsOnlyNoUpgrade;
       
       
       if (xhr.channel instanceof Ci.nsIHttpChannelInternal) {

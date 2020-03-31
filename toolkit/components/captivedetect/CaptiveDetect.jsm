@@ -38,7 +38,7 @@ function URLFetcher(url, timeout) {
   
   xhr.channel.loadFlags |= Ci.nsIChannel.LOAD_BYPASS_URL_CLASSIFIER;
   
-  xhr.channel.loadInfo.httpsOnlyStatus |= Ci.nsILoadInfo.HTTPS_ONLY_EXEMPT;
+  xhr.channel.loadInfo.httpsOnlyNoUpgrade = true;
 
   
   xhr.channel.QueryInterface(Ci.nsIHttpChannel).redirectionLimit = 0;

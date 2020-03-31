@@ -885,7 +885,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   
   if (CheckInsecureUpgradePreventsCORS(mRequestingPrincipal, aChannel)) {
     
-    if (!(loadInfo->GetHttpsOnlyStatus() & nsILoadInfo::HTTPS_ONLY_EXEMPT) &&
+    if (!loadInfo->GetHttpsOnlyNoUpgrade() &&
         StaticPrefs::dom_security_https_only_mode()) {
       return NS_OK;
     }

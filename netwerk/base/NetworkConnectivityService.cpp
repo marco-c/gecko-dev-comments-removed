@@ -209,9 +209,7 @@ static inline already_AddRefed<nsIChannel> SetupIPCheckChannel(bool ipv4) {
   {
     
     nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-    uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-    loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+    loadInfo->SetHttpsOnlyNoUpgrade(true);
   }
 
   NS_ENSURE_SUCCESS(rv, nullptr);

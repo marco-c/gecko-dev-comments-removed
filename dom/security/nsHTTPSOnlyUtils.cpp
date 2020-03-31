@@ -18,16 +18,14 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
     return false;
   }
   
-  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+  if (aLoadInfo->GetHttpsOnlyNoUpgrade()) {
     
     uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
-    AutoTArray<nsString, 1> params = {
+    AutoTArray<nsString, 2> params = {
         NS_ConvertUTF8toUTF16(aURI->GetSpecOrDefault())};
     nsHTTPSOnlyUtils::LogLocalizedString(
-        "HTTPSOnlyNoUpgradeException", params, nsIScriptError::infoFlag,
-        innerWindowId, !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId,
-        aURI);
+        "HTTPSOnlyNoUpgrade", params, nsIScriptError::infoFlag, innerWindowId,
+        !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId, aURI);
     return false;
   }
 
@@ -47,14 +45,6 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
       "HTTPSOnlyUpgradeRequest", params, nsIScriptError::warningFlag,
       innerWindowId, !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId,
       aURI);
-
-  
-  
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UNINITIALIZED) {
-    httpsOnlyStatus ^= nsILoadInfo::HTTPS_ONLY_UNINITIALIZED;
-    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED;
-    aLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-  }
 
   return true;
 }
@@ -89,8 +79,32 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
                                               aInnerWindowID, aURI);
   } else {
     
-    nsContentUtils::LogSimpleConsoleError(
-        message, category.get(), aFromPrivateWindow,
-        true , aFlags);
+    LogSimpleConsoleError(message, category.get(), aFromPrivateWindow,
+                          true , aFlags);
   }
+}
+
+
+void nsHTTPSOnlyUtils::LogSimpleConsoleError(const nsAString& aErrorText,
+                                             const char* aCategory,
+                                             bool aFromPrivateWindow,
+                                             bool aFromChromeContext,
+                                             uint32_t aErrorFlags) {
+  nsCOMPtr<nsIScriptError> scriptError =
+      do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
+  if (!scriptError) {
+    return;
+  }
+  nsCOMPtr<nsIConsoleService> console =
+      do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+  if (!console) {
+    return;
+  }
+  nsresult rv = scriptError->Init(aErrorText, EmptyString(), EmptyString(), 0,
+                                  0, aErrorFlags, aCategory, aFromPrivateWindow,
+                                  aFromChromeContext);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  console->LogMessage(scriptError);
 }
