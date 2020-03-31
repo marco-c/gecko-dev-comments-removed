@@ -830,33 +830,6 @@ function SearchEngine(options = {}) {
       this._shortName = shortName.slice(0, -4);
     }
     this._loadPath = this.getAnonymizedLoadPath(file, uri);
-
-    if (!shortName && !this._isBuiltin) {
-      
-      
-      return;
-    }
-
-    
-    
-    if (
-      this._isDefault ||
-      (uri && uri.spec.startsWith(SearchUtils.APP_SEARCH_PREFIX))
-    ) {
-      
-      
-      
-      this._id = "[app]/" + this._shortName + ".xml";
-    } else if (!this._isBuiltin) {
-      this._id = "[profile]/" + this._shortName + ".xml";
-    } else {
-      
-      
-      SearchUtils.log(
-        "Setting _id to full path for engine from " + this._loadPath
-      );
-      this._id = file ? file.path : uri.spec;
-    }
   }
 }
 
@@ -1877,12 +1850,6 @@ SearchEngine.prototype = {
   },
 
   
-
-
-
-
-
-
 
 
 
