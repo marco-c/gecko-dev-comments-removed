@@ -15737,13 +15737,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
     if (StorageDisabledByAntiTracking(this, nullptr)) {
       
       
-      DebugOnly<bool> isOnAllowList = false;
-      
-      MOZ_ASSERT_IF(NS_SUCCEEDED(ContentBlockingAllowList::Check(
-                        GetInProcessParentDocument()
-                            ->GetContentBlockingAllowListPrincipal(),
-                        false, isOnAllowList)),
-                    !isOnAllowList);
+      MOZ_ASSERT(!CookieJarSettings()->GetIsOnContentBlockingAllowList());
 
       RefPtr<Document> self(this);
 
