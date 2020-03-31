@@ -207,34 +207,6 @@ struct IsFunPtr<Result (*)(ArgTypes...)> : public TrueType {};
 template <typename T>
 struct IsFunction : public detail::IsFunPtr<typename RemoveCV<T>::Type*> {};
 
-namespace detail {
-
-template <typename T>
-struct IsPointerHelper : FalseType {};
-
-template <typename T>
-struct IsPointerHelper<T*> : TrueType {};
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type> {};
-
 
 
 
