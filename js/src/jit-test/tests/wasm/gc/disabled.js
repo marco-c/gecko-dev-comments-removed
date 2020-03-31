@@ -19,28 +19,8 @@ let simpleTests = [
 
 
 
-
-
-
-
-
-
-
-var fail_syntax = 0;
-var fail_compile = 0;
 for (let src of simpleTests) {
-    let bin = null;
-    try {
-        bin = wasmTextToBinary(src);
-    } catch (e) {
-        assertEq(e instanceof SyntaxError, true);
-        fail_syntax++;
-        continue;
-    }
-
+    let bin = wasmTextToBinary(src);
     assertEq(validate(bin), false);
     wasmCompilationShouldFail(bin, UNRECOGNIZED_OPCODE_OR_BAD_TYPE);
-
-    fail_compile++;
 }
-assertEq((fail_syntax == 0) != (fail_compile == 0), true);
