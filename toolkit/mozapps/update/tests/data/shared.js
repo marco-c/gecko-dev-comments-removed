@@ -46,7 +46,6 @@ const PREF_APP_UPDATE_SERVICE_ENABLED = "app.update.service.enabled";
 const PREF_APP_UPDATE_SOCKET_MAXERRORS = "app.update.socket.maxErrors";
 const PREF_APP_UPDATE_STAGING_ENABLED = "app.update.staging.enabled";
 const PREF_APP_UPDATE_UNSUPPORTED_URL = "app.update.unsupported.url";
-const PREF_APP_UPDATE_URL = "app.update.url";
 const PREF_APP_UPDATE_URL_DETAILS = "app.update.url.details";
 const PREF_APP_UPDATE_URL_MANUAL = "app.update.url.manual";
 
@@ -249,8 +248,62 @@ function setUpdateChannel(aChannel) {
 
 function setUpdateURL(aURL) {
   let url = aURL ? aURL : URL_HOST + "/update.xml";
-  debugDump("setting " + PREF_APP_UPDATE_URL + " to " + url);
-  gDefaultPrefBranch.setCharPref(PREF_APP_UPDATE_URL, url);
+  debugDump("setting update URL to " + url);
+
+  
+  
+  
+  
+  
+  let origAppInfo = Services.appinfo;
+  registerCleanupFunction(() => {
+    Services.appinfo = origAppInfo;
+  });
+
+  let mockAppInfo = {
+    
+    vendor: origAppInfo.vendor,
+    name: origAppInfo.name,
+    ID: origAppInfo.ID,
+    version: origAppInfo.version,
+    appBuildID: origAppInfo.appBuildID,
+    updateURL: url,
+
+    
+    platformVersion: origAppInfo.platformVersion,
+    platformBuildID: origAppInfo.platformBuildID,
+
+    
+    inSafeMode: origAppInfo.inSafeMode,
+    logConsoleErrors: origAppInfo.logConsoleErrors,
+    OS: origAppInfo.OS,
+    XPCOMABI: origAppInfo.XPCOMABI,
+    invalidateCachesOnRestart() {},
+    shouldBlockIncompatJaws: origAppInfo.shouldBlockIncompatJaws,
+    processType: origAppInfo.processType,
+    uniqueProcessID: origAppInfo.uniqueProcessID,
+
+    
+    get userCanElevate() {
+      return origAppInfo.userCanElevate;
+    },
+  };
+  let interfaces = [Ci.nsIXULAppInfo, Ci.nsIPlatformInfo, Ci.nsIXULRuntime];
+  if ("nsIWinAppHelper" in Ci) {
+    interfaces.push(Ci.nsIWinAppHelper);
+  }
+  if ("crashReporter" in origAppInfo && origAppInfo.crashReporter) {
+    
+    mockAppInfo.crashReporter = {};
+    mockAppInfo.annotations = {};
+    mockAppInfo.annotateCrashReport = function(key, data) {
+      this.annotations[key] = data;
+    };
+    interfaces.push(Ci.nsICrashReporter);
+  }
+  mockAppInfo.QueryInterface = ChromeUtils.generateQI(interfaces);
+
+  Services.appinfo = mockAppInfo;
 }
 
 
