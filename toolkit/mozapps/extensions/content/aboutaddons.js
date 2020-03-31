@@ -2192,7 +2192,7 @@ class AddonDetails extends HTMLElement {
     }
 
     
-    let tabGroupButtons = this.tabGroup.querySelectorAll("named-deck-button");
+    let tabGroupButtons = this.tabGroup.querySelectorAll(".tab-button");
     this.tabGroup.hidden = Array.from(tabGroupButtons).every(button => {
       return button.name == "details" || button.hidden;
     });
@@ -2222,7 +2222,7 @@ class AddonDetails extends HTMLElement {
     this.appendChild(importTemplate("addon-details"));
 
     this.deck = this.querySelector("named-deck");
-    this.tabGroup = this.querySelector(".deck-tab-group");
+    this.tabGroup = this.querySelector(".tab-group");
 
     
     this.permissionsList = this.querySelector("addon-permissions-list");

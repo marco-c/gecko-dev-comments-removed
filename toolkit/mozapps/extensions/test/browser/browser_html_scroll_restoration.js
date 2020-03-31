@@ -193,7 +193,7 @@ add_task(async function test_scroll_restoration() {
 
   
   
-  win.document.querySelector("named-deck-button[name='permissions']").click();
+  win.document.querySelector(".tab-button[name='permissions']").click();
 
   
 
