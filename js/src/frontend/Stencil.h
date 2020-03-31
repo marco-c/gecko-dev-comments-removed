@@ -473,7 +473,8 @@ class ScriptStencil {
 
   ScriptThingsVector gcThings;
 
-  js::frontend::FunctionBox* functionBox = nullptr;
+  
+  mozilla::Maybe<FunctionIndex> functionIndex;
 
   ScriptStencil(JSContext* cx,
                 UniquePtr<js::ImmutableScriptData> immutableScriptData)
