@@ -2188,7 +2188,8 @@ static bool CanUpdateKindInBackground(AllocKind kind) {
   
   
   
-  return js::gc::IsBackgroundFinalized(kind) && !IsShapeAllocKind(kind);
+  return js::gc::IsBackgroundFinalized(kind) && !IsShapeAllocKind(kind) &&
+         kind != AllocKind::BASE_SHAPE;
 }
 
 
