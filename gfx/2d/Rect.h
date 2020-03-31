@@ -183,7 +183,7 @@ struct IntRectTyped
   
   
   
-  MOZ_MUST_USE Maybe<Self> SafeUnion(const Self& aRect) const {
+  [[nodiscard]] Maybe<Self> SafeUnion(const Self& aRect) const {
     if (this->IsEmpty()) {
       return aRect.Overflows() ? Nothing() : Some(aRect);
     } else if (aRect.IsEmpty()) {
@@ -195,7 +195,7 @@ struct IntRectTyped
 
   
   
-  MOZ_MUST_USE Maybe<Self> SafeUnionEdges(const Self& aRect) const {
+  [[nodiscard]] Maybe<Self> SafeUnionEdges(const Self& aRect) const {
     if (this->Overflows() || aRect.Overflows()) {
       return Nothing();
     }

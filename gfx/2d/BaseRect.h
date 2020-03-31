@@ -109,7 +109,7 @@ struct BaseRect {
   
   
   
-  MOZ_MUST_USE Sub Intersect(const Sub& aRect) const {
+  [[nodiscard]] Sub Intersect(const Sub& aRect) const {
     Sub result;
     result.x = std::max<T>(x, aRect.x);
     result.y = std::max<T>(y, aRect.y);
@@ -152,7 +152,7 @@ struct BaseRect {
   
   
   
-  MOZ_MUST_USE Sub Union(const Sub& aRect) const {
+  [[nodiscard]] Sub Union(const Sub& aRect) const {
     if (IsEmpty()) {
       return aRect;
     } else if (aRect.IsEmpty()) {
@@ -166,7 +166,7 @@ struct BaseRect {
   
   
   
-  MOZ_MUST_USE Sub UnionEdges(const Sub& aRect) const {
+  [[nodiscard]] Sub UnionEdges(const Sub& aRect) const {
     Sub result;
     result.x = std::min(x, aRect.x);
     result.y = std::min(y, aRect.y);
@@ -609,7 +609,7 @@ struct BaseRect {
 
 
 
-  MOZ_MUST_USE Point ClampPoint(const Point& aPoint) const {
+  [[nodiscard]] Point ClampPoint(const Point& aPoint) const {
     return Point(std::max(x, std::min(XMost(), aPoint.x)),
                  std::max(y, std::min(YMost(), aPoint.y)));
   }
@@ -619,7 +619,7 @@ struct BaseRect {
 
 
 
-  MOZ_MUST_USE Sub MoveInsideAndClamp(const Sub& aRect) const {
+  [[nodiscard]] Sub MoveInsideAndClamp(const Sub& aRect) const {
     Sub rect(std::max(aRect.x, x), std::max(aRect.y, y),
              std::min(aRect.width, width), std::min(aRect.height, height));
     rect.x = std::min(rect.XMost(), aRect.XMost()) - rect.width;

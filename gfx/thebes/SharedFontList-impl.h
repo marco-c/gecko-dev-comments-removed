@@ -302,7 +302,7 @@ class FontList {
 
 
 
-  MOZ_MUST_USE bool UpdateShmBlocks();
+  [[nodiscard]] bool UpdateShmBlocks();
 
   
 

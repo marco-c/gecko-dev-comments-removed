@@ -1,25 +1,25 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef NSRECT_H
 #define NSRECT_H
 
-#include <stdio.h>           // for FILE
-#include <stdint.h>          // for int32_t, int64_t
-#include <algorithm>         // for min/max
-#include "mozilla/Likely.h"  // for MOZ_UNLIKELY
+#include <stdio.h>           
+#include <stdint.h>          
+#include <algorithm>         
+#include "mozilla/Likely.h"  
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
-#include "nsCoord.h"          // for nscoord, etc
-#include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
-#include "nsPoint.h"          // for nsIntPoint, nsPoint
-#include "nsMargin.h"         // for nsIntMargin, nsMargin
-#include "nsSize.h"           // for IntSize, nsSize
-#include "nscore.h"           // for NS_BUILD_REFCNT_LOGGING
+#include "nsCoord.h"          
+#include "nsISupportsImpl.h"  
+#include "nsPoint.h"          
+#include "nsMargin.h"         
+#include "nsSize.h"           
+#include "nscore.h"           
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
 #  if defined(_MSC_VER) && !defined(__clang__)
@@ -38,7 +38,7 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
 
   static void VERIFY_COORD(nscoord aValue) { ::VERIFY_COORD(aValue); }
 
-  // Constructors
+  
   nsRect() : Super() { MOZ_COUNT_CTOR(nsRect); }
   nsRect(const nsRect& aRect) : Super(aRect) { MOZ_COUNT_CTOR(nsRect); }
   nsRect(const nsPoint& aOrigin, const nsSize& aSize) : Super(aOrigin, aSize) {
@@ -52,11 +52,11 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
 
   MOZ_COUNTED_DTOR(nsRect)
 
-  // We have saturating versions of all the Union methods. These avoid
-  // overflowing nscoord values in the 'width' and 'height' fields by
-  // clamping the width and height values to nscoord_MAX if necessary.
+  
+  
+  
 
-  MOZ_MUST_USE nsRect SaturatingUnion(const nsRect& aRect) const {
+  [[nodiscard]] nsRect SaturatingUnion(const nsRect& aRect) const {
     if (IsEmpty()) {
       return aRect;
     } else if (aRect.IsEmpty()) {
@@ -66,7 +66,7 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
     }
   }
 
-  MOZ_MUST_USE nsRect SaturatingUnionEdges(const nsRect& aRect) const {
+  [[nodiscard]] nsRect SaturatingUnionEdges(const nsRect& aRect) const {
 #ifdef NS_COORD_IS_FLOAT
     return UnionEdges(aRect);
 #else
@@ -75,7 +75,7 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
         std::max(int64_t(aRect.X()) + aRect.Width(), int64_t(x) + width) -
         resultX;
     if (MOZ_UNLIKELY(w > nscoord_MAX)) {
-      // Clamp huge negative x to nscoord_MIN / 2 and try again.
+      
       resultX = std::max(resultX, nscoord_MIN / 2);
       w = std::max(int64_t(aRect.X()) + aRect.Width(), int64_t(x) + width) -
           resultX;
@@ -89,7 +89,7 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
         std::max(int64_t(aRect.Y()) + aRect.Height(), int64_t(y) + height) -
         resultY;
     if (MOZ_UNLIKELY(h > nscoord_MAX)) {
-      // Clamp huge negative y to nscoord_MIN / 2 and try again.
+      
       resultY = std::max(resultY, nscoord_MIN / 2);
       h = std::max(int64_t(aRect.Y()) + aRect.Height(), int64_t(y) + height) -
           resultY;
@@ -102,17 +102,17 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
   }
 
 #ifndef NS_COORD_IS_FLOAT
-  // Make all nsRect Union methods be saturating.
-  MOZ_MUST_USE nsRect UnionEdges(const nsRect& aRect) const {
+  
+  [[nodiscard]] nsRect UnionEdges(const nsRect& aRect) const {
     return SaturatingUnionEdges(aRect);
   }
   void UnionRectEdges(const nsRect& aRect1, const nsRect& aRect2) {
     *this = aRect1.UnionEdges(aRect2);
   }
-  MOZ_MUST_USE nsRect Union(const nsRect& aRect) const {
+  [[nodiscard]] nsRect Union(const nsRect& aRect) const {
     return SaturatingUnion(aRect);
   }
-  MOZ_MUST_USE nsRect UnsafeUnion(const nsRect& aRect) const {
+  [[nodiscard]] nsRect UnsafeUnion(const nsRect& aRect) const {
     return Super::Union(aRect);
   }
   void UnionRect(const nsRect& aRect1, const nsRect& aRect2) {
@@ -121,34 +121,34 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
 
 #  if defined(_MSC_VER) && !defined(__clang__) && \
       (defined(_M_X64) || defined(_M_IX86))
-  // Only MSVC supports inlining intrinsics for archs you're not compiling for.
-  MOZ_MUST_USE nsRect Intersect(const nsRect& aRect) const {
+  
+  [[nodiscard]] nsRect Intersect(const nsRect& aRect) const {
     nsRect result;
     if (mozilla::gfx::Factory::HasSSE4()) {
-      __m128i rect1 = _mm_loadu_si128((__m128i*)&aRect);  // x1, y1, w1, h1
-      __m128i rect2 = _mm_loadu_si128((__m128i*)this);    // x2, y2, w2, h2
+      __m128i rect1 = _mm_loadu_si128((__m128i*)&aRect);  
+      __m128i rect2 = _mm_loadu_si128((__m128i*)this);    
 
-      __m128i resultRect = _mm_max_epi32(rect1, rect2);  // xr, yr, zz, zz
+      __m128i resultRect = _mm_max_epi32(rect1, rect2);  
 
-      // result.width = std::min<int32_t>(x - result.x + width,
-      //                                  aRect.x - result.x + aRect.width);
-      // result.height = std::min<int32_t>(y - result.y + height,
-      //                                   aRect.y - result.y + aRect.height);
+      
+      
+      
+      
       __m128i widthheight = _mm_min_epi32(
           _mm_add_epi32(_mm_sub_epi32(rect1, resultRect),
                         _mm_srli_si128(rect1, 8)),
           _mm_add_epi32(_mm_sub_epi32(rect2, resultRect),
-                        _mm_srli_si128(rect2, 8)));  // w, h, zz, zz
-      widthheight = _mm_slli_si128(widthheight, 8);  // 00, 00, wr, hr
+                        _mm_srli_si128(rect2, 8)));  
+      widthheight = _mm_slli_si128(widthheight, 8);  
 
       resultRect =
-          _mm_blend_epi16(resultRect, widthheight, 0xF0);  // xr, yr, wr, hr
+          _mm_blend_epi16(resultRect, widthheight, 0xF0);  
 
       if ((_mm_movemask_ps(_mm_castsi128_ps(
                _mm_cmplt_epi32(resultRect, _mm_setzero_si128()))) &
            0xC) != 0) {
-        // It's potentially more efficient to store all 0s. But the non SSE4
-        // code leaves x/y intact so let's do the same here.
+        
+        
         resultRect = _mm_and_si128(resultRect,
                                    _mm_set_epi32(0, 0, 0xFFFFFFFF, 0xFFFFFFFF));
       }
@@ -172,29 +172,29 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
 
   bool IntersectRect(const nsRect& aRect1, const nsRect& aRect2) {
     if (mozilla::gfx::Factory::HasSSE4()) {
-      __m128i rect1 = _mm_loadu_si128((__m128i*)&aRect1);  // x1, y1, w1, h1
-      __m128i rect2 = _mm_loadu_si128((__m128i*)&aRect2);  // x2, y2, w2, h2
+      __m128i rect1 = _mm_loadu_si128((__m128i*)&aRect1);  
+      __m128i rect2 = _mm_loadu_si128((__m128i*)&aRect2);  
 
-      __m128i resultRect = _mm_max_epi32(rect1, rect2);  // xr, yr, zz, zz
-      // result.width = std::min<int32_t>(x - result.x + width,
-      //                                  aRect.x - result.x + aRect.width);
-      // result.height = std::min<int32_t>(y - result.y + height,
-      //                                   aRect.y - result.y + aRect.height);
+      __m128i resultRect = _mm_max_epi32(rect1, rect2);  
+      
+      
+      
+      
       __m128i widthheight = _mm_min_epi32(
           _mm_add_epi32(_mm_sub_epi32(rect1, resultRect),
                         _mm_srli_si128(rect1, 8)),
           _mm_add_epi32(_mm_sub_epi32(rect2, resultRect),
-                        _mm_srli_si128(rect2, 8)));  // w, h, zz, zz
-      widthheight = _mm_slli_si128(widthheight, 8);  // 00, 00, wr, hr
+                        _mm_srli_si128(rect2, 8)));  
+      widthheight = _mm_slli_si128(widthheight, 8);  
 
       resultRect =
-          _mm_blend_epi16(resultRect, widthheight, 0xF0);  // xr, yr, wr, hr
+          _mm_blend_epi16(resultRect, widthheight, 0xF0);  
 
       if ((_mm_movemask_ps(_mm_castsi128_ps(
                _mm_cmpgt_epi32(resultRect, _mm_setzero_si128()))) &
            0xC) != 0xC) {
-        // It's potentially more efficient to store all 0s. But the non SSE4
-        // code leaves x/y intact so let's do the same here.
+        
+        
         resultRect = _mm_and_si128(resultRect,
                                    _mm_set_epi32(0, 0, 0xFFFFFFFF, 0xFFFFFFFF));
         _mm_storeu_si128((__m128i*)this, resultRect);
@@ -230,52 +230,52 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
     *this = aRect1.SaturatingUnionEdges(aRect2);
   }
 
-  // Return whether this rect's right or bottom edge overflow int32.
+  
   bool Overflows() const;
 
-  /**
-   * Return this rect scaled to a different appunits per pixel (APP) ratio.
-   * In the RoundOut version we make the rect the smallest rect containing the
-   * unrounded result. In the RoundIn version we make the rect the largest rect
-   * contained in the unrounded result.
-   * @param aFromAPP the APP to scale from
-   * @param aToAPP the APP to scale to
-   * @note this can turn an empty rectangle into a non-empty rectangle
-   */
-  MOZ_MUST_USE inline nsRect ScaleToOtherAppUnitsRoundOut(int32_t aFromAPP,
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] inline nsRect ScaleToOtherAppUnitsRoundOut(
+      int32_t aFromAPP, int32_t aToAPP) const;
+  [[nodiscard]] inline nsRect ScaleToOtherAppUnitsRoundIn(int32_t aFromAPP,
                                                           int32_t aToAPP) const;
-  MOZ_MUST_USE inline nsRect ScaleToOtherAppUnitsRoundIn(int32_t aFromAPP,
-                                                         int32_t aToAPP) const;
 
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ScaleToNearestPixels(
+  [[nodiscard]] inline mozilla::gfx::IntRect ScaleToNearestPixels(
       float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
 
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ToNearestPixels(
+  [[nodiscard]] inline mozilla::gfx::IntRect ToNearestPixels(
       nscoord aAppUnitsPerPixel) const;
 
-  // Note: this can turn an empty rectangle into a non-empty rectangle
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ScaleToOutsidePixels(
+  
+  [[nodiscard]] inline mozilla::gfx::IntRect ScaleToOutsidePixels(
       float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
 
-  // Note: this can turn an empty rectangle into a non-empty rectangle
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ToOutsidePixels(
+  
+  [[nodiscard]] inline mozilla::gfx::IntRect ToOutsidePixels(
       nscoord aAppUnitsPerPixel) const;
 
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ScaleToInsidePixels(
+  [[nodiscard]] inline mozilla::gfx::IntRect ScaleToInsidePixels(
       float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
 
-  MOZ_MUST_USE inline mozilla::gfx::IntRect ToInsidePixels(
+  [[nodiscard]] inline mozilla::gfx::IntRect ToInsidePixels(
       nscoord aAppUnitsPerPixel) const;
 
-  // This is here only to keep IPDL-generated code happy. DO NOT USE.
+  
   bool operator==(const nsRect& aRect) const { return IsEqualEdges(aRect); }
 
-  MOZ_MUST_USE inline nsRect RemoveResolution(const float aResolution) const;
+  [[nodiscard]] inline nsRect RemoveResolution(const float aResolution) const;
 };
 
-/*
- * App Unit/Pixel conversions
- */
+
+
+
 
 inline nsRect nsRect::ScaleToOtherAppUnitsRoundOut(int32_t aFromAPP,
                                                    int32_t aToAPP) const {
@@ -307,7 +307,7 @@ inline nsRect nsRect::ScaleToOtherAppUnitsRoundIn(int32_t aFromAPP,
 
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
-// Life would be so much better if we had SSE4 here.
+
 static MOZ_ALWAYS_INLINE __m128i floor_ps2epi32(__m128 x) {
   __m128 one = _mm_set_ps(1.0f, 1.0f, 1.0f, 1.0f);
 
@@ -325,11 +325,11 @@ static MOZ_ALWAYS_INLINE __m128i ceil_ps2epi32(__m128 x) {
 }
 #endif
 
-// scale the rect but round to preserve centers
+
 inline mozilla::gfx::IntRect nsRect::ScaleToNearestPixels(
     float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const {
   mozilla::gfx::IntRect rect;
-  // Android x86 builds have bindgen issues.
+  
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
   __m128 appUnitsPacked = _mm_set_ps(aAppUnitsPerPixel, aAppUnitsPerPixel,
@@ -340,28 +340,28 @@ inline mozilla::gfx::IntRect nsRect::ScaleToNearestPixels(
   __m128i rectPacked = _mm_loadu_si128((__m128i*)this);
   __m128i topLeft = _mm_slli_si128(rectPacked, 8);
 
-  rectPacked = _mm_add_epi32(rectPacked, topLeft);  // X, Y, XMost(), YMost()
+  rectPacked = _mm_add_epi32(rectPacked, topLeft);  
 
   __m128 rectFloat = _mm_cvtepi32_ps(rectPacked);
 
-  // Scale, i.e. ([ x y xmost ymost ] / aAppUnitsPerPixel) * [ aXScale aYScale
-  // aXScale aYScale ]
+  
+  
   rectFloat = _mm_mul_ps(_mm_div_ps(rectFloat, appUnitsPacked), scalesPacked);
 
-  // Floor
-  // Executed with bias and roundmode down, since round-nearest rounds 0.5
-  // downward half the time.
+  
+  
+  
   rectFloat = _mm_add_ps(rectFloat, biasesPacked);
   rectPacked = floor_ps2epi32(rectFloat);
 
   topLeft = _mm_slli_si128(rectPacked, 8);
-  rectPacked = _mm_sub_epi32(rectPacked, topLeft);  // X, Y, Width, Height
+  rectPacked = _mm_sub_epi32(rectPacked, topLeft);  
 
-  // Avoid negative width/height due to overflow.
+  
   __m128i mask = _mm_or_si128(_mm_cmpgt_epi32(rectPacked, _mm_setzero_si128()),
                               _mm_set_epi32(0, 0, 0xFFFFFFFF, 0xFFFFFFFF));
-  // Mask will now contain [ 0xFFFFFFFF 0xFFFFFFFF (width <= 0 ? 0 : 0xFFFFFFFF)
-  // (height <= 0 ? 0 : 0xFFFFFFFF) ]
+  
+  
   rectPacked = _mm_and_si128(rectPacked, mask);
 
   _mm_storeu_si128((__m128i*)&rect, rectPacked);
@@ -377,44 +377,44 @@ inline mozilla::gfx::IntRect nsRect::ScaleToNearestPixels(
   return rect;
 }
 
-// scale the rect but round to smallest containing rect
+
 inline mozilla::gfx::IntRect nsRect::ScaleToOutsidePixels(
     float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const {
   mozilla::gfx::IntRect rect;
-  // Android x86 builds have bindgen issues.
+  
 #if !defined(ANDROID) && (defined(__SSE2__) || defined(_M_X64) || \
                           (defined(_M_IX86_FP) && _M_IX86_FP >= 2))
   __m128 appUnitsPacked = _mm_set_ps(aAppUnitsPerPixel, aAppUnitsPerPixel,
                                      aAppUnitsPerPixel, aAppUnitsPerPixel);
   __m128 scalesPacked = _mm_set_ps(aYScale, aXScale, aYScale, aXScale);
 
-  __m128i rectPacked = _mm_loadu_si128((__m128i*)this);  // x, y, w, h
-  __m128i topLeft = _mm_slli_si128(rectPacked, 8);       // 0, 0, x, y
+  __m128i rectPacked = _mm_loadu_si128((__m128i*)this);  
+  __m128i topLeft = _mm_slli_si128(rectPacked, 8);       
 
-  rectPacked = _mm_add_epi32(rectPacked, topLeft);  // X, Y, XMost(), YMost()
+  rectPacked = _mm_add_epi32(rectPacked, topLeft);  
 
   __m128 rectFloat = _mm_cvtepi32_ps(rectPacked);
 
-  // Scale i.e. ([ x y xmost ymost ] / aAppUnitsPerPixel) *
-  //             [ aXScale aYScale aXScale aYScale ]
+  
+  
   rectFloat = _mm_mul_ps(_mm_div_ps(rectFloat, appUnitsPacked), scalesPacked);
-  rectPacked = ceil_ps2epi32(rectFloat);    // xx, xx, XMost(), YMost()
-  __m128i tmp = floor_ps2epi32(rectFloat);  // x, y, xx, xx
+  rectPacked = ceil_ps2epi32(rectFloat);    
+  __m128i tmp = floor_ps2epi32(rectFloat);  
 
-  // _mm_move_sd is 1 cycle method of getting the blending we want.
+  
   rectPacked = _mm_castpd_si128(
       _mm_move_sd(_mm_castsi128_pd(rectPacked),
-                  _mm_castsi128_pd(tmp)));  // x, y, XMost(), YMost()
+                  _mm_castsi128_pd(tmp)));  
 
-  topLeft = _mm_slli_si128(rectPacked, 8);          // 0, 0, r.x, r.y
-  rectPacked = _mm_sub_epi32(rectPacked, topLeft);  // r.x, r.y, r.w, r.h
+  topLeft = _mm_slli_si128(rectPacked, 8);          
+  rectPacked = _mm_sub_epi32(rectPacked, topLeft);  
 
-  // Avoid negative width/height due to overflow.
+  
   __m128i mask = _mm_or_si128(_mm_cmpgt_epi32(rectPacked, _mm_setzero_si128()),
                               _mm_set_epi32(0, 0, 0xFFFFFFFF, 0xFFFFFFFF));
-  // clang-format off
-  // Mask will now contain [ 0xFFFFFFFF 0xFFFFFFFF (width <= 0 ? 0 : 0xFFFFFFFF) (height <= 0 ? 0 : 0xFFFFFFFF) ]
-  // clang-format on
+  
+  
+  
   rectPacked = _mm_and_si128(rectPacked, mask);
 
   _mm_storeu_si128((__m128i*)&rect, rectPacked);
@@ -432,7 +432,7 @@ inline mozilla::gfx::IntRect nsRect::ScaleToOutsidePixels(
   return rect;
 }
 
-// scale the rect but round to largest contained rect
+
 inline mozilla::gfx::IntRect nsRect::ScaleToInsidePixels(
     float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const {
   mozilla::gfx::IntRect rect;
@@ -468,8 +468,8 @@ inline nsRect nsRect::RemoveResolution(const float aResolution) const {
   nsRect rect;
   rect.MoveTo(NSToCoordRound(NSCoordToFloat(x) / aResolution),
               NSToCoordRound(NSCoordToFloat(y) / aResolution));
-  // A 1x1 rect indicates we are just hit testing a point, so pass down a 1x1
-  // rect as well instead of possibly rounding the width or height to zero.
+  
+  
   if (width == 1 && height == 1) {
     rect.SizeTo(1, 1);
   } else {
@@ -482,7 +482,7 @@ inline nsRect nsRect::RemoveResolution(const float aResolution) const {
 
 const mozilla::gfx::IntRect& GetMaxSizedIntRect();
 
-// app units are integer multiples of pixels, so no rounding needed
+
 template <class units>
 nsRect ToAppUnits(const mozilla::gfx::IntRectTyped<units>& aRect,
                   nscoord aAppUnitsPerPixel) {
@@ -492,4 +492,4 @@ nsRect ToAppUnits(const mozilla::gfx::IntRectTyped<units>& aRect,
                 NSIntPixelsToAppUnits(aRect.Height(), aAppUnitsPerPixel));
 }
 
-#endif /* NSRECT_H */
+#endif 

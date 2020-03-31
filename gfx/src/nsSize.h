@@ -31,8 +31,8 @@ struct nsSize : public mozilla::gfx::BaseSize<nscoord, nsSize> {
 
 
 
-  MOZ_MUST_USE inline nsSize ScaleToOtherAppUnits(int32_t aFromAPP,
-                                                  int32_t aToAPP) const;
+  [[nodiscard]] inline nsSize ScaleToOtherAppUnits(int32_t aFromAPP,
+                                                   int32_t aToAPP) const;
 };
 
 inline mozilla::gfx::IntSize nsSize::ScaleToNearestPixels(

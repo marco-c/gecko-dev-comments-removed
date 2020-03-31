@@ -94,9 +94,9 @@ class nsITheme : public nsISupports {
   
 
 
-  virtual MOZ_MUST_USE LayoutDeviceIntMargin
-  GetWidgetBorder(nsDeviceContext* aContext, nsIFrame* aFrame,
-                  StyleAppearance aWidgetType) = 0;
+  [[nodiscard]] virtual LayoutDeviceIntMargin GetWidgetBorder(
+      nsDeviceContext* aContext, nsIFrame* aFrame,
+      StyleAppearance aWidgetType) = 0;
 
   
 

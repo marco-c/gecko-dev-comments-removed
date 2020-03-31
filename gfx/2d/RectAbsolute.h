@@ -86,7 +86,7 @@ struct BaseRectAbsolute {
     return Sub(aRect.x, aRect.y, aRect.XMost(), aRect.YMost());
   }
 
-  MOZ_MUST_USE Sub Intersect(const Sub& aOther) const {
+  [[nodiscard]] Sub Intersect(const Sub& aOther) const {
     Sub result;
     result.left = std::max<T>(left, aOther.left);
     result.top = std::max<T>(top, aOther.top);
@@ -147,7 +147,7 @@ struct BaseRectAbsolute {
   
   
   
-  MOZ_MUST_USE Sub Union(const Sub& aRect) const {
+  [[nodiscard]] Sub Union(const Sub& aRect) const {
     if (IsEmpty()) {
       return aRect;
     } else if (aRect.IsEmpty()) {
@@ -161,7 +161,7 @@ struct BaseRectAbsolute {
   
   
   
-  MOZ_MUST_USE Sub UnionEdges(const Sub& aRect) const {
+  [[nodiscard]] Sub UnionEdges(const Sub& aRect) const {
     Sub result;
     result.left = std::min(left, aRect.left);
     result.top = std::min(top, aRect.top);
@@ -245,7 +245,7 @@ struct BaseRectAbsolute {
 
 
 
-  MOZ_MUST_USE Sub MoveInsideAndClamp(const Sub& aRect) const {
+  [[nodiscard]] Sub MoveInsideAndClamp(const Sub& aRect) const {
     T newLeft = std::max(aRect.left, left);
     T newTop = std::max(aRect.top, top);
     T width = std::min(aRect.Width(), Width());
