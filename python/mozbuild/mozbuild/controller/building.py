@@ -1400,7 +1400,7 @@ class BuildDriver(MozbuildObject):
         
         
         clobberer = Clobberer(self.topsrcdir, self.topobjdir)
-        clobber_output = io.BytesIO()
+        clobber_output = io.StringIO()
         res = clobberer.maybe_do_clobber(os.getcwd(), False,
                                          clobber_output)
         required, performed, message = res
