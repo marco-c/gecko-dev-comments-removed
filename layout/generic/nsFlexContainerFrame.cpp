@@ -2198,8 +2198,7 @@ bool FlexItem::NeedsFinalReflow() const {
     
     
     
-    if (finalSize !=
-        LogicalSize(mWM, mFrame->GetContentRectRelativeToSelf().Size())) {
+    if (finalSize != mFrame->ContentSize(mWM)) {
       
       
       FLEX_LOG(

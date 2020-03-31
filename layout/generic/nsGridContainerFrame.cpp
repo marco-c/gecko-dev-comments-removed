@@ -4970,7 +4970,7 @@ static nscoord ContentContribution(
     }
     nscoord overflow = size - aMinSizeClamp;
     if (MOZ_UNLIKELY(overflow > 0)) {
-      nscoord contentSize = child->ContentBSize(childWM);
+      nscoord contentSize = child->ContentSize(childWM).BSize(childWM);
       nscoord newContentSize = std::max(nscoord(0), contentSize - overflow);
       
       size -= contentSize - newContentSize;
