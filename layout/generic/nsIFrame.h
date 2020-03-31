@@ -2129,6 +2129,8 @@ class nsIFrame : public nsQueryFrame {
 
   void SetIsPrimaryFrame(bool aIsPrimary) { mIsPrimaryFrame = aIsPrimary; }
 
+  bool IsPrimaryFrameOfRootOrBodyElement() const;
+
   
 
 

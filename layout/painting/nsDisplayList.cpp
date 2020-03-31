@@ -3941,19 +3941,16 @@ nsDisplayBackgroundImage::nsDisplayBackgroundImage(
       mLayer(aInitData.layer),
       mIsRasterImage(aInitData.isRasterImage),
       mShouldFixToViewport(aInitData.shouldFixToViewport),
-      mImageFlags(0),
-      mAssociatedImage(false) {
+      mImageFlags(0) {
   MOZ_COUNT_CTOR(nsDisplayBackgroundImage);
-
-  
-  
-  
-  
-  
-  
-  
-  mTriedToAssociateImage =
-      !(mBackgroundStyle && mBackgroundStyle != mFrame->Style());
+#ifdef DEBUG
+  if (mBackgroundStyle && mBackgroundStyle != mFrame->Style()) {
+    
+    
+    MOZ_ASSERT(mFrame->IsCanvasFrame() ||
+               mFrame->IsFrameOfType(nsIFrame::eTablePart));
+  }
+#endif
 
   mBounds = GetBoundsInternal(aInitData.builder, aFrameForBounds);
   if (mShouldFixToViewport) {
@@ -3970,25 +3967,8 @@ nsDisplayBackgroundImage::nsDisplayBackgroundImage(
   }
 }
 
-void nsDisplayBackgroundImage::DisassociateImage() {
-  MOZ_ASSERT(mAssociatedImage);
-  MOZ_ASSERT(mFrame);
-
-  if (mFrame->HasImageRequest()) {
-    
-    
-    auto& layer = mBackgroundStyle->StyleBackground()->mImage.mLayers[mLayer];
-    mFrame->DisassociateImage(layer.mImage);
-  }
-
-  mAssociatedImage = false;
-}
-
 nsDisplayBackgroundImage::~nsDisplayBackgroundImage() {
   MOZ_COUNT_DTOR(nsDisplayBackgroundImage);
-  if (mAssociatedImage) {
-    DisassociateImage();
-  }
   if (mDependentFrame) {
     mDependentFrame->RemoveDisplayItem(this);
   }
@@ -4537,8 +4517,6 @@ bool nsDisplayBackgroundImage::CreateWebRenderCommands(
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
-  AssociateImageIfNeeded();
-
   if (!CanBuildWebRenderDisplayItems(aManager->LayerManager(),
                                      aDisplayListBuilder)) {
     return false;
@@ -4684,17 +4662,6 @@ bool nsDisplayBackgroundImage::RenderingMightDependOnPositioningAreaSizeChange()
   return false;
 }
 
-void nsDisplayBackgroundImage::AssociateImageIfNeeded() {
-  if (mTriedToAssociateImage) {
-    return;
-  }
-  mTriedToAssociateImage = true;
-  auto& layer = mBackgroundStyle->StyleBackground()->mImage.mLayers[mLayer];
-  if (mFrame->AssociateImage(layer.mImage)) {
-    mAssociatedImage = true;
-  }
-}
-
 void nsDisplayBackgroundImage::Paint(nsDisplayListBuilder* aBuilder,
                                      gfxContext* aCtx) {
   PaintInternal(aBuilder, aCtx, GetPaintRect(), &mBounds);
@@ -4704,7 +4671,6 @@ void nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
                                              gfxContext* aCtx,
                                              const nsRect& aBounds,
                                              nsRect* aClipRect) {
-  AssociateImageIfNeeded();
   gfxContext* ctx = aCtx;
   StyleGeometryBox clip =
       mBackgroundStyle->StyleBackground()->mImage.mLayers[mLayer].mClip;
