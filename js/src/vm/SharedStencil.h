@@ -112,6 +112,11 @@ class ScriptFlagBase {
   }
 
   operator uint32_t() const { return flags_; }
+
+  ScriptFlagBase& operator|=(const uint32_t rhs) {
+    flags_ |= rhs;
+    return *this;
+  }
 };
 
 enum class ImmutableScriptFlagsEnum : uint32_t {
@@ -144,9 +149,34 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   Strict = 1 << 4,
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   BindingsAccessedDynamically = 1 << 5,
+
+  
+  
+  
+  
+  
+  
+  
   FunHasExtensibleScope = 1 << 6,
 
+  
   
   
   HasCallSiteObj = 1 << 7,
@@ -155,6 +185,8 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   HasModuleGoal = 1 << 8,
 
+  
+  
   FunctionHasThisBinding = 1 << 9,
 
   
@@ -187,6 +219,7 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   IsForEval = 1 << 19,
 
+  
   
   IsModule = 1 << 20,
 
@@ -334,11 +367,6 @@ class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
 
   MutableScriptFlags& operator&=(const uint32_t rhs) {
     flags_ &= rhs;
-    return *this;
-  }
-
-  MutableScriptFlags& operator|=(const uint32_t rhs) {
-    flags_ |= rhs;
     return *this;
   }
 };
