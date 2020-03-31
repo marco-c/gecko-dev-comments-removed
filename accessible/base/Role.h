@@ -1061,7 +1061,12 @@ enum Role {
 
   COMMENT = 181,
 
-  LAST_ROLE = COMMENT
+  
+
+
+  CODE = 182,
+
+  LAST_ROLE = CODE
 };
 
 }  
