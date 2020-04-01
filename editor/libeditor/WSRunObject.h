@@ -470,7 +470,7 @@ class MOZ_STACK_CLASS WSRunScanner {
     int32_t mStartOffset;          
     int32_t mEndOffset;            
     
-    WSType mType, mLeftType;
+    WSType mType;
     
     WSFragment *mLeft, *mRight;
 
@@ -482,6 +482,18 @@ class MOZ_STACK_CLASS WSRunScanner {
     }
     EditorRawDOMPoint EndPoint() const {
       return EditorRawDOMPoint(mEndNode, mEndOffset);
+    }
+
+    
+
+
+
+    void SetStartFrom(WSType aLeftWSType) { mLeftWSType = aLeftWSType; }
+    void SetStartFromLeadingWhiteSpaces() { mLeftWSType = WSType::leadingWS; }
+    void SetStartFromNormalWhiteSpaces() { mLeftWSType = WSType::normalWS; }
+    bool StartsFromNormalText() const { return mLeftWSType == WSType::text; }
+    bool StartsFromSpecialContent() const {
+      return mLeftWSType == WSType::special;
     }
 
     
@@ -501,7 +513,7 @@ class MOZ_STACK_CLASS WSRunScanner {
     }
 
    private:
-    WSType mRightWSType;
+    WSType mLeftWSType, mRightWSType;
   };
 
   
