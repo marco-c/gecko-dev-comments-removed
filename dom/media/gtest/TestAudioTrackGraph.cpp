@@ -51,6 +51,8 @@ TEST(TestAudioTrackGraph, DifferentDeviceIDs)
   dummySource2->Destroy();
 }
 
+
+#if !defined(ANDROID)
 TEST(TestAudioTrackGraph, SetOutputDeviceID)
 {
   MockCubeb* cubeb = new MockCubeb();
@@ -106,3 +108,4 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
 
   mon.AwaitFinished();
 }
+#endif
