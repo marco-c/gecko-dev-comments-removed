@@ -253,6 +253,7 @@ function validatedWebRemoteType(
   if (
     allowLinkedWebInFileUriProcess &&
     
+    
     !documentChannel &&
     aPreferredRemoteType == FILE_REMOTE_TYPE
   ) {
@@ -261,6 +262,9 @@ function validatedWebRemoteType(
     
     
     if (aCurrentUri) {
+      if (aCurrentUri.scheme == "file" || aCurrentUri.spec == "about:blank") {
+        return FILE_REMOTE_TYPE;
+      }
       try {
         
         
@@ -838,6 +842,8 @@ var E10SUtils = {
     let { useRemoteSubframes } = aDocShell;
     this.log().debug(`shouldLoadURI(${this._uriStr(aURI)})`);
 
+    let remoteType = Services.appinfo.remoteType;
+
     
     
     
@@ -849,7 +855,7 @@ var E10SUtils = {
     let sessionHistory = webNav.sessionHistory;
     if (
       !aHasPostData &&
-      Services.appinfo.remoteType == WEB_REMOTE_TYPE &&
+      remoteType == WEB_REMOTE_TYPE &&
       sessionHistory.count == 1 &&
       webNav.currentURI.spec == "about:newtab"
     ) {
@@ -868,7 +874,7 @@ var E10SUtils = {
     
     
     if (
-      Services.appinfo.remoteType != NOT_REMOTE &&
+      remoteType != NOT_REMOTE &&
       (useRemoteSubframes || documentChannel) &&
       kDocumentChannelAllowedSchemes.includes(aURI.scheme)
     ) {
@@ -884,7 +890,7 @@ var E10SUtils = {
       aDocShell.browsingContext.group.getToplevels().length == 1;
     if (
       !aHasPostData &&
-      Services.appinfo.remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
+      remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
       !aDocShell.awaitingLargeAlloc &&
       isOnlyToplevelBrowsingContext
     ) {
@@ -893,6 +899,14 @@ var E10SUtils = {
       );
       return false;
     }
+
+    let wantRemoteType = this.getRemoteTypeForURIObject(
+      aURI,
+      true,
+      useRemoteSubframes,
+      remoteType,
+      webNav.currentURI
+    );
 
     
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
@@ -908,14 +922,6 @@ var E10SUtils = {
 
       
       
-      let remoteType = Services.appinfo.remoteType;
-      let wantRemoteType = this.getRemoteTypeForURIObject(
-        aURI,
-        true,
-        useRemoteSubframes,
-        remoteType,
-        webNav.currentURI
-      );
       this.log().debug(
         `Checking remote type, got: ${remoteType} want: ${wantRemoteType}\n`
       );
@@ -923,7 +929,7 @@ var E10SUtils = {
     }
 
     
-    return this.shouldLoadURIInThisProcess(aURI, useRemoteSubframes);
+    return remoteType == wantRemoteType;
   },
 
   redirectLoad(
