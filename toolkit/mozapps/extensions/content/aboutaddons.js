@@ -1630,8 +1630,6 @@ class CategoryButton extends HTMLButtonElement {
       return;
     }
 
-    this.classList.add("category");
-
     
     this.selected = this.hasAttribute("selected");
 
