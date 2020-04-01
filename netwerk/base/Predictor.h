@@ -429,9 +429,6 @@ class Predictor final : public nsINetworkPredictor,
   
   bool mInitialized;
 
-  bool mCleanedUp;
-  nsCOMPtr<nsITimer> mCleanupTimer;
-
   nsTArray<nsCString> mKeysToOperateOn;
   nsTArray<nsCString> mValuesToOperateOn;
 
