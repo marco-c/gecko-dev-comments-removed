@@ -862,6 +862,8 @@ class nsIFrame : public nsQueryFrame {
 
   nsContainerFrame* GetParent() const { return mParent; }
 
+  bool CanBeDynamicReflowRoot() const;
+
   
 
 
