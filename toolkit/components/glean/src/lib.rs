@@ -2,6 +2,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::ffi::CStr;
 use std::os::raw::c_char;
 
@@ -10,7 +25,13 @@ use nserror::{nsresult, NS_OK};
 use client_info::ClientInfo;
 use glean_core::Configuration;
 
+mod api;
 mod client_info;
+mod core_metrics;
+
+
+
+
 
 #[no_mangle]
 pub unsafe extern "C" fn fog_init(

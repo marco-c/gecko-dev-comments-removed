@@ -3,7 +3,7 @@
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClientInfo {
     
     pub app_build: String,
