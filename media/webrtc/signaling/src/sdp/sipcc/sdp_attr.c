@@ -4565,6 +4565,9 @@ sdp_result_e sdp_build_attr_rtcp_fb(sdp_t *sdp_p,
         case SDP_RTCP_FB_REMB:
             
             break;
+        case SDP_RTCP_FB_TRANSPORT_CC:
+            
+            break;
 
         case SDP_RTCP_FB_UNKNOWN:
             
@@ -4709,6 +4712,10 @@ sdp_result_e sdp_parse_attr_rtcp_fb (sdp_t *sdp_p,
             break;
 
         case SDP_RTCP_FB_REMB:
+            
+            break;
+
+        case SDP_RTCP_FB_TRANSPORT_CC:
             
             break;
 

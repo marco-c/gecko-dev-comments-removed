@@ -15,6 +15,8 @@ typedef enum {
     SDP_RTCP_FB_TRR_INT,
     
     SDP_RTCP_FB_REMB,
+    
+    SDP_RTCP_FB_TRANSPORT_CC,
     SDP_MAX_RTCP_FB,
     SDP_RTCP_FB_UNKNOWN
 } sdp_rtcp_fb_type_e;
