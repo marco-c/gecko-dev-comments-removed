@@ -197,13 +197,6 @@ class nsColumnSetFrame final : public nsContainerFrame {
                             ReflowOutput& aDesiredSize,
                             bool aUnboundedLastColumn, nsReflowStatus& aStatus);
 
-  
-
-
-
-
-  nscoord GetAvailableContentBSize(const ReflowInput& aReflowInput) const;
-
   void ForEachColumnRule(
       const std::function<void(const nsRect& lineRect)>& aSetLineRect,
       const nsPoint& aPt) const;
