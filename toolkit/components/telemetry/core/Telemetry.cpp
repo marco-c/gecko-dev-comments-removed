@@ -1159,6 +1159,25 @@ TelemetryImpl::GetIsOfficialTelemetry(bool* ret) {
   return NS_OK;
 }
 
+#if defined(MOZ_GLEAN)
+
+
+
+extern "C" {
+nsresult fog_init(const char* buildId, const char* appDisplayVersion, const char* channel);
+}
+
+static void internal_initGlean() {
+  Unused << NS_WARN_IF(NS_FAILED(
+        fog_init(
+           "build-id",
+           "0.0a1",
+           "nightly"
+        )
+  ));
+}
+#endif  
+
 already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   {
     auto lock = sTelemetry.Lock();
@@ -1208,6 +1227,12 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   
   if (GetCurrentProduct() == SupportedProduct::Geckoview) {
     TelemetryGeckoViewPersistence::InitPersistence();
+  }
+#endif
+
+#if defined(MOZ_GLEAN)
+  if (XRE_IsParentProcess()) {
+    internal_initGlean();
   }
 #endif
 

@@ -2,10 +2,17 @@
 
 
 
+use std::os::raw::c_char;
+
 use nserror::{nsresult, NS_OK};
-use nsstring::nsAString;
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_init(_data_dir: &nsAString, _pingsender_path: &nsAString) -> nsresult {
+pub unsafe extern "C" fn fog_init(
+    app_build: *const c_char,
+    app_display_version: *const c_char,
+    channel: *const c_char,
+) -> nsresult {
+    log::debug!("Initializing FOG.");
+
     NS_OK
 }
