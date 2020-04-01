@@ -275,6 +275,15 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
                                            nsIURI* aNewURI,
                                            nsILoadInfo* aLoadInfo,
                                            Maybe<nsresult>& aCancelCode) {
+  return ConsultCSPForRedirect(nsCSPContext::AsyncReportViolationCallback(
+                                   nsCSPContext::AsyncReportViolation),
+                               aOriginalURI, aNewURI, aLoadInfo, aCancelCode);
+}
+
+nsresult CSPService::ConsultCSPForRedirect(
+    const nsCSPContext::AsyncReportViolationCallback& aCallback,
+    nsIURI* aOriginalURI, nsIURI* aNewURI, nsILoadInfo* aLoadInfo,
+    Maybe<nsresult>& aCancelCode) {
   
   
   
@@ -282,10 +291,12 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
       aLoadInfo->GetCspToInherit();
   if (cspToInherit) {
     bool allowsNavigateTo = false;
-    nsresult rv = cspToInherit->GetAllowsNavigateTo(
-        aNewURI, aLoadInfo->GetIsFormSubmission(), true, 
-        false,                                           
-        &allowsNavigateTo);
+    nsresult rv = static_cast<nsCSPContext*>(cspToInherit.get())
+                      ->GetAllowsNavigateTo(aCallback, aNewURI,
+                                            aLoadInfo->GetIsFormSubmission(),
+                                            true,  
+                                            false, 
+                                            &allowsNavigateTo);
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (!allowsNavigateTo) {
@@ -330,16 +341,17 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
     nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = aLoadInfo->GetPreloadCsp();
     if (preloadCsp) {
       
-      preloadCsp->ShouldLoad(
-          policyType,  
-          cspEventListener,
-          aNewURI,         
-          requestContext,  
-          EmptyCString(),  
-          aOriginalURI,    
-          true,            
-          cspNonce,        
-          &decision);
+      static_cast<nsCSPContext*>(preloadCsp.get())
+          ->ShouldLoad(aCallback,
+                       policyType,  
+                       cspEventListener,
+                       aNewURI,         
+                       requestContext,  
+                       EmptyCString(),  
+                       aOriginalURI,    
+                       true,            
+                       cspNonce,        
+                       &decision);
 
       
       
@@ -354,15 +366,17 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadInfo->GetCsp();
   if (csp) {
     
-    csp->ShouldLoad(policyType,  
-                    cspEventListener,
-                    aNewURI,         
-                    requestContext,  
-                    EmptyCString(),  
-                    aOriginalURI,    
-                    true,            
-                    cspNonce,        
-                    &decision);
+    static_cast<nsCSPContext*>(csp.get())->ShouldLoad(
+        aCallback,
+        policyType,  
+        cspEventListener,
+        aNewURI,         
+        requestContext,  
+        EmptyCString(),  
+        aOriginalURI,    
+        true,            
+        cspNonce,        
+        &decision);
     if (NS_CP_REJECTED(decision)) {
       aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
       return NS_BINDING_FAILED;
