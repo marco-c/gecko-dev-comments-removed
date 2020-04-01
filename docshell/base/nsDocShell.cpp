@@ -9355,6 +9355,8 @@ static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
   return NS_OK;
 }
 
+
+
 static bool SchemeUsesDocChannel(nsIURI* aURI) {
   if (SchemeIsJavascript(aURI) || NS_IsAboutBlank(aURI)) {
     return false;

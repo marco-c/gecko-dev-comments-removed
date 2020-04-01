@@ -133,7 +133,23 @@ const kSafeSchemes = [
   "xmpp",
 ];
 
-const kDocumentChannelAllowedSchemes = ["http", "https", "ftp", "data"];
+const kDocumentChannelDeniedSchemes = ["javascript"];
+const kDocumentChannelDeniedURIs = [
+  "about:blank",
+  "about:crashcontent",
+  "about:newtab",
+  "about:printpreview",
+  "about:privatebrowsing",
+];
+
+
+
+function documentChannelPermittedForURI(aURI) {
+  return (
+    !kDocumentChannelDeniedSchemes.includes(aURI.scheme) &&
+    !kDocumentChannelDeniedURIs.includes(aURI.spec)
+  );
+}
 
 
 
@@ -799,9 +815,10 @@ var E10SUtils = {
     
     if (
       currentRemoteType != NOT_REMOTE &&
+      requiredRemoteType != NOT_REMOTE &&
       uriObject &&
       (remoteSubframes || documentChannel) &&
-      kDocumentChannelAllowedSchemes.includes(uriObject.scheme)
+      documentChannelPermittedForURI(uriObject)
     ) {
       mustChangeProcess = false;
     }
@@ -867,16 +884,22 @@ var E10SUtils = {
       return false;
     }
 
-    
-    
-    
+    let wantRemoteType = this.getRemoteTypeForURIObject(
+      aURI,
+      true,
+      useRemoteSubframes,
+      remoteType,
+      webNav.currentURI
+    );
+
     
     
     
     if (
-      remoteType != NOT_REMOTE &&
       (useRemoteSubframes || documentChannel) &&
-      kDocumentChannelAllowedSchemes.includes(aURI.scheme)
+      remoteType != NOT_REMOTE &&
+      wantRemoteType != NOT_REMOTE &&
+      documentChannelPermittedForURI(aURI)
     ) {
       return true;
     }
@@ -899,14 +922,6 @@ var E10SUtils = {
       );
       return false;
     }
-
-    let wantRemoteType = this.getRemoteTypeForURIObject(
-      aURI,
-      true,
-      useRemoteSubframes,
-      remoteType,
-      webNav.currentURI
-    );
 
     
     let requestedIndex = sessionHistory.legacySHistory.requestedIndex;
