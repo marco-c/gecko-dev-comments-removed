@@ -299,6 +299,9 @@ void GetBoxQuads(nsINode* aNode, const dom::BoxQuadOptions& aOptions,
       GetBoxRectForFrame(&relativeToFrame, CSSBoxType::Border).TopLeft();
   AccumulateQuadCallback callback(ownerDoc, aResult, relativeToFrame,
                                   relativeToTopLeft, aOptions.mBox);
+
+  
+  
   nsLayoutUtils::GetAllInFlowBoxes(frame, &callback);
 }
 
@@ -330,6 +333,9 @@ void GetBoxQuadsFromWindowOrigin(nsINode* aNode,
   ogn.SetAsDocument() = topInProcessDoc;
   bqo.mRelativeTo.Construct(ogn);
 
+  
+  
+  
   GetBoxQuads(aNode, bqo, aResult, CallerType::System, aRv);
   if (aRv.Failed()) {
     return;
@@ -364,7 +370,8 @@ void GetBoxQuadsFromWindowOrigin(nsINode* aNode,
   
   
   
-  LayoutDeviceToCSSScale ld2cScale(appUnitsPerDevPixel);
+  LayoutDeviceToCSSScale ld2cScale((float)appUnitsPerDevPixel /
+                                   (float)AppUnitsPerCSSPixel());
   CSSToLayoutDeviceScale c2ldScale = ld2cScale.Inverse();
 
   for (auto& quad : aResult) {
