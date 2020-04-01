@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 TEST_HARNESS_FILES['web-platform'] += [
     'mach_commands_base.py',
@@ -17,7 +17,7 @@ PYTHON_UNITTEST_MANIFESTS += ['python.ini']
 with Files("**"):
     SCHEDULES.exclusive = [
         'web-platform-tests',
-        'web-platform-tests-reftests',
+        'web-platform-tests-reftest',
         'web-platform-tests-wdspec',
     ]
 
@@ -173,7 +173,7 @@ with Files("tests/clipboard-apis/**"):
 with Files("tests/common/**"):
     BUG_COMPONENT = ("Testing", "web-platform-tests")
 
-# Appears to be testing -webkit specific css properties
+
 with Files("tests/compat/**"):
     BUG_COMPONENT = ("Core", "Layout")
 
@@ -443,7 +443,7 @@ with Files("tests/editing/**"):
 
 with Files("tests/element-timing/**"):
     BUG_COMPONENT = ("Core", "Performance")
-# as per Bug 746911
+
 with Files("tests/encoding/**"):
     BUG_COMPONENT = ("Core", "Internationalization")
 
@@ -489,7 +489,7 @@ with Files("tests/html/**"):
 with Files("tests/html-longdesc/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-# Not implemented yet, see Bug 741393
+
 with Files("tests/html-media-capture/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
@@ -514,15 +514,15 @@ with Files("tests/intersection-observer/**"):
 with Files("tests/js/**"):
     BUG_COMPONENT = ("Core", "JavaScript Engine")
 
-# To be implemented in bug 1348405
+
 with Files("tests/keyboard-lock/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-# No reference to longtask in bugzilla or codebase
+
 with Files("tests/longtask-timing/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-# depends on generic-sensor, check bug 1359076
+
 with Files("tests/magnetometer/**"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
 
@@ -568,7 +568,7 @@ with Files("tests/notifications/**"):
 with Files("tests/offscreen-canvas/**"):
     BUG_COMPONENT = ("Core", "Canvas: 2D")
 
-# No tests are run here
+
 with Files("tests/old-tests/submission/Microsoft/foreigncontent/**"):
     BUG_COMPONENT = ("Core", "SVG")
 
@@ -590,15 +590,15 @@ with Files("tests/page-visibility/**"):
 with Files("tests/paint-timing/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-# No tests in here
+
 with Files("tests/payment-handler/**"):
     BUG_COMPONENT = ("Core", "DOM: Web Payments")
 
-# No tests in here
+
 with Files("tests/payment-method-basic-card/**"):
     BUG_COMPONENT = ("Core", "DOM: Web Payments")
 
-# No tests in here
+
 with Files("tests/payment-method-id/**"):
     BUG_COMPONENT = ("Core", "DOM: Web Payments")
 
@@ -638,7 +638,7 @@ with Files("tests/referrer-policy/**"):
 with Files("tests/requestidlecallback/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
-# To be implemented in bug 1272409
+
 with Files("tests/resize-observer/**"):
     BUG_COMPONENT = ("Core", "Layout")
 
@@ -768,7 +768,7 @@ with Files("tests/webvtt/**"):
 with Files("tests/workers/**"):
     BUG_COMPONENT = ("Core", "DOM: Workers")
 
-# to be implemented in bug 1315239
+
 with Files("tests/worklets/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 

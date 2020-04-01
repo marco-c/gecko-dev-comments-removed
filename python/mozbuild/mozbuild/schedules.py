@@ -58,8 +58,8 @@ EXCLUSIVE_COMPONENTS = [
     'xpcshell',
     'xpcshell-coverage',
     'web-platform-tests',
-    'web-platform-tests-crashtests',
-    'web-platform-tests-reftests',
+    'web-platform-tests-crashtest',
+    'web-platform-tests-reftest',
     'web-platform-tests-wdspec',
     
     'mochitest-a11y',
