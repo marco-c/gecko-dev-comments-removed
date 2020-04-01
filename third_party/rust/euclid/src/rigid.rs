@@ -1,7 +1,11 @@
+
+
+
+
 use approxeq::ApproxEq;
 use num_traits::Float;
 use trig::Trig;
-use {Rotation3D, Transform3D, Vector3D};
+use {Rotation3D, Transform3D, Vector3D, UnknownUnit};
 
 
 
@@ -19,20 +23,18 @@ pub struct RigidTransform3D<T, Src, Dst> {
     pub translation: Vector3D<T, Dst>,
 }
 
-
-
-
-
-impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
+impl<T, Src, Dst> RigidTransform3D<T, Src, Dst> {
     
     #[inline]
-    pub fn new(rotation: Rotation3D<T, Src, Dst>, translation: Vector3D<T, Dst>) -> Self {
+    pub const fn new(rotation: Rotation3D<T, Src, Dst>, translation: Vector3D<T, Dst>) -> Self {
         Self {
             rotation,
             translation,
         }
     }
+}
 
+impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
     
     #[inline]
     pub fn identity() -> Self {
@@ -168,6 +170,24 @@ impl<T: Float + ApproxEq<T>, Src, Dst> RigidTransform3D<T, Src, Dst> {
         self.translation
             .to_transform()
             .pre_transform(&self.rotation.to_transform())
+    }
+
+    
+    #[inline]
+    pub fn to_untyped(&self) -> RigidTransform3D<T, UnknownUnit, UnknownUnit> {
+        RigidTransform3D {
+            rotation: self.rotation.to_untyped(),
+            translation: self.translation.to_untyped(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn from_untyped(transform: &RigidTransform3D<T, UnknownUnit, UnknownUnit>) -> Self {
+        RigidTransform3D {
+            rotation: Rotation3D::from_untyped(&transform.rotation),
+            translation: Vector3D::from_untyped(transform.translation),
+        }
     }
 }
 
