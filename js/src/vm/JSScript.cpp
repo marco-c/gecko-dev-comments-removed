@@ -1344,17 +1344,15 @@ template XDRResult js::XDRLazyScript(XDRState<XDR_DECODE>*, HandleScope,
                                      HandleScriptSourceObject, HandleFunction,
                                      MutableHandle<BaseScript*>);
 
-void JSScript::setDefaultClassConstructorSpan(
-    js::ScriptSourceObject* sourceObject, uint32_t start, uint32_t end,
-    unsigned line, unsigned column) {
-  MOZ_ASSERT(compartment() == sourceObject->compartment());
-  sourceObject_ = sourceObject;
+void JSScript::setDefaultClassConstructorSpan(uint32_t start, uint32_t end,
+                                              unsigned line, unsigned column) {
   extent_.toStringStart = start;
   extent_.toStringEnd = end;
   extent_.sourceStart = start;
   extent_.sourceEnd = end;
   extent_.lineno = line;
   extent_.column = column;
+
   
   
   clearFlag(ImmutableFlags::SelfHosted);

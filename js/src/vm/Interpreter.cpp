@@ -280,51 +280,63 @@ JSFunction* js::MakeDefaultConstructor(JSContext* cx, HandleScript script,
   bool derived = op == JSOp::DerivedConstructor;
   MOZ_ASSERT(derived == !!proto);
 
+  
   uint32_t atomIndex = 0;
   uint32_t classStartOffset = 0, classEndOffset = 0;
   GetClassConstructorOperands(pc, &atomIndex, &classStartOffset,
                               &classEndOffset);
+  RootedAtom className(cx, script->getAtom(atomIndex));
 
-  JSAtom* atom = script->getAtom(atomIndex);
-  PropertyName* lookup = derived ? cx->names().DefaultDerivedClassConstructor
-                                 : cx->names().DefaultBaseClassConstructor;
-
-  RootedPropertyName selfHostedName(cx, lookup);
-  RootedAtom name(cx, atom == cx->names().empty ? nullptr : atom);
-
-  RootedFunction ctor(cx);
-  if (!cx->runtime()->createLazySelfHostedFunctionClone(
-          cx, selfHostedName, name,
-           !!derived, proto, TenuredObject, &ctor)) {
-    return nullptr;
-  }
-
-  ctor->setIsConstructor();
-  ctor->setIsClassConstructor();
-
-  if (!JSFunction::setTypeForScriptedFunction(cx, ctor)) {
-    return nullptr;
+  
+  
+  if (className == cx->names().empty) {
+    className = nullptr;
   }
 
   
-  RootedScript ctorScript(cx, JSFunction::getOrCreateScript(cx, ctor));
-  if (!ctorScript) {
+  RootedPropertyName selfHostedName(
+      cx, derived ? cx->names().DefaultDerivedClassConstructor
+                  : cx->names().DefaultBaseClassConstructor);
+  RootedFunction sourceFun(
+      cx, cx->runtime()->getUnclonedSelfHostedFunction(cx, selfHostedName));
+  if (!sourceFun) {
+    return nullptr;
+  }
+  RootedScript sourceScript(cx, sourceFun->nonLazyScript());
+
+  
+  RootedFunction ctor(
+      cx, NewScriptedFunction(cx, sourceFun->nargs(),
+                              FunctionFlags::INTERPRETED_CLASS_CTOR, className,
+                              proto, gc::AllocKind::FUNCTION, TenuredObject));
+  if (!ctor) {
     return nullptr;
   }
 
   
   
   
-  
-  ctor->clearIsSelfHosted();
+  MOZ_ASSERT(sourceFun->enclosingScope()->is<GlobalScope>());
+  RootedScope enclosingScope(cx, &cx->global()->emptyGlobalScope());
+  Rooted<ScriptSourceObject*> sourceObject(cx, script->sourceObject());
+  if (!CloneScriptIntoFunction(cx, enclosingScope, ctor, sourceScript,
+                               sourceObject)) {
+    return nullptr;
+  }
+  RootedScript ctorScript(cx, ctor->nonLazyScript());
 
   
   
   
   unsigned column;
   unsigned line = PCToLineNumber(script, pc, &column);
-  ctorScript->setDefaultClassConstructorSpan(
-      script->sourceObject(), classStartOffset, classEndOffset, line, column);
+  ctorScript->setDefaultClassConstructorSpan(classStartOffset, classEndOffset,
+                                             line, column);
+
+  
+  if (!JSFunction::setTypeForScriptedFunction(cx, ctor)) {
+    return nullptr;
+  }
 
   DebugAPI::onNewScript(cx, ctorScript);
 

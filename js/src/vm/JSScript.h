@@ -1665,10 +1665,10 @@ class BaseScript : public gc::TenuredCell {
   
   
   
-  const GCPtrObject functionOrGlobal_;
+  const GCPtrObject functionOrGlobal_ = {};
 
   
-  GCPtr<ScriptSourceObject*> sourceObject_ = {};
+  const GCPtr<ScriptSourceObject*> sourceObject_ = {};
 
   
   
@@ -2389,8 +2389,7 @@ class JSScript : public js::BaseScript {
 
   static JSLinearString* sourceData(JSContext* cx, JS::HandleScript script);
 
-  void setDefaultClassConstructorSpan(js::ScriptSourceObject* sourceObject,
-                                      uint32_t start, uint32_t end,
+  void setDefaultClassConstructorSpan(uint32_t start, uint32_t end,
                                       unsigned line, unsigned column);
 
 #ifdef MOZ_VTUNE
