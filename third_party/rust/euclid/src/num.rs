@@ -30,74 +30,47 @@ impl<T: num_traits::One> One for T {
     }
 }
 
-
 pub trait Round: Copy {
-    
-    
-    
-    #[must_use]
     fn round(self) -> Self;
 }
-
 pub trait Floor: Copy {
-    
-    
-    
-    #[must_use]
     fn floor(self) -> Self;
 }
-
 pub trait Ceil: Copy {
-    
-    
-    
-    #[must_use]
     fn ceil(self) -> Self;
 }
 
 macro_rules! num_int {
-    ($ty:ty) => {
+    ($ty:ty) => (
         impl Round for $ty {
             #[inline]
-            fn round(self) -> $ty {
-                self
-            }
+            fn round(self) -> $ty { self }
         }
         impl Floor for $ty {
             #[inline]
-            fn floor(self) -> $ty {
-                self
-            }
+            fn floor(self) -> $ty { self }
         }
         impl Ceil for $ty {
             #[inline]
-            fn ceil(self) -> $ty {
-                self
-            }
+            fn ceil(self) -> $ty { self }
         }
-    };
+    )
 }
 macro_rules! num_float {
-    ($ty:ty) => {
+    ($ty:ty) => (
         impl Round for $ty {
             #[inline]
-            fn round(self) -> $ty {
-                num_traits::Float::round(self)
-            }
+            fn round(self) -> $ty { self.round() }
         }
         impl Floor for $ty {
             #[inline]
-            fn floor(self) -> $ty {
-                num_traits::Float::floor(self)
-            }
+            fn floor(self) -> $ty { self.floor() }
         }
         impl Ceil for $ty {
             #[inline]
-            fn ceil(self) -> $ty {
-                num_traits::Float::ceil(self)
-            }
+            fn ceil(self) -> $ty { self.ceil() }
         }
-    };
+    )
 }
 
 num_int!(i16);

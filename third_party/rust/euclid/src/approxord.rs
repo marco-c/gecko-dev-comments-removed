@@ -9,7 +9,6 @@
 
 
 
-
 pub fn min<T: PartialOrd>(x: T, y: T) -> T {
     if x <= y {
         x

@@ -43,14 +43,12 @@ use {Point2D, Rect, Size2D, Vector2D};
 pub struct Scale<T, Src, Dst>(pub T, #[doc(hidden)] pub PhantomData<(Src, Dst)>);
 
 impl<T, Src, Dst> Scale<T, Src, Dst> {
-    #[inline]
-    pub const fn new(x: T) -> Self {
+    pub fn new(x: T) -> Self {
         Scale(x, PhantomData)
     }
 }
 
 impl<T: Clone, Src, Dst> Scale<T, Src, Dst> {
-    #[inline]
     pub fn get(&self) -> T {
         self.0.clone()
     }
@@ -63,18 +61,6 @@ impl<Src, Dst> Scale<f32, Src, Dst> {
 
 impl<T: Clone + One + Div<T, Output = T>, Src, Dst> Scale<T, Src, Dst> {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn inv(&self) -> Scale<T, Dst, Src> {
         let one: T = One::one();
         Scale::new(one / self.get())
@@ -82,105 +68,48 @@ impl<T: Clone + One + Div<T, Output = T>, Src, Dst> Scale<T, Src, Dst> {
 }
 
 
-impl<T: Mul<T, Output = T>, A, B, C> Mul<Scale<T, B, C>> for Scale<T, A, B> {
+impl<T: Clone + Mul<T, Output = T>, A, B, C> Mul<Scale<T, B, C>> for Scale<T, A, B> {
     type Output = Scale<T, A, C>;
     #[inline]
     fn mul(self, other: Scale<T, B, C>) -> Scale<T, A, C> {
-        Scale::new(self.0 * other.0)
+        Scale::new(self.get() * other.get())
     }
 }
 
 
-impl<T: Add<T, Output = T>, Src, Dst> Add for Scale<T, Src, Dst> {
+impl<T: Clone + Add<T, Output = T>, Src, Dst> Add for Scale<T, Src, Dst> {
     type Output = Scale<T, Src, Dst>;
     #[inline]
     fn add(self, other: Scale<T, Src, Dst>) -> Scale<T, Src, Dst> {
-        Scale::new(self.0 + other.0)
+        Scale::new(self.get() + other.get())
     }
 }
 
 
-impl<T: Sub<T, Output = T>, Src, Dst> Sub for Scale<T, Src, Dst> {
+impl<T: Clone + Sub<T, Output = T>, Src, Dst> Sub for Scale<T, Src, Dst> {
     type Output = Scale<T, Src, Dst>;
     #[inline]
     fn sub(self, other: Scale<T, Src, Dst>) -> Scale<T, Src, Dst> {
-        Scale::new(self.0 - other.0)
+        Scale::new(self.get() - other.get())
     }
 }
 
-impl<T: NumCast + Clone, Src, Dst> Scale<T, Src, Dst> {
+impl<T: NumCast + Clone, Src, Dst0> Scale<T, Src, Dst0> {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn cast<NewT: NumCast>(&self) -> Scale<NewT, Src, Dst> {
+    pub fn cast<T1: NumCast + Clone>(&self) -> Scale<T1, Src, Dst0> {
         self.try_cast().unwrap()
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_cast<NewT: NumCast>(&self) -> Option<Scale<NewT, Src, Dst>> {
+    pub fn try_cast<T1: NumCast + Clone>(&self) -> Option<Scale<T1, Src, Dst0>> {
         NumCast::from(self.get()).map(Scale::new)
     }
 }
 
 impl<T, Src, Dst> Scale<T, Src, Dst>
 where
-    T: Copy + Mul<T, Output = T> + Neg<Output = T> + PartialEq + One,
+    T: Copy + Clone + Mul<T, Output = T> + Neg<Output = T> + PartialEq + One,
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     #[inline]
     pub fn transform_point(&self, point: Point2D<T, Src>) -> Point2D<T, Dst> {
@@ -188,53 +117,17 @@ where
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn transform_vector(&self, vec: Vector2D<T, Src>) -> Vector2D<T, Dst> {
         Vector2D::new(vec.x * self.get(), vec.y * self.get())
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn transform_size(&self, size: Size2D<T, Src>) -> Size2D<T, Dst> {
         Size2D::new(size.width * self.get(), size.height * self.get())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     #[inline]
     pub fn transform_rect(&self, rect: &Rect<T, Src>) -> Rect<T, Dst> {
@@ -251,24 +144,9 @@ where
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     #[inline]
     pub fn is_identity(&self) -> bool {
-        self.0 == T::one()
+        self.get() == T::one()
     }
 }
 

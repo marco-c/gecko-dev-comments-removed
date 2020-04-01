@@ -13,13 +13,12 @@
 use length::Length;
 use num::Zero;
 use core::fmt;
-use core::ops::{Add, Neg};
+use core::ops::Add;
 use core::marker::PhantomData;
 use core::cmp::{Eq, PartialEq};
 use core::hash::{Hash};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use crate::Vector2D;
 
 
 
@@ -95,12 +94,9 @@ impl<T: Default, U> Default for SideOffsets2D<T, U> {
     }
 }
 
-impl<T, U> SideOffsets2D<T, U> {
+impl<T: Copy, U> SideOffsets2D<T, U> {
     
-    
-    
-    
-    pub const fn new(top: T, right: T, bottom: T, left: T) -> Self {
+    pub fn new(top: T, right: T, bottom: T, left: T) -> Self {
         SideOffsets2D {
             top,
             right,
@@ -111,9 +107,6 @@ impl<T, U> SideOffsets2D<T, U> {
     }
 
     
-    
-    
-    
     pub fn from_lengths(
         top: Length<T, U>,
         right: Length<T, U>,
@@ -123,44 +116,6 @@ impl<T, U> SideOffsets2D<T, U> {
         SideOffsets2D::new(top.0, right.0, bottom.0, left.0)
     }
 
-    
-    
-    
-    
-    
-    pub fn from_vectors_outer(min: Vector2D<T, U>, max: Vector2D<T,U>) -> Self
-    where
-        T: Neg<Output = T>
-    {
-        SideOffsets2D {
-            left: -min.x,
-            top: -min.y,
-            right: max.x,
-            bottom: max.y,
-            _unit: PhantomData,
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn from_vectors_inner(min: Vector2D<T, U>, max: Vector2D<T,U>) -> Self
-    where
-        T: Neg<Output = T>
-    {
-        SideOffsets2D {
-            left: min.x,
-            top: min.y,
-            right: -max.x,
-            bottom: -max.y,
-            _unit: PhantomData,
-        }
-    }
-}
-
-impl<T: Copy, U> SideOffsets2D<T, U> {
     
     pub fn new_all_same(all: T) -> Self {
         SideOffsets2D::new(all, all, all, all)
@@ -187,7 +142,7 @@ where
 
 impl<T, U> Add for SideOffsets2D<T, U>
 where
-    T: Add<T, Output = T>,
+    T: Copy + Add<T, Output = T>,
 {
     type Output = Self;
     fn add(self, other: Self) -> Self {
@@ -200,26 +155,9 @@ where
     }
 }
 
-impl<T: Zero, U> SideOffsets2D<T, U> {
+impl<T: Copy + Zero, U> SideOffsets2D<T, U> {
     
     pub fn zero() -> Self {
         SideOffsets2D::new(Zero::zero(), Zero::zero(), Zero::zero(), Zero::zero())
     }
-}
-
-#[test]
-fn from_vectors() {
-    use crate::{vec2, point2};
-    type Box2D = crate::default::Box2D<i32>;
-
-    let b = Box2D {
-        min: point2(10, 10),
-        max: point2(20, 20),
-    };
-
-    let outer = b.outer_box(SideOffsets2D::from_vectors_outer(vec2(-1, -2), vec2(3, 4)));
-    let inner = b.inner_box(SideOffsets2D::from_vectors_inner(vec2(1, 2), vec2(-3, -4)));
-
-    assert_eq!(outer, Box2D { min: point2(9, 8), max: point2(23, 24) });
-    assert_eq!(inner, Box2D { min: point2(11, 12), max: point2(17, 16) });
 }
