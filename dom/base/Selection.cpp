@@ -888,7 +888,7 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       const bool executeDefaultAction = MaybeDispatchSelectstartEvent(
           *aRange, nsFrameSelection::sSelectionEventsOnTextControlsEnabled,
-          GetDocument());
+          doc);
 
       if (!executeDefaultAction) {
         return NS_OK;
