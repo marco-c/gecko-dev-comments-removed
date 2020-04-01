@@ -249,8 +249,8 @@ Accessible* nsAccUtils::TableFor(Accessible* aRow) {
       roles::Role tableRole = table->Role();
       const nsRoleMapEntry* roleMapEntry = table->ARIARoleMap();
       if (tableRole == roles::GROUPING ||  
-          (table->IsGenericHyperText() &&
-           !roleMapEntry)) {  
+          (table->IsGenericHyperText() && !roleMapEntry &&
+           !table->IsTable())) {  
         table = table->Parent();
         if (table) tableRole = table->Role();
       }
