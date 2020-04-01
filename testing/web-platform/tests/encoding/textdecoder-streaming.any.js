@@ -1,6 +1,8 @@
 
 
 
+
+
 var string = '\x00123ABCabc\x80\xFF\u0100\u1000\uFFFD\uD800\uDC00\uDBFF\uDFFF';
 var octets = {
     'utf-8':    [0x00,0x31,0x32,0x33,0x41,0x42,0x43,0x61,0x62,0x63,0xc2,0x80,
@@ -28,7 +30,7 @@ var octets = {
                     var sub = [];
                     for (var j = i; j < encoded.length && j < i + len; ++j)
                         sub.push(encoded[j]);
-                        var uintArray = new Uint8Array(new self[arrayBufferOrSharedArrayBuffer](sub.length));
+                        var uintArray = new Uint8Array(createBuffer(arrayBufferOrSharedArrayBuffer, sub.length));
                         uintArray.set(sub);
                     out += decoder.decode(uintArray, {stream: true});
                 }
