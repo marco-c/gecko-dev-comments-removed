@@ -55,8 +55,9 @@ def get_generated_sources():
                         rust_build_kind,
                         'build')
     finder = FileFinder(mozpath.join(buildconfig.topobjdir, base))
-    for p, f in finder.find('**/*.rs'):
-        yield mozpath.join(base, p), f
+    for p, f in finder:
+        if p.endswith(('.rs', '.c', '.h', '.cc', '.cpp')):
+            yield mozpath.join(base, p), f
 
 
 def get_s3_region_and_bucket():
