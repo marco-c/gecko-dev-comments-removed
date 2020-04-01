@@ -8,7 +8,6 @@
 #define mozilla_net_ADocumentChannelBridge_h
 
 #include "mozilla/net/PDocumentChannelParent.h"
-#include "mozilla/dom/nsCSPContext.h"
 
 namespace mozilla {
 namespace net {
@@ -41,14 +40,8 @@ class ADocumentChannelBridge {
   
   
   
-  
-  
-  
-  virtual void CSPViolation(
-      nsCSPContext* aContext, bool aIsCspToInherit, nsIURI* aBlockedURI,
-      nsCSPContext::BlockedContentSource aBlockedContentSource,
-      nsIURI* aOriginalURI, const nsAString& aViolatedDirective,
-      uint32_t aViolatedPolicyIndex, const nsAString& aObserverSubject) = 0;
+  virtual RefPtr<PDocumentChannelParent::ConfirmRedirectPromise>
+  ConfirmRedirect(const LoadInfoArgs& aLoadInfo, nsIURI* aNewURI) = 0;
 
   
   
