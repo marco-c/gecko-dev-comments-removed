@@ -72,10 +72,6 @@ impl<'a> FfiStr<'a> {
     
     
     
-    
-    
-    
-    
     #[inline]
     pub unsafe fn from_raw(ptr: *const c_char) -> Self {
         Self {

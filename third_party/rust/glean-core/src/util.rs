@@ -2,6 +2,7 @@
 
 
 
+use chrono::offset::TimeZone;
 use chrono::{DateTime, FixedOffset, Local};
 
 use crate::error_recording::{record_error, ErrorType};
@@ -18,7 +19,7 @@ pub fn sanitize_application_id(application_id: &str) -> String {
         .filter_map(|x| match x {
             'A'..='Z' | 'a'..='z' | '0'..='9' => {
                 last_dash = false;
-                Some(x.to_ascii_lowercase())
+                Some(x)
             }
             _ => {
                 let result = if last_dash { None } else { Some('-') };
@@ -48,8 +49,12 @@ pub fn get_iso_time_string(datetime: DateTime<FixedOffset>, truncate_to: TimeUni
 
 
 pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
+    
+
     let now: DateTime<Local> = Local::now();
-    now.with_timezone(now.offset())
+    let naive = now.naive_utc();
+    let fixed_tz = Local.offset_from_utc_datetime(&naive);
+    fixed_tz.from_utc_datetime(&naive)
 }
 
 
@@ -114,7 +119,6 @@ pub(crate) fn truncate_string_at_boundary_with_error<S: Into<String>>(
 #[cfg(test)]
 mod test {
     use super::*;
-    use chrono::offset::TimeZone;
 
     #[test]
     fn test_sanitize_application_id() {
@@ -129,10 +133,6 @@ mod test {
         assert_eq!(
             "org-mozilla-test-app",
             sanitize_application_id("org-mozilla-test-app")
-        );
-        assert_eq!(
-            "org-mozilla-test-app",
-            sanitize_application_id("org.mozilla.Test.App")
         );
     }
 

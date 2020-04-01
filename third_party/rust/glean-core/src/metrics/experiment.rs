@@ -3,7 +3,7 @@
 
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map as JsonMap, Value as JsonValue};
+use serde_json::json;
 use std::collections::HashMap;
 
 use crate::error_recording::{record_error, ErrorType};
@@ -14,7 +14,10 @@ use crate::util::{truncate_string_at_boundary, truncate_string_at_boundary_with_
 use crate::CommonMetricData;
 use crate::Glean;
 use crate::Lifetime;
-use crate::INTERNAL_STORAGE;
+
+
+
+const INTERNAL_STORAGE: &str = "glean_internal_info";
 
 
 
@@ -32,21 +35,6 @@ const MAX_EXPERIMENTS_EXTRAS_SIZE: usize = 20;
 pub struct RecordedExperimentData {
     pub branch: String,
     pub extra: Option<HashMap<String, String>>,
-}
-
-impl RecordedExperimentData {
-    
-    
-    
-    
-    pub fn as_json(&self) -> JsonValue {
-        let mut value = JsonMap::new();
-        value.insert("branch".to_string(), json!(self.branch));
-        if self.extra.is_some() {
-            value.insert("extra".to_string(), json!(self.extra));
-        }
-        JsonValue::Object(value)
-    }
 }
 
 

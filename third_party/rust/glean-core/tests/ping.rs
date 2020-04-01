@@ -12,7 +12,7 @@ use glean_core::CommonMetricData;
 fn write_ping_to_disk() {
     let (mut glean, _temp) = new_glean(None);
 
-    let ping = PingType::new("metrics", true, false, vec![]);
+    let ping = PingType::new("metrics", true, false);
     glean.register_ping_type(&ping);
 
     
@@ -24,7 +24,7 @@ fn write_ping_to_disk() {
     });
     counter.add(&glean, 1);
 
-    assert!(ping.submit(&glean, None).unwrap());
+    assert!(ping.submit(&glean).unwrap());
 
     assert_eq!(1, get_queued_pings(glean.get_data_path()).unwrap().len());
 }
@@ -33,7 +33,7 @@ fn write_ping_to_disk() {
 fn disabling_upload_clears_pending_pings() {
     let (mut glean, _) = new_glean(None);
 
-    let ping = PingType::new("metrics", true, false, vec![]);
+    let ping = PingType::new("metrics", true, false);
     glean.register_ping_type(&ping);
 
     
@@ -45,7 +45,7 @@ fn disabling_upload_clears_pending_pings() {
     });
 
     counter.add(&glean, 1);
-    assert!(ping.submit(&glean, None).unwrap());
+    assert!(ping.submit(&glean).unwrap());
     assert_eq!(1, get_queued_pings(glean.get_data_path()).unwrap().len());
     
     
@@ -60,44 +60,26 @@ fn disabling_upload_clears_pending_pings() {
     assert_eq!(0, get_queued_pings(glean.get_data_path()).unwrap().len());
 
     counter.add(&glean, 1);
-    assert!(ping.submit(&glean, None).unwrap());
+    assert!(ping.submit(&glean).unwrap());
     assert_eq!(1, get_queued_pings(glean.get_data_path()).unwrap().len());
-}
-
-#[test]
-fn deletion_request_only_when_toggled_from_on_to_off() {
-    let (mut glean, _) = new_glean(None);
-
-    
-    glean.set_upload_enabled(false);
-    assert_eq!(1, get_deletion_pings(glean.get_data_path()).unwrap().len());
-
-    
-    
-    glean.set_upload_enabled(false);
-    assert_eq!(1, get_deletion_pings(glean.get_data_path()).unwrap().len());
-
-    
-    glean.set_upload_enabled(true);
-    assert_eq!(1, get_deletion_pings(glean.get_data_path()).unwrap().len());
 }
 
 #[test]
 fn empty_pings_with_flag_are_sent() {
     let (mut glean, _) = new_glean(None);
 
-    let ping1 = PingType::new("custom-ping1", true, true, vec![]);
+    let ping1 = PingType::new("custom-ping1", true, true);
     glean.register_ping_type(&ping1);
-    let ping2 = PingType::new("custom-ping2", true, false, vec![]);
+    let ping2 = PingType::new("custom-ping2", true, false);
     glean.register_ping_type(&ping2);
 
     
 
     
-    assert_eq!(true, ping1.submit(&glean, None).unwrap());
+    assert_eq!(true, ping1.submit(&glean).unwrap());
     assert_eq!(1, get_queued_pings(glean.get_data_path()).unwrap().len());
 
     
-    assert_eq!(false, ping2.submit(&glean, None).unwrap());
+    assert_eq!(false, ping2.submit(&glean).unwrap());
     assert_eq!(1, get_queued_pings(glean.get_data_path()).unwrap().len());
 }

@@ -2,11 +2,26 @@
 
 
 
-
-
-
-
 use glean_core::{metrics::StringMetric, CommonMetricData, Lifetime};
+
+
+#[derive(Debug)]
+pub struct ClientInfoMetrics {
+    
+    pub app_build: String,
+    
+    pub app_display_version: String,
+}
+
+impl ClientInfoMetrics {
+    
+    pub fn unknown() -> Self {
+        ClientInfoMetrics {
+            app_build: "unknown".to_string(),
+            app_display_version: "unknown".to_string(),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct InternalMetrics {

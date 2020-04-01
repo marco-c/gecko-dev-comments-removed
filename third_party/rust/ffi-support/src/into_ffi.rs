@@ -143,12 +143,7 @@ use std::ptr;
 
 
 
-pub unsafe trait IntoFfi: Sized {
-    
-    
-    
-    
-    
+pub unsafe trait IntoFfi {
     
     
     

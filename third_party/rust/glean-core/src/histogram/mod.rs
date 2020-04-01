@@ -58,7 +58,7 @@ impl TryFrom<i32> for HistogramType {
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Histogram<B> {
     
     values: HashMap<u64, u64>,

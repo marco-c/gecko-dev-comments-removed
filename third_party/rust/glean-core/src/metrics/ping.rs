@@ -17,8 +17,6 @@ pub struct PingType {
     pub include_client_id: bool,
     
     pub send_if_empty: bool,
-    
-    pub reason_codes: Vec<String>,
 }
 
 impl PingType {
@@ -30,17 +28,11 @@ impl PingType {
     
     
     
-    pub fn new<A: Into<String>>(
-        name: A,
-        include_client_id: bool,
-        send_if_empty: bool,
-        reason_codes: Vec<String>,
-    ) -> Self {
+    pub fn new<A: Into<String>>(name: A, include_client_id: bool, send_if_empty: bool) -> Self {
         Self {
             name: name.into(),
             include_client_id,
             send_if_empty,
-            reason_codes,
         }
     }
 
@@ -53,21 +45,7 @@ impl PingType {
     
     
     
-    
-    
-    pub fn submit(&self, glean: &Glean, reason: Option<&str>) -> Result<bool> {
-        let corrected_reason = match reason {
-            Some(reason) => {
-                if self.reason_codes.contains(&reason.to_string()) {
-                    Some(reason)
-                } else {
-                    log::error!("Invalid reason code {} for ping {}", reason, self.name);
-                    None
-                }
-            }
-            None => None,
-        };
-
-        glean.submit_ping(self, corrected_reason)
+    pub fn submit(&self, glean: &Glean) -> Result<bool> {
+        glean.submit_ping(self)
     }
 }
