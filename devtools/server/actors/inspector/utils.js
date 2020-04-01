@@ -168,6 +168,19 @@ function standardTreeWalkerFilter(node) {
 
 
 
+function noAnonymousContentTreeWalkerFilter(node) {
+  
+  
+  
+  if (!isInXULDocument(node) && isNativeAnonymous(node)) {
+    return nodeFilterConstants.FILTER_SKIP;
+  }
+
+  return nodeFilterConstants.FILTER_ACCEPT;
+}
+
+
+
 
 function allAnonymousContentTreeWalkerFilter(node) {
   
@@ -556,4 +569,5 @@ module.exports = {
   nodeDocument,
   scrollbarTreeWalkerFilter,
   standardTreeWalkerFilter,
+  noAnonymousContentTreeWalkerFilter,
 };

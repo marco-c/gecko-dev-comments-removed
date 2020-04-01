@@ -117,6 +117,13 @@ loader.lazyRequireGetter(
 
 loader.lazyRequireGetter(
   this,
+  "noAnonymousContentTreeWalkerFilter",
+  "devtools/server/actors/inspector/utils",
+  true
+);
+
+loader.lazyRequireGetter(
+  this,
   "CustomElementWatcher",
   "devtools/server/actors/inspector/custom-element-watcher",
   true
@@ -2222,21 +2229,29 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     const nextWalkerSibling = this._getNextTraversalSibling(targetNode);
 
-    const walker = this.getDocumentWalker(targetNode);
+    const walker = new DocumentWalker(targetNode, this.rootWin, {
+      filter: noAnonymousContentTreeWalkerFilter,
+      skipTo: SKIP_TO_SIBLING,
+    });
+
     do {
       this._updateMutationBreakpointState("detach", walker.currentNode, null);
-    } while (
-      walker.nextNode() &&
-      !(nextWalkerSibling || walker.currentNode !== nextWalkerSibling)
-    );
+    } while (walker.nextNode() && walker.currentNode !== nextWalkerSibling);
   },
 
   _getNextTraversalSibling(targetNode) {
-    let current = targetNode;
-    while (current && !current.nextSibling) {
-      current = current.parentNode;
+    const walker = new DocumentWalker(targetNode, this.rootWin, {
+      filter: noAnonymousContentTreeWalkerFilter,
+      skipTo: SKIP_TO_SIBLING,
+    });
+
+    while (!walker.nextSibling()) {
+      if (!walker.parentNode()) {
+        
+        return null;
+      }
     }
-    return current ? current.nextSibling : null;
+    return walker.currentNode;
   },
 
   
