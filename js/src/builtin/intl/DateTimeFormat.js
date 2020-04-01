@@ -354,8 +354,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
                   "best fit");
     localeOpt.localeMatcher = localeMatcher;
 
-    
-#ifdef NIGHTLY_BUILD
     var calendar = GetOption(options, "calendar", "string", undefined, undefined);
 
     if (calendar !== undefined) {
@@ -373,7 +371,6 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     }
 
     localeOpt.nu = numberingSystem;
-#endif
 
     
     var hr12  = GetOption(options, "hour12", "boolean", undefined, undefined);
