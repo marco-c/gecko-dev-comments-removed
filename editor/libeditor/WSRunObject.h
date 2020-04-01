@@ -677,7 +677,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult Scrub(
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE static nsresult Scrub(
       HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPoint);
 
   
@@ -685,7 +685,7 @@ class MOZ_STACK_CLASS WSRunObject final : public WSRunScanner {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static nsresult PrepareToJoinBlocks(
+  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE static nsresult PrepareToJoinBlocks(
       HTMLEditor& aHTMLEditor, dom::Element& aLeftBlockElement,
       dom::Element& aRightBlockElement);
 
