@@ -963,7 +963,7 @@ void WSRunScanner::GetRuns() {
     mStartRun->mEndNode = mFirstNBSPNode;
     mStartRun->mEndOffset = mFirstNBSPOffset;
     mStartRun->mLeftType = mStartReason;
-    mStartRun->mRightType = WSType::normalWS;
+    mStartRun->SetEndByNormalWiteSpaces();
 
     
     WSFragment* normalRun = new WSFragment();
@@ -975,7 +975,7 @@ void WSRunScanner::GetRuns() {
     normalRun->mLeft = mStartRun;
     if (!EndsByBlockBoundary()) {
       
-      normalRun->mRightType = mEndReason;
+      normalRun->SetEndBy(mEndReason);
       normalRun->mEndNode = mEndNode;
       normalRun->mEndOffset = mEndOffset;
       mEndRun = normalRun;
@@ -986,14 +986,14 @@ void WSRunScanner::GetRuns() {
       
       if (mLastNBSPNode == mEndNode && mLastNBSPOffset == mEndOffset - 1) {
         
-        normalRun->mRightType = mEndReason;
+        normalRun->SetEndBy(mEndReason);
         normalRun->mEndNode = mEndNode;
         normalRun->mEndOffset = mEndOffset;
         mEndRun = normalRun;
       } else {
         normalRun->mEndNode = mLastNBSPNode;
         normalRun->mEndOffset = mLastNBSPOffset + 1;
-        normalRun->mRightType = WSType::trailingWS;
+        normalRun->SetEndByTrailingWhiteSpaces();
 
         
         WSFragment* lastRun = new WSFragment();
@@ -1004,7 +1004,7 @@ void WSRunScanner::GetRuns() {
         lastRun->mEndOffset = mEndOffset;
         lastRun->mLeftType = WSType::normalWS;
         lastRun->mLeft = normalRun;
-        lastRun->mRightType = mEndReason;
+        lastRun->SetEndBy(mEndReason);
         mEndRun = lastRun;
         normalRun->mRight = lastRun;
       }
@@ -1021,7 +1021,7 @@ void WSRunScanner::GetRuns() {
     
     
     if (mLastNBSPNode == mEndNode && mLastNBSPOffset == (mEndOffset - 1)) {
-      mStartRun->mRightType = mEndReason;
+      mStartRun->SetEndBy(mEndReason);
       mStartRun->mEndNode = mEndNode;
       mStartRun->mEndOffset = mEndOffset;
       mEndRun = mStartRun;
@@ -1033,10 +1033,10 @@ void WSRunScanner::GetRuns() {
       lastRun->mStartOffset = mLastNBSPOffset + 1;
       lastRun->mLeftType = WSType::normalWS;
       lastRun->mLeft = mStartRun;
-      lastRun->mRightType = mEndReason;
+      lastRun->SetEndBy(mEndReason);
       mEndRun = lastRun;
       mStartRun->mRight = lastRun;
-      mStartRun->mRightType = WSType::trailingWS;
+      mStartRun->SetEndByTrailingWhiteSpaces();
     }
   }
 }
@@ -1062,7 +1062,7 @@ void WSRunScanner::MakeSingleWSRun(WSType aType) {
   mStartRun->mEndNode = mEndNode;
   mStartRun->mEndOffset = mEndOffset;
   mStartRun->mLeftType = mStartReason;
-  mStartRun->mRightType = mEndReason;
+  mStartRun->SetEndBy(mEndReason);
 
   mEndRun = mStartRun;
 }
@@ -1897,12 +1897,11 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
     if (leftCheck || spaceNBSP) {
       
       
-      if (aRun->mRightType == WSType::text ||
-          aRun->mRightType == WSType::special ||
-          aRun->mRightType == WSType::br) {
+      if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
+          aRun->EndsByBRElement()) {
         rightCheck = true;
       }
-      if ((aRun->mRightType & WSType::block) &&
+      if ((aRun->EndsByBlockBoundary()) &&
           (IsBlockNode(GetEditableBlockParentOrTopmotEditableInlineContent(
                mScanStartPoint.GetContainerAsContent())) ||
            IsBlockNode(mScanStartPoint.GetContainerAsContent()))) {
@@ -2114,9 +2113,8 @@ nsresult WSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
           !atNextCharOfNextCharOfNBSP.IsCharASCIISpace()) {
         canConvert = true;
       }
-    } else if (aRun->mRightType == WSType::text ||
-               aRun->mRightType == WSType::special ||
-               aRun->mRightType == WSType::br) {
+    } else if (aRun->EndsByNormalText() || aRun->EndsBySpecialContent() ||
+               aRun->EndsByBRElement()) {
       canConvert = true;
     }
   }
