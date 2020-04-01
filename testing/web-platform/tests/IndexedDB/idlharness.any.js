@@ -2,6 +2,7 @@
 
 
 
+
 idl_test(
   ['IndexedDB'],
   ['html', 'dom'],
