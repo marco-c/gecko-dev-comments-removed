@@ -83,20 +83,25 @@ nsTreeBodyFrame* XULTreeElement::GetTreeBodyFrame(FlushType aFlushType) {
   MOZ_ASSERT(aFlushType == FlushType::Frames ||
              aFlushType == FlushType::Layout || aFlushType == FlushType::None);
   nsCOMPtr<nsIContent> kungFuDeathGrip = this;  
+  RefPtr<Document> doc = GetComposedDoc();
 
   
   
   
   
-  if (aFlushType != FlushType::None) {
-    if (RefPtr<Document> doc = GetComposedDoc()) {
-      doc->FlushPendingNotifications(aFlushType);
-    }
+  
+  
+  if (aFlushType == FlushType::Layout && doc) {
+    doc->FlushPendingNotifications(FlushType::Layout);
   }
 
   if (mTreeBody) {
     
     return mTreeBody;
+  }
+
+  if (aFlushType == FlushType::Frames && doc) {
+    doc->FlushPendingNotifications(FlushType::Frames);
   }
 
   if (nsCOMPtr<nsIContent> tree = FindBodyElement(this)) {
