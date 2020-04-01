@@ -6,14 +6,8 @@
 
 
 
-
-
-
-
 var DefaultDerivedClassConstructor =
     class extends null { constructor(...args) { super(...allowContentIter(args)); } };
-MakeDefaultConstructor(DefaultDerivedClassConstructor);
 
 var DefaultBaseClassConstructor =
     class { constructor() { } };
-MakeDefaultConstructor(DefaultBaseClassConstructor);
