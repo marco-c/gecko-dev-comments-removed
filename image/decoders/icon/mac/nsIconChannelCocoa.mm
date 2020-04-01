@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsContentUtils.h"
 #include "nsIconChannel.h"
@@ -33,13 +33,11 @@
 
 using namespace mozilla;
 
-// nsIconChannel methods
+
 nsIconChannel::nsIconChannel() {}
 
 nsIconChannel::~nsIconChannel() {
-  if (mLoadInfo) {
-    NS_ReleaseOnMainThreadSystemGroup("nsIconChannel::mLoadInfo", mLoadInfo.forget());
-  }
+  NS_ReleaseOnMainThreadSystemGroup("nsIconChannel::mLoadInfo", mLoadInfo.forget());
 }
 
 NS_IMPL_ISUPPORTS(nsIconChannel, nsIChannel, nsIRequest, nsIRequestObserver, nsIStreamListener)
@@ -53,8 +51,8 @@ nsresult nsIconChannel::Init(nsIURI* uri) {
   return rv;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// nsIRequest methods:
+
+
 
 NS_IMETHODIMP
 nsIconChannel::GetName(nsACString& result) { return mUrl->GetSpec(result); }
@@ -83,7 +81,7 @@ nsIconChannel::Suspend(void) { return mPump->Suspend(); }
 NS_IMETHODIMP
 nsIconChannel::Resume(void) { return mPump->Resume(); }
 
-// nsIRequestObserver methods
+
 NS_IMETHODIMP
 nsIconChannel::OnStartRequest(nsIRequest* aRequest) {
   if (mListener) {
@@ -99,7 +97,7 @@ nsIconChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     mListener = nullptr;
   }
 
-  // Remove from load group
+  
   if (mLoadGroup) {
     mLoadGroup->RemoveRequest(this, nullptr, aStatus);
   }
@@ -107,7 +105,7 @@ nsIconChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   return NS_OK;
 }
 
-// nsIStreamListener methods
+
 NS_IMETHODIMP
 nsIconChannel::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream, uint64_t aOffset,
                                uint32_t aCount) {
@@ -117,8 +115,8 @@ nsIconChannel::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream, ui
   return NS_OK;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// nsIChannel methods:
+
+
 
 NS_IMETHODIMP
 nsIconChannel::GetOriginalURI(nsIURI** aURI) {
@@ -191,7 +189,7 @@ nsIconChannel::AsyncOpen(nsIStreamListener* aListener) {
   }
 
   MOZ_ASSERT(
-      !mLoadInfo || mLoadInfo->GetSecurityMode() == 0 || mLoadInfo->GetInitialSecurityCheckDone() ||
+      mLoadInfo->GetSecurityMode() == 0 || mLoadInfo->GetInitialSecurityCheckDone() ||
           (mLoadInfo->GetSecurityMode() == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL &&
            mLoadInfo->LoadingPrincipal() && mLoadInfo->LoadingPrincipal()->IsSystemPrincipal()),
       "security flags in loadInfo but doContentSecurityCheck() not called");
@@ -203,7 +201,7 @@ nsIconChannel::AsyncOpen(nsIStreamListener* aListener) {
     return rv;
   }
 
-  // Init our stream pump
+  
   nsCOMPtr<nsIEventTarget> target =
       nsContentUtils::GetEventTargetByLoadInfo(mLoadInfo, mozilla::TaskCategory::Other);
   rv = mPump->Init(inStream, 0, 0, false, target);
@@ -214,9 +212,9 @@ nsIconChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   rv = mPump->AsyncRead(this, nullptr);
   if (NS_SUCCEEDED(rv)) {
-    // Store our real listener
+    
     mListener = aListener;
-    // Add ourself to the load group, if available
+    
     if (mLoadGroup) {
       mLoadGroup->AddRequest(this, nullptr);
     }
@@ -232,7 +230,7 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
 
   nsCString contentType;
   nsAutoCString fileExt;
-  nsCOMPtr<nsIFile> fileloc;  // file we want an icon for
+  nsCOMPtr<nsIFile> fileloc;  
   uint32_t desiredImageSize;
   nsresult rv =
       ExtractIconInfoFromUrl(getter_AddRefs(fileloc), &desiredImageSize, contentType, fileExt);
@@ -240,14 +238,14 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
 
   bool fileExists = false;
   if (fileloc) {
-    // ensure that we DO NOT resolve aliases, very important for file views
+    
     fileloc->SetFollowLinks(false);
     fileloc->Exists(&fileExists);
   }
 
   NSImage* iconImage = nil;
 
-  // first try to get the icon from the file if it exists
+  
   if (fileExists) {
     nsCOMPtr<nsILocalFileMac> localFileMac(do_QueryInterface(fileloc, &rv));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -259,13 +257,13 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
     }
   }
 
-  // if we don't have an icon yet try to get one by extension
+  
   if (!iconImage && !fileExt.IsEmpty()) {
     NSString* fileExtension = [NSString stringWithUTF8String:fileExt.get()];
     iconImage = [[NSWorkspace sharedWorkspace] iconForFileType:fileExtension];
   }
 
-  // If we still don't have an icon, get the generic document icon.
+  
   if (!iconImage) {
     iconImage = [[NSWorkspace sharedWorkspace] iconForFileType:NSFileTypeUnknown];
   }
@@ -275,26 +273,26 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
   }
 
   if (desiredImageSize > 255) {
-    // The Icon image format represents width and height as u8, so it does not
-    // allow for images sized 256 or more.
+    
+    
     return NS_ERROR_FAILURE;
   }
 
-  // Set the actual size to *twice* the requested size.
-  // We do this because our UI doesn't take the window's device pixel ratio into
-  // account when it requests these icons; e.g. it will request an icon with
-  // size 16, place it in a 16x16 CSS pixel sized image, and then display it in
-  // a window on a HiDPI screen where the icon now covers 32x32 physical screen
-  // pixels. So we just always double the size here in order to prevent blurriness.
+  
+  
+  
+  
+  
+  
   uint32_t size = (desiredImageSize < 128) ? desiredImageSize * 2 : desiredImageSize;
   uint32_t width = size;
   uint32_t height = size;
 
-  // The "image format" we're outputting here (and which gets decoded by
-  // nsIconDecoder) has the following format:
-  //  - 1 byte for the image width, as u8
-  //  - 1 byte for the image height, as u8
-  //  - the raw image data as BGRA, width * height * 4 bytes.
+  
+  
+  
+  
+  
   size_t bufferCapacity = 4 + width * height * 4;
   UniquePtr<uint8_t[]> fileBuf = MakeUnique<uint8_t[]>(bufferCapacity);
   fileBuf[0] = uint8_t(width);
@@ -303,12 +301,12 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
   fileBuf[3] = 0;
   uint8_t* imageBuf = &fileBuf[4];
 
-  // Create a CGBitmapContext around imageBuf and draw iconImage to it.
-  // This gives us the image data in the format we want: BGRA, four bytes per
-  // pixel, in host endianness, with premultiplied alpha.
+  
+  
+  
   CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
   CGContextRef ctx =
-      CGBitmapContextCreate(imageBuf, width, height, 8 /* bitsPerComponent */, width * 4, cs,
+      CGBitmapContextCreate(imageBuf, width, height, 8 , width * 4, cs,
                             kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst);
   CGColorSpaceRelease(cs);
 
@@ -322,7 +320,7 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
 
   CGContextRelease(ctx);
 
-  // Now, create a pipe and stuff our data into it
+  
   nsCOMPtr<nsIInputStream> inStream;
   nsCOMPtr<nsIOutputStream> outStream;
   rv = NS_NewPipe(getter_AddRefs(inStream), getter_AddRefs(outStream), bufferCapacity,
@@ -336,7 +334,7 @@ nsresult nsIconChannel::MakeInputStream(nsIInputStream** _retval, bool aNonBlock
     }
   }
 
-  // Drop notification callbacks to prevent cycles.
+  
   mCallbacks = nullptr;
 
   return NS_OK;
@@ -373,8 +371,8 @@ nsIconChannel::GetContentType(nsACString& aContentType) {
 
 NS_IMETHODIMP
 nsIconChannel::SetContentType(const nsACString& aContentType) {
-  // It doesn't make sense to set the content-type on this type
-  // of channel...
+  
+  
   return NS_ERROR_FAILURE;
 }
 
@@ -386,8 +384,8 @@ nsIconChannel::GetContentCharset(nsACString& aContentCharset) {
 
 NS_IMETHODIMP
 nsIconChannel::SetContentCharset(const nsACString& aContentCharset) {
-  // It doesn't make sense to set the content-type on this type
-  // of channel...
+  
+  
   return NS_ERROR_FAILURE;
 }
 
