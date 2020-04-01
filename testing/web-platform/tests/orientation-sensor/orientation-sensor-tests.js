@@ -42,7 +42,9 @@ async function checkPopulateMatrix(t, sensorProvider, sensorType) {
 
   
   assert_throws_js(TypeError,
-      () => sensor.populateMatrix(new Float32Array(new SharedArrayBuffer(16))));
+      
+      
+      () => sensor.populateMatrix(new Float32Array(new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer)));
 
   sensor.start();
 
