@@ -123,15 +123,11 @@
       if (val) {
         this.setAttribute("searchbutton", "true");
         this.removeAttribute("aria-autocomplete");
-        
-        
-        
-        
-        this._searchButtonIcon.setAttribute("onclick", "true");
+        this._searchButtonIcon.setAttribute("role", "button");
       } else {
         this.removeAttribute("searchbutton");
-        this._searchButtonIcon.removeAttribute("onclick");
         this.setAttribute("aria-autocomplete", "list");
+        this._searchButtonIcon.setAttribute("role", "none");
       }
       return val;
     }
