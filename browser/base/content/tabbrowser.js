@@ -208,13 +208,6 @@
 
     _windowIsClosing: false,
 
-    
-
-
-
-
-    _titleElement: undefined,
-
     preloadedBrowser: null,
 
     
@@ -920,9 +913,32 @@
     },
 
     getWindowTitleForBrowser(aBrowser) {
-      let title = "";
+      var newTitle = "";
+      var docElement = document.documentElement;
+      var sep = docElement.getAttribute("titlemenuseparator");
+      let tab = this.getTabForBrowser(aBrowser);
+      let docTitle;
 
-      let docElement = document.documentElement;
+      if (tab._labelIsContentTitle) {
+        
+        
+        
+        docTitle = tab.getAttribute("label").replace(/\0/g, "");
+      }
+
+      if (!docTitle) {
+        docTitle = docElement.getAttribute("titledefault");
+      }
+
+      var modifier = docElement.getAttribute("titlemodifier");
+      if (docTitle) {
+        newTitle += docElement.getAttribute("titlepreface") || "";
+        newTitle += docTitle;
+        if (modifier) {
+          newTitle += sep;
+        }
+      }
+      newTitle += modifier;
 
       
       
@@ -930,69 +946,30 @@
       try {
         if (docElement.getAttribute("chromehidden").includes("location")) {
           const uri = Services.io.createExposableURI(aBrowser.currentURI);
-          let prefix = uri.prePath;
-          if (uri.scheme == "about") {
-            prefix = uri.spec;
-          } else if (uri.scheme == "moz-extension") {
+          if (uri.scheme === "about") {
+            newTitle = `${uri.spec}${sep}${newTitle}`;
+          } else if (uri.scheme === "moz-extension") {
             const ext = WebExtensionPolicy.getByHostname(uri.host);
             if (ext && ext.name) {
-              let extensionLabel = document.getElementById(
-                "urlbar-label-extension"
-              );
-              prefix = `${extensionLabel.value} (${ext.name})`;
+              const prefix = document.querySelector("#urlbar-label-extension")
+                .value;
+              newTitle = `${prefix} (${ext.name})${sep}${newTitle}`;
+            } else {
+              newTitle = `${uri.prePath}${sep}${newTitle}`;
             }
+          } else {
+            newTitle = `${uri.prePath}${sep}${newTitle}`;
           }
-          title = prefix + " - ";
         }
       } catch (e) {
         
       }
 
-      if (docElement.hasAttribute("titlepreface")) {
-        title += docElement.getAttribute("titlepreface");
-      }
-
-      let tab = this.getTabForBrowser(aBrowser);
-
-      if (tab._labelIsContentTitle) {
-        
-        
-        
-        title += tab.getAttribute("label").replace(/\0/g, "");
-      }
-
-      let mode =
-        docElement.getAttribute("privatebrowsingmode") == "temporary"
-          ? "private"
-          : "default";
-
-      if (title) {
-        return {
-          id:
-            mode == "private"
-              ? "browser-main-window-content-title-private"
-              : "browser-main-window-content-title-default",
-          args: {
-            title,
-          },
-        };
-      }
-      return {
-        id: "browser-main-window-title",
-        args: {
-          mode,
-        },
-      };
+      return newTitle;
     },
 
-    async updateTitlebar() {
-      if (!this._titleElement) {
-        this._titleElement = document.documentElement.querySelector("title");
-      }
-
-      let { id, args } = this.getWindowTitleForBrowser(this.selectedBrowser);
-      document.l10n.setAttributes(this._titleElement, id, args);
-      await document.l10n.translateElements([this._titleElement]);
+    updateTitlebar() {
+      document.title = this.getWindowTitleForBrowser(this.selectedBrowser);
     },
 
     updateCurrentBrowser(aForceUpdate) {

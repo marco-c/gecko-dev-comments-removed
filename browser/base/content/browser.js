@@ -8369,6 +8369,13 @@ var gPrivateBrowsingUI = {
 
     
     let docElement = document.documentElement;
+    if (!PrivateBrowsingUtils.permanentPrivateBrowsing) {
+      docElement.title = docElement.getAttribute("title_privatebrowsing");
+      docElement.setAttribute(
+        "titlemodifier",
+        docElement.getAttribute("titlemodifier_privatebrowsing")
+      );
+    }
     docElement.setAttribute(
       "privatebrowsingmode",
       PrivateBrowsingUtils.permanentPrivateBrowsing ? "permanent" : "temporary"
