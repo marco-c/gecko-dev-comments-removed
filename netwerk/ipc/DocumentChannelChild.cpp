@@ -353,31 +353,56 @@ DocumentChannelChild::OnRedirectVerifyCallback(nsresult aStatusCode) {
   return NS_OK;
 }
 
-IPCResult DocumentChannelChild::RecvConfirmRedirect(
-    LoadInfoArgs&& aLoadInfo, nsIURI* aNewUri,
-    ConfirmRedirectResolver&& aResolve) {
-  
-  
-  
-  
-  RefPtr<dom::Document> cspToInheritLoadingDocument;
-  nsCOMPtr<nsIContentSecurityPolicy> policy = mLoadState->Csp();
-  if (policy) {
+mozilla::ipc::IPCResult DocumentChannelChild::RecvCSPViolation(
+    const CSPInfo& aCSP, bool aIsCspToInherit, nsIURI* aBlockedURI,
+    uint32_t aBlockedContentSource, nsIURI* aOriginalURI,
+    const nsAString& aViolatedDirective, uint32_t aViolatedPolicyIndex,
+    const nsAString& aObserverSubject) {
+  if (aBlockedContentSource > nsCSPContext::BlockedContentSource::eSelf) {
+    return IPC_FAIL(this, "Invalid BlockedContentSource value");
+  }
+  nsCSPContext::BlockedContentSource blockedContentSource =
+      static_cast<nsCSPContext::BlockedContentSource>(aBlockedContentSource);
+
+  RefPtr<dom::Document> cspLoadingDocument;
+  if (aIsCspToInherit) {
+    
+    
+    
+    nsCOMPtr<nsIContentSecurityPolicy> policy = mLoadState->Csp();
+    MOZ_ASSERT(policy,
+               "How is this a CSP to inherit violation if we didn't have a "
+               "policy to inherit!");
     nsWeakPtr ctx =
         static_cast<nsCSPContext*>(policy.get())->GetLoadingContext();
-    cspToInheritLoadingDocument = do_QueryReferent(ctx);
+    cspLoadingDocument = do_QueryReferent(ctx);
+  } else {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsINode> loadingContext;
+    RefPtr<BrowsingContext> frameBrowsingContext =
+        GetDocShell()->GetBrowsingContext();
+    if (frameBrowsingContext) {
+      loadingContext = frameBrowsingContext->GetEmbedderElement();
+      if (loadingContext) {
+        cspLoadingDocument = loadingContext->OwnerDoc();
+      }
+    }
   }
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  MOZ_ALWAYS_SUCCEEDS(LoadInfoArgsToLoadInfo(Some(std::move(aLoadInfo)),
-                                             cspToInheritLoadingDocument,
-                                             getter_AddRefs(loadInfo)));
+  nsCOMPtr<nsIContentSecurityPolicy> csp =
+      CSPInfoToCSP(aCSP, cspLoadingDocument);
+  if (!csp) {
+    return IPC_OK();
+  }
 
-  nsCOMPtr<nsIURI> originalUri;
-  GetOriginalURI(getter_AddRefs(originalUri));
-  Maybe<nsresult> cancelCode;
-  nsresult rv = CSPService::ConsultCSPForRedirect(originalUri, aNewUri,
-                                                  loadInfo, cancelCode);
-  aResolve(Tuple<const nsresult&, const Maybe<nsresult>&>(rv, cancelCode));
+  nsCSPContext::AsyncReportViolation(
+      static_cast<nsCSPContext*>(csp.get()), nullptr, nullptr, aBlockedURI,
+      blockedContentSource, aOriginalURI, aViolatedDirective,
+      aViolatedPolicyIndex, aObserverSubject, nsString(), nsString(), 0, 0);
+
   return IPC_OK();
 }
 
