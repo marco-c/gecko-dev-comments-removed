@@ -72,6 +72,10 @@ impl<'a> FfiStr<'a> {
     
     
     
+    
+    
+    
+    
     #[inline]
     pub unsafe fn from_raw(ptr: *const c_char) -> Self {
         Self {
@@ -127,16 +131,16 @@ impl<'a> FfiStr<'a> {
         }
     }
 
-    /// Get an `Option<String>` out of the `FfiStr`. Returns `None` if this
-    /// `FfiStr` holds a null pointer. Note that unlike [`FfiStr::as_opt_str`],
-    /// invalid UTF-8 is replaced with the replacement character instead of
-    /// causing us to return None.
-    ///
-    /// If the string should be mandatory, you should use
-    /// [`FfiStr::into_string`] instead. If an owned string is not needed, you
-    /// may want to use [`FfiStr::as_str`] or [`FfiStr::as_opt_str`] instead,
-    /// (however, note the differences in how invalid UTF-8 is handled, should
-    /// this be relevant to your use).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn into_opt_string(self) -> Option<String> {
         if !self.cstr.is_null() {
             unsafe { Some(CStr::from_ptr(self.cstr).to_string_lossy().to_string()) }
@@ -145,17 +149,17 @@ impl<'a> FfiStr<'a> {
         }
     }
 
-    /// Get a `String` out of a `FfiStr`. This function is essential a
-    /// convenience wrapper for `ffi_str.into_opt_string().unwrap()`, with a
-    /// message that indicates that a null argument was passed to rust when it
-    /// should be mandatory. As with [`FfiStr::into_opt_string`], invalid UTF-8
-    /// is replaced with the replacement character if encountered.
-    ///
-    /// If the string should *not* be mandatory, you should use
-    /// [`FfiStr::into_opt_string`] instead. If an owned string is not needed,
-    /// you may want to use [`FfiStr::as_str`] or [`FfiStr::as_opt_str`]
-    /// instead, (however, note the differences in how invalid UTF-8 is handled,
-    /// should this be relevant to your use).
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn into_string(self) -> String {
         self.into_opt_string()

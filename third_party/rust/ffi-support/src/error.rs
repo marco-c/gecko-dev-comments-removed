@@ -196,31 +196,31 @@ impl ExternError {
         }
     }
 
-    /// Get the `code` property.
+    
     #[inline]
     pub fn get_code(&self) -> ErrorCode {
         self.code
     }
 
-    /// Get the `message` property as a pointer to c_char.
+    
     #[inline]
     pub fn get_raw_message(&self) -> *const c_char {
         self.message as *const _
     }
 
-    /// Get the `message` property as an [`FfiStr`]
+    
     #[inline]
     pub fn get_message(&self) -> crate::FfiStr<'_> {
-        // Safe because the lifetime is the same as our lifetime.
+        
         unsafe { crate::FfiStr::from_raw(self.get_raw_message()) }
     }
 
-    /// Get the `message` property as a String, or None if this is not an error result.
-    ///
-    /// ## Safety
-    ///
-    /// You should only call this if you are certain that the other side of the FFI doesn't have a
-    /// reference to this result (more specifically, to the `message` property) anywhere!
+    
+    
+    
+    
+    
+    
     #[inline]
     pub unsafe fn get_and_consume_message(self) -> Option<String> {
         if self.code.is_success() {
@@ -232,12 +232,12 @@ impl ExternError {
         }
     }
 
-    /// Manually release the memory behind this string. You probably don't want to call this.
-    ///
-    /// ## Safety
-    ///
-    /// You should only call this if you are certain that the other side of the FFI doesn't have a
-    /// reference to this result (more specifically, to the `message` property) anywhere!
+    
+    
+    
+    
+    
+    
     pub unsafe fn manually_release(self) {
         if !self.message.is_null() {
             destroy_c_string(self.message)
@@ -252,13 +252,13 @@ impl Default for ExternError {
     }
 }
 
-// This is the `Err` of std::thread::Result, which is what
-// `panic::catch_unwind` returns.
+
+
 impl From<Box<dyn std::any::Any + Send + 'static>> for ExternError {
     fn from(e: Box<dyn std::any::Any + Send + 'static>) -> Self {
-        // The documentation suggests that it will *usually* be a str or String.
+        
         let message = if let Some(s) = e.downcast_ref::<&'static str>() {
-            s.to_string()
+            (*s).to_string()
         } else if let Some(s) = e.downcast_ref::<String>() {
             s.clone()
         } else {
@@ -269,31 +269,31 @@ impl From<Box<dyn std::any::Any + Send + 'static>> for ExternError {
     }
 }
 
-/// A wrapper around error codes, which is represented identically to an i32 on the other side of
-/// the FFI. Essentially exists to check that we don't accidentally reuse success/panic codes for
-/// other things.
+
+
+
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct ErrorCode(i32);
 
 impl ErrorCode {
-    /// The ErrorCode used for success.
+    
     pub const SUCCESS: ErrorCode = ErrorCode(0);
 
-    /// The ErrorCode used for panics. It's unlikely you need to ever use this.
-    // TODO: Consider moving to the reserved region...
+    
+    
     pub const PANIC: ErrorCode = ErrorCode(-1);
 
-    /// The ErrorCode used for handle map errors.
+    
     pub const INVALID_HANDLE: ErrorCode = ErrorCode(-1000);
 
-    /// Construct an error code from an integer code.
-    ///
-    /// ## Panics
-    ///
-    /// Panics if you call it with 0 (reserved for success, but you can use `ErrorCode::SUCCESS` if
-    /// that's what you want), or -1 (reserved for panics, but you can use `ErrorCode::PANIC` if
-    /// that's what you want).
+    
+    
+    
+    
+    
+    
+    
     pub fn new(code: i32) -> Self {
         assert!(code > ErrorCode::INVALID_HANDLE.0 && code != ErrorCode::PANIC.0 && code != ErrorCode::SUCCESS.0,
             "Error: The ErrorCodes `{success}`, `{panic}`, and all error codes less than or equal \

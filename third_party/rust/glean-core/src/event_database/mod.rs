@@ -113,8 +113,8 @@ impl EventDatabase {
     }
 
     fn load_events_from_disk(&self) -> Result<()> {
-        let _lock = self.file_lock.read().unwrap(); // safe unwrap, only error case is poisoning
-        let mut db = self.event_stores.write().unwrap(); // safe unwrap, only error case is poisoning
+        let _lock = self.file_lock.read().unwrap(); 
+        let mut db = self.event_stores.write().unwrap(); 
         for entry in fs::read_dir(&self.path)? {
             let entry = entry?;
             if entry.file_type()?.is_file() {
@@ -134,13 +134,13 @@ impl EventDatabase {
 
     fn send_all_events(&self, glean: &Glean) -> bool {
         let store_names = {
-            let db = self.event_stores.read().unwrap(); // safe unwrap, only error case is poisoning
+            let db = self.event_stores.read().unwrap(); 
             db.keys().cloned().collect::<Vec<String>>()
         };
 
         let mut ping_sent = false;
         for store_name in store_names {
-            if let Err(err) = glean.submit_ping_by_name(&store_name) {
+            if let Err(err) = glean.submit_ping_by_name(&store_name, None) {
                 log::error!(
                     "Error flushing existing events to the '{}' ping: {}",
                     store_name,
@@ -154,17 +154,17 @@ impl EventDatabase {
         ping_sent
     }
 
-    /// Record an event in the desired stores.
-    ///
-    /// # Arguments
-    ///
-    /// * `glean` - The Glean instance.
-    /// * `meta` - The metadata about the event metric. Used to get the category,
-    ///   name and stores for the metric.
-    /// * `timestamp` - The timestamp of the event, in milliseconds. Must use a
-    ///   monotonically increasing timer (this value is obtained on the
-    ///   platform-specific side).
-    /// * `extra` - Extra data values, mapping strings to strings.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn record(
         &self,
         glean: &Glean,
@@ -172,20 +172,20 @@ impl EventDatabase {
         timestamp: u64,
         extra: Option<HashMap<String, String>>,
     ) {
-        // Create RecordedEventData object, and its JSON form for serialization
-        // on disk.
+        
+        
         let event = RecordedEventData {
             timestamp,
             category: meta.category.to_string(),
             name: meta.name.to_string(),
             extra,
         };
-        let event_json = serde_json::to_string(&event).unwrap(); // safe unwrap, event can always be serialized
+        let event_json = serde_json::to_string(&event).unwrap(); 
 
-        // Store the event in memory and on disk to each of the stores.
+        
         let mut stores_to_submit: Vec<&str> = Vec::new();
         {
-            let mut db = self.event_stores.write().unwrap(); // safe unwrap, only error case is poisoning
+            let mut db = self.event_stores.write().unwrap(); 
             for store_name in meta.send_in_pings.iter() {
                 let store = db.entry(store_name.to_string()).or_insert_with(Vec::new);
                 store.push(event.clone());
@@ -196,10 +196,10 @@ impl EventDatabase {
             }
         }
 
-        // If any of the event stores reached maximum size, submit the pings
-        // containing those events immediately.
+        
+        
         for store_name in stores_to_submit {
-            if let Err(err) = glean.submit_ping_by_name(store_name) {
+            if let Err(err) = glean.submit_ping_by_name(store_name, None) {
                 log::error!(
                     "Got more than {} events, but could not send {} ping: {}",
                     glean.get_max_events(),
@@ -210,14 +210,14 @@ impl EventDatabase {
         }
     }
 
-    /// Writes an event to a single store on disk.
-    ///
-    /// # Arguments
-    ///
-    /// * `store_name` - The name of the store.
-    /// * `event_json` - The event content, as a single-line JSON-encoded string.
+    
+    
+    
+    
+    
+    
     fn write_event_to_disk(&self, store_name: &str, event_json: &str) {
-        let _lock = self.file_lock.write().unwrap(); // safe unwrap, only error case is poisoning
+        let _lock = self.file_lock.write().unwrap(); 
         if let Err(err) = OpenOptions::new()
             .create(true)
             .append(true)
@@ -228,27 +228,27 @@ impl EventDatabase {
         }
     }
 
-    /// Get a snapshot of the stored event data as a JsonValue.
-    ///
-    /// # Arguments
-    ///
-    /// * `store_name` - The name of the desired store.
-    /// * `clear_store` - Whether to clear the store after snapshotting.
-    ///
-    /// # Returns
-    ///
-    /// The an array of events, JSON encoded, if any.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn snapshot_as_json(&self, store_name: &str, clear_store: bool) -> Option<JsonValue> {
         let result = {
-            let mut db = self.event_stores.write().unwrap(); // safe unwrap, only error case is poisoning
+            let mut db = self.event_stores.write().unwrap(); 
             db.get_mut(&store_name.to_string()).and_then(|store| {
                 if !store.is_empty() {
-                    // Timestamps may have been recorded out-of-order, so sort the events
-                    // by the timestamp.
-                    // We can't insert events in order as-we-go, because we also append
-                    // events to a file on disk, where this would be expensive. Best to
-                    // handle this in every case (whether events came from disk or memory)
-                    // in a single location.
+                    
+                    
+                    
+                    
+                    
+                    
                     store.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
                     let first_timestamp = store[0].timestamp;
                     Some(JsonValue::from_iter(
@@ -264,14 +264,14 @@ impl EventDatabase {
         if clear_store {
             self.event_stores
                 .write()
-                .unwrap() // safe unwrap, only error case is poisoning
+                .unwrap() 
                 .remove(&store_name.to_string());
 
-            let _lock = self.file_lock.write().unwrap(); // safe unwrap, only error case is poisoning
+            let _lock = self.file_lock.write().unwrap(); 
             if let Err(err) = fs::remove_file(self.path.join(store_name)) {
                 match err.kind() {
                     std::io::ErrorKind::NotFound => {
-                        // silently drop this error, the file was already non-existing
+                        
                     }
                     _ => log::error!("Error removing events queue file '{}': {}", store_name, err),
                 }
@@ -281,12 +281,12 @@ impl EventDatabase {
         result
     }
 
-    /// Clear all stored events, both in memory and on-disk.
+    
     pub fn clear_all(&self) -> Result<()> {
-        // safe unwrap, only error case is poisoning
+        
         self.event_stores.write().unwrap().clear();
 
-        // safe unwrap, only error case is poisoning
+        
         let _lock = self.file_lock.write().unwrap();
         std::fs::remove_dir_all(&self.path)?;
         create_dir_all(&self.path)?;
@@ -294,28 +294,28 @@ impl EventDatabase {
         Ok(())
     }
 
-    /// **Test-only API (exported for FFI purposes).**
-    ///
-    /// Return whether there are any events currently stored for the given even
-    /// metric.
-    ///
-    /// This doesn't clear the stored value.
+    
+    
+    
+    
+    
+    
     pub fn test_has_value<'a>(&'a self, meta: &'a CommonMetricData, store_name: &str) -> bool {
         self.event_stores
             .read()
-            .unwrap() // safe unwrap, only error case is poisoning
+            .unwrap() 
             .get(&store_name.to_string())
             .into_iter()
             .flatten()
             .any(|event| event.name == meta.name && event.category == meta.category)
     }
 
-    /// **Test-only API (exported for FFI purposes).**
-    ///
-    /// Get the vector of currently stored events for the given event metric in
-    /// the given store.
-    ///
-    /// This doesn't clear the stored value.
+    
+    
+    
+    
+    
+    
     pub fn test_get_value<'a>(
         &'a self,
         meta: &'a CommonMetricData,
@@ -324,7 +324,7 @@ impl EventDatabase {
         let value: Vec<RecordedEventData> = self
             .event_stores
             .read()
-            .unwrap() // safe unwrap, only error case is poisoning
+            .unwrap() 
             .get(&store_name.to_string())
             .into_iter()
             .flatten()

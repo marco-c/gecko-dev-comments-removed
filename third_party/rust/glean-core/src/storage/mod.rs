@@ -111,19 +111,19 @@ impl StorageManager {
         }
     }
 
-    /// Get the current value of a single metric identified by name.
-    ///
-    /// This look for a value in stores for all lifetimes.
-    ///
-    /// ## Arguments:
-    ///
-    /// * `storage` - The database to get data from.
-    /// * `store_name` - The store name to look into.
-    /// * `metric_id` - The full metric identifier.
-    ///
-    /// ## Return value:
-    ///
-    /// Returns the decoded metric or `None` if no data is found.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn snapshot_metric(
         &self,
         storage: &Database,
@@ -146,30 +146,30 @@ impl StorageManager {
         snapshot
     }
 
-    ///  Snapshot the experiments.
-    ///
-    /// ## Arguments:
-    ///
-    /// * `storage` - The database to get data from.
-    /// * `store_name` - The store name to look into.
-    ///
-    /// ## Return value
-    ///
-    /// Returns a JSON representation of the experiment data, in the following format:
-    ///
-    /// ```json
-    /// {
-    ///  "experiment-id": {
-    ///    "branch": "branch-id",
-    ///    "extra": {
-    ///      "additional": "property",
-    ///      // ...
-    ///    }
-    ///  }
-    /// }
-    /// ```
-    ///
-    /// Returns `None` if no data for experiments exists.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn snapshot_experiments_as_json(
         &self,
         storage: &Database,
@@ -180,7 +180,7 @@ impl StorageManager {
         let mut snapshotter = |metric_name: &[u8], metric: &Metric| {
             let metric_name = String::from_utf8_lossy(metric_name).into_owned();
             if metric_name.ends_with("#experiment") {
-                let name = metric_name.splitn(2, '#').next().unwrap(); // safe unwrap, first field of a split always valid
+                let name = metric_name.splitn(2, '#').next().unwrap(); 
                 snapshot.insert(name.to_string(), metric.as_json());
             }
         };
@@ -201,8 +201,8 @@ mod test {
     use crate::metrics::ExperimentMetric;
     use crate::Glean;
 
-    // Experiment's API tests: the next test comes from glean-ac's
-    // ExperimentsStorageEngineTest.kt.
+    
+    
     #[test]
     fn test_experiments_json_serialization() {
         let t = tempfile::tempdir().unwrap();
@@ -222,6 +222,30 @@ mod test {
             .unwrap();
         assert_eq!(
             json!({"some-experiment": {"branch": "test-branch", "extra": {"test-key": "test-value"}}}),
+            snapshot
+        );
+
+        metric.set_inactive(&glean);
+
+        let empty_snapshot =
+            StorageManager.snapshot_experiments_as_json(glean.storage(), "glean_internal_info");
+        assert!(empty_snapshot.is_none());
+    }
+
+    #[test]
+    fn test_experiments_json_serialization_empty() {
+        let t = tempfile::tempdir().unwrap();
+        let name = t.path().display().to_string();
+        let glean = Glean::with_options(&name, "org.mozilla.glean", true).unwrap();
+
+        let metric = ExperimentMetric::new(&glean, "some-experiment".to_string());
+
+        metric.set_active(&glean, "test-branch".to_string(), None);
+        let snapshot = StorageManager
+            .snapshot_experiments_as_json(glean.storage(), "glean_internal_info")
+            .unwrap();
+        assert_eq!(
+            json!({"some-experiment": {"branch": "test-branch"}}),
             snapshot
         );
 
