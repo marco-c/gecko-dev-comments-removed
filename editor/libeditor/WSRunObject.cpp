@@ -203,9 +203,9 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
     AutoTrackDOMPoint tracker(mHTMLEditor.RangeUpdaterRef(), &pointToInsert);
 
     
-    if (!afterRun || (afterRun->mType & WSType::trailingWS)) {
+    if (!afterRun || afterRun->IsEndOfHardLine()) {
       
-    } else if (afterRun->mType & WSType::leadingWS) {
+    } else if (afterRun->IsStartOfHardLine()) {
       
       
       
@@ -214,7 +214,7 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
         NS_WARNING("WSRunObject::DeleteRange() failed");
         return nullptr;
       }
-    } else if (afterRun->mType == WSType::normalWS) {
+    } else if (afterRun->IsVisibleAndMiddleOfHardLine()) {
       
       
       EditorDOMPointInText atNextCharOfInsertionPoint =
@@ -241,9 +241,9 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
     }
 
     
-    if (!beforeRun || (beforeRun->mType & WSType::leadingWS)) {
+    if (!beforeRun || beforeRun->IsStartOfHardLine()) {
       
-    } else if (beforeRun->mType & WSType::trailingWS) {
+    } else if (beforeRun->IsEndOfHardLine()) {
       
       
       nsresult rv = DeleteRange(beforeRun->StartPoint(), pointToInsert);
@@ -251,7 +251,7 @@ already_AddRefed<Element> WSRunObject::InsertBreak(
         NS_WARNING("WSRunObject::DeleteRange() failed");
         return nullptr;
       }
-    } else if (beforeRun->mType == WSType::normalWS) {
+    } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
       
       nsresult rv = ReplacePreviousNBSPIfUnnecessary(beforeRun, pointToInsert);
       if (NS_FAILED(rv)) {
@@ -303,9 +303,9 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     AutoTrackDOMPoint tracker(mHTMLEditor.RangeUpdaterRef(), &pointToInsert);
 
     
-    if (!afterRun || afterRun->mType & WSType::trailingWS) {
+    if (!afterRun || afterRun->IsEndOfHardLine()) {
       
-    } else if (afterRun->mType & WSType::leadingWS) {
+    } else if (afterRun->IsStartOfHardLine()) {
       
       
       nsresult rv = DeleteRange(pointToInsert, afterRun->EndPoint());
@@ -313,7 +313,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
         NS_WARNING("WSRunObject::DeleteRange() failed");
         return rv;
       }
-    } else if (afterRun->mType == WSType::normalWS) {
+    } else if (afterRun->IsVisibleAndMiddleOfHardLine()) {
       
       
       nsresult rv = CheckLeadingNBSP(
@@ -326,9 +326,9 @@ nsresult WSRunObject::InsertText(Document& aDocument,
     }
 
     
-    if (!beforeRun || beforeRun->mType & WSType::leadingWS) {
+    if (!beforeRun || beforeRun->IsStartOfHardLine()) {
       
-    } else if (beforeRun->mType & WSType::trailingWS) {
+    } else if (beforeRun->IsEndOfHardLine()) {
       
       
       nsresult rv = DeleteRange(beforeRun->StartPoint(), pointToInsert);
@@ -336,7 +336,7 @@ nsresult WSRunObject::InsertText(Document& aDocument,
         NS_WARNING("WSRunObject::DeleteRange() failed");
         return rv;
       }
-    } else if (beforeRun->mType == WSType::normalWS) {
+    } else if (beforeRun->IsVisibleAndMiddleOfHardLine()) {
       
       
       nsresult rv = ReplacePreviousNBSPIfUnnecessary(beforeRun, pointToInsert);
@@ -356,9 +356,9 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   if (nsCRT::IsAsciiSpace(theString[0])) {
     
     if (beforeRun) {
-      if (beforeRun->mType & WSType::leadingWS) {
+      if (beforeRun->IsStartOfHardLine()) {
         theString.SetCharAt(kNBSP, 0);
-      } else if (beforeRun->mType & WSType::normalWS) {
+      } else if (beforeRun->IsVisible()) {
         EditorDOMPointInText atPreviousChar =
             GetPreviousCharPoint(pointToInsert);
         if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
@@ -377,9 +377,9 @@ nsresult WSRunObject::InsertText(Document& aDocument,
   if (nsCRT::IsAsciiSpace(theString[lastCharIndex])) {
     
     if (afterRun) {
-      if (afterRun->mType & WSType::trailingWS) {
+      if (afterRun->IsEndOfHardLine()) {
         theString.SetCharAt(kNBSP, lastCharIndex);
-      } else if (afterRun->mType & WSType::normalWS) {
+      } else if (afterRun->IsVisible()) {
         EditorDOMPointInText atNextChar = GetNextCharPoint(pointToInsert);
         if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
             atNextChar.IsCharASCIISpace()) {
@@ -578,7 +578,7 @@ WSScanResult WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundaryFrom(
 
   
   for (; run; run = run->mLeft) {
-    if (run->mType == WSType::normalWS) {
+    if (run->IsVisibleAndMiddleOfHardLine()) {
       EditorDOMPointInText atPreviousChar = GetPreviousCharPoint(aPoint);
       
       if (atPreviousChar.IsSet() && !atPreviousChar.IsContainerEmpty()) {
@@ -613,7 +613,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
 
   
   for (; run; run = run->mRight) {
-    if (run->mType == WSType::normalWS) {
+    if (run->IsVisibleAndMiddleOfHardLine()) {
       EditorDOMPointInText atNextChar = GetNextCharPoint(aPoint);
       
       if (atNextChar.IsSet() && !atNextChar.IsContainerEmpty()) {
@@ -645,7 +645,7 @@ nsresult WSRunObject::AdjustWhitespace() {
     return NS_OK;
   }
   for (WSFragment* run = mStartRun; run; run = run->mRight) {
-    if (run->mType != WSType::normalWS) {
+    if (!run->IsVisibleAndMiddleOfHardLine()) {
       continue;
     }
     nsresult rv = CheckTrailingNBSPOfRun(run);
@@ -933,7 +933,9 @@ void WSRunScanner::GetRuns() {
   if (mPRE ||
       ((StartsFromNormalText() || StartsFromSpecialContent()) &&
        (EndsByNormalText() || EndsBySpecialContent() || EndsByBRElement()))) {
-    MakeSingleWSRun(WSType::normalWS);
+    InitializeWithSingleFragment(WSFragment::Visible::Yes,
+                                 WSFragment::StartOfHardLine::No,
+                                 WSFragment::EndOfHardLine::No);
     return;
   }
 
@@ -941,14 +943,12 @@ void WSRunScanner::GetRuns() {
   
   if (!mFirstNBSPNode && !mLastNBSPNode &&
       (StartsFromHardLineBreak() || EndsByBlockBoundary())) {
-    WSType wstype;
-    if (StartsFromHardLineBreak()) {
-      wstype = WSType::leadingWS;
-    }
-    if (EndsByBlockBoundary()) {
-      wstype |= WSType::trailingWS;
-    }
-    MakeSingleWSRun(wstype);
+    InitializeWithSingleFragment(
+        WSFragment::Visible::No,
+        StartsFromHardLineBreak() ? WSFragment::StartOfHardLine::Yes
+                                  : WSFragment::StartOfHardLine::No,
+        EndsByBlockBoundary() ? WSFragment::EndOfHardLine::Yes
+                              : WSFragment::EndOfHardLine::No);
     return;
   }
 
@@ -959,7 +959,7 @@ void WSRunScanner::GetRuns() {
 
   if (StartsFromHardLineBreak()) {
     
-    mStartRun->mType = WSType::leadingWS;
+    mStartRun->MarkAsStartOfHardLine();
     mStartRun->mEndNode = mFirstNBSPNode;
     mStartRun->mEndOffset = mFirstNBSPOffset;
     mStartRun->SetStartFrom(mStartReason);
@@ -968,7 +968,7 @@ void WSRunScanner::GetRuns() {
     
     WSFragment* normalRun = new WSFragment();
     mStartRun->mRight = normalRun;
-    normalRun->mType = WSType::normalWS;
+    normalRun->MarkAsVisible();
     normalRun->mStartNode = mFirstNBSPNode;
     normalRun->mStartOffset = mFirstNBSPOffset;
     normalRun->SetStartFromLeadingWhiteSpaces();
@@ -997,7 +997,7 @@ void WSRunScanner::GetRuns() {
 
         
         WSFragment* lastRun = new WSFragment();
-        lastRun->mType = WSType::trailingWS;
+        lastRun->MarkAsEndOfHardLine();
         lastRun->mStartNode = mLastNBSPNode;
         lastRun->mStartOffset = mLastNBSPOffset + 1;
         lastRun->mEndNode = mEndNode;
@@ -1011,7 +1011,7 @@ void WSRunScanner::GetRuns() {
     }
   } else {
     MOZ_ASSERT(!StartsFromHardLineBreak());
-    mStartRun->mType = WSType::normalWS;
+    mStartRun->MarkAsVisible();
     mStartRun->mEndNode = mLastNBSPNode;
     mStartRun->mEndOffset = mLastNBSPOffset + 1;
     mStartRun->SetStartFrom(mStartReason);
@@ -1028,7 +1028,7 @@ void WSRunScanner::GetRuns() {
     } else {
       
       WSFragment* lastRun = new WSFragment();
-      lastRun->mType = WSType::trailingWS;
+      lastRun->MarkAsEndOfHardLine();
       lastRun->mStartNode = mLastNBSPNode;
       lastRun->mStartOffset = mLastNBSPOffset + 1;
       lastRun->SetStartFromNormalWhiteSpaces();
@@ -1053,12 +1053,26 @@ void WSRunScanner::ClearRuns() {
   mEndRun = 0;
 }
 
-void WSRunScanner::MakeSingleWSRun(WSType aType) {
+void WSRunScanner::InitializeWithSingleFragment(
+    WSFragment::Visible aIsVisible,
+    WSFragment::StartOfHardLine aIsStartOfHardLine,
+    WSFragment::EndOfHardLine aIsEndOfHardLine) {
+  MOZ_ASSERT(!mStartRun);
+  MOZ_ASSERT(!mEndRun);
+
   mStartRun = new WSFragment();
 
   mStartRun->mStartNode = mStartNode;
   mStartRun->mStartOffset = mStartOffset;
-  mStartRun->mType = aType;
+  if (aIsVisible == WSFragment::Visible::Yes) {
+    mStartRun->MarkAsVisible();
+  }
+  if (aIsStartOfHardLine == WSFragment::StartOfHardLine::Yes) {
+    mStartRun->MarkAsStartOfHardLine();
+  }
+  if (aIsEndOfHardLine == WSFragment::EndOfHardLine::Yes) {
+    mStartRun->MarkAsEndOfHardLine();
+  }
   mStartRun->mEndNode = mEndNode;
   mStartRun->mEndOffset = mEndOffset;
   mStartRun->SetStartFrom(mStartReason);
@@ -1282,7 +1296,7 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
 
   if (afterRun) {
     
-    if (afterRun->mType & WSType::leadingWS) {
+    if (afterRun->IsStartOfHardLine()) {
       
       
       AutoEditorDOMPointChildInvalidator forgetChild(mScanStartPoint);
@@ -1294,8 +1308,8 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
       }
     }
     
-    else if (afterRun->mType == WSType::normalWS && !aEndObject->mPRE) {
-      if ((beforeRun && (beforeRun->mType & WSType::leadingWS)) ||
+    else if (afterRun->IsVisibleAndMiddleOfHardLine() && !aEndObject->mPRE) {
+      if ((beforeRun && beforeRun->IsStartOfHardLine()) ||
           (!beforeRun && StartsFromHardLineBreak())) {
         
         
@@ -1326,7 +1340,7 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
   }
 
   
-  if (beforeRun->mType & WSType::trailingWS) {
+  if (beforeRun->IsEndOfHardLine()) {
     nsresult rv = DeleteRange(beforeRun->StartPoint(), mScanStartPoint);
     if (NS_FAILED(rv)) {
       NS_WARNING("WSRunObject::DeleteRange() failed");
@@ -1335,9 +1349,8 @@ nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {
     return NS_OK;
   }
 
-  if (beforeRun->mType == WSType::normalWS && !mPRE) {
-    if ((afterRun && ((afterRun->mType & WSType::trailingWS) ||
-                      afterRun->mType == WSType::normalWS)) ||
+  if (beforeRun->IsVisibleAndMiddleOfHardLine() && !mPRE) {
+    if ((afterRun && (afterRun->IsEndOfHardLine() || afterRun->IsVisible())) ||
         (!afterRun && aEndObject->EndsByBlockBoundary())) {
       
       
@@ -1377,7 +1390,7 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   WSFragment* afterRun = FindNearestRun(mScanStartPoint, true);
 
   
-  if (afterRun && afterRun->mType == WSType::normalWS) {
+  if (afterRun && afterRun->IsVisibleAndMiddleOfHardLine()) {
     
     
     EditorDOMPointInText atNextCharOfStart = GetNextCharPoint(mScanStartPoint);
@@ -1398,7 +1411,7 @@ nsresult WSRunObject::PrepareToSplitAcrossBlocksPriv() {
   }
 
   
-  if (beforeRun && beforeRun->mType == WSType::normalWS) {
+  if (beforeRun && beforeRun->IsVisibleAndMiddleOfHardLine()) {
     
     
     EditorDOMPointInText atPreviousCharOfStart =
@@ -1869,7 +1882,7 @@ nsresult WSRunObject::CheckTrailingNBSPOfRun(WSFragment* aRun) {
   bool rightCheck = false;
 
   
-  if (aRun->mType != WSType::normalWS) {
+  if (!aRun->IsVisibleAndMiddleOfHardLine()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2149,7 +2162,7 @@ nsresult WSRunObject::CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
 
 nsresult WSRunObject::Scrub() {
   for (WSFragment* run = mStartRun; run; run = run->mRight) {
-    if (!(run->mType & (WSType::leadingWS | WSType::trailingWS))) {
+    if (run->IsMiddleOfHardLine()) {
       continue;
     }
     nsresult rv = DeleteRange(run->StartPoint(), run->EndPoint());

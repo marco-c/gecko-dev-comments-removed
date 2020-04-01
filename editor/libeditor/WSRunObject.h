@@ -470,18 +470,47 @@ class MOZ_STACK_CLASS WSRunScanner {
     int32_t mStartOffset;          
     int32_t mEndOffset;            
     
-    WSType mType;
-    
     WSFragment *mLeft, *mRight;
 
     WSFragment()
-        : mStartOffset(0), mEndOffset(0), mLeft(nullptr), mRight(nullptr) {}
+        : mStartOffset(0),
+          mEndOffset(0),
+          mLeft(nullptr),
+          mRight(nullptr),
+          mIsVisible(Visible::No),
+          mIsStartOfHardLine(StartOfHardLine::No),
+          mIsEndOfHardLine(EndOfHardLine::No) {}
 
     EditorRawDOMPoint StartPoint() const {
       return EditorRawDOMPoint(mStartNode, mStartOffset);
     }
     EditorRawDOMPoint EndPoint() const {
       return EditorRawDOMPoint(mEndNode, mEndOffset);
+    }
+
+    enum class Visible : bool { No, Yes };
+    enum class StartOfHardLine : bool { No, Yes };
+    enum class EndOfHardLine : bool { No, Yes };
+
+    
+
+
+
+    void MarkAsVisible() { mIsVisible = Visible::Yes; }
+    void MarkAsStartOfHardLine() { mIsStartOfHardLine = StartOfHardLine::Yes; }
+    void MarkAsEndOfHardLine() { mIsEndOfHardLine = EndOfHardLine::Yes; }
+    bool IsVisible() const { return mIsVisible == Visible::Yes; }
+    bool IsStartOfHardLine() const {
+      return mIsStartOfHardLine == StartOfHardLine::Yes;
+    }
+    bool IsMiddleOfHardLine() const {
+      return !IsStartOfHardLine() && !IsEndOfHardLine();
+    }
+    bool IsEndOfHardLine() const {
+      return mIsEndOfHardLine == EndOfHardLine::Yes;
+    }
+    bool IsVisibleAndMiddleOfHardLine() const {
+      return IsVisible() && IsMiddleOfHardLine();
     }
 
     
@@ -514,6 +543,9 @@ class MOZ_STACK_CLASS WSRunScanner {
 
    private:
     WSType mLeftWSType, mRightWSType;
+    Visible mIsVisible;
+    StartOfHardLine mIsStartOfHardLine;
+    EndOfHardLine mIsEndOfHardLine;
   };
 
   
@@ -605,7 +637,10 @@ class MOZ_STACK_CLASS WSRunScanner {
 
   void GetRuns();
   void ClearRuns();
-  void MakeSingleWSRun(WSType aType);
+  void InitializeWithSingleFragment(
+      WSFragment::Visible aIsVisible,
+      WSFragment::StartOfHardLine aIsStartOfHardLine,
+      WSFragment::EndOfHardLine aIsEndOfHardLine);
 
   
   nsTArray<RefPtr<dom::Text>> mNodeArray;
