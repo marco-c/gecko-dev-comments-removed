@@ -11,7 +11,7 @@ use crate::error::{Error, ErrorKind};
 
 
 
-#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+#[derive(Copy, Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum TimeUnit {
     

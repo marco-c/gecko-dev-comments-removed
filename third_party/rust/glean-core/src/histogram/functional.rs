@@ -16,7 +16,7 @@ use super::{Bucketing, Histogram};
 
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Functional {
     exponent: f64,
 }

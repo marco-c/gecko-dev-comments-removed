@@ -258,7 +258,7 @@ impl From<Box<dyn std::any::Any + Send + 'static>> for ExternError {
     fn from(e: Box<dyn std::any::Any + Send + 'static>) -> Self {
         
         let message = if let Some(s) = e.downcast_ref::<&'static str>() {
-            s.to_string()
+            (*s).to_string()
         } else if let Some(s) = e.downcast_ref::<String>() {
             s.clone()
         } else {
