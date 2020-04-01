@@ -348,6 +348,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   
   
+  bool skipLocationSrcNotes() const {
+    return inPrologue() || (emitterMode == EmitterMode::SelfHosting);
+  }
+  bool skipBreakpointSrcNotes() const {
+    return inPrologue() || (emitterMode == EmitterMode::SelfHosting);
+  }
+
+  
+  
   
   MOZ_MUST_USE bool newSrcNote(SrcNoteType type, unsigned* indexp = nullptr);
   MOZ_MUST_USE bool newSrcNote2(SrcNoteType type, ptrdiff_t operand,

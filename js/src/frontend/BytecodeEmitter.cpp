@@ -188,7 +188,7 @@ Maybe<NameLocation> BytecodeEmitter::locationOfNameBoundInFunctionScope(
 }
 
 bool BytecodeEmitter::markStepBreakpoint() {
-  if (inPrologue()) {
+  if (skipBreakpointSrcNotes()) {
     return true;
   }
 
@@ -213,7 +213,7 @@ bool BytecodeEmitter::markStepBreakpoint() {
 }
 
 bool BytecodeEmitter::markSimpleBreakpoint() {
-  if (inPrologue()) {
+  if (skipBreakpointSrcNotes()) {
     return true;
   }
 
@@ -509,8 +509,7 @@ bool BytecodeEmitter::emitCheckIsCallable(CheckIsCallableKind kind) {
 
 
 bool BytecodeEmitter::updateLineNumberNotes(uint32_t offset) {
-  
-  if (inPrologue()) {
+  if (skipLocationSrcNotes()) {
     return true;
   }
 
@@ -561,8 +560,7 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
     return false;
   }
 
-  
-  if (inPrologue()) {
+  if (skipLocationSrcNotes()) {
     return true;
   }
 
@@ -10491,7 +10489,10 @@ bool BytecodeEmitter::addTryNote(TryNoteKind kind, uint32_t stackDepth,
 
 bool BytecodeEmitter::newSrcNote(SrcNoteType type, unsigned* indexp) {
   
-  MOZ_ASSERT(!inPrologue());
+  
+  MOZ_ASSERT_IF(skipLocationSrcNotes() || skipBreakpointSrcNotes(),
+                type <= SrcNoteType::LastGettable);
+
   SrcNotesVector& notes = bytecodeSection().notes();
   unsigned index;
 
