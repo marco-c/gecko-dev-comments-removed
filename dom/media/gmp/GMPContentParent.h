@@ -22,7 +22,9 @@ class GMPContentParent final : public PGMPContentParent, public GMPSharedMem {
   friend class PGMPContentParent;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPContentParent)
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPContentParent, final)
 
   explicit GMPContentParent(GMPParent* aParent = nullptr);
 
