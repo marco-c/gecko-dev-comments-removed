@@ -28,13 +28,15 @@ const badChunks = [
     
     
     get value() {
-      return new SharedArrayBuffer();
+      
+      return new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer;
     }
   },
   {
     name: 'shared Uint8Array',
     get value() {
-      return new Uint8Array(new SharedArrayBuffer())
+      
+      return new Uint8Array(new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer)
     }
   },
   {
