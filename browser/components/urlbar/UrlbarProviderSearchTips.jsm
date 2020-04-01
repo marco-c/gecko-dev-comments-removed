@@ -276,7 +276,19 @@ class ProviderSearchTips extends UrlbarProvider {
 
 
 
-  onLocationChange(uri) {
+
+
+
+  onLocationChange(uri, webProgress, flags) {
+    
+    
+    if (
+      flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT ||
+      !webProgress.isTopLevel
+    ) {
+      return;
+    }
+
     let window = BrowserWindowTracker.getTopWindow();
     
     
