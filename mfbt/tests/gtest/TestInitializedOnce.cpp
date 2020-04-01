@@ -27,10 +27,8 @@ void AssertIsNothing(const T& aVal) {
   ASSERT_TRUE(aVal.isNothing());
 }
 
-
-
-
-
+static_assert(std::is_trivially_destructible_v<InitializedOnce<const int>>);
+static_assert(std::is_trivially_destructible_v<LazyInitializedOnce<const int>>);
 
 static_assert(!std::is_copy_constructible_v<InitializedOnce<const int>>);
 static_assert(!std::is_copy_assignable_v<InitializedOnce<const int>>);
@@ -75,7 +73,7 @@ static_assert(
     test_has_init_method(kPtrInitializedOnceIntLazyInitAllowResettable));
 
 struct MoveOnly {
-  explicit MoveOnly(int aValue) : mValue{aValue} {}
+  explicit constexpr MoveOnly(int aValue) : mValue{aValue} {}
 
   MoveOnly(MoveOnly&&) = default;
   MoveOnly& operator=(MoveOnly&&) = default;
@@ -89,8 +87,16 @@ constexpr int testValue = 32;
 
 TEST(InitializedOnce, ImmediateInit)
 {
-  const InitializedOnce<const MoveOnly> val{testValue};
+  constexpr InitializedOnce<const MoveOnly> val{testValue};
 
+  
+  static_assert(val);
+  static_assert(val.isSome());
+  static_assert(!val.isNothing());
+  static_assert(testValue == (*val).mValue);
+  static_assert(testValue == val->mValue);
+
+  
   AssertIsSome(val);
   ASSERT_EQ(testValue, (*val).mValue);
   ASSERT_EQ(testValue, val->mValue);
