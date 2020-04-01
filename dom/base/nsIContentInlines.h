@@ -160,6 +160,9 @@ inline bool nsINode::IsEditable() const {
   }
 
   
+  
+  
+  
   Document* doc = GetUncomposedDoc();
   return doc && doc->HasFlag(NODE_IS_EDITABLE);
 }

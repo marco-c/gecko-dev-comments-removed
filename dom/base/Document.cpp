@@ -4094,6 +4094,19 @@ void Document::SetDesignMode(const nsAString& aDesignMode,
   SetDesignMode(aDesignMode, Some(&aSubjectPrincipal), rv);
 }
 
+static void NotifyEditableStateChange(Document& aDoc) {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  nsMutationGuard g;
+#endif
+  for (nsIContent* node = aDoc.GetNextNode(&aDoc); node;
+       node = node->GetNextNode(&aDoc)) {
+    if (auto* element = Element::FromNode(node)) {
+      element->UpdateState(true);
+    }
+  }
+  MOZ_DIAGNOSTIC_ASSERT(!g.Mutated(0));
+}
+
 void Document::SetDesignMode(const nsAString& aDesignMode,
                              const Maybe<nsIPrincipal*>& aSubjectPrincipal,
                              ErrorResult& rv) {
@@ -4105,7 +4118,9 @@ void Document::SetDesignMode(const nsAString& aDesignMode,
   bool editableMode = HasFlag(NODE_IS_EDITABLE);
   if (aDesignMode.LowerCaseEqualsASCII(editableMode ? "off" : "on")) {
     SetEditableFlag(!editableMode);
-
+    
+    
+    NotifyEditableStateChange(*this);
     rv = EditingStateChanged();
   }
 }
@@ -5215,16 +5230,6 @@ void Document::MaybeEditingStateChanged() {
   }
 }
 
-static void NotifyEditableStateChange(nsINode* aNode, Document* aDocument) {
-  for (nsIContent* child = aNode->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    if (child->IsElement()) {
-      child->AsElement()->UpdateState(true);
-    }
-    NotifyEditableStateChange(child, aDocument);
-  }
-}
-
 void Document::TearingDownEditor() {
   if (IsEditingOn()) {
     mEditingState = EditingState::eTearingDown;
@@ -5310,7 +5315,7 @@ nsresult Document::EditingStateChanged() {
   if (newState == EditingState::eOff) {
     
     nsAutoScriptBlocker scriptBlocker;
-    NotifyEditableStateChange(this, this);
+    NotifyEditableStateChange(*this);
     return TurnEditingOff();
   }
 
@@ -5363,7 +5368,6 @@ nsresult Document::EditingStateChanged() {
   }
 
   bool makeWindowEditable = mEditingState == EditingState::eOff;
-  bool updateState = false;
   bool spellRecheckAll = false;
   bool putOffToRemoveScriptBlockerUntilModifyingEditingState = false;
   htmlEditor = nullptr;
@@ -5405,10 +5409,6 @@ nsresult Document::EditingStateChanged() {
       AddContentEditableStyleSheetsToStyleSet(designMode);
     }
 
-    
-    
-    
-    updateState = designMode || oldState == EditingState::eDesignMode;
     if (designMode) {
       
       spellRecheckAll = oldState == EditingState::eContentEditable;
@@ -5504,11 +5504,6 @@ nsresult Document::EditingStateChanged() {
 
       return errorResult.StealNSResult();
     }
-  }
-
-  if (updateState) {
-    nsAutoScriptBlocker scriptBlocker;
-    NotifyEditableStateChange(this, this);
   }
 
   
