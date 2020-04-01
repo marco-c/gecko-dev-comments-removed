@@ -1933,7 +1933,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   i++;
 
   
-  unsigned argc = fi.funcType().args().length();
+  unsigned argc = abiArgCount;
   if (i->kind() == ABIArg::GPR) {
     masm.mov(ImmWord(argc), i->gpr());
   } else {
