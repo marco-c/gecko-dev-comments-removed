@@ -503,7 +503,7 @@ module.exports.addTests = function({testRunner, expect, puppeteer, CHROME}) {
       const error = await navigationPromise;
       expect(error.message).toBe('Navigating frame was detached');
     });
-    it('should return matching responses', async({page, server}) => {
+    it_fails_ffox('should return matching responses', async({page, server}) => {
       
       await page.setCacheEnabled(false);
       await page.goto(server.EMPTY_PAGE);
