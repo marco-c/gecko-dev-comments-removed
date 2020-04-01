@@ -73,6 +73,19 @@ struct CheckConvertibility<Group<SourceTypes...>, Group<TargetTypes...>>
 
 
 
+struct IgnoreImpl {
+  template <typename T>
+  constexpr const IgnoreImpl& operator=(const T&) const {
+    return *this;
+  }
+};
+
+
+
+
+
+
+
 
 
 
@@ -462,6 +475,22 @@ template <typename... Elements>
 inline Tuple<std::decay_t<Elements>...> MakeTuple(Elements&&... aElements) {
   return Tuple<std::decay_t<Elements>...>(std::forward<Elements>(aElements)...);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr detail::IgnoreImpl Ignore;
 
 
 
