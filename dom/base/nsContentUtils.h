@@ -1430,12 +1430,16 @@ class nsContentUtils {
 
 
 
+  
+  
   static nsresult DispatchTrustedEvent(Document* aDoc, nsISupports* aTarget,
                                        const nsAString& aEventName, CanBubble,
                                        Cancelable,
                                        Composed aComposed = Composed::eDefault,
                                        bool* aDefaultAction = nullptr);
 
+  
+  
   static nsresult DispatchTrustedEvent(Document* aDoc, nsISupports* aTarget,
                                        const nsAString& aEventName,
                                        CanBubble aCanBubble,

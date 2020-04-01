@@ -822,6 +822,26 @@ static nsINode* DetermineSelectstartEventTarget(
   return target;
 }
 
+
+
+
+static bool MaybeDispatchSelectstartEvent(
+    const nsRange& aRange, const bool aSelectionEventsOnTextControlsEnabled,
+    Document* aDocument) {
+  nsCOMPtr<nsINode> selectstartEventTarget = DetermineSelectstartEventTarget(
+      aSelectionEventsOnTextControlsEnabled, aRange);
+
+  bool executeDefaultAction = true;
+
+  if (selectstartEventTarget) {
+    nsContentUtils::DispatchTrustedEvent(
+        aDocument, selectstartEventTarget, NS_LITERAL_STRING("selectstart"),
+        CanBubble::eYes, Cancelable::eYes, &executeDefaultAction);
+  }
+
+  return executeDefaultAction;
+}
+
 nsresult Selection::AddRangesForUserSelectableNodes(
     nsRange* aRange, int32_t* aOutIndex,
     const DispatchSelectstartEvent aDispatchSelectstartEvent) {
@@ -849,6 +869,10 @@ nsresult Selection::AddRangesForUserSelectableNodes(
     
     
     
+
+    
+    
+    
     
     RefPtr<nsRange> scratchRange = aRange->CloneRange();
     UserSelectRangesToAdd(scratchRange, rangesToAdd);
@@ -861,33 +885,20 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       
       
+      
+      const bool executeDefaultAction = MaybeDispatchSelectstartEvent(
+          *aRange, nsFrameSelection::sSelectionEventsOnTextControlsEnabled,
+          GetDocument());
+
+      if (!executeDefaultAction) {
+        return NS_OK;
+      }
 
       
       
       
-      
-      nsCOMPtr<nsINode> selectstartEventTarget =
-          DetermineSelectstartEventTarget(
-              nsFrameSelection::sSelectionEventsOnTextControlsEnabled, *aRange);
-
-      if (selectstartEventTarget) {
-        bool defaultAction = true;
-
-        nsContentUtils::DispatchTrustedEvent(
-            GetDocument(), selectstartEventTarget,
-            NS_LITERAL_STRING("selectstart"), CanBubble::eYes, Cancelable::eYes,
-            &defaultAction);
-
-        if (!defaultAction) {
-          return NS_OK;
-        }
-
-        
-        
-        
-        if (!aRange->IsPositioned()) {
-          return NS_ERROR_UNEXPECTED;
-        }
+      if (!aRange->IsPositioned()) {
+        return NS_ERROR_UNEXPECTED;
       }
     }
 
