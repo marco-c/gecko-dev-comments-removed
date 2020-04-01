@@ -745,8 +745,6 @@ class Selection final : public nsSupportsWeakReference,
                                                      int32_t* aOutIndex);
 
   Document* GetDocument() const;
-  nsPIDOMWindowOuter* GetWindow() const;
-  HTMLEditor* GetHTMLEditor() const;
 
   void Disconnect();
 
@@ -831,7 +829,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-    Element* GetCommonEditingHostForAllRanges();
+    Element* GetCommonEditingHost() const;
+
+    void MaybeFocusCommonEditingHost(PresShell* aPresShell) const;
 
     
     
