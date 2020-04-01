@@ -531,8 +531,6 @@ class ProviderInterventions extends UrlbarProvider {
     if (topDocIDs.has("update")) {
       
       switch (appUpdater.status) {
-        case AppUpdater.STATUS.DOWNLOADING:
-        case AppUpdater.STATUS.STAGING:
         case AppUpdater.STATUS.READY_FOR_RESTART:
           
           this.currentTip = TIPS.UPDATE_RESTART;
@@ -552,6 +550,8 @@ class ProviderInterventions extends UrlbarProvider {
           
           return false;
         default:
+          
+          
           
           
           this.currentTip = TIPS.UPDATE_WEB;
