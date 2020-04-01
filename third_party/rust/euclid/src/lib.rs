@@ -38,6 +38,7 @@
 
 
 
+#![deny(unconditional_recursion)]
 
 #[cfg(feature = "serde")]
 #[macro_use]
@@ -49,6 +50,7 @@ extern crate num_traits;
 #[cfg(test)]
 use std as core;
 
+pub use angle::Angle;
 pub use box2d::Box2D;
 pub use length::Length;
 pub use scale::Scale;
@@ -64,7 +66,7 @@ pub use rect::{rect, Rect};
 pub use rigid::{RigidTransform3D};
 pub use box3d::{box3d, Box3D};
 pub use translation::{Translation2D, Translation3D};
-pub use rotation::{Angle, Rotation2D, Rotation3D};
+pub use rotation::{Rotation2D, Rotation3D};
 pub use side_offsets::SideOffsets2D;
 pub use size::{Size2D, Size3D, size2, size3};
 pub use trig::Trig;
@@ -72,6 +74,7 @@ pub use trig::Trig;
 #[macro_use]
 mod macros;
 
+mod angle;
 pub mod approxeq;
 pub mod approxord;
 mod box2d;
@@ -98,7 +101,10 @@ mod nonempty;
 pub struct UnknownUnit;
 
 pub mod default {
+    
+
     use super::UnknownUnit;
+    pub type Length<T> = super::Length<T, UnknownUnit>;
     pub type Point2D<T> = super::Point2D<T, UnknownUnit>;
     pub type Point3D<T> = super::Point3D<T, UnknownUnit>;
     pub type Vector2D<T> = super::Vector2D<T, UnknownUnit>;
@@ -114,6 +120,7 @@ pub mod default {
     pub type Transform3D<T> = super::Transform3D<T, UnknownUnit, UnknownUnit>;
     pub type Rotation2D<T> = super::Rotation2D<T, UnknownUnit, UnknownUnit>;
     pub type Rotation3D<T> = super::Rotation3D<T, UnknownUnit, UnknownUnit>;
+    pub type Translation2D<T> = super::Translation2D<T, UnknownUnit, UnknownUnit>;
     pub type Translation3D<T> = super::Translation3D<T, UnknownUnit, UnknownUnit>;
     pub type Scale<T> = super::Scale<T, UnknownUnit, UnknownUnit>;
     pub type RigidTransform3D<T> = super::RigidTransform3D<T, UnknownUnit, UnknownUnit>;
