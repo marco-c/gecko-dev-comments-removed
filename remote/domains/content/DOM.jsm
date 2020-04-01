@@ -28,6 +28,61 @@ class DOM extends ContentProcessDomain {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  describeNode(options = {}) {
+    const { objectId } = options;
+
+    
+    if (!["string"].includes(typeof objectId)) {
+      throw new TypeError("objectId: string value expected");
+    }
+
+    const Runtime = this.session.domains.get("Runtime");
+    const debuggerObj = Runtime._getRemoteObject(objectId);
+    if (!debuggerObj) {
+      throw new Error("Could not find object with given id");
+    }
+
+    if (typeof debuggerObj.nodeId == "undefined") {
+      throw new Error("Object id doesn't reference a Node");
+    }
+
+    const unsafeObj = debuggerObj.unsafeDereference();
+    const node = {
+      nodeId: debuggerObj.nodeId,
+      backendNodeId: debuggerObj.nodeId,
+      nodeType: unsafeObj.nodeType,
+      nodeName: unsafeObj.nodeName,
+      localName: unsafeObj.localName,
+      nodeValue: unsafeObj.nodeValue ? unsafeObj.nodeValue.toString() : "",
+      childNodeCount: unsafeObj.childElementCount,
+      frameId: this.docShell.browsingContext.id.toString(),
+    };
+
+    return { node };
+  }
+
   disable() {
     if (this.enabled) {
       this.enabled = false;
@@ -36,14 +91,11 @@ class DOM extends ContentProcessDomain {
 
   getContentQuads({ objectId }) {
     const Runtime = this.session.domains.get("Runtime");
-    if (!Runtime) {
-      throw new Error("Runtime domain is not instantiated");
+    const debuggerObj = Runtime._getRemoteObject(objectId);
+    if (!debuggerObj) {
+      throw new Error(`Cannot find object with id: ${objectId}`);
     }
-    const obj = Runtime._getRemoteObject(objectId);
-    if (!obj) {
-      throw new Error("Cannot find object with id = " + objectId);
-    }
-    const unsafeObject = obj.unsafeDereference();
+    const unsafeObject = debuggerObj.unsafeDereference();
     if (!unsafeObject.getBoxQuads) {
       throw new Error("RemoteObject is not a node");
     }
@@ -65,8 +117,11 @@ class DOM extends ContentProcessDomain {
 
   getBoxModel({ objectId }) {
     const Runtime = this.session.domains.get("Runtime");
-    const obj = Runtime._getRemoteObject(objectId);
-    const unsafeObject = obj.unsafeDereference();
+    const debuggerObj = Runtime._getRemoteObject(objectId);
+    if (!debuggerObj) {
+      throw new Error(`Cannot find object with id: ${objectId}`);
+    }
+    const unsafeObject = debuggerObj.unsafeDereference();
     const bounding = unsafeObject.getBoundingClientRect();
     const model = {
       width: Math.round(bounding.width),
