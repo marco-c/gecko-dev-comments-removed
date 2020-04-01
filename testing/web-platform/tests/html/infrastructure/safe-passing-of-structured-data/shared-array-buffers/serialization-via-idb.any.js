@@ -7,9 +7,11 @@ async_test(t => {
   openReq.onupgradeneeded = e => {
     const db = e.target.result;
     const store = db.createObjectStore("store", { keyPath: "key" });
+    
+    const sab = new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer;
 
     assert_throws_dom("DataCloneError", () => {
-      store.put({ key: 1, property: new SharedArrayBuffer() });
+      store.put({ key: 1, property: sab });
     });
     t.done();
   };
@@ -21,6 +23,8 @@ async_test(t => {
   openReq.onupgradeneeded = e => {
     const db = e.target.result;
     const store = db.createObjectStore("store", { keyPath: "key" });
+    
+    const sab = new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer;
 
     let getter1Called = false;
     let getter2Called = false;
@@ -28,7 +32,7 @@ async_test(t => {
     assert_throws_dom("DataCloneError", () => {
       store.put({ key: 1, property: [
         { get x() { getter1Called = true; return 5; } },
-        new SharedArrayBuffer(),
+        sab,
         { get x() { getter2Called = true; return 5; } }
       ]});
     });
