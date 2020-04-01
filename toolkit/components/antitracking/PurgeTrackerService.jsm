@@ -271,9 +271,15 @@ PurgeTrackerService.prototype = {
 
 
 
-function LOG(msg) {
+var logConsole;
+function LOG(...args) {
   if (loggingEnabled) {
-    dump(`*** PurgeTrackerService: ${msg}\n`);
-    Services.console.logStringMessage(`*** PurgeTrackerService: ${msg}`);
+    if (!logConsole) {
+      logConsole = console.createInstance({
+        prefix: "*** PurgeTrackerService:",
+        maxLogLevelPref: "privacy.purge_trackers.logging.level",
+      });
+    }
+    logConsole.log(...args);
   }
 }
