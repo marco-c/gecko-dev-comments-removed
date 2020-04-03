@@ -861,7 +861,8 @@ class Matrix4x4Typed {
     
     
     for (int plane = 0; plane < 4; plane++) {
-      planeNormals[plane].Normalize();
+      auto planeNormal = planeNormals[plane];
+      planeNormal.Normalize();
       Point4DTyped<UnknownUnits, F>* srcPoint = dstPointStart;
       Point4DTyped<UnknownUnits, F>* srcPointEnd = dstPoint;
 
@@ -877,10 +878,10 @@ class Matrix4x4Typed {
       
       
       Point4DTyped<UnknownUnits, F>* prevPoint = srcPointEnd - 1;
-      F prevDot = planeNormals[plane].DotProduct(*prevPoint);
+      F prevDot = planeNormal.DotProduct(*prevPoint);
       while (srcPoint < srcPointEnd &&
              ((dstPoint - dstPointStart) < kTransformAndClipRectMaxVerts)) {
-        F nextDot = planeNormals[plane].DotProduct(*srcPoint);
+        F nextDot = planeNormal.DotProduct(*srcPoint);
 
         if ((nextDot >= 0.0) != (prevDot >= 0.0)) {
           
