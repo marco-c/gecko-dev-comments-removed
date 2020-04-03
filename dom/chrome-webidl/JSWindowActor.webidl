@@ -141,6 +141,12 @@ dictionary WindowActorOptions {
   sequence<DOMString> remoteTypes;
 
   
+
+
+
+  sequence<DOMString> messageManagerGroups;
+
+  
   WindowActorSidedOptions parent;
   WindowActorChildOptions child;
 };
