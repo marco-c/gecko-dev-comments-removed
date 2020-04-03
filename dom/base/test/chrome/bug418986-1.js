@@ -7,8 +7,10 @@ var test = function(isContent) {
     set: [["security.allow_eval_with_system_principal", true]],
   });
 
-  let { ww } = SpecialPowers.Services;
-  window.chromeWindow = ww.activeWindow;
+  if (!isContent) {
+    let { ww } = SpecialPowers.Services;
+    window.chromeWindow = ww.activeWindow;
+  }
 
   
   
@@ -62,11 +64,11 @@ var test = function(isContent) {
         pairs.map(function([item, onVal]) {
           if (resisting) {
             checkPair("window." + item, onVal);
-          } else if (!item.startsWith("moz")) {
+          } else if (!isContent && !item.startsWith("moz")) {
             checkPair("window." + item, "chromeWindow." + item);
           }
         });
-        if (!resisting) {
+        if (!isContent && !resisting) {
           
           ok(
             window.mozInnerScreenX >= chromeWindow.mozInnerScreenX,
