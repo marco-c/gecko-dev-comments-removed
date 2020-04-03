@@ -861,6 +861,17 @@ nsresult AlignCommand::GetCurrentState(HTMLEditor* aHTMLEditor,
   ErrorResult error;
   AlignStateAtSelection state(*aHTMLEditor, error);
   if (error.Failed()) {
+    if (!state.IsSelectionRangesFound()) {
+      
+      
+      
+      
+      
+      error.SuppressException();
+      aParams.SetBool(STATE_MIXED, false);
+      aParams.SetCString(STATE_ATTRIBUTE, EmptyCString());
+      return NS_OK;
+    }
     NS_WARNING("AlignStateAtSelection failed");
     return error.StealNSResult();
   }
