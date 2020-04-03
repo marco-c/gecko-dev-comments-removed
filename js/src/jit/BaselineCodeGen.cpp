@@ -6017,8 +6017,6 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 
   
   
-  
-  
   Label interpret;
   Register scratch1 = regs.takeAny();
   masm.loadPtr(Address(callee, JSFunction::offsetOfScript()), scratch1);

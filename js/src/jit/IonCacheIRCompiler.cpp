@@ -899,9 +899,6 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResultShared(
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
              0);
 
-  
-  
-  
   MOZ_ASSERT(target->hasJitEntry());
   masm.loadJitCodeRaw(scratch, scratch);
   masm.callJit(scratch);
@@ -1913,9 +1910,6 @@ bool IonCacheIRCompiler::emitCallScriptedSetter() {
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
              0);
 
-  
-  
-  
   MOZ_ASSERT(target->hasJitEntry());
   masm.loadJitCodeRaw(scratch, scratch);
   masm.callJit(scratch);
