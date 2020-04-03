@@ -11,6 +11,11 @@ function run_test() {
     true
   );
 
+  Services.prefs.setBoolPref(
+    "network.cookie.rejectForeignWithExceptions.enabled",
+    false
+  );
+
   
   
   let spec1 = "http://foo.com/foo.html";
@@ -20,7 +25,10 @@ function run_test() {
 
   
   {
-    Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+    Services.prefs.setIntPref(
+      "network.cookie.cookieBehavior",
+      Ci.nsICookieService.BEHAVIOR_ACCEPT
+    );
 
     let channel1 = NetUtil.newChannel({
       uri: uri1,
@@ -39,7 +47,10 @@ function run_test() {
 
   
   {
-    Services.prefs.setIntPref("network.cookie.cookieBehavior", 1);
+    Services.prefs.setIntPref(
+      "network.cookie.cookieBehavior",
+      Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN
+    );
 
     let channel1 = NetUtil.newChannel({
       uri: uri1,
@@ -62,7 +73,10 @@ function run_test() {
 
   
   {
-    Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+    Services.prefs.setIntPref(
+      "network.cookie.cookieBehavior",
+      Ci.nsICookieService.BEHAVIOR_ACCEPT
+    );
 
     let channel1 = NetUtil.newChannel({
       uri: uri1,
@@ -86,7 +100,10 @@ function run_test() {
 
   
   {
-    Services.prefs.setIntPref("network.cookie.cookieBehavior", 1);
+    Services.prefs.setIntPref(
+      "network.cookie.cookieBehavior",
+      Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN
+    );
 
     let channel1 = NetUtil.newChannel({
       uri: uri1,
@@ -110,7 +127,10 @@ function run_test() {
 
   
   {
-    Services.prefs.setIntPref("network.cookie.cookieBehavior", 3);
+    Services.prefs.setIntPref(
+      "network.cookie.cookieBehavior",
+      Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN
+    );
 
     let channel1 = NetUtil.newChannel({
       uri: uri1,
