@@ -11620,7 +11620,8 @@ class nsDelayedEventDispatcher : public Runnable {
   nsTArray<nsCOMPtr<Document>> mDocuments;
 };
 
-static void GetAndUnsuppressSubDocuments(Document& aDocument, nsTArray<nsCOMPtr<Document>>& aDocuments) {
+static void GetAndUnsuppressSubDocuments(
+    Document& aDocument, nsTArray<nsCOMPtr<Document>>& aDocuments) {
   if (aDocument.EventHandlingSuppressed() > 0) {
     aDocument.DecreaseEventSuppression();
     aDocument.ScriptLoader()->RemoveExecuteBlocker();
@@ -12261,7 +12262,7 @@ void Document::GetPlugins(nsTArray<nsIObjectLoadingContent*>& aPlugins) {
   for (auto iter = mPlugins.ConstIter(); !iter.Done(); iter.Next()) {
     aPlugins.AppendElement(iter.Get()->GetKey());
   }
-  auto recurse = [&aPlugins] (Document& aSubDoc) {
+  auto recurse = [&aPlugins](Document& aSubDoc) {
     aSubDoc.GetPlugins(aPlugins);
     return CallState::Continue;
   };
@@ -14750,7 +14751,7 @@ DOMIntersectionObserver& Document::EnsureLazyLoadImageObserver() {
 
 void Document::NotifyLayerManagerRecreated() {
   EnumerateActivityObservers(NotifyActivityChanged);
-  EnumerateSubDocuments([] (Document& aSubDoc) {
+  EnumerateSubDocuments([](Document& aSubDoc) {
     aSubDoc.NotifyLayerManagerRecreated();
     return CallState::Continue;
   });
@@ -15055,7 +15056,7 @@ DocumentAutoplayPolicy Document::AutoplayPolicy() const {
 }
 
 void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
-  if (!CookieJarSettings()->GetRejectThirdPartyTrackers()) {
+  if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
     return;
   }
 
@@ -15649,7 +15650,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   }
 
   
-  if (!CookieJarSettings()->GetRejectThirdPartyTrackers()) {
+  if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
     if (IsTopLevelContentDocument()) {
       promise->MaybeResolveWithUndefined();
@@ -15709,7 +15710,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
 
-  if (CookieJarSettings()->GetRejectThirdPartyTrackers()) {
+  if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
     if (StorageDisabledByAntiTracking(this, nullptr)) {
       

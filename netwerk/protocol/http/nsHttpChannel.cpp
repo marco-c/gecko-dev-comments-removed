@@ -10451,7 +10451,7 @@ void nsHttpChannel::ReEvaluateReferrerAfterTrackingStatusIsKnown() {
   if (!cjs) {
     cjs = net::CookieJarSettings::Create();
   }
-  if (cjs->GetRejectThirdPartyTrackers()) {
+  if (cjs->GetRejectThirdPartyContexts()) {
     bool isPrivate = mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
     
     

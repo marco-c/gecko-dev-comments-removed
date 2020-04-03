@@ -4106,15 +4106,16 @@ CookieStatus nsCookieService::CheckPrefs(
   
   if (aIsForeign && aIsThirdPartyTrackingResource &&
       !aFirstPartyStorageAccessGranted &&
-      aCookieJarSettings->GetRejectThirdPartyTrackers()) {
-    
-    
-    
-    
-    
-    if (StoragePartitioningEnabled(
-            nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
-            aCookieJarSettings)) {
+      aCookieJarSettings->GetRejectThirdPartyContexts()) {
+    bool rejectThirdPartyWithExceptions =
+        CookieJarSettings::IsRejectThirdPartyWithExceptions(
+            aCookieJarSettings->GetCookieBehavior());
+
+    uint32_t rejectReason =
+        rejectThirdPartyWithExceptions
+            ? nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN
+            : nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER;
+    if (StoragePartitioningEnabled(rejectReason, aCookieJarSettings)) {
       MOZ_ASSERT(!aOriginAttrs.mFirstPartyDomain.IsEmpty(),
                  "We must have a StoragePrincipal here!");
       return STATUS_ACCEPTED;
@@ -4126,6 +4127,8 @@ CookieStatus nsCookieService::CheckPrefs(
     if (aIsThirdPartySocialTrackingResource) {
       *aRejectedReason =
           nsIWebProgressListener::STATE_COOKIES_BLOCKED_SOCIALTRACKER;
+    } else if (rejectThirdPartyWithExceptions) {
+      *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN;
     } else {
       *aRejectedReason = nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER;
     }

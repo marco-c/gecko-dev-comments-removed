@@ -8,6 +8,7 @@
 
 #include "AntiTrackingLog.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/dom/Document.h"
 #include "nsIChannel.h"
 #include "nsIPermission.h"
@@ -245,19 +246,21 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
   }
 
   int32_t cookieBehavior = cookieJarSettings->GetCookieBehavior();
+
+  bool rejectForeignWithExceptions =
+      net::CookieJarSettings::IsRejectThirdPartyWithExceptions(cookieBehavior);
+
   
   
   
   
-  
-  if (cookieBehavior != nsICookieService::BEHAVIOR_REJECT_TRACKER &&
-      cookieBehavior !=
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+  if (!net::CookieJarSettings::IsRejectThirdPartyContexts(cookieBehavior)) {
     return false;
   }
 
   nsCOMPtr<nsIPrincipal> targetPrincipal =
-      (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER)
+      (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+       rejectForeignWithExceptions)
           ? loadInfo->GetTopLevelStorageAreaPrincipal()
           : loadInfo->GetTopLevelPrincipal();
 
