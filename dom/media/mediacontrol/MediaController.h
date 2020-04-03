@@ -62,6 +62,14 @@ class MediaController final
 
   
   
+  void SetIsInPictureInPictureMode(bool aIsInPictureInPictureMode);
+
+  
+  
+  bool IsInPictureInPictureMode() const;
+
+  
+  
   void Shutdown();
 
   bool IsAudible() const;
@@ -101,6 +109,7 @@ class MediaController final
   int64_t mControlledMediaNum = 0;
   int64_t mPlayingControlledMediaNum = 0;
   bool mShutdown = false;
+  bool mIsInPictureInPictureMode = false;
 
   
   
