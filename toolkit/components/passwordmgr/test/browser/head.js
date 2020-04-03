@@ -628,7 +628,7 @@ async function fillGeneratedPasswordFromOpenACPopup(
 
 async function openPasswordContextMenu(
   browser,
-  passwordInput,
+  input,
   assertCallback = null,
   browsingContext = null
 ) {
@@ -651,14 +651,14 @@ async function openPasswordContextMenu(
   
   let eventDetails = { type: "mousedown", button: 2 };
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    passwordInput,
+    input,
     eventDetails,
     browsingContext
   );
   
   eventDetails = { type: "contextmenu", button: 2 };
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    passwordInput,
+    input,
     eventDetails,
     browsingContext
   );

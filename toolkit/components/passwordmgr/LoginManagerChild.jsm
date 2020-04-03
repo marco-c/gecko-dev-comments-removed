@@ -2314,23 +2314,30 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     ) {
       return null;
     }
+    let { hasBeenTypePassword } = aField;
 
-    let [usernameField, newPasswordField] = this.getUserNameAndPasswordFields(
+    
+    
+    const LOGIN_FIELD_ORDER = ["username", "new-password", "current-password"];
+    let usernameAndPasswordFields = this.getUserNameAndPasswordFields(aField);
+    let fieldNameHint;
+    let indexOfFieldInUsernameAndPasswordFields = usernameAndPasswordFields.indexOf(
       aField
     );
-
-    
-    
-    if (!aField.hasBeenTypePassword) {
-      usernameField = aField;
+    if (indexOfFieldInUsernameAndPasswordFields == -1) {
+      fieldNameHint = hasBeenTypePassword ? "current-password" : "username";
+    } else {
+      fieldNameHint =
+        LOGIN_FIELD_ORDER[indexOfFieldInUsernameAndPasswordFields];
     }
+    let [, newPasswordField] = usernameAndPasswordFields;
 
     return {
-      usernameField: {
-        found: !!usernameField,
-        disabled:
-          usernameField && (usernameField.disabled || usernameField.readOnly),
+      activeField: {
+        disabled: aField.disabled || aField.readOnly,
+        fieldNameHint,
       },
+      
       passwordField: {
         found: !!newPasswordField,
         disabled:

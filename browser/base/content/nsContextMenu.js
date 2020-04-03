@@ -4,6 +4,8 @@
 
 
 
+const PASSWORD_FIELDNAME_HINTS = ["current-password", "new-password"];
+
 function openContextMenu(aMessage, aBrowser, aActor) {
   if (BrowserHandler.kiosk) {
     
@@ -930,23 +932,24 @@ class nsContextMenu {
       
       
       let disableFill =
-        !loginFillInfo ||
-        !Services.logins ||
         !Services.logins.isLoggedIn ||
         loginFillInfo.passwordField.disabled ||
-        (!this.onPassword && loginFillInfo.usernameField.disabled);
-
+        loginFillInfo.activeField.disabled;
       this.setItemAttr("fill-login", "disabled", disableFill);
 
+      let onPasswordLikeField = PASSWORD_FIELDNAME_HINTS.includes(
+        loginFillInfo.activeField.fieldNameHint
+      );
       
       let fillMenu = document.getElementById("fill-login");
-      if (this.onPassword) {
+      if (onPasswordLikeField) {
         fillMenu.setAttribute("label", fillMenu.getAttribute("label-password"));
         fillMenu.setAttribute(
           "accesskey",
           fillMenu.getAttribute("accesskey-password")
         );
       } else {
+        
         fillMenu.setAttribute("label", fillMenu.getAttribute("label-login"));
         fillMenu.setAttribute(
           "accesskey",
@@ -958,7 +961,7 @@ class nsContextMenu {
       let isGeneratedPasswordEnabled =
         LoginHelper.generationAvailable && LoginHelper.generationEnabled;
       showGenerate =
-        this.onPassword &&
+        onPasswordLikeField &&
         isGeneratedPasswordEnabled &&
         Services.logins.getLoginSavingEnabled(formOrigin);
 
