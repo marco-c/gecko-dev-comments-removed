@@ -389,7 +389,6 @@ var SitePermissions = {
 
 
 
-
   isSupportedPrincipal(principal) {
     if (!principal) {
       return false;
@@ -399,7 +398,7 @@ var SitePermissions = {
         "Argument passed as principal is not an instance of Ci.nsIPrincipal"
       );
     }
-    return ["http", "https", "moz-extension"].some(scheme =>
+    return ["http", "https", "moz-extension", "file"].some(scheme =>
       principal.schemeIs(scheme)
     );
   },
