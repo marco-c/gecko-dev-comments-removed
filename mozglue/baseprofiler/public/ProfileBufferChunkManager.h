@@ -41,6 +41,7 @@ class ProfileBufferChunkManager {
   
   
   
+  
   virtual MOZ_MUST_USE UniquePtr<ProfileBufferChunk> GetChunk() = 0;
 
   
