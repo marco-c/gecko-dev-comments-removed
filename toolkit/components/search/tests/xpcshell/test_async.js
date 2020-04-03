@@ -20,11 +20,9 @@ add_task(async function test_async() {
   
   let engine = Services.search.getEngineByName("basic");
   Assert.notEqual(engine, null);
-  Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
 
   engine = Services.search.getEngineByName("Simple Engine");
   Assert.notEqual(engine, null);
-  Assert.ok(engine.isAppProvided, "Should be shown as an app-provided engine");
 
   
   engine = Services.search.getEngineByName("hidden");
