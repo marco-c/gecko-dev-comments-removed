@@ -84,9 +84,7 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
 
 class JSObject : public js::gc::Cell {
  protected:
-  using HeaderWithObjectGroup =
-      js::gc::CellHeaderWithTenuredGCPointer<js::ObjectGroup>;
-  HeaderWithObjectGroup headerAndGroup_;
+  js::GCPtrObjectGroup group_;
   js::GCPtrShape shape_;
 
  private:
@@ -103,12 +101,10 @@ class JSObject : public js::gc::Cell {
   
   static js::ObjectGroup* makeLazyGroup(JSContext* cx, js::HandleObject obj);
 
-  void setGroupRaw(js::ObjectGroup* group) { headerAndGroup_.setPtr(group); }
-
  public:
   bool isNative() const { return getClass()->isNative(); }
 
-  const JSClass* getClass() const { return groupRaw()->clasp(); }
+  const JSClass* getClass() const { return group_->clasp(); }
   bool hasClass(const JSClass* c) const { return getClass() == c; }
 
   js::LookupPropertyOp getOpsLookupProperty() const {
@@ -144,23 +140,23 @@ class JSObject : public js::gc::Cell {
     return groupRaw();
   }
 
-  js::ObjectGroup* groupRaw() const { return headerAndGroup_.ptr(); }
+  js::ObjectGroup* groupRaw() const { return group_; }
 
-  void initGroup(js::ObjectGroup* group) { headerAndGroup_.initPtr(group); }
-
-  
-
-
-
-  bool isSingleton() const { return groupRaw()->singleton(); }
+  void initGroup(js::ObjectGroup* group) { group_.init(group); }
 
   
 
 
 
-  bool hasLazyGroup() const { return groupRaw()->lazy(); }
+  bool isSingleton() const { return group_->singleton(); }
 
-  JS::Compartment* compartment() const { return groupRaw()->compartment(); }
+  
+
+
+
+  bool hasLazyGroup() const { return group_->lazy(); }
+
+  JS::Compartment* compartment() const { return group_->compartment(); }
   JS::Compartment* maybeCompartment() const { return compartment(); }
 
   void initShape(js::Shape* shape) {
@@ -270,14 +266,14 @@ class JSObject : public js::gc::Cell {
   void fixupAfterMovingGC();
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Object;
-  const js::gc::CellHeader& cellHeader() const { return headerAndGroup_; }
+  static const size_t MaxTagBits = 3;
 
-  MOZ_ALWAYS_INLINE JS::Zone* zone() const { return groupRaw()->zone(); }
+  MOZ_ALWAYS_INLINE JS::Zone* zone() const { return group_->zone(); }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZone() const {
     return JS::shadow::Zone::from(zone());
   }
   MOZ_ALWAYS_INLINE JS::Zone* zoneFromAnyThread() const {
-    return groupRaw()->zoneFromAnyThread();
+    return group_->zoneFromAnyThread();
   }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
     return JS::shadow::Zone::from(zoneFromAnyThread());
@@ -314,6 +310,11 @@ class JSObject : public js::gc::Cell {
 
   static inline js::ObjectGroup* getGroup(JSContext* cx, js::HandleObject obj);
 
+  const js::GCPtrObjectGroup& groupFromGC() const {
+    
+    return group_;
+  }
+
 #ifdef DEBUG
   static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,
                                   js::gc::AllocKind allocKind,
@@ -344,7 +345,7 @@ class JSObject : public js::gc::Cell {
 
 
 
-  js::TaggedProto taggedProto() const { return groupRaw()->proto(); }
+  js::TaggedProto taggedProto() const { return group_->proto(); }
 
   bool uninlinedIsProxy() const;
 
@@ -431,14 +432,14 @@ class JSObject : public js::gc::Cell {
 
   JS::Realm* nonCCWRealm() const {
     MOZ_ASSERT(!js::UninlinedIsCrossCompartmentWrapper(this));
-    return groupRaw()->realm();
+    return group_->realm();
   }
   bool hasSameRealmAs(JSContext* cx) const;
 
   
   
   
-  JS::Realm* maybeCCWRealm() const { return groupRaw()->realm(); }
+  JS::Realm* maybeCCWRealm() const { return group_->realm(); }
 
   
 
@@ -576,10 +577,7 @@ class JSObject : public js::gc::Cell {
   friend class js::jit::MacroAssembler;
   friend class js::jit::CacheIRCompiler;
 
-  static constexpr size_t offsetOfGroup() {
-    return offsetof(JSObject, headerAndGroup_) +
-           HeaderWithObjectGroup::offsetOfPtr();
-  }
+  static constexpr size_t offsetOfGroup() { return offsetof(JSObject, group_); }
   static constexpr size_t offsetOfShape() { return offsetof(JSObject, shape_); }
 
  private:

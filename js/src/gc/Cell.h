@@ -102,7 +102,17 @@ class CellColor {
 
 
 
-class CellHeader {
+
+
+
+
+
+
+
+
+
+
+struct alignas(gc::CellAlignBytes) Cell {
  public:
   static_assert(gc::CellFlagBitsReservedForGC >= 3,
                 "Not enough flag bits reserved for GC");
@@ -124,29 +134,6 @@ class CellHeader {
   
   static constexpr uintptr_t BIGINT_BIT = Bit(2);
 
- protected:
-  uintptr_t flags() const { return header_ & RESERVED_MASK; }
-
-  
-  
-  uintptr_t header_;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct alignas(gc::CellAlignBytes) Cell {
- public:
   MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
   MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
   MOZ_ALWAYS_INLINE TenuredCell& asTenured();
@@ -182,19 +169,19 @@ struct alignas(gc::CellAlignBytes) Cell {
 
   inline bool isForwarded() const {
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & CellHeader::FORWARD_BIT;
+    return firstWord & FORWARD_BIT;
   }
 
   inline bool nurseryCellIsString() const {
     MOZ_ASSERT(!isTenured());
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & CellHeader::JSSTRING_BIT;
+    return firstWord & JSSTRING_BIT;
   }
 
   inline bool nurseryCellIsBigInt() const {
     MOZ_ASSERT(!isTenured());
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & CellHeader::BIGINT_BIT;
+    return firstWord & BIGINT_BIT;
   }
 
   template <class T>
@@ -561,178 +548,88 @@ bool TenuredCell::isAligned() const {
 
 
 
-class CellHeaderWithLengthAndFlags : public CellHeader {
+
+template <class BaseCell>
+class CellWithLengthAndFlags : public BaseCell {
+  static_assert(std::is_same<BaseCell, Cell>::value ||
+                    std::is_same<BaseCell, TenuredCell>::value,
+                "BaseCell must be either Cell or TenuredCell");
+
+  
+  
+  uintptr_t flags_;
+
 #if JS_BITS_PER_WORD == 32
   
   uint32_t length_;
 #endif
 
- public:
+ protected:
   uint32_t lengthField() const {
 #if JS_BITS_PER_WORD == 32
     return length_;
 #else
-    return uint32_t(header_ >> 32);
+    return uint32_t(flags_ >> 32);
 #endif
   }
 
-  uint32_t flagsField() const { return uint32_t(header_); }
+  uint32_t flagsField() const { return uint32_t(flags_); }
 
-  void setFlagBit(uint32_t flag) { header_ |= uintptr_t(flag); }
-  void clearFlagBit(uint32_t flag) { header_ &= ~uintptr_t(flag); }
-  void toggleFlagBit(uint32_t flag) { header_ ^= uintptr_t(flag); }
+  void setFlagBit(uint32_t flag) { flags_ |= uintptr_t(flag); }
+  void clearFlagBit(uint32_t flag) { flags_ &= ~uintptr_t(flag); }
+  void toggleFlagBit(uint32_t flag) { flags_ ^= uintptr_t(flag); }
 
   void setLengthAndFlags(uint32_t len, uint32_t flags) {
 #if JS_BITS_PER_WORD == 32
-    header_ = flags;
+    flags_ = flags;
     length_ = len;
 #else
-    header_ = (uint64_t(len) << 32) | uint64_t(flags);
+    flags_ = (uint64_t(len) << 32) | uint64_t(flags);
 #endif
   }
 
   
   
   
-  void setTemporaryGCUnsafeData(uintptr_t data) { header_ = data; }
+  void setTemporaryGCUnsafeData(uintptr_t data) { flags_ = data; }
 
   
   
   uintptr_t unsetTemporaryGCUnsafeData(uint32_t len, uint32_t flags) {
-    uintptr_t data = header_;
+    uintptr_t data = flags_;
     setLengthAndFlags(len, flags);
     return data;
   }
 
   
-  
   static constexpr size_t offsetOfRawFlagsField() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_);
+    return offsetof(CellWithLengthAndFlags, flags_);
   }
 
   
   
 #if JS_BITS_PER_WORD == 32
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_);
+    return offsetof(CellWithLengthAndFlags, flags_);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellHeaderWithLengthAndFlags, length_);
+    return offsetof(CellWithLengthAndFlags, length_);
   }
 #elif MOZ_LITTLE_ENDIAN()
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_);
+    return offsetof(CellWithLengthAndFlags, flags_);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_) + sizeof(uint32_t);
+    return offsetof(CellWithLengthAndFlags, flags_) + sizeof(uint32_t);
   }
 #else
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_) + sizeof(uint32_t);
+    return offsetof(CellWithLengthAndFlags, flags_) + sizeof(uint32_t);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellHeaderWithLengthAndFlags, header_);
+    return offsetof(CellWithLengthAndFlags, flags_);
   }
 #endif
-};
-
-
-
-
-
-template <class PtrT>
-class CellHeaderWithNonGCPointer : public CellHeader {
-  static_assert(!std::is_pointer<PtrT>::value,
-                "PtrT should be the type of the referent, not of the pointer");
-  static_assert(
-      !std::is_base_of<Cell, PtrT>::value,
-      "Don't use CellHeaderWithNonGCPointer for pointers to GC things");
-
- public:
-  CellHeaderWithNonGCPointer() = default;
-  explicit CellHeaderWithNonGCPointer(PtrT* initial) : CellHeader() {
-    uintptr_t data = uintptr_t(initial);
-    MOZ_ASSERT((data & RESERVED_MASK) == 0);
-    header_ = data;
-  }
-
-  PtrT* ptr() const {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(flags() == 0);
-    return reinterpret_cast<PtrT*>(header_);
-  }
-
-  void setPtr(PtrT* newValue) {
-    
-    uintptr_t data = uintptr_t(newValue);
-    MOZ_ASSERT(flags() == 0);
-    MOZ_ASSERT((data & RESERVED_MASK) == 0);
-    header_ = data;
-  }
-
-  static constexpr size_t offsetOfPtr() {
-    return offsetof(CellHeaderWithNonGCPointer, header_);
-  }
-};
-
-
-
-
-
-
-
-
-template <class PtrT>
-class CellHeaderWithTenuredGCPointer : public CellHeader {
-  static_assert(!std::is_pointer<PtrT>::value,
-                "PtrT should be the type of the referent, not of the pointer");
-  static_assert(
-      std::is_base_of<Cell, PtrT>::value,
-      "Only use CellHeaderWithTenuredGCPointer for pointers to GC things");
-
- public:
-  CellHeaderWithTenuredGCPointer() = default;
-  explicit CellHeaderWithTenuredGCPointer(PtrT* initial) : CellHeader() {
-    initPtr(initial);
-  }
-
-  void initPtr(PtrT* initial) {
-    MOZ_ASSERT(!IsInsideNursery(initial));
-    uintptr_t data = uintptr_t(initial);
-    MOZ_ASSERT((data & RESERVED_MASK) == 0);
-    this->header_ = data;
-  }
-
-  PtrT* ptr() const {
-    
-    
-    
-    
-    MOZ_ASSERT(flags() == 0);
-    return reinterpret_cast<PtrT*>(this->header_);
-  }
-
-  void setPtr(PtrT* newValue) {
-    
-    MOZ_ASSERT(!IsInsideNursery(newValue));
-    PtrT::writeBarrierPre(ptr());
-    unsafeSetPtr(newValue);
-  }
-
-  void unsafeSetPtr(PtrT* newValue) {
-    uintptr_t data = uintptr_t(newValue);
-    MOZ_ASSERT(flags() == 0);
-    MOZ_ASSERT((data & RESERVED_MASK) == 0);
-    this->header_ = data;
-  }
-
-  static constexpr size_t offsetOfPtr() {
-    return offsetof(CellHeaderWithTenuredGCPointer, header_);
-  }
 };
 
 } 

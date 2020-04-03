@@ -545,18 +545,18 @@ template JitCode* JitCode::New<NoGC>(JSContext* cx, uint8_t* code,
 void JitCode::copyFrom(MacroAssembler& masm) {
   
   
-  JitCodeHeader::FromExecutable(raw())->init(this);
+  JitCodeHeader::FromExecutable(code_)->init(this);
 
   insnSize_ = masm.instructionsSize();
-  masm.executableCopy(raw());
+  masm.executableCopy(code_);
 
   jumpRelocTableBytes_ = masm.jumpRelocationTableBytes();
-  masm.copyJumpRelocationTable(raw() + jumpRelocTableOffset());
+  masm.copyJumpRelocationTable(code_ + jumpRelocTableOffset());
 
   dataRelocTableBytes_ = masm.dataRelocationTableBytes();
-  masm.copyDataRelocationTable(raw() + dataRelocTableOffset());
+  masm.copyDataRelocationTable(code_ + dataRelocTableOffset());
 
-  masm.processCodeLabels(raw());
+  masm.processCodeLabels(code_);
 }
 
 void JitCode::traceChildren(JSTracer* trc) {
@@ -567,12 +567,12 @@ void JitCode::traceChildren(JSTracer* trc) {
   }
 
   if (jumpRelocTableBytes_) {
-    uint8_t* start = raw() + jumpRelocTableOffset();
+    uint8_t* start = code_ + jumpRelocTableOffset();
     CompactBufferReader reader(start, start + jumpRelocTableBytes_);
     MacroAssembler::TraceJumpRelocations(trc, this, reader);
   }
   if (dataRelocTableBytes_) {
-    uint8_t* start = raw() + dataRelocTableOffset();
+    uint8_t* start = code_ + dataRelocTableOffset();
     CompactBufferReader reader(start, start + dataRelocTableBytes_);
     MacroAssembler::TraceDataRelocations(trc, this, reader);
   }
@@ -597,11 +597,11 @@ void JitCode::finalize(JSFreeOp* fop) {
   
   
   
-  if (fop->appendJitPoisonRange(JitPoisonRange(pool_, raw() - headerSize_,
+  if (fop->appendJitPoisonRange(JitPoisonRange(pool_, code_ - headerSize_,
                                                headerSize_ + bufferSize_))) {
     pool_->addRef();
   }
-  cellHeaderAndCode_.setPtr(nullptr);
+  code_ = nullptr;
 
   
   
