@@ -51,10 +51,7 @@ add_task(async function setup() {
 });
 
 function checkExtraContents(doc, type, opts = {}) {
-  let {
-    showAmoButton = false,
-    showThemeRecommendationFooter = type === "theme",
-  } = opts;
+  let { showThemeRecommendationFooter = type === "theme" } = opts;
   let footer = doc.querySelector("footer");
   let amoButton = footer.querySelector('[action="open-amo"]');
   let privacyPolicyLink = footer.querySelector(".privacy-policy-link");
@@ -67,15 +64,11 @@ function checkExtraContents(doc, type, opts = {}) {
 
   if (type == "extension") {
     ok(taarNotice, "There is a TAAR notice");
-    if (showAmoButton) {
-      is_element_visible(amoButton, "The AMO button is shown");
-    } else {
-      is_element_hidden(amoButton, "The AMO button is hidden");
-    }
+    is_element_visible(amoButton, "The AMO button is shown");
     is_element_visible(privacyPolicyLink, "The privacy policy is visible");
   } else if (type == "theme") {
     ok(!taarNotice, "There is no TAAR notice");
-    ok(!amoButton, "There is no AMO button");
+    ok(amoButton, "AMO button is shown");
     ok(!privacyPolicyLink, "There is no privacy policy");
   } else {
     throw new Error(`Unknown type ${type}`);
@@ -243,7 +236,7 @@ add_task(async function testInstallAllExtensions() {
   );
 
   
-  checkExtraContents(doc, type, { showAmoButton: true });
+  checkExtraContents(doc, type);
 
   
   let extension = extensions.pop();
@@ -270,7 +263,7 @@ add_task(async function testError() {
   let recommendedList = doc.querySelector("recommended-addon-list");
   await recommendedList.cardsReady;
 
-  checkExtraContents(doc, "extension", { showAmoButton: true });
+  checkExtraContents(doc, "extension");
 
   await closeView(win);
   await SpecialPowers.popPrefEnv();
