@@ -13,6 +13,7 @@
 #include "nsTArray.h"
 #include "InitializedOnce.h"
 #include "FileInfoFwd.h"
+#include "SafeRefPtr.h"
 
 namespace mozilla {
 namespace dom {
@@ -110,7 +111,7 @@ struct StructuredCloneFileParent : StructuredCloneFileBase {
   StructuredCloneFileParent& operator=(StructuredCloneFileParent&&) = delete;
 
   
-  StructuredCloneFileParent(FileType aType, RefPtr<FileInfo> aFileInfo);
+  StructuredCloneFileParent(FileType aType, SafeRefPtr<FileInfo> aFileInfo);
 
   
   ~StructuredCloneFileParent();
@@ -123,10 +124,10 @@ struct StructuredCloneFileParent : StructuredCloneFileBase {
   const indexedDB::FileInfo& FileInfo() const { return ***mContents; }
 
   
-  RefPtr<indexedDB::FileInfo> FileInfoPtr() const;
+  SafeRefPtr<indexedDB::FileInfo> FileInfoPtr() const;
 
  private:
-  InitializedOnce<const Maybe<RefPtr<indexedDB::FileInfo>>> mContents;
+  InitializedOnce<const Maybe<SafeRefPtr<indexedDB::FileInfo>>> mContents;
 };
 
 struct StructuredCloneReadInfoBase {
