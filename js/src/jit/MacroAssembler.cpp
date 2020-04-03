@@ -1816,7 +1816,7 @@ void MacroAssembler::loadJitCodeRaw(Register func, Register dest) {
   loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
 }
 
-void MacroAssembler::loadJitCodeMaybeNoArgCheck(Register func, Register dest) {
+void MacroAssembler::loadJitCodeNoArgCheck(Register func, Register dest) {
 #ifdef DEBUG
   {
     Label ok;
@@ -1832,18 +1832,17 @@ void MacroAssembler::loadJitCodeMaybeNoArgCheck(Register func, Register dest) {
   Imm32 tagMask(ScriptWarmUpData::TagMask);
 
   
-  
-  Label uncompiled, end;
   loadPtr(Address(func, JSFunction::offsetOfScript()), dest);
   loadPtr(Address(dest, BaseScript::offsetOfWarmUpData()), dest);
-  branchTestPtr(Assembler::NonZero, dest, tagMask, &uncompiled);
+#ifdef DEBUG
+  {
+    Label ok;
+    branchTestPtr(Assembler::Zero, dest, tagMask, &ok);
+    assumeUnreachable("Function has no JitScript!");
+    bind(&ok);
+  }
+#endif
   loadPtr(Address(dest, JitScript::offsetOfJitCodeSkipArgCheck()), dest);
-  jump(&end);
-
-  
-  bind(&uncompiled);
-  loadJitCodeRaw(func, dest);
-  bind(&end);
 }
 
 void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {

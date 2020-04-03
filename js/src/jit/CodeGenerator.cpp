@@ -5119,7 +5119,7 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   } else {
     
     
-    masm.loadJitCodeMaybeNoArgCheck(calleereg, objreg);
+    masm.loadJitCodeNoArgCheck(calleereg, objreg);
   }
 
   
@@ -5232,7 +5232,7 @@ void CodeGenerator::visitCallKnown(LCallKnown* call) {
   } else {
     
     
-    masm.loadJitCodeMaybeNoArgCheck(calleereg, objreg);
+    masm.loadJitCodeNoArgCheck(calleereg, objreg);
   }
 
   
