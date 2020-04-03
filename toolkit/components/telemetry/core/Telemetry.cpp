@@ -1164,12 +1164,21 @@ TelemetryImpl::GetIsOfficialTelemetry(bool* ret) {
 
 
 extern "C" {
-nsresult fog_init(const char* buildId, const char* appDisplayVersion, const char* channel);
+nsresult fog_init(const nsAString* dataPath, const char* buildId, const char* appDisplayVersion, const char* channel);
 }
 
 static void internal_initGlean() {
+  nsAutoString dataPath;
+  nsresult rv = Preferences::GetString("telemetry.fog.temporary_and_just_for_testing.data_path", dataPath);
+
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Can't read data path preference. FOG will not be initialized");
+    return;
+  }
+
   Unused << NS_WARN_IF(NS_FAILED(
         fog_init(
+          &dataPath,
            "build-id",
            "0.0a1",
            "nightly"
@@ -1227,12 +1236,6 @@ already_AddRefed<nsITelemetry> TelemetryImpl::CreateTelemetryInstance() {
   
   if (GetCurrentProduct() == SupportedProduct::Geckoview) {
     TelemetryGeckoViewPersistence::InitPersistence();
-  }
-#endif
-
-#if defined(MOZ_GLEAN)
-  if (XRE_IsParentProcess()) {
-    internal_initGlean();
   }
 #endif
 
@@ -1784,6 +1787,16 @@ TelemetryImpl::FlushBatchedChildTelemetry() {
 NS_IMETHODIMP
 TelemetryImpl::EarlyInit() {
   Unused << MemoryTelemetry::Get();
+
+#if defined(MOZ_GLEAN)
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    internal_initGlean();
+  }
+#endif
+
   return NS_OK;
 }
 
