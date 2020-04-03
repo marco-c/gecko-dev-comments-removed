@@ -246,6 +246,11 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
   if (Preferences::GetBool(GFX_MISSING_FONTS_NOTIFY_PREF)) {
     mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
   }
+
+  
+  
+  
+  mFontStats = MakeUnique<FontMatchingStats>();
 }
 
 static const char* gExactCallbackPrefs[] = {

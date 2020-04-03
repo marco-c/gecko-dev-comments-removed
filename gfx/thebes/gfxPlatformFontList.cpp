@@ -794,7 +794,7 @@ void gfxPlatformFontList::GetFontFamilyList(
 
 gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
     uint32_t aCh, uint32_t aNextCh, Script aRunScript,
-    const gfxFontStyle* aStyle) {
+    const gfxFontStyle* aStyle, FontVisibility* aVisibility) {
   MOZ_ASSERT(!mCodepointsWithNoFonts.test(aCh),
              "don't call for codepoints already known to be unsupported");
 
@@ -813,11 +813,13 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
       if (face) {
         fontEntry =
             GetOrCreateFontEntry(face, mReplacementCharFallbackFamily.mShared);
+        *aVisibility = mReplacementCharFallbackFamily.mShared->Visibility();
       }
     } else if (!mReplacementCharFallbackFamily.mIsShared &&
                mReplacementCharFallbackFamily.mUnshared) {
       fontEntry =
           mReplacementCharFallbackFamily.mUnshared->FindFontForStyle(*aStyle);
+      *aVisibility = mReplacementCharFallbackFamily.mUnshared->Visibility();
     }
 
     
@@ -860,8 +862,13 @@ gfxFontEntry* gfxPlatformFontList::SystemFindFontForChar(
   
   if (!fontEntry) {
     mCodepointsWithNoFonts.set(aCh);
-  } else if (aCh == 0xFFFD && fontEntry) {
-    mReplacementCharFallbackFamily = fallbackFamily;
+  } else {
+    *aVisibility = fallbackFamily.mIsShared
+                       ? fallbackFamily.mShared->Visibility()
+                       : fallbackFamily.mUnshared->Visibility();
+    if (aCh == 0xFFFD) {
+      mReplacementCharFallbackFamily = fallbackFamily;
+    }
   }
 
   
@@ -1004,16 +1011,12 @@ bool gfxPlatformFontList::FindAndAddFamilies(
   bool allowHidden = bool(aFlags & FindFamiliesFlags::eSearchHiddenFamilies);
   if (SharedFontList()) {
     fontlist::Family* family = SharedFontList()->FindFamily(key, allowHidden);
-    if (family) {
-      aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
-      return true;
-    }
     
     
     
     
     
-    if (!mOtherFamilyNamesInitialized) {
+    if (!family && !mOtherFamilyNamesInitialized) {
       bool triggerLoading = true;
       bool mayDefer =
           !(aFlags & FindFamiliesFlags::eForceOtherFamilyNamesLoading);
@@ -1038,10 +1041,6 @@ bool gfxPlatformFontList::FindAndAddFamilies(
       if (triggerLoading) {
         InitOtherFamilyNames(mayDefer);
         family = SharedFontList()->FindFamily(key);
-        if (family) {
-          aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
-          return true;
-        }
       }
       if (!family && !mOtherFamilyNamesInitialized &&
           !(aFlags & FindFamiliesFlags::eNoAddToNamesMissedWhenSearching)) {
@@ -1051,6 +1050,10 @@ bool gfxPlatformFontList::FindAndAddFamilies(
           mOtherNamesMissed = MakeUnique<nsTHashtable<nsCStringHashKey>>(2);
         }
         mOtherNamesMissed->PutEntry(key);
+      }
+      if (family) {
+        aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
+        return true;
       }
     }
     return false;
