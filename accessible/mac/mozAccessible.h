@@ -62,6 +62,11 @@ static const uintptr_t IS_PROXY = 1;
 
 
   mozilla::a11y::role mRole;
+
+  
+
+
+  uint64_t mCachedState;
 }
 
 
@@ -134,6 +139,12 @@ static const uintptr_t IS_PROXY = 1;
 
 
 - (uint64_t)stateWithMask:(uint64_t)mask;
+
+
+- (void)stateChanged:(uint64_t)state isEnabled:(BOOL)enabled;
+
+
+- (void)invalidateState;
 
 #pragma mark -
 
