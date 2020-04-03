@@ -56,9 +56,12 @@ class FeatureRef
     static const uint8  SIZEOF_CHUNK = sizeof(chunk_t)*8;
 
 public:
+    enum flags_t : uint16 {
+        HIDDEN = 0x0800
+    };
     FeatureRef() throw();
     FeatureRef(const Face & face, unsigned short & bits_offset, uint32 max_val,
-               uint32 name, uint16 uiName, uint16 flags,
+               uint32 name, uint16 uiName, flags_t flags,
                FeatureSetting *settings, uint16 num_set) throw();
     ~FeatureRef() throw();
 
@@ -75,6 +78,7 @@ public:
     uint16 getNumSettings() const { return m_numSet; }
     uint16 getSettingName(uint16 index) const { return m_nameValues[index].label(); }
     int16  getSettingValue(uint16 index) const { return m_nameValues[index].value(); }
+    flags_t getFlags() const { return m_flags; }
     uint32 maxVal() const { return m_max; }
     const Face & getFace() const { assert(m_face); return *m_face;}
     const FeatureMap* getFeatureMap() const;
@@ -88,9 +92,9 @@ private:
     chunk_t m_mask,             
             m_max;              
     uint32  m_id;               
-    uint16  m_nameid,            
-            m_flags,             
-            m_numSet;            
+    uint16  m_nameid,           
+            m_numSet;           
+    flags_t m_flags;            
     byte    m_bits,             
             m_index;            
 
@@ -103,8 +107,8 @@ FeatureRef::FeatureRef() throw()
 : m_face(0),
   m_nameValues(0),
   m_mask(0), m_max(0),
-  m_id(0),
-  m_nameid(0), m_flags(0), m_numSet(0),
+  m_id(0), m_nameid(0), m_numSet(0), 
+  m_flags(flags_t(0)),
   m_bits(0), m_index(0)
 {
 }
