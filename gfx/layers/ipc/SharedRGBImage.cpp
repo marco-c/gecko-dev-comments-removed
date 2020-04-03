@@ -15,11 +15,12 @@
 #include "mozilla/layers/ImageClient.h"        
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/TextureClient.h"      
-#include "mozilla/layers/ImageBridgeChild.h"   
-#include "mozilla/mozalloc.h"                  
-#include "nsDebug.h"                           
-#include "nsISupportsImpl.h"                   
-#include "nsRect.h"                            
+#include "mozilla/layers/TextureClientRecycleAllocator.h"  
+#include "mozilla/layers/ImageBridgeChild.h"  
+#include "mozilla/mozalloc.h"                 
+#include "nsDebug.h"                          
+#include "nsISupportsImpl.h"                  
+#include "nsRect.h"                           
 
 
 #define MAX_FRAME_SIZE (16 * 1024 * 1024)

@@ -18,6 +18,7 @@
 #  include "mozilla/gfx/DeviceManagerDx.h"  
 #  include "mozilla/layers/ImageDataSerializer.h"
 #endif
+#include "mozilla/D3DMessageUtils.h"  
 #include "mozilla/dom/WebGLParent.h"
 #include "mozilla/ipc/Transport.h"           
 #include "mozilla/layers/AnimationHelper.h"  
