@@ -993,7 +993,7 @@ static bool InitFromBailout(JSContext* cx, size_t frameNo, HandleFunction fun,
       
       
       
-      MOZ_ASSERT(cx->realm()->isDebuggee());
+      MOZ_ASSERT(cx->realm()->isDebuggee() || cx->isPropagatingForcedReturn());
       if (iter.moreFrames() ||
           HasLiveStackValueAtDepth(script, pc, i, exprStackSlots)) {
         v = iter.read();

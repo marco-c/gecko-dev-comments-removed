@@ -155,44 +155,59 @@ class TryNoteIterIon : public TryNoteIter<IonTryNoteFilter> {
       : TryNoteIter(cx, frame.script(), frame.pc(), IonTryNoteFilter(frame)) {}
 };
 
+static bool ShouldBailoutForDebugger(JSContext* cx,
+                                     const InlineFrameIterator& frame,
+                                     bool hitBailoutException) {
+  if (hitBailoutException) {
+    MOZ_ASSERT(!cx->isPropagatingForcedReturn());
+    return false;
+  }
+
+  
+  
+  if (cx->isPropagatingForcedReturn()) {
+    return true;
+  }
+
+  if (!cx->realm()->isDebuggee()) {
+    return false;
+  }
+
+  
+  
+  if (cx->isExceptionPending() &&
+      DebugAPI::hasExceptionUnwindHook(cx->global())) {
+    return true;
+  }
+
+  
+  JitActivation* act = cx->activation()->asJit();
+  RematerializedFrame* rematFrame =
+      act->lookupRematerializedFrame(frame.frame().fp(), frame.frameNo());
+  return rematFrame && rematFrame->isDebuggee();
+}
+
 static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
                                ResumeFromException* rfe,
                                bool* hitBailoutException) {
-  if (cx->realm()->isDebuggee()) {
+  if (ShouldBailoutForDebugger(cx, frame, *hitBailoutException)) {
     
     
     
-    bool shouldBail = DebugAPI::hasExceptionUnwindHook(cx->global());
-    RematerializedFrame* rematFrame = nullptr;
-    if (!shouldBail) {
-      JitActivation* act = cx->activation()->asJit();
-      rematFrame =
-          act->lookupRematerializedFrame(frame.frame().fp(), frame.frameNo());
-      shouldBail = rematFrame && rematFrame->isDebuggee();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    ExceptionBailoutInfo propagateInfo;
+    if (ExceptionHandlerBailout(cx, frame, rfe, propagateInfo)) {
+      return;
     }
-
-    if (shouldBail && !*hitBailoutException) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      ExceptionBailoutInfo propagateInfo;
-      if (ExceptionHandlerBailout(cx, frame, rfe, propagateInfo)) {
-        return;
-      }
-      
-      
-      *hitBailoutException = true;
-    }
+    *hitBailoutException = true;
   }
 
   RootedScript script(cx, frame.script());
