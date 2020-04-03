@@ -65,7 +65,7 @@ class nsLocalFile final : public nsILocalFileWin {
   bool mResolveDirty;
   bool mFollowSymlinks;  
 
-  bool mUseDOSDevicePathSyntax = false;
+  bool mUseDOSDevicePathSyntax;
 
   
   nsString mWorkingPath;
