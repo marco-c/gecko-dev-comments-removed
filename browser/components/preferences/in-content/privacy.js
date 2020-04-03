@@ -82,6 +82,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIUrlListManager"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "OS_AUTH_ENABLED",
+  "signon.management.page.os-auth.enabled",
+  true
+);
+
 Preferences.addAll([
   
   { id: "privacy.trackingprotection.enabled", type: "bool" },
@@ -1905,7 +1912,7 @@ var gPrivacyPane = {
 
   async changeMasterPassword() {
     
-    if (!LoginHelper.isMasterPasswordSet()) {
+    if (!LoginHelper.isMasterPasswordSet() && OS_AUTH_ENABLED) {
       let messageId = "master-password-os-auth-dialog-message";
       if (AppConstants.platform == "macosx") {
         
