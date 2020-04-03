@@ -1,0 +1,17 @@
+
+
+
+
+import mozunit
+from mozperftest.argparser import PerftestArgumentParser
+
+
+def test_argparser():
+    parser = PerftestArgumentParser()
+    args = ["test_one.js"]
+    res = parser.parse_args(args)
+    assert res.tests == ["test_one.js"]
+
+
+if __name__ == "__main__":
+    mozunit.main()
