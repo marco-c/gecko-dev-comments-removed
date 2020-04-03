@@ -180,6 +180,7 @@ let ACTORS = {
     },
 
     allFrames: true,
+    messageManagerGroups: ["browsers", "test"],
   },
 
   
