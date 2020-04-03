@@ -2699,7 +2699,8 @@ pref("dom.ipc.processCount.privilegedabout", 1);
 pref("dom.ipc.processCount.privilegedmozilla", 1);
 
 
-pref("dom.ipc.processCount.webIsolated", 1);
+
+pref("dom.ipc.processCount.webIsolated", 1, locked);
 
 
 
