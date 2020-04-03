@@ -15068,9 +15068,17 @@ void Document::MaybeAllowStorageForOpenerAfterUserInteraction() {
     return;
   }
 
-  
-  if (!nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
+  uint32_t cookieBehavior = CookieJarSettings()->GetCookieBehavior();
+  if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+      cookieBehavior ==
+          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+    
+    if (!nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
+      return;
+    }
+  } else {
+    MOZ_ASSERT(net::CookieJarSettings::IsRejectThirdPartyWithExceptions(
+        cookieBehavior));
   }
 
   auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
