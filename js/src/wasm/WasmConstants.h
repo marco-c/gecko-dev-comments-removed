@@ -74,7 +74,7 @@ enum class TypeCode {
   Func = 0x60,  
 
   
-  Struct = 0x50,  
+  Struct = 0x5f,  
 
   
   BlockVoid = 0x40,  
@@ -378,9 +378,11 @@ enum class Op {
   RefIsNull = 0xd1,
   RefFunc = 0xd2,
 
-  RefEq = 0xf0,  
+  
+  RefEq = 0xd5,
 
-  FirstPrefix = 0xfc,
+  FirstPrefix = 0xfb,
+  GcPrefix = 0xfb,
   MiscPrefix = 0xfc,
   ThreadPrefix = 0xfe,
   MozPrefix = 0xff,
@@ -389,6 +391,17 @@ enum class Op {
 };
 
 inline bool IsPrefixByte(uint8_t b) { return b >= uint8_t(Op::FirstPrefix); }
+
+
+enum class GcOp {
+  
+  StructNew = 0x00,
+  StructGet = 0x03,
+  StructSet = 0x06,
+  StructNarrow = 0x07,
+
+  Limit
+};
 
 
 enum class MiscOp {
@@ -415,12 +428,6 @@ enum class MiscOp {
   TableGrow = 0x0f,
   TableSize = 0x10,
   TableFill = 0x11,
-
-  
-  StructNew = 0x50,
-  StructGet = 0x51,
-  StructSet = 0x52,
-  StructNarrow = 0x53,
 
   Limit
 };
