@@ -533,7 +533,15 @@ class TestFirefoxRefresh(MarionetteTestCase):
                                   ignore_errors=False, onerror=handleRemoveReadonly)
 
                 
-                shutil.rmtree(cleanup.reset_profile_path,
+                os = self.marionette.session_capabilities["platformName"]
+                
+                if os == "windows" and not cleanup.reset_profile_path.startswith('\\\\?\\'):
+                    profile_path = r"\\?\%s" % cleanup.reset_profile_path
+                else:
+                    profile_path = cleanup.reset_profile_path
+
+                
+                shutil.rmtree(profile_path,
                               ignore_errors=False, onerror=handleRemoveReadonly)
 
     def doReset(self):
