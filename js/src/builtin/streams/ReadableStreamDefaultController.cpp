@@ -40,6 +40,7 @@
 #include "vm/Realm-inl.h"      
 
 using js::ClassSpec;
+using js::PromiseObject;
 using js::ReadableStream;
 using js::ReadableStreamController;
 using js::ReadableStreamControllerCallPullIfNeeded;
@@ -433,7 +434,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
 
 
 
-JSObject* js::ReadableStreamDefaultControllerPullSteps(
+PromiseObject* js::ReadableStreamDefaultControllerPullSteps(
     JSContext* cx,
     Handle<ReadableStreamDefaultController*> unwrappedController) {
   
