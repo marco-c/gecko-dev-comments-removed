@@ -1961,8 +1961,6 @@ setterLevel:                                                                  \
   IMMUTABLE_FLAG_GETTER(isGenerator, IsGenerator)
   IMMUTABLE_FLAG_GETTER(isAsync, IsAsync)
   IMMUTABLE_FLAG_GETTER_SETTER_PUBLIC(hasRest, HasRest)
-  
-  
   IMMUTABLE_FLAG_GETTER(argumentsHasVarBinding, ArgumentsHasVarBinding)
   IMMUTABLE_FLAG_GETTER(isForEval, IsForEval)
   IMMUTABLE_FLAG_GETTER(isModule, IsModule)
@@ -1977,8 +1975,6 @@ setterLevel:                                                                  \
   MUTABLE_FLAG_GETTER_SETTER(hasRunOnce, HasRunOnce)
   MUTABLE_FLAG_GETTER_SETTER(hasBeenCloned, HasBeenCloned)
   MUTABLE_FLAG_GETTER_SETTER(hasScriptCounts, HasScriptCounts)
-  
-  
   MUTABLE_FLAG_GETTER_SETTER(hasDebugScript, HasDebugScript)
   MUTABLE_FLAG_GETTER_SETTER(allowRelazify, AllowRelazify)
   MUTABLE_FLAG_GETTER_SETTER(failedBoundsCheck, FailedBoundsCheck)
