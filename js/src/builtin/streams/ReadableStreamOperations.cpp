@@ -330,7 +330,7 @@ MOZ_MUST_USE PromiseObject* js::ReadableStreamTee_Pull(
     
 
     
-    Rooted<JSObject*> readerReadResultPromise(
+    Rooted<PromiseObject*> readerReadResultPromise(
         cx, js::ReadableStreamDefaultReaderRead(cx, unwrappedReader));
     if (!readerReadResultPromise) {
       return nullptr;

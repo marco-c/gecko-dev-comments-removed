@@ -32,6 +32,7 @@
 #include "vm/JSContext.h"              
 #include "vm/JSObject.h"               
 #include "vm/NativeObject.h"           
+#include "vm/PromiseObject.h"          
 
 #include "builtin/streams/ReadableStreamReader-inl.h"  
 #include "vm/Compartment-inl.h"  

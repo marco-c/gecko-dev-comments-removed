@@ -29,12 +29,13 @@
 #include "vm/List-inl.h"         
 #include "vm/Realm-inl.h"        
 
-using js::ReadableStreamController;
-using js::UnwrapStreamFromReader;
-
 using JS::Handle;
 using JS::Rooted;
 using JS::Value;
+
+using js::PromiseObject;
+using js::ReadableStreamController;
+using js::UnwrapStreamFromReader;
 
 
 
@@ -225,7 +226,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericRelease(
 
 
 
-MOZ_MUST_USE JSObject* js::ReadableStreamDefaultReaderRead(
+MOZ_MUST_USE PromiseObject* js::ReadableStreamDefaultReaderRead(
     JSContext* cx, Handle<ReadableStreamDefaultReader*> unwrappedReader) {
   
 
