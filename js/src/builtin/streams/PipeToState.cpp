@@ -289,6 +289,7 @@ static MOZ_MUST_USE bool OnDestClosed(JSContext* cx,
   
   
   
+  
 
   
   Rooted<Maybe<Value>> destClosed(cx, Nothing());
@@ -326,17 +327,13 @@ static MOZ_MUST_USE bool OnDestClosed(JSContext* cx,
 
 
 
-static MOZ_MUST_USE bool CanPipeStreams(JSContext* cx,
-                                        Handle<PipeToState*> state,
-                                        Handle<ReadableStream*> unwrappedSource,
-                                        Handle<WritableStream*> unwrappedDest,
-                                        bool* shouldStart) {
+static MOZ_MUST_USE bool SourceOrDestErroredOrClosed(
+    JSContext* cx, Handle<PipeToState*> state,
+    Handle<ReadableStream*> unwrappedSource,
+    Handle<WritableStream*> unwrappedDest, bool* erroredOrClosed) {
   cx->check(state);
 
-  
-  
-  
-  *shouldStart = false;
+  *erroredOrClosed = true;
 
   
   
@@ -364,7 +361,7 @@ static MOZ_MUST_USE bool CanPipeStreams(JSContext* cx,
     return OnDestClosed(cx, state);
   }
 
-  *shouldStart = true;
+  *erroredOrClosed = false;
   return true;
 }
 
@@ -456,15 +453,16 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
   cx->check(state);
 
   
-  bool shouldStart;
-  if (!CanPipeStreams(cx, state, unwrappedSource, unwrappedDest,
-                      &shouldStart)) {
+  bool erroredOrClosed;
+  if (!SourceOrDestErroredOrClosed(cx, state, unwrappedSource, unwrappedDest,
+                                   &erroredOrClosed)) {
     return false;
   }
-  if (!shouldStart) {
+  if (erroredOrClosed) {
     return true;
   }
 
+  
   
   {
     Rooted<JSObject*> unwrappedClosedPromise(cx);
