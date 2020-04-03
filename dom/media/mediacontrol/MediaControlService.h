@@ -53,6 +53,11 @@ class MediaControlService final : public nsIObserver {
 
   
   
+  void NotifyControllerBeingUsedInPictureInPictureMode(
+      MediaController* aController);
+
+  
+  
   MediaController* GetMainController() const;
 
   
@@ -97,7 +102,7 @@ class MediaControlService final : public nsIObserver {
 
     bool AddController(MediaController* aController);
     bool RemoveController(MediaController* aController);
-    void UpdateMainController(MediaController* aController);
+    void UpdateMainControllerIfNeeded(MediaController* aController);
 
     void Shutdown();
 
@@ -111,6 +116,18 @@ class MediaControlService final : public nsIObserver {
     void MainControllerMetadataChanged(const MediaMetadataBase& aMetadata);
 
    private:
+    
+    
+    
+    enum class InsertOptions {
+      eInsertToTail,
+      eInsertBeforeTail,
+    };
+
+    
+    void ReorderGivenController(MediaController* aController,
+                                InsertOptions aOption);
+
     void UpdateMainControllerInternal(MediaController* aController);
     void ConnectToMainControllerEvents();
     void DisconnectMainControllerEvents();

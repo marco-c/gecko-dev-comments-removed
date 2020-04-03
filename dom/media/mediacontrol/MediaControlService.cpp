@@ -150,8 +150,21 @@ void MediaControlService::NotifyControllerPlaybackStateChanged(
   
   if (GetMainController() != aController &&
       aController->GetState() == MediaSessionPlaybackState::Playing) {
-    mControllerManager->UpdateMainController(aController);
+    mControllerManager->UpdateMainControllerIfNeeded(aController);
   }
+}
+
+void MediaControlService::NotifyControllerBeingUsedInPictureInPictureMode(
+    MediaController* aController) {
+  MOZ_DIAGNOSTIC_ASSERT(aController);
+  MOZ_DIAGNOSTIC_ASSERT(
+      mControllerManager,
+      "using controller in PIP mode before initializing service");
+  
+  if (!mControllerManager->Contains(aController)) {
+    return;
+  }
+  mControllerManager->UpdateMainControllerIfNeeded(aController);
 }
 
 uint64_t MediaControlService::GetActiveControllersNum() const {
@@ -204,7 +217,7 @@ bool MediaControlService::ControllerManager::AddController(
     return false;
   }
   mControllers.insertBack(aController);
-  UpdateMainControllerInternal(aController);
+  UpdateMainControllerIfNeeded(aController);
   return true;
 }
 
@@ -217,29 +230,68 @@ bool MediaControlService::ControllerManager::RemoveController(
   
   
   aController->remove();
-  UpdateMainControllerInternal(mControllers.isEmpty() ? nullptr
-                                                      : mControllers.getLast());
+  
+  
+  
+  if (GetMainController() == aController) {
+    UpdateMainControllerInternal(
+        mControllers.isEmpty() ? nullptr : mControllers.getLast());
+  }
   return true;
 }
 
-void MediaControlService::ControllerManager::UpdateMainController(
+void MediaControlService::ControllerManager::UpdateMainControllerIfNeeded(
     MediaController* aController) {
+  MOZ_DIAGNOSTIC_ASSERT(aController);
+
+  if (GetMainController() == aController) {
+    LOG_MAINCONTROLLER("This controller is alreay the main controller");
+    return;
+  }
+
+  if (GetMainController() && GetMainController()->IsInPictureInPictureMode() &&
+      !aController->IsInPictureInPictureMode()) {
+    LOG_MAINCONTROLLER(
+        "Main controller is being used in PIP mode, so we won't replace it "
+        "with non-PIP controller");
+    return ReorderGivenController(aController,
+                                  InsertOptions::eInsertBeforeTail);
+  }
+  ReorderGivenController(aController, InsertOptions::eInsertToTail);
+  UpdateMainControllerInternal(aController);
+}
+
+void MediaControlService::ControllerManager::ReorderGivenController(
+    MediaController* aController, InsertOptions aOption) {
   MOZ_DIAGNOSTIC_ASSERT(aController);
   MOZ_DIAGNOSTIC_ASSERT(mControllers.contains(aController));
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  aController->remove();
-  mControllers.insertBack(aController);
-  UpdateMainControllerInternal(aController);
+  if (aOption == InsertOptions::eInsertToTail) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aController->remove();
+    return mControllers.insertBack(aController);
+  }
+
+  if (aOption == InsertOptions::eInsertBeforeTail) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(GetMainController() != aController);
+    aController->remove();
+    return GetMainController()->setPrevious(aController);
+  }
 }
 
 void MediaControlService::ControllerManager::Shutdown() {
