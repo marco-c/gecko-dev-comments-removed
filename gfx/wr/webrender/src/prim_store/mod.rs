@@ -970,6 +970,13 @@ pub struct VisibleGradientTile {
     pub local_clip_rect: LayoutRect,
 }
 
+#[derive(Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct CachedGradientSegment {
+    pub handle: RenderTaskCacheEntryHandle,
+    pub local_rect: LayoutRect,
+}
+
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -3284,7 +3291,7 @@ impl PrimitiveStore {
                     };
 
                     
-                    let mut stops = [GradientStopKey::empty(); GRADIENT_FP_STOPS];
+                    let mut stops = vec![GradientStopKey::empty(); prim_data.stops.len()];
 
                     
                     
@@ -3302,35 +3309,124 @@ impl PrimitiveStore {
                         }
                     }
 
-                    let cache_key = GradientCacheKey {
-                        orientation,
-                        start_stop_point: VectorKey {
-                            x: start_point,
-                            y: end_point,
-                        },
-                        stops,
-                    };
-
                     
-                    gradient.cache_handle = Some(frame_state.resource_cache.request_render_task(
-                        RenderTaskCacheKey {
-                            size,
-                            kind: RenderTaskCacheKeyKind::Gradient(cache_key),
-                        },
-                        frame_state.gpu_cache,
-                        frame_state.render_tasks,
-                        None,
-                        prim_data.stops_opacity.is_opaque,
-                        |render_tasks| {
-                            render_tasks.add().init(RenderTask::new_gradient(
-                                size,
-                                stops,
-                                orientation,
-                                start_point,
-                                end_point,
-                            ))
+                    
+                    
+                    if start_point < 0.0 {
+                        stops.insert(0, GradientStopKey {
+                            offset: start_point,
+                            color : stops[0].color
+                        });
+                    }
+
+                    if end_point > 1.0 {
+                        stops.push( GradientStopKey {
+                            offset: end_point,
+                            color : stops[stops.len()-1].color
+                        });
+                    }
+
+                    gradient.cache_segments.clear();
+
+                    let mut first_stop = 0;
+                    
+                    
+                    while first_stop < stops.len()-1 {
+
+                        
+                        
+                        if stops[first_stop].offset > end_point {
+                            break;
                         }
-                    ));
+
+                        
+                        
+                        let mut last_stop = first_stop;
+                        let mut hard_stop = false;   
+                        while last_stop < stops.len()-1 &&
+                              last_stop - first_stop + 1 < GRADIENT_FP_STOPS
+                        {
+                            if stops[last_stop+1].offset == stops[last_stop].offset {
+                                hard_stop = true;
+                                break;
+                            }
+
+                            last_stop = last_stop + 1;
+                        }
+
+                        let num_stops = last_stop - first_stop + 1;
+
+                        
+                        if num_stops == 0 {
+                            first_stop = last_stop + 1;
+                            continue;
+                        }
+
+                        
+                        if stops[last_stop].offset < start_point {
+                            first_stop = if hard_stop { last_stop+1 } else { last_stop };
+                            continue;
+                        }
+
+                        let segment_start_point = start_point.max(stops[first_stop].offset);
+                        let segment_end_point   = end_point  .min(stops[last_stop ].offset);
+
+                        let mut segment_stops = [GradientStopKey::empty(); GRADIENT_FP_STOPS];
+                        for i in 0..num_stops {
+                            segment_stops[i] = stops[first_stop + i];
+                        }
+
+                        let cache_key = GradientCacheKey {
+                            orientation,
+                            start_stop_point: VectorKey {
+                                x: segment_start_point,
+                                y: segment_end_point,
+                            },
+                            stops: segment_stops,
+                        };
+
+                        let mut prim_origin = prim_instance.prim_origin;
+                        let mut prim_size   = prim_data.common.prim_size;
+
+                        let inv_length = 1.0 / ( end_point - start_point );
+                        if orientation == LineOrientation::Horizontal {
+                            prim_origin.x    += ( segment_start_point - start_point )       * inv_length * prim_size.width;
+                            prim_size.width  *= ( segment_end_point - segment_start_point ) * inv_length;
+                        } else {
+                            prim_origin.y    += ( segment_start_point - start_point )       * inv_length * prim_size.height;
+                            prim_size.height *= ( segment_end_point - segment_start_point ) * inv_length;
+                        }
+
+                        let local_rect = LayoutRect::new( prim_origin, prim_size );
+
+                        
+                        gradient.cache_segments.push(
+                            CachedGradientSegment {
+                                handle: frame_state.resource_cache.request_render_task(
+                                    RenderTaskCacheKey {
+                                        size,
+                                        kind: RenderTaskCacheKeyKind::Gradient(cache_key),
+                                    },
+                                    frame_state.gpu_cache,
+                                    frame_state.render_tasks,
+                                    None,
+                                    prim_data.stops_opacity.is_opaque,
+                                    |render_tasks| {
+                                        render_tasks.add().init(RenderTask::new_gradient(
+                                            size,
+                                            segment_stops,
+                                            orientation,
+                                            segment_start_point,
+                                            segment_end_point,
+                                        ))
+                                    }),
+                                local_rect: local_rect,
+                            }
+                        );
+
+                        
+                        first_stop = if hard_stop { last_stop + 1 } else { last_stop };
+                    }
                 }
 
                 if prim_data.tile_spacing != LayoutSize::zero() {
