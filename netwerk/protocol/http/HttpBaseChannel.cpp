@@ -4504,7 +4504,5 @@ void HttpBaseChannel::MaybeFlushConsoleReports() {
   }
 }
 
-void HttpBaseChannel::DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() {}
-
 }  
 }  
