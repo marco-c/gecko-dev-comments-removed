@@ -40,12 +40,19 @@ https://firefox-source-docs.mozilla.org/taskcluster/taskcluster/mach.html#parame
 
 
 def invalidate(cache):
-    if not os.path.isfile(cache):
-        return
+    try:
+        cmod = os.path.getmtime(cache)
+    except OSError as e:
+        
+        
+        
+        
+        if e.errno == 2:
+            return
+        raise
 
     tc_dir = os.path.join(build.topsrcdir, 'taskcluster')
     tmod = max(os.path.getmtime(os.path.join(tc_dir, p)) for p, _ in FileFinder(tc_dir))
-    cmod = os.path.getmtime(cache)
 
     if tmod > cmod:
         os.remove(cache)
