@@ -1090,12 +1090,12 @@ class FuncType {
   }
   
   
-  bool temporarilyUnsupportedResultCountForEntry() const {
+  bool temporarilyUnsupportedResultCountForJitEntry() const {
     return results().length() > 1;
   }
   
   
-  bool temporarilyUnsupportedResultCountForExit() const {
+  bool temporarilyUnsupportedResultCountForJitExit() const {
     return results().length() > 1;
   }
   

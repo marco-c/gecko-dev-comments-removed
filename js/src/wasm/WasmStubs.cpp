@@ -317,7 +317,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
           masm.loadPtr(src, iter->gpr());
         } else if (type == MIRType::StackResults) {
           MOZ_ASSERT(args.isSyntheticStackResultPointerArg(iter.index()));
-          MOZ_CRASH("multiple function results not yet implemented");
+          masm.loadPtr(src, iter->gpr());
         } else {
           MOZ_CRASH("unknown GPR type");
         }
@@ -380,7 +380,9 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
           }
           case MIRType::StackResults: {
             MOZ_ASSERT(args.isSyntheticStackResultPointerArg(iter.index()));
-            MOZ_CRASH("multiple function results not yet implemented");
+            masm.loadPtr(src, scratch);
+            masm.storePtr(scratch, Address(masm.getStackPointer(),
+                                           iter->offsetFromArgBase()));
             break;
           }
           default:
@@ -394,33 +396,37 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
   }
 }
 
-static void StoreABIReturn(MacroAssembler& masm, const FuncExport& fe,
-                           Register argv) {
-  
-  const ValTypeVector& results = fe.funcType().results();
-  if (results.length() == 0) {
-    return;
+static void StoreRegisterResult(MacroAssembler& masm, const FuncExport& fe,
+                                Register loc) {
+  ResultType results = ResultType::Vector(fe.funcType().results());
+  DebugOnly<bool> sawRegisterResult = false;
+  for (ABIResultIter iter(results); !iter.done(); iter.next()) {
+    const ABIResult& result = iter.cur();
+    if (result.inRegister()) {
+      MOZ_ASSERT(!sawRegisterResult);
+      sawRegisterResult = true;
+      switch (result.type().kind()) {
+        case ValType::I32:
+          masm.store32(result.gpr(), Address(loc, 0));
+          break;
+        case ValType::I64:
+          masm.store64(result.gpr64(), Address(loc, 0));
+          break;
+        case ValType::F32:
+          masm.canonicalizeFloat(result.fpr());
+          masm.storeFloat32(result.fpr(), Address(loc, 0));
+          break;
+        case ValType::F64:
+          masm.canonicalizeDouble(result.fpr());
+          masm.storeDouble(result.fpr(), Address(loc, 0));
+          break;
+        case ValType::Ref:
+          masm.storePtr(result.gpr(), Address(loc, 0));
+          break;
+      }
+    }
   }
-  MOZ_ASSERT(results.length() == 1, "multi-value return unimplemented");
-  switch (results[0].kind()) {
-    case ValType::I32:
-      masm.store32(ReturnReg, Address(argv, 0));
-      break;
-    case ValType::I64:
-      masm.store64(ReturnReg64, Address(argv, 0));
-      break;
-    case ValType::F32:
-      masm.canonicalizeFloat(ReturnFloat32Reg);
-      masm.storeFloat32(ReturnFloat32Reg, Address(argv, 0));
-      break;
-    case ValType::F64:
-      masm.canonicalizeDouble(ReturnDoubleReg);
-      masm.storeDouble(ReturnDoubleReg, Address(argv, 0));
-      break;
-    case ValType::Ref:
-      masm.storePtr(ReturnReg, Address(argv, 0));
-      break;
-  }
+  MOZ_ASSERT(sawRegisterResult == (results.length() > 0));
 }
 
 #if defined(JS_CODEGEN_ARM)
@@ -641,12 +647,6 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 #  endif
 #endif
 
-  if (fe.funcType().temporarilyUnsupportedResultCountForEntry()) {
-    
-    masm.breakpoint();
-    return FinishOffsets(masm, offsets);
-  }
-
   
   
   masm.setFramePushed(0);
@@ -746,7 +746,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 #endif
 
   
-  StoreABIReturn(masm, fe, argv);
+  StoreRegisterResult(masm, fe, argv);
 
   
   
@@ -2710,7 +2710,8 @@ bool wasm::GenerateEntryStubs(MacroAssembler& masm, size_t funcExportIndex,
   }
 
   
-  if (fe.funcType().temporarilyUnsupportedResultCountForEntry()) {
+  
+  if (fe.funcType().temporarilyUnsupportedResultCountForJitEntry()) {
     return true;
   }
 
@@ -2760,7 +2761,7 @@ bool wasm::GenerateStubs(const ModuleEnvironment& env,
 
     
     
-    if (fi.funcType().temporarilyUnsupportedResultCountForExit()) {
+    if (fi.funcType().temporarilyUnsupportedResultCountForJitExit()) {
       continue;
     }
 
