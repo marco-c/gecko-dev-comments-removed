@@ -393,7 +393,7 @@ static MOZ_MUST_USE bool ReadableByteStreamControllerHandleQueueDrain(
 
 
 
-static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
+static MOZ_MUST_USE PromiseObject* ReadableByteStreamControllerPullSteps(
     JSContext* cx, Handle<ReadableByteStreamController*> unwrappedController) {
   
   Rooted<ReadableStream*> unwrappedStream(cx, unwrappedController->stream());
