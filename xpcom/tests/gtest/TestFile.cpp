@@ -7,11 +7,19 @@
 #include "prsystem.h"
 
 #include "nsIFile.h"
+#ifdef XP_WIN
+#  include "nsILocalFileWin.h"
+#endif
 #include "nsString.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
+#include "nsPrintfCString.h"
 
 #include "gtest/gtest.h"
+
+#ifdef XP_WIN
+bool gTestWithPrefix_Win = false;
+#endif
 
 static bool VerifyResult(nsresult aRV, const char* aMsg) {
   bool failed = NS_FAILED(aRV);
@@ -19,12 +27,30 @@ static bool VerifyResult(nsresult aRV, const char* aMsg) {
   return !failed;
 }
 
+#ifdef XP_WIN
+static void SetUseDOSDevicePathSyntax(nsIFile* aFile) {
+  if (gTestWithPrefix_Win) {
+    nsresult rv;
+    nsCOMPtr<nsILocalFileWin> winFile = do_QueryInterface(aFile, &rv);
+    VerifyResult(rv, "Querying nsILocalFileWin");
+
+    MOZ_ASSERT(winFile);
+    winFile->SetUseDOSDevicePathSyntax(true);
+  }
+}
+#endif
+
 static already_AddRefed<nsIFile> NewFile(nsIFile* aBase) {
   nsresult rv;
   nsCOMPtr<nsIFile> file = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv);
   VerifyResult(rv, "Creating nsIFile");
   rv = file->InitWithFile(aBase);
   VerifyResult(rv, "InitWithFile");
+
+#ifdef XP_WIN
+  SetUseDOSDevicePathSyntax(file);
+#endif
+
   return file.forget();
 }
 
@@ -365,15 +391,21 @@ static bool TestNormalizeNativePath(nsIFile* aBase, nsIFile* aStart) {
   return true;
 }
 
-TEST(TestFile, Tests)
-{
+static void SetupAndTestFunctions(const nsAString& aDirName,
+                                  bool aTestCreateUnique, bool aTestNormalize) {
   nsCOMPtr<nsIFile> base;
   nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(base));
   ASSERT_TRUE(VerifyResult(rv, "Getting temp directory"));
 
-  rv = base->AppendNative(nsDependentCString("mozfiletests"));
+#ifdef XP_WIN
+  SetUseDOSDevicePathSyntax(base);
+#endif
+
+  rv = base->Append(aDirName);
   ASSERT_TRUE(
-      VerifyResult(rv, "Appending mozfiletests to temp directory name"));
+      VerifyResult(rv, nsPrintfCString("Appending %s to temp directory name",
+                                       NS_ConvertUTF16toUTF8(aDirName).get())
+                           .get()));
 
   
   
@@ -384,8 +416,10 @@ TEST(TestFile, Tests)
   ASSERT_TRUE(VerifyResult(rv, "Creating temp directory"));
 
   
-  rv = base->Normalize();
-  ASSERT_TRUE(VerifyResult(rv, "Normalizing temp directory name"));
+  if (aTestNormalize) {
+    rv = base->Normalize();
+    ASSERT_TRUE(VerifyResult(rv, "Normalizing temp directory name"));
+  }
 
   
   nsCOMPtr<nsIFile> subdir = NewFile(base);
@@ -397,6 +431,12 @@ TEST(TestFile, Tests)
   
   
   
+
+  
+  nsString leafName;
+  rv = base->GetLeafName(leafName);
+  ASSERT_TRUE(VerifyResult(rv, "Getting leafName"));
+  ASSERT_TRUE(leafName.Equals(aDirName));
 
   
   ASSERT_TRUE(TestInvalidFileName(base, "a/b"));
@@ -423,16 +463,22 @@ TEST(TestFile, Tests)
   
   ASSERT_TRUE(TestCopy(base, subdir, "file4.txt", "file5.txt"));
 
-  
-  ASSERT_TRUE(TestNormalizeNativePath(base, subdir));
+  if (aTestNormalize) {
+    
+    ASSERT_TRUE(TestNormalizeNativePath(base, subdir));
+  }
 
   
   ASSERT_TRUE(TestRemove(base, "subdir", true));
 
-  ASSERT_TRUE(TestCreateUnique(base, "foo", nsIFile::NORMAL_FILE_TYPE, 0600));
-  ASSERT_TRUE(TestCreateUnique(base, "foo", nsIFile::NORMAL_FILE_TYPE, 0600));
-  ASSERT_TRUE(TestCreateUnique(base, "bar.xx", nsIFile::DIRECTORY_TYPE, 0700));
-  ASSERT_TRUE(TestCreateUnique(base, "bar.xx", nsIFile::DIRECTORY_TYPE, 0700));
+  if (aTestCreateUnique) {
+    ASSERT_TRUE(TestCreateUnique(base, "foo", nsIFile::NORMAL_FILE_TYPE, 0600));
+    ASSERT_TRUE(TestCreateUnique(base, "foo", nsIFile::NORMAL_FILE_TYPE, 0600));
+    ASSERT_TRUE(
+        TestCreateUnique(base, "bar.xx", nsIFile::DIRECTORY_TYPE, 0700));
+    ASSERT_TRUE(
+        TestCreateUnique(base, "bar.xx", nsIFile::DIRECTORY_TYPE, 0700));
+  }
 
   ASSERT_TRUE(
       TestDeleteOnClose(base, "file7.txt", PR_RDWR | PR_CREATE_FILE, 0600));
@@ -440,4 +486,56 @@ TEST(TestFile, Tests)
   
   rv = base->Remove(true);
   VerifyResult(rv, "Cleaning up temp directory");
+}
+
+TEST(TestFile, Unprefixed)
+{
+#ifdef XP_WIN
+  gTestWithPrefix_Win = false;
+#endif
+
+  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests"),
+                         true,
+                         true);
+
+#ifdef XP_WIN
+  gTestWithPrefix_Win = true;
+#endif
+}
+
+
+
+TEST(TestFile, PrefixedOnWin)
+{
+  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests"),
+                         true,
+                         true);
+}
+
+TEST(TestFile, PrefixedOnWin_PathExceedsMaxPath)
+{
+  
+  
+  
+  
+  
+  nsString dirName;
+  dirName.AssignLiteral("mozfiletests");
+  for (uint32_t i = 255 - dirName.Length(); i > 0; --i) {
+    dirName.AppendLiteral("a");
+  }
+
+  
+  
+  SetupAndTestFunctions(dirName,  false,
+                         true);
+}
+
+TEST(TestFile, PrefixedOnWin_ComponentEndsWithPeriod)
+{
+  
+  
+  SetupAndTestFunctions(NS_LITERAL_STRING("mozfiletests."),
+                         true,
+                         false);
 }
