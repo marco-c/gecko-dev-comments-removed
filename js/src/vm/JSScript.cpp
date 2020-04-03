@@ -581,13 +581,7 @@ bool js::BaseScript::isUsingInterpreterTrampoline(JSRuntime* rt) const {
 }
 
 js::ScriptSource* js::BaseScript::maybeForwardedScriptSource() const {
-  JSObject* source = MaybeForwarded(sourceObject());
-
-  
-  
-  return UncheckedUnwrapWithoutExpose(source)
-      ->as<ScriptSourceObject>()
-      .source();
+  return MaybeForwarded(sourceObject())->source();
 }
 
 void js::BaseScript::setEnclosingScript(BaseScript* enclosingScript) {
