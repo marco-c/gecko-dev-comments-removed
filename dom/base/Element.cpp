@@ -3083,12 +3083,24 @@ CORSMode Element::AttrValueToCORSMode(const nsAttrValue* aValue) {
 
 
 
+
 static const char* GetFullscreenError(CallerType aCallerType,
                                       Document* aDocument) {
   MOZ_ASSERT(aDocument);
 
-  if (!StaticPrefs::full_screen_api_allow_trusted_requests_only() ||
-      aCallerType == CallerType::System) {
+  
+  if (aCallerType == CallerType::System) {
+    return nullptr;
+  }
+
+  
+  if (!FeaturePolicyUtils::IsFeatureAllowed(aDocument,
+                                            NS_LITERAL_STRING("fullscreen"))) {
+    return "FullscreenDeniedFeaturePolicy";
+  }
+
+  
+  if (!StaticPrefs::full_screen_api_allow_trusted_requests_only()) {
     return nullptr;
   }
 
@@ -3136,12 +3148,6 @@ already_AddRefed<Promise> Element::RequestFullscreen(CallerType aCallerType,
                                                      ErrorResult& aRv) {
   auto request = FullscreenRequest::Create(this, aCallerType, aRv);
   RefPtr<Promise> promise = request->GetPromise();
-
-  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(),
-                                            NS_LITERAL_STRING("fullscreen"))) {
-    request->Reject("FullscreenDeniedFeaturePolicy");
-    return promise.forget();
-  }
 
   
   
