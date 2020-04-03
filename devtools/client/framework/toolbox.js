@@ -61,20 +61,20 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "registerThread",
+  "registerTarget",
   "devtools/client/framework/actions/index",
   true
 );
 loader.lazyRequireGetter(
   this,
-  "clearThread",
+  "clearTarget",
   "devtools/client/framework/actions/index",
   true
 );
 
 loader.lazyRequireGetter(
   this,
-  "selectThread",
+  "selectTarget",
   "devtools/client/framework/actions/index",
   true
 );
@@ -147,8 +147,8 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "getSelectedThread",
-  "devtools/client/framework/reducers/threads",
+  "getSelectedTarget",
+  "devtools/client/framework/reducers/targets",
   true
 );
 loader.lazyRequireGetter(
@@ -616,20 +616,19 @@ Toolbox.prototype = {
 
 
 
-  selectThread(threadActorID) {
-    this.store.dispatch(selectThread(threadActorID));
+  selectTarget(targetActorID) {
+    this.store.dispatch(selectTarget(targetActorID));
   },
 
   
 
 
-  getSelectedThreadFront: function() {
-    const selectedThread = getSelectedThread(this.store.getState());
-    if (!selectedThread) {
+  getSelectedTargetFront: function() {
+    const selectedTarget = getSelectedTarget(this.store.getState());
+    if (!selectedTarget) {
       return null;
     }
-
-    return this.target.client.getFrontByID(selectedThread.actorID);
+    return this.target.client.getFrontByID(selectedTarget.actorID);
   },
 
   _onPausedState: function(packet, threadFront) {
@@ -685,7 +684,7 @@ Toolbox.prototype = {
     await this._attachTarget({ type, targetFront, isTopLevel });
 
     if (this.hostType !== Toolbox.HostType.PAGE) {
-      await this.store.dispatch(registerThread(targetFront));
+      await this.store.dispatch(registerTarget(targetFront));
     }
 
     if (isTopLevel) {
@@ -699,7 +698,7 @@ Toolbox.prototype = {
     }
 
     if (this.hostType !== Toolbox.HostType.PAGE) {
-      this.store.dispatch(clearThread(targetFront));
+      this.store.dispatch(clearTarget(targetFront));
     }
   },
 
@@ -3508,11 +3507,9 @@ Toolbox.prototype = {
     
     this.emit("selection-changed");
 
-    const threadFront = await this.selection?.nodeFront?.targetFront.getFront(
-      "thread"
-    );
-    if (threadFront) {
-      this.selectThread(threadFront.actorID);
+    const targetFrontActorID = this.selection?.nodeFront?.targetFront?.actorID;
+    if (targetFrontActorID) {
+      this.selectTarget(targetFrontActorID);
     }
   },
 

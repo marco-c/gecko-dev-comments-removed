@@ -1,0 +1,65 @@
+
+
+
+"use strict";
+
+const initialReducerState = {
+  targets: [],
+  selected: null,
+};
+
+exports.reducer = targetsReducer;
+function targetsReducer(state = initialReducerState, action) {
+  switch (action.type) {
+    case "SELECT_TARGET": {
+      const { targetActorID } = action;
+
+      if (state.selected?.actorID === targetActorID) {
+        return state;
+      }
+
+      const selectedTarget = state.targets.find(
+        target => target.actorID === targetActorID
+      );
+
+      
+      
+      if (!selectedTarget) {
+        return state;
+      }
+
+      return { ...state, selected: selectedTarget };
+    }
+
+    case "REGISTER_TARGET": {
+      return {
+        ...state,
+        targets: [...state.targets, action.target],
+      };
+    }
+
+    case "CLEAR_TARGET": {
+      const targets = state.targets.filter(
+        target => target._targetFront !== action.targetFront
+      );
+
+      let { selected } = state;
+      if (selected?._targetFront === action.targetFront) {
+        selected = null;
+      }
+
+      return { ...state, targets, selected };
+    }
+  }
+  return state;
+}
+
+exports.getToolboxTargets = getToolboxTargets;
+function getToolboxTargets(state) {
+  return state.targets.targets;
+}
+
+exports.getSelectedTarget = getSelectedTarget;
+function getSelectedTarget(state) {
+  return state.targets.selected;
+}
