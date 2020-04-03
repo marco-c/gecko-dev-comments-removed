@@ -101,6 +101,8 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   virtual void SetRegister(int register_index, int to);
   virtual void ClearRegisters(int reg_from, int reg_to);
 
+  virtual Handle<HeapObject> GetCode(Handle<String> source);
+
  private:
   
   void Push(js::jit::Register value);
@@ -217,6 +219,40 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
   js::jit::Label exit_label_;
   js::jit::Label stack_overflow_label_;
   js::jit::Label exit_with_exception_label_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class LabelPatch {
+   public:
+    LabelPatch(js::jit::CodeOffset patchOffset, size_t labelOffset)
+        : patchOffset_(patchOffset), labelOffset_(labelOffset) {}
+
+    js::jit::CodeOffset patchOffset_;
+    size_t labelOffset_ = 0;
+  };
+
+  js::Vector<LabelPatch, 4, js::SystemAllocPolicy> labelPatches_;
+  void AddLabelPatch(js::jit::CodeOffset patchOffset, size_t labelOffset) {
+    js::AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!labelPatches_.emplaceBack(patchOffset, labelOffset)) {
+      oomUnsafe.crash("Irregexp label patch");
+    }
+  }
 
   Mode mode_;
   int num_registers_;
