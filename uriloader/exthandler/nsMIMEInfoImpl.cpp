@@ -310,6 +310,8 @@ NS_IMETHODIMP
 nsMIMEInfoBase::LaunchWithURI(nsIURI* aURI,
                               nsIInterfaceRequestor* aWindowContext) {
   
+  
+  
   NS_ASSERTION(mClass == eProtocolInfo,
                "nsMIMEInfoBase should be a protocol handler");
 
