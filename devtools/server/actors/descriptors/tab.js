@@ -33,16 +33,13 @@ const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
 
 
 
-
-
 const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
-  initialize(connection, browser, options = {}) {
+  initialize(connection, browser) {
     Actor.prototype.initialize.call(this, connection);
     this._conn = connection;
     this._browser = browser;
     this._form = null;
     this.exited = false;
-    this.options = options;
 
     
     
@@ -138,14 +135,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     }
   },
 
-  
-
-
-
-  async update(options = {}) {
-    
-    this.options = options;
-
+  async update() {
     
     
     
