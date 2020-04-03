@@ -1348,6 +1348,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   
   
+  void UpdateMediaControlAfterPictureInPictureModeChanged();
+
+  
+  
   RefPtr<MediaDecoder> mDecoder;
 
   

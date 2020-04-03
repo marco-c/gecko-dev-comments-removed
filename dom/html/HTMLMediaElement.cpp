@@ -472,6 +472,17 @@ class HTMLMediaElement::MediaControlEventListener final
     }
   }
 
+  void SetPictureInPictureModeEnabled(bool aIsEnabled) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(IsStarted());
+    if (mIsPictureInPictureEnabled == aIsEnabled) {
+      return;
+    }
+    mIsPictureInPictureEnabled = aIsEnabled;
+    mControlAgent->NotifyPictureInPictureModeChanged(
+        this, mIsPictureInPictureEnabled);
+  }
+
   void OnKeyPressed(MediaControlKeysEvent aEvent) override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
@@ -528,6 +539,7 @@ class HTMLMediaElement::MediaControlEventListener final
   ControlledMediaState mState = ControlledMediaState::eStopped;
   WeakPtr<HTMLMediaElement> mElement;
   RefPtr<ContentMediaAgent> mControlAgent;
+  bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
 };
 
@@ -7736,6 +7748,11 @@ void HTMLMediaElement::StartListeningMediaControlEventIfNeeded() {
   
   
   mMediaControlEventListener->UpdateMediaAudibleState(IsAudible());
+
+  
+  
+  mMediaControlEventListener->SetPictureInPictureModeEnabled(
+      IsBeingUsedInPictureInPictureMode());
 }
 
 void HTMLMediaElement::StopListeningMediaControlEventIfNeeded() {
@@ -7792,6 +7809,19 @@ void HTMLMediaElement::ClearStopMediaControlTimerIfNeeded() {
     MEDIACONTROL_LOG("Cancel stop media control timer");
     mStopMediaControlTimer->Cancel();
     mStopMediaControlTimer = nullptr;
+  }
+}
+
+void HTMLMediaElement::UpdateMediaControlAfterPictureInPictureModeChanged() {
+  
+  if (!mMediaControlEventListener || !mMediaControlEventListener->IsStarted()) {
+    return;
+  }
+  if (IsBeingUsedInPictureInPictureMode()) {
+    mMediaControlEventListener->SetPictureInPictureModeEnabled(true);
+  } else {
+    mMediaControlEventListener->SetPictureInPictureModeEnabled(false);
+    CreateStopMediaControlTimerIfNeeded();
   }
 }
 
