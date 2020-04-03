@@ -16,6 +16,7 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/Compositor.h"         
 #include "mozilla/layers/ISurfaceAllocator.h"  
+#include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/layers/TextureHostBasic.h"
 #include "mozilla/layers/TextureHostOGL.h"  
@@ -26,6 +27,7 @@
 #endif
 #include "mozilla/layers/GPUVideoTextureHost.h"
 #include "mozilla/layers/WebRenderTextureHost.h"
+#include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/webrender/RenderBufferTextureHost.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
