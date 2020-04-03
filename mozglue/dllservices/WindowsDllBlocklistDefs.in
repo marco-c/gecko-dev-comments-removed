@@ -233,6 +233,9 @@ ALL_PROCESSES += [
     
     DllBlocklistEntry("IseGuard32.dll", (1, 6, 13835, 184)),
     DllBlocklistEntry("IseGuard64.dll", (1, 6, 13835, 184)),
+
+    
+    DllBlocklistEntry("guard64.dll", (5, 12, 59641, 2599)),
 ]
 
 ALL_PROCESSES_TESTS += [
