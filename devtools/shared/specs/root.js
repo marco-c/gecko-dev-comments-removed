@@ -50,6 +50,8 @@ const rootSpecPrototype = {
 
     listTabs: {
       request: {
+        
+        
         favicons: Option(0, "boolean"),
       },
       response: RetVal("root.listTabs"),

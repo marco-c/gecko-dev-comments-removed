@@ -231,8 +231,11 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
-  async listTabs(options) {
-    const { selected, tabs } = await super.listTabs(options);
+
+
+
+  async listTabs({ favicons } = {}) {
+    const { selected, tabs } = await super.listTabs({ favicons });
     const targets = [];
     for (const i in tabs) {
       if (!this.actorID) {

@@ -114,7 +114,11 @@ function createThisFirefoxClientMock() {
   
   
   const mockAboutDebuggingTab = {
+    getFavicon: () => {},
     outerWindowID: 0,
+    traits: {
+      getFavicon: true,
+    },
     url: "about:debugging",
   };
 

@@ -28,6 +28,11 @@ class TabDescriptorFront extends FrontClassWithSpec(tabDescriptorSpec) {
     this._client = client;
   }
 
+  form(json) {
+    this.actorID = json.actor;
+    this.traits = json.traits || {};
+  }
+
   _createTabTarget(form, filter) {
     
     

@@ -15,7 +15,6 @@
 const {
   connectToFrame,
 } = require("devtools/server/connectors/frame-connector");
-
 loader.lazyImporter(
   this,
   "PlacesUtils",
@@ -49,6 +48,17 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     
     
     this._formUpdateReject = null;
+  },
+
+  form() {
+    return {
+      actor: this.actorID,
+      traits: {
+        
+        
+        getFavicon: true,
+      },
+    };
   },
 
   async getTarget() {
@@ -87,10 +97,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
         );
 
         const form = this._createTargetForm(connectForm);
-        if (this.options.favicons) {
-          form.favicon = await this.getFaviconData();
-        }
-
         this._form = form;
         resolve(form);
       } catch (e) {
@@ -117,7 +123,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     );
   },
 
-  async getFaviconData() {
+  async getFavicon() {
     if (!AppConstants.MOZ_PLACES) {
       
       return null;
@@ -143,8 +149,8 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     
     
     
-    if (this.exited) {
-      return this.getTarget();
+    if (!this._form) {
+      return;
     }
 
     
@@ -170,11 +176,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     });
 
     this._form = form;
-    if (this.options.favicons) {
-      this._form.favicon = await this.getFaviconData();
-    }
-
-    return this;
   },
 
   _isZombieTab() {
