@@ -582,10 +582,7 @@ MIRType BaselineInspector::expectedBinaryArithSpecialization(jsbytecode* pc) {
   MIRType result;
   ICStub* stubs[2];
 
-  if (JSOp(*pc) == JSOp::Pos) {
-    
-    return MIRType::None;
-  }
+  MOZ_ASSERT(JSOp(*pc) != JSOp::Pos);
 
   const ICEntry& entry = icEntryFromPC(pc);
   ICFallbackStub* stub = entry.fallbackStub();

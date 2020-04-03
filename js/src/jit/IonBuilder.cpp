@@ -3871,12 +3871,21 @@ AbortReasonOr<Ok> IonBuilder::jsop_pos() {
     return Ok();
   }
 
-  
   MDefinition* value = current->pop();
   MConstant* one = MConstant::New(alloc(), Int32Value(1));
   current->add(one);
 
-  return jsop_binary_arith(JSOp::Mul, value, one);
+  
+  MBinaryArithInstruction* ins = MBinaryArithInstruction::New(
+      alloc(), MDefinition::Opcode::Mul, value, one);
+
+  
+  
+  maybeMarkEmpty(ins);
+
+  current->add(ins);
+  current->push(ins);
+  return resumeAfter(ins);
 }
 
 AbortReasonOr<Ok> IonBuilder::jsop_neg() {
