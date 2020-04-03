@@ -824,11 +824,6 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
 
 
 
-void Navigator::RegisterContentHandler(const nsAString& aMIMEType,
-                                       const nsAString& aURI,
-                                       const nsAString& aTitle,
-                                       ErrorResult& aRv) {}
-
 
 
 
