@@ -10,6 +10,11 @@
 #include "mozilla/RefPtr.h"
 
 namespace mozilla {
+
+namespace dom {
+class Document;
+}
+
 namespace layers {
 
 

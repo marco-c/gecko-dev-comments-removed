@@ -17,6 +17,7 @@
 #include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/ToString.h"  
 #include "mozilla/gfx/CompositorHitTestInfo.h"
+#include "mozilla/layers/LayersMessageUtils.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"
 #include "ipc/IPCMessageUtils.h"
 #include "js/TypeDecls.h"

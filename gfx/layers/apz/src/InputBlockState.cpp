@@ -17,6 +17,7 @@
 #include "mozilla/StaticPrefs_test.h"
 #include "mozilla/Telemetry.h"                
 #include "mozilla/layers/IAPZCTreeManager.h"  
+#include "LayersLogging.h"                    
 #include "OverscrollHandoffState.h"
 #include "QueuedInput.h"
 
