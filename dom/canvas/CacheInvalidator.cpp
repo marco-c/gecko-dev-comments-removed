@@ -10,7 +10,7 @@ namespace mozilla {
 
 void CacheInvalidator::InvalidateCaches() const {
   
-  while (mCaches.size()) {
+  while (!mCaches.empty()) {
     const auto& itr = mCaches.begin();
     const auto pEntry = *itr;
     pEntry->OnInvalidate();
