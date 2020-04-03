@@ -17,11 +17,11 @@ use crate::prio;
 use crate::replay::AntiReplay;
 use crate::secrets::SecretHolder;
 use crate::ssl::{self, PRBool};
-use crate::time::{PRTime, Time};
+use crate::time::TimeHolder;
 
 use neqo_common::{matches, qdebug, qinfo, qtrace, qwarn};
 use std::cell::RefCell;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use std::ffi::CString;
 use std::mem::{self, MaybeUninit};
 use std::ops::{Deref, DerefMut};
@@ -216,7 +216,7 @@ pub struct SecretAgent {
     
     alert: Pin<Box<Option<Alert>>>,
     
-    now: Pin<Box<PRTime>>,
+    now: TimeHolder,
 
     extension_handlers: Vec<ExtensionTracker>,
     inf: Option<SecretAgentInfo>,
@@ -238,7 +238,7 @@ impl SecretAgent {
 
             auth_required: Box::pin(false),
             alert: Box::pin(None),
-            now: Box::pin(0),
+            now: TimeHolder::default(),
 
             extension_handlers: Vec::new(),
             inf: None,
@@ -310,12 +310,6 @@ impl SecretAgent {
     }
 
     
-    unsafe extern "C" fn time_func(arg: *mut c_void) -> PRTime {
-        let p = arg as *mut PRTime as *const PRTime;
-        *p.as_ref().unwrap()
-    }
-
-    
     fn ready(&mut self, is_server: bool) -> Res<()> {
         secstatus_to_res(unsafe {
             ssl::SSL_AuthCertificateHook(
@@ -333,9 +327,7 @@ impl SecretAgent {
             )
         })?;
 
-        
-        unsafe { ssl::SSL_SetTimeFunc(self.fd, Some(Self::time_func), as_c_void(&mut self.now)) }?;
-
+        self.now.bind(self.fd)?;
         self.configure()?;
         secstatus_to_res(unsafe { ssl::SSL_ResetHandshake(self.fd, is_server as ssl::PRBool) })
     }
@@ -584,7 +576,7 @@ impl SecretAgent {
     
     
     pub fn handshake(&mut self, now: Instant, input: &[u8]) -> Res<Vec<u8>> {
-        *self.now = Time::from(now).try_into()?;
+        self.now.set(now)?;
         self.set_raw(false)?;
 
         let rv = {
@@ -642,7 +634,7 @@ impl SecretAgent {
     
     
     pub fn handshake_raw(&mut self, now: Instant, input: Option<Record>) -> Res<RecordList> {
-        *self.now = Time::from(now).try_into()?;
+        self.now.set(now)?;
         let mut records = self.setup_raw()?;
 
         
@@ -954,7 +946,7 @@ impl Server {
     
     
     pub fn send_ticket(&mut self, now: Instant, extra: &[u8]) -> Res<RecordList> {
-        *self.agent.now = Time::from(now).try_into()?;
+        self.agent.now.set(now)?;
         let records = self.setup_raw()?;
 
         unsafe {
