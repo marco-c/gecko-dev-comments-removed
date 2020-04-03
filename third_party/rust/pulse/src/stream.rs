@@ -186,7 +186,7 @@ impl Stream {
     {
         assert_eq!(mem::size_of::<CB>(), 0);
 
-        // See: A note about `wrapped` functions
+        
         unsafe extern "C" fn wrapped<F>(s: *mut ffi::pa_stream, success: c_int, userdata: *mut c_void)
             where F: Fn(&Stream, i32, *mut c_void)
         {
@@ -221,7 +221,7 @@ impl Stream {
     {
         assert_eq!(mem::size_of::<CB>(), 0);
 
-        // See: A note about `wrapped` functions
+        
         unsafe extern "C" fn wrapped<F>(s: *mut ffi::pa_stream, userdata: *mut c_void)
             where F: Fn(&Stream, *mut c_void)
         {
@@ -249,7 +249,7 @@ impl Stream {
     {
         assert_eq!(mem::size_of::<CB>(), 0);
 
-        // See: A note about `wrapped` functions
+        
         unsafe extern "C" fn wrapped<F>(s: *mut ffi::pa_stream, nbytes: usize, userdata: *mut c_void)
             where F: Fn(&Stream, usize, *mut c_void)
         {
@@ -277,7 +277,7 @@ impl Stream {
     {
         assert_eq!(mem::size_of::<CB>(), 0);
 
-        // See: A note about `wrapped` functions
+        
         unsafe extern "C" fn wrapped<F>(s: *mut ffi::pa_stream, nbytes: usize, userdata: *mut c_void)
             where F: Fn(&Stream, usize, *mut c_void)
         {
@@ -299,7 +299,7 @@ impl Stream {
     {
         assert_eq!(mem::size_of::<CB>(), 0);
 
-        // See: A note about `wrapped` functions
+        
         unsafe extern "C" fn wrapped<F>(s: *mut ffi::pa_stream, success: c_int, userdata: *mut c_void)
             where F: Fn(&Stream, i32, *mut c_void)
         {
@@ -323,7 +323,7 @@ impl Stream {
         Ok(unsafe { operation::from_raw_ptr(r) })
     }
 
-    pub fn get_time(&self) -> Result<(USec)> {
+    pub fn get_time(&self) -> Result<USec> {
         let mut usec: USec = 0;
         let r = unsafe { ffi::pa_stream_get_time(self.raw_mut(), &mut usec) };
         error_result!(usec, r)
