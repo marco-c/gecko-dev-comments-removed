@@ -10,20 +10,98 @@
 
 #include "new-regexp/RegExpAPI.h"
 
+#include "mozilla/ArrayUtils.h"
+#include "mozilla/Casting.h"
+
 #include "new-regexp/regexp-parser.h"
 #include "new-regexp/regexp-shim.h"
 #include "new-regexp/regexp.h"
+#include "util/StringBuffer.h"
 
 namespace js {
 namespace irregexp {
+
+using mozilla::AssertedCast;
+using mozilla::PointerRangeSize;
 
 using frontend::TokenStream;
 using frontend::TokenStreamAnyChars;
 
 using v8::internal::FlatStringReader;
 using v8::internal::RegExpCompileData;
+using v8::internal::RegExpError;
 using v8::internal::RegExpParser;
 using v8::internal::Zone;
+
+static uint32_t ErrorNumber(RegExpError err) {
+  switch (err) {
+    case RegExpError::kNone:
+      return JSMSG_NOT_AN_ERROR;
+    case RegExpError::kStackOverflow:
+      return JSMSG_OVER_RECURSED;
+    case RegExpError::kAnalysisStackOverflow:
+      return JSMSG_OVER_RECURSED;
+    case RegExpError::kTooLarge:
+      return JSMSG_TOO_MANY_PARENS;
+    case RegExpError::kUnterminatedGroup:
+      return JSMSG_MISSING_PAREN;
+    case RegExpError::kUnmatchedParen:
+      return JSMSG_UNMATCHED_RIGHT_PAREN;
+    case RegExpError::kEscapeAtEndOfPattern:
+      return JSMSG_ESCAPE_AT_END_OF_REGEXP;
+    case RegExpError::kInvalidPropertyName:
+      return JSMSG_INVALID_PROPERTY_NAME;
+    case RegExpError::kInvalidEscape:
+      return JSMSG_INVALID_IDENTITY_ESCAPE;
+    case RegExpError::kInvalidDecimalEscape:
+      return JSMSG_INVALID_DECIMAL_ESCAPE;
+    case RegExpError::kInvalidUnicodeEscape:
+      return JSMSG_INVALID_UNICODE_ESCAPE;
+    case RegExpError::kNothingToRepeat:
+      return JSMSG_NOTHING_TO_REPEAT;
+    case RegExpError::kLoneQuantifierBrackets:
+      
+      return JSMSG_RAW_BRACKET_IN_REGEXP;
+    case RegExpError::kRangeOutOfOrder:
+      return JSMSG_NUMBERS_OUT_OF_ORDER;
+    case RegExpError::kIncompleteQuantifier:
+      return JSMSG_INCOMPLETE_QUANTIFIER;
+    case RegExpError::kInvalidQuantifier:
+      return JSMSG_INVALID_QUANTIFIER;
+    case RegExpError::kInvalidGroup:
+      return JSMSG_INVALID_GROUP;
+    case RegExpError::kMultipleFlagDashes:
+    case RegExpError::kRepeatedFlag:
+    case RegExpError::kInvalidFlagGroup:
+      
+      
+      
+      MOZ_CRASH("Mode modifiers not supported");
+    case RegExpError::kTooManyCaptures:
+      return JSMSG_TOO_MANY_PARENS;
+    case RegExpError::kInvalidCaptureGroupName:
+      return JSMSG_INVALID_CAPTURE_NAME;
+    case RegExpError::kDuplicateCaptureGroupName:
+      return JSMSG_DUPLICATE_CAPTURE_NAME;
+    case RegExpError::kInvalidNamedReference:
+      return JSMSG_INVALID_NAMED_REF;
+    case RegExpError::kInvalidNamedCaptureReference:
+      return JSMSG_INVALID_NAMED_CAPTURE_REF;
+    case RegExpError::kInvalidClassEscape:
+      return JSMSG_RANGE_WITH_CLASS_ESCAPE;
+    case RegExpError::kInvalidClassPropertyName:
+      return JSMSG_INVALID_CLASS_PROPERTY_NAME;
+    case RegExpError::kInvalidCharacterClass:
+      return JSMSG_RANGE_WITH_CLASS_ESCAPE;
+    case RegExpError::kUnterminatedCharacterClass:
+      return JSMSG_UNTERM_CLASS;
+    case RegExpError::kOutOfOrderCharacterClass:
+      return JSMSG_BAD_CLASS_RANGE;
+    case RegExpError::NumErrors:
+      MOZ_CRASH("Unreachable");
+  }
+  MOZ_CRASH("Unreachable");
+}
 
 Isolate* CreateIsolate(JSContext* cx) {
   auto isolate = MakeUnique<Isolate>(cx);
@@ -31,6 +109,96 @@ Isolate* CreateIsolate(JSContext* cx) {
     return nullptr;
   }
   return isolate.release();
+}
+
+static size_t ComputeColumn(const Latin1Char* begin, const Latin1Char* end) {
+  return PointerRangeSize(begin, end);
+}
+
+static size_t ComputeColumn(const char16_t* begin, const char16_t* end) {
+  return unicode::CountCodePoints(begin, end);
+}
+
+
+
+template <typename CharT>
+static void ReportSyntaxError(TokenStreamAnyChars& ts,
+                              RegExpCompileData& result, CharT* start,
+                              size_t length,
+                              ...) {
+  gc::AutoSuppressGC suppressGC(ts.context());
+  uint32_t errorNumber = ErrorNumber(result.error);
+
+  uint32_t offset = std::max(result.error_pos, 0);
+  MOZ_ASSERT(offset <= length);
+
+  ErrorMetadata err;
+
+  
+  
+  
+  uint32_t location = ts.currentToken().pos.begin;
+  if (ts.fillExceptingContext(&err, location)) {
+    
+    
+    
+    
+    err.lineNumber = 1;
+    err.columnNumber =
+        AssertedCast<uint32_t>(ComputeColumn(start, start + offset));
+  }
+
+  
+  
+  
+  
+  
+
+  const CharT* windowStart =
+      (offset > ErrorMetadata::lineOfContextRadius)
+          ? start + (offset - ErrorMetadata::lineOfContextRadius)
+          : start;
+
+  const CharT* windowEnd =
+      (length - offset > ErrorMetadata::lineOfContextRadius)
+          ? start + offset + ErrorMetadata::lineOfContextRadius
+          : start + length;
+
+  size_t windowLength = PointerRangeSize(windowStart, windowEnd);
+  MOZ_ASSERT(windowLength <= ErrorMetadata::lineOfContextRadius * 2);
+
+  
+  
+  StringBuffer windowBuf(ts.context());
+  if (!windowBuf.append(windowStart, windowEnd)) return;
+
+  
+  
+  if (!windowBuf.append('\0')) return;
+
+  err.lineOfContext.reset(windowBuf.stealChars());
+  if (!err.lineOfContext) return;
+
+  err.lineLength = windowLength;
+  err.tokenOffset = offset - (windowStart - start);
+
+  va_list args;
+  va_start(args, length);
+  ReportCompileErrorLatin1(ts.context(), std::move(err), nullptr, errorNumber,
+                           &args);
+  va_end(args);
+}
+
+static void ReportSyntaxError(TokenStreamAnyChars& ts,
+                              RegExpCompileData& result, HandleAtom pattern) {
+  JS::AutoCheckCannotGC nogc_;
+  if (pattern->hasLatin1Chars()) {
+    ReportSyntaxError(ts, result, pattern->latin1Chars(nogc_),
+                      pattern->length());
+  } else {
+    ReportSyntaxError(ts, result, pattern->twoByteChars(nogc_),
+                      pattern->length());
+  }
 }
 
 static bool CheckPatternSyntaxImpl(JSContext* cx, FlatStringReader* pattern,
@@ -49,7 +217,7 @@ bool CheckPatternSyntax(JSContext* cx, TokenStreamAnyChars& ts,
   FlatStringReader reader(chars.begin().get(), chars.length());
   RegExpCompileData result;
   if (!CheckPatternSyntaxImpl(cx, &reader, flags, &result)) {
-    
+    ReportSyntaxError(ts, result, chars.begin().get(), chars.length());
     return false;
   }
   return true;
@@ -60,7 +228,7 @@ bool CheckPatternSyntax(JSContext* cx, TokenStreamAnyChars& ts,
   FlatStringReader reader(pattern);
   RegExpCompileData result;
   if (!CheckPatternSyntaxImpl(cx, &reader, flags, &result)) {
-    
+    ReportSyntaxError(ts, result, pattern);
     return false;
   }
   return true;
