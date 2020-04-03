@@ -445,9 +445,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<js::jit::JitActivation*> jitActivation;
 
+#ifndef ENABLE_NEW_REGEXP
   
   
   js::ContextData<js::irregexp::RegExpStack> regexpStack;
+#endif
 
   
 
