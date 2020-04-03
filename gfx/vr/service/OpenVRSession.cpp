@@ -30,6 +30,7 @@
 #include "binding/OpenVRViveBinding.h"
 #include "OpenVRCosmosMapper.h"
 #include "OpenVRDefaultMapper.h"
+#include "OpenVRKnucklesMapper.h"
 #include "OpenVRViveMapper.h"
 #if defined(XP_WIN)  
 #  include "OpenVRWMRMapper.h"
@@ -1023,8 +1024,7 @@ void OpenVRSession::EnumerateControllers(VRSystemState& aState) {
         break;
 #endif
       case VRControllerType::ValveIndex:
-        
-        mControllerMapper = MakeUnique<OpenVRDefaultMapper>();
+        mControllerMapper = MakeUnique<OpenVRKnucklesMapper>();
         break;
       default:
         mControllerMapper = MakeUnique<OpenVRDefaultMapper>();
