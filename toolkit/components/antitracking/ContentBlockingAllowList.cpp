@@ -71,6 +71,14 @@ using namespace mozilla;
   
   
   
+  if (nsGlobalWindowInner::Cast(aWindow)->GetPrincipal() ==
+      nsContentUtils::GetSystemPrincipal()) {
+    return true;
+  }
+
+  
+  
+  
   
   
   RefPtr<dom::Document> doc = nsGlobalWindowInner::Cast(aWindow)->GetDocument();

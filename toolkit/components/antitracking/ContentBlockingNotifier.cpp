@@ -222,7 +222,8 @@ void NotifyBlockingDecision(nsIChannel* aReportingChannel,
   
   if (nsGlobalWindowOuter::Cast(aWindow)->GetPrincipal() ==
       nsContentUtils::GetSystemPrincipal()) {
-    MOZ_ASSERT(aDecision == ContentBlockingNotifier::BlockingDecision::eAllow);
+    MOZ_DIAGNOSTIC_ASSERT(aDecision ==
+                          ContentBlockingNotifier::BlockingDecision::eAllow);
     return;
   }
 
