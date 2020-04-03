@@ -17,6 +17,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Span.h"
 
 namespace mozilla {
 namespace gfx {
@@ -25,6 +26,12 @@ static inline bool FuzzyEqual(Float aV1, Float aV2) {
   
   return fabs(aV2 - aV1) < 1e-6;
 }
+
+template <typename F>
+Span<Point4DTyped<UnknownUnits, F>> IntersectPolygon(
+    Span<Point4DTyped<UnknownUnits, F>> aPoints,
+    const Point4DTyped<UnknownUnits, F>& aPlaneNormal,
+    Span<Point4DTyped<UnknownUnits, F>> aDestBuffer);
 
 template <class T>
 class BaseMatrix {
@@ -834,99 +841,54 @@ class Matrix4x4Typed {
       return 0;
     }
 
-    
-    
-    Point4DTyped<UnknownUnits, F> points[2][kTransformAndClipRectMaxVerts];
-    Point4DTyped<UnknownUnits, F>* dstPointStart = points[0];
-    Point4DTyped<UnknownUnits, F>* dstPoint = dstPointStart;
-
-    *dstPoint++ = TransformPoint(
-        Point4DTyped<UnknownUnits, F>(aRect.X(), aRect.Y(), 0, 1));
-    *dstPoint++ = TransformPoint(
-        Point4DTyped<UnknownUnits, F>(aRect.XMost(), aRect.Y(), 0, 1));
-    *dstPoint++ = TransformPoint(
-        Point4DTyped<UnknownUnits, F>(aRect.XMost(), aRect.YMost(), 0, 1));
-    *dstPoint++ = TransformPoint(
-        Point4DTyped<UnknownUnits, F>(aRect.X(), aRect.YMost(), 0, 1));
+    typedef Point4DTyped<UnknownUnits, F> P4D;
 
     
     
-    Point4DTyped<UnknownUnits, F> planeNormals[4];
-    planeNormals[0] = Point4DTyped<UnknownUnits, F>(1.0, 0.0, 0.0, -aClip.X());
-    planeNormals[1] =
-        Point4DTyped<UnknownUnits, F>(-1.0, 0.0, 0.0, aClip.XMost());
-    planeNormals[2] = Point4DTyped<UnknownUnits, F>(0.0, 1.0, 0.0, -aClip.Y());
-    planeNormals[3] =
-        Point4DTyped<UnknownUnits, F>(0.0, -1.0, 0.0, aClip.YMost());
+    P4D rectCorners[] = {
+        TransformPoint(P4D(aRect.X(), aRect.Y(), 0, 1)),
+        TransformPoint(P4D(aRect.XMost(), aRect.Y(), 0, 1)),
+        TransformPoint(P4D(aRect.XMost(), aRect.YMost(), 0, 1)),
+        TransformPoint(P4D(aRect.X(), aRect.YMost(), 0, 1)),
+    };
 
     
     
     
     
     
-    for (int plane = 0; plane < 4; plane++) {
-      auto planeNormal = planeNormals[plane];
-      Point4DTyped<UnknownUnits, F>* srcPoint = dstPointStart;
-      Point4DTyped<UnknownUnits, F>* srcPointEnd = dstPoint;
+    
+    
+    
+    
+    
+    P4D polygonBufA[kTransformAndClipRectMaxVerts];
+    P4D polygonBufB[kTransformAndClipRectMaxVerts];
 
-      dstPointStart = points[~plane & 1];
-      dstPoint = dstPointStart;
+    Span<P4D> polygon(rectCorners);
+    polygon = IntersectPolygon<F>(polygon, P4D(1.0, 0.0, 0.0, -aClip.X()),
+                                  polygonBufA);
+    polygon = IntersectPolygon<F>(polygon, P4D(-1.0, 0.0, 0.0, aClip.XMost()),
+                                  polygonBufB);
+    polygon = IntersectPolygon<F>(polygon, P4D(0.0, 1.0, 0.0, -aClip.Y()),
+                                  polygonBufA);
+    polygon = IntersectPolygon<F>(polygon, P4D(0.0, -1.0, 0.0, aClip.YMost()),
+                                  polygonBufB);
 
-      
-      
-      
-      
-      
-      
-      
-      
-      Point4DTyped<UnknownUnits, F>* prevPoint = srcPointEnd - 1;
-      F prevDot = planeNormal.DotProduct(*prevPoint);
-      while (srcPoint < srcPointEnd &&
-             ((dstPoint - dstPointStart) < kTransformAndClipRectMaxVerts)) {
-        F nextDot = planeNormal.DotProduct(*srcPoint);
-
-        if ((nextDot >= 0.0) != (prevDot >= 0.0)) {
-          
-          
-          F t = -prevDot / (nextDot - prevDot);
-          *dstPoint++ = *srcPoint * t + *prevPoint * (1.0 - t);
-        }
-
-        if (nextDot >= 0.0) {
-          
-          
-          *dstPoint++ = *srcPoint;
-        }
-
-        prevPoint = srcPoint++;
-        prevDot = nextDot;
-      }
-
-      if (dstPoint == dstPointStart) {
-        
-        
-        break;
-      }
-    }
-
-    Point4DTyped<UnknownUnits, F>* srcPoint = dstPointStart;
-    Point4DTyped<UnknownUnits, F>* srcPointEnd = dstPoint;
     size_t vertCount = 0;
-    while (srcPoint < srcPointEnd) {
+    for (const auto& srcPoint : polygon) {
       PointTyped<TargetUnits, F> p;
-      if (srcPoint->w == 0.0) {
+      if (srcPoint.w == 0.0) {
         
         
         p = PointTyped<TargetUnits, F>(0.0, 0.0);
       } else {
-        p = srcPoint->As2DPoint();
+        p = srcPoint.As2DPoint();
       }
       
       if (vertCount == 0 || p != aVerts[vertCount - 1]) {
         aVerts[vertCount++] = p;
       }
-      srcPoint++;
     }
 
     return vertCount;
