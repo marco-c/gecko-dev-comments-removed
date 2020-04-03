@@ -112,8 +112,7 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
     return static_cast<gfxMacPlatformFontList*>(sPlatformFontList);
   }
 
-  gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                  FontVisibility aVisibility) const override;
+  gfxFontFamily* CreateFontFamily(const nsACString& aName) const override;
 
   static int32_t AppleWeightToCSSWeight(int32_t aAppleWeight);
 
@@ -145,8 +144,9 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   
   enum FontFamilyEntryType {
     kStandardFontFamily = 0,          
-    kTextSizeSystemFontFamily = 1,    
-    kDisplaySizeSystemFontFamily = 2  
+    kHiddenSystemFontFamily = 1,      
+    kTextSizeSystemFontFamily = 2,    
+    kDisplaySizeSystemFontFamily = 3  
   };
   void ReadSystemFontList(nsTArray<FontFamilyListEntry>* aList);
 
@@ -173,8 +173,6 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   
   gfxFontFamily* FindSystemFontFamily(const nsACString& aFamily);
 
-  FontVisibility GetVisibilityForFamily(const nsACString& aName) const;
-
   static void RegisteredFontsChangedNotificationCallback(
       CFNotificationCenterRef center, void* observer, CFStringRef name,
       const void* object, CFDictionaryRef userInfo);
@@ -197,7 +195,7 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   
   void AddFamily(CFStringRef aFamily);
 
-  void AddFamily(const nsACString& aFamilyName, FontVisibility aVisibility);
+  void AddFamily(const nsACString& aFamilyName, bool aSystemFont);
 
   void ActivateFontsFromDir(nsIFile* aDir);
 
@@ -220,6 +218,10 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   
   CTFontRef mDefaultFont;
+
+  
+  
+  FontFamilyTable mSystemFontFamilies;
 
   
   

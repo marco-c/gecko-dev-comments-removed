@@ -760,35 +760,13 @@ struct GlobalFontMatch {
   float mMatchDistance = INFINITY;  
 };
 
-
-
-
-
-enum class FontVisibility : uint8_t {
-  Unknown = 0,   
-  Base = 1,      
-  LangPack = 2,  
-  User = 3,      
-  Hidden = 4,    
-  Webfont = 5,   
-  Count = 6,     
-};
-
-namespace IPC {
-template <>
-struct ParamTraits<FontVisibility>
-    : public ContiguousEnumSerializer<FontVisibility, FontVisibility::Unknown,
-                                      FontVisibility::Count> {};
-}  
-
 class gfxFontFamily {
  public:
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFamily)
 
-  gfxFontFamily(const nsACString& aName, FontVisibility aVisibility)
+  explicit gfxFontFamily(const nsACString& aName)
       : mName(aName),
-        mVisibility(aVisibility),
         mOtherFamilyNamesInitialized(false),
         mHasOtherFamilyNames(false),
         mFaceNamesInitialized(false),
@@ -943,12 +921,6 @@ class gfxFontFamily {
     return true;
   }
 
-  FontVisibility Visibility() const { return mVisibility; }
-  bool IsHidden() const { return Visibility() == FontVisibility::Hidden; }
-  bool IsWebFontFamily() const {
-    return Visibility() == FontVisibility::Webfont;
-  }
-
  protected:
   
   virtual ~gfxFontFamily();
@@ -970,9 +942,6 @@ class gfxFontFamily {
   nsCString mName;
   nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts;
   gfxSparseBitSet mFamilyCharacterMap;
-
-  FontVisibility mVisibility;
-
   bool mOtherFamilyNamesInitialized : 1;
   bool mHasOtherFamilyNames : 1;
   bool mFaceNamesInitialized : 1;

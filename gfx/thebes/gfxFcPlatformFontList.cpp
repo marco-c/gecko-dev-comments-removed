@@ -1355,8 +1355,7 @@ void gfxFcPlatformFontList::AddPatternToFontList(
     aFontFamily =
         static_cast<gfxFontconfigFontFamily*>(mFontFamilies.GetWeak(keyName));
     if (!aFontFamily) {
-      FontVisibility visibility = FontVisibility::Unknown;  
-      aFontFamily = new gfxFontconfigFontFamily(aFamilyName, visibility);
+      aFontFamily = new gfxFontconfigFontFamily(aFamilyName);
       mFontFamilies.Put(keyName, RefPtr{aFontFamily});
     }
     
@@ -1608,9 +1607,8 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
 
 
-        FontVisibility visibility = FontVisibility::Unknown;  
         families.AppendElement(fontlist::Family::InitData(
-            keyName, aFamilyName,  0, visibility,
+            keyName, aFamilyName,  0,  false,
              aAppFont,  false));
       }
     }
@@ -2252,8 +2250,8 @@ void gfxFcPlatformFontList::CheckFontUpdates(nsITimer* aTimer, void* aThis) {
 }
 
 gfxFontFamily* gfxFcPlatformFontList::CreateFontFamily(
-    const nsACString& aName, FontVisibility aVisibility) const {
-  return new gfxFontconfigFontFamily(aName, aVisibility);
+    const nsACString& aName) const {
+  return new gfxFontconfigFontFamily(aName);
 }
 
 

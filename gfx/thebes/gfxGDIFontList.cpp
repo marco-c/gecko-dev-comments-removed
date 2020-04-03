@@ -630,8 +630,7 @@ int CALLBACK gfxGDIFontList::EnumFontFamExProc(ENUMLOGFONTEXW* lpelfe,
 
   if (!fontList->mFontFamilies.GetWeak(key)) {
     NS_ConvertUTF16toUTF8 faceName(lf.lfFaceName);
-    FontVisibility visibility = FontVisibility::Unknown;  
-    RefPtr<GDIFontFamily> family = new GDIFontFamily(faceName, visibility);
+    RefPtr<GDIFontFamily> family = new GDIFontFamily(faceName);
     fontList->mFontFamilies.Put(key, RefPtr{family});
 
     
@@ -1054,9 +1053,8 @@ already_AddRefed<FontInfoData> gfxGDIFontList::CreateFontInfoData() {
   return fi.forget();
 }
 
-gfxFontFamily* gfxGDIFontList::CreateFontFamily(
-    const nsACString& aName, FontVisibility aVisibility) const {
-  return new GDIFontFamily(aName, aVisibility);
+gfxFontFamily* gfxGDIFontList::CreateFontFamily(const nsACString& aName) const {
+  return new GDIFontFamily(aName);
 }
 
 #ifdef MOZ_BUNDLED_FONTS
