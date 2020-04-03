@@ -34,14 +34,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "VULNERABLE_PASSWORDS_ENABLED",
-  "signon.management.page.vulnerable-passwords.enabled",
+  "FXA_ENABLED",
+  "identity.fxaccounts.enabled",
   false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "FXA_ENABLED",
-  "identity.fxaccounts.enabled",
+  "OS_AUTH_ENABLED",
+  "signon.management.page.os-auth.enabled",
+  true
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "VULNERABLE_PASSWORDS_ENABLED",
+  "signon.management.page.vulnerable-passwords.enabled",
   false
 );
 XPCOMUtils.defineLazyGetter(this, "AboutLoginsL10n", () => {
@@ -330,7 +336,9 @@ class AboutLoginsParent extends JSWindowActorParent {
 
         let loggedIn = false;
         
-        if (token.checkPassword("")) {
+        if (!token.hasPassword && !OS_AUTH_ENABLED) {
+          loggedIn = true;
+        } else if (!token.hasPassword && OS_AUTH_ENABLED) {
           if (AppConstants.platform == "macosx") {
             
             
@@ -353,6 +361,9 @@ class AboutLoginsParent extends JSWindowActorParent {
             false
           );
         } else {
+          
+          token.checkPassword("");
+
           
           
           if (Services.logins.uiBusy) {

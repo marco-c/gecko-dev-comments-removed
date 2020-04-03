@@ -1727,6 +1727,7 @@ pref("extensions.pocket.site", "getpocket.com");
 
 pref("signon.generation.confidenceThreshold", "0.75");
 
+pref("signon.management.page.os-auth.enabled", true);
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
