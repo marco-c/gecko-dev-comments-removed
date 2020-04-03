@@ -16,23 +16,17 @@ add_task(async () => {
     },
     async browser => {
       let pipWin = await triggerPictureInPicture(browser, "no-controls");
-
-      let entered = BrowserTestUtils.waitForEvent(
-        pipWin,
-        "MozDOMFullscreen:Entered"
-      );
-
       let controls = pipWin.document.getElementById("controls");
 
-      EventUtils.sendMouseEvent(
-        {
-          type: "dblclick",
-        },
-        controls,
-        pipWin
-      );
-
-      await entered;
+      await promiseFullscreenEntered(pipWin, async () => {
+        EventUtils.sendMouseEvent(
+          {
+            type: "dblclick",
+          },
+          controls,
+          pipWin
+        );
+      });
 
       Assert.equal(
         pipWin.document.fullscreenElement,
@@ -40,53 +34,35 @@ add_task(async () => {
         "Double-click caused us to enter fullscreen."
       );
 
-      await BrowserTestUtils.waitForCondition(() => {
-        return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
+      
+      
+
+      await promiseFullscreenExited(pipWin, async () => {
+        EventUtils.sendMouseEvent(
+          {
+            type: "dblclick",
+          },
+          controls,
+          pipWin
+        );
       });
-
-      
-      
-
-      let exited = BrowserTestUtils.waitForEvent(
-        pipWin,
-        "MozDOMFullscreen:Exited"
-      );
-
-      EventUtils.sendMouseEvent(
-        {
-          type: "dblclick",
-        },
-        controls,
-        pipWin
-      );
-
-      await exited;
 
       Assert.ok(
         !pipWin.document.fullscreenElement,
         "Double-click caused us to exit fullscreen."
       );
 
-      await BrowserTestUtils.waitForCondition(() => {
-        return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
-      });
-
       
 
-      entered = BrowserTestUtils.waitForEvent(
-        pipWin,
-        "MozDOMFullscreen:Entered"
-      );
-
-      EventUtils.sendMouseEvent(
-        {
-          type: "dblclick",
-        },
-        controls,
-        pipWin
-      );
-
-      await entered;
+      await promiseFullscreenEntered(pipWin, async () => {
+        EventUtils.sendMouseEvent(
+          {
+            type: "dblclick",
+          },
+          controls,
+          pipWin
+        );
+      });
 
       Assert.equal(
         pipWin.document.fullscreenElement,
@@ -94,27 +70,17 @@ add_task(async () => {
         "Double-click caused us to re-enter fullscreen."
       );
 
-      await BrowserTestUtils.waitForCondition(() => {
-        return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
+      
+      
+
+      await promiseFullscreenExited(pipWin, async () => {
+        EventUtils.synthesizeKey("KEY_Escape", {}, pipWin);
       });
-
-      
-      
-
-      exited = BrowserTestUtils.waitForEvent(pipWin, "MozDOMFullscreen:Exited");
-
-      EventUtils.synthesizeKey("KEY_Escape", {}, pipWin);
-
-      await exited;
 
       Assert.ok(
         !pipWin.document.fullscreenElement,
         "Pressing Escape caused us to exit fullscreen."
       );
-
-      await BrowserTestUtils.waitForCondition(() => {
-        return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
-      });
 
       let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
       pipWin.close();

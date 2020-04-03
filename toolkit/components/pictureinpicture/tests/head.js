@@ -545,3 +545,62 @@ async function testToggleHelper(browser, videoID, canToggle, policy) {
   await BrowserTestUtils.synthesizeMouseAtPoint(1, 1, {}, browser);
   await assertSawMouseEvents(browser, true);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+async function promiseFullscreenEntered(window, asyncFn) {
+  let entered = BrowserTestUtils.waitForEvent(
+    window,
+    "MozDOMFullscreen:Entered"
+  );
+
+  await asyncFn();
+
+  await entered;
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function promiseFullscreenExited(window, asyncFn) {
+  let exited = BrowserTestUtils.waitForEvent(window, "MozDOMFullscreen:Exited");
+
+  await asyncFn();
+
+  await exited;
+
+  await BrowserTestUtils.waitForCondition(() => {
+    return !TelemetryStopwatch.running("FULLSCREEN_CHANGE_MS");
+  });
+
+  if (AppConstants.platform == "macosx") {
+    
+    
+    
+    
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+}
