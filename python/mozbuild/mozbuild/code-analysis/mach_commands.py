@@ -475,6 +475,10 @@ class StaticAnalysis(MachCommandBase):
                      'There are no files that need to be analyzed.')
             return 0
 
+        if len(self.cov_non_unified_paths):
+            self.cov_non_unified_paths = [mozpath.join(
+                self.topsrcdir, path) for path in self.cov_non_unified_paths]
+
         
         for element in commands_list:
 
@@ -483,8 +487,14 @@ class StaticAnalysis(MachCommandBase):
                 
                 return [re.sub(r'\'-D(.*)="(.*)"\'', r'-D\1="\2"', arg) for arg in cmd]
 
+            build_command = element['command'].split(' ')
+            
+            
+            if any(element['file'].startswith(path) for path in self.cov_non_unified_paths):
+                build_command[-1] = element['file']
+
             cmd = [self.cov_translate, '--dir', self.cov_idir_path] + \
-                transform_cmd(element['command'].split(' '))
+                transform_cmd(build_command)
 
             if self.run_cov_command(cmd, element['directory']):
                 return 1
@@ -642,6 +652,7 @@ class StaticAnalysis(MachCommandBase):
         self.cov_capture_search = cov_config.get('fs_capture_search', None)
         self.cov_full_stack = cov_config.get('full_stack', False)
         self.cov_stream = cov_config.get('stream', False)
+        self.cov_non_unified_paths = cov_config.get('non_unified', [])
 
         return 0
 
