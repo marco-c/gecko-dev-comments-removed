@@ -865,7 +865,22 @@ function threadFrontTest(test, options = {}) {
     );
 
     
-    const args = { threadFront, debuggee, client, server, targetFront };
+    
+    const rootActor = client.transport._serverConnection.rootActor;
+    const targetActor = rootActor._parameters.tabList.getTargetActorForTab(
+      "debuggee.js"
+    );
+    const { threadActor } = targetActor;
+
+    
+    const args = {
+      threadActor,
+      threadFront,
+      debuggee,
+      client,
+      server,
+      targetFront,
+    };
     if (waitForFinish) {
       
       
