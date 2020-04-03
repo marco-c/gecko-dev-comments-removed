@@ -862,7 +862,6 @@ class Matrix4x4Typed {
     
     for (int plane = 0; plane < 4; plane++) {
       auto planeNormal = planeNormals[plane];
-      planeNormal.Normalize();
       Point4DTyped<UnknownUnits, F>* srcPoint = dstPointStart;
       Point4DTyped<UnknownUnits, F>* srcPointEnd = dstPoint;
 
