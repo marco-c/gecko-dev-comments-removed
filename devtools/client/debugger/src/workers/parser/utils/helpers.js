@@ -123,7 +123,7 @@ export function getVariables(dec: Node) {
     
     
     return dec.id.elements
-      .filter(element => element)
+      .filter(Boolean)
       .map(element => ({
         name: t.isAssignmentPattern(element)
           ? element.left.name
