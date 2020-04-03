@@ -16,11 +16,8 @@ class GMPChild;
 
 class GMPContentChild : public PGMPContentChild, public GMPSharedMem {
  public:
-  
-  
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPContentChild, final)
-
-  explicit GMPContentChild(GMPChild* aChild) : mGMPChild(aChild) {}
+  explicit GMPContentChild(GMPChild* aChild);
+  virtual ~GMPContentChild();
 
   MessageLoop* GMPMessageLoop();
 
@@ -48,9 +45,6 @@ class GMPContentChild : public PGMPContentChild, public GMPSharedMem {
   bool IsUsed();
 
   GMPChild* mGMPChild;
-
- private:
-  ~GMPContentChild() = default;
 };
 
 }  
