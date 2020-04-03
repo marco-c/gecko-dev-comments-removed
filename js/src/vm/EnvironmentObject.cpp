@@ -2751,7 +2751,7 @@ void DebugEnvironments::takeFrameSnapshot(
 
 
 
-    if (script->analyzedArgsUsage() && script->needsArgsObj() &&
+    if (!script->needsArgsAnalysis() && script->needsArgsObj() &&
         frame.hasArgsObj()) {
       for (unsigned i = 0; i < frame.numFormalArgs(); ++i) {
         if (script->formalLivesInArgumentsObject(i)) {

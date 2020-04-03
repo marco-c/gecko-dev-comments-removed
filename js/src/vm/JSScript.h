@@ -2404,12 +2404,9 @@ class JSScript : public js::BaseScript {
 
 
 
-  bool analyzedArgsUsage() const {
-    return !hasFlag(MutableFlags::NeedsArgsAnalysis);
-  }
   inline bool ensureHasAnalyzedArgsUsage(JSContext* cx);
   bool needsArgsObj() const {
-    MOZ_ASSERT(analyzedArgsUsage());
+    MOZ_ASSERT(!needsArgsAnalysis());
     return hasFlag(MutableFlags::NeedsArgsObj);
   }
   void setNeedsArgsObj(bool needsArgsObj);
