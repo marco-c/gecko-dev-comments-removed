@@ -392,7 +392,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
 
   
@@ -412,7 +412,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetTextAsSubAction(const nsAString& aString);
 
   
@@ -528,7 +528,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult DidInsertText(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult DidInsertText(
       uint32_t aNewLength, uint32_t aInsertedOffset, uint32_t aInsertedLength);
 
  protected:  
@@ -549,7 +549,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   InsertLineFeedCharacterAtSelection();
 
   
@@ -581,7 +581,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual EditActionResult HandleInsertText(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult HandleInsertText(
       EditSubAction aEditSubAction, const nsAString& aInsertionString);
 
   
@@ -592,7 +592,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   HandleDeleteSelectionInternal(nsIEditor::EDirection aDirectionAndAmount,
                                 nsIEditor::EStripWrappers aStripWrappers);
 
@@ -602,7 +602,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
                         nsIEditor::EStripWrappers aStripWrappers);
 
@@ -621,14 +621,14 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   SetTextWithoutTransaction(const nsAString& aValue);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsurePaddingBRElementInMultilineEditor();
 
   
@@ -636,7 +636,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult EnsureCaretNotAtEndOfTextNode();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult EnsureCaretNotAtEndOfTextNode();
 
  protected:  
   MOZ_CAN_RUN_SCRIPT virtual void OnStartToHandleTopLevelEditSubAction(
@@ -676,7 +676,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InitEditorContentAndSelection();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
 
   
 
@@ -695,7 +695,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   OnInputText(const nsAString& aStringToInsert);
 
   
@@ -732,7 +732,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE virtual nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
   InsertWithQuotationsAsSubAction(const nsAString& aQuotedText);
 
   
@@ -773,7 +773,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   virtual nsresult PrepareTransferable(nsITransferable** transferable);
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertTextFromTransferable(nsITransferable* transferable);
 
   

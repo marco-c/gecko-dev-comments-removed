@@ -810,13 +810,13 @@ class EditorBase : public nsIEditor,
 
 
 
-    MOZ_MUST_USE bool CanHandle() const {
+    [[nodiscard]] bool CanHandle() const {
 #ifdef DEBUG
       mHasCanHandleChecked = true;
 #endif  
       return mSelection && mEditorBase.IsInitialized();
     }
-    MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
     CanHandleAndMaybeDispatchBeforeInputEvent() {
       if (NS_WARN_IF(!CanHandle())) {
         return NS_ERROR_NOT_INITIALIZED;
@@ -833,7 +833,7 @@ class EditorBase : public nsIEditor,
 
 
 
-    MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeDispatchBeforeInputEvent();
+    [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MaybeDispatchBeforeInputEvent();
 
     
 
@@ -1182,7 +1182,7 @@ class EditorBase : public nsIEditor,
     return mEditActionData->NeedsToDispatchBeforeInputEvent();
   }
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MaybeDispatchBeforeInputEvent() {
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MaybeDispatchBeforeInputEvent() {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->MaybeDispatchBeforeInputEvent();
   }
@@ -1359,7 +1359,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   InsertTextAsSubAction(const nsAString& aStringToInsert);
 
   
@@ -1406,7 +1406,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetTextNodeWithoutTransaction(const nsAString& aString, Text& aTextNode);
 
   
@@ -1438,7 +1438,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE CreateElementResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertPaddingBRElementForEmptyLastLineWithTransaction(
       const EditorDOMPoint& aPointToInsert);
 
@@ -1916,14 +1916,14 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoPaddingBRElementForEmptyEditor();
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MaybeCreatePaddingBRElementForEmptyEditor();
 
   
@@ -1932,7 +1932,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult MarkElementDirty(Element& aElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
 
   MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal(nsITransaction* aTxn);
 
@@ -2464,7 +2464,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult ScrollSelectionFocusIntoView();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ScrollSelectionFocusIntoView();
 
   
 
@@ -2609,7 +2609,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT MOZ_MUST_USE nsresult InsertLineBreakAsSubAction();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertLineBreakAsSubAction();
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

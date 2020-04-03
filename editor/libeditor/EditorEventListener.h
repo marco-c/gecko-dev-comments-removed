@@ -112,7 +112,7 @@ class EditorEventListener : public nsIDOMEventListener {
 
 
 
-  MOZ_MUST_USE bool EnsureCommitComposition();
+  [[nodiscard]] bool EnsureCommitComposition();
 
   EditorBase* mEditorBase;  
   RefPtr<nsCaret> mCaret;
