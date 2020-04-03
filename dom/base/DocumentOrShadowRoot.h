@@ -249,7 +249,7 @@ class DocumentOrShadowRoot {
 
 
 
-  void CloneAdoptedSheetsFrom(DocumentOrShadowRoot&);
+  void CloneAdoptedSheetsFrom(const DocumentOrShadowRoot&);
 
   
   already_AddRefed<StyleSheet> RemoveSheet(StyleSheet& aSheet);

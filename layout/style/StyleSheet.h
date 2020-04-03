@@ -412,7 +412,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   }
 
   
-  bool ConstructorDocumentMatches(dom::Document& aDocument) const {
+  bool ConstructorDocumentMatches(const dom::Document& aDocument) const {
     return mConstructorDocument == &aDocument;
   }
 

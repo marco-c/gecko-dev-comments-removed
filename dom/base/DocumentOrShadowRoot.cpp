@@ -199,18 +199,27 @@ void DocumentOrShadowRoot::ClearAdoptedStyleSheets() {
 }
 
 void DocumentOrShadowRoot::CloneAdoptedSheetsFrom(
-    DocumentOrShadowRoot& aSource) {
-  Document& ownerDoc = *AsNode().OwnerDoc();
+    const DocumentOrShadowRoot& aSource) {
+  if (!aSource.AdoptedSheetCount()) {
+    return;
+  }
   Sequence<OwningNonNull<StyleSheet>> list;
   if (!list.SetCapacity(mAdoptedStyleSheets.Length(), fallible)) {
     return;
   }
 
-  
-  
-  for (auto& sheet : aSource.mAdoptedStyleSheets) {
-    DebugOnly<bool> succeeded =
-        list.AppendElement(sheet->CloneAdoptedSheet(ownerDoc), fallible);
+  Document& ownerDoc = *AsNode().OwnerDoc();
+  const Document& sourceDoc = *aSource.AsNode().OwnerDoc();
+  auto* clonedSheetMap = static_cast<Document::AdoptedStyleSheetCloneCache*>(
+      sourceDoc.GetProperty(nsGkAtoms::adoptedsheetclones));
+  MOZ_ASSERT(clonedSheetMap);
+
+  for (const StyleSheet* sheet : aSource.mAdoptedStyleSheets) {
+    RefPtr<StyleSheet> clone = clonedSheetMap->LookupForAdd(sheet).OrInsert(
+        [&] { return sheet->CloneAdoptedSheet(ownerDoc); });
+    MOZ_ASSERT(clone);
+    MOZ_DIAGNOSTIC_ASSERT(clone->ConstructorDocumentMatches(ownerDoc));
+    DebugOnly<bool> succeeded = list.AppendElement(std::move(clone), fallible);
     MOZ_ASSERT(succeeded);
   }
 
