@@ -108,6 +108,8 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void createStackFrame();
   void initFrameAndRegs();
+  void successHandler();
+  void exitHandler();
 
   
   void Push(js::jit::Register value);
