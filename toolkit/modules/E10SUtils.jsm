@@ -139,7 +139,6 @@ const kDocumentChannelDeniedURIs = [
   "about:crashcontent",
   "about:newtab",
   "about:printpreview",
-  "about:privatebrowsing",
 ];
 
 
