@@ -145,6 +145,10 @@ class BackgroundFactoryChild final : public PBackgroundIDBFactoryChild {
   friend class mozilla::ipc::BackgroundChildImpl;
   friend IDBFactory;
 
+  
+  
+  
+  
   IDBFactory* mFactory;
 
   NS_DECL_OWNINGTHREAD
@@ -154,16 +158,17 @@ class BackgroundFactoryChild final : public PBackgroundIDBFactoryChild {
     NS_ASSERT_OWNINGTHREAD(BackgroundFactoryChild);
   }
 
-  IDBFactory* GetDOMObject() const {
+  IDBFactory& GetDOMObject() const {
     AssertIsOnOwningThread();
-    return mFactory;
+    MOZ_ASSERT(mFactory);
+    return *mFactory;
   }
 
   bool SendDeleteMe() = delete;
 
  private:
   
-  explicit BackgroundFactoryChild(IDBFactory* aFactory);
+  explicit BackgroundFactoryChild(IDBFactory& aFactory);
 
   
   ~BackgroundFactoryChild();
@@ -222,7 +227,7 @@ class BackgroundFactoryRequestChild final
   friend class PermissionRequestChild;
   friend class PermissionRequestParent;
 
-  const RefPtr<IDBFactory> mFactory;
+  const SafeRefPtr<IDBFactory> mFactory;
 
   
   
@@ -245,7 +250,7 @@ class BackgroundFactoryRequestChild final
 
  private:
   
-  BackgroundFactoryRequestChild(IDBFactory* aFactory,
+  BackgroundFactoryRequestChild(SafeRefPtr<IDBFactory> aFactory,
                                 IDBOpenDBRequest* aOpenRequest,
                                 bool aIsDeleteOp, uint64_t aRequestedVersion);
 
