@@ -17325,7 +17325,7 @@ nsresult QuotaClient::InitOrigin(PersistenceType aPersistenceType,
     
     
     if (NS_WARN_IF(!databaseFilenames.GetEntry(subdirNameBase)) &&
-        NS_WARN_IF(NS_FAILED(DeleteFilesNoQuota(directory, subdirName)))) {
+        NS_WARN_IF((NS_FAILED(DeleteFilesNoQuota(directory, subdirName))))) {
       REPORT_TELEMETRY_INIT_ERR(kQuotaExternalError, IDB_GetEntry);
       return NS_ERROR_UNEXPECTED;
     }
