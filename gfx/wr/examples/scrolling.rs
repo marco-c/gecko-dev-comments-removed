@@ -64,12 +64,12 @@ impl Example for App {
             
             let mut info = CommonItemProperties::new((0, 0).to(1000, 1000), space_and_clip1);
             info.hit_info = Some((0, 1));
-            builder.push_rect(&info, ColorF::new(1.0, 1.0, 1.0, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(1.0, 1.0, 1.0, 1.0));
 
             
             let mut info = CommonItemProperties::new((0, 0).to(50, 50), space_and_clip1);
             info.hit_info = Some((0, 2));
-            builder.push_rect(&info, ColorF::new(0.0, 0.0, 1.0, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(0.0, 0.0, 1.0, 1.0));
 
             
             
@@ -78,7 +78,7 @@ impl Example for App {
                 space_and_clip1,
             );
             info.hit_info = Some((0, 3));
-            builder.push_rect(&info, ColorF::new(0.0, 1.0, 0.0, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(0.0, 1.0, 0.0, 1.0));
 
             
             
@@ -101,13 +101,13 @@ impl Example for App {
                 space_and_clip2,
             );
             info.hit_info = Some((0, 4));
-            builder.push_rect(&info, ColorF::new(0.5, 0.5, 0.5, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(0.5, 0.5, 0.5, 1.0));
 
             
             
             let mut info = CommonItemProperties::new((0, 200).to(50, 250), space_and_clip2);
             info.hit_info = Some((0, 5));
-            builder.push_rect(&info, ColorF::new(0.0, 1.0, 1.0, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(0.0, 1.0, 1.0, 1.0));
 
             
             
@@ -132,6 +132,7 @@ impl Example for App {
             info.hit_info = Some((0, 6));
             builder.push_rect(
                 &info,
+                info.clip_rect,
                 ColorF::new(0.5, 0.5, 1.0, 1.0),
             );
 
@@ -142,7 +143,7 @@ impl Example for App {
                 space_and_clip2,
             );
             info.hit_info = Some((0, 7));
-            builder.push_rect(&info, ColorF::new(0.0, 1.0, 1.0, 1.0));
+            builder.push_rect(&info, info.clip_rect, ColorF::new(0.0, 1.0, 1.0, 1.0));
 
             builder.pop_stacking_context();
         }
