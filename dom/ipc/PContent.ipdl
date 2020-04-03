@@ -1489,6 +1489,13 @@ parent:
 
 
 
+    async NotifyPictureInPictureModeChanged(
+        MaybeDiscardedBrowsingContext aContext, bool aEnabled);
+
+   
+
+
+
     async NotifyMediaSessionUpdated(MaybeDiscardedBrowsingContext aContext, bool aIsCreated);
 
     

@@ -64,6 +64,11 @@ class ContentMediaAgent : public MediaControlKeysEventSource {
   virtual void NotifyAudibleStateChanged(
       const MediaControlKeysEventListener* aMedia, bool aAudible) = 0;
 
+  
+  
+  virtual void NotifyPictureInPictureModeChanged(
+      const MediaControlKeysEventListener* aMedia, bool aEnabled) = 0;
+
  private:
   
   bool Open() override { return true; }
@@ -117,6 +122,8 @@ class ContentMediaController final : public ContentMediaAgent,
                                ControlledMediaState aState) override;
   void NotifyAudibleStateChanged(const MediaControlKeysEventListener* aMedia,
                                  bool aAudible) override;
+  void NotifyPictureInPictureModeChanged(
+      const MediaControlKeysEventListener* aMedia, bool aEnabled) override;
 
   
   void OnKeyPressed(MediaControlKeysEvent aEvent) override;
