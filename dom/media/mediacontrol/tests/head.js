@@ -256,3 +256,14 @@ function waitUntilControllerMetadataChanged() {
     "media-session-controller-metadata-changed"
   );
 }
+
+
+
+
+
+
+
+
+function waitUntilMediaControllerAmountChanged() {
+  return BrowserUtils.promiseObserved("media-controller-amount-changed");
+}
