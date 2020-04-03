@@ -980,6 +980,10 @@ class Isolate {
   
   RegExpStack* regexp_stack() const { return regexpStack_; }
   byte* top_of_regexp_stack() const;
+
+  
+  
+  
   void StackOverflow() {}
 
 #ifndef V8_INTL_SUPPORT
