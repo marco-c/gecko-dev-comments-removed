@@ -92,12 +92,12 @@ struct CompilerEnvironment {
                       bool hugeMemory, bool bigIntConfigured);
 
   
-  void computeParameters(Decoder& d, bool gcFeatureOptIn);
+  void computeParameters(Decoder& d);
 
   
   
   
-  void computeParameters(bool gcFeatureOptIn);
+  void computeParameters();
 
   bool isComputed() const { return state_ == Computed; }
   CompileMode mode() const {
@@ -157,15 +157,6 @@ struct ModuleEnvironment {
 
   
   
-#ifdef ENABLE_WASM_GC
-  
-  
-  
-  
-  
-  
-  bool gcFeatureOptIn;
-#endif
   Maybe<uint32_t> dataCount;
   MemoryUsage memoryUsage;
   uint32_t minMemoryLength;
@@ -197,13 +188,9 @@ struct ModuleEnvironment {
       : kind(kind),
         sharedMemoryEnabled(sharedMemoryEnabled),
         compilerEnv(compilerEnv),
-#ifdef ENABLE_WASM_GC
-        gcFeatureOptIn(false),
-#endif
         memoryUsage(MemoryUsage::None),
         minMemoryLength(0),
-        numStructTypes(0) {
-  }
+        numStructTypes(0) {}
 
   Tier tier() const { return compilerEnv->tier(); }
   OptimizedBackend optimizedBackend() const {
