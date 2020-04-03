@@ -393,8 +393,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamControllerCancelSteps(
                                         unwrappedController->cancelMethod());
     if (unwrappedCancelMethod.isUndefined()) {
       
-      result = PromiseObject::unforgeableResolveWithNonPromise(
-          cx, UndefinedHandleValue);
+      result = PromiseResolvedWithUndefined(cx);
     } else {
       
       {
@@ -491,7 +490,7 @@ JSObject* js::ReadableStreamDefaultControllerPullSteps(
     }
 
     Rooted<Value> readResult(cx, ObjectValue(*readResultObj));
-    return PromiseObject::unforgeableResolve(cx, readResult);
+    return PromiseObject::unforgeableResolveWithNonPromise(cx, readResult);
   }
 
   

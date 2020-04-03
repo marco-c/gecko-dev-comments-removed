@@ -15,7 +15,7 @@
 #include "js/Class.h"         
 #include "js/Promise.h"       
 #include "js/RootingAPI.h"    
-#include "js/Value.h"         
+#include "js/Value.h"  
 #include "vm/NativeObject.h"  
 
 class JS_PUBLIC_API JSObject;
@@ -114,6 +114,13 @@ class PromiseObject : public NativeObject {
   static JSObject* unforgeableResolve(JSContext* cx,
                                       JS::Handle<JS::Value> value);
 
+  
+  
+  
+  
+  
+  
+  
   
   
   static PromiseObject* unforgeableResolveWithNonPromise(
@@ -218,6 +225,15 @@ class PromiseObject : public NativeObject {
 
   void copyUserInteractionFlagsFrom(PromiseObject& rhs);
 };
+
+
+
+
+
+inline PromiseObject* PromiseResolvedWithUndefined(JSContext* cx) {
+  return PromiseObject::unforgeableResolveWithNonPromise(
+      cx, JS::UndefinedHandleValue);
+}
 
 }  
 

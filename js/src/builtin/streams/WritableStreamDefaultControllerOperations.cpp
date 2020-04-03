@@ -52,6 +52,7 @@ using js::ListObject;
 using js::NewHandler;
 using js::PeekQueueValue;
 using js::PromiseObject;
+using js::PromiseResolvedWithUndefined;
 using js::TargetFromHandler;
 using js::WritableStream;
 using js::WritableStreamCloseQueuedOrInFlight;
@@ -79,7 +80,7 @@ JSObject* js::WritableStreamControllerAbortSteps(
   Rooted<JSObject*> result(cx);
   if (unwrappedAbortMethod.isUndefined()) {
     
-    result = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    result = PromiseResolvedWithUndefined(cx);
     if (!result) {
       return nullptr;
     }
@@ -683,7 +684,7 @@ static MOZ_MUST_USE JSObject* PerformCloseAlgorithm(
   
   
   if (unwrappedController->closeMethod().isUndefined()) {
-    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    return PromiseResolvedWithUndefined(cx);
   }
 
   
@@ -733,7 +734,7 @@ static MOZ_MUST_USE JSObject* PerformWriteAlgorithm(
   
   
   if (unwrappedController->writeMethod().isUndefined()) {
-    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    return PromiseResolvedWithUndefined(cx);
   }
 
   

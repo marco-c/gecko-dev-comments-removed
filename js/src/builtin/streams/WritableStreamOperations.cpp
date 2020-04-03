@@ -138,7 +138,7 @@ JSObject* js::WritableStreamAbort(JSContext* cx,
   
   
   if (unwrappedStream->closed() || unwrappedStream->errored()) {
-    return PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    return PromiseResolvedWithUndefined(cx);
   }
 
   

@@ -316,9 +316,7 @@ MOZ_MUST_USE bool js::SetUpExternalReadableByteStreamController(
   
   
   
-  Rooted<PromiseObject*> startPromise(
-      cx, PromiseObject::unforgeableResolveWithNonPromise(
-              cx, UndefinedHandleValue));
+  Rooted<PromiseObject*> startPromise(cx, PromiseResolvedWithUndefined(cx));
   if (!startPromise) {
     return false;
   }
@@ -501,7 +499,7 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
     if (!unwrappedReader) {
       return nullptr;
     }
-    RootedObject readResult(
+    Rooted<PlainObject*> readResult(
         cx, ReadableStreamCreateReadResult(cx, val, false,
                                            unwrappedReader->forAuthorCode()));
     if (!readResult) {
@@ -509,7 +507,7 @@ static MOZ_MUST_USE JSObject* ReadableByteStreamControllerPullSteps(
     }
     val.setObject(*readResult);
 
-    return PromiseObject::unforgeableResolve(cx, val);
+    return PromiseObject::unforgeableResolveWithNonPromise(cx, val);
   }
 
   

@@ -189,14 +189,14 @@ MOZ_MUST_USE bool js::ReadableStreamControllerCallPullIfNeeded(
           ReadableStreamControllerGetDesiredSizeUnchecked(unwrappedController);
       source->requestData(cx, stream, desiredSize);
     }
-    pullPromise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    pullPromise = PromiseResolvedWithUndefined(cx);
   } else {
     
     
     Rooted<Value> unwrappedPullMethod(cx, unwrappedController->pullMethod());
     if (unwrappedPullMethod.isUndefined()) {
       
-      pullPromise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+      pullPromise = PromiseResolvedWithUndefined(cx);
     } else {
       
       {

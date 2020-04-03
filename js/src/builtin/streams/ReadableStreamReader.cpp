@@ -94,8 +94,7 @@ MOZ_MUST_USE bool js::ReadableStreamReaderGenericInitialize(
     
     
     
-    promise = PromiseObject::unforgeableResolveWithNonPromise(
-        cx, UndefinedHandleValue);
+    promise = PromiseResolvedWithUndefined(cx);
   } else {
     
     
@@ -251,7 +250,7 @@ MOZ_MUST_USE JSObject* js::ReadableStreamDefaultReaderRead(
     }
 
     Rooted<Value> iterResultVal(cx, JS::ObjectValue(*iterResult));
-    return PromiseObject::unforgeableResolve(cx, iterResultVal);
+    return PromiseObject::unforgeableResolveWithNonPromise(cx, iterResultVal);
   }
 
   

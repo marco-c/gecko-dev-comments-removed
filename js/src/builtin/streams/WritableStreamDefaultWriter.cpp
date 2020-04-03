@@ -84,7 +84,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
     
     
     
-    JSObject* promise;
+    PromiseObject* promise;
     if (!WritableStreamCloseQueuedOrInFlight(unwrappedStream) &&
         unwrappedStream->backpressure()) {
       promise = PromiseObject::createSkippingExecutor(cx);
@@ -92,7 +92,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
     
     
     else {
-      promise = PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+      promise = PromiseResolvedWithUndefined(cx);
     }
     if (!promise) {
       return nullptr;
@@ -110,8 +110,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
   
   else if (unwrappedStream->closed()) {
     
-    JSObject* readyPromise =
-        PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    PromiseObject* readyPromise = PromiseResolvedWithUndefined(cx);
     if (!readyPromise) {
       return nullptr;
     }
@@ -120,8 +119,7 @@ MOZ_MUST_USE WritableStreamDefaultWriter* js::CreateWritableStreamDefaultWriter(
 
     
     
-    JSObject* closedPromise =
-        PromiseObject::unforgeableResolve(cx, UndefinedHandleValue);
+    PromiseObject* closedPromise = PromiseResolvedWithUndefined(cx);
     if (!closedPromise) {
       return nullptr;
     }
