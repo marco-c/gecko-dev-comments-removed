@@ -2236,10 +2236,12 @@ bool XrayResolveOwnProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
 
 
 
+
+
 bool XrayDefineProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
                         JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
                         JS::Handle<JS::PropertyDescriptor> desc,
-                        JS::ObjectOpResult& result, bool* defined);
+                        JS::ObjectOpResult& result, bool* done);
 
 
 
