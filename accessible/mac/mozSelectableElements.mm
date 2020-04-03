@@ -1,9 +1,9 @@
-/* -*- Mode: Objective-C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:expandtab:shiftwidth=2:tabstop=2:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 #import "mozSelectableElements.h"
 
@@ -32,9 +32,9 @@
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-/**
- * Return the mozAccessibles that are selectable.
- */
+
+
+
 - (id)selectableChildren {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -47,9 +47,9 @@
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
 }
 
-/**
- * Return the mozAccessibles that are actually selected.
- */
+
+
+
 - (id)selectedChildren {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
@@ -80,8 +80,8 @@
 }
 
 - (id)value {
-  // The value of a selectable is its selected child. In the case
-  // of multiple selections this will return the first one.
+  
+  
   return [[self selectedChildren] firstObject];
 }
 
@@ -90,7 +90,7 @@
 @implementation mozSelectableChildAccessible
 
 - (id)value {
-  return [NSNumber numberWithBool:([self state] & states::SELECTED) != 0];
+  return [NSNumber numberWithBool:[self stateWithMask:states::SELECTED] != 0];
 }
 
 @end
@@ -98,7 +98,7 @@
 @implementation mozTabGroupAccessible
 
 - (NSArray*)accessibilityAttributeNames {
-  // standard attributes that are shared and supported by root accessible (AXMain) elements.
+  
   static NSMutableArray* attributes = nil;
 
   if (!attributes) {

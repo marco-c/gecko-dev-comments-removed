@@ -129,7 +129,11 @@ static const uintptr_t IS_PROXY = 1;
 
 - (id)childAt:(uint32_t)i;
 
+
 - (uint64_t)state;
+
+
+- (uint64_t)stateWithMask:(uint64_t)mask;
 
 #pragma mark -
 
