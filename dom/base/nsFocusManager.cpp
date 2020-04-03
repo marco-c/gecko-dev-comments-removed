@@ -1014,11 +1014,27 @@ nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow) {
     
     
 
-    
-    if (mActiveWindow == mFocusedWindow || mActiveWindow == window)
-      WindowLowered(mActiveWindow);
-    else
-      ClearFocus(mActiveWindow);
+    if (XRE_IsParentProcess()) {
+      if (mActiveWindow == mFocusedWindow || mActiveWindow == window) {
+        WindowLowered(mActiveWindow);
+      } else {
+        ClearFocus(mActiveWindow);
+      }
+    } else {
+      BrowsingContext* active = GetActiveBrowsingContext();
+      if (active) {
+        nsPIDOMWindowOuter* activeWindow = active->GetDOMWindow();
+        if (activeWindow) {
+          if ((mFocusedWindow &&
+               mFocusedWindow->GetBrowsingContext() == active) ||
+              (window->GetBrowsingContext() == active)) {
+            WindowLowered(activeWindow);
+          } else {
+            ClearFocus(activeWindow);
+          }
+        }  
+      }
+    }
     return NS_OK;
   }
 
