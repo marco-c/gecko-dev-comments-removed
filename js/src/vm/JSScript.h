@@ -376,7 +376,7 @@ struct SourceTypeTraits<char16_t> {
 
 
 extern MOZ_MUST_USE bool SynchronouslyCompressSource(
-    JSContext* cx, JS::Handle<JSScript*> script);
+    JSContext* cx, JS::Handle<BaseScript*> script);
 
 
 
@@ -398,7 +398,7 @@ class ScriptSource {
 
   friend class SourceCompressionTask;
   friend bool SynchronouslyCompressSource(JSContext* cx,
-                                          JS::Handle<JSScript*> script);
+                                          JS::Handle<BaseScript*> script);
 
  private:
   
