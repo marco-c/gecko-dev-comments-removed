@@ -13,4 +13,6 @@ pub struct ClientInfo {
     pub channel: Option<String>,
     
     pub os_version: String,
+    
+    pub architecture: String,
 }
