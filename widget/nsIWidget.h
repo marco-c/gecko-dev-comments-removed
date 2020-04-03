@@ -375,6 +375,9 @@ class nsIWidget : public nsISupports {
   typedef mozilla::ScreenPoint ScreenPoint;
   typedef mozilla::CSSToScreenScale CSSToScreenScale;
   typedef mozilla::DesktopIntRect DesktopIntRect;
+  typedef mozilla::DesktopPoint DesktopPoint;
+  typedef mozilla::DesktopRect DesktopRect;
+  typedef mozilla::DesktopSize DesktopSize;
   typedef mozilla::CSSPoint CSSPoint;
   typedef mozilla::CSSRect CSSRect;
 
@@ -728,11 +731,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-
-  virtual void MoveClient(double aX, double aY) = 0;
+  virtual void MoveClient(const DesktopPoint& aOffset) = 0;
 
   
 
@@ -781,8 +780,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-  virtual void ResizeClient(double aWidth, double aHeight, bool aRepaint) = 0;
+  virtual void ResizeClient(const DesktopSize& aSize, bool aRepaint) = 0;
 
   
 
@@ -794,14 +792,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
-
-
-
-  virtual void ResizeClient(double aX, double aY, double aWidth, double aHeight,
-                            bool aRepaint) = 0;
+  virtual void ResizeClient(const DesktopRect& aRect, bool aRepaint) = 0;
 
   
 
