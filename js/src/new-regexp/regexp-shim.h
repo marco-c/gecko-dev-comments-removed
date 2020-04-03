@@ -977,6 +977,9 @@ using Factory = Isolate;
 
 class Isolate {
  public:
+  Isolate(JSContext* cx) : cx_(cx) {}
+  bool init();
+
   
   RegExpStack* regexp_stack() const { return regexpStack_; }
   byte* top_of_regexp_stack() const;

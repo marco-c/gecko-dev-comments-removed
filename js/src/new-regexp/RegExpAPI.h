@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+#ifndef regexp_RegExpAPI_h
+#define regexp_RegExpAPI_h
+
+#include "vm/JSContext.h"
+namespace js {
+namespace irregexp {
+
+Isolate* CreateIsolate(JSContext* cx);
+
+}  
+}  
+
+#endif 
