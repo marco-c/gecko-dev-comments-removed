@@ -27,7 +27,8 @@ def run(message='{msg}', push=True, closed_tree=False, try_config=None):
 
     
     
-    try_config.setdefault('optimize-strategies', 'taskgraph.optimize:bugbug_push_schedules')
+    try_config.setdefault('optimize-strategies',
+                          'taskgraph.optimize:experimental.bugbug_push_schedules')
 
     task_config = {
         'version': 2,
