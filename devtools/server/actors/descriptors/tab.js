@@ -153,11 +153,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       return;
     }
 
-    
-    
-    
-    await this._unzombifyIfNeeded();
-
     const form = await new Promise((resolve, reject) => {
       this._formUpdateReject = reject;
       const onFormUpdate = msg => {
@@ -232,7 +227,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
   },
 
   async _unzombifyIfNeeded() {
-    if (!this.options.forceUnzombify || !this._isZombieTab()) {
+    if (!this._isZombieTab()) {
       return;
     }
 
