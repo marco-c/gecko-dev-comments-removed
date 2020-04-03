@@ -5159,16 +5159,8 @@ void nsCSSFrameConstructor::AddFrameConstructionItems(
 static bool ShouldSuppressFrameInSelect(const nsIContent* aParent,
                                         const nsIContent& aChild) {
   if (!aParent ||
-      !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup,
-                                    nsGkAtoms::option)) {
+      !aParent->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::optgroup)) {
     return false;
-  }
-
-  
-  
-  if (aParent->IsHTMLElement(nsGkAtoms::option) &&
-      !aChild.IsRootOfAnonymousSubtree()) {
-    return aParent->AsElement()->HasNonEmptyAttr(nsGkAtoms::label);
   }
 
   
