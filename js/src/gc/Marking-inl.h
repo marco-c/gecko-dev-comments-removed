@@ -110,7 +110,7 @@ inline T MaybeForwarded(T t) {
 
 inline void RelocationOverlay::forwardTo(Cell* cell) {
   MOZ_ASSERT(!isForwarded());
-  MOZ_ASSERT((uintptr_t(cell) & Cell::RESERVED_MASK) == 0,
+  MOZ_ASSERT((uintptr_t(cell) & CellHeader::RESERVED_MASK) == 0,
              "preserving flags doesn't clobber any existing bits");
 
   
@@ -121,8 +121,8 @@ inline void RelocationOverlay::forwardTo(Cell* cell) {
   
   
   
-  uintptr_t gcFlags = dataWithTag_ & Cell::RESERVED_MASK;
-  dataWithTag_ = uintptr_t(cell) | gcFlags | Cell::FORWARD_BIT;
+  uintptr_t gcFlags = dataWithTag_ & CellHeader::RESERVED_MASK;
+  dataWithTag_ = uintptr_t(cell) | gcFlags | CellHeader::FORWARD_BIT;
 }
 
 inline bool IsAboutToBeFinalizedDuringMinorSweep(Cell** cellp) {
