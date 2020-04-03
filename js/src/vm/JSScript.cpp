@@ -1205,11 +1205,8 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
     }
     scriptp.set(script);
 
-    if (script->argumentsHasVarBinding()) {
-      
-      
-      script->setArgumentsHasVarBinding();
-    }
+    
+    script->resetArgsUsageAnalysis();
 
     
     
@@ -4429,12 +4426,10 @@ bool JSScript::fullyInitFromStencil(JSContext* cx,
 }
 
 void JSScript::resetArgsUsageAnalysis() {
-  bool alwaysNeedsArgsObj =
-      immutableFlags_.hasFlag(ImmutableFlags::AlwaysNeedsArgsObj);
-  MOZ_ASSERT_IF(alwaysNeedsArgsObj, argumentsHasVarBinding());
+  MOZ_ASSERT_IF(alwaysNeedsArgsObj(), argumentsHasVarBinding());
   if (argumentsHasVarBinding()) {
-    mutableFlags_.setFlag(MutableFlags::NeedsArgsObj, alwaysNeedsArgsObj);
-    mutableFlags_.setFlag(MutableFlags::NeedsArgsAnalysis, !alwaysNeedsArgsObj);
+    setFlag(MutableFlags::NeedsArgsObj, alwaysNeedsArgsObj());
+    setFlag(MutableFlags::NeedsArgsAnalysis, !alwaysNeedsArgsObj());
   }
 }
 
@@ -4934,9 +4929,8 @@ JSScript* js::detail::CopyScript(JSContext* cx, HandleScript src,
   dst->setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
                scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
 
-  if (src->argumentsHasVarBinding()) {
-    dst->setArgumentsHasVarBinding();
-  }
+  
+  dst->resetArgsUsageAnalysis();
 
   
   if (!PrivateScriptData::Clone(cx, src, dst, scopes)) {
@@ -5255,11 +5249,6 @@ Scope* JSScript::innermostScope(jsbytecode* pc) const {
     return scope;
   }
   return bodyScope();
-}
-
-void BaseScript::setArgumentsHasVarBinding() {
-  setFlag(ImmutableFlags::ArgumentsHasVarBinding);
-  setFlag(MutableFlags::NeedsArgsAnalysis);
 }
 
 void JSScript::setNeedsArgsObj(bool needsArgsObj) {
