@@ -770,7 +770,8 @@ enum class FontVisibility : uint8_t {
   LangPack = 2,  
   User = 3,      
   Hidden = 4,    
-  Count = 5,     
+  Webfont = 5,   
+  Count = 6,     
 };
 
 namespace IPC {
@@ -944,6 +945,9 @@ class gfxFontFamily {
 
   FontVisibility Visibility() const { return mVisibility; }
   bool IsHidden() const { return Visibility() == FontVisibility::Hidden; }
+  bool IsWebFontFamily() const {
+    return Visibility() == FontVisibility::Webfont;
+  }
 
  protected:
   

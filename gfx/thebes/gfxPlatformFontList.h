@@ -208,7 +208,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
 
   gfxFontEntry* SystemFindFontForChar(uint32_t aCh, uint32_t aNextCh,
                                       Script aRunScript,
-                                      const gfxFontStyle* aStyle);
+                                      const gfxFontStyle* aStyle,
+                                      FontVisibility* aVisibility);
 
   
   
