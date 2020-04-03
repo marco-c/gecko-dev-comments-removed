@@ -209,13 +209,17 @@ async function runTest(test, expectedFlag, expectedTrackingResource, prefs) {
   }
 
   
+  
   let result = await new Promise(resolve => {
-    let image = new Image();
-    image.src =
-      "http://example.com/tests/toolkit/components/url-classifier/tests/mochitest/raptor.jpg?" +
-      Math.random();
-    image.onload = _ => resolve(true);
-    image.onerror = _ => resolve(false);
+    let script = document.createElement("script");
+    script.setAttribute(
+      "src",
+      "http://example.com/tests/toolkit/components/url-classifier/tests/mochitest/evil.js?" +
+        Math.random()
+    );
+    script.onload = _ => resolve(true);
+    script.onerror = _ => resolve(false);
+    document.body.appendChild(script);
   });
 
   is(result, test.loadExpected, "The loading happened correctly");
@@ -253,7 +257,7 @@ function runTests(flag, prefs, trackingResource) {
         !channel ||
         !classifiedChannel ||
         !channel.URI.spec.startsWith(
-          "http://example.com/tests/toolkit/components/url-classifier/tests/mochitest/raptor.jpg"
+          "http://example.com/tests/toolkit/components/url-classifier/tests/mochitest/evil.js"
         )
       ) {
         return;

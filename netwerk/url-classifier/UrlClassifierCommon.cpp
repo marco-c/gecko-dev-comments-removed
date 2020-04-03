@@ -17,6 +17,7 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_channelclassifier.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozIThirdPartyUtil.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -594,6 +595,22 @@ uint32_t UrlClassifierCommon::TableToClassificationFlag(
   }
 
   return 0;
+}
+
+
+bool UrlClassifierCommon::IsPassiveContent(nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
+
+  
+  
+  
+  return contentType == nsIContentPolicy::TYPE_IMAGE ||
+         contentType == nsIContentPolicy::TYPE_MEDIA ||
+         (contentType == nsIContentPolicy::TYPE_OBJECT_SUBREQUEST &&
+          !StaticPrefs::security_mixed_content_block_object_subrequest());
 }
 
 }  
