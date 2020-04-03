@@ -138,7 +138,6 @@ class SearchEngineSelector {
       ) {
         
         await this._remoteConfig.db.clear();
-        await this._remoteConfig.db.close();
         
         return this._getConfiguration(false);
       }

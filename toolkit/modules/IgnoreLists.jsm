@@ -82,7 +82,6 @@ class IgnoreListsManager {
       ) {
         
         await this._ignoreListSettings.db.clear();
-        await this._ignoreListSettings.db.close();
         
         return this._getIgnoreListSettings(false);
       }
