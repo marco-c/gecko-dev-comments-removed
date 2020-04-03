@@ -25,6 +25,16 @@ struct HandlerProvider {
                                            NotNull<IStream*> aStream) = 0;
   virtual STDMETHODIMP_(REFIID) MarshalAs(REFIID aIid) = 0;
   virtual STDMETHODIMP DisconnectHandlerRemotes() = 0;
+
+  
+
+
+
+
+
+
+
+  virtual STDMETHODIMP IsInterfaceMaybeSupported(REFIID aIid) { return S_OK; }
 };
 
 struct IHandlerProvider : public IUnknown, public HandlerProvider {
