@@ -3800,11 +3800,6 @@ bool nsDisplaySolidColor::CreateWebRenderCommands(
   
   if (aBuilder.GetRenderRoot() == wr::RenderRoot::Default) {
     for (auto renderRoot : wr::kRenderRoots) {
-      
-      
-      if (renderRoot == wr::RenderRoot::Popover) {
-        continue;
-      }
       if (aBuilder.HasSubBuilder(renderRoot)) {
         LayoutDeviceRect renderRootRect =
             aDisplayListBuilder->GetRenderRootRect(renderRoot);

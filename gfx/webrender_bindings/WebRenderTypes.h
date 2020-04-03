@@ -81,22 +81,16 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
         
         
         
-        Content,
-
-        
-        
-        
-        Popover));
+        Content));
 
 typedef EnumSet<RenderRoot, uint8_t> RenderRootSet;
 
 
 const Array<RenderRoot, kRenderRootCount> kRenderRoots(RenderRoot::Default,
-                                                       RenderRoot::Content,
-                                                       RenderRoot::Popover);
+                                                       RenderRoot::Content);
 
 const Array<RenderRoot, kRenderRootCount - 1> kNonDefaultRenderRoots(
-    RenderRoot::Content, RenderRoot::Popover);
+    RenderRoot::Content);
 
 template <typename T>
 class RenderRootArray : public Array<T, kRenderRootCount> {
