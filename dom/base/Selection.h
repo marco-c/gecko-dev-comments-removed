@@ -169,7 +169,9 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-  MOZ_MUST_USE nsresult AddRangesForUserSelectableNodes(
+  
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  AddRangesForUserSelectableNodes(
       nsRange* aRange, int32_t* aOutIndex,
       const DispatchSelectstartEvent aDispatchSelectstartEvent);
 
@@ -184,7 +186,9 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-  MOZ_MUST_USE nsresult AddRangesForSelectableNodes(
+  
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
+  AddRangesForSelectableNodes(
       nsRange* aRange, int32_t* aOutIndex,
       DispatchSelectstartEvent aDispatchSelectstartEvent);
 
@@ -795,9 +799,7 @@ class Selection final : public nsSupportsWeakReference,
 
 
 
-    
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaybeAddRangeAndTruncateOverlaps(
+    MOZ_CAN_RUN_SCRIPT nsresult MaybeAddRangeAndTruncateOverlaps(
         nsRange* aRange, int32_t* aOutIndex, Selection& aSelection);
 
     
