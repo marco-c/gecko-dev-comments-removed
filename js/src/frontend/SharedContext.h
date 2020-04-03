@@ -363,40 +363,6 @@ class FunctionBox : public SharedContext {
 
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool argumentsHasLocalBinding_ : 1;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool definitelyNeedsArgsObj_ : 1;
-
   uint16_t nargs_;
 
   JSAtom* explicitName_;
@@ -550,8 +516,12 @@ class FunctionBox : public SharedContext {
   bool hasThisBinding() const {
     return immutableFlags_.hasFlag(ImmutableFlags::FunctionHasThisBinding);
   }
-  bool argumentsHasLocalBinding() const { return argumentsHasLocalBinding_; }
-  bool definitelyNeedsArgsObj() const { return definitelyNeedsArgsObj_; }
+  bool argumentsHasVarBinding() const {
+    return immutableFlags_.hasFlag(ImmutableFlags::ArgumentsHasVarBinding);
+  }
+  bool alwaysNeedsArgsObj() const {
+    return immutableFlags_.hasFlag(ImmutableFlags::AlwaysNeedsArgsObj);
+  }
   bool needsHomeObject() const {
     return immutableFlags_.hasFlag(ImmutableFlags::NeedsHomeObject);
   }
@@ -583,10 +553,12 @@ class FunctionBox : public SharedContext {
   void setHasThisBinding() {
     immutableFlags_.setFlag(ImmutableFlags::FunctionHasThisBinding);
   }
-  void setArgumentsHasLocalBinding() { argumentsHasLocalBinding_ = true; }
-  void setDefinitelyNeedsArgsObj() {
-    MOZ_ASSERT(argumentsHasLocalBinding_);
-    definitelyNeedsArgsObj_ = true;
+  void setArgumentsHasVarBinding() {
+    immutableFlags_.setFlag(ImmutableFlags::ArgumentsHasVarBinding);
+  }
+  void setAlwaysNeedsArgsObj() {
+    MOZ_ASSERT(argumentsHasVarBinding());
+    immutableFlags_.setFlag(ImmutableFlags::AlwaysNeedsArgsObj);
   }
   void setNeedsHomeObject() {
     MOZ_ASSERT_IF(hasFunction(), function()->allowSuperProperty());
@@ -614,7 +586,7 @@ class FunctionBox : public SharedContext {
     
     
     
-    return explicitName() || argumentsHasLocalBinding() || isGenerator() ||
+    return explicitName() || argumentsHasVarBinding() || isGenerator() ||
            isAsync();
   }
 

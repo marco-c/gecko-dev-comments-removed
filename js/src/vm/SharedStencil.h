@@ -217,23 +217,49 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   HasRest = 1 << 17,
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ArgumentsHasVarBinding = 1 << 18,
 
   
-  IsForEval = 1 << 19,
+  
+  
+  AlwaysNeedsArgsObj = 1 << 19,
+
+  
+  ShouldDeclareArguments = 1 << 20,
+
+  
+  IsForEval = 1 << 21,
 
   
   
-  IsModule = 1 << 20,
+  IsModule = 1 << 22,
 
   
-  ShouldDeclareArguments = 1 << 21,
+  IsFunction = 1 << 23,
 
   
-  IsFunction = 1 << 22,
-
-  
-  HasDirectEval = 1 << 23,
+  HasDirectEval = 1 << 24,
   
 
   
@@ -244,16 +270,12 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  HasNonSyntacticScope = 1 << 24,
+  HasNonSyntacticScope = 1 << 25,
 
-  FunctionHasExtraBodyVarScope = 1 << 25,
-
-  
-  NeedsFunctionEnvironmentObjects = 1 << 26,
+  FunctionHasExtraBodyVarScope = 1 << 26,
 
   
-  
-  AlwaysNeedsArgsObj = 1 << 27,
+  NeedsFunctionEnvironmentObjects = 1 << 27,
 };
 
 class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {

@@ -9486,7 +9486,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
       };
 
   
-  if (funbox->argumentsHasLocalBinding()) {
+  if (funbox->argumentsHasVarBinding()) {
     if (!emitInitializeFunctionSpecialName(this, cx->names().arguments,
                                            JSOp::Arguments)) {
       
