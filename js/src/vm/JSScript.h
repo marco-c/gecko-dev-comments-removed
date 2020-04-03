@@ -1655,7 +1655,84 @@ struct SourceExtent {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BaseScript : public gc::TenuredCell {
+ public:
+  
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+  using MutableFlags = MutableScriptFlagsEnum;
+
  protected:
   
   
@@ -1669,8 +1746,26 @@ class BaseScript : public gc::TenuredCell {
   const GCPtrObject functionOrGlobal_ = {};
 
   
+  
+  
   const GCPtr<ScriptSourceObject*> sourceObject_ = {};
 
+  
+  
+  SourceExtent extent_ = {};
+
+  
+  
+  
+  
+  ImmutableScriptFlags immutableFlags_ = {};
+
+  
+  
+  
+  MutableScriptFlags mutableFlags_ = {};
+
+  
   
   
   
@@ -1682,31 +1777,11 @@ class BaseScript : public gc::TenuredCell {
   
   RefPtr<js::RuntimeScriptData> sharedData_ = {};
 
-  SourceExtent extent_;
-
- public:
   
   
-  using ImmutableFlags = ImmutableScriptFlagsEnum;
-  using MutableFlags = MutableScriptFlagsEnum;
-
- protected:
-  
-  
-  
-  
-  
-  
-  
-  ImmutableScriptFlags immutableFlags_;
-  
-  
-  
-  
-  
-  MutableScriptFlags mutableFlags_;
-
   ScriptWarmUpData warmUpData_ = {};
+
+  
 
   BaseScript(uint8_t* stubEntry, JSObject* functionOrGlobal,
              ScriptSourceObject* sourceObject, SourceExtent extent,
