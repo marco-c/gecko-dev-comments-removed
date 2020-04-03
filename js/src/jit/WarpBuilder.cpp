@@ -101,16 +101,167 @@ bool WarpBuilder::startNewEntryBlock(size_t stackDepth, BytecodeLocation loc) {
   return true;
 }
 
-bool WarpBuilder::startNewLoopHeaderBlock(MBasicBlock* predecessor,
-                                          BytecodeLocation loc) {
+bool WarpBuilder::startNewLoopHeaderBlock(BytecodeLocation loopHead) {
   MBasicBlock* header = MBasicBlock::NewPendingLoopHeader(
-      graph(), info(), predecessor, newBytecodeSite(loc));
+      graph(), info(), current, newBytecodeSite(loopHead));
   if (!header) {
     return false;
   }
 
   initBlock(header);
   return loopStack_.emplaceBack(header);
+}
+
+bool WarpBuilder::startNewOsrPreHeaderBlock(BytecodeLocation loopHead) {
+  MOZ_ASSERT(loopHead.is(JSOp::LoopHead));
+  MOZ_ASSERT(loopHead.toRawBytecode() == info().osrPc());
+
+  
+  
+  
+  
+  
+
+  MBasicBlock* pred = current;
+
+  
+  if (!startNewEntryBlock(pred->stackDepth(), loopHead)) {
+    return false;
+  }
+
+  MBasicBlock* osrBlock = current;
+  graph().setOsrBlock(osrBlock);
+  graph().moveBlockAfter(*graph().begin(), osrBlock);
+
+  MOsrEntry* entry = MOsrEntry::New(alloc());
+  osrBlock->add(entry);
+
+  
+  {
+    uint32_t slot = info().environmentChainSlot();
+    MInstruction* envv;
+    if (usesEnvironmentChain()) {
+      envv = MOsrEnvironmentChain::New(alloc(), entry);
+    } else {
+      
+      
+      envv = MConstant::New(alloc(), UndefinedValue());
+    }
+    osrBlock->add(envv);
+    osrBlock->initSlot(slot, envv);
+  }
+
+  
+  {
+    MInstruction* returnValue;
+    if (!script_->noScriptRval()) {
+      returnValue = MOsrReturnValue::New(alloc(), entry);
+    } else {
+      returnValue = MConstant::New(alloc(), UndefinedValue());
+    }
+    osrBlock->add(returnValue);
+    osrBlock->initSlot(info().returnValueSlot(), returnValue);
+  }
+
+  
+  bool needsArgsObj = info().needsArgsObj();
+  MInstruction* argsObj = nullptr;
+  if (info().hasArguments()) {
+    if (needsArgsObj) {
+      argsObj = MOsrArgumentsObject::New(alloc(), entry);
+    } else {
+      argsObj = MConstant::New(alloc(), UndefinedValue());
+    }
+    osrBlock->add(argsObj);
+    osrBlock->initSlot(info().argsObjSlot(), argsObj);
+  }
+
+  if (info().funMaybeLazy()) {
+    
+    MParameter* thisv =
+        MParameter::New(alloc(), MParameter::THIS_SLOT, nullptr);
+    osrBlock->add(thisv);
+    osrBlock->initSlot(info().thisSlot(), thisv);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (uint32_t i = 0; i < info().nargs(); i++) {
+      uint32_t slot = info().argSlotUnchecked(i);
+      MInstruction* osrv;
+      if (!needsArgsObj || !info().argsObjAliasesFormals()) {
+        osrv = MParameter::New(alloc().fallible(), i, nullptr);
+      } else if (script_->formalIsAliased(i)) {
+        osrv = MConstant::New(alloc().fallible(), UndefinedValue());
+      } else {
+        osrv = MGetArgumentsObjectArg::New(alloc().fallible(), argsObj, i);
+      }
+      if (!osrv) {
+        return false;
+      }
+      current->add(osrv);
+      current->initSlot(slot, osrv);
+    }
+  }
+
+  
+  uint32_t nlocals = info().nlocals();
+  for (uint32_t i = 0; i < nlocals; i++) {
+    uint32_t slot = info().localSlot(i);
+    ptrdiff_t offset = BaselineFrame::reverseOffsetOfLocal(i);
+    MOsrValue* osrv = MOsrValue::New(alloc().fallible(), entry, offset);
+    if (!osrv) {
+      return false;
+    }
+    current->add(osrv);
+    current->initSlot(slot, osrv);
+  }
+
+  
+  uint32_t numStackSlots = current->stackDepth() - info().firstStackSlot();
+  for (uint32_t i = 0; i < numStackSlots; i++) {
+    uint32_t slot = info().stackSlot(i);
+    ptrdiff_t offset = BaselineFrame::reverseOffsetOfLocal(nlocals + i);
+    MOsrValue* osrv = MOsrValue::New(alloc().fallible(), entry, offset);
+    if (!osrv) {
+      return false;
+    }
+    current->add(osrv);
+    current->initSlot(slot, osrv);
+  }
+
+  current->add(MStart::New(alloc()));
+
+  
+  
+  
+  
+
+  
+  
+  if (!startNewBlock(pred, loopHead)) {
+    return false;
+  }
+
+  pred->end(MGoto::New(alloc(), current));
+  osrBlock->end(MGoto::New(alloc(), current));
+
+  if (!current->addPredecessor(alloc(), osrBlock)) {
+    return false;
+  }
+
+  
+  if (pred->getHitState() == MBasicBlock::HitState::Count) {
+    current->setHitCount(pred->getHitCount());
+  }
+
+  return true;
 }
 
 bool WarpBuilder::addPendingEdge(const PendingEdge& edge,
@@ -933,11 +1084,16 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
   }
 
   
+  if (loc.toRawBytecode() == info().osrPc()) {
+    if (!startNewOsrPreHeaderBlock(loc)) {
+      return false;
+    }
+  }
 
   loopDepth_++;
 
   MBasicBlock* pred = current;
-  if (!startNewLoopHeaderBlock(pred, loc)) {
+  if (!startNewLoopHeaderBlock(loc)) {
     return false;
   }
 
