@@ -3,8 +3,6 @@
 
 
 let { exports } = wasmEvalText(`(module
-    (gc_feature_opt_in 3)
-
     (func (export "ref_eq") (param $a anyref) (param $b anyref) (result i32)
         (ref.eq (local.get $a) (local.get $b)))
 
