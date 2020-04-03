@@ -76,7 +76,8 @@ class LoginManagerPrompter {
     aBrowser,
     aLogin,
     dismissed = false,
-    notifySaved = false
+    notifySaved = false,
+    autoFilledLoginGuid = ""
   ) {
     log.debug("promptToSavePassword");
     let inPrivateBrowsing = PrivateBrowsingUtils.isBrowserPrivate(aBrowser);
@@ -90,6 +91,7 @@ class LoginManagerPrompter {
       },
       {
         notifySaved,
+        autoFilledLoginGuid,
       }
     );
     Services.obs.notifyObservers(aLogin, "passwordmgr-prompt-save");
@@ -116,15 +118,25 @@ class LoginManagerPrompter {
 
 
 
+
+
   static _showLoginCaptureDoorhanger(
     browser,
     login,
     type,
     showOptions = {},
-    { notifySaved = false, messageStringID, autoSavedLoginGuid = "" } = {}
+    {
+      notifySaved = false,
+      messageStringID,
+      autoSavedLoginGuid = "",
+      autoFilledLoginGuid = "",
+    } = {}
   ) {
     log.debug(
       `_showLoginCaptureDoorhanger, got autoSavedLoginGuid: ${autoSavedLoginGuid}`
+    );
+    log.debug(
+      `_showLoginCaptureDoorhanger, got autoFilledLoginGuid: ${autoFilledLoginGuid}`
     );
 
     let saveMsgNames = {
@@ -486,8 +498,11 @@ class LoginManagerPrompter {
                   toggleBtn.addEventListener("command", onVisibilityToggle);
                   toggleBtn.setAttribute("label", togglePasswordLabel);
                   toggleBtn.setAttribute("accesskey", togglePasswordAccessKey);
+
                   let hideToggle =
                     LoginHelper.isMasterPasswordSet() ||
+                    
+                    !!autoFilledLoginGuid ||
                     
                     (this.timeShown && this.wasDismissed) ||
                     
@@ -571,7 +586,8 @@ class LoginManagerPrompter {
     aNewLogin,
     dismissed = false,
     notifySaved = false,
-    autoSavedLoginGuid = ""
+    autoSavedLoginGuid = "",
+    autoFilledLoginGuid = ""
   ) {
     let login = aOldLogin.clone();
     login.origin = aNewLogin.origin;
@@ -603,6 +619,7 @@ class LoginManagerPrompter {
         notifySaved,
         messageStringID,
         autoSavedLoginGuid,
+        autoFilledLoginGuid,
       }
     );
 

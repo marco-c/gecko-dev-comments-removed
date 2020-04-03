@@ -792,7 +792,8 @@ class LoginManagerParent extends JSWindowActorParent {
           formLogin,
           dismissedPrompt,
           false, 
-          autoSavedStorageGUID
+          autoSavedStorageGUID,
+          autoFilledLoginGuid
         );
       } else if (!existingLogin.username && formLogin.username) {
         log("...empty username update, prompting to change.");
@@ -803,7 +804,8 @@ class LoginManagerParent extends JSWindowActorParent {
           formLogin,
           dismissedPrompt,
           false, 
-          autoSavedStorageGUID
+          autoSavedStorageGUID,
+          autoFilledLoginGuid
         );
       } else {
         recordLoginUse(existingLogin);
@@ -813,7 +815,13 @@ class LoginManagerParent extends JSWindowActorParent {
     }
 
     
-    prompter.promptToSavePassword(promptBrowser, formLogin, dismissedPrompt);
+    prompter.promptToSavePassword(
+      promptBrowser,
+      formLogin,
+      dismissedPrompt,
+      false, 
+      autoFilledLoginGuid
+    );
   }
 
   async _onPasswordEditedOrGenerated(
@@ -1134,7 +1142,8 @@ class LoginManagerParent extends JSWindowActorParent {
           formLogin,
           true, 
           shouldAutoSaveLogin, 
-          autoSavedStorageGUID 
+          autoSavedStorageGUID, 
+          autoFilledLoginGuid
         );
       } else if (!existingLogin.username && formLogin.username) {
         log("...empty username update, prompting to change.");
@@ -1144,7 +1153,8 @@ class LoginManagerParent extends JSWindowActorParent {
           formLogin,
           true, 
           shouldAutoSaveLogin, 
-          autoSavedStorageGUID 
+          autoSavedStorageGUID, 
+          autoFilledLoginGuid
         );
       } else {
         log("_onPasswordEditedOrGenerated: No change to existing login");
@@ -1162,7 +1172,8 @@ class LoginManagerParent extends JSWindowActorParent {
             formLogin,
             true, 
             false, 
-            autoSavedStorageGUID 
+            autoSavedStorageGUID, 
+            autoFilledLoginGuid
           );
         }
       }
@@ -1173,7 +1184,8 @@ class LoginManagerParent extends JSWindowActorParent {
       promptBrowser,
       formLogin,
       true, 
-      shouldAutoSaveLogin 
+      shouldAutoSaveLogin, 
+      autoFilledLoginGuid
     );
   }
 
