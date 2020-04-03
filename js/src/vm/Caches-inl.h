@@ -51,7 +51,7 @@ inline NativeObject* NewObjectCache::newObjectFromHit(JSContext* cx,
   
   
   
-  ObjectGroup* group = templateObj->group_;
+  ObjectGroup* group = templateObj->groupRaw();
 
   
   
