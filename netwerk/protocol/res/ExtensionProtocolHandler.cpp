@@ -148,6 +148,9 @@ class ExtensionStreamGetter : public RefCounted<ExtensionStreamGetter> {
   
   void OnFD(const FileDescriptor& aFD);
 
+  static void CancelRequest(nsIStreamListener* aListener, nsIChannel* aChannel,
+                            nsresult aResult);
+
   MOZ_DECLARE_REFCOUNTED_TYPENAME(ExtensionStreamGetter)
 
  private:
@@ -257,8 +260,10 @@ Result<Ok, nsresult> ExtensionStreamGetter::GetAsync(
   return Ok();
 }
 
-static void CancelRequest(nsIStreamListener* aListener, nsIChannel* aChannel,
-                          nsresult aResult) {
+
+void ExtensionStreamGetter::CancelRequest(nsIStreamListener* aListener,
+                                          nsIChannel* aChannel,
+                                          nsresult aResult) {
   MOZ_ASSERT(aListener);
   MOZ_ASSERT(aChannel);
 
@@ -464,7 +469,7 @@ void OpenWhenReady(
           nsIStreamListener* aListener) -> already_AddRefed<Promise> {
         nsresult rv = aCallback(aListener, channel);
         if (NS_FAILED(rv)) {
-          CancelRequest(aListener, channel, rv);
+          ExtensionStreamGetter::CancelRequest(aListener, channel, rv);
         }
         return nullptr;
       },
@@ -840,7 +845,10 @@ Result<Ok, nsresult> ExtensionProtocolHandler::NewFD(
 }
 
 
-void SetContentType(nsIURI* aURI, nsIChannel* aChannel) {
+
+
+void ExtensionProtocolHandler::SetContentType(nsIURI* aURI,
+                                              nsIChannel* aChannel) {
   nsresult rv;
   nsCOMPtr<nsIMIMEService> mime = do_GetService("@mozilla.org/mime;1", &rv);
   if (NS_SUCCEEDED(rv)) {
@@ -853,9 +861,11 @@ void SetContentType(nsIURI* aURI, nsIChannel* aChannel) {
 }
 
 
-static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
-                             ExtensionStreamGetter* aStreamGetter,
-                             nsIChannel** aRetVal) {
+
+
+void ExtensionProtocolHandler::NewSimpleChannel(
+    nsIURI* aURI, nsILoadInfo* aLoadinfo, ExtensionStreamGetter* aStreamGetter,
+    nsIChannel** aRetVal) {
   nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(
       aURI, aLoadinfo, aStreamGetter,
       [](nsIStreamListener* listener, nsIChannel* simpleChannel,
@@ -869,8 +879,12 @@ static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
 }
 
 
-static void NewSimpleChannel(nsIURI* aURI, nsILoadInfo* aLoadinfo,
-                             nsIChannel* aChannel, nsIChannel** aRetVal) {
+
+
+void ExtensionProtocolHandler::NewSimpleChannel(nsIURI* aURI,
+                                                nsILoadInfo* aLoadinfo,
+                                                nsIChannel* aChannel,
+                                                nsIChannel** aRetVal) {
   nsCOMPtr<nsIChannel> channel = NS_NewSimpleChannel(
       aURI, aLoadinfo, aChannel,
       [](nsIStreamListener* listener, nsIChannel* simpleChannel,
