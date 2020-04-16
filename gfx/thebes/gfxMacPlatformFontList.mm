@@ -384,24 +384,38 @@ gfxFontEntry* gfxMacPlatformFontList::CreateFontEntry(fontlist::Face* aFace,
 
 CGFontRef MacOSFontEntry::GetFontRef() {
   if (!mFontRefInitialized) {
+    
+    mFontRef = CreateOrCopyFontRef();
     mFontRefInitialized = true;
-    NSString* psname = GetNSStringForString(NS_ConvertUTF8toUTF16(mName));
-    mFontRef = ::CGFontCreateWithFontName(CFStringRef(psname));
-    if (!mFontRef) {
-      
-      
-      
-      
-      
-      
-      
-      NSFont* font = [NSFont fontWithName:psname size:mSizeHint];
-      if (font) {
-        mFontRef = CTFontCopyGraphicsFont((CTFontRef)font, nullptr);
-      }
+  }
+  
+  return mFontRef;
+}
+
+CGFontRef MacOSFontEntry::CreateOrCopyFontRef() {
+  if (mFontRef) {
+    
+    
+    ::CGFontRetain(mFontRef);
+    return mFontRef;
+  }
+  
+  NSString* psname = GetNSStringForString(NS_ConvertUTF8toUTF16(mName));
+  CGFontRef ref = CGFontCreateWithFontName(CFStringRef(psname));
+  if (!ref) {
+    
+    
+    
+    
+    
+    
+    
+    NSFont* font = [NSFont fontWithName:psname size:mSizeHint];
+    if (font) {
+      ref = CTFontCopyGraphicsFont((CTFontRef)font, nullptr);
     }
   }
-  return mFontRef;
+  return ref; 
 }
 
 
@@ -430,12 +444,13 @@ class FontTableRec {
 }
 
 hb_blob_t* MacOSFontEntry::GetFontTable(uint32_t aTag) {
-  CGFontRef fontRef = GetFontRef();
+  CGFontRef fontRef = CreateOrCopyFontRef();
   if (!fontRef) {
     return nullptr;
   }
 
   CFDataRef dataRef = ::CGFontCopyTableForTag(fontRef, aTag);
+  ::CGFontRelease(fontRef);
   if (dataRef) {
     return hb_blob_create((const char*)::CFDataGetBytePtr(dataRef), ::CFDataGetLength(dataRef),
                           HB_MEMORY_MODE_READONLY,
@@ -454,11 +469,12 @@ bool MacOSFontEntry::HasFontTable(uint32_t aTableTag) {
   if (mAvailableTables.Count() == 0) {
     nsAutoreleasePool localPool;
 
-    CGFontRef fontRef = GetFontRef();
+    CGFontRef fontRef = CreateOrCopyFontRef();
     if (!fontRef) {
       return false;
     }
     CFArrayRef tags = ::CGFontCopyTableTags(fontRef);
+    ::CGFontRelease(fontRef);
     if (!tags) {
       return false;
     }
@@ -540,7 +556,11 @@ bool MacOSFontEntry::SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTa
       return mHasAATSmallCaps;
     }
     mHasAATSmallCapsInitialized = true;
-    CTFontRef ctFont = CTFontCreateWithGraphicsFont(mFontRef, 0.0, nullptr, nullptr);
+    CGFontRef cgFont = GetFontRef();
+    if (!cgFont) {
+      return mHasAATSmallCaps;
+    }
+    CTFontRef ctFont = CTFontCreateWithGraphicsFont(cgFont, 0.0, nullptr, nullptr);
     if (ctFont) {
       CFArrayRef features = CTFontCopyFeatures(ctFont);
       CFRelease(ctFont);

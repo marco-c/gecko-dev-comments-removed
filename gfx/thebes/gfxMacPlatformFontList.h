@@ -43,7 +43,19 @@ class MacOSFontEntry final : public gfxFontEntry {
 
   gfxFontEntry* Clone() const override;
 
+  
+  
+  
+  
   CGFontRef GetFontRef();
+
+  
+  
+  
+  
+  
+  
+  CGFontRef CreateOrCopyFontRef();
 
   
   
