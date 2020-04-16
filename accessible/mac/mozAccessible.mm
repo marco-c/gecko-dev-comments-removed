@@ -1269,8 +1269,10 @@ struct RoleDescrComparator {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
-  [mChildren release];
-  mChildren = nil;
+  if (mChildren) {
+    [mChildren release];
+    mChildren = nil;
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
