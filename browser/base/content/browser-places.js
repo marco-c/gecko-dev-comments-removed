@@ -303,6 +303,7 @@ var StarUI = {
   _createPanelIfNeeded() {
     
     if (!this._element("editBookmarkPanel")) {
+      MozXULElement.insertFTLIfNeeded("browser/editBookmarkOverlay.ftl");
       let template = this._element("editBookmarkPanelTemplate");
       let clone = template.content.cloneNode(true);
       template.replaceWith(clone);
