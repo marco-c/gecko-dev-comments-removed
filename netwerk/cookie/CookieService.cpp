@@ -175,10 +175,8 @@ void CookieService::CloseCookieStorages() {
     return;
   }
 
-  if (mPrivateStorage) {
-    mPrivateStorage->Close();
-    mPrivateStorage = nullptr;
-  }
+  mPrivateStorage->Close();
+  mPrivateStorage = nullptr;
 
   mPersistentStorage->Close();
   mPersistentStorage = nullptr;
@@ -370,8 +368,8 @@ void CookieService::SetCookieStringInternal(
   
   bool requireHostMatch;
   nsAutoCString baseDomain;
-  nsresult rv =
-      GetBaseDomain(mTLDService, aHostURI, baseDomain, requireHostMatch);
+  nsresult rv = CookieCommons::GetBaseDomain(mTLDService, aHostURI, baseDomain,
+                                             requireHostMatch);
   if (NS_FAILED(rv)) {
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "couldn't get base domain from URI");
@@ -387,7 +385,8 @@ void CookieService::SetCookieStringInternal(
   NS_ENSURE_SUCCESS_VOID(rv);
 
   nsAutoCString baseDomainFromURI;
-  rv = GetBaseDomainFromHost(mTLDService, hostFromURI, baseDomainFromURI);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, hostFromURI,
+                                            baseDomainFromURI);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   
@@ -552,7 +551,7 @@ CookieService::AddNative(const nsACString& aHost, const nsACString& aPath,
   
   
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   int64_t currentTimeInUsec = PR_Now();
@@ -583,7 +582,7 @@ nsresult CookieService::Remove(const nsACString& aHost,
 
   nsAutoCString baseDomain;
   if (!host.IsEmpty()) {
-    rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+    rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -638,44 +637,6 @@ CookieService::ImportCookies(nsIFile* aCookieFile) {
   return mPersistentStorage->ImportCookies(aCookieFile);
 }
 
-
-
-
-
-
-bool CookieService::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
-  
-  
-  
-  return aCookie->RawHost() == aHost ||
-         (aCookie->IsDomain() && StringEndsWith(aHost, aCookie->Host()));
-}
-
-bool CookieService::PathMatches(Cookie* aCookie, const nsACString& aPath) {
-  nsCString cookiePath(aCookie->GetFilePath());
-
-  
-  
-  
-  if (cookiePath.IsEmpty()) return false;
-
-  
-  if (cookiePath.Equals(aPath)) return true;
-
-  
-  
-  bool isPrefix = StringBeginsWith(aPath, cookiePath);
-  if (isPrefix && cookiePath.Last() == '/') return true;
-
-  
-  
-  
-  uint32_t cookiePathLen = cookiePath.Length();
-  if (isPrefix && aPath[cookiePathLen] == '/') return true;
-
-  return false;
-}
-
 void CookieService::GetCookiesForURI(
     nsIURI* aHostURI, nsIChannel* aChannel, bool aIsForeign,
     bool aIsThirdPartyTrackingResource,
@@ -698,8 +659,8 @@ void CookieService::GetCookiesForURI(
   
   bool requireHostMatch;
   nsAutoCString baseDomain, hostFromURI, pathFromURI;
-  nsresult rv =
-      GetBaseDomain(mTLDService, aHostURI, baseDomain, requireHostMatch);
+  nsresult rv = CookieCommons::GetBaseDomain(mTLDService, aHostURI, baseDomain,
+                                             requireHostMatch);
   if (NS_SUCCEEDED(rv)) rv = aHostURI->GetAsciiHost(hostFromURI);
   if (NS_SUCCEEDED(rv)) rv = aHostURI->GetFilePath(pathFromURI);
   if (NS_FAILED(rv)) {
@@ -716,8 +677,8 @@ void CookieService::GetCookiesForURI(
   NS_ENSURE_SUCCESS_VOID(rv);
 
   nsAutoCString baseDomainFromURI;
-  rv = GetBaseDomainFromHost(mTLDService, normalizedHostFromURI,
-                             baseDomainFromURI);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, normalizedHostFromURI,
+                                            baseDomainFromURI);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   
@@ -772,7 +733,7 @@ void CookieService::GetCookiesForURI(
   
   for (Cookie* cookie : *cookies) {
     
-    if (!DomainMatches(cookie, hostFromURI)) continue;
+    if (!CookieCommons::DomainMatches(cookie, hostFromURI)) continue;
 
     
     if (cookie->IsSecure() && !potentiallyTurstworthy) continue;
@@ -788,7 +749,7 @@ void CookieService::GetCookiesForURI(
     if (cookie->IsHttpOnly() && !aHttpBound) continue;
 
     
-    if (!PathMatches(cookie, pathFromURI)) continue;
+    if (!CookieCommons::PathMatches(cookie, pathFromURI)) continue;
 
     
     if (cookie->Expiry() <= currentTime) {
@@ -1432,74 +1393,6 @@ void CookieService::LogMessageToConsole(nsIChannel* aChannel, nsIURI* aURI,
 
 
 
-
-
-
-nsresult CookieService::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
-                                      nsIURI* aHostURI, nsCString& aBaseDomain,
-                                      bool& aRequireHostMatch) {
-  
-  
-  nsresult rv = aTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
-  aRequireHostMatch = rv == NS_ERROR_HOST_IS_IP_ADDRESS ||
-                      rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
-  if (aRequireHostMatch) {
-    
-    
-    
-    rv = aHostURI->GetAsciiHost(aBaseDomain);
-  }
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.')
-    return NS_ERROR_INVALID_ARG;
-
-  
-  if (aBaseDomain.IsEmpty() && !aHostURI->SchemeIs("file")) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  return NS_OK;
-}
-
-
-
-
-
-
-
-
-nsresult CookieService::GetBaseDomainFromHost(
-    nsIEffectiveTLDService* aTLDService, const nsACString& aHost,
-    nsCString& aBaseDomain) {
-  
-  if (aHost.Length() == 1 && aHost.Last() == '.') return NS_ERROR_INVALID_ARG;
-
-  
-  bool domain = !aHost.IsEmpty() && aHost.First() == '.';
-
-  
-  
-  nsresult rv = aTLDService->GetBaseDomainFromHost(Substring(aHost, domain), 0,
-                                                   aBaseDomain);
-  if (rv == NS_ERROR_HOST_IS_IP_ADDRESS ||
-      rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
-    
-    
-    
-    
-    if (domain) return NS_ERROR_INVALID_ARG;
-
-    aBaseDomain = aHost;
-    return NS_OK;
-  }
-  return rv;
-}
-
-
-
-
 nsresult CookieService::NormalizeHost(nsCString& aHost) {
   if (!IsAscii(aHost)) {
     nsAutoCString host;
@@ -1931,7 +1824,8 @@ CookieService::CookieExistsNative(const nsACString& aHost,
   }
 
   nsAutoCString baseDomain;
-  nsresult rv = GetBaseDomainFromHost(mTLDService, aHost, baseDomain);
+  nsresult rv =
+      CookieCommons::GetBaseDomainFromHost(mTLDService, aHost, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   CookieListIter iter;
@@ -1952,7 +1846,7 @@ CookieService::CountCookiesFromHost(const nsACString& aHost,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!IsInitialized()) {
@@ -1979,7 +1873,7 @@ CookieService::GetCookiesFromHost(const nsACString& aHost,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   OriginAttributes attrs;
@@ -2020,7 +1914,7 @@ CookieService::GetCookiesWithOriginAttributes(
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return GetCookiesWithOriginAttributes(pattern, baseDomain, aResult);
@@ -2050,7 +1944,7 @@ CookieService::RemoveCookiesWithOriginAttributes(const nsAString& aPattern,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return RemoveCookiesWithOriginAttributes(pattern, baseDomain);
@@ -2088,7 +1982,7 @@ nsresult CookieService::RemoveCookiesFromExactHost(
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString baseDomain;
-  rv = GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!IsInitialized()) {
