@@ -380,8 +380,9 @@ function buildOptionListForChildren(node, uniqueStyles) {
         continue;
       }
 
+      
       let textContent =
-        tagName == "OPTGROUP" ? child.getAttribute("label") : child.label;
+        tagName == "OPTGROUP" ? child.getAttribute("label") : (child.label || child.text);
       if (textContent == null) {
         textContent = "";
       }
