@@ -251,7 +251,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
 
 
-
   getRoot: function() {
     
     if (!this._globalActorPool) {
@@ -269,12 +268,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
   
 
   
-
-
-
-
-
-
 
 
 
@@ -303,21 +296,13 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     }
 
     
-    const reply = this.getRoot();
-
-    
     
     if (this._tabDescriptorActorPool) {
       this._tabDescriptorActorPool.destroy();
     }
     this._tabDescriptorActorPool = newActorPool;
 
-    
-    Object.assign(reply, {
-      tabs: [...this._tabDescriptorActorPool.poolChildren()],
-    });
-
-    return reply;
+    return tabDescriptorActors;
   },
 
   getTab: async function({ outerWindowID, tabId }) {

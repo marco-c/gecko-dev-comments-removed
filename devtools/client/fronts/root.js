@@ -201,18 +201,6 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
-  async listTabs({ favicons } = {}) {
-    const { tabs } = await super.listTabs({ favicons });
-    return tabs;
-  }
-
-  
-
-
-
-
-
-
 
 
 
