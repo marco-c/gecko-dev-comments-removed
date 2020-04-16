@@ -1,14 +1,17 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Widget: Win32")
 
 with Files("*CompositorWidget*"):
     BUG_COMPONENT = ("Core", "Graphics")
+
+with Files("OSK*"):
+    BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
 
 TEST_DIRS += ['tests']
 
@@ -86,7 +89,7 @@ UNIFIED_SOURCES += [
     'WinUtils.cpp',
 ]
 
-# The following files cannot be built in unified mode because of name clashes.
+
 SOURCES += [
     'CompositorWidgetParent.cpp',
     'InProcessWinCompositorWidget.cpp',
@@ -96,13 +99,14 @@ SOURCES += [
     'nsFilePicker.cpp',
     'nsSharePicker.cpp',
     'nsWidgetFactory.cpp',
+    'OSKInputPaneManager.cpp',
     'WinCompositorWidget.cpp',
     'WindowsSMTCProvider.cpp',
     'WindowsUIUtils.cpp',
     'WinMouseScrollHandler.cpp',
 ]
 
-# Needs INITGUID and we don't allow INITGUID in unified sources since bug 970429.
+
 SOURCES += [
     'InputDeviceUtils.cpp',
 ]

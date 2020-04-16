@@ -2720,7 +2720,8 @@ TSFTextStore::GetStatus(TS_STATUS* pdcs) {
             ("0x%p   TSFTextStore::GetStatus() FAILED due to null pdcs", this));
     return E_INVALIDARG;
   }
-  pdcs->dwDynamicFlags = 0;
+  
+  pdcs->dwDynamicFlags = TS_SD_INPUTPANEMANUALDISPLAYENABLE;
   
   pdcs->dwStaticFlags = TS_SS_NOHIDDENTEXT;
   return S_OK;
