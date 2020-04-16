@@ -4925,7 +4925,8 @@ bool nsGlobalWindowOuter::AlertOrConfirm(bool aAlert, const nsAString& aMessage,
 
   
   if (nsCOMPtr<nsIWritablePropertyBag2> promptBag = do_QueryInterface(prompt)) {
-    promptBag->SetPropertyAsBool(NS_LITERAL_STRING("allowTabModal"), true);
+    promptBag->SetPropertyAsUint32(NS_LITERAL_STRING("modalType"),
+                                   nsIPrompt::MODAL_TYPE_CONTENT);
   }
 
   bool result = false;
@@ -5014,7 +5015,8 @@ void nsGlobalWindowOuter::PromptOuter(const nsAString& aMessage,
 
   
   if (nsCOMPtr<nsIWritablePropertyBag2> promptBag = do_QueryInterface(prompt)) {
-    promptBag->SetPropertyAsBool(NS_LITERAL_STRING("allowTabModal"), true);
+    promptBag->SetPropertyAsUint32(NS_LITERAL_STRING("modalType"),
+                                   nsIPrompt::MODAL_TYPE_CONTENT);
   }
 
   
