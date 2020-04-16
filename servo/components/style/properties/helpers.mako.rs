@@ -71,8 +71,8 @@
     % endif
 </%def>
 
-// FIXME (Manishearth): Add computed_value_as_specified argument
-// and handle the empty case correctly
+
+
 <%doc>
     To be used in cases where we have a grammar like "<thing> [ , <thing> ]*".
 
@@ -82,18 +82,18 @@
     `initial_value` need not be defined for these.
 </%doc>
 
-// The setup here is roughly:
-//
-//  * UnderlyingList is the list that is stored in the computed value. This may
-//    be a shared ArcSlice if the property is inherited.
-//  * UnderlyingOwnedList is the list that is used for animation.
-//  * Specified values always use OwnedSlice, since it's more compact.
-//  * computed_value::List is just a convenient alias that you can use for the
-//    computed value list, since this is in the computed_value module.
-//
-// If simple_vector_bindings is true, then we don't use the complex iterator
-// machinery and set_foo_from, and just compute the value like any other
-// longhand.
+
+
+
+
+
+
+
+
+
+
+
+
 <%def name="vector_longhand(name, animation_value_type=None,
                             vector_animation_type=None, allow_empty=False,
                             simple_vector_bindings=False,
@@ -124,7 +124,7 @@
             ${caller.body()}
         }
 
-        /// The definition of the computed value for ${name}.
+        
         pub mod computed_value {
             #[allow(unused_imports)]
             use crate::values::animated::ToAnimatedValue;
@@ -142,9 +142,9 @@
                     data.longhands_by_name[name].style_struct.inherited
             %>
 
-            // FIXME(emilio): Add an OwnedNonEmptySlice type, and figure out
-            // something for transition-name, which is the only remaining user
-            // of NotInitial.
+            
+            
+            
             pub type UnderlyingList<T> =
                 % if allow_empty and allow_empty != "NotInitial":
                 % if data.longhands_by_name[name].style_struct.inherited:
@@ -164,12 +164,12 @@
                 % endif
 
 
-            /// The generic type defining the animated and resolved values for
-            /// this property.
-            ///
-            /// Making this type generic allows the compiler to figure out the
-            /// animated value for us, instead of having to implement it
-            /// manually for every type we care about.
+            
+            
+            
+            
+            
+            
             % if separator == "Comma":
             #[css(comma)]
             % endif
@@ -191,7 +191,7 @@
                 pub UnderlyingOwnedList<T>,
             );
 
-            /// The computed value for this property.
+            
             % if not is_shared_list:
             pub type ComputedList = OwnedList<single_value::T>;
             pub use self::OwnedList as List;
@@ -269,8 +269,8 @@
             use crate::values::animated::{Animate, ToAnimatedZero, Procedure};
             use crate::values::distance::{SquaredDistance, ComputeSquaredDistance};
 
-            // FIXME(emilio): For some reason rust thinks that this alias is
-            // unused, even though it's clearly used below?
+            
+            
             #[allow(unused)]
             type AnimatedList = OwnedList<<single_value::T as ToAnimatedValue>::AnimatedValue>;
 
@@ -317,13 +317,13 @@
             }
             % endif
 
-            /// The computed value, effectively a list of single values.
+            
             pub use self::ComputedList as T;
 
             pub type Iter<'a, 'cx, 'cx_a> = ComputedVecIter<'a, 'cx, 'cx_a, super::single_value::SpecifiedValue>;
         }
 
-        /// The specified value of ${name}.
+        
         % if separator == "Comma":
         #[css(comma)]
         % endif
@@ -405,7 +405,7 @@
         if property is None:
             return ""
     %>
-    /// ${property.spec}
+    
     pub mod ${property.ident} {
         #[allow(unused_imports)]
         use cssparser::{Parser, BasicParseError, Token};
@@ -498,14 +498,14 @@
             % endif
 
             % if property.is_vector and not property.simple_vector_bindings and engine == "gecko":
-                // In the case of a vector property we want to pass down an
-                // iterator so that this can be computed without allocation.
-                //
-                // However, computing requires a context, but the style struct
-                // being mutated is on the context. We temporarily remove it,
-                // mutate it, and then put it back. Vector longhands cannot
-                // touch their own style struct whilst computing, else this will
-                // panic.
+                
+                
+                
+                
+                
+                
+                
+                
                 let mut s =
                     context.builder.take_${data.current_style_struct.name_lower}();
                 {
@@ -648,13 +648,13 @@
     %>
     #[cfg(feature = "gecko")]
     impl ${type} {
-        /// Obtain a specified value from a Gecko keyword value
-        ///
-        /// Intended for use with presentation attributes, not style structs
+        
+        
+        
         pub fn from_gecko_keyword(kw: u32) -> Self {
             use crate::gecko_bindings::structs;
             % for value in values:
-                // We can't match on enum values if we're matching on a u32
+                
                 const ${to_rust_ident(value).upper()}: ${const_type}
                     = structs::${keyword.gecko_constant(value)} as ${const_type};
             % endfor
@@ -671,9 +671,9 @@
 <%def name="gecko_bitflags_conversion(bit_map, gecko_bit_prefix, type, kw_type='u8')">
     #[cfg(feature = "gecko")]
     impl ${type} {
-        /// Obtain a specified value from a Gecko keyword value
-        ///
-        /// Intended for use with presentation attributes, not style structs
+        
+        
+        
         pub fn from_gecko_keyword(kw: ${kw_type}) -> Self {
             % for gecko_bit in bit_map.values():
             use crate::gecko_bindings::structs::${gecko_bit_prefix}${gecko_bit};
@@ -694,8 +694,8 @@
             % endfor
 
             let mut bits: ${kw_type} = 0;
-            // FIXME: if we ensure that the Servo bitflags storage is the same
-            // as Gecko's one, we can just copy it.
+            
+            
             % for servo_bit, gecko_bit in bit_map.iteritems():
                 if self.contains(${servo_bit}) {
                     bits |= ${gecko_bit_prefix}${gecko_bit} as ${kw_type};
@@ -707,7 +707,8 @@
 </%def>
 
 <%def name="single_keyword(name, values, vector=False,
-            extra_specified=None, needs_conversion=False, **kwargs)">
+            extra_specified=None, needs_conversion=False,
+            gecko_pref_controlled_initial_value=None, **kwargs)">
     <%
         keyword_kwargs = {a: kwargs.pop(a, None) for a in [
             'gecko_constant_prefix',
@@ -724,7 +725,8 @@
         ]}
     %>
 
-    <%def name="inner_body(keyword, extra_specified=None, needs_conversion=False)">
+    <%def name="inner_body(keyword, extra_specified=None, needs_conversion=False,
+                           gecko_pref_controlled_initial_value=None)">
         <%def name="variants(variants, include_aliases)">
             % for variant in variants:
             % if include_aliases:
@@ -773,10 +775,20 @@
         }
         #[inline]
         pub fn get_initial_value() -> computed_value::T {
+            % if engine == "gecko" and gecko_pref_controlled_initial_value:
+            if static_prefs::pref!("${gecko_pref_controlled_initial_value.split('=')[0]}") {
+                return computed_value::T::${to_camel_case(gecko_pref_controlled_initial_value.split('=')[1])};
+            }
+            % endif
             computed_value::T::${to_camel_case(values.split()[0])}
         }
         #[inline]
         pub fn get_initial_specified_value() -> SpecifiedValue {
+            % if engine == "gecko" and gecko_pref_controlled_initial_value:
+            if static_prefs::pref!("${gecko_pref_controlled_initial_value.split('=')[0]}") {
+                return SpecifiedValue::${to_camel_case(gecko_pref_controlled_initial_value.split('=')[1])};
+            }
+            % endif
             SpecifiedValue::${to_camel_case(values.split()[0])}
         }
         #[inline]
@@ -805,7 +817,8 @@
     % else:
         <%call expr="longhand(name, keyword=Keyword(name, values, **keyword_kwargs), **kwargs)">
             ${inner_body(Keyword(name, values, **keyword_kwargs),
-                         extra_specified=extra_specified, needs_conversion=needs_conversion)}
+                         extra_specified=extra_specified, needs_conversion=needs_conversion,
+                         gecko_pref_controlled_initial_value=gecko_pref_controlled_initial_value)}
             % if caller:
             ${caller.body()}
             % endif
@@ -823,7 +836,7 @@
         derive_value_info = eval(derive_value_info)
 %>
     % if shorthand:
-    /// ${shorthand.spec}
+    
     pub mod ${shorthand.ident} {
         use cssparser::Parser;
         use crate::parser::ParserContext;
@@ -854,8 +867,8 @@
             % endfor
         }
 
-        /// Represents a serializable set of all of the longhand properties that
-        /// correspond to a shorthand.
+        
+        
         % if derive_serialize:
         #[derive(ToCss)]
         % endif
@@ -873,19 +886,19 @@
         }
 
         impl<'a> LonghandsToSerialize<'a> {
-            /// Tries to get a serializable set of longhands given a set of
-            /// property declarations.
+            
+            
             pub fn from_iter<I>(iter: I) -> Result<Self, ()>
             where
                 I: Iterator<Item=&'a PropertyDeclaration>,
             {
-                // Define all of the expected variables that correspond to the shorthand
+                
                 % for sub_property in shorthand.sub_properties:
                     let mut ${sub_property.ident} =
                         None::< &'a longhands::${sub_property.ident}::SpecifiedValue>;
                 % endfor
 
-                // Attempt to assign the incoming declarations to the expected variables
+                
                 for longhand in iter {
                     match *longhand {
                         % for sub_property in shorthand.sub_properties:
@@ -897,7 +910,7 @@
                     };
                 }
 
-                // If any of the expected variables are missing, return an error
+                
                 match (
                     % for sub_property in shorthand.sub_properties:
                         ${sub_property.ident},
@@ -923,8 +936,8 @@
             }
         }
 
-        /// Parse the given shorthand and fill the result into the
-        /// `declarations` vector.
+        
+        
         pub fn parse_into<'i, 't>(
             declarations: &mut SourcePropertyDeclaration,
             context: &ParserContext,
@@ -952,8 +965,8 @@
     % endif
 </%def>
 
-// A shorthand of kind `<property-1> <property-2>?` where both properties have
-// the same type.
+
+
 <%def name="two_properties_shorthand(
     name,
     first_property,
@@ -1119,7 +1132,7 @@
 </%def>
 
 <%def name="logical_setter(name)">
-    /// Set the appropriate physical property for ${name} given a writing mode.
+    
     pub fn set_${to_rust_ident(name)}(&mut self,
                                       v: longhands::${to_rust_ident(name)}::computed_value::T,
                                       wm: WritingMode) {
@@ -1130,8 +1143,8 @@
         </%self:logical_setter_helper>
     }
 
-    /// Copy the appropriate physical property from another struct for ${name}
-    /// given a writing mode.
+    
+    
     pub fn copy_${to_rust_ident(name)}_from(&mut self,
                                             other: &Self,
                                             wm: WritingMode) {
@@ -1142,16 +1155,16 @@
         </%self:logical_setter_helper>
     }
 
-    /// Copy the appropriate physical property from another struct for ${name}
-    /// given a writing mode.
+    
+    
     pub fn reset_${to_rust_ident(name)}(&mut self,
                                         other: &Self,
                                         wm: WritingMode) {
         self.copy_${to_rust_ident(name)}_from(other, wm)
     }
 
-    /// Get the computed value for the appropriate physical property for
-    /// ${name} given a writing mode.
+    
+    
     pub fn clone_${to_rust_ident(name)}(&self, wm: WritingMode)
         -> longhands::${to_rust_ident(name)}::computed_value::T {
     <%self:logical_setter_helper name="${name}">
