@@ -48,9 +48,14 @@ MOZ_ALWAYS_INLINE bool IdIsIndex(jsid id, uint32_t* indexp) {
 
 
 
+
 extern ArrayObject* JS_FASTCALL
-NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr,
-                   NewObjectKind newKind = GenericObject);
+NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr);
+
+
+
+extern ArrayObject* JS_FASTCALL
+NewTenuredDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr);
 
 
 
