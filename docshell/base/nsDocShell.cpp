@@ -2731,66 +2731,6 @@ nsDocShell::GetSameTypeRootTreeItemIgnoreBrowserBoundaries(
   return NS_OK;
 }
 
-bool nsDocShell::IsSandboxedFrom(BrowsingContext* aTargetBC) {
-  
-  if (!aTargetBC) {
-    return false;
-  }
-
-  
-  if (aTargetBC == mBrowsingContext) {
-    return false;
-  }
-
-  
-  
-  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
-  if (mContentViewer) {
-    RefPtr<Document> doc = mContentViewer->GetDocument();
-    if (doc) {
-      sandboxFlags = doc->GetSandboxFlags();
-    }
-  }
-
-  
-  if (!sandboxFlags) {
-    return false;
-  }
-
-  
-  RefPtr<BrowsingContext> ancestorOfTarget(aTargetBC->GetParent());
-  if (ancestorOfTarget) {
-    do {
-      
-      if (ancestorOfTarget == mBrowsingContext) {
-        return false;
-      }
-      ancestorOfTarget = ancestorOfTarget->GetParent();
-    } while (ancestorOfTarget);
-
-    
-    return true;
-  }
-
-  
-  
-  RefPtr<BrowsingContext> permittedNavigator(
-      aTargetBC->GetOnePermittedSandboxedNavigator());
-  if (permittedNavigator == mBrowsingContext) {
-    return false;
-  }
-
-  
-  
-  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) &&
-      aTargetBC == mBrowsingContext->Top()) {
-    return false;
-  }
-
-  
-  return true;
-}
-
 NS_IMETHODIMP
 nsDocShell::GetTreeOwner(nsIDocShellTreeOwner** aTreeOwner) {
   NS_ENSURE_ARG_POINTER(aTreeOwner);
@@ -3197,6 +3137,10 @@ nsIScriptGlobalObject* nsDocShell::GetScriptGlobalObject() {
 Document* nsDocShell::GetDocument() {
   NS_ENSURE_SUCCESS(EnsureContentViewer(), nullptr);
   return mContentViewer->GetDocument();
+}
+
+Document* nsDocShell::GetExtantDocument() {
+  return mContentViewer ? mContentViewer->GetDocument() : nullptr;
 }
 
 nsPIDOMWindowOuter* nsDocShell::GetWindow() {
@@ -8787,7 +8731,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (aLoadState->SourceDocShell() &&
-      aLoadState->SourceDocShell()->IsSandboxedFrom(mBrowsingContext)) {
+      aLoadState->SourceDocShell()->GetBrowsingContext()->IsSandboxedFrom(
+          mBrowsingContext)) {
     return NS_ERROR_DOM_INVALID_ACCESS_ERR;
   }
 
