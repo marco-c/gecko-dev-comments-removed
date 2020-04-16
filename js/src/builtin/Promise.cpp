@@ -4615,9 +4615,17 @@ bool js::AsyncFromSyncIteratorMethod(JSContext* cx, CallArgs& args,
   
   
   
+  
+  
   RootedValue iterVal(cx, ObjectValue(*iter));
   RootedValue resultVal(cx);
-  if (!Call(cx, func, iterVal, args.get(0), &resultVal)) {
+  bool ok;
+  if (args.length() == 0) {
+    ok = Call(cx, func, iterVal, &resultVal);
+  } else {
+    ok = Call(cx, func, iterVal, args[0], &resultVal);
+  }
+  if (!ok) {
     return AbruptRejectPromise(cx, args, resultPromise, nullptr);
   }
 
