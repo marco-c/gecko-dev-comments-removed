@@ -52,7 +52,7 @@ bool CookiePermission::Init() {
   
   
 
-  mPermMgr = PermissionManager::GetInstance();
+  mPermMgr = nsPermissionManager::GetInstance();
   return mPermMgr != nullptr;
 }
 

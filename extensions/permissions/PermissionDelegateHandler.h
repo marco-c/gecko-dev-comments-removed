@@ -23,15 +23,12 @@
 
 
 
-#ifndef mozilla_PermissionDelegateHandler_h
-#define mozilla_PermissionDelegateHandler_h
+#ifndef PermissionDelegateHandler_h__
+#define PermissionDelegateHandler_h__
 
-#include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsIPermissionDelegateHandler.h"
-#include "nsCOMPtr.h"
 
-class nsIPermissionManager;
 class nsIPrincipal;
 class nsIContentPermissionRequest;
 
@@ -39,6 +36,7 @@ namespace mozilla {
 namespace dom {
 class Document;
 }
+}  
 
 class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
  public:
@@ -163,7 +161,5 @@ class PermissionDelegateHandler final : public nsIPermissionDelegateHandler {
   nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
   RefPtr<nsIPermissionManager> mPermissionManager;
 };
-
-}  
 
 #endif  

@@ -5,14 +5,14 @@
 
 
 #include "mozilla/dom/PermissionStatus.h"
-#include "mozilla/PermissionDelegateHandler.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/Permission.h"
 #include "mozilla/Services.h"
 #include "nsIPermissionManager.h"
 #include "PermissionObserver.h"
 #include "PermissionUtils.h"
+#include "nsPermission.h"
+#include "PermissionDelegateHandler.h"
 
 namespace mozilla {
 namespace dom {
@@ -105,7 +105,7 @@ already_AddRefed<nsIPrincipal> PermissionStatus::GetPrincipal() const {
   }
 
   nsCOMPtr<nsIPrincipal> principal =
-      Permission::ClonePrincipalForPermission(doc->NodePrincipal());
+      nsPermission::ClonePrincipalForPermission(doc->NodePrincipal());
   NS_ENSURE_TRUE(principal, nullptr);
 
   return principal.forget();

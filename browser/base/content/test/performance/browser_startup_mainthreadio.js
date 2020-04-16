@@ -254,6 +254,29 @@ const startupPhases = {
     },
     {
       
+      path: "ProfD:permissions.sqlite",
+      condition: WIN || MAC,
+      fsync: 8,
+      read: 2,
+      stat: 1,
+      write: 10,
+    },
+    {
+      
+      path: "ProfD:permissions.sqlite-journal",
+      condition: WIN || MAC,
+      fsync: 8,
+      stat: 28,
+      write: 40,
+    },
+    {
+      
+      path: "ProfD:permissions.sqlite-wal",
+      condition: WIN,
+      stat: 20,
+    },
+    {
+      
       path: "*.savedState/restorecount.plist",
       condition: MAC,
       ignoreIfUnused: true,
