@@ -125,9 +125,25 @@ class CustomRequestPanel extends Component {
             : { method: val.trim() };
         break;
       case "custom-postdata-value":
+        
+        
+        const { requestHeaders } = request;
+        const newHeaders = requestHeaders.headers.map(header => {
+          if (header.name.toLowerCase() == "content-length") {
+            return {
+              name: header.name,
+              value: val.length,
+            };
+          }
+          return header;
+        });
+
         data = {
           requestPostData: {
             postData: { text: val },
+          },
+          requestHeaders: {
+            headers: newHeaders,
           },
         };
         break;
