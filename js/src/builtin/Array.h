@@ -14,10 +14,13 @@
 
 #include "jspubtd.h"
 
-#include "vm/ArrayObject.h"
 #include "vm/JSObject.h"
+#include "vm/NativeObject.h"  
 
 namespace js {
+
+class ArrayObject;
+
 
 const uint32_t MAX_ARRAY_INDEX = 4294967294u;
 
@@ -69,7 +72,7 @@ extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
 
 
 extern ArrayObject* NewDenseFullyAllocatedArrayWithTemplate(
-    JSContext* cx, uint32_t length, JSObject* templateObject);
+    JSContext* cx, uint32_t length, ArrayObject* templateObject);
 
 
 extern ArrayObject* NewDenseCopyOnWriteArray(JSContext* cx,
