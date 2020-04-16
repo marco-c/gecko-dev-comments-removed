@@ -1071,6 +1071,21 @@ var Policies = {
     
   },
 
+  LegacySameSiteCookieBehaviorEnabled: {
+    onBeforeAddons(manager, param) {
+      setDefaultPref("network.cookie.sameSite.laxByDefault", !param);
+    },
+  },
+
+  LegacySameSiteCookieBehaviorEnabledForDomainList: {
+    onBeforeAddons(manager, param) {
+      setDefaultPref(
+        "network.cookie.sameSite.laxByDefault.disabledHosts",
+        param.join(",")
+      );
+    },
+  },
+
   LocalFileLinks: {
     onBeforeAddons(manager, param) {
       
