@@ -881,7 +881,7 @@ class nsLayoutUtils {
 
 
 
-  static nsIFrame* GetFrameForPoint(nsIFrame* aFrame, nsPoint aPt,
+  static nsIFrame* GetFrameForPoint(const nsIFrame* aFrame, nsPoint aPt,
                                     mozilla::EnumSet<FrameForPointOption> = {});
 
   
@@ -892,7 +892,7 @@ class nsLayoutUtils {
 
 
 
-  static nsresult GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
+  static nsresult GetFramesForArea(const nsIFrame* aFrame, const nsRect& aRect,
                                    nsTArray<nsIFrame*>& aOutFrames,
                                    mozilla::EnumSet<FrameForPointOption> = {});
 
