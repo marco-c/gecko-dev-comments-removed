@@ -2374,8 +2374,6 @@ pref("services.blocklist.gfx.signer", "remote-settings.content-signature.mozilla
 pref("ui.key.accelKey", 17);
 pref("ui.key.menuAccessKey", 18);
 
-pref("ui.key.menuAccessKeyFocuses", false); 
-
 
 pref("middlemouse.paste", false);
 pref("middlemouse.contentLoadURL", false);
@@ -3110,8 +3108,6 @@ pref("ui.mouse.radius.inputSource.touchOnly", true);
   
   
   pref("gfx.font_rendering.cleartype_params.force_gdi_classic_max_size", 15);
-
-  pref("ui.key.menuAccessKeyFocuses", true);
 
   
   pref("layout.word_select.eat_space_to_next_word", true);

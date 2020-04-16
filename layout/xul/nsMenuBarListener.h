@@ -46,8 +46,6 @@ class nsMenuBarListener final : public nsIDOMEventListener {
 
   void OnDestroyMenuBarFrame();
 
-  static void InitializeStatics();
-
   
 
 
@@ -109,8 +107,6 @@ class nsMenuBarListener final : public nsIDOMEventListener {
   bool mAccessKeyDown;
   
   bool mAccessKeyDownCanceled;
-  
-  static bool mAccessKeyFocuses;
   
   static int32_t mAccessKey;
   
