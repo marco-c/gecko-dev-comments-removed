@@ -32,15 +32,15 @@ PREVIEW_SCRIPT = os.path.join(build.topsrcdir, 'tools/tryselect/selectors/previe
 
 
 TARGET_TASK_FILTERS = (
-    '.*-ccov\/.*',
-    'windows10-aarch64/opt.*',
-    '.*win64-aarch64-laptop.*',
-    '.*windows10-64-ref-hw-2017.*',
-    'android-hw.*',
-    '.*android-geckoview-docs.*',
-    'linux1804-32.*',   
-    r'linux-.*',  
-    r'linux.*web-platform-tests.*-fis-.*',  
+    '-ccov/',
+    'windows10-aarch64/opt',
+    'win64-aarch64-laptop',
+    'windows10-64-ref-hw-2017',
+    'android-hw',
+    'android-geckoview-docs',
+    'linux1804-32',   
+    r'linux-',  
+    r'linux.*web-platform-tests.*-fis-',  
 )
 
 
