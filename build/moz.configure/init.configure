@@ -363,7 +363,7 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
         if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
             log.debug("python2: executing as %s, should be running as %s" % (
                 sys.executable, manager.python_path))
-            log.info('Reexecuting in the virtualenv')
+            log.info('Re-executing in the virtualenv')
             if env_python:
                 del os.environ['PYTHON']
             
@@ -457,32 +457,15 @@ option(env='PYTHON3', nargs=1, help='Python 3 interpreter (3.5 or later)')
 @checking('for Python 3',
           callback=lambda x: '%s (%s)' % (x.path, x.str_version) if x else 'no')
 @imports(_from='__builtin__', _import='Exception')
-@imports('os')
-@imports('sys')
-@imports('subprocess')
-@imports('distutils.sysconfig')
 @imports(_from='mozbuild.configure.util', _import='LineIO')
 @imports(_from='mozbuild.virtualenv', _import='VirtualenvManager')
 @imports(_from='mozbuild.virtualenv', _import='verify_python_version')
-@imports(_from='mozbuild.virtualenv', _import='PY3')
 @imports(_from='mozbuild.pythonutil', _import='find_python3_executable')
 @imports(_from='mozbuild.pythonutil', _import='python_executable_version')
 @imports(_from='six', _import='ensure_text')
 def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
     if help:
         return
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    log.debug("python3: running with pid %r" % os.getpid())
-    log.debug("python3: sys.executable: %r" % sys.executable)
 
     
     
@@ -570,32 +553,6 @@ def virtualenv_python3(env_python, build_env, mozillabuild, mozconfig, help):
         log.debug("python3: venv is up to date")
 
     python = normsep(manager.python_path)
-
-    
-    
-    
-    
-    
-    
-    if PY3:
-        if not normsep(sys.executable).startswith(normsep(virtualenvs_root)):
-            log.debug("python3: executing as %s, should be running as %s" % (
-                sys.executable, manager.python_path))
-            log.info('Re-executing in the virtualenv')
-            if env_python:
-                del os.environ['PYTHON3']
-            
-            
-            
-            os.environ['PYTHONEXECUTABLE'] = python
-            
-            
-            sys.exit(subprocess.call([python] + sys.argv))
-
-        
-        if not distutils.sysconfig.get_python_lib():
-            die('Could not determine python site packages directory')
-
     str_version = '.'.join(str(v) for v in version)
 
     return namespace(
