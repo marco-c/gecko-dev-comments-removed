@@ -46,6 +46,7 @@ define(function(require, exports, module) {
     provider: ObjectProvider,
     expandedNodes: new Set(),
     selected: null,
+    defaultSelectFirstNode: true,
     active: null,
     expandableStrings: true,
     columns: [],
@@ -127,6 +128,8 @@ define(function(require, exports, module) {
         expandedNodes: PropTypes.object,
         
         selected: PropTypes.string,
+        
+        defaultSelectFirstNode: PropTypes.bool,
         
         active: PropTypes.string,
         
@@ -218,7 +221,7 @@ define(function(require, exports, module) {
         columns: ensureDefaultColumn(props.columns),
         selected: props.selected,
         active: props.active,
-        lastSelectedIndex: 0,
+        lastSelectedIndex: props.defaultSelectFirstNode ? 0 : null,
       };
 
       this.treeRef = createRef();
@@ -263,10 +266,14 @@ define(function(require, exports, module) {
         return;
       }
 
-      this.selectRow(
-        rows[Math.min(this.state.lastSelectedIndex, rows.length - 1)],
-        { alignTo: "top" }
-      );
+      
+      
+      if (this.state.lastSelectedIndex !== null) {
+        this.selectRow(
+          rows[Math.min(this.state.lastSelectedIndex, rows.length - 1)],
+          { alignTo: "top" }
+        );
+      }
     }
 
     
@@ -465,8 +472,7 @@ define(function(require, exports, module) {
     getSelectedRowIndex() {
       const row = this.getSelectedRow();
       if (!row) {
-        
-        return 0;
+        return this.props.defaultSelectFirstNode ? 0 : null;
       }
 
       return this.visibleRows.indexOf(row);
