@@ -35,11 +35,11 @@ NS_INTERFACE_MAP_END
 
 AuthenticatorResponse::AuthenticatorResponse(nsPIDOMWindowInner* aParent)
     : mParent(aParent), mClientDataJSONCachedObj(nullptr) {
-  mozilla::HoldJSObjects(this);
+  
 }
 
 AuthenticatorResponse::~AuthenticatorResponse() {
-  mozilla::DropJSObjects(this);
+  
 }
 
 void AuthenticatorResponse::GetClientDataJSON(
