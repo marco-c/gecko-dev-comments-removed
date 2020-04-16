@@ -487,17 +487,18 @@ pref("browser.tabs.showAudioPlayingIcon", true);
 
 pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
 
 
 
 
-#if defined(MOZ_CODE_COVERAGE) && defined(XP_LINUX)
+#if defined(MOZ_CODE_COVERAGE) && defined(XP_LINUX) || defined(MOZ_ASAN)
   
   pref("browser.tabs.remote.separatePrivilegedContentProcess", false);
 #else
   pref("browser.tabs.remote.separatePrivilegedContentProcess", true);
 #endif
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_ASAN)
   
   
   pref("browser.tabs.remote.enforceRemoteTypeRestrictions", true);
