@@ -67,15 +67,10 @@ add_task(async function test() {
           SpecialPowers.registerObservers("xfo-on-violate-policy");
 
           function examiner() {
-            
-            
-            
-            
             SpecialPowers.addObserver(
               this,
               "specialpowers-xfo-on-violate-policy"
             );
-            SpecialPowers.addObserver(this, "xfo-on-violate-policy");
           }
           examiner.prototype = {
             observe(subject, topic, data) {
@@ -92,7 +87,6 @@ add_task(async function test() {
                 this,
                 "specialpowers-xfo-on-violate-policy"
               );
-              SpecialPowers.removeObserver(this, "xfo-on-violate-policy");
             },
           };
           let myExaminer = new examiner();

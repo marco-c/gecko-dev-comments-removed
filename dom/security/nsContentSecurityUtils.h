@@ -36,6 +36,12 @@ class nsContentSecurityUtils {
   static nsresult GetHttpChannelFromPotentialMultiPart(
       nsIChannel* aChannel, nsIHttpChannel** aHttpChannel);
 
+  
+  
+  
+  
+  static void PerformCSPFrameAncestorAndXFOCheck(nsIChannel* aChannel);
+
 #if defined(DEBUG)
   static void AssertAboutPageHasCSP(mozilla::dom::Document* aDocument);
 #endif

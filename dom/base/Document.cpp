@@ -112,7 +112,6 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/FeaturePolicyUtils.h"
-#include "mozilla/dom/FramingChecker.h"
 #include "mozilla/dom/HTMLAllCollection.h"
 #include "mozilla/dom/HTMLMetaElement.h"
 #include "mozilla/dom/HTMLSharedElement.h"
@@ -3169,58 +3168,6 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   rv = InitCSP(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  
-  
-  bool fissionEnabled =
-      docShell && nsDocShell::Cast(docShell)->UseRemoteSubframes();
-  if (!fissionEnabled) {
-    nsContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
-    
-    
-    if (contentType == nsIContentPolicy::TYPE_SUBDOCUMENT ||
-        contentType == nsIContentPolicy::TYPE_OBJECT) {
-      
-      
-      
-      nsCOMPtr<nsIHttpChannel> httpChannel;
-      nsContentSecurityUtils::GetHttpChannelFromPotentialMultiPart(
-          aChannel, getter_AddRefs(httpChannel));
-      if (httpChannel && mCSP) {
-        bool safeAncestry = false;
-        
-        rv = mCSP->PermitsAncestry(loadInfo, &safeAncestry);
-        if (NS_FAILED(rv) || !safeAncestry) {
-          
-          aChannel->Cancel(NS_ERROR_CSP_FRAME_ANCESTOR_VIOLATION);
-        }
-      }
-    }
-
-    
-    
-    if (!FramingChecker::CheckFrameOptions(aChannel, mCSP)) {
-      
-      
-      
-      
-      
-      RefPtr<NullPrincipal> nullPrincipal =
-          NullPrincipal::CreateWithInheritedAttributes(NodePrincipal());
-      
-      
-      
-      
-      MOZ_ASSERT(!mFontFaceSet && !GetInnerWindow());
-      SetPrincipals(nullPrincipal, nullPrincipal);
-      aChannel->Cancel(NS_ERROR_XFO_VIOLATION);
-    }
-  }
 
   
   rv = InitFeaturePolicy(aChannel);

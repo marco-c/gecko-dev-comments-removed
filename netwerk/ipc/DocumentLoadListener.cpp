@@ -22,6 +22,7 @@
 #include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsDocShell.h"
 #include "nsDocShellLoadState.h"
+#include "nsContentSecurityUtils.h"
 #include "nsHttpChannel.h"
 #include "nsISecureBrowserUI.h"
 #include "nsRedirectHistoryEntry.h"
@@ -1028,6 +1029,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   if (!mDocumentChannelBridge) {
     return NS_ERROR_UNEXPECTED;
   }
+
+  
+  
+  nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(mChannel);
 
   
   
