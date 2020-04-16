@@ -266,8 +266,6 @@ struct DocShellLoadStateInit
   
   nsIContentSecurityPolicy Csp;
 
-  MaybeDiscardedBrowsingContext SourceBrowsingContext;
-
   nsCString? OriginalURIString;
   int32_t? CancelContentJSEpoch;
 

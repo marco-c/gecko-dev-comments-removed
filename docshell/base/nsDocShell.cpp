@@ -2731,6 +2731,66 @@ nsDocShell::GetSameTypeRootTreeItemIgnoreBrowserBoundaries(
   return NS_OK;
 }
 
+bool nsDocShell::IsSandboxedFrom(BrowsingContext* aTargetBC) {
+  
+  if (!aTargetBC) {
+    return false;
+  }
+
+  
+  if (aTargetBC == mBrowsingContext) {
+    return false;
+  }
+
+  
+  
+  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
+  if (mContentViewer) {
+    RefPtr<Document> doc = mContentViewer->GetDocument();
+    if (doc) {
+      sandboxFlags = doc->GetSandboxFlags();
+    }
+  }
+
+  
+  if (!sandboxFlags) {
+    return false;
+  }
+
+  
+  RefPtr<BrowsingContext> ancestorOfTarget(aTargetBC->GetParent());
+  if (ancestorOfTarget) {
+    do {
+      
+      if (ancestorOfTarget == mBrowsingContext) {
+        return false;
+      }
+      ancestorOfTarget = ancestorOfTarget->GetParent();
+    } while (ancestorOfTarget);
+
+    
+    return true;
+  }
+
+  
+  
+  RefPtr<BrowsingContext> permittedNavigator(
+      aTargetBC->GetOnePermittedSandboxedNavigator());
+  if (permittedNavigator == mBrowsingContext) {
+    return false;
+  }
+
+  
+  
+  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) &&
+      aTargetBC == mBrowsingContext->Top()) {
+    return false;
+  }
+
+  
+  return true;
+}
+
 NS_IMETHODIMP
 nsDocShell::GetTreeOwner(nsIDocShellTreeOwner** aTreeOwner) {
   NS_ENSURE_ARG_POINTER(aTreeOwner);
@@ -3137,10 +3197,6 @@ nsIScriptGlobalObject* nsDocShell::GetScriptGlobalObject() {
 Document* nsDocShell::GetDocument() {
   NS_ENSURE_SUCCESS(EnsureContentViewer(), nullptr);
   return mContentViewer->GetDocument();
-}
-
-Document* nsDocShell::GetExtantDocument() {
-  return mContentViewer ? mContentViewer->GetDocument() : nullptr;
 }
 
 nsPIDOMWindowOuter* nsDocShell::GetWindow() {
@@ -3931,7 +3987,7 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aErrorURI, nsIURI* aFailedURI,
   loadState->SetTriggeringPrincipal(nsContentUtils::GetSystemPrincipal());
   loadState->SetLoadType(LOAD_ERROR_PAGE);
   loadState->SetFirstParty(true);
-  loadState->SetSourceBrowsingContext(mBrowsingContext);
+  loadState->SetSourceDocShell(this);
 
   return InternalLoad(loadState, nullptr, nullptr);
 }
@@ -4034,7 +4090,7 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
     loadState->SetLoadType(loadType);
     loadState->SetFirstParty(true);
     loadState->SetSrcdocData(srcdoc);
-    loadState->SetSourceBrowsingContext(mBrowsingContext);
+    loadState->SetSourceDocShell(this);
     loadState->SetBaseURI(baseURI);
     rv = InternalLoad(loadState, nullptr, nullptr);
   }
@@ -8354,7 +8410,8 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   aLoadState->SetTarget(EmptyString());
   
   aLoadState->SetFileName(VoidString());
-  return targetContext->InternalLoad(aLoadState, aDocShell, aRequest);
+  return targetContext->InternalLoad(mBrowsingContext, aLoadState, aDocShell,
+                                     aRequest);
 }
 
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
@@ -8729,10 +8786,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  
-  
-  MOZ_TRY(mBrowsingContext->CheckSandboxFlags(aLoadState));
+  if (aLoadState->SourceDocShell() &&
+      aLoadState->SourceDocShell()->IsSandboxedFrom(mBrowsingContext)) {
+    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+  }
 
   NS_ENSURE_STATE(!HasUnloadedParent());
 
@@ -12242,7 +12299,7 @@ nsresult nsDocShell::OnLinkClickSync(
   loadState->SetHeadersStream(aHeadersDataStream);
   loadState->SetLoadType(loadType);
   loadState->SetFirstParty(true);
-  loadState->SetSourceBrowsingContext(mBrowsingContext);
+  loadState->SetSourceDocShell(this);
   loadState->SetIsFormSubmission(aContent->IsHTMLElement(nsGkAtoms::form));
   nsresult rv = InternalLoad(loadState, aDocShell, aRequest);
 

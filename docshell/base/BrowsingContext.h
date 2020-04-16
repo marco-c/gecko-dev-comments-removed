@@ -257,15 +257,14 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void RestoreChildren(Children&& aChildren, bool aFromIPC = false);
 
   
-  nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating = false);
+  
+  
+  nsresult LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState,
+                   bool aSetNavigating = false);
 
-  nsresult InternalLoad(nsDocShellLoadState* aLoadState,
+  nsresult InternalLoad(BrowsingContext* aAccessor,
+                        nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
-
-  
-  
-  
-  nsresult CheckSandboxFlags(nsDocShellLoadState* aLoadState);
 
   void DisplayLoadError(const nsAString& aURI);
 
@@ -538,8 +537,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
-
-  bool IsSandboxedFrom(BrowsingContext* aTarget);
 
   
   
