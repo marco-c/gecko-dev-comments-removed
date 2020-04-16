@@ -40,18 +40,8 @@ class FramingChecker {
 
 
 
-
-
-
-
-
-  static void ReportError(const char* aMessageTag, nsIURI* aParentURI,
-                          nsIURI* aChildURI, const nsAString& aPolicy,
-                          uint64_t aInnerWindowID);
-  static void ReportError(const char* aMessageTag,
-                          mozilla::dom::BrowsingContext* aParentContext,
-                          nsIURI* aChildURI, const nsAString& aPolicy,
-                          uint64_t aInnerWindowID);
+  static void ReportError(const char* aMessageTag, nsIHttpChannel* aChannel,
+                          nsIURI* aURI, const nsAString& aPolicy);
 
   static bool CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
                                          const nsAString& aPolicy);
