@@ -3159,8 +3159,6 @@ NSEvent* gLastDragMouseDownEvent = nil;
     return;
   }
 
-  NSUInteger modifierFlags = [theEvent modifierFlags];
-
   WidgetMouseEvent geckoEvent(true, eMouseDown, mGeckoChild, WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
 
@@ -3172,10 +3170,12 @@ NSEvent* gLastDragMouseDownEvent = nil;
   }
   geckoEvent.mClickCount = clickCount;
 
-  if (modifierFlags & NSControlKeyMask)
+  if (!StaticPrefs::dom_event_treat_ctrl_click_as_right_click_disabled() &&
+      ([theEvent modifierFlags] & NSControlKeyMask)) {
     geckoEvent.mButton = MouseButton::eRight;
-  else
+  } else {
     geckoEvent.mButton = MouseButton::eLeft;
+  }
 
   mGeckoChild->DispatchInputEvent(&geckoEvent);
   mBlockedLastMouseDown = NO;
@@ -3199,10 +3199,13 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   WidgetMouseEvent geckoEvent(true, eMouseUp, mGeckoChild, WidgetMouseEvent::eReal);
   [self convertCocoaMouseEvent:theEvent toGeckoEvent:&geckoEvent];
-  if ([theEvent modifierFlags] & NSControlKeyMask)
+
+  if (!StaticPrefs::dom_event_treat_ctrl_click_as_right_click_disabled() &&
+      ([theEvent modifierFlags] & NSControlKeyMask)) {
     geckoEvent.mButton = MouseButton::eRight;
-  else
+  } else {
     geckoEvent.mButton = MouseButton::eLeft;
+  }
 
   
   
