@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.10"
-static const int32_t kVRExternalVersion = 17;
+#define SHMEM_VERSION "0.0.9"
+static const int32_t kVRExternalVersion = 16;
 
 
 
@@ -63,6 +63,7 @@ static const uint32_t kVRGroupAll = 0xffffffff;
 
 static const int kVRDisplayNameMaxLen = 256;
 static const int kVRControllerNameMaxLen = 256;
+static const int kProfileNameListMaxLen = 256;
 static const int kVRControllerMaxCount = 16;
 static const int kVRControllerMaxButtons = 64;
 static const int kVRControllerMaxAxis = 16;
@@ -121,7 +122,7 @@ enum class ControllerCapabilityFlags : uint16_t {
   
 
 
-  Cap_TargetRaySpacePosition = 1 << 5,
+  Cap_GripSpacePosition = 1 << 5,
   
 
 
@@ -371,6 +372,11 @@ struct VRControllerState {
   TargetRayMode targetRayMode;
 
   
+  
+  
+  char profiles[kProfileNameListMaxLen];
+
+  
   GamepadMappingType mappingType;
 
   
@@ -417,7 +423,7 @@ struct VRControllerState {
   
   
   
-  VRPose targetRayPose;
+  VRPose gripPose;
 
   bool isPositionValid;
   bool isOrientationValid;

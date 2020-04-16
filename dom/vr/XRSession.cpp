@@ -108,14 +108,13 @@ XRSession::XRSession(
     aClient->SessionStarted(this);
   }
   mActiveRenderState = new XRRenderState(aWindow, this);
+  
+  mInputSources = new XRInputSourceArray(aWindow);
   mStartTimeStamp = TimeStamp::Now();
   if (IsImmersive()) {
     mDisplayPresentation =
         mDisplayClient->BeginPresentation({}, gfx::kVRGroupContent);
   }
-  
-  
-  mInputSources = new XRInputSourceArray(aWindow);
 }
 
 XRSession::~XRSession() { MOZ_ASSERT(mShutdown); }

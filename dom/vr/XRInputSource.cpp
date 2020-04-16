@@ -5,8 +5,7 @@
 
 
 #include "mozilla/dom/XRInputSource.h"
-#include "XRNativeOriginViewer.h"
-#include "XRNativeOriginTracker.h"
+#include "mozilla/dom/XRSpace.h"
 
 namespace mozilla {
 namespace dom {
@@ -14,93 +13,6 @@ namespace dom {
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(XRInputSource, mParent)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(XRInputSource, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(XRInputSource, Release)
-
-
-nsTArray<nsString> GetInputSourceProfile(VRControllerType aType) {
-  nsTArray<nsString> profile;
-  nsString id;
-
-  switch(aType) {
-    case VRControllerType::HTCVive:
-      id.AssignLiteral("htc-vive");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-touchpad");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::HTCViveCosmos:
-      id.AssignLiteral("htc-vive-cosmos");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::HTCViveFocus:
-      id.AssignLiteral("htc-vive-focus");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-touchpad");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::HTCViveFocusPlus:
-      id.AssignLiteral("htc-vive-focus-plus");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-touchpad");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::MSMR:
-      id.AssignLiteral("microsoft-mixed-reality");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-touchpad-thumbstick");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::ValveIndex:
-      id.AssignLiteral("valve-index");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-touchpad-thumbstick");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::OculusGo:
-      id.AssignLiteral("oculus-go");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-touchpad");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::OculusTouch:
-      id.AssignLiteral("oculus-touch");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::OculusTouch2:
-      id.AssignLiteral("oculus-touch-v2");
-      profile.AppendElement(id);
-      id.AssignLiteral("oculus-touch");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::PicoGaze:
-      id.AssignLiteral("pico-gaze");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-button");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::PicoG2:
-      id.AssignLiteral("pico-g-v2");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-touchpad");
-      profile.AppendElement(id);
-      break;
-    case VRControllerType::PicoNeo2:
-      id.AssignLiteral("pico-neco-v2");
-      profile.AppendElement(id);
-      id.AssignLiteral("generic-trigger-squeeze-thumbstick");
-      profile.AppendElement(id);
-      break;
-    default:
-      NS_WARNING("Unsupported XR input source profile.\n");
-      break;
-  }
-  return profile;
-}
 
 XRInputSource::XRInputSource(nsISupports* aParent) : mParent(aParent) {}
 
@@ -110,93 +22,32 @@ JSObject* XRInputSource::WrapObject(JSContext* aCx,
 }
 
 XRHandedness XRInputSource::Handedness() {
-  return mHandedness;
+  
+  return XRHandedness::None;
 }
 
 XRTargetRayMode XRInputSource::TargetRayMode() {
-  return mTargetRayMode;
+  
+  return XRTargetRayMode::Tracked_pointer;
 }
 
 XRSpace* XRInputSource::TargetRaySpace() {
-  return mTargetRaySpace;
+  
+  return nullptr;
 }
 
 XRSpace* XRInputSource::GetGripSpace() {
-  return mGripSpace;
+  
+  return nullptr;
 }
 
 void XRInputSource::GetProfiles(nsTArray<nsString>& aResult) {
-  aResult = mProfiles;
+  
 }
 
 Gamepad* XRInputSource::GetGamepad() {
   
   return nullptr;
-}
-
-void XRInputSource::Setup(XRSession* aSession, uint32_t aIndex) {
-  MOZ_ASSERT(aSession);
-  gfx::VRDisplayClient* displayClient = aSession->GetDisplayClient();
-  if (!displayClient) {
-    MOZ_ASSERT(displayClient);
-    return;
-  }
-  const gfx::VRDisplayInfo& displayInfo = displayClient->GetDisplayInfo();
-  const gfx::VRControllerState& controllerState = displayInfo.mControllerState[aIndex];
-  MOZ_ASSERT(controllerState.controllerName[0] != '\0');
-
-  mProfiles = GetInputSourceProfile(controllerState.type);
-  mHandedness = XRHandedness::None;
-  switch(controllerState.hand) {
-    case GamepadHand::_empty:
-      mHandedness = XRHandedness::None;
-      break;
-    case GamepadHand::Left:
-      mHandedness = XRHandedness::Left;
-      break;
-    case GamepadHand::Right:
-      mHandedness = XRHandedness::Right;
-      break;
-    default:
-      MOZ_ASSERT(false && "Unknown GamepadHand type.");
-      break;
-  }
-
-  RefPtr<XRNativeOrigin> nativeOriginTargetRay = nullptr;
-  RefPtr<XRNativeOrigin> nativeOriginGrip = nullptr;
-  mTargetRayMode = XRTargetRayMode::Tracked_pointer;
-  switch(controllerState.targetRayMode) {
-    case gfx::TargetRayMode::Gaze:
-      mTargetRayMode = XRTargetRayMode::Gaze;
-      nativeOriginTargetRay = new XRNativeOriginViewer(displayClient);
-      nativeOriginGrip = new XRNativeOriginViewer(displayClient);
-      break;
-    case gfx::TargetRayMode::TrackedPointer:
-      mTargetRayMode = XRTargetRayMode::Tracked_pointer;
-      
-      nativeOriginTargetRay = new XRNativeOriginTracker(&controllerState.targetRayPose);
-      nativeOriginGrip = new XRNativeOriginTracker(&controllerState.pose);
-      break;
-    case gfx::TargetRayMode::Screen:
-      mTargetRayMode = XRTargetRayMode::Screen;
-      break;
-    default:
-      MOZ_ASSERT(false && "Undefined TargetRayMode type.");
-      break;
-  }
-  mTargetRaySpace = new XRSpace(aSession->GetParentObject(), aSession, nativeOriginTargetRay);
-  mGripSpace = new XRSpace(aSession->GetParentObject(), aSession, nativeOriginGrip);
-  mIndex = aIndex;
-}
-
-void XRInputSource::SetGamepadIsConnected(bool aConnected) {
-}
-
-void XRInputSource::Update(XRSession* aSession) {
-}
-
-int32_t XRInputSource::GetIndex() {
-  return mIndex;
 }
 
 }  

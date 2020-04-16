@@ -40,8 +40,10 @@ JSObject* XRSpace::WrapObject(JSContext* aCx,
 XRSession* XRSpace::GetSession() const { return mSession; }
 
 gfx::QuaternionDouble XRSpace::GetEffectiveOriginOrientation() const {
-  gfx::QuaternionDouble orientation = mNativeOrigin->GetOrientation() * mOriginOffsetOrientation;
-  return orientation;
+  
+  
+  
+  return mOriginOffsetOrientation;
 }
 
 gfx::PointDouble3D XRSpace::GetEffectiveOriginPosition() const {
