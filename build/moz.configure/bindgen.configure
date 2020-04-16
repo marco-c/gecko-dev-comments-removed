@@ -224,7 +224,7 @@ def bindgen_config_paths(clang, libclang, build_project):
 @imports(_from='textwrap', _import='dedent')
 def min_libclang_version(libclang):
     try:
-        lib = CDLL(libclang.encode('utf-8'))
+        lib = CDLL(libclang)
         
         
         fun = lib.clang_EvalResult_getAsLongLong

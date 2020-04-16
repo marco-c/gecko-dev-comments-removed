@@ -282,7 +282,7 @@ def unique_list(l):
 
 
 
-@imports(_import='_winreg', _as='winreg')
+@imports(_import='winreg')
 @imports(_from='__builtin__', _import='WindowsError')
 @imports(_from='fnmatch', _import='fnmatch')
 def get_registry_values(pattern, get_32_and_64_bit=False):
