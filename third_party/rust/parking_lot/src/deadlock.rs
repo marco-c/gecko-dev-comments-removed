@@ -46,9 +46,7 @@ mod tests {
     use std::time::Duration;
 
     
-    lazy_static::lazy_static! {
-        static ref DEADLOCK_DETECTION_LOCK: Mutex<()> = Mutex::new(());
-    }
+    static DEADLOCK_DETECTION_LOCK: Mutex<()> = crate::const_mutex(());
 
     fn check_deadlock() -> bool {
         use parking_lot_core::deadlock::check_deadlock;

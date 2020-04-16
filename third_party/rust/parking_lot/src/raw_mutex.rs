@@ -6,19 +6,13 @@
 
 
 use crate::{deadlock, util};
-#[cfg(has_sized_atomics)]
-use core::sync::atomic::AtomicU8;
-#[cfg(not(has_sized_atomics))]
-use core::sync::atomic::AtomicUsize as AtomicU8;
-use core::{sync::atomic::Ordering, time::Duration};
-use lock_api::{GuardNoSend, RawMutex as RawMutexTrait, RawMutexFair, RawMutexTimed};
+use core::{
+    sync::atomic::{AtomicU8, Ordering},
+    time::Duration,
+};
+use lock_api::{GuardNoSend, RawMutex as RawMutex_};
 use parking_lot_core::{self, ParkResult, SpinWait, UnparkResult, UnparkToken, DEFAULT_PARK_TOKEN};
 use std::time::Instant;
-
-#[cfg(has_sized_atomics)]
-type U8 = u8;
-#[cfg(not(has_sized_atomics))]
-type U8 = usize;
 
 
 
@@ -28,16 +22,43 @@ pub(crate) const TOKEN_NORMAL: UnparkToken = UnparkToken(0);
 
 pub(crate) const TOKEN_HANDOFF: UnparkToken = UnparkToken(1);
 
-const LOCKED_BIT: U8 = 1;
-const PARKED_BIT: U8 = 2;
+
+const LOCKED_BIT: u8 = 0b01;
+
+
+const PARKED_BIT: u8 = 0b10;
 
 
 pub struct RawMutex {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     state: AtomicU8,
 }
 
-unsafe impl RawMutexTrait for RawMutex {
-    const INIT: RawMutex = RawMutex { state: AtomicU8::new(0) };
+unsafe impl lock_api::RawMutex for RawMutex {
+    const INIT: RawMutex = RawMutex {
+        state: AtomicU8::new(0),
+    };
 
     type GuardMarker = GuardNoSend;
 
@@ -78,7 +99,10 @@ unsafe impl RawMutexTrait for RawMutex {
     #[inline]
     fn unlock(&self) {
         unsafe { deadlock::release_resource(self as *const _ as usize) };
-        if self.state.compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed).is_ok()
+        if self
+            .state
+            .compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
+            .is_ok()
         {
             return;
         }
@@ -86,11 +110,14 @@ unsafe impl RawMutexTrait for RawMutex {
     }
 }
 
-unsafe impl RawMutexFair for RawMutex {
+unsafe impl lock_api::RawMutexFair for RawMutex {
     #[inline]
     fn unlock_fair(&self) {
         unsafe { deadlock::release_resource(self as *const _ as usize) };
-        if self.state.compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed).is_ok()
+        if self
+            .state
+            .compare_exchange(LOCKED_BIT, 0, Ordering::Release, Ordering::Relaxed)
+            .is_ok()
         {
             return;
         }
@@ -105,7 +132,7 @@ unsafe impl RawMutexFair for RawMutex {
     }
 }
 
-unsafe impl RawMutexTimed for RawMutex {
+unsafe impl lock_api::RawMutexTimed for RawMutex {
     type Duration = Duration;
     type Instant = Instant;
 
@@ -212,37 +239,41 @@ impl RawMutex {
             }
 
             
-            unsafe {
-                let addr = self as *const _ as usize;
-                let validate = || self.state.load(Ordering::Relaxed) == LOCKED_BIT | PARKED_BIT;
-                let before_sleep = || {};
-                let timed_out = |_, was_last_thread| {
-                    
-                    if was_last_thread {
-                        self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
-                    }
-                };
-                match parking_lot_core::park(
+            let addr = self as *const _ as usize;
+            let validate = || self.state.load(Ordering::Relaxed) == LOCKED_BIT | PARKED_BIT;
+            let before_sleep = || {};
+            let timed_out = |_, was_last_thread| {
+                
+                if was_last_thread {
+                    self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
+                }
+            };
+            
+            
+            
+            
+            match unsafe {
+                parking_lot_core::park(
                     addr,
                     validate,
                     before_sleep,
                     timed_out,
                     DEFAULT_PARK_TOKEN,
                     timeout,
-                ) {
-                    
-                    
-                    ParkResult::Unparked(TOKEN_HANDOFF) => return true,
+                )
+            } {
+                
+                
+                ParkResult::Unparked(TOKEN_HANDOFF) => return true,
 
-                    
-                    ParkResult::Unparked(_) => (),
+                
+                ParkResult::Unparked(_) => (),
 
-                    
-                    ParkResult::Invalid => (),
+                
+                ParkResult::Invalid => (),
 
-                    
-                    ParkResult::TimedOut => return false,
-                }
+                
+                ParkResult::TimedOut => return false,
             }
 
             
@@ -255,29 +286,32 @@ impl RawMutex {
     fn unlock_slow(&self, force_fair: bool) {
         
         
-        unsafe {
-            let addr = self as *const _ as usize;
-            let callback = |result: UnparkResult| {
+        let addr = self as *const _ as usize;
+        let callback = |result: UnparkResult| {
+            
+            
+            if result.unparked_threads != 0 && (force_fair || result.be_fair) {
                 
                 
-                if result.unparked_threads != 0 && (force_fair || result.be_fair) {
-                    
-                    
-                    if !result.have_more_threads {
-                        self.state.store(LOCKED_BIT, Ordering::Relaxed);
-                    }
-                    return TOKEN_HANDOFF;
+                if !result.have_more_threads {
+                    self.state.store(LOCKED_BIT, Ordering::Relaxed);
                 }
+                return TOKEN_HANDOFF;
+            }
 
-                
-                
-                if result.have_more_threads {
-                    self.state.store(PARKED_BIT, Ordering::Release);
-                } else {
-                    self.state.store(0, Ordering::Release);
-                }
-                TOKEN_NORMAL
-            };
+            
+            
+            if result.have_more_threads {
+                self.state.store(PARKED_BIT, Ordering::Release);
+            } else {
+                self.state.store(0, Ordering::Release);
+            }
+            TOKEN_NORMAL
+        };
+        
+        
+        
+        unsafe {
             parking_lot_core::unpark_one(addr, callback);
         }
     }
