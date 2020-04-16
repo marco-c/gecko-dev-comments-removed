@@ -110,7 +110,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
-  nsPoint mDesiredPos;
+  const nsPoint mDesiredPos;
 
   
   
@@ -120,28 +120,28 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
-  bool mJumpLines;
+  const bool mJumpLines;
 
   
-  bool mTrimSpaces;
-
-  
-  
-  
-  bool mScrollViewStop;
+  const bool mTrimSpaces;
 
   
   
   
-  bool mIsKeyboardSelect;
+  const bool mScrollViewStop;
 
   
   
   
-  bool mVisual;
+  const bool mIsKeyboardSelect;
 
   
-  bool mExtend;
+  
+  
+  const bool mVisual;
+
+  
+  const bool mExtend;
 
   
   
