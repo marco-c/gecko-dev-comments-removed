@@ -1721,7 +1721,6 @@ pref("signon.management.page.os-auth.enabled", true);
 pref("signon.management.page.breach-alerts.enabled", true);
 pref("signon.management.page.vulnerable-passwords.enabled", true);
 pref("signon.management.page.sort", "name");
-pref("signon.management.overrideURI", "about:logins?filter=%DOMAIN%");
 
 
 
@@ -1732,6 +1731,7 @@ pref("signon.management.page.breachAlertUrl",
 pref("signon.management.page.hideMobileFooter", false);
 pref("signon.management.page.showPasswordSyncNotification", true);
 pref("signon.passwordEditCapture.enabled", true);
+pref("signon.showAutoCompleteFooter", true);
 
 
 

@@ -3923,7 +3923,7 @@ pref("signon.schemeUpgrades",                     true);
 pref("signon.includeOtherSubdomainsInLookup",     true);
 
 pref("signon.masterPasswordReprompt.timeout_ms", 900000); 
-pref("signon.showAutoCompleteFooter",             true);
+pref("signon.showAutoCompleteFooter",             false);
 pref("signon.showAutoCompleteOrigins",            true);
 
 
