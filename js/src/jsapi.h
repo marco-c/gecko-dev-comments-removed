@@ -311,7 +311,7 @@ JS_PUBLIC_API void SetFilenameValidationCallback(FilenameValidationCallback cb);
 
 
 JS_PUBLIC_API void SetHelperThreadTaskCallback(
-    void (*callback)(js::UniquePtr<js::RunnableTask>));
+    void (*callback)(js::RunnableTask*));
 
 extern JS_PUBLIC_API const char* JS_GetImplementationVersion(void);
 
