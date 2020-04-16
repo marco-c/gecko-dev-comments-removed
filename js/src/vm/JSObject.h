@@ -883,8 +883,7 @@ extern JSObject* CreateThis(JSContext* cx, const JSClass* clasp,
 extern JSObject* CloneObject(JSContext* cx, HandleObject obj,
                              Handle<js::TaggedProto> proto);
 
-extern JSObject* DeepCloneObjectLiteral(JSContext* cx, HandleObject obj,
-                                        NewObjectKind newKind);
+extern JSObject* DeepCloneObjectLiteral(JSContext* cx, HandleObject obj);
 
 
 bool ToPropertyDescriptor(JSContext* cx, HandleValue descval,
