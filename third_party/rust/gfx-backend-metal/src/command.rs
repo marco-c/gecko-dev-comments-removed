@@ -378,11 +378,12 @@ impl State {
         }
     }
 
-    fn make_render_commands(
-        &self,
-        aspects: Aspects,
-    ) -> impl Iterator<Item = soft::RenderCommand<&soft::Ref>> {
-        
+    fn make_viewport_and_scissor_commands(
+        &self
+    ) -> (
+        Option<soft::RenderCommand<&soft::Ref>>,
+        Option<soft::RenderCommand<&soft::Ref>>,    
+    ) {
         let com_vp = self
             .viewport
             .as_ref()
@@ -390,6 +391,14 @@ impl State {
         let com_scissor = self
             .scissors
             .map(|sr| soft::RenderCommand::SetScissor(Self::clamp_scissor(sr, self.target_extent)));
+        (com_vp, com_scissor)
+    }
+
+    fn make_render_commands(
+        &self,
+        aspects: Aspects,
+    ) -> impl Iterator<Item = soft::RenderCommand<&soft::Ref>> {
+        
         let com_blend = if aspects.contains(Aspects::COLOR) {
             self.blend_color.map(soft::RenderCommand::SetBlendColor)
         } else {
@@ -409,6 +418,7 @@ impl State {
         } else {
             None
         };
+        let (com_vp, com_scissor) = self.make_viewport_and_scissor_commands();
         let (com_pso, com_rast) = self.make_pso_commands();
 
         let render_resources = iter::once(&self.resources_vs).chain(iter::once(&self.resources_ps));
@@ -917,12 +927,12 @@ impl Journal {
             }
         }
 
-        // Note: journals contain 3 levels of stuff:
-        // resources, commands, and passes
-        // Each upper level points to the lower one with index
-        // sub-ranges. In order to merge two journals, we need
-        // to fix those indices of the one that goes on top.
-        // This is referred here as "rebasing".
+        
+        
+        
+        
+        
+        
         for mut com in other.render_commands.iter().cloned() {
             self.resources.rebase_render(&mut com);
             self.render_commands.push(com);
@@ -963,8 +973,8 @@ enum CommandSink {
     },
 }
 
-/// A helper temporary object that consumes state-setting commands only
-/// applicable to a render pass currently encoded.
+
+
 enum PreRender<'a> {
     Immediate(&'a metal::RenderCommandEncoderRef),
     Deferred(
@@ -1010,8 +1020,8 @@ impl<'a> PreRender<'a> {
     }
 }
 
-/// A helper temporary object that consumes state-setting commands only
-/// applicable to a compute pass currently encoded.
+
+
 enum PreCompute<'a> {
     Immediate(&'a metal::ComputeCommandEncoderRef),
     Deferred(
@@ -1092,8 +1102,8 @@ impl CommandSink {
         }
     }
 
-    /// Start issuing pre-render commands. Those can be rejected, so the caller is responsible
-    /// for updating the state cache accordingly, so that it's set upon the start of a next pass.
+    
+    
     fn pre_render(&mut self) -> PreRender {
         match *self {
             CommandSink::Immediate {
@@ -1119,9 +1129,9 @@ impl CommandSink {
         }
     }
 
-    /// Switch the active encoder to render by starting a render pass.
+    
     fn switch_render(&mut self, descriptor: metal::RenderPassDescriptor) -> PreRender {
-        //assert!(AutoReleasePool::is_active());
+        
         self.stop_encoding();
 
         match *self {
@@ -1191,8 +1201,8 @@ impl CommandSink {
         self.stop_encoding();
     }
 
-    /// Issue provided blit commands. This function doesn't expect an active blit pass,
-    /// it will automatically start one when needed.
+    
+    
     fn blit_commands<I>(&mut self, commands: I)
     where
         I: Iterator<Item = soft::BlitCommand>,
@@ -1277,8 +1287,8 @@ impl CommandSink {
         }
     }
 
-    /// Start issuing pre-compute commands. Those can be rejected, so the caller is responsible
-    /// for updating the state cache accordingly, so that it's set upon the start of a next pass.
+    
+    
     fn pre_compute(&mut self) -> PreCompute {
         match *self {
             CommandSink::Immediate {
@@ -1305,8 +1315,8 @@ impl CommandSink {
         }
     }
 
-    /// Switch the active encoder to compute.
-    /// Second returned value is `true` if the switch has just happened.
+    
+    
     fn switch_compute(&mut self) -> (PreCompute, bool) {
         match *self {
             CommandSink::Immediate {
@@ -1403,9 +1413,9 @@ pub struct IndexBuffer<B> {
     stride: u32,
 }
 
-/// This is an inner mutable part of the command buffer that is
-/// accessible by the owning command pool for one single reason:
-/// to reset it.
+
+
+
 #[derive(Debug)]
 pub struct CommandBufferInner {
     sink: Option<CommandSink>,
@@ -1589,7 +1599,7 @@ where
             let values: &[Option<BufferPtr>] = buffers.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `BufferPtr` -> `&metal::BufferRef`
+                    
                     mem::transmute(values)
                 };
                 let offsets = buffers.as_slice(resources);
@@ -1629,7 +1639,7 @@ where
             let values = textures.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `TexturePtr` -> `&metal::TextureRef`
+                    
                     mem::transmute(values)
                 };
                 match stage {
@@ -1648,7 +1658,7 @@ where
             let values = samplers.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `SamplerPtr` -> `&metal::SamplerStateRef`
+                    
                     mem::transmute(values)
                 };
                 match stage {
@@ -1911,7 +1921,7 @@ where
             let values: &[Option<BufferPtr>] = buffers.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `BufferPtr` -> `&metal::BufferRef`
+                    
                     mem::transmute(values)
                 };
                 let offsets = buffers.as_slice(resources);
@@ -1934,7 +1944,7 @@ where
             let values = textures.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `TexturePtr` -> `&metal::TextureRef`
+                    
                     mem::transmute(values)
                 };
                 encoder.set_textures(index as _, data);
@@ -1948,7 +1958,7 @@ where
             let values = samplers.as_slice(resources);
             if !values.is_empty() {
                 let data = unsafe {
-                    // convert `SamplerPtr` -> `&metal::SamplerStateRef`
+                    
                     mem::transmute(values)
                 };
                 encoder.set_sampler_states(index as _, data);
@@ -1992,10 +2002,10 @@ pub struct CommandQueue {
     retained_textures: Vec<metal::Texture>,
     active_visibility_queries: Vec<query::Id>,
     perf_counters: Option<PerformanceCounters>,
-    /// If true, we combine deferred command buffers together into one giant
-    /// command buffer per submission, including the signalling logic.
+    
+    
     pub stitch_deferred: bool,
-    /// Hack around the Metal System Trace logic that ignores empty command buffers entirely.
+    
     pub insert_dummy_encoders: bool,
 }
 
@@ -2019,7 +2029,7 @@ impl CommandQueue {
         }
     }
 
-    /// This is a hack around Metal System Trace logic that ignores empty command buffers entirely.
+    
     fn record_empty(&self, command_buf: &metal::CommandBufferRef) {
         if self.insert_dummy_encoders {
             command_buf.new_blit_command_encoder().end_encoding();
@@ -2081,7 +2091,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
         let do_signal = fence.is_some() || !system_semaphores.is_empty();
 
         autoreleasepool(|| {
-            // for command buffers
+            
             let cmd_queue = self.shared.queue.lock();
             let mut blocker = self.shared.queue_blocker.lock();
             let mut deferred_cmd_buffer = None::<&metal::CommandBufferRef>;
@@ -2098,9 +2108,9 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                     ..
                 } = *inner;
 
-                //TODO: split event commands into immediate/blocked submissions?
+                
                 event_commands.extend_from_slice(events);
-                // wait for anything not previously fired
+                
                 let wait_events = host_events
                     .iter()
                     .filter(|event| {
@@ -2132,7 +2142,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                         self.active_visibility_queries
                             .extend(active_visibility_queries.drain(..));
                         if num_passes != 0 {
-                            // flush the deferred recording, if any
+                            
                             if let Some(cb) = deferred_cmd_buffer.take() {
                                 blocker.submit_impl(cb);
                             }
@@ -2170,7 +2180,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                         trace!("\tremote {:?}", token);
                         cmd_buffer.lock().enqueue();
                         let shared_cb = SharedCommandBuffer(Arc::clone(cmd_buffer));
-                        //TODO: make this compatible with events
+                        
                         queue.sync(move || {
                             shared_cb.0.lock().commit();
                         });
@@ -2181,7 +2191,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
 
             if do_signal || !event_commands.is_empty() || !self.active_visibility_queries.is_empty()
             {
-                //Note: there is quite a bit copying here
+                
                 let free_buffers = self
                     .retained_buffers
                     .drain(..)
@@ -2201,18 +2211,18 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                 };
 
                 let block = ConcreteBlock::new(move |_cb: *mut ()| {
-                    // signal the semaphores
+                    
                     for semaphore in &system_semaphores {
                         semaphore.signal();
                     }
-                    // process events
+                    
                     for &(ref atomic, value) in &event_commands {
                         atomic.store(value, Ordering::Release);
                     }
-                    // free all the manually retained resources
+                    
                     let _ = free_buffers;
                     let _ = free_textures;
-                    // update visibility queries
+                    
                     if let Some((ref shared, ref queries)) = visibility {
                         let vis = &shared.visibility;
                         let availability_ptr = (vis.buffer.contents() as *mut u8)
@@ -2221,7 +2231,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                         for &q in queries {
                             *availability_ptr.offset(q as isize) = 1;
                         }
-                        //HACK: the lock is needed to wake up, but it doesn't hold the checked data
+                        
                         let _ = vis.allocator.lock();
                         vis.condvar.notify_all();
                     }
@@ -2286,7 +2296,7 @@ impl hal::queue::CommandQueue<Backend> for CommandQueue {
                 let drawable = swapchain
                     .borrow()
                     .take_drawable(index)
-                    .map_err(|()| PresentError::OutOfDate)?; // What `Err(())` represents?
+                    .map_err(|()| PresentError::OutOfDate)?; 
                 command_buffer.present_drawable(&drawable);
             }
             command_buffer.commit();
@@ -2375,8 +2385,8 @@ impl hal::pool::CommandPool<Backend> for CommandPool {
     }
 
     unsafe fn allocate_one(&mut self, level: com::Level) -> CommandBuffer {
-        //TODO: fail with OOM if we allocate more actual command buffers
-        // than our mega-queue supports.
+        
+        
         let inner = Arc::new(RefCell::new(CommandBufferInner {
             sink: None,
             level,
@@ -2439,7 +2449,7 @@ impl hal::pool::CommandPool<Backend> for CommandPool {
         }
     }
 
-    /// Free command buffers which are allocated from this pool.
+    
     unsafe fn free<I>(&mut self, cmd_buffers: I)
     where
         I: IntoIterator<Item = CommandBuffer>,
@@ -2620,7 +2630,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             let length = (end - start) / WORD_ALIGNMENT;
             let value_and_length = [data, length as _];
 
-            // TODO: Consider writing multiple values per thread in shader
+            
             let threads_per_threadgroup = pso.thread_execution_width();
             let threadgroups = (length + threads_per_threadgroup - 1) / threads_per_threadgroup;
 
@@ -2715,7 +2725,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     sub.layers.clone()
                 };
                 let texture = if is_layered && sub.layers.start > 0 {
-                    // aliasing is necessary for bulk-clearing all layers starting with 0
+                    
                     let tex = raw.new_texture_view_from_slice(
                         image.mtl_format,
                         image.mtl_type,
@@ -2817,7 +2827,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         U: IntoIterator,
         U::Item: Borrow<pso::ClearRect>,
     {
-        // gather vertices/polygons
+        
         let de = self.state.target_extent;
         let vertices = &mut self.temp.clear_vertices;
         vertices.clear();
@@ -2831,10 +2841,10 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     [r.rect.x + r.rect.w, r.rect.y + r.rect.h],
                     [r.rect.x + r.rect.w, r.rect.y],
                 ];
-                // now use the hard-coded index array to add 6 vertices to the list
-                //TODO: could use instancing here
-                // - with triangle strips
-                // - with half of the data supplied per instance
+                
+                
+                
+                
 
                 for &index in &[0usize, 1, 2, 2, 3, 0] {
                     let d = data[index];
@@ -2842,7 +2852,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                         pos: [
                             d[0] as f32 / de.width as f32,
                             d[1] as f32 / de.height as f32,
-                            0.0, //TODO: depth Z
+                            0.0, 
                             layer as f32,
                         ],
                     });
@@ -2856,7 +2866,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         let ds_store = &self.shared.service_pipes.depth_stencil_states;
         let ds_state;
 
-        //  issue a PSO+color switch and a draw for each requested clear
+        
         let mut key = ClearKey {
             framebuffer_aspects: self.state.target_aspects,
             color_formats: [metal::MTLPixelFormat::Invalid; 1],
@@ -2876,16 +2886,16 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         }
 
         for clear in clears {
-            let pso; // has to live at least as long as all the commands
+            let pso; 
             let depth_stencil;
             let raw_value;
 
             let (com_clear, target_index) = match *clear.borrow() {
                 com::AttachmentClear::Color { index, value } => {
                     let channel = self.state.target_formats.colors[index].1;
-                    //Note: technically we should be able to derive the Channel from the
-                    // `value` variant, but this is blocked by the portability that is
-                    // always passing the attachment clears as `ClearColor::Sfloat` atm.
+                    
+                    
+                    
                     raw_value = com::ClearColor::from(value);
                     let com = soft::RenderCommand::BindBufferData {
                         stage: pso::Stage::Fragment,
@@ -2907,7 +2917,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                         aspects |= Aspects::DEPTH;
                     }
                     if stencil.is_some() {
-                        //TODO: soft::RenderCommand::SetStencilReference
+                        
                         aspects |= Aspects::STENCIL;
                     }
                     depth_stencil = ds_store.get_write(aspects);
@@ -2975,7 +2985,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             inner.sink().pre_render().issue_many(commands);
         }
 
-        // reset all the affected states
+        
+        let (com_viewport, com_scissor) = self.state.make_viewport_and_scissor_commands();
         let (com_pso, com_rast) = self.state.make_pso_commands();
 
         let device_lock = &self.shared.device;
@@ -3015,6 +3026,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         let commands = com_pso
             .into_iter()
             .chain(com_rast)
+            .chain(com_viewport)
+            .chain(com_scissor)
             .chain(com_ds)
             .chain(com_vs)
             .chain(com_ps);
@@ -3085,7 +3098,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         for region in regions {
             let r = region.borrow();
 
-            // layer count must be equal in both subresources
+            
             debug_assert_eq!(
                 r.src_subresource.layers.len(),
                 r.dst_subresource.layers.len()
@@ -3096,7 +3109,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
 
             let se = src.kind.extent().at_level(r.src_subresource.level);
             let de = dst.kind.extent().at_level(r.dst_subresource.level);
-            //TODO: support 3D textures
+            
             if se.depth != 1 || de.depth != 1 {
                 warn!(
                     "3D image blits are not supported properly yet: {:?} -> {:?}",
@@ -3114,7 +3127,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                 .or_insert_with(Vec::new);
 
             for (src_layer, dst_layer) in layers {
-                // this helper array defines unique data for quad vertices
+                
                 let data = [
                     [
                         r.src_bounds.start.x,
@@ -3141,10 +3154,10 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                         r.dst_bounds.start.y,
                     ],
                 ];
-                // now use the hard-coded index array to add 6 vertices to the list
-                //TODO: could use instancing here
-                // - with triangle strips
-                // - with half of the data supplied per instance
+                
+                
+                
+                
 
                 for &index in &[0usize, 1, 2, 2, 3, 0] {
                     let d = data[index];
@@ -3166,9 +3179,9 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             }
         }
 
-        // Note: we don't bother to restore any render states here, since we are currently
-        // outside of a render pass, and the state will be reset automatically once
-        // we enter the next pass.
+        
+        
+        
 
         let src_native = AsNative::from(match src_cubish {
             Some(ref tex) => tex.as_ref(),
@@ -3233,7 +3246,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                 }
 
                 let ext = dst.kind.extent().at_level(level);
-                //Note: flipping Y coordinate of the destination here
+                
                 let rect = pso::Rect {
                     x: 0,
                     y: ext.height as _,
@@ -3278,7 +3291,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
 
     unsafe fn bind_index_buffer(&mut self, view: buffer::IndexBufferView<Backend>) {
         let (raw, range) = view.buffer.as_bound();
-        assert!(range.start + view.offset < range.end); // conservative
+        assert!(range.start + view.offset < range.end); 
         self.state.index_buffer = Some(IndexBuffer {
             buffer: AsNative::from(raw),
             offset: (range.start + view.offset) as _,
@@ -3323,7 +3336,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         T: IntoIterator,
         T::Item: Borrow<pso::Viewport>,
     {
-        // macOS_GPUFamily1_v3 supports >1 viewport, todo
+        
         if first_viewport != 0 {
             panic!("First viewport != 0; Metal supports only one viewport");
         }
@@ -3333,7 +3346,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             .expect("No viewport provided, Metal supports exactly one");
         let vp = vp_borrowable.borrow();
         if vps.next().is_some() {
-            // TODO should we panic here or set buffer in an erroneous state?
+            
             panic!("More than one viewport set; Metal supports only one viewport");
         }
 
@@ -3346,7 +3359,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         T: IntoIterator,
         T::Item: Borrow<pso::Rect>,
     {
-        // macOS_GPUFamily1_v3 supports >1 scissor/viewport, todo
+        
         if first_scissor != 0 {
             panic!("First scissor != 0; Metal supports only one viewport");
         }
@@ -3373,9 +3386,9 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
     }
 
     unsafe fn set_line_width(&mut self, width: f32) {
-        // Note from the Vulkan spec:
-        // > If the wide lines feature is not enabled, lineWidth must be 1.0
-        // Simply assert and no-op because Metal never exposes `Features::LINE_WIDTH`
+        
+        
+        
         assert_eq!(width, 1.0);
     }
 
@@ -3412,7 +3425,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         T: IntoIterator,
         T::Item: Borrow<com::ClearValue>,
     {
-        // fill out temporary clear values per attachment
+        
         self.temp
             .clear_values
             .resize(render_pass.attachments.len(), None);
@@ -3430,8 +3443,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         self.state.pending_subpasses.clear();
         self.state.target_extent = framebuffer.extent;
 
-        //TODO: cache produced `RenderPassDescriptor` objects
-        // we stack the subpasses in the opposite order
+        
+        
         for subpass in render_pass.subpasses.iter().rev() {
             let mut combined_aspects = Aspects::empty();
             let descriptor = autoreleasepool(|| {
@@ -3459,7 +3472,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     }
                     if let Some(id) = resolve_id {
                         let resolve = &framebuffer.attachments[id];
-                        //Note: the selection of levels and slices is already handled by `ImageView`
+                        
                         desc.set_resolve_texture(Some(resolve));
                         desc.set_store_action(conv::map_resolved_store_operation(rat.ops.store));
                     } else if op_flags.contains(native::SubpassOps::STORE) {
@@ -3614,17 +3627,17 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                 if let Some(ref rs) = pipeline.rasterizer_state {
                     pre.issue(soft::RenderCommand::SetRasterizerState(rs.clone()))
                 }
-                // re-bind vertex buffers
+                
                 if let Some(command) = self
                     .state
                     .set_vertex_buffers(self.shared.private_caps.max_buffers_per_stage as usize)
                 {
                     pre.issue(command);
                 }
-                // re-bind push constants
+                
                 if let Some(pc) = pipeline.vs_pc_info {
                     if Some(pc) != self.state.resources_vs.push_constants {
-                        // if we don't have enough constants, then binding will follow
+                        
                         if pc.count as usize <= self.state.push_constants.len() {
                             pre.issue(self.state.push_vs_constants(pc));
                         }
@@ -3648,8 +3661,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                 pre.issue(soft::RenderCommand::SetDepthStencilState(state));
             }
         } else {
-            // This may be tricky: we expect either another pipeline to be bound
-            // (this overwriting these), or a new render pass started (thus using these).
+            
+            
             self.state.rasterizer_state = pipeline.rasterizer_state.clone();
             self.state.primitive_type = pipeline.primitive_type;
         }
@@ -3759,7 +3772,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     stage_flags,
                     ..
                 } => {
-                    //Note: this is incompatible with the binding scheme below
+                    
                     if stage_flags.contains(pso::ShaderStageFlags::VERTEX) {
                         let index = info.offsets.vs.buffers;
                         self.state.resources_vs.buffers[index as usize] =
@@ -3806,7 +3819,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             }
         }
 
-        // now bind all the affected resources
+        
         for (stage, cache, range) in
             iter::once((pso::Stage::Vertex, &self.state.resources_vs, bind_range.vs)).chain(
                 iter::once((
@@ -3954,7 +3967,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             }
         }
 
-        // now bind all the affected resources
+        
         if bind_range.textures.start != bind_range.textures.end {
             pre.issue(soft::ComputeCommand::BindTextures {
                 index: bind_range.textures.start,
@@ -4054,7 +4067,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     },
                 });
             } else {
-                // not natively supported, going through a compute shader
+                
                 assert_eq!(0, r.size >> 32);
                 let src_aligned = r.src & !(WORD_SIZE as u64 - 1);
                 let dst_aligned = r.dst & !(WORD_SIZE as u64 - 1);
@@ -4086,8 +4099,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     .alloc()
                     .init(soft::ComputeCommand::BindBufferData {
                         index: 2,
-                        // Rust doesn't see that compute_datas will not lose this
-                        // item and the boxed contents can't be moved otherwise.
+                        
+                        
                         words: mem::transmute(&compute_datas.last().unwrap()[..]),
                     });
                 compute_commands
@@ -4101,7 +4114,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             sink.blit_commands(blit_commands.into_iter());
         }
         if compute_commands.len() > 1 {
-            // first is bind PSO
+            
             sink.quick_compute("copy_buffer", compute_commands.into_iter());
         }
     }
@@ -4540,7 +4553,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                     && flags.contains(query::ResultFlags::BITS_64)
                     && !flags.contains(query::ResultFlags::WITH_AVAILABILITY)
                 {
-                    // if stride is matching, copy everything in one go
+                    
                     let com = soft::BlitCommand::CopyBuffer {
                         src: AsNative::from(visibility.buffer.as_ref()),
                         dst: AsNative::from(raw),
@@ -4555,7 +4568,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                         .sink()
                         .blit_commands(iter::once(com));
                 } else {
-                    // copy parts of individual entries
+                    
                     let size_payload = if flags.contains(query::ResultFlags::BITS_64) {
                         mem::size_of::<u64>() as buffer::Offset
                     } else {
@@ -4578,8 +4591,8 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                         let (com_avail, com_pad) = if flags.contains(
                             query::ResultFlags::WITH_AVAILABILITY | query::ResultFlags::WAIT,
                         ) {
-                            // Technically waiting is a no-op on a single queue. However,
-                            // the client expects the availability to be set regardless.
+                            
+                            
                             let com = soft::BlitCommand::FillBuffer {
                                 dst: AsNative::from(raw),
                                 range: dst_offset + size_payload .. dst_offset + 2 * size_payload,
@@ -4597,7 +4610,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
                                     size: size_meta,
                                 },
                             };
-                            // An extra padding is required if the client expects 64 bits availability without a wait
+                            
                             let com_pad = if flags.contains(query::ResultFlags::BITS_64) {
                                 Some(soft::BlitCommand::FillBuffer {
                                     dst: AsNative::from(raw),
@@ -4622,7 +4635,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
     }
 
     unsafe fn write_timestamp(&mut self, _: pso::PipelineStage, _: query::Query<Backend>) {
-        // nothing to do, timestamps are unsupported on Metal
+        
     }
 
     unsafe fn push_graphics_constants(
@@ -4637,7 +4650,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
         if stages.intersects(pso::ShaderStageFlags::GRAPHICS) {
             let mut inner = self.inner.borrow_mut();
             let mut pre = inner.sink().pre_render();
-            // Note: the whole range is re-uploaded, which may be inefficient
+            
             if stages.contains(pso::ShaderStageFlags::VERTEX) {
                 let pc = layout.push_constants.vs.unwrap();
                 pre.issue(self.state.push_vs_constants(pc));
@@ -4659,7 +4672,7 @@ impl com::CommandBuffer<Backend> for CommandBuffer {
             .update_push_constants(offset, constants, layout.total_push_constants);
         let pc = layout.push_constants.cs.unwrap();
 
-        // Note: the whole range is re-uploaded, which may be inefficient
+        
         self.inner
             .borrow_mut()
             .sink()
