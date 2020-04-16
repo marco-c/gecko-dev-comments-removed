@@ -490,7 +490,7 @@ class nsTextFrame : public nsFrame {
 
 
 
-  bool HasNonSuppressedText();
+  bool HasNonSuppressedText() const;
 
   
 

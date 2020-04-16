@@ -10172,7 +10172,7 @@ uint32_t nsTextFrame::CountGraphemeClusters() const {
   return unicode::CountGraphemeClusters(content.Data(), content.Length());
 }
 
-bool nsTextFrame::HasNonSuppressedText() {
+bool nsTextFrame::HasNonSuppressedText() const {
   if (HasAnyStateBits(TEXT_ISNOT_ONLY_WHITESPACE |
                       
                       

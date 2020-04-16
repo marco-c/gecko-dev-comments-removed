@@ -322,7 +322,7 @@ class nsBidiPresUtils {
   
 
 
-  static nsBidiLevel GetFrameBaseLevel(nsIFrame* aFrame);
+  static nsBidiLevel GetFrameBaseLevel(const nsIFrame* aFrame);
 
   
 
@@ -330,7 +330,7 @@ class nsBidiPresUtils {
 
 
 
-  static nsBidiDirection ParagraphDirection(nsIFrame* aFrame) {
+  static nsBidiDirection ParagraphDirection(const nsIFrame* aFrame) {
     return DIRECTION_FROM_LEVEL(GetFrameBaseLevel(aFrame));
   }
 
