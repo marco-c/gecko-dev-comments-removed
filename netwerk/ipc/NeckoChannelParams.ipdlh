@@ -146,6 +146,7 @@ struct LoadInfoArgs
   nsString                    cspNonce;
   bool                        skipContentSniffing;
   uint32_t                    httpsOnlyStatus;
+  bool                        allowDeprecatedSystemRequests;
   bool                        isFromProcessingFrameAttributes;
   CookieJarSettingsArgs       cookieJarSettings;
   uint32_t                    requestBlockingReason;
@@ -185,8 +186,12 @@ struct ParentLoadInfoForwarderArgs
   
   bool skipContentSniffing;
 
-  
   uint32_t httpsOnlyStatus;
+
+  
+  
+  
+  bool allowDeprecatedSystemRequests;
 
   
   

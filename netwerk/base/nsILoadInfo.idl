@@ -461,6 +461,12 @@ interface nsILoadInfo : nsISupports
 
 
 
+  [infallible] attribute boolean allowDeprecatedSystemRequests;
+
+  
+
+
+
 
 
   [infallible] readonly attribute boolean isInThirdPartyContext;
