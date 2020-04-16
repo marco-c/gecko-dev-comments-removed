@@ -112,7 +112,6 @@ document.addEventListener("DOMContentLoaded", e => {
     
     let maxColumnCount = 0;
     let date = new Date();
-    var hasData = false;
     for (let i = 0; i <= 6; i++) {
       let dateString = date.toISOString().split("T")[0];
       let ariaOwnsString = ""; 
@@ -123,7 +122,6 @@ document.addEventListener("DOMContentLoaded", e => {
       let innerBar = document.createElement("div");
       innerBar.className = "graph-wrapper-bar";
       if (data[dateString]) {
-        hasData = true;
         let content = data[dateString];
         let count = document.createElement("div");
         count.className = "bar-count";
@@ -250,7 +248,7 @@ document.addEventListener("DOMContentLoaded", e => {
       !socialEnabled;
 
     
-    if (notBlocking && !hasData) {
+    if (notBlocking) {
       document
         .getElementById("etp-card-content")
         .setAttribute(
