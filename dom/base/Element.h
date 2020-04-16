@@ -219,6 +219,11 @@ class Element : public FragmentOrElement {
   
 
 
+  Maybe<int32_t> GetTabIndexAttrValue();
+
+  
+
+
   void SetTabIndex(int32_t aTabIndex, mozilla::ErrorResult& aError);
 
   

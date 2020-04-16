@@ -2321,6 +2321,7 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   int32_t tabIndex = TabIndex();
   bool disabled = false;
   bool disallowOverridingFocusability = true;
+  Maybe<int32_t> attrVal = GetTabIndexAttrValue();
 
   if (IsEditableRoot()) {
     
@@ -2328,7 +2329,7 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
     
     
-    if (!HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+    if (attrVal.isNothing()) {
       
       
       tabIndex = 0;
@@ -2349,9 +2350,7 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
 
   
   
-  *aIsFocusable =
-      (tabIndex >= 0 ||
-       (!disabled && HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)));
+  *aIsFocusable = (tabIndex >= 0 || (!disabled && attrVal.isSome()));
 
   return disallowOverridingFocusability;
 }

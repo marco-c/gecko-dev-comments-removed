@@ -217,7 +217,7 @@ bool SVGAElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
     return false;
   }
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+  if (GetTabIndexAttrValue().isNothing()) {
     
     if (!Link::HasURI()) {
       

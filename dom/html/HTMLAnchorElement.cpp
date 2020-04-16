@@ -149,7 +149,7 @@ bool HTMLAnchorElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
     return true;
   }
 
-  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+  if (GetTabIndexAttrValue().isNothing()) {
     
     if (!Link::HasURI()) {
       

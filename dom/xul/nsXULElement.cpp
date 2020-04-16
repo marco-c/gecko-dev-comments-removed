@@ -385,11 +385,12 @@ bool nsXULElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   }
 
   if (aTabIndex) {
-    if (HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+    Maybe<int32_t> attrVal = GetTabIndexAttrValue();
+    if (attrVal.isSome()) {
       
       
       shouldFocus = true;
-      *aTabIndex = TabIndex();
+      *aTabIndex = attrVal.value();
     } else {
       
       

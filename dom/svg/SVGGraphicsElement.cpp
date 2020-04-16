@@ -28,6 +28,8 @@ SVGGraphicsElement::SVGGraphicsElement(
 
 bool SVGGraphicsElement::IsSVGFocusable(bool* aIsFocusable,
                                         int32_t* aTabIndex) {
+  
+  
   Document* doc = GetComposedDoc();
   if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
     
@@ -48,7 +50,7 @@ bool SVGGraphicsElement::IsSVGFocusable(bool* aIsFocusable,
 
   
   
-  *aIsFocusable = tabIndex >= 0 || HasAttr(nsGkAtoms::tabindex);
+  *aIsFocusable = tabIndex >= 0 || GetTabIndexAttrValue().isSome();
 
   return false;
 }
