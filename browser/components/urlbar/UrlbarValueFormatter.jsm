@@ -104,15 +104,6 @@ class UrlbarValueFormatter {
     }
 
     let url = this.inputField.value;
-    let browser = this.window.gBrowser.selectedBrowser;
-
-    
-    
-    
-    if (browser._urlMetaData && browser._urlMetaData.url == url) {
-      return browser._urlMetaData.data;
-    }
-    browser._urlMetaData = { url, data: null };
 
     
     let flags =
@@ -184,14 +175,7 @@ class UrlbarValueFormatter {
       }
     }
 
-    return (browser._urlMetaData.data = {
-      domain,
-      origin: uriInfo.fixedURI.host,
-      preDomain,
-      schemeWSlashes,
-      trimmedLength,
-      url,
-    });
+    return { preDomain, schemeWSlashes, domain, url, uriInfo, trimmedLength };
   }
 
   _removeURLFormat() {
@@ -225,12 +209,12 @@ class UrlbarValueFormatter {
     }
 
     let {
-      domain,
-      origin,
+      url,
+      uriInfo,
       preDomain,
       schemeWSlashes,
+      domain,
       trimmedLength,
-      url,
     } = urlMetaData;
     
     if (!UrlbarPrefs.get("trimURLs") || schemeWSlashes != "http://") {
@@ -274,7 +258,7 @@ class UrlbarValueFormatter {
     let baseDomain = domain;
     let subDomain = "";
     try {
-      baseDomain = Services.eTLD.getBaseDomainFromHost(origin);
+      baseDomain = Services.eTLD.getBaseDomainFromHost(uriInfo.fixedURI.host);
       if (!domain.endsWith(baseDomain)) {
         
         let IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(

@@ -82,7 +82,6 @@ class nsISecureBrowserUI;
 class nsISHistory;
 class nsIStringBundle;
 class nsIURIFixup;
-class nsIURIFixupInfo;
 class nsIURILoader;
 class nsIWebBrowserFind;
 class nsIWidget;
@@ -836,10 +835,6 @@ class nsDocShell final : public nsDocLoader,
       nsIChannel* aChannel, nsIURI* aURI, uint32_t aChannelRedirectFlags,
       const nsTArray<mozilla::net::DocumentChannelRedirect>& aRedirects);
 
-  already_AddRefed<nsIURIFixupInfo> KeywordToURI(const nsACString& aKeyword,
-                                                 bool aIsPrivateContext,
-                                                 nsIInputStream** aPostData);
-
   
   
   
@@ -1102,8 +1097,10 @@ class nsDocShell final : public nsDocLoader,
                                         SameDocumentNavigationState& aState);
 
  private:  
+  static nsIURIFixup* sURIFixup;
+
 #ifdef DEBUG
-           
+  
   static unsigned long gNumberOfDocShells;
 #endif 
 

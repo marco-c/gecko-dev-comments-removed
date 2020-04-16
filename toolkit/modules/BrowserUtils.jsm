@@ -853,12 +853,15 @@ var BrowserUtils = {
   trimURL(aURL) {
     
     
+
     let url = this.removeSingleTrailingSlashFromURL(aURL);
+
     
     if (!url.startsWith("http://")) {
       return url;
     }
     let urlWithoutProtocol = url.substring(7);
+
     
     
     
