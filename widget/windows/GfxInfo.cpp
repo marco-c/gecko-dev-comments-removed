@@ -1255,12 +1255,6 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_FAILURE_NV_W7_17", "nVidia driver > 187.45");
 
     
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::NvidiaAll,
-        GfxDriverInfo::allFeatures, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
-        DRIVER_EQUAL, V(26, 21, 14, 4575), "NVIDIA driver != 26.21.14.4575");
-
-    
 
 
     APPEND_TO_DRIVER_BLOCKLIST(
