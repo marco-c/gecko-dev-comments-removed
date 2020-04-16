@@ -123,7 +123,7 @@ extern "C" const char* __tsan_default_suppressions() {
 
          
          "race:UpdateCellPointers<js::Shape>\n"
-         "race:js::gc::MovingTracer::onScopeEdge\n"
+         "race:UpdateCellPointers<js::Scope>\n"
          "race:js::gc::MovingTracer::onShapeEdge\n"
          "race:fixupShapeTreeAfterMovingGC\n"
 
