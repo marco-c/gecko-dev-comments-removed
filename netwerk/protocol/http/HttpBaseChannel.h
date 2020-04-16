@@ -300,6 +300,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   virtual void SetCorsPreflightParameters(
       const nsTArray<nsCString>& unsafeHeaders) override;
   virtual void SetAltDataForChild(bool aIsForChild) override;
+  virtual void DisableAltDataCache() override { mDisableAltDataCache = true; };
+
   NS_IMETHOD GetConnectionInfoHashKey(
       nsACString& aConnectionInfoHashKey) override;
   NS_IMETHOD GetIntegrityMetadata(nsAString& aIntegrityMetadata) override;
@@ -863,6 +865,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   
   bool mAltDataForChild;
+
+  
+  
+  
+  bool mDisableAltDataCache;
 
   bool mForceMainDocumentChannel;
   
