@@ -232,6 +232,16 @@ void AnimationSurfaceProvider::Run() {
     }
 
     
+    
+    
+    
+    
+    bool checkForNewFrameAtYieldResult = false;
+    if (result == LexerResult(Yield::OUTPUT_AVAILABLE)) {
+      checkForNewFrameAtYieldResult = CheckForNewFrameAtYield();
+    }
+
+    
     if (mImage && mDecoder->HasProgress()) {
       NotifyProgress(WrapNotNull(mImage), WrapNotNull(mDecoder));
     }
@@ -249,7 +259,7 @@ void AnimationSurfaceProvider::Run() {
     
     
     MOZ_ASSERT(result == LexerResult(Yield::OUTPUT_AVAILABLE));
-    if (!CheckForNewFrameAtYield() ||
+    if (!checkForNewFrameAtYieldResult ||
         DecodePool::Singleton()->IsShuttingDown()) {
       return;
     }
