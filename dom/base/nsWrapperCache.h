@@ -13,7 +13,6 @@
 #include "js/Value.h"  
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
-#include "jsfriendapi.h"
 
 namespace mozilla {
 namespace dom {
@@ -181,18 +180,10 @@ class nsWrapperCache {
   
 
 
-  template <typename T>
-  void UpdateWrapperForNewGlobal(T* aScriptObjectHolder, JSObject* aNewWrapper);
-
-  
-
-
 
 
 
   void UpdateWrapper(JSObject* aNewObject, const JSObject* aOldObject) {
-    MOZ_ASSERT(js::GetObjectZoneFromAnyThread(aNewObject) ==
-               js::GetObjectZoneFromAnyThread(aOldObject));
     if (mWrapper) {
       MOZ_ASSERT(mWrapper == aOldObject);
       mWrapper = aNewObject;
@@ -302,8 +293,8 @@ class nsWrapperCache {
       return;
     }
 
-    JSObject* wrapper = GetWrapper();  
-    HoldJSObjects(aScriptObjectHolder, aTracer, JS::GetObjectZone(wrapper));
+    GetWrapper();  
+    HoldJSObjects(aScriptObjectHolder, aTracer);
     SetPreservingWrapper(true);
 #ifdef DEBUG
     
@@ -350,8 +341,7 @@ class nsWrapperCache {
     mFlags &= ~aFlagsToUnset;
   }
 
-  void HoldJSObjects(void* aScriptObjectHolder, nsScriptObjectTracer* aTracer,
-                     JS::Zone* aZone);
+  void HoldJSObjects(void* aScriptObjectHolder, nsScriptObjectTracer* aTracer);
 
 #ifdef DEBUG
  public:
