@@ -194,20 +194,6 @@ class ConvertToStringPolicy final : public TypePolicy {
 
 
 template <unsigned Op>
-class BooleanPolicy final : private TypePolicy {
- public:
-  constexpr BooleanPolicy() = default;
-  EMPTY_DATA_;
-  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
-                                              MInstruction* def);
-  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
-                                 MInstruction* def) const override {
-    return staticAdjustInputs(alloc, def);
-  }
-};
-
-
-template <unsigned Op>
 class UnboxedInt32Policy final : private TypePolicy {
  public:
   constexpr UnboxedInt32Policy() = default;
