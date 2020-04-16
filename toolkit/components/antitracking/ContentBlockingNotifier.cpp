@@ -170,14 +170,53 @@ void ReportBlockingToConsole(nsIChannel* aChannel, nsIURI* aURI,
   ReportBlockingToConsole(windowID, aURI, aRejectedReason);
 }
 
+void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
+                            ContentBlockingNotifier::BlockingDecision aDecision,
+                            uint32_t aRejectedReason, nsIURI* aURI) {
+  MOZ_ASSERT(aTrackingChannel);
 
-void NotifyAllowDecision(nsIChannel* aTrackingChannel, nsIURI* aURI) {
+  
+  
+  if (XRE_IsContentProcess()) {
+    nsCOMPtr<nsILoadContext> loadContext;
+    NS_QueryNotificationCallbacks(aTrackingChannel, loadContext);
+    if (!loadContext) {
+      return;
+    }
+
+    nsCOMPtr<mozIDOMWindowProxy> window;
+    loadContext->GetAssociatedWindow(getter_AddRefs(window));
+    if (!window) {
+      return;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> outer = nsPIDOMWindowOuter::From(window);
+    if (!outer) {
+      return;
+    }
+
+    
+    
+    
+    if (nsGlobalWindowOuter::Cast(outer)->GetPrincipal() ==
+        nsContentUtils::GetSystemPrincipal()) {
+      MOZ_DIAGNOSTIC_ASSERT(aDecision ==
+                            ContentBlockingNotifier::BlockingDecision::eAllow);
+      return;
+    }
+  }
+
   nsAutoCString trackingOrigin;
   if (aURI) {
     Unused << nsContentUtils::GetASCIIOrigin(aURI, trackingOrigin);
   }
 
-  
+  if (aDecision == ContentBlockingNotifier::BlockingDecision::eBlock) {
+    ContentBlockingNotifier::OnEvent(aTrackingChannel, true, aRejectedReason,
+                                     trackingOrigin);
+
+    ReportBlockingToConsole(aTrackingChannel, aURI, aRejectedReason);
+  }
 
   
   
@@ -207,55 +246,6 @@ void NotifyAllowDecision(nsIChannel* aTrackingChannel, nsIURI* aURI) {
         nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER,
         trackingOrigin);
   }
-}
-
-void NotifyBlockingDecision(nsIChannel* aTrackingChannel,
-                            ContentBlockingNotifier::BlockingDecision aDecision,
-                            uint32_t aRejectedReason, nsIURI* aURI) {
-  MOZ_ASSERT(aTrackingChannel);
-
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-    nsCOMPtr<nsILoadContext> loadContext;
-    NS_QueryNotificationCallbacks(aTrackingChannel, loadContext);
-    if (!loadContext) {
-      return;
-    }
-
-    nsCOMPtr<mozIDOMWindowProxy> window;
-    loadContext->GetAssociatedWindow(getter_AddRefs(window));
-    if (!window) {
-      return;
-    }
-
-    nsCOMPtr<nsPIDOMWindowOuter> outer = nsPIDOMWindowOuter::From(window);
-    if (!outer) {
-      return;
-    }
-
-    if (nsGlobalWindowOuter::Cast(outer)->GetPrincipal() ==
-        nsContentUtils::GetSystemPrincipal()) {
-      MOZ_DIAGNOSTIC_ASSERT(aDecision ==
-                            ContentBlockingNotifier::BlockingDecision::eAllow);
-      return;
-    }
-  }
-
-  nsAutoCString trackingOrigin;
-  if (aURI) {
-    Unused << nsContentUtils::GetASCIIOrigin(aURI, trackingOrigin);
-  }
-
-  if (aDecision == ContentBlockingNotifier::BlockingDecision::eBlock) {
-    ContentBlockingNotifier::OnEvent(aTrackingChannel, true, aRejectedReason,
-                                     trackingOrigin);
-
-    ReportBlockingToConsole(aTrackingChannel, aURI, aRejectedReason);
-  }
-
-  NotifyAllowDecision(aTrackingChannel, aURI);
 }
 
 
