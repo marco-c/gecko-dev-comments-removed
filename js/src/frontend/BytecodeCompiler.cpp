@@ -940,26 +940,10 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
       uint32_t(BaseScript::ImmutableFlags::NeedsFunctionEnvironmentObjects);
 
   
-  
-  
-  
-  
-  
-  constexpr uint32_t CustomFlagsMask =
-      uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce);
-
-  
-  constexpr uint32_t MatchedFlagsMask = ~(NonLazyFlagsMask | CustomFlagsMask);
+  constexpr uint32_t MatchedFlagsMask = ~NonLazyFlagsMask;
 
   MOZ_ASSERT((lazy & NonLazyFlagsMask) == 0);
   MOZ_ASSERT((lazy & MatchedFlagsMask) == (nonLazy & MatchedFlagsMask));
-
-  
-  
-  
-  
-  MOZ_ASSERT_IF(nonLazy & uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce),
-                lazy & uint32_t(BaseScript::ImmutableFlags::TreatAsRunOnce));
 #endif  
 }
 

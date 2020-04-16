@@ -102,9 +102,7 @@ bool FunctionEmitter::emitLazy() {
   }
 
   funbox_->setEnclosingScopeForInnerLazyFunction(bce_->innermostScope());
-  if (bce_->emittingRunOnceLambda) {
-    
-    
+  if (bce_->emittingRunOnceLambda && !funbox_->shouldSuppressRunOnce()) {
     funbox_->setTreatAsRunOnce();
   }
 
