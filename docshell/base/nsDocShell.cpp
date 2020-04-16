@@ -8417,8 +8417,7 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
   aLoadState->SetTarget(EmptyString());
   
   aLoadState->SetFileName(VoidString());
-  return targetContext->InternalLoad(mBrowsingContext, aLoadState, aDocShell,
-                                     aRequest);
+  return targetContext->InternalLoad(aLoadState, aDocShell, aRequest);
 }
 
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
