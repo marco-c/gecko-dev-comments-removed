@@ -1674,14 +1674,12 @@ static MOZ_MUST_USE bool AsyncGeneratorPromiseReactionJob(
     JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
   MOZ_ASSERT(reaction->isAsyncGenerator());
 
-  int32_t handler = reaction->handler().toInt32();
   RootedValue argument(cx, reaction->handlerArg());
   Rooted<AsyncGeneratorObject*> asyncGenObj(cx, reaction->asyncGenerator());
 
   
   
-
-  switch (handler) {
+  switch (int32_t handler = reaction->handler().toInt32(); handler) {
     
     
     case PromiseHandlerAsyncGeneratorAwaitedFulfilled: {

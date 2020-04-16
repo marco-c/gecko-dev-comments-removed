@@ -546,8 +546,7 @@ static bool SimplifyCondition(JSContext* cx, FullParseHandler* handler,
   
 
   ParseNode* node = *nodePtr;
-  Truthiness t = Boolish(node);
-  if (t != Unknown) {
+  if (Truthiness t = Boolish(node); t != Unknown) {
     
     
     

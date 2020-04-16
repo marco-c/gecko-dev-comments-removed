@@ -768,8 +768,7 @@ bool LanguageTag::canonicalizeTransformExtension(
   };
 
   
-  size_t fieldsLength = fields.length();
-  if (fieldsLength > 1) {
+  if (size_t fieldsLength = fields.length(); fieldsLength > 1) {
     if (!fields.growByUninitialized(fieldsLength)) {
       return false;
     }
