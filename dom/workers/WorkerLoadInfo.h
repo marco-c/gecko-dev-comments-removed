@@ -8,6 +8,7 @@
 #define mozilla_dom_workers_WorkerLoadInfo_h
 
 #include "mozilla/StorageAccess.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ChannelInfo.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -64,7 +65,7 @@ struct WorkerLoadInfoData {
   
   
   
-  nsAutoPtr<mozilla::ipc::CSPInfo> mCSPInfo;
+  UniquePtr<mozilla::ipc::CSPInfo> mCSPInfo;
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
@@ -100,8 +101,8 @@ struct WorkerLoadInfoData {
   
   RefPtr<InterfaceRequestor> mInterfaceRequestor;
 
-  nsAutoPtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
-  nsAutoPtr<mozilla::ipc::PrincipalInfo> mStoragePrincipalInfo;
+  UniquePtr<mozilla::ipc::PrincipalInfo> mPrincipalInfo;
+  UniquePtr<mozilla::ipc::PrincipalInfo> mStoragePrincipalInfo;
   nsCString mDomain;
   nsString mOrigin;  
 
