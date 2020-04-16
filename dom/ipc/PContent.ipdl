@@ -1472,7 +1472,7 @@ parent:
 
 
 
-    async FirstPartyStorageAccessGrantedForOrigin(Principal aParentPrincipal,
+    async FirstPartyStorageAccessGrantedForOrigin(uint64_t aParentWindowId,
                                                   Principal aTrackingPrincipal,
                                                   nsCString aTrackingOrigin,
                                                   int aAllowMode)
