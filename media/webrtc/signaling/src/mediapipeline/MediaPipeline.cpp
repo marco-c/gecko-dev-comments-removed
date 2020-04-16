@@ -1180,7 +1180,7 @@ void MediaPipelineTransmit::PipelineListener::NotifyQueuedChanges(
     return;
   }
 
-  TRACE_AUDIO_CALLBACK_COMMENT("Audio");
+  TRACE_COMMENT("Audio");
 
   if (mDirectConnect) {
     
@@ -1441,7 +1441,7 @@ class MediaPipelineReceiveAudio::PipelineListener
   }
 
   void NotifyPullImpl(TrackTime aDesiredTime) {
-    TRACE_AUDIO_CALLBACK_COMMENT("Listener %p", this);
+    TRACE_COMMENT("Listener %p", this);
     uint32_t samplesPer10ms = mRate / 100;
 
     
