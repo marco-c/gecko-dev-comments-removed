@@ -16,6 +16,11 @@ const { FileUtils } = ChromeUtils.import(
 );
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+ChromeUtils.defineModuleGetter(
+  this,
+  "WindowsVersionInfo",
+  "resource://gre/modules/components-utils/WindowsVersionInfo.jsm"
+);
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]); 
 
 ChromeUtils.defineModuleGetter(
@@ -385,9 +390,13 @@ if (AppConstants.platform != "win") {
 
 
 function getDistributionPrefValue(aPrefName) {
-  return Services.prefs
+  let value = Services.prefs
     .getDefaultBranch(null)
     .getCharPref(aPrefName, "default");
+  if (!value) {
+    value = "default";
+  }
+  return value;
 }
 
 function getSystemCapabilities() {
@@ -541,92 +550,42 @@ XPCOMUtils.defineLazyGetter(UpdateUtils, "OSVersion", function() {
 
   if (osVersion) {
     if (AppConstants.platform == "win") {
-      const BYTE = ctypes.uint8_t;
-      const WORD = ctypes.uint16_t;
-      const DWORD = ctypes.uint32_t;
-      const WCHAR = ctypes.char16_t;
-      const BOOL = ctypes.int;
-
       
-      
-      const SZCSDVERSIONLENGTH = 128;
-      const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW", [
-        { dwOSVersionInfoSize: DWORD },
-        { dwMajorVersion: DWORD },
-        { dwMinorVersion: DWORD },
-        { dwBuildNumber: DWORD },
-        { dwPlatformId: DWORD },
-        { szCSDVersion: ctypes.ArrayType(WCHAR, SZCSDVERSIONLENGTH) },
-        { wServicePackMajor: WORD },
-        { wServicePackMinor: WORD },
-        { wSuiteMask: WORD },
-        { wProductType: BYTE },
-        { wReserved: BYTE },
-      ]);
-
-      let kernel32 = false;
       try {
-        kernel32 = ctypes.open("Kernel32");
-      } catch (e) {
-        Cu.reportError("Unable to open kernel32! " + e);
-        osVersion += ".unknown (unknown)";
+        const {
+          servicePackMajor,
+          servicePackMinor,
+          buildNumber,
+        } = WindowsVersionInfo.get();
+        osVersion += `.${servicePackMajor}.${servicePackMinor}.${buildNumber}`;
+      } catch (err) {
+        Cu.reportError(
+          "Unable to retrieve windows version information: " + err
+        );
+        osVersion += ".unknown";
       }
 
-      if (kernel32) {
-        try {
-          
-          try {
-            let GetVersionEx = kernel32.declare(
-              "GetVersionExW",
-              ctypes.winapi_abi,
-              BOOL,
-              OSVERSIONINFOEXW.ptr
-            );
-            let winVer = OSVERSIONINFOEXW();
-            winVer.dwOSVersionInfoSize = OSVERSIONINFOEXW.size;
-
-            if (0 !== GetVersionEx(winVer.address())) {
-              osVersion +=
-                "." +
-                winVer.wServicePackMajor +
-                "." +
-                winVer.wServicePackMinor +
-                "." +
-                winVer.dwBuildNumber;
-            } else {
-              Cu.reportError("Unknown failure in GetVersionEX (returned 0)");
-              osVersion += ".unknown";
-            }
-          } catch (e) {
-            Cu.reportError(
-              "Error getting service pack information. Exception: " + e
-            );
-            osVersion += ".unknown";
-          }
-
-          if (
-            Services.vc.compare(
-              Services.sysinfo.getProperty("version"),
-              "10"
-            ) >= 0
-          ) {
-            const WINDOWS_UBR_KEY_PATH =
-              "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-            let ubr = WindowsRegistry.readRegKey(
-              Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-              WINDOWS_UBR_KEY_PATH,
-              "UBR",
-              Ci.nsIWindowsRegKey.WOW64_64
-            );
-            osVersion += ubr !== undefined ? "." + ubr : ".unknown";
-          }
-        } finally {
-          kernel32.close();
+      
+      if (
+        Services.vc.compare(Services.sysinfo.getProperty("version"), "10") >= 0
+      ) {
+        const WINDOWS_UBR_KEY_PATH =
+          "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+        let ubr = WindowsRegistry.readRegKey(
+          Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
+          WINDOWS_UBR_KEY_PATH,
+          "UBR",
+          Ci.nsIWindowsRegKey.WOW64_64
+        );
+        if (ubr !== undefined) {
+          osVersion += `.${ubr}`;
+        } else {
+          osVersion += ".undefined;";
         }
-
-        
-        osVersion += " (" + gWinCPUArch + ")";
       }
+
+      
+      osVersion += " (" + gWinCPUArch + ")";
     }
 
     try {
