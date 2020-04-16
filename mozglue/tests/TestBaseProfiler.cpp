@@ -850,6 +850,31 @@ static void TestChunkedBuffer() {
                 "UniquePtr<ProfileBufferChunk>");
   MOZ_RELEASE_ASSERT(!chunks, "Expected no chunks when out-of-session");
 
+  
+  
+  
+  constexpr size_t bufferMaxSize = 1024;
+  constexpr ProfileChunkedBuffer::Length chunkMinSize = 128;
+  ProfileBufferChunkManagerWithLocalLimit cm(bufferMaxSize, chunkMinSize);
+  cb.SetChunkManager(cm);
+
+  
+  cm.FulfillChunkRequests();
+
+  MOZ_RELEASE_ASSERT(cm.MaxTotalSize() == bufferMaxSize);
+  MOZ_RELEASE_ASSERT(cb.BufferLength().isSome());
+  MOZ_RELEASE_ASSERT(*cb.BufferLength() == bufferMaxSize);
+
+  
+  chunks = cb.GetAllChunks();
+  MOZ_RELEASE_ASSERT(!!chunks, "Expected at least one chunk");
+  MOZ_RELEASE_ASSERT(!chunks->GetNext(), "Expected only one chunk");
+  const ProfileChunkedBuffer::Length chunkActualSize = chunks->BufferBytes();
+  MOZ_RELEASE_ASSERT(chunkActualSize >= chunkMinSize);
+  MOZ_RELEASE_ASSERT(chunks->RangeStart() == 1);
+  MOZ_RELEASE_ASSERT(chunks->OffsetFirstBlock() == 0);
+  MOZ_RELEASE_ASSERT(chunks->OffsetPastLastBlock() == 0);
+
 #ifdef DEBUG
   
 #endif
@@ -860,7 +885,35 @@ static void TestChunkedBuffer() {
   
 #endif
 
+  
+  cb.ResetChunkManager();
+
+  chunks = cb.GetAllChunks();
+  MOZ_RELEASE_ASSERT(!chunks, "Expected no chunks when out-of-session");
+
   printf("TestChunkedBuffer done\n");
+}
+
+static void TestChunkedBufferSingle() {
+  printf("TestChunkedBufferSingle...\n");
+
+  constexpr ProfileChunkedBuffer::Length chunkMinSize = 128;
+
+  
+  
+  
+  ProfileChunkedBuffer cbSingle(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+      MakeUnique<ProfileBufferChunkManagerSingle>(chunkMinSize));
+
+  MOZ_RELEASE_ASSERT(cbSingle.BufferLength().isSome());
+  MOZ_RELEASE_ASSERT(*cbSingle.BufferLength() >= chunkMinSize);
+
+#ifdef DEBUG
+  
+#endif
+
+  printf("TestChunkedBufferSingle done\n");
 }
 
 static void TestModuloBuffer(ModuloBuffer<>& mb, uint32_t MBSize) {
@@ -2059,6 +2112,7 @@ void TestProfilerDependencies() {
   TestChunkManagerSingle();
   TestChunkManagerWithLocalLimit();
   TestChunkedBuffer();
+  TestChunkedBufferSingle();
   TestModuloBuffer();
   TestBlocksRingBufferAPI();
   TestBlocksRingBufferUnderlyingBufferChanges();

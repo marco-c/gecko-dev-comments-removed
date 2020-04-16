@@ -72,12 +72,65 @@ class ProfileChunkedBuffer {
       : mMutex(aThreadSafety != ThreadSafety::WithoutMutex) {}
 
   
+  ProfileChunkedBuffer(ThreadSafety aThreadSafety,
+                       ProfileBufferChunkManager& aChunkManager)
+      : mMutex(aThreadSafety != ThreadSafety::WithoutMutex) {
+    SetChunkManager(aChunkManager);
+  }
+
+  
+  ProfileChunkedBuffer(ThreadSafety aThreadSafety,
+                       UniquePtr<ProfileBufferChunkManager>&& aChunkManager)
+      : mMutex(aThreadSafety != ThreadSafety::WithoutMutex) {
+    SetChunkManager(std::move(aChunkManager));
+  }
+
+  ~ProfileChunkedBuffer() {
+    
+    ResetChunkManager();
+  }
+
+  
   
   [[nodiscard]] bool IsThreadSafe() const { return mMutex.IsActivated(); }
 
   [[nodiscard]] bool IsInSession() const {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
     return !!mChunkManager;
+  }
+
+  
+  
+  
+  void ResetChunkManager() {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    Unused << ResetChunkManager(lock);
+  }
+
+  
+  
+  
+  
+  void SetChunkManager(ProfileBufferChunkManager& aChunkManager) {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    Unused << ResetChunkManager(lock);
+    SetChunkManager(aChunkManager, lock);
+  }
+
+  
+  void SetChunkManager(UniquePtr<ProfileBufferChunkManager>&& aChunkManager) {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    Unused << ResetChunkManager(lock);
+    mOwnedChunkManager = std::move(aChunkManager);
+    if (mOwnedChunkManager) {
+      SetChunkManager(*mOwnedChunkManager, lock);
+    }
+  }
+
+  
+  [[nodiscard]] UniquePtr<ProfileBufferChunkManager> ExtractChunkManager() {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    return ResetChunkManager(lock);
   }
 
   void Clear() {
@@ -219,6 +272,57 @@ class ProfileChunkedBuffer {
 #endif  
 
  private:
+  [[nodiscard]] UniquePtr<ProfileBufferChunkManager> ResetChunkManager(
+      const baseprofiler::detail::BaseProfilerMaybeAutoLock&) {
+    UniquePtr<ProfileBufferChunkManager> chunkManager;
+    if (mChunkManager) {
+      mChunkManager->ForgetUnreleasedChunks();
+#ifdef DEBUG
+      mChunkManager->DeregisteredFrom(this);
+#endif
+      mChunkManager = nullptr;
+      chunkManager = std::move(mOwnedChunkManager);
+      if (mCurrentChunk) {
+        mCurrentChunk->MarkDone();
+        mCurrentChunk = nullptr;
+      }
+      mNextChunks = nullptr;
+      mNextChunkRangeStart = mRangeEnd;
+      mRangeStart = mRangeEnd;
+      mPushedBlockCount = 0;
+      mClearedBlockCount = 0;
+    }
+    return chunkManager;
+  }
+
+  void SetChunkManager(
+      ProfileBufferChunkManager& aChunkManager,
+      const baseprofiler::detail::BaseProfilerMaybeAutoLock& aLock) {
+    MOZ_ASSERT(!mChunkManager);
+    mChunkManager = &aChunkManager;
+#ifdef DEBUG
+    mChunkManager->RegisteredWith(this);
+#endif
+
+    mChunkManager->SetChunkDestroyedCallback(
+        [this](const ProfileBufferChunk& aChunk) {
+          for (;;) {
+            ProfileBufferIndex rangeStart = mRangeStart;
+            if (MOZ_LIKELY(rangeStart <= aChunk.RangeStart())) {
+              if (MOZ_LIKELY(mRangeStart.compareExchange(
+                      rangeStart,
+                      aChunk.RangeStart() + aChunk.BufferBytes()))) {
+                break;
+              }
+            }
+          }
+          mClearedBlockCount += aChunk.BlockCount();
+        });
+
+    
+    SetAndInitializeCurrentChunk(mChunkManager->GetChunk(), aLock);
+  }
+
   [[nodiscard]] size_t SizeOfExcludingThis(
       MallocSizeOf aMallocSizeOf,
       const baseprofiler::detail::BaseProfilerMaybeAutoLock&) const {
@@ -259,6 +363,9 @@ class ProfileChunkedBuffer {
   
   
   ProfileBufferChunkManager* mChunkManager = nullptr;
+
+  
+  UniquePtr<ProfileBufferChunkManager> mOwnedChunkManager;
 
   UniquePtr<ProfileBufferChunk> mCurrentChunk;
 
