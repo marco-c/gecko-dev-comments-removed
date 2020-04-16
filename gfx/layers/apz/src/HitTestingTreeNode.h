@@ -136,10 +136,12 @@ class HitTestingTreeNode {
   
   void SetStickyPosData(ScrollableLayerGuid::ViewID aStickyPosTarget,
                         const LayerRectAbsolute& aScrollRangeOuter,
-                        const LayerRectAbsolute& aScrollRangeInner);
+                        const LayerRectAbsolute& aScrollRangeInner,
+                        const Maybe<uint64_t>& aStickyPositionAnimationId);
   ScrollableLayerGuid::ViewID GetStickyPosTarget() const;
   const LayerRectAbsolute& GetStickyScrollRangeOuter() const;
   const LayerRectAbsolute& GetStickyScrollRangeInner() const;
+  Maybe<uint64_t> GetStickyPositionAnimationId() const;
 
   
 
@@ -205,6 +207,9 @@ class HitTestingTreeNode {
   ScrollableLayerGuid::ViewID mStickyPosTarget;
   LayerRectAbsolute mStickyScrollRangeOuter;
   LayerRectAbsolute mStickyScrollRangeInner;
+  
+  
+  Maybe<uint64_t> mStickyPositionAnimationId;
 
   
 

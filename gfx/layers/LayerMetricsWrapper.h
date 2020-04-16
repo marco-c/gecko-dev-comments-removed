@@ -455,6 +455,14 @@ class MOZ_STACK_CLASS LayerMetricsWrapper final {
     return empty;
   }
 
+  Maybe<uint64_t> GetStickyPositionAnimationId() const {
+    MOZ_ASSERT(IsValid());
+    
+    
+    
+    return Nothing();
+  }
+
   Maybe<uint64_t> GetZoomAnimationId() const {
     MOZ_ASSERT(IsValid());
     

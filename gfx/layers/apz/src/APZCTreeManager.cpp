@@ -152,6 +152,7 @@ struct APZCTreeManager::TreeBuildingState {
   
   std::vector<FixedPositionInfo> mFixedPositionInfo;
   std::vector<RootScrollbarInfo> mRootScrollbarInfo;
+  std::vector<StickyPositionInfo> mStickyPositionInfo;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -484,6 +485,12 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
                 *(node->GetFixedPositionAnimationId()),
                 node->GetFixedPosSides());
           }
+          
+          if (node->GetStickyPositionAnimationId().isSome()) {
+            state.mStickyPositionInfo.emplace_back(
+                *(node->GetStickyPositionAnimationId()),
+                node->GetFixedPosSides());
+          }
           if (apzc && node->IsPrimaryHolder()) {
             state.mScrollTargets[apzc->GetGuid()] = node;
           }
@@ -631,6 +638,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
 
     mRootScrollbarInfo = std::move(state.mRootScrollbarInfo);
     mFixedPositionInfo = std::move(state.mFixedPositionInfo);
+    mStickyPositionInfo = std::move(state.mStickyPositionInfo);
   }
 
   for (size_t i = 0; i < state.mNodesToDestroy.Length(); i++) {
@@ -1176,7 +1184,8 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
                           aLayer.GetFixedPositionAnimationId());
     node->SetStickyPosData(aLayer.GetStickyScrollContainerId(),
                            aLayer.GetStickyScrollRangeOuter(),
-                           aLayer.GetStickyScrollRangeInner());
+                           aLayer.GetStickyScrollRangeInner(),
+                           aLayer.GetStickyPositionAnimationId());
     return node;
   }
 
@@ -1405,7 +1414,8 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
                         aLayer.GetFixedPositionAnimationId());
   node->SetStickyPosData(aLayer.GetStickyScrollContainerId(),
                          aLayer.GetStickyScrollRangeOuter(),
-                         aLayer.GetStickyScrollRangeInner());
+                         aLayer.GetStickyScrollRangeInner(),
+                         aLayer.GetStickyPositionAnimationId());
   return node;
 }
 
