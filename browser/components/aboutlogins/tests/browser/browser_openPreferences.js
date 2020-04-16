@@ -12,9 +12,28 @@ add_task(async function setup() {
 });
 
 add_task(async function test_open_preferences() {
+  
+  
+  
+  
+  
+  let seenFirstURL = false;
   let promiseNewTab = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    "about:preferences#privacy-logins"
+    url => {
+      if (url == "about:preferences#privacy-logins") {
+        seenFirstURL = true;
+        return true;
+      } else if (url == "about:preferences#privacy") {
+        ok(
+          seenFirstURL,
+          "Must have seen an onLocationChange notification for the privacy-logins hash"
+        );
+        return true;
+      }
+      return false;
+    },
+    true
   );
 
   let browser = gBrowser.selectedBrowser;
