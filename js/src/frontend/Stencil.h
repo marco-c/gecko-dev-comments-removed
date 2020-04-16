@@ -457,6 +457,9 @@ class ScriptStencil {
   
   mozilla::Maybe<FunctionIndex> functionIndex;
 
+  
+  mozilla::Maybe<FieldInitializers> fieldInitializers;
+
   ScriptStencil(JSContext* cx,
                 UniquePtr<js::ImmutableScriptData> immutableScriptData)
       : immutableScriptData(std::move(immutableScriptData)), gcThings(cx) {}

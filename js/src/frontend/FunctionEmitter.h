@@ -255,8 +255,7 @@ class MOZ_STACK_CLASS FunctionScriptEmitter {
   
   
   
-  MOZ_MUST_USE bool initScript(
-      const mozilla::Maybe<FieldInitializers>& fieldInitializers);
+  MOZ_MUST_USE bool initScript();
 
  private:
   MOZ_MUST_USE bool emitExtraBodyVarScope();

@@ -44,6 +44,7 @@ void BCEScriptStencil::init() {
   if (isFunction()) {
     FunctionBox* funbox = bce_.sc->asFunctionBox();
     functionIndex.emplace(funbox->index());
+    fieldInitializers = funbox->fieldInitializers;
 
     
     
