@@ -1464,10 +1464,6 @@ bool ScriptedProxyHandler::isConstructor(JSObject* obj) const {
 const char ScriptedProxyHandler::family = 0;
 const ScriptedProxyHandler ScriptedProxyHandler::singleton;
 
-bool IsRevokedScriptedProxy(JSObject* obj) {
-  obj = CheckedUnwrapStatic(obj);
-  return obj && IsScriptedProxy(obj) && !obj->as<ProxyObject>().target();
-}
 
 
 
@@ -1484,23 +1480,9 @@ static bool ProxyCreate(JSContext* cx, CallArgs& args, const char* callerName) {
   }
 
   
-  if (IsRevokedScriptedProxy(target)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_PROXY_ARG_REVOKED, "1");
-    return false;
-  }
-
-  
   RootedObject handler(cx,
                        RequireObjectArg(cx, "`handler`", callerName, args[1]));
   if (!handler) {
-    return false;
-  }
-
-  
-  if (IsRevokedScriptedProxy(handler)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_PROXY_ARG_REVOKED, "2");
     return false;
   }
 
