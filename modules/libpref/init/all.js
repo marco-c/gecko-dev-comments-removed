@@ -526,6 +526,7 @@ pref("media.videocontrols.picture-in-picture.video-toggle.min-video-secs", 45);
   pref("media.getusermedia.noise", 1); 
   pref("media.getusermedia.agc_enabled", true);
   pref("media.getusermedia.agc", 1); 
+  pref("media.getusermedia.hpf_enabled", true);
   
   pref("media.navigator.audio.full_duplex", true);
 #endif // MOZ_WEBRTC
