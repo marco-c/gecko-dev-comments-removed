@@ -2786,9 +2786,9 @@ MDefinition* MRsh::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MBinaryArithInstruction::foldsTo(TempAllocator& alloc) {
-  MOZ_ASSERT(IsNumberType(specialization_));
+  MOZ_ASSERT(IsNumberType(type()));
 
-  if (specialization_ == MIRType::Int64) {
+  if (type() == MIRType::Int64) {
     return this;
   }
 
@@ -2811,7 +2811,7 @@ MDefinition* MBinaryArithInstruction::foldsTo(TempAllocator& alloc) {
   }
 
   
-  if (isAdd() && specialization_ != MIRType::Int32) {
+  if (isAdd() && type() != MIRType::Int32) {
     return this;
   }
 
@@ -2868,10 +2868,10 @@ bool MFilterTypeSet::canConsumeFloat32(MUse* operand) const {
 }
 
 void MBinaryArithInstruction::trySpecializeFloat32(TempAllocator& alloc) {
-  MOZ_ASSERT(IsNumberType(specialization_));
+  MOZ_ASSERT(IsNumberType(type()));
 
   
-  if (specialization_ == MIRType::Int32) {
+  if (type() == MIRType::Int32) {
     return;
   }
 
@@ -2889,12 +2889,11 @@ void MBinaryArithInstruction::trySpecializeFloat32(TempAllocator& alloc) {
     return;
   }
 
-  specialization_ = MIRType::Float32;
   setResultType(MIRType::Float32);
 }
 
 void MMinMax::trySpecializeFloat32(TempAllocator& alloc) {
-  if (specialization_ == MIRType::Int32) {
+  if (type() == MIRType::Int32) {
     return;
   }
 
@@ -2914,7 +2913,6 @@ void MMinMax::trySpecializeFloat32(TempAllocator& alloc) {
     return;
   }
 
-  specialization_ = MIRType::Float32;
   setResultType(MIRType::Float32);
 }
 
@@ -3086,13 +3084,12 @@ void MAbs::trySpecializeFloat32(TempAllocator& alloc) {
   }
 
   setResultType(MIRType::Float32);
-  specialization_ = MIRType::Float32;
 }
 
 MDefinition* MDiv::foldsTo(TempAllocator& alloc) {
-  MOZ_ASSERT(IsNumberType(specialization_));
+  MOZ_ASSERT(IsNumberType(type()));
 
-  if (specialization_ == MIRType::Int64) {
+  if (type() == MIRType::Int64) {
     return this;
   }
 
@@ -3109,7 +3106,7 @@ MDefinition* MDiv::foldsTo(TempAllocator& alloc) {
 
 void MDiv::analyzeEdgeCasesForward() {
   
-  if (specialization_ != MIRType::Int32) {
+  if (type() != MIRType::Int32) {
     return;
   }
 
@@ -3154,9 +3151,9 @@ void MDiv::analyzeEdgeCasesBackward() {
 bool MDiv::fallible() const { return !isTruncated(); }
 
 MDefinition* MMod::foldsTo(TempAllocator& alloc) {
-  MOZ_ASSERT(IsNumberType(specialization_));
+  MOZ_ASSERT(IsNumberType(type()));
 
-  if (specialization_ == MIRType::Int64) {
+  if (type() == MIRType::Int64) {
     return this;
   }
 
@@ -3169,7 +3166,7 @@ MDefinition* MMod::foldsTo(TempAllocator& alloc) {
 
 void MMod::analyzeEdgeCasesForward() {
   
-  if (specialization_ != MIRType::Int32) {
+  if (type() != MIRType::Int32) {
     return;
   }
 
@@ -3244,7 +3241,7 @@ MDefinition* MMul::foldsTo(TempAllocator& alloc) {
     return out;
   }
 
-  if (specialization() != MIRType::Int32) {
+  if (type() != MIRType::Int32) {
     return this;
   }
 
@@ -3258,7 +3255,7 @@ MDefinition* MMul::foldsTo(TempAllocator& alloc) {
 void MMul::analyzeEdgeCasesForward() {
   
   
-  if (specialization() != MIRType::Int32) {
+  if (type() != MIRType::Int32) {
     return;
   }
 
