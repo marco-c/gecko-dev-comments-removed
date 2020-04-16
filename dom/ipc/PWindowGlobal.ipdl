@@ -12,6 +12,7 @@ include protocol PBrowserBridge;
 
 include DOMTypes;
 include ClientIPCTypes;
+include NeckoChannelParams;
 
 using JSWindowActorMessageKind from "mozilla/dom/JSWindowActor.h";
 using mozilla::gfx::IntRect from "mozilla/gfx/Rect.h";
@@ -82,6 +83,27 @@ parent:
 
   
   async UpdateDocumentURI(nsIURI aUri);
+
+  
+  
+  
+  
+  async UpdateDocumentPrincipal(nsIPrincipal aPrincipal);
+
+  
+  async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);
+
+  
+  async UpdateDocumentHasUserInteracted(bool aDocumentHasUserInteracted);
+
+  
+  async UpdateSandboxFlags(uint32_t aSandboxFlags);
+
+  
+  async UpdateDocumentCspSettings(bool aBlockAllMixedContent, bool aUpgradeInsecureRequests);
+
+  
+  async UpdateCookieJarSettings(CookieJarSettingsArgs cookieJarSettings);
 
   
   async UpdateDocumentTitle(nsString aTitle);

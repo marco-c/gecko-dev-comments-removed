@@ -61,6 +61,9 @@ class WindowGlobalChild final : public WindowGlobalActor,
 
   nsIURI* GetDocumentURI() override { return mDocumentURI; }
   void SetDocumentURI(nsIURI* aDocumentURI);
+  
+  
+  void SetDocumentPrincipal(nsIPrincipal* aNewDocumentPrincipal);
 
   nsIPrincipal* DocumentPrincipal() { return mDocumentPrincipal; }
 

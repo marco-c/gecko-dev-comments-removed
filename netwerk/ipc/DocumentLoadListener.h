@@ -96,11 +96,11 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                                 ADocumentChannelBridge* aBridge);
 
   
-  bool Open(nsDocShellLoadState* aLoadState, LoadInfo* aLoadInfo,
-            nsLoadFlags aLoadFlags, uint32_t aCacheKey,
-            const uint64_t& aChannelId, const TimeStamp& aAsyncOpenTime,
-            nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
-            uint64_t aOuterWindowId, bool aHasGesture, nsresult* aRv);
+  bool Open(nsDocShellLoadState* aLoadState, nsLoadFlags aLoadFlags,
+            uint32_t aCacheKey, const uint64_t& aChannelId,
+            const TimeStamp& aAsyncOpenTime, nsDOMNavigationTiming* aTiming,
+            Maybe<dom::ClientInfo>&& aInfo, uint64_t aOuterWindowId,
+            bool aHasGesture, nsresult* aRv);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -213,8 +213,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                         const Maybe<uint64_t>& aDestinationProcess,
                         nsTArray<ParentEndpoint>&& aStreamFilterEndpoints);
 
-  
-  
   
   already_AddRefed<LoadInfo> CreateLoadInfo(
       dom::CanonicalBrowsingContext* aBrowsingContext,

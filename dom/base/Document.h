@@ -1847,6 +1847,14 @@ class Document : public nsINode,
     return window ? window->WindowID() : 0;
   }
 
+  
+
+
+  WindowGlobalChild* GetWindowGlobalChild() {
+    return GetInnerWindow() ? GetInnerWindow()->GetWindowGlobalChild()
+                            : nullptr;
+  }
+
   bool IsTopLevelWindowInactive() const;
 
   

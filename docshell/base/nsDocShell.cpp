@@ -9634,11 +9634,17 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           "subframes should have the same docshell type as their parent");
 #endif
     } else {
+      if (mIsBeingDestroyed) {
+        
+        
+        
+        
+        return NS_OK;
+      }
       
       
       
-      
-      return NS_OK;
+      loadingPrincipal = NullPrincipal::Create(GetOriginAttributes(), nullptr);
     }
   }
 
