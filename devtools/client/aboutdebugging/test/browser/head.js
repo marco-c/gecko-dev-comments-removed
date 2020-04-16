@@ -232,12 +232,19 @@ function waitForDispatch(store, type) {
 
 async function selectThisFirefoxPage(doc, store) {
   info("Select This Firefox page");
+
   const onRequestSuccess = waitForRequestsSuccess(store);
   doc.location.hash = "#/runtime/this-firefox";
   info("Wait for requests to be complete");
   await onRequestSuccess;
+
   info("Wait for runtime page to be rendered");
   await waitUntil(() => doc.querySelector(".qa-runtime-page"));
+
+  
+  
+  
+  await waitForRequestsToSettle(store);
 }
 
 
