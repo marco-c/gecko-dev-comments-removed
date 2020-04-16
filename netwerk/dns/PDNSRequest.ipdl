@@ -21,7 +21,7 @@ async refcounted protocol PDNSRequest
 {
   manager PNecko or PSocketProcess;
 
-both:
+parent:
   
 
   
@@ -31,6 +31,7 @@ both:
                          uint32_t flags, nsresult reason);
   async __delete__();
 
+child:
   async LookupCompleted(DNSRequestResponse reply);
 
 };
