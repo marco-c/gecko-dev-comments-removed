@@ -18,11 +18,11 @@
 
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/CookiePermission.h"
+#include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceChild.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoCommon.h"
 
-#include "nsCookieService.h"
 #include "nsContentUtils.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIWebProgressListener.h"
@@ -63,16 +63,17 @@
 #include "nsIConsoleService.h"
 #include "nsVariant.h"
 
-using namespace mozilla;
 using namespace mozilla::dom;
-using namespace mozilla::net;
+
+namespace mozilla {
+namespace net {
 
 
 
 
 
 
-static StaticRefPtr<nsCookieService> gCookieService;
+static StaticRefPtr<CookieService> gCookieService;
 
 #define CONSOLE_SAMESITE_CATEGORY NS_LITERAL_CSTRING("cookieSameSite")
 #define CONSOLE_GENERIC_CATEGORY NS_LITERAL_CSTRING("cookies")
@@ -123,13 +124,13 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
 
 
 
-already_AddRefed<nsICookieService> nsCookieService::GetXPCOMSingleton() {
+already_AddRefed<nsICookieService> CookieService::GetXPCOMSingleton() {
   if (IsNeckoChild()) return CookieServiceChild::GetSingleton();
 
   return GetSingleton();
 }
 
-already_AddRefed<nsCookieService> nsCookieService::GetSingleton() {
+already_AddRefed<CookieService> CookieService::GetSingleton() {
   NS_ASSERTION(!IsNeckoChild(), "not a parent process");
 
   if (gCookieService) {
@@ -142,7 +143,7 @@ already_AddRefed<nsCookieService> nsCookieService::GetSingleton() {
   
   
   
-  gCookieService = new nsCookieService();
+  gCookieService = new CookieService();
   if (gCookieService) {
     if (NS_SUCCEEDED(gCookieService->Init())) {
       ClearOnShutdown(&gCookieService);
@@ -159,12 +160,12 @@ already_AddRefed<nsCookieService> nsCookieService::GetSingleton() {
 
 
 
-NS_IMPL_ISUPPORTS(nsCookieService, nsICookieService, nsICookieManager,
+NS_IMPL_ISUPPORTS(CookieService, nsICookieService, nsICookieManager,
                   nsIObserver, nsISupportsWeakReference, nsIMemoryReporter)
 
-nsCookieService::nsCookieService() = default;
+CookieService::CookieService() = default;
 
-nsresult nsCookieService::Init() {
+nsresult CookieService::Init() {
   nsresult rv;
   mTLDService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -180,7 +181,7 @@ nsresult nsCookieService::Init() {
 
   RegisterWeakMemoryReporter(this);
 
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   NS_ENSURE_STATE(os);
   os->AddObserver(this, "profile-before-change", true);
   os->AddObserver(this, "profile-do-change", true);
@@ -191,7 +192,7 @@ nsresult nsCookieService::Init() {
   return NS_OK;
 }
 
-void nsCookieService::InitCookieStorages() {
+void CookieService::InitCookieStorages() {
   NS_ASSERTION(!mDefaultStorage, "already have a default CookieStorage");
   NS_ASSERTION(!mPrivateStorage, "already have a private CookieStorage");
 
@@ -202,7 +203,7 @@ void nsCookieService::InitCookieStorages() {
   mDefaultStorage->Activate();
 }
 
-void nsCookieService::CloseCookieStorages() {
+void CookieService::CloseCookieStorages() {
   
   if (!mDefaultStorage) {
     return;
@@ -217,7 +218,7 @@ void nsCookieService::CloseCookieStorages() {
   mDefaultStorage = nullptr;
 }
 
-nsCookieService::~nsCookieService() {
+CookieService::~CookieService() {
   CloseCookieStorages();
 
   UnregisterWeakMemoryReporter(this);
@@ -226,8 +227,8 @@ nsCookieService::~nsCookieService() {
 }
 
 NS_IMETHODIMP
-nsCookieService::Observe(nsISupports* aSubject, const char* aTopic,
-                         const char16_t* aData) {
+CookieService::Observe(nsISupports* aSubject, const char* aTopic,
+                       const char16_t* aData) {
   
   if (!strcmp(aTopic, "profile-before-change")) {
     
@@ -249,7 +250,7 @@ nsCookieService::Observe(nsISupports* aSubject, const char* aTopic,
 
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
     
-    mozilla::OriginAttributesPattern pattern;
+    OriginAttributesPattern pattern;
     pattern.mPrivateBrowsingId.Construct(1);
     RemoveCookiesWithOriginAttributes(pattern, EmptyCString());
     mPrivateStorage = CookiePrivateStorage::Create();
@@ -259,22 +260,22 @@ nsCookieService::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 NS_IMETHODIMP
-nsCookieService::GetCookieString(nsIURI* aHostURI, nsIChannel* aChannel,
-                                 nsACString& aCookie) {
+CookieService::GetCookieString(nsIURI* aHostURI, nsIChannel* aChannel,
+                               nsACString& aCookie) {
   return GetCookieStringCommon(aHostURI, aChannel, false, aCookie);
 }
 
 NS_IMETHODIMP
-nsCookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIURI* aFirstURI,
-                                         nsIChannel* aChannel,
-                                         nsACString& aCookie) {
+CookieService::GetCookieStringFromHttp(nsIURI* aHostURI, nsIURI* aFirstURI,
+                                       nsIChannel* aChannel,
+                                       nsACString& aCookie) {
   return GetCookieStringCommon(aHostURI, aChannel, true, aCookie);
 }
 
-nsresult nsCookieService::GetCookieStringCommon(nsIURI* aHostURI,
-                                                nsIChannel* aChannel,
-                                                bool aHttpBound,
-                                                nsACString& aCookie) {
+nsresult CookieService::GetCookieStringCommon(nsIURI* aHostURI,
+                                              nsIChannel* aChannel,
+                                              bool aHttpBound,
+                                              nsACString& aCookie) {
   NS_ENSURE_ARG(aHostURI);
 
   aCookie.Truncate();
@@ -302,7 +303,7 @@ nsresult nsCookieService::GetCookieStringCommon(nsIURI* aHostURI,
 }
 
 
-already_AddRefed<nsICookieJarSettings> nsCookieService::GetCookieJarSettings(
+already_AddRefed<nsICookieJarSettings> CookieService::GetCookieJarSettings(
     nsIChannel* aChannel) {
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   if (aChannel) {
@@ -321,23 +322,23 @@ already_AddRefed<nsICookieJarSettings> nsCookieService::GetCookieJarSettings(
 }
 
 NS_IMETHODIMP
-nsCookieService::SetCookieString(nsIURI* aHostURI,
-                                 const nsACString& aCookieHeader,
-                                 nsIChannel* aChannel) {
+CookieService::SetCookieString(nsIURI* aHostURI,
+                               const nsACString& aCookieHeader,
+                               nsIChannel* aChannel) {
   return SetCookieStringCommon(aHostURI, aCookieHeader, VoidCString(), aChannel,
                                false);
 }
 
 NS_IMETHODIMP
-nsCookieService::SetCookieStringFromHttp(nsIURI* aHostURI, nsIURI* aFirstURI,
-                                         const nsACString& aCookieHeader,
-                                         const nsACString& aServerTime,
-                                         nsIChannel* aChannel) {
+CookieService::SetCookieStringFromHttp(nsIURI* aHostURI, nsIURI* aFirstURI,
+                                       const nsACString& aCookieHeader,
+                                       const nsACString& aServerTime,
+                                       nsIChannel* aChannel) {
   return SetCookieStringCommon(aHostURI, aCookieHeader, aServerTime, aChannel,
                                true);
 }
 
-int64_t nsCookieService::ParseServerTime(const nsACString& aServerTime) {
+int64_t CookieService::ParseServerTime(const nsACString& aServerTime) {
   
   
   
@@ -355,11 +356,11 @@ int64_t nsCookieService::ParseServerTime(const nsACString& aServerTime) {
   return serverTime;
 }
 
-nsresult nsCookieService::SetCookieStringCommon(nsIURI* aHostURI,
-                                                const nsACString& aCookieHeader,
-                                                const nsACString& aServerTime,
-                                                nsIChannel* aChannel,
-                                                bool aFromHttp) {
+nsresult CookieService::SetCookieStringCommon(nsIURI* aHostURI,
+                                              const nsACString& aCookieHeader,
+                                              const nsACString& aServerTime,
+                                              nsIChannel* aChannel,
+                                              bool aFromHttp) {
   NS_ENSURE_ARG(aHostURI);
 
   uint32_t rejectedReason = 0;
@@ -382,7 +383,7 @@ nsresult nsCookieService::SetCookieStringCommon(nsIURI* aHostURI,
   return NS_OK;
 }
 
-void nsCookieService::SetCookieStringInternal(
+void CookieService::SetCookieStringInternal(
     nsIURI* aHostURI, bool aIsForeign, bool aIsThirdPartyTrackingResource,
     bool aIsThirdPartySocialTrackingResource,
     bool aFirstPartyStorageAccessGranted, uint32_t aRejectedReason,
@@ -463,17 +464,17 @@ void nsCookieService::SetCookieStringInternal(
   }
 }
 
-void nsCookieService::NotifyAccepted(nsIChannel* aChannel) {
+void CookieService::NotifyAccepted(nsIChannel* aChannel) {
   ContentBlockingNotifier::OnDecision(
       aChannel, ContentBlockingNotifier::BlockingDecision::eAllow, 0);
 }
 
 
-void nsCookieService::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
-                                     uint32_t aRejectedReason,
-                                     CookieOperation aOperation) {
+void CookieService::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
+                                   uint32_t aRejectedReason,
+                                   CookieOperation aOperation) {
   if (aOperation == OPERATION_WRITE) {
-    nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+    nsCOMPtr<nsIObserverService> os = services::GetObserverService();
     if (os) {
       os->NotifyObservers(aHostURI, "cookie-rejected", nullptr);
     }
@@ -492,7 +493,7 @@ void nsCookieService::NotifyRejected(nsIURI* aHostURI, nsIChannel* aChannel,
 
 
 NS_IMETHODIMP
-nsCookieService::RunInTransaction(nsICookieTransactionCallback* aCallback) {
+CookieService::RunInTransaction(nsICookieTransactionCallback* aCallback) {
   NS_ENSURE_ARG(aCallback);
 
   if (!IsInitialized()) {
@@ -509,7 +510,7 @@ nsCookieService::RunInTransaction(nsICookieTransactionCallback* aCallback) {
 
 
 NS_IMETHODIMP
-nsCookieService::RemoveAll() {
+CookieService::RemoveAll() {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -520,7 +521,7 @@ nsCookieService::RemoveAll() {
 }
 
 NS_IMETHODIMP
-nsCookieService::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
+CookieService::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -534,7 +535,7 @@ nsCookieService::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
 }
 
 NS_IMETHODIMP
-nsCookieService::GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
+CookieService::GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -548,11 +549,11 @@ nsCookieService::GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
 }
 
 NS_IMETHODIMP
-nsCookieService::Add(const nsACString& aHost, const nsACString& aPath,
-                     const nsACString& aName, const nsACString& aValue,
-                     bool aIsSecure, bool aIsHttpOnly, bool aIsSession,
-                     int64_t aExpiry, JS::HandleValue aOriginAttributes,
-                     int32_t aSameSite, JSContext* aCx) {
+CookieService::Add(const nsACString& aHost, const nsACString& aPath,
+                   const nsACString& aName, const nsACString& aValue,
+                   bool aIsSecure, bool aIsHttpOnly, bool aIsSession,
+                   int64_t aExpiry, JS::HandleValue aOriginAttributes,
+                   int32_t aSameSite, JSContext* aCx) {
   OriginAttributes attrs;
 
   if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
@@ -564,11 +565,11 @@ nsCookieService::Add(const nsACString& aHost, const nsACString& aPath,
 }
 
 NS_IMETHODIMP_(nsresult)
-nsCookieService::AddNative(const nsACString& aHost, const nsACString& aPath,
-                           const nsACString& aName, const nsACString& aValue,
-                           bool aIsSecure, bool aIsHttpOnly, bool aIsSession,
-                           int64_t aExpiry, OriginAttributes* aOriginAttributes,
-                           int32_t aSameSite) {
+CookieService::AddNative(const nsACString& aHost, const nsACString& aPath,
+                         const nsACString& aName, const nsACString& aValue,
+                         bool aIsSecure, bool aIsHttpOnly, bool aIsSession,
+                         int64_t aExpiry, OriginAttributes* aOriginAttributes,
+                         int32_t aSameSite) {
   if (NS_WARN_IF(!aOriginAttributes)) {
     return NS_ERROR_FAILURE;
   }
@@ -605,10 +606,10 @@ nsCookieService::AddNative(const nsACString& aHost, const nsACString& aPath,
   return NS_OK;
 }
 
-nsresult nsCookieService::Remove(const nsACString& aHost,
-                                 const OriginAttributes& aAttrs,
-                                 const nsACString& aName,
-                                 const nsACString& aPath) {
+nsresult CookieService::Remove(const nsACString& aHost,
+                               const OriginAttributes& aAttrs,
+                               const nsACString& aName,
+                               const nsACString& aPath) {
   
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
@@ -632,9 +633,9 @@ nsresult nsCookieService::Remove(const nsACString& aHost,
 }
 
 NS_IMETHODIMP
-nsCookieService::Remove(const nsACString& aHost, const nsACString& aName,
-                        const nsACString& aPath,
-                        JS::HandleValue aOriginAttributes, JSContext* aCx) {
+CookieService::Remove(const nsACString& aHost, const nsACString& aName,
+                      const nsACString& aPath,
+                      JS::HandleValue aOriginAttributes, JSContext* aCx) {
   OriginAttributes attrs;
 
   if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
@@ -645,9 +646,9 @@ nsCookieService::Remove(const nsACString& aHost, const nsACString& aName,
 }
 
 NS_IMETHODIMP_(nsresult)
-nsCookieService::RemoveNative(const nsACString& aHost, const nsACString& aName,
-                              const nsACString& aPath,
-                              OriginAttributes* aOriginAttributes) {
+CookieService::RemoveNative(const nsACString& aHost, const nsACString& aName,
+                            const nsACString& aPath,
+                            OriginAttributes* aOriginAttributes) {
   if (NS_WARN_IF(!aOriginAttributes)) {
     return NS_ERROR_FAILURE;
   }
@@ -661,7 +662,7 @@ nsCookieService::RemoveNative(const nsACString& aHost, const nsACString& aName,
 }
 
 NS_IMETHODIMP
-nsCookieService::ImportCookies(nsIFile* aCookieFile) {
+CookieService::ImportCookies(nsIFile* aCookieFile) {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -676,7 +677,7 @@ nsCookieService::ImportCookies(nsIFile* aCookieFile) {
 
 
 
-bool nsCookieService::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
+bool CookieService::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
   
   
   
@@ -684,7 +685,7 @@ bool nsCookieService::DomainMatches(Cookie* aCookie, const nsACString& aHost) {
          (aCookie->IsDomain() && StringEndsWith(aHost, aCookie->Host()));
 }
 
-bool nsCookieService::PathMatches(Cookie* aCookie, const nsACString& aPath) {
+bool CookieService::PathMatches(Cookie* aCookie, const nsACString& aPath) {
   nsCString cookiePath(aCookie->GetFilePath());
 
   
@@ -709,7 +710,7 @@ bool nsCookieService::PathMatches(Cookie* aCookie, const nsACString& aPath) {
   return false;
 }
 
-void nsCookieService::GetCookiesForURI(
+void CookieService::GetCookiesForURI(
     nsIURI* aHostURI, nsIChannel* aChannel, bool aIsForeign,
     bool aIsThirdPartyTrackingResource,
     bool aIsThirdPartySocialTrackingResource,
@@ -856,7 +857,7 @@ void nsCookieService::GetCookiesForURI(
   aCookieList.Sort(CompareCookiesForSending());
 }
 
-void nsCookieService::GetCookieStringInternal(
+void CookieService::GetCookieStringInternal(
     nsIURI* aHostURI, nsIChannel* aChannel, bool aIsForeign,
     bool aIsThirdPartyTrackingResource,
     bool aIsThirdPartySocialTrackingResource,
@@ -899,7 +900,7 @@ void nsCookieService::GetCookieStringInternal(
 
 
 
-bool nsCookieService::CanSetCookie(
+bool CookieService::CanSetCookie(
     nsIURI* aHostURI, const nsACString& aBaseDomain, CookieStruct& aCookieData,
     bool aRequireHostMatch, CookieStatus aStatus, nsCString& aCookieHeader,
     int64_t aServerTime, bool aFromHttp, nsIChannel* aChannel, bool& aSetCookie,
@@ -1064,7 +1065,7 @@ bool nsCookieService::CanSetCookie(
 
 
 
-bool nsCookieService::SetCookieInternal(
+bool CookieService::SetCookieInternal(
     CookieStorage* aStorage, nsIURI* aHostURI, const nsACString& aBaseDomain,
     const OriginAttributes& aOriginAttributes, bool aRequireHostMatch,
     CookieStatus aStatus, nsCString& aCookieHeader, int64_t aServerTime,
@@ -1208,11 +1209,11 @@ static inline bool istokenseparator(char c) {
 
 
 
-bool nsCookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
-                                    nsACString::const_char_iterator& aEndIter,
-                                    nsDependentCSubstring& aTokenString,
-                                    nsDependentCSubstring& aTokenValue,
-                                    bool& aEqualsFound) {
+bool CookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
+                                  nsACString::const_char_iterator& aEndIter,
+                                  nsDependentCSubstring& aTokenString,
+                                  nsDependentCSubstring& aTokenValue,
+                                  bool& aEqualsFound) {
   nsACString::const_char_iterator start, lastSpace;
   
   aTokenValue.Rebind(aIter, aIter);
@@ -1268,11 +1269,11 @@ bool nsCookieService::GetTokenValue(nsACString::const_char_iterator& aIter,
 
 
 
-bool nsCookieService::ParseAttributes(nsIChannel* aChannel, nsIURI* aHostURI,
-                                      nsCString& aCookieHeader,
-                                      mozilla::net::CookieStruct& aCookieData,
-                                      nsACString& aExpires, nsACString& aMaxage,
-                                      bool& aAcceptedByParser) {
+bool CookieService::ParseAttributes(nsIChannel* aChannel, nsIURI* aHostURI,
+                                    nsCString& aCookieHeader,
+                                    CookieStruct& aCookieData,
+                                    nsACString& aExpires, nsACString& aMaxage,
+                                    bool& aAcceptedByParser) {
   aAcceptedByParser = false;
 
   static const char kPath[] = "path";
@@ -1434,11 +1435,11 @@ bool nsCookieService::ParseAttributes(nsIChannel* aChannel, nsIURI* aHostURI,
 }
 
 
-void nsCookieService::LogMessageToConsole(nsIChannel* aChannel, nsIURI* aURI,
-                                          uint32_t aErrorFlags,
-                                          const nsACString& aCategory,
-                                          const nsACString& aMsg,
-                                          const nsTArray<nsString>& aParams) {
+void CookieService::LogMessageToConsole(nsIChannel* aChannel, nsIURI* aURI,
+                                        uint32_t aErrorFlags,
+                                        const nsACString& aCategory,
+                                        const nsACString& aMsg,
+                                        const nsTArray<nsString>& aParams) {
   MOZ_ASSERT(aURI);
 
   nsCOMPtr<HttpBaseChannel> httpChannel = do_QueryInterface(aChannel);
@@ -1468,10 +1469,9 @@ void nsCookieService::LogMessageToConsole(nsIChannel* aChannel, nsIURI* aURI,
 
 
 
-nsresult nsCookieService::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
-                                        nsIURI* aHostURI,
-                                        nsCString& aBaseDomain,
-                                        bool& aRequireHostMatch) {
+nsresult CookieService::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
+                                      nsIURI* aHostURI, nsCString& aBaseDomain,
+                                      bool& aRequireHostMatch) {
   
   
   nsresult rv = aTLDService->GetBaseDomain(aHostURI, 0, aBaseDomain);
@@ -1504,7 +1504,7 @@ nsresult nsCookieService::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
 
 
 
-nsresult nsCookieService::GetBaseDomainFromHost(
+nsresult CookieService::GetBaseDomainFromHost(
     nsIEffectiveTLDService* aTLDService, const nsACString& aHost,
     nsCString& aBaseDomain) {
   
@@ -1534,7 +1534,7 @@ nsresult nsCookieService::GetBaseDomainFromHost(
 
 
 
-nsresult nsCookieService::NormalizeHost(nsCString& aHost) {
+nsresult CookieService::NormalizeHost(nsCString& aHost) {
   if (!IsAscii(aHost)) {
     nsAutoCString host;
     nsresult rv = mIDNService->ConvertUTF8toACE(aHost, host);
@@ -1556,13 +1556,15 @@ static inline bool IsSubdomainOf(const nsACString& a, const nsACString& b) {
   return false;
 }
 
-CookieStatus nsCookieService::CheckPrefs(
-    nsICookieJarSettings* aCookieJarSettings, nsIURI* aHostURI, bool aIsForeign,
-    bool aIsThirdPartyTrackingResource,
-    bool aIsThirdPartySocialTrackingResource,
-    bool aFirstPartyStorageAccessGranted, const nsACString& aCookieHeader,
-    const int aNumOfCookies, const OriginAttributes& aOriginAttrs,
-    uint32_t* aRejectedReason) {
+CookieStatus CookieService::CheckPrefs(nsICookieJarSettings* aCookieJarSettings,
+                                       nsIURI* aHostURI, bool aIsForeign,
+                                       bool aIsThirdPartyTrackingResource,
+                                       bool aIsThirdPartySocialTrackingResource,
+                                       bool aFirstPartyStorageAccessGranted,
+                                       const nsACString& aCookieHeader,
+                                       const int aNumOfCookies,
+                                       const OriginAttributes& aOriginAttrs,
+                                       uint32_t* aRejectedReason) {
   nsresult rv;
 
   MOZ_ASSERT(aRejectedReason);
@@ -1688,9 +1690,9 @@ CookieStatus nsCookieService::CheckPrefs(
 
 
 
-bool nsCookieService::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
-                                  const nsACString& aBaseDomain,
-                                  bool aRequireHostMatch) {
+bool CookieService::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
+                                const nsACString& aBaseDomain,
+                                bool aRequireHostMatch) {
   
   
   
@@ -1741,7 +1743,7 @@ bool nsCookieService::CheckDomain(CookieStruct& aCookieData, nsIURI* aHostURI,
   return true;
 }
 
-nsAutoCString nsCookieService::GetPathFromURI(nsIURI* aHostURI) {
+nsAutoCString CookieService::GetPathFromURI(nsIURI* aHostURI) {
   
   
   
@@ -1770,8 +1772,8 @@ nsAutoCString nsCookieService::GetPathFromURI(nsIURI* aHostURI) {
   return path;
 }
 
-bool nsCookieService::CheckPath(CookieStruct& aCookieData, nsIChannel* aChannel,
-                                nsIURI* aHostURI) {
+bool CookieService::CheckPath(CookieStruct& aCookieData, nsIChannel* aChannel,
+                              nsIURI* aHostURI) {
   
   if (aCookieData.path().IsEmpty() || aCookieData.path().First() != '/') {
     aCookieData.path() = GetPathFromURI(aHostURI);
@@ -1822,8 +1824,8 @@ bool nsCookieService::CheckPath(CookieStruct& aCookieData, nsIChannel* aChannel,
 
 
 
-bool nsCookieService::CheckPrefixes(CookieStruct& aCookieData,
-                                    bool aSecureRequest) {
+bool CookieService::CheckPrefixes(CookieStruct& aCookieData,
+                                  bool aSecureRequest) {
   static const char kSecure[] = "__Secure-";
   static const char kHost[] = "__Host-";
   static const int kSecureLen = sizeof(kSecure) - 1;
@@ -1859,10 +1861,10 @@ bool nsCookieService::CheckPrefixes(CookieStruct& aCookieData,
   return true;
 }
 
-bool nsCookieService::GetExpiry(CookieStruct& aCookieData,
-                                const nsACString& aExpires,
-                                const nsACString& aMaxage, int64_t aServerTime,
-                                int64_t aCurrentTime, bool aFromHttp) {
+bool CookieService::GetExpiry(CookieStruct& aCookieData,
+                              const nsACString& aExpires,
+                              const nsACString& aMaxage, int64_t aServerTime,
+                              int64_t aCurrentTime, bool aFromHttp) {
   
   
   int64_t maxageCap =
@@ -1935,10 +1937,10 @@ bool nsCookieService::GetExpiry(CookieStruct& aCookieData,
 
 
 NS_IMETHODIMP
-nsCookieService::CookieExists(const nsACString& aHost, const nsACString& aPath,
-                              const nsACString& aName,
-                              JS::HandleValue aOriginAttributes, JSContext* aCx,
-                              bool* aFoundCookie) {
+CookieService::CookieExists(const nsACString& aHost, const nsACString& aPath,
+                            const nsACString& aName,
+                            JS::HandleValue aOriginAttributes, JSContext* aCx,
+                            bool* aFoundCookie) {
   NS_ENSURE_ARG_POINTER(aCx);
   NS_ENSURE_ARG_POINTER(aFoundCookie);
 
@@ -1950,11 +1952,11 @@ nsCookieService::CookieExists(const nsACString& aHost, const nsACString& aPath,
 }
 
 NS_IMETHODIMP_(nsresult)
-nsCookieService::CookieExistsNative(const nsACString& aHost,
-                                    const nsACString& aPath,
-                                    const nsACString& aName,
-                                    OriginAttributes* aOriginAttributes,
-                                    bool* aFoundCookie) {
+CookieService::CookieExistsNative(const nsACString& aHost,
+                                  const nsACString& aPath,
+                                  const nsACString& aName,
+                                  OriginAttributes* aOriginAttributes,
+                                  bool* aFoundCookie) {
   NS_ENSURE_ARG_POINTER(aOriginAttributes);
   NS_ENSURE_ARG_POINTER(aFoundCookie);
 
@@ -1976,8 +1978,8 @@ nsCookieService::CookieExistsNative(const nsACString& aHost,
 
 
 NS_IMETHODIMP
-nsCookieService::CountCookiesFromHost(const nsACString& aHost,
-                                      uint32_t* aCountFromHost) {
+CookieService::CountCookiesFromHost(const nsACString& aHost,
+                                    uint32_t* aCountFromHost) {
   
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
@@ -2001,10 +2003,10 @@ nsCookieService::CountCookiesFromHost(const nsACString& aHost,
 
 
 NS_IMETHODIMP
-nsCookieService::GetCookiesFromHost(const nsACString& aHost,
-                                    JS::HandleValue aOriginAttributes,
-                                    JSContext* aCx,
-                                    nsTArray<RefPtr<nsICookie>>& aResult) {
+CookieService::GetCookiesFromHost(const nsACString& aHost,
+                                  JS::HandleValue aOriginAttributes,
+                                  JSContext* aCx,
+                                  nsTArray<RefPtr<nsICookie>>& aResult) {
   
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
@@ -2039,10 +2041,10 @@ nsCookieService::GetCookiesFromHost(const nsACString& aHost,
 }
 
 NS_IMETHODIMP
-nsCookieService::GetCookiesWithOriginAttributes(
+CookieService::GetCookiesWithOriginAttributes(
     const nsAString& aPattern, const nsACString& aHost,
     nsTArray<RefPtr<nsICookie>>& aResult) {
-  mozilla::OriginAttributesPattern pattern;
+  OriginAttributesPattern pattern;
   if (!pattern.Init(aPattern)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2058,9 +2060,9 @@ nsCookieService::GetCookiesWithOriginAttributes(
   return GetCookiesWithOriginAttributes(pattern, baseDomain, aResult);
 }
 
-nsresult nsCookieService::GetCookiesWithOriginAttributes(
-    const mozilla::OriginAttributesPattern& aPattern,
-    const nsCString& aBaseDomain, nsTArray<RefPtr<nsICookie>>& aResult) {
+nsresult CookieService::GetCookiesWithOriginAttributes(
+    const OriginAttributesPattern& aPattern, const nsCString& aBaseDomain,
+    nsTArray<RefPtr<nsICookie>>& aResult) {
   CookieStorage* storage = PickStorage(aPattern);
   storage->GetCookiesWithOriginAttributes(aPattern, aBaseDomain, aResult);
 
@@ -2068,11 +2070,11 @@ nsresult nsCookieService::GetCookiesWithOriginAttributes(
 }
 
 NS_IMETHODIMP
-nsCookieService::RemoveCookiesWithOriginAttributes(const nsAString& aPattern,
-                                                   const nsACString& aHost) {
+CookieService::RemoveCookiesWithOriginAttributes(const nsAString& aPattern,
+                                                 const nsACString& aHost) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  mozilla::OriginAttributesPattern pattern;
+  OriginAttributesPattern pattern;
   if (!pattern.Init(aPattern)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2088,9 +2090,8 @@ nsCookieService::RemoveCookiesWithOriginAttributes(const nsAString& aPattern,
   return RemoveCookiesWithOriginAttributes(pattern, baseDomain);
 }
 
-nsresult nsCookieService::RemoveCookiesWithOriginAttributes(
-    const mozilla::OriginAttributesPattern& aPattern,
-    const nsCString& aBaseDomain) {
+nsresult CookieService::RemoveCookiesWithOriginAttributes(
+    const OriginAttributesPattern& aPattern, const nsCString& aBaseDomain) {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -2102,11 +2103,11 @@ nsresult nsCookieService::RemoveCookiesWithOriginAttributes(
 }
 
 NS_IMETHODIMP
-nsCookieService::RemoveCookiesFromExactHost(const nsACString& aHost,
-                                            const nsAString& aPattern) {
+CookieService::RemoveCookiesFromExactHost(const nsACString& aHost,
+                                          const nsAString& aPattern) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
-  mozilla::OriginAttributesPattern pattern;
+  OriginAttributesPattern pattern;
   if (!pattern.Init(aPattern)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2114,8 +2115,8 @@ nsCookieService::RemoveCookiesFromExactHost(const nsACString& aHost,
   return RemoveCookiesFromExactHost(aHost, pattern);
 }
 
-nsresult nsCookieService::RemoveCookiesFromExactHost(
-    const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern) {
+nsresult CookieService::RemoveCookiesFromExactHost(
+    const nsACString& aHost, const OriginAttributesPattern& aPattern) {
   nsAutoCString host(aHost);
   nsresult rv = NormalizeHost(host);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -2139,7 +2140,7 @@ namespace {
 class RemoveAllSinceRunnable : public Runnable {
  public:
   typedef nsTArray<RefPtr<nsICookie>> CookieArray;
-  RemoveAllSinceRunnable(Promise* aPromise, nsCookieService* aSelf,
+  RemoveAllSinceRunnable(Promise* aPromise, CookieService* aSelf,
                          CookieArray&& aCookieArray, int64_t aSinceWhen)
       : Runnable("RemoveAllSinceRunnable"),
         mPromise(aPromise),
@@ -2174,7 +2175,7 @@ class RemoveAllSinceRunnable : public Runnable {
 
  private:
   RefPtr<Promise> mPromise;
-  RefPtr<nsCookieService> mSelf;
+  RefPtr<CookieService> mSelf;
   CookieArray mList;
   CookieArray::size_type mIndex;
   int64_t mSinceWhen;
@@ -2184,8 +2185,8 @@ class RemoveAllSinceRunnable : public Runnable {
 }  
 
 NS_IMETHODIMP
-nsCookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
-                                Promise** aRetVal) {
+CookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
+                              Promise** aRetVal) {
   nsIGlobalObject* globalObject = xpc::CurrentNativeGlobal(aCx);
   if (NS_WARN_IF(!globalObject)) {
     return NS_ERROR_UNEXPECTED;
@@ -2212,8 +2213,7 @@ nsCookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
   return runMe->Run();
 }
 
-size_t nsCookieService::SizeOfIncludingThis(
-    mozilla::MallocSizeOf aMallocSizeOf) const {
+size_t CookieService::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
 
   if (mDefaultStorage) {
@@ -2229,8 +2229,8 @@ size_t nsCookieService::SizeOfIncludingThis(
 MOZ_DEFINE_MALLOC_SIZE_OF(CookieServiceMallocSizeOf)
 
 NS_IMETHODIMP
-nsCookieService::CollectReports(nsIHandleReportCallback* aHandleReport,
-                                nsISupports* aData, bool aAnonymize) {
+CookieService::CollectReports(nsIHandleReportCallback* aHandleReport,
+                              nsISupports* aData, bool aAnonymize) {
   MOZ_COLLECT_REPORT("explicit/cookie-service", KIND_HEAP, UNITS_BYTES,
                      SizeOfIncludingThis(CookieServiceMallocSizeOf),
                      "Memory used by the cookie service.");
@@ -2238,7 +2238,7 @@ nsCookieService::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-bool nsCookieService::IsInitialized() const {
+bool CookieService::IsInitialized() const {
   if (!mDefaultStorage) {
     NS_WARNING("No CookieStorage! Profile already close?");
     return false;
@@ -2248,7 +2248,7 @@ bool nsCookieService::IsInitialized() const {
   return true;
 }
 
-CookieStorage* nsCookieService::PickStorage(const OriginAttributes& aAttrs) {
+CookieStorage* CookieService::PickStorage(const OriginAttributes& aAttrs) {
   MOZ_ASSERT(IsInitialized());
 
   if (aAttrs.mPrivateBrowsingId > 0) {
@@ -2259,7 +2259,7 @@ CookieStorage* nsCookieService::PickStorage(const OriginAttributes& aAttrs) {
   return mDefaultStorage;
 }
 
-CookieStorage* nsCookieService::PickStorage(
+CookieStorage* CookieService::PickStorage(
     const OriginAttributesPattern& aAttrs) {
   MOZ_ASSERT(IsInitialized());
 
@@ -2271,3 +2271,6 @@ CookieStorage* nsCookieService::PickStorage(
   mDefaultStorage->EnsureReadComplete();
   return mDefaultStorage;
 }
+
+}  
+}  

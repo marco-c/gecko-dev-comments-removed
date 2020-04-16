@@ -3,6 +3,7 @@
 
 
 
+#include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
 #include "mozilla/dom/PContentParent.h"
 #include "mozilla/net/NeckoParent.h"
@@ -11,7 +12,6 @@
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "nsArrayUtils.h"
-#include "nsCookieService.h"
 #include "nsIChannel.h"
 #include "nsNetCID.h"
 #include "nsPrintfCString.h"
@@ -50,7 +50,7 @@ CookieServiceParent::CookieServiceParent() {
   nsCOMPtr<nsICookieService> cs = do_GetService(NS_COOKIESERVICE_CONTRACTID);
 
   
-  mCookieService = nsCookieService::GetSingleton();
+  mCookieService = CookieService::GetSingleton();
   NS_ASSERTION(mCookieService, "couldn't get nsICookieService");
   mProcessingCookie = false;
 }
