@@ -6,7 +6,6 @@
 
 extern crate serde_bytes;
 
-use crate::channel::{self, MsgReceiver, MsgSender};
 use peek_poke::PeekPoke;
 use std::cell::Cell;
 use std::fmt;
@@ -15,6 +14,7 @@ use std::os::raw::c_void;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::u32;
+use std::sync::mpsc::{Sender, Receiver, channel};
 
 use crate::{display_item as di, font};
 use crate::color::{ColorU, ColorF};
@@ -845,9 +845,11 @@ pub enum FrameMsg {
     
     UpdateEpoch(PipelineId, Epoch),
     
-    HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, MsgSender<HitTestResult>),
+    #[serde(skip_serializing, skip_deserializing)]
+    HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, Sender<HitTestResult>),
     
-    RequestHitTester(MsgSender<Arc<dyn ApiHitTester>>),
+    #[serde(skip_serializing, skip_deserializing)]
+    RequestHitTester(Sender<Arc<dyn ApiHitTester>>),
     
     SetPan(DeviceIntPoint),
     
@@ -855,7 +857,8 @@ pub enum FrameMsg {
     
     ScrollNodeWithId(LayoutPoint, di::ExternalScrollId, ScrollClamping),
     
-    GetScrollNodeState(MsgSender<Vec<ScrollNodeState>>),
+    #[serde(skip_serializing, skip_deserializing)]
+    GetScrollNodeState(Sender<Vec<ScrollNodeState>>),
     
     UpdateDynamicProperties(DynamicProperties),
     
@@ -965,7 +968,8 @@ pub enum DebugCommand {
     
     SaveCapture(PathBuf, CaptureBits),
     
-    LoadCapture(PathBuf, MsgSender<CapturedDocument>),
+    #[serde(skip_serializing, skip_deserializing)]
+    LoadCapture(PathBuf, Sender<CapturedDocument>),
     
     ClearCaches(ClearCache),
     
@@ -994,15 +998,18 @@ pub enum ApiMsg {
     
     UpdateResources(Vec<ResourceUpdate>),
     
+    #[serde(skip_serializing, skip_deserializing)]
     GetGlyphDimensions(
         font::FontInstanceKey,
         Vec<font::GlyphIndex>,
-        MsgSender<Vec<Option<font::GlyphDimensions>>>,
+        Sender<Vec<Option<font::GlyphDimensions>>>,
     ),
     
-    GetGlyphIndices(font::FontKey, String, MsgSender<Vec<Option<u32>>>),
+    #[serde(skip_serializing, skip_deserializing)]
+    GetGlyphIndices(font::FontKey, String, Sender<Vec<Option<u32>>>),
     
-    CloneApi(MsgSender<IdNamespace>),
+    #[serde(skip_serializing, skip_deserializing)]
+    CloneApi(Sender<IdNamespace>),
     
     CloneApiByClient(IdNamespace),
     
@@ -1020,7 +1027,8 @@ pub enum ApiMsg {
     
     MemoryPressure,
     
-    ReportMemory(MsgSender<Box<MemoryReport>>),
+    #[serde(skip_serializing, skip_deserializing)]
+    ReportMemory(Sender<Box<MemoryReport>>),
     
     DebugCommand(DebugCommand),
     
@@ -1031,9 +1039,11 @@ pub enum ApiMsg {
     
     
     
-    FlushSceneBuilder(MsgSender<()>),
+    #[serde(skip_serializing, skip_deserializing)]
+    FlushSceneBuilder(Sender<()>),
     
-    ShutDown(Option<MsgSender<()>>),
+    #[serde(skip_serializing, skip_deserializing)]
+    ShutDown(Option<Sender<()>>),
 }
 
 impl fmt::Debug for ApiMsg {
@@ -1293,14 +1303,15 @@ pub enum ScrollClamping {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct RenderApiSender {
-    api_sender: MsgSender<ApiMsg>,
+    api_sender: Sender<ApiMsg>,
+
 }
 
 impl RenderApiSender {
     
-    pub fn new(api_sender: MsgSender<ApiMsg>) -> Self {
+    pub fn new(api_sender: Sender<ApiMsg>) -> Self {
         RenderApiSender {
             api_sender,
         }
@@ -1308,8 +1319,7 @@ impl RenderApiSender {
 
     
     pub fn create_api(&self) -> RenderApi {
-        let (sync_tx, sync_rx) =
-            channel::msg_channel().expect("Failed to create channel");
+        let (sync_tx, sync_rx) = channel();
         let msg = ApiMsg::CloneApi(sync_tx);
         self.api_sender.send(msg).expect("Failed to send CloneApi message");
         let namespace_id = match sync_rx.recv() {
@@ -1431,7 +1441,7 @@ bitflags! {
 
 
 pub struct RenderApi {
-    api_sender: MsgSender<ApiMsg>,
+    api_sender: Sender<ApiMsg>,
     namespace_id: IdNamespace,
     next_id: Cell<ResourceId>,
 }
@@ -1498,7 +1508,7 @@ impl RenderApi {
         font: font::FontInstanceKey,
         glyph_indices: Vec<font::GlyphIndex>,
     ) -> Vec<Option<font::GlyphDimensions>> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         let msg = ApiMsg::GetGlyphDimensions(font, glyph_indices, tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
@@ -1507,7 +1517,7 @@ impl RenderApi {
     
     
     pub fn get_glyph_indices(&self, font_key: font::FontKey, text: &str) -> Vec<Option<u32>> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         let msg = ApiMsg::GetGlyphIndices(font_key, text.to_string(), tx);
         self.api_sender.send(msg).unwrap();
         rx.recv().unwrap()
@@ -1550,7 +1560,7 @@ impl RenderApi {
 
     
     pub fn report_memory(&self) -> MemoryReport {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         self.api_sender.send(ApiMsg::ReportMemory(tx)).unwrap();
         *rx.recv().unwrap()
     }
@@ -1564,7 +1574,7 @@ impl RenderApi {
     
     pub fn shut_down(&self, synchronously: bool) {
         if synchronously {
-            let (tx, rx) = channel::msg_channel().unwrap();
+            let (tx, rx) = channel();
             self.api_sender.send(ApiMsg::ShutDown(Some(tx))).unwrap();
             rx.recv().unwrap();
         } else {
@@ -1646,7 +1656,7 @@ impl RenderApi {
                     point: WorldPoint,
                     flags: HitTestFlags)
                     -> HitTestResult {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
 
         self.send_frame_msg(
             document_id,
@@ -1657,7 +1667,7 @@ impl RenderApi {
 
     
     pub fn request_hit_tester(&self, document_id: DocumentId) -> HitTesterRequest {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         self.send_frame_msg(
             document_id,
             FrameMsg::RequestHitTester(tx)
@@ -1696,7 +1706,7 @@ impl RenderApi {
 
     
     pub fn get_scroll_node_state(&self, document_id: DocumentId) -> Vec<ScrollNodeState> {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         self.send_frame_msg(document_id, FrameMsg::GetScrollNodeState(tx));
         rx.recv().unwrap()
     }
@@ -1712,7 +1722,7 @@ impl RenderApi {
     
     
     pub fn flush_scene_builder(&self) {
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         self.send_message(ApiMsg::FlushSceneBuilder(tx));
         rx.recv().unwrap(); 
     }
@@ -1729,7 +1739,7 @@ impl RenderApi {
         
         self.flush_scene_builder();
 
-        let (tx, rx) = channel::msg_channel().unwrap();
+        let (tx, rx) = channel();
         let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, tx));
         self.send_message(msg);
 
@@ -1758,7 +1768,7 @@ impl Drop for RenderApi {
 
 
 pub struct HitTesterRequest {
-    rx: MsgReceiver<Arc<dyn ApiHitTester>>,
+    rx: Receiver<Arc<dyn ApiHitTester>>,
 }
 
 impl HitTesterRequest {
