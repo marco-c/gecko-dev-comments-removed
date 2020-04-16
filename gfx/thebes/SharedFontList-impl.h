@@ -7,7 +7,7 @@
 
 #include "SharedFontList.h"
 
-#include "mozilla/ipc/SharedMemoryBasic.h"
+#include "base/shared_memory.h"
 
 #include "gfxFontUtils.h"
 #include "nsClassHashtable.h"
@@ -224,10 +224,10 @@ class FontList {
 
 
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
-                              mozilla::ipc::SharedMemoryBasic::Handle* aOut) {
+                              base::SharedMemoryHandle* aOut) {
     if (aIndex >= mBlocks.Length()) {
       
-      *aOut = mozilla::ipc::SharedMemoryBasic::NULLHandle();
+      *aOut = base::SharedMemory::NULLHandle();
     }
     if (!mBlocks[aIndex]->mShmem->ShareToProcess(aPid, aOut)) {
       MOZ_CRASH("failed to share block");
@@ -240,7 +240,7 @@ class FontList {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t result = mBlocks.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (const auto& b : mBlocks) {
-      result += aMallocSizeOf(b.get()) + aMallocSizeOf(b->mShmem);
+      result += aMallocSizeOf(b.get()) + aMallocSizeOf(b->mShmem.get());
     }
     return result;
   }
@@ -268,7 +268,8 @@ class FontList {
 
  private:
   struct ShmBlock {
-    ShmBlock(mozilla::ipc::SharedMemoryBasic* aShmem, void* aAddr)
+    
+    ShmBlock(base::SharedMemory* aShmem, void* aAddr)
         : mShmem(aShmem), mAddr(aAddr) {}
 
     
@@ -278,7 +279,7 @@ class FontList {
       return *static_cast<std::atomic<uint32_t>*>(mAddr);
     }
 
-    RefPtr<mozilla::ipc::SharedMemoryBasic> mShmem;
+    mozilla::UniquePtr<base::SharedMemory> mShmem;
     void* mAddr;  
                   
                   

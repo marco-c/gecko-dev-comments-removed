@@ -1266,7 +1266,7 @@ parent:
 
 
     sync GetFontListShmBlock(uint32_t aGeneration, uint32_t aIndex)
-        returns (Handle aHandle);
+        returns (SharedMemoryHandle aHandle);
 
     
 
