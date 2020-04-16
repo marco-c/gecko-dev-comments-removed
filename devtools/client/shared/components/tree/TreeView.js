@@ -218,7 +218,7 @@ define(function(require, exports, module) {
         columns: ensureDefaultColumn(props.columns),
         selected: props.selected,
         active: props.active,
-        lastSelectedIndex: null,
+        lastSelectedIndex: 0,
       };
 
       this.treeRef = createRef();
@@ -263,14 +263,10 @@ define(function(require, exports, module) {
         return;
       }
 
-      
-      
-      if (this.state.lastSelectedIndex !== null) {
-        this.selectRow(
-          rows[Math.min(this.state.lastSelectedIndex, rows.length - 1)],
-          { alignTo: "top" }
-        );
-      }
+      this.selectRow(
+        rows[Math.min(this.state.lastSelectedIndex, rows.length - 1)],
+        { alignTo: "top" }
+      );
     }
 
     
@@ -469,7 +465,8 @@ define(function(require, exports, module) {
     getSelectedRowIndex() {
       const row = this.getSelectedRow();
       if (!row) {
-        return null;
+        
+        return 0;
       }
 
       return this.visibleRows.indexOf(row);
