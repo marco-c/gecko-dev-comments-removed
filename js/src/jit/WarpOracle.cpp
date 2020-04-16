@@ -112,20 +112,17 @@ static MOZ_MUST_USE bool AddWarpGetImport(TempAllocator& alloc,
 
 AbortReasonOr<WarpEnvironment> WarpOracle::createEnvironment(
     HandleScript script) {
-  WarpEnvironment env;
-
   
   
   
   
   if (!script->jitScript()->usesEnvironmentChain() && !script->needsArgsObj()) {
-    MOZ_ASSERT(env.kind() == WarpEnvironment::Kind::None);
-    return env;
+    return WarpEnvironment(NoEnvironment());
   }
 
   if (ModuleObject* module = script->module()) {
-    env.initConstantObject(&module->initialEnvironment());
-    return env;
+    JSObject* obj = &module->initialEnvironment();
+    return WarpEnvironment(obj);
   }
 
   JSFunction* fun = script->function();
@@ -134,8 +131,8 @@ AbortReasonOr<WarpEnvironment> WarpOracle::createEnvironment(
     
     MOZ_ASSERT(!script->isForEval());
     MOZ_ASSERT(!script->hasNonSyntacticScope());
-    env.initConstantObject(&script->global().lexicalEnvironment());
-    return env;
+    JSObject* obj = &script->global().lexicalEnvironment();
+    return WarpEnvironment(obj);
   }
 
   
@@ -159,8 +156,8 @@ AbortReasonOr<WarpEnvironment> WarpOracle::createEnvironment(
     namedLambdaTemplate = &templateEnv->as<LexicalEnvironmentObject>();
   }
 
-  env.initFunction(callObjectTemplate, namedLambdaTemplate);
-  return env;
+  return WarpEnvironment(
+      FunctionEnvironment(callObjectTemplate, namedLambdaTemplate));
 }
 
 AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
@@ -175,7 +172,7 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
     return abort(AbortReason::Disable, "Try-finally not supported");
   }
 
-  WarpEnvironment environment;
+  WarpEnvironment environment{NoEnvironment()};
   MOZ_TRY_VAR(environment, createEnvironment(script));
 
   
