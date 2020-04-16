@@ -6,7 +6,14 @@
 
 
 
+
 #![allow(non_snake_case)]
+
+
+
+
+
+
 
 extern crate core_foundation_sys;
 extern crate libc;
@@ -17,6 +24,34 @@ extern crate chrono;
 use base::TCFType;
 
 pub unsafe trait ConcreteCFType: TCFType {}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[macro_export]
 macro_rules! declare_TCFType {
@@ -34,6 +69,13 @@ macro_rules! declare_TCFType {
         }
     }
 }
+
+
+
+
+
+
+
 
 #[macro_export]
 macro_rules! impl_TCFType {
@@ -122,6 +164,18 @@ macro_rules! impl_TCFType {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! impl_CFTypeDescription {
     ($ty:ident) => {
@@ -162,6 +216,7 @@ pub mod array;
 pub mod attributed_string;
 pub mod base;
 pub mod boolean;
+pub mod characterset;
 pub mod data;
 pub mod date;
 pub mod dictionary;
