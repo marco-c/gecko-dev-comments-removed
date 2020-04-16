@@ -37,10 +37,10 @@ class nsURILoader final : public nsIURILoader {
 
 
 
-  MOZ_MUST_USE nsresult OpenChannel(nsIChannel* channel, uint32_t aFlags,
-                                    nsIInterfaceRequestor* aWindowContext,
-                                    bool aChannelOpen,
-                                    nsIStreamListener** aListener);
+  [[nodiscard]] nsresult OpenChannel(nsIChannel* channel, uint32_t aFlags,
+                                     nsIInterfaceRequestor* aWindowContext,
+                                     bool aChannelOpen,
+                                     nsIStreamListener** aListener);
 
   
 

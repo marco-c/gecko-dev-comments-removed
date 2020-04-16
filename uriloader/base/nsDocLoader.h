@@ -3,9 +3,6 @@
 
 
 
-
-
-
 #ifndef nsDocLoader_h__
 #define nsDocLoader_h__
 
@@ -63,7 +60,7 @@ class nsDocLoader : public nsIDocumentLoader,
 
   nsDocLoader();
 
-  virtual MOZ_MUST_USE nsresult Init();
+  [[nodiscard]] virtual nsresult Init();
 
   static already_AddRefed<nsDocLoader> GetAsDocLoader(nsISupports* aSupports);
   
@@ -72,8 +69,8 @@ class nsDocLoader : public nsIDocumentLoader,
   }
 
   
-  static MOZ_MUST_USE nsresult
-  AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader);
+  [[nodiscard]] static nsresult AddDocLoaderAsChildOfRoot(
+      nsDocLoader* aDocLoader);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsDocLoader, nsIDocumentLoader)
@@ -89,16 +86,20 @@ class nsDocLoader : public nsIDocumentLoader,
 
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICHANNELEVENTSINK
+  
+  
   NS_DECL_NSISUPPORTSPRIORITY
 
   
 
   
   
-  MOZ_MUST_USE nsresult RemoveChildLoader(nsDocLoader* aChild);
+  [[nodiscard]] nsresult RemoveChildLoader(nsDocLoader* aChild);
+  
+
   
   
-  MOZ_MUST_USE nsresult AddChildLoader(nsDocLoader* aChild);
+  [[nodiscard]] nsresult AddChildLoader(nsDocLoader* aChild);
   nsDocLoader* GetParent() const { return mParent; }
 
   struct nsListenerInfo {
@@ -160,7 +161,7 @@ class nsDocLoader : public nsIDocumentLoader,
  protected:
   virtual ~nsDocLoader();
 
-  virtual MOZ_MUST_USE nsresult SetDocLoaderParent(nsDocLoader* aLoader);
+  [[nodiscard]] virtual nsresult SetDocLoaderParent(nsDocLoader* aLoader);
 
   bool IsBusy();
 
@@ -204,8 +205,9 @@ class nsDocLoader : public nsIDocumentLoader,
   void FireOnLocationChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
                             nsIURI* aUri, uint32_t aFlags);
 
-  MOZ_MUST_USE bool RefreshAttempted(nsIWebProgress* aWebProgress, nsIURI* aURI,
-                                     int32_t aDelay, bool aSameURI);
+  [[nodiscard]] bool RefreshAttempted(nsIWebProgress* aWebProgress,
+                                      nsIURI* aURI, int32_t aDelay,
+                                      bool aSameURI);
 
   
   
@@ -227,7 +229,7 @@ class nsDocLoader : public nsIDocumentLoader,
 
   
   
-  MOZ_MUST_USE bool ChildEnteringOnload(nsIDocumentLoader* aChild) {
+  [[nodiscard]] bool ChildEnteringOnload(nsIDocumentLoader* aChild) {
     
     
     

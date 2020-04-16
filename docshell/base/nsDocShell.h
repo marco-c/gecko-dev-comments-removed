@@ -980,7 +980,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-  MOZ_MUST_USE bool MaybeInitTiming();
+  [[nodiscard]] bool MaybeInitTiming();
   void MaybeResetInitTiming(bool aReset);
 
   

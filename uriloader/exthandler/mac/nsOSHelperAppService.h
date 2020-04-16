@@ -43,11 +43,11 @@ class nsOSHelperAppService : public nsExternalHelperAppService {
   
   
   
-  MOZ_MUST_USE nsresult GetFileTokenForPath(const char16_t* platformAppPath,
-                                            nsIFile** aFile) override;
+  [[nodiscard]] nsresult GetFileTokenForPath(const char16_t* platformAppPath,
+                                             nsIFile** aFile) override;
 
-  MOZ_MUST_USE nsresult OSProtocolHandlerExists(const char* aScheme,
-                                                bool* aHandlerExists) override;
+  [[nodiscard]] nsresult OSProtocolHandlerExists(const char* aScheme,
+                                                 bool* aHandlerExists) override;
 };
 
 #endif  

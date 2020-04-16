@@ -61,7 +61,7 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
 
 
-  MOZ_MUST_USE nsresult Init();
+  [[nodiscard]] nsresult Init();
 
   
 
