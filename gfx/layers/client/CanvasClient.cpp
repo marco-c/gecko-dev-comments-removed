@@ -430,7 +430,17 @@ void CanvasClientSharedSurface::UpdateRenderer(gfx::IntSize aSize,
   SharedSurface* surf = mShSurfClient->Surf();
 
   if (!surf->IsBufferAvailable()) {
-    NS_WARNING("SharedSurface buffer not available, skip update");
+    
+    
+    
+    if (!mNewFront && !mFront) {
+      
+      
+      
+      mNewFront = newFront;
+    } else {
+      NS_WARNING("SharedSurface buffer not available, skip update");
+    }
     return;
   }
 

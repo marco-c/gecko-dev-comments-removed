@@ -264,6 +264,9 @@ class RenderThread final {
   
   bool IsHandlingWebRenderError();
 
+  
+  void NotifyAllAndroidSurfaceTexturesDetatched();
+
   size_t RendererCount();
 
   void SetCompositionRecorderForWindow(
