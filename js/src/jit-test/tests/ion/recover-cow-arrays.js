@@ -34,7 +34,7 @@ function escape(arr) { global_arr = arr; }
 function checkCOW() {
     assertEq(hasCopyOnWriteElements([1, 2, 3, 4]), false);
     
-    assertEq(hasCopyOnWriteElements([1, 2, 3, 4, 5, 6, 7]), true);
+    assertEq(hasCopyOnWriteElements([1, 2, 3, 4, 5, 6, 7]), isTypeInferenceEnabled());
 }
 checkCOW();
 

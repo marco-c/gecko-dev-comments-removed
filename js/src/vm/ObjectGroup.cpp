@@ -1523,6 +1523,8 @@ bool ObjectGroup::setAllocationSiteObjectGroup(JSContext* cx,
 ArrayObject* ObjectGroup::getOrFixupCopyOnWriteObject(JSContext* cx,
                                                       HandleScript script,
                                                       jsbytecode* pc) {
+  MOZ_ASSERT(IsTypeInferenceEnabled());
+
   
   
   RootedArrayObject obj(

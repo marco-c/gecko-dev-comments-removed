@@ -9145,8 +9145,11 @@ bool BytecodeEmitter::emitArrayLiteral(ListNode* array) {
     
     
     
+    
+    
     static const size_t MinElementsForCopyOnWrite = 5;
-    if (emitterMode != BytecodeEmitter::SelfHosting &&
+    if (IsTypeInferenceEnabled() &&
+        emitterMode != BytecodeEmitter::SelfHosting &&
         (array->count() >= MinElementsForCopyOnWrite || isSingleton) &&
         isArrayObjLiteralCompatible(array->head())) {
       return emitObjLiteralArray(array->head(),  !isSingleton);
