@@ -382,7 +382,9 @@ function buildOptionListForChildren(node, uniqueStyles) {
 
       
       let textContent =
-        tagName == "OPTGROUP" ? child.getAttribute("label") : (child.label || child.text);
+        tagName == "OPTGROUP"
+          ? child.getAttribute("label")
+          : child.label || child.text;
       if (textContent == null) {
         textContent = "";
       }
