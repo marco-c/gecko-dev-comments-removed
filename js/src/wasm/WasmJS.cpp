@@ -1565,42 +1565,49 @@ WasmInstanceObject* WasmInstanceObject::create(
     }
   }
 
-  AutoSetNewObjectMetadata metadata(cx);
-  RootedWasmInstanceObject obj(
-      cx, NewObjectWithGivenProto<WasmInstanceObject>(cx, proto));
-  if (!obj) {
-    return nullptr;
+  Instance* instance = nullptr;
+  RootedWasmInstanceObject obj(cx);
+
+  {
+    
+    
+    
+    AutoSetNewObjectMetadata metadata(cx);
+    obj = NewObjectWithGivenProto<WasmInstanceObject>(cx, proto);
+    if (!obj) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(obj->isTenured(), "assumed by WasmTableObject write barriers");
+
+    
+    InitReservedSlot(obj, EXPORTS_SLOT, exports.release(),
+                     MemoryUse::WasmInstanceExports);
+
+    InitReservedSlot(obj, SCOPES_SLOT, scopes.release(),
+                     MemoryUse::WasmInstanceScopes);
+
+    InitReservedSlot(obj, GLOBALS_SLOT, indirectGlobalObjs.release(),
+                     MemoryUse::WasmInstanceGlobals);
+
+    obj->initReservedSlot(INSTANCE_SCOPE_SLOT, UndefinedValue());
+
+    
+    
+    MOZ_ASSERT(obj->isNewborn());
+
+    
+    instance = cx->new_<Instance>(
+        cx, obj, code, std::move(tlsData), memory, std::move(tables),
+        std::move(structTypeDescrs), std::move(maybeDebug));
+    if (!instance) {
+      return nullptr;
+    }
+
+    InitReservedSlot(obj, INSTANCE_SLOT, instance,
+                     MemoryUse::WasmInstanceInstance);
+    MOZ_ASSERT(!obj->isNewborn());
   }
-
-  MOZ_ASSERT(obj->isTenured(), "assumed by WasmTableObject write barriers");
-
-  
-  InitReservedSlot(obj, EXPORTS_SLOT, exports.release(),
-                   MemoryUse::WasmInstanceExports);
-
-  InitReservedSlot(obj, SCOPES_SLOT, scopes.release(),
-                   MemoryUse::WasmInstanceScopes);
-
-  InitReservedSlot(obj, GLOBALS_SLOT, indirectGlobalObjs.release(),
-                   MemoryUse::WasmInstanceGlobals);
-
-  obj->initReservedSlot(INSTANCE_SCOPE_SLOT, UndefinedValue());
-
-  
-  
-  MOZ_ASSERT(obj->isNewborn());
-
-  
-  auto* instance = cx->new_<Instance>(
-      cx, obj, code, std::move(tlsData), memory, std::move(tables),
-      std::move(structTypeDescrs), std::move(maybeDebug));
-  if (!instance) {
-    return nullptr;
-  }
-
-  InitReservedSlot(obj, INSTANCE_SLOT, instance,
-                   MemoryUse::WasmInstanceInstance);
-  MOZ_ASSERT(!obj->isNewborn());
 
   if (!instance->init(cx, funcImports, globalImportValues, globalObjs,
                       dataSegments, elemSegments)) {
