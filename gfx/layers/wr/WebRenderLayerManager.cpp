@@ -332,7 +332,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
 
     mWebRenderCommandBuilder.BuildWebRenderCommands(
         builder, resourceUpdates, aDisplayList, aDisplayListBuilder,
-        mScrollDatas, std::move(aFilters));
+        mScrollData, std::move(aFilters));
 
     builderDumpIndex =
         mWebRenderCommandBuilder.GetBuilderDumpIndex(builder.GetRenderRoot());
@@ -355,20 +355,13 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
     Unused << builder.Dump( 1, Some(builderDumpIndex), Nothing());
   }
 
-  for (auto& stateManager : mStateManagers) {
-    if (AsyncPanZoomEnabled()) {
-      auto& scrollData = mScrollDatas[stateManager.GetRenderRoot()];
-
-      if (mIsFirstPaint) {
-        
-        
-        
-        scrollData.SetIsFirstPaint();
-      }
-      scrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
+  if (AsyncPanZoomEnabled()) {
+    if (mIsFirstPaint) {
+      mScrollData.SetIsFirstPaint();
+      mIsFirstPaint = false;
     }
+    mScrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
   }
-  mIsFirstPaint = false;
 
   
   
@@ -436,7 +429,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
                  renderRootDL->mLargeShmems);
       renderRootDL->mRect =
           LayoutDeviceRect(LayoutDevicePoint(), LayoutDeviceSize(size));
-      renderRootDL->mScrollData.emplace(std::move(mScrollDatas[renderRoot]));
+      renderRootDL->mScrollData.emplace(std::move(mScrollData));
     }
 
     WrBridge()->EndTransaction(renderRootDLs, mLatestTransactionId,

@@ -1019,60 +1019,6 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
   }
 }
 
-size_t WebRenderScrollDataCollection::GetLayerCount(
-    wr::RenderRoot aRoot) const {
-  return mInternalScrollDatas[aRoot].size();
-}
-
-void WebRenderScrollDataCollection::AppendRoot(
-    Maybe<ScrollMetadata>& aRootMetadata,
-    wr::RenderRootArray<WebRenderScrollData>& aScrollDatas) {
-  mSeenRenderRoot[wr::RenderRoot::Default] = true;
-
-  for (auto renderRoot : wr::kRenderRoots) {
-    if (mSeenRenderRoot[renderRoot]) {
-      auto& layerScrollData = mInternalScrollDatas[renderRoot];
-      layerScrollData.emplace_back();
-      layerScrollData.back().InitializeRoot(layerScrollData.size() - 1);
-
-      if (aRootMetadata) {
-        
-        
-        
-        size_t rootMetadataTarget = layerScrollData.size() - 1;
-        for (size_t i = rootMetadataTarget; i > 0; i--) {
-          if (auto zoomContainerId =
-                  layerScrollData[i - 1].GetAsyncZoomContainerId()) {
-            if (*zoomContainerId == aRootMetadata->GetMetrics().GetScrollId()) {
-              rootMetadataTarget = i - 1;
-              break;
-            }
-          }
-        }
-        layerScrollData[rootMetadataTarget].AppendScrollMetadata(
-            aScrollDatas[renderRoot], aRootMetadata.ref());
-      }
-    }
-  }
-}
-
-void WebRenderScrollDataCollection::AppendScrollData(
-    const wr::DisplayListBuilder& aBuilder, WebRenderLayerManager* aManager,
-    nsDisplayItem* aItem, size_t aLayerCountBeforeRecursing,
-    const ActiveScrolledRoot* aStopAtAsr,
-    const Maybe<gfx::Matrix4x4>& aAncestorTransform) {
-  wr::RenderRoot renderRoot = aBuilder.GetRenderRoot();
-  mSeenRenderRoot[renderRoot] = true;
-
-  int descendants =
-      mInternalScrollDatas[renderRoot].size() - aLayerCountBeforeRecursing;
-
-  mInternalScrollDatas[renderRoot].emplace_back();
-  mInternalScrollDatas[renderRoot].back().Initialize(
-      aManager->GetScrollData(renderRoot), aItem, descendants, aStopAtAsr,
-      aAncestorTransform, renderRoot);
-}
-
 class WebRenderGroupData : public WebRenderUserData {
  public:
   WebRenderGroupData(RenderRootStateManager* aWRManager, nsDisplayItem* aItem);
@@ -1566,19 +1512,18 @@ bool WebRenderCommandBuilder::NeedsEmptyTransaction() {
 void WebRenderCommandBuilder::BuildWebRenderCommands(
     wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResourceUpdates, nsDisplayList* aDisplayList,
-    nsDisplayListBuilder* aDisplayListBuilder,
-    wr::RenderRootArray<WebRenderScrollData>& aScrollDatas,
+    nsDisplayListBuilder* aDisplayListBuilder, WebRenderScrollData& aScrollData,
     WrFiltersHolder&& aFilters) {
   AUTO_PROFILER_LABEL_CATEGORY_PAIR(GRAPHICS_WRDisplayList);
   wr::RenderRootArray<StackingContextHelper> rootScs;
   MOZ_ASSERT(aBuilder.GetRenderRoot() == wr::RenderRoot::Default);
 
+  aScrollData = WebRenderScrollData(mManager);
+  MOZ_ASSERT(mLayerScrollData.empty());
   for (auto renderRoot : wr::kRenderRoots) {
-    aScrollDatas[renderRoot] = WebRenderScrollData(mManager);
     mClipManagers[renderRoot].BeginBuild(mManager, aBuilder);
     mBuilderDumpIndex[renderRoot] = 0;
   }
-  MOZ_ASSERT(mLayerScrollDatas.IsEmpty());
   mLastCanvasDatas.Clear();
   mLastLocalCanvasDatas.Clear();
   mLastAsr = nullptr;
@@ -1620,31 +1565,45 @@ void WebRenderCommandBuilder::BuildWebRenderCommands(
         *pageRootScs[wr::RenderRoot::Default], aBuilder, aResourceUpdates);
   }
 
+  
+  mLayerScrollData.emplace_back();
+  mLayerScrollData.back().InitializeRoot(mLayerScrollData.size() - 1);
   auto callback =
-      [&aScrollDatas](ScrollableLayerGuid::ViewID aScrollId) -> bool {
-    for (auto renderRoot : wr::kRenderRoots) {
-      if (aScrollDatas[renderRoot].HasMetadataFor(aScrollId).isSome()) {
-        return true;
-      }
-    }
-    return false;
+      [&aScrollData](ScrollableLayerGuid::ViewID aScrollId) -> bool {
+    return aScrollData.HasMetadataFor(aScrollId).isSome();
   };
   Maybe<ScrollMetadata> rootMetadata = nsLayoutUtils::GetRootMetadata(
       aDisplayListBuilder, mManager, ContainerLayerParameters(), callback);
+  if (rootMetadata) {
+    
+    
+    
+    size_t rootMetadataTarget = mLayerScrollData.size() - 1;
+    for (size_t i = rootMetadataTarget; i > 0; i--) {
+      if (auto zoomContainerId =
+              mLayerScrollData[i - 1].GetAsyncZoomContainerId()) {
+        if (*zoomContainerId == rootMetadata->GetMetrics().GetScrollId()) {
+          rootMetadataTarget = i - 1;
+          break;
+        }
+      }
+    }
+    mLayerScrollData[rootMetadataTarget].AppendScrollMetadata(
+        aScrollData, rootMetadata.ref());
+  }
 
-  mLayerScrollDatas.AppendRoot(rootMetadata, aScrollDatas);
+  
+  
+  
+  for (auto it = mLayerScrollData.crbegin(); it != mLayerScrollData.crend();
+       it++) {
+    aScrollData.AddLayerData(*it);
+  }
+  mLayerScrollData.clear();
 
   for (auto renderRoot : wr::kRenderRoots) {
-    
-    
-    
-    for (auto it = mLayerScrollDatas[renderRoot].crbegin();
-         it != mLayerScrollDatas[renderRoot].crend(); it++) {
-      aScrollDatas[renderRoot].AddLayerData(*it);
-    }
     mClipManagers[renderRoot].EndBuild();
   }
-  mLayerScrollDatas.Clear();
 
   
   
@@ -1725,8 +1684,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
     DisplayItemType itemType = item->GetType();
 
     bool forceNewLayerData = false;
-    size_t layerCountBeforeRecursing =
-        mLayerScrollDatas.GetLayerCount(aBuilder.GetRenderRoot());
+    size_t layerCountBeforeRecursing = mLayerScrollData.size();
     if (apzEnabled) {
       
       
@@ -1806,6 +1764,9 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         const ActiveScrolledRoot* stopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
 
+        int32_t descendants =
+            mLayerScrollData.size() - layerCountBeforeRecursing;
+
         
         
         
@@ -1828,25 +1789,32 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
           
           
           
-          mLayerScrollDatas.AppendScrollData(
-              aBuilder, mManager, item, layerCountBeforeRecursing,
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(
+              mManager->GetScrollData(), item, descendants,
               (*deferred)->GetActiveScrolledRoot(), Nothing());
+
+          
+          
+          descendants++;
 
           
           
           
           
           
-          mLayerScrollDatas.AppendScrollData(
-              aBuilder, mManager, *deferred, layerCountBeforeRecursing,
-              stopAtAsr, aSc.GetDeferredTransformMatrix());
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(mManager->GetScrollData(),
+                                             *deferred, descendants, stopAtAsr,
+                                             aSc.GetDeferredTransformMatrix());
         } else {
           
           
           
-          mLayerScrollDatas.AppendScrollData(
-              aBuilder, mManager, item, layerCountBeforeRecursing, stopAtAsr,
-              aSc.GetDeferredTransformMatrix());
+          mLayerScrollData.emplace_back();
+          mLayerScrollData.back().Initialize(mManager->GetScrollData(), item,
+                                             descendants, stopAtAsr,
+                                             aSc.GetDeferredTransformMatrix());
         }
       }
     }
