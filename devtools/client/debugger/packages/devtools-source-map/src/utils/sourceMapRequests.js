@@ -7,6 +7,20 @@ const { generatedToOriginalId } = require(".");
 const sourceMapRequests = new Map();
 
 function clearSourceMaps() {
+  for (const [, metadataPromise] of sourceMapRequests) {
+    
+    
+    metadataPromise.then(
+      metadata => {
+        if (metadata) {
+          metadata.map.destroy();
+        }
+      },
+      
+      () => {}
+    );
+  }
+
   sourceMapRequests.clear();
 }
 
