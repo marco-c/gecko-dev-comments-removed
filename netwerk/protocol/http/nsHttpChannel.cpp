@@ -6215,6 +6215,7 @@ NS_INTERFACE_MAP_BEGIN(nsHttpChannel)
   NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
   NS_INTERFACE_MAP_ENTRY(nsIChannelWithDivertableParentListener)
   NS_INTERFACE_MAP_ENTRY(nsIRequestTailUnblockCallback)
+  NS_INTERFACE_MAP_ENTRY(nsIProcessSwitchRequestor)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(nsHttpChannel)
 NS_INTERFACE_MAP_END_INHERITING(HttpBaseChannel)
 
@@ -7392,6 +7393,59 @@ nsHttpChannel::GetLoadGroup(nsILoadGroup** aLoadGroup) {
 NS_IMETHODIMP
 nsHttpChannel::GetRequestMethod(nsACString& aMethod) {
   return HttpBaseChannel::GetRequestMethod(aMethod);
+}
+
+
+
+
+
+NS_IMETHODIMP nsHttpChannel::GetChannel(nsIChannel** aChannel) {
+  *aChannel = do_AddRef(this).take();
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(
+    dom::Promise* aContentProcessIdPromise, uint64_t aIdentifier) {
+  MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG(aContentProcessIdPromise);
+
+  LOG(("nsHttpChannel::SwitchProcessTo [this=%p]", this));
+  LogCallingScriptLocation(this);
+
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(this, parentChannel);
+  RefPtr<DocumentLoadListener> documentChannelParent =
+      do_QueryObject(parentChannel);
+  
+  
+  if (!documentChannelParent) {
+    
+    NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
+  }
+
+  mRedirectContentProcessIdPromise =
+      ContentProcessIdPromise::FromDomPromise(aContentProcessIdPromise);
+  mCrossProcessRedirectIdentifier = aIdentifier;
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+nsHttpChannel::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
+  MOZ_ASSERT(aMismatch);
+  if (!aMismatch) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  *aMismatch = mHasCrossOriginOpenerPolicyMismatch;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHttpChannel::GetCachedCrossOriginOpenerPolicy(
+    nsILoadInfo::CrossOriginOpenerPolicy* aPolicy) {
+  return HttpBaseChannel::GetCrossOriginOpenerPolicy(aPolicy);
 }
 
 
