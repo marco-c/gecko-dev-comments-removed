@@ -1247,7 +1247,6 @@ public class GeckoAppShell {
     private static int[] getSystemColors() {
         
         final int[] attrsAppearance = {
-            android.R.attr.textColor,
             android.R.attr.textColorPrimary,
             android.R.attr.textColorPrimaryInverse,
             android.R.attr.textColorSecondary,
