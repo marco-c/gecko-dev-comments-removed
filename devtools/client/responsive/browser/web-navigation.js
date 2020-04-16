@@ -84,13 +84,6 @@ BrowserElementWebNavigation.prototype = {
     });
   },
 
-  setOriginAttributesBeforeLoading(originAttributes) {
-    
-    this._sendMessage("WebNavigation:SetOriginAttributes", {
-      originAttributes,
-    });
-  },
-
   reload(flags) {
     let hardReload = false;
     if (
