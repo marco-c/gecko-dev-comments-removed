@@ -643,15 +643,13 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   }
   AutoTArray<InputScope, 3> scopes;
 
+  
+  
+  AppendInputScopeFromType(aHTMLInputType, scopes);
+  AppendInputScopeFromInputmode(aHTMLInputInputmode, scopes);
+
   if (aInPrivateBrowsing) {
     scopes.AppendElement(IS_PRIVATE);
-  }
-
-  
-  if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
-    AppendInputScopeFromInputmode(aHTMLInputInputmode, scopes);
-  } else {
-    AppendInputScopeFromType(aHTMLInputType, scopes);
   }
 
   if (scopes.IsEmpty()) {
@@ -687,34 +685,50 @@ void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
       return;
     }
     
-    aScopes.AppendElement(IS_URL);
+    if (!aScopes.Contains(IS_URL)) {
+      aScopes.AppendElement(IS_URL);
+    }
     return;
   }
 
   
   if (aInputmode.EqualsLiteral("url")) {
-    aScopes.AppendElement(IS_URL);
+    if (!aScopes.Contains(IS_SEARCH)) {
+      aScopes.AppendElement(IS_URL);
+    }
     return;
   }
   if (aInputmode.EqualsLiteral("email")) {
-    aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+    if (!aScopes.Contains(IS_EMAIL_SMTPEMAILADDRESS)) {
+      aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+    }
     return;
   }
   if (aInputmode.EqualsLiteral("tel")) {
-    aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+    if (!aScopes.Contains(IS_TELEPHONE_FULLTELEPHONENUMBER)) {
+      aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
+    }
+    if (!aScopes.Contains(IS_TELEPHONE_LOCALNUMBER)) {
+      aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+    }
     return;
   }
   if (aInputmode.EqualsLiteral("numeric")) {
-    aScopes.AppendElement(IS_DIGITS);
+    if (!aScopes.Contains(IS_DIGITS)) {
+      aScopes.AppendElement(IS_DIGITS);
+    }
     return;
   }
   if (aInputmode.EqualsLiteral("decimal")) {
-    aScopes.AppendElement(IS_NUMBER);
+    if (!aScopes.Contains(IS_NUMBER)) {
+      aScopes.AppendElement(IS_NUMBER);
+    }
     return;
   }
   if (aInputmode.EqualsLiteral("search")) {
-    aScopes.AppendElement(IS_SEARCH);
+    if (!aScopes.Contains(IS_SEARCH)) {
+      aScopes.AppendElement(IS_SEARCH);
+    }
     return;
   }
 }
