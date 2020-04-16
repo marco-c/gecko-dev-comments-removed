@@ -20,6 +20,11 @@ add_task(async function test() {
   let profile = do_get_profile();
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
 
+  
+  
+  var pm = Services.perms;
+  Assert.equal(pm.all.length, 0, "No cookies");
+
   let db = Services.storage.openDatabase(GetPermissionsFile(profile));
   db.schemaVersion = 6;
   db.executeSimpleSQL("DROP TABLE moz_perms");
