@@ -5,6 +5,7 @@
 
 
 
+"use strict";
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
@@ -138,7 +139,7 @@ function test_partial2(status, entry) {
     "0123"
   );
 
-  observers_called = "";
+  observerCalled = false;
 
   var chan = makeChan(
     "http://localhost:" + httpserv.identity.primaryPort + "/path/partial"
@@ -172,7 +173,7 @@ function test_cached2(status, entry) {
     "0123456789"
   );
 
-  observers_called = "";
+  observerCalled = false;
 
   var chan = makeChan(
     "http://localhost:" + httpserv.identity.primaryPort + "/path/cached"

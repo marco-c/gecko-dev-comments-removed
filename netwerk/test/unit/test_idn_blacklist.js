@@ -1,5 +1,8 @@
 
 
+
+"use strict";
+
 const testcases = [
   
   

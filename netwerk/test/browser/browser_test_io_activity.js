@@ -3,7 +3,7 @@
 
 
 
-
+"use strict";
 const ROOT_URL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",
   "https://example.com/"

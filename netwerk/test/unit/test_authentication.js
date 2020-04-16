@@ -1,9 +1,9 @@
 
 
 
-const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
+"use strict";
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
+const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 
 var prefs = Cc["@mozilla.org/preferences-service;1"].getService(
@@ -690,7 +690,6 @@ function authShortDigest(metadata, response) {
   
   response.setStatusLine(metadata.httpVersion, 401, "Unauthorized");
   response.setHeader("WWW-Authenticate", "Digest", false);
-  body = "failed, no header";
 }
 
 let buildLargePayload = (function() {

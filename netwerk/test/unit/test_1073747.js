@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 var test = function(s, funcName) {
   function Arg() {}
   Arg.prototype.toString = function() {
@@ -21,8 +23,6 @@ var test = function(s, funcName) {
     Assert.ok(true); 
     return x;
   }
-  
-  Assert.ok(false);
 };
 var s = null;
 var funcs = [

@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 var BS = "\\";
 var DQUOTE = '"';
 

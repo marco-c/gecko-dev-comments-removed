@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 function doom(url, callback) {
   get_cache_service()
     .diskCacheStorage(Services.loadContextInfo.default, false)

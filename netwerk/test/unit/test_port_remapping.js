@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 function make_channel(url, callback, ctx) {

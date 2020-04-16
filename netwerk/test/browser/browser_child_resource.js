@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 
 const TEST_URL = "http://example.com/browser/netwerk/test/browser/dummy.html";

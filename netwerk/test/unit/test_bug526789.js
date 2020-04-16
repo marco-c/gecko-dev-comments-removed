@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 function run_test() {
   var cs = Cc["@mozilla.org/cookieService;1"].getService(Ci.nsICookieService);
   var cm = Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager);
@@ -171,7 +173,7 @@ function run_test() {
   cm.removeAll();
 
   
-  emptyuri = NetUtil.newURI("file:///");
+  let emptyuri = NetUtil.newURI("file:///");
   Assert.equal(emptyuri.asciiHost, "");
   Assert.equal(NetUtil.newURI("file://./").asciiHost, "");
   Assert.equal(NetUtil.newURI("file://foo.bar/").asciiHost, "");

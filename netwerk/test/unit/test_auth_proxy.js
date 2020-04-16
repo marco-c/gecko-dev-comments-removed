@@ -10,6 +10,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const FLAG_RETURN_FALSE = 1 << 0;

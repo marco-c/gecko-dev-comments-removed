@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 const PR_RDONLY = 0x1; 
 
 
@@ -58,7 +60,6 @@ function test_stream(stream) {
 
     numread += avail;
   }
-  return numread;
 }
 
 function stream_for_file(file) {

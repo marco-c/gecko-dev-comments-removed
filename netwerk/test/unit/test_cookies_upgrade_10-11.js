@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function getDBVersion(dbfile) {
   let dbConnection = Services.storage.openDatabase(dbfile);
   let version = dbConnection.schemaVersion;

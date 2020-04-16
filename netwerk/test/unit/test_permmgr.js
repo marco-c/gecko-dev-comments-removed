@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 var hosts = [
   
   ["http://mozilla.org", "cookie", 1],

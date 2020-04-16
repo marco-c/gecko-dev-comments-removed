@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 
@@ -186,9 +188,6 @@ function makeHandler(headerIdx, bodyIdx) {
 
 var httpserv;
 function run_test() {
-  
-  return;
-
   
   
   

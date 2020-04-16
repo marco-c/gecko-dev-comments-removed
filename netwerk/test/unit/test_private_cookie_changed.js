@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function makeChan(uri, isPrivate) {
   var chan = NetUtil.newChannel({
     uri: uri.spec,

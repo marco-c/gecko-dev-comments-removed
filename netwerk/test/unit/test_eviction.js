@@ -240,7 +240,7 @@ function check_remaining_cookies(aNumberTotal, aNumberOld, aNumberToExpect) {
 
     if (aNumberTotal != aNumberToExpect) {
       
-      var hostNumber = new Number(cookie.rawHost.split(".")[1]);
+      var hostNumber = Number(cookie.rawHost.split(".")[1]);
       if (hostNumber < aNumberOld - aNumberToExpect) {
         break;
       }

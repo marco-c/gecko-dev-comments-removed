@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 var idnService;
 
 function expected_pass(inputIDN) {
@@ -43,7 +45,7 @@ function run_test() {
   
   expected_fail("foo\u0341bar.com");
   
-  expected_fail("foo\200ebar.com");
+  expected_fail("foo\u200ebar.com");
   
   
   expected_fail(

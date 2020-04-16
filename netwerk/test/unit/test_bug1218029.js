@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 var tests = [
   { data: "", chunks: [], status: Cr.NS_OK, consume: [], dataChunks: [""] },
   {

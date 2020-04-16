@@ -1,3 +1,5 @@
+"use strict";
+
 var CC = Components.Constructor;
 
 const ServerSocket = CC(
@@ -82,7 +84,7 @@ var listener = {
 
 
 add_test(function testNoConnectChannelCanceledEarly() {
-  serv = new TestServer();
+  let serv = new TestServer();
 
   obs.addObserver(requestListenerObserver, "http-on-modify-request");
   var chan = NetUtil.newChannel({

@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 function read_stream(stream, count) {
   
   var wrapper = Cc["@mozilla.org/binaryinputstream;1"].createInstance(

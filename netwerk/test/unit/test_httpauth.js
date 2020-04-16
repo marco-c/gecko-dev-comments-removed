@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 function run_test() {
   var am = Cc["@mozilla.org/network/http-auth-manager;1"].getService(
     Ci.nsIHttpAuthManager
@@ -60,9 +62,9 @@ function run_test() {
     Assert.equal(pass.value, kPassword);
 
     
-    (domain = { value: kEmpty }),
-      (user = { value: kEmpty }),
-      (pass = { value: kEmpty });
+    domain = { value: kEmpty };
+    user = { value: kEmpty };
+    pass = { value: kEmpty };
     try {
       
       am.getAuthIdentity(
@@ -100,9 +102,9 @@ function run_test() {
       PRIVATE
     );
     
-    (domain = { value: kEmpty }),
-      (user = { value: kEmpty }),
-      (pass = { value: kEmpty });
+    domain = { value: kEmpty };
+    user = { value: kEmpty };
+    pass = { value: kEmpty };
     am.getAuthIdentity(
       kHTTP,
       kHost2,
@@ -121,9 +123,9 @@ function run_test() {
 
     try {
       
-      (domain = { value: kEmpty }),
-        (user = { value: kEmpty }),
-        (pass = { value: kEmpty });
+      domain = { value: kEmpty };
+      user = { value: kEmpty };
+      pass = { value: kEmpty };
       am.getAuthIdentity(
         kHTTP,
         kHost2,
@@ -149,9 +151,9 @@ function run_test() {
     Services.obs.notifyObservers(null, "last-pb-context-exited");
 
     
-    (domain = { value: kEmpty }),
-      (user = { value: kEmpty }),
-      (pass = { value: kEmpty });
+    domain = { value: kEmpty };
+    user = { value: kEmpty };
+    pass = { value: kEmpty };
     try {
       
       am.getAuthIdentity(

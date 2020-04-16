@@ -1,4 +1,9 @@
-var callbacks = new Array();
+
+
+
+"use strict";
+
+var callbacks = [];
 
 
 const NORMAL = 0;

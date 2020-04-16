@@ -1,6 +1,6 @@
 
 
-
+"use strict";
 add_task(async function() {
   const iconUrl =
     "http://example.org/browser/netwerk/test/browser/damonbowling.jpg";

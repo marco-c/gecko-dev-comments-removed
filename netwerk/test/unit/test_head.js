@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 const ReferrerInfo = Components.Constructor(
   "@mozilla.org/referrer-info;1",

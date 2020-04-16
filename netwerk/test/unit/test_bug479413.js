@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 var idnService;
 
 function expected_pass(inputIDN) {

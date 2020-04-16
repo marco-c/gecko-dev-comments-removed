@@ -1,6 +1,6 @@
 
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
+"use strict";
 
 
 function generateContent(size) {
@@ -1177,7 +1177,7 @@ FromDiskCacheListener.prototype = {
       
       
       var chan = makeChan("https://localhost:" + serverPort + "/diskcache");
-      chan.listener = new PulledDiskCacheListener();
+      var listener = new PulledDiskCacheListener();
       chan.loadGroup = loadGroup;
       chan.asyncOpen(listener);
     });
@@ -1197,7 +1197,7 @@ Http2DiskCachePushListener.onStopRequest = function(request, status) {
   
   
   var chan = makeChan("https://localhost:" + serverPort + "/diskcache");
-  chan.listener = new FromDiskCacheListener();
+  var listener = new FromDiskCacheListener();
   chan.loadGroup = loadGroup;
   chan.asyncOpen(listener);
 };

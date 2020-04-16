@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 const USER_CONTEXTS = ["default", "personal", "work"];
 

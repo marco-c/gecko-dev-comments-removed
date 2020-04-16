@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 const PR_RDONLY = 0x1;
 

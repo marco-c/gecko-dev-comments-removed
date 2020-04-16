@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 const kDiskDevice = "disk";
 const kMemoryDevice = "memory";

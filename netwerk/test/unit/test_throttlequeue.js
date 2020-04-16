@@ -1,4 +1,5 @@
 
+"use strict";
 
 function init(tq, mean, max) {
   let threw = false;

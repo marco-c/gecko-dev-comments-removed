@@ -21,6 +21,8 @@
 
 
 
+"use strict";
+
 var socketserver_port = -1;
 
 const CC = Components.Constructor;
@@ -126,7 +128,7 @@ var connectHandler = {
   onOutputStreamReady: output => {
     writeData(output);
   },
-  QueryInterface: () => {
+  QueryInterface: iid => {
     if (
       iid.equals(Ci.nsISupports) ||
       iid.equals(Ci.nsIInputStreamCallback) ||

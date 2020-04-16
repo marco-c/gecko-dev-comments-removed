@@ -15,6 +15,9 @@
 
 
 
+
+"use strict";
+
 var firstTest = 1; 
 var lastTest = 4; 
 
@@ -30,7 +33,7 @@ XPCOMUtils.defineLazyGetter(this, "URL", function() {
 var httpserver = new HttpServer();
 var index = 0;
 var nextTest = firstTest;
-var test_flags = new Array();
+var test_flags = [];
 var testPathBase = "/test_headers";
 
 function run_test() {
@@ -47,10 +50,10 @@ function runNextTest() {
   }
   nextTest++;
   
-  if (this["handler" + nextTest] == undefined) {
+  if (globalThis["handler" + nextTest] == undefined) {
     do_throw("handler" + nextTest + " undefined!");
   }
-  if (this["completeTest" + nextTest] == undefined) {
+  if (globalThis["completeTest" + nextTest] == undefined) {
     do_throw("completeTest" + nextTest + " undefined!");
   }
 
@@ -58,13 +61,13 @@ function runNextTest() {
 }
 
 function run_test_number(num) {
-  testPath = testPathBase + num;
-  httpserver.registerPathHandler(testPath, this["handler" + num]);
+  let testPath = testPathBase + num;
+  httpserver.registerPathHandler(testPath, globalThis["handler" + num]);
 
   var channel = setupChannel(testPath);
-  flags = test_flags[num]; 
+  let flags = test_flags[num]; 
   channel.asyncOpen(
-    new ChannelListener(this["completeTest" + num], channel, flags)
+    new ChannelListener(globalThis["completeTest" + num], channel, flags)
   );
 }
 
@@ -118,7 +121,7 @@ function completeTest2(request, data, ctx) {
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_ATTACHMENT);
     Assert.equal(chan.contentDispositionHeader, "attachment");
 
-    filename = chan.contentDispositionFilename; 
+    let filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
     info("correctly ate exception");
@@ -142,7 +145,7 @@ function completeTest3(request, data, ctx) {
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_ATTACHMENT);
     Assert.equal(chan.contentDispositionHeader, "attachment; filename=");
 
-    filename = chan.contentDispositionFilename; 
+    let filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
     info("correctly ate exception");
@@ -166,7 +169,7 @@ function completeTest4(request, data, ctx) {
     Assert.equal(chan.contentDisposition, chan.DISPOSITION_INLINE);
     Assert.equal(chan.contentDispositionHeader, "inline");
 
-    filename = chan.contentDispositionFilename; 
+    let filename = chan.contentDispositionFilename; 
     do_throw("Should have failed getting Content-Disposition filename");
   } catch (ex) {
     info("correctly ate exception");

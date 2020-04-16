@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 CookiePolicyHelper.runTest("BroadcastChannel", {
   cookieJarAccessAllowed: async w => {

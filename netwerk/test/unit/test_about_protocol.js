@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 var unsafeAboutModule = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIAboutModule]),
   newChannel(aURI, aLoadInfo) {

@@ -10,6 +10,7 @@
 
 
 
+"use strict";
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -119,7 +120,7 @@ function promiseCopyToSaver(aSourceString, aSaverOutputStream, aCloseWhenDone) {
           if (Components.isSuccessCode(aStatusCode)) {
             resolve();
           } else {
-            reject(new Components.Exception(aResult));
+            reject(new Components.Exception(aStatusCode));
           }
         },
       },

@@ -3,13 +3,12 @@
 
 
 
+"use strict";
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 const { Preferences } = ChromeUtils.import(
   "resource://gre/modules/Preferences.jsm"
 );
-
-Cu.importGlobalProperties(["XMLHttpRequest"]);
 
 var sSame;
 var sOther;

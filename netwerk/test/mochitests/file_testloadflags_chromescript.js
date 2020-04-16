@@ -1,3 +1,7 @@
+
+
+"use strict";
+
 var gObs;
 
 function info(s) {

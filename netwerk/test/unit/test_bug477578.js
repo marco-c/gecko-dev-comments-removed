@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 const testMethods = [
   ["GET"],
   ["get"],

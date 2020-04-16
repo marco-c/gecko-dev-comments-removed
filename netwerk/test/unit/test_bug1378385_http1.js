@@ -25,6 +25,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var server = new HttpServer();
@@ -127,7 +129,7 @@ function check_response_id(responses, windowId) {
   }
 }
 
-var responseQueue = new Array();
+var responseQueue = [];
 function setup_http_server() {
   log("setup_http_server");
   var prefs = Cc["@mozilla.org/preferences-service;1"].getService(

@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 function continue_test(status, entry) {
   Assert.equal(status, Cr.NS_OK);
   

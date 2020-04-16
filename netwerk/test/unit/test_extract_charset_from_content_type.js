@@ -4,6 +4,8 @@
 
 
 
+"use strict";
+
 var charset = {};
 var charsetStart = {};
 var charsetEnd = {};

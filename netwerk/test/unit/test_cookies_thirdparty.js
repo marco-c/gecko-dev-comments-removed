@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 function run_test() {
   Services.prefs.setBoolPref(
     "network.cookieJarSettings.unblocked_for_testing",

@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 function make_and_open_channel(url, callback) {
   let chan = NetUtil.newChannel({ uri: url, loadUsingSystemPrincipal: true });
   chan.asyncOpen(new ChannelListener(callback, null, CL_ALLOW_UNKNOWN_CL));

@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 var URIs = ["http://example.org", "https://example.org", "ftp://example.org"];
 
 function* getChannels() {

@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
 let prefs;

@@ -2,6 +2,7 @@
 
 
 
+"use strict";
 
 function write_atomic(file, str) {
   var stream = Cc[

@@ -3,6 +3,8 @@
 
 
 
+"use strict";
+
 function write_and_check(str, data, len) {
   var written = str.write(data, len);
   if (written != len) {

@@ -5,6 +5,8 @@
 
 
 
+"use strict";
+
 var h2Port;
 var prefs;
 var spdypref;

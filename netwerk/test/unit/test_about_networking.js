@@ -3,6 +3,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const gDashboard = Cc["@mozilla.org/network/dashboard;1"].getService(

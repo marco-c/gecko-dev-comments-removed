@@ -2,6 +2,9 @@
 
 
 
+
+"use strict";
+
 let reference = [
   [
     "www.example.com%e2%88%95www.mozill%d0%b0.com%e2%81%84www.mozilla.org",

@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 const PR_WRONLY = 0x02;
 const PR_CREATE_FILE = 0x08;

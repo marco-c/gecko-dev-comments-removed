@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 var listener = {
   onStartRequest: function test_onStartR(request) {},
 

@@ -22,14 +22,13 @@
 
 
 
+"use strict";
 
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
-Cu.importGlobalProperties(["XMLHttpRequest"]);
 
 
-
-redirectHook = "http-on-modify-request";
+let redirectHook = "http-on-modify-request";
 
 var httpServer = null,
   httpServer2 = null;

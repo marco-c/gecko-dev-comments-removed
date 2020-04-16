@@ -15,6 +15,8 @@
 
 
 
+"use strict";
+
 const kENTRYCOUNT = 10;
 
 function log_(msg) {

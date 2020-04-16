@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 const unknownType = "application/x-unknown-content-type";

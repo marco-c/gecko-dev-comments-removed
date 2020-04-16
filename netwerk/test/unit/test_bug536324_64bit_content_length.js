@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 
@@ -16,7 +18,7 @@ var listener = {
     Assert.equal(req.getResponseHeader("Content-Length"), CONTENT_LENGTH);
 
     
-    req.cancel(NS_BINDING_ABORT);
+    req.cancel(Cr.NS_BINDING_ABORTED);
   },
 
   onStopRequest(req, stat) {

@@ -1,5 +1,7 @@
 
 
+"use strict";
+
 function run_test() {
   
   Assert.throws(

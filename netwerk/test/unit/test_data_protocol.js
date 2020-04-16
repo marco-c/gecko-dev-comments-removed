@@ -4,6 +4,9 @@
 
 
 
+
+"use strict";
+
 var urls = [
   ["data:,", "text/plain", ""],
   ["data:,foo", "text/plain", "foo"],

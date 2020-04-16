@@ -6,6 +6,8 @@
 
 
 
+"use strict";
+
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
 
 var prefs = Cc["@mozilla.org/preferences-service;1"].getService(
