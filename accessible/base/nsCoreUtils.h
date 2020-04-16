@@ -11,6 +11,7 @@
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
 #include "mozilla/dom/Document.h"  
+#include "mozilla/FlushType.h"
 
 #include "nsPoint.h"
 #include "nsTArray.h"
@@ -253,7 +254,8 @@ class nsCoreUtils {
 
 
   static already_AddRefed<nsTreeColumn> GetFirstSensibleColumn(
-      mozilla::dom::XULTreeElement* aTree);
+      mozilla::dom::XULTreeElement* aTree,
+      mozilla::FlushType = mozilla::FlushType::Frames);
 
   
 
