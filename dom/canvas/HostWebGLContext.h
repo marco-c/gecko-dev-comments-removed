@@ -216,6 +216,8 @@ class HostWebGLContext final : public SupportsWeakPtr<HostWebGLContext> {
 
   void CreateBuffer(ObjectId);
   void CreateFramebuffer(ObjectId);
+  bool CreateOpaqueFramebuffer(ObjectId,
+                               const webgl::OpaqueFramebufferOptions& options);
   void CreateProgram(ObjectId);
   void CreateQuery(ObjectId);
   void CreateRenderbuffer(ObjectId);
@@ -717,6 +719,14 @@ class HostWebGLContext final : public SupportsWeakPtr<HostWebGLContext> {
   }
 
   
+  void SetFramebufferIsInOpaqueRAF(ObjectId id, bool value) {
+    WebGLFramebuffer* fb = AutoResolve(id);
+    if (fb) {
+      fb->mInOpaqueRAF = value;
+    }
+  }
+
+  
   
   
   
@@ -774,7 +784,7 @@ class HostWebGLContext final : public SupportsWeakPtr<HostWebGLContext> {
 
   
  public:
-  RefPtr<layers::SharedSurfaceTextureClient> GetVRFrame() const;
+  RefPtr<layers::SharedSurfaceTextureClient> GetVRFrame(ObjectId id) const;
 
  protected:
   WebGL2Context* GetWebGL2Context() const {

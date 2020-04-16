@@ -108,6 +108,7 @@ class XRSystem final : public DOMEventTargetHelper,
   bool FeaturePolicyBlocked() const;
   bool OnXRPermissionRequestAllow();
   void OnXRPermissionRequestCancel();
+  bool HasActiveImmersiveSession() const;
 
   
   static already_AddRefed<XRSystem> Create(nsPIDOMWindowInner* aWindow);
