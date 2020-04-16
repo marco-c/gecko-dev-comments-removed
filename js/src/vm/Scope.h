@@ -245,7 +245,6 @@ class Scope : public js::gc::TenuredCell {
   friend class GCMarker;
   friend class frontend::ScopeCreationData;
 
- protected:
   
   using HeaderWithScope = gc::CellHeaderWithTenuredGCPointer<Scope>;
   HeaderWithScope headerAndEnclosingScope_;
@@ -257,6 +256,7 @@ class Scope : public js::gc::TenuredCell {
   
   const GCPtrShape environmentShape_;
 
+ protected:
   BaseScopeData* data_;
 
   Scope(ScopeKind kind, Scope* enclosing, Shape* environmentShape)

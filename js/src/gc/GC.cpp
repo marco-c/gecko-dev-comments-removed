@@ -313,17 +313,6 @@ static_assert(mozilla::ArrayLength(slotsToThingKind) ==
 FOR_EACH_ALLOCKIND(CHECK_THING_SIZE);
 #undef CHECK_THING_SIZE
 
-
-
-
-#define CHECK_THING_LAYOUT(_1, traceKind, _2, _3, _4, _5, _6)         \
-  static_assert(                                                      \
-      std::is_standard_layout<                                        \
-          MapTraceKindToType<JS::TraceKind::traceKind>::Type>::value, \
-      "The class for " #traceKind " must by a standard layout type.");
-FOR_EACH_ALLOCKIND(CHECK_THING_LAYOUT)
-#undef CHECK_THING_LAYOUT
-
 template <typename T>
 struct ArenaLayout {
   static constexpr size_t thingSize() { return sizeof(T); }
@@ -1916,7 +1905,8 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
 #endif
 
   
-  RelocationOverlay::forwardCell(src, dst);
+  RelocationOverlay* overlay = RelocationOverlay::fromCell(src);
+  overlay->forwardTo(dst);
 }
 
 static void RelocateArena(Arena* arena, SliceBudget& sliceBudget) {
