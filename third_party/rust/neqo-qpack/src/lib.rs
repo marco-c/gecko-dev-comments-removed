@@ -5,7 +5,11 @@
 
 
 #![cfg_attr(feature = "deny-warnings", deny(warnings))]
-#![warn(clippy::use_self)]
+#![warn(clippy::pedantic)]
+
+#![allow(clippy::module_name_repetitions)]
+
+#![allow(clippy::pub_enum_variant_names)]
 
 pub mod decoder;
 mod decoder_instructions;
@@ -39,25 +43,32 @@ impl ::std::fmt::Display for QPackSide {
 #[derive(Clone, Debug, PartialEq)]
 pub enum Error {
     DecompressionFailed,
-    EncoderStreamError,
-    DecoderStreamError,
+    EncoderStream,
+    DecoderStream,
     ClosedCriticalStream,
 
     
-    HeaderLookupError,
+    HeaderLookup,
     NoMoreData,
     IntegerOverflow,
     WrongStreamCount,
-    InternalError,
-    DecodingError, 
+    Internal,
+    Decoding, 
 
     TransportError(neqo_transport::Error),
 }
 
 impl Error {
+    #[must_use]
     pub fn code(&self) -> neqo_transport::AppError {
-        
-        3
+        match self {
+            Self::DecompressionFailed => 0x200,
+            Self::EncoderStream => 0x201,
+            Self::DecoderStream => 0x202,
+            Self::ClosedCriticalStream => 0x104,
+            
+            _ => 3,
+        }
     }
 }
 

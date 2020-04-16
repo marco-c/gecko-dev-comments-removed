@@ -46,7 +46,7 @@ enum Http3RemoteSettingsState {
 
 #[derive(Debug, PartialEq, PartialOrd, Ord, Eq, Clone)]
 struct LocalSettings {
-    max_table_size: u32,
+    max_table_size: u64,
     max_blocked_streams: u16,
 }
 
@@ -81,7 +81,7 @@ impl<T: Http3Transaction> ::std::fmt::Display for Http3Connection<T> {
 }
 
 impl<T: Http3Transaction> Http3Connection<T> {
-    pub fn new(max_table_size: u32, max_blocked_streams: u16) -> Self {
+    pub fn new(max_table_size: u64, max_blocked_streams: u16) -> Self {
         if max_table_size > (1 << 30) - 1 {
             panic!("Wrong max_table_size");
         }
@@ -117,7 +117,7 @@ impl<T: Http3Transaction> Http3Connection<T> {
             settings: HSettings::new(&[
                 HSetting {
                     setting_type: HSettingType::MaxTableCapacity,
-                    value: self.qpack_decoder.get_max_table_size().into(),
+                    value: self.qpack_decoder.get_max_table_size(),
                 },
                 HSetting {
                     setting_type: HSettingType::BlockedStreams,
@@ -299,12 +299,12 @@ impl<T: Http3Transaction> Http3Connection<T> {
 
             Ok(HandleReadableOutput::NoOutput)
         } else {
-            // For a new stream we receive NewStream event and a
-            // RecvStreamReadable event.
-            // In most cases we decode a new stream already on the NewStream
-            // event and remove it from self.new_streams.
-            // Therefore, while processing RecvStreamReadable there will be no
-            // entry for the stream in self.new_streams.
+            
+            
+            
+            
+            
+            
             qdebug!("Unknown stream.");
             Ok(HandleReadableOutput::NoOutput)
         }
@@ -326,13 +326,13 @@ impl<T: Http3Transaction> Http3Connection<T> {
         debug_assert!(self.state_active());
 
         if let Some(t) = self.transactions.get_mut(&stream_id) {
-            // Close both sides of the transaction_client.
+            
             t.reset_receiving_side();
             t.stop_sending();
-            // close sending side of the transport stream as well. The server may have done
-            // it as well, but just to be sure.
+            
+            
             let _ = conn.stream_reset_send(stream_id, app_err);
-            // remove the stream
+            
             self.transactions.remove(&stream_id);
             Ok(true)
         } else {
@@ -387,7 +387,7 @@ impl<T: Http3Transaction> Http3Connection<T> {
             );
             self.settings_state = Http3RemoteSettingsState::NotReceived;
             self.streams_have_data_to_send.clear();
-            // TODO: investigate whether this code can automatically retry failed transactions.
+            
             self.transactions.clear();
             Ok(())
         } else {
@@ -428,7 +428,7 @@ impl<T: Http3Transaction> Http3Connection<T> {
         }
     }
 
-    // Returns true if it is a push stream.
+    
     fn decode_new_stream(
         &mut self,
         conn: &mut Connection,
@@ -459,7 +459,6 @@ impl<T: Http3Transaction> Http3Connection<T> {
                     .map_err(|_| Error::HttpStreamCreationError)?;
                 Ok(false)
             }
-            // TODO reserved stream types
             _ => {
                 conn.stream_stop_sending(stream_id, Error::HttpStreamCreationError.code())?;
                 Ok(false)
@@ -488,10 +487,10 @@ impl<T: Http3Transaction> Http3Connection<T> {
             .remove(&stream_id)
             .ok_or(Error::InvalidStreamId)?;
         transaction.stop_sending();
-        // Stream maybe already be closed and we may get an error here, but we do not care.
+        
         let _ = conn.stream_reset_send(stream_id, error);
         transaction.reset_receiving_side();
-        // Stream maybe already be closed and we may get an error here, but we do not care.
+        
         conn.stream_stop_sending(stream_id, error)?;
         Ok(())
     }
@@ -510,8 +509,8 @@ impl<T: Http3Transaction> Http3Connection<T> {
         Ok(())
     }
 
-    // If the control stream has received frames MaxPushId or Goaway which handling is specific to
-    // the client and server, we must give them to the specific client/server handler..
+    
+    
     fn handle_control_frame(&mut self) -> Res<Option<HFrame>> {
         if self.control_stream_remote.recvd_fin() {
             return Err(Error::HttpClosedCriticalStream);
@@ -585,7 +584,7 @@ impl<T: Http3Transaction> Http3Connection<T> {
                     match st {
                         HSettingType::MaxTableCapacity => {
                             if zero_rtt_value != 0 {
-                                return Err(Error::HttpSettingsError);
+                                return Err(Error::QpackError(neqo_qpack::Error::DecoderStream));
                             }
                             qpack_changed = true;
                         }

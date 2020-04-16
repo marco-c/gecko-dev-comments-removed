@@ -14,10 +14,16 @@ use std::mem;
 use std::str;
 
 pub trait ReadByte {
+    
+    
+    
     fn read_byte(&mut self) -> Res<u8>;
 }
 
 pub trait Reader {
+    
+    
+    
     fn read(&mut self, buf: &mut [u8]) -> Res<usize>;
 }
 
@@ -156,6 +162,7 @@ pub struct IntReader {
 impl IntReader {
     
     
+    #[must_use]
     pub fn new(first_byte: u8, prefix_len: u8) -> Self {
         debug_assert!(prefix_len < 8, "prefix cannot larger than 7.");
         let mask = if prefix_len == 0 {
@@ -172,6 +179,7 @@ impl IntReader {
         }
     }
 
+    #[must_use]
     pub fn make(first_byte: u8, prefixes: &[Prefix]) -> Self {
         for prefix in prefixes {
             if prefix.cmp_prefix(first_byte) {
@@ -258,6 +266,7 @@ impl LiteralReader {
     
     
     
+    #[must_use]
     pub fn new_with_first_byte(first_byte: u8, prefix_len: u8) -> Self {
         assert!(prefix_len < 8);
         Self {
@@ -295,7 +304,7 @@ impl LiteralReader {
                 LiteralReaderState::ReadLength { reader } => match reader.read(s)? {
                     Some(v) => {
                         self.literal
-                            .resize(v.try_into().or(Err(Error::DecodingError))?, 0x0);
+                            .resize(v.try_into().or(Err(Error::Decoding))?, 0x0);
                         self.state = LiteralReaderState::ReadLiteral { offset: 0 };
                     }
                     None => break Ok(None),
@@ -324,6 +333,8 @@ impl LiteralReader {
 
 
 
+
+
 pub fn to_string(v: &[u8]) -> Res<String> {
     match str::from_utf8(v) {
         Ok(s) => Ok(s.to_string()),
@@ -334,7 +345,7 @@ pub fn to_string(v: &[u8]) -> Res<String> {
 #[cfg(test)]
 pub(crate) mod test_receiver {
 
-    use super::*;
+    use super::{Error, ReadByte, Reader, Res};
     use std::collections::VecDeque;
 
     pub struct TestReceiver {
@@ -381,7 +392,10 @@ pub(crate) mod test_receiver {
 #[cfg(test)]
 mod tests {
 
-    use super::*;
+    use super::{
+        str, test_receiver, to_string, Error, IntReader, LiteralReader, ReadByte,
+        ReceiverBufferWrapper, Res,
+    };
     use test_receiver::TestReceiver;
 
     const TEST_CASES_NUMBERS: [(&[u8], u8, u64); 7] = [
@@ -580,12 +594,15 @@ mod tests {
     }
 
     #[test]
-    fn read_failure_receiver_buffer_wrapper() {
+    fn read_failure_receiver_buffer_wrapper_number() {
         let (buf, prefix_len, _) = &TEST_CASES_NUMBERS[4];
         let mut buffer = ReceiverBufferWrapper::new(&buf[..1]);
         let mut reader = IntReader::new(buffer.read_byte().unwrap(), *prefix_len);
         assert_eq!(reader.read(&mut buffer), Err(Error::DecompressionFailed));
+    }
 
+    #[test]
+    fn read_failure_receiver_buffer_wrapper_literal() {
         let (buf, prefix_len, _) = &TEST_CASES_LITERAL[0];
         let mut buffer = ReceiverBufferWrapper::new(&buf[..6]);
         assert_eq!(
