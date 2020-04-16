@@ -175,12 +175,6 @@ class CSSEditUtils final {
     return GetCSSEquivalentToHTMLInlineStyleSetInternal(
         aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
   }
-  static nsresult GetSpecifiedCSSEquivalentToHTMLInlineStyleSet(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      nsAString& aValue) {
-    return GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Specified);
-  }
 
   
 
