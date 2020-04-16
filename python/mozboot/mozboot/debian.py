@@ -51,7 +51,6 @@ class DebianBootstrapper(
         'autoconf2.13',
         'build-essential',
         'nodejs',
-        'python-pip',
         'python-setuptools',
         'unzip',
         'uuid',
@@ -97,12 +96,13 @@ class DebianBootstrapper(
     
     MOBILE_ANDROID_DISTRO_PACKAGES = []
 
-    def __init__(self, distro, version, dist_id, **kwargs):
+    def __init__(self, distro, version, dist_id, codename, **kwargs):
         BaseBootstrapper.__init__(self, **kwargs)
 
         self.distro = distro
         self.version = version
         self.dist_id = dist_id
+        self.codename = codename
 
         self.packages = self.COMMON_PACKAGES + self.DISTRO_PACKAGES
         if self.distro == 'debian':
@@ -112,6 +112,14 @@ class DebianBootstrapper(
         if self.distro == 'ubuntu' and int(self.version.split('.')[0]) >= 20:
             self.packages.extend(['python2.7', 'python2.7-dev'])
         else:
+            if (self.distro == 'ubuntu'
+                or (self.distro == 'debian' and self.codename != "bullseye")):
+                
+                
+                
+                
+                self.packages.append('python-pip')
+
             self.packages.append('python-dev')
         self.browser_packages = self.BROWSER_COMMON_PACKAGES + self.BROWSER_DISTRO_PACKAGES
         self.mobile_android_packages = self.MOBILE_ANDROID_COMMON_PACKAGES + \
