@@ -326,8 +326,8 @@ ThirdPartyUtil::IsThirdPartyChannel(nsIChannel* aChannel, nsIURI* aURI,
         
         
 
-        rv = loadInfo->LoadingPrincipal()->IsThirdPartyURI(channelURI,
-                                                           &parentIsThird);
+        rv = loadInfo->GetLoadingPrincipal()->IsThirdPartyURI(channelURI,
+                                                              &parentIsThird);
         if (NS_FAILED(rv)) {
           return rv;
         }

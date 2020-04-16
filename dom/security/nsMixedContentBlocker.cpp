@@ -280,7 +280,7 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(
 
   
   nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
-  nsCOMPtr<nsIPrincipal> requestingPrincipal = loadInfo->LoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> requestingPrincipal = loadInfo->GetLoadingPrincipal();
 
   
   
@@ -326,7 +326,7 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
   nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
   nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
   nsCOMPtr<nsIURI> requestingLocation;
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->LoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
 
   
   

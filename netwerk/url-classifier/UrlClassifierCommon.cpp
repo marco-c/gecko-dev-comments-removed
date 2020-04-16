@@ -46,7 +46,7 @@ bool UrlClassifierCommon::AddonMayLoad(nsIChannel* aChannel, nsIURI* aURI) {
   
   
   
-  nsIPrincipal* loadingPrincipal = channelLoadInfo->LoadingPrincipal();
+  nsIPrincipal* loadingPrincipal = channelLoadInfo->GetLoadingPrincipal();
   if (!loadingPrincipal) {
     return false;
   }

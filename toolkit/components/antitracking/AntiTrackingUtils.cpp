@@ -274,7 +274,7 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
     }
 
     
-    targetPrincipal = loadInfo->LoadingPrincipal();
+    targetPrincipal = loadInfo->GetLoadingPrincipal();
   }
 
   if (!targetPrincipal) {

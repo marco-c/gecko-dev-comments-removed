@@ -11162,9 +11162,9 @@ nsresult nsDocShell::AddToSessionHistory(
     
     if (!principalToInherit) {
       if (loadInfo->GetLoadingSandboxed()) {
-        if (loadInfo->LoadingPrincipal()) {
+        if (loadInfo->GetLoadingPrincipal()) {
           principalToInherit = NullPrincipal::CreateWithInheritedAttributes(
-              loadInfo->LoadingPrincipal());
+              loadInfo->GetLoadingPrincipal());
         } else {
           
           OriginAttributes attrs;

@@ -256,8 +256,17 @@ interface nsILoadInfo : nsISupports
   
 
 
-  [noscript, notxpcom, nostdcall, binaryname(LoadingPrincipal)]
-  nsIPrincipal binaryLoadingPrincipal();
+
+
+
+  [noscript, notxpcom, nostdcall]
+  nsIPrincipal virtualGetLoadingPrincipal();
+
+%{C++
+  nsIPrincipal* GetLoadingPrincipal() {
+    return VirtualGetLoadingPrincipal();
+  }
+%}
 
   
 
