@@ -49,6 +49,12 @@ void KungFuDeathGripChecker::check(const MatchFinder::MatchResult &Result) {
 
   
   
+  if (E->isXValue()) {
+    return;
+  }
+
+  
+  
   if (E->getType().isNull()) {
     return;
   }
