@@ -86,6 +86,14 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
 
   static hb_codepoint_t GetVerticalPresentationForm(hb_codepoint_t aUnicode);
 
+  
+  
+  
+  
+  static hb_font_t* CreateHBFont(gfxFont* aFont,
+                                 hb_font_funcs_t* aFontFuncs = nullptr,
+                                 FontCallbackData* aCallbackData = nullptr);
+
  protected:
   nsresult SetGlyphsFromRun(gfxShapedText* aShapedText, uint32_t aOffset,
                             uint32_t aLength, const char16_t* aText,
@@ -109,10 +117,6 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   };
 
   const Glyf* FindGlyf(hb_codepoint_t aGlyph, bool* aEmptyGlyf) const;
-
-  
-  
-  hb_face_t* mHBFace;
 
   
   hb_font_t* mHBFont;
