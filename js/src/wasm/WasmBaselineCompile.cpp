@@ -4361,16 +4361,18 @@ class BaseCompiler final : public BaseCompilerInterface {
     if (ABIResultIter::HasStackResults(type)) {
       MOZ_ASSERT(stk_.length() >= type.length());
       ABIResultIter iter(type);
-      for (ABIResultIter iter(type); !iter.done(); iter.next()) {
+      for (; !iter.done(); iter.next()) {
 #ifdef DEBUG
         const ABIResult& result = iter.cur();
         const Stk& v = stk_[stk_.length() - iter.index() - 1];
         MOZ_ASSERT(v.isMem() == result.onStack());
 #endif
       }
-      stackResultBytes = iter.stackBytesConsumedSoFar();
 
-      if (stackResultBytes) {
+      stackResultBytes = iter.stackBytesConsumedSoFar();
+      MOZ_ASSERT(stackResultBytes > 0);
+
+      if (srcHeight != destHeight) {
         
         
         bool saved = false;
