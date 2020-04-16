@@ -150,13 +150,8 @@ struct APZCTreeManager::TreeBuildingState {
   
   
   
-  std::vector<HitTestingTreeNode*> mFixedPositionNodesWithAnimationId;
-
-  
-  
-  
-  
-  std::vector<HitTestingTreeNode*> mRootScrollbars;
+  std::vector<FixedPositionInfo> mFixedPositionInfo;
+  std::vector<RootScrollbarInfo> mRootScrollbarInfo;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -477,13 +472,17 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
               state.mScrollThumbs.push_back(node);
             } else if (node->IsScrollbarContainerNode()) {
               
-              state.mRootScrollbars.push_back(node);
+              state.mRootScrollbarInfo.emplace_back(
+                  *(node->GetScrollbarAnimationId()),
+                  node->GetScrollbarDirection());
             }
           }
 
           
           if (node->GetFixedPositionAnimationId().isSome()) {
-            state.mFixedPositionNodesWithAnimationId.push_back(node);
+            state.mFixedPositionInfo.emplace_back(
+                *(node->GetFixedPositionAnimationId()),
+                node->GetFixedPosSides());
           }
           if (apzc && node->IsPrimaryHolder()) {
             state.mScrollTargets[apzc->GetGuid()] = node;
@@ -630,26 +629,8 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
           target->IsAncestorOf(thumb));
     }
 
-    mRootScrollbarInfo.clear();
-    
-    
-    
-    for (const HitTestingTreeNode* scrollbar : state.mRootScrollbars) {
-      MOZ_ASSERT(scrollbar->IsScrollbarContainerNode());
-      mRootScrollbarInfo.emplace_back(*(scrollbar->GetScrollbarAnimationId()),
-                                      scrollbar->GetScrollbarDirection());
-    }
-
-    mFixedPositionInfo.clear();
-    
-    
-    for (HitTestingTreeNode* fixedPos :
-         state.mFixedPositionNodesWithAnimationId) {
-      MOZ_ASSERT(fixedPos->GetFixedPositionAnimationId().isSome());
-      mFixedPositionInfo.emplace_back(
-          fixedPos->GetFixedPositionAnimationId().value(),
-          fixedPos->GetFixedPosSides());
-    }
+    mRootScrollbarInfo = std::move(state.mRootScrollbarInfo);
+    mFixedPositionInfo = std::move(state.mFixedPositionInfo);
   }
 
   for (size_t i = 0; i < state.mNodesToDestroy.Length(); i++) {
