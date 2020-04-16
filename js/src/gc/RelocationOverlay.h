@@ -20,6 +20,15 @@
 namespace js {
 namespace gc {
 
+class RelocatedCellHeader : public CellHeader {
+ public:
+  RelocatedCellHeader(Cell* location, uintptr_t flags);
+
+  Cell* location() const {
+    return reinterpret_cast<Cell*>(header_ & ~RESERVED_MASK);
+  }
+};
+
 
 
 
@@ -31,10 +40,12 @@ class RelocationOverlay : public Cell {
   
   
   
-  uintptr_t dataWithTag_;
+  RelocatedCellHeader header_;
 
   
   RelocationOverlay* next_;
+
+  RelocationOverlay(Cell* dst, uintptr_t flags);
 
  public:
   static const RelocationOverlay* fromCell(const Cell* cell) {
@@ -45,13 +56,12 @@ class RelocationOverlay : public Cell {
     return static_cast<RelocationOverlay*>(cell);
   }
 
+  static RelocationOverlay* forwardCell(Cell* src, Cell* dst);
+
   Cell* forwardingAddress() const {
     MOZ_ASSERT(isForwarded());
-    uintptr_t newLocation = dataWithTag_ & ~CellHeader::RESERVED_MASK;
-    return reinterpret_cast<Cell*>(newLocation);
+    return header_.location();
   }
-
-  void forwardTo(Cell* cell);
 
   RelocationOverlay*& nextRef() {
     MOZ_ASSERT(isForwarded());
