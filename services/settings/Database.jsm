@@ -503,10 +503,24 @@ function ensureShutdownBlocker() {
     "RemoteSettingsClient - finish IDB access.",
     () => {
       gShutdownStarted = true;
+      const NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR = 0x80660006;
       
       
       for (let transaction of Array.from(gPendingReadOnlyTransactions)) {
-        transaction.abort();
+        try {
+          transaction.abort();
+        } catch (ex) {
+          
+
+          
+          
+          
+          
+          if (ex.result != NS_ERROR_DOM_INDEXEDDB_NOT_ALLOWED_ERR) {
+            
+            Cu.reportError(ex);
+          }
+        }
       }
       if (gDB) {
         
