@@ -364,8 +364,10 @@ CraneliftStaticEnvironment::CraneliftStaticEnvironment()
       cx_tls_offset(offsetof(TlsData, cx)),
       realm_cx_offset(JSContext::offsetOfRealm()),
       realm_tls_offset(offsetof(TlsData, realm)),
-      realm_func_import_tls_offset(offsetof(FuncImportTls, realm)) {
+      realm_func_import_tls_offset(offsetof(FuncImportTls, realm)),
+      size_of_wasm_frame(sizeof(wasm::Frame)) {
 }
+
 
 
 
