@@ -5507,21 +5507,21 @@ static void InitStaticPrefsFromShared() {
   
   
   
-  
 #define NEVER_PREF(name, cpp_type, value)
-#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value) \
-  {                                                          \
-    StripAtomic<cpp_type> val;                               \
-    nsresult rv = Internals::GetSharedPrefValue(name, &val); \
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));                       \
-    StaticPrefs::sMirror_##full_id = val;                    \
+#define ALWAYS_PREF(name, base_id, full_id, cpp_type, value)            \
+  {                                                                     \
+    StripAtomic<cpp_type> val;                                          \
+    DebugOnly<nsresult> rv = Internals::GetSharedPrefValue(name, &val); \
+    MOZ_ASSERT(NS_SUCCEEDED(rv));                                       \
+    StaticPrefs::sMirror_##full_id = val;                               \
   }
-#define ONCE_PREF(name, base_id, full_id, cpp_type, value)                   \
-  {                                                                          \
-    cpp_type val;                                                            \
-    nsresult rv = Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val); \
-    MOZ_ALWAYS_TRUE(NS_SUCCEEDED(rv));                                       \
-    StaticPrefs::sMirror_##full_id = val;                                    \
+#define ONCE_PREF(name, base_id, full_id, cpp_type, value)         \
+  {                                                                \
+    cpp_type val;                                                  \
+    DebugOnly<nsresult> rv =                                       \
+        Internals::GetSharedPrefValue(ONCE_PREF_NAME(name), &val); \
+    MOZ_ASSERT(NS_SUCCEEDED(rv));                                  \
+    StaticPrefs::sMirror_##full_id = val;                          \
   }
 #include "mozilla/StaticPrefListAll.h"
 #undef NEVER_PREF
