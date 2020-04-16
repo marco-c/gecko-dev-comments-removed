@@ -1583,10 +1583,9 @@ import android.view.inputmethod.EditorInfo;
                 
                 outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
                         InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE;
-                if (typeHint.equalsIgnoreCase("textarea") ||
-                        typeHint.length() == 0) {
+                if (!typeHint.equalsIgnoreCase("text")) {
                     
-                    outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+                    outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
                 }
             }
         }
