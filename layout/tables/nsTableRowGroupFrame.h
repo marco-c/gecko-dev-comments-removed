@@ -260,7 +260,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
   NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame,
-                                  int32_t aLineNumber) override;
+                                  int32_t aLineNumber) const override;
 
   
   

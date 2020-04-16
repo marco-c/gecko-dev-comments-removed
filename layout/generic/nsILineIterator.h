@@ -78,7 +78,8 @@ class nsILineIterator {
 
   
   
-  NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame, int32_t aLineNumber) = 0;
+  NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame,
+                                  int32_t aLineNumber) const = 0;
 
   
   
