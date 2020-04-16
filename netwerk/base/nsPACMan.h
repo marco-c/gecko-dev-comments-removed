@@ -58,7 +58,7 @@ class PendingPACQuery final : public Runnable,
                               public LinkedListElement<PendingPACQuery> {
  public:
   PendingPACQuery(nsPACMan* pacMan, nsIURI* uri, nsPACManCallback* callback,
-                  bool mainThreadResponse);
+                  uint32_t flags, bool mainThreadResponse);
 
   
   void Complete(nsresult status, const nsACString& pacString);
@@ -68,6 +68,7 @@ class PendingPACQuery final : public Runnable,
   nsCString mScheme;
   nsCString mHost;
   int32_t mPort;
+  uint32_t mFlags;
 
   NS_IMETHOD Run(void) override; 
 
@@ -113,8 +114,11 @@ class nsPACMan final : public nsIStreamLoaderObserver,
 
 
 
+
+
+
   nsresult AsyncGetProxyForURI(nsIURI* uri, nsPACManCallback* callback,
-                               bool mustCallbackOnMainThread);
+                               uint32_t flags, bool mustCallbackOnMainThread);
 
   
 
