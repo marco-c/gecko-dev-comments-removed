@@ -270,7 +270,7 @@ class SimpleTransaction : public TestTransaction {
 
   ~SimpleTransaction() override = default;
 
-  NS_IMETHOD DoTransaction() override {
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD DoTransaction() override {
     
     
     
@@ -286,7 +286,7 @@ class SimpleTransaction : public TestTransaction {
     return (mFlags & THROWS_DO_ERROR_FLAG) ? NS_ERROR_FAILURE : NS_OK;
   }
 
-  NS_IMETHOD UndoTransaction() override {
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD UndoTransaction() override {
     
     
     
@@ -302,7 +302,7 @@ class SimpleTransaction : public TestTransaction {
     return (mFlags & THROWS_UNDO_ERROR_FLAG) ? NS_ERROR_FAILURE : NS_OK;
   }
 
-  NS_IMETHOD RedoTransaction() override {
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override {
     
     
     
@@ -372,7 +372,7 @@ class AggregateTransaction : public SimpleTransaction {
 
   ~AggregateTransaction() override = default;
 
-  NS_IMETHOD DoTransaction() override {
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD DoTransaction() override {
     if (mLevel >= mMaxLevel) {
       
       mFlags |= mErrorFlags;
@@ -390,7 +390,7 @@ class AggregateTransaction : public SimpleTransaction {
     }
 
     if (mFlags & BATCH_FLAG) {
-      rv = mTXMgr->BeginBatch(nullptr);
+      rv = MOZ_KnownLive(mTXMgr)->BeginBatch(nullptr);
       if (NS_FAILED(rv)) {
         return rv;
       }
@@ -416,7 +416,7 @@ class AggregateTransaction : public SimpleTransaction {
       RefPtr<AggregateTransaction> tximpl = new AggregateTransaction(
           mTXMgr, cLevel, i, mMaxLevel, mNumChildrenPerNode, flags);
 
-      rv = mTXMgr->DoTransaction(tximpl);
+      rv = MOZ_KnownLive(mTXMgr)->DoTransaction(tximpl);
       if (NS_FAILED(rv)) {
         if (mFlags & BATCH_FLAG) {
           mTXMgr->EndBatch(false);
@@ -482,7 +482,7 @@ void reset_globals() {
 
 
 
-void quick_test(TestTransactionFactory* factory) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void quick_test(TestTransactionFactory* factory) {
   
 
 
@@ -497,7 +497,7 @@ void quick_test(TestTransactionFactory* factory) {
 
 
 
-  nsresult rv = mgr->DoTransaction(0);
+  nsresult rv = mgr->DoTransaction(nullptr);
   EXPECT_EQ(rv, NS_ERROR_NULL_POINTER);
 
   
@@ -1229,7 +1229,8 @@ TEST(TestTXMgr, AggregationTest)
 
 
 
-void quick_batch_test(TestTransactionFactory* factory) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void quick_batch_test(
+    TestTransactionFactory* factory) {
   
 
 
@@ -1858,7 +1859,8 @@ TEST(TestTXMgr, AggregationBatchTest)
 
 
 
-void stress_test(TestTransactionFactory* factory, int32_t iterations) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void stress_test(TestTransactionFactory* factory,
+                                             int32_t iterations) {
   
 
 

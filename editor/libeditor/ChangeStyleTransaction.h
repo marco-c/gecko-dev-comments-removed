@@ -59,7 +59,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
   NS_DECL_EDITTRANSACTIONBASE
 
-  NS_IMETHOD RedoTransaction() override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
 
   
 
@@ -106,7 +106,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-  nsresult SetStyle(bool aAttributeWasSet, nsAString& aValue);
+  MOZ_CAN_RUN_SCRIPT nsresult SetStyle(bool aAttributeWasSet,
+                                       nsAString& aValue);
 
   
   RefPtr<nsStyledElement> mStyledElement;
