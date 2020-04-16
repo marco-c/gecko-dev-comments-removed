@@ -442,6 +442,22 @@ DistributionCustomizer.prototype = {
       }
     }
 
+    if (this._ini.getString("Global", "id") == "yandex") {
+      
+      
+      
+      try {
+        defaults.set(
+          "distribution.id",
+          defaults
+            .get("extensions.yasearch@yandex.ru.clids.vendor")
+            .replace("firefox", "yandex")
+        );
+      } catch (e) {
+        
+      }
+    }
+
     let localizedStr = Cc["@mozilla.org/pref-localizedstring;1"].createInstance(
       Ci.nsIPrefLocalizedString
     );
