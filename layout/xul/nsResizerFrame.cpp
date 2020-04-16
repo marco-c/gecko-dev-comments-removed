@@ -285,7 +285,14 @@ nsresult nsResizerFrame::HandleEvent(nsPresContext* aPresContext,
 
     case eMouseClick: {
       WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
-      if (mouseEvent->IsLeftClickEvent()) {
+      if (mouseEvent->IsLeftClickEvent()
+#ifdef XP_MACOSX
+          
+          
+          
+          && !mouseEvent->IsControl()
+#endif
+      ) {
         MouseClicked(mouseEvent);
       }
       break;
