@@ -223,10 +223,14 @@ function whereToOpenLink(e, ignoreButton, ignoreAlt) {
   var alt = e.altKey && !ignoreAlt;
 
   
-  var middle = !ignoreButton && e.button == 1;
-  var middleUsesTabs = Services.prefs.getBoolPref(
+  let middle = !ignoreButton && e.button == 1;
+  let middleUsesTabs = Services.prefs.getBoolPref(
     "browser.tabs.opentabfor.middleclick",
     true
+  );
+  let middleUsesNewWindow = Services.prefs.getBoolPref(
+    "middlemouse.openNewWindow",
+    false
   );
 
   
@@ -240,7 +244,7 @@ function whereToOpenLink(e, ignoreButton, ignoreAlt) {
     return "save";
   }
 
-  if (shift || (middle && !middleUsesTabs)) {
+  if (shift || (middle && !middleUsesTabs && middleUsesNewWindow)) {
     return "window";
   }
 
