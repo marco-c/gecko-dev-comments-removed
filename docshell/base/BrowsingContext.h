@@ -74,6 +74,10 @@ class WindowProxyHolder;
 
 
 
+
+
+
+
 #define MOZ_EACH_BC_FIELD(FIELD)                                             \
   FIELD(Name, nsString)                                                      \
   FIELD(Closed, bool)                                                        \
@@ -496,14 +500,6 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   void ResetGVAutoplayRequestStatus();
 
   
-
-
-
-
-
-
-
-
 
 
 
