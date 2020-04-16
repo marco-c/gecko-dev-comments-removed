@@ -15,7 +15,7 @@ import { createSelector } from "reselect";
 import { features } from "../utils/prefs";
 
 import type { Selector, State } from "./types";
-import type { Thread, ThreadList } from "../types";
+import type { Thread, ThreadList, Worker } from "../types";
 import type { Action } from "../actions/types";
 
 export type ThreadsState = {
@@ -87,7 +87,7 @@ export const getThreads = (state: OuterState) => state.threads.threads;
 
 export const getWorkerCount = (state: OuterState) => getThreads(state).length;
 
-export function getWorkerByThread(state: OuterState, thread: string) {
+export function getWorkerByThread(state: OuterState, thread: string): ?Worker {
   return getThreads(state).find(worker => worker.actor == thread);
 }
 
@@ -108,15 +108,14 @@ export const getAllThreads: Selector<Thread[]> = createSelector(
   ]
 );
 
-export function supportsWasm(state: State) {
+export function supportsWasm(state: State): boolean {
   return features.wasm && state.threads.traits.wasmBinarySource;
 }
 
 
 
-export function startsWithThreadActor(state: State, path: string) {
+export function startsWithThreadActor(state: State, path: string): ?string {
   const threadActors = getAllThreads(state).map(t => t.actor);
-
   const match = path.match(new RegExp(`(${threadActors.join("|")})\/(.*)`));
   return match?.[1];
 }

@@ -11,7 +11,7 @@ import type { State } from "../reducers/types";
 
 
 
-export function isLineInScope(state: State, line: number) {
+export function isLineInScope(state: State, line: number): boolean {
   const frame = getVisibleSelectedFrame(state);
   if (!frame) {
     return false;

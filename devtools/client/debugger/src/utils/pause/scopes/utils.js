@@ -54,7 +54,7 @@ export function getThisVariable(this_: any, path: string): ?NamedValue {
 
 
 
-export function getScopeItemPath(item: Object) {
+export function getScopeItemPath(item: Object): string {
   
   return item.path.toString();
 }

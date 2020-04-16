@@ -15,7 +15,10 @@ import { features, prefs } from "../utils/prefs";
 
 let actions;
 
-export async function onConnect(connection: any, _actions: Object) {
+export async function onConnect(
+  connection: any,
+  _actions: Object
+): Promise<void> {
   const { devToolsClient, targetList } = connection;
   actions = _actions;
 
@@ -32,70 +35,72 @@ async function onTargetAvailable({
   targetFront,
   isTopLevel,
   isTargetSwitching,
-}) {
-  if (isTopLevel) {
-    if (isTargetSwitching) {
-      
-      
-      
-      
-      actions.willNavigate({ url: targetFront.url });
-    }
-
-    
-    await targetFront.onThreadAttached;
-
-    const { threadFront } = targetFront;
-    if (!threadFront) {
-      return;
-    }
-
-    setupEventsTopTarget(targetFront);
-    targetFront.on("will-navigate", actions.willNavigate);
-    targetFront.on("navigate", actions.navigated);
-
-    const wasmBinarySource =
-      features.wasm && !!targetFront.client.mainRoot.traits.wasmBinarySource;
-
-    await threadFront.reconfigure({
-      observeAsmJS: true,
-      pauseWorkersUntilAttach: true,
-      wasmBinarySource,
-      skipBreakpoints: prefs.skipPausing,
-      logEventBreakpoints: prefs.logEventBreakpoints,
-    });
-
-    
-    actions.getEventListenerBreakpointTypes().catch(e => console.error(e));
-
-    
-    
-    actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
-
-    const { traits } = targetFront;
-    await actions.connect(
-      targetFront.url,
-      threadFront.actor,
-      traits,
-      targetFront.isWebExtension
-    );
-
-    
-    
-    
-    
-    
-    
-    
-    
-    const sources = await clientCommands.fetchSources();
-    await actions.newGeneratedSources(sources);
-
-    await clientCommands.checkIfAlreadyPaused();
+}): Promise<void> {
+  if (!isTopLevel) {
+    return;
   }
+
+  if (isTargetSwitching) {
+    
+    
+    
+    
+    actions.willNavigate({ url: targetFront.url });
+  }
+
+  
+  await targetFront.onThreadAttached;
+
+  const { threadFront } = targetFront;
+  if (!threadFront) {
+    return;
+  }
+
+  setupEventsTopTarget(targetFront);
+  targetFront.on("will-navigate", actions.willNavigate);
+  targetFront.on("navigate", actions.navigated);
+
+  const wasmBinarySource =
+    features.wasm && !!targetFront.client.mainRoot.traits.wasmBinarySource;
+
+  await threadFront.reconfigure({
+    observeAsmJS: true,
+    pauseWorkersUntilAttach: true,
+    wasmBinarySource,
+    skipBreakpoints: prefs.skipPausing,
+    logEventBreakpoints: prefs.logEventBreakpoints,
+  });
+
+  
+  actions.getEventListenerBreakpointTypes().catch(e => console.error(e));
+
+  
+  
+  actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
+
+  const { traits } = targetFront;
+  await actions.connect(
+    targetFront.url,
+    threadFront.actor,
+    traits,
+    targetFront.isWebExtension
+  );
+
+  
+  
+  
+  
+  
+  
+  
+  
+  const sources = await clientCommands.fetchSources();
+  await actions.newGeneratedSources(sources);
+
+  await clientCommands.checkIfAlreadyPaused();
 }
 
-function onTargetDestroyed({ targetFront, isTopLevel }) {
+function onTargetDestroyed({ targetFront, isTopLevel }): void {
   if (isTopLevel) {
     targetFront.off("will-navigate", actions.willNavigate);
     targetFront.off("navigate", actions.navigated);

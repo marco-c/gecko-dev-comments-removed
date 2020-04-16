@@ -107,7 +107,10 @@ const libraryMap = [
   },
 ];
 
-export function getLibraryFromUrl(frame: Frame, callStack: Array<Frame> = []) {
+export function getLibraryFromUrl(
+  frame: Frame,
+  callStack: Array<Frame> = []
+): ?string | void {
   
   
   const frameUrl = getFrameUrl(frame);

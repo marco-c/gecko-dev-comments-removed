@@ -57,11 +57,11 @@ function update(
 
 type OuterState = { preview: PreviewState };
 
-export function getPreview(state: OuterState) {
+export function getPreview(state: OuterState): ?Preview {
   return state.preview.preview;
 }
 
-export function getPreviewCount(state: OuterState) {
+export function getPreviewCount(state: OuterState): number {
   return state.preview.previewCount;
 }
 

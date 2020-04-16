@@ -686,7 +686,7 @@ export function getInlinePreviewExpression(
 
 export function getChromeScopes(state: State, thread: ThreadId) {
   const frame: ?ChromeFrame = (getSelectedFrame(state, thread): any);
-  return frame ? frame.scopeChain : undefined;
+  return frame?.scopeChain;
 }
 
 export function getLastExpandedScopes(state: State, thread: ThreadId) {

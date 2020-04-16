@@ -9,7 +9,7 @@
 
 
 
-export function copyToTheClipboard(string: string) {
+export function copyToTheClipboard(string: string): void {
   const doCopy = function(e: any) {
     e.clipboardData.setData("text/plain", string);
     e.preventDefault();
