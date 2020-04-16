@@ -7,9 +7,9 @@
 #include "gfxCrashReporterUtils.h"
 #include <string.h>              
 #include "mozilla/Assertions.h"  
+#include "mozilla/SchedulerGroup.h"  
 #include "mozilla/Services.h"    
 #include "mozilla/StaticMutex.h"
-#include "mozilla/SystemGroup.h"  
 #include "mozilla/mozalloc.h"     
 #include "mozilla/RefPtr.h"       
 #include "MainThreadUtils.h"      
@@ -100,7 +100,7 @@ void ScopedGfxFeatureReporter::WriteAppNote(char statusChar,
   if (!gFeaturesAlreadyReported) {
     gFeaturesAlreadyReported = new nsTArray<nsCString>;
     nsCOMPtr<nsIRunnable> r = new RegisterObserverRunnable();
-    SystemGroup::Dispatch(TaskCategory::Other, r.forget());
+    SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
   }
 
   nsAutoCString featureString;
@@ -121,7 +121,7 @@ void ScopedGfxFeatureReporter::AppNote(const nsACString& aMessage) {
     CrashReporter::AppendAppNotesToCrashReport(aMessage);
   } else {
     nsCOMPtr<nsIRunnable> r = new AppendAppNotesRunnable(aMessage);
-    SystemGroup::Dispatch(TaskCategory::Other, r.forget());
+    SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
   }
 }
 

@@ -12,7 +12,7 @@
 #include "nsMemory.h"
 #include "prinrval.h"
 #include "mozilla/Logging.h"
-#include "mozilla/SystemGroup.h"
+#include "mozilla/SchedulerGroup.h"
 #include "nsThreadSyncDispatch.h"
 
 #include <mutex>
@@ -157,9 +157,10 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   
   
   
-  SystemGroup::Dispatch(TaskCategory::Other,
-                        NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
-                                          &nsIThread::AsyncShutdown));
+  SchedulerGroup::Dispatch(
+      TaskCategory::Other,
+      NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
+                        &nsIThread::AsyncShutdown));
 }
 
 

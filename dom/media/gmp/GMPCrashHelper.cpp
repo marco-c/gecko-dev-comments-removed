@@ -6,7 +6,7 @@
 #include "GMPCrashHelper.h"
 #include "runnable_utils.h"
 #include "nsThreadUtils.h"
-#include "SystemGroup.h"
+#include "mozilla/SchedulerGroup.h"
 
 namespace mozilla {
 
@@ -18,7 +18,7 @@ void GMPCrashHelper::Destroy() {
     delete this;
   } else {
     
-    SystemGroup::Dispatch(
+    SchedulerGroup::Dispatch(
         TaskCategory::Other,
         NewNonOwningRunnableMethod("GMPCrashHelper::Destroy", this,
                                    &GMPCrashHelper::Destroy));

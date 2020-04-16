@@ -11,9 +11,9 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/mscom/SpinEvent.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/SystemGroup.h"
 #include "mozilla/Unused.h"
 #include "private/prpriv.h"  
 #include <winternl.h>        
@@ -154,8 +154,8 @@ bool MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable) {
 
   
   
-  if (NS_FAILED(SystemGroup::Dispatch(TaskCategory::Other,
-                                      do_AddRef(syncRunnable)))) {
+  if (NS_FAILED(SchedulerGroup::Dispatch(TaskCategory::Other,
+                                         do_AddRef(syncRunnable)))) {
     return false;
   }
 
