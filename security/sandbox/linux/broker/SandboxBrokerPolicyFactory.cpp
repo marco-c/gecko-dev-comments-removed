@@ -677,6 +677,10 @@ SandboxBrokerPolicyFactory::GetSocketProcessPolicy(int aPid) {
 
   
   
+  AddSharedMemoryPaths(policy.get(), aPid);
+
+  
+  
   
   
   
