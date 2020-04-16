@@ -3868,10 +3868,13 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
   
   
   
+  
   bool allowStyleCaching =
       StaticPrefs::layout_css_cached_scrollbar_styles_enabled() &&
       aParentFrame->StyleVisibility()->mVisible == StyleVisibility::Visible &&
+#ifndef ANDROID
       aParentFrame->StyleUI()->mPointerEvents == StylePointerEvents::Auto &&
+#endif
       mPresShell->GetPresContext()->Medium() == nsGkAtoms::screen;
 
   
@@ -3925,6 +3928,9 @@ nsresult nsCSSFrameConstructor::GetAnonymousContent(
             cachedStyles[i]->EqualForCachedAnonymousContentStyle(*cs),
             "cached anonymous content styles should be identical to those we "
             "would compute normally");
+#ifdef ANDROID
+        MOZ_ASSERT(cs->StyleUI()->mPointerEvents == StylePointerEvents::None);
+#endif
 #endif
         Servo_SetExplicitStyle(elements[i], cachedStyles[i]);
       }

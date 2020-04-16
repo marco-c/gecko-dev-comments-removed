@@ -20,6 +20,13 @@ xul|scrollbar {
   display: block;
 }
 
+
+
+xul|resizer,
+xul|scrollcorner {
+  pointer-events: none;
+}
+
 xul|scrollbar[orient="vertical"] {
   min-width: 6px;
   max-width: 6px;
