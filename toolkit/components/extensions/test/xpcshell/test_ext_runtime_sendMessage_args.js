@@ -22,6 +22,8 @@ add_task(async function() {
         browser.runtime.onMessage.addListener((msg, sender) => {
           browser.test.sendMessage("received-page", { msg, sender });
         });
+        
+        browser.test.sendMessage("page-ready");
       },
       "page.html": `<!DOCTYPE html><meta charset="utf-8"><script src="page.js"></script>`,
     },
@@ -37,6 +39,7 @@ add_task(async function() {
   });
 
   await Promise.all([extension1.startup(), extension2.startup()]);
+  await extension1.awaitMessage("page-ready");
 
   
   async function checkLocalMessage(msg) {
