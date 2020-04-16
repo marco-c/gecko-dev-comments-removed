@@ -536,6 +536,8 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
   
   bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
 
+  bool IsSandboxedFrom(BrowsingContext* aTarget);
+
   
   
   
