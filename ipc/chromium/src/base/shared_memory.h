@@ -141,7 +141,7 @@ class SharedMemory {
   
   
   
-  MOZ_MUST_USE bool ReadOnlyCopy(SharedMemory *ro_out);
+  MOZ_MUST_USE bool ReadOnlyCopy(SharedMemory* ro_out);
 
   
   

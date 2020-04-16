@@ -11,11 +11,11 @@
 
 #include "mozilla/Attributes.h"  
 
-#include "jstypes.h"        
-#include "js/CallArgs.h"    
-#include "js/RootingAPI.h"  
-#include "js/Value.h"       
-#include "vm/JSObject.h"    
+#include "jstypes.h"           
+#include "js/CallArgs.h"       
+#include "js/RootingAPI.h"     
+#include "js/Value.h"          
+#include "vm/JSObject.h"       
 #include "vm/PromiseObject.h"  
 
 struct JS_PUBLIC_API JSContext;

@@ -1383,11 +1383,8 @@ void nsDragService::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
     return;
   }
 
-
   MOZ_LOG(sDragLm, LogLevel::Debug, ("Type is %s\n", typeName));
-  auto freeTypeName = mozilla::MakeScopeExit([&] {
-    g_free(typeName);
-  });
+  auto freeTypeName = mozilla::MakeScopeExit([&] { g_free(typeName); });
   
   if (!mSourceDataItems) {
     MOZ_LOG(sDragLm, LogLevel::Debug, ("Failed to get our data items\n"));

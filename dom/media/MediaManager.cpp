@@ -4373,20 +4373,24 @@ void SourceListener::SetEnabledFor(MediaTrack* aTrack, bool aEnable) {
             state.mDevice->GetRawGroupId(inputDeviceGroupId);
 
             return MediaManager::PostTask<DeviceOperationPromise>(
-                __func__, [self, device = state.mDevice, aEnable, inputDeviceGroupId](
-                              MozPromiseHolder<DeviceOperationPromise>& h) {
+                __func__,
+                [self, device = state.mDevice, aEnable, inputDeviceGroupId](
+                    MozPromiseHolder<DeviceOperationPromise>& h) {
                   
                   
                   
                   
-                  if (device->mKind == dom::MediaDeviceKind::Audioinput && !aEnable) {
+                  if (device->mKind == dom::MediaDeviceKind::Audioinput &&
+                      !aEnable) {
                     
                     
-                    CubebDeviceEnumerator* enumerator = CubebDeviceEnumerator::GetInstance();
+                    CubebDeviceEnumerator* enumerator =
+                        CubebDeviceEnumerator::GetInstance();
                     
                     
                     RefPtr<AudioDeviceInfo> outputDevice =
-                      enumerator->DefaultDevice(CubebDeviceEnumerator::Side::OUTPUT);
+                        enumerator->DefaultDevice(
+                            CubebDeviceEnumerator::Side::OUTPUT);
                     if (outputDevice->GroupID().Equals(inputDeviceGroupId)) {
                       LOG("Device group id match when %s, "
                           "not turning the input device off (%s)",

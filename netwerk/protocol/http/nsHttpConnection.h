@@ -177,6 +177,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   bool NoClientCertAuth() const override;
 
   bool CanAcceptWebsocket() override;
+
  private:
   
   enum TCPKeepaliveConfig {

@@ -7,13 +7,13 @@
 #ifndef builtin_Promise_inl_h
 #define builtin_Promise_inl_h
 
-#include "js/Promise.h"          
+#include "js/Promise.h"  
 
 #include "mozilla/Assertions.h"  
 
-#include "js/RootingAPI.h"       
-#include "vm/JSContext.h"        
-#include "vm/PromiseObject.h"    
+#include "js/RootingAPI.h"     
+#include "vm/JSContext.h"      
+#include "vm/PromiseObject.h"  
 
 namespace js {
 

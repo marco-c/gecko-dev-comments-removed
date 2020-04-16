@@ -12,9 +12,9 @@
 
 #include <stdint.h>  
 
-#include "js/Class.h"         
-#include "js/Promise.h"       
-#include "js/RootingAPI.h"    
+#include "js/Class.h"       
+#include "js/Promise.h"     
+#include "js/RootingAPI.h"  
 #include "js/Value.h"  
 #include "vm/NativeObject.h"  
 

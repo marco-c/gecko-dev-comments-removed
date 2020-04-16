@@ -25,7 +25,7 @@ class gfxPattern final {
   
   gfxPattern(gfxFloat x0, gfxFloat y0, gfxFloat x1, gfxFloat y1);  
   gfxPattern(gfxFloat cx0, gfxFloat cy0, gfxFloat radius0, gfxFloat cx1,
-             gfxFloat cy1, gfxFloat radius1);            
+             gfxFloat cy1, gfxFloat radius1);  
   gfxPattern(gfxFloat cx, gfxFloat cy, gfxFloat angle, gfxFloat startOffset,
              gfxFloat endOffset);  
   gfxPattern(mozilla::gfx::SourceSurface* aSurface,

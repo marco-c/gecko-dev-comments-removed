@@ -26,7 +26,8 @@ namespace mozilla {
 
 
 std::string CommentsToSpaces(const std::string& src) {
-  constexpr auto flags = std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize;
+  constexpr auto flags =
+      std::regex::ECMAScript | std::regex::nosubs | std::regex::optimize;
 
   static const auto RE_COMMENT_BEGIN = std::regex("/[*/]", flags);
   static const auto RE_LINE_COMMENT_END = std::regex(R"([^\\]\n)", flags);
@@ -35,6 +36,7 @@ std::string CommentsToSpaces(const std::string& src) {
   std::string ret;
   ret.reserve(src.size());
 
+  
   
   
 

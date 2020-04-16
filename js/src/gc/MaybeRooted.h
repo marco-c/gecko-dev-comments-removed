@@ -17,7 +17,7 @@
 
 #include <type_traits>  
 
-#include "gc/Allocator.h"   
+#include "gc/Allocator.h"            
 #include "js/ComparisonOperators.h"  
 #include "js/RootingAPI.h"  
 
