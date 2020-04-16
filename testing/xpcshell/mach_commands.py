@@ -227,7 +227,7 @@ class MachCommands(MachCommandBase):
             params['manifest'] = m
 
         driver = self._spawn(BuildDriver)
-        driver.install_tests(test_objects)
+        driver.install_tests()
 
         
         
