@@ -139,11 +139,18 @@ nsresult TextEditor::Init(Document& aDoc, Element* aRoot,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  MOZ_ASSERT(!mInitSucceeded, "TextEditor::Init() shouldn't be nested");
+  mInitSucceeded = true;
+
   rv = InitEditorContentAndSelection();
   if (NS_FAILED(rv)) {
     NS_WARNING("TextEditor::InitEditorContentAndSelection() failed");
     
     
+    mInitSucceeded = false;
     return EditorBase::ToGenericNSResult(rv);
   }
 
@@ -151,8 +158,6 @@ nsresult TextEditor::Init(Document& aDoc, Element* aRoot,
   
   ClearUndoRedo();
   EnableUndoRedo();
-  MOZ_ASSERT(!mInitSucceeded, "TextEditor::Init() shouldn't be nested");
-  mInitSucceeded = true;
   return NS_OK;
 }
 
