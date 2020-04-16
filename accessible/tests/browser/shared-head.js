@@ -15,6 +15,7 @@
 
 
 
+
 const CURRENT_FILE_DIR = "/browser/accessible/tests/browser/";
 
 
@@ -217,6 +218,20 @@ function invokeFocus(browser, id) {
 
     elm.focus();
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+function getContentDPR(browser) {
+  return invokeContentTask(browser, [], () => content.window.devicePixelRatio);
 }
 
 
@@ -676,4 +691,38 @@ async function contentSpawnMutation(browser, waitFor, func, args = []) {
   });
 
   return events;
+}
+
+async function waitForImageMap(browser, accDoc, id = "imgmap") {
+  const acc = findAccessibleChildByID(accDoc, id);
+  if (acc.firstChild) {
+    return;
+  }
+
+  const onReorder = waitForEvent(EVENT_REORDER, id);
+  
+  await invokeContentTask(browser, [id], contentId => {
+    const { ContentTaskUtils } = ChromeUtils.import(
+      "resource://testing-common/ContentTaskUtils.jsm"
+    );
+    const EventUtils = ContentTaskUtils.getEventUtils(content);
+    EventUtils.synthesizeMouse(
+      content.document.getElementById(contentId),
+      10,
+      10,
+      { type: "mousemove" },
+      content
+    );
+  });
+  await onReorder;
+}
+
+async function getContentBoundsForDOMElm(browser, id) {
+  return invokeContentTask(browser, [id], contentId => {
+    const { Layout: LayoutUtils } = ChromeUtils.import(
+      "chrome://mochitests/content/browser/accessible/tests/browser/Layout.jsm"
+    );
+
+    return LayoutUtils.getBoundsForDOMElm(contentId, content.document);
+  });
 }

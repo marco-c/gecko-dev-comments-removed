@@ -6,8 +6,6 @@
 
 
 
-
-
 async function runTests(browser, accDoc) {
   async function testTextNode(id) {
     let hyperTextNode = findAccessibleChildByID(accDoc, id);
