@@ -193,7 +193,11 @@ class nsSVGIntegrationUtils final {
 
 
 
-  static bool PaintMask(const PaintFramesParams& aParams);
+
+
+
+  static bool PaintMask(const PaintFramesParams& aParams,
+                        bool& aOutIsMaskComplete);
 
   
 
