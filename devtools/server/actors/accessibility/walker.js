@@ -484,9 +484,17 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
 
   getAccessibleFor(domNode) {
     
-    return this.getDocument().then(() =>
-      this.addRef(this.getRawAccessibleFor(domNode.rawNode))
-    );
+    return this.getDocument().then(() => {
+      const rawAccessible = this.getRawAccessibleFor(domNode.rawNode);
+      
+      
+      
+      if (!rawAccessible) {
+        return null;
+      }
+
+      return this.addRef(rawAccessible);
+    });
   },
 
   

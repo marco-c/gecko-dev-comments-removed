@@ -755,7 +755,23 @@ async function runA11yPanelTests(tests, env) {
 
 
 
-function buildURL(uri) {
+
+function buildURL(uri, options = {}) {
+  if (options.remoteIframe) {
+    const srcURL = new URL(`http://example.net/document-builder.sjs`);
+    srcURL.searchParams.append(
+      "html",
+      `<html>
+        <head>
+          <meta charset="utf-8"/>
+          <title>Accessibility Panel Test (OOP)</title>
+        </head>
+        <body>${uri}</body>
+      </html>`
+    );
+    uri = `<iframe title="Accessibility Panel Test (OOP)" src="${srcURL.href}"/>`;
+  }
+
   return `data:text/html;charset=UTF-8,${encodeURIComponent(uri)}`;
 }
 
@@ -773,8 +789,9 @@ function buildURL(uri) {
 
 
 
-function addA11yPanelTestsTask(tests, uri, msg) {
-  addA11YPanelTask(msg, uri, env => runA11yPanelTests(tests, env));
+
+function addA11yPanelTestsTask(tests, uri, msg, options) {
+  addA11YPanelTask(msg, uri, env => runA11yPanelTests(tests, env), options);
 }
 
 
@@ -784,10 +801,11 @@ function addA11yPanelTestsTask(tests, uri, msg) {
 
 
 
-function addA11YPanelTask(msg, uri, task) {
+
+function addA11YPanelTask(msg, uri, task, options = {}) {
   add_task(async function a11YPanelTask() {
     info(msg);
-    const env = await addTestTab(buildURL(uri));
+    const env = await addTestTab(buildURL(uri, options));
     await task(env);
     await disableAccessibilityInspector(env);
   });
