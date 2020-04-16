@@ -185,6 +185,7 @@ async function getTestSettings() {
 
   
   if (isGecko) {
+    await ext.storage.local.clear();
     await ext.storage.local.set({ settings });
   } else {
     await new Promise(resolve => {
