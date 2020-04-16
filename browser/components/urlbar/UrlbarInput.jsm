@@ -1321,6 +1321,11 @@ class UrlbarInput {
     return false;
   }
 
+  
+
+
+
+
   _updateTextOverflow() {
     if (!this._overflowing) {
       this.removeAttribute("textoverflow");
@@ -1333,6 +1338,8 @@ class UrlbarInput {
       
       let input = this.inputField;
       if (input && this._overflowing) {
+        
+        
         let side = isRTL ? "left" : "right";
         if (input.scrollLeft == input.scrollLeftMax) {
           side = isRTL == !input.scrollLeft ? "left" : "right";
