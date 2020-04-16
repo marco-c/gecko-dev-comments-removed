@@ -1007,6 +1007,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  
+  void pow32(Register base, Register power, Register dest, Register temp1,
+             Register temp2, Label* onOver);
+
+  
+  
 
   
   
@@ -1274,6 +1280,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   template <typename T>
   inline void branchMul32(Condition cond, T src, Register dest,
                           Label* label) PER_SHARED_ARCH;
+  template <typename T>
+  inline void branchRshift32(Condition cond, T src, Register dest,
+                             Label* label) PER_SHARED_ARCH;
 
   inline void decBranchPtr(Condition cond, Register lhs, Imm32 rhs,
                            Label* label) PER_SHARED_ARCH;
