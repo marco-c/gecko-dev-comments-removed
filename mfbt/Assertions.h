@@ -682,31 +682,6 @@ struct AssertionConditionType {
 #define MOZ_ALWAYS_OK(expr) MOZ_ALWAYS_TRUE((expr).isOk())
 #define MOZ_ALWAYS_ERR(expr) MOZ_ALWAYS_TRUE((expr).isErr())
 
-
-
-
-
-
-
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-#  define MOZ_DIAGNOSTIC_ALWAYS_TRUE(expr)   \
-    do {                                     \
-      if ((expr)) {                          \
-        /* Do nothing. */                    \
-      } else {                               \
-        MOZ_DIAGNOSTIC_ASSERT(false, #expr); \
-      }                                      \
-    } while (false)
-#else
-#  define MOZ_DIAGNOSTIC_ALWAYS_TRUE(expr) \
-    do {                                   \
-      if ((expr)) {                        \
-        /* Silence MOZ_MUST_USE. */        \
-      }                                    \
-    } while (false)
-#endif
-
 #undef MOZ_DUMP_ASSERTION_STACK
 #undef MOZ_CRASH_CRASHREPORT
 
