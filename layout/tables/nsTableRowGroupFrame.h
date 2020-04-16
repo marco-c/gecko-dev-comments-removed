@@ -240,7 +240,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
-                         bool* aPosIsAfterLastFrame) override;
+                         bool* aPosIsAfterLastFrame) const override;
 
   
 
