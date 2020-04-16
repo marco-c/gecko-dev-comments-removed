@@ -642,6 +642,10 @@ class JSTerm extends Component {
     }
 
     if (!this.props.editorMode) {
+      
+      
+      
+      this.props.terminalInputChanged("");
       this._setValue("");
     }
     this.clearCompletion();
