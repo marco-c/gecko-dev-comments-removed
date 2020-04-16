@@ -1265,6 +1265,8 @@ void OculusSession::UpdateControllerPose(VRSystemState& aState,
             dom::GamepadCapabilityFlags::Cap_AngularAcceleration;
         controllerState.flags |=
             dom::GamepadCapabilityFlags::Cap_LinearAcceleration;
+        controllerState.flags |=
+            dom::GamepadCapabilityFlags::Cap_TargetRaySpacePosition;
       }
 
       if (bNewController || trackingState.HandStatusFlags[handIdx] &
@@ -1324,6 +1326,7 @@ void OculusSession::EnumerateControllers(VRSystemState& aState,
         strncpy(controllerState.controllerName, OculusControllerNames[handIdx],
                 kVRControllerNameMaxLen);
         controllerState.hand = OculusControllerHand[handIdx];
+        controllerState.targetRayMode = gfx::TargetRayMode::TrackedPointer;
         controllerState.numButtons = kNumOculusButtons;
         controllerState.numAxes = kNumOculusAxes;
         controllerState.numHaptics = kNumOculusHaptcs;
