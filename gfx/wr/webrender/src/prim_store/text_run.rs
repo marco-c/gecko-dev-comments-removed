@@ -41,9 +41,7 @@ impl TextRunKey {
         text_run: TextRun,
     ) -> Self {
         TextRunKey {
-            common: PrimKeyCommonData::with_info(
-                info,
-            ),
+            common: info.into(),
             font: text_run.font,
             glyphs: PrimaryArc(text_run.glyphs),
             shadow: text_run.shadow,
@@ -421,7 +419,7 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 56, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 72, "TextRunTemplate size changed");
-    assert_eq!(mem::size_of::<TextRunKey>(), 64, "TextRunKey size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 80, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunKey>(), 72, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 80, "TextRunPrimitive size changed");
 }
