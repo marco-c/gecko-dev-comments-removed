@@ -426,7 +426,7 @@ add_task(async function suggestHistoryFalse_bookmark_multiple() {
   });
 
   
-  await addBookmark({
+  await PlacesTestUtils.addBookmarkWithDetails({
     uri: bookmarkedURL,
   });
   await check_autocomplete({
@@ -499,7 +499,7 @@ add_task(async function suggestHistoryFalse_bookmark_prefix_multiple() {
   });
 
   
-  await addBookmark({
+  await PlacesTestUtils.addBookmarkWithDetails({
     uri: bookmarkedURL,
   });
   await check_autocomplete({
