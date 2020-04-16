@@ -766,6 +766,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const MutexAutoLock& aProofOfMapLock,
       ClippedCompositionBoundsMap& aDestMap, ScrollableLayerGuid aGuid);
 
+  ScreenMargin GetCompositorFixedLayerMargins() const;
+
  protected:
   
 
