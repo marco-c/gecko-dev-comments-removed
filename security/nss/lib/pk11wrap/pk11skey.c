@@ -73,11 +73,11 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
 
 
         if ((symKey->series != slot->series) ||
-            (symKey->session == CK_INVALID_SESSION)) {
+            (symKey->session == CK_INVALID_HANDLE)) {
             symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
         }
-        PORT_Assert(symKey->session != CK_INVALID_SESSION);
-        if (symKey->session != CK_INVALID_SESSION)
+        PORT_Assert(symKey->session != CK_INVALID_HANDLE);
+        if (symKey->session != CK_INVALID_HANDLE)
             return symKey;
         PK11_FreeSymKey(symKey);
         
@@ -94,13 +94,13 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
     symKey->next = NULL;
     if (needSession) {
         symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
-        PORT_Assert(symKey->session != CK_INVALID_SESSION);
-        if (symKey->session == CK_INVALID_SESSION) {
+        PORT_Assert(symKey->session != CK_INVALID_HANDLE);
+        if (symKey->session == CK_INVALID_HANDLE) {
             PK11_FreeSymKey(symKey);
             symKey = NULL;
         }
     } else {
-        symKey->session = CK_INVALID_SESSION;
+        symKey->session = CK_INVALID_HANDLE;
     }
     return symKey;
 }
@@ -148,7 +148,7 @@ pk11_CreateSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     
 
 
-    if (needSession && symKey->session == CK_INVALID_SESSION) {
+    if (needSession && symKey->session == CK_INVALID_HANDLE) {
         PK11_FreeSymKey(symKey);
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return NULL;
@@ -218,11 +218,11 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 
 
             if (symKey->sessionOwner) {
-                PORT_Assert(symKey->session != CK_INVALID_SESSION);
+                PORT_Assert(symKey->session != CK_INVALID_HANDLE);
                 symKey->next = slot->freeSymKeysWithSessionHead;
                 slot->freeSymKeysWithSessionHead = symKey;
             } else {
-                symKey->session = CK_INVALID_SESSION;
+                symKey->session = CK_INVALID_HANDLE;
                 symKey->next = slot->freeSymKeysHead;
                 slot->freeSymKeysHead = symKey;
             }
@@ -345,8 +345,8 @@ PK11_SymKeyFromHandle(PK11SlotInfo *slot, PK11SymKey *parent, PK11Origin origin,
         
 
 
-        PORT_Assert(parent->session != CK_INVALID_SESSION);
-        if (parent->session == CK_INVALID_SESSION) {
+        PORT_Assert(parent->session != CK_INVALID_HANDLE);
+        if (parent->session == CK_INVALID_HANDLE) {
             PK11_FreeSymKey(symKey);
             PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
             return NULL;
@@ -477,6 +477,15 @@ PK11_ImportSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     CK_ATTRIBUTE keyTemplate[5];
     CK_ATTRIBUTE *attrs = keyTemplate;
 
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
+    }
+
     PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
     attrs++;
     PK11_SETATTRS(attrs, CKA_KEY_TYPE, &keyType, sizeof(keyType));
@@ -507,6 +516,15 @@ PK11_ImportSymKeyWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     CK_BBOOL cktrue = CK_TRUE; 
     CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
     CK_ATTRIBUTE *attrs = keyTemplate;
+
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
+    }
 
     PK11_SETATTRS(attrs, CKA_CLASS, &keyClass, sizeof(keyClass));
     attrs++;
@@ -1157,10 +1175,10 @@ PK11_KeyGenWithTemplate(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
         symKey->owner = PR_FALSE;
     } else {
         session = symKey->session;
-        if (session != CK_INVALID_SESSION)
+        if (session != CK_INVALID_HANDLE)
             pk11_EnterKeyMonitor(symKey);
     }
-    if (session == CK_INVALID_SESSION) {
+    if (session == CK_INVALID_HANDLE) {
         PK11_FreeSymKey(symKey);
         PORT_SetError(SEC_ERROR_BAD_DATA);
         return NULL;
@@ -1207,7 +1225,7 @@ PK11_ConvertSessionSymKeyToTokenSymKey(PK11SymKey *symk, void *wincx)
 
     PK11_Authenticate(slot, PR_TRUE, wincx);
     rwsession = PK11_GetRWSession(slot);
-    if (rwsession == CK_INVALID_SESSION) {
+    if (rwsession == CK_INVALID_HANDLE) {
         PORT_SetError(SEC_ERROR_BAD_DATA);
         return NULL;
     }
@@ -1357,13 +1375,121 @@ pk11_HandWrap(PK11SymKey *wrappingKey, SECItem *param, CK_MECHANISM_TYPE type,
 
 
 
+
+static SECStatus
+pk11_moveTwoKeys(CK_MECHANISM_TYPE mech,
+                 CK_ATTRIBUTE_TYPE preferedOperation,
+                 CK_ATTRIBUTE_TYPE movingOperation,
+                 PK11SymKey *preferedKey, PK11SymKey *movingKey,
+                 PK11SymKey **newPreferedKey, PK11SymKey **newMovingKey)
+{
+    PK11SlotInfo *newSlot;
+    *newMovingKey = NULL;
+    *newPreferedKey = NULL;
+
+    newSlot = PK11_GetBestSlot(mech, preferedKey->cx);
+    if (newSlot == NULL) {
+        return SECFailure;
+    }
+    *newMovingKey = pk11_CopyToSlot(newSlot, movingKey->type,
+                                    movingOperation, movingKey);
+    if (*newMovingKey == NULL) {
+        goto loser;
+    }
+    *newPreferedKey = pk11_CopyToSlot(newSlot, preferedKey->type,
+                                      preferedOperation, preferedKey);
+    if (*newPreferedKey == NULL) {
+        goto loser;
+    }
+
+    PK11_FreeSlot(newSlot);
+    return SECSuccess;
+loser:
+    PK11_FreeSlot(newSlot);
+    PK11_FreeSymKey(*newMovingKey);
+    PK11_FreeSymKey(*newPreferedKey);
+    *newMovingKey = NULL;
+    *newPreferedKey = NULL;
+    return SECFailure;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+SECStatus
+PK11_SymKeysToSameSlot(CK_MECHANISM_TYPE mech,
+                       CK_ATTRIBUTE_TYPE preferedOperation,
+                       CK_ATTRIBUTE_TYPE movingOperation,
+                       PK11SymKey *preferedKey, PK11SymKey *movingKey,
+                       PK11SymKey **newPreferedKey, PK11SymKey **newMovingKey)
+{
+    
+    *newMovingKey = NULL;
+    *newPreferedKey = NULL;
+    if (movingKey->slot == preferedKey->slot) {
+
+        
+        if ((preferedKey->slot != NULL) &&
+            PK11_DoesMechanism(preferedKey->slot, mech)) {
+            return SECSuccess;
+        }
+
+        
+
+        return pk11_moveTwoKeys(mech, preferedOperation, movingOperation,
+                                preferedKey, movingKey,
+                                newPreferedKey, newMovingKey);
+    }
+
+    
+
+    if ((preferedKey->slot != NULL) &&
+        PK11_DoesMechanism(preferedKey->slot, mech)) {
+        *newMovingKey = pk11_CopyToSlot(preferedKey->slot, movingKey->type,
+                                        movingOperation, movingKey);
+        if (*newMovingKey != NULL) {
+            return SECSuccess;
+        }
+    }
+    
+
+    if ((movingKey->slot != NULL) &&
+        PK11_DoesMechanism(movingKey->slot, mech)) {
+        *newPreferedKey = pk11_CopyToSlot(movingKey->slot, preferedKey->type,
+                                          preferedOperation, preferedKey);
+        if (*newPreferedKey != NULL) {
+            return SECSuccess;
+        }
+    }
+    
+
+
+    return pk11_moveTwoKeys(mech, preferedOperation, movingOperation,
+                            preferedKey, movingKey,
+                            newPreferedKey, newMovingKey);
+}
+
+
+
+
 SECStatus
 PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
-                PK11SymKey *wrappingKey, PK11SymKey *symKey, SECItem *wrappedKey)
+                PK11SymKey *wrappingKey, PK11SymKey *symKey,
+                SECItem *wrappedKey)
 {
     PK11SlotInfo *slot;
     CK_ULONG len = wrappedKey->len;
-    PK11SymKey *newKey = NULL;
+    PK11SymKey *newSymKey = NULL;
+    PK11SymKey *newWrappingKey = NULL;
     SECItem *param_save = NULL;
     CK_MECHANISM mechanism;
     PRBool owner = PR_TRUE;
@@ -1372,43 +1498,31 @@ PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
     SECStatus rv;
 
     
-    
-    if ((wrappingKey->slot == NULL) || (symKey->slot != wrappingKey->slot)) {
+    rv = PK11_SymKeysToSameSlot(type, CKA_ENCRYPT, CKA_WRAP,
+                                symKey, wrappingKey,
+                                &newSymKey, &newWrappingKey);
+    if (rv != SECSuccess) {
         
-        if (symKey->slot && PK11_DoesMechanism(symKey->slot, type)) {
-            newKey = pk11_CopyToSlot(symKey->slot, type, CKA_WRAP, wrappingKey);
-        }
-        
-        if (newKey == NULL) {
-            if (wrappingKey->slot) {
-                newKey = pk11_CopyToSlot(wrappingKey->slot,
-                                         symKey->type, CKA_ENCRYPT, symKey);
+        if (symKey->data.data == NULL) {
+            rv = PK11_ExtractKeyValue(symKey);
+            if (rv != SECSuccess) {
+                PORT_SetError(SEC_ERROR_NO_MODULE);
+                return SECFailure;
             }
-            
-
-
-
-            if (newKey == NULL) {
-                
-                if (symKey->data.data == NULL) {
-                    PORT_SetError(SEC_ERROR_NO_MODULE);
-                    return SECFailure;
-                }
-                if (param == NULL) {
-                    param_save = param = PK11_ParamFromIV(type, NULL);
-                }
-                rv = pk11_HandWrap(wrappingKey, param, type,
-                                   &symKey->data, wrappedKey);
-                if (param_save)
-                    SECITEM_FreeItem(param_save, PR_TRUE);
-                return rv;
-            }
-            
-            symKey = newKey;
-        } else {
-            
-            wrappingKey = newKey;
         }
+        if (param == NULL) {
+            param_save = param = PK11_ParamFromIV(type, NULL);
+        }
+        rv = pk11_HandWrap(wrappingKey, param, type, &symKey->data, wrappedKey);
+        if (param_save)
+            SECITEM_FreeItem(param_save, PR_TRUE);
+        return rv;
+    }
+    if (newSymKey) {
+        symKey = newSymKey;
+    }
+    if (newWrappingKey) {
+        wrappingKey = newWrappingKey;
     }
 
     
@@ -1452,8 +1566,8 @@ PK11_WrapSymKey(CK_MECHANISM_TYPE type, SECItem *param,
     } else {
         wrappedKey->len = len;
     }
-    if (newKey)
-        PK11_FreeSymKey(newKey);
+    PK11_FreeSymKey(newSymKey);
+    PK11_FreeSymKey(newWrappingKey);
     if (param_save)
         SECITEM_FreeItem(param_save, PR_TRUE);
     return rv;
@@ -1532,6 +1646,14 @@ PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
+    }
 
     
     for (templateCount = 0; templateCount < numAttrs; ++templateCount) {
@@ -1606,7 +1728,7 @@ PK11_DeriveWithTemplate(PK11SymKey *baseKey, CK_MECHANISM_TYPE derive,
         pk11_EnterKeyMonitor(symKey);
         session = symKey->session;
     }
-    if (session == CK_INVALID_SESSION) {
+    if (session == CK_INVALID_HANDLE) {
         if (!isPerm)
             pk11_ExitKeyMonitor(symKey);
         crv = CKR_SESSION_HANDLE_INVALID;
@@ -1916,6 +2038,15 @@ PK11_PubDerive(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
         return NULL;
     }
 
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
+    }
+
     symKey->origin = PK11_OriginDerive;
 
     switch (privKey->keyType) {
@@ -2188,6 +2319,14 @@ pk11_PubDeriveECKeyWithKDF(
     symKey = pk11_CreateSymKey(slot, target, PR_TRUE, PR_TRUE, wincx);
     if (symKey == NULL) {
         return NULL;
+    }
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
     }
 
     symKey->origin = PK11_OriginDerive;
@@ -2511,6 +2650,14 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return NULL;
     }
+    
+
+
+    if ((operation & CKA_NSS_MESSAGE_MASK) == CKA_NSS_MESSAGE) {
+        
+
+        operation &= ~CKA_NSS_MESSAGE_MASK;
+    }
 
     
     for (templateCount = 0; templateCount < numAttrs; ++templateCount) {
@@ -2619,8 +2766,8 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
         pk11_EnterKeyMonitor(symKey);
         rwsession = symKey->session;
     }
-    PORT_Assert(rwsession != CK_INVALID_SESSION);
-    if (rwsession == CK_INVALID_SESSION)
+    PORT_Assert(rwsession != CK_INVALID_HANDLE);
+    if (rwsession == CK_INVALID_HANDLE)
         crv = CKR_SESSION_HANDLE_INVALID;
     else
         crv = PK11_GETTAB(slot)->C_UnwrapKey(rwsession, &mechanism, wrappingKey,
@@ -2628,7 +2775,7 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
                                              keyTemplate, templateCount,
                                              &symKey->objectID);
     if (isPerm) {
-        if (rwsession != CK_INVALID_SESSION)
+        if (rwsession != CK_INVALID_HANDLE)
             PK11_RestoreROSession(slot, rwsession);
     } else {
         pk11_ExitKeyMonitor(symKey);

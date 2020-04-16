@@ -145,27 +145,42 @@ struct PK11SymKeyStr {
 
 
 struct PK11ContextStr {
-    CK_ATTRIBUTE_TYPE operation; 
-
-    PK11SymKey *key;             
-    PK11SlotInfo *slot;          
-    CK_SESSION_HANDLE session;   
-    PZLock *sessionLock;         
-
-    PRBool ownSession;           
-    void *cx;                    
-    void *savedData;             
-
-    unsigned long savedLength;   
-    SECItem *param;              
-
-    PRBool init;                 
-    CK_MECHANISM_TYPE type;      
+    CK_ATTRIBUTE_TYPE operation;          
 
 
+    PK11SymKey *key;                      
+    PK11SlotInfo *slot;                   
+    CK_SESSION_HANDLE session;            
+    PZLock *sessionLock;                  
 
-    PRBool fortezzaHack;         
+    PRBool ownSession;                    
+    void *cx;                             
+    void *savedData;                      
 
+    unsigned long savedLength;            
+    SECItem *param;                       
+
+    PRBool init;                          
+    CK_MECHANISM_TYPE type;               
+
+
+
+
+    PRBool fortezzaHack;                  
+
+    PRBool simulate_message;              
+
+
+
+
+    CK_MECHANISM_TYPE simulate_mechanism; 
+    PRUint64 ivCounter;                   
+    PRUint64 ivMaxCount;                  
+
+    unsigned long ivLen;                  
+    unsigned int ivFixedBits;             
+
+    CK_GENERATOR_FUNCTION ivGen;          
 };
 
 

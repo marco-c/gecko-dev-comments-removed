@@ -203,6 +203,35 @@ typedef int __BLAPI_DEPRECATED __attribute__((deprecated));
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define GCMIV_RANDOM_BIRTHDAY_BITS 64
+
+
+
+
+
 struct DESContextStr;
 struct RC2ContextStr;
 struct RC4ContextStr;

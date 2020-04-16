@@ -10,7 +10,7 @@
 
 #include "blapi.h"
 
-#define FREEBL_VERSION 0x0316
+#define FREEBL_VERSION 0x0323
 
 struct FREEBLVectorStr {
 
@@ -777,6 +777,25 @@ struct FREEBLVectorStr {
                                unsigned int max_result_len);
     void (*p_CMAC_Destroy)(CMACContext *ctx, PRBool free_it);
 
+    
+    SECStatus (*p_ChaCha20Poly1305_Encrypt)(
+        const ChaCha20Poly1305Context *ctx, unsigned char *output,
+        unsigned int *outputLen, unsigned int maxOutputLen,
+        const unsigned char *input, unsigned int inputLen,
+        const unsigned char *nonce, unsigned int nonceLen,
+        const unsigned char *ad, unsigned int adLen, unsigned char *tagOut);
+
+    SECStatus (*p_ChaCha20Poly1305_Decrypt)(
+        const ChaCha20Poly1305Context *ctx, unsigned char *output,
+        unsigned int *outputLen, unsigned int maxOutputLen,
+        const unsigned char *input, unsigned int inputLen,
+        const unsigned char *nonce, unsigned int nonceLen,
+        const unsigned char *ad, unsigned int adLen, unsigned char *tagIn);
+    SECStatus (*p_AES_AEAD)(AESContext *cx, unsigned char *output,
+                            unsigned int *outputLen, unsigned int maxOutputLen,
+                            const unsigned char *input, unsigned int inputLen,
+                            void *params, unsigned int paramsLen,
+                            const unsigned char *aad, unsigned int aadLen);
     
 
     

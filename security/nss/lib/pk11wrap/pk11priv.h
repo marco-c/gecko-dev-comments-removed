@@ -98,6 +98,7 @@ void PK11_AddMechanismEntry(CK_MECHANISM_TYPE type, CK_KEY_TYPE key,
                             int ivLen, int blocksize);
 CK_MECHANISM_TYPE PK11_GetKeyMechanism(CK_KEY_TYPE type);
 CK_MECHANISM_TYPE PK11_GetKeyGenWithSize(CK_MECHANISM_TYPE type, int size);
+PRBool PK11_DoesMechanismFlag(PK11SlotInfo *, CK_MECHANISM_TYPE type, CK_FLAGS flags);
 
 
 
@@ -146,6 +147,14 @@ PK11Context *PK11_CreateContextByRawKey(PK11SlotInfo *slot,
                                         CK_MECHANISM_TYPE type, PK11Origin origin, CK_ATTRIBUTE_TYPE operation,
                                         SECItem *key, SECItem *param, void *wincx);
 PRBool PK11_HashOK(SECOidTag hashAlg);
+
+
+
+
+
+
+SECStatus _PK11_ContextSetAEADSimulation(PK11Context *context);
+PRBool _PK11_ContextGetAEADSimulation(PK11Context *context);
 
 
 

@@ -361,7 +361,7 @@ freebl_fips_AES_PowerUpSelfTest(int aes_key_size)
     AESContext *aes_context;
     unsigned int aes_bytes_encrypted;
     unsigned int aes_bytes_decrypted;
-    CK_GCM_PARAMS gcmParams;
+    CK_NSS_GCM_PARAMS gcmParams;
     SECStatus aes_status;
 
     

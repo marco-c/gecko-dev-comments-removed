@@ -869,6 +869,28 @@ AES_Decrypt(AESContext *cx, unsigned char *output,
 
 
 
+
+
+
+extern SECStatus
+AES_AEAD(AESContext *cx, unsigned char *output,
+         unsigned int *outputLen, unsigned int maxOutputLen,
+         const unsigned char *input, unsigned int inputLen,
+         void *params, unsigned int paramsLen,
+         const unsigned char *aad, unsigned int aadLen);
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern AESKeyWrapContext *
 AESKeyWrap_CreateContext(const unsigned char *key, const unsigned char *iv,
                          int encrypt, unsigned int keylen);
@@ -1013,6 +1035,20 @@ extern SECStatus ChaCha20Poly1305_Open(
     const unsigned char *input, unsigned int inputLen,
     const unsigned char *nonce, unsigned int nonceLen,
     const unsigned char *ad, unsigned int adLen);
+
+extern SECStatus ChaCha20Poly1305_Encrypt(
+    const ChaCha20Poly1305Context *ctx, unsigned char *output,
+    unsigned int *outputLen, unsigned int maxOutputLen,
+    const unsigned char *input, unsigned int inputLen,
+    const unsigned char *nonce, unsigned int nonceLen,
+    const unsigned char *ad, unsigned int adLen, unsigned char *tagOut);
+
+extern SECStatus ChaCha20Poly1305_Decrypt(
+    const ChaCha20Poly1305Context *ctx, unsigned char *output,
+    unsigned int *outputLen, unsigned int maxOutputLen,
+    const unsigned char *input, unsigned int inputLen,
+    const unsigned char *nonce, unsigned int nonceLen,
+    const unsigned char *ad, unsigned int adLen, unsigned char *tagIn);
 
 extern SECStatus ChaCha20_Xor(
     unsigned char *output, const unsigned char *block, unsigned int len,

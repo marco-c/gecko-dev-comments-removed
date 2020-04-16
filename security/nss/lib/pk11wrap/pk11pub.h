@@ -371,6 +371,25 @@ PK11SymKey *PK11_MoveSymKey(PK11SlotInfo *slot, CK_ATTRIBUTE_TYPE operation,
 
 
 
+
+
+
+SECStatus PK11_SymKeysToSameSlot(CK_MECHANISM_TYPE mech,
+                                 CK_ATTRIBUTE_TYPE preferedOperation,
+                                 CK_ATTRIBUTE_TYPE movingOperation,
+                                 PK11SymKey *preferedKey, PK11SymKey *movingKey,
+                                 PK11SymKey **newPreferedKey,
+                                 PK11SymKey **newMovingKey);
+
+
+
+
+
+
+
+
+
+
 PK11SymKey *PK11_Derive(PK11SymKey *baseKey, CK_MECHANISM_TYPE mechanism,
                         SECItem *param, CK_MECHANISM_TYPE target,
                         CK_ATTRIBUTE_TYPE operation, int keySize);
@@ -741,6 +760,19 @@ SECStatus PK11_DigestOp(PK11Context *context, const unsigned char *in,
                         unsigned len);
 SECStatus PK11_CipherOp(PK11Context *context, unsigned char *out, int *outlen,
                         int maxout, const unsigned char *in, int inlen);
+
+SECStatus PK11_AEADRawOp(PK11Context *context, void *params, int paramslen,
+                         const unsigned char *aad, int aadlen,
+                         unsigned char *out, int *outlen,
+                         int maxout, const unsigned char *in, int inlen);
+
+SECStatus PK11_AEADOp(PK11Context *context, CK_GENERATOR_FUNCTION ivGen,
+                      int fixedbits, unsigned char *iv, int ivlen,
+                      const unsigned char *aad, int aadlen,
+                      unsigned char *out, int *outlen,
+                      int maxout, unsigned char *tag, int taglen,
+                      const unsigned char *in, int inlen);
+
 SECStatus PK11_Finalize(PK11Context *context);
 SECStatus PK11_DigestFinal(PK11Context *context, unsigned char *data,
                            unsigned int *outLen, unsigned int length);
@@ -863,6 +895,9 @@ SECStatus PK11_ReadRawAttribute(PK11ObjectType type, void *object,
                                 CK_ATTRIBUTE_TYPE attr, SECItem *item);
 SECStatus PK11_WriteRawAttribute(PK11ObjectType type, void *object,
                                  CK_ATTRIBUTE_TYPE attr, SECItem *item);
+
+CK_OBJECT_HANDLE PK11_GetObjectHandle(PK11ObjectType objType, void *objSpec,
+                                      PK11SlotInfo **slotp);
 
 
 
