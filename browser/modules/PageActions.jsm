@@ -1131,7 +1131,6 @@ var gBuiltInActions = [
     urlbarIDOverride: "star-button-box",
     _urlbarNodeInMarkup: true,
     
-    
     title: "",
     pinnedToUrlbar: true,
     onShowingInPanel(buttonNode) {
@@ -1269,7 +1268,7 @@ if (SiteSpecificBrowserService.isEnabled) {
   gBuiltInActions.push({
     id: "launchSSB",
     
-    title: "Install Website as App",
+    title: "Use This Site in App Mode",
     onLocationChange(browserWindow) {
       browserPageActions(browserWindow).launchSSB.updateState();
     },
