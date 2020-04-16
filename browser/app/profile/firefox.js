@@ -2140,7 +2140,12 @@ pref("devtools.webconsole.filter.netxhr", false);
 pref("devtools.webconsole.input.autocomplete",true);
 
 
-pref("devtools.webconsole.input.context", false);
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.webconsole.input.context", true);
+#else
+  pref("devtools.webconsole.input.context", false);
+#endif
+
 
 pref("devtools.contenttoolbox.webconsole.input.context", false);
 
