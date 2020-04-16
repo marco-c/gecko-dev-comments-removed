@@ -948,7 +948,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool IsSharedMemoryAllowed() const override;
 
   
-  bool CrossOriginIsolated() const;
+  bool CrossOriginIsolated() const override;
 
  protected:
   
