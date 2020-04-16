@@ -182,7 +182,7 @@ void CustomElementData::AttachedInternals() {
   mIsAttachedInternals = true;
 }
 
-CustomElementDefinition* CustomElementData::GetCustomElementDefinition() {
+CustomElementDefinition* CustomElementData::GetCustomElementDefinition() const {
   
   
   MOZ_ASSERT_IF(mCustomElementDefinition, mState != State::eUndefined);
@@ -491,6 +491,7 @@ CustomElementRegistry::CreateCustomElementCallback(
   }
   return callback;
 }
+
 
 
 void CustomElementRegistry::EnqueueLifecycleCallback(
