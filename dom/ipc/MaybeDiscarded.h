@@ -73,8 +73,6 @@ class MaybeDiscarded {
   bool IsDiscarded() const { return IsNullOrDiscarded() && !IsNull(); }
   bool IsNull() const { return mId == 0; }
 
-  explicit operator bool() const { return !IsNullOrDiscarded(); }
-
   
   T* get() const {
     MOZ_DIAGNOSTIC_ASSERT(!IsDiscarded());
@@ -83,11 +81,6 @@ class MaybeDiscarded {
   already_AddRefed<T> forget() {
     MOZ_DIAGNOSTIC_ASSERT(!IsDiscarded());
     return mPtr.forget();
-  }
-
-  T* operator->() const {
-    MOZ_ASSERT(!IsNull());
-    return get();
   }
 
   

@@ -649,8 +649,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   RefPtr<BrowsingContext> parentBC(
       parentWindow ? parentWindow->GetBrowsingContext() : nullptr);
-  nsCOMPtr<nsIDocShell> parentDocShell(parentBC ? parentBC->GetDocShell()
-                                                : nullptr);
 
   
   
@@ -671,8 +669,14 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   
-  if (parentBC && parentBC->IsSandboxedFrom(newBC)) {
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+  nsCOMPtr<nsIDocShell> parentDocShell;
+  if (parentWindow) {
+    parentDocShell = parentWindow->GetDocShell();
+    if (parentDocShell) {
+      if (parentDocShell->IsSandboxedFrom(newBC)) {
+        return NS_ERROR_DOM_INVALID_ACCESS_ERR;
+      }
+    }
   }
 
   
@@ -1233,7 +1237,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     loadState->SetFirstParty(true);
 
     
-    newBC->LoadURI(loadState);
+    newBC->LoadURI(parentBC, loadState);
   }
 
   
