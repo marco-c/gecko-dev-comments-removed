@@ -824,9 +824,11 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
   
   
   
+  
   bool needToReportMemoryAllocation = false;
   if ((aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGL1 ||
-       aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGL2) &&
+       aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGL2 ||
+       aCanvasEl.GetCurrentContextType() == CanvasContextType::WebGPU) &&
       aCropRect.isSome()) {
     RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface();
     croppedSurface = CropAndCopyDataSourceSurface(dataSurface, cropRect);
