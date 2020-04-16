@@ -16,6 +16,10 @@
 #  include "mozilla/sandboxTarget.h"
 #endif
 
+#ifdef OS_POSIX
+#  include <unistd.h>  
+#endif
+
 using mozilla::ipc::IOThreadChild;
 
 namespace mozilla {
