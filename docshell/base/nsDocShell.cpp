@@ -8793,11 +8793,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  const auto& sourceBC = aLoadState->SourceBrowsingContext();
-  if (sourceBC.IsDiscarded() ||
-      (sourceBC && sourceBC->IsSandboxedFrom(mBrowsingContext))) {
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-  }
+  
+  
+  
+  MOZ_TRY(mBrowsingContext->CheckSandboxFlags(aLoadState));
 
   NS_ENSURE_STATE(!HasUnloadedParent());
 
