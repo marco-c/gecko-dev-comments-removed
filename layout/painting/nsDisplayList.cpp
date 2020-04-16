@@ -637,7 +637,7 @@ static Maybe<TransformData> CreateAnimationData(
   
   
   TransformReferenceBox refBox(aFrame);
-  nsRect bounds(0, 0, refBox.Width(), refBox.Height());
+  const nsRect bounds(0, 0, refBox.Width(), refBox.Height());
 
   
   int32_t devPixelsToAppUnits = aFrame->PresContext()->AppUnitsPerDevPixel();
@@ -8107,10 +8107,8 @@ Matrix4x4 nsDisplayTransform::GetResultingTransformMatrix(
 Matrix4x4 nsDisplayTransform::GetResultingTransformMatrix(
     const nsIFrame* aFrame, const nsPoint& aOrigin, float aAppUnitsPerPixel,
     uint32_t aFlags) {
-  
   TransformReferenceBox refBox(aFrame);
   FrameTransformProperties props(aFrame, refBox, aAppUnitsPerPixel);
-
   return GetResultingTransformMatrixInternal(props, refBox, aOrigin,
                                              aAppUnitsPerPixel, aFlags);
 }
