@@ -6197,11 +6197,13 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
   nsDisplayStickyPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                           nsDisplayList* aList,
                           const ActiveScrolledRoot* aActiveScrolledRoot,
-                          const ActiveScrolledRoot* aContainerASR);
+                          const ActiveScrolledRoot* aContainerASR,
+                          bool aClippedToDisplayPort);
   nsDisplayStickyPosition(nsDisplayListBuilder* aBuilder,
                           const nsDisplayStickyPosition& aOther)
       : nsDisplayOwnLayer(aBuilder, aOther),
-        mContainerASR(aOther.mContainerASR) {
+        mContainerASR(aOther.mContainerASR),
+        mClippedToDisplayPort(aOther.mClippedToDisplayPort) {
     MOZ_COUNT_CTOR(nsDisplayStickyPosition);
   }
 
@@ -6209,6 +6211,7 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
 
   void SetClipChain(const DisplayItemClipChain* aClipChain,
                     bool aStore) override;
+  bool IsClippedToDisplayPort() const { return mClippedToDisplayPort; }
 
   already_AddRefed<Layer> BuildLayer(
       nsDisplayListBuilder* aBuilder, LayerManager* aManager,
@@ -6248,6 +6251,17 @@ class nsDisplayStickyPosition : public nsDisplayOwnLayer {
   
   
   RefPtr<const ActiveScrolledRoot> mContainerASR;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mClippedToDisplayPort;
 };
 
 class nsDisplayFixedPosition : public nsDisplayOwnLayer {

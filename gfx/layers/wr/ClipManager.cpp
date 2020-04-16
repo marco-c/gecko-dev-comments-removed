@@ -147,7 +147,16 @@ wr::WrSpaceAndClipChain ClipManager::SwitchItem(nsDisplayItem* aItem) {
     
     
     
-    asr = static_cast<nsDisplayStickyPosition*>(aItem)->GetContainerASR();
+    nsDisplayStickyPosition* sticky =
+        static_cast<nsDisplayStickyPosition*>(aItem);
+    asr = sticky->GetContainerASR();
+
+    
+    
+    
+    if (sticky->IsClippedToDisplayPort() && clip && clip->mASR == asr) {
+      clip = clip->mParent;
+    }
   }
 
   

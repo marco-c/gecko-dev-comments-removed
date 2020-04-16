@@ -3636,6 +3636,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           GetUnsnappedScrolledRectInternal(
               mScrolledFrame->GetScrollableOverflowRect(), mScrollPort.Size()) +
           mScrolledFrame->GetPosition();
+      bool clippedToDisplayPort = false;
       if (mWillBuildScrollableLayer && aBuilder->IsPaintingToWindow()) {
         
         
@@ -3654,9 +3655,16 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         
         
         scrolledRectClip = scrolledRectClip.Intersect(visibleRect);
+        clippedToDisplayPort = scrolledRectClip.IsEqualEdges(visibleRect);
       }
       scrolledRectClipState.ClipContainingBlockDescendants(
           scrolledRectClip + aBuilder->ToReferenceFrame(mOuter));
+      if (clippedToDisplayPort) {
+        
+        
+        
+        scrolledRectClipState.SetClippedToDisplayPort();
+      }
 
       nsDisplayListBuilder::AutoBuildingDisplayList building(
           aBuilder, mOuter, visibleRect, dirtyRect);
