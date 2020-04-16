@@ -587,27 +587,6 @@ var PlacesCommandHook = {
   
 
 
-  bookmarkPages(URIList) {
-    if (!URIList.length) {
-      return;
-    }
-
-    let bookmarkDialogInfo = { action: "add" };
-    if (URIList.length > 1) {
-      bookmarkDialogInfo.type = "folder";
-      bookmarkDialogInfo.URIList = URIList;
-    } else {
-      bookmarkDialogInfo.type = "bookmark";
-      bookmarkDialogInfo.title = URIList[0].title;
-      bookmarkDialogInfo.uri = URIList[0].uri;
-    }
-
-    PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, window);
-  },
-
-  
-
-
 
 
 

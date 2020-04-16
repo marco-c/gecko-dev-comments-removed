@@ -1,7 +1,7 @@
 # -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http:
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #ifdef XP_UNIX
 #ifndef XP_MACOSX
@@ -54,7 +54,7 @@
     <command id="Browser:AddBookmarkAs"
              oncommand="PlacesCommandHook.bookmarkPage();"/>
     <command id="Browser:BookmarkAllTabs"
-             oncommand="PlacesCommandHook.bookmarkPages(PlacesCommandHook.uniqueCurrentPages);"/>
+             oncommand="PlacesUIUtils.showBookmarkPagesDialog(PlacesCommandHook.uniqueCurrentPages);"/>
     <command id="Browser:Back"    oncommand="BrowserBack();" disabled="true"/>
     <command id="Browser:BackOrBackDuplicate" oncommand="BrowserBack(event);" disabled="true">
       <observes element="Browser:Back" attribute="disabled"/>
@@ -255,7 +255,10 @@
     <key data-l10n-id="search-find-again-shortcut-alt" command="cmd_findPrevious" modifiers="shift"/>
 
     <key id="addBookmarkAsKb" data-l10n-id="bookmark-this-page-shortcut" command="Browser:AddBookmarkAs" modifiers="accel"/>
-    <key id="bookmarkAllTabsKb" data-l10n-id="bookmark-this-page-shortcut" oncommand="PlacesCommandHook.bookmarkPages(PlacesCommandHook.uniqueCurrentPages);" modifiers="accel,shift"/>
+    <key id="bookmarkAllTabsKb"
+         data-l10n-id="bookmark-this-page-shortcut"
+         oncommand="PlacesUIUtils.showBookmarkPagesDialog(PlacesCommandHook.uniqueCurrentPages);"
+         modifiers="accel,shift"/>
     <key id="manBookmarkKb" data-l10n-id="bookmark-show-all-shortcut" command="Browser:ShowAllBookmarks" modifiers="accel,shift"/>
     <key id="viewBookmarksSidebarKb"
          data-l10n-id="bookmark-show-sidebar-shortcut"

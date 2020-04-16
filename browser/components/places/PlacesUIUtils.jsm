@@ -302,7 +302,7 @@ var PlacesUIUtils = {
 
 
 
-  showBookmarkDialog(aInfo, aParentWindow) {
+  showBookmarkDialog(aInfo, aParentWindow = null) {
     
     
     
@@ -325,6 +325,10 @@ var PlacesUIUtils = {
       await batchBlockingDeferred.promise;
     });
 
+    if (!aParentWindow) {
+      aParentWindow = Services.wm.getMostRecentWindow(null);
+    }
+
     aParentWindow.openDialog(dialogURL, "", features, aInfo);
 
     let bookmarkGuid =
@@ -337,6 +341,35 @@ var PlacesUIUtils = {
     }
 
     return bookmarkGuid;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  showBookmarkPagesDialog(URIList, hiddenRows = [], win = null) {
+    if (!URIList.length) {
+      return;
+    }
+
+    const bookmarkDialogInfo = { action: "add", hiddenRows };
+    if (URIList.length > 1) {
+      bookmarkDialogInfo.type = "folder";
+      bookmarkDialogInfo.URIList = URIList;
+    } else {
+      bookmarkDialogInfo.type = "bookmark";
+      bookmarkDialogInfo.title = URIList[0].title;
+      bookmarkDialogInfo.uri = URIList[0].uri;
+    }
+
+    PlacesUIUtils.showBookmarkDialog(bookmarkDialogInfo, win);
   },
 
   
