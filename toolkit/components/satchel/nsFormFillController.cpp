@@ -823,6 +823,8 @@ nsFormFillController::HandleFormEvent(Event* aEvent) {
       return MouseDown(aEvent);
     case eKeyDown:
       return KeyDown(aEvent);
+    case eKeyPress:
+      return KeyPress(aEvent);
     case eEditorInput: {
       nsCOMPtr<nsINode> input = do_QueryInterface(aEvent->GetComposedTarget());
       if (!IsTextControl(input)) {
@@ -1017,8 +1019,6 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
   }
 
   bool cancel = false;
-  bool unused = false;
-
   uint32_t k = keyEvent->KeyCode();
   switch (k) {
     case KeyboardEvent_Binding::DOM_VK_RETURN: {
@@ -1026,6 +1026,40 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
       controller->HandleEnter(false, aEvent, &cancel);
       break;
     }
+  }
+
+  if (cancel) {
+    aEvent->PreventDefault();
+    
+    
+    
+    
+    if (k == KeyboardEvent_Binding::DOM_VK_RETURN) {
+      aEvent->StopPropagation();
+    }
+  }
+  return NS_OK;
+}
+
+nsresult nsFormFillController::KeyPress(Event* aEvent) {
+  NS_ASSERTION(mController, "should have a controller!");
+
+  mPasswordPopupAutomaticallyOpened = false;
+
+  if (!IsFocusedInputControlled()) {
+    return NS_OK;
+  }
+
+  RefPtr<KeyboardEvent> keyEvent = aEvent->AsKeyboardEvent();
+  if (!keyEvent) {
+    return NS_ERROR_FAILURE;
+  }
+
+  bool cancel = false;
+  bool unused = false;
+
+  uint32_t k = keyEvent->KeyCode();
+  switch (k) {
     case KeyboardEvent_Binding::DOM_VK_DELETE:
 #ifndef XP_MACOSX
     {
@@ -1107,13 +1141,6 @@ nsresult nsFormFillController::KeyDown(Event* aEvent) {
 
   if (cancel) {
     aEvent->PreventDefault();
-    
-    
-    
-    
-    if (k == KeyboardEvent_Binding::DOM_VK_RETURN) {
-      aEvent->StopPropagation();
-    }
   }
 
   return NS_OK;
