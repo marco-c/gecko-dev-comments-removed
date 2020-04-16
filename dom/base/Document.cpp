@@ -91,7 +91,7 @@
 #include "nsINSSErrorsService.h"
 #include "nsISocketProvider.h"
 #include "nsISiteSecurityService.h"
-#include "PermissionDelegateHandler.h"
+#include "mozilla/PermissionDelegateHandler.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasicEvents.h"
@@ -6829,7 +6829,8 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
     if (!window) {
       return;
     }
-    BrowsingContextGroup* browsingContextGroup = window->GetBrowsingContextGroup();
+    BrowsingContextGroup* browsingContextGroup =
+        window->GetBrowsingContextGroup();
 
     
     

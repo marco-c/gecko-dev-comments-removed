@@ -4,8 +4,9 @@
 
 
 
+#include "mozilla/PermissionDelegateHandler.h"
+
 #include "nsGlobalWindowInner.h"
-#include "PermissionDelegateHandler.h"
 #include "nsPIDOMWindow.h"
 #include "nsPermissionManager.h"
 #include "nsIPrincipal.h"
@@ -16,8 +17,10 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FeaturePolicyUtils.h"
 
-using namespace mozilla;
 using namespace mozilla::dom;
+
+namespace mozilla {
+
 typedef PermissionDelegateHandler::PermissionDelegatePolicy DelegatePolicy;
 typedef PermissionDelegateHandler::PermissionDelegateInfo DelegateInfo;
 
@@ -242,3 +245,5 @@ nsresult PermissionDelegateHandler::GetPermissionForPermissionsAPI(
     const nsACString& aType, uint32_t* aPermission) {
   return GetPermission(aType, aPermission, false);
 }
+
+}  

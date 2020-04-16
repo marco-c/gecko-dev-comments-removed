@@ -12,7 +12,7 @@
 #include "nsIMutableArray.h"
 #include "mozilla/dom/PContentPermissionRequestChild.h"
 #include "mozilla/dom/ipc/IdType.h"
-#include "PermissionDelegateHandler.h"
+#include "mozilla/PermissionDelegateHandler.h"
 
 
 
