@@ -134,9 +134,48 @@ IPCResult DocumentChannelChild::RecvFailedAsyncOpen(
   return IPC_OK();
 }
 
+void DocumentChannelChild::ShutdownListeners(nsresult aStatusCode) {
+  LOG(("DocumentChannelChild ShutdownListeners [this=%p, status=%" PRIx32 "]",
+       this, static_cast<uint32_t>(aStatusCode)));
+  mStatus = aStatusCode;
+
+  nsCOMPtr<nsIStreamListener> l = mListener;
+  if (l) {
+    l->OnStartRequest(this);
+  }
+
+  mIsPending = false;
+
+  l = mListener;  
+  if (l) {
+    l->OnStopRequest(this, aStatusCode);
+  }
+  mListener = nullptr;
+  mCallbacks = nullptr;
+
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, aStatusCode);
+    mLoadGroup = nullptr;
+  }
+
+  if (CanSend()) {
+    Send__delete__(this);
+  }
+}
+
 IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
     const nsresult& aStatus, const nsresult& aLoadGroupStatus) {
-  DisconnectChildListeners(aStatus, aLoadGroupStatus);
+  MOZ_ASSERT(NS_FAILED(aStatus));
+  mStatus = aLoadGroupStatus;
+  
+  
+  
+  if (mLoadGroup) {
+    mLoadGroup->RemoveRequest(this, nullptr, aStatus);
+    mLoadGroup = nullptr;
+  }
+
+  ShutdownListeners(aStatus);
   return IPC_OK();
 }
 
