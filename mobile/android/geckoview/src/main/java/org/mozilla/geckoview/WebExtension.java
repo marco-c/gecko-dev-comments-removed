@@ -1817,7 +1817,8 @@ public class WebExtension {
         }
 
          MetaData(final GeckoBundle bundle) {
-            permissions = bundle.getStringArray("permissions");
+            
+            permissions = bundle.getStringArray("promptPermissions");
             origins = bundle.getStringArray("origins");
             description = bundle.getString("description");
             version = bundle.getString("version");

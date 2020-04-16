@@ -136,6 +136,15 @@ XPCOMUtils.defineLazyGetter(
   () => ExtensionCommon.LocaleData
 );
 
+XPCOMUtils.defineLazyGetter(this, "NO_PROMPT_PERMISSIONS", () => {
+  return new Set(
+    Schemas.getPermissionNames([
+      "PermissionNoPrompt",
+      "OptionalPermissionNoPrompt",
+    ])
+  );
+});
+
 const { sharedData } = Services.ppmm;
 
 const PRIVATE_ALLOWED_PERMISSION = "internal:privateBrowsingAllowed";
@@ -674,6 +683,11 @@ class ExtensionData {
       p => !result.origins.includes(p) && !EXP_PATTERN.test(p)
     );
     return result;
+  }
+
+  
+  static shouldPromptFor(permission) {
+    return !NO_PROMPT_PERMISSIONS.has(permission);
   }
 
   
@@ -1531,12 +1545,14 @@ class ExtensionData {
       if (permission == "nativeMessaging") {
         continue;
       }
-      try {
-        result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
-      } catch (err) {
-        
-        
+      if (!ExtensionData.shouldPromptFor(permission)) {
+        continue;
       }
+      
+      
+      
+      
+      result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
     }
 
     const haveAccessKeys = AppConstants.platform !== "android";
