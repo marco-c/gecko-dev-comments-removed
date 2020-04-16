@@ -1033,7 +1033,7 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
       table.setNull(dstOffset + i);
     } else if (!table.isFunction()) {
       
-      void* fnref = Instance::funcRef(this, funcIndex);
+      void* fnref = Instance::refFunc(this, funcIndex);
       if (fnref == AnyRef::invalid().forCompiledCode()) {
         return false;  
       }
@@ -1231,8 +1231,8 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
   return table.length();
 }
 
- void* Instance::funcRef(Instance* instance, uint32_t funcIndex) {
-  MOZ_ASSERT(SASigFuncRef.failureMode == FailureMode::FailOnInvalidRef);
+ void* Instance::refFunc(Instance* instance, uint32_t funcIndex) {
+  MOZ_ASSERT(SASigRefFunc.failureMode == FailureMode::FailOnInvalidRef);
   JSContext* cx = TlsContext.get();
 
   Tier tier = instance->code().bestTier();
