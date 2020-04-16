@@ -198,7 +198,13 @@ ReferrerPolicy ReferrerInfo::GetDefaultReferrerPolicy(nsIHttpChannel* aChannel,
     if (!cjs) {
       cjs = net::CookieJarSettings::Create();
     }
-    if (cjs->GetRejectThirdPartyContexts()) {
+
+    
+    
+    
+    
+    
+    if (XRE_IsParentProcess() && cjs->GetRejectThirdPartyContexts()) {
       uint32_t rejectedReason = 0;
       thirdPartyTrackerIsolated = !ContentBlocking::ShouldAllowAccessFor(
           aChannel, aURI, &rejectedReason);
