@@ -1624,7 +1624,8 @@ class SdpSsrcGroupAttributeList : public SdpAttribute {
     kFec,    
     kFid,    
     kFecFr,  
-    kDup     
+    kDup,    
+    kSim     
   };
 
   struct SsrcGroup {
@@ -1658,6 +1659,9 @@ inline std::ostream& operator<<(std::ostream& os,
       break;
     case SdpSsrcGroupAttributeList::kDup:
       os << "DUP";
+      break;
+    case SdpSsrcGroupAttributeList::kSim:
+      os << "SIM";
       break;
     default:
       MOZ_ASSERT(false);
