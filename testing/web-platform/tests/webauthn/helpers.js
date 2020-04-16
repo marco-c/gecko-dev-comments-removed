@@ -35,6 +35,10 @@ var createCredentialDefaultArgs = {
                 alg: cose_alg_ECDSA_w_SHA256,
             }],
 
+            authenticatorSelection: {
+                requireResidentKey: false,
+            },
+
             timeout: 60000, 
             excludeCredentials: [] 
         }
@@ -421,6 +425,9 @@ class GetCredentialsTest extends TestCase {
         this.credentialPromiseList = [];
 
         
+        this.isResidentKeyTest = false;
+
+        
         
         if (arguments.length) {
             if (args.cred instanceof Promise) this.credPromise = args.cred;
@@ -464,7 +471,9 @@ class GetCredentialsTest extends TestCase {
                         type: "public-key"
                     };
                 });
-                this.testObject.options.publicKey.allowCredentials = idList;
+                if (!this.isResidentKeyTest) {
+                    this.testObject.options.publicKey.allowCredentials = idList;
+                }
                 
             })
             .catch((err) => {
@@ -475,6 +484,11 @@ class GetCredentialsTest extends TestCase {
     validateRet(ret) {
         validatePublicKeyCredential(ret);
         validateAuthenticatorAssertionResponse(ret.response);
+    }
+
+    setIsResidentKeyTest(isResidentKeyTest) {
+        this.isResidentKeyTest = isResidentKeyTest;
+        return this;
     }
 }
 
@@ -535,12 +549,17 @@ function validateAuthenticatorAssertionResponse(assert) {
     
 }
 
-function standardSetup(cb) {
+function standardSetup(cb, options = {}) {
     
-    window.test_driver.add_virtual_authenticator({
+    let authenticatorArgs = {
         protocol: "ctap1/u2f",
-        transport: "usb"
-    }).then(authenticator => {
+        transport: "usb",
+        hasResidentKey: false,
+        hasUserVerification: false,
+        isUserVerified: false,
+    };
+    extendObject(authenticatorArgs, options);
+    window.test_driver.add_virtual_authenticator(authenticatorArgs).then(authenticator => {
         cb();
         
         
