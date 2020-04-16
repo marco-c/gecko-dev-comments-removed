@@ -9,6 +9,7 @@
 #include "PaintedLayerMLGPU.h"
 #include "ImageLayerMLGPU.h"
 #include "CanvasLayerMLGPU.h"
+#include "ContainerLayerMLGPU.h"
 #include "GeckoProfiler.h"  
 #include "gfxEnv.h"         
 #include "MLGDevice.h"
