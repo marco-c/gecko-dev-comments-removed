@@ -3562,7 +3562,10 @@ class MCreateThis : public MBinaryInstruction,
   NAMED_OPERANDS((0, getCallee), (1, getNewTarget))
 
   
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
+  
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::Any);
+  }
   bool possiblyCalls() const override { return true; }
 };
 
