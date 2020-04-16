@@ -560,7 +560,9 @@ void CookieStorage::AddCookie(const nsACString& aBaseDomain,
 
   
   
-  AddCookieToList(aBaseDomain, aOriginAttributes, aCookie, nullptr);
+  AddCookieToList(aBaseDomain, aOriginAttributes, aCookie);
+  StoreCookie(aBaseDomain, aOriginAttributes, aCookie);
+
   COOKIE_LOGSUCCESS(SET_COOKIE, aHostURI, aCookieHeader, aCookie, foundCookie);
 
   
@@ -581,9 +583,7 @@ void CookieStorage::UpdateCookieOldestTime(Cookie* aCookie) {
 
 void CookieStorage::AddCookieToList(const nsACString& aBaseDomain,
                                     const OriginAttributes& aOriginAttributes,
-                                    Cookie* aCookie,
-                                    mozIStorageBindingParamsArray* aParamsArray,
-                                    bool aWriteToDB) {
+                                    Cookie* aCookie) {
   if (!aCookie) {
     NS_WARNING("Attempting to AddCookieToList with null cookie");
     return;
@@ -599,12 +599,6 @@ void CookieStorage::AddCookieToList(const nsACString& aBaseDomain,
 
   
   UpdateCookieOldestTime(aCookie);
-
-  
-  
-  if (aWriteToDB && !aCookie->IsSession()) {
-    WriteCookieToDB(aBaseDomain, aOriginAttributes, aCookie, aParamsArray);
-  }
 }
 
 already_AddRefed<nsIArray> CookieStorage::CreatePurgeList(nsICookie* aCookie) {
@@ -673,9 +667,11 @@ void CookieStorage::CreateOrUpdatePurgeList(nsIArray** aPurgedList,
 }
 
 
-already_AddRefed<nsIArray> CookieStorage::PurgeCookies(
+already_AddRefed<nsIArray> CookieStorage::PurgeCookiesWithCallbacks(
     int64_t aCurrentTimeInUsec, uint16_t aMaxNumberOfCookies,
-    int64_t aCookiePurgeAge) {
+    int64_t aCookiePurgeAge,
+    std::function<void(const CookieListIter&)>&& aRemoveCookieCallback,
+    std::function<void()>&& aFinalizeCallback) {
   NS_ASSERTION(mHostTable.Count() > 0, "table is empty");
 
   uint32_t initialCookieCount = mCookieCount;
@@ -689,11 +685,6 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookies(
 
   nsCOMPtr<nsIMutableArray> removedList =
       do_CreateInstance(NS_ARRAY_CONTRACTID);
-
-  
-  
-  nsCOMPtr<mozIStorageBindingParamsArray> paramsArray;
-  MaybeCreateDeleteBindingParamsArray(getter_AddRefs(paramsArray));
 
   int64_t currentTime = aCurrentTimeInUsec / PR_USEC_PER_SEC;
   int64_t purgeTime = aCurrentTimeInUsec - aCookiePurgeAge;
@@ -715,7 +706,7 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookies(
 
         
         
-        RemoveCookieFromList(iter, paramsArray);
+        aRemoveCookieCallback(iter);
         if (i == --length) {
           break;
         }
@@ -761,11 +752,13 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookies(
     removedList->AppendElement(cookie);
     COOKIE_LOGEVICTED(cookie, "Cookie too old");
 
-    RemoveCookieFromList(purgeList[i], paramsArray);
+    aRemoveCookieCallback(purgeList[i]);
   }
 
   
-  DeleteFromDB(paramsArray);
+  if (aFinalizeCallback) {
+    aFinalizeCallback();
+  }
 
   
   mCookieOldestTime = oldestTime;
@@ -781,10 +774,12 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookies(
 }
 
 
-void CookieStorage::RemoveCookieFromList(
-    const CookieListIter& aIter, mozIStorageBindingParamsArray* aParamsArray) {
-  RemoveCookieFromListInternal(aIter, aParamsArray);
+void CookieStorage::RemoveCookieFromList(const CookieListIter& aIter) {
+  RemoveCookieFromDB(aIter);
+  RemoveCookieFromListInternal(aIter);
+}
 
+void CookieStorage::RemoveCookieFromListInternal(const CookieListIter& aIter) {
   if (aIter.entry->GetCookies().Length() == 1) {
     
     
