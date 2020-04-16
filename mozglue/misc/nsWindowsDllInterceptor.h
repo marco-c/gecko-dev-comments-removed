@@ -712,6 +712,33 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS
   FuncPtrT mOrigFunc;
 };
 
+
+
+
+
+class WindowsDllEntryPointInterceptor final {
+  using DllMainFn = BOOL(WINAPI*)(HINSTANCE, DWORD, LPVOID);
+  using MMPolicyT = MMPolicyInProcessEarlyStage;
+
+  MMPolicyT mMMPolicy;
+
+ public:
+  explicit WindowsDllEntryPointInterceptor(
+      const MMPolicyT::Kernel32Exports& aK32Exports)
+      : mMMPolicy(aK32Exports) {}
+
+  bool Set(const nt::PEHeaders& aHeaders, DllMainFn aDestination) {
+    if (!aHeaders) {
+      return false;
+    }
+
+    WindowsDllDetourPatcherPrimitive<MMPolicyT> patcher;
+    return patcher.AddIrreversibleHook(
+        mMMPolicy, aHeaders.GetEntryPoint(),
+        reinterpret_cast<uintptr_t>(aDestination));
+  }
+};
+
 }  
 
 using WindowsDllInterceptor = interceptor::WindowsDllInterceptor<>;
