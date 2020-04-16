@@ -25,7 +25,7 @@
       this.setAttribute("consumeoutsideclicks", "never");
 
       this.textContent = "";
-      this.appendChild(this.constructor.fragment);
+      this.appendChild(MozXULElement.parseXULToFragment(this._markup));
 
       
 
@@ -108,7 +108,7 @@
       return this._richlistbox;
     }
 
-    static get markup() {
+    get _markup() {
       return `
       <richlistbox class="autocomplete-richlistbox" flex="1"/>
     `;

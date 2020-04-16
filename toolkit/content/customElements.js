@@ -495,48 +495,6 @@
 
 
 
-
-      static get fragment() {
-        if (!this.hasOwnProperty("_fragment")) {
-          let markup = this.markup;
-          if (markup) {
-            this._fragment = MozXULElement.parseXULToFragment(
-              markup,
-              this.entities
-            );
-          } else {
-            throw new Error("Markup is null");
-          }
-        }
-        return document.importNode(this._fragment, true);
-      }
-
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       static parseXULToFragment(str, entities = []) {
         let doc = gXULDOMParser.parseFromSafeString(
           `
