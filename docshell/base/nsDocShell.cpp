@@ -12677,15 +12677,6 @@ bool nsDocShell::IsInvisible() { return mInvisible; }
 
 void nsDocShell::SetInvisible(bool aInvisible) { mInvisible = aInvisible; }
 
-void nsDocShell::SetOpener(nsIRemoteTab* aOpener) {
-  mOpener = do_GetWeakReference(aOpener);
-}
-
-nsIRemoteTab* nsDocShell::GetOpener() {
-  nsCOMPtr<nsIRemoteTab> opener(do_QueryReferent(mOpener));
-  return opener;
-}
-
 
 void nsDocShell::NotifyJSRunToCompletionStart(const char* aReason,
                                               const nsAString& aFunctionName,
