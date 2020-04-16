@@ -27,20 +27,6 @@ here = os.path.abspath(os.path.dirname(__file__))
 build = MozbuildObject.from_environment(cwd=here)
 
 
-
-
-TASK_FILTERS = (
-    r'.*-ccov\/.*',
-    r'windows10-aarch64/opt.*',
-    r'.*win64-aarch64-laptop.*',
-    r'.*windows10-64-ref-hw-2017.*',
-    r'android-hw.*',
-    r'.*android-geckoview-docs.*',
-    r'linux1804-32.*',   
-    r'linux-.*',  
-    r'linux.*web-platform-tests.*-fis-.*',  
-)
-
 PARAMETER_MISMATCH = """
 ERROR - The parameters being used to generate tasks differ from those expected
 by your working copy:
@@ -122,19 +108,6 @@ def generate_tasks(params=None, full=False):
     if full:
         return tg_full
     return tg_target
-
-
-def filter_tasks_by_blacklist(task):
-    """Checks task label against known task filters.
-
-    Args:
-        task (str): String representing the task name.
-
-    Returns:
-        (Boolean): True if task does not match any known filters.
-        False otherwise.
-    """
-    return not any(re.search(pattern, task) for pattern in TASK_FILTERS)
 
 
 def filter_tasks_by_paths(tasks, paths):
