@@ -1666,6 +1666,20 @@ Relation Accessible::RelationByType(RelationType aType) const {
       
       
       
+      if (XRE_IsContentProcess() && IsRoot()) {
+        dom::Document* doc =
+            const_cast<Accessible*>(this)->AsDoc()->DocumentNode();
+        dom::BrowsingContext* bc = doc->GetBrowsingContext();
+        MOZ_ASSERT(bc);
+        if (!bc->Top()->IsInProcess()) {
+          return rel;
+        }
+      }
+
+      
+      
+      
+      
       
       
       nsIFrame* frame = GetFrame();
