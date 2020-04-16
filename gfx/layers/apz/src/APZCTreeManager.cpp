@@ -2873,9 +2873,26 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
     RefPtr<HitTestingTreeNode> node =
         GetTargetNode(guid, &GuidComparatorIgnoringPresShell);
     if (!node) {
-      APZCTM_LOG("no corresponding node found.\n");
-      chosenResult = Some(result);
-      break;
+      APZCTM_LOG("no corresponding node found, falling back to root.\n");
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(result.mScrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
+      node = FindRootNodeForLayersId(result.mLayersId);
+      if (!node) {
+        
+        
+        MOZ_ASSERT(false);
+        chosenResult = Some(result);
+        break;
+      }
     }
     MOZ_ASSERT(node->GetApzc());  
     EventRegionsOverride flags = node->GetEventRegionsOverride();
@@ -2897,6 +2914,7 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
     return hit;
   }
 
+  MOZ_ASSERT(hit.mTargetApzc);
   hit.mLayersId = chosenResult->mLayersId;
   ScrollableLayerGuid::ViewID scrollId = chosenResult->mScrollId;
   gfx::CompositorHitTestInfo hitInfo = chosenResult->mHitInfo;
@@ -2904,12 +2922,6 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPointWR(
 
   APZCTM_LOG("Successfully matched APZC %p (hit result 0x%x)\n",
              hit.mTargetApzc.get(), hitInfo.serialize());
-  if (!hit.mTargetApzc) {
-    
-    MOZ_ASSERT(scrollId == ScrollableLayerGuid::NULL_SCROLL_ID);
-    hit.mTargetApzc = FindRootApzcForLayersId(hit.mLayersId);
-    MOZ_ASSERT(hit.mTargetApzc);
-  }
 
   const bool isScrollbar =
       hitInfo.contains(gfx::CompositorHitTestFlags::eScrollbar);
@@ -3148,7 +3160,7 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPoint(
   return hit;
 }
 
-AsyncPanZoomController* APZCTreeManager::FindRootApzcForLayersId(
+HitTestingTreeNode* APZCTreeManager::FindRootNodeForLayersId(
     LayersId aLayersId) const {
   mTreeLock.AssertCurrentThreadIn();
 
@@ -3158,6 +3170,14 @@ AsyncPanZoomController* APZCTreeManager::FindRootApzcForLayersId(
         return apzc && apzc->GetLayersId() == aLayersId &&
                apzc->IsRootForLayersId();
       });
+  return resultNode;
+}
+
+AsyncPanZoomController* APZCTreeManager::FindRootApzcForLayersId(
+    LayersId aLayersId) const {
+  mTreeLock.AssertCurrentThreadIn();
+
+  HitTestingTreeNode* resultNode = FindRootNodeForLayersId(aLayersId);
   return resultNode ? resultNode->GetApzc() : nullptr;
 }
 
