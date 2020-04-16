@@ -1916,8 +1916,7 @@ static void RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind,
 #endif
 
   
-  RelocationOverlay* overlay = RelocationOverlay::fromCell(src);
-  overlay->forwardTo(dst);
+  RelocationOverlay::forwardCell(src, dst);
 }
 
 static void RelocateArena(Arena* arena, SliceBudget& sliceBudget) {
