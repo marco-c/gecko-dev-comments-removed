@@ -10,6 +10,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Variant.h"
 
+#include "gc/Policy.h"
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitContext.h"
 #include "vm/Printer.h"
@@ -28,6 +29,29 @@ namespace jit {
   _(WarpGetImport)               \
   _(WarpLambda)                  \
   _(WarpRest)
+
+
+
+template <typename T>
+class WarpGCPtr {
+  
+  
+  const T ptr_;
+
+ public:
+  explicit WarpGCPtr(const T& ptr) : ptr_(ptr) {
+    MOZ_ASSERT(JS::GCPolicy<T>::isTenured(ptr),
+               "WarpSnapshot pointers must be tenured");
+  }
+  WarpGCPtr(const WarpGCPtr<T>& other) = default;
+
+  operator T() const { return static_cast<T>(ptr_); }
+  T operator->() const { return static_cast<T>(ptr_); }
+
+ private:
+  WarpGCPtr() = delete;
+  void operator=(WarpGCPtr<T>& other) = delete;
+};
 
 
 
@@ -77,7 +101,7 @@ using WarpOpSnapshotList = mozilla::LinkedList<WarpOpSnapshot>;
 
 class WarpArguments : public WarpOpSnapshot {
   
-  ArgumentsObject* templateObj_;
+  WarpGCPtr<ArgumentsObject*> templateObj_;
 
  public:
   static constexpr Kind ThisKind = Kind::WarpArguments;
@@ -113,7 +137,7 @@ class WarpRegExp : public WarpOpSnapshot {
 
 
 class WarpFunctionProto : public WarpOpSnapshot {
-  JSObject* proto_;
+  WarpGCPtr<JSObject*> proto_;
 
  public:
   static constexpr Kind ThisKind = Kind::WarpFunctionProto;
@@ -133,7 +157,7 @@ class WarpFunctionProto : public WarpOpSnapshot {
 
 
 class WarpGetIntrinsic : public WarpOpSnapshot {
-  Value intrinsic_;
+  WarpGCPtr<Value> intrinsic_;
 
  public:
   static constexpr Kind ThisKind = Kind::WarpGetIntrinsic;
@@ -151,7 +175,7 @@ class WarpGetIntrinsic : public WarpOpSnapshot {
 
 
 class WarpGetImport : public WarpOpSnapshot {
-  ModuleEnvironmentObject* targetEnv_;
+  WarpGCPtr<ModuleEnvironmentObject*> targetEnv_;
   uint32_t numFixedSlots_;
   uint32_t slot_;
   bool needsLexicalCheck_;
@@ -181,7 +205,7 @@ class WarpGetImport : public WarpOpSnapshot {
 
 
 class WarpLambda : public WarpOpSnapshot {
-  BaseScript* baseScript_;
+  WarpGCPtr<BaseScript*> baseScript_;
   FunctionFlags flags_;
   uint16_t nargs_;
 
@@ -207,7 +231,7 @@ class WarpLambda : public WarpOpSnapshot {
 
 
 class WarpRest : public WarpOpSnapshot {
-  ArrayObject* templateObject_;
+  WarpGCPtr<ArrayObject*> templateObject_;
 
  public:
   static constexpr Kind ThisKind = Kind::WarpRest;
@@ -224,9 +248,10 @@ class WarpRest : public WarpOpSnapshot {
 };
 
 struct NoEnvironment {};
+using ConstantObjectEnvironment = WarpGCPtr<JSObject*>;
 struct FunctionEnvironment {
-  CallObject* callObjectTemplate;
-  LexicalEnvironmentObject* namedLambdaTemplate;
+  WarpGCPtr<CallObject*> callObjectTemplate;
+  WarpGCPtr<LexicalEnvironmentObject*> namedLambdaTemplate;
 
  public:
   FunctionEnvironment(CallObject* callObjectTemplate,
@@ -248,19 +273,20 @@ struct FunctionEnvironment {
 
 
 using WarpEnvironment =
-    mozilla::Variant<NoEnvironment, JSObject*, FunctionEnvironment>;
+    mozilla::Variant<NoEnvironment, ConstantObjectEnvironment,
+                     FunctionEnvironment>;
 
 
 class WarpScriptSnapshot : public TempObject {
-  JSScript* script_;
+  WarpGCPtr<JSScript*> script_;
   WarpEnvironment environment_;
   WarpOpSnapshotList opSnapshots_;
 
   
-  ModuleObject* moduleObject_;
+  WarpGCPtr<ModuleObject*> moduleObject_;
 
   
-  JSObject* instrumentationCallback_;
+  WarpGCPtr<JSObject*> instrumentationCallback_;
   mozilla::Maybe<int32_t> instrumentationScriptId_;
   mozilla::Maybe<bool> instrumentationActive_;
 
@@ -304,8 +330,8 @@ class WarpSnapshot : public TempObject {
 
   
   
-  LexicalEnvironmentObject* globalLexicalEnv_;
-  Value globalLexicalEnvThis_;
+  WarpGCPtr<LexicalEnvironmentObject*> globalLexicalEnv_;
+  WarpGCPtr<Value> globalLexicalEnvThis_;
 
  public:
   explicit WarpSnapshot(JSContext* cx, WarpScriptSnapshot* script);
