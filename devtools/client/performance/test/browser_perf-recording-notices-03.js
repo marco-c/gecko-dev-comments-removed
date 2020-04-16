@@ -50,16 +50,11 @@ add_task(async function() {
   });
 
   const { panel } = await initPerformanceInTab({ tab: target.localTab });
-  const {
-    gFront,
-    EVENTS,
-    $,
-    PerformanceController,
-    PerformanceView,
-  } = panel.panelWin;
+  const { EVENTS, $, PerformanceController, PerformanceView } = panel.panelWin;
 
   
-  await gFront.setProfilerStatusInterval(10);
+  const performanceFront = await panel.target.getFront("performance");
+  await performanceFront.setProfilerStatusInterval(10);
 
   const DETAILS_CONTAINER = $("#details-pane-container");
   const NORMAL_BUFFER_STATUS_MESSAGE = $(

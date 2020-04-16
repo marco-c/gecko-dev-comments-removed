@@ -142,9 +142,6 @@ PerformancePanel.prototype = {
           await PerformanceController.startRecording();
         }
       }
-
-      
-      this.panelWin.gFront = performanceFront;
     }
   },
 
