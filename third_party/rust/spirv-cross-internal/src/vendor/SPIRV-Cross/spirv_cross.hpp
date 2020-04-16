@@ -316,6 +316,10 @@ public:
 	                                                 spv::ExecutionModel execution_model) const;
 
 	
+	void update_active_builtins();
+	bool has_active_builtin(spv::BuiltIn builtin, spv::StorageClass storage);
+
+	
 	const Bitset &get_execution_mode_bitset() const;
 
 	void unset_execution_mode(spv::ExecutionMode mode);
@@ -832,10 +836,6 @@ protected:
 	uint32_t clip_distance_count = 0;
 	uint32_t cull_distance_count = 0;
 	bool position_invariant = false;
-
-	
-	void update_active_builtins();
-	bool has_active_builtin(spv::BuiltIn builtin, spv::StorageClass storage);
 
 	void analyze_parameter_preservation(
 	    SPIRFunction &entry, const CFG &cfg,

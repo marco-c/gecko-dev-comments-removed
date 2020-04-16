@@ -44,6 +44,8 @@ struct RootConstants
 
 enum HLSLBindingFlagBits
 {
+	HLSL_BINDING_AUTO_NONE_BIT = 0,
+
 	
 	
 	
@@ -67,6 +69,28 @@ enum HLSLBindingFlagBits
 };
 using HLSLBindingFlags = uint32_t;
 
+
+
+
+
+
+
+
+
+
+struct HLSLResourceBinding
+{
+	spv::ExecutionModel stage = spv::ExecutionModelMax;
+	uint32_t desc_set = 0;
+	uint32_t binding = 0;
+
+	struct Binding
+	{
+		uint32_t register_space = 0;
+		uint32_t register_binding = 0;
+	} cbv, uav, srv, sampler;
+};
+
 class CompilerHLSL : public CompilerGLSL
 {
 public:
@@ -85,6 +109,15 @@ public:
 		
 		
 		bool support_nonzero_base_vertex_base_instance = false;
+
+		
+		
+		bool force_storage_buffer_as_uav = false;
+
+		
+		
+		
+		bool nonwritable_uav_texture_as_srv = false;
 	};
 
 	explicit CompilerHLSL(std::vector<uint32_t> spirv_)
@@ -145,6 +178,14 @@ public:
 	
 	void set_resource_binding_flags(HLSLBindingFlags flags);
 
+	
+	
+	
+	
+	
+	void add_hlsl_resource_binding(const HLSLResourceBinding &resource);
+	bool is_hlsl_resource_binding_used(spv::ExecutionModel model, uint32_t set, uint32_t binding) const;
+
 private:
 	std::string type_to_glsl(const SPIRType &type, uint32_t id = 0) override;
 	std::string image_type_hlsl(const SPIRType &type, uint32_t id);
@@ -154,6 +195,7 @@ private:
 	void emit_hlsl_entry_point();
 	void emit_header() override;
 	void emit_resources();
+	void declare_undefined_values() override;
 	void emit_interface_block_globally(const SPIRVariable &type);
 	void emit_interface_block_in_struct(const SPIRVariable &type, std::unordered_set<uint32_t> &active_locations);
 	void emit_builtin_inputs_in_struct();
@@ -178,12 +220,19 @@ private:
 	std::string to_sampler_expression(uint32_t id);
 	std::string to_resource_binding(const SPIRVariable &var);
 	std::string to_resource_binding_sampler(const SPIRVariable &var);
-	std::string to_resource_register(HLSLBindingFlags flags, char space, uint32_t binding, uint32_t set);
+	std::string to_resource_register(HLSLBindingFlagBits flag, char space, uint32_t binding, uint32_t set);
 	void emit_sampled_image_op(uint32_t result_type, uint32_t result_id, uint32_t image_id, uint32_t samp_id) override;
 	void emit_access_chain(const Instruction &instruction);
 	void emit_load(const Instruction &instruction);
-	std::string read_access_chain(const SPIRAccessChain &chain);
-	void write_access_chain(const SPIRAccessChain &chain, uint32_t value);
+	void read_access_chain(std::string *expr, const std::string &lhs, const SPIRAccessChain &chain);
+	void read_access_chain_struct(const std::string &lhs, const SPIRAccessChain &chain);
+	void read_access_chain_array(const std::string &lhs, const SPIRAccessChain &chain);
+	void write_access_chain(const SPIRAccessChain &chain, uint32_t value, const SmallVector<uint32_t> &composite_chain);
+	void write_access_chain_struct(const SPIRAccessChain &chain, uint32_t value,
+	                               const SmallVector<uint32_t> &composite_chain);
+	void write_access_chain_array(const SPIRAccessChain &chain, uint32_t value,
+	                              const SmallVector<uint32_t> &composite_chain);
+	std::string write_access_chain_value(uint32_t value, const SmallVector<uint32_t> &composite_chain, bool enclose);
 	void emit_store(const Instruction &instruction);
 	void emit_atomic(const uint32_t *ops, uint32_t length, spv::Op op);
 	void emit_subgroup_op(const Instruction &i) override;
@@ -257,6 +306,12 @@ private:
 	std::vector<RootConstants> root_constants_layout;
 
 	void validate_shader_model();
+
+	std::string get_unique_identifier();
+	uint32_t unique_identifier_count = 0;
+
+	std::unordered_map<StageSetBinding, std::pair<HLSLResourceBinding, bool>, InternalHasher> resource_bindings;
+	void remap_hlsl_resource_binding(HLSLBindingFlagBits type, uint32_t &desc_set, uint32_t &binding);
 };
 } 
 

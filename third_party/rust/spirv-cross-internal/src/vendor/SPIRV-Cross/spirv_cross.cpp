@@ -317,6 +317,8 @@ void Compiler::register_write(uint32_t chain)
 			var = maybe_get<SPIRVariable>(access_chain->loaded_from);
 	}
 
+	auto &chain_type = expression_type(chain);
+
 	if (var)
 	{
 		bool check_argument_storage_qualifier = true;
@@ -359,7 +361,7 @@ void Compiler::register_write(uint32_t chain)
 			force_recompile();
 		}
 	}
-	else
+	else if (chain_type.pointer)
 	{
 		
 		
@@ -368,6 +370,9 @@ void Compiler::register_write(uint32_t chain)
 		
 		flush_all_active_variables();
 	}
+
+	
+	
 }
 
 void Compiler::flush_dependees(SPIRVariable &var)
