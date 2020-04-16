@@ -92,9 +92,12 @@ struct String {
 
   const nsCString AsString(FontList* aList) const {
     MOZ_ASSERT(!mPointer.IsNull());
-    nsCString res;
-    res.AssignLiteral(static_cast<const char*>(mPointer.ToPtr(aList)), mLength);
-    return res;
+    
+    
+    
+    
+    
+    return nsCString(static_cast<const char*>(mPointer.ToPtr(aList)), mLength);
   }
 
   void Assign(const nsACString& aString, FontList* aList);
