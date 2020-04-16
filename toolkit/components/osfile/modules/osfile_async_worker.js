@@ -29,11 +29,12 @@ if (this.Components) {
 
   let worker = new PromiseWorker.AbstractWorker();
   worker.dispatch = function(method, args = []) {
-    let startTime = performance.now();
+    let prefix = "OS.File " + method;
+    performance.mark(prefix + "-start");
     try {
       return Agent[method](...args);
     } finally {
-      let text = method;
+      let name = prefix;
       if (args.length && args[0] instanceof Object && args[0].string) {
         
         
@@ -41,9 +42,9 @@ if (this.Components) {
         
         
         
-        text += " — " + args[0].string;
+        name += " — " + args[0].string;
       }
-      ChromeUtils.addProfilerMarker("OS.File", startTime, text);
+      performance.measure(name, prefix + "-start");
     }
   };
   worker.log = LOG;
