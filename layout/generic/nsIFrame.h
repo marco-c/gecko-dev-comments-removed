@@ -3409,6 +3409,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  bool ShouldHaveLineIfEmpty() const;
+
+  
+
+
+
 
 
   virtual nsresult GetSelectionController(nsPresContext* aPresContext,
