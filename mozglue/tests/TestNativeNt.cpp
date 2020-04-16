@@ -41,35 +41,6 @@ const char kFailFmt[] =
 using namespace mozilla;
 using namespace mozilla::nt;
 
-bool TestVirtualQuery(HANDLE aProcess, LPCVOID aAddress) {
-  MEMORY_BASIC_INFORMATION info1 = {}, info2 = {};
-  SIZE_T result1 = ::VirtualQueryEx(aProcess, aAddress, &info1, sizeof(info1)),
-         result2 = mozilla::nt::VirtualQueryEx(aProcess, aAddress, &info2,
-                                               sizeof(info2));
-  if (result1 != result2) {
-    printf("TEST-FAILED | NativeNt | The returned values mismatch\n");
-    return false;
-  }
-
-  if (!result1) {
-    
-    return true;
-  }
-
-  if (memcmp(&info1, &info2, result1) != 0) {
-    printf("TEST-FAILED | NativeNt | The returned structures mismatch\n");
-    return false;
-  }
-
-  return true;
-}
-
-LauncherResult<HMODULE> GetModuleHandleFromLeafName(const wchar_t* aName) {
-  UNICODE_STRING name;
-  ::RtlInitUnicodeString(&name, aName);
-  return nt::GetModuleHandleFromLeafName(name);
-}
-
 
 
 
@@ -252,40 +223,6 @@ int wmain(int argc, wchar_t* argv[]) {
     printf(
         "TEST-FAILED | NativeNt | Unable to find the IAT thunk for "
         "ntdll.dll in kernel32.dll\n");
-    return 1;
-  }
-
-  
-  
-  nsAutoHandle process(
-      ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, GetCurrentProcessId()));
-  if (!process) {
-    printf("TEST-FAILED | NativeNt | OpenProcess() failed - %08lx\n",
-           ::GetLastError());
-    return 1;
-  }
-
-  
-  if (!TestVirtualQuery(process, nullptr) || !TestVirtualQuery(process, argv) ||
-      !TestVirtualQuery(process, kNormal) ||
-      !TestVirtualQuery(nullptr, kNormal)) {
-    return 1;
-  }
-
-  auto moduleResult = GetModuleHandleFromLeafName(kKernel32);
-  if (moduleResult.isErr() ||
-      moduleResult.inspect() != k32headers.template RVAToPtr<HMODULE>(0)) {
-    printf(
-        "TEST-FAILED | NativeNt | "
-        "GetModuleHandleFromLeafName returns a wrong value.\n");
-    return 1;
-  }
-
-  moduleResult = GetModuleHandleFromLeafName(L"invalid");
-  if (moduleResult.isOk()) {
-    printf(
-        "TEST-FAILED | NativeNt | "
-        "GetModuleHandleFromLeafName unexpectedly returns a value.\n");
     return 1;
   }
 

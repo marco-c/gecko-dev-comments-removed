@@ -30,7 +30,6 @@
 
 
 
-
 ALL_PROCESSES += [
     
     DllBlocklistEntry("npffaddon.dll", ALL_VERSIONS),
@@ -228,8 +227,8 @@ ALL_PROCESSES += [
     DllBlocklistEntry("pdzipmenu32.dll", UNVERSIONED),
 
     
-    RedirectToNoOpEntryPoint("dgapi.dll", (7, 5, 0, 0xffff)),
-    RedirectToNoOpEntryPoint("dgapi64.dll", (7, 5, 0, 0xffff)),
+    DllBlocklistEntry("dgapi.dll", (7, 5, 0, 0xffff)),
+    DllBlocklistEntry("dgapi64.dll", (7, 5, 0, 0xffff)),
 
     
     DllBlocklistEntry("IseGuard32.dll", (1, 6, 13835, 184)),
@@ -244,8 +243,6 @@ ALL_PROCESSES_TESTS += [
     DllBlocklistEntry("testdllblocklist_matchbyname.dll", ALL_VERSIONS),
     DllBlocklistEntry("testdllblocklist_matchbyversion.dll", (5, 5, 5, 5)),
     DllBlocklistEntry("testdllblocklist_allowbyversion.dll", (5, 5, 5, 5)),
-    RedirectToNoOpEntryPoint("testdllblocklist_noopentrypoint.dll",
-                             (5, 5, 5, 5)),
 ]
 
 BROWSER_PROCESS += [

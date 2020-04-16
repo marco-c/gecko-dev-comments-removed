@@ -74,63 +74,8 @@ PVOID WINAPI MapViewOfFile3(HANDLE FileMapping, HANDLE Process,
 extern "C" errno_t rand_s(unsigned int* randomValue);
 #endif  
 
-
-
-namespace mozilla {
-namespace nt {
-SIZE_T WINAPI VirtualQueryEx(HANDLE aProcess, LPCVOID aAddress,
-                             PMEMORY_BASIC_INFORMATION aMemInfo,
-                             SIZE_T aMemInfoLen);
-
-SIZE_T WINAPI VirtualQuery(LPCVOID aAddress, PMEMORY_BASIC_INFORMATION aMemInfo,
-                           SIZE_T aMemInfoLen);
-}  
-}  
-
 namespace mozilla {
 namespace interceptor {
-
-
-
-class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcessPrimitive {
- protected:
-  bool ProtectInternal(decltype(&::VirtualProtect) aVirtualProtect,
-                       void* aVAddress, size_t aSize, uint32_t aProtFlags,
-                       uint32_t* aPrevProtFlags) const {
-    MOZ_ASSERT(aPrevProtFlags);
-    BOOL ok = aVirtualProtect(aVAddress, aSize, aProtFlags,
-                              reinterpret_cast<PDWORD>(aPrevProtFlags));
-    if (!ok && aPrevProtFlags) {
-      
-      
-      *aPrevProtFlags = 0;
-    }
-
-    return !!ok;
-  }
-
- public:
-  bool Read(void* aToPtr, const void* aFromPtr, size_t aLen) const {
-    ::memcpy(aToPtr, aFromPtr, aLen);
-    return true;
-  }
-
-  bool Write(void* aToPtr, const void* aFromPtr, size_t aLen) const {
-    ::memcpy(aToPtr, aFromPtr, aLen);
-    return true;
-  }
-
-  
-
-
-  bool IsPageAccessible(void* aVAddress) const {
-    MEMORY_BASIC_INFORMATION mbi;
-    SIZE_T result = nt::VirtualQuery(aVAddress, &mbi, sizeof(mbi));
-
-    return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
-           mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
-  }
-};
 
 class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
  protected:
@@ -149,7 +94,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
   }
 
  public:
-  DWORD ComputeAllocationSize(const uint32_t aRequestedSize) const {
+  static DWORD ComputeAllocationSize(const uint32_t aRequestedSize) {
     MOZ_ASSERT(aRequestedSize);
     DWORD result = aRequestedSize;
 
@@ -163,7 +108,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     return result;
   }
 
-  DWORD GetAllocGranularity() const {
+  static DWORD GetAllocGranularity() {
     static const DWORD kAllocGranularity = []() -> DWORD {
       SYSTEM_INFO sysInfo;
       ::GetSystemInfo(&sysInfo);
@@ -173,7 +118,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     return kAllocGranularity;
   }
 
-  DWORD GetPageSize() const {
+  static DWORD GetPageSize() {
     static const DWORD kPageSize = []() -> DWORD {
       SYSTEM_INFO sysInfo;
       ::GetSystemInfo(&sysInfo);
@@ -183,7 +128,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     return kPageSize;
   }
 
-  uintptr_t GetMaxUserModeAddress() const {
+  static uintptr_t GetMaxUserModeAddress() {
     static const uintptr_t kMaxUserModeAddr = []() -> uintptr_t {
       SYSTEM_INFO sysInfo;
       ::GetSystemInfo(&sysInfo);
@@ -216,9 +161,9 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
 
 
 
-  Maybe<Span<const uint8_t>> SpanFromPivotAndDistance(
+  static Maybe<Span<const uint8_t>> SpanFromPivotAndDistance(
       const uint32_t aSize, const uintptr_t aPivotAddr,
-      const uint32_t aMaxDistanceFromPivot) const {
+      const uint32_t aMaxDistanceFromPivot) {
     if (!aPivotAddr || !aMaxDistanceFromPivot) {
       return Nothing();
     }
@@ -295,8 +240,8 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
 
 
 
-  PVOID FindRegion(HANDLE aProcess, const size_t aDesiredBytesLen,
-                   const uint8_t* aRangeMin, const uint8_t* aRangeMax) const {
+  static PVOID FindRegion(HANDLE aProcess, const size_t aDesiredBytesLen,
+                          const uint8_t* aRangeMin, const uint8_t* aRangeMax) {
     const DWORD kGranularity = GetAllocGranularity();
     MOZ_ASSERT(aDesiredBytesLen >= kGranularity);
     if (!aDesiredBytesLen) {
@@ -331,7 +276,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     
     
     while (address <= kMaxPtr &&
-           nt::VirtualQueryEx(aProcess, address, &mbi, len)) {
+           ::VirtualQueryEx(aProcess, address, &mbi, len)) {
       if (mbi.State == MEM_FREE && mbi.RegionSize >= aDesiredBytesLen) {
         return mbi.BaseAddress;
       }
@@ -359,10 +304,10 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
 
 
   template <typename ReserveFnT, typename ReserveRangeFnT>
-  PVOID Reserve(HANDLE aProcess, const uint32_t aSize,
-                const ReserveFnT& aReserveFn,
-                const ReserveRangeFnT& aReserveRangeFn,
-                const Maybe<Span<const uint8_t>>& aBounds) const {
+  static PVOID Reserve(HANDLE aProcess, const uint32_t aSize,
+                       const ReserveFnT& aReserveFn,
+                       const ReserveRangeFnT& aReserveRangeFn,
+                       const Maybe<Span<const uint8_t>>& aBounds) {
     if (!aBounds) {
       
       return aReserveFn(aProcess, nullptr, aSize);
@@ -408,9 +353,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
   }
 };
 
-class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
-    : public MMPolicyInProcessPrimitive,
-      public MMPolicyBase {
+class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess : public MMPolicyBase {
  public:
   typedef MMPolicyInProcess MMPolicyT;
 
@@ -445,6 +388,16 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
 
   bool ShouldUnhookUponDestruction() const { return true; }
 
+  bool Read(void* aToPtr, const void* aFromPtr, size_t aLen) const {
+    ::memcpy(aToPtr, aFromPtr, aLen);
+    return true;
+  }
+
+  bool Write(void* aToPtr, const void* aFromPtr, size_t aLen) const {
+    ::memcpy(aToPtr, aFromPtr, aLen);
+    return true;
+  }
+
 #if defined(_M_IX86)
   bool WriteAtomic(void* aDestPtr, const uint16_t aValue) const {
     *static_cast<uint16_t*>(aDestPtr) = aValue;
@@ -454,8 +407,27 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
 
   bool Protect(void* aVAddress, size_t aSize, uint32_t aProtFlags,
                uint32_t* aPrevProtFlags) const {
-    return ProtectInternal(::VirtualProtect, aVAddress, aSize, aProtFlags,
-                           aPrevProtFlags);
+    MOZ_ASSERT(aPrevProtFlags);
+    BOOL ok = ::VirtualProtect(aVAddress, aSize, aProtFlags,
+                               reinterpret_cast<PDWORD>(aPrevProtFlags));
+    if (!ok && aPrevProtFlags) {
+      
+      
+      *aPrevProtFlags = 0;
+    }
+
+    return !!ok;
+  }
+
+  
+
+
+  bool IsPageAccessible(void* aVAddress) const {
+    MEMORY_BASIC_INFORMATION mbi;
+    SIZE_T result = ::VirtualQuery(aVAddress, &mbi, sizeof(mbi));
+
+    return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
+           mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
   }
 
   bool FlushInstructionCache() const {
@@ -564,51 +536,6 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
   uint8_t* mBase;
   uint32_t mReservationSize;
   uint32_t mCommitOffset;
-};
-
-
-
-
-class MMPolicyInProcessEarlyStage : public MMPolicyInProcessPrimitive {
- public:
-  struct Kernel32Exports {
-    decltype(&::FlushInstructionCache) mFlushInstructionCache;
-    decltype(&::GetSystemInfo) mGetSystemInfo;
-    decltype(&::VirtualProtect) mVirtualProtect;
-  };
-
- private:
-  static DWORD GetPageSize(const Kernel32Exports& aK32Exports) {
-    SYSTEM_INFO sysInfo;
-    aK32Exports.mGetSystemInfo(&sysInfo);
-    return sysInfo.dwPageSize;
-  }
-
-  const Kernel32Exports& mK32Exports;
-  const DWORD mPageSize;
-
- public:
-  explicit MMPolicyInProcessEarlyStage(const Kernel32Exports& aK32Exports)
-      : mK32Exports(aK32Exports), mPageSize(GetPageSize(mK32Exports)) {}
-
-  
-  
-  
-  
-  
-  
-  DWORD GetPageSize() const { return mPageSize; }
-
-  bool Protect(void* aVAddress, size_t aSize, uint32_t aProtFlags,
-               uint32_t* aPrevProtFlags) const {
-    return ProtectInternal(mK32Exports.mVirtualProtect, aVAddress, aSize,
-                           aProtFlags, aPrevProtFlags);
-  }
-
-  bool FlushInstructionCache() const {
-    const HANDLE kCurrentProcess = reinterpret_cast<HANDLE>(-1);
-    return !!mK32Exports.mFlushInstructionCache(kCurrentProcess, nullptr, 0);
-  }
 };
 
 class MMPolicyOutOfProcess : public MMPolicyBase {
@@ -769,7 +696,7 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
 
   bool IsPageAccessible(void* aVAddress) const {
     MEMORY_BASIC_INFORMATION mbi;
-    SIZE_T result = nt::VirtualQueryEx(mProcess, aVAddress, &mbi, sizeof(mbi));
+    SIZE_T result = ::VirtualQueryEx(mProcess, aVAddress, &mbi, sizeof(mbi));
 
     return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
            mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;

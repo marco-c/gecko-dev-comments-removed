@@ -40,85 +40,10 @@ enum class DetourFlags : uint32_t {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DetourFlags)
 
-
-
-
-template <typename MMPolicyT>
-class WindowsDllDetourPatcherPrimitive {
- protected:
-  constexpr static uint32_t GetWorstCaseRequiredBytesToPatch() {
-#if defined(_M_IX86)
-    return 5;
-#elif defined(_M_X64)
-    return 13;
-#elif defined(_M_ARM64)
-    return 16;
-#else
-#  error "Unsupported processor architecture"
-#endif
-  }
-
-  static void ApplyDefaultPatch(WritableTargetFunction<MMPolicyT>& target,
-                                intptr_t aDest) {
-#if defined(_M_IX86)
-    target.WriteByte(0xe9);     
-    target.WriteDisp32(aDest);  
-#elif defined(_M_X64)
-    
-    target.WriteByte(0x49);
-    target.WriteByte(0xbb);
-    target.WritePointer(aDest);
-
-    
-    target.WriteByte(0x41);
-    target.WriteByte(0xff);
-    target.WriteByte(0xe3);
-#elif defined(_M_ARM64)
-    
-    
-    target.WriteLong(kLdrX16Plus8);
-    
-    target.WriteLong(arm64::BuildUnconditionalBranchToRegister(16));
-    target.WritePointer(aDest);
-#else
-#  error "Unsupported processor architecture"
-#endif
-  }
-
- public:
-  WindowsDllDetourPatcherPrimitive() = default;
-
-  WindowsDllDetourPatcherPrimitive(const WindowsDllDetourPatcherPrimitive&) =
-      delete;
-  WindowsDllDetourPatcherPrimitive(WindowsDllDetourPatcherPrimitive&&) = delete;
-  WindowsDllDetourPatcherPrimitive& operator=(
-      const WindowsDllDetourPatcherPrimitive&) = delete;
-  WindowsDllDetourPatcherPrimitive& operator=(
-      WindowsDllDetourPatcherPrimitive&&) = delete;
-
-  bool AddIrreversibleHook(const MMPolicyT& aMMPolicy, FARPROC aTargetFn,
-                           intptr_t aHookDest) {
-    ReadOnlyTargetFunction<MMPolicyT> targetReadOnly(aMMPolicy, aTargetFn);
-
-    WritableTargetFunction<MMPolicyT> targetWritable(
-        targetReadOnly.Promote(GetWorstCaseRequiredBytesToPatch()));
-    if (!targetWritable) {
-      return false;
-    }
-
-    ApplyDefaultPatch(targetWritable, aHookDest);
-
-    return targetWritable.Commit();
-  }
-};
-
 template <typename VMPolicy>
-class WindowsDllDetourPatcher final
-    : public WindowsDllDetourPatcherPrimitive<typename VMPolicy::MMPolicyT>,
-      public WindowsDllPatcherBase<VMPolicy> {
-  using MMPolicyT = typename VMPolicy::MMPolicyT;
-  using TrampPoolT = typename VMPolicy::PoolType;
-  using PrimitiveT = WindowsDllDetourPatcherPrimitive<MMPolicyT>;
+class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
+  typedef typename VMPolicy::MMPolicyT MMPolicyT;
+  typedef typename VMPolicy::PoolType TrampPoolT;
   Maybe<DetourFlags> mFlags;
 
 #if defined(_M_ARM64)
@@ -784,88 +709,6 @@ class WindowsDllDetourPatcher final
     return false;
   }
 
-#if defined(_M_ARM64)
-  bool Apply4BytePatch(TrampPoolT* aTrampPool, void* aTrampPtr,
-                       WritableTargetFunction<MMPolicyT>& target,
-                       intptr_t aDest) {
-    MOZ_ASSERT(aTrampPool);
-    if (!aTrampPool) {
-      return false;
-    }
-
-    uintptr_t hookDest = arm64::MakeVeneer(*aTrampPool, aTrampPtr, aDest);
-    if (!hookDest) {
-      return false;
-    }
-
-    Maybe<uint32_t> branchImm = arm64::BuildUnconditionalBranchImm(
-        target.GetCurrentAddress(), hookDest);
-    if (!branchImm) {
-      return false;
-    }
-
-    target.WriteLong(branchImm.value());
-
-    return true;
-  }
-#endif  
-
-#if defined(_M_X64)
-  bool Apply10BytePatch(TrampPoolT* aTrampPool, void* aTrampPtr,
-                        WritableTargetFunction<MMPolicyT>& target,
-                        intptr_t aDest) {
-    
-    
-    
-    Maybe<Trampoline<MMPolicyT>> maybeCallTramp(
-        aTrampPool->GetNextTrampoline());
-    if (!maybeCallTramp) {
-      return false;
-    }
-
-    Trampoline<MMPolicyT> callTramp(std::move(maybeCallTramp.ref()));
-
-    
-    
-    callTramp.WriteEncodedPointer(nullptr);
-    
-    callTramp.WriteEncodedPointer(aTrampPtr);
-    callTramp.StartExecutableCode();
-
-    
-    callTramp.WriteByte(0x49);
-    callTramp.WriteByte(0xbb);
-    callTramp.WritePointer(aDest);
-
-    
-    callTramp.WriteByte(0x41);
-    callTramp.WriteByte(0xff);
-    callTramp.WriteByte(0xe3);
-
-    void* callTrampStart = callTramp.EndExecutableCode();
-    if (!callTrampStart) {
-      return false;
-    }
-
-    target.WriteByte(0xB8);  
-
-    
-    MOZ_ASSERT(
-        !(reinterpret_cast<uintptr_t>(callTrampStart) & (~0x7FFFFFFFULL)));
-
-    target.WriteLong(static_cast<uint32_t>(
-        reinterpret_cast<uintptr_t>(callTrampStart) & 0x7FFFFFFFU));
-    target.WriteByte(0x48);  
-    target.WriteByte(0x63);  
-    
-    target.WriteByte(BuildModRmByte(kModReg, kRegAx, kRegAx));
-    target.WriteByte(0xFF);                                
-    target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx));  
-
-    return true;
-  }
-#endif  
-
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
                         TrampPoolT* aTrampPool, Trampoline<MMPolicyT>& aTramp,
                         intptr_t aDest, void** aOutTramp) {
@@ -912,12 +755,9 @@ class WindowsDllDetourPatcher final
 
     tramp.StartExecutableCode();
 
-    constexpr uint32_t kWorstCaseBytesRequired =
-        PrimitiveT::GetWorstCaseRequiredBytesToPatch();
-
 #if defined(_M_IX86)
     int pJmp32 = -1;
-    while (origBytes.GetOffset() < kWorstCaseBytesRequired) {
+    while (origBytes.GetOffset() < 5) {
       
       
       
@@ -1026,8 +866,7 @@ class WindowsDllDetourPatcher final
     bool use10BytePatch =
         (mFlags.value() & DetourFlags::eTestOnlyForceShortPatch) ==
         DetourFlags::eTestOnlyForceShortPatch;
-    const uint32_t bytesRequired =
-        use10BytePatch ? 10 : kWorstCaseBytesRequired;
+    const uint32_t bytesRequired = use10BytePatch ? 10 : 13;
 
     while (origBytes.GetOffset() < bytesRequired) {
       
@@ -1470,6 +1309,7 @@ class WindowsDllDetourPatcher final
     
     
     
+    const uint32_t kWorstCaseBytesRequired = 16;
     const uint32_t bytesRequiredFromDecode =
         (mFlags.value() & DetourFlags::eTestOnlyForceShortPatch)
             ? 4
@@ -1594,30 +1434,107 @@ class WindowsDllDetourPatcher final
       return;
     }
 
-    do {
+#if defined(_M_IX86)
+    
+    target.WriteByte(0xe9);     
+    target.WriteDisp32(aDest);  
+#elif defined(_M_X64)
+    if (use10BytePatch) {
       
       
       
       
-
-#if defined(_M_X64)
-      if (use10BytePatch) {
-        if (!Apply10BytePatch(aTrampPool, trampPtr, target, aDest)) {
-          return;
-        }
-        break;
+      Maybe<Trampoline<MMPolicyT>> maybeCallTramp(
+          aTrampPool->GetNextTrampoline());
+      if (!maybeCallTramp) {
+        return;
       }
+
+      Trampoline<MMPolicyT> callTramp(std::move(maybeCallTramp.ref()));
+
+      
+      
+      callTramp.WriteEncodedPointer(nullptr);
+      
+      callTramp.WriteEncodedPointer(trampPtr);
+      callTramp.StartExecutableCode();
+
+      
+      callTramp.WriteByte(0x49);
+      callTramp.WriteByte(0xbb);
+      callTramp.WritePointer(aDest);
+
+      
+      callTramp.WriteByte(0x41);
+      callTramp.WriteByte(0xff);
+      callTramp.WriteByte(0xe3);
+
+      void* callTrampStart = callTramp.EndExecutableCode();
+      if (!callTrampStart) {
+        return;
+      }
+
+      target.WriteByte(0xB8);  
+
+      
+      MOZ_ASSERT(
+          !(reinterpret_cast<uintptr_t>(callTrampStart) & (~0x7FFFFFFFULL)));
+
+      target.WriteLong(static_cast<uint32_t>(
+          reinterpret_cast<uintptr_t>(callTrampStart) & 0x7FFFFFFFU));
+      target.WriteByte(0x48);  
+      target.WriteByte(0x63);  
+      
+      target.WriteByte(BuildModRmByte(kModReg, kRegAx, kRegAx));
+      target.WriteByte(0xFF);                                
+      target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx));  
+    } else {
+      
+      target.WriteByte(0x49);
+      target.WriteByte(0xbb);
+      target.WritePointer(aDest);
+
+      
+      target.WriteByte(0x41);
+      target.WriteByte(0xff);
+      target.WriteByte(0xe3);
+    }
 #elif defined(_M_ARM64)
-      if (numBytesForPatching < kWorstCaseBytesRequired) {
-        if (!Apply4BytePatch(aTrampPool, trampPtr, target, aDest)) {
-          return;
-        }
-        break;
-      }
-#endif
 
-      PrimitiveT::ApplyDefaultPatch(target, aDest);
-    } while (false);
+    
+
+    if (numBytesForPatching < kWorstCaseBytesRequired) {
+      
+
+      MOZ_ASSERT(aTrampPool);
+      if (!aTrampPool) {
+        return;
+      }
+
+      uintptr_t hookDest = arm64::MakeVeneer(*aTrampPool, trampPtr, aDest);
+      if (!hookDest) {
+        return;
+      }
+
+      Maybe<uint32_t> branchImm = arm64::BuildUnconditionalBranchImm(
+          target.GetCurrentAddress(), hookDest);
+      if (!branchImm) {
+        return;
+      }
+
+      target.WriteLong(branchImm.value());
+    } else {
+      
+      
+      target.WriteLong(kLdrX16Plus8);
+      
+      target.WriteLong(arm64::BuildUnconditionalBranchToRegister(16));
+      target.WritePointer(aDest);
+    }
+
+#else
+#  error "Unsupported processor architecture"
+#endif
 
     if (!target.Commit()) {
       return;
