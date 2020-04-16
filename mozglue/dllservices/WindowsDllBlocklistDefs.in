@@ -228,8 +228,8 @@ ALL_PROCESSES += [
     DllBlocklistEntry("pdzipmenu32.dll", UNVERSIONED),
 
     
-    DllBlocklistEntry("dgapi.dll", (7, 5, 0, 0xffff)),
-    DllBlocklistEntry("dgapi64.dll", (7, 5, 0, 0xffff)),
+    RedirectToNoOpEntryPoint("dgapi.dll", (7, 5, 0, 0xffff)),
+    RedirectToNoOpEntryPoint("dgapi64.dll", (7, 5, 0, 0xffff)),
 
     
     DllBlocklistEntry("IseGuard32.dll", (1, 6, 13835, 184)),
