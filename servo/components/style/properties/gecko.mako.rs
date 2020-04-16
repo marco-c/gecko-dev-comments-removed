@@ -29,6 +29,7 @@ use crate::gecko_bindings::bindings::Gecko_nsStyleFont_CopyLangFrom;
 use crate::gecko_bindings::structs;
 use crate::gecko_bindings::structs::nsCSSPropertyID;
 use crate::gecko_bindings::structs::mozilla::PseudoStyleType;
+use crate::gecko::data::PerDocumentStyleData;
 use crate::gecko::values::round_border_to_device_pixels;
 use crate::logical_geometry::WritingMode;
 use crate::media_queries::Device;
@@ -55,7 +56,7 @@ pub mod style_structs {
 
 }
 
-/// FIXME(emilio): This is completely duplicated with the other properties code.
+
 pub type ComputedValuesInner = structs::ServoComputedData;
 
 #[repr(C)]
@@ -92,11 +93,11 @@ impl ComputedValues {
 
     pub fn default_values(doc: &structs::Document) -> Arc<Self> {
         ComputedValuesInner::new(
-            /* custom_properties = */ None,
-            /* writing_mode = */ WritingMode::empty(), // FIXME(bz): This seems dubious
+             None,
+             WritingMode::empty(), 
             ComputedValueFlags::empty(),
-            /* rules = */ None,
-            /* visited_style = */ None,
+             None,
+             None,
             % for style_struct in data.style_structs:
             style_structs::${style_struct.name}::default(doc),
             % endfor
@@ -121,7 +122,7 @@ impl ComputedValues {
         self.pseudo() == Some(PseudoElement::FirstLine)
     }
 
-    /// Returns true if the display property is changed from 'none' to others.
+    
     pub fn is_display_property_changed_from_none(
         &self,
         old_values: Option<<&ComputedValues>
@@ -208,8 +209,8 @@ impl ComputedValuesInner {
                 &self,
                 pseudo_ty,
             );
-            // We're simulating move semantics by having C++ do a memcpy and then forgetting
-            // it on this end.
+            
+            
             forget(self);
             UniqueArc::assume_init(arc).shareable()
         }
@@ -230,8 +231,8 @@ impl ops::DerefMut for ComputedValues {
 }
 
 impl ComputedValuesInner {
-    /// Returns true if the value of the `content` property would make a
-    /// pseudo-element not rendered.
+    
+    
     #[inline]
     pub fn ineffective_content_property(&self) -> bool {
         self.get_counters().ineffective_content_property()
@@ -258,7 +259,7 @@ impl ComputedValuesInner {
     }
     % endfor
 
-    /// Gets the raw visited style. Useful for memory reporting.
+    
     pub fn get_raw_visited_style(&self) -> &Option<RawOffsetArc<ComputedValues>> {
         &self.visited_style
     }
@@ -314,7 +315,7 @@ def set_gecko_property(ffi_name, expr):
     #[allow(non_snake_case)]
     pub fn set_${ident}(&mut self, v: longhands::${ident}::computed_value::T) {
         use crate::properties::longhands::${ident}::computed_value::T as Keyword;
-        // FIXME(bholley): Align binary representations and ditch |match| for cast + static_asserts
+        
         let result = match v {
             % for value in keyword.values_for('gecko'):
                 Keyword::${to_camel_case(value)} =>
@@ -329,13 +330,13 @@ def set_gecko_property(ffi_name, expr):
     #[allow(non_snake_case)]
     pub fn clone_${ident}(&self) -> longhands::${ident}::computed_value::T {
         use crate::properties::longhands::${ident}::computed_value::T as Keyword;
-        // FIXME(bholley): Align binary representations and ditch |match| for cast + static_asserts
+        
 
-        // Some constant macros in the gecko are defined as negative integer(e.g. font-stretch).
-        // And they are convert to signed integer in Rust bindings. We need to cast then
-        // as signed type when we have both signed/unsigned integer in order to use them
-        // as match's arms.
-        // Also, to use same implementation here we use casted constant if we have only singed values.
+        
+        
+        
+        
+        
         % if keyword.gecko_enum_prefix is None:
         % for value in keyword.values_for('gecko'):
         const ${keyword.casted_constant_name(value, cast_type)} : ${cast_type} =
@@ -410,14 +411,14 @@ def set_gecko_property(ffi_name, expr):
     pub fn copy_${ident}_from(&mut self, other: &Self) {
         % if inherit_from:
         self.gecko.${inherit_from} = other.gecko.${inherit_from};
-        // NOTE: This is needed to easily handle the `unset` and `initial`
-        // keywords, which are implemented calling this function.
-        //
-        // In practice, this means that we may have an incorrect value here, but
-        // we'll adjust that properly in the style fixup phase.
-        //
-        // FIXME(emilio): We could clean this up a bit special-casing the reset_
-        // function below.
+        
+        
+        
+        
+        
+        
+        
+        
         self.gecko.${gecko_ffi_name} = other.gecko.${inherit_from};
         % else:
         self.gecko.${gecko_ffi_name} = other.gecko.${gecko_ffi_name};
@@ -503,8 +504,8 @@ impl ${style_struct.gecko_struct_name} {
     pub fn default(document: &structs::Document) -> Arc<Self> {
         unsafe {
             let mut result = UniqueArc::<Self>::new_uninit();
-            // FIXME(bug 1595895): Zero the memory to keep valgrind happy, but
-            // these looks like Valgrind false-positives at a quick glance.
+            
+            
             ptr::write_bytes::<Self>(result.as_mut_ptr(), 0, 1);
             Gecko_Construct_Default_${style_struct.gecko_ffi_name}(
                 result.as_mut_ptr() as *mut _,
@@ -525,8 +526,8 @@ impl Clone for ${style_struct.gecko_struct_name} {
     fn clone(&self) -> Self {
         unsafe {
             let mut result = MaybeUninit::<Self>::uninit();
-            // FIXME(bug 1595895): Zero the memory to keep valgrind happy, but
-            // these looks like Valgrind false-positives at a quick glance.
+            
+            
             ptr::write_bytes::<Self>(result.as_mut_ptr(), 0, 1);
             Gecko_CopyConstruct_${style_struct.gecko_ffi_name}(result.as_mut_ptr() as *mut _, &*self.gecko);
             result.assume_init()
@@ -617,14 +618,14 @@ impl Clone for ${style_struct.gecko_struct_name} {
         method(**args)
 %>
 impl ${style_struct.gecko_struct_name} {
-    /*
-     * Manually-Implemented Methods.
-     */
+    
+
+
     ${caller.body().strip()}
 
-    /*
-     * Auto-Generated Methods.
-     */
+    
+
+
     <%
     for longhand in longhands:
         longhand_method(longhand)
@@ -645,7 +646,7 @@ CORNERS = ["top_left", "top_right", "bottom_right", "bottom_left"]
 
 #[allow(dead_code)]
 fn static_assert() {
-    // Note: using the above technique with an enum hits a rust bug when |structs| is in a different crate.
+    
     % for side in SIDES:
     { const DETAIL: u32 = [0][(structs::Side::eSide${side.name} as usize != ${side.index}) as usize]; let _ = DETAIL; }
     % endfor
@@ -664,35 +665,35 @@ fn static_assert() {
     pub fn set_border_${side.ident}_style(&mut self, v: BorderStyle) {
         self.gecko.mBorderStyle[${side.index}] = v;
 
-        // This is needed because the initial mComputedBorder value is set to
-        // zero.
-        //
-        // In order to compute stuff, we start from the initial struct, and keep
-        // going down the tree applying properties.
-        //
-        // That means, effectively, that when we set border-style to something
-        // non-hidden, we should use the initial border instead.
-        //
-        // Servo stores the initial border-width in the initial struct, and then
-        // adjusts as needed in the fixup phase. This means that the initial
-        // struct is technically not valid without fixups, and that you lose
-        // pretty much any sharing of the initial struct, which is kind of
-        // unfortunate.
-        //
-        // Gecko has two fields for this, one that stores the "specified"
-        // border, and other that stores the actual computed one. That means
-        // that when we set border-style, border-width may change and we need to
-        // sync back to the specified one. This is what this function does.
-        //
-        // Note that this doesn't impose any dependency in the order of
-        // computation of the properties. This is only relevant if border-style
-        // is specified, but border-width isn't. If border-width is specified at
-        // some point, the two mBorder and mComputedBorder fields would be the
-        // same already.
-        //
-        // Once we're here, we know that we'll run style fixups, so it's fine to
-        // just copy the specified border here, we'll adjust it if it's
-        // incorrect later.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         self.gecko.mComputedBorder.${side.ident} = self.gecko.mBorder.${side.ident};
     }
 
@@ -820,15 +821,15 @@ fn static_assert() {
 
     pub fn set_outline_style(&mut self, v: longhands::outline_style::computed_value::T) {
         self.gecko.mOutlineStyle = v;
-        // NB: This is needed to correctly handling the initial value of
-        // outline-width when outline-style changes, see the
-        // update_border_${side.ident} comment for more details.
+        
+        
+        
         self.gecko.mActualOutlineWidth = self.gecko.mOutlineWidth;
     }
 
     pub fn copy_outline_style_from(&mut self, other: &Self) {
-        // FIXME(emilio): Why doesn't this need to reset mActualOutlineWidth?
-        // Looks fishy.
+        
+        
         self.gecko.mOutlineStyle = other.gecko.mOutlineStyle;
     }
 
@@ -865,8 +866,8 @@ fn static_assert() {
 <%self:impl_trait style_struct_name="Font"
     skip_longhands="${skip_font_longhands}">
 
-    // Negative numbers are invalid at parse time, but <integer> is still an
-    // i32.
+    
+    
     <% impl_font_settings("font_feature_settings", "gfxFontFeature", "FeatureTagValue", "i32", "u32") %>
     <% impl_font_settings("font_variation_settings", "gfxFontVariation", "VariationValue", "f32", "f32") %>
 
@@ -883,7 +884,7 @@ fn static_assert() {
         self.gecko.mFont.fontlist.mFontlist.mBasePtr.set_move(
             v.families.shared_font_list().clone()
         );
-        // Fixed-up if needed in Cascade::fixup_font_stuff.
+        
         self.gecko.mFont.fontlist.mDefaultFontType = GenericFontFamily::None;
     }
 
@@ -929,7 +930,7 @@ fn static_assert() {
         self.gecko.mFont.size = other.gecko.mSize;
         self.gecko.mFontSizeKeyword = other.gecko.mFontSizeKeyword;
 
-        // TODO(emilio): Should we really copy over these two?
+        
         self.gecko.mFontSizeFactor = other.gecko.mFontSizeFactor;
         self.gecko.mFontSizeOffset = other.gecko.mFontSizeOffset;
     }
@@ -944,7 +945,7 @@ fn static_assert() {
         let size = Au::from(v.size());
         self.gecko.mScriptUnconstrainedSize = size.0;
 
-        // These two may be changed from Cascade::fixup_font_stuff.
+        
         self.gecko.mSize = size.0;
         self.gecko.mFont.size = size.0;
 
@@ -1351,7 +1352,7 @@ fn static_assert() {
     ${impl_animation_or_transition_timing_function('transition')}
 
     pub fn transition_combined_duration_at(&self, index: usize) -> f32 {
-        // https://drafts.csswg.org/css-transitions/#transition-combined-duration
+        
         self.gecko.mTransitions[index % self.gecko.mTransitionDurationCount as usize].mDuration.max(0.0)
             + self.gecko.mTransitions[index % self.gecko.mTransitionDelayCount as usize].mDelay
     }
@@ -1385,13 +1386,13 @@ fn static_assert() {
                 }
             }
         } else {
-            // In gecko |none| is represented by eCSSPropertyExtra_no_properties.
+            
             self.gecko.mTransitionPropertyCount = 1;
             self.gecko.mTransitions[0].mProperty = eCSSPropertyExtra_no_properties;
         }
     }
 
-    /// Returns whether there are any transitions specified.
+    
     pub fn specifies_transitions(&self) -> bool {
         use crate::gecko_bindings::structs::nsCSSPropertyID::eCSSPropertyExtra_all_properties;
         if self.gecko.mTransitionPropertyCount == 1 &&
@@ -1423,11 +1424,11 @@ fn static_assert() {
                 Atom::from_raw(atom)
             })
         } else if property == eCSSPropertyExtra_no_properties {
-            // Actually, we don't expect TransitionProperty::Unsupported also
-            // represents "none", but if the caller wants to convert it, it is
-            // fine. Please use it carefully.
-            //
-            // FIXME(emilio): This is a hack, is this reachable?
+            
+            
+            
+            
+            
             TransitionProperty::Unsupported(CustomIdent(atom!("none")))
         } else {
             property.into()
@@ -1624,7 +1625,7 @@ fn static_assert() {
                                           count as usize,
                                           LayerType::${shorthand.title()});
         }
-        // FIXME(emilio): This may be bogus in the same way as bug 1426246.
+        
         for (layer, other) in self.gecko.${layers_field_name}.mLayers.iter_mut()
                                   .zip(other.gecko.${layers_field_name}.mLayers.iter())
                                   .take(count as usize) {
@@ -1904,16 +1905,16 @@ fn static_assert() {
             max_len = cmp::max(max_len, self.gecko.${image_layers_field}.${member}Count);
         % endfor
         unsafe {
-            // While we could do this manually, we'd need to also manually
-            // run all the copy constructors, so we just delegate to gecko
+            
+            
             Gecko_FillAllImageLayers(&mut self.gecko.${image_layers_field}, max_len);
         }
     }
 </%def>
 
-// TODO: Gecko accepts lists in most background-related properties. We just use
-// the first element (which is the common case), but at some point we want to
-// add support for parsing these lists in servo and pushing to nsTArray's.
+
+
+
 <% skip_background_longhands = """background-repeat
                                   background-image background-clip
                                   background-origin background-attachment
@@ -2128,3 +2129,40 @@ mask-mode mask-repeat mask-clip mask-origin mask-composite mask-position-x mask-
 ${declare_style_struct(style_struct)}
 ${impl_style_struct(style_struct)}
 % endfor
+
+
+
+#[cfg(feature = "gecko")]
+#[inline]
+pub fn assert_initial_values_match(data: &PerDocumentStyleData) {
+    if cfg!(debug_assertions) {
+        let data = data.borrow();
+        let cv = data.stylist.device().default_computed_values();
+        <%
+            # Skip properties with initial values that change at computed value time.
+            SKIPPED = [
+                "border-top-width",
+                "border-bottom-width",
+                "border-left-width",
+                "border-right-width",
+                "font-family",
+                "font-size",
+                "outline-width",
+            ]
+            TO_TEST = [p for p in data.longhands if p.enabled_in != "" and not p.logical and not p.name in SKIPPED]
+        %>
+        % for property in TO_TEST:
+        assert_eq!(
+            cv.clone_${property.ident}(),
+            longhands::${property.ident}::get_initial_value(),
+            concat!(
+                "initial value in Gecko style struct for ",
+                stringify!(${property.ident}),
+                " must match longhands::",
+                stringify!(${property.ident}),
+                "::get_initial_value()"
+            )
+        );
+        % endfor
+    }
+}

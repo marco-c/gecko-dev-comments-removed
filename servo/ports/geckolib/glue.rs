@@ -3975,6 +3975,11 @@ pub extern "C" fn Servo_ComputedValues_EqualForCachedAnonymousContentStyle(
 #[no_mangle]
 pub extern "C" fn Servo_StyleSet_Init(doc: &structs::Document) -> *mut RawServoStyleSet {
     let data = Box::new(PerDocumentStyleData::new(doc));
+
+    
+    
+    style::gecko_properties::assert_initial_values_match(&data);
+
     Box::into_raw(data) as *mut RawServoStyleSet
 }
 
