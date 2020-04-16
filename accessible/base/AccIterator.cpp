@@ -82,7 +82,7 @@ Accessible* RelatedAccIterator::Next() {
   if (!mProviders) return nullptr;
 
   while (mIndex < mProviders->Length()) {
-    DocAccessible::AttrRelProvider* provider = (*mProviders)[mIndex++];
+    const auto& provider = (*mProviders)[mIndex++];
 
     
     if (provider->mRelAttr == mRelAttr) {
