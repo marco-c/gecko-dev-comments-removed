@@ -1040,6 +1040,26 @@ enum TexStorageUsage {
 
 
 
+#[derive(Copy, Clone, Debug)]
+pub enum StrideAlignment {
+    Bytes(NonZeroUsize),
+    Pixels(NonZeroUsize),
+}
+
+impl StrideAlignment {
+    pub fn num_bytes(&self, format: ImageFormat) -> NonZeroUsize {
+        match *self {
+            Self::Bytes(bytes) => bytes,
+            Self::Pixels(pixels) => {
+                assert!(format.bytes_per_pixel() > 0);
+                NonZeroUsize::new(pixels.get() * format.bytes_per_pixel() as usize).unwrap()
+            }
+        }
+    }
+}
+
+
+
 
 
 const RESERVE_DEPTH_BITS: i32 = 2;
@@ -1102,7 +1122,7 @@ pub struct Device {
     
     texture_storage_usage: TexStorageUsage,
 
-    optimal_pbo_stride: NonZeroUsize,
+    optimal_pbo_stride: StrideAlignment,
 
     
     
@@ -1525,16 +1545,22 @@ impl Device {
         
         let requires_null_terminated_shader_source = is_emulator;
 
-        
-        
-        
-        
-        
         let is_amd_macos = cfg!(target_os = "macos") && renderer_name.starts_with("AMD");
-        let optimal_pbo_stride = if is_adreno || is_amd_macos {
-            NonZeroUsize::new(256).unwrap()
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let optimal_pbo_stride = if is_adreno {
+            StrideAlignment::Pixels(NonZeroUsize::new(64).unwrap())
+        } else if is_amd_macos {
+            StrideAlignment::Bytes(NonZeroUsize::new(256).unwrap())
         } else {
-            NonZeroUsize::new(4).unwrap()
+            StrideAlignment::Bytes(NonZeroUsize::new(4).unwrap())
         };
 
         
@@ -1665,7 +1691,7 @@ impl Device {
         return (self.max_depth_ids() - 1) as f32;
     }
 
-    pub fn optimal_pbo_stride(&self) -> NonZeroUsize {
+    pub fn optimal_pbo_stride(&self) -> StrideAlignment {
         self.optimal_pbo_stride
     }
 
@@ -2863,7 +2889,7 @@ impl Device {
         let bytes_pp = format.bytes_per_pixel() as usize;
         let width_bytes = size.width as usize * bytes_pp;
 
-        let dst_stride = round_up_to_multiple(width_bytes, self.optimal_pbo_stride);
+        let dst_stride = round_up_to_multiple(width_bytes, self.optimal_pbo_stride.num_bytes(format));
 
         
         
