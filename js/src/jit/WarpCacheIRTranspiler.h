@@ -24,6 +24,7 @@ using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
 
 #define WARP_CACHE_IR_OPS(_)          \
+  _(GuardClass)                       \
   _(GuardShape)                       \
   _(GuardToObject)                    \
   _(LoadEnclosingEnvironment)         \
@@ -31,7 +32,9 @@ using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
   _(LoadFixedSlotResult)              \
   _(LoadEnvironmentFixedSlotResult)   \
   _(LoadEnvironmentDynamicSlotResult) \
-  _(TypeMonitorResult)
+  _(LoadInt32ArrayLengthResult)       \
+  _(TypeMonitorResult)                \
+  _(ReturnFromIC)
 
 
 
