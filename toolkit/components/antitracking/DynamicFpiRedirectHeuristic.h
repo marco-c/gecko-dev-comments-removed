@@ -1,0 +1,20 @@
+
+
+
+
+
+
+#ifndef mozilla_dynamicfpiredirectheuristic_h
+#define mozilla_dynamicfpiredirectheuristic_h
+
+class nsIChannel;
+class nsIURI;
+
+namespace mozilla {
+
+void DynamicFpiRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
+                                 nsIChannel* aNewChannel, nsIURI* aNewURI);
+
+}  
+
+#endif  

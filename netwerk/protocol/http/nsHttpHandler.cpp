@@ -65,6 +65,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/AntiTrackingRedirectHeuristic.h"
+#include "mozilla/DynamicFpiRedirectHeuristic.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/LazyIdleThread.h"
 #include "mozilla/SyncRunnable.h"
@@ -839,6 +840,8 @@ nsresult nsHttpHandler::AsyncOnChannelRedirect(
   MOZ_ASSERT(newURI);
 
   AntiTrackingRedirectHeuristic(oldChan, oldURI, newChan, newURI);
+
+  DynamicFpiRedirectHeuristic(oldChan, oldURI, newChan, newURI);
 
   
   RefPtr<nsAsyncRedirectVerifyHelper> redirectCallbackHelper =
