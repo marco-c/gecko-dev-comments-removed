@@ -50,7 +50,7 @@ tabmodalprompt label[value=""] {
   
 
 
-  left: auto;
+  inset-inline: auto;
   
 
 
@@ -60,7 +60,6 @@ tabmodalprompt label[value=""] {
 
   max-width: calc(100vw - 16px - 16px);
   position: absolute;
-  right: auto;
   
   top: -3px;
   width: 600px;
