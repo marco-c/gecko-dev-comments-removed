@@ -99,7 +99,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct {
   
   
   
-  nsDirection mDirection;
+  const nsDirection mDirection;
 
   
   
