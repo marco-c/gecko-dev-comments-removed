@@ -87,7 +87,8 @@ class nsMixedContentEvent : public Runnable {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIDocShell> rootShell = docShell->GetBrowsingContext()->Top()->GetDocShell();
+    nsCOMPtr<nsIDocShell> rootShell =
+        docShell->GetBrowsingContext()->Top()->GetDocShell();
     if (!rootShell) {
       return NS_OK;
     }
@@ -323,24 +324,14 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
   uint32_t contentType = aLoadInfo->InternalContentPolicyType();
   nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
   nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
-  nsCOMPtr<nsIURI> requestingLocation;
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
-
-  
-  
-  auto* basePrin = BasePrincipal::Cast(loadingPrincipal);
-  if (basePrin) {
-    basePrin->GetURI(getter_AddRefs(requestingLocation));
-  }
 
   
   
   
   
-  nsresult rv =
-      ShouldLoad(false,  
-                 contentType, aContentLocation, requestingLocation,
-                 requestingContext, aMimeGuess, requestPrincipal, aDecision);
+  nsresult rv = ShouldLoad(false,  
+                           contentType, aContentLocation, requestingContext,
+                           aMimeGuess, requestPrincipal, aDecision);
 
   if (*aDecision == nsIContentPolicy::REJECT_REQUEST) {
     NS_SetRequestBlockingReason(aLoadInfo,
@@ -502,11 +493,13 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
 
 
 
-nsresult nsMixedContentBlocker::ShouldLoad(
-    bool aHadInsecureImageRedirect, uint32_t aContentType,
-    nsIURI* aContentLocation, nsIURI* aRequestingLocation,
-    nsISupports* aRequestingContext, const nsACString& aMimeGuess,
-    nsIPrincipal* aRequestPrincipal, int16_t* aDecision) {
+nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
+                                           uint32_t aContentType,
+                                           nsIURI* aContentLocation,
+                                           nsISupports* aRequestingContext,
+                                           const nsACString& aMimeGuess,
+                                           nsIPrincipal* aRequestPrincipal,
+                                           int16_t* aDecision) {
   
   
   
@@ -686,11 +679,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   
   
   
-  
-  
-  
-  
-  
 
   nsCOMPtr<nsIPrincipal> principal;
   
@@ -723,15 +711,6 @@ nsresult nsMixedContentBlocker::ShouldLoad(
       *aDecision = ACCEPT;
       return NS_OK;
     }
-  }
-
-  
-  
-  
-  
-  
-  if (!requestingLocation) {
-    requestingLocation = aRequestingLocation;
   }
 
   
