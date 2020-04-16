@@ -191,7 +191,6 @@ nsresult NS_NewTimerWithFuncCallback(nsITimer** aTimer,
 
 
 
-
 static mozilla::LazyLogModule sTimerFiringsLog("TimerFirings");
 
 static mozilla::LogModule* GetTimerFiringsLog() { return sTimerFiringsLog; }
@@ -766,7 +765,7 @@ void nsTimerImpl::GetName(nsACString& aName) {
 
 void nsTimerImpl::SetHolder(nsTimerImplHolder* aHolder) { mHolder = aHolder; }
 
-nsTimer::~nsTimer() {}
+nsTimer::~nsTimer() = default;
 
 size_t nsTimer::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this);
