@@ -74,12 +74,6 @@ mod riscv;
 #[cfg(feature = "x86")]
 mod x86;
 
-#[cfg(all(feature = "x86", feature = "unwind"))]
-
-pub mod fde {
-    pub use super::x86::map_reg;
-}
-
 #[cfg(feature = "arm32")]
 mod arm32;
 

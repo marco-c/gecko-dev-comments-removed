@@ -16,6 +16,8 @@ use crate::isa::{self, TargetIsa};
 use crate::predicates;
 use crate::regalloc::RegDiversions;
 
+use cranelift_codegen_shared::isa::x86::EncodingBits;
+
 include!(concat!(env!("OUT_DIR"), "/encoding-x86.rs"));
 include!(concat!(env!("OUT_DIR"), "/legalize-x86.rs"));
 
@@ -130,26 +132,11 @@ fn size_plus_maybe_sib_or_offset_inreg1_plus_rex_prefix_for_inreg0_inreg1(
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(0, inst, divert, func, is_extended_reg)
         || test_input(1, inst, divert, func, is_extended_reg);
     size_plus_maybe_sib_or_offset_for_inreg_1(sizing, enc, inst, divert, func)
         + if needs_rex { 1 } else { 0 }
-}
-
-
-
-fn size_plus_maybe_sib_inreg1_plus_rex_prefix_for_inreg0_inreg1(
-    sizing: &RecipeSizing,
-    enc: Encoding,
-    inst: Inst,
-    divert: &RegDiversions,
-    func: &Function,
-) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
-        || test_input(1, inst, divert, func, is_extended_reg);
-    size_plus_maybe_sib_for_inreg_1(sizing, enc, inst, divert, func) + if needs_rex { 1 } else { 0 }
 }
 
 
@@ -162,27 +149,11 @@ fn size_plus_maybe_sib_or_offset_for_inreg_0_plus_rex_prefix_for_inreg0_outreg0(
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(0, inst, divert, func, is_extended_reg)
         || test_result(0, inst, divert, func, is_extended_reg);
     size_plus_maybe_sib_or_offset_for_inreg_0(sizing, enc, inst, divert, func)
         + if needs_rex { 1 } else { 0 }
-}
-
-
-
-
-fn size_plus_maybe_sib_for_inreg_0_plus_rex_prefix_for_inreg0_outreg0(
-    sizing: &RecipeSizing,
-    enc: Encoding,
-    inst: Inst,
-    divert: &RegDiversions,
-    func: &Function,
-) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
-        || test_result(0, inst, divert, func, is_extended_reg);
-    size_plus_maybe_sib_for_inreg_0(sizing, enc, inst, divert, func) + if needs_rex { 1 } else { 0 }
 }
 
 
@@ -192,39 +163,39 @@ fn size_plus_maybe_sib_for_inreg_0_plus_rex_prefix_for_inreg0_outreg0(
 
 fn size_with_inferred_rex_for_inreg0(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg);
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(0, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
 
 
 fn size_with_inferred_rex_for_inreg1(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(1, inst, divert, func, is_extended_reg);
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(1, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
 
 
 fn size_with_inferred_rex_for_inreg2(
     sizing: &RecipeSizing,
-    _: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(2, inst, divert, func, is_extended_reg);
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(2, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
 
@@ -235,13 +206,13 @@ fn size_with_inferred_rex_for_inreg2(
 
 fn size_with_inferred_rex_for_inreg0_inreg1(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(0, inst, divert, func, is_extended_reg)
         || test_input(1, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
@@ -250,13 +221,13 @@ fn size_with_inferred_rex_for_inreg0_inreg1(
 
 fn size_with_inferred_rex_for_inreg0_outreg0(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(0, inst, divert, func, is_extended_reg)
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(0, inst, divert, func, is_extended_reg)
         || test_result(0, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
@@ -264,13 +235,13 @@ fn size_with_inferred_rex_for_inreg0_outreg0(
 
 fn size_with_inferred_rex_for_outreg0(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_result(0, inst, divert, func, is_extended_reg);
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_result(0, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
 
@@ -279,13 +250,13 @@ fn size_with_inferred_rex_for_outreg0(
 
 fn size_with_inferred_rex_for_cmov(
     sizing: &RecipeSizing,
-    _enc: Encoding,
+    enc: Encoding,
     inst: Inst,
     divert: &RegDiversions,
     func: &Function,
 ) -> u8 {
-    
-    let needs_rex = test_input(1, inst, divert, func, is_extended_reg)
+    let needs_rex = (EncodingBits::from(enc.bits()).rex_w() != 0)
+        || test_input(1, inst, divert, func, is_extended_reg)
         || test_input(2, inst, divert, func, is_extended_reg);
     sizing.base_size + if needs_rex { 1 } else { 0 }
 }
