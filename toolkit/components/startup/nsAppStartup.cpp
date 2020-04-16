@@ -582,10 +582,8 @@ nsAppStartup::GetInterrupted(bool* aInterrupted) {
 NS_IMETHODIMP
 nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome* aParent,
                                  uint32_t aChromeFlags,
-                                 nsIRemoteTab* aOpeningTab,
-                                 mozIDOMWindowProxy* aOpener,
-                                 uint64_t aNextRemoteTabId, bool* aCancel,
-                                 nsIWebBrowserChrome** _retval) {
+                                 nsIOpenWindowInfo* aOpenWindowInfo,
+                                 bool* aCancel, nsIWebBrowserChrome** _retval) {
   NS_ENSURE_ARG_POINTER(aCancel);
   NS_ENSURE_ARG_POINTER(_retval);
   *aCancel = false;
@@ -612,14 +610,14 @@ nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome* aParent,
                  "may work.");
 
     if (appParent)
-      appParent->CreateNewWindow(aChromeFlags, aOpeningTab, aOpener,
-                                 aNextRemoteTabId, getter_AddRefs(newWindow));
+      appParent->CreateNewWindow(aChromeFlags, aOpenWindowInfo,
+                                 getter_AddRefs(newWindow));
     
     
   } else {  
-    MOZ_RELEASE_ASSERT(aNextRemoteTabId == 0,
-                       "Unexpected aNextRemoteTabId, we shouldn't ever have a "
-                       "next actor ID without a parent");
+    MOZ_RELEASE_ASSERT(!aOpenWindowInfo,
+                       "Unexpected aOpenWindowInfo, we shouldn't ever have an "
+                       "nsIOpenWindowInfo without a parent");
 
     
 
@@ -633,8 +631,7 @@ nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome* aParent,
 
     appShell->CreateTopLevelWindow(
         0, 0, aChromeFlags, nsIAppShellService::SIZE_TO_CONTENT,
-        nsIAppShellService::SIZE_TO_CONTENT, aOpeningTab, aOpener,
-        getter_AddRefs(newWindow));
+        nsIAppShellService::SIZE_TO_CONTENT, getter_AddRefs(newWindow));
   }
 
   

@@ -115,6 +115,7 @@
 #include "nsIURIMutator.h"
 #include "nsIInputStreamChannel.h"
 #include "nsFocusManager.h"
+#include "nsIOpenWindowInfo.h"
 
 #if !defined(XP_WIN)
 #  include "mozilla/Omnijar.h"
@@ -775,20 +776,20 @@ void ContentChild::SetProcessName(const nsAString& aName) {
 }
 
 NS_IMETHODIMP
-ContentChild::ProvideWindow(mozIDOMWindowProxy* aParent, uint32_t aChromeFlags,
-                            bool aCalledFromJS, bool aWidthSpecified,
-                            nsIURI* aURI, const nsAString& aName,
-                            const nsACString& aFeatures, bool aForceNoOpener,
-                            bool aForceNoReferrer,
+ContentChild::ProvideWindow(nsIOpenWindowInfo* aOpenWindowInfo,
+                            uint32_t aChromeFlags, bool aCalledFromJS,
+                            bool aWidthSpecified, nsIURI* aURI,
+                            const nsAString& aName, const nsACString& aFeatures,
+                            bool aForceNoOpener, bool aForceNoReferrer,
                             nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
                             BrowsingContext** aReturn) {
-  return ProvideWindowCommon(nullptr, aParent, false, aChromeFlags,
+  return ProvideWindowCommon(nullptr, aOpenWindowInfo, false, aChromeFlags,
                              aCalledFromJS, aWidthSpecified, aURI, aName,
                              aFeatures, aForceNoOpener, aForceNoReferrer,
                              aLoadState, aWindowIsNew, aReturn);
 }
 
-static nsresult GetCreateWindowParams(mozIDOMWindowProxy* aParent,
+static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
                                       nsDocShellLoadState* aLoadState,
                                       bool aForceNoReferrer, float* aFullZoom,
                                       nsIReferrerInfo** aReferrerInfo,
@@ -813,10 +814,12 @@ static nsresult GetCreateWindowParams(mozIDOMWindowProxy* aParent,
     referrerInfo = aLoadState->GetReferrerInfo();
   }
 
-  auto* opener = nsPIDOMWindowOuter::From(aParent);
+  RefPtr<BrowsingContext> parent = aOpenWindowInfo->GetParent();
+  nsCOMPtr<nsPIDOMWindowOuter> opener =
+      parent ? parent->GetDOMWindow() : nullptr;
   if (!opener) {
     nsCOMPtr<nsIPrincipal> nullPrincipal =
-        NullPrincipal::CreateWithoutOriginAttributes();
+        NullPrincipal::Create(aOpenWindowInfo->GetOriginAttributes());
     if (!referrerInfo) {
       referrerInfo = new ReferrerInfo(nullptr, ReferrerPolicy::_empty);
     }
@@ -863,11 +866,12 @@ static nsresult GetCreateWindowParams(mozIDOMWindowProxy* aParent,
 }
 
 nsresult ContentChild::ProvideWindowCommon(
-    BrowserChild* aTabOpener, mozIDOMWindowProxy* aParent, bool aIframeMoz,
-    uint32_t aChromeFlags, bool aCalledFromJS, bool aWidthSpecified,
-    nsIURI* aURI, const nsAString& aName, const nsACString& aFeatures,
-    bool aForceNoOpener, bool aForceNoReferrer, nsDocShellLoadState* aLoadState,
-    bool* aWindowIsNew, BrowsingContext** aReturn) {
+    BrowserChild* aTabOpener, nsIOpenWindowInfo* aOpenWindowInfo,
+    bool aIframeMoz, uint32_t aChromeFlags, bool aCalledFromJS,
+    bool aWidthSpecified, nsIURI* aURI, const nsAString& aName,
+    const nsACString& aFeatures, bool aForceNoOpener, bool aForceNoReferrer,
+    nsDocShellLoadState* aLoadState, bool* aWindowIsNew,
+    BrowsingContext** aReturn) {
   *aReturn = nullptr;
 
   UniquePtr<IPCTabContext> ipcContext;
@@ -877,8 +881,9 @@ nsresult ContentChild::ProvideWindowCommon(
 
   nsresult rv;
 
-  MOZ_ASSERT(!aParent || aTabOpener,
-             "If aParent is non-null, we should have an aTabOpener");
+  RefPtr<BrowsingContext> parent = aOpenWindowInfo->GetParent();
+  MOZ_ASSERT(!parent || aTabOpener,
+             "If parent is non-null, we should have an aTabOpener");
 
   
   
@@ -901,14 +906,10 @@ nsresult ContentChild::ProvideWindowCommon(
   bool loadInDifferentProcess =
       aForceNoOpener && sNoopenerNewProcess && !useRemoteSubframes;
   if (aTabOpener && !loadInDifferentProcess && aURI) {
-    nsCOMPtr<nsILoadContext> context;
-    if (aParent) {
-      context = do_GetInterface(aTabOpener->WebNavigation());
-    }
     
     
     
-    if (!(context && context->UseRemoteSubframes())) {
+    if (!(parent && parent->UseRemoteSubframes())) {
       nsCOMPtr<nsIWebBrowserChrome3> browserChrome3;
       rv = aTabOpener->GetWebBrowserChrome(getter_AddRefs(browserChrome3));
       if (NS_SUCCEEDED(rv) && browserChrome3) {
@@ -926,8 +927,8 @@ nsresult ContentChild::ProvideWindowCommon(
     nsCOMPtr<nsIPrincipal> triggeringPrincipal;
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     nsCOMPtr<nsIReferrerInfo> referrerInfo;
-    rv = GetCreateWindowParams(aParent, aLoadState, aForceNoReferrer, &fullZoom,
-                               getter_AddRefs(referrerInfo),
+    rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
+                               &fullZoom, getter_AddRefs(referrerInfo),
                                getter_AddRefs(triggeringPrincipal),
                                getter_AddRefs(csp));
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -941,8 +942,9 @@ nsresult ContentChild::ProvideWindowCommon(
     MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(name));
 
     Unused << SendCreateWindowInDifferentProcess(
-        aTabOpener, aChromeFlags, aCalledFromJS, aWidthSpecified, aURI,
-        features, fullZoom, name, triggeringPrincipal, csp, referrerInfo);
+        aTabOpener, parent, aChromeFlags, aCalledFromJS, aWidthSpecified, aURI,
+        features, fullZoom, name, triggeringPrincipal, csp, referrerInfo,
+        aOpenWindowInfo->GetOriginAttributes());
 
     
     
@@ -973,15 +975,18 @@ nsresult ContentChild::ProvideWindowCommon(
   if (aTabOpener && !aForceNoOpener) {
     
     tabGroup = aTabOpener->TabGroup();
-    if (aParent) {
-      openerBC = nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext();
-    }
+    openerBC = parent;
   } else {
     tabGroup = new TabGroup();
   }
 
-  RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
+  RefPtr<BrowsingContext> browsingContext = BrowsingContext::CreateDetached(
       nullptr, openerBC, aName, BrowsingContext::Type::Content);
+  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteTabs(true));
+  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteSubframes(useRemoteSubframes));
+  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetOriginAttributes(
+      aOpenWindowInfo->GetOriginAttributes()));
+  browsingContext->EnsureAttached();
 
   browsingContext->SetPendingInitialization(true);
   auto unsetPending = MakeScopeExit([browsingContext]() {
@@ -989,6 +994,9 @@ nsresult ContentChild::ProvideWindowCommon(
   });
 
   TabContext newTabContext = aTabOpener ? *aTabOpener : TabContext();
+
+  MOZ_ASSERT(newTabContext.OriginAttributesRef().EqualsIgnoringFPD(
+      browsingContext->OriginAttributesRef()));
 
   
   
@@ -999,7 +1007,7 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   nsCOMPtr<nsIPrincipal> initialPrincipal =
-      NullPrincipal::Create(newTabContext.OriginAttributesRef());
+      NullPrincipal::Create(browsingContext->OriginAttributesRef());
   WindowGlobalInit windowInit = WindowGlobalActor::AboutBlankInitializer(
       browsingContext, initialPrincipal);
 
@@ -1046,7 +1054,8 @@ nsresult ContentChild::ProvideWindowCommon(
 
   
   
-  if (NS_FAILED(newChild->Init(aParent, windowChild))) {
+  nsPIDOMWindowOuter* parentWindow = parent ? parent->GetDOMWindow() : nullptr;
+  if (NS_FAILED(newChild->Init(parentWindow, windowChild))) {
     return NS_ERROR_ABORT;
   }
 
@@ -1089,9 +1098,7 @@ nsresult ContentChild::ProvideWindowCommon(
     }
 
     ParentShowInfo showInfo(EmptyString(), false, true, false, 0, 0, 0);
-    auto* opener = nsPIDOMWindowOuter::From(aParent);
-    nsIDocShell* openerShell;
-    if (opener && (openerShell = opener->GetDocShell())) {
+    if (aTabOpener) {
       showInfo = ParentShowInfo(
           EmptyString(), false, true, false, aTabOpener->WebWidget()->GetDPI(),
           aTabOpener->WebWidget()->RoundsWidgetCoordinatesTo(),
@@ -1105,10 +1112,7 @@ nsresult ContentChild::ProvideWindowCommon(
     if (nsCOMPtr<nsPIDOMWindowOuter> outer =
             do_GetInterface(newChild->WebNavigation())) {
       BrowsingContext* bc = outer->GetBrowsingContext();
-      auto parentBC =
-          aParent
-              ? nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext()->Id()
-              : 0;
+      auto parentBC = parent ? parent->Id() : 0;
 
       if (aForceNoOpener) {
         MOZ_DIAGNOSTIC_ASSERT(!*aWindowIsNew || !bc->HadOriginalOpener());
@@ -1179,18 +1183,19 @@ nsresult ContentChild::ProvideWindowCommon(
     nsCOMPtr<nsIPrincipal> triggeringPrincipal;
     nsCOMPtr<nsIContentSecurityPolicy> csp;
     nsCOMPtr<nsIReferrerInfo> referrerInfo;
-    rv = GetCreateWindowParams(aParent, aLoadState, aForceNoReferrer, &fullZoom,
-                               getter_AddRefs(referrerInfo),
+    rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
+                               &fullZoom, getter_AddRefs(referrerInfo),
                                getter_AddRefs(triggeringPrincipal),
                                getter_AddRefs(csp));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    SendCreateWindow(aTabOpener, newChild, aChromeFlags, aCalledFromJS,
+    SendCreateWindow(aTabOpener, parent, newChild, aChromeFlags, aCalledFromJS,
                      aWidthSpecified, aURI, features, fullZoom,
                      Principal(triggeringPrincipal), csp, referrerInfo,
-                     std::move(resolve), std::move(reject));
+                     aOpenWindowInfo->GetOriginAttributes(), std::move(resolve),
+                     std::move(reject));
   }
 
   

@@ -20,6 +20,7 @@ class nsDocShellLoadState;
 webidl BrowsingContext;
 interface mozIDOMWindowProxy;
 interface nsIURI;
+interface nsIOpenWindowInfo;
 native nsDocShellLoadStatePtr(nsDocShellLoadState*);
 
 
@@ -92,10 +93,7 @@ interface nsIWindowProvider : nsISupports
 
 
 
-
-
-
-  BrowsingContext provideWindow(in mozIDOMWindowProxy aParent,
+  BrowsingContext provideWindow(in nsIOpenWindowInfo aOpenWindowInfo,
                                 in unsigned long aChromeFlags,
                                 in boolean aCalledFromJS,
                                 in boolean aWidthSpecified,
