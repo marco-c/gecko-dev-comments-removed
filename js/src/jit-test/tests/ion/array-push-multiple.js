@@ -53,7 +53,7 @@ while(true) {
   if (res == 0) {
     limit = 1024 * 1024 * 1024;
   } else if (res == 1) { 
-    if (limit == 0) 
+    if (limit <= 1) 
       break;
     
     
