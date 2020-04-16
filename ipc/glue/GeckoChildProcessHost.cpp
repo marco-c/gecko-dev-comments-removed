@@ -218,7 +218,8 @@ class WindowsProcessLauncher : public BaseProcessLauncher {
  public:
   WindowsProcessLauncher(GeckoChildProcessHost* aHost,
                          std::vector<std::string>&& aExtraOpts)
-      : BaseProcessLauncher(aHost, std::move(aExtraOpts)) {}
+      : BaseProcessLauncher(aHost, std::move(aExtraOpts)),
+        mProfileDir(aHost->mProfileDir) {}
 
  protected:
   virtual bool DoSetup() override;
@@ -227,6 +228,8 @@ class WindowsProcessLauncher : public BaseProcessLauncher {
 
   mozilla::Maybe<CommandLine> mCmdLine;
   bool mUseSandbox = false;
+
+  nsCOMPtr<nsIFile> mProfileDir;
 };
 typedef WindowsProcessLauncher ProcessLauncher;
 #endif  
@@ -575,6 +578,11 @@ void GeckoChildProcessHost::PrepareLaunch() {
   
   mEnableSandboxLogging =
       mEnableSandboxLogging || !!PR_GetEnv("MOZ_SANDBOX_LOGGING");
+
+  if (ShouldHaveDirectoryService() && mProcessType == GeckoProcessType_GPU) {
+    mozilla::Unused << NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
+                                              getter_AddRefs(mProfileDir));
+  }
 #  endif
 #elif defined(XP_MACOSX)
 #  if defined(MOZ_SANDBOX)
@@ -1415,7 +1423,8 @@ bool WindowsProcessLauncher::DoSetup() {
         
         
         
-        mResults.mSandboxBroker->SetSecurityLevelForGPUProcess(mSandboxLevel);
+        mResults.mSandboxBroker->SetSecurityLevelForGPUProcess(mSandboxLevel,
+                                                               mProfileDir);
         mUseSandbox = true;
       }
       break;

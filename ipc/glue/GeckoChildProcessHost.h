@@ -181,6 +181,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
   friend class BaseProcessLauncher;
   friend class PosixProcessLauncher;
+  friend class WindowsProcessLauncher;
 
  protected:
   ~GeckoChildProcessHost();
