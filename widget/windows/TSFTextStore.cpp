@@ -26,6 +26,11 @@
 #include "nsWindow.h"
 #include "nsPrintfCString.h"
 
+
+#ifndef TS_SD_INPUTPANEMANUALDISPLAYENABLE
+#define TS_SD_INPUTPANEMANUALDISPLAYENABLE 0x40
+#endif
+
 namespace mozilla {
 namespace widget {
 
@@ -2720,7 +2725,8 @@ TSFTextStore::GetStatus(TS_STATUS* pdcs) {
             ("0x%p   TSFTextStore::GetStatus() FAILED due to null pdcs", this));
     return E_INVALIDARG;
   }
-  pdcs->dwDynamicFlags = 0;
+  
+  pdcs->dwDynamicFlags = TS_SD_INPUTPANEMANUALDISPLAYENABLE;
   
   pdcs->dwStaticFlags = TS_SS_NOHIDDENTEXT;
   return S_OK;

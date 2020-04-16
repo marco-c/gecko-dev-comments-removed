@@ -222,7 +222,7 @@ class IMEHandler final {
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }
   static bool IsIMMActive();
 
-  static void MaybeShowOnScreenKeyboard();
+  static void MaybeShowOnScreenKeyboard(nsWindow* aWindow);
   static void MaybeDismissOnScreenKeyboard(nsWindow* aWindow);
   static bool WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
                                                const std::wstring& aNeedle);
@@ -236,13 +236,13 @@ class IMEHandler final {
 
 
 
-  static void ShowOnScreenKeyboard();
+  static void ShowOnScreenKeyboard(nsWindow* aWindow);
 
   
 
 
 
-  static void DismissOnScreenKeyboard();
+  static void DismissOnScreenKeyboard(nsWindow* aWindow);
 
   
 
