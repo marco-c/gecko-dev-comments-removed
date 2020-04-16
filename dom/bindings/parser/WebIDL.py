@@ -4351,8 +4351,7 @@ class IDLConst(IDLInterfaceMember):
               identifier == "ChromeOnly" or
               identifier == "Func" or
               identifier == "SecureContext" or
-              identifier == "NonEnumerable" or
-              identifier == "NeedsWindowsUndef"):
+              identifier == "NonEnumerable"):
             
             pass
         else:
