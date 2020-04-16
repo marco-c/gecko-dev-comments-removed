@@ -3547,6 +3547,32 @@ this.Schemas = {
     return this.rootSchema.checkPermissions(namespace, wrapperFuncs);
   },
 
+  
+
+
+
+
+
+  getPermissionNames(
+    types = [
+      "Permission",
+      "OptionalPermission",
+      "PermissionNoPrompt",
+      "OptionalPermissionNoPrompt",
+    ]
+  ) {
+    const ns = this.getNamespace("manifest");
+    let names = [];
+    for (let typeName of types) {
+      for (let choice of ns
+        .get(typeName)
+        .choices.filter(choice => choice.enumeration)) {
+        names = names.concat(choice.enumeration);
+      }
+    }
+    return names.sort();
+  },
+
   exportLazyGetter,
 
   
