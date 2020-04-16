@@ -1330,6 +1330,11 @@ void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
   nsJSContext::MaybePokeCC();
   CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
   mozilla::jsipc::AfterProcessTask();
+
+  
+  
+  
+  SetPendingException(nullptr);
 }
 
 bool XPCJSContext::IsSystemCaller() const {
