@@ -1,0 +1,11 @@
+
+
+
+
+
+#ifndef mozilla_net_CookieCommons_h
+#define mozilla_net_CookieCommons_h
+
+static const uint32_t kMaxNumberOfCookies = 3000;
+
+#endif  
