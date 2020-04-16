@@ -20,14 +20,6 @@ types.addDictType("root.listServiceWorkerRegistrations", {
 types.addDictType("root.listRemoteFrames", {
   frames: "array:frameDescriptor",
 });
-
-
-
-
-types.addDictType("root.getProcess", {
-  form: "nullable:processDescriptor",
-  processDescriptor: "nullable:processDescriptor",
-});
 types.addDictType("root.listTabs", {
   
   
@@ -108,7 +100,9 @@ const rootSpecPrototype = {
       request: {
         id: Arg(0, "number"),
       },
-      response: RetVal("root.getProcess"),
+      response: {
+        processDescriptor: RetVal("processDescriptor"),
+      },
     },
 
     listRemoteFrames: {

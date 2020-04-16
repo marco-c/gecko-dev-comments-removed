@@ -218,21 +218,6 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
-  async getProcess(id) {
-    const { form, processDescriptor } = await super.getProcess(id);
-    
-    
-    
-    
-    return processDescriptor || form;
-  }
-
-  
-
-
-
-
-
 
   async listTabs({ favicons } = {}) {
     const { selected, tabs } = await super.listTabs({ favicons });
