@@ -32,6 +32,10 @@
 #include "sandbox/win/src/security_level.h"
 #include "WinUtils.h"
 
+#if defined(MOZ_LAUNCHER_PROCESS)
+#  include "mozilla/LauncherRegistryInfo.h"
+#endif  
+
 namespace mozilla {
 
 sandbox::BrokerServices* SandboxBroker::sBrokerService = nullptr;
@@ -300,6 +304,16 @@ bool SandboxBroker::LaunchApp(const wchar_t* aPath, const wchar_t* aArguments,
       TerminateProcess(targetInfo.hProcess, 1);
       CloseHandle(targetInfo.hThread);
       CloseHandle(targetInfo.hProcess);
+
+#if defined(MOZ_LAUNCHER_PROCESS)
+      
+      
+      
+      
+      LauncherRegistryInfo regInfo;
+      Unused << regInfo.DisableDueToFailure();
+#endif  
+
       return false;
     }
   } else {
