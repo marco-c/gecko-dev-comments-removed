@@ -197,9 +197,7 @@ class ProfileAutoCompleteResult {
 
 
 
-
-
-  removeValueAt(index, removeFromDatabase) {
+  removeValueAt(index) {
     
   }
 }

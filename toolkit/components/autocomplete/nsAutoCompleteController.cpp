@@ -682,7 +682,7 @@ nsAutoCompleteController::HandleDelete(bool* _retval) {
   input->GetSearchParam(search);
 
   
-  result->RemoveValueAt(matchIndex, true);
+  result->RemoveValueAt(matchIndex);
   --mMatchCount;
 
   

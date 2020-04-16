@@ -162,19 +162,14 @@ FormAutoCompleteResult.prototype = {
 
 
 
-
-  removeValueAt(index, removeFromDatabase) {
+  removeValueAt(index) {
     this._checkIndexBounds(index);
     
     
     
-    if (
-      removeFromDatabase &&
-      this._formHistResult &&
-      index < this._formHistResult.matchCount
-    ) {
+    if (this._formHistResult && index < this._formHistResult.matchCount) {
       
-      this._formHistResult.removeValueAt(index, true);
+      this._formHistResult.removeValueAt(index);
     }
     this._values.splice(index, 1);
     this._labels.splice(index, 1);

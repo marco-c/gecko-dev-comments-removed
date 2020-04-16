@@ -109,7 +109,7 @@ AutoCompleteResultBase.prototype = {
     return this._finalCompleteValues[aIndex] || this._values[aIndex];
   },
 
-  removeValueAt(aRowIndex, aRemoveFromDb) {},
+  removeValueAt(aRowIndex) {},
 
   
   QueryInterface: ChromeUtils.generateQI([Ci.nsIAutoCompleteResult]),
