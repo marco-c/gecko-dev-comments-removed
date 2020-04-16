@@ -5829,6 +5829,18 @@ already_AddRefed<nsIChannel> Document::CreateDummyChannelForCookies(
   }
   pbChannel->SetPrivate(loadContext->UsePrivateBrowsing());
 
+  
+  
+  
+  
+  
+  
+  bool parentDocHasStoragePermissin =
+      mParentDocument ? mParentDocument->HasStoragePermission() : false;
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  Unused << loadInfo->SetHasStoragePermission(parentDocHasStoragePermissin);
+
   return channel.forget();
 }
 
