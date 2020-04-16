@@ -568,7 +568,11 @@ const DownloadsIndicatorView = {
 
   onCommand(aEvent) {
     if (
-      (aEvent.type == "mousedown" && aEvent.button != 0) ||
+      
+      
+      (aEvent.type == "mousedown" &&
+        (aEvent.button != 0 ||
+          (AppConstants.platform == "macosx" && aEvent.ctrlKey))) ||
       (aEvent.type == "keypress" && aEvent.key != " " && aEvent.key != "Enter")
     ) {
       return;
