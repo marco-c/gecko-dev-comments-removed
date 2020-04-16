@@ -8734,67 +8734,49 @@ nsresult nsIFrame::PeekOffsetParagraph(nsPeekOffsetStruct* aPos) {
   blockFrameOrBR.mContent = nullptr;
   bool reachedBlockAncestor = frame->IsBlockOutside();
 
-  
-  
-  
-  
+  auto traverse = [&aPos](nsIFrame* current) {
+    return aPos->mDirection == eDirPrevious ? current->GetPrevSibling()
+                                            : current->GetNextSibling();
+  };
 
-  if (aPos->mDirection == eDirPrevious) {
-    while (!reachedBlockAncestor) {
-      nsIFrame* parent = frame->GetParent();
-      
-      
-      if (!frame->mContent || !frame->mContent->GetParent()) {
-        reachedBlockAncestor = true;
-        break;
-      }
-      nsIFrame* sibling = frame->GetPrevSibling();
-      while (sibling && !blockFrameOrBR.mContent) {
-        blockFrameOrBR = FindLineBreakingFrame(sibling, eDirPrevious);
-        sibling = sibling->GetPrevSibling();
-      }
-      if (blockFrameOrBR.mContent) {
-        aPos->mResultContent = blockFrameOrBR.mContent;
-        aPos->mContentOffset = blockFrameOrBR.mOffset;
-        break;
-      }
-      frame = parent;
-      reachedBlockAncestor = frame && frame->IsBlockOutside();
+  
+  
+  
+  
+  while (!reachedBlockAncestor) {
+    nsIFrame* parent = frame->GetParent();
+    
+    
+    if (!frame->mContent || !frame->mContent->GetParent()) {
+      reachedBlockAncestor = true;
+      break;
     }
-    if (reachedBlockAncestor) {  
-      aPos->mResultContent = frame->GetContent();
-      aPos->mContentOffset = 0;
-    }
-  } else {  
-    while (!reachedBlockAncestor) {
-      nsIFrame* parent = frame->GetParent();
-      
-      
-      if (!frame->mContent || !frame->mContent->GetParent()) {
-        reachedBlockAncestor = true;
-        break;
-      }
 
+    if (aPos->mDirection == eDirNext) {
       
       blockFrameOrBR = FindLineBreakInText(frame, eDirNext);
-
-      nsIFrame* sibling = frame->GetNextSibling();
-      while (sibling && !blockFrameOrBR.mContent) {
-        blockFrameOrBR = FindLineBreakingFrame(sibling, eDirNext);
-        sibling = sibling->GetNextSibling();
-      }
-      if (blockFrameOrBR.mContent) {
-        aPos->mResultContent = blockFrameOrBR.mContent;
-        aPos->mContentOffset = blockFrameOrBR.mOffset;
-        break;
-      }
-      frame = parent;
-      reachedBlockAncestor = frame && frame->IsBlockOutside();
     }
-    if (reachedBlockAncestor) {  
-      aPos->mResultContent = frame->GetContent();
-      if (aPos->mResultContent)
-        aPos->mContentOffset = aPos->mResultContent->GetChildCount();
+
+    nsIFrame* sibling = traverse(frame);
+    while (sibling && !blockFrameOrBR.mContent) {
+      blockFrameOrBR = FindLineBreakingFrame(sibling, aPos->mDirection);
+      sibling = traverse(sibling);
+    }
+    if (blockFrameOrBR.mContent) {
+      aPos->mResultContent = blockFrameOrBR.mContent;
+      aPos->mContentOffset = blockFrameOrBR.mOffset;
+      break;
+    }
+    frame = parent;
+    reachedBlockAncestor = frame && frame->IsBlockOutside();
+  }
+
+  if (reachedBlockAncestor) {  
+    aPos->mResultContent = frame->GetContent();
+    if (aPos->mDirection == eDirPrevious) {
+      aPos->mContentOffset = 0;
+    } else if (aPos->mResultContent) {
+      aPos->mContentOffset = aPos->mResultContent->GetChildCount();
     }
   }
   return NS_OK;
