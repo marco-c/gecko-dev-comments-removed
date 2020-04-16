@@ -28,10 +28,8 @@ let loadChromiumResources = Promise.resolve().then(() => {
     `${prefix}/barcodedetection_provider.mojom.js`,
     `${prefix}/facedetection.mojom.js`,
     `${prefix}/facedetection_provider.mojom.js`,
-    `${prefix}/textdetection.mojom.js`,
     '/resources/chromium/mock-barcodedetection.js',
     '/resources/chromium/mock-facedetection.js',
-    '/resources/chromium/mock-textdetection.js',
   ].forEach(path => {
     
     if (typeof document === 'undefined') {
@@ -49,7 +47,6 @@ let loadChromiumResources = Promise.resolve().then(() => {
 
   return chain;
 });
-
 
 
 
