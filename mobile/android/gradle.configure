@@ -1,13 +1,13 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# If --with-gradle is specified, build mobile/android with Gradle.  If no
-# Gradle binary is specified use the in tree Gradle wrapper.  The wrapper
-# downloads and installs Gradle, which is good for local developers but not
-# good in automation.
+
+
+
+
+
+
+
+
+
 option('--without-gradle', nargs='?',
        help='Disable building mobile/android with Gradle '
             '(argument: location of binary or wrapper (gradle/gradlew))')
@@ -32,7 +32,7 @@ def gradle(host, value, build_env):
         if host.os == 'WINNT':
             gradle = gradle + '.bat'
 
-    # TODO: verify that $GRADLE is executable.
+    
     if not isfile(gradle):
         die('GRADLE must be executable: %s', gradle)
 
@@ -45,7 +45,7 @@ set_config('GRADLE', gradle)
 @imports(_from='itertools', _import='chain')
 def gradle_android_build_config():
     def capitalize(s):
-        # str.capitalize lower cases trailing letters.
+        
         if s:
             return s[0].upper() + s[1:]
         else:
@@ -55,7 +55,7 @@ def gradle_android_build_config():
         return namespace(
             productFlavors=productFlavors,
             buildType=buildType,
-            # Like 'WithoutGeckoBinariesDebug'
+            
             name = ''.join(capitalize(t) for t in chain(productFlavors, (buildType, )))
         )
 
@@ -70,7 +70,6 @@ def gradle_android_build_config():
 
 
 @depends(gradle_android_build_config)
-@imports(_from='itertools', _import='imap')
 def gradle_android_intermediates_folder(build_config):
     '''Path to intermediates classes folder.'''
     def uncapitalize(s):
@@ -80,13 +79,13 @@ def gradle_android_intermediates_folder(build_config):
             return s
 
     def capitalize(s):
-        # str.capitalize lower cases trailing letters.
+        
         if s:
             return s[0].upper() + s[1:]
         else:
             return s
 
-    productFlavor = uncapitalize(''.join(imap(capitalize, build_config.geckoview.variant.productFlavors)))
+    productFlavor = uncapitalize(''.join(capitalize(f) for f in build_config.geckoview.variant.productFlavors))
     buildType = uncapitalize(build_config.geckoview.variant.buildType)
 
     return "gradle/build/mobile/android/geckoview/intermediates/javac/{}{}/compile{}{}JavaWithJavac/classes".format(
@@ -296,8 +295,8 @@ set_config('GRADLE_ANDROID_INSTALL_GECKOVIEW_EXAMPLE_TASKS', gradle_android_inst
 @dependable
 def gradle_android_dependencies():
     '''Gradle tasks that download all dependencies.'''
-    # These tasks download most dependencies from each configuration, the
-    # notable exception is dependencies added at runtime by gradle plugins
+    
+    
     return [
         'downloadDependencies',
     ]
@@ -307,23 +306,21 @@ def gradle_android_dependencies():
     gradle_android_checkstyle_tasks,
     gradle_android_dependencies,
 )
-@imports(_from='itertools', _import='imap')
 @imports(_from='itertools', _import='chain')
-@imports(_from='itertools', _import='ifilterfalse')
 def gradle_android_dependencies_tasks(*tasks):
     '''Gradle tasks run by |mach android dependencies|.'''
-    # The union, plus a bit more, of all of the Gradle tasks
-    # invoked by the android-* automation jobs.
+    
+    
     def withoutGeckoBinaries(task):
         return task.replace('withGeckoBinaries', 'withoutGeckoBinaries')
 
-    return list(imap(withoutGeckoBinaries, chain(*tasks)))
+    return list(withoutGeckoBinaries(t) for t in chain(*tasks))
 
 set_config('GRADLE_ANDROID_DEPENDENCIES_TASKS', gradle_android_dependencies_tasks)
 
 
-# Automation uses this to change log levels, not use the daemon, and use
-# offline mode.
+
+
 option(env='GRADLE_FLAGS', default='', help='Flags to pass to Gradle.')
 
 @depends('GRADLE_FLAGS')
@@ -332,8 +329,8 @@ def gradle_flags(value):
 
 set_config('GRADLE_FLAGS', gradle_flags)
 
-# Automation will set this to (file:///path/to/local, ...) via the mozconfig.
-# Local developer default is (jcenter, maven.google.com).
+
+
 option(env='GRADLE_MAVEN_REPOSITORIES',
        nargs='+',
        default=('https://maven.google.com/',
