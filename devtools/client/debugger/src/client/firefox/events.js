@@ -101,7 +101,8 @@ async function paused(
     return;
   }
 
-  if (why.type == "alreadyPaused") {
+  
+  if (why.type == "alreadyPaused" || why.type == "attached") {
     return;
   }
 
