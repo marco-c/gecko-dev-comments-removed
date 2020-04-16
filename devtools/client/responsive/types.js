@@ -47,7 +47,7 @@ const device = {
   touch: PropTypes.bool,
 
   
-  os: PropTypes.String,
+  os: PropTypes.string,
 
   
   displayed: PropTypes.bool,
