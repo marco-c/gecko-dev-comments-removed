@@ -1216,9 +1216,14 @@ class ResponsiveUI {
   }
 
   async onRemotenessChange(event) {
+    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
+      "devtools.target-switching.enabled",
+      false
+    );
+
     
     
-    if (this.isBrowserUIEnabled) {
+    if (isTargetSwitchingEnabled && this.isBrowserUIEnabled) {
       const newTarget = await this.client.mainRoot.getTab();
       await this.targetList.switchToTarget(newTarget);
     } else {

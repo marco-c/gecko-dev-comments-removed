@@ -952,21 +952,3 @@ async function waitForDeviceAndViewportState(ui) {
       state.devices.listState == localTypes.loadableState.LOADED
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-async function navigateToNewDomain(uri, ui) {
-  
-  const target = ui.currentTarget;
-
-  await load(ui.getViewportBrowser(), uri);
-  await waitUntil(() => ui.currentTarget !== target);
-}
