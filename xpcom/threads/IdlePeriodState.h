@@ -146,6 +146,10 @@ class IdlePeriodState {
 
   
   
+  bool ShouldGetIdleToken();
+
+  
+  
   
   
   
