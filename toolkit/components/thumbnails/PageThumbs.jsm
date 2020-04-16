@@ -100,7 +100,7 @@ var PageThumbs = {
 
 
   get staticHost() {
-    return "thumbnails";
+    return "thumbnail";
   },
 
   

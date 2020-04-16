@@ -10,7 +10,6 @@
 #include "mozilla/ContentPrincipal.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/ExtensionProtocolHandler.h"
-#include "mozilla/net/PageThumbProtocolHandler.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/HttpChannelParent.h"
 #include "mozilla/net/CookieServiceParent.h"
@@ -999,52 +998,6 @@ mozilla::ipc::IPCResult NeckoParent::RecvEnsureHSTSData(
   RefPtr<HSTSDataCallbackWrapper> wrapper =
       new HSTSDataCallbackWrapper(std::move(callback));
   gHttpHandler->EnsureHSTSDataReadyNative(wrapper);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult NeckoParent::RecvGetPageThumbStream(
-    nsIURI* aURI, GetPageThumbStreamResolver&& aResolver) {
-  
-  
-  
-  
-  
-  
-  if (!static_cast<ContentParent*>(Manager())->GetRemoteType().EqualsLiteral(
-          PRIVILEGEDABOUT_REMOTE_TYPE)) {
-    return IPC_FAIL(this, "Wrong process type");
-  }
-
-  RefPtr<PageThumbProtocolHandler> ph(PageThumbProtocolHandler::GetSingleton());
-  MOZ_ASSERT(ph);
-
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIInputStream> inputStream;
-  bool terminateSender = true;
-  auto inputStreamPromise = ph->NewStream(aURI, &terminateSender);
-
-  if (terminateSender) {
-    return IPC_FAIL(this, "Malformed moz-page-thumb request");
-  }
-
-  inputStreamPromise->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [aResolver](const nsCOMPtr<nsIInputStream>& aStream) {
-        aResolver(aStream);
-      },
-      [aResolver](nsresult aRv) {
-        
-        
-        
-        Unused << NS_WARN_IF(NS_FAILED(aRv));
-        aResolver(nullptr);
-      });
-
   return IPC_OK();
 }
 
