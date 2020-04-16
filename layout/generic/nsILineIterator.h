@@ -56,7 +56,7 @@ class nsILineIterator {
   
   
   NS_IMETHOD GetLine(int32_t aLineNumber, nsIFrame** aFirstFrameOnLine,
-                     int32_t* aNumFramesOnLine, nsRect& aLineBounds) = 0;
+                     int32_t* aNumFramesOnLine, nsRect& aLineBounds) const = 0;
 
   
 
