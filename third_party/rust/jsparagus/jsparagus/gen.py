@@ -26,27 +26,32 @@ For very basic needs, see `lexer.LexicalGrammar`.
 
 """
 
+from __future__ import annotations
+
 import collections
 import io
 import pickle
 import sys
-import itertools
-import math
+import typing
+from dataclasses import dataclass
 
 from .ordered import OrderedSet, OrderedFrozenSet
 
 from .grammar import (Grammar,
                       NtDef, Production, Some, CallMethod, InitNt,
+                      ReduceExprOrAccept,
                       is_concrete_element,
                       Optional, Exclude, Literal, UnicodeCategory, Nt, Var,
                       End, NoLineTerminatorHere, ErrorSymbol,
                       LookaheadRule, lookahead_contains, lookahead_intersect)
 from .actions import (Action, Reduce, Lookahead, CheckNotOnNewLine, FilterFlag,
-                      PushFlag, PopFlag, FunCall, Seq)
+                      FunCall, Seq)
 from . import emit
 from .runtime import ACCEPT, ErrorToken
 from .utils import keep_until
 from . import types
+
+
 
 
 
@@ -540,7 +545,12 @@ def follow_sets(grammar, prods_with_indexes_by_nt, start_set_cache):
 
 
 
-Prod = collections.namedtuple("Prod", "nt index rhs reducer")
+@dataclass
+class Prod:
+    nt: str
+    index: int
+    rhs: typing.List
+    reducer: ReduceExprOrAccept
 
 
 def expand_optional_symbols_in_rhs(rhs, grammar, empties, start_index=0):
@@ -645,8 +655,7 @@ def expand_all_optional_elements(grammar):
                         return CallMethod(expr.method, [adjust_reduce_expr(arg)
                                                         for arg in expr.args],
                                           expr.trait,
-                                          expr.fallible
-                        )
+                                          expr.fallible)
                     elif expr == 'accept':
                         
                         
@@ -812,33 +821,38 @@ def find_path(start_set, successors, test):
 
 
 
+@dataclass(frozen=True, order=True)
+class LRItem:
+    """A snapshot of progress through a single specific production.
 
+    *   `prod_index` identifies the production. (Every production in the grammar
+        gets a unique index; see the loop that computes
+        prods_with_indexes_by_nt.)
 
+    *   `offset` is the position of the cursor within the production.
 
+    `lookahead` and `followed_by` are two totally different kinds of lookahead.
 
+    *   `lookahead` is the LookaheadRule, if any, that applies to the immediately
+        upcoming input. It is present only if this LRItem is subject to a
+        `[lookahead]` restriction; otherwise it's None. These restrictions can't
+        extend beyond the end of a production, or else the grammar is invalid.
+        This implements the lookahead restrictions in the ECMAScript grammar.
+        It is not part of any account of LR I've seen.
 
+    *   `followed_by` is a completely different kind of lookahead restriction.
+        This is the kind of lookahead that is a central part of canonical LR
+        table generation.  It applies to the token *after* the whole current
+        production, so `followed_by` always applies to completely different and
+        later tokens than `lookahead`.  `followed_by` is a set of terminals; if
+        `None` is in this set, it means `END`, not that the LRItem is
+        unrestricted.
+    """
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-LRItem = collections.namedtuple(
-    "LRItem", "prod_index offset lookahead followed_by")
+    prod_index: int
+    offset: int
+    lookahead: typing.Optional[LookaheadRule]
+    followed_by: typing.Set[typing.Optional[str]]
 
 
 def assert_items_are_compatible(grammar, prods, items):
@@ -1587,7 +1601,8 @@ class ParserStates:
 
 class CanonicalGrammar:
     __slots__ = "prods", "prods_with_indexes_by_nt", "grammar"
-    def __init__(self, grammar, old = False):
+
+    def __init__(self, grammar, old=False):
         assert isinstance(grammar, Grammar)
 
         
@@ -1602,26 +1617,34 @@ class CanonicalGrammar:
         self.grammar = grammar
 
 
+@dataclass(frozen=True)
+class Edge:
+    """An edge in a Parse table is a tuple of a source state and the term followed
+    to exit this state. The destination is not saved here as it can easily be
+    inferred by looking it up in the parse table.
 
+    Note, the term might be `None` if no term is specified yet. This is useful
+    when manipulating a list of edges and we know that we are taking transitions
+    from a given state, but not yet with which term.
 
+      src: Index of the state from which this directed edge is coming from.
 
+      term: Edge transition value, this can be a terminal, non-terminal or an
+          action to be executed on an epsilon transition.
+    """
+    src: int
+    term: typing.Union[str, Nt, Action]
 
-
-
-
-
-
-
-
-Edge = collections.namedtuple("Edge", "src term")
 
 def edge_str(edge):
-    assert isinstance(edge, (Edge, Edge))
+    assert isinstance(edge, Edge)
     return "{} -- {} -->".format(edge.src, str(edge.term))
+
 
 
 class Conflict(Exception):
     pass
+
 
 class StateAndTransitions:
     """This is one state of the parse table, which has transitions based on
@@ -1632,22 +1655,23 @@ class StateAndTransitions:
     """
 
     __slots__ = [
-        "index",        
-        "terminals",    
-        "nonterminals", 
-        "errors",       
-        "epsilon",      
-        "locations",    
-        "delayed_actions", 
-                        
-        "backedges",    
-                        
-        "_hash",        
-                        
-                        
+        "index",            
+        "terminals",        
+        "nonterminals",     
+        "errors",           
+        "epsilon",          
+                            
+        "locations",        
+        "delayed_actions",  
+                            
+        "backedges",        
+                            
+        "_hash",            
+                            
+                            
     ]
 
-    def __init__(self, index, locations, delayed_actions = OrderedFrozenSet()):
+    def __init__(self, index, locations, delayed_actions=OrderedFrozenSet()):
         assert isinstance(locations, OrderedFrozenSet)
         assert isinstance(delayed_actions, OrderedFrozenSet)
         self.index = index
@@ -1658,6 +1682,7 @@ class StateAndTransitions:
         self.locations = locations
         self.delayed_actions = delayed_actions
         self.backedges = OrderedSet()
+
         
         
         def hashed_content():
@@ -1736,7 +1761,7 @@ class StateAndTransitions:
             (k, state_map[s]) for k, s in self.epsilon
         ]
         self.backedges = set(
-            Edge(state_map[s], k) for s, k in self.backedges
+            Edge(state_map[edge.src], edge.term) for edge in self.backedges
         )
 
     def get_error_symbol(self):
@@ -1818,15 +1843,16 @@ def on_stack(grammar, term):
         return False
     raise ValueError(term)
 
+
 def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
     
     alias_set = ["parser"]
     if isinstance(expr, int):
         stack_index = pop - expr
         if depth == 0:
-            expr = FunCall("id", (stack_index,), fallible = False,
-                           trait = types.Type("AstBuilder"), set_to = ret,
-                           alias_read = alias_set, alias_write = alias_set)
+            expr = FunCall("id", (stack_index,), fallible=False,
+                           trait=types.Type("AstBuilder"), set_to=ret,
+                           alias_read=alias_set, alias_write=alias_set)
             funcalls.append(expr)
             return ret
         else:
@@ -1842,24 +1868,25 @@ def callmethods_to_funcalls(expr, pop, ret, depth, funcalls):
                 yield callmethods_to_funcalls(arg, pop, ret + "_{}".format(i), depth + 1, funcalls)
         args = tuple(convert_args(expr.args))
         expr = FunCall(expr.method, args,
-                       trait = expr.trait,
-                       fallible = expr.fallible,
-                       set_to = ret,
-                       alias_read = alias_set,
-                       alias_write = alias_set)
+                       trait=expr.trait,
+                       fallible=expr.fallible,
+                       set_to=ret,
+                       alias_read=alias_set,
+                       alias_write=alias_set)
         funcalls.append(expr)
         return ret
     elif expr == "accept":
         expr = FunCall("accept", (),
-                       trait = types.Type("ParserTrait"),
-                       fallible = False,
-                       set_to = ret,
-                       alias_read = alias_set,
-                       alias_write = alias_set)
+                       trait=types.Type("ParserTrait"),
+                       fallible=False,
+                       set_to=ret,
+                       alias_read=alias_set,
+                       alias_write=alias_set)
         funcalls.append(expr)
         return ret
     else:
         raise ValueError(expr)
+
 
 class LR0Generator:
     """Provide a way to iterate over the grammar, given a set of LR items."""
@@ -1870,7 +1897,7 @@ class LR0Generator:
         "_hash",
     ]
 
-    def __init__(self, grammar, lr_items = []):
+    def __init__(self, grammar, lr_items=[]):
         self.grammar = grammar
         self.lr_items = OrderedFrozenSet(lr_items)
         
@@ -1909,10 +1936,10 @@ class LR0Generator:
             for prod_index, _ in grammar.prods_with_indexes_by_nt[nt]:
                 assert isinstance(prod_index, int)
                 lr_items.append(LRItem(
-                    prod_index = prod_index,
-                    offset = 0,
-                    lookahead = None,
-                    followed_by = tuple(),
+                    prod_index=prod_index,
+                    offset=0,
+                    lookahead=None,
+                    followed_by=tuple(),
                 ))
 
                 prod = grammar.prods[prod_index]
@@ -1990,15 +2017,14 @@ class LR0Generator:
             
             return
 
-
         
         
         new_transition = term not in followed_by
         followed_by[term].append(LRItem(
-            prod_index = lr_item.prod_index,
-            offset = lr_item.offset + 1,
-            lookahead = None,
-            followed_by = tuple(),
+            prod_index=lr_item.prod_index,
+            offset=lr_item.offset + 1,
+            lookahead=None,
+            followed_by=tuple(),
         ))
 
         
@@ -2011,46 +2037,56 @@ class LR0Generator:
             for prod_index, _ in self.grammar.prods_with_indexes_by_nt[term]:
                 assert isinstance(prod_index, int)
                 self.item_transitions(LRItem(
-                    prod_index = prod_index,
-                    offset = 0,
-                    lookahead = None,
-                    followed_by = tuple(),
+                    prod_index=prod_index,
+                    offset=0,
+                    lookahead=None,
+                    followed_by=tuple(),
                 ), followed_by)
 
 
+@dataclass(frozen=True)
+class APS:
+    """Abstract parser state.
+
+    To fix inconsistencies of the grammar, we have to traverse the grammar both
+    forward by using the lookahead and backward by using the parser's emulated
+    stack recovered from reduce actions.
+
+    To do so we define the notion of abstract parser state (APS), which is a
+    tuple which represent the known state of the parser, as:
+      (stack, shift, lookahead, actions)
+
+      stack: This is the stack at the location where we started investigating.
+             Which means that the last element of the stack would be the location
+             where we started.
+
+      shift: This is the stack computed after the traversal of edges. It is
+             reduced each time a reduce action is encountered, and the rest of
+             the production content is added back to the stack, as newly acquired
+             context. The last element is the last state reached through the
+             sequence of lookahead and actions.
+
+      lookahead: This is the list of terminals encountered while pushing edges
+             through the list of terminals.
+
+      actions: This is the list of actions that would be executed as we push
+             edges. Maybe we should rename this history. This is a list of edges
+             taken, which helps tracking which state got visited since we
+             started.
+
+      replay: This is the list of lookahead terminals and non-terminals which
+             remains to be executed. This represents the fact that reduce actions
+             are popping elements which are below the top of the stack, and add
+             them back to the stack.
+    """
+    stack: typing.List[Edge]
+    shift: typing.List[Edge]
+    lookahead: typing.List[str]
+    actions: typing.List[Edge]
+    replay: typing.List[typing.Union[str, Nt]]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-APS = collections.namedtuple("APS", "stack shift lookahead actions replay")
-
-def aps_str(aps, name = "aps"):
+def aps_str(aps, name="aps"):
     return """{}.stack = [{}]
 {}.shift = [{}]
 {}.lookahead = [{}]
@@ -2064,8 +2100,10 @@ def aps_str(aps, name = "aps"):
         name, ", ".join(repr(e) for e in aps.replay)
     )
 
-def aps_lanes_str(aps_lanes, header = "lanes:", name = "\taps"):
+
+def aps_lanes_str(aps_lanes, header="lanes:", name="\taps"):
     return "{}\n{}".format(header, "\n".join(aps_str(aps, name) for aps in aps_lanes))
+
 
 def is_valid_aps(aps):
     "Returns whether an APS contains the right content."
@@ -2076,6 +2114,7 @@ def is_valid_aps(aps):
     check &= all(isinstance(ac, Edge) for ac in aps.actions)
     check &= all(not isinstance(rp, Action) for rp in aps.replay)
     return check
+
 
 class ParseTable:
     """The parser can be represented as a matrix of state transitions where on one
@@ -2134,7 +2173,7 @@ class ParseTable:
         "exec_modes"
     ]
 
-    def __init__(self, grammar, verbose = False, progress = False, debug = False):
+    def __init__(self, grammar, verbose=False, progress=False, debug=False):
         self.actions = []
         self.states = []
         self.state_cache = {}
@@ -2176,7 +2215,7 @@ class ParseTable:
                 return True
         return False
 
-    def new_state(self, locations, delayed_actions = OrderedFrozenSet()):
+    def new_state(self, locations, delayed_actions=OrderedFrozenSet()):
         """Get or create state with an LR0 location and delayed actions. Returns a tuple
         where the first element is whether the element is newly created, and
         the second element is the State object."""
@@ -2189,7 +2228,7 @@ class ParseTable:
             self.states.append(state)
             return True, state
 
-    def get_state(self, locations, delayed_actions = OrderedFrozenSet()):
+    def get_state(self, locations, delayed_actions=OrderedFrozenSet()):
         """Like new_state(), but only returns the state without returning whether it is
         newly created or not."""
         _, state = self.new_state(locations, delayed_actions)
@@ -2223,13 +2262,13 @@ class ParseTable:
     def replace_edge(self, src, term, dest, maybe_unreachable_set):
         assert isinstance(src, StateAndTransitions)
         assert isinstance(dest, int) and dest < len(self.states)
-        try:
+
+        if term in src:
             old_dest = src[term]
             self.remove_backedge(src, term, old_dest, maybe_unreachable_set)
-        except:
-            pass
+
         if isinstance(term, Action):
-            src.epsilon = [ (t, d) for t, d in src.epsilon if t != term ]
+            src.epsilon = [(t, d) for t, d in src.epsilon if t != term]
             src.epsilon.append((term, dest))
         elif isinstance(term, Nt):
             src.nonterminals[term] = dest
@@ -2258,7 +2297,6 @@ class ParseTable:
         
         _, init = zip(*self.named_goals)
         init = set(init)
-        check_set = maybe_unreachable_set
         while maybe_unreachable_set:
             next_set = set()
             for s in maybe_unreachable_set:
@@ -2278,9 +2316,9 @@ class ParseTable:
         while todo:
             s = todo.pop()
             reachable_back.add(s)
-            for s, _ in self.states[s].backedges:
-                if s not in reachable_back:
-                    todo.append(s)
+            for edge in self.states[s].backedges:
+                if edge.src not in reachable_back:
+                    todo.append(edge.src)
         for _, s in self.named_goals:
             if s in reachable_back:
                 return True
@@ -2316,7 +2354,7 @@ class ParseTable:
         
         def visit_grammar():
             while todo:
-                yield 
+                yield  
                 
                 s_it, s = todo.popleft()
                 if verbose:
@@ -2336,7 +2374,7 @@ class ParseTable:
     def is_term_shifted(self, term):
         return not (isinstance(term, Action) and term.update_stack())
 
-    def is_valid_path(self, path, state = None):
+    def is_valid_path(self, path, state=None):
         """This function is used to check a list of edges and returns whether it
         corresponds to a valid path within the parse table. This is useful when
         merging sequences of edges from various locations."""
@@ -2348,12 +2386,13 @@ class ParseTable:
             if state != edge.src:
                 return False
             term = edge.term
-            if term == None and len(path) == 0:
+            if term is None and len(path) == 0:
                 return True
-            try:
-                state = self.states[state][term]
-            except:
+
+            row = self.states[state]
+            if term not in row:
                 return False
+            state = row[term]
         return True
 
     def shifted_path_to(self, n, right_of):
@@ -2442,7 +2481,7 @@ class ParseTable:
     def term_is_stacked(self, term):
         return not isinstance(term, Action)
 
-    def aps_start(self, state, replay = []):
+    def aps_start(self, state, replay=[]):
         "Return a parser state only knowing the state at which we are currently."
         edge = Edge(state, None)
         return APS([edge], [edge], [], [], replay)
@@ -2467,7 +2506,12 @@ class ParseTable:
 
         """
         assert is_valid_aps(aps)
-        st, sh, la, ac, rp = aps
+        st = aps.stack
+        sh = aps.shift
+        la = aps.lookahead
+        ac = aps.actions
+        rp = aps.replay
+
         last_edge = sh[-1]
         state = self.states[last_edge.src]
         if aps.replay == []:
@@ -2508,6 +2552,10 @@ class ParseTable:
                     
                     
                     
+                    
+                    
+                    
+                    
                     if prev_sh[-len(path):] != path[-len(prev_sh):]:
                         
                         
@@ -2540,7 +2588,7 @@ class ParseTable:
                     
                     new_replay = []
                     if reducer.replay > 0:
-                        new_replay = [ edge.term for edge in path if self.term_is_stacked(edge.term) ]
+                        new_replay = [edge.term for edge in path if self.term_is_stacked(edge.term)]
                         new_replay = new_replay[-reducer.replay:]
                     new_replay = new_replay + rp
                     new_la = la[:max(len(la) - reducer.replay, 0)]
@@ -2564,6 +2612,7 @@ class ParseTable:
         context when reduce states are encountered."""
         assert isinstance(state, int)
         record = []
+
         def visit(aps):
             has_shift_loop = len(aps.shift) != 1 + len(set(zip(aps.shift, aps.shift[1:])))
             has_stack_loop = len(aps.stack) != 1 + len(set(zip(aps.stack, aps.stack[1:])))
@@ -2593,7 +2642,9 @@ class ParseTable:
         is True if we should fallback on solving this issue with more
         lookahead, and the second is the list of APS lanes which are providing
         enough context to disambiguate the inconsistency of the given state."""
+
         assert isinstance(state, int)
+
         def not_interesting(aps):
             reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
             has_reduce_loop = len(reduce_list) != len(set(reduce_list))
@@ -2603,6 +2654,7 @@ class ParseTable:
         
         
         context = collections.defaultdict(lambda: [])
+
         def has_enough_context(aps):
             try:
                 assert aps.actions[0] in context[tuple(aps.stack)]
@@ -2662,21 +2714,21 @@ class ParseTable:
 
         return False, collect
 
-        def visit(aps):
-            reduce_list = [e for e in aps.actions if self.is_term_shifted(e.term)]
-            has_reduce_loop = len(reduce_list) != len(set(reduce_list))
-            has_lookahead = len(aps.lookahead) >= 1
-            stop = has_shift_loop or has_stack_loop or has_lookahead
-            
-            
-            
-            if stop:
-                print("lanes_visit stop:")
-                print(aps_str(aps, "\trecord"))
-                record.append(aps)
-            return not stop
-        self.aps_visitor(self.aps_start(state), visit)
-        return record
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
     def lookahead_lanes(self, state):
         """Compute lanes to collect all lookahead symbols available. After each reduce
@@ -2692,6 +2744,7 @@ class ParseTable:
         
         
         seen_edge_after_reduce = set()
+
         def visit(aps):
             
             
@@ -2713,217 +2766,214 @@ class ParseTable:
 
     def fix_with_context(self, s, aps_lanes):
         raise ValueError("fix_with_context: Not Implemented")
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Id = collections.namedtuple("Id", "edge")
-        Eq = collections.namedtuple("Eq", "flag_in edge flag_out")
-        Var = collections.namedtuple("Var", "n")
-        SubSt = collections.namedtuple("SubSt", "var by")
-
-        
-        
-        def unify_expr(expr1, expr2, swapped = False):
-            if isinstance(expr1, Eq) and isinstance(expr2, Id):
-                if expr1.edge != expr2.edge:
-                    
-                    return True
-                if isinstance(expr1.flag_in, Var):
-                    return SubSt(expr1.flag_in, expr1.flag_out)
-                if isinstance(expr1.flag_out, Var):
-                    return SubSt(expr1.flag_out, expr1.flag_in)
-                
-                
-                
-                return expr1.flag_out == expr1.flag_in
-            if isinstance(expr1, Eq) and isinstance(expr2, Eq):
-                if expr1.edge != expr2.edge:
-                    
-                    return True
-                if expr1.flag_in == None and isinstance(expr2.flag_in, Var):
-                    return SubSt(expr2.flag_in, None)
-                if expr1.flag_out == None and isinstance(expr2.flag_out, Var):
-                    return SubSt(expr2.flag_out, None)
-                if expr1.flag_in == expr2.flag_in:
-                    if isinstance(expr1.flag_out, Var):
-                        return SubSt(expr1.flag_out, expr2.flag_out)
-                    elif isinstance(expr2.flag_out, Var):
-                        return SubSt(expr2.flag_out, expr1.flag_out)
-                    
-                    
-                    return expr1.flag_out == expr2.flag_out
-                if expr1.flag_out == expr2.flag_out:
-                    if isinstance(expr1.flag_in, Var):
-                        return SubSt(expr1.flag_in, expr2.flag_in)
-                    elif isinstance(expr2.flag_in, Var):
-                        return SubSt(expr2.flag_in, expr1.flag_in)
-                    return True
-            if not swapped:
-                return unify_expr(expr2, expr1, True)
-            return True
-
-        
-        def subst_expr(subst, expr):
-            if expr == subst.var:
-                return True, subst.by
-            if isinstance(expr, Eq):
-                subst1, flag_in = subst_expr(subst, expr.flag_in)
-                subst2, flag_out = subst_expr(subst, expr.flag_out)
-                return subst1 or subst2, Eq(flag_in, expr.edge, flag_out)
-            return False, expr
-
-        
-        
-        def unify_with(expr, knowledge, free_vars):
-            old_knowledge = knowledge
-            old_free_Vars = free_vars
-            while True:
-                subst = None
-                for rel in knowledge:
-                    subst = unify_expr(rel, expr)
-                    if subst == False:
-                        raise Error("Failed to find a coherent solution")
-                    if subst == True:
-                        continue
-                    break
-                else:
-                    return knowledge + [expr], free_vars
-                free_vars = [fv for fv in free_vars if fv != subst.var]
-                
-                
-                
-                
-                subst_rules = [subst_expr(subst, k) for k in knowledge]
-                knowledge = [rule for changed, rule in subst_rule if not changed]
-                for changed, rule in subst_rule:
-                    if not changed:
-                        continue
-                    knowledge, free_vars = unify_with(rule, knowledge, free_vars)
-
-        
-        
-        
-        
-        
-        
-        
-        rules = []
-        free_vars = []
-        last_free = 0
-        maybe_id_edges = set()
-        nts = set()
-        for aps in aps_lanes:
-            assert len(aps.stack) >= 1
-            flag_in = None
-            for edge in aps.stack[-1]:
-                i = last_free
-                last_free += 1
-                free_vars.append(Var(i))
-                rule = Eq(flag_in, edge, Var(i))
-                rules, free_vars = unify_with(rule, rules, free_vars)
-                flag_in = Var(i)
-                if flag_in != None:
-                    maybe_id_edges.add(Id(edge))
-            edge = aps.stack[-1]
-            nt = edge.term.reduce_with().nt
-            rule = Eq(nt, edge, None)
-            rules, free_vars = unify_with(rule, rules, free_vars)
-            nts.add(nt)
-
-        
-        
-        
-        def fill_with_id_functions(rules, free_vars, maybe_id_edges):
-            min_rules, min_vars = rules, free_vars
-            for num_id_edges in reversed(range(len(maybe_id_edges))):
-                for id_edges in itertools.combinations(edges, num_id_edges):
-                    try:
-                        for edge in id_edges:
-                            new_rules, new_free_vars = unify_with(rule, rules, free_vars)
-                            if new_free_vars == []:
-                                return new_rules, new_free_vars
-                            if len(new_free_vars) < len(min_free_vars):
-                                min_vars = new_free_vars
-                                min_rules = new_rules
-                    except:
-                        pass
-            return rules, free_vars
-
-        rules, free_vars = fill_with_id_functions(rules, free_vars, maybe_id_edges)
-        if free_vars != []:
-            raise Error("Hum … maybe we can try to iterate over the remaining free-variable.")
-        print("debug: Great we found a solution for a reduce-reduce conflict")
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        edge_rules = collections.defaultdict(lambda: [])
-        for rule in rules:
-            if isinstance(rule, Id):
-                edge_rules[rule.edge] = None
-            elif isinstance(rule, Eq):
-                if edge_rules[rule.edge] != None:
-                    edge_rules[rule.edge].append(rule)
-
-        maybe_unreachable_set = set()
-        flag_name = self.get_flag_for(nts)
-        for edge, rules in edge_rules.items():
-            
-            
-            if rules == None:
-                continue
-            
-            src = self.states[edge.src]
-            dest = src[edge.term]
-            dest_state = self.states[dest]
-            
-            
-            actions = []
-            for rule in OrderedFrozenSet(rules):
-                assert isinstance(rule, Eq)
-                seq = []
-                if rule.flag_in != None:
-                    seq.append(FilterFlag(flag_name, True))
-                    if rule.flag_in != rule.flag_out:
-                        seq.append(PopFlag(flag_name))
-                if rule.flag_out != None and rule.flag_in != rule.flag_out:
-                    seq.append(PushFlag(flag_name, rule.flag_out))
-                actions.append(Seq(seq))
-            
-            assert len(set(eq.flag_in for eq in rules)) < len(rules)
-            
-            is_new, switch = self.new_state(dest.locations, OrderedFrozenSet(actions))
-            assert is_new
-            for seq in actions:
-                self.add_edge(switch, seq, dest)
-
-            
-            
-            
-            self.replace_edge(src, edge.term, switch, maybe_unreachable_set)
-
-        self.remove_unreachable_states(maybe_unreachable_set)
-        pass
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     def fix_with_lookahead(self, s, aps_lanes):
         
@@ -2956,10 +3006,10 @@ class ParseTable:
             accept = True
             for edge in actions:
                 new_term = edge.term.shifted_action(term)
-                if new_term == False:
+                if new_term is False:
                     accept = False
                     break
-                elif new_term == True:
+                elif new_term is True:
                     continue
                 new_actions.append(Edge(edge.src, new_term))
             if accept:
@@ -3043,7 +3093,7 @@ class ParseTable:
         if state is None or not state.is_inconsistent():
             return False
 
-        all_reduce = all( a.update_stack() for a, _ in state.epsilon )
+        all_reduce = all(a.update_stack() for a, _ in state.epsilon)
         any_shift = (len(state.terminals) + len(state.nonterminals) + len(state.errors)) > 0
         try_with_context = all_reduce and not any_shift
         try_with_lookahead = not try_with_context
@@ -3066,7 +3116,6 @@ class ParseTable:
             self.fix_with_lookahead(s, aps_lanes)
         return True
 
-
     def fix_inconsistent_table(self, verbose, progress):
         """The parse table might be inconsistent. We fix the parse table by looking
         around the inconsistent states for more context. Either by looking at the
@@ -3088,12 +3137,13 @@ class ParseTable:
                     len(self.states), len(todo)))
 
         count = 0
+
         def visit_table():
             nonlocal count
             unreachable = []
             while todo:
                 while todo:
-                    yield 
+                    yield  
                     
                     s = todo.popleft()
                     if not self.is_reachable_state(s):
@@ -3111,13 +3161,13 @@ class ParseTable:
                         print("Fixing state {}\n".format(self.states[s]))
                     try:
                         self.fix_inconsistent_state(s, verbose)
-                    except:
+                    except Exception as exc:
                         self.debug_info = True
                         raise ValueError(
                             "Error while fixing conflict in state {}\n\n"
                             "In the following grammar productions:\n{}"
                             .format(self.states[s], self.debug_context(s, "\n", "\t"))
-                        )
+                        ) from exc
                     new_inconsistent_states = [
                         s.index for s in self.states[start_len:]
                         if s.is_inconsistent()
@@ -3149,7 +3199,7 @@ class ParseTable:
 
     def remove_all_unreachable_state(self, verbose, progress):
         self.states = [s for s in self.states if s is not None]
-        state_map = { s.index: i for i, s in enumerate(self.states) }
+        state_map = {s.index: i for i, s in enumerate(self.states)}
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
@@ -3160,16 +3210,18 @@ class ParseTable:
         if verbose or progress:
             print("Fold identical endings.")
         maybe_unreachable = set()
+
         def rewrite_backedges(state_list):
             
             
             ref = state_list[0]
             replace_edges = [e for s in state_list[1:] for e in s.backedges]
             hit = False
-            for src, term in replace_edges:
-                src = self.states[src]
+            for edge in replace_edges:
+                src = self.states[edge.src]
                 
-                self.replace_edge(src, term, ref.index, maybe_unreachable)
+                
+                self.replace_edge(src, edge.term, ref.index, maybe_unreachable)
                 hit = True
             return hit
 
@@ -3186,13 +3238,12 @@ class ParseTable:
         def visit_table():
             hit = True
             while hit:
-                yield 
+                yield  
                 hit = rewrite_if_same_outedges(self.states)
         consume(visit_table(), progress)
 
         self.remove_unreachable_states(maybe_unreachable)
         self.remove_all_unreachable_state(verbose, progress)
-
 
     def group_epsilon_states(self, verbose, progress):
         shift_states = [s for s in self.states if len(s.epsilon) == 0]
@@ -3200,12 +3251,13 @@ class ParseTable:
         self.states = []
         self.states.extend(shift_states)
         self.states.extend(action_states)
-        state_map = { s.index: i for i, s in enumerate(self.states) }
+        state_map = {s.index: i for i, s in enumerate(self.states)}
         for s in self.states:
             s.rewrite_state_indexes(state_map)
 
     def count_shift_states(self):
         return sum(1 for s in self.states if len(s.epsilon) == 0)
+
     def count_action_states(self):
         return sum(1 for s in self.states if len(s.epsilon) > 0)
 
@@ -3225,11 +3277,10 @@ class ParseTable:
                 for path, _ in self.reduce_path([Edge(s.index, t)]):
                     for i, edge in enumerate(path):
                         depths[edge.src].append(i + 1)
-        depths = { s: max(ds) for s, ds in depths.items() }
+        depths = {s: max(ds) for s, ds in depths.items()}
         return depths
 
-
-    def debug_context(self, state, split_txt = "; ", prefix = ""):
+    def debug_context(self, state, split_txt="; ", prefix=""):
         "Reconstruct the grammar production by traversing the parse table."
         assert isinstance(state, int)
         if self.debug_info is False:
@@ -3237,6 +3288,7 @@ class ParseTable:
         if self.debug_info is True:
             self.debug_info = self.prepare_debug_context()
         record = []
+
         def visit(aps):
             
             if aps.actions == []:
@@ -3282,7 +3334,7 @@ class ParseTable:
             )
             context.add(txt)
 
-        if split_txt == None:
+        if split_txt is None:
             return context
         return split_txt.join(txt for txt in sorted(context))
 
@@ -3322,7 +3374,7 @@ def generate_parser(out, source, *, verbose=False, progress=False, debug=False,
             raise ValueError("Unexpected parser_data kind")
 
 
-def compile(grammar, verbose = False):
+def compile(grammar, verbose=False):
     assert isinstance(grammar, Grammar)
     out = io.StringIO()
     generate_parser(out, grammar)

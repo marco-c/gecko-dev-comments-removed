@@ -1,7 +1,5 @@
 
 import json
-import os.path
-from datetime import datetime
 
 read_filename = 'count/fuzzbug.json'
 write_count = 'badges/open-fuzzbug.json'
@@ -10,7 +8,7 @@ open_fuzzbugs = 0
 with open(read_filename, 'r') as f:
     filedata = json.load(f)
     
-    open_fuzzbugs = len([x for x in filedata if x['closed_at'] == None])
+    open_fuzzbugs = len([x for x in filedata if x['closed_at'] is None])
 
 
 data = {

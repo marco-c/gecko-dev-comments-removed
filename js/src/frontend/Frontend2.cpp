@@ -8,6 +8,7 @@
 
 #include "mozilla/Maybe.h"                  
 #include "mozilla/OperatorNewExtensions.h"  
+#include "mozilla/Range.h"                  
 #include "mozilla/Span.h"                   
 
 #include <stddef.h>  
@@ -19,16 +20,27 @@
 #include "frontend/CompilationInfo.h"   
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"  
-#include "frontend/Stencil.h"      
+#include "frontend/Stencil.h"  
+#include "frontend/TokenStream.h"  
 #include "gc/Rooting.h"            
+#ifndef ENABLE_NEW_REGEXP
+#  include "irregexp/RegExpParser.h"  
+#endif
+#include "js/CharacterEncoding.h"  
 #include "js/HeapAPI.h"            
+#include "js/RegExpFlags.h"        
 #include "js/RootingAPI.h"         
 #include "js/TypeDecls.h"          
-#include "vm/JSAtom.h"             
-#include "vm/JSScript.h"           
-#include "vm/Scope.h"              
-#include "vm/ScopeKind.h"          
-#include "vm/SharedStencil.h"      
+#include "js/Utility.h"            
+#ifdef ENABLE_NEW_REGEXP
+#  include "new-regexp/RegExpAPI.h"  
+#endif
+#include "vm/JSAtom.h"         
+#include "vm/JSScript.h"       
+#include "vm/RegExpObject.h"   
+#include "vm/Scope.h"          
+#include "vm/ScopeKind.h"      
+#include "vm/SharedStencil.h"  
 
 #include "vm/JSContext-inl.h"  
 
@@ -89,6 +101,10 @@ class SmooshScriptStencil : public ScriptStencil {
       return false;
     }
 
+    if (!createRegExpData(cx)) {
+      return false;
+    }
+
     return true;
   }
 
@@ -105,13 +121,27 @@ class SmooshScriptStencil : public ScriptStencil {
           
           
           MutableHandle<ScopeCreationData> data =
-              compilationInfo_.scopeCreationData[item.scope_index];
+              compilationInfo_.scopeCreationData[item.index];
           Scope* scope = data.get().createScope(cx);
           if (!scope) {
             return false;
           }
 
           output[i] = JS::GCCellPtr(scope);
+
+          break;
+        }
+        case SmooshGCThingKind::RegExpIndex: {
+          
+          
+          
+          RegExpCreationData& data = compilationInfo_.regExpData[item.index];
+          RegExpObject* regexp = data.createRegExp(cx);
+          if (!regexp) {
+            return false;
+          }
+
+          output[i] = JS::GCCellPtr(regexp);
 
           break;
         }
@@ -216,6 +246,79 @@ class SmooshScriptStencil : public ScriptStencil {
 
       
       MOZ_ASSERT(index == i);
+    }
+
+    return true;
+  }
+
+  
+  
+  bool createRegExpData(JSContext* cx) {
+    for (size_t i = 0; i < result_.regexps.len; i++) {
+      SmooshRegExpItem& item = result_.regexps.data[i];
+      auto s = smoosh_get_slice_at(result_, item.pattern);
+      auto len = smoosh_get_slice_len_at(result_, item.pattern);
+
+      JS::RegExpFlags::Flag flags = JS::RegExpFlag::NoFlags;
+      if (item.global) {
+        flags |= JS::RegExpFlag::Global;
+      }
+      if (item.ignore_case) {
+        flags |= JS::RegExpFlag::IgnoreCase;
+      }
+      if (item.multi_line) {
+        flags |= JS::RegExpFlag::Multiline;
+      }
+      if (item.dot_all) {
+        flags |= JS::RegExpFlag::DotAll;
+      }
+      if (item.sticky) {
+        flags |= JS::RegExpFlag::Sticky;
+      }
+      if (item.unicode) {
+        flags |= JS::RegExpFlag::Unicode;
+      }
+
+      
+      size_t length;
+      JS::UniqueTwoByteChars pattern(
+          UTF8CharsToNewTwoByteCharsZ(cx, JS::UTF8Chars(s, len), &length,
+                                      StringBufferArena)
+              .get());
+      if (!pattern) {
+        return false;
+      }
+
+      mozilla::Range<const char16_t> range(pattern.get(), length);
+
+      TokenStreamAnyChars ts(cx, compilationInfo_.options,  nullptr);
+
+      
+
+      LifoAllocScope allocScope(&cx->tempLifoAlloc());
+#ifdef ENABLE_NEW_REGEXP
+      if (!irregexp::CheckPatternSyntax(cx, ts, range, flags)) {
+        return false;
+      }
+#else
+      if (!irregexp::ParsePatternSyntax(ts, allocScope.alloc(), range,
+                                        flags & JS::RegExpFlag::Unicode)) {
+        return false;
+      }
+#endif
+
+      RegExpIndex index(compilationInfo_.regExpData.length());
+      if (!compilationInfo_.regExpData.emplaceBack()) {
+        return false;
+      }
+
+      if (!compilationInfo_.regExpData[index].init(cx, range,
+                                                   JS::RegExpFlags(flags))) {
+        return false;
+      }
+
+      
+      MOZ_ASSERT(index.index == i);
     }
 
     return true;

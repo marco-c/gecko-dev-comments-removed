@@ -1,20 +1,18 @@
-
-
-
-use crate::scope::{
+use crate::data::{
     BindingName, GlobalScopeData, LexicalScopeData, ScopeData, ScopeDataList, ScopeDataMap,
     ScopeIndex,
 };
+use crate::free_name_tracker::FreeNameTracker;
+use ast::associated_data::AssociatedData;
 use ast::source_atom_set::SourceAtomSetIndex;
-use ast::{associated_data::AssociatedData, types::*, visit::Pass};
+use ast::source_location_accessor::SourceLocationAccessor;
+use ast::type_id::NodeTypeIdAccessor;
 use indexmap::set::IndexSet;
-use std::marker::PhantomData;
 
 
 
 
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 enum VarScopedDeclarationsItemKind {
     
@@ -29,6 +27,7 @@ enum VarScopedDeclarationsItemKind {
     
     
     
+    #[allow(dead_code)]
     VariableDeclaration,
 
     
@@ -43,6 +42,7 @@ enum VarScopedDeclarationsItemKind {
     
     
     
+    #[allow(dead_code)]
     ForBinding,
 
     
@@ -75,21 +75,25 @@ enum VarScopedDeclarationsItemKind {
     
     
     
+    #[allow(dead_code)]
     FunctionDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     GeneratorDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     AsyncFunctionDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     AsyncGeneratorDeclaration,
 
     
@@ -110,6 +114,7 @@ enum VarScopedDeclarationsItemKind {
     
     
     
+    #[allow(dead_code)]
     BindingIdentifier,
 }
 
@@ -117,7 +122,6 @@ enum VarScopedDeclarationsItemKind {
 
 
 
-#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq)]
 enum LexicallyScopedDeclarations {
     
@@ -133,32 +137,39 @@ enum LexicallyScopedDeclarations {
     
     
     
+    #[allow(dead_code)]
     FunctionDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     GeneratorDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     AsyncFunctionDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     AsyncGeneratorDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     ClassDeclaration,
 
     
     
     
+    #[allow(dead_code)]
     LexicalDeclarationWithLet,
+    #[allow(dead_code)]
     LexicalDeclarationWithConst,
 
     
@@ -211,6 +222,7 @@ enum LexicallyScopedDeclarations {
     
     
     
+    #[allow(dead_code)]
     ExportDeclarationWithAssignmentExpression,
 }
 
@@ -287,6 +299,8 @@ struct GlobalContext {
     const_names: Vec<SourceAtomSetIndex>,
 
     scope_index: ScopeIndex,
+
+    name_tracker: FreeNameTracker,
     
 }
 
@@ -298,10 +312,11 @@ impl GlobalContext {
             let_names: Vec::new(),
             const_names: Vec::new(),
             scope_index,
+            name_tracker: FreeNameTracker::new(),
         }
     }
 
-    fn declare_var<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_var(&mut self, name: SourceAtomSetIndex) {
         
         
         
@@ -323,28 +338,28 @@ impl GlobalContext {
 
         
         
-        self.declared_var_names.insert(binding.name.value);
+        self.declared_var_names.insert(name);
     }
 
-    fn declare_let<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_let(&mut self, name: SourceAtomSetIndex) {
         
         
         
         
         
-        self.let_names.push(binding.name.value);
+        self.let_names.push(name);
     }
 
-    fn declare_const<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_const(&mut self, name: SourceAtomSetIndex) {
         
         
         
         
         
-        self.const_names.push(binding.name.value);
+        self.const_names.push(name);
     }
 
-    fn declare_function<'alloc>(&mut self, fun: &Function) {
+    fn declare_function(&mut self, name: SourceAtomSetIndex) {
         
         
         
@@ -358,11 +373,6 @@ impl GlobalContext {
         
 
         
-        let fn_ = if let Some(ref name) = fun.name {
-            name.name.value
-        } else {
-            panic!("FunctionDeclaration should have name");
-        };
 
         
         
@@ -373,9 +383,8 @@ impl GlobalContext {
         
 
         
-        self.declared_function_names.insert(fn_);
+        self.declared_function_names.insert(name);
 
-        
         
         
         
@@ -411,7 +420,8 @@ impl GlobalContext {
         
         for n in &self.declared_var_names {
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         
@@ -423,7 +433,9 @@ impl GlobalContext {
             
             
             
-            data.bindings.push(BindingName::new_top_level_function(*n));
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings
+                .push(BindingName::new_top_level_function(*n, is_closed_over));
         }
 
         
@@ -433,12 +445,14 @@ impl GlobalContext {
         for n in &self.let_names {
             
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Global(data)
@@ -457,6 +471,7 @@ struct BlockContext {
 
     
     scope_index: ScopeIndex,
+    name_tracker: FreeNameTracker,
 }
 
 impl BlockContext {
@@ -466,38 +481,33 @@ impl BlockContext {
             fun_names: Vec::new(),
             const_names: Vec::new(),
             scope_index,
+            name_tracker: FreeNameTracker::new(),
         }
     }
 
-    fn declare_let<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_let(&mut self, name: SourceAtomSetIndex) {
         
         
         
         
-        self.let_names.push(binding.name.value);
+        self.let_names.push(name);
     }
 
-    fn declare_const<'alloc>(&mut self, binding: &BindingIdentifier) {
+    fn declare_const(&mut self, name: SourceAtomSetIndex) {
         
         
         
         
-        self.const_names.push(binding.name.value);
+        self.const_names.push(name);
     }
 
-    fn declare_function<'alloc>(&mut self, fun: &Function) {
+    fn declare_function(&mut self, name: SourceAtomSetIndex) {
         
         
         
         
 
-        let fn_ = if let Some(ref name) = fun.name {
-            name.name.value
-        } else {
-            panic!("FunctionDeclaration should have name");
-        };
-
-        self.fun_names.push(fn_);
+        self.fun_names.push(name);
     }
 
     fn into_scope_data(self, enclosing: ScopeIndex) -> ScopeData {
@@ -521,7 +531,8 @@ impl BlockContext {
         for n in &self.let_names {
             
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.fun_names {
             
@@ -531,12 +542,14 @@ impl BlockContext {
             
             
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
         for n in &self.const_names {
             
             
-            data.bindings.push(BindingName::new(*n))
+            let is_closed_over = self.name_tracker.is_closed_over_def(n);
+            data.bindings.push(BindingName::new(*n, is_closed_over))
         }
 
         ScopeData::Lexical(data)
@@ -554,6 +567,47 @@ impl Context {
         match self {
             Context::Global(context) => context.scope_index,
             Context::Block(context) => context.scope_index,
+        }
+    }
+
+    fn declare_var(&mut self, name: SourceAtomSetIndex) {
+        self.name_tracker_mut().note_def(name);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_var(name),
+            _ => panic!("unexpected var context"),
+        }
+    }
+
+    fn declare_let(&mut self, name: SourceAtomSetIndex) {
+        self.name_tracker_mut().note_def(name);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_let(name),
+            Context::Block(ref mut context) => context.declare_let(name),
+        }
+    }
+
+    fn declare_const(&mut self, name: SourceAtomSetIndex) {
+        self.name_tracker_mut().note_def(name);
+
+        match self {
+            Context::Global(ref mut context) => context.declare_const(name),
+            Context::Block(ref mut context) => context.declare_const(name),
+        }
+    }
+
+    pub fn name_tracker(&self) -> &FreeNameTracker {
+        match self {
+            Context::Global(context) => &context.name_tracker,
+            Context::Block(context) => &context.name_tracker,
+        }
+    }
+
+    pub fn name_tracker_mut(&mut self) -> &mut FreeNameTracker {
+        match self {
+            Context::Global(context) => &mut context.name_tracker,
+            Context::Block(context) => &mut context.name_tracker,
         }
     }
 }
@@ -631,8 +685,8 @@ impl ContextStack {
     }
 
     fn pop_global(&mut self) -> GlobalContext {
-        match self.stack.pop() {
-            Some(Context::Global(context)) => context,
+        match self.pop() {
+            Context::Global(context) => context,
             _ => panic!("unmatching context"),
         }
     }
@@ -642,16 +696,36 @@ impl ContextStack {
     }
 
     fn pop_block(&mut self) -> BlockContext {
-        match self.stack.pop() {
-            Some(Context::Block(context)) => context,
+        match self.pop() {
+            Context::Block(context) => context,
             _ => panic!("unmatching context"),
         }
     }
+
+    
+    fn pop(&mut self) -> Context {
+        let inner = self.stack.pop().expect("unmatching context");
+        match self.stack.last_mut() {
+            Some(outer) => {
+                let inner_tracker = inner.name_tracker();
+                let outer_tracker = outer.name_tracker_mut();
+                match inner {
+                    Context::Global(_) => {
+                        panic!("Global shouldn't be enclosed by other scope");
+                    }
+                    Context::Block(_) => {
+                        outer_tracker.propagate_from_inner_non_script(inner_tracker)
+                    }
+                }
+            }
+            None => {}
+        }
+        inner
+    }
 }
 
-
 #[derive(Debug)]
-struct ScopePass<'alloc> {
+pub struct ScopeContext {
     scope_kind_stack: ScopeKindStack,
     context_stack: ContextStack,
     scopes: ScopeDataList,
@@ -662,35 +736,20 @@ struct ScopePass<'alloc> {
 
     
     non_global: AssociatedData<ScopeIndex>,
-
-    phantom: PhantomData<&'alloc ()>,
 }
 
-impl<'alloc> ScopePass<'alloc> {
-    fn new() -> Self {
+impl ScopeContext {
+    pub fn new() -> Self {
         Self {
             scope_kind_stack: ScopeKindStack::new(),
             context_stack: ContextStack::new(),
             scopes: ScopeDataList::new(),
             global: None,
             non_global: AssociatedData::new(),
-            phantom: PhantomData,
         }
     }
-}
 
-impl<'alloc> From<ScopePass<'alloc>> for ScopeDataMap {
-    fn from(pass: ScopePass<'alloc>) -> ScopeDataMap {
-        ScopeDataMap::new(
-            pass.scopes,
-            pass.global.expect("There should be global scope data"),
-            pass.non_global,
-        )
-    }
-}
-
-impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
-    fn enter_script(&mut self, _ast: &mut Script<'alloc>) {
+    pub fn before_script(&mut self) {
         
         
         
@@ -726,7 +785,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         
     }
 
-    fn leave_script(&mut self, _ast: &mut Script<'alloc>) {
+    pub fn after_script(&mut self) {
         let mut context = self.context_stack.pop_global();
 
         
@@ -747,7 +806,10 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
             .populate(context.scope_index, context.into_scope_data());
     }
 
-    fn enter_enum_statement_variant_block_statement(&mut self, block: &mut Block<'alloc>) {
+    pub fn before_block_statement<T>(&mut self, block: &T)
+    where
+        T: SourceLocationAccessor + NodeTypeIdAccessor,
+    {
         
         
         
@@ -774,7 +836,7 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         
     }
 
-    fn leave_enum_statement_variant_block_statement(&mut self, _block: &mut Block<'alloc>) {
+    pub fn after_block_statement(&mut self) {
         let context = self.context_stack.pop_block();
         let enclosing = self.context_stack.current_scope_index();
 
@@ -795,35 +857,31 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         
     }
 
-    fn enter_variable_declaration(&mut self, ast: &mut VariableDeclaration<'alloc>) {
-        match ast.kind {
-            VariableDeclarationKind::Var { .. } => {
-                self.scope_kind_stack.push(ScopeKind::Var);
-            }
-            VariableDeclarationKind::Let { .. } => {
-                self.scope_kind_stack.push(ScopeKind::Let);
-            }
-            VariableDeclarationKind::Const { .. } => {
-                self.scope_kind_stack.push(ScopeKind::Const);
-            }
-        }
+    pub fn before_var_declaration(&mut self) {
+        self.scope_kind_stack.push(ScopeKind::Var);
     }
 
-    fn leave_variable_declaration(&mut self, ast: &mut VariableDeclaration<'alloc>) {
-        match ast.kind {
-            VariableDeclarationKind::Var { .. } => {
-                self.scope_kind_stack.pop(ScopeKind::Var);
-            }
-            VariableDeclarationKind::Let { .. } => {
-                self.scope_kind_stack.pop(ScopeKind::Let);
-            }
-            VariableDeclarationKind::Const { .. } => {
-                self.scope_kind_stack.pop(ScopeKind::Const);
-            }
-        }
+    pub fn after_var_declaration(&mut self) {
+        self.scope_kind_stack.pop(ScopeKind::Var);
     }
 
-    fn visit_binding_identifier(&mut self, ast: &mut BindingIdentifier) {
+    pub fn before_let_declaration(&mut self) {
+        self.scope_kind_stack.push(ScopeKind::Let);
+    }
+
+    pub fn after_let_declaration(&mut self) {
+        self.scope_kind_stack.pop(ScopeKind::Let);
+    }
+
+    pub fn before_const_declaration(&mut self) {
+        self.scope_kind_stack.push(ScopeKind::Const);
+    }
+
+    pub fn after_const_declaration(&mut self) {
+        self.scope_kind_stack.pop(ScopeKind::Const);
+    }
+
+    pub fn on_binding_identifier(&mut self, name: SourceAtomSetIndex) {
         
         
         
@@ -842,33 +900,34 @@ impl<'alloc> Pass<'alloc> for ScopePass<'alloc> {
         }
 
         match self.scope_kind_stack.innermost() {
-            ScopeKind::Var => match self.context_stack.innermost_var() {
-                Context::Global(ref mut context) => context.declare_var(ast),
-                _ => panic!("unexpected var context"),
-            },
-            ScopeKind::Let => match self.context_stack.innermost_lexical() {
-                Context::Global(ref mut context) => context.declare_let(ast),
-                Context::Block(ref mut context) => context.declare_let(ast),
-            },
-            ScopeKind::Const => match self.context_stack.innermost_lexical() {
-                Context::Global(ref mut context) => context.declare_const(ast),
-                Context::Block(ref mut context) => context.declare_const(ast),
-            },
+            ScopeKind::Var => self.context_stack.innermost_var().declare_var(name),
+            ScopeKind::Let => self.context_stack.innermost_lexical().declare_let(name),
+            ScopeKind::Const => self.context_stack.innermost_lexical().declare_const(name),
             _ => panic!("Not implemeneted"),
         }
     }
 
-    fn enter_enum_statement_variant_function_declaration(&mut self, ast: &mut Function<'alloc>) {
+    pub fn on_non_binding_identifier(&mut self, name: SourceAtomSetIndex) {
+        self.context_stack
+            .innermost_lexical()
+            .name_tracker_mut()
+            .note_use(name);
+    }
+
+    pub fn before_function_declaration(&mut self, name: SourceAtomSetIndex) {
         match self.context_stack.innermost_lexical() {
-            Context::Global(ref mut context) => context.declare_function(ast),
-            Context::Block(ref mut context) => context.declare_function(ast),
+            Context::Global(ref mut context) => context.declare_function(name),
+            Context::Block(ref mut context) => context.declare_function(name),
         }
     }
 }
 
-
-pub fn generate_scope_data<'alloc>(ast: &mut Program<'alloc>) -> ScopeDataMap {
-    let mut scope_pass = ScopePass::new();
-    scope_pass.visit_program(ast);
-    scope_pass.into()
+impl From<ScopeContext> for ScopeDataMap {
+    fn from(context: ScopeContext) -> ScopeDataMap {
+        ScopeDataMap::new(
+            context.scopes,
+            context.global.expect("There should be global scope data"),
+            context.non_global,
+        )
+    }
 }
