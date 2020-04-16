@@ -3326,6 +3326,14 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
     return NS_OK;
   }
 
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (loadInfo->GetExternalContentPolicyType() ==
+      nsIContentPolicy::TYPE_IMAGE) {
+    return NS_OK;
+  }
+
   MOZ_ASSERT(!mCSP, "where did mCSP get set if not here?");
 
   
@@ -3334,7 +3342,6 @@ nsresult Document::InitCSP(nsIChannel* aChannel) {
   
   
   if (CSP_ShouldResponseInheritCSP(aChannel)) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     mCSP = loadInfo->GetCspToInherit();
   }
 
