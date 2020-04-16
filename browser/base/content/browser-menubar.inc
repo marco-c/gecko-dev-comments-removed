@@ -1,7 +1,7 @@
 # -*- Mode: Java; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http:
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
        <menubar id="main-menubar"
                 onpopupshowing="if (event.target.parentNode.parentNode == this &amp;&amp;
@@ -266,7 +266,7 @@
                 <menuitem id="historyRestoreLastSession"
                           command="Browser:RestoreLastSession" data-l10n-id="menu-history-restore-last-session"/>
                 <menuitem id="hiddenTabsMenu"
-                          oncommand="gTabsPanel.showHiddenTabsPanel();"
+                          oncommand="gTabsPanel.showHiddenTabsPanel(event);"
                           hidden="true" data-l10n-id="menu-history-hidden-tabs"/>
                 <menu id="historyUndoMenu"
                       disabled="true" data-l10n-id="menu-history-undo-menu">
@@ -420,7 +420,7 @@
               <menuitem id="menu_layout_debugger"
                         data-l10n-id="menu-tools-layout-debugger"
                         oncommand="toOpenWindowByType('mozapp:layoutdebug',
-                                          'chrome://layoutdebug/content/layoutdebug.xhtml');"/>
+                                          'chrome:
 #endif
 #ifdef XP_MACOSX
 <!-- nsMenuBarX hides these and uses them to build the Application menu. -->

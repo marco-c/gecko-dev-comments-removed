@@ -144,3 +144,16 @@ add_task(async function test_overflow_panel_touch() {
 
   CustomizableUI.reset();
 });
+
+
+add_task(async function test_list_all_tabs_touch() {
+  
+  let tabs = document.getElementById("tabbrowser-tabs");
+  if (!tabs.hasAttribute("overflow")) {
+    tabs.setAttribute("overflow", true);
+    registerCleanupFunction(() => tabs.removeAttribute("overflow"));
+  }
+
+  let target = document.getElementById("alltabs-button");
+  await openAndCheckCustomizationUIMenu(target);
+});
