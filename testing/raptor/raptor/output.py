@@ -300,7 +300,7 @@ class PerftestOutput(object):
         if testname.startswith("raptor-v8_7"):
             return 100 * filters.geometric_mean(_filter(vals))
 
-        if testname.startswith("raptor-speedometer"):
+        if testname.startswith("raptor-speedometer") or testname.startswith("speedometer"):
             correctionFactor = 3
             results = _filter(vals)
             
