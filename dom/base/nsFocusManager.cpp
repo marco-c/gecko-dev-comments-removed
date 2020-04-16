@@ -2966,10 +2966,6 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
   
   
-  bool forDocumentNavigation = false;
-
-  
-  
   
   
   
@@ -3006,10 +3002,10 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
                       &nsIContent::sTabFocusModel);
 
   
-  if (aType == MOVEFOCUS_FORWARDDOC || aType == MOVEFOCUS_BACKWARDDOC ||
-      aType == MOVEFOCUS_FIRSTDOC || aType == MOVEFOCUS_LASTDOC) {
-    forDocumentNavigation = true;
-  }
+  
+  const bool forDocumentNavigation =
+      aType == MOVEFOCUS_FORWARDDOC || aType == MOVEFOCUS_BACKWARDDOC ||
+      aType == MOVEFOCUS_FIRSTDOC || aType == MOVEFOCUS_LASTDOC;
 
   
   if (aType == MOVEFOCUS_ROOT || aType == MOVEFOCUS_FIRSTDOC) {
@@ -3998,8 +3994,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
           
           
           
-          BrowserParent* remote = BrowserParent::GetFrom(currentContent);
-          if (remote) {
+          if (BrowserParent* remote = BrowserParent::GetFrom(currentContent)) {
             if (aNavigateByKey) {
               remote->NavigateByKey(aForward, aForDocumentNavigation);
               return NS_SUCCESS_DOM_NO_OPERATION;
@@ -4008,8 +4003,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
           }
 
           
-          BrowserBridgeChild* bbc = BrowserBridgeChild::GetFrom(currentContent);
-          if (bbc) {
+          if (auto* bbc = BrowserBridgeChild::GetFrom(currentContent)) {
             if (aNavigateByKey) {
               bbc->NavigateByKey(aForward, aForDocumentNavigation);
               return NS_SUCCESS_DOM_NO_OPERATION;
@@ -4113,8 +4107,7 @@ bool nsFocusManager::TryDocumentNavigation(nsIContent* aCurrentContent,
                                            bool* aCheckSubDocument,
                                            nsIContent** aResultContent) {
   *aCheckSubDocument = true;
-  Element* docRoot = GetRootForChildDocument(aCurrentContent);
-  if (docRoot) {
+  if (Element* docRoot = GetRootForChildDocument(aCurrentContent)) {
     
     
     
@@ -4145,8 +4138,7 @@ bool nsFocusManager::TryToMoveFocusToSubDocument(
     if (aForward) {
       
       
-      nsCOMPtr<nsPIDOMWindowOuter> subframe = subdoc->GetWindow();
-      if (subframe) {
+      if (nsCOMPtr<nsPIDOMWindowOuter> subframe = subdoc->GetWindow()) {
         *aResultContent = GetRootForFocus(subframe, subdoc, false, true);
         if (*aResultContent) {
           NS_ADDREF(*aResultContent);
