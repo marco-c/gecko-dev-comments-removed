@@ -701,14 +701,7 @@ var BrowserPageActions = {
   },
 
   doCommandForAction(action, event, buttonNode) {
-    
-    
-    if (
-      event &&
-      event.type == "click" &&
-      (event.button != 0 ||
-        (AppConstants.platform == "macosx" && event.ctrlKey))
-    ) {
+    if (event && event.type == "click" && event.button != 0) {
       return;
     }
     if (event && event.type == "keypress") {
@@ -860,11 +853,7 @@ var BrowserPageActions = {
   mainButtonClicked(event) {
     event.stopPropagation();
     if (
-      
-      
-      (event.type == "mousedown" &&
-        (event.button != 0 ||
-          (AppConstants.platform == "macosx" && event.ctrlKey))) ||
+      (event.type == "mousedown" && event.button != 0) ||
       (event.type == "keypress" &&
         event.charCode != KeyEvent.DOM_VK_SPACE &&
         event.keyCode != KeyEvent.DOM_VK_RETURN)

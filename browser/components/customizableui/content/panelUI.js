@@ -302,12 +302,7 @@ const PanelUI = {
         }
         break;
       case "mousedown":
-        
-        
-        if (
-          aEvent.button == 0 &&
-          (AppConstants.platform != "macosx" || !aEvent.ctrlKey)
-        ) {
+        if (aEvent.button == 0) {
           this.toggle(aEvent);
         }
         break;
@@ -385,13 +380,7 @@ const PanelUI = {
   async showSubView(aViewId, aAnchor, aEvent) {
     let domEvent = null;
     if (aEvent) {
-      
-      
-      if (
-        aEvent.type == "mousedown" &&
-        (aEvent.button != 0 ||
-          (AppConstants.platform == "macosx" && aEvent.ctrlKey))
-      ) {
+      if (aEvent.type == "mousedown" && aEvent.button != 0) {
         return;
       }
       if (
