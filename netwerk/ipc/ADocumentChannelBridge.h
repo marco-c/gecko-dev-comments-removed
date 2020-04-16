@@ -40,18 +40,6 @@ class ADocumentChannelBridge {
 
   
   
-  
-  
-  
-  
-  virtual void CSPViolation(
-      nsCSPContext* aContext, bool aIsCspToInherit, nsIURI* aBlockedURI,
-      nsCSPContext::BlockedContentSource aBlockedContentSource,
-      nsIURI* aOriginalURI, const nsAString& aViolatedDirective,
-      uint32_t aViolatedPolicyIndex, const nsAString& aObserverSubject) = 0;
-
-  
-  
   virtual RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(
       nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>&&
