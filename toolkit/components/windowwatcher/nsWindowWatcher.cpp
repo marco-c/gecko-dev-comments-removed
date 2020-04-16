@@ -1234,7 +1234,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     loadState->SetFirstParty(true);
 
     
-    newBC->LoadURI(parentBC, loadState);
+    newBC->LoadURI(loadState);
   }
 
   
