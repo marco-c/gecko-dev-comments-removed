@@ -275,7 +275,7 @@ class Localization {
 
 
   async formatWithFallback(keys, method) {
-    const translations = new Array(keys.length);
+    const translations = new Array(keys.length).fill(null);
     let hasAtLeastOneBundle = false;
 
     for await (const bundle of this.bundles) {
@@ -314,7 +314,7 @@ class Localization {
     if (!this.isSync) {
       throw new Error("Can't use sync formatWithFallback when state is async.");
     }
-    const translations = new Array(keys.length);
+    const translations = new Array(keys.length).fill(null);
     let hasAtLeastOneBundle = false;
 
     for (const bundle of this.bundles) {
@@ -614,7 +614,7 @@ function keysFromBundle(method, bundle, keys, translations) {
   const missingIds = new Set();
 
   keys.forEach(({id, args}, i) => {
-    if (translations[i] !== undefined) {
+    if (translations[i] !== null) {
       return;
     }
 

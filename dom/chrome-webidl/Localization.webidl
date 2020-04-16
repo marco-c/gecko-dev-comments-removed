@@ -113,7 +113,7 @@ interface Localization {
 
 
 
-  [NewObject] Promise<UTF8String> formatValue(UTF8String aId, optional L10nArgs aArgs);
+  [NewObject] Promise<UTF8String?> formatValue(UTF8String aId, optional L10nArgs aArgs);
 
   
 
@@ -128,7 +128,7 @@ interface Localization {
 
 
 
-  [NewObject] Promise<sequence<UTF8String>> formatValues(sequence<L10nKey> aKeys);
+  [NewObject] Promise<sequence<UTF8String?>> formatValues(sequence<L10nKey> aKeys);
 
   
 
@@ -151,7 +151,7 @@ interface Localization {
 
 
 
-  [NewObject] Promise<sequence<L10nMessage>> formatMessages(sequence<L10nKey> aKeys);
+  [NewObject] Promise<sequence<L10nMessage?>> formatMessages(sequence<L10nKey> aKeys);
 
   void setIsSync(boolean aIsSync);
 
