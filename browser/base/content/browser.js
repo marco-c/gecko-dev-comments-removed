@@ -2099,15 +2099,9 @@ var gBrowserInit = {
       this._firstBrowserPaintDeferred.resolve = resolve;
     });
 
-    
-    
-    
-    
-    let shouldRemoveFocusedAttribute = true;
     this._callWithURIToLoad(uriToLoad => {
       if (isBlankPageURL(uriToLoad) || uriToLoad == "about:privatebrowsing") {
         gURLBar.select();
-        shouldRemoveFocusedAttribute = false;
         return;
       }
 
@@ -2129,16 +2123,6 @@ var gBrowserInit = {
         gBrowser.selectedBrowser.focus();
       }
     });
-    
-    
-    
-    if (shouldRemoveFocusedAttribute) {
-      window.requestAnimationFrame(() => {
-        if (shouldRemoveFocusedAttribute) {
-          gURLBar.removeAttribute("focused");
-        }
-      });
-    }
   },
 
   _handleURIToLoad() {

@@ -132,7 +132,6 @@ async function test_window(win) {
 }
 
 add_task(async function test_normalWindow() {
-  
   let win = await BrowserTestUtils.openNewBrowserWindow();
   await test_window(win);
   await BrowserTestUtils.closeWindow(win);

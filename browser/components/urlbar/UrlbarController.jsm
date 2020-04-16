@@ -319,7 +319,6 @@ class UrlbarController {
         
         
         let allowTabbingThroughResults =
-          !UrlbarPrefs.get("update1") ||
           this.input.focusedViaMousedown ||
           (this.input.value &&
             this.input.getAttribute("pageproxystate") != "valid");

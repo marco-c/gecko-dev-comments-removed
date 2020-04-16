@@ -27,7 +27,7 @@ add_task(async function() {
 
   
   
-  await ensureFocusedUrlbar();
+  gURLBar.focus();
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
   let firstTabRect = gBrowser.selectedTab.getBoundingClientRect();

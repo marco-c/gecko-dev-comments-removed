@@ -44,10 +44,6 @@ class UrlbarView {
     this.document = this.panel.ownerDocument;
     this.window = this.document.defaultView;
 
-    if (this.input.megabar) {
-      this.panel.classList.add("megabar");
-    }
-
     this._mainContainer = this.panel.querySelector(".urlbarView-body-inner");
     this._rows = this.panel.querySelector(".urlbarView-results");
 
@@ -358,14 +354,9 @@ class UrlbarView {
 
     this.removeAccessibleFocus();
     this.input.inputField.setAttribute("aria-expanded", "false");
-    this.input.dropmarker.removeAttribute("open");
 
     this.input.removeAttribute("open");
     this.input.endLayoutExtend();
-
-    if (!this.input.megabar && this.input._toolbar) {
-      this.input._toolbar.removeAttribute("urlbar-exceeds-toolbar-bounds");
-    }
 
     
     
@@ -600,87 +591,15 @@ class UrlbarView {
 
     this.panel.removeAttribute("actionoverride");
 
-    if (!this.input.megabar) {
-      let px = number => number.toFixed(2) + "px";
-      let inputRect = getBoundsWithoutFlushing(this.input.textbox);
-
-      
-      let documentRect = getBoundsWithoutFlushing(
-        this.document.documentElement
-      );
-      let width = documentRect.right - documentRect.left;
-
-      
-      
-      
-      
-      let boundToCheck = this.window.RTL_UI ? "right" : "left";
-      let startOffset = Math.abs(
-        inputRect[boundToCheck] - documentRect[boundToCheck]
-      );
-      let alignSiteIcons = startOffset / width <= 0.3 || startOffset <= 250;
-
-      if (alignSiteIcons) {
-        
-        let boundToCheckEnd = this.window.RTL_UI ? "left" : "right";
-        let endOffset = Math.abs(
-          inputRect[boundToCheckEnd] - documentRect[boundToCheckEnd]
-        );
-        if (endOffset > startOffset * 2) {
-          
-          
-          
-          endOffset = startOffset;
-        }
-
-        
-        
-        let alignRect;
-        for (let id of ["tracking-protection-icon-box", "identity-icon"]) {
-          alignRect = getBoundsWithoutFlushing(
-            this.document.getElementById(id)
-          );
-          if (alignRect.width > 0) {
-            break;
-          }
-        }
-        let start = this.window.RTL_UI
-          ? documentRect.right - alignRect.right
-          : alignRect.left;
-
-        this.panel.style.setProperty("--item-padding-start", px(start));
-        this.panel.style.setProperty("--item-padding-end", px(endOffset));
-      } else {
-        this.panel.style.removeProperty("--item-padding-start");
-        this.panel.style.removeProperty("--item-padding-end");
-      }
-
-      
-      this.panel.style.top = px(
-        getBoundsWithoutFlushing(this.input._toolbar).bottom
-      );
-
-      this._mainContainer.style.maxWidth = px(width);
-
-      if (this.input._toolbar) {
-        this.input._toolbar.setAttribute(
-          "urlbar-exceeds-toolbar-bounds",
-          "true"
-        );
-      }
-    }
-
     this._enableOrDisableRowWrap();
 
     this.input.inputField.setAttribute("aria-expanded", "true");
-    this.input.dropmarker.setAttribute("open", "true");
 
     this.input.setAttribute("open", "true");
     this.input.startLayoutExtend();
 
     this.window.addEventListener("resize", this);
     this.window.addEventListener("blur", this);
-    this._windowOuterWidth = this.window.outerWidth;
 
     this.controller.notify(this.controller.NOTIFICATIONS.VIEW_OPEN);
   }
@@ -815,21 +734,14 @@ class UrlbarView {
     noWrap.className = "urlbarView-no-wrap";
     item._content.appendChild(noWrap);
 
-    let typeIcon = this._createElement("span");
-    typeIcon.className = "urlbarView-type-icon";
-
-    if (!this.input.megabar) {
-      noWrap.appendChild(typeIcon);
-    }
-
     let favicon = this._createElement("img");
     favicon.className = "urlbarView-favicon";
     noWrap.appendChild(favicon);
     item._elements.set("favicon", favicon);
 
-    if (this.input.megabar) {
-      noWrap.appendChild(typeIcon);
-    }
+    let typeIcon = this._createElement("span");
+    typeIcon.className = "urlbarView-type-icon";
+    noWrap.appendChild(typeIcon);
 
     let title = this._createElement("span");
     title.className = "urlbarView-title";
@@ -1574,22 +1486,7 @@ class UrlbarView {
   }
 
   _on_resize() {
-    if (this.input.megabar) {
-      this._enableOrDisableRowWrap();
-      return;
-    }
-
-    if (this._windowOuterWidth == this.window.outerWidth) {
-      
-      
-      
-      
-      return;
-    }
-
-    
-    
-    this.close();
+    this._enableOrDisableRowWrap();
   }
 }
 

@@ -101,44 +101,11 @@ add_task(async function test_popup_url() {
     "Should get maxResults=" + maxResults + " results"
   );
 
-  let popup = gURLBar.view.panel;
-
-  if (!gURLBar.megabar) {
-    
-    
-    
-    let popupCS = window.getComputedStyle(popup);
-
-    Assert.equal(
-      popupCS.backgroundColor,
-      `rgb(${hexToRGB(POPUP_COLOR).join(", ")})`,
-      `Popup background color should be set to ${POPUP_COLOR}`
-    );
-
-    Assert.equal(
-      popupCS.borderBottomColor,
-      `rgb(${hexToRGB(CHROME_CONTENT_SEPARATOR_COLOR).join(", ")})`,
-      `Popup bottom color should be set to ${CHROME_CONTENT_SEPARATOR_COLOR}`
-    );
-
-    Assert.equal(
-      popupCS.color,
-      `rgb(${hexToRGB(POPUP_TEXT_COLOR_DARK).join(", ")})`,
-      `Popup color should be set to ${POPUP_TEXT_COLOR_DARK}`
-    );
-  }
-
   
   UrlbarTestUtils.setSelectedRowIndex(window, 1);
   let actionResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
   let urlResult = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
-  let resultCS;
-  if (gURLBar.megabar) {
-    
-    resultCS = window.getComputedStyle(urlResult.element.row._content);
-  } else {
-    resultCS = window.getComputedStyle(urlResult.element.row);
-  }
+  let resultCS = window.getComputedStyle(urlResult.element.row._content);
 
   Assert.equal(
     resultCS.backgroundColor,
@@ -211,17 +178,6 @@ add_task(async function test_popup_url() {
   });
 
   await extension.startup();
-
-  if (!gURLBar.megabar) {
-    
-    
-    
-    Assert.equal(
-      window.getComputedStyle(popup).color,
-      `rgb(${hexToRGB(POPUP_TEXT_COLOR_BRIGHT).join(", ")})`,
-      `Popup color should be set to ${POPUP_TEXT_COLOR_BRIGHT}`
-    );
-  }
 
   Assert.equal(
     window.getComputedStyle(urlResult.element.url).color,

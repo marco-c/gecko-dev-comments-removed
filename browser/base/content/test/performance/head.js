@@ -262,31 +262,6 @@ async function prepareSettledWindow() {
 
 
 
-async function ensureFocusedUrlbar() {
-  let opacityPromise;
-  if (!gURLBar.dropmarker.hidden) {
-    
-    
-    
-    await TestUtils.waitForCondition(
-      () => !gURLBar.hasAttribute("switchingtabs")
-    );
-
-    opacityPromise = BrowserTestUtils.waitForEvent(
-      gURLBar.dropmarker,
-      "transitionend",
-      false,
-      e => e.propertyName === "opacity"
-    );
-  }
-  gURLBar.focus();
-  if (opacityPromise) {
-    await opacityPromise;
-  }
-}
-
-
-
 
 
 
@@ -761,61 +736,27 @@ async function runUrlbarTest(
     await UrlbarTestUtils.promisePopupClose(win);
   };
 
-  let expectedRects;
-  if (URLBar.megabar) {
-    let urlbarRect = URLBar.textbox.getBoundingClientRect();
-    const SHADOW_SIZE = 4;
-    expectedRects = {
-      filter: rects => {
-        
-        
-        
-        
-        
-        
-        
-        
-        return rects.filter(
-          r =>
-            !(
-              r.x1 >= Math.floor(urlbarRect.left) - SHADOW_SIZE &&
-              r.x2 <= Math.ceil(urlbarRect.right) + SHADOW_SIZE &&
-              r.y1 >= Math.floor(urlbarRect.top) - SHADOW_SIZE
-            )
-        );
-      },
-    };
-  } else {
-    
-    
-    URLBar.view.panel.style.visibility = "hidden";
-
-    let dropmarkerRect = URLBar.dropmarker.getBoundingClientRect();
-    let textBoxRect = URLBar.querySelector(
-      "moz-input-box"
-    ).getBoundingClientRect();
-    expectedRects = {
-      filter: rects =>
-        rects.filter(
-          r =>
-            !(
-              
-              (
-                (r.x1 >= Math.floor(textBoxRect.left) &&
-                  r.x2 <= Math.ceil(textBoxRect.right) &&
-                  r.y1 >= Math.floor(textBoxRect.top) &&
-                  r.y2 <= Math.ceil(textBoxRect.bottom)) ||
-                
-                
-                (r.x1 >= Math.floor(dropmarkerRect.left) &&
-                  r.x2 <= Math.ceil(dropmarkerRect.right) &&
-                  r.y1 >= Math.floor(dropmarkerRect.top) &&
-                  r.y2 <= Math.ceil(dropmarkerRect.bottom))
-              )
-            )
-        ),
-    };
-  }
+  let urlbarRect = URLBar.textbox.getBoundingClientRect();
+  const SHADOW_SIZE = 4;
+  let expectedRects = {
+    filter: rects => {
+      
+      
+      
+      
+      
+      
+      
+      return rects.filter(
+        r =>
+          !(
+            r.x1 >= Math.floor(urlbarRect.left) - SHADOW_SIZE &&
+            r.x2 <= Math.ceil(urlbarRect.right) + SHADOW_SIZE &&
+            r.y1 >= Math.floor(urlbarRect.top) - SHADOW_SIZE
+          )
+      );
+    },
+  };
 
   info("First opening");
   await withPerfObserver(

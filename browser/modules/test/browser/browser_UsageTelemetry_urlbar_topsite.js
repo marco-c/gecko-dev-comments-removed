@@ -1,10 +1,10 @@
-/* Any copyright is dedicated to the Public Domain.
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
-/**
- * This file tests urlbar telemetry for topsite results.
- */
+
+
+
+
+
+
 
 "use strict";
 
@@ -58,15 +58,15 @@ function assertHistogramResults(histograms, type, index, method) {
   TelemetryTestUtils.assertHistogram(histograms.resultMethodHist, method, 1);
 }
 
-/**
- * Updates the Top Sites feed.
- * @param {function} condition
- *   A callback that returns true after Top Sites are successfully updated.
- * @param {boolean} searchShortcuts
- *   True if Top Sites search shortcuts should be enabled.
- */
+
+
+
+
+
+
+
 async function updateTopSites(condition, searchShortcuts = false) {
-  // Toggle the pref to clear the feed cache and force an update.
+  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.newtabpage.activity-stream.feeds.topsites", false],
@@ -78,7 +78,7 @@ async function updateTopSites(condition, searchShortcuts = false) {
     ],
   });
 
-  // Wait for the feed to be updated.
+  
   await TestUtils.waitForCondition(() => {
     let sites = AboutNewTab.getTopSites();
     return condition(sites);
@@ -88,7 +88,6 @@ async function updateTopSites(condition, searchShortcuts = false) {
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.update1", true],
       ["browser.urlbar.openViewOnFocus", true],
       ["browser.newtabpage.activity-stream.default.sites", EN_US_TOPSITES],
     ],
@@ -119,7 +118,7 @@ add_task(async function test() {
       sites.length,
       "The number of results should be the same as the number of Top Sites (6)."
     );
-    // Select the first resultm and confirm it.
+    
     let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
     EventUtils.synthesizeKey("KEY_ArrowDown");
     Assert.equal(

@@ -309,9 +309,6 @@ pref("browser.urlbar.usepreloadedtopurls.enabled", false);
 pref("browser.urlbar.usepreloadedtopurls.expire_days", 14);
 
 
-pref("browser.urlbar.update1", true);
-
-
 
 pref("browser.urlbar.update1.interventions", true);
 
