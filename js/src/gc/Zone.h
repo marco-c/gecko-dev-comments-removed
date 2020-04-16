@@ -566,7 +566,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  void enterWeakMarkingMode(js::GCMarker* marker);
+  js::gc::IncrementalProgress enterWeakMarkingMode(js::GCMarker* marker,
+                                                   js::SliceBudget& budget);
   void checkWeakMarkingMode();
 
   

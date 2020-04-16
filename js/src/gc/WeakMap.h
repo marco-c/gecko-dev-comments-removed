@@ -345,7 +345,7 @@ class WeakMap
   
   
   
-  static void addWeakEntry(GCMarker* marker, JS::Zone* keyZone, gc::Cell* key,
+  static void addWeakEntry(GCMarker* marker, gc::Cell* key,
                            const gc::WeakMarkable& markable);
 
   bool markEntries(GCMarker* marker) override;
