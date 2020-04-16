@@ -529,8 +529,7 @@ RefPtr<PerformanceInfoPromise> WorkerDebugger::ReportPerformanceInfo() {
   
   
   RefPtr<WorkerPrivate> workerRef = mWorkerPrivate;
-  RefPtr<AbstractThread> mainThread =
-      SystemGroup::AbstractMainThreadFor(TaskCategory::Performance);
+  RefPtr<AbstractThread> mainThread = AbstractThread::MainThread();
 
   return CollectMemoryInfo(top, mainThread)
       ->Then(
