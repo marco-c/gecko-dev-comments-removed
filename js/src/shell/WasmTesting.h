@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_testing_h
-#define wasm_testing_h
+#ifndef shell_wasm_h
+#define shell_wasm_h
 
 #include "wasm/WasmTypes.h"
 
