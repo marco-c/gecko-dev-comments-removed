@@ -39,6 +39,7 @@ function enableActorReleaser(webConsoleUI) {
           if (
             front &&
             typeof front.release === "function" &&
+            front.actorID &&
             (!state.ui.frontInSidebar ||
               state.ui.frontInSidebar.actorID !== front.actorID)
           ) {
