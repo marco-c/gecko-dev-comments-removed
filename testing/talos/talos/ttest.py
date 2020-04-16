@@ -223,67 +223,69 @@ class TTest(object):
                 if counter_management:
                     counter_management.stop()
 
-            if test_config['mainthread']:
-                rawlog = os.path.join(here, 'mainthread_io.log')
-                if os.path.exists(rawlog):
-                    processedlog = \
-                        os.path.join(here, 'mainthread_io.json')
-                    xre_path = \
-                        os.path.dirname(browser_config['browser_path'])
-                    mtio_py = os.path.join(here, 'mainthreadio.py')
-                    command = ['python', mtio_py, rawlog,
-                               processedlog, xre_path]
-                    mtio = subprocess.Popen(command,
-                                            env=os.environ.copy(),
-                                            stdout=subprocess.PIPE)
-                    output, stderr = mtio.communicate()
-                    for line in output.split('\n'):
-                        if line.strip() == '':
-                            continue
+            try:
+                if test_config['mainthread']:
+                    rawlog = os.path.join(here, 'mainthread_io.log')
+                    if os.path.exists(rawlog):
+                        processedlog = \
+                            os.path.join(here, 'mainthread_io.json')
+                        xre_path = \
+                            os.path.dirname(browser_config['browser_path'])
+                        mtio_py = os.path.join(here, 'mainthreadio.py')
+                        command = ['python', mtio_py, rawlog,
+                                   processedlog, xre_path]
+                        mtio = subprocess.Popen(command,
+                                                env=os.environ.copy(),
+                                                stdout=subprocess.PIPE)
+                        output, stderr = mtio.communicate()
+                        for line in output.split('\n'):
+                            if line.strip() == '':
+                                continue
 
-                        print(line)
-                        mainthread_error_count += 1
-                    mozfile.remove(rawlog)
+                            print(line)
+                            mainthread_error_count += 1
+                        mozfile.remove(rawlog)
 
-            if test_config['cleanup']:
+                if test_config['cleanup']:
+                    
+                    
+                    talosconfig.generateTalosConfig(command_args,
+                                                    browser_config,
+                                                    test_config,
+                                                    pid=pcontext.pid)
+                    subprocess.call(
+                        [sys.executable] + test_config['cleanup'].split()
+                    )
+
                 
                 
-                talosconfig.generateTalosConfig(command_args,
-                                                browser_config,
-                                                test_config,
-                                                pid=pcontext.pid)
-                subprocess.call(
-                    [sys.executable] + test_config['cleanup'].split()
-                )
+                for fname in ('sessionstore.js', '.parentlock',
+                              'sessionstore.bak'):
+                    mozfile.remove(os.path.join(setup.profile_dir, fname))
 
-            
-            
-            for fname in ('sessionstore.js', '.parentlock',
-                          'sessionstore.bak'):
-                mozfile.remove(os.path.join(setup.profile_dir, fname))
+                
+                if os.path.exists(browser_config['error_filename']) or \
+                   mainthread_error_count > 0:
+                    raise TalosRegression(
+                        'Talos has found a regression, if you have questions'
+                        ' ask for help in irc on #perf'
+                    )
 
-            
-            if os.path.exists(browser_config['error_filename']) or \
-               mainthread_error_count > 0:
-                raise TalosRegression(
-                    'Talos has found a regression, if you have questions'
-                    ' ask for help in irc on #perf'
-                )
+                
+                if not run_in_debug_mode(browser_config):
+                    test_results.add(
+                        '\n'.join(pcontext.output),
+                        counter_results=(counter_management.results()
+                                         if counter_management
+                                         else None)
+                    )
 
-            
-            if not run_in_debug_mode(browser_config):
-                test_results.add(
-                    '\n'.join(pcontext.output),
-                    counter_results=(counter_management.results()
-                                     if counter_management
-                                     else None)
-                )
+                if setup.gecko_profile:
+                    setup.gecko_profile.symbolicate(i)
 
-            if setup.gecko_profile:
-                setup.gecko_profile.symbolicate(i)
-
-            self.check_for_crashes(browser_config, minidump_dir,
-                                   test_config['name'])
+            finally:
+                self.check_for_crashes(browser_config, minidump_dir,
+                                       test_config['name'])
 
         
         test_results.all_counter_results.extend(
