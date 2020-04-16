@@ -1524,8 +1524,12 @@ already_AddRefed<nsINodeList> nsGenericHTMLElement::Labels() {
 
 bool nsGenericHTMLElement::IsInteractiveHTMLContent(
     bool aIgnoreTabindex) const {
-  return IsAnyOfHTMLElements(nsGkAtoms::embed) ||
-         (!aIgnoreTabindex && HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex));
+  
+  
+  
+  
+  
+  return !aIgnoreTabindex && HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex);
 }
 
 
