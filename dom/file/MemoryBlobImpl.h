@@ -26,7 +26,7 @@ class MemoryBlobImpl final : public BaseBlobImpl {
   
   static already_AddRefed<MemoryBlobImpl> CreateWithLastModifiedNow(
       void* aMemoryBuffer, uint64_t aLength, const nsAString& aName,
-      const nsAString& aContentType);
+      const nsAString& aContentType, bool aCrossOriginIsolated);
 
   
   
