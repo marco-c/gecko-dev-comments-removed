@@ -18,6 +18,9 @@ class nsIPrincipal;
 class nsIURI;
 
 namespace mozilla {
+namespace dom {
+class BrowsingContext;
+}  
 
 class AntiTrackingUtils final {
  public:
@@ -52,6 +55,17 @@ class AntiTrackingUtils final {
   
   
   static bool HasStoragePermissionInParent(nsIChannel* aChannel);
+
+  
+  
+  static uint64_t GetTopLevelAntiTrackingWindowId(
+      dom::BrowsingContext* aBrowsingContext);
+
+  
+  
+  
+  static uint64_t GetTopLevelStorageAreaWindowId(
+      dom::BrowsingContext* aBrowsingContext);
 };
 
 }  
