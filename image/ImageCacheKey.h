@@ -61,8 +61,7 @@ class ImageCacheKey final {
  private:
   
   
-  static void* GetSpecialCaseDocumentToken(dom::Document* aDocument,
-                                           nsIURI* aURI);
+  static void* GetSpecialCaseDocumentToken(dom::Document* aDocument);
 
   
   
