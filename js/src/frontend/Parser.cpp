@@ -274,10 +274,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   }
 
   
-  SourceExtent extent;
-  extent.toStringStart = toStringStart;
-
-  
 
 
 
@@ -285,7 +281,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
 
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
-      cx_, traceListHead_, extent, this->getCompilationInfo(),
+      cx_, traceListHead_, toStringStart, this->getCompilationInfo(),
       inheritedDirectives, generatorKind, asyncKind, fun->explicitName(),
       fun->flags(), index);
   if (!funbox) {
@@ -313,10 +309,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   }
 
   
-  SourceExtent extent;
-  extent.toStringStart = toStringStart;
-
-  
 
 
 
@@ -324,7 +316,7 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
 
 
   FunctionBox* funbox = alloc_.new_<FunctionBox>(
-      cx_, traceListHead_, extent, this->getCompilationInfo(),
+      cx_, traceListHead_, toStringStart, this->getCompilationInfo(),
       inheritedDirectives, generatorKind, asyncKind, fcd.get().atom,
       fcd.get().flags, index);
 
@@ -395,11 +387,9 @@ template <class ParseHandler, typename Unit>
 typename ParseHandler::ListNodeType GeneralParser<ParseHandler, Unit>::parse() {
   MOZ_ASSERT(checkOptionsCalled_);
 
-  SourceExtent extent =
-      SourceExtent::makeGlobalExtent( 0, options());
   Directives directives(options().forceStrictMode());
   GlobalSharedContext globalsc(cx_, ScopeKind::Global,
-                               this->getCompilationInfo(), directives, extent);
+                               this->getCompilationInfo(), directives);
   SourceParseContext globalpc(this, &globalsc,  nullptr);
   if (!globalpc.init()) {
     return null();
