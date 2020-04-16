@@ -928,17 +928,6 @@ class nsDisplayListBuilder {
   void SubtractFromVisibleRegion(nsRegion* aVisibleRegion,
                                  const nsRegion& aRegion);
 
-  void ExpandRenderRootRect(LayoutDeviceRect aRect,
-                            mozilla::wr::RenderRoot aRenderRoot) {
-    mRenderRootRects[aRenderRoot] = mRenderRootRects[aRenderRoot].Union(aRect);
-  }
-
-  void ComputeDefaultRenderRootRect(LayoutDeviceIntSize aClientSize);
-
-  LayoutDeviceRect GetRenderRootRect(mozilla::wr::RenderRoot aRenderRoot) {
-    return mRenderRootRects[aRenderRoot];
-  }
-
   
 
 
@@ -1918,8 +1907,6 @@ class nsDisplayListBuilder {
   const nsIFrame* mCurrentReferenceFrame;
   
   nsPoint mCurrentOffsetToReferenceFrame;
-
-  mozilla::wr::RenderRootArray<LayoutDeviceRect> mRenderRootRects;
 
   RefPtr<AnimatedGeometryRoot> mRootAGR;
   RefPtr<AnimatedGeometryRoot> mCurrentAGR;
