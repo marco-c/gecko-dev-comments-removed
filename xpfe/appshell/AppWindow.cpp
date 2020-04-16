@@ -156,9 +156,8 @@ NS_INTERFACE_MAP_BEGIN(AppWindow)
 NS_INTERFACE_MAP_END
 
 nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
-                               nsIURI* aUrl, int32_t aInitialWidth,
-                               int32_t aInitialHeight, bool aIsHiddenWindow,
-                               nsIRemoteTab* aOpeningTab,
+                               int32_t aInitialWidth, int32_t aInitialHeight,
+                               bool aIsHiddenWindow, nsIRemoteTab* aOpeningTab,
                                mozIDOMWindowProxy* aOpenerWindow,
                                nsWidgetInitData& widgetInitData) {
   nsresult rv;
@@ -278,47 +277,6 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
     MOZ_DIAGNOSTIC_ASSERT(bc->HadOriginalOpener());
   }
 #endif
-
-  
-  
-  
-  
-  
-  
-  if (nsContentUtils::IsInitialized()) {  
-                                          
-    MOZ_ASSERT(mDocShell->ItemType() == nsIDocShellTreeItem::typeChrome);
-    nsCOMPtr<nsIPrincipal> principal =
-        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
-    if (nsContentUtils::IsExpandedPrincipal(principal)) {
-      principal = nullptr;
-    }
-    
-    
-    rv = mDocShell->CreateAboutBlankContentViewer(principal, principal,
-                                                   nullptr);
-    NS_ENSURE_SUCCESS(rv, rv);
-    RefPtr<Document> doc = mDocShell->GetDocument();
-    NS_ENSURE_TRUE(!!doc, NS_ERROR_FAILURE);
-    doc->SetIsInitialDocument(true);
-  }
-
-  if (nullptr != aUrl) {
-    nsCString tmpStr;
-
-    rv = aUrl->GetSpec(tmpStr);
-    if (NS_FAILED(rv)) return rv;
-
-    NS_ConvertUTF8toUTF16 urlString(tmpStr);
-    nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
-    NS_ENSURE_TRUE(webNav, NS_ERROR_FAILURE);
-
-    LoadURIOptions loadURIOptions;
-    loadURIOptions.mTriggeringPrincipal = nsContentUtils::GetSystemPrincipal();
-
-    rv = webNav->LoadURI(urlString, loadURIOptions);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
   return rv;
 }
