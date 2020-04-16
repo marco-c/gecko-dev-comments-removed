@@ -97,7 +97,6 @@ nsresult HttpConnectionMgrParent::UpdateParam(nsParamName name,
 void HttpConnectionMgrParent::PrintDiagnostics() {
   
   
-  return;
 }
 
 nsresult HttpConnectionMgrParent::UpdateCurrentTopLevelOuterContentWindowId(
