@@ -66,23 +66,6 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path);
 
 
 
-
-
-
-
-
-
-
-nsresult net_ResolveRelativePath(const nsACString& relativePath,
-                                 const nsACString& basePath,
-                                 nsACString& result);
-
-
-
-
-
-
-
 bool net_IsAbsoluteURL(const nsACString& inURL);
 
 
