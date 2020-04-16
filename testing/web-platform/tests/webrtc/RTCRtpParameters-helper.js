@@ -47,9 +47,6 @@ async function doOfferAnswerExchange(t, caller) {
 
 
 
-
-
-
 function validateSenderRtpParameters(param) {
   validateRtpParameters(param);
 
@@ -93,11 +90,7 @@ function validateReceiverRtpParameters(param) {
 
   assert_equals(param.rtcp.cname, undefined,
     'Expect receiver param.rtcp.cname to be unset');
-
-  assert_equals(param.degradationPreference, undefined,
-    'Expect receiver param.degradationPreference to be unset');
 }
-
 
 
 
@@ -134,9 +127,6 @@ function validateRtpParameters(param) {
   for(const codec of param.codecs) {
     validateCodecParameters(codec);
   }
-
-  assert_optional_enum_field(param, 'degradationPreference',
-    ['maintain-framerate', 'maintain-resolution', 'balanced']);
 }
 
 
