@@ -33,7 +33,7 @@ using namespace dom;
 
 StyleSheet::StyleSheet(css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
                        const dom::SRIMetadata& aIntegrity)
-    : mParent(nullptr),
+    : mParentSheet(nullptr),
       mConstructorDocument(nullptr),
       mDocumentOrShadowRoot(nullptr),
       mOwningNode(nullptr),
@@ -49,7 +49,7 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
                        dom::CSSImportRule* aOwnerRuleToUse,
                        dom::DocumentOrShadowRoot* aDocumentOrShadowRoot,
                        nsINode* aOwningNodeToUse)
-    : mParent(aParentToUse),
+    : mParentSheet(aParentToUse),
       mConstructorDocument(aCopy.mConstructorDocument),
       mTitle(aCopy.mTitle),
       mDocumentOrShadowRoot(aDocumentOrShadowRoot),
@@ -162,7 +162,7 @@ dom::DocumentOrShadowRoot* StyleSheet::GetAssociatedDocumentOrShadowRoot()
   if (mDocumentOrShadowRoot) {
     return mDocumentOrShadowRoot;
   }
-  for (auto* sheet = this; sheet; sheet = sheet->mParent) {
+  for (const auto* sheet = this; sheet; sheet = sheet->mParentSheet) {
     MOZ_ASSERT(!sheet->mDocumentOrShadowRoot);
     if (sheet->IsConstructed()) {
       return sheet->mConstructorDocument;
@@ -208,8 +208,8 @@ void StyleSheet::UnlinkInner() {
   }
 
   for (StyleSheet* child : ChildSheets()) {
-    MOZ_ASSERT(child->mParent == this, "We have a unique inner!");
-    child->mParent = nullptr;
+    MOZ_ASSERT(child->mParentSheet == this, "We have a unique inner!");
+    child->mParentSheet = nullptr;
     
     
     
@@ -419,7 +419,7 @@ void StyleSheetInfo::RemoveSheet(StyleSheet* aSheet) {
   if (aSheet == mSheets[0] && mSheets.Length() > 1) {
     StyleSheet* newParent = mSheets[1];
     for (StyleSheet* child : mChildren) {
-      child->mParent = newParent;
+      child->mParentSheet = newParent;
       child->SetAssociatedDocumentOrShadowRoot(newParent->mDocumentOrShadowRoot,
                                                newParent->mAssociationMode);
     }
@@ -507,7 +507,7 @@ void StyleSheet::DropStyleSet(ServoStyleSet* aStyleSet) {
           adopter->AsNode().AsDocument()->function_ args_;            \
         }                                                             \
       }                                                               \
-      current = current->mParent;                                     \
+      current = current->mParentSheet;                                \
     } while (current);                                                \
   } while (0)
 
@@ -872,21 +872,21 @@ uint64_t StyleSheet::FindOwningWindowInnerID() const {
     }
   }
 
-  if (windowID == 0 && mParent) {
-    windowID = mParent->FindOwningWindowInnerID();
+  if (windowID == 0 && mParentSheet) {
+    windowID = mParentSheet->FindOwningWindowInnerID();
   }
 
   return windowID;
 }
 
 void StyleSheet::RemoveFromParent() {
-  if (!mParent) {
+  if (!mParentSheet) {
     return;
   }
 
-  MOZ_ASSERT(mParent->ChildSheets().Contains(this));
-  mParent->Inner().mChildren.RemoveElement(this);
-  mParent = nullptr;
+  MOZ_ASSERT(mParentSheet->ChildSheets().Contains(this));
+  mParentSheet->Inner().mChildren.RemoveElement(this);
+  mParentSheet = nullptr;
   ClearAssociatedDocumentOrShadowRoot();
 }
 
@@ -894,8 +894,8 @@ void StyleSheet::UnparentChildren() {
   
   
   for (StyleSheet* child : ChildSheets()) {
-    if (child->mParent == this) {
-      child->mParent = nullptr;
+    if (child->mParentSheet == this) {
+      child->mParentSheet = nullptr;
       MOZ_ASSERT(child->mAssociationMode == NotOwnedByDocumentOrShadowRoot,
                  "How did we get to the destructor, exactly, if we're owned "
                  "by a document?");
@@ -971,7 +971,7 @@ void StyleSheet::SetAssociatedDocumentOrShadowRoot(
   
   
   for (StyleSheet* child : ChildSheets()) {
-    if (child->mParent == this) {
+    if (child->mParentSheet == this) {
       child->SetAssociatedDocumentOrShadowRoot(aDocOrShadowRoot,
                                                aAssociationMode);
     }
@@ -990,7 +990,7 @@ void StyleSheet::AppendStyleSheetSilently(StyleSheet& aSheet) {
 
   
   
-  aSheet.mParent = this;
+  aSheet.mParentSheet = this;
   aSheet.SetAssociatedDocumentOrShadowRoot(mDocumentOrShadowRoot,
                                            mAssociationMode);
 }
@@ -1261,7 +1261,7 @@ void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
 
   
   for (StyleSheet* child : ChildSheets()) {
-    child->mParent = nullptr;
+    child->mParentSheet = nullptr;
     child->ClearAssociatedDocumentOrShadowRoot();
   }
   Inner().mChildren.Clear();
