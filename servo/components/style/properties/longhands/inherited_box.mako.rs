@@ -6,7 +6,7 @@
 
 <% data.new_style_struct("InheritedBox", inherited=True, gecko_name="Visibility") %>
 
-// TODO: collapse. Well, do tables first.
+
 ${helpers.single_keyword(
     "visibility",
     "visible hidden",
@@ -19,8 +19,8 @@ ${helpers.single_keyword(
     gecko_enum_prefix="StyleVisibility",
 )}
 
-// CSS Writing Modes Level 3
-// https://drafts.csswg.org/css-writing-modes-3
+
+
 ${helpers.single_keyword(
     "writing-mode",
     "horizontal-tb vertical-rl vertical-lr",
@@ -57,8 +57,8 @@ ${helpers.single_keyword(
     spec="https://drafts.csswg.org/css-writing-modes/#propdef-text-orientation",
 )}
 
-// CSS Color Module Level 4
-// https://drafts.csswg.org/css-color/
+
+
 ${helpers.single_keyword(
     "color-adjust",
     "economy exact",
@@ -68,8 +68,8 @@ ${helpers.single_keyword(
     spec="https://drafts.csswg.org/css-color/#propdef-color-adjust",
 )}
 
-// According to to CSS-IMAGES-3, `optimizespeed` and `optimizequality` are synonyms for `auto`
-// And, firefox doesn't support `pixelated` yet (https://bugzilla.mozilla.org/show_bug.cgi?id=856337)
+
+
 ${helpers.single_keyword(
     "image-rendering",
     "auto crisp-edges",
@@ -85,7 +85,8 @@ ${helpers.single_keyword(
 
 ${helpers.single_keyword(
     "image-orientation",
-    "from-image none",
+    "none from-image",
+    gecko_pref_controlled_initial_value="layout.css.image-orientation.initial-from-image=from-image",
     engines="gecko",
     gecko_enum_prefix="StyleImageOrientation",
     animation_value_type="discrete",
