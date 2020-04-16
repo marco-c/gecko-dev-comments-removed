@@ -12,6 +12,7 @@
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
 #include "nsEnumeratorUtils.h"
+#include "nsThreadUtils.h"
 
 #include "mozilla/SimpleEnumerator.h"
 #include "nsICategoryManager.h"
@@ -102,7 +103,7 @@ void nsDirectoryService::RealInit() {
   gService->mProviders.AppendElement(defaultProvider);
 }
 
-nsDirectoryService::~nsDirectoryService() {}
+nsDirectoryService::~nsDirectoryService() = default;
 
 NS_IMPL_ISUPPORTS(nsDirectoryService, nsIProperties, nsIDirectoryService,
                   nsIDirectoryServiceProvider, nsIDirectoryServiceProvider2)

@@ -16,6 +16,7 @@
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIBufferedStreams.h"
+#include "nsIPipe.h"
 #include "nsNetCID.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -475,7 +476,7 @@ class nsAStreamCopier : public nsIInputStreamCallback,
   nsresult mCancelStatus;
 
   
-  virtual ~nsAStreamCopier() {}
+  virtual ~nsAStreamCopier() = default;
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(nsAStreamCopier, CancelableRunnable,
@@ -484,7 +485,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsAStreamCopier, CancelableRunnable,
 class nsStreamCopierIB final : public nsAStreamCopier {
  public:
   nsStreamCopierIB() : nsAStreamCopier() {}
-  virtual ~nsStreamCopierIB() {}
+  virtual ~nsStreamCopierIB() = default;
 
   struct MOZ_STACK_CLASS ReadSegmentsState {
     
@@ -526,7 +527,7 @@ class nsStreamCopierIB final : public nsAStreamCopier {
 class nsStreamCopierOB final : public nsAStreamCopier {
  public:
   nsStreamCopierOB() : nsAStreamCopier() {}
-  virtual ~nsStreamCopierOB() {}
+  virtual ~nsStreamCopierOB() = default;
 
   struct MOZ_STACK_CLASS WriteSegmentsState {
     

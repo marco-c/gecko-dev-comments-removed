@@ -28,7 +28,10 @@
 #include "XPCOMModule.h"
 
 using namespace mozilla::ipc;
+using mozilla::fallible;
+using mozilla::MallocSizeOf;
 using mozilla::Maybe;
+using mozilla::ReentrantMonitorAutoEnter;
 using mozilla::Some;
 
 
@@ -58,7 +61,7 @@ class nsStringInputStream final : public nsIStringInputStream,
   nsresult Init(nsTArray<uint8_t>&& aArray);
 
  private:
-  ~nsStringInputStream() {}
+  ~nsStringInputStream() = default;
 
   template <typename M>
   void SerializeInternal(InputStreamParams& aParams, bool aDelayedStart,
@@ -471,7 +474,7 @@ nsStringInputStream::Clone(nsIInputStream** aCloneOut) {
 }
 
 nsresult NS_NewByteInputStream(nsIInputStream** aStreamResult,
-                               Span<const char> aStringToRead,
+                               mozilla::Span<const char> aStringToRead,
                                nsAssignmentType aAssignment) {
   MOZ_ASSERT(aStreamResult, "null out ptr");
 

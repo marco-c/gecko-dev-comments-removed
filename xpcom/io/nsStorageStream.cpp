@@ -43,7 +43,7 @@ using mozilla::ipc::StringInputStreamParams;
 
 
 
-static LazyLogModule sStorageStreamLog("nsStorageStream");
+static mozilla::LazyLogModule sStorageStreamLog("nsStorageStream");
 #ifdef LOG
 #  undef LOG
 #endif
@@ -343,7 +343,7 @@ class nsStorageInputStream final : public nsIInputStream,
   NS_DECL_NSICLONEABLEINPUTSTREAM
 
  private:
-  ~nsStorageInputStream() {}
+  ~nsStorageInputStream() = default;
 
  protected:
   nsresult Seek(uint32_t aPosition);
@@ -577,8 +577,8 @@ void nsStorageInputStream::SerializeInternal(InputStreamParams& aParams,
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   if (remaining >= aMaxSize) {
-    InputStreamHelper::SerializeInputStreamAsPipe(this, aParams, aDelayedStart,
-                                                  aManager);
+    mozilla::ipc::InputStreamHelper::SerializeInputStreamAsPipe(
+        this, aParams, aDelayedStart, aManager);
     return;
   }
 
