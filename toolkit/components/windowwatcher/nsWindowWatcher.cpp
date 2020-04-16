@@ -63,7 +63,6 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
-#include "mozilla/Telemetry.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Storage.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -318,7 +317,9 @@ struct SizeSpec {
         mOuterHeightSpecified(false),
         mInnerWidthSpecified(false),
         mInnerHeightSpecified(false),
-        mLockAspectRatio(false) {}
+        mLockAspectRatio(false),
+        mUseDefaultWidth(false),
+        mUseDefaultHeight(false) {}
 
   int32_t mLeft;
   int32_t mTop;
@@ -334,6 +335,11 @@ struct SizeSpec {
   bool mInnerWidthSpecified;
   bool mInnerHeightSpecified;
   bool mLockAspectRatio;
+
+  
+  
+  bool mUseDefaultWidth;
+  bool mUseDefaultHeight;
 
   bool PositionSpecified() const { return mLeftSpecified || mTopSpecified; }
 
@@ -405,7 +411,8 @@ static bool CheckUserContextCompatibility(nsIDocShell* aDocShell) {
   return subjectPrincipal->GetUserContextId() == userContextId;
 }
 
-nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
+nsresult nsWindowWatcher::CreateChromeWindow(const nsACString& aFeatures,
+                                             nsIWebBrowserChrome* aParentChrome,
                                              uint32_t aChromeFlags,
                                              nsIOpenWindowInfo* aOpenWindowInfo,
                                              nsIWebBrowserChrome** aResult) {
@@ -443,12 +450,15 @@ nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
 
 
 void nsWindowWatcher::MaybeDisablePersistence(
-    const SizeSpec& sizeSpec, nsIDocShellTreeOwner* aTreeOwner) {
+    const nsACString& aFeatures, nsIDocShellTreeOwner* aTreeOwner) {
   if (!aTreeOwner) {
     return;
   }
 
-  if (sizeSpec.SizeSpecified()) {
+  
+  
+  if (PL_strcasestr(aFeatures.BeginReading(), "width=") ||
+      PL_strcasestr(aFeatures.BeginReading(), "height=")) {
     aTreeOwner->SetPersistence(false, false, false);
   }
 }
@@ -513,13 +523,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
     return NS_ERROR_UNEXPECTED;
   }
 
-  WindowFeatures features;
-  features.Tokenize(aFeatures);
-
   SizeSpec sizeSpec;
-  CalcSizeSpec(features, sizeSpec);
+  CalcSizeSpec(aFeatures, sizeSpec);
 
-  uint32_t chromeFlags = CalculateChromeFlagsForChild(features, sizeSpec);
+  uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures, sizeSpec);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -536,7 +543,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   nsCOMPtr<nsIWebBrowserChrome> parentChrome(do_GetInterface(parentTreeOwner));
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
 
-  CreateChromeWindow(parentChrome, chromeFlags, aOpenWindowInfo,
+  CreateChromeWindow(aFeatures, parentChrome, chromeFlags, aOpenWindowInfo,
                      getter_AddRefs(newWindowChrome));
 
   if (NS_WARN_IF(!newWindowChrome)) {
@@ -567,7 +574,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   
   MOZ_ASSERT(chromeContext->UseRemoteTabs());
 
-  MaybeDisablePersistence(sizeSpec, chromeTreeOwner);
+  MaybeDisablePersistence(aFeatures, chromeTreeOwner);
 
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
                    Some(aOpenerFullZoom));
@@ -599,6 +606,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   uint32_t chromeFlags;
   nsAutoString name;           
+  nsAutoCString features;      
   nsCOMPtr<nsIURI> uriToLoad;  
   nsCOMPtr<nsIDocShellTreeOwner>
       parentTreeOwner;            
@@ -636,13 +644,11 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     name.SetIsVoid(true);
   }
 
-  WindowFeatures features;
-  nsAutoCString featuresStr;
   if (aFeatures) {
-    featuresStr.Assign(aFeatures);
-    features.Tokenize(featuresStr);
+    features.Assign(aFeatures);
+    features.StripWhitespace();
   } else {
-    featuresStr.SetIsVoid(true);
+    features.SetIsVoid(true);
   }
 
   RefPtr<BrowsingContext> parentBC(
@@ -684,13 +690,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   }
 
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
-
-  if (!hasChromeParent) {
-    bool outerSizeUsed =
-        features.Exists("outerwidth") || features.Exists("outerheight");
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::WINDOW_OPEN_OUTER_SIZE,
-                                   outerSizeUsed);
-  }
 
   SizeSpec sizeSpec;
   CalcSizeSpec(features, sizeSpec);
@@ -840,8 +839,8 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (provider) {
         rv = provider->ProvideWindow(openWindowInfo, chromeFlags, aCalledFromJS,
                                      sizeSpec.WidthSpecified(), uriToLoad, name,
-                                     featuresStr, aForceNoOpener,
-                                     aForceNoReferrer, aLoadState, &windowIsNew,
+                                     features, aForceNoOpener, aForceNoReferrer,
+                                     aLoadState, &windowIsNew,
                                      getter_AddRefs(newBC));
 
         if (NS_SUCCEEDED(rv) && newBC) {
@@ -937,8 +936,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
 
 
-      rv = CreateChromeWindow(parentChrome, chromeFlags, openWindowInfo,
-                              getter_AddRefs(newChrome));
+      rv = CreateChromeWindow(features, parentChrome, chromeFlags,
+                              openWindowInfo, getter_AddRefs(newChrome));
+
       if (parentTopInnerWindow) {
         parentTopInnerWindow->Resume();
       }
@@ -1031,7 +1031,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   if (isNewToplevelWindow) {
     nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
     newDocShell->GetTreeOwner(getter_AddRefs(newTreeOwner));
-    MaybeDisablePersistence(sizeSpec, newTreeOwner);
+    MaybeDisablePersistence(features, newTreeOwner);
   }
 
   if (aDialog && aArgv) {
@@ -1649,43 +1649,41 @@ nsresult nsWindowWatcher::URIfromURL(const char* aURL,
   return NS_NewURI(aURI, aURL, baseURI);
 }
 
+#define NS_CALCULATE_CHROME_FLAG_FOR(feature, flag) \
+  chromeFlags |=                                    \
+      WinHasOption(aFeatures, (feature), 0, &presenceFlag) ? (flag) : 0;
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
-    uint32_t aInitialFlags, const WindowFeatures& aFeatures,
-    const SizeSpec& aSizeSpec, bool* presenceFlag, bool aHasChromeParent) {
+    uint32_t aInitialFlags, const nsACString& aFeatures,
+    const SizeSpec& aSizeSpec, bool& presenceFlag, bool aHasChromeParent) {
   uint32_t chromeFlags = aInitialFlags;
 
-  if (aFeatures.GetBoolWithDefault("titlebar", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_TITLEBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("close", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_CLOSE;
-  }
-  if (aFeatures.GetBoolWithDefault("toolbar", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_TOOLBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("location", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_LOCATIONBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("personalbar", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("status", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_STATUSBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("menubar", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_MENUBAR;
-  }
-  if (aFeatures.GetBoolWithDefault("resizable", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_RESIZE;
-  }
-  if (aFeatures.GetBoolWithDefault("minimizable", false, presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_MIN;
-  }
+  
+  
 
-  if (aFeatures.GetBoolWithDefault("scrollbars", true, presenceFlag)) {
+  NS_CALCULATE_CHROME_FLAG_FOR("titlebar",
+                               nsIWebBrowserChrome::CHROME_TITLEBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("close",
+                               nsIWebBrowserChrome::CHROME_WINDOW_CLOSE);
+  NS_CALCULATE_CHROME_FLAG_FOR("toolbar", nsIWebBrowserChrome::CHROME_TOOLBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("location",
+                               nsIWebBrowserChrome::CHROME_LOCATIONBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("personalbar",
+                               nsIWebBrowserChrome::CHROME_PERSONAL_TOOLBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("status", nsIWebBrowserChrome::CHROME_STATUSBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("menubar", nsIWebBrowserChrome::CHROME_MENUBAR);
+  NS_CALCULATE_CHROME_FLAG_FOR("resizable",
+                               nsIWebBrowserChrome::CHROME_WINDOW_RESIZE);
+  NS_CALCULATE_CHROME_FLAG_FOR("minimizable",
+                               nsIWebBrowserChrome::CHROME_WINDOW_MIN);
+
+  
+  bool scrollbarsPresent = false;
+  if (WinHasOption(aFeatures, "scrollbars", 1, &scrollbarsPresent) ||
+      !scrollbarsPresent) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_SCROLLBARS;
   }
+  presenceFlag = presenceFlag || scrollbarsPresent;
 
   if (aHasChromeParent) {
     return chromeFlags;
@@ -1741,32 +1739,37 @@ uint32_t nsWindowWatcher::EnsureFlagsSafeForContent(uint32_t aChromeFlags,
 }
 
 
-bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
+bool nsWindowWatcher::ShouldOpenPopup(const nsACString& aFeatures,
                                       const SizeSpec& aSizeSpec) {
-  if (aFeatures.IsEmpty()) {
+  if (aFeatures.IsVoid()) {
     return false;
   }
 
   
   
-  if (!aFeatures.GetBoolWithDefault("location", false) &&
-      !aFeatures.GetBoolWithDefault("toolbar", false)) {
+  bool unused;
+  if (!WinHasOption(aFeatures, "location", 0, &unused) &&
+      !WinHasOption(aFeatures, "toolbar", 0, &unused)) {
     return true;
   }
 
-  if (!aFeatures.GetBoolWithDefault("menubar", false)) {
+  if (!WinHasOption(aFeatures, "menubar", 0, &unused)) {
     return true;
   }
 
-  if (!aFeatures.GetBoolWithDefault("resizable", true)) {
+  
+  
+  bool resizablePresent = false;
+  if (!WinHasOption(aFeatures, "resizable", 0, &resizablePresent) &&
+      resizablePresent) {
     return true;
   }
 
-  if (!aFeatures.GetBoolWithDefault("scrollbars", false)) {
+  if (!WinHasOption(aFeatures, "scrollbars", 0, &unused)) {
     return true;
   }
 
-  if (!aFeatures.GetBoolWithDefault("status", false)) {
+  if (!WinHasOption(aFeatures, "status", 0, &unused)) {
     return true;
   }
 
@@ -1788,13 +1791,15 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
 
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
-    const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec) {
-  if (aFeatures.IsEmpty()) {
+    const nsACString& aFeatures, const SizeSpec& aSizeSpec) {
+  if (aFeatures.IsVoid()) {
     return nsIWebBrowserChrome::CHROME_ALL;
   }
 
-  uint32_t chromeFlags = CalculateChromeFlagsHelper(
-      nsIWebBrowserChrome::CHROME_WINDOW_BORDERS, aFeatures, aSizeSpec);
+  bool presenceFlag = false;
+  uint32_t chromeFlags =
+      CalculateChromeFlagsHelper(nsIWebBrowserChrome::CHROME_WINDOW_BORDERS,
+                                 aFeatures, aSizeSpec, presenceFlag);
 
   return EnsureFlagsSafeForContent(chromeFlags);
 }
@@ -1812,7 +1817,7 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForChild(
 
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
-    mozIDOMWindowProxy* aParent, const WindowFeatures& aFeatures,
+    mozIDOMWindowProxy* aParent, const nsACString& aFeatures,
     const SizeSpec& aSizeSpec, bool aDialog, bool aChromeURL,
     bool aHasChromeParent, bool aCalledFromJS) {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -1822,7 +1827,7 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
 
   
   
-  if (aFeatures.IsEmpty()) {
+  if (aFeatures.IsVoid()) {
     chromeFlags = nsIWebBrowserChrome::CHROME_ALL;
     if (aDialog) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
@@ -1841,29 +1846,29 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
 
 
   bool presenceFlag = false;
-  if (aDialog && aFeatures.GetBoolWithDefault("all", false, &presenceFlag)) {
+  if (aDialog && WinHasOption(aFeatures, "all", 0, &presenceFlag)) {
     chromeFlags = nsIWebBrowserChrome::CHROME_ALL;
   }
 
   
   chromeFlags = CalculateChromeFlagsHelper(chromeFlags, aFeatures, aSizeSpec,
-                                           &presenceFlag, aHasChromeParent);
+                                           presenceFlag, aHasChromeParent);
 
   
-  if (aFeatures.GetBoolWithDefault("private", false, &presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
-  }
-  if (aFeatures.GetBoolWithDefault("non-private", false, &presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW;
-  }
+  chromeFlags |= WinHasOption(aFeatures, "private", 0, &presenceFlag)
+                     ? nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "non-private", 0, &presenceFlag)
+                     ? nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW
+                     : 0;
 
   
   bool remote = BrowserTabsRemoteAutostart();
 
   if (remote) {
-    remote = !aFeatures.GetBoolWithDefault("non-remote", false, &presenceFlag);
+    remote = !WinHasOption(aFeatures, "non-remote", 0, &presenceFlag);
   } else {
-    remote = aFeatures.GetBoolWithDefault("remote", false, &presenceFlag);
+    remote = WinHasOption(aFeatures, "remote", 0, &presenceFlag);
   }
 
   if (remote) {
@@ -1874,19 +1879,18 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
   bool fission = StaticPrefs::fission_autostart();
 
   if (fission) {
-    fission =
-        !aFeatures.GetBoolWithDefault("non-fission", false, &presenceFlag);
+    fission = !WinHasOption(aFeatures, "non-fission", 0, &presenceFlag);
   } else {
-    fission = aFeatures.GetBoolWithDefault("fission", false, &presenceFlag);
+    fission = WinHasOption(aFeatures, "fission", 0, &presenceFlag);
   }
 
   if (fission) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
   }
 
-  if (aFeatures.GetBoolWithDefault("popup", false, &presenceFlag)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_POPUP;
-  }
+  chromeFlags |= WinHasOption(aFeatures, "popup", 0, &presenceFlag)
+                     ? nsIWebBrowserChrome::CHROME_WINDOW_POPUP
+                     : 0;
 
   
 
@@ -1897,15 +1901,15 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
 
   
   if (!(chromeFlags & nsIWebBrowserChrome::CHROME_WINDOW_POPUP)) {
-    if (!aFeatures.Exists("titlebar")) {
+    if (!PL_strcasestr(aFeatures.BeginReading(), "titlebar")) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_TITLEBAR;
     }
-    if (!aFeatures.Exists("close")) {
+    if (!PL_strcasestr(aFeatures.BeginReading(), "close")) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_CLOSE;
     }
   }
 
-  if (aDialog && !aFeatures.IsEmpty() && !presenceFlag) {
+  if (aDialog && !aFeatures.IsVoid() && !presenceFlag) {
     chromeFlags = nsIWebBrowserChrome::CHROME_DEFAULT;
   }
 
@@ -1913,35 +1917,35 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
 
 
 
-  if (aFeatures.GetBoolWithDefault("alwayslowered", false) ||
-      aFeatures.GetBoolWithDefault("z-lock", false)) {
+  if (WinHasOption(aFeatures, "alwaysLowered", 0, nullptr) ||
+      WinHasOption(aFeatures, "z-lock", 0, nullptr)) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_LOWERED;
-  } else if (aFeatures.GetBoolWithDefault("alwaysraised", false)) {
+  } else if (WinHasOption(aFeatures, "alwaysRaised", 0, nullptr)) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_RAISED;
   }
 
-  if (aFeatures.GetBoolWithDefault("suppressanimation", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_SUPPRESS_ANIMATION;
-  }
-  if (aFeatures.GetBoolWithDefault("alwaysontop", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP;
-  }
-  if (aFeatures.GetBoolWithDefault("chrome", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
-  }
-  if (aFeatures.GetBoolWithDefault("extrachrome", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_EXTRA;
-  }
-  if (aFeatures.GetBoolWithDefault("centerscreen", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_CENTER_SCREEN;
-  }
-  if (aFeatures.GetBoolWithDefault("dependent", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_DEPENDENT;
-  }
-  if (aFeatures.GetBoolWithDefault("modal", false)) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_MODAL |
-                   nsIWebBrowserChrome::CHROME_DEPENDENT;
-  }
+  chromeFlags |= WinHasOption(aFeatures, "suppressanimation", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_SUPPRESS_ANIMATION
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "alwaysontop", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_ALWAYS_ON_TOP
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "chrome", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_OPENAS_CHROME
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "extrachrome", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_EXTRA
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "centerscreen", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_CENTER_SCREEN
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "dependent", 0, nullptr)
+                     ? nsIWebBrowserChrome::CHROME_DEPENDENT
+                     : 0;
+  chromeFlags |= WinHasOption(aFeatures, "modal", 0, nullptr)
+                     ? (nsIWebBrowserChrome::CHROME_MODAL |
+                        nsIWebBrowserChrome::CHROME_DEPENDENT)
+                     : 0;
 
   
 
@@ -1953,18 +1957,18 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
                       &disableDialogFeature);
 
   if (!disableDialogFeature) {
-    if (aFeatures.GetBoolWithDefault("dialog", false)) {
-      chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
-    }
+    chromeFlags |= WinHasOption(aFeatures, "dialog", 0, nullptr)
+                       ? nsIWebBrowserChrome::CHROME_OPENAS_DIALOG
+                       : 0;
   }
 
   
 
   if (aDialog) {
-    if (!aFeatures.Exists("dialog")) {
+    if (!PL_strcasestr(aFeatures.BeginReading(), "dialog")) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
     }
-    if (!aFeatures.Exists("chrome")) {
+    if (!PL_strcasestr(aFeatures.BeginReading(), "chrome")) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_CHROME;
     }
   }
@@ -1986,6 +1990,63 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
   }
 
   return chromeFlags;
+}
+
+
+int32_t nsWindowWatcher::WinHasOption(const nsACString& aOptions,
+                                      const char* aName, int32_t aDefault,
+                                      bool* aPresenceFlag) {
+  if (aOptions.IsEmpty()) {
+    return 0;
+  }
+
+  const char* options = aOptions.BeginReading();
+  char* comma;
+  char* equal;
+  int32_t found = 0;
+
+#ifdef DEBUG
+  NS_ASSERTION(nsAutoCString(aOptions).FindCharInSet(" \n\r\t") == kNotFound,
+               "There should be no whitespace in this string!");
+#endif
+
+  while (true) {
+    comma = PL_strchr(options, ',');
+    if (comma) {
+      *comma = '\0';
+    }
+    equal = PL_strchr(options, '=');
+    if (equal) {
+      *equal = '\0';
+    }
+    if (nsCRT::strcasecmp(options, aName) == 0) {
+      if (aPresenceFlag) {
+        *aPresenceFlag = true;
+      }
+      if (equal)
+        if (*(equal + 1) == '*') {
+          found = aDefault;
+        } else if (nsCRT::strcasecmp(equal + 1, "yes") == 0) {
+          found = 1;
+        } else {
+          found = atoi(equal + 1);
+        }
+      else {
+        found = 1;
+      }
+    }
+    if (equal) {
+      *equal = '=';
+    }
+    if (comma) {
+      *comma = ',';
+    }
+    if (found || !comma) {
+      break;
+    }
+    options = comma + 1;
+  }
+  return found;
 }
 
 already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
@@ -2019,148 +2080,70 @@ already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
 }
 
 
-void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
+void nsWindowWatcher::CalcSizeSpec(const nsACString& aFeatures,
                                    SizeSpec& aResult) {
   
-  
-  
+  bool present;
+  int32_t temp;
 
-  
-  
-
-  
-  
-
-  
-  
-
-  
-  
-
-  
-  if (aFeatures.Exists("left")) {
-    
-    
-    
-    
-    int32_t x = aFeatures.GetInt("left");
-
-    
-    
-    
-
-    
-    
-    
-    
-    aResult.mLeft = x;
-    aResult.mLeftSpecified = true;
+  present = false;
+  if ((temp = WinHasOption(aFeatures, "left", 0, &present)) || present) {
+    aResult.mLeft = temp;
+  } else if ((temp = WinHasOption(aFeatures, "screenX", 0, &present)) ||
+             present) {
+    aResult.mLeft = temp;
   }
+  aResult.mLeftSpecified = present;
 
-  
-  if (aFeatures.Exists("top")) {
-    
-    
-    
-    
-    int32_t y = aFeatures.GetInt("top");
-
-    
-    
-    
-
-    
-    
-    
-    
-    aResult.mTop = y;
-    aResult.mTopSpecified = true;
+  present = false;
+  if ((temp = WinHasOption(aFeatures, "top", 0, &present)) || present) {
+    aResult.mTop = temp;
+  } else if ((temp = WinHasOption(aFeatures, "screenY", 0, &present)) ||
+             present) {
+    aResult.mTop = temp;
   }
+  aResult.mTopSpecified = present;
 
   
-  
-  if (aFeatures.Exists("outerwidth")) {
-    int32_t width = aFeatures.GetInt("outerwidth");
-    if (width) {
-      aResult.mOuterWidth = width;
-      aResult.mOuterWidthSpecified = true;
+  if ((temp = WinHasOption(aFeatures, "outerWidth", INT32_MIN, nullptr))) {
+    if (temp == INT32_MIN) {
+      aResult.mUseDefaultWidth = true;
+    } else {
+      aResult.mOuterWidth = temp;
     }
-  }
-
-  if (!aResult.mOuterWidthSpecified) {
-    
-    if (aFeatures.Exists("width")) {
-      
-      
-      
-      
-      int32_t width = aFeatures.GetInt("width");
-
-      
-      if (width) {
-        
-        
-        
-        
-
-        
-        
-        
-        aResult.mInnerWidth = width;
-        aResult.mInnerWidthSpecified = true;
-
-        
-        
-        
-        
-      }
+    aResult.mOuterWidthSpecified = true;
+  } else if ((temp = WinHasOption(aFeatures, "width", INT32_MIN, nullptr)) ||
+             (temp =
+                  WinHasOption(aFeatures, "innerWidth", INT32_MIN, nullptr))) {
+    if (temp == INT32_MIN) {
+      aResult.mUseDefaultWidth = true;
+    } else {
+      aResult.mInnerWidth = temp;
     }
+    aResult.mInnerWidthSpecified = true;
   }
 
-  
-  
-  if (aFeatures.Exists("outerheight")) {
-    int32_t height = aFeatures.GetInt("outerheight");
-    if (height) {
-      aResult.mOuterHeight = height;
-      aResult.mOuterHeightSpecified = true;
+  if ((temp = WinHasOption(aFeatures, "outerHeight", INT32_MIN, nullptr))) {
+    if (temp == INT32_MIN) {
+      aResult.mUseDefaultHeight = true;
+    } else {
+      aResult.mOuterHeight = temp;
     }
-  }
-
-  if (!aResult.mOuterHeightSpecified) {
-    
-    if (aFeatures.Exists("height")) {
-      
-      
-      
-      
-      int32_t height = aFeatures.GetInt("height");
-
-      
-      if (height) {
-        
-        
-        
-        
-
-        
-        
-        
-        aResult.mInnerHeight = height;
-        aResult.mInnerHeightSpecified = true;
-
-        
-        
-        
-        
-      }
+    aResult.mOuterHeightSpecified = true;
+  } else if ((temp = WinHasOption(aFeatures, "height", INT32_MIN, nullptr)) ||
+             (temp =
+                  WinHasOption(aFeatures, "innerHeight", INT32_MIN, nullptr))) {
+    if (temp == INT32_MIN) {
+      aResult.mUseDefaultHeight = true;
+    } else {
+      aResult.mInnerHeight = temp;
     }
+    aResult.mInnerHeightSpecified = true;
   }
 
-  
-  
-  aResult.mLockAspectRatio =
-      aFeatures.GetBoolWithDefault("lockaspectratio", false);
+  if (WinHasOption(aFeatures, "lockaspectratio", 0, nullptr)) {
+    aResult.mLockAspectRatio = true;
+  }
 }
 
 
@@ -2250,18 +2233,30 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
 
   
   if (aSizeSpec.mOuterWidthSpecified) {
-    width = NSToIntRound(aSizeSpec.mOuterWidth * openerZoom);
+    if (!aSizeSpec.mUseDefaultWidth) {
+      width = NSToIntRound(aSizeSpec.mOuterWidth * openerZoom);
+    }  
   } else if (aSizeSpec.mInnerWidthSpecified) {
     sizeChromeWidth = false;
-    width = NSToIntRound(aSizeSpec.mInnerWidth * openerZoom);
+    if (aSizeSpec.mUseDefaultWidth) {
+      width = width - chromeWidth;
+    } else {
+      width = NSToIntRound(aSizeSpec.mInnerWidth * openerZoom);
+    }
   }
 
   
   if (aSizeSpec.mOuterHeightSpecified) {
-    height = NSToIntRound(aSizeSpec.mOuterHeight * openerZoom);
+    if (!aSizeSpec.mUseDefaultHeight) {
+      height = NSToIntRound(aSizeSpec.mOuterHeight * openerZoom);
+    }  
   } else if (aSizeSpec.mInnerHeightSpecified) {
     sizeChromeHeight = false;
-    height = NSToIntRound(aSizeSpec.mInnerHeight * openerZoom);
+    if (aSizeSpec.mUseDefaultHeight) {
+      height = height - chromeHeight;
+    } else {
+      height = NSToIntRound(aSizeSpec.mInnerHeight * openerZoom);
+    }
   }
 
   bool positionSpecified = aSizeSpec.PositionSpecified();

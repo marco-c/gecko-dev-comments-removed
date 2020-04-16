@@ -11,7 +11,6 @@
 #include "nsClassHashtable.h"
 #include "nsComponentManagerUtils.h"
 #include "nsTArray.h"
-#include "nsTStringHasher.h"  
 #include "nsZipArchive.h"
 #include "nsITimer.h"
 #include "nsIMemoryReporter.h"
@@ -122,6 +121,19 @@ struct StartupCacheEntry {
   };
 };
 
+struct nsCStringHasher {
+  using Key = nsCString;
+  using Lookup = nsCString;
+
+  static HashNumber hash(const Lookup& aLookup) {
+    return HashString(aLookup.get());
+  }
+
+  static bool match(const Key& aKey, const Lookup& aLookup) {
+    return aKey.Equals(aLookup);
+  }
+};
+
 
 
 class StartupCacheListener final : public nsIObserver {
@@ -206,7 +218,7 @@ class StartupCache : public nsIMemoryReporter {
   static void ThreadedWrite(void* aClosure);
   static void ThreadedPrefetch(void* aClosure);
 
-  HashMap<nsCString, StartupCacheEntry> mTable;
+  HashMap<nsCString, StartupCacheEntry, nsCStringHasher> mTable;
   
   
   

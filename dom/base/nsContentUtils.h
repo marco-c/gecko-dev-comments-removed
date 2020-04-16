@@ -615,11 +615,6 @@ class nsContentUtils {
     eParseHTMLInteger_NoFlags = 0,
     
     
-    
-    
-    
-    
-    
     eParseHTMLInteger_NonStandard = 1 << 0,
     eParseHTMLInteger_DidNotConsumeAllInput = 1 << 1,
     
@@ -631,15 +626,7 @@ class nsContentUtils {
   };
   static int32_t ParseHTMLInteger(const nsAString& aValue,
                                   ParseHTMLIntegerResultFlags* aResult);
-  static int32_t ParseHTMLInteger(const nsACString& aValue,
-                                  ParseHTMLIntegerResultFlags* aResult);
 
- private:
-  template <class StringT>
-  static int32_t ParseHTMLIntegerImpl(const StringT& aValue,
-                                      ParseHTMLIntegerResultFlags* aResult);
-
- public:
   
 
 
