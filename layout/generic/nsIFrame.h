@@ -4594,25 +4594,6 @@ class nsIFrame : public nsQueryFrame {
   static_assert(sizeof(PeekOffsetCharacterOptions) <= sizeof(intptr_t),
                 "aOptions should be changed to const reference");
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   struct PeekWordState {
     
     
@@ -4650,6 +4631,23 @@ class nsIFrame : public nsQueryFrame {
       mAtStart = false;
     }
   };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   virtual FrameSearchResult PeekOffsetWord(
       bool aForward, bool aWordSelectEatSpace, bool aIsKeyboardSelect,
       int32_t* aOffset, PeekWordState* aState, bool aTrimSpaces) = 0;
