@@ -38,6 +38,24 @@ const mockTargets = [
   { id: "3", name: "no client record device", type: "phone" },
 ];
 
+add_task(async function openPanel() {
+  if (AppConstants.platform == "macosx") {
+    
+    return;
+  }
+
+  let url = "http://example.com/";
+  await BrowserTestUtils.withNewTab(url, async () => {
+    
+    await promisePageActionPanelOpen({ ctrlKey: true });
+
+    
+    let hiddenPromise = promisePageActionPanelHidden();
+    BrowserPageActions.panelNode.hidePopup();
+    await hiddenPromise;
+  });
+});
+
 add_task(async function bookmark() {
   
   let url = "http://example.com/browser_page_action_menu";
