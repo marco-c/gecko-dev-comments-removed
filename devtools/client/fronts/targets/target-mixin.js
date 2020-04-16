@@ -460,7 +460,7 @@ function TargetMixin(parentClass) {
         try {
           await this.detach();
         } catch (e) {
-          console.warn("Error while detaching target:", e);
+          this.logDetachError(e);
         }
       }
 
@@ -468,6 +468,32 @@ function TargetMixin(parentClass) {
       super.destroy();
 
       this._cleanup();
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    logDetachError(e, targetType) {
+      const noSuchActorError = e?.message.includes("noSuchActor");
+
+      
+      if (noSuchActorError) {
+        return;
+      }
+
+      
+      const message = targetType
+        ? `Error while detaching the ${targetType} target:`
+        : "Error while detaching target:";
+      console.warn(message, e);
     }
 
     
