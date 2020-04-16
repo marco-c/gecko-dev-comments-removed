@@ -37,11 +37,7 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
   sImageLibInitialized = true;
 
   
-  nsresult rv = Preferences::SetBool("gfx.color_management.force_srgb", true);
-  EXPECT_TRUE(rv == NS_OK);
-
-  
-  rv = Preferences::SetBool("image.webp.enabled", true);
+  nsresult rv = Preferences::SetBool("image.webp.enabled", true);
   EXPECT_TRUE(rv == NS_OK);
 
   
