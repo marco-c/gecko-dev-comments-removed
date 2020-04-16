@@ -270,6 +270,8 @@ if (!isDevtools) {
   
   whitelist.add("resource://services-sync/service.js");
   
+  whitelist.add("resource://services-sync/bridged_engine.js");
+  
   for (let module of [
     "addons.js",
     "bookmarks.js",

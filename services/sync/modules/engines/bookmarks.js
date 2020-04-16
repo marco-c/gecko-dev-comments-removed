@@ -1016,11 +1016,6 @@ BufferedBookmarksEngine.prototype = {
     await super.finalize();
     await this._store.finalize();
   },
-
-  
-  _newWatchdog() {
-    return Async.watchdog();
-  },
 };
 
 
