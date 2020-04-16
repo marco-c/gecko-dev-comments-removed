@@ -711,7 +711,7 @@ static void DebugDoContentSecurityCheck(nsIChannel* aChannel,
 
     
     nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
-    LogPrincipal(aLoadInfo->GetLoadingPrincipal(),
+    LogPrincipal(aLoadInfo->LoadingPrincipal(),
                  NS_LITERAL_STRING("loadingPrincipal"));
     LogPrincipal(requestPrincipal, NS_LITERAL_STRING("triggeringPrincipal"));
     LogPrincipal(aLoadInfo->PrincipalToInherit(),
@@ -769,8 +769,8 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
 
   
   
-  if (!loadInfo->GetLoadingPrincipal() ||
-      !loadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) {
+  if (!loadInfo->LoadingPrincipal() ||
+      !loadInfo->LoadingPrincipal()->IsSystemPrincipal()) {
     return NS_OK;
   }
 
@@ -1033,7 +1033,7 @@ nsresult nsContentSecurityManager::CheckChannel(nsIChannel* aChannel) {
     
     MOZ_ASSERT(loadInfo->GetExternalContentPolicyType() !=
                nsIContentPolicy::TYPE_DOCUMENT);
-    nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
+    nsIPrincipal* loadingPrincipal = loadInfo->LoadingPrincipal();
 
     
     

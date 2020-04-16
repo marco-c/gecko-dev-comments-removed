@@ -253,12 +253,11 @@ interface nsILoadInfo : nsISupports
 
   readonly attribute nsIPrincipal loadingPrincipal;
 
-%{C++
   
 
 
-  virtual nsIPrincipal* GetLoadingPrincipal() = 0;
-%}
+  [noscript, notxpcom, nostdcall, binaryname(LoadingPrincipal)]
+  nsIPrincipal binaryLoadingPrincipal();
 
   
 
