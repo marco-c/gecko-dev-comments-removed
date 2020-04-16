@@ -1116,7 +1116,7 @@ extern JS::FilenameValidationCallback gFilenameValidationCallback;
 
 
 
-extern void (*HelperThreadTaskCallback)(js::UniquePtr<js::RunnableTask>);
+extern void (*HelperThreadTaskCallback)(js::RunnableTask*);
 
 } 
 
