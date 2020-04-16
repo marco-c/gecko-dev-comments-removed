@@ -18,8 +18,7 @@ unsafe impl GetThreadId for RawThreadId {
     fn nonzero_thread_id(&self) -> NonZeroUsize {
         
         
-        
-        thread_local!(static KEY: u8 = 0);
+        thread_local!(static KEY: u8 = unsafe { ::std::mem::uninitialized() });
         KEY.with(|x| {
             NonZeroUsize::new(x as *const _ as usize)
                 .expect("thread-local variable address is null")
@@ -39,17 +38,6 @@ unsafe impl GetThreadId for RawThreadId {
 
 
 pub type ReentrantMutex<T> = lock_api::ReentrantMutex<RawMutex, RawThreadId, T>;
-
-
-
-
-pub const fn const_reentrant_mutex<T>(val: T) -> ReentrantMutex<T> {
-    ReentrantMutex::const_new(
-        <RawMutex as lock_api::RawMutex>::INIT,
-        <RawThreadId as lock_api::GetThreadId>::INIT,
-        val,
-    )
-}
 
 
 
@@ -80,18 +68,18 @@ mod tests {
 
     #[test]
     fn smoke() {
-        let m = ReentrantMutex::new(2);
+        let m = ReentrantMutex::new(());
         {
             let a = m.lock();
             {
                 let b = m.lock();
                 {
                     let c = m.lock();
-                    assert_eq!(*c, 2);
+                    assert_eq!(*c, ());
                 }
-                assert_eq!(*b, 2);
+                assert_eq!(*b, ());
             }
-            assert_eq!(*a, 2);
+            assert_eq!(*a, ());
         }
     }
 

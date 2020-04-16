@@ -12,7 +12,11 @@ use core::{
     cell::Cell,
     sync::atomic::{AtomicUsize, Ordering},
 };
-use lock_api::{GuardNoSend, RawRwLock as RawRwLock_, RawRwLockUpgrade};
+use lock_api::{
+    GuardNoSend, RawRwLock as RawRwLockTrait, RawRwLockDowngrade, RawRwLockFair,
+    RawRwLockRecursive, RawRwLockRecursiveTimed, RawRwLockTimed, RawRwLockUpgrade,
+    RawRwLockUpgradeDowngrade, RawRwLockUpgradeFair, RawRwLockUpgradeTimed,
+};
 use parking_lot_core::{
     self, deadlock, FilterOp, ParkResult, ParkToken, SpinWait, UnparkResult, UnparkToken,
 };
@@ -56,10 +60,8 @@ pub struct RawRwLock {
     state: AtomicUsize,
 }
 
-unsafe impl lock_api::RawRwLock for RawRwLock {
-    const INIT: RawRwLock = RawRwLock {
-        state: AtomicUsize::new(0),
-    };
+unsafe impl RawRwLockTrait for RawRwLock {
+    const INIT: RawRwLock = RawRwLock { state: AtomicUsize::new(0) };
 
     type GuardMarker = GuardNoSend;
 
@@ -78,10 +80,7 @@ unsafe impl lock_api::RawRwLock for RawRwLock {
 
     #[inline]
     fn try_lock_exclusive(&self) -> bool {
-        if self
-            .state
-            .compare_exchange(0, WRITER_BIT, Ordering::Acquire, Ordering::Relaxed)
-            .is_ok()
+        if self.state.compare_exchange(0, WRITER_BIT, Ordering::Acquire, Ordering::Relaxed).is_ok()
         {
             self.deadlock_acquire();
             true
@@ -93,10 +92,7 @@ unsafe impl lock_api::RawRwLock for RawRwLock {
     #[inline]
     fn unlock_exclusive(&self) {
         self.deadlock_release();
-        if self
-            .state
-            .compare_exchange(WRITER_BIT, 0, Ordering::Release, Ordering::Relaxed)
-            .is_ok()
+        if self.state.compare_exchange(WRITER_BIT, 0, Ordering::Release, Ordering::Relaxed).is_ok()
         {
             return;
         }
@@ -114,11 +110,8 @@ unsafe impl lock_api::RawRwLock for RawRwLock {
 
     #[inline]
     fn try_lock_shared(&self) -> bool {
-        let result = if self.try_lock_shared_fast(false) {
-            true
-        } else {
-            self.try_lock_shared_slow(false)
-        };
+        let result =
+            if self.try_lock_shared_fast(false) { true } else { self.try_lock_shared_slow(false) };
         if result {
             self.deadlock_acquire();
         }
@@ -139,7 +132,7 @@ unsafe impl lock_api::RawRwLock for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockFair for RawRwLock {
+unsafe impl RawRwLockFair for RawRwLock {
     #[inline]
     fn unlock_shared_fair(&self) {
         
@@ -149,10 +142,7 @@ unsafe impl lock_api::RawRwLockFair for RawRwLock {
     #[inline]
     fn unlock_exclusive_fair(&self) {
         self.deadlock_release();
-        if self
-            .state
-            .compare_exchange(WRITER_BIT, 0, Ordering::Release, Ordering::Relaxed)
-            .is_ok()
+        if self.state.compare_exchange(WRITER_BIT, 0, Ordering::Release, Ordering::Relaxed).is_ok()
         {
             return;
         }
@@ -176,12 +166,10 @@ unsafe impl lock_api::RawRwLockFair for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockDowngrade for RawRwLock {
+unsafe impl RawRwLockDowngrade for RawRwLock {
     #[inline]
     fn downgrade(&self) {
-        let state = self
-            .state
-            .fetch_add(ONE_READER - WRITER_BIT, Ordering::Release);
+        let state = self.state.fetch_add(ONE_READER - WRITER_BIT, Ordering::Release);
 
         
         if state & PARKED_BIT != 0 {
@@ -190,7 +178,7 @@ unsafe impl lock_api::RawRwLockDowngrade for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockTimed for RawRwLock {
+unsafe impl RawRwLockTimed for RawRwLock {
     type Duration = Duration;
     type Instant = Instant;
 
@@ -255,7 +243,7 @@ unsafe impl lock_api::RawRwLockTimed for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockRecursive for RawRwLock {
+unsafe impl RawRwLockRecursive for RawRwLock {
     #[inline]
     fn lock_shared_recursive(&self) {
         if !self.try_lock_shared_fast(true) {
@@ -267,11 +255,8 @@ unsafe impl lock_api::RawRwLockRecursive for RawRwLock {
 
     #[inline]
     fn try_lock_shared_recursive(&self) -> bool {
-        let result = if self.try_lock_shared_fast(true) {
-            true
-        } else {
-            self.try_lock_shared_slow(true)
-        };
+        let result =
+            if self.try_lock_shared_fast(true) { true } else { self.try_lock_shared_slow(true) };
         if result {
             self.deadlock_acquire();
         }
@@ -279,7 +264,7 @@ unsafe impl lock_api::RawRwLockRecursive for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockRecursiveTimed for RawRwLock {
+unsafe impl RawRwLockRecursiveTimed for RawRwLock {
     #[inline]
     fn try_lock_shared_recursive_for(&self, timeout: Self::Duration) -> bool {
         let result = if self.try_lock_shared_fast(true) {
@@ -307,7 +292,7 @@ unsafe impl lock_api::RawRwLockRecursiveTimed for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockUpgrade for RawRwLock {
+unsafe impl RawRwLockUpgrade for RawRwLock {
     #[inline]
     fn lock_upgradable(&self) {
         if !self.try_lock_upgradable_fast() {
@@ -319,11 +304,8 @@ unsafe impl lock_api::RawRwLockUpgrade for RawRwLock {
 
     #[inline]
     fn try_lock_upgradable(&self) -> bool {
-        let result = if self.try_lock_upgradable_fast() {
-            true
-        } else {
-            self.try_lock_upgradable_slow()
-        };
+        let result =
+            if self.try_lock_upgradable_fast() { true } else { self.try_lock_upgradable_slow() };
         if result {
             self.deadlock_acquire();
         }
@@ -353,10 +335,8 @@ unsafe impl lock_api::RawRwLockUpgrade for RawRwLock {
 
     #[inline]
     fn upgrade(&self) {
-        let state = self.state.fetch_sub(
-            (ONE_READER | UPGRADABLE_BIT) - WRITER_BIT,
-            Ordering::Relaxed,
-        );
+        let state =
+            self.state.fetch_sub((ONE_READER | UPGRADABLE_BIT) - WRITER_BIT, Ordering::Relaxed);
         if state & READERS_MASK != ONE_READER {
             let result = self.upgrade_slow(None);
             debug_assert!(result);
@@ -382,7 +362,7 @@ unsafe impl lock_api::RawRwLockUpgrade for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockUpgradeFair for RawRwLock {
+unsafe impl RawRwLockUpgradeFair for RawRwLock {
     #[inline]
     fn unlock_upgradable_fair(&self) {
         self.deadlock_release();
@@ -412,7 +392,7 @@ unsafe impl lock_api::RawRwLockUpgradeFair for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockUpgradeDowngrade for RawRwLock {
+unsafe impl RawRwLockUpgradeDowngrade for RawRwLock {
     #[inline]
     fn downgrade_upgradable(&self) {
         let state = self.state.fetch_sub(UPGRADABLE_BIT, Ordering::Relaxed);
@@ -425,10 +405,8 @@ unsafe impl lock_api::RawRwLockUpgradeDowngrade for RawRwLock {
 
     #[inline]
     fn downgrade_to_upgradable(&self) {
-        let state = self.state.fetch_add(
-            (ONE_READER | UPGRADABLE_BIT) - WRITER_BIT,
-            Ordering::Release,
-        );
+        let state =
+            self.state.fetch_add((ONE_READER | UPGRADABLE_BIT) - WRITER_BIT, Ordering::Release);
 
         
         if state & PARKED_BIT != 0 {
@@ -437,7 +415,7 @@ unsafe impl lock_api::RawRwLockUpgradeDowngrade for RawRwLock {
     }
 }
 
-unsafe impl lock_api::RawRwLockUpgradeTimed for RawRwLock {
+unsafe impl RawRwLockUpgradeTimed for RawRwLock {
     #[inline]
     fn try_lock_upgradable_until(&self, timeout: Instant) -> bool {
         let result = if self.try_lock_upgradable_fast() {
@@ -466,23 +444,15 @@ unsafe impl lock_api::RawRwLockUpgradeTimed for RawRwLock {
 
     #[inline]
     fn try_upgrade_until(&self, timeout: Instant) -> bool {
-        let state = self.state.fetch_sub(
-            (ONE_READER | UPGRADABLE_BIT) - WRITER_BIT,
-            Ordering::Relaxed,
-        );
-        if state & READERS_MASK == ONE_READER {
-            true
-        } else {
-            self.upgrade_slow(Some(timeout))
-        }
+        let state =
+            self.state.fetch_sub((ONE_READER | UPGRADABLE_BIT) - WRITER_BIT, Ordering::Relaxed);
+        if state & READERS_MASK == ONE_READER { true } else { self.upgrade_slow(Some(timeout)) }
     }
 
     #[inline]
     fn try_upgrade_for(&self, timeout: Duration) -> bool {
-        let state = self.state.fetch_sub(
-            (ONE_READER | UPGRADABLE_BIT) - WRITER_BIT,
-            Ordering::Relaxed,
-        );
+        let state =
+            self.state.fetch_sub((ONE_READER | UPGRADABLE_BIT) - WRITER_BIT, Ordering::Relaxed);
         if state & READERS_MASK == ONE_READER {
             true
         } else {
@@ -511,9 +481,7 @@ impl RawRwLock {
         
         
         if have_elision() && state == 0 {
-            self.state
-                .elision_compare_exchange_acquire(0, ONE_READER)
-                .is_ok()
+            self.state.elision_compare_exchange_acquire(0, ONE_READER).is_ok()
         } else if let Some(new_state) = state.checked_add(ONE_READER) {
             self.state
                 .compare_exchange_weak(state, new_state, Ordering::Acquire, Ordering::Relaxed)
@@ -541,9 +509,7 @@ impl RawRwLock {
             } else {
                 match self.state.compare_exchange_weak(
                     state,
-                    state
-                        .checked_add(ONE_READER)
-                        .expect("RwLock reader count overflow"),
+                    state.checked_add(ONE_READER).expect("RwLock reader count overflow"),
                     Ordering::Acquire,
                     Ordering::Relaxed,
                 ) {
@@ -598,31 +564,29 @@ impl RawRwLock {
 
     #[cold]
     fn lock_exclusive_slow(&self, timeout: Option<Instant>) -> bool {
-        let try_lock = |state: &mut usize| {
-            loop {
-                if *state & (WRITER_BIT | UPGRADABLE_BIT) != 0 {
-                    return false;
-                }
-
-                
-                match self.state.compare_exchange_weak(
-                    *state,
-                    *state | WRITER_BIT,
-                    Ordering::Acquire,
-                    Ordering::Relaxed,
-                ) {
-                    Ok(_) => return true,
-                    Err(x) => *state = x,
-                }
-            }
-        };
-
         
         let timed_out = !self.lock_common(
             timeout,
             TOKEN_EXCLUSIVE,
-            try_lock,
-            WRITER_BIT | UPGRADABLE_BIT,
+            |state| {
+                loop {
+                    if *state & (WRITER_BIT | UPGRADABLE_BIT) != 0 {
+                        return false;
+                    }
+
+                    
+                    match self.state.compare_exchange_weak(
+                        *state,
+                        *state | WRITER_BIT,
+                        Ordering::Acquire,
+                        Ordering::Relaxed,
+                    ) {
+                        Ok(_) => return true,
+                        Err(x) => *state = x,
+                    }
+                }
+            },
+            |state| state & (WRITER_BIT | UPGRADABLE_BIT) != 0,
         );
         if timed_out {
             return false;
@@ -654,115 +618,111 @@ impl RawRwLock {
                 TOKEN_NORMAL
             }
         };
-        
-        unsafe {
-            self.wake_parked_threads(0, callback);
-        }
+        self.wake_parked_threads(0, callback);
     }
 
     #[cold]
     fn lock_shared_slow(&self, recursive: bool, timeout: Option<Instant>) -> bool {
-        let try_lock = |state: &mut usize| {
-            let mut spinwait_shared = SpinWait::new();
-            loop {
-                
-                
-                
-                if have_elision() && *state == 0 {
-                    match self.state.elision_compare_exchange_acquire(0, ONE_READER) {
-                        Ok(_) => return true,
-                        Err(x) => *state = x,
+        self.lock_common(
+            timeout,
+            TOKEN_SHARED,
+            |state| {
+                let mut spinwait_shared = SpinWait::new();
+                loop {
+                    
+                    
+                    
+                    if have_elision() && *state == 0 {
+                        match self.state.elision_compare_exchange_acquire(0, ONE_READER) {
+                            Ok(_) => return true,
+                            Err(x) => *state = x,
+                        }
                     }
-                }
 
-                
-                if *state & WRITER_BIT != 0 {
-                    if !recursive || *state & READERS_MASK == 0 {
-                        return false;
+                    
+                    if *state & WRITER_BIT != 0 {
+                        if !recursive || *state & READERS_MASK == 0 {
+                            return false;
+                        }
                     }
-                }
 
-                if self
-                    .state
-                    .compare_exchange_weak(
-                        *state,
-                        state
-                            .checked_add(ONE_READER)
-                            .expect("RwLock reader count overflow"),
-                        Ordering::Acquire,
-                        Ordering::Relaxed,
-                    )
-                    .is_ok()
-                {
-                    return true;
-                }
+                    if self
+                        .state
+                        .compare_exchange_weak(
+                            *state,
+                            state.checked_add(ONE_READER).expect("RwLock reader count overflow"),
+                            Ordering::Acquire,
+                            Ordering::Relaxed,
+                        )
+                        .is_ok()
+                    {
+                        return true;
+                    }
 
-                
-                
-                
-                spinwait_shared.spin_no_yield();
-                *state = self.state.load(Ordering::Relaxed);
-            }
-        };
-        self.lock_common(timeout, TOKEN_SHARED, try_lock, WRITER_BIT)
+                    
+                    
+                    
+                    spinwait_shared.spin_no_yield();
+                    *state = self.state.load(Ordering::Relaxed);
+                }
+            },
+            |state| state & WRITER_BIT != 0,
+        )
     }
 
     #[cold]
     fn unlock_shared_slow(&self) {
         
         
-        
-        let addr = self as *const _ as usize + 1;
-        let callback = |_result: UnparkResult| {
-            
-            
-            self.state.fetch_and(!WRITER_PARKED_BIT, Ordering::Relaxed);
-            TOKEN_NORMAL
-        };
-        
-        
-        
         unsafe {
+            
+            let addr = self as *const _ as usize + 1;
+            let callback = |result: UnparkResult| {
+                
+                
+                debug_assert!(!result.have_more_threads);
+                self.state.fetch_and(!WRITER_PARKED_BIT, Ordering::Relaxed);
+                TOKEN_NORMAL
+            };
             parking_lot_core::unpark_one(addr, callback);
         }
     }
 
     #[cold]
     fn lock_upgradable_slow(&self, timeout: Option<Instant>) -> bool {
-        let try_lock = |state: &mut usize| {
-            let mut spinwait_shared = SpinWait::new();
-            loop {
-                if *state & (WRITER_BIT | UPGRADABLE_BIT) != 0 {
-                    return false;
-                }
-
-                if self
-                    .state
-                    .compare_exchange_weak(
-                        *state,
-                        state
-                            .checked_add(ONE_READER | UPGRADABLE_BIT)
-                            .expect("RwLock reader count overflow"),
-                        Ordering::Acquire,
-                        Ordering::Relaxed,
-                    )
-                    .is_ok()
-                {
-                    return true;
-                }
-
-                
-                
-                
-                spinwait_shared.spin_no_yield();
-                *state = self.state.load(Ordering::Relaxed);
-            }
-        };
         self.lock_common(
             timeout,
             TOKEN_UPGRADABLE,
-            try_lock,
-            WRITER_BIT | UPGRADABLE_BIT,
+            |state| {
+                let mut spinwait_shared = SpinWait::new();
+                loop {
+                    if *state & (WRITER_BIT | UPGRADABLE_BIT) != 0 {
+                        return false;
+                    }
+
+                    if self
+                        .state
+                        .compare_exchange_weak(
+                            *state,
+                            state
+                                .checked_add(ONE_READER | UPGRADABLE_BIT)
+                                .expect("RwLock reader count overflow"),
+                            Ordering::Acquire,
+                            Ordering::Relaxed,
+                        )
+                        .is_ok()
+                    {
+                        return true;
+                    }
+
+                    
+                    
+                    
+                    spinwait_shared.spin_no_yield();
+                    *state = self.state.load(Ordering::Relaxed);
+                }
+            },
+            |state| state & (WRITER_BIT | UPGRADABLE_BIT) != 0,
         )
     }
 
@@ -829,10 +789,7 @@ impl RawRwLock {
                 }
             }
         };
-        
-        unsafe {
-            self.wake_parked_threads(0, callback);
-        }
+        self.wake_parked_threads(0, callback);
     }
 
     #[cold]
@@ -869,10 +826,7 @@ impl RawRwLock {
             }
             TOKEN_NORMAL
         };
-        
-        unsafe {
-            self.wake_parked_threads(ONE_READER, callback);
-        }
+        self.wake_parked_threads(ONE_READER, callback);
     }
 
     #[cold]
@@ -885,10 +839,7 @@ impl RawRwLock {
             }
             TOKEN_NORMAL
         };
-        
-        unsafe {
-            self.wake_parked_threads(ONE_READER | UPGRADABLE_BIT, callback);
-        }
+        self.wake_parked_threads(ONE_READER | UPGRADABLE_BIT, callback);
     }
 
     #[cold]
@@ -913,47 +864,39 @@ impl RawRwLock {
 
     
     
-    
-    
-    
-    
-    
-    
     #[inline]
-    unsafe fn wake_parked_threads(
-        &self,
-        new_state: usize,
-        callback: impl FnOnce(usize, UnparkResult) -> UnparkToken,
-    ) {
+    fn wake_parked_threads<C>(&self, new_state: usize, callback: C)
+    where
+        C: FnOnce(usize, UnparkResult) -> UnparkToken,
+    {
         
         
         
         let new_state = Cell::new(new_state);
-        let addr = self as *const _ as usize;
-        let filter = |ParkToken(token)| {
-            let s = new_state.get();
+        unsafe {
+            let addr = self as *const _ as usize;
+            let filter = |ParkToken(token)| {
+                let s = new_state.get();
 
-            
-            if s & WRITER_BIT != 0 {
-                return FilterOp::Stop;
-            }
+                
+                if s & WRITER_BIT != 0 {
+                    return FilterOp::Stop;
+                }
 
-            
-            if token & (UPGRADABLE_BIT | WRITER_BIT) != 0 && s & UPGRADABLE_BIT != 0 {
                 
-                
-                FilterOp::Skip
-            } else {
-                new_state.set(s + token);
-                FilterOp::Unpark
-            }
-        };
-        let callback = |result| callback(new_state.get(), result);
-        
-        
-        
-        
-        parking_lot_core::unpark_filter(addr, filter, callback);
+                if token & (UPGRADABLE_BIT | WRITER_BIT) != 0 && s & UPGRADABLE_BIT != 0 {
+                    
+                    
+                    FilterOp::Skip
+                } else {
+                    new_state.set(s + token);
+                    FilterOp::Unpark
+                }
+            };
+            parking_lot_core::unpark_filter(addr, filter, |result| {
+                callback(new_state.get(), result)
+            });
+        }
     }
 
     
@@ -985,60 +928,52 @@ impl RawRwLock {
             }
 
             
-            
-            let addr = self as *const _ as usize + 1;
-            let validate = || {
-                let state = self.state.load(Ordering::Relaxed);
-                state & READERS_MASK != 0 && state & WRITER_PARKED_BIT != 0
-            };
-            let before_sleep = || {};
-            let timed_out = |_, _| {};
-            
-            
-            
-            
-            let park_result = unsafe {
-                parking_lot_core::park(
+            unsafe {
+                
+                let addr = self as *const _ as usize + 1;
+                let validate = || {
+                    let state = self.state.load(Ordering::Relaxed);
+                    state & READERS_MASK != 0 && state & WRITER_PARKED_BIT != 0
+                };
+                let before_sleep = || {};
+                let timed_out = |_, _| {};
+                match parking_lot_core::park(
                     addr,
                     validate,
                     before_sleep,
                     timed_out,
                     TOKEN_EXCLUSIVE,
                     timeout,
-                )
-            };
-            match park_result {
-                
-                
-                
-                ParkResult::Unparked(_) | ParkResult::Invalid => {
-                    state = self.state.load(Ordering::Relaxed);
-                    continue;
-                }
+                ) {
+                    
+                    
+                    
+                    ParkResult::Unparked(_) | ParkResult::Invalid => {
+                        state = self.state.load(Ordering::Relaxed);
+                        continue;
+                    }
 
-                
-                ParkResult::TimedOut => {
                     
-                    
-                    
-                    let state = self.state.fetch_add(
-                        prev_value.wrapping_sub(WRITER_BIT | WRITER_PARKED_BIT),
-                        Ordering::Relaxed,
-                    );
-                    if state & PARKED_BIT != 0 {
-                        let callback = |_, result: UnparkResult| {
-                            
-                            if !result.have_more_threads {
-                                self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
-                            }
-                            TOKEN_NORMAL
-                        };
+                    ParkResult::TimedOut => {
                         
-                        unsafe {
+                        
+                        
+                        let state = self.state.fetch_add(
+                            prev_value.wrapping_sub(WRITER_BIT | WRITER_PARKED_BIT),
+                            Ordering::Relaxed,
+                        );
+                        if state & PARKED_BIT != 0 {
+                            let callback = |_, result: UnparkResult| {
+                                
+                                if !result.have_more_threads {
+                                    self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
+                                }
+                                TOKEN_NORMAL
+                            };
                             self.wake_parked_threads(ONE_READER | UPGRADABLE_BIT, callback);
                         }
+                        return false;
                     }
-                    return false;
                 }
             }
         }
@@ -1047,13 +982,17 @@ impl RawRwLock {
 
     
     #[inline]
-    fn lock_common(
+    fn lock_common<F, V>(
         &self,
         timeout: Option<Instant>,
         token: ParkToken,
-        mut try_lock: impl FnMut(&mut usize) -> bool,
-        validate_flags: usize,
-    ) -> bool {
+        mut try_lock: F,
+        validate: V,
+    ) -> bool
+    where
+        F: FnMut(&mut usize) -> bool,
+        V: Fn(usize) -> bool,
+    {
         let mut spinwait = SpinWait::new();
         let mut state = self.state.load(Ordering::Relaxed);
         loop {
@@ -1082,39 +1021,40 @@ impl RawRwLock {
             }
 
             
-            let addr = self as *const _ as usize;
-            let validate = || {
-                let state = self.state.load(Ordering::Relaxed);
-                state & PARKED_BIT != 0 && (state & validate_flags != 0)
-            };
-            let before_sleep = || {};
-            let timed_out = |_, was_last_thread| {
-                
-                if was_last_thread {
-                    self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
+            unsafe {
+                let addr = self as *const _ as usize;
+                let validate = || {
+                    let state = self.state.load(Ordering::Relaxed);
+                    state & PARKED_BIT != 0 && validate(state)
+                };
+                let before_sleep = || {};
+                let timed_out = |_, was_last_thread| {
+                    
+                    if was_last_thread {
+                        self.state.fetch_and(!PARKED_BIT, Ordering::Relaxed);
+                    }
+                };
+                match parking_lot_core::park(
+                    addr,
+                    validate,
+                    before_sleep,
+                    timed_out,
+                    token,
+                    timeout,
+                ) {
+                    
+                    
+                    ParkResult::Unparked(TOKEN_HANDOFF) => return true,
+
+                    
+                    ParkResult::Unparked(_) => (),
+
+                    
+                    ParkResult::Invalid => (),
+
+                    
+                    ParkResult::TimedOut => return false,
                 }
-            };
-
-            
-            
-            
-            
-            let park_result = unsafe {
-                parking_lot_core::park(addr, validate, before_sleep, timed_out, token, timeout)
-            };
-            match park_result {
-                
-                
-                ParkResult::Unparked(TOKEN_HANDOFF) => return true,
-
-                
-                ParkResult::Unparked(_) => (),
-
-                
-                ParkResult::Invalid => (),
-
-                
-                ParkResult::TimedOut => return false,
             }
 
             

@@ -28,9 +28,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 pub unsafe trait RawMutex {
     
-    
-    
-    #[allow(clippy::declare_interior_mutable_const)]
     const INIT: Self;
 
     
@@ -40,7 +37,6 @@ pub unsafe trait RawMutex {
     
     fn lock(&self);
 
-    
     
     fn try_lock(&self) -> bool;
 
@@ -95,9 +91,38 @@ pub unsafe trait RawMutexTimed: RawMutex {
 
 
 
-pub struct Mutex<R, T: ?Sized> {
+pub struct Mutex<R: RawMutex, T: ?Sized> {
     raw: R,
     data: UnsafeCell<T>,
+}
+
+
+#[cfg(feature = "serde")]
+impl<R, T> Serialize for Mutex<R, T>
+where
+    R: RawMutex,
+    T: Serialize + ?Sized,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.lock().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, R, T> Deserialize<'de> for Mutex<R, T>
+where
+    R: RawMutex,
+    T: Deserialize<'de> + ?Sized,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer).map(Mutex::new)
+    }
 }
 
 unsafe impl<R: RawMutex + Send, T: ?Sized + Send> Send for Mutex<R, T> {}
@@ -108,39 +133,21 @@ impl<R: RawMutex, T> Mutex<R, T> {
     #[cfg(feature = "nightly")]
     #[inline]
     pub const fn new(val: T) -> Mutex<R, T> {
-        Mutex {
-            raw: R::INIT,
-            data: UnsafeCell::new(val),
-        }
+        Mutex { data: UnsafeCell::new(val), raw: R::INIT }
     }
 
     
     #[cfg(not(feature = "nightly"))]
     #[inline]
     pub fn new(val: T) -> Mutex<R, T> {
-        Mutex {
-            raw: R::INIT,
-            data: UnsafeCell::new(val),
-        }
+        Mutex { data: UnsafeCell::new(val), raw: R::INIT }
     }
 
     
     #[inline]
+    #[allow(unused_unsafe)]
     pub fn into_inner(self) -> T {
-        self.data.into_inner()
-    }
-}
-
-impl<R, T> Mutex<R, T> {
-    
-    
-    
-    #[inline]
-    pub const fn const_new(raw_mutex: R, val: T) -> Mutex<R, T> {
-        Mutex {
-            raw: raw_mutex,
-            data: UnsafeCell::new(val),
-        }
+        unsafe { self.data.into_inner() }
     }
 }
 
@@ -150,10 +157,7 @@ impl<R: RawMutex, T: ?Sized> Mutex<R, T> {
     
     #[inline]
     unsafe fn guard(&self) -> MutexGuard<'_, R, T> {
-        MutexGuard {
-            mutex: self,
-            marker: PhantomData,
-        }
+        MutexGuard { mutex: self, marker: PhantomData }
     }
 
     
@@ -305,40 +309,9 @@ impl<R: RawMutex, T: ?Sized + fmt::Debug> fmt::Debug for Mutex<R, T> {
                     }
                 }
 
-                f.debug_struct("Mutex")
-                    .field("data", &LockedPlaceholder)
-                    .finish()
+                f.debug_struct("Mutex").field("data", &LockedPlaceholder).finish()
             }
         }
-    }
-}
-
-
-#[cfg(feature = "serde")]
-impl<R, T> Serialize for Mutex<R, T>
-where
-    R: RawMutex,
-    T: Serialize + ?Sized,
-{
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        self.lock().serialize(serializer)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'de, R, T> Deserialize<'de> for Mutex<R, T>
-where
-    R: RawMutex,
-    T: Deserialize<'de> + ?Sized,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        Deserialize::deserialize(deserializer).map(Mutex::new)
     }
 }
 
@@ -377,11 +350,7 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
         let raw = &s.mutex.raw;
         let data = f(unsafe { &mut *s.mutex.data.get() });
         mem::forget(s);
-        MappedMutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
+        MappedMutexGuard { raw, data, marker: PhantomData }
     }
 
     
@@ -404,11 +373,7 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MutexGuard<'a, R, T> {
             None => return Err(s),
         };
         mem::forget(s);
-        Ok(MappedMutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        })
+        Ok(MappedMutexGuard { raw, data, marker: PhantomData })
     }
 
     
@@ -549,11 +514,7 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MappedMutexGuard<'a, R, T> {
         let raw = s.raw;
         let data = f(unsafe { &mut *s.data });
         mem::forget(s);
-        MappedMutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        }
+        MappedMutexGuard { raw, data, marker: PhantomData }
     }
 
     
@@ -576,11 +537,7 @@ impl<'a, R: RawMutex + 'a, T: ?Sized + 'a> MappedMutexGuard<'a, R, T> {
             None => return Err(s),
         };
         mem::forget(s);
-        Ok(MappedMutexGuard {
-            raw,
-            data,
-            marker: PhantomData,
-        })
+        Ok(MappedMutexGuard { raw, data, marker: PhantomData })
     }
 }
 

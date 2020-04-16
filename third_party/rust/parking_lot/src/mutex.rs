@@ -84,14 +84,8 @@ use lock_api;
 
 
 
+
 pub type Mutex<T> = lock_api::Mutex<RawMutex, T>;
-
-
-
-
-pub const fn const_mutex<T>(val: T) -> Mutex<T> {
-    Mutex::const_new(<RawMutex as lock_api::RawMutex>::INIT, val)
-}
 
 
 
@@ -251,7 +245,7 @@ mod tests {
     fn test_mutex_arc_access_in_unwind() {
         let arc = Arc::new(Mutex::new(1));
         let arc2 = arc.clone();
-        let _ = thread::spawn(move || {
+        let _ = thread::spawn(move || -> () {
             struct Unwinder {
                 i: Arc<Mutex<i32>>,
             }
