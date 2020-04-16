@@ -70,9 +70,6 @@ class MOZ_STACK_CLASS FunctionEmitter {
   FunctionBox* funbox_;
 
   
-  JS::Rooted<JSFunction*> fun_;
-
-  
   JS::Rooted<JSAtom*> name_;
 
   FunctionSyntaxKind syntaxKind_;

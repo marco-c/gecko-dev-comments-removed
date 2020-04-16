@@ -355,14 +355,14 @@ class FunctionBox : public SharedContext {
   bool emitBytecode : 1; 
 
   
-  bool usesArguments : 1; 
-  bool usesApply : 1;     
-  bool usesThis : 1;      
-  bool usesReturn : 1;    
-  bool hasExprBody_ : 1;  
+  bool usesArguments : 1;  
+  bool usesApply : 1;      
+  bool usesThis : 1;       
+  bool usesReturn : 1;     
+  bool hasExprBody_ : 1;   
 
 
-
+  bool isAsmJSModule_ : 1; 
   uint16_t nargs_;
 
   JSAtom* explicitName_;
@@ -428,6 +428,9 @@ class FunctionBox : public SharedContext {
     clobberFunction(fun);
     synchronizeArgCount();
   }
+
+  void setAsmJSModule(JSFunction* function);
+  bool isAsmJSModule() { return isAsmJSModule_; }
 
   void clobberFunction(JSFunction* function);
 

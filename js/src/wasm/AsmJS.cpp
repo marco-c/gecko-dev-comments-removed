@@ -7116,7 +7116,7 @@ static bool DoCompileAsmJS(JSContext* cx, AsmJSParser<Unit>& parser,
   
   
   MOZ_ASSERT(funbox->isInterpreted());
-  funbox->clobberFunction(moduleFun);
+  funbox->setAsmJSModule(moduleFun);
 
   
   
