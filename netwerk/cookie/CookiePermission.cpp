@@ -4,7 +4,7 @@
 
 
 
-#include "nsCookiePermission.h"
+#include "mozilla/net/CookiePermission.h"
 
 #include "nsICookie.h"
 #include "nsICookieService.h"
@@ -25,27 +25,27 @@
 
 
 
-using namespace mozilla;
-using namespace mozilla::net;
+namespace mozilla {
+namespace net {
 
 static const bool kDefaultPolicy = true;
 
 namespace {
-mozilla::StaticRefPtr<nsCookiePermission> gSingleton;
+mozilla::StaticRefPtr<CookiePermission> gSingleton;
 }
 
-NS_IMPL_ISUPPORTS(nsCookiePermission, nsICookiePermission)
+NS_IMPL_ISUPPORTS(CookiePermission, nsICookiePermission)
 
 
-already_AddRefed<nsICookiePermission> nsCookiePermission::GetOrCreate() {
+already_AddRefed<nsICookiePermission> CookiePermission::GetOrCreate() {
   if (!gSingleton) {
-    gSingleton = new nsCookiePermission();
+    gSingleton = new CookiePermission();
     ClearOnShutdown(&gSingleton);
   }
   return do_AddRef(gSingleton);
 }
 
-bool nsCookiePermission::Init() {
+bool CookiePermission::Init() {
   
   
   
@@ -55,9 +55,9 @@ bool nsCookiePermission::Init() {
 }
 
 NS_IMETHODIMP
-nsCookiePermission::CanSetCookie(nsIURI* aURI, nsIChannel* aChannel,
-                                 nsICookie* aCookie, bool* aIsSession,
-                                 int64_t* aExpiry, bool* aResult) {
+CookiePermission::CanSetCookie(nsIURI* aURI, nsIChannel* aChannel,
+                               nsICookie* aCookie, bool* aIsSession,
+                               int64_t* aExpiry, bool* aResult) {
   NS_ASSERTION(aURI, "null uri");
 
   *aResult = kDefaultPolicy;
@@ -110,3 +110,6 @@ nsCookiePermission::CanSetCookie(nsIURI* aURI, nsIChannel* aChannel,
 
   return NS_OK;
 }
+
+}  
+}  
