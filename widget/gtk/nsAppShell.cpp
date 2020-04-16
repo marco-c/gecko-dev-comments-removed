@@ -169,17 +169,22 @@ nsresult nsAppShell::Init() {
     } else {
       screenManager.SetHelper(mozilla::MakeUnique<ScreenHelperGTK>());
     }
-  }
 
-  if (gtk_check_version(3, 16, 3) == nullptr) {
-    
-    
-    
-    
-    nsAutoString brandName;
-    mozilla::widget::WidgetUtils::GetBrandShortName(brandName);
-    if (!brandName.IsEmpty()) {
-      gdk_set_program_class(NS_ConvertUTF16toUTF8(brandName).get());
+    if (gtk_check_version(3, 16, 3) == nullptr) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsAutoString brandName;
+      mozilla::widget::WidgetUtils::GetBrandShortName(brandName);
+      if (!brandName.IsEmpty()) {
+        gdk_set_program_class(NS_ConvertUTF16toUTF8(brandName).get());
+      }
     }
   }
 
