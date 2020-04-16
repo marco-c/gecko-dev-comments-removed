@@ -43,28 +43,8 @@ class BrowserAppShim {
     this.tabs = [this.selectedTab];
   }
 
-  getTabForId(aId) {
-    return this.selectedTab;
-  }
-
   getTabForBrowser(aBrowser) {
     return this.selectedTab;
-  }
-
-  getTabForWindow(aWindow) {
-    return this.selectedTab;
-  }
-
-  getTabForDocument(aDocument) {
-    return this.selectedTab;
-  }
-
-  getBrowserForOuterWindowID(aID) {
-    return this.selectedBrowser;
-  }
-
-  getBrowserForDocument(aDocument) {
-    return this.selectedBrowser;
   }
 
   static getBrowserApp(window) {
