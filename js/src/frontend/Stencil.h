@@ -436,6 +436,9 @@ using ScriptThingsVector = Vector<ScriptThingVariant>;
 
 class ScriptStencil {
  public:
+  using ImmutableFlags = ImmutableScriptFlagsEnum;
+
+ public:
   js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
 
   
@@ -461,7 +464,7 @@ class ScriptStencil {
       : immutableScriptData(std::move(immutableScriptData)), gcThings(cx) {}
 
   bool isFunction() const {
-    return immutableFlags.hasFlag(ImmutableScriptFlagsEnum::IsFunction);
+    return immutableFlags.hasFlag(ImmutableFlags::IsFunction);
   }
 
   
