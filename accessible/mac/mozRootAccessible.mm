@@ -97,9 +97,7 @@ static id<mozAccessible, mozView> getNativeViewFromRootAccessible(Accessible* aA
                                                                         NSDictionary* bindings) {
         AccessibleWrap* childAcc = [child getGeckoAccessible];
         if (childAcc) {
-          role r = childAcc->Role();
-          if ((r == roles::MENUPOPUP || r == roles::DIALOG || r == roles::ALERT) &&
-              ((childAcc->VisibilityState() & states::INVISIBLE) != 0)) {
+          if (((childAcc->VisibilityState() & states::INVISIBLE) != 0)) {
             
             
             
