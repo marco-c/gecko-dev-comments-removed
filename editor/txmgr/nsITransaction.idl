@@ -17,11 +17,13 @@ interface nsITransaction : nsISupports
   
 
 
+  [can_run_script]
   void doTransaction();
 
   
 
 
+  [can_run_script]
   void undoTransaction();
 
   
@@ -31,6 +33,7 @@ interface nsITransaction : nsISupports
 
 
 
+  [can_run_script]
   void redoTransaction();
 
   

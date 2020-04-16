@@ -5182,7 +5182,7 @@ void HTMLEditor::NotifyRootChanged() {
   
   nsCOMPtr<nsINode> node = GetFocusedNode();
   if (node) {
-    DebugOnly<nsresult> rvIgnored = InitializeSelection(node);
+    DebugOnly<nsresult> rvIgnored = InitializeSelection(*node);
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rvIgnored),
         "EditorBase::InitializeSelection() failed, but ignored");

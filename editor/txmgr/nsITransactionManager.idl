@@ -31,18 +31,21 @@ interface nsITransactionManager : nsISupports
 
 
 
+  [can_run_script]
   void doTransaction(in nsITransaction aTransaction);
 
   
 
 
 
+  [can_run_script]
   void undoTransaction();
 
   
 
 
 
+  [can_run_script]
   void redoTransaction();
 
   
@@ -69,6 +72,7 @@ interface nsITransactionManager : nsISupports
 
 
 
+  [can_run_script]
   void beginBatch(in nsISupports aData);
 
   

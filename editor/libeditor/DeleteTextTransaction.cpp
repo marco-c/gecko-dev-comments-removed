@@ -97,8 +97,7 @@ bool DeleteTextTransaction::CanDoIt() const {
   return mEditorBase->IsModifiableNode(*mTextNode);
 }
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-DeleteTextTransaction::DoTransaction() {
+NS_IMETHODIMP DeleteTextTransaction::DoTransaction() {
   if (NS_WARN_IF(!CanDoIt())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -140,8 +139,7 @@ DeleteTextTransaction::DoTransaction() {
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
-DeleteTextTransaction::UndoTransaction() {
+NS_IMETHODIMP DeleteTextTransaction::UndoTransaction() {
   if (NS_WARN_IF(!CanDoIt())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
