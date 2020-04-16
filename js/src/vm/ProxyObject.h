@@ -46,7 +46,14 @@ class ProxyObject : public JSObject {
  public:
   static ProxyObject* New(JSContext* cx, const BaseProxyHandler* handler,
                           HandleValue priv, TaggedProto proto_,
-                          const ProxyOptions& options);
+                          const JSClass* clasp);
+
+  static ProxyObject* NewSingleton(JSContext* cx,
+                                   const BaseProxyHandler* handler,
+                                   HandleValue priv, TaggedProto proto_,
+                                   const JSClass* clasp);
+
+  void init(const BaseProxyHandler* handler, HandleValue priv, JSContext* cx);
 
   
   
@@ -62,6 +69,7 @@ class ProxyObject : public JSObject {
         &reinterpret_cast<detail::ProxyValueArray*>(inlineDataStart())
              ->reservedSlots;
   }
+
   MOZ_MUST_USE bool initExternalValueArrayAfterSwap(JSContext* cx,
                                                     HandleValueVector values);
 
