@@ -138,6 +138,8 @@ pub enum StyleParseErrorKind<'i> {
     
     UnexpectedImportRule,
     
+    DisallowedImportRule,
+    
     UnexpectedCharsetRule,
     
     UnsupportedAtRule(CowRcStr<'i>),
@@ -149,7 +151,6 @@ pub enum StyleParseErrorKind<'i> {
     ValueError(ValueParseErrorKind<'i>),
     
     SelectorError(SelectorParseErrorKind<'i>),
-
     
     UnknownProperty(CowRcStr<'i>),
     
