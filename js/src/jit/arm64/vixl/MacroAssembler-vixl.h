@@ -1488,32 +1488,12 @@ class MacroAssembler : public js::jit::Assembler {
     SingleEmissionCheckScope guard(this);
     umsubl(rd, rn, rm, ra);
   }
+
   void Unreachable() {
     SingleEmissionCheckScope guard(this);
-#ifdef JS_SIMULATOR_ARM64
-    hlt(kUnreachableOpcode);
-#else
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    Emit(0xd4a00000);		
-#endif
+    Emit(UNDEFINED_INST_PATTERN);
   }
+
   void Uxtb(const Register& rd, const Register& rn) {
     VIXL_ASSERT(!rd.IsZero());
     VIXL_ASSERT(!rn.IsZero());

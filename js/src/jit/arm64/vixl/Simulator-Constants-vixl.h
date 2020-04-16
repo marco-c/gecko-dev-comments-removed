@@ -43,12 +43,11 @@ namespace vixl {
 
 
 enum DebugHltOpcodes {
-  kUnreachableOpcode = 0xdeb0,
   kPrintfOpcode,
   kTraceOpcode,
   kLogOpcode,
   
-  kDebugHltFirstOpcode = kUnreachableOpcode,
+  kDebugHltFirstOpcode = kPrintfOpcode,
   kDebugHltLastOpcode = kLogOpcode
 };
 

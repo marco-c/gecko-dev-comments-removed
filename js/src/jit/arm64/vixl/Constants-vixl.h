@@ -2665,6 +2665,30 @@ enum UnallocatedOp {
   UnallocatedFMask = 0x00000000
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr uint32_t UNDEFINED_INST_PATTERN = 0xd4a00000;
+
 }  
 
 #endif  
