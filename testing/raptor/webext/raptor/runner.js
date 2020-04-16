@@ -197,6 +197,10 @@ async function getTestSettings() {
   raptorLog("wrote settings to ext local storage");
 }
 
+async function sleep(delay) {
+  return new Promise(resolve => setTimeout(resolve, delay));
+}
+
 async function getBrowserInfo() {
   if (isGecko) {
     const info = await ext.runtime.getBrowserInfo();
@@ -417,7 +421,7 @@ async function nextCycle() {
     );
     
     
-    await new Promise(resolve => setTimeout(resolve, foregroundDelay));
+    await sleep(foregroundDelay);
   }
   if (pageCycle == 1) {
     const text = `running ${pageCycles} pagecycles of ${testURL}`;
@@ -434,62 +438,65 @@ async function nextCycle() {
         `bringing app to background`
       );
     }
-    setTimeout(async () => {
-      await postToControlServer("status", `begin pagecycle ${pageCycle}`);
 
-      switch (testType) {
-        case TEST_BENCHMARK:
-          isBenchmarkPending = true;
-          break;
+    await sleep(pageCycleDelay);
 
-        case TEST_PAGE_LOAD:
-          if (getHero) {
-            isHeroPending = true;
-            pendingHeroes = Array.from(settings.measure.hero);
-          }
-          if (getFNBPaint) {
-            isFNBPaintPending = true;
-          }
-          if (getFCP) {
-            isFCPPending = true;
-          }
-          if (getDCF) {
-            isDCFPending = true;
-          }
-          if (getTTFI) {
-            isTTFIPending = true;
-          }
-          if (getLoadTime) {
-            isLoadTimePending = true;
-          }
-          break;
+    await postToControlServer("status", `begin page cycle ${pageCycle}`);
 
-        case TEST_SCENARIO:
-          isScenarioPending = true;
-          break;
-      }
+    switch (testType) {
+      case TEST_BENCHMARK:
+        isBenchmarkPending = true;
+        break;
 
-      if (newTabPerCycle) {
-        
-        await closeTab(testTabID);
-        testTabID = await openTab();
-      }
+      case TEST_PAGE_LOAD:
+        if (getHero) {
+          isHeroPending = true;
+          pendingHeroes = Array.from(settings.measure.hero);
+        }
+        if (getFNBPaint) {
+          isFNBPaintPending = true;
+        }
+        if (getFCP) {
+          isFCPPending = true;
+        }
+        if (getDCF) {
+          isDCFPending = true;
+        }
+        if (getTTFI) {
+          isTTFIPending = true;
+        }
+        if (getLoadTime) {
+          isLoadTimePending = true;
+        }
+        break;
 
-      await updateTab(testTabID, testURL);
+      case TEST_SCENARIO:
+        isScenarioPending = true;
+        break;
+    }
 
-      if (testType == TEST_SCENARIO) {
-        await startScenarioTimer();
-      }
-
+    if (newTabPerCycle) {
       
-      
-      
-      
-      
-      if (testType != TEST_PAGE_LOAD) {
-        await collectResults();
-      }
-    }, pageCycleDelay);
+      await closeTab(testTabID);
+      testTabID = await openTab();
+    }
+
+    await updateTab(testTabID, testURL);
+
+    if (testType == TEST_SCENARIO) {
+      await startScenarioTimer();
+    }
+
+    
+    
+    
+    
+    
+    if (testType != TEST_PAGE_LOAD) {
+      await collectResults();
+    }
+
+    await postToControlServer("status", `ended page cycle ${pageCycle}`);
   } else {
     await verifyResults();
   }
@@ -714,18 +721,14 @@ async function raptorRunner() {
   const text = `* pausing ${postStartupDelay /
     1000} seconds to let browser settle... *`;
   await postToControlServer("status", text);
+  await sleep(postStartupDelay);
 
   
-  if (isGeckoView) {
-    setTimeout(function() {
-      nextCycle();
-    }, postStartupDelay);
-  } else {
-    setTimeout(async function() {
-      testTabID = await openTab();
-      nextCycle();
-    }, postStartupDelay);
+  if (!isGeckoView) {
+    testTabID = await openTab();
   }
+
+  await nextCycle();
 }
 
 function raptorLog(text, level = "info") {
