@@ -2274,10 +2274,20 @@ void MacroAssembler::convertValueToInt(
   jump(&done);
 
   
+  bool handleStringIndices = handleStrings && output != stringReg;
+
+  
+  
+  Label handleStringIndex;
   if (handleStrings) {
     bind(&isString);
     unboxString(value, stringReg);
-    jump(handleStringEntry);
+    if (handleStringIndices) {
+      loadStringIndexValue(stringReg, output, handleStringEntry);
+      jump(&handleStringIndex);
+    } else {
+      jump(handleStringEntry);
+    }
   }
 
   
@@ -2303,9 +2313,16 @@ void MacroAssembler::convertValueToInt(
   }
 
   
-  if (isInt32.used()) {
-    bind(&isInt32);
-    unboxInt32(value, output);
+  if (isInt32.used() || handleStringIndices) {
+    if (isInt32.used()) {
+      bind(&isInt32);
+      unboxInt32(value, output);
+    }
+
+    if (handleStringIndices) {
+      bind(&handleStringIndex);
+    }
+
     if (behavior == IntConversionBehavior::ClampToUint8) {
       clampIntToUint8(output);
     }
