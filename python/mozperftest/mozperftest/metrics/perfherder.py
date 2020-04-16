@@ -35,7 +35,7 @@ class Perfherder(MachEnvironment):
         
         
         
-        flavor = metadata.get("flavor")
+        flavor = metadata.flavor
         if not flavor or flavor not in KNOWN_FLAVORS:
             flavor = "default"
             self.warning(
@@ -47,7 +47,7 @@ class Perfherder(MachEnvironment):
 
         
         
-        cm = CommonMetrics(metadata["results"], **metadata["mach_args"])
+        cm = CommonMetrics(metadata.get_result())
 
         
         
@@ -59,5 +59,5 @@ class Perfherder(MachEnvironment):
         self.info(
             "Writing perfherder results to {}".format(os.path.join(cm.output, file))
         )
-        metadata["output"] = write_json(proc, cm.output, file)
+        metadata.set_output(write_json(proc, cm.output, file))
         return metadata

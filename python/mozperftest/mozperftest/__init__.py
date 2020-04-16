@@ -7,6 +7,7 @@ from mozperftest.browser import pick_browser
 from mozperftest.system import pick_system
 from mozperftest.metrics import pick_metrics
 from mozperftest.argparser import PerftestArgumentParser
+from mozperftest.metadata import Metadata
 
 
 logger = mozlog.commandline.setup_logging("mozperftest", {})
@@ -16,20 +17,8 @@ def get_parser():
     return PerftestArgumentParser()
 
 
-
-
-
-
-
-
 def get_metadata(mach_cmd, flavor, **kwargs):
-    res = {
-        "mach_cmd": mach_cmd,
-        "mach_args": kwargs,
-        "flavor": flavor,
-        "browser": {"prefs": {}},
-    }
-    return res
+    return Metadata(mach_cmd, flavor, **kwargs)
 
 
 def get_env(mach_cmd, flavor="script", test_objects=None, resolve_tests=True, **kwargs):
