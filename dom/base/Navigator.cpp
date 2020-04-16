@@ -813,6 +813,15 @@ bool Navigator::Vibrate(const nsTArray<uint32_t>& aPattern) {
 
 
 uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
+  nsIDocShell* docshell = GetDocShell();
+  BrowsingContext* bc = docshell ? docshell->GetBrowsingContext() : nullptr;
+
+  
+  
+  if (bc && bc->InRDMPane()) {
+    return bc->GetMaxTouchPointsOverride();
+  }
+
   
   
   if (aCallerType != CallerType::System &&
