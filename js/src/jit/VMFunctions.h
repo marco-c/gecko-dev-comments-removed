@@ -947,6 +947,10 @@ void PostWriteElementBarrier(JSRuntime* rt, JSObject* obj, int32_t index);
 
 
 
+bool GetInt32FromStringPure(JSContext* cx, JSString* str, int32_t* result);
+
+
+
 int32_t GetIndexFromString(JSString* str);
 
 JSObject* WrapObjectPure(JSContext* cx, JSObject* obj);
