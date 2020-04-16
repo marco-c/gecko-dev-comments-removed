@@ -83,21 +83,24 @@ def config_status(config):
     
     
     
-    def sanitized_bools(v):
+    def sanitize_config(v):
         if v is True:
             return '1'
         if v is False:
             return ''
+        
+        if not isinstance(v, (bytes, six.text_type, dict)) and isinstance(v, Iterable):
+            return list(v)
         return v
 
     sanitized_config = {}
     sanitized_config['substs'] = {
-        k: sanitized_bools(v) for k, v in six.iteritems(config)
+        k: sanitize_config(v) for k, v in six.iteritems(config)
         if k not in ('DEFINES', 'non_global_defines', 'TOPSRCDIR', 'TOPOBJDIR',
                      'CONFIG_STATUS_DEPS')
     }
     sanitized_config['defines'] = {
-        k: sanitized_bools(v) for k, v in six.iteritems(config['DEFINES'])
+        k: sanitize_config(v) for k, v in six.iteritems(config['DEFINES'])
     }
     sanitized_config['non_global_defines'] = config['non_global_defines']
     sanitized_config['topsrcdir'] = config['TOPSRCDIR']
