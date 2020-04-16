@@ -74,7 +74,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   typedef T elem_type;
   typedef nsTArray<T> array_type;
 
-  nsAutoTObserverArray() {}
+  nsAutoTObserverArray() = default;
 
   
   
@@ -183,8 +183,8 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   
   
   template <class Item>
-  void AppendElement(const Item& aItem) {
-    mArray.AppendElement(aItem);
+  void AppendElement(Item&& aItem) {
+    mArray.AppendElement(std::forward<Item>(aItem));
   }
 
   
@@ -404,7 +404,7 @@ class nsTObserverArray : public nsAutoTObserverArray<T, 0> {
   
   
 
-  nsTObserverArray() {}
+  nsTObserverArray() = default;
 
   
   explicit nsTObserverArray(size_type aCapacity) {
