@@ -771,7 +771,7 @@ class nsTableFrame : public nsContainerFrame {
                       nsTArray<nsTableRowFrame*>& aCollection);
 
  public: 
-  int32_t GetStartRowIndex(nsTableRowGroupFrame* aRowGroupFrame);
+  int32_t GetStartRowIndex(const nsTableRowGroupFrame* aRowGroupFrame) const;
 
   
 

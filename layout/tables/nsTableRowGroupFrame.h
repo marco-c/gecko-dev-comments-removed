@@ -110,12 +110,12 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   
 
-  int32_t GetRowCount();
+  int32_t GetRowCount() const;
 
   
 
 
-  int32_t GetStartRowIndex();
+  int32_t GetStartRowIndex() const;
 
   
 
