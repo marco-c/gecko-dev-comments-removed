@@ -773,9 +773,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   
   
-  
-  
-  void NotifyTabContextUpdated(bool aIsPreallocated);
+  void NotifyTabContextUpdated();
 
   
   void UpdateFrameType();
