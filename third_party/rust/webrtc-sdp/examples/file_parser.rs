@@ -2,37 +2,69 @@
 
 
 
-use std::env;
-use std::error::Error;
 use std::fs::File;
 use std::io::prelude::*;
+use std::panic;
 use std::path::Path;
 extern crate webrtc_sdp;
 
+
+
+
+
 fn main() {
-    let filename = match env::args().nth(1) {
+    let mut args = std::env::args();
+    let filename = match args.nth(1) {
         None => {
             eprintln!("Missing file name argument!");
             std::process::exit(1);
         }
         Some(x) => x,
     };
+
     let path = Path::new(filename.as_str());
     let display = path.display();
 
     let mut file = match File::open(&path) {
-        Err(why) => panic!("Failed to open {}: {}", display, why.description()),
+        Err(why) => panic!("Failed to open {}: {}", display, why),
         Ok(file) => file,
     };
 
     let mut s = String::new();
     match file.read_to_string(&mut s) {
-        Err(why) => panic!("Couldn't read {}: {}", display, why.description()),
+        Err(why) => panic!("Couldn't read {}: {}", display, why),
         Ok(s) => s,
     };
 
+    
+    let expect_failure = if let Some(x) = args.next() {
+        if x.to_lowercase() != "--expect-failure" {
+            eprintln!("Extra arguments passed!");
+            std::process::exit(1);
+        }
+        panic::set_hook(Box::new(|_| {
+            println!("Exited with failure, as expected.");
+            std::process::exit(0);
+        }));
+        true
+    } else {
+        false
+    };
+
+    
+    let s = s
+        .lines()
+        .filter(|&l| !l.trim_start().starts_with(';'))
+        .collect::<Vec<&str>>()
+        .join("\r\n");
+
     if let Err(why) = webrtc_sdp::parse_sdp(&s, true) {
         panic!("Failed to parse SDP with error: {}", why);
+    }
+
+    if expect_failure {
+        eprintln!("Successfully parsed SDP that was expected to fail. You may need to update the example expectations.");
+        std::process::exit(1);
     }
     println!("Successfully parsed SDP");
 }
