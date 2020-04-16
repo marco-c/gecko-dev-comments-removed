@@ -57,6 +57,28 @@ __declspec(dllexport) __attribute__((naked)) void Opcode83() {
       "xor $0x42, %eax;"
       "cmpl $1, 0xc(%ebp);");
 }
+
+__declspec(dllexport) __attribute__((naked)) void LockPrefix() {
+  
+  asm volatile(
+      "push $0x7c;"
+      "lock push $0x7c;");
+}
+
+__declspec(dllexport) __attribute__((naked)) void LooksLikeLockPrefix() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  asm volatile(
+      "push $0x7c;"
+      "push $0x0000f0cc;");
+}
 #  endif
 #endif  
 

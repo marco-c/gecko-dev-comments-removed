@@ -738,6 +738,8 @@ bool TestAssemblyFunctions() {
     TestCase("PushRet", NoStubAddressCheck),
     TestCase("MovEaxJump", NoStubAddressCheck),
     TestCase("Opcode83", NoStubAddressCheck),
+    TestCase("LockPrefix", NoStubAddressCheck),
+    TestCase("LooksLikeLockPrefix", NoStubAddressCheck),
 #    endif
 #  endif  
 #endif    
