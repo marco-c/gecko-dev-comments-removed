@@ -90,26 +90,10 @@ nsRFPService* nsRFPService::GetOrCreate() {
 double nsRFPService::TimerResolution() {
   double prefValue = StaticPrefs::
       privacy_resistFingerprinting_reduceTimerPrecision_microseconds();
-  if (nsRFPService::IsResistFingerprintingEnabled()) {
+  if (StaticPrefs::privacy_resistFingerprinting()) {
     return std::max(100000.0, prefValue);
   }
   return prefValue;
-}
-
-
-bool nsRFPService::IsResistFingerprintingEnabled() {
-  return StaticPrefs::privacy_resistFingerprinting();
-}
-
-
-bool nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType) {
-  if (aType == TimerPrecisionType::RFPOnly) {
-    return IsResistFingerprintingEnabled();
-  }
-
-  return (StaticPrefs::privacy_reduceTimerPrecision() ||
-          IsResistFingerprintingEnabled()) &&
-         TimerResolution() > 0;
 }
 
 
@@ -462,15 +446,16 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
                                              double aResolutionUSec,
                                              int64_t aContextMixin,
                                              TimerPrecisionType aType) {
+  if (aType == TimerPrecisionType::DangerouslyNone) {
+    return aTime;
+  }
+
   
   
   
   
   bool unconditionalClamping = false;
-  if (!IsTimerPrecisionReductionEnabled(aType)) {
-    if (!StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
-      return aTime;
-    }
+  if (aType == UnconditionalAKAHighRes || TimerResolution() <= 0) {
     unconditionalClamping = true;
     aResolutionUSec = RFP_TIMER_UNCONDITIONAL_VALUE;  
     aContextMixin = 0;  
@@ -498,13 +483,14 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
   
   
   const long long kFeb282008 = 1204233985000;
-  if (!unconditionalClamping && aContextMixin == 0 &&
-      aType == TimerPrecisionType::All && timeAsInt < kFeb282008) {
+  if (aContextMixin == 0 && timeAsInt < kFeb282008 && !unconditionalClamping &&
+      aType != TimerPrecisionType::RFP) {
+    nsAutoCString type;
+    TypeToText(aType, type);
     MOZ_LOG(
         gResistFingerprintingLog, LogLevel::Error,
         ("About to assert. aTime=%lli<%lli aContextMixin=%" PRId64 " aType=%s",
-         timeAsInt, kFeb282008, aContextMixin,
-         (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
+         timeAsInt, kFeb282008, aContextMixin, type.get()));
     MOZ_ASSERT(
         false,
         "ReduceTimePrecisionImpl was given a relative time "
@@ -561,11 +547,52 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsUSecs(
-    double aTime, int64_t aContextMixin,
-    TimerPrecisionType aType ) {
+double nsRFPService::ReduceTimePrecisionAsUSecs(double aTime,
+                                                int64_t aContextMixin,
+                                                bool aIsSystemPrincipal,
+                                                bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
   return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, MicroSeconds, TimerResolution(), aContextMixin, aType);
+      aTime, MicroSeconds, TimerResolution(), aContextMixin, type);
+}
+
+
+double nsRFPService::ReduceTimePrecisionAsMSecs(double aTime,
+                                                int64_t aContextMixin,
+                                                bool aIsSystemPrincipal,
+                                                bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
+  return nsRFPService::ReduceTimePrecisionImpl(
+      aTime, MilliSeconds, TimerResolution(), aContextMixin, type);
+}
+
+
+double nsRFPService::ReduceTimePrecisionAsMSecsRFP(double aTime,
+                                                   int64_t aContextMixin) {
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds,
+                                               TimerResolution(), aContextMixin,
+                                               TimerPrecisionType::RFP);
+}
+
+
+double nsRFPService::ReduceTimePrecisionAsSecs(double aTime,
+                                               int64_t aContextMixin,
+                                               bool aIsSystemPrincipal,
+                                               bool aCrossOriginIsolated) {
+  const auto type =
+      GetTimerPrecisionType(aIsSystemPrincipal, aCrossOriginIsolated);
+  return nsRFPService::ReduceTimePrecisionImpl(
+      aTime, Seconds, TimerResolution(), aContextMixin, type);
+}
+
+
+double nsRFPService::ReduceTimePrecisionAsSecsRFP(double aTime,
+                                                  int64_t aContextMixin) {
+  return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds,
+                                               TimerResolution(), aContextMixin,
+                                               TimerPrecisionType::RFP);
 }
 
 
@@ -574,23 +601,7 @@ double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime) {
       aTime, MicroSeconds, TimerResolution(),
       0, 
 
-      TimerPrecisionType::All);
-}
-
-
-double nsRFPService::ReduceTimePrecisionAsMSecs(
-    double aTime, int64_t aContextMixin,
-    TimerPrecisionType aType ) {
-  return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, MilliSeconds, TimerResolution(), aContextMixin, aType);
-}
-
-
-double nsRFPService::ReduceTimePrecisionAsSecs(
-    double aTime, int64_t aContextMixin,
-    TimerPrecisionType aType ) {
-  return nsRFPService::ReduceTimePrecisionImpl(
-      aTime, Seconds, TimerResolution(), aContextMixin, aType);
+      TimerPrecisionType::Normal);
 }
 
 
@@ -1062,6 +1073,55 @@ bool nsRFPService::GetSpoofedKeyCode(const dom::Document* aDoc,
   }
 
   return false;
+}
+
+
+TimerPrecisionType nsRFPService::GetTimerPrecisionType(
+    bool aIsSystemPrincipal, bool aCrossOriginIsolated) {
+  if (aIsSystemPrincipal) {
+    return DangerouslyNone;
+  }
+
+  if (StaticPrefs::privacy_resistFingerprinting()) {
+    return RFP;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision() && aCrossOriginIsolated) {
+    return UnconditionalAKAHighRes;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision()) {
+    return Normal;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
+    return UnconditionalAKAHighRes;
+  }
+
+  return DangerouslyNone;
+}
+
+
+void nsRFPService::TypeToText(TimerPrecisionType aType, nsACString& aText) {
+  switch (aType) {
+    case TimerPrecisionType::DangerouslyNone:
+      aText.AssignLiteral("DangerouslyNone");
+      return;
+    case TimerPrecisionType::Normal:
+      aText.AssignLiteral("Normal");
+      return;
+    case TimerPrecisionType::RFP:
+      aText.AssignLiteral("RFP");
+      return;
+    case TimerPrecisionType::UnconditionalAKAHighRes:
+      aText.AssignLiteral("UnconditionalAKAHighRes");
+      return;
+    default:
+      MOZ_ASSERT(false, "Shouldn't go here");
+      aText.AssignLiteral("Unknown Enum Value");
+      return;
+  }
+}
 }
 
 

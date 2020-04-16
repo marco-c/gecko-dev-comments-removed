@@ -1753,8 +1753,8 @@ void nsRefreshDriver::RunFrameRequestCallbacks(TimeStamp aNowTime) {
           
           
           if (!perf->IsSystemPrincipal()) {
-            timeStamp = nsRFPService::ReduceTimePrecisionAsMSecs(
-                timeStamp, 0, TimerPrecisionType::RFPOnly);
+            timeStamp =
+                nsRFPService::ReduceTimePrecisionAsMSecsRFP(timeStamp, 0);
           }
         }
         

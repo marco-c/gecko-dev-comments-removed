@@ -252,8 +252,7 @@ void CSSAnimation::QueueEvents(const StickyTimeDuration& aActiveTime) {
       
       
       
-      elapsedTime = nsRFPService::ReduceTimePrecisionAsSecs(
-          elapsedTime, 0, TimerPrecisionType::RFPOnly);
+      elapsedTime = nsRFPService::ReduceTimePrecisionAsSecsRFP(elapsedTime, 0);
     }
     events.AppendElement(
         AnimationEventInfo(mAnimationName, mOwningElement.Target(), aMessage,

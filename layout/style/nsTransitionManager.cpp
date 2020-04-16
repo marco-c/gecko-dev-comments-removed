@@ -148,8 +148,7 @@ void CSSTransition::QueueEvents(const StickyTimeDuration& aActiveTime) {
       
       
       
-      elapsedTime = nsRFPService::ReduceTimePrecisionAsSecs(
-          elapsedTime, 0, TimerPrecisionType::RFPOnly);
+      elapsedTime = nsRFPService::ReduceTimePrecisionAsSecsRFP(elapsedTime, 0);
     }
     events.AppendElement(AnimationEventInfo(
         TransitionProperty(), mOwningElement.Target(), aMessage, elapsedTime,
