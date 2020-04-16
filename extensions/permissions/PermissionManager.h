@@ -179,20 +179,9 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   
-  
-  static const int64_t cIDPermissionIsDefault = -1;
-
-  
-  
   nsresult TestPermissionWithoutDefaultsFromPrincipal(nsIPrincipal* aPrincipal,
                                                       const nsACString& aType,
-                                                      uint32_t* aPermission) {
-    MOZ_ASSERT(!HasDefaultPref(aType));
-
-    return CommonTestPermission(aPrincipal, -1, aType, aPermission,
-                                nsIPermissionManager::UNKNOWN_ACTION, true,
-                                false, true);
-  }
+                                                      uint32_t* aPermission);
 
   nsresult LegacyTestPermissionFromURI(
       nsIURI* aURI, const OriginAttributes* aOriginAttributes,
@@ -371,50 +360,21 @@ class PermissionManager final : public nsIPermissionManager,
                                      nsTArray<PermissionEntry>& aResult);
 
   
-  
-  static bool HasDefaultPref(const nsACString& aType) {
-    
-    
-    static const nsLiteralCString kPermissionsWithDefaults[] = {
-        NS_LITERAL_CSTRING("camera"), NS_LITERAL_CSTRING("microphone"),
-        NS_LITERAL_CSTRING("geo"), NS_LITERAL_CSTRING("desktop-notification"),
-        NS_LITERAL_CSTRING("shortcuts")};
-
-    if (!aType.IsEmpty()) {
-      for (const auto& perm : kPermissionsWithDefaults) {
-        if (perm.Equals(aType)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
+  int32_t GetTypeIndex(const nsACString& aType, bool aAdd);
 
   
-  int32_t GetTypeIndex(const nsACString& aType, bool aAdd) {
-    for (uint32_t i = 0; i < mTypeArray.length(); ++i) {
-      if (mTypeArray[i].Equals(aType)) {
-        return i;
-      }
-    }
-
-    if (!aAdd) {
-      
-      return -1;
-    }
-
-    
-    
-    if (!mTypeArray.emplaceBack(aType)) {
-      return -1;
-    }
-
-    return mTypeArray.length() - 1;
-  }
-
+  
+  
+  
+  
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
                                           uint32_t aType, bool aExactHostMatch);
+
+  
+  
+  
+  
+  
   PermissionHashKey* GetPermissionHashKey(
       nsIURI* aURI, const OriginAttributes* aOriginAttributes, uint32_t aType,
       bool aExactHostMatch);
@@ -433,53 +393,23 @@ class PermissionManager final : public nsIPermissionManager,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession) {
-    auto preparationResult = CommonPrepareToTestPermission(
-        aPrincipal, aTypeIndex, aType, aPermission, aDefaultPermission,
-        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
-    if (preparationResult.is<nsresult>()) {
-      return preparationResult.as<nsresult>();
-    }
+                                bool aExactHostMatch, bool aIncludingSession);
 
-    return CommonTestPermissionInternal(
-        aPrincipal, nullptr, nullptr, preparationResult.as<int32_t>(), aType,
-        aPermission, aExactHostMatch, aIncludingSession);
-  }
   
   nsresult CommonTestPermission(nsIURI* aURI, int32_t aTypeIndex,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession) {
-    auto preparationResult = CommonPrepareToTestPermission(
-        nullptr, aTypeIndex, aType, aPermission, aDefaultPermission,
-        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
-    if (preparationResult.is<nsresult>()) {
-      return preparationResult.as<nsresult>();
-    }
+                                bool aExactHostMatch, bool aIncludingSession);
 
-    return CommonTestPermissionInternal(
-        nullptr, aURI, nullptr, preparationResult.as<int32_t>(), aType,
-        aPermission, aExactHostMatch, aIncludingSession);
-  }
   nsresult CommonTestPermission(nsIURI* aURI,
                                 const OriginAttributes* aOriginAttributes,
                                 int32_t aTypeIndex, const nsACString& aType,
                                 uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession) {
-    auto preparationResult = CommonPrepareToTestPermission(
-        nullptr, aTypeIndex, aType, aPermission, aDefaultPermission,
-        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
-    if (preparationResult.is<nsresult>()) {
-      return preparationResult.as<nsresult>();
-    }
+                                bool aExactHostMatch, bool aIncludingSession);
 
-    return CommonTestPermissionInternal(
-        nullptr, aURI, aOriginAttributes, preparationResult.as<int32_t>(),
-        aType, aPermission, aExactHostMatch, aIncludingSession);
-  }
   
   nsresult CommonTestPermissionInternal(
       nsIPrincipal* aPrincipal, nsIURI* aURI,
