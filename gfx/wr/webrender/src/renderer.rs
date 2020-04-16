@@ -1109,7 +1109,12 @@ impl TextureResolver {
         
         
         
-        self.retain_targets(device, |texture| texture.used_recently(frame_id, 30));
+        self.gc_targets(
+            device,
+            frame_id,
+            32 * 1024 * 1024,
+            60,
+        );
     }
 
     
@@ -1119,17 +1124,58 @@ impl TextureResolver {
     }
 
     
-    pub fn retain_targets<F: Fn(&Texture) -> bool>(&mut self, device: &mut Device, f: F) {
+    fn on_memory_pressure(
+        &mut self,
+        device: &mut Device,
+    ) {
         
-        let mut tmp = SmallVec::<[Texture; 8]>::new();
         for target in self.render_target_pool.drain(..) {
-            if f(&target) {
-                tmp.push(target);
-            } else {
+            device.delete_texture(target);
+        }
+    }
+
+    
+    pub fn gc_targets(
+        &mut self,
+        device: &mut Device,
+        current_frame_id: GpuFrameId,
+        total_bytes_threshold: usize,
+        frames_threshold: usize,
+    ) {
+        
+        let mut rt_pool_size_in_bytes: usize = self.render_target_pool
+            .iter()
+            .map(|t| t.size_in_bytes())
+            .sum();
+
+        
+        
+        if rt_pool_size_in_bytes <= total_bytes_threshold {
+            return;
+        }
+
+        
+        self.render_target_pool.sort_by_key(|t| t.last_frame_used());
+
+        
+        let mut retained_targets = SmallVec::<[Texture; 8]>::new();
+
+        for target in self.render_target_pool.drain(..) {
+            
+            
+            
+            
+            if rt_pool_size_in_bytes > total_bytes_threshold &&
+               !target.used_recently(current_frame_id, frames_threshold)
+            {
+                rt_pool_size_in_bytes -= target.size_in_bytes();
                 device.delete_texture(target);
+            } else {
+                retained_targets.push(target);
             }
         }
-        self.render_target_pool.extend(tmp);
+
+        self.render_target_pool.extend(retained_targets);
     }
 
     fn end_pass(
@@ -2799,7 +2845,9 @@ impl Renderer {
                     
                     
                     if memory_pressure {
-                        self.texture_resolver.retain_targets(&mut self.device, |_| false);
+                        self.texture_resolver.on_memory_pressure(
+                            &mut self.device,
+                        );
                     }
 
                     self.device.end_frame();
