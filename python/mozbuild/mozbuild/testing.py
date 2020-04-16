@@ -174,12 +174,6 @@ class SupportFilesConverter(object):
                         if field == 'support-files':
                             dest_path = mozpath.join(out_dir,
                                                      os.path.basename(pattern))
-                        
-                        
-                        
-                        
-                        else:
-                            continue
                     info.installs.append((full, mozpath.normpath(dest_path)))
         return info
 
