@@ -4126,6 +4126,9 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
     
     if (isCompound) {
+      if (!newSrcNote(SrcNoteType::AssignOp)) {
+        return false;
+      }
       if (!emit1(compoundOp)) {
         
         return false;
