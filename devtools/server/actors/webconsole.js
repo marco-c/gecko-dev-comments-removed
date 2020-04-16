@@ -1004,6 +1004,9 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         
         response = await this._maybeWaitForResponseResult(response);
         
+        
+        response.timestamp = Date.now();
+        
         this.emit("evaluationResult", {
           type: "evaluationResult",
           resultID,
@@ -1069,10 +1072,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       delete response.awaitResult;
     }
 
-    
-    
-    response.timestamp = Date.now();
-
     return response;
   },
 
@@ -1088,7 +1087,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
   
   evaluateJS: function(request) {
     const input = request.text;
-    const timestamp = Date.now();
 
     const evalOptions = {
       frameActor: request.frameActor,
@@ -1268,7 +1266,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       input: input,
       result: resultGrip,
       awaitResult,
-      timestamp: timestamp,
       exception: errorGrip,
       exceptionMessage: this._createStringGrip(errorMessage),
       exceptionDocURL: errorDocURL,

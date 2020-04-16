@@ -250,6 +250,7 @@ class WebConsoleWrapper {
       
       
       packet.type = "will-navigate";
+      packet.timeStamp = Date.now();
       this.dispatchMessageAdd(packet);
     } else {
       this.webConsoleUI.clearNetworkRequests();
