@@ -43,35 +43,35 @@ class ProfileBufferBlockIndex {
 
   
   
-  MOZ_MUST_USE bool operator==(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator==(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex == aRhs.mBlockIndex;
   }
-  MOZ_MUST_USE bool operator!=(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator!=(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex != aRhs.mBlockIndex;
   }
-  MOZ_MUST_USE bool operator<(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator<(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex < aRhs.mBlockIndex;
   }
-  MOZ_MUST_USE bool operator<=(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator<=(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex <= aRhs.mBlockIndex;
   }
-  MOZ_MUST_USE bool operator>(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator>(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex > aRhs.mBlockIndex;
   }
-  MOZ_MUST_USE bool operator>=(const ProfileBufferBlockIndex& aRhs) const {
+  [[nodiscard]] bool operator>=(const ProfileBufferBlockIndex& aRhs) const {
     return mBlockIndex >= aRhs.mBlockIndex;
   }
 
   
   
-  MOZ_MUST_USE ProfileBufferIndex ConvertToProfileBufferIndex() const {
+  [[nodiscard]] ProfileBufferIndex ConvertToProfileBufferIndex() const {
     return mBlockIndex;
   }
 
   
   
-  static MOZ_MUST_USE ProfileBufferBlockIndex
-  CreateFromProfileBufferIndex(ProfileBufferIndex aIndex) {
+  [[nodiscard]] static ProfileBufferBlockIndex CreateFromProfileBufferIndex(
+      ProfileBufferIndex aIndex) {
     return ProfileBufferBlockIndex(aIndex);
   }
 

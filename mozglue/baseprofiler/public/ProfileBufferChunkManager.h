@@ -36,13 +36,13 @@ class ProfileBufferChunkManager {
 #endif
 
   
-  virtual MOZ_MUST_USE size_t MaxTotalSize() const = 0;
+  [[nodiscard]] virtual size_t MaxTotalSize() const = 0;
 
   
   
   
   
-  virtual MOZ_MUST_USE UniquePtr<ProfileBufferChunk> GetChunk() = 0;
+  [[nodiscard]] virtual UniquePtr<ProfileBufferChunk> GetChunk() = 0;
 
   
   
@@ -76,13 +76,13 @@ class ProfileBufferChunkManager {
           aChunkDestroyedCallback) = 0;
 
   
-  virtual MOZ_MUST_USE UniquePtr<ProfileBufferChunk>
+  [[nodiscard]] virtual UniquePtr<ProfileBufferChunk>
   GetExtantReleasedChunks() = 0;
 
   
   
   template <typename Callback>
-  MOZ_MUST_USE auto PeekExtantReleasedChunks(Callback&& aCallback) {
+  [[nodiscard]] auto PeekExtantReleasedChunks(Callback&& aCallback) {
     const ProfileBufferChunk* chunks = PeekExtantReleasedChunksAndLock();
     auto unlock =
         MakeScopeExit([&]() { UnlockAfterPeekExtantReleasedChunks(); });
@@ -92,10 +92,10 @@ class ProfileBufferChunkManager {
   
   virtual void ForgetUnreleasedChunks() = 0;
 
-  virtual MOZ_MUST_USE size_t
-  SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const = 0;
-  virtual MOZ_MUST_USE size_t
-  SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const = 0;
+  [[nodiscard]] virtual size_t SizeOfExcludingThis(
+      MallocSizeOf aMallocSizeOf) const = 0;
+  [[nodiscard]] virtual size_t SizeOfIncludingThis(
+      MallocSizeOf aMallocSizeOf) const = 0;
 
  protected:
   
