@@ -1,23 +1,23 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "mozilla/dom/PermissionStatus.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/Permission.h"
 #include "mozilla/Services.h"
 #include "nsIPermissionManager.h"
 #include "PermissionObserver.h"
 #include "PermissionUtils.h"
-#include "nsPermission.h"
 #include "PermissionDelegateHandler.h"
 
 namespace mozilla {
 namespace dom {
 
-/* static */
+
 already_AddRefed<PermissionStatus> PermissionStatus::Create(
     nsPIDOMWindowInner* aWindow, PermissionName aName, ErrorResult& aRv) {
   RefPtr<PermissionStatus> status = new PermissionStatus(aWindow, aName);
@@ -105,7 +105,7 @@ already_AddRefed<nsIPrincipal> PermissionStatus::GetPrincipal() const {
   }
 
   nsCOMPtr<nsIPrincipal> principal =
-      nsPermission::ClonePrincipalForPermission(doc->NodePrincipal());
+      Permission::ClonePrincipalForPermission(doc->NodePrincipal());
   NS_ENSURE_TRUE(principal, nullptr);
 
   return principal.forget();
@@ -132,5 +132,5 @@ void PermissionStatus::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  
+}  
