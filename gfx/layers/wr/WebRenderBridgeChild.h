@@ -67,7 +67,7 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
   void AddWebRenderParentCommand(const WebRenderParentCommand& aCmd,
                                  wr::RenderRoot aRenderRoot);
   bool HasWebRenderParentCommands(wr::RenderRoot aRenderRoot) {
-    return !mParentCommands[aRenderRoot].IsEmpty();
+    return !mParentCommands.IsEmpty();
   }
 
   void UpdateResources(wr::IpcResourceUpdateQueue& aResources,
@@ -122,6 +122,7 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
 
   void Destroy(bool aIsSync);
   bool IPCOpen() const { return mIPCOpen && !mDestroyed; }
+  bool GetSentDisplayList() const { return mSentDisplayList; }
   bool IsDestroyed() const { return mDestroyed; }
 
   uint32_t GetNextResourceId() { return ++mResourceId; }
@@ -239,7 +240,7 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
   bool AddOpDestroy(const OpDestroy& aOp);
 
   nsTArray<OpDestroy> mDestroyedActors;
-  wr::RenderRootArray<nsTArray<WebRenderParentCommand>> mParentCommands;
+  nsTArray<WebRenderParentCommand> mParentCommands;
   nsDataHashtable<nsUint64HashKey, CompositableClient*> mCompositables;
   bool mIsInTransaction;
   bool mIsInClearCachedResources;
@@ -250,6 +251,9 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
 
   bool mIPCOpen;
   bool mDestroyed;
+  
+  
+  bool mSentDisplayList;
 
   wr::RenderRootArray<uint32_t> mFontKeysDeleted;
   wr::RenderRootArray<nsDataHashtable<UnscaledFontHashKey, wr::FontKey>>
