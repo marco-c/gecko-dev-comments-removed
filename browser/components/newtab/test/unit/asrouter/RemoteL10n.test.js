@@ -56,17 +56,14 @@ describe("RemoteL10n", () => {
       assert.calledOnce(domL10nStub);
       const { args } = domL10nStub.firstCall;
       
-      
-      
-      assert.equal(args.length, 3);
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "browser/newtab/asrouter.ftl",
         "browser/branding/brandings.ftl",
         "browser/branding/sync-brand.ftl",
         "branding/brand.ftl",
       ]);
-      assert.isFalse(args[1]);
-      assert.isFunction(args[2].generateBundles);
+      assert.isFunction(args[1]);
     });
     it("should load the local Fluent file if USE_REMOTE_L10N_PREF is false", () => {
       sandbox.stub(global.Services.prefs, "getBoolPref").returns(false);
@@ -74,17 +71,14 @@ describe("RemoteL10n", () => {
 
       const { args } = domL10nStub.firstCall;
       
-      
-      
-      assert.equal(args.length, 3);
+      assert.equal(args.length, 2);
       assert.deepEqual(args[0], [
         "browser/newtab/asrouter.ftl",
         "browser/branding/brandings.ftl",
         "browser/branding/sync-brand.ftl",
         "branding/brand.ftl",
       ]);
-      assert.isFalse(args[1]);
-      assert.isEmpty(args[2]);
+      assert.isUndefined(args[1]);
     });
   });
 });
