@@ -844,6 +844,28 @@ static void TestChunkedBuffer() {
 
   MOZ_RELEASE_ASSERT(cb.BufferLength().isNothing());
 
+  int result = 0;
+  result = cb.ReserveAndPut(
+      []() {
+        MOZ_RELEASE_ASSERT(false);
+        return 1;
+      },
+      [](ProfileBufferEntryWriter* aEW) { return aEW ? 2 : 3; });
+  MOZ_RELEASE_ASSERT(result == 3);
+
+  result = 0;
+  result = cb.Put(1, [](ProfileBufferEntryWriter* aEW) { return aEW ? 1 : 2; });
+  MOZ_RELEASE_ASSERT(result == 2);
+
+  blockIndex = cb.PutFrom(&result, 1);
+  MOZ_RELEASE_ASSERT(!blockIndex);
+
+  blockIndex = cb.PutObjects(123, result, "hello");
+  MOZ_RELEASE_ASSERT(!blockIndex);
+
+  blockIndex = cb.PutObject(123);
+  MOZ_RELEASE_ASSERT(!blockIndex);
+
   auto chunks = cb.GetAllChunks();
   static_assert(std::is_same_v<decltype(chunks), UniquePtr<ProfileBufferChunk>>,
                 "ProfileChunkedBuffer::GetAllChunks() should return a "
@@ -866,6 +888,27 @@ static void TestChunkedBuffer() {
   MOZ_RELEASE_ASSERT(*cb.BufferLength() == bufferMaxSize);
 
   
+  const int test = 123;
+  bool ran = false;
+  blockIndex = nullptr;
+  bool success = cb.ReserveAndPut(
+      []() { return sizeof(test); },
+      [&](ProfileBufferEntryWriter* aEW) {
+        ran = true;
+        if (!aEW) {
+          return false;
+        }
+        blockIndex = aEW->CurrentBlockIndex();
+        MOZ_RELEASE_ASSERT(aEW->RemainingBytes() == sizeof(test));
+        aEW->WriteObject(test);
+        MOZ_RELEASE_ASSERT(aEW->RemainingBytes() == 0);
+        return true;
+      });
+  MOZ_RELEASE_ASSERT(ran);
+  MOZ_RELEASE_ASSERT(success);
+  MOZ_RELEASE_ASSERT(blockIndex.ConvertToProfileBufferIndex() == 1);
+
+  
   chunks = cb.GetAllChunks();
   MOZ_RELEASE_ASSERT(!!chunks, "Expected at least one chunk");
   MOZ_RELEASE_ASSERT(!!chunks->GetNext(), "Expected two chunks");
@@ -874,7 +917,24 @@ static void TestChunkedBuffer() {
   MOZ_RELEASE_ASSERT(chunkActualSize >= chunkMinSize);
   MOZ_RELEASE_ASSERT(chunks->RangeStart() == 1);
   MOZ_RELEASE_ASSERT(chunks->OffsetFirstBlock() == 0);
-  MOZ_RELEASE_ASSERT(chunks->OffsetPastLastBlock() == 0);
+  MOZ_RELEASE_ASSERT(chunks->OffsetPastLastBlock() == 1 + sizeof(test));
+
+  
+  ProfileBufferBlockIndex firstBlockIndex;
+  MOZ_RELEASE_ASSERT(!firstBlockIndex);
+  ProfileBufferBlockIndex lastBlockIndex;
+  MOZ_RELEASE_ASSERT(!lastBlockIndex);
+  const size_t lots = 2 * bufferMaxSize / (1 + sizeof(int));
+  for (size_t i = 1; i < lots; ++i) {
+    ProfileBufferBlockIndex blockIndex = cb.PutFrom(&i, sizeof(i));
+    MOZ_RELEASE_ASSERT(!!blockIndex);
+    MOZ_RELEASE_ASSERT(blockIndex > firstBlockIndex);
+    if (!firstBlockIndex) {
+      firstBlockIndex = blockIndex;
+    }
+    MOZ_RELEASE_ASSERT(blockIndex > lastBlockIndex);
+    lastBlockIndex = blockIndex;
+  }
 
 #ifdef DEBUG
   
@@ -887,7 +947,66 @@ static void TestChunkedBuffer() {
 #endif
 
   
+  constexpr int ThreadCount = 32;
+  std::thread threads[ThreadCount];
+  for (int threadNo = 0; threadNo < ThreadCount; ++threadNo) {
+    threads[threadNo] = std::thread(
+        [&](int aThreadNo) {
+          ::SleepMilli(1);
+          constexpr int pushCount = 1024;
+          for (int push = 0; push < pushCount; ++push) {
+            
+            
+            const bool success =
+                cb.Put(std::max(aThreadNo, int(sizeof(push))),
+                       [&](ProfileBufferEntryWriter* aEW) {
+                         if (!aEW) {
+                           return false;
+                         }
+                         aEW->WriteObject(aThreadNo * 1000000 + push);
+                         
+                         for (size_t r = aEW->RemainingBytes(); r != 0; --r) {
+                           aEW->WriteObject<char>('_');
+                         }
+                         return true;
+                       });
+            MOZ_RELEASE_ASSERT(success);
+          }
+        },
+        threadNo);
+  }
+
+  
+  for (auto&& thread : threads) {
+    thread.join();
+  }
+
+#ifdef DEBUG
+  
+#endif
+
+  
   cb.ResetChunkManager();
+
+  success = cb.ReserveAndPut(
+      []() {
+        MOZ_RELEASE_ASSERT(false);
+        return 1;
+      },
+      [](ProfileBufferEntryWriter* aEW) { return !!aEW; });
+  MOZ_RELEASE_ASSERT(!success);
+
+  success = cb.Put(1, [](ProfileBufferEntryWriter* aEW) { return !!aEW; });
+  MOZ_RELEASE_ASSERT(!success);
+
+  blockIndex = cb.PutFrom(&success, 1);
+  MOZ_RELEASE_ASSERT(!blockIndex);
+
+  blockIndex = cb.PutObjects(123, success, "hello");
+  MOZ_RELEASE_ASSERT(!blockIndex);
+
+  blockIndex = cb.PutObject(123);
+  MOZ_RELEASE_ASSERT(!blockIndex);
 
   chunks = cb.GetAllChunks();
   MOZ_RELEASE_ASSERT(!chunks, "Expected no chunks when out-of-session");
@@ -910,7 +1029,38 @@ static void TestChunkedBufferSingle() {
   MOZ_RELEASE_ASSERT(cbSingle.BufferLength().isSome());
   MOZ_RELEASE_ASSERT(*cbSingle.BufferLength() >= chunkMinSize);
 
+  
+  
+  size_t firstIndexToFail = 0;
+  ProfileBufferBlockIndex lastBlockIndex;
+  for (size_t i = 1; i < 3 * chunkMinSize / (1 + sizeof(int)); ++i) {
+    ProfileBufferBlockIndex blockIndex = cbSingle.PutObject(i);
+    if (blockIndex) {
+      MOZ_RELEASE_ASSERT(
+          firstIndexToFail == 0,
+          "We should successfully write after we have failed once");
+      lastBlockIndex = blockIndex;
+    } else if (firstIndexToFail == 0) {
+      firstIndexToFail = i;
+    }
+  }
+  MOZ_RELEASE_ASSERT(firstIndexToFail != 0,
+                     "There should be at least one failure");
+  MOZ_RELEASE_ASSERT(firstIndexToFail != 1, "We shouldn't fail from the start");
+  MOZ_RELEASE_ASSERT(!!lastBlockIndex, "We shouldn't fail from the start");
+
+  
+  
+  
+  
+  
+  constexpr size_t bufferMaxSize = 1024;
+  ProfileBufferChunkManagerWithLocalLimit cmTarget(bufferMaxSize, chunkMinSize);
+  ProfileChunkedBuffer cbTarget(ProfileChunkedBuffer::ThreadSafety::WithMutex,
+                                cmTarget);
+
 #ifdef DEBUG
+  
   
 #endif
 
