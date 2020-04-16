@@ -2714,27 +2714,6 @@ class LModD : public LBinaryMath<1> {
 };
 
 
-class LBinaryV : public LCallInstructionHelper<BOX_PIECES, 2 * BOX_PIECES, 0> {
-  JSOp jsop_;
-
- public:
-  LIR_HEADER(BinaryV)
-
-  LBinaryV(JSOp jsop, const LBoxAllocation& lhs, const LBoxAllocation& rhs)
-      : LCallInstructionHelper(classOpcode), jsop_(jsop) {
-    setBoxOperand(LhsInput, lhs);
-    setBoxOperand(RhsInput, rhs);
-  }
-
-  JSOp jsop() const { return jsop_; }
-
-  const char* extraName() const { return CodeName(jsop_); }
-
-  static const size_t LhsInput = 0;
-  static const size_t RhsInput = BOX_PIECES;
-};
-
-
 class LConcat : public LInstructionHelper<1, 2, 5> {
  public:
   LIR_HEADER(Concat)

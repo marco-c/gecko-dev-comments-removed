@@ -71,12 +71,7 @@ namespace jit {
     js::jit::BigIntStringEqual<js::jit::EqualityKind::NotEqual>)               \
   _(BigIntSub, JS::BigInt::sub)                                                \
   _(BindVarOperation, js::BindVarOperation)                                    \
-  _(BitAnd, js::BitAnd)                                                        \
-  _(BitLsh, js::BitLsh)                                                        \
   _(BitNot, js::BitNot)                                                        \
-  _(BitOr, js::BitOr)                                                          \
-  _(BitRsh, js::BitRsh)                                                        \
-  _(BitXor, js::BitXor)                                                        \
   _(BoxBoxableValue, js::wasm::BoxBoxableValue)                                \
   _(BoxNonStrictThis, js::BoxNonStrictThis)                                    \
   _(CallNativeGetter, js::jit::CallNativeGetter)                               \
@@ -277,8 +272,7 @@ namespace jit {
   _(ToIdOperation, js::ToIdOperation)                                          \
   _(ToObjectSlow, js::ToObjectSlow)                                            \
   _(ToStringSlow, js::ToStringSlow<CanGC>)                                     \
-  _(TrySkipAwait, js::jit::TrySkipAwait)                                       \
-  _(UrshValues, js::UrshValues)
+  _(TrySkipAwait, js::jit::TrySkipAwait)
 
 
 
