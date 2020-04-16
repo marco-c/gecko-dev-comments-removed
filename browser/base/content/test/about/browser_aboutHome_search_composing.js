@@ -12,10 +12,13 @@ add_task(async function() {
     async function(browser) {
       
       let currEngine = await Services.search.getDefault();
-      let engine = await promiseNewEngine("searchSuggestionEngine.xml");
-      let p = promiseContentSearchChange(browser, engine.name);
-      await Services.search.setDefault(engine);
-      await p;
+
+      let engine;
+      await promiseContentSearchChange(browser, async () => {
+        engine = await promiseNewEngine("searchSuggestionEngine.xml");
+        await Services.search.setDefault(engine);
+        return engine.name;
+      });
 
       
       await new Promise((resolve, reject) => {

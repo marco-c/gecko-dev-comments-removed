@@ -160,26 +160,54 @@ function promiseTabLoadEvent(tab, url) {
 
 
 
-function promiseContentSearchChange(browser, newEngineName) {
+
+async function promiseContentSearchChange(browser, searchEngineChangeFn) {
   
   
   
-  return ContentTask.spawn(browser, { newEngineName }, async function(args) {
-    return new Promise(resolve => {
-      content.addEventListener("ContentSearchService", function listener(
-        aEvent
-      ) {
-        if (
-          aEvent.detail.type == "CurrentState" &&
-          content.wrappedJSObject.gContentSearchController.defaultEngine.name ==
-            args.newEngineName
-        ) {
-          content.removeEventListener("ContentSearchService", listener);
-          resolve();
+  await SpecialPowers.spawn(browser, [], async () => {
+    
+    content._searchDetails = {
+      defaultEnginesList: [],
+      listener: event => {
+        if (event.detail.type == "CurrentState") {
+          content._searchDetails.defaultEnginesList.push(
+            content.wrappedJSObject.gContentSearchController.defaultEngine.name
+          );
         }
-      });
-    });
+      },
+    };
+
+    
+    
+    content.addEventListener(
+      "ContentSearchService",
+      content._searchDetails.listener,
+      { mozSystemGroup: true }
+    );
   });
+
+  let expectedEngineName = await searchEngineChangeFn();
+
+  await SpecialPowers.spawn(
+    browser,
+    [expectedEngineName],
+    async expectedEngineNameChild => {
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          content._searchDetails.defaultEnginesList &&
+          content._searchDetails.defaultEnginesList[
+            content._searchDetails.defaultEnginesList.length - 1
+          ] == expectedEngineNameChild
+      );
+      content.removeEventListener(
+        "ContentSearchService",
+        content._searchDetails.listener,
+        { mozSystemGroup: true }
+      );
+      delete content._searchDetails;
+    }
+  );
 }
 
 

@@ -13,11 +13,13 @@ add_task(async function() {
     async function(browser) {
       
       let currEngine = await Services.search.getDefault();
-      let engine = await promiseNewEngine("searchSuggestionEngine.xml");
-      await Promise.all([
-        promiseContentSearchChange(browser, engine.name),
-        Services.search.setDefault(engine),
-      ]);
+
+      let engine;
+      await promiseContentSearchChange(browser, async () => {
+        engine = await promiseNewEngine("searchSuggestionEngine.xml");
+        await Services.search.setDefault(engine);
+        return engine.name;
+      });
 
       await SpecialPowers.spawn(browser, [], async function() {
         
