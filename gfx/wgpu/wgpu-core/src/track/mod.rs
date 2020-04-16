@@ -111,7 +111,7 @@ struct Resource<S> {
 
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct PendingTransition<S: ResourceState> {
     pub id: S::Id,
     pub selector: S::Selector,

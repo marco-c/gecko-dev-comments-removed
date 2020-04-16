@@ -37,7 +37,7 @@ typedef unsigned long long WGPUOption_TextureViewId;
 
 #define WGPUMAX_MIP_LEVELS 16
 
-#define WGPUMAX_VERTEX_BUFFERS 16
+#define WGPUMAX_VERTEX_BUFFERS 8
 
 typedef enum {
   WGPUAddressMode_ClampToEdge = 0,
