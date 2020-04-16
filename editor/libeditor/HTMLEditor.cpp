@@ -3,7 +3,7 @@
 
 
 
-#include "HTMLEditor.h"
+#include "mozilla/HTMLEditor.h"
 
 #include "mozilla/ComposerCommandsUpdater.h"
 #include "mozilla/ContentIterator.h"
@@ -2049,13 +2049,13 @@ nsresult HTMLEditor::GetBackgroundColorState(bool* aMixed,
     nsresult rv = GetCSSBackgroundColorState(aMixed, aOutColor, true);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::GetCSSBackgroundColorState() failed");
-    return EditorBase::ToGenericNSResult(rv);
+    return rv;
   }
   
   nsresult rv = GetHTMLBackgroundColorState(aMixed, aOutColor);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::GetCSSBackgroundColorState() failed");
-  return EditorBase::ToGenericNSResult(rv);
+  return rv;
 }
 
 NS_IMETHODIMP HTMLEditor::GetHighlightColorState(bool* aMixed,
@@ -2103,56 +2103,43 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
   }
 
   nsCOMPtr<nsINode> startContainer = firstRange->GetStartContainer();
-  if (NS_WARN_IF(!startContainer) || NS_WARN_IF(!startContainer->IsContent())) {
+  if (NS_WARN_IF(!startContainer)) {
     return NS_ERROR_FAILURE;
   }
 
   
-  nsIContent* contentToExamine;
+  nsCOMPtr<nsINode> nodeToExamine;
   if (SelectionRefPtr()->IsCollapsed() || IsTextNode(startContainer)) {
     
-    contentToExamine = startContainer->AsContent();
+    nodeToExamine = startContainer;
   } else {
     
     
-    contentToExamine = firstRange->GetChildAtStartOffset();
+    nodeToExamine = firstRange->GetChildAtStartOffset();
     
   }
 
-  if (NS_WARN_IF(!contentToExamine)) {
+  if (NS_WARN_IF(!nodeToExamine)) {
     return NS_ERROR_FAILURE;
   }
 
   if (aBlockLevel) {
     
     
-    Element* blockParent = GetBlock(*contentToExamine);
+    nsCOMPtr<Element> blockParent = GetBlock(*nodeToExamine);
     if (NS_WARN_IF(!blockParent)) {
       return NS_OK;
     }
 
-    for (RefPtr<Element> element = blockParent; element;
-         element = element->GetParentElement()) {
-      nsCOMPtr<nsINode> parentNode = element->GetParentNode();
+    
+    do {
       
-      DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *element, *nsGkAtoms::backgroundColor, aOutColor);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_WARN_IF(parentNode != element->GetParentNode())) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-      }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                           "backgroundColor) failed, but ignored");
+      CSSEditUtils::GetComputedProperty(*blockParent,
+                                        *nsGkAtoms::backgroundColor, aOutColor);
+      blockParent = blockParent->GetParentElement();
       
       
-      if (!aOutColor.EqualsLiteral("transparent")) {
-        break;
-      }
-    }
-
+    } while (aOutColor.EqualsLiteral("transparent") && blockParent);
     if (aOutColor.EqualsLiteral("transparent")) {
       
       
@@ -2161,44 +2148,32 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     }
   } else {
     
-    if (IsTextNode(contentToExamine)) {
+    if (IsTextNode(nodeToExamine)) {
       
-      contentToExamine = contentToExamine->GetParent();
+      nodeToExamine = nodeToExamine->GetParentNode();
     }
     
-    if (!contentToExamine) {
+    if (!nodeToExamine) {
       return NS_OK;
     }
-
-    for (RefPtr<Element> element =
-             contentToExamine->GetAsElementOrParentElement();
-         element; element = element->GetParentElement()) {
+    do {
       
-      if (HTMLEditor::NodeIsBlockStatic(*element)) {
+      if (HTMLEditor::NodeIsBlockStatic(*nodeToExamine)) {
         
         
         aOutColor.AssignLiteral("transparent");
         break;
+      } else {
+        
+        
+        CSSEditUtils::GetComputedProperty(
+            *nodeToExamine, *nsGkAtoms::backgroundColor, aOutColor);
+        if (!aOutColor.EqualsLiteral("transparent")) {
+          break;
+        }
       }
-
-      
-      
-      nsCOMPtr<nsINode> parentNode = element->GetParentNode();
-      DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *element, *nsGkAtoms::backgroundColor, aOutColor);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_WARN_IF(parentNode != element->GetParentNode())) {
-        return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
-      }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "CSSEditUtils::GetComputedProperty(nsGkAtoms::"
-                           "backgroundColor) failed, but ignored");
-      if (!aOutColor.EqualsLiteral("transparent")) {
-        break;
-      }
-    }
+      nodeToExamine = nodeToExamine->GetParentNode();
+    } while (aOutColor.EqualsLiteral("transparent") && nodeToExamine);
   }
   return NS_OK;
 }

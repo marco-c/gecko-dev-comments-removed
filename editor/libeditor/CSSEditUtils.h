@@ -17,7 +17,6 @@ class nsAtom;
 class nsIContent;
 class nsICSSDeclaration;
 class nsINode;
-class nsStaticAtom;
 
 namespace mozilla {
 
@@ -58,6 +57,8 @@ class CSSEditUtils final {
     eCSSEditableProperty_whitespace,
     eCSSEditableProperty_width
   };
+
+  enum StyleType { eSpecified, eComputed };
 
   struct CSSEquivTable {
     nsCSSEditableProperty cssProperty;
@@ -114,11 +115,10 @@ class CSSEditUtils final {
 
 
 
-  static nsresult GetSpecifiedProperty(nsIContent& aContent,
-                                       nsAtom& aCSSProperty, nsAString& aValue);
-  MOZ_CAN_RUN_SCRIPT static nsresult GetComputedProperty(nsIContent& aContent,
-                                                         nsAtom& aCSSProperty,
-                                                         nsAString& aValue);
+  static nsresult GetSpecifiedProperty(nsINode& aNode, nsAtom& aProperty,
+                                       nsAString& aValue);
+  static nsresult GetComputedProperty(nsINode& aNode, nsAtom& aProperty,
+                                      nsAString& aValue);
 
   
 
@@ -171,44 +171,12 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT static nsresult
-  GetComputedCSSEquivalentToHTMLInlineStyleSet(nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue) {
-    return GetCSSEquivalentToHTMLInlineStyleSetInternal(
-        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
-  }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT static bool IsComputedCSSEquivalentToHTMLInlineStyleSet(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      nsAString& aValue) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
-        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
-  }
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static bool
-  IsSpecifiedCSSEquivalentToHTMLInlineStyleSet(nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
-        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Specified);
-  }
+  static nsresult GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
+                                                       nsAtom* aHTMLProperty,
+                                                       nsAtom* aAttribute,
+                                                       nsAString& aValueString,
+                                                       StyleType aStyleType);
 
   
 
@@ -224,20 +192,44 @@ class CSSEditUtils final {
 
 
 
+  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
+                                                  nsAtom* aProperty,
+                                                  nsAtom* aAttribute,
+                                                  nsAString& aValue,
+                                                  StyleType aStyleType);
+
+  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
+                                                  nsAtom* aProperty,
+                                                  nsAtom* aAttribute,
+                                                  const nsAString& aValue,
+                                                  StyleType aStyleType);
+
+  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
+                                                  nsAtom* aProperty,
+                                                  const nsAString* aAttribute,
+                                                  nsAString& aValue,
+                                                  StyleType aStyleType);
+
+  
 
 
-  MOZ_CAN_RUN_SCRIPT static bool HaveComputedCSSEquivalentStyles(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return HaveCSSEquivalentStylesInternal(aContent, aHTMLProperty, aAttribute,
-                                           StyleType::Computed);
-  }
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static bool HaveSpecifiedCSSEquivalentStyles(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute) {
-    MOZ_ASSERT(aHTMLProperty || aAttribute);
-    return HaveCSSEquivalentStylesInternal(aContent, aHTMLProperty, aAttribute,
-                                           StyleType::Specified);
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool HaveCSSEquivalentStyles(nsINode& aNode, nsAtom* aProperty,
+                                      nsAtom* aAttribute, StyleType aStyleType);
 
   
 
@@ -332,7 +324,14 @@ class CSSEditUtils final {
       dom::Element* aElement);
 
  private:
-  enum class StyleType { Specified, Computed };
+  
+
+
+
+
+
+  static void GetCSSPropertyAtom(nsCSSEditableProperty aProperty,
+                                 nsAtom** aAtom);
 
   
 
@@ -340,9 +339,6 @@ class CSSEditUtils final {
 
 
 
-  static nsStaticAtom* GetCSSPropertyAtom(nsCSSEditableProperty aProperty);
-
-  
 
 
 
@@ -351,16 +347,11 @@ class CSSEditUtils final {
 
 
 
-
-
-
-
-
-
-  static void BuildCSSDeclarations(
-      nsTArray<nsStaticAtom*>& aOutArrayOfCSSProperty,
-      nsTArray<nsString>& aOutArrayOfCSSValue, const CSSEquivTable* aEquivTable,
-      const nsAString* aValue, bool aGetOrRemoveRequest);
+  static void BuildCSSDeclarations(nsTArray<nsAtom*>& aPropertyArray,
+                                   nsTArray<nsString>& cssValueArray,
+                                   const CSSEquivTable* aEquivTable,
+                                   const nsAString* aValue,
+                                   bool aGetOrRemoveRequest);
 
   
 
@@ -380,9 +371,9 @@ class CSSEditUtils final {
 
 
   static void GenerateCSSDeclarationsFromHTMLStyle(
-      dom::Element& aElement, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      const nsAString* aValue, nsTArray<nsStaticAtom*>& aOutArrayOfCSSProperty,
-      nsTArray<nsString>& aOutArrayOfCSSValue, bool aGetOrRemoveRequest);
+      dom::Element* aNode, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      const nsAString* aValue, nsTArray<nsAtom*>& aPropertyArray,
+      nsTArray<nsString>& aValueArray, bool aGetOrRemoveRequest);
 
   
 
@@ -391,30 +382,10 @@ class CSSEditUtils final {
 
 
 
-  MOZ_CAN_RUN_SCRIPT static nsresult GetComputedCSSInlinePropertyBase(
-      nsIContent& aContent, nsAtom& aCSSProperty, nsAString& aValue);
-  static nsresult GetSpecifiedCSSInlinePropertyBase(nsIContent& aContent,
-                                                    nsAtom& aCSSProperty,
-                                                    nsAString& aValue);
 
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT static nsresult
-  GetCSSEquivalentToHTMLInlineStyleSetInternal(nsIContent& aContent,
-                                               nsAtom* aHTMLProperty,
-                                               nsAtom* aAttribute,
-                                               nsAString& aValue,
-                                               StyleType aStyleType);
-  MOZ_CAN_RUN_SCRIPT static bool IsCSSEquivalentToHTMLInlineStyleSetInternal(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      nsAString& aValue, StyleType aStyleType);
-  MOZ_CAN_RUN_SCRIPT static bool HaveCSSEquivalentStylesInternal(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
-      StyleType aStyleType);
+  static nsresult GetCSSInlinePropertyBase(nsINode* aNode, nsAtom* aProperty,
+                                           nsAString& aValue,
+                                           StyleType aStyleType);
 
  private:
   HTMLEditor* mHTMLEditor;

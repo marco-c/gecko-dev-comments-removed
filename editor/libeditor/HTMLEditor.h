@@ -36,9 +36,8 @@ class nsDocumentFragment;
 class nsHTMLDocument;
 class nsITransferable;
 class nsIClipboard;
-class nsRange;
-class nsStaticAtom;
 class nsTableWrapperFrame;
+class nsRange;
 
 namespace mozilla {
 class AlignStateAtSelection;
@@ -183,8 +182,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult GetBackgroundColorState(bool* aMixed,
-                                                      nsAString& aOutColor);
+  nsresult GetBackgroundColorState(bool* aMixed, nsAString& aOutColor);
 
   
 
@@ -418,8 +416,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
-  GetAbsolutelyPositionedSelectionContainer() const;
+  already_AddRefed<Element> GetAbsolutelyPositionedSelectionContainer() const;
 
   Element* GetPositionedElement() const { return mAbsolutelyPositionedObject; }
 
@@ -441,7 +438,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT int32_t GetZIndex(Element& aElement);
+  int32_t GetZIndex(Element& aElement);
 
   
 
@@ -471,12 +468,13 @@ class HTMLEditor final : public TextEditor,
       nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue,
       nsIPrincipal* aPrincipal = nullptr);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlineProperty(
-      nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString& aValue,
-      bool* aFirst, bool* aAny, bool* aAll) const;
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlinePropertyWithAttrValue(
-      nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString& aValue,
-      bool* aFirst, bool* aAny, bool* aAll, nsAString& outValue);
+  nsresult GetInlineProperty(nsAtom* aProperty, nsAtom* aAttribute,
+                             const nsAString& aValue, bool* aFirst, bool* aAny,
+                             bool* aAll) const;
+  nsresult GetInlinePropertyWithAttrValue(nsAtom* aProperty, nsAtom* aAttr,
+                                          const nsAString& aValue, bool* aFirst,
+                                          bool* aAny, bool* aAll,
+                                          nsAString& outValue);
 
   
 
@@ -495,9 +493,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertyAsAction(
-      nsStaticAtom& aHTMLProperty, nsStaticAtom* aAttribute,
-      nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveInlinePropertyAsAction(nsAtom& aProperty, nsAtom* aAttribute,
+                               nsIPrincipal* aPrincipal = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult
   RemoveAllInlinePropertiesAsAction(nsIPrincipal* aPrincipal = nullptr);
@@ -533,8 +531,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetFontColorState(bool* aIsMixed, nsAString& aColor);
+  nsresult GetFontColorState(bool* aIsMixed, nsAString& aColor);
 
   
 
@@ -892,8 +889,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RelativeChangeElementZIndex(
-      Element& aElement, int32_t aChange, int32_t* aReturn);
+  MOZ_CAN_RUN_SCRIPT nsresult RelativeChangeElementZIndex(Element& aElement,
+                                                          int32_t aChange,
+                                                          int32_t* aReturn);
 
   virtual bool IsBlockNode(nsINode* aNode) const override;
   using EditorBase::IsBlockNode;
@@ -1201,9 +1199,10 @@ class HTMLEditor final : public TextEditor,
   nsIContent* GetFirstEditableLeaf(nsINode& aNode);
   nsIContent* GetLastEditableLeaf(nsINode& aNode);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlinePropertyBase(
-      nsAtom& aHTMLProperty, nsAtom* aAttribute, const nsAString* aValue,
-      bool* aFirst, bool* aAny, bool* aAll, nsAString* outValue) const;
+  nsresult GetInlinePropertyBase(nsAtom& aProperty, nsAtom* aAttribute,
+                                 const nsAString* aValue, bool* aFirst,
+                                 bool* aAny, bool* aAll,
+                                 nsAString* outValue) const;
 
   
 
@@ -1278,15 +1277,14 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetInlineStyles(nsIContent& aContent, AutoStyleCacheArray& aStyleCacheArray);
+  GetInlineStyles(nsINode& aNode, AutoStyleCacheArray& aStyleCacheArray);
 
   
 
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CacheInlineStyles(nsIContent& aContent);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CacheInlineStyles(nsINode& aNode);
 
   
 
@@ -3440,9 +3438,9 @@ class HTMLEditor final : public TextEditor,
 
 
   enum class RemoveRelatedElements { Yes, No };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveInlinePropertyInternal(
-      nsStaticAtom* aHTMLProperty, nsStaticAtom* aAttribute,
-      RemoveRelatedElements aRemoveRelatedElements);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveInlinePropertyInternal(nsAtom* aProperty, nsAtom* aAttribute,
+                               RemoveRelatedElements aRemoveRelatedElements);
 
   
 
@@ -3454,8 +3452,8 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT nsresult ReplaceHeadContentsWithSourceWithTransaction(
       const nsAString& aSourceToInsert);
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetCSSBackgroundColorState(
-      bool* aMixed, nsAString& aOutColor, bool aBlockLevel);
+  nsresult GetCSSBackgroundColorState(bool* aMixed, nsAString& aOutColor,
+                                      bool aBlockLevel);
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
   nsresult GetLastCellInRow(nsINode* aRowNode, nsINode** aCellNode);
@@ -4127,13 +4125,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT bool IsRemovableParentStyleWithNewSpanElement(
-      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute) const;
+  static bool IsRemovableParentStyleWithNewSpanElement(nsIContent& aContent,
+                                                       nsAtom* aProperty,
+                                                       nsAtom* aAttribute);
 
   
 
@@ -4227,10 +4221,10 @@ class HTMLEditor final : public TextEditor,
 
 
   nsresult GetElementOrigin(Element& aElement, int32_t& aX, int32_t& aY);
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetPositionAndDimensions(
-      Element& aElement, int32_t& aX, int32_t& aY, int32_t& aW, int32_t& aH,
-      int32_t& aBorderLeft, int32_t& aBorderTop, int32_t& aMarginLeft,
-      int32_t& aMarginTop);
+  nsresult GetPositionAndDimensions(Element& aElement, int32_t& aX, int32_t& aY,
+                                    int32_t& aW, int32_t& aH,
+                                    int32_t& aBorderLeft, int32_t& aBorderTop,
+                                    int32_t& aMarginLeft, int32_t& aMarginTop);
 
   bool IsInObservedSubtree(nsIContent* aChild);
 
@@ -4242,7 +4236,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SetAllResizersPosition();
+  MOZ_CAN_RUN_SCRIPT nsresult SetAllResizersPosition();
 
   
 
@@ -4277,9 +4271,10 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SetShadowPosition(Element& aShadowElement, Element& aElement,
-                    int32_t aElementLeft, int32_t aElementTop);
+  MOZ_CAN_RUN_SCRIPT nsresult SetShadowPosition(Element& aShadowElement,
+                                                Element& aElement,
+                                                int32_t aElementLeft,
+                                                int32_t aElementTop);
 
   ManualNACPtr CreateResizingInfo(nsIContent& aParentContent);
   MOZ_CAN_RUN_SCRIPT nsresult SetResizingInfoPosition(int32_t aX, int32_t aY,
@@ -4358,9 +4353,8 @@ class HTMLEditor final : public TextEditor,
   void SnapToGrid(int32_t& newX, int32_t& newY);
   nsresult GrabberClicked();
   MOZ_CAN_RUN_SCRIPT nsresult EndMoving();
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetTemporaryStyleForFocusedPositionedElement(Element& aElement,
-                                               nsAString& aReturn);
+  nsresult GetTemporaryStyleForFocusedPositionedElement(Element& aElement,
+                                                        nsAString& aReturn);
 
   
 
@@ -4659,8 +4653,7 @@ class MOZ_STACK_CLASS ListItemElementSelectionState final {
 class MOZ_STACK_CLASS AlignStateAtSelection final {
  public:
   AlignStateAtSelection() = delete;
-  MOZ_CAN_RUN_SCRIPT AlignStateAtSelection(HTMLEditor& aHTMLEditor,
-                                           ErrorResult& aRv);
+  AlignStateAtSelection(HTMLEditor& aHTMLEditor, ErrorResult& aRv);
 
   nsIHTMLEditor::EAlignment AlignmentAtSelectionStart() const {
     return mFirstAlign;
