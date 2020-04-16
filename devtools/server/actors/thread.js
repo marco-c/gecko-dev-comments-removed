@@ -2045,6 +2045,12 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     };
   },
 
+  
+  
+  onDumpPools() {
+    return this.conn.dumpPools();
+  },
+
   logLocation: function(prefix, frame) {
     const loc = this.sources.getFrameLocation(frame);
     dump(`${prefix} (${loc.line}, ${loc.column})\n`);
@@ -2061,6 +2067,7 @@ Object.assign(ThreadActor.prototype.requestTypes, {
   skipBreakpoints: ThreadActor.prototype.onSkipBreakpoints,
   pauseOnExceptions: ThreadActor.prototype.onPauseOnExceptions,
   dumpThread: ThreadActor.prototype.onDump,
+  dumpPools: ThreadActor.prototype.onDumpPools,
 });
 
 exports.ThreadActor = ThreadActor;

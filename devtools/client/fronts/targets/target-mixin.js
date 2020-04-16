@@ -490,6 +490,12 @@ function TargetMixin(parentClass) {
       return `Target:${id}`;
     }
 
+    dumpPools() {
+      
+      
+      return this.threadFront.dumpPools();
+    }
+
     
 
 
