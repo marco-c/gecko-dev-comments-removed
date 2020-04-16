@@ -5,10 +5,8 @@
 
 #include "mozilla/net/CookieService.h"
 #include "mozilla/net/CookieServiceParent.h"
-#include "mozilla/dom/PContentParent.h"
 #include "mozilla/net/NeckoParent.h"
 
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/StoragePrincipalHelper.h"
 #include "mozIThirdPartyUtil.h"
@@ -17,26 +15,6 @@
 #include "nsNetCID.h"
 
 using namespace mozilla::ipc;
-using mozilla::OriginAttributes;
-
-namespace {
-
-
-
-nsresult CreateDummyChannel(nsIURI* aHostURI, nsILoadInfo* aLoadInfo,
-                            nsIChannel** aChannel) {
-  nsCOMPtr<nsIChannel> dummyChannel;
-  nsresult rv =
-      NS_NewChannelInternal(getter_AddRefs(dummyChannel), aHostURI, aLoadInfo);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  dummyChannel.forget(aChannel);
-  return NS_OK;
-}
-
-}  
 
 namespace mozilla {
 namespace net {
@@ -173,14 +151,10 @@ void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
   
 }
 
-IPCResult CookieServiceParent::RecvSetCookieString(
-    const URIParams& aHost, const Maybe<URIParams>& aChannelURI,
-    const Maybe<LoadInfoArgs>& aLoadInfoArgs, const bool& aIsForeign,
-    const bool& aIsThirdPartyTrackingResource,
-    const bool& aIsThirdPartySocialTrackingResource,
-    const bool& aFirstPartyStorageAccessGranted,
-    const uint32_t& aRejectedReason, const OriginAttributes& aAttrs,
-    const nsCString& aCookieString, const bool& aFromHttp) {
+IPCResult CookieServiceParent::RecvSetCookies(
+    const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
+    const URIParams& aHost, bool aFromHttp,
+    const nsTArray<CookieStruct>& aCookies) {
   if (!mCookieService) {
     return IPC_OK();
   }
@@ -192,39 +166,15 @@ IPCResult CookieServiceParent::RecvSetCookieString(
     return IPC_FAIL_NO_REASON(this);
   }
 
-  nsCOMPtr<nsIURI> channelURI = DeserializeURI(aChannelURI);
-
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  Unused << NS_WARN_IF(NS_FAILED(
-      LoadInfoArgsToLoadInfo(aLoadInfoArgs, getter_AddRefs(loadInfo))));
-
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIChannel> dummyChannel;
-  nsresult rv =
-      CreateDummyChannel(channelURI, loadInfo, getter_AddRefs(dummyChannel));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    return IPC_OK();
-  }
-
-  
-  nsDependentCString cookieString(aCookieString, 0);
-
   
   
   mProcessingCookie = true;
-  mCookieService->SetCookieStringInternal(
-      hostURI, aIsForeign, aIsThirdPartyTrackingResource,
-      aIsThirdPartySocialTrackingResource, aFirstPartyStorageAccessGranted,
-      aRejectedReason, cookieString, aFromHttp, aAttrs, dummyChannel);
+
+  bool ok = mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes,
+                                              hostURI, aFromHttp, aCookies);
+
   mProcessingCookie = false;
-  return IPC_OK();
+  return ok ? IPC_OK() : IPC_FAIL(this, "Invalid cookie received.");
 }
 
 }  
