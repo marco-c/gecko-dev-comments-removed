@@ -6,6 +6,8 @@ import responses
 import re
 import json
 
+from mozprofile.prefs import Preferences
+
 from condprof.client import get_profile, ROOT_URL
 from condprof.util import _DEFAULT_SERVER
 
@@ -84,6 +86,12 @@ class TestClient(unittest.TestCase):
         
         
         self.assertEqual(len(responses.calls), 1)
+
+        
+        prefs_js = os.path.join(self.target, "prefs.js")
+        prefs = Preferences.read_prefs(prefs_js)
+        for name, value in prefs:
+            self.assertFalse(name.startswith("gfx.blacklist"))
 
 
 if __name__ == "__main__":
