@@ -136,6 +136,12 @@ function openBrowserWindowIntl() {
 function startBrowserTests() {
   if (gBrowserContext.startURL) {
     
+    
+    if (currentBrowser().contentWindow.location != gBrowserContext.startURL) {
+      setTimeout(startBrowserTests, 0);
+      return;
+    }
+    
     addA11yLoadEvent(gBrowserContext.testFunc, currentBrowser().contentWindow);
   } else {
     gBrowserContext.testFunc();
