@@ -1079,17 +1079,16 @@ pref("privacy.restrict3rdpartystorage.url_decorations", "");
 pref("privacy.popups.maxReported", 100);
 
 
-pref("privacy.purge_trackers.enabled", false);
-
 #ifdef NIGHTLY_BUILD
-  pref("privacy.purge_trackers.logging.enabled", true);
+  pref("privacy.purge_trackers.enabled", true);
+  pref("privacy.purge_trackers.logging.level", "All");
 #else
-  pref("privacy.purge_trackers.logging.enabled", false);
+  pref("privacy.purge_trackers.enabled", false);
+  pref("privacy.purge_trackers.logging.level", "Error");
 #endif
 
-pref("privacy.purge_trackers.max_purge_count", 100);
-pref("privacy.purge_trackers.logging.level", "Warn");
 
+pref("privacy.purge_trackers.max_purge_count", 100);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.coalesce_mouse_move",       true);
