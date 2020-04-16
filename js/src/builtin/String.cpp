@@ -4455,7 +4455,7 @@ static bool BuildFlatMatchArray(JSContext* cx, HandleString str,
 
   
   
-  ArrayObject* templateObject =
+  JSObject* templateObject =
       cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
   if (!templateObject) {
     return false;

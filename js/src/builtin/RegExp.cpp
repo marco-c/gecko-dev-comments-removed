@@ -62,7 +62,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleString input,
 
   
   
-  ArrayObject* templateObject =
+  JSObject* templateObject =
       cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
   if (!templateObject) {
     return false;

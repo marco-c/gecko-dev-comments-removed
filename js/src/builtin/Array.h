@@ -14,13 +14,10 @@
 
 #include "jspubtd.h"
 
+#include "vm/ArrayObject.h"
 #include "vm/JSObject.h"
-#include "vm/NativeObject.h"  
 
 namespace js {
-
-class ArrayObject;
-
 
 const uint32_t MAX_ARRAY_INDEX = 4294967294u;
 
@@ -48,18 +45,19 @@ MOZ_ALWAYS_INLINE bool IdIsIndex(jsid id, uint32_t* indexp) {
 
 
 
-
 extern ArrayObject* JS_FASTCALL
-NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr);
-
-
-
-extern ArrayObject* JS_FASTCALL
-NewTenuredDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr);
+NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr,
+                   NewObjectKind newKind = GenericObject);
 
 
 
 extern ArrayObject* JS_FASTCALL NewDenseUnallocatedArray(
+    JSContext* cx, uint32_t length, HandleObject proto = nullptr,
+    NewObjectKind newKind = GenericObject);
+
+
+
+extern ArrayObject* JS_FASTCALL NewDensePartlyAllocatedArray(
     JSContext* cx, uint32_t length, HandleObject proto = nullptr,
     NewObjectKind newKind = GenericObject);
 
@@ -77,7 +75,7 @@ extern ArrayObject* NewDenseCopiedArray(JSContext* cx, uint32_t length,
 
 
 extern ArrayObject* NewDenseFullyAllocatedArrayWithTemplate(
-    JSContext* cx, uint32_t length, ArrayObject* templateObject);
+    JSContext* cx, uint32_t length, JSObject* templateObject);
 
 
 extern ArrayObject* NewDenseCopyOnWriteArray(JSContext* cx,

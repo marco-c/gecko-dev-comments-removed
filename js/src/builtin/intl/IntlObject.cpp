@@ -800,7 +800,7 @@ static JSObject* CreateIntlObject(JSContext* cx, JSProtoKey key) {
 
   
   
-  return NewSingletonObjectWithGivenProto(cx, &IntlClass, proto);
+  return NewObjectWithGivenProto(cx, &IntlClass, proto, SingletonObject);
 }
 
 

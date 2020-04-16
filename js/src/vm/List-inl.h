@@ -26,7 +26,7 @@
 #include "vm/TypeInference-inl.h"  
 
 inline  js::ListObject* js::ListObject::create(JSContext* cx) {
-  js::ListObject* obj = NewObjectWithGivenProto<ListObject>(cx, nullptr);
+  js::ListObject* obj = NewObjectWithNullTaggedProto<ListObject>(cx);
   if (!obj) {
     return nullptr;
   }

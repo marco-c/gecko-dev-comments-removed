@@ -28,7 +28,6 @@
 #include "vm/JSAtom-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
-#include "vm/ObjectGroup-inl.h"  
 #include "vm/Stack-inl.h"
 #include "vm/TypeInference-inl.h"
 

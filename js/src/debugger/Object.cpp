@@ -68,7 +68,7 @@
 
 #include "vm/Compartment-inl.h"       
 #include "vm/JSAtom-inl.h"            
-#include "vm/JSObject-inl.h"  
+#include "vm/JSObject-inl.h"          
 #include "vm/NativeObject-inl.h"      
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
@@ -1618,10 +1618,10 @@ NativeObject* DebuggerObject::initClass(JSContext* cx,
 DebuggerObject* DebuggerObject::create(JSContext* cx, HandleObject proto,
                                        HandleObject referent,
                                        HandleNativeObject debugger) {
+  NewObjectKind newKind =
+      IsInsideNursery(referent) ? GenericObject : TenuredObject;
   DebuggerObject* obj =
-      IsInsideNursery(referent)
-          ? NewObjectWithGivenProto<DebuggerObject>(cx, proto)
-          : NewTenuredObjectWithGivenProto<DebuggerObject>(cx, proto);
+      NewObjectWithGivenProto<DebuggerObject>(cx, proto, newKind);
   if (!obj) {
     return nullptr;
   }

@@ -52,6 +52,12 @@ enum NewObjectKind {
 
 
 
+  NurseryAllocatedProxy,
+
+  
+
+
+
 
   TenuredObject
 };
@@ -460,25 +466,14 @@ class ObjectGroup : public gc::TenuredCell {
   static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
                                             JSProtoKey key);
 
- public:
   
 
   static ObjectGroup* defaultNewGroup(JSContext* cx, const JSClass* clasp,
                                       TaggedProto proto,
                                       JSObject* associated = nullptr);
-
-  
-  
-  static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroupRealm& realm,
-                                         JS::Realm* objectRealm,
+  static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroup* oldGroup,
                                          const JSClass* clasp,
                                          TaggedProto proto);
-
-  
-  static inline ObjectGroup* lazySingletonGroup(JSContext* cx,
-                                                ObjectGroup* oldGroup,
-                                                const JSClass* clasp,
-                                                TaggedProto proto);
 
   static void setDefaultNewGroupUnknown(JSContext* cx, ObjectGroupRealm& realm,
                                         const JSClass* clasp,

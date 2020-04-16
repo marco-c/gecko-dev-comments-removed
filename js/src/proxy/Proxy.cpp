@@ -792,32 +792,7 @@ JS_FRIEND_API JSObject* js::NewProxyObject(JSContext* cx,
     proto_ = TaggedProto::LazyProto;
   }
 
-  return ProxyObject::New(cx, handler, priv, TaggedProto(proto_),
-                          options.clasp());
-}
-
-JS_FRIEND_API JSObject* js::NewSingletonProxyObject(
-    JSContext* cx, const BaseProxyHandler* handler, HandleValue priv,
-    JSObject* proto_, const ProxyOptions& options) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-
-  
-  
-  
-  cx->realm()->maybeGlobal();
-
-  if (proto_ != TaggedProto::LazyProto) {
-    cx->check(proto_);  
-  }
-
-  if (options.lazyProto()) {
-    MOZ_ASSERT(!proto_);
-    proto_ = TaggedProto::LazyProto;
-  }
-
-  return ProxyObject::NewSingleton(cx, handler, priv, TaggedProto(proto_),
-                                   options.clasp());
+  return ProxyObject::New(cx, handler, priv, TaggedProto(proto_), options);
 }
 
 void ProxyObject::renew(const BaseProxyHandler* handler, const Value& priv) {
