@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -22,7 +22,7 @@ import org.mozilla.geckoview.test.util.UiThreadUtils
 @MediumTest
 class HistoryDelegateTest : BaseSessionTest() {
     companion object {
-        // Keep in sync with the styles in `LINKS_HTML_PATH`.
+        
         const val UNVISITED_COLOR = "rgb(0, 0, 255)"
         const val VISITED_COLOR = "rgb(255, 0, 0)"
     }
@@ -64,13 +64,13 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        // Since `getVisited` is called asynchronously after the page loads, we
-        // can't use `waitForPageStop` here.
+        
+        
         sessionRule.session.loadUri(testUri)
         sessionRule.session.waitUntilCalled(GeckoSession.HistoryDelegate::class,
                                             "onVisited", "getVisited")
 
-        // Sometimes link changes are not applied immediately, wait for a little bit
+        
         UiThreadUtils.waitForCondition({
             sessionRule.getLinkColor(testUri, "#mozilla") == VISITED_COLOR
         }, sessionRule.env.defaultTimeoutMillis)
@@ -94,7 +94,7 @@ class HistoryDelegateTest : BaseSessionTest() {
         )
     }
 
-    @Ignore //disable test on debug for frequent failures Bug 1544169
+    @Ignore 
     @Test fun onHistoryStateChange() {
         sessionRule.session.loadTestPath(HELLO_HTML_PATH)
 
@@ -180,4 +180,38 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
     }
+
+    @Test fun onHistoryStateChangeSavingState() {
+        
+        sessionRule.session.loadTestPath(HELLO_HTML_PATH)
+
+        sessionRule.waitUntilCalled(object : Callbacks.HistoryDelegate {
+            @AssertCalled(count = 1)
+            override fun onHistoryStateChange(session: GeckoSession, state: GeckoSession.HistoryDelegate.HistoryList) {
+                assertThat("History should have one entry", state.size,
+                        equalTo(1))
+                assertThat("URLs should match", state[state.currentIndex].uri,
+                        endsWith(HELLO_HTML_PATH))
+                assertThat("History index should be 0", state.currentIndex,
+                        equalTo(0))
+            }
+        })
+
+        sessionRule.session.loadTestPath(HELLO2_HTML_PATH)
+
+        sessionRule.waitUntilCalled(object : Callbacks.HistoryDelegate {
+            @AssertCalled(count = 1)
+            override fun onHistoryStateChange(session: GeckoSession, state: GeckoSession.HistoryDelegate.HistoryList) {
+                assertThat("History should have two entries", state.size,
+                        equalTo(2))
+                assertThat("URLs should match", state[state.currentIndex].uri,
+                        endsWith(HELLO2_HTML_PATH))
+                assertThat("History index should be 1", state.currentIndex,
+                        equalTo(1))
+            }
+        })
+    }
+
+
+
 }

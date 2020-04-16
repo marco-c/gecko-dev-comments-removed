@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -18,6 +18,7 @@ import org.junit.Assume.assumeThat
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -91,8 +92,8 @@ class ProgressDelegateTest : BaseSessionTest() {
 
             @AssertCalled(count = 2, order = [2, 4])
             override fun onPageStop(session: GeckoSession, success: Boolean) {
-                // The first load is certain to fail because of interruption by the second load
-                // or by invalid domain name, whereas the second load is certain to succeed.
+                
+                
                 assertThat("Success flag should match", success,
                            equalTo(forEachCall(false, true)))
             };
@@ -295,7 +296,7 @@ class ProgressDelegateTest : BaseSessionTest() {
         waitForScroll(offset, timeout, "pageTop")
     }
 
-    @Ignore // Bug 1547849
+    @Ignore 
     @WithDisplay(width = 400, height = 400)
     @Test fun saveAndRestoreState() {
         sessionRule.setPrefsUntilTestEnd(mapOf("dom.visualviewport.enabled" to true))
@@ -337,11 +338,11 @@ class ProgressDelegateTest : BaseSessionTest() {
             }
         })
 
-        /* TODO: Reenable when we have a workaround for ContentSessionStore not
-                 saving in response to JS-driven formdata changes.
-        assertThat("'name' field should match",
-                mainSession.evaluateJS("$('#name').value").toString(),
-                equalTo("the name"))*/
+        
+
+
+
+
 
         assertThat("Scroll position should match",
                 mainSession.evaluateJS("window.visualViewport.pageTop") as Double,
@@ -374,6 +375,18 @@ class ProgressDelegateTest : BaseSessionTest() {
             @AssertCalled(count = 1)
             override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
                 assertThat("Old session state and new should match", sessionState, equalTo(oldState))
+            }
+        })
+    }
+
+    @NullDelegate(GeckoSession.HistoryDelegate::class)
+    @Test fun noHistoryDelegateOnSessionStateChange() {
+        sessionRule.session.loadTestPath(HELLO_HTML_PATH)
+        sessionRule.waitForPageStop()
+
+        sessionRule.waitUntilCalled(object : Callbacks.ProgressDelegate {
+            @AssertCalled(count = 1)
+            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
             }
         })
     }
