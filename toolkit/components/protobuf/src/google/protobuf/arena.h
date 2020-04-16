@@ -33,14 +33,14 @@
 #ifndef GOOGLE_PROTOBUF_ARENA_H__
 #define GOOGLE_PROTOBUF_ARENA_H__
 
+
 #include <limits>
+#include <type_traits>
+#include <utility>
 #ifdef max
 #undef max  // Visual Studio defines this macro
 #endif
-#if LANG_CXX11
-#include <google/protobuf/stubs/type_traits.h>
-#endif
-#if defined(_MSC_VER) && !_HAS_EXCEPTIONS
+#if defined(_MSC_VER) && !defined(_LIBCPP_STD_VER) && !_HAS_EXCEPTIONS
 
 #include <exception>
 #include <typeinfo>
@@ -51,26 +51,55 @@ using type_info = ::type_info;
 #include <typeinfo>
 #endif
 
+#include <type_traits>
 #include <google/protobuf/arena_impl.h>
+#include <google/protobuf/port.h>
+
+#include <google/protobuf/port_def.inc>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
 
 namespace google {
 namespace protobuf {
 
-class Arena;       
-class Message;     
+struct ArenaOptions;  
+
+}  
+}  
+
+namespace google {
+namespace protobuf {
+
+class Arena;    
+class Message;  
+class MessageLite;
+template <typename Key, typename T>
+class Map;
+
+namespace arena_metrics {
+
+void EnableArenaMetrics(ArenaOptions* options);
+
+}  
 
 namespace internal {
-class ArenaString; 
-class LazyField;   
 
-template<typename Type>
-class GenericTypeHandler; 
+struct ArenaStringPtr;  
+class LazyField;        
+class EpsCopyInputStream;  
+
+template <typename Type>
+class GenericTypeHandler;  
 
 
-template<typename T> void arena_destruct_object(void* object) {
+template <typename T>
+void arena_destruct_object(void* object) {
   reinterpret_cast<T*>(object)->~T();
 }
-template<typename T> void arena_delete_object(void* object) {
+template <typename T>
+void arena_delete_object(void* object) {
   delete reinterpret_cast<T*>(object);
 }
 inline void arena_free(void* object, size_t size) {
@@ -116,6 +145,21 @@ struct ArenaOptions {
   
   
   void (*block_dealloc)(void*, size_t);
+
+  ArenaOptions()
+      : start_block_size(kDefaultStartBlockSize),
+        max_block_size(kDefaultMaxBlockSize),
+        initial_block(NULL),
+        initial_block_size(0),
+        block_alloc(&::operator new),
+        block_dealloc(&internal::arena_free),
+        on_arena_init(NULL),
+        on_arena_reset(NULL),
+        on_arena_destruction(NULL),
+        on_arena_allocation(NULL) {}
+
+ private:
+  
   
   
   
@@ -135,30 +179,21 @@ struct ArenaOptions {
   
   
   void (*on_arena_allocation)(const std::type_info* allocated_type,
-      uint64 alloc_size, void* cookie);
+                              uint64 alloc_size, void* cookie);
 
-  ArenaOptions()
-      : start_block_size(kDefaultStartBlockSize),
-        max_block_size(kDefaultMaxBlockSize),
-        initial_block(NULL),
-        initial_block_size(0),
-        block_alloc(&::operator new),
-        block_dealloc(&internal::arena_free),
-        on_arena_init(NULL),
-        on_arena_reset(NULL),
-        on_arena_destruction(NULL),
-        on_arena_allocation(NULL) {}
-
- private:
   
   
   static const size_t kDefaultStartBlockSize = 256;
-  static const size_t kDefaultMaxBlockSize   = 8192;
+  static const size_t kDefaultMaxBlockSize = 8192;
+
+  friend void arena_metrics::EnableArenaMetrics(ArenaOptions*);
+  friend class Arena;
+  friend class ArenaOptionsTestFriend;
 };
 
 
 
-#ifndef GOOGLE_PROTOBUF_NO_RTTI
+#if PROTOBUF_RTTI
 #define RTTI_TYPE_ID(type) (&typeid(type))
 #else
 #define RTTI_TYPE_ID(type) (NULL)
@@ -213,8 +248,7 @@ struct ArenaOptions {
 
 
 
-
-class LIBPROTOBUF_EXPORT Arena {
+class PROTOBUF_EXPORT alignas(8) Arena final {
  public:
   
   
@@ -224,18 +258,20 @@ class LIBPROTOBUF_EXPORT Arena {
 
   
   
+  
+  
+  
+  
+  static const size_t kBlockOverhead = internal::ArenaImpl::kBlockHeaderSize +
+                                       internal::ArenaImpl::kSerialArenaSize;
+
+  
+  
   Arena() : impl_(ArenaOptions()) { Init(ArenaOptions()); }
 
   ~Arena() {
-    uint64 space_allocated = SpaceAllocated();
-    
-    if (on_arena_reset_ != NULL) {
-      on_arena_reset_(this, hooks_cookie_, space_allocated);
-    }
-
-    
-    if (on_arena_destruction_ != NULL) {
-      on_arena_destruction_(this, hooks_cookie_, space_allocated);
+    if (hooks_cookie_) {
+      CallDestructorHooks();
     }
   }
 
@@ -261,54 +297,15 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template <typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* CreateMessage(::google::protobuf::Arena* arena) {
-#if LANG_CXX11
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateMessage(Arena* arena, Args&&... args) {
     static_assert(
         InternalHelper<T>::is_arena_constructable::value,
         "CreateMessage can only construct types that are ArenaConstructable");
-#endif
-    if (arena == NULL) {
-      return new T;
-    } else {
-      return arena->CreateMessageInternal<T>();
-    }
-  }
-
-  
-  
-  
-  template <typename T, typename Arg> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* CreateMessage(::google::protobuf::Arena* arena, const Arg& arg) {
-#if LANG_CXX11
-    static_assert(
-        InternalHelper<T>::is_arena_constructable::value,
-        "CreateMessage can only construct types that are ArenaConstructable");
-#endif
-    if (arena == NULL) {
-      return new T(NULL, arg);
-    } else {
-      return arena->CreateMessageInternal<T>(arg);
-    }
-  }
-
-  
-  
-  
-  template <typename T, typename Arg1, typename Arg2> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* CreateMessage(::google::protobuf::Arena* arena,
-                          const Arg1& arg1,
-                          const Arg2& arg2) {
-#if LANG_CXX11
-    static_assert(
-        InternalHelper<T>::is_arena_constructable::value,
-        "CreateMessage can only construct types that are ArenaConstructable");
-#endif
-    if (arena == NULL) {
-      return new T(NULL, arg1, arg2);
-    } else {
-      return arena->CreateMessageInternal<T>(arg1, arg2);
-    }
+    
+    
+    
+    return Arena::CreateMaybeMessage<T>(arena, std::forward<Args>(args)...);
   }
 
   
@@ -326,143 +323,10 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-#if LANG_CXX11
-  template <typename T, typename... Args> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* Create(::google::protobuf::Arena* arena, Args&&... args) {
-    if (arena == NULL) {
-      return new T(std::forward<Args>(args)...);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      std::forward<Args>(args)...);
-    }
-  }
-#endif
-  template <typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* Create(::google::protobuf::Arena* arena) {
-    if (arena == NULL) {
-      return new T();
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value);
-    }
-  }
-
-  
-  template <typename T, typename Arg> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* Create(::google::protobuf::Arena* arena, const Arg& arg) {
-    if (arena == NULL) {
-      return new T(arg);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg);
-    }
-  }
-
-  
-  template <typename T, typename Arg1, typename Arg2> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* Create(::google::protobuf::Arena* arena, const Arg1& arg1, const Arg2& arg2) {
-    if (arena == NULL) {
-      return new T(arg1, arg2);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2, arg3);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3, const Arg4& arg4) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3, arg4);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2, arg3, arg4);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3, const Arg4& arg4,
-                                           const Arg5& arg5) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3, arg4, arg5);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2, arg3, arg4, arg5);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3, const Arg4& arg4,
-                                           const Arg5& arg5, const Arg6& arg6) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3, arg4, arg5, arg6);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2, arg3, arg4, arg5, arg6);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6, typename Arg7>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3, const Arg4& arg4,
-                                           const Arg5& arg5, const Arg6& arg6,
-                                           const Arg7& arg7) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    } else {
-      return arena->CreateInternal<T>(google::protobuf::internal::has_trivial_destructor<T>::value,
-                                      arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-    }
-  }
-
-  
-  
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6, typename Arg7,
-            typename Arg8>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* Create(::google::protobuf::Arena* arena,
-                                           const Arg1& arg1, const Arg2& arg2,
-                                           const Arg3& arg3, const Arg4& arg4,
-                                           const Arg5& arg5, const Arg6& arg6,
-                                           const Arg7& arg7, const Arg8& arg8) {
-    if (arena == NULL) {
-      return new T(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    } else {
-      return arena->CreateInternal<T>(
-          google::protobuf::internal::has_trivial_destructor<T>::value,
-          arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    }
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* Create(Arena* arena, Args&&... args) {
+    return CreateNoMessage<T>(arena, is_arena_constructable<T>(),
+                              std::forward<Args>(args)...);
   }
 
   
@@ -471,10 +335,14 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template <typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static T* CreateArray(::google::protobuf::Arena* arena, size_t num_elements) {
-    GOOGLE_CHECK_LE(num_elements,
-             std::numeric_limits<size_t>::max() / sizeof(T))
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static T* CreateArray(Arena* arena,
+                                               size_t num_elements) {
+    static_assert(std::is_pod<T>::value,
+                  "CreateArray requires a trivially constructible type");
+    static_assert(std::is_trivially_destructible<T>::value,
+                  "CreateArray requires a trivially destructible type");
+    GOOGLE_CHECK_LE(num_elements, std::numeric_limits<size_t>::max() / sizeof(T))
         << "Requested size is too large to fit into size_t.";
     if (arena == NULL) {
       return static_cast<T*>(::operator new[](num_elements * sizeof(T)));
@@ -492,33 +360,25 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   uint64 SpaceUsed() const { return impl_.SpaceUsed(); }
-  
-  
-  
-  
-  std::pair<uint64, uint64> SpaceAllocatedAndUsed() const {
-    return std::make_pair(SpaceAllocated(), SpaceUsed());
-  }
 
   
   
   
   
   
-  GOOGLE_ATTRIBUTE_NOINLINE uint64 Reset() {
-    uint64 space_allocated = SpaceAllocated();
+  PROTOBUF_NOINLINE uint64 Reset() {
     
     if (on_arena_reset_ != NULL) {
-      on_arena_reset_(this, hooks_cookie_, space_allocated);
+      on_arena_reset_(this, hooks_cookie_, impl_.SpaceAllocated());
     }
     return impl_.Reset();
   }
 
   
   
-  template <typename T> GOOGLE_ATTRIBUTE_NOINLINE
-  void Own(T* object) {
-    OwnInternal(object, google::protobuf::internal::is_convertible<T*, ::google::protobuf::Message*>());
+  template <typename T>
+  PROTOBUF_NOINLINE void Own(T* object) {
+    OwnInternal(object, std::is_convertible<T*, Message*>());
   }
 
   
@@ -526,8 +386,8 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template <typename T> GOOGLE_ATTRIBUTE_NOINLINE
-  void OwnDestructor(T* object) {
+  template <typename T>
+  PROTOBUF_NOINLINE void OwnDestructor(T* object) {
     if (object != NULL) {
       impl_.AddCleanup(object, &internal::arena_destruct_object<T>);
     }
@@ -537,8 +397,8 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  GOOGLE_ATTRIBUTE_NOINLINE void OwnCustomDestructor(void* object,
-                                              void (*destruct)(void*)) {
+  PROTOBUF_NOINLINE void OwnCustomDestructor(void* object,
+                                             void (*destruct)(void*)) {
     impl_.AddCleanup(object, destruct);
   }
 
@@ -546,9 +406,9 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template<typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  static ::google::protobuf::Arena* GetArena(const T* value) {
-    return GetArenaInternal(value, is_arena_constructable<T>());
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetArena(const T* value) {
+    return GetArenaInternal(value);
   }
 
   template <typename T>
@@ -558,43 +418,40 @@ class LIBPROTOBUF_EXPORT Arena {
     template <typename U>
     static double DestructorSkippable(...);
 
-    typedef google::protobuf::internal::integral_constant<
+    typedef std::integral_constant<
         bool, sizeof(DestructorSkippable<T>(static_cast<const T*>(0))) ==
                       sizeof(char) ||
-                  google::protobuf::internal::has_trivial_destructor<T>::value>
+                  std::is_trivially_destructible<T>::value>
         is_destructor_skippable;
 
-    template<typename U>
+    template <typename U>
     static char ArenaConstructable(
         const typename U::InternalArenaConstructable_*);
-    template<typename U>
+    template <typename U>
     static double ArenaConstructable(...);
 
-    typedef google::protobuf::internal::integral_constant<bool, sizeof(ArenaConstructable<T>(
-                                              static_cast<const T*>(0))) ==
-                                              sizeof(char)>
+    typedef std::integral_constant<bool, sizeof(ArenaConstructable<T>(
+                                             static_cast<const T*>(0))) ==
+                                             sizeof(char)>
         is_arena_constructable;
 
-#if LANG_CXX11
+    template <typename U,
+              typename std::enable_if<
+                  std::is_same<Arena*, decltype(std::declval<const U>()
+                                                    .GetArena())>::value,
+                  int>::type = 0>
+    static char HasGetArena(decltype(&U::GetArena));
+    template <typename U>
+    static double HasGetArena(...);
+
+    typedef std::integral_constant<bool, sizeof(HasGetArena<T>(nullptr)) ==
+                                             sizeof(char)>
+        has_get_arena;
+
     template <typename... Args>
     static T* Construct(void* ptr, Args&&... args) {
       return new (ptr) T(std::forward<Args>(args)...);
     }
-#else
-    template <typename Arg1>
-    static T* Construct(void* ptr, const Arg1& arg1) {
-      return new (ptr) T(arg1);
-    }
-    template <typename Arg1, typename Arg2>
-    static T* Construct(void* ptr, const Arg1& arg1, const Arg2& arg2) {
-      return new (ptr) T(arg1, arg2);
-    }
-    template <typename Arg1, typename Arg2, typename Arg3>
-    static T* Construct(void* ptr, const Arg1& arg1,
-                        const Arg2& arg2, const Arg3& arg3) {
-      return new (ptr) T(arg1, arg2, arg3);
-    }
-#endif  
 
     static Arena* GetArena(const T* p) { return p->GetArenaNoVirtual(); }
 
@@ -608,13 +465,64 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
+  
+  
+  
+  
+  
   template <typename T>
   struct is_arena_constructable : InternalHelper<T>::is_arena_constructable {};
+  template <typename T>
+  struct is_destructor_skippable : InternalHelper<T>::is_destructor_skippable {
+  };
 
  private:
+  template <typename T>
+  struct has_get_arena : InternalHelper<T>::has_get_arena {};
+
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateMessageInternal(Arena* arena,
+                                                         Args&&... args) {
+    static_assert(
+        InternalHelper<T>::is_arena_constructable::value,
+        "CreateMessage can only construct types that are ArenaConstructable");
+    if (arena == NULL) {
+      return new T(nullptr, std::forward<Args>(args)...);
+    } else {
+      return arena->DoCreateMessage<T>(std::forward<Args>(args)...);
+    }
+  }
+
+  
+  
+  
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE static T* CreateMessageInternal(Arena* arena) {
+    static_assert(
+        InternalHelper<T>::is_arena_constructable::value,
+        "CreateMessage can only construct types that are ArenaConstructable");
+    if (arena == NULL) {
+      return new T();
+    } else {
+      return arena->DoCreateMessage<T>();
+    }
+  }
+
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateInternal(Arena* arena,
+                                                  Args&&... args) {
+    if (arena == NULL) {
+      return new T(std::forward<Args>(args)...);
+    } else {
+      return arena->DoCreate<T>(std::is_trivially_destructible<T>::value,
+                                std::forward<Args>(args)...);
+    }
+  }
+
+  void CallDestructorHooks();
   void OnArenaAllocation(const std::type_info* allocated_type, size_t n) const;
   inline void AllocHook(const std::type_info* allocated_type, size_t n) const {
-    if (GOOGLE_PREDICT_FALSE(hooks_cookie_ != NULL)) {
+    if (PROTOBUF_PREDICT_FALSE(hooks_cookie_ != NULL)) {
       OnArenaAllocation(allocated_type, n);
     }
   }
@@ -622,13 +530,13 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template<typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  void* AllocateInternal(bool skip_explicit_ownership) {
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE void* AllocateInternal(bool skip_explicit_ownership) {
     const size_t n = internal::AlignUpTo8(sizeof(T));
     AllocHook(RTTI_TYPE_ID(T), n);
     
     if (skip_explicit_ownership) {
-      return impl_.AllocateAligned(n);
+      return AllocateAlignedNoHook(n);
     } else {
       return impl_.AllocateAlignedAndAddCleanup(
           n, &internal::arena_destruct_object<T>);
@@ -640,155 +548,69 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template <typename Msg>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static Msg* CreateMaybeMessage(Arena* arena,
-                                                         google::protobuf::internal::true_type) {
-    return CreateMessage<Msg>(arena);
+  template <typename Msg, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static Msg* DoCreateMaybeMessage(Arena* arena,
+                                                          std::true_type,
+                                                          Args&&... args) {
+    return CreateMessageInternal<Msg>(arena, std::forward<Args>(args)...);
   }
 
-  template <typename T>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* CreateMaybeMessage(Arena* arena,
-                                                       google::protobuf::internal::false_type) {
-    return Create<T>(arena);
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* DoCreateMaybeMessage(Arena* arena,
+                                                        std::false_type,
+                                                        Args&&... args) {
+    return CreateInternal<T>(arena, std::forward<Args>(args)...);
   }
 
-  template <typename T>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static T* CreateMaybeMessage(Arena* arena) {
-    return CreateMaybeMessage<T>(arena, is_arena_constructable<T>());
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateMaybeMessage(Arena* arena,
+                                                      Args&&... args) {
+    return DoCreateMaybeMessage<T>(arena, is_arena_constructable<T>(),
+                                   std::forward<Args>(args)...);
+  }
+
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateNoMessage(Arena* arena, std::true_type,
+                                                   Args&&... args) {
+    
+    
+    
+    return CreateInternal<T>(arena, std::forward<Args>(args)...);
+  }
+
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE static T* CreateNoMessage(Arena* arena,
+                                                   std::false_type,
+                                                   Args&&... args) {
+    
+    
+    
+    return CreateMaybeMessage<T>(arena, std::forward<Args>(args)...);
   }
 
   
   
-  template<typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  T* CreateInternalRawArray(size_t num_elements) {
-    GOOGLE_CHECK_LE(num_elements,
-             std::numeric_limits<size_t>::max() / sizeof(T))
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE T* CreateInternalRawArray(size_t num_elements) {
+    GOOGLE_CHECK_LE(num_elements, std::numeric_limits<size_t>::max() / sizeof(T))
         << "Requested size is too large to fit into size_t.";
     const size_t n = internal::AlignUpTo8(sizeof(T) * num_elements);
     
     AllocHook(RTTI_TYPE_ID(T), n);
-    return static_cast<T*>(impl_.AllocateAligned(n));
+    return static_cast<T*>(AllocateAlignedNoHook(n));
   }
 
-#if LANG_CXX11
-  template <typename T, typename... Args> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  T* CreateInternal(bool skip_explicit_ownership, Args&&... args) {
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE T* DoCreate(bool skip_explicit_ownership,
+                                     Args&&... args) {
     return new (AllocateInternal<T>(skip_explicit_ownership))
         T(std::forward<Args>(args)...);
   }
-#else
-  template <typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  T* CreateInternal(bool skip_explicit_ownership) {
-    return new (AllocateInternal<T>(skip_explicit_ownership)) T();
-  }
-
-  template <typename T, typename Arg> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  T* CreateInternal(bool skip_explicit_ownership, const Arg& arg) {
-    return new (AllocateInternal<T>(skip_explicit_ownership)) T(arg);
-  }
-
-  template <typename T, typename Arg1, typename Arg2>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2) {
-    return new (AllocateInternal<T>(skip_explicit_ownership)) T(arg1, arg2);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3,
-                                            const Arg4& arg4) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3, arg4);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3,
-                                            const Arg4& arg4,
-                                            const Arg5& arg5) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3, arg4, arg5);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3,
-                                            const Arg4& arg4,
-                                            const Arg5& arg5,
-                                            const Arg6& arg6) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3, arg4, arg5, arg6);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6, typename Arg7>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3,
-                                            const Arg4& arg4,
-                                            const Arg5& arg5,
-                                            const Arg6& arg6,
-                                            const Arg7& arg7) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-  }
-
-  template <typename T, typename Arg1, typename Arg2, typename Arg3,
-            typename Arg4, typename Arg5, typename Arg6, typename Arg7,
-            typename Arg8>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateInternal(bool skip_explicit_ownership,
-                                            const Arg1& arg1,
-                                            const Arg2& arg2,
-                                            const Arg3& arg3,
-                                            const Arg4& arg4,
-                                            const Arg5& arg5,
-                                            const Arg6& arg6,
-                                            const Arg7& arg7,
-                                            const Arg8& arg8) {
-    return new (AllocateInternal<T>(skip_explicit_ownership))
-        T(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-  }
-#endif
-  template <typename T>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateMessageInternal() {
+  template <typename T, typename... Args>
+  PROTOBUF_ALWAYS_INLINE T* DoCreateMessage(Args&&... args) {
     return InternalHelper<T>::Construct(
         AllocateInternal<T>(InternalHelper<T>::is_destructor_skippable::value),
-        this);
-  }
-
-  template <typename T, typename Arg>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateMessageInternal(const Arg& arg) {
-    return InternalHelper<T>::Construct(
-        AllocateInternal<T>(InternalHelper<T>::is_destructor_skippable::value),
-        this, arg);
-  }
-
-  template <typename T, typename Arg1, typename Arg2>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* CreateMessageInternal(const Arg1& arg1,
-                                                   const Arg2& arg2) {
-    return InternalHelper<T>::Construct(
-        AllocateInternal<T>(InternalHelper<T>::is_destructor_skippable::value),
-        this, arg1, arg2);
+        this, std::forward<Args>(args)...);
   }
 
   
@@ -804,22 +626,22 @@ class LIBPROTOBUF_EXPORT Arena {
   }
 
   template <typename T>
-  static void CreateInArenaStorageInternal(
-      T* ptr, Arena* arena, google::protobuf::internal::true_type) {
+  static void CreateInArenaStorageInternal(T* ptr, Arena* arena,
+                                           std::true_type) {
     InternalHelper<T>::Construct(ptr, arena);
   }
   template <typename T>
-  static void CreateInArenaStorageInternal(
-      T* ptr, Arena* , google::protobuf::internal::false_type) {
+  static void CreateInArenaStorageInternal(T* ptr, Arena* ,
+                                           std::false_type) {
     new (ptr) T();
   }
 
   template <typename T>
-  static void RegisterDestructorInternal(
-      T* , Arena* , google::protobuf::internal::true_type) {}
+  static void RegisterDestructorInternal(T* , Arena* ,
+                                         std::true_type) {}
   template <typename T>
-  static void RegisterDestructorInternal(
-      T* ptr, Arena* arena, google::protobuf::internal::false_type) {
+  static void RegisterDestructorInternal(T* ptr, Arena* arena,
+                                         std::false_type) {
     arena->OwnDestructor(ptr);
   }
 
@@ -828,15 +650,14 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template<typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  void OwnInternal(T* object, google::protobuf::internal::true_type) {
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE void OwnInternal(T* object, std::true_type) {
     if (object != NULL) {
-      impl_.AddCleanup(object,
-                       &internal::arena_delete_object< ::google::protobuf::Message>);
+      impl_.AddCleanup(object, &internal::arena_delete_object<Message>);
     }
   }
-  template<typename T> GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-  void OwnInternal(T* object, google::protobuf::internal::false_type) {
+  template <typename T>
+  PROTOBUF_ALWAYS_INLINE void OwnInternal(T* object, std::false_type) {
     if (object != NULL) {
       impl_.AddCleanup(object, &internal::arena_delete_object<T>);
     }
@@ -845,27 +666,37 @@ class LIBPROTOBUF_EXPORT Arena {
   
   
   
-  template <typename T>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static ::google::protobuf::Arena* GetArenaInternal(
-      const T* value, google::protobuf::internal::true_type) {
+  template <typename T, typename std::enable_if<
+                            is_arena_constructable<T>::value, int>::type = 0>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetArenaInternal(const T* value) {
     return InternalHelper<T>::GetArena(value);
   }
-
-  template <typename T>
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE static ::google::protobuf::Arena* GetArenaInternal(
-      const T* value, google::protobuf::internal::false_type) {
-    return NULL;
+  template <typename T,
+            typename std::enable_if<!is_arena_constructable<T>::value &&
+                                        has_get_arena<T>::value,
+                                    int>::type = 0>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetArenaInternal(const T* value) {
+    return value->GetArena();
+  }
+  template <typename T,
+            typename std::enable_if<!is_arena_constructable<T>::value &&
+                                        !has_get_arena<T>::value,
+                                    int>::type = 0>
+  PROTOBUF_ALWAYS_INLINE static Arena* GetArenaInternal(const T* value) {
+    (void)value;
+    return nullptr;
   }
 
   
   void* AllocateAligned(size_t n) {
     AllocHook(NULL, n);
-    return impl_.AllocateAligned(internal::AlignUpTo8(n));
+    return AllocateAlignedNoHook(internal::AlignUpTo8(n));
   }
+
+  void* AllocateAlignedNoHook(size_t n);
 
   internal::ArenaImpl impl_;
 
-  void* (*on_arena_init_)(Arena* arena);
   void (*on_arena_allocation_)(const std::type_info* allocated_type,
                                uint64 alloc_size, void* cookie);
   void (*on_arena_reset_)(Arena* arena, void* cookie, uint64 space_used);
@@ -876,9 +707,11 @@ class LIBPROTOBUF_EXPORT Arena {
   void* hooks_cookie_;
 
   template <typename Type>
-  friend class ::google::protobuf::internal::GenericTypeHandler;
-  friend class internal::ArenaString;  
-  friend class internal::LazyField;    
+  friend class internal::GenericTypeHandler;
+  friend struct internal::ArenaStringPtr;  
+  friend class internal::LazyField;        
+  friend class internal::EpsCopyInputStream;  
+  friend class MessageLite;
   template <typename Key, typename T>
   friend class Map;
 };
@@ -887,6 +720,8 @@ class LIBPROTOBUF_EXPORT Arena {
 #undef RTTI_TYPE_ID
 
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

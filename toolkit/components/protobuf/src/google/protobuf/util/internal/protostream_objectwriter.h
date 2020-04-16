@@ -32,10 +32,12 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_PROTOSTREAM_OBJECTWRITER_H__
 
 #include <deque>
-#include <google/protobuf/stubs/hash.h>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/type.pb.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/descriptor.h>
@@ -46,21 +48,11 @@
 #include <google/protobuf/util/internal/structured_objectwriter.h>
 #include <google/protobuf/util/type_resolver.h>
 #include <google/protobuf/stubs/bytestream.h>
+#include <google/protobuf/stubs/hash.h>
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
-namespace protobuf {
-namespace io {
-class CodedOutputStream;
-}  
-}  
-
-
-namespace protobuf {
-class Type;
-class Field;
-}  
-
-
 namespace protobuf {
 namespace util {
 namespace converter {
@@ -72,7 +64,7 @@ class ObjectLocationTracker;
 
 
 
-class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
+class PROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
  public:
   
   struct Options {
@@ -88,16 +80,34 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 
     
     
+    
     bool ignore_unknown_fields;
+
+    
+    bool ignore_unknown_enum_values;
 
     
     
     bool use_lower_camel_for_enums;
 
+    
+    bool case_insensitive_enum_parsing;
+
+    
+    
+    bool ignore_null_value_map_entry;
+
+    
+    bool use_legacy_json_map_format;
+
     Options()
         : struct_integers_as_strings(false),
           ignore_unknown_fields(false),
-          use_lower_camel_for_enums(false) {}
+          ignore_unknown_enum_values(false),
+          use_lower_camel_for_enums(false),
+          case_insensitive_enum_parsing(false),
+          ignore_null_value_map_entry(false),
+          use_legacy_json_map_format(false) {}
 
     
     static const Options& Defaults() {
@@ -112,18 +122,18 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
                           strings::ByteSink* output, ErrorListener* listener,
                           const ProtoStreamObjectWriter::Options& options =
                               ProtoStreamObjectWriter::Options::Defaults());
-  virtual ~ProtoStreamObjectWriter();
+  ~ProtoStreamObjectWriter() override;
 
   
-  virtual ProtoStreamObjectWriter* StartObject(StringPiece name);
-  virtual ProtoStreamObjectWriter* EndObject();
-  virtual ProtoStreamObjectWriter* StartList(StringPiece name);
-  virtual ProtoStreamObjectWriter* EndList();
+  ProtoStreamObjectWriter* StartObject(StringPiece name) override;
+  ProtoStreamObjectWriter* EndObject() override;
+  ProtoStreamObjectWriter* StartList(StringPiece name) override;
+  ProtoStreamObjectWriter* EndList() override;
 
   
   
-  virtual ProtoStreamObjectWriter* RenderDataPiece(StringPiece name,
-                                                   const DataPiece& value);
+  ProtoStreamObjectWriter* RenderDataPiece(StringPiece name,
+                                           const DataPiece& data) override;
 
  protected:
   
@@ -131,7 +141,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
                                          const DataPiece&);
 
   
-  class LIBPROTOBUF_EXPORT AnyWriter {
+  class PROTOBUF_EXPORT AnyWriter {
    public:
     explicit AnyWriter(ProtoStreamObjectWriter* parent);
     ~AnyWriter();
@@ -156,7 +166,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
    private:
     
     
-    class LIBPROTOBUF_EXPORT Event {
+    class PROTOBUF_EXPORT Event {
      public:
       enum Type {
         START_OBJECT = 0,
@@ -171,13 +181,11 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 
       
       explicit Event(Type type, StringPiece name)
-          : type_(type),
-            name_(name.ToString()),
-            value_(DataPiece::NullData()) {}
+          : type_(type), name_(name), value_(DataPiece::NullData()) {}
 
       
       explicit Event(StringPiece name, const DataPiece& value)
-          : type_(RENDER_DATA_PIECE), name_(name.ToString()), value_(value) {
+          : type_(RENDER_DATA_PIECE), name_(name), value_(value) {
         DeepCopy();
       }
 
@@ -200,9 +208,9 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
       void DeepCopy();
 
       Type type_;
-      string name_;
+      std::string name_;
       DataPiece value_;
-      string value_storage_;
+      std::string value_storage_;
     };
 
     
@@ -216,17 +224,17 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
     ProtoStreamObjectWriter* parent_;
 
     
-    google::protobuf::scoped_ptr<ProtoStreamObjectWriter> ow_;
+    std::unique_ptr<ProtoStreamObjectWriter> ow_;
 
     
-    string type_url_;
+    std::string type_url_;
 
     
     
     bool invalid_;
 
     
-    string data_;
+    std::string data_;
     strings::StringByteSink output_;
 
     
@@ -247,7 +255,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 
   
   
-  class LIBPROTOBUF_EXPORT Item : public BaseElement {
+  class PROTOBUF_EXPORT Item : public BaseElement {
    public:
     
     enum ItemType {
@@ -263,7 +271,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
     
     Item(Item* parent, ItemType item_type, bool is_placeholder, bool is_list);
 
-    virtual ~Item() {}
+    ~Item() override {}
 
     
     
@@ -272,7 +280,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 
     AnyWriter* any() const { return any_.get(); }
 
-    virtual Item* parent() const {
+    Item* parent() const override {
       return static_cast<Item*>(BaseElement::parent());
     }
 
@@ -292,14 +300,14 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
     ProtoStreamObjectWriter* ow_;
 
     
-    google::protobuf::scoped_ptr<AnyWriter> any_;
+    std::unique_ptr<AnyWriter> any_;
 
     
     ItemType item_type_;
 
     
     
-    google::protobuf::scoped_ptr<hash_set<string> > map_keys_;
+    std::unique_ptr<std::unordered_set<std::string> > map_keys_;
 
     
     
@@ -315,6 +323,11 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
   ProtoStreamObjectWriter(const TypeInfo* typeinfo,
                           const google::protobuf::Type& type,
                           strings::ByteSink* output, ErrorListener* listener);
+
+  ProtoStreamObjectWriter(const TypeInfo* typeinfo,
+                          const google::protobuf::Type& type,
+                          strings::ByteSink* output, ErrorListener* listener,
+                          const ProtoStreamObjectWriter::Options& options);
 
   
   inline bool IsMap(const google::protobuf::Field& field);
@@ -355,7 +368,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 
   static void InitRendererMap();
   static void DeleteRendererMap();
-  static TypeRenderer* FindTypeRenderer(const string& type_url);
+  static TypeRenderer* FindTypeRenderer(const std::string& type_url);
 
   
   
@@ -371,8 +384,8 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
   
   
   
-  void Push(StringPiece name, Item::ItemType item_type, bool is_placeholder,
-            bool is_list);
+  void Push(StringPiece name, Item::ItemType item_type,
+            bool is_placeholder, bool is_list);
 
   
   
@@ -385,14 +398,14 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
  private:
   
   
-  static hash_map<string, TypeRenderer>* renderers_;
+  static std::unordered_map<std::string, TypeRenderer>* renderers_;
 
   
   
   const google::protobuf::Type& master_type_;
 
   
-  google::protobuf::scoped_ptr<Item> current_;
+  std::unique_ptr<Item> current_;
 
   
   const ProtoStreamObjectWriter::Options options_;
@@ -403,6 +416,8 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectWriter : public ProtoWriter {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

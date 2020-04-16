@@ -32,7 +32,10 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_OBJECT_WRITER_H__
 
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -55,7 +58,7 @@ class DataPiece;
 
 
 
-class LIBPROTOBUF_EXPORT ObjectWriter {
+class PROTOBUF_EXPORT ObjectWriter {
  public:
   virtual ~ObjectWriter() {}
 
@@ -86,6 +89,7 @@ class LIBPROTOBUF_EXPORT ObjectWriter {
   
   virtual ObjectWriter* RenderUint64(StringPiece name, uint64 value) = 0;
 
+
   
   virtual ObjectWriter* RenderDouble(StringPiece name, double value) = 0;
 
@@ -93,7 +97,8 @@ class LIBPROTOBUF_EXPORT ObjectWriter {
   virtual ObjectWriter* RenderFloat(StringPiece name, float value) = 0;
 
   
-  virtual ObjectWriter* RenderString(StringPiece name, StringPiece value) = 0;
+  virtual ObjectWriter* RenderString(StringPiece name,
+                                     StringPiece value) = 0;
 
   
   virtual ObjectWriter* RenderBytes(StringPiece name, StringPiece value) = 0;
@@ -119,13 +124,6 @@ class LIBPROTOBUF_EXPORT ObjectWriter {
     return use_strict_base64_decoding_;
   }
 
-  
-  
-  
-  
-  
-  virtual void empty_name_ok_for_next_key() {}
-
  protected:
   ObjectWriter() : use_strict_base64_decoding_(true) {}
 
@@ -141,6 +139,8 @@ class LIBPROTOBUF_EXPORT ObjectWriter {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

@@ -31,16 +31,53 @@
 #ifndef GOOGLE_PROTOBUF_GENERATED_ENUM_UTIL_H__
 #define GOOGLE_PROTOBUF_GENERATED_ENUM_UTIL_H__
 
-#include <google/protobuf/stubs/template_util.h>
+#include <type_traits>
+
+#include <google/protobuf/message_lite.h>
+#include <google/protobuf/stubs/strutil.h>
+
+#include <google/protobuf/port_def.inc>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
 
 namespace google {
 namespace protobuf {
 
 
 
-template <typename T> struct is_proto_enum : ::google::protobuf::internal::false_type {};
+template <typename T>
+struct is_proto_enum : ::std::false_type {};
+
+namespace internal {
+
+
+
+
+struct EnumEntry {
+  StringPiece name;
+  int value;
+};
+
+
+PROTOBUF_EXPORT bool LookUpEnumValue(const EnumEntry* enums, size_t size,
+                                     StringPiece name, int* value);
+
+
+PROTOBUF_EXPORT int LookUpEnumName(const EnumEntry* enums,
+                                   const int* sorted_indices, size_t size,
+                                   int value);
+
+
+PROTOBUF_EXPORT bool InitializeEnumStrings(
+    const EnumEntry* enums, const int* sorted_indices, size_t size,
+    internal::ExplicitlyConstructed<std::string>* enum_strings);
 
 }  
-
 }  
+}  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

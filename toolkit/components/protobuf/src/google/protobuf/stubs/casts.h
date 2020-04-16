@@ -31,8 +31,9 @@
 #ifndef GOOGLE_PROTOBUF_CASTS_H__
 #define GOOGLE_PROTOBUF_CASTS_H__
 
+#include <type_traits>
+
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/type_traits.h>
 
 namespace google {
 namespace protobuf {
@@ -88,14 +89,14 @@ inline To down_cast(From* f) {
   }
 
 #if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
-  assert(f == NULL || dynamic_cast<To>(f) != NULL);  
+  assert(f == nullptr || dynamic_cast<To>(f) != nullptr);  
 #endif
   return static_cast<To>(f);
 }
 
 template<typename To, typename From>    
 inline To down_cast(From& f) {
-  typedef typename remove_reference<To>::type* ToAsPointer;
+  typedef typename std::remove_reference<To>::type* ToAsPointer;
   
   
   
@@ -106,7 +107,7 @@ inline To down_cast(From& f) {
 
 #if !defined(NDEBUG) && !defined(GOOGLE_PROTOBUF_NO_RTTI)
   
-  assert(dynamic_cast<ToAsPointer>(&f) != NULL);
+  assert(dynamic_cast<ToAsPointer>(&f) != nullptr);
 #endif
   return *static_cast<ToAsPointer>(&f);
 }

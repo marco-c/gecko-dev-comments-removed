@@ -31,9 +31,18 @@
 #ifndef GOOGLE_PROTOBUF_METADATA_LITE_H__
 #define GOOGLE_PROTOBUF_METADATA_LITE_H__
 
+#include <string>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/arena.h>
 #include <google/protobuf/generated_message_util.h>
+#include <google/protobuf/message_lite.h>
+#include <google/protobuf/port.h>
+
+#include <google/protobuf/port_def.inc>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
 
 namespace google {
 namespace protobuf {
@@ -62,35 +71,35 @@ class InternalMetadataWithArenaBase {
     ptr_ = NULL;
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE const T& unknown_fields() const {
-    if (GOOGLE_PREDICT_FALSE(have_unknown_fields())) {
+  PROTOBUF_ALWAYS_INLINE const T& unknown_fields() const {
+    if (PROTOBUF_PREDICT_FALSE(have_unknown_fields())) {
       return PtrValue<Container>()->unknown_fields;
     } else {
       return Derived::default_instance();
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE T* mutable_unknown_fields() {
-    if (GOOGLE_PREDICT_TRUE(have_unknown_fields())) {
+  PROTOBUF_ALWAYS_INLINE T* mutable_unknown_fields() {
+    if (PROTOBUF_PREDICT_TRUE(have_unknown_fields())) {
       return &PtrValue<Container>()->unknown_fields;
     } else {
       return mutable_unknown_fields_slow();
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE Arena* arena() const {
-    if (GOOGLE_PREDICT_FALSE(have_unknown_fields())) {
+  PROTOBUF_ALWAYS_INLINE Arena* arena() const {
+    if (PROTOBUF_PREDICT_FALSE(have_unknown_fields())) {
       return PtrValue<Container>()->arena;
     } else {
       return PtrValue<Arena>();
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE bool have_unknown_fields() const {
+  PROTOBUF_ALWAYS_INLINE bool have_unknown_fields() const {
     return PtrTag() == kTagContainer;
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void Swap(Derived* other) {
+  PROTOBUF_ALWAYS_INLINE void Swap(Derived* other) {
     
     
     
@@ -102,21 +111,19 @@ class InternalMetadataWithArenaBase {
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void MergeFrom(const Derived& other) {
+  PROTOBUF_ALWAYS_INLINE void MergeFrom(const Derived& other) {
     if (other.have_unknown_fields()) {
       static_cast<Derived*>(this)->DoMergeFrom(other.unknown_fields());
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void Clear() {
+  PROTOBUF_ALWAYS_INLINE void Clear() {
     if (have_unknown_fields()) {
       static_cast<Derived*>(this)->DoClear();
     }
   }
 
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void* raw_arena_ptr() const {
-    return ptr_;
-  }
+  PROTOBUF_ALWAYS_INLINE void* raw_arena_ptr() const { return ptr_; }
 
  private:
   void* ptr_;
@@ -132,13 +139,14 @@ class InternalMetadataWithArenaBase {
   static const intptr_t kPtrValueMask = ~kPtrTagMask;
 
   
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE int PtrTag() const {
+  PROTOBUF_ALWAYS_INLINE int PtrTag() const {
     return reinterpret_cast<intptr_t>(ptr_) & kPtrTagMask;
   }
 
-  template<typename U> U* PtrValue() const {
-    return reinterpret_cast<U*>(
-        reinterpret_cast<intptr_t>(ptr_) & kPtrValueMask);
+  template <typename U>
+  U* PtrValue() const {
+    return reinterpret_cast<U*>(reinterpret_cast<intptr_t>(ptr_) &
+                                kPtrValueMask);
   }
 
   
@@ -147,11 +155,14 @@ class InternalMetadataWithArenaBase {
     Arena* arena;
   };
 
-  GOOGLE_ATTRIBUTE_NOINLINE T* mutable_unknown_fields_slow() {
+  PROTOBUF_NOINLINE T* mutable_unknown_fields_slow() {
     Arena* my_arena = arena();
     Container* container = Arena::Create<Container>(my_arena);
-    ptr_ = reinterpret_cast<void*>(
-        reinterpret_cast<intptr_t>(container) | kTagContainer);
+    
+    
+    ptr_ = container;
+    ptr_ = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(ptr_) |
+                                   kTagContainer);
     container->arena = my_arena;
     return &(container->unknown_fields);
   }
@@ -160,35 +171,65 @@ class InternalMetadataWithArenaBase {
 
 
 
+
 class InternalMetadataWithArenaLite
-    : public InternalMetadataWithArenaBase<string,
+    : public InternalMetadataWithArenaBase<std::string,
                                            InternalMetadataWithArenaLite> {
  public:
   InternalMetadataWithArenaLite() {}
 
   explicit InternalMetadataWithArenaLite(Arena* arena)
-      : InternalMetadataWithArenaBase<string,
+      : InternalMetadataWithArenaBase<std::string,
                                       InternalMetadataWithArenaLite>(arena) {}
 
-  void DoSwap(string* other) {
-    mutable_unknown_fields()->swap(*other);
-  }
+  void DoSwap(std::string* other) { mutable_unknown_fields()->swap(*other); }
 
-  void DoMergeFrom(const string& other) {
+  void DoMergeFrom(const std::string& other) {
     mutable_unknown_fields()->append(other);
   }
 
-  void DoClear() {
-    mutable_unknown_fields()->clear();
-  }
+  void DoClear() { mutable_unknown_fields()->clear(); }
 
-  static const string& default_instance() {
-    return GetEmptyStringAlreadyInited();
+  static const std::string& default_instance() {
+    
+    
+    
+    
+    
+    return GetEmptyString();
   }
+};
+
+
+
+
+
+
+
+
+
+class PROTOBUF_EXPORT LiteUnknownFieldSetter {
+ public:
+  explicit LiteUnknownFieldSetter(InternalMetadataWithArenaLite* metadata)
+      : metadata_(metadata) {
+    if (metadata->have_unknown_fields()) {
+      buffer_.swap(*metadata->mutable_unknown_fields());
+    }
+  }
+  ~LiteUnknownFieldSetter() {
+    if (!buffer_.empty()) metadata_->mutable_unknown_fields()->swap(buffer_);
+  }
+  std::string* buffer() { return &buffer_; }
+
+ private:
+  InternalMetadataWithArenaLite* metadata_;
+  std::string buffer_;
 };
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

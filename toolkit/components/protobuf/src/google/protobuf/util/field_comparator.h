@@ -35,8 +35,11 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/stubs/common.h>
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -48,12 +51,13 @@ class FieldDescriptor;
 namespace util {
 
 class FieldContext;
+class MessageDifferencer;
 
 
 
 
 
-class LIBPROTOBUF_EXPORT FieldComparator {
+class PROTOBUF_EXPORT FieldComparator {
  public:
   FieldComparator();
   virtual ~FieldComparator();
@@ -80,12 +84,11 @@ class LIBPROTOBUF_EXPORT FieldComparator {
   
   
   
-  virtual ComparisonResult Compare(
-      const google::protobuf::Message& message_1,
-      const google::protobuf::Message& message_2,
-      const google::protobuf::FieldDescriptor* field,
-      int index_1, int index_2,
-      const google::protobuf::util::FieldContext* field_context) = 0;
+  virtual ComparisonResult Compare(const Message& message_1,
+                                   const Message& message_2,
+                                   const FieldDescriptor* field, int index_1,
+                                   int index_2,
+                                   const util::FieldContext* field_context) = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(FieldComparator);
@@ -94,36 +97,32 @@ class LIBPROTOBUF_EXPORT FieldComparator {
 
 
 
-class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
+class PROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
  public:
   enum FloatComparison {
-     EXACT,               
-     APPROXIMATE,         
-                          
-                          
-     
-     
+    EXACT,        
+    APPROXIMATE,  
+                  
+                  
+    
+    
   };
 
   
   DefaultFieldComparator();
 
-  virtual ~DefaultFieldComparator();
+  ~DefaultFieldComparator() override;
 
-  virtual ComparisonResult Compare(
-      const google::protobuf::Message& message_1,
-      const google::protobuf::Message& message_2,
-      const google::protobuf::FieldDescriptor* field,
-      int index_1, int index_2,
-      const google::protobuf::util::FieldContext* field_context);
+  ComparisonResult Compare(const Message& message_1, const Message& message_2,
+                           const FieldDescriptor* field, int index_1,
+                           int index_2,
+                           const util::FieldContext* field_context) override;
 
   void set_float_comparison(FloatComparison float_comparison) {
     float_comparison_ = float_comparison;
   }
 
-  FloatComparison float_comparison() const {
-    return float_comparison_;
-  }
+  FloatComparison float_comparison() const { return float_comparison_; }
 
   
   
@@ -132,9 +131,7 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
     treat_nan_as_equal_ = treat_nan_as_equal;
   }
 
-  bool treat_nan_as_equal() const {
-    return treat_nan_as_equal_;
-  }
+  bool treat_nan_as_equal() const { return treat_nan_as_equal_; }
 
   
   
@@ -153,17 +150,21 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   void SetDefaultFractionAndMargin(double fraction, double margin);
 
+ protected:
+  
+  
+  
+  bool Compare(MessageDifferencer* differencer, const Message& message1,
+               const Message& message2,
+               const util::FieldContext* field_context);
+
  private:
   
   struct Tolerance {
     double fraction;
     double margin;
-    Tolerance()
-        : fraction(0.0),
-          margin(0.0) {}
-    Tolerance(double f, double m)
-        : fraction(f),
-          margin(m) {}
+    Tolerance() : fraction(0.0), margin(0.0) {}
+    Tolerance(double f, double m) : fraction(f), margin(m) {}
   };
 
   
@@ -173,56 +174,54 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
   
   
   
-  bool CompareBool(const google::protobuf::FieldDescriptor& field,
-                   bool value_1, bool value_2) {
+  bool CompareBool(const FieldDescriptor& , bool value_1,
+                   bool value_2) {
     return value_1 == value_2;
   }
 
   
   
-  bool CompareDouble(const google::protobuf::FieldDescriptor& field,
-                     double value_1, double value_2);
+  bool CompareDouble(const FieldDescriptor& field, double value_1,
+                     double value_2);
 
-  bool CompareEnum(const google::protobuf::FieldDescriptor& field,
+  bool CompareEnum(const FieldDescriptor& field,
                    const EnumValueDescriptor* value_1,
                    const EnumValueDescriptor* value_2);
 
   
   
-  bool CompareFloat(const google::protobuf::FieldDescriptor& field,
-                    float value_1, float value_2);
+  bool CompareFloat(const FieldDescriptor& field, float value_1, float value_2);
 
-  bool CompareInt32(const google::protobuf::FieldDescriptor& field,
-                    int32 value_1, int32 value_2) {
+  bool CompareInt32(const FieldDescriptor& , int32 value_1,
+                    int32 value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareInt64(const google::protobuf::FieldDescriptor& field,
-                    int64 value_1, int64 value_2) {
+  bool CompareInt64(const FieldDescriptor& , int64 value_1,
+                    int64 value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareString(const google::protobuf::FieldDescriptor& field,
-                     const string& value_1, const string& value_2) {
+  bool CompareString(const FieldDescriptor& ,
+                     const std::string& value_1, const std::string& value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareUInt32(const google::protobuf::FieldDescriptor& field,
-                     uint32 value_1, uint32 value_2) {
+  bool CompareUInt32(const FieldDescriptor& , uint32 value_1,
+                     uint32 value_2) {
     return value_1 == value_2;
   }
 
-  bool CompareUInt64(const google::protobuf::FieldDescriptor& field,
-                     uint64 value_1, uint64 value_2) {
+  bool CompareUInt64(const FieldDescriptor& , uint64 value_1,
+                     uint64 value_2) {
     return value_1 == value_2;
   }
 
   
   
   
-  template<typename T>
-  bool CompareDoubleOrFloat(const google::protobuf::FieldDescriptor& field,
-                            T value_1, T value_2);
+  template <typename T>
+  bool CompareDoubleOrFloat(const FieldDescriptor& field, T value_1, T value_2);
 
   
   
@@ -254,6 +253,8 @@ class LIBPROTOBUF_EXPORT DefaultFieldComparator : public FieldComparator {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

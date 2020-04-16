@@ -41,14 +41,22 @@
 
 #include <string>
 
-#include <google/protobuf/stubs/template_util.h>
 #include <google/protobuf/generated_enum_util.h>
+#include <google/protobuf/port.h>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
-  class EnumDescriptor;
+class EnumDescriptor;
+}  
 }  
 
+namespace google {
 namespace protobuf {
 
 
@@ -62,13 +70,11 @@ namespace internal {
 
 
 
-LIBPROTOBUF_EXPORT bool ParseNamedEnum(const EnumDescriptor* descriptor,
-                    const string& name,
-                    int* value);
+PROTOBUF_EXPORT bool ParseNamedEnum(const EnumDescriptor* descriptor,
+                                    const std::string& name, int* value);
 
-template<typename EnumType>
-bool ParseNamedEnum(const EnumDescriptor* descriptor,
-                    const string& name,
+template <typename EnumType>
+bool ParseNamedEnum(const EnumDescriptor* descriptor, const std::string& name,
                     EnumType* value) {
   int tmp;
   if (!ParseNamedEnum(descriptor, name, &tmp)) return false;
@@ -79,10 +85,13 @@ bool ParseNamedEnum(const EnumDescriptor* descriptor,
 
 
 
-LIBPROTOBUF_EXPORT const string& NameOfEnum(const EnumDescriptor* descriptor, int value);
+PROTOBUF_EXPORT const std::string& NameOfEnum(const EnumDescriptor* descriptor,
+                                              int value);
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

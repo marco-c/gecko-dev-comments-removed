@@ -40,43 +40,46 @@
 #define GOOGLE_PROTOBUF_MESSAGE_LITE_H__
 
 #include <climits>
+#include <string>
+
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/arena.h>
 #include <google/protobuf/stubs/once.h>
+#include <google/protobuf/port.h>
+#include <google/protobuf/stubs/strutil.h>
 
 
-#if LANG_CXX11 && !defined(__NVCC__)
-#define PROTOBUF_CXX11 1
-#else
-#define PROTOBUF_CXX11 0
+#include <google/protobuf/port_def.inc>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
 #endif
-
-#if PROTOBUF_CXX11
-#define PROTOBUF_FINAL final
-#else
-#define PROTOBUF_FINAL
-#endif
-
-#ifndef LIBPROTOBUF_EXPORT
-#define LIBPROTOBUF_EXPORT
-#endif
-
-#define PROTOBUF_RUNTIME_DEPRECATED(message)
 
 namespace google {
 namespace protobuf {
-class Arena;
+
+template <typename T>
+class RepeatedPtrField;
+
 namespace io {
+
 class CodedInputStream;
 class CodedOutputStream;
 class ZeroCopyInputStream;
 class ZeroCopyOutputStream;
-}
+
+}  
 namespace internal {
 
-class WireFormatLite;
 
-#ifndef SWIG
+class ParseContext;
+
+class RepeatedPtrFieldBase;
+class WireFormatLite;
+class WeakFieldMap;
+
 
 
 
@@ -120,21 +123,16 @@ inline int ToIntSize(size_t size) {
 template <typename T>
 class ExplicitlyConstructed {
  public:
-  void DefaultConstruct() {
-    new (&union_) T();
+  void DefaultConstruct() { new (&union_) T(); }
+
+  template <typename... Args>
+  void Construct(Args&&... args) {
+    new (&union_) T(std::forward<Args>(args)...);
   }
 
-  void Destruct() {
-    get_mutable()->~T();
-  }
+  void Destruct() { get_mutable()->~T(); }
 
-#if LANG_CXX11
-  constexpr
-#endif
-      const T&
-      get() const {
-    return reinterpret_cast<const T&>(union_);
-  }
+  constexpr const T& get() const { return reinterpret_cast<const T&>(union_); }
   T* get_mutable() { return reinterpret_cast<T*>(&union_); }
 
  private:
@@ -148,22 +146,16 @@ class ExplicitlyConstructed {
 
 
 
-extern ExplicitlyConstructed< ::std::string> fixed_address_empty_string;
-LIBPROTOBUF_EXPORT extern ProtobufOnceType empty_string_once_init_;
-LIBPROTOBUF_EXPORT void InitEmptyString();
+PROTOBUF_EXPORT extern ExplicitlyConstructed<std::string>
+    fixed_address_empty_string;
 
 
-LIBPROTOBUF_EXPORT inline const ::std::string& GetEmptyStringAlreadyInited() {
+PROTOBUF_EXPORT inline const std::string& GetEmptyStringAlreadyInited() {
   return fixed_address_empty_string.get();
 }
 
-LIBPROTOBUF_EXPORT inline const ::std::string& GetEmptyString() {
-  ::google::protobuf::GoogleOnceInit(&empty_string_once_init_, &InitEmptyString);
-  return GetEmptyStringAlreadyInited();
-}
+PROTOBUF_EXPORT size_t StringSpaceUsedExcludingSelfLong(const std::string& str);
 
-LIBPROTOBUF_EXPORT size_t StringSpaceUsedExcludingSelfLong(const string& str);
-#endif  
 }  
 
 
@@ -189,7 +181,7 @@ LIBPROTOBUF_EXPORT size_t StringSpaceUsedExcludingSelfLong(const string& str);
 
 
 
-class LIBPROTOBUF_EXPORT MessageLite {
+class PROTOBUF_EXPORT MessageLite {
  public:
   inline MessageLite() {}
   virtual ~MessageLite() {}
@@ -197,7 +189,7 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
 
   
-  virtual string GetTypeName() const = 0;
+  virtual std::string GetTypeName() const = 0;
 
   
   
@@ -205,14 +197,14 @@ class LIBPROTOBUF_EXPORT MessageLite {
 
   
   
-  virtual MessageLite* New(::google::protobuf::Arena* arena) const;
+  virtual MessageLite* New(Arena* arena) const;
 
   
   
   
   
   
-  virtual ::google::protobuf::Arena* GetArena() const { return NULL; }
+  virtual Arena* GetArena() const { return NULL; }
 
   
   
@@ -238,11 +230,26 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  virtual string InitializationErrorString() const;
+  virtual std::string InitializationErrorString() const;
 
   
   
   virtual void CheckTypeAndMergeFrom(const MessageLite& other) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::string DebugString() const;
+  std::string ShortDebugString() const { return DebugString(); }
+  
+  
+  std::string Utf8DebugString() const { return DebugString(); }
 
   
   
@@ -266,7 +273,24 @@ class LIBPROTOBUF_EXPORT MessageLite {
   bool ParsePartialFromZeroCopyStream(io::ZeroCopyInputStream* input);
   
   
+  bool ParseFromFileDescriptor(int file_descriptor);
   
+  
+  bool ParsePartialFromFileDescriptor(int file_descriptor);
+  
+  
+  bool ParseFromIstream(std::istream* input);
+  
+  
+  bool ParsePartialFromIstream(std::istream* input);
+  
+  
+  
+  bool MergePartialFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input,
+                                             int size);
+  
+  
+  bool MergeFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input, int size);
   bool ParseFromBoundedZeroCopyStream(io::ZeroCopyInputStream* input, int size);
   
   
@@ -277,10 +301,10 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  bool ParseFromString(const string& data);
+  bool ParseFromString(const std::string& data);
   
   
-  bool ParsePartialFromString(const string& data);
+  bool ParsePartialFromString(const std::string& data);
   
   bool ParseFromArray(const void* data, int size);
   
@@ -306,7 +330,10 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  virtual bool MergePartialFromCodedStream(io::CodedInputStream* input) = 0;
+  bool MergePartialFromCodedStream(io::CodedInputStream* input);
+
+  
+  bool MergeFromString(const std::string& data);
 
 
   
@@ -326,9 +353,9 @@ class LIBPROTOBUF_EXPORT MessageLite {
   bool SerializePartialToZeroCopyStream(io::ZeroCopyOutputStream* output) const;
   
   
-  bool SerializeToString(string* output) const;
+  bool SerializeToString(std::string* output) const;
   
-  bool SerializePartialToString(string* output) const;
+  bool SerializePartialToString(std::string* output) const;
   
   
   bool SerializeToArray(void* data, int size) const;
@@ -341,15 +368,27 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  string SerializeAsString() const;
+  std::string SerializeAsString() const;
   
-  string SerializePartialAsString() const;
+  std::string SerializePartialAsString() const;
 
   
   
-  bool AppendToString(string* output) const;
+  bool SerializeToFileDescriptor(int file_descriptor) const;
   
-  bool AppendPartialToString(string* output) const;
+  bool SerializePartialToFileDescriptor(int file_descriptor) const;
+  
+  
+  bool SerializeToOstream(std::ostream* output) const;
+  
+  bool SerializePartialToOstream(std::ostream* output) const;
+
+  
+  
+  bool AppendToString(std::string* output) const;
+  
+  bool AppendPartialToString(std::string* output) const;
+
 
   
   
@@ -359,20 +398,19 @@ class LIBPROTOBUF_EXPORT MessageLite {
   virtual size_t ByteSizeLong() const = 0;
 
   
-  PROTOBUF_RUNTIME_DEPRECATED("Please use ByteSizeLong() instead")
-  int ByteSize() const {
-    return internal::ToIntSize(ByteSizeLong());
+  PROTOBUF_DEPRECATED_MSG("Please use ByteSizeLong() instead")
+  int ByteSize() const { return internal::ToIntSize(ByteSizeLong()); }
+
+  
+  
+  
+  void SerializeWithCachedSizes(io::CodedOutputStream* output) const {
+    output->SetCur(_InternalSerialize(output->Cur(), output->EpsCopy()));
   }
 
   
   
   
-  virtual void SerializeWithCachedSizes(
-      io::CodedOutputStream* output) const;
-
-  
-  
-  
   
 
   
@@ -380,7 +418,7 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   
   
-  virtual uint8* SerializeWithCachedSizesToArray(uint8* target) const;
+  uint8* SerializeWithCachedSizesToArray(uint8* target) const;
 
   
   
@@ -395,8 +433,36 @@ class LIBPROTOBUF_EXPORT MessageLite {
   
   virtual int GetCachedSize() const = 0;
 
-  virtual uint8* InternalSerializeWithCachedSizesToArray(bool deterministic,
-                                                         uint8* target) const;
+  virtual const char* _InternalParse(const char* ,
+                                     internal::ParseContext* ) {
+    return nullptr;
+  }
+
+ protected:
+  template <typename T>
+  static T* CreateMaybeMessage(Arena* arena) {
+    return Arena::CreateMaybeMessage<T>(arena);
+  }
+
+ public:
+  enum ParseFlags {
+    kMerge = 0,
+    kParse = 1,
+    kMergePartial = 2,
+    kParsePartial = 3,
+    kMergeWithAliasing = 4,
+    kParseWithAliasing = 5,
+    kMergePartialWithAliasing = 6,
+    kParsePartialWithAliasing = 7
+  };
+
+  template <ParseFlags flags, typename T>
+  bool ParseFrom(const T& input);
+
+  
+  
+  virtual uint8* _InternalSerialize(uint8* ptr,
+                                    io::EpsCopyOutputStream* stream) const = 0;
 
  private:
   
@@ -404,27 +470,102 @@ class LIBPROTOBUF_EXPORT MessageLite {
 
   friend class internal::WireFormatLite;
   friend class Message;
+  friend class internal::WeakFieldMap;
+
+  bool IsInitializedWithErrors() const {
+    if (IsInitialized()) return true;
+    LogInitializationErrorMessage();
+    return false;
+  }
+
+  void LogInitializationErrorMessage() const;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MessageLite);
 };
 
 namespace internal {
 
-extern bool LIBPROTOBUF_EXPORT proto3_preserve_unknown_;
+template <bool alias>
+bool MergePartialFromImpl(StringPiece input, MessageLite* msg);
+extern template bool MergePartialFromImpl<false>(StringPiece input,
+                                                 MessageLite* msg);
+extern template bool MergePartialFromImpl<true>(StringPiece input,
+                                                MessageLite* msg);
 
+template <bool alias>
+bool MergePartialFromImpl(io::ZeroCopyInputStream* input, MessageLite* msg);
+extern template bool MergePartialFromImpl<false>(io::ZeroCopyInputStream* input,
+                                                 MessageLite* msg);
+extern template bool MergePartialFromImpl<true>(io::ZeroCopyInputStream* input,
+                                                MessageLite* msg);
 
+struct BoundedZCIS {
+  io::ZeroCopyInputStream* zcis;
+  int limit;
+};
 
-inline bool GetProto3PreserveUnknownsDefault() {
-  return proto3_preserve_unknown_;
+template <bool alias>
+bool MergePartialFromImpl(BoundedZCIS input, MessageLite* msg);
+extern template bool MergePartialFromImpl<false>(BoundedZCIS input,
+                                                 MessageLite* msg);
+extern template bool MergePartialFromImpl<true>(BoundedZCIS input,
+                                                MessageLite* msg);
+
+template <typename T>
+struct SourceWrapper;
+
+template <bool alias, typename T>
+bool MergePartialFromImpl(const SourceWrapper<T>& input, MessageLite* msg) {
+  return input.template MergePartialInto<alias>(msg);
+}
+
+}  
+
+template <MessageLite::ParseFlags flags, typename T>
+bool MessageLite::ParseFrom(const T& input) {
+  if (flags & kParse) Clear();
+  constexpr bool alias = flags & kMergeWithAliasing;
+  bool res = internal::MergePartialFromImpl<alias>(input, this);
+  return res && ((flags & kMergePartial) || IsInitializedWithErrors());
 }
 
 
 
-void LIBPROTOBUF_EXPORT SetProto3PreserveUnknownsDefault(bool preserve);
-}  
 
 
-}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PROTOBUF_EXPORT void ShutdownProtobufLibrary();
+
+namespace internal {
+
+
+PROTOBUF_EXPORT void OnShutdown(void (*func)());
+
+PROTOBUF_EXPORT void OnShutdownRun(void (*f)(const void*), const void* arg);
+
+template <typename T>
+T* OnShutdownDelete(T* p) {
+  OnShutdownRun([](const void* pp) { delete static_cast<const T*>(pp); }, p);
+  return p;
+}
 
 }  
+}  
+}  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

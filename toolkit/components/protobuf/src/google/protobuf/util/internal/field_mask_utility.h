@@ -36,8 +36,9 @@
 #include <functional>
 #include <stack>
 
+#include <google/protobuf/stubs/callback.h>
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/status.h>
 
 namespace google {
@@ -45,15 +46,15 @@ namespace protobuf {
 namespace util {
 namespace converter {
 
-typedef string (*ConverterCallback)(StringPiece);
-typedef ResultCallback1<util::Status, StringPiece>* PathSinkCallback;
+typedef std::function<std::string(StringPiece)> ConverterCallback;
+typedef std::function<util::Status(StringPiece)> PathSinkCallback;
 
 
 
 
 
-string ConvertFieldMaskPath(const StringPiece path,
-                            ConverterCallback converter);
+std::string ConvertFieldMaskPath(const StringPiece path,
+                                 ConverterCallback converter);
 
 
 
@@ -67,6 +68,6 @@ util::Status DecodeCompactFieldMaskPaths(StringPiece paths,
 }  
 }  
 }  
-
 }  
+
 #endif  

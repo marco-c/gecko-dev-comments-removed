@@ -107,11 +107,14 @@
 #ifndef GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_H__
 #define GOOGLE_PROTOBUF_IO_ZERO_COPY_STREAM_H__
 
+
 #include <string>
+
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/port_def.inc>
+
 
 namespace google {
-
 namespace protobuf {
 namespace io {
 
@@ -121,7 +124,7 @@ class ZeroCopyOutputStream;
 
 
 
-class LIBPROTOBUF_EXPORT ZeroCopyInputStream {
+class PROTOBUF_EXPORT ZeroCopyInputStream {
  public:
   ZeroCopyInputStream() {}
   virtual ~ZeroCopyInputStream() {}
@@ -169,7 +172,7 @@ class LIBPROTOBUF_EXPORT ZeroCopyInputStream {
   virtual bool Skip(int count) = 0;
 
   
-  virtual int64 ByteCount() const = 0;
+  virtual int64_t ByteCount() const = 0;
 
 
  private:
@@ -178,7 +181,7 @@ class LIBPROTOBUF_EXPORT ZeroCopyInputStream {
 
 
 
-class LIBPROTOBUF_EXPORT ZeroCopyOutputStream {
+class PROTOBUF_EXPORT ZeroCopyOutputStream {
  public:
   ZeroCopyOutputStream() {}
   virtual ~ZeroCopyOutputStream() {}
@@ -224,7 +227,7 @@ class LIBPROTOBUF_EXPORT ZeroCopyOutputStream {
   virtual void BackUp(int count) = 0;
 
   
-  virtual int64 ByteCount() const = 0;
+  virtual int64_t ByteCount() const = 0;
 
   
   
@@ -243,6 +246,8 @@ class LIBPROTOBUF_EXPORT ZeroCopyOutputStream {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif

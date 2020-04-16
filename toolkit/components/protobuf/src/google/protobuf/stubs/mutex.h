@@ -30,11 +30,36 @@
 #ifndef GOOGLE_PROTOBUF_STUBS_MUTEX_H_
 #define GOOGLE_PROTOBUF_STUBS_MUTEX_H_
 
-#ifdef GOOGLE_PROTOBUF_NO_THREADLOCAL
-#include <pthread.h>
+#include <mutex>
+
+#ifdef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+
+#include <windows.h>
+
+
+#ifdef GetMessage
+#undef GetMessage
+#endif
+
 #endif
 
 #include <google/protobuf/stubs/macros.h>
+
+
+
+#if defined(__clang__) && !defined(SWIG)
+#define GOOGLE_PROTOBUF_ACQUIRE(...) \
+  __attribute__((acquire_capability(__VA_ARGS__)))
+#define GOOGLE_PROTOBUF_RELEASE(...) \
+  __attribute__((release_capability(__VA_ARGS__)))
+#define GOOGLE_PROTOBUF_CAPABILITY(x) __attribute__((capability(x)))
+#else
+#define GOOGLE_PROTOBUF_ACQUIRE(...)
+#define GOOGLE_PROTOBUF_RELEASE(...)
+#define GOOGLE_PROTOBUF_CAPABILITY(x)
+#endif
+
+#include <google/protobuf/port_def.inc>
 
 
 
@@ -42,36 +67,53 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
+#define GOOGLE_PROTOBUF_LINKER_INITIALIZED
+
+#ifdef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
 
 
 
-class LIBPROTOBUF_EXPORT Mutex {
+
+
+class PROTOBUF_EXPORT CriticalSectionLock {
  public:
-  
-  Mutex();
-
-  
-  ~Mutex();
-
-  
-  void Lock();
-
-  
-  void Unlock();
-
-  
-  
-  void AssertHeld();
+  CriticalSectionLock() { InitializeCriticalSection(&critical_section_); }
+  ~CriticalSectionLock() { DeleteCriticalSection(&critical_section_); }
+  void lock() { EnterCriticalSection(&critical_section_); }
+  void unlock() { LeaveCriticalSection(&critical_section_); }
 
  private:
-  struct Internal;
-  Internal* mInternal;
+  CRITICAL_SECTION critical_section_;
 
-  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Mutex);
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(CriticalSectionLock);
 };
 
+#endif
 
-class LIBPROTOBUF_EXPORT MutexLock {
+
+
+
+class GOOGLE_PROTOBUF_CAPABILITY("mutex") PROTOBUF_EXPORT WrappedMutex {
+ public:
+  WrappedMutex() = default;
+  void Lock() GOOGLE_PROTOBUF_ACQUIRE() { mu_.lock(); }
+  void Unlock() GOOGLE_PROTOBUF_RELEASE() { mu_.unlock(); }
+  
+  
+  void AssertHeld() const {}
+
+ private:
+#ifndef GOOGLE_PROTOBUF_SUPPORT_WINDOWS_XP
+  std::mutex mu_;
+#else  
+  CriticalSectionLock mu_;
+#endif  
+};
+
+using Mutex = WrappedMutex;
+
+
+class PROTOBUF_EXPORT MutexLock {
  public:
   explicit MutexLock(Mutex *mu) : mu_(mu) { this->mu_->Lock(); }
   ~MutexLock() { this->mu_->Unlock(); }
@@ -85,11 +127,11 @@ typedef MutexLock ReaderMutexLock;
 typedef MutexLock WriterMutexLock;
 
 
-class LIBPROTOBUF_EXPORT MutexLockMaybe {
+class PROTOBUF_EXPORT MutexLockMaybe {
  public:
   explicit MutexLockMaybe(Mutex *mu) :
-    mu_(mu) { if (this->mu_ != NULL) { this->mu_->Lock(); } }
-  ~MutexLockMaybe() { if (this->mu_ != NULL) { this->mu_->Unlock(); } }
+    mu_(mu) { if (this->mu_ != nullptr) { this->mu_->Lock(); } }
+  ~MutexLockMaybe() { if (this->mu_ != nullptr) { this->mu_->Unlock(); } }
  private:
   Mutex *const mu_;
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(MutexLockMaybe);
@@ -107,7 +149,7 @@ class ThreadLocalStorage {
   }
   T* Get() {
     T* result = static_cast<T*>(pthread_getspecific(key_));
-    if (result == NULL) {
+    if (result == nullptr) {
       result = new T();
       pthread_setspecific(key_, result);
     }
@@ -133,8 +175,12 @@ using internal::ReaderMutexLock;
 using internal::WriterMutexLock;
 using internal::MutexLockMaybe;
 
+}  
+}  
 
-}  
-}  
+#undef GOOGLE_PROTOBUF_ACQUIRE
+#undef GOOGLE_PROTOBUF_RELEASE
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

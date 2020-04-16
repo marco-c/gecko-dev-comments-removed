@@ -37,16 +37,19 @@
 #ifndef GOOGLE_PROTOBUF_IO_TOKENIZER_H__
 #define GOOGLE_PROTOBUF_IO_TOKENIZER_H__
 
+
 #include <string>
 #include <vector>
+
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
 namespace io {
 
-class ZeroCopyInputStream;     
+class ZeroCopyInputStream;  
 
 
 class ErrorCollector;
@@ -61,7 +64,7 @@ typedef int ColumnNumber;
 
 
 
-class LIBPROTOBUF_EXPORT ErrorCollector {
+class PROTOBUF_EXPORT ErrorCollector {
  public:
   inline ErrorCollector() {}
   virtual ~ErrorCollector();
@@ -70,13 +73,13 @@ class LIBPROTOBUF_EXPORT ErrorCollector {
   
   
   virtual void AddError(int line, ColumnNumber column,
-                        const string& message) = 0;
+                        const std::string& message) = 0;
 
   
   
   
   virtual void AddWarning(int line, ColumnNumber column,
-                          const string& message) { }
+                          const std::string& message) {}
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ErrorCollector);
@@ -88,7 +91,7 @@ class LIBPROTOBUF_EXPORT ErrorCollector {
 
 
 
-class LIBPROTOBUF_EXPORT Tokenizer {
+class PROTOBUF_EXPORT Tokenizer {
  public:
   
   
@@ -97,8 +100,8 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   ~Tokenizer();
 
   enum TokenType {
-    TYPE_START,       
-    TYPE_END,         
+    TYPE_START,  
+    TYPE_END,    
 
     TYPE_IDENTIFIER,  
                       
@@ -124,7 +127,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   
   struct Token {
     TokenType type;
-    string text;       
+    std::string text;  
                        
                        
 
@@ -190,31 +193,31 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   
   
   
-  bool NextWithComments(string* prev_trailing_comments,
-                        std::vector<string>* detached_comments,
-                        string* next_leading_comments);
+  bool NextWithComments(std::string* prev_trailing_comments,
+                        std::vector<std::string>* detached_comments,
+                        std::string* next_leading_comments);
 
   
 
   
   
   
-  static double ParseFloat(const string& text);
+  static double ParseFloat(const std::string& text);
 
   
   
   
-  static void ParseString(const string& text, string* output);
+  static void ParseString(const std::string& text, std::string* output);
 
   
-  static void ParseStringAppend(const string& text, string* output);
+  static void ParseStringAppend(const std::string& text, std::string* output);
 
   
   
   
   
   
-  static bool ParseInteger(const string& text, uint64 max_value,
+  static bool ParseInteger(const std::string& text, uint64 max_value,
                            uint64* output);
 
   
@@ -250,23 +253,23 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   }
 
   
-  static bool IsIdentifier(const string& text);
+  static bool IsIdentifier(const std::string& text);
 
   
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Tokenizer);
 
-  Token current_;           
-  Token previous_;          
+  Token current_;   
+  Token previous_;  
 
   ZeroCopyInputStream* input_;
   ErrorCollector* error_collector_;
 
-  char current_char_;       
-  const char* buffer_;      
-  int buffer_size_;         
-  int buffer_pos_;          
-  bool read_error_;         
+  char current_char_;   
+  const char* buffer_;  
+  int buffer_size_;     
+  int buffer_pos_;      
+  bool read_error_;     
 
   
   int line_;
@@ -276,7 +279,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   
   
   
-  string* record_target_;
+  std::string* record_target_;
   int record_start_;
 
   
@@ -299,7 +302,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   
   void Refresh();
 
-  inline void RecordTo(string* target);
+  inline void RecordTo(std::string* target);
   inline void StopRecording();
 
   
@@ -311,7 +314,7 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   inline void EndToken();
 
   
-  void AddError(const string& message) {
+  void AddError(const std::string& message) {
     error_collector_->AddError(line_, column_, message);
   }
 
@@ -334,9 +337,9 @@ class LIBPROTOBUF_EXPORT Tokenizer {
   TokenType ConsumeNumber(bool started_with_zero, bool started_with_dot);
 
   
-  void ConsumeLineComment(string* content);
+  void ConsumeLineComment(std::string* content);
   
-  void ConsumeBlockComment(string* content);
+  void ConsumeBlockComment(std::string* content);
 
   enum NextCommentStatus {
     
@@ -367,45 +370,44 @@ class LIBPROTOBUF_EXPORT Tokenizer {
 
   
   
-  template<typename CharacterClass>
+  template <typename CharacterClass>
   inline bool LookingAt();
 
   
   
   
-  template<typename CharacterClass>
+  template <typename CharacterClass>
   inline bool TryConsumeOne();
 
   
   inline bool TryConsume(char c);
 
   
-  template<typename CharacterClass>
+  template <typename CharacterClass>
   inline void ConsumeZeroOrMore();
 
   
   
   
-  template<typename CharacterClass>
+  template <typename CharacterClass>
   inline void ConsumeOneOrMore(const char* error);
 };
 
 
-inline const Tokenizer::Token& Tokenizer::current() {
-  return current_;
-}
+inline const Tokenizer::Token& Tokenizer::current() { return current_; }
 
-inline const Tokenizer::Token& Tokenizer::previous() {
-  return previous_;
-}
+inline const Tokenizer::Token& Tokenizer::previous() { return previous_; }
 
-inline void Tokenizer::ParseString(const string& text, string* output) {
+inline void Tokenizer::ParseString(const std::string& text,
+                                   std::string* output) {
   output->clear();
   ParseStringAppend(text, output);
 }
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

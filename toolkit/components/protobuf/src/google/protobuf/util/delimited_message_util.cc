@@ -1,31 +1,69 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <google/protobuf/util/delimited_message_util.h>
+#include <google/protobuf/io/coded_stream.h>
 
 namespace google {
 namespace protobuf {
 namespace util {
 
-bool SerializeDelimitedToFileDescriptor(const MessageLite& message, int file_descriptor) {
+bool SerializeDelimitedToFileDescriptor(const MessageLite& message,
+                                        int file_descriptor) {
   io::FileOutputStream output(file_descriptor);
   return SerializeDelimitedToZeroCopyStream(message, &output);
 }
 
-bool SerializeDelimitedToOstream(const MessageLite& message, ostream* output) {
+bool SerializeDelimitedToOstream(const MessageLite& message,
+                                 std::ostream* output) {
   {
     io::OstreamOutputStream zero_copy_output(output);
-    if (!SerializeDelimitedToZeroCopyStream(message, &zero_copy_output)) return false;
+    if (!SerializeDelimitedToZeroCopyStream(message, &zero_copy_output))
+      return false;
   }
   return output->good();
 }
 
-bool ParseDelimitedFromZeroCopyStream(MessageLite* message, io::ZeroCopyInputStream* input, bool* clean_eof) {
-  google::protobuf::io::CodedInputStream coded_input(input);
+bool ParseDelimitedFromZeroCopyStream(MessageLite* message,
+                                      io::ZeroCopyInputStream* input,
+                                      bool* clean_eof) {
+  io::CodedInputStream coded_input(input);
   return ParseDelimitedFromCodedStream(message, &coded_input, clean_eof);
 }
 
-bool ParseDelimitedFromCodedStream(MessageLite* message, io::CodedInputStream* input, bool* clean_eof) {
+bool ParseDelimitedFromCodedStream(MessageLite* message,
+                                   io::CodedInputStream* input,
+                                   bool* clean_eof) {
   if (clean_eof != NULL) *clean_eof = false;
   int start = input->CurrentPosition();
 
@@ -37,7 +75,7 @@ bool ParseDelimitedFromCodedStream(MessageLite* message, io::CodedInputStream* i
   }
 
   
-  google::protobuf::io::CodedInputStream::Limit limit = input->PushLimit(size);
+  io::CodedInputStream::Limit limit = input->PushLimit(size);
 
   
   if (!message->MergeFromCodedStream(input)) return false;
@@ -49,14 +87,18 @@ bool ParseDelimitedFromCodedStream(MessageLite* message, io::CodedInputStream* i
   return true;
 }
 
-bool SerializeDelimitedToZeroCopyStream(const MessageLite& message, io::ZeroCopyOutputStream* output) {
-  google::protobuf::io::CodedOutputStream coded_output(output);
+bool SerializeDelimitedToZeroCopyStream(const MessageLite& message,
+                                        io::ZeroCopyOutputStream* output) {
+  io::CodedOutputStream coded_output(output);
   return SerializeDelimitedToCodedStream(message, &coded_output);
 }
 
-bool SerializeDelimitedToCodedStream(const MessageLite& message, io::CodedOutputStream* output) {
+bool SerializeDelimitedToCodedStream(const MessageLite& message,
+                                     io::CodedOutputStream* output) {
   
-  int size = message.ByteSize();
+  size_t size = message.ByteSizeLong();
+  if (size > INT_MAX) return false;
+
   output->WriteVarint32(size);
 
   

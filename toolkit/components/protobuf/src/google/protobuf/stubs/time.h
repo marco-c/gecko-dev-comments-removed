@@ -32,6 +32,8 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 namespace internal {
@@ -49,27 +51,30 @@ struct DateTime {
 
 
 
-bool LIBPROTOBUF_EXPORT SecondsToDateTime(int64 seconds, DateTime* time);
+bool PROTOBUF_EXPORT SecondsToDateTime(int64 seconds, DateTime* time);
 
 
-bool LIBPROTOBUF_EXPORT DateTimeToSeconds(const DateTime& time, int64* seconds);
+bool PROTOBUF_EXPORT DateTimeToSeconds(const DateTime& time, int64* seconds);
 
-void LIBPROTOBUF_EXPORT GetCurrentTime(int64* seconds, int32* nanos);
-
-
-
+void PROTOBUF_EXPORT GetCurrentTime(int64* seconds, int32* nanos);
 
 
 
 
 
-string LIBPROTOBUF_EXPORT FormatTime(int64 seconds, int32 nanos);
 
 
-bool LIBPROTOBUF_EXPORT ParseTime(const string& value, int64* seconds, int32* nanos);
+
+string PROTOBUF_EXPORT FormatTime(int64 seconds, int32 nanos);
+
+
+bool PROTOBUF_EXPORT ParseTime(const string& value, int64* seconds,
+                               int32* nanos);
 
 }  
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

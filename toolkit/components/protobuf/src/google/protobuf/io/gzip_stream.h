@@ -43,16 +43,20 @@
 #ifndef GOOGLE_PROTOBUF_IO_GZIP_STREAM_H__
 #define GOOGLE_PROTOBUF_IO_GZIP_STREAM_H__
 
+
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/io/zero_copy_stream.h>
+#include <google/protobuf/port.h>
 #include <zlib.h>
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
 namespace io {
 
 
-class LIBPROTOBUF_EXPORT GzipInputStream : public ZeroCopyInputStream {
+class PROTOBUF_EXPORT GzipInputStream : public ZeroCopyInputStream {
  public:
   
   enum Format {
@@ -67,25 +71,19 @@ class LIBPROTOBUF_EXPORT GzipInputStream : public ZeroCopyInputStream {
   };
 
   
-  explicit GzipInputStream(
-      ZeroCopyInputStream* sub_stream,
-      Format format = AUTO,
-      int buffer_size = -1);
+  explicit GzipInputStream(ZeroCopyInputStream* sub_stream,
+                           Format format = AUTO, int buffer_size = -1);
   virtual ~GzipInputStream();
 
   
-  inline const char* ZlibErrorMessage() const {
-    return zcontext_.msg;
-  }
-  inline int ZlibErrorCode() const {
-    return zerror_;
-  }
+  inline const char* ZlibErrorMessage() const { return zcontext_.msg; }
+  inline int ZlibErrorCode() const { return zerror_; }
 
   
   bool Next(const void** data, int* size);
   void BackUp(int count);
   bool Skip(int count);
-  int64 ByteCount() const;
+  int64_t ByteCount() const;
 
  private:
   Format format_;
@@ -106,8 +104,7 @@ class LIBPROTOBUF_EXPORT GzipInputStream : public ZeroCopyInputStream {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(GzipInputStream);
 };
 
-
-class LIBPROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
+class PROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
  public:
   
   enum Format {
@@ -118,7 +115,7 @@ class LIBPROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
     ZLIB = 2,
   };
 
-  struct Options {
+  struct PROTOBUF_EXPORT Options {
     
     Format format;
 
@@ -141,19 +138,13 @@ class LIBPROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
   explicit GzipOutputStream(ZeroCopyOutputStream* sub_stream);
 
   
-  GzipOutputStream(
-      ZeroCopyOutputStream* sub_stream,
-      const Options& options);
+  GzipOutputStream(ZeroCopyOutputStream* sub_stream, const Options& options);
 
   virtual ~GzipOutputStream();
 
   
-  inline const char* ZlibErrorMessage() const {
-    return zcontext_.msg;
-  }
-  inline int ZlibErrorCode() const {
-    return zerror_;
-  }
+  inline const char* ZlibErrorMessage() const { return zcontext_.msg; }
+  inline int ZlibErrorCode() const { return zerror_; }
 
   
   
@@ -178,7 +169,7 @@ class LIBPROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
   
   bool Next(void** data, int* size);
   void BackUp(int count);
-  int64 ByteCount() const;
+  int64_t ByteCount() const;
 
  private:
   ZeroCopyOutputStream* sub_stream_;
@@ -204,6 +195,8 @@ class LIBPROTOBUF_EXPORT GzipOutputStream : public ZeroCopyOutputStream {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

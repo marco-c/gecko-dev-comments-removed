@@ -151,6 +151,8 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/hash.h>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 
@@ -175,7 +177,7 @@ typedef string::difference_type stringpiece_ssize_type;
 #define STRINGPIECE_CHECK_SIZE 0
 #endif
 
-class LIBPROTOBUF_EXPORT StringPiece {
+class PROTOBUF_EXPORT StringPiece {
  private:
   const char* ptr_;
   stringpiece_ssize_type length_;
@@ -207,11 +209,11 @@ class LIBPROTOBUF_EXPORT StringPiece {
   
   
   
-  StringPiece() : ptr_(NULL), length_(0) {}
+  StringPiece() : ptr_(nullptr), length_(0) {}
 
   StringPiece(const char* str)  
       : ptr_(str), length_(0) {
-    if (str != NULL) {
+    if (str != nullptr) {
       length_ = CheckedSsizeTFromSizeT(strlen(str));
     }
   }
@@ -248,7 +250,7 @@ class LIBPROTOBUF_EXPORT StringPiece {
   bool empty() const { return length_ == 0; }
 
   void clear() {
-    ptr_ = NULL;
+    ptr_ = nullptr;
     length_ = 0;
   }
 
@@ -260,7 +262,7 @@ class LIBPROTOBUF_EXPORT StringPiece {
 
   void set(const char* str) {
     ptr_ = str;
-    if (str != NULL)
+    if (str != nullptr)
       length_ = CheckedSsizeTFromSizeT(strlen(str));
     else
       length_ = 0;
@@ -309,7 +311,7 @@ class LIBPROTOBUF_EXPORT StringPiece {
   
   
   string ToString() const {
-    if (ptr_ == NULL) return string();
+    if (ptr_ == nullptr) return string();
     return string(data(), static_cast<size_type>(size()));
   }
 
@@ -463,6 +465,9 @@ struct StringPiecePod {
   std::string ToString() const {
     return std::string(data_, static_cast<size_t>(size_));
   }
+
+  operator string() const { return ToString(); }
+
  private:
   const char* data_;
   stringpiece_ssize_type size_;
@@ -476,12 +481,14 @@ GOOGLE_PROTOBUF_HASH_NAMESPACE_DECLARATION_START
 template<> struct hash<StringPiece> {
   size_t operator()(const StringPiece& s) const {
     size_t result = 0;
-    for (const char *str = s.data(), *end = str + s.size(); str < end; str++) {  
+    for (const char *str = s.data(), *end = str + s.size(); str < end; str++) {
       result = 5 * result + static_cast<size_t>(*str);
     }
     return result;
   }
 };
 GOOGLE_PROTOBUF_HASH_NAMESPACE_DECLARATION_END
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

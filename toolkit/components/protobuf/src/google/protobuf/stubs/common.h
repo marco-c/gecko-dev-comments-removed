@@ -38,6 +38,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -45,12 +46,6 @@
 #include <google/protobuf/stubs/port.h>
 #include <google/protobuf/stubs/macros.h>
 #include <google/protobuf/stubs/platform_macros.h>
-
-
-#include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/scoped_ptr.h>
-#include <google/protobuf/stubs/mutex.h>
-#include <google/protobuf/stubs/callback.h>
 
 #ifndef PROTOBUF_USE_EXCEPTIONS
 #if defined(_MSC_VER) && defined(_CPPUNWIND)
@@ -73,22 +68,7 @@
 #include <pthread.h>
 #endif
 
-#if defined(_WIN32) && defined(GetMessage)
-
-
-
-inline BOOL GetMessage_Win32(
-    LPMSG lpMsg, HWND hWnd,
-    UINT wMsgFilterMin, UINT wMsgFilterMax) {
-  return GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
-}
-#undef GetMessage
-inline BOOL GetMessage(
-    LPMSG lpMsg, HWND hWnd,
-    UINT wMsgFilterMin, UINT wMsgFilterMax) {
-  return GetMessage_Win32(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
-}
-#endif
+#include <google/protobuf/port_def.inc>
 
 namespace std {}
 
@@ -101,35 +81,31 @@ namespace internal {
 
 
 
-#define GOOGLE_PROTOBUF_VERSION 3004000
+#define GOOGLE_PROTOBUF_VERSION 3011004
 
 
 #define GOOGLE_PROTOBUF_VERSION_SUFFIX ""
 
 
 
-#define GOOGLE_PROTOBUF_MIN_LIBRARY_VERSION 3004000
+
+static const int kMinHeaderVersionForLibrary = 3011000;
 
 
 
-
-static const int kMinHeaderVersionForLibrary = 3004000;
-
-
-
-#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION 3004000
+#define GOOGLE_PROTOBUF_MIN_PROTOC_VERSION 3011000
 
 
 
-static const int kMinHeaderVersionForProtoc = 3004000;
+static const int kMinHeaderVersionForProtoc = 3011000;
 
 
 
-void LIBPROTOBUF_EXPORT VerifyVersion(int headerVersion, int minLibraryVersion,
-                                      const char* filename);
+void PROTOBUF_EXPORT VerifyVersion(int headerVersion, int minLibraryVersion,
+                                   const char* filename);
 
 
-std::string LIBPROTOBUF_EXPORT VersionString(int version);
+std::string PROTOBUF_EXPORT VersionString(int version);
 
 }  
 
@@ -151,14 +127,14 @@ namespace internal {
 
 
 
-LIBPROTOBUF_EXPORT bool IsStructurallyValidUTF8(const char* buf, int len);
+PROTOBUF_EXPORT bool IsStructurallyValidUTF8(const char* buf, int len);
 
 inline bool IsStructurallyValidUTF8(const std::string& str) {
   return IsStructurallyValidUTF8(str.data(), static_cast<int>(str.length()));
 }
 
 
-LIBPROTOBUF_EXPORT int UTF8SpnStructurallyValid(const StringPiece& str);
+PROTOBUF_EXPORT int UTF8SpnStructurallyValid(const StringPiece& str);
 
 
 
@@ -172,38 +148,25 @@ LIBPROTOBUF_EXPORT int UTF8SpnStructurallyValid(const StringPiece& str);
 
 
 
-LIBPROTOBUF_EXPORT char* UTF8CoerceToStructurallyValid(
-    const StringPiece& str, char* dst, char replace_char);
+PROTOBUF_EXPORT char* UTF8CoerceToStructurallyValid(const StringPiece& str,
+                                                    char* dst,
+                                                    char replace_char);
 
 }  
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-LIBPROTOBUF_EXPORT void ShutdownProtobufLibrary();
+PROTOBUF_EXPORT void ShutdownProtobufLibrary();
 
 namespace internal {
 
 
-LIBPROTOBUF_EXPORT void OnShutdown(void (*func)());
 
-LIBPROTOBUF_EXPORT void OnShutdownDestroyString(const std::string* ptr);
-
-LIBPROTOBUF_EXPORT void OnShutdownDestroyMessage(const void* ptr);
+template <typename T>
+void StrongReference(const T& var) {
+  auto volatile unused = &var;
+  (void)&unused;  
+}
 
 }  
 
@@ -229,14 +192,11 @@ class FatalException : public std::exception {
 
 
 
-
-using std::istream;
-using std::ostream;
-using std::pair;
 using std::string;
-using std::vector;
 
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

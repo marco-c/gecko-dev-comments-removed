@@ -32,13 +32,12 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_STRUCTURED_OBJECTWRITER_H__
 
 #include <memory>
-#ifndef _SHARED_PTR_H
-#include <google/protobuf/stubs/shared_ptr.h>
-#endif
 
 #include <google/protobuf/stubs/casts.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/util/internal/object_writer.h>
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -56,7 +55,7 @@ namespace converter {
 
 
 
-class LIBPROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
+class PROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
  public:
   virtual ~StructuredObjectWriter() {}
 
@@ -66,7 +65,7 @@ class LIBPROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
   
   
   
-  class LIBPROTOBUF_EXPORT BaseElement {
+  class PROTOBUF_EXPORT BaseElement {
    public:
     
     explicit BaseElement(BaseElement* parent)
@@ -80,7 +79,7 @@ class LIBPROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
     }
 
     
-    bool is_root() const { return parent_ == NULL; }
+    bool is_root() const { return parent_ == nullptr; }
 
     
     int level() const { return level_; }
@@ -91,7 +90,7 @@ class LIBPROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
 
    private:
     
-    google::protobuf::scoped_ptr<BaseElement> parent_;
+    std::unique_ptr<BaseElement> parent_;
 
     
     
@@ -113,6 +112,8 @@ class LIBPROTOBUF_EXPORT StructuredObjectWriter : public ObjectWriter {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

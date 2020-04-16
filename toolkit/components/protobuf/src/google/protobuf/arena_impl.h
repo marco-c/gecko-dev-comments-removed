@@ -33,32 +33,37 @@
 #ifndef GOOGLE_PROTOBUF_ARENA_IMPL_H__
 #define GOOGLE_PROTOBUF_ARENA_IMPL_H__
 
+#include <atomic>
 #include <limits>
 
-#include <google/protobuf/stubs/atomic_sequence_num.h>
-#include <google/protobuf/stubs/atomicops.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/mutex.h>
-#include <google/protobuf/stubs/type_traits.h>
+
+#ifdef ADDRESS_SANITIZER
+#include <sanitizer/asan_interface.h>
+#endif  
+
+#include <google/protobuf/port_def.inc>
+
 
 namespace google {
-
 namespace protobuf {
 namespace internal {
 
 inline size_t AlignUpTo8(size_t n) {
   
-  return (n + 7) & -8;
+  return (n + 7) & static_cast<size_t>(-8);
 }
 
+using LifecycleId = int64_t;
 
 
 
 
 
 
-class LIBPROTOBUF_EXPORT ArenaImpl {
+
+class PROTOBUF_EXPORT ArenaImpl {
  public:
   struct Options {
     size_t start_block_size;
@@ -70,16 +75,24 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
 
     template <typename O>
     explicit Options(const O& options)
-      : start_block_size(options.start_block_size),
-        max_block_size(options.max_block_size),
-        initial_block(options.initial_block),
-        initial_block_size(options.initial_block_size),
-        block_alloc(options.block_alloc),
-        block_dealloc(options.block_dealloc) {}
+        : start_block_size(options.start_block_size),
+          max_block_size(options.max_block_size),
+          initial_block(options.initial_block),
+          initial_block_size(options.initial_block_size),
+          block_alloc(options.block_alloc),
+          block_dealloc(options.block_dealloc) {}
   };
 
   template <typename O>
   explicit ArenaImpl(const O& options) : options_(options) {
+    if (options_.initial_block != NULL && options_.initial_block_size > 0) {
+      GOOGLE_CHECK_GE(options_.initial_block_size, sizeof(Block))
+          << ": Initial block size too small for header.";
+      initial_block_ = reinterpret_cast<Block*>(options_.initial_block);
+    } else {
+      initial_block_ = NULL;
+    }
+
     Init();
   }
 
@@ -94,7 +107,27 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
   uint64 SpaceAllocated() const;
   uint64 SpaceUsed() const;
 
-  void* AllocateAligned(size_t n);
+  void* AllocateAligned(size_t n) {
+    SerialArena* arena;
+    if (PROTOBUF_PREDICT_TRUE(GetSerialArenaFast(&arena))) {
+      return arena->AllocateAligned(n);
+    } else {
+      return AllocateAlignedFallback(n);
+    }
+  }
+
+  
+  
+  
+  
+  
+  PROTOBUF_ALWAYS_INLINE bool MaybeAllocateAligned(size_t n, void** out) {
+    SerialArena* a;
+    if (PROTOBUF_PREDICT_TRUE(GetSerialArenaFromThreadCache(&a))) {
+      return a->MaybeAllocateAligned(n, out);
+    }
+    return false;
+  }
 
   void* AllocateAlignedAndAddCleanup(size_t n, void (*cleanup)(void*));
 
@@ -102,6 +135,10 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
   void AddCleanup(void* elem, void (*cleanup)(void*));
 
  private:
+  void* AllocateAlignedFallback(size_t n);
+  void* AllocateAlignedAndAddCleanupFallback(size_t n, void (*cleanup)(void*));
+  void AddCleanupFallback(void* elem, void (*cleanup)(void*));
+
   
   
   struct CleanupNode {
@@ -114,41 +151,140 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
     static size_t SizeOf(size_t i) {
       return sizeof(CleanupChunk) + (sizeof(CleanupNode) * (i - 1));
     }
-    size_t len;            
     size_t size;           
     CleanupChunk* next;    
     CleanupNode nodes[1];  
   };
 
+  class Block;
+
   
-  
-  struct Block {
-    void* owner;            
-    Block* next;            
-    CleanupChunk* cleanup;  
-                            
+  class PROTOBUF_EXPORT SerialArena {
+   public:
     
     
-    size_t pos;
-    size_t size;  
-    GOOGLE_ATTRIBUTE_ALWAYS_INLINE size_t avail() const { return size - pos; }
+    
+
+    
+    static SerialArena* New(Block* b, void* owner, ArenaImpl* arena);
+
+    
+    
+    static uint64 Free(SerialArena* serial, Block* initial_block,
+                       void (*block_dealloc)(void*, size_t));
+
+    void CleanupList();
+    uint64 SpaceUsed() const;
+
+    bool HasSpace(size_t n) { return n <= static_cast<size_t>(limit_ - ptr_); }
+
+    void* AllocateAligned(size_t n) {
+      GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
+      GOOGLE_DCHECK_GE(limit_, ptr_);
+      if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) {
+        return AllocateAlignedFallback(n);
+      }
+      void* ret = ptr_;
+      ptr_ += n;
+#ifdef ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(ret, n);
+#endif  
+      return ret;
+    }
+
+    
+    bool MaybeAllocateAligned(size_t n, void** out) {
+      GOOGLE_DCHECK_EQ(internal::AlignUpTo8(n), n);  
+      GOOGLE_DCHECK_GE(limit_, ptr_);
+      if (PROTOBUF_PREDICT_FALSE(!HasSpace(n))) return false;
+      void* ret = ptr_;
+      ptr_ += n;
+#ifdef ADDRESS_SANITIZER
+      ASAN_UNPOISON_MEMORY_REGION(ret, n);
+#endif  
+      *out = ret;
+      return true;
+    }
+
+    void AddCleanup(void* elem, void (*cleanup)(void*)) {
+      if (PROTOBUF_PREDICT_FALSE(cleanup_ptr_ == cleanup_limit_)) {
+        AddCleanupFallback(elem, cleanup);
+        return;
+      }
+      cleanup_ptr_->elem = elem;
+      cleanup_ptr_->cleanup = cleanup;
+      cleanup_ptr_++;
+    }
+
+    void* AllocateAlignedAndAddCleanup(size_t n, void (*cleanup)(void*)) {
+      void* ret = AllocateAligned(n);
+      AddCleanup(ret, cleanup);
+      return ret;
+    }
+
+    void* owner() const { return owner_; }
+    SerialArena* next() const { return next_; }
+    void set_next(SerialArena* next) { next_ = next; }
+
+   private:
+    void* AllocateAlignedFallback(size_t n);
+    void AddCleanupFallback(void* elem, void (*cleanup)(void*));
+    void CleanupListFallback();
+
+    ArenaImpl* arena_;       
+    void* owner_;            
+    Block* head_;            
+    CleanupChunk* cleanup_;  
+    SerialArena* next_;      
+
+    
+    
+    
+    char* ptr_;
+    char* limit_;
+
+    
+    CleanupNode* cleanup_ptr_;
+    CleanupNode* cleanup_limit_;
+  };
+
+  
+  
+  class PROTOBUF_EXPORT Block {
+   public:
+    Block(size_t size, Block* next);
+
+    char* Pointer(size_t n) {
+      GOOGLE_DCHECK(n <= size_);
+      return reinterpret_cast<char*>(this) + n;
+    }
+
+    Block* next() const { return next_; }
+    size_t pos() const { return pos_; }
+    size_t size() const { return size_; }
+    void set_pos(size_t pos) { pos_ = pos; }
+
+   private:
+    Block* next_;  
+    size_t pos_;
+    size_t size_;
     
   };
 
   struct ThreadCache {
+#if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
     
     
-    int64 last_lifecycle_id_seen;
-    Block* last_block_used_;
-  };
-
-  
-  
-  static const size_t kHeaderSize = (sizeof(Block) + 7) & -8;
-#if LANG_CXX11
-  static_assert(kHeaderSize % 8 == 0, "kHeaderSize must be a multiple of 8.");
+    
+    ThreadCache() : last_lifecycle_id_seen(-1), last_serial_arena(NULL) {}
 #endif
-  static google::protobuf::internal::SequenceNumber lifecycle_id_generator_;
+
+    
+    
+    LifecycleId last_lifecycle_id_seen;
+    SerialArena* last_serial_arena;
+  };
+  static std::atomic<LifecycleId> lifecycle_id_generator_;
 #if defined(GOOGLE_PROTOBUF_NO_THREADLOCAL)
   
   
@@ -167,48 +303,85 @@ class LIBPROTOBUF_EXPORT ArenaImpl {
 
   
   
-  uint64 FreeBlocks(Block* head);
-
-  void AddCleanupInBlock(Block* b, void* elem, void (*cleanup)(void*));
-  Block* ExpandCleanupList(Block* b);
+  uint64 FreeBlocks();
   
-  void CleanupList(Block* head);
-  uint64 ResetInternal();
+  void CleanupList();
 
-  inline void CacheBlock(Block* block) {
-    thread_cache().last_block_used_ = block;
+  inline void CacheSerialArena(SerialArena* serial) {
+    thread_cache().last_serial_arena = serial;
     thread_cache().last_lifecycle_id_seen = lifecycle_id_;
-    google::protobuf::internal::Release_Store(&hint_, reinterpret_cast<google::protobuf::internal::AtomicWord>(block));
+    
+    
+    
+
+    hint_.store(serial, std::memory_order_release);
   }
 
-  google::protobuf::internal::AtomicWord blocks_;       
-  google::protobuf::internal::AtomicWord hint_;         
-  uint64 space_allocated_;  
+  std::atomic<SerialArena*>
+      threads_;                     
+  std::atomic<SerialArena*> hint_;  
+  std::atomic<size_t> space_allocated_;  
 
-  bool owns_first_block_;  
-  mutable Mutex blocks_lock_;
+  Block* initial_block_;  
+                          
 
-  void AddBlock(Block* b);
-  
-  
-  void AddBlockInternal(Block* b);
-  
-  Block* GetBlock(size_t n);
-  Block* GetBlockSlow(void* me, Block* my_full_block, size_t n);
-  Block* FindBlock(void* me);
-  Block* NewBlock(void* me, Block* my_last_block, size_t min_bytes,
-                  size_t start_block_size, size_t max_block_size);
-  static void* AllocFromBlock(Block* b, size_t n);
+  Block* NewBlock(Block* last_block, size_t min_bytes);
 
-  int64 lifecycle_id_;  
+  SerialArena* GetSerialArena();
+  PROTOBUF_ALWAYS_INLINE bool GetSerialArenaFast(SerialArena** arena) {
+    if (GetSerialArenaFromThreadCache(arena)) return true;
+
+    
+    
+    ThreadCache* tc = &thread_cache();
+    SerialArena* serial = hint_.load(std::memory_order_acquire);
+    if (PROTOBUF_PREDICT_TRUE(serial != NULL && serial->owner() == tc)) {
+      *arena = serial;
+      return true;
+    }
+    return false;
+  }
+
+  PROTOBUF_ALWAYS_INLINE bool GetSerialArenaFromThreadCache(
+      SerialArena** arena) {
+    
+    
+    
+    ThreadCache* tc = &thread_cache();
+    if (PROTOBUF_PREDICT_TRUE(tc->last_lifecycle_id_seen == lifecycle_id_)) {
+      *arena = tc->last_serial_arena;
+      return true;
+    }
+    return false;
+  }
+  SerialArena* GetSerialArenaFallback(void* me);
+  LifecycleId lifecycle_id_;  
 
   Options options_;
 
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ArenaImpl);
+  
+  
+  ArenaImpl(ArenaImpl&&) = delete;
+  ArenaImpl& operator=(ArenaImpl&&) = delete;
+
+ public:
+  
+  
+  static const size_t kBlockHeaderSize =
+      (sizeof(Block) + 7) & static_cast<size_t>(-8);
+  static const size_t kSerialArenaSize =
+      (sizeof(SerialArena) + 7) & static_cast<size_t>(-8);
+  static_assert(kBlockHeaderSize % 8 == 0,
+                "kBlockHeaderSize must be a multiple of 8.");
+  static_assert(kSerialArenaSize % 8 == 0,
+                "kSerialArenaSize must be a multiple of 8.");
 };
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

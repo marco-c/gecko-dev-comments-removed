@@ -32,14 +32,15 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_JSON_OBJECTWRITER_H__
 
 #include <memory>
-#ifndef _SHARED_PTR_H
-#include <google/protobuf/stubs/shared_ptr.h>
-#endif
 #include <string>
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/util/internal/structured_objectwriter.h>
 #include <google/protobuf/stubs/bytestream.h>
+
+
+#include <google/protobuf/port_def.inc>
+
 
 namespace google {
 namespace protobuf {
@@ -85,50 +86,61 @@ namespace converter {
 
 
 
-class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
+
+class PROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
  public:
-  JsonObjectWriter(StringPiece indent_string,
-                   google::protobuf::io::CodedOutputStream* out)
-      : element_(new Element(NULL)),
+  JsonObjectWriter(StringPiece indent_string, io::CodedOutputStream* out)
+      : element_(new Element(nullptr, false)),
         stream_(out),
         sink_(out),
-        indent_string_(indent_string.ToString()),
-        use_websafe_base64_for_bytes_(false),
-        empty_name_ok_for_next_key_(false) {}
+        indent_string_(indent_string),
+        indent_char_('\0'),
+        indent_count_(0),
+        use_websafe_base64_for_bytes_(false) {
+    
+    if (!indent_string.empty()) {
+      indent_char_ = indent_string[0];
+      indent_count_ = indent_string.length();
+      for (int i = 1; i < indent_string.length(); i++) {
+        if (indent_char_ != indent_string_[i]) {
+          indent_char_ = '\0';
+          indent_count_ = 0;
+          break;
+        }
+      }
+    }
+  }
   virtual ~JsonObjectWriter();
 
   
-  virtual JsonObjectWriter* StartObject(StringPiece name);
-  virtual JsonObjectWriter* EndObject();
-  virtual JsonObjectWriter* StartList(StringPiece name);
-  virtual JsonObjectWriter* EndList();
-  virtual JsonObjectWriter* RenderBool(StringPiece name, bool value);
-  virtual JsonObjectWriter* RenderInt32(StringPiece name, int32 value);
-  virtual JsonObjectWriter* RenderUint32(StringPiece name, uint32 value);
-  virtual JsonObjectWriter* RenderInt64(StringPiece name, int64 value);
-  virtual JsonObjectWriter* RenderUint64(StringPiece name, uint64 value);
-  virtual JsonObjectWriter* RenderDouble(StringPiece name, double value);
-  virtual JsonObjectWriter* RenderFloat(StringPiece name, float value);
-  virtual JsonObjectWriter* RenderString(StringPiece name, StringPiece value);
-  virtual JsonObjectWriter* RenderBytes(StringPiece name, StringPiece value);
-  virtual JsonObjectWriter* RenderNull(StringPiece name);
+  JsonObjectWriter* StartObject(StringPiece name) override;
+  JsonObjectWriter* EndObject() override;
+  JsonObjectWriter* StartList(StringPiece name) override;
+  JsonObjectWriter* EndList() override;
+  JsonObjectWriter* RenderBool(StringPiece name, bool value) override;
+  JsonObjectWriter* RenderInt32(StringPiece name, int32 value) override;
+  JsonObjectWriter* RenderUint32(StringPiece name, uint32 value) override;
+  JsonObjectWriter* RenderInt64(StringPiece name, int64 value) override;
+  JsonObjectWriter* RenderUint64(StringPiece name, uint64 value) override;
+  JsonObjectWriter* RenderDouble(StringPiece name, double value) override;
+  JsonObjectWriter* RenderFloat(StringPiece name, float value) override;
+  JsonObjectWriter* RenderString(StringPiece name,
+                                 StringPiece value) override;
+  JsonObjectWriter* RenderBytes(StringPiece name, StringPiece value) override;
+  JsonObjectWriter* RenderNull(StringPiece name) override;
   virtual JsonObjectWriter* RenderNullAsEmpty(StringPiece name);
 
   void set_use_websafe_base64_for_bytes(bool value) {
     use_websafe_base64_for_bytes_ = value;
   }
 
-  
-  
-  
-  virtual void empty_name_ok_for_next_key() {
-    empty_name_ok_for_next_key_ = true;
-  }
-
  protected:
-  class LIBPROTOBUF_EXPORT Element : public BaseElement {
+  class PROTOBUF_EXPORT Element : public BaseElement {
    public:
-    explicit Element(Element* parent) : BaseElement(parent), is_first_(true) {}
+    Element(Element* parent, bool is_json_object)
+        : BaseElement(parent),
+          is_first_(true),
+          is_json_object_(is_json_object) {}
 
     
     
@@ -140,28 +152,32 @@ class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
       return false;
     }
 
+    
+    
+    bool is_json_object() const { return is_json_object_; }
+
    private:
     bool is_first_;
+    bool is_json_object_;
 
     GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(Element);
   };
 
-  virtual Element* element() { return element_.get(); }
+  Element* element() override { return element_.get(); }
 
  private:
-  class LIBPROTOBUF_EXPORT ByteSinkWrapper : public strings::ByteSink {
+  class PROTOBUF_EXPORT ByteSinkWrapper : public strings::ByteSink {
    public:
-    explicit ByteSinkWrapper(google::protobuf::io::CodedOutputStream* stream)
-        : stream_(stream) {}
-    virtual ~ByteSinkWrapper() {}
+    explicit ByteSinkWrapper(io::CodedOutputStream* stream) : stream_(stream) {}
+    ~ByteSinkWrapper() override {}
 
     
-    virtual void Append(const char* bytes, size_t n) {
+    void Append(const char* bytes, size_t n) override {
       stream_->WriteRaw(bytes, n);
     }
 
    private:
-    google::protobuf::io::CodedOutputStream* stream_;
+    io::CodedOutputStream* stream_;
 
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ByteSinkWrapper);
   };
@@ -169,14 +185,22 @@ class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
   
   
   
-  JsonObjectWriter* RenderSimple(StringPiece name, const string& value) {
+  JsonObjectWriter* RenderSimple(StringPiece name,
+                                 StringPiece value) {
     WritePrefix(name);
-    stream_->WriteString(value);
+    WriteRawString(value);
     return this;
   }
 
   
-  void Push() { element_.reset(new Element(element_.release())); }
+  void PushArray() {
+    element_.reset(new Element(element_.release(), false));
+  }
+
+  
+  void PushObject() {
+    element_.reset(new Element(element_.release(), true));
+  }
 
   
   void Pop() {
@@ -189,9 +213,25 @@ class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
   
   void NewLine() {
     if (!indent_string_.empty()) {
-      WriteChar('\n');
-      for (int i = 0; i < element()->level(); i++) {
-        stream_->WriteString(indent_string_);
+      size_t len = sizeof('\n') + (indent_string_.size() * element()->level());
+
+      
+      
+      
+      uint8* out = nullptr;
+      if (indent_count_ > 0) {
+        out = stream_->GetDirectBufferForNBytesAndAdvance(len);
+      }
+
+      if (out != nullptr) {
+        out[0] = '\n';
+        memset(&out[1], indent_char_, len - 1);
+      } else {
+        
+        WriteChar('\n');
+        for (int i = 0; i < element()->level(); i++) {
+          stream_->WriteRaw(indent_string_.c_str(), indent_string_.length());
+        }
       }
     }
   }
@@ -205,22 +245,22 @@ class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
   void WriteChar(const char c) { stream_->WriteRaw(&c, sizeof(c)); }
 
   
-  
-  bool GetAndResetEmptyKeyOk();
+  void WriteRawString(StringPiece s) {
+    stream_->WriteRaw(s.data(), s.length());
+  }
 
-  google::protobuf::scoped_ptr<Element> element_;
-  google::protobuf::io::CodedOutputStream* stream_;
+  std::unique_ptr<Element> element_;
+  io::CodedOutputStream* stream_;
   ByteSinkWrapper sink_;
-  const string indent_string_;
+  const std::string indent_string_;
+
+  
+  char indent_char_;
+  int indent_count_;
 
   
   
   bool use_websafe_base64_for_bytes_;
-
-  
-  
-  
-  bool empty_name_ok_for_next_key_;
 
   GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(JsonObjectWriter);
 };
@@ -228,6 +268,8 @@ class LIBPROTOBUF_EXPORT JsonObjectWriter : public StructuredObjectWriter {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

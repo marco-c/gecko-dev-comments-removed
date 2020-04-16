@@ -32,12 +32,20 @@
 #define GOOGLE_PROTOBUF_ARENASTRING_H__
 
 #include <string>
+#include <type_traits>
+#include <utility>
 
 #include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/fastmem.h>
 #include <google/protobuf/arena.h>
+#include <google/protobuf/port.h>
 
+#include <google/protobuf/port_def.inc>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
 
 
 
@@ -52,9 +60,21 @@ namespace google {
 namespace protobuf {
 namespace internal {
 
-struct LIBPROTOBUF_EXPORT ArenaStringPtr {
+template <typename T>
+class TaggedPtr {
+ public:
+  void Set(T* p) { ptr_ = reinterpret_cast<uintptr_t>(p); }
+  T* Get() const { return reinterpret_cast<T*>(ptr_); }
+
+  bool IsNull() { return ptr_ == 0; }
+
+ private:
+  uintptr_t ptr_;
+};
+
+struct PROTOBUF_EXPORT ArenaStringPtr {
   inline void Set(const ::std::string* default_value,
-                  const ::std::string& value, ::google::protobuf::Arena* arena) {
+                  const ::std::string& value, Arena* arena) {
     if (ptr_ == default_value) {
       CreateInstance(arena, &value);
     } else {
@@ -62,11 +82,16 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
     }
   }
 
+  inline void SetLite(const ::std::string* default_value,
+                      const ::std::string& value, Arena* arena) {
+    Set(default_value, value, arena);
+  }
+
   
   inline const ::std::string& Get() const { return *ptr_; }
 
   inline ::std::string* Mutable(const ::std::string* default_value,
-                           ::google::protobuf::Arena* arena) {
+                                Arena* arena) {
     if (ptr_ == default_value) {
       CreateInstance(arena, default_value);
     }
@@ -78,18 +103,26 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   
   inline ::std::string* Release(const ::std::string* default_value,
-                           ::google::protobuf::Arena* arena) {
+                                Arena* arena) {
     if (ptr_ == default_value) {
       return NULL;
     }
+    return ReleaseNonDefault(default_value, arena);
+  }
+
+  
+  inline ::std::string* ReleaseNonDefault(const ::std::string* default_value,
+                                          Arena* arena) {
+    GOOGLE_DCHECK(!IsDefault(default_value));
     ::std::string* released = NULL;
     if (arena != NULL) {
       
-      released = new ::std::string(*ptr_);
+      released = new ::std::string;
+      released->swap(*ptr_);
     } else {
       released = ptr_;
     }
-    ptr_ = const_cast< ::std::string* >(default_value);
+    ptr_ = const_cast< ::std::string*>(default_value);
     return released;
   }
 
@@ -99,12 +132,12 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   
   inline ::std::string* UnsafeArenaRelease(const ::std::string* default_value,
-                                      ::google::protobuf::Arena* ) {
+                                           Arena* ) {
     if (ptr_ == default_value) {
       return NULL;
     }
     ::std::string* released = ptr_;
-    ptr_ = const_cast< ::std::string* >(default_value);
+    ptr_ = const_cast< ::std::string*>(default_value);
     return released;
   }
 
@@ -112,7 +145,7 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   
   inline void SetAllocated(const ::std::string* default_value,
-                           ::std::string* value, ::google::protobuf::Arena* arena) {
+                           ::std::string* value, Arena* arena) {
     if (arena == NULL && ptr_ != default_value) {
       Destroy(default_value, arena);
     }
@@ -122,7 +155,7 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
         arena->Own(value);
       }
     } else {
-      ptr_ = const_cast< ::std::string* >(default_value);
+      ptr_ = const_cast< ::std::string*>(default_value);
     }
   }
 
@@ -132,24 +165,49 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   inline void UnsafeArenaSetAllocated(const ::std::string* default_value,
                                       ::std::string* value,
-                                      ::google::protobuf::Arena* ) {
+                                      Arena* ) {
     if (value != NULL) {
       ptr_ = value;
     } else {
-      ptr_ = const_cast< ::std::string* >(default_value);
+      ptr_ = const_cast< ::std::string*>(default_value);
     }
   }
 
   
   
   
-  GOOGLE_ATTRIBUTE_ALWAYS_INLINE void Swap(ArenaStringPtr* other) {
+  PROTOBUF_ALWAYS_INLINE void Swap(ArenaStringPtr* other) {
     std::swap(ptr_, other->ptr_);
+  }
+  PROTOBUF_ALWAYS_INLINE void Swap(ArenaStringPtr* other,
+                                   const ::std::string* default_value,
+                                   Arena* arena) {
+#ifndef NDEBUG
+    
+    
+    
+    
+    
+    
+    
+    
+    if (IsDefault(default_value) && other->IsDefault(default_value)) {
+      return;
+    }
+
+    ::std::string* this_ptr = Mutable(default_value, arena);
+    ::std::string* other_ptr = other->Mutable(default_value, arena);
+
+    this_ptr->swap(*other_ptr);
+#else
+    std::swap(ptr_, other->ptr_);
+    (void)default_value;
+    (void)arena;
+#endif
   }
 
   
-  inline void Destroy(const ::std::string* default_value,
-                      ::google::protobuf::Arena* arena) {
+  inline void Destroy(const ::std::string* default_value, Arena* arena) {
     if (arena == NULL && ptr_ != default_value) {
       delete ptr_;
     }
@@ -160,7 +218,7 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   
   inline void ClearToEmpty(const ::std::string* default_value,
-                           ::google::protobuf::Arena* ) {
+                           Arena* ) {
     if (ptr_ == default_value) {
       
     } else {
@@ -170,9 +228,14 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
 
   
   
+  inline void ClearNonDefaultToEmpty() { ptr_->clear(); }
+  inline void ClearNonDefaultToEmptyNoArena() { ptr_->clear(); }
+
+  
+  
   
   inline void ClearToDefault(const ::std::string* default_value,
-                             ::google::protobuf::Arena* ) {
+                             Arena* ) {
     if (ptr_ == default_value) {
       
     } else {
@@ -191,7 +254,7 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   inline void UnsafeSetDefault(const ::std::string* default_value) {
     
     
-    ptr_ = const_cast< ::std::string* >(default_value);
+    ptr_ = const_cast< ::std::string*>(default_value);
   }
 
   
@@ -210,7 +273,6 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
     }
   }
 
-#if LANG_CXX11
   void SetNoArena(const ::std::string* default_value, ::std::string&& value) {
     if (IsDefault(default_value)) {
       ptr_ = new ::std::string(std::move(value));
@@ -218,9 +280,9 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
       *ptr_ = std::move(value);
     }
   }
-#endif
 
-  void AssignWithDefault(const ::std::string* default_value, ArenaStringPtr value);
+  void AssignWithDefault(const ::std::string* default_value,
+                         ArenaStringPtr value);
 
   inline const ::std::string& GetNoArena() const { return *ptr_; }
 
@@ -235,10 +297,16 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
     if (ptr_ == default_value) {
       return NULL;
     } else {
-      ::std::string* released = ptr_;
-      ptr_ = const_cast< ::std::string* >(default_value);
-      return released;
+      return ReleaseNonDefaultNoArena(default_value);
     }
+  }
+
+  inline ::std::string* ReleaseNonDefaultNoArena(
+      const ::std::string* default_value) {
+    GOOGLE_DCHECK(!IsDefault(default_value));
+    ::std::string* released = ptr_;
+    ptr_ = const_cast< ::std::string*>(default_value);
+    return released;
   }
 
   inline void SetAllocatedNoArena(const ::std::string* default_value,
@@ -249,7 +317,7 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
     if (value != NULL) {
       ptr_ = value;
     } else {
-      ptr_ = const_cast< ::std::string* >(default_value);
+      ptr_ = const_cast< ::std::string*>(default_value);
     }
   }
 
@@ -280,26 +348,32 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
   
   
   
-  inline ::std::string** UnsafeRawStringPointer() {
-    return &ptr_;
-  }
+  inline ::std::string** UnsafeRawStringPointer() { return &ptr_; }
 
   inline bool IsDefault(const ::std::string* default_value) const {
     return ptr_ == default_value;
   }
 
+  
+  void UnsafeSetTaggedPointer(TaggedPtr< ::std::string> value) {
+    ptr_ = value.Get();
+  }
+  
+  
+  
+  ::std::string* UnsafeMutablePointer() { return ptr_; }
+
  private:
   ::std::string* ptr_;
 
-  GOOGLE_ATTRIBUTE_NOINLINE void CreateInstance(::google::protobuf::Arena* arena,
-                                         const ::std::string* initial_value) {
+  PROTOBUF_NOINLINE
+  void CreateInstance(Arena* arena, const ::std::string* initial_value) {
     GOOGLE_DCHECK(initial_value != NULL);
-    ptr_ = new ::std::string(*initial_value);
-    if (arena != NULL) {
-      arena->Own(ptr_);
-    }
+    
+    ptr_ = Arena::Create< ::std::string>(arena, *initial_value);
   }
-  GOOGLE_ATTRIBUTE_NOINLINE void CreateInstanceNoArena(const ::std::string* initial_value) {
+  PROTOBUF_NOINLINE
+  void CreateInstanceNoArena(const ::std::string* initial_value) {
     GOOGLE_DCHECK(initial_value != NULL);
     ptr_ = new ::std::string(*initial_value);
   }
@@ -308,13 +382,11 @@ struct LIBPROTOBUF_EXPORT ArenaStringPtr {
 }  
 }  
 
-
-
 namespace protobuf {
 namespace internal {
 
-inline void ArenaStringPtr::AssignWithDefault(const ::std::string* default_value,
-                                       ArenaStringPtr value) {
+inline void ArenaStringPtr::AssignWithDefault(
+    const ::std::string* default_value, ArenaStringPtr value) {
   const ::std::string* me = *UnsafeRawStringPointer();
   const ::std::string* other = *value.UnsafeRawStringPointer();
   
@@ -325,6 +397,9 @@ inline void ArenaStringPtr::AssignWithDefault(const ::std::string* default_value
 
 }  
 }  
-
 }  
+
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

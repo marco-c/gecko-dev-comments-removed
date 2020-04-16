@@ -447,7 +447,7 @@ LookupOrInsertNew(Collection* const collection,
   std::pair<typename Collection::iterator, bool> ret =
       collection->insert(typename Collection::value_type(
           key,
-          static_cast<typename Collection::value_type::second_type>(NULL)));
+          static_cast<typename Collection::value_type::second_type>(nullptr)));
   if (ret.second) {
     ret.first->second = new Element();
   }
@@ -466,7 +466,7 @@ LookupOrInsertNew(Collection* const collection,
   std::pair<typename Collection::iterator, bool> ret =
       collection->insert(typename Collection::value_type(
           key,
-          static_cast<typename Collection::value_type::second_type>(NULL)));
+          static_cast<typename Collection::value_type::second_type>(nullptr)));
   if (ret.second) {
     ret.first->second = new Element(arg);
   }
@@ -620,12 +620,11 @@ bool UpdateReturnCopy(Collection* const collection,
 
 
 template <class Collection>
-typename Collection::value_type::second_type* const
-InsertOrReturnExisting(Collection* const collection,
-                       const typename Collection::value_type& vt) {
+typename Collection::value_type::second_type* InsertOrReturnExisting(
+    Collection* const collection, const typename Collection::value_type& vt) {
   std::pair<typename Collection::iterator, bool> ret = collection->insert(vt);
   if (ret.second) {
-    return NULL;  
+    return nullptr;  
   } else {
     return &ret.first->second;  
   }
@@ -633,8 +632,7 @@ InsertOrReturnExisting(Collection* const collection,
 
 
 template <class Collection>
-typename Collection::value_type::second_type* const
-InsertOrReturnExisting(
+typename Collection::value_type::second_type* InsertOrReturnExisting(
     Collection* const collection,
     const typename Collection::value_type::first_type& key,
     const typename Collection::value_type::second_type& data) {
@@ -658,13 +656,14 @@ InsertOrReturnExisting(
 
 
 
+
 template <class Collection>
 typename Collection::value_type::second_type EraseKeyReturnValuePtr(
     Collection* const collection,
     const typename Collection::value_type::first_type& key) {
   typename Collection::iterator it = collection->find(key);
   if (it == collection->end()) {
-    return NULL;
+    return nullptr;
   }
   typename Collection::value_type::second_type v = it->second;
   collection->erase(it);
@@ -678,7 +677,7 @@ typename Collection::value_type::second_type EraseKeyReturnValuePtr(
 template <class MapContainer, class KeyContainer>
 void InsertKeysFromMap(const MapContainer& map_container,
                        KeyContainer* key_container) {
-  GOOGLE_CHECK(key_container != NULL);
+  GOOGLE_CHECK(key_container != nullptr);
   for (typename MapContainer::const_iterator it = map_container.begin();
        it != map_container.end(); ++it) {
     key_container->insert(it->first);
@@ -692,7 +691,7 @@ void InsertKeysFromMap(const MapContainer& map_container,
 template <class MapContainer, class KeyContainer>
 void AppendKeysFromMap(const MapContainer& map_container,
                        KeyContainer* key_container) {
-  GOOGLE_CHECK(key_container != NULL);
+  GOOGLE_CHECK(key_container != nullptr);
   for (typename MapContainer::const_iterator it = map_container.begin();
        it != map_container.end(); ++it) {
     key_container->push_back(it->first);
@@ -708,8 +707,8 @@ void AppendKeysFromMap(const MapContainer& map_container,
 
 template <class MapContainer, class KeyType>
 void AppendKeysFromMap(const MapContainer& map_container,
-                       vector<KeyType>* key_container) {
-  GOOGLE_CHECK(key_container != NULL);
+                       std::vector<KeyType>* key_container) {
+  GOOGLE_CHECK(key_container != nullptr);
   
   
   
@@ -736,7 +735,7 @@ void AppendKeysFromMap(const MapContainer& map_container,
 template <class MapContainer, class ValueContainer>
 void AppendValuesFromMap(const MapContainer& map_container,
                          ValueContainer* value_container) {
-  GOOGLE_CHECK(value_container != NULL);
+  GOOGLE_CHECK(value_container != nullptr);
   for (typename MapContainer::const_iterator it = map_container.begin();
        it != map_container.end(); ++it) {
     value_container->push_back(it->second);
@@ -752,8 +751,8 @@ void AppendValuesFromMap(const MapContainer& map_container,
 
 template <class MapContainer, class ValueType>
 void AppendValuesFromMap(const MapContainer& map_container,
-                         vector<ValueType>* value_container) {
-  GOOGLE_CHECK(value_container != NULL);
+                         std::vector<ValueType>* value_container) {
+  GOOGLE_CHECK(value_container != nullptr);
   
   if (value_container->empty()) {
     value_container->reserve(map_container.size());

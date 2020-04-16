@@ -35,6 +35,8 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 namespace util {
@@ -42,12 +44,12 @@ namespace converter {
 
 
 
-class LIBPROTOBUF_EXPORT LocationTrackerInterface {
+class PROTOBUF_EXPORT LocationTrackerInterface {
  public:
   virtual ~LocationTrackerInterface() {}
 
   
-  virtual string ToString() const = 0;
+  virtual std::string ToString() const = 0;
 
  protected:
   LocationTrackerInterface() {}
@@ -60,6 +62,8 @@ class LIBPROTOBUF_EXPORT LocationTrackerInterface {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

@@ -101,8 +101,14 @@
 #define GOOGLE_PROTOBUF_SERVICE_H__
 
 #include <string>
-#include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/callback.h>
+#include <google/protobuf/stubs/common.h>
+
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -113,17 +119,17 @@ class RpcController;
 class RpcChannel;
 
 
-class Descriptor;            
-class ServiceDescriptor;     
-class MethodDescriptor;      
-class Message;               
+class Descriptor;         
+class ServiceDescriptor;  
+class MethodDescriptor;   
+class Message;            
 
 
 
 
 
 
-class LIBPROTOBUF_EXPORT Service {
+class PROTOBUF_EXPORT Service {
  public:
   inline Service() {}
   virtual ~Service();
@@ -131,10 +137,7 @@ class LIBPROTOBUF_EXPORT Service {
   
   
   
-  enum ChannelOwnership {
-    STUB_OWNS_CHANNEL,
-    STUB_DOESNT_OWN_CHANNEL
-  };
+  enum ChannelOwnership { STUB_OWNS_CHANNEL, STUB_DOESNT_OWN_CHANNEL };
 
   
   virtual const ServiceDescriptor* GetDescriptor() = 0;
@@ -165,10 +168,8 @@ class LIBPROTOBUF_EXPORT Service {
   
   
   virtual void CallMethod(const MethodDescriptor* method,
-                          RpcController* controller,
-                          const Message* request,
-                          Message* response,
-                          Closure* done) = 0;
+                          RpcController* controller, const Message* request,
+                          Message* response, Closure* done) = 0;
 
   
   
@@ -184,9 +185,9 @@ class LIBPROTOBUF_EXPORT Service {
   
   
   virtual const Message& GetRequestPrototype(
-    const MethodDescriptor* method) const = 0;
+      const MethodDescriptor* method) const = 0;
   virtual const Message& GetResponsePrototype(
-    const MethodDescriptor* method) const = 0;
+      const MethodDescriptor* method) const = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Service);
@@ -200,7 +201,7 @@ class LIBPROTOBUF_EXPORT Service {
 
 
 
-class LIBPROTOBUF_EXPORT RpcController {
+class PROTOBUF_EXPORT RpcController {
  public:
   inline RpcController() {}
   virtual ~RpcController();
@@ -220,7 +221,7 @@ class LIBPROTOBUF_EXPORT RpcController {
   virtual bool Failed() const = 0;
 
   
-  virtual string ErrorText() const = 0;
+  virtual std::string ErrorText() const = 0;
 
   
   
@@ -238,7 +239,7 @@ class LIBPROTOBUF_EXPORT RpcController {
   
   
   
-  virtual void SetFailed(const string& reason) = 0;
+  virtual void SetFailed(const std::string& reason) = 0;
 
   
   
@@ -266,7 +267,7 @@ class LIBPROTOBUF_EXPORT RpcController {
 
 
 
-class LIBPROTOBUF_EXPORT RpcChannel {
+class PROTOBUF_EXPORT RpcChannel {
  public:
   inline RpcChannel() {}
   virtual ~RpcChannel();
@@ -277,16 +278,16 @@ class LIBPROTOBUF_EXPORT RpcChannel {
   
   
   virtual void CallMethod(const MethodDescriptor* method,
-                          RpcController* controller,
-                          const Message* request,
-                          Message* response,
-                          Closure* done) = 0;
+                          RpcController* controller, const Message* request,
+                          Message* response, Closure* done) = 0;
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(RpcChannel);
 };
 
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

@@ -35,28 +35,31 @@
 
 #include <string>
 
-#include <google/protobuf/descriptor.h>
 #include <google/protobuf/field_mask.pb.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/descriptor.h>
+#include <google/protobuf/stubs/strutil.h>
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
 namespace util {
 
-class LIBPROTOBUF_EXPORT FieldMaskUtil {
+class PROTOBUF_EXPORT FieldMaskUtil {
   typedef google::protobuf::FieldMask FieldMask;
 
  public:
   
   
-  static string ToString(const FieldMask& mask);
+  static std::string ToString(const FieldMask& mask);
   static void FromString(StringPiece str, FieldMask* out);
 
   
   
   
   
-  static bool ToJsonString(const FieldMask& mask, string* out);
+  static bool ToJsonString(const FieldMask& mask, std::string* out);
   static bool FromJsonString(StringPiece str, FieldMask* out);
 
   
@@ -70,14 +73,14 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
   
   template <typename T>
   static bool IsValidPath(StringPiece path) {
-    return GetFieldDescriptors(T::descriptor(), path, NULL);
+    return GetFieldDescriptors(T::descriptor(), path, nullptr);
   }
 
   
   template <typename T>
   static bool IsValidFieldMask(const FieldMask& mask) {
     for (int i = 0; i < mask.paths_size(); ++i) {
-      if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), NULL))
+      if (!GetFieldDescriptors(T::descriptor(), mask.paths(i), nullptr))
         return false;
     }
     return true;
@@ -94,9 +97,20 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
   
   
   template <typename T>
-  static void GetFieldMaskForAllFields(FieldMask* out) {
-    InternalGetFieldMaskForAllFields(T::descriptor(), out);
+  static FieldMask GetFieldMaskForAllFields() {
+    FieldMask out;
+    GetFieldMaskForAllFields(T::descriptor(), &out);
+    return out;
   }
+  template <typename T>
+  PROTOBUF_DEPRECATED_MSG("Use *out = GetFieldMaskForAllFields() instead")
+  static void GetFieldMaskForAllFields(FieldMask* out) {
+    GetFieldMaskForAllFields(T::descriptor(), out);
+  }
+  
+  
+  static void GetFieldMaskForAllFields(const Descriptor* descriptor,
+                                       FieldMask* out);
 
   
   
@@ -114,12 +128,23 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
                         FieldMask* out);
 
   
+  template <typename T>
+  static void Subtract(const FieldMask& mask1, const FieldMask& mask2,
+                       FieldMask* out) {
+    Subtract(T::descriptor(), mask1, mask2, out);
+  }
+  
+  
+  static void Subtract(const Descriptor* descriptor, const FieldMask& mask1,
+                       const FieldMask& mask2, FieldMask* out);
+
+  
+  
+  
   
   static bool IsPathInFieldMask(StringPiece path, const FieldMask& mask);
 
   class MergeOptions;
-  
-  
   
   static void MergeMessageTo(const Message& source, const FieldMask& mask,
                              const MergeOptions& options, Message* destination);
@@ -127,12 +152,14 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
   class TrimOptions;
   
   
-  static void TrimMessage(const FieldMask& mask, Message* message);
+  
+  static bool TrimMessage(const FieldMask& mask, Message* message);
 
   
   
   
-  static void TrimMessage(const FieldMask& mask, Message* message,
+  
+  static bool TrimMessage(const FieldMask& mask, Message* message,
                           const TrimOptions& options);
 
  private:
@@ -150,7 +177,8 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
   
   
   
-  static bool SnakeCaseToCamelCase(StringPiece input, string* output);
+  static bool SnakeCaseToCamelCase(StringPiece input,
+                                   std::string* output);
   
   
   
@@ -163,17 +191,11 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil {
   
   
   
-  static bool CamelCaseToSnakeCase(StringPiece input, string* output);
-
-  static void InternalGetFieldMaskForAllFields(const Descriptor* descriptor,
-                                               FieldMask* out);
+  static bool CamelCaseToSnakeCase(StringPiece input,
+                                   std::string* output);
 };
 
-
-
-
-
-class LIBPROTOBUF_EXPORT FieldMaskUtil::MergeOptions {
+class PROTOBUF_EXPORT FieldMaskUtil::MergeOptions {
  public:
   MergeOptions()
       : replace_message_fields_(false), replace_repeated_fields_(false) {}
@@ -201,17 +223,14 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil::MergeOptions {
   bool replace_repeated_fields_;
 };
 
-class LIBPROTOBUF_EXPORT FieldMaskUtil::TrimOptions {
+class PROTOBUF_EXPORT FieldMaskUtil::TrimOptions {
  public:
-  TrimOptions()
-      : keep_required_fields_(false) {}
+  TrimOptions() : keep_required_fields_(false) {}
   
   
   
   
-  void set_keep_required_fields(bool value) {
-    keep_required_fields_ = value;
-  }
+  void set_keep_required_fields(bool value) { keep_required_fields_ = value; }
   bool keep_required_fields() const { return keep_required_fields_; }
 
  private:
@@ -220,6 +239,8 @@ class LIBPROTOBUF_EXPORT FieldMaskUtil::TrimOptions {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

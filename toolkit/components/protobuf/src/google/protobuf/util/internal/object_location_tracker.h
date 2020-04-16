@@ -47,10 +47,10 @@ class ObjectLocationTracker : public LocationTrackerInterface {
   
   ObjectLocationTracker() {}
 
-  virtual ~ObjectLocationTracker() {}
+  ~ObjectLocationTracker() override {}
 
   
-  virtual string ToString() const { return ""; }
+  std::string ToString() const override { return ""; }
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ObjectLocationTracker);
@@ -59,6 +59,6 @@ class ObjectLocationTracker : public LocationTrackerInterface {
 }  
 }  
 }  
-
 }  
+
 #endif  

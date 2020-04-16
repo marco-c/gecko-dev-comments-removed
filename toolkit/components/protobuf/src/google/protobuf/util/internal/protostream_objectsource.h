@@ -32,27 +32,24 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_PROTOSTREAM_OBJECTSOURCE_H__
 
 #include <functional>
-#include <google/protobuf/stubs/hash.h>
 #include <string>
+#include <unordered_map>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/type.pb.h>
+#include <google/protobuf/util/internal/type_info.h>
 #include <google/protobuf/util/internal/object_source.h>
 #include <google/protobuf/util/internal/object_writer.h>
-#include <google/protobuf/util/internal/type_info.h>
 #include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
+#include <google/protobuf/stubs/hash.h>
 #include <google/protobuf/stubs/status.h>
 #include <google/protobuf/stubs/statusor.h>
 
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
-namespace protobuf {
-class Field;
-class Type;
-}  
-
-
 namespace protobuf {
 namespace util {
 namespace converter {
@@ -72,15 +69,16 @@ class TypeInfo;
 
 
 
-class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
+class PROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
  public:
-  ProtoStreamObjectSource(google::protobuf::io::CodedInputStream* stream,
+  ProtoStreamObjectSource(io::CodedInputStream* stream,
                           TypeResolver* type_resolver,
                           const google::protobuf::Type& type);
 
-  virtual ~ProtoStreamObjectSource();
+  ~ProtoStreamObjectSource() override;
 
-  virtual util::Status NamedWriteTo(StringPiece name, ObjectWriter* ow) const;
+  util::Status NamedWriteTo(StringPiece name,
+                              ObjectWriter* ow) const override;
 
   
   
@@ -134,7 +132,8 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   
   virtual util::Status WriteMessage(const google::protobuf::Type& descriptor,
-                                      StringPiece name, const uint32 end_tag,
+                                      StringPiece name,
+                                      const uint32 end_tag,
                                       bool include_start_and_end,
                                       ObjectWriter* ow) const;
 
@@ -142,26 +141,27 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   
   virtual util::StatusOr<uint32> RenderList(
-      const google::protobuf::Field* field, StringPiece name, uint32 list_tag,
-      ObjectWriter* ow) const;
+      const google::protobuf::Field* field, StringPiece name,
+      uint32 list_tag, ObjectWriter* ow) const;
 
   
   const google::protobuf::Field* FindAndVerifyField(
       const google::protobuf::Type& type, uint32 tag) const;
 
   
-  util::Status RenderField(const google::protobuf::Field* field,
-                             StringPiece field_name, ObjectWriter* ow) const;
+  virtual util::Status RenderField(const google::protobuf::Field* field,
+                                     StringPiece field_name,
+                                     ObjectWriter* ow) const;
 
   
   
   
-  const string ReadFieldValueAsString(
+  const std::string ReadFieldValueAsString(
       const google::protobuf::Field& field) const;
 
 
  private:
-  ProtoStreamObjectSource(google::protobuf::io::CodedInputStream* stream,
+  ProtoStreamObjectSource(io::CodedInputStream* stream,
                           const TypeInfo* typeinfo,
                           const google::protobuf::Type& type);
   
@@ -188,12 +188,14 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   static util::Status RenderTimestamp(const ProtoStreamObjectSource* os,
                                         const google::protobuf::Type& type,
-                                        StringPiece name, ObjectWriter* ow);
+                                        StringPiece name,
+                                        ObjectWriter* ow);
 
   
   static util::Status RenderDuration(const ProtoStreamObjectSource* os,
                                        const google::protobuf::Type& type,
-                                       StringPiece name, ObjectWriter* ow);
+                                       StringPiece name,
+                                       ObjectWriter* ow);
 
   
   
@@ -233,7 +235,8 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   static util::Status RenderStructValue(const ProtoStreamObjectSource* os,
                                           const google::protobuf::Type& type,
-                                          StringPiece name, ObjectWriter* ow);
+                                          StringPiece name,
+                                          ObjectWriter* ow);
 
   
   static util::Status RenderStructListValue(
@@ -248,12 +251,13 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   static util::Status RenderFieldMask(const ProtoStreamObjectSource* os,
                                         const google::protobuf::Type& type,
-                                        StringPiece name, ObjectWriter* ow);
+                                        StringPiece name,
+                                        ObjectWriter* ow);
 
-  static hash_map<string, TypeRenderer>* renderers_;
+  static std::unordered_map<std::string, TypeRenderer>* renderers_;
   static void InitRendererMap();
   static void DeleteRendererMap();
-  static TypeRenderer* FindTypeRenderer(const string& type_url);
+  static TypeRenderer* FindTypeRenderer(const std::string& type_url);
 
   
   
@@ -277,7 +281,7 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
                                          StringPiece field_name) const;
 
   
-  google::protobuf::io::CodedInputStream* stream_;
+  io::CodedInputStream* stream_;
 
   
   
@@ -315,12 +319,21 @@ class LIBPROTOBUF_EXPORT ProtoStreamObjectSource : public ObjectSource {
   
   bool add_trailing_zeros_for_timestamp_and_duration_;
 
+  
+  
+  
+  bool suppress_empty_object_;
+
+  bool use_legacy_json_map_format_;
+
   GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(ProtoStreamObjectSource);
 };
 
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

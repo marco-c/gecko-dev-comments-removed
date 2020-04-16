@@ -50,6 +50,6 @@ float SafeDoubleToFloat(double value);
 
 }  
 }  
-
 }  
+
 #endif  

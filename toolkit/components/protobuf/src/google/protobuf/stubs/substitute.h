@@ -38,6 +38,8 @@
 #ifndef GOOGLE_PROTOBUF_STUBS_SUBSTITUTE_H_
 #define GOOGLE_PROTOBUF_STUBS_SUBSTITUTE_H_
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 namespace strings {
@@ -93,7 +95,7 @@ class SubstituteArg {
 
   
   inline explicit SubstituteArg()
-    : text_(NULL), size_(-1) {}
+    : text_(nullptr), size_(-1) {}
 
   
   
@@ -137,34 +139,36 @@ class SubstituteArg {
 
 }  
 
-LIBPROTOBUF_EXPORT string Substitute(
-  const char* format,
-  const internal::SubstituteArg& arg0 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg1 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg2 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg3 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg4 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg5 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg6 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg7 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg8 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg9 = internal::SubstituteArg());
+PROTOBUF_EXPORT string
+Substitute(const char* format,
+           const internal::SubstituteArg& arg0 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg1 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg2 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg3 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg4 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg5 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg6 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg7 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg8 = internal::SubstituteArg(),
+           const internal::SubstituteArg& arg9 = internal::SubstituteArg());
 
-LIBPROTOBUF_EXPORT void SubstituteAndAppend(
-  string* output, const char* format,
-  const internal::SubstituteArg& arg0 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg1 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg2 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg3 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg4 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg5 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg6 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg7 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg8 = internal::SubstituteArg(),
-  const internal::SubstituteArg& arg9 = internal::SubstituteArg());
+PROTOBUF_EXPORT void SubstituteAndAppend(
+    string* output, const char* format,
+    const internal::SubstituteArg& arg0 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg1 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg2 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg3 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg4 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg5 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg6 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg7 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg8 = internal::SubstituteArg(),
+    const internal::SubstituteArg& arg9 = internal::SubstituteArg());
 
 }  
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif 

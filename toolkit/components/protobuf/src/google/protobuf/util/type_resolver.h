@@ -36,16 +36,12 @@
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/type.pb.h>
 #include <google/protobuf/stubs/status.h>
 
+#include <google/protobuf/port_def.inc>
 
 namespace google {
-namespace protobuf {
-class Type;
-class Enum;
-}  
-
-
 namespace protobuf {
 class DescriptorPool;
 namespace util {
@@ -53,17 +49,17 @@ namespace util {
 
 
 
-class LIBPROTOBUF_EXPORT TypeResolver {
+class PROTOBUF_EXPORT TypeResolver {
  public:
   TypeResolver() {}
   virtual ~TypeResolver() {}
 
   
   virtual util::Status ResolveMessageType(
-      const string& type_url, google::protobuf::Type* message_type) = 0;
+      const std::string& type_url, google::protobuf::Type* message_type) = 0;
 
   
-  virtual util::Status ResolveEnumType(const string& type_url,
+  virtual util::Status ResolveEnumType(const std::string& type_url,
                                          google::protobuf::Enum* enum_type) = 0;
 
  private:
@@ -72,6 +68,8 @@ class LIBPROTOBUF_EXPORT TypeResolver {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

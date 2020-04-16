@@ -35,20 +35,23 @@
 
 #include <string>
 
-#include <google/protobuf/stubs/common.h>
 namespace google {
 namespace protobuf {
 class DescriptorPool;
 namespace util {
 class TypeResolver;
 
+#include <google/protobuf/port_def.inc>
 
 
-LIBPROTOBUF_EXPORT TypeResolver* NewTypeResolverForDescriptorPool(
-    const string& url_prefix, const DescriptorPool* pool);
+
+PROTOBUF_EXPORT TypeResolver* NewTypeResolverForDescriptorPool(
+    const std::string& url_prefix, const DescriptorPool* pool);
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

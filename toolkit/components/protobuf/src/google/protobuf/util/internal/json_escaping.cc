@@ -50,39 +50,30 @@ static const char kHex[] = "0123456789abcdef";
 
 
 static const char kCommonEscapes[160][7] = {
-  
-  "\\u0000", "\\u0001", "\\u0002", "\\u0003",  
-  "\\u0004", "\\u0005", "\\u0006", "\\u0007",
-  "\\b",     "\\t",     "\\n",     "\\u000b",
-  "\\f",     "\\r",     "\\u000e", "\\u000f",
-  "\\u0010", "\\u0011", "\\u0012", "\\u0013",  
-  "\\u0014", "\\u0015", "\\u0016", "\\u0017",
-  "\\u0018", "\\u0019", "\\u001a", "\\u001b",
-  "\\u001c", "\\u001d", "\\u001e", "\\u001f",
-  
-  
-  "", "", "\\\"", "", "",        "", "",        "",  
-  "", "", "",     "", "",        "", "",        "",
-  "", "", "",     "", "",        "", "",        "",  
-  "", "", "",     "", "\\u003c", "", "\\u003e", "",
-  "", "", "",     "", "",        "", "",        "",  
-  "", "", "",     "", "",        "", "",        "",
-  "", "", "",     "", "",        "", "",        "",  
-  "", "", "",     "", "\\\\",    "", "",        "",
-  "", "", "",     "", "",        "", "",        "",  
-  "", "", "",     "", "",        "", "",        "",
-  "", "", "",     "", "",        "", "",        "",  
-  "", "", "",     "", "",        "", "",        "\\u007f",
-  
-  "\\u0080", "\\u0081", "\\u0082", "\\u0083",  
-  "\\u0084", "\\u0085", "\\u0086", "\\u0087",
-  "\\u0088", "\\u0089", "\\u008a", "\\u008b",
-  "\\u008c", "\\u008d", "\\u008e", "\\u008f",
-  "\\u0090", "\\u0091", "\\u0092", "\\u0093",  
-  "\\u0094", "\\u0095", "\\u0096", "\\u0097",
-  "\\u0098", "\\u0099", "\\u009a", "\\u009b",
-  "\\u009c", "\\u009d", "\\u009e", "\\u009f"
-};
+    
+    "\\u0000", "\\u0001", "\\u0002", "\\u0003",  
+    "\\u0004", "\\u0005", "\\u0006", "\\u0007", "\\b", "\\t", "\\n", "\\u000b",
+    "\\f", "\\r", "\\u000e", "\\u000f", "\\u0010", "\\u0011", "\\u0012",
+    "\\u0013",  
+    "\\u0014", "\\u0015", "\\u0016", "\\u0017", "\\u0018", "\\u0019", "\\u001a",
+    "\\u001b", "\\u001c", "\\u001d", "\\u001e", "\\u001f",
+    
+    
+    "", "", "\\\"", "", "", "", "", "",                              
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",  
+    "", "", "", "", "\\u003c", "", "\\u003e", "", "", "", "", "", "", "", "",
+    "",                                                                  
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",      
+    "", "", "", "", "\\\\", "", "", "", "", "", "", "", "", "", "", "",  
+    "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "",      
+    "", "", "", "", "", "", "", "\\u007f",
+    
+    "\\u0080", "\\u0081", "\\u0082", "\\u0083",  
+    "\\u0084", "\\u0085", "\\u0086", "\\u0087", "\\u0088", "\\u0089", "\\u008a",
+    "\\u008b", "\\u008c", "\\u008d", "\\u008e", "\\u008f", "\\u0090", "\\u0091",
+    "\\u0092", "\\u0093",  
+    "\\u0094", "\\u0095", "\\u0096", "\\u0097", "\\u0098", "\\u0099", "\\u009a",
+    "\\u009b", "\\u009c", "\\u009d", "\\u009e", "\\u009f"};
 
 
 
@@ -102,9 +93,9 @@ inline bool IsValidCodePoint(uint32 cp) {
 
 
 inline uint16 ToLowSurrogate(uint32 cp) {
-  return (cp & (JsonEscaping::kMaxLowSurrogate
-                - JsonEscaping::kMinLowSurrogate))
-      + JsonEscaping::kMinLowSurrogate;
+  return (cp &
+          (JsonEscaping::kMaxLowSurrogate - JsonEscaping::kMinLowSurrogate)) +
+         JsonEscaping::kMinLowSurrogate;
 }
 
 
@@ -134,8 +125,8 @@ inline uint16 ToHighSurrogate(uint32 cp) {
 
 
 
-bool ReadCodePoint(StringPiece str, int index,
-                   uint32 *cp, int* num_left, int *num_read) {
+bool ReadCodePoint(StringPiece str, int index, uint32* cp, int* num_left,
+                   int* num_read) {
   if (*num_left == 0) {
     
     *cp = static_cast<uint8>(str[index++]);
@@ -207,7 +198,7 @@ StringPiece ToHex(uint16 cp, char* buffer) {
   buffer[3] = kHex[cp & 0x0f];
   cp >>= 4;
   buffer[2] = kHex[cp & 0x0f];
-  return StringPiece(buffer).substr(0, 6);
+  return StringPiece(buffer, 6);
 }
 
 
@@ -328,10 +319,10 @@ void JsonEscaping::Escape(strings::ByteSource* input,
       ok = ReadCodePoint(str, i, &cp, &num_left, &num_read);
       if (num_left > 0 || !ok) break;  
       escaped = EscapeCodePoint(cp, buffer, cp_was_split);
-      if (!escaped.empty()) break;     
+      if (!escaped.empty()) break;  
       i += num_read;
       num_read = 0;
-    } while (i < str.length());        
+    } while (i < str.length());  
     
     if (i > 0) input->CopyTo(output, i);
     if (num_read > 0) input->Skip(num_read);
@@ -347,6 +338,28 @@ void JsonEscaping::Escape(strings::ByteSource* input,
   if (num_left > 0) {
     
     
+  }
+}
+
+void JsonEscaping::Escape(StringPiece input, strings::ByteSink* output) {
+  const size_t len = input.length();
+  const char* p = input.data();
+
+  bool can_skip_escaping = true;
+  for (int i = 0; i < len; i++) {
+    char c = p[i];
+    if (c < 0x20 || c >= 0x7F || c == '"' || c == '<' || c == '>' ||
+        c == '\\') {
+      can_skip_escaping = false;
+      break;
+    }
+  }
+
+  if (can_skip_escaping) {
+    output->Append(input.data(), input.length());
+  } else {
+    strings::ArrayByteSource source(input);
+    Escape(&source, output);
   }
 }
 

@@ -32,19 +32,15 @@
 #define GOOGLE_PROTOBUF_STUBS_PORT_H_
 
 #include <assert.h>
+#include <cstdint>
 #include <stdlib.h>
 #include <cstddef>
 #include <string>
 #include <string.h>
-#if defined(__osf__)
-
-
-#include <inttypes.h>
-#elif !defined(_MSC_VER)
-#include <stdint.h>
-#endif
 
 #include <google/protobuf/stubs/platform_macros.h>
+
+#include <google/protobuf/port_def.inc>
 
 #undef PROTOBUF_LITTLE_ENDIAN
 #ifdef _WIN32
@@ -72,6 +68,19 @@
     #define PROTOBUF_LITTLE_ENDIAN 1
   #endif
 #endif
+
+
+#ifdef _MSC_VER
+#include <stdlib.h>  
+#include <intrin.h>
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#elif defined(__GLIBC__) || defined(__BIONIC__) || defined(__CYGWIN__)
+#include <byteswap.h>  
+#endif
+
+
+
 #if defined(_MSC_VER) && defined(PROTOBUF_USE_DLLS)
   #ifdef LIBPROTOBUF_EXPORTS
     #define LIBPROTOBUF_EXPORT __declspec(dllexport)
@@ -88,14 +97,9 @@
   #define LIBPROTOC_EXPORT
 #endif
 
-
-#ifdef _MSC_VER
-#include <stdlib.h>  
-#elif defined(__APPLE__)
-#include <libkern/OSByteOrder.h>
-#elif defined(__GLIBC__) || defined(__CYGWIN__)
-#include <byteswap.h>  
-#endif
+#define PROTOBUF_RUNTIME_DEPRECATED(message) PROTOBUF_DEPRECATED_MSG(message)
+#define GOOGLE_PROTOBUF_RUNTIME_DEPRECATED(message) \
+  PROTOBUF_DEPRECATED_MSG(message)
 
 
 
@@ -106,6 +110,8 @@
 
 
 #define LANG_CXX11 1
+#else
+#error "Protobuf requires at least C++11."
 #endif
 
 namespace google {
@@ -113,17 +119,6 @@ namespace protobuf {
 
 typedef unsigned int uint;
 
-#ifdef _MSC_VER
-typedef signed __int8  int8;
-typedef __int16 int16;
-typedef __int32 int32;
-typedef __int64 int64;
-
-typedef unsigned __int8  uint8;
-typedef unsigned __int16 uint16;
-typedef unsigned __int32 uint32;
-typedef unsigned __int64 uint64;
-#else
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -133,137 +128,55 @@ typedef uint8_t uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-#endif
-
-
-
-#undef GOOGLE_LONGLONG
-#undef GOOGLE_ULONGLONG
-#undef GOOGLE_LL_FORMAT
-
-#ifdef _MSC_VER
-#define GOOGLE_LONGLONG(x) x##I64
-#define GOOGLE_ULONGLONG(x) x##UI64
-#define GOOGLE_LL_FORMAT "I64"  // As in printf("%I64d", ...)
-#else
-
-#define GOOGLE_LONGLONG(x) x##LL
-#define GOOGLE_ULONGLONG(x) x##ULL
-
-#define GOOGLE_LL_FORMAT "ll"  // As in "%lld". Note that "q" is poor form also.
-#endif
 
 static const int32 kint32max = 0x7FFFFFFF;
 static const int32 kint32min = -kint32max - 1;
-static const int64 kint64max = GOOGLE_LONGLONG(0x7FFFFFFFFFFFFFFF);
+static const int64 kint64max = PROTOBUF_LONGLONG(0x7FFFFFFFFFFFFFFF);
 static const int64 kint64min = -kint64max - 1;
 static const uint32 kuint32max = 0xFFFFFFFFu;
-static const uint64 kuint64max = GOOGLE_ULONGLONG(0xFFFFFFFFFFFFFFFF);
+static const uint64 kuint64max = PROTOBUF_ULONGLONG(0xFFFFFFFFFFFFFFFF);
 
+#if defined(ADDRESS_SANITIZER) || defined(THREAD_SANITIZER) ||\
+    defined(MEMORY_SANITIZER)
 
-
-
-
-
-
-#ifndef GOOGLE_ATTRIBUTE_ALWAYS_INLINE
-#if defined(__GNUC__) && (__GNUC__ > 3 ||(__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-
-
-#define GOOGLE_ATTRIBUTE_ALWAYS_INLINE __attribute__ ((always_inline))
-#else
-
-#define GOOGLE_ATTRIBUTE_ALWAYS_INLINE
+#ifdef __cplusplus
+extern "C" {
 #endif
-#endif
+uint16_t __sanitizer_unaligned_load16(const void *p);
+uint32_t __sanitizer_unaligned_load32(const void *p);
+uint64_t __sanitizer_unaligned_load64(const void *p);
+void __sanitizer_unaligned_store16(void *p, uint16_t v);
+void __sanitizer_unaligned_store32(void *p, uint32_t v);
+void __sanitizer_unaligned_store64(void *p, uint64_t v);
+#ifdef __cplusplus
+}  
+#endif  
 
-#ifndef GOOGLE_ATTRIBUTE_NOINLINE
-#if defined(__GNUC__) && (__GNUC__ > 3 ||(__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+inline uint16 GOOGLE_UNALIGNED_LOAD16(const void *p) {
+  return __sanitizer_unaligned_load16(p);
+}
 
+inline uint32 GOOGLE_UNALIGNED_LOAD32(const void *p) {
+  return __sanitizer_unaligned_load32(p);
+}
 
-#define GOOGLE_ATTRIBUTE_NOINLINE __attribute__ ((noinline))
-#elif defined(_MSC_VER) && (_MSC_VER >= 1400)
+inline uint64 GOOGLE_UNALIGNED_LOAD64(const void *p) {
+  return __sanitizer_unaligned_load64(p);
+}
 
-#define GOOGLE_ATTRIBUTE_NOINLINE __declspec(noinline)
-#else
+inline void GOOGLE_UNALIGNED_STORE16(void *p, uint16 v) {
+  __sanitizer_unaligned_store16(p, v);
+}
 
-#define GOOGLE_ATTRIBUTE_NOINLINE
-#endif
-#endif
+inline void GOOGLE_UNALIGNED_STORE32(void *p, uint32 v) {
+  __sanitizer_unaligned_store32(p, v);
+}
 
-#ifndef GOOGLE_ATTRIBUTE_NORETURN
-#ifdef __GNUC__
+inline void GOOGLE_UNALIGNED_STORE64(void *p, uint64 v) {
+  __sanitizer_unaligned_store64(p, v);
+}
 
-#define GOOGLE_ATTRIBUTE_NORETURN __attribute__((noreturn))
-#else
-#define GOOGLE_ATTRIBUTE_NORETURN
-#endif
-#endif
-
-#ifndef GOOGLE_ATTRIBUTE_DEPRECATED
-#ifdef __GNUC__
-
-#define GOOGLE_ATTRIBUTE_DEPRECATED __attribute__((deprecated))
-#else
-#define GOOGLE_ATTRIBUTE_DEPRECATED
-#endif
-#endif
-
-#ifndef GOOGLE_PREDICT_TRUE
-#ifdef __GNUC__
-
-#define GOOGLE_PREDICT_TRUE(x) (__builtin_expect(!!(x), 1))
-#else
-#define GOOGLE_PREDICT_TRUE(x) (x)
-#endif
-#endif
-
-#ifndef GOOGLE_PREDICT_FALSE
-#ifdef __GNUC__
-
-#define GOOGLE_PREDICT_FALSE(x) (__builtin_expect(x, 0))
-#else
-#define GOOGLE_PREDICT_FALSE(x) (x)
-#endif
-#endif
-
-
-
-
-#ifndef GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN
-#define GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN()
-#endif
-#ifndef GOOGLE_SAFE_CONCURRENT_WRITES_END
-#define GOOGLE_SAFE_CONCURRENT_WRITES_END()
-#endif
-
-#if defined(__clang__) && defined(__has_cpp_attribute) \
-    && !defined(GOOGLE_PROTOBUF_OS_APPLE)
-# if defined(GOOGLE_PROTOBUF_OS_NACL) || defined(EMSCRIPTEN) || \
-     __has_cpp_attribute(clang::fallthrough)
-#  define GOOGLE_FALLTHROUGH_INTENDED [[clang::fallthrough]]
-# endif
-#endif
-
-#ifndef GOOGLE_FALLTHROUGH_INTENDED
-# define GOOGLE_FALLTHROUGH_INTENDED
-#endif
-
-#define GOOGLE_GUARDED_BY(x)
-#define GOOGLE_ATTRIBUTE_COLD
-
-#ifdef GOOGLE_PROTOBUF_DONT_USE_UNALIGNED
-# define GOOGLE_PROTOBUF_USE_UNALIGNED 0
-#else
-
-# if defined(_M_X64) || defined(__x86_64__) || defined(_M_IX86) || defined(__i386__)
-#  define GOOGLE_PROTOBUF_USE_UNALIGNED 1
-# else
-#  define GOOGLE_PROTOBUF_USE_UNALIGNED 0
-# endif
-#endif
-
-#if GOOGLE_PROTOBUF_USE_UNALIGNED
+#elif defined(GOOGLE_PROTOBUF_USE_UNALIGNED) && GOOGLE_PROTOBUF_USE_UNALIGNED
 
 #define GOOGLE_UNALIGNED_LOAD16(_p) (*reinterpret_cast<const uint16 *>(_p))
 #define GOOGLE_UNALIGNED_LOAD32(_p) (*reinterpret_cast<const uint32 *>(_p))
@@ -305,6 +218,13 @@ inline void GOOGLE_UNALIGNED_STORE64(void *p, uint64 v) {
 }
 #endif
 
+#if defined(GOOGLE_PROTOBUF_OS_NACL) \
+    || (defined(__ANDROID__) && defined(__clang__) \
+        && (__clang_major__ == 3 && __clang_minor__ == 8) \
+        && (__clang_patchlevel__ < 275480))
+# define GOOGLE_PROTOBUF_USE_PORTABLE_LOG2
+#endif
+
 #if defined(_MSC_VER)
 #define GOOGLE_THREAD_LOCAL __declspec(thread)
 #else
@@ -323,12 +243,16 @@ inline void GOOGLE_UNALIGNED_STORE64(void *p, uint64 v) {
 #define bswap_32(x) OSSwapInt32(x)
 #define bswap_64(x) OSSwapInt64(x)
 
-#elif !defined(__GLIBC__) && !defined(__CYGWIN__)
+#elif !defined(__GLIBC__) && !defined(__BIONIC__) && !defined(__CYGWIN__)
 
+#ifndef bswap_16
 static inline uint16 bswap_16(uint16 x) {
   return static_cast<uint16>(((x & 0xFF) << 8) | ((x & 0xFF00) >> 8));
 }
 #define bswap_16(x) bswap_16(x)
+#endif
+
+#ifndef bswap_32
 static inline uint32 bswap_32(uint32 x) {
   return (((x & 0xFF) << 24) |
           ((x & 0xFF00) << 8) |
@@ -336,17 +260,21 @@ static inline uint32 bswap_32(uint32 x) {
           ((x & 0xFF000000) >> 24));
 }
 #define bswap_32(x) bswap_32(x)
+#endif
+
+#ifndef bswap_64
 static inline uint64 bswap_64(uint64 x) {
-  return (((x & GOOGLE_ULONGLONG(0xFF)) << 56) |
-          ((x & GOOGLE_ULONGLONG(0xFF00)) << 40) |
-          ((x & GOOGLE_ULONGLONG(0xFF0000)) << 24) |
-          ((x & GOOGLE_ULONGLONG(0xFF000000)) << 8) |
-          ((x & GOOGLE_ULONGLONG(0xFF00000000)) >> 8) |
-          ((x & GOOGLE_ULONGLONG(0xFF0000000000)) >> 24) |
-          ((x & GOOGLE_ULONGLONG(0xFF000000000000)) >> 40) |
-          ((x & GOOGLE_ULONGLONG(0xFF00000000000000)) >> 56));
+  return (((x & PROTOBUF_ULONGLONG(0xFF)) << 56) |
+          ((x & PROTOBUF_ULONGLONG(0xFF00)) << 40) |
+          ((x & PROTOBUF_ULONGLONG(0xFF0000)) << 24) |
+          ((x & PROTOBUF_ULONGLONG(0xFF000000)) << 8) |
+          ((x & PROTOBUF_ULONGLONG(0xFF00000000)) >> 8) |
+          ((x & PROTOBUF_ULONGLONG(0xFF0000000000)) >> 24) |
+          ((x & PROTOBUF_ULONGLONG(0xFF000000000000)) >> 40) |
+          ((x & PROTOBUF_ULONGLONG(0xFF00000000000000)) >> 56));
 }
 #define bswap_64(x) bswap_64(x)
+#endif
 
 #endif
 
@@ -358,12 +286,10 @@ class Bits {
   static uint32 Log2FloorNonZero(uint32 n) {
 #if defined(__GNUC__)
   return 31 ^ static_cast<uint32>(__builtin_clz(n));
-#elif defined(COMPILER_MSVC) && defined(_M_IX86)
-  _asm {
-    bsr ebx, n
-    mov n, ebx
-  }
-  return n;
+#elif defined(_MSC_VER)
+  unsigned long where;
+  _BitScanReverse(&where, n);
+  return where;
 #else
   return Log2FloorNonZero_Portable(n);
 #endif
@@ -375,8 +301,13 @@ class Bits {
     
     
     
-#if defined(__GNUC__) && !defined(GOOGLE_PROTOBUF_OS_NACL)
+    
+#if defined(__GNUC__) && !defined(GOOGLE_PROTOBUF_USE_PORTABLE_LOG2)
   return 63 ^ static_cast<uint32>(__builtin_clzll(n));
+#elif defined(_MSC_VER) && defined(_M_X64)
+  unsigned long where;
+  _BitScanReverse64(&where, n);
+  return where;
 #else
   return Log2FloorNonZero64_Portable(n);
 #endif
@@ -412,7 +343,7 @@ class Bits {
 
 
 
-LIBPROTOBUF_EXPORT uint32 ghtonl(uint32 x);
+PROTOBUF_EXPORT uint32 ghtonl(uint32 x);
 
 class BigEndian {
  public:
@@ -470,11 +401,9 @@ class BigEndian {
   }
 };
 
-#ifndef GOOGLE_ATTRIBUTE_SECTION_VARIABLE
-#define GOOGLE_ATTRIBUTE_SECTION_VARIABLE(name)
-#endif
+}  
+}  
 
-}  
-}  
+#include <google/protobuf/port_undef.inc>
 
 #endif  

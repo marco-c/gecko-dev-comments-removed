@@ -34,6 +34,8 @@
 
 #include <iosfwd>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 
@@ -48,7 +50,7 @@ struct uint128_pod;
 #endif
 
 
-class LIBPROTOBUF_EXPORT uint128 {
+class PROTOBUF_EXPORT uint128 {
  public:
   UINT128_CONSTEXPR uint128();  
   UINT128_CONSTEXPR uint128(uint64 top, uint64 bottom);
@@ -84,8 +86,8 @@ class LIBPROTOBUF_EXPORT uint128 {
   friend uint64 Uint128High64(const uint128& v);
 
   
-  LIBPROTOBUF_EXPORT friend std::ostream& operator<<(std::ostream& o,
-                                                     const uint128& b);
+  PROTOBUF_EXPORT friend std::ostream& operator<<(std::ostream& o,
+                                                  const uint128& b);
 
  private:
   static void DivModImpl(uint128 dividend, uint128 divisor,
@@ -116,11 +118,11 @@ struct uint128_pod {
   uint64 lo;
 };
 
-LIBPROTOBUF_EXPORT extern const uint128_pod kuint128max;
+PROTOBUF_EXPORT extern const uint128_pod kuint128max;
 
 
-LIBPROTOBUF_EXPORT extern std::ostream& operator<<(std::ostream& o,
-                                                   const uint128& b);
+PROTOBUF_EXPORT extern std::ostream& operator<<(std::ostream& o,
+                                                const uint128& b);
 
 
 
@@ -379,5 +381,7 @@ inline uint128& uint128::operator--() {
 
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

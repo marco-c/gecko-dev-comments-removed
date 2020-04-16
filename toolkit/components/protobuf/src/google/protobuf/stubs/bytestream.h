@@ -56,8 +56,9 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/stringpiece.h>
 
+#include <google/protobuf/port_def.inc>
+
 class CordByteSink;
-class MemBlock;
 
 namespace google {
 namespace protobuf {
@@ -74,7 +75,7 @@ namespace strings {
 
 
 
-class LIBPROTOBUF_EXPORT ByteSink {
+class PROTOBUF_EXPORT ByteSink {
  public:
   ByteSink() {}
   virtual ~ByteSink() {}
@@ -103,7 +104,7 @@ class LIBPROTOBUF_EXPORT ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT ByteSource {
+class PROTOBUF_EXPORT ByteSource {
  public:
   ByteSource() {}
   virtual ~ByteSource() {}
@@ -159,10 +160,10 @@ class LIBPROTOBUF_EXPORT ByteSource {
 
 
 
-class LIBPROTOBUF_EXPORT UncheckedArrayByteSink : public ByteSink {
+class PROTOBUF_EXPORT UncheckedArrayByteSink : public ByteSink {
  public:
   explicit UncheckedArrayByteSink(char* dest) : dest_(dest) {}
-  virtual void Append(const char* data, size_t n);
+  virtual void Append(const char* data, size_t n) override;
 
   
   
@@ -187,10 +188,10 @@ class LIBPROTOBUF_EXPORT UncheckedArrayByteSink : public ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT CheckedArrayByteSink : public ByteSink {
+class PROTOBUF_EXPORT CheckedArrayByteSink : public ByteSink {
  public:
   CheckedArrayByteSink(char* outbuf, size_t capacity);
-  virtual void Append(const char* bytes, size_t n);
+  virtual void Append(const char* bytes, size_t n) override;
 
   
   size_t NumberOfBytesWritten() const { return size_; }
@@ -223,11 +224,11 @@ class LIBPROTOBUF_EXPORT CheckedArrayByteSink : public ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT GrowingArrayByteSink : public strings::ByteSink {
+class PROTOBUF_EXPORT GrowingArrayByteSink : public strings::ByteSink {
  public:
   explicit GrowingArrayByteSink(size_t estimated_size);
   virtual ~GrowingArrayByteSink();
-  virtual void Append(const char* bytes, size_t n);
+  virtual void Append(const char* bytes, size_t n) override;
 
   
   
@@ -253,10 +254,10 @@ class LIBPROTOBUF_EXPORT GrowingArrayByteSink : public strings::ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT StringByteSink : public ByteSink {
+class PROTOBUF_EXPORT StringByteSink : public ByteSink {
  public:
   explicit StringByteSink(string* dest) : dest_(dest) {}
-  virtual void Append(const char* data, size_t n);
+  virtual void Append(const char* data, size_t n) override;
 
  private:
   string* dest_;
@@ -270,10 +271,10 @@ class LIBPROTOBUF_EXPORT StringByteSink : public ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT NullByteSink : public ByteSink {
+class PROTOBUF_EXPORT NullByteSink : public ByteSink {
  public:
   NullByteSink() {}
-  virtual void Append(const char *data, size_t n) {}
+  void Append(const char* , size_t ) override {}
 
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(NullByteSink);
@@ -292,13 +293,13 @@ class LIBPROTOBUF_EXPORT NullByteSink : public ByteSink {
 
 
 
-class LIBPROTOBUF_EXPORT ArrayByteSource : public ByteSource {
+class PROTOBUF_EXPORT ArrayByteSource : public ByteSource {
  public:
   explicit ArrayByteSource(StringPiece s) : input_(s) {}
 
-  virtual size_t Available() const;
-  virtual StringPiece Peek();
-  virtual void Skip(size_t n);
+  virtual size_t Available() const override;
+  virtual StringPiece Peek() override;
+  virtual void Skip(size_t n) override;
 
  private:
   StringPiece   input_;
@@ -323,18 +324,18 @@ class LIBPROTOBUF_EXPORT ArrayByteSource : public ByteSource {
 
 
 
-class LIBPROTOBUF_EXPORT LimitByteSource : public ByteSource {
+class PROTOBUF_EXPORT LimitByteSource : public ByteSource {
  public:
   
   LimitByteSource(ByteSource* source, size_t limit);
 
-  virtual size_t Available() const;
-  virtual StringPiece Peek();
-  virtual void Skip(size_t n);
+  virtual size_t Available() const override;
+  virtual StringPiece Peek() override;
+  virtual void Skip(size_t n) override;
 
   
   
-  virtual void CopyTo(ByteSink* sink, size_t n);
+  virtual void CopyTo(ByteSink* sink, size_t n) override;
 
  private:
   ByteSource* source_;
@@ -344,5 +345,7 @@ class LIBPROTOBUF_EXPORT LimitByteSource : public ByteSource {
 }  
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif

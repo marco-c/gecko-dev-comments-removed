@@ -31,15 +31,16 @@
 
 
 #include <google/protobuf/stubs/strutil.h>
-#include <google/protobuf/stubs/mathlimits.h>
 
 #include <errno.h>
 #include <float.h>    
-#include <limits>
 #include <limits.h>
 #include <stdio.h>
+#include <cmath>
 #include <iterator>
+#include <limits>
 
+#include <google/protobuf/stubs/logging.h>
 #include <google/protobuf/stubs/stl_util.h>
 
 #ifdef _WIN32
@@ -83,26 +84,11 @@ inline bool isprint(char c) {
 
 
 
-void StripString(string* s, const char* remove, char replacewith) {
-  const char * str_start = s->c_str();
-  const char * str = str_start;
-  for (str = strpbrk(str, remove);
-       str != NULL;
-       str = strpbrk(str + 1, remove)) {
-    (*s)[str - str_start] = replacewith;
-  }
-}
-
-
-
-
-
-
 void ReplaceCharacters(string *s, const char *remove, char replacewith) {
   const char *str_start = s->c_str();
   const char *str = str_start;
   for (str = strpbrk(str, remove);
-       str != NULL;
+       str != nullptr;
        str = strpbrk(str + 1, remove)) {
     (*s)[str - str_start] = replacewith;
   }
@@ -226,8 +212,8 @@ void SplitStringToIteratorUsing(const string& full,
 
 void SplitStringUsing(const string& full,
                       const char* delim,
-                      vector<string>* result) {
-  std::back_insert_iterator< vector<string> > it(*result);
+                      std::vector<string>* result) {
+  std::back_insert_iterator< std::vector<string> > it(*result);
   SplitStringToIteratorUsing(full, delim, it);
 }
 
@@ -264,8 +250,8 @@ void SplitStringToIteratorAllowEmpty(const StringType& full,
 }
 
 void SplitStringAllowEmpty(const string& full, const char* delim,
-                           vector<string>* result) {
-  std::back_insert_iterator<vector<string> > it(*result);
+                           std::vector<string>* result) {
+  std::back_insert_iterator<std::vector<string> > it(*result);
   SplitStringToIteratorAllowEmpty(full, delim, 0, it);
 }
 
@@ -280,7 +266,7 @@ static void JoinStringsIterator(const ITERATOR& start,
                                 const ITERATOR& end,
                                 const char* delim,
                                 string* result) {
-  GOOGLE_CHECK(result != NULL);
+  GOOGLE_CHECK(result != nullptr);
   result->clear();
   int delim_length = strlen(delim);
 
@@ -303,7 +289,7 @@ static void JoinStringsIterator(const ITERATOR& start,
   }
 }
 
-void JoinStrings(const vector<string>& components,
+void JoinStrings(const std::vector<string>& components,
                  const char* delim,
                  string * result) {
   JoinStringsIterator(components.begin(), components.end(), delim, result);
@@ -328,12 +314,12 @@ void JoinStrings(const vector<string>& components,
 #define LOG_STRING(LEVEL, VECTOR) GOOGLE_LOG_IF(LEVEL, false)
 
 int UnescapeCEscapeSequences(const char* source, char* dest) {
-  return UnescapeCEscapeSequences(source, dest, NULL);
+  return UnescapeCEscapeSequences(source, dest, nullptr);
 }
 
 int UnescapeCEscapeSequences(const char* source, char* dest,
-                             vector<string> *errors) {
-  GOOGLE_DCHECK(errors == NULL) << "Error reporting not implemented.";
+                             std::vector<string> *errors) {
+  GOOGLE_DCHECK(errors == nullptr) << "Error reporting not implemented.";
 
   char* d = dest;
   const char* p = source;
@@ -464,12 +450,12 @@ int UnescapeCEscapeSequences(const char* source, char* dest,
 
 
 int UnescapeCEscapeString(const string& src, string* dest) {
-  return UnescapeCEscapeString(src, dest, NULL);
+  return UnescapeCEscapeString(src, dest, nullptr);
 }
 
 int UnescapeCEscapeString(const string& src, string* dest,
-                          vector<string> *errors) {
-  scoped_array<char> unescaped(new char[src.size() + 1]);
+                          std::vector<string> *errors) {
+  std::unique_ptr<char[]> unescaped(new char[src.size() + 1]);
   int len = UnescapeCEscapeSequences(src.c_str(), unescaped.get(), errors);
   GOOGLE_CHECK(dest);
   dest->assign(unescaped.get(), len);
@@ -477,8 +463,8 @@ int UnescapeCEscapeString(const string& src, string* dest,
 }
 
 string UnescapeCEscapeString(const string& src) {
-  scoped_array<char> unescaped(new char[src.size() + 1]);
-  int len = UnescapeCEscapeSequences(src.c_str(), unescaped.get(), NULL);
+  std::unique_ptr<char[]> unescaped(new char[src.size() + 1]);
+  int len = UnescapeCEscapeSequences(src.c_str(), unescaped.get(), nullptr);
   return string(unescaped.get(), len);
 }
 
@@ -620,7 +606,7 @@ namespace strings {
 
 string Utf8SafeCEscape(const string& src) {
   const int dest_length = src.size() * 4 + 1; 
-  scoped_array<char> dest(new char[dest_length]);
+  std::unique_ptr<char[]> dest(new char[dest_length]);
   const int len = CEscapeInternal(src.data(), src.size(),
                                   dest.get(), dest_length, false, true);
   GOOGLE_DCHECK_GE(len, 0);
@@ -629,7 +615,7 @@ string Utf8SafeCEscape(const string& src) {
 
 string CHexEscape(const string& src) {
   const int dest_length = src.size() * 4 + 1; 
-  scoped_array<char> dest(new char[dest_length]);
+  std::unique_ptr<char[]> dest(new char[dest_length]);
   const int len = CEscapeInternal(src.data(), src.size(),
                                   dest.get(), dest_length, true, false);
   GOOGLE_DCHECK_GE(len, 0);
@@ -982,7 +968,7 @@ static const char two_ASCII_digits[100][2] = {
 
 char* FastUInt32ToBufferLeft(uint32 u, char* buffer) {
   uint32 digits;
-  const char *ASCII_digits = NULL;
+  const char *ASCII_digits = nullptr;
   
   
   
@@ -1063,17 +1049,19 @@ done:
 }
 
 char* FastInt32ToBufferLeft(int32 i, char* buffer) {
-  uint32 u = i;
+  uint32 u = 0;
   if (i < 0) {
     *buffer++ = '-';
-    u = -i;
+    u -= i;
+  } else {
+    u = i;
   }
   return FastUInt32ToBufferLeft(u, buffer);
 }
 
 char* FastUInt64ToBufferLeft(uint64 u64, char* buffer) {
   int digits;
-  const char *ASCII_digits = NULL;
+  const char *ASCII_digits = nullptr;
 
   uint32 u = static_cast<uint32>(u64);
   if (u == u64) return FastUInt32ToBufferLeft(u, buffer);
@@ -1114,10 +1102,12 @@ char* FastUInt64ToBufferLeft(uint64 u64, char* buffer) {
 }
 
 char* FastInt64ToBufferLeft(int64 i, char* buffer) {
-  uint64 u = i;
+  uint64 u = 0;
   if (i < 0) {
     *buffer++ = '-';
-    u = -i;
+    u -= i;
+  } else {
+    u = i;
   }
   return FastUInt64ToBufferLeft(u, buffer);
 }
@@ -1231,7 +1221,7 @@ static inline bool IsValidFloatChar(char c) {
 void DelocalizeRadix(char* buffer) {
   
   
-  if (strchr(buffer, '.') != NULL) return;
+  if (strchr(buffer, '.') != nullptr) return;
 
   
   while (IsValidFloatChar(*buffer)) ++buffer;
@@ -1268,7 +1258,7 @@ char* DoubleToBuffer(double value, char* buffer) {
   } else if (value == -std::numeric_limits<double>::infinity()) {
     strcpy(buffer, "-inf");
     return buffer;
-  } else if (MathLimits<double>::IsNaN(value)) {
+  } else if (std::isnan(value)) {
     strcpy(buffer, "nan");
     return buffer;
   }
@@ -1286,7 +1276,7 @@ char* DoubleToBuffer(double value, char* buffer) {
   
   
   
-  volatile double parsed_value = strtod(buffer, NULL);
+  volatile double parsed_value = internal::NoLocaleStrtod(buffer, nullptr);
   if (parsed_value != value) {
     int snprintf_result =
       snprintf(buffer, kDoubleToBufferSize, "%.*g", DBL_DIG+2, value);
@@ -1318,7 +1308,7 @@ inline bool CaseEqual(StringPiece s1, StringPiece s2) {
 }
 
 bool safe_strtob(StringPiece str, bool* value) {
-  GOOGLE_CHECK(value != NULL) << "NULL output boolean given.";
+  GOOGLE_CHECK(value != nullptr) << "nullptr output boolean given.";
   if (CaseEqual(str, "true") || CaseEqual(str, "t") ||
       CaseEqual(str, "yes") || CaseEqual(str, "y") ||
       CaseEqual(str, "1")) {
@@ -1338,7 +1328,7 @@ bool safe_strtof(const char* str, float* value) {
   char* endptr;
   errno = 0;  
 #if defined(_WIN32) || defined (__hpux)  
-  *value = strtod(str, &endptr);
+  *value = internal::NoLocaleStrtod(str, &endptr);
 #else
   *value = strtof(str, &endptr);
 #endif
@@ -1347,7 +1337,7 @@ bool safe_strtof(const char* str, float* value) {
 
 bool safe_strtod(const char* str, double* value) {
   char* endptr;
-  *value = strtod(str, &endptr);
+  *value = internal::NoLocaleStrtod(str, &endptr);
   if (endptr != str) {
     while (ascii_isspace(*endptr)) ++endptr;
   }
@@ -1386,7 +1376,7 @@ char* FloatToBuffer(float value, char* buffer) {
   } else if (value == -std::numeric_limits<double>::infinity()) {
     strcpy(buffer, "-inf");
     return buffer;
-  } else if (MathLimits<float>::IsNaN(value)) {
+  } else if (std::isnan(value)) {
     strcpy(buffer, "nan");
     return buffer;
   }
@@ -1619,7 +1609,7 @@ void StrAppend(string *result,
 int GlobalReplaceSubstring(const string& substring,
                            const string& replacement,
                            string* s) {
-  GOOGLE_CHECK(s != NULL);
+  GOOGLE_CHECK(s != nullptr);
   if (s->empty() || substring.empty())
     return 0;
   string tmp;
@@ -1984,6 +1974,7 @@ int Base64UnescapeInternal(const char *src_param, int szsrc,
 
 
 
+
 static const signed char kUnBase64[] = {
   -1,      -1,      -1,      -1,      -1,      -1,      -1,      -1,
   -1,      -1,      -1,      -1,      -1,      -1,      -1,      -1,
@@ -1994,7 +1985,7 @@ static const signed char kUnBase64[] = {
   52, 53, 54, 55, 56, 57, 58, 59,
   60, 61, -1,      -1,      -1,      -1,      -1,      -1,
   -1,       0,  1,  2,  3,  4,  5,  6,
-  07,  8,  9, 10, 11, 12, 13, 14,
+   7,  8,  9, 10, 11, 12, 13, 14,
   15, 16, 17, 18, 19, 20, 21, 22,
   23, 24, 25, -1,      -1,      -1,      -1,      -1,
   -1,      26, 27, 28, 29, 30, 31, 32,
@@ -2028,7 +2019,7 @@ static const signed char kUnWebSafeBase64[] = {
   52, 53, 54, 55, 56, 57, 58, 59,
   60, 61, -1,      -1,      -1,      -1,      -1,      -1,
   -1,       0,  1,  2,  3,  4,  5,  6,
-  07,  8,  9, 10, 11, 12, 13, 14,
+   7,  8,  9, 10, 11, 12, 13, 14,
   15, 16, 17, 18, 19, 20, 21, 22,
   23, 24, 25, -1,      -1,      -1,      -1,      63,
   -1,      26, 27, 28, 29, 30, 31, 32,
@@ -2299,6 +2290,182 @@ int UTF8FirstLetterNumBytes(const char* src, int len) {
   }
   return kUTF8LenTbl[*reinterpret_cast<const uint8*>(src)];
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void CleanStringLineEndings(const string &src, string *dst,
+                            bool auto_end_last_line) {
+  if (dst->empty()) {
+    dst->append(src);
+    CleanStringLineEndings(dst, auto_end_last_line);
+  } else {
+    string tmp = src;
+    CleanStringLineEndings(&tmp, auto_end_last_line);
+    dst->append(tmp);
+  }
+}
+
+void CleanStringLineEndings(string *str, bool auto_end_last_line) {
+  ptrdiff_t output_pos = 0;
+  bool r_seen = false;
+  ptrdiff_t len = str->size();
+
+  char *p = &(*str)[0];
+
+  for (ptrdiff_t input_pos = 0; input_pos < len;) {
+    if (!r_seen && input_pos + 8 < len) {
+      uint64_t v = GOOGLE_UNALIGNED_LOAD64(p + input_pos);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#define has_less(x, n) (((x) - ~0ULL / 255 * (n)) & ~(x) & ~0ULL / 255 * 128)
+      if (!has_less(v, '\r' + 1)) {
+#undef has_less
+        
+        if (output_pos != input_pos) {
+          GOOGLE_UNALIGNED_STORE64(p + output_pos, v);
+        }
+        input_pos += 8;
+        output_pos += 8;
+        continue;
+      }
+    }
+    string::const_reference in = p[input_pos];
+    if (in == '\r') {
+      if (r_seen) p[output_pos++] = '\n';
+      r_seen = true;
+    } else if (in == '\n') {
+      if (input_pos != output_pos)
+        p[output_pos++] = '\n';
+      else
+        output_pos++;
+      r_seen = false;
+    } else {
+      if (r_seen) p[output_pos++] = '\n';
+      r_seen = false;
+      if (input_pos != output_pos)
+        p[output_pos++] = in;
+      else
+        output_pos++;
+    }
+    input_pos++;
+  }
+  if (r_seen ||
+      (auto_end_last_line && output_pos > 0 && p[output_pos - 1] != '\n')) {
+    str->resize(output_pos + 1);
+    str->operator[](output_pos) = '\n';
+  } else if (output_pos < len) {
+    str->resize(output_pos);
+  }
+}
+
+namespace internal {
+
+
+
+
+
+
+namespace {
+
+
+
+
+std::string LocalizeRadix(const char *input, const char *radix_pos) {
+  
+  
+  
+  
+  
+  char temp[16];
+  int size = snprintf(temp, sizeof(temp), "%.1f", 1.5);
+  GOOGLE_CHECK_EQ(temp[0], '1');
+  GOOGLE_CHECK_EQ(temp[size - 1], '5');
+  GOOGLE_CHECK_LE(size, 6);
+
+  
+  std::string result;
+  result.reserve(strlen(input) + size - 3);
+  result.append(input, radix_pos);
+  result.append(temp + 1, size - 2);
+  result.append(radix_pos + 1);
+  return result;
+}
+
+}  
+
+double NoLocaleStrtod(const char *str, char **endptr) {
+  
+  
+  
+  
+  
+
+  char *temp_endptr;
+  double result = strtod(str, &temp_endptr);
+  if (endptr != NULL) *endptr = temp_endptr;
+  if (*temp_endptr != '.') return result;
+
+  
+  
+  
+  std::string localized = LocalizeRadix(str, temp_endptr);
+  const char *localized_cstr = localized.c_str();
+  char *localized_endptr;
+  result = strtod(localized_cstr, &localized_endptr);
+  if ((localized_endptr - localized_cstr) > (temp_endptr - str)) {
+    
+    
+    if (endptr != NULL) {
+      
+      int size_diff = localized.size() - strlen(str);
+      
+      *endptr = const_cast<char *>(
+          str + (localized_endptr - localized_cstr - size_diff));
+    }
+  }
+
+  return result;
+}
+
+}  
 
 }  
 }  

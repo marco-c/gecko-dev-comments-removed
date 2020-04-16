@@ -34,16 +34,28 @@
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/message.h>
 #include <google/protobuf/arenastring.h>
+#include <google/protobuf/message_lite.h>
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
+
+class FieldDescriptor;
+class Message;
+
 namespace internal {
 
+extern const char kAnyFullTypeName[];          
+extern const char kTypeGoogleApisComPrefix[];  
+extern const char kTypeGoogleProdComPrefix[];  
 
-class LIBPROTOBUF_EXPORT AnyMetadata {
+std::string GetTypeUrl(StringPiece message_name,
+                       StringPiece type_url_prefix);
+
+
+class PROTOBUF_EXPORT AnyMetadata {
   typedef ArenaStringPtr UrlType;
   typedef ArenaStringPtr ValueType;
  public:
@@ -52,31 +64,52 @@ class LIBPROTOBUF_EXPORT AnyMetadata {
 
   
   
+  template <typename T>
+  void PackFrom(const T& message) {
+    InternalPackFrom(message, kTypeGoogleApisComPrefix, T::FullMessageName());
+  }
+
   void PackFrom(const Message& message);
-  
-  
-  
-  
-  
-  
-  void PackFrom(const Message& message, const string& type_url_prefix);
 
   
   
   
   
+  
+  
+  template <typename T>
+  void PackFrom(const T& message, StringPiece type_url_prefix) {
+    InternalPackFrom(message, type_url_prefix, T::FullMessageName());
+  }
+
+  void PackFrom(const Message& message, const std::string& type_url_prefix);
+
+  
+  
+  
+  
+  template <typename T>
+  bool UnpackTo(T* message) const {
+    return InternalUnpackTo(T::FullMessageName(), message);
+  }
+
   bool UnpackTo(Message* message) const;
 
   
   
   
-  template<typename T>
+  template <typename T>
   bool Is() const {
-    return InternalIs(T::default_instance().GetDescriptor());
+    return InternalIs(T::FullMessageName());
   }
 
  private:
-  bool InternalIs(const Descriptor* message) const;
+  void InternalPackFrom(const MessageLite& message,
+                        StringPiece type_url_prefix,
+                        StringPiece type_name);
+  bool InternalUnpackTo(StringPiece type_name,
+                        MessageLite* message) const;
+  bool InternalIs(StringPiece type_name) const;
 
   UrlType* type_url_;
   ValueType* value_;
@@ -84,15 +117,22 @@ class LIBPROTOBUF_EXPORT AnyMetadata {
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(AnyMetadata);
 };
 
-extern const char kAnyFullTypeName[];          
-extern const char kTypeGoogleApisComPrefix[];  
-extern const char kTypeGoogleProdComPrefix[];  
 
 
 
 
 
-bool ParseAnyTypeUrl(const string& type_url, string* full_type_name);
+
+
+bool ParseAnyTypeUrl(const std::string& type_url, std::string* full_type_name);
+
+
+
+
+
+
+bool ParseAnyTypeUrl(const std::string& type_url, std::string* url_prefix,
+                     std::string* full_type_name);
 
 
 
@@ -102,6 +142,8 @@ bool GetAnyFieldDescriptors(const Message& message,
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

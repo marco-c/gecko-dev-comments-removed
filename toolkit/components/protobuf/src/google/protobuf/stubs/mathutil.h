@@ -30,16 +30,37 @@
 #ifndef GOOGLE_PROTOBUF_STUBS_MATHUTIL_H_
 #define GOOGLE_PROTOBUF_STUBS_MATHUTIL_H_
 
+#include <cmath>
 #include <float.h>
-#include <math.h>
+#include <limits>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
-#include <google/protobuf/stubs/mathlimits.h>
 
 namespace google {
 namespace protobuf {
 namespace internal {
+
+
+template <typename T>
+using MakeUnsignedT =
+    typename std::conditional<std::is_integral<T>::value, std::make_unsigned<T>,
+                              std::common_type<T>>::type::type;
+
+
+
+template <typename T,
+          typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
+bool IsNan(T val) {
+  return false;
+}
+
+template <typename T, typename std::enable_if<std::is_floating_point<T>::value,
+                                              int>::type = 0>
+bool IsNan(T val) {
+  return std::isnan(val);
+}
+
 template<typename T>
 bool AlmostEquals(T a, T b) {
   return a == b;
@@ -53,21 +74,22 @@ template<>
 inline bool AlmostEquals(double a, double b) {
   return fabs(a - b) < 32 * DBL_EPSILON;
 }
+
 }  
 
 class MathUtil {
  public:
-  template<typename T>
+  template <typename T>
   static T Sign(T value) {
-    if (value == T(0) || MathLimits<T>::IsNaN(value)) {
+    if (value == T(0) || internal::IsNan(value)) {
       return value;
     }
     return value > T(0) ? 1 : -1;
   }
 
-  template<typename T>
+  template <typename T>
   static bool AlmostEquals(T a, T b) {
-    return ::google::protobuf::internal::AlmostEquals(a, b);
+    return internal::AlmostEquals(a, b);
   }
 
   
@@ -76,9 +98,9 @@ class MathUtil {
   
   
   
-  template<typename T>
+  template <typename T>
   static T Max(const T x, const T y) {
-    return MathLimits<T>::IsNaN(x) || x > y ? x : y;
+    return internal::IsNan(x) || x > y ? x : y;
   }
 
   
@@ -93,10 +115,10 @@ class MathUtil {
 
   
   
-  template<typename T>
-  static typename MathLimits<T>::UnsignedType AbsDiff(const T x, const T y) {
+  template <typename T>
+  static typename internal::MakeUnsignedT<T> AbsDiff(const T x, const T y) {
     
-    typedef typename MathLimits<T>::UnsignedType R;
+    typedef typename internal::MakeUnsignedT<T> R;
     return x > y ? R(x) - R(y) : R(y) - R(x);
   }
 
@@ -123,11 +145,10 @@ bool MathUtil::WithinFractionOrMargin(const T x, const T y,
   
   
   
-  if (MathLimits<T>::kIsInteger) {
+  if (std::numeric_limits<T>::is_integer) {
     return x == y;
   } else {
-    
-    if (!MathLimits<T>::IsFinite(x) && !MathLimits<T>::IsFinite(y)) {
+    if (!std::isfinite(x) || !std::isfinite(y)) {
       return false;
     }
     T relative_margin = static_cast<T>(fraction * Max(Abs(x), Abs(y)));

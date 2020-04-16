@@ -34,19 +34,18 @@
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/type.pb.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/statusor.h>
 
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
-class Enum;
-}  
-
-
-namespace protobuf {
 namespace util {
 namespace converter {
+class ProtoWriter;
 
 
 
@@ -57,7 +56,7 @@ namespace converter {
 
 
 
-class LIBPROTOBUF_EXPORT DataPiece {
+class PROTOBUF_EXPORT DataPiece {
  public:
   
   
@@ -147,26 +146,17 @@ class LIBPROTOBUF_EXPORT DataPiece {
   util::StatusOr<bool> ToBool() const;
 
   
-  util::StatusOr<string> ToString() const;
+  util::StatusOr<std::string> ToString() const;
 
   
   
-  string ValueAsStringOrDefault(StringPiece default_string) const;
+  std::string ValueAsStringOrDefault(StringPiece default_string) const;
 
-  util::StatusOr<string> ToBytes() const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  util::StatusOr<int> ToEnum(const google::protobuf::Enum* enum_type,
-                               bool use_lower_camel_for_enums) const;
+  util::StatusOr<std::string> ToBytes() const;
 
  private:
+  friend class ProtoWriter;
+
   
   DataPiece();
 
@@ -176,16 +166,25 @@ class LIBPROTOBUF_EXPORT DataPiece {
 
   
   
+  util::StatusOr<int> ToEnum(const google::protobuf::Enum* enum_type,
+                               bool use_lower_camel_for_enums,
+                               bool case_insensitive_enum_parsing,
+                               bool ignore_unknown_enum_values,
+                               bool* is_unknown_enum_value) const;
+
+  
+  
   template <typename To>
   util::StatusOr<To> GenericConvert() const;
 
   
   
   template <typename To>
-  util::StatusOr<To> StringToNumber(bool (*func)(StringPiece, To*)) const;
+  util::StatusOr<To> StringToNumber(bool (*func)(StringPiece,
+                                                   To*)) const;
 
   
-  bool DecodeBase64(StringPiece src, string* dest) const;
+  bool DecodeBase64(StringPiece src, std::string* dest) const;
 
   
   void InternalCopy(const DataPiece& other);
@@ -214,6 +213,8 @@ class LIBPROTOBUF_EXPORT DataPiece {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

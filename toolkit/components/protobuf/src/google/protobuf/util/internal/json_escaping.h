@@ -28,8 +28,8 @@
 
 
 
-#ifndef NET_PROTO2_UTIL_CONVERTER_STRINGS_JSON_ESCAPING_H_
-#define NET_PROTO2_UTIL_CONVERTER_STRINGS_JSON_ESCAPING_H_
+#ifndef GOOGLE_PROTOBUF_UTIL_INTERNAL__JSON_ESCAPING_H__
+#define GOOGLE_PROTOBUF_UTIL_INTERNAL__JSON_ESCAPING_H__
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/bytestream.h>
@@ -79,6 +79,11 @@ class JsonEscaping {
   
   static void Escape(strings::ByteSource* input, strings::ByteSink* output);
 
+  
+  
+  
+  static void Escape(StringPiece input, strings::ByteSink* output);
+
  private:
   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(JsonEscaping);
 };
@@ -86,6 +91,6 @@ class JsonEscaping {
 }  
 }  
 }  
-
-#endif
 }  
+
+#endif  

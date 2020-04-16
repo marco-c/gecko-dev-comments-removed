@@ -35,14 +35,12 @@
 #include <string>
 
 #include <google/protobuf/stubs/common.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/status.h>
 
-namespace google {
-namespace util {
-class Status;
-}  
+#include <google/protobuf/port_def.inc>
 
+namespace google {
 namespace protobuf {
 namespace util {
 namespace converter {
@@ -69,7 +67,7 @@ class ObjectWriter;
 
 
 
-class LIBPROTOBUF_EXPORT JsonStreamParser {
+class PROTOBUF_EXPORT JsonStreamParser {
  public:
   
   explicit JsonStreamParser(ObjectWriter* ow);
@@ -83,7 +81,18 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
   util::Status FinishParse();
 
 
+  
+  
+  
+  void set_max_recursion_depth(int max_depth) {
+    max_recursion_depth_ = max_depth;
+  }
+
  private:
+  friend class JsonStreamParserTest;
+  
+  int recursion_depth() { return recursion_depth_; }
+
   enum TokenType {
     BEGIN_STRING,     
     BEGIN_NUMBER,     
@@ -155,6 +164,10 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
   util::Status ParseNumberHelper(NumberResult* result);
 
   
+  util::Status ParseDoubleHelper(const std::string& number,
+                                   NumberResult* result);
+
+  
   util::Status HandleBeginObject();
 
   
@@ -193,6 +206,11 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
   util::Status ReportUnknown(StringPiece message);
 
   
+  
+  
+  util::Status IncrementRecursionDepth(StringPiece key) const;
+
+  
   void SkipWhitespace();
 
   
@@ -213,7 +231,7 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
 
   
   
-  string leftover_;
+  std::string leftover_;
 
   
   
@@ -227,7 +245,7 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
 
   
   
-  string key_storage_;
+  std::string key_storage_;
 
   
   
@@ -239,14 +257,14 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
 
   
   
-  string parsed_storage_;
+  std::string parsed_storage_;
 
   
   
   char string_open_;
 
   
-  string chunk_storage_;
+  std::string chunk_storage_;
 
   
   bool coerce_to_utf8_;
@@ -256,7 +274,17 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
   bool allow_empty_null_;
 
   
+  
+  bool allow_permissive_key_naming_;
+
+  
   bool loose_float_number_conversion_;
+
+  
+  mutable int recursion_depth_;
+
+  
+  int max_recursion_depth_;
 
   GOOGLE_DISALLOW_IMPLICIT_CONSTRUCTORS(JsonStreamParser);
 };
@@ -264,6 +292,8 @@ class LIBPROTOBUF_EXPORT JsonStreamParser {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

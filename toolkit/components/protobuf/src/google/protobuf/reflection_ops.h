@@ -41,6 +41,12 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/message.h>
 
+#ifdef SWIG
+#error "You cannot SWIG proto headers"
+#endif
+
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 namespace internal {
@@ -54,7 +60,7 @@ namespace internal {
 
 
 
-class LIBPROTOBUF_EXPORT ReflectionOps {
+class PROTOBUF_EXPORT ReflectionOps {
  public:
   static void Copy(const Message& from, Message* to);
   static void Merge(const Message& from, Message* to);
@@ -66,8 +72,8 @@ class LIBPROTOBUF_EXPORT ReflectionOps {
   
   
   static void FindInitializationErrors(const Message& message,
-                                       const string& prefix,
-                                       std::vector<string>* errors);
+                                       const std::string& prefix,
+                                       std::vector<std::string>* errors);
 
  private:
   
@@ -76,6 +82,8 @@ class LIBPROTOBUF_EXPORT ReflectionOps {
 
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

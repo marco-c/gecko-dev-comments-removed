@@ -34,9 +34,12 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/type.pb.h>
 #include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/status.h>
 #include <google/protobuf/stubs/statusor.h>
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -44,7 +47,7 @@ namespace util {
 namespace converter {
 
 
-class LIBPROTOBUF_EXPORT TypeInfo {
+class PROTOBUF_EXPORT TypeInfo {
  public:
   TypeInfo() {}
   virtual ~TypeInfo() {}
@@ -87,6 +90,8 @@ class LIBPROTOBUF_EXPORT TypeInfo {
 }  
 }  
 }  
-
 }  
-#endif  
+
+#include <google/protobuf/port_undef.inc>
+
+#endif

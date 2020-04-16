@@ -87,14 +87,10 @@ const char kDurationType[] = "google.protobuf.Duration";
 const char kStructValueTypeUrl[] = "type.googleapis.com/google.protobuf.Value";
 
 
-const char kStructTypeUrl[] = "type.googleapis.com/google.protobuf.Struct";
-
-
 const char kAnyType[] = "google.protobuf.Any";
 
 
-const char kFieldMaskTypeUrl[] =
-    "type.googleapis.com/google.protobuf.FieldMask";
+const char kOptionJspbMessageId[] = "jspb.message_id";
 
 }  
 }  

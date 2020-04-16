@@ -36,7 +36,9 @@
 #include <stdarg.h> 
 #include <stdio.h> 
 #include <vector>
+
 #include <google/protobuf/stubs/common.h>
+#include <google/protobuf/stubs/logging.h>
 
 namespace google {
 namespace protobuf {
@@ -76,7 +78,7 @@ void StringAppendV(string* dst, const char* format, va_list ap) {
       
       
       va_copy(backup_ap, ap);
-      result = vsnprintf(NULL, 0, format, backup_ap);
+      result = vsnprintf(nullptr, 0, format, backup_ap);
       va_end(backup_ap);
     }
 
@@ -137,7 +139,7 @@ const int kStringPrintfVectorMaxArgs = 32;
 
 static const char string_printf_empty_block[256] = { '\0' };
 
-string StringPrintfVector(const char* format, const vector<string>& v) {
+string StringPrintfVector(const char* format, const std::vector<string>& v) {
   GOOGLE_CHECK_LE(v.size(), kStringPrintfVectorMaxArgs)
       << "StringPrintfVector currently only supports up to "
       << kStringPrintfVectorMaxArgs << " arguments. "

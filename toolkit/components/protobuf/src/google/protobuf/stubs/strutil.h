@@ -38,10 +38,12 @@
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/stringpiece.h>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1800
 #define strtoll  _strtoi64
 #define strtoull _strtoui64
 #elif defined(__DECCXX) && defined(__osf__)
@@ -155,13 +157,10 @@ inline string StripSuffixString(const string& str, const string& suffix) {
 
 
 
-LIBPROTOBUF_EXPORT void ReplaceCharacters(string* s, const char* remove,
-                                          char replacewith);
-LIBPROTOBUF_EXPORT void StripString(string* s, const char* remove,
-                                    char replacewith);
+PROTOBUF_EXPORT void ReplaceCharacters(string* s, const char* remove,
+                                       char replacewith);
 
-LIBPROTOBUF_EXPORT void StripWhitespace(string* s);
-
+PROTOBUF_EXPORT void StripWhitespace(string* s);
 
 
 
@@ -203,8 +202,8 @@ inline string ToUpper(const string& s) {
 
 
 
-LIBPROTOBUF_EXPORT string StringReplace(const string& s, const string& oldsub,
-                                        const string& newsub, bool replace_all);
+PROTOBUF_EXPORT string StringReplace(const string& s, const string& oldsub,
+                                     const string& newsub, bool replace_all);
 
 
 
@@ -212,8 +211,8 @@ LIBPROTOBUF_EXPORT string StringReplace(const string& s, const string& oldsub,
 
 
 
-LIBPROTOBUF_EXPORT void SplitStringUsing(const string& full, const char* delim,
-                                         vector<string>* res);
+PROTOBUF_EXPORT void SplitStringUsing(const string& full, const char* delim,
+                                      std::vector<string>* res);
 
 
 
@@ -223,17 +222,17 @@ LIBPROTOBUF_EXPORT void SplitStringUsing(const string& full, const char* delim,
 
 
 
-LIBPROTOBUF_EXPORT void SplitStringAllowEmpty(const string& full,
-                                              const char* delim,
-                                              vector<string>* result);
+PROTOBUF_EXPORT void SplitStringAllowEmpty(const string& full,
+                                           const char* delim,
+                                           std::vector<string>* result);
 
 
 
 
 
-inline vector<string> Split(
+inline std::vector<string> Split(
     const string& full, const char* delim, bool skip_empty = true) {
-  vector<string> result;
+  std::vector<string> result;
   if (skip_empty) {
     SplitStringUsing(full, delim, &result);
   } else {
@@ -250,10 +249,10 @@ inline vector<string> Split(
 
 
 
-LIBPROTOBUF_EXPORT void JoinStrings(const vector<string>& components,
-                                    const char* delim, string* result);
+PROTOBUF_EXPORT void JoinStrings(const std::vector<string>& components,
+                                 const char* delim, string* result);
 
-inline string JoinStrings(const vector<string>& components,
+inline string JoinStrings(const std::vector<string>& components,
                           const char* delim) {
   string result;
   JoinStrings(components, delim, &result);
@@ -291,9 +290,9 @@ inline string JoinStrings(const vector<string>& components,
 
 
 
-LIBPROTOBUF_EXPORT int UnescapeCEscapeSequences(const char* source, char* dest);
-LIBPROTOBUF_EXPORT int UnescapeCEscapeSequences(const char* source, char* dest,
-                                                vector<string> *errors);
+PROTOBUF_EXPORT int UnescapeCEscapeSequences(const char* source, char* dest);
+PROTOBUF_EXPORT int UnescapeCEscapeSequences(const char* source, char* dest,
+                                             std::vector<string>* errors);
 
 
 
@@ -310,10 +309,10 @@ LIBPROTOBUF_EXPORT int UnescapeCEscapeSequences(const char* source, char* dest,
 
 
 
-LIBPROTOBUF_EXPORT int UnescapeCEscapeString(const string& src, string* dest);
-LIBPROTOBUF_EXPORT int UnescapeCEscapeString(const string& src, string* dest,
-                                             vector<string> *errors);
-LIBPROTOBUF_EXPORT string UnescapeCEscapeString(const string& src);
+PROTOBUF_EXPORT int UnescapeCEscapeString(const string& src, string* dest);
+PROTOBUF_EXPORT int UnescapeCEscapeString(const string& src, string* dest,
+                                          std::vector<string>* errors);
+PROTOBUF_EXPORT string UnescapeCEscapeString(const string& src);
 
 
 
@@ -322,21 +321,21 @@ LIBPROTOBUF_EXPORT string UnescapeCEscapeString(const string& src);
 
 
 
-LIBPROTOBUF_EXPORT string CEscape(const string& src);
+PROTOBUF_EXPORT string CEscape(const string& src);
 
 
 
 
 
 
-LIBPROTOBUF_EXPORT void CEscapeAndAppend(StringPiece src, string* dest);
+PROTOBUF_EXPORT void CEscapeAndAppend(StringPiece src, string* dest);
 
 namespace strings {
 
-LIBPROTOBUF_EXPORT string Utf8SafeCEscape(const string& src);
+PROTOBUF_EXPORT string Utf8SafeCEscape(const string& src);
 
 
-LIBPROTOBUF_EXPORT string CHexEscape(const string& src);
+PROTOBUF_EXPORT string CHexEscape(const string& src);
 }  
 
 
@@ -349,10 +348,10 @@ LIBPROTOBUF_EXPORT string CHexEscape(const string& src);
 
 
 
-LIBPROTOBUF_EXPORT int32 strto32_adaptor(const char *nptr, char **endptr,
-                                         int base);
-LIBPROTOBUF_EXPORT uint32 strtou32_adaptor(const char *nptr, char **endptr,
-                                           int base);
+PROTOBUF_EXPORT int32 strto32_adaptor(const char* nptr, char** endptr,
+                                      int base);
+PROTOBUF_EXPORT uint32 strtou32_adaptor(const char* nptr, char** endptr,
+                                        int base);
 
 inline int32 strto32(const char *nptr, char **endptr, int base) {
   if (sizeof(int32) == sizeof(long))
@@ -391,10 +390,10 @@ inline uint64 strtou64(const char *nptr, char **endptr, int base) {
 
 
 
-LIBPROTOBUF_EXPORT bool safe_strtob(StringPiece str, bool* value);
+PROTOBUF_EXPORT bool safe_strtob(StringPiece str, bool* value);
 
-LIBPROTOBUF_EXPORT bool safe_strto32(const string& str, int32* value);
-LIBPROTOBUF_EXPORT bool safe_strtou32(const string& str, uint32* value);
+PROTOBUF_EXPORT bool safe_strto32(const string& str, int32* value);
+PROTOBUF_EXPORT bool safe_strtou32(const string& str, uint32* value);
 inline bool safe_strto32(const char* str, int32* value) {
   return safe_strto32(string(str), value);
 }
@@ -408,8 +407,8 @@ inline bool safe_strtou32(StringPiece str, uint32* value) {
   return safe_strtou32(str.ToString(), value);
 }
 
-LIBPROTOBUF_EXPORT bool safe_strto64(const string& str, int64* value);
-LIBPROTOBUF_EXPORT bool safe_strtou64(const string& str, uint64* value);
+PROTOBUF_EXPORT bool safe_strto64(const string& str, int64* value);
+PROTOBUF_EXPORT bool safe_strtou64(const string& str, uint64* value);
 inline bool safe_strto64(const char* str, int64* value) {
   return safe_strto64(string(str), value);
 }
@@ -423,8 +422,8 @@ inline bool safe_strtou64(StringPiece str, uint64* value) {
   return safe_strtou64(str.ToString(), value);
 }
 
-LIBPROTOBUF_EXPORT bool safe_strtof(const char* str, float* value);
-LIBPROTOBUF_EXPORT bool safe_strtod(const char* str, double* value);
+PROTOBUF_EXPORT bool safe_strtof(const char* str, float* value);
+PROTOBUF_EXPORT bool safe_strtod(const char* str, double* value);
 inline bool safe_strtof(const string& str, float* value) {
   return safe_strtof(str.c_str(), value);
 }
@@ -464,13 +463,13 @@ inline bool safe_strtod(StringPiece str, double* value) {
 
 static const int kFastToBufferSize = 32;
 
-LIBPROTOBUF_EXPORT char* FastInt32ToBuffer(int32 i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastInt64ToBuffer(int64 i, char* buffer);
+PROTOBUF_EXPORT char* FastInt32ToBuffer(int32 i, char* buffer);
+PROTOBUF_EXPORT char* FastInt64ToBuffer(int64 i, char* buffer);
 char* FastUInt32ToBuffer(uint32 i, char* buffer);  
 char* FastUInt64ToBuffer(uint64 i, char* buffer);  
-LIBPROTOBUF_EXPORT char* FastHexToBuffer(int i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastHex64ToBuffer(uint64 i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastHex32ToBuffer(uint32 i, char* buffer);
+PROTOBUF_EXPORT char* FastHexToBuffer(int i, char* buffer);
+PROTOBUF_EXPORT char* FastHex64ToBuffer(uint64 i, char* buffer);
+PROTOBUF_EXPORT char* FastHex32ToBuffer(uint32 i, char* buffer);
 
 
 inline char* FastIntToBuffer(int i, char* buffer) {
@@ -506,10 +505,10 @@ inline char* FastULongToBuffer(unsigned long i, char* buffer) {
 
 
 
-LIBPROTOBUF_EXPORT char* FastInt32ToBufferLeft(int32 i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastUInt32ToBufferLeft(uint32 i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastInt64ToBufferLeft(int64 i, char* buffer);
-LIBPROTOBUF_EXPORT char* FastUInt64ToBufferLeft(uint64 i, char* buffer);
+PROTOBUF_EXPORT char* FastInt32ToBufferLeft(int32 i, char* buffer);
+PROTOBUF_EXPORT char* FastUInt32ToBufferLeft(uint32 i, char* buffer);
+PROTOBUF_EXPORT char* FastInt64ToBufferLeft(int64 i, char* buffer);
+PROTOBUF_EXPORT char* FastUInt64ToBufferLeft(uint64 i, char* buffer);
 
 
 inline char* FastUInt32ToBuffer(uint32 i, char* buffer) {
@@ -531,12 +530,12 @@ inline string SimpleBtoa(bool value) {
 
 
 
-LIBPROTOBUF_EXPORT string SimpleItoa(int i);
-LIBPROTOBUF_EXPORT string SimpleItoa(unsigned int i);
-LIBPROTOBUF_EXPORT string SimpleItoa(long i);
-LIBPROTOBUF_EXPORT string SimpleItoa(unsigned long i);
-LIBPROTOBUF_EXPORT string SimpleItoa(long long i);
-LIBPROTOBUF_EXPORT string SimpleItoa(unsigned long long i);
+PROTOBUF_EXPORT string SimpleItoa(int i);
+PROTOBUF_EXPORT string SimpleItoa(unsigned int i);
+PROTOBUF_EXPORT string SimpleItoa(long i);
+PROTOBUF_EXPORT string SimpleItoa(unsigned long i);
+PROTOBUF_EXPORT string SimpleItoa(long long i);
+PROTOBUF_EXPORT string SimpleItoa(unsigned long long i);
 
 
 
@@ -557,11 +556,11 @@ LIBPROTOBUF_EXPORT string SimpleItoa(unsigned long long i);
 
 
 
-LIBPROTOBUF_EXPORT string SimpleDtoa(double value);
-LIBPROTOBUF_EXPORT string SimpleFtoa(float value);
+PROTOBUF_EXPORT string SimpleDtoa(double value);
+PROTOBUF_EXPORT string SimpleFtoa(float value);
 
-LIBPROTOBUF_EXPORT char* DoubleToBuffer(double i, char* buffer);
-LIBPROTOBUF_EXPORT char* FloatToBuffer(float i, char* buffer);
+PROTOBUF_EXPORT char* DoubleToBuffer(double i, char* buffer);
+PROTOBUF_EXPORT char* FloatToBuffer(float i, char* buffer);
 
 
 
@@ -610,7 +609,7 @@ struct Hex {
   }
 };
 
-struct LIBPROTOBUF_EXPORT AlphaNum {
+struct PROTOBUF_EXPORT AlphaNum {
   const char *piece_data_;  
   size_t piece_size_;       
 
@@ -619,16 +618,26 @@ struct LIBPROTOBUF_EXPORT AlphaNum {
   
   
 
-  AlphaNum(int32 i32)
+  AlphaNum(int i32)
       : piece_data_(digits),
         piece_size_(FastInt32ToBufferLeft(i32, digits) - &digits[0]) {}
-  AlphaNum(uint32 u32)
+  AlphaNum(unsigned int u32)
       : piece_data_(digits),
         piece_size_(FastUInt32ToBufferLeft(u32, digits) - &digits[0]) {}
-  AlphaNum(int64 i64)
+  AlphaNum(long long i64)
       : piece_data_(digits),
         piece_size_(FastInt64ToBufferLeft(i64, digits) - &digits[0]) {}
-  AlphaNum(uint64 u64)
+  AlphaNum(unsigned long long u64)
+      : piece_data_(digits),
+        piece_size_(FastUInt64ToBufferLeft(u64, digits) - &digits[0]) {}
+
+  
+  
+  
+  AlphaNum(long i64)
+      : piece_data_(digits),
+        piece_size_(FastInt64ToBufferLeft(i64, digits) - &digits[0]) {}
+  AlphaNum(unsigned long u64)
       : piece_data_(digits),
         piece_size_(FastUInt64ToBufferLeft(u64, digits) - &digits[0]) {}
 
@@ -692,30 +701,30 @@ using strings::AlphaNum;
 
 
 
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d,
-                                 const AlphaNum& e);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d,
-                                 const AlphaNum& e, const AlphaNum& f);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d,
-                                 const AlphaNum& e, const AlphaNum& f,
-                                 const AlphaNum& g);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d,
-                                 const AlphaNum& e, const AlphaNum& f,
-                                 const AlphaNum& g, const AlphaNum& h);
-LIBPROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
-                                 const AlphaNum& c, const AlphaNum& d,
-                                 const AlphaNum& e, const AlphaNum& f,
-                                 const AlphaNum& g, const AlphaNum& h,
-                                 const AlphaNum& i);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d,
+                              const AlphaNum& e);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d,
+                              const AlphaNum& e, const AlphaNum& f);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d,
+                              const AlphaNum& e, const AlphaNum& f,
+                              const AlphaNum& g);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d,
+                              const AlphaNum& e, const AlphaNum& f,
+                              const AlphaNum& g, const AlphaNum& h);
+PROTOBUF_EXPORT string StrCat(const AlphaNum& a, const AlphaNum& b,
+                              const AlphaNum& c, const AlphaNum& d,
+                              const AlphaNum& e, const AlphaNum& f,
+                              const AlphaNum& g, const AlphaNum& h,
+                              const AlphaNum& i);
 
 inline string StrCat(const AlphaNum& a) { return string(a.data(), a.size()); }
 
@@ -740,14 +749,14 @@ inline string StrCat(const AlphaNum& a) { return string(a.data(), a.size()); }
 
 
 
-LIBPROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a);
-LIBPROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
-                                  const AlphaNum& b);
-LIBPROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
-                                  const AlphaNum& b, const AlphaNum& c);
-LIBPROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
-                                  const AlphaNum& b, const AlphaNum& c,
-                                  const AlphaNum& d);
+PROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a);
+PROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
+                               const AlphaNum& b);
+PROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
+                               const AlphaNum& b, const AlphaNum& c);
+PROTOBUF_EXPORT void StrAppend(string* dest, const AlphaNum& a,
+                               const AlphaNum& b, const AlphaNum& c,
+                               const AlphaNum& d);
 
 
 
@@ -777,7 +786,7 @@ string Join(const Range& components,
 
 
 
-LIBPROTOBUF_EXPORT string ToHex(uint64 num);
+PROTOBUF_EXPORT string ToHex(uint64 num);
 
 
 
@@ -786,9 +795,9 @@ LIBPROTOBUF_EXPORT string ToHex(uint64 num);
 
 
 
-LIBPROTOBUF_EXPORT int GlobalReplaceSubstring(const string& substring,
-                                              const string& replacement,
-                                              string* s);
+PROTOBUF_EXPORT int GlobalReplaceSubstring(const string& substring,
+                                           const string& replacement,
+                                           string* s);
 
 
 
@@ -796,31 +805,7 @@ LIBPROTOBUF_EXPORT int GlobalReplaceSubstring(const string& substring,
 
 
 
-LIBPROTOBUF_EXPORT bool Base64Unescape(StringPiece src, string* dest);
-
-
-
-
-
-
-
-
-
-
-
-
-LIBPROTOBUF_EXPORT int WebSafeBase64Unescape(const char* src, int slen,
-                                             char* dest, int szdest);
-LIBPROTOBUF_EXPORT bool WebSafeBase64Unescape(StringPiece src, string* dest);
-
-
-
-
-
-LIBPROTOBUF_EXPORT int CalculateBase64EscapedLen(int input_len,
-                                                 bool do_padding);
-
-LIBPROTOBUF_EXPORT int CalculateBase64EscapedLen(int input_len);
+PROTOBUF_EXPORT bool Base64Unescape(StringPiece src, string* dest);
 
 
 
@@ -833,24 +818,47 @@ LIBPROTOBUF_EXPORT int CalculateBase64EscapedLen(int input_len);
 
 
 
+PROTOBUF_EXPORT int WebSafeBase64Unescape(const char* src, int slen, char* dest,
+                                          int szdest);
+PROTOBUF_EXPORT bool WebSafeBase64Unescape(StringPiece src, string* dest);
 
-LIBPROTOBUF_EXPORT int Base64Escape(const unsigned char* src, int slen,
-                                    char* dest, int szdest);
-LIBPROTOBUF_EXPORT int WebSafeBase64Escape(
-    const unsigned char* src, int slen, char* dest,
-    int szdest, bool do_padding);
 
-LIBPROTOBUF_EXPORT void Base64Escape(StringPiece src, string* dest);
 
-LIBPROTOBUF_EXPORT void WebSafeBase64Escape(StringPiece src, string* dest);
 
-LIBPROTOBUF_EXPORT void WebSafeBase64EscapeWithPadding(StringPiece src,
-                                                       string* dest);
 
-LIBPROTOBUF_EXPORT void Base64Escape(const unsigned char* src, int szsrc,
-                                     string* dest, bool do_padding);
-LIBPROTOBUF_EXPORT void WebSafeBase64Escape(const unsigned char* src, int szsrc,
-                                            string* dest, bool do_padding);
+PROTOBUF_EXPORT int CalculateBase64EscapedLen(int input_len, bool do_padding);
+
+PROTOBUF_EXPORT int CalculateBase64EscapedLen(int input_len);
+
+
+
+
+
+
+
+
+
+
+
+
+
+PROTOBUF_EXPORT int Base64Escape(const unsigned char* src, int slen, char* dest,
+                                 int szdest);
+PROTOBUF_EXPORT int WebSafeBase64Escape(const unsigned char* src, int slen,
+                                        char* dest, int szdest,
+                                        bool do_padding);
+
+PROTOBUF_EXPORT void Base64Escape(StringPiece src, string* dest);
+
+PROTOBUF_EXPORT void WebSafeBase64Escape(StringPiece src, string* dest);
+
+PROTOBUF_EXPORT void WebSafeBase64EscapeWithPadding(StringPiece src,
+                                                    string* dest);
+
+PROTOBUF_EXPORT void Base64Escape(const unsigned char* src, int szsrc,
+                                  string* dest, bool do_padding);
+PROTOBUF_EXPORT void WebSafeBase64Escape(const unsigned char* src, int szsrc,
+                                         string* dest, bool do_padding);
 
 inline bool IsValidCodePoint(uint32 code_point) {
   return code_point < 0xD800 ||
@@ -864,15 +872,75 @@ static const int UTFmax = 4;
 
 
 
-LIBPROTOBUF_EXPORT int EncodeAsUTF8Char(uint32 code_point, char* output);
+PROTOBUF_EXPORT int EncodeAsUTF8Char(uint32 code_point, char* output);
 
 
 
 
 
-LIBPROTOBUF_EXPORT int UTF8FirstLetterNumBytes(const char* src, int len);
+PROTOBUF_EXPORT int UTF8FirstLetterNumBytes(const char* src, int len);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+PROTOBUF_EXPORT void CleanStringLineEndings(const string& src, string* dst,
+                                            bool auto_end_last_line);
+
+
+PROTOBUF_EXPORT void CleanStringLineEndings(string* str,
+                                            bool auto_end_last_line);
+
+namespace strings {
+inline bool EndsWith(StringPiece text, StringPiece suffix) {
+  return suffix.empty() ||
+      (text.size() >= suffix.size() &&
+       memcmp(text.data() + (text.size() - suffix.size()), suffix.data(),
+              suffix.size()) == 0);
+}
+}  
+
+namespace internal {
+
+
+
+double NoLocaleStrtod(const char* str, char** endptr);
+
+}  
 
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

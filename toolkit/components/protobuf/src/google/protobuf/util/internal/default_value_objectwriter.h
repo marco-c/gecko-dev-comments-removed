@@ -31,21 +31,21 @@
 #ifndef GOOGLE_PROTOBUF_UTIL_CONVERTER_DEFAULT_VALUE_OBJECTWRITER_H__
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_DEFAULT_VALUE_OBJECTWRITER_H__
 
+#include <functional>
 #include <memory>
-#ifndef _SHARED_PTR_H
-#include <google/protobuf/stubs/shared_ptr.h>
-#endif
 #include <stack>
 #include <vector>
 
-#include <google/protobuf/stubs/callback.h>
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/util/internal/type_info.h>
 #include <google/protobuf/util/internal/datapiece.h>
 #include <google/protobuf/util/internal/object_writer.h>
 #include <google/protobuf/util/internal/utility.h>
 #include <google/protobuf/util/type_resolver.h>
-#include <google/protobuf/stubs/stringpiece.h>
+#include <google/protobuf/stubs/strutil.h>
+
+
+#include <google/protobuf/port_def.inc>
 
 namespace google {
 namespace protobuf {
@@ -58,7 +58,7 @@ namespace converter {
 
 
 
-class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
+class PROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
  public:
   
   
@@ -71,13 +71,10 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   
   
   
-  typedef ResultCallback2<bool ,
-                          const std::vector<string>& ,
-                          const google::protobuf::Field* >
+  typedef std::function<bool(
+      const std::vector<std::string>& ,
+      const google::protobuf::Field* )>
       FieldScrubCallBack;
-
-  
-  typedef google::protobuf::scoped_ptr<FieldScrubCallBack> FieldScrubCallBackPtr;
 
   DefaultValueObjectWriter(TypeResolver* type_resolver,
                            const google::protobuf::Type& type,
@@ -86,41 +83,44 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   virtual ~DefaultValueObjectWriter();
 
   
-  virtual DefaultValueObjectWriter* StartObject(StringPiece name);
+  DefaultValueObjectWriter* StartObject(StringPiece name) override;
 
-  virtual DefaultValueObjectWriter* EndObject();
+  DefaultValueObjectWriter* EndObject() override;
 
-  virtual DefaultValueObjectWriter* StartList(StringPiece name);
+  DefaultValueObjectWriter* StartList(StringPiece name) override;
 
-  virtual DefaultValueObjectWriter* EndList();
+  DefaultValueObjectWriter* EndList() override;
 
-  virtual DefaultValueObjectWriter* RenderBool(StringPiece name, bool value);
+  DefaultValueObjectWriter* RenderBool(StringPiece name,
+                                       bool value) override;
 
-  virtual DefaultValueObjectWriter* RenderInt32(StringPiece name, int32 value);
+  DefaultValueObjectWriter* RenderInt32(StringPiece name,
+                                        int32 value) override;
 
-  virtual DefaultValueObjectWriter* RenderUint32(StringPiece name,
-                                                 uint32 value);
+  DefaultValueObjectWriter* RenderUint32(StringPiece name,
+                                         uint32 value) override;
 
-  virtual DefaultValueObjectWriter* RenderInt64(StringPiece name, int64 value);
+  DefaultValueObjectWriter* RenderInt64(StringPiece name,
+                                        int64 value) override;
 
-  virtual DefaultValueObjectWriter* RenderUint64(StringPiece name,
-                                                 uint64 value);
+  DefaultValueObjectWriter* RenderUint64(StringPiece name,
+                                         uint64 value) override;
 
-  virtual DefaultValueObjectWriter* RenderDouble(StringPiece name,
-                                                 double value);
+  DefaultValueObjectWriter* RenderDouble(StringPiece name,
+                                         double value) override;
 
-  virtual DefaultValueObjectWriter* RenderFloat(StringPiece name, float value);
+  DefaultValueObjectWriter* RenderFloat(StringPiece name,
+                                        float value) override;
 
-  virtual DefaultValueObjectWriter* RenderString(StringPiece name,
-                                                 StringPiece value);
-  virtual DefaultValueObjectWriter* RenderBytes(StringPiece name,
-                                                StringPiece value);
+  DefaultValueObjectWriter* RenderString(StringPiece name,
+                                         StringPiece value) override;
+  DefaultValueObjectWriter* RenderBytes(StringPiece name,
+                                        StringPiece value) override;
 
-  virtual DefaultValueObjectWriter* RenderNull(StringPiece name);
+  DefaultValueObjectWriter* RenderNull(StringPiece name) override;
 
   
-  
-  void RegisterFieldScrubCallBack(FieldScrubCallBackPtr field_scrub_callback);
+  void RegisterFieldScrubCallBack(FieldScrubCallBack field_scrub_callback);
 
   
   
@@ -130,6 +130,10 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   void set_preserve_proto_field_names(bool value) {
     preserve_proto_field_names_ = value;
   }
+
+  
+  
+  void set_print_enums_as_ints(bool value) { use_ints_for_enums_ = value; }
 
  protected:
   enum NodeKind {
@@ -141,17 +145,13 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
 
   
   
-  class LIBPROTOBUF_EXPORT Node {
+  class PROTOBUF_EXPORT Node {
    public:
-    Node(const string& name, const google::protobuf::Type* type, NodeKind kind,
-         const DataPiece& data, bool is_placeholder,
-         const std::vector<string>& path, bool suppress_empty_list,
-         FieldScrubCallBack* field_scrub_callback);
-    Node(const string& name, const google::protobuf::Type* type, NodeKind kind,
-         const DataPiece& data, bool is_placeholder,
-         const std::vector<string>& path, bool suppress_empty_list,
-         bool preserve_proto_field_names,
-         FieldScrubCallBack* field_scrub_callback);
+    Node(const std::string& name, const google::protobuf::Type* type,
+         NodeKind kind, const DataPiece& data, bool is_placeholder,
+         const std::vector<std::string>& path, bool suppress_empty_list,
+         bool preserve_proto_field_names, bool use_ints_for_enums,
+         FieldScrubCallBack field_scrub_callback);
     virtual ~Node() {
       for (int i = 0; i < children_.size(); ++i) {
         delete children_[i];
@@ -175,9 +175,9 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
     virtual void WriteTo(ObjectWriter* ow);
 
     
-    const string& name() const { return name_; }
+    const std::string& name() const { return name_; }
 
-    const std::vector<string>& path() const { return path_; }
+    const std::vector<std::string>& path() const { return path_; }
 
     const google::protobuf::Type* type() const { return type_; }
 
@@ -207,7 +207,7 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
     void WriteChildren(ObjectWriter* ow);
 
     
-    string name_;
+    std::string name_;
     
     const google::protobuf::Type* type_;
     
@@ -225,7 +225,7 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
     bool is_placeholder_;
 
     
-    std::vector<string> path_;
+    std::vector<std::string> path_;
 
     
     bool suppress_empty_list_;
@@ -234,33 +234,35 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
     bool preserve_proto_field_names_;
 
     
+    bool use_ints_for_enums_;
+
     
-    FieldScrubCallBack* field_scrub_callback_;
+    FieldScrubCallBack field_scrub_callback_;
 
    private:
     GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(Node);
   };
 
   
-  virtual Node* CreateNewNode(const string& name,
+  virtual Node* CreateNewNode(const std::string& name,
                               const google::protobuf::Type* type, NodeKind kind,
                               const DataPiece& data, bool is_placeholder,
-                              const std::vector<string>& path,
-                              bool suppress_empty_list,
-                              FieldScrubCallBack* field_scrub_callback);
-
-  
-  virtual Node* CreateNewNode(const string& name,
-                              const google::protobuf::Type* type, NodeKind kind,
-                              const DataPiece& data, bool is_placeholder,
-                              const std::vector<string>& path,
+                              const std::vector<std::string>& path,
                               bool suppress_empty_list,
                               bool preserve_proto_field_names,
-                              FieldScrubCallBack* field_scrub_callback);
+                              bool use_ints_for_enums,
+                              FieldScrubCallBack field_scrub_callback);
 
   
   static DataPiece CreateDefaultDataPieceForField(
-      const google::protobuf::Field& field, const TypeInfo* typeinfo);
+      const google::protobuf::Field& field, const TypeInfo* typeinfo) {
+    return CreateDefaultDataPieceForField(field, typeinfo, false);
+  }
+
+  
+  static DataPiece CreateDefaultDataPieceForField(
+      const google::protobuf::Field& field, const TypeInfo* typeinfo,
+      bool use_ints_for_enums);
 
  protected:
   
@@ -282,7 +284,8 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   
   
   static DataPiece FindEnumDefault(const google::protobuf::Field& field,
-                                   const TypeInfo* typeinfo);
+                                   const TypeInfo* typeinfo,
+                                   bool use_ints_for_enums);
 
   
   
@@ -292,12 +295,12 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   
   const google::protobuf::Type& type_;
   
-  std::vector<string*> string_values_;
+  std::vector<std::unique_ptr<std::string>> string_values_;
 
   
   Node* current_;
   
-  google::protobuf::scoped_ptr<Node> root_;
+  std::unique_ptr<Node> root_;
   
   std::stack<Node*> stack_;
 
@@ -308,8 +311,10 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
   bool preserve_proto_field_names_;
 
   
+  bool use_ints_for_enums_;
+
   
-  FieldScrubCallBackPtr field_scrub_callback_;
+  FieldScrubCallBack field_scrub_callback_;
 
   ObjectWriter* ow_;
 
@@ -319,6 +324,8 @@ class LIBPROTOBUF_EXPORT DefaultValueObjectWriter : public ObjectWriter {
 }  
 }  
 }  
-
 }  
+
+#include <google/protobuf/port_undef.inc>
+
 #endif  

@@ -89,6 +89,8 @@
 
 #include <google/protobuf/stubs/status.h>
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
 namespace protobuf {
 namespace util {
@@ -162,7 +164,7 @@ class StatusOr {
 
 namespace internal {
 
-class LIBPROTOBUF_EXPORT StatusOrHelper {
+class PROTOBUF_EXPORT StatusOrHelper {
  public:
   
   static void Crash(const util::Status& status);
@@ -180,7 +182,7 @@ struct StatusOrHelper::Specialize {
 
 template<typename T>
 struct StatusOrHelper::Specialize<T*> {
-  static inline bool IsValueNull(const T* t) { return t == NULL; }
+  static inline bool IsValueNull(const T* t) { return t == nullptr; }
 };
 
 }  
@@ -202,7 +204,7 @@ inline StatusOr<T>::StatusOr(const Status& status) {
 template<typename T>
 inline StatusOr<T>::StatusOr(const T& value) {
   if (internal::StatusOrHelper::Specialize<T>::IsValueNull(value)) {
-    status_ = Status(error::INTERNAL, "NULL is not a vaild argument.");
+    status_ = Status(error::INTERNAL, "nullptr is not a vaild argument.");
   } else {
     status_ = Status::OK;
     value_ = value;
@@ -255,5 +257,7 @@ inline const T& StatusOr<T>::ValueOrDie() const {
 }  
 }  
 }  
+
+#include <google/protobuf/port_undef.inc>
 
 #endif  

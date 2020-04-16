@@ -32,35 +32,22 @@
 #define GOOGLE_PROTOBUF_UTIL_CONVERTER_UTILITY_H__
 
 #include <memory>
-#ifndef _SHARED_PTR_H
-#include <google/protobuf/stubs/shared_ptr.h>
-#endif
 #include <string>
 #include <utility>
 
 #include <google/protobuf/stubs/common.h>
 #include <google/protobuf/stubs/logging.h>
+#include <google/protobuf/any.pb.h>
 #include <google/protobuf/type.pb.h>
 #include <google/protobuf/repeated_field.h>
-#include <google/protobuf/stubs/stringpiece.h>
 #include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/stubs/status.h>
 #include <google/protobuf/stubs/statusor.h>
 
 
+#include <google/protobuf/port_def.inc>
+
 namespace google {
-namespace protobuf {
-class Method;
-class Any;
-class Bool;
-class Option;
-class Field;
-class Type;
-class Enum;
-class EnumValue;
-}  
-
-
 namespace protobuf {
 namespace util {
 namespace converter {
@@ -71,60 +58,62 @@ static const int64 kTypeUrlSize = 19;
 
 
 
-LIBPROTOBUF_EXPORT bool GetBoolOptionOrDefault(
-    const google::protobuf::RepeatedPtrField<google::protobuf::Option>& options,
-    const string& option_name, bool default_value);
+PROTOBUF_EXPORT bool GetBoolOptionOrDefault(
+    const RepeatedPtrField<google::protobuf::Option>& options,
+    StringPiece option_name, bool default_value);
 
 
 
-LIBPROTOBUF_EXPORT int64 GetInt64OptionOrDefault(
-    const google::protobuf::RepeatedPtrField<google::protobuf::Option>& options,
-    const string& option_name, int64 default_value);
+PROTOBUF_EXPORT int64 GetInt64OptionOrDefault(
+    const RepeatedPtrField<google::protobuf::Option>& options,
+    StringPiece option_name, int64 default_value);
 
 
 
-LIBPROTOBUF_EXPORT double GetDoubleOptionOrDefault(
-    const google::protobuf::RepeatedPtrField<google::protobuf::Option>& options,
-    const string& option_name, double default_value);
+PROTOBUF_EXPORT double GetDoubleOptionOrDefault(
+    const RepeatedPtrField<google::protobuf::Option>& options,
+    StringPiece option_name, double default_value);
 
 
 
-LIBPROTOBUF_EXPORT string GetStringOptionOrDefault(
-    const google::protobuf::RepeatedPtrField<google::protobuf::Option>& options,
-    const string& option_name, const string& default_value);
-
-
-
-
-
-LIBPROTOBUF_EXPORT bool GetBoolFromAny(const google::protobuf::Any& any);
-
-
-LIBPROTOBUF_EXPORT int64 GetInt64FromAny(const google::protobuf::Any& any);
-
-
-LIBPROTOBUF_EXPORT double GetDoubleFromAny(const google::protobuf::Any& any);
-
-
-LIBPROTOBUF_EXPORT string GetStringFromAny(const google::protobuf::Any& any);
-
-
-
-LIBPROTOBUF_EXPORT const StringPiece GetTypeWithoutUrl(StringPiece type_url);
+PROTOBUF_EXPORT std::string GetStringOptionOrDefault(
+    const RepeatedPtrField<google::protobuf::Option>& options,
+    StringPiece option_name, StringPiece default_value);
 
 
 
 
 
+PROTOBUF_EXPORT bool GetBoolFromAny(const google::protobuf::Any& any);
 
 
-LIBPROTOBUF_EXPORT const string GetFullTypeWithUrl(StringPiece simple_type);
+PROTOBUF_EXPORT int64 GetInt64FromAny(const google::protobuf::Any& any);
+
+
+PROTOBUF_EXPORT double GetDoubleFromAny(const google::protobuf::Any& any);
+
+
+PROTOBUF_EXPORT std::string GetStringFromAny(const google::protobuf::Any& any);
+
+
+
+PROTOBUF_EXPORT const StringPiece GetTypeWithoutUrl(
+    StringPiece type_url);
+
+
+
+
+
+
+
+PROTOBUF_EXPORT const std::string GetFullTypeWithUrl(
+    StringPiece simple_type);
 
 
 
 const google::protobuf::Option* FindOptionOrNull(
-    const google::protobuf::RepeatedPtrField<google::protobuf::Option>& options,
-    const string& option_name);
+    const RepeatedPtrField<google::protobuf::Option>& options,
+    StringPiece option_name);
 
 
 
@@ -158,51 +147,57 @@ const google::protobuf::EnumValue* FindEnumValueByNameWithoutUnderscoreOrNull(
     const google::protobuf::Enum* enum_type, StringPiece enum_name);
 
 
-LIBPROTOBUF_EXPORT string ToCamelCase(const StringPiece input);
+PROTOBUF_EXPORT std::string ToCamelCase(const StringPiece input);
 
 
-LIBPROTOBUF_EXPORT string ToSnakeCase(StringPiece input);
+std::string EnumValueNameToLowerCamelCase(const StringPiece input);
 
 
-LIBPROTOBUF_EXPORT bool IsWellKnownType(const string& type_name);
+PROTOBUF_EXPORT std::string ToSnakeCase(StringPiece input);
+
+
+PROTOBUF_EXPORT bool IsWellKnownType(const std::string& type_name);
 
 
 
-LIBPROTOBUF_EXPORT bool IsValidBoolString(const string& bool_string);
+PROTOBUF_EXPORT bool IsValidBoolString(StringPiece bool_string);
 
 
-LIBPROTOBUF_EXPORT bool IsMap(const google::protobuf::Field& field,
-           const google::protobuf::Type& type);
+PROTOBUF_EXPORT bool IsMap(const google::protobuf::Field& field,
+                           const google::protobuf::Type& type);
 
 
 bool IsMessageSetWireFormat(const google::protobuf::Type& type);
 
 
-LIBPROTOBUF_EXPORT string DoubleAsString(double value);
-LIBPROTOBUF_EXPORT string FloatAsString(float value);
+PROTOBUF_EXPORT std::string DoubleAsString(double value);
+PROTOBUF_EXPORT std::string FloatAsString(float value);
 
 
 template <typename T>
-string ValueAsString(T value) {
-  return SimpleItoa(value);
+std::string ValueAsString(T value) {
+  return StrCat(value);
 }
 
 template <>
-inline string ValueAsString(float value) {
+inline std::string ValueAsString(float value) {
   return FloatAsString(value);
 }
 
 template <>
-inline string ValueAsString(double value) {
+inline std::string ValueAsString(double value) {
   return DoubleAsString(value);
 }
 
 
 
-LIBPROTOBUF_EXPORT bool SafeStrToFloat(StringPiece str, float* value);
+PROTOBUF_EXPORT bool SafeStrToFloat(StringPiece str, float* value);
+
+}  
 }  
 }  
 }  
 
-}  
+#include <google/protobuf/port_undef.inc>
+
 #endif  
