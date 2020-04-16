@@ -5,7 +5,9 @@
 
 
 #include "nsCOMPtr.h"
+#include "nsIBrowser.h"
 #include "nsIContent.h"
+#include "nsIOpenWindowInfo.h"
 #include "nsFrameLoader.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
@@ -76,23 +78,19 @@ void XULFrameElement::LoadSrc() {
   RefPtr<nsFrameLoader> frameLoader = GetFrameLoader();
   if (!frameLoader) {
     
-    RefPtr<BrowsingContext> opener = mOpener;
-    if (!opener) {
-      
-      nsCOMPtr<nsPIDOMWindowOuter> window = OwnerDoc()->GetWindow();
-      if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::primary, nsGkAtoms::_true,
-                      eIgnoreCase) &&
-          window) {
-        opener = window->TakeOpenerForInitialContentBrowser();
-      }
+    
+    
+    
+    nsCOMPtr<nsIOpenWindowInfo> openWindowInfo;
+    if (nsCOMPtr<nsIBrowser> browser = AsBrowser()) {
+      browser->GetOpenWindowInfo(getter_AddRefs(openWindowInfo));
+      browser->SetOpenWindowInfo(nullptr);
     }
-    mOpener = nullptr;
 
     
     
     
-    
-    mFrameLoader = nsFrameLoader::Create(this, opener, false);
+    mFrameLoader = nsFrameLoader::Create(this, false, openWindowInfo);
     if (NS_WARN_IF(!mFrameLoader)) {
       return;
     }

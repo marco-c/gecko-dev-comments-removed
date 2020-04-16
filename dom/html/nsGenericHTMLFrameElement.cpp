@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsGenericHTMLFrameElement.h"
 
@@ -80,10 +80,10 @@ Document* nsGenericHTMLFrameElement::GetContentDocument(
 
   nsPIDOMWindowOuter* window = bc->GetDOMWindow();
   if (!window) {
-    // Either our browsing context contents are out-of-process (in which case
-    // clearly this is a cross-origin call and we should return null), or our
-    // browsing context is torn-down enough to no longer have a window or a
-    // document, and we should still return null.
+    
+    
+    
+    
     return nullptr;
   }
   Document* doc = window->GetDoc();
@@ -91,7 +91,7 @@ Document* nsGenericHTMLFrameElement::GetContentDocument(
     return nullptr;
   }
 
-  // Return null for cross-origin contentDocument.
+  
   if (!aSubjectPrincipal.SubsumesConsideringDomain(doc->NodePrincipal())) {
     return nullptr;
   }
@@ -106,7 +106,7 @@ BrowsingContext* nsGenericHTMLFrameElement::GetContentWindowInternal() {
   }
 
   if (mFrameLoader->DepthTooGreat()) {
-    // Claim to have no contentWindow
+    
     return nullptr;
   }
 
@@ -124,13 +124,13 @@ Nullable<WindowProxyHolder> nsGenericHTMLFrameElement::GetContentWindow() {
 
 void nsGenericHTMLFrameElement::EnsureFrameLoader() {
   if (!IsInComposedDoc() || mFrameLoader || mFrameLoaderCreationDisallowed) {
-    // If frame loader is there, we just keep it around, cached
+    
     return;
   }
 
-  // Strangely enough, this method doesn't actually ensure that the
-  // frameloader exists.  It's more of a best-effort kind of thing.
-  mFrameLoader = nsFrameLoader::Create(this, mOpenerWindow, mNetworkCreated);
+  
+  
+  mFrameLoader = nsFrameLoader::Create(this, mNetworkCreated);
 }
 
 void nsGenericHTMLFrameElement::DisallowCreateFrameLoader() {
@@ -155,10 +155,10 @@ void nsGenericHTMLFrameElement::CreateRemoteFrameLoader(
   mFrameLoader->InitializeFromBrowserParent(aBrowserParent);
 
   if (nsSubDocumentFrame* subdocFrame = do_QueryFrame(GetPrimaryFrame())) {
-    // The reflow for this element already happened while we were waiting
-    // for the iframe creation. Therefore the subdoc frame didn't have a
-    // frameloader when UpdatePositionAndSize was supposed to be called in
-    // ReflowFinished, and we need to do it properly now.
+    
+    
+    
+    
     mFrameLoader->UpdatePositionAndSize(subdocFrame);
   }
 }
@@ -173,7 +173,7 @@ void nsGenericHTMLFrameElement::PresetOpenerWindow(
 void nsGenericHTMLFrameElement::SwapFrameLoaders(
     HTMLIFrameElement& aOtherLoaderOwner, ErrorResult& rv) {
   if (&aOtherLoaderOwner == this) {
-    // nothing to do
+    
     return;
   }
 
@@ -188,7 +188,7 @@ void nsGenericHTMLFrameElement::SwapFrameLoaders(
 void nsGenericHTMLFrameElement::SwapFrameLoaders(
     nsFrameLoaderOwner* aOtherLoaderOwner, mozilla::ErrorResult& rv) {
   if (RefPtr<Document> doc = GetComposedDoc()) {
-    // SwapWithOtherLoader relies on frames being up-to-date.
+    
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
@@ -225,24 +225,24 @@ nsresult nsGenericHTMLFrameElement::BindToTree(BindContext& aContext,
 
     AUTO_PROFILER_LABEL("nsGenericHTMLFrameElement::BindToTree", OTHER);
 
-    // We're in a document now.  Kick off the frame load.
+    
     LoadSrc();
   }
 
-  // We're now in document and scripts may move us, so clear
-  // the mNetworkCreated flag.
+  
+  
   mNetworkCreated = false;
   return rv;
 }
 
 void nsGenericHTMLFrameElement::UnbindFromTree(bool aNullParent) {
   if (mFrameLoader) {
-    // This iframe is being taken out of the document, destroy the
-    // iframe's frame loader (doing that will tear down the window in
-    // this iframe).
-    // XXXbz we really want to only partially destroy the frame
-    // loader... we don't want to tear down the docshell.  Food for
-    // later bug.
+    
+    
+    
+    
+    
+    
     mFrameLoader->Destroy();
     mFrameLoader = nullptr;
   }
@@ -250,7 +250,7 @@ void nsGenericHTMLFrameElement::UnbindFromTree(bool aNullParent) {
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
 }
 
-/* static */
+
 ScrollbarPreference nsGenericHTMLFrameElement::MapScrollingAttribute(
     const nsAttrValue* aValue) {
   if (aValue && aValue->Type() == nsAttrValue::eEnum) {
@@ -275,7 +275,7 @@ static bool PrincipalAllowsBrowserFrame(nsIPrincipal* aPrincipal) {
   return permission == nsIPermissionManager::ALLOW_ACTION;
 }
 
-/* virtual */
+
 nsresult nsGenericHTMLFrameElement::AfterSetAttr(
     int32_t aNameSpaceID, nsAtom* aName, const nsAttrValue* aValue,
     const nsAttrValue* aOldValue, nsIPrincipal* aMaybeScriptedPrincipal,
@@ -296,11 +296,11 @@ nsresult nsGenericHTMLFrameElement::AfterSetAttr(
         if (nsIDocShell* docshell = mFrameLoader->GetExistingDocShell()) {
           nsDocShell::Cast(docshell)->SetScrollbarPreference(pref);
         } else if (auto* child = mFrameLoader->GetBrowserBridgeChild()) {
-          // NOTE(emilio): We intentionally don't deal with the
-          // GetBrowserParent() case, and only deal with the fission iframe
-          // case. We could make it work, but it's a bit of boilerplate for
-          // something that we don't use, and we'd need to think how it
-          // interacts with the scrollbar window flags...
+          
+          
+          
+          
+          
           child->SendScrollbarPreferenceChanged(pref);
         }
       }
@@ -334,12 +334,12 @@ void nsGenericHTMLFrameElement::AfterMaybeChangeAttr(
           aMaybeScriptedPrincipal);
       if (!IsHTMLElement(nsGkAtoms::iframe) ||
           !HasAttr(kNameSpaceID_None, nsGkAtoms::srcdoc)) {
-        // Don't propagate error here. The attribute was successfully
-        // set or removed; that's what we should reflect.
+        
+        
         LoadSrc();
       }
     } else if (aName == nsGkAtoms::name) {
-      // Propagate "name" to the browsing context per HTML5.
+      
       RefPtr<BrowsingContext> bc =
           mFrameLoader ? mFrameLoader->GetExtantBrowsingContext() : nullptr;
       if (bc) {
@@ -370,7 +370,7 @@ nsresult nsGenericHTMLFrameElement::CopyInnerTo(Element* aDest) {
   if (doc->IsStaticDocument() && mFrameLoader) {
     nsGenericHTMLFrameElement* dest =
         static_cast<nsGenericHTMLFrameElement*>(aDest);
-    RefPtr<nsFrameLoader> fl = nsFrameLoader::Create(dest, nullptr, false);
+    RefPtr<nsFrameLoader> fl = nsFrameLoader::Create(dest, false);
     NS_ENSURE_STATE(fl);
     dest->mFrameLoader = fl;
     mFrameLoader->CreateStaticClone(fl);
@@ -396,12 +396,12 @@ bool nsGenericHTMLFrameElement::IsHTMLFocusable(bool aWithMouse,
   return false;
 }
 
-/**
- * Return true if this frame element really is a mozbrowser.  (It
- * needs to have the right attributes, and its creator must have the right
- * permissions.)
- */
-/* [infallible] */
+
+
+
+
+
+
 nsresult nsGenericHTMLFrameElement::GetReallyIsBrowser(bool* aOut) {
   *aOut = mReallyIsBrowser;
   return NS_OK;
