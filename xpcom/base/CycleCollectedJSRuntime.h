@@ -90,10 +90,13 @@ class IncrementalFinalizeRunnable;
 
 class JSHolderMap {
  public:
+  enum WhichHolders { AllHolders, HoldersInCollectingZones };
+
   JSHolderMap();
 
+  
   template <typename F>
-  void ForEach(F&& f);
+  void ForEach(F&& f, WhichHolders aWhich = AllHolders);
 
   bool Has(void* aHolder) const;
   nsScriptObjectTracer* Get(void* aHolder) const;
@@ -216,7 +219,8 @@ class CycleCollectedJSRuntime {
   static void AfterWaitCallback(void* aCookie);
 
   virtual void TraceNativeBlackRoots(JSTracer* aTracer){};
-  void TraceNativeGrayRoots(JSTracer* aTracer);
+  void TraceNativeGrayRoots(JSTracer* aTracer,
+                            JSHolderMap::WhichHolders aWhich);
 
  public:
   void FinalizeDeferredThings(

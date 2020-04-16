@@ -53,7 +53,6 @@
 
 
 
-
 #include "mozilla/CycleCollectedJSRuntime.h"
 
 #include <algorithm>
@@ -62,6 +61,7 @@
 #include "GeckoProfiler.h"
 #include "js/Debug.h"
 #include "js/GCAPI.h"
+#include "js/HeapAPI.h"
 #include "js/Warnings.h"  
 #include "jsfriendapi.h"
 #include "mozilla/ArrayUtils.h"
@@ -490,9 +490,16 @@ JSHolderMap::Entry::Entry(void* aHolder, nsScriptObjectTracer* aTracer,
 JSHolderMap::JSHolderMap() : mJSHolderMap(256) {}
 
 template <typename F>
-inline void JSHolderMap::ForEach(F&& f) {
+inline void JSHolderMap::ForEach(F&& f, WhichHolders aWhich) {
+  
   ForEach(mAnyZoneJSHolders, f, nullptr);
+
   for (auto i = mPerZoneJSHolders.modIter(); !i.done(); i.next()) {
+    if (aWhich == HoldersInCollectingZones &&
+        !JS::ZoneIsCollecting(i.get().key())) {
+      continue;
+    }
+
     EntryVector* holders = i.get().value().get();
     ForEach(*holders, f, i.get().key());
     if (holders->IsEmpty()) {
@@ -512,7 +519,7 @@ inline void JSHolderMap::ForEach(EntryVector& aJSHolders, const F& f,
       break;  
     }
 
-    MOZ_ASSERT(entry->mZone == aZone);
+    MOZ_ASSERT_IF(aZone, entry->mZone == aZone);
     f(entry->mHolder, entry->mTracer, aZone);
   }
 }
@@ -725,7 +732,7 @@ void CycleCollectedJSRuntime::Shutdown(JSContext* cx) {
 #ifdef NS_BUILD_REFCNT_LOGGING
   JSLeakTracer tracer(Runtime());
   TraceNativeBlackRoots(&tracer);
-  TraceNativeGrayRoots(&tracer);
+  TraceNativeGrayRoots(&tracer, JSHolderMap::AllHolders);
 #endif
 
 #ifdef DEBUG
@@ -964,7 +971,7 @@ void CycleCollectedJSRuntime::TraceGrayJS(JSTracer* aTracer, void* aData) {
   CycleCollectedJSRuntime* self = static_cast<CycleCollectedJSRuntime*>(aData);
 
   
-  self->TraceNativeGrayRoots(aTracer);
+  self->TraceNativeGrayRoots(aTracer, JSHolderMap::HoldersInCollectingZones);
 }
 
 
@@ -1267,7 +1274,8 @@ static inline void CheckHolderIsSingleZone(
 
 #endif
 
-void CycleCollectedJSRuntime::TraceNativeGrayRoots(JSTracer* aTracer) {
+void CycleCollectedJSRuntime::TraceNativeGrayRoots(
+    JSTracer* aTracer, JSHolderMap::WhichHolders aWhich) {
   
   
   TraceAdditionalNativeGrayRoots(aTracer);
@@ -1280,7 +1288,8 @@ void CycleCollectedJSRuntime::TraceNativeGrayRoots(JSTracer* aTracer) {
         }
 #endif
         tracer->Trace(holder, JsGcTracer(), aTracer);
-      });
+      },
+      aWhich);
 }
 
 void CycleCollectedJSRuntime::AddJSHolder(void* aHolder,
