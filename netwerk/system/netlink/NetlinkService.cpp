@@ -1333,32 +1333,11 @@ class LinknameComparator {
   }
 };
 
-bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
-  LOG(("NetlinkService::CalculateIDForFamily [family=%s]",
-       aFamily == AF_INET ? "AF_INET" : "AF_INET6"));
 
-  bool retval = false;
 
-  if (!mLinkUp) {
-    
-    LOG(("Link is down, skipping ID calculation."));
-    return retval;
-  }
-
-  UniquePtr<NetlinkRoute>* routeCheckResultPtr;
-  if (aFamily == AF_INET) {
-    routeCheckResultPtr = &mIPv4RouteCheckResult;
-  } else {
-    routeCheckResultPtr = &mIPv6RouteCheckResult;
-  }
-
-  
-  
-  
-  
-  
-  nsTArray<NetlinkNeighbor*> gwNeighbors;
-
+void NetlinkService::GetGWNeighboursForFamily(
+    uint8_t aFamily, nsTArray<NetlinkNeighbor*>& aGwNeighbors) {
+  LOG(("NetlinkService::GetGWNeighboursForFamily"));
   
   for (auto iter = mLinks.ConstIter(); !iter.Done(); iter.Next()) {
     LinkInfo* linkInfo = iter.UserData();
@@ -1409,7 +1388,7 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
         continue;
       }
 
-      if (gwNeighbors.IndexOf(neigh, 0, NeighborComparator()) !=
+      if (aGwNeighbors.IndexOf(neigh, 0, NeighborComparator()) !=
           nsTArray<NetlinkNeighbor*>::NoIndex) {
         
         LOG(("MAC of neighbor %s is already selected for hashing.",
@@ -1418,9 +1397,199 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
       }
 
       LOG(("MAC of neighbor %s will be used for network ID.", neighKey.get()));
-      gwNeighbors.AppendElement(neigh);
+      aGwNeighbors.AppendElement(neigh);
     }
   }
+}
+
+bool NetlinkService::CalculateIDForEthernetLink(uint8_t aFamily,
+                                                NetlinkRoute* aRouteCheckResult,
+                                                uint32_t aRouteCheckIfIdx,
+                                                LinkInfo* aRouteCheckLinkInfo,
+                                                SHA1Sum* aSHA1) {
+  LOG(("NetlinkService::CalculateIDForEthernetLink"));
+  bool retval = false;
+  const in_common_addr* addrPtr = aRouteCheckResult->GetGWAddrPtr();
+
+  if (!addrPtr) {
+    
+    
+    if (LOG_ENABLED()) {
+      nsAutoCString routeDbgStr;
+      aRouteCheckResult->GetAsString(routeDbgStr);
+      LOG(("There is no next hop in route: %s", routeDbgStr.get()));
+    }
+    return retval;
+  }
+
+  
+  
+  
+  
+  
+  nsAutoCString neighKey;
+  GetAddrStr(addrPtr, aFamily, neighKey);
+  LOG(("Next hop for the checked host is %s on ifIdx %u.", neighKey.get(),
+       aRouteCheckIfIdx));
+
+  NetlinkNeighbor* neigh = nullptr;
+  if (!aRouteCheckLinkInfo->mNeighbors.Get(neighKey, &neigh)) {
+    LOG(("Neighbor %s not found in hashtable.", neighKey.get()));
+    return retval;
+  }
+
+  if (!neigh->HasMAC()) {
+    LOG(("We have no MAC for neighbor %s.", neighKey.get()));
+    return retval;
+  }
+
+  if (LOG_ENABLED()) {
+    nsAutoCString neighDbgStr;
+    neigh->GetAsString(neighDbgStr);
+    LOG(("Hashing MAC address of neighbor: %s", neighDbgStr.get()));
+  }
+  aSHA1->update(neigh->GetMACPtr(), ETH_ALEN);
+  retval = true;
+
+  return retval;
+}
+
+bool NetlinkService::CalculateIDForNonEthernetLink(
+    uint8_t aFamily, NetlinkRoute* aRouteCheckResult,
+    nsTArray<nsCString>& aLinkNamesToHash, uint32_t aRouteCheckIfIdx,
+    LinkInfo* aRouteCheckLinkInfo, SHA1Sum* aSHA1) {
+  LOG(("NetlinkService::CalculateIDForNonEthernetLink"));
+  bool retval = false;
+  const in_common_addr* addrPtr = aRouteCheckResult->GetGWAddrPtr();
+  nsAutoCString routeCheckLinkName;
+  aRouteCheckLinkInfo->mLink->GetName(routeCheckLinkName);
+
+  if (addrPtr) {
+    
+    
+
+    nsAutoCString addrStr;
+    GetAddrStr(addrPtr, aFamily, addrStr);
+    size_t addrSize =
+        (aFamily == AF_INET) ? sizeof(addrPtr->addr4) : sizeof(addrPtr->addr6);
+
+    LOG(("Hashing link name %s", routeCheckLinkName.get()));
+    aSHA1->update(routeCheckLinkName.get(), routeCheckLinkName.Length());
+
+    
+    if (!aLinkNamesToHash.Contains(routeCheckLinkName)) {
+      LOG(("Hashing GW address %s", addrStr.get()));
+      aSHA1->update(addrPtr, addrSize);
+    }
+
+    retval = true;
+  } else {
+    
+    
+    
+    
+
+    bool hasSrcAddr = aRouteCheckResult->HasPrefSrcAddr();
+    if (!hasSrcAddr) {
+      LOG(("There is no preferred source address."));
+    }
+
+    NetlinkAddress* linkAddress = nullptr;
+    
+    
+    
+    for (uint32_t i = 0; i < aRouteCheckLinkInfo->mAddresses.Length(); ++i) {
+      if (!hasSrcAddr) {
+        
+        if (aRouteCheckLinkInfo->mAddresses[i]->Family() != aFamily) {
+          continue;
+        }
+      } else if (!aRouteCheckResult->PrefSrcAddrEquals(
+                     *aRouteCheckLinkInfo->mAddresses[i])) {
+        continue;
+      }
+
+      if (!linkAddress ||
+          linkAddress->GetPrefixLen() >
+              aRouteCheckLinkInfo->mAddresses[i]->GetPrefixLen()) {
+        
+        
+        linkAddress = aRouteCheckLinkInfo->mAddresses[i].get();
+      }
+    }
+
+    if (!linkAddress) {
+      
+      if (LOG_ENABLED()) {
+        nsAutoCString dbgStr;
+        aRouteCheckResult->GetAsString(dbgStr);
+        LOG(("No address found for preferred source address in route: %s",
+             dbgStr.get()));
+      }
+      return retval;
+    }
+
+    in_common_addr prefix;
+    int32_t prefixSize = (aFamily == AF_INET) ? (int32_t)sizeof(prefix.addr4)
+                                              : (int32_t)sizeof(prefix.addr6);
+    memcpy(&prefix, linkAddress->GetAddrPtr(), prefixSize);
+    uint8_t maskit[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
+    int32_t bits = linkAddress->GetPrefixLen();
+    if (bits > prefixSize * 8) {
+      MOZ_ASSERT(false, "Unexpected prefix length!");
+      LOG(("Unexpected prefix length %d, maximum for this family is %d", bits,
+           prefixSize * 8));
+      return retval;
+    }
+    for (int32_t i = 0; i < prefixSize; i++) {
+      uint8_t mask = (bits >= 8) ? 0xff : maskit[bits];
+      ((unsigned char*)&prefix)[i] &= mask;
+      bits -= 8;
+      if (bits <= 0) {
+        bits = 0;
+      }
+    }
+
+    nsAutoCString addrStr;
+    GetAddrStr(&prefix, aFamily, addrStr);
+    LOG(("Hashing link name %s and network address %s/%u",
+         routeCheckLinkName.get(), addrStr.get(), linkAddress->GetPrefixLen()));
+    aSHA1->update(routeCheckLinkName.get(), routeCheckLinkName.Length());
+    aSHA1->update(&prefix, prefixSize);
+    bits = linkAddress->GetPrefixLen();
+    aSHA1->update(&bits, sizeof(bits));
+    retval = true;
+  }
+  return retval;
+}
+
+bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
+  LOG(("NetlinkService::CalculateIDForFamily [family=%s]",
+       aFamily == AF_INET ? "AF_INET" : "AF_INET6"));
+
+  bool retval = false;
+
+  if (!mLinkUp) {
+    
+    LOG(("Link is down, skipping ID calculation."));
+    return retval;
+  }
+
+  NetlinkRoute* routeCheckResult;
+  if (aFamily == AF_INET) {
+    routeCheckResult = mIPv4RouteCheckResult.get();
+  } else {
+    routeCheckResult = mIPv6RouteCheckResult.get();
+  }
+
+  
+  
+  
+  
+  
+  nsTArray<NetlinkNeighbor*> gwNeighbors;
+
+  GetGWNeighboursForFamily(aFamily, gwNeighbors);
 
   
   gwNeighbors.Sort(NeighborComparator());
@@ -1474,165 +1643,29 @@ bool NetlinkService::CalculateIDForFamily(uint8_t aFamily, SHA1Sum* aSHA1) {
     }
   }
 
-  if (!*routeCheckResultPtr) {
+  if (!routeCheckResult) {
     
     
     LOG(("There is no route check result."));
     return retval;
   }
 
-  nsAutoCString routeCheckLinkName;
   LinkInfo* routeCheckLinkInfo = nullptr;
-  uint32_t routeCheckIfIdx = (*routeCheckResultPtr)->Oif();
+  uint32_t routeCheckIfIdx = routeCheckResult->Oif();
   if (!mLinks.Get(routeCheckIfIdx, &routeCheckLinkInfo)) {
     LOG(("Cannot find link with index %u ??", routeCheckIfIdx));
     return retval;
   }
-  routeCheckLinkInfo->mLink->GetName(routeCheckLinkName);
-  const in_common_addr* addrPtr = (*routeCheckResultPtr)->GetGWAddrPtr();
 
   if (routeCheckLinkInfo->mLink->IsTypeEther()) {
     
-
-    if (!addrPtr) {
-      
-      
-      if (LOG_ENABLED()) {
-        nsAutoCString routeDbgStr;
-        (*routeCheckResultPtr)->GetAsString(routeDbgStr);
-        LOG(("There is no next hop in route: %s", routeDbgStr.get()));
-      }
-      return retval;
-    }
-
-    
-    
-    
-    
-    
-    nsAutoCString neighKey;
-    GetAddrStr(addrPtr, aFamily, neighKey);
-    LOG(("Next hop for the checked host is %s on ifIdx %u.", neighKey.get(),
-         routeCheckIfIdx));
-
-    NetlinkNeighbor* neigh = nullptr;
-    if (!routeCheckLinkInfo->mNeighbors.Get(neighKey, &neigh)) {
-      LOG(("Neighbor %s not found in hashtable.", neighKey.get()));
-      return retval;
-    }
-
-    if (!neigh->HasMAC()) {
-      LOG(("We have no MAC for neighbor %s.", neighKey.get()));
-      return retval;
-    }
-
-    if (LOG_ENABLED()) {
-      nsAutoCString neighDbgStr;
-      neigh->GetAsString(neighDbgStr);
-      LOG(("Hashing MAC address of neighbor: %s", neighDbgStr.get()));
-    }
-    aSHA1->update(neigh->GetMACPtr(), ETH_ALEN);
-    retval = true;
+    retval |= CalculateIDForEthernetLink(
+        aFamily, routeCheckResult, routeCheckIfIdx, routeCheckLinkInfo, aSHA1);
   } else {
     
-    if (addrPtr) {
-      
-      
-
-      nsAutoCString addrStr;
-      GetAddrStr(addrPtr, aFamily, addrStr);
-      size_t addrSize = (aFamily == AF_INET) ? sizeof(addrPtr->addr4)
-                                             : sizeof(addrPtr->addr6);
-
-      LOG(("Hashing link name %s", routeCheckLinkName.get()));
-      aSHA1->update(routeCheckLinkName.get(), routeCheckLinkName.Length());
-
-      
-      if (!linkNamesToHash.Contains(routeCheckLinkName)) {
-        LOG(("Hashing GW address %s", addrStr.get()));
-        aSHA1->update(addrPtr, addrSize);
-      }
-
-      retval = true;
-    } else {
-      
-      
-      
-      
-
-      bool hasSrcAddr = (*routeCheckResultPtr)->HasPrefSrcAddr();
-      if (!hasSrcAddr) {
-        LOG(("There is no preferred source address."));
-      }
-
-      NetlinkAddress* linkAddress = nullptr;
-      
-      
-      
-      for (uint32_t i = 0; i < routeCheckLinkInfo->mAddresses.Length(); ++i) {
-        if (!hasSrcAddr) {
-          
-          if (routeCheckLinkInfo->mAddresses[i]->Family() != aFamily) {
-            continue;
-          }
-        } else if (!(*routeCheckResultPtr)
-                        ->PrefSrcAddrEquals(
-                            *routeCheckLinkInfo->mAddresses[i])) {
-          continue;
-        }
-
-        if (!linkAddress ||
-            linkAddress->GetPrefixLen() >
-                routeCheckLinkInfo->mAddresses[i]->GetPrefixLen()) {
-          
-          
-          linkAddress = routeCheckLinkInfo->mAddresses[i].get();
-        }
-      }
-
-      if (!linkAddress) {
-        
-        if (LOG_ENABLED()) {
-          nsAutoCString dbgStr;
-          (*routeCheckResultPtr)->GetAsString(dbgStr);
-          LOG(("No address found for preferred source address in route: %s",
-               dbgStr.get()));
-        }
-        return retval;
-      }
-
-      in_common_addr prefix;
-      int32_t prefixSize = (aFamily == AF_INET) ? (int32_t)sizeof(prefix.addr4)
-                                                : (int32_t)sizeof(prefix.addr6);
-      memcpy(&prefix, linkAddress->GetAddrPtr(), prefixSize);
-      uint8_t maskit[] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe};
-      int32_t bits = linkAddress->GetPrefixLen();
-      if (bits > prefixSize * 8) {
-        MOZ_ASSERT(false, "Unexpected prefix length!");
-        LOG(("Unexpected prefix length %d, maximum for this family is %d", bits,
-             prefixSize * 8));
-        return retval;
-      }
-      for (int32_t i = 0; i < prefixSize; i++) {
-        uint8_t mask = (bits >= 8) ? 0xff : maskit[bits];
-        ((unsigned char*)&prefix)[i] &= mask;
-        bits -= 8;
-        if (bits <= 0) {
-          bits = 0;
-        }
-      }
-
-      nsAutoCString addrStr;
-      GetAddrStr(&prefix, aFamily, addrStr);
-      LOG(("Hashing link name %s and network address %s/%u",
-           routeCheckLinkName.get(), addrStr.get(),
-           linkAddress->GetPrefixLen()));
-      aSHA1->update(routeCheckLinkName.get(), routeCheckLinkName.Length());
-      aSHA1->update(&prefix, prefixSize);
-      bits = linkAddress->GetPrefixLen();
-      aSHA1->update(&bits, sizeof(bits));
-      retval = true;
-    }
+    retval |= CalculateIDForNonEthernetLink(aFamily, routeCheckResult,
+                                            linkNamesToHash, routeCheckIfIdx,
+                                            routeCheckLinkInfo, aSHA1);
   }
 
   return retval;
