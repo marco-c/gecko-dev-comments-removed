@@ -44,7 +44,9 @@ source_test_description_schema = Schema({
     
     
     
-    Required('require-build'): bool,
+    Optional('require-build'): {
+        text_type: text_type,
+    },
 
     
     
@@ -63,17 +65,10 @@ source_test_description_schema = Schema({
         text_type: optionally_keyed_by(
             'platform', job_description_schema['fetches'][text_type]),
     },
+
 })
 
 transforms = TransformSequence()
-
-
-@transforms.add
-def set_defaults(config, jobs):
-    for job in jobs:
-        job.setdefault('require-build', False)
-        yield job
-
 
 transforms.add_validate(source_test_description_schema)
 
@@ -161,11 +156,11 @@ def add_build_dependency(config, job):
     Add build dependency to the job and installer_url to env.
     """
     key = job['platform']
-    build_labels = config.config.get('dependent-build-platforms', {})
+    build_labels = job.pop('require-build', {})
     matches = keymatch(build_labels, key)
     if not matches:
-        raise Exception("No build platform found for '{}'. "
-                        "Define 'dependent-build-platforms' in the kind config.".format(key))
+        raise Exception("No build platform found. "
+                        "Define 'require-build' for {} in the task config.".format(key))
 
     if len(matches) > 1:
         raise Exception("More than one build platform found for '{}'.".format(key))
@@ -196,7 +191,7 @@ def handle_platform(config, jobs):
         if 'treeherder' in job:
             job['treeherder']['platform'] = platform
 
-        if job.pop('require-build'):
+        if 'require-build' in job:
             add_build_dependency(config, job)
 
         del job['platform']
