@@ -50,6 +50,8 @@ namespace js {
 namespace jit {
 class JitScript;
 enum class RoundingMode;
+template <class VecT>
+class ABIArgIter;
 }  
 
 
@@ -1211,6 +1213,14 @@ class ArgTypeVector {
   const ValTypeVector& args_;
   bool hasStackResults_;
 
+  
+  
+  
+  
+  size_t length() const { return args_.length() + size_t(hasStackResults_); }
+  friend jit::ABIArgIter<ArgTypeVector>;
+  friend jit::ABIArgIter<const ArgTypeVector>;
+
  public:
   ArgTypeVector(const ValTypeVector& args, StackResults stackResults)
       : args_(args),
@@ -1226,7 +1236,7 @@ class ArgTypeVector {
   bool isSyntheticStackResultPointerArg(size_t idx) const {
     
     
-    MOZ_ASSERT(idx < length());
+    MOZ_ASSERT(idx < lengthWithStackResults());
     return idx == args_.length();
   }
   bool isNaturalArg(size_t idx) const {
@@ -1239,9 +1249,9 @@ class ArgTypeVector {
     return idx;
   }
 
-  size_t length() const { return args_.length() + size_t(hasStackResults_); }
+  size_t lengthWithStackResults() const { return length(); }
   jit::MIRType operator[](size_t i) const {
-    MOZ_ASSERT(i < length());
+    MOZ_ASSERT(i < lengthWithStackResults());
     if (isSyntheticStackResultPointerArg(i)) {
       return jit::MIRType::StackResults;
     }
