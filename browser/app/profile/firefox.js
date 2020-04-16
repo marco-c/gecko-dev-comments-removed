@@ -1257,10 +1257,6 @@ pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.prop
 pref("prompts.tab_modal.enabled", true);
 
 
-
-pref("prompts.defaultModalType", 3);
-
-
 pref("browser.newtab.preload", true);
 
 

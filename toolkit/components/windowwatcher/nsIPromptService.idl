@@ -11,8 +11,6 @@ interface nsIAuthInformation;
 interface nsICancelable;
 interface nsIChannel;
 
-webidl BrowsingContext;
-
 
 
 
@@ -59,10 +57,6 @@ interface nsIPromptService : nsISupports
   void alert(in mozIDOMWindowProxy aParent,
              in wstring aDialogTitle,
              in wstring aText);
-  void alertBC(in BrowsingContext aBrowsingContext,
-               in unsigned long modalType,
-               in wstring aDialogTitle,
-               in wstring aText);
 
   
 
@@ -84,12 +78,6 @@ interface nsIPromptService : nsISupports
                   in wstring aText,
                   in wstring aCheckMsg,
                   inout boolean aCheckState);
-  void alertCheckBC(in BrowsingContext aBrowsingContext,
-                    in unsigned long modalType,
-                    in wstring aDialogTitle,
-                    in wstring aText,
-                    in wstring aCheckMsg,
-                    inout boolean aCheckState);
 
   
 
@@ -106,10 +94,6 @@ interface nsIPromptService : nsISupports
   boolean confirm(in mozIDOMWindowProxy aParent,
                   in wstring aDialogTitle,
                   in wstring aText);
-  boolean confirmBC(in BrowsingContext aBrowsingContext,
-                    in unsigned long modalType,
-                    in wstring aDialogTitle,
-                    in wstring aText);
 
   
 
@@ -133,12 +117,6 @@ interface nsIPromptService : nsISupports
                        in wstring aText,
                        in wstring aCheckMsg,
                        inout boolean aCheckState);
-  boolean confirmCheckBC(in BrowsingContext aBrowsingContext,
-                         in unsigned long modalType,
-                         in wstring aDialogTitle,
-                         in wstring aText,
-                         in wstring aCheckMsg,
-                         inout boolean aCheckState);
 
   
 
@@ -195,10 +173,6 @@ interface nsIPromptService : nsISupports
   const unsigned long STD_YES_NO_BUTTONS         = (BUTTON_TITLE_YES * BUTTON_POS_0) +
                                                    (BUTTON_TITLE_NO  * BUTTON_POS_1);
 
-  
-  const unsigned long MODAL_TYPE_CONTENT = 1;
-  const unsigned long MODAL_TYPE_TAB = 2;
-  const unsigned long MODAL_TYPE_WINDOW = 3;
 
   
 
@@ -252,16 +226,6 @@ interface nsIPromptService : nsISupports
                     in wstring aButton2Title,
                     in wstring aCheckMsg,
                     inout boolean aCheckState);
-  int32_t confirmExBC(in BrowsingContext aBrowsingContext,
-                      in unsigned long modalType,
-                      in wstring aDialogTitle,
-                      in wstring aText,
-                      in unsigned long aButtonFlags,
-                      in wstring aButton0Title,
-                      in wstring aButton1Title,
-                      in wstring aButton2Title,
-                      in wstring aCheckMsg,
-                      inout boolean aCheckState);
 
   
 
@@ -291,13 +255,6 @@ interface nsIPromptService : nsISupports
                  inout wstring aValue,
                  in wstring aCheckMsg,
                  inout boolean aCheckState);
-  boolean promptBC(in BrowsingContext aBrowsingContext,
-                   in unsigned long modalType,
-                   in wstring aDialogTitle,
-                   in wstring aText,
-                   inout wstring aValue,
-                   in wstring aCheckMsg,
-                   inout boolean aCheckState);
 
   
 
@@ -334,14 +291,6 @@ interface nsIPromptService : nsISupports
                                     inout wstring aPassword,
                                     in wstring aCheckMsg,
                                     inout boolean aCheckState);
-  boolean promptUsernameAndPasswordBC(in BrowsingContext aBrowsingContext,
-                                      in unsigned long modalType,
-                                      in wstring aDialogTitle,
-                                      in wstring aText,
-                                      inout wstring aUsername,
-                                      inout wstring aPassword,
-                                      in wstring aCheckMsg,
-                                      inout boolean aCheckState);
 
   
 
@@ -371,13 +320,6 @@ interface nsIPromptService : nsISupports
                          inout wstring aPassword,
                          in wstring aCheckMsg,
                          inout boolean aCheckState);
-  boolean promptPasswordBC(in BrowsingContext aBrowsingContext,
-                           in unsigned long modalType,
-                           in wstring aDialogTitle,
-                           in wstring aText,
-                           inout wstring aPassword,
-                           in wstring aCheckMsg,
-                           inout boolean aCheckState);
 
   
 
@@ -402,12 +344,6 @@ interface nsIPromptService : nsISupports
                  in wstring aText,
                  in Array<AString> aSelectList,
                  out long aOutSelection);
-  boolean selectBC(in BrowsingContext aBrowsingContext,
-                   in unsigned long modalType,
-                   in wstring aDialogTitle,
-                   in wstring aText,
-                   in Array<AString> aSelectList,
-                   out long aOutSelection);
 
   
   
@@ -423,13 +359,6 @@ interface nsIPromptService : nsISupports
                      in nsIAuthInformation authInfo,
                      in wstring checkboxLabel,
                      inout boolean checkValue);
-  boolean promptAuthBC(in BrowsingContext aBrowsingContext,
-                       in unsigned long modalType,
-                       in nsIChannel aChannel,
-                       in uint32_t level,
-                       in nsIAuthInformation authInfo,
-                       in wstring checkboxLabel,
-                       inout boolean checkValue);
 
   nsICancelable asyncPromptAuth(in mozIDOMWindowProxy aParent,
                                 in nsIChannel aChannel,
@@ -439,13 +368,4 @@ interface nsIPromptService : nsISupports
                                 in nsIAuthInformation authInfo,
                                 in wstring checkboxLabel,
                                 inout boolean checkValue);
-  nsICancelable asyncPromptAuthBC(in BrowsingContext aBrowsingContext,
-                                  in unsigned long modalType,
-                                  in nsIChannel aChannel,
-                                  in nsIAuthPromptCallback aCallback,
-                                  in nsISupports aContext,
-                                  in uint32_t level,
-                                  in nsIAuthInformation authInfo,
-                                  in wstring checkboxLabel,
-                                  inout boolean checkValue);
 };

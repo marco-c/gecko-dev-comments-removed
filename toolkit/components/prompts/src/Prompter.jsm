@@ -26,8 +26,8 @@ Prompter.prototype = {
 
   
 
-  pickPrompter(options) {
-    return new ModalPrompter(options);
+  pickPrompter(domWin) {
+    return new ModalPrompter(domWin);
   },
 
   
@@ -48,7 +48,7 @@ Prompter.prototype = {
       }
     }
 
-    let p = new ModalPrompter({ domWin });
+    let p = new ModalPrompter(domWin);
     p.QueryInterface(iid);
     return p;
   },
@@ -56,43 +56,23 @@ Prompter.prototype = {
   
 
   alert(domWin, title, text) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     p.alert(title, text);
   },
 
-  alertBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    p.alert(...promptArgs);
-  },
-
   alertCheck(domWin, title, text, checkLabel, checkValue) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     p.alertCheck(title, text, checkLabel, checkValue);
   },
 
-  alertCheckBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    p.alertCheck(...promptArgs);
-  },
-
   confirm(domWin, title, text) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.confirm(title, text);
   },
 
-  confirmBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.confirm(...promptArgs);
-  },
-
   confirmCheck(domWin, title, text, checkLabel, checkValue) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.confirmCheck(title, text, checkLabel, checkValue);
-  },
-
-  confirmCheckBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.confirmCheck(...promptArgs);
   },
 
   confirmEx(
@@ -106,32 +86,7 @@ Prompter.prototype = {
     checkLabel,
     checkValue
   ) {
-    let p = this.pickPrompter({ domWin });
-    return p.confirmEx(
-      title,
-      text,
-      flags,
-      button0,
-      button1,
-      button2,
-      checkLabel,
-      checkValue
-    );
-  },
-
-  confirmExBC(
-    browsingContext,
-    modalType,
-    title,
-    text,
-    flags,
-    button0,
-    button1,
-    button2,
-    checkLabel,
-    checkValue
-  ) {
-    let p = this.pickPrompter({ browsingContext, modalType });
+    let p = this.pickPrompter(domWin);
     return p.confirmEx(
       title,
       text,
@@ -145,13 +100,8 @@ Prompter.prototype = {
   },
 
   prompt(domWin, title, text, value, checkLabel, checkValue) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.nsIPrompt_prompt(title, text, value, checkLabel, checkValue);
-  },
-
-  promptBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.nsIPrompt_prompt(...promptArgs);
   },
 
   promptUsernameAndPassword(
@@ -163,7 +113,7 @@ Prompter.prototype = {
     checkLabel,
     checkValue
   ) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.nsIPrompt_promptUsernameAndPassword(
       title,
       text,
@@ -174,13 +124,8 @@ Prompter.prototype = {
     );
   },
 
-  promptUsernameAndPasswordBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.nsIPrompt_promptUsernameAndPassword(...promptArgs);
-  },
-
   promptPassword(domWin, title, text, pass, checkLabel, checkValue) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.nsIPrompt_promptPassword(
       title,
       text,
@@ -190,29 +135,14 @@ Prompter.prototype = {
     );
   },
 
-  promptPasswordBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.nsIPrompt_promptPassword(...promptArgs);
-  },
-
   select(domWin, title, text, list, selected) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.select(title, text, list, selected);
   },
 
-  selectBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.select(...promptArgs);
-  },
-
   promptAuth(domWin, channel, level, authInfo, checkLabel, checkValue) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.promptAuth(channel, level, authInfo, checkLabel, checkValue);
-  },
-
-  promptAuthBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.promptAuth(...promptArgs);
   },
 
   asyncPromptAuth(
@@ -225,7 +155,7 @@ Prompter.prototype = {
     checkLabel,
     checkValue
   ) {
-    let p = this.pickPrompter({ domWin });
+    let p = this.pickPrompter(domWin);
     return p.asyncPromptAuth(
       channel,
       callback,
@@ -235,11 +165,6 @@ Prompter.prototype = {
       checkLabel,
       checkValue
     );
-  },
-
-  asyncPromptAuthBC(browsingContext, modalType, ...promptArgs) {
-    let p = this.pickPrompter({ browsingContext, modalType });
-    return p.asyncPromptAuth(...promptArgs);
   },
 };
 
@@ -444,6 +369,33 @@ var PromptUtilsTemp = {
     return text;
   },
 
+  getTabModalPrompt(domWin) {
+    var promptBox = null;
+
+    try {
+      
+      var promptWin = domWin.top;
+
+      
+      
+      var chromeWin =
+        promptWin.docShell.chromeEventHandler.ownerGlobal.wrappedJSObject;
+
+      if (chromeWin) {
+        if (chromeWin.gBrowser && chromeWin.gBrowser.getTabModalPromptBox) {
+          let browser = promptWin.docShell.chromeEventHandler;
+          promptBox = chromeWin.gBrowser.getTabModalPromptBox(browser);
+        } else if (chromeWin.getTabModalPromptBox) {
+          chromeWin.getTabModalPromptBox(promptWin);
+        }
+      }
+    } catch (e) {
+      
+    }
+
+    return promptBox;
+  },
+
   getBrandFullName() {
     return this.brandBundle.GetStringFromName("brandFullName");
   },
@@ -482,169 +434,190 @@ XPCOMUtils.defineLazyGetter(PromptUtils, "ellipsis", function() {
   return ellipsis;
 });
 
-class ModalPrompter {
-  constructor({ browsingContext = null, domWin = null, modalType = null }) {
-    if (browsingContext && domWin) {
-      throw new Error("Pass either browsingContext or domWin");
-    }
-    this.browsingContext = browsingContext;
-    this._domWin = domWin;
-
-    if (this._domWin) {
-      
-      this.browsingContext = BrowsingContext.getFromWindow(this._domWin);
-    } else if (this.browsingContext) {
-      
-      if (this.browsingContext.window) {
-        this._domWin = this.browsingContext.window;
-      } else {
-        this._domWin =
-          this.browsingContext.embedderElement &&
-          this.browsingContext.embedderElement.ownerGlobal;
-      }
-    }
-
+function openModalWindow(domWin, uri, args) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (domWin) {
     
-    this.modalType = modalType || ModalPrompter.defaultModalType;
+    let winUtils = domWin.windowUtils;
 
-    this.QueryInterface = ChromeUtils.generateQI([
-      Ci.nsIPrompt,
-      Ci.nsIAuthPrompt,
-      Ci.nsIAuthPrompt2,
-      Ci.nsIWritablePropertyBag2,
-    ]);
-  }
-
-  set modalType(modalType) {
-    
-    if (modalType == Ci.nsIPrompt.MODAL_TYPE_WINDOW) {
-      this._modalType = modalType;
-      return;
-    }
-
-    
-    
-    
-    
-    if (
-      !this.browsingContext ||
-      !this._domWin ||
-      (this._domWin.isChromeWindow &&
-        !this.browsingContext.top.embedderElement) ||
-      !ModalPrompter.tabModalEnabled
-    ) {
-      modalType = Ci.nsIPrompt.MODAL_TYPE_WINDOW;
-
-      Cu.reportError(
-        "Prompter: Browser not available or tab modal prompts disabled. Falling back to window prompt."
+    if (winUtils && !winUtils.isParentWindowMainWidgetVisible) {
+      throw Components.Exception(
+        "Cannot call openModalWindow on a hidden window",
+        Cr.NS_ERROR_NOT_AVAILABLE
       );
     }
-    this._modalType = modalType;
+  } else {
+    
+    
+    domWin = Services.ww.activeWindow;
+    
   }
-
-  get modalType() {
-    return this._modalType;
-  }
-
+  
+  
   
 
-  openPrompt(args) {
-    if (!this.browsingContext) {
-      
+  Services.ww.openWindow(
+    domWin && domWin.docShell.rootTreeItem.domWindow,
+    uri,
+    "_blank",
+    "centerscreen,chrome,modal,titlebar",
+    args
+  );
+}
 
-      
-      
-      
-      
+function openTabPrompt(domWin, tabPrompt, args) {
+  let docShell = domWin.docShell;
+  let inPermitUnload =
+    docShell.contentViewer && docShell.contentViewer.inPermitUnload;
+  let eventDetail = Cu.cloneInto({ tabPrompt: true, inPermitUnload }, domWin);
+  PromptUtils.fireDialogEvent(
+    domWin,
+    "DOMWillOpenModalDialog",
+    null,
+    eventDetail
+  );
 
-      
-      
-      let parentWindow = Services.ww.activeWindow;
-      
+  let winUtils = domWin.windowUtils;
+  winUtils.enterModalState();
 
-      this.openWindowPrompt(parentWindow, args);
+  let frameMM = docShell.messageManager;
+
+  
+  
+  
+  
+  let callbackInvoked = false;
+  let newPrompt;
+  function onPromptClose(forceCleanup) {
+    if (!newPrompt && !forceCleanup) {
+      return;
+    }
+    callbackInvoked = true;
+    if (newPrompt) {
+      tabPrompt.removePrompt(newPrompt);
+    }
+
+    frameMM.removeEventListener("pagehide", pagehide, true);
+
+    winUtils.leaveModalState();
+
+    PromptUtils.fireDialogEvent(domWin, "DOMModalDialogClosed");
+  }
+
+  frameMM.addEventListener("pagehide", pagehide, true);
+  function pagehide(e) {
+    
+    let window = domWin;
+    let eventWindow = e.target.defaultView;
+    while (window != eventWindow && window.parent != window) {
+      window = window.parent;
+    }
+    if (window != eventWindow) {
+      return;
+    }
+    frameMM.removeEventListener("pagehide", pagehide, true);
+
+    if (newPrompt) {
+      newPrompt.abortPrompt();
+    }
+  }
+
+  try {
+    let topPrincipal = domWin.top.document.nodePrincipal;
+    let promptPrincipal = domWin.document.nodePrincipal;
+    args.showAlertOrigin = topPrincipal.equals(promptPrincipal);
+    args.promptActive = true;
+
+    newPrompt = tabPrompt.appendPrompt(args, onPromptClose);
+
+    
+    
+    
+
+    Services.tm.spinEventLoopUntil(() => !args.promptActive);
+    delete args.promptActive;
+
+    if (args.promptAborted) {
+      throw Components.Exception(
+        "prompt aborted by user",
+        Cr.NS_ERROR_NOT_AVAILABLE
+      );
+    }
+  } finally {
+    
+    if (!callbackInvoked) {
+      onPromptClose(true);
+    }
+  }
+}
+
+function openRemotePrompt(domWin, args) {
+  let actor = domWin.windowGlobalChild.getActor("Prompt");
+
+  let docShell = domWin.docShell;
+  let inPermitUnload =
+    docShell.contentViewer && docShell.contentViewer.inPermitUnload;
+  let eventDetail = Cu.cloneInto(
+    { tabPrompt: args.tabPrompt, inPermitUnload },
+    domWin
+  );
+  PromptUtils.fireDialogEvent(
+    domWin,
+    "DOMWillOpenModalDialog",
+    null,
+    eventDetail
+  );
+
+  let windowUtils = domWin.windowUtils;
+  windowUtils.enterModalState();
+
+  
+  
+  
+  let id =
+    "id" +
+    Cc["@mozilla.org/uuid-generator;1"]
+      .getService(Ci.nsIUUIDGenerator)
+      .generateUUID()
+      .toString();
+
+  let frameMM = docShell.messageManager;
+  let closed = false;
+
+  let onPageHide = e => {
+    let window = domWin;
+    let eventWindow = e.target.defaultView;
+    while (window != eventWindow && window.parent != window) {
+      window = window.parent;
+    }
+    if (window != eventWindow) {
       return;
     }
 
-    
-    
-    
-    if (
-      args.promptType == "select" &&
-      this.modalType !== Ci.nsIPrompt.MODAL_TYPE_WINDOW
-    ) {
-      Cu.reportError(
-        "Prompter: 'select' prompts do not support tab/content prompting. Falling back to window prompt."
-      );
-      args.modalType = Ci.nsIPrompt.MODAL_TYPE_WINDOW;
-    } else {
-      args.modalType = this.modalType;
-    }
+    actor.sendAsyncMessage("Prompt:ForceClose", { _remoteId: id });
+    closed = true;
+  };
 
-    args.browsingContext = this.browsingContext;
+  frameMM.addEventListener("pagehide", onPageHide, true);
 
-    let actor = this._domWin.windowGlobalChild.getActor("Prompt");
-
-    let docShell =
-      (this.browsingContext && this.browsingContext.docShell) ||
-      this._domWin.docShell;
-    let inPermitUnload =
-      docShell.contentViewer && docShell.contentViewer.inPermitUnload;
-    let eventDetail = Cu.cloneInto(
-      {
-        tabPrompt: this.modalType != Ci.nsIPrompt.MODAL_TYPE_WINDOW,
-        inPermitUnload,
-      },
-      this._domWin
-    );
-    PromptUtils.fireDialogEvent(
-      this._domWin,
-      "DOMWillOpenModalDialog",
-      null,
-      eventDetail
-    );
-
-    let windowUtils =
-      Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT &&
-      this._domWin.windowUtils;
-
-    
-    if (windowUtils) {
-      windowUtils.enterModalState();
-    }
-
-    
-    
-    
-    let id =
-      "id" +
-      Cc["@mozilla.org/uuid-generator;1"]
-        .getService(Ci.nsIUUIDGenerator)
-        .generateUUID()
-        .toString();
-
-    let closed = false;
-
-    args.promptPrincipal = this._domWin.document.nodePrincipal;
+  try {
+    let promptPrincipal = domWin.document.nodePrincipal;
+    args.promptPrincipal = promptPrincipal;
     args.inPermitUnload = inPermitUnload;
     args._remoteId = id;
 
-    actor
-      .sendQuery("Prompt:Open", args)
-      .then(returnedArgs => {
-        
-        
-        if (!returnedArgs) {
-          return;
-        }
-
-        if (returnedArgs.promptAborted) {
-          throw Components.Exception(
-            "prompt aborted by user",
-            Cr.NS_ERROR_NOT_AVAILABLE
-          );
-        }
-
+    let promise = actor.sendQuery("Prompt:Open", args);
+    promise.then(returnedArgs => {
+      
+      
+      if (returnedArgs) {
         if (returnedArgs._remoteId !== id) {
           return;
         }
@@ -652,34 +625,82 @@ class ModalPrompter {
         for (let key in returnedArgs) {
           args[key] = returnedArgs[key];
         }
-      })
-      .finally(() => {
-        closed = true;
-      });
+      }
+      closed = true;
+    });
 
     Services.tm.spinEventLoopUntilOrShutdown(() => closed);
-
-    if (windowUtils) {
-      windowUtils.leaveModalState();
-    }
-    PromptUtils.fireDialogEvent(this._domWin, "DOMModalDialogClosed");
+  } finally {
+    frameMM.removeEventListener("pagehide", onPageHide, true);
+    windowUtils.leaveModalState();
+    PromptUtils.fireDialogEvent(domWin, "DOMModalDialogClosed");
   }
+}
 
-  openWindowPrompt(parentWindow, args) {
+function ModalPrompter(domWin) {
+  this.domWin = domWin;
+}
+ModalPrompter.prototype = {
+  domWin: null,
+  
+
+
+
+
+  allowTabModal: false,
+
+  QueryInterface: ChromeUtils.generateQI([
+    Ci.nsIPrompt,
+    Ci.nsIAuthPrompt,
+    Ci.nsIAuthPrompt2,
+    Ci.nsIWritablePropertyBag2,
+  ]),
+
+  
+
+  openPrompt(args) {
+    
+    const prefName = "prompts.tab_modal.enabled";
+    let prefValue = false;
+    if (Services.prefs.getPrefType(prefName) == Services.prefs.PREF_BOOL) {
+      prefValue = Services.prefs.getBoolPref(prefName);
+    }
+
+    let allowTabModal = this.allowTabModal && prefValue;
+
+    if (allowTabModal && this.domWin) {
+      if (
+        Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT
+      ) {
+        args.tabPrompt = true;
+        openRemotePrompt(this.domWin, args);
+        return;
+      }
+
+      let tabPrompt = PromptUtils.getTabModalPrompt(this.domWin);
+      if (tabPrompt) {
+        openTabPrompt(this.domWin, tabPrompt, args);
+        return;
+      }
+    }
+
+    
+    if (
+      Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT
+    ) {
+      args.tabPrompt = false;
+      openRemotePrompt(this.domWin, args);
+      return;
+    }
+
     const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
     const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
 
     let uri = args.promptType == "select" ? SELECT_DIALOG : COMMON_DIALOG;
     let propBag = PromptUtils.objectToPropBag(args);
-    Services.ww.openWindow(
-      parentWindow,
-      uri,
-      "_blank",
-      "centerscreen,chrome,modal,titlebar",
-      propBag
-    );
+    openModalWindow(this.domWin, uri, propBag);
     PromptUtils.propBagToObject(propBag, args);
-  }
+  },
 
   
 
@@ -695,7 +716,7 @@ class ModalPrompter {
       return this.nsIPrompt_prompt.apply(this, arguments);
     }
     return this.nsIAuthPrompt_prompt.apply(this, arguments);
-  }
+  },
 
   promptUsernameAndPassword() {
     
@@ -703,7 +724,7 @@ class ModalPrompter {
       return this.nsIPrompt_promptUsernameAndPassword.apply(this, arguments);
     }
     return this.nsIAuthPrompt_promptUsernameAndPassword.apply(this, arguments);
-  }
+  },
 
   promptPassword() {
     
@@ -711,7 +732,7 @@ class ModalPrompter {
       return this.nsIPrompt_promptPassword.apply(this, arguments);
     }
     return this.nsIAuthPrompt_promptPassword.apply(this, arguments);
-  }
+  },
 
   
 
@@ -727,7 +748,7 @@ class ModalPrompter {
     };
 
     this.openPrompt(args);
-  }
+  },
 
   alertCheck(title, text, checkLabel, checkValue) {
     if (!title) {
@@ -746,7 +767,7 @@ class ModalPrompter {
 
     
     checkValue.value = args.checked;
-  }
+  },
 
   confirm(title, text) {
     if (!title) {
@@ -764,7 +785,7 @@ class ModalPrompter {
 
     
     return args.ok;
-  }
+  },
 
   confirmCheck(title, text, checkLabel, checkValue) {
     if (!title) {
@@ -787,7 +808,7 @@ class ModalPrompter {
 
     
     return args.ok;
-  }
+  },
 
   confirmEx(
     title,
@@ -841,7 +862,7 @@ class ModalPrompter {
 
     
     return args.buttonNumClicked;
-  }
+  },
 
   nsIPrompt_prompt(title, text, value, checkLabel, checkValue) {
     if (!title) {
@@ -868,7 +889,7 @@ class ModalPrompter {
     }
 
     return ok;
-  }
+  },
 
   nsIPrompt_promptUsernameAndPassword(
     title,
@@ -906,7 +927,7 @@ class ModalPrompter {
     }
 
     return ok;
-  }
+  },
 
   nsIPrompt_promptPassword(title, text, pass, checkLabel, checkValue) {
     if (!title) {
@@ -935,7 +956,7 @@ class ModalPrompter {
     }
 
     return ok;
-  }
+  },
 
   select(title, text, list, selected) {
     if (!title) {
@@ -960,7 +981,7 @@ class ModalPrompter {
     }
 
     return ok;
-  }
+  },
 
   
 
@@ -977,7 +998,7 @@ class ModalPrompter {
       result.value = defaultText;
     }
     return this.nsIPrompt_prompt(title, text, result, null, {});
-  }
+  },
 
   nsIAuthPrompt_promptUsernameAndPassword(
     title,
@@ -996,12 +1017,12 @@ class ModalPrompter {
       null,
       {}
     );
-  }
+  },
 
   nsIAuthPrompt_promptPassword(title, text, passwordRealm, savePassword, pass) {
     
     return this.nsIPrompt_promptPassword(title, text, pass, null, {});
-  }
+  },
 
   
 
@@ -1037,7 +1058,7 @@ class ModalPrompter {
       PromptUtils.setAuthInfo(authInfo, userParam.value, passParam.value);
     }
     return ok;
-  }
+  },
 
   asyncPromptAuth(
     channel,
@@ -1055,33 +1076,20 @@ class ModalPrompter {
     
     
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
-  }
+  },
 
   
+
   
-  
-  setPropertyAsUint32(name, value) {
-    if (name == "modalType") {
-      this.modalType = value;
+
+  setPropertyAsBool(name, value) {
+    if (name == "allowTabModal") {
+      this.allowTabModal = value;
     } else {
       throw Cr.NS_ERROR_ILLEGAL_VALUE;
     }
-  }
-}
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  ModalPrompter,
-  "defaultModalType",
-  "prompts.defaultModalType",
-  Ci.nsIPrompt.MODAL_TYPE_WINDOW
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  ModalPrompter,
-  "tabModalEnabled",
-  "prompts.tab_modal.enabled",
-  true
-);
+  },
+};
 
 function AuthPromptAdapterFactory() {}
 AuthPromptAdapterFactory.prototype = {

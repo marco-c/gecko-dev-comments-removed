@@ -2017,25 +2017,7 @@
     }
 
     leaveModalState() {
-      this.sendMessageToActor(
-        "LeaveModalState",
-        { forceLeave: true },
-        "BrowserElement",
-        "roots"
-      );
-    }
-
-    
-
-
-
-    maybeLeaveModalState() {
-      this.sendMessageToActor(
-        "LeaveModalState",
-        { forceLeave: false },
-        "BrowserElement",
-        "roots"
-      );
+      this.sendMessageToActor("LeaveModalState", {}, "BrowserElement", "roots");
     }
 
     getDevicePermissionOrigins(key) {

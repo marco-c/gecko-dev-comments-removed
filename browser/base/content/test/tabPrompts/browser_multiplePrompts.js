@@ -59,7 +59,9 @@ add_task(async function() {
     
     let i = 0;
     for (let promptElement of promptElements) {
-      let prompt = tab.linkedBrowser.tabModalPromptBox.getPrompt(promptElement);
+      let prompt = tab.linkedBrowser.tabModalPromptBox.prompts.get(
+        promptElement
+      );
       let expectedType = ["alert", "prompt", "confirm"][i % 3];
       is(
         prompt.Dialog.args.text,
