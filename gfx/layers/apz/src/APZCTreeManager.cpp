@@ -843,6 +843,23 @@ void APZCTreeManager::SampleForWebRender(
         wr::ToWrTransformProperty(info.mFixedPositionAnimationId, transform));
   }
 
+  for (const StickyPositionInfo& info : mStickyPositionInfo) {
+    ScreenPoint translation =
+        AsyncCompositionManager::ComputeFixedMarginsOffset(
+            GetCompositorFixedLayerMargins(), info.mFixedPosSides,
+            
+            
+            
+            ScreenMargin());
+
+    LayerToParentLayerMatrix4x4 transform =
+        LayerToParentLayerMatrix4x4::Translation(ViewAs<ParentLayerPixel>(
+            translation, PixelCastJustification::ScreenIsParentLayerForRoot));
+
+    transforms.AppendElement(
+        wr::ToWrTransformProperty(info.mStickyPositionAnimationId, transform));
+  }
+
   aTxn.AppendTransformProperties(transforms);
 
   
