@@ -22,6 +22,7 @@ const EXPECTED_REFLOWS = [
 
 add_task(async function() {
   await ensureNoPreloadedBrowser();
+  await disableFxaBadge();
 
   
   

@@ -254,6 +254,21 @@ async function ensureNoPreloadedBrowser(win = window) {
   });
 }
 
+
+
+
+function disableFxaBadge() {
+  let { ToolbarBadgeHub } = ChromeUtils.import(
+    "resource://activity-stream/lib/ToolbarBadgeHub.jsm"
+  );
+  ToolbarBadgeHub.removeAllNotifications();
+
+  
+  return SpecialPowers.pushPrefEnv({
+    set: [["identity.fxaccounts.toolbar.accessed", true]],
+  });
+}
+
 async function prepareSettledWindow() {
   let win = await BrowserTestUtils.openNewBrowserWindow();
   await ensureNoPreloadedBrowser(win);
