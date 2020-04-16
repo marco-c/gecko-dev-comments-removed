@@ -46,6 +46,7 @@ AddonTestUtils.createAppInfo(
 
 
 function createContext(searchString = "foo", properties = {}) {
+  info(`Creating new queryContext with searchString: ${searchString}`);
   return new UrlbarQueryContext(
     Object.assign(
       {
@@ -215,4 +216,205 @@ async function addTestSuggestionsEngine(suggestionsFn = null) {
     resp.write(JSON.stringify(data));
   });
   return addTestEngine("engine-suggestions.xml", server);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeSearchResult(
+  queryContext,
+  {
+    suggestion,
+    engineName,
+    alias,
+    query,
+    engineIconUri,
+    heuristic = false,
+    keywordOffer,
+  }
+) {
+  UrlbarTokenizer.tokenize(queryContext);
+
+  if (!keywordOffer) {
+    keywordOffer = UrlbarUtils.KEYWORD_OFFER.NONE;
+    if (alias && !query.trim() && alias.startsWith("@")) {
+      keywordOffer = heuristic
+        ? UrlbarUtils.KEYWORD_OFFER.HIDE
+        : UrlbarUtils.KEYWORD_OFFER.SHOW;
+    }
+  }
+
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.SEARCH,
+    UrlbarUtils.RESULT_SOURCE.SEARCH,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      engine: [engineName, UrlbarUtils.HIGHLIGHT.TYPED],
+      suggestion: [suggestion, UrlbarUtils.HIGHLIGHT.SUGGESTED],
+      keyword: [alias, UrlbarUtils.HIGHLIGHT.TYPED],
+      
+      query: [
+        typeof query != "undefined" ? query : queryContext.searchString.trim(),
+        UrlbarUtils.HIGHLIGHT.TYPED,
+      ],
+      icon: [engineIconUri ? engineIconUri : ""],
+      keywordOffer,
+    })
+  );
+
+  result.heuristic = heuristic;
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeVisitResult(
+  queryContext,
+  { title, uri, iconUri, tags = [], heuristic = false }
+) {
+  UrlbarTokenizer.tokenize(queryContext);
+
+  let payload = {
+    url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+    
+    icon: [typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`],
+    title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
+  };
+
+  if (!heuristic) {
+    payload.tags = [tags, UrlbarUtils.HIGHLIGHT.TYPED];
+  }
+
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
+  );
+
+  result.heuristic = heuristic;
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function makeBookmarkResult(
+  queryContext,
+  { title, uri, iconUri, tags = [], heuristic = false }
+) {
+  UrlbarTokenizer.tokenize(queryContext);
+
+  let result = new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+    ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+      url: [uri, UrlbarUtils.HIGHLIGHT.TYPED],
+      
+      icon: [typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`],
+      title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
+      tags: [tags, UrlbarUtils.HIGHLIGHT.TYPED],
+    })
+  );
+
+  result.heuristic = heuristic;
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function check_results({ context, matches = [] } = {}) {
+  if (!context) {
+    return;
+  }
+
+  
+  
+  
+  
+  await PlacesTestUtils.promiseAsyncUpdates();
+
+  let controller = UrlbarTestUtils.newMockController({
+    input: {
+      isPrivate: context.isPrivate,
+      window: {
+        location: {
+          href: AppConstants.BROWSER_CHROME_URL,
+        },
+      },
+    },
+  });
+  await controller.startQuery(context);
+
+  Assert.equal(
+    context.results.length,
+    matches.length,
+    "Found the expected number of results."
+  );
+
+  Assert.deepEqual(
+    matches.map(m => m.payload),
+    context.results.map(m => m.payload),
+    "Payloads are the same."
+  );
+
+  Assert.deepEqual(
+    matches.map(m => m.heuristic),
+    context.results.map(m => m.heuristic),
+    "Heuristic results are correctly flagged."
+  );
 }
