@@ -47,7 +47,6 @@
 #include "nsBaseWidget.h"
 #include "nsQueryObject.h"
 #include "ReferrerInfo.h"
-#include "nsIOpenWindowInfo.h"
 
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -258,20 +257,7 @@ static bool IsTopContent(BrowsingContext* aParent, Element* aOwner) {
 }
 
 static already_AddRefed<BrowsingContext> CreateBrowsingContext(
-    Element* aOwner, nsIOpenWindowInfo* aOpenWindowInfo) {
-  
-  
-  if (aOpenWindowInfo && aOpenWindowInfo->GetNextRemoteBrowser()) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return do_AddRef(
-        aOpenWindowInfo->GetNextRemoteBrowser()->GetBrowsingContext());
-  }
-
-  RefPtr<BrowsingContext> opener;
-  if (aOpenWindowInfo && !aOpenWindowInfo->GetForceNoOpener()) {
-    opener = aOpenWindowInfo->GetParent();
-  }
-
+    Element* aOwner, BrowsingContext* aOpener) {
   Document* doc = aOwner->OwnerDoc();
   
   
@@ -304,7 +290,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   if (IsTopContent(parentContext, aOwner)) {
     
     RefPtr<BrowsingContext> bc = BrowsingContext::CreateDetached(
-        nullptr, opener, frameName, BrowsingContext::Type::Content);
+        nullptr, aOpener, frameName, BrowsingContext::Type::Content);
 
     
     
@@ -318,13 +304,10 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
     return bc.forget();
   }
 
-  MOZ_ASSERT(!aOpenWindowInfo,
-             "Can't have openWindowInfo for non-toplevel context");
-
   auto type = parentContext->IsContent() ? BrowsingContext::Type::Content
                                          : BrowsingContext::Type::Chrome;
 
-  return BrowsingContext::CreateDetached(parentContext, nullptr, frameName,
+  return BrowsingContext::CreateDetached(parentContext, aOpener, frameName,
                                          type);
 }
 
@@ -356,8 +339,9 @@ static bool InitialLoadIsRemote(Element* aOwner) {
                              nsGkAtoms::_true, eCaseMatters);
 }
 
-already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
-    Element* aOwner, bool aNetworkCreated, nsIOpenWindowInfo* aOpenWindowInfo) {
+already_AddRefed<nsFrameLoader> nsFrameLoader::Create(Element* aOwner,
+                                                      BrowsingContext* aOpener,
+                                                      bool aNetworkCreated) {
   NS_ENSURE_TRUE(aOwner, nullptr);
   Document* doc = aOwner->OwnerDoc();
 
@@ -386,8 +370,7 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
                       doc->IsStaticDocument()),
                  nullptr);
 
-  RefPtr<BrowsingContext> context =
-      CreateBrowsingContext(aOwner, aOpenWindowInfo);
+  RefPtr<BrowsingContext> context = CreateBrowsingContext(aOwner, aOpener);
   NS_ENSURE_TRUE(context, nullptr);
 
   
@@ -395,6 +378,8 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
   
   nsAutoString remoteType(VoidString());
   if (InitialLoadIsRemote(aOwner)) {
+    MOZ_ASSERT(!aOpener, "Cannot pass `aOpener` for a remote frame!");
+
     
     
     bool hasRemoteType =
@@ -406,7 +391,6 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
 
   RefPtr<nsFrameLoader> fl =
       new nsFrameLoader(aOwner, context, remoteType, aNetworkCreated);
-  fl->mOpenWindowInfo = aOpenWindowInfo;
   return fl.forget();
 }
 
@@ -1183,12 +1167,12 @@ nsresult nsFrameLoader::SwapWithOtherRemoteLoader(
   
   
   OriginAttributes ourOriginAttributes = browserParent->OriginAttributesRef();
-  rv = PopulateOriginContextIdsFromAttributes(ourOriginAttributes);
+  rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
   NS_ENSURE_SUCCESS(rv, rv);
 
   OriginAttributes otherOriginAttributes =
       otherBrowserParent->OriginAttributesRef();
-  rv = aOther->PopulateOriginContextIdsFromAttributes(otherOriginAttributes);
+  rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (ourOriginAttributes != otherOriginAttributes) {
@@ -1613,11 +1597,11 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   
   OriginAttributes ourOriginAttributes = ourDocshell->GetOriginAttributes();
-  rv = PopulateOriginContextIdsFromAttributes(ourOriginAttributes);
+  rv = PopulateUserContextIdFromAttribute(ourOriginAttributes);
   NS_ENSURE_SUCCESS(rv, rv);
 
   OriginAttributes otherOriginAttributes = otherDocshell->GetOriginAttributes();
-  rv = aOther->PopulateOriginContextIdsFromAttributes(otherOriginAttributes);
+  rv = aOther->PopulateUserContextIdFromAttribute(otherOriginAttributes);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (ourOriginAttributes != otherOriginAttributes) {
@@ -2065,9 +2049,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     return NS_ERROR_UNEXPECTED;
   }
 
-  if (!EnsureBrowsingContextAttached()) {
-    return NS_ERROR_FAILURE;
-  }
+  mPendingBrowsingContext->EnsureAttached();
 
   
   
@@ -2155,6 +2137,37 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  OriginAttributes attrs;
+  if (parentDocShell->ItemType() == docShell->ItemType()) {
+    attrs = parentDocShell->GetOriginAttributes();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (parentIsContent && !doc->NodePrincipal()->IsSystemPrincipal() &&
+      !OwnerIsMozBrowserFrame()) {
+    OriginAttributes oa = doc->NodePrincipal()->OriginAttributesRef();
+
+    
+    MOZ_ASSERT_IF(mIsTopLevelContent, attrs.mFirstPartyDomain.IsEmpty());
+
+    
+    
+    MOZ_ASSERT(
+        attrs.mUserContextId == oa.mUserContextId,
+        "docshell and document should have the same userContextId attribute.");
+    MOZ_ASSERT(attrs.mPrivateBrowsingId == oa.mPrivateBrowsingId,
+               "docshell and document should have the same privateBrowsingId "
+               "attribute.");
+
+    attrs = oa;
+  }
+
   if (OwnerIsMozBrowserFrame()) {
     docShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
   } else if (mPendingBrowsingContext->GetParent()) {
@@ -2172,6 +2185,19 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   }
   ApplySandboxFlags(sandboxFlags);
 
+  
+  nsresult rv = PopulateUserContextIdFromAttribute(attrs);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  bool isPrivate = false;
+  rv = parentDocShell->GetUsePrivateBrowsing(&isPrivate);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+  attrs.SyncAttributesWithPrivateBrowsing(isPrivate);
+
   if (OwnerIsMozBrowserFrame()) {
     
     nsAutoString name;
@@ -2182,7 +2208,24 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
         mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
         mOwnerContent->HasAttr(kNameSpaceID_None,
                                nsGkAtoms::mozallowfullscreen));
+    bool isPrivate = mOwnerContent->HasAttr(kNameSpaceID_None,
+                                            nsGkAtoms::mozprivatebrowsing);
+    if (isPrivate) {
+      if (docShell->GetHasLoadedNonBlankURI()) {
+        nsContentUtils::ReportToConsoleNonLocalized(
+            NS_LITERAL_STRING("We should not switch to Private Browsing after "
+                              "loading a document."),
+            nsIScriptError::warningFlag,
+            NS_LITERAL_CSTRING("mozprivatebrowsing"), nullptr);
+      } else {
+        
+        
+        attrs.SyncAttributesWithPrivateBrowsing(isPrivate);
+      }
+    }
   }
+
+  docShell->SetOriginAttributes(attrs);
 
   
   
@@ -2497,12 +2540,18 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
-  if (!EnsureBrowsingContextAttached()) {
-    return false;
-  }
+  mPendingBrowsingContext->EnsureAttached();
 
   RefPtr<ContentParent> openerContentParent;
+  RefPtr<nsIPrincipal> openerContentPrincipal;
   RefPtr<BrowserParent> sameTabGroupAs;
+  if (auto* host = BrowserHost::GetFrom(parentDocShell->GetOpener())) {
+    openerContentParent = host->GetContentParent();
+    BrowserParent* openerBrowserParent = host->GetActor();
+    if (openerBrowserParent) {
+      openerContentPrincipal = openerBrowserParent->GetContentPrincipal();
+    }
+  }
 
   
   
@@ -2582,28 +2631,45 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   nsresult rv = GetNewTabContext(&context);
   NS_ENSURE_SUCCESS(rv, false);
 
+  
+  if (openerContentPrincipal) {
+    context.SetFirstPartyDomainAttributes(
+        openerContentPrincipal->OriginAttributesRef().mFirstPartyDomain);
+  }
+
+  uint64_t nextRemoteTabId = 0;
+  if (mOwnerContent) {
+    nsAutoString nextBrowserParentIdAttr;
+    mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::nextRemoteTabId,
+                           nextBrowserParentIdAttr);
+    nextRemoteTabId = strtoull(
+        NS_ConvertUTF16toUTF8(nextBrowserParentIdAttr).get(), nullptr, 10);
+
+    
+    
+    if (!nextRemoteTabId && window) {
+      Unused << window->GetNextRemoteTabId(&nextRemoteTabId);
+    }
+  }
+
   nsCOMPtr<Element> ownerElement = mOwnerContent;
 
-  RefPtr<BrowserParent> nextRemoteBrowser =
-      mOpenWindowInfo ? mOpenWindowInfo->GetNextRemoteBrowser() : nullptr;
-  if (nextRemoteBrowser) {
-    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
-    if (nextRemoteBrowser->GetOwnerElement()) {
-      MOZ_ASSERT_UNREACHABLE("Shouldn't have an owner element before");
-      return false;
-    }
-    nextRemoteBrowser->SetOwnerElement(ownerElement);
-  } else {
-    mRemoteBrowser = ContentParent::CreateBrowser(
-        context, ownerElement, mRemoteType, mPendingBrowsingContext,
-        openerContentParent, sameTabGroupAs);
-  }
+  mRemoteBrowser = ContentParent::CreateBrowser(
+      context, ownerElement, mRemoteType, mPendingBrowsingContext,
+      openerContentParent, sameTabGroupAs, nextRemoteTabId);
   if (!mRemoteBrowser) {
     return false;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext ==
-                        mRemoteBrowser->GetBrowsingContext());
+  
+  
+  
+  
+  if (mPendingBrowsingContext != mRemoteBrowser->GetBrowsingContext()) {
+    MOZ_DIAGNOSTIC_ASSERT(nextRemoteTabId);
+    mPendingBrowsingContext->Detach();
+    mPendingBrowsingContext = mRemoteBrowser->GetBrowsingContext();
+  }
 
   mRemoteBrowser->GetBrowsingContext()->Embed();
 
@@ -3345,6 +3411,14 @@ void nsFrameLoader::MaybeUpdatePrimaryBrowserParent(
 
 nsresult nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
                                          nsIURI* aURI) {
+  OriginAttributes attrs;
+  nsresult rv;
+
+  
+  
+  rv = PopulateUserContextIdFromAttribute(attrs);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   nsAutoString presentationURLStr;
   mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::mozpresentation,
                          presentationURLStr);
@@ -3353,8 +3427,8 @@ nsresult nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
   nsCOMPtr<nsILoadContext> parentContext = do_QueryInterface(docShell);
   NS_ENSURE_STATE(parentContext);
 
-  MOZ_ASSERT(mPendingBrowsingContext->EverAttached());
-  OriginAttributes attrs = mPendingBrowsingContext->OriginAttributesRef();
+  bool isPrivate = parentContext->UsePrivateBrowsing();
+  attrs.SyncAttributesWithPrivateBrowsing(isPrivate);
 
   UIStateChangeType showFocusRings = UIStateChangeType_NoChange;
   uint64_t chromeOuterWindowID = 0;
@@ -3383,32 +3457,21 @@ nsresult nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
   return NS_OK;
 }
 
-nsresult nsFrameLoader::PopulateOriginContextIdsFromAttributes(
+nsresult nsFrameLoader::PopulateUserContextIdFromAttribute(
     OriginAttributes& aAttr) {
-  
-  uint32_t namespaceID = mOwnerContent->GetNameSpaceID();
-  if (namespaceID != kNameSpaceID_XUL && !OwnerIsMozBrowserFrame()) {
-    return NS_OK;
-  }
-
-  nsAutoString attributeValue;
   if (aAttr.mUserContextId ==
-          nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID &&
-      mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid,
-                             attributeValue) &&
-      !attributeValue.IsEmpty()) {
-    nsresult rv;
-    aAttr.mUserContextId = attributeValue.ToInteger(&rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  if (aAttr.mGeckoViewSessionContextId.IsEmpty() &&
-      mOwnerContent->GetAttr(kNameSpaceID_None,
-                             nsGkAtoms::geckoViewSessionContextId,
-                             attributeValue) &&
-      !attributeValue.IsEmpty()) {
+      nsIScriptSecurityManager::DEFAULT_USER_CONTEXT_ID) {
     
-    aAttr.mGeckoViewSessionContextId = attributeValue;
+    nsAutoString userContextIdStr;
+    int32_t namespaceID = mOwnerContent->GetNameSpaceID();
+    if ((namespaceID == kNameSpaceID_XUL || OwnerIsMozBrowserFrame()) &&
+        mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid,
+                               userContextIdStr) &&
+        !userContextIdStr.IsEmpty()) {
+      nsresult rv;
+      aAttr.mUserContextId = userContextIdStr.ToInteger(&rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
 
   return NS_OK;
@@ -3518,89 +3581,4 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
   event->SetTrusted(true);
   EventDispatcher::DispatchDOMEvent(mOwnerContent, nullptr, event, nullptr,
                                     nullptr);
-}
-
-bool nsFrameLoader::EnsureBrowsingContextAttached() {
-  nsresult rv;
-
-  Document* parentDoc = mOwnerContent->OwnerDoc();
-  MOZ_ASSERT(parentDoc);
-  BrowsingContext* parentContext = parentDoc->GetBrowsingContext();
-  MOZ_ASSERT(parentContext);
-
-  
-  bool usePrivateBrowsing = parentContext->UsePrivateBrowsing();
-  bool useRemoteSubframes = parentContext->UseRemoteSubframes();
-  bool useRemoteTabs = parentContext->UseRemoteTabs();
-
-  
-  
-  
-  OriginAttributes attrs;
-  if (mPendingBrowsingContext->IsContent()) {
-    if (mPendingBrowsingContext->GetParent()) {
-      MOZ_ASSERT(mPendingBrowsingContext->GetParent() == parentContext);
-      parentContext->GetOriginAttributes(attrs);
-    }
-
-    
-    
-    if (parentContext->IsContent() &&
-        !parentDoc->NodePrincipal()->IsSystemPrincipal() &&
-        !OwnerIsMozBrowserFrame()) {
-      OriginAttributes docAttrs =
-          parentDoc->NodePrincipal()->OriginAttributesRef();
-      
-      
-      MOZ_ASSERT(attrs.EqualsIgnoringFPD(docAttrs));
-      attrs.mFirstPartyDomain = docAttrs.mFirstPartyDomain;
-    }
-
-    
-    attrs.SyncAttributesWithPrivateBrowsing(usePrivateBrowsing);
-
-    
-    
-    rv = PopulateOriginContextIdsFromAttributes(attrs);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return false;
-    }
-
-    
-    
-    if (OwnerIsMozBrowserFrame()) {
-      if (mOwnerContent->HasAttr(kNameSpaceID_None,
-                                 nsGkAtoms::mozprivatebrowsing)) {
-        attrs.SyncAttributesWithPrivateBrowsing(true);
-        usePrivateBrowsing = true;
-      }
-    }
-  }
-
-  
-  if (mPendingBrowsingContext->EverAttached()) {
-    MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext->UsePrivateBrowsing() ==
-                          usePrivateBrowsing);
-    MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext->UseRemoteTabs() ==
-                          useRemoteTabs);
-    MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext->UseRemoteSubframes() ==
-                          useRemoteSubframes);
-    
-    
-    return true;
-  }
-
-  
-  rv = mPendingBrowsingContext->SetOriginAttributes(attrs);
-  NS_ENSURE_SUCCESS(rv, false);
-  rv = mPendingBrowsingContext->SetUsePrivateBrowsing(usePrivateBrowsing);
-  NS_ENSURE_SUCCESS(rv, false);
-  rv = mPendingBrowsingContext->SetRemoteTabs(useRemoteTabs);
-  NS_ENSURE_SUCCESS(rv, false);
-  rv = mPendingBrowsingContext->SetRemoteSubframes(useRemoteSubframes);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  
-  mPendingBrowsingContext->EnsureAttached();
-  return true;
 }

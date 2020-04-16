@@ -108,14 +108,7 @@ class BrowserDOMWindow {
 
 
 
-  createContentWindow(
-    uri,
-    openWindowInfo,
-    where,
-    flags,
-    triggeringPrincipal,
-    csp
-  ) {
+  createContentWindow(uri, opener, where, flags, triggeringPrincipal, csp) {
     console.error(
       "createContentWindow should never be called from a remote browser"
     );
@@ -133,7 +126,7 @@ class BrowserDOMWindow {
 
 
 
-  openURI(uri, openWindowInfo, where, flags, triggeringPrincipal, csp) {
+  openURI(uri, opener, where, flags, triggeringPrincipal, csp) {
     console.error("openURI should never be called from a remote browser");
     throw Cr.NS_ERROR_FAILURE;
   }
@@ -149,11 +142,13 @@ class BrowserDOMWindow {
 
 
 
+
   getContentWindowOrOpenURIInFrame(
     uri,
     params,
     where,
     flags,
+    nextRemoteTabId,
     name,
     shouldOpen
   ) {
@@ -180,6 +175,7 @@ class BrowserDOMWindow {
         params,
         where,
         flags,
+        nextRemoteTabId,
         name
       );
     }
@@ -200,12 +196,14 @@ class BrowserDOMWindow {
 
 
 
-  createContentWindowInFrame(uri, params, where, flags, name) {
+
+  createContentWindowInFrame(uri, params, where, flags, nextRemoteTabId, name) {
     return this.getContentWindowOrOpenURIInFrame(
       uri,
       params,
       where,
       flags,
+      nextRemoteTabId,
       name,
       false
     );
@@ -221,12 +219,14 @@ class BrowserDOMWindow {
 
 
 
-  openURIInFrame(uri, params, where, flags, name) {
+
+  openURIInFrame(uri, params, where, flags, nextRemoteTabId, name) {
     return this.getContentWindowOrOpenURIInFrame(
       uri,
       params,
       where,
       flags,
+      nextRemoteTabId,
       name,
       true
     );

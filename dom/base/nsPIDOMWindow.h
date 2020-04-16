@@ -1059,6 +1059,21 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   virtual nsISerialEventTarget* EventTargetFor(
       mozilla::TaskCategory aCategory) const = 0;
 
+  
+
+
+
+
+
+
+
+
+
+  void SetOpenerForInitialContentBrowser(
+      mozilla::dom::BrowsingContext* aOpener);
+  already_AddRefed<mozilla::dom::BrowsingContext>
+  TakeOpenerForInitialContentBrowser();
+
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();
   already_AddRefed<nsIBaseWindow> GetTreeOwnerWindow();
   already_AddRefed<nsIWebBrowserChrome> GetWebBrowserChrome();
@@ -1137,6 +1152,8 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   bool mServiceWorkersTestingEnabled;
 
   mozilla::dom::LargeAllocStatus mLargeAllocStatus;
+
+  RefPtr<mozilla::dom::BrowsingContext> mOpenerForInitialContentBrowser;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)

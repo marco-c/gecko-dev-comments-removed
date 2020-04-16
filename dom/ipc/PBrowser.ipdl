@@ -488,6 +488,22 @@ parent:
 
 
 
+
+
+
+
+
+
+    async BrowserFrameOpenWindow(PBrowser opener,
+                                 nsString aURL, nsString aName,
+                                 bool aForceNoReferrer, nsString aFeatures)
+        returns (CreatedWindowInfo window);
+
+    
+
+
+
+
     async RespondStartSwipeEvent(uint64_t aInputBlockId, bool aStartSwipe);
 
     
@@ -995,6 +1011,12 @@ child:
 
 
     async AllowScriptsToClose();
+
+    
+
+
+
+    async SetOriginAttributes(OriginAttributes aOriginAttributes);
 
     
 

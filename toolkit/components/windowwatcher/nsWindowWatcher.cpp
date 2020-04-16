@@ -49,7 +49,6 @@
 #include "nsIDOMStorageManager.h"
 #include "nsIWidget.h"
 #include "nsFocusManager.h"
-#include "nsOpenWindowInfo.h"
 #include "nsPresContext.h"
 #include "nsContentUtils.h"
 #include "nsIPrefBranch.h"
@@ -411,12 +410,11 @@ static bool CheckUserContextCompatibility(nsIDocShell* aDocShell) {
 
   return subjectPrincipal->GetUserContextId() == userContextId;
 }
-
-nsresult nsWindowWatcher::CreateChromeWindow(const nsACString& aFeatures,
-                                             nsIWebBrowserChrome* aParentChrome,
-                                             uint32_t aChromeFlags,
-                                             nsIOpenWindowInfo* aOpenWindowInfo,
-                                             nsIWebBrowserChrome** aResult) {
+nsresult nsWindowWatcher::CreateChromeWindow(
+    const nsACString& aFeatures, nsIWebBrowserChrome* aParentChrome,
+    uint32_t aChromeFlags, nsIRemoteTab* aOpeningBrowserParent,
+    mozIDOMWindowProxy* aOpener, uint64_t aNextRemoteTabId,
+    nsIWebBrowserChrome** aResult) {
   if (NS_WARN_IF(!mWindowCreator)) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -424,8 +422,8 @@ nsresult nsWindowWatcher::CreateChromeWindow(const nsACString& aFeatures,
   bool cancel = false;
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
   nsresult rv = mWindowCreator->CreateChromeWindow(
-      aParentChrome, aChromeFlags, aOpenWindowInfo, &cancel,
-      getter_AddRefs(newWindowChrome));
+      aParentChrome, aChromeFlags, aOpeningBrowserParent, aOpener,
+      aNextRemoteTabId, &cancel, getter_AddRefs(newWindowChrome));
 
   if (NS_SUCCEEDED(rv) && cancel) {
     newWindowChrome = nullptr;
@@ -465,12 +463,10 @@ void nsWindowWatcher::MaybeDisablePersistence(
 }
 
 NS_IMETHODIMP
-nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
-                                         const nsACString& aFeatures,
-                                         bool aCalledFromJS,
-                                         float aOpenerFullZoom,
-                                         nsIOpenWindowInfo* aOpenWindowInfo,
-                                         nsIRemoteTab** aResult) {
+nsWindowWatcher::OpenWindowWithRemoteTab(
+    nsIRemoteTab* aRemoteTab, const nsACString& aFeatures, bool aCalledFromJS,
+    float aOpenerFullZoom, uint64_t aNextRemoteTabId, bool aForceNoOpener,
+    nsIRemoteTab** aResult) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mWindowCreator);
 
@@ -488,18 +484,20 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
       Preferences::GetBool("browser.privatebrowsing.autostart");
 
   nsCOMPtr<nsPIDOMWindowOuter> parentWindowOuter;
-  RefPtr<BrowsingContext> parentBC = aOpenWindowInfo->GetParent();
-  if (parentBC) {
-    RefPtr<Element> browserElement = parentBC->Top()->GetEmbedderElement();
-    if (browserElement && browserElement->GetOwnerGlobal() &&
-        browserElement->GetOwnerGlobal()->AsInnerWindow()) {
-      parentWindowOuter =
-          browserElement->GetOwnerGlobal()->AsInnerWindow()->GetOuterWindow();
-    }
+  if (aRemoteTab) {
+    
+    
+    BrowserHost* openingTab = BrowserHost::GetFrom(aRemoteTab);
+    parentWindowOuter = openingTab->GetParentWindowOuter();
 
-    isFissionWindow = parentBC->UseRemoteSubframes();
-    isPrivateBrowsingWindow =
-        isPrivateBrowsingWindow || parentBC->UsePrivateBrowsing();
+    
+    
+    nsCOMPtr<nsILoadContext> parentContext = openingTab->GetLoadContext();
+    if (parentContext) {
+      isFissionWindow = parentContext->UseRemoteSubframes();
+      isPrivateBrowsingWindow =
+          isPrivateBrowsingWindow || parentContext->UsePrivateBrowsing();
+    }
   }
 
   if (!parentWindowOuter) {
@@ -529,10 +527,6 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
 
   uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures, sizeSpec);
 
-  if (isPrivateBrowsingWindow) {
-    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
-  }
-
   
   
   chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
@@ -544,8 +538,9 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   nsCOMPtr<nsIWebBrowserChrome> parentChrome(do_GetInterface(parentTreeOwner));
   nsCOMPtr<nsIWebBrowserChrome> newWindowChrome;
 
-  CreateChromeWindow(aFeatures, parentChrome, chromeFlags, aOpenWindowInfo,
-                     getter_AddRefs(newWindowChrome));
+  CreateChromeWindow(aFeatures, parentChrome, chromeFlags,
+                     aForceNoOpener ? nullptr : aRemoteTab, nullptr,
+                     aNextRemoteTabId, getter_AddRefs(newWindowChrome));
 
   if (NS_WARN_IF(!newWindowChrome)) {
     return NS_ERROR_UNEXPECTED;
@@ -568,12 +563,12 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
     return NS_ERROR_UNEXPECTED;
   }
 
-  MOZ_ASSERT(chromeContext->UsePrivateBrowsing() == isPrivateBrowsingWindow);
-  MOZ_ASSERT(chromeContext->UseRemoteSubframes() == isFissionWindow);
+  chromeContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
+  chromeContext->SetRemoteSubframes(isFissionWindow);
 
   
   
-  MOZ_ASSERT(chromeContext->UseRemoteTabs());
+  chromeContext->SetRemoteTabs(true);
 
   MaybeDisablePersistence(aFeatures, chromeTreeOwner);
 
@@ -727,10 +722,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (docShell->UseRemoteSubframes()) {
         chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
       }
-    } else if (XRE_IsContentProcess()) {
-      
-      
-      chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
     }
   }
 
@@ -781,29 +772,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     }
   }
 
-  
-  
-  RefPtr<nsOpenWindowInfo> openWindowInfo;
-  if (!newBC && !windowTypeIsChrome) {
-    openWindowInfo = new nsOpenWindowInfo();
-    openWindowInfo->mForceNoOpener = aForceNoOpener;
-    openWindowInfo->mParent = parentBC;
-
-    
-    
-    openWindowInfo->mIsRemote = XRE_IsContentProcess();
-
-    
-    
-    nsCOMPtr<nsIPrincipal> subjectPrincipal =
-        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
-    if (subjectPrincipal &&
-        !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal)) {
-      openWindowInfo->mOriginAttributes =
-          subjectPrincipal->OriginAttributesRef();
-    }
-  }
-
   uint32_t activeDocsSandboxFlags = 0;
   if (!newBC) {
     
@@ -830,8 +798,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         !(chromeFlags & (nsIWebBrowserChrome::CHROME_MODAL |
                          nsIWebBrowserChrome::CHROME_OPENAS_DIALOG |
                          nsIWebBrowserChrome::CHROME_OPENAS_CHROME))) {
-      MOZ_ASSERT(openWindowInfo);
-
       nsCOMPtr<nsIWindowProvider> provider;
       if (parentTreeOwner) {
         provider = do_GetInterface(parentTreeOwner);
@@ -842,11 +808,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       }
 
       if (provider) {
-        rv = provider->ProvideWindow(openWindowInfo, chromeFlags, aCalledFromJS,
-                                     sizeSpec.WidthSpecified(), uriToLoad, name,
-                                     features, aForceNoOpener, aForceNoReferrer,
-                                     aLoadState, &windowIsNew,
-                                     getter_AddRefs(newBC));
+        rv = provider->ProvideWindow(
+            aParent, chromeFlags, aCalledFromJS, sizeSpec.WidthSpecified(),
+            uriToLoad, name, features, aForceNoOpener, aForceNoReferrer,
+            aLoadState, &windowIsNew, getter_AddRefs(newBC));
 
         if (NS_SUCCEEDED(rv) && newBC) {
           nsCOMPtr<nsIDocShell> newDocShell = newBC->GetDocShell();
@@ -941,14 +906,25 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
 
 
-      rv = CreateChromeWindow(features, parentChrome, chromeFlags,
-                              openWindowInfo, getter_AddRefs(newChrome));
+      mozIDOMWindowProxy* openerWindow = aForceNoOpener ? nullptr : aParent;
+      rv = CreateChromeWindow(features, parentChrome, chromeFlags, nullptr,
+                              openerWindow, 0, getter_AddRefs(newChrome));
 
       if (parentTopInnerWindow) {
         parentTopInnerWindow->Resume();
       }
 
       if (newChrome) {
+        nsCOMPtr<nsIAppWindow> appWin = do_GetInterface(newChrome);
+        if (appWin) {
+          nsCOMPtr<nsIXULBrowserWindow> xulBrowserWin;
+          appWin->GetXULBrowserWindow(getter_AddRefs(xulBrowserWin));
+          if (xulBrowserWin) {
+            nsPIDOMWindowOuter* openerWindow =
+                aForceNoOpener ? nullptr : parentWindow.get();
+            xulBrowserWin->ForceInitialBrowserNonRemote(openerWindow);
+          }
+        }
         
 
 
@@ -979,19 +955,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     newBC->SetOnePermittedSandboxedNavigator(parentBC);
   }
 
-  if (!aForceNoOpener && parentBC) {
-    
-    
-    
-    if (windowIsNew && newBC->IsContent()) {
-      MOZ_RELEASE_ASSERT(newBC->GetOpenerId() == parentBC->Id());
-      MOZ_RELEASE_ASSERT(!!parentBC == newBC->HadOriginalOpener());
-    } else {
-      
-      newBC->SetOpener(parentBC);
-    }
-  }
-
   RefPtr<nsDocShell> newDocShell(nsDocShell::Cast(newBC->GetDocShell()));
 
   
@@ -1013,6 +976,22 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   RefPtr<nsGlobalWindowOuter> win(
       nsGlobalWindowOuter::Cast(newBC->GetDOMWindow()));
   if (win) {
+    if (!aForceNoOpener) {
+      if (windowIsNew) {
+        
+        
+        MOZ_DIAGNOSTIC_ASSERT(newBC->GetOpenerId() ==
+                              (parentBC ? parentBC->Id() : 0));
+        MOZ_DIAGNOSTIC_ASSERT(!!parentBC == newBC->HadOriginalOpener());
+      } else {
+        newBC->SetOpener(parentBC);
+      }
+    } else if (parentWindow && parentWindow != win) {
+      MOZ_ASSERT(
+          win->TabGroup() != parentWindow->TabGroup(),
+          "If we're forcing no opener, they should be in different tab groups");
+    }
+
     if (windowIsNew) {
 #ifdef DEBUG
       
@@ -1027,9 +1006,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         doc->SetIsInitialDocument(true);
       }
     }
+  } else {
+    MOZ_ASSERT(!windowIsNew, "New windows are always created in-process");
+    if (!aForceNoOpener) {
+      
+      
+      
+      
+    }
   }
-
-  MOZ_ASSERT(win || !windowIsNew, "New windows are always created in-process");
 
   *aResult = do_AddRef(newBC).take();
 
@@ -1071,12 +1056,24 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       cx ? nsContentUtils::SubjectPrincipal()
          : nsContentUtils::GetSystemPrincipal();
 
+  bool isPrivateBrowsingWindow = false;
+
   if (windowIsNew) {
+    
+    
     if (subjectPrincipal &&
         !nsContentUtils::IsSystemOrExpandedPrincipal(subjectPrincipal) &&
-        newBC->IsContent()) {
-      MOZ_DIAGNOSTIC_ASSERT(subjectPrincipal->OriginAttributesRef() ==
-                            newBC->OriginAttributesRef());
+        newDocShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+      isPrivateBrowsingWindow =
+          !!subjectPrincipal->OriginAttributesRef().mPrivateBrowsingId;
+      newDocShell->SetOriginAttributes(subjectPrincipal->OriginAttributesRef());
+    } else {
+      nsCOMPtr<nsIDocShellTreeItem> parentItem;
+      GetWindowTreeItem(aParent, getter_AddRefs(parentItem));
+      nsCOMPtr<nsILoadContext> parentContext = do_QueryInterface(parentItem);
+      if (parentContext) {
+        isPrivateBrowsingWindow = parentContext->UsePrivateBrowsing();
+      }
     }
 
     bool autoPrivateBrowsing =
@@ -1084,20 +1081,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
     if (!autoPrivateBrowsing &&
         (chromeFlags & nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW)) {
-      if (newBC->IsChrome()) {
-        newBC->SetUsePrivateBrowsing(false);
-      }
-      MOZ_DIAGNOSTIC_ASSERT(
-          !newBC->UsePrivateBrowsing(),
-          "CHROME_NON_PRIVATE_WINDOW passed, but got private window");
+      isPrivateBrowsingWindow = false;
     } else if (autoPrivateBrowsing ||
                (chromeFlags & nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW)) {
-      if (newBC->IsChrome()) {
-        newBC->SetUsePrivateBrowsing(true);
-      }
-      MOZ_DIAGNOSTIC_ASSERT(
-          newBC->UsePrivateBrowsing(),
-          "CHROME_PRIVATE_WINDOW passed, but got non-private window");
+      isPrivateBrowsingWindow = true;
     }
 
     
@@ -1136,12 +1123,25 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   
   
-  MOZ_DIAGNOSTIC_ASSERT(
-      newBC->UseRemoteTabs() ==
-      !!(chromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW));
-  MOZ_DIAGNOSTIC_ASSERT(
-      newBC->UseRemoteSubframes() ==
-      !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
+  bool isRemoteWindow =
+      !!(chromeFlags & nsIWebBrowserChrome::CHROME_REMOTE_WINDOW);
+  bool isFissionWindow =
+      !!(chromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW);
+
+  if (isNewToplevelWindow) {
+    nsCOMPtr<nsIDocShellTreeItem> childRoot;
+    newDocShell->GetInProcessRootTreeItem(getter_AddRefs(childRoot));
+    nsCOMPtr<nsILoadContext> childContext = do_QueryInterface(childRoot);
+    if (childContext) {
+      childContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
+      childContext->SetRemoteTabs(isRemoteWindow);
+      childContext->SetRemoteSubframes(isFissionWindow);
+    }
+  } else if (windowIsNew) {
+    newDocShell->SetPrivateBrowsing(isPrivateBrowsingWindow);
+    newDocShell->SetRemoteTabs(isRemoteWindow);
+    newDocShell->SetRemoteSubframes(isFissionWindow);
+  }
 
   RefPtr<nsDocShellLoadState> loadState = aLoadState;
   if (uriToLoad && loadState) {
@@ -1254,7 +1254,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
           parentWindow->GetCurrentInnerWindow();
       parentStorageManager->GetStorage(
           pInnerWin, subjectPrincipal, subjectPrincipal,
-          newBC->UsePrivateBrowsing(), getter_AddRefs(storage));
+          isPrivateBrowsingWindow, getter_AddRefs(storage));
       if (storage) {
         newStorageManager->CloneStorage(storage);
       }

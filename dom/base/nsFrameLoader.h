@@ -45,7 +45,6 @@ class nsIMessageSender;
 class nsIPrintSettings;
 class nsIWebBrowserPersistDocumentReceiver;
 class nsIWebProgressListener;
-class nsIOpenWindowInfo;
 
 namespace mozilla {
 
@@ -102,9 +101,9 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
  public:
   
-  static already_AddRefed<nsFrameLoader> Create(
-      Element* aOwner, bool aNetworkCreated,
-      nsIOpenWindowInfo* aOpenWindowInfo = nullptr);
+  static already_AddRefed<nsFrameLoader> Create(Element* aOwner,
+                                                BrowsingContext* aOpener,
+                                                bool aNetworkCreated);
 
   
   
@@ -468,16 +467,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
   enum BrowserParentChange { eBrowserParentRemoved, eBrowserParentChanged };
   void MaybeUpdatePrimaryBrowserParent(BrowserParentChange aChange);
 
-  nsresult PopulateOriginContextIdsFromAttributes(
-      mozilla::OriginAttributes& aAttr);
-
-  bool EnsureBrowsingContextAttached();
+  nsresult PopulateUserContextIdFromAttribute(mozilla::OriginAttributes& aAttr);
 
   RefPtr<mozilla::dom::BrowsingContext> mPendingBrowsingContext;
   nsCOMPtr<nsIURI> mURIToLoad;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIContentSecurityPolicy> mCsp;
-  nsCOMPtr<nsIOpenWindowInfo> mOpenWindowInfo;
   mozilla::dom::Element* mOwnerContent;  
 
   

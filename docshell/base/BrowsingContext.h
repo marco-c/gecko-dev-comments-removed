@@ -29,7 +29,6 @@
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 #include "nsILoadInfo.h"
-#include "nsILoadContext.h"
 
 class nsDocShellLoadState;
 class nsGlobalWindowOuter;
@@ -105,7 +104,6 @@ class WindowProxyHolder;
   FIELD(AllowPlugins, bool)                                                  \
   FIELD(AllowContentRetargeting, bool)                                       \
   FIELD(AllowContentRetargetingOnChildren, bool)                             \
-  FIELD(ForceEnableTrackingProtection, bool)                                 \
   /* These field are used to store the states of autoplay media request on   \
    * GeckoView only, and it would only be modified on the top level browsing \
    * context. */                                                             \
@@ -134,7 +132,7 @@ class WindowProxyHolder;
 
 
 
-class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+class BrowsingContext : public nsISupports, public nsWrapperCache {
   MOZ_DECL_SYNCED_CONTEXT(BrowsingContext, MOZ_EACH_BC_FIELD)
 
  public:
@@ -434,7 +432,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BrowsingContext)
-  NS_DECL_NSILOADCONTEXT
 
   const Children& GetChildren() { return mChildren; }
   const nsTArray<RefPtr<WindowContext>>& GetWindowContexts() {
@@ -511,22 +508,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
 
   struct IPCInitializer {
-    uint64_t mId = 0;
+    uint64_t mId;
 
     
     
     
-    uint64_t mParentId = 0;
+    uint64_t mParentId;
     already_AddRefed<BrowsingContext> GetParent();
     already_AddRefed<BrowsingContext> GetOpener();
 
     uint64_t GetOpenerId() const { return mozilla::Get<IDX_OpenerId>(mFields); }
 
-    bool mCached = false;
-    bool mWindowless = false;
-    bool mUseRemoteTabs = false;
-    bool mUseRemoteSubframes = false;
-    OriginAttributes mOriginAttributes;
+    bool mCached;
+    bool mWindowless;
 
     FieldTuple mFields;
   };
@@ -552,9 +546,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool PendingInitialization() const { return mPendingInitialization; };
   void SetPendingInitialization(bool aVal) { mPendingInitialization = aVal; };
 
-  const OriginAttributes& OriginAttributesRef() { return mOriginAttributes; }
-  nsresult SetOriginAttributes(const OriginAttributes& aAttrs);
-
  protected:
   virtual ~BrowsingContext();
   BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
@@ -566,12 +557,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   BrowsingContext* FindWithSpecialName(const nsAString& aName,
                                        BrowsingContext& aRequestingContext);
-
-  
-  
-  bool CanSetOriginAttributes();
-
-  void AssertOriginAttributesMatchPrivateBrowsing();
 
   friend class ::nsOuterWindowProxy;
   friend class ::nsGlobalWindowOuter;
@@ -719,16 +704,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   LocationProxy mLocation;
 
   
-  
-  OriginAttributes mOriginAttributes;
-
-  
-  
-  
-  
-  uint32_t mPrivateBrowsingId;
-
-  
   bool mEverAttached : 1;
 
   
@@ -755,14 +730,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   bool mEmbeddedByThisProcess : 1;
-
-  
-  
-  bool mUseRemoteTabs : 1;
-
-  
-  
-  bool mUseRemoteSubframes : 1;
 
   
   

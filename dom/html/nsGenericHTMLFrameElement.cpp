@@ -34,6 +34,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsGenericHTMLFrameElement)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(nsGenericHTMLFrameElement,
                                                   nsGenericHTMLElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameLoader)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOpenerWindow)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBrowserElementAPI)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
@@ -44,6 +45,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(nsGenericHTMLFrameElement,
   }
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameLoader)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOpenerWindow)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowserElementAPI)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -128,7 +130,7 @@ void nsGenericHTMLFrameElement::EnsureFrameLoader() {
 
   
   
-  mFrameLoader = nsFrameLoader::Create(this, mNetworkCreated);
+  mFrameLoader = nsFrameLoader::Create(this, mOpenerWindow, mNetworkCreated);
 }
 
 void nsGenericHTMLFrameElement::DisallowCreateFrameLoader() {
@@ -159,6 +161,13 @@ void nsGenericHTMLFrameElement::CreateRemoteFrameLoader(
     
     mFrameLoader->UpdatePositionAndSize(subdocFrame);
   }
+}
+
+void nsGenericHTMLFrameElement::PresetOpenerWindow(
+    const Nullable<WindowProxyHolder>& aOpenerWindow, ErrorResult& aRv) {
+  MOZ_ASSERT(!mFrameLoader);
+  mOpenerWindow =
+      aOpenerWindow.IsNull() ? nullptr : aOpenerWindow.Value().get();
 }
 
 void nsGenericHTMLFrameElement::SwapFrameLoaders(
@@ -361,7 +370,7 @@ nsresult nsGenericHTMLFrameElement::CopyInnerTo(Element* aDest) {
   if (doc->IsStaticDocument() && mFrameLoader) {
     nsGenericHTMLFrameElement* dest =
         static_cast<nsGenericHTMLFrameElement*>(aDest);
-    RefPtr<nsFrameLoader> fl = nsFrameLoader::Create(dest, false);
+    RefPtr<nsFrameLoader> fl = nsFrameLoader::Create(dest, nullptr, false);
     NS_ENSURE_STATE(fl);
     dest->mFrameLoader = fl;
     mFrameLoader->CreateStaticClone(fl);
