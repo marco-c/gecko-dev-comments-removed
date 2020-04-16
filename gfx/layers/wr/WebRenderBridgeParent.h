@@ -626,6 +626,7 @@ class WebRenderBridgeParent final
   bool mReceivedDisplayList;
   bool mIsFirstPaint;
   bool mSkippedComposite;
+  bool mDisablingNativeCompositor;
   
   DataMutex<nsClassHashtable<PipelineIdAndEpochHashEntry,
                              nsTArray<CompositionPayload>>>
