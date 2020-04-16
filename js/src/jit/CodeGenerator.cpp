@@ -10452,7 +10452,7 @@ bool CodeGenerator::generateWasm(wasm::FuncTypeIdDesc funcTypeId,
     }
     
     
-    MOZ_ALWAYS_TRUE(functionEntryStackMap);
+    MOZ_ASSERT(functionEntryStackMap);
     if (functionEntryStackMap &&
         !stackMaps->add((uint8_t*)(uintptr_t)trapInsnOffset.offset(),
                         functionEntryStackMap)) {
@@ -10507,7 +10507,7 @@ bool CodeGenerator::generateWasm(wasm::FuncTypeIdDesc funcTypeId,
       return false;
     }
     
-    MOZ_ALWAYS_TRUE(stackMap);
+    MOZ_ASSERT(stackMap);
     if (!stackMap) {
       continue;
     }
