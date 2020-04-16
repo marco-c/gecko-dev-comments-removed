@@ -1761,7 +1761,6 @@ class PaintedDisplayItemLayerUserData : public LayerUserData {
         mAnimatedGeometryRootPosition(0, 0),
         mLastItemCount(0),
         mContainerLayerFrame(nullptr),
-        mHasExplicitLastPaintOffset(false),
         mDisabledAlpha(false) {}
 
   NS_INLINE_DECL_REFCOUNTING(PaintedDisplayItemLayerUserData);
@@ -1829,15 +1828,14 @@ class PaintedDisplayItemLayerUserData : public LayerUserData {
 
   
   
-  nsIntPoint mLastPaintOffset;
+  
+  Maybe<nsIntPoint> mLastPaintOffset;
 
   
   
   
   std::vector<AssignedDisplayItem> mItems;
   nsIFrame* mContainerLayerFrame;
-
-  bool mHasExplicitLastPaintOffset;
 
   
 
@@ -1862,8 +1860,7 @@ FrameLayerBuilder::FrameLayerBuilder()
 FrameLayerBuilder::~FrameLayerBuilder() {
   GetMaskLayerImageCache()->Sweep();
   for (PaintedDisplayItemLayerUserData* userData : mPaintedLayerItems) {
-    userData->mLastPaintOffset = userData->mTranslation;
-    userData->mHasExplicitLastPaintOffset = true;
+    userData->mLastPaintOffset = Some(userData->mTranslation);
     userData->mItems.clear();
     userData->mContainerLayerFrame = nullptr;
   }
@@ -5585,10 +5582,7 @@ nsIntPoint FrameLayerBuilder::GetLastPaintOffset(PaintedLayer* aLayer) {
   PaintedDisplayItemLayerUserData* layerData =
       GetPaintedDisplayItemLayerUserData(aLayer);
   MOZ_ASSERT(layerData);
-  if (layerData->mHasExplicitLastPaintOffset) {
-    return layerData->mLastPaintOffset;
-  }
-  return GetTranslationForPaintedLayer(aLayer);
+  return layerData->mLastPaintOffset.valueOr(layerData->mTranslation);
 }
 
 bool FrameLayerBuilder::CheckInLayerTreeCompressionMode() {
