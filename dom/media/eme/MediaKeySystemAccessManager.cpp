@@ -388,8 +388,11 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
     
     
     
-    MediaKeySystemAccess::NotifyObservers(mWindow, aRequest->mKeySystem,
-                                          MediaKeySystemStatus::Api_disabled);
+    
+    if (!Preferences::IsLocked("media.eme.enabled")) {
+      MediaKeySystemAccess::NotifyObservers(mWindow, aRequest->mKeySystem,
+                                            MediaKeySystemStatus::Api_disabled);
+    }
     aRequest->RejectPromiseWithNotSupportedError(
         NS_LITERAL_CSTRING("EME has been preffed off"));
     diagnostics.StoreMediaKeySystemAccess(
