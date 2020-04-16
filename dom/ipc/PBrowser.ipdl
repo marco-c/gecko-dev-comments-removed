@@ -1017,12 +1017,6 @@ child:
 
 
 
-    async SetOriginAttributes(OriginAttributes aOriginAttributes);
-
-    
-
-
-
     async SetWidgetNativeData(WindowsHandle aHandle);
 
     async WillChangeProcess() returns (bool success);

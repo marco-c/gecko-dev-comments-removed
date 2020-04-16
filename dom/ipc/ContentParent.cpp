@@ -4792,14 +4792,8 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     newBrowserHost->GetBrowsingContext()->SetName(aName);
   }
 
-  
-  
-  
-  
-  
-  if (!aSetOpener) {
-    Unused << newBrowserParent->SendSetOriginAttributes(openerOriginAttributes);
-  }
+  MOZ_ASSERT(newBrowserHost->GetBrowsingContext()->OriginAttributesRef() ==
+             openerOriginAttributes);
 
   if (aURIToLoad && aLoadURI) {
     nsCOMPtr<mozIDOMWindowProxy> openerWindow;

@@ -567,12 +567,12 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
-  chromeContext->SetPrivateBrowsing(isPrivateBrowsingWindow);
-  chromeContext->SetRemoteSubframes(isFissionWindow);
+  MOZ_ASSERT(chromeContext->UsePrivateBrowsing() == isPrivateBrowsingWindow);
+  MOZ_ASSERT(chromeContext->UseRemoteSubframes() == isFissionWindow);
 
   
   
-  chromeContext->SetRemoteTabs(true);
+  MOZ_ASSERT(chromeContext->UseRemoteTabs());
 
   MaybeDisablePersistence(aFeatures, chromeTreeOwner);
 
