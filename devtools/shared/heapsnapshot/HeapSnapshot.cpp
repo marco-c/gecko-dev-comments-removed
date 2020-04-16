@@ -1011,7 +1011,7 @@ class MOZ_STACK_CLASS StreamWriter : public CoreDumpWriter {
     
     
     ::google::protobuf::io::CodedOutputStream codedStream(&stream);
-    codedStream.WriteVarint32(message.ByteSize());
+    codedStream.WriteVarint32(message.ByteSizeLong());
     message.SerializeWithCachedSizes(&codedStream);
     return !codedStream.HadError();
   }
