@@ -64,6 +64,12 @@ bool TestVirtualQuery(HANDLE aProcess, LPCVOID aAddress) {
   return true;
 }
 
+LauncherResult<HMODULE> GetModuleHandleFromLeafName(const wchar_t* aName) {
+  UNICODE_STRING name;
+  ::RtlInitUnicodeString(&name, aName);
+  return nt::GetModuleHandleFromLeafName(name);
+}
+
 
 
 
@@ -263,6 +269,23 @@ int wmain(int argc, wchar_t* argv[]) {
   if (!TestVirtualQuery(process, nullptr) || !TestVirtualQuery(process, argv) ||
       !TestVirtualQuery(process, kNormal) ||
       !TestVirtualQuery(nullptr, kNormal)) {
+    return 1;
+  }
+
+  auto moduleResult = GetModuleHandleFromLeafName(kKernel32);
+  if (moduleResult.isErr() ||
+      moduleResult.inspect() != k32headers.template RVAToPtr<HMODULE>(0)) {
+    printf(
+        "TEST-FAILED | NativeNt | "
+        "GetModuleHandleFromLeafName returns a wrong value.\n");
+    return 1;
+  }
+
+  moduleResult = GetModuleHandleFromLeafName(L"invalid");
+  if (moduleResult.isOk()) {
+    printf(
+        "TEST-FAILED | NativeNt | "
+        "GetModuleHandleFromLeafName unexpectedly returns a value.\n");
     return 1;
   }
 
