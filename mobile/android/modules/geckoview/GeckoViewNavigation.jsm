@@ -282,7 +282,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     });
   }
 
-  waitAndSetupWindow(aSessionId, { opener, nextRemoteTabId, forceNotRemote }) {
+  waitAndSetupWindow(aSessionId, aOpenWindowInfo) {
     if (!aSessionId) {
       return Promise.resolve(null);
     }
@@ -294,17 +294,13 @@ class GeckoViewNavigation extends GeckoViewModule {
             aTopic === "geckoview-window-created" &&
             aSubject.name === aSessionId
           ) {
-            if (nextRemoteTabId) {
-              aSubject.browser.setAttribute(
-                "nextRemoteTabId",
-                nextRemoteTabId.toString()
-              );
-            }
+            
+            aSubject.browser.openWindowInfo = aOpenWindowInfo;
 
-            if (opener) {
-              aSubject.browser.presetOpenerWindow(opener);
-            }
-            if (forceNotRemote && aSubject.browser.hasAttribute("remote")) {
+            if (
+              !aOpenWindowInfo.isRemote &&
+              aSubject.browser.hasAttribute("remote")
+            ) {
               
               aSubject.browser.setAttribute("remote", "false");
               aSubject.browser.removeAttribute("remoteType");
@@ -320,7 +316,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     });
   }
 
-  handleNewSession(aUri, aOpener, aWhere, aFlags, aNextRemoteTabId) {
+  handleNewSession(aUri, aOpenWindowInfo, aWhere, aFlags) {
     debug`handleNewSession: uri=${aUri && aUri.spec}
                              where=${aWhere} flags=${aFlags}`;
 
@@ -333,24 +329,11 @@ class GeckoViewNavigation extends GeckoViewModule {
       uri: aUri ? aUri.displaySpec : "",
     };
 
-    
-    
-    
-    
-    
-    
-    const forceNotRemote = !!aOpener;
-
     let browser = undefined;
     this.eventDispatcher
       .sendRequestForResult(message)
       .then(sessionId => {
-        return this.waitAndSetupWindow(sessionId, {
-          opener:
-            aFlags & Ci.nsIBrowserDOMWindow.OPEN_NO_OPENER ? null : aOpener,
-          nextRemoteTabId: aNextRemoteTabId,
-          forceNotRemote,
-        });
+        return this.waitAndSetupWindow(sessionId, aOpenWindowInfo);
       })
       .then(
         window => {
@@ -371,7 +354,7 @@ class GeckoViewNavigation extends GeckoViewModule {
   
   createContentWindow(
     aUri,
-    aOpener,
+    aOpenWindowInfo,
     aWhere,
     aFlags,
     aTriggeringPrincipal,
@@ -395,7 +378,13 @@ class GeckoViewNavigation extends GeckoViewModule {
       return null;
     }
 
-    const browser = this.handleNewSession(aUri, aOpener, aWhere, aFlags, null);
+    const browser = this.handleNewSession(
+      aUri,
+      aOpenWindowInfo,
+      aWhere,
+      aFlags,
+      null
+    );
     if (!browser) {
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -405,17 +394,9 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  createContentWindowInFrame(
-    aUri,
-    aParams,
-    aWhere,
-    aFlags,
-    aNextRemoteTabId,
-    aName
-  ) {
+  createContentWindowInFrame(aUri, aParams, aWhere, aFlags, aName) {
     debug`createContentWindowInFrame: uri=${aUri && aUri.spec}
                                        where=${aWhere} flags=${aFlags}
-                                       nextRemoteTabId=${aNextRemoteTabId}
                                        name=${aName}`;
 
     if (
@@ -435,10 +416,9 @@ class GeckoViewNavigation extends GeckoViewModule {
 
     const browser = this.handleNewSession(
       aUri,
-      null,
+      aParams.openWindowInfo,
       aWhere,
-      aFlags,
-      aNextRemoteTabId
+      aFlags
     );
     if (!browser) {
       Components.returnCode = Cr.NS_ERROR_ABORT;
@@ -450,13 +430,12 @@ class GeckoViewNavigation extends GeckoViewModule {
 
   handleOpenUri(
     aUri,
-    aOpener,
+    aOpenWindowInfo,
     aWhere,
     aFlags,
     aTriggeringPrincipal,
     aCsp,
-    aReferrerInfo,
-    aNextRemoteTabId
+    aReferrerInfo
   ) {
     debug`handleOpenUri: uri=${aUri && aUri.spec}
                           where=${aWhere} flags=${aFlags}`;
@@ -483,7 +462,7 @@ class GeckoViewNavigation extends GeckoViewModule {
     ) {
       browser = this.handleNewSession(
         aUri,
-        aOpener,
+        aOpenWindowInfo,
         aWhere,
         aFlags,
         aTriggeringPrincipal
@@ -505,15 +484,14 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  openURI(aUri, aOpener, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
+  openURI(aUri, aOpenWindowInfo, aWhere, aFlags, aTriggeringPrincipal, aCsp) {
     const browser = this.handleOpenUri(
       aUri,
-      aOpener,
+      aOpenWindowInfo,
       aWhere,
       aFlags,
       aTriggeringPrincipal,
       aCsp,
-      null,
       null
     );
     return browser && browser.browsingContext;
@@ -523,13 +501,12 @@ class GeckoViewNavigation extends GeckoViewModule {
   openURIInFrame(aUri, aParams, aWhere, aFlags, aNextRemoteTabId, aName) {
     const browser = this.handleOpenUri(
       aUri,
-      null,
+      aParams.openWindowInfo,
       aWhere,
       aFlags,
       aParams.triggeringPrincipal,
       aParams.csp,
-      aParams.referrerInfo,
-      aNextRemoteTabId
+      aParams.referrerInfo
     );
     return browser;
   }
