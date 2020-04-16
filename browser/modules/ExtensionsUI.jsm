@@ -372,6 +372,11 @@ var ExtensionsUI = {
       await pending;
     }
 
+    
+    if (window.gBrowser.selectedBrowser !== browser) {
+      return false;
+    }
+
     let promise = new Promise(resolve => {
       function eventCallback(topic) {
         let doc = this.browser.ownerDocument;
