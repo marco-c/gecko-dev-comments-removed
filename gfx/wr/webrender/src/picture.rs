@@ -5060,8 +5060,7 @@ impl PicturePrimitive {
 
                         for tile in tile_cache.tiles.values_mut() {
 
-                            
-                            if tile.is_visible && tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX {
+                            if tile.is_visible {
                                 
                                 let device_draw_rect = device_clip_rect.intersection(&tile.device_valid_rect);
 
@@ -5071,7 +5070,9 @@ impl PicturePrimitive {
                                 
                                 match device_draw_rect {
                                     Some(device_draw_rect) => {
-                                        if frame_state.composite_state.is_tile_occluded(tile.z_id, device_draw_rect) {
+                                        
+                                        if tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX &&
+                                           frame_state.composite_state.is_tile_occluded(tile.z_id, device_draw_rect) {
                                             
                                             
                                             
