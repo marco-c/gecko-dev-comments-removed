@@ -147,7 +147,6 @@ struct LoadInfoArgs
   bool                        skipContentSniffing;
   uint32_t                    httpsOnlyStatus;
   bool                        allowDeprecatedSystemRequests;
-  bool                        parserCreatedScript;
   bool                        isFromProcessingFrameAttributes;
   CookieJarSettingsArgs       cookieJarSettings;
   uint32_t                    requestBlockingReason;
@@ -193,10 +192,6 @@ struct ParentLoadInfoForwarderArgs
   
   
   bool allowDeprecatedSystemRequests;
-
-  
-  
-  bool parserCreatedScript;
 
   
   

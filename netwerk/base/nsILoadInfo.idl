@@ -467,12 +467,6 @@ interface nsILoadInfo : nsISupports
 
 
 
-  [infallible] attribute boolean parserCreatedScript;
-
-  
-
-
-
 
 
   [infallible] readonly attribute boolean isInThirdPartyContext;

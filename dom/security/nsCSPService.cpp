@@ -103,7 +103,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   }
 
   uint32_t contentType = aLoadInfo->InternalContentPolicyType();
-  bool parserCreatedScript = aLoadInfo->GetParserCreatedScript();
+  nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
 
   nsCOMPtr<nsICSPEventListener> cspEventListener;
   nsresult rv =
@@ -141,10 +141,10 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
     if (preloadCsp) {
       
       rv = preloadCsp->ShouldLoad(
-          contentType, cspEventListener, aContentLocation, aMimeTypeGuess,
+          contentType, cspEventListener, aContentLocation, requestContext,
+          aMimeTypeGuess,
           nullptr,  
-          aLoadInfo->GetSendCSPViolationEvents(), cspNonce, parserCreatedScript,
-          aDecision);
+          aLoadInfo->GetSendCSPViolationEvents(), cspNonce, aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -167,10 +167,10 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (csp) {
     
     rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
-                         aMimeTypeGuess,
+                         requestContext, aMimeTypeGuess,
                          nullptr,  
                          aLoadInfo->GetSendCSPViolationEvents(), cspNonce,
-                         parserCreatedScript, aDecision);
+                         aDecision);
 
     if (NS_CP_REJECTED(*aDecision)) {
       NS_SetRequestBlockingReason(
@@ -335,8 +335,7 @@ nsresult CSPService::ConsultCSPForRedirect(
       nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
   int16_t decision = nsIContentPolicy::ACCEPT;
-  bool parserCreatedScript = aLoadInfo->GetParserCreatedScript();
-
+  nsCOMPtr<nsISupports> requestContext = aLoadInfo->GetLoadingContext();
   
   if (isPreload) {
     nsCOMPtr<nsIContentSecurityPolicy> preloadCsp = aLoadInfo->GetPreloadCsp();
@@ -347,11 +346,12 @@ nsresult CSPService::ConsultCSPForRedirect(
                        policyType,  
                        cspEventListener,
                        aNewURI,         
+                       requestContext,  
                        EmptyCString(),  
                        aOriginalURI,    
                        true,            
                        cspNonce,        
-                       parserCreatedScript, &decision);
+                       &decision);
 
       
       
@@ -371,11 +371,12 @@ nsresult CSPService::ConsultCSPForRedirect(
         policyType,  
         cspEventListener,
         aNewURI,         
+        requestContext,  
         EmptyCString(),  
         aOriginalURI,    
         true,            
         cspNonce,        
-        parserCreatedScript, &decision);
+        &decision);
     if (NS_CP_REJECTED(decision)) {
       aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
       return NS_BINDING_FAILED;
