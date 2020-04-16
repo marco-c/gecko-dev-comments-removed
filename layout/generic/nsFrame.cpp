@@ -9189,6 +9189,7 @@ nsIFrame::FrameSearchResult nsFrame::PeekOffsetWord(
   return CONTINUE;
 }
 
+
 bool nsFrame::BreakWordBetweenPunctuation(const PeekWordState* aState,
                                           bool aForward, bool aPunctAfter,
                                           bool aWhitespaceAfter,

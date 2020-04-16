@@ -226,9 +226,10 @@ class nsFrame : public nsBox {
 
 
 
-  bool BreakWordBetweenPunctuation(const PeekWordState* aState, bool aForward,
-                                   bool aPunctAfter, bool aWhitespaceAfter,
-                                   bool aIsKeyboardSelect);
+  static bool BreakWordBetweenPunctuation(const PeekWordState* aState,
+                                          bool aForward, bool aPunctAfter,
+                                          bool aWhitespaceAfter,
+                                          bool aIsKeyboardSelect);
 
   nsresult CheckVisibility(nsPresContext* aContext, int32_t aStartIndex,
                            int32_t aEndIndex, bool aRecurse, bool* aFinished,
