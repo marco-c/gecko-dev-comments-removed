@@ -11,9 +11,13 @@ webidl BrowsingContext;
 %{ C++
 namespace mozilla {
 class OriginAttributes;
+namespace dom {
+class BrowserParent;
+} 
 } 
 %}
 [ref] native const_OriginAttributes(const mozilla::OriginAttributes);
+[ptr] native BrowserParent(mozilla::dom::BrowserParent);
 
 
 
@@ -34,8 +38,9 @@ interface nsIOpenWindowInfo : nsISupports {
   [infallible]
   readonly attribute boolean forceNoOpener;
 
-  [infallible]
-  readonly attribute unsigned long long nextRemoteBrowserId;
+  
+  [notxpcom, nostdcall]
+  BrowserParent getNextRemoteBrowser();
 
   
   [implicit_jscontext, binaryname(ScriptableOriginAttributes)]

@@ -259,6 +259,14 @@ static bool IsTopContent(BrowsingContext* aParent, Element* aOwner) {
 
 static already_AddRefed<BrowsingContext> CreateBrowsingContext(
     Element* aOwner, nsIOpenWindowInfo* aOpenWindowInfo) {
+  
+  
+  if (aOpenWindowInfo && aOpenWindowInfo->GetNextRemoteBrowser()) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    return do_AddRef(
+        aOpenWindowInfo->GetNextRemoteBrowser()->GetBrowsingContext());
+  }
+
   RefPtr<BrowsingContext> opener;
   if (aOpenWindowInfo && !aOpenWindowInfo->GetForceNoOpener()) {
     opener = aOpenWindowInfo->GetParent();
@@ -2489,9 +2497,6 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
-  uint64_t nextRemoteBrowserId =
-      mOpenWindowInfo ? mOpenWindowInfo->GetNextRemoteBrowserId() : 0;
-
   if (!EnsureBrowsingContextAttached()) {
     return false;
   }
@@ -2579,22 +2584,26 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
 
   nsCOMPtr<Element> ownerElement = mOwnerContent;
 
-  mRemoteBrowser = ContentParent::CreateBrowser(
-      context, ownerElement, mRemoteType, mPendingBrowsingContext,
-      openerContentParent, sameTabGroupAs, nextRemoteBrowserId);
+  RefPtr<BrowserParent> nextRemoteBrowser =
+      mOpenWindowInfo ? mOpenWindowInfo->GetNextRemoteBrowser() : nullptr;
+  if (nextRemoteBrowser) {
+    mRemoteBrowser = new BrowserHost(nextRemoteBrowser);
+    if (nextRemoteBrowser->GetOwnerElement()) {
+      MOZ_ASSERT_UNREACHABLE("Shouldn't have an owner element before");
+      return false;
+    }
+    nextRemoteBrowser->SetOwnerElement(ownerElement);
+  } else {
+    mRemoteBrowser = ContentParent::CreateBrowser(
+        context, ownerElement, mRemoteType, mPendingBrowsingContext,
+        openerContentParent, sameTabGroupAs);
+  }
   if (!mRemoteBrowser) {
     return false;
   }
 
-  
-  
-  
-  
-  if (mPendingBrowsingContext != mRemoteBrowser->GetBrowsingContext()) {
-    MOZ_DIAGNOSTIC_ASSERT(nextRemoteBrowserId);
-    mPendingBrowsingContext->Detach();
-    mPendingBrowsingContext = mRemoteBrowser->GetBrowsingContext();
-  }
+  MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext ==
+                        mRemoteBrowser->GetBrowsingContext());
 
   mRemoteBrowser->GetBrowsingContext()->Embed();
 
