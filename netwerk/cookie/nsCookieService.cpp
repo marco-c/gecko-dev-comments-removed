@@ -143,14 +143,14 @@ struct nsListIter {
 
   
   
-  explicit nsListIter(nsCookieEntry* aEntry, nsCookieEntry::IndexType aIndex)
+  explicit nsListIter(CookieEntry* aEntry, CookieEntry::IndexType aIndex)
       : entry(aEntry), index(aIndex) {}
 
   
   Cookie* Cookie() const { return entry->GetCookies()[index]; }
 
-  nsCookieEntry* entry;
-  nsCookieEntry::IndexType index;
+  CookieEntry* entry;
+  CookieEntry::IndexType index;
 };
 
 
@@ -527,26 +527,6 @@ bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
 }
 
 }  
-
-size_t nsCookieEntry::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  size_t amount = CookieKey::SizeOfExcludingThis(aMallocSizeOf);
-
-  amount += mCookies.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  for (uint32_t i = 0; i < mCookies.Length(); ++i) {
-    amount += mCookies[i]->SizeOfIncludingThis(aMallocSizeOf);
-  }
-
-  return amount;
-}
-
-size_t CookieStorage::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  size_t amount = 0;
-
-  amount += aMallocSizeOf(this);
-  amount += hostTable.SizeOfExcludingThis(aMallocSizeOf);
-
-  return amount;
-}
 
 
 
@@ -1983,11 +1963,10 @@ void nsCookieService::RebuildCorruptDB(CookieStorage* aCookieStorage) {
               for (auto iter =
                        gCookieService->mDefaultStorage->hostTable.Iter();
                    !iter.Done(); iter.Next()) {
-                nsCookieEntry* entry = iter.Get();
+                CookieEntry* entry = iter.Get();
 
-                const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-                for (nsCookieEntry::IndexType i = 0; i < cookies.Length();
-                     ++i) {
+                const CookieEntry::ArrayType& cookies = entry->GetCookies();
+                for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
                   Cookie* cookie = cookies[i];
 
                   if (!cookie->IsSession()) {
@@ -2466,8 +2445,8 @@ nsCookieService::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
 
   aCookies.SetCapacity(mStorage->cookieCount);
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    const nsCookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
-    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+    const CookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
       aCookies.AppendElement(cookies[i]);
     }
   }
@@ -2486,8 +2465,8 @@ nsCookieService::GetSessionCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
 
   aCookies.SetCapacity(mStorage->cookieCount);
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    const nsCookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
-    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+    const CookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
       Cookie* cookie = cookies[i];
       
       if (cookie->IsSession()) {
@@ -3076,7 +3055,7 @@ void nsCookieService::GetCookiesForURI(
   CookieKey key(baseDomain, aOriginAttrs);
 
   
-  nsCookieEntry* entry = mStorage->hostTable.GetEntry(key);
+  CookieEntry* entry = mStorage->hostTable.GetEntry(key);
   if (!entry) return;
 
   bool laxByDefault =
@@ -3085,8 +3064,8 @@ void nsCookieService::GetCookiesForURI(
           aHostURI, "network.cookie.sameSite.laxByDefault.disabledHosts");
 
   
-  const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+  const CookieEntry::ArrayType& cookies = entry->GetCookies();
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     cookie = cookies[i];
 
     
@@ -3559,7 +3538,7 @@ void nsCookieService::AddInternal(const CookieKey& aKey, Cookie* aCookie,
     }
 
     
-    nsCookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
+    CookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
     if (entry && entry->GetCookies().Length() >= mMaxCookiesPerHost) {
       nsTArray<nsListIter> removedIterList;
       
@@ -4486,11 +4465,11 @@ already_AddRefed<nsIArray> nsCookieService::PurgeCookies(
   int64_t oldestTime = INT64_MAX;
 
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    nsCookieEntry* entry = iter.Get();
+    CookieEntry* entry = iter.Get();
 
-    const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
+    const CookieEntry::ArrayType& cookies = entry->GetCookies();
     auto length = cookies.Length();
-    for (nsCookieEntry::IndexType i = 0; i < length;) {
+    for (CookieEntry::IndexType i = 0; i < length;) {
       nsListIter iter(entry, i);
       Cookie* cookie = cookies[i];
 
@@ -4653,19 +4632,19 @@ class CookieIterComparator {
 
 
 
-void nsCookieService::FindStaleCookies(nsCookieEntry* aEntry,
+void nsCookieService::FindStaleCookies(CookieEntry* aEntry,
                                        int64_t aCurrentTime, bool aIsSecure,
                                        nsTArray<nsListIter>& aOutput,
                                        uint32_t aLimit) {
   MOZ_ASSERT(aLimit);
 
-  const nsCookieEntry::ArrayType& cookies = aEntry->GetCookies();
+  const CookieEntry::ArrayType& cookies = aEntry->GetCookies();
   aOutput.Clear();
 
   CookieIterComparator comp(aCurrentTime);
   nsTPriorityQueue<nsListIter, CookieIterComparator> queue(comp);
 
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     Cookie* cookie = cookies[i];
 
     if (cookie->Expiry() <= aCurrentTime) {
@@ -4726,7 +4705,7 @@ nsresult nsCookieService::CountCookiesFromHostInternal(
   CookieKey key(baseDomain, attrs);
 
   
-  nsCookieEntry* entry = mStorage->hostTable.GetEntry(key);
+  CookieEntry* entry = mStorage->hostTable.GetEntry(key);
   *aCountFromHost = entry ? entry->GetCookies().Length() : 0;
   return NS_OK;
 }
@@ -4766,12 +4745,12 @@ nsCookieService::GetCookiesFromHost(const nsACString& aHost,
 
   CookieKey key = CookieKey(baseDomain, attrs);
 
-  nsCookieEntry* entry = mStorage->hostTable.GetEntry(key);
+  CookieEntry* entry = mStorage->hostTable.GetEntry(key);
   if (!entry) return NS_OK;
 
   aResult.SetCapacity(mMaxCookiesPerHost);
-  const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+  const CookieEntry::ArrayType& cookies = entry->GetCookies();
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     aResult.AppendElement(cookies[i]);
   }
 
@@ -4814,7 +4793,7 @@ nsresult nsCookieService::GetCookiesWithOriginAttributes(
                  : mDefaultStorage;
 
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    nsCookieEntry* entry = iter.Get();
+    CookieEntry* entry = iter.Get();
 
     if (!aBaseDomain.IsEmpty() && !aBaseDomain.Equals(entry->mBaseDomain)) {
       continue;
@@ -4824,9 +4803,9 @@ nsresult nsCookieService::GetCookiesWithOriginAttributes(
       continue;
     }
 
-    const nsCookieEntry::ArrayType& entryCookies = entry->GetCookies();
+    const CookieEntry::ArrayType& entryCookies = entry->GetCookies();
 
-    for (nsCookieEntry::IndexType i = 0; i < entryCookies.Length(); ++i) {
+    for (CookieEntry::IndexType i = 0; i < entryCookies.Length(); ++i) {
       aResult.AppendElement(entryCookies[i]);
     }
   }
@@ -4874,7 +4853,7 @@ nsresult nsCookieService::RemoveCookiesWithOriginAttributes(
   mozStorageTransaction transaction(mStorage->dbConn, false);
   
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    nsCookieEntry* entry = iter.Get();
+    CookieEntry* entry = iter.Get();
 
     if (!aBaseDomain.IsEmpty() && !aBaseDomain.Equals(entry->mBaseDomain)) {
       continue;
@@ -4887,7 +4866,7 @@ nsresult nsCookieService::RemoveCookiesWithOriginAttributes(
     
     uint32_t cookiesCount = entry->GetCookies().Length();
 
-    for (nsCookieEntry::IndexType i = 0; i < cookiesCount; ++i) {
+    for (CookieEntry::IndexType i = 0; i < cookiesCount; ++i) {
       
       nsListIter iter(entry, 0);
       RefPtr<Cookie> cookie = iter.Cookie();
@@ -4945,7 +4924,7 @@ nsresult nsCookieService::RemoveCookiesFromExactHost(
   mozStorageTransaction transaction(mStorage->dbConn, false);
   
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    nsCookieEntry* entry = iter.Get();
+    CookieEntry* entry = iter.Get();
 
     if (!baseDomain.Equals(entry->mBaseDomain)) {
       continue;
@@ -4956,7 +4935,7 @@ nsresult nsCookieService::RemoveCookiesFromExactHost(
     }
 
     uint32_t cookiesCount = entry->GetCookies().Length();
-    for (nsCookieEntry::IndexType i = cookiesCount; i != 0; --i) {
+    for (CookieEntry::IndexType i = cookiesCount; i != 0; --i) {
       nsListIter iter(entry, i - 1);
       RefPtr<Cookie> cookie = iter.Cookie();
 
@@ -5046,8 +5025,8 @@ nsCookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
   typedef RemoveAllSinceRunnable::CookieArray CookieArray;
   CookieArray cookieList(mStorage->cookieCount);
   for (auto iter = mStorage->hostTable.Iter(); !iter.Done(); iter.Next()) {
-    const nsCookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
-    for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+    const CookieEntry::ArrayType& cookies = iter.Get()->GetCookies();
+    for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
       cookieList.AppendElement(cookies[i]);
     }
   }
@@ -5062,11 +5041,11 @@ nsCookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
 
 
 bool nsCookieService::FindSecureCookie(const CookieKey& aKey, Cookie* aCookie) {
-  nsCookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
+  CookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
   if (!entry) return false;
 
-  const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+  const CookieEntry::ArrayType& cookies = entry->GetCookies();
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     Cookie* cookie = cookies[i];
     
     if (!cookie->IsSecure() || !aCookie->Name().Equals(cookie->Name()))
@@ -5096,11 +5075,11 @@ bool nsCookieService::FindCookie(const CookieKey& aKey, const nsCString& aHost,
   MOZ_ASSERT(mInitializedCookieStorages);
   MOZ_ASSERT(mInitializedDBConn);
 
-  nsCookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
+  CookieEntry* entry = mStorage->hostTable.GetEntry(aKey);
   if (!entry) return false;
 
-  const nsCookieEntry::ArrayType& cookies = entry->GetCookies();
-  for (nsCookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
+  const CookieEntry::ArrayType& cookies = entry->GetCookies();
+  for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     Cookie* cookie = cookies[i];
 
     if (aHost.Equals(cookie->Host()) && aPath.Equals(cookie->Path()) &&
@@ -5261,7 +5240,7 @@ void nsCookieService::AddCookieToList(
     return;
   }
 
-  nsCookieEntry* entry = aCookieStorage->hostTable.PutEntry(aKey);
+  CookieEntry* entry = aCookieStorage->hostTable.PutEntry(aKey);
   NS_ASSERTION(entry, "can't insert element into a null entry!");
 
   entry->GetCookies().AppendElement(aCookie);
