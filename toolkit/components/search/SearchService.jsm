@@ -1126,47 +1126,7 @@ SearchService.prototype = {
   async _loadEngines(cache, isReload) {
     SearchUtils.log("_loadEngines: start");
     let engines = await this._findEngines();
-
-    
-    let distDirs = [];
-    let locations;
-    try {
-      locations = Services.dirsvc.get(
-        NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
-        Ci.nsISimpleEnumerator
-      );
-    } catch (e) {
-      
-      
-      locations = [];
-    }
-    for (let dir of locations) {
-      let iterator = new OS.File.DirectoryIterator(dir.path, {
-        winPattern: "*.xml",
-      });
-      try {
-        
-        let { done } = await iterator.next();
-        if (!done) {
-          distDirs.push(dir);
-        }
-      } catch (ex) {
-        if (!(ex instanceof OS.File.Error)) {
-          throw ex;
-        }
-        if (ex.becauseAccessDenied) {
-          Cu.reportError(
-            "Not loading distribution files because access was denied."
-          );
-        } else if (!ex.becauseNoSuchFile) {
-          throw ex;
-        }
-      } finally {
-        
-        
-        iterator.close().catch(Cu.reportError);
-      }
-    }
+    let distDirs = await this._getDistibutionEngineDirectories();
 
     let buildID = Services.appinfo.platformBuildID;
     let rebuildCache =
@@ -1333,6 +1293,59 @@ SearchService.prototype = {
       }
     }
     return engines;
+  },
+
+  
+
+
+
+
+
+  async _getDistibutionEngineDirectories() {
+    if (gModernConfig) {
+      return [];
+    }
+    
+    let distDirs = [];
+    let locations;
+    try {
+      locations = Services.dirsvc.get(
+        NS_APP_DISTRIBUTION_SEARCH_DIR_LIST,
+        Ci.nsISimpleEnumerator
+      );
+    } catch (e) {
+      
+      
+      locations = [];
+    }
+    for (let dir of locations) {
+      let iterator = new OS.File.DirectoryIterator(dir.path, {
+        winPattern: "*.xml",
+      });
+      try {
+        
+        let { done } = await iterator.next();
+        if (!done) {
+          distDirs.push(dir);
+        }
+      } catch (ex) {
+        if (!(ex instanceof OS.File.Error)) {
+          throw ex;
+        }
+        if (ex.becauseAccessDenied) {
+          Cu.reportError(
+            "Not loading distribution files because access was denied."
+          );
+        } else if (!ex.becauseNoSuchFile) {
+          throw ex;
+        }
+      } finally {
+        
+        
+        iterator.close().catch(Cu.reportError);
+      }
+    }
+    return distDirs;
   },
 
   
