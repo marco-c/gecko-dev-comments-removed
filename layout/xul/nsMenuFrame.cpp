@@ -383,6 +383,11 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
 #endif
   } else if (aEvent->mMessage == eMouseDown &&
              aEvent->AsMouseEvent()->mButton == MouseButton::eLeft &&
+#ifdef XP_MACOSX
+             
+             
+             !aEvent->AsMouseEvent()->IsControl() &&
+#endif
              !IsDisabled() && IsMenu()) {
     
     
