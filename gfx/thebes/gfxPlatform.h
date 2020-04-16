@@ -732,6 +732,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+  virtual nsTArray<uint8_t> GetPlatformCMSOutputProfileData();
+
+  
+
+
+
   virtual void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut);
 
   
@@ -809,6 +815,23 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
+
+
+  nsTArray<uint8_t> GetPrefCMSOutputProfileData();
+
+  
+
+
+
+
+
+
+
+  const mozilla::gfx::ContentDeviceData* GetInitContentDeviceData();
+
+  
+
+
   void BumpDeviceCounter();
 
   
@@ -881,11 +904,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static void InitOpenGLConfig();
   static void CreateCMSOutputProfile();
 
-  static nsTArray<uint8_t> GetCMSOutputProfileData();
-
   friend void RecordingPrefChanged(const char* aPrefName, void* aClosure);
-
-  virtual nsTArray<uint8_t> GetPlatformCMSOutputProfileData();
 
   
 

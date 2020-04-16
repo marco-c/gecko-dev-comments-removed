@@ -41,6 +41,7 @@ struct ContentDeviceData
 {
   DevicePrefs prefs;
   D3D11DeviceStatus d3d11;
+  uint8_t[] cmsOutputProfileData;
 };
 
 

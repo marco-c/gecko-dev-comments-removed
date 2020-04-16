@@ -359,6 +359,12 @@ const startupPhases = {
     },
     {
       
+      path: "SysD:spool/drivers/color/*",
+      condition: WIN,
+      read: 1,
+    },
+    {
+      
       path: "UAppData:",
       ignoreIfUnused: true, 
       

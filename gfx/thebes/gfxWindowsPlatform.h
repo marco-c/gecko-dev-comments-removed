@@ -253,6 +253,9 @@ class gfxWindowsPlatform final : public gfxPlatform {
 
   RefPtr<mozilla::layers::ReadbackManagerD3D11> mD3D11ReadbackManager;
   bool mInitializedDevices = false;
+
+  
+  nsTArray<uint8_t> mCachedOutputColorProfile;
 };
 
 #endif 
