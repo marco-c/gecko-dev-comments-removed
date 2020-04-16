@@ -1804,7 +1804,11 @@ void nsGlobalWindowInner::UpdateParentTarget() {
   
   
 
-  nsCOMPtr<Element> frameElement = GetOuterWindow()->GetFrameElementInternal();
+  nsPIDOMWindowOuter* outer = GetOuterWindow();
+  if (!outer) {
+    return;
+  }
+  nsCOMPtr<Element> frameElement = outer->GetFrameElementInternal();
   nsCOMPtr<EventTarget> eventTarget =
       nsContentUtils::TryGetBrowserChildGlobal(frameElement);
 
