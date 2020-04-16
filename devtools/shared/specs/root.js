@@ -21,9 +21,7 @@ types.addDictType("root.listRemoteFrames", {
   frames: "array:frameDescriptor",
 });
 types.addDictType("root.listTabs", {
-  
-  
-  tabs: "array:json",
+  tabs: "array:tabDescriptor",
   selected: "number",
 });
 types.addPolymorphicType("root.browsingContextDescriptor", [
@@ -55,9 +53,7 @@ const rootSpecPrototype = {
         tabId: Option(0, "number"),
       },
       response: {
-        
-        
-        tab: RetVal("json"),
+        tab: RetVal("tabDescriptor"),
       },
     },
 
