@@ -9231,7 +9231,7 @@ function getVariables(dec) {
     
 
 
-    return dec.id.elements.filter(element => element).map(element => {
+    return dec.id.elements.filter(Boolean).map(element => {
       var _element$argument;
 
       return {
