@@ -208,36 +208,37 @@ nsCacheProfilePrefObserver::Observe(nsISupports* subject, const char* topic,
   return NS_OK;
 }
 
+static already_AddRefed<nsIFile> GetCacheDirectory(const char* aSubdir,
+                                                   bool aAllowProcDirCache) {
+  nsCOMPtr<nsIFile> directory;
+
+  
+  Unused << NS_GetSpecialDirectory(NS_APP_CACHE_PARENT_DIR,
+                                   getter_AddRefs(directory));
+  if (!directory) {
+    
+    nsCOMPtr<nsIFile> profDir;
+    NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(profDir));
+    NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
+                           getter_AddRefs(directory));
+    if (!directory)
+      directory = profDir;
+    else if (profDir) {
+      nsCacheService::MoveOrRemoveDiskCache(profDir, directory, aSubdir);
+    }
+  }
+  if (!directory && aAllowProcDirCache) {
+    Unused << NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
+                                     getter_AddRefs(directory));
+  }
+  return directory.forget();
+}
+
 nsresult nsCacheProfilePrefObserver::ReadPrefs(nsIPrefBranch* branch) {
-  nsresult rv = NS_OK;
-
   if (!mDiskCacheParentDirectory) {
-    nsCOMPtr<nsIFile> directory;
-
     
-    rv = NS_GetSpecialDirectory(NS_APP_CACHE_PARENT_DIR,
-                                getter_AddRefs(directory));
-    if (NS_FAILED(rv)) {
-      
-      nsCOMPtr<nsIFile> profDir;
-      NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                             getter_AddRefs(profDir));
-      NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
-                             getter_AddRefs(directory));
-      if (!directory)
-        directory = profDir;
-      else if (profDir) {
-        nsCacheService::MoveOrRemoveDiskCache(profDir, directory, "Cache");
-      }
-    }
-    
-    if (!directory && PR_GetEnv("NECKO_DEV_ENABLE_DISK_CACHE")) {
-      rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
-                                  getter_AddRefs(directory));
-    }
-    if (directory) {
-      mDiskCacheParentDirectory = directory;
-    }
+    bool allowProcDirCache = PR_GetEnv("NECKO_DEV_ENABLE_DISK_CACHE");
+    mDiskCacheParentDirectory = GetCacheDirectory("Cache", allowProcDirCache);
   }
 
   
@@ -254,38 +255,20 @@ nsresult nsCacheProfilePrefObserver::ReadPrefs(nsIPrefBranch* branch) {
                                 getter_AddRefs(mOfflineCacheParentDirectory));
 
   if (!mOfflineCacheParentDirectory) {
-    nsCOMPtr<nsIFile> directory;
-
-    
-    rv = NS_GetSpecialDirectory(NS_APP_CACHE_PARENT_DIR,
-                                getter_AddRefs(directory));
-    if (NS_FAILED(rv)) {
-      
-      nsCOMPtr<nsIFile> profDir;
-      NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
-                             getter_AddRefs(profDir));
-      NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
-                             getter_AddRefs(directory));
-      if (!directory)
-        directory = profDir;
-      else if (profDir) {
-        nsCacheService::MoveOrRemoveDiskCache(profDir, directory,
-                                              "OfflineCache");
-      }
-    }
-#if DEBUG
-    if (!directory) {
-      
-      rv = NS_GetSpecialDirectory(NS_XPCOM_CURRENT_PROCESS_DIR,
-                                  getter_AddRefs(directory));
-    }
+#ifdef DEBUG
+    bool allowProcDirCache = true;
+#else
+    bool allowProcDirCache = false;
 #endif
-    if (directory) {
-      mOfflineCacheParentDirectory = directory;
-    }
+    mOfflineCacheParentDirectory =
+        GetCacheDirectory("OfflineCache", allowProcDirCache);
   }
 
-  return rv;
+  if (!mDiskCacheParentDirectory || !mOfflineCacheParentDirectory) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
 }
 
 nsresult nsCacheService::DispatchToCacheIOThread(nsIRunnable* event) {
@@ -813,7 +796,9 @@ NS_IMETHODIMP nsCacheService::GetLockHeldTime(double* aLockHeldTime) {
 nsresult nsCacheService::GetOfflineDevice(nsOfflineCacheDevice** aDevice) {
   if (!mOfflineDevice) {
     nsresult rv = CreateOfflineDevice();
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   *aDevice = do_AddRef(mOfflineDevice).take();
@@ -830,7 +815,9 @@ nsresult nsCacheService::GetCustomOfflineDevice(
 
   if (!mCustomOfflineDevices.Get(profilePath, aDevice)) {
     rv = CreateCustomOfflineDevice(aProfileDir, aQuota, aDevice);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
     (*aDevice)->SetAutoShutdown();
     mCustomOfflineDevices.Put(profilePath, RefPtr{*aDevice});
@@ -847,12 +834,9 @@ nsresult nsCacheService::CreateOfflineDevice() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsresult rv = CreateCustomOfflineDevice(
-      mObserver->OfflineCacheParentDirectory(),
-      mObserver->OfflineCacheCapacity(), &mOfflineDevice);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return NS_OK;
+  return CreateCustomOfflineDevice(mObserver->OfflineCacheParentDirectory(),
+                                   mObserver->OfflineCacheCapacity(),
+                                   &mOfflineDevice);
 }
 
 nsresult nsCacheService::CreateCustomOfflineDevice(
@@ -864,7 +848,11 @@ nsresult nsCacheService::CreateCustomOfflineDevice(
                     aProfileDir->HumanReadablePath().get(), aQuota));
   }
 
-  if (!mInitialized) return NS_ERROR_NOT_AVAILABLE;
+  if (!mInitialized) {
+    NS_WARNING("nsCacheService not initialized");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (!mEnableOfflineDevice) return NS_ERROR_NOT_AVAILABLE;
 
   RefPtr<nsOfflineCacheDevice> device = new nsOfflineCacheDevice();
