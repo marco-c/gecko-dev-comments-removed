@@ -6,52 +6,16 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ShellService",
-  "resource:///modules/ShellService.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "AddonManager",
-  "resource://gre/modules/AddonManager.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryArchive",
-  "resource://gre/modules/TelemetryArchive.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryController",
-  "resource://gre/modules/TelemetryController.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryEnvironment",
-  "resource://gre/modules/TelemetryEnvironment.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "UpdateUtils",
-  "resource://gre/modules/UpdateUtils.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "FirstStartup",
-  "resource://gre/modules/FirstStartup.jsm"
-);
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "AttributionCode",
-  "resource:///modules/AttributionCode.jsm"
-);
+ChromeUtils.defineModuleGetter(this, "ShellService", "resource:///modules/ShellService.jsm");
+ChromeUtils.defineModuleGetter(this, "AddonManager", "resource://gre/modules/AddonManager.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryArchive", "resource://gre/modules/TelemetryArchive.jsm");
+ChromeUtils.defineModuleGetter(this, "TelemetryController", "resource://gre/modules/TelemetryController.jsm");
+ChromeUtils.defineModuleGetter(this, "UpdateUtils", "resource://gre/modules/UpdateUtils.jsm");
+ChromeUtils.defineModuleGetter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
+ChromeUtils.defineModuleGetter(this, "AttributionCode", "resource:///modules/AttributionCode.jsm");
+ChromeUtils.defineModuleGetter(this, "WindowsVersionInfo", "resource://gre/modules/components-utils/WindowsVersionInfo.jsm");
+
 
 var EXPORTED_SYMBOLS = ["ClientEnvironmentBase"];
 
@@ -139,15 +103,9 @@ class ClientEnvironmentBase {
   }
 
   static get searchEngine() {
-    
-    if (FirstStartup.state === FirstStartup.IN_PROGRESS) {
-      return undefined;
-    }
-
     return (async () => {
-      await TelemetryEnvironment.onInitialized();
-      return TelemetryEnvironment.currentEnvironment.settings
-        .defaultSearchEngine;
+      const defaultEngineInfo = await Services.search.getDefaultEngineInfo();
+      return defaultEngineInfo.defaultSearchEngine;
     })();
   }
 
@@ -212,48 +170,72 @@ class ClientEnvironmentBase {
   }
 
   static get os() {
-    
-    if (FirstStartup.state === FirstStartup.IN_PROGRESS) {
-      return undefined;
-    }
-
     function coerceToNumber(version) {
       const parts = version.split(".");
       return parseFloat(parts.slice(0, 2).join("."));
     }
 
-    return (async () => {
-      await TelemetryEnvironment.onInitialized();
-
-      const { system } = TelemetryEnvironment.currentEnvironment;
-      const rv = {
-        isWindows: AppConstants.platform === "win",
-        isMac: AppConstants.platform === "macosx",
-        isLinux: AppConstants.platform === "linux",
-        windowsVersion: null,
-        windowsBuildNumber: null,
-        macVersion: null,
-        darwinVersion: null,
-      };
-
-      if (rv.isWindows) {
-        rv.windowsVersion = coerceToNumber(system.os.version);
-        rv.windowsBuildNumber = system.os.windowsBuildNumber;
-      } else if (rv.isMac) {
-        rv.darwinVersion = coerceToNumber(system.os.version);
+    function getOsVersion() {
+      let version = null;
+      try {
+        version = Services.sysinfo.getProperty("version", null);
+      } catch (_e) {
         
-        if (rv.darwinVersion >= 5) {
-          
-          const intPart = Math.floor(rv.darwinVersion);
-          rv.macVersion = 10 + 0.1 * (intPart - 4);
-        }
       }
+      if (version) {
+        version = coerceToNumber(version);
+      }
+      return version;
+    }
+
+    let osInfo = {
+      isWindows: AppConstants.platform == "win",
+      isMac: AppConstants.platform === "macosx",
+      isLinux: AppConstants.platform === "linux",
+
+      get windowsVersion() {
+        if (!osInfo.isWindows) {
+          return null;
+        }
+        return getOsVersion();
+      },
+
+      
+
+
+
+
+      get windowsBuildNumber() {
+        if (!osInfo.isWindows) {
+          return null;
+        }
+
+        return WindowsVersionInfo.get({ throwOnError: false }).buildNumber;
+      },
+
+      get macVersion() {
+        const darwinVersion = osInfo.darwinVersion;
+        
+        if (darwinVersion >= 5) {
+          
+          const intPart = Math.floor(darwinVersion);
+          return 10 + 0.1 * (intPart - 4);
+        }
+        return null;
+      },
+
+      get darwinVersion() {
+        if (!osInfo.isMac) {
+          return null;
+        }
+        return getOsVersion();
+      },
 
       
       
+    };
 
-      return rv;
-    })();
+    return osInfo;
   }
 
   static get attribution() {
