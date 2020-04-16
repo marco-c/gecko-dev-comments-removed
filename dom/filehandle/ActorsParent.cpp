@@ -2137,6 +2137,25 @@ nsresult TruncateOp::DoFileWork(FileHandle* aFileHandle) {
   nsCOMPtr<nsISeekableStream> sstream = do_QueryInterface(mFileStream);
   MOZ_ASSERT(sstream);
 
+  if (mParams.offset()) {
+    nsCOMPtr<nsIFileMetadata> fileMetadata = do_QueryInterface(mFileStream);
+    MOZ_ASSERT(fileMetadata);
+
+    int64_t size;
+    nsresult rv = fileMetadata->GetSize(&size);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+    MOZ_ASSERT(size >= 0);
+
+    if (mParams.offset() > static_cast<uint64_t>(size)) {
+      
+      return NS_ERROR_DOM_INVALID_MODIFICATION_ERR;
+    }
+  }
+
+  
+  
   nsresult rv = sstream->Seek(nsISeekableStream::NS_SEEK_SET, mParams.offset());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
