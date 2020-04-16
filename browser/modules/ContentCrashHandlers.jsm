@@ -1053,7 +1053,7 @@ var UnsubmittedCrashHandler = {
     for (let reportID of reportIDs) {
       CrashSubmit.submit(reportID, {
         extraExtraKeyVals: {
-          SubmittedFromInfobar: true,
+          SubmittedFromInfobar: "1",
         },
       }).catch(Cu.reportError);
     }
