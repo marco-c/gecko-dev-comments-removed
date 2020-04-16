@@ -777,6 +777,9 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   nsCOMPtr<nsIURI> finalURI;
   NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
 
+  if (loadInfo->GetAllowDeprecatedSystemRequests()) {
+    return NS_OK;
+  }
   
   
   if (!nsContentUtils::SchemeIs(finalURI, "http") &&
