@@ -113,11 +113,6 @@ class WebRenderCommandBuilder final {
 
   bool GetContainsSVGGroup() { return mContainsSVGGroup; }
 
-  const StackingContextHelper& GetRootStackingContextHelper(
-      wr::RenderRoot aRenderRoot) const {
-    return *(*mRootStackingContexts)[aRenderRoot];
-  }
-
   
   
   
@@ -182,7 +177,6 @@ class WebRenderCommandBuilder final {
                                const StackingContextHelper& aSc,
                                nsDisplayListBuilder* aDisplayListBuilder);
 
-  wr::RenderRootArray<Maybe<StackingContextHelper>>* mRootStackingContexts;
   ClipManager mClipManager;
 
   
