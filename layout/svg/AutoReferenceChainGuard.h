@@ -118,7 +118,7 @@ class MOZ_RAII AutoReferenceChainGuard {
 
 
 
-  MOZ_MUST_USE bool Reference() {
+  [[nodiscard]] bool Reference() {
     if (MOZ_UNLIKELY(*mFrameInUse)) {
       mBrokeReference = true;
       ReportErrorToConsole();

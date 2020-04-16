@@ -2040,7 +2040,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  MOZ_MUST_USE bool AssociateImage(const mozilla::StyleImage&);
+  [[nodiscard]] bool AssociateImage(const mozilla::StyleImage&);
 
   
 
@@ -3720,7 +3720,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   template <typename T>
-  MOZ_MUST_USE FrameProperties::PropertyType<T> TakeProperty(
+  [[nodiscard]] FrameProperties::PropertyType<T> TakeProperty(
       FrameProperties::Descriptor<T> aProperty, bool* aFoundResult = nullptr) {
     return mProperties.Take(aProperty, aFoundResult);
   }
