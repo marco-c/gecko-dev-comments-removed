@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/PermissionStatus.h"
+#include "mozilla/PermissionDelegateHandler.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Permission.h"
@@ -12,7 +13,6 @@
 #include "nsIPermissionManager.h"
 #include "PermissionObserver.h"
 #include "PermissionUtils.h"
-#include "PermissionDelegateHandler.h"
 
 namespace mozilla {
 namespace dom {
