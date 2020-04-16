@@ -10,7 +10,7 @@ module.exports = {
 
     
     
-    complexity: ["error", 57],
+    complexity: ["error", 59],
 
     "no-unused-vars": [
       "error",

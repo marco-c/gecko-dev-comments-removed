@@ -479,7 +479,7 @@ add_task(async function test_addUsernameBeforeAutoSaveEdit() {
   );
   resetPrompterHistory();
 
-  info("Add a username in storage");
+  info("Add a username to the auto-saved login in storage");
   let loginWithUsername = login.clone();
   loginWithUsername.username = "added_username";
   LoginManagerPrompter._updateLogin(login, loginWithUsername);
@@ -507,6 +507,7 @@ add_task(async function test_addUsernameBeforeAutoSaveEdit() {
   let [dataArray] = await storageChangedPromised;
   login = dataArray.queryElementAt(1, Ci.nsILoginInfo);
   loginWithUsername.password = newPassword;
+  
   assertLoginProperties(login, loginWithUsername);
   ok(login.matches(loginWithUsername, false), "Check updated login");
   equal(
@@ -530,7 +531,7 @@ add_task(async function test_addUsernameBeforeAutoSaveEdit() {
   );
   
   ok(
-    !fakePromptToChangePassword.getCall(0).args[4],
+    fakePromptToChangePassword.getCall(0).args[4],
     "promptToChangePassword should have a falsey 'notifySaved' argument"
   );
   resetPrompterHistory();
