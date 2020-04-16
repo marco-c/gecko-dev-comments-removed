@@ -4,24 +4,35 @@
 
 
 
-function receiveMessage(event) {
+async function receiveMessage(event) {
   raptorLog("raptor benchmark received message");
   raptorLog(event.data);
+
   
   
   if (event.data[0] == "raptor-benchmark") {
-    sendResult(event.data[1], event.data.slice(2));
+    await sendResult(event.data[1], event.data.slice(2));
   }
 }
 
-function sendResult(_type, _value) {
-  
-  raptorLog(`sending result back to runner: ${_type} ${_value}`);
-  chrome.runtime.sendMessage({ type: _type, value: _value }, function(
-    response
-  ) {
-    raptorLog(response.text);
-  });
+
+
+
+async function sendResult(type, value) {
+  raptorLog(`sending result back to runner: ${type} ${value}`);
+
+  let response;
+  if (typeof browser !== "undefined") {
+    response = await browser.runtime.sendMessage({ type, value });
+  } else {
+    response = await new Promise(resolve => {
+      chrome.runtime.sendMessage({ type, value }, resolve);
+    });
+  }
+
+  if (response) {
+    raptorLog(`Response: ${response.text}`);
+  }
 }
 
 function raptorLog(text, level = "info") {
