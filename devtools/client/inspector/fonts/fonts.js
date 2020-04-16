@@ -26,6 +26,10 @@ const INSPECTOR_L10N = new LocalizationHelper(
 const {
   parseFontVariationAxes,
 } = require("devtools/client/inspector/fonts/utils/font-utils");
+
+const fontDataReducer = require("devtools/client/inspector/fonts/reducers/fonts");
+const fontEditorReducer = require("devtools/client/inspector/fonts/reducers/font-editor");
+const fontOptionsReducer = require("devtools/client/inspector/fonts/reducers/font-options");
 const {
   updateFonts,
 } = require("devtools/client/inspector/fonts/actions/fonts");
@@ -83,6 +87,10 @@ class FontInspector {
     
     
     this.writers = new Map();
+
+    this.store.injectReducer("fontOptions", fontOptionsReducer);
+    this.store.injectReducer("fontData", fontDataReducer);
+    this.store.injectReducer("fontEditor", fontEditorReducer);
 
     this.syncChanges = debounce(this.syncChanges, 100, this);
     this.onInstanceChange = this.onInstanceChange.bind(this);

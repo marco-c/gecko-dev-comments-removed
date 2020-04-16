@@ -5,11 +5,37 @@
 "use strict";
 
 const createStore = require("devtools/client/shared/redux/create-store");
-const reducers = require("devtools/client/inspector/reducers");
+const { combineReducers } = require("devtools/client/shared/vendor/redux");
 
-module.exports = () =>
-  createStore(reducers, {
+const reducers = {};
+
+function createReducer(laterReducers = {}) {
+  return combineReducers({
+    ...reducers,
+    ...laterReducers,
+  });
+}
+
+module.exports = () => {
+  const store = createStore(createReducer(), {
     
     shouldLog: true,
     thunkOptions: {},
   });
+
+  
+  store.laterReducers = {};
+
+  
+  
+  store.injectReducer = (key, reducer) => {
+    if (store.laterReducers[key]) {
+      console.log(`Already loaded reducer: ${key}`);
+      return;
+    }
+    store.laterReducers[key] = reducer;
+    store.replaceReducer(createReducer(store.laterReducers));
+  };
+
+  return store;
+};
