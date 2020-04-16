@@ -287,8 +287,16 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
 
     log.debug("python2: executable from configuration: %r" % python)
 
+    
+    
     with LineIO(lambda l: log.error(l)) as out:
         verify_python_version(out)
+
+    
+    
+    
+    
+    
     topsrcdir, topobjdir = build_env.topsrcdir, build_env.topobjdir
     if topobjdir.endswith('/js/src'):
         topobjdir = topobjdir[:-7]
@@ -308,6 +316,9 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
         sys.path.insert(
             0, os.path.join(topsrcdir, 'third_party', 'python', 'backports'))
 
+    
+    
+    
     if python:
         found_python = find_program(python)
         if not found_python:
@@ -329,7 +340,9 @@ def virtualenv_python2(env_python, build_env, mozillabuild, mozconfig, help):
             raise FatalCheckError('could not determine version of '
                                   'MozillaBuild python: %s' % e)
     else:
+        
         python, version = find_python2_executable()
+        
         if python:
             python = ensure_text(python)
 
