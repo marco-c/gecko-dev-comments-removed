@@ -73,6 +73,21 @@ Context.Content = "content";
 this.Context = Context;
 
 
+class MobileTabBrowser {
+  constructor(window) {
+    this.window = window;
+  }
+
+  get tabs() {
+    return [this.window.tab];
+  }
+
+  get selectedTab() {
+    return this.window.tab;
+  }
+}
+
+
 
 
 
@@ -82,12 +97,7 @@ this.Context = Context;
 
 
 browser.getBrowserForTab = function(tab) {
-  
-  if (tab && "browser" in tab) {
-    return tab.browser;
-
-    
-  } else if (tab && "linkedBrowser" in tab) {
+  if (tab && "linkedBrowser" in tab) {
     return tab.linkedBrowser;
   }
 
@@ -105,12 +115,12 @@ browser.getBrowserForTab = function(tab) {
 
 browser.getTabBrowser = function(window) {
   
-  if ("BrowserApp" in window) {
-    return window.BrowserApp;
+  if ("gBrowser" in window) {
+    return window.gBrowser;
 
     
-  } else if ("gBrowser" in window) {
-    return window.gBrowser;
+  } else if ("browser" in window) {
+    return new MobileTabBrowser(window);
 
     
   } else if (window.document.getElementById("tabmail")) {
@@ -396,12 +406,6 @@ browser.Context = class {
     let tabClosed;
 
     switch (this.driver.appName) {
-      case "fennec":
-        
-        tabClosed = waitForEvent(this.tabBrowser.deck, "TabClose");
-        this.tabBrowser.closeTab(this.tab);
-        break;
-
       case "firefox":
         tabClosed = waitForEvent(this.tab, "TabClose");
         this.tabBrowser.removeTab(this.tab);
@@ -424,11 +428,6 @@ browser.Context = class {
     let tabOpened = waitForEvent(this.window, "TabOpen");
 
     switch (this.driver.appName) {
-      case "fennec":
-        tab = this.tabBrowser.addTab(null);
-        this.tabBrowser.selectTab(focus ? tab : this.tab);
-        break;
-
       case "firefox":
         this.window.BrowserOpenTab();
         tab = this.tabBrowser.selectedTab;
@@ -489,11 +488,6 @@ browser.Context = class {
       let tabSelected = waitForEvent(this.window, "TabSelect");
 
       switch (this.driver.appName) {
-        case "fennec":
-          this.tabBrowser.selectTab(this.tab);
-          await tabSelected;
-          break;
-
         case "firefox":
           this.tabBrowser.selectedTab = this.tab;
           await tabSelected;
