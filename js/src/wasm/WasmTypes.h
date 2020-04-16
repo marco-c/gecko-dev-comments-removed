@@ -1110,12 +1110,12 @@ class FuncType {
   
   
   bool temporarilyUnsupportedResultCountForJitEntry() const {
-    return results().length() > 1;
+    return results().length() > MaxResultsForJitEntry;
   }
   
   
   bool temporarilyUnsupportedResultCountForJitExit() const {
-    return results().length() > 1;
+    return results().length() > MaxResultsForJitExit;
   }
   
   
