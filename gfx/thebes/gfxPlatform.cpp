@@ -3087,9 +3087,11 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   if (!DeviceManagerDx::Get()->CheckHardwareStretchingSupport()) {
-    featureComp.Disable(
-        FeatureStatus::Unavailable, "No hardware stretching support",
-        NS_LITERAL_CSTRING("FEATURE_FAILURE_NO_HARDWARE_STRETCHING"));
+    
+
+
+
+
   }
 
 #endif
