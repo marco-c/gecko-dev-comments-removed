@@ -199,8 +199,13 @@ PushRecord.prototype = {
       if (window.closed || PrivateBrowsingUtils.isWindowPrivate(window)) {
         continue;
       }
-      for (let tab of window.gBrowser.tabs) {
-        let tabURI = tab.linkedBrowser.currentURI;
+      
+      let tabs = window.gBrowser
+        ? window.gBrowser.tabs
+        : window.BrowserApp.tabs;
+      for (let tab of tabs) {
+        
+        let tabURI = (tab.linkedBrowser || tab.browser).currentURI;
         if (tabURI.prePath == this.uri.prePath) {
           return true;
         }
