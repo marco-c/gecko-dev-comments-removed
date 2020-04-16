@@ -27,8 +27,5 @@ user_pref("toolkit.content-background-hang-monitor.disabled", true);
 user_pref('javascript.options.asyncstack', false);
 
 
-user_pref('marionette.log.level', 'Trace');
-
-
 
 user_pref('datareporting.healthreport.uploadEnabled', false);
