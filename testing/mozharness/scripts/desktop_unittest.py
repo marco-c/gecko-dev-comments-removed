@@ -481,32 +481,31 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin,
                        " '--binary-path' flag")
 
     def _query_specified_suites(self, category):
-        
-        
-        
-        
+        """Checks if the provided suite does indeed exist.
+
+        If at least one suite was given and if it does exist, return the suite
+        as legitimate and line it up for execution.
+
+        Otherwise, do not run any suites and return a fatal error.
+        """
         c = self.config
-        all_suites = c.get('all_%s_suites' % (category))
-        specified_suites = c.get('specified_%s_suites' % (category))  
-        suites = None
+        all_suites = c.get('all_{}_suites'.format(category), None)
+        specified_suites = c.get('specified_{}_suites'.format(category), None)
 
-        if specified_suites:
-            if 'all' in specified_suites:
-                
-                
-                suites = all_suites
-            else:
-                
-                
-                suites = dict((key, all_suites.get(key)) for key in
-                              specified_suites if key in all_suites.keys())
-        else:
-            if c.get('run_all_suites'):  
-                suites = all_suites
-            else:
-                suites = self.query_per_test_category_suites(category, all_suites)
+        
+        if specified_suites is None:
+            
+            return self.query_per_test_category_suites(category, all_suites)
+        if specified_suites and len(specified_suites) > 1:
+            self.fatal("""Selection of multiple suites is not permitted. \
+                       Please select at most 1 test suite.""")
+            return
 
-        return suites
+        
+        suite = specified_suites[0]
+        if suite not in all_suites:
+            self.fatal("""Selected suite does not exist!""")
+        return {suite: all_suites[suite]}
 
     def _query_try_flavor(self, category, suite):
         flavors = {
