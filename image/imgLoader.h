@@ -363,7 +363,10 @@ class imgLoader final : public imgILoader,
       imgRequestProxy** aProxyRequest, nsIPrincipal* aLoadingPrincipal,
       int32_t aCORSMode, bool* aNewChannelCreated);
 
+  
+  
   nsresult CreateNewProxyForRequest(imgRequest* aRequest,
+                                    nsIURI* aURI,
                                     nsILoadGroup* aLoadGroup,
                                     mozilla::dom::Document* aLoadingDocument,
                                     imgINotificationObserver* aObserver,
