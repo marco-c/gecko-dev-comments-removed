@@ -2,8 +2,17 @@
 
 
 
+%include ../../shared/incontentprefs/preferences.inc.css
 
 
+body {
+  font-size: 1.11em;
+}
+
+.treecol-sortdirection {
+  
+  -moz-appearance: none;
+}
 
 
 #useFirefoxSync,

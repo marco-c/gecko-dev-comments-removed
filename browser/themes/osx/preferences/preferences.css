@@ -2,23 +2,14 @@
 
 
 
+%include ../../shared/incontentprefs/preferences.inc.css
 
-
-
-%include ../../../../toolkit/themes/osx/global/shared.inc
-
-:root {
-  font: -moz-dialog;
+body {
+  font-size: 1.36em;
 }
 
 tabpanels {
   padding: 20px 7px 7px;
-}
-
-#popupPolicyRow {
-  margin-bottom: 4px !important;
-  padding-bottom: 4px !important;
-  border-bottom: 1px solid #ccc;
 }
 
 #translationAttributionImage {

@@ -2,7 +2,7 @@
 
 
 
-%include ../../../shared/incontentprefs/dialog.inc.css
+%include ../../shared/incontentprefs/dialog.inc.css
 
 window {
   font: message-box !important;

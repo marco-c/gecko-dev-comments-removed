@@ -1,0 +1,10 @@
+
+
+
+
+%include ../../shared/incontentprefs/dialog.inc.css
+
+:root > * {
+  font-size: 1.05em;
+}
+
