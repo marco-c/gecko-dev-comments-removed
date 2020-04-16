@@ -77,7 +77,7 @@ add_task(async function testContentBlockingStandardDefinition() {
   defaults.setBoolPref(TP_PBM_PREF, !originalTPPBM);
   defaults.setBoolPref(FP_PREF, !originalFP);
   defaults.setBoolPref(CM_PREF, !originalCM);
-  defaults.setBoolPref(CM_PREF, !originalSTP);
+  defaults.setBoolPref(STP_PREF, !originalSTP);
   defaults.setIntPref(NCB_PREF, !originalNCB);
 
   ok(
@@ -103,6 +103,11 @@ add_task(async function testContentBlockingStandardDefinition() {
   ok(
     !Services.prefs.prefHasUserValue(NCB_PREF),
     `${NCB_PREF} pref has the default value`
+  );
+  is(
+    Services.prefs.getStringPref(CAT_PREF),
+    "standard",
+    `${CAT_PREF} remains on standard`
   );
 
   
@@ -170,7 +175,7 @@ add_task(async function testContentBlockingStrictDefinition() {
   is(
     Services.prefs.getIntPref(NCB_PREF),
     Ci.nsICookieService.BEHAVIOR_ACCEPT,
-    `${NCB_PREF} has been set to BEHAVIOR_REJECT_TRACKER`
+    `${NCB_PREF} has been set to BEHAVIOR_ACCEPT`
   );
 
   
@@ -201,6 +206,7 @@ add_task(async function testContentBlockingStrictDefinition() {
     `${NCB_PREF} pref has the default value`
   );
 
+  
   defaults.setStringPref(
     STRICT_DEF_PREF,
     "-tpPrivate,-fp,-cm,-tp,cookieBehavior3,-stp"
@@ -233,7 +239,12 @@ add_task(async function testContentBlockingStrictDefinition() {
   is(
     Services.prefs.getIntPref(NCB_PREF),
     Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN,
-    `${NCB_PREF} has been set to BEHAVIOR_REJECT_TRACKER`
+    `${NCB_PREF} has been set to BEHAVIOR_LIMIT_FOREIGN`
+  );
+  is(
+    Services.prefs.getStringPref(CAT_PREF),
+    "strict",
+    `${CAT_PREF} remains in strict`
   );
 
   
