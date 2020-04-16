@@ -18,6 +18,7 @@
 
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/CompilationInfo.h"   
+#include "frontend/Parser.h"  
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"       
 #include "frontend/Stencil.h"  
