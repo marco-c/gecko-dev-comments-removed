@@ -88,6 +88,10 @@ class DeviceManagerDx final {
   nsTArray<DXGI_OUTPUT_DESC1> EnumerateOutputs();
 
   
+  
+  bool GetOutputFromMonitor(HMONITOR monitor, RefPtr<IDXGIOutput>* aOutOutput);
+
+  
   bool CheckHardwareStretchingSupport();
 
   bool CreateCompositorDevices();
