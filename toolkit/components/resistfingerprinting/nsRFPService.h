@@ -167,7 +167,7 @@ class nsRFPService final : public nsIObserver {
                                              int64_t aContextMixin);
 
   
-  static double ReduceTimePrecisionAsUSecsWrapper(double aTime);
+  static double ReduceTimePrecisionAsUSecsWrapper(double aTime, JSContext* aCx);
 
   
   static double ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
