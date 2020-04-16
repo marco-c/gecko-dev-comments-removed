@@ -5469,24 +5469,21 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
   }
 
   if (funbox->isInterpreted()) {
-    if (!funbox->emitBytecode) {
-      if (!fe.emitLazy()) {
-        
+    
+    
+    
+    if (classContentsIfConstructor) {
+      funbox->fieldInitializers = setupFieldInitializers(
+          classContentsIfConstructor, FieldPlacement::Instance);
+      if (!funbox->fieldInitializers) {
+        ReportAllocationOverflow(cx);
         return false;
       }
+    }
 
-      if (classContentsIfConstructor) {
-        mozilla::Maybe<FieldInitializers> fieldInitializers =
-            setupFieldInitializers(classContentsIfConstructor,
-                                   FieldPlacement::Instance);
-        if (!fieldInitializers) {
-          ReportAllocationOverflow(cx);
-          return false;
-        }
-        funbox->setFieldInitializers(*fieldInitializers);
-      }
-
-      return true;
+    if (!funbox->emitBytecode) {
+      return fe.emitLazy();
+      
     }
 
     if (!fe.prepareForNonLazy()) {
