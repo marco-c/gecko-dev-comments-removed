@@ -362,6 +362,11 @@ class WindowsDllInterceptor final
     
   }
 
+  constexpr static uint32_t GetWorstCaseRequiredBytesToPatch() {
+    return WindowsDllDetourPatcherPrimitive<
+        typename VMPolicy::MMPolicyT>::GetWorstCaseRequiredBytesToPatch();
+  }
+
  private:
   
 
