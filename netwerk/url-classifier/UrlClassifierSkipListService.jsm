@@ -114,8 +114,7 @@ UrlClassifierSkipListService.prototype = {
       
       
       entries = await RemoteSettings(COLLECTION_NAME).get();
-    } catch (e) {
-    }
+    } catch (e) {}
 
     
     
