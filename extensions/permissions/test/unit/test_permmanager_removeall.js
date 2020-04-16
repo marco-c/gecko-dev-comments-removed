@@ -1,16 +1,21 @@
 
 
 
-function run_test() {
+add_task(async function test() {
   
   var dir = do_get_profile();
 
   
+  
   var pm = Services.perms;
+  Assert.ok(pm.all.length === 0);
+
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
 
   
   var file = dir.clone();
   file.append("permissions.sqlite");
+
   Assert.ok(file.exists());
 
   
@@ -35,4 +40,4 @@ function run_test() {
 
   
   pm.removeAll();
-}
+});
