@@ -578,3 +578,12 @@ menupopup::part(drop-indicator) {
 #content-mask {
   background: rgba(0, 0, 0, 0.5);
 }
+
+
+
+
+
+.popup-notification-description[popupid="doh-first-time"] > html|b:first-of-type {
+  display: block;
+  margin-bottom: 4px; 
+}
