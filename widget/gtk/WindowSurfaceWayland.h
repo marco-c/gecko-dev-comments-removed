@@ -268,7 +268,7 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  LayoutDeviceIntRect mWidgetRect;
+  LayoutDeviceIntRect mWLBufferRect;
   nsWaylandDisplay* mWaylandDisplay;
 
   

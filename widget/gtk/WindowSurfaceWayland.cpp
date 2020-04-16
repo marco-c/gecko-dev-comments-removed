@@ -649,13 +649,14 @@ WindowBackBuffer* WindowSurfaceWayland::SetNewWaylandBuffer(
   LOGWAYLAND(
       ("WindowSurfaceWayland::NewWaylandBuffer [%p] Requested buffer [%d "
        "x %d] DMABuf %d\n",
-       (void*)this, mWidgetRect.width, mWidgetRect.height, aUseDMABufBackend));
+       (void*)this, mWLBufferRect.width, mWLBufferRect.height,
+       aUseDMABufBackend));
 
   mWaylandBuffer = WaylandBufferFindAvailable(
-      mWidgetRect.width, mWidgetRect.height, aUseDMABufBackend);
+      mWLBufferRect.width, mWLBufferRect.height, aUseDMABufBackend);
   if (!mWaylandBuffer) {
-    mWaylandBuffer = CreateWaylandBuffer(mWidgetRect.width, mWidgetRect.height,
-                                         aUseDMABufBackend);
+    mWaylandBuffer = CreateWaylandBuffer(
+        mWLBufferRect.width, mWLBufferRect.height, aUseDMABufBackend);
   }
 
   return mWaylandBuffer;
@@ -665,7 +666,7 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferRecent() {
   LOGWAYLAND(
       ("WindowSurfaceWayland::GetWaylandBufferRecent [%p] Requested buffer [%d "
        "x %d]\n",
-       (void*)this, mWidgetRect.width, mWidgetRect.height));
+       (void*)this, mWLBufferRect.width, mWLBufferRect.height));
 
   
   if (!mWaylandBuffer) {
@@ -677,9 +678,10 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferRecent() {
     return nullptr;
   }
 
-  if (mWaylandBuffer->IsMatchingSize(mWidgetRect.width, mWidgetRect.height)) {
-    LOGWAYLAND(("    Size is ok, use the buffer [%d x %d]\n", mWidgetRect.width,
-                mWidgetRect.height));
+  if (mWaylandBuffer->IsMatchingSize(mWLBufferRect.width,
+                                     mWLBufferRect.height)) {
+    LOGWAYLAND(("    Size is ok, use the buffer [%d x %d]\n",
+                mWLBufferRect.width, mWLBufferRect.height));
     return mWaylandBuffer;
   }
 
@@ -694,7 +696,7 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferWithSwitch() {
   LOGWAYLAND(
       ("WindowSurfaceWayland::GetWaylandBufferWithSwitch [%p] Requested buffer "
        "[%d x %d]\n",
-       (void*)this, mWidgetRect.width, mWidgetRect.height));
+       (void*)this, mWLBufferRect.width, mWLBufferRect.height));
 
   
   
@@ -703,11 +705,11 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferWithSwitch() {
   }
 
   
-  LOGWAYLAND(("    Reuse buffer with resize [%d x %d]\n", mWidgetRect.width,
-              mWidgetRect.height));
+  LOGWAYLAND(("    Reuse buffer with resize [%d x %d]\n", mWLBufferRect.width,
+              mWLBufferRect.height));
 
   
-  if (!mWaylandBuffer->Resize(mWidgetRect.width, mWidgetRect.height)) {
+  if (!mWaylandBuffer->Resize(mWLBufferRect.width, mWLBufferRect.height)) {
     return nullptr;
   }
   return mWaylandBuffer;
@@ -715,8 +717,9 @@ WindowBackBuffer* WindowSurfaceWayland::GetWaylandBufferWithSwitch() {
 
 already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::LockWaylandBuffer() {
   
-  
-  mWidgetRect = mWindow->GetMozContainerSize();
+  LayoutDeviceIntRegion region;
+  region.And(mLockedScreenRect, mWindow->GetMozContainerSize());
+  mWLBufferRect = LayoutDeviceIntRect(region.GetBounds());
 
   
   
@@ -883,8 +886,8 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
 
   
   LayoutDeviceIntRect size = mWindow->GetMozContainerSize();
-  mDrawToWaylandBufferDirectly = (size.width == mLockedScreenRect.width &&
-                                  size.height == mLockedScreenRect.height);
+  mDrawToWaylandBufferDirectly = (size.width >= mLockedScreenRect.width &&
+                                  size.height >= mLockedScreenRect.height);
 
   
   
