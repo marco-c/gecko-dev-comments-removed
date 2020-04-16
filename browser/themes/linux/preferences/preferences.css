@@ -15,33 +15,7 @@ body {
 }
 
 
-#useFirefoxSync,
-#getStarted {
-  font-size: 90%;
-}
-
-#isNotDefaultLabel {
-  font-weight: bold;
-}
-
-
-#translationAttributionImage {
-  width: 70px;
-  cursor: pointer;
-}
-
-
 
 .actionButtons {
   margin: 0 3px 6px;
-}
-
-
-
-#noFxaAccount {
-  line-height: 1.2em;
-}
-
-#noFxaAccount > label:first-child {
-  margin-bottom: 0.6em;
 }
