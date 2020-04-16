@@ -479,8 +479,40 @@ JSHolderMap::JSHolderMap() : mJSHolderMap(256) {}
 template <typename F>
 inline void JSHolderMap::ForEach(F&& f) {
   for (auto iter = mJSHolders.Iter(); !iter.Done(); iter.Next()) {
+    Entry* entry = &iter.Get();
+
+    
+    if (!entry->mHolder && !RemoveEntry(entry)) {
+      break;  
+    }
+
     f(iter.Get().mHolder, iter.Get().mTracer);
   }
+}
+
+bool JSHolderMap::RemoveEntry(Entry* aEntry) {
+  MOZ_ASSERT(aEntry);
+  MOZ_ASSERT(!aEntry->mHolder);
+
+  
+  while (!mJSHolders.GetLast().mHolder && &mJSHolders.GetLast() != aEntry) {
+    mJSHolders.PopLast();
+  }
+
+  
+  
+  Entry* lastEntry = &mJSHolders.GetLast();
+  if (aEntry != lastEntry) {
+    MOZ_ASSERT(lastEntry->mHolder);
+    *aEntry = *lastEntry;
+    MOZ_ASSERT(mJSHolderMap.has(aEntry->mHolder));
+    MOZ_ALWAYS_TRUE(mJSHolderMap.put(aEntry->mHolder, aEntry));
+  }
+
+  mJSHolders.PopLast();
+
+  
+  return aEntry != lastEntry;
 }
 
 inline bool JSHolderMap::Has(void* aHolder) const {
@@ -499,6 +531,8 @@ inline nsScriptObjectTracer* JSHolderMap::Get(void* aHolder) const {
 }
 
 inline nsScriptObjectTracer* JSHolderMap::GetAndRemove(void* aHolder) {
+  MOZ_ASSERT(aHolder);
+
   auto ptr = mJSHolderMap.lookup(aHolder);
   if (!ptr) {
     return nullptr;
@@ -508,22 +542,18 @@ inline nsScriptObjectTracer* JSHolderMap::GetAndRemove(void* aHolder) {
   MOZ_ASSERT(info->mHolder == aHolder);
   nsScriptObjectTracer* tracer = info->mTracer;
 
-  Entry* lastInfo = &mJSHolders.GetLast();
-  if (info != lastInfo) {
-    
-    
-    *info = *lastInfo;
-    MOZ_ASSERT(mJSHolderMap.has(info->mHolder));
-    MOZ_ALWAYS_TRUE(mJSHolderMap.put(info->mHolder, info));
-  }
+  
+  info->mHolder = nullptr;
+  info->mTracer = nullptr;
 
-  mJSHolders.PopLast();
   mJSHolderMap.remove(ptr);
 
   return tracer;
 }
 
 inline void JSHolderMap::Put(void* aHolder, nsScriptObjectTracer* aTracer) {
+  MOZ_ASSERT(aHolder);
+
   auto ptr = mJSHolderMap.lookupForAdd(aHolder);
   if (ptr) {
     Entry* info = ptr->value();
