@@ -41,8 +41,10 @@ class FlushRejections : public CancelableRunnable {
       return;
     }
     sDispatched.set(true);
-    SchedulerGroup::Dispatch(TaskCategory::Other,
-                             do_AddRef(new FlushRejections()));
+
+    
+    
+    NS_DispatchToCurrentThread(new FlushRejections());
   }
 
   static void FlushSync() {
