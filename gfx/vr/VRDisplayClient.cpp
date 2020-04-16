@@ -40,7 +40,8 @@ VRDisplayClient::VRDisplayClient(const VRDisplayInfo& aDisplayInfo)
       mPresentationCount(0),
       mLastEventFrameId(0),
       mLastPresentingGeneration(0),
-      mLastEventControllerState{} {
+      mLastEventControllerState{},
+      mAPIMode(VRAPIMode::WebXR) {
   MOZ_COUNT_CTOR(VRDisplayClient);
 }
 
@@ -102,6 +103,10 @@ void VRDisplayClient::MakePresentationGenerationCurrent() {
   mLastPresentingGeneration = mDisplayInfo.mDisplayState.presentingGeneration;
 }
 
+void VRDisplayClient::SetXRAPIMode(gfx::VRAPIMode aMode) {
+  mAPIMode = aMode;
+}
+
 void VRDisplayClient::FireEvents() {
   RefPtr<VRManagerChild> vm = VRManagerChild::Get();
   
@@ -143,15 +148,14 @@ void VRDisplayClient::FireEvents() {
 
   
   
-  if (!StaticPrefs::dom_vr_webxr_enabled()) { 
+  if (mAPIMode == VRAPIMode::WebVR) {
     FireGamepadEvents();
-  } else {
-    
-    for (auto& session : mSessions) {
-      dom::XRInputSourceArray* inputs = session->InputSources();
-      if (inputs) {
-        inputs->Update(session);
-      }
+  }
+  
+  for (auto& session : mSessions) {
+    dom::XRInputSourceArray* inputs = session->InputSources();
+    if (inputs) {
+      inputs->Update(session);
     }
   }
 }
