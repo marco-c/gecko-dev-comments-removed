@@ -178,7 +178,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void TriggerCrossProcessSwitch();
+  bool MaybeTriggerProcessSwitch();
 
   
   
@@ -346,14 +346,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool mIsFinished = false;
 
-  typedef MozPromise<uint64_t, nsresult, true >
-      ContentProcessIdPromise;
-  
-  
-  
-  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
-  
-  
   
   
   uint64_t mCrossProcessRedirectIdentifier = 0;
