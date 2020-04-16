@@ -1597,6 +1597,24 @@ void PresShell::SelectionWillLoseFocus() {
   
 }
 
+
+
+
+static void RepaintNormalSelectionWhenSafe(nsFrameSelection& aFrameSelection) {
+  if (nsContentUtils::IsSafeToRunScript()) {
+    aFrameSelection.RepaintSelection(SelectionType::eNormal);
+    return;
+  }
+
+  
+  
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "RepaintNormalSelectionWhenSafe",
+      [sel = RefPtr<nsFrameSelection>(&aFrameSelection)] {
+        sel->RepaintSelection(SelectionType::eNormal);
+      }));
+}
+
 void PresShell::FrameSelectionWillLoseFocus(nsFrameSelection& aFrameSelection) {
   if (mFocusedFrameSelection != &aFrameSelection) {
     return;
@@ -1612,7 +1630,7 @@ void PresShell::FrameSelectionWillLoseFocus(nsFrameSelection& aFrameSelection) {
 
   if (old->GetDisplaySelection() != nsISelectionController::SELECTION_HIDDEN) {
     old->SetDisplaySelection(nsISelectionController::SELECTION_HIDDEN);
-    old->RepaintSelection(SelectionType::eNormal);
+    RepaintNormalSelectionWhenSafe(*old);
   }
 
   if (mSelection) {
@@ -1627,7 +1645,7 @@ void PresShell::FrameSelectionWillTakeFocus(nsFrameSelection& aFrameSelection) {
     
     
     
-    aFrameSelection.RepaintSelection(SelectionType::eNormal);
+    RepaintNormalSelectionWhenSafe(aFrameSelection);
 #endif
     return;
   }
@@ -1638,13 +1656,13 @@ void PresShell::FrameSelectionWillTakeFocus(nsFrameSelection& aFrameSelection) {
   if (old &&
       old->GetDisplaySelection() != nsISelectionController::SELECTION_HIDDEN) {
     old->SetDisplaySelection(nsISelectionController::SELECTION_HIDDEN);
-    old->RepaintSelection(SelectionType::eNormal);
+    RepaintNormalSelectionWhenSafe(*old);
   }
 
   if (aFrameSelection.GetDisplaySelection() !=
       nsISelectionController::SELECTION_ON) {
     aFrameSelection.SetDisplaySelection(nsISelectionController::SELECTION_ON);
-    aFrameSelection.RepaintSelection(SelectionType::eNormal);
+    RepaintNormalSelectionWhenSafe(aFrameSelection);
   }
 }
 
