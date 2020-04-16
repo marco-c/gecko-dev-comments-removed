@@ -282,8 +282,8 @@ void FunctionBox::setAsmJSModule(JSFunction* function) {
 void FunctionBox::finish() {
   if (!emitBytecode) {
     
-    
     function()->setEnclosingScope(enclosingScope_.getExistingScope());
+    function()->baseScript()->setTreatAsRunOnce(treatAsRunOnce());
   } else {
     
     MOZ_ASSERT(!enclosingScope_);
