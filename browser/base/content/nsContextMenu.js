@@ -1302,15 +1302,18 @@ class nsContextMenu {
 
     this.actor.saveVideoFrameAsImage(this.targetIdentifier).then(dataURL => {
       
-      saveImageURL(
+      internalSave(
         dataURL,
+        null, 
         name,
-        "SaveImageTitle",
-        true, 
-        false, 
-        referrerInfo, 
         null, 
         "image/jpeg", 
+        true, 
+        "SaveImageTitle",
+        null, 
+        referrerInfo,
+        null, 
+        false, 
         null, 
         isPrivate,
         this.principal
@@ -1610,32 +1613,38 @@ class nsContextMenu {
     if (this.onCanvas) {
       
       this._canvasToBlobURL(this.targetIdentifier).then(function(blobURL) {
-        saveImageURL(
+        internalSave(
           blobURL,
+          null, 
           "canvas.png",
-          "SaveImageTitle",
-          true,
-          false,
-          referrerInfo,
-          null,
+          null, 
           "image/png", 
-          null,
+          true, 
+          "SaveImageTitle",
+          null, 
+          referrerInfo,
+          null, 
+          false, 
+          null, 
           isPrivate,
           document.nodePrincipal 
         );
       }, Cu.reportError);
     } else if (this.onImage) {
       urlSecurityCheck(this.mediaURL, this.principal);
-      saveImageURL(
+      internalSave(
         this.mediaURL,
-        null,
-        "SaveImageTitle",
-        false,
-        false,
-        referrerInfo,
-        null,
-        this.contentData.contentType,
+        null, 
+        null, 
         this.contentData.contentDisposition,
+        this.contentData.contentType,
+        false, 
+        "SaveImageTitle",
+        null, 
+        referrerInfo,
+        null, 
+        false, 
+        null, 
         isPrivate,
         this.principal
       );

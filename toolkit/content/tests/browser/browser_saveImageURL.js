@@ -2,7 +2,6 @@
 
 const IMAGE_PAGE =
   "https://example.com/browser/toolkit/content/tests/browser/image_page.html";
-const PREF_UNSAFE_FORBIDDEN = "dom.ipc.cpows.forbid-unsafe-from-browser";
 
 var MockFilePicker = SpecialPowers.MockFilePicker;
 
@@ -26,7 +25,6 @@ function waitForFilePicker() {
 
 
 
-
 add_task(async function preferred_API() {
   await BrowserTestUtils.withNewTab(
     {
@@ -40,17 +38,20 @@ add_task(async function preferred_API() {
       });
 
       let filePickerPromise = waitForFilePicker();
-      saveImageURL(
+      internalSave(
         url,
+        null, 
         "image.jpg",
-        null,
-        true,
-        false,
-        null,
-        null,
+        null, 
         "image/jpeg",
-        null,
-        false,
+        true, 
+        null, 
+        null, 
+        null, 
+        null, 
+        false, 
+        null, 
+        false, 
         gBrowser.contentPrincipal
       );
       await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
@@ -68,63 +69,6 @@ add_task(async function preferred_API() {
           );
         }
       });
-      await filePickerPromise;
-    }
-  );
-});
-
-
-
-
-
-
-
-add_task(async function deprecated_API() {
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      url: IMAGE_PAGE,
-    },
-    async function(browser) {
-      await pushPrefs([PREF_UNSAFE_FORBIDDEN, false]);
-
-      let url = await SpecialPowers.spawn(browser, [], async function() {
-        let image = content.document.getElementById("image");
-        return image.href;
-      });
-
-      
-      
-      
-      let doc = document;
-
-      await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
-        let channel = docShell.currentDocumentChannel;
-        if (channel) {
-          todo(
-            channel.QueryInterface(Ci.nsIHttpChannelInternal)
-              .channelIsForDownload
-          );
-
-          
-          todo(
-            channel.QueryInterface(Ci.nsIClassOfService).classFlags ==
-              Ci.nsIClassOfService.Throttleable
-          );
-        }
-      });
-      let filePickerPromise = waitForFilePicker();
-      saveImageURL(
-        url,
-        "image.jpg",
-        null,
-        true,
-        false,
-        null,
-        doc,
-        "image/jpeg",
-        null
-      );
       await filePickerPromise;
     }
   );
