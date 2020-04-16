@@ -19,7 +19,7 @@
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/CompilationInfo.h"   
 #include "frontend/smoosh_generated.h"  
-#include "frontend/SourceNotes.h"  
+#include "frontend/SourceNotes.h"       
 #include "frontend/Stencil.h"  
 #include "frontend/TokenStream.h"  
 #include "gc/Rooting.h"            
@@ -345,7 +345,7 @@ class AutoFreeSmooshResult {
   explicit AutoFreeSmooshResult(SmooshResult* result) : result_(result) {}
   ~AutoFreeSmooshResult() {
     if (result_) {
-      free_smoosh(*result_);
+      smoosh_free(*result_);
     }
   }
 };
@@ -361,12 +361,12 @@ class AutoFreeSmooshParseResult {
       : result_(result) {}
   ~AutoFreeSmooshParseResult() {
     if (result_) {
-      free_smoosh_parse_result(*result_);
+      smoosh_free_parse_result(*result_);
     }
   }
 };
 
-void InitSmoosh() { init_smoosh(); }
+void InitSmoosh() { smoosh_init(); }
 
 void ReportSmooshCompileError(JSContext* cx, ErrorMetadata&& metadata,
                               int errorNumber, ...) {
@@ -393,7 +393,7 @@ JSScript* Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
   SmooshCompileOptions compileOptions;
   compileOptions.no_script_rval = options.noScriptRval;
 
-  SmooshResult smoosh = run_smoosh(bytes, length, &compileOptions);
+  SmooshResult smoosh = smoosh_run(bytes, length, &compileOptions);
   AutoFreeSmooshResult afsr(&smoosh);
 
   if (smoosh.error.data) {
@@ -500,7 +500,7 @@ JSScript* Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
 }
 
 bool SmooshParseScript(JSContext* cx, const uint8_t* bytes, size_t length) {
-  SmooshParseResult result = test_parse_script(bytes, length);
+  SmooshParseResult result = smoosh_test_parse_script(bytes, length);
   AutoFreeSmooshParseResult afspr(&result);
   if (result.error.data) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -514,7 +514,7 @@ bool SmooshParseScript(JSContext* cx, const uint8_t* bytes, size_t length) {
 }
 
 bool SmooshParseModule(JSContext* cx, const uint8_t* bytes, size_t length) {
-  SmooshParseResult result = test_parse_module(bytes, length);
+  SmooshParseResult result = smoosh_test_parse_module(bytes, length);
   AutoFreeSmooshParseResult afspr(&result);
   if (result.error.data) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
