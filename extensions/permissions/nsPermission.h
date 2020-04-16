@@ -3,24 +3,22 @@
 
 
 
-#ifndef mozilla_Permission_h
-#define mozilla_Permission_h
+#ifndef nsPermission_h__
+#define nsPermission_h__
 
 #include "nsIPermission.h"
 #include "nsCOMPtr.h"
 #include "nsString.h"
 
-namespace mozilla {
 
 
-
-class Permission : public nsIPermission {
+class nsPermission : public nsIPermission {
  public:
   
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPERMISSION
 
-  static already_AddRefed<Permission> Create(
+  static already_AddRefed<nsPermission> Create(
       nsIPrincipal* aPrincipal, const nsACString& aType, uint32_t aCapability,
       uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime);
 
@@ -30,11 +28,11 @@ class Permission : public nsIPermission {
       nsIPrincipal* aPrincipal);
 
  protected:
-  Permission(nsIPrincipal* aPrincipal, const nsACString& aType,
-             uint32_t aCapability, uint32_t aExpireType, int64_t aExpireTime,
-             int64_t aModificationTime);
+  nsPermission(nsIPrincipal* aPrincipal, const nsACString& aType,
+               uint32_t aCapability, uint32_t aExpireType, int64_t aExpireTime,
+               int64_t aModificationTime);
 
-  virtual ~Permission() = default;
+  virtual ~nsPermission(){};
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCString mType;
@@ -43,7 +41,5 @@ class Permission : public nsIPermission {
   int64_t mExpireTime;
   int64_t mModificationTime;
 };
-
-}  
 
 #endif  

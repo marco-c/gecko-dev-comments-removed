@@ -4,32 +4,31 @@
 
 
 
-#ifndef mozilla_PermissionManager_h
-#define mozilla_PermissionManager_h
+#ifndef nsPermissionManager_h__
+#define nsPermissionManager_h__
 
 #include "nsIPermissionManager.h"
 #include "nsIObserver.h"
 #include "nsWeakReference.h"
 #include "nsCOMPtr.h"
+#include "nsIInputStream.h"
 #include "nsTHashtable.h"
 #include "nsTArray.h"
 #include "nsString.h"
+#include "nsPermission.h"
+#include "nsIPrefBranch.h"
 #include "nsHashKeys.h"
+#include "nsCOMArray.h"
+#include "nsDataHashtable.h"
 #include "nsRefPtrHashtable.h"
-#include "mozilla/Atomics.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/ThreadBound.h"
+#include "mozilla/Unused.h"
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 
 #include <utility>
-
-class mozIStorageConnection;
-class mozIStorageStatement;
-class nsIInputStream;
-class nsIPermission;
-class nsIPrefBranch;
 
 namespace IPC {
 struct Permission;
@@ -37,18 +36,17 @@ struct Permission;
 
 namespace mozilla {
 class OriginAttributesPattern;
+}
 
-namespace dom {
-class ContentChild;
-}  
+class nsIPermission;
+class mozIStorageConnection;
+class mozIStorageAsyncStatement;
 
 
 
-class PermissionManager final : public nsIPermissionManager,
-                                public nsIObserver,
-                                public nsSupportsWeakReference {
-  friend class dom::ContentChild;
-
+class nsPermissionManager final : public nsIPermissionManager,
+                                  public nsIObserver,
+                                  public nsSupportsWeakReference {
  public:
   class PermissionEntry {
    public:
@@ -86,11 +84,11 @@ class PermissionManager final : public nsIPermissionManager,
                                               nsresult& aResult);
     static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
     static PermissionKey* CreateFromURIAndOriginAttributes(
-        nsIURI* aURI, const OriginAttributes* aOriginAttributes,
+        nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
         bool aForceStripOA, nsresult& aResult);
 
     explicit PermissionKey(const nsACString& aOrigin)
-        : mOrigin(aOrigin), mHashCode(HashString(aOrigin)) {}
+        : mOrigin(aOrigin), mHashCode(mozilla::HashString(aOrigin)) {}
 
     bool operator==(const PermissionKey& aKey) const {
       return mOrigin.Equals(aKey.mOrigin);
@@ -155,13 +153,13 @@ class PermissionManager final : public nsIPermissionManager,
   };
 
   
-  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_ISUPPORTS
   NS_DECL_NSIPERMISSIONMANAGER
   NS_DECL_NSIOBSERVER
 
-  PermissionManager();
+  nsPermissionManager();
   static already_AddRefed<nsIPermissionManager> GetXPCOMSingleton();
-  static PermissionManager* GetInstance();
+  static nsPermissionManager* GetInstance();
   nsresult Init();
 
   
@@ -179,12 +177,31 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   
+  
+  static const int64_t cIDPermissionIsDefault = -1;
+
+  nsresult AddInternal(nsIPrincipal* aPrincipal, const nsACString& aType,
+                       uint32_t aPermission, int64_t aID, uint32_t aExpireType,
+                       int64_t aExpireTime, int64_t aModificationTime,
+                       NotifyOperationType aNotifyOperation,
+                       DBOperationType aDBOperation,
+                       const bool aIgnoreSessionPermissions = false,
+                       const nsACString* aOriginString = nullptr);
+
+  
+  
   nsresult TestPermissionWithoutDefaultsFromPrincipal(nsIPrincipal* aPrincipal,
                                                       const nsACString& aType,
-                                                      uint32_t* aPermission);
+                                                      uint32_t* aPermission) {
+    MOZ_ASSERT(!HasDefaultPref(aType));
+
+    return CommonTestPermission(aPrincipal, -1, aType, aPermission,
+                                nsIPermissionManager::UNKNOWN_ACTION, true,
+                                false, true);
+  }
 
   nsresult LegacyTestPermissionFromURI(
-      nsIURI* aURI, const OriginAttributes* aOriginAttributes,
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
       const nsACString& aType, uint32_t* aPermission);
 
   
@@ -196,7 +213,8 @@ class PermissionManager final : public nsIPermissionManager,
 
   static void Startup();
 
-  nsresult RemovePermissionsWithAttributes(OriginAttributesPattern& aAttrs);
+  nsresult RemovePermissionsWithAttributes(
+      mozilla::OriginAttributesPattern& aAttrs);
 
   
 
@@ -347,7 +365,7 @@ class PermissionManager final : public nsIPermissionManager,
                                 nsIRunnable* aRunnable);
 
  private:
-  ~PermissionManager();
+  virtual ~nsPermissionManager();
 
   
 
@@ -360,78 +378,212 @@ class PermissionManager final : public nsIPermissionManager,
                                      nsTArray<PermissionEntry>& aResult);
 
   
-  int32_t GetTypeIndex(const nsACString& aType, bool aAdd);
+  
+  static bool HasDefaultPref(const nsACString& aType) {
+    
+    
+    static const nsLiteralCString kPermissionsWithDefaults[] = {
+        NS_LITERAL_CSTRING("camera"), NS_LITERAL_CSTRING("microphone"),
+        NS_LITERAL_CSTRING("geo"), NS_LITERAL_CSTRING("desktop-notification"),
+        NS_LITERAL_CSTRING("shortcuts")};
+
+    if (!aType.IsEmpty()) {
+      for (const auto& perm : kPermissionsWithDefaults) {
+        if (perm.Equals(aType)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
 
   
-  
-  
-  
-  
+  int32_t GetTypeIndex(const nsACString& aType, bool aAdd) {
+    for (uint32_t i = 0; i < mTypeArray.length(); ++i) {
+      if (mTypeArray[i].Equals(aType)) {
+        return i;
+      }
+    }
+
+    if (!aAdd) {
+      
+      return -1;
+    }
+
+    
+    
+    if (!mTypeArray.emplaceBack(aType)) {
+      return -1;
+    }
+
+    return mTypeArray.length() - 1;
+  }
+
   PermissionHashKey* GetPermissionHashKey(nsIPrincipal* aPrincipal,
                                           uint32_t aType, bool aExactHostMatch);
-
-  
-  
-  
-  
-  
   PermissionHashKey* GetPermissionHashKey(
-      nsIURI* aURI, const OriginAttributes* aOriginAttributes, uint32_t aType,
-      bool aExactHostMatch);
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+      uint32_t aType, bool aExactHostMatch);
 
   
   
-  typedef Variant<int32_t, nsresult> TestPreparationResult;
+  typedef mozilla::Variant<int32_t, nsresult> TestPreparationResult;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   TestPreparationResult CommonPrepareToTestPermission(
       nsIPrincipal* aPrincipal, int32_t aTypeIndex, const nsACString& aType,
       uint32_t* aPermission, uint32_t aDefaultPermission,
       bool aDefaultPermissionIsValid, bool aExactHostMatch,
-      bool aIncludingSession);
+      bool aIncludingSession) {
+    using mozilla::AsVariant;
+
+    auto* basePrin = mozilla::BasePrincipal::Cast(aPrincipal);
+    if (basePrin && basePrin->IsSystemPrincipal()) {
+      *aPermission = ALLOW_ACTION;
+      return AsVariant(NS_OK);
+    }
+
+    
+    
+    
+    int32_t defaultPermission =
+        aDefaultPermissionIsValid ? aDefaultPermission : UNKNOWN_ACTION;
+    if (!aDefaultPermissionIsValid && HasDefaultPref(aType)) {
+      mozilla::Unused << mDefaultPrefBranch->GetIntPref(
+          PromiseFlatCString(aType).get(), &defaultPermission);
+    }
+
+    
+    *aPermission = defaultPermission;
+
+    int32_t typeIndex =
+        aTypeIndex == -1 ? GetTypeIndex(aType, false) : aTypeIndex;
+
+    
+    
+    if (basePrin && basePrin->Is<ExpandedPrincipal>()) {
+      auto ep = basePrin->As<ExpandedPrincipal>();
+      for (auto& prin : ep->AllowList()) {
+        uint32_t perm;
+        nsresult rv = CommonTestPermission(prin, typeIndex, aType, &perm,
+                                           defaultPermission, true,
+                                           aExactHostMatch, aIncludingSession);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return AsVariant(rv);
+        }
+
+        if (perm == nsIPermissionManager::ALLOW_ACTION) {
+          *aPermission = perm;
+          return AsVariant(NS_OK);
+        }
+        if (perm == nsIPermissionManager::PROMPT_ACTION) {
+          
+          *aPermission = perm;
+        }
+      }
+
+      return AsVariant(NS_OK);
+    }
+
+    
+    if (typeIndex == -1) {
+      return AsVariant(NS_OK);
+    }
+
+    return AsVariant(typeIndex);
+  }
 
   
   nsresult CommonTestPermission(nsIPrincipal* aPrincipal, int32_t aTypeIndex,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+                                bool aExactHostMatch, bool aIncludingSession) {
+    auto preparationResult = CommonPrepareToTestPermission(
+        aPrincipal, aTypeIndex, aType, aPermission, aDefaultPermission,
+        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
+    if (preparationResult.is<nsresult>()) {
+      return preparationResult.as<nsresult>();
+    }
 
+    return CommonTestPermissionInternal(
+        aPrincipal, nullptr, nullptr, preparationResult.as<int32_t>(), aType,
+        aPermission, aExactHostMatch, aIncludingSession);
+  }
   
   nsresult CommonTestPermission(nsIURI* aURI, int32_t aTypeIndex,
                                 const nsACString& aType, uint32_t* aPermission,
                                 uint32_t aDefaultPermission,
                                 bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+                                bool aExactHostMatch, bool aIncludingSession) {
+    auto preparationResult = CommonPrepareToTestPermission(
+        nullptr, aTypeIndex, aType, aPermission, aDefaultPermission,
+        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
+    if (preparationResult.is<nsresult>()) {
+      return preparationResult.as<nsresult>();
+    }
 
-  nsresult CommonTestPermission(nsIURI* aURI,
-                                const OriginAttributes* aOriginAttributes,
-                                int32_t aTypeIndex, const nsACString& aType,
-                                uint32_t* aPermission,
-                                uint32_t aDefaultPermission,
-                                bool aDefaultPermissionIsValid,
-                                bool aExactHostMatch, bool aIncludingSession);
+    return CommonTestPermissionInternal(
+        nullptr, aURI, nullptr, preparationResult.as<int32_t>(), aType,
+        aPermission, aExactHostMatch, aIncludingSession);
+  }
+  nsresult CommonTestPermission(
+      nsIURI* aURI, const mozilla::OriginAttributes* aOriginAttributes,
+      int32_t aTypeIndex, const nsACString& aType, uint32_t* aPermission,
+      uint32_t aDefaultPermission, bool aDefaultPermissionIsValid,
+      bool aExactHostMatch, bool aIncludingSession) {
+    auto preparationResult = CommonPrepareToTestPermission(
+        nullptr, aTypeIndex, aType, aPermission, aDefaultPermission,
+        aDefaultPermissionIsValid, aExactHostMatch, aIncludingSession);
+    if (preparationResult.is<nsresult>()) {
+      return preparationResult.as<nsresult>();
+    }
 
+    return CommonTestPermissionInternal(
+        nullptr, aURI, aOriginAttributes, preparationResult.as<int32_t>(),
+        aType, aPermission, aExactHostMatch, aIncludingSession);
+  }
   
   nsresult CommonTestPermissionInternal(
       nsIPrincipal* aPrincipal, nsIURI* aURI,
-      const OriginAttributes* aOriginAttributes, int32_t aTypeIndex,
+      const mozilla::OriginAttributes* aOriginAttributes, int32_t aTypeIndex,
       const nsACString& aType, uint32_t* aPermission, bool aExactHostMatch,
       bool aIncludingSession);
 
   nsresult OpenDatabase(nsIFile* permissionsFile);
-
-  void InitDB(bool aRemoveFile);
-  nsresult TryInitDB(bool aRemoveFile, nsIInputStream* aDefaultsInputStream);
-
+  nsresult InitDB(bool aRemoveFile);
   void AddIdleDailyMaintenanceJob();
   void RemoveIdleDailyMaintenanceJob();
   void PerformIdleDailyMaintenance();
 
-  nsresult ImportLatestDefaults();
-  already_AddRefed<nsIInputStream> GetDefaultsInputStream();
-  void ConsumeDefaultsInputStream(nsIInputStream* aDefaultsInputStream,
-                                  const MonitorAutoLock& aProofOfLock);
-
   nsresult CreateTable();
+  nsresult ImportDefaults();
+  nsresult _DoImport(nsIInputStream* inputStream, mozIStorageConnection* aConn);
+  nsresult Read();
   void NotifyObserversWithPermission(nsIPrincipal* aPrincipal,
                                      const nsACString& aType,
                                      uint32_t aPermission, uint32_t aExpireType,
@@ -446,11 +598,11 @@ class PermissionManager final : public nsIPermissionManager,
 
   nsresult RemoveAllInternal(bool aNotifyObservers);
   nsresult RemoveAllFromMemory();
-
-  void UpdateDB(OperationType aOp, int64_t aID, const nsACString& aOrigin,
-                const nsACString& aType, uint32_t aPermission,
-                uint32_t aExpireType, int64_t aExpireTime,
-                int64_t aModificationTime);
+  static void UpdateDB(OperationType aOp, mozIStorageAsyncStatement* aStmt,
+                       int64_t aID, const nsACString& aOrigin,
+                       const nsACString& aType, uint32_t aPermission,
+                       uint32_t aExpireType, int64_t aExpireTime,
+                       int64_t aModificationTime);
 
   
 
@@ -460,135 +612,14 @@ class PermissionManager final : public nsIPermissionManager,
   template <class T>
   nsresult RemovePermissionEntries(T aCondition);
 
-  
-  
-  
-  void EnsureReadCompleted();
-
-  nsresult AddInternal(nsIPrincipal* aPrincipal, const nsACString& aType,
-                       uint32_t aPermission, int64_t aID, uint32_t aExpireType,
-                       int64_t aExpireTime, int64_t aModificationTime,
-                       NotifyOperationType aNotifyOperation,
-                       DBOperationType aDBOperation,
-                       const bool aIgnoreSessionPermissions = false,
-                       const nsACString* aOriginString = nullptr);
-
-  void MaybeAddReadEntryFromMigration(const nsACString& aOrigin,
-                                      const nsCString& aType,
-                                      uint32_t aPermission,
-                                      uint32_t aExpireType, int64_t aExpireTime,
-                                      int64_t aModificationTime, int64_t aId);
-
-  nsRefPtrHashtable<nsCStringHashKey, GenericNonExclusivePromise::Private>
+  nsRefPtrHashtable<nsCStringHashKey,
+                    mozilla::GenericNonExclusivePromise::Private>
       mPermissionKeyPromiseMap;
 
-  nsCOMPtr<nsIFile> mPermissionsFile;
-
-  
-  
-  
-  Monitor mMonitor;
-
-  enum State {
-    
-    
-    
-    
-    eInitializing,
-
-    
-    
-    
-    
-    eDBInitialized,
-
-    
-    eReady,
-
-    
-    
-    eClosed,
-  };
-  Atomic<State> mState;
-
-  
-  struct ReadEntry {
-    ReadEntry()
-        : mId(0),
-          mPermission(0),
-          mExpireType(0),
-          mExpireTime(0),
-          mModificationTime(0) {}
-
-    nsCString mOrigin;
-    nsCString mType;
-    int64_t mId;
-    uint32_t mPermission;
-    uint32_t mExpireType;
-    int64_t mExpireTime;
-    int64_t mModificationTime;
-
-    
-    bool mFromMigration;
-  };
-
-  
-  
-  
-  nsTArray<ReadEntry> mReadEntries;
-
-  
-  struct MigrationEntry {
-    MigrationEntry()
-        : mId(0),
-          mPermission(0),
-          mExpireType(0),
-          mExpireTime(0),
-          mModificationTime(0),
-          mIsInBrowserElement(false) {}
-
-    nsCString mHost;
-    nsCString mType;
-    int64_t mId;
-    uint32_t mPermission;
-    uint32_t mExpireType;
-    int64_t mExpireTime;
-    int64_t mModificationTime;
-
-    
-    bool mIsInBrowserElement;
-  };
-
-  
-  
-  
-  
-  nsTArray<MigrationEntry> mMigrationEntries;
-
-  
-  struct DefaultEntry {
-    DefaultEntry() : mOp(eImportMatchTypeHost), mPermission(0) {}
-
-    enum Op {
-      eImportMatchTypeHost,
-      eImportMatchTypeOrigin,
-    };
-
-    Op mOp;
-
-    nsCString mHostOrOrigin;
-    nsCString mType;
-    uint32_t mPermission;
-  };
-
-  
-  
-  nsTArray<DefaultEntry> mDefaultEntries;
-
-  nsresult Read(const MonitorAutoLock& aProofOfLock);
-  void CompleteRead();
-
-  void CompleteMigrations();
+  nsCOMPtr<mozIStorageConnection> mDBConn;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtInsert;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtUpdate;
 
   bool mMemoryOnlyDB;
 
@@ -600,18 +631,7 @@ class PermissionManager final : public nsIPermissionManager,
 
   
   
-  Vector<nsCString, 512> mTypeArray;
-
-  nsCOMPtr<nsIThread> mThread;
-
-  struct ThreadBoundData {
-    nsCOMPtr<mozIStorageConnection> mDBConn;
-
-    nsCOMPtr<mozIStorageStatement> mStmtInsert;
-    nsCOMPtr<mozIStorageStatement> mStmtDelete;
-    nsCOMPtr<mozIStorageStatement> mStmtUpdate;
-  };
-  ThreadBound<ThreadBoundData> mThreadBoundData;
+  mozilla::Vector<nsCString, 512> mTypeArray;
 
   friend class DeleteFromMozHostListener;
   friend class CloseDatabaseListener;
@@ -625,6 +645,4 @@ class PermissionManager final : public nsIPermissionManager,
     }                                              \
   }
 
-}  
-
-#endif  
+#endif 
