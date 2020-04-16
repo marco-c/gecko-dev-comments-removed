@@ -165,22 +165,6 @@ function Tester(aTests, structuredLogger, aCallback) {
   
   
   
-  
-  this.cpowSandbox = Cu.Sandbox(window, {
-    freshCompartment: true,
-    sandboxPrototype: window,
-  });
-  Cu.permitCPOWsInScope(this.cpowSandbox);
-
-  this.cpowEventUtils = new this.cpowSandbox.Object();
-  this._scriptLoader.loadSubScript(
-    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
-    this.cpowEventUtils
-  );
-
-  
-  
-  
   void window.windowGlobalChild.getActor("SpecialPowers");
 
   var simpleTestScope = {};
@@ -942,9 +926,7 @@ Tester.prototype = {
 
     
     let { scope } = this.currentTest;
-    scope.EventUtils = this.currentTest.usesUnsafeCPOWs
-      ? this.cpowEventUtils
-      : this.EventUtils;
+    scope.EventUtils = this.EventUtils;
     scope.SimpleTest = this.SimpleTest;
     scope.gTestPath = this.currentTest.path;
     scope.ContentTask = this.ContentTask;
@@ -1467,17 +1449,6 @@ function testScope(aTester, aTest, expected) {
     });
   };
 
-  
-  
-  
-  
-  
-  
-  if (aTest.usesUnsafeCPOWs) {
-    let sandbox = this._createSandbox();
-    Cu.permitCPOWsInScope(sandbox);
-    return sandbox;
-  }
   return this;
 }
 
@@ -1505,35 +1476,6 @@ testScope.prototype = {
   TestUtils: null,
   ExtensionTestUtils: null,
   Assert: null,
-
-  _createSandbox() {
-    
-    
-    
-    let sandbox = Cu.Sandbox(window, {
-      freshCompartment: true,
-      sandboxPrototype: window,
-    });
-
-    for (let prop in this) {
-      if (typeof this[prop] == "function") {
-        sandbox[prop] = this[prop].bind(this);
-      } else {
-        Object.defineProperty(sandbox, prop, {
-          configurable: true,
-          enumerable: true,
-          get: () => {
-            return this[prop];
-          },
-          set: value => {
-            this[prop] = value;
-          },
-        });
-      }
-    }
-
-    return sandbox;
-  },
 
   
 
