@@ -5,7 +5,8 @@
 
 
 #include "mozilla/layers/Compositor.h"
-#include "base/message_loop.h"                      
+#include "base/message_loop.h"  
+#include "mozilla/gfx/Types.h"
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/Diagnostics.h"
 #include "mozilla/layers/Effects.h"  
@@ -69,8 +70,8 @@ Compositor::Compositor(widget::CompositorWidget* aWidget,
       mDefaultClearColor(ToDeviceColor(sRGBColor::OpaqueWhite()))
 #else
       ,
-      mClearColor(DeviceColor()),
-      mDefaultClearColor(DeviceColor())
+      mClearColor(gfx::DeviceColor()),
+      mDefaultClearColor(gfx::DeviceColor())
 #endif
 {
 }
