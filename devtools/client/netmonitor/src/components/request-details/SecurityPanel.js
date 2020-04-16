@@ -194,6 +194,15 @@ const getObject = ({ securityInfo, url }) => {
   };
 };
 
+const getDefaultSelectedNode = securityInfo => {
+  return {
+    label:
+      securityInfo.state !== "secure" && securityInfo.state !== "weak"
+        ? [ERROR_LABEL]
+        : [CONNECTION_LABEL],
+  };
+};
+
 
 
 
@@ -270,6 +279,8 @@ class SecurityPanel extends Component {
           this.renderValue(props, securityInfo.weaknessReasons),
         enableFilter: false,
         expandedNodes: TreeViewClass.getExpandedNodes(object),
+        
+        targetSearchResult: getDefaultSelectedNode(securityInfo),
       })
     );
   }
