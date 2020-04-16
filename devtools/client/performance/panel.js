@@ -36,8 +36,6 @@ PerformancePanel.prototype = {
     const front = await this.target.getFront("performance");
 
     
-    this.panelWin.gToolbox = this.toolbox;
-    this.panelWin.gTarget = this.target;
     this.panelWin.gFront = front;
 
     
