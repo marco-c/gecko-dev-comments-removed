@@ -15,6 +15,7 @@
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Gamepad.h"
 #include "mozilla/dom/XRSession.h"
+#include "mozilla/dom/XRInputSourceArray.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/WebXRBinding.h"
@@ -141,7 +142,18 @@ void VRDisplayClient::FireEvents() {
   }
 
   
-  FireGamepadEvents();
+  
+  if (!StaticPrefs::dom_vr_webxr_enabled()) { 
+    FireGamepadEvents();
+  } else {
+    
+    for (auto& session : mSessions) {
+      dom::XRInputSourceArray* inputs = session->InputSources();
+      if (inputs) {
+        inputs->Update(session);
+      }
+    }
+  }
 }
 
 void VRDisplayClient::GamepadMappingForWebVR(
