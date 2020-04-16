@@ -126,7 +126,7 @@ static const uintptr_t IS_PROXY = 1;
 
 
 
-- (void)firePlatformEvent:(uint32_t)eventType;
+- (void)handleAccessibleEvent:(uint32_t)eventType;
 
 
 - (void)postNotification:(NSString*)notification;
