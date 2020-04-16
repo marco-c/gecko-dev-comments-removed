@@ -2721,6 +2721,25 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
                                getter_AddRefs(loadInfo.mResolvedScriptURI));
     NS_ENSURE_SUCCESS(rv, rv);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsILoadInfo> channelLoadInfo = loadInfo.mChannel->LoadInfo();
+    if (document) {
+      rv = channelLoadInfo->SetHasStoragePermission(
+          document->HasStoragePermission());
+    } else {
+      
+      
+      rv = channelLoadInfo->SetHasStoragePermission(true);
+    }
+    NS_ENSURE_SUCCESS(rv, rv);
+
     rv = loadInfo.SetPrincipalsAndCSPFromChannel(loadInfo.mChannel);
     NS_ENSURE_SUCCESS(rv, rv);
   }
