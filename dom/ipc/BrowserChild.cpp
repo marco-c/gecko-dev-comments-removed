@@ -501,7 +501,7 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   NS_ASSERTION(mWebNav, "nsWebBrowser doesn't implement nsIWebNavigation?");
 
   
-  NotifyTabContextUpdated(false);
+  NotifyTabContextUpdated();
 
   
   
@@ -584,7 +584,7 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
   return NS_OK;
 }
 
-void BrowserChild::NotifyTabContextUpdated(bool aIsPreallocated) {
+void BrowserChild::NotifyTabContextUpdated() {
   nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
   MOZ_ASSERT(docShell);
 
@@ -593,10 +593,6 @@ void BrowserChild::NotifyTabContextUpdated(bool aIsPreallocated) {
   }
 
   UpdateFrameType();
-
-  if (aIsPreallocated) {
-    nsDocShell::Cast(docShell)->SetOriginAttributes(OriginAttributesRef());
-  }
 
   
   if (!PresentationURL().IsEmpty()) {
