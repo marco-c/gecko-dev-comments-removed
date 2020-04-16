@@ -649,67 +649,112 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
 
   
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
-    if (aHTMLInputInputmode.EqualsLiteral("url")) {
-      scopes.AppendElement(IS_URL);
-    } else if (aHTMLInputInputmode.EqualsLiteral("mozAwesomebar")) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
-        scopes.AppendElement(IS_DEFAULT);
-      } else {
-        scopes.AppendElement(IS_URL);
-      }
-    } else if (aHTMLInputInputmode.EqualsLiteral("email")) {
-      scopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-    } else if (aHTMLInputInputmode.EqualsLiteral("tel")) {
-      scopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-      scopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    } else if (aHTMLInputInputmode.EqualsLiteral("numeric")) {
-      scopes.AppendElement(IS_NUMBER);
-    } else {
-      scopes.AppendElement(IS_DEFAULT);
-    }
-  } else if (aHTMLInputType.EqualsLiteral("url")) {
-    scopes.AppendElement(IS_URL);
-  } else if (aHTMLInputType.EqualsLiteral("search")) {
-    scopes.AppendElement(IS_SEARCH);
-  } else if (aHTMLInputType.EqualsLiteral("email")) {
-    scopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-  } else if (aHTMLInputType.EqualsLiteral("password")) {
-    scopes.AppendElement(IS_PASSWORD);
-  } else if (aHTMLInputType.EqualsLiteral("datetime") ||
-             aHTMLInputType.EqualsLiteral("datetime-local")) {
-    scopes.AppendElement(IS_DATE_FULLDATE);
-    scopes.AppendElement(IS_TIME_FULLTIME);
-  } else if (aHTMLInputType.EqualsLiteral("date") ||
-             aHTMLInputType.EqualsLiteral("month") ||
-             aHTMLInputType.EqualsLiteral("week")) {
-    scopes.AppendElement(IS_DATE_FULLDATE);
-  } else if (aHTMLInputType.EqualsLiteral("time")) {
-    scopes.AppendElement(IS_TIME_FULLTIME);
-  } else if (aHTMLInputType.EqualsLiteral("tel")) {
-    scopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    scopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-  } else if (aHTMLInputType.EqualsLiteral("number")) {
-    scopes.AppendElement(IS_NUMBER);
+    AppendInputScopeFromInputmode(aHTMLInputInputmode, scopes);
+  } else {
+    AppendInputScopeFromType(aHTMLInputType, scopes);
   }
-  if (!scopes.IsEmpty()) {
-    sSetInputScopes(aWindow->GetWindowHandle(), scopes.Elements(),
-                    scopes.Length(), nullptr, 0, nullptr, nullptr);
+
+  if (scopes.IsEmpty()) {
+    
+    scopes.AppendElement(IS_DEFAULT);
+  }
+
+  sSetInputScopes(aWindow->GetWindowHandle(), scopes.Elements(),
+                  scopes.Length(), nullptr, 0, nullptr, nullptr);
+}
+
+
+void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
+                                               nsTArray<InputScope>& aScopes) {
+  if (aInputmode.EqualsLiteral("mozAwesomebar")) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
+      return;
+    }
+    
+    aScopes.AppendElement(IS_URL);
+    return;
+  }
+
+  
+  if (aInputmode.EqualsLiteral("url")) {
+    aScopes.AppendElement(IS_URL);
+    return;
+  }
+  if (aInputmode.EqualsLiteral("email")) {
+    aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+    return;
+  }
+  if (aInputmode.EqualsLiteral("tel")) {
+    aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
+    aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+    return;
+  }
+  if (aInputmode.EqualsLiteral("numeric")) {
+    aScopes.AppendElement(IS_NUMBER);
+    return;
+  }
+}
+
+
+void IMEHandler::AppendInputScopeFromType(const nsAString& aHTMLInputType,
+                                          nsTArray<InputScope>& aScopes) {
+  
+  if (aHTMLInputType.EqualsLiteral("url")) {
+    aScopes.AppendElement(IS_URL);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("search")) {
+    aScopes.AppendElement(IS_SEARCH);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("email")) {
+    aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("password")) {
+    aScopes.AppendElement(IS_PASSWORD);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("datetime") ||
+      aHTMLInputType.EqualsLiteral("datetime-local")) {
+    aScopes.AppendElement(IS_DATE_FULLDATE);
+    aScopes.AppendElement(IS_TIME_FULLTIME);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("date") ||
+      aHTMLInputType.EqualsLiteral("month") ||
+      aHTMLInputType.EqualsLiteral("week")) {
+    aScopes.AppendElement(IS_DATE_FULLDATE);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("time")) {
+    aScopes.AppendElement(IS_TIME_FULLTIME);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("tel")) {
+    aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
+    aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+    return;
+  }
+  if (aHTMLInputType.EqualsLiteral("number")) {
+    aScopes.AppendElement(IS_NUMBER);
+    return;
   }
 }
 
