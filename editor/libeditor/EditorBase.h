@@ -423,7 +423,7 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT virtual nsresult HandleKeyPressEvent(
       WidgetKeyboardEvent* aKeyboardEvent);
 
-  virtual dom::EventTarget* GetDOMEventTarget() = 0;
+  virtual dom::EventTarget* GetDOMEventTarget() const = 0;
 
   
 
@@ -560,13 +560,13 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual nsIContent* GetFocusedContent();
+  virtual nsIContent* GetFocusedContent() const;
 
   
 
 
 
-  virtual already_AddRefed<nsIContent> GetFocusedContentForIME();
+  virtual nsIContent* GetFocusedContentForIME() const;
 
   
 
@@ -2259,7 +2259,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual bool IsActiveInDOMWindow();
+  virtual bool IsActiveInDOMWindow() const;
 
   
 
@@ -2531,7 +2531,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual already_AddRefed<Element> GetInputEventTargetElement() = 0;
+  virtual already_AddRefed<Element> GetInputEventTargetElement() const = 0;
 
   
 
