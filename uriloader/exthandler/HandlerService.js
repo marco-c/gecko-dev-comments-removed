@@ -156,6 +156,28 @@ HandlerService.prototype = {
     
     
     
+    for (let [scheme, handlerObject] of Array.from(Object.entries(schemes))) {
+      let handlers = Array.from(Object.entries(handlerObject));
+      let validHandlers = 0;
+      for (let [key, obj] of handlers) {
+        if (
+          !obj.uriTemplate ||
+          !obj.uriTemplate.startsWith("https://") ||
+          !obj.uriTemplate.toLowerCase().includes("%s")
+        ) {
+          delete handlerObject[key];
+        } else {
+          validHandlers++;
+        }
+      }
+      if (!validHandlers) {
+        delete schemes[scheme];
+      }
+    }
+
+    
+    
+    
     
     
     
@@ -164,7 +186,7 @@ HandlerService.prototype = {
     
     for (let scheme of Object.keys(schemes)) {
       let existingSchemeInfo = this._store.data.schemes[scheme];
-      if (!this._store.data.schemes[scheme]) {
+      if (!existingSchemeInfo) {
         
         
         existingSchemeInfo = {
