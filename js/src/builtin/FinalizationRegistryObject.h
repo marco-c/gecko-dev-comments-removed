@@ -132,23 +132,24 @@ class FinalizationRecordObject : public NativeObject {
 };
 
 
-using FinalizationRecordVector =
-    GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
+using WeakFinalizationRecordVector =
+    GCVector<WeakHeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
 
 
 
 
 
-class FinalizationRecordVectorObject : public NativeObject {
+
+class FinalizationRegistrationsObject : public NativeObject {
   enum { RecordsSlot = 0, SlotCount };
 
  public:
   static const JSClass class_;
 
-  static FinalizationRecordVectorObject* create(JSContext* cx);
+  static FinalizationRegistrationsObject* create(JSContext* cx);
 
-  FinalizationRecordVector* records();
-  const FinalizationRecordVector* records() const;
+  WeakFinalizationRecordVector* records();
+  const WeakFinalizationRecordVector* records() const;
 
   bool isEmpty() const;
 
@@ -165,6 +166,9 @@ class FinalizationRecordVectorObject : public NativeObject {
   static void trace(JSTracer* trc, JSObject* obj);
   static void finalize(JSFreeOp* fop, JSObject* obj);
 };
+
+using FinalizationRecordVector =
+    GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::ZoneAllocPolicy>;
 
 using FinalizationRecordSet =
     GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
