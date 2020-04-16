@@ -9,7 +9,7 @@ use std::{cmp::Ordering, fmt::Debug, iter, ops::Range, slice::Iter};
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RangedStates<I, T> {
     
     
