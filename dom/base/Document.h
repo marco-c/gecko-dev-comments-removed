@@ -10,7 +10,6 @@
 #include "mozilla/FlushType.h"    
 #include "mozilla/MozPromise.h"   
 #include "mozilla/FunctionRef.h"  
-#include "nsAutoPtr.h"            
 #include "nsCOMArray.h"           
 #include "nsCompatibility.h"      
 #include "nsCOMPtr.h"             
@@ -4249,7 +4248,7 @@ class Document : public nsINode,
   
   
   
-  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsISupports>>> mActivityObservers;
+  UniquePtr<nsTHashtable<nsPtrHashKey<nsISupports>>> mActivityObservers;
 
   
   nsTHashtable<nsPtrHashKey<Link>> mStyledLinks;
