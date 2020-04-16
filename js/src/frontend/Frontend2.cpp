@@ -425,12 +425,7 @@ JSScript* Smoosh::compileGlobalScript(CompilationInfo& compilationInfo,
     return nullptr;
   }
 
-  SourceExtent extent( 0,
-                       length,
-                       0,
-                       length,
-                       1,
-                       0);
+  SourceExtent extent = SourceExtent::makeGlobalExtent(length);
   RootedScript script(
       cx, JSScript::Create(cx, cx->global(), sso, extent,
                            ImmutableScriptFlags::fromCompileOptions(options)));
