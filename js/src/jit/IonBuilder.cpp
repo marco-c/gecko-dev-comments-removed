@@ -3955,6 +3955,11 @@ AbortReasonOr<Ok> IonBuilder::unaryArithTrySpecializedOnBaselineInspector(
   
   
 
+  
+  if (!SimpleArithOperand(value)) {
+    return Ok();
+  }
+
   MIRType specialization = inspector->expectedBinaryArithSpecialization(pc);
   if (specialization == MIRType::None) {
     return Ok();
