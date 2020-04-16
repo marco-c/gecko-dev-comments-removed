@@ -25,6 +25,20 @@
 #endif
 
 namespace mozilla {
+
+#if defined(XP_WIN)
+namespace mscom {
+namespace detail {
+
+template <>
+struct VTableSizer<IAccessible> {
+  
+  enum { Size = 28 };
+};
+}  
+}  
+#endif  
+
 namespace a11y {
 uint64_t DocAccessibleParent::sMaxDocID = 0;
 
@@ -605,6 +619,27 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         aChildDoc->SetEmulatedWindowHandle(mEmulatedWindowHandle);
         Unused << aChildDoc->SendEmulatedWindow(
             reinterpret_cast<uintptr_t>(mEmulatedWindowHandle), nullptr);
+      }
+      
+      
+      
+      
+      DocAccessibleParent* topDoc = this;
+      while (DocAccessibleParent* parentDoc = topDoc->ParentDoc()) {
+        topDoc = parentDoc;
+      }
+      MOZ_ASSERT(topDoc && topDoc->IsTopLevel());
+      RefPtr<IAccessible> topDocAcc;
+      topDoc->GetCOMInterface((void**)getter_AddRefs(topDocAcc));
+      RefPtr<IAccessible> topDocWrapped(
+          mscom::PassthruProxy::Wrap<IAccessible>(WrapNotNull(topDocAcc)));
+      IAccessibleHolder::COMPtrType topDocPtr(
+          mscom::ToProxyUniquePtr(std::move(topDocWrapped)));
+      IAccessibleHolder topDocHolder(std::move(topDocPtr));
+      if (aChildDoc->SendTopLevelDocCOMProxy(topDocHolder)) {
+#  if defined(MOZ_SANDBOX)
+        aChildDoc->mTopLevelDocProxyStream = topDocHolder.GetPreservedStream();
+#  endif  
       }
 #endif  
       
