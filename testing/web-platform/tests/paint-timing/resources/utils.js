@@ -1,15 +1,3 @@
-
-const numMillisecondsWait = 50;
-
-
-
-
-const numFramesWaiting = 3;
-
-function waitTime(t) {
-  return new Promise(resolve => t.step_timeout(resolve, numMillisecondsWait));
-}
-
 function waitForAnimationFrames(count) {
   return new Promise(resolve => {
     if (count-- <= 0) {
@@ -23,21 +11,25 @@ function waitForAnimationFrames(count) {
 }
 
 
-async function assertNoFirstContentfulPaint(t) {
-  if (t)
-    await waitTime(t);
 
-  await waitForAnimationFrames(numFramesWaiting);
+async function assertNoFirstContentfulPaint(t) {
+  await waitForAnimationFrames(3);
   assert_equals(performance.getEntriesByName('first-contentful-paint').length, 0, 'First contentful paint marked too early. ');
 }
 
 
 
 async function assertFirstContentfulPaint(t) {
-  if (t)
-    await waitTime(t);
-  await waitForAnimationFrames(numFramesWaiting);
-  assert_equals(performance.getEntriesByName('first-contentful-paint').length, 1, 'Expected first contentful paint not found. ');
+  return new Promise(resolve  => {
+    function checkFCP() {
+      if (performance.getEntriesByName('first-contentful-paint').length === 1) {
+        resolve();
+      } else {
+        t.step_timeout(checkFCP, 0);
+      }
+    }
+    t.step(checkFCP);
+  });
 }
 
 async function test_fcp(label) {
@@ -47,10 +39,10 @@ async function test_fcp(label) {
     assert_precondition(window.PerformancePaintTiming, "Paint Timing isn't supported.");
     const main = document.getElementById('main');
     await new Promise(r => window.addEventListener('load', r));
-    await assertNoFirstContentfulPaint();
+    await assertNoFirstContentfulPaint(t);
     main.className = 'preFCP';
-    await assertNoFirstContentfulPaint();
+    await assertNoFirstContentfulPaint(t);
     main.className = 'contentful';
-    await assertFirstContentfulPaint();
+    await assertFirstContentfulPaint(t);
   }, label);
 }
