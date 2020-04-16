@@ -26,6 +26,7 @@
 #include "frontend/FullParseHandler.h"
 #include "frontend/ParseContext.h"
 #include "frontend/Parser.h"
+#include "js/Exception.h"
 #include "js/Vector.h"
 
 #include "jsapi-tests/tests.h"
@@ -297,10 +298,11 @@ void runTestFromPath(JSContext* cx, const char* path) {
     auto txtParsed =
         txtParser
             .parse();  
-    RootedValue txtExn(cx);
+
+    ExceptionStack txtExn(cx);
     if (!txtParsed) {
       
-      if (!js::GetAndClearException(cx, &txtExn)) {
+      if (!StealPendingExceptionStack(cx, &txtExn)) {
         MOZ_CRASH("Couldn't clear exception");
       }
     }
@@ -339,10 +341,10 @@ void runTestFromPath(JSContext* cx, const char* path) {
     auto binParsed = binParser.parse(
         &globalsc,
         binSource);  
-    RootedValue binExn(cx);
+    ExceptionStack binExn(cx);
     if (binParsed.isErr()) {
       
-      if (!js::GetAndClearException(cx, &binExn)) {
+      if (!StealPendingExceptionStack(cx, &binExn)) {
         MOZ_CRASH("Couldn't clear binExn");
       }
     }
