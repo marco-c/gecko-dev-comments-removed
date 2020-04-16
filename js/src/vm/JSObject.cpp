@@ -2250,6 +2250,38 @@ static bool SetProto(JSContext* cx, HandleObject obj,
   return true;
 }
 
+bool js::SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
+                                       HandleObject proto) {
+  
+
+  
+  
+  
+  MOZ_ASSERT(fun->isSingleton());
+  MOZ_ASSERT(!fun->staticPrototypeIsImmutable());
+  MOZ_ASSERT(fun->isExtensible());
+  MOZ_ASSERT(proto);
+
+  if (proto == fun->staticPrototype()) {
+    return true;
+  }
+
+  if (!JSObject::setDelegate(cx, proto)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
+  if (!JSObject::splicePrototype(cx, fun, tagged)) {
+    return false;
+  }
+
+  return true;
+}
+
 
 bool JSObject::changeToSingleton(JSContext* cx, HandleObject obj) {
   MOZ_ASSERT(!obj->isSingleton());

@@ -57,26 +57,8 @@ inline JSFunction* CloneFunctionObjectIfNotSingleton(
 
 
   if (CanReuseFunctionForClone(cx, fun)) {
-    if (proto && proto != fun->staticPrototype()) {
-      
-      
-      
-      MOZ_ASSERT(fun->isSingleton());
-      MOZ_ASSERT(!fun->staticPrototypeIsImmutable());
-      MOZ_ASSERT(fun->isExtensible());
-
-      if (!JSObject::setDelegate(cx, proto)) {
-        return nullptr;
-      }
-
-      
-      
-      
-      
-      Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
-      if (!JSObject::splicePrototype(cx, fun, tagged)) {
-        return nullptr;
-      }
+    if (proto && !SetPrototypeForClonedFunction(cx, fun, proto)) {
+      return nullptr;
     }
     fun->setEnvironment(enclosingEnv);
     return fun;
