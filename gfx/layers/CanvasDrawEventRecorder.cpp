@@ -435,6 +435,8 @@ void CanvasEventRingBuffer::ReturnWrite(const char* aData, size_t aSize) {
       bufRemaining = kStreamSize - bufPos;
       aData += availableToWrite;
       aSize -= availableToWrite;
+    } else if (mReaderServices->WriterClosed()) {
+      return;
     }
 
     availableToWrite = std::min(
@@ -455,7 +457,9 @@ void CanvasEventRingBuffer::ReturnRead(char* aOut, size_t aSize) {
   
   
   while (readCount == mRead->returnCount) {
-    if (mRead->state != State::Processing) {
+    
+    
+    if (mRead->state != State::Processing && readCount == mRead->returnCount) {
       return;
     }
   }
@@ -473,6 +477,8 @@ void CanvasEventRingBuffer::ReturnRead(char* aOut, size_t aSize) {
       bufRemaining = kStreamSize - bufPos;
       aOut += availableToRead;
       aSize -= availableToRead;
+    } else if (mWriterServices->ReaderClosed()) {
+      return;
     }
 
     availableToRead = std::min(bufRemaining, (mRead->returnCount - readCount));
