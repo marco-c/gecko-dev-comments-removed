@@ -15,6 +15,7 @@
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/UniquePtr.h"
+#include "nsXULAppAPI.h"  
 #include "RecordingTypes.h"
 #include "RecordedEventImpl.h"
 
