@@ -2266,6 +2266,12 @@ bool js::SetPrototypeForClonedFunction(JSContext* cx, HandleFunction fun,
     return true;
   }
 
+  
+  
+  if (!ReshapeForProtoMutation(cx, fun)) {
+    return false;
+  }
+
   if (!JSObject::setDelegate(cx, proto)) {
     return false;
   }
