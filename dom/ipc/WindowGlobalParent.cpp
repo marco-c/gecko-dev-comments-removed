@@ -213,7 +213,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvLoadURI(
   
   
 
-  targetBC->LoadURI(nullptr, aLoadState, aSetNavigating);
+  targetBC->LoadURI(aLoadState, aSetNavigating);
   return IPC_OK();
 }
 
@@ -238,7 +238,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvInternalLoad(
   
   
 
-  targetBC->InternalLoad(BrowsingContext(), aLoadState, nullptr, nullptr);
+  targetBC->InternalLoad(aLoadState, nullptr, nullptr);
   return IPC_OK();
 }
 
