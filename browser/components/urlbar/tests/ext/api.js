@@ -11,49 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.jsm",
-  AppUpdater: "resource:///modules/AppUpdater.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   Preferences: "resource://gre/modules/Preferences.jsm",
-  ProfileAge: "resource://gre/modules/ProfileAge.jsm",
-  Services: "resource://gre/modules/Services.jsm",
-  ResetProfile: "resource://gre/modules/ResetProfile.jsm",
-  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
-  Sanitizer: "resource:///modules/Sanitizer.jsm",
-});
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "updateService",
-  "@mozilla.org/updates/update-service;1",
-  "nsIApplicationUpdateService"
-);
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "updateManager",
-  "@mozilla.org/updates/update-manager;1",
-  "nsIUpdateManager"
-);
-
-XPCOMUtils.defineLazyGetter(this, "appUpdater", () => new AppUpdater());
-
-XPCOMUtils.defineLazyGetter(this, "appUpdaterStatusToStringMap", () => {
-  
-  
-  
-  
-  let map = new Map();
-  for (let name in AppUpdater.STATUS) {
-    let parts = name.split("_").map(p => p.toLowerCase());
-    let string =
-      parts[0] +
-      parts
-        .slice(1)
-        .map(p => p[0].toUpperCase() + p.substring(1))
-        .join("");
-    map.set(AppUpdater.STATUS[name], string);
-  }
-  return map;
 });
 
 XPCOMUtils.defineLazyGetter(
@@ -67,10 +26,6 @@ this.experiments_urlbar = class extends ExtensionAPI {
     return {
       experiments: {
         urlbar: {
-          checkForBrowserUpdate() {
-            appUpdater.check();
-          },
-
           clearInput() {
             let window = BrowserWindowTracker.getTopWindow();
             window.gURLBar.value = "";
@@ -81,129 +36,9 @@ this.experiments_urlbar = class extends ExtensionAPI {
             "browser.urlbar.eventTelemetry.enabled"
           ),
 
-          getBrowserUpdateStatus() {
-            return appUpdaterStatusToStringMap.get(appUpdater.status);
-          },
-
-          installBrowserUpdateAndRestart() {
-            if (appUpdater.status != AppUpdater.STATUS.DOWNLOAD_AND_INSTALL) {
-              return Promise.resolve();
-            }
-            return new Promise(resolve => {
-              let listener = () => {
-                
-                
-                if (
-                  appUpdater.status != AppUpdater.STATUS.READY_FOR_RESTART &&
-                  appUpdater.status != AppUpdater.STATUS.DOWNLOAD_FAILED
-                ) {
-                  return;
-                }
-                appUpdater.removeListener(listener);
-                if (appUpdater.status == AppUpdater.STATUS.READY_FOR_RESTART) {
-                  restartBrowser();
-                }
-                resolve();
-              };
-              appUpdater.addListener(listener);
-              appUpdater.startDownload();
-            });
-          },
-
-          isBrowserShowingNotification() {
-            let window = BrowserWindowTracker.getTopWindow();
-
-            
-            if (
-              window.gURLBar.view.isOpen ||
-              window.gBrowser.getNotificationBox().currentNotification
-            ) {
-              return true;
-            }
-
-            
-            if (
-              AppMenuNotifications.activeNotification &&
-              !AppMenuNotifications.activeNotification.dismissed &&
-              !AppMenuNotifications.activeNotification.options.badgeOnly
-            ) {
-              return true;
-            }
-
-            
-            if (
-              ["tracking-protection-icon-container", "identity-box"].some(
-                id =>
-                  window.document.getElementById(id).getAttribute("open") ==
-                  "true"
-              )
-            ) {
-              return true;
-            }
-
-            
-            let pageActions = window.document.getElementById(
-              "page-action-buttons"
-            );
-            if (pageActions) {
-              for (let child of pageActions.childNodes) {
-                if (child.getAttribute("open") == "true") {
-                  return true;
-                }
-              }
-            }
-
-            
-            let navbar = window.document.getElementById(
-              "nav-bar-customization-target"
-            );
-            for (let node of navbar.querySelectorAll("toolbarbutton")) {
-              if (node.getAttribute("open") == "true") {
-                return true;
-              }
-            }
-
-            return false;
-          },
-
-          async lastBrowserUpdateDate() {
-            
-            
-            
-            if (updateManager.updateCount) {
-              let update = updateManager.getUpdateAt(0);
-              return update.installDate;
-            }
-            
-            let age = await ProfileAge();
-            return (await age.firstUse) || age.created;
-          },
-
           openViewOnFocus: this._getDefaultSettingsAPI(
             "browser.urlbar.openViewOnFocus"
           ),
-
-          openClearHistoryDialog() {
-            let window = BrowserWindowTracker.getTopWindow();
-            
-            
-            if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-              return;
-            }
-            Sanitizer.showUI(window);
-          },
-
-          restartBrowser() {
-            restartBrowser();
-          },
-
-          resetBrowser() {
-            if (!ResetProfile.resetSupported()) {
-              return;
-            }
-            let window = BrowserWindowTracker.getTopWindow();
-            ResetProfile.openConfirmationDialog(window);
-          },
         },
       },
     };
@@ -252,27 +87,3 @@ this.experiments_urlbar = class extends ExtensionAPI {
     };
   }
 };
-
-function restartBrowser() {
-  
-  let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-    Ci.nsISupportsPRBool
-  );
-  Services.obs.notifyObservers(
-    cancelQuit,
-    "quit-application-requested",
-    "restart"
-  );
-  
-  if (cancelQuit.data) {
-    return;
-  }
-  
-  if (Services.appinfo.inSafeMode) {
-    Services.startup.restartInSafeMode(Ci.nsIAppStartup.eAttemptQuit);
-  } else {
-    Services.startup.quit(
-      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
-    );
-  }
-}
