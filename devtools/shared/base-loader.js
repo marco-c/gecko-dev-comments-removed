@@ -157,17 +157,7 @@ function load(loader, module) {
 
   const originalExports = module.exports;
   try {
-    Services.scriptloader.loadSubScriptWithOptions(module.uri, {
-      target: sandbox,
-      
-      
-      
-      
-      
-      
-      
-      useCompilationScope: !loader.hasJSMLifetime,
-    });
+    Services.scriptloader.loadSubScript(module.uri, sandbox);
   } catch (error) {
     
     
@@ -451,12 +441,6 @@ function Module(id, uri) {
 function unload(loader, reason) {
   
   
-  if (loader.hasJSMLifetime) {
-    throw new Error("A JSM-lifetime loader can't be destroyed");
-  }
-
-  
-  
   
   
   
@@ -465,10 +449,6 @@ function unload(loader, reason) {
   const subject = { wrappedJSObject: loader.destructor };
   Services.obs.notifyObservers(subject, "devtools:loader:destroy", reason);
 }
-
-
-
-
 
 
 
@@ -578,11 +558,6 @@ function Loader(options) {
     invisibleToDebugger: {
       enumerable: false,
       value: options.invisibleToDebugger || false,
-    },
-    hasJSMLifetime: {
-      enumerable: false,
-      writable: false,
-      value: options.hasJSMLifetime || false,
     },
     requireHook: {
       enumerable: false,

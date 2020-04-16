@@ -45,12 +45,9 @@ var gNextLoaderID = 0;
 
 
 
-
-
 function DevToolsLoader({
   invisibleToDebugger = false,
   freshCompartment = false,
-  hasJSMLifetime = false,
 } = {}) {
   const paths = {
     
@@ -82,7 +79,6 @@ function DevToolsLoader({
   }
 
   this.loader = new Loader({
-    hasJSMLifetime,
     paths,
     invisibleToDebugger,
     freshCompartment,
@@ -172,13 +168,6 @@ DevToolsLoader.prototype = {
 
 
 var loader = new DevToolsLoader({
-  
-
-
-
-
-  hasJSMLifetime: true,
-
   
 
 

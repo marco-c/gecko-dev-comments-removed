@@ -50,10 +50,6 @@ interface mozIJSSubScriptLoader : nsISupports
 
 
 
-
-
-
-
     [implicit_jscontext]
     jsval loadSubScriptWithOptions(in AString url, in jsval options);
 };
