@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-<!-- This Source Code Form is subject to the terms of the Mozilla Public
-   - License, v. 2.0. If a copy of the MPL was not distributed with this file,
-   - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
+
+
+
 
 <html lang="en">
   <head>
@@ -63,7 +63,6 @@
 #ifdef MOZ_INSTALL_TRACKING
       <li><a href="about:license#adjust">Adjust SDK License</a></li>
 #endif
-      <li><a href="about:license#adobecmap">Adobe CMap License</a></li>
       <li><a href="about:license#android">Android Open Source License</a></li>
       <li><a href="about:license#angle">ANGLE License</a></li>
       <li><a href="about:license#apache">Apache License 2.0</a></li>
@@ -209,7 +208,7 @@ The following licenses are specific to code used by the
 #includesubst @APP_LICENSE_PRODUCT_NAME@
 product.
 
-<!-- Index of product-specific licenses for non-Firefox apps. -->
+
 #includesubst @APP_LICENSE_LIST_BLOCK@
 #endif
 
@@ -2122,59 +2121,13 @@ copyright statement needs to be provided if you just ship binary
 executables of your software products.
 </pre>
 
-
-    <hr>
-
-    <h1><a id="adobecmap"></a>Adobe CMap License</h1>
-
-    <p>This license applies to files in the directory
-    <code>browser/extensions/pdfjs/content/web/cmaps/</code>.</p>
-
-<pre>
-Copyright 1990-2009 Adobe Systems Incorporated.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or
-without modification, are permitted provided that the
-following conditions are met:
-
-Redistributions of source code must retain the above
-copyright notice, this list of conditions and the following
-disclaimer.
-
-Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following
-disclaimer in the documentation and/or other materials
-provided with the distribution.
-
-Neither the name of Adobe Systems Incorporated nor the names
-of its contributors may be used to endorse or promote
-products derived from this software without specific prior
-written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
-CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
-OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-</pre>
-
-
     <hr>
 
     <h1><a id="android"></a>Android Open Source License</h1>
 
     <p>This license applies to various files in the Mozilla codebase,
     including those in the directory <code>gfx/skia/</code>.</p>
-<!-- This is the wrong directory, what was intended? -->
+
 
 <pre>
  Copyright 2009, The Android Open Source Project
@@ -3857,7 +3810,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <p>This license applies to <code>mfbt/Span.h</code> and
     <code>mfbt/tests/gtest/TestSpan.cpp</code>.</p>
-    <!-- https://github.com/Microsoft/GSL/blob/3819df6e378ffccf0e29465afe99c3b324c2aa70/LICENSE -->
+    
 <pre>
 Copyright (c) 2015 Microsoft Corporation. All rights reserved.
 
@@ -7403,7 +7356,7 @@ following terms:
 #ifndef APP_LICENSE_LIST_BLOCK
 #error
 #endif
-<!-- List of product-specific licenses for non-Firefox apps. -->
+
 #includesubst @APP_LICENSE_BODY_BLOCK@
 #endif
 
