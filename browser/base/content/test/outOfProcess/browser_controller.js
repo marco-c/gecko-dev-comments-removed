@@ -40,10 +40,10 @@ add_task(async function test_controllers_subframes() {
     "<input id='input'><br><br>"
   );
 
+  gURLBar.focus();
+
   for (let stepNum = 0; stepNum < browsingContexts.length; stepNum++) {
-    if (stepNum > 0) {
-      await keyAndUpdate("VK_TAB", {}, 5);
-    }
+    await keyAndUpdate(stepNum > 0 ? "VK_TAB" : "VK_F6", {}, 6);
 
     
     
@@ -59,20 +59,16 @@ add_task(async function test_controllers_subframes() {
       goUpdateGlobalEditMenuItems(true);
     }
 
-    await SpecialPowers.spawn(
-      browsingContexts[stepNum],
-      [stepNum == 0],
-      bodyFocused => {
-        
-        
-        let document = content.document;
-        Assert.equal(
-          document.activeElement,
-          bodyFocused ? document.body : document.documentElement,
-          "root focused"
-        );
-      }
-    );
+    await SpecialPowers.spawn(browsingContexts[stepNum], [], () => {
+      
+      
+      let document = content.document;
+      Assert.equal(
+        document.activeElement,
+        document.documentElement,
+        "root focused"
+      );
+    });
     checkCommandState("step " + stepNum + " root focused", false, false);
 
     
