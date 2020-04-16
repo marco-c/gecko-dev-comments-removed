@@ -7449,6 +7449,7 @@ already_AddRefed<Layer> nsDisplayStickyPosition::BuildLayer(
 
 
 
+
 static nscoord DistanceToRange(nscoord min, nscoord max) {
   MOZ_ASSERT(min <= max);
   if (max < 0) {
@@ -7458,6 +7459,32 @@ static nscoord DistanceToRange(nscoord min, nscoord max) {
     return min;
   }
   MOZ_ASSERT(min <= 0 && max >= 0);
+  return 0;
+}
+
+
+
+static nscoord PositivePart(nscoord min, nscoord max) {
+  MOZ_ASSERT(min <= max);
+  if (min >= 0) {
+    return max - min;
+  }
+  if (max > 0) {
+    return max;
+  }
+  return 0;
+}
+
+
+
+static nscoord NegativePart(nscoord min, nscoord max) {
+  MOZ_ASSERT(min <= max);
+  if (max <= 0) {
+    return max - min;
+  }
+  if (min < 0) {
+    return 0 - min;
+  }
   return 0;
 }
 
@@ -7540,7 +7567,18 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
       nscoord distance = DistanceToRange(inner.YMost(), outer.YMost());
+      if (distance > 0) {
+        distance -= PositivePart(outer.Y(), inner.Y());
+      }
       topMargin = Some(NSAppUnitsToFloatPixels(
           itemBounds.y - scrollPort.y - distance, auPerDevPixel));
       
@@ -7567,6 +7605,9 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
       
       
       nscoord distance = DistanceToRange(outer.Y(), inner.Y());
+      if (distance < 0) {
+        distance += NegativePart(inner.YMost(), outer.YMost());
+      }
       bottomMargin = Some(NSAppUnitsToFloatPixels(
           scrollPort.YMost() - itemBounds.YMost() + distance, auPerDevPixel));
       
@@ -7584,6 +7625,9 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
     
     if (outer.XMost() != inner.XMost()) {
       nscoord distance = DistanceToRange(inner.XMost(), outer.XMost());
+      if (distance > 0) {
+        distance -= PositivePart(outer.X(), inner.X());
+      }
       leftMargin = Some(NSAppUnitsToFloatPixels(
           itemBounds.x - scrollPort.x - distance, auPerDevPixel));
       hBounds.max =
@@ -7595,6 +7639,9 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
     }
     if (outer.X() != inner.X()) {
       nscoord distance = DistanceToRange(outer.X(), inner.X());
+      if (distance < 0) {
+        distance += NegativePart(inner.XMost(), outer.XMost());
+      }
       rightMargin = Some(NSAppUnitsToFloatPixels(
           scrollPort.XMost() - itemBounds.XMost() + distance, auPerDevPixel));
       hBounds.min =
