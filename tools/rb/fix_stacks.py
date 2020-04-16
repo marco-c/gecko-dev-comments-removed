@@ -20,49 +20,84 @@ line_re = re.compile("#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
 
 fix_stacks = None
 
+print_slow_warning = False
 
-def fixSymbols(line, jsonMode=False, slowWarning=False, breakpadSymsDir=None):
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def init(json_mode=False, slow_warning=False, breakpad_syms_dir=None):
     global fix_stacks
+    global print_slow_warning
+
+    
+    if fix_stacks:
+        return
+
+    
+    
+    
+    base = os.environ.get(
+        'MOZ_FETCHES_DIR',
+        os.environ.get(
+            'MOZBUILD_STATE_PATH',
+            os.path.expanduser('~/.mozbuild')
+        )
+    )
+    fix_stacks_exe = base + '/fix-stacks/fix-stacks'
+    if platform.system() == 'Windows':
+        fix_stacks_exe = fix_stacks_exe + '.exe'
+
+    if not (os.path.isfile(fix_stacks_exe) and os.access(fix_stacks_exe, os.X_OK)):
+        raise Exception('cannot find `fix-stacks`; please run `./mach bootstrap`')
+
+    args = [fix_stacks_exe]
+    if json_mode:
+        args.append('-j')
+    if breakpad_syms_dir:
+        
+        here = os.path.dirname(__file__)
+        fileid_exe = os.path.join(here, 'fileid')
+        if platform.system() == 'Windows':
+            fileid_exe = fileid_exe + '.exe'
+
+        args.append('-b')
+        args.append(breakpad_syms_dir + "," + fileid_exe)
+
+    fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=None)
+    print_slow_warning = slow_warning
+
+
+def fix(line):
+    global print_slow_warning
 
     result = line_re.search(line)
     if result is None:
         return line
 
-    if not fix_stacks:
-        
-        
-        
-        base = os.environ.get(
-            'MOZ_FETCHES_DIR',
-            os.environ.get(
-                'MOZBUILD_STATE_PATH',
-                os.path.expanduser('~/.mozbuild')
-            )
-        )
-        fix_stacks_exe = base + '/fix-stacks/fix-stacks'
-        if platform.system() == 'Windows':
-            fix_stacks_exe = fix_stacks_exe + '.exe'
-
-        if not (os.path.isfile(fix_stacks_exe) and os.access(fix_stacks_exe, os.X_OK)):
-            raise Exception('cannot find `fix-stacks`; please run `./mach bootstrap`')
-
-        args = [fix_stacks_exe]
-        if jsonMode:
-            args.append('-j')
-        if breakpadSymsDir:
-            
-            here = os.path.dirname(__file__)
-            fileid_exe = os.path.join(here, 'fileid')
-            if platform.system() == 'Windows':
-                fileid_exe = fileid_exe + '.exe'
-
-            args.append('-b')
-            args.append(breakpadSymsDir + "," + fileid_exe)
-
-        fix_stacks = Popen(args, stdin=PIPE, stdout=PIPE, stderr=None)
-
-        if slowWarning:
-            print("Initializing stack-fixing for the first stack frame, this may take a while...")
+    
+    
+    if print_slow_warning:
+        print("Initializing stack-fixing for the first stack frame, this may take a while...")
+        print_slow_warning = False
 
     
     
@@ -80,5 +115,6 @@ def fixSymbols(line, jsonMode=False, slowWarning=False, breakpadSymsDir=None):
 
 
 if __name__ == "__main__":
+    init()
     for line in sys.stdin:
-        sys.stdout.write(fixSymbols(line))
+        sys.stdout.write(fix(line))
