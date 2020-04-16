@@ -19,6 +19,11 @@ namespace mozilla {
 
 void GetErrorName(nsresult rv, nsACString& name);
 
+
+
+
+const char* GetStaticErrorName(nsresult rv);
+
 }  
 
 #endif  
