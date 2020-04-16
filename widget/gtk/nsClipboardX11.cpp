@@ -67,7 +67,7 @@ nsRetrievalContextX11::nsRetrievalContextX11()
       mTargetMIMEType(gdk_atom_intern("TARGETS", FALSE)) {
   
   
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+#if defined(MOZ_X11)
   if (gtk_check_version(3, 11, 3))
     gdk_window_add_filter(nullptr, selection_request_filter, nullptr);
 #endif

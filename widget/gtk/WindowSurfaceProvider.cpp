@@ -77,14 +77,11 @@ UniquePtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
   
   
   
-
-#ifdef MOZ_WIDGET_GTK
   if (!mIsShaped && gfxVars::UseXRender()) {
     LOGDRAW(("Drawing to Window 0x%lx will use XRender\n", mXWindow));
     return MakeUnique<WindowSurfaceXRender>(mXDisplay, mXWindow, mXVisual,
                                             mXDepth);
   }
-#endif  
 
 #ifdef MOZ_HAVE_SHMIMAGE
   if (!mIsShaped && nsShmImage::UseShm()) {
