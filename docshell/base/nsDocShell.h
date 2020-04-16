@@ -713,14 +713,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  bool OnLoadingSite(nsIChannel* aChannel, bool aFireOnLocationChange,
-                     bool aAddToGlobalHistory = true);
-
-  
-  
-  
-  
-  
   
   
   
