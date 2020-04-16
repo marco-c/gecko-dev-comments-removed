@@ -5,6 +5,7 @@
 
 #include "GPUChild.h"
 #include "gfxConfig.h"
+#include "gfxPlatform.h"
 #include "GPUProcessHost.h"
 #include "GPUProcessManager.h"
 #include "VRProcessManager.h"
