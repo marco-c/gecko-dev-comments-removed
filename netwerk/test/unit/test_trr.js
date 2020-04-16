@@ -1730,6 +1730,12 @@ add_task(async function test_resolve_not_confirmed() {
   
   let count = 100;
   while (count > 0) {
+    if (count == 50 || count == 10) {
+      
+      
+      
+      await new Promise(resolve => do_timeout(100 * (100 / count), resolve));
+    }
     let [inRequest, inRecord, inStatus] = await new DNSListener(
       `ip${count}.example.org`,
       undefined,
