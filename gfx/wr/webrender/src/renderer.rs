@@ -2231,9 +2231,19 @@ impl Renderer {
         let transforms_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAF32);
         let render_task_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAF32);
 
+        
+        
+        
+        
+        
+        
+        
+        
+        let is_angle = device.get_capabilities().renderer_name.contains("ANGLE");
+
         let gpu_cache_texture = GpuCacheTexture::new(
             &mut device,
-            options.scatter_gpu_cache_updates,
+            is_angle,
         )?;
 
         device.end_frame();
@@ -6608,7 +6618,6 @@ pub struct RendererOptions {
     pub enable_clear_scissor: bool,
     pub max_texture_size: Option<i32>,
     pub max_glyph_cache_size: Option<usize>,
-    pub scatter_gpu_cache_updates: bool,
     pub upload_method: UploadMethod,
     pub workers: Option<Arc<ThreadPool>>,
     pub enable_multithreading: bool,
@@ -6679,8 +6688,6 @@ impl Default for RendererOptions {
             enable_clear_scissor: true,
             max_texture_size: None,
             max_glyph_cache_size: None,
-            
-            scatter_gpu_cache_updates: false,
             
             
             upload_method: UploadMethod::PixelBuffer(VertexUsageHint::Stream),
