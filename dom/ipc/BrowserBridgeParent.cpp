@@ -86,7 +86,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
 
   
   bool ok = aContentParent->SendConstructBrowser(
-      std::move(childEp), std::move(windowChildEp), aTabId, TabId(0),
+      std::move(childEp), std::move(windowChildEp), aTabId,
       tabContext.AsIPCTabContext(), aWindowInit, aChromeFlags,
       aContentParent->ChildID(), aContentParent->IsForBrowser(),
        false);

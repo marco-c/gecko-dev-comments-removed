@@ -31,6 +31,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
@@ -66,7 +67,6 @@
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/SessionStorageManager.h"
 #include "mozilla/dom/BrowserChild.h"
-#include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/ChildSHistory.h"
@@ -1018,12 +1018,11 @@ void nsDocShell::FirePageHideNotificationInternal(
   }
 }
 
-nsresult nsDocShell::DispatchToTabGroup(
-    TaskCategory aCategory, already_AddRefed<nsIRunnable>&& aRunnable) {
-  
+nsresult nsDocShell::Dispatch(TaskCategory aCategory,
+                              already_AddRefed<nsIRunnable>&& aRunnable) {
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
   nsCOMPtr<nsPIDOMWindowOuter> win = GetWindow();
-  if (!win) {
+  if (NS_WARN_IF(!win)) {
     
     MOZ_ASSERT(mIsBeingDestroyed);
     return NS_ERROR_FAILURE;
@@ -1038,7 +1037,7 @@ nsresult nsDocShell::DispatchToTabGroup(
 
 NS_IMETHODIMP
 nsDocShell::DispatchLocationChangeEvent() {
-  return DispatchToTabGroup(
+  return Dispatch(
       TaskCategory::Other,
       NewRunnableMethod("nsDocShell::FireDummyOnLocationChange", this,
                         &nsDocShell::FireDummyOnLocationChange));
@@ -7057,8 +7056,7 @@ nsresult nsDocShell::RestorePresentation(nsISHEntry* aSHEntry,
   mRestorePresentationEvent.Revoke();
 
   RefPtr<RestorePresentationEvent> evt = new RestorePresentationEvent(this);
-  nsresult rv = DispatchToTabGroup(
-      TaskCategory::Other, RefPtr<RestorePresentationEvent>(evt).forget());
+  nsresult rv = Dispatch(TaskCategory::Other, do_AddRef(evt));
   if (NS_SUCCEEDED(rv)) {
     mRestorePresentationEvent = evt.get();
     
@@ -8873,7 +8871,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
       
       nsCOMPtr<nsIRunnable> ev = new InternalLoadEvent(this, aLoadState);
-      return DispatchToTabGroup(TaskCategory::Other, ev.forget());
+      return Dispatch(TaskCategory::Other, ev.forget());
     }
 
     
@@ -12231,7 +12229,7 @@ nsresult nsDocShell::OnLinkClick(
       this, aContent, aURI, target, aFileName, aPostDataStream,
       aHeadersDataStream, noOpenerImplied, aIsUserTriggered, aIsTrusted,
       aTriggeringPrincipal, aCsp);
-  return DispatchToTabGroup(TaskCategory::UI, ev.forget());
+  return Dispatch(TaskCategory::UI, ev.forget());
 }
 
 static bool IsElementAnchorOrArea(nsIContent* aContent) {

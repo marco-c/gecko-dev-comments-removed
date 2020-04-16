@@ -111,7 +111,6 @@
 #include "nsCharTraits.h"  
 #include "PostMessageEvent.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/TabGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "PaintWorkletImpl.h"
 
@@ -7089,46 +7088,6 @@ already_AddRefed<Promise> nsGlobalWindowInner::CreateImageBitmap(
                              Some(gfx::IntRect(aSx, aSy, aSw, aSh)), aRv);
 }
 
-mozilla::dom::TabGroup* nsGlobalWindowInner::MaybeTabGroupInner() {
-  
-  
-  if (!mTabGroup) {
-    nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-    if (!outer) {
-      return nullptr;
-    }
-    mTabGroup = outer->MaybeTabGroup();
-    if (!mTabGroup) {
-      return nullptr;
-    }
-  }
-
-#ifdef DEBUG
-  nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-  MOZ_ASSERT_IF(outer, outer->TabGroup() == mTabGroup);
-#endif
-
-  return mTabGroup;
-}
-
-mozilla::dom::TabGroup* nsGlobalWindowInner::TabGroupInner() {
-  
-  
-  
-  
-  
-  
-  
-  
-  MOZ_RELEASE_ASSERT(
-      mTabGroup || GetOuterWindowInternal(),
-      "Inner window without outer window has no cached tab group!");
-
-  mozilla::dom::TabGroup* tabGroup = MaybeTabGroupInner();
-  MOZ_RELEASE_ASSERT(tabGroup);
-  return tabGroup;
-}
-
 nsresult nsGlobalWindowInner::Dispatch(
     TaskCategory aCategory, already_AddRefed<nsIRunnable>&& aRunnable) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -7250,14 +7209,6 @@ void nsGlobalWindowInner::StorageAccessGranted() {
   if (mDoc) {
     mDoc->ClearActiveStoragePrincipal();
   }
-}
-
-mozilla::dom::TabGroup* nsPIDOMWindowInner::TabGroup() {
-  return nsGlobalWindowInner::Cast(this)->TabGroupInner();
-}
-
-mozilla::dom::TabGroup* nsPIDOMWindowInner::MaybeTabGroup() {
-  return nsGlobalWindowInner::Cast(this)->MaybeTabGroupInner();
 }
 
 

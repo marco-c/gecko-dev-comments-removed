@@ -110,7 +110,6 @@ struct RequestInit;
 class RequestOrUSVString;
 class Selection;
 class SpeechSynthesis;
-class TabGroup;
 class Timeout;
 class U2F;
 class VRDisplay;
@@ -1037,12 +1036,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
 
-  mozilla::dom::TabGroup* TabGroupOuter();
-
-  
-  
-  mozilla::dom::TabGroup* MaybeTabGroupOuter();
-
   void SetIsBackgroundInternal(bool aIsBackground);
 
   nsresult GetInterfaceInternal(const nsIID& aIID, void** aSink);
@@ -1123,12 +1116,6 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   RefPtr<Document> mSuspendedDoc;
-
-#ifdef DEBUG
-  
-  
-  bool mIsValidatingTabGroup;
-#endif
 
   
   uint32_t mCanSkipCCGeneration;

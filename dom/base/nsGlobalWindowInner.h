@@ -122,7 +122,6 @@ class RequestOrUSVString;
 class SharedWorker;
 class Selection;
 class SpeechSynthesis;
-class TabGroup;
 class Timeout;
 class U2F;
 class VisualViewport;
@@ -1179,12 +1178,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   friend class nsPIDOMWindowInner;
   friend class nsPIDOMWindowOuter;
-
-  mozilla::dom::TabGroup* TabGroupInner();
-
-  
-  
-  mozilla::dom::TabGroup* MaybeTabGroupInner();
 
   bool IsBackgroundInternal() const;
 

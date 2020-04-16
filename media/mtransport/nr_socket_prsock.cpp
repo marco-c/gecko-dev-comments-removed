@@ -109,7 +109,6 @@
 #include "runnable_utils.h"
 #include "mozilla/SyncRunnable.h"
 #include "nsTArray.h"
-#include "mozilla/SystemGroup.h"
 #include "nsISocketFilter.h"
 #include "nsDebug.h"
 #include "nsNetUtil.h"

@@ -19,7 +19,6 @@
 #include "ipc/IPCMessageUtils.h"  
 #include "IPDLActor.h"
 #include "mozilla/Assertions.h"  
-#include "mozilla/dom/TabGroup.h"
 #include "mozilla/gfx/Point.h"                  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"
@@ -195,9 +194,8 @@ ShadowLayerForwarder::ShadowLayerForwarder(
       mIsFirstPaint(false),
       mNextLayerHandle(1) {
   mTxn = new Transaction();
-  if (TabGroup* tabGroup = mClientLayerManager->GetTabGroup()) {
-    mEventTarget = tabGroup->EventTargetFor(TaskCategory::Other);
-  }
+  mEventTarget = GetMainThreadSerialEventTarget();
+
   MOZ_ASSERT(mEventTarget || !XRE_IsContentProcess());
   mActiveResourceTracker = MakeUnique<ActiveResourceTracker>(
       1000, "CompositableForwarder", mEventTarget);

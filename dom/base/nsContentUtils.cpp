@@ -244,7 +244,6 @@
 #include "mozilla/BloomFilter.h"
 #include "BrowserChild.h"
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/dom/TabGroup.h"
 #include "nsIWebNavigationInfo.h"
 #include "nsPluginHost.h"
 #include "nsIBrowser.h"
@@ -9874,21 +9873,7 @@ already_AddRefed<nsISerialEventTarget> nsContentUtils::GetEventTargetByLoadInfo(
       target = group->EventTargetFor(aCategory);
     }
   } else {
-    
-    
-    uint64_t outerWindowId;
-    if (NS_FAILED(aLoadInfo->GetOuterWindowID(&outerWindowId))) {
-      
-      
-      return nullptr;
-    }
-    RefPtr<nsGlobalWindowOuter> window =
-        nsGlobalWindowOuter::GetOuterWindowWithId(outerWindowId);
-    if (!window) {
-      return nullptr;
-    }
-
-    target = window->TabGroup()->EventTargetFor(aCategory);
+    target = GetMainThreadSerialEventTarget();
   }
 
   return target.forget();

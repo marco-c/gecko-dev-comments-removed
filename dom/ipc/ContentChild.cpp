@@ -59,7 +59,6 @@
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/dom/SHEntryChild.h"
 #include "mozilla/dom/SHistoryChild.h"
-#include "mozilla/dom/TabGroup.h"
 #include "mozilla/dom/URLClassifierChild.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WorkerDebugger.h"
@@ -969,16 +968,11 @@ nsresult ContentChild::ProvideWindowCommon(
   
   
   
-  RefPtr<TabGroup> tabGroup;
   RefPtr<BrowsingContext> openerBC;
   if (aTabOpener && !aForceNoOpener) {
-    
-    tabGroup = aTabOpener->TabGroup();
     if (aParent) {
       openerBC = nsPIDOMWindowOuter::From(aParent)->GetBrowsingContext();
     }
-  } else {
-    tabGroup = new TabGroup();
   }
 
   RefPtr<BrowsingContext> browsingContext = BrowsingContext::Create(
@@ -1006,7 +1000,7 @@ nsresult ContentChild::ProvideWindowCommon(
 
   auto windowChild = MakeRefPtr<WindowGlobalChild>(windowInit, nullptr);
 
-  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, tabGroup, newTabContext,
+  auto newChild = MakeRefPtr<BrowserChild>(this, tabId, newTabContext,
                                            browsingContext, aChromeFlags,
                                             true);
 
@@ -1756,10 +1750,9 @@ bool ContentChild::DeallocPJavaScriptChild(PJavaScriptChild* aChild) {
 mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     ManagedEndpoint<PBrowserChild>&& aBrowserEp,
     ManagedEndpoint<PWindowGlobalChild>&& aWindowEp, const TabId& aTabId,
-    const TabId& aSameTabGroupAs, const IPCTabContext& aContext,
-    const WindowGlobalInit& aWindowInit, const uint32_t& aChromeFlags,
-    const ContentParentId& aCpID, const bool& aIsForBrowser,
-    const bool& aIsTopLevel) {
+    const IPCTabContext& aContext, const WindowGlobalInit& aWindowInit,
+    const uint32_t& aChromeFlags, const ContentParentId& aCpID,
+    const bool& aIsForBrowser, const bool& aIsTopLevel) {
   MOZ_ASSERT(!IsShuttingDown());
 
   static bool hasRunOnce = false;
@@ -1795,8 +1788,8 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
   auto windowChild = MakeRefPtr<WindowGlobalChild>(aWindowInit, nullptr);
 
   RefPtr<BrowserChild> browserChild = BrowserChild::Create(
-      this, aTabId, aSameTabGroupAs, tc.GetTabContext(),
-      aWindowInit.browsingContext().get(), aChromeFlags, aIsTopLevel);
+      this, aTabId, tc.GetTabContext(), aWindowInit.browsingContext().get(),
+      aChromeFlags, aIsTopLevel);
 
   
   if (NS_WARN_IF(!BindPBrowserEndpoint(std::move(aBrowserEp), browserChild))) {
@@ -1810,14 +1803,9 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
   windowChild->Init();
 
   
-  if (!browserChild->mTabGroup) {
-    browserChild->mTabGroup = TabGroup::GetFromActor(browserChild);
-
-    if (!browserChild->mTabGroup) {
-      browserChild->mTabGroup = new TabGroup();
-      MOZ_DIAGNOSTIC_ASSERT(aSameTabGroupAs != 0);
-    }
-  }
+  
+  MOZ_RELEASE_ASSERT(browserChild->mBrowsingContext ==
+                     aWindowInit.browsingContext().get());
 
   if (NS_WARN_IF(
           NS_FAILED(browserChild->Init( nullptr, windowChild)))) {
@@ -3604,90 +3592,6 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdateSHEntriesInDocShell(
                                  aNewEntry->ToSHEntryChild());
   }
   return IPC_OK();
-}
-
-already_AddRefed<nsIEventTarget> ContentChild::GetSpecificMessageEventTarget(
-    const Message& aMsg) {
-  switch (aMsg.type()) {
-    
-    case PJavaScript::Msg_DropTemporaryStrongReferences__ID:
-    case PJavaScript::Msg_DropObject__ID:
-
-    
-    case PContent::Msg_NotifyVisited__ID:
-
-    
-    case PContent::Msg_DataStoragePut__ID:
-    case PContent::Msg_DataStorageRemove__ID:
-    case PContent::Msg_DataStorageClear__ID:
-
-    
-    case PContent::Msg_BlobURLRegistration__ID:
-    case PContent::Msg_BlobURLUnregistration__ID:
-    case PContent::Msg_InitBlobURLs__ID:
-    case PContent::Msg_PIPCBlobInputStreamConstructor__ID:
-    case PContent::Msg_StoreAndBroadcastBlobURLRegistration__ID:
-
-      return do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other));
-
-    
-    case PContent::Msg_ConstructBrowser__ID: {
-      
-      
-      
-      
-      ManagedEndpoint<PBrowserChild> endpoint;
-      ManagedEndpoint<PWindowGlobalChild> windowGlobalEndpoint;
-      TabId tabId, sameTabGroupAs;
-      PickleIterator iter(aMsg);
-      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &endpoint))) {
-        return nullptr;
-      }
-      aMsg.IgnoreSentinel(&iter);
-      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &windowGlobalEndpoint))) {
-        return nullptr;
-      }
-      aMsg.IgnoreSentinel(&iter);
-      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &tabId))) {
-        return nullptr;
-      }
-      aMsg.IgnoreSentinel(&iter);
-      if (NS_WARN_IF(!IPC::ReadParam(&aMsg, &iter, &sameTabGroupAs))) {
-        return nullptr;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      if (sameTabGroupAs) {
-        return nullptr;
-      }
-
-      if (NS_WARN_IF(!endpoint.IsValid())) {
-        return nullptr;
-      }
-
-      
-      
-      
-      RefPtr<TabGroup> tabGroup = new TabGroup();
-      nsCOMPtr<nsIEventTarget> target =
-          tabGroup->EventTargetFor(TaskCategory::Other);
-
-      
-      
-      SetEventTargetForRoute(*endpoint.ActorId(), target);
-
-      return target.forget();
-    }
-
-    default:
-      return nullptr;
-  }
 }
 
 void ContentChild::OnChannelReceivedMessage(const Message& aMsg) {

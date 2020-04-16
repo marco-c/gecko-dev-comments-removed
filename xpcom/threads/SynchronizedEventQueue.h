@@ -11,6 +11,7 @@
 #include "mozilla/AbstractEventQueue.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
+#include "nsIThreadInternal.h"
 #include "nsTObserverArray.h"
 
 class nsIEventTarget;
@@ -51,7 +52,7 @@ class ThreadTargetSink {
       mozilla::MallocSizeOf aMallocSizeOf) const = 0;
 
  protected:
-  virtual ~ThreadTargetSink() {}
+  virtual ~ThreadTargetSink() = default;
 };
 
 class SynchronizedEventQueue : public ThreadTargetSink {
@@ -115,7 +116,7 @@ class SynchronizedEventQueue : public ThreadTargetSink {
   virtual void PopEventQueue(nsIEventTarget* aTarget) = 0;
 
  protected:
-  virtual ~SynchronizedEventQueue() {}
+  virtual ~SynchronizedEventQueue() = default;
 
  private:
   nsTObserverArray<nsCOMPtr<nsIThreadObserver>> mEventObservers;

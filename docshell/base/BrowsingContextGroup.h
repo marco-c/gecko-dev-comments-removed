@@ -8,6 +8,7 @@
 #define mozilla_dom_BrowsingContextGroup_h
 
 #include "mozilla/dom/BrowsingContext.h"
+#include "nsRefPtrHashtable.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -21,8 +22,6 @@ namespace dom {
 
 class BrowsingContext;
 class ContentParent;
-
-
 
 
 
@@ -119,6 +118,23 @@ class BrowsingContextGroup final : public nsWrapperCache {
 
   void GetDocGroups(nsTArray<DocGroup*>& aDocGroups);
 
+  
+  already_AddRefed<DocGroup> AddDocument(const nsACString& aKey,
+                                         Document* aDocument);
+
+  
+  void RemoveDocument(const nsACString& aKey, Document* aDocument);
+
+  auto DocGroups() const { return mDocGroups.ConstIter(); }
+
+  mozilla::ThrottledEventQueue* GetTimerEventQueue() const {
+    return mTimerEventQueue;
+  }
+
+  mozilla::ThrottledEventQueue* GetWorkerEventQueue() const {
+    return mWorkerEventQueue;
+  }
+
  private:
   friend class CanonicalBrowsingContext;
 
@@ -134,6 +150,12 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   BrowsingContext::Children mToplevels;
 
+  
+  
+  
+  
+  nsRefPtrHashtable<nsCStringHashKey, DocGroup> mDocGroups;
+
   ContentParents mSubscribers;
 
   
@@ -142,6 +164,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   
   
   RefPtr<mozilla::ThrottledEventQueue> mPostMessageEventQueue;
+
+  RefPtr<mozilla::ThrottledEventQueue> mTimerEventQueue;
+  RefPtr<mozilla::ThrottledEventQueue> mWorkerEventQueue;
 };
 
 }  

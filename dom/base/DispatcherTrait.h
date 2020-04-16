@@ -16,8 +16,6 @@ class nsISerialEventTarget;
 namespace mozilla {
 class AbstractThread;
 namespace dom {
-class TabGroup;
-
 
 
 

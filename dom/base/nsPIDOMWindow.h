@@ -57,7 +57,6 @@ class ClientState;
 class ContentFrameMessageManager;
 class DocGroup;
 class Document;
-class TabGroup;
 class Element;
 class Navigator;
 class Performance;
@@ -339,12 +338,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   void NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
 
   void NoteDOMContentLoaded();
-
-  mozilla::dom::TabGroup* TabGroup();
-
-  
-  
-  mozilla::dom::TabGroup* MaybeTabGroup();
 
   virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
 
@@ -639,8 +632,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts;  
 
-  RefPtr<mozilla::dom::TabGroup> mTabGroup;
-
   RefPtr<mozilla::dom::BrowsingContext> mBrowsingContext;
 
   
@@ -769,12 +760,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   bool IsTopLevelWindow();
   bool HadOriginalOpener() const;
 
-  mozilla::dom::TabGroup* TabGroup();
-
-  
-  
-  mozilla::dom::TabGroup* MaybeTabGroup();
-
   virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
 
   virtual void ActivateOrDeactivate(bool aActivate) = 0;
@@ -874,6 +859,11 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
   inline mozilla::dom::BrowsingContext* GetBrowsingContext() const;
+
+  
+
+
+  mozilla::dom::BrowsingContextGroup* GetBrowsingContextGroup() const;
 
   
 
@@ -1138,8 +1128,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   
   nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;
-
-  RefPtr<mozilla::dom::TabGroup> mTabGroup;
 
   
   

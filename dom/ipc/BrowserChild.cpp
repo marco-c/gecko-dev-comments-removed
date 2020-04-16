@@ -322,24 +322,20 @@ already_AddRefed<BrowserChild> BrowserChild::FindBrowserChild(
 
 
 already_AddRefed<BrowserChild> BrowserChild::Create(
-    ContentChild* aManager, const TabId& aTabId, const TabId& aSameTabGroupAs,
-    const TabContext& aContext, BrowsingContext* aBrowsingContext,
-    uint32_t aChromeFlags, bool aIsTopLevel) {
-  RefPtr<BrowserChild> groupChild = FindBrowserChild(aSameTabGroupAs);
-  dom::TabGroup* group = groupChild ? groupChild->TabGroup() : nullptr;
-  RefPtr<BrowserChild> iframe =
-      new BrowserChild(aManager, aTabId, group, aContext, aBrowsingContext,
-                       aChromeFlags, aIsTopLevel);
+    ContentChild* aManager, const TabId& aTabId, const TabContext& aContext,
+    BrowsingContext* aBrowsingContext, uint32_t aChromeFlags,
+    bool aIsTopLevel) {
+  RefPtr<BrowserChild> iframe = new BrowserChild(
+      aManager, aTabId, aContext, aBrowsingContext, aChromeFlags, aIsTopLevel);
   return iframe.forget();
 }
 
 BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
-                           dom::TabGroup* aTabGroup, const TabContext& aContext,
+                           const TabContext& aContext,
                            BrowsingContext* aBrowsingContext,
                            uint32_t aChromeFlags, bool aIsTopLevel)
     : TabContext(aContext),
       mBrowserChildMessageManager(nullptr),
-      mTabGroup(aTabGroup),
       mManager(aManager),
       mBrowsingContext(aBrowsingContext),
       mChromeFlags(aChromeFlags),
@@ -483,7 +479,6 @@ bool BrowserChild::DoUpdateZoomConstraints(
 
 nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
                             WindowGlobalChild* aInitialWindowChild) {
-  MOZ_DIAGNOSTIC_ASSERT(mTabGroup);
   MOZ_ASSERT_IF(aInitialWindowChild,
                 aInitialWindowChild->BrowsingContext() == mBrowsingContext);
 
@@ -517,10 +512,6 @@ nsresult BrowserChild::Init(mozIDOMWindowProxy* aParent,
 
   mStatusFilter = new nsBrowserStatusFilter();
 
-  RefPtr<nsIEventTarget> eventTarget =
-      TabGroup()->EventTargetFor(TaskCategory::Network);
-
-  mStatusFilter->SetTarget(eventTarget);
   nsresult rv =
       mStatusFilter->AddProgressListener(this, nsIWebProgress::NOTIFY_ALL);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -929,13 +920,6 @@ BrowserChild::ProvideWindow(mozIDOMWindowProxy* aParent, uint32_t aChromeFlags,
 
 void BrowserChild::DestroyWindow() {
   mBrowsingContext = nullptr;
-
-  
-  
-  
-  
-  
-  mTabGroup->MaybeDestroy();
 
   if (mStatusFilter) {
     if (nsCOMPtr<nsIWebProgress> webProgress =
@@ -3585,8 +3569,6 @@ NS_IMETHODIMP BrowserChild::BeginSendingWebProgressEventsToParent() {
   return NS_OK;
 }
 
-mozilla::dom::TabGroup* BrowserChild::TabGroup() { return mTabGroup; }
-
 nsresult BrowserChild::GetHasSiblings(bool* aHasSiblings) {
   *aHasSiblings = mHasSiblings;
   return NS_OK;
@@ -4148,24 +4130,15 @@ uint64_t BrowserChildMessageManager::ChromeOuterWindowID() {
 
 nsresult BrowserChildMessageManager::Dispatch(
     TaskCategory aCategory, already_AddRefed<nsIRunnable>&& aRunnable) {
-  if (mBrowserChild && mBrowserChild->TabGroup()) {
-    return mBrowserChild->TabGroup()->Dispatch(aCategory, std::move(aRunnable));
-  }
   return DispatcherTrait::Dispatch(aCategory, std::move(aRunnable));
 }
 
 nsISerialEventTarget* BrowserChildMessageManager::EventTargetFor(
     TaskCategory aCategory) const {
-  if (mBrowserChild && mBrowserChild->TabGroup()) {
-    return mBrowserChild->TabGroup()->EventTargetFor(aCategory);
-  }
   return DispatcherTrait::EventTargetFor(aCategory);
 }
 
 AbstractThread* BrowserChildMessageManager::AbstractMainThreadFor(
     TaskCategory aCategory) {
-  if (mBrowserChild && mBrowserChild->TabGroup()) {
-    return mBrowserChild->TabGroup()->AbstractMainThreadFor(aCategory);
-  }
   return DispatcherTrait::AbstractMainThreadFor(aCategory);
 }

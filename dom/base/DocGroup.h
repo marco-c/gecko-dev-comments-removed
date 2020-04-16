@@ -11,9 +11,8 @@
 #include "nsIPrincipal.h"
 #include "nsTHashtable.h"
 #include "nsString.h"
-
-#include "mozilla/dom/TabGroup.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/HTMLSlotElement.h"
 #include "mozilla/PerformanceCounter.h"
@@ -35,15 +34,14 @@ namespace dom {
 
 
 
-
-
-
 class DocGroup final {
  public:
   typedef nsTArray<Document*>::iterator Iterator;
-  friend class TabGroup;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DocGroup)
+
+  static already_AddRefed<DocGroup> Create(
+      BrowsingContextGroup* aBrowsingContextGroup, const nsACString& aKey);
 
   
   
@@ -53,6 +51,8 @@ class DocGroup final {
 
   bool MatchesKey(const nsACString& aKey) { return aKey == mKey; }
 
+  const nsACString& GetKey() const { return mKey; }
+
   PerformanceCounter* GetPerformanceCounter() { return mPerformanceCounter; }
 
   JSExecutionManager* GetExecutionManager() const { return mExecutionManager; }
@@ -60,7 +60,9 @@ class DocGroup final {
 
   RefPtr<PerformanceInfoPromise> ReportPerformanceInfo();
 
-  TabGroup* GetTabGroup() { return mTabGroup; }
+  BrowsingContextGroup* GetBrowsingContextGroup() const {
+    return mBrowsingContextGroup;
+  }
 
   mozilla::dom::DOMArena* ArenaAllocator() { return mArena; }
 
@@ -72,7 +74,16 @@ class DocGroup final {
 
     return mReactionsStack;
   }
-  void RemoveDocument(Document* aWindow);
+
+  
+  
+  
+  void AddDocument(Document* aDocument);
+
+  
+  
+  
+  void RemoveDocument(Document* aDocument);
 
   
   Iterator begin() {
@@ -117,21 +128,26 @@ class DocGroup final {
 
   const nsID& AgentClusterId() const { return mAgentClusterId; }
 
+  bool IsEmpty() const { return mDocuments.IsEmpty(); }
+
+  void ClearEventTarget();
+
  private:
-  DocGroup(TabGroup* aTabGroup, const nsACString& aKey,
-           const nsID& aAgentClusterId);
+  DocGroup(BrowsingContextGroup* aBrowsingContextGroup, const nsACString& aKey);
+
   ~DocGroup();
 
   void FlushIframePostMessageQueue();
   nsCString mKey;
-  RefPtr<TabGroup> mTabGroup;
   nsTArray<Document*> mDocuments;
   RefPtr<mozilla::dom::CustomElementReactionsStack> mReactionsStack;
   nsTArray<RefPtr<HTMLSlotElement>> mSignalSlotList;
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
-
+  RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
   RefPtr<mozilla::ThrottledEventQueue> mIframePostMessageQueue;
   nsTHashtable<nsUint64HashKey> mIframesUsedPostMessageQueue;
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
+  RefPtr<AbstractThread> mAbstractThread;
 
   
   

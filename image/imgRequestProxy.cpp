@@ -16,7 +16,6 @@
 #include "imgLoader.h"
 #include "mozilla/Telemetry.h"     
 #include "mozilla/dom/DocGroup.h"  
-#include "mozilla/dom/TabGroup.h"  
 #include "nsCRTGlue.h"
 #include "nsError.h"
 
@@ -277,7 +276,7 @@ nsresult imgRequestProxy::DispatchWithTargetIfAvailable(
 void imgRequestProxy::DispatchWithTarget(already_AddRefed<nsIRunnable> aEvent) {
   LOG_FUNC(gImgLog, "imgRequestProxy::DispatchWithTarget");
 
-  MOZ_ASSERT(mListener || mTabGroup);
+  MOZ_ASSERT(mListener);
   MOZ_ASSERT(mEventTarget);
 
   mHadDispatch = true;
@@ -302,9 +301,6 @@ void imgRequestProxy::AddToOwner(Document* aLoadingDocument) {
   if (aLoadingDocument) {
     RefPtr<mozilla::dom::DocGroup> docGroup = aLoadingDocument->GetDocGroup();
     if (docGroup) {
-      mTabGroup = docGroup->GetTabGroup();
-      MOZ_ASSERT(mTabGroup);
-
       mEventTarget = docGroup->EventTargetFor(mozilla::TaskCategory::Other);
       MOZ_ASSERT(mEventTarget);
     }
@@ -1070,11 +1066,6 @@ void imgRequestProxy::NullOutListener() {
   } else {
     mListener = nullptr;
   }
-
-  
-  
-  
-  mTabGroup = nullptr;
 }
 
 NS_IMETHODIMP

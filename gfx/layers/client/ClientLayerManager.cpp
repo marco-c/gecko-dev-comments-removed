@@ -13,7 +13,6 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/dom/BrowserChild.h"  
-#include "mozilla/dom/TabGroup.h"      
 #include "mozilla/hal_sandbox/PHal.h"  
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositorBridgeChild.h"  
@@ -140,15 +139,6 @@ void ClientLayerManager::Destroy() {
 
   
   mWidget = nullptr;
-}
-
-TabGroup* ClientLayerManager::GetTabGroup() {
-  if (mWidget) {
-    if (BrowserChild* browserChild = mWidget->GetOwningBrowserChild()) {
-      return browserChild->TabGroup();
-    }
-  }
-  return nullptr;
 }
 
 int32_t ClientLayerManager::GetMaxTextureSize() const {
