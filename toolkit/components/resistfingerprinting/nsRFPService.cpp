@@ -442,6 +442,7 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
+
 double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
                                              double aResolutionUSec,
                                              int64_t aContextMixin,
@@ -455,15 +456,11 @@ double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
   
   
   bool unconditionalClamping = false;
-  if (aType == UnconditionalAKAHighRes || TimerResolution() <= 0) {
+  if (aType == UnconditionalAKAHighRes || aResolutionUSec <= 0) {
     unconditionalClamping = true;
     aResolutionUSec = RFP_TIMER_UNCONDITIONAL_VALUE;  
     aContextMixin = 0;  
                         
-  }
-
-  if (aResolutionUSec <= 0) {
-    return aTime;
   }
 
   
@@ -569,11 +566,11 @@ double nsRFPService::ReduceTimePrecisionAsMSecs(double aTime,
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsMSecsRFP(double aTime,
-                                                   int64_t aContextMixin) {
+double nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(double aTime,
+                                                       int64_t aContextMixin) {
   return nsRFPService::ReduceTimePrecisionImpl(aTime, MilliSeconds,
                                                TimerResolution(), aContextMixin,
-                                               TimerPrecisionType::RFP);
+                                               GetTimerPrecisionTypeRFPOnly());
 }
 
 
@@ -588,11 +585,11 @@ double nsRFPService::ReduceTimePrecisionAsSecs(double aTime,
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsSecsRFP(double aTime,
-                                                  int64_t aContextMixin) {
+double nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(double aTime,
+                                                      int64_t aContextMixin) {
   return nsRFPService::ReduceTimePrecisionImpl(aTime, Seconds,
                                                TimerResolution(), aContextMixin,
-                                               TimerPrecisionType::RFP);
+                                               GetTimerPrecisionTypeRFPOnly());
 }
 
 
@@ -1099,6 +1096,19 @@ TimerPrecisionType nsRFPService::GetTimerPrecisionType(
 
   if (StaticPrefs::privacy_reduceTimerPrecision()) {
     return Normal;
+  }
+
+  if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {
+    return UnconditionalAKAHighRes;
+  }
+
+  return DangerouslyNone;
+}
+
+
+TimerPrecisionType nsRFPService::GetTimerPrecisionTypeRFPOnly() {
+  if (StaticPrefs::privacy_resistFingerprinting()) {
+    return RFP;
   }
 
   if (StaticPrefs::privacy_reduceTimerPrecision_unconditional()) {

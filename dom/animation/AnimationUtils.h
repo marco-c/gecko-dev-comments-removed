@@ -40,7 +40,7 @@ class AnimationUtils {
       
       
       
-      result.SetValue(nsRFPService::ReduceTimePrecisionAsMSecsRFP(
+      result.SetValue(nsRFPService::ReduceTimePrecisionAsMSecsRFPOnly(
           aTime.Value().ToMilliseconds(), 0));
     }
 
