@@ -464,7 +464,7 @@ impl SpatialNode {
         
         
         
-        let sticky_rect = info.frame_rect.translate(*viewport_scroll_offset);
+        let mut sticky_rect = info.frame_rect.translate(*viewport_scroll_offset);
 
         let mut sticky_offset = LayoutVector2D::zero();
         if let Some(margin) = info.margins.top {
@@ -490,18 +490,27 @@ impl SpatialNode {
         
         
         
+        
+        
         if sticky_offset.y + info.previously_applied_offset.y <= 0.0 {
             if let Some(margin) = info.margins.bottom {
                 
                 
                 
                 
+                
+                sticky_rect.origin.y += sticky_offset.y;
+
+                
+                
+                
+                
                 let bottom_viewport_edge = viewport_rect.max_y() - margin;
                 if sticky_rect.max_y() > bottom_viewport_edge {
-                    sticky_offset.y = bottom_viewport_edge - sticky_rect.max_y();
+                    sticky_offset.y += bottom_viewport_edge - sticky_rect.max_y();
                 } else if info.previously_applied_offset.y < 0.0 &&
                     sticky_rect.max_y() < bottom_viewport_edge {
-                    sticky_offset.y = bottom_viewport_edge - sticky_rect.max_y();
+                    sticky_offset.y += bottom_viewport_edge - sticky_rect.max_y();
                     sticky_offset.y = sticky_offset.y.min(-info.previously_applied_offset.y);
                 }
             }
@@ -521,12 +530,13 @@ impl SpatialNode {
 
         if sticky_offset.x + info.previously_applied_offset.x <= 0.0 {
             if let Some(margin) = info.margins.right {
+                sticky_rect.origin.x += sticky_offset.x;
                 let right_viewport_edge = viewport_rect.max_x() - margin;
                 if sticky_rect.max_x() > right_viewport_edge {
-                    sticky_offset.x = right_viewport_edge - sticky_rect.max_x();
+                    sticky_offset.x += right_viewport_edge - sticky_rect.max_x();
                 } else if info.previously_applied_offset.x < 0.0 &&
                     sticky_rect.max_x() < right_viewport_edge {
-                    sticky_offset.x = right_viewport_edge - sticky_rect.max_x();
+                    sticky_offset.x += right_viewport_edge - sticky_rect.max_x();
                     sticky_offset.x = sticky_offset.x.min(-info.previously_applied_offset.x);
                 }
             }
