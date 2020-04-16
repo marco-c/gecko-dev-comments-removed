@@ -1070,7 +1070,11 @@ void mozilla::TraceScriptHolder(nsISupports* aHolder, JSTracer* aTracer) {
   participant->Trace(aHolder, JsGcTracer(), aTracer);
 }
 
-#ifdef DEBUG
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION) || defined(DEBUG)
+#  define CHECK_SINGLE_ZONE_JS_HOLDERS
+#endif
+
+#ifdef CHECK_SINGLE_ZONE_JS_HOLDERS
 
 
 
@@ -1177,6 +1181,15 @@ static inline void CheckHolderIsSingleZone(
   aParticipant->Trace(aHolder, tracer, nullptr);
 }
 
+static inline bool ShouldCheckSingleZoneHolders() {
+#  ifdef DEBUG
+  return true;
+#  else
+  
+  return rand() % 256 == 0;
+#  endif
+}
+
 #endif
 
 void CycleCollectedJSRuntime::TraceNativeGrayRoots(JSTracer* aTracer) {
@@ -1184,9 +1197,14 @@ void CycleCollectedJSRuntime::TraceNativeGrayRoots(JSTracer* aTracer) {
   
   TraceAdditionalNativeGrayRoots(aTracer);
 
-  mJSHolders.ForEach([aTracer](void* holder, nsScriptObjectTracer* tracer) {
-#ifdef DEBUG
-    if (!tracer->IsMultiZoneJSHolder()) {
+#ifdef CHECK_SINGLE_ZONE_JS_HOLDERS
+  bool checkSingleZoneHolders = ShouldCheckSingleZoneHolders();
+#endif
+
+  mJSHolders.ForEach([aTracer, checkSingleZoneHolders](
+                         void* holder, nsScriptObjectTracer* tracer) {
+#ifdef CHECK_SINGLE_ZONE_JS_HOLDERS
+    if (checkSingleZoneHolders && !tracer->IsMultiZoneJSHolder()) {
       CheckHolderIsSingleZone(holder, tracer);
     }
 #endif

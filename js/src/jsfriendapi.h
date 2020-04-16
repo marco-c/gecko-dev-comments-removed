@@ -2693,9 +2693,7 @@ extern JS_FRIEND_API void SetPerformanceHint(JSContext* cx,
 
 } 
 
-#ifdef DEBUG
 extern JS_FRIEND_API JS::Zone* GetObjectZoneFromAnyThread(JSObject* obj);
-#endif
 
 } 
 
