@@ -918,9 +918,6 @@ pref("nglayout.enable_drag_images", true);
 pref("nglayout.debug.paint_flashing", false);
 pref("nglayout.debug.paint_flashing_chrome", false);
 
-
-pref("layout.framevisibility.enabled", true);
-
 pref("layout.framevisibility.numscrollportwidths", 0);
 pref("layout.framevisibility.numscrollportheights", 1);
 
