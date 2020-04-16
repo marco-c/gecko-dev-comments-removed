@@ -527,6 +527,10 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
 
   uint32_t chromeFlags = CalculateChromeFlagsForChild(aFeatures, sizeSpec);
 
+  if (isPrivateBrowsingWindow) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+  }
+
   
   
   chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
@@ -722,6 +726,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
       if (docShell->UseRemoteSubframes()) {
         chromeFlags |= nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
       }
+    } else if (XRE_IsContentProcess()) {
+      
+      
+      chromeFlags |= nsIWebBrowserChrome::CHROME_REMOTE_WINDOW;
     }
   }
 
