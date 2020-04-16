@@ -100,7 +100,6 @@ class ExceptionHandler {
   
   
   typedef bool (*FilterCallback)(void* context, EXCEPTION_POINTERS* exinfo,
-                                 const mozilla::phc::AddrInfo* addr_info,
                                  MDRawAssertionInfo* assertion);
 
   

@@ -865,7 +865,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
   
   
   
-  if (filter_ && !filter_(callback_context_, exinfo, &addr_info, assertion)) {
+  if (filter_ && !filter_(callback_context_, exinfo, assertion)) {
     return false;
   }
 
