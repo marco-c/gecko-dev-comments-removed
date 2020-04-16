@@ -911,7 +911,7 @@ var BrowserPageActions = {
 
 
 
-  onContextMenuShowing(event, popup) {
+  async onContextMenuShowing(event, popup) {
     if (event.target != popup) {
       return;
     }
@@ -933,6 +933,16 @@ var BrowserPageActions = {
         : "extensionUnpinned";
     }
     popup.setAttribute("state", state);
+
+    let removeExtension = popup.querySelector(".removeExtensionItem");
+    let { extensionID } = this._contextAction;
+    let addon = extensionID && (await AddonManager.getAddonByID(extensionID));
+    removeExtension.hidden = !addon;
+    if (addon) {
+      removeExtension.disabled = !(
+        addon.permissions & AddonManager.PERM_CAN_UNINSTALL
+      );
+    }
   },
 
   
@@ -966,6 +976,19 @@ var BrowserPageActions = {
 
     let viewID = "addons://detail/" + encodeURIComponent(action.extensionID);
     window.BrowserOpenAddonsMgr(viewID);
+  },
+
+  
+
+
+  removeExtensionForContextAction() {
+    if (!this._contextAction) {
+      return;
+    }
+    let action = this._contextAction;
+    this._contextAction = null;
+
+    BrowserAddonUI.removeAddon(action.extensionID, "pageAction");
   },
 
   _contextAction: null,

@@ -1535,8 +1535,9 @@ add_task(async function contextMenu() {
 
   
   
+  
   let menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Remove from Address Bar",
@@ -1552,6 +1553,13 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
   await contextMenuPromise;
@@ -1573,7 +1581,7 @@ add_task(async function contextMenu() {
   
   
   menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Add to Address Bar",
@@ -1589,6 +1597,13 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
   await contextMenuPromise;
@@ -1609,8 +1624,9 @@ add_task(async function contextMenu() {
 
   
   
+  
   menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Remove from Address Bar",
@@ -1626,6 +1642,14 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
+  
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   let aboutAddonsPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
@@ -1647,8 +1671,9 @@ add_task(async function contextMenu() {
 
   
   
+  
   menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Remove from Address Bar",
@@ -1664,6 +1689,13 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
   await contextMenuPromise;
@@ -1685,7 +1717,7 @@ add_task(async function contextMenu() {
   
   
   menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Add to Address Bar",
@@ -1701,6 +1733,13 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
   await contextMenuPromise;
@@ -1722,7 +1761,7 @@ add_task(async function contextMenu() {
   
   
   menuItems = collectContextMenuItems();
-  Assert.equal(menuItems.length, 3, "Context menu has 3 children");
+  Assert.equal(menuItems.length, 4, "Context menu has 4 children");
   Assert.equal(
     menuItems[0].label,
     "Remove from Address Bar",
@@ -1738,6 +1777,14 @@ add_task(async function contextMenu() {
     "Manage Extension\u2026",
     "'Manage' item is present"
   );
+  Assert.equal(
+    menuItems[3].label,
+    "Remove Extension",
+    "'Remove' item is present"
+  );
+  Assert.ok(menuItems[3].hidden, "'Remove' item is hidden");
+
+  
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   aboutAddonsPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
   EventUtils.synthesizeMouseAtCenter(menuItems[2], {});
