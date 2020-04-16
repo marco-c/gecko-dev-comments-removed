@@ -122,13 +122,7 @@ struct CraneliftFuncCompileInput {
 
 
 struct CraneliftMetadataEntry {
-  enum Which {
-    DirectCall,
-    IndirectCall,
-    Trap,
-    MemoryAccess,
-    SymbolicAccess
-  } which;
+  enum Which { DirectCall, IndirectCall, Trap, SymbolicAccess } which;
   uint32_t codeOffset;
   uint32_t moduleBytecodeOffset;
   size_t extra;
