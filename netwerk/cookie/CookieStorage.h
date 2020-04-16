@@ -8,6 +8,8 @@
 
 #include "CookieKey.h"
 
+#include "mozilla/Atomics.h"
+#include "mozilla/Monitor.h"
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStorageStatement.h"
@@ -16,6 +18,8 @@
 #include "nsTHashtable.h"
 #include "nsWeakReference.h"
 
+class mozIStorageService;
+class nsICookieTransactionCallback;
 class nsIPrefBranch;
 
 namespace mozilla {
@@ -68,7 +72,7 @@ struct CookieListIter {
 
 class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
@@ -117,12 +121,6 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
                  int64_t aCurrentTimeInUsec, nsIURI* aHostURI,
                  const nsACString& aCookieHeader, bool aFromHttp);
 
-  void AddCookieToList(const nsACString& aBaseDomain,
-                       const OriginAttributes& aOriginAttributes,
-                       mozilla::net::Cookie* aCookie,
-                       mozIStorageBindingParamsArray* aParamsArray,
-                       bool aWriteToDB = true);
-
   void CreateOrUpdatePurgeList(nsIArray** aPurgeList, nsICookie* aCookie);
 
   virtual void StaleCookies(const nsTArray<Cookie*>& aCookieList,
@@ -130,17 +128,17 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
 
   virtual void Close() = 0;
 
-  
-  nsTHashtable<CookieEntry> hostTable;
-
-  uint32_t cookieCount;
-  int64_t cookieOldestTime;
-
  protected:
   CookieStorage();
   virtual ~CookieStorage();
 
   void Init();
+
+  void AddCookieToList(const nsACString& aBaseDomain,
+                       const OriginAttributes& aOriginAttributes,
+                       mozilla::net::Cookie* aCookie,
+                       mozIStorageBindingParamsArray* aParamsArray,
+                       bool aWriteToDB = true);
 
   virtual const char* NotificationTopic() const = 0;
 
@@ -168,6 +166,10 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
 
   virtual void DeleteFromDB(mozIStorageBindingParamsArray* aParamsArray) = 0;
 
+  nsTHashtable<CookieEntry> mHostTable;
+
+  uint32_t mCookieCount;
+
  private:
   void PrefChanged(nsIPrefBranch* aPrefBranch);
 
@@ -186,6 +188,8 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   already_AddRefed<nsIArray> PurgeCookies(int64_t aCurrentTimeInUsec,
                                           uint16_t aMaxNumberOfCookies,
                                           int64_t aCookiePurgeAge);
+
+  int64_t mCookieOldestTime;
 
   uint16_t mMaxNumberOfCookies;
   uint16_t mMaxCookiesPerHost;
@@ -229,6 +233,9 @@ class CookiePrivateStorage final : public CookieStorage {
 
 class CookieDefaultStorage final : public CookieStorage {
  public:
+  
+  enum OpenDBResult { RESULT_OK, RESULT_RETRY, RESULT_FAILURE };
+
   static already_AddRefed<CookieDefaultStorage> Create();
 
   void HandleCorruptDB();
@@ -246,11 +253,30 @@ class CookieDefaultStorage final : public CookieStorage {
 
   void Close() override;
 
+  void EnsureReadComplete();
+
   void CleanupCachedStatements();
   void CleanupDefaultDBConnection();
 
-  nsresult ImportCookies(nsIFile* aCookieFile,
-                         nsIEffectiveTLDService* aTLDService);
+  nsresult ImportCookies(nsIFile* aCookieFile);
+
+  void Activate();
+
+  void RebuildCorruptDB();
+  void HandleDBClosed();
+
+  nsresult RunInTransaction(nsICookieTransactionCallback* aCallback);
+
+  
+  enum CorruptFlag {
+    OK,                   
+    CLOSING_FOR_REBUILD,  
+    REBUILDING            
+  };
+
+  CorruptFlag GetCorruptFlag() const { return mCorruptFlag; }
+
+  void SetCorruptFlag(CorruptFlag aFlag) { mCorruptFlag = aFlag; }
 
  protected:
   const char* NotificationTopic() const override { return "cookie-changed"; }
@@ -280,33 +306,56 @@ class CookieDefaultStorage final : public CookieStorage {
   void UpdateCookieInList(Cookie* aCookie, int64_t aLastAccessed,
                           mozIStorageBindingParamsArray* aParamsArray);
 
-  
- public:
-  nsCOMPtr<nsIFile> cookieFile;
-  nsCOMPtr<mozIStorageConnection> dbConn;
-  nsCOMPtr<mozIStorageAsyncStatement> stmtInsert;
-  nsCOMPtr<mozIStorageAsyncStatement> stmtDelete;
-  nsCOMPtr<mozIStorageAsyncStatement> stmtUpdate;
+  void InitDBConn();
+  nsresult InitDBConnInternal();
+
+  OpenDBResult TryInitDB(bool aDeleteExistingDB);
+  OpenDBResult Read();
+
+  nsresult CreateTableWorker(const char* aName);
+  nsresult CreateTable();
+  nsresult CreateTableForSchemaVersion6();
+  nsresult CreateTableForSchemaVersion5();
+
+  mozilla::UniquePtr<CookieStruct> GetCookieFromRow(mozIStorageStatement* aRow);
+
+  nsCOMPtr<nsIThread> mThread;
+  nsCOMPtr<mozIStorageService> mStorageService;
+  nsCOMPtr<nsIEffectiveTLDService> mTLDService;
 
   
-  enum CorruptFlag {
-    OK,                   
-    CLOSING_FOR_REBUILD,  
-    REBUILDING            
+  struct CookieDomainTuple {
+    CookieKey key;
+    OriginAttributes originAttributes;
+    mozilla::UniquePtr<mozilla::net::CookieStruct> cookie;
   };
 
-  CorruptFlag corruptFlag;
+  
+  mozilla::TimeStamp mEndInitDBConn;
+  nsTArray<CookieDomainTuple> mReadArray;
+
+  mozilla::Monitor mMonitor;
+
+  mozilla::Atomic<bool> mInitialized;
+  mozilla::Atomic<bool> mInitializedDBConn;
+
+  nsCOMPtr<nsIFile> mCookieFile;
+  nsCOMPtr<mozIStorageConnection> mDBConn;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtInsert;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
+  nsCOMPtr<mozIStorageAsyncStatement> mStmtUpdate;
+
+  CorruptFlag mCorruptFlag;
 
   
   
-  nsCOMPtr<mozIStorageConnection> syncConn;
-  nsCOMPtr<mozIStorageStatement> stmtReadDomain;
+  nsCOMPtr<mozIStorageConnection> mSyncConn;
 
   
-  nsCOMPtr<mozIStorageStatementCallback> insertListener;
-  nsCOMPtr<mozIStorageStatementCallback> updateListener;
-  nsCOMPtr<mozIStorageStatementCallback> removeListener;
-  nsCOMPtr<mozIStorageCompletionCallback> closeListener;
+  nsCOMPtr<mozIStorageStatementCallback> mInsertListener;
+  nsCOMPtr<mozIStorageStatementCallback> mUpdateListener;
+  nsCOMPtr<mozIStorageStatementCallback> mRemoveListener;
+  nsCOMPtr<mozIStorageCompletionCallback> mCloseListener;
 };
 
 }  

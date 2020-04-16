@@ -23,11 +23,9 @@
 #include "mozIStorageAsyncStatement.h"
 #include "mozIStorageConnection.h"
 #include "nsIFile.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
 
 using mozilla::OriginAttributes;
@@ -41,7 +39,6 @@ class nsIURI;
 class nsIChannel;
 class nsIArray;
 class nsIThread;
-class mozIStorageService;
 class mozIThirdPartyUtil;
 
 namespace mozilla {
@@ -51,13 +48,6 @@ class CookieServiceParent;
 }  
 
 using mozilla::net::CookieKey;
-
-
-struct CookieDomainTuple {
-  CookieKey key;
-  OriginAttributes originAttributes;
-  mozilla::UniquePtr<mozilla::net::CookieStruct> cookie;
-};
 
 
 enum CookieOperation { OPERATION_READ, OPERATION_WRITE };
@@ -73,9 +63,6 @@ enum CookieStatus {
   
   STATUS_REJECTED_WITH_ERROR
 };
-
-
-enum OpenDBResult { RESULT_OK, RESULT_RETRY, RESULT_FAILURE };
 
 
 
@@ -161,19 +148,8 @@ class nsCookieService final : public nsICookieService,
   bool IsInitialized() const;
 
   void InitCookieStorages();
-  OpenDBResult TryInitDB(bool aDeleteExistingDB);
-  void InitDBConn();
-  nsresult InitDBConnInternal();
-  nsresult CreateTableWorker(const char* aName);
-  nsresult CreateTable();
-  nsresult CreateTableForSchemaVersion6();
-  nsresult CreateTableForSchemaVersion5();
   void CloseCookieStorages();
-  void HandleDBClosed(mozilla::net::CookieDefaultStorage* aCookieStorage);
-  void RebuildCorruptDB(mozilla::net::CookieDefaultStorage* aCookieStorage);
-  OpenDBResult Read();
-  mozilla::UniquePtr<mozilla::net::CookieStruct> GetCookieFromRow(
-      mozIStorageStatement* aRow);
+
   void EnsureReadComplete(bool aInitDBConn);
   nsresult NormalizeHost(nsCString& aHost);
   nsresult GetCookieStringCommon(nsIURI* aHostURI, nsIChannel* aChannel,
@@ -255,20 +231,11 @@ class nsCookieService final : public nsICookieService,
   nsCOMPtr<mozIThirdPartyUtil> mThirdPartyUtil;
   nsCOMPtr<nsIEffectiveTLDService> mTLDService;
   nsCOMPtr<nsIIDNService> mIDNService;
-  nsCOMPtr<mozIStorageService> mStorageService;
 
   
   
   RefPtr<mozilla::net::CookieDefaultStorage> mDefaultStorage;
   RefPtr<mozilla::net::CookiePrivateStorage> mPrivateStorage;
-
-  
-  nsCOMPtr<nsIThread> mThread;
-  mozilla::Monitor mMonitor;
-  mozilla::Atomic<bool> mInitializedCookieStorages;
-  mozilla::Atomic<bool> mInitializedDBConn;
-  mozilla::TimeStamp mEndInitDBConn;
-  nsTArray<CookieDomainTuple> mReadArray;
 
   
   friend class DBListenerErrorHandler;
