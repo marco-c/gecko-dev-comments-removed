@@ -507,6 +507,16 @@ bool BytecodeEmitter::emitPickN(uint8_t n) {
   return emit2(JSOp::Pick, n);
 }
 
+bool BytecodeEmitter::emitUnpickN(uint8_t n) {
+  MOZ_ASSERT(n != 0);
+
+  if (n == 1) {
+    return emit1(JSOp::Swap);
+  }
+
+  return emit2(JSOp::Unpick, n);
+}
+
 bool BytecodeEmitter::emitCheckIsObj(CheckIsObjectKind kind) {
   return emit2(JSOp::CheckIsObj, uint8_t(kind));
 }
@@ -1182,6 +1192,9 @@ restart:
     case ParseNodeKind::AssignExpr:
     case ParseNodeKind::AddAssignExpr:
     case ParseNodeKind::SubAssignExpr:
+    case ParseNodeKind::CoalesceAssignExpr:
+    case ParseNodeKind::OrAssignExpr:
+    case ParseNodeKind::AndAssignExpr:
     case ParseNodeKind::BitOrAssignExpr:
     case ParseNodeKind::BitXorAssignExpr:
     case ParseNodeKind::BitAndAssignExpr:
@@ -4065,6 +4078,11 @@ static inline JSOp CompoundAssignmentParseNodeKindToJSOp(ParseNodeKind pnk) {
       return JSOp::Mod;
     case ParseNodeKind::PowAssignExpr:
       return JSOp::Pow;
+    case ParseNodeKind::CoalesceAssignExpr:
+    case ParseNodeKind::OrAssignExpr:
+    case ParseNodeKind::AndAssignExpr:
+      
+      [[fallthrough]];
     default:
       MOZ_CRASH("unexpected compound assignment op");
   }
@@ -4337,6 +4355,238 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
     default:
       MOZ_ASSERT(0);
   }
+  return true;
+}
+
+bool BytecodeEmitter::emitShortCircuitAssignment(AssignmentNode* node) {
+  JSOp op;
+  switch (node->getKind()) {
+    case ParseNodeKind::CoalesceAssignExpr:
+      op = JSOp::Coalesce;
+      break;
+    case ParseNodeKind::OrAssignExpr:
+      op = JSOp::Or;
+      break;
+    case ParseNodeKind::AndAssignExpr:
+      op = JSOp::And;
+      break;
+    default:
+      MOZ_CRASH("Unexpected ParseNodeKind");
+  }
+
+  ParseNode* lhs = node->left();
+  ParseNode* rhs = node->right();
+
+  
+  RootedAtom name(cx);
+
+  
+  Maybe<NameOpEmitter> noe;
+  Maybe<PropOpEmitter> poe;
+  Maybe<ElemOpEmitter> eoe;
+
+  int32_t depth = bytecodeSection().stackDepth();
+
+  
+  int32_t numPushed;
+
+  
+  
+  switch (lhs->getKind()) {
+    case ParseNodeKind::Name: {
+      name = lhs->as<NameNode>().name();
+      noe.emplace(this, name, NameOpEmitter::Kind::CompoundAssignment);
+
+      if (!noe->prepareForRhs()) {
+        
+        return false;
+      }
+
+      numPushed = noe->emittedBindOp();
+      break;
+    }
+
+    case ParseNodeKind::DotExpr: {
+      PropertyAccess* prop = &lhs->as<PropertyAccess>();
+      bool isSuper = prop->isSuper();
+
+      poe.emplace(this, PropOpEmitter::Kind::CompoundAssignment,
+                  isSuper ? PropOpEmitter::ObjKind::Super
+                          : PropOpEmitter::ObjKind::Other);
+
+      if (!poe->prepareForObj()) {
+        return false;
+      }
+
+      if (isSuper) {
+        UnaryNode* base = &prop->expression().as<UnaryNode>();
+        if (!emitGetThisForSuperBase(base)) {
+          
+          return false;
+        }
+      } else {
+        if (!emitTree(&prop->expression())) {
+          
+          return false;
+        }
+      }
+
+      if (!poe->emitGet(prop->key().atom())) {
+        
+        
+        
+        
+        return false;
+      }
+
+      if (!poe->prepareForRhs()) {
+        
+        
+        
+        
+        return false;
+      }
+
+      numPushed = 1 + isSuper;
+      break;
+    }
+
+    case ParseNodeKind::ElemExpr: {
+      PropertyByValue* elem = &lhs->as<PropertyByValue>();
+      bool isSuper = elem->isSuper();
+
+      eoe.emplace(this, ElemOpEmitter::Kind::CompoundAssignment,
+                  isSuper ? ElemOpEmitter::ObjKind::Super
+                          : ElemOpEmitter::ObjKind::Other);
+
+      if (!emitElemObjAndKey(elem, isSuper, *eoe)) {
+        
+        
+        
+        
+        return false;
+      }
+
+      if (!eoe->emitGet()) {
+        
+        
+        
+        
+        return false;
+      }
+
+      if (!eoe->prepareForRhs()) {
+        
+        
+        
+        
+        return false;
+      }
+
+      numPushed = 2 + isSuper;
+      break;
+    }
+
+    default:
+      MOZ_CRASH();
+  }
+
+  MOZ_ASSERT(bytecodeSection().stackDepth() == depth + numPushed + 1);
+
+  
+  JumpList jump;
+  if (!emitJump(op, &jump)) {
+    
+    return false;
+  }
+
+  
+  
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
+  }
+
+  
+  
+  if (!emitTree(rhs)) {
+    
+    return false;
+  }
+
+  
+  switch (lhs->getKind()) {
+    case ParseNodeKind::Name: {
+      if (!noe->emitAssignment()) {
+        
+        return false;
+      }
+      break;
+    }
+
+    case ParseNodeKind::DotExpr: {
+      PropertyAccess* prop = &lhs->as<PropertyAccess>();
+
+      if (!poe->emitAssignment(prop->key().atom())) {
+        
+        return false;
+      }
+      break;
+    }
+
+    case ParseNodeKind::ElemExpr: {
+      if (!eoe->emitAssignment()) {
+        
+        return false;
+      }
+      break;
+    }
+
+    default:
+      MOZ_CRASH();
+  }
+
+  MOZ_ASSERT(bytecodeSection().stackDepth() == depth + 1);
+
+  
+  if (numPushed > 0) {
+    JumpList jumpAroundPop;
+    if (!emitJump(JSOp::Goto, &jumpAroundPop)) {
+      
+      return false;
+    }
+
+    if (!emitJumpTargetAndPatch(jump)) {
+      
+      return false;
+    }
+
+    
+    bytecodeSection().setStackDepth(depth + 1 + numPushed);
+
+    
+    if (!emitUnpickN(numPushed)) {
+      
+      return false;
+    }
+    if (!emitPopN(numPushed)) {
+      
+      return false;
+    }
+
+    if (!emitJumpTargetAndPatch(jumpAroundPop)) {
+      
+      return false;
+    }
+  } else {
+    if (!emitJumpTargetAndPatch(jump)) {
+      
+      return false;
+    }
+  }
+
+  MOZ_ASSERT(bytecodeSection().stackDepth() == depth + 1);
+
   return true;
 }
 
@@ -10076,6 +10326,14 @@ bool BytecodeEmitter::emitTree(
       }
       break;
     }
+
+    case ParseNodeKind::CoalesceAssignExpr:
+    case ParseNodeKind::OrAssignExpr:
+    case ParseNodeKind::AndAssignExpr:
+      if (!emitShortCircuitAssignment(&pn->as<AssignmentNode>())) {
+        return false;
+      }
+      break;
 
     case ParseNodeKind::ConditionalExpr:
       if (!emitConditionalExpression(pn->as<ConditionalExpression>(),

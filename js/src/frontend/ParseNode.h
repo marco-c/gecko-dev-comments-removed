@@ -217,6 +217,9 @@ class FunctionBox;
   F(AssignExpr, AssignmentNode)                                  \
   F(AddAssignExpr, AssignmentNode)                               \
   F(SubAssignExpr, AssignmentNode)                               \
+  F(CoalesceAssignExpr, AssignmentNode)                          \
+  F(OrAssignExpr, AssignmentNode)                                \
+  F(AndAssignExpr, AssignmentNode)                               \
   F(BitOrAssignExpr, AssignmentNode)                             \
   F(BitXorAssignExpr, AssignmentNode)                            \
   F(BitAndAssignExpr, AssignmentNode)                            \
@@ -260,6 +263,7 @@ inline bool IsTypeofKind(ParseNodeKind kind) {
   return ParseNodeKind::TypeOfNameExpr <= kind &&
          kind <= ParseNodeKind::TypeOfExpr;
 }
+
 
 
 

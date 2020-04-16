@@ -8632,6 +8632,15 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
     case TokenKind::SubAssign:
       kind = ParseNodeKind::SubAssignExpr;
       break;
+    case TokenKind::CoalesceAssign:
+      kind = ParseNodeKind::CoalesceAssignExpr;
+      break;
+    case TokenKind::OrAssign:
+      kind = ParseNodeKind::OrAssignExpr;
+      break;
+    case TokenKind::AndAssign:
+      kind = ParseNodeKind::AndAssignExpr;
+      break;
     case TokenKind::BitOrAssign:
       kind = ParseNodeKind::BitOrAssignExpr;
       break;
@@ -8697,6 +8706,17 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
   } else if (handler_.isPropertyAccess(lhs)) {
     
   } else if (handler_.isFunctionCall(lhs)) {
+    
+    
+    
+    
+    if (kind == ParseNodeKind::CoalesceAssignExpr ||
+        kind == ParseNodeKind::OrAssignExpr ||
+        kind == ParseNodeKind::AndAssignExpr) {
+      errorAt(exprPos.begin, JSMSG_BAD_LEFTSIDE_OF_ASS);
+      return null();
+    }
+
     if (!strictModeErrorAt(exprPos.begin, JSMSG_BAD_LEFTSIDE_OF_ASS)) {
       return null();
     }
