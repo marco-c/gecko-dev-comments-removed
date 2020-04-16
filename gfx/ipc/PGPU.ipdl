@@ -120,7 +120,7 @@ child:
   
   async GraphicsError(nsCString aError);
 
-  async InitCrashReporter(Shmem shmem, NativeThreadId threadId);
+  async InitCrashReporter(NativeThreadId threadId);
 
   async CreateVRProcess();
   async ShutdownVRProcess();

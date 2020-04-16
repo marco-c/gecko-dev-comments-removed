@@ -6,7 +6,6 @@
 #define mozilla_ipc_CrashReporterHelper_h
 
 #include "CrashReporterHost.h"
-#include "mozilla/ipc/Shmem.h"
 #include "mozilla/UniquePtr.h"
 #include "nsExceptionHandler.h"
 #include "nsICrashService.h"
@@ -33,9 +32,8 @@ template <GeckoProcessType PT>
 class CrashReporterHelper {
  public:
   CrashReporterHelper() : mCrashReporter(nullptr) {}
-  IPCResult RecvInitCrashReporter(Shmem&& aShmem,
-                                  const CrashReporter::ThreadId& aThreadId) {
-    mCrashReporter = MakeUnique<ipc::CrashReporterHost>(PT, aShmem, aThreadId);
+  IPCResult RecvInitCrashReporter(const CrashReporter::ThreadId& aThreadId) {
+    mCrashReporter = MakeUnique<ipc::CrashReporterHost>(PT, aThreadId);
     return IPC_OK();
   }
 
