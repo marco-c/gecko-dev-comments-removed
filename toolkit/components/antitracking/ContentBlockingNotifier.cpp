@@ -172,8 +172,7 @@ void ReportBlockingToConsole(nsIChannel* aChannel, nsIURI* aURI,
 
 
 void NotifyAllowDecision(nsIChannel* aReportingChannel,
-                         nsIChannel* aTrackingChannel, nsIURI* aURI,
-                         nsPIDOMWindowOuter* aWindow) {
+                         nsIChannel* aTrackingChannel, nsIURI* aURI) {
   nsAutoCString trackingOrigin;
   if (aURI) {
     Unused << nsContentUtils::GetASCIIOrigin(aURI, trackingOrigin);
@@ -183,9 +182,9 @@ void NotifyAllowDecision(nsIChannel* aReportingChannel,
 
   
   
-  ContentBlockingNotifier::OnEvent(
-      aWindow, aReportingChannel, aTrackingChannel, false,
-      nsIWebProgressListener::STATE_COOKIES_LOADED, trackingOrigin);
+  ContentBlockingNotifier::OnEvent(aReportingChannel, aTrackingChannel, false,
+                                   nsIWebProgressListener::STATE_COOKIES_LOADED,
+                                   trackingOrigin);
 
   nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
       do_QueryInterface(aTrackingChannel);
@@ -198,14 +197,14 @@ void NotifyAllowDecision(nsIChannel* aReportingChannel,
   if (classificationFlags &
       nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_TRACKING) {
     ContentBlockingNotifier::OnEvent(
-        aWindow, aReportingChannel, aTrackingChannel, false,
+        aReportingChannel, aTrackingChannel, false,
         nsIWebProgressListener::STATE_COOKIES_LOADED_TRACKER, trackingOrigin);
   }
 
   if (classificationFlags &
       nsIClassifiedChannel::ClassificationFlags::CLASSIFIED_SOCIALTRACKING) {
     ContentBlockingNotifier::OnEvent(
-        aWindow, aReportingChannel, aTrackingChannel, false,
+        aReportingChannel, aTrackingChannel, false,
         nsIWebProgressListener::STATE_COOKIES_LOADED_SOCIALTRACKER,
         trackingOrigin);
   }
@@ -233,14 +232,13 @@ void NotifyBlockingDecision(nsIChannel* aReportingChannel,
   }
 
   if (aDecision == ContentBlockingNotifier::BlockingDecision::eBlock) {
-    ContentBlockingNotifier::OnEvent(aWindow, aReportingChannel,
-                                     aTrackingChannel, true, aRejectedReason,
-                                     trackingOrigin);
+    ContentBlockingNotifier::OnEvent(aReportingChannel, aTrackingChannel, true,
+                                     aRejectedReason, trackingOrigin);
 
     ReportBlockingToConsole(aReportingChannel, aURI, aRejectedReason);
   }
 
-  NotifyAllowDecision(aReportingChannel, aTrackingChannel, aURI, aWindow);
+  NotifyAllowDecision(aReportingChannel, aTrackingChannel, aURI);
 }
 
 void NotifyBlockingDecision(nsIChannel* aReportingChannel,
@@ -256,27 +254,38 @@ void NotifyBlockingDecision(nsIChannel* aReportingChannel,
   }
 
   if (aDecision == ContentBlockingNotifier::BlockingDecision::eBlock) {
-    ContentBlockingNotifier::OnEvent(nullptr, aReportingChannel,
-                                     aTrackingChannel, true, aRejectedReason,
-                                     trackingOrigin);
+    ContentBlockingNotifier::OnEvent(aReportingChannel, aTrackingChannel, true,
+                                     aRejectedReason, trackingOrigin);
 
     ReportBlockingToConsole(aReportingChannel, aURI, aRejectedReason);
   }
 
-  NotifyAllowDecision(aReportingChannel, aTrackingChannel, aURI, nullptr);
+  NotifyAllowDecision(aReportingChannel, aTrackingChannel, aURI);
 }
 
 
 
 void NotifyEventInChild(
-    nsPIDOMWindowOuter* aWindow, nsIChannel* aReportingChannel,
-    nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
-    const nsACString& aTrackingOrigin,
+    nsIChannel* aReportingChannel, nsIChannel* aTrackingChannel, bool aBlocked,
+    uint32_t aRejectedReason, const nsACString& aTrackingOrigin,
     const Maybe<ContentBlockingNotifier::StorageAccessGrantedReason>& aReason) {
   MOZ_ASSERT(XRE_IsContentProcess());
-  MOZ_ASSERT(aWindow);
 
-  RefPtr<dom::BrowserChild> browserChild = dom::BrowserChild::GetFrom(aWindow);
+  
+  
+  nsCOMPtr<nsILoadContext> loadContext;
+  NS_QueryNotificationCallbacks(aReportingChannel, loadContext);
+  if (!loadContext) {
+    return;
+  }
+
+  nsCOMPtr<mozIDOMWindowProxy> window;
+  loadContext->GetAssociatedWindow(getter_AddRefs(window));
+  if (!window) {
+    return;
+  }
+
+  RefPtr<dom::BrowserChild> browserChild = dom::BrowserChild::GetFrom(window);
   NS_ENSURE_TRUE_VOID(browserChild);
 
   nsTArray<nsCString> trackingFullHashes;
@@ -505,21 +514,20 @@ void ContentBlockingNotifier::OnEvent(nsIChannel* aChannel,
     Unused << nsContentUtils::GetASCIIOrigin(uri, trackingOrigin);
   }
 
-  return ContentBlockingNotifier::OnEvent(nullptr, aChannel, aChannel, true,
+  return ContentBlockingNotifier::OnEvent(aChannel, aChannel, true,
                                           aRejectedReason, trackingOrigin);
 }
 
 
 void ContentBlockingNotifier::OnEvent(
-    nsPIDOMWindowOuter* aWindow, nsIChannel* aReportingChannel,
-    nsIChannel* aTrackingChannel, bool aBlocked, uint32_t aRejectedReason,
-    const nsACString& aTrackingOrigin,
+    nsIChannel* aReportingChannel, nsIChannel* aTrackingChannel, bool aBlocked,
+    uint32_t aRejectedReason, const nsACString& aTrackingOrigin,
     const Maybe<StorageAccessGrantedReason>& aReason) {
   if (XRE_IsParentProcess()) {
     NotifyEventInParent(aReportingChannel, aTrackingChannel, aBlocked,
                         aRejectedReason, aTrackingOrigin, aReason);
   } else {
-    NotifyEventInChild(aWindow, aReportingChannel, aTrackingChannel, aBlocked,
+    NotifyEventInChild(aReportingChannel, aTrackingChannel, aBlocked,
                        aRejectedReason, aTrackingOrigin, aReason);
   }
 }
