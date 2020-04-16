@@ -1132,7 +1132,7 @@ void HttpChannelChild::OnStopRequest(
 
   
   
-  if (mMultiPartID && !mIsLastPartOfMultiPart) {
+  if (mMultiPartID) {
     LOG(
         ("HttpChannelChild::OnStopRequest  - Expecting future parts on a "
          "multipart channel"
@@ -1254,7 +1254,7 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
 
   
   
-  if (mMultiPartID && !mIsLastPartOfMultiPart) {
+  if (mMultiPartID) {
     LOG(
         ("HttpChannelChild::DoOnStopRequest  - Expecting future parts on a "
          "multipart channel"
