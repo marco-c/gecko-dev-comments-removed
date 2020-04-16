@@ -4970,8 +4970,8 @@ void GCRuntime::startTask(GCParallelTask& task, gcstats::PhaseKind phase,
                           AutoLockHelperThreadState& lock) {
   if (!CanUseExtraThreads()) {
     AutoUnlockHelperThreadState unlock(lock);
+    gcstats::AutoPhase ap(stats(), phase);
     task.runFromMainThread();
-    stats().recordParallelPhase(phase, task.duration());
     return;
   }
 
@@ -4987,15 +4987,18 @@ void GCRuntime::joinTask(GCParallelTask& task, gcstats::PhaseKind phase,
     return;
   }
 
+  
+  
+  
   if (task.isDispatched(lock)) {
-    
-    
-    
     task.cancelDispatchedTask(lock);
     AutoUnlockHelperThreadState unlock(lock);
+    gcstats::AutoPhase ap(stats(), phase);
     task.runFromMainThread();
-  } else {
-    
+    return;
+  }
+
+  {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::JOIN_PARALLEL_TASKS);
     task.joinRunningOrFinishedTask(lock);
   }
