@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 TEST_HARNESS_FILES.testing.mochitest.tests.fonts.math += [
     'fonts/math/axis-height-1.otf',
@@ -242,12 +242,6 @@ with Files('view-source/**'):
     BUG_COMPONENT = ('Core', 'DOM: HTML Parser')
 with Files('w3c-css/**'):
     BUG_COMPONENT = ('Core', 'Layout')
-with Files('w3c-css/received/css-conditional/**'):
-    BUG_COMPONENT = ('Core', 'CSS Parsing and Computation')
-with Files('w3c-css/received/css-namespaces/**'):
-    BUG_COMPONENT = ('Core', 'CSS Parsing and Computation')
-with Files('w3c-css/received/css-values/**'):
-    BUG_COMPONENT = ('Core', 'CSS Parsing and Computation')
 with Files('w3c-css/submitted/conditional3/**'):
     BUG_COMPONENT = ('Core', 'CSS Parsing and Computation')
 with Files('w3c-css/submitted/css21/**'):
