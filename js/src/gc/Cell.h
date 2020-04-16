@@ -47,6 +47,7 @@ namespace gc {
 
 class Arena;
 enum class AllocKind : uint8_t;
+class CellHeaderWithLengthAndFlags;
 struct Chunk;
 class StoreBuffer;
 class TenuredCell;
@@ -134,6 +135,7 @@ class CellHeader {
   
   
   uintptr_t header_;
+  friend class CellHeaderWithLengthAndFlags;
 };
 
 
@@ -562,48 +564,57 @@ bool TenuredCell::isAligned() const {
 
 
 
-class CellHeaderWithLengthAndFlags : public CellHeader {
+class CellHeaderWithLengthAndFlags {
+  
+  
+  CellHeader header_;
+
 #if JS_BITS_PER_WORD == 32
   
   uint32_t length_;
 #endif
+
+  uintptr_t& header() { return header_.header_; }
+  const uintptr_t& header() const { return header_.header_; }
 
  public:
   uint32_t lengthField() const {
 #if JS_BITS_PER_WORD == 32
     return length_;
 #else
-    return uint32_t(header_ >> 32);
+    return uint32_t(header() >> 32);
 #endif
   }
 
-  uint32_t flagsField() const { return uint32_t(header_); }
+  uint32_t flagsField() const { return uint32_t(header()); }
 
-  void setFlagBit(uint32_t flag) { header_ |= uintptr_t(flag); }
-  void clearFlagBit(uint32_t flag) { header_ &= ~uintptr_t(flag); }
-  void toggleFlagBit(uint32_t flag) { header_ ^= uintptr_t(flag); }
+  void setFlagBit(uint32_t flag) { header() |= uintptr_t(flag); }
+  void clearFlagBit(uint32_t flag) { header() &= ~uintptr_t(flag); }
+  void toggleFlagBit(uint32_t flag) { header() ^= uintptr_t(flag); }
 
   void setLengthAndFlags(uint32_t len, uint32_t flags) {
 #if JS_BITS_PER_WORD == 32
-    header_ = flags;
+    header() = flags;
     length_ = len;
 #else
-    header_ = (uint64_t(len) << 32) | uint64_t(flags);
+    header() = (uint64_t(len) << 32) | uint64_t(flags);
 #endif
   }
 
   
   
   
-  void setTemporaryGCUnsafeData(uintptr_t data) { header_ = data; }
+  void setTemporaryGCUnsafeData(uintptr_t data) { header() = data; }
 
   
   
   uintptr_t unsetTemporaryGCUnsafeData(uint32_t len, uint32_t flags) {
-    uintptr_t data = header_;
+    uintptr_t data = header();
     setLengthAndFlags(len, flags);
     return data;
   }
+
+  const js::gc::CellHeader& cellHeader() const { return header_; }
 
   
   
