@@ -63,11 +63,7 @@ bool BoxInputsPolicy::staticAdjustInputs(TempAllocator& alloc,
 }
 
 bool ArithPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
-  MIRType specialization = ins->typePolicySpecialization();
-  if (specialization == MIRType::None) {
-    return BoxInputsPolicy::staticAdjustInputs(alloc, ins);
-  }
-
+  MOZ_ASSERT(IsNumberType(ins->typePolicySpecialization()));
   MOZ_ASSERT(ins->type() == MIRType::Double || ins->type() == MIRType::Int32 ||
              ins->type() == MIRType::Float32);
 
@@ -1236,6 +1232,8 @@ bool TypedArrayIndexPolicy::adjustInputs(TempAllocator& alloc,
   _(MixPolicy<StringPolicy<0>, UnboxedInt32Policy<1>>)                        \
   _(MixPolicy<StringPolicy<0>, StringPolicy<1>>)                              \
   _(MixPolicy<BoxPolicy<0>, BoxPolicy<1>>)                                    \
+  _(MixPolicy<ObjectPolicy<0>, ObjectPolicy<1>, BoxPolicy<2>,                 \
+              ObjectPolicy<3>>)                                               \
   _(NoFloatPolicy<0>)                                                         \
   _(NoFloatPolicyAfter<0>)                                                    \
   _(NoFloatPolicyAfter<1>)                                                    \
