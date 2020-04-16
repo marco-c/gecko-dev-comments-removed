@@ -4098,50 +4098,9 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
                             lhs->isKind(ParseNodeKind::ElemExpr));
 
   
-  
-  if (lhs->isKind(ParseNodeKind::Name)) {
-    NameNode* nameNode = &lhs->as<NameNode>();
-    RootedAtom name(cx, nameNode->name());
-    NameOpEmitter noe(this, name,
-                      isCompound ? NameOpEmitter::Kind::CompoundAssignment
-                                 : NameOpEmitter::Kind::SimpleAssignment);
-    if (!noe.prepareForRhs()) {
-      
-      return false;
-    }
+  RootedAtom name(cx);
 
-    if (rhs) {
-      if (!emitAssignmentRhs(rhs, name)) {
-        
-        return false;
-      }
-    } else {
-      uint8_t offset = noe.emittedBindOp() ? 2 : 1;
-      
-      if (!emitAssignmentRhs(offset)) {
-        
-        return false;
-      }
-    }
-
-    
-    if (isCompound) {
-      if (!newSrcNote(SrcNoteType::AssignOp)) {
-        return false;
-      }
-      if (!emit1(compoundOp)) {
-        
-        return false;
-      }
-    }
-    if (!noe.emitAssignment()) {
-      
-      return false;
-    }
-
-    return true;
-  }
-
+  Maybe<NameOpEmitter> noe;
   Maybe<PropOpEmitter> poe;
   Maybe<ElemOpEmitter> eoe;
 
@@ -4150,6 +4109,14 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
   RootedAtom anonFunctionName(cx);
   switch (lhs->getKind()) {
+    case ParseNodeKind::Name: {
+      name = lhs->as<NameNode>().name();
+      anonFunctionName = name;
+      noe.emplace(this, name,
+                  isCompound ? NameOpEmitter::Kind::CompoundAssignment
+                             : NameOpEmitter::Kind::SimpleAssignment);
+      break;
+    }
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &lhs->as<PropertyAccess>();
       bool isSuper = prop->isSuper();
@@ -4262,6 +4229,13 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   }
 
   switch (lhs->getKind()) {
+    case ParseNodeKind::Name:
+      if (!noe->prepareForRhs()) {
+        
+        return false;
+      }
+      offset += noe->emittedBindOp();
+      break;
     case ParseNodeKind::DotExpr:
       if (!poe->prepareForRhs()) {
         
@@ -4326,6 +4300,13 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
 
   
   switch (lhs->getKind()) {
+    case ParseNodeKind::Name: {
+      if (!noe->emitAssignment()) {
+        
+        return false;
+      }
+      break;
+    }
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &lhs->as<PropertyAccess>();
       if (!poe->emitAssignment(prop->key().atom())) {
