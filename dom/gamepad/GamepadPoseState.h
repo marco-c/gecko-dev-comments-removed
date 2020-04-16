@@ -34,7 +34,7 @@ enum class GamepadCapabilityFlags : uint16_t {
   
 
 
-  Cap_GripSpacePosition = 1 << 5,
+  Cap_TargetRaySpacePosition = 1 << 5,
   
 
 

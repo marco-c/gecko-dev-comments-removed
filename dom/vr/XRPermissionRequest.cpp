@@ -5,7 +5,7 @@
 
 
 #include "XRPermissionRequest.h"
-#include "nsIGlobalObject.h"
+#include "nsGlobalWindowInner.h"
 #include "mozilla/Preferences.h"
 #include "nsContentUtils.h"
 

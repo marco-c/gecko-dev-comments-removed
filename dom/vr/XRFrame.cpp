@@ -156,18 +156,30 @@ XRPose* XRFrame::GetPose(const XRSpace& aSpace, const XRSpace& aBaseSpace,
 
   
   
+  if (aSpace.GetSession()->VisibilityState() != XRVisibilityState::Visible) {
+    aRv.ThrowInvalidStateError(
+        "An XRSpace ’s visibilityState in not 'visible'.");
+    return nullptr;
+  }
 
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  return nullptr;
+  const gfx::PointDouble3D& originPosition = aBaseSpace.GetEffectiveOriginPosition();
+  gfx::PointDouble3D position = aSpace.GetEffectiveOriginPosition();
+  gfx::QuaternionDouble orientation = aSpace.GetEffectiveOriginOrientation();
+
+  gfx::QuaternionDouble invOriginOrientation(aBaseSpace.GetEffectiveOriginOrientation());
+  invOriginOrientation.Invert();
+
+  position = invOriginOrientation.RotatePoint(position);
+  position -= originPosition;
+  orientation *= invOriginOrientation;
+
+  RefPtr<XRRigidTransform> transform = new XRRigidTransform(mParent, position, orientation);
+  RefPtr<XRPose> pose = new XRPose(mParent, transform, false);
+
+  return pose;
 }
 
 void XRFrame::StartAnimationFrame() {
