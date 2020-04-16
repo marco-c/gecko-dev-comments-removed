@@ -59,6 +59,11 @@ extern JS_PUBLIC_API bool GetPendingExceptionStack(
 extern JS_PUBLIC_API bool StealPendingExceptionStack(
     JSContext* cx, JS::ExceptionStack* exceptionStack);
 
+
+
+extern JS_PUBLIC_API void SetPendingExceptionStack(
+    JSContext* cx, const JS::ExceptionStack& exceptionStack);
+
 }  
 
 #endif  

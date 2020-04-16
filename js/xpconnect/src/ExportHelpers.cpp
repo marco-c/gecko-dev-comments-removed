@@ -305,8 +305,7 @@ static void MaybeSanitizeException(JSContext* cx,
     {  
       AutoJSAPI jsapi;
       if (jsapi.Init(unwrappedFun)) {
-        JS::SetPendingExceptionAndStack(cx, exnStack.exception(),
-                                        exnStack.stack());
+        JS::SetPendingExceptionStack(cx, exnStack);
       }
       
 

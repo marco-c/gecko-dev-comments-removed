@@ -8,6 +8,7 @@
 
 #include "jsapi.h"  
 #include "vm/JSContext.h"
+#include "vm/SavedFrame.h"
 
 using namespace js;
 
@@ -38,4 +39,22 @@ bool JS::GetPendingExceptionStack(JSContext* cx,
   RootedObject stack(cx, cx->getPendingExceptionStack());
   exceptionStack->init(exception, stack);
   return true;
+}
+
+void JS::SetPendingExceptionStack(JSContext* cx,
+                                  const JS::ExceptionStack& exceptionStack) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+
+  
+  
+  
+  
+  
+
+  RootedSavedFrame nstack(cx);
+  if (exceptionStack.stack()) {
+    nstack = &UncheckedUnwrap(exceptionStack.stack())->as<SavedFrame>();
+  }
+  cx->setPendingException(exceptionStack.exception(), nstack);
 }

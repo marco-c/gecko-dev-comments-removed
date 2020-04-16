@@ -4938,24 +4938,6 @@ JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx) {
   cx->clearPendingException();
 }
 
-JS_PUBLIC_API void JS::SetPendingExceptionAndStack(JSContext* cx,
-                                                   HandleValue value,
-                                                   HandleObject stack) {
-  AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  
-  
-  
-  
-  
-
-  RootedSavedFrame nstack(cx);
-  if (stack) {
-    nstack = &UncheckedUnwrap(stack)->as<SavedFrame>();
-  }
-  cx->setPendingException(value, nstack);
-}
-
 JS::AutoSaveExceptionState::AutoSaveExceptionState(JSContext* cx)
     : context(cx),
       wasPropagatingForcedReturn(cx->propagatingForcedReturn_),
