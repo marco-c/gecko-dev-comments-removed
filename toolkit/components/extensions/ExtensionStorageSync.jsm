@@ -663,23 +663,22 @@ this.CryptoCollection = CryptoCollection;
 
 
 let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
-  constructor(cryptoCollection, extensionId) {
+  constructor(cryptoCollection, keyring, extensionId) {
     super();
     this.cryptoCollection = cryptoCollection;
+    this.keyring = keyring;
     this.extensionId = extensionId;
   }
 
   async getKeys() {
-    
-    const collectionKeys = await this.cryptoCollection.getKeyRing();
-    if (!collectionKeys.hasKeysFor([this.extensionId])) {
+    if (!this.keyring.hasKeysFor([this.extensionId])) {
       
       
       throw new Error(
         `tried to encrypt records for ${this.extensionId}, but key is not present`
       );
     }
-    return collectionKeys.keyForCollection(this.extensionId);
+    return this.keyring.keyForCollection(this.extensionId);
   }
 
   getEncodedRecordId(record) {
@@ -789,10 +788,12 @@ class ExtensionStorageSync {
     }
     await this.ensureCanSync(extIds);
     await this.checkSyncKeyRing();
+    const keyring = await this.cryptoCollection.getKeyRing();
     const promises = Array.from(extensions, extension => {
       const remoteTransformers = [
         new CollectionKeyEncryptionRemoteTransformer(
           this.cryptoCollection,
+          keyring,
           extension.id
         ),
       ];
