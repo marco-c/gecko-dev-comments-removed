@@ -43,6 +43,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -126,10 +127,6 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
-
-#define BEFOREUNLOAD_DISABLED_PREFNAME "dom.disable_beforeunload"
-#define BEFOREUNLOAD_REQUIRES_INTERACTION_PREFNAME \
-  "dom.require_user_interaction_for_beforeunload"
 
 
 
@@ -1262,18 +1259,6 @@ nsresult nsDocumentViewer::PermitUnloadInternal(uint32_t* aPermitUnloadFlags,
     return NS_OK;
   }
 
-  static bool sIsBeforeUnloadDisabled;
-  static bool sBeforeUnloadRequiresInteraction;
-  static bool sBeforeUnloadPrefsCached = false;
-
-  if (!sBeforeUnloadPrefsCached) {
-    sBeforeUnloadPrefsCached = true;
-    Preferences::AddBoolVarCache(&sIsBeforeUnloadDisabled,
-                                 BEFOREUNLOAD_DISABLED_PREFNAME);
-    Preferences::AddBoolVarCache(&sBeforeUnloadRequiresInteraction,
-                                 BEFOREUNLOAD_REQUIRES_INTERACTION_PREFNAME);
-  }
-
   
   nsPIDOMWindowOuter* window = mDocument->GetWindow();
 
@@ -1330,7 +1315,7 @@ nsresult nsDocumentViewer::PermitUnloadInternal(uint32_t* aPermitUnloadFlags,
   nsAutoString text;
   event->GetReturnValue(text);
 
-  if (sIsBeforeUnloadDisabled) {
+  if (StaticPrefs::dom_disable_beforeunload()) {
     *aPermitUnloadFlags = eDontPromptAndUnload;
   }
 
@@ -1338,7 +1323,8 @@ nsresult nsDocumentViewer::PermitUnloadInternal(uint32_t* aPermitUnloadFlags,
   
   if (*aPermitUnloadFlags != eDontPromptAndUnload && dialogsAreEnabled &&
       mDocument && !(mDocument->GetSandboxFlags() & SANDBOXED_MODALS) &&
-      (!sBeforeUnloadRequiresInteraction || mDocument->UserHasInteracted()) &&
+      (!StaticPrefs::dom_require_user_interaction_for_beforeunload() ||
+       mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
     
     
