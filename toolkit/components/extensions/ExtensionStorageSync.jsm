@@ -724,11 +724,7 @@ function cleanUpForContext(extension, context) {
 
 
 
-
-
-
-
-const openCollection = async function(cryptoCollection, extension, context) {
+const openCollection = async function(cryptoCollection, extension) {
   let collectionId = extension.id;
   const { kinto } = await storageSyncInit();
   const remoteTransformers = [
@@ -1215,7 +1211,7 @@ class ExtensionStorageSync {
       });
     }
     this.registerInUse(extension, context);
-    return openCollection(this.cryptoCollection, extension, context);
+    return openCollection(this.cryptoCollection, extension);
   }
 
   async set(extension, items, context) {
