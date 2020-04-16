@@ -1764,7 +1764,14 @@ SearchService.prototype = {
         SearchUtils.log(
           "_loadEnginesMetadataFromCache, transfering metadata for " + name
         );
-        this._engines.get(name)._metaData = engine._metaData || {};
+        let eng = this._engines.get(name);
+        
+        
+        
+        if (eng._alias === engine?._metaData?.alias) {
+          delete engine._metaData.alias;
+        }
+        eng._metaData = engine._metaData || {};
       }
     }
   },
@@ -2557,6 +2564,18 @@ SearchService.prototype = {
     if (!gInitialized) {
       this._startupExtensions.add(extension);
       return [];
+    }
+    if (extension.startupReason == "ADDON_UPGRADE") {
+      let engines = await Services.search.getEnginesByExtensionID(extension.id);
+      for (let engine of engines) {
+        let params = await this.getEngineParams(
+          extension,
+          extension.manifest,
+          SearchUtils.DEFAULT_TAG
+        );
+        engine._updateFromMetadata(params);
+      }
+      return engines;
     }
     return this._installExtensionEngine(extension, [SearchUtils.DEFAULT_TAG]);
   },
