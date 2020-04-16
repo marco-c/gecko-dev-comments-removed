@@ -168,8 +168,20 @@ void CanvasTranslator::FinishShutdown() {
   
   
   mStream = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CanvasTranslatorSet& canvasTranslators = CanvasTranslators();
   CanvasThreadHolder::ReleaseOnCompositorThread(mCanvasThreadHolder.forget());
-  CanvasTranslators().RemoveEntry(this);
+  canvasTranslators.RemoveEntry(this);
 }
 
 bool CanvasTranslator::TranslateRecording() {
