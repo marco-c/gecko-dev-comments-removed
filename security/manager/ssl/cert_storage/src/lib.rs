@@ -878,7 +878,14 @@ fn get_store_path(profile_path: &PathBuf) -> Result<PathBuf, SecurityStateError>
 fn make_env(path: &Path) -> Result<Rkv, SecurityStateError> {
     let mut builder = Rkv::environment_builder::<SafeMode>();
     builder.set_max_dbs(2);
-    builder.set_map_size(16777216); 
+
+    
+    
+    
+    
+    
+
+    
 
     
     
