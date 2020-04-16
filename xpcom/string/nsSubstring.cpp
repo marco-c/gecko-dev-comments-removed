@@ -62,6 +62,11 @@ class nsStringStats {
       return;
     }
 
+    
+    if (mAllocCount <= mFreeCount && mAdoptCount <= mAdoptFreeCount) {
+      return;
+    }
+
     printf("nsStringStats\n");
     printf(" => mAllocCount:     % 10d\n", int(mAllocCount));
     printf(" => mReallocCount:   % 10d\n", int(mReallocCount));
