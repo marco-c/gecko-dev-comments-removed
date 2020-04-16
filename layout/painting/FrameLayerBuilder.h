@@ -627,13 +627,6 @@ class FrameLayerBuilder : public layers::LayerUserData {
 
 
 
-  nsIntPoint GetLastPaintOffset(PaintedLayer* aLayer);
-
-  
-
-
-
-
 
 
   static gfxSize GetPaintedLayerScaleForFrame(nsIFrame* aFrame);
