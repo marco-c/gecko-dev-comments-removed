@@ -23,7 +23,7 @@ class EditorBase;
 
 class DeleteNodeTransaction final : public EditTransactionBase {
  protected:
-  DeleteNodeTransaction(EditorBase& aEditorBase, nsINode& aNodeToDelete);
+  DeleteNodeTransaction(EditorBase& aEditorBase, nsIContent& aContentToDelete);
 
  public:
   
@@ -34,7 +34,7 @@ class DeleteNodeTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<DeleteNodeTransaction> MaybeCreate(
-      EditorBase& aEditorBase, nsINode& aNodeToDelete);
+      EditorBase& aEditorBase, nsIContent& aContentToDelete);
 
   
 
@@ -57,13 +57,13 @@ class DeleteNodeTransaction final : public EditTransactionBase {
   RefPtr<EditorBase> mEditorBase;
 
   
-  nsCOMPtr<nsINode> mNodeToDelete;
+  nsCOMPtr<nsIContent> mContentToDelete;
 
   
   nsCOMPtr<nsINode> mParentNode;
 
   
-  nsCOMPtr<nsIContent> mRefNode;
+  nsCOMPtr<nsIContent> mRefContent;
 };
 
 }  

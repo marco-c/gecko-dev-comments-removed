@@ -54,11 +54,15 @@ CreateElementTransaction::CreateElementTransaction(
     : EditTransactionBase(),
       mEditorBase(&aEditorBase),
       mTag(&aTag),
-      mPointToInsert(aPointToInsert) {}
+      mPointToInsert(aPointToInsert) {
+  MOZ_ASSERT(!mPointToInsert.IsInDataNode());
+  
+  AutoEditorDOMPointOffsetInvalidator lockChild(mPointToInsert);
+}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CreateElementTransaction,
                                    EditTransactionBase, mEditorBase,
-                                   mPointToInsert, mNewNode)
+                                   mPointToInsert, mNewElement)
 
 NS_IMPL_ADDREF_INHERITED(CreateElementTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(CreateElementTransaction, EditTransactionBase)
@@ -72,16 +76,16 @@ CreateElementTransaction::DoTransaction() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  RefPtr<EditorBase> editorBase(mEditorBase);
+  OwningNonNull<EditorBase> editorBase = *mEditorBase;
 
-  mNewNode = editorBase->CreateHTMLContent(mTag);
-  if (!mNewNode) {
+  mNewElement = editorBase->CreateHTMLContent(mTag);
+  if (!mNewElement) {
     NS_WARNING("EditorBase::CreateHTMLContent() failed");
     return NS_ERROR_FAILURE;
   }
 
   
-  OwningNonNull<Element> newElement(*mNewNode);
+  OwningNonNull<Element> newElement = *mNewElement;
   nsresult rv = editorBase->MarkElementDirty(newElement);
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return EditorBase::ToGenericNSResult(rv);
@@ -108,7 +112,7 @@ CreateElementTransaction::DoTransaction() {
     return NS_ERROR_FAILURE;
   }
 
-  EditorRawDOMPoint afterNewNode(EditorRawDOMPoint::After(mNewNode));
+  EditorRawDOMPoint afterNewNode(EditorRawDOMPoint::After(newElement));
   if (NS_WARN_IF(!afterNewNode.IsSet())) {
     
     
@@ -123,48 +127,61 @@ CreateElementTransaction::DoTransaction() {
 }
 
 void CreateElementTransaction::InsertNewNode(ErrorResult& aError) {
+  MOZ_ASSERT(mNewElement);
+  MOZ_ASSERT(mPointToInsert.IsSet());
+
   if (mPointToInsert.IsSetAndValid()) {
     if (mPointToInsert.IsEndOfContainer()) {
-      mPointToInsert.GetContainer()->AppendChild(*mNewNode, aError);
+      OwningNonNull<nsINode> container = *mPointToInsert.GetContainer();
+      OwningNonNull<Element> newElement = *mNewElement;
+      container->AppendChild(newElement, aError);
       NS_WARNING_ASSERTION(!aError.Failed(),
                            "nsINode::AppendChild() failed, but ignored");
       return;
     }
-    mPointToInsert.GetContainer()->InsertBefore(
-        *mNewNode, mPointToInsert.GetChild(), aError);
+    MOZ_ASSERT(mPointToInsert.GetChild());
+    OwningNonNull<nsINode> container = *mPointToInsert.GetContainer();
+    OwningNonNull<nsIContent> child = *mPointToInsert.GetChild();
+    OwningNonNull<Element> newElement = *mNewElement;
+    container->InsertBefore(newElement, child, aError);
     NS_WARNING_ASSERTION(!aError.Failed(),
                          "nsINode::InsertBefore() failed, but ignored");
     return;
   }
 
-  if (NS_WARN_IF(mPointToInsert.GetChild() &&
-                 mPointToInsert.GetContainer() !=
-                     mPointToInsert.GetChild()->GetParentNode())) {
+  if (NS_WARN_IF(mPointToInsert.GetContainer() !=
+                 mPointToInsert.GetChild()->GetParentNode())) {
     aError.Throw(NS_ERROR_FAILURE);
     return;
   }
 
   
   
-  mPointToInsert.GetContainer()->AppendChild(*mNewNode, aError);
+  OwningNonNull<nsINode> container = *mPointToInsert.GetContainer();
+  OwningNonNull<Element> newElement = *mNewElement;
+  container->AppendChild(newElement, aError);
   NS_WARNING_ASSERTION(!aError.Failed(),
                        "nsINode::AppendChild() failed, but ignored");
 }
 
 NS_IMETHODIMP CreateElementTransaction::UndoTransaction() {
-  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mPointToInsert.IsSet())) {
-    return NS_ERROR_NOT_INITIALIZED;
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mPointToInsert.IsSet()) ||
+      NS_WARN_IF(!mNewElement)) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
+  OwningNonNull<Element> newElement = *mNewElement;
+  OwningNonNull<nsINode> containerNode = *mPointToInsert.GetContainer();
   ErrorResult error;
-  mPointToInsert.GetContainer()->RemoveChild(*mNewNode, error);
+  containerNode->RemoveChild(newElement, error);
   NS_WARNING_ASSERTION(!error.Failed(), "nsINode::RemoveChild() failed");
   return error.StealNSResult();
 }
 
 NS_IMETHODIMP CreateElementTransaction::RedoTransaction() {
-  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mPointToInsert.IsSet())) {
-    return NS_ERROR_NOT_INITIALIZED;
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mPointToInsert.IsSet()) ||
+      NS_WARN_IF(!mNewElement)) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
@@ -178,10 +195,6 @@ NS_IMETHODIMP CreateElementTransaction::RedoTransaction() {
   NS_WARNING_ASSERTION(!error.Failed(),
                        "CreateElementTransaction::InsertNewNode() failed");
   return error.StealNSResult();
-}
-
-already_AddRefed<Element> CreateElementTransaction::GetNewNode() {
-  return nsCOMPtr<Element>(mNewNode).forget();
 }
 
 }  
