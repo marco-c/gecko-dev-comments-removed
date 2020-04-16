@@ -31,6 +31,7 @@ fn main() {
     println!("cargo:rerun-if-changed=baldrapi.h");
 
     let mut generator = bindgen::builder()
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
         .disable_name_namespacing()
         .size_t_is_usize(true)
         
