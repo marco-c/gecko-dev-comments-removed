@@ -29,7 +29,6 @@
 #include "mozilla/dom/ProfileTimelineMarkerBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/gfx/Matrix.h"
-#include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsCharsetSource.h"
@@ -491,8 +490,8 @@ class nsDocShell final : public nsDocLoader,
   
   static nsresult CreateRealChannelForDocument(
       nsIChannel** aChannel, nsIURI* aURI, nsILoadInfo* aLoadInfo,
-      nsIInterfaceRequestor* aCallbacks,
-      nsLoadFlags aLoadFlags, const nsAString& aSrcdoc, nsIURI* aBaseURI);
+      nsIInterfaceRequestor* aCallbacks, nsLoadFlags aLoadFlags,
+      const nsAString& aSrcdoc, nsIURI* aBaseURI);
 
   
   

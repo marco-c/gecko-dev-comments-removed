@@ -4,7 +4,6 @@
 
 
 #include "mozilla/ClearOnShutdown.h"
-#include "nsAutoPtr.h"
 #include "nsJARProtocolHandler.h"
 #include "nsCRT.h"
 #include "nsJARURI.h"

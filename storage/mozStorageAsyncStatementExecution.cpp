@@ -4,8 +4,6 @@
 
 
 
-#include "nsAutoPtr.h"
-
 #include "sqlite3.h"
 
 #include "mozIStorageStatementCallback.h"

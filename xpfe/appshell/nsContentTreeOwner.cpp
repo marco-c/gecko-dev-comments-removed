@@ -10,9 +10,6 @@
 #include "AppWindow.h"
 
 
-#include "nsAutoPtr.h"
-
-
 #include "nsIDOMWindow.h"
 #include "nsIDOMChromeWindow.h"
 #include "nsIBrowserDOMWindow.h"
