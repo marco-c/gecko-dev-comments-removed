@@ -200,6 +200,8 @@ pref("browser.fixup.domainwhitelist.localhost", true);
   pref("general.autoScroll", true);
 #endif
 
+pref("browser.stopReloadAnimation.enabled", true);
+
 
 
 pref("browser.uidensity", 0);
