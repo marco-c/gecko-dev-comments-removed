@@ -286,56 +286,47 @@ async function collectResults() {
   setTimeoutAlarm("raptor-page-timeout", pageTimeout);
 
   
-  await waitForResult();
+  await waitForResults();
 
   
   await nextCycle();
 }
 
-async function waitForResult() {
-  let results = await new Promise(resolve => {
-    async function checkForResult() {
-      raptorLog("checking results...");
-      switch (testType) {
-        case TEST_BENCHMARK:
-          if (!isBenchmarkPending) {
-            resolve();
-          } else {
-            setTimeout(checkForResult, 250);
-          }
-          break;
+function checkForTestFinished() {
+  let finished = false;
 
-        case TEST_PAGE_LOAD:
-          if (
-            !isHeroPending &&
-            !isFNBPaintPending &&
-            !isFCPPending &&
-            !isDCFPending &&
-            !isTTFIPending &&
-            !isLoadTimePending
-          ) {
-            raptorLog("no more results pending; resolving checkForResult");
-            resolve();
-          } else {
-            raptorLog("setting timeout to checkForResult again in 250ms");
-            setTimeout(checkForResult, 250);
-          }
-          break;
-
-        case TEST_SCENARIO:
-          if (!isScenarioPending) {
-            await cancelTimeoutAlarm("raptor-page-timeout");
-            await postToControlServer("status", `scenario test ended`);
-            resolve();
-          } else {
-            setTimeout(checkForResult, 5);
-          }
-          break;
+  switch (testType) {
+    case TEST_BENCHMARK:
+      finished = !isBenchmarkPending;
+      break;
+    case TEST_PAGE_LOAD:
+      if (
+        !isHeroPending &&
+        !isFNBPaintPending &&
+        !isFCPPending &&
+        !isDCFPending &&
+        !isTTFIPending &&
+        !isLoadTimePending
+      ) {
+        finished = true;
       }
-    }
+      break;
 
-    checkForResult();
-  });
+    case TEST_SCENARIO:
+      finished = !isScenarioPending;
+      break;
+  }
+
+  return finished;
+}
+
+async function waitForResults() {
+  raptorLog("waiting for results...");
+
+  while (!checkForTestFinished()) {
+    raptorLog("results pending...");
+    await sleep(250);
+  }
 
   await cancelTimeoutAlarm("raptor-page-timeout");
 
@@ -348,8 +339,6 @@ async function waitForResult() {
   if (screenCapture) {
     await getScreenCapture();
   }
-
-  return results;
 }
 
 async function getScreenCapture() {
