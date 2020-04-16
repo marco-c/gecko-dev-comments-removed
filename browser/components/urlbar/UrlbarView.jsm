@@ -1431,7 +1431,9 @@ class UrlbarView {
     
     
     
-    this.close();
+    if (!UrlbarPrefs.get("ui.popup.disable_autohide")) {
+      this.close();
+    }
   }
 
   _on_mousedown(event) {
