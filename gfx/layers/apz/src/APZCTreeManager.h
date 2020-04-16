@@ -376,7 +376,13 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void DispatchScroll(AsyncPanZoomController* aApzc,
+
+
+
+
+
+
+  bool DispatchScroll(AsyncPanZoomController* aPrev,
                       ParentLayerPoint& aStartPoint,
                       ParentLayerPoint& aEndPoint,
                       OverscrollHandoffState& aOverscrollHandoffState);

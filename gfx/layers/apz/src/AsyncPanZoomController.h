@@ -1534,7 +1534,7 @@ class AsyncPanZoomController {
 
 
 
-  void CallDispatchScroll(ParentLayerPoint& aStartPoint,
+  bool CallDispatchScroll(ParentLayerPoint& aStartPoint,
                           ParentLayerPoint& aEndPoint,
                           OverscrollHandoffState& aOverscrollHandoffState);
 

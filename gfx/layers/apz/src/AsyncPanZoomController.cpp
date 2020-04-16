@@ -3264,12 +3264,14 @@ bool AsyncPanZoomController::AttemptScroll(
     
     
     ++aOverscrollHandoffState.mChainIndex;
-    CallDispatchScroll(aStartPoint, aEndPoint, aOverscrollHandoffState);
-
-    overscroll = aStartPoint - aEndPoint;
-    if (IsZero(overscroll)) {
+    bool consumed =
+        CallDispatchScroll(aStartPoint, aEndPoint, aOverscrollHandoffState);
+    if (consumed) {
       return true;
     }
+
+    overscroll = aStartPoint - aEndPoint;
+    MOZ_ASSERT(!IsZero(overscroll));
   }
 
   
@@ -3501,7 +3503,7 @@ void AsyncPanZoomController::StartOverscrollAnimation(
   StartAnimation(new OverscrollAnimation(*this, aVelocity));
 }
 
-void AsyncPanZoomController::CallDispatchScroll(
+bool AsyncPanZoomController::CallDispatchScroll(
     ParentLayerPoint& aStartPoint, ParentLayerPoint& aEndPoint,
     OverscrollHandoffState& aOverscrollHandoffState) {
   
@@ -3509,7 +3511,7 @@ void AsyncPanZoomController::CallDispatchScroll(
   
   APZCTreeManager* treeManagerLocal = GetApzcTreeManager();
   if (!treeManagerLocal) {
-    return;
+    return false;
   }
 
   
@@ -3524,12 +3526,12 @@ void AsyncPanZoomController::CallDispatchScroll(
     }
     if (aStartPoint == endPoint) {
       
-      return;
+      return false;
     }
   }
 
-  treeManagerLocal->DispatchScroll(this, aStartPoint, endPoint,
-                                   aOverscrollHandoffState);
+  return treeManagerLocal->DispatchScroll(this, aStartPoint, endPoint,
+                                          aOverscrollHandoffState);
 }
 
 void AsyncPanZoomController::RecordScrollPayload(const TimeStamp& aTimeStamp) {
