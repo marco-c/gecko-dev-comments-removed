@@ -1702,7 +1702,11 @@ toolbar#nav-bar {
             self.log.error(str(e))
             return None
 
-        browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leak_report_file
+        if ("MOZ_PROFILER_STARTUP_FEATURES" not in browserEnv or
+            "nativeallocations" not in browserEnv["MOZ_PROFILER_STARTUP_FEATURES"].split(",")):
+            
+            
+            browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leak_report_file
 
         try:
             gmp_path = self.getGMPPluginPath(options)
