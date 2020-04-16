@@ -43,6 +43,7 @@
 #include "nsGlobalWindowOuter.h"
 #include "nsIObserverService.h"
 #include "nsContentUtils.h"
+#include "nsSandboxFlags.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
 #include "xpcprivate.h"
@@ -887,6 +888,61 @@ bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
   }
 
   return false;
+}
+
+bool BrowsingContext::IsSandboxedFrom(BrowsingContext* aTarget) {
+  
+  if (!aTarget) {
+    return false;
+  }
+
+  
+  if (aTarget == this) {
+    return false;
+  }
+
+  
+  
+  uint32_t sandboxFlags = GetSandboxFlags();
+  if (mDocShell) {
+    if (RefPtr<Document> doc = mDocShell->GetExtantDocument()) {
+      sandboxFlags = doc->GetSandboxFlags();
+    }
+  }
+
+  
+  if (!sandboxFlags) {
+    return false;
+  }
+
+  
+  if (RefPtr<BrowsingContext> ancestorOfTarget = aTarget->GetParent()) {
+    do {
+      
+      if (ancestorOfTarget == this) {
+        return false;
+      }
+      ancestorOfTarget = ancestorOfTarget->GetParent();
+    } while (ancestorOfTarget);
+
+    
+    return true;
+  }
+
+  
+  
+  if (aTarget->GetOnePermittedSandboxedNavigatorId() == Id()) {
+    return false;
+  }
+
+  
+  
+  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) && aTarget == Top()) {
+    return false;
+  }
+
+  
+  return true;
 }
 
 RefPtr<SessionStorageManager> BrowsingContext::GetSessionStorageManager() {
