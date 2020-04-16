@@ -29,6 +29,7 @@ var postStartupDelay;
 
 var pageCycleDelay = 1000;
 
+var newTabDelay = 1000;
 var newTabPerCycle = false;
 
 
@@ -48,6 +49,7 @@ var browserCycle = 0;
 var pageCycles = 0;
 var pageCycle = 0;
 var testURL;
+var testTabID = 0;
 var scenarioTestTime = 60000;
 var getHero = false;
 var getFNBPaint = false;
@@ -184,7 +186,6 @@ async function getTestSettings() {
 
   
   if (isGecko) {
-    await ext.storage.local.clear();
     await ext.storage.local.set({ settings });
   } else {
     await new Promise(resolve => {
@@ -194,10 +195,6 @@ async function getTestSettings() {
     });
   }
   raptorLog("wrote settings to ext local storage");
-}
-
-async function sleep(delay) {
-  return new Promise(resolve => setTimeout(resolve, delay));
 }
 
 async function getBrowserInfo() {
@@ -217,7 +214,7 @@ async function getBrowserInfo() {
   raptorLog(`testing on ${results.browser}`);
 }
 
-async function startScenarioTimer() {
+async function scenarioTimer() {
   setTimeout(function() {
     isScenarioPending = false;
     results.measurements.scenario = [1];
@@ -226,85 +223,29 @@ async function startScenarioTimer() {
   await postToControlServer("status", `started scenario test timer`);
 }
 
-async function closeTab() {
-  
-  const tabs = await queryForTabs({ currentWindow: true });
-  if (tabs.length == 1) {
-    await postToControlServer("status", `Not closing last Tab: ${tabId}`);
-    return;
-  }
-
-  const tabId = await getCurrentTabId();
-
-  await postToControlServer("status", `closing Tab: ${tabId}`);
-
-  if (isGecko) {
-    await ext.tabs.remove(tabId);
-  } else {
-    await new Promise(resolve => {
-      ext.tabs.remove(tabId, resolve);
-    });
-  }
-
-  await postToControlServer("status", `closed tab: ${tabId}`);
-}
-
-async function getCurrentTabId() {
-  const tabs = await queryForTabs({ currentWindow: true, active: true });
-
-  await postToControlServer("status", "found active tab with id " + tabs[0].id);
-  return tabs[0].id;
-}
-
-async function openTab() {
-  await postToControlServer("status", "openinig new tab");
-
-  let tab;
-  if (isGecko) {
-    tab = await ext.tabs.create({ url: "about:blank" });
-  } else {
-    tab = await new Promise(resolve => {
-      ext.tabs.create({ url: "about:blank" }, resolve);
-    });
-  }
-
-  await postToControlServer("status", `opened new empty tab: ${tab.id}`);
-
-  return tab.id;
-}
-
-async function queryForTabs(options = {}) {
-  let tabs;
-
-  if (isGecko) {
-    tabs = await ext.tabs.query(options);
-  } else {
-    tabs = await new Promise(resolve => {
-      ext.tabs.query(options, resolve);
-    });
-  }
-
-  return tabs;
-}
-
-
-
-
-async function updateTab(url) {
-  const tabId = await getCurrentTabId();
-
-  await postToControlServer("status", `update tab ${tabId} for ${url}`);
+async function testTabCreated(tab) {
+  testTabID = tab.id;
+  await postToControlServer("status", `opened new empty tab: ${testTabID}`);
 
   
-  if (isGecko) {
-    await ext.tabs.update(tabId, { url });
-  } else {
-    await new Promise(resolve => {
-      ext.tabs.update(tabId, { url }, resolve);
-    });
-  }
+  ext.browserAction.setTitle({ title: "Raptor RUNNING" });
+}
 
-  await postToControlServer("status", `tab ${tabId} updated`);
+async function testTabRemoved(tab) {
+  await postToControlServer("status", `Removed tab: ${testTabID}`);
+  testTabID = 0;
+}
+
+async function testTabUpdated(tab) {
+  await postToControlServer("status", `test tab updated: ${testTabID}`);
+
+  
+  
+  
+  
+  if (testType != TEST_PAGE_LOAD) {
+    await collectResults();
+  }
 }
 
 async function collectResults() {
@@ -313,47 +254,56 @@ async function collectResults() {
   setTimeoutAlarm("raptor-page-timeout", pageTimeout);
 
   
-  await waitForResults();
+  await waitForResult();
 
   
   await nextCycle();
 }
 
-function checkForTestFinished() {
-  let finished = false;
+async function waitForResult() {
+  let results = await new Promise(resolve => {
+    async function checkForResult() {
+      raptorLog("checking results...");
+      switch (testType) {
+        case TEST_BENCHMARK:
+          if (!isBenchmarkPending) {
+            resolve();
+          } else {
+            setTimeout(checkForResult, 250);
+          }
+          break;
 
-  switch (testType) {
-    case TEST_BENCHMARK:
-      finished = !isBenchmarkPending;
-      break;
-    case TEST_PAGE_LOAD:
-      if (
-        !isHeroPending &&
-        !isFNBPaintPending &&
-        !isFCPPending &&
-        !isDCFPending &&
-        !isTTFIPending &&
-        !isLoadTimePending
-      ) {
-        finished = true;
+        case TEST_PAGE_LOAD:
+          if (
+            !isHeroPending &&
+            !isFNBPaintPending &&
+            !isFCPPending &&
+            !isDCFPending &&
+            !isTTFIPending &&
+            !isLoadTimePending
+          ) {
+            raptorLog("no more results pending; resolving checkForResult");
+            resolve();
+          } else {
+            raptorLog("setting timeout to checkForResult again in 250ms");
+            setTimeout(checkForResult, 250);
+          }
+          break;
+
+        case TEST_SCENARIO:
+          if (!isScenarioPending) {
+            await cancelTimeoutAlarm("raptor-page-timeout");
+            await postToControlServer("status", `scenario test ended`);
+            resolve();
+          } else {
+            setTimeout(checkForResult, 5);
+          }
+          break;
       }
-      break;
+    }
 
-    case TEST_SCENARIO:
-      finished = !isScenarioPending;
-      break;
-  }
-
-  return finished;
-}
-
-async function waitForResults() {
-  raptorLog("waiting for results...");
-
-  while (!checkForTestFinished()) {
-    raptorLog("results pending...");
-    await sleep(250);
-  }
+    checkForResult();
+  });
 
   await cancelTimeoutAlarm("raptor-page-timeout");
 
@@ -366,6 +316,8 @@ async function waitForResults() {
   if (screenCapture) {
     await getScreenCapture();
   }
+
+  return results;
 }
 
 async function getScreenCapture() {
@@ -437,7 +389,7 @@ async function nextCycle() {
     );
     
     
-    await sleep(foregroundDelay);
+    await new Promise(resolve => setTimeout(resolve, foregroundDelay));
   }
   if (pageCycle == 1) {
     const text = `running ${pageCycles} pagecycles of ${testURL}`;
@@ -454,65 +406,62 @@ async function nextCycle() {
         `bringing app to background`
       );
     }
+    setTimeout(async () => {
+      await postToControlServer("status", `begin pagecycle ${pageCycle}`);
 
-    await sleep(pageCycleDelay);
+      switch (testType) {
+        case TEST_BENCHMARK:
+          isBenchmarkPending = true;
+          break;
 
-    await postToControlServer("status", `begin page cycle ${pageCycle}`);
+        case TEST_PAGE_LOAD:
+          if (getHero) {
+            isHeroPending = true;
+            pendingHeroes = Array.from(settings.measure.hero);
+          }
+          if (getFNBPaint) {
+            isFNBPaintPending = true;
+          }
+          if (getFCP) {
+            isFCPPending = true;
+          }
+          if (getDCF) {
+            isDCFPending = true;
+          }
+          if (getTTFI) {
+            isTTFIPending = true;
+          }
+          if (getLoadTime) {
+            isLoadTimePending = true;
+          }
+          break;
 
-    switch (testType) {
-      case TEST_BENCHMARK:
-        isBenchmarkPending = true;
-        break;
+        case TEST_SCENARIO:
+          isScenarioPending = true;
+          break;
+      }
 
-      case TEST_PAGE_LOAD:
-        if (getHero) {
-          isHeroPending = true;
-          pendingHeroes = Array.from(settings.measure.hero);
+      if (newTabPerCycle && testTabID != 0) {
+        
+        ext.tabs.remove(testTabID);
+        await postToControlServer("status", `closing Tab: ${testTabID}`);
+
+        
+        ext.tabs.create({ url: "about:blank" });
+        await postToControlServer("status", "Open new tab");
+      }
+      setTimeout(async () => {
+        await postToControlServer("status", `update tab: ${testTabID}`);
+
+        
+        
+        ext.tabs.update(testTabID || null, { url: testURL }, testTabUpdated);
+
+        if (testType == TEST_SCENARIO) {
+          await scenarioTimer();
         }
-        if (getFNBPaint) {
-          isFNBPaintPending = true;
-        }
-        if (getFCP) {
-          isFCPPending = true;
-        }
-        if (getDCF) {
-          isDCFPending = true;
-        }
-        if (getTTFI) {
-          isTTFIPending = true;
-        }
-        if (getLoadTime) {
-          isLoadTimePending = true;
-        }
-        break;
-
-      case TEST_SCENARIO:
-        isScenarioPending = true;
-        break;
-    }
-
-    if (newTabPerCycle) {
-      
-      await closeTab();
-      await openTab();
-    }
-
-    await updateTab(testURL);
-
-    if (testType == TEST_SCENARIO) {
-      await startScenarioTimer();
-    }
-
-    
-    
-    
-    
-    
-    if (testType != TEST_PAGE_LOAD) {
-      await collectResults();
-    }
-
-    await postToControlServer("status", `ended page cycle ${pageCycle}`);
+      }, newTabDelay);
+    }, pageCycleDelay);
   } else {
     await verifyResults();
   }
@@ -555,32 +504,32 @@ function setTimeoutAlarm(timeoutName, timeoutMS) {
 }
 
 async function cancelTimeoutAlarm(timeoutName) {
-  let cleared = false;
-
   if (isGecko) {
-    cleared = await ext.alarms.clear(timeoutName);
+    const alarm = await ext.alarms.clear(timeoutName);
+    if (alarm) {
+      raptorLog(`cancelled raptor alarm ${timeoutName}`);
+    } else {
+      raptorLog(`failed to clear raptor alarm ${timeoutName}`, "error");
+    }
   } else {
-    cleared = await new Promise(resolve => {
-      chrome.alarms.clear(timeoutName, resolve);
+    chrome.alarms.clear(timeoutName, function(wasCleared) {
+      if (wasCleared) {
+        raptorLog(`cancelled raptor alarm ${timeoutName}`);
+      } else {
+        raptorLog(`failed to clear raptor alarm ${timeoutName}`, "error");
+      }
     });
-  }
-
-  if (cleared) {
-    raptorLog(`cancelled raptor alarm ${timeoutName}`);
-  } else {
-    raptorLog(`failed to clear raptor alarm ${timeoutName}`, "error");
   }
 }
 
-function resultListener(request, sender, sendResponse) {
+async function resultListener(request, sender, sendResponse) {
   raptorLog(`received message from ${sender.tab.url}`);
 
   
   if (request.type == "pageloadjs-ready") {
     raptorLog("received pageloadjs-ready!");
-
     sendResponse({ text: "pageloadjs-ready-response" });
-    collectResults();
+    await collectResults();
     return;
   }
 
@@ -691,16 +640,18 @@ async function postToControlServer(msgType, msgData = "") {
 
 async function cleanUp() {
   
-  if (debugMode == 1) {
-    raptorLog("debug-mode enabled, leaving tab open");
+  if (debugMode != 1) {
+    ext.tabs.remove(testTabID);
+    raptorLog(`closed tab ${testTabID}`);
   } else {
-    await closeTab();
+    raptorLog("debug-mode enabled, leaving tab open");
   }
 
   if (testType == TEST_PAGE_LOAD) {
     
     ext.alarms.onAlarm.removeListener(timeoutAlarmListener);
     ext.runtime.onMessage.removeListener(resultListener);
+    ext.tabs.onCreated.removeListener(testTabCreated);
   }
   raptorLog(`${testType} test finished`);
 
@@ -731,20 +682,26 @@ async function raptorRunner() {
 
   ext.alarms.onAlarm.addListener(timeoutAlarmListener);
   ext.runtime.onMessage.addListener(resultListener);
+  ext.tabs.onCreated.addListener(testTabCreated);
+  ext.tabs.onRemoved.addListener(testTabRemoved);
 
   
   
   const text = `* pausing ${postStartupDelay /
     1000} seconds to let browser settle... *`;
   await postToControlServer("status", text);
-  await sleep(postStartupDelay);
 
   
-  if (!isGeckoView) {
-    await openTab();
+  if (isGeckoView) {
+    setTimeout(function() {
+      nextCycle();
+    }, postStartupDelay);
+  } else {
+    setTimeout(function() {
+      ext.tabs.create({ url: "about:blank" });
+      nextCycle();
+    }, postStartupDelay);
   }
-
-  await nextCycle();
 }
 
 function raptorLog(text, level = "info") {
