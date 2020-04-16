@@ -102,6 +102,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   NS_IMETHOD RedirectTo(nsIURI* newURI) override;
   NS_IMETHOD UpgradeToSecure() override;
   NS_IMETHOD GetProtocolVersion(nsACString& aProtocolVersion) override;
+  void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() override;
   
   NS_IMETHOD SetupFallbackChannel(const char* aFallbackKey) override;
   
@@ -433,6 +434,13 @@ class HttpChannelChild final : public PHttpChannelChild,
   Atomic<bool, SequentiallyConsistent> mCacheNeedToReportBytesReadInitialized;
   
   Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead;
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  bool mDoDiagnosticAssertWhenOnStopNotCalledOnDestroy = false;
+  bool mAsyncOpenSucceeded = false;
+  bool mSuccesfullyRedirected = false;
+  Maybe<ActorDestroyReason> mActorDestroyReason;
+#endif
 
   uint8_t mCacheEntryAvailable : 1;
   uint8_t mAltDataCacheEntryAvailable : 1;
