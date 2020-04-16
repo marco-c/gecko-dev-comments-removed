@@ -12,6 +12,7 @@
 #include "gfxFontUtils.h"
 #include "nsClassHashtable.h"
 #include "nsDataHashtable.h"
+#include "mozilla/UniquePtr.h"
 
 
 
@@ -270,20 +271,20 @@ class FontList {
  private:
   struct ShmBlock {
     
-    ShmBlock(base::SharedMemory* aShmem, void* aAddr)
-        : mShmem(aShmem), mAddr(aAddr) {}
+    explicit ShmBlock(mozilla::UniquePtr<base::SharedMemory>&& aShmem)
+        : mShmem(std::move(aShmem)) {}
+
+    
+    void* Memory() const { return mShmem->memory(); }
 
     
     
     
     std::atomic<uint32_t>& Allocated() const {
-      return *static_cast<std::atomic<uint32_t>*>(mAddr);
+      return *static_cast<std::atomic<uint32_t>*>(Memory());
     }
 
     mozilla::UniquePtr<base::SharedMemory> mShmem;
-    void* mAddr;  
-                  
-                  
   };
 
   Header& GetHeader() {
