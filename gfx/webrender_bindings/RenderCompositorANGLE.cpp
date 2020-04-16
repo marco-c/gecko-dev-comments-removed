@@ -162,7 +162,7 @@ bool RenderCompositorANGLE::Initialize() {
 
   
   if (gfx::gfxVars::UseWebRenderDCompWin()) {
-    HWND compositorHwnd = mWidget->AsWindows()->GetCompositorHwnd();
+    HWND compositorHwnd = GetCompositorHwnd();
     if (compositorHwnd) {
       mDCLayerTree =
           DCLayerTree::Create(gl, mEGLConfig, mDevice, compositorHwnd);
@@ -189,6 +189,26 @@ bool RenderCompositorANGLE::Initialize() {
   InitializeUsePartialPresent();
 
   return true;
+}
+
+HWND RenderCompositorANGLE::GetCompositorHwnd() {
+  HWND hwnd = 0;
+
+  if (XRE_IsGPUProcess()) {
+    hwnd = mWidget->AsWindows()->GetCompositorHwnd();
+  }
+#ifdef NIGHTLY_BUILD
+  else if (
+      StaticPrefs::
+          gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup()) {
+    MOZ_ASSERT(XRE_IsParentProcess());
+
+    
+    hwnd = mWidget->AsWindows()->GetHwnd();
+  }
+#endif
+
+  return hwnd;
 }
 
 bool RenderCompositorANGLE::CreateSwapChain() {
@@ -302,7 +322,7 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(
     return;
   }
 
-  HWND hwnd = mWidget->AsWindows()->GetCompositorHwnd();
+  HWND hwnd = GetCompositorHwnd();
   if (!hwnd) {
     
     
@@ -312,8 +332,6 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible(
     }
     return;
   }
-
-  MOZ_ASSERT(XRE_IsGPUProcess());
 
   
   
