@@ -75,9 +75,14 @@ fn evex2(rm: RegUnit, reg: RegUnit) -> u8 {
 }
 
 
+
+
+
+
+
 #[inline]
-fn needs_rex(bits: u16, rex: u8) -> bool {
-    rex != BASE_REX || EncodingBits::from(bits).rex_w() == 1
+fn needs_rex(rex: u8) -> bool {
+    rex != BASE_REX
 }
 
 
@@ -107,7 +112,7 @@ fn put_rexop1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
 
 fn put_dynrexop1<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     debug_assert_eq!(bits & 0x0f00, 0, "Invalid encoding bits for DynRexOp1*");
-    if needs_rex(bits, rex) {
+    if needs_rex(rex) {
         rex_prefix(bits, rex, sink);
     }
     sink.put1(bits as u8);
@@ -136,7 +141,7 @@ fn put_dynrexop2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
         0x0400,
         "Invalid encoding bits for DynRexOp2*"
     );
-    if needs_rex(bits, rex) {
+    if needs_rex(rex) {
         rex_prefix(bits, rex, sink);
     }
     sink.put1(0x0f);
@@ -190,7 +195,7 @@ fn put_dynrexmp2<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     );
     let enc = EncodingBits::from(bits);
     sink.put1(PREFIX[(enc.pp() - 1) as usize]);
-    if needs_rex(bits, rex) {
+    if needs_rex(rex) {
         rex_prefix(bits, rex, sink);
     }
     sink.put1(0x0f);
@@ -228,7 +233,7 @@ fn put_dynrexmp3<CS: CodeSink + ?Sized>(bits: u16, rex: u8, sink: &mut CS) {
     );
     let enc = EncodingBits::from(bits);
     sink.put1(PREFIX[(enc.pp() - 1) as usize]);
-    if needs_rex(bits, rex) {
+    if needs_rex(rex) {
         rex_prefix(bits, rex, sink);
     }
     sink.put1(0x0f);
