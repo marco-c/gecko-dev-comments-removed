@@ -296,16 +296,9 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     
     
     const newActorPool = new Pool(this.conn, "listTabs-tab-descriptors");
-    let selected;
 
     const tabDescriptorActors = await tabList.getList();
     for (const tabDescriptorActor of tabDescriptorActors) {
-      if (tabDescriptorActor.selected) {
-        const index = tabDescriptorActors.findIndex(
-          descriptor => descriptor === tabDescriptorActor
-        );
-        selected = index;
-      }
       newActorPool.manage(tabDescriptorActor);
     }
 
@@ -321,7 +314,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
     
     Object.assign(reply, {
-      selected: selected || 0,
       tabs: [...this._tabDescriptorActorPool.poolChildren()],
     });
 

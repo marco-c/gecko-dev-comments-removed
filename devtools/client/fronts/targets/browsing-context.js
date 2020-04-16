@@ -24,9 +24,6 @@ class BrowsingContextTargetFront extends TargetMixin(
       javascriptEnabled: null,
     };
 
-    
-    this._selected = false;
-
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onFrameUpdate = this._onFrameUpdate.bind(this);
   }
@@ -43,17 +40,6 @@ class BrowsingContextTargetFront extends TargetMixin(
     this.favicon = json.favicon;
     this._title = json.title;
     this._url = json.url;
-  }
-
-  
-  
-  get selected() {
-    return this._selected;
-  }
-
-  
-  setIsSelected(selected) {
-    this._selected = selected;
   }
 
   
