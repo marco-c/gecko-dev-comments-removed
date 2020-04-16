@@ -20,6 +20,7 @@
 #include "nsIObserver.h"
 #include "nsIParentChannel.h"
 #include "nsIParentRedirectingChannel.h"
+#include "nsIProcessSwitchRequestor.h"
 #include "nsIRedirectResultListener.h"
 #include "nsIMultiPartChannel.h"
 
@@ -59,6 +60,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIParentChannel,
                              public nsIChannelEventSink,
                              public HttpChannelSecurityWarningReporter,
+                             public nsIProcessSwitchRequestor,
                              public nsIMultiPartChannelListener {
  public:
   explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
@@ -79,6 +81,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIASYNCVERIFYREDIRECTREADYCALLBACK
   NS_DECL_NSICHANNELEVENTSINK
+  NS_DECL_NSIPROCESSSWITCHREQUESTOR
   NS_DECL_NSIMULTIPARTCHANNELLISTENER
 
   
@@ -175,7 +178,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  bool MaybeTriggerProcessSwitch();
+  void TriggerCrossProcessSwitch();
 
   
   
@@ -190,8 +193,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   already_AddRefed<LoadInfo> CreateLoadInfo(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
-
-  bool HasCrossOriginOpenerPolicyMismatch();
 
   
   
@@ -345,6 +346,14 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool mIsFinished = false;
 
+  typedef MozPromise<uint64_t, nsresult, true >
+      ContentProcessIdPromise;
+  
+  
+  
+  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
+  
+  
   
   
   uint64_t mCrossProcessRedirectIdentifier = 0;

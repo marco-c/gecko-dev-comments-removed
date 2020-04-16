@@ -32,6 +32,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/Mutex.h"
+#include "nsIProcessSwitchRequestor.h"
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -78,7 +79,8 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsIChannelWithDivertableParentListener,
                             public nsIRaceCacheWithNetwork,
                             public nsIRequestTailUnblockCallback,
-                            public nsITimerCallback {
+                            public nsITimerCallback,
+                            public nsIProcessSwitchRequestor {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUESTOBSERVER
@@ -100,6 +102,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSIRACECACHEWITHNETWORK
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
+  NS_DECL_NSIPROCESSSWITCHREQUESTOR
 
   
   
@@ -273,6 +276,16 @@ class nsHttpChannel final : public HttpBaseChannel,
     mTransactionObserver = arg;
   }
   TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
+
+  typedef MozPromise<uint64_t, nsresult, true >
+      ContentProcessIdPromise;
+  already_AddRefed<ContentProcessIdPromise>
+  TakeRedirectContentProcessIdPromise() {
+    return mRedirectContentProcessIdPromise.forget();
+  }
+  uint64_t CrossProcessRedirectIdentifier() {
+    return mCrossProcessRedirectIdentifier;
+  }
 
   CacheDisposition mCacheDisposition;
 
@@ -482,11 +495,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult ProcessCrossOriginResourcePolicyHeader();
 
   nsresult ComputeCrossOriginOpenerPolicyMismatch();
-  
-  
-  bool HasCrossOriginOpenerPolicyMismatch() {
-    return mHasCrossOriginOpenerPolicyMismatch;
-  }
 
   
 
@@ -573,6 +581,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsIURI> mRedirectURI;
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIChannel> mPreflightChannel;
+
+  
+  
+  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
+  
+  uint64_t mCrossProcessRedirectIdentifier = 0;
 
   
   
