@@ -40,9 +40,7 @@ const char* const js::jit::CacheKindNames[] = {
 
 
 
-namespace js {
-namespace jit {
-namespace CacheIROpFormat {
+namespace js::jit::CacheIROpFormat {
 
 static constexpr uint32_t CacheIRArgLength(ArgType arg) {
   switch (arg) {
@@ -62,18 +60,16 @@ static constexpr uint32_t CacheIRArgLength(ArgType arg) {
   }
 }
 template <typename... Args>
-static constexpr uint32_t CacheIRArgLength(ArgType arg, Args... args) {
-  return CacheIRArgLength(arg) + CacheIRArgLength(args...);
+static constexpr uint32_t CacheIRArgsLength(Args... args) {
+  return (CacheIRArgLength(args) + ...);
 }
 
 const uint32_t ArgLengths[] = {
-#define ARGLENGTH(op, ...) CacheIRArgLength(__VA_ARGS__),
+#define ARGLENGTH(op, ...) CacheIRArgsLength(__VA_ARGS__),
     CACHE_IR_OPS(ARGLENGTH)
 #undef ARGLENGTH
 };
 
-}  
-}  
 }  
 
 void CacheIRWriter::assertSameCompartment(JSObject* obj) {
