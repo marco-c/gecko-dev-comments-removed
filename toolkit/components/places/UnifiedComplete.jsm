@@ -616,22 +616,6 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 
 
 
-function substringAt(sourceStr, targetStr) {
-  let index = sourceStr.indexOf(targetStr);
-  return index < 0 ? "" : sourceStr.substr(index);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 function substringAfter(sourceStr, targetStr) {
   let index = sourceStr.indexOf(targetStr);
   return index < 0 ? "" : sourceStr.substr(index + targetStr.length);
@@ -686,14 +670,11 @@ function makeActionUrl(type, params) {
 
 
 
-
-
 function Search(
   searchString,
   searchParam,
   autocompleteListener,
   autocompleteSearch,
-  prohibitSearchSuggestions,
   queryContext
 ) {
   
@@ -776,12 +757,11 @@ function Search(
     this.setBehavior("restrict");
     let behavior = sourceToBehaviorMap.get(queryContext.restrictSource);
     this.setBehavior(behavior);
+
     if (behavior == "search" && queryContext.engineName) {
       this._engineName = queryContext.engineName;
     }
-    if (behavior != "search") {
-      prohibitSearchSuggestions = true;
-    }
+
     
     
     this._heuristicToken = null;
@@ -809,8 +789,6 @@ function Search(
   }
 
   this._keywordSubstitute = null;
-
-  this._prohibitSearchSuggestions = prohibitSearchSuggestions;
 
   this._listener = autocompleteListener;
   this._autocompleteSearch = autocompleteSearch;
@@ -970,10 +948,6 @@ Search.prototype = {
       this._sleepResolve();
       this._sleepResolve = null;
     }
-    if (this._suggestionsFetch) {
-      this._suggestionsFetch.stop();
-      this._suggestionsFetch = null;
-    }
     if (typeof this.interrupt == "function") {
       this.interrupt();
     }
@@ -1074,20 +1048,18 @@ Search.prototype = {
       
       
       
-      
-      
-      
-      
-      
-      let emptyQueryTokenAlias =
+      let tokenAliasQuery =
         this._searchEngineAliasMatch &&
-        this._searchEngineAliasMatch.isTokenAlias &&
-        !this._searchEngineAliasMatch.query;
+        this._searchEngineAliasMatch.isTokenAlias;
       let emptySearchRestriction =
         this._trimmedOriginalSearchString.length <= 3 &&
         this._leadingRestrictionToken == UrlbarTokenizer.RESTRICT.SEARCH &&
         /\s*\S?$/.test(this._trimmedOriginalSearchString);
-      if (emptySearchRestriction || emptyQueryTokenAlias) {
+      if (
+        emptySearchRestriction ||
+        tokenAliasQuery ||
+        (this.hasBehavior("search") && this.hasBehavior("restrict"))
+      ) {
         this._autocompleteSearch.finishSearch(true);
         return;
       }
@@ -1107,68 +1079,6 @@ Search.prototype = {
       extensionsCompletePromise = this._matchExtensionSuggestions();
     } else if (ExtensionSearchHandler.hasActiveInputSession()) {
       ExtensionSearchHandler.handleInputCancelled();
-    }
-
-    
-    
-    let searchSuggestionsCompletePromise = Promise.resolve();
-    if (
-      this._enableActions &&
-      this.hasBehavior("search") &&
-      (!this._inPrivateWindow ||
-        UrlbarPrefs.get("browser.search.suggest.enabled.private"))
-    ) {
-      let query = this._searchEngineAliasMatch
-        ? this._searchEngineAliasMatch.query
-        : substringAt(this._originalSearchString, this._searchTokens[0].value);
-      if (query) {
-        
-        query = query.substr(
-          0,
-          UrlbarPrefs.get("maxCharsForSearchSuggestions")
-        );
-        
-        if (!this._prohibitSearchSuggestionsFor(query)) {
-          let engine;
-          if (this._searchEngineAliasMatch) {
-            engine = this._searchEngineAliasMatch.engine;
-          } else {
-            engine = this._engineName
-              ? Services.search.getEngineByName(this._engineName)
-              : await PlacesSearchAutocompleteProvider.currentEngine(
-                  this._inPrivateWindow
-                );
-            if (!this.pending || !engine) {
-              return;
-            }
-          }
-          let alias =
-            (this._searchEngineAliasMatch &&
-              this._searchEngineAliasMatch.alias) ||
-            "";
-          searchSuggestionsCompletePromise = this._matchSearchSuggestions(
-            engine,
-            query,
-            alias
-          );
-        }
-      }
-    }
-
-    
-    
-    
-    if (
-      (this._searchEngineAliasMatch &&
-        this._searchEngineAliasMatch.isTokenAlias) ||
-      (this._enableActions &&
-        this.hasBehavior("search") &&
-        this.hasBehavior("restrict"))
-    ) {
-      
-      await searchSuggestionsCompletePromise;
-      this._autocompleteSearch.finishSearch(true);
-      return;
     }
 
     
@@ -1247,7 +1157,6 @@ Search.prototype = {
     this._matchPreloadedSites();
 
     
-    await searchSuggestionsCompletePromise;
     await extensionsCompletePromise;
   },
 
@@ -1513,9 +1422,6 @@ Search.prototype = {
       if (matched) {
         
         
-        this._prohibitSearchSuggestions = true;
-        
-        
         
         try {
           new URL(this._originalSearchString);
@@ -1543,97 +1449,6 @@ Search.prototype = {
     }
 
     return false;
-  },
-
-  _matchSearchSuggestions(engine, searchString, alias) {
-    this._suggestionsFetch = PlacesSearchAutocompleteProvider.newSuggestionsFetch(
-      engine,
-      searchString,
-      this._inPrivateWindow,
-      UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
-      this._maxResults - UrlbarPrefs.get("maxHistoricalSearchSuggestions"),
-      this._userContextId
-    );
-    return this._suggestionsFetch.fetchCompletePromise
-      .then(() => {
-        
-        if (!this._suggestionsFetch) {
-          return;
-        }
-        if (
-          this._suggestionsFetch.resultsCount >= 0 &&
-          this._suggestionsFetch.resultsCount < 2
-        ) {
-          
-          this._lastLowResultsSearchSuggestion = this._originalSearchString;
-        }
-        while (this.pending) {
-          let result = this._suggestionsFetch.consume();
-          if (!result) {
-            break;
-          }
-          let { suggestion, historical } = result;
-          if (!looksLikeUrl(suggestion)) {
-            this._addSearchEngineMatch({
-              engine,
-              alias,
-              query: searchString,
-              suggestion,
-              historical,
-            });
-          }
-        }
-      })
-      .catch(Cu.reportError);
-  },
-
-  
-
-
-
-
-
-
-
-
-  _prohibitSearchSuggestionsFor(searchString) {
-    if (this._prohibitSearchSuggestions) {
-      return true;
-    }
-
-    
-    
-    if (
-      this._searchEngineAliasMatch &&
-      this._searchEngineAliasMatch.isTokenAlias
-    ) {
-      return false;
-    }
-
-    
-    if (searchString.length < 2) {
-      return true;
-    }
-
-    
-    if (
-      this._searchTokens.length == 1 &&
-      this._searchTokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-      Services.uriFixup.isDomainWhitelisted(this._searchTokens[0].value, -1)
-    ) {
-      return true;
-    }
-
-    
-    
-    
-    return this._searchTokens.some(t => {
-      return (
-        t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
-        (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-          !/^[a-z0-9-]+$/i.test(t.value))
-      );
-    });
   },
 
   async _matchKnownUrl(conn) {
@@ -1866,14 +1681,10 @@ Search.prototype = {
 
 
 
-
-
-
   _addSearchEngineMatch({
     engine,
     query = "",
     alias = undefined,
-    suggestion = undefined,
     historical = false,
   }) {
     let actionURLParams = {
@@ -1881,10 +1692,7 @@ Search.prototype = {
       searchQuery: query,
     };
 
-    if (suggestion) {
-      
-      actionURLParams.input = (alias ? `${alias} ` : "") + suggestion;
-    } else if (alias && !query) {
+    if (alias && !query) {
       
       
       
@@ -1895,7 +1703,7 @@ Search.prototype = {
 
     let match = {
       comment: engine.name,
-      icon: engine.iconURI && !suggestion ? engine.iconURI.spec : null,
+      icon: engine.iconURI ? engine.iconURI.spec : null,
       style: "action searchengine",
       frecency: FRECENCY_DEFAULT,
     };
@@ -1903,11 +1711,6 @@ Search.prototype = {
     if (alias) {
       actionURLParams.alias = alias;
       match.style += " alias";
-    }
-    if (suggestion) {
-      actionURLParams.searchSuggestion = suggestion;
-      match.style += " suggestion";
-      match.type = UrlbarUtils.RESULT_GROUP.SUGGESTION;
     }
 
     match.value = makeActionUrl("searchengine", actionURLParams);
@@ -2992,19 +2795,11 @@ UnifiedComplete.prototype = {
       this.stopSearch();
     }
 
-    
-    
-    let prohibitSearchSuggestions =
-      !!this._lastLowResultsSearchSuggestion &&
-      searchString.length > this._lastLowResultsSearchSuggestion.length &&
-      searchString.startsWith(this._lastLowResultsSearchSuggestion);
-
     let search = (this._currentSearch = new Search(
       searchString,
       searchParam,
       listener,
       this,
-      prohibitSearchSuggestions,
       queryContext
     ));
     this.getDatabaseHandle()

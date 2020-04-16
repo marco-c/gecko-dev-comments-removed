@@ -113,9 +113,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    
-    return false;
-    
     if (
       !UrlbarPrefs.get("browser.search.suggest.enabled") ||
       !UrlbarPrefs.get("suggest.searches")
