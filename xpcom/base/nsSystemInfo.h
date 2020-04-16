@@ -60,6 +60,11 @@ typedef mozilla::MozPromise<OSInfo, nsresult,  false>
 typedef mozilla::MozPromise<ProcessInfo, nsresult,  false>
     ProcessInfoPromise;
 
+
+
+
+nsresult CollectProcessInfo(ProcessInfo& info);
+
 class nsSystemInfo final : public nsISystemInfo, public nsHashPropertyBag {
  public:
   NS_DECL_ISUPPORTS_INHERITED
