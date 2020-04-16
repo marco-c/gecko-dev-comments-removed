@@ -156,6 +156,11 @@ parent:
   async EnsureHSTSData()
     returns (bool result);
 
+  
+
+
+  async GetPageThumbStream(nsIURI uri) returns (nsIInputStream stream);
+
 child:
   
 
