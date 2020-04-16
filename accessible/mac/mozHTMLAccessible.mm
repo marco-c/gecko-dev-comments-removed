@@ -67,15 +67,6 @@
   return [super accessibilityAttributeValue:attribute];
 }
 
-- (NSArray*)accessibilityActionNames {
-  
-  if (![self getGeckoAccessible] && ![self getProxyAccessible]) return [NSArray array];
-
-  
-  return [@[ NSAccessibilityPressAction ]
-      arrayByAddingObjectsFromArray:[super accessibilityActionNames]];
-}
-
 - (NSString*)customDescription {
   return @"";
 }
