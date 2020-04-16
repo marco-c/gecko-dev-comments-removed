@@ -26,7 +26,8 @@ WarpBuilder::WarpBuilder(WarpSnapshot& snapshot, MIRGenerator& mirGen)
       alloc_(mirGen.alloc()),
       info_(mirGen.outerInfo()),
       script_(snapshot.script()->script()),
-      loopStack_(alloc_) {
+      loopStack_(alloc_),
+      iterators_(alloc_) {
   opSnapshotIter_ = snapshot.script()->opSnapshots().getFirst();
 }
 
@@ -303,6 +304,10 @@ bool WarpBuilder::build() {
   }
 
   if (!buildEpilogue()) {
+    return false;
+  }
+
+  if (!MPhi::markIteratorPhis(iterators_)) {
     return false;
   }
 
@@ -1071,6 +1076,65 @@ bool WarpBuilder::build_JumpTarget(BytecodeLocation loc) {
   return true;
 }
 
+bool WarpBuilder::addIteratorLoopPhis(BytecodeLocation loopHead) {
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(current->stackDepth() >= info().firstStackSlot());
+
+  bool emptyStack = current->stackDepth() == info().firstStackSlot();
+  if (emptyStack) {
+    return true;
+  }
+
+  jsbytecode* loopHeadPC = loopHead.toRawBytecode();
+
+  for (TryNoteIterAllNoGC tni(script_, loopHeadPC); !tni.done(); ++tni) {
+    const TryNote& tn = **tni;
+
+    
+    
+    if (tn.isLoop()) {
+      BytecodeLocation tnStart = script_->offsetToLocation(tn.start);
+      if (tnStart != loopHead) {
+        MOZ_ASSERT(tnStart.is(JSOp::LoopHead));
+        MOZ_ASSERT(tnStart < loopHead);
+        return true;
+      }
+    }
+
+    switch (tn.kind()) {
+      case TryNoteKind::Destructuring:
+      case TryNoteKind::ForIn: {
+        
+        
+        
+        MOZ_ASSERT(tn.stackDepth >= 1);
+        uint32_t slot = info().stackSlot(tn.stackDepth - 1);
+        MPhi* phi = current->getSlot(slot)->toPhi();
+        if (!iterators_.append(phi)) {
+          return false;
+        }
+        break;
+      }
+      case TryNoteKind::Loop:
+      case TryNoteKind::ForOf:
+        
+        
+        break;
+      default:
+        break;
+    }
+  }
+
+  return true;
+}
+
 bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
   
   
@@ -1099,7 +1163,9 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
 
   pred->end(MGoto::New(alloc(), current));
 
-  
+  if (!addIteratorLoopPhis(loc)) {
+    return false;
+  }
 
   MInterruptCheck* check = MInterruptCheck::New(alloc());
   current->add(check);
