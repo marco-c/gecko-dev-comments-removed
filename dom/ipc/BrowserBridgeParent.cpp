@@ -78,7 +78,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
       MakeRefPtr<WindowGlobalParent>(aWindowInit,  false);
 
   ManagedEndpoint<PWindowGlobalChild> windowChildEp =
-      aContentParent->OpenPWindowGlobalEndpoint(windowParent);
+      browserParent->OpenPWindowGlobalEndpoint(windowParent);
   if (NS_WARN_IF(!windowChildEp.IsValid())) {
     MOZ_ASSERT(false, "WindowGlobal Open Endpoint Failed");
     return NS_ERROR_FAILURE;
@@ -100,7 +100,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
   mBrowserParent->SetOwnerElement(Manager()->GetOwnerElement());
   mBrowserParent->InitRendering();
 
-  windowParent->Init(aWindowInit, mBrowserParent);
+  windowParent->Init(aWindowInit);
 
   
   Unused << SendSetLayersId(mBrowserParent->GetLayersId());

@@ -14,7 +14,6 @@
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
-#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "nsRefPtrHashtable.h"
@@ -79,11 +78,7 @@ class WindowGlobalParent final : public WindowContext,
 
   
   
-  ContentParent* GetContentParent();
-
-  
-  
-  BrowserParent* GetBrowserParent() const { return mBrowserParent; }
+  already_AddRefed<BrowserParent> GetBrowserParent();
 
   void ReceiveRawMessage(const JSWindowActorMessageMeta& aMeta,
                          ipc::StructuredCloneData&& aData,
@@ -149,7 +144,8 @@ class WindowGlobalParent final : public WindowContext,
   WindowGlobalParent(const WindowGlobalInit& aInit, bool aInProcess);
 
   
-  void Init(const WindowGlobalInit& aInit, BrowserParent* aBrowserParent);
+  
+  void Init(const WindowGlobalInit& aInit);
 
   nsIGlobalObject* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
@@ -163,6 +159,8 @@ class WindowGlobalParent final : public WindowContext,
           aReason = Nothing());
 
   ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
+
+  nsIContentParent* GetContentParent();
 
  protected:
   const nsAString& GetRemoteType() override;
@@ -204,8 +202,6 @@ class WindowGlobalParent final : public WindowContext,
 
  private:
   ~WindowGlobalParent();
-
-  RefPtr<BrowserParent> mBrowserParent;
 
   
   

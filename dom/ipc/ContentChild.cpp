@@ -1030,7 +1030,7 @@ nsresult ContentChild::ProvideWindowCommon(
 
   
   ManagedEndpoint<PWindowGlobalParent> windowParentEp =
-      OpenPWindowGlobalEndpoint(windowChild);
+      newChild->OpenPWindowGlobalEndpoint(windowChild);
   if (NS_WARN_IF(!windowParentEp.IsValid())) {
     return NS_ERROR_ABORT;
   }
@@ -1042,7 +1042,7 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  windowChild->Init(newChild);
+  windowChild->Init();
 
   
   
@@ -1807,11 +1807,11 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     return IPC_FAIL(this, "BindPBrowserEndpoint failed");
   }
 
-  if (NS_WARN_IF(
-          !BindPWindowGlobalEndpoint(std::move(aWindowEp), windowChild))) {
+  if (NS_WARN_IF(!browserChild->BindPWindowGlobalEndpoint(std::move(aWindowEp),
+                                                          windowChild))) {
     return IPC_FAIL(this, "BindPWindowGlobalEndpoint failed");
   }
-  windowChild->Init(browserChild);
+  windowChild->Init();
 
   
   if (!browserChild->mTabGroup) {

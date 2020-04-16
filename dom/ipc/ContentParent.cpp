@@ -1311,7 +1311,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
 
   
   ManagedEndpoint<PWindowGlobalChild> windowEp =
-      constructorSender->OpenPWindowGlobalEndpoint(windowParent);
+      browserParent->OpenPWindowGlobalEndpoint(windowParent);
   if (NS_WARN_IF(!windowEp.IsValid())) {
     return nullptr;
   }
@@ -1327,7 +1327,7 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
     return nullptr;
   }
 
-  windowParent->Init(windowInit, browserParent);
+  windowParent->Init(windowInit);
 
   if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
     
@@ -3314,12 +3314,12 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
     }
   }
 
-  if (NS_WARN_IF(!BindPWindowGlobalEndpoint(std::move(aWindowEp),
+  if (NS_WARN_IF(!parent->BindPWindowGlobalEndpoint(std::move(aWindowEp),
                                                     initialWindow))) {
     return IPC_FAIL(this, "BindPWindowGlobalEndpoint failed");
   }
 
-  initialWindow->Init(aInitialWindowInit, parent);
+  initialWindow->Init(aInitialWindowInit);
 
   
   

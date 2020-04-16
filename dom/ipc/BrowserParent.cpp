@@ -1360,8 +1360,8 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   
   auto wgp = MakeRefPtr<WindowGlobalParent>(aInit,  false);
 
-  Manager()->BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
-  wgp->Init(aInit, this);
+  BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
+  wgp->Init(aInit);
   return IPC_OK();
 }
 
