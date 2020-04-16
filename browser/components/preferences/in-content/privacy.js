@@ -870,6 +870,19 @@ var gPrivacyPane = {
         );
       }
 
+      
+      document.querySelector(selector + " .all-cookies-option").hidden = true;
+      document.querySelector(
+        selector + " .unvisited-cookies-option"
+      ).hidden = true;
+      document.querySelector(
+        selector + " .third-party-tracking-cookies-option"
+      ).hidden = true;
+      document.querySelector(
+        selector + " .all-third-party-cookies-option"
+      ).hidden = true;
+      document.querySelector(selector + " .social-media-option").hidden = true;
+
       for (let item of rulesArray) {
         
         switch (item) {
