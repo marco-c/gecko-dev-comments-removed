@@ -1062,13 +1062,6 @@ class nsDocShell final : public nsDocLoader,
   
   uint32_t DetermineContentType();
 
-  
-  
-  
-  
-  nsresult MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
-                                   uint32_t aWindowType, bool* aDidHandleLoad);
-
   struct SameDocumentNavigationState {
     nsAutoCString mCurrentHash;
     nsAutoCString mNewHash;

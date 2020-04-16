@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -10,6 +10,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import android.util.Log
 import org.hamcrest.Matchers.*
+import org.junit.Assume.assumeThat
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,9 +54,9 @@ class RuntimeSettingsTest : BaseSessionTest() {
         assertThat("font inflation restored to previous value",
                 settings.fontInflationEnabled, `is`(initialFontInflation))
 
-        // Now check with that with font inflation initially off, the initial state is still
-        // restored correctly after switching auto mode back off.
-        // Also reset font size factor back to its default value of 1.0f.
+        
+        
+        
         initialFontSize = 1.0f
         initialFontInflation = false
         settings.fontSizeFactor = initialFontSize
@@ -78,7 +79,7 @@ class RuntimeSettingsTest : BaseSessionTest() {
                 settings.fontInflationEnabled, `is`(initialFontInflation))
     }
 
-    @Ignore // Bug 1546297 disabled test on pgo for frequent failures
+    @Ignore 
     @Test fun fontSize() {
         val settings = sessionRule.runtime.settings
         settings.fontSizeFactor = 1.0f
@@ -149,6 +150,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
     @Test
     fun aboutConfig() {
+        
+        assumeThat(sessionRule.env.isAutomation, equalTo(false))
         val settings = sessionRule.runtime.settings
 
         assertThat("about:config should be disabled by default",

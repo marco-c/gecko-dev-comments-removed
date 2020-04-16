@@ -8078,47 +8078,6 @@ bool nsDocShell::JustStartedNetworkLoad() {
   return mDocumentRequest && mDocumentRequest != GetCurrentDocChannel();
 }
 
-nsresult nsDocShell::MaybeHandleLoadDelegate(nsDocShellLoadState* aLoadState,
-                                             uint32_t aWindowType,
-                                             bool* aDidHandleLoad) {
-  MOZ_ASSERT(aLoadState);
-  MOZ_ASSERT(aDidHandleLoad);
-  MOZ_ASSERT(aWindowType == nsIBrowserDOMWindow::OPEN_NEWWINDOW ||
-             aWindowType == nsIBrowserDOMWindow::OPEN_CURRENTWINDOW);
-
-  *aDidHandleLoad = false;
-
-  if (aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE)) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsILoadURIDelegate> loadURIDelegate = GetLoadURIDelegate();
-  
-  
-  if (!loadURIDelegate || aLoadState->LoadType() == LOAD_ERROR_PAGE) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  Document* doc = mContentViewer ? mContentViewer->GetDocument() : nullptr;
-  const bool isDocumentAuxSandboxed =
-      doc && (doc->GetSandboxFlags() & SANDBOXED_AUXILIARY_NAVIGATION);
-
-  if (aWindowType == nsIBrowserDOMWindow::OPEN_NEWWINDOW &&
-      isDocumentAuxSandboxed) {
-    
-    
-    *aDidHandleLoad = true;
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-  }
-
-  return loadURIDelegate->LoadURI(
-      aLoadState->URI(), aWindowType, aLoadState->LoadFlags(),
-      aLoadState->TriggeringPrincipal(), aDidHandleLoad);
-}
-
 
 
 
@@ -8213,21 +8172,6 @@ nsresult nsDocShell::PerformRetargeting(nsDocShellLoadState* aLoadState,
       }
 
       return NS_ERROR_CONTENT_BLOCKED;
-    }
-  }
-
-  if (!targetContext || (targetContext == mBrowsingContext)) {
-    bool handled;
-    rv = MaybeHandleLoadDelegate(aLoadState,
-                                 targetContext
-                                     ? nsIBrowserDOMWindow::OPEN_CURRENTWINDOW
-                                     : nsIBrowserDOMWindow::OPEN_NEWWINDOW,
-                                 &handled);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (handled) {
-      return NS_OK;
     }
   }
 
@@ -8712,20 +8656,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   bool sameDocument =
       IsSameDocumentNavigation(aLoadState, sameDocumentNavigationState) &&
       !aLoadState->GetPendingRedirectedChannel();
-  
-  
-  
-  if (!sameDocument && !(aLoadState->LoadType() & LOAD_CMD_HISTORY)) {
-    bool handled;
-    rv = MaybeHandleLoadDelegate(
-        aLoadState, nsIBrowserDOMWindow::OPEN_CURRENTWINDOW, &handled);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (handled) {
-      return NS_OK;
-    }
-  }
 
   
   
