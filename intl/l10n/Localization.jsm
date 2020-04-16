@@ -215,16 +215,26 @@ class Localization {
 
 
 
-
-
-
-
-  constructor(resourceIds = [], sync = false, generateBundles = defaultGenerateBundles, generateBundlesSync = defaultGenerateBundlesSync) {
-    this.isSync = sync;
+  constructor(resourceIds = []) {
     this.resourceIds = resourceIds;
+    this.generateBundles = defaultGenerateBundles;
+    this.generateBundlesSync = defaultGenerateBundlesSync;
+  }
+
+  setGenerateBundles(generateBundles) {
     this.generateBundles = generateBundles;
+  }
+
+  setGenerateBundlesSync(generateBundlesSync) {
     this.generateBundlesSync = generateBundlesSync;
-    this.onChange(true);
+  }
+
+  setIsSync(isSync) {
+    this.isSync = isSync;
+  }
+
+  init(eager = false) {
+    this.onChange(eager);
   }
 
   cached(iterable) {
@@ -500,11 +510,6 @@ class Localization {
       this.bundles.touchNext(prefetchCount);
     }
   }
-
-  setIsSync(isSync) {
-    this.isSync = isSync;
-    this.onChange();
-  }
 }
 
 Localization.prototype.QueryInterface = ChromeUtils.generateQI([
@@ -634,13 +639,9 @@ function keysFromBundle(method, bundle, keys, translations) {
 
 
 
-var getLocalization = (resourceIds, sync = false) => {
-  return new Localization(resourceIds, sync);
-};
-
-var getLocalizationWithCustomGenerateMessages = (resourceIds, generateMessages) => {
-  return new Localization(resourceIds, false, generateMessages);
+var getLocalization = (resourceIds) => {
+  return new Localization(resourceIds);
 };
 
 this.Localization = Localization;
-var EXPORTED_SYMBOLS = ["Localization", "getLocalization", "getLocalizationWithCustomGenerateMessages"];
+var EXPORTED_SYMBOLS = ["Localization", "getLocalization"];

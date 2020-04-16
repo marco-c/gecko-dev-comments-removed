@@ -3734,7 +3734,7 @@ class Document : public nsINode,
  private:
   bool IsErrorPage() const;
 
-  void InitializeLocalization(nsTArray<nsString>& aResourceIds);
+  void InitializeLocalization(Sequence<nsString>& aResourceIds);
 
   
   
@@ -3760,7 +3760,7 @@ class Document : public nsINode,
 
   FlashClassification DocumentFlashClassificationInternal();
 
-  nsTArray<nsString> mL10nResources;
+  Sequence<nsString> mL10nResources;
 
   
   
