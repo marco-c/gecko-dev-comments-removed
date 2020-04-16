@@ -551,7 +551,20 @@ static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
       return GETCLASSFROMTABLE(gLBClass30, l);
     }
     if (0xff00 == h) {
-      if (l < 0x0060) {  
+      if (l <= 0x0060) {  
+        
+        
+        if (l + 0x20 == ',' || l + 0x20 == '.') {
+          return CLASS_CLOSE;
+        }
+        
+        
+        if (l == 0x005f) {
+          return CLASS_OPEN;
+        }
+        if (l == 0x0060) {
+          return CLASS_CLOSE;
+        }
         return GETCLASSFROMTABLE(gLBClass00, (l + 0x20));
       }
       if (l < 0x00a0) {  
