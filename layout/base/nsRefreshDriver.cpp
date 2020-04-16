@@ -1040,7 +1040,13 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
   }
 
   
-  nsIWidget* widget = GetPresContext()->GetRootWidget();
+  
+  
+  
+  
+  
+  nsPresContext* pc = GetPresContext();
+  nsIWidget* widget = pc->GetPresShell() ? pc->GetRootWidget() : nullptr;
   if (widget) {
     RefPtr<gfx::VsyncSource> localVsyncSource = widget->GetVsyncSource();
     if (localVsyncSource) {
