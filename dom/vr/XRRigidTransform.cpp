@@ -92,8 +92,8 @@ void XRRigidTransform::GetMatrix(JSContext* aCx,
     mat.SetRotationFromQuaternion(
         gfx::Quaternion(mOrientation->X(), mOrientation->Y(), mOrientation->Z(),
                         mOrientation->W()));
-    mat.PreTranslate((float)mPosition->X(), (float)mPosition->Y(),
-                     (float)mPosition->Z());
+    mat.PostTranslate((float)mPosition->X(), (float)mPosition->Y(),
+                      (float)mPosition->Z());
     
     mMatrixArray = dom::Float32Array::Create(aCx, this, 16, mat.components);
     if (!mMatrixArray) {
