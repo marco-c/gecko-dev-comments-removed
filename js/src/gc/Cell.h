@@ -102,17 +102,7 @@ class CellColor {
 
 
 
-
-
-
-
-
-
-
-
-
-
-struct alignas(gc::CellAlignBytes) Cell {
+class CellHeader {
  public:
   static_assert(gc::CellFlagBitsReservedForGC >= 3,
                 "Not enough flag bits reserved for GC");
@@ -134,6 +124,27 @@ struct alignas(gc::CellAlignBytes) Cell {
   
   static constexpr uintptr_t BIGINT_BIT = Bit(2);
 
+ protected:
+  
+  
+  uintptr_t header_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct alignas(gc::CellAlignBytes) Cell {
+ public:
   MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
   MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
   MOZ_ALWAYS_INLINE TenuredCell& asTenured();
@@ -169,19 +180,19 @@ struct alignas(gc::CellAlignBytes) Cell {
 
   inline bool isForwarded() const {
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & FORWARD_BIT;
+    return firstWord & CellHeader::FORWARD_BIT;
   }
 
   inline bool nurseryCellIsString() const {
     MOZ_ASSERT(!isTenured());
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & JSSTRING_BIT;
+    return firstWord & CellHeader::JSSTRING_BIT;
   }
 
   inline bool nurseryCellIsBigInt() const {
     MOZ_ASSERT(!isTenured());
     uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-    return firstWord & BIGINT_BIT;
+    return firstWord & CellHeader::BIGINT_BIT;
   }
 
   template <class T>
@@ -548,86 +559,77 @@ bool TenuredCell::isAligned() const {
 
 
 
-
-template <class BaseCell>
-class CellWithLengthAndFlags : public BaseCell {
-  static_assert(std::is_same<BaseCell, Cell>::value ||
-                    std::is_same<BaseCell, TenuredCell>::value,
-                "BaseCell must be either Cell or TenuredCell");
-
-  
-  
-  uintptr_t flags_;
-
+class CellHeaderWithLengthAndFlags : public CellHeader {
 #if JS_BITS_PER_WORD == 32
   
   uint32_t length_;
 #endif
 
- protected:
+ public:
   uint32_t lengthField() const {
 #if JS_BITS_PER_WORD == 32
     return length_;
 #else
-    return uint32_t(flags_ >> 32);
+    return uint32_t(header_ >> 32);
 #endif
   }
 
-  uint32_t flagsField() const { return uint32_t(flags_); }
+  uint32_t flagsField() const { return uint32_t(header_); }
 
-  void setFlagBit(uint32_t flag) { flags_ |= uintptr_t(flag); }
-  void clearFlagBit(uint32_t flag) { flags_ &= ~uintptr_t(flag); }
-  void toggleFlagBit(uint32_t flag) { flags_ ^= uintptr_t(flag); }
+  void setFlagBit(uint32_t flag) { header_ |= uintptr_t(flag); }
+  void clearFlagBit(uint32_t flag) { header_ &= ~uintptr_t(flag); }
+  void toggleFlagBit(uint32_t flag) { header_ ^= uintptr_t(flag); }
 
   void setLengthAndFlags(uint32_t len, uint32_t flags) {
 #if JS_BITS_PER_WORD == 32
-    flags_ = flags;
+    header_ = flags;
     length_ = len;
 #else
-    flags_ = (uint64_t(len) << 32) | uint64_t(flags);
+    header_ = (uint64_t(len) << 32) | uint64_t(flags);
 #endif
   }
 
   
   
   
-  void setTemporaryGCUnsafeData(uintptr_t data) { flags_ = data; }
+  void setTemporaryGCUnsafeData(uintptr_t data) { header_ = data; }
 
   
   
   uintptr_t unsetTemporaryGCUnsafeData(uint32_t len, uint32_t flags) {
-    uintptr_t data = flags_;
+    uintptr_t data = header_;
     setLengthAndFlags(len, flags);
     return data;
   }
 
   
+  
   static constexpr size_t offsetOfRawFlagsField() {
-    return offsetof(CellWithLengthAndFlags, flags_);
+    return offsetof(CellHeaderWithLengthAndFlags, header_);
   }
 
   
   
 #if JS_BITS_PER_WORD == 32
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellWithLengthAndFlags, flags_);
+    return offsetof(CellHeaderWithLengthAndFlags, header_);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellWithLengthAndFlags, length_);
+    return offsetof(CellHeaderWithLengthAndFlags, length_);
   }
 #elif MOZ_LITTLE_ENDIAN()
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellWithLengthAndFlags, flags_);
+    return offsetof(CellHeaderWithLengthAndFlags, header_);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellWithLengthAndFlags, flags_) + sizeof(uint32_t);
+    return offsetof(CellHeaderWithLengthAndFlags, header_) + sizeof(uint32_t);
   }
 #else
   static constexpr size_t offsetOfFlags() {
-    return offsetof(CellWithLengthAndFlags, flags_) + sizeof(uint32_t);
+    return offsetof(CellHeaderWithLengthAndFlags, header_) + sizeof(uint32_t);
   }
   static constexpr size_t offsetOfLength() {
-    return offsetof(CellWithLengthAndFlags, flags_);
+    return offsetof(CellHeaderWithLengthAndFlags, header_);
   }
 #endif
 };
