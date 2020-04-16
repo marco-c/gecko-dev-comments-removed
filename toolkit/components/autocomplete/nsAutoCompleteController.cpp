@@ -427,13 +427,9 @@ nsAutoCompleteController::HandleKeyNavigation(uint32_t aKey, bool* _retval) {
       
       *_retval = true;
       bool reverse = aKey == dom::KeyboardEvent_Binding::DOM_VK_UP ||
-                             aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP
-                         ? true
-                         : false;
+                     aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP;
       bool page = aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_UP ||
-                          aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_DOWN
-                      ? true
-                      : false;
+                  aKey == dom::KeyboardEvent_Binding::DOM_VK_PAGE_DOWN;
 
       
       

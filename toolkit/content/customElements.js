@@ -835,17 +835,6 @@
       "chrome://global/content/elements/toolbarbutton.js",
       "chrome://global/content/elements/tree.js",
       "chrome://global/content/elements/wizard.js",
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      "chrome://global/content/elements/autocomplete-input.js",
     ]) {
       Services.scriptloader.loadSubScript(script, window);
     }
@@ -858,6 +847,10 @@
       [
         "printpreview-toolbar",
         "chrome://global/content/printPreviewToolbar.js",
+      ],
+      [
+        "autocomplete-input",
+        "chrome://global/content/elements/autocomplete-input.js",
       ],
       ["editor", "chrome://global/content/elements/editor.js"],
     ]) {

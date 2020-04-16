@@ -807,11 +807,11 @@ class SearchOneOffs {
 
 
 
-  handleKeyPress(event, numListItems, allowEmptySelection, textboxUserValue) {
+  handleKeyDown(event, numListItems, allowEmptySelection, textboxUserValue) {
     if (!this.popup && !this._view) {
       return false;
     }
-    let handled = this._handleKeyPress(
+    let handled = this._handleKeyDown(
       event,
       numListItems,
       allowEmptySelection,
@@ -824,7 +824,7 @@ class SearchOneOffs {
     return handled;
   }
 
-  _handleKeyPress(event, numListItems, allowEmptySelection, textboxUserValue) {
+  _handleKeyDown(event, numListItems, allowEmptySelection, textboxUserValue) {
     if (this.compact && this.container.hidden) {
       return false;
     }
