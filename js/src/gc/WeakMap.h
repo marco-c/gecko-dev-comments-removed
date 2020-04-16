@@ -14,12 +14,15 @@
 #include "gc/Tracer.h"
 #include "gc/ZoneAllocator.h"
 #include "js/HashTable.h"
+#include "js/HeapAPI.h"
 
 namespace js {
 
 class GCMarker;
 class WeakMapBase;
 struct WeakMapTracer;
+
+extern void DumpWeakMapLog(JSRuntime* rt);
 
 namespace gc {
 
@@ -31,6 +34,42 @@ bool CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key, Cell* value);
 #endif
 
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -86,6 +125,9 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   static void sweepZone(JS::Zone* zone);
 
   
+  static void sweepZoneAfterMinorGC(JS::Zone* zone);
+
+  
   static void traceAllMappings(WeakMapTracer* tracer);
 
   
@@ -111,6 +153,12 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   virtual void markKey(GCMarker* marker, gc::Cell* markedCell, gc::Cell* l) = 0;
+
+  
+  
+  
+  virtual void postSeverDelegate(GCMarker* marker, JSObject* key,
+                                 Compartment* comp) = 0;
 
   virtual bool markEntries(GCMarker* marker) = 0;
 
@@ -195,26 +243,66 @@ class WeakMap
     return p;
   }
 
+  void remove(Ptr p) {
+    MOZ_ASSERT(p.found());
+    if (mapColor) {
+      forgetKey(p->key());
+    }
+    Base::remove(p);
+  }
+
+  void remove(const Lookup& l) {
+    if (Ptr p = lookup(l)) {
+      remove(p);
+    }
+  }
+
+  void clear();
+
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool put(KeyInput&& key, ValueInput&& value) {
-    MOZ_ASSERT(key);
-    return Base::put(std::forward<KeyInput>(key),
-                     std::forward<ValueInput>(value));
+  MOZ_MUST_USE bool add(AddPtr& p, KeyInput&& k, ValueInput&& v) {
+    MOZ_ASSERT(k);
+    if (!Base::add(p, std::forward<KeyInput>(k), std::forward<ValueInput>(v))) {
+      return false;
+    }
+    barrierForInsert(p->key(), p->value());
+    return true;
   }
 
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool putNew(KeyInput&& key, ValueInput&& value) {
-    MOZ_ASSERT(key);
-    return Base::putNew(std::forward<KeyInput>(key),
-                        std::forward<ValueInput>(value));
+  MOZ_MUST_USE bool relookupOrAdd(AddPtr& p, KeyInput&& k, ValueInput&& v) {
+    MOZ_ASSERT(k);
+    if (!Base::relookupOrAdd(p, std::forward<KeyInput>(k),
+                             std::forward<ValueInput>(v))) {
+      return false;
+    }
+    barrierForInsert(p->key(), p->value());
+    return true;
   }
 
   template <typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& ptr, KeyInput&& key,
-                                  ValueInput&& value) {
-    MOZ_ASSERT(key);
-    return Base::relookupOrAdd(ptr, std::forward<KeyInput>(key),
-                               std::forward<ValueInput>(value));
+  MOZ_MUST_USE bool put(KeyInput&& k, ValueInput&& v) {
+    MOZ_ASSERT(k);
+    AddPtr p = lookupForAdd(k);
+    if (p) {
+      p->value() = std::forward<ValueInput>(v);
+      return true;
+    }
+    return add(p, std::forward<KeyInput>(k), std::forward<ValueInput>(v));
+  }
+
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool putNew(KeyInput&& k, ValueInput&& v) {
+    MOZ_ASSERT(k);
+    barrierForInsert(k, v);
+    return Base::putNew(std::forward<KeyInput>(k), std::forward<ValueInput>(v));
+  }
+
+  template <typename KeyInput, typename ValueInput>
+  void putNewInfallible(KeyInput&& k, ValueInput&& v) {
+    MOZ_ASSERT(k);
+    barrierForInsert(k, v);
+    Base::putNewInfallible(std::forward(k), std::forward<KeyInput>(k));
   }
 
 #ifdef DEBUG
@@ -230,13 +318,34 @@ class WeakMap
 
   bool markEntry(GCMarker* marker, Key& key, Value& value);
 
+  
+  void postSeverDelegate(GCMarker* marker, JSObject* key,
+                         Compartment* comp) override;
+
   void trace(JSTracer* trc) override;
 
  protected:
+  inline void forgetKey(UnbarrieredKey key);
+
+  void barrierForInsert(Key k, const Value& v) {
+    if (!mapColor) {
+      return;
+    }
+    auto mapZone = JS::shadow::Zone::from(zone());
+    if (!mapZone->needsIncrementalBarrier()) {
+      return;
+    }
+
+    JSTracer* trc = mapZone->barrierTracer();
+    Value tmp = v;
+    TraceEdge(trc, &tmp, "weakmap inserted value");
+    MOZ_ASSERT(tmp == v);
+  }
+
   
   
   
-  static void addWeakEntry(GCMarker* marker, gc::Cell* key,
+  static void addWeakEntry(GCMarker* marker, JS::Zone* keyZone, gc::Cell* key,
                            const gc::WeakMarkable& markable);
 
   bool markEntries(GCMarker* marker) override;

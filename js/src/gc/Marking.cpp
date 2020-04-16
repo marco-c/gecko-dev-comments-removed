@@ -15,6 +15,7 @@
 #include "mozilla/Unused.h"
 
 #include <algorithm>
+#include <initializer_list>
 #include <type_traits>
 
 #include "jsfriendapi.h"
@@ -775,6 +776,56 @@ void GCMarker::markEphemeronValues(gc::Cell* markedCell,
   MOZ_ASSERT(values.length() == initialLen);
 }
 
+void GCMarker::forgetWeakKey(js::gc::WeakKeyTable& weakKeys, WeakMapBase* map,
+                             gc::Cell* keyOrDelegate, gc::Cell* keyToRemove) {
+  
+  
+  
+  
+  
+  
+  
+  
+  auto p = weakKeys.get(keyOrDelegate);
+
+  
+  
+  
+  if (p) {
+    
+    for (auto r = p->value.all(); !r.empty(); r.popFront()) {
+      MOZ_ASSERT(r.front().weakmap->mapColor);
+    }
+
+    p->value.eraseIfEqual(WeakMarkable(map, keyToRemove));
+  }
+}
+
+void GCMarker::forgetWeakMap(WeakMapBase* map, Zone* zone) {
+  for (auto table : {&zone->gcNurseryWeakKeys(), &zone->gcWeakKeys()}) {
+    for (auto p = table->all(); !p.empty(); p.popFront()) {
+      p.front().value.eraseIf([map](const WeakMarkable& markable) -> bool {
+        return markable.weakmap == map;
+      });
+    }
+  }
+}
+
+
+void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
+  JS::Zone* zone = delegate->zone();
+  auto p = zone->gcWeakKeys(delegate).get(delegate);
+  if (p) {
+    p->value.eraseIf([this, key](const WeakMarkable& markable) -> bool {
+      if (markable.key != key) {
+        return false;
+      }
+      markable.weakmap->postSeverDelegate(this, key, key->compartment());
+      return true;
+    });
+  }
+}
+
 template <typename T>
 void GCMarker::markImplicitEdgesHelper(T markedThing) {
   if (!isWeakMarking()) {
@@ -872,6 +923,8 @@ template <typename T>
 void DoMarking(GCMarker* gcmarker, T* thing) {
   
   if (!ShouldMark(gcmarker, thing)) {
+    MOZ_ASSERT(gc::detail::GetEffectiveColor(gcmarker->runtime(), thing) ==
+               js::gc::CellColor::Black);
     return;
   }
 
@@ -2710,9 +2763,54 @@ bool GCMarker::enterWeakMarkingMode() {
 
 void JS::Zone::enterWeakMarkingMode(GCMarker* marker) {
   MOZ_ASSERT(marker->isWeakMarking());
-  for (WeakMapBase* m : gcWeakMapList()) {
-    if (m->mapColor) {
-      mozilla::Unused << m->markEntries(marker);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!isGCMarking()) {
+    return;
+  }
+
+  MOZ_ASSERT(gcNurseryWeakKeys().count() == 0);
+
+  
+  
+  
+  gc::WeakKeyTable::Range r = gcWeakKeys().all();
+  while (!r.empty()) {
+    gc::Cell* key = r.front().key;
+    gc::CellColor keyColor =
+        gc::detail::GetEffectiveColor(marker->runtime(), key);
+    if (keyColor) {
+      MOZ_ASSERT(key == r.front().key);
+      auto& markables = r.front().value;
+      r.popFront();  
+      size_t end = markables.length();
+      for (size_t i = 0; i < end; i++) {
+        WeakMarkable& v = markables[i];
+        
+        
+        
+        v.weakmap->markKey(marker, key, v.key);
+      }
+
+      if (keyColor == gc::CellColor::Black) {
+        
+        
+        if (end == markables.length()) {
+          bool found;
+          gcWeakKeys().remove(key, &found);
+        } else {
+          markables.erase(markables.begin(), &markables[end]);
+        }
+      }
+    } else {
+      r.popFront();
     }
   }
 }
@@ -2738,12 +2836,6 @@ void GCMarker::leaveWeakMarkingMode() {
 
   
   
-  AutoEnterOOMUnsafeRegion oomUnsafe;
-  for (GCZonesIter zone(runtime()); !zone.done(); zone.next()) {
-    if (!zone->gcWeakKeys().clear()) {
-      oomUnsafe.crash("clearing weak keys in GCMarker::leaveWeakMarkingMode()");
-    }
-  }
 }
 
 void GCMarker::delayMarkingChildren(Cell* cell) {

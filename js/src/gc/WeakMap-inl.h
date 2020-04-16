@@ -15,9 +15,11 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "gc/PublicIterators.h"
 #include "gc/Zone.h"
 #include "js/TraceKind.h"
 #include "vm/JSContext.h"
+#include "vm/JSObject.h"
 
 namespace js {
 namespace gc {
@@ -106,9 +108,14 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
 
 
 
+
+
+
 template <class K, class V>
 void WeakMap<K, V>::markKey(GCMarker* marker, gc::Cell* markedCell,
                             gc::Cell* origKey) {
+  using namespace gc::detail;
+
 #if DEBUG
   if (!mapColor) {
     fprintf(stderr, "markKey called on an unmarked map %p", this);
@@ -127,9 +134,15 @@ void WeakMap<K, V>::markKey(GCMarker* marker, gc::Cell* markedCell,
     }
   }
 #endif
+
   MOZ_ASSERT(mapColor);
 
   Ptr p = Base::lookup(static_cast<Lookup>(origKey));
+  
+  
+  
+  
+  
   MOZ_ASSERT(p.found());
 
   mozilla::DebugOnly<gc::Cell*> oldKey = gc::ToMarkable(p->key());
@@ -220,11 +233,34 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
 }
 
 template <class K, class V>
+ void WeakMap<K, V>::forgetKey(UnbarrieredKey key) {
+  
+  if (zone()->needsIncrementalBarrier()) {
+    JSRuntime* rt = zone()->runtimeFromMainThread();
+    if (JSObject* delegate = js::gc::detail::GetDelegate(key)) {
+      js::gc::WeakKeyTable& weakKeys = delegate->zone()->gcWeakKeys(delegate);
+      rt->gc.marker.forgetWeakKey(weakKeys, this, delegate, key);
+    } else {
+      js::gc::WeakKeyTable& weakKeys = key->zone()->gcWeakKeys(key);
+      rt->gc.marker.forgetWeakKey(weakKeys, this, key, key);
+    }
+  }
+}
+
+template <class K, class V>
+ void WeakMap<K, V>::clear() {
+  Base::clear();
+  JSRuntime* rt = zone()->runtimeFromMainThread();
+  if (zone()->needsIncrementalBarrier()) {
+    rt->gc.marker.forgetWeakMap(this, zone());
+  }
+}
+
+template <class K, class V>
  void WeakMap<K, V>::addWeakEntry(
-    GCMarker* marker, gc::Cell* key, const gc::WeakMarkable& markable) {
-  Zone* zone = key->asTenured().zone();
-  auto& weakKeys =
-      gc::IsInsideNursery(key) ? zone->gcNurseryWeakKeys() : zone->gcWeakKeys();
+    GCMarker* marker, JS::Zone* keyZone, gc::Cell* key,
+    const gc::WeakMarkable& markable) {
+  auto& weakKeys = keyZone->gcWeakKeys(key);
   auto p = weakKeys.get(key);
   if (p) {
     gc::WeakEntryVector& weakEntries = p->value;
@@ -249,11 +285,6 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
     if (markEntry(marker, e.front().mutableKey(), e.front().value())) {
       markedAny = true;
     }
-    if (!marker->isWeakMarking()) {
-      
-      
-      continue;
-    }
 
     JSRuntime* rt = zone()->runtimeFromAnyThread();
     CellColor keyColor =
@@ -269,16 +300,29 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
       
       
       
-      gc::Cell* weakKey = gc::detail::ExtractUnbarriered(e.front().key());
-      gc::WeakMarkable markable(this, weakKey);
-      addWeakEntry(marker, weakKey, markable);
-      if (JSObject* delegate = gc::detail::GetDelegate(e.front().key())) {
-        addWeakEntry(marker, delegate, markable);
+      auto& weakKey = e.front().key();
+      gc::Cell* weakKeyCell = gc::detail::ExtractUnbarriered(weakKey);
+      gc::WeakMarkable markable(this, weakKeyCell);
+      if (JSObject* delegate = gc::detail::GetDelegate(weakKey)) {
+        addWeakEntry(marker, delegate->zone(), delegate, markable);
+      } else {
+        addWeakEntry(marker, weakKey.get()->zone(), weakKeyCell, markable);
       }
     }
   }
 
   return markedAny;
+}
+
+template <class K, class V>
+void WeakMap<K, V>::postSeverDelegate(GCMarker* marker, JSObject* key,
+                                      Compartment* comp) {
+  if (mapColor) {
+    
+    
+    gc::WeakMarkable markable(this, key);
+    addWeakEntry(marker, key->zone(), key, markable);
+  }
 }
 
 template <class K, class V>

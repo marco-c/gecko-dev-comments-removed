@@ -12,6 +12,7 @@
 #include "vm/Realm.h"
 
 #include "gc/ObjectKind-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/TypeInference-inl.h"
 
@@ -223,6 +224,15 @@ inline void ProxyObject::setPrivate(const Value& priv) {
 }
 
 void ProxyObject::nuke() {
+  
+  
+  
+  
+  JSObject* delegate = UncheckedUnwrapWithoutExpose(this);
+  if (delegate != this) {
+    delegate->zone()->delegatePreWriteBarrier(this, delegate);
+  }
+
   
   
   setSameCompartmentPrivate(DeadProxyTargetValue(this));
