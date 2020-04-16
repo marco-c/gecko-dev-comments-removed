@@ -21,6 +21,7 @@ evalInFrame(0, "globalFun(true, expectedGlobalFunThis)");
   }
   var expectedInnerFunThis = innerFun(false);
   evalInFrame(0, "innerFun(true, expectedInnerFunThis)");
+  return [innerFun, expectedInnerFunThis]; 
 })();
 
 (function testWith() {
