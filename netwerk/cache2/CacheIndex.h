@@ -875,7 +875,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   nsresult GetFile(const nsACString& aName, nsIFile** _retval);
-  nsresult RemoveFile(const nsACString& aName);
+  void RemoveFile(const nsACString& aName);
   void RemoveAllIndexFiles();
   void RemoveJournalAndTempFile();
   
