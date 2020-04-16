@@ -293,6 +293,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   policy->AddDir(rdonly, "/nix/store");
   policy->AddDir(rdonly, "/run/host/fonts");
   policy->AddDir(rdonly, "/run/host/user-fonts");
+  policy->AddDir(rdonly, "/var/cache/fontconfig");
 
   AddMesaSysfsPaths(policy);
   AddLdconfigPaths(policy);
@@ -328,10 +329,11 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
 
   
   
-  mozilla::Array<const char*, 3> extraConfDirs = {
+  mozilla::Array<const char*, 4> extraConfDirs = {
       ".config",  
       ".themes",
       ".fonts",
+      ".cache/fontconfig",
   };
 
   nsCOMPtr<nsIFile> homeDir;
