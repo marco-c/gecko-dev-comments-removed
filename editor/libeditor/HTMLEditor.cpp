@@ -348,7 +348,7 @@ NS_IMETHODIMP HTMLEditor::NotifySelectionChanged(Document* aDocument,
 
   if (mTypeInState) {
     RefPtr<TypeInState> typeInState = mTypeInState;
-    typeInState->OnSelectionChange(*aSelection);
+    typeInState->OnSelectionChange(*aSelection, aReason);
 
     
     

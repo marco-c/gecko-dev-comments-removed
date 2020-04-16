@@ -7,12 +7,14 @@
 
 #include <stddef.h>
 
-#include "nsError.h"
+#include "HTMLEditUtils.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/mozalloc.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsDebug.h"
+#include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsINode.h"
 #include "nsISupportsBase.h"
@@ -76,7 +78,7 @@ nsresult TypeInState::UpdateSelState(Selection* aSelection) {
   return NS_OK;
 }
 
-void TypeInState::OnSelectionChange(Selection& aSelection) {
+void TypeInState::OnSelectionChange(Selection& aSelection, int16_t aReason) {
   
   
   
@@ -87,6 +89,7 @@ void TypeInState::OnSelectionChange(Selection& aSelection) {
   
   
 
+  bool unlink = false;
   if (aSelection.IsCollapsed() && aSelection.RangeCount()) {
     EditorRawDOMPoint selectionStartPoint(
         EditorBase::GetStartPoint(aSelection));
@@ -99,6 +102,33 @@ void TypeInState::OnSelectionChange(Selection& aSelection) {
       return;
     }
 
+    
+    
+    if (aReason == nsISelectionListener::KEYPRESS_REASON &&
+        mLastSelectionPoint.IsSet() && selectionStartPoint.IsInTextNode() &&
+        (selectionStartPoint.IsStartOfContainer() ||
+         selectionStartPoint.IsEndOfContainer()) &&
+        
+        
+        mLastSelectionPoint.GetContainer() !=
+            selectionStartPoint.GetContainer()) {
+      
+      
+      bool maybeStartOfAnchor = selectionStartPoint.IsStartOfContainer();
+      for (EditorRawDOMPoint point(selectionStartPoint.GetContainer());
+           point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
+                                                : point.IsAtLastContent());
+           point.Set(point.GetContainer())) {
+        
+        if (HTMLEditUtils::IsLink(point.GetContainer())) {
+          
+          unlink = !mLastSelectionPoint.GetContainer()->IsInclusiveDescendantOf(
+              point.GetContainer());
+          break;
+        }
+      }
+    }
+
     mLastSelectionPoint = selectionStartPoint;
     
     
@@ -108,6 +138,10 @@ void TypeInState::OnSelectionChange(Selection& aSelection) {
   }
 
   Reset();
+
+  if (unlink) {
+    ClearProp(nsGkAtoms::a, nullptr);
+  }
 }
 
 void TypeInState::Reset() {
