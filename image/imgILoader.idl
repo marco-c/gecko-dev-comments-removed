@@ -18,6 +18,8 @@ interface nsIReferrerInfo;
 
 interface nsISimpleEnumerator;
 
+webidl Document;
+
 #include "nsIRequest.idl" 
 #include "nsIContentPolicy.idl" 
 
@@ -65,7 +67,7 @@ interface imgILoader : nsISupports
                              in nsIPrincipal aLoadingPrincipal,
                              in nsILoadGroup aLoadGroup,
                              in imgINotificationObserver aObserver,
-                             in nsISupports aCX,
+                             in Document aLoadingDocument,
                              in nsLoadFlags aLoadFlags,
                              in nsISupports cacheKey,
                              [optional]
@@ -90,6 +92,6 @@ interface imgILoader : nsISupports
 
   imgIRequest loadImageWithChannelXPCOM(in nsIChannel aChannel,
                                         in imgINotificationObserver aObserver,
-                                        in nsISupports cx,
+                                        in Document aLoadingDocument,
                                         out nsIStreamListener aListener);
 };

@@ -663,7 +663,7 @@ static bool ShouldRevalidateEntry(imgCacheEntry* aEntry, nsLoadFlags aFlags,
 
 
 static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
-                                  nsISupports* aLoadingContext,
+                                  Document* aLoadingDocument,
                                   nsIPrincipal* aTriggeringPrincipal,
                                   nsContentPolicyType aPolicyType,
                                   bool aSendCSPViolationReports) {
@@ -681,9 +681,9 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
   aImgRequest->GetFinalURI(getter_AddRefs(contentLocation));
   nsresult rv;
 
-  nsCOMPtr<nsINode> requestingNode = do_QueryInterface(aLoadingContext);
   nsCOMPtr<nsIPrincipal> loadingPrincipal =
-      requestingNode ? requestingNode->NodePrincipal() : aTriggeringPrincipal;
+      aLoadingDocument ? aLoadingDocument->NodePrincipal()
+                       : aTriggeringPrincipal;
   
   
   
@@ -692,7 +692,7 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
   }
 
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new LoadInfo(
-      loadingPrincipal, aTriggeringPrincipal, requestingNode,
+      loadingPrincipal, aTriggeringPrincipal, aLoadingDocument,
       nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK, aPolicyType);
 
   secCheckLoadInfo->SetSendCSPViolationEvents(aSendCSPViolationReports);
@@ -715,7 +715,7 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
     
     
     nsCOMPtr<nsIDocShell> docShell =
-        NS_CP_GetDocShellFromContext(aLoadingContext);
+        NS_CP_GetDocShellFromContext(ToSupports(aLoadingDocument));
     if (docShell) {
       Document* document = docShell->GetDocument();
       if (document && document->GetUpgradeInsecureRequests(false)) {
@@ -728,7 +728,7 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
       decision = nsIContentPolicy::REJECT_REQUEST;
       rv = nsMixedContentBlocker::ShouldLoad(insecureRedirect, aPolicyType,
                                              contentLocation, nullptr,
-                                             aLoadingContext,
+                                             ToSupports(aLoadingDocument),
                                              EmptyCString(),  
                                              aTriggeringPrincipal, &decision);
       if (NS_FAILED(rv) || !NS_CP_ACCEPTED(decision)) {
@@ -747,7 +747,7 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
 static bool ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
                                  int32_t corsmode,
                                  nsIPrincipal* triggeringPrincipal,
-                                 nsISupports* aCX,
+                                 Document* aLoadingDocument,
                                  nsContentPolicyType aPolicyType,
                                  nsIReferrerInfo* aReferrerInfo) {
   
@@ -796,7 +796,8 @@ static bool ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
   }
 
   
-  return ShouldLoadCachedImage(request, aCX, triggeringPrincipal, aPolicyType,
+  return ShouldLoadCachedImage(request, aLoadingDocument, triggeringPrincipal,
+                               aPolicyType,
                                 false);
 }
 
@@ -812,7 +813,7 @@ static nsresult NewImageChannel(
     nsIURI* aInitialDocumentURI, int32_t aCORSMode,
     nsIReferrerInfo* aReferrerInfo, nsILoadGroup* aLoadGroup,
     nsLoadFlags aLoadFlags, nsContentPolicyType aPolicyType,
-    nsIPrincipal* aTriggeringPrincipal, nsISupports* aRequestingContext,
+    nsIPrincipal* aTriggeringPrincipal, nsINode* aRequestingNode,
     bool aRespectPrivacy) {
   MOZ_ASSERT(aResult);
 
@@ -839,8 +840,6 @@ static nsresult NewImageChannel(
   
   
 
-  nsCOMPtr<nsINode> requestingNode = do_QueryInterface(aRequestingContext);
-
   nsSecurityFlags securityFlags =
       aCORSMode == imgIRequest::CORS_NONE
           ? nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS
@@ -856,8 +855,8 @@ static nsresult NewImageChannel(
   
   
   
-  if (requestingNode && aTriggeringPrincipal) {
-    rv = NS_NewChannelWithTriggeringPrincipal(aResult, aURI, requestingNode,
+  if (aRequestingNode && aTriggeringPrincipal) {
+    rv = NS_NewChannelWithTriggeringPrincipal(aResult, aURI, aRequestingNode,
                                               aTriggeringPrincipal,
                                               securityFlags, aPolicyType,
                                               nullptr,  
@@ -1667,8 +1666,8 @@ void imgLoader::CheckCacheLimits(imgCacheTable& cache, imgCacheQueue& queue) {
 bool imgLoader::ValidateRequestWithNewChannel(
     imgRequest* request, nsIURI* aURI, nsIURI* aInitialDocumentURI,
     nsIReferrerInfo* aReferrerInfo, nsILoadGroup* aLoadGroup,
-    imgINotificationObserver* aObserver, nsISupports* aCX,
-    Document* aLoadingDocument, uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
+    imgINotificationObserver* aObserver, Document* aLoadingDocument,
+    uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
     nsContentPolicyType aLoadPolicyType, imgRequestProxy** aProxyRequest,
     nsIPrincipal* aTriggeringPrincipal, int32_t aCORSMode,
     bool* aNewChannelCreated) {
@@ -1710,7 +1709,7 @@ bool imgLoader::ValidateRequestWithNewChannel(
   rv = NewImageChannel(getter_AddRefs(newChannel), &forcePrincipalCheck, aURI,
                        aInitialDocumentURI, aCORSMode, aReferrerInfo,
                        aLoadGroup, aLoadFlags, aLoadPolicyType,
-                       aTriggeringPrincipal, aCX, mRespectPrivacy);
+                       aTriggeringPrincipal, aLoadingDocument, mRespectPrivacy);
   if (NS_FAILED(rv)) {
     return false;
   }
@@ -1733,8 +1732,9 @@ bool imgLoader::ValidateRequestWithNewChannel(
     return false;
   }
 
-  RefPtr<imgCacheValidator> hvc = new imgCacheValidator(
-      progressproxy, this, request, aCX, aInnerWindowId, forcePrincipalCheck);
+  RefPtr<imgCacheValidator> hvc =
+      new imgCacheValidator(progressproxy, this, request, aLoadingDocument,
+                            aInnerWindowId, forcePrincipalCheck);
 
   
   nsCOMPtr<nsIStreamListener> listener =
@@ -1773,11 +1773,11 @@ bool imgLoader::ValidateRequestWithNewChannel(
 bool imgLoader::ValidateEntry(
     imgCacheEntry* aEntry, nsIURI* aURI, nsIURI* aInitialDocumentURI,
     nsIReferrerInfo* aReferrerInfo, nsILoadGroup* aLoadGroup,
-    imgINotificationObserver* aObserver, nsISupports* aCX,
-    Document* aLoadingDocument, nsLoadFlags aLoadFlags,
-    nsContentPolicyType aLoadPolicyType, bool aCanMakeNewChannel,
-    bool* aNewChannelCreated, imgRequestProxy** aProxyRequest,
-    nsIPrincipal* aTriggeringPrincipal, int32_t aCORSMode) {
+    imgINotificationObserver* aObserver, Document* aLoadingDocument,
+    nsLoadFlags aLoadFlags, nsContentPolicyType aLoadPolicyType,
+    bool aCanMakeNewChannel, bool* aNewChannelCreated,
+    imgRequestProxy** aProxyRequest, nsIPrincipal* aTriggeringPrincipal,
+    int32_t aCORSMode) {
   LOG_SCOPE(gImgLog, "imgLoader::ValidateEntry");
 
   
@@ -1814,9 +1814,10 @@ bool imgLoader::ValidateEntry(
   }
 
   if (!ValidateSecurityInfo(request, aEntry->ForcePrincipalCheck(), aCORSMode,
-                            aTriggeringPrincipal, aCX, aLoadPolicyType,
-                            aReferrerInfo))
+                            aTriggeringPrincipal, aLoadingDocument,
+                            aLoadPolicyType, aReferrerInfo)) {
     return false;
+  }
 
   
   
@@ -1839,9 +1840,9 @@ bool imgLoader::ValidateEntry(
   
   
   
-  void* key = (void*)aCX;
-  nsCOMPtr<Document> doc = do_QueryInterface(aCX);
-  uint64_t innerWindowID = doc ? doc->InnerWindowID() : 0;
+  void* key = (void*)aLoadingDocument;
+  uint64_t innerWindowID =
+      aLoadingDocument ? aLoadingDocument->InnerWindowID() : 0;
   if (request->LoadId() != key || request->InnerWindowID() != innerWindowID) {
     
     
@@ -1894,9 +1895,8 @@ bool imgLoader::ValidateEntry(
 
     return ValidateRequestWithNewChannel(
         request, aURI, aInitialDocumentURI, aReferrerInfo, aLoadGroup,
-        aObserver, aCX, aLoadingDocument, innerWindowID, aLoadFlags,
-        aLoadPolicyType, aProxyRequest, aTriggeringPrincipal, aCORSMode,
-        aNewChannelCreated);
+        aObserver, aLoadingDocument, innerWindowID, aLoadFlags, aLoadPolicyType,
+        aProxyRequest, aTriggeringPrincipal, aCORSMode, aNewChannelCreated);
   }
 
   return !validateRequest;
@@ -2044,25 +2044,21 @@ bool imgLoader::PreferLoadFromCache(nsIURI* aURI) const {
    nsIRequest::VALIDATE_ONCE_PER_SESSION)
 
 NS_IMETHODIMP
-imgLoader::LoadImageXPCOM(nsIURI* aURI, nsIURI* aInitialDocumentURI,
-                          nsIReferrerInfo* aReferrerInfo,
-                          nsIPrincipal* aTriggeringPrincipal,
-                          nsILoadGroup* aLoadGroup,
-                          imgINotificationObserver* aObserver, nsISupports* aCX,
-                          nsLoadFlags aLoadFlags, nsISupports* aCacheKey,
-                          nsContentPolicyType aContentPolicyType,
-                          imgIRequest** _retval) {
+imgLoader::LoadImageXPCOM(
+    nsIURI* aURI, nsIURI* aInitialDocumentURI, nsIReferrerInfo* aReferrerInfo,
+    nsIPrincipal* aTriggeringPrincipal, nsILoadGroup* aLoadGroup,
+    imgINotificationObserver* aObserver, Document* aLoadingDocument,
+    nsLoadFlags aLoadFlags, nsISupports* aCacheKey,
+    nsContentPolicyType aContentPolicyType, imgIRequest** _retval) {
   
   if (!aContentPolicyType) {
     aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE;
   }
   imgRequestProxy* proxy;
-  nsCOMPtr<nsINode> node = do_QueryInterface(aCX);
-  nsCOMPtr<Document> doc = do_QueryInterface(aCX);
   nsresult rv =
       LoadImage(aURI, aInitialDocumentURI, aReferrerInfo, aTriggeringPrincipal,
-                0, aLoadGroup, aObserver, node, doc, aLoadFlags, aCacheKey,
-                aContentPolicyType, EmptyString(),
+                0, aLoadGroup, aObserver, aLoadingDocument, aLoadingDocument,
+                aLoadFlags, aCacheKey, aContentPolicyType, EmptyString(),
                  false, &proxy);
   *_retval = proxy;
   return rv;
@@ -2170,10 +2166,9 @@ nsresult imgLoader::LoadImage(
   if (cache.Get(key, getter_AddRefs(entry)) && entry) {
     bool newChannelCreated = false;
     if (ValidateEntry(entry, aURI, aInitialDocumentURI, aReferrerInfo,
-                      aLoadGroup, aObserver, ToSupports(aLoadingDocument),
-                      aLoadingDocument, requestFlags, aContentPolicyType, true,
-                      &newChannelCreated, _retval, aTriggeringPrincipal,
-                      corsmode)) {
+                      aLoadGroup, aObserver, aLoadingDocument, requestFlags,
+                      aContentPolicyType, true, &newChannelCreated, _retval,
+                      aTriggeringPrincipal, corsmode)) {
       request = entry->GetRequest();
 
       
@@ -2199,10 +2194,9 @@ nsresult imgLoader::LoadImage(
         
         
         
-        DebugOnly<bool> shouldLoad =
-            ShouldLoadCachedImage(request, ToSupports(aLoadingDocument),
-                                  aTriggeringPrincipal, aContentPolicyType,
-                                   true);
+        DebugOnly<bool> shouldLoad = ShouldLoadCachedImage(
+            request, aLoadingDocument, aTriggeringPrincipal, aContentPolicyType,
+             true);
         MOZ_ASSERT(shouldLoad);
       }
     } else {
@@ -2258,9 +2252,8 @@ nsresult imgLoader::LoadImage(
     nsCOMPtr<nsILoadGroup> channelLoadGroup;
     newChannel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
     rv = request->Init(aURI, aURI,  false,
-                       channelLoadGroup, newChannel, entry,
-                       ToSupports(aLoadingDocument), aTriggeringPrincipal,
-                       corsmode, aReferrerInfo);
+                       channelLoadGroup, newChannel, entry, aLoadingDocument,
+                       aTriggeringPrincipal, corsmode, aReferrerInfo);
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
@@ -2360,19 +2353,20 @@ nsresult imgLoader::LoadImage(
 NS_IMETHODIMP
 imgLoader::LoadImageWithChannelXPCOM(nsIChannel* channel,
                                      imgINotificationObserver* aObserver,
-                                     nsISupports* aCX,
+                                     Document* aLoadingDocument,
                                      nsIStreamListener** listener,
                                      imgIRequest** _retval) {
   nsresult result;
   imgRequestProxy* proxy;
-  result = LoadImageWithChannel(channel, aObserver, aCX, listener, &proxy);
+  result = LoadImageWithChannel(channel, aObserver, aLoadingDocument, listener,
+                                &proxy);
   *_retval = proxy;
   return result;
 }
 
 nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
                                          imgINotificationObserver* aObserver,
-                                         nsISupports* aCX,
+                                         Document* aLoadingDocument,
                                          nsIStreamListener** listener,
                                          imgRequestProxy** _retval) {
   NS_ASSERTION(channel,
@@ -2385,14 +2379,13 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
   nsCOMPtr<nsIURI> uri;
   channel->GetURI(getter_AddRefs(uri));
-  nsCOMPtr<Document> doc = do_QueryInterface(aCX);
 
   NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
   nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
 
   OriginAttributes attrs = loadInfo->GetOriginAttributes();
 
-  ImageCacheKey key(uri, attrs, doc);
+  ImageCacheKey key(uri, attrs, aLoadingDocument);
 
   nsLoadFlags requestFlags = nsIRequest::LOAD_NORMAL;
   channel->GetLoadFlags(&requestFlags);
@@ -2428,9 +2421,9 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
       
       nsContentPolicyType policyType = loadInfo->InternalContentPolicyType();
 
-      if (ValidateEntry(entry, uri, nullptr, nullptr, nullptr, aObserver, aCX,
-                        doc, requestFlags, policyType, false, nullptr, nullptr,
-                        nullptr, imgIRequest::CORS_NONE)) {
+      if (ValidateEntry(entry, uri, nullptr, nullptr, nullptr, aObserver,
+                        aLoadingDocument, requestFlags, policyType, false,
+                        nullptr, nullptr, nullptr, imgIRequest::CORS_NONE)) {
         request = entry->GetRequest();
       } else {
         nsCOMPtr<nsICacheInfoChannel> cacheChan(do_QueryInterface(channel));
@@ -2473,11 +2466,12 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
   channel->GetLoadGroup(getter_AddRefs(loadGroup));
 
 #ifdef DEBUG
-  if (doc) {
+  if (aLoadingDocument) {
     
     
     
-    nsCOMPtr<nsILoadGroup> docLoadGroup = doc->GetDocumentLoadGroup();
+    nsCOMPtr<nsILoadGroup> docLoadGroup =
+        aLoadingDocument->GetDocumentLoadGroup();
     MOZ_ASSERT(docLoadGroup == loadGroup);
   }
 #endif
@@ -2494,8 +2488,8 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
 
     *listener = nullptr;  
 
-    rv = CreateNewProxyForRequest(request, loadGroup, doc, aObserver,
-                                  requestFlags, _retval);
+    rv = CreateNewProxyForRequest(request, loadGroup, aLoadingDocument,
+                                  aObserver, requestFlags, _retval);
     static_cast<imgRequestProxy*>(*_retval)->NotifyListener();
   } else {
     
@@ -2506,7 +2500,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     
-    ImageCacheKey originalURIKey(originalURI, attrs, doc);
+    ImageCacheKey originalURIKey(originalURI, attrs, aLoadingDocument);
 
     
     
@@ -2524,7 +2518,7 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     
     rv = request->Init(originalURI, uri,  false,
-                       channel, channel, entry, aCX, nullptr,
+                       channel, channel, entry, aLoadingDocument, nullptr,
                        imgIRequest::CORS_NONE, nullptr);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -2535,8 +2529,8 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
     
     PutIntoCache(originalURIKey, entry);
 
-    rv = CreateNewProxyForRequest(request, loadGroup, doc, aObserver,
-                                  requestFlags, _retval);
+    rv = CreateNewProxyForRequest(request, loadGroup, aLoadingDocument,
+                                  aObserver, requestFlags, _retval);
 
     
     
@@ -2762,12 +2756,12 @@ NS_IMPL_ISUPPORTS(imgCacheValidator, nsIStreamListener, nsIRequestObserver,
 
 imgCacheValidator::imgCacheValidator(nsProgressNotificationProxy* progress,
                                      imgLoader* loader, imgRequest* request,
-                                     nsISupports* aContext,
+                                     Document* aDocument,
                                      uint64_t aInnerWindowId,
                                      bool forcePrincipalCheckForCacheEntry)
     : mProgressProxy(progress),
       mRequest(request),
-      mContext(aContext),
+      mDocument(aDocument),
       mInnerWindowId(aInnerWindowId),
       mImgLoader(loader),
       mHadInsecureRedirect(false) {
@@ -2856,7 +2850,7 @@ void imgCacheValidator::UpdateProxies(bool aCancelRequest, bool aSyncNotify) {
 NS_IMETHODIMP
 imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   
-  nsCOMPtr<nsISupports> context = mContext.forget();
+  RefPtr<Document> document = mDocument.forget();
 
   
   
@@ -2893,7 +2887,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
 
       
       
-      mRequest->SetLoadId(context);
+      mRequest->SetLoadId(document);
       mRequest->SetInnerWindowID(mInnerWindowId);
       UpdateProxies( false,  true);
       return NS_OK;
@@ -2921,7 +2915,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   nsCOMPtr<nsIURI> originalURI;
   channel->GetOriginalURI(getter_AddRefs(originalURI));
   nsresult rv = mNewRequest->Init(originalURI, uri, mHadInsecureRedirect,
-                                  aRequest, channel, mNewEntry, context,
+                                  aRequest, channel, mNewEntry, document,
                                   triggeringPrincipal, corsmode, referrerInfo);
   if (NS_FAILED(rv)) {
     UpdateProxies( true,  true);
@@ -2941,7 +2935,7 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
 NS_IMETHODIMP
 imgCacheValidator::OnStopRequest(nsIRequest* aRequest, nsresult status) {
   
-  mContext = nullptr;
+  mDocument = nullptr;
 
   if (!mDestListener) {
     return NS_OK;
