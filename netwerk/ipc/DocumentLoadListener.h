@@ -146,6 +146,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   MOZ_MUST_USE RefPtr<ChildEndpointPromise> AttachStreamFilter(
       base::ProcessId aChildProcessId);
 
+  using ParentEndpoint = ipc::Endpoint<extensions::PStreamFilterParent>;
+
   
   
   void SerializeRedirectData(RedirectToRealChannelArgs& aArgs,
@@ -182,7 +184,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
-                        const Maybe<uint64_t>& aDestinationProcess);
+                        const Maybe<uint64_t>& aDestinationProcess,
+                        nsTArray<ParentEndpoint>&& aStreamFilterEndpoints);
 
   
   
@@ -310,6 +313,25 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<nsDOMNavigationTiming> mTiming;
 
   nsTArray<DocumentChannelRedirect> mRedirects;
+
+  
+  
+  
+  
+  
+  
+  
+  struct StreamFilterRequest {
+    ~StreamFilterRequest() {
+      if (mPromise) {
+        mPromise->Reject(false, __func__);
+      }
+    }
+    RefPtr<ChildEndpointPromise::Private> mPromise;
+    base::ProcessId mChildProcessId;
+    mozilla::ipc::Endpoint<extensions::PStreamFilterChild> mChildEndpoint;
+  };
+  nsTArray<StreamFilterRequest> mStreamFilterRequests;
 
   nsString mSrcdocData;
   nsCOMPtr<nsIURI> mBaseURI;
