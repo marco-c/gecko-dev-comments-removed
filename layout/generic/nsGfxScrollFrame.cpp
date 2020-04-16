@@ -2109,8 +2109,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
     mScrollbarActivity = new ScrollbarActivity(do_QueryFrame(aOuter));
   }
 
-  EnsureFrameVisPrefsCached();
-
   if (IsAlwaysActive() && StaticPrefs::layers_enable_tiles_AtStartup() &&
       !nsLayoutUtils::UsesAsyncScrolling(mOuter) && mOuter->GetContent()) {
     
@@ -3252,26 +3250,6 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
   }
 }
 
-
-bool ScrollFrameHelper::sFrameVisPrefsCached = false;
-
-uint32_t ScrollFrameHelper::sHorzExpandScrollPort = 0;
-
-uint32_t ScrollFrameHelper::sVertExpandScrollPort = 1;
-
-
-void ScrollFrameHelper::EnsureFrameVisPrefsCached() {
-  if (!sFrameVisPrefsCached) {
-    Preferences::AddUintVarCache(&sHorzExpandScrollPort,
-                                 "layout.framevisibility.numscrollportwidths",
-                                 (uint32_t)0);
-    Preferences::AddUintVarCache(&sVertExpandScrollPort,
-                                 "layout.framevisibility.numscrollportheights",
-                                 1);
-    sFrameVisPrefsCached = true;
-  }
-}
-
 nsRect ScrollFrameHelper::ExpandRectToNearlyVisible(const nsRect& aRect) const {
   
   
@@ -3279,7 +3257,8 @@ nsRect ScrollFrameHelper::ExpandRectToNearlyVisible(const nsRect& aRect) const {
   nsPoint scrollPos = GetScrollPosition();
   nsMargin expand(0, 0, 0, 0);
 
-  nscoord vertShift = sVertExpandScrollPort * aRect.height;
+  nscoord vertShift =
+      StaticPrefs::layout_framevisibility_numscrollportheights() * aRect.height;
   if (scrollRange.y < scrollPos.y) {
     expand.top = vertShift;
   }
@@ -3287,7 +3266,8 @@ nsRect ScrollFrameHelper::ExpandRectToNearlyVisible(const nsRect& aRect) const {
     expand.bottom = vertShift;
   }
 
-  nscoord horzShift = sHorzExpandScrollPort * aRect.width;
+  nscoord horzShift =
+      StaticPrefs::layout_framevisibility_numscrollportwidths() * aRect.width;
   if (scrollRange.x < scrollPos.x) {
     expand.left = horzShift;
   }

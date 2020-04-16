@@ -739,13 +739,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   
   void RemoveObservers();
-
-  static void EnsureFrameVisPrefsCached();
-  static bool sFrameVisPrefsCached;
-  
-  
-  static uint32_t sHorzExpandScrollPort;
-  static uint32_t sVertExpandScrollPort;
 };
 
 }  
