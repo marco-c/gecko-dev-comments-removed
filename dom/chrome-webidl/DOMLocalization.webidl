@@ -35,9 +35,15 @@ interface DOMLocalization : Localization {
 
 
 
+
+
+
+
+
   [Throws]
-  constructor(optional sequence<DOMString> aResourceIds,
-              optional GenerateMessages aGenerateMessages);
+  constructor(sequence<DOMString> aResourceIds,
+              optional boolean aSync = false,
+              optional BundleGenerator aBundleGenerator = {});
 
   
 
