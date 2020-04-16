@@ -21,6 +21,7 @@ interface nsIWebBrowserChrome;
 interface nsIDocShellTreeItem;
 interface nsIArray;
 interface nsIRemoteTab;
+interface nsIOpenWindowInfo;
 native nsDocShellLoadStatePtr(nsDocShellLoadState*);
 
 [uuid(d162f9c4-19d5-4723-931f-f1e51bfa9f68)]
@@ -113,14 +114,10 @@ interface nsPIWindowWatcher : nsISupports
 
 
 
-
-
-
   nsIRemoteTab openWindowWithRemoteTab(in nsIRemoteTab aOpeningTab,
                                        in ACString aFeatures,
                                        in boolean aCalledFromJS,
                                        in float aOpenerFullZoom,
-                                       in unsigned long long aNextRemoteTabId,
-                                       in boolean aForceNoOpener);
+                                       in nsIOpenWindowInfo aOpenWindowInfo);
 };
 

@@ -32,6 +32,7 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIIOService.h"
 #include "nsIObserverService.h"
+#include "nsIOpenWindowInfo.h"
 #include "nsIWindowMediator.h"
 #include "nsIScreenManager.h"
 #include "nsIScreen.h"
@@ -126,7 +127,6 @@ AppWindow::AppWindow(uint32_t aChromeFlags)
       mPersistentAttributesDirty(0),
       mPersistentAttributesMask(0),
       mChromeFlags(aChromeFlags),
-      mNextRemoteTabId(0),
       mSPTimerLock("AppWindow.mSPTimerLock"),
       mWidgetListenerDelegate(this) {}
 
@@ -157,8 +157,7 @@ NS_INTERFACE_MAP_END
 
 nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
                                int32_t aInitialWidth, int32_t aInitialHeight,
-                               bool aIsHiddenWindow, nsIRemoteTab* aOpeningTab,
-                               mozIDOMWindowProxy* aOpenerWindow,
+                               bool aIsHiddenWindow,
                                nsWidgetInitData& widgetInitData) {
   nsresult rv;
   nsCOMPtr<nsIWidget> parentWidget;
@@ -231,20 +230,15 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   mWindow->SetBackgroundColor(NS_RGB(255, 255, 255));
 
   
-  RefPtr<BrowsingContext> openerContext =
-      aOpenerWindow
-          ? nsPIDOMWindowOuter::From(aOpenerWindow)->GetBrowsingContext()
-          : nullptr;
+  
+  
   RefPtr<BrowsingContext> browsingContext =
-      BrowsingContext::Create( nullptr, openerContext,
+      BrowsingContext::Create( nullptr,  nullptr,
                               EmptyString(), BrowsingContext::Type::Chrome);
-  mDocShell = nsDocShell::Create(browsingContext);
-  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
 
   
-  
-  
-  mDocShell->SetOpener(aOpeningTab);
+  mDocShell = nsDocShell::Create(browsingContext);
+  NS_ENSURE_TRUE(mDocShell, NS_ERROR_FAILURE);
 
   
   
@@ -267,16 +261,6 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
     webProgress->AddProgressListener(this,
                                      nsIWebProgress::NOTIFY_STATE_NETWORK);
   }
-
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  if (aOpenerWindow) {
-    BrowsingContext* bc = mDocShell->GetBrowsingContext();
-    BrowsingContext* openerBC =
-        nsPIDOMWindowOuter::From(aOpenerWindow)->GetBrowsingContext();
-    MOZ_DIAGNOSTIC_ASSERT(bc->GetOpenerId() == openerBC->Id());
-    MOZ_DIAGNOSTIC_ASSERT(bc->HadOriginalOpener());
-  }
-#endif
 
   return rv;
 }
@@ -2105,26 +2089,21 @@ NS_IMETHODIMP AppWindow::ExitModalLoop(nsresult aStatus) {
 
 
 NS_IMETHODIMP AppWindow::CreateNewWindow(int32_t aChromeFlags,
-                                         nsIRemoteTab* aOpeningTab,
-                                         mozIDOMWindowProxy* aOpener,
-                                         uint64_t aNextRemoteTabId,
+                                         nsIOpenWindowInfo* aOpenWindowInfo,
                                          nsIAppWindow** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
 
   if (aChromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME) {
     MOZ_RELEASE_ASSERT(
-        aNextRemoteTabId == 0,
-        "Unexpected next remote tab ID, should never have a non-zero "
-        "aNextRemoteTabId when creating a new chrome window");
-    return CreateNewChromeWindow(aChromeFlags, aOpeningTab, aOpener, _retval);
+        !aOpenWindowInfo,
+        "Unexpected nsOpenWindowInfo when creating a new chrome window");
+    return CreateNewChromeWindow(aChromeFlags, _retval);
   }
-  return CreateNewContentWindow(aChromeFlags, aOpeningTab, aOpener,
-                                aNextRemoteTabId, _retval);
+
+  return CreateNewContentWindow(aChromeFlags, aOpenWindowInfo, _retval);
 }
 
 NS_IMETHODIMP AppWindow::CreateNewChromeWindow(int32_t aChromeFlags,
-                                               nsIRemoteTab* aOpeningTab,
-                                               mozIDOMWindowProxy* aOpener,
                                                nsIAppWindow** _retval) {
   nsCOMPtr<nsIAppShellService> appShell(
       do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
@@ -2134,8 +2113,7 @@ NS_IMETHODIMP AppWindow::CreateNewChromeWindow(int32_t aChromeFlags,
   nsCOMPtr<nsIAppWindow> newWindow;
   appShell->CreateTopLevelWindow(
       this, nullptr, aChromeFlags, nsIAppShellService::SIZE_TO_CONTENT,
-      nsIAppShellService::SIZE_TO_CONTENT, aOpeningTab, aOpener,
-      getter_AddRefs(newWindow));
+      nsIAppShellService::SIZE_TO_CONTENT, getter_AddRefs(newWindow));
 
   NS_ENSURE_TRUE(newWindow, NS_ERROR_FAILURE);
 
@@ -2144,11 +2122,9 @@ NS_IMETHODIMP AppWindow::CreateNewChromeWindow(int32_t aChromeFlags,
   return NS_OK;
 }
 
-NS_IMETHODIMP AppWindow::CreateNewContentWindow(int32_t aChromeFlags,
-                                                nsIRemoteTab* aOpeningTab,
-                                                mozIDOMWindowProxy* aOpener,
-                                                uint64_t aNextRemoteTabId,
-                                                nsIAppWindow** _retval) {
+NS_IMETHODIMP AppWindow::CreateNewContentWindow(
+    int32_t aChromeFlags, nsIOpenWindowInfo* aOpenWindowInfo,
+    nsIAppWindow** _retval) {
   nsCOMPtr<nsIAppShellService> appShell(
       do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   NS_ENSURE_TRUE(appShell, NS_ERROR_FAILURE);
@@ -2175,34 +2151,20 @@ NS_IMETHODIMP AppWindow::CreateNewContentWindow(int32_t aChromeFlags,
   nsCOMPtr<nsIAppWindow> newWindow;
   {
     AutoNoJSAPI nojsapi;
-    
-    
-    
     appShell->CreateTopLevelWindow(this, uri, aChromeFlags, 615, 480,
-                                   aOpeningTab, nullptr,
                                    getter_AddRefs(newWindow));
     NS_ENSURE_TRUE(newWindow, NS_ERROR_FAILURE);
   }
 
-  
-  
   AppWindow* appWin =
       static_cast<AppWindow*>(static_cast<nsIAppWindow*>(newWindow));
 
-  if (aNextRemoteTabId) {
-    appWin->mNextRemoteTabId = aNextRemoteTabId;
-  }
+  
+  
+  appWin->mInitialOpenWindowInfo = aOpenWindowInfo;
 
-  if (aOpener) {
-    nsCOMPtr<nsIDocShell> docShell;
-    appWin->GetDocShell(getter_AddRefs(docShell));
-    MOZ_ASSERT(docShell);
-    nsCOMPtr<nsPIDOMWindowOuter> window = docShell->GetWindow();
-    MOZ_ASSERT(window);
-    window->SetOpenerForInitialContentBrowser(
-        nsPIDOMWindowOuter::From(aOpener)->GetBrowsingContext());
-  }
-
+  
+  
   appWin->LockUntilChromeLoad();
 
   {
@@ -2212,7 +2174,8 @@ NS_IMETHODIMP AppWindow::CreateNewContentWindow(int32_t aChromeFlags,
 
   NS_ENSURE_STATE(appWin->mPrimaryContentShell ||
                   appWin->mPrimaryBrowserParent);
-  MOZ_ASSERT_IF(appWin->mPrimaryContentShell, aNextRemoteTabId == 0);
+  MOZ_ASSERT_IF(appWin->mPrimaryContentShell,
+                aOpenWindowInfo->GetNextRemoteBrowserId() == 0);
 
   newWindow.forget(_retval);
 
@@ -2610,9 +2573,10 @@ nsresult AppWindow::GetTabCount(uint32_t* aResult) {
   return NS_OK;
 }
 
-nsresult AppWindow::GetNextRemoteTabId(uint64_t* aNextRemoteTabId) {
-  NS_ENSURE_ARG_POINTER(aNextRemoteTabId);
-  *aNextRemoteTabId = mNextRemoteTabId;
+nsresult AppWindow::GetInitialOpenWindowInfo(
+    nsIOpenWindowInfo** aOpenWindowInfo) {
+  NS_ENSURE_ARG_POINTER(aOpenWindowInfo);
+  *aOpenWindowInfo = do_AddRef(mInitialOpenWindowInfo).take();
   return NS_OK;
 }
 

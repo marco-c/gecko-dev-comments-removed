@@ -15,6 +15,7 @@
 
 #include "nsISupports.idl"
 
+interface nsIOpenWindowInfo;
 interface nsIRemoteTab;
 interface nsIURI;
 interface nsIWebBrowserChrome;
@@ -38,15 +39,9 @@ interface nsIWindowCreator : nsISupports {
 
 
 
-
-
-
-
   nsIWebBrowserChrome createChromeWindow(in nsIWebBrowserChrome parent,
                                          in uint32_t chromeFlags,
-                                         in nsIRemoteTab aOpeningTab,
-                                         in mozIDOMWindowProxy aOpener,
-                                         in unsigned long long aNextRemoteTabId,
+                                         in nsIOpenWindowInfo aOpenWindowInfo,
                                          out boolean cancel);
 };
 
