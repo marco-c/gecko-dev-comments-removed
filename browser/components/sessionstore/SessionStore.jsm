@@ -4945,6 +4945,17 @@ var SessionStoreInternal = {
     this._crashedBrowsers.delete(browser.permanentKey);
 
     
+    
+    
+    if (
+      options.restoreContentReason ==
+      RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE
+    ) {
+      delete tabData.userTypedValue;
+      delete tabData.userTypedClear;
+    }
+
+    
     TabStateCache.update(browser, {
       
       

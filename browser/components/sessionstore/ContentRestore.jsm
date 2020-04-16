@@ -305,13 +305,7 @@ ContentRestoreInternal.prototype = {
           csp,
         };
         webNavigation.loadURI(loadArguments.uri, loadURIOptions);
-      } else if (
-        tabData.userTypedValue &&
-        tabData.userTypedClear &&
-        !isRemotenessUpdate
-      ) {
-        
-        
+      } else if (tabData.userTypedValue && tabData.userTypedClear) {
         
         
         
