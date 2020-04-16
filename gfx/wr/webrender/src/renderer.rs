@@ -127,6 +127,18 @@ const DEFAULT_BATCH_LOOKBACK_COUNT: usize = 10;
 const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
 
 
+
+
+
+
+
+
+
+
+
+const VERTEX_DATA_TEXTURE_COUNT: usize = 3;
+
+
 static HAS_BEEN_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 
@@ -1849,6 +1861,89 @@ impl DebugOverlayState {
     }
 }
 
+pub struct VertexDataTextures {
+    prim_header_f_texture: VertexDataTexture<PrimitiveHeaderF>,
+    prim_header_i_texture: VertexDataTexture<PrimitiveHeaderI>,
+    transforms_texture: VertexDataTexture<TransformData>,
+    render_task_texture: VertexDataTexture<RenderTaskData>,
+}
+
+impl VertexDataTextures {
+    fn new(
+        device: &mut Device,
+    ) -> Self {
+        VertexDataTextures {
+            prim_header_f_texture: VertexDataTexture::new(device, ImageFormat::RGBAF32),
+            prim_header_i_texture: VertexDataTexture::new(device, ImageFormat::RGBAI32),
+            transforms_texture: VertexDataTexture::new(device, ImageFormat::RGBAF32),
+            render_task_texture: VertexDataTexture::new(device, ImageFormat::RGBAF32),
+        }
+    }
+
+    fn update(
+        &mut self,
+        device: &mut Device,
+        frame: &mut Frame,
+    ) {
+        self.prim_header_f_texture.update(
+            device,
+            &mut frame.prim_headers.headers_float,
+        );
+        device.bind_texture(
+            TextureSampler::PrimitiveHeadersF,
+            &self.prim_header_f_texture.texture(),
+            Swizzle::default(),
+        );
+
+        self.prim_header_i_texture.update(
+            device,
+            &mut frame.prim_headers.headers_int,
+        );
+        device.bind_texture(
+            TextureSampler::PrimitiveHeadersI,
+            &self.prim_header_i_texture.texture(),
+            Swizzle::default(),
+        );
+
+        self.transforms_texture.update(
+            device,
+            &mut frame.transform_palette,
+        );
+        device.bind_texture(
+            TextureSampler::TransformPalette,
+            &self.transforms_texture.texture(),
+            Swizzle::default(),
+        );
+
+        self.render_task_texture.update(
+            device,
+            &mut frame.render_tasks.task_data,
+        );
+        device.bind_texture(
+            TextureSampler::RenderTasks,
+            &self.render_task_texture.texture(),
+            Swizzle::default(),
+        );
+    }
+
+    fn size_in_bytes(&self) -> usize {
+        self.prim_header_f_texture.size_in_bytes() +
+        self.prim_header_i_texture.size_in_bytes() +
+        self.transforms_texture.size_in_bytes() +
+        self.render_task_texture.size_in_bytes()
+    }
+
+    fn deinit(
+        self,
+        device: &mut Device,
+    ) {
+        self.transforms_texture.deinit(device);
+        self.prim_header_f_texture.deinit(device);
+        self.prim_header_i_texture.deinit(device);
+        self.render_task_texture.deinit(device);
+    }
+}
+
 
 
 
@@ -1890,11 +1985,9 @@ pub struct Renderer {
     pub gpu_profile: GpuProfiler<GpuProfileTag>,
     vaos: RendererVAOs,
 
-    prim_header_f_texture: VertexDataTexture<PrimitiveHeaderF>,
-    prim_header_i_texture: VertexDataTexture<PrimitiveHeaderI>,
-    transforms_texture: VertexDataTexture<TransformData>,
-    render_task_texture: VertexDataTexture<RenderTaskData>,
     gpu_cache_texture: GpuCacheTexture,
+    vertex_data_textures: Vec<VertexDataTextures>,
+    current_vertex_data_textures: usize,
 
     
     
@@ -2226,10 +2319,10 @@ impl Renderer {
 
         let texture_resolver = TextureResolver::new(&mut device);
 
-        let prim_header_f_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAF32);
-        let prim_header_i_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAI32);
-        let transforms_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAF32);
-        let render_task_texture = VertexDataTexture::new(&mut device, ImageFormat::RGBAF32);
+        let mut vertex_data_textures = Vec::new();
+        for _ in 0 .. VERTEX_DATA_TEXTURE_COUNT {
+            vertex_data_textures.push(VertexDataTextures::new(&mut device));
+        }
 
         
         
@@ -2496,10 +2589,8 @@ impl Renderer {
                 svg_filter_vao,
                 composite_vao,
             },
-            transforms_texture,
-            prim_header_i_texture,
-            prim_header_f_texture,
-            render_task_texture,
+            vertex_data_textures,
+            current_vertex_data_textures: 0,
             pipeline_info: PipelineInfo::default(),
             dither_matrix_texture,
             external_image_handler: None,
@@ -5491,43 +5582,12 @@ impl Renderer {
     fn bind_frame_data(&mut self, frame: &mut Frame) {
         let _timer = self.gpu_profile.start_timer(GPU_TAG_SETUP_DATA);
 
-        self.prim_header_f_texture.update(
+        self.vertex_data_textures[self.current_vertex_data_textures].update(
             &mut self.device,
-            &mut frame.prim_headers.headers_float,
+            frame,
         );
-        self.device.bind_texture(
-            TextureSampler::PrimitiveHeadersF,
-            &self.prim_header_f_texture.texture(),
-            Swizzle::default(),
-        );
-
-        self.prim_header_i_texture.update(
-            &mut self.device,
-            &mut frame.prim_headers.headers_int,
-        );
-        self.device.bind_texture(
-            TextureSampler::PrimitiveHeadersI,
-            &self.prim_header_i_texture.texture(),
-            Swizzle::default(),
-        );
-
-        self.transforms_texture.update(
-            &mut self.device,
-            &mut frame.transform_palette,
-        );
-        self.device.bind_texture(
-            TextureSampler::TransformPalette,
-            &self.transforms_texture.texture(),
-            Swizzle::default(),
-        );
-
-        self.render_task_texture
-            .update(&mut self.device, &mut frame.render_tasks.task_data);
-        self.device.bind_texture(
-            TextureSampler::RenderTasks,
-            &self.render_task_texture.texture(),
-            Swizzle::default(),
-        );
+        self.current_vertex_data_textures =
+            (self.current_vertex_data_textures + 1) % VERTEX_DATA_TEXTURE_COUNT;
 
         debug_assert!(self.texture_resolver.prev_pass_alpha.is_none());
         debug_assert!(self.texture_resolver.prev_pass_color.is_none());
@@ -6389,10 +6449,9 @@ impl Renderer {
         if let Some(zoom_debug_texture) = self.zoom_debug_texture {
             self.device.delete_texture(zoom_debug_texture);
         }
-        self.transforms_texture.deinit(&mut self.device);
-        self.prim_header_f_texture.deinit(&mut self.device);
-        self.prim_header_i_texture.deinit(&mut self.device);
-        self.render_task_texture.deinit(&mut self.device);
+        for textures in self.vertex_data_textures.drain(..) {
+            textures.deinit(&mut self.device);
+        }
         self.device.delete_pbo(self.texture_cache_upload_pbo);
         self.texture_resolver.deinit(&mut self.device);
         self.device.delete_vao(self.vaos.prim_vao);
@@ -6459,10 +6518,9 @@ impl Renderer {
         }
 
         
-        report.vertex_data_textures += self.prim_header_f_texture.size_in_bytes();
-        report.vertex_data_textures += self.prim_header_i_texture.size_in_bytes();
-        report.vertex_data_textures += self.transforms_texture.size_in_bytes();
-        report.vertex_data_textures += self.render_task_texture.size_in_bytes();
+        for textures in &self.vertex_data_textures {
+            report.vertex_data_textures += textures.size_in_bytes();
+        }
 
         
         report += self.texture_resolver.report_memory();
