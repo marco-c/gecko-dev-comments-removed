@@ -66,6 +66,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
+  [can_run_script]
   void getInlineProperty(in AString aProperty,
                          in AString aAttribute,
                          in AString aValue,
@@ -73,6 +74,7 @@ interface nsIHTMLEditor : nsISupports
                          out boolean aAny,
                          out boolean aAll);
 
+  [can_run_script]
   AString getInlinePropertyWithAttrValue(in AString aProperty,
                                          in AString aAttribute,
                                          in AString aValue,
@@ -196,6 +198,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
+  [can_run_script]
   AString getFontFaceState(out boolean aMixed);
 
   
@@ -203,6 +206,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
+  [can_run_script]
   AString getHighlightColorState(out boolean aMixed);
 
   
@@ -237,6 +241,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
+  [can_run_script]
   void getAlignment(out boolean aMixed, out short aAlign);
 
   
