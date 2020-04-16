@@ -59,18 +59,47 @@ addRDMTask(
         state.viewports.length == 1 &&
         state.devices.listState == Types.loadableState.LOADED
     );
+
+    
+    await navigateToNewDomain("about:robots", ui);
+
+    
+    is(ui.destroyed, false, "RDM is still open.");
+
+    info("Close RDM");
+    await closeRDM(tab);
+
+    await removeTab(tab);
+  },
+  { usingBrowserUI: true, onlyPrefAndTask: true }
+);
+
+
+
+
+addRDMTask(
+  null,
+  async function() {
+    const tab = await addTab(TEST_URL);
+
+    const { ui } = await openRDM(tab);
+    const { store } = ui.toolWindow;
+    await waitUntilState(
+      store,
+      state =>
+        state.viewports.length == 1 &&
+        state.devices.listState == Types.loadableState.LOADED
+    );
     const clientClosed = waitForClientClose(ui);
 
     
     await load(tab.linkedBrowser, "about:robots");
 
     
-    
-    
     is(ui.destroyed, true, "RDM closed synchronously");
 
     await clientClosed;
     await removeTab(tab);
   },
-  { usingBrowserUI: true, onlyPrefAndTask: true }
+  { usingBrowserUI: false, onlyPrefAndTask: true }
 );
