@@ -5,6 +5,8 @@
 
 
 #include "RenderTextureHost.h"
+
+#include "GLContext.h"
 #include "RenderThread.h"
 
 namespace mozilla {
