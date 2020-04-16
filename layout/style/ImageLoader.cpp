@@ -510,10 +510,11 @@ static void InvalidateImages(nsIFrame* aFrame, imgIRequest* aRequest,
   }
 
   if (aFrame->IsPrimaryFrameOfRootOrBodyElement()) {
-    
-    
-    InvalidateImages(aFrame->PresShell()->GetCanvasFrame(), aRequest,
-                     aForcePaint);
+    if (auto* canvas = aFrame->PresShell()->GetCanvasFrame()) {
+      
+      
+      InvalidateImages(canvas, aRequest, aForcePaint);
+    }
   }
 
   bool invalidateFrame = aForcePaint;
