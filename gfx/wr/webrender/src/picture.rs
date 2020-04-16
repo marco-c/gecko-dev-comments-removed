@@ -4972,37 +4972,56 @@ impl PicturePrimitive {
                         let device_clip_rect = (world_clip_rect * frame_context.global_device_pixel_scale).round();
 
                         for tile in tile_cache.tiles.values_mut() {
-                            if !tile.is_visible {
-                                continue;
+
+                            
+                            if tile.is_visible && tile_cache.spatial_node_index == ROOT_SPATIAL_NODE_INDEX {
+                                
+                                let device_draw_rect = device_clip_rect.intersection(&tile.device_valid_rect);
+
+                                
+                                
+                                
+                                
+                                match device_draw_rect {
+                                    Some(device_draw_rect) => {
+                                        if frame_state.composite_state.is_tile_occluded(tile.z_id, device_draw_rect) {
+                                            
+                                            
+                                            
+                                            
+                                            let surface = tile.surface.as_mut().expect("no tile surface set!");
+
+                                            if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id, .. }, .. } = surface {
+                                                if let Some(id) = id.take() {
+                                                    frame_state.resource_cache.destroy_compositor_tile(id);
+                                                }
+                                            }
+
+                                            tile.is_visible = false;
+                                            continue;
+                                        }
+                                    }
+                                    None => {
+                                        tile.is_visible = false;
+                                    }
+                                }
                             }
 
                             
-                            let device_draw_rect = match device_clip_rect.intersection(&tile.device_valid_rect) {
-                                Some(rect) => rect,
-                                None => {
-                                    tile.is_visible = false;
-                                    continue;
+                            
+                            
+                            
+                            if let Some(TileSurface::Texture { descriptor, .. }) = tile.surface.as_ref() {
+                                if let SurfaceTextureDescriptor::TextureCache { ref handle, .. } = descriptor {
+                                    frame_state.resource_cache.texture_cache.request(
+                                        handle,
+                                        frame_state.gpu_cache,
+                                    );
                                 }
-                            };
+                            }
 
                             
-                            
-                            
-                            
-                            if frame_state.composite_state.is_tile_occluded(tile.z_id, device_draw_rect) {
-                                
-                                
-                                
-                                
-                                let surface = tile.surface.as_mut().expect("no tile surface set!");
-
-                                if let TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id, .. }, .. } = surface {
-                                    if let Some(id) = id.take() {
-                                        frame_state.resource_cache.destroy_compositor_tile(id);
-                                    }
-                                }
-
-                                tile.is_visible = false;
+                            if !tile.is_visible {
                                 continue;
                             }
 
