@@ -33,6 +33,34 @@
 
 namespace mozilla {
 namespace net {
+using ChildEndpointPromise =
+    MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
+
+
+
+
+
+
+
+
+struct StreamFilterRequest {
+  StreamFilterRequest() = default;
+  StreamFilterRequest(StreamFilterRequest&&) = default;
+  ~StreamFilterRequest() {
+    if (mPromise) {
+      mPromise->Reject(false, __func__);
+    }
+  }
+  RefPtr<ChildEndpointPromise::Private> mPromise;
+  base::ProcessId mChildProcessId;
+  ipc::Endpoint<extensions::PStreamFilterChild> mChildEndpoint;
+};
+}  
+}  
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::net::StreamFilterRequest)
+
+namespace mozilla {
+namespace net {
 
 class LoadInfo;
 
@@ -141,10 +169,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     return 0;
   }
 
-  using ChildEndpointPromise =
-      MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
   MOZ_MUST_USE RefPtr<ChildEndpointPromise> AttachStreamFilter(
       base::ProcessId aChildProcessId);
+
+  using ParentEndpoint = ipc::Endpoint<extensions::PStreamFilterParent>;
 
   
   
@@ -182,7 +210,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
-                        const Maybe<uint64_t>& aDestinationProcess);
+                        const Maybe<uint64_t>& aDestinationProcess,
+                        nsTArray<ParentEndpoint>&& aStreamFilterEndpoints);
 
   
   
@@ -310,6 +339,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   RefPtr<nsDOMNavigationTiming> mTiming;
 
   nsTArray<DocumentChannelRedirect> mRedirects;
+
+  nsTArray<StreamFilterRequest> mStreamFilterRequests;
 
   nsString mSrcdocData;
   nsCOMPtr<nsIURI> mBaseURI;

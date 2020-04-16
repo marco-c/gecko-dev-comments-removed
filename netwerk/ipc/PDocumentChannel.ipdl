@@ -38,8 +38,6 @@ child:
   
   async FailedAsyncOpen(nsresult status);
 
-  async AttachStreamFilter(Endpoint<PStreamFilterParent> aEndpoint);
-
   
   
   
@@ -52,7 +50,7 @@ child:
 
   
   
-  async RedirectToRealChannel(RedirectToRealChannelArgs args)
+  async RedirectToRealChannel(RedirectToRealChannelArgs args, Endpoint<PStreamFilterParent>[] aEndpoint)
       returns (nsresult rv);
 
   async CSPViolation(CSPInfo aCSP, bool aIsCspToInherit,
