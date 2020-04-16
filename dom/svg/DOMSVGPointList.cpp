@@ -50,6 +50,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(DOMSVGPointList)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(DOMSVGPointList)
   
   
+  tmp->RemoveFromTearoffTable();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(DOMSVGPointList)
@@ -112,13 +113,17 @@ DOMSVGPointList* DOMSVGPointList::GetDOMWrapperIfExists(void* aList) {
   return SVGPointListTearoffTable().GetTearoff(aList);
 }
 
-DOMSVGPointList::~DOMSVGPointList() {
+void DOMSVGPointList::RemoveFromTearoffTable() {
+  
+  
   
   
   void* key = mIsAnimValList ? InternalAList().GetAnimValKey()
                              : InternalAList().GetBaseValKey();
   SVGPointListTearoffTable().RemoveTearoff(key);
 }
+
+DOMSVGPointList::~DOMSVGPointList() { RemoveFromTearoffTable(); }
 
 JSObject* DOMSVGPointList::WrapObject(JSContext* cx,
                                       JS::Handle<JSObject*> aGivenProto) {

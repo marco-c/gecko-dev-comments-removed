@@ -100,6 +100,8 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
 
   SVGStringList& InternalList() const;
 
+  void RemoveFromTearoffTable();
+
   
   RefPtr<dom::SVGElement> mElement;
 

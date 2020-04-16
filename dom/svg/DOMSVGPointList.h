@@ -191,6 +191,8 @@ class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   void MaybeInsertNullInAnimValListAt(uint32_t aIndex);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex);
 
+  void RemoveFromTearoffTable();
+
   
   
   FallibleTArray<nsISVGPoint*> mItems;

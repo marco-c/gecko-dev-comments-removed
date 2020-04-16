@@ -200,6 +200,8 @@ class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
 
   DOMSVGPathSeg*& ItemAt(uint32_t aIndex) { return mItems[aIndex].mItem; }
 
+  void RemoveFromTearoffTable();
+
   
 
 
