@@ -965,11 +965,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
 
  private:
-  
-  inline void checkImpl(int argIndex) {}
-
-  template <class Head, class... Tail>
-  inline void checkImpl(int argIndex, const Head& head, const Tail&... tail);
+  template <class... Args>
+  inline void checkImpl(const Args&... args);
 
   bool contextChecksEnabled() const {
     
