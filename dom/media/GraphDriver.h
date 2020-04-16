@@ -606,7 +606,7 @@ class AudioCallbackDriver : public GraphDriver,
 
   AudioCallbackDriver* AsAudioCallbackDriver() override { return this; }
 
-  uint32_t OutputChannelCount() { return mOutputChannels; }
+  uint32_t OutputChannelCount() { return mOutputChannelCount; }
 
   uint32_t InputChannelCount() { return mInputChannelCount; }
 
@@ -683,7 +683,7 @@ class AudioCallbackDriver : public GraphDriver,
   }
 
   
-  const uint32_t mOutputChannels;
+  const uint32_t mOutputChannelCount;
   
 
 
