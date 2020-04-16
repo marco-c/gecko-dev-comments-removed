@@ -46,76 +46,16 @@ void ProxyCreated(ProxyAccessible* aProxy, uint32_t) {
   uintptr_t accWrap = reinterpret_cast<uintptr_t>(aProxy) | IS_PROXY;
   mozAccessible* mozWrapper = [[type alloc] initWithAccessible:accWrap];
   aProxy->SetWrapper(reinterpret_cast<uintptr_t>(mozWrapper));
-
-  mozAccessible* nativeParent = nullptr;
-  if (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevel()) {
-    
-    
-    Accessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-    if (outerDoc) {
-      nativeParent = GetNativeFromGeckoAccessible(outerDoc);
-    }
-  } else {
-    
-    ProxyAccessible* parent = aProxy->Parent();
-    MOZ_ASSERT(parent ||
-                   
-                   (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevelInContentProcess()),
-               "a non-top-level proxy is missing a parent?");
-    nativeParent = parent ? GetNativeFromProxy(parent) : nullptr;
-  }
-
-  if (nativeParent) {
-    [nativeParent invalidateChildren];
-  }
 }
 
 void ProxyDestroyed(ProxyAccessible* aProxy) {
-  mozAccessible* nativeParent = nil;
-  if (aProxy->IsDoc() && aProxy->AsDoc()->IsTopLevel()) {
-    
-    Accessible* outerDoc = aProxy->OuterDocOfRemoteBrowser();
-    if (outerDoc) {
-      nativeParent = GetNativeFromGeckoAccessible(outerDoc);
-    }
-  } else {
-    if (!aProxy->Document()->IsShutdown()) {
-      
-      
-      ProxyAccessible* parent = aProxy->Parent();
-      
-      if (parent) {
-        nativeParent = GetNativeFromProxy(parent);
-      }
-    }
-  }
-
   mozAccessible* wrapper = GetNativeFromProxy(aProxy);
   [wrapper expire];
   [wrapper release];
   aProxy->SetWrapper(0);
-
-  if (nativeParent) {
-    [nativeParent invalidateChildren];
-  }
 }
 
 void ProxyEvent(ProxyAccessible* aProxy, uint32_t aEventType) {
-  if (aEventType == nsIAccessibleEvent::EVENT_REORDER && aProxy->ChildrenCount() == 1 &&
-      aProxy->ChildAt(0)->IsDoc()) {
-    
-    
-    
-    
-    
-    
-    
-    mozAccessible* wrapper = GetNativeFromProxy(aProxy);
-    if (wrapper) {
-      [wrapper invalidateChildren];
-    }
-  }
-
   
   
   if (aEventType != nsIAccessibleEvent::EVENT_FOCUS &&

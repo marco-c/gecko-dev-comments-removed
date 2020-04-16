@@ -51,16 +51,6 @@ static const uintptr_t IS_PROXY = 1;
   
 
 
-  NSMutableArray* mChildren;
-
-  
-
-
-  mozAccessible* mParent;
-
-  
-
-
   mozilla::a11y::role mRole;
 
   
@@ -149,14 +139,6 @@ static const uintptr_t IS_PROXY = 1;
 #pragma mark -
 
 
-- (void)invalidateChildren;
-
-
-
-
-- (void)appendChild:(mozilla::a11y::Accessible*)aAccessible;
-
-
 
 - (void)expire;
 - (BOOL)isExpired;
@@ -187,6 +169,11 @@ static const uintptr_t IS_PROXY = 1;
 
 
 - (id)accessibilityAttributeValue:(NSString*)attribute;
+
+
+
+
+- (NSUInteger)accessibilityArrayAttributeCount:(NSString*)attribute;
 
 - (BOOL)accessibilityIsAttributeSettable:(NSString*)attribute;
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute;
