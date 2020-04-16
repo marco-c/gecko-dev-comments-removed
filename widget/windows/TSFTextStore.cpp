@@ -3971,60 +3971,12 @@ void TSFTextStore::SetInputScope(const nsString& aHTMLInputType,
   }
 
   if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
-    if (aHTMLInputInputMode.EqualsLiteral("url")) {
-      mInputScopes.AppendElement(IS_URL);
-    } else if (aHTMLInputInputMode.EqualsLiteral("mozAwesomebar")) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
-        return;
-      }
-      
-      mInputScopes.AppendElement(IS_URL);
-    } else if (aHTMLInputInputMode.EqualsLiteral("email")) {
-      mInputScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-    } else if (aHTMLInputType.EqualsLiteral("tel")) {
-      mInputScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-      mInputScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-    } else if (aHTMLInputType.EqualsLiteral("numeric")) {
-      mInputScopes.AppendElement(IS_NUMBER);
-    }
+    IMEHandler::AppendInputScopeFromInputmode(aHTMLInputInputMode,
+                                              mInputScopes);
     return;
   }
 
-  
-  if (aHTMLInputType.EqualsLiteral("url")) {
-    mInputScopes.AppendElement(IS_URL);
-  } else if (aHTMLInputType.EqualsLiteral("search")) {
-    mInputScopes.AppendElement(IS_SEARCH);
-  } else if (aHTMLInputType.EqualsLiteral("email")) {
-    mInputScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-  } else if (aHTMLInputType.EqualsLiteral("password")) {
-    mInputScopes.AppendElement(IS_PASSWORD);
-  } else if (aHTMLInputType.EqualsLiteral("datetime") ||
-             aHTMLInputType.EqualsLiteral("datetime-local")) {
-    mInputScopes.AppendElement(IS_DATE_FULLDATE);
-    mInputScopes.AppendElement(IS_TIME_FULLTIME);
-  } else if (aHTMLInputType.EqualsLiteral("date") ||
-             aHTMLInputType.EqualsLiteral("month") ||
-             aHTMLInputType.EqualsLiteral("week")) {
-    mInputScopes.AppendElement(IS_DATE_FULLDATE);
-  } else if (aHTMLInputType.EqualsLiteral("time")) {
-    mInputScopes.AppendElement(IS_TIME_FULLTIME);
-  } else if (aHTMLInputType.EqualsLiteral("tel")) {
-    mInputScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    mInputScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-  } else if (aHTMLInputType.EqualsLiteral("number")) {
-    mInputScopes.AppendElement(IS_NUMBER);
-  }
+  IMEHandler::AppendInputScopeFromType(aHTMLInputType, mInputScopes);
 }
 
 int32_t TSFTextStore::GetRequestedAttrIndex(const TS_ATTRID& aAttrID) {

@@ -176,6 +176,18 @@ class IMEHandler final {
   static bool CurrentKeyboardLayoutHasIME();
 #endif  
 
+  
+
+
+  static void AppendInputScopeFromInputmode(const nsAString& aInputmode,
+                                            nsTArray<InputScope>& aScopes);
+
+  
+
+
+  static void AppendInputScopeFromType(const nsAString& aInputType,
+                                       nsTArray<InputScope>& aScopes);
+
  private:
   static nsWindow* sFocusedWindow;
   static InputContextAction::Cause sLastContextActionCause;
