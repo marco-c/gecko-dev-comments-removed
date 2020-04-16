@@ -17,8 +17,6 @@ const L10N = new LocalizationHelper(
 
 
 
-
-
 class RulePreviewTooltip {
   constructor(doc) {
     this.show = this.show.bind(this);
@@ -36,12 +34,12 @@ class RulePreviewTooltip {
 
     this.message = doc.createElementNS(XHTML_NS, "span");
     this.message.className = "rule-preview-tooltip-message";
-    this.message.textContent = L10N.getStr(
-      "rulePreviewTooltip.noAssociatedRule"
-    );
-    this.container.appendChild(this.message);
 
-    
+    this.footer = doc.createElementNS(XHTML_NS, "span");
+    this.footer.className = "rule-preview-tooltip-source-rule-footer";
+    this.footer.textContent = L10N.getStr(
+      "rulePreviewTooltip.jumpToRuleShortcut"
+    );
 
     this._tooltip.panel.innerHTML = "";
     this._tooltip.panel.appendChild(this.container);
@@ -54,7 +52,14 @@ class RulePreviewTooltip {
 
 
 
-  show(element) {
+
+
+
+  show(element, ruleText) {
+    this.message.textContent = ruleText;
+    this.container.appendChild(this.message);
+    this.container.appendChild(this.footer);
+
     element.addEventListener("mouseout", () => this._tooltip.hide());
     this._tooltip.show(element);
   }
@@ -63,6 +68,7 @@ class RulePreviewTooltip {
     this._tooltip.destroy();
     this.container = null;
     this.message = null;
+    this.footer = null;
   }
 }
 
