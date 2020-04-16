@@ -1873,7 +1873,7 @@ class Document : public nsINode,
   
 
 
-  nsTArray<Element*> GetFullscreenStack() const;
+  nsTArray<Element*> GetTopLayer() const;
 
   
 
@@ -1903,14 +1903,19 @@ class Document : public nsINode,
   void CleanupFullscreenState();
 
   
-  
-  
-  bool FullscreenStackPush(Element* aElement);
+  bool TopLayerPush(Element* aElement);
 
   
   
+  Element* TopLayerPop(FunctionRef<bool(Element*)> aPredicateFunc);
+
   
-  void FullscreenStackPop();
+  
+  void UnsetFullscreenElement();
+
+  
+  
+  bool SetFullscreenElement(Element* aElement);
 
   
 
@@ -1950,6 +1955,8 @@ class Document : public nsINode,
 
 
   Document* GetFullscreenRoot();
+
+  size_t CountFullscreenElements() const;
 
   
 
@@ -3345,7 +3352,9 @@ class Document : public nsINode,
   nsIURI* GetDocumentURIObject() const;
   
   bool FullscreenEnabled(CallerType aCallerType);
-  Element* FullscreenStackTop();
+  Element* GetTopLayerTop();
+  
+  Element* GetUnretargetedFullScreenElement();
   bool Fullscreen() { return !!GetFullscreenElement(); }
   already_AddRefed<Promise> ExitFullscreen(ErrorResult&);
   void ExitPointerLock() { UnlockPointer(this); }
@@ -4913,9 +4922,7 @@ class Document : public nsINode,
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
 
   
-  
-  
-  nsTArray<nsWeakPtr> mFullscreenStack;
+  nsTArray<nsWeakPtr> mTopLayer;
 
   
   

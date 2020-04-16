@@ -10947,7 +10947,7 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   EnumerateActivityObservers(NotifyActivityChanged);
 
   ClearPendingFullscreenRequests(this);
-  if (FullscreenStackTop()) {
+  if (GetUnretargetedFullScreenElement()) {
     
     
     
@@ -12979,6 +12979,18 @@ Document* Document::GetFullscreenRoot() {
   return root;
 }
 
+size_t Document::CountFullscreenElements() const {
+  size_t count = 0;
+  for (const nsWeakPtr& ptr : mTopLayer) {
+    if (nsCOMPtr<Element> elem = do_QueryReferent(ptr)) {
+      if (elem->State().HasState(NS_EVENT_STATE_FULLSCREEN)) {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
 void Document::SetFullscreenRoot(Document* aRoot) {
   mFullscreenRoot = do_GetWeakReference(aRoot);
 }
@@ -13035,7 +13047,7 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
   uint32_t count = 0;
   
   auto subDoc = [&count](Document& aSubDoc) {
-    if (aSubDoc.FullscreenStackTop()) {
+    if (aSubDoc.GetUnretargetedFullScreenElement()) {
       count++;
     }
     return CallState::Continue;
@@ -13047,7 +13059,7 @@ static uint32_t CountFullscreenSubDocuments(Document& aDoc) {
 bool Document::IsFullscreenLeaf() {
   
   
-  if (!FullscreenStackTop()) {
+  if (!GetUnretargetedFullScreenElement()) {
     return false;
   }
   return CountFullscreenSubDocuments(*this) == 0;
@@ -13057,7 +13069,7 @@ static Document* GetFullscreenLeaf(Document& aDoc) {
   if (aDoc.IsFullscreenLeaf()) {
     return &aDoc;
   }
-  if (!aDoc.FullscreenStackTop()) {
+  if (!aDoc.GetUnretargetedFullScreenElement()) {
     return nullptr;
   }
   Document* leaf = nullptr;
@@ -13080,11 +13092,12 @@ static Document* GetFullscreenLeaf(Document* aDoc) {
 }
 
 static CallState ResetFullscreen(Document& aDocument) {
-  if (Element* fsElement = aDocument.FullscreenStackTop()) {
+  if (Element* fsElement = aDocument.GetUnretargetedFullScreenElement()) {
     NS_ASSERTION(CountFullscreenSubDocuments(aDocument) <= 1,
                  "Should have at most 1 fullscreen subdocument.");
     aDocument.CleanupFullscreenState();
-    NS_ASSERTION(!aDocument.FullscreenStackTop(), "Should reset fullscreen");
+    NS_ASSERTION(!aDocument.GetUnretargetedFullScreenElement(),
+                 "Should reset fullscreen");
     DispatchFullscreenChange(aDocument, fsElement);
     aDocument.EnumerateSubDocuments(ResetFullscreen);
   }
@@ -13137,7 +13150,7 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   }
 
   nsCOMPtr<Document> root = aMaybeNotARootDoc->GetFullscreenRoot();
-  if (!root || !root->FullscreenStackTop()) {
+  if (!root || !root->GetUnretargetedFullScreenElement()) {
     
     
     
@@ -13158,7 +13171,7 @@ void Document::ExitFullscreenInDocTree(Document* aMaybeNotARootDoc) {
   
   ResetFullscreen(*root);
 
-  NS_ASSERTION(!root->FullscreenStackTop(),
+  NS_ASSERTION(!root->GetUnretargetedFullScreenElement(),
                "Fullscreen root should no longer be a fullscreen doc...");
 
   
@@ -13176,14 +13189,15 @@ static void DispatchFullscreenNewOriginEvent(Document* aDoc) {
 }
 
 void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
-  NS_ASSERTION(!FullscreenStackTop() || !FullscreenRoots::IsEmpty(),
-               "Should have at least 1 fullscreen root when fullscreen!");
+  NS_ASSERTION(
+      !GetUnretargetedFullScreenElement() || !FullscreenRoots::IsEmpty(),
+      "Should have at least 1 fullscreen root when fullscreen!");
 
   if (!GetWindow()) {
     aExit->MayRejectPromise("No active window");
     return;
   }
-  if (!FullscreenStackTop() || FullscreenRoots::IsEmpty()) {
+  if (!GetUnretargetedFullScreenElement() || FullscreenRoots::IsEmpty()) {
     aExit->MayRejectPromise("Not in fullscreen mode");
     return;
   }
@@ -13194,7 +13208,7 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   Document* doc = fullScreenDoc;
   
   for (; doc != this; doc = doc->GetInProcessParentDocument()) {
-    Element* fsElement = doc->FullscreenStackTop();
+    Element* fsElement = doc->GetUnretargetedFullScreenElement();
     MOZ_ASSERT(fsElement,
                "Parent document of "
                "a fullscreen document without fullscreen element?");
@@ -13203,9 +13217,9 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   MOZ_ASSERT(doc == this, "Must have reached this doc");
   
   for (; doc; doc = doc->GetInProcessParentDocument()) {
-    MOZ_ASSERT(!doc->mFullscreenStack.IsEmpty(),
+    Element* fsElement = doc->GetUnretargetedFullScreenElement();
+    MOZ_ASSERT(fsElement,
                "Ancestor of fullscreen document must also be in fullscreen");
-    Element* fsElement = doc->FullscreenStackTop();
     if (doc != this) {
       if (auto* iframe = HTMLIFrameElement::FromNode(fsElement)) {
         if (iframe->FullscreenFlag()) {
@@ -13216,14 +13230,14 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
       }
     }
     exitElements.AppendElement(fsElement);
-    if (doc->mFullscreenStack.Length() > 1) {
+    if (doc->CountFullscreenElements() > 1) {
       break;
     }
   }
 
   Document* lastDoc = exitElements.LastElement()->OwnerDoc();
-  if (!lastDoc->GetInProcessParentDocument() &&
-      lastDoc->mFullscreenStack.Length() == 1) {
+  size_t fullscreenCount = lastDoc->CountFullscreenElements();
+  if (!lastDoc->GetInProcessParentDocument() && fullscreenCount == 1) {
     
     
     PendingFullscreenChangeList::Add(std::move(aExit));
@@ -13241,8 +13255,8 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   
   
   Document* newFullscreenDoc;
-  if (lastDoc->mFullscreenStack.Length() > 1) {
-    lastDoc->FullscreenStackPop();
+  if (fullscreenCount > 1) {
+    lastDoc->UnsetFullscreenElement();
     newFullscreenDoc = lastDoc;
   } else {
     lastDoc->CleanupFullscreenState();
@@ -13316,12 +13330,20 @@ void Document::CleanupFullscreenState() {
   
   
   
-  for (nsWeakPtr& weakPtr : Reversed(mFullscreenStack)) {
-    if (nsCOMPtr<Element> element = do_QueryReferent(weakPtr)) {
-      ClearFullscreenStateOnElement(element);
+  mTopLayer.RemoveElementsBy([&](const nsWeakPtr& weakPtr) {
+    nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
+    if (!element || !element->IsInComposedDoc() ||
+        element->OwnerDoc() != this) {
+      return true;
     }
-  }
-  mFullscreenStack.Clear();
+
+    if (element->State().HasState(NS_EVENT_STATE_FULLSCREEN)) {
+      ClearFullscreenStateOnElement(element);
+      return true;
+    }
+    return false;
+  });
+
   mFullscreenRoot = nullptr;
 
   
@@ -13335,71 +13357,102 @@ void Document::CleanupFullscreenState() {
   UpdateViewportScrollbarOverrideForFullscreen(this);
 }
 
-bool Document::FullscreenStackPush(Element* aElement) {
-  NS_ASSERTION(aElement, "Must pass non-null to FullscreenStackPush()");
-  Element* top = FullscreenStackTop();
-  if (top == aElement || !aElement) {
-    return false;
-  }
-  EventStateManager::SetFullscreenState(aElement, true);
-  mFullscreenStack.AppendElement(do_GetWeakReference(aElement));
-  NS_ASSERTION(FullscreenStackTop() == aElement, "Should match");
+void Document::UnsetFullscreenElement() {
+  Element* removedElement = TopLayerPop([](Element* element) -> bool {
+    return element->State().HasState(NS_EVENT_STATE_FULLSCREEN);
+  });
+
+  MOZ_ASSERT(removedElement->State().HasState(NS_EVENT_STATE_FULLSCREEN));
+  ClearFullscreenStateOnElement(removedElement);
   UpdateViewportScrollbarOverrideForFullscreen(this);
+}
+
+bool Document::SetFullscreenElement(Element* aElement) {
+  if (TopLayerPush(aElement)) {
+    EventStateManager::SetFullscreenState(aElement, true);
+    UpdateViewportScrollbarOverrideForFullscreen(this);
+    return true;
+  }
+  return false;
+}
+
+bool Document::TopLayerPush(Element* aElement) {
+  NS_ASSERTION(aElement, "Must pass non-null to TopLayerPush()");
+  auto predictFunc = [&aElement](Element* element) {
+    return element == aElement;
+  };
+  TopLayerPop(predictFunc);
+
+  mTopLayer.AppendElement(do_GetWeakReference(aElement));
+  NS_ASSERTION(GetTopLayerTop() == aElement, "Should match");
   return true;
 }
 
-void Document::FullscreenStackPop() {
-  if (mFullscreenStack.IsEmpty()) {
-    return;
+Element* Document::TopLayerPop(FunctionRef<bool(Element*)> aPredicateFunc) {
+  if (mTopLayer.IsEmpty()) {
+    return nullptr;
   }
 
-  ClearFullscreenStateOnElement(FullscreenStackTop());
+  
+  
+  
+  Element* removedElement;
+  for (auto i : Reversed(IntegerRange(mTopLayer.Length()))) {
+    nsCOMPtr<Element> element(do_QueryReferent(mTopLayer[i]));
+    if (element && aPredicateFunc(element)) {
+      removedElement = element;
+      mTopLayer.RemoveElementAt(i);
+      break;
+    }
+  }
 
   
   
   
-  uint32_t last = mFullscreenStack.Length() - 1;
-  mFullscreenStack.RemoveElementAt(last);
-
-  
-  
-  
-  while (!mFullscreenStack.IsEmpty()) {
-    Element* element = FullscreenStackTop();
+  while (!mTopLayer.IsEmpty()) {
+    Element* element = GetTopLayerTop();
     if (!element || !element->IsInUncomposedDoc() ||
         element->OwnerDoc() != this) {
-      NS_ASSERTION(!element->State().HasState(NS_EVENT_STATE_FULLSCREEN),
-                   "Should have already removed fullscreen styles");
-      uint32_t last = mFullscreenStack.Length() - 1;
-      mFullscreenStack.RemoveElementAt(last);
+      mTopLayer.RemoveLastElement();
     } else {
       
       break;
     }
   }
 
-  UpdateViewportScrollbarOverrideForFullscreen(this);
+  return removedElement;
 }
 
-Element* Document::FullscreenStackTop() {
-  if (mFullscreenStack.IsEmpty()) {
+Element* Document::GetTopLayerTop() {
+  if (mTopLayer.IsEmpty()) {
     return nullptr;
   }
-  uint32_t last = mFullscreenStack.Length() - 1;
-  nsCOMPtr<Element> element(do_QueryReferent(mFullscreenStack[last]));
-  NS_ASSERTION(element, "Should have fullscreen element!");
+  uint32_t last = mTopLayer.Length() - 1;
+  nsCOMPtr<Element> element(do_QueryReferent(mTopLayer[last]));
+  NS_ASSERTION(element, "Should have a top layer element!");
   NS_ASSERTION(element->IsInComposedDoc(),
-               "Fullscreen element should be in doc");
+               "Top layer element should be in doc");
   NS_ASSERTION(element->OwnerDoc() == this,
-               "Fullscreen element should be in this doc");
+               "Top layer element should be in this doc");
   return element;
 }
 
-nsTArray<Element*> Document::GetFullscreenStack() const {
+Element* Document::GetUnretargetedFullScreenElement() {
+  for (const nsWeakPtr& weakPtr : Reversed(mTopLayer)) {
+    nsCOMPtr<Element> element(do_QueryReferent(weakPtr));
+    
+    
+    if (element && element->State().HasState(NS_EVENT_STATE_FULLSCREEN)) {
+      return element;
+    }
+  }
+  return nullptr;
+}
+
+nsTArray<Element*> Document::GetTopLayer() const {
   nsTArray<Element*> elements;
-  for (const nsWeakPtr& ptr : mFullscreenStack) {
+  for (const nsWeakPtr& ptr : mTopLayer) {
     if (nsCOMPtr<Element> elem = do_QueryReferent(ptr)) {
-      MOZ_ASSERT(elem->State().HasState(NS_EVENT_STATE_FULLSCREEN));
       elements.AppendElement(elem);
     }
   }
@@ -13514,7 +13567,8 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
   
   
   
-  if (elem == FullscreenStackTop()) {
+  Element* fullscreenElement = GetUnretargetedFullScreenElement();
+  if (elem == fullscreenElement) {
     aRequest.MayResolvePromise();
     return false;
   }
@@ -13540,9 +13594,8 @@ bool Document::FullscreenElementReadyCheck(FullscreenRequest& aRequest) {
   }
   
   
-  if (FullscreenStackTop() &&
-      !nsContentUtils::ContentIsHostIncludingDescendantOf(
-          elem, FullscreenStackTop())) {
+  if (fullscreenElement && !nsContentUtils::ContentIsHostIncludingDescendantOf(
+                               elem, fullscreenElement)) {
     
     
     aRequest.Reject("FullscreenDeniedNotDescendant");
@@ -13583,7 +13636,8 @@ static bool ShouldApplyFullscreenDirectly(Document* aDoc,
     
     
     
-    return !!nsContentUtils::GetRootDocument(aDoc)->GetFullscreenElement();
+    return !!nsContentUtils::GetRootDocument(aDoc)
+                 ->GetUnretargetedFullScreenElement();
   } else {
     
     
@@ -13703,8 +13757,8 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   
   
   Element* elem = aRequest->Element();
-  DebugOnly<bool> x = FullscreenStackPush(elem);
-  NS_ASSERTION(x, "Fullscreen state of requesting doc should always change!");
+  DebugOnly<bool> x = SetFullscreenElement(elem);
+  MOZ_ASSERT(x, "Fullscreen state of requesting doc should always change!");
   
   if (auto* iframe = HTMLIFrameElement::FromNode(elem)) {
     iframe->SetFullscreenFlag(true);
@@ -13744,7 +13798,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
     }
     Document* parent = child->GetInProcessParentDocument();
     Element* element = parent->FindContentForSubDocument(child);
-    if (parent->FullscreenStackPush(element)) {
+    if (parent->SetFullscreenElement(element)) {
       changed.AppendElement(parent);
       child = parent;
     } else {
@@ -13785,7 +13839,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   
   
   for (Document* d : Reversed(changed)) {
-    DispatchFullscreenChange(*d, d->FullscreenStackTop());
+    DispatchFullscreenChange(*d, d->GetUnretargetedFullScreenElement());
   }
   aRequest->MayResolvePromise();
   return true;
@@ -13959,7 +14013,8 @@ PointerLockRequest::Run() {
   }
   
   
-  if (!error && !mUserInputOrChromeCaller && !doc->GetFullscreenElement()) {
+  if (!error && !mUserInputOrChromeCaller &&
+      !doc->GetUnretargetedFullScreenElement()) {
     error = "PointerLockDeniedNotInputDriven";
   }
   if (!error && !doc->SetPointerLock(e, StyleCursorKind::None)) {
