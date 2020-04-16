@@ -853,7 +853,11 @@ var BrowserPageActions = {
   mainButtonClicked(event) {
     event.stopPropagation();
     if (
-      (event.type == "mousedown" && event.button != 0) ||
+      
+      
+      (event.type == "mousedown" &&
+        (event.button != 0 ||
+          (AppConstants.platform == "macosx" && event.ctrlKey))) ||
       (event.type == "keypress" &&
         event.charCode != KeyEvent.DOM_VK_SPACE &&
         event.keyCode != KeyEvent.DOM_VK_RETURN)
