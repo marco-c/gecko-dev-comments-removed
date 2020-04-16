@@ -32,6 +32,20 @@ function checksCertTab(tabsCount) {
   checkSpec(spec);
 }
 
+async function checkCertChain() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    let certificateTabs;
+    await ContentTaskUtils.waitForCondition(() => {
+      certificateTabs = content.document
+        .querySelector("certificate-section")
+        .shadowRoot.querySelectorAll(".certificate-tab");
+      return certificateTabs.length;
+    }, "Found certificate tabs.");
+
+    Assert.greater(certificateTabs.length, 1, "Certificate chain tabs shown");
+  });
+}
+
 
 function openCertDownloadDialog(cert) {
   let returnVals = Cc["@mozilla.org/hash-property-bag;1"].createInstance(
@@ -236,22 +250,22 @@ add_task(async function testPreferencesCert() {
     Assert.ok(doc, "doc loaded");
 
     doc.getElementById("certmanagertabs").selectedTab = doc.getElementById(
-      "ca_tab"
+      "mine_tab"
     );
-    let treeView = doc.getElementById("ca-tree").view;
+    let treeView = doc.getElementById("user-tree").view;
     let selectedCert;
     
     for (let i = 0; i < treeView.rowCount; i++) {
       treeView.selection.select(i);
       dialogWin.getSelectedCerts();
       let certs = dialogWin.selected_certs;
-      if (certs && certs.length == 1 && certs[0]) {
+      if (certs && certs[0]) {
         selectedCert = certs[0];
         break;
       }
     }
     Assert.ok(selectedCert, "A cert should be selected");
-    let viewButton = doc.getElementById("ca_viewButton");
+    let viewButton = doc.getElementById("mine_viewButton");
     Assert.equal(viewButton.disabled, false, "Should enable view button");
 
     let loaded = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
@@ -259,6 +273,7 @@ add_task(async function testPreferencesCert() {
     await loaded;
 
     checksCertTab(tabsCount);
+    await checkCertChain();
   });
   gBrowser.removeCurrentTab(); 
 });
