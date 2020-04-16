@@ -46,6 +46,8 @@
   width: 0;
   border-left: none;
   padding-left: 0;
+  
+  overflow: hidden;
 }
 
 #filter-container.show-presets .filters-list {
