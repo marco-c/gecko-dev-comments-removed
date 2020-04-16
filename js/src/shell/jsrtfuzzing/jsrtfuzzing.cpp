@@ -18,6 +18,7 @@
 
 #include "js/CompilationAndEvaluation.h"  
 #include "js/CompileOptions.h"            
+#include "js/Exception.h"                 
 #include "js/RootingAPI.h"                
 #include "js/SourceText.h"                
 #include "js/Value.h"                     
@@ -34,20 +35,17 @@ static std::string gFuzzModuleName;
 
 static void CrashOnPendingException() {
   if (JS_IsExceptionPending(gCx)) {
-    JS::Rooted<JS::Value> exn(gCx);
-    (void)JS_GetPendingException(gCx, &exn);
-    JS::Rooted<JSObject*> stack(gCx, JS::GetPendingExceptionStack(gCx));
-
-    JS_ClearPendingException(gCx);
+    JS::ExceptionStack exnStack(gCx);
+    (void)JS::StealPendingExceptionStack(gCx, &exnStack);
 
     js::ErrorReport report(gCx);
-    if (!report.init(gCx, exn, js::ErrorReport::WithSideEffects)) {
+    if (!report.init(gCx, exnStack, js::ErrorReport::WithSideEffects)) {
       fprintf(stderr, "out of memory initializing ErrorReport\n");
       fflush(stderr);
     } else {
       js::PrintError(gCx, stderr, report.toStringResult(), report.report(),
                      js::shell::reportWarnings);
-      if (!js::shell::PrintStackTrace(gCx, stack)) {
+      if (!js::shell::PrintStackTrace(gCx, exnStack.stack())) {
         fputs("(Unable to print stack trace)\n", stderr);
       }
     }

@@ -8,6 +8,7 @@
 #include "WrapperFactory.h"
 #include "AccessCheck.h"
 #include "jsfriendapi.h"
+#include "js/Exception.h"
 #include "js/Proxy.h"
 #include "js/Wrapper.h"
 #include "mozilla/ErrorResult.h"
@@ -277,34 +278,35 @@ static void MaybeSanitizeException(JSContext* cx,
   
   {  
     JSAutoRealm ar(cx, unwrappedFun);
-    JS::Rooted<JS::Value> exn(cx);
+
+    JS::ExceptionStack exnStack(cx);
     
     
     
     
     
-    if (!JS_GetPendingException(cx, &exn)) {
+    if (!JS::GetPendingExceptionStack(cx, &exnStack)) {
       JS_ClearPendingException(cx);
       return;
     }
 
     
     
-    if (!exn.isObject() ||
+    if (!exnStack.exception().isObject() ||
         callerPrincipal->Subsumes(nsContentUtils::ObjectPrincipal(
-            js::UncheckedUnwrap(&exn.toObject())))) {
+            js::UncheckedUnwrap(&exnStack.exception().toObject())))) {
       
       return;
     }
 
     
     
-    JS::Rooted<JSObject*> exnStack(cx, JS::GetPendingExceptionStack(cx));
     JS_ClearPendingException(cx);
     {  
       AutoJSAPI jsapi;
       if (jsapi.Init(unwrappedFun)) {
-        JS::SetPendingExceptionAndStack(cx, exn, exnStack);
+        JS::SetPendingExceptionAndStack(cx, exnStack.exception(),
+                                        exnStack.stack());
       }
       
 
