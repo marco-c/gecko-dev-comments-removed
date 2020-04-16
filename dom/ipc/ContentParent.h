@@ -624,6 +624,19 @@ class ContentParent final
 
   nsresult TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void TransmitBlobDataIfBlobURL(nsIURI* aURI, nsIPrincipal* aPrincipal);
+
   void OnCompositorDeviceReset() override;
 
   static hal::ProcessPriority GetInitialProcessPriority(Element* aFrameElement);
