@@ -79,8 +79,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       };
 
       try {
-        await this._unzombifyIfNeeded();
-
         
         if (!this._browser.isConnected) {
           onDestroy();
@@ -165,11 +163,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
 
   _isZombieTab() {
     
-    if (this._browser.hasAttribute("pending")) {
-      return true;
-    }
-
-    
     const tabbrowser = this._tabbrowser;
     const tab = tabbrowser ? tabbrowser.getTabForBrowser(this._browser) : null;
     return tab?.hasAttribute && tab.hasAttribute("pending");
@@ -180,13 +173,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
 
 
   _getZombieTabTitle() {
-    
-    if (this._browser && this._browser.__SS_restore) {
-      const sessionStore = this._browser.__SS_data;
-      
-      const entry = sessionStore.entries[sessionStore.index - 1];
-      return entry.title;
-    }
     
     
     
@@ -200,54 +186,11 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     return null;
   },
 
-  
-
-
-
-  _getZombieTabUrl() {
-    
-    if (this._browser && this._browser.__SS_restore) {
-      const sessionStore = this._browser.__SS_data;
-      
-      const entry = sessionStore.entries[sessionStore.index - 1];
-      return entry.url;
-    }
-
-    return null;
-  },
-
-  async _unzombifyIfNeeded() {
-    if (!this._isZombieTab()) {
-      return;
-    }
-
-    
-    const browserApp = this._browser
-      ? this._browser.ownerGlobal.BrowserApp
-      : null;
-    if (browserApp) {
-      
-      
-      const waitForUnzombify = new Promise(resolve => {
-        this._browser.addEventListener("DOMContentLoaded", resolve, {
-          capture: true,
-          once: true,
-        });
-      });
-
-      const tab = browserApp.getTabForBrowser(this._browser);
-      tab.unzombify();
-
-      await waitForUnzombify;
-    }
-  },
-
   _createTargetForm(connectedForm) {
     const form = Object.assign({}, connectedForm);
     
     if (this._isZombieTab()) {
       form.title = this._getZombieTabTitle() || form.title;
-      form.url = this._getZombieTabUrl() || form.url;
     }
 
     return form;
