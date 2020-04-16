@@ -141,9 +141,11 @@ static bool GenerateCraneliftCode(WasmMacroAssembler& masm,
             &functionEntryStackMap)) {
       return false;
     }
+
     
     
-    MOZ_ALWAYS_TRUE(functionEntryStackMap);
+    MOZ_ASSERT(functionEntryStackMap);
+
     if (functionEntryStackMap &&
         !stackMaps->add((uint8_t*)(uintptr_t)trapInsnOffset.offset(),
                         functionEntryStackMap)) {
