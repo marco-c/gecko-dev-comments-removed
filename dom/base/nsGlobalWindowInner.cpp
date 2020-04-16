@@ -1996,19 +1996,11 @@ nsresult nsGlobalWindowInner::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
     }
     mIsDocumentLoaded = false;
-    
-    if (mWindowGlobalChild) {
-      mWindowGlobalChild->SendUpdateDocumentHasLoaded(mIsDocumentLoaded);
-    }
   } else if (aVisitor.mEvent->mMessage == eLoad &&
              aVisitor.mEvent->IsTrusted()) {
     
     
     mIsDocumentLoaded = true;
-    
-    if (mWindowGlobalChild) {
-      mWindowGlobalChild->SendUpdateDocumentHasLoaded(mIsDocumentLoaded);
-    }
 
     mTimeoutManager->OnDocumentLoaded();
 

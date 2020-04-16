@@ -30,7 +30,6 @@ namespace dom {
 class PerformanceStorage;
 class XMLHttpRequestMainThread;
 class CanonicalBrowsingContext;
-class WindowGlobalParent;
 }  
 
 namespace net {
@@ -58,7 +57,6 @@ class LoadInfo final : public nsILoadInfo {
   NS_DECL_NSILOADINFO
 
   
-  
   LoadInfo(nsIPrincipal* aLoadingPrincipal, nsIPrincipal* aTriggeringPrincipal,
            nsINode* aLoadingContext, nsSecurityFlags aSecurityFlags,
            nsContentPolicyType aContentPolicyType,
@@ -67,10 +65,6 @@ class LoadInfo final : public nsILoadInfo {
            const Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController =
                Maybe<mozilla::dom::ServiceWorkerDescriptor>(),
            uint32_t aSandboxFlags = 0);
-  
-  LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
-           nsIPrincipal* aTriggeringPrincipal, uint64_t aFrameOuterWindowID,
-           nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags);
 
   
   
@@ -185,7 +179,6 @@ class LoadInfo final : public nsILoadInfo {
   ~LoadInfo() = default;
 
   void ComputeIsThirdPartyContext(nsPIDOMWindowOuter* aOuterWindow);
-  void ComputeIsThirdPartyContext(dom::WindowGlobalParent* aGlobal);
 
   
   

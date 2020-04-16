@@ -398,6 +398,7 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mHasLoadedNonBlankURI(false),
       mBlankTiming(false),
       mTitleValidForCurrentURI(false),
+      mIsFrame(false),
       mWillChangeProcess(false),
       mWatchedByDevtools(false),
       mIsNavigating(false) {
@@ -9634,17 +9635,11 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
           "subframes should have the same docshell type as their parent");
 #endif
     } else {
-      if (mIsBeingDestroyed) {
-        
-        
-        
-        
-        return NS_OK;
-      }
       
       
       
-      loadingPrincipal = NullPrincipal::Create(GetOriginAttributes(), nullptr);
+      
+      return NS_OK;
     }
   }
 
@@ -11641,6 +11636,8 @@ nsresult nsDocShell::EnsureFind() {
 
   return NS_OK;
 }
+
+bool nsDocShell::IsFrame() { return mIsFrame; }
 
 NS_IMETHODIMP
 nsDocShell::IsBeingDestroyed(bool* aDoomed) {

@@ -360,6 +360,8 @@ class nsDocShell final : public nsDocLoader,
   void SetInFrameSwap(bool aInSwap) { mInFrameSwap = aInSwap; }
   bool InFrameSwap();
 
+  void SetIsFrame() { mIsFrame = true; };
+
   const mozilla::Encoding* GetForcedCharset() { return mForcedCharset; }
 
   mozilla::HTMLEditor* GetHTMLEditorInternal();
@@ -1000,7 +1002,7 @@ class nsDocShell final : public nsDocLoader,
   void RecomputeCanExecuteScripts();
   void ClearFrameHistory(nsISHEntry* aEntry);
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
-  bool IsFrame() { return mBrowsingContext->GetParent(); }
+  bool IsFrame();
   bool CanSetOriginAttributes();
   bool ShouldBlockLoadingForBackButton();
   bool ShouldDiscardLayoutState(nsIHttpChannel* aChannel);
@@ -1330,6 +1332,8 @@ class nsDocShell final : public nsDocLoader,
 
   
   bool mTitleValidForCurrentURI : 1;
+
+  bool mIsFrame : 1;
 
   
   
