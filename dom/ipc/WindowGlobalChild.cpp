@@ -101,6 +101,9 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
     return wgc.forget();
   }
 
+  RefPtr<BrowserChild> browserChild =
+      BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));
+
   
   if (XRE_IsParentProcess()) {
     InProcessChild* ipChild = InProcessChild::Singleton();
@@ -117,31 +120,30 @@ already_AddRefed<WindowGlobalChild> WindowGlobalChild::Create(
 
     
     ipParent->BindPWindowGlobalEndpoint(std::move(endpoint), wgp);
-    wgp->Init(init);
+    wgp->Init(init,  nullptr);
   } else {
-    RefPtr<BrowserChild> browserChild =
-        BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(aWindow));
-    MOZ_ASSERT(browserChild);
-
+    ContentChild* contentChild = ContentChild::GetSingleton();
     ManagedEndpoint<PWindowGlobalParent> endpoint =
-        browserChild->OpenPWindowGlobalEndpoint(wgc);
-
+        contentChild->OpenPWindowGlobalEndpoint(wgc);
     browserChild->SendNewWindowGlobal(std::move(endpoint), init);
   }
 
-  wgc->Init();
+  wgc->Init(browserChild);
   return wgc.forget();
 }
 
-void WindowGlobalChild::Init() {
+void WindowGlobalChild::Init(BrowserChild* aBrowserChild) {
   if (!mDocumentURI) {
     NS_NewURI(getter_AddRefs(mDocumentURI), "about:blank");
   }
 
   
   if (XRE_IsParentProcess()) {
+    MOZ_ASSERT(!aBrowserChild);
     mWindowContext = GetParentActor();
   } else {
+    MOZ_ASSERT(aBrowserChild);
+    mBrowserChild = aBrowserChild;
     mWindowContext = WindowContext::Create(this);
   }
 
@@ -181,10 +183,8 @@ already_AddRefed<WindowGlobalParent> WindowGlobalChild::GetParentActor() {
 }
 
 already_AddRefed<BrowserChild> WindowGlobalChild::GetBrowserChild() {
-  if (IsInProcess() || !CanSend()) {
-    return nullptr;
-  }
-  return do_AddRef(static_cast<BrowserChild*>(Manager()));
+  return do_AddRef(
+      BrowserChild::GetFrom(static_cast<mozIDOMWindow*>(mWindowGlobal)));
 }
 
 uint64_t WindowGlobalChild::ContentParentId() {
@@ -242,13 +242,7 @@ void WindowGlobalChild::Destroy() {
           windowActor->StartDestroy();
         }
 
-        
-        
-        
-        RefPtr<BrowserChild> browserChild = self->GetBrowserChild();
-        if (!browserChild || !browserChild->IsDestroyed()) {
-          self->SendDestroy();
-        }
+        self->SendDestroy();
       }));
 }
 

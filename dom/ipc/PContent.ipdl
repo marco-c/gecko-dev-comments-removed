@@ -392,6 +392,7 @@ nested(upto inside_cpow) sync protocol PContent
     manages PSHEntry;
     manages PSHistory;
     manages PBenchmarkStorage;
+    manages PWindowGlobal;
 
     
     

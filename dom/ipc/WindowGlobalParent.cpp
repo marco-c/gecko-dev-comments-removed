@@ -70,8 +70,11 @@ WindowGlobalParent::WindowGlobalParent(const WindowGlobalInit& aInit,
   mFields.SetWithoutSyncing<IDX_OuterWindowId>(aInit.outerWindowId());
 }
 
-void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
+void WindowGlobalParent::Init(const WindowGlobalInit& aInit,
+                              BrowserParent* aBrowserParent) {
   MOZ_ASSERT(Manager(), "Should have a manager!");
+
+  mBrowserParent = aBrowserParent;
 
   
   
@@ -79,13 +82,17 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
 
   
   dom::ContentParentId processId(0);
-  ContentParent* cp = nullptr;
-  if (!mInProcess) {
-    cp = static_cast<ContentParent*>(Manager()->Manager());
-    processId = cp->ChildID();
+  if (mInProcess) {
+    MOZ_DIAGNOSTIC_ASSERT(!GetContentParent());
+    MOZ_DIAGNOSTIC_ASSERT(!mBrowserParent);
+  } else {
+    MOZ_DIAGNOSTIC_ASSERT(mBrowserParent);
+    MOZ_DIAGNOSTIC_ASSERT(mBrowserParent->Manager() == Manager());
+
+    processId = GetContentParent()->ChildID();
 
     
-    cp->TransmitPermissionsForPrincipal(mDocumentPrincipal);
+    GetContentParent()->TransmitPermissionsForPrincipal(mDocumentPrincipal);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(
@@ -102,9 +109,10 @@ void WindowGlobalParent::Init(const WindowGlobalInit& aInit) {
   
   
   IPCInitializer ipcinit = GetIPCInitializer();
-  Group()->EachOtherParent(cp, [&](ContentParent* otherContent) {
-    Unused << otherContent->SendCreateWindowContext(ipcinit);
-  });
+  Group()->EachOtherParent(
+      GetContentParent(), [&](ContentParent* otherContent) {
+        Unused << otherContent->SendCreateWindowContext(ipcinit);
+      });
 
   
   
@@ -139,11 +147,11 @@ already_AddRefed<WindowGlobalChild> WindowGlobalParent::GetChildActor() {
   return do_AddRef(static_cast<WindowGlobalChild*>(otherSide));
 }
 
-already_AddRefed<BrowserParent> WindowGlobalParent::GetBrowserParent() {
-  if (IsInProcess() || !CanSend()) {
+ContentParent* WindowGlobalParent::GetContentParent() {
+  if (IsInProcess() || !CanRecv()) {
     return nullptr;
   }
-  return do_AddRef(static_cast<BrowserParent*>(Manager()));
+  return static_cast<ContentParent*>(Manager());
 }
 
 already_AddRefed<nsFrameLoader> WindowGlobalParent::GetRootFrameLoader() {
@@ -158,13 +166,11 @@ already_AddRefed<nsFrameLoader> WindowGlobalParent::GetRootFrameLoader() {
 }
 
 uint64_t WindowGlobalParent::ContentParentId() {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  return browserParent ? browserParent->Manager()->ChildID() : 0;
+  return GetContentParent() ? GetContentParent()->ChildID() : 0;
 }
 
 int32_t WindowGlobalParent::OsPid() {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  return browserParent ? browserParent->Manager()->Pid() : -1;
+  return GetContentParent() ? GetContentParent()->Pid() : -1;
 }
 
 
@@ -279,10 +285,7 @@ IPCResult WindowGlobalParent::RecvDestroy() {
   }
 
   if (CanSend()) {
-    RefPtr<BrowserParent> browserParent = GetBrowserParent();
-    if (!browserParent || !browserParent->IsDestroyed()) {
-      Unused << Send__delete__(this);
-    }
+    Unused << Send__delete__(this);
   }
   return IPC_OK();
 }
@@ -309,8 +312,8 @@ void WindowGlobalParent::ReceiveRawMessage(
 }
 
 const nsAString& WindowGlobalParent::GetRemoteType() {
-  if (RefPtr<BrowserParent> browserParent = GetBrowserParent()) {
-    return browserParent->Manager()->GetRemoteType();
+  if (ContentParent* contentParent = GetContentParent()) {
+    return contentParent->GetRemoteType();
   }
 
   return VoidString();
@@ -348,9 +351,12 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
     
     
     
-    
-    RefPtr<BrowserParent> browserParent =
-        static_cast<BrowserParent*>(Manager());
+    RefPtr<nsFrameLoader> frameLoader = GetRootFrameLoader();
+    if (NS_WARN_IF(!frameLoader)) {
+      return;
+    }
+
+    BrowserParent* browserParent = frameLoader->GetBrowserParent();
     if (NS_WARN_IF(!browserParent)) {
       return;
     }
@@ -358,7 +364,6 @@ void WindowGlobalParent::NotifyContentBlockingEvent(
     nsCOMPtr<nsIBrowser> browser;
     nsCOMPtr<nsIWebProgress> manager;
     nsCOMPtr<nsIWebProgressListener> managerAsListener;
-
     if (!browserParent->GetWebProgressListener(
             getter_AddRefs(browser), getter_AddRefs(manager),
             getter_AddRefs(managerAsListener))) {
@@ -589,37 +594,28 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   WindowContext::Discard();
 
-  ContentParent* cp = nullptr;
-  if (!mInProcess) {
-    cp = static_cast<ContentParent*>(Manager()->Manager());
-  }
-
   RefPtr<WindowGlobalParent> self(this);
-  Group()->EachOtherParent(cp, [&](ContentParent* otherContent) {
+  Group()->EachOtherParent(GetContentParent(), [&](ContentParent* cp) {
     
     
-    auto resolve = [self](bool) {};
-    auto reject = [self](mozilla::ipc::ResponseRejectReason) {};
-    otherContent->SendDiscardWindowContext(InnerWindowId(), resolve, reject);
+    
+    auto callback = [self](auto) {};
+    cp->SendDiscardWindowContext(InnerWindowId(), callback, callback);
   });
 
   
   
   
   
-  if (!mInProcess) {
-    RefPtr<BrowserParent> browserParent =
-        static_cast<BrowserParent*>(Manager());
-    if (browserParent) {
-      nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
-      if (loadContext && !loadContext->UsePrivateBrowsing() &&
-          BrowsingContext()->IsTopContent()) {
-        GetContentBlockingLog()->ReportLog(DocumentPrincipal());
+  if (mBrowserParent) {
+    nsCOMPtr<nsILoadContext> loadContext = mBrowserParent->GetLoadContext();
+    if (loadContext && !loadContext->UsePrivateBrowsing() &&
+        BrowsingContext()->IsTopContent()) {
+      GetContentBlockingLog()->ReportLog(DocumentPrincipal());
 
-        if (mDocumentURI && (net::SchemeIsHTTP(mDocumentURI) ||
-                             net::SchemeIsHTTPS(mDocumentURI))) {
-          GetContentBlockingLog()->ReportOrigins();
-        }
+      if (mDocumentURI && (net::SchemeIsHTTP(mDocumentURI) ||
+                           net::SchemeIsHTTPS(mDocumentURI))) {
+        GetContentBlockingLog()->ReportOrigins();
       }
     }
   }
@@ -650,15 +646,6 @@ JSObject* WindowGlobalParent::WrapObject(JSContext* aCx,
 
 nsIGlobalObject* WindowGlobalParent::GetParentObject() {
   return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
-}
-
-nsIContentParent* WindowGlobalParent::GetContentParent() {
-  RefPtr<BrowserParent> browserParent = GetBrowserParent();
-  if (!browserParent) {
-    return nullptr;
-  }
-
-  return browserParent->Manager();
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(WindowGlobalParent, WindowContext,
