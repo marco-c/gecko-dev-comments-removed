@@ -438,7 +438,7 @@ using PostSamplingCallback = std::function<void(SamplingState)>;
 
 
 
-MOZ_MUST_USE bool profiler_callback_after_sampling(
+[[nodiscard]] bool profiler_callback_after_sampling(
     PostSamplingCallback&& aCallback);
 
 

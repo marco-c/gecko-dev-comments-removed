@@ -393,23 +393,23 @@ class UniqueStacks {
   explicit UniqueStacks(JITFrameInfo&& aJITFrameInfo);
 
   
-  MOZ_MUST_USE StackKey BeginStack(const FrameKey& aFrame);
+  [[nodiscard]] StackKey BeginStack(const FrameKey& aFrame);
 
   
-  MOZ_MUST_USE StackKey AppendFrame(const StackKey& aStack,
-                                    const FrameKey& aFrame);
+  [[nodiscard]] StackKey AppendFrame(const StackKey& aStack,
+                                     const FrameKey& aFrame);
 
   
   
   
   
   
-  MOZ_MUST_USE mozilla::Maybe<mozilla::Vector<UniqueStacks::FrameKey>>
+  [[nodiscard]] mozilla::Maybe<mozilla::Vector<UniqueStacks::FrameKey>>
   LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
                                          uint64_t aBufferPosition);
 
-  MOZ_MUST_USE uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
-  MOZ_MUST_USE uint32_t GetOrAddStackIndex(const StackKey& aStack);
+  [[nodiscard]] uint32_t GetOrAddFrameIndex(const FrameKey& aFrame);
+  [[nodiscard]] uint32_t GetOrAddStackIndex(const StackKey& aStack);
 
   void SpliceFrameTableElements(SpliceableJSONWriter& aWriter);
   void SpliceStackTableElements(SpliceableJSONWriter& aWriter);
