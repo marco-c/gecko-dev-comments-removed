@@ -121,6 +121,15 @@ raptor-tp6-10-chrome:
             - --test=raptor-tp6-10
             - --app=chrome
 
+raptor-tp6-11-chrome:
+    description: "Raptor tp6-11 on Chrome"
+    try-name: raptor-tp6-11-chrome
+    treeherder-symbol: Rap-ChR(tp6-11)
+    mozharness:
+        extra-options:
+            - --test=raptor-tp6-11
+            - --app=chrome
+
 raptor-speedometer-chrome:
     description: "Raptor Speedometer on Chrome"
     try-name: raptor-speedometer-chrome
@@ -493,6 +502,15 @@ raptor-tp6-30-chrome-cold:
             - --test=raptor-tp6-30-cold
             - --app=chrome
 
+raptor-tp6-31-chrome-cold:
+    description: "Raptor tp6-31 cold page-load on Chrome"
+    try-name: raptor-tp6-31-chrome-cold
+    treeherder-symbol: Rap-ChR(tp6-c-31)
+    mozharness:
+        extra-options:
+            - --test=raptor-tp6-31-cold
+            - --app=chrome
+
 raptor-ares6-chrome:
     description: "Raptor Ares6 on Chrome"
     try-name: raptor-ares6-chrome
@@ -522,10 +540,7 @@ raptor-youtube-playback-chrome:
     description: "Raptor YouTube Playback on Chrome"
     try-name: raptor-youtube-playback-chrome
     treeherder-symbol: Rap-ChR(ytp)
-    max-run-time:
-        by-test-platform:
-            windows10-aarch64/opt: 3600
-            default: 2700
+    max-run-time: 2700
     tier: 2
     mozharness:
         extra-options:
