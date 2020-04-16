@@ -2070,19 +2070,6 @@ class LBitNotI : public LInstructionHelper<1, 1, 0> {
 };
 
 
-class LBitNotV : public LCallInstructionHelper<BOX_PIECES, BOX_PIECES, 0> {
- public:
-  LIR_HEADER(BitNotV)
-
-  static const size_t Input = 0;
-
-  explicit LBitNotV(const LBoxAllocation& input)
-      : LCallInstructionHelper(classOpcode) {
-    setBoxOperand(Input, input);
-  }
-};
-
-
 
 class LBitOpI : public LInstructionHelper<1, 2, 0> {
   JSOp op_;
