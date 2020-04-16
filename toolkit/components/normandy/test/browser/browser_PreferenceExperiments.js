@@ -1879,7 +1879,12 @@ decorate_task(
     mockPreferences.set("fake.preference", "uservalue", "user");
 
     
-    await Promise.resolve();
+    await TestUtils.topicObserved(
+      "normandy:preference-experiment:stopped",
+      (subject, message) => {
+        return message == "test";
+      }
+    );
 
     sendEventStub.assertEvents([
       [

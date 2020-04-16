@@ -19,6 +19,11 @@ ChromeUtils.defineModuleGetter(
 );
 ChromeUtils.defineModuleGetter(
   this,
+  "BaseAction",
+  "resource://normandy/actions/BaseAction.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "ClientEnvironment",
   "resource://normandy/lib/ClientEnvironment.jsm"
 );
@@ -45,7 +50,7 @@ class PreferenceExperimentAction extends BaseStudyAction {
     this.seenExperimentSlugs = [];
   }
 
-  async _run(recipe) {
+  async _processRecipe(recipe, suitability) {
     const {
       branches,
       isHighPopulation,
@@ -53,59 +58,124 @@ class PreferenceExperimentAction extends BaseStudyAction {
       slug,
       userFacingName,
       userFacingDescription,
-    } = recipe.arguments;
+    } = recipe.arguments || {};
 
-    this.seenExperimentSlugs.push(slug);
-
+    let experiment;
     
-    const hasSlug = await PreferenceExperiments.has(slug);
-    if (!hasSlug) {
-      
-      
-      const activeExperiments = await PreferenceExperiments.getAllActive();
-      for (const branch of branches) {
-        const conflictingPrefs = Object.keys(branch.preferences).filter(
-          preferenceName => {
-            return activeExperiments.some(exp =>
-              exp.preferences.hasOwnProperty(preferenceName)
-            );
-          }
-        );
-        if (conflictingPrefs.length) {
-          throw new Error(
-            `Experiment ${slug} ignored; another active experiment is already using the
-            ${conflictingPrefs[0]} preference.`
-          );
+    
+    if (slug) {
+      this.seenExperimentSlugs.push(slug);
+
+      try {
+        experiment = await PreferenceExperiments.get(slug);
+      } catch (err) {
+        
+        
+        if (!(err instanceof PreferenceExperiments.NotFoundError)) {
+          throw err;
         }
       }
+    }
 
-      
-      if (isEnrollmentPaused) {
-        this.log.debug(`Enrollment is paused for experiment "${slug}"`);
-        return;
+    switch (suitability) {
+      case BaseAction.suitability.SIGNATURE_ERROR: {
+        this._considerTemporaryError({ experiment, reason: "signature-error" });
+        break;
       }
 
-      
-      const branch = await this.chooseBranch(slug, branches);
-      const experimentType = isHighPopulation ? "exp-highpop" : "exp";
-      await PreferenceExperiments.start({
-        slug,
-        actionName: this.name,
-        branch: branch.slug,
-        preferences: branch.preferences,
-        experimentType,
-        userFacingName,
-        userFacingDescription,
-      });
-    } else {
-      
-      const experiment = await PreferenceExperiments.get(slug);
-      if (experiment.expired) {
-        this.log.debug(`Experiment ${slug} has expired, aborting.`);
-      } else {
-        await PreferenceExperiments.markLastSeen(slug);
+      case BaseAction.suitability.CAPABILITES_MISMATCH: {
+        if (experiment) {
+          await PreferenceExperiments.stop(slug, {
+            resetValue: true,
+            reason: "capability-mismatch",
+          });
+        }
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_MATCH: {
+        
+        if (!experiment) {
+          
+          
+          const activeExperiments = await PreferenceExperiments.getAllActive();
+          for (const branch of branches) {
+            const conflictingPrefs = Object.keys(branch.preferences).filter(
+              preferenceName => {
+                return activeExperiments.some(exp =>
+                  exp.preferences.hasOwnProperty(preferenceName)
+                );
+              }
+            );
+            if (conflictingPrefs.length) {
+              throw new Error(
+                `Experiment ${slug} ignored; another active experiment is already using the
+            ${conflictingPrefs[0]} preference.`
+              );
+            }
+          }
+
+          
+          if (isEnrollmentPaused) {
+            this.log.debug(`Enrollment is paused for experiment "${slug}"`);
+            return;
+          }
+
+          
+          const branch = await this.chooseBranch(slug, branches);
+          const experimentType = isHighPopulation ? "exp-highpop" : "exp";
+          await PreferenceExperiments.start({
+            slug,
+            actionName: this.name,
+            branch: branch.slug,
+            preferences: branch.preferences,
+            experimentType,
+            userFacingName,
+            userFacingDescription,
+          });
+        } else if (experiment.expired) {
+          this.log.debug(`Experiment ${slug} has expired, aborting.`);
+        } else {
+          experiment.temporaryErrorDeadline = null;
+          await PreferenceExperiments.update(experiment);
+          await PreferenceExperiments.markLastSeen(slug);
+        }
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_MISMATCH: {
+        if (experiment) {
+          await PreferenceExperiments.stop(slug, {
+            resetValue: true,
+            reason: "filter-mismatch",
+          });
+        }
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_ERROR: {
+        this._considerTemporaryError({ experiment, reason: "filter-error" });
+        break;
+      }
+
+      case BaseAction.suitability.ARGUMENTS_INVALID: {
+        if (experiment) {
+          await PreferenceExperiments.stop(slug, {
+            resetValue: true,
+            reason: "arguments-invalid",
+          });
+        }
+        break;
+      }
+
+      default: {
+        throw new Error(`Unknown recipe suitability "${suitability}".`);
       }
     }
+  }
+
+  async _run(recipe) {
+    throw new Error("_run shouldn't be called anymore");
   }
 
   async chooseBranch(slug, branches) {
@@ -152,5 +222,53 @@ class PreferenceExperimentAction extends BaseStudyAction {
         });
       })
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _considerTemporaryError({ experiment, reason }) {
+    if (!experiment) {
+      return;
+    }
+
+    let now = Date.now(); 
+    let day = 24 * 60 * 60 * 1000;
+    let newDeadline = new Date(now + 7 * day).toJSON();
+
+    if (experiment.temporaryErrorDeadline) {
+      let deadline = new Date(experiment.temporaryErrorDeadline);
+      
+      if (isNaN(deadline)) {
+        experiment.temporaryErrorDeadline = newDeadline;
+        await PreferenceExperiments.update(experiment);
+        return;
+      }
+
+      if (now > deadline) {
+        await PreferenceExperiments.stop(experiment.slug, {
+          resetValue: true,
+          reason,
+        });
+      }
+    } else {
+      
+      experiment.temporaryErrorDeadline = newDeadline;
+      await PreferenceExperiments.update(experiment);
+    }
   }
 }
