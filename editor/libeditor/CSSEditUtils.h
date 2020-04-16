@@ -204,12 +204,6 @@ class CSSEditUtils final {
                                                   const nsAString& aValue,
                                                   StyleType aStyleType);
 
-  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                                  nsAtom* aProperty,
-                                                  const nsAString* aAttribute,
-                                                  nsAString& aValue,
-                                                  StyleType aStyleType);
-
   
 
 
