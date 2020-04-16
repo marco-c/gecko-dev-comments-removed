@@ -38,6 +38,7 @@ class WebConsoleConnectionProxy {
     this._connecter = null;
 
     this._onPageError = this._onPageError.bind(this);
+    this._onConsoleAPICall = this._onConsoleAPICall.bind(this);
     this._onLogMessage = this._onLogMessage.bind(this);
     this._onNetworkEvent = this._onNetworkEvent.bind(this);
     this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
@@ -79,8 +80,6 @@ class WebConsoleConnectionProxy {
         );
       await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
 
-      
-      
       const cachedMessages = await this._getCachedMessages();
       const networkMessages = this._getNetworkMessages();
       const messages = cachedMessages.concat(networkMessages);
@@ -121,10 +120,7 @@ class WebConsoleConnectionProxy {
 
 
   _attachConsole() {
-    
-    
-    
-    const listeners = ["PageError", "NetworkActivity"];
+    const listeners = ["PageError", "ConsoleAPI", "NetworkActivity"];
     
     
     
@@ -145,6 +141,7 @@ class WebConsoleConnectionProxy {
     this.webConsoleFront.on("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleFront.on("logMessage", this._onLogMessage);
     this.webConsoleFront.on("pageError", this._onPageError);
+    this.webConsoleFront.on("consoleAPICall", this._onConsoleAPICall);
     this.webConsoleFront.on(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -165,6 +162,7 @@ class WebConsoleConnectionProxy {
     this.webConsoleFront.off("networkEventUpdate", this._onNetworkEventUpdate);
     this.webConsoleFront.off("logMessage", this._onLogMessage);
     this.webConsoleFront.off("pageError", this._onPageError);
+    this.webConsoleFront.off("consoleAPICall", this._onConsoleAPICall);
     this.webConsoleFront.off(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -183,9 +181,9 @@ class WebConsoleConnectionProxy {
 
 
   async _getCachedMessages() {
-    
     const response = await this.webConsoleFront.getCachedMessages([
       "PageError",
+      "ConsoleAPI",
     ]);
 
     if (response.error) {
@@ -236,6 +234,24 @@ class WebConsoleConnectionProxy {
       return;
     }
     packet.type = "logMessage";
+    this.dispatchMessageAdd(packet);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _onConsoleAPICall(packet) {
+    if (!this.webConsoleUI) {
+      return;
+    }
+    packet.type = "consoleAPICall";
     this.dispatchMessageAdd(packet);
   }
 
