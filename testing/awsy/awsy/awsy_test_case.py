@@ -133,9 +133,12 @@ class AwsyTestCase(MarionetteTestCase):
         tmp_files = os.listdir(tmpdir)
         for f in fnmatch.filter(tmp_files, "dmd-*.json.gz"):
             f = os.path.join(tmpdir, f)
-            self.logger.info("Fixing stacks for %s, this may take a while" % f)
-            isZipped = True
-            fixStackTraces(f, isZipped, gzip.open)
+            
+            
+            if not sys.platform.startswith('win'):
+                self.logger.info("Fixing stacks for %s, this may take a while" % f)
+                isZipped = True
+                fixStackTraces(f, isZipped, gzip.open)
             shutil.move(f, self._resultsDir)
 
         
