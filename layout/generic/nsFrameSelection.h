@@ -928,8 +928,6 @@ class nsFrameSelection final {
 
   bool mDragState = false;  
   bool mAccessibleCaretEnabled = false;
-
-  static bool sSelectionEventsOnTextControlsEnabled;
 };
 
 #endif 

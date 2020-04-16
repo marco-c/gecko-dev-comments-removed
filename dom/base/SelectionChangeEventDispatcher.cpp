@@ -124,7 +124,7 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   
   
   
-  if (nsFrameSelection::sSelectionEventsOnTextControlsEnabled) {
+  if (StaticPrefs::dom_select_events_textcontrols_enabled()) {
     nsCOMPtr<nsINode> target;
 
     

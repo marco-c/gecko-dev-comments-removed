@@ -900,8 +900,7 @@ nsresult Selection::AddRangesForUserSelectableNodes(
       
       
       const bool executeDefaultAction = MaybeDispatchSelectstartEvent(
-          *aRange, nsFrameSelection::sSelectionEventsOnTextControlsEnabled,
-          doc);
+          *aRange, StaticPrefs::dom_select_events_textcontrols_enabled(), doc);
 
       if (!executeDefaultAction) {
         return NS_OK;
