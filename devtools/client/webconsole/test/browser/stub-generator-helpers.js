@@ -25,278 +25,281 @@ function getCleanedPacket(key, packet) {
     .replace(/\\\"/g, `\"`)
     .replace(/\\\'/g, `\'`);
 
-  
-  
-  
-  let res;
-  if (stubPackets.has(safeKey)) {
-    const existingPacket = stubPackets.get(safeKey);
-    res = Object.assign({}, packet, {
-      from: existingPacket.from,
-    });
+  cleanTimeStamp(packet);
 
+  if (!stubPackets.has(safeKey)) {
+    return packet;
+  }
+
+  
+  
+  const existingPacket = stubPackets.get(safeKey);
+  const res = Object.assign({}, packet, {
+    from: existingPacket.from,
+  });
+
+  if (res.innerWindowID) {
+    res.innerWindowID = existingPacket.innerWindowID;
+  }
+
+  if (res.startedDateTime) {
+    res.startedDateTime = existingPacket.startedDateTime;
+  }
+
+  if (res.actor) {
+    res.actor = existingPacket.actor;
+  }
+
+  if (res.channelId) {
+    res.channelId = existingPacket.channelId;
+  }
+
+  if (res.resultID) {
+    res.resultID = existingPacket.resultID;
+  }
+
+  if (res.message) {
+    if (res.message.timer) {
+      
+      
+      
+      if ("duration" in res.message.timer) {
+        res.message.timer.duration = existingPacket.message.timer.duration;
+      }
+    }
     
-    if (res.timestamp) {
-      res.timestamp = existingPacket.timestamp;
-    }
+    res.message.innerWindowID = existingPacket.message.innerWindowID;
 
-    if (res.timeStamp) {
-      res.timeStamp = existingPacket.timeStamp;
-    }
-
-    if (res.innerWindowID) {
-      res.innerWindowID = existingPacket.innerWindowID;
-    }
-
-    if (res.startedDateTime) {
-      res.startedDateTime = existingPacket.startedDateTime;
-    }
-
-    if (res.actor) {
-      res.actor = existingPacket.actor;
-    }
-
-    if (res.channelId) {
-      res.channelId = existingPacket.channelId;
-    }
-
-    if (res.resultID) {
-      res.resultID = existingPacket.resultID;
-    }
-
-    if (res.message) {
-      
-      res.message.timeStamp = existingPacket.message.timeStamp;
-      if (res.message.timer) {
-        
-        
-        
-        if ("duration" in res.message.timer) {
-          res.message.timer.duration = existingPacket.message.timer.duration;
+    if (Array.isArray(res.message.arguments)) {
+      res.message.arguments = res.message.arguments.map((argument, i) => {
+        if (!argument || typeof argument !== "object") {
+          return argument;
         }
-      }
-      
-      res.message.innerWindowID = existingPacket.message.innerWindowID;
 
-      if (Array.isArray(res.message.arguments)) {
-        res.message.arguments = res.message.arguments.map((argument, i) => {
-          if (!argument || typeof argument !== "object") {
-            return argument;
-          }
+        const newArgument = Object.assign({}, argument);
+        const existingArgument = existingPacket.message.arguments[i];
 
-          const newArgument = Object.assign({}, argument);
-          const existingArgument = existingPacket.message.arguments[i];
-
-          if (existingArgument && newArgument._grip) {
-            
-            copyExistingActor(newArgument, existingArgument);
-
-            
-            
-            if (newArgument._grip.class === "Window") {
-              newArgument._grip.ownPropertyLength =
-                existingArgument._grip.ownPropertyLength;
-            }
-          }
-          return newArgument;
-        });
-      }
-
-      if (res.message.sourceId) {
-        res.message.sourceId = existingPacket.message.sourceId;
-      }
-
-      if (Array.isArray(res.message.stacktrace)) {
-        res.message.stacktrace = res.message.stacktrace.map((frame, i) => {
-          const existingFrame = existingPacket.message.stacktrace[i];
-          if (frame && existingFrame && frame.sourceId) {
-            frame.sourceId = existingFrame.sourceId;
-          }
-          return frame;
-        });
-      }
-    }
-
-    if (res.result && res.result._grip && existingPacket.result) {
-      
-      copyExistingActor(res.result, existingPacket.result);
-
-      if (res.result._grip.preview) {
-        if (res.result._grip.preview.timestamp) {
+        if (existingArgument && newArgument._grip) {
           
-          res.result._grip.preview.timestamp =
-            existingPacket.result._grip.preview.timestamp;
-        }
-      }
-    }
+          copyExistingActor(newArgument, existingArgument);
 
-    if (res.exception && existingPacket.exception) {
-      
-      copyExistingActor(res.exception, existingPacket.exception);
-
-      if (
-        res.exception._grip &&
-        res.exception._grip.preview &&
-        existingPacket.exception._grip &&
-        existingPacket.exception._grip.preview
-      ) {
-        if (res.exception._grip.preview.timestamp) {
           
-          res.exception._grip.preview.timestamp =
-            existingPacket.exception._grip.preview.timestamp;
-        }
-
-        if (
-          typeof res.exception._grip.preview.message === "object" &&
-          res.exception._grip.preview.message._grip.type === "longString" &&
-          typeof existingPacket.exception._grip.preview.message === "object" &&
-          existingPacket.exception._grip.preview.message._grip.type ===
-            "longString"
-        ) {
-          copyExistingActor(
-            res.exception._grip.preview.message,
-            existingPacket.exception._grip.preview.message
-          );
-        }
-      }
-
-      if (
-        typeof res.exceptionMessage === "object" &&
-        res.exceptionMessage._grip &&
-        res.exceptionMessage._grip.type === "longString"
-      ) {
-        copyExistingActor(
-          res.exceptionMessage,
-          existingPacket.exceptionMessage
-        );
-      }
-    }
-
-    if (res.eventActor) {
-      
-      res.eventActor.actor = existingPacket.eventActor.actor;
-      res.eventActor.startedDateTime =
-        existingPacket.eventActor.startedDateTime;
-      res.eventActor.timeStamp = existingPacket.eventActor.timeStamp;
-    }
-
-    if (res.pageError) {
-      
-      res.pageError.timeStamp = existingPacket.pageError.timeStamp;
-      res.pageError.innerWindowID = existingPacket.pageError.innerWindowID;
-
-      if (
-        typeof res.pageError.errorMessage === "object" &&
-        res.pageError.errorMessage._grip &&
-        res.pageError.errorMessage._grip.type === "longString"
-      ) {
-        copyExistingActor(
-          res.pageError.errorMessage,
-          existingPacket.pageError.errorMessage
-        );
-      }
-
-      if (res.pageError.sourceId) {
-        res.pageError.sourceId = existingPacket.pageError.sourceId;
-      }
-
-      if (Array.isArray(res.pageError.stacktrace)) {
-        res.pageError.stacktrace = res.pageError.stacktrace.map((frame, i) => {
-          const existingFrame = existingPacket.pageError.stacktrace[i];
-          if (frame && existingFrame && frame.sourceId) {
-            frame.sourceId = existingFrame.sourceId;
+          
+          if (newArgument._grip.class === "Window") {
+            newArgument._grip.ownPropertyLength =
+              existingArgument._grip.ownPropertyLength;
           }
-          return frame;
-        });
-      }
+        }
+        return newArgument;
+      });
     }
 
-    if (Array.isArray(res.exceptionStack)) {
-      res.exceptionStack = res.exceptionStack.map((frame, i) => {
-        const existingFrame = existingPacket.exceptionStack[i];
+    if (res.message.sourceId) {
+      res.message.sourceId = existingPacket.message.sourceId;
+    }
+
+    if (Array.isArray(res.message.stacktrace)) {
+      res.message.stacktrace = res.message.stacktrace.map((frame, i) => {
+        const existingFrame = existingPacket.message.stacktrace[i];
         if (frame && existingFrame && frame.sourceId) {
           frame.sourceId = existingFrame.sourceId;
         }
         return frame;
       });
     }
+  }
 
-    if (res.frame && existingPacket.frame) {
-      res.frame.sourceId = existingPacket.frame.sourceId;
-    }
+  if (res.result && res.result._grip && existingPacket.result) {
+    
+    copyExistingActor(res.result, existingPacket.result);
+  }
 
-    if (res.packet) {
-      const override = {};
-      const keys = ["totalTime", "from", "contentSize", "transferredSize"];
-      keys.forEach(x => {
-        if (res.packet[x] !== undefined) {
-          override[x] = existingPacket.packet[key];
-        }
-      });
-      res.packet = Object.assign({}, res.packet, override);
-    }
+  if (res.exception && existingPacket.exception) {
+    
+    copyExistingActor(res.exception, existingPacket.exception);
 
-    if (res.networkInfo) {
-      if (res.networkInfo.timeStamp) {
-        res.networkInfo.timeStamp = existingPacket.networkInfo.timeStamp;
-      }
-
-      if (res.networkInfo.startedDateTime) {
-        res.networkInfo.startedDateTime =
-          existingPacket.networkInfo.startedDateTime;
-      }
-
-      if (res.networkInfo.totalTime) {
-        res.networkInfo.totalTime = existingPacket.networkInfo.totalTime;
-      }
-
-      if (res.networkInfo.actor) {
-        res.networkInfo.actor = existingPacket.networkInfo.actor;
-      }
-
-      if (res.networkInfo.request && res.networkInfo.request.headersSize) {
-        res.networkInfo.request.headersSize =
-          existingPacket.networkInfo.request.headersSize;
-      }
-
+    if (
+      res.exception._grip &&
+      res.exception._grip.preview &&
+      existingPacket.exception._grip &&
+      existingPacket.exception._grip.preview
+    ) {
       if (
-        res.networkInfo.response &&
-        res.networkInfo.response.headersSize !== undefined
+        typeof res.exception._grip.preview.message === "object" &&
+        res.exception._grip.preview.message._grip.type === "longString" &&
+        typeof existingPacket.exception._grip.preview.message === "object" &&
+        existingPacket.exception._grip.preview.message._grip.type ===
+          "longString"
       ) {
-        res.networkInfo.response.headersSize =
-          existingPacket.networkInfo.response.headersSize;
-      }
-      if (
-        res.networkInfo.response &&
-        res.networkInfo.response.bodySize !== undefined
-      ) {
-        res.networkInfo.response.bodySize =
-          existingPacket.networkInfo.response.bodySize;
-      }
-      if (
-        res.networkInfo.response &&
-        res.networkInfo.response.transferredSize !== undefined
-      ) {
-        res.networkInfo.response.transferredSize =
-          existingPacket.networkInfo.response.transferredSize;
+        copyExistingActor(
+          res.exception._grip.preview.message,
+          existingPacket.exception._grip.preview.message
+        );
       }
     }
 
-    if (res.updates && Array.isArray(res.updates)) {
-      res.updates.sort();
+    if (
+      typeof res.exceptionMessage === "object" &&
+      res.exceptionMessage._grip &&
+      res.exceptionMessage._grip.type === "longString"
+    ) {
+      copyExistingActor(res.exceptionMessage, existingPacket.exceptionMessage);
     }
+  }
 
-    if (res.helperResult) {
+  if (res.eventActor) {
+    
+    res.eventActor.actor = existingPacket.eventActor.actor;
+    res.eventActor.startedDateTime = existingPacket.eventActor.startedDateTime;
+  }
+
+  if (res.pageError) {
+    
+    res.pageError.innerWindowID = existingPacket.pageError.innerWindowID;
+
+    if (
+      typeof res.pageError.errorMessage === "object" &&
+      res.pageError.errorMessage._grip &&
+      res.pageError.errorMessage._grip.type === "longString"
+    ) {
       copyExistingActor(
-        res.helperResult.object,
-        existingPacket.helperResult.object
+        res.pageError.errorMessage,
+        existingPacket.pageError.errorMessage
       );
     }
-  } else {
-    res = packet;
+
+    if (res.pageError.sourceId) {
+      res.pageError.sourceId = existingPacket.pageError.sourceId;
+    }
+
+    if (Array.isArray(res.pageError.stacktrace)) {
+      res.pageError.stacktrace = res.pageError.stacktrace.map((frame, i) => {
+        const existingFrame = existingPacket.pageError.stacktrace[i];
+        if (frame && existingFrame && frame.sourceId) {
+          frame.sourceId = existingFrame.sourceId;
+        }
+        return frame;
+      });
+    }
+  }
+
+  if (Array.isArray(res.exceptionStack)) {
+    res.exceptionStack = res.exceptionStack.map((frame, i) => {
+      const existingFrame = existingPacket.exceptionStack[i];
+      if (frame && existingFrame && frame.sourceId) {
+        frame.sourceId = existingFrame.sourceId;
+      }
+      return frame;
+    });
+  }
+
+  if (res.frame && existingPacket.frame) {
+    res.frame.sourceId = existingPacket.frame.sourceId;
+  }
+
+  if (res.packet) {
+    const override = {};
+    const keys = ["totalTime", "from", "contentSize", "transferredSize"];
+    keys.forEach(x => {
+      if (res.packet[x] !== undefined) {
+        override[x] = existingPacket.packet[key];
+      }
+    });
+    res.packet = Object.assign({}, res.packet, override);
+  }
+
+  if (res.networkInfo) {
+    if (res.networkInfo.startedDateTime) {
+      res.networkInfo.startedDateTime =
+        existingPacket.networkInfo.startedDateTime;
+    }
+
+    if (res.networkInfo.totalTime) {
+      res.networkInfo.totalTime = existingPacket.networkInfo.totalTime;
+    }
+
+    if (res.networkInfo.actor) {
+      res.networkInfo.actor = existingPacket.networkInfo.actor;
+    }
+
+    if (res.networkInfo.request && res.networkInfo.request.headersSize) {
+      res.networkInfo.request.headersSize =
+        existingPacket.networkInfo.request.headersSize;
+    }
+
+    if (
+      res.networkInfo.response &&
+      res.networkInfo.response.headersSize !== undefined
+    ) {
+      res.networkInfo.response.headersSize =
+        existingPacket.networkInfo.response.headersSize;
+    }
+    if (
+      res.networkInfo.response &&
+      res.networkInfo.response.bodySize !== undefined
+    ) {
+      res.networkInfo.response.bodySize =
+        existingPacket.networkInfo.response.bodySize;
+    }
+    if (
+      res.networkInfo.response &&
+      res.networkInfo.response.transferredSize !== undefined
+    ) {
+      res.networkInfo.response.transferredSize =
+        existingPacket.networkInfo.response.transferredSize;
+    }
+  }
+
+  if (res.updates && Array.isArray(res.updates)) {
+    res.updates.sort();
+  }
+
+  if (res.helperResult) {
+    copyExistingActor(
+      res.helperResult.object,
+      existingPacket.helperResult.object
+    );
   }
 
   return res;
+}
+
+function cleanTimeStamp(packet) {
+  
+  
+  const uniqueTimeStamp = 1572867483805;
+
+  if (packet.timestamp) {
+    packet.timestamp = uniqueTimeStamp;
+  }
+
+  if (packet.timeStamp) {
+    packet.timeStamp = uniqueTimeStamp;
+  }
+
+  if (packet?.message?.timeStamp) {
+    packet.message.timeStamp = uniqueTimeStamp;
+  }
+
+  if (packet?.result?._grip?.preview?.timestamp) {
+    packet.result._grip.preview.timestamp = uniqueTimeStamp;
+  }
+
+  if (packet?.exception?._grip?.preview?.timestamp) {
+    packet.exception._grip.preview.timestamp = uniqueTimeStamp;
+  }
+
+  if (packet?.eventActor?.timeStamp) {
+    packet.eventActor.timeStamp = uniqueTimeStamp;
+  }
+
+  if (packet?.pageError?.timeStamp) {
+    packet.pageError.timeStamp = uniqueTimeStamp;
+  }
+
+  if (packet?.networkInfo?.timeStamp) {
+    packet.networkInfo.timeStamp = uniqueTimeStamp;
+  }
 }
 
 function copyExistingActor(front1, front2) {
