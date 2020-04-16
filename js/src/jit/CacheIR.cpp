@@ -6642,7 +6642,7 @@ AttachDecision BinaryArithIRGenerator::tryAttachBitwise() {
 AttachDecision BinaryArithIRGenerator::tryAttachDouble() {
   
   if (op_ != JSOp::Add && op_ != JSOp::Sub && op_ != JSOp::Mul &&
-      op_ != JSOp::Div && op_ != JSOp::Mod) {
+      op_ != JSOp::Div && op_ != JSOp::Mod && op_ != JSOp::Pow) {
     return AttachDecision::NoAction;
   }
 
@@ -6678,6 +6678,10 @@ AttachDecision BinaryArithIRGenerator::tryAttachDouble() {
       writer.doubleModResult(lhs, rhs);
       trackAttached("BinaryArith.Double.Mod");
       break;
+    case JSOp::Pow:
+      writer.doublePowResult(lhs, rhs);
+      trackAttached("BinaryArith.Double.Pow");
+      break;
     default:
       MOZ_CRASH("Unhandled Op");
   }
@@ -6699,7 +6703,14 @@ AttachDecision BinaryArithIRGenerator::tryAttachInt32() {
   }
 
   if (op_ != JSOp::Add && op_ != JSOp::Sub && op_ != JSOp::Mul &&
-      op_ != JSOp::Div && op_ != JSOp::Mod) {
+      op_ != JSOp::Div && op_ != JSOp::Mod && op_ != JSOp::Pow) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  
+  if (op_ == JSOp::Pow && rhs_.isInt32() && rhs_.toInt32() < 0) {
     return AttachDecision::NoAction;
   }
 
@@ -6737,6 +6748,10 @@ AttachDecision BinaryArithIRGenerator::tryAttachInt32() {
     case JSOp::Mod:
       writer.int32ModResult(lhsIntId, rhsIntId);
       trackAttached("BinaryArith.Int32.Mod");
+      break;
+    case JSOp::Pow:
+      writer.int32PowResult(lhsIntId, rhsIntId);
+      trackAttached("BinaryArith.Int32.Pow");
       break;
     default:
       MOZ_CRASH("Unhandled op in tryAttachInt32");
@@ -6976,7 +6991,15 @@ AttachDecision BinaryArithIRGenerator::tryAttachStringInt32Arith() {
 
   
   if (op_ != JSOp::Sub && op_ != JSOp::Mul && op_ != JSOp::Div &&
-      op_ != JSOp::Mod) {
+      op_ != JSOp::Mod && op_ != JSOp::Pow) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  
+  if (op_ == JSOp::Pow &&
+      ((rhs_.isInt32() && rhs_.toInt32() < 0) || rhs_.isString())) {
     return AttachDecision::NoAction;
   }
 
