@@ -330,12 +330,12 @@ class WebConsoleUI {
       this._onTargetAvailable,
       this._onTargetDestroy
     );
-    
-    
-    
-    
-    
-    
+
+    const resourceWatcher = this.hud.resourceWatcher;
+    await resourceWatcher.watch(
+      [resourceWatcher.TYPES.CONSOLE_MESSAGES],
+      this._onResourceAvailable
+    );
   }
 
   _onResourceAvailable({ resourceType, targetFront, resource }) {
