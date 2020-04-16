@@ -13,7 +13,6 @@
 
 #include "gc/ObjectKind-inl.h"
 #include "vm/JSObject-inl.h"
-#include "vm/ObjectGroup-inl.h"  
 #include "vm/TypeInference-inl.h"
 
 using namespace js;
@@ -148,35 +147,40 @@ ProxyObject* ProxyObject::NewSingleton(JSContext* cx,
   Rooted<ProxyObject*> proxy(cx);
   {
     Realm* realm = cx->realm();
-    RootedObjectGroup group(cx);
-    RootedShape shape(cx);
 
     
-    if (!realm->newProxyCache.lookup(clasp, proto, group.address(),
-                                     shape.address())) {
-      group = ObjectGroup::defaultNewGroup(cx, clasp, proto, nullptr);
-      if (!group) {
-        return nullptr;
-      }
-
-      shape = EmptyShape::getInitialShape(cx, clasp, proto,  0);
-      if (!shape) {
-        return nullptr;
-      }
-
-      realm->newProxyCache.add(group, shape);
+    
+    RootedObjectGroup group(cx, ObjectGroup::lazySingletonGroup(
+                                    cx, ObjectGroupRealm::getForNewObject(cx),
+                                    realm, clasp, proto));
+    if (!group) {
+      return nullptr;
     }
 
     MOZ_ASSERT(group->realm() == realm);
-    MOZ_ASSERT(shape->zone() == cx->zone());
+    MOZ_ASSERT(group->singleton());
     MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(group.address()));
+
+    
+    
+    
+    
+    
+    
+    RootedShape shape(
+        cx, EmptyShape::getInitialShape(cx, clasp, proto,  0));
+    if (!shape) {
+      return nullptr;
+    }
+
+    MOZ_ASSERT(shape->zone() == cx->zone());
     MOZ_ASSERT(!IsAboutToBeFinalizedUnbarriered(shape.address()));
 
-    gc::InitialHeap heap = GetInitialHeap(SingletonObject, group);
+    gc::InitialHeap heap = gc::TenuredHeap;
     debugCheckNewObject(group, shape, allocKind, heap);
 
     JSObject* obj =
-        js::AllocateObject(cx, allocKind,  0, heap, clasp);
+        AllocateObject(cx, allocKind,  0, heap, clasp);
     if (!obj) {
       return nullptr;
     }
@@ -186,17 +190,14 @@ ProxyObject* ProxyObject::NewSingleton(JSContext* cx,
     proxy->initShape(shape);
 
     MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
-    cx->realm()->setObjectPendingMetadata(cx, proxy);
+    realm->setObjectPendingMetadata(cx, proxy);
 
     js::gc::gcTracer.traceCreateObject(proxy);
   }
 
   proxy->init(handler, priv, cx);
 
-  if (!JSObject::setSingleton(cx, proxy)) {
-    return nullptr;
-  }
-
+  MOZ_ASSERT(proxy->isSingleton());
   return proxy;
 }
 
