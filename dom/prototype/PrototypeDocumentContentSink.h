@@ -105,6 +105,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
   RefPtr<nsParserBase> mParser;
   nsCOMPtr<nsIURI> mDocumentURI;
   RefPtr<Document> mDocument;
+  RefPtr<nsNodeInfoManager> mNodeInfoManager;
   RefPtr<ScriptLoader> mScriptLoader;
 
   PrototypeDocumentContentSink* mNextSrcLoadWaiter;  
@@ -214,7 +215,7 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
 
 
   nsresult CreateElementFromPrototype(nsXULPrototypeElement* aPrototype,
-                                      Element** aResult, nsIContent* aParent);
+                                      Element** aResult, bool aIsRoot);
   
 
 
