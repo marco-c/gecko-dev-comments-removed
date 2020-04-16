@@ -936,6 +936,32 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
+
+  struct StickyPositionInfo {
+    uint64_t mStickyPositionAnimationId;
+    SideBits mFixedPosSides;
+
+    StickyPositionInfo(const uint64_t& aStickyPositionAnimationId,
+                       const SideBits aFixedPosSides)
+        : mStickyPositionAnimationId(aStickyPositionAnimationId),
+          mFixedPosSides(aFixedPosSides) {}
+  };
+  
+
+
+
+
+
+
+
+
+
+
+  std::vector<StickyPositionInfo> mStickyPositionInfo;
+
+  
+
+
   std::unordered_map<ScrollableLayerGuid, ZoomConstraints,
                      ScrollableLayerGuid::HashFn>
       mZoomConstraints;
