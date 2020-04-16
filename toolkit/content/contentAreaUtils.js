@@ -35,16 +35,6 @@ function urlSecurityCheck(aURL, aPrincipal, aFlags) {
   return BrowserUtils.urlSecurityCheck(aURL, aPrincipal, aFlags);
 }
 
-function forbidCPOW(arg, func, argname) {
-  if (
-    arg &&
-    (typeof arg == "object" || typeof arg == "function") &&
-    Cu.isCrossProcessWrapper(arg)
-  ) {
-    throw new Error(`no CPOWs allowed for argument ${argname} to ${func}`);
-  }
-}
-
 
 
 
@@ -74,10 +64,6 @@ function saveURL(
   aIsContentWindowPrivate,
   aPrincipal
 ) {
-  forbidCPOW(aURL, "saveURL", "aURL");
-  forbidCPOW(aReferrerInfo, "saveURL", "aReferrerInfo");
-  
-
   internalSave(
     aURL,
     null,
@@ -95,7 +81,6 @@ function saveURL(
     aPrincipal
   );
 }
-
 
 
 
@@ -136,7 +121,24 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
   let stack = Components.stack.caller;
   persistable.startPersistence(aOuterWindowID, {
     onDocumentReady(document) {
-      saveDocument(document, aSkipPrompt);
+      if (!document || !(document instanceof Ci.nsIWebBrowserPersistDocument)) {
+        throw new Error("Must have an nsIWebBrowserPersistDocument!");
+      }
+
+      internalSave(
+        document.documentURI,
+        document,
+        null, 
+        document.contentDisposition,
+        document.contentType,
+        false, 
+        null, 
+        null, 
+        document.referrerInfo,
+        document,
+        aSkipPrompt,
+        document.cacheKey
+      );
     },
     onError(status) {
       throw new Components.Exception(
@@ -146,65 +148,6 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
       );
     },
   });
-}
-
-
-
-
-
-
-
-
-function saveDocument(aDocument, aSkipPrompt) {
-  if (!aDocument) {
-    throw new Error("Must have a document when calling saveDocument");
-  }
-
-  let contentDisposition = null;
-  let cacheKey = 0;
-
-  if (aDocument instanceof Ci.nsIWebBrowserPersistDocument) {
-    
-    contentDisposition = aDocument.contentDisposition;
-    cacheKey = aDocument.cacheKey;
-  } else if (aDocument.nodeType == 9 ) {
-    
-    
-    let win = aDocument.defaultView;
-
-    try {
-      contentDisposition = win.windowUtils.getDocumentMetadata(
-        "content-disposition"
-      );
-    } catch (ex) {
-      
-    }
-
-    try {
-      let shEntry = win.docShell
-        .QueryInterface(Ci.nsIWebPageDescriptor)
-        .currentDescriptor.QueryInterface(Ci.nsISHEntry);
-
-      cacheKey = shEntry.cacheKey;
-    } catch (ex) {
-      
-    }
-  }
-
-  internalSave(
-    aDocument.documentURI,
-    aDocument,
-    null,
-    contentDisposition,
-    aDocument.contentType,
-    false,
-    null,
-    null,
-    aDocument.referrerInfo,
-    aDocument,
-    aSkipPrompt,
-    cacheKey
-  );
 }
 
 function DownloadListener(win, transfer) {
@@ -328,11 +271,6 @@ function internalSave(
   aIsContentWindowPrivate,
   aPrincipal
 ) {
-  forbidCPOW(aURL, "internalSave", "aURL");
-  forbidCPOW(aReferrerInfo, "internalSave", "aReferrerInfo");
-  forbidCPOW(aCacheKey, "internalSave", "aCacheKey");
-  
-
   if (aSkipPrompt == undefined) {
     aSkipPrompt = false;
   }
@@ -411,7 +349,6 @@ function internalSave(
     
     
     
-    let nonCPOWDocument = aDocument && !Cu.isCrossProcessWrapper(aDocument);
 
     let isPrivate = aIsContentWindowPrivate;
     if (isPrivate === undefined) {
@@ -439,7 +376,7 @@ function internalSave(
       targetContentType: saveAsType == kSaveAsType_Text ? "text/plain" : null,
       targetFile: file,
       sourceCacheKey: aCacheKey,
-      sourcePostData: nonCPOWDocument ? getPostData(aDocument) : null,
+      sourcePostData: aDocument ? getPostData(aDocument) : null,
       bypassCache: aShouldBypassCache,
       contentPolicyType,
       isPrivate,
@@ -1242,8 +1179,7 @@ function getDefaultExtension(aFilename, aURI, aContentType) {
 
 function GetSaveModeForContentType(aContentType, aDocument) {
   
-  
-  if (!aDocument || Cu.isCrossProcessWrapper(aDocument)) {
+  if (!aDocument) {
     return SAVEMODE_FILEONLY;
   }
 
