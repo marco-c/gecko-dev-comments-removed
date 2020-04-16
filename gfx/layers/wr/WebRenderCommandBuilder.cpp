@@ -2499,6 +2499,24 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
       return Nothing();
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!maskIsComplete &&
+        (aMaskItem->Frame()->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
+      return Nothing();
+    }
+
     recorder->FlushItem(IntRect(0, 0, size.width, size.height));
     recorder->Finish();
 
