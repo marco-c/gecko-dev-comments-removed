@@ -2573,9 +2573,6 @@ pref("layout.css.dpi", -1);
 pref("layout.scrollbar.side", 0);
 
 
-pref("layout.testing.overlay-scrollbars.always-visible", false);
-
-
 pref("layout.spammy_warnings.enabled", false);
 
 
