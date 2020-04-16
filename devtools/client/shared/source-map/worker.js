@@ -3857,9 +3857,9 @@ function hasOriginalURL(url) {
 }
 
 function _resolveSourceMapURL(source) {
-  const {
+  let {
     url = "",
-    sourceMapURL = ""
+    sourceMapURL
   } = source;
 
   if (!url) {
@@ -3870,13 +3870,21 @@ function _resolveSourceMapURL(source) {
     };
   }
 
-  const resolvedURL = new URL(sourceMapURL, url);
-  const resolvedString = resolvedURL.toString();
-  let baseURL = resolvedString; 
+  sourceMapURL = sourceMapURL || "";
+  let resolvedString;
+  let baseURL; 
+  
   
 
-  if (resolvedURL.protocol == "data:") {
+  if (sourceMapURL.startsWith("data:")) {
+    resolvedString = sourceMapURL;
     baseURL = url;
+  } else {
+    resolvedString = new URL(sourceMapURL, 
+    
+    
+    url.startsWith("data:") ? undefined : url).toString();
+    baseURL = resolvedString;
   }
 
   return {

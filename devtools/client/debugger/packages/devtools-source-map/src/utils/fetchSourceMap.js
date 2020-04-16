@@ -25,21 +25,32 @@ function hasOriginalURL(url: string): boolean {
 }
 
 function _resolveSourceMapURL(source: SourceMapInput) {
-  const { url = "", sourceMapURL = "" } = source;
+  let { url = "", sourceMapURL } = source;
 
   if (!url) {
     
     return { sourceMapURL, baseURL: sourceMapURL };
   }
+  sourceMapURL = sourceMapURL || "";
 
-  const resolvedURL = new URL(sourceMapURL, url);
-  const resolvedString = resolvedURL.toString();
+  let resolvedString;
+  let baseURL;
 
-  let baseURL = resolvedString;
   
   
-  if (resolvedURL.protocol == "data:") {
+  
+  if (sourceMapURL.startsWith("data:")) {
+    resolvedString = sourceMapURL;
     baseURL = url;
+  } else {
+    resolvedString = new URL(
+      sourceMapURL,
+      
+      
+      
+      url.startsWith("data:") ? undefined : url
+    ).toString();
+    baseURL = resolvedString;
   }
 
   return { sourceMapURL: resolvedString, baseURL };
