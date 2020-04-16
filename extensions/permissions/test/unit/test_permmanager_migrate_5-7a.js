@@ -17,8 +17,8 @@ function GetPermissionsFile(profile) {
 
 add_task(async function test() {
   
-  let profile = do_get_profile();
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
+  let profile = do_get_profile();
 
   
   

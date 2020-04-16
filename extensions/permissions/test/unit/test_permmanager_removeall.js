@@ -2,6 +2,7 @@
 
 
 add_task(async function test() {
+  Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
   
   var dir = do_get_profile();
 
