@@ -5,6 +5,8 @@
 
 #include "gfxTelemetry.h"
 
+#include "mozilla/Assertions.h"
+
 namespace mozilla {
 namespace gfx {
 

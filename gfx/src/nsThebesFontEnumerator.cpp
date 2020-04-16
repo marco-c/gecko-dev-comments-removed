@@ -4,9 +4,10 @@
 
 
 #include "nsThebesFontEnumerator.h"
-#include <stdint.h>               
-#include "gfxPlatform.h"          
-#include "mozilla/Assertions.h"   
+#include <stdint.h>              
+#include "gfxPlatform.h"         
+#include "mozilla/Assertions.h"  
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Promise.h"  
 #include "nsCOMPtr.h"             
 #include "nsDebug.h"              
@@ -17,6 +18,10 @@
 #include "nsString.h"  
 #include "nsTArray.h"  
 #include "nscore.h"    
+
+using mozilla::MakeUnique;
+using mozilla::Runnable;
+using mozilla::UniquePtr;
 
 NS_IMPL_ISUPPORTS(nsThebesFontEnumerator, nsIFontEnumerator)
 
@@ -143,8 +148,9 @@ nsThebesFontEnumerator::EnumerateFontsAsync(const char* aLangGroup,
   nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
   NS_ENSURE_TRUE(global, NS_ERROR_UNEXPECTED);
 
-  ErrorResult errv;
-  RefPtr<mozilla::dom::Promise> promise = dom::Promise::Create(global, errv);
+  mozilla::ErrorResult errv;
+  RefPtr<mozilla::dom::Promise> promise =
+      mozilla::dom::Promise::Create(global, errv);
   if (errv.Failed()) {
     return errv.StealNSResult();
   }
