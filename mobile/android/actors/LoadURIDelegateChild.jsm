@@ -8,6 +8,14 @@ const { GeckoViewActorChild } = ChromeUtils.import(
 const { LoadURIDelegate } = ChromeUtils.import(
   "resource://gre/modules/LoadURIDelegate.jsm"
 );
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  E10SUtils: "resource://gre/modules/E10SUtils.jsm",
+});
 
 var EXPORTED_SYMBOLS = ["LoadURIDelegateChild"];
 
@@ -51,6 +59,21 @@ class LoadURIDelegateChild extends GeckoViewActorChild {
     if (!this.isContentWindow) {
       debug`loadURI: not a content window`;
       
+      return false;
+    }
+
+    
+    
+    if (
+      WebExtensionPolicy.useRemoteWebExtensions &&
+      E10SUtils.getRemoteTypeForURIObject(
+        aUri,
+         true,
+         false,
+        Services.appinfo.remoteType
+      ) == E10SUtils.EXTENSION_REMOTE_TYPE
+    ) {
+      debug`Bypassing load delegate in the Extension process.`;
       return false;
     }
 

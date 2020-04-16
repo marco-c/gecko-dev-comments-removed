@@ -79,3 +79,6 @@ pref("media.geckoview.autoplay.request", true);
 
 
 pref("media.eme.require-app-approval", true);
+
+
+pref("extensions.webextensions.remote", true);
