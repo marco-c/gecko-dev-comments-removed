@@ -301,6 +301,15 @@ var PerformanceView = {
   
 
 
+
+  resetBufferStatus() {
+    this._bufferStatusSupported = false;
+    $("#details-pane-container").removeAttribute("buffer-status");
+  },
+
+  
+
+
   updateBufferStatus: function() {
     
     

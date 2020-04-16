@@ -8,6 +8,9 @@ loader.lazyRequireGetter(this, "EventEmitter", "devtools/shared/event-emitter");
 function PerformancePanel(iframeWindow, toolbox) {
   this.panelWin = iframeWindow;
   this.toolbox = toolbox;
+  this._targetAvailablePromise = Promise.resolve();
+
+  this._onTargetAvailable = this._onTargetAvailable.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -29,23 +32,7 @@ PerformancePanel.prototype = {
 
     this._checkRecordingStatus = this._checkRecordingStatus.bind(this);
 
-    
-    
-    
-    
-    const front = await this.target.getFront("performance");
-
-    
-    this.panelWin.gFront = front;
-
-    
-    
-    
-    if (!front) {
-      console.error("No PerformanceFront found in toolbox.");
-    }
-
-    const { PerformanceController, PerformanceView, EVENTS } = this.panelWin;
+    const { PerformanceController, EVENTS } = this.panelWin;
     PerformanceController.on(
       EVENTS.RECORDING_ADDED,
       this._checkRecordingStatus
@@ -55,9 +42,17 @@ PerformancePanel.prototype = {
       this._checkRecordingStatus
     );
 
-    await PerformanceController.initialize(this.toolbox, this.target, front);
-    await PerformanceView.initialize();
-    PerformanceController.enableFrontEventListeners();
+    
+    
+    
+    
+    
+    
+    
+    await this.toolbox.targetList.watchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this._onTargetAvailable
+    );
 
     
     
@@ -95,6 +90,10 @@ PerformancePanel.prototype = {
       this._checkRecordingStatus
     );
 
+    await this.toolbox.targetList.unwatchTargets(
+      [this.toolbox.targetList.TYPES.FRAME],
+      this._onTargetAvailable
+    );
     await PerformanceController.destroy();
     await PerformanceView.destroy();
     PerformanceController.disableFrontEventListeners();
@@ -109,5 +108,56 @@ PerformancePanel.prototype = {
     } else {
       this.toolbox.unhighlightTool("performance");
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+  async _handleTargetAvailable({ targetFront, isTopLevel }) {
+    if (isTopLevel) {
+      const { PerformanceController, PerformanceView } = this.panelWin;
+      const performanceFront = await targetFront.getFront("performance");
+
+      if (!this._isPanelInitialized) {
+        await PerformanceController.initialize(targetFront, performanceFront);
+        await PerformanceView.initialize();
+        PerformanceController.enableFrontEventListeners();
+        this._isPanelInitialized = true;
+      } else {
+        const isRecording = PerformanceController.isRecording();
+        if (isRecording) {
+          await PerformanceController.stopRecording();
+        }
+
+        PerformanceView.resetBufferStatus();
+        PerformanceController.updateFronts(targetFront, performanceFront);
+
+        if (isRecording) {
+          await PerformanceController.startRecording();
+        }
+      }
+
+      
+      this.panelWin.gFront = performanceFront;
+    }
+  },
+
+  
+
+
+  _onTargetAvailable(parameters) {
+    
+    
+    this._targetAvailablePromise = this._targetAvailablePromise.then(() =>
+      this._handleTargetAvailable(parameters)
+    );
+
+    return this._targetAvailablePromise;
   },
 };
