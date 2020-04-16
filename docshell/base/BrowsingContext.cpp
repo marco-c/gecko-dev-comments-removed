@@ -33,7 +33,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Logging.h"
-#include "mozilla/ResultExtensions.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_page_load.h"
 #include "mozilla/StaticPtr.h"
@@ -44,7 +43,6 @@
 #include "nsGlobalWindowOuter.h"
 #include "nsIObserverService.h"
 #include "nsContentUtils.h"
-#include "nsSandboxFlags.h"
 #include "nsScriptError.h"
 #include "nsThreadUtils.h"
 #include "xpcprivate.h"
@@ -868,61 +866,6 @@ bool BrowsingContext::CanAccess(BrowsingContext* aTarget,
   return false;
 }
 
-bool BrowsingContext::IsSandboxedFrom(BrowsingContext* aTarget) {
-  
-  if (!aTarget) {
-    return false;
-  }
-
-  
-  if (aTarget == this) {
-    return false;
-  }
-
-  
-  
-  uint32_t sandboxFlags = GetSandboxFlags();
-  if (mDocShell) {
-    if (RefPtr<Document> doc = mDocShell->GetExtantDocument()) {
-      sandboxFlags = doc->GetSandboxFlags();
-    }
-  }
-
-  
-  if (!sandboxFlags) {
-    return false;
-  }
-
-  
-  if (RefPtr<BrowsingContext> ancestorOfTarget = aTarget->GetParent()) {
-    do {
-      
-      if (ancestorOfTarget == this) {
-        return false;
-      }
-      ancestorOfTarget = ancestorOfTarget->GetParent();
-    } while (ancestorOfTarget);
-
-    
-    return true;
-  }
-
-  
-  
-  if (aTarget->GetOnePermittedSandboxedNavigatorId() == Id()) {
-    return false;
-  }
-
-  
-  
-  if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION) && aTarget == Top()) {
-    return false;
-  }
-
-  
-  return true;
-}
-
 RefPtr<SessionStorageManager> BrowsingContext::GetSessionStorageManager() {
   RefPtr<SessionStorageManager>& manager = Top()->mSessionStorageManager;
   if (!manager) {
@@ -1119,21 +1062,14 @@ void BrowsingContext::Location(JSContext* aCx,
   }
 }
 
-nsresult BrowsingContext::CheckSandboxFlags(nsDocShellLoadState* aLoadState) {
-  const auto& sourceBC = aLoadState->SourceBrowsingContext();
-  if (sourceBC.IsDiscarded() || (sourceBC && sourceBC->IsSandboxedFrom(this))) {
-    return NS_ERROR_DOM_INVALID_ACCESS_ERR;
-  }
-  return NS_OK;
-}
-
-nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
+nsresult BrowsingContext::LoadURI(BrowsingContext* aAccessor,
+                                  nsDocShellLoadState* aLoadState,
                                   bool aSetNavigating) {
   
   
   
   
-  if (IsDiscarded()) {
+  if (IsDiscarded() || (aAccessor && aAccessor->IsDiscarded())) {
     return NS_OK;
   }
 
@@ -1141,48 +1077,41 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     return mDocShell->LoadURI(aLoadState, aSetNavigating);
   }
 
-  
-  
-  
-  
-  
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
-
-  if (const auto& sourceBC = aLoadState->SourceBrowsingContext()) {
-    MOZ_DIAGNOSTIC_ASSERT(sourceBC->Group() == Group());
-
-    if (!sourceBC->CanAccess(this)) {
-      return NS_ERROR_DOM_PROP_ACCESS_DENIED;
-    }
-
-    nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
-    if (WindowGlobalChild* wgc =
-            win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
-      wgc->SendLoadURI(this, aLoadState, aSetNavigating);
+  if (!aAccessor && XRE_IsParentProcess()) {
+    if (ContentParent* cp = Canonical()->GetContentParent()) {
+      Unused << cp->SendLoadURI(this, aLoadState, aSetNavigating);
     }
   } else {
-    MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-    if (!XRE_IsParentProcess()) {
+    MOZ_DIAGNOSTIC_ASSERT(aAccessor);
+    MOZ_DIAGNOSTIC_ASSERT(aAccessor->Group() == Group());
+    if (!aAccessor) {
       return NS_ERROR_UNEXPECTED;
     }
 
-    if (ContentParent* cp = Canonical()->GetContentParent()) {
-      Unused << cp->SendLoadURI(this, aLoadState, aSetNavigating);
+    if (!aAccessor->CanAccess(this)) {
+      return NS_ERROR_DOM_PROP_ACCESS_DENIED;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> win(aAccessor->GetDOMWindow());
+    MOZ_DIAGNOSTIC_ASSERT(win);
+    if (WindowGlobalChild* wgc =
+            win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
+      wgc->SendLoadURI(this, aLoadState, aSetNavigating);
     }
   }
   return NS_OK;
 }
 
-nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState,
+nsresult BrowsingContext::InternalLoad(BrowsingContext* aAccessor,
+                                       nsDocShellLoadState* aLoadState,
                                        nsIDocShell** aDocShell,
                                        nsIRequest** aRequest) {
-  if (IsDiscarded()) {
+  if (IsDiscarded() || (aAccessor && aAccessor->IsDiscarded())) {
     return NS_OK;
   }
 
-  const auto& sourceBC = aLoadState->SourceBrowsingContext();
   bool isActive =
-      sourceBC && sourceBC->GetIsActive() && !GetIsActive() &&
+      aAccessor && aAccessor->GetIsActive() && !GetIsActive() &&
       !Preferences::GetBool("browser.tabs.loadDivertedInBackground", false);
   if (mDocShell) {
     nsresult rv = nsDocShell::Cast(mDocShell)->InternalLoad(
@@ -1203,26 +1132,20 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState,
     return rv;
   }
 
-  
-  
-  
-  
-  
-  MOZ_TRY(CheckSandboxFlags(aLoadState));
-
   if (XRE_IsParentProcess()) {
     if (ContentParent* cp = Canonical()->GetContentParent()) {
       Unused << cp->SendInternalLoad(this, aLoadState, isActive);
     }
   } else {
-    MOZ_DIAGNOSTIC_ASSERT(sourceBC);
-    MOZ_DIAGNOSTIC_ASSERT(sourceBC->Group() == Group());
+    MOZ_DIAGNOSTIC_ASSERT(aAccessor);
+    MOZ_DIAGNOSTIC_ASSERT(aAccessor->Group() == Group());
 
-    if (!sourceBC->CanAccess(this)) {
+    if (!aAccessor->CanAccess(this)) {
       return NS_ERROR_DOM_PROP_ACCESS_DENIED;
     }
 
-    nsCOMPtr<nsPIDOMWindowOuter> win(sourceBC->GetDOMWindow());
+    nsCOMPtr<nsPIDOMWindowOuter> win(aAccessor->GetDOMWindow());
+    MOZ_DIAGNOSTIC_ASSERT(win);
     if (WindowGlobalChild* wgc =
             win->GetCurrentInnerWindow()->GetWindowGlobalChild()) {
       wgc->SendInternalLoad(this, aLoadState);

@@ -272,7 +272,9 @@ void CanonicalBrowsingContext::LoadURI(const nsAString& aURI,
     return;
   }
 
-  LoadURI(loadState, true);
+  
+  
+  LoadURI(nullptr, loadState, true);
 }
 
 void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
