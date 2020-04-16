@@ -34,6 +34,7 @@ from collections import (
 )
 from io import StringIO
 from itertools import chain
+from multiprocessing import cpu_count
 import six
 from six import string_types
 
@@ -854,9 +855,17 @@ class BuildReader(object):
         for path, f in self._relevant_mozbuild_finder.find('*/config.status'):
             self._relevant_mozbuild_finder.ignore.add(os.path.dirname(path))
 
-        
-        
-        self._gyp_worker_pool = ProcessPoolExecutor()
+        max_workers = cpu_count()
+        if sys.platform.startswith('win'):
+            
+            
+            
+            
+            
+            
+            
+            max_workers = min(max_workers, 60)
+        self._gyp_worker_pool = ProcessPoolExecutor(max_workers=max_workers)
         self._gyp_processors = []
         self._execution_time = 0.0
         self._file_count = 0
