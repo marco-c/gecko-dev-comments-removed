@@ -90,6 +90,13 @@ Performance::~Performance() = default;
 
 DOMHighResTimeStamp Performance::Now() {
   DOMHighResTimeStamp rawTime = NowUnclamped();
+
+  
+  
+  if (mSystemPrincipal) {
+    return rawTime;
+  }
+
   return nsRFPService::ReduceTimePrecisionAsMSecs(
       rawTime, GetRandomTimelineSeed(), mSystemPrincipal,
       CrossOriginIsolated());
