@@ -29,20 +29,6 @@ class Feature {
   }
 
   async addObserver(observer) {
-    
-    
-    if (!this.remoteEntries) {
-      let remoteEntries;
-      try {
-        
-        
-        remoteEntries = await RemoteSettings(COLLECTION_NAME).get();
-      } catch (e) {
-        remoteEntries = [];
-      }
-      this.onRemoteSettingsUpdate(remoteEntries);
-    }
-
     this.observers.add(observer);
     this.notifyObservers(observer);
   }
@@ -63,6 +49,7 @@ class Feature {
 
   onRemoteSettingsUpdate(entries) {
     this.remoteEntries = [];
+
     for (let entry of entries) {
       if (entry.feature == this.name) {
         this.remoteEntries.push(entry.pattern.toLowerCase());
@@ -71,6 +58,11 @@ class Feature {
   }
 
   notifyObservers(observer = null) {
+    
+    if (!this.remoteEntries) {
+      return;
+    }
+
     let entries = [];
     if (this.prefValue) {
       entries = this.prefValue.split(",");
@@ -98,30 +90,68 @@ UrlClassifierSkipListService.prototype = {
   features: {},
   _initialized: false,
 
-  lazyInit() {
+  async lazyInit() {
     if (this._initialized) {
       return;
     }
 
-    RemoteSettings(COLLECTION_NAME).on("sync", event => {
+    let rs = RemoteSettings(COLLECTION_NAME);
+    rs.on("sync", event => {
       let {
         data: { current },
       } = event;
-      for (let key of Object.keys(this.features)) {
-        let feature = this.features[key];
-        feature.onRemoteSettingsUpdate(current);
-        feature.notifyObservers();
-      }
+      this.entries = current || [];
+      this.onUpdateEntries(current);
     });
 
     this._initialized = true;
+
+    
+    
+    
+    
+    
+    try {
+      
+      
+      this.entries = await rs.get();
+    } catch (e) {}
+
+    
+    
+    if (!this.entries) {
+      this.entries = [];
+    }
+
+    this.onUpdateEntries(this.entries);
+  },
+
+  onUpdateEntries(entries) {
+    for (let key of Object.keys(this.features)) {
+      let feature = this.features[key];
+      feature.onRemoteSettingsUpdate(entries);
+      feature.notifyObservers();
+    }
   },
 
   registerAndRunSkipListObserver(feature, prefName, observer) {
+    
+    
+    
+    
+    
+    
+    
     this.lazyInit();
 
     if (!this.features[feature]) {
-      this.features[feature] = new Feature(feature, prefName);
+      let featureObj = new Feature(feature, prefName);
+      this.features[feature] = featureObj;
+      
+      
+      if (this.entries) {
+        featureObj.onRemoteSettingsUpdate(this.entries);
+      }
     }
     this.features[feature].addObserver(observer);
   },
