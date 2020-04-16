@@ -2,6 +2,7 @@ from __future__ import absolute_import
 import unittest
 
 import os
+import six
 import sys
 import os.path
 import time
@@ -34,9 +35,9 @@ class TestNsinstall(unittest.TestCase):
         
         
         if sys.stdin.encoding is None:
-            tmpdir = unicode(self.tmpdir)
+            tmpdir = six.ensure_text(self.tmpdir)
         else:
-            tmpdir = unicode(self.tmpdir, sys.stdin.encoding)
+            tmpdir = six.ensure_text(self.tmpdir, sys.stdin.encoding)
         rmtree(tmpdir)
 
     
@@ -121,20 +122,19 @@ class TestNsinstall(unittest.TestCase):
         self.assertEqual(os.stat(testfile).st_mtime,
                          os.stat(destfile).st_mtime)
 
-    if sys.platform != "win32":
-        
-        def test_nsinstall_m(self):
-            "Test that nsinstall -m works (set mode)"
-            testfile = self.touch("testfile")
-            mode = 0o600
-            os.chmod(testfile, mode)
-            testdir = self.mkdirs("testdir")
-            self.assertEqual(nsinstall(["-m", "{0:04o}"
-                                        .format(mode), testfile, testdir]), 0)
-            destfile = os.path.join(testdir, "testfile")
-            self.assert_(os.path.isfile(destfile))
-            self.assertEqual(os.stat(testfile).st_mode,
-                             os.stat(destfile).st_mode)
+    @unittest.skipIf(sys.platform == "win32", "Windows doesn't have real file modes")
+    def test_nsinstall_m(self):
+        "Test that nsinstall -m works (set mode)"
+        testfile = self.touch("testfile")
+        mode = 0o600
+        os.chmod(testfile, mode)
+        testdir = self.mkdirs("testdir")
+        self.assertEqual(nsinstall(["-m", "{0:04o}"
+                                    .format(mode), testfile, testdir]), 0)
+        destfile = os.path.join(testdir, "testfile")
+        self.assert_(os.path.isfile(destfile))
+        self.assertEqual(os.stat(testfile).st_mode,
+                         os.stat(destfile).st_mode)
 
     def test_nsinstall_d(self):
         "Test that nsinstall -d works (create directories in target)"
@@ -145,35 +145,38 @@ class TestNsinstall(unittest.TestCase):
         self.assertEqual(nsinstall(["-d", testfile, destdir]), 0)
         self.assert_(os.path.isdir(os.path.join(destdir, "testfile")))
 
-    if RUN_NON_ASCII_TESTS:
-        def test_nsinstall_non_ascii(self):
-            "Test that nsinstall handles non-ASCII files"
-            filename = u"\u2325\u3452\u2415\u5081"
-            testfile = self.touch(filename)
-            testdir = self.mkdirs(u"\u4241\u1D04\u1414")
-            self.assertEqual(nsinstall([testfile.encode("utf-8"),
-                                        testdir.encode("utf-8")]), 0)
+    @unittest.skipIf(not RUN_NON_ASCII_TESTS, "Skipping non ascii tests")
+    def test_nsinstall_non_ascii(self):
+        "Test that nsinstall handles non-ASCII files"
+        filename = u"\u2325\u3452\u2415\u5081"
+        testfile = self.touch(filename)
+        testdir = self.mkdirs(u"\u4241\u1D04\u1414")
+        self.assertEqual(nsinstall([testfile.encode("utf-8"),
+                                    testdir.encode("utf-8")]), 0)
 
-            destfile = os.path.join(testdir, filename)
-            self.assert_(os.path.isfile(destfile))
+        destfile = os.path.join(testdir, filename)
+        self.assert_(os.path.isfile(destfile))
 
-        def test_nsinstall_non_ascii_subprocess(self):
-            "Test that nsinstall as a subprocess handles non-ASCII files"
-            filename = u"\u2325\u3452\u2415\u5081"
-            testfile = self.touch(filename)
-            testdir = self.mkdirs(u"\u4241\u1D04\u1414")
-            
-            
-            
-            p = processhandler.ProcessHandlerMixin([sys.executable,
-                                                    NSINSTALL_PATH,
-                                                    testfile, testdir])
-            p.run()
-            rv = p.wait()
+    
+    @unittest.skipIf(not RUN_NON_ASCII_TESTS or sys.version_info[0] == 2,
+                     "Skipping non ascii tests")
+    def test_nsinstall_non_ascii_subprocess(self):
+        "Test that nsinstall as a subprocess handles non-ASCII files"
+        filename = u"\u2325\u3452\u2415\u5081"
+        testfile = self.touch(filename)
+        testdir = self.mkdirs(u"\u4241\u1D04\u1414")
+        
+        
+        
+        p = processhandler.ProcessHandlerMixin([sys.executable,
+                                                NSINSTALL_PATH,
+                                                testfile, testdir])
+        p.run()
+        rv = p.wait()
 
-            self.assertEqual(rv, 0)
-            destfile = os.path.join(testdir, filename)
-            self.assert_(os.path.isfile(destfile))
+        self.assertEqual(rv, 0)
+        destfile = os.path.join(testdir, filename)
+        self.assert_(os.path.isfile(destfile))
 
     
 

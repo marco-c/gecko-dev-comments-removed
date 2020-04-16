@@ -15,6 +15,7 @@ from optparse import OptionParser
 import mozfile
 import os
 import os.path
+import six
 import sys
 import shutil
 
@@ -154,36 +155,8 @@ def _nsinstall_internal(argv):
 
 
 def nsinstall(argv):
-    return _nsinstall_internal([unicode(arg, "utf-8") for arg in argv])
+    return _nsinstall_internal([six.ensure_text(arg, "utf-8") for arg in argv])
 
 
 if __name__ == '__main__':
-    
-    
-    
-    
-    
-    if sys.platform == "win32":
-        import ctypes
-        from ctypes import wintypes
-        GetCommandLine = ctypes.windll.kernel32.GetCommandLineW
-        GetCommandLine.argtypes = []
-        GetCommandLine.restype = wintypes.LPWSTR
-
-        CommandLineToArgv = ctypes.windll.shell32.CommandLineToArgvW
-        CommandLineToArgv.argtypes = [
-            wintypes.LPWSTR, ctypes.POINTER(ctypes.c_int)]
-        CommandLineToArgv.restype = ctypes.POINTER(wintypes.LPWSTR)
-
-        argc = ctypes.c_int(0)
-        argv_arr = CommandLineToArgv(GetCommandLine(), ctypes.byref(argc))
-        
-        argv = argv_arr[1:argc.value]
-    else:
-        
-        if sys.stdin.encoding is not None:
-            argv = [unicode(arg, sys.stdin.encoding) for arg in sys.argv]
-        else:
-            argv = [unicode(arg) for arg in sys.argv]
-
-    sys.exit(_nsinstall_internal(argv[1:]))
+    sys.exit(_nsinstall_internal(sys.argv[1:]))
