@@ -4068,21 +4068,6 @@ class MToNumeric : public MUnaryInstruction, public BoxInputsPolicy::Data {
 };
 
 
-class MToNumber : public MUnaryInstruction, public BoxInputsPolicy::Data {
-  explicit MToNumber(MDefinition* arg) : MUnaryInstruction(classOpcode, arg) {
-    
-    
-    setResultType(MIRType::Value);
-  }
-
- public:
-  INSTRUCTION_HEADER(ToNumber)
-  TRIVIAL_NEW_WRAPPERS
-
-  ALLOW_CLONE(MToNumber)
-};
-
-
 
 
 
