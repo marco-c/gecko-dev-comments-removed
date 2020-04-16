@@ -47,14 +47,12 @@ static nsString DefaultVideoName() {
   
   
   
-  media::Await(
-      do_AddRef(SystemGroup::EventTargetFor(TaskCategory::Other)),
-      InvokeAsync(
-          SystemGroup::EventTargetFor(TaskCategory::Other), __func__, [&]() {
-            rv = Preferences::GetString("media.getusermedia.fake-camera-name",
-                                        cameraNameFromPref);
-            return GenericPromise::CreateAndResolve(true, __func__);
-          }));
+  media::Await(do_AddRef(GetMainThreadSerialEventTarget()),
+               InvokeAsync(GetMainThreadSerialEventTarget(), __func__, [&]() {
+                 rv = Preferences::GetString(
+                     "media.getusermedia.fake-camera-name", cameraNameFromPref);
+                 return GenericPromise::CreateAndResolve(true, __func__);
+               }));
 
   if (NS_SUCCEEDED(rv)) {
     return std::move(cameraNameFromPref);
