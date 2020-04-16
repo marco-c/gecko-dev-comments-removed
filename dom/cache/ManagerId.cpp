@@ -61,8 +61,7 @@ ManagerId::~ManagerId() {
 
   
   
-  NS_ReleaseOnMainThreadSystemGroup("ManagerId::mPrincipal",
-                                    mPrincipal.forget());
+  NS_ReleaseOnMainThread("ManagerId::mPrincipal", mPrincipal.forget());
 }
 
 }  

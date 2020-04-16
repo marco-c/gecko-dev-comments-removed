@@ -61,7 +61,7 @@ static const bool gLoggingBuffered = true;
 static bool gLoggingToDebugger = true;
 #endif  
 
-nsConsoleService::MessageElement::~MessageElement() {}
+nsConsoleService::MessageElement::~MessageElement() = default;
 
 nsConsoleService::nsConsoleService()
     : mCurrentSize(0),
@@ -397,8 +397,8 @@ nsresult nsConsoleService::LogMessageWithMode(
     
     
     
-    NS_ReleaseOnMainThreadSystemGroup("nsConsoleService::retiredMessage",
-                                      retiredMessage.forget());
+    NS_ReleaseOnMainThread("nsConsoleService::retiredMessage",
+                           retiredMessage.forget());
   }
 
   if (r) {

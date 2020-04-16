@@ -210,9 +210,8 @@ void ServiceWorkerJob::Finish(ErrorResult& aRv) {
 
   
   
-  NS_ReleaseOnMainThreadSystemGroup("ServiceWorkerJobProxyRunnable",
-                                    kungFuDeathGrip.forget(),
-                                    true );
+  NS_ReleaseOnMainThread("ServiceWorkerJobProxyRunnable",
+                         kungFuDeathGrip.forget(), true );
 }
 
 void ServiceWorkerJob::Finish(nsresult aRv) {

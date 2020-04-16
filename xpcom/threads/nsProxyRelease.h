@@ -148,34 +148,30 @@ inline NS_HIDDEN_(void)
 
 template <class T>
 inline NS_HIDDEN_(void)
-    NS_ReleaseOnMainThreadSystemGroup(const char* aName,
-                                      already_AddRefed<T> aDoomed,
-                                      bool aAlwaysProxy = false) {
+    NS_ReleaseOnMainThread(const char* aName, already_AddRefed<T> aDoomed,
+                           bool aAlwaysProxy = false) {
   
   
   
-  nsCOMPtr<nsIEventTarget> systemGroupEventTarget;
+  nsCOMPtr<nsIEventTarget> target;
   if (!NS_IsMainThread() || aAlwaysProxy) {
-    systemGroupEventTarget =
-        mozilla::SystemGroup::EventTargetFor(mozilla::TaskCategory::Other);
+    target = mozilla::GetMainThreadSerialEventTarget();
 
-    if (!systemGroupEventTarget) {
+    if (!target) {
       MOZ_ASSERT_UNREACHABLE("Could not get main thread; leaking an object!");
       mozilla::Unused << aDoomed.take();
       return;
     }
   }
 
-  NS_ProxyRelease(aName, systemGroupEventTarget, std::move(aDoomed),
-                  aAlwaysProxy);
+  NS_ProxyRelease(aName, target, std::move(aDoomed), aAlwaysProxy);
 }
 
 template <class T>
-inline NS_HIDDEN_(void)
-    NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
-                                      bool aAlwaysProxy = false) {
-  NS_ReleaseOnMainThreadSystemGroup("NS_ReleaseOnMainThreadSystemGroup",
-                                    std::move(aDoomed), aAlwaysProxy);
+inline NS_HIDDEN_(void) NS_ReleaseOnMainThread(already_AddRefed<T> aDoomed,
+                                               bool aAlwaysProxy = false) {
+  NS_ReleaseOnMainThread("NS_ReleaseOnMainThread", std::move(aDoomed),
+                         aAlwaysProxy);
 }
 
 

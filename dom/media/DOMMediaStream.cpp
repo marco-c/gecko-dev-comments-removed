@@ -267,7 +267,7 @@ already_AddRefed<Promise> DOMMediaStream::CountUnderlyingStreams(
     
     
     void RunDuringShutdown() override {
-      NS_ReleaseOnMainThreadSystemGroup(
+      NS_ReleaseOnMainThread(
           "DOMMediaStream::CountUnderlyingStreams::Counter::RunDuringShutdown",
           mPromise.forget());
     }

@@ -1753,9 +1753,9 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
       
       
       
-      NS_ReleaseOnMainThreadSystemGroup("MediaTrackGraphImpl::CurrentDriver",
-                                        driver.forget(),
-                                        true);  
+      NS_ReleaseOnMainThread("MediaTrackGraphImpl::CurrentDriver",
+                             driver.forget(),
+                             true);  
     }
 
     if (LifecycleStateRef() == LIFECYCLE_WAITING_FOR_MAIN_THREAD_CLEANUP &&

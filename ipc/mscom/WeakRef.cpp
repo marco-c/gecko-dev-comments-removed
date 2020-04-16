@@ -153,7 +153,7 @@ WeakReferenceSupport::Release() {
       
       
       RefPtr<WeakReferenceSupport> self = this;
-      NS_ReleaseOnMainThreadSystemGroup("WeakReferenceSupport", self.forget());
+      NS_ReleaseOnMainThread("WeakReferenceSupport", self.forget());
     }
   }
   return newRefCnt;

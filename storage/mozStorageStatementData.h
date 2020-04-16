@@ -42,8 +42,8 @@ class StatementData {
     
     
     
-    NS_ReleaseOnMainThreadSystemGroup("StatementData::mParamsArray",
-                                      mParamsArray.forget());
+    NS_ReleaseOnMainThread("StatementData::mParamsArray",
+                           mParamsArray.forget());
   }
 
   

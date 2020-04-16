@@ -234,8 +234,8 @@ void PaintThread::AsyncPaintTask(CompositorBridgeChild* aBridge,
     
     
     
-    NS_ReleaseOnMainThreadSystemGroup("PaintTask::DrawTargetCapture",
-                                      aTask->mCapture.forget());
+    NS_ReleaseOnMainThread("PaintTask::DrawTargetCapture",
+                           aTask->mCapture.forget());
   }
 
   if (aBridge->NotifyFinishedAsyncWorkerPaint(aTask)) {

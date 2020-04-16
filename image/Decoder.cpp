@@ -85,7 +85,7 @@ Decoder::~Decoder() {
   if (mImage && !NS_IsMainThread()) {
     
     
-    NS_ReleaseOnMainThreadSystemGroup(mImage.forget());
+    NS_ReleaseOnMainThread(mImage.forget());
   }
 }
 

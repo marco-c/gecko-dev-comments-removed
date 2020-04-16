@@ -56,7 +56,7 @@ gfxFontSrcURI::gfxFontSrcURI(nsIURI* aURI) {
 }
 
 gfxFontSrcURI::~gfxFontSrcURI() {
-  NS_ReleaseOnMainThreadSystemGroup("gfxFontSrcURI::mURI", mURI.forget());
+  NS_ReleaseOnMainThread("gfxFontSrcURI::mURI", mURI.forget());
 }
 
 bool gfxFontSrcURI::Equals(gfxFontSrcURI* aOther) {

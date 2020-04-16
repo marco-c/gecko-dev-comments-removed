@@ -2851,8 +2851,7 @@ void DataChannelConnection::ReadBlob(
     
     
     
-    NS_ReleaseOnMainThreadSystemGroup("DataChannelBlobSendRunnable",
-                                      runnable.forget());
+    NS_ReleaseOnMainThread("DataChannelBlobSendRunnable", runnable.forget());
     return;
   }
   aBlob->Close();

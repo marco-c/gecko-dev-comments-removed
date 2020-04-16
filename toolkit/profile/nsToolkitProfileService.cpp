@@ -114,8 +114,8 @@ void RemoveProfileFiles(nsIToolkitProfile* aProfile, bool aInBackground) {
         lock->Unlock();
         
         
-        NS_ReleaseOnMainThreadSystemGroup(
-            "nsToolkitProfile::RemoveProfileFiles::Unlock", lock.forget());
+        NS_ReleaseOnMainThread("nsToolkitProfile::RemoveProfileFiles::Unlock",
+                               lock.forget());
 
         rv = rootDir->Remove(true);
         NS_ENSURE_SUCCESS_VOID(rv);

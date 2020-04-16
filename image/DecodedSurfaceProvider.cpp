@@ -43,7 +43,7 @@ void DecodedSurfaceProvider::DropImageReference() {
   
   RefPtr<RasterImage> image = mImage;
   mImage = nullptr;
-  NS_ReleaseOnMainThreadSystemGroup(image.forget(),  true);
+  NS_ReleaseOnMainThread(image.forget(),  true);
 }
 
 DrawableFrameRef DecodedSurfaceProvider::DrawableRef(size_t aFrame) {

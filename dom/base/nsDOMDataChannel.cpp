@@ -467,8 +467,7 @@ void nsDOMDataChannel::DontKeepAliveAnyMore() {
 
 void nsDOMDataChannel::ReleaseSelf() {
   
-  NS_ReleaseOnMainThreadSystemGroup("nsDOMDataChannel::mSelfRef",
-                                    mSelfRef.forget(), true);
+  NS_ReleaseOnMainThread("nsDOMDataChannel::mSelfRef", mSelfRef.forget(), true);
 }
 
 void nsDOMDataChannel::EventListenerAdded(nsAtom* aType) {
