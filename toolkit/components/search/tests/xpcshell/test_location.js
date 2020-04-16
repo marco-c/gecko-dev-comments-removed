@@ -1,6 +1,10 @@
 
 
 
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
@@ -22,18 +26,17 @@ add_task(async function test_location() {
   );
   
   checkCountryResultTelemetry(TELEMETRY_RESULT_ENUM.SUCCESS);
-
   
   
   
   let probeUSMismatched, probeNonUSMismatched;
-  switch (Services.appinfo.OS) {
-    case "Darwin":
+  switch (AppConstants.platform) {
+    case "macosx":
       probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_OSX";
       probeNonUSMismatched =
         "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_OSX";
       break;
-    case "WINNT":
+    case "win":
       probeUSMismatched = "SEARCH_SERVICE_US_COUNTRY_MISMATCHED_PLATFORM_WIN";
       probeNonUSMismatched =
         "SEARCH_SERVICE_NONUS_COUNTRY_MISMATCHED_PLATFORM_WIN";
@@ -45,6 +48,14 @@ add_task(async function test_location() {
   if (probeUSMismatched && probeNonUSMismatched) {
     let countryCode = await Services.sysinfo.countryCode;
     print("Platform says the country-code is", countryCode);
+    if (!countryCode) {
+      
+      
+      
+      
+      info("No country code set on this machine, skipping rest of test");
+      return;
+    }
     let expectedResult;
     let hid;
     
@@ -59,9 +70,13 @@ add_task(async function test_location() {
       expectedResult =
         countryCode == "AU" ? { 0: 1, 1: 0 } : { 0: 0, 1: 1, 2: 0 };
     }
+    const histogram = Services.telemetry.getHistogramById(hid);
+    let snapshot;
+    await TestUtils.waitForCondition(() => {
+      snapshot = histogram.snapshot();
+      return snapshot.sum == 1;
+    });
 
-    let histogram = Services.telemetry.getHistogramById(hid);
-    let snapshot = histogram.snapshot();
     deepEqual(snapshot.values, expectedResult);
   }
 });
