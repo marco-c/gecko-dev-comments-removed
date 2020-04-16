@@ -5,7 +5,6 @@
 
 
 #include "nsURILoader.h"
-#include "nsAutoPtr.h"
 #include "nsIURIContentListener.h"
 #include "nsIContentHandler.h"
 #include "nsILoadGroup.h"
