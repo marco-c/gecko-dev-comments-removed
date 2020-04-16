@@ -1009,7 +1009,7 @@ Search.prototype = {
       
       
       
-      await PlacesSearchAutocompleteProvider.ensureInitialized();
+      await PlacesSearchAutocompleteProvider.ensureReady();
       if (!this.pending) {
         return;
       }

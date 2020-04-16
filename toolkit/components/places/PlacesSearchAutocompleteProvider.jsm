@@ -49,7 +49,8 @@ const SearchAutocompleteProviderInternal = {
     }
 
     
-    await this._refresh();
+    this._refreshedPromise = this._refresh();
+    await this._refreshedPromise;
 
     Services.obs.addObserver(this, SEARCH_ENGINE_TOPIC, true);
 
@@ -64,7 +65,7 @@ const SearchAutocompleteProviderInternal = {
       case "engine-changed":
       case "engine-removed":
       case "engine-default":
-        this._refresh();
+        this._refreshedPromise = this._refresh();
     }
   },
 
@@ -211,12 +212,15 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-
-  ensureInitialized() {
+  ensureReady() {
     if (!gInitializationPromise) {
       gInitializationPromise = SearchAutocompleteProviderInternal.initialize();
     }
-    return gInitializationPromise;
+
+    return Promise.all([
+      gInitializationPromise,
+      SearchAutocompleteProviderInternal._refreshedPromise,
+    ]);
   },
 
   
@@ -227,7 +231,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
   async engineForDomainPrefix(prefix) {
-    await this.ensureInitialized();
+    await this.ensureReady();
 
     
     
@@ -248,7 +252,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
   async engineForAlias(alias) {
-    await this.ensureInitialized();
+    await this.ensureReady();
 
     return (
       SearchAutocompleteProviderInternal.enginesByAlias.get(
@@ -264,7 +268,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
   async tokenAliasEngines() {
-    await this.ensureInitialized();
+    await this.ensureReady();
 
     return SearchAutocompleteProviderInternal.tokenAliasEngines.slice();
   },
@@ -278,7 +282,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
   async currentEngine(inPrivateWindow) {
-    await this.ensureInitialized();
+    await this.ensureReady();
 
     return inPrivateWindow
       ? Services.search.defaultPrivateEngine
