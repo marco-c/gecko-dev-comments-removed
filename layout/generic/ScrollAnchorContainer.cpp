@@ -76,15 +76,20 @@ static void SetAnchorFlags(const nsIFrame* aScrolledFrame,
                            nsIFrame* aAnchorNode, bool aInScrollAnchorChain) {
   nsIFrame* frame = aAnchorNode;
   while (frame && frame != aScrolledFrame) {
-    MOZ_ASSERT(
-        frame == aAnchorNode || !frame->IsScrollFrame(),
-        "We shouldn't select an anchor node inside a nested scroll frame.");
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
     frame->SetInScrollAnchorChain(aInScrollAnchorChain);
     frame = frame->GetParent();
   }
   MOZ_ASSERT(frame,
-             "The anchor node should be a descendant of the scroll frame");
+             "The anchor node should be a descendant of the scrolled frame");
   
   
   if (StaticPrefs::layout_css_scroll_anchoring_highlight()) {
@@ -196,55 +201,63 @@ static nscoord FindScrollAnchoringBoundingOffset(
   return logicalBounding.BStart(writingMode);
 }
 
+bool ScrollAnchorContainer::CanMaintainAnchor() const {
+  if (!StaticPrefs::layout_css_scroll_anchoring_enabled()) {
+    return false;
+  }
+
+  
+  if (mDisabled) {
+    return false;
+  }
+
+  const nsStyleDisplay& disp = *Frame()->StyleDisplay();
+  
+  
+  if (disp.mOverflowAnchor != mozilla::StyleOverflowAnchor::Auto) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (mScrollFrame->GetLogicalScrollPosition() == nsPoint()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (Frame()->ChildrenHavePerspective()) {
+    return false;
+  }
+
+  return true;
+}
+
 void ScrollAnchorContainer::SelectAnchor() {
   MOZ_ASSERT(mScrollFrame->mScrolledFrame);
   MOZ_ASSERT(mAnchorNodeIsDirty);
 
-  if (mDisabled || !StaticPrefs::layout_css_scroll_anchoring_enabled()) {
-    return;
-  }
-
   AUTO_PROFILER_LABEL("ScrollAnchorContainer::SelectAnchor", LAYOUT);
   ANCHOR_LOG(
-      "Selecting anchor for with scroll-port=%s.\n",
+      "Selecting anchor with scroll-port=%s.\n",
       mozilla::ToString(mScrollFrame->GetVisualOptimalViewingRect()).c_str());
-
-  const nsStyleDisplay* disp = Frame()->StyleDisplay();
-
-  
-  
-  bool overflowAnchor =
-      disp->mOverflowAnchor == mozilla::StyleOverflowAnchor::Auto;
-
-  
-  
-  
-  
-  bool isScrolled = mScrollFrame->GetLogicalScrollPosition() != nsPoint();
-
-  
-  
-  
-  
-  
-  bool hasPerspective = Frame()->ChildrenHavePerspective();
 
   
   nsIFrame* oldAnchor = mAnchorNode;
-  if (overflowAnchor && isScrolled && !hasPerspective) {
-    ANCHOR_LOG("Beginning candidate selection.\n");
+  if (CanMaintainAnchor()) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        !mScrollFrame->mScrolledFrame->IsInScrollAnchorChain(),
+        "Our scrolled frame can't serve as or contain an anchor for an "
+        "ancestor if it can maintain its own anchor");
+    ANCHOR_LOG("Beginning selection.\n");
     mAnchorNode = FindAnchorIn(mScrollFrame->mScrolledFrame);
   } else {
-    if (!overflowAnchor) {
-      ANCHOR_LOG("Skipping candidate selection for `overflow-anchor: none`\n");
-    }
-    if (!isScrolled) {
-      ANCHOR_LOG("Skipping candidate selection for not being scrolled\n");
-    }
-    if (hasPerspective) {
-      ANCHOR_LOG(
-          "Skipping candidate selection for scroll frame with perspective\n");
-    }
+    ANCHOR_LOG("Skipping selection, doesn't maintain a scroll anchor");
     mAnchorNode = nullptr;
   }
 
@@ -360,13 +373,19 @@ void ScrollAnchorContainer::InvalidateAnchor(ScheduleSelection aSchedule) {
 
   if (mAnchorNode) {
     SetAnchorFlags(mScrollFrame->mScrolledFrame, mAnchorNode, false);
+  } else if (mScrollFrame->mScrolledFrame->IsInScrollAnchorChain()) {
+    
+    
+    
+    
+    
+    FindFor(Frame())->InvalidateAnchor();
   }
   mAnchorNode = nullptr;
   mAnchorNodeIsDirty = true;
   mLastAnchorOffset = 0;
 
-  if (mDisabled || aSchedule == ScheduleSelection::No ||
-      !StaticPrefs::layout_css_scroll_anchoring_enabled()) {
+  if (!CanMaintainAnchor() || aSchedule == ScheduleSelection::No) {
     return;
   }
 
@@ -521,9 +540,9 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
   const bool isAnonBox = aFrame->Style()->IsAnonBox();
 
   
-  
-  
   nsIScrollableFrame* scrollable = do_QueryFrame(aFrame);
+  const bool isScrollableWithAnchor =
+      scrollable && scrollable->Anchor()->CanMaintainAnchor();
 
   
   
@@ -535,7 +554,11 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
   
   
   
-  const bool canDescend = !scrollable && !isReplaced;
+  
+  
+  
+  
+  const bool canDescend = !isScrollableWithAnchor && !isReplaced;
 
   
   

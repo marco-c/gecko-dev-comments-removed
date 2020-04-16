@@ -10038,15 +10038,27 @@ bool nsIFrame::IsScrollAnchor(ScrollAnchorContainer** aOutContainer) {
     return false;
   }
 
-  ScrollAnchorContainer* container = ScrollAnchorContainer::FindFor(this);
-  if (container->AnchorNode() != this) {
-    return false;
+  nsIFrame* f = this;
+
+  
+  
+  
+  while (auto* container = ScrollAnchorContainer::FindFor(f)) {
+    
+    if (nsIFrame* anchor = container->AnchorNode()) {
+      if (anchor != this) {
+        return false;
+      }
+      if (aOutContainer) {
+        *aOutContainer = container;
+      }
+      return true;
+    }
+
+    f = container->Frame();
   }
 
-  if (aOutContainer) {
-    *aOutContainer = container;
-  }
-  return true;
+  return false;
 }
 
 bool nsIFrame::IsInScrollAnchorChain() const { return mInScrollAnchorChain; }

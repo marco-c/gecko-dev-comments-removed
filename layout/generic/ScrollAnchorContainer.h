@@ -66,6 +66,11 @@ class ScrollAnchorContainer final {
   
 
 
+  bool CanMaintainAnchor() const;
+
+  
+
+
 
   void UserScrolled();
 
