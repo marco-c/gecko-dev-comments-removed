@@ -430,7 +430,7 @@ class nsDocShell final : public nsDocLoader,
   }
 
   const mozilla::OriginAttributes& GetOriginAttributes() {
-    return mOriginAttributes;
+    return mBrowsingContext->OriginAttributesRef();
   }
 
   
@@ -991,10 +991,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  void AssertOriginAttributesMatchPrivateBrowsing();
-
-  
-  
   
   
   void FirePageHideNotificationInternal(bool aIsUnload,
@@ -1096,6 +1092,9 @@ class nsDocShell final : public nsDocLoader,
   nsresult HandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                         SameDocumentNavigationState& aState);
 
+  
+  void NotifyPrivateBrowsingChanged();
+
  private:  
   static nsIURIFixup* sURIFixup;
 
@@ -1111,7 +1110,6 @@ class nsDocShell final : public nsDocLoader,
   nsTObserverArray<nsWeakPtr> mPrivacyObservers;
   nsTObserverArray<nsWeakPtr> mReflowObservers;
   nsTObserverArray<nsWeakPtr> mScrollObservers;
-  mozilla::OriginAttributes mOriginAttributes;
   mozilla::UniquePtr<mozilla::dom::ClientSource> mInitialClientSource;
   nsCOMPtr<nsINetworkInterceptController> mInterceptController;
   RefPtr<nsDOMNavigationTiming> mTiming;
@@ -1244,13 +1242,6 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  
-  
-  
-  uint32_t mPrivateBrowsingId;
-
-  
-  
   DisplayMode mDisplayMode;
 
   
@@ -1308,13 +1299,9 @@ class nsDocShell final : public nsDocLoader,
   bool mDisableMetaRefreshWhenInactive : 1;
   bool mIsAppTab : 1;
   bool mUseGlobalHistory : 1;
-  bool mUseRemoteTabs : 1;
-  bool mUseRemoteSubframes : 1;
-  bool mUseTrackingProtection : 1;
   bool mDeviceSizeIsPageSize : 1;
   bool mWindowDraggingAllowed : 1;
   bool mInFrameSwap : 1;
-  bool mInheritPrivateBrowsingId : 1;
 
   
   
