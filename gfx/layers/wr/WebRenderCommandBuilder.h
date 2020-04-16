@@ -77,8 +77,6 @@ class WebRenderCommandBuilder final {
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderUserData>>
       WebRenderUserDataRefTable;
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
-  typedef nsTHashtable<nsRefPtrHashKey<WebRenderLocalCanvasData>>
-      LocalCanvasDataSet;
 
  public:
   explicit WebRenderCommandBuilder(WebRenderLayerManager* aManager);
@@ -201,17 +199,9 @@ class WebRenderCommandBuilder final {
     
     data->SetUsed(true);
 
-    switch (T::Type()) {
-      case WebRenderUserData::UserDataType::eCanvas:
-        mLastCanvasDatas.PutEntry(data->AsCanvasData());
-        break;
-      case WebRenderUserData::UserDataType::eLocalCanvas:
-        mLastLocalCanvasDatas.PutEntry(data->AsLocalCanvasData());
-        break;
-      default:
-        break;
+    if (T::Type() == WebRenderUserData::UserDataType::eCanvas) {
+      mLastCanvasDatas.PutEntry(data->AsCanvasData());
     }
-
     RefPtr<T> res = static_cast<T*>(data.get());
     return res.forget();
   }
@@ -244,8 +234,6 @@ class WebRenderCommandBuilder final {
 
   
   CanvasDataSet mLastCanvasDatas;
-  
-  LocalCanvasDataSet mLastLocalCanvasDatas;
 
   wr::RenderRootArray<wr::usize> mBuilderDumpIndex;
   wr::usize mDumpIndent;
