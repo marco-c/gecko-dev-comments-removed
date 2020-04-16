@@ -171,6 +171,9 @@ function cause(first, second) {
 }
 
 function initiator(first, second) {
+  const firstCause = first.cause.type;
+  const secondCause = second.cause.type;
+
   let firstInitiator = "";
   let firstInitiatorLineNumber = 0;
 
@@ -187,9 +190,21 @@ function initiator(first, second) {
     secondInitiatorLineNumber = second.cause.lastFrame.lineNumber;
   }
 
-  let result = compareValues(firstInitiator, secondInitiator);
-  if (result === 0) {
+  let result;
+  
+  if (!firstInitiator && !secondInitiator) {
+    result = compareValues(firstCause, secondCause);
+  } else if (!firstInitiator || !secondInitiator) {
+    
     result = compareValues(firstInitiatorLineNumber, secondInitiatorLineNumber);
+  } else {
+    result = compareValues(firstInitiator, secondInitiator);
+    if (result === 0) {
+      result = compareValues(
+        firstInitiatorLineNumber,
+        secondInitiatorLineNumber
+      );
+    }
   }
 
   return result || waterfall(first, second);
