@@ -78,7 +78,8 @@ mod build_bundled {
             .flag("-DSQLITE_SOUNDEX")
             .flag("-DSQLITE_THREADSAFE=1")
             .flag("-DSQLITE_USE_URI")
-            .flag("-DHAVE_USLEEP=1");
+            .flag("-DHAVE_USLEEP=1")
+            .warnings(false);
         
         
         

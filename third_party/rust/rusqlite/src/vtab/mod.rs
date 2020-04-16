@@ -71,7 +71,6 @@ unsafe impl<T: VTab> Sync for Module<T> {}
 
 
 
-
 fn zeroed_module() -> ffi::sqlite3_module {
     
     unsafe { std::mem::MaybeUninit::zeroed().assume_init() }

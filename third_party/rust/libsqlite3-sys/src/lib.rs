@@ -17,6 +17,7 @@ pub fn SQLITE_TRANSIENT() -> sqlite3_destructor_type {
 
 
 #[repr(i32)]
+#[non_exhaustive]
 pub enum Limit {
     
     SQLITE_LIMIT_LENGTH = SQLITE_LIMIT_LENGTH,
