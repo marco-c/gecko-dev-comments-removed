@@ -8,7 +8,6 @@
 include protocol PNecko;
 include protocol PStreamFilter;
 include InputStreamParams;
-include URIParams;
 include PBackgroundSharedTypes;
 include NeckoChannelParams;
 include IPCServiceWorkerDescriptor;
@@ -20,6 +19,7 @@ include "mozilla/net/NeckoMessageUtils.h";
 using class nsHttpHeaderArray from "nsHttpHeaderArray.h";
 using mozilla::net::NetAddr from "mozilla/net/DNS.h";
 using refcounted class nsIReferrerInfo from "mozilla/dom/ReferrerInfoUtils.h";
+using refcounted class nsIURI from "mozilla/ipc/URIUtils.h";
 using nsIHttpChannel::FlashPluginState from "mozilla/net/NeckoMessageUtils.h";
 using nsILoadInfo::CrossOriginOpenerPolicy from "nsILoadInfo.h";
 
@@ -49,7 +49,7 @@ parent:
                         uint32_t sourceRequestBlockingReason,
                         ChildLoadInfoForwarderArgs? targetLoadInfoForwarder,
                         uint32_t loadFlags, nsIReferrerInfo referrerInfo,
-                        URIParams? apiRedirectTo,
+                        nsIURI apiRedirectTo,
                         CorsPreflightArgs? corsPreflightArgs,
                         bool chooseAppcache);
 
@@ -86,7 +86,7 @@ parent:
 
   
   
-  async RemoveCorsPreflightCacheEntry(URIParams uri,
+  async RemoveCorsPreflightCacheEntry(nsIURI uri,
                                       PrincipalInfo requestingPrincipal);
 
   
@@ -161,7 +161,7 @@ child:
   
   
   async Redirect1Begin(uint32_t           registrarId,
-                       URIParams          newOriginalUri,
+                       nsIURI             newOriginalUri,
                        uint32_t           newLoadFlags,
                        uint32_t           redirectFlags,
                        ParentLoadInfoForwarderArgs loadInfoForwarder,
