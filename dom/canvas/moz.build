@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files('**'):
     BUG_COMPONENT = ('Core', 'Canvas: 2D')
@@ -28,8 +28,8 @@ with Files('test/chrome/*webgl*'):
 with Files('test/crossorigin/*webgl*'):
     BUG_COMPONENT = ('Core', 'Canvas: WebGL')
 
-# Change the following line(s) to avoid bug 1081323 (clobber after changing a manifest):
-# * Adjust failure errata for webgl-conf.
+
+
 
 MOCHITEST_MANIFESTS += [
     'test/crash/mochitest.ini',
@@ -67,9 +67,11 @@ EXPORTS.mozilla.dom += [
     'WebGLIpdl.h',
     'WebGLParent.h',
     'WebGLTypes.h',
+    'XRWebGLLayer.h',
 ]
 
-# Canvas 2D and common sources
+
+
 UNIFIED_SOURCES += [
     'CanvasImageCache.cpp',
     'CanvasRenderingContext2D.cpp',
@@ -79,13 +81,14 @@ UNIFIED_SOURCES += [
     'ImageBitmapRenderingContext.cpp',
     'ImageData.cpp',
     'OffscreenCanvas.cpp',
+    'XRWebGLLayer.cpp',
 ]
 
 SOURCES += [
     'ImageUtils.cpp',
 ]
 
-# WebGL Sources
+
 UNIFIED_SOURCES += [
     'CacheInvalidator.cpp',
     'ClientWebGLContext.cpp',
@@ -172,7 +175,7 @@ IPDL_SOURCES += [
     'PWebGL.ipdl',
 ]
 
-# Suppress warnings from third-party code.
+
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     SOURCES['MurmurHash3.cpp'].flags += ['-Wno-implicit-fallthrough']
 
@@ -183,7 +186,7 @@ LOCAL_INCLUDES += [
 include('/ipc/chromium/chromium-config.mozbuild')
 
 
-USE_LIBS += [ 'translator' ] # Grab the Angle shader translator.
+USE_LIBS += [ 'translator' ] 
 
 FINAL_LIBRARY = 'xul'
 LOCAL_INCLUDES += [
@@ -214,4 +217,4 @@ if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
     CXXFLAGS += ['-Werror=implicit-int-conversion']
 
 if CONFIG['CC_TYPE'] == 'gcc':
-    CXXFLAGS += ['-Wno-error=unused-result'] # GCC doesn't ignore (void)MustUse();
+    CXXFLAGS += ['-Wno-error=unused-result'] 

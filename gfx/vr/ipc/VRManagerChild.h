@@ -9,6 +9,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/WindowBinding.h"  
+#include "mozilla/dom/WebXRBinding.h"
+#include "mozilla/dom/XRFrame.h"
 #include "mozilla/gfx/PVRManagerChild.h"
 #include "mozilla/ipc/SharedMemory.h"  
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
@@ -22,6 +24,7 @@ class Promise;
 class GamepadManager;
 class Navigator;
 class VRDisplay;
+class FrameRequestCallback;
 }  
 namespace layers {
 class SyncObjectClient;
@@ -63,6 +66,7 @@ class VRManagerChild : public PVRManagerChild {
   void StopActivity();
   bool RuntimeSupportsVR() const;
   bool RuntimeSupportsAR() const;
+  bool RuntimeSupportsInline() const;
 
   void GetVRDisplays(nsTArray<RefPtr<VRDisplayClient>>& aDisplays);
   bool RefreshVRDisplaysWithCallback(uint64_t aWindowId);
@@ -86,8 +90,8 @@ class VRManagerChild : public PVRManagerChild {
   layers::LayersBackend GetBackendType() const;
   layers::SyncObjectClient* GetSyncObject() { return mSyncObject; }
 
-  nsresult ScheduleFrameRequestCallback(
-      mozilla::dom::FrameRequestCallback& aCallback, int32_t* aHandle);
+  nsresult ScheduleFrameRequestCallback(dom::FrameRequestCallback& aCallback,
+                                        int32_t* aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
   MOZ_CAN_RUN_SCRIPT
   void RunFrameRequestCallbacks();
@@ -155,17 +159,16 @@ class VRManagerChild : public PVRManagerChild {
 
   MessageLoop* mMessageLoop;
 
-  
-  
-  struct FrameRequest {
-    FrameRequest(mozilla::dom::FrameRequestCallback& aCallback, int32_t aHandle)
+  struct XRFrameRequest {
+    XRFrameRequest(mozilla::dom::FrameRequestCallback& aCallback,
+                   int32_t aHandle)
         : mCallback(&aCallback), mHandle(aHandle) {}
 
-    
-    
-    operator const RefPtr<mozilla::dom::FrameRequestCallback>&() const {
-      return mCallback;
-    }
+    XRFrameRequest(mozilla::dom::XRFrameRequestCallback& aCallback,
+                   mozilla::dom::XRFrame& aFrame, int32_t aHandle)
+        : mXRCallback(&aCallback), mXRFrame(&aFrame), mHandle(aHandle) {}
+    MOZ_CAN_RUN_SCRIPT
+    void Call(const DOMHighResTimeStamp& aTimeStamp);
 
     
     
@@ -173,10 +176,12 @@ class VRManagerChild : public PVRManagerChild {
     bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
 
     RefPtr<mozilla::dom::FrameRequestCallback> mCallback;
+    RefPtr<mozilla::dom::XRFrameRequestCallback> mXRCallback;
+    RefPtr<mozilla::dom::XRFrame> mXRFrame;
     int32_t mHandle;
   };
 
-  nsTArray<FrameRequest> mFrameRequestCallbacks;
+  nsTArray<XRFrameRequest> mFrameRequestCallbacks;
   
 
 

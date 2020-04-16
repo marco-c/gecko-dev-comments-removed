@@ -47,8 +47,8 @@ namespace gfx {
 
 
 
-#define SHMEM_VERSION "0.0.8"
-static const int32_t kVRExternalVersion = 15;
+#define SHMEM_VERSION "0.0.9"
+static const int32_t kVRExternalVersion = 16;
 
 
 
@@ -227,7 +227,14 @@ enum class VRDisplayCapabilityFlags : uint16_t {
   
 
 
-  Cap_All = (1 << 13) - 1
+
+
+
+  Cap_UseDepthValues = 1 << 13,
+  
+
+
+  Cap_All = (1 << 14) - 1
 };
 
 #ifdef MOZILLA_INTERNAL_API

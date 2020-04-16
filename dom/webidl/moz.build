@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
@@ -351,6 +351,12 @@ with Files("WebGPU*"):
 
 with Files("Webrtc*"):
     BUG_COMPONENT = ("Core", "WebRTC")
+
+with Files("WebXR.webidl"):
+    BUG_COMPONENT = ("Core", "WebVR")
+
+with Files("XR*"):
+    BUG_COMPONENT = ("Core", "WebVR")
 
 with Files("WheelEvent.webidl"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
@@ -950,6 +956,7 @@ WEBIDL_FILES = [
     'WebGLRenderingContext.webidl',
     'WebGPU.webidl',
     'WebSocket.webidl',
+    'WebXR.webidl',
     'WheelEvent.webidl',
     'WidevineCDMManifest.webidl',
     'WindowOrWorkerGlobalScope.webidl',
@@ -1030,8 +1037,8 @@ WEBIDL_FILES += [
     'StyleSheetApplicableStateChangeEvent.webidl',
 ]
 
-# We only expose our prefable test interfaces in debug builds, just to be on
-# the safe side.
+
+
 if CONFIG['MOZ_DEBUG'] and CONFIG['ENABLE_TESTS']:
     WEBIDL_FILES += ['TestFunctions.webidl',
                      'TestInterfaceJS.webidl',
@@ -1093,6 +1100,10 @@ GENERATED_EVENTS_WEBIDL_FILES = [
     'UDPMessageEvent.webidl',
     'UserProximityEvent.webidl',
     'WebGLContextEvent.webidl',
+    'XRInputSourceEvent.webidl',
+    'XRInputSourcesChangeEvent.webidl',
+    'XRReferenceSpaceEvent.webidl',
+    'XRSessionEvent.webidl',
 ]
 
 if CONFIG['MOZ_WEBRTC']:

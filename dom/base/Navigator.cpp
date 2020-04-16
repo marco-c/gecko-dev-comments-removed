@@ -53,6 +53,7 @@
 #include "mozilla/dom/VRDisplay.h"
 #include "mozilla/dom/VRDisplayEvent.h"
 #include "mozilla/dom/VRServiceTest.h"
+#include "mozilla/dom/XRSystem.h"
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 #include "mozilla/Hal.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -159,6 +160,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVRGetDisplaysPromises)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVRServiceTest)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSharePromise)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mXRSystem)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(Navigator)
@@ -219,6 +221,11 @@ void Navigator::Invalidate() {
   if (mVRServiceTest) {
     mVRServiceTest->Shutdown();
     mVRServiceTest = nullptr;
+  }
+
+  if (mXRSystem) {
+    mXRSystem->Shutdown();
+    mXRSystem = nullptr;
   }
 
   mMediaCapabilities = nullptr;
@@ -1525,19 +1532,40 @@ void Navigator::FinishGetVRDisplays(bool isWebVRSupportedInwindow, Promise* p) {
 }
 
 void Navigator::OnXRPermissionRequestAllow() {
+  
+  
   nsGlobalWindowInner* win = nsGlobalWindowInner::Cast(mWindow);
+  bool usingWebXR = false;
 
+  if (mXRSystem) {
+    usingWebXR = mXRSystem->OnXRPermissionRequestAllow();
+  }
+
+  bool rejectWebVR = true;
   
   
-  if (!VRDisplay::RefreshVRDisplays(win->WindowID())) {
+  if (!usingWebXR) {
+    
+    
+    
+    rejectWebVR = !VRDisplay::RefreshVRDisplays(win->WindowID());
+  }
+  
+  
+  if (rejectWebVR) {
     for (auto& p : mVRGetDisplaysPromises) {
       
       p->MaybeRejectWithTypeError("Failed to find attached VR displays.");
     }
+    mVRGetDisplaysPromises.Clear();
   }
 }
 
 void Navigator::OnXRPermissionRequestCancel() {
+  if (mXRSystem) {
+    mXRSystem->OnXRPermissionRequestCancel();
+  }
+
   nsTArray<RefPtr<VRDisplay>> vrDisplays;
   for (auto& p : mVRGetDisplaysPromises) {
     
@@ -1605,6 +1633,17 @@ VRServiceTest* Navigator::RequestVRServiceTest() {
     mVRServiceTest = VRServiceTest::CreateTestService(mWindow);
   }
   return mVRServiceTest;
+}
+
+XRSystem* Navigator::GetXr(ErrorResult& aRv) {
+  if (!mWindow) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return nullptr;
+  }
+  if (!mXRSystem) {
+    mXRSystem = XRSystem::Create(mWindow);
+  }
+  return mXRSystem;
 }
 
 bool Navigator::IsWebVRContentDetected() const {

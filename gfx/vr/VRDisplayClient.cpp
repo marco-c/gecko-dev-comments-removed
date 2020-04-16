@@ -14,8 +14,10 @@
 #include "nsString.h"
 #include "mozilla/dom/GamepadManager.h"
 #include "mozilla/dom/Gamepad.h"
+#include "mozilla/dom/XRSession.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Unused.h"
+#include "mozilla/dom/WebXRBinding.h"
 #include "nsServiceManagerUtils.h"
 
 #ifdef XP_WIN
@@ -50,13 +52,35 @@ void VRDisplayClient::UpdateDisplayInfo(const VRDisplayInfo& aDisplayInfo) {
 
 already_AddRefed<VRDisplayPresentation> VRDisplayClient::BeginPresentation(
     const nsTArray<mozilla::dom::VRLayer>& aLayers, uint32_t aGroup) {
-  ++mPresentationCount;
+  PresentationCreated();
   RefPtr<VRDisplayPresentation> presentation =
       new VRDisplayPresentation(this, aLayers, aGroup);
   return presentation.forget();
 }
 
+void VRDisplayClient::PresentationCreated() { ++mPresentationCount; }
+
 void VRDisplayClient::PresentationDestroyed() { --mPresentationCount; }
+
+void VRDisplayClient::SessionStarted(dom::XRSession* aSession) {
+  PresentationCreated();
+  mSessions.AppendElement(aSession);
+}
+void VRDisplayClient::SessionEnded(dom::XRSession* aSession) {
+  mSessions.RemoveElement(aSession);
+  PresentationDestroyed();
+}
+
+void VRDisplayClient::StartFrame() {
+  RefPtr<VRManagerChild> vm = VRManagerChild::Get();
+  vm->RunFrameRequestCallbacks();
+
+  nsTArray<RefPtr<dom::XRSession>> sessions;
+  sessions.AppendElements(mSessions);
+  for (auto session : sessions) {
+    session->StartFrame();
+  }
+}
 
 void VRDisplayClient::SetGroupMask(uint32_t aGroupMask) {
   VRManagerChild* vm = VRManagerChild::Get();
@@ -112,7 +136,7 @@ void VRDisplayClient::FireEvents() {
   
   if (mLastEventFrameId != mDisplayInfo.mFrameId) {
     mLastEventFrameId = mDisplayInfo.mFrameId;
-    vm->RunFrameRequestCallbacks();
+    StartFrame();
   }
 
   
@@ -489,4 +513,36 @@ void VRDisplayClient::StopVRNavigation(const TimeDuration& aTimeout) {
 
   VRManagerChild* vm = VRManagerChild::Get();
   vm->SendStopVRNavigation(mDisplayInfo.mDisplayID, aTimeout);
+}
+
+bool VRDisplayClient::IsReferenceSpaceTypeSupported(
+    dom::XRReferenceSpaceType aType) const {
+  
+
+
+
+
+
+
+
+
+  switch (aType) {
+    case dom::XRReferenceSpaceType::Viewer:
+      
+      return true;
+    case dom::XRReferenceSpaceType::Local:
+    case dom::XRReferenceSpaceType::Local_floor:
+      
+      return bool(mDisplayInfo.GetCapabilities() &
+                  (VRDisplayCapabilityFlags::Cap_ImmersiveVR |
+                   VRDisplayCapabilityFlags::Cap_ImmersiveAR));
+    case dom::XRReferenceSpaceType::Bounded_floor:
+      return bool(mDisplayInfo.GetCapabilities() &
+                  VRDisplayCapabilityFlags::Cap_StageParameters);
+    default:
+      NS_WARNING(
+          "Unknown XRReferenceSpaceType passed to "
+          "VRDisplayClient::IsReferenceSpaceTypeSupported");
+      return false;
+  }
 }

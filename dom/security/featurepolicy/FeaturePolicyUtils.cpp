@@ -51,6 +51,8 @@ static FeatureMap sExperimentalFeatures[] = {
     
     {"speaker", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+    
+    {"xr-spatial-tracking", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
 };
 
 
