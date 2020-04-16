@@ -30,6 +30,7 @@
 
 
 
+
 ALL_PROCESSES += [
     
     DllBlocklistEntry("npffaddon.dll", ALL_VERSIONS),
@@ -243,6 +244,8 @@ ALL_PROCESSES_TESTS += [
     DllBlocklistEntry("testdllblocklist_matchbyname.dll", ALL_VERSIONS),
     DllBlocklistEntry("testdllblocklist_matchbyversion.dll", (5, 5, 5, 5)),
     DllBlocklistEntry("testdllblocklist_allowbyversion.dll", (5, 5, 5, 5)),
+    RedirectToNoOpEntryPoint("testdllblocklist_noopentrypoint.dll",
+                             (5, 5, 5, 5)),
 ]
 
 BROWSER_PROCESS += [
