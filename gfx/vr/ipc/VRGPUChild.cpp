@@ -5,7 +5,9 @@
 
 
 #include "VRGPUChild.h"
+
 #include "mozilla/layers/CompositorThread.h"
+#include "VRManager.h"
 
 namespace mozilla {
 namespace gfx {
