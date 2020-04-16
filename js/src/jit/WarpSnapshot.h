@@ -21,6 +21,8 @@ class ModuleEnvironmentObject;
 
 namespace jit {
 
+class CacheIRStubInfo;
+
 #define WARP_OP_SNAPSHOT_LIST(_) \
   _(WarpArguments)               \
   _(WarpRegExp)                  \
@@ -28,7 +30,8 @@ namespace jit {
   _(WarpGetIntrinsic)            \
   _(WarpGetImport)               \
   _(WarpLambda)                  \
-  _(WarpRest)
+  _(WarpRest)                    \
+  _(WarpCacheIR)
 
 
 
@@ -229,6 +232,34 @@ class WarpLambda : public WarpOpSnapshot {
 #endif
 };
 
+
+class WarpCacheIR : public WarpOpSnapshot {
+  
+  WarpGCPtr<JitCode*> stubCode_;
+  const CacheIRStubInfo* stubInfo_;
+
+  
+  const uint8_t* stubData_;
+
+ public:
+  static constexpr Kind ThisKind = Kind::WarpCacheIR;
+
+  WarpCacheIR(uint32_t offset, JitCode* stubCode,
+              const CacheIRStubInfo* stubInfo, const uint8_t* stubData)
+      : WarpOpSnapshot(ThisKind, offset),
+        stubCode_(stubCode),
+        stubInfo_(stubInfo),
+        stubData_(stubData) {}
+
+  const CacheIRStubInfo* stubInfo() const { return stubInfo_; }
+  const uint8_t* stubData() const { return stubData_; }
+
+  void traceData(JSTracer* trc);
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
+};
 
 class WarpRest : public WarpOpSnapshot {
   WarpGCPtr<ArrayObject*> templateObject_;

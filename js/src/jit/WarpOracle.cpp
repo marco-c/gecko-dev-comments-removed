@@ -9,6 +9,9 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/ScopeExit.h"
 
+#include <algorithm>
+
+#include "jit/CacheIRCompiler.h"
 #include "jit/JitScript.h"
 #include "jit/JitSpewer.h"
 #include "jit/MIRGenerator.h"
@@ -380,6 +383,11 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
         break;
       }
 
+      case JSOp::GetName:
+      case JSOp::GetGName:
+        MOZ_TRY(maybeInlineIC(opSnapshots, script, loc));
+        break;
+
       case JSOp::Nop:
       case JSOp::NopDestructuring:
       case JSOp::TryDestructuring:
@@ -488,8 +496,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
       case JSOp::FunApply:
       case JSOp::New:
       case JSOp::SuperCall:
-      case JSOp::GetName:
-      case JSOp::GetGName:
       case JSOp::BindName:
       case JSOp::BindGName:
       case JSOp::GetProp:
@@ -594,4 +600,78 @@ AbortReasonOr<WarpScriptSnapshot*> WarpOracle::createScriptSnapshot(
   autoClearOpSnapshots.release();
 
   return scriptSnapshot;
+}
+
+AbortReasonOr<Ok> WarpOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
+                                            HandleScript script,
+                                            BytecodeLocation loc) {
+  
+  
+
+  MOZ_ASSERT(loc.opHasIC());
+
+  uint32_t offset = loc.bytecodeToOffset(script);
+
+  
+  const ICEntry& entry = script->jitScript()->icEntryFromPCOffset(offset);
+
+  ICStub* stub = entry.firstStub();
+
+  if (stub->isFallback()) {
+    
+    
+    return Ok();
+  }
+
+  if (!stub->next()->isFallback()) {
+    
+    return Ok();
+  }
+
+  
+  
+  
+  
+
+  const CacheIRStubInfo* stubInfo = nullptr;
+  const uint8_t* stubData = nullptr;
+  switch (stub->kind()) {
+    case ICStub::CacheIR_Regular:
+      stubInfo = stub->toCacheIR_Regular()->stubInfo();
+      stubData = stub->toCacheIR_Regular()->stubDataStart();
+      break;
+    case ICStub::CacheIR_Monitored:
+      stubInfo = stub->toCacheIR_Monitored()->stubInfo();
+      stubData = stub->toCacheIR_Monitored()->stubDataStart();
+      break;
+    case ICStub::CacheIR_Updated:
+      stubInfo = stub->toCacheIR_Updated()->stubInfo();
+      stubData = stub->toCacheIR_Updated()->stubDataStart();
+      break;
+    default:
+      MOZ_CRASH("Unexpected stub");
+  }
+
+  
+  
+  
+  
+  size_t bytesNeeded = stubInfo->stubDataSize();
+  uint8_t* stubDataCopy = alloc_.allocateArray<uint8_t>(bytesNeeded);
+  if (!stubDataCopy) {
+    return abort(AbortReason::Alloc);
+  }
+
+  
+  
+  std::copy_n(stubData, bytesNeeded, stubDataCopy);
+
+  JitCode* jitCode = stub->jitCode();
+
+  if (!AddOpSnapshot<WarpCacheIR>(alloc_, snapshots, offset, jitCode, stubInfo,
+                                  stubDataCopy)) {
+    return abort(AbortReason::Alloc);
+  }
+
+  return Ok();
 }
