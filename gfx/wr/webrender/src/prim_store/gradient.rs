@@ -19,6 +19,7 @@ use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStor
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
 use std::{hash, ops::{Deref, DerefMut}};
 use crate::util::pack_as_float;
+use crate::texture_cache::TEXTURE_REGION_DIMENSIONS;
 
 
 pub const GRADIENT_FP_STOPS: usize = 4;
@@ -151,9 +152,7 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
         
         
         
-        let supports_caching =
-            
-            item.extend_mode == ExtendMode::Clamp &&
+        let mut supports_caching =
             
             item.tile_spacing.w + item.stretch_size.w >= common.prim_size.width &&
             item.tile_spacing.h + item.stretch_size.h >= common.prim_size.height &&
@@ -162,6 +161,31 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
              item.start_point.y.approx_eq(&item.end_point.y)) &&
             
             item.nine_patch.is_none();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if supports_caching && item.extend_mode == ExtendMode::Repeat {
+            let single_repeat_size =
+                if item.start_point.x.approx_eq(&item.end_point.x) {
+                    item.end_point.y - item.start_point.y
+                } else {
+                    item.end_point.x - item.start_point.x
+                };
+            let downscaling = single_repeat_size as f32 / TEXTURE_REGION_DIMENSIONS as f32;
+            if downscaling < 0.1 {
+                
+                
+                supports_caching = false;
+            }
+        }
 
         
         

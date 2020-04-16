@@ -6,7 +6,7 @@ use api::{BorderRadius, ClipMode, ColorF, ColorU};
 use api::{ImageRendering, RepeatMode, PrimitiveFlags};
 use api::{PremultipliedColorF, PropertyBinding, Shadow, GradientStop};
 use api::{BoxShadowClipMode, LineStyle, LineOrientation, BorderStyle};
-use api::{PrimitiveKeyKind};
+use api::{PrimitiveKeyKind, ExtendMode};
 use api::units::*;
 use crate::border::{get_max_scale_for_border, build_border_instances};
 use crate::border::BorderSegmentCacheKey;
@@ -3267,17 +3267,20 @@ impl PrimitiveStore {
                     
                     
                     
-                    let (size, orientation, start_point, end_point) = if prim_data.start_point.x.approx_eq(&prim_data.end_point.x) {
-                        let start_point = -prim_data.start_point.y / gradient_size.height;
-                        let end_point = (prim_data.common.prim_size.height - prim_data.start_point.y) / gradient_size.height;
-                        let size = DeviceIntSize::new(16, TEXTURE_REGION_DIMENSIONS);
-                        (size, LineOrientation::Vertical, start_point, end_point)
-                    } else {
-                        let start_point = -prim_data.start_point.x / gradient_size.width;
-                        let end_point = (prim_data.common.prim_size.width - prim_data.start_point.x) / gradient_size.width;
-                        let size = DeviceIntSize::new(TEXTURE_REGION_DIMENSIONS, 16);
-                        (size, LineOrientation::Horizontal, start_point, end_point)
-                    };
+                    let (size, orientation, prim_start_offset, prim_end_offset) =
+                        if prim_data.start_point.x.approx_eq(&prim_data.end_point.x) {
+                            let prim_start_offset = -prim_data.start_point.y / gradient_size.height;
+                            let prim_end_offset = (prim_data.common.prim_size.height - prim_data.start_point.y)
+                                                    / gradient_size.height;
+                            let size = DeviceIntSize::new(16, TEXTURE_REGION_DIMENSIONS);
+                            (size, LineOrientation::Vertical, prim_start_offset, prim_end_offset)
+                        } else {
+                            let prim_start_offset = -prim_data.start_point.x / gradient_size.width;
+                            let prim_end_offset = (prim_data.common.prim_size.width - prim_data.start_point.x)
+                                                    / gradient_size.width;
+                            let size = DeviceIntSize::new(TEXTURE_REGION_DIMENSIONS, 16);
+                            (size, LineOrientation::Horizontal, prim_start_offset, prim_end_offset)
+                        };
 
                     
                     let mut stops = vec![GradientStopKey::empty(); prim_data.stops.len()];
@@ -3298,123 +3301,224 @@ impl PrimitiveStore {
                         }
                     }
 
-                    
-                    
-                    
-                    if start_point < 0.0 {
-                        stops.insert(0, GradientStopKey {
-                            offset: start_point,
-                            color : stops[0].color
-                        });
-                    }
-
-                    if end_point > 1.0 {
-                        stops.push( GradientStopKey {
-                            offset: end_point,
-                            color : stops[stops.len()-1].color
-                        });
-                    }
-
                     gradient.cache_segments.clear();
 
-                    let mut first_stop = 0;
                     
                     
-                    while first_stop < stops.len()-1 {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    fn emit_segments(start_offset: f32, 
+                                     end_offset: f32,   
+                                     gradient_offset_base: f32,
+                                     prim_start_offset: f32, 
+                                     prim_end_offset: f32,   
+                                     prim_origin_in: LayoutPoint,
+                                     prim_size_in: LayoutSize,
+                                     task_size: DeviceIntSize,
+                                     is_opaque: bool,
+                                     stops: &[GradientStopKey],
+                                     orientation: LineOrientation,
+                                     frame_state: &mut FrameBuildingState,
+                                     gradient: &mut LinearGradientPrimitive)
+                    {
+                        
+                        
+                        
+                        
+                        
+                        
+                        let mut first_stop = 0;
+                        
+                        
+                        while first_stop < stops.len()-1 {
 
-                        
-                        
-                        if stops[first_stop].offset > end_point {
-                            break;
-                        }
-
-                        
-                        
-                        let mut last_stop = first_stop;
-                        let mut hard_stop = false;   
-                        while last_stop < stops.len()-1 &&
-                              last_stop - first_stop + 1 < GRADIENT_FP_STOPS
-                        {
-                            if stops[last_stop+1].offset == stops[last_stop].offset {
-                                hard_stop = true;
-                                break;
+                            
+                            
+                            if stops[first_stop].offset > end_offset {
+                                return;
                             }
 
-                            last_stop = last_stop + 1;
-                        }
+                            
+                            
+                            let mut last_stop = first_stop;
+                            let mut hard_stop = false;   
+                            while last_stop < stops.len()-1 &&
+                                  last_stop - first_stop + 1 < GRADIENT_FP_STOPS
+                            {
+                                if stops[last_stop+1].offset == stops[last_stop].offset {
+                                    hard_stop = true;
+                                    break;
+                                }
 
-                        let num_stops = last_stop - first_stop + 1;
-
-                        
-                        if num_stops == 0 {
-                            first_stop = last_stop + 1;
-                            continue;
-                        }
-
-                        
-                        if stops[last_stop].offset < start_point {
-                            first_stop = if hard_stop { last_stop+1 } else { last_stop };
-                            continue;
-                        }
-
-                        let segment_start_point = start_point.max(stops[first_stop].offset);
-                        let segment_end_point   = end_point  .min(stops[last_stop ].offset);
-
-                        let mut segment_stops = [GradientStopKey::empty(); GRADIENT_FP_STOPS];
-                        for i in 0..num_stops {
-                            segment_stops[i] = stops[first_stop + i];
-                        }
-
-                        let cache_key = GradientCacheKey {
-                            orientation,
-                            start_stop_point: VectorKey {
-                                x: segment_start_point,
-                                y: segment_end_point,
-                            },
-                            stops: segment_stops,
-                        };
-
-                        let mut prim_origin = prim_instance.prim_origin;
-                        let mut prim_size   = prim_data.common.prim_size;
-
-                        let inv_length = 1.0 / ( end_point - start_point );
-                        if orientation == LineOrientation::Horizontal {
-                            prim_origin.x    += ( segment_start_point - start_point )       * inv_length * prim_size.width;
-                            prim_size.width  *= ( segment_end_point - segment_start_point ) * inv_length;
-                        } else {
-                            prim_origin.y    += ( segment_start_point - start_point )       * inv_length * prim_size.height;
-                            prim_size.height *= ( segment_end_point - segment_start_point ) * inv_length;
-                        }
-
-                        let local_rect = LayoutRect::new( prim_origin, prim_size );
-
-                        
-                        gradient.cache_segments.push(
-                            CachedGradientSegment {
-                                handle: frame_state.resource_cache.request_render_task(
-                                    RenderTaskCacheKey {
-                                        size,
-                                        kind: RenderTaskCacheKeyKind::Gradient(cache_key),
-                                    },
-                                    frame_state.gpu_cache,
-                                    frame_state.render_tasks,
-                                    None,
-                                    prim_data.stops_opacity.is_opaque,
-                                    |render_tasks| {
-                                        render_tasks.add().init(RenderTask::new_gradient(
-                                            size,
-                                            segment_stops,
-                                            orientation,
-                                            segment_start_point,
-                                            segment_end_point,
-                                        ))
-                                    }),
-                                local_rect: local_rect,
+                                last_stop = last_stop + 1;
                             }
-                        );
 
+                            let num_stops = last_stop - first_stop + 1;
+
+                            
+                            if num_stops == 0 {
+                                first_stop = last_stop + 1;
+                                continue;
+                            }
+
+                            
+                            if stops[last_stop].offset < start_offset {
+                                first_stop = if hard_stop { last_stop+1 } else { last_stop };
+                                continue;
+                            }
+
+                            let segment_start_point = start_offset.max(stops[first_stop].offset);
+                            let segment_end_point   = end_offset  .min(stops[last_stop ].offset);
+
+                            let mut segment_stops = [GradientStopKey::empty(); GRADIENT_FP_STOPS];
+                            for i in 0..num_stops {
+                                segment_stops[i] = stops[first_stop + i];
+                            }
+
+                            let cache_key = GradientCacheKey {
+                                orientation,
+                                start_stop_point: VectorKey {
+                                    x: segment_start_point,
+                                    y: segment_end_point,
+                                },
+                                stops: segment_stops,
+                            };
+
+                            let mut prim_origin = prim_origin_in;
+                            let mut prim_size   = prim_size_in;
+
+                            
+                            
+                            
+                            let inv_length = 1.0 / ( prim_end_offset - prim_start_offset );
+                            if orientation == LineOrientation::Horizontal {
+                                prim_origin.x    += ( segment_start_point + gradient_offset_base - prim_start_offset )
+                                                    * inv_length * prim_size.width;
+                                prim_size.width  *= ( segment_end_point - segment_start_point )
+                                                    * inv_length; 
+                            } else {
+                                prim_origin.y    += ( segment_start_point + gradient_offset_base - prim_start_offset )
+                                                    * inv_length * prim_size.height;
+                                prim_size.height *= ( segment_end_point - segment_start_point )
+                                                    * inv_length; 
+                            }
+
+                            
+                            if prim_size.area() > 0.0 {
+                                let local_rect = LayoutRect::new( prim_origin, prim_size );
+
+                                
+                                
+                                
+
+                                
+                                gradient.cache_segments.push(
+                                    CachedGradientSegment {
+                                        handle: frame_state.resource_cache.request_render_task(
+                                            RenderTaskCacheKey {
+                                                size: task_size,
+                                                kind: RenderTaskCacheKeyKind::Gradient(cache_key),
+                                            },
+                                            frame_state.gpu_cache,
+                                            frame_state.render_tasks,
+                                            None,
+                                            is_opaque,
+                                            |render_tasks| {
+                                                render_tasks.add().init(RenderTask::new_gradient(
+                                                    task_size,
+                                                    segment_stops,
+                                                    orientation,
+                                                    segment_start_point,
+                                                    segment_end_point,
+                                                ))
+                                            }),
+                                        local_rect: local_rect,
+                                    }
+                                );
+                            }
+
+                            
+                            first_stop = if hard_stop { last_stop + 1 } else { last_stop };
+                        }
+                    }
+
+                    if prim_data.extend_mode == ExtendMode::Clamp ||
+                       ( prim_start_offset >= 0.0 && prim_end_offset <= 1.0 )  
+                    {
                         
-                        first_stop = if hard_stop { last_stop + 1 } else { last_stop };
+                        
+                        
+                        if prim_start_offset < 0.0 {
+                            stops.insert(0, GradientStopKey {
+                                offset: prim_start_offset,
+                                color : stops[0].color
+                            });
+                        }
+
+                        if prim_end_offset > 1.0 {
+                            stops.push( GradientStopKey {
+                                offset: prim_end_offset,
+                                color : stops[stops.len()-1].color
+                            });
+                        }
+
+                        emit_segments(prim_start_offset, prim_end_offset,
+                                      0.0,
+                                      prim_start_offset, prim_end_offset,
+                                      prim_instance.prim_origin,
+                                      prim_data.common.prim_size,
+                                      size,
+                                      prim_data.stops_opacity.is_opaque,
+                                      &stops,
+                                      orientation,
+                                      frame_state,
+                                      gradient);
+                    }
+                    else
+                    {
+                        let mut segment_start_point = prim_start_offset;
+                        while segment_start_point < prim_end_offset {
+
+                            
+                            
+                            
+                            let gradient_offset_base = segment_start_point.floor();
+                            
+                            let repeat_start = segment_start_point - gradient_offset_base;
+                            
+                            
+                            let repeat_end = (gradient_offset_base + 1.0).min(prim_end_offset) - gradient_offset_base;
+
+                            emit_segments(repeat_start, repeat_end,
+                                          gradient_offset_base,
+                                          prim_start_offset, prim_end_offset,
+                                          prim_instance.prim_origin,
+                                          prim_data.common.prim_size,
+                                          size,
+                                          prim_data.stops_opacity.is_opaque,
+                                          &stops,
+                                          orientation,
+                                          frame_state,
+                                          gradient);
+
+                            segment_start_point = repeat_end + gradient_offset_base;
+                        }
                     }
                 }
 
