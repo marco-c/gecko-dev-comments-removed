@@ -44,16 +44,10 @@ class WarpOpSnapshot : public TempObject,
   
   uint32_t offset_ = 0;
 
-#if defined(DEBUG) || defined(JS_JITSPEW)
   Kind kind_;
-#endif
 
  protected:
-  WarpOpSnapshot(Kind kind, uint32_t offset) : offset_(offset) {
-#if defined(DEBUG) || defined(JS_JITSPEW)
-    kind_ = kind;
-#endif
-  }
+  WarpOpSnapshot(Kind kind, uint32_t offset) : offset_(offset), kind_(kind) {}
 
  public:
   uint32_t offset() const { return offset_; }
@@ -63,6 +57,14 @@ class WarpOpSnapshot : public TempObject,
     MOZ_ASSERT(kind_ == T::ThisKind);
     return static_cast<const T*>(this);
   }
+
+  template <typename T>
+  T* as() {
+    MOZ_ASSERT(kind_ == T::ThisKind);
+    return static_cast<T*>(this);
+  }
+
+  void trace(JSTracer* trc);
 
 #ifdef JS_JITSPEW
   void dump(GenericPrinter& out, JSScript* script) const;
@@ -83,6 +85,8 @@ class WarpArguments : public WarpOpSnapshot {
       : WarpOpSnapshot(ThisKind, offset), templateObj_(templateObj) {}
   ArgumentsObject* templateObj() const { return templateObj_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -99,6 +103,8 @@ class WarpRegExp : public WarpOpSnapshot {
       : WarpOpSnapshot(ThisKind, offset), hasShared_(hasShared) {}
   bool hasShared() const { return hasShared_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -106,7 +112,6 @@ class WarpRegExp : public WarpOpSnapshot {
 
 
 class WarpFunctionProto : public WarpOpSnapshot {
-  
   JSObject* proto_;
 
  public:
@@ -118,6 +123,8 @@ class WarpFunctionProto : public WarpOpSnapshot {
   }
   JSObject* proto() const { return proto_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -125,7 +132,6 @@ class WarpFunctionProto : public WarpOpSnapshot {
 
 
 class WarpGetIntrinsic : public WarpOpSnapshot {
-  
   Value intrinsic_;
 
  public:
@@ -135,6 +141,8 @@ class WarpGetIntrinsic : public WarpOpSnapshot {
       : WarpOpSnapshot(ThisKind, offset), intrinsic_(intrinsic) {}
   Value intrinsic() const { return intrinsic_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -142,7 +150,6 @@ class WarpGetIntrinsic : public WarpOpSnapshot {
 
 
 class WarpGetImport : public WarpOpSnapshot {
-  
   ModuleEnvironmentObject* targetEnv_;
   uint32_t numFixedSlots_;
   uint32_t slot_;
@@ -163,6 +170,8 @@ class WarpGetImport : public WarpOpSnapshot {
   uint32_t slot() const { return slot_; }
   bool needsLexicalCheck() const { return needsLexicalCheck_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -171,7 +180,6 @@ class WarpGetImport : public WarpOpSnapshot {
 
 
 class WarpLambda : public WarpOpSnapshot {
-  
   BaseScript* baseScript_;
   FunctionFlags flags_;
   uint16_t nargs_;
@@ -189,6 +197,8 @@ class WarpLambda : public WarpOpSnapshot {
   FunctionFlags flags() const { return flags_; }
   uint16_t nargs() const { return nargs_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
@@ -196,7 +206,6 @@ class WarpLambda : public WarpOpSnapshot {
 
 
 class WarpRest : public WarpOpSnapshot {
-  
   ArrayObject* templateObject_;
 
  public:
@@ -206,11 +215,12 @@ class WarpRest : public WarpOpSnapshot {
       : WarpOpSnapshot(ThisKind, offset), templateObject_(templateObject) {}
   ArrayObject* templateObject() const { return templateObject_; }
 
+  void traceData(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dumpData(GenericPrinter& out) const;
 #endif
 };
-
 
 
 class WarpEnvironment {
@@ -270,6 +280,8 @@ class WarpEnvironment {
     MOZ_ASSERT(kind_ == Kind::Function);
     return fun.namedLambdaTemplate_;
   }
+
+  void trace(JSTracer* trc);
 };
 
 
@@ -279,10 +291,8 @@ class WarpScriptSnapshot : public TempObject {
   WarpOpSnapshotList opSnapshots_;
 
   
-  
   ModuleObject* moduleObject_;
 
-  
   
   JSObject* instrumentationCallback_;
   mozilla::Maybe<int32_t> instrumentationScriptId_;
@@ -313,6 +323,8 @@ class WarpScriptSnapshot : public TempObject {
 
   bool isArrowFunction() const { return isArrowFunction_; }
 
+  void trace(JSTracer* trc);
+
 #ifdef JS_JITSPEW
   void dump(GenericPrinter& out) const;
 #endif
@@ -320,14 +332,10 @@ class WarpScriptSnapshot : public TempObject {
 
 
 
-
-
-
 class WarpSnapshot : public TempObject {
   
   WarpScriptSnapshot* script_;
 
-  
   
   
   LexicalEnvironmentObject* globalLexicalEnv_;
@@ -342,6 +350,8 @@ class WarpSnapshot : public TempObject {
     return globalLexicalEnv_;
   }
   Value globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
+
+  void trace(JSTracer* trc);
 
 #ifdef JS_JITSPEW
   void dump() const;
