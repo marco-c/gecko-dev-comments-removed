@@ -1324,7 +1324,7 @@ class GetUserMediaStreamRunnable : public Runnable {
                  }
                });
 
-    if (!IsPincipalInfoPrivate(mPrincipalInfo)) {
+    if (!IsPrincipalInfoPrivate(mPrincipalInfo)) {
       
       
       media::GetPrincipalKey(mPrincipalInfo, true)

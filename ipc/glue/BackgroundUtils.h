@@ -104,7 +104,7 @@ nsresult CSPToCSPInfo(nsIContentSecurityPolicy* aCSP, CSPInfo* aCSPInfo);
 
 
 
-bool IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
+bool IsPrincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
 
 
 
