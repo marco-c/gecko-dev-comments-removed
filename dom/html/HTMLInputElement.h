@@ -1482,7 +1482,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  nsAutoPtr<DateTimeValue> mDateTimeInputBoxValue;
+  UniquePtr<DateTimeValue> mDateTimeInputBoxValue;
 
   
 
