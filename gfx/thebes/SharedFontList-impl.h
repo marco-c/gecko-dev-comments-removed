@@ -270,20 +270,19 @@ class FontList {
  private:
   struct ShmBlock {
     
-    ShmBlock(base::SharedMemory* aShmem, void* aAddr)
-        : mShmem(aShmem), mAddr(aAddr) {}
+    ShmBlock(base::SharedMemory* aShmem) : mShmem(aShmem) {}
+
+    
+    void* Memory() const { return mShmem->memory(); }
 
     
     
     
     std::atomic<uint32_t>& Allocated() const {
-      return *static_cast<std::atomic<uint32_t>*>(mAddr);
+      return *static_cast<std::atomic<uint32_t>*>(Memory());
     }
 
     mozilla::UniquePtr<base::SharedMemory> mShmem;
-    void* mAddr;  
-                  
-                  
   };
 
   Header& GetHeader() {
