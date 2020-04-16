@@ -225,11 +225,12 @@ class FontList {
 
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
                               base::SharedMemoryHandle* aOut) {
-    if (aIndex >= mBlocks.Length()) {
+    MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
+    if (aIndex >= mReadOnlyShmems.Length()) {
       
       *aOut = base::SharedMemory::NULLHandle();
     }
-    if (!mBlocks[aIndex]->mShmem->ShareToProcess(aPid, aOut)) {
+    if (!mReadOnlyShmems[aIndex]->ShareToProcess(aPid, aOut)) {
       MOZ_CRASH("failed to share block");
     }
   }
@@ -325,6 +326,12 @@ class FontList {
 
 
   nsTArray<mozilla::UniquePtr<ShmBlock>> mBlocks;
+
+  
+
+
+
+  nsTArray<mozilla::UniquePtr<base::SharedMemory>> mReadOnlyShmems;
 };
 
 }  
