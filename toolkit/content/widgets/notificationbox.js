@@ -1,25 +1,25 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-// This is loaded into chrome windows with the subscript loader. If you need to
-// define globals, wrap in a block to prevent leaking onto `window`.
+
+
 {
   const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
   );
 
   MozElements.NotificationBox = class NotificationBox {
-    /**
-     * Creates a new class to handle a notification box, but does not add any
-     * elements to the DOM until a notification has to be displayed.
-     *
-     * @param insertElementFn
-     *        Called with the "notification-stack" element as an argument when the
-     *        first notification has to be displayed.
-     */
+    
+
+
+
+
+
+
+
     constructor(insertElementFn) {
       this._insertElementFn = insertElementFn;
       this._animating = false;
@@ -51,7 +51,7 @@
     }
 
     get allNotifications() {
-      // Don't create any DOM if no new notification has been added yet.
+      
       if (!this._stack) {
         return [];
       }
@@ -74,50 +74,50 @@
       return null;
     }
 
-    /**
-     * Creates a <notification> element and shows it. The calling code can modify
-     * the element synchronously to add features to the notification.
-     *
-     * @param aLabel
-     *        The main message text, or a DocumentFragment containing elements to
-     *        add as children of the notification's main <description> element.
-     * @param aValue
-     *        String identifier of the notification.
-     * @param aImage
-     *        URL of the icon image to display. If not specified, a default icon
-     *        based on the priority will be shown.
-     * @param aPriority
-     *        One of the PRIORITY_ constants. These determine the appearance of
-     *        the notification based on severity (using the "type" attribute), and
-     *        only the notification with the highest priority is displayed.
-     * @param aButtons
-     *        Array of objects defining action buttons:
-     *        {
-     *          label:
-     *            Label of the <button> element.
-     *          accessKey:
-     *            Access key character for the <button> element.
-     *          callback:
-     *            When the button is used, this is called with the arguments:
-     *             1. The <notification> element.
-     *             2. This button object definition.
-     *             3. The <button> element.
-     *             4. The "command" event.
-     *          popup:
-     *            If specified, the button will open the popup element with this
-     *            ID, anchored to the button. This is alternative to "callback".
-     *          is:
-     *            Defines a Custom Element name to use as the "is" value on
-     *            button creation.
-     *        }
-     * @param aEventCallback
-     *        This may be called with the "removed" or "dismissed" parameter.
-     * @param aNotificationIs
-     *        Defines a Custom Element name to use as the "is" value on creation.
-     *        This allows subclassing the created element.
-     *
-     * @return The <notification> element that is shown.
-     */
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     appendNotification(
       aLabel,
       aValue,
@@ -134,8 +134,8 @@
         throw new Error("Invalid notification priority " + aPriority);
       }
 
-      // check for where the notification should be inserted according to
-      // priority. If two are equal, the existing one appears on top.
+      
+      
       var notifications = this.allNotifications;
       var insertPos = null;
       for (var n = notifications.length - 1; n >= 0; n--) {
@@ -145,16 +145,16 @@
         insertPos = notifications[n];
       }
 
-      // Create the Custom Element and connect it to the document immediately.
+      
       var newitem = document.createXULElement(
         "notification",
         aNotificationIs ? { is: aNotificationIs } : {}
       );
       this.stack.insertBefore(newitem, insertPos);
 
-      // Custom notification classes may not have the messageText property.
+      
       if (newitem.messageText) {
-        // Can't use instanceof in case this was created from a different document:
+        
         if (
           aLabel &&
           typeof aLabel == "object" &&
@@ -213,7 +213,7 @@
         this._showNotification(newitem, true);
       }
 
-      // Fire event for accessibility APIs
+      
       var event = document.createEvent("Events");
       event.initEvent("AlertActive", true, true);
       newitem.dispatchEvent(event);
@@ -236,7 +236,7 @@
       }
       this.stack.removeChild(aChild);
 
-      // make sure focus doesn't get lost (workaround for bug 570835)
+      
       if (!Services.focus.getFocusedElementForWindow(window, false, {})) {
         Services.focus.moveFocus(
           window,
@@ -262,12 +262,12 @@
       }
       this.currentNotification = null;
 
-      // Clean up any currently-animating notification; this is necessary
-      // if a notification was just opened and is still animating, but we
-      // want to close it *without* animating.  This can even happen if
-      // the user toggled `toolkit.cosmeticAnimations.enabled` to false
-      // and called this method immediately after an animated notification
-      // displayed (although this case isn't very likely).
+      
+      
+      
+      
+      
+      
       if (aImmediate || !this._allowAnimation) {
         this._finishAnimation();
       }
@@ -334,7 +334,7 @@
     }
   };
 
-  // These are defined on the instance prototype for backwards compatibility.
+  
   Object.assign(MozElements.NotificationBox.prototype, {
     PRIORITY_INFO_LOW: 1,
     PRIORITY_INFO_MEDIUM: 2,
@@ -348,17 +348,8 @@
   });
 
   MozElements.Notification = class Notification extends MozXULElement {
-    constructor() {
-      super();
-      this.persistence = 0;
-      this.priority = 0;
-      this.timeout = 0;
-    }
-
-    connectedCallback() {
-      this.appendChild(
-        MozXULElement.parseXULToFragment(
-          `
+    static get markup() {
+      return `
       <hbox class="messageDetails" align="center" flex="1"
             oncommand="this.parentNode._doButtonCommand(event);">
         <image class="messageImage"/>
@@ -369,10 +360,22 @@
                      class="messageCloseButton close-icon tabbable"
                      tooltiptext="&closeNotification.tooltip;"
                      oncommand="this.parentNode.dismiss();"/>
-    `,
-          ["chrome://global/locale/notification.dtd"]
-        )
-      );
+      `;
+    }
+
+    static get entities() {
+      return ["chrome://global/locale/notification.dtd"];
+    }
+
+    constructor() {
+      super();
+      this.persistence = 0;
+      this.priority = 0;
+      this.timeout = 0;
+    }
+
+    connectedCallback() {
+      this.appendChild(this.constructor.fragment);
 
       for (let [propertyName, selector] of [
         ["messageDetails", ".messageDetails"],
@@ -388,19 +391,19 @@
       return this.closest(".notificationbox-stack")._notificationBox;
     }
 
-    /**
-     * Changes the text of an existing notification. If the notification was
-     * created with a custom fragment, it will be overwritten with plain text.
-     */
+    
+
+
+
     set label(value) {
       this.messageText.textContent = value;
     }
 
-    /**
-     * This method should only be called when the user has manually closed the
-     * notification. If you want to programmatically close the notification, you
-     * should call close() instead.
-     */
+    
+
+
+
+
     dismiss() {
       if (this.eventCallback) {
         this.eventCallback("dismissed");
