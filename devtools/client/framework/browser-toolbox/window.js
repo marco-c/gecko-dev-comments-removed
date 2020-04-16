@@ -135,8 +135,6 @@ function setPrefDefaults() {
     "devtools.command-button-noautohide.enabled",
     true
   );
-  
-  Services.prefs.setBoolPref("devtools.debugger.source-maps-enabled", false);
   Services.prefs.setBoolPref("devtools.performance.new-panel-enabled", false);
   Services.prefs.setBoolPref("layout.css.emulate-moz-box-with-flex", false);
 
