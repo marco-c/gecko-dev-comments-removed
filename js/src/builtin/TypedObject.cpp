@@ -1284,7 +1284,7 @@ static bool DefineSimpleTypeDescr(JSContext* cx, Handle<GlobalObject*> global,
   
   
   Rooted<TypedProto*> proto(cx);
-  proto = NewObjectWithGivenProto<TypedProto>(cx, objProto, TenuredObject);
+  proto = NewTenuredObjectWithGivenProto<TypedProto>(cx, objProto);
   if (!proto) {
     return false;
   }

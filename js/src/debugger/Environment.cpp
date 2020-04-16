@@ -36,7 +36,7 @@
 
 #include "vm/Compartment-inl.h"        
 #include "vm/EnvironmentObject-inl.h"  
-#include "vm/JSObject-inl.h"           
+#include "vm/JSObject-inl.h"  
 #include "vm/ObjectOperations-inl.h"   
 #include "vm/Realm-inl.h"              
 
@@ -402,7 +402,7 @@ DebuggerEnvironment* DebuggerEnvironment::create(JSContext* cx,
   NewObjectKind newKind =
       IsInsideNursery(referent) ? GenericObject : TenuredObject;
   DebuggerEnvironment* obj =
-      NewObjectWithGivenProto<DebuggerEnvironment>(cx, proto, newKind);
+      NewObjectWithGivenProtoAndKind<DebuggerEnvironment>(cx, proto, newKind);
   if (!obj) {
     return nullptr;
   }
