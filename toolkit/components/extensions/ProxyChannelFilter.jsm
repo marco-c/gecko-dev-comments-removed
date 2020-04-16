@@ -339,8 +339,7 @@ class ProxyChannelFilter {
 
 
 
-
-  async applyFilter(service, channel, defaultProxyInfo, proxyFilter) {
+  async applyFilter(channel, defaultProxyInfo, proxyFilter) {
     let proxyInfo;
     try {
       let wrapper = ChannelWrapper.get(channel);

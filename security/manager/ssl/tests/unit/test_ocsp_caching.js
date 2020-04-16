@@ -282,7 +282,7 @@ function add_tests() {
     
     
     let proxyFilter = {
-      applyFilter(aProxyService, aChannel, aProxy, aCallback) {
+      applyFilter(aChannel, aProxy, aCallback) {
         
         if (aChannel.originalURI.spec == "http://localhost:8888/") {
           gObservedCnt++;
