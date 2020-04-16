@@ -25,11 +25,7 @@ static bool MOZ_FORMAT_PRINTF(2, 3)
   return output && !strcmp(output.get(), expect);
 }
 
-static const char* zero() {
-  
-  
-  return uintptr_t(&zero) == 0x10 ? "never happens" : nullptr;
-}
+static const char* zero() { return nullptr; }
 
 BEGIN_TEST(testPrintf) {
   CHECK(print_one("23", "%d", 23));

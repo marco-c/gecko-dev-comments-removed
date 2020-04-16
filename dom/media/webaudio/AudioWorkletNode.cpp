@@ -805,28 +805,17 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   auto workletImpl = static_cast<AudioWorkletImpl*>(worklet->Impl());
   audioWorkletNode->mTrack->SendRunnable(NS_NewRunnableFunction(
       "WorkletNodeEngine::ConstructProcessor",
-  
-  
-  
-  
-  
-  
-  
-#ifdef __clang__
-#  define AND_MUTABLE(macro) macro mutable
-#else
-#  define AND_MUTABLE(macro) mutable macro
-#endif
+      
+      
       [track = audioWorkletNode->mTrack,
        workletImpl = RefPtr<AudioWorkletImpl>(workletImpl),
        name = nsString(aName), options = std::move(serializedOptions),
        portId = std::move(processorPortId)]()
-          AND_MUTABLE(MOZ_CAN_RUN_SCRIPT_BOUNDARY) {
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY mutable {
             auto engine = static_cast<WorkletNodeEngine*>(track->Engine());
             engine->ConstructProcessor(
                 workletImpl, name, WrapNotNull(options.get()), portId, track);
           }));
-#undef AND_MUTABLE
 
   
   
