@@ -137,7 +137,7 @@ function setPrefDefaults() {
   );
   
   Services.prefs.setBoolPref("devtools.debugger.source-maps-enabled", false);
-  Services.prefs.setBoolPref("devtools.preference.new-panel-enabled", false);
+  Services.prefs.setBoolPref("devtools.performance.new-panel-enabled", false);
   Services.prefs.setBoolPref("layout.css.emulate-moz-box-with-flex", false);
 
   Services.prefs.setBoolPref("devtools.performance.enabled", false);
