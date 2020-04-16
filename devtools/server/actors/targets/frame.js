@@ -13,7 +13,6 @@
 
 
 
-var { Cr } = require("chrome");
 var {
   BrowsingContextTargetActor,
   browsingContextTargetPrototype,
@@ -41,14 +40,7 @@ const frameTargetPrototype = extend({}, browsingContextTargetPrototype);
 frameTargetPrototype.initialize = function(connection, docShell) {
   BrowsingContextTargetActor.prototype.initialize.call(this, connection);
 
-  
-  
-  
-  this._messageManager = docShell.messageManager;
-
   this.traits.reconfigure = false;
-  this._sendForm = this._sendForm.bind(this);
-  this._messageManager.addMessageListener("debug:form", this._sendForm);
 
   Object.defineProperty(this, "docShell", {
     value: docShell,
@@ -63,34 +55,6 @@ Object.defineProperty(frameTargetPrototype, "title", {
   enumerable: true,
   configurable: true,
 });
-
-frameTargetPrototype.exit = function() {
-  if (this._sendForm) {
-    try {
-      this._messageManager.removeMessageListener("debug:form", this._sendForm);
-    } catch (e) {
-      if (e.result != Cr.NS_ERROR_NULL_POINTER) {
-        throw e;
-      }
-      
-      
-      
-    }
-    this._sendForm = null;
-  }
-
-  BrowsingContextTargetActor.prototype.exit.call(this);
-
-  this._messageManager = null;
-};
-
-
-
-
-
-frameTargetPrototype._sendForm = function() {
-  this._messageManager.sendAsyncMessage("debug:form", this.form());
-};
 
 exports.FrameTargetActor = ActorClassWithSpec(
   frameTargetSpec,

@@ -39,25 +39,51 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     Actor.prototype.initialize.call(this, connection);
     this._conn = connection;
     this._browser = browser;
-    this._form = null;
     this.exited = false;
-
-    
-    
-    
-    this._formUpdateReject = null;
   },
 
   form() {
-    return {
+    const form = {
       actor: this.actorID,
+      browsingContextID:
+        this._browser && this._browser.browsingContext
+          ? this._browser.browsingContext.id
+          : null,
+      outerWindowID: this._getOuterWindowId(),
       selected: this.selected,
+      title: this._getZombieTabTitle(),
       traits: {
         
         
         getFavicon: true,
+        
+        
+        
+        
+        hasTabInfo: true,
       },
+      url: this._getUrl(),
     };
+
+    return form;
+  },
+
+  _getUrl() {
+    if (!this._browser || !this._browser.browsingContext) {
+      return "";
+    }
+
+    const { browsingContext } = this._browser;
+    return browsingContext.currentWindowGlobal.documentURI.spec;
+  },
+
+  _getOuterWindowId() {
+    if (!this._browser || !this._browser.browsingContext) {
+      return "";
+    }
+
+    const { browsingContext } = this._browser;
+    return browsingContext.currentWindowGlobal.outerWindowId;
   },
 
   get selected() {
@@ -78,9 +104,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
         message: "Tab destroyed while performing a TabDescriptorActor update",
       };
     }
-    if (this._form) {
-      return this._form;
-    }
+
     
     return new Promise(async (resolve, reject) => {
       const onDestroy = () => {
@@ -105,7 +129,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
         );
 
         const form = this._createTargetForm(connectForm);
-        this._form = form;
         resolve(form);
       } catch (e) {
         reject({
@@ -123,14 +146,6 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     return null;
   },
 
-  get _mm() {
-    
-    
-    return (
-      this._browser.messageManager || this._browser.frameLoader.messageManager
-    );
-  },
-
   async getFavicon() {
     if (!AppConstants.MOZ_PLACES) {
       
@@ -138,40 +153,12 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     }
 
     try {
-      const { data } = await PlacesUtils.promiseFaviconData(this._form.url);
+      const { data } = await PlacesUtils.promiseFaviconData(this._getUrl());
       return data;
     } catch (e) {
       
       return null;
     }
-  },
-
-  async update() {
-    
-    
-    
-    if (!this._form) {
-      return;
-    }
-
-    const form = await new Promise((resolve, reject) => {
-      this._formUpdateReject = reject;
-      const onFormUpdate = msg => {
-        
-        if (this._form.actor != msg.json.actor) {
-          return;
-        }
-        this._mm.removeMessageListener("debug:form", onFormUpdate);
-
-        this._formUpdateReject = null;
-        resolve(msg.json);
-      };
-
-      this._mm.addMessageListener("debug:form", onFormUpdate);
-      this._mm.sendAsyncMessage("debug:form");
-    });
-
-    this._form = form;
   },
 
   _isZombieTab() {
@@ -210,15 +197,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
   },
 
   destroy() {
-    if (this._formUpdateReject) {
-      this._formUpdateReject({
-        error: "tabDestroyed",
-        message: "Tab destroyed while performing a TabDescriptorActor update",
-      });
-      this._formUpdateReject = null;
-    }
     this._browser = null;
-    this._form = null;
     this.exited = true;
     this.emit("exited");
 

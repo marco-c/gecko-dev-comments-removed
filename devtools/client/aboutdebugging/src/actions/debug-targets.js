@@ -215,7 +215,7 @@ function requestTabs() {
 
       
       await Promise.all(
-        tabs.map(async tab => (tab.favicon = await getTabFavicon(tab)))
+        tabs.map(descriptorFront => descriptorFront.retrieveAsyncFormData())
       );
 
       dispatch({ type: REQUEST_TABS_SUCCESS, tabs });
@@ -223,29 +223,6 @@ function requestTabs() {
       dispatch({ type: REQUEST_TABS_FAILURE, error: e });
     }
   };
-}
-
-async function getTabFavicon(targetFront) {
-  const { descriptorFront } = targetFront;
-  if (!descriptorFront || !descriptorFront.traits.getFavicon) {
-    
-    
-    
-    
-    return targetFront.favicon;
-  }
-
-  try {
-    const favicon = await descriptorFront.getFavicon();
-    return favicon;
-  } catch (e) {
-    
-    
-    if (targetFront.actorID) {
-      console.error("Failed to retrieve the favicon for " + targetFront.url, e);
-    }
-    return "";
-  }
 }
 
 function requestExtensions() {
