@@ -278,6 +278,10 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
     if (markEntry(marker, e.front().mutableKey(), e.front().value())) {
       markedAny = true;
     }
+    if (!marker->incrementalWeakMapMarkingEnabled && !marker->isWeakMarking()) {
+      
+      continue;
+    }
 
     JSRuntime* rt = zone()->runtimeFromAnyThread();
     CellColor keyColor =

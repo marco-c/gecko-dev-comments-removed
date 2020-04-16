@@ -2597,7 +2597,9 @@ GCMarker::GCMarker(JSRuntime* rt)
       markQueue(rt),
       queuePos(0)
 #endif
-{
+      ,
+      incrementalWeakMapMarkingEnabled(
+          TuningDefaults::IncrementalWeakMapMarkingEnabled) {
   setTraceWeakEdges(false);
 }
 
@@ -2764,6 +2766,19 @@ bool GCMarker::enterWeakMarkingMode() {
 IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
                                                    SliceBudget& budget) {
   MOZ_ASSERT(marker->isWeakMarking());
+
+  if (!marker->incrementalWeakMapMarkingEnabled) {
+    
+    
+    mozilla::Unused << gcWeakKeys().clear();
+
+    for (WeakMapBase* m : gcWeakMapList()) {
+      if (m->mapColor) {
+        mozilla::Unused << m->markEntries(marker);
+      }
+    }
+    return IncrementalProgress::Finished;
+  }
 
   
   

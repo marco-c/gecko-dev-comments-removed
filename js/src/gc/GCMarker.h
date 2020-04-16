@@ -487,7 +487,17 @@ class GCMarker : public JSTracer {
   
   MainThreadOrGCTaskData<MarkingState> state;
 
+ public:
+  
+
+
+
+
+
+  MainThreadOrGCTaskData<bool> incrementalWeakMapMarkingEnabled;
+
 #ifdef DEBUG
+ private:
   
   MainThreadOrGCTaskData<size_t> markLaterArenas;
 

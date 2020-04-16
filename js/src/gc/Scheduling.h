@@ -399,6 +399,9 @@ static const JSGCMode Mode = JSGC_MODE_ZONE_INCREMENTAL;
 static const bool CompactingEnabled = true;
 
 
+static const bool IncrementalWeakMapMarkingEnabled = false;
+
+
 static const uint32_t NurseryFreeThresholdForIdleCollection = ChunkSize / 4;
 
 
