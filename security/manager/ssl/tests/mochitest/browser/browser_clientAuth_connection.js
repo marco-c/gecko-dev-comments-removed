@@ -20,9 +20,7 @@ const DialogState = {
   RETURN_CERT_NOT_SELECTED: "RETURN_CERT_NOT_SELECTED",
 };
 
-var sdr = Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing);
-
-var gExpectedClientCertificateChoices;
+let sdr = Cc["@mozilla.org/security/sdr;1"].getService(Ci.nsISecretDecoderRing);
 
 
 const gClientAuthDialogs = {
@@ -95,11 +93,7 @@ const gClientAuthDialogs = {
     
     
     Assert.notEqual(certList, null, "Cert list should not be null");
-    Assert.equal(
-      certList.length,
-      gExpectedClientCertificateChoices,
-      `${gExpectedClientCertificateChoices} certificates should be available`
-    );
+    Assert.equal(certList.length, 2, "2 certificate should be available");
 
     for (let cert of certList.enumerate(Ci.nsIX509Cert)) {
       Assert.notEqual(cert, null, "Cert list should contain nsIX509Certs");
@@ -135,16 +129,6 @@ add_task(async function setup() {
   
   
   await readCertificate("pgo-ca-all-usages.pem", "CTu,CTu,CTu");
-  
-  
-  
-  
-  
-  
-  
-  
-  await readCertificate("client-cert-via-intermediate.pem", ",,");
-  gExpectedClientCertificateChoices = 2;
 });
 
 
@@ -181,7 +165,7 @@ async function testHelper(prefValue, expectedURL, options = undefined) {
   let loadedURL = win.gBrowser.selectedBrowser.documentURI.spec;
   Assert.ok(
     loadedURL.startsWith(expectedURL),
-    `Expected and actual URLs should match (got '${loadedURL}', expected '${expectedURL}')`
+    "Expected and actual URLs should match"
   );
   Assert.equal(
     gClientAuthDialogs.chooseCertificateCalled,
@@ -251,37 +235,4 @@ add_task(async function testClearPrivateBrowsingState() {
   
   
   sdr.logoutAndTeardown();
-});
-
-
-
-add_task(async function testCertFilteringWithIntermediate() {
-  let intermediateBytes = await OS.File.read(
-    getTestFilePath("intermediate.pem")
-  ).then(
-    data => {
-      let decoder = new TextDecoder();
-      let pem = decoder.decode(data);
-      let base64 = pemToBase64(pem);
-      let bin = atob(base64);
-      let bytes = [];
-      for (let i = 0; i < bin.length; i++) {
-        bytes.push(bin.charCodeAt(i));
-      }
-      return bytes;
-    },
-    error => {
-      throw error;
-    }
-  );
-  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
-  nssComponent.addEnterpriseIntermediate(intermediateBytes);
-  gExpectedClientCertificateChoices = 3;
-  gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
-  await testHelper("Ask Every Time", "https://requireclientcert.example.com/");
-  sdr.logoutAndTeardown();
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["security.enterprise_roots.enabled", true]],
-  });
 });
