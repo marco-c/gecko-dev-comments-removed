@@ -608,7 +608,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-#urlbar[textoverflow="left"][domaindir="rtl"]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-scheme:valid {
+#urlbar[textoverflow="left"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-scheme:valid {
   visibility: visible;
 }
 
@@ -618,28 +618,19 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 #urlbar[textoverflow="right"]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
   mask-image: linear-gradient(to left, transparent, black 3ch);
 }
-#urlbar[textoverflow="left"][domaindir="rtl"]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
-  mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
+
+#urlbar[textoverflow="left"][rtltext]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+  mask-image: linear-gradient(to right, transparent, black 3ch);
 }
 
-#urlbar[textoverflow="left"][rtltext]:not([focused]):not([domaindir]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input,
-#urlbar[textoverflow="right"][rtltext]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
-  mask-image: linear-gradient(to right, transparent, black 3ch);
+#urlbar[textoverflow="left"][hasrtldomain]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
+  mask-image: linear-gradient(to right, transparent var(--urlbar-scheme-size), black calc(var(--urlbar-scheme-size) + 3ch));
 }
 
 #urlbar-input {
   mask-repeat: no-repeat;
   unicode-bidi: plaintext;
   text-align: match-parent;
-}
-
-#urlbar[domaindir]:not([focused]) > #urlbar-input-container > .urlbar-input-box > #urlbar-input {
-  
-
-
-
-  direction: ltr;
-  unicode-bidi: embed;
 }
 
 
