@@ -4762,11 +4762,13 @@ class nsIFrame : public nsQueryFrame {
 
 
   void DumpFrameTree() const;
+  void DumpFrameTreeInCSSPixels() const;
 
   
 
 
   void DumpFrameTreeLimited() const;
+  void DumpFrameTreeLimitedInCSSPixels() const;
 
   virtual nsresult GetFrameName(nsAString& aResult) const = 0;
 #endif
