@@ -181,6 +181,12 @@ class nsWrapperCache {
   
 
 
+  template <typename T>
+  void UpdateWrapperForNewGlobal(T* aScriptObjectHolder, JSObject* aNewWrapper);
+
+  
+
+
 
 
 
