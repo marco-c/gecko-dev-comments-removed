@@ -1277,14 +1277,15 @@ class HTMLEditor final : public TextEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  GetInlineStyles(nsINode& aNode, AutoStyleCacheArray& aStyleCacheArray);
+  GetInlineStyles(nsIContent& aContent, AutoStyleCacheArray& aStyleCacheArray);
 
   
 
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CacheInlineStyles(nsINode& aNode);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  CacheInlineStyles(nsIContent& aContent);
 
   
 

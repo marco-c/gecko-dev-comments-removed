@@ -58,8 +58,6 @@ class CSSEditUtils final {
     eCSSEditableProperty_width
   };
 
-  enum StyleType { eSpecified, eComputed };
-
   struct CSSEquivTable {
     nsCSSEditableProperty cssProperty;
     nsProcessValueFunc processValueFunctor;
@@ -115,10 +113,10 @@ class CSSEditUtils final {
 
 
 
-  static nsresult GetSpecifiedProperty(nsINode& aNode, nsAtom& aProperty,
-                                       nsAString& aValue);
-  static nsresult GetComputedProperty(nsINode& aNode, nsAtom& aProperty,
-                                      nsAString& aValue);
+  static nsresult GetSpecifiedProperty(nsIContent& aContent,
+                                       nsAtom& aCSSProperty, nsAString& aValue);
+  static nsresult GetComputedProperty(nsIContent& aContent,
+                                      nsAtom& aCSSProperty, nsAString& aValue);
 
   
 
@@ -171,12 +169,47 @@ class CSSEditUtils final {
 
 
 
+  static nsresult GetComputedCSSEquivalentToHTMLInlineStyleSet(
+      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      nsAString& aValue) {
+    return GetCSSEquivalentToHTMLInlineStyleSetInternal(
+        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
+  }
+  static nsresult GetSpecifiedCSSEquivalentToHTMLInlineStyleSet(
+      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      nsAString& aValue) {
+    return GetCSSEquivalentToHTMLInlineStyleSetInternal(
+        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Specified);
+  }
 
-  static nsresult GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
-                                                       nsAtom* aHTMLProperty,
-                                                       nsAtom* aAttribute,
-                                                       nsAString& aValueString,
-                                                       StyleType aStyleType);
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static bool IsComputedCSSEquivalentToHTMLInlineStyleSet(nsIContent& aContent,
+                                                          nsAtom* aHTMLProperty,
+                                                          nsAtom* aAttribute,
+                                                          nsAString& aValue) {
+    MOZ_ASSERT(aHTMLProperty || aAttribute);
+    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
+        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Computed);
+  }
+  static bool IsSpecifiedCSSEquivalentToHTMLInlineStyleSet(
+      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      nsAString& aValue) {
+    MOZ_ASSERT(aHTMLProperty || aAttribute);
+    return IsCSSEquivalentToHTMLInlineStyleSetInternal(
+        aContent, aHTMLProperty, aAttribute, aValue, StyleType::Specified);
+  }
 
   
 
@@ -192,38 +225,22 @@ class CSSEditUtils final {
 
 
 
-  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                                  nsAtom* aProperty,
-                                                  nsAtom* aAttribute,
-                                                  nsAString& aValue,
-                                                  StyleType aStyleType);
-
-  static bool IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aContent,
-                                                  nsAtom* aProperty,
-                                                  nsAtom* aAttribute,
-                                                  const nsAString& aValue,
-                                                  StyleType aStyleType);
-
-  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool HaveCSSEquivalentStyles(nsINode& aNode, nsAtom* aProperty,
-                                      nsAtom* aAttribute, StyleType aStyleType);
+  static bool HaveComputedCSSEquivalentStyles(nsIContent& aContent,
+                                              nsAtom* aHTMLProperty,
+                                              nsAtom* aAttribute) {
+    MOZ_ASSERT(aHTMLProperty || aAttribute);
+    return HaveCSSEquivalentStylesInternal(aContent, aHTMLProperty, aAttribute,
+                                           StyleType::Computed);
+  }
+  static bool HaveSpecifiedCSSEquivalentStyles(nsIContent& aContent,
+                                               nsAtom* aHTMLProperty,
+                                               nsAtom* aAttribute) {
+    MOZ_ASSERT(aHTMLProperty || aAttribute);
+    return HaveCSSEquivalentStylesInternal(aContent, aHTMLProperty, aAttribute,
+                                           StyleType::Specified);
+  }
 
   
 
@@ -318,6 +335,8 @@ class CSSEditUtils final {
       dom::Element* aElement);
 
  private:
+  enum class StyleType { Specified, Computed };
+
   
 
 
@@ -376,10 +395,30 @@ class CSSEditUtils final {
 
 
 
+  static nsresult GetComputedCSSInlinePropertyBase(nsIContent& aContent,
+                                                   nsAtom& aCSSProperty,
+                                                   nsAString& aValue);
+  static nsresult GetSpecifiedCSSInlinePropertyBase(nsIContent& aContent,
+                                                    nsAtom& aCSSProperty,
+                                                    nsAString& aValue);
 
-  static nsresult GetCSSInlinePropertyBase(nsINode* aNode, nsAtom* aProperty,
-                                           nsAString& aValue,
-                                           StyleType aStyleType);
+  
+
+
+
+
+  static nsresult GetCSSEquivalentToHTMLInlineStyleSetInternal(
+      nsIContent& aContent, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      nsAString& aValue, StyleType aStyleType);
+  static bool IsCSSEquivalentToHTMLInlineStyleSetInternal(nsIContent& aContent,
+                                                          nsAtom* aHTMLProperty,
+                                                          nsAtom* aAttribute,
+                                                          nsAString& aValue,
+                                                          StyleType aStyleType);
+  static bool HaveCSSEquivalentStylesInternal(nsIContent& aContent,
+                                              nsAtom* aHTMLProperty,
+                                              nsAtom* aAttribute,
+                                              StyleType aStyleType);
 
  private:
   HTMLEditor* mHTMLEditor;

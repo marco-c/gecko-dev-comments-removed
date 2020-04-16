@@ -2103,30 +2103,30 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
   }
 
   nsCOMPtr<nsINode> startContainer = firstRange->GetStartContainer();
-  if (NS_WARN_IF(!startContainer)) {
+  if (NS_WARN_IF(!startContainer) || NS_WARN_IF(!startContainer->IsContent())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  nsCOMPtr<nsINode> nodeToExamine;
+  nsCOMPtr<nsIContent> contentToExamine;
   if (SelectionRefPtr()->IsCollapsed() || IsTextNode(startContainer)) {
     
-    nodeToExamine = startContainer;
+    contentToExamine = startContainer->AsContent();
   } else {
     
     
-    nodeToExamine = firstRange->GetChildAtStartOffset();
+    contentToExamine = firstRange->GetChildAtStartOffset();
     
   }
 
-  if (NS_WARN_IF(!nodeToExamine)) {
+  if (NS_WARN_IF(!contentToExamine)) {
     return NS_ERROR_FAILURE;
   }
 
   if (aBlockLevel) {
     
     
-    nsCOMPtr<Element> blockParent = GetBlock(*nodeToExamine);
+    nsCOMPtr<Element> blockParent = GetBlock(*contentToExamine);
     if (NS_WARN_IF(!blockParent)) {
       return NS_OK;
     }
@@ -2148,17 +2148,17 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     }
   } else {
     
-    if (IsTextNode(nodeToExamine)) {
+    if (IsTextNode(contentToExamine)) {
       
-      nodeToExamine = nodeToExamine->GetParentNode();
+      contentToExamine = contentToExamine->GetParent();
     }
     
-    if (!nodeToExamine) {
+    if (!contentToExamine) {
       return NS_OK;
     }
     do {
       
-      if (HTMLEditor::NodeIsBlockStatic(*nodeToExamine)) {
+      if (HTMLEditor::NodeIsBlockStatic(*contentToExamine)) {
         
         
         aOutColor.AssignLiteral("transparent");
@@ -2167,13 +2167,13 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
         
         
         CSSEditUtils::GetComputedProperty(
-            *nodeToExamine, *nsGkAtoms::backgroundColor, aOutColor);
+            *contentToExamine, *nsGkAtoms::backgroundColor, aOutColor);
         if (!aOutColor.EqualsLiteral("transparent")) {
           break;
         }
       }
-      nodeToExamine = nodeToExamine->GetParentNode();
-    } while (aOutColor.EqualsLiteral("transparent") && nodeToExamine);
+      contentToExamine = contentToExamine->GetParent();
+    } while (aOutColor.EqualsLiteral("transparent") && contentToExamine);
   }
   return NS_OK;
 }
