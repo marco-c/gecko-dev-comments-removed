@@ -3583,11 +3583,14 @@ void MediaDecoderStateMachine::UpdateOutputCaptured() {
   mVideoCompleted = false;
 
   
-  StopMediaSink();
-  mMediaSink->Shutdown();
+  if (!mIsMediaSinkSuspended) {
+    
+    StopMediaSink();
+    mMediaSink->Shutdown();
 
-  
-  mMediaSink = CreateMediaSink();
+    
+    mMediaSink = CreateMediaSink();
+  }
 
   
   
