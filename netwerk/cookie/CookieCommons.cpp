@@ -3,6 +3,7 @@
 
 
 
+#include "Cookie.h"
 #include "CookieCommons.h"
 #include "nsIEffectiveTLDService.h"
 
@@ -25,21 +26,29 @@ bool CookieCommons::PathMatches(Cookie* aCookie, const nsACString& aPath) {
   
   
   
-  if (cookiePath.IsEmpty()) return false;
+  if (cookiePath.IsEmpty()) {
+    return false;
+  }
 
   
-  if (cookiePath.Equals(aPath)) return true;
+  if (cookiePath.Equals(aPath)) {
+    return true;
+  }
 
   
   
   bool isPrefix = StringBeginsWith(aPath, cookiePath);
-  if (isPrefix && cookiePath.Last() == '/') return true;
+  if (isPrefix && cookiePath.Last() == '/') {
+    return true;
+  }
 
   
   
   
   uint32_t cookiePathLen = cookiePath.Length();
-  if (isPrefix && aPath[cookiePathLen] == '/') return true;
+  if (isPrefix && aPath[cookiePathLen] == '/') {
+    return true;
+  }
 
   return false;
 }
@@ -67,8 +76,9 @@ nsresult CookieCommons::GetBaseDomain(nsIEffectiveTLDService* aTLDService,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.')
+  if (aBaseDomain.Length() == 1 && aBaseDomain.Last() == '.') {
     return NS_ERROR_INVALID_ARG;
+  }
 
   
   if (aBaseDomain.IsEmpty() && !aHostURI->SchemeIs("file")) {
@@ -89,7 +99,9 @@ nsresult CookieCommons::GetBaseDomainFromHost(
     nsIEffectiveTLDService* aTLDService, const nsACString& aHost,
     nsCString& aBaseDomain) {
   
-  if (aHost.Length() == 1 && aHost.Last() == '.') return NS_ERROR_INVALID_ARG;
+  if (aHost.Length() == 1 && aHost.Last() == '.') {
+    return NS_ERROR_INVALID_ARG;
+  }
 
   
   bool domain = !aHost.IsEmpty() && aHost.First() == '.';
@@ -104,7 +116,9 @@ nsresult CookieCommons::GetBaseDomainFromHost(
     
     
     
-    if (domain) return NS_ERROR_INVALID_ARG;
+    if (domain) {
+      return NS_ERROR_INVALID_ARG;
+    }
 
     aBaseDomain = aHost;
     return NS_OK;

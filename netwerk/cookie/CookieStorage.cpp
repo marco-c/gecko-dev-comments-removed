@@ -27,15 +27,17 @@ namespace {
 
 class CompareCookiesByAge {
  public:
-  bool Equals(const CookieListIter& a, const CookieListIter& b) const {
+  static bool Equals(const CookieListIter& a, const CookieListIter& b) {
     return a.Cookie()->LastAccessed() == b.Cookie()->LastAccessed() &&
            a.Cookie()->CreationTime() == b.Cookie()->CreationTime();
   }
 
-  bool LessThan(const CookieListIter& a, const CookieListIter& b) const {
+  static bool LessThan(const CookieListIter& a, const CookieListIter& b) {
     
     int64_t result = a.Cookie()->LastAccessed() - b.Cookie()->LastAccessed();
-    if (result != 0) return result < 0;
+    if (result != 0) {
+      return result < 0;
+    }
 
     return a.Cookie()->CreationTime() < b.Cookie()->CreationTime();
   }
@@ -70,15 +72,17 @@ class CookieIterComparator {
 
 class CompareCookiesByIndex {
  public:
-  bool Equals(const CookieListIter& a, const CookieListIter& b) const {
+  static bool Equals(const CookieListIter& a, const CookieListIter& b) {
     NS_ASSERTION(a.entry != b.entry || a.index != b.index,
                  "cookie indexes should never be equal");
     return false;
   }
 
-  bool LessThan(const CookieListIter& a, const CookieListIter& b) const {
+  static bool LessThan(const CookieListIter& a, const CookieListIter& b) {
     
-    if (a.entry != b.entry) return a.entry < b.entry;
+    if (a.entry != b.entry) {
+      return a.entry < b.entry;
+    }
 
     return a.index < b.index;
   }
@@ -191,14 +195,17 @@ bool CookieStorage::FindSecureCookie(const nsACString& aBaseDomain,
                                      Cookie* aCookie) {
   CookieEntry* entry =
       mHostTable.GetEntry(CookieKey(aBaseDomain, aOriginAttributes));
-  if (!entry) return false;
+  if (!entry) {
+    return false;
+  }
 
   const CookieEntry::ArrayType& cookies = entry->GetCookies();
   for (CookieEntry::IndexType i = 0; i < cookies.Length(); ++i) {
     Cookie* cookie = cookies[i];
     
-    if (!cookie->IsSecure() || !aCookie->Name().Equals(cookie->Name()))
+    if (!cookie->IsSecure() || !aCookie->Name().Equals(cookie->Name())) {
       continue;
+    }
 
     
     if (CookieCommons::DomainMatches(cookie, aCookie->Host()) ||
@@ -372,7 +379,7 @@ void CookieStorage::RemoveAll() {
 
 
 void CookieStorage::NotifyChanged(nsISupports* aSubject, const char16_t* aData,
-                                  bool aOldCookieIsSession, bool aFromHttp) {
+                                  bool aOldCookieIsSession) {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (!os) {
     return;
@@ -491,7 +498,7 @@ void CookieStorage::AddCookie(const nsACString& aBaseDomain,
       if (aCookie->Expiry() <= currentTime) {
         COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                           "previously stored cookie was deleted");
-        NotifyChanged(oldCookie, u"deleted", oldCookieIsSession, aFromHttp);
+        NotifyChanged(oldCookie, u"deleted", oldCookieIsSession);
         return;
       }
 
@@ -572,7 +579,7 @@ void CookieStorage::AddCookie(const nsACString& aBaseDomain,
   }
 
   NotifyChanged(aCookie, foundCookie ? u"changed" : u"added",
-                oldCookieIsSession, aFromHttp);
+                oldCookieIsSession);
 }
 
 void CookieStorage::UpdateCookieOldestTime(Cookie* aCookie) {
@@ -601,12 +608,14 @@ void CookieStorage::AddCookieToList(const nsACString& aBaseDomain,
   UpdateCookieOldestTime(aCookie);
 }
 
+
 already_AddRefed<nsIArray> CookieStorage::CreatePurgeList(nsICookie* aCookie) {
   nsCOMPtr<nsIMutableArray> removedList =
       do_CreateInstance(NS_ARRAY_CONTRACTID);
   removedList->AppendElement(aCookie);
   return removedList.forget();
 }
+
 
 
 
@@ -648,6 +657,7 @@ void CookieStorage::FindStaleCookies(CookieEntry* aEntry, int64_t aCurrentTime,
   }
 }
 
+
 void CookieStorage::CreateOrUpdatePurgeList(nsIArray** aPurgedList,
                                             nsICookie* aCookie) {
   if (!*aPurgedList) {
@@ -680,7 +690,7 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookiesWithCallbacks(
                     " cookies and %" PRId64 " oldest age",
                     mCookieCount, aCurrentTimeInUsec - mCookieOldestTime));
 
-  typedef nsTArray<CookieListIter> PurgeList;
+  using PurgeList = nsTArray<CookieListIter>;
   PurgeList purgeList(kMaxNumberOfCookies);
 
   nsCOMPtr<nsIMutableArray> removedList =
@@ -796,17 +806,19 @@ void CookieStorage::RemoveCookieFromListInternal(const CookieListIter& aIter) {
 
 void CookieStorage::PrefChanged(nsIPrefBranch* aPrefBranch) {
   int32_t val;
-  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxNumberOfCookies, &val)))
-    mMaxNumberOfCookies = (uint16_t)LIMIT(val, 1, 0xFFFF, kMaxNumberOfCookies);
+  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxNumberOfCookies, &val))) {
+    mMaxNumberOfCookies =
+        static_cast<uint16_t> LIMIT(val, 1, 0xFFFF, kMaxNumberOfCookies);
+  }
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookieQuotaPerHost, &val))) {
-    mCookieQuotaPerHost =
-        (uint16_t)LIMIT(val, 1, mMaxCookiesPerHost - 1, kCookieQuotaPerHost);
+    mCookieQuotaPerHost = static_cast<uint16_t> LIMIT(
+        val, 1, mMaxCookiesPerHost - 1, kCookieQuotaPerHost);
   }
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxCookiesPerHost, &val))) {
-    mMaxCookiesPerHost = (uint16_t)LIMIT(val, mCookieQuotaPerHost + 1, 0xFFFF,
-                                         kMaxCookiesPerHost);
+    mMaxCookiesPerHost = static_cast<uint16_t> LIMIT(
+        val, mCookieQuotaPerHost + 1, 0xFFFF, kMaxCookiesPerHost);
   }
 
   if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookiePurgeAge, &val))) {
@@ -817,7 +829,7 @@ void CookieStorage::PrefChanged(nsIPrefBranch* aPrefBranch) {
 
 NS_IMETHODIMP
 CookieStorage::Observe(nsISupports* aSubject, const char* aTopic,
-                       const char16_t* aData) {
+                       const char16_t* ) {
   if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
     nsCOMPtr<nsIPrefBranch> prefBranch = do_QueryInterface(aSubject);
     if (prefBranch) {
