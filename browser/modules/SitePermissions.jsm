@@ -775,6 +775,9 @@ var SitePermissions = {
 
 
 
+
+
+
   getMultichoiceStateLabel(permissionID, state) {
     
     
@@ -875,6 +878,9 @@ var gPermissionObject = {
 
 
 
+
+
+
   "autoplay-media": {
     exactHostMatch: true,
     getDefault() {
@@ -920,7 +926,7 @@ var gPermissionObject = {
             "state.multichoice.autoplayallow"
           );
       }
-      throw new Error(`Unkown state: ${state}`);
+      throw new Error(`Unknown state: ${state}`);
     },
   },
 
