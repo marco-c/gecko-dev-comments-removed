@@ -2126,12 +2126,11 @@ JSObject* InlineFrameIterator::computeEnvironmentChain(
         *hasInitialEnv = isFunctionFrame() &&
                          callee(fallback)->needsFunctionEnvironmentObjects();
         return obj;
-      } else {
-        JS::AutoSuppressGCAnalysis
-            nogc;  
-        *hasInitialEnv = isFunctionFrame() &&
-                         callee(fallback)->needsFunctionEnvironmentObjects();
       }
+      JS::AutoSuppressGCAnalysis
+          nogc;  
+      *hasInitialEnv = isFunctionFrame() &&
+                       callee(fallback)->needsFunctionEnvironmentObjects();
     }
 
     return &envChainValue.toObject();
