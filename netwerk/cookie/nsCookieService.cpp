@@ -34,7 +34,6 @@
 #include "nsIChannel.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
-#include "nsILineInputStream.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIIDNService.h"
 #include "mozIStorageBindingParamsArray.h"
@@ -95,34 +94,14 @@ static StaticRefPtr<nsCookieService> gCookieService;
 #define IDX_SAME_SITE 10
 #define IDX_RAW_SAME_SITE 11
 
-static const int64_t kCookiePurgeAge =
-    int64_t(30 * 24 * 60 * 60) * PR_USEC_PER_SEC;  
-
 #define OLD_COOKIE_FILE_NAME "cookies.txt"
-
-#undef LIMIT
-#define LIMIT(x, low, high, default) \
-  ((x) >= (low) && (x) <= (high) ? (x) : (default))
 
 #define CONSOLE_SAMESITE_CATEGORY NS_LITERAL_CSTRING("cookieSameSite")
 #define CONSOLE_GENERIC_CATEGORY NS_LITERAL_CSTRING("cookies")
 
 
-
-static const uint32_t kMaxCookiesPerHost = 180;
-static const uint32_t kCookieQuotaPerHost = 150;
-static const uint32_t kMaxBytesPerCookie = 4096;
-static const uint32_t kMaxBytesPerPath = 1024;
-
-
 #define SAMESITE_MDN_URL \
   NS_LITERAL_STRING("https://developer.mozilla.org/docs/Web/HTTP/Cookies")
-
-
-static const char kPrefMaxNumberOfCookies[] = "network.cookie.maxNumber";
-static const char kPrefMaxCookiesPerHost[] = "network.cookie.maxPerHost";
-static const char kPrefCookieQuotaPerHost[] = "network.cookie.quotaPerHost";
-static const char kPrefCookiePurgeAge[] = "network.cookie.purgeAge";
 
 static void bindCookieParameters(mozIStorageBindingParamsArray* aParamsArray,
                                  const CookieKey& aKey, const Cookie* aCookie);
@@ -376,11 +355,7 @@ NS_IMPL_ISUPPORTS(nsCookieService, nsICookieService, nsICookieManager,
                   nsIObserver, nsISupportsWeakReference, nsIMemoryReporter)
 
 nsCookieService::nsCookieService()
-    : mMaxNumberOfCookies(kMaxNumberOfCookies),
-      mMaxCookiesPerHost(kMaxCookiesPerHost),
-      mCookieQuotaPerHost(kCookieQuotaPerHost),
-      mCookiePurgeAge(kCookiePurgeAge),
-      mThread(nullptr),
+    : mThread(nullptr),
       mMonitor("CookieThread"),
       mInitializedCookieStorages(false),
       mInitializedDBConn(false) {}
@@ -395,15 +370,6 @@ nsresult nsCookieService::Init() {
 
   mThirdPartyUtil = do_GetService(THIRDPARTYUTIL_CONTRACTID);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefBranch) {
-    prefBranch->AddObserver(kPrefMaxNumberOfCookies, this, true);
-    prefBranch->AddObserver(kPrefMaxCookiesPerHost, this, true);
-    prefBranch->AddObserver(kPrefCookiePurgeAge, this, true);
-    PrefChanged(prefBranch);
-  }
 
   mStorageService = do_GetService("@mozilla.org/storage/service;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1744,10 +1710,6 @@ nsCookieService::Observe(nsISupports* aSubject, const char* aTopic,
     
     InitCookieStorages();
 
-  } else if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
-    nsCOMPtr<nsIPrefBranch> prefBranch = do_QueryInterface(aSubject);
-    if (prefBranch) PrefChanged(prefBranch);
-
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
     
     mozilla::OriginAttributesPattern pattern;
@@ -2019,32 +1981,6 @@ nsCookieService::RunInTransaction(nsICookieTransactionCallback* aCallback) {
 
 
 
-void nsCookieService::PrefChanged(nsIPrefBranch* aPrefBranch) {
-  int32_t val;
-  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxNumberOfCookies, &val)))
-    mMaxNumberOfCookies = (uint16_t)LIMIT(val, 1, 0xFFFF, kMaxNumberOfCookies);
-
-  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookieQuotaPerHost, &val))) {
-    mCookieQuotaPerHost =
-        (uint16_t)LIMIT(val, 1, mMaxCookiesPerHost - 1, kCookieQuotaPerHost);
-  }
-
-  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefMaxCookiesPerHost, &val))) {
-    mMaxCookiesPerHost = (uint16_t)LIMIT(val, mCookieQuotaPerHost + 1, 0xFFFF,
-                                         kMaxCookiesPerHost);
-  }
-
-  if (NS_SUCCEEDED(aPrefBranch->GetIntPref(kPrefCookiePurgeAge, &val))) {
-    mCookiePurgeAge =
-        int64_t(LIMIT(val, 0, INT32_MAX, INT32_MAX)) * PR_USEC_PER_SEC;
-  }
-}
-
-
-
-
-
-
 NS_IMETHODIMP
 nsCookieService::RemoveAll() {
   if (!IsInitialized()) {
@@ -2139,8 +2075,7 @@ nsCookieService::AddNative(const nsACString& aHost, const nsACString& aPath,
 
   CookieStorage* storage = PickStorage(*aOriginAttributes);
   storage->AddCookie(baseDomain, *aOriginAttributes, cookie, currentTimeInUsec,
-                     nullptr, VoidCString(), true, mMaxNumberOfCookies,
-                     mMaxCookiesPerHost, mCookieQuotaPerHost, mCookiePurgeAge);
+                     nullptr, VoidCString(), true);
   return NS_OK;
 }
 
@@ -2354,9 +2289,7 @@ nsCookieService::ImportCookies(nsIFile* aCookieFile) {
 
   EnsureReadComplete(true);
 
-  return mDefaultStorage->ImportCookies(aCookieFile, mTLDService,
-                                        mMaxNumberOfCookies, mMaxCookiesPerHost,
-                                        mCookieQuotaPerHost, mCookiePurgeAge);
+  return mDefaultStorage->ImportCookies(aCookieFile, mTLDService);
 }
 
 
@@ -2807,9 +2740,7 @@ bool nsCookieService::SetCookieInternal(
   
   
   aStorage->AddCookie(aBaseDomain, aOriginAttributes, cookie, PR_Now(),
-                      aHostURI, savedCookieHeader, aFromHttp,
-                      mMaxNumberOfCookies, mMaxCookiesPerHost,
-                      mCookieQuotaPerHost, mCookiePurgeAge);
+                      aHostURI, savedCookieHeader, aFromHttp);
   return newCookie;
 }
 
@@ -3719,7 +3650,7 @@ nsCookieService::GetCookiesFromHost(const nsACString& aHost,
       storage->GetCookiesFromHost(baseDomain, attrs);
 
   if (cookies) {
-    aResult.SetCapacity(mMaxCookiesPerHost);
+    aResult.SetCapacity(cookies->Length());
     for (Cookie* cookie : *cookies) {
       aResult.AppendElement(cookie);
     }
