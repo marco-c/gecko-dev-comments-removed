@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCookie_h__
-#define nsCookie_h__
+#ifndef mozilla_net_Cookie_h
+#define mozilla_net_Cookie_h
 
 #include "nsICookie.h"
 #include "nsIMemoryReporter.h"
@@ -17,6 +17,8 @@
 
 using mozilla::OriginAttributes;
 
+namespace mozilla {
+namespace net {
 
 
 
@@ -27,7 +29,8 @@ using mozilla::OriginAttributes;
 
 
 
-class nsCookie final : public nsICookie {
+
+class Cookie final : public nsICookie {
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
  public:
@@ -37,8 +40,8 @@ class nsCookie final : public nsICookie {
 
  private:
   
-  nsCookie(const mozilla::net::CookieStruct& aCookieData,
-           const OriginAttributes& aOriginAttributes)
+  Cookie(const mozilla::net::CookieStruct& aCookieData,
+         const OriginAttributes& aOriginAttributes)
       : mData(aCookieData), mOriginAttributes(aOriginAttributes) {}
 
  public:
@@ -50,7 +53,7 @@ class nsCookie final : public nsICookie {
   static int64_t GenerateUniqueCreationTime(int64_t aCreationTime);
 
   
-  static already_AddRefed<nsCookie> Create(
+  static already_AddRefed<Cookie> Create(
       const nsACString& aName, const nsACString& aValue,
       const nsACString& aHost, const nsACString& aPath, int64_t aExpiry,
       int64_t aLastAccessed, int64_t aCreationTime, bool aIsSession,
@@ -58,7 +61,7 @@ class nsCookie final : public nsICookie {
       const OriginAttributes& aOriginAttributes, int32_t aSameSite,
       int32_t aRawSameSite);
 
-  static already_AddRefed<nsCookie> Create(
+  static already_AddRefed<Cookie> Create(
       const mozilla::net::CookieStruct& aCookieData,
       const OriginAttributes& aOriginAttributes);
 
@@ -103,7 +106,7 @@ class nsCookie final : public nsICookie {
   const mozilla::net::CookieStruct& ToIPC() const { return mData; }
 
  protected:
-  virtual ~nsCookie() = default;
+  virtual ~Cookie() = default;
 
  private:
   
@@ -117,12 +120,12 @@ class nsCookie final : public nsICookie {
 
 class CompareCookiesForSending {
  public:
-  bool Equals(const nsCookie* aCookie1, const nsCookie* aCookie2) const {
+  bool Equals(const Cookie* aCookie1, const Cookie* aCookie2) const {
     return aCookie1->CreationTime() == aCookie2->CreationTime() &&
            aCookie2->Path().Length() == aCookie1->Path().Length();
   }
 
-  bool LessThan(const nsCookie* aCookie1, const nsCookie* aCookie2) const {
+  bool LessThan(const Cookie* aCookie1, const Cookie* aCookie2) const {
     
     int32_t result = aCookie2->Path().Length() - aCookie1->Path().Length();
     if (result != 0) return result < 0;
@@ -134,4 +137,8 @@ class CompareCookiesForSending {
     return aCookie1->CreationTime() < aCookie2->CreationTime();
   }
 };
+
+}  
+}  
+
 #endif  

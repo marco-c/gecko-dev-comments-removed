@@ -3,13 +3,16 @@
 
 
 
+#include "Cookie.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/StaticPrefs_network.h"
-#include "nsCookie.h"
 #include "nsIURLParser.h"
 #include "nsURLHelper.h"
 #include <stdlib.h>
+
+namespace mozilla {
+namespace net {
 
 
 
@@ -25,7 +28,7 @@
 
 static int64_t gLastCreationTime;
 
-int64_t nsCookie::GenerateUniqueCreationTime(int64_t aCreationTime) {
+int64_t Cookie::GenerateUniqueCreationTime(int64_t aCreationTime) {
   
   
   if (aCreationTime > gLastCreationTime) {
@@ -38,7 +41,7 @@ int64_t nsCookie::GenerateUniqueCreationTime(int64_t aCreationTime) {
 }
 
 
-already_AddRefed<nsCookie> nsCookie::Create(
+already_AddRefed<Cookie> Cookie::Create(
     const nsACString& aName, const nsACString& aValue, const nsACString& aHost,
     const nsACString& aPath, int64_t aExpiry, int64_t aLastAccessed,
     int64_t aCreationTime, bool aIsSession, bool aIsSecure, bool aIsHttpOnly,
@@ -52,10 +55,10 @@ already_AddRefed<nsCookie> nsCookie::Create(
   return Create(cookieData, aOriginAttributes);
 }
 
-already_AddRefed<nsCookie> nsCookie::Create(
+already_AddRefed<Cookie> Cookie::Create(
     const mozilla::net::CookieStruct& aCookieData,
     const OriginAttributes& aOriginAttributes) {
-  RefPtr<nsCookie> cookie = new nsCookie(aCookieData, aOriginAttributes);
+  RefPtr<Cookie> cookie = new Cookie(aCookieData, aOriginAttributes);
 
   
   
@@ -75,15 +78,14 @@ already_AddRefed<nsCookie> nsCookie::Create(
   }
 
   
-  if (!nsCookie::ValidateRawSame(cookie->mData)) {
+  if (!Cookie::ValidateRawSame(cookie->mData)) {
     cookie->mData.rawSameSite() = nsICookie::SAMESITE_NONE;
   }
 
   return cookie.forget();
 }
 
-size_t nsCookie::SizeOfIncludingThis(
-    mozilla::MallocSizeOf aMallocSizeOf) const {
+size_t Cookie::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this) +
          mData.name().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
          mData.value().SizeOfExcludingThisIfUnshared(MallocSizeOf) +
@@ -92,7 +94,7 @@ size_t nsCookie::SizeOfIncludingThis(
          mFilePathCache.SizeOfExcludingThisIfUnshared(MallocSizeOf);
 }
 
-bool nsCookie::IsStale() const {
+bool Cookie::IsStale() const {
   int64_t currentTimeInUsec = PR_Now();
 
   return currentTimeInUsec - LastAccessed() >
@@ -106,55 +108,55 @@ bool nsCookie::IsStale() const {
 
 
 
-NS_IMETHODIMP nsCookie::GetName(nsACString& aName) {
+NS_IMETHODIMP Cookie::GetName(nsACString& aName) {
   aName = Name();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetValue(nsACString& aValue) {
+NS_IMETHODIMP Cookie::GetValue(nsACString& aValue) {
   aValue = Value();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetHost(nsACString& aHost) {
+NS_IMETHODIMP Cookie::GetHost(nsACString& aHost) {
   aHost = Host();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetRawHost(nsACString& aHost) {
+NS_IMETHODIMP Cookie::GetRawHost(nsACString& aHost) {
   aHost = RawHost();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetPath(nsACString& aPath) {
+NS_IMETHODIMP Cookie::GetPath(nsACString& aPath) {
   aPath = Path();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetExpiry(int64_t* aExpiry) {
+NS_IMETHODIMP Cookie::GetExpiry(int64_t* aExpiry) {
   *aExpiry = Expiry();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetIsSession(bool* aIsSession) {
+NS_IMETHODIMP Cookie::GetIsSession(bool* aIsSession) {
   *aIsSession = IsSession();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetIsDomain(bool* aIsDomain) {
+NS_IMETHODIMP Cookie::GetIsDomain(bool* aIsDomain) {
   *aIsDomain = IsDomain();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetIsSecure(bool* aIsSecure) {
+NS_IMETHODIMP Cookie::GetIsSecure(bool* aIsSecure) {
   *aIsSecure = IsSecure();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetIsHttpOnly(bool* aHttpOnly) {
+NS_IMETHODIMP Cookie::GetIsHttpOnly(bool* aHttpOnly) {
   *aHttpOnly = IsHttpOnly();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetCreationTime(int64_t* aCreation) {
+NS_IMETHODIMP Cookie::GetCreationTime(int64_t* aCreation) {
   *aCreation = CreationTime();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetLastAccessed(int64_t* aTime) {
+NS_IMETHODIMP Cookie::GetLastAccessed(int64_t* aTime) {
   *aTime = LastAccessed();
   return NS_OK;
 }
-NS_IMETHODIMP nsCookie::GetSameSite(int32_t* aSameSite) {
+NS_IMETHODIMP Cookie::GetSameSite(int32_t* aSameSite) {
   if (mozilla::StaticPrefs::network_cookie_sameSite_laxByDefault()) {
     *aSameSite = SameSite();
   } else {
@@ -164,15 +166,14 @@ NS_IMETHODIMP nsCookie::GetSameSite(int32_t* aSameSite) {
 }
 
 NS_IMETHODIMP
-nsCookie::GetOriginAttributes(JSContext* aCx,
-                              JS::MutableHandle<JS::Value> aVal) {
+Cookie::GetOriginAttributes(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) {
   if (NS_WARN_IF(!ToJSValue(aCx, mOriginAttributes, aVal))) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
 }
 
-const nsCString& nsCookie::GetFilePath() {
+const nsCString& Cookie::GetFilePath() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
   if (Path().IsEmpty()) {
@@ -204,7 +205,7 @@ const nsCString& nsCookie::GetFilePath() {
 
 
 NS_IMETHODIMP
-nsCookie::GetExpires(uint64_t* aExpires) {
+Cookie::GetExpires(uint64_t* aExpires) {
   if (IsSession()) {
     *aExpires = 0;
   } else {
@@ -214,9 +215,12 @@ nsCookie::GetExpires(uint64_t* aExpires) {
 }
 
 
-bool nsCookie::ValidateRawSame(const mozilla::net::CookieStruct& aCookieData) {
+bool Cookie::ValidateRawSame(const mozilla::net::CookieStruct& aCookieData) {
   return aCookieData.rawSameSite() == aCookieData.sameSite() ||
          aCookieData.rawSameSite() == nsICookie::SAMESITE_NONE;
 }
 
-NS_IMPL_ISUPPORTS(nsCookie, nsICookie)
+NS_IMPL_ISUPPORTS(Cookie, nsICookie)
+
+}  
+}  
