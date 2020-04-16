@@ -2411,14 +2411,15 @@ bool nsGenericHTMLElement::PerformAccesskey(bool aKeyCausesActivation,
 
   
   bool focused = true;
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) {
-    fm->SetFocus(this, nsIFocusManager::FLAG_BYKEY |
-                           nsIFocusManager::FLAG_BYELEMENTFOCUS);
+  if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    fm->SetFocus(this, nsIFocusManager::FLAG_BYKEY);
 
     
+    
+    
+    
     nsPIDOMWindowOuter* window = OwnerDoc()->GetWindow();
-    focused = (window && window->GetFocusedElement());
+    focused = window && window->GetFocusedElement();
   }
 
   if (aKeyCausesActivation) {

@@ -128,8 +128,7 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           
           
           if (mouseEvent->mClickCount <= 1) {
-            nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-            if (fm) {
+            if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
               
               
               
@@ -145,7 +144,6 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
                               MouseEvent_Binding::MOZ_SOURCE_TOUCH);
               fm->SetFocus(content,
                            nsIFocusManager::FLAG_BYMOVEFOCUS |
-                               nsIFocusManager::FLAG_BYELEMENTFOCUS |
                                (byMouse ? nsIFocusManager::FLAG_BYMOUSE : 0) |
                                (byTouch ? nsIFocusManager::FLAG_BYTOUCH : 0));
             }
