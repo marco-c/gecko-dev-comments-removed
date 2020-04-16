@@ -26,6 +26,8 @@ RTCStatsTimestampMaker::RTCStatsTimestampMaker(const GlobalObject* aGlobal) {
     
     mStartWallClockRaw =
         PerformanceService::GetOrCreate()->TimeOrigin(mStartMonotonic);
+    MOZ_ASSERT(window->AsGlobal());
+    mCrossOriginIsolated = window->AsGlobal()->CrossOriginIsolated();
   }
 }
 
@@ -42,10 +44,13 @@ DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
   
   if (mRandomTimelineSeed) {
     msSinceStart = nsRFPService::ReduceTimePrecisionAsMSecs(
-        msSinceStart, mRandomTimelineSeed);
+        msSinceStart, mRandomTimelineSeed,  false,
+        mCrossOriginIsolated);
   }
-  return msSinceStart +
-         nsRFPService::ReduceTimePrecisionAsMSecs(mStartWallClockRaw, 0);
+  return msSinceStart + nsRFPService::ReduceTimePrecisionAsMSecs(
+                            mStartWallClockRaw, 0,
+                             false,
+                            mCrossOriginIsolated);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(RTCStatsReport, mParent)
