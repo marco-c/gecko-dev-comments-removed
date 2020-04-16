@@ -1023,14 +1023,7 @@ void gfxPlatform::Init() {
   
   
   
-  if (!UseWebRender()
-#ifdef NIGHTLY_BUILD
-      || (UseWebRender() && XRE_IsParentProcess() &&
-          !gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
-          StaticPrefs::
-              gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup())
-#endif
-  ) {
+  if (!UseWebRender()) {
     gPlatform->EnsureDevicesInitialized();
   }
   gPlatform->InitOMTPConfig();
@@ -2959,6 +2952,15 @@ void gfxPlatform::InitWebRenderConfig() {
         NS_LITERAL_CSTRING("FEATURE_FAILURE_WEBRENDER_NEED_HWCOMP"));
   }
 
+  
+#ifdef XP_WIN
+  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    featureWebRender.ForceDisable(
+        FeatureStatus::UnavailableNoGpuProcess, "GPU Process is disabled",
+        NS_LITERAL_CSTRING("FEATURE_FAILURE_GPU_PROCESS_DISABLED"));
+  }
+#endif
+
   if (InSafeMode()) {
     featureWebRender.ForceDisable(
         FeatureStatus::UnavailableInSafeMode, "Safe-mode is enabled",
@@ -2966,22 +2968,11 @@ void gfxPlatform::InitWebRenderConfig() {
   }
 
 #ifdef XP_WIN
-  if (StaticPrefs::gfx_webrender_force_angle_AtStartup()) {
+  if (Preferences::GetBool("gfx.webrender.force-angle", false)) {
     if (!gfxConfig::IsEnabled(Feature::D3D11_HW_ANGLE)) {
       featureWebRender.ForceDisable(
           FeatureStatus::UnavailableNoAngle, "ANGLE is disabled",
           NS_LITERAL_CSTRING("FEATURE_FAILURE_ANGLE_DISABLED"));
-    } else if (
-        !gfxConfig::IsEnabled(Feature::GPU_PROCESS)
-#  ifdef NIGHTLY_BUILD
-        && !StaticPrefs::
-               gfx_webrender_enabled_no_gpu_process_with_angle_win_AtStartup()
-#  endif
-    ) {
-      
-      featureWebRender.ForceDisable(
-          FeatureStatus::UnavailableNoGpuProcess, "GPU Process is disabled",
-          NS_LITERAL_CSTRING("FEATURE_FAILURE_GPU_PROCESS_DISABLED"));
     } else {
       gfxVars::SetUseWebRenderANGLE(gfxConfig::IsEnabled(Feature::WEBRENDER));
     }
