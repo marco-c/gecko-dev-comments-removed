@@ -102,12 +102,14 @@ add_task(async () => {
 
   
   
-  evt = waitForMacEvent(
-    "AXFocusedUIElementChanged",
-    iface => iface.getAttributeValue("AXRole") == "AXRadioButton"
-  );
-  gBrowser.selectedTab.focus();
-  await evt;
+  if (gBrowser.ownerDocument.activeElement != gBrowser.selectedTab) {
+    evt = waitForMacEvent(
+      "AXFocusedUIElementChanged",
+      iface => iface.getAttributeValue("AXRole") == "AXRadioButton"
+    );
+    gBrowser.selectedTab.focus();
+    await evt;
+  }
 
   
   evt = waitForMacEvent(
