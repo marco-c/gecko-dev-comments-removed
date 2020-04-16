@@ -5,7 +5,11 @@
 
 const EXPORTED_SYMBOLS = ["Screenshots"];
 
-Cu.importGlobalProperties(["fetch"]);
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -30,6 +34,13 @@ ChromeUtils.defineModuleGetter(
 
 const GREY_10 = "#F9F9FA";
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gPrivilegedAboutProcessEnabled",
+  "browser.tabs.remote.separatePrivilegedContentProcess",
+  false
+);
+
 this.Screenshots = {
   
 
@@ -43,6 +54,15 @@ this.Screenshots = {
       await BackgroundPageThumbs.captureIfMissing(url, {
         backgroundColor: GREY_10,
       });
+
+      
+      
+      if (gPrivilegedAboutProcessEnabled) {
+        return PageThumbs.getThumbnailURL(url);
+      }
+
+      
+      
       const imgPath = PageThumbs.getThumbnailPath(url);
 
       const filePathResponse = await fetch(`file://${imgPath}`);
