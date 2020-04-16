@@ -59,6 +59,10 @@ struct APZEventResult {
   
 
 
+  bool mTargetIsRoot;
+  
+
+
 
   uint64_t mInputBlockId;
   
