@@ -88,7 +88,6 @@
 
 
     return function require(path) {
-      let startTime = performance.now();
       if (typeof path != "string" || !path.includes("://")) {
         throw new TypeError(
           "The argument to require() must be a string uri, got " + path
@@ -147,8 +146,6 @@
         
         modules.delete(path);
         throw ex;
-      } finally {
-        ChromeUtils.addProfilerMarker("require", startTime, path);
       }
 
       Object.freeze(module.exports);
