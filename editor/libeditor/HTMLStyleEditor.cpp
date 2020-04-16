@@ -1411,6 +1411,8 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsAtom& aProperty,
       }
 
       bool isSet = false;
+      bool useTextDecoration =
+          &aProperty == nsGkAtoms::u || &aProperty == nsGkAtoms::strike;
       if (first) {
         if (CSSEditUtils::IsCSSEditableProperty(content, &aProperty,
                                                 aAttribute)) {
@@ -1448,7 +1450,24 @@ nsresult HTMLEditor::GetInlinePropertyBase(nsAtom& aProperty,
           isSet = IsTextPropertySetByContent(content, &aProperty, aAttribute,
                                              aValue, &theValue);
         }
-        if (firstValue != theValue) {
+
+        if (firstValue != theValue &&
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            (!useTextDecoration || *aFirst != isSet)) {
           *aAll = false;
         }
       }
