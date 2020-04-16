@@ -827,11 +827,7 @@ bool WarpBuilder::build_ToNumeric(BytecodeLocation loc) {
 bool WarpBuilder::build_Pos(BytecodeLocation loc) {
   
   
-  MDefinition* value = current->pop();
-  MToNumber* ins = MToNumber::New(alloc(), value);
-  current->add(ins);
-  current->push(ins);
-  return resumeAfter(ins, loc);
+  return buildUnaryOp(loc);
 }
 
 bool WarpBuilder::buildUnaryOp(BytecodeLocation loc) {

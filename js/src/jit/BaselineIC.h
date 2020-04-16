@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef jit_BaselineIC_h
 #define jit_BaselineIC_h
@@ -25,177 +25,177 @@
 namespace js {
 namespace jit {
 
-// [SMDOC] JIT Inline Caches (ICs)
-//
-// Baseline Inline Caches are polymorphic caches that aggressively
-// share their stub code.
-//
-// Every polymorphic site contains a linked list of stubs which are
-// specific to that site.  These stubs are composed of a |StubData|
-// structure that stores parametrization information (e.g.
-// the shape pointer for a shape-check-and-property-get stub), any
-// dynamic information (e.g. warm-up counters), a pointer to the stub code,
-// and a pointer to the next stub state in the linked list.
-//
-// Every BaselineScript keeps an table of |CacheDescriptor| data
-// structures, which store the following:
-//      A pointer to the first StubData in the cache.
-//      The bytecode PC of the relevant IC.
-//      The machine-code PC where the call to the stubcode returns.
-//
-// A diagram:
-//
-//        Control flow                  Pointers
-//      =======#                     ----.     .---->
-//             #                         |     |
-//             #======>                  \-----/
-//
-//
-//                                   .---------------------------------------.
-//                                   |         .-------------------------.   |
-//                                   |         |         .----.          |   |
-//         Baseline                  |         |         |    |          |   |
-//         JIT Code              0   ^     1   ^     2   ^    |          |   |
-//     +--------------+    .-->+-----+   +-----+   +-----+    |          |   |
-//     |              |  #=|==>|     |==>|     |==>| FB  |    |          |   |
-//     |              |  # |   +-----+   +-----+   +-----+    |          |   |
-//     |              |  # |      #         #         #       |          |   |
-//     |==============|==# |      #         #         #       |          |   |
-//     |=== IC =======|    |      #         #         #       |          |   |
-//  .->|==============|<===|======#=========#=========#       |          |   |
-//  |  |              |    |                                  |          |   |
-//  |  |              |    |                                  |          |   |
-//  |  |              |    |                                  |          |   |
-//  |  |              |    |                                  v          |   |
-//  |  |              |    |                              +---------+    |   |
-//  |  |              |    |                              | Fallback|    |   |
-//  |  |              |    |                              | Stub    |    |   |
-//  |  |              |    |                              | Code    |    |   |
-//  |  |              |    |                              +---------+    |   |
-//  |  +--------------+    |                                             |   |
-//  |         |_______     |                              +---------+    |   |
-//  |                |     |                              | Stub    |<---/   |
-//  |        IC      |     \--.                           | Code    |        |
-//  |    Descriptor  |        |                           +---------+        |
-//  |      Table     v        |                                              |
-//  |  +-----------------+    |                           +---------+        |
-//  \--| Ins | PC | Stub |----/                           | Stub    |<-------/
-//     +-----------------+                                | Code    |
-//     |       ...       |                                +---------+
-//     +-----------------+
-//                                                          Shared
-//                                                          Stub Code
-//
-//
-// Type ICs
-// ========
-//
-// Type ICs are otherwise regular ICs that are actually nested within
-// other IC chains.  They serve to optimize locations in the code where the
-// baseline compiler would have otherwise had to perform a type Monitor
-// operation (e.g. the result of GetProp, GetElem, etc.), or locations where the
-// baseline compiler would have had to modify a heap typeset using the type of
-// an input value (e.g. SetProp, SetElem, etc.)
-//
-// There are two kinds of Type ICs: Monitor and Update.
-//
-// Note that type stub bodies are no-ops.  The stubs only exist for their
-// guards, and their existence simply signifies that the typeset (implicit)
-// that is being checked already contains that type.
-//
-// TypeMonitor ICs
-// ---------------
-// Monitor ICs are shared between stubs in the general IC, and monitor the
-// resulting types of getter operations (call returns, getprop outputs, etc.)
-//
-//        +-----------+     +-----------+     +-----------+     +-----------+
-//   ---->| Stub 1    |---->| Stub 2    |---->| Stub 3    |---->| FB Stub   |
-//        +-----------+     +-----------+     +-----------+     +-----------+
-//             |                  |                 |                  |
-//             |------------------/-----------------/                  |
-//             v                                                       |
-//        +-----------+     +-----------+     +-----------+            |
-//        | Type 1    |---->| Type 2    |---->| Type FB   |            |
-//        +-----------+     +-----------+     +-----------+            |
-//             |                 |                  |                  |
-//  <----------/-----------------/------------------/------------------/
-//                r e t u r n    p a t h
-//
-// After an optimized IC stub successfully executes, it passes control to the
-// type stub chain to check the resulting type.  If no type stub succeeds, and
-// the monitor fallback stub is reached, the monitor fallback stub performs a
-// manual monitor, and also adds the appropriate type stub to the chain.
-//
-// The IC's main fallback, in addition to generating new mainline stubs, also
-// generates type stubs as reflected by its returned value.
-//
-// NOTE: The type IC chain returns directly to the mainline code, not back to
-// the stub it was entered from.  Thus, entering a type IC is a matter of a
-// |jump|, not a |call|.  This allows us to safely call a VM Monitor function
-// from within the monitor IC's fallback chain, since the return address (needed
-// for stack inspection) is preserved.
-//
-//
-// TypeUpdate ICs
-// --------------
-// Update ICs update heap typesets and monitor the input types of setter
-// operations (setelem, setprop inputs, etc.).  Unlike monitor ICs, they are not
-// shared between stubs on an IC, but instead are kept track of on a per-stub
-// basis.
-//
-// This is because the main stubs for the operation will each identify a
-// potentially different ObjectGroup to update.  New input types must be tracked
-// on a group-to- group basis.
-//
-// Type-update ICs cannot be called in tail position (they must return to the
-// the stub that called them so that the stub may continue to perform its
-// original purpose).  This means that any VMCall to perform a manual type
-// update from C++ must be done from within the main IC stub.  This necessitates
-// that the stub enter a "BaselineStub" frame before making the call.
-//
-// If the type-update IC chain could itself make the VMCall, then the
-// BaselineStub frame must be entered before calling the type-update chain, and
-// exited afterward.  This is very expensive for a common case where we expect
-// the type-update fallback to not be called.  To avoid the cost of entering and
-// exiting a BaselineStub frame when using the type-update IC chain, we design
-// the chain to not perform any VM-calls in its fallback.
-//
-// Instead, the type-update IC chain is responsible for returning 1 or 0,
-// depending on if a type is represented in the chain or not.  The fallback stub
-// simply returns 0, and all other optimized stubs return 1. If the chain
-// returns 1, then the IC stub goes ahead and performs its operation. If the
-// chain returns 0, then the IC stub performs a call to the fallback function
-// inline (doing the requisite BaselineStub frame enter/exit).
-// This allows us to avoid the expensive subfram enter/exit in the common case.
-//
-//                                 r e t u r n    p a t h
-//   <--------------.-----------------.-----------------.-----------------.
-//                  |                 |                 |                 |
-//        +-----------+     +-----------+     +-----------+     +-----------+
-//   ---->| Stub 1    |---->| Stub 2    |---->| Stub 3    |---->| FB Stub   |
-//        +-----------+     +-----------+     +-----------+     +-----------+
-//          |   ^             |   ^             |   ^
-//          |   |             |   |             |   |
-//          |   |             |   |             |   |----------------.
-//          |   |             |   |             v   |1               |0
-//          |   |             |   |         +-----------+    +-----------+
-//          |   |             |   |         | Type 3.1  |--->|    FB 3   |
-//          |   |             |   |         +-----------+    +-----------+
-//          |   |             |   |
-//          |   |             |   \-------------.-----------------.
-//          |   |             |   |             |                 |
-//          |   |             v   |1            |1                |0
-//          |   |         +-----------+     +-----------+     +-----------+
-//          |   |         | Type 2.1  |---->| Type 2.2  |---->|    FB 2   |
-//          |   |         +-----------+     +-----------+     +-----------+
-//          |   |
-//          |   \-------------.-----------------.
-//          |   |             |                 |
-//          v   |1            |1                |0
-//     +-----------+     +-----------+     +-----------+
-//     | Type 1.1  |---->| Type 1.2  |---->|   FB 1    |
-//     +-----------+     +-----------+     +-----------+
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ICStub;
 class ICFallbackStub;
@@ -214,29 +214,29 @@ void TypeFallbackICSpew(JSContext* cx, ICTypeMonitor_Fallback* stub,
 #  define TypeFallbackICSpew(...)
 #endif
 
-// An entry in the BaselineScript IC descriptor table. There's one ICEntry per
-// IC.
+
+
 class ICEntry {
-  // A pointer to the first IC stub for this instruction.
+  
   ICStub* firstStub_;
 
-  // The PC offset of this IC's bytecode op within the JSScript or
-  // ProloguePCOffset if this is a prologue IC.
+  
+  
   uint32_t pcOffset_;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 #  ifdef JS_64BIT
-  // On 64-bit architectures, we have 32 bits of alignment padding.
-  // We fill it with a magic value, and check that value when tracing.
+  
+  
   static const uint32_t EXPECTED_TRACE_MAGIC = 0xdeaddead;
   uint32_t traceMagic_ = EXPECTED_TRACE_MAGIC;
 #  endif
 #endif
 
  public:
-  // Prologue ICs are Baseline ICs used for function argument/this type
-  // monitoring in the script's prologue. Note: the last bytecode op in a script
-  // is always a return so UINT32_MAX is never a valid bytecode offset.
+  
+  
+  
   static constexpr uint32_t ProloguePCOffset = UINT32_MAX;
 
   ICEntry(ICStub* firstStub, uint32_t pcOffset)
@@ -272,13 +272,13 @@ class ICEntry {
 class ICMonitoredStub;
 class ICMonitoredFallbackStub;
 
-// Constant iterator that traverses arbitrary chains of ICStubs.
-// No requirements are made of the ICStub used to construct this
-// iterator, aside from that the stub be part of a nullptr-terminated
-// chain.
-// The iterator is considered to be at its end once it has been
-// incremented _past_ the last stub.  Thus, if 'atEnd()' returns
-// true, the '*' and '->' operations are not valid.
+
+
+
+
+
+
+
 class ICStubConstIterator {
   friend class ICStub;
   friend class ICFallbackStub;
@@ -325,17 +325,17 @@ class ICStubConstIterator {
   bool atEnd() const { return currentStub_ == nullptr; }
 };
 
-// Iterator that traverses "regular" IC chains that start at an ICEntry
-// and are terminated with an ICFallbackStub.
-//
-// The iterator is considered to be at its end once it is _at_ the
-// fallback stub.  Thus, unlike the ICStubConstIterator, operators
-// '*' and '->' are valid even if 'atEnd()' returns true - they
-// will act on the fallback stub.
-//
-// This iterator also allows unlinking of stubs being traversed.
-// Note that 'unlink' does not implicitly advance the iterator -
-// it must be advanced explicitly using '++'.
+
+
+
+
+
+
+
+
+
+
+
 class ICStubIterator {
   friend class ICFallbackStub;
 
@@ -350,7 +350,7 @@ class ICStubIterator {
 
  public:
   bool operator==(const ICStubIterator& other) const {
-    // == should only ever be called on stubs from the same chain.
+    
     MOZ_ASSERT(icEntry_ == other.icEntry_);
     MOZ_ASSERT(fallbackStub_ == other.fallbackStub_);
     return currentStub_ == other.currentStub_;
@@ -376,9 +376,9 @@ class ICStubIterator {
   void unlink(JSContext* cx);
 };
 
-//
-// Base class for all IC stubs.
-//
+
+
+
 class ICStub {
   friend class ICFallbackStub;
 
@@ -446,18 +446,18 @@ class ICStub {
   }
 
  protected:
-  // The raw jitcode to call for this stub.
+  
   uint8_t* stubCode_;
 
-  // Pointer to next IC stub.  This is null for the last IC stub, which should
-  // either be a fallback or inert IC stub.
+  
+  
   ICStub* next_ = nullptr;
 
-  // A 16-bit field usable by subtypes of ICStub for subtype-specific small-info
+  
   uint16_t extra_ = 0;
 
-  // A 16-bit field storing the trait and kind.
-  // Unused bits are filled with a magic value and verified when tracing.
+  
+  
   uint16_t traitKindBits_;
 
   static const uint16_t TRAIT_OFFSET = 0;
@@ -586,16 +586,16 @@ class ICStub {
   inline bool hasNext() const { return next_ != nullptr; }
 
   inline void setNext(ICStub* stub) {
-    // Note: next_ only needs to be changed under the compilation lock for
-    // non-type-monitor/update ICs.
+    
+    
     next_ = stub;
   }
 
   inline ICStub** addressOfNext() { return &next_; }
 
   bool usesTrampolineCode() const {
-    // All fallback code is stored in a single JitCode instance, so we can't
-    // call JitCode::FromExecutable on the raw pointer.
+    
+    
     return isFallback() || isTypeMonitor_Fallback() || isTypeUpdate_Fallback();
   }
   JitCode* jitCode() {
@@ -605,7 +605,7 @@ class ICStub {
 
   inline uint8_t* rawStubCode() const { return stubCode_; }
 
-  // This method is not valid on TypeUpdate stub chains!
+  
   inline ICFallbackStub* getChainFallback() {
     ICStub* lastStub = this;
     while (lastStub->next_) {
@@ -630,10 +630,10 @@ class ICStub {
   static bool NonCacheIRStubMakesGCCalls(Kind kind);
   bool makesGCCalls() const;
 
-  // Optimized stubs get purged on GC.  But some stubs can be active on the
-  // stack during GC - specifically the ones that can make calls.  To ensure
-  // that these do not get purged, all stubs that can make calls are allocated
-  // in the fallback stub space.
+  
+  
+  
+  
   bool allocatedInFallbackSpace() const {
     MOZ_ASSERT(next());
     return makesGCCalls();
@@ -644,26 +644,26 @@ class ICFallbackStub : public ICStub {
   friend class ICStubConstIterator;
 
  protected:
-  // Fallback stubs need these fields to easily add new stubs to
-  // the linked list of stubs for an IC.
+  
+  
 
-  // The IC entry for this linked list of stubs.
+  
   ICEntry* icEntry_;
 
-  // The state of this IC
+  
   ICState state_;
 
-  // Counts the number of times the stub was entered
-  //
-  // See Bug 1494473 comment 6 for a mechanism to handle overflow if overflow
-  // becomes a concern.
+  
+  
+  
+  
   uint32_t enteredCount_;
 
-  // A pointer to the location stub pointer that needs to be
-  // changed to add a new "last" stub immediately before the fallback
-  // stub.  This'll start out pointing to the icEntry's "firstStub_"
-  // field, and as new stubs are added, it'll point to the current
-  // last stub's "next_" field.
+  
+  
+  
+  
+  
   ICStub** lastStubPtrAddr_;
 
   ICFallbackStub(Kind kind, TrampolinePtr stubCode)
@@ -689,10 +689,10 @@ class ICFallbackStub : public ICStub {
 
   ICState& state() { return state_; }
 
-  // The icEntry and lastStubPtrAddr_ fields can't be initialized when the stub
-  // is created since the stub is created at compile time, and we won't know the
-  // IC entry address until after compile when the JitScript is created.  This
-  // method allows these fields to be fixed up at that point.
+  
+  
+  
+  
   void fixupICEntry(ICEntry* icEntry) {
     MOZ_ASSERT(icEntry_ == nullptr);
     MOZ_ASSERT(lastStubPtrAddr_ == nullptr);
@@ -700,7 +700,7 @@ class ICFallbackStub : public ICStub {
     lastStubPtrAddr_ = icEntry_->addressOfFirstStub();
   }
 
-  // Add a new stub to the IC chain terminated by this fallback stub.
+  
   void addNewStub(ICStub* stub) {
     MOZ_ASSERT(*lastStubPtrAddr_ == this);
     MOZ_ASSERT(stub->next() == nullptr);
@@ -740,23 +740,23 @@ class ICFallbackStub : public ICStub {
   void unlinkStub(Zone* zone, ICStub* prev, ICStub* stub);
   void unlinkStubsWithKind(JSContext* cx, ICStub::Kind kind);
 
-  // Return the number of times this stub has successfully provided a value to
-  // the caller.
+  
+  
   uint32_t enteredCount() const { return enteredCount_; }
   inline void incrementEnteredCount() { enteredCount_++; }
   void resetEnteredCount() { enteredCount_ = 0; }
 };
 
-// Shared trait for all CacheIR stubs.
+
 template <typename T>
 class ICCacheIR_Trait {
  protected:
   const CacheIRStubInfo* stubInfo_;
 
-  // Counts the number of times the stub was entered
-  //
-  // See Bug 1494473 comment 6 for a mechanism to handle overflow if overflow
-  // becomes a concern.
+  
+  
+  
+  
   uint32_t enteredCount_;
 
  public:
@@ -765,15 +765,15 @@ class ICCacheIR_Trait {
 
   const CacheIRStubInfo* stubInfo() const { return stubInfo_; }
 
-  // Return the number of times this stub has successfully provided a value to
-  // the caller.
+  
+  
   uint32_t enteredCount() const { return enteredCount_; }
   void resetEnteredCount() { enteredCount_ = 0; }
 
   static size_t offsetOfEnteredCount() { return offsetof(T, enteredCount_); }
 };
 
-// Base class for Trait::Regular CacheIR stubs
+
 class ICCacheIR_Regular : public ICStub,
                           public ICCacheIR_Trait<ICCacheIR_Regular> {
  public:
@@ -786,19 +786,19 @@ class ICCacheIR_Regular : public ICStub,
   uint8_t* stubDataStart();
 };
 
-// Monitored stubs are IC stubs that feed a single resulting value out to a
-// type monitor operation.
+
+
 class ICMonitoredStub : public ICStub {
  protected:
-  // Pointer to the start of the type monitoring stub chain.
+  
   ICStub* firstMonitorStub_;
 
   ICMonitoredStub(Kind kind, JitCode* stubCode, ICStub* firstMonitorStub);
 
  public:
   inline void updateFirstMonitorStub(ICStub* monitorStub) {
-    // This should only be called once: when the first optimized monitor stub
-    // is added to the type monitor IC chain.
+    
+    
     MOZ_ASSERT(firstMonitorStub_ &&
                firstMonitorStub_->isTypeMonitor_Fallback());
     firstMonitorStub_ = monitorStub;
@@ -835,7 +835,7 @@ class ICCacheIR_Updated : public ICStub,
   GCPtrObjectGroup updateStubGroup_;
   GCPtrId updateStubId_;
 
-  // Pointer to the start of the type updating stub chain.
+  
   ICStub* firstUpdateStub_;
 
   static const uint32_t MAX_OPTIMIZED_STUBS = 8;
@@ -906,7 +906,7 @@ class ICCacheIR_Updated : public ICStub,
   }
 };
 
-// Base class for stubcode compilers.
+
 class ICStubCompilerBase {
  protected:
   JSContext* cx;
@@ -923,26 +923,26 @@ class ICStubCompilerBase {
                          AllocatableGeneralRegisterSet regs, Register argcReg,
                          bool isConstructing);
 
-  // Push a payload specialized per compiler needed to execute stubs.
+  
   void PushStubPayload(MacroAssembler& masm, Register scratch);
   void pushStubPayload(MacroAssembler& masm, Register scratch);
 
-  // Emits a tail call to a VMFunction wrapper.
+  
   MOZ_MUST_USE bool tailCallVMInternal(MacroAssembler& masm,
                                        TailCallVMFunctionId id);
 
   template <typename Fn, Fn fn>
   MOZ_MUST_USE bool tailCallVM(MacroAssembler& masm);
 
-  // Emits a normal (non-tail) call to a VMFunction wrapper.
+  
   MOZ_MUST_USE bool callVMInternal(MacroAssembler& masm, VMFunctionId id);
 
   template <typename Fn, Fn fn>
   MOZ_MUST_USE bool callVM(MacroAssembler& masm);
 
-  // A stub frame is used when a stub wants to call into the VM without
-  // performing a tail call. This is required for the return address
-  // to pc mapping to work.
+  
+  
+  
   void enterStubFrame(MacroAssembler& masm, Register scratch);
   void assumeStubFrame();
   void leaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false);
@@ -992,13 +992,13 @@ class ICStubCompilerBase {
 };
 
 class ICStubCompiler : public ICStubCompilerBase {
-  // Prevent GC in the middle of stub compilation.
+  
   js::gc::AutoSuppressGC suppressGC;
 
  protected:
   ICStub::Kind kind;
 
-  // By default the stubcode key is just the kind.
+  
   virtual int32_t getKey() const { return static_cast<int32_t>(kind); }
 
   virtual MOZ_MUST_USE bool generateStubCode(MacroAssembler& masm) = 0;
@@ -1025,11 +1025,11 @@ class ICStubCompiler : public ICStubCompilerBase {
   }
 };
 
-// Monitored fallback stubs - as the name implies.
+
 class ICMonitoredFallbackStub : public ICFallbackStub {
  protected:
-  // Pointer to the fallback monitor stub. Created lazily by
-  // getFallbackMonitorStub if needed.
+  
+  
   ICTypeMonitor_Fallback* fallbackMonitorStub_;
 
   ICMonitoredFallbackStub(Kind kind, TrampolinePtr stubCode)
@@ -1056,9 +1056,9 @@ class ICMonitoredFallbackStub : public ICFallbackStub {
   }
 };
 
-// TypeCheckPrimitiveSetStub
-//   Base class for IC stubs (TypeUpdate or TypeMonitor) that check that a given
-//   value's type falls within a set of primitive types.
+
+
+
 
 class TypeCheckPrimitiveSetStub : public ICStub {
   friend class ICStubSpace;
@@ -1134,42 +1134,42 @@ class TypeCheckPrimitiveSetStub : public ICStub {
   };
 };
 
-// TypeMonitor
 
-// The TypeMonitor fallback stub is not always a regular fallback stub. When
-// used for monitoring the values pushed by a bytecode it doesn't hold a
-// pointer to the IC entry, but rather back to the main fallback stub for the
-// IC (from which a pointer to the IC entry can be retrieved). When monitoring
-// the types of 'this', arguments or other values with no associated IC, there
-// is no main fallback stub, and the IC entry is referenced directly.
+
+
+
+
+
+
+
 class ICTypeMonitor_Fallback : public ICStub {
   friend class ICStubSpace;
 
   static const uint32_t MAX_OPTIMIZED_STUBS = 8;
 
-  // Pointer to the main fallback stub for the IC or to the main IC entry,
-  // depending on hasFallbackStub.
+  
+  
   union {
     ICMonitoredFallbackStub* mainFallbackStub_;
     ICEntry* icEntry_;
   };
 
-  // Pointer to the first monitor stub.
+  
   ICStub* firstMonitorStub_;
 
-  // Address of the last monitor stub's field pointing to this
-  // fallback monitor stub.  This will get updated when new
-  // monitor stubs are created and added.
+  
+  
+  
   ICStub** lastMonitorStubPtrAddr_;
 
-  // Count of optimized type monitor stubs in this chain.
+  
   uint32_t numOptimizedMonitorStubs_ : 7;
 
-  // Whether this has a fallback stub referring to the IC entry.
+  
   bool hasFallbackStub_ : 1;
 
-  // Index of 'this' or argument which is being monitored, or BYTECODE_INDEX
-  // if this is monitoring the types of values pushed at some bytecode.
+  
+  
   uint32_t argumentIndex_ : 23;
 
   static const uint32_t BYTECODE_INDEX = (1 << 23) - 1;
@@ -1255,7 +1255,7 @@ class ICTypeMonitor_Fallback : public ICStub {
     return argumentIndex_ == BYTECODE_INDEX;
   }
 
-  // Fixup the IC entry as for a normal fallback stub, for this/arguments.
+  
   void fixupICEntry(ICEntry* icEntry) {
     MOZ_ASSERT(!hasFallbackStub_);
     MOZ_ASSERT(icEntry_ == nullptr);
@@ -1264,8 +1264,8 @@ class ICTypeMonitor_Fallback : public ICStub {
     lastMonitorStubPtrAddr_ = icEntry_->addressOfFirstStub();
   }
 
-  // Create a new monitor stub for the type of the given value, and
-  // add it to this chain.
+  
+  
   MOZ_MUST_USE bool addMonitorStubForValue(JSContext* cx, BaselineFrame* frame,
                                            StackTypeSet* types,
                                            HandleValue val);
@@ -1385,10 +1385,10 @@ class ICTypeMonitor_AnyValue : public ICStub {
   };
 };
 
-// TypeUpdate
 
-// The TypeUpdate fallback is not a regular fallback, since it just
-// forwards to a different entry point in the main fallback stub.
+
+
+
 class ICTypeUpdate_Fallback : public ICStub {
   friend class ICStubSpace;
 
@@ -1429,7 +1429,7 @@ class ICTypeUpdate_PrimitiveSet : public TypeCheckPrimitiveSetStub {
   };
 };
 
-// Type update stub to handle a singleton object.
+
 class ICTypeUpdate_SingleObject : public ICStub {
   friend class ICStubSpace;
 
@@ -1459,7 +1459,7 @@ class ICTypeUpdate_SingleObject : public ICStub {
   };
 };
 
-// Type update stub to handle a single ObjectGroup.
+
 class ICTypeUpdate_ObjectGroup : public ICStub {
   friend class ICStubSpace;
 
@@ -1510,8 +1510,8 @@ class ICTypeUpdate_AnyValue : public ICStub {
   };
 };
 
-// ToBool
-//      JSOp::IfNe
+
+
 
 class ICToBool_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1523,9 +1523,9 @@ class ICToBool_Fallback : public ICFallbackStub {
   static const uint32_t MAX_OPTIMIZED_STUBS = 8;
 };
 
-// GetElem
-//      JSOp::GetElem
-//      JSOp::GetElemSuper
+
+
+
 
 class ICGetElem_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
@@ -1544,9 +1544,9 @@ class ICGetElem_Fallback : public ICMonitoredFallbackStub {
   bool sawNonIntegerIndex() const { return extra_ & SAW_NON_INTEGER_INDEX_BIT; }
 };
 
-// SetElem
-//      JSOp::SetElem
-//      JSOp::InitElem
+
+
+
 
 class ICSetElem_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1565,8 +1565,8 @@ class ICSetElem_Fallback : public ICFallbackStub {
   bool hasTypedArrayOOB() const { return extra_ & HasTypedArrayOOBFlag; }
 };
 
-// In
-//      JSOp::In
+
+
 class ICIn_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1574,8 +1574,8 @@ class ICIn_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::In_Fallback, stubCode) {}
 };
 
-// HasOwn
-//      JSOp::HasOwn
+
+
 class ICHasOwn_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1583,9 +1583,9 @@ class ICHasOwn_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::HasOwn_Fallback, stubCode) {}
 };
 
-// GetName
-//      JSOp::GetName
-//      JSOp::GetGName
+
+
+
 class ICGetName_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
 
@@ -1593,8 +1593,8 @@ class ICGetName_Fallback : public ICMonitoredFallbackStub {
       : ICMonitoredFallbackStub(ICStub::GetName_Fallback, stubCode) {}
 };
 
-// BindName
-//      JSOp::BindName
+
+
 class ICBindName_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1602,8 +1602,8 @@ class ICBindName_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::BindName_Fallback, stubCode) {}
 };
 
-// GetIntrinsic
-//      JSOp::GetIntrinsic
+
+
 class ICGetIntrinsic_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
 
@@ -1611,9 +1611,9 @@ class ICGetIntrinsic_Fallback : public ICMonitoredFallbackStub {
       : ICMonitoredFallbackStub(ICStub::GetIntrinsic_Fallback, stubCode) {}
 };
 
-// GetProp
-//     JSOp::GetProp
-//     JSOp::GetPropSuper
+
+
+
 
 class ICGetProp_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
@@ -1630,11 +1630,11 @@ class ICGetProp_Fallback : public ICMonitoredFallbackStub {
   }
 };
 
-// SetProp
-//     JSOp::SetProp
-//     JSOp::SetName
-//     JSOp::SetGName
-//     JSOp::InitProp
+
+
+
+
+
 
 class ICSetProp_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1643,21 +1643,21 @@ class ICSetProp_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::SetProp_Fallback, stubCode) {}
 };
 
-// Call
-//      JSOp::Call
-//      JSOp::CallIgnoresRv
-//      JSOp::CallIter
-//      JSOp::FunApply
-//      JSOp::FunCall
-//      JSOp::New
-//      JSOp::SuperCall
-//      JSOp::Eval
-//      JSOp::StrictEval
-//      JSOp::SpreadCall
-//      JSOp::SpreadNew
-//      JSOp::SpreadSuperCall
-//      JSOp::SpreadEval
-//      JSOp::SpreadStrictEval
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ICCall_Fallback : public ICMonitoredFallbackStub {
   friend class ICStubSpace;
@@ -1670,7 +1670,7 @@ class ICCall_Fallback : public ICMonitoredFallbackStub {
       : ICMonitoredFallbackStub(ICStub::Call_Fallback, stubCode) {}
 };
 
-// IC for constructing an iterator from an input value.
+
 class ICGetIterator_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1678,8 +1678,8 @@ class ICGetIterator_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::GetIterator_Fallback, stubCode) {}
 };
 
-// InstanceOf
-//      JSOp::Instanceof
+
+
 class ICInstanceOf_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1687,9 +1687,9 @@ class ICInstanceOf_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::InstanceOf_Fallback, stubCode) {}
 };
 
-// TypeOf
-//      JSOp::Typeof
-//      JSOp::TypeofExpr
+
+
+
 class ICTypeOf_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
@@ -1715,11 +1715,12 @@ class ICRest_Fallback : public ICFallbackStub {
   GCPtrArrayObject& templateObject() { return templateObject_; }
 };
 
-// UnaryArith
-//     JSOp::BitNot
-//     JSOp::Neg
-//     JSOp::Inc
-//     JSOp::Dec
+
+
+
+
+
+
 
 class ICUnaryArith_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1732,15 +1733,15 @@ class ICUnaryArith_Fallback : public ICFallbackStub {
   void setSawDoubleResult() { extra_ = 1; }
 };
 
-// Compare
-//      JSOp::Lt
-//      JSOp::Le
-//      JSOp::Gt
-//      JSOp::Ge
-//      JSOp::Eq
-//      JSOp::Ne
-//      JSOp::StrictEq
-//      JSOp::StrictNe
+
+
+
+
+
+
+
+
+
 
 class ICCompare_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1749,10 +1750,10 @@ class ICCompare_Fallback : public ICFallbackStub {
       : ICFallbackStub(ICStub::Compare_Fallback, stubCode) {}
 };
 
-// BinaryArith
-//      JSOp::Add, JSOp::Sub, JSOp::Mul, JOP_DIV, JSOp::Mod
-//      JSOp::BitAnd, JSOp::BitXor, JSOp::BitOr
-//      JSOp::Lsh, JSOp::Rsh, JSOp::Ursh
+
+
+
+
 
 class ICBinaryArith_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1769,15 +1770,15 @@ class ICBinaryArith_Fallback : public ICFallbackStub {
   void setSawDoubleResult() { extra_ |= SAW_DOUBLE_RESULT_BIT; }
 };
 
-// JSOp::NewArray
+
 
 class ICNewArray_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
   GCPtrObject templateObject_;
 
-  // The group used for objects created here is always available, even if the
-  // template object itself is not.
+  
+  
   GCPtrObjectGroup templateGroup_;
 
   ICNewArray_Fallback(TrampolinePtr stubCode, ObjectGroup* templateGroup)
@@ -1801,7 +1802,7 @@ class ICNewArray_Fallback : public ICFallbackStub {
   }
 };
 
-// JSOp::NewObject
+
 
 class ICNewObject_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
@@ -1828,8 +1829,8 @@ inline bool IsCacheableDOMProxy(JSObject* obj) {
     return false;
   }
 
-  // Some DOM proxies have dynamic prototypes.  We can't really cache those very
-  // well.
+  
+  
   return obj->hasStaticPrototype();
 }
 
@@ -1943,7 +1944,7 @@ extern bool DoCompareFallback(JSContext* cx, BaselineFrame* frame,
                               ICCompare_Fallback* stub, HandleValue lhs,
                               HandleValue rhs, MutableHandleValue ret);
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_BaselineIC_h */
+#endif 
