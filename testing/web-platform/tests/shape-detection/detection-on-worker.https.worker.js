@@ -18,6 +18,12 @@ const imageBitmapTests =
         mockTestName: "BarcodeDetectionTest",
         resultSize: 2, 
         detectorType: "Barcode"
+      },
+      {
+        createDetector: () => { return new TextDetector(); },
+        mockTestName: "TextDetectionTest",
+        resultSize: 2, 
+        detectorType: "Text"
       }
     ];
 
