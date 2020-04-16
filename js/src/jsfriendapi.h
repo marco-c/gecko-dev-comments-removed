@@ -484,13 +484,6 @@ extern JS_FRIEND_API void IterateGrayObjects(JS::Zone* zone,
                                              GCThingCallback cellCallback,
                                              void* data);
 
-
-
-
-
-extern JS_FRIEND_API void IterateGrayObjectsUnderCC(
-    JS::Zone* zone, GCThingCallback cellCallback, void* data);
-
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
 
 
