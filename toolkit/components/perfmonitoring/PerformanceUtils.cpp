@@ -9,6 +9,8 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/BrowsingContextGroup.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/WorkerDebugger.h"
 #include "mozilla/dom/WorkerDebuggerManager.h"
 
@@ -38,25 +40,23 @@ nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo() {
     promises.AppendElement(debugger->ReportPerformanceInfo());
   }
 
-  
-  LinkedList<TabGroup>* tabGroups = TabGroup::GetTabGroupList();
-
-  
-  if (tabGroups) {
-    
-    
-    nsTArray<RefPtr<DocGroup>> docGroups;
-    for (TabGroup* tabGroup = tabGroups->getFirst(); tabGroup;
-         tabGroup =
-             static_cast<LinkedListElement<TabGroup>*>(tabGroup)->getNext()) {
-      for (auto iter = tabGroup->Iter(); !iter.Done(); iter.Next()) {
-        docGroups.AppendElement(iter.Get()->mDocGroup);
-      }
-    }
-    for (DocGroup* docGroup : docGroups) {
-      promises.AppendElement(docGroup->ReportPerformanceInfo());
-    }
+  nsTArray<RefPtr<BrowsingContextGroup>> groups;
+  if (XRE_IsContentProcess()) {
+    groups.AppendElements(
+        ContentChild::GetSingleton()->BrowsingContextGroups());
+  } else {
+    groups.AppendElements(ContentParent::BrowsingContextGroups());
   }
+
+  nsTArray<DocGroup*> docGroups;
+  for (auto& browsingContextGroup : groups) {
+    browsingContextGroup->GetDocGroups(docGroups);
+  }
+
+  for (DocGroup* docGroup : docGroups) {
+    promises.AppendElement(docGroup->ReportPerformanceInfo());
+  }
+
   return promises;
 }
 
