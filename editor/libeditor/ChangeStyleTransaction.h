@@ -12,6 +12,7 @@
 #include "nsString.h"                      
 
 class nsAtom;
+class nsStyledElement;
 
 namespace mozilla {
 
@@ -25,7 +26,7 @@ class Element;
 
 class ChangeStyleTransaction final : public EditTransactionBase {
  protected:
-  ChangeStyleTransaction(dom::Element& aElement, nsAtom& aProperty,
+  ChangeStyleTransaction(nsStyledElement& aStyledElement, nsAtom& aProperty,
                          const nsAString& aValue, bool aRemove);
 
  public:
@@ -37,7 +38,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> Create(
-      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
+      nsStyledElement& aStyledElement, nsAtom& aProperty,
+      const nsAString& aValue);
 
   
 
@@ -47,7 +49,8 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> CreateToRemove(
-      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
+      nsStyledElement& aStyledElement, nsAtom& aProperty,
+      const nsAString& aValue);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction,
                                            EditTransactionBase)
@@ -106,7 +109,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
   nsresult SetStyle(bool aAttributeWasSet, nsAString& aValue);
 
   
-  nsCOMPtr<dom::Element> mElement;
+  RefPtr<nsStyledElement> mStyledElement;
 
   
   RefPtr<nsAtom> mProperty;
@@ -115,12 +118,13 @@ class ChangeStyleTransaction final : public EditTransactionBase {
   nsString mValue;
 
   
-  bool mRemoveProperty;
-
-  
   nsString mUndoValue;
   
   nsString mRedoValue;
+
+  
+  bool mRemoveProperty;
+
   
   bool mUndoAttributeWasSet;
   

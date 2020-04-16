@@ -10,11 +10,9 @@
 #include "mozilla/EditTransactionBase.h"  
 #include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h"
+#include "nsIContent.h"
 #include "nsISupportsImpl.h"  
 #include "nscore.h"           
-
-class nsIContent;
-class nsINode;
 
 namespace mozilla {
 
@@ -28,7 +26,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
  private:
   template <typename PT, typename CT>
   SplitNodeTransaction(EditorBase& aEditorBase,
-                       const EditorDOMPointBase<PT, CT>& aStartOfRightNode);
+                       const EditorDOMPointBase<PT, CT>& aStartOfRightContent);
 
  public:
   
@@ -45,7 +43,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
   template <typename PT, typename CT>
   static already_AddRefed<SplitNodeTransaction> Create(
       EditorBase& aEditorBase,
-      const EditorDOMPointBase<PT, CT>& aStartOfRightNode);
+      const EditorDOMPointBase<PT, CT>& aStartOfRightContent);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction,
@@ -55,7 +53,7 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
   NS_IMETHOD RedoTransaction() override;
 
-  nsIContent* GetNewNode();
+  nsIContent* GetNewLeftContent() const { return mNewLeftContent; }
 
  protected:
   virtual ~SplitNodeTransaction() = default;
@@ -64,13 +62,13 @@ class SplitNodeTransaction final : public EditTransactionBase {
 
   
   
-  EditorDOMPoint mStartOfRightNode;
+  EditorDOMPoint mStartOfRightContent;
 
   
-  nsCOMPtr<nsIContent> mNewLeftNode;
+  nsCOMPtr<nsIContent> mNewLeftContent;
 
   
-  nsCOMPtr<nsINode> mParent;
+  nsCOMPtr<nsINode> mContainerParentNode;
 };
 
 }  
