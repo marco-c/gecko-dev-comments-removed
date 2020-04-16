@@ -1555,7 +1555,11 @@ pref("network.http.send_window_size", 1024);
 
 pref("network.ftp.data.qos", 0);
 pref("network.ftp.control.qos", 0);
-pref("network.ftp.enabled", true);
+#ifdef NIGHTLY_BUILD
+  pref("network.ftp.enabled", false);
+#else
+  pref("network.ftp.enabled", true);
+#endif
 
 
 pref("network.sts.max_time_for_events_between_two_polls", 100);

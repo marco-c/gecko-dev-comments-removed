@@ -7,6 +7,10 @@ const { MatchURLFilters } = ChromeUtils.import(
   "resource://gre/modules/MatchURLFilters.jsm"
 );
 
+const { Preferences } = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm"
+);
+
 function createTestFilter({ url, filters }) {
   let m = new MatchURLFilters(filters);
   return m.matches(url);
@@ -115,7 +119,20 @@ add_task(async function test_match_url_filters() {
     
     { shouldPass, filters: [{ ports: [443] }], url: "https://mozilla.org" },
     { shouldPass, filters: [{ ports: [80] }], url: "http://mozilla.org" },
-    { shouldPass, filters: [{ ports: [21] }], url: "ftp://ftp.mozilla.org" },
+    {
+      shouldPass,
+      filters: [{ ports: [21] }],
+      url: "ftp://ftp.mozilla.org",
+      prefs: [["network.ftp.enabled", true]],
+    },
+
+    
+    {
+      shouldFail,
+      filters: [{ ports: [21] }],
+      url: "ftp://ftp.mozilla.org",
+      prefs: [["network.ftp.enabled", false]],
+    },
 
     
     { shouldFail, filters: [{ ports: [-1] }], url: "about:blank" },
@@ -809,7 +826,13 @@ add_task(async function test_match_url_filters() {
 
   
   for (let currentTest of testCases) {
-    let { exceptionMessageContains, url, filters } = currentTest;
+    let { exceptionMessageContains, url, filters, prefs } = currentTest;
+
+    if (prefs !== undefined) {
+      for (let [name, val] of prefs) {
+        Preferences.set(name, val);
+      }
+    }
 
     if (currentTest.shouldThrow) {
       expectThrow({ url, filters, exceptionMessageContains });
@@ -817,6 +840,12 @@ add_task(async function test_match_url_filters() {
       expectFail({ url, filters });
     } else {
       expectPass({ url, filters });
+    }
+
+    if (prefs !== undefined) {
+      for (let [name] of prefs) {
+        Preferences.reset(name);
+      }
     }
   }
 });

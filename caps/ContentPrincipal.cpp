@@ -399,7 +399,10 @@ static nsresult GetSpecialBaseDomain(const nsCOMPtr<nsIURI>& aURI,
     return rv;
   }
 
-  if (hasNoRelativeFlag) {
+  
+  
+  
+  if (hasNoRelativeFlag && !aURI->SchemeIs("ftp")) {
     *aHandled = true;
     return aURI->GetSpec(aBaseDomain);
   }

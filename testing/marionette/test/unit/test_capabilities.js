@@ -19,6 +19,12 @@ const {
   UnhandledPromptBehavior,
 } = ChromeUtils.import("chrome://marionette/content/capabilities.js");
 
+
+registerCleanupFunction(function() {
+  Preferences.reset("network.ftp.enabled");
+});
+Preferences.set("network.ftp.enabled", true);
+
 add_test(function test_Timeouts_ctor() {
   let ts = new Timeouts();
   equal(ts.implicit, 0);
