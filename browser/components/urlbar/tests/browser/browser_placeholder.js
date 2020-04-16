@@ -74,6 +74,12 @@ add_task(async function test_change_default_engine_updates_placeholder() {
 add_task(async function test_delayed_update_placeholder() {
   
   
+  
+  
+  Services.obs.removeObserver(BrowserSearch, "browser-search-engine-modified");
+
+  
+  
   let urlTab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "about:mozilla"
@@ -84,6 +90,7 @@ add_task(async function test_delayed_update_placeholder() {
   let blankTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   tabs.push(blankTab);
 
+  await Services.search.setDefault(extraEngine);
   
   BrowserSearch._updateURLBarPlaceholder(extraEngine.name, false, true);
 
@@ -104,8 +111,8 @@ add_task(async function test_delayed_update_placeholder() {
   
   await BrowserTestUtils.switchTab(gBrowser, blankTab);
 
+  await Services.search.setDefault(originalEngine);
   BrowserSearch._updateURLBarPlaceholder(originalEngine.name, false, true);
-  await TestUtils.waitForTick();
 
   Assert.equal(
     gURLBar.placeholder,
@@ -122,13 +129,14 @@ add_task(async function test_delayed_update_placeholder() {
 
   
   BrowserSearch._updateURLBarPlaceholder(extraEngine.name, false);
-  await TestUtils.waitForTick();
 
   Assert.equal(
     gURLBar.placeholder,
     gURLBar.getAttribute("defaultPlaceholder"),
     "Placeholder should be the default."
   );
+
+  Services.obs.addObserver(BrowserSearch, "browser-search-engine-modified");
 });
 
 add_task(async function test_private_window_no_separate_engine() {
