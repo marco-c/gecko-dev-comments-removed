@@ -17,15 +17,15 @@ withJitOptions(Opts_IonEagerNoOffthreadCompilation, function() {
 
   
   (function () {
-    function a() {}
-    for (var i = 0; i < 1; i++) f();
+    var a = 1;
+    for (var i = 0; i < 1; i++) { f(); a = 2; }
   })();
 
   
   (function () {
     {
-      function a() {}
-      for (var i = 0; i < 1; i++) f();
+      let a = 1;
+      for (var i = 0; i < 1; i++) { f(); a = 2; }
     }
   })();
 });
