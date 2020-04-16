@@ -2218,44 +2218,31 @@ bool LayerManager::IsLogEnabled() {
 }
 
 bool LayerManager::SetPendingScrollUpdateForNextTransaction(
-    ScrollableLayerGuid::ViewID aScrollId, const ScrollUpdateInfo& aUpdateInfo,
-    wr::RenderRoot aRenderRoot) {
+    ScrollableLayerGuid::ViewID aScrollId,
+    const ScrollUpdateInfo& aUpdateInfo) {
   Layer* withPendingTransform = DepthFirstSearch<ForwardIterator>(
       GetRoot(), [](Layer* aLayer) { return aLayer->HasPendingTransform(); });
   if (withPendingTransform) {
     return false;
   }
 
-  
-  
-  
-  
-  wr::RenderRoot renderRoot = (GetBackendType() == LayersBackend::LAYERS_WR)
-                                  ? aRenderRoot
-                                  : wr::RenderRoot::Default;
-  mPendingScrollUpdates[renderRoot].Put(aScrollId, aUpdateInfo);
+  mPendingScrollUpdates.Put(aScrollId, aUpdateInfo);
   return true;
 }
 
 Maybe<ScrollUpdateInfo> LayerManager::GetPendingScrollInfoUpdate(
     ScrollableLayerGuid::ViewID aScrollId) {
-  
-  
-  MOZ_ASSERT(GetBackendType() != LayersBackend::LAYERS_WR);
-  auto p = mPendingScrollUpdates[wr::RenderRoot::Default].Lookup(aScrollId);
+  auto p = mPendingScrollUpdates.Lookup(aScrollId);
   return p ? Some(p.Data()) : Nothing();
 }
 
 std::unordered_set<ScrollableLayerGuid::ViewID>
 LayerManager::ClearPendingScrollInfoUpdate() {
   std::unordered_set<ScrollableLayerGuid::ViewID> scrollIds;
-  for (auto renderRoot : wr::kRenderRoots) {
-    auto& updates = mPendingScrollUpdates[renderRoot];
-    for (auto it = updates.Iter(); !it.Done(); it.Next()) {
-      scrollIds.insert(it.Key());
-    }
-    updates.Clear();
+  for (auto it = mPendingScrollUpdates.Iter(); !it.Done(); it.Next()) {
+    scrollIds.insert(it.Key());
   }
+  mPendingScrollUpdates.Clear();
   return scrollIds;
 }
 
