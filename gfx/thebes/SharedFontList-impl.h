@@ -7,7 +7,7 @@
 
 #include "SharedFontList.h"
 
-#include "base/shared_memory.h"
+#include "mozilla/ipc/SharedMemoryBasic.h"
 
 #include "gfxFontUtils.h"
 #include "nsClassHashtable.h"
@@ -224,13 +224,12 @@ class FontList {
 
 
   void ShareShmBlockToProcess(uint32_t aIndex, base::ProcessId aPid,
-                              base::SharedMemoryHandle* aOut) {
-    MOZ_RELEASE_ASSERT(mReadOnlyShmems.Length() == mBlocks.Length());
-    if (aIndex >= mReadOnlyShmems.Length()) {
+                              mozilla::ipc::SharedMemoryBasic::Handle* aOut) {
+    if (aIndex >= mBlocks.Length()) {
       
-      *aOut = base::SharedMemory::NULLHandle();
+      *aOut = mozilla::ipc::SharedMemoryBasic::NULLHandle();
     }
-    if (!mReadOnlyShmems[aIndex]->ShareToProcess(aPid, aOut)) {
+    if (!mBlocks[aIndex]->mShmem->ShareToProcess(aPid, aOut)) {
       MOZ_CRASH("failed to share block");
     }
   }
@@ -241,7 +240,7 @@ class FontList {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t result = mBlocks.ShallowSizeOfExcludingThis(aMallocSizeOf);
     for (const auto& b : mBlocks) {
-      result += aMallocSizeOf(b.get()) + aMallocSizeOf(b->mShmem.get());
+      result += aMallocSizeOf(b.get()) + aMallocSizeOf(b->mShmem);
     }
     return result;
   }
@@ -269,20 +268,20 @@ class FontList {
 
  private:
   struct ShmBlock {
-    
-    ShmBlock(base::SharedMemory* aShmem) : mShmem(aShmem) {}
-
-    
-    void* Memory() const { return mShmem->memory(); }
+    ShmBlock(mozilla::ipc::SharedMemoryBasic* aShmem, void* aAddr)
+        : mShmem(aShmem), mAddr(aAddr) {}
 
     
     
     
     std::atomic<uint32_t>& Allocated() const {
-      return *static_cast<std::atomic<uint32_t>*>(Memory());
+      return *static_cast<std::atomic<uint32_t>*>(mAddr);
     }
 
-    mozilla::UniquePtr<base::SharedMemory> mShmem;
+    RefPtr<mozilla::ipc::SharedMemoryBasic> mShmem;
+    void* mAddr;  
+                  
+                  
   };
 
   Header& GetHeader() {
@@ -325,12 +324,6 @@ class FontList {
 
 
   nsTArray<mozilla::UniquePtr<ShmBlock>> mBlocks;
-
-  
-
-
-
-  nsTArray<mozilla::UniquePtr<base::SharedMemory>> mReadOnlyShmems;
 };
 
 }  
