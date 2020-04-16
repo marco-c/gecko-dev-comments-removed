@@ -11,6 +11,7 @@
 
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitContext.h"
+#include "vm/Printer.h"
 
 namespace js {
 
@@ -45,13 +46,13 @@ class WarpOpSnapshot : public TempObject,
   
   uint32_t offset_ = 0;
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
   Kind kind_;
 #endif
 
  protected:
   WarpOpSnapshot(Kind kind, uint32_t offset) : offset_(offset) {
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     kind_ = kind;
 #endif
   }
@@ -64,6 +65,10 @@ class WarpOpSnapshot : public TempObject,
     MOZ_ASSERT(kind_ == T::ThisKind);
     return static_cast<const T*>(this);
   }
+
+#ifdef JS_JITSPEW
+  void dump(GenericPrinter& out, JSScript* script) const;
+#endif
 };
 
 using WarpOpSnapshotList = mozilla::LinkedList<WarpOpSnapshot>;
@@ -79,6 +84,10 @@ class WarpArguments : public WarpOpSnapshot {
   WarpArguments(uint32_t offset, ArgumentsObject* templateObj)
       : WarpOpSnapshot(ThisKind, offset), templateObj_(templateObj) {}
   ArgumentsObject* templateObj() const { return templateObj_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -91,6 +100,10 @@ class WarpRegExp : public WarpOpSnapshot {
   WarpRegExp(uint32_t offset, bool hasShared)
       : WarpOpSnapshot(ThisKind, offset), hasShared_(hasShared) {}
   bool hasShared() const { return hasShared_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -106,6 +119,10 @@ class WarpFunctionProto : public WarpOpSnapshot {
     MOZ_ASSERT(proto);
   }
   JSObject* proto() const { return proto_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -119,6 +136,10 @@ class WarpGetIntrinsic : public WarpOpSnapshot {
   WarpGetIntrinsic(uint32_t offset, const Value& intrinsic)
       : WarpOpSnapshot(ThisKind, offset), intrinsic_(intrinsic) {}
   Value intrinsic() const { return intrinsic_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -143,6 +164,10 @@ class WarpGetImport : public WarpOpSnapshot {
   uint32_t numFixedSlots() const { return numFixedSlots_; }
   uint32_t slot() const { return slot_; }
   bool needsLexicalCheck() const { return needsLexicalCheck_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -165,6 +190,10 @@ class WarpLambda : public WarpOpSnapshot {
   BaseScript* baseScript() const { return baseScript_; }
   FunctionFlags flags() const { return flags_; }
   uint16_t nargs() const { return nargs_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -178,6 +207,10 @@ class WarpRest : public WarpOpSnapshot {
   WarpRest(uint32_t offset, ArrayObject* templateObject)
       : WarpOpSnapshot(ThisKind, offset), templateObject_(templateObject) {}
   ArrayObject* templateObject() const { return templateObject_; }
+
+#ifdef JS_JITSPEW
+  void dumpData(GenericPrinter& out) const;
+#endif
 };
 
 
@@ -281,8 +314,11 @@ class WarpScriptSnapshot : public TempObject {
   bool instrumentationActive() const { return *instrumentationActive_; }
 
   bool isArrowFunction() const { return isArrowFunction_; }
-};
 
+#ifdef JS_JITSPEW
+  void dump(GenericPrinter& out) const;
+#endif
+};
 
 
 
@@ -308,6 +344,11 @@ class WarpSnapshot : public TempObject {
     return globalLexicalEnv_;
   }
   Value globalLexicalEnvThis() const { return globalLexicalEnvThis_; }
+
+#ifdef JS_JITSPEW
+  void dump() const;
+  void dump(GenericPrinter& out) const;
+#endif
 };
 
 
