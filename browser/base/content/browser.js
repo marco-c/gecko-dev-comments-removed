@@ -8880,7 +8880,8 @@ function TabModalPromptBox(browser) {
 
 
 
-  this.prompts = new WeakMap();
+  this._contentPrompts = new WeakMap();
+  this._tabPrompts = new WeakMap();
 }
 
 TabModalPromptBox.prototype = {
@@ -8904,10 +8905,24 @@ TabModalPromptBox.prototype = {
     onCloseCallback.apply(this, args);
   },
 
+  getPrompt(promptEl) {
+    if (promptEl.classList.contains("tab-prompt")) {
+      return this._tabPrompts.get(promptEl);
+    }
+    return this._contentPrompts.get(promptEl);
+  },
+
   appendPrompt(args, onCloseCallback) {
     let browser = this.browser;
     let newPrompt = new TabModalPrompt(browser.ownerGlobal);
-    this.prompts.set(newPrompt.element, newPrompt);
+
+    if (args.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+      newPrompt.element.classList.add("tab-prompt");
+      this._tabPrompts.set(newPrompt.element, newPrompt);
+    } else {
+      newPrompt.element.classList.add("content-prompt");
+      this._contentPrompts.set(newPrompt.element, newPrompt);
+    }
 
     browser.parentNode.insertBefore(
       newPrompt.element,
@@ -8915,7 +8930,7 @@ TabModalPromptBox.prototype = {
     );
     browser.setAttribute("tabmodalPromptShowing", true);
 
-    let prompts = this.listPrompts();
+    let prompts = this.listPrompts(args.modalType);
     if (prompts.length > 1) {
       
       newPrompt.element.hidden = true;
@@ -8957,11 +8972,16 @@ TabModalPromptBox.prototype = {
   },
 
   removePrompt(aPrompt) {
-    this.prompts.delete(aPrompt.element);
+    if (aPrompt.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+      this._tabPrompts.delete(aPrompt.element);
+    } else {
+      this._contentPrompts.delete(aPrompt.element);
+    }
+
     let browser = this.browser;
     aPrompt.element.remove();
 
-    let prompts = this.listPrompts();
+    let prompts = this.listPrompts(aPrompt.modalType);
     if (prompts.length) {
       let prompt = prompts[prompts.length - 1];
       prompt.element.hidden = false;
@@ -8973,15 +8993,29 @@ TabModalPromptBox.prototype = {
     }
   },
 
-  listPrompts(aPrompt) {
+  listPrompts(aModalType = null) {
     
-    const XUL_NS =
-      "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-    let els = this.browser.parentNode.getElementsByTagNameNS(
-      XUL_NS,
-      "tabmodalprompt"
+    let selector = "tabmodalprompt";
+    let promptMap;
+
+    if (aModalType != null) {
+      if (aModalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+        selector += ".tab-prompt";
+        promptMap = this._tabPrompts;
+      } else {
+        selector += ".content-prompt";
+        promptMap = this._contentPrompts;
+      }
+    }
+
+    let elements = this.browser.parentNode.querySelectorAll(selector);
+
+    if (promptMap) {
+      return [...elements].map(el => promptMap.get(el));
+    }
+    return [...elements].map(
+      el => this._contentPrompts.get(el) || this._tabPrompts.get(el)
     );
-    return Array.from(els).map(el => this.prompts.get(el));
   },
 
   onNextPromptShowAllowFocusCheckboxFor(principal) {
