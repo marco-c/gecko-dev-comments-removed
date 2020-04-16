@@ -79,6 +79,13 @@ class NotificationHandler {
   virtual ~NotificationHandler() = default;
 };
 
+struct WrHitResult {
+  layers::LayersId mLayersId;
+  layers::ScrollableLayerGuid::ViewID mScrollId;
+  gfx::CompositorHitTestInfo mHitInfo;
+  SideBits mSideBits;
+};
+
 class TransactionBuilder final {
  public:
   explicit TransactionBuilder(bool aUseSceneBuilderThread = true);
@@ -236,13 +243,8 @@ class WebRenderAPI final {
   wr::WindowId GetId() const { return mId; }
 
   
-  bool HitTest(const wr::WorldPoint& aPoint, wr::WrPipelineId& aOutPipelineId,
-               layers::ScrollableLayerGuid::ViewID& aOutScrollId,
-               gfx::CompositorHitTestInfo& aOutHitInfo, SideBits& aOutSideBits);
-
   
-  
-  
+  std::vector<WrHitResult> HitTest(const wr::WorldPoint& aPoint);
 
   void SendTransaction(TransactionBuilder& aTxn);
 
