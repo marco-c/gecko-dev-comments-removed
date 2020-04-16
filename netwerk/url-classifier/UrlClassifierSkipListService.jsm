@@ -29,6 +29,20 @@ class Feature {
   }
 
   async addObserver(observer) {
+    
+    
+    if (!this.remoteEntries) {
+      let remoteEntries;
+      try {
+        
+        
+        remoteEntries = await RemoteSettings(COLLECTION_NAME).get();
+      } catch (e) {
+        remoteEntries = [];
+      }
+      this.onRemoteSettingsUpdate(remoteEntries);
+    }
+
     this.observers.add(observer);
     this.notifyObservers(observer);
   }
@@ -49,7 +63,6 @@ class Feature {
 
   onRemoteSettingsUpdate(entries) {
     this.remoteEntries = [];
-
     for (let entry of entries) {
       if (entry.feature == this.name) {
         this.remoteEntries.push(entry.pattern.toLowerCase());
@@ -58,11 +71,6 @@ class Feature {
   }
 
   notifyObservers(observer = null) {
-    
-    if (!this.remoteEntries) {
-      return;
-    }
-
     let entries = [];
     if (this.prefValue) {
       entries = this.prefValue.split(",");
@@ -90,7 +98,7 @@ UrlClassifierSkipListService.prototype = {
   features: {},
   _initialized: false,
 
-  async lazyInit() {
+  lazyInit() {
     if (this._initialized) {
       return;
     }
@@ -99,38 +107,14 @@ UrlClassifierSkipListService.prototype = {
       let {
         data: { current },
       } = event;
-      this.onUpdateEntries(current);
+      for (let key of Object.keys(this.features)) {
+        let feature = this.features[key];
+        feature.onRemoteSettingsUpdate(current);
+        feature.notifyObservers();
+      }
     });
 
     this._initialized = true;
-
-    
-    
-    
-    
-    
-    let entries;
-    try {
-      
-      
-      entries = await RemoteSettings(COLLECTION_NAME).get();
-    } catch (e) {}
-
-    
-    
-    if (!entries) {
-      entries = [];
-    }
-
-    this.onUpdateEntries(entries);
-  },
-
-  onUpdateEntries(entries) {
-    for (let key of Object.keys(this.features)) {
-      let feature = this.features[key];
-      feature.onRemoteSettingsUpdate(entries);
-      feature.notifyObservers();
-    }
   },
 
   registerAndRunSkipListObserver(feature, prefName, observer) {
