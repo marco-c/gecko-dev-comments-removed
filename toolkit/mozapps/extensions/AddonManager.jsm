@@ -114,9 +114,6 @@ var formatter = new Log.BasicFormatter();
 parentLogger.addAppender(new Log.ConsoleAppender(formatter));
 
 
-parentLogger.addAppender(new Log.DumpAppender(formatter));
-
-
 
 const LOGGER_ID = "addons.manager";
 var logger = Log.repository.getLogger(LOGGER_ID);
