@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let error = new Test262Error();
+Promise.resolve = function() {
+  throw error;
+};
+
+Promise.any([1]).then(() => {
+    $DONE('The promise should be rejected, but was resolved');
+  }, (reason) => {
+    assert.sameValue(reason, error);
+  }).then($DONE, $DONE);

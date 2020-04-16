@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = {};
+assert.throws(TypeError, function() {
+  new x(x = Array);
+});
+
+assert.sameValue(x, Array);
+
+reportCompare(0, 0);

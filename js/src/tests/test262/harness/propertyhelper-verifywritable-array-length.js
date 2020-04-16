@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+var array = [1, 2, 3];
+
+verifyWritable(array, "length");
+
+assert.sameValue(array.length, 3, '`verifyWritable` should be non-destructive.');
+
+reportCompare(0, 0);

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(/[\b]/u.test('\u0008'));
+assert(/[\b-A]/u.test('A'));
+
+reportCompare(0, 0);

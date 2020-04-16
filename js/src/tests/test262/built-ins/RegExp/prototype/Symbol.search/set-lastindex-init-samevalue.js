@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var re = /(?:)/;
+var execLastIndex;
+
+re.lastIndex = -0;
+re.exec = function() {
+  execLastIndex = re.lastIndex;
+  return null;
+};
+
+assert.sameValue(re[Symbol.search](""), -1);
+assert.sameValue(execLastIndex, 0);
+
+reportCompare(0, 0);

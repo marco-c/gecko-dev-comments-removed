@@ -19,7 +19,10 @@
 
 
 
-var match;
+
+
+
+
 
 assert.sameValue(/\1/.exec('\x01')[0], '\x01', '\\1');
 assert.sameValue(/\2/.exec('\x02')[0], '\x02', '\\2');
@@ -54,8 +57,14 @@ assert.sameValue(/\070/.exec('\x38')[0], '\x38', '\\070');
 assert.sameValue(/\300/.exec('\xc0')[0], '\xc0', '\\300');
 assert.sameValue(/\307/.exec('\xc7')[0], '\xc7', '\\307');
 assert.sameValue(/\370/.exec('\xf8')[0], '\xf8', '\\370');
+assert.sameValue(/\377/.exec('\xff')[0], '\xff', '\\377');
 
-match = /(.)\1/.exec('a\x01 aa');
+
+assert.sameValue(/\0111/.exec('\x091')[0], '\x091', '\\0111');
+assert.sameValue(/\0022/.exec('\x022')[0], '\x022', '\\0022');
+assert.sameValue(/\0003/.exec('\x003')[0], '\x003', '\\0003');
+
+var match = /(.)\1/.exec('a\x01 aa');
 assert.sameValue(
   match[0], 'aa', 'DecimalEscape takes precedence over LegacyOctalEscapeSequence'
 );

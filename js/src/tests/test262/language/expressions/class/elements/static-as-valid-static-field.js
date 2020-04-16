@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = class {
+  static static;
+}
+
+verifyProperty(C, "static", {
+  value: undefined,
+  enumerable: true,
+  writable: true,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

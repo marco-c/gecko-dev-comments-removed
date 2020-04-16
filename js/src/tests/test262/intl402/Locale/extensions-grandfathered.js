@@ -24,6 +24,18 @@
 const testData = [
     
     {
+        tag: "cel-gaulish",
+        options: {
+            language: "fr",
+            script: "Cyrl",
+            region: "FR",
+            numberingSystem: "latn",
+        },
+        canonical: "fr-Cyrl-FR-u-nu-latn-x-cel-gaulish",
+    },
+
+    
+    {
         tag: "art-lojban",
         options: {
             language: "fr",

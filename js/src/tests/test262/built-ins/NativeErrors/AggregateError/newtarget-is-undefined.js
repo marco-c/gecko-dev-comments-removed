@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = AggregateError([], '');
+
+assert.sameValue(Object.getPrototypeOf(obj), AggregateError.prototype);
+assert(obj instanceof AggregateError);
+
+reportCompare(0, 0);

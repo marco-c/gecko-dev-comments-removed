@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayTarget = new Proxy([], {});
+var arrayProxy = new Proxy(arrayTarget, {
+  getPrototypeOf: undefined,
+});
+
+assert.sameValue(Object.getPrototypeOf(arrayProxy), Array.prototype);
+
+reportCompare(0, 0);

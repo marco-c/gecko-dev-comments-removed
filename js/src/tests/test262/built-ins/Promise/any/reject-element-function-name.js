@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var rejectElementFunction;
+var thenable = {
+  then(_, reject) {
+    rejectElementFunction = reject;
+  }
+};
+
+function NotPromise(executor) {
+  executor(function() {}, function() {});
+}
+NotPromise.resolve = function(v) {
+  return v;
+};
+Promise.any.call(NotPromise, [thenable]);
+
+verifyProperty(rejectElementFunction, "name", {
+  value: "", writable: false, enumerable: false, configurable: true
+});
+
+reportCompare(0, 0);

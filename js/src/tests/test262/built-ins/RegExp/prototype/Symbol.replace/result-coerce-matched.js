@@ -16,13 +16,20 @@
 
 
 
+
+
 var r = /./;
 var coercibleValue = {
+  length: 1,
   0: {
     toString: function() {
       return 'toString value';
-    }
-  }
+    },
+    valueOf: function() {
+      throw new Test262Error('This method should not be invoked.');
+    },
+  },
+  index: 0,
 };
 r.exec = function() {
   return coercibleValue;

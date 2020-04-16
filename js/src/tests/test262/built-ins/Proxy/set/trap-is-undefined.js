@@ -10,15 +10,16 @@
 
 
 
+
 var target = {
   attr: 1
 };
 var p = new Proxy(target, {
-  get: undefined
+  set: undefined
 });
 
-p.attr = 1;
+p.attr = 2;
 
-assert.sameValue(target.attr, 1);
+assert.sameValue(target.attr, 2);
 
 reportCompare(0, 0);

@@ -34,6 +34,8 @@ const invalidNumberingSystemOptions = [
   "latn-ca",
   "latn-ca-",
   "latn-ca-gregory",
+  "latné",
+  "latn编号",
 ];
 for (const numberingSystem of invalidNumberingSystemOptions) {
   assert.throws(RangeError, function() {

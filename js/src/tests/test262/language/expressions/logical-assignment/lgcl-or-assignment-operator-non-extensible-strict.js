@@ -1,0 +1,25 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+Object.preventExtensions(obj);
+
+assert.throws(TypeError, function() {
+  obj.prop ||= 1;
+});
+assert.sameValue(obj.prop, undefined, "obj.prop");
+
+reportCompare(0, 0);

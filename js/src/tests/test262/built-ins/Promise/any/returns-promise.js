@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var p = Promise.any([]);
+
+assert(p instanceof Promise);
+assert.sameValue(Object.getPrototypeOf(p), Promise.prototype);
+
+reportCompare(0, 0);

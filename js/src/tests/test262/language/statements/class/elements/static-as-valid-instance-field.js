@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static;
+}
+
+let c = new C();
+
+verifyProperty(c, "static", {
+  value: undefined,
+  enumerable: true,
+  writable: true,
+  configurable: true
+});
+
+
+reportCompare(0, 0);

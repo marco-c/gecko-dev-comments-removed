@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CustomPromise() {
+  throw new Test262Error();
+}
+
+assert.throws(Test262Error, function() {
+  Promise.any.call(CustomPromise);
+});
+
+reportCompare(0, 0);

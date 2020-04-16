@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = 0;
+
+assert.throws(ReferenceError, function() {
+  value ||= unresolved;
+});
+assert.sameValue(value, 0, "value");
+
+reportCompare(0, 0);

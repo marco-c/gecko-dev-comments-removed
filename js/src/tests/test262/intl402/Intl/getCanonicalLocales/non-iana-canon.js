@@ -61,16 +61,12 @@ var testData = [
         canonical: "cs",
     },
     {
-        
-        
         tag: "hy-arevela",
-        canonical: "hy-arevela",
+        canonical: "hy",
     },
     {
-        
-        
         tag: "hy-arevmda",
-        canonical: "hy-arevmda",
+        canonical: "hyw",
     },
 ];
 

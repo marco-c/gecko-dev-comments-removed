@@ -12,12 +12,14 @@
 
 
 
-var revocable = Proxy.revocable({}, {});
 
+
+
+
+var revocable = Proxy.revocable({}, {});
 revocable.revoke();
 
-assert.throws(TypeError, function() {
-  new Proxy(revocable.proxy, {});
-});
+var proxy = new Proxy(revocable.proxy, {});
+assert.sameValue(typeof proxy, "object");
 
 reportCompare(0, 0);

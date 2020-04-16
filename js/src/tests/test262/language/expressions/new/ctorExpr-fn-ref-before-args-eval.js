@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var x = function() {
+  this.foo = 42;
+};
+
+var result = new x(x = 1);
+
+assert.sameValue(x, 1);
+assert.sameValue(result.foo, 42);
+
+reportCompare(0, 0);

@@ -18,13 +18,11 @@ assert(/\k/.test("k"));
 
 assert(/(?<a>\a)/.test("a"));
 
-assert(compareArray(["k<a>"], "xxxk<a>xxx".match(/\k<a>/)));
-assert(compareArray(["k<a"], "xxxk<a>xxx".match(/\k<a/)));
+assert.compareArray(["k<a>"], "xxxk<a>xxx".match(/\k<a>/));
+assert.compareArray(["k<a"], "xxxk<a>xxx".match(/\k<a/));
 
-
-
-assert(/\k<a>(?<=>)a/.test("k<a>a"));
-assert(/\k<a>(?<!a)a/.test("k<a>a"));
 assert(/\k<a>(<a>x)/.test("k<a><a>x"));
+assert(/\k<a>\1/.test("k<a>\x01"));
+assert(/\1(b)\k<a>/.test("bk<a>"));
 
 reportCompare(0, 0);

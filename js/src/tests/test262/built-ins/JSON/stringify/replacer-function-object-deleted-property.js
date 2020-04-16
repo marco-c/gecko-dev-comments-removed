@@ -18,6 +18,13 @@
 
 
 
+
+
+
+
+
+
+
 var obj = {
   get a() {
     delete this.b;

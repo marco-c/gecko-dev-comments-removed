@@ -22,7 +22,10 @@ var replacer = function() {
   return {
     toString: function() {
       return 'toString value';
-    }
+    },
+    valueOf: function() {
+      throw new Test262Error('This method should not be invoked.');
+    },
   };
 };
 

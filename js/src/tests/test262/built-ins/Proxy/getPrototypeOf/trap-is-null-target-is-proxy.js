@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var plainObjectTarget = new Proxy(Object.create(null), {});
+var plainObjectProxy = new Proxy(plainObjectTarget, {
+  getPrototypeOf: null,
+});
+
+assert.sameValue(Object.getPrototypeOf(plainObjectProxy), null);
+
+reportCompare(0, 0);

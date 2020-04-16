@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = 0;
+
+assert.sameValue(value &&= unresolved, 0, "value");
+
+reportCompare(0, 0);

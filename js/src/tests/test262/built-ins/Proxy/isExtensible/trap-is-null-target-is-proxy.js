@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var plainObjectTarget = new Proxy({}, {});
+var plainObjectProxy = new Proxy(plainObjectTarget, {
+  isExtensible: null,
+});
+
+assert(Object.isExtensible(plainObjectProxy));
+
+reportCompare(0, 0);

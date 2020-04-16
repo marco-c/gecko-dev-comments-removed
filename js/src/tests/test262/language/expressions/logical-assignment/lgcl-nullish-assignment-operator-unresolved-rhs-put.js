@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var value = undefined;
+
+assert.throws(ReferenceError, function() {
+  value ??= unresolved;
+});
+assert.sameValue(value, undefined, "value");
+
+reportCompare(0, 0);

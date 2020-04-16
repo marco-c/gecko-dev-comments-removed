@@ -19,12 +19,6 @@
 
 
 
-
-
-
-
-
-
 var spreadable = {};
 spreadable.length = Number.MAX_SAFE_INTEGER;
 spreadable[Symbol.isConcatSpreadable] = true;

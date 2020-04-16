@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const invalidCalendarOptions = [
+  "",
+  "a",
+  "ab",
+  "abcdefghi",
+  "abc-abcdefghi",
+  "!invalid!",
+  "-gregory-",
+  "gregory-",
+  "gregory--",
+  "gregory-nu",
+  "gregory-nu-",
+  "gregory-nu-latn",
+  "gregoryé",
+  "gregory역법",
+];
+for (const calendar of invalidCalendarOptions) {
+  assert.throws(RangeError, function() {
+    new Intl.DateTimeFormat('en', {calendar});
+  }, `new Intl.DateTimeFormat("en", {calendar: "${calendar}"}) throws RangeError`);
+}
+
+reportCompare(0, 0);

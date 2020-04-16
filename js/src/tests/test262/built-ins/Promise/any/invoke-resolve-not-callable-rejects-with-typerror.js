@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Promise.resolve = null;
+
+Promise.any([1])
+  .then(
+    () => $DONE('The promise should not be resolved.'),
+    error => {
+      assert(error instanceof TypeError);
+    }
+  ).then($DONE, $DONE);

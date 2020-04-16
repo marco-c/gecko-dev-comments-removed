@@ -33,10 +33,8 @@
 var cleanupCallback = 0;
 var called = 0;
 
-
-
-
-function cb() {
+function cb(holding) {
+  assert.sameValue(holding, 'a');
   called += 1;
 }
 
@@ -54,14 +52,17 @@ function emptyCells() {
   return prom;
 }
 
-
-
-async function fn() {
+emptyCells()
+  .then(async function() {
   await Promise.resolve(1);
 
   finalizationRegistry.cleanupSome(cb);
+
   
-  assert.sameValue(called, 1, 'cleanupSome callback for the first time');
+  
+  let expectedCalled = cleanupCallback === 1 ? 0 : 1;
+  
+  assert.sameValue(called, expectedCalled, 'cleanupSome callback for the first time');
 
   
   
@@ -80,9 +81,7 @@ async function fn() {
 
   finalizationRegistry.cleanupSome(cb);
 
-  
-  
-  assert.sameValue(called, 2, 'cleanupSome callback for the second time');
+  assert.sameValue(called, expectedCalled, 'cleanupSome callback is not called anymore, no empty cells');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #1');
 
   await $262.gc();
@@ -90,46 +89,9 @@ async function fn() {
 
   finalizationRegistry.cleanupSome(cb);
 
-  assert.sameValue(called, 3, 'cleanupSome callback for the third time');
+  assert.sameValue(called, expectedCalled, 'cleanupSome callback is not called again #2');
   assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #2');
 
   await $262.gc();
-}
-
-emptyCells()
-  .then(async function() {
-    await fn();
-    await Promise.resolve(4); 
-
-    assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #3');
-
-    finalizationRegistry.cleanupSome(cb);
-
-    assert.sameValue(called, 4, 'cleanupSome callback for the fourth time');
-    assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #4');
-    
-    await $262.gc();
-
-    
-    finalizationRegistry.cleanupSome(iterator => {
-      var exhausted = [...iterator];
-      assert.sameValue(exhausted.length, 1);
-      assert.sameValue(exhausted[0], 'a');
-      called += 1;
-    });
-
-    assert.sameValue(called, 5, 'cleanupSome callback for the fifth time');
-    assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #4');
-
-    await $262.gc();
-
-    await Promise.resolve(5); 
-    await await Promise.resolve(6); 
-    await await await Promise.resolve(7); 
-
-    finalizationRegistry.cleanupSome(cb);
-
-    assert.sameValue(called, 5, 'cleanupSome callback is not called anymore, no empty cells');
-    assert.sameValue(cleanupCallback, 0, 'cleanupCallback is not called again #5');
   })
   .then($DONE, resolveAsyncGC);

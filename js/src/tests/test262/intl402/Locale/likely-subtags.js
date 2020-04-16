@@ -37,6 +37,10 @@ const testDataMaximal = {
     "und-419": "es-Latn-419",
     "und-150": "ru-Cyrl-RU",
     "und-AT": "de-Latn-AT",
+    "und-Cyrl-RO": "bg-Cyrl-RO",
+
+    
+    "und-AQ": "und-Latn-AQ",
 };
 
 const testDataMinimal = {
@@ -62,6 +66,8 @@ const testDataMinimal = {
     "es-Latn-419": "es-419",
     "ru-Cyrl-RU": "ru",
     "de-Latn-AT": "de-AT",
+    "bg-Cyrl-RO": "bg-RO",
+    "und-Latn-AQ": "und-AQ",
 };
 
 

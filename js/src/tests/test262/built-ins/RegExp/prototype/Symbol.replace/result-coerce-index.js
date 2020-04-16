@@ -17,19 +17,29 @@
 
 
 
+
+
+
+
+
 var r = /./;
-var counter = 0;
 var coercibleIndex = {
+  length: 1,
+  0: '',
   index: {
     valueOf: function() {
       return 2.9;
-    }
-  }
+    },
+  },
 };
 r.exec = function() {
   return coercibleIndex;
 };
 
-assert.sameValue(r[Symbol.replace]('abcd', ''), 'ab');
+var replacer = function(_matched, position) {
+  return position;
+};
+
+assert.sameValue(r[Symbol.replace]('abcd', replacer), 'ab2cd');
 
 reportCompare(0, 0);

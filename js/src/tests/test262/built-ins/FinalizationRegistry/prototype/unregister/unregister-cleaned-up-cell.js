@@ -34,13 +34,6 @@
 
 
 
-
-
-
-
-
-
-
 var value = 'target!';
 var token = {};
 var finalizationRegistry = new FinalizationRegistry(function() {});
@@ -57,10 +50,10 @@ function emptyCells() {
 
 emptyCells().then(function() {
   var called = 0;
-  var holdings;
-  finalizationRegistry.cleanupSome(function cb(iterator) {
+  var holdings = [];
+  finalizationRegistry.cleanupSome(function cb(holding) {
     called += 1;
-    holdings = [...iterator];
+    holdings.push(holding);
   });
 
   assert.sameValue(called, 1);
