@@ -5,6 +5,12 @@ var DEBUG_TEST = false;
 function run_test() {
   
   var dir = do_get_profile();
+
+  
+  
+  var pm = Services.perms;
+  Assert.equal(pm.all.length, 0, "No cookies");
+
   
   var file = dir.clone();
   file.append("permissions.sqlite");
@@ -219,9 +225,6 @@ function run_test() {
 
   
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
-
-  
-  var pm = Services.perms;
 
   
   Assert.greater(pm.all.length, 0);
