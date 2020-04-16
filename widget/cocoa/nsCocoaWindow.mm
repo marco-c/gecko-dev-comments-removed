@@ -1611,9 +1611,6 @@ nsresult nsCocoaWindow::DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransi
     
     [mWindow toggleFullScreen:nil];
   } else {
-    if (mWidgetListener) {
-      mWidgetListener->FullscreenWillChange(aFullScreen);
-    }
     NSDisableScreenUpdates();
     
     
