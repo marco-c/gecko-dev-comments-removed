@@ -3,7 +3,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ContentSearch"];
+var EXPORTED_SYMBOLS = ["ContentSearchParent", "ContentSearch"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -28,12 +28,11 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/SearchSuggestionController.jsm"
 );
 
-const INBOUND_MESSAGE = "ContentSearch";
-const OUTBOUND_MESSAGE = INBOUND_MESSAGE;
 const MAX_LOCAL_SUGGESTIONS = 3;
 const MAX_SUGGESTIONS = 6;
 
 
+let gContentSearchActors = new Set();
 
 
 
@@ -91,11 +90,9 @@ const MAX_SUGGESTIONS = 6;
 
 
 
+let ContentSearch = {
+  initialized: false,
 
-
-
-
-var ContentSearch = {
   
   
   
@@ -114,13 +111,17 @@ var ContentSearch = {
   _currentSuggestion: null,
 
   init() {
-    Services.obs.addObserver(this, "browser-search-engine-modified");
-    Services.obs.addObserver(this, "browser-search-service");
-    Services.obs.addObserver(this, "shutdown-leaks-before-check");
-    Services.prefs.addObserver("browser.search.hiddenOneOffs", this);
-    this._stringBundle = Services.strings.createBundle(
-      "chrome://global/locale/autocomplete.properties"
-    );
+    if (!this.initialized) {
+      Services.obs.addObserver(this, "browser-search-engine-modified");
+      Services.obs.addObserver(this, "browser-search-service");
+      Services.obs.addObserver(this, "shutdown-leaks-before-check");
+      Services.prefs.addObserver("browser.search.hiddenOneOffs", this);
+      this._stringBundle = Services.strings.createBundle(
+        "chrome://global/locale/autocomplete.properties"
+      );
+
+      this.initialized = true;
+    }
   },
 
   get searchSuggestionUIStrings() {
@@ -147,6 +148,10 @@ var ContentSearch = {
   },
 
   destroy() {
+    if (!this.initialized) {
+      return new Promise();
+    }
+
     if (this._destroyedPromise) {
       return this._destroyedPromise;
     }
@@ -158,48 +163,6 @@ var ContentSearch = {
     this._eventQueue.length = 0;
     this._destroyedPromise = Promise.resolve(this._currentEventPromise);
     return this._destroyedPromise;
-  },
-
-  
-
-
-
-
-  focusInput(messageManager) {
-    messageManager.sendAsyncMessage(OUTBOUND_MESSAGE, {
-      type: "FocusInput",
-    });
-  },
-
-  
-  receiveMessage(msg) {
-    
-    
-    
-    
-    msg.handleEvent = event => {
-      let browserData = this._suggestionMap.get(msg.target);
-      if (browserData) {
-        this._suggestionMap.delete(msg.target);
-        this._suggestionMap.set(event.detail, browserData);
-      }
-      msg.target.removeEventListener("SwapDocShells", msg, true);
-      msg.target = event.detail;
-      msg.target.addEventListener("SwapDocShells", msg, true);
-    };
-    msg.target.addEventListener("SwapDocShells", msg, true);
-
-    
-    
-    if (msg.data.type === "Search") {
-      this._cancelSuggestions(msg);
-    }
-
-    this._eventQueue.push({
-      type: "Message",
-      data: msg,
-    });
-    this._processEventQueue();
   },
 
   observe(subj, topic, data) {
@@ -226,8 +189,8 @@ var ContentSearch = {
     }
   },
 
-  removeFormHistoryEntry(msg, entry) {
-    let browserData = this._suggestionDataForBrowser(msg.target);
+  removeFormHistoryEntry(browser, entry) {
+    let browserData = this._suggestionDataForBrowser(browser);
     if (browserData && browserData.previousFormHistoryResult) {
       let { previousFormHistoryResult } = browserData;
       for (let i = 0; i < previousFormHistoryResult.matchCount; i++) {
@@ -239,7 +202,7 @@ var ContentSearch = {
     }
   },
 
-  performSearch(msg, data) {
+  performSearch(browser, data) {
     this._ensureDataHasProperties(data, [
       "engineName",
       "searchString",
@@ -252,7 +215,6 @@ var ContentSearch = {
       "",
       data.searchPurpose
     );
-    let browser = msg.target;
     let win = browser.ownerGlobal;
     if (!win) {
       
@@ -269,7 +231,7 @@ var ContentSearch = {
     if (where === "current") {
       
       
-      this._reply(msg, "Blur");
+      this._reply(browser, "Blur");
       browser.loadURI(submission.uri.spec, {
         postData: submission.postData,
         triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
@@ -308,7 +270,7 @@ var ContentSearch = {
     let priv = PrivateBrowsingUtils.isBrowserPrivate(browser);
     
     
-    this._currentSuggestion = { controller, target: browser };
+    this._currentSuggestion = { controller, browser };
     let suggestions = await controller.fetch(searchString, priv, engine);
     this._currentSuggestion = null;
 
@@ -339,14 +301,14 @@ var ContentSearch = {
       
       
       
-      isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser.target);
+      isPrivate = PrivateBrowsingUtils.isBrowserPrivate(browser);
     } catch (err) {
       return false;
     }
     if (isPrivate || entry === "") {
       return false;
     }
-    let browserData = this._suggestionDataForBrowser(browser.target, true);
+    let browserData = this._suggestionDataForBrowser(browser, true);
     FormHistory.update(
       {
         op: "bump",
@@ -402,60 +364,59 @@ var ContentSearch = {
 
     this._currentEventPromise = (async () => {
       try {
-        await this["_on" + event.type](event.data);
+        await this["_on" + event.type](event);
       } catch (err) {
         Cu.reportError(err);
       } finally {
         this._currentEventPromise = null;
+
         this._processEventQueue();
       }
     })();
   },
 
-  _cancelSuggestions(msg) {
+  _cancelSuggestions(browser) {
     let cancelled = false;
     
     if (
       this._currentSuggestion &&
-      this._currentSuggestion.target === msg.target
+      this._currentSuggestion.browser === browser
     ) {
       this._currentSuggestion.controller.stop();
       cancelled = true;
     }
     
     for (let i = 0; i < this._eventQueue.length; i++) {
-      let m = this._eventQueue[i].data;
-      if (msg.target === m.target && m.data.type === "GetSuggestions") {
+      let m = this._eventQueue[i];
+      if (browser === m.browser && m.name === "GetSuggestions") {
         this._eventQueue.splice(i, 1);
         cancelled = true;
         i--;
       }
     }
     if (cancelled) {
-      this._reply(msg, "SuggestionsCancelled");
+      this._reply(browser, "SuggestionsCancelled");
     }
   },
 
-  async _onMessage(msg) {
-    let methodName = "_onMessage" + msg.data.type;
+  async _onMessage(eventItem) {
+    let methodName = "_onMessage" + eventItem.name;
     if (methodName in this) {
       await this._initService();
-      await this[methodName](msg, msg.data.data);
-      if (!Cu.isDeadWrapper(msg.target)) {
-        msg.target.removeEventListener("SwapDocShells", msg, true);
-      }
+      await this[methodName](eventItem.browser, eventItem.data);
+      eventItem.browser.removeEventListener("SwapDocShells", eventItem, true);
     }
   },
 
-  _onMessageGetState(msg, data) {
-    return this.currentStateObj(msg.target.ownerGlobal).then(state => {
-      this._reply(msg, "State", state);
+  _onMessageGetState(browser, data) {
+    return this.currentStateObj(browser.ownerGlobal).then(state => {
+      this._reply(browser, "State", state);
     });
   },
 
-  _onMessageGetEngine(msg, data) {
-    return this.currentStateObj(msg.target.ownerGlobal).then(state => {
-      this._reply(msg, "Engine", {
+  _onMessageGetEngine(browser, data) {
+    return this.currentStateObj(browser.ownerGlobal).then(state => {
+      this._reply(browser, "Engine", {
         isPrivateWindow: state.isPrivateWindow,
         engine: state.isPrivateWindow
           ? state.currentPrivateEngine
@@ -464,32 +425,32 @@ var ContentSearch = {
     });
   },
 
-  _onMessageGetStrings(msg, data) {
-    this._reply(msg, "Strings", this.searchSuggestionUIStrings);
+  _onMessageGetStrings(browser, data) {
+    this._reply(browser, "Strings", this.searchSuggestionUIStrings);
   },
 
-  _onMessageSearch(msg, data) {
-    this.performSearch(msg, data);
+  _onMessageSearch(browser, data) {
+    this.performSearch(browser, data);
   },
 
-  _onMessageSetCurrentEngine(msg, data) {
+  _onMessageSetCurrentEngine(browser, data) {
     Services.search.defaultEngine = Services.search.getEngineByName(data);
   },
 
-  _onMessageManageEngines(msg) {
-    msg.target.ownerGlobal.openPreferences("paneSearch");
+  _onMessageManageEngines(browser) {
+    browser.ownerGlobal.openPreferences("paneSearch");
   },
 
-  async _onMessageGetSuggestions(msg, data) {
+  async _onMessageGetSuggestions(browser, data) {
     this._ensureDataHasProperties(data, ["engineName", "searchString"]);
     let { engineName, searchString } = data;
     let suggestions = await this.getSuggestions(
       engineName,
       searchString,
-      msg.target
+      browser
     );
 
-    this._reply(msg, "Suggestions", {
+    this._reply(browser, "Suggestions", {
       engineName: data.engineName,
       searchString: suggestions.term,
       formHistory: suggestions.local,
@@ -497,32 +458,32 @@ var ContentSearch = {
     });
   },
 
-  async _onMessageAddFormHistoryEntry(msg, entry) {
-    await this.addFormHistoryEntry(msg, entry);
+  async _onMessageAddFormHistoryEntry(browser, entry) {
+    await this.addFormHistoryEntry(browser, entry);
   },
 
-  _onMessageRemoveFormHistoryEntry(msg, entry) {
-    this.removeFormHistoryEntry(msg, entry);
+  _onMessageRemoveFormHistoryEntry(browser, entry) {
+    this.removeFormHistoryEntry(browser, entry);
   },
 
-  _onMessageSpeculativeConnect(msg, engineName) {
+  _onMessageSpeculativeConnect(browser, engineName) {
     let engine = Services.search.getEngineByName(engineName);
     if (!engine) {
       throw new Error("Unknown engine name: " + engineName);
     }
-    if (msg.target.contentWindow) {
+    if (browser.contentWindow) {
       engine.speculativeConnect({
-        window: msg.target.contentWindow,
-        originAttributes: msg.target.contentPrincipal.originAttributes,
+        window: browser.contentWindow,
+        originAttributes: browser.contentPrincipal.originAttributes,
       });
     }
   },
 
-  async _onObserve(data) {
-    if (data === "engine-default") {
+  async _onObserve(eventItem) {
+    if (eventItem.data === "engine-default") {
       let engine = await this._currentEngineObj(false);
       this._broadcast("CurrentEngine", engine);
-    } else if (data === "engine-default-private") {
+    } else if (eventItem.data === "engine-default-private") {
       let engine = await this._currentEngineObj(true);
       this._broadcast("CurrentPrivateEngine", engine);
     } else {
@@ -545,26 +506,14 @@ var ContentSearch = {
     return data;
   },
 
-  _reply(msg, type, data) {
-    
-    
-    if (!Cu.isDeadWrapper(msg.target) && msg.target.messageManager) {
-      msg.target.messageManager.sendAsyncMessage(...this._msgArgs(type, data));
-    }
+  _reply(browser, type, data) {
+    browser.sendMessageToActor(type, data, "ContentSearch");
   },
 
   _broadcast(type, data) {
-    Services.mm.broadcastAsyncMessage(...this._msgArgs(type, data));
-  },
-
-  _msgArgs(type, data) {
-    return [
-      OUTBOUND_MESSAGE,
-      {
-        type,
-        data,
-      },
-    ];
+    for (let actor of gContentSearchActors) {
+      actor.sendAsyncMessage(type, data);
+    }
   },
 
   async _currentEngineObj(usePrivate) {
@@ -633,3 +582,49 @@ var ContentSearch = {
     return this._initServicePromise;
   },
 };
+
+class ContentSearchParent extends JSWindowActorParent {
+  constructor() {
+    super();
+    ContentSearch.init();
+    gContentSearchActors.add(this);
+  }
+
+  didDestroy() {
+    gContentSearchActors.delete(this);
+  }
+
+  receiveMessage(msg) {
+    
+    
+    
+    
+    let browser = this.browsingContext.top.embedderElement;
+    let eventItem = {
+      type: "Message",
+      name: msg.name,
+      data: msg.data,
+      browser,
+      handleEvent: event => {
+        let browserData = ContentSearch._suggestionMap.get(eventItem.browser);
+        if (browserData) {
+          ContentSearch._suggestionMap.delete(eventItem.browser);
+          ContentSearch._suggestionMap.set(event.detail, browserData);
+        }
+        browser.removeEventListener("SwapDocShells", eventItem, true);
+        eventItem.browser = event.detail;
+        eventItem.browser.addEventListener("SwapDocShells", eventItem, true);
+      },
+    };
+    browser.addEventListener("SwapDocShells", eventItem, true);
+
+    
+    
+    if (msg.name === "Search") {
+      ContentSearch._cancelSuggestions();
+    }
+
+    ContentSearch._eventQueue.push(eventItem);
+    ContentSearch._processEventQueue();
+  }
+}
