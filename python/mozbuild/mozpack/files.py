@@ -375,7 +375,10 @@ class AbsoluteSymlinkFile(File):
 
         
         
-        if not hasattr(os, 'symlink'):
+        
+        
+        
+        if not hasattr(os, 'symlink') or platform.system() == 'Windows':
             return File.copy(self, dest, skip_if_older=skip_if_older)
 
         
@@ -577,7 +580,8 @@ class PreprocessedFile(BaseFile):
         
         
         
-        if hasattr(os, 'symlink'):
+        
+        if hasattr(os, 'symlink') and platform.system() != 'Windows':
             if os.path.islink(dest.path):
                 os.remove(dest.path)
 
