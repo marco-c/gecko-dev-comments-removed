@@ -439,6 +439,12 @@ SRGBOverrideObserver::Observe(nsISupports* aSubject, const char* aTopic,
   ShutdownCMS();
   
   gfxPlatform::CreateCMSOutputProfile();
+  
+  
+  
+  gfxPlatform::GetCMSRGBTransform();
+  gfxPlatform::GetCMSRGBATransform();
+  gfxPlatform::GetCMSBGRATransform();
   return NS_OK;
 }
 
@@ -1090,6 +1096,12 @@ void gfxPlatform::Init() {
                                        "gfx.2d.recording");
 
   CreateCMSOutputProfile();
+
+  
+  
+  GetCMSRGBTransform();
+  GetCMSRGBATransform();
+  GetCMSBGRATransform();
 
   
   gPlatform->mMemoryPressureObserver =
