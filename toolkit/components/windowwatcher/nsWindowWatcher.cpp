@@ -962,6 +962,19 @@ nsresult nsWindowWatcher::OpenWindowInternal(
     newBC->SetOnePermittedSandboxedNavigator(parentBC);
   }
 
+  if (!aForceNoOpener && parentBC) {
+    
+    
+    
+    if (windowIsNew && newBC->IsContent()) {
+      MOZ_RELEASE_ASSERT(newBC->GetOpenerId() == parentBC->Id());
+      MOZ_RELEASE_ASSERT(!!parentBC == newBC->HadOriginalOpener());
+    } else {
+      
+      newBC->SetOpener(parentBC);
+    }
+  }
+
   RefPtr<nsDocShell> newDocShell(nsDocShell::Cast(newBC->GetDocShell()));
 
   
@@ -983,22 +996,6 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   RefPtr<nsGlobalWindowOuter> win(
       nsGlobalWindowOuter::Cast(newBC->GetDOMWindow()));
   if (win) {
-    if (!aForceNoOpener) {
-      if (windowIsNew) {
-        
-        
-        MOZ_DIAGNOSTIC_ASSERT(newBC->GetOpenerId() ==
-                              (parentBC ? parentBC->Id() : 0));
-        MOZ_DIAGNOSTIC_ASSERT(!!parentBC == newBC->HadOriginalOpener());
-      } else {
-        newBC->SetOpener(parentBC);
-      }
-    } else if (parentBC && parentBC != newBC && !newBC->IsChrome()) {
-      MOZ_ASSERT(newBC->Group() != parentBC->Group(),
-                 "If we're forcing no opener, they should be in different "
-                 "browsing context groups");
-    }
-
     if (windowIsNew) {
 #ifdef DEBUG
       
@@ -1013,15 +1010,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
         doc->SetIsInitialDocument(true);
       }
     }
-  } else {
-    MOZ_ASSERT(!windowIsNew, "New windows are always created in-process");
-    if (!aForceNoOpener) {
-      
-      
-      
-      
-    }
   }
+
+  MOZ_ASSERT(win || !windowIsNew, "New windows are always created in-process");
 
   *aResult = do_AddRef(newBC).take();
 
