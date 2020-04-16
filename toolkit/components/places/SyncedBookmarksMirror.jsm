@@ -89,7 +89,7 @@ const DEFAULT_MAX_FRECENCIES_TO_RECALCULATE = 400;
 XPCOMUtils.defineLazyGetter(this, "yieldState", () => Async.yieldState());
 
 
-class LogAdapter {
+class MirrorLoggerAdapter {
   constructor(log) {
     this.log = log;
   }
@@ -97,18 +97,18 @@ class LogAdapter {
   get maxLevel() {
     let level = this.log.level;
     if (level <= Log.Level.All) {
-      return Ci.mozIServicesLogger.LEVEL_TRACE;
+      return Ci.mozISyncedBookmarksMirrorLogger.LEVEL_TRACE;
     }
     if (level <= Log.Level.Info) {
-      return Ci.mozIServicesLogger.LEVEL_DEBUG;
+      return Ci.mozISyncedBookmarksMirrorLogger.LEVEL_DEBUG;
     }
     if (level <= Log.Level.Warn) {
-      return Ci.mozIServicesLogger.LEVEL_WARN;
+      return Ci.mozISyncedBookmarksMirrorLogger.LEVEL_WARN;
     }
     if (level <= Log.Level.Error) {
-      return Ci.mozIServicesLogger.LEVEL_ERROR;
+      return Ci.mozISyncedBookmarksMirrorLogger.LEVEL_ERROR;
     }
-    return Ci.mozIServicesLogger.LEVEL_OFF;
+    return Ci.mozISyncedBookmarksMirrorLogger.LEVEL_OFF;
   }
 
   trace(message) {
@@ -266,7 +266,7 @@ class SyncedBookmarksMirror {
     this.merger.db = db.unsafeRawConnection.QueryInterface(
       Ci.mozIStorageConnection
     );
-    this.merger.logger = new LogAdapter(MirrorLog);
+    this.merger.logger = new MirrorLoggerAdapter(MirrorLog);
 
     
     
