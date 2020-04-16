@@ -7,6 +7,7 @@
 #define __mozilla_widget_GfxDriverInfo_h__
 
 #include "nsString.h"
+#include "nsTArray.h"
 
 
 
