@@ -10,7 +10,12 @@ body {
 body {
   --sidebar-width: 320px;
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  
+
+
+
+
+  grid-template-columns: var(--sidebar-width) minmax(min-content, 1fr);
   grid-template-rows: 75px 1fr;
   grid-template-areas: "header header"
                        "logins login";
