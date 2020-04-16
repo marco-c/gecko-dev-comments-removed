@@ -18,6 +18,7 @@
 #include "mozilla/Maybe.h"
 
 #include "jsapi.h"
+#include "js/Exception.h"
 #include "js/Debug.h"
 #include "js/Warnings.h"  
 
@@ -269,9 +270,7 @@ class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
 
   
   
-  
-  MOZ_MUST_USE bool StealExceptionAndStack(JS::MutableHandle<JS::Value> aVal,
-                                           JS::MutableHandle<JSObject*> aStack);
+  MOZ_MUST_USE bool StealExceptionAndStack(JS::ExceptionStack* aExnStack);
 
   
   
