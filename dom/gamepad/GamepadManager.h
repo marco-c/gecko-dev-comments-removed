@@ -35,6 +35,11 @@ class GamepadManager final : public nsIObserver {
   
   static already_AddRefed<GamepadManager> GetService();
 
+  
+  
+  static uint32_t GetGamepadIndexWithServiceType(
+      uint32_t aIndex, GamepadServiceType aServiceType);
+
   void BeginShutdown();
   void StopMonitoring();
 
@@ -139,10 +144,6 @@ class GamepadManager final : public nsIObserver {
   
   void SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex,
                                bool aHasSeen = true);
-  
-  
-  uint32_t GetGamepadIndexWithServiceType(
-      uint32_t aIndex, GamepadServiceType aServiceType) const;
 
   
   
