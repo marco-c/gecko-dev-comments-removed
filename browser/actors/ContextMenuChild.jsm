@@ -998,9 +998,20 @@ class ContextMenuChild extends JSWindowActorChild {
       
       
       
-      context.mediaURL = (
-        context.target.currentRequestFinalURI || context.target.currentURI
-      ).spec;
+      
+      
+      
+      context.mediaURL = (() => {
+        let finalURI = context.target.currentRequestFinalURI?.spec;
+        if (finalURI && this._isMediaURLReusable(finalURI)) {
+          return finalURI;
+        }
+        let currentURI = context.target.currentURI?.spec;
+        if (currentURI && this._isMediaURLReusable(currentURI)) {
+          return currentURI;
+        }
+        return "";
+      })();
 
       const descURL = context.target.getAttribute("longdesc");
 
