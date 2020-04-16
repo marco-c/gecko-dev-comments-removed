@@ -17,6 +17,10 @@
 #include "nsThreadUtils.h"
 #include "nsVariant.h"
 
+using mozilla::MakeRefPtr;
+using mozilla::SimpleEnumerator;
+using mozilla::Unused;
+
 extern "C" {
 
 
@@ -78,7 +82,7 @@ nsHashPropertyBagBase::DeleteProperty(const nsAString& aName) {
 
 
 class nsSimpleProperty final : public nsIProperty {
-  ~nsSimpleProperty() {}
+  ~nsSimpleProperty() = default;
 
  public:
   nsSimpleProperty(const nsAString& aName, nsIVariant* aValue)
