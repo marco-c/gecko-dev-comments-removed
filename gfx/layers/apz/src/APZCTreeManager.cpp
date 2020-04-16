@@ -153,6 +153,11 @@ struct APZCTreeManager::TreeBuildingState {
   std::vector<FixedPositionInfo> mFixedPositionInfo;
   std::vector<RootScrollbarInfo> mRootScrollbarInfo;
   std::vector<StickyPositionInfo> mStickyPositionInfo;
+
+  
+  
+  
+  std::stack<EventRegionsOverride> mOverrideFlags;
 };
 
 class APZCTreeManager::CheckerboardFlushObserver : public nsIObserver {
@@ -420,6 +425,7 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
     seenLayersIds.insert(mRootLayersId);
     ancestorTransforms.push(AncestorTransform());
     state.mParentHasPerspective.push(false);
+    state.mOverrideFlags.push(EventRegionsOverride::NoOverride);
 
     mApzcTreeLog << "[start]\n";
     mTreeLock.AssertCurrentThreadIn();
@@ -524,6 +530,21 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
           if (Maybe<LayersId> newLayersId = aLayerMetrics.GetReferentId()) {
             layersId = *newLayersId;
             seenLayersIds.insert(layersId);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            state.mOverrideFlags.push(state.mOverrideFlags.top() |
+                                      aLayerMetrics.GetEventRegionsOverride());
           }
 
           indents.push(gfx::TreeAutoIndent<LOG_DEFAULT>(mApzcTreeLog));
@@ -533,6 +554,9 @@ APZCTreeManager::UpdateHitTestingTreeImpl(const ScrollNode& aRoot,
         [&](ScrollNode aLayerMetrics) {
           if (aLayerMetrics.IsAsyncZoomContainer()) {
             --asyncZoomContainerNestingDepth;
+          }
+          if (aLayerMetrics.GetReferentId()) {
+            state.mOverrideFlags.pop();
           }
 
           next = parent;
@@ -1053,24 +1077,6 @@ already_AddRefed<HitTestingTreeNode> APZCTreeManager::RecycleOrCreateNode(
   return node.forget();
 }
 
-template <class ScrollNode>
-static EventRegionsOverride GetEventRegionsOverride(HitTestingTreeNode* aParent,
-                                                    const ScrollNode& aLayer) {
-  
-  
-  
-  
-  EventRegionsOverride result = aLayer.GetEventRegionsOverride();
-  if (result != EventRegionsOverride::NoOverride) {
-    
-    MOZ_ASSERT(aLayer.GetReferentId());
-  }
-  if (aParent) {
-    result |= aParent->GetEventRegionsOverride();
-  }
-  return result;
-}
-
 void APZCTreeManager::StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
                                          const AsyncDragMetrics& aDragMetrics) {
   APZThreadUtils::AssertOnControllerThread();
@@ -1142,14 +1148,14 @@ void APZCTreeManager::NotifyAutoscrollRejected(
 }
 
 template <class ScrollNode>
-void SetHitTestData(HitTestingTreeNode* aNode, HitTestingTreeNode* aParent,
-                    const ScrollNode& aLayer,
-                    const Maybe<ParentLayerIntRegion>& aClipRegion) {
-  aNode->SetHitTestData(
-      GetEventRegions(aLayer), aLayer.GetVisibleRegion(),
-      aLayer.GetRemoteDocumentSize(), aLayer.GetTransformTyped(), aClipRegion,
-      GetEventRegionsOverride(aParent, aLayer), aLayer.IsBackfaceHidden(),
-      !!aLayer.IsAsyncZoomContainer());
+void SetHitTestData(HitTestingTreeNode* aNode, const ScrollNode& aLayer,
+                    const Maybe<ParentLayerIntRegion>& aClipRegion,
+                    const EventRegionsOverride& aOverrideFlags) {
+  aNode->SetHitTestData(GetEventRegions(aLayer), aLayer.GetVisibleRegion(),
+                        aLayer.GetRemoteDocumentSize(),
+                        aLayer.GetTransformTyped(), aClipRegion, aOverrideFlags,
+                        aLayer.IsBackfaceHidden(),
+                        !!aLayer.IsAsyncZoomContainer());
 }
 
 template <class ScrollNode>
@@ -1191,10 +1197,11 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
     
     node = RecycleOrCreateNode(aProofOfTreeLock, aState, nullptr, aLayersId);
     AttachNodeToTree(node, aParent, aNextSibling);
-    SetHitTestData(node, aParent, aLayer,
+    SetHitTestData(node, aLayer,
                    (!parentHasPerspective && aLayer.GetClipRect())
                        ? Some(ParentLayerIntRegion(*aLayer.GetClipRect()))
-                       : Nothing());
+                       : Nothing(),
+                   aState.mOverrideFlags.top());
     node->SetScrollbarData(aLayer.GetScrollbarAnimationId(),
                            aLayer.GetScrollbarData());
     node->SetFixedPosData(aLayer.GetFixedPositionScrollContainerId(),
@@ -1319,7 +1326,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
 
     Maybe<ParentLayerIntRegion> clipRegion =
         parentHasPerspective ? Nothing() : ComputeClipRegion(aLayer);
-    SetHitTestData(node, aParent, aLayer, clipRegion);
+    SetHitTestData(node, aLayer, clipRegion, aState.mOverrideFlags.top());
     apzc->SetAncestorTransform(aAncestorTransform);
 
     PrintAPZCInfo(aLayer, apzc);
@@ -1419,7 +1426,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
 
     Maybe<ParentLayerIntRegion> clipRegion =
         parentHasPerspective ? Nothing() : ComputeClipRegion(aLayer);
-    SetHitTestData(node, aParent, aLayer, clipRegion);
+    SetHitTestData(node, aLayer, clipRegion, aState.mOverrideFlags.top());
   }
 
   
