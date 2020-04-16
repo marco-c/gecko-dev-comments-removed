@@ -33,7 +33,7 @@ class nsILineIterator {
   
 
 
-  virtual int32_t GetNumLines() = 0;
+  virtual int32_t GetNumLines() const = 0;
 
   
 

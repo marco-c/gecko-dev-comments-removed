@@ -195,7 +195,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   
 
 
-  virtual int32_t GetNumLines() override;
+  virtual int32_t GetNumLines() const override;
 
   
 
