@@ -93,7 +93,7 @@ test(MyArray, {
             }
         });
     },
-    exceptionVal: "return getter throws",
+    exceptionVal: "defineProperty throws",
     closed: true,
 });
 test(MyArray, {
@@ -106,7 +106,7 @@ test(MyArray, {
             }
         });
     },
-    exceptionType: TypeError,
+    exceptionVal: "defineProperty throws",
     closed: true,
 });
 test(MyArray, {
@@ -120,7 +120,7 @@ test(MyArray, {
             }
         });
     },
-    exceptionType: TypeError,
+    exceptionVal: "defineProperty throws",
     closed: true,
 });
 

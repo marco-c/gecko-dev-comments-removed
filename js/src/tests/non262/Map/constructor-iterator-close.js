@@ -122,7 +122,7 @@ test([MySet, MyWeakSet], {
 
 
 
-test([MyMap, MySet, MyWeakMap, MyWeakSet], {
+test([MyMap, MyWeakMap], {
     nextVal: { value: [{}, {}], done: false },
     modifier: (iterator, iterable) => {
         Object.defineProperty(iterator, "return", {
@@ -132,10 +132,23 @@ test([MyMap, MySet, MyWeakMap, MyWeakSet], {
             }
         });
     },
-    exceptionVal: "return getter throws",
+    exceptionVal: "setter throws",
     closed: true,
 });
-test([MyMap, MySet, MyWeakMap, MyWeakSet], {
+test([MySet, MyWeakSet], {
+  nextVal: { value: [{}, {}], done: false },
+  modifier: (iterator, iterable) => {
+      Object.defineProperty(iterator, "return", {
+          get: function() {
+              iterable.closed = true;
+              throw "return getter throws";
+          }
+      });
+  },
+  exceptionVal: "adder throws",
+  closed: true,
+});
+test([MyMap, MyWeakMap], {
     nextVal: { value: [{}, {}], done: false },
     modifier: (iterator, iterable) => {
         Object.defineProperty(iterator, "return", {
@@ -145,10 +158,23 @@ test([MyMap, MySet, MyWeakMap, MyWeakSet], {
             }
         });
     },
-    exceptionType: TypeError,
+    exceptionVal: "setter throws",
     closed: true,
 });
-test([MyMap, MySet, MyWeakMap, MyWeakSet], {
+test([MySet, MyWeakSet], {
+  nextVal: { value: [{}, {}], done: false },
+  modifier: (iterator, iterable) => {
+      Object.defineProperty(iterator, "return", {
+          get: function() {
+              iterable.closed = true;
+              return "non object";
+          }
+      });
+  },
+  exceptionVal: "adder throws",
+  closed: true,
+});
+test([MyMap, MyWeakMap], {
     nextVal: { value: [{}, {}], done: false },
     modifier: (iterator, iterable) => {
         Object.defineProperty(iterator, "return", {
@@ -159,8 +185,22 @@ test([MyMap, MySet, MyWeakMap, MyWeakSet], {
             }
         });
     },
-    exceptionType: TypeError,
+    exceptionVal: "setter throws",
     closed: true,
+});
+test([MySet, MyWeakSet], {
+  nextVal: { value: [{}, {}], done: false },
+  modifier: (iterator, iterable) => {
+      Object.defineProperty(iterator, "return", {
+          get: function() {
+              iterable.closed = true;
+              
+              return {};
+          }
+      });
+  },
+  exceptionVal: "adder throws",
+  closed: true,
 });
 
 

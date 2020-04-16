@@ -2861,11 +2861,43 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
   
   
   
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  Maybe<TryEmitter> tryCatch;
+
+  if (completionKind == CompletionKind::Throw) {
+    tryCatch.emplace(this, TryEmitter::Kind::TryCatch,
+                     TryEmitter::ControlKind::NonSyntactic);
+
+    if (!tryCatch->emitTry()) {
+      
+      return false;
+    }
+  }
 
   if (!emit1(JSOp::Dup)) {
     
     return false;
   }
+
+  
 
   
   
@@ -2889,32 +2921,6 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
     return false;
   }
 
-  if (completionKind == CompletionKind::Throw) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    CheckIsCallableKind kind = CheckIsCallableKind::IteratorReturn;
-    if (!emitCheckIsCallable(kind)) {
-      
-      return false;
-    }
-  }
-
-  
   
   
   
@@ -2923,32 +2929,12 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
     return false;
   }
 
-  Maybe<TryEmitter> tryCatch;
-
-  if (completionKind == CompletionKind::Throw) {
-    tryCatch.emplace(this, TryEmitter::Kind::TryCatch,
-                     TryEmitter::ControlKind::NonSyntactic);
-
-    
-    if (!emit1(JSOp::Undefined)) {
-      
-      return false;
-    }
-    if (!tryCatch->emitTry()) {
-      
-      return false;
-    }
-    if (!emitDupAt(2, 2)) {
-      
-      return false;
-    }
-  }
-
   if (!emitCall(JSOp::Call, 0)) {
     
     return false;
   }
 
+  
   if (iterKind == IteratorKind::Async) {
     if (completionKind != CompletionKind::Throw) {
       
@@ -2961,54 +2947,13 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
         return false;
       }
     }
+
     if (!emitAwaitInScope(currentScope)) {
       
       return false;
     }
-  }
 
-  if (completionKind == CompletionKind::Throw) {
-    if (!emit1(JSOp::Swap)) {
-      
-      return false;
-    }
-    if (!emit1(JSOp::Pop)) {
-      
-      return false;
-    }
-
-    if (!tryCatch->emitCatch()) {
-      
-      return false;
-    }
-
-    
-    if (!emit1(JSOp::Pop)) {
-      
-      return false;
-    }
-
-    if (!tryCatch->emitEnd()) {
-      
-      return false;
-    }
-
-    
-    if (!emit2(JSOp::Unpick, 2)) {
-      
-      return false;
-    }
-    if (!emitPopN(2)) {
-      
-      return false;
-    }
-  } else {
-    if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) {
-      
-      return false;
-    }
-
-    if (iterKind == IteratorKind::Async) {
+    if (completionKind != CompletionKind::Throw) {
       if (!emit1(JSOp::Swap)) {
         
         return false;
@@ -3017,6 +2962,17 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
         
         return false;
       }
+    }
+  }
+
+  
+
+  
+  if (completionKind != CompletionKind::Throw) {
+    
+    if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) {
+      
+      return false;
     }
   }
 
@@ -3033,6 +2989,26 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
   if (!ifReturnMethodIsDefined.emitEnd()) {
     return false;
   }
+
+  if (completionKind == CompletionKind::Throw) {
+    if (!tryCatch->emitCatch()) {
+      
+      return false;
+    }
+
+    
+    if (!emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+
+    if (!tryCatch->emitEnd()) {
+      
+      return false;
+    }
+  }
+
+  
 
   return emit1(JSOp::Pop);
   
