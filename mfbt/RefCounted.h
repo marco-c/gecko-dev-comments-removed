@@ -88,10 +88,17 @@ class RC {
  public:
   explicit RC(T aCount) : mValue(aCount) {}
 
+  RC(const RC&) = delete;
+  RC& operator=(const RC&) = delete;
+  RC(RC&&) = delete;
+  RC& operator=(RC&&) = delete;
+
   T operator++() { return ++mValue; }
   T operator--() { return --mValue; }
 
+#ifdef DEBUG
   void operator=(const T& aValue) { mValue = aValue; }
+#endif
 
   operator T() const { return mValue; }
 
@@ -103,6 +110,11 @@ template <typename T>
 class RC<T, AtomicRefCount> {
  public:
   explicit RC(T aCount) : mValue(aCount) {}
+
+  RC(const RC&) = delete;
+  RC& operator=(const RC&) = delete;
+  RC(RC&&) = delete;
+  RC& operator=(RC&&) = delete;
 
   T operator++() {
     
@@ -139,11 +151,13 @@ class RC<T, AtomicRefCount> {
     return result;
   }
 
+#ifdef DEBUG
   
   
   void operator=(const T& aValue) {
     mValue.store(aValue, std::memory_order_seq_cst);
   }
+#endif
 
   operator T() const {
     
@@ -159,7 +173,9 @@ template <typename T, RefCountAtomicity Atomicity>
 class RefCounted {
  protected:
   RefCounted() : mRefCnt(0) {}
+#ifdef DEBUG
   ~RefCounted() { MOZ_ASSERT(mRefCnt == detail::DEAD); }
+#endif
 
  public:
   
