@@ -727,7 +727,7 @@ static bool ShouldLoadCachedImage(imgRequest* aImgRequest,
       
       decision = nsIContentPolicy::REJECT_REQUEST;
       rv = nsMixedContentBlocker::ShouldLoad(insecureRedirect, aPolicyType,
-                                             contentLocation,
+                                             contentLocation, nullptr,
                                              ToSupports(aLoadingDocument),
                                              EmptyCString(),  
                                              aTriggeringPrincipal, &decision);
