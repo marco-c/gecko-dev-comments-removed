@@ -333,6 +333,13 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
+    [noscript, notxpcom, nostdcall]
+    void disableAltDataCache();
+
+    
+
+
+
 
 
     [infallible]
