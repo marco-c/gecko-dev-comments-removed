@@ -12,6 +12,7 @@
 
 
 
+const Services = require("Services");
 const {
   connectToFrame,
 } = require("devtools/server/connectors/frame-connector");
@@ -50,12 +51,24 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
   form() {
     return {
       actor: this.actorID,
+      selected: this.selected,
       traits: {
         
         
         getFavicon: true,
       },
     };
+  },
+
+  get selected() {
+    
+    
+    const topAppWindow = Services.wm.getMostRecentBrowserWindow();
+    if (!topAppWindow) {
+      return false;
+    }
+    const selectedBrowser = topAppWindow.gBrowser.selectedBrowser;
+    return this._browser === selectedBrowser;
   },
 
   async getTarget() {
