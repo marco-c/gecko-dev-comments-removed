@@ -668,13 +668,14 @@ struct AssertionConditionType {
 
 
 
-#define MOZ_ALWAYS_TRUE(expr)     \
-  do {                            \
-    if (MOZ_LIKELY(expr)) {       \
-      /* Silence MOZ_MUST_USE. */ \
-    } else {                      \
-      MOZ_ASSERT(false, #expr);   \
-    }                             \
+
+#define MOZ_ALWAYS_TRUE(expr)              \
+  do {                                     \
+    if (MOZ_LIKELY(expr)) {                \
+      /* Silence MOZ_MUST_USE. */          \
+    } else {                               \
+      MOZ_DIAGNOSTIC_ASSERT(false, #expr); \
+    }                                      \
   } while (false)
 
 #define MOZ_ALWAYS_FALSE(expr) MOZ_ALWAYS_TRUE(!(expr))
