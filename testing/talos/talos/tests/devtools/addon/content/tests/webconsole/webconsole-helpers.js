@@ -6,13 +6,66 @@
 
 const { reloadPageAndLog } = require("../head");
 
+
+
+
+
+
+
+
+
+
+
 exports.reloadConsoleAndLog = async function(label, toolbox, expectedMessages) {
   const onReload = async function() {
     const { hud } = toolbox.getPanel("webconsole");
 
+    const expected =
+      typeof expectedMessages === "number"
+        ? [{ text: "", count: expectedMessages }]
+        : expectedMessages;
+
     await waitForConsoleOutputChildListChange(hud, consoleOutputEl => {
-      const messageCount = consoleOutputEl.querySelectorAll(".message").length;
-      return messageCount >= expectedMessages;
+      dump("[TEST_LOG] Console output changed - checking content:\n");
+      const messages = Array.from(consoleOutputEl.querySelectorAll(".message"));
+
+      const missing = new Map(expected.map(e => [e.text, e.count || 1]));
+
+      const foundAllMessages = expected.every(({ text, count = 1 }) => {
+        let found = 0;
+        for (const message of messages) {
+          const messageText = message.querySelector(".message-body").innerText;
+          if (messageText.includes(text)) {
+            const repeat = message
+              .querySelector(".message-repeats")
+              ?.innerText?.trim();
+            found = found + (repeat ? parseInt(repeat) : 1);
+          }
+        }
+        const allFound = found >= count;
+
+        if (allFound) {
+          missing.delete(text);
+        } else {
+          missing.set(text, count - found);
+        }
+
+        return allFound;
+      });
+
+      if (!foundAllMessages) {
+        dump(
+          `[TEST_LOG] Still waiting for the following messages: \n${Array.from(
+            missing.entries()
+          )
+            .map(([text, count]) => `${text || "<any text>"} (✕${count})`)
+            .join("\n")}\n`
+        );
+      } else {
+        dump(`[TEST_LOG] All expected messages where found\n`);
+      }
+      dump("---\n");
+      return foundAllMessages;
     });
   };
   await reloadPageAndLog(label + ".webconsole", toolbox, onReload);
