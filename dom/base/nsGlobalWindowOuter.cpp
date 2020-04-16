@@ -1751,6 +1751,7 @@ void nsGlobalWindowOuter::SetInitialPrincipalToSubject(
   
   
   
+  
   if (nsContentUtils::IsExpandedPrincipal(newWindowPrincipal) ||
       (newWindowPrincipal->IsSystemPrincipal() &&
        GetDocShell()->ItemType() != nsIDocShellTreeItem::typeChrome)) {
