@@ -590,7 +590,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void OnFocus(nsINode& aFocusEventTargetNode);
+  void OnFocus(dom::EventTarget* aFocusEventTarget);
 
   
 
@@ -604,7 +604,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void ReinitializeSelection(Element& aElement);
+  void ReinitializeSelection(Element& aElement);
 
   
 
@@ -2361,7 +2361,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void BeginTransactionInternal();
+  void BeginTransactionInternal();
   MOZ_CAN_RUN_SCRIPT void EndTransactionInternal();
 
  protected:  
@@ -2583,7 +2583,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InitializeSelection(nsINode& aFocusEventTarget);
+  nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
 
   enum NotificationForEditorObservers {
     eNotifyEditorObserversOfEnd,
@@ -2638,7 +2638,7 @@ class EditorBase : public nsIEditor,
         EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
         : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      MOZ_KnownLive(mEditorBase).BeginTransactionInternal();
+      mEditorBase.BeginTransactionInternal();
     }
 
     MOZ_CAN_RUN_SCRIPT ~AutoTransactionBatch() {

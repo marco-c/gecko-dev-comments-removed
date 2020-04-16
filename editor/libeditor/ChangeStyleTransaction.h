@@ -12,7 +12,6 @@
 #include "nsString.h"                      
 
 class nsAtom;
-class nsStyledElement;
 
 namespace mozilla {
 
@@ -26,7 +25,7 @@ class Element;
 
 class ChangeStyleTransaction final : public EditTransactionBase {
  protected:
-  ChangeStyleTransaction(nsStyledElement& aStyledElement, nsAtom& aProperty,
+  ChangeStyleTransaction(dom::Element& aElement, nsAtom& aProperty,
                          const nsAString& aValue, bool aRemove);
 
  public:
@@ -38,8 +37,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> Create(
-      nsStyledElement& aStyledElement, nsAtom& aProperty,
-      const nsAString& aValue);
+      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
 
   
 
@@ -49,8 +47,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<ChangeStyleTransaction> CreateToRemove(
-      nsStyledElement& aStyledElement, nsAtom& aProperty,
-      const nsAString& aValue);
+      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction,
                                            EditTransactionBase)
@@ -59,7 +56,7 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
   NS_DECL_EDITTRANSACTIONBASE
 
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
+  NS_IMETHOD RedoTransaction() override;
 
   
 
@@ -106,11 +103,10 @@ class ChangeStyleTransaction final : public EditTransactionBase {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult SetStyle(bool aAttributeWasSet,
-                                       nsAString& aValue);
+  nsresult SetStyle(bool aAttributeWasSet, nsAString& aValue);
 
   
-  RefPtr<nsStyledElement> mStyledElement;
+  nsCOMPtr<dom::Element> mElement;
 
   
   RefPtr<nsAtom> mProperty;
@@ -119,13 +115,12 @@ class ChangeStyleTransaction final : public EditTransactionBase {
   nsString mValue;
 
   
+  bool mRemoveProperty;
+
+  
   nsString mUndoValue;
   
   nsString mRedoValue;
-
-  
-  bool mRemoveProperty;
-
   
   bool mUndoAttributeWasSet;
   

@@ -23,7 +23,7 @@ class EditorBase;
 
 class DeleteNodeTransaction final : public EditTransactionBase {
  protected:
-  DeleteNodeTransaction(EditorBase& aEditorBase, nsIContent& aContentToDelete);
+  DeleteNodeTransaction(EditorBase& aEditorBase, nsINode& aNodeToDelete);
 
  public:
   
@@ -34,7 +34,7 @@ class DeleteNodeTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<DeleteNodeTransaction> MaybeCreate(
-      EditorBase& aEditorBase, nsIContent& aContentToDelete);
+      EditorBase& aEditorBase, nsINode& aNodeToDelete);
 
   
 
@@ -48,7 +48,7 @@ class DeleteNodeTransaction final : public EditTransactionBase {
 
   NS_DECL_EDITTRANSACTIONBASE
 
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD RedoTransaction() override;
+  NS_IMETHOD RedoTransaction() override;
 
  protected:
   virtual ~DeleteNodeTransaction() = default;
@@ -57,13 +57,13 @@ class DeleteNodeTransaction final : public EditTransactionBase {
   RefPtr<EditorBase> mEditorBase;
 
   
-  nsCOMPtr<nsIContent> mContentToDelete;
+  nsCOMPtr<nsINode> mNodeToDelete;
 
   
   nsCOMPtr<nsINode> mParentNode;
 
   
-  nsCOMPtr<nsIContent> mRefContent;
+  nsCOMPtr<nsIContent> mRefNode;
 };
 
 }  

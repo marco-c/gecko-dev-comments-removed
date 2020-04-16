@@ -19,10 +19,9 @@ using namespace dom;
 
 
 already_AddRefed<JoinNodeTransaction> JoinNodeTransaction::MaybeCreate(
-    EditorBase& aEditorBase, nsIContent& aLeftContent,
-    nsIContent& aRightContent) {
+    EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode) {
   RefPtr<JoinNodeTransaction> transaction =
-      new JoinNodeTransaction(aEditorBase, aLeftContent, aRightContent);
+      new JoinNodeTransaction(aEditorBase, aLeftNode, aRightNode);
   if (NS_WARN_IF(!transaction->CanDoIt())) {
     return nullptr;
   }
@@ -30,107 +29,100 @@ already_AddRefed<JoinNodeTransaction> JoinNodeTransaction::MaybeCreate(
 }
 
 JoinNodeTransaction::JoinNodeTransaction(EditorBase& aEditorBase,
-                                         nsIContent& aLeftContent,
-                                         nsIContent& aRightContent)
+                                         nsINode& aLeftNode,
+                                         nsINode& aRightNode)
     : mEditorBase(&aEditorBase),
-      mLeftContent(&aLeftContent),
-      mRightContent(&aRightContent),
+      mLeftNode(&aLeftNode),
+      mRightNode(&aRightNode),
       mOffset(0) {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTransaction, EditTransactionBase,
-                                   mEditorBase, mLeftContent, mRightContent,
-                                   mParentNode)
+                                   mEditorBase, mLeftNode, mRightNode, mParent)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JoinNodeTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
 bool JoinNodeTransaction::CanDoIt() const {
-  if (NS_WARN_IF(!mLeftContent) || NS_WARN_IF(!mRightContent) ||
-      NS_WARN_IF(!mEditorBase) || !mLeftContent->GetParentNode()) {
+  if (NS_WARN_IF(!mLeftNode) || NS_WARN_IF(!mRightNode) ||
+      NS_WARN_IF(!mEditorBase) || !mLeftNode->GetParentNode()) {
     return false;
   }
-  return mEditorBase->IsModifiableNode(*mLeftContent->GetParentNode());
+  return mEditorBase->IsModifiableNode(*mLeftNode->GetParentNode());
 }
 
 
 
-NS_IMETHODIMP JoinNodeTransaction::DoTransaction() {
-  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mLeftContent) ||
-      NS_WARN_IF(!mRightContent)) {
-    return NS_ERROR_NOT_AVAILABLE;
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP JoinNodeTransaction::DoTransaction() {
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mLeftNode) ||
+      NS_WARN_IF(!mRightNode)) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
 
   
-  nsCOMPtr<nsINode> leftContentParent = mLeftContent->GetParentNode();
-  if (NS_WARN_IF(!leftContentParent)) {
-    return NS_ERROR_NOT_AVAILABLE;
+  nsCOMPtr<nsINode> leftNodeParent = mLeftNode->GetParentNode();
+  if (NS_WARN_IF(!leftNodeParent)) {
+    return NS_ERROR_FAILURE;
   }
 
   
-  if (leftContentParent != mRightContent->GetParentNode()) {
+  if (leftNodeParent != mRightNode->GetParentNode()) {
     NS_ASSERTION(false, "Nodes do not have same parent");
-    return NS_ERROR_NOT_AVAILABLE;
+    return NS_ERROR_INVALID_ARG;
   }
 
   
   
-  mParentNode = leftContentParent;
-  mOffset = mLeftContent->Length();
+  mParent = leftNodeParent;
+  mOffset = mLeftNode->Length();
 
-  OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  OwningNonNull<nsINode> leftNode = *mLeftContent;
-  OwningNonNull<nsINode> rightNode = *mRightContent;
-  nsresult rv = editorBase->DoJoinNodes(rightNode, leftNode, leftContentParent);
+  RefPtr<EditorBase> editorBase = mEditorBase;
+  nsCOMPtr<nsINode> leftNode = mLeftNode;
+  nsCOMPtr<nsINode> rightNode = mRightNode;
+  nsresult rv = editorBase->DoJoinNodes(rightNode, leftNode, leftNodeParent);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::DoJoinNodes() failed");
   return rv;
 }
 
 
 
-NS_IMETHODIMP JoinNodeTransaction::UndoTransaction() {
-  if (NS_WARN_IF(!mParentNode) || NS_WARN_IF(!mLeftContent) ||
-      NS_WARN_IF(!mRightContent) || NS_WARN_IF(!mEditorBase)) {
-    return NS_ERROR_NOT_AVAILABLE;
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
+JoinNodeTransaction::UndoTransaction() {
+  if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mLeftNode) ||
+      NS_WARN_IF(!mRightNode) || NS_WARN_IF(!mEditorBase)) {
+    return NS_ERROR_NOT_INITIALIZED;
   }
-
-  OwningNonNull<nsIContent> leftContent = *mLeftContent;
-  OwningNonNull<nsIContent> rightContent = *mRightContent;
-  OwningNonNull<nsINode> parentNode = *mParentNode;
 
   
   ErrorResult error;
-  if (Text* rightTextNode = rightContent->GetAsText()) {
-    OwningNonNull<EditorBase> editorBase = *mEditorBase;
-    editorBase->DoDeleteText(MOZ_KnownLive(*rightTextNode), 0, mOffset, error);
+  if (mRightNode->GetAsText()) {
+    RefPtr<EditorBase> editorBase = mEditorBase;
+    RefPtr<Text> rightNodeAsText = mRightNode->GetAsText();
+    editorBase->DoDeleteText(*rightNodeAsText, 0, mOffset, error);
     if (error.Failed()) {
       NS_WARNING("EditorBase::DoDeleteText() failed");
       return error.StealNSResult();
     }
   } else {
-    AutoTArray<OwningNonNull<nsIContent>, 24> movingChildren;
-    if (nsIContent* child = mRightContent->GetFirstChild()) {
-      movingChildren.AppendElement(*child);
-      for (uint32_t i = 0; i < mOffset; i++) {
-        child = child->GetNextSibling();
-        if (!child) {
-          break;
-        }
-        movingChildren.AppendElement(*child);
-      }
-    }
-    for (OwningNonNull<nsIContent>& child : movingChildren) {
-      leftContent->AppendChild(child, error);
+    nsCOMPtr<nsIContent> child = mRightNode->GetFirstChild();
+    for (uint32_t i = 0; i < mOffset; i++) {
       if (error.Failed()) {
-        NS_WARNING("nsINode::AppendChild() failed");
         return error.StealNSResult();
       }
+      if (!child) {
+        return NS_ERROR_NULL_POINTER;
+      }
+      nsCOMPtr<nsIContent> nextSibling = child->GetNextSibling();
+      mLeftNode->AppendChild(*child, error);
+      NS_WARNING_ASSERTION(!error.Failed(), "nsINode::AppendChild() failed");
+      child = nextSibling;
     }
   }
 
   NS_WARNING_ASSERTION(!error.Failed(), "The previous error was ignored");
 
   
-  parentNode->InsertBefore(leftContent, rightContent, error);
+  nsCOMPtr<nsINode> refNode = mRightNode;
+  mParent->InsertBefore(*mLeftNode, refNode, error);
   NS_WARNING_ASSERTION(!error.Failed(), "nsINode::InsertBefore() failed");
   return error.StealNSResult();
 }

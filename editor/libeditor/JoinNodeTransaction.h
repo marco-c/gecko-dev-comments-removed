@@ -12,7 +12,6 @@
 #include "nsID.h"    
 #include "nscore.h"  
 
-class nsIContent;
 class nsINode;
 
 namespace mozilla {
@@ -27,8 +26,8 @@ class EditorBase;
 
 class JoinNodeTransaction final : public EditTransactionBase {
  protected:
-  JoinNodeTransaction(EditorBase& aEditorBase, nsIContent& aLeftContent,
-                      nsIContent& aRightContent);
+  JoinNodeTransaction(EditorBase& aEditorBase, nsINode& aLeftNode,
+                      nsINode& aRightNode);
 
  public:
   
@@ -40,8 +39,7 @@ class JoinNodeTransaction final : public EditTransactionBase {
 
 
   static already_AddRefed<JoinNodeTransaction> MaybeCreate(
-      EditorBase& aEditorBase, nsIContent& aLeftContent,
-      nsIContent& aRightContent);
+      EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode);
 
   
 
@@ -60,8 +58,8 @@ class JoinNodeTransaction final : public EditTransactionBase {
 
   
   
-  nsCOMPtr<nsIContent> mLeftContent;
-  nsCOMPtr<nsIContent> mRightContent;
+  nsCOMPtr<nsINode> mLeftNode;
+  nsCOMPtr<nsINode> mRightNode;
 
   
   
@@ -69,7 +67,7 @@ class JoinNodeTransaction final : public EditTransactionBase {
   uint32_t mOffset;
 
   
-  nsCOMPtr<nsINode> mParentNode;
+  nsCOMPtr<nsINode> mParent;
 };
 
 }  
