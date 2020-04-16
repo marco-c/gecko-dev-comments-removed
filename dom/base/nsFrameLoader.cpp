@@ -1509,26 +1509,26 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  
-  
-  
-  int32_t ourType = ourDocshell->ItemType();
-  int32_t otherType = otherDocshell->ItemType();
-  if (ourType != otherType) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
   RefPtr<BrowsingContext> ourBc = ourDocshell->GetBrowsingContext();
   RefPtr<BrowsingContext> otherBc = otherDocshell->GetBrowsingContext();
+
+  
+  
+  
   if (ourBc->GetType() != otherBc->GetType()) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
   
+  if (ourBc->IsTop() != otherBc->IsTop()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   
   
   
-  if (ourType != nsIDocShellTreeItem::typeContent &&
+  
+  if (!ourBc->IsContent() &&
       (!AllDescendantsOfType(ourBc, ourBc->GetType()) ||
        !AllDescendantsOfType(otherBc, otherBc->GetType()))) {
     return NS_ERROR_NOT_IMPLEMENTED;
@@ -1545,13 +1545,6 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   ourDocshell->GetInProcessParent(getter_AddRefs(ourParentItem));
   otherDocshell->GetInProcessParent(getter_AddRefs(otherParentItem));
   if (!ourParentItem || !otherParentItem) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  
-  int32_t ourParentType = ourParentItem->ItemType();
-  int32_t otherParentType = otherParentItem->ItemType();
-  if (ourParentType != otherParentType) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -1659,7 +1652,7 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   ourParentItem->RemoveChild(ourDocshell);
   otherParentItem->RemoveChild(otherDocshell);
-  if (ourType == nsIDocShellTreeItem::typeContent) {
+  if (ourBc->IsContent()) {
     ourOwner->ContentShellRemoved(ourDocshell);
     otherOwner->ContentShellRemoved(otherDocshell);
   }
@@ -1674,13 +1667,10 @@ nsresult nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(
       ourDocshell, otherOwner,
-      ourType == nsIDocShellTreeItem::typeContent
-          ? otherChromeEventHandler.get()
-          : nullptr);
+      ourBc->IsContent() ? otherChromeEventHandler.get() : nullptr);
   SetTreeOwnerAndChromeEventHandlerOnDocshellTree(
       otherDocshell, ourOwner,
-      ourType == nsIDocShellTreeItem::typeContent ? ourChromeEventHandler.get()
-                                                  : nullptr);
+      ourBc->IsContent() ? ourChromeEventHandler.get() : nullptr);
 
   
   
