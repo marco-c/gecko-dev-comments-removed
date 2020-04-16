@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=8 et :
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 include "mozilla/layers/WebRenderMessageUtils.h";
 
@@ -38,7 +38,13 @@ struct RefCountedShmem {
   Shmem buffer;
 };
 
-struct OpAddExternalImage {
+struct OpAddPrivateExternalImage {
+  ExternalImageId externalImageId;
+  ImageKey key;
+  ImageDescriptor descriptor;
+};
+
+struct OpAddSharedExternalImage {
   ExternalImageId externalImageId;
   ImageKey key;
 };
@@ -131,7 +137,7 @@ struct OpSetBlobImageVisibleArea {
   BlobImageKey key;
 };
 
-struct OpUpdateExternalImage {
+struct OpUpdateSharedExternalImage {
   ExternalImageId externalImageId;
   ImageKey key;
   ImageIntRect dirtyRect;
@@ -187,10 +193,11 @@ union OpUpdateResource {
   OpDeleteFont;
   OpAddFontInstance;
   OpDeleteFontInstance;
-  OpAddExternalImage;
+  OpAddPrivateExternalImage;
+  OpAddSharedExternalImage;
   OpPushExternalImageForTexture;
-  OpUpdateExternalImage;
+  OpUpdateSharedExternalImage;
 };
 
-} // namespace
-} // namespace
+} 
+} 
