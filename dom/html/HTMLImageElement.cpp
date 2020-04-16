@@ -86,7 +86,15 @@ class ImageLoadTask final : public MicroTaskRunnable {
     if (mElement->mPendingImageLoadTask == this) {
       mElement->mPendingImageLoadTask = nullptr;
       mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
-      mElement->LoadSelectedImage(true, true, mAlwaysLoad);
+      
+      
+      
+      
+      
+      
+      if (!mElement->IsLazyLoading()) {
+        mElement->LoadSelectedImage(true, true, mAlwaysLoad);
+      }
     }
     mDocument->UnblockOnload(false);
   }
