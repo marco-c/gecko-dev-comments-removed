@@ -381,3 +381,38 @@ function waitUntilUsbDeviceIsUnplugged(deviceName, aboutDebuggingDocument) {
     return !!sidebarItem.querySelector(".qa-runtime-item-unplugged");
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function updateSelectedTab(browser, tab, store) {
+  info("Update the selected tab");
+
+  const { runtimes, ui } = store.getState();
+  const isOnThisFirefox =
+    runtimes.selectedRuntimeId === "this-firefox" &&
+    ui.selectedPage === "runtime";
+
+  
+  const onTabsSuccess = isOnThisFirefox
+    ? waitForDispatch(store, "REQUEST_TABS_SUCCESS")
+    : null;
+
+  
+  browser.selectedTab = tab;
+
+  if (onTabsSuccess) {
+    info("Wait for the tablist update after updating the selected tab");
+    await onTabsSuccess;
+  }
+}
