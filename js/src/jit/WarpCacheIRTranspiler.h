@@ -23,6 +23,16 @@ using MDefinitionStackVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
 
 
+#define WARP_CACHE_IR_OPS(_)          \
+  _(GuardShape)                       \
+  _(LoadEnclosingEnvironment)         \
+  _(LoadDynamicSlotResult)            \
+  _(LoadEnvironmentFixedSlotResult)   \
+  _(LoadEnvironmentDynamicSlotResult) \
+  _(TypeMonitorResult)
+
+
+
 struct MOZ_STACK_CLASS TranspilerOutput {
   
   MDefinition* result = nullptr;

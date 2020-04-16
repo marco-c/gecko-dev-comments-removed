@@ -17,16 +17,6 @@ using namespace js;
 using namespace js::jit;
 
 
-
-#define WARP_CACHE_IR_OPS(_)          \
-  _(GuardShape)                       \
-  _(LoadEnclosingEnvironment)         \
-  _(LoadDynamicSlotResult)            \
-  _(LoadEnvironmentFixedSlotResult)   \
-  _(LoadEnvironmentDynamicSlotResult) \
-  _(TypeMonitorResult)
-
-
 class MOZ_RAII WarpCacheIRTranspiler {
   TempAllocator& alloc_;
   const CacheIRStubInfo* stubInfo_;
