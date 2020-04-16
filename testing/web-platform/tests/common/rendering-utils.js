@@ -1,0 +1,19 @@
+"use strict";
+
+
+
+
+
+
+function waitForAtLeastOneFrame() {
+  return new Promise(resolve => {
+    
+    
+    
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+  });
+}
