@@ -36,7 +36,6 @@
 #include "vm/JSContext.h"      
 #include "vm/JSFunction.h"     
 #include "vm/JSObject.h"       
-#include "vm/ObjectGroup.h"    
 #include "vm/ObjectOperations.h"  
 #include "vm/Realm.h"             
 #include "vm/Runtime.h"           
@@ -45,9 +44,9 @@
 #include "wasm/WasmInstance.h"    
 #include "wasm/WasmTypes.h"       
 
-#include "vm/BytecodeUtil-inl.h"      
-#include "vm/JSAtom-inl.h"            
-#include "vm/JSObject-inl.h"          
+#include "vm/BytecodeUtil-inl.h"  
+#include "vm/JSAtom-inl.h"        
+#include "vm/JSObject-inl.h"  
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
 
@@ -107,7 +106,7 @@ DebuggerScript* DebuggerScript::create(JSContext* cx, HandleObject proto,
                                        Handle<DebuggerScriptReferent> referent,
                                        HandleNativeObject debugger) {
   DebuggerScript* scriptobj =
-      NewObjectWithGivenProto<DebuggerScript>(cx, proto, TenuredObject);
+      NewTenuredObjectWithGivenProto<DebuggerScript>(cx, proto);
   if (!scriptobj) {
     return nullptr;
   }
