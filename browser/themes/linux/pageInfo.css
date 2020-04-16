@@ -4,7 +4,7 @@
 
 %endif
 
-@import url("chrome://global/skin/");
+@import url("chrome://global/skin/global.css");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 

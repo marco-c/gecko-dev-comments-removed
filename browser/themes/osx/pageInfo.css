@@ -2,7 +2,7 @@
 
 
 
-@import "chrome://global/skin/";
+@import "chrome://global/skin/global.css";
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 %include ../../../toolkit/themes/osx/global/shared.inc
