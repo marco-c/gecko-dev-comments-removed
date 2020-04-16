@@ -257,13 +257,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void RestoreChildren(Children&& aChildren, bool aFromIPC = false);
 
   
-  
-  
-  nsresult LoadURI(BrowsingContext* aAccessor, nsDocShellLoadState* aLoadState,
-                   bool aSetNavigating = false);
+  nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating = false);
 
-  nsresult InternalLoad(BrowsingContext* aAccessor,
-                        nsDocShellLoadState* aLoadState,
+  nsresult InternalLoad(nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
 
   
