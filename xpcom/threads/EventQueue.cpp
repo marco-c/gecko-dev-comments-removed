@@ -5,6 +5,8 @@
 
 
 #include "mozilla/EventQueue.h"
+
+#include "GeckoProfiler.h"
 #include "nsIRunnable.h"
 
 using namespace mozilla;

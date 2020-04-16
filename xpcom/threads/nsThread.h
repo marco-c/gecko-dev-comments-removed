@@ -353,6 +353,28 @@ class nsThread : public nsIThreadInternal,
   bool mIsInLocalExecutionMode = false;
 };
 
+struct nsThreadShutdownContext {
+  nsThreadShutdownContext(NotNull<nsThread*> aTerminatingThread,
+                          NotNull<nsThread*> aJoiningThread,
+                          bool aAwaitingShutdownAck)
+      : mTerminatingThread(aTerminatingThread),
+        mTerminatingPRThread(aTerminatingThread->GetPRThread()),
+        mJoiningThread(aJoiningThread),
+        mAwaitingShutdownAck(aAwaitingShutdownAck),
+        mIsMainThreadJoining(NS_IsMainThread()) {
+    MOZ_COUNT_CTOR(nsThreadShutdownContext);
+  }
+  MOZ_COUNTED_DTOR(nsThreadShutdownContext)
+
+  
+  NotNull<RefPtr<nsThread>> mTerminatingThread;
+  PRThread* const mTerminatingPRThread;
+  NotNull<nsThread*> MOZ_UNSAFE_REF(
+      "Thread manager is holding reference to joining thread") mJoiningThread;
+  bool mAwaitingShutdownAck;
+  bool mIsMainThreadJoining;
+};
+
 class nsLocalExecutionRecord;
 
 
@@ -399,13 +421,13 @@ class MOZ_TEMPORARY_CLASS nsLocalExecutionRecord final {
 
 class MOZ_STACK_CLASS nsThreadEnumerator final {
  public:
-  nsThreadEnumerator() : mMal(nsThread::ThreadListMutex()) {}
+  nsThreadEnumerator() = default;
 
   auto begin() { return nsThread::ThreadList().begin(); }
   auto end() { return nsThread::ThreadList().end(); }
 
  private:
-  mozilla::OffTheBooksMutexAutoLock mMal;
+  mozilla::OffTheBooksMutexAutoLock mMal{nsThread::ThreadListMutex()};
 };
 
 #if defined(XP_UNIX) && !defined(ANDROID) && !defined(DEBUG) && HAVE_UALARM && \

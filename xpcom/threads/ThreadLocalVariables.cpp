@@ -2,6 +2,8 @@
 
 
 
+#include "mozilla/ThreadLocal.h"
+
 
 
 MOZ_THREAD_LOCAL(uint32_t) gTlsURLRecursionCount;
