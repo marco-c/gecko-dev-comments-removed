@@ -82,3 +82,6 @@ pref("media.eme.require-app-approval", true);
 
 
 pref("extensions.webextensions.remote", true);
+
+
+pref("dom.ipc.processPriorityManager.enabled", true);
