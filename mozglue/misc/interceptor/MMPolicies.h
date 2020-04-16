@@ -8,10 +8,10 @@
 #define mozilla_interceptor_MMPolicies_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/NativeNt.h"
 #include "mozilla/Span.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/Types.h"
@@ -73,6 +73,19 @@ PVOID WINAPI MapViewOfFile3(HANDLE FileMapping, HANDLE Process,
 #if !defined(_CRT_RAND_S)
 extern "C" errno_t rand_s(unsigned int* randomValue);
 #endif  
+
+
+
+namespace mozilla {
+namespace nt {
+SIZE_T WINAPI VirtualQueryEx(HANDLE aProcess, LPCVOID aAddress,
+                             PMEMORY_BASIC_INFORMATION aMemInfo,
+                             SIZE_T aMemInfoLen);
+
+SIZE_T WINAPI VirtualQuery(LPCVOID aAddress, PMEMORY_BASIC_INFORMATION aMemInfo,
+                           SIZE_T aMemInfoLen);
+}  
+}  
 
 namespace mozilla {
 namespace interceptor {
@@ -276,7 +289,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
     
     
     while (address <= kMaxPtr &&
-           ::VirtualQueryEx(aProcess, address, &mbi, len)) {
+           nt::VirtualQueryEx(aProcess, address, &mbi, len)) {
       if (mbi.State == MEM_FREE && mbi.RegionSize >= aDesiredBytesLen) {
         return mbi.BaseAddress;
       }
@@ -424,14 +437,10 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess : public MMPolicyBase {
 
   bool IsPageAccessible(void* aVAddress) const {
     MEMORY_BASIC_INFORMATION mbi;
-    SIZE_T result = ::VirtualQuery(aVAddress, &mbi, sizeof(mbi));
+    SIZE_T result = nt::VirtualQuery(aVAddress, &mbi, sizeof(mbi));
 
     return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
            mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
-  }
-
-  FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
-    return ::GetProcAddress(aModule, aName);
   }
 
   bool FlushInstructionCache() const {
@@ -618,6 +627,8 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
     return false;
   }
 
+  
+  
   bool Read(void* aToPtr, const void* aFromPtr, size_t aLen) const {
     MOZ_ASSERT(mProcess);
     if (!mProcess) {
@@ -627,6 +638,40 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
     SIZE_T numBytes = 0;
     BOOL ok = ::ReadProcessMemory(mProcess, aFromPtr, aToPtr, aLen, &numBytes);
     return ok && numBytes == aLen;
+  }
+
+  
+  
+  size_t TryRead(void* aToPtr, const void* aFromPtr, size_t aLen) const {
+    MOZ_ASSERT(mProcess);
+    if (!mProcess) {
+      return 0;
+    }
+
+    uint32_t pageSize = GetPageSize();
+    uintptr_t pageMask = pageSize - 1;
+
+    auto rangeStart = reinterpret_cast<uintptr_t>(aFromPtr);
+    auto rangeEnd = rangeStart + aLen;
+
+    while (rangeStart < rangeEnd) {
+      SIZE_T numBytes = 0;
+      BOOL ok = ::ReadProcessMemory(mProcess, aFromPtr, aToPtr,
+                                    rangeEnd - rangeStart, &numBytes);
+      if (ok) {
+        return numBytes;
+      }
+
+      
+      
+      if (rangeEnd & pageMask) {
+        rangeEnd &= ~pageMask;
+      } else {
+        rangeEnd -= pageSize;
+      }
+    }
+
+    return 0;
   }
 
   bool Write(void* aToPtr, const void* aFromPtr, size_t aLen) const {
@@ -664,47 +709,10 @@ class MMPolicyOutOfProcess : public MMPolicyBase {
 
   bool IsPageAccessible(void* aVAddress) const {
     MEMORY_BASIC_INFORMATION mbi;
-    SIZE_T result = ::VirtualQueryEx(mProcess, aVAddress, &mbi, sizeof(mbi));
+    SIZE_T result = nt::VirtualQueryEx(mProcess, aVAddress, &mbi, sizeof(mbi));
 
     return result && mbi.AllocationProtect && (mbi.Type & MEM_IMAGE) &&
            mbi.State == MEM_COMMIT && mbi.Protect != PAGE_NOACCESS;
-  }
-
-  
-
-
-
-
-  FARPROC GetProcAddress(HMODULE aModule, const char* aName) const {
-    nt::PEHeaders moduleHeaders(aModule);
-    auto funcEntry = moduleHeaders.FindExportAddressTableEntry(aName);
-    if (funcEntry.isErr()) {
-      
-      
-      
-      
-      return nullptr;
-    }
-    if (!funcEntry.inspect()) {
-      
-      
-      
-      
-      return ::GetProcAddress(aModule, aName);
-    }
-
-    SIZE_T numBytes = 0;
-    DWORD rvaTargetFunction = 0;
-    BOOL ok =
-        ::ReadProcessMemory(mProcess, funcEntry.inspect(), &rvaTargetFunction,
-                            sizeof(rvaTargetFunction), &numBytes);
-    if (!ok || numBytes != sizeof(rvaTargetFunction)) {
-      
-      
-      return ::GetProcAddress(aModule, aName);
-    }
-
-    return moduleHeaders.RVAToPtr<FARPROC>(rvaTargetFunction);
   }
 
   bool FlushInstructionCache() const {
