@@ -316,9 +316,6 @@ pref("browser.urlbar.update1.interventions", true);
 
 pref("browser.urlbar.update1.searchTips", true);
 
-
-pref("browser.urlbar.update1.view.stripHttps", true);
-
 pref("browser.urlbar.openViewOnFocus", true);
 
 
