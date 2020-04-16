@@ -4107,7 +4107,20 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
   
   uint8_t offset = 1;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   RootedAtom anonFunctionName(cx);
+
   switch (lhs->getKind()) {
     case ParseNodeKind::Name: {
       name = lhs->as<NameNode>().name();
@@ -4266,14 +4279,6 @@ bool BytecodeEmitter::emitAssignmentOrInit(ParseNodeKind kind, ParseNode* lhs,
       break;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
   if (rhs) {
     if (!emitAssignmentRhs(rhs, anonFunctionName)) {
       
