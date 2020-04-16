@@ -176,18 +176,6 @@ class IMEHandler final {
   static bool CurrentKeyboardLayoutHasIME();
 #endif  
 
-  
-
-
-  static void AppendInputScopeFromInputmode(const nsAString& aInputmode,
-                                            nsTArray<InputScope>& aScopes);
-
-  
-
-
-  static void AppendInputScopeFromType(const nsAString& aInputType,
-                                       nsTArray<InputScope>& aScopes);
-
  private:
   static nsWindow* sFocusedWindow;
   static InputContextAction::Cause sLastContextActionCause;
@@ -222,11 +210,8 @@ class IMEHandler final {
   static bool IsTSFAvailable() { return (sIsInTSFMode && !sPluginHasFocus); }
   static bool IsIMMActive();
 
-  static void MaybeShowOnScreenKeyboard(nsWindow* aWindow,
-                                        const InputContext& aInputContext);
-  enum class Sync { Yes, No };
-  static void MaybeDismissOnScreenKeyboard(nsWindow* aWindow,
-                                           Sync aSync = Sync::No);
+  static void MaybeShowOnScreenKeyboard();
+  static void MaybeDismissOnScreenKeyboard(nsWindow* aWindow);
   static bool WStringStartsWithCaseInsensitive(const std::wstring& aHaystack,
                                                const std::wstring& aNeedle);
   static bool NeedOnScreenKeyboard();
@@ -239,13 +224,13 @@ class IMEHandler final {
 
 
 
-  static void ShowOnScreenKeyboard(nsWindow* aWindow);
+  static void ShowOnScreenKeyboard();
 
   
 
 
 
-  static void DismissOnScreenKeyboard(nsWindow* aWindow);
+  static void DismissOnScreenKeyboard();
 
   
 

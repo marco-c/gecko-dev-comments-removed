@@ -16,7 +16,6 @@
 #  include "TSFTextStore.h"
 #endif  
 
-#include "OSKInputPaneManager.h"
 #include "nsLookAndFeel.h"
 #include "nsWindow.h"
 #include "WinUtils.h"
@@ -166,6 +165,13 @@ bool IMEHandler::ProcessRawKeyMessage(const MSG& aMsg) {
 bool IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
                                 WPARAM& aWParam, LPARAM& aLParam,
                                 MSGResult& aResult) {
+  if (aMessage == MOZ_WM_DISMISS_ONSCREEN_KEYBOARD) {
+    if (!sFocusedWindow) {
+      DismissOnScreenKeyboard();
+    }
+    return true;
+  }
+
   
   
   
@@ -301,8 +307,7 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
         nsresult rv = TSFTextStore::OnFocusChange(true, aWindow,
                                                   aWindow->GetInputContext());
         MaybeCreateNativeCaret(aWindow);
-        IMEHandler::MaybeShowOnScreenKeyboard(aWindow,
-                                              aWindow->GetInputContext());
+        IMEHandler::MaybeShowOnScreenKeyboard();
         return rv;
       }
       case NOTIFY_IME_OF_BLUR:
@@ -362,8 +367,7 @@ nsresult IMEHandler::NotifyIME(nsWindow* aWindow,
     case NOTIFY_IME_OF_FOCUS:
       sFocusedWindow = aWindow;
       IMMHandler::OnFocusChange(true, aWindow);
-      IMEHandler::MaybeShowOnScreenKeyboard(aWindow,
-                                            aWindow->GetInputContext());
+      IMEHandler::MaybeShowOnScreenKeyboard();
       MaybeCreateNativeCaret(aWindow);
       return NS_OK;
     case NOTIFY_IME_OF_BLUR:
@@ -478,10 +482,8 @@ void IMEHandler::SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
     aWindow->DispatchPluginSettingEvents();
   }
 
-  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
-    IMEHandler::MaybeDismissOnScreenKeyboard(aWindow, Sync::Yes);
-  } else if (aAction.UserMightRequestOpenVKB()) {
-    IMEHandler::MaybeShowOnScreenKeyboard(aWindow, aInputContext);
+  if (aAction.UserMightRequestOpenVKB()) {
+    IMEHandler::MaybeShowOnScreenKeyboard();
   }
 
   bool enable = WinUtils::IsIMEEnabled(aInputContext);
@@ -641,149 +643,78 @@ void IMEHandler::SetInputScopeForIMM32(nsWindow* aWindow,
   }
   AutoTArray<InputScope, 3> scopes;
 
-  
-  
-  AppendInputScopeFromType(aHTMLInputType, scopes);
-  AppendInputScopeFromInputmode(aHTMLInputInputmode, scopes);
-
   if (aInPrivateBrowsing) {
     scopes.AppendElement(IS_PRIVATE);
   }
 
-  if (scopes.IsEmpty()) {
-    
-    scopes.AppendElement(IS_DEFAULT);
-  }
-
-  sSetInputScopes(aWindow->GetWindowHandle(), scopes.Elements(),
-                  scopes.Length(), nullptr, 0, nullptr, nullptr);
-}
-
-
-void IMEHandler::AppendInputScopeFromInputmode(const nsAString& aInputmode,
-                                               nsTArray<InputScope>& aScopes) {
-  if (aInputmode.EqualsLiteral("mozAwesomebar")) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
-      return;
-    }
-    
-    if (!aScopes.Contains(IS_URL)) {
-      aScopes.AppendElement(IS_URL);
-    }
-    return;
-  }
-
   
-  if (aInputmode.EqualsLiteral("url")) {
-    if (!aScopes.Contains(IS_SEARCH)) {
-      aScopes.AppendElement(IS_URL);
+  if (aHTMLInputType.IsEmpty() || aHTMLInputType.EqualsLiteral("text")) {
+    if (aHTMLInputInputmode.EqualsLiteral("url")) {
+      scopes.AppendElement(IS_URL);
+    } else if (aHTMLInputInputmode.EqualsLiteral("mozAwesomebar")) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (TSFTextStore::ShouldSetInputScopeOfURLBarToDefault()) {
+        scopes.AppendElement(IS_DEFAULT);
+      } else {
+        scopes.AppendElement(IS_URL);
+      }
+    } else if (aHTMLInputInputmode.EqualsLiteral("email")) {
+      scopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+    } else if (aHTMLInputInputmode.EqualsLiteral("tel")) {
+      scopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+      scopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
+    } else if (aHTMLInputInputmode.EqualsLiteral("numeric")) {
+      scopes.AppendElement(IS_NUMBER);
+    } else {
+      scopes.AppendElement(IS_DEFAULT);
     }
-    return;
+  } else if (aHTMLInputType.EqualsLiteral("url")) {
+    scopes.AppendElement(IS_URL);
+  } else if (aHTMLInputType.EqualsLiteral("search")) {
+    scopes.AppendElement(IS_SEARCH);
+  } else if (aHTMLInputType.EqualsLiteral("email")) {
+    scopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
+  } else if (aHTMLInputType.EqualsLiteral("password")) {
+    scopes.AppendElement(IS_PASSWORD);
+  } else if (aHTMLInputType.EqualsLiteral("datetime") ||
+             aHTMLInputType.EqualsLiteral("datetime-local")) {
+    scopes.AppendElement(IS_DATE_FULLDATE);
+    scopes.AppendElement(IS_TIME_FULLTIME);
+  } else if (aHTMLInputType.EqualsLiteral("date") ||
+             aHTMLInputType.EqualsLiteral("month") ||
+             aHTMLInputType.EqualsLiteral("week")) {
+    scopes.AppendElement(IS_DATE_FULLDATE);
+  } else if (aHTMLInputType.EqualsLiteral("time")) {
+    scopes.AppendElement(IS_TIME_FULLTIME);
+  } else if (aHTMLInputType.EqualsLiteral("tel")) {
+    scopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
+    scopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
+  } else if (aHTMLInputType.EqualsLiteral("number")) {
+    scopes.AppendElement(IS_NUMBER);
   }
-  if (aInputmode.EqualsLiteral("email")) {
-    if (!aScopes.Contains(IS_EMAIL_SMTPEMAILADDRESS)) {
-      aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-    }
-    return;
-  }
-  if (aInputmode.EqualsLiteral("tel")) {
-    if (!aScopes.Contains(IS_TELEPHONE_FULLTELEPHONENUMBER)) {
-      aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    }
-    if (!aScopes.Contains(IS_TELEPHONE_LOCALNUMBER)) {
-      aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-    }
-    return;
-  }
-  if (aInputmode.EqualsLiteral("numeric")) {
-    if (!aScopes.Contains(IS_DIGITS)) {
-      aScopes.AppendElement(IS_DIGITS);
-    }
-    return;
-  }
-  if (aInputmode.EqualsLiteral("decimal")) {
-    if (!aScopes.Contains(IS_NUMBER)) {
-      aScopes.AppendElement(IS_NUMBER);
-    }
-    return;
-  }
-  if (aInputmode.EqualsLiteral("search")) {
-    if (!aScopes.Contains(IS_SEARCH)) {
-      aScopes.AppendElement(IS_SEARCH);
-    }
-    return;
+  if (!scopes.IsEmpty()) {
+    sSetInputScopes(aWindow->GetWindowHandle(), scopes.Elements(),
+                    scopes.Length(), nullptr, 0, nullptr, nullptr);
   }
 }
 
 
-void IMEHandler::AppendInputScopeFromType(const nsAString& aHTMLInputType,
-                                          nsTArray<InputScope>& aScopes) {
-  
-  if (aHTMLInputType.EqualsLiteral("url")) {
-    aScopes.AppendElement(IS_URL);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("search")) {
-    aScopes.AppendElement(IS_SEARCH);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("email")) {
-    aScopes.AppendElement(IS_EMAIL_SMTPEMAILADDRESS);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("password")) {
-    aScopes.AppendElement(IS_PASSWORD);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("datetime") ||
-      aHTMLInputType.EqualsLiteral("datetime-local")) {
-    aScopes.AppendElement(IS_DATE_FULLDATE);
-    aScopes.AppendElement(IS_TIME_FULLTIME);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("date") ||
-      aHTMLInputType.EqualsLiteral("month") ||
-      aHTMLInputType.EqualsLiteral("week")) {
-    aScopes.AppendElement(IS_DATE_FULLDATE);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("time")) {
-    aScopes.AppendElement(IS_TIME_FULLTIME);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("tel")) {
-    aScopes.AppendElement(IS_TELEPHONE_FULLTELEPHONENUMBER);
-    aScopes.AppendElement(IS_TELEPHONE_LOCALNUMBER);
-    return;
-  }
-  if (aHTMLInputType.EqualsLiteral("number")) {
-    aScopes.AppendElement(IS_NUMBER);
-    return;
-  }
-}
-
-
-void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
-                                           const InputContext& aInputContext) {
-  if (aInputContext.mHTMLInputInputmode.EqualsLiteral("none")) {
-    return;
-  }
+void IMEHandler::MaybeShowOnScreenKeyboard() {
 #ifdef NIGHTLY_BUILD
   if (FxRWindowManager::GetInstance()->IsFxRWindow(sFocusedWindow)) {
     mozilla::gfx::VRShMem shmem(nullptr, true );
@@ -809,11 +740,11 @@ void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
     return;
   }
 
-  IMEHandler::ShowOnScreenKeyboard(aWindow);
+  IMEHandler::ShowOnScreenKeyboard();
 }
 
 
-void IMEHandler::MaybeDismissOnScreenKeyboard(nsWindow* aWindow, Sync aSync) {
+void IMEHandler::MaybeDismissOnScreenKeyboard(nsWindow* aWindow) {
 #ifdef NIGHTLY_BUILD
   if (FxRWindowManager::GetInstance()->IsFxRWindow(aWindow)) {
     mozilla::gfx::VRShMem shmem(nullptr, true );
@@ -824,24 +755,8 @@ void IMEHandler::MaybeDismissOnScreenKeyboard(nsWindow* aWindow, Sync aSync) {
   if (sPluginHasFocus || !IsWin8OrLater()) {
     return;
   }
-
-  if (aSync == Sync::Yes) {
-    DismissOnScreenKeyboard(aWindow);
-    return;
-  }
-
-  RefPtr<nsWindow> window(aWindow);
-  NS_DispatchToCurrentThreadQueue(
-      NS_NewRunnableFunction("IMEHandler::MaybeDismissOnScreenKeyboard",
-                             [window]() {
-                               if (window->Destroyed()) {
-                                 return;
-                               }
-                               if (!sFocusedWindow) {
-                                 DismissOnScreenKeyboard(window);
-                               }
-                             }),
-      EventQueuePriority::Idle);
+  ::PostMessage(aWindow->GetWindowHandle(), MOZ_WM_DISMISS_ONSCREEN_KEYBOARD, 0,
+                0);
 }
 
 
@@ -1052,12 +967,7 @@ bool IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode() {
 
 
 
-void IMEHandler::ShowOnScreenKeyboard(nsWindow* aWindow) {
-  if (IsWin10AnniversaryUpdateOrLater()) {
-    OSKInputPaneManager::ShowOnScreenKeyboard(aWindow->GetWindowHandle());
-    return;
-  }
-
+void IMEHandler::ShowOnScreenKeyboard() {
   nsAutoString cachedPath;
   nsresult result = Preferences::GetString(kOskPathPrefName, cachedPath);
   if (NS_FAILED(result) || cachedPath.IsEmpty()) {
@@ -1125,13 +1035,8 @@ void IMEHandler::ShowOnScreenKeyboard(nsWindow* aWindow) {
 
 
 
-void IMEHandler::DismissOnScreenKeyboard(nsWindow* aWindow) {
+void IMEHandler::DismissOnScreenKeyboard() {
   
-  if (IsWin10AnniversaryUpdateOrLater()) {
-    OSKInputPaneManager::DismissOnScreenKeyboard(aWindow->GetWindowHandle());
-    return;
-  }
-
   HWND osk = GetOnScreenKeyboardWindow();
   if (osk) {
     ::PostMessage(osk, WM_SYSCOMMAND, SC_CLOSE, 0);
