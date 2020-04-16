@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments, clippy::missing_safety_doc)]
 
 
 
@@ -21,13 +22,9 @@
 
 
 
-
-
-extern crate shared_library;
-
-pub use device::Device;
-pub use entry::{Entry, EntryCustom, InstanceError, LoadingError};
-pub use instance::Instance;
+pub use crate::device::Device;
+pub use crate::entry::{Entry, EntryCustom, InstanceError, LoadingError};
+pub use crate::instance::Instance;
 
 mod device;
 mod entry;
@@ -47,8 +44,8 @@ pub trait RawPtr<T> {
 
 impl<'r, T> RawPtr<T> for Option<&'r T> {
     fn as_raw_ptr(&self) -> *const T {
-        match self {
-            &Some(inner) => inner as *const T,
+        match *self {
+            Some(inner) => inner as *const T,
 
             _ => ::std::ptr::null(),
         }

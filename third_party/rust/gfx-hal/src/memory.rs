@@ -8,17 +8,17 @@ bitflags!(
     #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
     pub struct Properties: u16 {
         /// Device local memory on the GPU.
-        const DEVICE_LOCAL   = 0x1;
+        const DEVICE_LOCAL = 0x1;
 
         /// Host visible memory can be accessed by the CPU.
         ///
         /// Backends must provide at least one cpu visible memory.
-        const CPU_VISIBLE   = 0x2;
+        const CPU_VISIBLE = 0x2;
 
         /// CPU-GPU coherent.
         ///
         /// Non-coherent memory requires explicit flushing.
-        const COHERENT     = 0x4;
+        const COHERENT = 0x4;
 
         /// Cached memory by the CPU
         const CPU_CACHED = 0x8;
@@ -35,8 +35,10 @@ bitflags!(
     pub struct Dependencies: u32 {
         /// Specifies the memory dependency to be framebuffer-local.
         const BY_REGION    = 0x1;
-        //const VIEW_LOCAL   = 0x2;
-        //const DEVICE_GROUP = 0x4;
+        ///
+        const VIEW_LOCAL   = 0x2;
+        ///
+        const DEVICE_GROUP = 0x4;
     }
 );
 
@@ -58,10 +60,10 @@ pub enum Barrier<'a, B: Backend> {
         
         target: &'a B::Buffer,
         
+        range: buffer::SubRange,
+        
         
         families: Option<Range<queue::QueueFamilyId>>,
-        
-        range: Range<Option<u64>>,
     },
     
     Image {
@@ -70,10 +72,10 @@ pub enum Barrier<'a, B: Backend> {
         
         target: &'a B::Image,
         
+        range: image::SubresourceRange,
+        
         
         families: Option<Range<queue::QueueFamilyId>>,
-        
-        range: image::SubresourceRange,
     },
 }
 
@@ -84,7 +86,7 @@ impl<'a, B: Backend> Barrier<'a, B> {
             states,
             target,
             families: None,
-            range: None .. None,
+            range: buffer::SubRange::WHOLE,
         }
     }
 }
@@ -98,4 +100,22 @@ pub struct Requirements {
     pub alignment: u64,
     
     pub type_mask: u64,
+}
+
+
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Segment {
+    
+    pub offset: u64,
+    
+    pub size: Option<u64>,
+}
+
+impl Segment {
+    
+    pub const ALL: Self = Segment {
+        offset: 0,
+        size: None,
+    };
 }

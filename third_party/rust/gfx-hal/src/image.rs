@@ -65,7 +65,7 @@ impl Extent {
 
 
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Offset {
     
@@ -97,10 +97,10 @@ impl Offset {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Tiling {
     
-    Optimal,
+    Optimal = 0,
     
     
-    Linear,
+    Linear = 1,
 }
 
 
@@ -153,7 +153,7 @@ impl std::error::Error for CreationError {
 
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ViewError { 
+pub enum ViewCreationError {
     
     Usage(Usage),
     
@@ -170,30 +170,30 @@ pub enum ViewError {
     Unsupported,
 }
 
-impl From<device::OutOfMemory> for ViewError {
+impl From<device::OutOfMemory> for ViewCreationError {
     fn from(error: device::OutOfMemory) -> Self {
-        ViewError::OutOfMemory(error)
+        ViewCreationError::OutOfMemory(error)
     }
 }
 
-impl std::fmt::Display for ViewError {
+impl std::fmt::Display for ViewCreationError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ViewError::Usage(usage) => write!(fmt, "Failed to create image view: Specified usage flags are not present in the image {:?}", usage),
-            ViewError::Level(level) => write!(fmt, "Failed to create image view: Selected level doesn't exist in the image {}", level),
-            ViewError::Layer(err) => write!(fmt, "Failed to create image view: {}", err),
-            ViewError::BadFormat(format) => write!(fmt, "Failed to create image view: Incompatible format {:?}", format),
-            ViewError::BadKind(kind) => write!(fmt, "Failed to create image view: Incompatible kind {:?}", kind),
-            ViewError::OutOfMemory(err) => write!(fmt, "Failed to create image view: {}", err),
-            ViewError::Unsupported => write!(fmt, "Failed to create image view: Implementation specific error occurred"),
+            ViewCreationError::Usage(usage) => write!(fmt, "Failed to create image view: Specified usage flags are not present in the image {:?}", usage),
+            ViewCreationError::Level(level) => write!(fmt, "Failed to create image view: Selected level doesn't exist in the image {}", level),
+            ViewCreationError::Layer(err) => write!(fmt, "Failed to create image view: {}", err),
+            ViewCreationError::BadFormat(format) => write!(fmt, "Failed to create image view: Incompatible format {:?}", format),
+            ViewCreationError::BadKind(kind) => write!(fmt, "Failed to create image view: Incompatible kind {:?}", kind),
+            ViewCreationError::OutOfMemory(err) => write!(fmt, "Failed to create image view: {}", err),
+            ViewCreationError::Unsupported => write!(fmt, "Failed to create image view: Implementation specific error occurred"),
         }
     }
 }
 
-impl std::error::Error for ViewError {
+impl std::error::Error for ViewCreationError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            ViewError::OutOfMemory(err) => Some(err),
+            ViewCreationError::OutOfMemory(err) => Some(err),
             _ => None,
         }
     }
@@ -211,8 +211,14 @@ pub enum LayerError {
 impl std::fmt::Display for LayerError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LayerError::NotExpected(kind) => write!(fmt, "Kind {{{:?}}} does not support arrays", kind),
-            LayerError::OutOfBounds(layers) => write!(fmt, "Out of bounds layers {} .. {}", layers.start, layers.end),
+            LayerError::NotExpected(kind) => {
+                write!(fmt, "Kind {{{:?}}} does not support arrays", kind)
+            }
+            LayerError::OutOfBounds(layers) => write!(
+                fmt,
+                "Out of bounds layers {} .. {}",
+                layers.start, layers.end
+            ),
         }
     }
 }
@@ -232,16 +238,6 @@ pub enum Filter {
     
     
     Linear,
-}
-
-
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum Anisotropic {
-    
-    Off,
-    
-    On(u8),
 }
 
 
@@ -452,6 +448,10 @@ pub enum WrapMode {
     Clamp,
     
     Border,
+    
+    
+    
+    MirrorClamp,
 }
 
 
@@ -528,7 +528,9 @@ pub struct SamplerDesc {
     
     pub normalized: bool,
     
-    pub anisotropic: Anisotropic,
+    
+    
+    pub anisotropy_clamp: Option<u8>,
 }
 
 impl SamplerDesc {
@@ -545,7 +547,7 @@ impl SamplerDesc {
             comparison: None,
             border: PackedColor(0),
             normalized: true,
-            anisotropic: Anisotropic::Off,
+            anisotropy_clamp: None,
         }
     }
 }
@@ -580,7 +582,7 @@ pub enum Layout {
     
     
     
-    Undefined, 
+    Undefined,
     
     
     Preinitialized,

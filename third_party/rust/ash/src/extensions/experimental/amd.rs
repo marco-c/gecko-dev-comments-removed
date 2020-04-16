@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal)]
 
 
 
@@ -23,9 +24,10 @@
 
 
 
+
+use crate::vk::*;
 use std::fmt;
 use std::os::raw::*;
-use vk::*;
 
 
 

@@ -47,6 +47,12 @@ impl AttachmentOps {
     };
 
     
+    pub const INIT: Self = AttachmentOps {
+        load: AttachmentLoadOp::Clear,
+        store: AttachmentStoreOp::Store,
+    };
+
+    
     pub const PRESERVE: Self = AttachmentOps {
         load: AttachmentLoadOp::Load,
         store: AttachmentStoreOp::Store,
@@ -104,18 +110,7 @@ pub type AttachmentRef = (AttachmentId, AttachmentLayout);
 pub const ATTACHMENT_UNUSED: AttachmentId = !0;
 
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum SubpassRef {
-    
-    
-    External,
-    
-    
-    
-    
-    Pass(usize),
-}
+pub type SubpassId = u8;
 
 
 
@@ -125,7 +120,10 @@ pub enum SubpassRef {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SubpassDependency {
     
-    pub passes: Range<SubpassRef>,
+    
+    
+    
+    pub passes: Range<Option<SubpassId>>,
     
     pub stages: Range<PipelineStage>,
     
@@ -153,9 +151,6 @@ pub struct SubpassDesc<'a> {
     
     pub preserves: &'a [AttachmentId],
 }
-
-
-pub type SubpassId = usize;
 
 
 #[derive(Debug)]

@@ -23,7 +23,6 @@ use std::ops::Range;
 
 use crate::image::{Filter, Layout, SubresourceRange};
 use crate::memory::{Barrier, Dependencies};
-use crate::range::RangeArg;
 use crate::{buffer, pass, pso, query};
 use crate::{
     Backend,
@@ -37,7 +36,6 @@ use crate::{
 
 pub use self::clear::*;
 pub use self::structs::*;
-
 
 
 pub type DescriptorSetOffset = u32;
@@ -145,9 +143,7 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
         T::Item: Borrow<Barrier<'a, B>>;
 
     
-    unsafe fn fill_buffer<R>(&mut self, buffer: &B::Buffer, range: R, data: u32)
-    where
-        R: RangeArg<buffer::Offset>;
+    unsafe fn fill_buffer(&mut self, buffer: &B::Buffer, range: buffer::SubRange, data: u32);
 
     
     unsafe fn update_buffer(&mut self, buffer: &B::Buffer, offset: buffer::Offset, data: &[u8]);
@@ -218,10 +214,9 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     
-    
     unsafe fn bind_vertex_buffers<I, T>(&mut self, first_binding: pso::BufferIndex, buffers: I)
     where
-        I: IntoIterator<Item = (T, buffer::Offset)>,
+        I: IntoIterator<Item = (T, buffer::SubRange)>,
         T: Borrow<B::Buffer>;
 
     
@@ -285,6 +280,8 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     unsafe fn set_depth_bounds(&mut self, bounds: Range<f32>);
 
+    
+    
     
     unsafe fn set_line_width(&mut self, width: f32);
 
@@ -561,4 +558,11 @@ pub trait CommandBuffer<B: Backend>: fmt::Debug + Any + Send + Sync {
     where
         T: 'a + Borrow<B::CommandBuffer>,
         I: IntoIterator<Item = &'a T>;
+
+    
+    unsafe fn insert_debug_marker(&mut self, name: &str, color: u32);
+    
+    unsafe fn begin_debug_marker(&mut self, name: &str, color: u32);
+    
+    unsafe fn end_debug_marker(&mut self);
 }

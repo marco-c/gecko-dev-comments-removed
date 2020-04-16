@@ -1,0 +1,25 @@
+use crate::mapping::MappedRange;
+use hal::memory as m;
+
+
+
+
+
+pub trait Block<B: hal::Backend> {
+    
+    fn properties(&self) -> m::Properties;
+
+    
+    fn memory(&self) -> &B::Memory;
+
+    
+    fn segment(&self) -> m::Segment;
+
+    
+    
+    fn map<'a>(
+        &'a mut self,
+        device: &B::Device,
+        segment: m::Segment,
+    ) -> Result<MappedRange<'a, B>, hal::device::MapError>;
+}

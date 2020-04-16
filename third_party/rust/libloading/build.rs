@@ -14,6 +14,7 @@ fn main(){
         
         Ok("openbsd") | Ok("bitrig") | Ok("netbsd") | Ok("macos") | Ok("ios") => {}
         Ok("solaris") => {}
+        Ok("haiku") => {}
         
         Ok("windows") => {}
         tos => {

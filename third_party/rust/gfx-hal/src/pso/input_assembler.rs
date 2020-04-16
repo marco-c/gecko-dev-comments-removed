@@ -17,7 +17,6 @@ pub type InstanceRate = u8;
 pub type PatchSize = u8;
 
 
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum VertexInputRate {

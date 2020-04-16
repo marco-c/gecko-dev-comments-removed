@@ -6,9 +6,7 @@
 
 
 use hal::pso;
-use std::borrow::Borrow;
-use std::cmp::Ordering;
-use std::ops::Range;
+use std::{borrow::Borrow, cmp::Ordering, ops::Range};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct RootConstant {

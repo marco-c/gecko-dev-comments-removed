@@ -25,10 +25,44 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![no_std]
 #![cfg_attr(feature = "union", feature(untagged_unions))]
 #![cfg_attr(feature = "specialization", feature(specialization))]
 #![cfg_attr(feature = "may_dangle", feature(dropck_eyepatch))]
+#![cfg_attr(feature = "const_generics", allow(incomplete_features))]
+#![cfg_attr(feature = "const_generics", feature(const_generics))]
 #![deny(missing_docs)]
 
 #[doc(hidden)]
@@ -1053,6 +1087,7 @@ impl<A: Array> SmallVec<A> {
     
     
     
+    #[inline]
     pub unsafe fn from_raw_parts(ptr: *mut A::Item, length: usize, capacity: usize) -> SmallVec<A> {
         assert!(capacity > A::size());
         SmallVec {
@@ -1370,6 +1405,7 @@ where
 }
 
 impl<A: Array> FromIterator<A::Item> for SmallVec<A> {
+    #[inline]
     fn from_iter<I: IntoIterator<Item = A::Item>>(iterable: I) -> SmallVec<A> {
         let mut v = SmallVec::new();
         v.extend(iterable);
@@ -1450,6 +1486,7 @@ impl<A: Array> Clone for SmallVec<A>
 where
     A::Item: Clone,
 {
+    #[inline]
     fn clone(&self) -> SmallVec<A> {
         let mut new_vector = SmallVec::with_capacity(self.len());
         for element in self.iter() {
@@ -1502,11 +1539,11 @@ where
 
 unsafe impl<A: Array> Send for SmallVec<A> where A::Item: Send {}
 
-/// An iterator that consumes a `SmallVec` and yields its items by value.
-///
-/// Returned from [`SmallVec::into_iter`][1].
-///
-/// [1]: struct.SmallVec.html#method.into_iter
+
+
+
+
+
 pub struct IntoIter<A: Array> {
     data: SmallVec<A>,
     current: usize,
@@ -1578,13 +1615,13 @@ impl<A: Array> ExactSizeIterator for IntoIter<A> {}
 impl<A: Array> FusedIterator for IntoIter<A> {}
 
 impl<A: Array> IntoIter<A> {
-    /// Returns the remaining items of this iterator as a slice.
+    
     pub fn as_slice(&self) -> &[A::Item] {
         let len = self.end - self.current;
         unsafe { core::slice::from_raw_parts(self.data.as_ptr().add(self.current), len) }
     }
 
-    /// Returns the remaining items of this iterator as a mutable slice.
+    
     pub fn as_mut_slice(&mut self) -> &mut [A::Item] {
         let len = self.end - self.current;
         unsafe { core::slice::from_raw_parts_mut(self.data.as_mut_ptr().add(self.current), len) }
@@ -1596,7 +1633,7 @@ impl<A: Array> IntoIterator for SmallVec<A> {
     type Item = A::Item;
     fn into_iter(mut self) -> Self::IntoIter {
         unsafe {
-            // Set SmallVec len to zero as `IntoIter` drop handles dropping of the elements
+            
             let len = self.len();
             self.set_len(0);
             IntoIter {
@@ -1624,17 +1661,17 @@ impl<'a, A: Array> IntoIterator for &'a mut SmallVec<A> {
     }
 }
 
-/// Types that can be used as the backing store for a SmallVec
+
 pub unsafe trait Array {
-    /// The type of the array's elements.
+    
     type Item;
-    /// Returns the number of items the array can hold.
+    
     fn size() -> usize;
 }
 
-/// Set the length of the vec when the `SetLenOnDrop` value goes out of scope.
-///
-/// Copied from https://github.com/rust-lang/rust/pull/36355
+
+
+
 struct SetLenOnDrop<'a> {
     len: &'a mut usize,
     local_len: usize,
@@ -1667,6 +1704,13 @@ impl<'a> Drop for SetLenOnDrop<'a> {
     }
 }
 
+#[cfg(feature = "const_generics")]
+unsafe impl<T, const N: usize> Array for [T; N] {
+    type Item = T;
+    fn size() -> usize { N }
+}
+
+#[cfg(not(feature = "const_generics"))]
 macro_rules! impl_array(
     ($($size:expr),+) => {
         $(
@@ -1678,11 +1722,26 @@ macro_rules! impl_array(
     }
 );
 
+#[cfg(not(feature = "const_generics"))]
 impl_array!(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 20, 24, 32, 36, 0x40, 0x60, 0x80,
     0x100, 0x200, 0x400, 0x600, 0x800, 0x1000, 0x2000, 0x4000, 0x6000, 0x8000, 0x10000, 0x20000,
     0x40000, 0x60000, 0x80000, 0x10_0000
 );
+
+
+pub trait ToSmallVec<A:Array> {
+    
+    fn to_smallvec(&self) -> SmallVec<A>;
+}
+
+impl<A:Array> ToSmallVec<A> for [A::Item]
+    where A::Item: Copy {
+    #[inline]
+    fn to_smallvec(&self) -> SmallVec<A> {
+        SmallVec::from_slice(self)
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1704,7 +1763,7 @@ mod tests {
         assert_eq!(&*v, &[0]);
     }
 
-    // We heap allocate all these strings so that double frees will show up under valgrind.
+    
 
     #[test]
     pub fn test_inline() {
@@ -1760,13 +1819,13 @@ mod tests {
         );
     }
 
-    /// https://github.com/servo/rust-smallvec/issues/4
+    
     #[test]
     fn issue_4() {
         SmallVec::<[Box<u32>; 2]>::new();
     }
 
-    /// https://github.com/servo/rust-smallvec/issues/5
+    
     #[test]
     fn issue_5() {
         assert!(Some(SmallVec::<[&u32; 2]>::new()).is_some());
@@ -1791,13 +1850,13 @@ mod tests {
         v.push(3);
         assert_eq!(v.drain(..).collect::<Vec<_>>(), &[3]);
 
-        // spilling the vec
+        
         v.push(3);
         v.push(4);
         v.push(5);
         let old_capacity = v.capacity();
         assert_eq!(v.drain(1..).collect::<Vec<_>>(), &[4, 5]);
-        // drain should not change the capacity
+        
         assert_eq!(v.capacity(), old_capacity);
     }
 
@@ -1807,7 +1866,7 @@ mod tests {
         v.push(3);
         assert_eq!(v.drain(..).rev().collect::<Vec<_>>(), &[3]);
 
-        // spilling the vec
+        
         v.push(3);
         v.push(4);
         v.push(5);
@@ -1827,7 +1886,7 @@ mod tests {
         v.push(3);
         assert_eq!(v.into_iter().collect::<Vec<_>>(), &[3]);
 
-        // spilling the vec
+        
         let mut v: SmallVec<[u8; 2]> = SmallVec::new();
         v.push(3);
         v.push(4);
@@ -1841,7 +1900,7 @@ mod tests {
         v.push(3);
         assert_eq!(v.into_iter().rev().collect::<Vec<_>>(), &[3]);
 
-        // spilling the vec
+        
         let mut v: SmallVec<[u8; 2]> = SmallVec::new();
         v.push(3);
         v.push(4);
@@ -2009,7 +2068,7 @@ mod tests {
     }
 
     #[test]
-    // https://github.com/servo/rust-smallvec/issues/96
+    
     fn test_insert_many_panic() {
         struct PanicOnDoubleDrop {
             dropped: Box<bool>,
@@ -2087,8 +2146,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_drop_panic_smallvec() {
-        // This test should only panic once, and not double panic,
-        // which would mean a double drop
+        
+        
         struct DropPanic;
 
         impl Drop for DropPanic {
@@ -2106,13 +2165,13 @@ mod tests {
         let mut a: SmallVec<[u32; 2]> = SmallVec::new();
         let mut b: SmallVec<[u32; 2]> = SmallVec::new();
         let mut c: SmallVec<[u32; 2]> = SmallVec::new();
-        // a = [1, 2]
+        
         a.push(1);
         a.push(2);
-        // b = [1, 2]
+        
         b.push(1);
         b.push(2);
-        // c = [3, 4]
+        
         c.push(3);
         c.push(4);
 
@@ -2125,12 +2184,12 @@ mod tests {
         let mut a: SmallVec<[u32; 2]> = SmallVec::new();
         let mut b: SmallVec<[u32; 2]> = SmallVec::new();
         let mut c: SmallVec<[u32; 2]> = SmallVec::new();
-        // a = [1]
+        
         a.push(1);
-        // b = [1, 1]
+        
         b.push(1);
         b.push(1);
-        // c = [1, 2]
+        
         c.push(1);
         c.push(2);
 
@@ -2277,8 +2336,8 @@ mod tests {
 
     #[test]
     fn test_into_iter_clone() {
-        // Test that the cloned iterator yields identical elements and that it owns its own copy
-        // (i.e. no use after move errors).
+        
+        
         let mut iter = SmallVec::<[u8; 2]>::from_iter(0..3).into_iter();
         let mut clone_iter = iter.clone();
         while let Some(x) = iter.next() {
@@ -2289,7 +2348,7 @@ mod tests {
 
     #[test]
     fn test_into_iter_clone_partially_consumed_iterator() {
-        // Test that the cloned iterator only contains the remaining elements of the original iterator.
+        
         let mut iter = SmallVec::<[u8; 2]>::from_iter(0..3).into_iter().skip(1);
         let mut clone_iter = iter.clone();
         while let Some(x) = iter.next() {
@@ -2371,7 +2430,7 @@ mod tests {
 
     #[test]
     fn test_retain() {
-        // Test inline data storate
+        
         let mut sv: SmallVec<[i32; 5]> = SmallVec::from_slice(&[1, 2, 3, 3, 4]);
         sv.retain(|&mut i| i != 3);
         assert_eq!(sv.pop(), Some(4));
@@ -2379,7 +2438,7 @@ mod tests {
         assert_eq!(sv.pop(), Some(1));
         assert_eq!(sv.pop(), None);
 
-        // Test spilled data storage
+        
         let mut sv: SmallVec<[i32; 3]> = SmallVec::from_slice(&[1, 2, 3, 3, 4]);
         sv.retain(|&mut i| i != 3);
         assert_eq!(sv.pop(), Some(4));
@@ -2387,7 +2446,7 @@ mod tests {
         assert_eq!(sv.pop(), Some(1));
         assert_eq!(sv.pop(), None);
 
-        // Test that drop implementations are called for inline.
+        
         let one = Rc::new(1);
         let mut sv: SmallVec<[Rc<i32>; 3]> = SmallVec::new();
         sv.push(Rc::clone(&one));
@@ -2395,7 +2454,7 @@ mod tests {
         sv.retain(|_| false);
         assert_eq!(Rc::strong_count(&one), 1);
 
-        // Test that drop implementations are called for spilled data.
+        
         let mut sv: SmallVec<[Rc<i32>; 1]> = SmallVec::new();
         sv.push(Rc::clone(&one));
         sv.push(Rc::new(2));
@@ -2464,10 +2523,10 @@ mod tests {
         let decoded: SmallVec<[i32; 2]> = deserialize(&encoded).unwrap();
         assert_eq!(small_vec, decoded);
         small_vec.push(2);
-        // Spill the vec
+        
         small_vec.push(3);
         small_vec.push(4);
-        // Check again after spilling.
+        
         let encoded = config().limit(100).serialize(&small_vec).unwrap();
         let decoded: SmallVec<[i32; 2]> = deserialize(&encoded).unwrap();
         assert_eq!(small_vec, decoded);
@@ -2481,7 +2540,7 @@ mod tests {
         v.push(3);
         assert!(v.spilled());
         v.clear();
-        // Shrink to inline.
+        
         v.grow(2);
         assert!(!v.spilled());
         assert_eq!(v.capacity(), 2);
@@ -2521,5 +2580,11 @@ mod tests {
         v.grow(4);
         assert_eq!(v.capacity(), 4);
         assert_eq!(v[..], [0, 1, 2]);
+    }
+
+    #[cfg(feature = "const_generics")]
+    #[test]
+    fn const_generics() {
+        let _v = SmallVec::<[i32; 987]>::default();
     }
 }

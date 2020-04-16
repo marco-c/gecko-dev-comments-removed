@@ -1,5 +1,16 @@
+
+
+
+
+
+
+
+
+
+
 #![allow(dead_code)]
-use peek_poke::{PeekPoke, Poke, PeekCopy};
+
+use peek_poke::{PeekPoke, Poke};
 use std::{marker::PhantomData, mem::size_of};
 
 #[test]
@@ -60,7 +71,7 @@ fn test_basic_struct() {
 
 #[test]
 fn test_enum() {
-    #[derive(Clone, Copy, PeekCopy, Poke)]
+    #[derive(Clone, Copy, PeekPoke)]
     enum TestEnum {
         NoArg,
         OneArg(usize),
@@ -77,7 +88,7 @@ fn test_enum() {
 #[test]
 fn test_enum_cstyle() {
     #[repr(u32)]
-    #[derive(Clone, Copy, PeekCopy, Poke)]
+    #[derive(Clone, Copy, PeekPoke)]
     enum BorderStyle {
         None = 0,
         Solid = 1,

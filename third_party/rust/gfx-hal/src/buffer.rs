@@ -12,6 +12,29 @@ use crate::{device, format, Backend, IndexType};
 pub type Offset = u64;
 
 
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SubRange {
+    
+    pub offset: Offset,
+    
+    pub size: Option<Offset>,
+}
+
+impl SubRange {
+    
+    pub const WHOLE: Self = SubRange {
+        offset: 0,
+        size: None,
+    };
+
+    
+    pub fn size_to(&self, limit: Offset) -> Offset {
+        self.size.unwrap_or(limit - self.offset)
+    }
+}
+
+
 pub type State = Access;
 
 
@@ -39,7 +62,11 @@ impl std::fmt::Display for CreationError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             CreationError::OutOfMemory(err) => write!(fmt, "Failed to create buffer: {}", err),
-            CreationError::UnsupportedUsage { usage } => write!(fmt, "Failed to create buffer: Unsupported usage: {:?}", usage),
+            CreationError::UnsupportedUsage { usage } => write!(
+                fmt,
+                "Failed to create buffer: Unsupported usage: {:?}",
+                usage
+            ),
         }
     }
 }
@@ -60,10 +87,7 @@ pub enum ViewCreationError {
     OutOfMemory(device::OutOfMemory),
 
     
-    UnsupportedFormat {
-        
-        format: Option<format::Format>,
-    },
+    UnsupportedFormat(Option<format::Format>),
 }
 
 impl From<device::OutOfMemory> for ViewCreationError {
@@ -75,9 +99,17 @@ impl From<device::OutOfMemory> for ViewCreationError {
 impl std::fmt::Display for ViewCreationError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ViewCreationError::OutOfMemory(err) => write!(fmt, "Failed to create buffer view: {}", err),
-            ViewCreationError::UnsupportedFormat { format: Some(format) } => write!(fmt, "Failed to create buffer view: Unsupported format {:?}", format),
-            ViewCreationError::UnsupportedFormat { format: None } => write!(fmt, "Failed to create buffer view: Unspecified format"),
+            ViewCreationError::OutOfMemory(err) => {
+                write!(fmt, "Failed to create buffer view: {}", err)
+            }
+            ViewCreationError::UnsupportedFormat(Some(format)) => write!(
+                fmt,
+                "Failed to create buffer view: Unsupported format {:?}",
+                format
+            ),
+            ViewCreationError::UnsupportedFormat(None) => {
+                write!(fmt, "Failed to create buffer view: Unspecified format")
+            }
         }
     }
 }
@@ -169,7 +201,7 @@ pub struct IndexBufferView<'a, B: Backend> {
     
     pub buffer: &'a B::Buffer,
     
-    pub offset: u64,
+    pub range: SubRange,
     
     pub index_type: IndexType,
 }

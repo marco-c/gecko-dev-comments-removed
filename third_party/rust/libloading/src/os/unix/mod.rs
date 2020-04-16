@@ -194,6 +194,29 @@ impl Library {
             Ok(x) => Ok(x)
         }
     }
+
+    
+    
+    
+    
+    pub fn into_raw(self) -> *mut raw::c_void {
+        let handle = self.handle;
+        mem::forget(self);
+        handle
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(handle: *mut raw::c_void) -> Library {
+        Library {
+            handle: handle
+        }
+    }
 }
 
 impl Drop for Library {
@@ -219,6 +242,15 @@ impl fmt::Debug for Library {
 pub struct Symbol<T> {
     pointer: *mut raw::c_void,
     pd: marker::PhantomData<T>
+}
+
+impl<T> Symbol<T> {
+    
+    pub fn into_raw(self) -> *mut raw::c_void {
+        let pointer = self.pointer;
+        mem::forget(self);
+        pointer
+    }
 }
 
 impl<T> Symbol<Option<T>> {

@@ -111,6 +111,23 @@ impl Library {
             panic!("GetProcAddress failed but GetLastError did not report the error")
         ))
     }
+
+    
+    pub fn into_raw(self) -> HMODULE {
+        let handle = self.0;
+        mem::forget(self);
+        handle
+    }
+
+    
+    
+    
+    
+    
+    
+    pub unsafe fn from_raw(handle: HMODULE) -> Library {
+        Library(handle)
+    }
 }
 
 impl Drop for Library {
@@ -148,6 +165,15 @@ impl fmt::Debug for Library {
 pub struct Symbol<T> {
     pointer: FARPROC,
     pd: marker::PhantomData<T>
+}
+
+impl<T> Symbol<T> {
+    
+    pub fn into_raw(self) -> FARPROC {
+        let pointer = self.pointer;
+        mem::forget(self);
+        pointer
+    }
 }
 
 impl<T> Symbol<Option<T>> {

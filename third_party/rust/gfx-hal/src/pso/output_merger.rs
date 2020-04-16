@@ -2,10 +2,7 @@
 
 
 
-use crate::pso::{
-    graphics::StencilValue,
-    State,
-};
+use crate::pso::{graphics::StencilValue, State};
 
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

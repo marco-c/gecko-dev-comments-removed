@@ -6,7 +6,10 @@ use crate::{
     pso::{
         input_assembler::{AttributeDesc, InputAssemblerDesc, Primitive, VertexBufferDesc},
         output_merger::{ColorBlendDesc, DepthStencilDesc, Face},
-        BasePipeline, EntryPoint, PipelineCreationFlags, State,
+        BasePipeline,
+        EntryPoint,
+        PipelineCreationFlags,
+        State,
     },
     Backend,
 };
@@ -168,7 +171,7 @@ pub enum PolygonMode {
     
     Point,
     
-    Line(State<f32>),
+    Line,
     
     Fill,
 }
@@ -221,6 +224,8 @@ pub struct Rasterizer {
     pub depth_bias: Option<State<DepthBias>>,
     
     pub conservative: bool,
+    
+    pub line_width: State<f32>,
 }
 
 impl Rasterizer {
@@ -232,6 +237,7 @@ impl Rasterizer {
         depth_clamping: false,
         depth_bias: None,
         conservative: false,
+        line_width: State::Static(1.0),
     };
 }
 

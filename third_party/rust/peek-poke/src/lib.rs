@@ -6,36 +6,127 @@
 
 
 
-#![no_std]
+
+
+
+
+
+
+
+
+
 
 #[cfg(feature = "derive")]
 pub use peek_poke_derive::*;
 
-use core::{
-    marker::PhantomData,
-    mem::{size_of, transmute},
-};
+use core::{marker::PhantomData, mem::size_of, slice};
+use crate::{slice_ext::*, vec_ext::*};
 
-#[cfg(feature = "option_copy")]
-use core::mem::uninitialized;
+mod slice_ext;
+mod vec_ext;
+
+union MaybeUninitShim<T: Copy> {
+    uninit: (),
+    init: T,
+}
 
 
 
-#[inline(always)]
-fn copy_bytes_to(bytes: &[u8], dest: *mut u8) -> *mut u8 {
+pub unsafe fn peek_from_uninit<T: Copy + Peek>(bytes: *const u8) -> (T, *const u8) {
+    let mut val = MaybeUninitShim { uninit: () };
+    let bytes = <T>::peek_from(bytes, &mut val.init);
+    (val.init, bytes)
+}
+
+
+
+pub unsafe fn peek_from_default<T: Default + Peek>(bytes: *const u8) -> (T, *const u8) {
+    let mut val = T::default();
+    let bytes = <T>::peek_from(bytes, &mut val);
+    (val, bytes)
+}
+
+
+
+
+
+pub fn peek_from_slice<'a, T: Peek>(src: &'a [u8], dst: &mut T) -> &'a [u8] {
     unsafe {
-        bytes.as_ptr().copy_to_nonoverlapping(dest, bytes.len());
-        dest.add(bytes.len())
+        
+        assert!(T::max_size() < src.len(), "WRDL: unexpected end of display list");
+        let end_ptr = T::peek_from(src.as_ptr(), dst);
+        let len = end_ptr as usize - src.as_ptr() as usize;
+        
+        
+        assert!(len <= src.len(), "WRDL: Peek::max_size was wrong");
+        slice::from_raw_parts(end_ptr, src.len() - len)
     }
 }
 
-#[inline(always)]
-fn copy_to_slice(src: *const u8, slice: &mut [u8]) -> *const u8 {
+
+pub fn poke_inplace_slice<T: Poke>(src: &T, dst: &mut [u8]) {
+    assert!(T::max_size() <= dst.len(),  "WRDL: buffer too small to write into");
     unsafe {
-        src.copy_to_nonoverlapping(slice.as_mut_ptr(), slice.len());
-        src.add(slice.len())
+        src.poke_into(dst.as_mut_ptr());
     }
 }
+
+
+pub fn poke_into_vec<T: Poke>(src: &T, dst: &mut Vec<u8>) {
+    dst.reserve(T::max_size());
+    unsafe {
+        let ptr = dst.as_end_mut_ptr();
+        let end_ptr = src.poke_into(ptr);
+        dst.set_end_ptr(end_ptr);
+    }
+}
+
+
+pub fn poke_extend_vec<I>(src: I, dst: &mut Vec<u8>) -> usize
+where
+    I: ExactSizeIterator,
+    I::Item: Poke,
+{
+    let len = src.len();
+    let max_size = len * I::Item::max_size();
+    dst.reserve(max_size);
+    unsafe {
+        let ptr = dst.as_end_mut_ptr();
+        
+        
+        let end_ptr = src.take(len).fold(ptr, |ptr, item| item.poke_into(ptr));
+        dst.set_end_ptr(end_ptr);
+    }
+
+    len
+}
+
+
+
+
+pub fn ensure_red_zone<T: Poke>(bytes: &mut Vec<u8>) {
+    bytes.reserve(T::max_size());
+    unsafe {
+        let end_ptr = bytes.as_end_mut_ptr();
+        end_ptr.write_bytes(0, T::max_size());
+        bytes.set_end_ptr(end_ptr.add(T::max_size()));
+    }
+}
+
+#[inline]
+unsafe fn read_verbatim<T>(src: *const u8, dst: *mut T) -> *const u8 {
+    *dst = (src as *const T).read_unaligned();
+    src.add(size_of::<T>())
+}
+
+#[inline]
+unsafe fn write_verbatim<T>(src: T, dst: *mut u8) -> *mut u8 {
+    (dst as *mut T).write_unaligned(src);
+    dst.add(size_of::<T>())
+}
+
+#[cfg(feature = "extras")]
+mod euclid;
 
 
 
@@ -143,7 +234,7 @@ pub trait Peek: Poke {
     
     
     
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8;
+    unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8;
 }
 
 macro_rules! impl_poke_for_deref {
@@ -163,13 +254,6 @@ macro_rules! impl_poke_for_deref {
 impl_poke_for_deref!(<'a, T: Poke> Poke for &'a T);
 impl_poke_for_deref!(<'a, T: Poke> Poke for &'a mut T);
 
-impl<'a, T: Peek> Peek for &'a mut T {
-    #[inline(always)]
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-        (**self).peek_from(bytes)
-    }
-}
-
 macro_rules! impl_for_primitive {
     ($($ty:ty)+) => {
         $(unsafe impl Poke for $ty {
@@ -179,15 +263,13 @@ macro_rules! impl_for_primitive {
             }
             #[inline(always)]
             unsafe fn poke_into(&self, bytes: *mut u8) -> *mut u8 {
-                let int_bytes = transmute::<_, &[u8; size_of::<$ty>()]>(self);
-                copy_bytes_to(int_bytes, bytes)
+                write_verbatim(*self, bytes)
             }
         }
         impl Peek for $ty {
             #[inline(always)]
-            unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-                let int_bytes = transmute::<_, &mut [u8; size_of::<$ty>()]>(self);
-                copy_to_slice(bytes, int_bytes)
+            unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+                read_verbatim(bytes, output)
             }
         })+
     };
@@ -202,19 +284,20 @@ impl_for_primitive! {
 unsafe impl Poke for bool {
     #[inline(always)]
     fn max_size() -> usize {
-        <u8>::max_size()
+        u8::max_size()
     }
     #[inline]
     unsafe fn poke_into(&self, bytes: *mut u8) -> *mut u8 {
         (*self as u8).poke_into(bytes)
     }
 }
+
 impl Peek for bool {
     #[inline]
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
+    unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
         let mut int_bool = 0u8;
-        let ptr = int_bool.peek_from(bytes);
-        *self = int_bool != 0;
+        let ptr = <u8>::peek_from(bytes, &mut int_bool);
+        *output = int_bool != 0;
         ptr
     }
 }
@@ -229,10 +312,11 @@ unsafe impl<T> Poke for PhantomData<T> {
         bytes
     }
 }
+
 impl<T> Peek for PhantomData<T> {
     #[inline(always)]
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-        *self = PhantomData;
+    unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+        *output = PhantomData;
         bytes
     }
 }
@@ -240,8 +324,9 @@ impl<T> Peek for PhantomData<T> {
 unsafe impl<T: Poke> Poke for Option<T> {
     #[inline(always)]
     fn max_size() -> usize {
-        <u8>::max_size() + <T>::max_size()
+        u8::max_size() + T::max_size()
     }
+
     #[inline]
     unsafe fn poke_into(&self, bytes: *mut u8) -> *mut u8 {
         match self {
@@ -255,43 +340,18 @@ unsafe impl<T: Poke> Poke for Option<T> {
     }
 }
 
-#[cfg(feature = "option_copy")]
-impl<T: Copy + Peek> Peek for Option<T> {
-    #[inline]
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-        let mut variant = 0u8;
-        let bytes = variant.peek_from(bytes);
-        match variant {
-            0 => {
-                *self = None;
-                bytes
-            }
-            1 => {
-                let mut __0: T = uninitialized();
-                let bytes = __0.peek_from(bytes);
-                *self = Some(__0);
-                bytes
-            }
-            _ => unreachable!(),
-        }
-    }
-}
-
-#[cfg(feature = "option_default")]
 impl<T: Default + Peek> Peek for Option<T> {
     #[inline]
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-        let mut variant = 0u8;
-        let bytes = variant.peek_from(bytes);
+    unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+        let (variant, bytes) = peek_from_default::<u8>(bytes);
         match variant {
             0 => {
-                *self = None;
+                *output = None;
                 bytes
             }
             1 => {
-                let mut __0 = T::default();
-                let bytes = __0.peek_from(bytes);
-                *self = Some(__0);
+                let (val, bytes) = peek_from_default(bytes);
+                *output = Some(val);
                 bytes
             }
             _ => unreachable!(),
@@ -303,15 +363,15 @@ macro_rules! impl_for_arrays {
     ($($len:tt)+) => {
         $(unsafe impl<T: Poke> Poke for [T; $len] {
             fn max_size() -> usize {
-                $len * <T>::max_size()
+                $len * T::max_size()
             }
             unsafe fn poke_into(&self, bytes: *mut u8) -> *mut u8 {
                 self.iter().fold(bytes, |bytes, e| e.poke_into(bytes))
             }
         }
         impl<T: Peek> Peek for [T; $len] {
-            unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-                self.iter_mut().fold(bytes, |bytes, e| e.peek_from(bytes))
+            unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+                (&mut *output).iter_mut().fold(bytes, |bytes, e| <T>::peek_from(bytes, e))
             }
         })+
     }
@@ -333,8 +393,8 @@ unsafe impl Poke for () {
     }
 }
 impl Peek for () {
-    unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-        *self = ();
+    unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+        *output = ();
         bytes
     }
 }
@@ -352,8 +412,8 @@ macro_rules! impl_for_tuple {
             }
         }
         impl<$($ty: Peek),+> Peek for ($($ty,)+) {
-            unsafe fn peek_from(&mut self, bytes: *const u8) -> *const u8 {
-                $(let bytes = self.$n.peek_from(bytes);)+
+            unsafe fn peek_from(bytes: *const u8, output: *mut Self) -> *const u8 {
+                $(let bytes = $ty::peek_from(bytes, &mut (*output).$n);)+
                 bytes
             }
         }

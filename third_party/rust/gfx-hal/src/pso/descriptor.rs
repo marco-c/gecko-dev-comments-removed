@@ -16,15 +16,9 @@
 
 
 
-use smallvec::SmallVec;
-use std::{borrow::Borrow, fmt, iter, ops::Range};
+use std::{borrow::Borrow, fmt, iter};
 
-use crate::{
-    buffer::Offset,
-    image::Layout,
-    pso::ShaderStageFlags,
-    Backend,
-};
+use crate::{buffer::SubRange, image::Layout, pso::ShaderStageFlags, Backend, PseudoVec};
 
 
 pub type DescriptorSetIndex = u16;
@@ -34,37 +28,70 @@ pub type DescriptorBinding = u32;
 pub type DescriptorArrayIndex = usize;
 
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum BufferDescriptorType {
+    
+    Storage {
+        
+        read_only: bool,
+    },
+    
+    Uniform,
+}
 
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum BufferDescriptorFormat {
+    
+    Structured {
+        
+        
+        dynamic_offset: bool,
+    },
+    
+    
+    Texel,
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub enum ImageDescriptorType {
+    
+    Sampled {
+        
+        
+        with_sampler: bool,
+    },
+    
+    Storage {
+        
+        read_only: bool,
+    },
+}
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum DescriptorType {
     
-    Sampler = 0,
+    Sampler,
     
-    CombinedImageSampler = 1,
+    Image {
+        
+        ty: ImageDescriptorType,
+    },
     
+    Buffer {
+        
+        ty: BufferDescriptorType,
+        
+        format: BufferDescriptorFormat,
+    },
     
-    SampledImage = 2,
-    
-    StorageImage = 3,
-    
-    UniformTexelBuffer = 4,
-    
-    StorageTexelBuffer = 5,
-    
-    UniformBuffer = 6,
-    
-    StorageBuffer = 7,
-    
-    
-    
-    UniformBufferDynamic = 8,
-    
-    StorageBufferDynamic = 9,
-    
-    InputAttachment = 10,
+    InputAttachment,
 }
 
 
@@ -128,11 +155,23 @@ pub enum AllocationError {
 impl std::fmt::Display for AllocationError {
     fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AllocationError::Host => write!(fmt, "Failed to allocate descriptor set: Out of host memory"),
-            AllocationError::Device => write!(fmt, "Failed to allocate descriptor set: Out of device memory"),
-            AllocationError::OutOfPoolMemory => write!(fmt, "Failed to allocate descriptor set: Out of pool memory"),
-            AllocationError::FragmentedPool => write!(fmt, "Failed to allocate descriptor set: Pool is fragmented"),
-            AllocationError::IncompatibleLayout => write!(fmt, "Failed to allocate descriptor set: Incompatible layout"),
+            AllocationError::Host => {
+                write!(fmt, "Failed to allocate descriptor set: Out of host memory")
+            }
+            AllocationError::Device => write!(
+                fmt,
+                "Failed to allocate descriptor set: Out of device memory"
+            ),
+            AllocationError::OutOfPoolMemory => {
+                write!(fmt, "Failed to allocate descriptor set: Out of pool memory")
+            }
+            AllocationError::FragmentedPool => {
+                write!(fmt, "Failed to allocate descriptor set: Pool is fragmented")
+            }
+            AllocationError::IncompatibleLayout => write!(
+                fmt,
+                "Failed to allocate descriptor set: Incompatible layout"
+            ),
         }
     }
 }
@@ -156,9 +195,9 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
         &mut self,
         layout: &B::DescriptorSetLayout,
     ) -> Result<B::DescriptorSet, AllocationError> {
-        let mut sets = SmallVec::new();
-        self.allocate_sets(iter::once(layout), &mut sets)
-            .map(|_| sets.remove(0))
+        let mut result = PseudoVec(None);
+        self.allocate(iter::once(layout), &mut result)?;
+        Ok(result.0.unwrap())
     }
 
     
@@ -173,26 +212,15 @@ pub trait DescriptorPool<B: Backend>: Send + Sync + fmt::Debug {
     
     
     
-    unsafe fn allocate_sets<I>(
-        &mut self,
-        layouts: I,
-        sets: &mut SmallVec<[B::DescriptorSet; 1]>,
-    ) -> Result<(), AllocationError>
+    unsafe fn allocate<I, E>(&mut self, layouts: I, list: &mut E) -> Result<(), AllocationError>
     where
         I: IntoIterator,
         I::Item: Borrow<B::DescriptorSetLayout>,
+        E: Extend<B::DescriptorSet>,
     {
-        let base = sets.len();
         for layout in layouts {
-            match self.allocate_set(layout.borrow()) {
-                Ok(set) => sets.push(set),
-                Err(e) => {
-                    while sets.len() != base {
-                        self.free_sets(sets.pop());
-                    }
-                    return Err(e);
-                }
-            }
+            let set = self.allocate_set(layout.borrow())?;
+            list.extend(iter::once(set));
         }
         Ok(())
     }
@@ -238,9 +266,8 @@ pub enum Descriptor<'a, B: Backend> {
     Sampler(&'a B::Sampler),
     Image(&'a B::ImageView, Layout),
     CombinedImageSampler(&'a B::ImageView, Layout, &'a B::Sampler),
-    Buffer(&'a B::Buffer, Range<Option<Offset>>),
-    UniformTexelBuffer(&'a B::BufferView),
-    StorageTexelBuffer(&'a B::BufferView),
+    Buffer(&'a B::Buffer, SubRange),
+    TexelBuffer(&'a B::BufferView),
 }
 
 

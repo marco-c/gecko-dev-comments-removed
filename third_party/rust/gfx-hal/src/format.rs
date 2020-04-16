@@ -88,17 +88,18 @@ pub const BITS_ZERO: FormatBits = FormatBits {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Component {
     
-    Zero,
     
-    One,
+    Zero = 1,
     
-    R,
+    One = 2,
     
-    G,
+    R = 3,
     
-    B,
+    G = 4,
     
-    A,
+    B = 5,
+    
+    A = 6,
 }
 
 

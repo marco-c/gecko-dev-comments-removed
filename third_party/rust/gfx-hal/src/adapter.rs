@@ -9,8 +9,15 @@
 use std::{any::Any, fmt};
 
 use crate::{
+    device,
+    format,
+    image,
+    memory,
     queue::{QueueGroup, QueuePriority},
-    device, format, image, memory, Backend, Features, Limits,
+    Backend,
+    Features,
+    Hints,
+    Limits,
 };
 
 
@@ -96,6 +103,9 @@ pub trait PhysicalDevice<B: Backend>: fmt::Debug + Any + Send + Sync {
     
     
     fn features(&self) -> Features;
+
+    
+    fn hints(&self) -> Hints;
 
     
     fn limits(&self) -> Limits;

@@ -41,6 +41,32 @@ struct RootConstants
 	uint32_t space;
 };
 
+
+enum HLSLBindingFlagBits
+{
+	
+	
+	
+	HLSL_BINDING_AUTO_PUSH_CONSTANT_BIT = 1 << 0,
+
+	
+	
+	HLSL_BINDING_AUTO_CBV_BIT = 1 << 1,
+
+	
+	HLSL_BINDING_AUTO_SRV_BIT = 1 << 2,
+
+	
+	HLSL_BINDING_AUTO_UAV_BIT = 1 << 3,
+
+	
+	HLSL_BINDING_AUTO_SAMPLER_BIT = 1 << 4,
+
+	
+	HLSL_BINDING_AUTO_ALL = 0x7fffffff
+};
+using HLSLBindingFlags = uint32_t;
+
 class CompilerHLSL : public CompilerGLSL
 {
 public:
@@ -116,6 +142,9 @@ public:
 	
 	VariableID remap_num_workgroups_builtin();
 
+	
+	void set_resource_binding_flags(HLSLBindingFlags flags);
+
 private:
 	std::string type_to_glsl(const SPIRType &type, uint32_t id = 0) override;
 	std::string image_type_hlsl(const SPIRType &type, uint32_t id);
@@ -149,7 +178,7 @@ private:
 	std::string to_sampler_expression(uint32_t id);
 	std::string to_resource_binding(const SPIRVariable &var);
 	std::string to_resource_binding_sampler(const SPIRVariable &var);
-	std::string to_resource_register(char space, uint32_t binding, uint32_t set);
+	std::string to_resource_register(HLSLBindingFlags flags, char space, uint32_t binding, uint32_t set);
 	void emit_sampled_image_op(uint32_t result_type, uint32_t result_id, uint32_t image_id, uint32_t samp_id) override;
 	void emit_access_chain(const Instruction &instruction);
 	void emit_load(const Instruction &instruction);
@@ -221,6 +250,7 @@ private:
 	std::string to_semantic(uint32_t location, spv::ExecutionModel em, spv::StorageClass sc);
 
 	uint32_t num_workgroups_builtin = 0;
+	HLSLBindingFlags resource_binding_flags = 0;
 
 	
 	
