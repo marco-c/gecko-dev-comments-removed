@@ -228,7 +228,7 @@ inline GCPtrShape* DictionaryShapeLink::prevPtr() {
 template <class ObjectSubclass>
  inline bool EmptyShape::ensureInitialCustomShape(
     JSContext* cx, Handle<ObjectSubclass*> obj) {
-  static_assert(std::is_base_of<JSObject, ObjectSubclass>::value,
+  static_assert(std::is_base_of_v<JSObject, ObjectSubclass>,
                 "ObjectSubclass must be a subclass of JSObject");
 
   

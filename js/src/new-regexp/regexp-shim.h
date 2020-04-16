@@ -640,8 +640,8 @@ class MOZ_NONHEAP_CLASS Handle {
   Handle(JS::Value value, Isolate* isolate);
 
   
-  template <typename S, typename = typename std::enable_if<
-                            std::is_convertible<S*, T*>::value>::type>
+  template <typename S,
+            typename = std::enable_if_t<std::is_convertible_v<S*, T*>>>
   inline Handle(Handle<S> handle) : location_(handle.location_) {}
 
   template <typename S>
@@ -705,8 +705,8 @@ class MOZ_NONHEAP_CLASS MaybeHandle final {
 
   
   
-  template <typename S, typename = typename std::enable_if<
-                            std::is_convertible<S*, T*>::value>::type>
+  template <typename S,
+            typename = std::enable_if_t<std::is_convertible_v<S*, T*>>>
   MaybeHandle(Handle<S> handle) : location_(handle.location_) {}
 
   inline Handle<T> ToHandleChecked() const {

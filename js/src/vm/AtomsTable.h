@@ -173,8 +173,8 @@ class AtomsTable {
       const mozilla::Maybe<uint32_t>& indexValue,
       const AtomHasher::Lookup& lookup);
 
-  template <typename CharT, typename = typename std::enable_if<
-                                !std::is_const<CharT>::value>::type>
+  template <typename CharT,
+            typename = std::enable_if_t<!std::is_const_v<CharT>>>
   MOZ_ALWAYS_INLINE JSAtom* atomizeAndCopyChars(
       JSContext* cx, CharT* chars, size_t length, PinningBehavior pin,
       const mozilla::Maybe<uint32_t>& indexValue,

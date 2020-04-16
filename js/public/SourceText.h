@@ -75,8 +75,8 @@ enum class SourceOwnership {
 template <typename Unit>
 class SourceText final {
  private:
-  static_assert(std::is_same<Unit, mozilla::Utf8Unit>::value ||
-                    std::is_same<Unit, char16_t>::value,
+  static_assert(std::is_same_v<Unit, mozilla::Utf8Unit> ||
+                    std::is_same_v<Unit, char16_t>,
                 "Unit must be either char16_t or Utf8Unit for "
                 "SourceText<Unit>");
 
@@ -95,8 +95,8 @@ class SourceText final {
  public:
   
   
-  using CharT = typename std::conditional<std::is_same<Unit, char16_t>::value,
-                                          char16_t, char>::type;
+  using CharT =
+      std::conditional_t<std::is_same_v<Unit, char16_t>, char16_t, char>;
 
  public:
   
@@ -179,9 +179,9 @@ class SourceText final {
 
 
 
-  template <typename Char, typename = typename std::enable_if<
-                               std::is_same<Char, CharT>::value &&
-                               !std::is_same<Char, Unit>::value>::type>
+  template <typename Char,
+            typename = std::enable_if_t<std::is_same_v<Char, CharT> &&
+                                        !std::is_same_v<Char, Unit>>>
   MOZ_IS_CLASS_INIT MOZ_MUST_USE bool init(JSContext* cx, const Char* chars,
                                            size_t charsLength,
                                            SourceOwnership ownership) {
@@ -207,9 +207,9 @@ class SourceText final {
 
 
 
-  template <typename Char, typename = typename std::enable_if<
-                               std::is_same<Char, CharT>::value &&
-                               !std::is_same<Char, Unit>::value>::type>
+  template <typename Char,
+            typename = std::enable_if_t<std::is_same_v<Char, CharT> &&
+                                        !std::is_same_v<Char, Unit>>>
   MOZ_MUST_USE bool init(JSContext* cx,
                          js::UniquePtr<Char[], JS::FreePolicy> data,
                          size_t dataLength) {
