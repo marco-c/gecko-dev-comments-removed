@@ -33,60 +33,73 @@
 }
 
 
-scrollcorner:-moz-native-anonymous-no-specificity,
-resizer:-moz-native-anonymous-no-specificity,
-scrollbar:-moz-native-anonymous-no-specificity,
-scrollbarbutton:-moz-native-anonymous-no-specificity,
-slider:-moz-native-anonymous-no-specificity {
+@supports -moz-bool-pref("layout.css.cached-scrollbar-styles.enabled") {
+  scrollcorner:-moz-native-anonymous-no-specificity,
+  resizer:-moz-native-anonymous-no-specificity,
+  scrollbar:-moz-native-anonymous-no-specificity,
+  scrollbarbutton:-moz-native-anonymous-no-specificity,
+  slider:-moz-native-anonymous-no-specificity {
+    
+
+
+
+    all: initial;
+    visibility: inherit;
+    pointer-events: inherit;
+
+    
+    -moz-list-reversed: initial;
+    -moz-font-smoothing-background-color: initial;
+    -moz-min-font-size-ratio: initial;
+
+    
+
+
+
+
+
+    direction: ltr;
+
+    
+
+
+
+    font: 16px sans-serif;
+
+    
+
+
+
+
+    justify-items: start;
+
+    
+
+
+    vertical-align: initial !important;
+
+    
+
+
+
+
+
+    -moz-user-focus: ignore;
+    -moz-user-select: none;
+    display: -moz-box;
+    box-sizing: border-box;
+  }
+
   
 
 
 
-  all: initial;
-  visibility: inherit;
-  pointer-events: inherit;
-
-  
-  -moz-list-reversed: initial;
-  -moz-font-smoothing-background-color: initial;
-  -moz-min-font-size-ratio: initial;
-
-  
-
-
-
-
-
-  direction: ltr;
-
-  
-
-
-
-  font: 16px sans-serif;
-
-  
-
-
-
-
-  justify-items: start;
-
-  
-
-
-  vertical-align: initial !important;
-
-  
-
-
-
-
-
-  -moz-user-focus: ignore;
-  -moz-user-select: none;
-  display: -moz-box;
-  box-sizing: border-box;
+  scrollbarbutton:-moz-native-anonymous-no-specificity,
+  slider:-moz-native-anonymous-no-specificity,
+  thumb:-moz-native-anonymous-no-specificity {
+    direction: inherit;
+    cursor: inherit;
+  }
 }
 
 scrollbar[orient="vertical"],
@@ -102,17 +115,6 @@ thumb {
 
   -moz-box-align: center;
   -moz-box-pack: center;
-}
-
-
-
-
-
-scrollbarbutton:-moz-native-anonymous-no-specificity,
-slider:-moz-native-anonymous-no-specificity,
-thumb:-moz-native-anonymous-no-specificity {
-  direction: inherit;
-  cursor: inherit;
 }
 
 
