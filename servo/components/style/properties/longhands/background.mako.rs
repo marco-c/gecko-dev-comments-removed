@@ -35,8 +35,8 @@ ${helpers.predefined_type(
     ${helpers.predefined_type(
         "background-position-" + axis,
         "position::" + direction + "Position",
+        "computed::LengthPercentage::zero_percent()",
         engines="gecko servo-2013 servo-2020",
-        initial_value="computed::LengthPercentage::zero()",
         initial_specified_value="SpecifiedValue::initial_specified_value()",
         spec="https://drafts.csswg.org/css-backgrounds-4/#propdef-background-position-" + axis,
         animation_value_type="ComputedValue",
@@ -101,7 +101,7 @@ ${helpers.predefined_type(
     animation_value_type="BackgroundSizeList",
     extra_prefixes="webkit")}
 
-// https://drafts.fxtf.org/compositing/#background-blend-mode
+
 ${helpers.single_keyword(
     "background-blend-mode",
     """normal multiply screen overlay darken lighten color-dodge

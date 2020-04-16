@@ -5,12 +5,12 @@
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import Method %>
 
-// CSS Basic User Interface Module Level 1
-// https://drafts.csswg.org/css-ui-3/
+
+
 <% data.new_style_struct("UI", inherited=False, gecko_name="UIReset") %>
 
-// TODO spec says that UAs should not support this
-// we should probably remove from gecko (https://bugzilla.mozilla.org/show_bug.cgi?id=1328331)
+
+
 ${helpers.single_keyword(
     "ime-mode",
     "auto normal active disabled inactive",
@@ -43,7 +43,7 @@ ${helpers.predefined_type(
     spec="https://drafts.csswg.org/css-ui-4/#propdef-user-select",
 )}
 
-// TODO(emilio): This probably should be hidden from content.
+
 ${helpers.single_keyword(
     "-moz-window-dragging",
     "default drag no-drag",
@@ -56,7 +56,7 @@ ${helpers.single_keyword(
 
 ${helpers.single_keyword(
     "-moz-window-shadow",
-    "none default menu tooltip sheet",
+    "default none menu tooltip sheet",
     engines="gecko",
     gecko_ffi_name="mWindowShadow",
     gecko_enum_prefix="StyleWindowShadow",
@@ -98,7 +98,7 @@ ${helpers.predefined_type(
     enabled_in="chrome",
 )}
 
-// TODO(emilio): Probably also should be hidden from content.
+
 ${helpers.predefined_type(
     "-moz-force-broken-image-icon",
     "MozForceBrokenImageIcon",

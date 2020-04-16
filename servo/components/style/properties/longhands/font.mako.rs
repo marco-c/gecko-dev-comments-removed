@@ -230,7 +230,7 @@ ${helpers.predefined_type(
 ${helpers.predefined_type(
     "-moz-script-level",
     "MozScriptLevel",
-    0,
+    "0",
     engines="gecko",
     animation_value_type="none",
     enabled_in="ua",
@@ -287,25 +287,25 @@ ${helpers.predefined_type(
 
 % if engine == "gecko":
     pub mod system_font {
-        //! We deal with system fonts here
-        //!
-        //! System fonts can only be set as a group via the font shorthand.
-        //! They resolve at compute time (not parse time -- this lets the
-        //! browser respond to changes to the OS font settings).
-        //!
-        //! While Gecko handles these as a separate property and keyword
-        //! values on each property indicating that the font should be picked
-        //! from the -x-system-font property, we avoid this. Instead,
-        //! each font longhand has a special SystemFont variant which contains
-        //! the specified system font. When the cascade function (in helpers)
-        //! detects that a value has a system font, it will resolve it, and
-        //! cache it on the ComputedValues. After this, it can be just fetched
-        //! whenever a font longhand on the same element needs the system font.
-        //!
-        //! When a longhand property is holding a SystemFont, it's serialized
-        //! to an empty string as if its value comes from a shorthand with
-        //! variable reference. We may want to improve this behavior at some
-        //! point. See also https://github.com/w3c/csswg-drafts/issues/1586.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         use app_units::Au;
         use cssparser::{Parser, ToCss};
@@ -336,11 +336,11 @@ ${helpers.predefined_type(
             % endfor
         }
 
-        // ComputedValues are compared at times
-        // so we need these impls. We don't want to
-        // add Eq to Number (which contains a float)
-        // so instead we have an eq impl which skips the
-        // cached values
+        
+        
+        
+        
+        
         impl PartialEq for ComputedSystemFont {
             fn eq(&self, other: &Self) -> bool {
                 self.system_font == other.system_font
@@ -430,14 +430,14 @@ ${helpers.predefined_type(
         }
 
         #[inline]
-        /// Compute and cache a system font
-        ///
-        /// Must be called before attempting to compute a system font
-        /// specified value
+        
+        
+        
+        
         pub fn resolve_system_font(system: SystemFont, context: &mut Context) {
-            // Checking if context.cached_system_font.is_none() isn't enough,
-            // if animating from one system font to another the cached system font
-            // may change
+            
+            
+            
             if Some(system) != context.cached_system_font.as_ref().map(|x| x.system_font) {
                 let computed = system.to_computed_value(context);
                 context.cached_system_font = Some(computed);
@@ -465,8 +465,8 @@ ${helpers.predefined_type(
 
         impl ToCss for SystemFont {
             fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-                // We may want to do something better in the future, see
-                // w3c/csswg-drafts#1586.
+                
+                
                 dest.write_str("-moz-use-system-font")
             }
         }
@@ -475,12 +475,12 @@ ${helpers.predefined_type(
     pub mod system_font {
         use cssparser::Parser;
 
-        // We don't parse system fonts, but in the interest of not littering
-        // a lot of code with `if engine == "gecko"` conditionals, we have a
-        // dummy system font module that does nothing
+        
+        
+        
 
         #[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-        /// void enum for system font, can never exist
+        
         pub enum SystemFont {}
         impl SystemFont {
             pub fn parse(_: &mut Parser) -> Result<Self, ()> {

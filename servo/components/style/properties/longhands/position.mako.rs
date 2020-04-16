@@ -8,7 +8,7 @@
 
 <% data.new_style_struct("Position", inherited=False) %>
 
-// "top" / "left" / "bottom" / "right"
+
 % for side in PHYSICAL_SIDES:
     ${helpers.predefined_type(
         side,
@@ -22,7 +22,7 @@
         logical_group="inset",
     )}
 % endfor
-// inset-* logical properties, map to "top" / "left" / "bottom" / "right"
+
 % for side in LOGICAL_SIDES:
     ${helpers.predefined_type(
         "inset-%s" % side,
@@ -66,10 +66,10 @@ ${helpers.predefined_type(
     animation_value_type="ComputedValue",
 )}
 
-// CSS Flexible Box Layout Module Level 1
-// http://www.w3.org/TR/css3-flexbox/
 
-// Flex container properties
+
+
+
 ${helpers.single_keyword(
     "flex-direction",
     "row row-reverse column column-reverse",
@@ -93,7 +93,7 @@ ${helpers.single_keyword(
 )}
 
 % if engine == "servo-2013":
-    // FIXME: Update Servo to support the same Syntax as Gecko.
+    
     ${helpers.single_keyword(
         "justify-content",
         "flex-start stretch flex-end center space-between space-around",
@@ -118,7 +118,7 @@ ${helpers.single_keyword(
 % endif
 
 % if engine in ["servo-2013", "servo-2020"]:
-    // FIXME: Update Servo to support the same Syntax as Gecko.
+    
     ${helpers.single_keyword(
         "align-content",
         "stretch flex-start flex-end center space-between space-around",
@@ -179,7 +179,7 @@ ${helpers.single_keyword(
     impl_align_conversions!(crate::values::specified::align::JustifyItems);
 % endif
 
-// Flex item properties
+
 ${helpers.predefined_type(
     "flex-grow",
     "NonNegativeNumber",
@@ -202,9 +202,9 @@ ${helpers.predefined_type(
     servo_restyle_damage = "reflow",
 )}
 
-// https://drafts.csswg.org/css-align/#align-self-property
+
 % if engine in ["servo-2013", "servo-2020"]:
-    // FIXME: Update Servo to support the same syntax as Gecko.
+    
     ${helpers.single_keyword(
         "align-self",
         "auto stretch flex-start flex-end center baseline",
@@ -240,7 +240,7 @@ ${helpers.predefined_type(
     impl_align_conversions!(crate::values::specified::align::SelfAlignment);
 % endif
 
-// https://drafts.csswg.org/css-flexbox/#propdef-order
+
 ${helpers.predefined_type(
     "order",
     "Integer",
@@ -270,7 +270,7 @@ ${helpers.predefined_type(
         if logical:
             spec = "https://drafts.csswg.org/css-logical-props/#propdef-%s"
     %>
-    // width, height, block-size, inline-size
+    
     ${helpers.predefined_type(
         size,
         "Size",
@@ -283,7 +283,7 @@ ${helpers.predefined_type(
         animation_value_type="Size",
         servo_restyle_damage="reflow",
     )}
-    // min-width, min-height, min-block-size, min-inline-size
+    
     ${helpers.predefined_type(
         "min-%s" % size,
         "Size",
@@ -335,7 +335,7 @@ ${helpers.single_keyword(
 ${helpers.predefined_type(
     "object-position",
     "Position",
-    "computed::Position::zero()",
+    "computed::Position::center()",
     engines="gecko",
     boxed=True,
     spec="https://drafts.csswg.org/css-images-3/#the-object-position",
@@ -405,7 +405,7 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow",
 )}
 
-// no need for -moz- prefixed alias for this property
+
 ${helpers.predefined_type(
     "row-gap",
     "length::NonNegativeLengthPercentageOrNormal",
@@ -417,10 +417,10 @@ ${helpers.predefined_type(
     servo_restyle_damage="reflow",
 )}
 
-// NOTE(emilio): Before exposing this property to content, we probably need to
-// change syntax and such, and make it apply to more elements.
-//
-// For now, it's used only for mapped attributes.
+
+
+
+
 ${helpers.predefined_type(
     "aspect-ratio",
     "Number",

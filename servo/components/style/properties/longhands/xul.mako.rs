@@ -5,7 +5,7 @@
 <%namespace name="helpers" file="/helpers.mako.rs" />
 <% from data import Method %>
 
-// Non-standard properties that Gecko uses for XUL elements.
+
 <% data.new_style_struct("XUL", inherited=False) %>
 
 ${helpers.single_keyword(
@@ -64,10 +64,12 @@ ${helpers.single_keyword(
     spec="Nonstandard (https://developer.mozilla.org/en-US/docs/Web/CSS/box-pack)",
 )}
 
+
+
 ${helpers.predefined_type(
     "-moz-box-ordinal-group",
     "Integer",
-    "0",
+    "1",
     engines="gecko",
     parse_method="parse_non_negative",
     alias="-webkit-box-ordinal-group",
