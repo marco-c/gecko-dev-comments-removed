@@ -386,10 +386,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return {
       actor: this.actorID,
       root: this.rootNode.form(),
-      traits: {
-        
-        retrieveNodeFromContentDomReference: true,
-      },
+      traits: {},
     };
   },
 
