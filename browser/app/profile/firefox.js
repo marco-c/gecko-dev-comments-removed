@@ -2138,7 +2138,11 @@ pref("devtools.webconsole.filter.netxhr", false);
 
 
 pref("devtools.webconsole.input.autocomplete",true);
+
+
 pref("devtools.webconsole.input.context", false);
+
+pref("devtools.contenttoolbox.webconsole.input.context", false);
 
 
 
