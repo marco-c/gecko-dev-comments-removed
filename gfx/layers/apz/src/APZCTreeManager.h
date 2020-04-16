@@ -766,8 +766,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       const MutexAutoLock& aProofOfMapLock,
       ClippedCompositionBoundsMap& aDestMap, ScrollableLayerGuid aGuid);
 
-  ScreenMargin GetCompositorFixedLayerMargins() const;
-
  protected:
   
 
@@ -934,32 +932,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   std::vector<FixedPositionInfo> mFixedPositionInfo;
-
-  
-
-
-
-  struct StickyPositionInfo {
-    uint64_t mStickyPositionAnimationId;
-    SideBits mFixedPosSides;
-
-    StickyPositionInfo(const uint64_t& aStickyPositionAnimationId,
-                       const SideBits aFixedPosSides)
-        : mStickyPositionAnimationId(aStickyPositionAnimationId),
-          mFixedPosSides(aFixedPosSides) {}
-  };
-  
-
-
-
-
-
-
-
-
-
-
-  std::vector<StickyPositionInfo> mStickyPositionInfo;
 
   
 
