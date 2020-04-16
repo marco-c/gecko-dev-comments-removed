@@ -1990,7 +1990,7 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   
   
-  if (!loadInfo->LoadingPrincipal()) {
+  if (!loadInfo->GetLoadingPrincipal()) {
     return false;
   }
 
@@ -1999,7 +1999,7 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport) {
     return true;
   }
 
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->LoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
   uint32_t mode = loadInfo->GetSecurityMode();
   bool dataInherits =
       mode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS ||
@@ -3075,8 +3075,8 @@ nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel* aChannel) {
   
   
   
-  if (loadInfo->LoadingPrincipal() &&
-      loadInfo->LoadingPrincipal()->IsSystemPrincipal() &&
+  if (loadInfo->GetLoadingPrincipal() &&
+      loadInfo->GetLoadingPrincipal()->IsSystemPrincipal() &&
       loadInfo->InternalContentPolicyType() ==
           nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
     return NS_OK;

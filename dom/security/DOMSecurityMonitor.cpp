@@ -110,7 +110,7 @@ void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
 
 void DOMSecurityMonitor::AuditUseOfJavaScriptURI(nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->LoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
 
   
   

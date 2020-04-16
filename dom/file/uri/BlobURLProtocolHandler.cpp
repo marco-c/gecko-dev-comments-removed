@@ -811,8 +811,8 @@ BlobURLProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   
   
   if (aLoadInfo &&
-      (!aLoadInfo->LoadingPrincipal() ||
-       !aLoadInfo->LoadingPrincipal()->IsSystemPrincipal()) &&
+      (!aLoadInfo->GetLoadingPrincipal() ||
+       !aLoadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) &&
       !ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
           aLoadInfo->GetOriginAttributes(),
           BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef())) {

@@ -2850,8 +2850,8 @@ void HttpBaseChannel::AssertPrivateBrowsingId() {
   
   
   
-  if (mLoadInfo->LoadingPrincipal() &&
-      mLoadInfo->LoadingPrincipal()->IsSystemPrincipal() &&
+  if (mLoadInfo->GetLoadingPrincipal() &&
+      mLoadInfo->GetLoadingPrincipal()->IsSystemPrincipal() &&
       mLoadInfo->InternalContentPolicyType() ==
           nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
     return;
@@ -3157,7 +3157,7 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     
     if (loadInfo->GetExternalContentPolicyType() !=
         nsIContentPolicy::TYPE_DOCUMENT) {
-      nsCOMPtr<nsIPrincipal> principal = loadInfo->LoadingPrincipal();
+      nsCOMPtr<nsIPrincipal> principal = loadInfo->GetLoadingPrincipal();
       config.timedChannel->timingAllowCheckForPrincipal() =
           Some(oldTimedChannel->TimingAllowCheck(principal));
     }

@@ -276,7 +276,7 @@ bool PerformanceTimingData::CheckAllowedOrigin(nsIHttpChannel* aResourceChannel,
     return true;
   }
 
-  nsCOMPtr<nsIPrincipal> principal = loadInfo->LoadingPrincipal();
+  nsCOMPtr<nsIPrincipal> principal = loadInfo->GetLoadingPrincipal();
 
   
   

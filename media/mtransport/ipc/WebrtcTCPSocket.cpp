@@ -378,7 +378,7 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   rv = ioService->NewChannelFromURIWithProxyFlags(
       mURI, nullptr,
       
-      0, loadInfo->LoadingNode(), loadInfo->LoadingPrincipal(),
+      0, loadInfo->LoadingNode(), loadInfo->GetLoadingPrincipal(),
       loadInfo->TriggeringPrincipal(),
       nsILoadInfo::SEC_DONT_FOLLOW_REDIRECTS | nsILoadInfo::SEC_COOKIES_OMIT |
           
