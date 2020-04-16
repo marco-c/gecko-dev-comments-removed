@@ -9181,8 +9181,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
 
 
 
-    bool synchronousCustomElements = aFromParser != dom::FROM_PARSER_FRAGMENT ||
-                                     aFromParser == dom::NOT_FROM_PARSER;
+    bool synchronousCustomElements = aFromParser != dom::FROM_PARSER_FRAGMENT;
     
     
     
