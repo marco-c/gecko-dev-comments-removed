@@ -42,6 +42,10 @@ add_task(async function test_builtin_location() {
   ok(!addon.hidden, "Addon is not hidden");
 
   
+  
+  ok(!Services.blocklist.isLoaded, "Blocklist hasn't been loaded");
+
+  
   await promiseRestartManager();
   await wrapper.awaitStartup();
   await wrapper.awaitMessage("started");
