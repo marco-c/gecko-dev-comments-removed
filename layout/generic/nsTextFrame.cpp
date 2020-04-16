@@ -7721,22 +7721,22 @@ class MOZ_STACK_CLASS ClusterIterator {
                   bool aTrimSpaces = true);
 
   bool NextCluster();
-  bool IsWhitespace();
-  bool IsPunctuation();
-  bool HaveWordBreakBefore() { return mHaveWordBreak; }
+  bool IsWhitespace() const;
+  bool IsPunctuation() const;
+  bool HaveWordBreakBefore() const { return mHaveWordBreak; }
 
   
   
   
   
-  int32_t GetBeforeOffset() {
+  int32_t GetBeforeOffset() const {
     MOZ_ASSERT(mCharIndex >= 0);
     return mDirection < 0 ? GetAfterInternal() : mCharIndex;
   }
   
   
   
-  int32_t GetAfterOffset() {
+  int32_t GetAfterOffset() const {
     MOZ_ASSERT(mCharIndex >= 0);
     return mDirection > 0 ? GetAfterInternal() : mCharIndex;
   }
@@ -7744,7 +7744,7 @@ class MOZ_STACK_CLASS ClusterIterator {
  private:
   
   
-  int32_t GetAfterInternal();
+  int32_t GetAfterInternal() const;
 
   gfxSkipCharsIterator mIterator;
   
@@ -7866,12 +7866,12 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetCharacter(
   return CONTINUE;
 }
 
-bool ClusterIterator::IsWhitespace() {
+bool ClusterIterator::IsWhitespace() const {
   NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
   return IsSelectionSpace(mFrag, mCharIndex);
 }
 
-bool ClusterIterator::IsPunctuation() {
+bool ClusterIterator::IsPunctuation() const {
   NS_ASSERTION(mCharIndex >= 0, "No cluster selected");
   
   static bool sStopAtUnderscore =
@@ -7904,7 +7904,7 @@ bool ClusterIterator::IsPunctuation() {
   }
 }
 
-int32_t ClusterIterator::GetAfterInternal() {
+int32_t ClusterIterator::GetAfterInternal() const {
   if (mFrag->IsHighSurrogateFollowedByLowSurrogateAt(mCharIndex)) {
     return mCharIndex + 2;
   }
