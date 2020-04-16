@@ -132,7 +132,14 @@ class BlocksRingBuffer {
     mMaybeUnderlyingBuffer.emplace(aExternalBuffer, aLength);
   }
 
+  
+  
   bool IsThreadSafe() const { return mMutex.IsActivated(); }
+
+  [[nodiscard]] bool IsInSession() const {
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+    return !!mMaybeUnderlyingBuffer;
+  }
 
   
   
