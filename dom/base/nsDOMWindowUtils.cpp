@@ -2508,11 +2508,38 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return NS_OK;
   }
 
-  if (!element->GetPrimaryFrame()) {
+  bool shouldSkip = [&] {
+    nsIFrame* frame = element->GetPrimaryFrame();
+    if (!frame) {
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (frame->PresShell() == presShell) {
+      for (; frame; frame = frame->GetParent()) {
+        if (frame->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+            nsLayoutUtils::IsReallyFixedPos(frame)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }();
+
+  if (shouldSkip) {
     return NS_OK;
   }
 
-  Document* document = presShell->GetDocument();
+  RefPtr<Document> document = presShell->GetDocument();
   if (!document) {
     return NS_OK;
   }
