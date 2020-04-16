@@ -20,7 +20,14 @@ class FormValidationChild extends JSWindowActorChild {
     super();
     this._validationMessage = "";
     this._element = null;
-    this._addedPageShowListener = false;
+  }
+
+  actorCreated() {
+    
+    
+    
+    
+    this.contentWindow.addEventListener("pageshow", this);
   }
 
   
@@ -28,15 +35,6 @@ class FormValidationChild extends JSWindowActorChild {
 
 
   handleEvent(aEvent) {
-    if (!this._addedPageShowListener) {
-      
-      
-      
-      
-      this.contentWindow.addEventListener("pageshow", this);
-      this._addedPageShowListener = true;
-    }
-
     switch (aEvent.type) {
       case "MozInvalidForm":
         aEvent.preventDefault();
