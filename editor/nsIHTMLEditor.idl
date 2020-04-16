@@ -280,6 +280,7 @@ interface nsIHTMLEditor : nsISupports
 
 
 
+
   Element getElementOrParentByTagName(in AString aTagName,
                                       in Node aNode);
 

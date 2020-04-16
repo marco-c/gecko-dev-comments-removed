@@ -370,7 +370,7 @@ nsresult HTMLEditor::RefreshEditingUI() {
   if (IsObjectResizerEnabled() || IsInlineTableEditorEnabled()) {
     
     
-    cellElement = GetElementOrParentByTagNameAtSelection(*nsGkAtoms::td);
+    cellElement = GetInclusiveAncestorByTagNameAtSelection(*nsGkAtoms::td);
   }
 
   if (IsObjectResizerEnabled() && cellElement) {

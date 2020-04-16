@@ -597,10 +597,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-  Element* GetElementOrParentByTagName(const nsAtom& aTagName,
-                                       nsINode* aNode) const;
+  Element* GetInclusiveAncestorByTagName(const nsStaticAtom& aTagName,
+                                         nsIContent& aContent) const;
 
   
 
@@ -2905,7 +2903,8 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  Element* GetElementOrParentByTagNameAtSelection(const nsAtom& aTagName) const;
+  Element* GetInclusiveAncestorByTagNameAtSelection(
+      const nsStaticAtom& aTagName) const;
 
   
 
@@ -2924,8 +2923,9 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  Element* GetElementOrParentByTagNameInternal(const nsAtom& aTagName,
-                                               nsINode& aNode) const;
+
+  Element* GetInclusiveAncestorByTagNameInternal(const nsStaticAtom& aTagName,
+                                                 nsIContent& aContent) const;
 
   
 

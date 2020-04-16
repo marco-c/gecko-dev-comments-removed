@@ -71,16 +71,6 @@ using namespace widget;
 
 const char16_t kNBSP = 160;
 
-static already_AddRefed<nsAtom> GetLowerCaseNameAtom(
-    const nsAString& aTagName) {
-  if (aTagName.IsEmpty()) {
-    return nullptr;
-  }
-  nsAutoString lowerTagName;
-  nsContentUtils::ASCIIToLower(aTagName, lowerTagName);
-  return NS_Atomize(lowerTagName);
-}
-
 
 static bool IsLinkTag(const nsAtom& aTagName) {
   return &aTagName == nsGkAtoms::href;
@@ -1088,10 +1078,11 @@ EditActionResult HTMLEditor::HandleTabKeyPressInTable(
   }
 
   
-  Element* cellElement = GetElementOrParentByTagNameAtSelection(*nsGkAtoms::td);
+  Element* cellElement =
+      GetInclusiveAncestorByTagNameAtSelection(*nsGkAtoms::td);
   if (!cellElement) {
     NS_WARNING(
-        "HTMLEditor::GetElementOrParentByTagNameAtSelection(*nsGkAtoms::td) "
+        "HTMLEditor::GetInclusiveAncestorByTagNameAtSelection(*nsGkAtoms::td) "
         "returned nullptr");
     
     return EditActionIgnored();
@@ -2541,8 +2532,8 @@ nsresult HTMLEditor::AlignAsAction(const nsAString& aAlignType,
   return EditorBase::ToGenericNSResult(result.Rv());
 }
 
-Element* HTMLEditor::GetElementOrParentByTagName(const nsAtom& aTagName,
-                                                 nsINode* aNode) const {
+Element* HTMLEditor::GetInclusiveAncestorByTagName(const nsStaticAtom& aTagName,
+                                                   nsIContent& aContent) const {
   MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
 
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
@@ -2550,55 +2541,44 @@ Element* HTMLEditor::GetElementOrParentByTagName(const nsAtom& aTagName,
     return nullptr;
   }
 
-  if (aNode) {
-    return GetElementOrParentByTagNameInternal(aTagName, *aNode);
-  }
-
-  if (IsSelectionRangeContainerNotContent()) {
-    return nullptr;
-  }
-
-  return GetElementOrParentByTagNameAtSelection(aTagName);
+  return GetInclusiveAncestorByTagNameInternal(aTagName, aContent);
 }
 
-Element* HTMLEditor::GetElementOrParentByTagNameAtSelection(
-    const nsAtom& aTagName) const {
+Element* HTMLEditor::GetInclusiveAncestorByTagNameAtSelection(
+    const nsStaticAtom& aTagName) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
-  MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
-
   MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
 
   
   const EditorRawDOMPoint atAnchor(SelectionRefPtr()->AnchorRef());
-  if (NS_WARN_IF(!atAnchor.IsSet())) {
+  if (NS_WARN_IF(!atAnchor.IsSet()) ||
+      NS_WARN_IF(!atAnchor.GetContainerAsContent())) {
     return nullptr;
   }
 
   
-  nsCOMPtr<nsINode> node;
+  nsIContent* content = nullptr;
   if (atAnchor.GetContainer()->HasChildNodes() &&
       atAnchor.GetContainerAsContent()) {
-    node = atAnchor.GetChild();
+    content = atAnchor.GetChild();
   }
   
-  if (!node) {
-    if (NS_WARN_IF(!atAnchor.IsSet())) {
+  if (!content) {
+    content = atAnchor.GetContainerAsContent();
+    if (NS_WARN_IF(!content)) {
       return nullptr;
     }
-    node = atAnchor.GetContainer();
   }
-  return GetElementOrParentByTagNameInternal(aTagName, *node);
+  return GetInclusiveAncestorByTagNameInternal(aTagName, *content);
 }
 
-Element* HTMLEditor::GetElementOrParentByTagNameInternal(const nsAtom& aTagName,
-                                                         nsINode& aNode) const {
+Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
+    const nsStaticAtom& aTagName, nsIContent& aContent) const {
   MOZ_ASSERT(&aTagName != nsGkAtoms::_empty);
 
-  Element* currentElement = aNode.GetAsElementOrParentElement();
+  Element* currentElement = aContent.GetAsElementOrParentElement();
   if (NS_WARN_IF(!currentElement)) {
-    
-    MOZ_ASSERT(!aNode.GetParentNode() ||
-               !aNode.GetParentNode()->GetParentNode());
+    MOZ_ASSERT(!aContent.GetParentNode());
     return nullptr;
   }
 
@@ -2645,12 +2625,35 @@ NS_IMETHODIMP HTMLEditor::GetElementOrParentByTagName(const nsAString& aTagName,
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<nsAtom> tagName = GetLowerCaseNameAtom(aTagName);
-  if (NS_WARN_IF(!tagName) || NS_WARN_IF(tagName == nsGkAtoms::_empty)) {
+  nsStaticAtom* tagName = EditorUtils::GetTagNameAtom(aTagName);
+  if (NS_WARN_IF(!tagName)) {
+    
+    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  }
+  if (NS_WARN_IF(tagName == nsGkAtoms::_empty)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<Element> parentElement = GetElementOrParentByTagName(*tagName, aNode);
+  if (!aNode) {
+    AutoEditActionDataSetter dummyEditAction(*this, EditAction::eNotEditing);
+    if (NS_WARN_IF(!dummyEditAction.CanHandle())) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    RefPtr<Element> parentElement =
+        GetInclusiveAncestorByTagNameAtSelection(*tagName);
+    if (!parentElement) {
+      return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+    }
+    parentElement.forget(aReturn);
+    return NS_OK;
+  }
+
+  if (!aNode->IsContent() || !aNode->GetAsElementOrParentElement()) {
+    return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
+  }
+
+  RefPtr<Element> parentElement =
+      GetInclusiveAncestorByTagName(*tagName, *aNode->AsContent());
   if (!parentElement) {
     return NS_SUCCESS_EDITOR_ELEMENT_NOT_FOUND;
   }
@@ -2671,7 +2674,11 @@ NS_IMETHODIMP HTMLEditor::GetSelectedElement(const nsAString& aTagName,
   }
 
   ErrorResult error;
-  RefPtr<nsAtom> tagName = GetLowerCaseNameAtom(aTagName);
+  nsStaticAtom* tagName = EditorUtils::GetTagNameAtom(aTagName);
+  if (!aTagName.IsEmpty() && !tagName) {
+    
+    return NS_OK;
+  }
   RefPtr<nsINode> selectedNode = GetSelectedElement(tagName, error);
   NS_WARNING_ASSERTION(!error.Failed(),
                        "HTMLEditor::GetSelectedElement() failed");
@@ -2732,18 +2739,19 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
     }
   }
 
-  if (isLinkTag) {
+  if (isLinkTag && startRef.Container()->IsContent() &&
+      endRef.Container()->IsContent()) {
     
-    Element* parentLinkOfStart = GetElementOrParentByTagNameInternal(
-        *nsGkAtoms::href, *startRef.Container());
+    Element* parentLinkOfStart = GetInclusiveAncestorByTagNameInternal(
+        *nsGkAtoms::href, *startRef.Container()->AsContent());
     if (parentLinkOfStart) {
       if (SelectionRefPtr()->IsCollapsed()) {
         
         return do_AddRef(parentLinkOfStart);
       }
       
-      Element* parentLinkOfEnd = GetElementOrParentByTagNameInternal(
-          *nsGkAtoms::href, *endRef.Container());
+      Element* parentLinkOfEnd = GetInclusiveAncestorByTagNameInternal(
+          *nsGkAtoms::href, *endRef.Container()->AsContent());
       if (parentLinkOfStart == parentLinkOfEnd) {
         return do_AddRef(parentLinkOfStart);
       }
@@ -2917,11 +2925,12 @@ NS_IMETHODIMP HTMLEditor::CreateElementWithDefaults(const nsAString& aTagName,
 
   *aReturn = nullptr;
 
-  RefPtr<nsAtom> tagName = GetLowerCaseNameAtom(aTagName);
+  nsStaticAtom* tagName = EditorUtils::GetTagNameAtom(aTagName);
   if (NS_WARN_IF(!tagName)) {
     return NS_ERROR_INVALID_ARG;
   }
-  RefPtr<Element> newElement = CreateElementWithDefaults(*tagName);
+  RefPtr<Element> newElement =
+      CreateElementWithDefaults(MOZ_KnownLive(*tagName));
   if (!newElement) {
     NS_WARNING("HTMLEditor::CreateElementWithDefaults() failed");
     return NS_ERROR_FAILURE;
