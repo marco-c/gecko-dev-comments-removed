@@ -124,6 +124,10 @@ auto StreamFilterParent::Create(dom::ContentParent* aContentParent,
     return ChildEndpointPromise::CreateAndReject(false, __func__);
   }
 
+  
+  nsCOMPtr<nsIHttpChannelInternal> internal(do_QueryObject(channel));
+  internal->DisableAltDataCache();
+
   return chan->AttachStreamFilter(aContentParent ? aContentParent->OtherPid()
                                                  : base::GetCurrentProcId());
 }
