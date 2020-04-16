@@ -38,6 +38,7 @@
 #include "mozilla/StaticPrefs_gl.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/layers/TextureForwarder.h"  
 
 #include "OGLShaderProgram.h"  
 
