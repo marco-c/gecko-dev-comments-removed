@@ -1820,15 +1820,13 @@ void nsListControlFrame::ScrollToIndex(int32_t aIndex) {
 
 void nsListControlFrame::ScrollToFrame(dom::HTMLOptionElement& aOptElement) {
   
-  nsIFrame* childFrame = aOptElement.GetPrimaryFrame();
-  if (childFrame) {
+  if (nsIFrame* childFrame = aOptElement.GetPrimaryFrame()) {
     RefPtr<mozilla::PresShell> presShell = PresShell();
     presShell->ScrollFrameRectIntoView(
         childFrame, nsRect(nsPoint(0, 0), childFrame->GetSize()), ScrollAxis(),
         ScrollAxis(),
         ScrollFlags::ScrollOverflowHidden |
-            ScrollFlags::ScrollFirstAncestorOnly |
-            ScrollFlags::IgnoreMarginAndPadding);
+            ScrollFlags::ScrollFirstAncestorOnly);
   }
 }
 
