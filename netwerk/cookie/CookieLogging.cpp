@@ -4,6 +4,7 @@
 
 
 #include "CookieLogging.h"
+#include "Cookie.h"
 
 namespace mozilla {
 namespace net {

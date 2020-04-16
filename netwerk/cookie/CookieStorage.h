@@ -13,10 +13,14 @@
 #include "nsTHashtable.h"
 #include "nsWeakReference.h"
 
+class nsIArray;
+class nsICookie;
 class nsIPrefBranch;
 
 namespace mozilla {
 namespace net {
+
+class Cookie;
 
 
 

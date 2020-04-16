@@ -4,6 +4,7 @@
 
 
 #include "CookieCommons.h"
+#include "CookieLogging.h"
 #include "CookiePersistentStorage.h"
 #include "CookieService.h"
 
@@ -15,7 +16,9 @@
 #include "mozIStorageService.h"
 #include "mozStorageHelper.h"
 #include "nsAppDirectoryServiceDefs.h"
+#include "nsIEffectiveTLDService.h"
 #include "nsILineInputStream.h"
+#include "nsNetUtil.h"
 #include "nsVariant.h"
 #include "prprf.h"
 

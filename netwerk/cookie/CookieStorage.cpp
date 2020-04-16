@@ -3,8 +3,10 @@
 
 
 
+#include "Cookie.h"
 #include "CookieCommons.h"
 #include "CookieLogging.h"
+#include "CookieService.h"
 #include "CookieStorage.h"
 
 #include "nsIMutableArray.h"
