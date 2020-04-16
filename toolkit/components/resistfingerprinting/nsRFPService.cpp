@@ -650,7 +650,7 @@ uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
 
 static uint32_t GetSpoofedVersion() {
   
-  const uint32_t kKnownEsrVersion = 60;
+  const uint32_t kKnownEsrVersion = 78;
 
   nsresult rv;
   nsCOMPtr<nsIXULAppInfo> appInfo =
@@ -672,7 +672,7 @@ static uint32_t GetSpoofedVersion() {
   
   
   if (!strcmp(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL), "esr")) {
-    MOZ_ASSERT(((firefoxVersion % 8) == 4),
+    MOZ_ASSERT(((firefoxVersion - kKnownEsrVersion) % 13) == 0,
                "Please update ESR version formula in nsRFPService.cpp");
   }
 #endif  
@@ -680,7 +680,25 @@ static uint32_t GetSpoofedVersion() {
   
   
   
-  return firefoxVersion - ((firefoxVersion - 4) % 8);
+  
+  
+  
+  
+
+  if (firefoxVersion < 78) {
+    
+    
+    return 68;
+  }
+
+  uint32_t spoofedVersion =
+      firefoxVersion - ((firefoxVersion - kKnownEsrVersion) % 13);
+
+  MOZ_ASSERT(spoofedVersion >= kKnownEsrVersion &&
+             spoofedVersion <= firefoxVersion &&
+             (spoofedVersion - kKnownEsrVersion) % 13 == 0);
+
+  return spoofedVersion;
 }
 
 
