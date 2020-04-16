@@ -5,7 +5,7 @@
 
 
 
-use crate::raw_mutex::RawMutex;
+use crate::raw_fair_mutex::RawFairMutex;
 use lock_api;
 
 
@@ -78,19 +78,13 @@ use lock_api;
 
 
 
+pub type FairMutex<T> = lock_api::Mutex<RawFairMutex, T>;
 
 
 
 
-
-
-pub type Mutex<T> = lock_api::Mutex<RawMutex, T>;
-
-
-
-
-pub const fn const_mutex<T>(val: T) -> Mutex<T> {
-    Mutex::const_new(<RawMutex as lock_api::RawMutex>::INIT, val)
+pub const fn const_fair_mutex<T>(val: T) -> FairMutex<T> {
+    FairMutex::const_new(<RawFairMutex as lock_api::RawMutex>::INIT, val)
 }
 
 
@@ -98,7 +92,7 @@ pub const fn const_mutex<T>(val: T) -> Mutex<T> {
 
 
 
-pub type MutexGuard<'a, T> = lock_api::MutexGuard<'a, RawMutex, T>;
+pub type FairMutexGuard<'a, T> = lock_api::MutexGuard<'a, RawFairMutex, T>;
 
 
 
@@ -107,11 +101,11 @@ pub type MutexGuard<'a, T> = lock_api::MutexGuard<'a, RawMutex, T>;
 
 
 
-pub type MappedMutexGuard<'a, T> = lock_api::MappedMutexGuard<'a, RawMutex, T>;
+pub type MappedFairMutexGuard<'a, T> = lock_api::MappedMutexGuard<'a, RawFairMutex, T>;
 
 #[cfg(test)]
 mod tests {
-    use crate::{Condvar, Mutex};
+    use crate::FairMutex;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::mpsc::channel;
     use std::sync::Arc;
@@ -120,17 +114,12 @@ mod tests {
     #[cfg(feature = "serde")]
     use bincode::{deserialize, serialize};
 
-    struct Packet<T>(Arc<(Mutex<T>, Condvar)>);
-
     #[derive(Eq, PartialEq, Debug)]
     struct NonCopy(i32);
 
-    unsafe impl<T: Send> Send for Packet<T> {}
-    unsafe impl<T> Sync for Packet<T> {}
-
     #[test]
     fn smoke() {
-        let m = Mutex::new(());
+        let m = FairMutex::new(());
         drop(m.lock());
         drop(m.lock());
     }
@@ -140,9 +129,9 @@ mod tests {
         const J: u32 = 1000;
         const K: u32 = 3;
 
-        let m = Arc::new(Mutex::new(0));
+        let m = Arc::new(FairMutex::new(0));
 
-        fn inc(m: &Mutex<u32>) {
+        fn inc(m: &FairMutex<u32>) {
             for _ in 0..J {
                 *m.lock() += 1;
             }
@@ -173,13 +162,13 @@ mod tests {
 
     #[test]
     fn try_lock() {
-        let m = Mutex::new(());
+        let m = FairMutex::new(());
         *m.try_lock().unwrap() = ();
     }
 
     #[test]
     fn test_into_inner() {
-        let m = Mutex::new(NonCopy(10));
+        let m = FairMutex::new(NonCopy(10));
         assert_eq!(m.into_inner(), NonCopy(10));
     }
 
@@ -192,7 +181,7 @@ mod tests {
             }
         }
         let num_drops = Arc::new(AtomicUsize::new(0));
-        let m = Mutex::new(Foo(num_drops.clone()));
+        let m = FairMutex::new(Foo(num_drops.clone()));
         assert_eq!(num_drops.load(Ordering::SeqCst), 0);
         {
             let _inner = m.into_inner();
@@ -203,40 +192,17 @@ mod tests {
 
     #[test]
     fn test_get_mut() {
-        let mut m = Mutex::new(NonCopy(10));
+        let mut m = FairMutex::new(NonCopy(10));
         *m.get_mut() = NonCopy(20);
         assert_eq!(m.into_inner(), NonCopy(20));
-    }
-
-    #[test]
-    fn test_mutex_arc_condvar() {
-        let packet = Packet(Arc::new((Mutex::new(false), Condvar::new())));
-        let packet2 = Packet(packet.0.clone());
-        let (tx, rx) = channel();
-        let _t = thread::spawn(move || {
-            
-            rx.recv().unwrap();
-            let &(ref lock, ref cvar) = &*packet2.0;
-            let mut lock = lock.lock();
-            *lock = true;
-            cvar.notify_one();
-        });
-
-        let &(ref lock, ref cvar) = &*packet.0;
-        let mut lock = lock.lock();
-        tx.send(()).unwrap();
-        assert!(!*lock);
-        while !*lock {
-            cvar.wait(&mut lock);
-        }
     }
 
     #[test]
     fn test_mutex_arc_nested() {
         
         
-        let arc = Arc::new(Mutex::new(1));
-        let arc2 = Arc::new(Mutex::new(arc));
+        let arc = Arc::new(FairMutex::new(1));
+        let arc2 = Arc::new(FairMutex::new(arc));
         let (tx, rx) = channel();
         let _t = thread::spawn(move || {
             let lock = arc2.lock();
@@ -249,11 +215,11 @@ mod tests {
 
     #[test]
     fn test_mutex_arc_access_in_unwind() {
-        let arc = Arc::new(Mutex::new(1));
+        let arc = Arc::new(FairMutex::new(1));
         let arc2 = arc.clone();
         let _ = thread::spawn(move || {
             struct Unwinder {
-                i: Arc<Mutex<i32>>,
+                i: Arc<FairMutex<i32>>,
             }
             impl Drop for Unwinder {
                 fn drop(&mut self) {
@@ -270,7 +236,7 @@ mod tests {
 
     #[test]
     fn test_mutex_unsized() {
-        let mutex: &Mutex<[i32]> = &Mutex::new([1, 2, 3]);
+        let mutex: &FairMutex<[i32]> = &FairMutex::new([1, 2, 3]);
         {
             let b = &mut *mutex.lock();
             b[0] = 4;
@@ -284,13 +250,13 @@ mod tests {
     fn test_mutexguard_sync() {
         fn sync<T: Sync>(_: T) {}
 
-        let mutex = Mutex::new(());
+        let mutex = FairMutex::new(());
         sync(mutex.lock());
     }
 
     #[test]
     fn test_mutex_debug() {
-        let mutex = Mutex::new(vec![0u8, 10]);
+        let mutex = FairMutex::new(vec![0u8, 10]);
 
         assert_eq!(format!("{:?}", mutex), "Mutex { data: [0, 10] }");
         let _lock = mutex.lock();
@@ -301,10 +267,10 @@ mod tests {
     #[test]
     fn test_serde() {
         let contents: Vec<u8> = vec![0, 1, 2];
-        let mutex = Mutex::new(contents.clone());
+        let mutex = FairMutex::new(contents.clone());
 
         let serialized = serialize(&mutex).unwrap();
-        let deserialized: Mutex<Vec<u8>> = deserialize(&serialized).unwrap();
+        let deserialized: FairMutex<Vec<u8>> = deserialize(&serialized).unwrap();
 
         assert_eq!(*(mutex.lock()), *(deserialized.lock()));
         assert_eq!(contents, *(deserialized.lock()));
