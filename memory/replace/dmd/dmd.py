@@ -228,35 +228,33 @@ def fixStackTraces(inputFilename, isZipped, opener):
         def fix(line): return fixModule.fixSymbols(line, jsonMode=True)
 
     else:
-        fix = None
+        return
 
-    if fix:
-        
-        
-        tmpFile = tempfile.NamedTemporaryFile(delete=False)
+    
+    
+    tmpFile = tempfile.NamedTemporaryFile(delete=False)
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        tmpFilename = tmpFile.name
-        if isZipped:
-            tmpFile = gzip.GzipFile(filename='', fileobj=tmpFile)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    tmpFilename = tmpFile.name
+    if isZipped:
+        tmpFile = gzip.GzipFile(filename='', fileobj=tmpFile)
 
-        with opener(inputFilename, 'rb') as inputFile:
-            for line in inputFile:
-                tmpFile.write(fix(line))
+    with opener(inputFilename, 'rb') as inputFile:
+        for line in inputFile:
+            tmpFile.write(fix(line))
 
-        tmpFile.close()
+    tmpFile.close()
 
-        shutil.move(tmpFilename, inputFilename)
+    shutil.move(tmpFilename, inputFilename)
 
 
 def getDigestFromFile(args, inputFile):
