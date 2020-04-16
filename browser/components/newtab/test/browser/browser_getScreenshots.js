@@ -14,11 +14,28 @@ ChromeUtils.defineModuleGetter(
   "resource://activity-stream/lib/Screenshots.jsm"
 );
 
-function get_pixels_for_blob(blob, width, height) {
+function get_pixels(stringOrObject, width, height) {
   return new Promise(resolve => {
     
     let img = document.createElementNS(XHTMLNS, "img");
-    let imgPath = URL.createObjectURL(blob);
+    let imgPath;
+
+    if (typeof stringOrObject === "string") {
+      Assert.ok(
+        Services.prefs.getBoolPref(
+          "browser.tabs.remote.separatePrivilegedContentProcess"
+        ),
+        "The privileged about content process should be enabled."
+      );
+      imgPath = stringOrObject;
+      Assert.ok(
+        imgPath.startsWith("moz-page-thumb://"),
+        "Thumbnails should be retrieved using moz-page-thumb://"
+      );
+    } else {
+      imgPath = URL.createObjectURL(stringOrObject.data);
+    }
+
     img.setAttribute("src", imgPath);
     img.addEventListener(
       "load",
@@ -44,7 +61,7 @@ add_task(async function test_screenshot() {
 
   
   const screenshotAsObject = await Screenshots.getScreenshotForURL(TEST_URL);
-  let pixels = await get_pixels_for_blob(screenshotAsObject.data, 10, 10);
+  let pixels = await get_pixels(screenshotAsObject, 10, 10);
   let rgbaCount = { r: 0, g: 0, b: 0, a: 0 };
   while (pixels.length) {
     
