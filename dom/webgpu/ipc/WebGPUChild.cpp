@@ -84,12 +84,22 @@ UniquePtr<ffi::WGPUTextureViewDescriptor> WebGPUChild::GetDefaultViewDescriptor(
     const dom::GPUTextureDescriptor& aDesc) {
   ffi::WGPUTextureViewDescriptor desc = {};
   desc.format = ffi::WGPUTextureFormat(aDesc.mFormat);
+  
+  uint32_t depth = 0;
+  if (aDesc.mSize.IsUnsignedLongSequence()) {
+    const auto& seq = aDesc.mSize.GetAsUnsignedLongSequence();
+    depth = seq.Length() > 2 ? seq[2] : 1;
+  } else {
+    depth = aDesc.mSize.GetAsGPUExtent3DDict().mDepth;
+  }
+  
   switch (aDesc.mDimension) {
     case dom::GPUTextureDimension::_1d:
       desc.dimension = ffi::WGPUTextureViewDimension_D1;
       break;
     case dom::GPUTextureDimension::_2d:
-      desc.dimension = ffi::WGPUTextureViewDimension_D2;
+      desc.dimension = depth > 1 ? ffi::WGPUTextureViewDimension_D2Array
+                                 : ffi::WGPUTextureViewDimension_D2;
       break;
     case dom::GPUTextureDimension::_3d:
       desc.dimension = ffi::WGPUTextureViewDimension_D3;
@@ -97,6 +107,7 @@ UniquePtr<ffi::WGPUTextureViewDescriptor> WebGPUChild::GetDefaultViewDescriptor(
     default:
       MOZ_CRASH("Unexpected texture dimension");
   }
+  
   desc.level_count = aDesc.mMipLevelCount;
   return UniquePtr<ffi::WGPUTextureViewDescriptor>(
       new ffi::WGPUTextureViewDescriptor(desc));
