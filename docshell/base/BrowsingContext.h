@@ -260,6 +260,11 @@ class BrowsingContext : public nsISupports, public nsWrapperCache {
                         nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
 
+  
+  
+  
+  nsresult CheckSandboxFlags(nsDocShellLoadState* aLoadState);
+
   void DisplayLoadError(const nsAString& aURI);
 
   
