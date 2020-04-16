@@ -131,10 +131,7 @@ class HeaderChanger {
     
     
     
-    
-    
-    
-    let headersAlreadySet = new Set(["content-security-policy"]);
+    let headersAlreadySet = new Set();
     for (let { name, value, binaryValue } of headers) {
       if (binaryValue) {
         value = String.fromCharCode(...binaryValue);
