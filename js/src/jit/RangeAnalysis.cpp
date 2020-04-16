@@ -2567,8 +2567,7 @@ bool MAdd::needTruncation(TruncateKind kind) {
 
 void MAdd::truncate() {
   MOZ_ASSERT(needTruncation(truncateKind()));
-  specialization_ = MIRType::Int32;
-  setResultType(MIRType::Int32);
+  setSpecialization(MIRType::Int32);
   if (truncateKind() >= IndirectTruncate && range()) {
     range()->wrapAroundToInt32();
   }
@@ -2583,8 +2582,7 @@ bool MSub::needTruncation(TruncateKind kind) {
 
 void MSub::truncate() {
   MOZ_ASSERT(needTruncation(truncateKind()));
-  specialization_ = MIRType::Int32;
-  setResultType(MIRType::Int32);
+  setSpecialization(MIRType::Int32);
   if (truncateKind() >= IndirectTruncate && range()) {
     range()->wrapAroundToInt32();
   }
@@ -2599,8 +2597,7 @@ bool MMul::needTruncation(TruncateKind kind) {
 
 void MMul::truncate() {
   MOZ_ASSERT(needTruncation(truncateKind()));
-  specialization_ = MIRType::Int32;
-  setResultType(MIRType::Int32);
+  setSpecialization(MIRType::Int32);
   if (truncateKind() >= IndirectTruncate) {
     setCanBeNegativeZero(false);
     if (range()) {
@@ -2618,8 +2615,7 @@ bool MDiv::needTruncation(TruncateKind kind) {
 
 void MDiv::truncate() {
   MOZ_ASSERT(needTruncation(truncateKind()));
-  specialization_ = MIRType::Int32;
-  setResultType(MIRType::Int32);
+  setSpecialization(MIRType::Int32);
 
   
   
@@ -2639,8 +2635,7 @@ bool MMod::needTruncation(TruncateKind kind) {
 void MMod::truncate() {
   
   MOZ_ASSERT(needTruncation(truncateKind()));
-  specialization_ = MIRType::Int32;
-  setResultType(MIRType::Int32);
+  setSpecialization(MIRType::Int32);
 
   if (unsignedOperands()) {
     replaceWithUnsignedOperands();
