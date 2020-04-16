@@ -33,7 +33,6 @@ class DNSRequestChild final : public PDNSRequestChild, public nsICancelable {
   
   void StartRequest();
   void CallOnLookupComplete();
-  void CallOnLookupByTypeComplete();
 
  protected:
   friend class CancelDNSRequestEvent;
@@ -46,13 +45,6 @@ class DNSRequestChild final : public PDNSRequestChild, public nsICancelable {
   nsCOMPtr<nsIDNSListener> mListener;
   nsCOMPtr<nsIEventTarget> mTarget;
   nsCOMPtr<nsIDNSRecord> mResultRecord;
-  nsCOMPtr<nsIDNSByTypeRecord>
-      mResultByTypeRecords;  
-                             
-                             
-                             
-                             
-                             
   nsresult mResultStatus;
   nsCString mHost;
   nsCString mTrrServer;

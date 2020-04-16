@@ -127,13 +127,6 @@ Predictor::DNSListener::OnLookupComplete(nsICancelable* request,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-Predictor::DNSListener::OnLookupByTypeComplete(nsICancelable* request,
-                                               nsIDNSByTypeRecord* res,
-                                               nsresult status) {
-  return NS_OK;
-}
-
 
 
 

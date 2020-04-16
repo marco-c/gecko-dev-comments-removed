@@ -127,21 +127,3 @@ nsDNSPrefetch::OnLookupComplete(nsICancelable* request, nsIDNSRecord* rec,
   mListener = nullptr;
   return NS_OK;
 }
-
-NS_IMETHODIMP
-nsDNSPrefetch::OnLookupByTypeComplete(nsICancelable* request,
-                                      nsIDNSByTypeRecord* res,
-                                      nsresult status) {
-  if (mStoreTiming) {
-    mEndTimestamp = mozilla::TimeStamp::Now();
-  }
-  nsCOMPtr<nsIDNSListener> listener = do_QueryReferent(mListener);
-  if (listener) {
-    listener->OnLookupByTypeComplete(request, res, status);
-  }
-  
-  
-  
-  mListener = nullptr;
-  return NS_OK;
-}
