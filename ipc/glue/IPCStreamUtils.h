@@ -164,16 +164,16 @@ class AutoIPCStream {
   bool Serialize(nsIInputStream* aStream, net::SocketProcessChild* aManager);
 
   
-  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
-                              dom::ContentParent* aManager);
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               dom::ContentParent* aManager);
 
   
-  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
-                              PBackgroundParent* aManager);
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               PBackgroundParent* aManager);
 
   
-  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
-                              net::SocketProcessParent* aManager);
+  [[nodiscard]] bool Serialize(nsIInputStream* aStream,
+                               net::SocketProcessParent* aManager);
 
   
   

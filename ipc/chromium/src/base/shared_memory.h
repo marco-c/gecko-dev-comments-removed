@@ -122,7 +122,7 @@ class SharedMemory {
   
   
   
-  MOZ_MUST_USE bool Freeze() {
+  [[nodiscard]] bool Freeze() {
     Unmap();
     return ReadOnlyCopy(this);
   }
@@ -141,7 +141,7 @@ class SharedMemory {
   
   
   
-  MOZ_MUST_USE bool ReadOnlyCopy(SharedMemory* ro_out);
+  [[nodiscard]] bool ReadOnlyCopy(SharedMemory* ro_out);
 
   
   
