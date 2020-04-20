@@ -11,6 +11,7 @@
 #include "mozilla/CSSEditUtils.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/ManualNAC.h"
+#include "mozilla/Result.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/UniquePtr.h"
@@ -2102,6 +2103,23 @@ class HTMLEditor final : public TextEditor,
       const EditorDOMPoint& aPointInHardLine,
       const EditorDOMPoint& aPointToInsert,
       MoveToEndOfContainer aMoveToEndOfContainer = MoveToEndOfContainer::No);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  JoinNodesDeepWithTransaction(nsIContent& aLeftContent,
+                               nsIContent& aRightContent);
 
   
 

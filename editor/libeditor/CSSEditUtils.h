@@ -308,9 +308,8 @@ class CSSEditUtils final {
 
 
 
-
-  static bool ElementsSameStyle(dom::Element* aFirstNode,
-                                dom::Element* aSecondNode);
+  static bool DoElementsHaveSameStyle(const dom::Element& aElement,
+                                      const dom::Element& aOtherElement);
 
   
 
@@ -320,7 +319,7 @@ class CSSEditUtils final {
 
 
 
-  static nsresult GetInlineStyles(dom::Element* aElement,
+  static nsresult GetInlineStyles(const dom::Element& aElement,
                                   nsICSSDeclaration** aCssDecl,
                                   uint32_t* aLength);
 

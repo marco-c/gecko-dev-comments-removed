@@ -68,6 +68,7 @@ class nsISupports;
 namespace mozilla {
 
 using namespace dom;
+using StyleDifference = HTMLEditUtils::StyleDifference;
 
 enum { kLonely = 0, kPrevSib = 1, kNextSib = 2, kBothSibs = 3 };
 
@@ -3283,7 +3284,10 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   
   if (leftBlock->GetParentNode() == rightBlock->GetParentNode() &&
-      AreNodesSameType(*leftBlock, *rightBlock) &&
+      HTMLEditUtils::CanContentsBeJoined(
+          *leftBlock, *rightBlock,
+          IsCSSEnabled() ? StyleDifference::CompareIfSpanElements
+                         : StyleDifference::Ignore) &&
       
       (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
        HTMLEditUtils::IsListItem(leftBlock) ||
@@ -3299,17 +3303,16 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
       return EditActionHandled(rv);
     }
     
-    EditorDOMPoint atFirstChildOfTheLastRightNode =
+    Result<EditorDOMPoint, nsresult> atFirstChildOfTheLastRightNodeOrError =
         JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+    if (atFirstChildOfTheLastRightNodeOrError.isErr()) {
+      NS_WARNING("HTMLEditor::JoinNodesDeepWithTransaction() failed");
+      return EditActionHandled(
+          atFirstChildOfTheLastRightNodeOrError.unwrapErr());
     }
-    if (!atFirstChildOfTheLastRightNode.IsSet()) {
-      NS_WARNING("EditorBase::JoinNodesDeepWithTransaction() failed");
-      return EditActionHandled(NS_ERROR_FAILURE);
-    }
+    MOZ_ASSERT(atFirstChildOfTheLastRightNodeOrError.inspect().IsSet());
     
-    rv = CollapseSelectionTo(atFirstChildOfTheLastRightNode);
+    rv = CollapseSelectionTo(atFirstChildOfTheLastRightNodeOrError.inspect());
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::CollapseSelectionTo() failed");
     return EditActionHandled(rv);
@@ -3623,6 +3626,82 @@ EditorDOMPoint HTMLEditor::GetGoodCaretPointFor(
 
   
   return EditorDOMPoint(&aContent);
+}
+
+Result<EditorDOMPoint, nsresult> HTMLEditor::JoinNodesDeepWithTransaction(
+    nsIContent& aLeftContent, nsIContent& aRightContent) {
+  
+  
+  
+
+  nsCOMPtr<nsIContent> leftContentToJoin = &aLeftContent;
+  nsCOMPtr<nsIContent> rightContentToJoin = &aRightContent;
+  nsCOMPtr<nsINode> parentNode = aRightContent.GetParentNode();
+
+  EditorDOMPoint ret;
+  const HTMLEditUtils::StyleDifference kCompareStyle =
+      IsCSSEnabled() ? StyleDifference::CompareIfSpanElements
+                     : StyleDifference::Ignore;
+  while (leftContentToJoin && rightContentToJoin && parentNode &&
+         HTMLEditUtils::CanContentsBeJoined(
+             *leftContentToJoin, *rightContentToJoin, kCompareStyle)) {
+    uint32_t length = leftContentToJoin->Length();
+
+    
+    nsresult rv =
+        JoinNodesWithTransaction(*leftContentToJoin, *rightContentToJoin);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::JoinNodesWithTransaction() failed");
+      return Err(rv);
+    }
+
+    
+    
+    ret.Set(rightContentToJoin, length);
+    if (NS_WARN_IF(!ret.IsSet())) {
+      return Err(NS_ERROR_FAILURE);
+    }
+
+    if (parentNode->IsText()) {
+      
+      return ret;
+    }
+
+    
+    parentNode = rightContentToJoin;
+    rightContentToJoin = parentNode->GetChildAt_Deprecated(length);
+    if (rightContentToJoin) {
+      leftContentToJoin = rightContentToJoin->GetPreviousSibling();
+    } else {
+      leftContentToJoin = nullptr;
+    }
+
+    
+    while (leftContentToJoin && !EditorUtils::IsEditableContent(
+                                    *leftContentToJoin, EditorType::HTML)) {
+      leftContentToJoin = leftContentToJoin->GetPreviousSibling();
+    }
+    if (!leftContentToJoin) {
+      return ret;
+    }
+
+    while (rightContentToJoin && !EditorUtils::IsEditableContent(
+                                     *rightContentToJoin, EditorType::HTML)) {
+      rightContentToJoin = rightContentToJoin->GetNextSibling();
+    }
+    if (!rightContentToJoin) {
+      return ret;
+    }
+  }
+
+  if (!ret.IsSet()) {
+    NS_WARNING("HTMLEditor::JoinNodesDeepWithTransaction() joined no contents");
+    return Err(NS_ERROR_FAILURE);
+  }
+  return ret;
 }
 
 EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
@@ -9817,16 +9896,9 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
     return rv;
   }
 
-  
-  
-  
-  
-  
-  if (HTMLEditor::AreNodesSameType(*lastLeft, *firstRight) &&
-      (lastLeft->IsText() ||
-       (lastLeft->IsElement() && firstRight->IsElement() &&
-        CSSEditUtils::ElementsSameStyle(lastLeft->AsElement(),
-                                        firstRight->AsElement())))) {
+  if ((lastLeft->IsText() || lastLeft->IsElement()) &&
+      HTMLEditUtils::CanContentsBeJoined(*lastLeft, *firstRight,
+                                         StyleDifference::CompareIfElements)) {
     nsresult rv = JoinNearestEditableNodesWithTransaction(
         *lastLeft, *firstRight, aNewFirstChildOfRightNode);
     NS_WARNING_ASSERTION(

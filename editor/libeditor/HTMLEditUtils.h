@@ -43,6 +43,23 @@ class HTMLEditUtils final {
 
 
 
+  enum class StyleDifference {
+    
+    
+    Ignore,
+    
+    CompareIfElements,
+    
+    CompareIfSpanElements,
+  };
+  static bool CanContentsBeJoined(const nsIContent& aLeftContent,
+                                  const nsIContent& aRightContent,
+                                  StyleDifference aStyleDifference);
+
+  
+
+
+
   static bool IsBlockElement(const nsIContent& aContent);
   
 

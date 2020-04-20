@@ -1906,21 +1906,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT EditorDOMPoint
-  JoinNodesDeepWithTransaction(nsIContent& aLeftNode, nsIContent& aRightNode);
-
-  
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   EnsureNoPaddingBRElementForEmptyEditor();
 
@@ -2125,14 +2110,6 @@ class EditorBase : public nsIEditor,
 
 
   bool ShouldHandleIMEComposition() const;
-
-  
-
-
-
-
-
-  bool AreNodesSameType(nsIContent& aNode1, nsIContent& aNode2) const;
 
   static bool IsTextNode(nsINode* aNode) {
     return aNode->NodeType() == nsINode::TEXT_NODE;
