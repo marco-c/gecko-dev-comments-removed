@@ -323,51 +323,74 @@ class AboutLoginsParent extends JSWindowActorParent {
           );
         }
 
-        if (Date.now() < AboutLogins._authExpirationTime) {
-          this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", true);
-          return;
-        }
-
-        
-        let tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].createInstance(
-          Ci.nsIPK11TokenDB
-        );
-        let token = tokendb.getInternalKeyToken();
-
         let loggedIn = false;
-        
-        if (!token.hasPassword && !OS_AUTH_ENABLED) {
-          loggedIn = true;
-        } else if (!token.hasPassword && OS_AUTH_ENABLED) {
-          if (AppConstants.platform == "macosx") {
-            
-            
-            messageId += "-macosx";
+        let telemetryEvent;
+
+        try {
+          
+          let tokendb = Cc[
+            "@mozilla.org/security/pk11tokendb;1"
+          ].createInstance(Ci.nsIPK11TokenDB);
+          let token = tokendb.getInternalKeyToken();
+
+          if (Date.now() < AboutLogins._authExpirationTime) {
+            loggedIn = true;
+            telemetryEvent = {
+              object: token.hasPassword ? "master_password" : "os_auth",
+              method: "reauthenticate",
+              value: "success_no_prompt",
+            };
+            return;
           }
-          let [messageText, captionText] = await AboutLoginsL10n.formatMessages(
-            [
+
+          
+          if (!token.hasPassword && !OS_AUTH_ENABLED) {
+            loggedIn = true;
+            telemetryEvent = {
+              object: "os_auth",
+              method: "reauthenticate",
+              value: "success_disabled",
+            };
+            return;
+          }
+          if (!token.hasPassword && OS_AUTH_ENABLED) {
+            if (AppConstants.platform == "macosx") {
+              
+              
+              messageId += "-macosx";
+            }
+            let [
+              messageText,
+              captionText,
+            ] = await AboutLoginsL10n.formatMessages([
               {
                 id: messageId,
               },
               {
                 id: "about-logins-os-auth-dialog-caption",
               },
-            ]
-          );
-          loggedIn = await OSKeyStore.ensureLoggedIn(
-            messageText.value,
-            captionText.value,
-            ownerGlobal,
-            false
-          );
-        } else {
+            ]);
+            let result = await OSKeyStore.ensureLoggedIn(
+              messageText.value,
+              captionText.value,
+              ownerGlobal,
+              false
+            );
+            loggedIn = result.authenticated;
+            telemetryEvent = {
+              object: "os_auth",
+              method: "reauthenticate",
+              value: result.auth_details,
+            };
+            return;
+          }
           
           token.checkPassword("");
 
           
           
           if (Services.logins.uiBusy) {
-            this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", false);
+            loggedIn = false;
             return;
           }
 
@@ -381,13 +404,21 @@ class AboutLoginsParent extends JSWindowActorParent {
             
           }
           loggedIn = token.isLoggedIn();
+          telemetryEvent = {
+            object: "master_password",
+            method: "reauthenticate",
+            value: loggedIn ? "success" : "fail",
+          };
+        } finally {
+          if (loggedIn) {
+            const AUTH_TIMEOUT_MS = 5 * 60 * 1000; 
+            AboutLogins._authExpirationTime = Date.now() + AUTH_TIMEOUT_MS;
+          }
+          this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", {
+            result: loggedIn,
+            telemetryEvent,
+          });
         }
-
-        if (loggedIn) {
-          const AUTH_TIMEOUT_MS = 5 * 60 * 1000; 
-          AboutLogins._authExpirationTime = Date.now() + AUTH_TIMEOUT_MS;
-        }
-        this.sendAsyncMessage("AboutLogins:MasterPasswordResponse", loggedIn);
         break;
       }
       case "AboutLogins:Subscribe": {
