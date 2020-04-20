@@ -354,9 +354,6 @@ static const size_t GCMinNurseryBytes = 256 * 1024;
 static const float NonIncrementalFactor = 1.12f;
 
 
-static const float AvoidInterruptFactor = 1.0f;
-
-
 static const size_t ZoneAllocDelayBytes = 1024 * 1024;
 
 
@@ -460,14 +457,6 @@ class GCSchedulingTunables {
 
 
   UnprotectedData<float> nonIncrementalFactor_;
-
-  
-
-
-
-
-
-  UnprotectedData<float> avoidInterruptFactor_;
 
   
 
@@ -590,7 +579,6 @@ class GCSchedulingTunables {
   size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
   size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
   double nonIncrementalFactor() const { return nonIncrementalFactor_; }
-  double avoidInterruptFactor() const { return avoidInterruptFactor_; }
   size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
   bool isDynamicHeapGrowthEnabled() const { return dynamicHeapGrowthEnabled_; }
   const mozilla::TimeDuration& highFrequencyThreshold() const {

@@ -139,7 +139,6 @@ typedef enum JSGCParamKey {
 
 
 
-
   
 
 
@@ -254,15 +253,6 @@ typedef enum JSGCParamKey {
 
 
   JSGC_NON_INCREMENTAL_FACTOR = 25,
-
-  
-
-
-
-
-
-
-  JSGC_AVOID_INTERRUPT_FACTOR = 26,
 
   
 
