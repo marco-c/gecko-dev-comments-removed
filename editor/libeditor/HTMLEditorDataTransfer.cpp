@@ -690,7 +690,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
 
   
   
-  if (EditorBase::IsTextNode(containerContent) ||
+  if (containerContent->IsText() ||
       (IsContainer(containerContent) &&
        !HTMLEditUtils::IsTable(containerContent))) {
     pointToPutCaret.SetToEndOf(containerContent);

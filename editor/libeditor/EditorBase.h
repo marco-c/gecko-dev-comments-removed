@@ -2111,10 +2111,6 @@ class EditorBase : public nsIEditor,
 
   bool ShouldHandleIMEComposition() const;
 
-  static bool IsTextNode(nsINode* aNode) {
-    return aNode->NodeType() == nsINode::TEXT_NODE;
-  }
-
   
 
 

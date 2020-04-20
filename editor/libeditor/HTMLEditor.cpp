@@ -2093,7 +2093,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
 
   
   nsIContent* contentToExamine;
-  if (SelectionRefPtr()->IsCollapsed() || IsTextNode(startContainer)) {
+  if (SelectionRefPtr()->IsCollapsed() || startContainer->IsText()) {
     if (NS_WARN_IF(!startContainer->IsContent())) {
       return NS_ERROR_FAILURE;
     }
@@ -2148,7 +2148,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     }
   } else {
     
-    if (IsTextNode(contentToExamine)) {
+    if (contentToExamine->IsText()) {
       
       contentToExamine = contentToExamine->GetParent();
     }

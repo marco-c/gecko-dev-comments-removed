@@ -3603,7 +3603,7 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
 
   
   
-  if (IsTextNode(aNodeToKeep) && IsTextNode(aNodeToJoin)) {
+  if (aNodeToKeep->IsText() && aNodeToJoin->IsText()) {
     nsAutoString rightText;
     nsAutoString leftText;
     aNodeToKeep->GetAsText()->GetData(rightText);
