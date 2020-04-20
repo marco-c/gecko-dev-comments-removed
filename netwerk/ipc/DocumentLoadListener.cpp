@@ -40,6 +40,7 @@
 #include "nsIOService.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "nsICookieService.h"
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -259,9 +260,6 @@ DocumentLoadListener::~DocumentLoadListener() {
 already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
     CanonicalBrowsingContext* aBrowsingContext, nsDocShellLoadState* aLoadState,
     uint64_t aOuterWindowId) {
-  OriginAttributes attrs;
-  mLoadContext->GetOriginAttributes(attrs);
-
   
   bool inheritPrincipal = false;
 
@@ -291,20 +289,20 @@ already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
     securityFlags |= nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL;
   }
 
+  if (aBrowsingContext->GetParent()) {
+    
+    RefPtr<LoadInfo> loadInfo =
+        new LoadInfo(aBrowsingContext, aLoadState->TriggeringPrincipal(),
+                     aOuterWindowId, securityFlags, sandboxFlags);
+    return loadInfo.forget();
+  }
+  
+  OriginAttributes attrs;
+  mLoadContext->GetOriginAttributes(attrs);
   RefPtr<LoadInfo> loadInfo =
       new LoadInfo(aBrowsingContext, aLoadState->TriggeringPrincipal(), attrs,
                    aOuterWindowId, securityFlags, sandboxFlags);
   return loadInfo.forget();
-}
-
-already_AddRefed<WindowGlobalParent> GetParentEmbedderWindowGlobal(
-    CanonicalBrowsingContext* aBrowsingContext) {
-  RefPtr<WindowGlobalParent> parent =
-      aBrowsingContext->GetEmbedderWindowGlobal();
-  if (parent && parent->BrowsingContext() == aBrowsingContext->GetParent()) {
-    return parent.forget();
-  }
-  return nullptr;
 }
 
 
@@ -314,8 +312,7 @@ GetTopWindowExcludingExtensionAccessibleContentFrames(
     CanonicalBrowsingContext* aBrowsingContext, nsIURI* aURIBeingLoaded) {
   CanonicalBrowsingContext* bc = aBrowsingContext;
   RefPtr<WindowGlobalParent> prev;
-  while (RefPtr<WindowGlobalParent> parent =
-             GetParentEmbedderWindowGlobal(bc)) {
+  while (RefPtr<WindowGlobalParent> parent = bc->GetParentWindowGlobal()) {
     CanonicalBrowsingContext* parentBC = parent->BrowsingContext();
 
     nsIPrincipal* parentPrincipal = parent->DocumentPrincipal();
@@ -340,11 +337,10 @@ GetTopWindowExcludingExtensionAccessibleContentFrames(
 }
 
 bool DocumentLoadListener::Open(
-    nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
-    nsLoadFlags aLoadFlags, uint32_t aCacheKey, const uint64_t& aChannelId,
-    const TimeStamp& aAsyncOpenTime, nsDOMNavigationTiming* aTiming,
-    Maybe<ClientInfo>&& aInfo, uint64_t aOuterWindowId, bool aHasGesture,
-    nsresult* aRv) {
+    nsDocShellLoadState* aLoadState, nsLoadFlags aLoadFlags, uint32_t aCacheKey,
+    const uint64_t& aChannelId, const TimeStamp& aAsyncOpenTime,
+    nsDOMNavigationTiming* aTiming, Maybe<ClientInfo>&& aInfo,
+    uint64_t aOuterWindowId, bool aHasGesture, nsresult* aRv) {
   LOG(("DocumentLoadListener Open [this=%p, uri=%s]", this,
        aLoadState->URI()->GetSpecOrDefault().get()));
   RefPtr<CanonicalBrowsingContext> browsingContext =
@@ -353,19 +349,21 @@ bool DocumentLoadListener::Open(
   OriginAttributes attrs;
   mLoadContext->GetOriginAttributes(attrs);
 
-  
-  
-  
-  
-  
-  RefPtr<LoadInfo> loadInfo = aLoadInfo;
-  if (!browsingContext->GetParent()) {
+  RefPtr<WindowGlobalParent> embedderWGP =
+      browsingContext->GetParentWindowGlobal();
+  if (browsingContext->GetParent() && !embedderWGP) {
     
-    
-    MOZ_ASSERT(!aLoadInfo || aLoadInfo->InternalContentPolicyType() ==
-                                 nsIContentPolicy::TYPE_DOCUMENT);
-    loadInfo = CreateLoadInfo(browsingContext, aLoadState, aOuterWindowId);
+    NS_WARNING(
+        "We don't have an embedder WindowGlobalParent, probably because of a "
+        "race");
+    return false;
   }
+
+  
+  
+  
+  RefPtr<LoadInfo> loadInfo =
+      CreateLoadInfo(browsingContext, aLoadState, aOuterWindowId);
 
   if (!nsDocShell::CreateAndConfigureRealChannelForLoadState(
           browsingContext, aLoadState, loadInfo, mParentChannelListener,

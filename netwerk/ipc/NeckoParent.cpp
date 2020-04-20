@@ -420,8 +420,16 @@ NeckoParent::AllocPDocumentChannelParent(
     context = aContext.get_canonical();
   }
 
-  nsCOMPtr<nsIPrincipal> requestingPrincipal =
-      GetRequestingPrincipal(Some(args.loadInfo()));
+  nsCOMPtr<nsIPrincipal> requestingPrincipal;
+  
+  
+  
+  if (context && !aContext.IsDiscarded() && context->GetParent()) {
+    if (RefPtr<WindowGlobalParent> embedderWGP =
+            context->GetParentWindowGlobal()) {
+      requestingPrincipal = embedderWGP->DocumentPrincipal();
+    }
+  }
 
   nsCOMPtr<nsILoadContext> loadContext;
   const char* error = CreateChannelLoadContext(

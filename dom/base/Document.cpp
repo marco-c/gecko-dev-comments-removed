@@ -3243,6 +3243,11 @@ void Document::ApplySettingsFromCSP(bool aSpeculative) {
       if (!mUpgradeInsecurePreloads) {
         mUpgradeInsecurePreloads = mUpgradeInsecureRequests;
       }
+      
+      if (auto* wgc = GetWindowGlobalChild()) {
+        wgc->SendUpdateDocumentCspSettings(mBlockAllMixedContent,
+                                           mUpgradeInsecureRequests);
+      }
     }
     return;
   }
@@ -14988,6 +14993,10 @@ void Document::SetUserHasInteracted() {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
     loadInfo->SetDocumentHasUserInteracted(true);
   }
+  
+  if (auto* wgc = GetWindowGlobalChild()) {
+    wgc->SendUpdateDocumentHasUserInteracted(true);
+  }
 
   MaybeAllowStorageForOpenerAfterUserInteraction();
 }
@@ -16135,6 +16144,17 @@ nsICookieJarSettings* Document::CookieJarSettings() {
             ? net::CookieJarSettings::Create(
                   inProcessParent->CookieJarSettings()->GetCookieBehavior())
             : net::CookieJarSettings::Create();
+
+    if (auto* wgc = GetWindowGlobalChild()) {
+      net::CookieJarSettingsArgs csArgs;
+      net::CookieJarSettings::Cast(mCookieJarSettings)->Serialize(csArgs);
+      
+      if (!wgc->SendUpdateCookieJarSettings(csArgs)) {
+        NS_WARNING(
+            "Failed to update document's cookie jar settings on the "
+            "WindowGlobalParent");
+      }
+    }
   }
 
   return mCookieJarSettings;
@@ -16176,10 +16196,8 @@ void Document::SetIsInitialDocument(bool aIsInitialDocument) {
 
   
   
-  if (RefPtr<nsPIDOMWindowInner> inner = GetInnerWindow()) {
-    if (RefPtr<WindowGlobalChild> wgc = inner->GetWindowGlobalChild()) {
-      wgc->SendSetIsInitialDocument(aIsInitialDocument);
-    }
+  if (auto* wgc = GetWindowGlobalChild()) {
+    wgc->SendSetIsInitialDocument(aIsInitialDocument);
   }
 }
 
