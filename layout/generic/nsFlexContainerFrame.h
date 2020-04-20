@@ -505,10 +505,16 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void ReflowFlexItem(const FlexboxAxisTracker& aAxisTracker,
-                      const ReflowInput& aReflowInput, const FlexItem& aItem,
-                      mozilla::LogicalPoint& aFramePos,
-                      const nsSize& aContainerSize, bool aHasLineClampEllipsis);
+
+
+
+  nsReflowStatus ReflowFlexItem(const FlexboxAxisTracker& aAxisTracker,
+                                const ReflowInput& aReflowInput,
+                                const FlexItem& aItem,
+                                mozilla::LogicalPoint& aFramePos,
+                                const mozilla::LogicalSize& aAvailableSize,
+                                const nsSize& aContainerSize,
+                                bool aHasLineClampEllipsis);
 
   
 

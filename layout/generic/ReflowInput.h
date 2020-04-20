@@ -763,11 +763,13 @@ struct ReflowInput : public SizeComputationInput {
 
 
 
+
   ReflowInput(nsPresContext* aPresContext, nsIFrame* aFrame,
               gfxContext* aRenderingContext,
               const mozilla::LogicalSize& aAvailableSpace, uint32_t aFlags = 0);
 
   
+
 
 
 

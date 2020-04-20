@@ -4856,8 +4856,25 @@ void nsFlexContainerFrame::ReflowChildren(
       
       
       if (item.NeedsFinalReflow()) {
-        ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
-                       containerSize, aHasLineClampEllipsis);
+        
+        const WritingMode itemWM = item.GetWritingMode();
+        LogicalSize availableSize = aReflowInput.ComputedSize(itemWM);
+
+        
+        
+        availableSize.BSize(itemWM) = NS_UNCONSTRAINEDSIZE;
+
+        const nsReflowStatus childReflowStatus =
+            ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
+                           availableSize, containerSize, aHasLineClampEllipsis);
+
+        
+        
+        
+        
+        MOZ_ASSERT(childReflowStatus.IsComplete(),
+                   "We gave flex item unconstrained available height, so it "
+                   "should be complete");
       } else {
         MoveFlexItemToFinalPosition(aReflowInput, item, framePos,
                                     containerSize);
@@ -5026,16 +5043,14 @@ void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
   PositionChildViews(aItem.Frame());
 }
 
-void nsFlexContainerFrame::ReflowFlexItem(
+nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     const FlexboxAxisTracker& aAxisTracker, const ReflowInput& aReflowInput,
     const FlexItem& aItem, LogicalPoint& aFramePos,
-    const nsSize& aContainerSize, bool aHasLineClampEllipsis) {
+    const LogicalSize& aAvailableSize, const nsSize& aContainerSize,
+    bool aHasLineClampEllipsis) {
   WritingMode outerWM = aReflowInput.GetWritingMode();
-  WritingMode wm = aItem.Frame()->GetWritingMode();
-  LogicalSize availSize = aReflowInput.ComputedSize(wm);
-  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput childReflowInput(PresContext(), aReflowInput, aItem.Frame(),
-                               availSize);
+                               aAvailableSize);
   childReflowInput.mFlags.mInsideLineClamp = GetLineClampValue() != 0;
   
   
@@ -5124,19 +5139,13 @@ void nsFlexContainerFrame::ReflowFlexItem(
 
   
 
-  
-  
-  
-  
-  MOZ_ASSERT(childReflowStatus.IsComplete(),
-             "We gave flex item unconstrained available height, so it "
-             "should be complete");
-
   FinishReflowChild(aItem.Frame(), PresContext(), childReflowOutput,
                     &childReflowInput, outerWM, aFramePos, aContainerSize,
                     ReflowChildFlags::ApplyRelativePositioning);
 
   aItem.SetAscent(childReflowOutput.BlockStartAscent());
+
+  return childReflowStatus;
 }
 
 void nsFlexContainerFrame::ReflowPlaceholders(
