@@ -64,6 +64,24 @@ class GenericGroup:
             },
         ],
         [
+            
+            ["--metrics"],
+            {
+                "nargs": "*",
+                "default": [],
+                "help": "The metrics that should be retrieved from the data.",
+            },
+        ],
+        [
+            
+            ["--metrics"],
+            {
+                "nargs": "*",
+                "default": [],
+                "help": "The metrics that should be retrieved from the data.",
+            },
+        ],
+        [
             ["--extra-options"],
             {"type": str, "default": "", "help": "Extra options passed through"},
         ],
