@@ -57,9 +57,6 @@ class WidgetTouchEvent;
 
 
 
-
-
-
 class AccessibleCaretEventHub : public nsIReflowObserver,
                                 public nsIScrollObserver,
                                 public nsSupportsWeakReference {
