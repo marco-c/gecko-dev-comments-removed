@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -20,19 +20,18 @@ class FinderTest : BaseSessionTest() {
         mainSession.loadTestPath(LOREM_IPSUM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        // Initial search.
+        
         var result = sessionRule.waitForResult(mainSession.finder.find("dolore", 0))
 
         assertThat("Should be found", result.found, equalTo(true))
-        // "wrapped" is true for the first found result of a new session.
-        assertThat("Should have wrapped", result.wrapped, equalTo(true))
+        assertThat("Should not have wrapped", result.wrapped, equalTo(false))
         assertThat("Current count should be correct", result.current, equalTo(1))
         assertThat("Total count should be correct", result.total, equalTo(2))
         assertThat("Search string should be correct",
                    result.searchString, equalTo("dolore"))
         assertThat("Flags should be correct", result.flags, equalTo(0))
 
-        // Search again using new flags.
+        
         result = sessionRule.waitForResult(mainSession.finder.find(
                 null, GeckoSession.FINDER_FIND_BACKWARDS
                                         or GeckoSession.FINDER_FIND_MATCH_CASE
@@ -49,7 +48,7 @@ class FinderTest : BaseSessionTest() {
                                             or GeckoSession.FINDER_FIND_MATCH_CASE
                                             or GeckoSession.FINDER_FIND_WHOLE_WORD))
 
-        // And again using same flags.
+        
         result = sessionRule.waitForResult(mainSession.finder.find(
                 null, GeckoSession.FINDER_FIND_BACKWARDS
                                         or GeckoSession.FINDER_FIND_MATCH_CASE
@@ -66,7 +65,7 @@ class FinderTest : BaseSessionTest() {
                                             or GeckoSession.FINDER_FIND_MATCH_CASE
                                             or GeckoSession.FINDER_FIND_WHOLE_WORD))
 
-        // And again but go forward.
+        
         result = sessionRule.waitForResult(mainSession.finder.find(
                 null, GeckoSession.FINDER_FIND_MATCH_CASE
                                         or GeckoSession.FINDER_FIND_WHOLE_WORD))
