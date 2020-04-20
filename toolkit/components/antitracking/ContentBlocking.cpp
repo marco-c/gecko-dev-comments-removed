@@ -1016,9 +1016,46 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     return false;
   }
 
-  return AntiTrackingUtils::CheckStoragePermission(
-      parentPrincipal, type, !!privateBrowsingId, aRejectedReason,
-      blockedReason);
+  auto checkPermission = [parentPrincipal, type, privateBrowsingId,
+                          aRejectedReason, blockedReason]() -> bool {
+    return AntiTrackingUtils::CheckStoragePermission(
+        parentPrincipal, type, !!privateBrowsingId, aRejectedReason,
+        blockedReason);
+  };
+
+  
+  
+  
+  
+  RefPtr<BrowsingContext> bc;
+  loadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (!bc) {
+    return checkPermission();
+  }
+
+  bc = bc->Top();
+  if (!bc || !bc->IsInProcess()) {
+    return checkPermission();
+  }
+
+  nsGlobalWindowOuter* topWindow =
+      nsGlobalWindowOuter::Cast(bc->GetDOMWindow());
+
+  if (!topWindow) {
+    return checkPermission();
+  }
+
+  nsPIDOMWindowInner* topInnerWindow = topWindow->GetCurrentInnerWindow();
+  
+  
+  
+  
+  
+  if (topInnerWindow && topInnerWindow->HasStorageAccessGranted(type)) {
+    return true;
+  }
+
+  return checkPermission();
 }
 
 bool ContentBlocking::ShouldAllowAccessFor(
