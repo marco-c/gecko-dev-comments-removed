@@ -26,7 +26,6 @@
 #include "nsIOutputStream.h"
 #include "nsISupports.h"
 #include "nsITimer.h"
-#include "nsZipArchive.h"
 #include "mozilla/Omnijar.h"
 #include "prenv.h"
 #include "mozilla/Telemetry.h"
@@ -146,19 +145,16 @@ bool StartupCache::gFoundDiskCacheOnInit;
 NS_IMPL_ISUPPORTS(StartupCache, nsIMemoryReporter)
 
 StartupCache::StartupCache()
-    : mDirty(false),
+    : mTableLock("StartupCache::mTableLock"),
+      mDirty(false),
       mWrittenOnce(false),
       mStartupWriteInitiated(false),
       mCurTableReferenced(false),
       mRequestedCount(0),
       mCacheEntriesBaseOffset(0),
-      mWriteThread(nullptr),
       mPrefetchThread(nullptr) {}
 
-StartupCache::~StartupCache() {
-  WaitOnWriteThread();
-  UnregisterWeakMemoryReporter(this);
-}
+StartupCache::~StartupCache() { UnregisterWeakMemoryReporter(this); }
 
 nsresult StartupCache::Init() {
   
@@ -243,8 +239,8 @@ void StartupCache::StartPrefetchMemoryThread() {
 
 
 
-
 Result<Ok, nsresult> StartupCache::LoadArchive() {
+  MOZ_ASSERT(NS_IsMainThread(), "Can only load startup cache on main thread");
   if (gIgnoreDiskCache) return Err(NS_ERROR_FAILURE);
 
   MOZ_TRY(mCacheData.init(mFile));
@@ -345,7 +341,6 @@ bool StartupCache::HasEntry(const char* id) {
   AUTO_PROFILER_LABEL("StartupCache::HasEntry", OTHER);
 
   MOZ_ASSERT(NS_IsMainThread(), "Startup cache only available on main thread");
-  WaitOnWriteThread();
 
   return mTable.has(nsDependentCString(id));
 }
@@ -357,7 +352,6 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
   NS_ASSERTION(NS_IsMainThread(),
                "Startup cache only available on main thread");
 
-  WaitOnWriteThread();
   Telemetry::LABELS_STARTUP_CACHE_REQUESTS label =
       Telemetry::LABELS_STARTUP_CACHE_REQUESTS::Miss;
   auto telemetry =
@@ -375,6 +369,22 @@ nsresult StartupCache::GetBuffer(const char* id, const char** outbuf,
     if (!mCacheData.initialized()) {
       return NS_ERROR_NOT_AVAILABLE;
     }
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mTableLock.TryLock()) {
+      MOZ_ASSERT(false, "Could not gain mTableLock - should never happen!");
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+    mTableLock.Unlock();
+#endif
 
     size_t totalRead = 0;
     size_t totalWritten = 0;
@@ -427,7 +437,6 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
                                  uint32_t len) {
   NS_ASSERTION(NS_IsMainThread(),
                "Startup cache only available on main thread");
-  WaitOnWriteThread();
   if (StartupCache::gShutdownInitiated) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -439,6 +448,12 @@ nsresult StartupCache::PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
     
     return NS_OK;
   }
+  
+  
+  if (!mTableLock.TryLock()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  auto lockGuard = MakeScopeExit([&] { mTableLock.Unlock(); });
 
   
   
@@ -476,6 +491,8 @@ size_t StartupCache::HeapSizeOfIncludingThis(
 
 
 Result<Ok, nsresult> StartupCache::WriteToDisk() {
+  mTableLock.AssertCurrentThreadOwns();
+
   mStartupWriteInitiated = true;
   if (!mDirty || mWrittenOnce) {
     return Ok();
@@ -579,10 +596,13 @@ Result<Ok, nsresult> StartupCache::WriteToDisk() {
 }
 
 void StartupCache::InvalidateCache(bool memoryOnly) {
-  WaitOnWriteThread();
   WaitOnPrefetchThread();
+  
+  MutexAutoLock unlock(mTableLock);
+
   mWrittenOnce = false;
   if (memoryOnly) {
+    
     auto writeResult = WriteToDisk();
     if (NS_WARN_IF(writeResult.isErr())) {
       gIgnoreDiskCache = true;
@@ -622,27 +642,43 @@ void StartupCache::MaybeInitShutdownWrite() {
   }
   gShutdownInitiated = true;
 
-  MaybeSpawnWriteThread();
+  MaybeWriteOffMainThread();
+}
+
+void StartupCache::EnsureShutdownWriteComplete() {
+  
+  
+  if (mWrittenOnce || (mCacheData.initialized() && !ShouldCompactCache())) {
+    return;
+  }
+  
+  
+  if (!mTableLock.TryLock()) {
+    
+    
+    mTableLock.Lock();
+  } else {
+    
+    
+    WaitOnPrefetchThread();
+    mStartupWriteInitiated = false;
+    mDirty = true;
+    mCacheData.reset();
+    
+    
+
+    auto writeResult = WriteToDisk();
+    Unused << NS_WARN_IF(writeResult.isErr());
+    
+    
+    
+  }
+  mTableLock.Unlock();
 }
 
 void StartupCache::IgnoreDiskCache() {
   gIgnoreDiskCache = true;
   if (gStartupCache) gStartupCache->InvalidateCache();
-}
-
-
-
-
-
-
-
-void StartupCache::WaitOnWriteThread() {
-  NS_ASSERTION(NS_IsMainThread(),
-               "Startup cache should only wait for io thread on main thread");
-  if (!mWriteThread || mWriteThread == PR_GetCurrentThread()) return;
-
-  PR_JoinThread(mWriteThread);
-  mWriteThread = nullptr;
 }
 
 void StartupCache::WaitOnPrefetchThread() {
@@ -665,23 +701,6 @@ void StartupCache::ThreadedPrefetch(void* aClosure) {
   mozilla::IOInterposer::UnregisterCurrentThread();
 }
 
-void StartupCache::ThreadedWrite(void* aClosure) {
-  AUTO_PROFILER_REGISTER_THREAD("StartupCache");
-  NS_SetCurrentThreadName("StartupCache");
-  mozilla::IOInterposer::RegisterCurrentThread();
-  
-
-
-
-
-
-
-  StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
-  auto result = startupCacheObj->WriteToDisk();
-  Unused << NS_WARN_IF(result.isErr());
-  mozilla::IOInterposer::UnregisterCurrentThread();
-}
-
 bool StartupCache::ShouldCompactCache() {
   
   
@@ -690,7 +709,6 @@ bool StartupCache::ShouldCompactCache() {
   MOZ_RELEASE_ASSERT(threshold.isValid(), "Runaway StartupCache size");
   return mRequestedCount < threshold.value();
 }
-
 
 
 
@@ -705,14 +723,14 @@ void StartupCache::WriteTimeout(nsITimer* aTimer, void* aClosure) {
 
 
   StartupCache* startupCacheObj = static_cast<StartupCache*>(aClosure);
-  startupCacheObj->MaybeSpawnWriteThread();
+  startupCacheObj->MaybeWriteOffMainThread();
 }
 
 
 
 
-void StartupCache::MaybeSpawnWriteThread() {
-  if (mWriteThread || mWrittenOnce) {
+void StartupCache::MaybeWriteOffMainThread() {
+  if (mWrittenOnce) {
     return;
   }
 
@@ -720,13 +738,20 @@ void StartupCache::MaybeSpawnWriteThread() {
     return;
   }
 
+  
   WaitOnPrefetchThread();
   mStartupWriteInitiated = false;
   mDirty = true;
   mCacheData.reset();
-  mWriteThread = PR_CreateThread(PR_USER_THREAD, StartupCache::ThreadedWrite,
-                                 this, PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                 PR_JOINABLE_THREAD, 512 * 1024);
+
+  RefPtr<StartupCache> self = this;
+  nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableFunction("StartupCache::Write", [self]() mutable {
+        MutexAutoLock unlock(self->mTableLock);
+        auto result = self->WriteToDisk();
+        Unused << NS_WARN_IF(result.isErr());
+      });
+  NS_DispatchBackgroundTask(runnable.forget(), NS_DISPATCH_EVENT_MAY_BLOCK);
 }
 
 
@@ -740,9 +765,13 @@ nsresult StartupCacheListener::Observe(nsISupports* subject, const char* topic,
 
   if (strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0) {
     
-    sc->WaitOnWriteThread();
     sc->WaitOnPrefetchThread();
     StartupCache::gShutdownInitiated = true;
+    
+    
+    
+    
+    
   } else if (strcmp(topic, "startupcache-invalidate") == 0) {
     sc->InvalidateCache(data && nsCRT::strcmp(data, u"memoryOnly") == 0);
   }
@@ -792,8 +821,20 @@ nsresult StartupCache::ResetStartupWriteTimer() {
   return NS_OK;
 }
 
+
 bool StartupCache::StartupWriteComplete() {
-  WaitOnWriteThread();
+  
+  
+  if (!mStartupWriteInitiated || mDirty) {
+    return false;
+  }
+  
+  
+  
+  if (!mTableLock.TryLock()) {
+    return false;
+  }
+  mTableLock.Unlock();
   return mStartupWriteInitiated && !mDirty;
 }
 
