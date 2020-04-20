@@ -570,6 +570,39 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+  void MergeSortedOverflow(nsFrameList& aList);
+
+  
+
+
+
+  void MergeSortedExcessOverflowContainers(nsFrameList& aList);
+
+  
+
+
+
+
+
+
+
+  static void MergeSortedFrameLists(nsFrameList& aDest, nsFrameList& aSrc,
+                                    nsIContent* aCommonAncestor);
+
+  
+
+
+
+  static inline void MergeSortedFrameListsFor(nsFrameList& aDest,
+                                              nsFrameList& aSrc,
+                                              nsContainerFrame* aParent) {
+    MergeSortedFrameLists(aDest, aSrc, aParent->GetContent());
+  }
+
+  
+
+
+
 
 
 

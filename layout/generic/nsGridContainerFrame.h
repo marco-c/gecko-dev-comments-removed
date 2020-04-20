@@ -363,11 +363,6 @@ class nsGridContainerFrame final : public nsContainerFrame {
   
   void NoteNewChildren(ChildListID aListID, const nsFrameList& aFrameList);
 
-  
-  void MergeSortedOverflow(nsFrameList& aList);
-  
-  void MergeSortedExcessOverflowContainers(nsFrameList& aList);
-
   bool GetBBaseline(BaselineSharingGroup aBaselineGroup,
                     nscoord* aResult) const {
     *aResult = mBaseline[mozilla::eLogicalAxisBlock][aBaselineGroup];
