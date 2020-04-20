@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef mozilla_gfx_thebes_DisplayConfigWindows_h
+#define mozilla_gfx_thebes_DisplayConfigWindows_h
+
+namespace mozilla {
+namespace gfx {
+
+extern bool HasScaledResolution();
+
+}  
+}  
+
+#endif  
