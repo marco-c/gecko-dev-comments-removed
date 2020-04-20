@@ -545,7 +545,13 @@ bool WarpBuilder::build_Nop(BytecodeLocation) { return true; }
 
 bool WarpBuilder::build_NopDestructuring(BytecodeLocation) { return true; }
 
-bool WarpBuilder::build_TryDestructuring(BytecodeLocation) { return true; }
+bool WarpBuilder::build_TryDestructuring(BytecodeLocation) {
+  
+  
+  
+  graph().setHasTryBlock();
+  return true;
+}
 
 bool WarpBuilder::build_Lineno(BytecodeLocation) { return true; }
 

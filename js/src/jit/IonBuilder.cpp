@@ -1783,9 +1783,15 @@ AbortReasonOr<Ok> IonBuilder::inspectOpcode(JSOp op, bool* restarted) {
   
   switch (op) {
     case JSOp::NopDestructuring:
-    case JSOp::TryDestructuring:
     case JSOp::Lineno:
     case JSOp::Nop:
+      return Ok();
+
+    case JSOp::TryDestructuring:
+      
+      
+      
+      graph().setHasTryBlock();
       return Ok();
 
     case JSOp::LoopHead:
