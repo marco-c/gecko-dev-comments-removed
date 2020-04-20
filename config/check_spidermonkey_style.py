@@ -64,6 +64,7 @@ included_inclnames_to_ignore = set([
     'frontend/smoosh_generated.h',        
     'gc/StatsPhasesGenerated.h',         
     'gc/StatsPhasesGenerated.inc',       
+    'jit/CacheIROpsGenerated.h',         
     'jit/LOpcodesGenerated.h',           
     'jit/MOpcodesGenerated.h',           
     'jscustomallocator.h',      
