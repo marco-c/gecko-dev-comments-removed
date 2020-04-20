@@ -6,7 +6,7 @@
 #define mozilla_BaseHistory_h
 
 #include "IHistory.h"
-#include "mozilla/Result.h"
+#include "mozilla/dom/ContentParent.h"
 
 
 
@@ -14,14 +14,17 @@ namespace mozilla {
 
 class BaseHistory : public IHistory {
  public:
-  nsresult RegisterVisitedCallback(nsIURI*, dom::Link*) final;
+  void RegisterVisitedCallback(nsIURI*, dom::Link*) final;
   void UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
   void NotifyVisited(nsIURI*, VisitedStatus) final;
 
  protected:
+  void NotifyVisitedInThisProcess(nsIURI*, VisitedStatus);
+  void NotifyVisitedFromParent(nsIURI*, VisitedStatus);
   static constexpr const size_t kTrackedUrisInitialSize = 64;
 
-  BaseHistory() : mTrackedURIs(kTrackedUrisInitialSize) {}
+  BaseHistory();
+  ~BaseHistory();
 
   using ObserverArray = nsTObserverArray<dom::Link*>;
   struct ObservingLinks {
@@ -34,29 +37,20 @@ class BaseHistory : public IHistory {
   };
 
   using PendingVisitedQueries = nsTHashtable<nsURIHashKey>;
+  using PendingVisitedResults = nsTArray<mozilla::dom::VisitedQueryResult>;
 
   
   
   virtual void StartPendingVisitedQueries(const PendingVisitedQueries&) = 0;
 
  private:
-  
-
-
-
-  void NotifyVisitedForDocument(nsIURI*, dom::Document*, VisitedStatus);
-
   void ScheduleVisitedQuery(nsIURI*);
 
   
   
   void CancelVisitedQueryIfPossible(nsIURI*);
 
-  
-
-
-
-  void DispatchNotifyVisited(nsIURI*, dom::Document*, VisitedStatus);
+  void SendPendingVisitedResultsToChildProcesses();
 
  protected:
   
@@ -68,7 +62,13 @@ class BaseHistory : public IHistory {
   PendingVisitedQueries mPendingQueries;
   
   
+  PendingVisitedResults mPendingResults;
+  
+  
   bool mStartPendingVisitedQueriesScheduled = false;
+  
+  
+  bool mStartPendingResultsScheduled = false;
 };
 
 }  

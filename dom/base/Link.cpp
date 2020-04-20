@@ -142,13 +142,10 @@ EventStates Link::LinkState() const {
     
     if (mHistory && hrefURI) {
       if (nsCOMPtr<IHistory> history = services::GetHistoryService()) {
-        nsresult rv = history->RegisterVisitedCallback(hrefURI, self);
-        if (NS_SUCCEEDED(rv)) {
-          self->mRegistered = true;
-
-          
-          element->GetComposedDoc()->AddStyleRelevantLink(self);
-        }
+        self->mRegistered = true;
+        history->RegisterVisitedCallback(hrefURI, self);
+        
+        element->GetComposedDoc()->AddStyleRelevantLink(self);
       }
     }
   }

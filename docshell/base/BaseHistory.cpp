@@ -5,75 +5,23 @@
 
 
 #include "BaseHistory.h"
+#include "nsThreadUtils.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/StaticPrefs_layout.h"
 
 namespace mozilla {
 
+using mozilla::dom::ContentParent;
 using mozilla::dom::Document;
 using mozilla::dom::Element;
 using mozilla::dom::Link;
 
-static Document* GetLinkDocument(const Link& aLink) {
-  Element* element = aLink.GetElement();
-  
-  return element ? element->OwnerDoc() : nullptr;
-}
+BaseHistory::BaseHistory() : mTrackedURIs(kTrackedUrisInitialSize) {}
 
-void BaseHistory::DispatchNotifyVisited(nsIURI* aURI, dom::Document* aDoc,
-                                        VisitedStatus aStatus) {
-  MOZ_ASSERT(aStatus != VisitedStatus::Unknown);
-
-  nsCOMPtr<nsIRunnable> runnable =
-      NewRunnableMethod<nsCOMPtr<nsIURI>, RefPtr<dom::Document>, VisitedStatus>(
-          "BaseHistory::DispatchNotifyVisited", this,
-          &BaseHistory::NotifyVisitedForDocument, aURI, aDoc, aStatus);
-  if (aDoc) {
-    aDoc->Dispatch(TaskCategory::Other, runnable.forget());
-  } else {
-    NS_DispatchToMainThread(runnable.forget());
-  }
-}
-
-void BaseHistory::NotifyVisitedForDocument(nsIURI* aURI, dom::Document* aDoc,
-                                           VisitedStatus aStatus) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aStatus != VisitedStatus::Unknown);
-
-  
-  
-  nsAutoScriptBlocker scriptBlocker;
-
-  
-  auto entry = mTrackedURIs.Lookup(aURI);
-  if (!entry) {
-    return;
-  }
-
-  ObservingLinks& links = entry.Data();
-
-  const bool visited = aStatus == VisitedStatus::Visited;
-  {
-    
-    
-    ObserverArray::BackwardIterator iter(links.mLinks);
-    while (iter.HasMore()) {
-      Link* link = iter.GetNext();
-      if (GetLinkDocument(*link) == aDoc) {
-        link->VisitedQueryFinished(visited);
-        if (visited) {
-          iter.Remove();
-        }
-      }
-    }
-  }
-
-  
-  if (links.mLinks.IsEmpty()) {
-    entry.Remove();
-  }
-}
+BaseHistory::~BaseHistory() = default;
 
 void BaseHistory::ScheduleVisitedQuery(nsIURI* aURI) {
   mPendingQueries.PutEntry(aURI);
@@ -99,7 +47,7 @@ void BaseHistory::CancelVisitedQueryIfPossible(nsIURI* aURI) {
   
 }
 
-nsresult BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
+void BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aURI, "Must pass a non-null URI!");
   if (XRE_IsContentProcess()) {
@@ -125,7 +73,7 @@ nsresult BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
     if (!entry) {
       entry.OrRemove();
     }
-    return NS_OK;
+    return;
   }
 
   ObservingLinks& links = entry.OrInsert([] { return ObservingLinks{}; });
@@ -134,18 +82,26 @@ nsresult BaseHistory::RegisterVisitedCallback(nsIURI* aURI, Link* aLink) {
   
   MOZ_DIAGNOSTIC_ASSERT(!links.mLinks.Contains(aLink),
                         "Already tracking this Link object!");
-
   
+  
+  MOZ_DIAGNOSTIC_ASSERT(links.mStatus != VisitedStatus::Visited,
+                        "We don't keep tracking known-visited links");
+
   links.mLinks.AppendElement(aLink);
 
   
-  
-  
-  if (links.mStatus != VisitedStatus::Unknown) {
-    DispatchNotifyVisited(aURI, GetLinkDocument(*aLink), links.mStatus);
+  switch (links.mStatus) {
+    case VisitedStatus::Unknown:
+      break;
+    case VisitedStatus::Unvisited:
+      if (!StaticPrefs::layout_css_notify_of_unvisited()) {
+        break;
+      }
+      [[fallthrough]];
+    case VisitedStatus::Visited:
+      aLink->VisitedQueryFinished(links.mStatus == VisitedStatus::Visited);
+      break;
   }
-
-  return NS_OK;
 }
 
 void BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
@@ -176,6 +132,20 @@ void BaseHistory::UnregisterVisitedCallback(nsIURI* aURI, Link* aLink) {
 void BaseHistory::NotifyVisited(nsIURI* aURI, VisitedStatus aStatus) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aStatus != VisitedStatus::Unknown);
+
+  if (aStatus == VisitedStatus::Unvisited &&
+      !StaticPrefs::layout_css_notify_of_unvisited()) {
+    return;
+  }
+
+  NotifyVisitedInThisProcess(aURI, aStatus);
+  if (XRE_IsParentProcess()) {
+    NotifyVisitedFromParent(aURI, aStatus);
+  }
+}
+
+void BaseHistory::NotifyVisitedInThisProcess(nsIURI* aURI,
+                                             VisitedStatus aStatus) {
   if (NS_WARN_IF(!aURI)) {
     return;
   }
@@ -195,18 +165,55 @@ void BaseHistory::NotifyVisited(nsIURI* aURI, VisitedStatus aStatus) {
   
   
 
-  
-  nsTArray<Document*> seen;  
-  ObserverArray::BackwardIterator iter(links.mLinks);
-  while (iter.HasMore()) {
-    Link* link = iter.GetNext();
-    Document* doc = GetLinkDocument(*link);
-    if (seen.Contains(doc)) {
-      continue;
+  const bool visited = aStatus == VisitedStatus::Visited;
+  {
+    ObserverArray::BackwardIterator iter(links.mLinks);
+    while (iter.HasMore()) {
+      Link* link = iter.GetNext();
+      link->VisitedQueryFinished(visited);
     }
-    seen.AppendElement(doc);
-    DispatchNotifyVisited(aURI, doc, aStatus);
   }
+
+  
+  
+  
+  
+  
+  if (visited) {
+    entry.Remove();
+  }
+}
+
+void BaseHistory::SendPendingVisitedResultsToChildProcesses() {
+  MOZ_ASSERT(!mPendingResults.IsEmpty());
+
+  mStartPendingResultsScheduled = false;
+
+  auto results = std::move(mPendingResults);
+  MOZ_ASSERT(mPendingResults.IsEmpty());
+
+  nsTArray<ContentParent*> cplist;
+  ContentParent::GetAll(cplist);
+  for (ContentParent* cp : cplist) {
+    Unused << NS_WARN_IF(!cp->SendNotifyVisited(results));
+  }
+}
+
+void BaseHistory::NotifyVisitedFromParent(nsIURI* aURI, VisitedStatus aStatus) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  auto& result = *mPendingResults.AppendElement();
+  result.visited() = aStatus == VisitedStatus::Visited;
+  result.uri() = aURI;
+
+  if (mStartPendingResultsScheduled) {
+    return;
+  }
+
+  mStartPendingResultsScheduled = NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+      NewRunnableMethod(
+          "BaseHistory::SendPendingVisitedResultsToChildProcesses", this,
+          &BaseHistory::SendPendingVisitedResultsToChildProcesses),
+      EventQueuePriority::Idle));
 }
 
 }  

@@ -55,8 +55,7 @@ class IHistory : public nsISupports {
 
 
 
-
-  virtual nsresult RegisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
+  virtual void RegisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
 
   
 
