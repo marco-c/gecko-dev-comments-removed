@@ -135,6 +135,9 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
             "R_LOG_LEVEL=6",
             "--es", "env2",
             "MOZ_WEBRENDER=%d" % self.config["enable_webrender"],
+            
+            "--es", "env3",
+            "MOZ_CRASHREPORTER_SHUTDOWN=1",
         ]
 
         try:
