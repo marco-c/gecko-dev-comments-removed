@@ -811,6 +811,16 @@ class EditorUtils final {
 
 
 
+  static bool IsPaddingBRElementForEmptyLastLine(const nsIContent& aContent) {
+    const dom::HTMLBRElement* brElement =
+        dom::HTMLBRElement::FromNode(&aContent);
+    return brElement && brElement->IsPaddingForEmptyLastLine();
+  }
+
+  
+
+
+
 
 
 
