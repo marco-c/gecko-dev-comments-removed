@@ -869,6 +869,9 @@ MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
 extern JSObject* CreateThis(JSContext* cx, const JSClass* clasp,
                             js::HandleObject callee);
 
+extern JSObject* CloneObject(JSContext* cx, HandleObject obj,
+                             Handle<js::TaggedProto> proto);
+
 extern JSObject* DeepCloneObjectLiteral(JSContext* cx, HandleObject obj);
 
 
