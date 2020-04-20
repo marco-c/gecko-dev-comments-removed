@@ -255,49 +255,9 @@ bool BaselineCacheIRCompiler::emitGuardGroup(ObjOperandId objId,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitGuardProto() {
+bool BaselineCacheIRCompiler::emitGuardProto(ObjOperandId objId,
+                                             uint32_t protoOffset) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  Register obj = allocator.useRegister(masm, reader.objOperandId());
-  AutoScratchRegister scratch(allocator, masm);
-
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
-  Address addr(stubAddress(reader.stubOffset()));
-  masm.loadObjProto(obj, scratch);
-  masm.branchPtr(Assembler::NotEqual, addr, scratch, failure->label());
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitGuardCompartment() {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  Register obj = allocator.useRegister(masm, reader.objOperandId());
-  AutoScratchRegister scratch(allocator, masm);
-
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
-  
-  
-  Address globalWrapper(stubAddress(reader.stubOffset()));
-  masm.loadPtr(globalWrapper, scratch);
-  Address handlerAddr(scratch, ProxyObject::offsetOfHandler());
-  masm.branchPtr(Assembler::Equal, handlerAddr,
-                 ImmPtr(&DeadObjectProxy::singleton), failure->label());
-
-  Address addr(stubAddress(reader.stubOffset()));
-  masm.branchTestObjCompartment(Assembler::NotEqual, obj, addr, scratch,
-                                failure->label());
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitGuardAnyClass() {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  ObjOperandId objId = reader.objOperandId();
   Register obj = allocator.useRegister(masm, objId);
   AutoScratchRegister scratch(allocator, masm);
 
@@ -306,7 +266,50 @@ bool BaselineCacheIRCompiler::emitGuardAnyClass() {
     return false;
   }
 
-  Address testAddr(stubAddress(reader.stubOffset()));
+  Address addr(stubAddress(protoOffset));
+  masm.loadObjProto(obj, scratch);
+  masm.branchPtr(Assembler::NotEqual, addr, scratch, failure->label());
+  return true;
+}
+
+bool BaselineCacheIRCompiler::emitGuardCompartment(ObjOperandId objId,
+                                                   uint32_t globalOffset,
+                                                   uint32_t compartmentOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Register obj = allocator.useRegister(masm, objId);
+  AutoScratchRegister scratch(allocator, masm);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  
+  
+  Address globalWrapper(stubAddress(globalOffset));
+  masm.loadPtr(globalWrapper, scratch);
+  Address handlerAddr(scratch, ProxyObject::offsetOfHandler());
+  masm.branchPtr(Assembler::Equal, handlerAddr,
+                 ImmPtr(&DeadObjectProxy::singleton), failure->label());
+
+  Address addr(stubAddress(compartmentOffset));
+  masm.branchTestObjCompartment(Assembler::NotEqual, obj, addr, scratch,
+                                failure->label());
+  return true;
+}
+
+bool BaselineCacheIRCompiler::emitGuardAnyClass(ObjOperandId objId,
+                                                uint32_t claspOffset) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+  Register obj = allocator.useRegister(masm, objId);
+  AutoScratchRegister scratch(allocator, masm);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  Address testAddr(stubAddress(claspOffset));
   if (objectGuardNeedsSpectreMitigations(objId)) {
     masm.branchTestObjClass(Assembler::NotEqual, obj, testAddr, scratch, obj,
                             failure->label());
