@@ -539,6 +539,16 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
     value = value.trim_start_matches(HTML_SPACE_CHARACTERS);
 
     
+    if value.is_empty() {
+        return LengthOrPercentageOrAuto::Auto;
+    }
+
+    
+    if value.starts_with('+') {
+        value = &value[1..]
+    }
+
+    
     match value.chars().nth(0) {
         Some('0'..='9') => {},
         _ => return LengthOrPercentageOrAuto::Auto,

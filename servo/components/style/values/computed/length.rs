@@ -80,7 +80,7 @@ macro_rules! computed_length_percentage_or_auto {
                 generics::GenericLengthPercentageOrAuto::Auto => None,
                 generics::GenericLengthPercentageOrAuto::LengthPercentage(ref lp) => {
                     Some(lp.to_used_value(percentage_basis))
-                },
+                }
             }
         }
 
@@ -93,7 +93,7 @@ macro_rules! computed_length_percentage_or_auto {
                 Auto => false,
             }
         }
-    };
+    }
 }
 
 
@@ -109,19 +109,8 @@ impl LengthPercentageOrAuto {
         }
     }
 
-    
-    pub fn as_ref(&self) -> generics::GenericLengthPercentageOrAuto<&LengthPercentage> {
-        use values::generics::length::LengthPercentageOrAuto::*;
-        match *self {
-            LengthPercentage(ref lp) => LengthPercentage(lp),
-            Auto => Auto,
-        }
-    }
-
     computed_length_percentage_or_auto!(LengthPercentage);
-}
 
-impl generics::GenericLengthPercentageOrAuto<&LengthPercentage> {
     
     #[inline]
     pub fn percentage_relative_to(&self, basis: Length) -> LengthOrAuto {

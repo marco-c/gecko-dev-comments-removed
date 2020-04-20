@@ -582,7 +582,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
                             
                             
                             return;
-                        },
+                        }
                     }
                 } else {
                     (*unparsed_value).clone()
@@ -848,7 +848,7 @@ fn substitute_all(
         match result {
             Ok(computed_value) => {
                 context.map.insert(name, Arc::new(computed_value));
-            },
+            }
             Err(..) => {
                 
                 let inherited = context.inherited.and_then(|m| m.get(&name)).cloned();
@@ -860,7 +860,7 @@ fn substitute_all(
                         context.map.remove(&name);
                     },
                 };
-            },
+            }
         }
 
         
