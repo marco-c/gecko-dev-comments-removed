@@ -1225,7 +1225,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mPartialBuildFailed(false),
       mIsInActiveDocShell(false),
       mBuildAsyncZoomContainer(false),
-      mBuildBackdropRootContainer(false),
       mContainsBackdropFilter(false),
       mHitTestArea(),
       mHitTestInfo(CompositorHitTestInvisibleToHit) {
@@ -1454,16 +1453,9 @@ void nsDisplayListBuilder::UpdateShouldBuildAsyncZoomContainer() {
   mBuildAsyncZoomContainer = nsLayoutUtils::AllowZoomingForDocument(document);
 }
 
-void nsDisplayListBuilder::UpdateShouldBuildBackdropRootContainer() {
-  mBuildBackdropRootContainer =
-      StaticPrefs::layout_css_backdrop_filter_enabled();
-}
-
 
 
 bool nsDisplayListBuilder::ShouldRebuildDisplayListDueToPrefChange() {
-  bool shouldRebuild = false;
-
   
   
   
@@ -1471,19 +1463,10 @@ bool nsDisplayListBuilder::ShouldRebuildDisplayListDueToPrefChange() {
   bool didBuildAsyncZoomContainer = mBuildAsyncZoomContainer;
   UpdateShouldBuildAsyncZoomContainer();
   if (didBuildAsyncZoomContainer != mBuildAsyncZoomContainer) {
-    shouldRebuild = true;
+    return true;
   }
 
-  
-  
-  
-  bool didBuildBackdropRootContainer = mBuildBackdropRootContainer;
-  UpdateShouldBuildBackdropRootContainer();
-  if (didBuildBackdropRootContainer != mBuildBackdropRootContainer) {
-    shouldRebuild = true;
-  }
-
-  return shouldRebuild;
+  return false;
 }
 
 bool nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
