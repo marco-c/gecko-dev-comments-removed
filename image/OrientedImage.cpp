@@ -135,7 +135,15 @@ OrientedImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
                               uint32_t aFlags) {
   
   
-  return GetFrame(aWhichFrame, aFlags);
+  IntSize innerSize = aSize;
+  if (mOrientation.SwapsWidthAndHeight()) {
+    swap(innerSize.width, innerSize.height);
+  }
+  RefPtr<SourceSurface> innerSurface =
+      InnerImage()->GetFrameAtSize(innerSize, aWhichFrame, aFlags);
+  NS_ENSURE_TRUE(innerSurface, nullptr);
+
+  return OrientSurface(mOrientation, innerSurface);
 }
 
 NS_IMETHODIMP_(bool)
