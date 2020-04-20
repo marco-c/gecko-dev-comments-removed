@@ -19,7 +19,8 @@ use crate::values::specified::position::{HorizontalPositionKeyword, VerticalPosi
 use crate::values::specified::position::{Position, PositionComponent, Side};
 use crate::values::specified::url::SpecifiedImageUrl;
 use crate::values::specified::{
-    Angle, AngleOrPercentage, Color, Length, LengthPercentage, NonNegativeLength, NonNegativeLengthPercentage,
+    Angle, AngleOrPercentage, Color, Length, LengthPercentage, NonNegativeLength,
+    NonNegativeLengthPercentage,
 };
 use crate::values::specified::{Number, NumberOrPercentage, Percentage};
 use crate::Atom;
@@ -51,6 +52,16 @@ pub type Gradient = generic::Gradient<
 
 type LengthPercentageItemList = crate::OwnedSlice<generic::GradientItem<Color, LengthPercentage>>;
 
+#[cfg(feature = "gecko")]
+fn conic_gradients_enabled() -> bool {
+    static_prefs::pref!("layout.css.conic-gradient.enabled")
+}
+
+#[cfg(feature = "servo")]
+fn conic_gradients_enabled() -> bool {
+    false
+}
+
 impl SpecifiedValueInfo for Gradient {
     const SUPPORTED_TYPES: u8 = CssType::GRADIENT;
 
@@ -72,35 +83,32 @@ impl SpecifiedValueInfo for Gradient {
             "-webkit-gradient",
         ]);
 
-        if static_prefs::pref!("layout.css.conic-gradient.enabled") {
-            f(&[
-                "conic-gradient",
-                "repeating-conic-gradient",
-            ]);
+        if conic_gradients_enabled() {
+            f(&["conic-gradient", "repeating-conic-gradient"]);
         }
     }
 }
 
-/// A specified gradient line direction.
-///
-/// FIXME(emilio): This should be generic over Angle.
+
+
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum LineDirection {
-    /// An angular direction.
+    
     Angle(Angle),
-    /// A horizontal direction.
+    
     Horizontal(HorizontalPositionKeyword),
-    /// A vertical direction.
+    
     Vertical(VerticalPositionKeyword),
-    /// A direction towards a corner of a box.
+    
     Corner(HorizontalPositionKeyword, VerticalPositionKeyword),
 }
 
-/// A specified ending shape.
+
 pub type EndingShape = generic::EndingShape<NonNegativeLength, NonNegativeLengthPercentage>;
 
-/// Specified values for `moz-image-rect`
-/// -moz-image-rect(<uri>, top, right, bottom, left);
+
+
 #[cfg(all(feature = "gecko", not(feature = "cbindgen")))]
 pub type MozImageRect = generic::GenericMozImageRect<NumberOrPercentage, SpecifiedImageUrl>;
 
@@ -116,7 +124,7 @@ pub type MozImageRect = generic::GenericMozImageRect<NumberOrPercentage, Specifi
     ToResolvedValue,
     ToShmem,
 )]
-/// Empty enum on non-Gecko
+
 pub enum MozImageRect {}
 
 impl Parse for Image {
@@ -152,15 +160,15 @@ impl Parse for Image {
 }
 
 impl Image {
-    /// Creates an already specified image value from an already resolved URL
-    /// for insertion in the cascade.
+    
+    
     #[cfg(feature = "servo")]
     pub fn for_cascade(url: ServoUrl) -> Self {
         use crate::values::CssUrl;
         generic::Image::Url(CssUrl::for_cascade(url))
     }
 
-    /// Parses a `-moz-element(# <element-id>)`.
+    
     #[cfg(feature = "gecko")]
     fn parse_element<'i, 't>(input: &mut Parser<'i, 't>) -> Result<Atom, ParseError<'i>> {
         input.try(|i| i.expect_function_matching("-moz-element"))?;
@@ -171,11 +179,11 @@ impl Image {
         })
     }
 
-    /// Provides an alternate method for parsing that associates the URL with
-    /// anonymous CORS headers.
-    ///
-    /// FIXME(emilio): It'd be nicer for this to pass a `CorsMode` parameter to
-    /// a shared function instead.
+    
+    
+    
+    
+    
     pub fn parse_with_cors_anonymous<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -242,10 +250,10 @@ impl Parse for Gradient {
             "-moz-repeating-radial-gradient" => {
                 (Shape::Radial, true, GradientCompatMode::Moz)
             },
-            "conic-gradient" if static_prefs::pref!("layout.css.conic-gradient.enabled") => {
+            "conic-gradient" if conic_gradients_enabled() => {
                 (Shape::Conic, false, GradientCompatMode::Modern)
             },
-            "repeating-conic-gradient" if static_prefs::pref!("layout.css.conic-gradient.enabled") => {
+            "repeating-conic-gradient" if conic_gradients_enabled() => {
                 (Shape::Conic, true, GradientCompatMode::Modern)
             },
             "-webkit-gradient" => {
@@ -522,20 +530,21 @@ impl Gradient {
         Ok(items.into())
     }
 
-    /// Not used for -webkit-gradient syntax and conic-gradient
+    
     fn parse_stops<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<LengthPercentageItemList, ParseError<'i>> {
-        let items = generic::GradientItem::parse_comma_separated(context, input, LengthPercentage::parse)?;
+        let items =
+            generic::GradientItem::parse_comma_separated(context, input, LengthPercentage::parse)?;
         if items.len() < 2 {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
         Ok(items)
     }
 
-    /// Parses a linear gradient.
-    /// GradientCompatMode can change during `-moz-` prefixed gradient parsing if it come across a `to` keyword.
+    
+    
     fn parse_linear<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -564,7 +573,7 @@ impl Gradient {
         })
     }
 
-    /// Parses a radial gradient.
+    
     fn parse_radial<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -619,8 +628,8 @@ impl Gradient {
     ) -> Result<Self, ParseError<'i>> {
         let angle = input.try(|i| {
             i.expect_ident_matching("from")?;
-            // Spec allows unitless zero start angles
-            // https://drafts.csswg.org/css-images-4/#valdef-conic-gradient-angle
+            
+            
             Angle::parse_with_unitless(context, i)
         });
         let position = input.try(|i| {
@@ -633,7 +642,11 @@ impl Gradient {
 
         let angle = angle.unwrap_or(Angle::zero());
         let position = position.unwrap_or(Position::center());
-        let items = generic::GradientItem::parse_comma_separated(context, input, AngleOrPercentage::parse_with_unitless)?;
+        let items = generic::GradientItem::parse_comma_separated(
+            context,
+            input,
+            AngleOrPercentage::parse_with_unitless,
+        )?;
 
         if items.len() < 2 {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
@@ -698,8 +711,8 @@ impl LineDirection {
         input: &mut Parser<'i, 't>,
         compat_mode: &mut GradientCompatMode,
     ) -> Result<Self, ParseError<'i>> {
-        // Gradients allow unitless zero angles as an exception, see:
-        // https://github.com/w3c/csswg-drafts/issues/1162
+        
+        
         if let Ok(angle) = input.try(|i| Angle::parse_with_unitless(context, i)) {
             return Ok(LineDirection::Angle(angle));
         }
@@ -707,16 +720,16 @@ impl LineDirection {
         input.try(|i| {
             let to_ident = i.try(|i| i.expect_ident_matching("to"));
             match *compat_mode {
-                // `to` keyword is mandatory in modern syntax.
+                
                 GradientCompatMode::Modern => to_ident?,
-                // Fall back to Modern compatibility mode in case there is a `to` keyword.
-                // According to Gecko, `-moz-linear-gradient(to ...)` should serialize like
-                // `linear-gradient(to ...)`.
+                
+                
+                
                 GradientCompatMode::Moz if to_ident.is_ok() => {
                     *compat_mode = GradientCompatMode::Modern
                 },
-                // There is no `to` keyword in webkit prefixed syntax. If it's consumed,
-                // parsing should throw an error.
+                
+                
                 GradientCompatMode::WebKit if to_ident.is_ok() => {
                     return Err(
                         i.new_custom_error(SelectorParseErrorKind::UnexpectedIdent("to".into()))
@@ -853,7 +866,8 @@ impl<T> generic::GradientItem<Color, T> {
     fn parse_comma_separated<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
-        parse_position: impl for<'i1, 't1> Fn(&ParserContext, &mut Parser<'i1, 't1>) -> Result<T, ParseError<'i1>> + Copy,
+        parse_position: impl for<'i1, 't1> Fn(&ParserContext, &mut Parser<'i1, 't1>) -> Result<T, ParseError<'i1>>
+            + Copy,
     ) -> Result<crate::OwnedSlice<Self>, ParseError<'i>> {
         let mut items = Vec::new();
         let mut seen_stop = false;
@@ -906,7 +920,10 @@ impl<T> generic::ColorStop<Color, T> {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
-        parse_position: impl for<'i1, 't1> Fn(&ParserContext, &mut Parser<'i1, 't1>) -> Result<T, ParseError<'i1>>,
+        parse_position: impl for<'i1, 't1> Fn(
+            &ParserContext,
+            &mut Parser<'i1, 't1>,
+        ) -> Result<T, ParseError<'i1>>,
     ) -> Result<Self, ParseError<'i>> {
         Ok(generic::ColorStop {
             color: Color::parse(context, input)?,

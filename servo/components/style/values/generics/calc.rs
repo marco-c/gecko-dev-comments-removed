@@ -7,14 +7,25 @@
 
 
 use crate::Zero;
-use style_traits::{CssWriter, ToCss};
-use std::fmt::{self, Write};
-use std::{cmp, mem};
-use std::ops::Add;
 use smallvec::SmallVec;
+use std::fmt::{self, Write};
+use std::ops::Add;
+use std::{cmp, mem};
+use style_traits::{CssWriter, ToCss};
 
 
-#[derive(Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, ToAnimatedZero, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToAnimatedZero,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(u8)]
 pub enum MinMaxOp {
     
@@ -50,7 +61,17 @@ pub enum SortKey {
 
 
 #[repr(u8)]
-#[derive(Clone, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, ToAnimatedZero, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    ToAnimatedZero,
+    ToResolvedValue,
+    ToShmem,
+)]
 pub enum GenericCalcNode<L> {
     
     Leaf(L),
@@ -73,7 +94,7 @@ pub enum GenericCalcNode<L> {
 pub use self::GenericCalcNode as CalcNode;
 
 
-pub trait CalcNodeLeaf : Clone + Sized + PartialOrd + PartialEq + ToCss {
+pub trait CalcNodeLeaf: Clone + Sized + PartialOrd + PartialEq + ToCss {
     
     fn is_negative(&self) -> bool;
 
@@ -111,7 +132,9 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
     
     fn try_sum_in_place(&mut self, other: &Self) -> Result<(), ()> {
         match (self, other) {
-            (&mut CalcNode::Leaf(ref mut one), &CalcNode::Leaf(ref other)) => one.try_sum_in_place(other),
+            (&mut CalcNode::Leaf(ref mut one), &CalcNode::Leaf(ref other)) => {
+                one.try_sum_in_place(other)
+            },
             _ => Err(()),
         }
     }
@@ -139,25 +162,35 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             O: CalcNodeLeaf,
             F: FnMut(&L) -> O,
         {
-            children.iter().map(|c| c.map_leaves_internal(map)).collect()
+            children
+                .iter()
+                .map(|c| c.map_leaves_internal(map))
+                .collect()
         }
 
         match *self {
             Self::Leaf(ref l) => CalcNode::Leaf(map(l)),
             Self::Sum(ref c) => CalcNode::Sum(map_children(c, map)),
             Self::MinMax(ref c, op) => CalcNode::MinMax(map_children(c, map), op),
-            Self::Clamp { ref min, ref center, ref max } => {
+            Self::Clamp {
+                ref min,
+                ref center,
+                ref max,
+            } => {
                 let min = Box::new(min.map_leaves_internal(map));
                 let center = Box::new(center.map_leaves_internal(map));
                 let max = Box::new(max.map_leaves_internal(map));
                 CalcNode::Clamp { min, center, max }
-            }
+            },
         }
     }
 
     
     
-    pub fn resolve<O>(&self, mut leaf_to_output_fn: impl FnMut(&L) -> Result<O, ()>) -> Result<O, ()>
+    pub fn resolve<O>(
+        &self,
+        mut leaf_to_output_fn: impl FnMut(&L) -> Result<O, ()>,
+    ) -> Result<O, ()>
     where
         O: PartialOrd + PartialEq + Add<Output = O> + Zero,
     {
@@ -192,7 +225,11 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
                 result
             },
-            Self::Clamp { ref min, ref center, ref max } => {
+            Self::Clamp {
+                ref min,
+                ref center,
+                ref max,
+            } => {
                 let min = min.resolve_internal(leaf_to_output_fn)?;
                 let center = center.resolve_internal(leaf_to_output_fn)?;
                 let max = max.resolve_internal(leaf_to_output_fn)?;
@@ -432,7 +469,7 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
             },
             Self::Leaf(ref mut l) => {
                 l.simplify();
-            }
+            },
         }
     }
 
