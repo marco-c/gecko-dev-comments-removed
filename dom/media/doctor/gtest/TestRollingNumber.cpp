@@ -17,7 +17,7 @@ using RN8 = mozilla::RollingNumber<uint8_t>;
 TEST(RollingNumber, Value)
 {
   
-  static_assert(std::is_same_v<RN8::ValueType, uint8_t>, "");
+  static_assert(std::is_same_v<RN8::ValueType, uint8_t>);
 
   
   const RN8 n;
