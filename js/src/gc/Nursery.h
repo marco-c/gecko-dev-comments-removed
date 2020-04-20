@@ -309,16 +309,12 @@ class Nursery {
                              arena_id_t arena = js::MallocArena);
 
   
-  void* reallocateBuffer(JSObject* obj, void* oldBuffer, size_t oldBytes,
-                         size_t newBytes);
+  void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
+                         size_t oldBytes, size_t newBytes);
 
   
   
   void* allocateBuffer(JS::BigInt* bi, size_t nbytes);
-
-  
-  void* reallocateBuffer(JS::BigInt* bi, void* oldDigits, size_t oldBytes,
-                         size_t newBytes);
 
   
   void freeBuffer(void* buffer);
