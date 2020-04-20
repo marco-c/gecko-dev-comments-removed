@@ -132,5 +132,10 @@ void Buffer::Unmap(JSContext* aCx, ErrorResult& aRv) {
   mMapping.reset();
 }
 
+void Buffer::Destroy() {
+  
+  
+}
+
 }  
 }  

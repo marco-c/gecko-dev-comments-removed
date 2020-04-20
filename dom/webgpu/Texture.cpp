@@ -40,5 +40,10 @@ already_AddRefed<TextureView> Texture::CreateView(
   return view.forget();
 }
 
+void Texture::Destroy() {
+  
+  
+}
+
 }  
 }  
