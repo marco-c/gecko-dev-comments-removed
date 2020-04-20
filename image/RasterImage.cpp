@@ -166,14 +166,16 @@ RasterImage::RequestRefresh(const TimeStamp& aTime) {
     res = mFrameAnimator->RequestRefresh(*mAnimationState, aTime);
   }
 
-  if (res.mFrameAdvanced) {
-
-
-
 #ifdef DEBUG
+  if (res.mFrameAdvanced) {
     mFramesNotified++;
+  }
 #endif
 
+  
+  
+  
+  if (!res.mDirtyRect.IsEmpty() || res.mFrameAdvanced) {
     auto dirtyRect = UnorientedIntRect::FromUnknownRect(res.mDirtyRect);
     NotifyProgress(NoProgress, dirtyRect);
   }
