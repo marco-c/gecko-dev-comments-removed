@@ -311,6 +311,32 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.ret();
 }
 
+
+
+static void DumpAllRegs(MacroAssembler& masm) {
+  if (JitSupportsSimd()) {
+    masm.PushRegsInMask(AllRegs);
+  } else {
+    
+    
+    
+    
+    
+    for (GeneralRegisterBackwardIterator iter(AllRegs.gprs()); iter.more();
+         ++iter) {
+      masm.Push(*iter);
+    }
+
+    masm.reserveStack(sizeof(RegisterDump::FPUArray));
+    for (FloatRegisterBackwardIterator iter(AllRegs.fpus()); iter.more();
+         ++iter) {
+      FloatRegister reg = *iter;
+      Address spillAddress(StackPointer, reg.getRegisterDumpOffsetInBytes());
+      masm.storeDouble(reg, spillAddress);
+    }
+  }
+}
+
 void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   invalidatorOffset_ = startTrampolineCode(masm);
 
@@ -327,7 +353,7 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   masm.addl(Imm32(sizeof(uintptr_t)), esp);
 
   
-  masm.PushRegsInMask(AllRegs);
+  DumpAllRegs(masm);
 
   masm.movl(esp, eax);  
 
@@ -512,27 +538,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm) {
 static void PushBailoutFrame(MacroAssembler& masm, uint32_t frameClass,
                              Register spArg) {
   
-  if (JitSupportsSimd()) {
-    masm.PushRegsInMask(AllRegs);
-  } else {
-    
-    
-    
-    
-    
-    for (GeneralRegisterBackwardIterator iter(AllRegs.gprs()); iter.more();
-         ++iter) {
-      masm.Push(*iter);
-    }
-
-    masm.reserveStack(sizeof(RegisterDump::FPUArray));
-    for (FloatRegisterBackwardIterator iter(AllRegs.fpus()); iter.more();
-         ++iter) {
-      FloatRegister reg = *iter;
-      Address spillAddress(StackPointer, reg.getRegisterDumpOffsetInBytes());
-      masm.storeDouble(reg, spillAddress);
-    }
-  }
+  DumpAllRegs(masm);
 
   
   masm.push(Imm32(frameClass));
