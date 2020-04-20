@@ -436,7 +436,7 @@ bool GCRuntime::checkAllocatorState(JSContext* cx, AllocKind kind) {
   return true;
 }
 
-bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
+inline bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
 #ifdef JS_GC_ZEAL
   if (needZealousGC()) {
     runDebugGC();
@@ -447,17 +447,6 @@ bool GCRuntime::gcIfNeededAtAllocation(JSContext* cx) {
   
   if (cx->hasAnyPendingInterrupt()) {
     gcIfRequested();
-  }
-
-  
-  
-  
-  Zone* zone = cx->zone();
-  if (isIncrementalGCInProgress() &&
-      zone->gcHeapSize.bytes() >
-          zone->gcHeapThreshold.nonIncrementalTriggerBytes(tunables)) {
-    PrepareZoneForGC(cx->zone());
-    gc(GC_NORMAL, JS::GCReason::INCREMENTAL_TOO_SLOW);
   }
 
   return true;
