@@ -3566,7 +3566,7 @@ JS::Result<ParseNode*> BinASTParser<Tok>::parseInterfaceLiteralRegExpExpression(
   
   {
     JS::CompileOptions dummyOptions(cx_);
-    TokenStream dummyTokenStream(cx_, dummyOptions, nullptr, 0, nullptr);
+    DummyTokenStream dummyTokenStream(cx_, dummyOptions);
 
     LifoAllocScope allocScope(&cx_->tempLifoAlloc());
 #ifdef ENABLE_NEW_REGEXP

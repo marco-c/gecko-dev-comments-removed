@@ -203,6 +203,7 @@
 
 #include "jspubtd.h"
 
+#include "frontend/CompilationInfo.h"
 #include "frontend/ErrorReporter.h"
 #include "frontend/Token.h"
 #include "frontend/TokenKind.h"
@@ -1506,8 +1507,13 @@ class TokenStreamCharsShared {
 
   CharBuffer charBuffer;
 
+  
+  CompilationInfo* compilationInfo;
+
  protected:
-  explicit TokenStreamCharsShared(JSContext* cx) : charBuffer(cx) {}
+  explicit TokenStreamCharsShared(JSContext* cx,
+                                  CompilationInfo* compilationInfo)
+      : charBuffer(cx), compilationInfo(compilationInfo) {}
 
   MOZ_MUST_USE bool appendCodePointToCharBuffer(uint32_t codePoint);
 
@@ -1572,8 +1578,8 @@ class TokenStreamCharsBase : public TokenStreamCharsShared {
   
 
  protected:
-  TokenStreamCharsBase(JSContext* cx, const Unit* units, size_t length,
-                       size_t startOffset);
+  TokenStreamCharsBase(JSContext* cx, CompilationInfo* compilationInfo,
+                       const Unit* units, size_t length, size_t startOffset);
 
   
 
@@ -2446,7 +2452,8 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   friend class TokenStreamPosition;
 
  public:
-  TokenStreamSpecific(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+  TokenStreamSpecific(JSContext* cx, CompilationInfo* compilationInfo,
+                      const JS::ReadOnlyCompileOptions& options,
                       const Unit* units, size_t length);
 
   
@@ -2885,17 +2892,24 @@ class TokenStreamAnyCharsAccess {
       const TokenStreamSpecific* tss);
 };
 
-class MOZ_STACK_CLASS TokenStream final
+class MOZ_STACK_CLASS TokenStream
     : public TokenStreamAnyChars,
       public TokenStreamSpecific<char16_t, TokenStreamAnyCharsAccess> {
   using Unit = char16_t;
 
  public:
-  TokenStream(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-              const Unit* units, size_t length, StrictModeGetter* smg)
+  TokenStream(JSContext* cx, CompilationInfo* compilationInfo,
+              const JS::ReadOnlyCompileOptions& options, const Unit* units,
+              size_t length, StrictModeGetter* smg)
       : TokenStreamAnyChars(cx, options, smg),
-        TokenStreamSpecific<Unit, TokenStreamAnyCharsAccess>(cx, options, units,
-                                                             length) {}
+        TokenStreamSpecific<Unit, TokenStreamAnyCharsAccess>(
+            cx, compilationInfo, options, units, length) {}
+};
+
+class MOZ_STACK_CLASS DummyTokenStream final : public TokenStream {
+ public:
+  DummyTokenStream(JSContext* cx, const JS::ReadOnlyCompileOptions& options)
+      : TokenStream(cx, nullptr, options, nullptr, 0, nullptr) {}
 };
 
 template <class TokenStreamSpecific>
@@ -2923,4 +2937,4 @@ extern JS_FRIEND_API int js_fgets(char* buf, int size, FILE* file);
 extern const char* TokenKindToString(js::frontend::TokenKind tt);
 #endif
 
-#endif
+#endif 
