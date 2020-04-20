@@ -12,7 +12,7 @@
 #include "mozpkix/Result.h"
 #include "nsThreadUtils.h"
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 #  include "GeneratedJNIWrappers.h"
 #endif  
 
@@ -330,7 +330,7 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
 }
 #endif  
 
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
 void GatherEnterpriseCertsAndroid(Vector<EnterpriseCert>& certs) {
   if (!jni::IsAvailable()) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("JNI not available"));
@@ -368,7 +368,7 @@ nsresult GatherEnterpriseCerts(Vector<EnterpriseCert>& certs) {
     return NS_ERROR_FAILURE;
   }
 #endif  
-#ifdef ANDROID
+#ifdef MOZ_WIDGET_ANDROID
   GatherEnterpriseCertsAndroid(certs);
 #endif  
   return NS_OK;
