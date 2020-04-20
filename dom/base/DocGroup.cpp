@@ -47,8 +47,6 @@ class LabellingEventTarget final : public nsISerialEventTarget {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
 
-  void ClearDocGroup() { mDocGroup = nullptr; }
-
  private:
   ~LabellingEventTarget() = default;
 };
@@ -141,9 +139,9 @@ void DocGroup::RemoveDocument(Document* aDocument) {
 
   if (mDocuments.IsEmpty()) {
     mBrowsingContextGroup = nullptr;
-    nsCOMPtr<LabellingEventTarget> target = do_QueryInterface(mEventTarget);
     
-    target->ClearDocGroup();
+    mEventTarget = nullptr;
+    mAbstractThread = nullptr;
   }
 }
 
@@ -281,12 +279,21 @@ nsISerialEventTarget* DocGroup::EventTargetFor(TaskCategory aCategory) const {
   
   
   
-  return mEventTarget;
+  if (mEventTarget) {
+    return mEventTarget;
+  }
+
+  return GetMainThreadSerialEventTarget();
 }
 
 AbstractThread* DocGroup::AbstractMainThreadFor(TaskCategory aCategory) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mDocuments.IsEmpty());
+
+  if (!mEventTarget) {
+    return AbstractThread::MainThread();
+  }
+
   
   
   
