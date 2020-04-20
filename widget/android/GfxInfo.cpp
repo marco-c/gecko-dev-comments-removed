@@ -572,6 +572,13 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       const nsCString& gpu = mGLStrings->Renderer();
       isUnblocked |= gpu.Find("Adreno (TM) 5",  true) >= 0 ||
                      gpu.Find("Adreno (TM) 6",  true) >= 0;
+#else
+      
+      NS_LossyConvertUTF16toASCII model(mModel);
+      isUnblocked |= model.Find("Pixel 2",  true) >=
+                         0 ||  
+                     model.Find("Pixel 3",  true) >=
+                         0;  
 #endif
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
