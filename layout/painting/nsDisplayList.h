@@ -5730,8 +5730,8 @@ class nsDisplayOpacity : public nsDisplayWrapList {
  private:
   NS_DISPLAY_ALLOW_CLONING()
 
-  bool ApplyOpacityToChildren(nsDisplayListBuilder* aBuilder);
-  bool IsEffectsWrapper() const;
+  bool ApplyToChildren(nsDisplayListBuilder* aBuilder);
+  bool ApplyToFilterOrMask(const bool aUsingLayers);
 
   float mOpacity;
   bool mForEventsAndPluginsOnly : 1;
@@ -6560,7 +6560,10 @@ class nsDisplayEffectsBase : public nsDisplayWrapList {
     return false;
   }
 
-  void SetHandleOpacity() { mHandleOpacity = true; }
+  virtual void SelectOpacityOptimization(const bool ) {
+    SetHandleOpacity();
+  }
+
   bool ShouldHandleOpacity() const { return mHandleOpacity; }
 
   gfxRect BBoxInUserSpace() const;
@@ -6571,6 +6574,7 @@ class nsDisplayEffectsBase : public nsDisplayWrapList {
                                  nsRegion* aInvalidRegion) const override;
 
  protected:
+  void SetHandleOpacity() { mHandleOpacity = true; }
   bool ValidateSVGFrame();
 
   
@@ -6657,6 +6661,8 @@ class nsDisplayMasksAndClipPaths : public nsDisplayEffectsBase {
 
   const nsTArray<nsRect>& GetDestRects() { return mDestRects; }
 
+  void SelectOpacityOptimization(const bool aUsingLayers) override;
+
   bool CreateWebRenderCommands(
       mozilla::wr::DisplayListBuilder& aBuilder,
       mozilla::wr::IpcResourceUpdateQueue& aResources,
@@ -6676,6 +6682,7 @@ class nsDisplayMasksAndClipPaths : public nsDisplayEffectsBase {
   bool CanPaintOnMaskLayer(LayerManager* aManager);
 
   nsTArray<nsRect> mDestRects;
+  bool mApplyOpacityWithSimpleClipPath;
 };
 
 class nsDisplayBackdropRootContainer : public nsDisplayWrapList {
