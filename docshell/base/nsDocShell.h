@@ -1060,6 +1060,12 @@ class nsDocShell final : public nsDocLoader,
   
   uint32_t DetermineContentType();
 
+  
+  
+  
+  
+  void UnblockEmbedderLoadEventForFailure();
+
   struct SameDocumentNavigationState {
     nsAutoCString mCurrentHash;
     nsAutoCString mNewHash;

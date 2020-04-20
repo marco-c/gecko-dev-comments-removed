@@ -3330,6 +3330,25 @@ nsDocShell::LoadURIFromScript(const nsAString& aURI,
   return LoadURI(aURI, loadURIOptions);
 }
 
+void nsDocShell::UnblockEmbedderLoadEventForFailure() {
+  
+  
+  if (mBrowsingContext->IsTopContent() || mBrowsingContext->IsChrome()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(this);
+  if (browserChild) {
+    mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
+         false);
+  }
+}
+
 NS_IMETHODIMP
 nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
                              const char16_t* aURL, nsIChannel* aFailedChannel,
@@ -3337,18 +3356,6 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   MOZ_LOG(gDocShellLeakLog, LogLevel::Debug,
           ("DOCSHELL %p DisplayLoadError %s\n", this,
            aURI ? aURI->GetSpecOrDefault().get() : ""));
-  
-  
-  
-  
-  
-  if (GetBrowsingContext()->IsContentSubframe() &&
-      !GetBrowsingContext()->GetParent()->IsInProcess()) {
-    if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
-      mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
-           false);
-    }
-  }
 
   *aDisplayedErrorPage = false;
   
@@ -5977,6 +5984,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
         aStatus == NS_ERROR_FILE_ACCESS_DENIED ||
         aStatus == NS_ERROR_CORRUPTED_CONTENT ||
         aStatus == NS_ERROR_INVALID_CONTENT_ENCODING) {
+      UnblockEmbedderLoadEventForFailure();
       DisplayLoadError(aStatus, url, nullptr, aChannel);
       return NS_OK;
     }
@@ -5987,6 +5995,8 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     
     if (!isTopFrame &&
         UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
+      UnblockEmbedderLoadEventForFailure();
+
       
       RefPtr<Element> frameElement;
       nsPIDOMWindowOuter* thisWindow = GetWindow();
@@ -6013,7 +6023,6 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
       }
 
       parentDoc->AddBlockedNodeByClassifier(frameElement);
-
       return NS_OK;
     }
 
@@ -6187,6 +6196,8 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
 
     
     
+
+    UnblockEmbedderLoadEventForFailure();
 
     
     if ((aStatus == NS_ERROR_UNKNOWN_HOST ||
@@ -8992,6 +9003,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIChannel> chan(do_QueryInterface(req));
+    UnblockEmbedderLoadEventForFailure();
     if (DisplayLoadError(rv, aLoadState->URI(), nullptr, chan) &&
         aLoadState->HasLoadFlags(LOAD_FLAGS_ERROR_LOAD_CHANGES_RV)) {
       return NS_ERROR_LOAD_SHOWED_ERRORPAGE;
