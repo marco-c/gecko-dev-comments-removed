@@ -667,9 +667,24 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
       AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
   already_AddRefed<AsyncPanZoomController> CommonAncestor(
       AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
+
+  
+  
+  
+  
+  
   bool IsFixedToRootContent(const HitTestingTreeNode* aNode) const;
+  bool IsFixedToRootContent(const HitTestingTreeNode* aNode,
+                            const MutexAutoLock& aProofOfMapLock) const;
+
+  
+  
+  
   
   bool IsStuckToRootContentAtBottom(const HitTestingTreeNode* aNode) const;
+  bool IsStuckToRootContentAtBottom(const HitTestingTreeNode* aNode,
+                                    const MutexAutoLock& aProofOfMapLock) const;
+
   
 
 
