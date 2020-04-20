@@ -53,10 +53,7 @@ def run_clang_format(hooktype, changedFiles):
         
         subprocess.call(clang_format_cmd)
 
-        
-        
-        for f in path_list:
-            vcs.add_remove_files(f)
+        vcs.add_remove_files(*path_list)
 
         return False
     print("warning: '{}' is not a valid clang-format hooktype".format(hooktype))

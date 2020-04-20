@@ -48,10 +48,7 @@ def run_js_format(hooktype, changedFiles):
         
         subprocess.call(js_format_cmd)
 
-        
-        
-        for f in path_list:
-            vcs.add_remove_files(f)
+        vcs.add_remove_files(*path_list)
 
         return False
     print("warning: '{}' is not a valid js-format hooktype".format(hooktype))
