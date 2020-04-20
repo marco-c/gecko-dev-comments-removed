@@ -5,6 +5,10 @@
 
 
 const BYTES_PER_MEBIBYTE = 1048576;
+const MS_PER_DAY = 86400000;
+
+
+const CORRUPT_DB_RETAIN_DAYS = 14;
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -44,6 +48,7 @@ var PlacesDBUtils = {
       this._refreshUI,
       this.originFrecencyStats,
       this.incrementalVacuum,
+      this.removeOldCorruptDBs,
     ];
     let telemetryStartTime = Date.now();
     let taskStatusMap = await PlacesDBUtils.runTasks(tasks);
@@ -1258,6 +1263,56 @@ var PlacesDBUtils = {
       probeValues[probe.histogram] = val;
       Services.telemetry.getHistogramById(probe.histogram).add(val);
     }
+  },
+
+  
+
+
+
+
+
+  async removeOldCorruptDBs() {
+    let logs = [];
+    logs.push(
+      "> Cleanup profile from places.sqlite.corrupt files older than " +
+        CORRUPT_DB_RETAIN_DAYS +
+        " days."
+    );
+    let re = /^places\.sqlite(-\d)?\.corrupt$/;
+    let currentTime = Date.now();
+    let iterator = new OS.File.DirectoryIterator(OS.Constants.Path.profileDir);
+    try {
+      await iterator.forEach(async entry => {
+        let lastModificationDate;
+        if (!entry.isDir && !entry.isSymLink && re.test(entry.name)) {
+          if ("winLastWriteDate" in entry) {
+            
+            
+            lastModificationDate = entry.winLastWriteDate.getTime();
+          } else {
+            
+            let info = await OS.File.stat(entry.path);
+            lastModificationDate = info.lastModificationDate.getTime();
+          }
+          try {
+            
+            let days = Math.ceil(
+              (currentTime - lastModificationDate) / MS_PER_DAY
+            );
+            if (days >= CORRUPT_DB_RETAIN_DAYS || days < 0) {
+              await OS.File.remove(entry.path);
+            }
+          } catch (error) {
+            logs.push("Could not remove file: " + entry.path, error);
+          }
+        }
+      });
+    } catch (error) {
+      logs.push("removeOldCorruptDBs failed", error);
+    } finally {
+      iterator.close();
+    }
+    return logs;
   },
 
   
