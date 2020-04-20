@@ -3330,7 +3330,7 @@ nsDocShell::LoadURIFromScript(const nsAString& aURI,
   return LoadURI(aURI, loadURIOptions);
 }
 
-void nsDocShell::UnblockEmbedderLoadEventForFailure() {
+void nsDocShell::UnblockEmbedderLoadEventForFailure(bool aFireFrameErrorEvent) {
   
   
   if (mBrowsingContext->IsTopContent() || mBrowsingContext->IsChrome()) {
@@ -3342,10 +3342,29 @@ void nsDocShell::UnblockEmbedderLoadEventForFailure() {
   
   
   
+  
+  RefPtr<Element> element = mBrowsingContext->GetEmbedderElement();
+  if (element) {
+    if (aFireFrameErrorEvent) {
+      if (RefPtr<nsFrameLoaderOwner> flo = do_QueryObject(element)) {
+        if (RefPtr<nsFrameLoader> fl = flo->GetFrameLoader()) {
+          fl->FireErrorEvent();
+        }
+      }
+    }
+    return;
+  }
+
+  
+  
+  
+  
+  
   RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(this);
   if (browserChild) {
     mozilla::Unused << browserChild->SendMaybeFireEmbedderLoadEvents(
-        EmbedderElementEventType::NoEvent);
+        aFireFrameErrorEvent ? EmbedderElementEventType::ErrorEvent
+                             : EmbedderElementEventType::NoEvent);
   }
 }
 
@@ -6197,7 +6216,15 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
     
     
 
-    UnblockEmbedderLoadEventForFailure();
+    
+    
+    
+    
+    
+    
+    bool fireFrameErrorEvent = (aStatus == NS_ERROR_CONTENT_BLOCKED_SHOW_ALT ||
+                                aStatus == NS_ERROR_CONTENT_BLOCKED);
+    UnblockEmbedderLoadEventForFailure(fireFrameErrorEvent);
 
     
     if ((aStatus == NS_ERROR_UNKNOWN_HOST ||
