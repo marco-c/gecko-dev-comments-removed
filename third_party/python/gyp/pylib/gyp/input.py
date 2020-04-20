@@ -1183,7 +1183,7 @@ def LoadVariablesFromVariablesDict(variables, the_dict, the_dict_key):
       if variable_name in variables:
         
         continue
-      if the_dict_key is 'variables' and variable_name in the_dict:
+      if the_dict_key == 'variables' and variable_name in the_dict:
         
         
         
