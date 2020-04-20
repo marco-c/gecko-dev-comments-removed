@@ -400,6 +400,14 @@ pub unsafe extern "C" fn sdp_get_rtpmaps(
 
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct RustRtxFmtpParameters {
+    pub apt: u8,
+    pub has_rtx_time: bool,
+    pub rtx_time: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct RustSdpAttributeFmtpParameters {
     
     pub packetization_mode: u32,
@@ -426,6 +434,9 @@ pub struct RustSdpAttributeFmtpParameters {
     pub dtmf_tones: StringView,
 
     
+    pub rtx: RustRtxFmtpParameters,
+
+    
     pub encodings: *const Vec<u8>,
 
     
@@ -434,6 +445,20 @@ pub struct RustSdpAttributeFmtpParameters {
 
 impl<'a> From<&'a SdpAttributeFmtpParameters> for RustSdpAttributeFmtpParameters {
     fn from(other: &SdpAttributeFmtpParameters) -> Self {
+        let rtx = if let Some(rtx) = other.rtx {
+            RustRtxFmtpParameters {
+                apt: rtx.apt,
+                has_rtx_time: rtx.rtx_time.is_some(),
+                rtx_time: rtx.rtx_time.unwrap_or(0),
+            }
+        } else {
+            RustRtxFmtpParameters {
+                apt: 0,
+                has_rtx_time: false,
+                rtx_time: 0,
+            }
+        };
+
         RustSdpAttributeFmtpParameters {
             packetization_mode: other.packetization_mode,
             level_asymmetry_allowed: other.level_asymmetry_allowed,
@@ -450,6 +475,7 @@ impl<'a> From<&'a SdpAttributeFmtpParameters> for RustSdpAttributeFmtpParameters
             max_fr: other.max_fr,
             maxplaybackrate: other.maxplaybackrate,
             dtmf_tones: StringView::from(other.dtmf_tones.as_str()),
+            rtx,
             encodings: &other.encodings,
             unknown_tokens: &other.unknown_tokens,
         }
