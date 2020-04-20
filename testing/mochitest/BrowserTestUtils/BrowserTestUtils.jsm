@@ -1637,6 +1637,8 @@ var BrowserTestUtils = {
 
 
 
+
+
   async crashFrame(
     browser,
     shouldShowTabCrashPage = true,
@@ -1779,6 +1781,7 @@ var BrowserTestUtils = {
       "BrowserTestUtils:CrashFrame",
       {
         crashType: options.crashType || "",
+        asyncCrash: options.asyncCrash || false,
       }
     );
 
