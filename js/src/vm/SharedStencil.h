@@ -233,6 +233,7 @@ class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
 
 
 class alignas(uint32_t) ImmutableScriptData final {
+ private:
   
   using Offset = uint32_t;
 
@@ -241,6 +242,7 @@ class alignas(uint32_t) ImmutableScriptData final {
   
   uint32_t codeLength_ = 0;
 
+ public:
   
   uint32_t mainOffset = 0;
 
@@ -265,6 +267,7 @@ class alignas(uint32_t) ImmutableScriptData final {
   
   
 
+ private:
   struct Flags {
     uint8_t resumeOffsetsEndIndex : 2;
     uint8_t scopeNotesEndIndex : 2;
@@ -274,9 +277,6 @@ class alignas(uint32_t) ImmutableScriptData final {
   static_assert(sizeof(Flags) == sizeof(uint8_t),
                 "Structure packing is broken");
 
-  friend class ::JSScript;
-
- private:
   
   
   
@@ -386,11 +386,13 @@ class alignas(uint32_t) ImmutableScriptData final {
     return mozilla::MakeSpan(reinterpret_cast<const uint8_t*>(this), allocSize);
   }
 
+ private:
   Flags& flagsRef() { return *offsetToPointer<Flags>(flagOffset()); }
   const Flags& flags() const {
     return const_cast<ImmutableScriptData*>(this)->flagsRef();
   }
 
+ public:
   uint32_t codeLength() const { return codeLength_; }
   jsbytecode* code() { return offsetToPointer<jsbytecode>(codeOffset()); }
   mozilla::Span<jsbytecode> codeSpan() { return {code(), codeLength()}; }
@@ -412,6 +414,7 @@ class alignas(uint32_t) ImmutableScriptData final {
                              offsetToPointer<TryNote>(endOffset()));
   }
 
+  
   static constexpr size_t offsetOfCode() {
     return sizeof(ImmutableScriptData) + sizeof(Flags);
   }
@@ -429,10 +432,6 @@ class alignas(uint32_t) ImmutableScriptData final {
   static constexpr size_t offsetOfFunLength() {
     return offsetof(ImmutableScriptData, funLength);
   }
-
-  template <XDRMode mode>
-  static MOZ_MUST_USE XDRResult XDR(js::XDRState<mode>* xdr,
-                                    js::UniquePtr<ImmutableScriptData>& script);
 
   
   ImmutableScriptData(const ImmutableScriptData&) = delete;
