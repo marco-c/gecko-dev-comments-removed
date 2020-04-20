@@ -87,7 +87,8 @@ class nsMixedContentEvent : public Runnable {
       return NS_OK;
     }
 
-    nsCOMPtr<nsIDocShell> rootShell = docShell->GetBrowsingContext()->Top()->GetDocShell();
+    nsCOMPtr<nsIDocShell> rootShell =
+        docShell->GetBrowsingContext()->Top()->GetDocShell();
     if (!rootShell) {
       return NS_OK;
     }
@@ -322,16 +323,8 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
                                   int16_t* aDecision) {
   uint32_t contentType = aLoadInfo->InternalContentPolicyType();
   nsCOMPtr<nsISupports> requestingContext = aLoadInfo->GetLoadingContext();
-  nsCOMPtr<nsIPrincipal> requestPrincipal = aLoadInfo->TriggeringPrincipal();
-  nsCOMPtr<nsIURI> requestingLocation;
   nsCOMPtr<nsIPrincipal> loadingPrincipal = aLoadInfo->GetLoadingPrincipal();
-
-  
-  
-  auto* basePrin = BasePrincipal::Cast(loadingPrincipal);
-  if (basePrin) {
-    basePrin->GetURI(getter_AddRefs(requestingLocation));
-  }
+  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
 
   
   
@@ -339,8 +332,8 @@ nsMixedContentBlocker::ShouldLoad(nsIURI* aContentLocation,
   
   nsresult rv =
       ShouldLoad(false,  
-                 contentType, aContentLocation, requestingLocation,
-                 requestingContext, aMimeGuess, requestPrincipal, aDecision);
+                 contentType, aContentLocation, loadingPrincipal,
+                 triggeringPrincipal, requestingContext, aMimeGuess, aDecision);
 
   if (*aDecision == nsIContentPolicy::REJECT_REQUEST) {
     NS_SetRequestBlockingReason(aLoadInfo,
@@ -504,9 +497,9 @@ bool nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(nsIURI* aURI) {
 
 nsresult nsMixedContentBlocker::ShouldLoad(
     bool aHadInsecureImageRedirect, uint32_t aContentType,
-    nsIURI* aContentLocation, nsIURI* aRequestingLocation,
-    nsISupports* aRequestingContext, const nsACString& aMimeGuess,
-    nsIPrincipal* aRequestPrincipal, int16_t* aDecision) {
+    nsIURI* aContentLocation, nsIPrincipal* aLoadingPrincipal,
+    nsIPrincipal* aTriggeringPrincipal, nsISupports* aRequestingContext,
+    const nsACString& aMimeGuess, int16_t* aDecision) {
   
   
   
@@ -673,74 +666,27 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  nsCOMPtr<nsIPrincipal> principal;
-  
-  nsCOMPtr<nsINode> node = do_QueryInterface(aRequestingContext);
-  if (node) {
-    principal = node->NodePrincipal();
-  }
 
-  
-  if (!principal) {
-    nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrin =
-        do_QueryInterface(aRequestingContext);
-    if (scriptObjPrin) {
-      principal = scriptObjPrin->GetPrincipal();
-    }
-  }
 
-  nsCOMPtr<nsIURI> requestingLocation;
-  
-  
-  auto* basePrin = BasePrincipal::Cast(principal);
-  if (basePrin) {
-    basePrin->GetURI(getter_AddRefs(requestingLocation));
-  }
+
+
+
+
+
+
+
 
   
   
-  if (principal && !requestingLocation) {
-    if (principal->IsSystemPrincipal()) {
+  
+  if (aTriggeringPrincipal) {
+    if (aTriggeringPrincipal->IsSystemPrincipal()) {
       *aDecision = ACCEPT;
       return NS_OK;
     }
-  }
-
-  
-  
-  
-  
-  
-  if (!requestingLocation) {
-    requestingLocation = aRequestingLocation;
-  }
-
-  
-  
-  
-  
-  if (!principal && !requestingLocation && aRequestPrincipal) {
     nsCOMPtr<nsIExpandedPrincipal> expanded =
-        do_QueryInterface(aRequestPrincipal);
+        do_QueryInterface(aTriggeringPrincipal);
     if (expanded) {
       *aDecision = ACCEPT;
       return NS_OK;
@@ -748,6 +694,20 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
+  
+  
+  nsCOMPtr<nsIURI> requestingLocation;
+  auto* baseLoadingPrincipal = BasePrincipal::Cast(aLoadingPrincipal);
+  if (baseLoadingPrincipal) {
+    baseLoadingPrincipal->GetURI(getter_AddRefs(requestingLocation));
+  }
+  if (!requestingLocation) {
+    auto* baseTriggeringPrincipal = BasePrincipal::Cast(aTriggeringPrincipal);
+    if (baseTriggeringPrincipal) {
+      baseTriggeringPrincipal->GetURI(getter_AddRefs(requestingLocation));
+    }
+  }
+
   
   
   if (!requestingLocation) {
@@ -956,10 +916,10 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   nsresult stateRV = securityUI->GetState(&state);
 
   OriginAttributes originAttributes;
-  if (principal) {
-    originAttributes = principal->OriginAttributesRef();
-  } else if (aRequestPrincipal) {
-    originAttributes = aRequestPrincipal->OriginAttributesRef();
+  if (aLoadingPrincipal) {
+    originAttributes = aLoadingPrincipal->OriginAttributesRef();
+  } else if (aTriggeringPrincipal) {
+    originAttributes = aTriggeringPrincipal->OriginAttributesRef();
   }
 
   
