@@ -177,6 +177,10 @@ class nsDocShellLoadState final {
 
   void SetFirstParty(bool aFirstParty);
 
+  bool HasValidUserGestureActivation() const;
+
+  void SetHasValidUserGestureActivation(bool HasValidUserGestureActivation);
+
   const nsCString& TypeHint() const;
 
   void SetTypeHint(const nsCString& aTypeHint);
@@ -354,6 +358,9 @@ class nsDocShellLoadState final {
 
   
   bool mFirstParty;
+
+  
+  bool mHasValidUserGestureActivation;
 
   
   
