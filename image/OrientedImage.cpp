@@ -75,37 +75,33 @@ Maybe<AspectRatio> OrientedImage::GetIntrinsicRatio() {
   return ratio;
 }
 
-NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
-OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
-  nsresult rv;
+already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
+    Orientation aOrientation, SourceSurface* aSurface, const nsIntSize& aSize) {
+  MOZ_ASSERT(aSurface);
 
-  if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetFrame(aWhichFrame, aFlags);
+  
+  if (aOrientation.IsIdentity()) {
+    return do_AddRef(aSurface);
   }
 
   
-  IntSize size;
-  rv = InnerImage()->GetWidth(&size.width);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-  rv = InnerImage()->GetHeight(&size.height);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  RefPtr<SourceSurface> innerSurface =
-      InnerImage()->GetFrame(aWhichFrame, aFlags);
-  NS_ENSURE_TRUE(innerSurface, nullptr);
+  nsIntSize targetSize = aSize;
+  if (aOrientation.SwapsWidthAndHeight()) {
+    swap(targetSize.width, targetSize.height);
+  }
 
   
-  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(innerSurface, size);
+  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(aSurface, aSize);
 
   
-  gfx::SurfaceFormat surfaceFormat = IsOpaque(innerSurface->GetFormat())
+  gfx::SurfaceFormat surfaceFormat = IsOpaque(aSurface->GetFormat())
                                          ? gfx::SurfaceFormat::OS_RGBX
                                          : gfx::SurfaceFormat::OS_RGBA;
 
   
   RefPtr<DrawTarget> target =
       gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-          size, surfaceFormat);
+          targetSize, surfaceFormat);
   if (!target || !target->IsValid()) {
     NS_ERROR("Could not create a DrawTarget");
     return nullptr;
@@ -114,12 +110,32 @@ OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx);  
-  ctx->Multiply(OrientationMatrix(size));
-  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(size),
-                             ImageRegion::Create(size), surfaceFormat,
+  ctx->Multiply(OrientationMatrix(aOrientation, aSize));
+  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(aSize),
+                             ImageRegion::Create(aSize), surfaceFormat,
                              SamplingFilter::LINEAR);
 
   return target->Snapshot();
+}
+
+NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
+OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
+  nsresult rv;
+
+  
+  
+  RefPtr<SourceSurface> innerSurface =
+      InnerImage()->GetFrame(aWhichFrame, aFlags);
+  NS_ENSURE_TRUE(innerSurface, nullptr);
+
+  
+  IntSize size;
+  rv = InnerImage()->GetWidth(&size.width);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+  rv = InnerImage()->GetHeight(&size.height);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  return OrientSurface(mOrientation, innerSurface, size);
 }
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
@@ -218,31 +234,19 @@ struct MatrixBuilder {
   bool mInvert;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-gfxMatrix OrientedImage::OrientationMatrix(const nsIntSize& aSize,
+gfxMatrix OrientedImage::OrientationMatrix(Orientation aOrientation,
+                                           const nsIntSize& aSize,
                                            bool aInvert ) {
   MatrixBuilder builder(aInvert);
 
   
   
   
-  switch (mOrientation.flip) {
+  switch (aOrientation.flip) {
     case Flip::Unflipped:
       break;
     case Flip::Horizontal:
-      if (mOrientation.SwapsWidthAndHeight()) {
+      if (aOrientation.SwapsWidthAndHeight()) {
         builder.Translate(gfxPoint(aSize.height, 0));
       } else {
         builder.Translate(gfxPoint(aSize.width, 0));
@@ -255,7 +259,7 @@ gfxMatrix OrientedImage::OrientationMatrix(const nsIntSize& aSize,
 
   
   
-  switch (mOrientation.rotation) {
+  switch (aOrientation.rotation) {
     case Angle::D0:
       break;
     case Angle::D90:
