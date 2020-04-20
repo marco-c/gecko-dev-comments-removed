@@ -1016,9 +1016,40 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     return false;
   }
 
-  return AntiTrackingUtils::CheckStoragePermission(
-      parentPrincipal, type, !!privateBrowsingId, aRejectedReason,
-      blockedReason);
+  auto checkPermission = [parentPrincipal, type, privateBrowsingId,
+                          aRejectedReason, blockedReason]() -> bool {
+    return AntiTrackingUtils::CheckStoragePermission(
+        parentPrincipal, type, !!privateBrowsingId, aRejectedReason,
+        blockedReason);
+  };
+
+  
+  
+  
+  
+  nsCOMPtr<mozIDOMWindowProxy> win;
+  rv = thirdPartyUtil->GetTopWindowForChannel(aChannel, nullptr,
+                                              getter_AddRefs(win));
+  Unused << NS_WARN_IF(NS_FAILED(rv));
+
+  if (!win) {
+    return checkPermission();
+  }
+
+  nsGlobalWindowOuter* topWindow =
+      nsGlobalWindowOuter::Cast(nsPIDOMWindowOuter::From(win));
+  nsPIDOMWindowInner* topInnerWindow = topWindow->GetCurrentInnerWindow();
+
+  
+  
+  
+  
+  
+  if (topInnerWindow && topInnerWindow->HasStorageAccessGranted(type)) {
+    return true;
+  }
+
+  return checkPermission();
 }
 
 bool ContentBlocking::ShouldAllowAccessFor(
