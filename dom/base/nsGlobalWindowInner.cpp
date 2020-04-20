@@ -2945,13 +2945,6 @@ bool nsGlobalWindowInner::IsRequestIdleCallbackEnabled(JSContext* aCx,
 }
 
 
-bool nsGlobalWindowInner::RegisterProtocolHandlerAllowedForContext(
-    JSContext* aCx, JSObject* aObj) {
-  return IsSecureContextOrObjectIsFromSecureContext(aCx, aObj) ||
-         Preferences::GetBool("dom.registerProtocolHandler.insecure.enabled");
-}
-
-
 bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx, JSObject* aObj) {
   return Preferences::GetBool("device.sensors.enabled");
 }

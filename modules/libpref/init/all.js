@@ -241,9 +241,6 @@ pref("browser.cache.offline.capacity",         512000);
 pref("browser.download.forbid_open_with", false);
 
 
-pref("dom.registerProtocolHandler.insecure.enabled", false);
-
-
 pref("dom.indexedDB.experimental", false);
 
 pref("dom.indexedDB.logging.enabled", true);
