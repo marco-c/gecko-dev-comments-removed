@@ -432,6 +432,22 @@ class nsFlexContainerFrame final : public nsContainerFrame {
                            nscoord aAvailableBSizeForContent, bool* aIsDefinite,
                            nsReflowStatus& aStatus) const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  mozilla::LogicalSize ComputeAvailableSizeForItems(
+      const ReflowInput& aReflowInput,
+      const mozilla::LogicalMargin& aBorderPadding) const;
+
   void SizeItemInCrossAxis(ReflowInput& aChildReflowInput, FlexItem& aItem);
 
   
@@ -466,9 +482,19 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
+
+
+
+
+
   void ReflowChildren(const ReflowInput& aReflowInput,
                       const nscoord aContentBoxMainSize,
                       const nscoord aContentBoxCrossSize,
+                      const mozilla::LogicalSize& aAvailableSizeForItems,
+                      const mozilla::LogicalMargin& aBorderPadding,
+                      const nscoord aConsumedBSize,
                       nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
                       nsTArray<nsIFrame*>& aPlaceholders,
                       const FlexboxAxisTracker& aAxisTracker,

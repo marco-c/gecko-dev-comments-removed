@@ -4042,6 +4042,35 @@ nscoord nsFlexContainerFrame::ComputeCrossSize(
                        aReflowInput.ComputedMaxBSize());
 }
 
+LogicalSize nsFlexContainerFrame::ComputeAvailableSizeForItems(
+    const ReflowInput& aReflowInput,
+    const mozilla::LogicalMargin& aBorderPadding) const {
+  const WritingMode wm = GetWritingMode();
+  nscoord availableBSize = aReflowInput.AvailableBSize();
+
+  if (availableBSize != NS_UNCONSTRAINEDSIZE) {
+    
+    
+    availableBSize -= aBorderPadding.BStart(wm);
+
+    if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+        StyleBoxDecorationBreak::Clone) {
+      
+      
+      availableBSize -= aBorderPadding.BEnd(wm);
+    }
+
+    
+    
+    
+    
+    availableBSize =
+        std::max(nsPresContext::CSSPixelsToAppUnits(1), availableBSize);
+  }
+
+  return LogicalSize(wm, aReflowInput.ComputedISize(), availableBSize);
+}
+
 void FlexLine::PositionItemsInMainAxis(
     const StyleContentDistribution& aJustifyContent,
     nscoord aContentBoxMainSize, const FlexboxAxisTracker& aAxisTracker) {
@@ -4194,15 +4223,13 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   
-  
-  nscoord availableBSizeForContent = aReflowInput.AvailableBSize();
-  if (availableBSizeForContent != NS_UNCONSTRAINEDSIZE &&
-      !(GetLogicalSkipSides(&aReflowInput).BStart())) {
-    availableBSizeForContent -=
-        aReflowInput.ComputedLogicalBorderPadding().BStart(wm);
-    
-    availableBSizeForContent = std::max(availableBSizeForContent, 0);
-  }
+  LogicalMargin borderPadding =
+      aReflowInput.ComputedLogicalBorderPadding().ApplySkipSides(
+          PreReflowBlockLevelLogicalSkipSides());
+
+  const LogicalSize availableSizeForItems =
+      ComputeAvailableSizeForItems(aReflowInput, borderPadding);
+  const nscoord availableBSizeForContent = availableSizeForItems.BSize(wm);
 
   nscoord contentBoxMainSize =
       GetMainSizeFromReflowInput(aReflowInput, axisTracker);
@@ -4247,7 +4274,26 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
                  hasLineClampEllipsis, containerInfo);
   }
 
+  const LogicalSize contentBoxSize =
+      axisTracker.LogicalSizeFromFlexRelativeSizes(contentBoxMainSize,
+                                                   contentBoxCrossSize);
+  const nscoord consumedBSize = ConsumedBSize(wm);
+  const nscoord effectiveContentBSize =
+      contentBoxSize.BSize(wm) - consumedBSize;
+
+  
+  
+  const bool mayNeedNextInFlow =
+      effectiveContentBSize > availableSizeForItems.BSize(wm);
+  if (mayNeedNextInFlow) {
+    if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+        StyleBoxDecorationBreak::Slice) {
+      borderPadding.BEnd(wm) = 0;
+    }
+  }
+
   ReflowChildren(aReflowInput, contentBoxMainSize, contentBoxCrossSize,
+                 availableSizeForItems, borderPadding, consumedBSize,
                  flexContainerAscent, lines, placeholders, axisTracker,
                  hasLineClampEllipsis);
 
@@ -4800,31 +4846,23 @@ void nsFlexContainerFrame::DoFlexLayout(
 
 void nsFlexContainerFrame::ReflowChildren(
     const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-    const nscoord aContentBoxCrossSize, nscoord& aFlexContainerAscent,
-    nsTArray<FlexLine>& aLines, nsTArray<nsIFrame*>& aPlaceholders,
-    const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis) {
+    const nscoord aContentBoxCrossSize,
+    const LogicalSize& aAvailableSizeForItems,
+    const LogicalMargin& aBorderPadding, const nscoord aConsumedBSize,
+    nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
+    nsTArray<nsIFrame*>& aPlaceholders, const FlexboxAxisTracker& aAxisTracker,
+    bool aHasLineClampEllipsis) {
   
   
   
   WritingMode flexWM = aReflowInput.GetWritingMode();
-  LogicalMargin containerBP = aReflowInput.ComputedLogicalBorderPadding();
-
-  
-  
-  
-  
-  const LogicalSides skipSides =
-      GetLogicalSkipSides(&aReflowInput) | LogicalSides(eLogicalSideBitsBEnd);
-  containerBP.ApplySkipSides(skipSides);
-
   const LogicalPoint containerContentBoxOrigin(
-      flexWM, containerBP.IStart(flexWM), containerBP.BStart(flexWM));
+      flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
 
   
   LogicalSize logSize = aAxisTracker.LogicalSizeFromFlexRelativeSizes(
       aContentBoxMainSize, aContentBoxCrossSize);
-  
-  logSize += aReflowInput.ComputedLogicalBorderPadding().Size(flexWM);
+  logSize += aBorderPadding.Size(flexWM);
   nsSize containerSize = logSize.GetPhysicalSize(flexWM);
 
   
@@ -4849,6 +4887,9 @@ void nsFlexContainerFrame::ReflowChildren(
 
       
       
+
+      
+      
       const nscoord itemNormalBPos = framePos.B(flexWM);
 
       
@@ -4857,8 +4898,11 @@ void nsFlexContainerFrame::ReflowChildren(
       
       if (item.NeedsFinalReflow()) {
         
+        
+        
         const WritingMode itemWM = item.GetWritingMode();
-        LogicalSize availableSize = aReflowInput.ComputedSize(itemWM);
+        LogicalSize availableSize =
+            aAvailableSizeForItems.ConvertTo(itemWM, flexWM);
 
         
         
@@ -4867,6 +4911,10 @@ void nsFlexContainerFrame::ReflowChildren(
         const nsReflowStatus childReflowStatus =
             ReflowFlexItem(aAxisTracker, aReflowInput, item, framePos,
                            availableSize, containerSize, aHasLineClampEllipsis);
+
+        
+        
+        Unused << childReflowStatus;
 
         
         
