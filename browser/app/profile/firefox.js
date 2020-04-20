@@ -1374,9 +1374,6 @@ pref("security.insecure_connection_icon.pbmode.enabled", true);
 pref("security.secure_connection_icon_color_gray", true);
 
 
-pref("security.identityblock.show_extended_validation", false);
-
-
 pref("security.insecure_connection_text.enabled", false);
 pref("security.insecure_connection_text.pbmode.enabled", false);
 
