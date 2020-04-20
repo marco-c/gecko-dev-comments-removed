@@ -160,6 +160,24 @@ class nsContainerFrame : public nsSplittableFrame {
                                     nsIFrame* aNewParentFrame);
 
   
+
+
+  static void ReparentFrame(nsIFrame* aFrame, nsContainerFrame* aOldParent,
+                            nsContainerFrame* aNewParent);
+
+  
+
+
+
+
+
+
+
+  static void ReparentFrames(nsFrameList& aFrameList,
+                             nsContainerFrame* aOldParent,
+                             nsContainerFrame* aNewParent);
+
+  
   static void SyncFrameViewAfterReflow(
       nsPresContext* aPresContext, nsIFrame* aFrame, nsView* aView,
       const nsRect& aVisualOverflowArea,
