@@ -508,10 +508,8 @@ class Object {
   
   
   
-  inline bool IsException(Isolate*) const {
-    MOZ_ASSERT(!value_.toBoolean());
-    return true;
-  }
+  
+  inline bool IsException(Isolate*) const { return !value_.toBoolean(); }
 
  protected:
   JS::Value value_;
@@ -547,6 +545,12 @@ class FixedArray : public HeapObject {
  public:
   inline void set(uint32_t index, Object value) {}
   inline static FixedArray cast(Object object) { MOZ_CRASH("TODO"); }
+};
+
+class ByteArrayData {
+public:
+  uint32_t length;
+  uint8_t* data();
 };
 
 
@@ -750,12 +754,9 @@ class DisallowHeapAllocation {
 
 
 
-
-
-
-
 class AllowHeapAllocation {
  public:
+  
   AllowHeapAllocation() {}
 };
 
@@ -766,7 +767,7 @@ class String : public HeapObject {
   JSString* str() const { return value_.toString(); }
 
  public:
-  String() = default;
+  String() : HeapObject() {}
   String(JSString* str) { value_ = JS::StringValue(str); }
 
   operator JSString*() const { return str(); }
@@ -890,23 +891,21 @@ class MOZ_STACK_CLASS FlatStringReader {
 
 class JSRegExp : public HeapObject {
  public:
-  JSRegExp() : HeapObject() {}
-  JSRegExp(js::RegExpShared* re) { value_ = JS::PrivateGCThingValue(re); }
-
   
   
   
-  void TierUpTick() { inner()->tierUpTick(); }
-
-  Object Code(bool is_latin1) const {
-    return Object(JS::PrivateGCThingValue(inner()->getJitCode(is_latin1)));
-  }
-  Object Bytecode(bool is_latin1) const {
-    return Object(JS::PrivateValue(inner()->getByteCode(is_latin1)));
+  void TierUpTick() {  }
+  bool MarkedForTierUp() const {
+    return false; 
   }
 
   
-  uint32_t BacktrackLimit() const { return 0; }
+  Object Code(bool is_latin1) const { return Object(JS::UndefinedValue()); }
+  Object Bytecode(bool is_latin1) const { return Object(JS::UndefinedValue()); }
+
+  uint32_t BacktrackLimit() const {
+    return 0; 
+  }
 
   static JSRegExp cast(Object object) {
     JSRegExp regexp;
@@ -918,6 +917,12 @@ class JSRegExp : public HeapObject {
   
   
   
+
+  
+  
+  
+  
+  enum Type { NOT_COMPILED, ATOM, IRREGEXP };
 
   
   static constexpr int kMaxCaptures = 1 << 16;
@@ -940,9 +945,9 @@ class JSRegExp : public HeapObject {
   static constexpr int kNoBacktrackLimit = 0;
 
 private:
- js::RegExpShared* inner() const {
-   return value_.toGCThing()->as<js::RegExpShared>();
- }
+  js::RegExpShared* inner() {
+    return value_.toGCThing()->as<js::RegExpShared>();
+  }
 };
 
 class Histogram {
@@ -1023,12 +1028,9 @@ public:
 
   
   inline StackGuard* stack_guard() { return this; }
-
-  
-  
-  
-  
-  Object HandleInterrupts() { return Object(JS::BooleanValue(false)); }
+  Object HandleInterrupts() {
+    return Object(JS::BooleanValue(cx()->handleInterrupt()));
+  }
 
   JSContext* cx() const { return cx_; }
 
@@ -1078,9 +1080,7 @@ class StackLimitCheck {
   bool HasOverflowed() { return !CheckRecursionLimitDontReport(cx_); }
 
   
-  bool InterruptRequested() {
-    return cx_->hasPendingInterrupt(js::InterruptReason::CallbackUrgent);
-  }
+  bool InterruptRequested() { return cx_->hasAnyPendingInterrupt(); }
 
   
   bool JsHasOverflowed() {
