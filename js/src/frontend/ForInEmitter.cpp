@@ -11,7 +11,7 @@
 #include "frontend/SourceNotes.h"
 #include "vm/Opcodes.h"
 #include "vm/Scope.h"
-#include "vm/TryNoteKind.h"  
+#include "vm/StencilEnums.h"  
 
 using namespace js;
 using namespace js::frontend;

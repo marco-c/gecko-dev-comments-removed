@@ -35,7 +35,7 @@
 #include "js/Vector.h"                  
 #include "vm/Opcodes.h"                 
 #include "vm/SharedStencil.h"           
-#include "vm/TryNoteKind.h"             
+#include "vm/StencilEnums.h"            
 
 namespace js {
 

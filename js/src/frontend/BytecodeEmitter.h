@@ -49,10 +49,10 @@
 #include "vm/Instrumentation.h"            
 #include "vm/Iteration.h"                  
 #include "vm/JSFunction.h"                 
-#include "vm/JSScript.h"     
-#include "vm/Runtime.h"      
-#include "vm/StringType.h"   
-#include "vm/TryNoteKind.h"  
+#include "vm/JSScript.h"      
+#include "vm/Runtime.h"       
+#include "vm/StencilEnums.h"  
+#include "vm/StringType.h"    
 
 namespace js {
 namespace frontend {

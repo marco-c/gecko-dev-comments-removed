@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_TryNoteKind_h
-#define vm_TryNoteKind_h
+#ifndef vm_StencilEnums_h
+#define vm_StencilEnums_h
 
 #include <stdint.h>  
 

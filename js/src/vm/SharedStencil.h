@@ -12,7 +12,7 @@
 
 #include "jstypes.h"
 #include "js/CompileOptions.h"
-#include "vm/TryNoteKind.h"  
+#include "vm/StencilEnums.h"  
 
 
 
