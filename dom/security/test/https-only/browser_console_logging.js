@@ -57,9 +57,11 @@ const testPathUpgradeable = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   "http://example.com"
 );
+
+
 const testPathNotUpgradeable = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
-  "http://mochi.test:8888"
+  "http://nocert.example.com"
 );
 const kTestURISuccess = testPathUpgradeable + "file_console_logging.html";
 const kTestURIFail = testPathNotUpgradeable + "file_console_logging.html";

@@ -7,8 +7,9 @@
 #ifndef nsHTTPSOnlyStreamListener_h___
 #define nsHTTPSOnlyStreamListener_h___
 
-#include "nsIStreamListener.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
+#include "nsIStreamListener.h"
 
 
 
@@ -26,7 +27,21 @@ class nsHTTPSOnlyStreamListener : public nsIStreamListener {
  private:
   virtual ~nsHTTPSOnlyStreamListener() = default;
 
+  
+
+
+
+  void RecordUpgradeTelemetry(nsIRequest* request, nsresult aStatus);
+
+  
+
+
+
+
+  void LogUpgradeFailure(nsIRequest* request, nsresult aStatus);
+
   nsCOMPtr<nsIStreamListener> mListener;
+  mozilla::TimeStamp mCreationStart;
 };
 
 #endif 
