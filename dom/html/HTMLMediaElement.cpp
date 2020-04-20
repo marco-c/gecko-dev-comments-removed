@@ -1538,11 +1538,6 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     }
 
     
-    if (mOwner->ShouldBeSuspendedByInactiveDocShell()) {
-      return false;
-    }
-
-    
     if (mOwner->mPaused) {
       return false;
     }
@@ -4223,12 +4218,6 @@ already_AddRefed<Promise> HTMLMediaElement::Play(ErrorResult& aRv) {
   
   
 
-  if (ShouldBeSuspendedByInactiveDocShell()) {
-    LOG(LogLevel::Debug, ("%p no allow to play by the docShell for now", this));
-    mPendingPlayPromises.AppendElement(promise);
-    return promise.forget();
-  }
-
   
   
   if (MediaPlaybackDelayPolicy::ShouldDelayPlayback(this)) {
@@ -4319,7 +4308,7 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
     if (mDecoder->IsEnded()) {
       SetCurrentTime(0);
     }
-    if (!mSuspendedByInactiveDocOrDocshell) {
+    if (!mSuspendedForInactiveDocument) {
       mDecoder->Play();
     }
   }
@@ -5063,13 +5052,13 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder) {
     return NS_ERROR_FAILURE;
   }
 
-  if (mSuspendedByInactiveDocOrDocshell) {
+  if (mSuspendedForInactiveDocument) {
     mDecoder->Suspend();
   }
 
   if (!mPaused) {
     SetPlayedOrSeeked(true);
-    if (!mSuspendedByInactiveDocOrDocshell) {
+    if (!mSuspendedForInactiveDocument) {
       mDecoder->Play();
     }
   }
@@ -5085,7 +5074,7 @@ void HTMLMediaElement::UpdateSrcMediaStreamPlaying(uint32_t aFlags) {
   }
 
   bool shouldPlay = !(aFlags & REMOVING_SRC_STREAM) && !mPaused &&
-                    !mSuspendedByInactiveDocOrDocshell;
+                    !mSuspendedForInactiveDocument;
   if (shouldPlay == mSrcStreamIsPlaying) {
     return;
   }
@@ -5959,7 +5948,7 @@ void HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState) {
   if (oldState < HAVE_FUTURE_DATA && mReadyState >= HAVE_FUTURE_DATA) {
     DispatchAsyncEvent(NS_LITERAL_STRING("canplay"));
     if (!mPaused) {
-      if (mDecoder && !mSuspendedByInactiveDocOrDocshell) {
+      if (mDecoder && !mSuspendedForInactiveDocument) {
         MOZ_ASSERT(AutoplayPolicy::IsAllowedToPlay(*this));
         mDecoder->Play();
       }
@@ -6034,18 +6023,13 @@ bool HTMLMediaElement::CanActivateAutoplay() {
     return false;
   }
 
-  if (mSuspendedByInactiveDocOrDocshell) {
+  if (mSuspendedForInactiveDocument) {
     return false;
   }
 
   
   
   if (OwnerDoc()->IsStaticDocument()) {
-    return false;
-  }
-
-  if (ShouldBeSuspendedByInactiveDocShell()) {
-    LOG(LogLevel::Debug, ("%p prohibiting autoplay by the docShell", this));
     return false;
   }
 
@@ -6083,7 +6067,7 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
     if (mCurrentPlayRangeStart == -1.0) {
       mCurrentPlayRangeStart = CurrentTime();
     }
-    MOZ_ASSERT(!mSuspendedByInactiveDocOrDocshell);
+    MOZ_ASSERT(!mSuspendedForInactiveDocument);
     mDecoder->Play();
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
@@ -6382,11 +6366,11 @@ void HTMLMediaElement::UpdateMediaSize(const nsIntSize& aSize) {
 void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
   LOG(LogLevel::Debug, ("%p SuspendOrResumeElement(suspend=%d) hidden=%d", this,
                         aSuspendElement, OwnerDoc()->Hidden()));
-  if (aSuspendElement == mSuspendedByInactiveDocOrDocshell) {
+  if (aSuspendElement == mSuspendedForInactiveDocument) {
     return;
   }
 
-  mSuspendedByInactiveDocOrDocshell = aSuspendElement;
+  mSuspendedForInactiveDocument = aSuspendElement;
   UpdateSrcMediaStreamPlaying();
   UpdateAudioChannelPlayingState();
 
@@ -6435,18 +6419,11 @@ void HTMLMediaElement::SuspendOrResumeElement(bool aSuspendElement) {
         !AutoplayPolicy::IsAllowedToPlay(*this)) {
       MaybeNotifyAutoplayBlocked();
     }
-    
-    
-    if (mMediaControlEventListener &&
-        !mMediaControlEventListener->IsStarted()) {
+    if (mMediaControlEventListener) {
+      MOZ_ASSERT(!mMediaControlEventListener->IsStarted(),
+                 "We didn't stop listening event when we were in bfcache?");
       StartListeningMediaControlEventIfNeeded();
     }
-  }
-  if (StaticPrefs::media_testing_only_events()) {
-    auto dispatcher = MakeRefPtr<AsyncEventDispatcher>(
-        this, NS_LITERAL_STRING("MozMediaSuspendChanged"), CanBubble::eYes,
-        ChromeOnlyDispatch::eYes);
-    dispatcher->PostDOMEvent();
   }
 }
 
@@ -6457,16 +6434,6 @@ bool HTMLMediaElement::IsBeingDestroyed() {
     docShell->IsBeingDestroyed(&isBeingDestroyed);
   }
   return isBeingDestroyed;
-}
-
-bool HTMLMediaElement::ShouldBeSuspendedByInactiveDocShell() const {
-  nsIDocShell* docShell = OwnerDoc()->GetDocShell();
-  if (!docShell) {
-    return false;
-  }
-  bool isDocShellActive = false;
-  docShell->GetIsActive(&isDocShellActive);
-  return !isDocShellActive && docShell->GetSuspendMediaWhenInactive();
 }
 
 void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
@@ -6483,11 +6450,7 @@ void HTMLMediaElement::NotifyOwnerDocumentActivityChanged() {
     NotifyDecoderActivityChanges();
   }
 
-  
-  
-  
-  bool shouldSuspend = !IsActive() || ShouldBeSuspendedByInactiveDocShell();
-  SuspendOrResumeElement(shouldSuspend);
+  SuspendOrResumeElement(!IsActive());
 
   
   if (!OwnerDoc()->IsCurrentActiveDocument() && mMediaKeys) {
@@ -7197,10 +7160,6 @@ float HTMLMediaElement::ComputedVolume() const {
 
 bool HTMLMediaElement::ComputedMuted() const {
   return (mMuted & MUTED_BY_AUDIO_CHANNEL);
-}
-
-bool HTMLMediaElement::IsSuspendedByInactiveDocOrDocShell() const {
-  return mSuspendedByInactiveDocOrDocshell;
 }
 
 bool HTMLMediaElement::IsCurrentlyPlaying() const {

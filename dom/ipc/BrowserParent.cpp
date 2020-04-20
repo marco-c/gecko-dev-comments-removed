@@ -223,8 +223,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
-      mSuspendedProgressEvents(false),
-      mSuspendMediaWhenInactive(false) {
+      mSuspendedProgressEvents(false) {
   MOZ_ASSERT(aManager);
   
   
@@ -3429,16 +3428,6 @@ void BrowserParent::SetDocShellIsActive(bool isActive) {
     }
   }
 #endif
-}
-
-bool BrowserParent::GetSuspendMediaWhenInactive() const {
-  return mSuspendMediaWhenInactive;
-}
-
-void BrowserParent::SetSuspendMediaWhenInactive(
-    bool aSuspendMediaWhenInactive) {
-  mSuspendMediaWhenInactive = aSuspendMediaWhenInactive;
-  Unused << SendSetSuspendMediaWhenInactive(aSuspendMediaWhenInactive);
 }
 
 bool BrowserParent::GetHasPresented() { return mHasPresented; }

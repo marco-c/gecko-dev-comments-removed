@@ -1341,10 +1341,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mIsNavigating : 1;
-
-  
-  
-  bool mSuspendMediaWhenInactive : 1;
 };
 
 #endif 
