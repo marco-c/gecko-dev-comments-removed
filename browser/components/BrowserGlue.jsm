@@ -94,6 +94,25 @@ let ACTORS = {
     matches: ["about:logins", "about:logins?*"],
   },
 
+  AboutWelcome: {
+    parent: {
+      moduleURI: "resource:///actors/AboutWelcomeParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/AboutWelcomeChild.jsm",
+      events: {
+        
+        
+        DOMWindowCreated: {},
+      },
+    },
+    matches: ["about:welcome"],
+
+    
+    
+    enablePreference: "browser.aboutwelcome.enabled",
+  },
+
   BlockedSite: {
     parent: {
       moduleURI: "resource:///actors/BlockedSiteParent.jsm",
@@ -431,51 +450,6 @@ let LEGACY_ACTORS = {
     },
   },
 };
-
-
-
-
-const ACTOR_CONFIG = {
-  parent: {
-    moduleURI: "resource:///actors/AboutWelcomeParent.jsm",
-  },
-  child: {
-    moduleURI: "resource:///actors/AboutWelcomeChild.jsm",
-    events: {
-      
-      
-      DOMWindowCreated: {},
-    },
-  },
-  matches: ["about:welcome"],
-};
-
-const AboutWelcomeActorHelper = {
-  register() {
-    ChromeUtils.registerWindowActor("AboutWelcome", ACTOR_CONFIG);
-  },
-  unregister() {
-    ChromeUtils.unregisterWindowActor("AboutWelcome");
-  },
-};
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "isSeparateAboutWelcome",
-  "browser.aboutwelcome.enabled",
-  false,
-  (prefName, prevValue, isEnabled) => {
-    if (isEnabled) {
-      AboutWelcomeActorHelper.register();
-    } else {
-      AboutWelcomeActorHelper.unregister();
-    }
-  }
-);
-
-if (isSeparateAboutWelcome) {
-  AboutWelcomeActorHelper.register();
-}
 
 (function earlyBlankFirstPaint() {
   if (
