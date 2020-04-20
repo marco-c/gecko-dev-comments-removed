@@ -53,12 +53,6 @@ enum NewObjectKind {
 
 
 
-  NurseryAllocatedProxy,
-
-  
-
-
-
 
   TenuredObject
 };
