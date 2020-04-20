@@ -101,13 +101,9 @@ bool FunctionEmitter::emitLazy() {
     return false;
   }
 
-  bool isRunOnceLambda = bce_->emittingRunOnceLambda &&
-                         !funbox_->shouldSuppressRunOnce();
-
   
   
   funbox_->setEnclosingScopeForInnerLazyFunction(bce_->innermostScope());
-  funbox_->setTreatAsRunOnce(isRunOnceLambda);
 
   if (!emitFunction()) {
     
@@ -382,15 +378,6 @@ bool FunctionScriptEmitter::prepareForParameters() {
     if (!namedLambdaEmitterScope_->enterNamedLambda(bce_, funbox_)) {
       return false;
     }
-  }
-
-  
-
-
-
-  if (bce_->isRunOnceLambda()) {
-    bce_->script->setTreatAsRunOnce();
-    MOZ_ASSERT(!bce_->script->hasRunOnce());
   }
 
   if (bodyEnd_) {

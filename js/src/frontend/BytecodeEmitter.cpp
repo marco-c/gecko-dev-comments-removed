@@ -5695,6 +5695,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
     
     
     
+    
     if (classContentsIfConstructor) {
       funbox->fieldInitializers = setupFieldInitializers(
           classContentsIfConstructor, FieldPlacement::Instance);
@@ -5703,6 +5704,23 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
         return false;
       }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool isRunOnceLambda =
+        emittingRunOnceLambda && !funbox->shouldSuppressRunOnce();
+    funbox->setTreatAsRunOnce(isRunOnceLambda);
 
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
