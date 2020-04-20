@@ -56,10 +56,18 @@ const PREF_SEPARATE_ABOUT_WELCOME = "browser.aboutwelcome.enabled";
 const SEPARATE_ABOUT_WELCOME_URL =
   "resource://activity-stream/aboutwelcome/aboutwelcome.html";
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "BasePromiseWorker",
+  "resource://gre/modules/PromiseWorker.jsm"
+);
+
 const TOPIC_APP_QUIT = "quit-application-granted";
 const TOPIC_CONTENT_DOCUMENT_INTERACTIVE = "content-document-interactive";
 
 const BASE_URL = "resource://activity-stream/";
+const CACHE_WORKER_URL = "resource://activity-stream/lib/cache-worker.js";
+
 const ACTIVITY_STREAM_PAGES = new Set(["home", "newtab", "welcome"]);
 
 const IS_PRIVILEGED_PROCESS =
@@ -82,6 +90,8 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 
 const AboutHomeStartupCacheChild = {
   _initted: false,
+  STATE_RESPONSE_MESSAGE: "AboutHomeStartupCache:State:Response",
+  STATE_REQUEST_MESSAGE: "AboutHomeStartupCache:State:Request",
 
   
 
@@ -176,35 +186,83 @@ const AboutHomeStartupCacheChild = {
     return channel;
   },
 
+  getAboutHomeState() {
+    return new Promise(resolve => {
+      Services.cpmm.addMessageListener(this.STATE_RESPONSE_MESSAGE, m => {
+        Services.cpmm.removeMessageListener(this.STATE_RESPONSE_MESSAGE, this);
+        resolve(m.data.state);
+      });
+
+      Services.cpmm.sendAsyncMessage(this.STATE_REQUEST_MESSAGE);
+    });
+  },
+
+  _constructionPromise: null,
+
   
 
 
 
 
-  populateCache() {
-    let pageInputStream = Cc[
-      "@mozilla.org/io/string-input-stream;1"
-    ].createInstance(Ci.nsIStringInputStream);
 
-    let cacheDate = new Date().toISOString();
-    pageInputStream.data = `<html>
-  <body>
-    <p>Cached at: ${cacheDate}</p>
-    <p>Seen at: <span id="seen"></span></p>
-  </body>
-  <script src='about:home?jscache'></script>
-</html>`;
 
-    let scriptInputStream = Cc[
-      "@mozilla.org/io/string-input-stream;1"
-    ].createInstance(Ci.nsIStringInputStream);
 
-    scriptInputStream.data = `document.getElementById("seen").textContent = new Date().toISOString();`;
 
-    Services.cpmm.sendAsyncMessage("AboutHomeStartupCache:PopulateCache", {
-      pageInputStream,
-      scriptInputStream,
-    });
+
+
+
+
+
+
+
+
+
+  constructAndSendCache() {
+    if (!IS_PRIVILEGED_PROCESS) {
+      throw new Error("Wrong process type.");
+    }
+
+    if (this._constructionPromise) {
+      return this._constructionPromise;
+    }
+
+    return (this._constructionPromise = (async () => {
+      try {
+        let worker = this.getOrCreateWorker();
+        let state = await this.getAboutHomeState();
+
+        let { page, script } = await worker.post("construct", [state]);
+
+        let pageInputStream = Cc[
+          "@mozilla.org/io/string-input-stream;1"
+        ].createInstance(Ci.nsIStringInputStream);
+
+        pageInputStream.setUTF8Data(page);
+
+        let scriptInputStream = Cc[
+          "@mozilla.org/io/string-input-stream;1"
+        ].createInstance(Ci.nsIStringInputStream);
+
+        scriptInputStream.setUTF8Data(script);
+
+        Services.cpmm.sendAsyncMessage("AboutHomeStartupCache:PopulateCache", {
+          pageInputStream,
+          scriptInputStream,
+        });
+      } finally {
+        this._constructionPromise = null;
+      }
+    })());
+  },
+
+  _cacheWorker: null,
+  getOrCreateWorker() {
+    if (this._cacheWorker) {
+      return this._cacheWorker;
+    }
+
+    this._cacheWorker = new BasePromiseWorker(CACHE_WORKER_URL);
+    return this._cacheWorker;
   },
 };
 
@@ -326,6 +384,15 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
           return;
         }
 
+        if (win.location.protocol !== "about:") {
+          
+          
+          let debug = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2);
+          debug.abort("AboutNewTabService.jsm", 0);
+          
+          return;
+        }
+
         
         
         
@@ -333,6 +400,17 @@ class AboutNewTabChildService extends BaseAboutNewTabService {
         
         
         if (!ACTIVITY_STREAM_PAGES.has(win.location.pathname)) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        if (ChromeUtils.waiveXrays(win).__FROM_STARTUP_CACHE__) {
           return;
         }
 

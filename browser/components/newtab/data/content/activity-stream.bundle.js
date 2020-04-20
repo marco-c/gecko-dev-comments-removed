@@ -2738,7 +2738,7 @@ const rehydrationMiddleware = ({
   getState.didRehydrate = false;
   getState.didRequestInitialState = false;
   return next => action => {
-    if (getState.didRehydrate) {
+    if (getState.didRehydrate || window.__FROM_STARTUP_CACHE__) {
       return next(action);
     }
 
@@ -4682,6 +4682,7 @@ CardGrid.defaultProps = {
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "DefaultMeta", function() { return DefaultMeta; });
  __webpack_require__.d(__webpack_exports__, "CTAButtonMeta", function() { return CTAButtonMeta; });
+ __webpack_require__.d(__webpack_exports__, "_DSCard", function() { return _DSCard; });
  __webpack_require__.d(__webpack_exports__, "DSCard", function() { return DSCard; });
  __webpack_require__.d(__webpack_exports__, "PlaceholderDSCard", function() { return PlaceholderDSCard; });
  var common_Actions_jsm__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(2);
@@ -4693,6 +4694,9 @@ __webpack_require__.r(__webpack_exports__);
  var _SafeAnchor_SafeAnchor__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(36);
  var _DSContextFooter_DSContextFooter_jsx__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(37);
  var _FluentOrText_FluentOrText_jsx__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(40);
+ var react_redux__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(23);
+ var react_redux__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react_redux__WEBPACK_IMPORTED_MODULE_8__);
+
 
 
 
@@ -4770,7 +4774,7 @@ const CTAButtonMeta = ({
   display_engagement_labels: display_engagement_labels,
   engagement: engagement
 }));
-class DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
+class _DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent {
   constructor(props) {
     super(props);
     this.onLinkClick = this.onLinkClick.bind(this);
@@ -4781,7 +4785,12 @@ class DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent 
 
     this.state = {
       isSeen: false
-    };
+    }; 
+    
+
+    if (props.App.isForStartupCache) {
+      this.state.isSeen = true;
+    }
   }
 
   onLinkClick(event) {
@@ -4926,10 +4935,13 @@ class DSCard extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureComponent 
   }
 
 }
-DSCard.defaultProps = {
+_DSCard.defaultProps = {
   windowObj: window 
 
 };
+const DSCard = Object(react_redux__WEBPACK_IMPORTED_MODULE_8__["connect"])(state => ({
+  App: state.App
+}))(_DSCard);
 const PlaceholderDSCard = props => react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement(DSCard, {
   placeholder: true
 });
