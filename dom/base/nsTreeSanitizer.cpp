@@ -563,11 +563,12 @@ const nsStaticAtom* const kAttributesSVG[] = {
     nsGkAtoms::text_anchor,        
     nsGkAtoms::text_decoration,    
     
-    nsGkAtoms::text_rendering,  
-    nsGkAtoms::title,           
-    nsGkAtoms::to,              
-    nsGkAtoms::transform,       
-    nsGkAtoms::type,            
+    nsGkAtoms::text_rendering,    
+    nsGkAtoms::title,             
+    nsGkAtoms::to,                
+    nsGkAtoms::transform,         
+    nsGkAtoms::transform_origin,  
+    nsGkAtoms::type,              
     
     
     
