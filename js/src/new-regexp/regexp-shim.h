@@ -508,8 +508,10 @@ class Object {
   
   
   
-  
-  inline bool IsException(Isolate*) const { return !value_.toBoolean(); }
+  inline bool IsException(Isolate*) const {
+    MOZ_ASSERT(!value_.toBoolean());
+    return true;
+  }
 
  protected:
   JS::Value value_;
@@ -748,9 +750,12 @@ class DisallowHeapAllocation {
 
 
 
+
+
+
+
 class AllowHeapAllocation {
  public:
-  
   AllowHeapAllocation() {}
 };
 
@@ -1021,9 +1026,12 @@ public:
 
   
   inline StackGuard* stack_guard() { return this; }
-  Object HandleInterrupts() {
-    return Object(JS::BooleanValue(cx()->handleInterrupt()));
-  }
+
+  
+  
+  
+  
+  Object HandleInterrupts() { return Object(JS::BooleanValue(false)); }
 
   JSContext* cx() const { return cx_; }
 
@@ -1073,7 +1081,9 @@ class StackLimitCheck {
   bool HasOverflowed() { return !CheckRecursionLimitDontReport(cx_); }
 
   
-  bool InterruptRequested() { return cx_->hasAnyPendingInterrupt(); }
+  bool InterruptRequested() {
+    return cx_->hasPendingInterrupt(js::InterruptReason::CallbackUrgent);
+  }
 
   
   bool JsHasOverflowed() {

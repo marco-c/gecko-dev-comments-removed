@@ -27,6 +27,7 @@
 #include "js/RegExpFlags.h"  
 #include "js/StableStringChars.h"
 #ifdef ENABLE_NEW_REGEXP
+#  include "new-regexp/regexp-stack.h"
 #  include "new-regexp/RegExpAPI.h"
 #endif
 #include "util/StringBuffer.h"
@@ -1050,7 +1051,54 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
     return RegExpShared::executeAtom(cx, re, input, start, matches);
   }
 
-  MOZ_CRASH("TODO");
+  
+  irregexp::RegExpStackScope stackScope(cx->isolate);
+
+  
+
+
+
+  if (!matches->allocOrExpandArray(re->pairCount())) {
+    ReportOutOfMemory(cx);
+    return RegExpRunStatus_Error;
+  }
+
+  uint32_t interruptRetries = 0;
+  const uint32_t maxInterruptRetries = 4;
+  do {
+    RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
+
+    if (result == RegExpRunStatus_Error) {
+      
+
+
+
+
+
+
+
+
+
+      if (cx->hasAnyPendingInterrupt()) {
+        if (!CheckForInterrupt(cx)) {
+          return RegExpRunStatus_Error;
+        }
+        if (interruptRetries++ < maxInterruptRetries) {
+          continue;
+        }
+      }
+      
+      ReportOverRecursed(cx);
+      return RegExpRunStatus_Error;
+    }
+
+    MOZ_ASSERT(result == RegExpRunStatus_Success ||
+               result == RegExpRunStatus_Success_NotFound);
+
+    return result;
+  } while (true);
+
+  MOZ_CRASH("Unreachable");
 }
 
 void RegExpShared::useAtomMatch(HandleAtom pattern) {
@@ -1058,6 +1106,12 @@ void RegExpShared::useAtomMatch(HandleAtom pattern) {
   kind_ = RegExpShared::Kind::Atom;
   patternAtom_ = pattern;
   pairCount_ = 1;
+}
+
+void RegExpShared::useRegExpMatch(size_t pairCount) {
+  MOZ_ASSERT(kind() == RegExpShared::Kind::Unparsed);
+  kind_ = RegExpShared::Kind::RegExp;
+  pairCount_ = pairCount;
 }
 
 #else   
