@@ -73,7 +73,7 @@ class HttpTransactionShell : public nsISupports {
   
   
   
-  MOZ_MUST_USE nsresult virtual Init(
+  [[nodiscard]] nsresult virtual Init(
       uint32_t caps, nsHttpConnectionInfo* connInfo,
       nsHttpRequestHead* reqHeaders, nsIInputStream* reqBody,
       uint64_t reqContentLength, bool reqBodyIncludesHeaders,

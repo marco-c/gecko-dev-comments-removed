@@ -30,11 +30,12 @@ class nsFileChannel : public nsBaseChannel,
   
   
   
-  MOZ_MUST_USE nsresult MakeFileInputStream(nsIFile* file,
-                                            nsCOMPtr<nsIInputStream>& stream,
-                                            nsCString& contentType, bool async);
+  [[nodiscard]] nsresult MakeFileInputStream(nsIFile* file,
+                                             nsCOMPtr<nsIInputStream>& stream,
+                                             nsCString& contentType,
+                                             bool async);
 
-  virtual MOZ_MUST_USE nsresult OpenContentStream(
+  [[nodiscard]] virtual nsresult OpenContentStream(
       bool async, nsIInputStream** result, nsIChannel** channel) override;
 
   

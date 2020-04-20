@@ -84,14 +84,14 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   HttpChannelParent(const dom::PBrowserOrId& iframeEmbedding,
                     nsILoadContext* aLoadContext, PBOverrideStatus aStatus);
 
-  MOZ_MUST_USE bool Init(const HttpChannelCreationArgs& aOpenArgs);
+  [[nodiscard]] bool Init(const HttpChannelCreationArgs& aOpenArgs);
 
   
   void DivertTo(nsIStreamListener* aListener) override;
-  MOZ_MUST_USE nsresult SuspendForDiversion() override;
-  MOZ_MUST_USE nsresult SuspendMessageDiversion() override;
-  MOZ_MUST_USE nsresult ResumeMessageDiversion() override;
-  MOZ_MUST_USE nsresult CancelDiversion() override;
+  [[nodiscard]] nsresult SuspendForDiversion() override;
+  [[nodiscard]] nsresult SuspendMessageDiversion() override;
+  [[nodiscard]] nsresult ResumeMessageDiversion() override;
+  [[nodiscard]] nsresult CancelDiversion() override;
 
   
   
@@ -109,9 +109,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
     }
   }
 
-  MOZ_MUST_USE nsresult
-  OpenAlternativeOutputStream(const nsACString& type, int64_t predictedSize,
-                              nsIAsyncOutputStream** _retval);
+  [[nodiscard]] nsresult OpenAlternativeOutputStream(
+      const nsACString& type, int64_t predictedSize,
+      nsIAsyncOutputStream** _retval);
 
   
   
@@ -138,10 +138,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
  protected:
   
   
-  MOZ_MUST_USE bool ConnectChannel(const uint32_t& channelId,
-                                   const bool& shouldIntercept);
+  [[nodiscard]] bool ConnectChannel(const uint32_t& channelId,
+                                    const bool& shouldIntercept);
 
-  MOZ_MUST_USE bool DoAsyncOpen(
+  [[nodiscard]] bool DoAsyncOpen(
       const URIParams& uri, const Maybe<URIParams>& originalUri,
       const Maybe<URIParams>& docUri, nsIReferrerInfo* aReferrerInfo,
       const Maybe<URIParams>& internalRedirectUri,
@@ -216,7 +216,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
   
-  MOZ_MUST_USE nsresult ResumeForDiversion();
+  [[nodiscard]] nsresult ResumeForDiversion();
 
   
   void FailDiversion(nsresult aErrorCode);
@@ -224,7 +224,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   friend class ParentChannelListener;
   RefPtr<mozilla::dom::BrowserParent> mBrowserParent;
 
-  MOZ_MUST_USE nsresult ReportSecurityMessage(
+  [[nodiscard]] nsresult ReportSecurityMessage(
       const nsAString& aMessageTag, const nsAString& aMessageCategory) override;
   nsresult LogBlockedCORSRequest(const nsAString& aMessage,
                                  const nsACString& aCategory) override;
@@ -234,7 +234,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   
   
-  MOZ_MUST_USE bool DoSendDeleteSelf();
+  [[nodiscard]] bool DoSendDeleteSelf();
   
   virtual mozilla::ipc::IPCResult RecvDeletingChannel() override;
   virtual mozilla::ipc::IPCResult RecvFinishInterceptedRedirect() override;
@@ -261,7 +261,7 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   
-  MOZ_MUST_USE RefPtr<GenericNonExclusivePromise> WaitForBgParent();
+  [[nodiscard]] RefPtr<GenericNonExclusivePromise> WaitForBgParent();
 
   
   

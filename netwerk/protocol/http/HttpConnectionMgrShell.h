@@ -54,7 +54,7 @@ class HttpConnectionMgrShell : public nsISupports {
     PROXY_BE_CONSERVATIVE
   };
 
-  MOZ_MUST_USE virtual nsresult Init(
+  [[nodiscard]] virtual nsresult Init(
       uint16_t maxUrgentExcessiveConns, uint16_t maxConnections,
       uint16_t maxPersistentConnectionsPerHost,
       uint16_t maxPersistentConnectionsPerProxy, uint16_t maxRequestDelay,
@@ -64,30 +64,30 @@ class HttpConnectionMgrShell : public nsISupports {
       uint32_t throttleHoldTime, uint32_t throttleMaxTime,
       bool beConservativeForProxy) = 0;
 
-  MOZ_MUST_USE virtual nsresult Shutdown() = 0;
+  [[nodiscard]] virtual nsresult Shutdown() = 0;
 
   
   
-  MOZ_MUST_USE virtual nsresult UpdateRequestTokenBucket(
+  [[nodiscard]] virtual nsresult UpdateRequestTokenBucket(
       EventTokenBucket* aBucket) = 0;
 
   
   
   
-  MOZ_MUST_USE virtual nsresult DoShiftReloadConnectionCleanup(
+  [[nodiscard]] virtual nsresult DoShiftReloadConnectionCleanup(
       nsHttpConnectionInfo*) = 0;
 
   
   
-  MOZ_MUST_USE virtual nsresult PruneDeadConnections() = 0;
+  [[nodiscard]] virtual nsresult PruneDeadConnections() = 0;
 
   
   virtual void AbortAndCloseAllConnections(int32_t, ARefBase*) = 0;
 
   
   
-  MOZ_MUST_USE virtual nsresult UpdateParam(nsParamName name,
-                                            uint16_t value) = 0;
+  [[nodiscard]] virtual nsresult UpdateParam(nsParamName name,
+                                             uint16_t value) = 0;
 
   
   
@@ -97,61 +97,62 @@ class HttpConnectionMgrShell : public nsISupports {
       uint64_t aWindowId) = 0;
 
   
-  MOZ_MUST_USE virtual nsresult AddTransaction(HttpTransactionShell*,
-                                               int32_t priority) = 0;
+  [[nodiscard]] virtual nsresult AddTransaction(HttpTransactionShell*,
+                                                int32_t priority) = 0;
 
   
-  MOZ_MUST_USE virtual nsresult AddTransactionWithStickyConn(
+  [[nodiscard]] virtual nsresult AddTransactionWithStickyConn(
       HttpTransactionShell* trans, int32_t priority,
       HttpTransactionShell* transWithStickyConn) = 0;
 
   
   
-  MOZ_MUST_USE virtual nsresult RescheduleTransaction(HttpTransactionShell*,
-                                                      int32_t priority) = 0;
+  [[nodiscard]] virtual nsresult RescheduleTransaction(HttpTransactionShell*,
+                                                       int32_t priority) = 0;
 
   void virtual UpdateClassOfServiceOnTransaction(HttpTransactionShell*,
                                                  uint32_t classOfService) = 0;
 
   
-  MOZ_MUST_USE virtual nsresult CancelTransaction(HttpTransactionShell*,
-                                                  nsresult reason) = 0;
+  [[nodiscard]] virtual nsresult CancelTransaction(HttpTransactionShell*,
+                                                   nsresult reason) = 0;
 
   
   
   
-  MOZ_MUST_USE virtual nsresult ReclaimConnection(HttpConnectionBase* conn) = 0;
+  [[nodiscard]] virtual nsresult ReclaimConnection(
+      HttpConnectionBase* conn) = 0;
 
   
   
-  MOZ_MUST_USE virtual nsresult ProcessPendingQ(nsHttpConnectionInfo*) = 0;
+  [[nodiscard]] virtual nsresult ProcessPendingQ(nsHttpConnectionInfo*) = 0;
 
   
-  MOZ_MUST_USE virtual nsresult ProcessPendingQ() = 0;
-
-  
-  
-  MOZ_MUST_USE virtual nsresult GetSocketThreadTarget(nsIEventTarget**) = 0;
+  [[nodiscard]] virtual nsresult ProcessPendingQ() = 0;
 
   
   
+  [[nodiscard]] virtual nsresult GetSocketThreadTarget(nsIEventTarget**) = 0;
+
   
   
   
   
-  MOZ_MUST_USE virtual nsresult SpeculativeConnect(
+  
+  
+  [[nodiscard]] virtual nsresult SpeculativeConnect(
       nsHttpConnectionInfo*, nsIInterfaceRequestor*, uint32_t caps = 0,
       NullHttpTransaction* = nullptr) = 0;
 
   
   
   
-  MOZ_MUST_USE virtual nsresult VerifyTraffic() = 0;
+  [[nodiscard]] virtual nsresult VerifyTraffic() = 0;
 
   virtual void BlacklistSpdy(const nsHttpConnectionInfo* ci) = 0;
 
   
-  MOZ_MUST_USE virtual nsresult ClearConnectionHistory() = 0;
+  [[nodiscard]] virtual nsresult ClearConnectionHistory() = 0;
 
   
   
@@ -159,7 +160,7 @@ class HttpConnectionMgrShell : public nsISupports {
   
   
   
-  MOZ_MUST_USE virtual nsresult CompleteUpgrade(
+  [[nodiscard]] virtual nsresult CompleteUpgrade(
       HttpTransactionShell* aTrans,
       nsIHttpUpgradeListener* aUpgradeListener) = 0;
 

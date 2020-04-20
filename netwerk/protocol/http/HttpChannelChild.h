@@ -117,7 +117,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsresult SetReferrerHeader(const nsACString& aReferrer,
                              bool aRespectBeforeConnect) override;
 
-  MOZ_MUST_USE bool IsSuspended();
+  [[nodiscard]] bool IsSuspended();
 
   void FlushedForDiversion();
 
@@ -285,7 +285,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   already_AddRefed<nsIEventTarget> GetODATarget();
 
-  MOZ_MUST_USE nsresult ContinueAsyncOpen();
+  [[nodiscard]] nsresult ContinueAsyncOpen();
 
   
   
@@ -542,10 +542,10 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   
-  MOZ_MUST_USE nsresult SetupRedirect(nsIURI* uri,
-                                      const nsHttpResponseHead* responseHead,
-                                      const uint32_t& redirectFlags,
-                                      nsIChannel** outChannel);
+  [[nodiscard]] nsresult SetupRedirect(nsIURI* uri,
+                                       const nsHttpResponseHead* responseHead,
+                                       const uint32_t& redirectFlags,
+                                       nsIChannel** outChannel);
 
   
   void BeginNonIPCRedirect(nsIURI* responseURI,

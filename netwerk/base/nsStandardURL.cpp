@@ -3322,9 +3322,9 @@ inline ipc::StandardURLSegment ToIPCSegment(
   return ipc::StandardURLSegment(aSegment.mPos, aSegment.mLen);
 }
 
-inline MOZ_MUST_USE bool FromIPCSegment(const nsACString& aSpec,
-                                        const ipc::StandardURLSegment& aSegment,
-                                        nsStandardURL::URLSegment& aTarget) {
+[[nodiscard]] inline bool FromIPCSegment(
+    const nsACString& aSpec, const ipc::StandardURLSegment& aSegment,
+    nsStandardURL::URLSegment& aTarget) {
   
   if (aSegment.length() == -1) {
     aTarget = nsStandardURL::URLSegment();

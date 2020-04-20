@@ -1539,7 +1539,7 @@ class WebsocketHasDataToWrite final : public Runnable {
 
   NS_IMETHOD Run() override { return mShim->CallTransactionHasDataToWrite(); }
 
-  MOZ_MUST_USE nsresult Dispatch() {
+  [[nodiscard]] nsresult Dispatch() {
     if (OnSocketThread()) {
       return Run();
     }
@@ -1764,7 +1764,7 @@ class CheckAvailData final : public Runnable {
     return NS_OK;
   }
 
-  MOZ_MUST_USE nsresult Dispatch() {
+  [[nodiscard]] nsresult Dispatch() {
     
     
     

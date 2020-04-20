@@ -57,11 +57,11 @@ class nsViewSourceChannel final : public nsIViewSourceChannel,
         mIsSrcdocChannel(false),
         mReplaceRequest(true) {}
 
-  MOZ_MUST_USE nsresult Init(nsIURI* uri, nsILoadInfo* aLoadInfo);
+  [[nodiscard]] nsresult Init(nsIURI* uri, nsILoadInfo* aLoadInfo);
 
-  MOZ_MUST_USE nsresult InitSrcdoc(nsIURI* aURI, nsIURI* aBaseURI,
-                                   const nsAString& aSrcdoc,
-                                   nsILoadInfo* aLoadInfo);
+  [[nodiscard]] nsresult InitSrcdoc(nsIURI* aURI, nsIURI* aBaseURI,
+                                    const nsAString& aSrcdoc,
+                                    nsILoadInfo* aLoadInfo);
 
   
   

@@ -79,18 +79,17 @@ class ExtensionProtocolHandler final
  private:
   explicit ExtensionProtocolHandler();
 
-  MOZ_MUST_USE bool ResolveSpecialCases(const nsACString& aHost,
-                                        const nsACString& aPath,
-                                        const nsACString& aPathname,
-                                        nsACString& aResult) override;
+  [[nodiscard]] bool ResolveSpecialCases(const nsACString& aHost,
+                                         const nsACString& aPath,
+                                         const nsACString& aPathname,
+                                         nsACString& aResult) override;
 
   
   
   
   
-  virtual MOZ_MUST_USE nsresult SubstituteChannel(nsIURI* uri,
-                                                  nsILoadInfo* aLoadInfo,
-                                                  nsIChannel** result) override;
+  [[nodiscard]] virtual nsresult SubstituteChannel(
+      nsIURI* uri, nsILoadInfo* aLoadInfo, nsIChannel** result) override;
 
   
 

@@ -26,10 +26,10 @@ class nsViewSourceHandler final : public nsIProtocolHandlerWithDynamicFlags,
 
   
   
-  MOZ_MUST_USE nsresult NewSrcdocChannel(nsIURI* aURI, nsIURI* aBaseURI,
-                                         const nsAString& aSrcdoc,
-                                         nsILoadInfo* aLoadInfo,
-                                         nsIChannel** outChannel);
+  [[nodiscard]] nsresult NewSrcdocChannel(nsIURI* aURI, nsIURI* aBaseURI,
+                                          const nsAString& aSrcdoc,
+                                          nsILoadInfo* aLoadInfo,
+                                          nsIChannel** outChannel);
 
   static nsViewSourceHandler* GetInstance();
 

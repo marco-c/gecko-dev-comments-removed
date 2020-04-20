@@ -21,8 +21,8 @@ class ASpdySession : public nsAHttpTransaction {
   ASpdySession() = default;
   virtual ~ASpdySession() = default;
 
-  virtual MOZ_MUST_USE bool AddStream(nsAHttpTransaction*, int32_t, bool, bool,
-                                      nsIInterfaceRequestor*) = 0;
+  [[nodiscard]] virtual bool AddStream(nsAHttpTransaction*, int32_t, bool, bool,
+                                       nsIInterfaceRequestor*) = 0;
   virtual bool CanReuse() = 0;
   virtual bool RoomForMoreStreams() = 0;
   virtual PRIntervalTime IdleTime() = 0;
@@ -104,8 +104,8 @@ class SpdyInformation {
 
   
   
-  MOZ_MUST_USE nsresult GetNPNIndex(const nsACString& npnString,
-                                    uint32_t* result) const;
+  [[nodiscard]] nsresult GetNPNIndex(const nsACString& npnString,
+                                     uint32_t* result) const;
 
   
   bool ProtocolEnabled(uint32_t index) const;

@@ -26,16 +26,17 @@ class nsDataHandler : public nsIProtocolHandler,
                                nsIURI* aBaseURI, nsIURI** result);
 
   
-  static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, const nsIID& aIID,
-                                      void** aResult);
+  [[nodiscard]] static nsresult Create(nsISupports* aOuter, const nsIID& aIID,
+                                       void** aResult);
 
   
   
   
   
-  static MOZ_MUST_USE nsresult ParseURI(nsCString& spec, nsCString& contentType,
-                                        nsCString* contentCharset,
-                                        bool& isBase64, nsCString* dataBuffer);
+  [[nodiscard]] static nsresult ParseURI(nsCString& spec,
+                                         nsCString& contentType,
+                                         nsCString* contentCharset,
+                                         bool& isBase64, nsCString* dataBuffer);
 
   
   
@@ -47,10 +48,10 @@ class nsDataHandler : public nsIProtocolHandler,
   
   
   
-  static MOZ_MUST_USE nsresult
-  ParsePathWithoutRef(const nsACString& aPath, nsCString& aContentType,
-                      nsCString* aContentCharset, bool& aIsBase64,
-                      nsDependentCSubstring* aDataBuffer);
+  [[nodiscard]] static nsresult ParsePathWithoutRef(
+      const nsACString& aPath, nsCString& aContentType,
+      nsCString* aContentCharset, bool& aIsBase64,
+      nsDependentCSubstring* aDataBuffer);
 };
 
 #endif 

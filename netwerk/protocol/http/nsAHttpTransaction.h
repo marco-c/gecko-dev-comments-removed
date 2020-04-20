@@ -79,29 +79,28 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual uint32_t Caps() = 0;
 
   
-  virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader* reader,
-                                             uint32_t count,
-                                             uint32_t* countRead) = 0;
-
-  
-  virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter* writer,
+  [[nodiscard]] virtual nsresult ReadSegments(nsAHttpSegmentReader* reader,
                                               uint32_t count,
-                                              uint32_t* countWritten) = 0;
+                                              uint32_t* countRead) = 0;
+
+  
+  [[nodiscard]] virtual nsresult WriteSegments(nsAHttpSegmentWriter* writer,
+                                               uint32_t count,
+                                               uint32_t* countWritten) = 0;
 
   
   
   
   
-  virtual MOZ_MUST_USE nsresult ReadSegmentsAgain(nsAHttpSegmentReader* reader,
-                                                  uint32_t count,
-                                                  uint32_t* countRead,
-                                                  bool* again) {
+  [[nodiscard]] virtual nsresult ReadSegmentsAgain(nsAHttpSegmentReader* reader,
+                                                   uint32_t count,
+                                                   uint32_t* countRead,
+                                                   bool* again) {
     return ReadSegments(reader, count, countRead);
   }
-  virtual MOZ_MUST_USE nsresult WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
-                                                   uint32_t count,
-                                                   uint32_t* countWritten,
-                                                   bool* again) {
+  [[nodiscard]] virtual nsresult WriteSegmentsAgain(
+      nsAHttpSegmentWriter* writer, uint32_t count, uint32_t* countWritten,
+      bool* again) {
     return WriteSegments(writer, count, countWritten);
   }
 
@@ -128,7 +127,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  virtual MOZ_MUST_USE nsresult TakeSubTransactions(
+  [[nodiscard]] virtual nsresult TakeSubTransactions(
       nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) = 0;
 
   
@@ -172,7 +171,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  virtual MOZ_MUST_USE nsresult GetTransactionSecurityInfo(nsISupports**) {
+  [[nodiscard]] virtual nsresult GetTransactionSecurityInfo(nsISupports**) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -189,15 +188,11 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual void DoNotRemoveAltSvc() {}
 
   
-  virtual MOZ_MUST_USE bool CanDo0RTT() { return false; }
+  [[nodiscard]] virtual bool CanDo0RTT() { return false; }
   
   
   
-  virtual MOZ_MUST_USE bool Do0RTT() { return false; }
-  
-  
-  
-  
+  [[nodiscard]] virtual bool Do0RTT() { return false; }
   
   
   
@@ -205,11 +200,15 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  virtual MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) {
+  
+  
+  
+  
+  [[nodiscard]] virtual nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  virtual MOZ_MUST_USE nsresult RestartOnFastOpenError() {
+  [[nodiscard]] virtual nsresult RestartOnFastOpenError() {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -234,16 +233,16 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
   bool IsDone() override;                                                      \
   nsresult Status() override;                                                  \
   uint32_t Caps() override;                                                    \
-  virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader*, uint32_t,  \
-                                             uint32_t*) override;              \
-  virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter*, uint32_t, \
+  [[nodiscard]] virtual nsresult ReadSegments(nsAHttpSegmentReader*, uint32_t, \
                                               uint32_t*) override;             \
+  [[nodiscard]] virtual nsresult WriteSegments(nsAHttpSegmentWriter*,          \
+                                               uint32_t, uint32_t*) override;  \
   virtual void Close(nsresult reason) override;                                \
   nsHttpConnectionInfo* ConnectionInfo() override;                             \
   void SetProxyConnectFailed() override;                                       \
   virtual nsHttpRequestHead* RequestHead() override;                           \
   uint32_t Http1xTransactionCount() override;                                  \
-  MOZ_MUST_USE nsresult TakeSubTransactions(                                   \
+  [[nodiscard]] nsresult TakeSubTransactions(                                  \
       nsTArray<RefPtr<nsAHttpTransaction> >& outTransactions) override;
 
 
@@ -253,9 +252,9 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpTransaction, NS_AHTTPTRANSACTION_IID)
 class nsAHttpSegmentReader {
  public:
   
-  virtual MOZ_MUST_USE nsresult OnReadSegment(const char* segment,
-                                              uint32_t count,
-                                              uint32_t* countRead) = 0;
+  [[nodiscard]] virtual nsresult OnReadSegment(const char* segment,
+                                               uint32_t count,
+                                               uint32_t* countRead) = 0;
 
   
   
@@ -267,14 +266,14 @@ class nsAHttpSegmentReader {
   
   
   
-  virtual MOZ_MUST_USE nsresult CommitToSegmentSize(uint32_t size,
-                                                    bool forceCommitment) {
+  [[nodiscard]] virtual nsresult CommitToSegmentSize(uint32_t size,
+                                                     bool forceCommitment) {
     return NS_ERROR_FAILURE;
   }
 };
 
-#define NS_DECL_NSAHTTPSEGMENTREADER                                    \
-  MOZ_MUST_USE nsresult OnReadSegment(const char*, uint32_t, uint32_t*) \
+#define NS_DECL_NSAHTTPSEGMENTREADER                                     \
+  [[nodiscard]] nsresult OnReadSegment(const char*, uint32_t, uint32_t*) \
       override;
 
 
@@ -284,12 +283,12 @@ class nsAHttpSegmentReader {
 class nsAHttpSegmentWriter {
  public:
   
-  virtual MOZ_MUST_USE nsresult OnWriteSegment(char* segment, uint32_t count,
-                                               uint32_t* countWritten) = 0;
+  [[nodiscard]] virtual nsresult OnWriteSegment(char* segment, uint32_t count,
+                                                uint32_t* countWritten) = 0;
 };
 
 #define NS_DECL_NSAHTTPSEGMENTWRITER \
-  MOZ_MUST_USE nsresult OnWriteSegment(char*, uint32_t, uint32_t*) override;
+  [[nodiscard]] nsresult OnWriteSegment(char*, uint32_t, uint32_t*) override;
 
 }  
 }  

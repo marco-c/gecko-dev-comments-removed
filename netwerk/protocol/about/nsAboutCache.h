@@ -113,12 +113,12 @@ class nsAboutCache final : public nsIAboutModule {
 
   nsAboutCache() = default;
 
-  static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, REFNSIID aIID,
-                                      void** aResult);
+  [[nodiscard]] static nsresult Create(nsISupports* aOuter, REFNSIID aIID,
+                                       void** aResult);
 
-  static MOZ_MUST_USE nsresult GetStorage(nsACString const& storageName,
-                                          nsILoadContextInfo* loadInfo,
-                                          nsICacheStorage** storage);
+  [[nodiscard]] static nsresult GetStorage(nsACString const& storageName,
+                                           nsILoadContextInfo* loadInfo,
+                                           nsICacheStorage** storage);
 
  protected:
   virtual ~nsAboutCache() = default;
@@ -135,13 +135,13 @@ class nsAboutCache final : public nsIAboutModule {
     virtual ~Channel() = default;
 
    public:
-    MOZ_MUST_USE nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
-    MOZ_MUST_USE nsresult ParseURI(nsIURI* uri, nsACString& storage);
+    [[nodiscard]] nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+    [[nodiscard]] nsresult ParseURI(nsIURI* uri, nsACString& storage);
 
     
     
     
-    MOZ_MUST_USE nsresult VisitNextStorage();
+    [[nodiscard]] nsresult VisitNextStorage();
     
     
     
@@ -149,13 +149,13 @@ class nsAboutCache final : public nsIAboutModule {
     
     
     
-    MOZ_MUST_USE nsresult VisitStorage(nsACString const& storageName);
+    [[nodiscard]] nsresult VisitStorage(nsACString const& storageName);
 
     
     
     
     
-    MOZ_MUST_USE nsresult FlushBuffer();
+    [[nodiscard]] nsresult FlushBuffer();
 
     
     

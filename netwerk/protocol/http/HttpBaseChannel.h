@@ -124,11 +124,11 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   HttpBaseChannel();
 
-  virtual MOZ_MUST_USE nsresult Init(nsIURI* aURI, uint32_t aCaps,
-                                     nsProxyInfo* aProxyInfo,
-                                     uint32_t aProxyResolveFlags,
-                                     nsIURI* aProxyURI, uint64_t aChannelId,
-                                     nsContentPolicyType aContentPolicyType);
+  [[nodiscard]] virtual nsresult Init(nsIURI* aURI, uint32_t aCaps,
+                                      nsProxyInfo* aProxyInfo,
+                                      uint32_t aProxyResolveFlags,
+                                      nsIURI* aProxyURI, uint64_t aChannelId,
+                                      nsContentPolicyType aContentPolicyType);
 
   
   NS_IMETHOD GetName(nsACString& aName) override;
@@ -276,7 +276,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD GetTlsFlags(uint32_t* aTlsFlags) override;
   NS_IMETHOD SetTlsFlags(uint32_t aTlsFlags) override;
   NS_IMETHOD GetApiRedirectToURI(nsIURI** aApiRedirectToURI) override;
-  virtual MOZ_MUST_USE nsresult AddSecurityMessage(
+  [[nodiscard]] virtual nsresult AddSecurityMessage(
       const nsAString& aMessageTag, const nsAString& aMessageCategory);
   NS_IMETHOD TakeAllSecurityMessages(
       nsCOMArray<nsISecurityConsoleMessage>& aMessages) override;
@@ -388,7 +388,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
    private:
     virtual ~nsContentEncodings() = default;
 
-    MOZ_MUST_USE nsresult PrepareForNext(void);
+    [[nodiscard]] nsresult PrepareForNext(void);
 
     
     const char* mEncodingHeader;
@@ -411,7 +411,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   const NetAddr& GetSelfAddr() { return mSelfAddr; }
   const NetAddr& GetPeerAddr() { return mPeerAddr; }
 
-  MOZ_MUST_USE nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
+  [[nodiscard]] nsresult OverrideSecurityInfo(nsISupports* aSecurityInfo);
 
  public: 
   int64_t GetAltDataLength() { return mAltDataLength; }
@@ -429,7 +429,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   
-  MOZ_MUST_USE nsresult DoApplyContentConversions(
+  [[nodiscard]] nsresult DoApplyContentConversions(
       nsIStreamListener* aNextListener, nsIStreamListener** aNewNextListener);
 
   
@@ -544,9 +544,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
   nsPIDOMWindowInner* GetInnerDOMWindow();
 
   void AddCookiesToRequest();
-  virtual MOZ_MUST_USE nsresult SetupReplacementChannel(nsIURI*, nsIChannel*,
-                                                        bool preserveMethod,
-                                                        uint32_t redirectFlags);
+  [[nodiscard]] virtual nsresult SetupReplacementChannel(
+      nsIURI*, nsIChannel*, bool preserveMethod, uint32_t redirectFlags);
 
   
   inline void CallOnModifyRequestObservers() {
@@ -570,7 +569,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
   
   nsIPrincipal* GetURIPrincipal();
 
-  MOZ_MUST_USE bool BypassServiceWorker() const;
+  [[nodiscard]] bool BypassServiceWorker() const;
 
   
   
@@ -905,7 +904,7 @@ class HttpAsyncAborter {
 
   
   
-  MOZ_MUST_USE nsresult AsyncAbort(nsresult status);
+  [[nodiscard]] nsresult AsyncAbort(nsresult status);
 
   
   void HandleAsyncAbort();
@@ -913,7 +912,7 @@ class HttpAsyncAborter {
   
   
   
-  MOZ_MUST_USE virtual nsresult AsyncCall(
+  [[nodiscard]] virtual nsresult AsyncCall(
       void (T::*funcPtr)(), nsRunnableMethod<T>** retval = nullptr);
 
  private:
@@ -925,7 +924,7 @@ class HttpAsyncAborter {
 };
 
 template <class T>
-MOZ_MUST_USE nsresult HttpAsyncAborter<T>::AsyncAbort(nsresult status) {
+[[nodiscard]] nsresult HttpAsyncAborter<T>::AsyncAbort(nsresult status) {
   MOZ_LOG(gHttpLog, LogLevel::Debug,
           ("HttpAsyncAborter::AsyncAbort [this=%p status=%" PRIx32 "]\n", mThis,
            static_cast<uint32_t>(status)));

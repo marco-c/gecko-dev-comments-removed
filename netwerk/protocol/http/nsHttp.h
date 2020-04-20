@@ -154,7 +154,7 @@ struct nsHttpAtom {
 };
 
 namespace nsHttp {
-MOZ_MUST_USE nsresult CreateAtomTable();
+[[nodiscard]] nsresult CreateAtomTable();
 void DestroyAtomTable();
 
 
@@ -200,12 +200,12 @@ const char* FindToken(const char* input, const char* token,
 
 
 
-MOZ_MUST_USE bool ParseInt64(const char* input, const char** next,
-                             int64_t* result);
+[[nodiscard]] bool ParseInt64(const char* input, const char** next,
+                              int64_t* result);
 
 
 
-inline MOZ_MUST_USE bool ParseInt64(const char* input, int64_t* result) {
+[[nodiscard]] inline bool ParseInt64(const char* input, int64_t* result) {
   const char* next;
   return ParseInt64(input, &next, result) && *next == '\0';
 }

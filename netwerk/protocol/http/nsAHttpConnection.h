@@ -49,23 +49,22 @@ class nsAHttpConnection : public nsISupports {
   
   
   
-  virtual MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction*,
-                                                   nsHttpRequestHead*,
-                                                   nsHttpResponseHead*,
-                                                   bool* reset) = 0;
+  [[nodiscard]] virtual nsresult
+      OnHeadersAvailable(nsAHttpTransaction*, nsHttpRequestHead*,
+                         nsHttpResponseHead*, bool* reset) = 0;
 
   
   
   
   
   
-  virtual MOZ_MUST_USE nsresult ResumeSend() = 0;
-  virtual MOZ_MUST_USE nsresult ResumeRecv() = 0;
+  [[nodiscard]] virtual nsresult ResumeSend() = 0;
+  [[nodiscard]] virtual nsresult ResumeRecv() = 0;
 
   
   
-  virtual MOZ_MUST_USE nsresult ForceSend() = 0;
-  virtual MOZ_MUST_USE nsresult ForceRecv() = 0;
+  [[nodiscard]] virtual nsresult ForceSend() = 0;
+  [[nodiscard]] virtual nsresult ForceRecv() = 0;
 
   
   
@@ -100,9 +99,9 @@ class nsAHttpConnection : public nsISupports {
 
   
   
-  virtual MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport**,
-                                              nsIAsyncInputStream**,
-                                              nsIAsyncOutputStream**) = 0;
+  [[nodiscard]] virtual nsresult TakeTransport(nsISocketTransport**,
+                                               nsIAsyncInputStream**,
+                                               nsIAsyncOutputStream**) = 0;
 
   
   virtual void GetSecurityInfo(nsISupports**) = 0;
@@ -117,7 +116,8 @@ class nsAHttpConnection : public nsISupports {
 
   
   
-  virtual MOZ_MUST_USE nsresult PushBack(const char* data, uint32_t length) = 0;
+  [[nodiscard]] virtual nsresult PushBack(const char* data,
+                                          uint32_t length) = 0;
 
   
   
@@ -162,24 +162,24 @@ class nsAHttpConnection : public nsISupports {
 NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
 
 #define NS_DECL_NSAHTTPCONNECTION(fwdObject)                               \
-  MOZ_MUST_USE nsresult OnHeadersAvailable(                                \
+  [[nodiscard]] nsresult OnHeadersAvailable(                               \
       nsAHttpTransaction*, nsHttpRequestHead*, nsHttpResponseHead*,        \
       bool* reset) override;                                               \
   void CloseTransaction(nsAHttpTransaction*, nsresult) override;           \
-  MOZ_MUST_USE nsresult TakeTransport(                                     \
+  [[nodiscard]] nsresult TakeTransport(                                    \
       nsISocketTransport**, nsIAsyncInputStream**, nsIAsyncOutputStream**) \
       override;                                                            \
   bool IsPersistent() override;                                            \
   bool IsReused() override;                                                \
   void DontReuse() override;                                               \
-  MOZ_MUST_USE nsresult PushBack(const char*, uint32_t) override;          \
+  [[nodiscard]] nsresult PushBack(const char*, uint32_t) override;         \
   already_AddRefed<HttpConnectionBase> TakeHttpConnection() override;      \
   already_AddRefed<HttpConnectionBase> HttpConnection() override;          \
   void TopLevelOuterContentWindowIdChanged(uint64_t windowId) override;    \
-  /*                                                                       \
-     Thes methods below have automatic definitions that just forward the   \
-     function to a lower level connection object                           \
-  */                                                                       \
+  
+
+
+                                                                       \
   void GetConnectionInfo(nsHttpConnectionInfo** result) override {         \
     if (!(fwdObject)) {                                                    \
       *result = nullptr;                                                   \
@@ -194,19 +194,19 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
     }                                                                      \
     return (fwdObject)->GetSecurityInfo(result);                           \
   }                                                                        \
-  MOZ_MUST_USE nsresult ResumeSend() override {                            \
+  [[nodiscard]] nsresult ResumeSend() override {                           \
     if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
     return (fwdObject)->ResumeSend();                                      \
   }                                                                        \
-  MOZ_MUST_USE nsresult ResumeRecv() override {                            \
+  [[nodiscard]] nsresult ResumeRecv() override {                           \
     if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
     return (fwdObject)->ResumeRecv();                                      \
   }                                                                        \
-  MOZ_MUST_USE nsresult ForceSend() override {                             \
+  [[nodiscard]] nsresult ForceSend() override {                            \
     if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
     return (fwdObject)->ForceSend();                                       \
   }                                                                        \
-  MOZ_MUST_USE nsresult ForceRecv() override {                             \
+  [[nodiscard]] nsresult ForceRecv() override {                            \
     if (!(fwdObject)) return NS_ERROR_FAILURE;                             \
     return (fwdObject)->ForceRecv();                                       \
   }                                                                        \
