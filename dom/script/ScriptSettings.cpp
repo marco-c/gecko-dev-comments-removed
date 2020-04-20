@@ -487,6 +487,13 @@ void AutoJSAPI::ReportException() {
         
         
         errorGlobal = GetCurrentThreadWorkerDebuggerGlobal();
+        if (NS_WARN_IF(!errorGlobal)) {
+          
+          
+          
+          ClearException();
+          return;
+        }
       }
     }
   }
