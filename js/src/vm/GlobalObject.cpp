@@ -371,9 +371,31 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
 
     
     if (clasp->specShouldDefineConstructor()) {
-      RootedValue ctorValue(cx, ObjectValue(*ctor));
-      if (!DefineDataProperty(cx, global, id, ctorValue, JSPROP_RESOLVING)) {
-        return false;
+      bool shouldReallyDefine = true;
+
+      
+      
+      
+      
+      if (key == JSProto_SharedArrayBuffer) {
+        const JS::RealmCreationOptions& options =
+            cx->realm()->creationOptions();
+
+        MOZ_ASSERT(options.getSharedMemoryAndAtomicsEnabled(),
+                   "shouldn't be defining SharedArrayBuffer if shared memory "
+                   "is disabled");
+
+        fprintf(stderr, "defineSharedArrayBufferConstructor: %d\n",
+                static_cast<int>(options.defineSharedArrayBufferConstructor()));
+
+        shouldReallyDefine = options.defineSharedArrayBufferConstructor();
+      }
+
+      if (shouldReallyDefine) {
+        RootedValue ctorValue(cx, ObjectValue(*ctor));
+        if (!DefineDataProperty(cx, global, id, ctorValue, JSPROP_RESOLVING)) {
+          return false;
+        }
       }
     }
 

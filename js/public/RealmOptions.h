@@ -125,9 +125,50 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+  
+  
+  
   bool getSharedMemoryAndAtomicsEnabled() const;
   RealmCreationOptions& setSharedMemoryAndAtomicsEnabled(bool flag);
 
+  
+  
+  
+  
+  
+  
+  
+  bool defineSharedArrayBufferConstructor() const {
+    return defineSharedArrayBufferConstructor_;
+  }
+  RealmCreationOptions& setDefineSharedArrayBufferConstructor(bool flag) {
+    defineSharedArrayBufferConstructor_ = flag;
+    return *this;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -216,6 +257,7 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool preserveJitCode_ = false;
   bool cloneSingletons_ = false;
   bool sharedMemoryAndAtomics_ = false;
+  bool defineSharedArrayBufferConstructor_ = true;
   bool coopAndCoep_ = false;
   bool streams_ = false;
   bool readableByteStreams_ = false;

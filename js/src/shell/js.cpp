@@ -6637,6 +6637,17 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
     if (v.isBoolean()) {
       creationOptions.setCoopAndCoepEnabled(v.toBoolean());
     }
+
+    
+    
+    
+    
+    if (!JS_GetProperty(cx, opts, "defineSharedArrayBufferConstructor", &v)) {
+      return false;
+    }
+    if (v.isBoolean()) {
+      creationOptions.setDefineSharedArrayBufferConstructor(v.toBoolean());
+    }
   }
 
   if (!CheckRealmOptions(cx, options, principals.get())) {
