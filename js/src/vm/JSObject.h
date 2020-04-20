@@ -866,17 +866,6 @@ MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
 }
 
 
-
-extern JSObject* CreateThisForFunctionWithProto(
-    JSContext* cx, js::HandleFunction callee, HandleObject newTarget,
-    HandleObject proto, NewObjectKind newKind = GenericObject);
-
-
-extern JSObject* CreateThisForFunction(JSContext* cx, js::HandleFunction callee,
-                                       js::HandleObject newTarget,
-                                       NewObjectKind newKind);
-
-
 extern JSObject* CreateThis(JSContext* cx, const JSClass* clasp,
                             js::HandleObject callee);
 

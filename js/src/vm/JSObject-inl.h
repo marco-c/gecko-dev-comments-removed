@@ -20,6 +20,24 @@
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"
 
+namespace js {
+
+
+
+
+
+static inline gc::AllocKind NewObjectGCKind(const JSClass* clasp) {
+  if (clasp == &ArrayObject::class_) {
+    return gc::AllocKind::OBJECT8;
+  }
+  if (clasp == &JSFunction::class_) {
+    return gc::AllocKind::OBJECT2;
+  }
+  return gc::AllocKind::OBJECT4;
+}
+
+}  
+
 MOZ_ALWAYS_INLINE uint32_t js::NativeObject::numDynamicSlots() const {
   return dynamicSlotsCount(numFixedSlots(), slotSpan(), getClass());
 }
@@ -636,26 +654,6 @@ inline bool IsCallable(const Value& v) {
 
 inline bool IsConstructor(const Value& v) {
   return v.isObject() && v.toObject().isConstructor();
-}
-
-MOZ_ALWAYS_INLINE bool CreateThis(JSContext* cx, HandleFunction callee,
-                                  HandleObject newTarget, NewObjectKind newKind,
-                                  MutableHandleValue thisv) {
-  if (callee->constructorNeedsUninitializedThis()) {
-    thisv.setMagic(JS_UNINITIALIZED_LEXICAL);
-    return true;
-  }
-
-  MOZ_ASSERT(thisv.isMagic(JS_IS_CONSTRUCTING));
-
-  JSObject* obj = CreateThisForFunction(cx, callee, newTarget, newKind);
-  if (!obj) {
-    return false;
-  }
-
-  MOZ_ASSERT(obj->nonCCWRealm() == callee->realm());
-  thisv.setObject(*obj);
-  return true;
 }
 
 } 

@@ -12,8 +12,11 @@
 #include "js/Result.h"        
 #include "js/RootingAPI.h"    
 #include "vm/NativeObject.h"  
+#include "vm/ObjectGroup.h"   
 
 struct JS_PUBLIC_API JSContext;
+class JS_PUBLIC_API JSFunction;
+class JS_PUBLIC_API JSObject;
 
 namespace js {
 
@@ -36,6 +39,20 @@ extern bool CopyDataPropertiesNative(JSContext* cx,
                                      JS::Handle<NativeObject*> from,
                                      JS::Handle<PlainObject*> excludedItems,
                                      bool* optimized);
+
+
+
+extern PlainObject* CreateThisForFunctionWithProto(
+    JSContext* cx, JS::Handle<JSFunction*> callee,
+    JS::Handle<JSObject*> newTarget, JS::Handle<JSObject*> proto,
+    NewObjectKind newKind = GenericObject);
+
+
+extern PlainObject* CreateThisForFunction(JSContext* cx,
+                                          JS::Handle<JSFunction*> callee,
+                                          JS::Handle<JSObject*> newTarget,
+                                          NewObjectKind newKind);
+
 }  
 
 #endif  
