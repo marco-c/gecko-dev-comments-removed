@@ -288,8 +288,6 @@ pref("browser.urlbar.maxCharsForSearchSuggestions", 20);
 pref("browser.urlbar.formatting.enabled", true);
 pref("browser.urlbar.trimURLs", true);
 
-pref("browser.urlbar.oneOffSearches", true);
-
 
 
 pref("browser.urlbar.decodeURLsOnCopy", false);

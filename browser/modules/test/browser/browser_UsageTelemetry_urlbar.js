@@ -15,7 +15,6 @@ const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 
 const SUGGESTION_ENGINE_NAME =
   "browser_UsageTelemetry usageTelemetrySearchSuggestions.xml";
-const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   SearchTelemetry: "resource:///modules/SearchTelemetry.jsm",
@@ -110,9 +109,6 @@ add_task(async function setup() {
   Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, true);
 
   
-  Services.prefs.setBoolPref(ONEOFF_URLBAR_PREF, true);
-
-  
   let oldCanRecord = Services.telemetry.canRecordExtended;
   Services.telemetry.canRecordExtended = true;
 
@@ -140,7 +136,6 @@ add_task(async function setup() {
     await Services.search.setDefault(originalEngine);
     await Services.search.removeEngine(engine);
     Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, suggestionsEnabled);
-    Services.prefs.clearUserPref(ONEOFF_URLBAR_PREF);
     await PlacesUtils.history.clear();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
