@@ -741,7 +741,14 @@ this.downloads = class extends ExtensionAPI {
               return target;
             }
 
-            const window = Services.wm.getMostRecentWindow("navigator:browser");
+            if (!("windowTracker" in global)) {
+              return target;
+            }
+
+            
+            
+            
+            const window = global.windowTracker.getTopWindow().window;
             const basename = OS.Path.basename(target);
             const ext = basename.match(/\.([^.]+)$/);
 
