@@ -260,7 +260,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(Document* aOldDocument,
     
     
     if (aOldShadowRoot) {
-      aOldShadowRoot->RemoveSheet(*mStyleSheet);
+      aOldShadowRoot->RemoveStyleSheet(*mStyleSheet);
     } else {
       aOldDocument->RemoveStyleSheet(*mStyleSheet);
     }
@@ -297,7 +297,7 @@ nsStyleLinkElement::DoUpdateStyleSheet(Document* aOldDocument,
       ShadowRoot* containingShadow = thisContent->GetContainingShadow();
       
       if (MOZ_LIKELY(containingShadow)) {
-        containingShadow->RemoveSheet(*mStyleSheet);
+        containingShadow->RemoveStyleSheet(*mStyleSheet);
       }
     } else {
       doc->RemoveStyleSheet(*mStyleSheet);

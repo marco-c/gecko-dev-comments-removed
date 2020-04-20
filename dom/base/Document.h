@@ -1718,11 +1718,6 @@ class Document : public nsINode,
   
 
 
-  void RemoveStyleSheet(StyleSheet&);
-
-  
-
-
 
   void StyleSheetApplicableStateChanged(StyleSheet&);
 
