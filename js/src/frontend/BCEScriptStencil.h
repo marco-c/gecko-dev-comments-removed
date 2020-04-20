@@ -9,18 +9,14 @@
 
 #include "mozilla/Span.h"  
 
-#include <stdint.h>  
-
 #include "frontend/Stencil.h"  
 #include "gc/Barrier.h"        
 #include "js/HeapAPI.h"        
-#include "vm/JSScript.h"       
+#include "js/TypeDecls.h"      
+#include "js/UniquePtr.h"      
+#include "vm/SharedStencil.h"  
 
-struct JSContext;
-
-namespace js {
-
-namespace frontend {
+namespace js::frontend {
 
 struct BytecodeEmitter;
 
@@ -41,7 +37,6 @@ class BCEScriptStencil : public ScriptStencil {
   virtual void finishInnerFunctions() const;
 };
 
-} 
 } 
 
 #endif 

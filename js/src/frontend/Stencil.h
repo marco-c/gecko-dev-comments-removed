@@ -20,12 +20,12 @@
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ObjLiteral.h"         
 #include "frontend/TypedIndex.h"         
-#include "gc/AllocKind.h"                
 #include "gc/Barrier.h"                  
 #include "gc/Rooting.h"  
 #include "js/GCVariant.h"    
 #include "js/RegExpFlags.h"  
 #include "js/RootingAPI.h"   
+#include "js/TypeDecls.h"    
 #include "js/UniquePtr.h"    
 #include "js/Utility.h"      
 #include "js/Vector.h"       
@@ -33,21 +33,14 @@
 #include "vm/BigIntType.h"   
 #include "vm/JSFunction.h"   
 #include "vm/JSScript.h"  
-#include "vm/Runtime.h"  
+#include "vm/Runtime.h"   
 #include "vm/Scope.h"  
 #include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
 
-struct JSContext;
-class JSAtom;
-class JSFunction;
-class JSTracer;
+class JS_PUBLIC_API JSTracer;
 
-namespace js {
-
-class Shape;
-
-namespace frontend {
+namespace js::frontend {
 
 struct CompilationInfo;
 class FunctionBox;
@@ -477,7 +470,6 @@ class ScriptStencil {
   virtual void finishInnerFunctions() const = 0;
 };
 
-} 
 } 
 
 namespace JS {
