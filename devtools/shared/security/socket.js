@@ -275,6 +275,13 @@ var _attemptConnect = async function({ host, port, encryption }) {
   } else {
     s = socketTransportService.createTransport([], host, port, null);
   }
+
+  
+  
+  if (!host.includes(":")) {
+    s.connectionFlags |= Ci.nsISocketTransport.DISABLE_IPV6;
+  }
+
   
   
   
