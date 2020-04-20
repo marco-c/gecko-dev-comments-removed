@@ -366,9 +366,8 @@ var ExtensionsUI = {
     let { browser, window } = getTabBrowser(target);
 
     
-    
     let pending;
-    while ((pending = this.pendingNotifications.get(window))) {
+    while ((pending = this.pendingNotifications.get(browser))) {
       await pending;
     }
 
@@ -455,8 +454,8 @@ var ExtensionsUI = {
       );
     });
 
-    this.pendingNotifications.set(window, promise);
-    promise.finally(() => this.pendingNotifications.delete(window));
+    this.pendingNotifications.set(browser, promise);
+    promise.finally(() => this.pendingNotifications.delete(browser));
     return promise;
   },
 
