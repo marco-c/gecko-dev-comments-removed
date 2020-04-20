@@ -1,17 +1,55 @@
 
 
 
+
 'use strict';
 
 
 
 idl_test(
   ['webxr'],
-  ['permissions', 'webgl1', 'html', 'dom'],
+  ['permissions', 'webgl1', 'geometry', 'html', 'dom'],
   async idl_array => {
     idl_array.add_objects({
       Navigator: ['navigator'],
       XR: ['navigator.xr'],
+      
+      XRSession: ['xrSession'],
+      XRRenderState: ['xrRenderState'],
+      
+      
+      XRReferenceSpace: ['xrReferenceSpace'],
+      
+      
+      
+      XRRigidTransform: ['new XRRigidTransform()'],
+      
+      
+      
+      XRInputSourceArray: ['xrInputSourceArray'],
+      XRWebGLLayer: ['xrWebGLLayer'],
+      WebGLRenderingContextBase: ['webGLRenderingContextBase'],
+      XRSessionEvent: ['xrSessionEvent'],
+      
+      XRInputSourcesChangeEvent: ['xrInputSourcesChangeEvent'],
+      
+      
     });
+
+    self.xrSession = await navigator.xr.requestSession('inline');
+    self.xrRenderState = self.xrSession.renderState;
+    self.xrReferenceSpace = await self.xrSession.requestReferenceSpace('viewer');
+    self.xrInputSourceArray = self.xrSession.inputSources;
+    self.xrSessionEvent = new XRSessionEvent('end', {session: self.xrSession});
+    self.xrInputSourcesChangeEvent = new XRInputSourcesChangeEvent('inputsourceschange', {
+      session: self.xrSession,
+      added: [],
+      removed: [],
+    });
+
+    
+    const canvas = document.createElement('canvas');
+    self.webGLRenderingContextBase = canvas.getContext('webgl');
+    self.xrWebGLLayer = new XRWebGLLayer(self.xrSession, self.webGLRenderingContextBase);
   }
 );
