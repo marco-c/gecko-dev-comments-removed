@@ -845,7 +845,7 @@ where
                 
                 
                 
-                if kid.get_data().is_some() {
+                if kid.has_data() {
                     kid.clear_data();
                     parents.push(kid);
                 }

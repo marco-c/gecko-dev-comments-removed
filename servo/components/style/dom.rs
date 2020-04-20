@@ -22,7 +22,7 @@ use crate::shared_lock::Locked;
 use crate::stylist::CascadeData;
 use crate::traversal_flags::TraversalFlags;
 use crate::{Atom, LocalName, Namespace, WeakAtom};
-use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
+use atomic_refcell::{AtomicRef, AtomicRefMut};
 use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
 use selectors::sink::Push;
 use selectors::Element as SelectorsElement;
@@ -698,17 +698,13 @@ pub trait TElement:
     unsafe fn clear_data(&self);
 
     
-    fn get_data(&self) -> Option<&AtomicRefCell<ElementData>>;
+    fn has_data(&self) -> bool;
 
     
-    fn borrow_data(&self) -> Option<AtomicRef<ElementData>> {
-        self.get_data().map(|x| x.borrow())
-    }
+    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
 
     
-    fn mutate_data(&self) -> Option<AtomicRefMut<ElementData>> {
-        self.get_data().map(|x| x.borrow_mut())
-    }
+    fn mutate_data(&self) -> Option<AtomicRefMut<ElementData>>;
 
     
     
