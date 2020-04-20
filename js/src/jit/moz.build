@@ -241,14 +241,14 @@ elif CONFIG['JS_CODEGEN_MIPS32'] or CONFIG['JS_CODEGEN_MIPS64']:
 
 
 
-GeneratedFile('MOpcodes.h',
+GeneratedFile('MOpcodesGenerated.h',
               script='GenerateOpcodeFiles.py',
               entry_point='generate_mir_header',
               inputs=['MIR.h'])
 
 
 
-GeneratedFile('LOpcodes.h',
+GeneratedFile('LOpcodesGenerated.h',
               script='GenerateOpcodeFiles.py',
               entry_point='generate_lir_header',
               inputs=lir_inputs)

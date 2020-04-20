@@ -17,7 +17,7 @@
 #include "jit/FixedList.h"
 #include "jit/InlineList.h"
 #include "jit/JitAllocPolicy.h"
-#include "jit/LOpcodes.h"
+#include "jit/LOpcodesGenerated.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
 #include "jit/Registers.h"
@@ -783,6 +783,7 @@ class LNode {
   inline const L##name* to##name() const;
   LIR_OPCODE_LIST(LIROP)
 #undef LIROP
+
 
 
 #define LIR_HEADER(opcode) \
