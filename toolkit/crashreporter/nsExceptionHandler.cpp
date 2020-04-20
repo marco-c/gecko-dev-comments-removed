@@ -189,6 +189,7 @@ static xpstring* defaultMemoryReportPath = nullptr;
 static const char kCrashMainID[] = "crash.main.3\n";
 
 static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
+static mozilla::Atomic<bool> gEncounteredChildException(false);
 
 static XP_CHAR* pendingDirectory;
 static XP_CHAR* crashReporterPath;
@@ -1727,20 +1728,8 @@ static void FreeBreakpadVM() {
   }
 }
 
-
-
-
-
-
-
-static bool FPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
-                      MDRawAssertionInfo* assertion) {
+static bool IsCrashingException(EXCEPTION_POINTERS* exinfo) {
   if (!exinfo) {
-    mozilla::IOInterposer::Disable();
-#  if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-    DllBlocklist_Shutdown();
-#  endif
-    FreeBreakpadVM();
     return true;
   }
 
@@ -1756,18 +1745,49 @@ static bool FPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
     case STATUS_FLOAT_MULTIPLE_FAULTS:
     case STATUS_FLOAT_MULTIPLE_TRAPS:
       return false;  
+    default:
+      return true;
   }
+}
+
+
+
+
+
+static void PrepareForMinidump() {
   mozilla::IOInterposer::Disable();
 #  if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
   DllBlocklist_Shutdown();
 #  endif
   FreeBreakpadVM();
-  return true;
+}
+
+
+
+
+
+static bool FPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
+                      MDRawAssertionInfo* assertion) {
+  if (IsCrashingException(exinfo)) {
+    PrepareForMinidump();
+    return true;
+  }
+
+  return false;
 }
 
 static bool ChildFPEFilter(void* context, EXCEPTION_POINTERS* exinfo,
                            MDRawAssertionInfo* assertion) {
-  return FPEFilter(context, exinfo, assertion);
+  if (!IsCrashingException(exinfo)) {
+    return false;
+  }
+
+  if (gEncounteredChildException.exchange(true)) {
+    return false;
+  }
+
+  PrepareForMinidump();
+  return true;
 }
 
 static bool ChildMinidumpCallback(const wchar_t* dump_path,
@@ -1838,6 +1858,10 @@ static bool Filter(void* context, const phc::AddrInfo* addrInfo) {
 }
 
 static bool ChildFilter(void* context, const phc::AddrInfo* addrInfo) {
+  if (gEncounteredChildException.exchange(true)) {
+    return false;
+  }
+
   mozilla::IOInterposer::Disable();
   PrepareChildExceptionTimeAnnotations(context, addrInfo);
   return true;
