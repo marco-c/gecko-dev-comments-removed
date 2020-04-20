@@ -130,6 +130,9 @@ class JSWindowActor : public nsISupports, public nsWrapperCache {
   };
 
   nsCOMPtr<nsISupports> mWrappedJS;
+  
+  
+  nsCString mCName;
   nsString mName;
   nsRefPtrHashtable<nsUint64HashKey, Promise> mPendingQueries;
   uint64_t mNextQueryId;
