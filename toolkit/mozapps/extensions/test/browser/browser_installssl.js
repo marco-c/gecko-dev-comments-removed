@@ -36,10 +36,6 @@ function test() {
     cos.clearValidityOverride("untrusted.example.com", -1);
     cos.clearValidityOverride("expired.example.com", -1);
 
-    try {
-      Services.prefs.clearUserPref(PREF_INSTALL_REQUIREBUILTINCERTS);
-    } catch (e) {}
-
     if (gPendingInstall) {
       gTests = [];
       ok(
@@ -177,8 +173,10 @@ add_test(function() {
 
 
 
-add_test(function() {
-  Services.prefs.setBoolPref(PREF_INSTALL_REQUIREBUILTINCERTS, false);
+add_test(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_INSTALL_REQUIREBUILTINCERTS, false]],
+  });
 
   
   add_install_test(HTTP, null, SUCCESS);
@@ -246,8 +244,10 @@ add_test(() => {
 
 
 
-add_test(function() {
-  Services.prefs.clearUserPref(PREF_INSTALL_REQUIREBUILTINCERTS);
+add_test(async function() {
+  await SpecialPowers.pushPrefEnv({
+    clear: [[PREF_INSTALL_REQUIREBUILTINCERTS]],
+  });
 
   
   add_install_test(HTTP, null, SUCCESS);
@@ -310,8 +310,10 @@ add_test(function() {
 
 
 
-add_test(function() {
-  Services.prefs.setBoolPref(PREF_INSTALL_REQUIREBUILTINCERTS, false);
+add_test(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_INSTALL_REQUIREBUILTINCERTS, false]],
+  });
 
   
   add_install_test(HTTP, null, SUCCESS);
