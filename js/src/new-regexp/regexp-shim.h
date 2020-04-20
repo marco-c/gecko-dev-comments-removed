@@ -896,20 +896,17 @@ class JSRegExp : public HeapObject {
   
   
   
-  void TierUpTick() {  }
-  bool MarkedForTierUp() const {
-    return false; 
+  void TierUpTick() { inner()->tierUpTick(); }
+
+  Object Code(bool is_latin1) const {
+    return Object(JS::PrivateGCThingValue(inner()->getJitCode(is_latin1)));
   }
   Object Bytecode(bool is_latin1) const {
     return Object(JS::PrivateValue(inner()->getByteCode(is_latin1)));
   }
 
   
-  Object Code(bool is_latin1) const { return Object(JS::UndefinedValue()); }
-
-  uint32_t BacktrackLimit() const {
-    return 0; 
-  }
+  uint32_t BacktrackLimit() const { return 0; }
 
   static JSRegExp cast(Object object) {
     JSRegExp regexp;
