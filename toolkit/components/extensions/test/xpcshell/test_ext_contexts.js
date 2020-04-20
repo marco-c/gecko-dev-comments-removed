@@ -48,8 +48,6 @@ add_task(async function test_post_unload_promises() {
 
   context.wrapPromise(Promise.resolve("resolved")).then(fail);
 
-  
-  
   context.wrapPromise(Promise.reject({ message: "rejected" })).then(fail, fail);
 
   context.unload();

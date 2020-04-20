@@ -802,7 +802,7 @@ Download.prototype = {
     if (!this._promiseCanceled) {
       
       this._promiseCanceled = new Promise(resolve => {
-        this._currentAttempt.finally(resolve);
+        this._currentAttempt.then(resolve, resolve);
       });
 
       

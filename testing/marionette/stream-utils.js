@@ -97,8 +97,7 @@ function StreamCopier(input, output, length) {
   
   
   this.then = this._deferred.promise.then.bind(this._deferred.promise);
-  this.finally = this._deferred.promise.finally.bind(this._deferred.promise);
-  this.finally(this._destroy);
+  this.then(this._destroy, this._destroy);
 
   
   

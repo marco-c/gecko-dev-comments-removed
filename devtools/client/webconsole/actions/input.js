@@ -87,6 +87,8 @@ function evaluateExpression(expression, from = "input") {
 
     
     
+    const onSettled = res => res;
+
     const response = await client
       .evaluateJSAsync(expression, {
         frameActor: await webConsoleUI.getFrameActor(),
@@ -94,7 +96,7 @@ function evaluateExpression(expression, from = "input") {
         selectedTargetFront: toolbox && toolbox.getSelectedTargetFront(),
         mapped,
       })
-      .catch(e => e);
+      .then(onSettled, onSettled);
 
     return dispatch(onExpressionEvaluated(response));
   };

@@ -288,7 +288,10 @@ function looseTimer(delay) {
   );
   
   
-  deferred.promise.finally(() => timer.cancel());
+  deferred.promise.then(
+    () => timer.cancel(),
+    () => timer.cancel()
+  );
   return deferred;
 }
 
