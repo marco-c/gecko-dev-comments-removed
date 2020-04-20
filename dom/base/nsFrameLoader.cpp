@@ -2139,10 +2139,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (OwnerIsMozBrowserFrame()) {
-    docShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
-  }
-
   
   
   
@@ -2160,10 +2156,6 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     if (mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name)) {
       docShell->SetName(name);
     }
-    docShell->SetFullscreenAllowed(
-        mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
-        mOwnerContent->HasAttr(kNameSpaceID_None,
-                               nsGkAtoms::mozallowfullscreen));
   }
 
   
@@ -2171,8 +2163,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-  if (!docShell->GetIsMozBrowser() &&
-      parentDocShell->ItemType() == docShell->ItemType() &&
+  if (parentDocShell->ItemType() == docShell->ItemType() &&
       !doc->IsStaticDocument() && win) {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;

@@ -596,22 +596,10 @@ void BrowserChild::NotifyTabContextUpdated() {
     return;
   }
 
-  UpdateFrameType();
-
   
   if (!PresentationURL().IsEmpty()) {
     mBrowsingContext->SetSandboxFlags(SANDBOXED_AUXILIARY_NAVIGATION);
   }
-}
-
-void BrowserChild::UpdateFrameType() {
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  MOZ_ASSERT(docShell);
-
-  
-  docShell->SetFrameType(IsMozBrowserElement()
-                             ? nsIDocShell::FRAME_TYPE_BROWSER
-                             : nsIDocShell::FRAME_TYPE_REGULAR);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowserChild)
@@ -1096,9 +1084,6 @@ void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
     mDidSetRealShowInfo = true;
   }
 
-  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
-    docShell->SetFullscreenAllowed(aInfo.fullscreenAllowed());
-  }
   mIsTransparent = aInfo.isTransparent();
 }
 
@@ -2266,11 +2251,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvSwappedWithOtherRemoteLoader(
   if (!UpdateTabContextAfterSwap(maybeContext.GetTabContext())) {
     MOZ_CRASH("Update to TabContext after swap was denied.");
   }
-
-  
-  
-  
-  UpdateFrameType();
 
   
   mTriedBrowserInit = true;
