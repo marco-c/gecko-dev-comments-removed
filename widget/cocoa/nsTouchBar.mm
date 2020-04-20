@@ -1,11 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "nsTouchBar.h"
 
 #include "mozilla/MacStringHelpers.h"
-#include "mozilla/Telemetry.h"
 #include "nsArrayUtils.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIArray.h"
@@ -15,28 +14,28 @@
 
 static const NSTouchBarItemIdentifier BaseIdentifier = @"com.mozilla.firefox.touchbar";
 
-// Non-JS scrubber implemention for the Share Scrubber,
-// since it is defined by an Apple API.
+
+
 static NSTouchBarItemIdentifier ShareScrubberIdentifier =
     [TouchBarInput nativeIdentifierWithType:@"scrubber" withKey:@"share"];
 
-// The search popover needs to show/hide depending on if the Urlbar is focused
-// when it is created. We keep track of its identifier to accomodate this
-// special handling.
+
+
+
 static NSTouchBarItemIdentifier SearchPopoverIdentifier =
     [TouchBarInput nativeIdentifierWithType:@"popover" withKey:@"search-popover"];
 
-// Used to tie action strings to buttons.
+
 static char sIdentifierAssociationKey;
 
-// The default space between inputs, used where layout is not automatic.
+
 static const uint32_t kInputSpacing = 8;
-// The width of buttons in Apple's Share ScrollView. We use this in our
-// ScrollViews to give them a native appearance.
+
+
 static const uint32_t kScrollViewButtonWidth = 144;
 static const uint32_t kInputIconSize = 16;
 
-// The system default width for Touch Bar inputs is 128px. This is double.
+
 #define MAIN_BUTTON_WIDTH 256
 
 #pragma mark - NSTouchBarDelegate
@@ -58,8 +57,8 @@ static const uint32_t kInputIconSize = 16;
     self.customizationAllowedItemIdentifiers = @[];
 
     if (!aInputs) {
-      // This customization identifier is how users' custom layouts are saved by macOS.
-      // If this changes, all users' layouts would be reset to the default layout.
+      
+      
       self.customizationIdentifier = [BaseIdentifier stringByAppendingPathExtension:@"defaultbar"];
       nsCOMPtr<nsIArray> allItems;
 
@@ -70,9 +69,9 @@ static const uint32_t kInputIconSize = 16;
 
       uint32_t itemCount = 0;
       allItems->GetLength(&itemCount);
-      // This is copied to self.customizationAllowedItemIdentifiers.
-      // Required since [self.mappedItems allKeys] does not preserve order.
-      // One slot is added for the spacer item.
+      
+      
+      
       NSMutableArray* orderedIdentifiers = [NSMutableArray arrayWithCapacity:itemCount + 1];
       for (uint32_t i = 0; i < itemCount; ++i) {
         nsCOMPtr<nsITouchBarInput> input = do_QueryElementAt(allItems, i);
@@ -87,14 +86,14 @@ static const uint32_t kInputIconSize = 16;
           continue;
         }
 
-        // If there is already an input in mappedLayoutItems with this identifier,
-        // that means updateItem fired before this initialization. The input
-        // cached by updateItem is more current, so we should use that one.
+        
+        
+        
         if (self.mappedLayoutItems[newInputIdentifier]) {
           convertedInput = self.mappedLayoutItems[newInputIdentifier];
         } else {
           convertedInput = [[TouchBarInput alloc] initWithXPCOM:input];
-          // Add new input to dictionary for lookup of properties in delegate.
+          
           self.mappedLayoutItems[[convertedInput nativeIdentifier]] = convertedInput;
         }
 
@@ -163,9 +162,9 @@ static const uint32_t kInputIconSize = 16;
   }
 
   if ([input baseType] == TouchBarInputBaseType::kScrubber) {
-    // We check the identifier rather than the baseType here as a special case.
+    
     if (![aIdentifier isEqualToString:ShareScrubberIdentifier]) {
-      // We're only supporting the Share scrubber for now.
+      
       return nil;
     }
     return [self makeShareScrubberForIdentifier:aIdentifier];
@@ -175,15 +174,15 @@ static const uint32_t kInputIconSize = 16;
     NSPopoverTouchBarItem* newPopoverItem =
         [[NSPopoverTouchBarItem alloc] initWithIdentifier:aIdentifier];
     [newPopoverItem setCustomizationLabel:[input title]];
-    // We initialize popoverTouchBar here because we only allow setting this
-    // property on popover creation. Updating popoverTouchBar for every update
-    // of the popover item would be very expensive.
+    
+    
+    
     newPopoverItem.popoverTouchBar = [[nsTouchBar alloc] initWithInputs:[input children]];
     [self updatePopover:newPopoverItem withIdentifier:[input nativeIdentifier]];
     return newPopoverItem;
   }
 
-  // Our new item, which will be initialized depending on aIdentifier.
+  
   NSCustomTouchBarItem* newItem = [[NSCustomTouchBarItem alloc] initWithIdentifier:aIdentifier];
   [newItem setCustomizationLabel:[input title]];
 
@@ -197,7 +196,7 @@ static const uint32_t kInputIconSize = 16;
     return newItem;
   }
 
-  // The cases of a button or main button require the same setup.
+  
   NSButton* button = [NSButton buttonWithTitle:@"" target:self action:@selector(touchBarAction:)];
   newItem.view = button;
 
@@ -217,11 +216,11 @@ static const uint32_t kInputIconSize = 16;
 
   NSTouchBarItem* item = [self itemForIdentifier:[aInput nativeIdentifier]];
 
-  // If we can't immediately find item, there are three possibilities:
-  //   * It is a button in a ScrollView, or
-  //   * It is contained within a popover, or
-  //   * It simply does not exist.
-  // We check for each possibility here.
+  
+  
+  
+  
+  
   if (!self.mappedLayoutItems[[aInput nativeIdentifier]]) {
     if ([self maybeUpdateScrollViewChild:aInput]) {
       return true;
@@ -232,7 +231,7 @@ static const uint32_t kInputIconSize = 16;
     return false;
   }
 
-  // Update our canonical copy of the input.
+  
   [self replaceMappedLayoutItem:aInput];
 
   if ([aInput baseType] == TouchBarInputBaseType::kButton) {
@@ -276,14 +275,14 @@ static const uint32_t kInputIconSize = 16;
 - (bool)maybeUpdateScrollViewChild:(TouchBarInput*)aInput {
   NSCustomTouchBarItem* scrollViewButton = self.scrollViewButtons[[aInput nativeIdentifier]];
   if (scrollViewButton) {
-    // ScrollView buttons are similar to mainButtons except for their width.
+    
     [self updateMainButton:scrollViewButton withIdentifier:[aInput nativeIdentifier]];
     NSButton* button = (NSButton*)scrollViewButton.view;
     uint32_t buttonSize = MAX(button.attributedTitle.size.width + kInputIconSize + kInputSpacing,
                               kScrollViewButtonWidth);
     [[button widthAnchor] constraintGreaterThanOrEqualToConstant:buttonSize].active = YES;
   }
-  // Updating the TouchBarInput* in the ScrollView's mChildren array.
+  
   for (NSTouchBarItemIdentifier identifier in self.mappedLayoutItems) {
     TouchBarInput* potentialScrollView = self.mappedLayoutItems[identifier];
     if ([potentialScrollView baseType] != TouchBarInputBaseType::kScrollView) {
@@ -323,8 +322,8 @@ static const uint32_t kInputIconSize = 16;
   if ([input imageURI]) {
     [button setImagePosition:NSImageOnly];
     [self loadIconForInput:input forItem:aButton];
-    // Because we are hiding the title, NSAccessibility also does not get it.
-    // Therefore, set an accessibility label as alternative text for image-only buttons.
+    
+    
     [button setAccessibilityLabel:[input title]];
   }
 
@@ -351,7 +350,7 @@ static const uint32_t kInputIconSize = 16;
   [self updateButton:aMainButton withIdentifier:aIdentifier];
   NSButton* button = (NSButton*)[aMainButton view];
 
-  // If empty, string is still being localized. Display a blank input instead.
+  
   if ([[input title] isEqualToString:@""]) {
     [button setImagePosition:NSNoImage];
   } else {
@@ -380,10 +379,10 @@ static const uint32_t kInputIconSize = 16;
     aPopoverItem.collapsedRepresentationLabel = [input title];
   }
 
-  // Special handling to show/hide the search popover if the Urlbar is focused.
+  
   if ([[input nativeIdentifier] isEqualToString:SearchPopoverIdentifier]) {
-    // We can reach this code during window shutdown. We only want to toggle
-    // showPopover if we are in a normal running state.
+    
+    
     if (!mTouchBarHelper) {
       return;
     }
@@ -410,8 +409,8 @@ static const uint32_t kInputIconSize = 16;
   NSView* documentView = [[NSView alloc] initWithFrame:NSZeroRect];
   NSString* layoutFormat = @"H:|-8-";
   NSSize size = NSMakeSize(kInputSpacing, 30);
-  // Layout strings allow only alphanumeric characters. We will use this
-  // NSCharacterSet to strip illegal characters.
+  
+  
   NSCharacterSet* charactersToRemove = [[NSCharacterSet alphanumericCharacterSet] invertedSet];
 
   for (TouchBarInput* childInput in [input children]) {
@@ -425,7 +424,7 @@ static const uint32_t kInputIconSize = 16;
                                           target:self
                                           action:@selector(touchBarAction:)];
     newItem.view = button;
-    // ScrollView buttons are similar to mainButtons except for their width.
+    
     [self updateMainButton:newItem withIdentifier:[childInput nativeIdentifier]];
     uint32_t buttonSize = MAX(button.attributedTitle.size.width + kInputIconSize + kInputSpacing,
                               kScrollViewButtonWidth);
@@ -440,7 +439,7 @@ static const uint32_t kInputIconSize = 16;
     NSString* layoutKey = [[[childInput nativeIdentifier]
         componentsSeparatedByCharactersInSet:charactersToRemove] componentsJoinedByString:@""];
 
-    // Iteratively create our layout string.
+    
     layoutFormat =
         [layoutFormat stringByAppendingString:[NSString stringWithFormat:@"[%@]-8-", layoutKey]];
     [constraintViews setObject:button forKey:layoutKey];
@@ -475,12 +474,12 @@ static const uint32_t kInputIconSize = 16;
 
 - (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier {
   TouchBarInput* input = self.mappedLayoutItems[aIdentifier];
-  // System-default share menu
+  
   NSSharingServicePickerTouchBarItem* servicesItem =
       [[NSSharingServicePickerTouchBarItem alloc] initWithIdentifier:aIdentifier];
 
-  // buttonImage needs to be set to nil while we wait for our icon to load.
-  // Otherwise, the default Apple share icon is automatically loaded.
+  
+  
   servicesItem.buttonImage = nil;
 
   [self loadIconForInput:input forItem:servicesItem];
@@ -554,9 +553,9 @@ static const uint32_t kInputIconSize = 16;
       continue;
     }
 
-    // Childless popovers contain the default Touch Bar as its popoverTouchBar.
-    // We check for [input children] since the default Touch Bar contains a
-    // popover (search-popover), so this would infinitely loop if there was no check.
+    
+    
+    
     if ([input baseType] == TouchBarInputBaseType::kPopover && [input children]) {
       NSTouchBarItem* item = [self itemForIdentifier:identifier];
       [(nsTouchBar*)[(NSPopoverTouchBarItem*)item popoverTouchBar] releaseJSObjects];
@@ -578,9 +577,9 @@ static const uint32_t kInputIconSize = 16;
     nsresult rv = mTouchBarHelper->GetActiveUrl(url);
     if (!NS_FAILED(rv)) {
       urlToShare = [NSURL URLWithString:nsCocoaUtils::ToNSString(url)];
-      // NSURL URLWithString returns nil if the URL is invalid. At this point,
-      // it is too late to simply shut down the share menu, so we default to
-      // about:blank if the share button is clicked when the URL is invalid.
+      
+      
+      
       if (urlToShare == nil) {
         urlToShare = [NSURL URLWithString:@"about:blank"];
       }
@@ -592,17 +591,13 @@ static const uint32_t kInputIconSize = 16;
     }
   }
 
-  // If the user has gotten this far, they have clicked the share button so it
-  // is logged.
-  Telemetry::AccumulateCategorical(Telemetry::LABELS_TOUCHBAR_BUTTON_PRESSES::Share);
-
   return @[ urlToShare, titleToShare ];
 }
 
 - (NSArray<NSSharingService*>*)sharingServicePicker:(NSSharingServicePicker*)aSharingServicePicker
                             sharingServicesForItems:(NSArray*)aItems
                             proposedSharingServices:(NSArray<NSSharingService*>*)aProposedServices {
-  // redundant services
+  
   NSArray* excludedServices = @[
     @"com.apple.share.System.add-to-safari-reading-list",
   ];
