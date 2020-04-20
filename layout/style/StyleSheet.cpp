@@ -45,14 +45,15 @@ StyleSheet::StyleSheet(css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
   mInner->AddSheet(this);
 }
 
-StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
+StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentSheetToUse,
                        dom::CSSImportRule* aOwnerRuleToUse,
-                       dom::DocumentOrShadowRoot* aDocumentOrShadowRoot,
+                       dom::DocumentOrShadowRoot* aDocOrShadowRootToUse,
+                       dom::Document* aConstructorDocToUse,
                        nsINode* aOwningNodeToUse)
-    : mParentSheet(aParentToUse),
-      mConstructorDocument(aCopy.mConstructorDocument),
+    : mParentSheet(aParentSheetToUse),
+      mConstructorDocument(aConstructorDocToUse),
       mTitle(aCopy.mTitle),
-      mDocumentOrShadowRoot(aDocumentOrShadowRoot),
+      mDocumentOrShadowRoot(aDocOrShadowRootToUse),
       mOwningNode(aOwningNodeToUse),
       mOwnerRule(aOwnerRuleToUse),
       mParsingMode(aCopy.mParsingMode),
@@ -62,6 +63,9 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
       mAssociationMode(NotOwnedByDocumentOrShadowRoot),
       
       mInner(aCopy.mInner) {
+  MOZ_ASSERT(!aConstructorDocToUse || aCopy.IsConstructed());
+  MOZ_ASSERT(!aConstructorDocToUse || !aDocOrShadowRootToUse,
+             "Should never have both of these together.");
   MOZ_ASSERT(mInner, "Should only copy StyleSheets with an mInner.");
   mInner->AddSheet(this);
   
@@ -674,7 +678,7 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   
 
   
-  if (!mConstructorDocument) {
+  if (!IsConstructed()) {
     promise->MaybeRejectWithNotAllowedError(
         "This method can only be called on "
         "constructed style sheets");
@@ -724,7 +728,7 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
   
 
   
-  if (!mConstructorDocument) {
+  if (!IsConstructed()) {
     return aRv.ThrowNotAllowedError(
         "Can only be called on constructed style sheets");
   }
@@ -960,6 +964,7 @@ bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
 
 void StyleSheet::SetAssociatedDocumentOrShadowRoot(
     DocumentOrShadowRoot* aDocOrShadowRoot, AssociationMode aAssociationMode) {
+  MOZ_ASSERT(!IsConstructed());
   MOZ_ASSERT(aDocOrShadowRoot ||
              aAssociationMode == NotOwnedByDocumentOrShadowRoot);
 
@@ -1323,9 +1328,9 @@ already_AddRefed<StyleSheet> StyleSheet::Clone(
     nsINode* aCloneOwningNode) const {
   MOZ_ASSERT(!IsConstructed(),
              "Cannot create a non-constructed sheet from a constructed sheet");
-  RefPtr<StyleSheet> clone =
-      new StyleSheet(*this, aCloneParent, aCloneOwnerRule,
-                     aCloneDocumentOrShadowRoot, aCloneOwningNode);
+  RefPtr<StyleSheet> clone = new StyleSheet(
+      *this, aCloneParent, aCloneOwnerRule, aCloneDocumentOrShadowRoot,
+       nullptr, aCloneOwningNode);
   return clone.forget();
 }
 
@@ -1335,12 +1340,12 @@ already_AddRefed<StyleSheet> StyleSheet::CloneAdoptedSheet(
              "Cannot create a constructed sheet from a non-constructed sheet");
   MOZ_ASSERT(aConstructorDocument.IsStaticDocument(),
              "Should never clone adopted sheets for a non-static document");
-  RefPtr<StyleSheet> clone = new StyleSheet(*this,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr,
-                                             nullptr);
-  clone->mConstructorDocument = &aConstructorDocument;
+  RefPtr<StyleSheet> clone =
+      new StyleSheet(*this,
+                      nullptr,
+                      nullptr,
+                      nullptr, &aConstructorDocument,
+                      nullptr);
   return clone.forget();
 }
 

@@ -270,7 +270,9 @@ class DocumentOrShadowRoot {
   RefPtr<StyleSheetList> mDOMStyleSheets;
 
   
-  
+
+
+
   nsTArray<RefPtr<StyleSheet>> mAdoptedStyleSheets;
 
   
