@@ -271,7 +271,7 @@
   
   
   
-  if (ABUSE_REPORT_ENABLED) {
+  if (ABUSE_REPORT_ENABLED && AbuseReporter.openDialogDisabled) {
     customElements.define(
       "addon-abuse-report-xulframe",
       AddonAbuseReportsXULFrame
