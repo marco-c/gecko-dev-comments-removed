@@ -16,7 +16,8 @@ using namespace mozilla;
 static const int32_t kPasswordNotSetErrorCode = -1000;
 
 nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
-                                  bool& aReauthenticated) {
+                                  bool& aReauthenticated,
+                                  bool& aIsBlankPassword) {
   
   
   
@@ -26,7 +27,8 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
 
   dispatch_semaphore_t sema = dispatch_semaphore_create(0);
 
-  __block BOOL biometricSuccess = NO;  
+  __block BOOL biometricSuccess = NO;     
+  __block BOOL errorPasswordNotSet = NO;  
 
   
   [context evaluatePolicy:LAPolicyDeviceOwnerAuthentication
@@ -38,9 +40,8 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
                         
                         
                         
-                        if (success || [error code] == kPasswordNotSetErrorCode) {
-                          biometricSuccess = YES;
-                        }
+                        errorPasswordNotSet = error && [error code] == kPasswordNotSetErrorCode;
+                        biometricSuccess = success || errorPasswordNotSet;
                         dispatch_semaphore_signal(sema);
                       });
                     }];
@@ -52,6 +53,7 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
   sema = NULL;
 
   aReauthenticated = biometricSuccess;
+  aIsBlankPassword = errorPasswordNotSet;
 
   [context release];
   return NS_OK;
