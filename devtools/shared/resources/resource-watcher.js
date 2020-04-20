@@ -301,7 +301,6 @@ class ResourceWatcher {
 
 ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
   CONSOLE_MESSAGES: "console-messages",
-  DOCUMENT_EVENTS: "document-events",
 };
 module.exports = { ResourceWatcher };
 
@@ -351,21 +350,5 @@ const LegacyListeners = {
 
     
     webConsoleFront.on("consoleAPICall", onAvailable);
-  },
-  async [ResourceWatcher.TYPES.DOCUMENT_EVENTS]({
-    targetList,
-    targetType,
-    targetFront,
-    isTopLevel,
-    onAvailable,
-  }) {
-    
-    if (!isTopLevel) {
-      return;
-    }
-
-    const webConsoleFront = await targetFront.getFront("console");
-    webConsoleFront.on("documentEvent", onAvailable);
-    await webConsoleFront.startListeners(["DocumentEvents"]);
   },
 };
