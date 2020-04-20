@@ -952,7 +952,7 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
   }
 
   RefPtr<Element> blockElementAtEditTarget =
-      HTMLEditor::GetBlock(*editTargetContent);
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(*editTargetContent);
   if (NS_WARN_IF(!blockElementAtEditTarget)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -1302,10 +1302,15 @@ nsresult HTMLEditor::EnsureCaretNotAfterPaddingBRElement() {
     return NS_OK;
   }
 
+  if (!atSelectionStart.IsInContentNode()) {
+    return NS_OK;
+  }
+
   RefPtr<Element> blockElementAtSelectionStart =
-      GetBlock(*atSelectionStart.GetContainer());
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(
+          *atSelectionStart.ContainerAsContent());
   RefPtr<Element> parentBlockElementOfPreviousEditableContent =
-      GetBlockNodeParent(previousEditableContent);
+      HTMLEditUtils::GetAncestorBlockElement(*previousEditableContent);
 
   if (!blockElementAtSelectionStart ||
       blockElementAtSelectionStart !=
@@ -1821,37 +1826,41 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   
   
   
-  RefPtr<Element> blockParent =
-      HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), editingHost);
+  RefPtr<Element> blockElement =
+      atStartOfSelection.IsInContentNode()
+          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
+                *atStartOfSelection.ContainerAsContent(), editingHost)
+          : nullptr;
 
   ParagraphSeparator separator = GetDefaultParagraphSeparator();
   bool insertBRElement;
   
   
-  if (!blockParent) {
+  if (!blockElement) {
     
     insertBRElement = true;
   }
   
   
   
-  else if (editingHost == blockParent) {
+  else if (editingHost == blockElement) {
     insertBRElement = separator == ParagraphSeparator::br ||
                       !HTMLEditUtils::CanElementContainParagraph(*editingHost);
   }
   
   
   
-  else if (HTMLEditUtils::IsSingleLineContainer(*blockParent)) {
+  else if (HTMLEditUtils::IsSingleLineContainer(*blockElement)) {
     insertBRElement = false;
   }
   
   
   else {
     insertBRElement = true;
-    for (Element* blockAncestor = blockParent; blockAncestor && insertBRElement;
-         blockAncestor =
-             HTMLEditor::GetBlockNodeParent(blockAncestor, editingHost)) {
+    for (Element* blockAncestor = blockElement;
+         blockAncestor && insertBRElement;
+         blockAncestor = HTMLEditUtils::GetAncestorBlockElement(*blockAncestor,
+                                                                editingHost)) {
       insertBRElement =
           !HTMLEditUtils::CanElementContainParagraph(*blockAncestor);
     }
@@ -1868,7 +1877,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     return EditActionHandled();
   }
 
-  if (editingHost == blockParent && separator != ParagraphSeparator::br) {
+  if (editingHost == blockElement && separator != ParagraphSeparator::br) {
     
     MOZ_ASSERT(separator == ParagraphSeparator::div ||
                separator == ParagraphSeparator::p);
@@ -1898,12 +1907,15 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     }
     MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
-    blockParent =
-        HTMLEditor::GetBlock(*atStartOfSelection.GetContainer(), editingHost);
-    if (NS_WARN_IF(!blockParent)) {
+    blockElement =
+        atStartOfSelection.IsInContentNode()
+            ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
+                  *atStartOfSelection.ContainerAsContent(), editingHost)
+            : nullptr;
+    if (NS_WARN_IF(!blockElement)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
-    if (NS_WARN_IF(blockParent == editingHost)) {
+    if (NS_WARN_IF(blockElement == editingHost)) {
       
       rv = InsertBRElement(atStartOfSelection);
       if (NS_FAILED(rv)) {
@@ -1919,17 +1931,17 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     
     
     
-    TopLevelEditSubActionDataRef().mNewBlockElement = blockParent;
+    TopLevelEditSubActionDataRef().mNewBlockElement = blockElement;
   }
 
   
   
   
   
-  if (IsEmptyBlockElement(*blockParent, IgnoreSingleBR::No)) {
+  if (IsEmptyBlockElement(*blockElement, IgnoreSingleBR::No)) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     EditorDOMPoint endOfBlockParent;
-    endOfBlockParent.SetToEndOf(blockParent);
+    endOfBlockParent.SetToEndOf(blockElement);
     RefPtr<Element> brElement =
         InsertBRElementWithTransaction(endOfBlockParent);
     if (NS_WARN_IF(Destroyed())) {
@@ -1941,7 +1953,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     }
   }
 
-  RefPtr<Element> listItem = GetNearestAncestorListItemElement(*blockParent);
+  RefPtr<Element> listItem = GetNearestAncestorListItemElement(*blockElement);
   if (listItem && listItem != editingHost) {
     nsresult rv = HandleInsertParagraphInListItemElement(
         *listItem, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
@@ -1955,10 +1967,10 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     return EditActionHandled();
   }
 
-  if (HTMLEditUtils::IsHeader(*blockParent)) {
+  if (HTMLEditUtils::IsHeader(*blockElement)) {
     
     nsresult rv = HandleInsertParagraphInHeadingElement(
-        *blockParent, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
+        *blockElement, MOZ_KnownLive(*atStartOfSelection.GetContainer()),
         atStartOfSelection.Offset());
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
@@ -1977,12 +1989,12 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   
   
   if ((separator == ParagraphSeparator::br &&
-       blockParent->IsHTMLElement(nsGkAtoms::p)) ||
+       blockElement->IsHTMLElement(nsGkAtoms::p)) ||
       (separator != ParagraphSeparator::br &&
-       blockParent->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
+       blockElement->IsAnyOfHTMLElements(nsGkAtoms::p, nsGkAtoms::div))) {
     AutoEditorDOMPointChildInvalidator lockOffset(atStartOfSelection);
     
-    EditActionResult result = HandleInsertParagraphInParagraph(*blockParent);
+    EditActionResult result = HandleInsertParagraphInParagraph(*blockElement);
     if (result.Failed()) {
       NS_WARNING("HTMLEditor::HandleInsertParagraphInParagraph() failed");
       return result;
@@ -3226,18 +3238,24 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   }
 
   
-  RefPtr<Element> leftBlock =
-      HTMLEditor::GetBlock(*firstRangeStart.GetContainer());
-  RefPtr<Element> rightBlock =
-      HTMLEditor::GetBlock(*firstRangeEnd.GetContainer());
-  if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+  RefPtr<Element> leftBlockElement =
+      firstRangeStart.IsInContentNode()
+          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
+                *firstRangeStart.ContainerAsContent())
+          : nullptr;
+  RefPtr<Element> rightBlockElement =
+      firstRangeEnd.IsInContentNode()
+          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
+                *firstRangeEnd.ContainerAsContent())
+          : nullptr;
+  if (NS_WARN_IF(!leftBlockElement) || NS_WARN_IF(!rightBlockElement)) {
     return EditActionHandled(NS_ERROR_FAILURE);  
   }
 
   
   
   
-  if (leftBlock && leftBlock == rightBlock) {
+  if (leftBlockElement && leftBlockElement == rightBlockElement) {
     {
       AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &firstRangeStart);
       AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &firstRangeEnd);
@@ -3264,15 +3282,15 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
   
   
   
-  if (leftBlock->GetParentNode() == rightBlock->GetParentNode() &&
+  if (leftBlockElement->GetParentNode() == rightBlockElement->GetParentNode() &&
       HTMLEditUtils::CanContentsBeJoined(
-          *leftBlock, *rightBlock,
+          *leftBlockElement, *rightBlockElement,
           IsCSSEnabled() ? StyleDifference::CompareIfSpanElements
                          : StyleDifference::Ignore) &&
       
-      (leftBlock->IsHTMLElement(nsGkAtoms::p) ||
-       HTMLEditUtils::IsListItem(leftBlock) ||
-       HTMLEditUtils::IsHeader(*leftBlock))) {
+      (leftBlockElement->IsHTMLElement(nsGkAtoms::p) ||
+       HTMLEditUtils::IsListItem(leftBlockElement) ||
+       HTMLEditUtils::IsHeader(*leftBlockElement))) {
     
     nsresult rv =
         DeleteSelectionWithTransaction(aDirectionAndAmount, aStripWrappers);
@@ -3285,7 +3303,7 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     }
     
     Result<EditorDOMPoint, nsresult> atFirstChildOfTheLastRightNodeOrError =
-        JoinNodesDeepWithTransaction(*leftBlock, *rightBlock);
+        JoinNodesDeepWithTransaction(*leftBlockElement, *rightBlockElement);
     if (atFirstChildOfTheLastRightNodeOrError.isErr()) {
       NS_WARNING("HTMLEditor::JoinNodesDeepWithTransaction() failed");
       return EditActionHandled(
@@ -3395,7 +3413,8 @@ EditActionResult HTMLEditor::HandleDeleteNonCollapsedSelection(
     }
 
     if (join) {
-      result |= TryToJoinBlocksWithTransaction(*leftBlock, *rightBlock);
+      result |=
+          TryToJoinBlocksWithTransaction(*leftBlockElement, *rightBlockElement);
       if (result.Failed()) {
         NS_WARNING("HTMLEditor::TryToJoinBlocksWithTransaction() failed");
         return result;
@@ -3690,47 +3709,51 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
     nsIContent& aLeftContentInBlock, nsIContent& aRightContentInBlock) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  RefPtr<Element> leftBlock = GetBlock(aLeftContentInBlock);
-  RefPtr<Element> rightBlock = GetBlock(aRightContentInBlock);
+  RefPtr<Element> leftBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(aLeftContentInBlock);
+  RefPtr<Element> rightBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(aRightContentInBlock);
 
   
-  if (NS_WARN_IF(!leftBlock) || NS_WARN_IF(!rightBlock)) {
+  if (NS_WARN_IF(!leftBlockElement) || NS_WARN_IF(!rightBlockElement)) {
     return EditActionIgnored(NS_ERROR_NULL_POINTER);
   }
-  if (NS_WARN_IF(leftBlock == rightBlock)) {
+  if (NS_WARN_IF(leftBlockElement == rightBlockElement)) {
     return EditActionIgnored(NS_ERROR_UNEXPECTED);
   }
 
-  if (HTMLEditUtils::IsTableElement(leftBlock) ||
-      HTMLEditUtils::IsTableElement(rightBlock)) {
+  if (HTMLEditUtils::IsTableElement(leftBlockElement) ||
+      HTMLEditUtils::IsTableElement(rightBlockElement)) {
     
     return EditActionCanceled();
   }
 
   
   
-  if (leftBlock->IsHTMLElement(nsGkAtoms::hr)) {
-    leftBlock = GetBlockNodeParent(leftBlock);
-    if (NS_WARN_IF(!leftBlock)) {
+  if (leftBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
+    leftBlockElement =
+        HTMLEditUtils::GetAncestorBlockElement(*leftBlockElement);
+    if (NS_WARN_IF(!leftBlockElement)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
   }
-  if (rightBlock->IsHTMLElement(nsGkAtoms::hr)) {
-    rightBlock = GetBlockNodeParent(rightBlock);
-    if (NS_WARN_IF(!rightBlock)) {
+  if (rightBlockElement->IsHTMLElement(nsGkAtoms::hr)) {
+    rightBlockElement =
+        HTMLEditUtils::GetAncestorBlockElement(*rightBlockElement);
+    if (NS_WARN_IF(!rightBlockElement)) {
       return EditActionIgnored(NS_ERROR_UNEXPECTED);
     }
   }
 
   
-  if (leftBlock == rightBlock) {
+  if (leftBlockElement == rightBlockElement) {
     return EditActionIgnored();
   }
 
   
-  if (HTMLEditUtils::IsList(leftBlock) &&
-      HTMLEditUtils::IsListItem(rightBlock) &&
-      rightBlock->GetParentNode() == leftBlock) {
+  if (HTMLEditUtils::IsList(leftBlockElement) &&
+      HTMLEditUtils::IsListItem(rightBlockElement) &&
+      rightBlockElement->GetParentNode() == leftBlockElement) {
     return EditActionHandled();
   }
 
@@ -3739,25 +3762,25 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   bool mergeListElements = false;
   nsAtom* leftListElementTagName = nsGkAtoms::_empty;
   RefPtr<Element> leftListElement, rightListElement;
-  if (HTMLEditUtils::IsListItem(leftBlock) &&
-      HTMLEditUtils::IsListItem(rightBlock)) {
+  if (HTMLEditUtils::IsListItem(leftBlockElement) &&
+      HTMLEditUtils::IsListItem(rightBlockElement)) {
     
-    leftListElement = leftBlock->GetParentElement();
-    rightListElement = rightBlock->GetParentElement();
+    leftListElement = leftBlockElement->GetParentElement();
+    rightListElement = rightBlockElement->GetParentElement();
     EditorDOMPoint atChildInBlock;
     if (leftListElement && rightListElement &&
         leftListElement != rightListElement &&
-        !EditorUtils::IsDescendantOf(*leftListElement, *rightBlock,
+        !EditorUtils::IsDescendantOf(*leftListElement, *rightBlockElement,
                                      &atChildInBlock) &&
-        !EditorUtils::IsDescendantOf(*rightListElement, *leftBlock,
+        !EditorUtils::IsDescendantOf(*rightListElement, *leftBlockElement,
                                      &atChildInBlock)) {
       
       
       
       
       MOZ_DIAGNOSTIC_ASSERT(!atChildInBlock.IsSet());
-      leftBlock = leftListElement;
-      rightBlock = rightListElement;
+      leftBlockElement = leftListElement;
+      rightBlockElement = rightListElement;
       mergeListElements = true;
       leftListElementTagName = leftListElement->NodeInfo()->NameAtom();
     }
@@ -3769,15 +3792,16 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
   
   EditorDOMPoint atRightBlockChild;
-  if (EditorUtils::IsDescendantOf(*leftBlock, *rightBlock,
+  if (EditorUtils::IsDescendantOf(*leftBlockElement, *rightBlockElement,
                                   &atRightBlockChild)) {
-    MOZ_ASSERT(atRightBlockChild.GetContainer() == rightBlock);
+    MOZ_ASSERT(atRightBlockChild.GetContainer() == rightBlockElement);
     DebugOnly<bool> advanced = atRightBlockChild.AdvanceOffset();
     NS_WARNING_ASSERTION(
         advanced,
-        "Failed to advance offset to after child of rightBlock, "
-        "leftBlock is a descendant of the child");
-    nsresult rv = WSRunObject::Scrub(*this, EditorDOMPoint::AtEndOf(leftBlock));
+        "Failed to advance offset to after child of rightBlockElement, "
+        "leftBlockElement is a descendant of the child");
+    nsresult rv =
+        WSRunObject::Scrub(*this, EditorDOMPoint::AtEndOf(leftBlockElement));
     if (NS_FAILED(rv)) {
       NS_WARNING("WSRunObject::Scrub() failed at left block");
       return EditActionIgnored(rv);
@@ -3795,17 +3819,17 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       
       
       if (atRightBlockChild.GetContainerAsElement()) {
-        rightBlock = atRightBlockChild.GetContainerAsElement();
+        rightBlockElement = atRightBlockChild.GetContainerAsElement();
       } else if (NS_WARN_IF(!atRightBlockChild.GetContainerParentAsElement())) {
         return EditActionIgnored(NS_ERROR_UNEXPECTED);
       } else {
-        rightBlock = atRightBlockChild.GetContainerParentAsElement();
+        rightBlockElement = atRightBlockChild.GetContainerParentAsElement();
       }
     }
 
     
     RefPtr<Element> invisibleBRElement =
-        GetInvisibleBRElementAt(EditorDOMPoint::AtEndOf(leftBlock));
+        GetInvisibleBRElementAt(EditorDOMPoint::AtEndOf(leftBlockElement));
     EditActionResult ret(NS_OK);
     if (NS_WARN_IF(mergeListElements)) {
       
@@ -3826,11 +3850,12 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       ret.MarkAsHandled();
     } else {
       
-      NS_WARNING_ASSERTION(rightBlock == atRightBlockChild.GetContainer(),
-                           "The relation is not guaranteed but assumed");
+      NS_WARNING_ASSERTION(
+          rightBlockElement == atRightBlockChild.GetContainer(),
+          "The relation is not guaranteed but assumed");
       MoveNodeResult moveNodeResult = MoveOneHardLineContents(
-          EditorDOMPoint(rightBlock, atRightBlockChild.Offset()),
-          EditorDOMPoint(leftBlock, 0), MoveToEndOfContainer::Yes);
+          EditorDOMPoint(rightBlockElement, atRightBlockChild.Offset()),
+          EditorDOMPoint(leftBlockElement, 0), MoveToEndOfContainer::Yes);
       if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
         return ret.SetResult(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -3871,10 +3896,12 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
   
   EditorDOMPoint atLeftBlockChild;
-  if (EditorUtils::IsDescendantOf(*rightBlock, *leftBlock, &atLeftBlockChild)) {
-    MOZ_ASSERT(leftBlock == atLeftBlockChild.GetContainer());
+  if (EditorUtils::IsDescendantOf(*rightBlockElement, *leftBlockElement,
+                                  &atLeftBlockChild)) {
+    MOZ_ASSERT(leftBlockElement == atLeftBlockChild.GetContainer());
 
-    nsresult rv = WSRunObject::Scrub(*this, EditorDOMPoint(rightBlock, 0));
+    nsresult rv =
+        WSRunObject::Scrub(*this, EditorDOMPoint(rightBlockElement, 0));
     if (NS_FAILED(rv)) {
       NS_WARNING("WSRunObject::Scrub() failed at right block");
       return EditActionIgnored(rv);
@@ -3885,7 +3912,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       
       AutoTrackDOMPoint tracker(RangeUpdaterRef(), &atLeftBlockChild);
       rv = WSRunObject::Scrub(
-          *this, EditorDOMPoint(leftBlock, atLeftBlockChild.Offset()));
+          *this, EditorDOMPoint(leftBlockElement, atLeftBlockChild.Offset()));
       if (NS_FAILED(rv)) {
         NS_WARNING("WSRunObject::Scrub() failed at left block child");
         return EditActionIgnored(rv);
@@ -3893,11 +3920,11 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       
       
       if (atLeftBlockChild.GetContainerAsElement()) {
-        leftBlock = atLeftBlockChild.GetContainerAsElement();
+        leftBlockElement = atLeftBlockChild.GetContainerAsElement();
       } else if (NS_WARN_IF(!atLeftBlockChild.GetContainerParentAsElement())) {
         return EditActionIgnored(NS_ERROR_UNEXPECTED);
       } else {
-        leftBlock = atLeftBlockChild.GetContainerParentAsElement();
+        leftBlockElement = atLeftBlockChild.GetContainerParentAsElement();
       }
     }
 
@@ -3931,7 +3958,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
       
 
       EditorDOMPoint atPreviousContent;
-      if (&aLeftContentInBlock == leftBlock) {
+      if (&aLeftContentInBlock == leftBlockElement) {
         
         
         
@@ -3987,7 +4014,7 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
         }
       }
 
-      ret |= MoveOneHardLineContents(EditorDOMPoint(rightBlock, 0),
+      ret |= MoveOneHardLineContents(EditorDOMPoint(rightBlockElement, 0),
                                      atPreviousContent);
       if (ret.Failed()) {
         NS_WARNING("HTMLEditor::MoveOneHardLineContents() failed");
@@ -4021,22 +4048,22 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
   
 
   
-  nsresult rv =
-      WSRunObject::PrepareToJoinBlocks(*this, *leftBlock, *rightBlock);
+  nsresult rv = WSRunObject::PrepareToJoinBlocks(*this, *leftBlockElement,
+                                                 *rightBlockElement);
   if (NS_FAILED(rv)) {
     NS_WARNING("WSRunObject::PrepareToJoinBlocks() failed");
     return EditActionIgnored(rv);
   }
   
   RefPtr<Element> invisibleBRElement =
-      GetInvisibleBRElementAt(EditorDOMPoint::AtEndOf(leftBlock));
+      GetInvisibleBRElementAt(EditorDOMPoint::AtEndOf(leftBlockElement));
   EditActionResult ret(NS_OK);
-  if (mergeListElements ||
-      leftBlock->NodeInfo()->NameAtom() == rightBlock->NodeInfo()->NameAtom()) {
+  if (mergeListElements || leftBlockElement->NodeInfo()->NameAtom() ==
+                               rightBlockElement->NodeInfo()->NameAtom()) {
     
     EditorDOMPoint atFirstChildOfRightNode;
     nsresult rv = JoinNearestEditableNodesWithTransaction(
-        *leftBlock, *rightBlock, &atFirstChildOfRightNode);
+        *leftBlockElement, *rightBlockElement, &atFirstChildOfRightNode);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
     }
@@ -4045,7 +4072,8 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
                          " failed, but ignored");
     if (mergeListElements && atFirstChildOfRightNode.IsSet()) {
       CreateElementResult convertListTypeResult = ChangeListElementType(
-          *rightBlock, MOZ_KnownLive(*leftListElementTagName), *nsGkAtoms::li);
+          *rightBlockElement, MOZ_KnownLive(*leftListElementTagName),
+          *nsGkAtoms::li);
       if (NS_WARN_IF(convertListTypeResult.EditorDestroyed())) {
         return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -4056,8 +4084,8 @@ EditActionResult HTMLEditor::TryToJoinBlocksWithTransaction(
     ret.MarkAsHandled();
   } else {
     
-    ret |= MoveOneHardLineContents(EditorDOMPoint(rightBlock, 0),
-                                   EditorDOMPoint(leftBlock, 0),
+    ret |= MoveOneHardLineContents(EditorDOMPoint(rightBlockElement, 0),
+                                   EditorDOMPoint(leftBlockElement, 0),
                                    MoveToEndOfContainer::Yes);
     if (ret.Failed()) {
       NS_WARNING(
@@ -5071,15 +5099,23 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
 
     EditorDOMPoint pointToInsertBlock(firstRange->StartRef());
     if (&blockType == nsGkAtoms::normal || &blockType == nsGkAtoms::_empty) {
+      if (!pointToInsertBlock.IsInContentNode()) {
+        NS_WARNING(
+            "HTMLEditor::FormatBlockContainerWithTransaction() couldn't find "
+            "block parent because container of the point is not content");
+        return NS_ERROR_FAILURE;
+      }
       
-      RefPtr<Element> curBlock = GetBlock(*pointToInsertBlock.GetContainer());
-      if (!curBlock) {
+      RefPtr<Element> blockElement =
+          HTMLEditUtils::GetInclusiveAncestorBlockElement(
+              *pointToInsertBlock.ContainerAsContent());
+      if (!blockElement) {
         NS_WARNING(
             "HTMLEditor::FormatBlockContainerWithTransaction() couldn't find "
             "block parent");
         return NS_ERROR_FAILURE;
       }
-      if (!HTMLEditUtils::IsFormatNode(curBlock)) {
+      if (!HTMLEditUtils::IsFormatNode(blockElement)) {
         return NS_OK;
       }
 
@@ -5101,7 +5137,7 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
       }
       
       SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-          *curBlock, pointToInsertBlock,
+          *blockElement, pointToInsertBlock,
           SplitAtEdges::eDoNotCreateEmptyContainer);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
@@ -5467,9 +5503,11 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
     if (NS_WARN_IF(!atCaret.IsSet())) {
       return NS_ERROR_FAILURE;
     }
-    Element* block = GetBlock(*atCaret.GetContainer());
-    if (block && HTMLEditUtils::IsListItem(block)) {
-      arrayOfContents.AppendElement(*block);
+    MOZ_ASSERT(atCaret.IsInContentNode());
+    Element* blockElement = HTMLEditUtils::GetInclusiveAncestorBlockElement(
+        *atCaret.ContainerAsContent());
+    if (blockElement && HTMLEditUtils::IsListItem(blockElement)) {
+      arrayOfContents.AppendElement(*blockElement);
     }
   }
 
@@ -7241,13 +7279,15 @@ EditActionResult HTMLEditor::MaybeDeleteTopMostEmptyAncestor(
 
   
   
-  RefPtr<Element> blockElement = GetBlock(aStartContent);
+  RefPtr<Element> blockElement =
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(aStartContent);
   RefPtr<Element> topMostEmptyBlockElement;
   while (blockElement && blockElement != &aEditingHostElement &&
          !HTMLEditUtils::IsTableElement(blockElement) &&
          IsEmptyNode(*blockElement, true, false)) {
     topMostEmptyBlockElement = blockElement;
-    blockElement = GetBlockNodeParent(topMostEmptyBlockElement);
+    blockElement =
+        HTMLEditUtils::GetAncestorBlockElement(*topMostEmptyBlockElement);
   }
 
   
@@ -7442,9 +7482,15 @@ HTMLEditor::GetExtendedRangeToIncludeInvisibleNodes(
   EditorRawDOMPoint atStart(aAbstractRange.StartRef());
   EditorRawDOMPoint atEnd(aAbstractRange.EndRef());
 
+  if (NS_WARN_IF(
+          !aAbstractRange.GetClosestCommonInclusiveAncestor()->IsContent())) {
+    return nullptr;
+  }
+
   
   Element* commonAncestorBlock =
-      HTMLEditor::GetBlock(*aAbstractRange.GetClosestCommonInclusiveAncestor());
+      HTMLEditUtils::GetInclusiveAncestorBlockElement(
+          *aAbstractRange.GetClosestCommonInclusiveAncestor()->AsContent());
   if (NS_WARN_IF(!commonAncestorBlock)) {
     return nullptr;
   }
@@ -7527,10 +7573,11 @@ HTMLEditor::GetExtendedRangeToIncludeInvisibleNodes(
       break;
     }
 
-    if (atFirstInvisibleBRElement.IsSet()) {
+    if (atFirstInvisibleBRElement.IsInContentNode()) {
       
       if (RefPtr<Element> brElementParent =
-              HTMLEditor::GetBlock(*atFirstInvisibleBRElement.GetContainer())) {
+              HTMLEditUtils::GetInclusiveAncestorBlockElement(
+                  *atFirstInvisibleBRElement.ContainerAsContent())) {
         
         RefPtr<StaticRange> staticRange =
             StaticRange::Create(atStart.ToRawRangeBoundary(),
@@ -7958,8 +8005,13 @@ void HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock(
     return;
   }
 
-  Element* block = GetBlock(*aStartRef.Container());
-  if (!block) {
+  if (!aStartRef.Container()->IsContent()) {
+    return;
+  }
+
+  Element* blockElement = HTMLEditUtils::GetInclusiveAncestorBlockElement(
+      *aStartRef.Container()->AsContent());
+  if (!blockElement) {
     return;
   }
 
@@ -7969,13 +8021,13 @@ void HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock(
   }
 
   
-  if (editingHost->IsInclusiveDescendantOf(block)) {
+  if (editingHost->IsInclusiveDescendantOf(blockElement)) {
     return;
   }
 
-  if (IsEmptyNode(*block, true, false)) {
-    aStartRef = {block, 0u};
-    aEndRef = {block, block->Length()};
+  if (IsEmptyNode(*blockElement, true, false)) {
+    aStartRef = {blockElement, 0u};
+    aEndRef = {blockElement, blockElement->Length()};
   }
 }
 
@@ -9360,23 +9412,23 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
   
   
   
-  RefPtr<Element> curBlock;
+  RefPtr<Element> blockElement;
   nsCOMPtr<nsIContent> firstContent, lastContent;
   for (auto& content : aArrayOfContents) {
     
     if (HTMLEditUtils::IsFormatNode(content)) {
       
-      if (curBlock) {
+      if (blockElement) {
         SplitRangeOffFromNodeResult removeMiddleContainerResult =
             SplitRangeOffFromBlockAndRemoveMiddleContainer(
-                *curBlock, *firstContent, *lastContent);
+                *blockElement, *firstContent, *lastContent);
         if (removeMiddleContainerResult.Failed()) {
           NS_WARNING(
               "HTMLEditor::SplitRangeOffFromBlockAndRemoveMiddleContainer() "
               "failed");
           return removeMiddleContainerResult.Rv();
         }
-        firstContent = lastContent = curBlock = nullptr;
+        firstContent = lastContent = blockElement = nullptr;
       }
       if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
         continue;
@@ -9400,17 +9452,17 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
             nsGkAtoms::li, nsGkAtoms::blockquote, nsGkAtoms::div) ||
         HTMLEditUtils::IsList(content)) {
       
-      if (curBlock) {
+      if (blockElement) {
         SplitRangeOffFromNodeResult removeMiddleContainerResult =
             SplitRangeOffFromBlockAndRemoveMiddleContainer(
-                *curBlock, *firstContent, *lastContent);
+                *blockElement, *firstContent, *lastContent);
         if (removeMiddleContainerResult.Failed()) {
           NS_WARNING(
               "HTMLEditor::SplitRangeOffFromBlockAndRemoveMiddleContainer() "
               "failed");
           return removeMiddleContainerResult.Rv();
         }
-        firstContent = lastContent = curBlock = nullptr;
+        firstContent = lastContent = blockElement = nullptr;
       }
       if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
         continue;
@@ -9427,9 +9479,9 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
     }
 
     if (HTMLEditUtils::IsInlineElement(content)) {
-      if (curBlock) {
+      if (blockElement) {
         
-        if (EditorUtils::IsDescendantOf(*content, *curBlock)) {
+        if (EditorUtils::IsDescendantOf(*content, *blockElement)) {
           
           lastContent = content;
           continue;
@@ -9439,55 +9491,55 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
         
         SplitRangeOffFromNodeResult removeMiddleContainerResult =
             SplitRangeOffFromBlockAndRemoveMiddleContainer(
-                *curBlock, *firstContent, *lastContent);
+                *blockElement, *firstContent, *lastContent);
         if (removeMiddleContainerResult.Failed()) {
           NS_WARNING(
               "HTMLEditor::SplitRangeOffFromBlockAndRemoveMiddleContainer() "
               "failed");
           return removeMiddleContainerResult.Rv();
         }
-        firstContent = lastContent = curBlock = nullptr;
+        firstContent = lastContent = blockElement = nullptr;
         
       }
-      curBlock = GetBlockNodeParent(content);
-      if (!curBlock || !HTMLEditUtils::IsFormatNode(curBlock) ||
-          !EditorUtils::IsEditableContent(*curBlock, EditorType::HTML)) {
+      blockElement = HTMLEditUtils::GetAncestorBlockElement(content);
+      if (!blockElement || !HTMLEditUtils::IsFormatNode(blockElement) ||
+          !EditorUtils::IsEditableContent(*blockElement, EditorType::HTML)) {
         
-        curBlock = nullptr;
+        blockElement = nullptr;
       } else {
         firstContent = lastContent = content;
       }
       continue;
     }
 
-    if (curBlock) {
+    if (blockElement) {
       
       
       SplitRangeOffFromNodeResult removeMiddleContainerResult =
           SplitRangeOffFromBlockAndRemoveMiddleContainer(
-              *curBlock, *firstContent, *lastContent);
+              *blockElement, *firstContent, *lastContent);
       if (removeMiddleContainerResult.Failed()) {
         NS_WARNING(
             "HTMLEditor::SplitRangeOffFromBlockAndRemoveMiddleContainer() "
             "failed");
         return removeMiddleContainerResult.Rv();
       }
-      firstContent = lastContent = curBlock = nullptr;
+      firstContent = lastContent = blockElement = nullptr;
       continue;
     }
   }
   
-  if (curBlock) {
+  if (blockElement) {
     SplitRangeOffFromNodeResult removeMiddleContainerResult =
-        SplitRangeOffFromBlockAndRemoveMiddleContainer(*curBlock, *firstContent,
-                                                       *lastContent);
+        SplitRangeOffFromBlockAndRemoveMiddleContainer(
+            *blockElement, *firstContent, *lastContent);
     if (removeMiddleContainerResult.Failed()) {
       NS_WARNING(
           "HTMLEditor::SplitRangeOffFromBlockAndRemoveMiddleContainer() "
           "failed");
       return removeMiddleContainerResult.Rv();
     }
-    firstContent = lastContent = curBlock = nullptr;
+    firstContent = lastContent = blockElement = nullptr;
   }
   return NS_OK;
 }
@@ -10260,7 +10312,9 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
 
   
   
-  if (RefPtr<Element> blockElement = GetBlock(*point.GetContainer())) {
+  if (RefPtr<Element> blockElement =
+          HTMLEditUtils::GetInclusiveAncestorBlockElement(
+              *point.ContainerAsContent())) {
     if (blockElement &&
         EditorUtils::IsEditableContent(*blockElement, EditorType::HTML) &&
         IsEmptyNode(*blockElement, false, false) &&
@@ -10303,9 +10357,11 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
 
   if (nsCOMPtr<nsIContent> previousEditableContent =
           GetPreviousEditableHTMLNode(point)) {
-    RefPtr<Element> blockElementAtCaret = GetBlock(*point.GetContainer());
+    RefPtr<Element> blockElementAtCaret =
+        HTMLEditUtils::GetInclusiveAncestorBlockElement(
+            *point.ContainerAsContent());
     RefPtr<Element> blockElementParentAtPreviousEditableContent =
-        GetBlockNodeParent(previousEditableContent);
+        HTMLEditUtils::GetAncestorBlockElement(*previousEditableContent);
     
     
     if (blockElementAtCaret &&

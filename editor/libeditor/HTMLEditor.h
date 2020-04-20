@@ -775,21 +775,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  static Element* GetBlockNodeParent(nsINode* aNode,
-                                     nsINode* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
-  static Element* GetBlock(nsINode& aNode, nsINode* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
 
 
 
