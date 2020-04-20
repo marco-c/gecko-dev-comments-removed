@@ -120,38 +120,33 @@ class PromptParent extends JSWindowActorParent {
   forceClosePrompts(browsingContext) {
     let prompts = gBrowserPrompts.get(browsingContext) || [];
 
-    for (let prompt of prompts) {
-      if (prompt.tabModalPrompt) {
-        prompt.tabModalPrompt.abortPrompt();
-      }
+    for (let [, prompt] of prompts) {
+      prompt.tabModalPrompt && prompt.tabModalPrompt.abortPrompt();
     }
   }
 
   receiveMessage(message) {
-    let browsingContext = this.browsingContext;
     let args = message.data;
+    let browsingContext = args.browsingContext || this.browsingContext;
     let id = args._remoteId;
 
     switch (message.name) {
       case "Prompt:Open": {
-        const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
-        const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
-
         let topPrincipal =
           browsingContext.top.currentWindowGlobal.documentPrincipal;
         args.showAlertOrigin = topPrincipal.equals(args.promptPrincipal);
-
-        if (message.data.tabPrompt) {
-          return this.openTabPrompt(message.data, browsingContext, id);
+        if (args.modalType === Ci.nsIPrompt.MODAL_TYPE_WINDOW) {
+          return this.openWindowPrompt(args, browsingContext);
         }
-        let uri =
-          message.data.promptType == "select" ? SELECT_DIALOG : COMMON_DIALOG;
-
-        let browser = browsingContext.top.embedderElement;
-        return this.openModalWindow(uri, message.data, browser);
+        return this.openTabPrompt(args, browsingContext, id);
       }
       case "Prompt:ForceClose": {
         this.forceClosePrompt(browsingContext, id);
+        break;
+      }
+      case "Prompt:OnPageHide": {
+        
+        this.forceClosePrompts(browsingContext);
         break;
       }
     }
@@ -176,8 +171,11 @@ class PromptParent extends JSWindowActorParent {
 
 
 
-  openTabPrompt(args, browsingContext, id) {
+  openTabPrompt(args, browsingContext = this.browsingContext, id) {
     let browser = browsingContext.top.embedderElement;
+    if (!browser) {
+      throw new Error("Cannot tab-prompt without a browser!");
+    }
     let window = browser.ownerGlobal;
     let tabPrompt = window.gBrowser.getTabModalPromptBox(browser);
     let newPrompt;
@@ -206,7 +204,7 @@ class PromptParent extends JSWindowActorParent {
 
       PromptUtils.fireDialogEvent(window, "DOMModalDialogClosed", browser);
       resolver(args);
-      browser.leaveModalState();
+      browser.maybeLeaveModalState();
     };
 
     try {
@@ -256,17 +254,35 @@ class PromptParent extends JSWindowActorParent {
 
 
 
+  openWindowPrompt(args, browsingContext = this.browsingContext) {
+    const COMMON_DIALOG = "chrome://global/content/commonDialog.xhtml";
+    const SELECT_DIALOG = "chrome://global/content/selectDialog.xhtml";
+    let uri = args.promptType == "select" ? SELECT_DIALOG : COMMON_DIALOG;
 
+    let browser = browsingContext.top.embedderElement;
+    
+    
+    
+    let win = (browser && browser.ownerGlobal) || browsingContext.top.window;
 
-  openModalWindow(uri, args, browser) {
-    let window = browser.ownerGlobal;
+    
+    
+    
+    
+    if (win && win.winUtils && !win.winUtils.isParentWindowMainWidgetVisible) {
+      throw new Error("Cannot call openModalWindow on a hidden window");
+    }
+
     try {
-      browser.enterModalState();
-      PromptUtils.fireDialogEvent(window, "DOMWillOpenModalDialog", browser);
+      if (browser) {
+        browser.enterModalState();
+        PromptUtils.fireDialogEvent(win, "DOMWillOpenModalDialog", browser);
+      }
+
       let bag = PromptUtils.objectToPropBag(args);
 
       Services.ww.openWindow(
-        window,
+        win,
         uri,
         "_blank",
         "centerscreen,chrome,modal,titlebar",
@@ -275,8 +291,10 @@ class PromptParent extends JSWindowActorParent {
 
       PromptUtils.propBagToObject(bag, args);
     } finally {
-      browser.leaveModalState();
-      PromptUtils.fireDialogEvent(window, "DOMModalDialogClosed", browser);
+      if (browser) {
+        browser.leaveModalState();
+        PromptUtils.fireDialogEvent(win, "DOMModalDialogClosed", browser);
+      }
     }
     return Promise.resolve(args);
   }

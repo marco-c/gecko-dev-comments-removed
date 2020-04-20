@@ -1,0 +1,20 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["PromptChild"];
+
+class PromptChild extends JSWindowActorChild {
+  constructor(dispatcher) {
+    super(dispatcher);
+  }
+
+  handleEvent(aEvent) {
+    if (aEvent.type !== "pagehide") {
+      return;
+    }
+    this.sendAsyncMessage("Prompt:OnPageHide", {});
+  }
+}
