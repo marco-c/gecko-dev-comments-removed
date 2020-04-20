@@ -714,10 +714,7 @@ impl FontLanguageOverride {
 
     
     #[inline]
-    pub fn to_str(self, storage: &mut [u8; 4]) -> &str {
-        if self.0 == 0 {
-            return "normal";
-        }
+    pub(crate) fn to_str(self, storage: &mut [u8; 4]) -> &str {
         *storage = u32::to_be_bytes(self.0);
         
         let slice = if cfg!(debug_assertions) {
@@ -758,6 +755,9 @@ impl ToCss for FontLanguageOverride {
     where
         W: fmt::Write,
     {
+        if self.0 == 0 {
+            return dest.write_str("normal");
+        }
         self.to_str(&mut [0; 4]).to_css(dest)
     }
 }
