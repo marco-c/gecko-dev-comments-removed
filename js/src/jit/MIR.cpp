@@ -4967,31 +4967,55 @@ static bool AddIsANonZeroAdditionOf(MAdd* add, MDefinition* ins) {
   return true;
 }
 
+
+
+
+static MDefinition* SkipUninterestingInstructions(MDefinition* ins) {
+  
+  
+  if (ins->isToNumberInt32()) {
+    return SkipUninterestingInstructions(ins->toToNumberInt32()->input());
+  }
+
+  
+  if (ins->isBoundsCheck()) {
+    return SkipUninterestingInstructions(ins->toBoundsCheck()->index());
+  }
+
+  
+  if (ins->isSpectreMaskIndex()) {
+    return SkipUninterestingInstructions(ins->toSpectreMaskIndex()->index());
+  }
+
+  return ins;
+}
+
 static bool DefinitelyDifferentValue(MDefinition* ins1, MDefinition* ins2) {
+  ins1 = SkipUninterestingInstructions(ins1);
+  ins2 = SkipUninterestingInstructions(ins2);
+
   if (ins1 == ins2) {
     return false;
   }
 
   
-  
-  if (ins1->isToNumberInt32()) {
-    return DefinitelyDifferentValue(ins1->toToNumberInt32()->input(), ins2);
-  }
-  if (ins2->isToNumberInt32()) {
-    return DefinitelyDifferentValue(ins2->toToNumberInt32()->input(), ins1);
-  }
-
-  
-  if (ins1->isBoundsCheck()) {
-    return DefinitelyDifferentValue(ins1->toBoundsCheck()->index(), ins2);
-  }
-  if (ins2->isBoundsCheck()) {
-    return DefinitelyDifferentValue(ins2->toBoundsCheck()->index(), ins1);
-  }
-
-  
   if (ins1->isConstant() && ins2->isConstant()) {
-    return !ins1->toConstant()->equals(ins2->toConstant());
+    MConstant* cst1 = ins1->toConstant();
+    MConstant* cst2 = ins2->toConstant();
+
+    if (!cst1->isTypeRepresentableAsDouble() ||
+        !cst2->isTypeRepresentableAsDouble()) {
+      return false;
+    }
+
+    
+    int32_t n1, n2;
+    if (!mozilla::NumberIsInt32(cst1->numberToDouble(), &n1) ||
+        !mozilla::NumberIsInt32(cst2->numberToDouble(), &n2)) {
+      return false;
+    }
+
+    return n1 != n2;
   }
 
   
