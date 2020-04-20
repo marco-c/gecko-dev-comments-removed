@@ -129,9 +129,6 @@ class MOZ_STACK_CLASS FunctionEmitter {
 
  private:
   
-  MOZ_MUST_USE bool interpretedCommon();
-
-  
   
   
   MOZ_MUST_USE bool emitFunction();

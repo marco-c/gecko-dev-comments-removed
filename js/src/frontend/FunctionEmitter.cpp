@@ -38,15 +38,6 @@ FunctionEmitter::FunctionEmitter(BytecodeEmitter* bce, FunctionBox* funbox,
       syntaxKind_(syntaxKind),
       isHoisted_(isHoisted) {}
 
-bool FunctionEmitter::interpretedCommon() {
-  
-  
-  
-  
-  bool singleton = bce_->checkRunOnceContext();
-  return funbox_->setTypeForScriptedFunction(bce_->cx, singleton);
-}
-
 bool FunctionEmitter::prepareForNonLazy() {
   MOZ_ASSERT(state_ == State::Start);
 
@@ -57,10 +48,6 @@ bool FunctionEmitter::prepareForNonLazy() {
   
 
   funbox_->wasEmitted = true;
-
-  if (!interpretedCommon()) {
-    return false;
-  }
 
   MOZ_ASSERT_IF(bce_->sc->strict(), funbox_->strictScript);
 
@@ -96,10 +83,6 @@ bool FunctionEmitter::emitLazy() {
   
 
   funbox_->wasEmitted = true;
-
-  if (!interpretedCommon()) {
-    return false;
-  }
 
   
   

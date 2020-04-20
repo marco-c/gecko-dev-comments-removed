@@ -5713,6 +5713,19 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitFunction(
         emittingRunOnceLambda && !funbox->shouldSuppressRunOnce();
     funbox->setTreatAsRunOnce(isRunOnceLambda);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    bool isSingleton = checkRunOnceContext();
+    if (!funbox->setTypeForScriptedFunction(cx, isSingleton)) {
+      return false;
+    }
+
     if (!funbox->emitBytecode) {
       return fe.emitLazy();
       
