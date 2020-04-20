@@ -72,8 +72,7 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
     }
 
     
-    
-    pub unsafe fn unsafe_get(&self) -> &[RefCell<Option<T>>] {
-        &self.slots
+    pub fn into_slots(self) -> Box<[RefCell<Option<T>>]> {
+        self.slots
     }
 }
