@@ -1169,7 +1169,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     if (!pwFields.length) {
       log("(form ignored -- no password fields.)");
       return null;
-    } else if (pwFields.length > 3) {
+    } else if (pwFields.length > 5) {
       log(
         "(form ignored -- too many password fields. [ got ",
         pwFields.length,
