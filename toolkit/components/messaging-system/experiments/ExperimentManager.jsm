@@ -20,11 +20,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.jsm",
   ExperimentStore:
     "resource://messaging-system/experiments/ExperimentStore.jsm",
-  LogManager: "resource://normandy/lib/LogManager.jsm",
   NormandyUtils: "resource://normandy/lib/NormandyUtils.jsm",
   Sampling: "resource://gre/modules/components-utils/Sampling.jsm",
   TelemetryEvents: "resource://normandy/lib/TelemetryEvents.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  const { Logger } = ChromeUtils.import(
+    "resource://messaging-system/lib/Logger.jsm"
+  );
+  return new Logger("ExperimentManager");
 });
 
 
@@ -43,8 +49,15 @@ class _ExperimentManager {
   constructor({ id = "experimentmanager", store } = {}) {
     this.id = id;
     this.store = store || new ExperimentStore();
-    this.slugsSeenInThisSession = new Set();
-    this.log = LogManager.getLogger("ExperimentManager");
+    this.sessions = new Map();
+
+    this.filterContext = {};
+    Object.defineProperty(this.filterContext, "activeExperiments", {
+      get: async () => {
+        await this.store.ready();
+        return this.store.getAllActive().map(exp => exp.slug);
+      },
+    });
   }
 
   
@@ -63,28 +76,45 @@ class _ExperimentManager {
 
 
 
-  async onRecipe(recipe) {
+
+  async onRecipe(recipe, source) {
     const { slug, isEnrollmentPaused } = recipe;
 
-    this.slugsSeenInThisSession.add(slug);
+    if (!source) {
+      throw new Error("When calling onRecipe, you must specify a source.");
+    }
+
+    if (!this.sessions.has(source)) {
+      this.sessions.set(source, new Set());
+    }
+    this.sessions.get(source).add(slug);
 
     if (this.store.has(slug)) {
       this.updateEnrollment(recipe);
     } else if (isEnrollmentPaused) {
-      this.log.debug(`Enrollment is paused for "${slug}"`);
+      log.debug(`Enrollment is paused for "${slug}"`);
     } else {
-      await this.enroll(recipe);
+      await this.enroll(recipe, source);
     }
   }
 
   
-  onFinalize() {
+
+
+
+  onFinalize(sourceToCheck) {
+    if (!sourceToCheck) {
+      throw new Error("When calling onFinalize, you must specify a source.");
+    }
     const activeExperiments = this.store.getAllActive();
 
     for (const experiment of activeExperiments) {
-      const { slug } = experiment;
-      if (!this.slugsSeenInThisSession.has(slug)) {
-        this.log.debug(`Stopping study for recipe ${slug}`);
+      const { slug, source } = experiment;
+      if (sourceToCheck !== source) {
+        continue;
+      }
+      if (!this.sessions.get(source)?.has(slug)) {
+        log.debug(`Stopping study for recipe ${slug}`);
         try {
           this.unenroll(slug, "recipe-not-seen");
         } catch (err) {
@@ -93,7 +123,7 @@ class _ExperimentManager {
       }
     }
 
-    this.slugsSeenInThisSession.clear();
+    this.sessions.delete(sourceToCheck);
   }
 
   
@@ -104,7 +134,11 @@ class _ExperimentManager {
 
 
 
-  async enroll({ slug, branches, experimentType = DEFAULT_EXPERIMENT_TYPE }) {
+
+  async enroll(
+    { slug, branches, experimentType = DEFAULT_EXPERIMENT_TYPE },
+    source
+  ) {
     if (this.store.has(slug)) {
       this.sendFailureTelemetry("enrollFailed", slug, "name-conflict");
       throw new Error(`An experiment with the slug "${slug}" already exists.`);
@@ -114,7 +148,7 @@ class _ExperimentManager {
     const branch = await this.chooseBranch(slug, branches);
 
     if (branch.groups && this.store.hasExperimentForGroups(branch.groups)) {
-      this.log.debug(
+      log.debug(
         `Skipping enrollment for "${slug}" because there is an existing experiment for one of its groups.`
       );
       this.sendFailureTelemetry("enrollFailed", slug, "group-conflict");
@@ -128,13 +162,14 @@ class _ExperimentManager {
       active: true,
       enrollmentId,
       experimentType,
+      source,
     };
 
     this.store.addExperiment(experiment);
     this.setExperimentActive(experiment);
     this.sendEnrollmentTelemetry(experiment);
 
-    this.log.debug(`New experiment started: ${slug}, ${branch.slug}`);
+    log.debug(`New experiment started: ${slug}, ${branch.slug}`);
 
     return experiment;
   }
@@ -150,13 +185,13 @@ class _ExperimentManager {
 
     
     if (experiment.active === false) {
-      this.log.debug(`Enrollment ${recipe.slug} has expired, aborting.`);
+      log.debug(`Enrollment ${recipe.slug} has expired, aborting.`);
       return;
     }
 
     
     const branch = recipe.branches.find(
-      branch => branch.slug === experiment.branch
+      branch => branch.slug === experiment.branch.slug
     );
 
     if (!branch) {
@@ -171,8 +206,7 @@ class _ExperimentManager {
 
 
 
-
-  unenroll(slug, { reason = "unknown" } = {}) {
+  unenroll(slug, reason = "unknown") {
     const experiment = this.store.get(slug);
     if (!experiment) {
       this.sendFailureTelemetry("unenrollFailed", slug, "does-not-exist");
@@ -196,7 +230,7 @@ class _ExperimentManager {
         experiment.enrollmentId || TelemetryEvents.NO_ENROLLMENT_ID_MARKER,
     });
 
-    this.log.debug(`Experiment unenrolled: ${slug}}`);
+    log.debug(`Experiment unenrolled: ${slug}}`);
   }
 
   

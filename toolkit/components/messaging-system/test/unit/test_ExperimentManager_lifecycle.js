@@ -66,12 +66,12 @@ add_task(async function test_onRecipe_track_slug() {
 
   await manager.onStartup();
   
-  await manager.onRecipe(fooRecipe);
+  await manager.onRecipe(fooRecipe, "test");
 
   Assert.equal(
-    manager.slugsSeenInThisSession.has("foo"),
+    manager.sessions.get("test").has("foo"),
     true,
-    "should add slug to slugsSeenInThisSession"
+    "should add slug to sessions[test]"
   );
 });
 
@@ -84,7 +84,7 @@ add_task(async function test_onRecipe_enroll() {
   const fooRecipe = ExperimentFakes.recipe("foo");
 
   await manager.onStartup();
-  await manager.onRecipe(fooRecipe);
+  await manager.onRecipe(fooRecipe, "test");
 
   Assert.equal(
     manager.enroll.calledWith(fooRecipe),
@@ -107,10 +107,9 @@ add_task(async function test_onRecipe_update() {
   const fooRecipe = ExperimentFakes.recipe("foo");
 
   await manager.onStartup();
-
-  await manager.onRecipe(fooRecipe);
+  await manager.onRecipe(fooRecipe, "test");
   
-  await manager.onRecipe(fooRecipe);
+  await manager.onRecipe(fooRecipe, "test");
 
   Assert.equal(
     manager.updateEnrollment.calledWith(fooRecipe),
@@ -130,7 +129,7 @@ add_task(async function test_onRecipe_isEnrollmentPaused() {
   const pausedRecipe = ExperimentFakes.recipe("xyz", {
     isEnrollmentPaused: true,
   });
-  await manager.onRecipe(pausedRecipe);
+  await manager.onRecipe(pausedRecipe, "test");
   Assert.equal(
     manager.enroll.calledWith(pausedRecipe),
     false,
@@ -147,7 +146,7 @@ add_task(async function test_onRecipe_isEnrollmentPaused() {
     isEnrollmentPaused: true,
   });
   await manager.enroll(fooRecipe);
-  await manager.onRecipe(updatedRecipe);
+  await manager.onRecipe(updatedRecipe, "test");
   Assert.equal(
     manager.updateEnrollment.calledWith(updatedRecipe),
     true,
@@ -172,11 +171,12 @@ add_task(async function test_onFinalize_unenroll() {
   manager.store.addExperiment(ExperimentFakes.experiment("foo"));
 
   
-  await manager.onRecipe(ExperimentFakes.recipe("bar"));
-  await manager.onRecipe(ExperimentFakes.recipe("baz"));
+  await manager.onStartup();
+  await manager.onRecipe(ExperimentFakes.recipe("bar"), "test");
+  await manager.onRecipe(ExperimentFakes.recipe("baz"), "test");
 
   
-  manager.onFinalize();
+  manager.onFinalize("test");
 
   Assert.equal(
     manager.unenroll.callCount,
@@ -189,8 +189,8 @@ add_task(async function test_onFinalize_unenroll() {
     "should unenroll a experiment whose recipe wasn't seen in the current session"
   );
   Assert.equal(
-    manager.slugsSeenInThisSession.size,
-    0,
-    "should clear slugsSeenInThisSession"
+    manager.sessions.has("test"),
+    false,
+    "should clear sessions[test]"
   );
 });
