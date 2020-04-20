@@ -22,6 +22,17 @@ PaintWorkletGlobalScope::PaintWorkletGlobalScope(PaintWorkletImpl* aImpl)
 bool PaintWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
   JS::RealmOptions options;
+
+  
+  
+  
+  
+  
+  
+  bool defineSharedArrayBufferConstructor = true;
+  options.creationOptions().setDefineSharedArrayBufferConstructor(
+      defineSharedArrayBufferConstructor);
+
   JS::AutoHoldPrincipals principals(aCx, new WorkletPrincipals(mImpl));
   return PaintWorkletGlobalScope_Binding::Wrap(
       aCx, this, this, options, principals.get(), true, aReflector);

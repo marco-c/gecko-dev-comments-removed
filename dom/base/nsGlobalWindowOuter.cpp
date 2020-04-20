@@ -2004,12 +2004,10 @@ static JS::RealmCreationOptions& SelectZone(
 
 
 
-static nsresult CreateNativeGlobalForInner(JSContext* aCx,
-                                           nsGlobalWindowInner* aNewInner,
-                                           nsIURI* aURI,
-                                           nsIPrincipal* aPrincipal,
-                                           JS::MutableHandle<JSObject*> aGlobal,
-                                           bool aIsSecureContext) {
+static nsresult CreateNativeGlobalForInner(
+    JSContext* aCx, nsGlobalWindowInner* aNewInner, nsIURI* aURI,
+    nsIPrincipal* aPrincipal, JS::MutableHandle<JSObject*> aGlobal,
+    bool aIsSecureContext, bool aDefineSharedArrayBufferConstructor) {
   MOZ_ASSERT(aCx);
   MOZ_ASSERT(aNewInner);
   MOZ_ASSERT(aPrincipal);
@@ -2020,10 +2018,20 @@ static nsresult CreateNativeGlobalForInner(JSContext* aCx,
   MOZ_RELEASE_ASSERT(!nsEP, "DOMWindow with nsEP is not supported");
 
   JS::RealmOptions options;
+  JS::RealmCreationOptions& creationOptions = options.creationOptions();
 
-  SelectZone(aCx, aPrincipal, aNewInner, options.creationOptions());
+  SelectZone(aCx, aPrincipal, aNewInner, creationOptions);
 
-  options.creationOptions().setSecureContext(aIsSecureContext);
+  creationOptions.setSecureContext(aIsSecureContext);
+
+  
+  
+  
+  
+  
+  
+  creationOptions.setDefineSharedArrayBufferConstructor(
+      aDefineSharedArrayBufferConstructor);
 
   xpc::InitGlobalObjectOptions(options, aPrincipal);
 
@@ -2209,12 +2217,28 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       mInnerWindow = nullptr;
 
       mCreatingInnerWindow = true;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      bool aDefineSharedArrayBufferConstructor = true;
+
       
       
       rv = CreateNativeGlobalForInner(
           cx, newInnerWindow, aDocument->GetDocumentURI(),
           aDocument->NodePrincipal(), &newInnerGlobal,
-          ComputeIsSecureContext(aDocument));
+          ComputeIsSecureContext(aDocument),
+          aDefineSharedArrayBufferConstructor);
       NS_ASSERTION(
           NS_SUCCEEDED(rv) && newInnerGlobal &&
               newInnerWindow->GetWrapperPreserveColor() == newInnerGlobal,

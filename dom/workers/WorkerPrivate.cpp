@@ -2205,19 +2205,51 @@ WorkerPrivate::WorkerPrivate(
 
     RuntimeService::GetDefaultJSSettings(mJSSettings);
 
-    mJSSettings.chrome.realmOptions.behaviors().setClampAndJitterTime(
-        !UsesSystemPrincipal());
-    mJSSettings.content.realmOptions.behaviors().setClampAndJitterTime(
-        !UsesSystemPrincipal());
+    {
+      JS::RealmOptions& chromeRealmOptions = mJSSettings.chrome.realmOptions;
+      JS::RealmOptions& contentRealmOptions = mJSSettings.content.realmOptions;
 
-    mJSSettings.chrome.realmOptions.creationOptions().setToSourceEnabled(
-        UsesSystemPrincipal());
-    mJSSettings.content.realmOptions.creationOptions().setToSourceEnabled(
-        UsesSystemPrincipal());
+      JS::RealmBehaviors& chromeRealmBehaviors = chromeRealmOptions.behaviors();
+      JS::RealmBehaviors& contentRealmBehaviors =
+          contentRealmOptions.behaviors();
 
-    if (mIsSecureContext) {
-      mJSSettings.chrome.realmOptions.creationOptions().setSecureContext(true);
-      mJSSettings.content.realmOptions.creationOptions().setSecureContext(true);
+      bool usesSystemPrincipal = UsesSystemPrincipal();
+
+      
+      
+      bool clampAndJitterTime = !usesSystemPrincipal;
+      chromeRealmBehaviors.setClampAndJitterTime(clampAndJitterTime);
+      contentRealmBehaviors.setClampAndJitterTime(clampAndJitterTime);
+
+      JS::RealmCreationOptions& chromeCreationOptions =
+          chromeRealmOptions.creationOptions();
+      JS::RealmCreationOptions& contentCreationOptions =
+          contentRealmOptions.creationOptions();
+
+      
+      bool toSourceEnabled = usesSystemPrincipal;
+      chromeCreationOptions.setToSourceEnabled(toSourceEnabled);
+      contentCreationOptions.setToSourceEnabled(toSourceEnabled);
+
+      if (mIsSecureContext) {
+        chromeCreationOptions.setSecureContext(true);
+        contentCreationOptions.setSecureContext(true);
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      bool defineSharedArrayBufferConstructor = true;
+
+      chromeCreationOptions.setDefineSharedArrayBufferConstructor(
+          defineSharedArrayBufferConstructor);
+      contentCreationOptions.setDefineSharedArrayBufferConstructor(
+          defineSharedArrayBufferConstructor);
     }
 
     mIsInAutomation = xpc::IsInAutomation();

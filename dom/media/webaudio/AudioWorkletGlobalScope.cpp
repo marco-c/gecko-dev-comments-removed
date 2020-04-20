@@ -41,6 +41,17 @@ AudioWorkletGlobalScope::AudioWorkletGlobalScope(AudioWorkletImpl* aImpl)
 bool AudioWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
   JS::RealmOptions options;
+
+  
+  
+  
+  
+  
+  
+  bool defineSharedArrayBufferConstructor = true;
+  options.creationOptions().setDefineSharedArrayBufferConstructor(
+      defineSharedArrayBufferConstructor);
+
   JS::AutoHoldPrincipals principals(aCx, new WorkletPrincipals(mImpl));
   return AudioWorkletGlobalScope_Binding::Wrap(
       aCx, this, this, options, principals.get(), true, aReflector);
