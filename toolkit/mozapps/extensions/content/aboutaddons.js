@@ -332,9 +332,11 @@ function checkForUpdate(addon) {
   return new Promise(resolve => {
     let listener = {
       onUpdateAvailable(addon, install) {
-        attachUpdateHandler(install);
-
         if (AddonManager.shouldAutoUpdate(addon)) {
+          
+          
+          attachUpdateHandler(install);
+
           let failed = () => {
             install.removeListener(updateListener);
             resolve({ installed: false, pending: false, found: true });
@@ -2852,6 +2854,14 @@ class AddonCard extends HTMLElement {
           break;
         }
         case "install-update":
+          
+          
+          
+          
+          
+          
+          attachUpdateHandler(this.updateInstall);
+
           this.updateInstall.install().then(
             () => {
               

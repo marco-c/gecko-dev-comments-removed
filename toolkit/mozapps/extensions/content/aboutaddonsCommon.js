@@ -103,7 +103,7 @@ function attachUpdateHandler(install) {
           info: {
             type: "update",
             addon: info.addon,
-            icon: info.addon.icon,
+            icon: info.addon.iconURL,
             
             
             

@@ -1618,7 +1618,9 @@ var AddonTestUtils = {
     reason = AddonTestUtils.updateReason,
     ...args
   ) {
-    let equal = this.testScope.equal;
+    
+    
+    let equal = this.testScope.equal || this.testScope.is;
     return new Promise((resolve, reject) => {
       let result = {};
       addon.findUpdates(
