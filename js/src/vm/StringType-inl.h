@@ -276,7 +276,8 @@ MOZ_ALWAYS_INLINE JSLinearString* JSLinearString::new_(
     
     
     
-    if (!cx->runtime()->gc.nursery().registerMallocedBuffer(chars.get())) {
+    if (!cx->runtime()->gc.nursery().registerMallocedBuffer(
+            chars.get(), length * sizeof(CharT))) {
       str->init(static_cast<JS::Latin1Char*>(nullptr), 0);
       if (allowGC) {
         ReportOutOfMemory(cx);

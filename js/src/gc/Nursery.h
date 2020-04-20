@@ -317,7 +317,7 @@ class Nursery {
   void* allocateBuffer(JS::BigInt* bi, size_t nbytes);
 
   
-  void freeBuffer(void* buffer);
+  void freeBuffer(void* buffer, size_t nbytes);
 
   
   static const size_t MaxNurseryBufferSize = 1024;
@@ -342,10 +342,22 @@ class Nursery {
   
   
   
-  MOZ_MUST_USE bool registerMallocedBuffer(void* buffer);
+  MOZ_MUST_USE bool registerMallocedBuffer(void* buffer, size_t nbytes);
 
   
-  void removeMallocedBuffer(void* buffer) {
+  void removeMallocedBuffer(void* buffer, size_t nbytes) {
+    MOZ_ASSERT(mallocedBuffers.has(buffer));
+    MOZ_ASSERT(nbytes > 0);
+    MOZ_ASSERT(mallocedBufferBytes >= nbytes);
+    mallocedBuffers.remove(buffer);
+    mallocedBufferBytes -= nbytes;
+  }
+
+  
+  
+  
+  void removeMallocedBufferDuringMinorGC(void* buffer) {
+    MOZ_ASSERT(JS::RuntimeHeapIsMinorCollecting());
     MOZ_ASSERT(mallocedBuffers.has(buffer));
     mallocedBuffers.remove(buffer);
   }
@@ -542,6 +554,7 @@ class Nursery {
   
   
   BufferSet mallocedBuffers;
+  size_t mallocedBufferBytes = 0;
 
   
   
