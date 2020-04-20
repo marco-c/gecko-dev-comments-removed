@@ -20,6 +20,7 @@ use crate::{display_item as di, font};
 use crate::color::{ColorU, ColorF};
 use crate::display_list::{BuiltDisplayList, BuiltDisplayListDescriptor};
 use crate::image::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey};
+use crate::image::DEFAULT_TILE_SIZE;
 use crate::units::*;
 
 
@@ -99,7 +100,7 @@ impl fmt::Debug for ResourceUpdate {
                 &i.descriptor.size
             )),
             ResourceUpdate::AddBlobImage(ref i) => f.write_fmt(format_args!(
-                "ResourceUpdate::AddBlobImage size({:?})",
+                "ResourceUFpdate::AddBlobImage size({:?})",
                 &i.descriptor.size
             )),
             ResourceUpdate::UpdateBlobImage(i) => f.write_fmt(format_args!(
@@ -445,7 +446,7 @@ impl Transaction {
         descriptor: ImageDescriptor,
         data: Arc<BlobImageData>,
         visible_rect: DeviceIntRect,
-        tiling: Option<TileSize>,
+        tile_size: Option<TileSize>,
     ) {
         self.resource_updates.push(
             ResourceUpdate::AddBlobImage(AddBlobImage {
@@ -453,7 +454,7 @@ impl Transaction {
                 descriptor,
                 data,
                 visible_rect,
-                tiling,
+                tile_size: tile_size.unwrap_or(DEFAULT_TILE_SIZE),
             })
         );
     }
@@ -700,8 +701,7 @@ pub struct AddBlobImage {
     
     
     
-    
-    pub tiling: Option<TileSize>,
+    pub tile_size: TileSize,
 }
 
 

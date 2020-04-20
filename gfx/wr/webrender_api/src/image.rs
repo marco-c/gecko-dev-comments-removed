@@ -16,6 +16,10 @@ use crate::units::*;
 
 
 
+pub const DEFAULT_TILE_SIZE: TileSize = 512;
+
+
+
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
@@ -389,7 +393,7 @@ pub trait BlobImageHandler: Send {
 
     
     fn add(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, visible_rect: &DeviceIntRect,
-           tiling: Option<TileSize>);
+           tile_size: TileSize);
 
     
     fn update(&mut self, key: BlobImageKey, data: Arc<BlobImageData>, visible_rect: &DeviceIntRect,
@@ -580,7 +584,5 @@ pub struct BlobImageRequest {
     
     pub key: BlobImageKey,
     
-    
-    
-    pub tile: Option<TileOffset>,
+    pub tile: TileOffset,
 }

@@ -510,7 +510,7 @@ struct BlobCommand {
     
     visible_rect: DeviceIntRect,
     
-    tile_size: Option<TileSize>,
+    tile_size: TileSize,
 }
 
 struct Job {
@@ -519,7 +519,7 @@ struct Job {
     commands: Arc<BlobImageData>,
     dirty_rect: BlobDirtyRect,
     visible_rect: DeviceIntRect,
-    tile_size: Option<TileSize>,
+    tile_size: TileSize,
 }
 
 
@@ -632,8 +632,8 @@ fn rasterize_blob(job: Job) -> (BlobImageRequest, BlobImageResult) {
             descriptor.format,
             &descriptor.rect,
             &job.visible_rect,
-            job.tile_size.as_ref(),
-            job.request.tile.as_ref(),
+            job.tile_size,
+            &job.request.tile,
             dirty_rect.as_ref(),
             MutByteSlice::new(output.as_mut_slice()),
         ) {
@@ -661,7 +661,7 @@ impl BlobImageHandler for Moz2dBlobImageHandler {
         key: BlobImageKey,
         data: Arc<BlobImageData>,
         visible_rect: &DeviceIntRect,
-        tile_size: Option<TileSize>,
+        tile_size: TileSize,
     ) {
         {
             let index = BlobReader::new(&data);
