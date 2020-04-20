@@ -2854,8 +2854,6 @@ var CustomizableUIInternal = {
       return;
     }
     aWidget[aEventName] = function(...aArgs) {
-      
-      
       try {
         
         
