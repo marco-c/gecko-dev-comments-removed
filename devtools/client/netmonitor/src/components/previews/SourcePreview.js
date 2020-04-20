@@ -13,7 +13,7 @@ const Editor = require("devtools/client/shared/sourceeditor/editor");
 const {
   setTargetSearchResult,
 } = require("devtools/client/netmonitor/src/actions/search");
-const { div, pre } = dom;
+const { div } = dom;
 
 
 
@@ -29,16 +29,12 @@ class SourcePreview extends Component {
       
       
       resetTargetSearchResult: PropTypes.func,
-      
-      limit: PropTypes.number,
     };
   }
 
   componentDidMount() {
     const { mode, text } = this.props;
-    if (!this.isOverSizeLimit(text)) {
-      this.loadEditor(mode, text);
-    }
+    this.loadEditor(mode, text);
   }
 
   shouldComponentUpdate(nextProps) {
@@ -54,19 +50,7 @@ class SourcePreview extends Component {
 
     if (prevProps.text !== text) {
       
-      
-      if (this.isOverSizeLimit(text)) {
-        this.unloadEditor();
-        return;
-      }
-
-      if (!this.editor || this.editor.isDestroyed()) {
-        
-        this.loadEditor(mode, text);
-      } else {
-        
-        this.updateEditor(mode, text);
-      }
+      this.updateEditor(mode, text);
     } else if (prevProps.targetSearchResult !== targetSearchResult) {
       this.findSearchResult();
     }
@@ -167,23 +151,6 @@ class SourcePreview extends Component {
     }
   }
 
-  isOverSizeLimit(text) {
-    const { limit } = this.props;
-    return text && text.length > limit;
-  }
-
-  renderPre(text) {
-    return div(
-      { className: "responseTextContainer" },
-      pre(
-        { ref: element => this.scrollToLine(element) },
-        text.split(/\r\n|\r|\n/).map((line, index) => {
-          return div({ key: index }, line);
-        })
-      )
-    );
-  }
-
   renderEditor() {
     return div(
       { className: "editor-row-container" },
@@ -195,13 +162,9 @@ class SourcePreview extends Component {
   }
 
   render() {
-    const { text } = this.props;
-    
-    
-    const isOverSize = this.isOverSizeLimit(text);
     return div(
       { key: "EDITOR_CONFIG", className: "editor-row-container" },
-      isOverSize ? this.renderPre(text) : this.renderEditor()
+      this.renderEditor()
     );
   }
 }
