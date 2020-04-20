@@ -479,13 +479,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     mState |= State::ModifiedRules | State::ModifiedRulesForDevtools;
   }
 
-  
-  
-  
-  
-  
-  dom::ShadowRoot* GetContainingShadow() const;
-
   StyleSheetInfo& Inner() {
     MOZ_ASSERT(mInner);
     return *mInner;
