@@ -1,9 +1,9 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 4 -*-
- * vim: set ts=4 sw=4 et tw=80:
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
+
 
 include DOMTypes;
 
@@ -38,7 +38,6 @@ struct RemoteObject
     bool isCallable;
     bool isConstructor;
     bool isDOMObject;
-    nsCString objectTag;
 };
 
 union ObjectVariant
@@ -78,10 +77,10 @@ union JSVariant
     NullVariant;
     ObjectVariant;
     SymbolVariant;
-    nsString;   /* StringValue(x) */
-    double;     /* NumberValue(x) */
-    bool;       /* BooleanValue(x) */
-    JSIID;      /* XPC nsIID */
+    nsString;   
+    double;     
+    bool;       
+    JSIID;      
 };
 
 union JSIDVariant
@@ -119,8 +118,8 @@ union ReturnStatus
 
 union JSParam
 {
-    void_t;     /* value is strictly an xpc out param */
-    JSVariant;  /* actual value to pass through */
+    void_t;     
+    JSVariant;  
 };
 
 union GetterSetter
@@ -135,13 +134,13 @@ struct PPropertyDescriptor
     uint32_t attrs;
     JSVariant value;
 
-    // How to interpret these values depends on whether JSPROP_GETTER/SETTER
-    // are set. If set, the corresponding value is a CPOW or 0 for NULL.
-    // Otherwise, the following table is used:
-    //
-    //  0 - NULL
-    //  1 - Default getter or setter.
-    //  2 - Unknown
+    
+    
+    
+    
+    
+    
+    
     GetterSetter getter;
     GetterSetter setter;
 };
