@@ -69,6 +69,8 @@ parent:
   async SetLayersObserverEpoch(LayersObserverEpoch childEpoch);
   async ClearCachedResources();
   
+  async InvalidateRenderedFrame();
+  
   async ScheduleComposite();
   
   async Capture();

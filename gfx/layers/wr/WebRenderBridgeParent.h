@@ -190,6 +190,7 @@ class WebRenderBridgeParent final
       const LayersObserverEpoch& aChildEpoch) override;
 
   mozilla::ipc::IPCResult RecvClearCachedResources() override;
+  mozilla::ipc::IPCResult RecvInvalidateRenderedFrame() override;
   mozilla::ipc::IPCResult RecvScheduleComposite() override;
   mozilla::ipc::IPCResult RecvCapture() override;
   mozilla::ipc::IPCResult RecvSetTransactionLogging(const bool&) override;
@@ -281,6 +282,14 @@ class WebRenderBridgeParent final
   void ScheduleGenerateFrame(const Maybe<wr::RenderRoot>& aRenderRoot);
   void ScheduleGenerateFrame(const wr::RenderRootSet& aRenderRoots);
   void ScheduleGenerateFrameAllRenderRoots();
+
+  
+
+
+
+
+
+  void InvalidateRenderedFrame();
 
   
 
