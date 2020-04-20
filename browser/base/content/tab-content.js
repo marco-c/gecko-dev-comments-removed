@@ -29,15 +29,6 @@ ActorManagerChild.attach(this, "browsers");
 
 var global = this;
 
-
-var trHandler = null;
-if (Services.prefs.getBoolPref("browser.translation.detectLanguage")) {
-  var { TranslationContentHandler } = ChromeUtils.import(
-    "resource:///modules/translation/TranslationContentHandler.jsm"
-  );
-  trHandler = new TranslationContentHandler(global, docShell);
-}
-
 var WebBrowserChrome = {
   onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
     return BrowserUtils.onBeforeLinkTraversal(

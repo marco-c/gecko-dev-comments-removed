@@ -4,7 +4,11 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Translation", "TranslationTelemetry"];
+var EXPORTED_SYMBOLS = [
+  "Translation",
+  "TranslationParent",
+  "TranslationTelemetry",
+];
 
 const TRANSLATION_PREF_SHOWUI = "browser.translation.ui.show";
 const TRANSLATION_PREF_DETECT_LANG = "browser.translation.detectLanguage";
@@ -17,6 +21,8 @@ var Translation = {
   STATE_TRANSLATED: 2,
   STATE_ERROR: 3,
   STATE_UNAVAILABLE: 4,
+
+  translationListener: null,
 
   serviceUnavailable: false,
 
@@ -57,6 +63,10 @@ var Translation = {
     "zh",
   ],
 
+  setListenerForTests(listener) {
+    this.translationListener = listener;
+  },
+
   _defaultTargetLanguage: "",
   get defaultTargetLanguage() {
     if (!this._defaultTargetLanguage) {
@@ -65,49 +75,6 @@ var Translation = {
       )[0];
     }
     return this._defaultTargetLanguage;
-  },
-
-  documentStateReceived(aBrowser, aData) {
-    if (aData.state == this.STATE_OFFER) {
-      if (aData.detectedLanguage == this.defaultTargetLanguage) {
-        
-        return;
-      }
-
-      if (!this.supportedSourceLanguages.includes(aData.detectedLanguage)) {
-        
-        TranslationTelemetry.recordMissedTranslationOpportunity(
-          aData.detectedLanguage
-        );
-        return;
-      }
-
-      TranslationTelemetry.recordTranslationOpportunity(aData.detectedLanguage);
-    }
-
-    if (!Services.prefs.getBoolPref(TRANSLATION_PREF_SHOWUI)) {
-      return;
-    }
-
-    if (!aBrowser.translationUI) {
-      aBrowser.translationUI = new TranslationUI(aBrowser);
-    }
-    let trUI = aBrowser.translationUI;
-
-    
-    trUI._state = Translation.serviceUnavailable
-      ? Translation.STATE_UNAVAILABLE
-      : aData.state;
-    trUI.detectedLanguage = aData.detectedLanguage;
-    trUI.translatedFrom = aData.translatedFrom;
-    trUI.translatedTo = aData.translatedTo;
-    trUI.originalShown = aData.originalShown;
-
-    trUI.showURLBarIcon();
-
-    if (trUI.shouldShowInfoBar(aBrowser.contentPrincipal)) {
-      trUI.showTranslationInfoBar();
-    }
   },
 
   openProviderAttribution() {
@@ -158,26 +125,65 @@ var Translation = {
 
 
 
+class TranslationParent extends JSWindowActorParent {
+  actorCreated() {
+    this._state = 0;
+    this.originalShown = true;
+  }
 
-
-function TranslationUI(aBrowser) {
-  this.browser = aBrowser;
-}
-
-TranslationUI.prototype = {
   get browser() {
-    return this._browser;
-  },
-  set browser(aBrowser) {
-    if (this._browser) {
-      this._browser.messageManager.removeMessageListener(
-        "Translation:Finished",
-        this
-      );
+    let browser = this.browsingContext.top.embedderElement;
+    return browser.outerBrowser ? browser.outerBrowser : browser;
+  }
+
+  receiveMessage(aMessage) {
+    switch (aMessage.name) {
+      case "Translation:DocumentState":
+        this.documentStateReceived(aMessage.data);
+        break;
     }
-    aBrowser.messageManager.addMessageListener("Translation:Finished", this);
-    this._browser = aBrowser;
-  },
+  }
+
+  documentStateReceived(aData) {
+    if (aData.state == Translation.STATE_OFFER) {
+      if (aData.detectedLanguage == Translation.defaultTargetLanguage) {
+        
+        return;
+      }
+
+      if (
+        !Translation.supportedTargetLanguages.includes(aData.detectedLanguage)
+      ) {
+        
+        TranslationTelemetry.recordMissedTranslationOpportunity(
+          aData.detectedLanguage
+        );
+        return;
+      }
+
+      TranslationTelemetry.recordTranslationOpportunity(aData.detectedLanguage);
+    }
+
+    if (!Services.prefs.getBoolPref(TRANSLATION_PREF_SHOWUI)) {
+      return;
+    }
+
+    
+    this._state = Translation.serviceUnavailable
+      ? Translation.STATE_UNAVAILABLE
+      : aData.state;
+    this.detectedLanguage = aData.detectedLanguage;
+    this.translatedFrom = aData.translatedFrom;
+    this.translatedTo = aData.translatedTo;
+    this.originalShown = aData.originalShown;
+
+    this.showURLBarIcon();
+
+    if (this.shouldShowInfoBar(this.browser.contentPrincipal)) {
+      this.showTranslationInfoBar();
+    }
+  }
+
   translate(aFrom, aTo) {
     if (
       aFrom == aTo ||
@@ -206,11 +212,16 @@ TranslationUI.prototype = {
     this.translatedFrom = aFrom;
     this.translatedTo = aTo;
 
-    this.browser.messageManager.sendAsyncMessage(
-      "Translation:TranslateDocument",
-      { from: aFrom, to: aTo }
+    this.sendQuery("Translation:TranslateDocument", {
+      from: aFrom,
+      to: aTo,
+    }).then(
+      result => {
+        this.translationFinished(result);
+      },
+      () => {}
     );
-  },
+  }
 
   showURLBarIcon() {
     let chromeWin = this.browser.ownerGlobal;
@@ -229,8 +240,6 @@ TranslationUI.prototype = {
         let infoBarVisible = this.notificationBox.getNotificationWithValue(
           "translation"
         );
-        aNewBrowser.translationUI = this;
-        this.browser = aNewBrowser;
         if (infoBarVisible) {
           this.showTranslationInfoBar();
         }
@@ -261,37 +270,36 @@ TranslationUI.prototype = {
       null,
       { dismissed: true, eventCallback: callback }
     );
-  },
+  }
 
-  _state: 0,
   get state() {
     return this._state;
-  },
+  }
+
   set state(val) {
     let notif = this.notificationBox.getNotificationWithValue("translation");
     if (notif) {
       notif.state = val;
     }
     this._state = val;
-  },
+  }
 
-  originalShown: true,
   showOriginalContent() {
     this.originalShown = true;
     this.showURLBarIcon();
-    this.browser.messageManager.sendAsyncMessage("Translation:ShowOriginal");
+    this.sendAsyncMessage("Translation:ShowOriginal");
     TranslationTelemetry.recordShowOriginalContent();
-  },
+  }
 
   showTranslatedContent() {
     this.originalShown = false;
     this.showURLBarIcon();
-    this.browser.messageManager.sendAsyncMessage("Translation:ShowTranslation");
-  },
+    this.sendAsyncMessage("Translation:ShowTranslation");
+  }
 
   get notificationBox() {
     return this.browser.ownerGlobal.gBrowser.getNotificationBox(this.browser);
-  },
+  }
 
   showTranslationInfoBar() {
     let notificationBox = this.notificationBox;
@@ -306,7 +314,7 @@ TranslationUI.prototype = {
     );
     notif.init(this);
     return notif;
-  },
+  }
 
   shouldShowInfoBar(aPrincipal) {
     
@@ -335,38 +343,38 @@ TranslationUI.prototype = {
     }
 
     return true;
-  },
+  }
 
-  receiveMessage(msg) {
-    switch (msg.name) {
-      case "Translation:Finished":
-        if (msg.data.success) {
-          this.originalShown = false;
-          this.state = Translation.STATE_TRANSLATED;
-          this.showURLBarIcon();
+  translationFinished(result) {
+    if (result.success) {
+      this.originalShown = false;
+      this.state = Translation.STATE_TRANSLATED;
+      this.showURLBarIcon();
 
-          
-          TranslationTelemetry.recordTranslation(
-            msg.data.from,
-            msg.data.to,
-            msg.data.characterCount
-          );
-        } else if (msg.data.unavailable) {
-          Translation.serviceUnavailable = true;
-          this.state = Translation.STATE_UNAVAILABLE;
-        } else {
-          this.state = Translation.STATE_ERROR;
-        }
-        break;
+      
+      TranslationTelemetry.recordTranslation(
+        result.from,
+        result.to,
+        result.characterCount
+      );
+    } else if (result.unavailable) {
+      Translation.serviceUnavailable = true;
+      this.state = Translation.STATE_UNAVAILABLE;
+    } else {
+      this.state = Translation.STATE_ERROR;
     }
-  },
+
+    if (Translation.translationListener) {
+      Translation.translationListener();
+    }
+  }
 
   infobarClosed() {
     if (this.state == Translation.STATE_OFFER) {
       TranslationTelemetry.recordDeniedTranslationOffer();
     }
-  },
-};
+  }
+}
 
 
 
