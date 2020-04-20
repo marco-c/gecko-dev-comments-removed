@@ -1064,7 +1064,10 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void UnblockEmbedderLoadEventForFailure();
+  
+  
+  
+  void UnblockEmbedderLoadEventForFailure(bool aFireFrameErrorEvent = false);
 
   struct SameDocumentNavigationState {
     nsAutoCString mCurrentHash;

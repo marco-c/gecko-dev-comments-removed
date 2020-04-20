@@ -97,6 +97,7 @@ using struct CollectedInputDataValue from "mozilla/dom/SessionStoreMessageUtils.
 using refcounted class nsITransportSecurityInfo from "nsITransportSecurityInfo.h";
 using mozilla::ContentBlockingNotifier::StorageAccessGrantedReason from "mozilla/ContentBlockingNotifier.h";
 using CallerType from "mozilla/dom/BindingDeclarations.h";
+using mozilla::dom::EmbedderElementEventType from "mozilla/dom/TabMessageUtils.h";
 
 namespace mozilla {
 namespace dom {
@@ -687,7 +688,7 @@ parent:
 
 
 
-    async MaybeFireEmbedderLoadEvents(bool aFireLoadAtEmbeddingElement);
+    async MaybeFireEmbedderLoadEvents(EmbedderElementEventType aFireEventAtEmbeddingElement);
 
     async ScrollRectIntoView(nsRect aRect, ScrollAxis aVertical,
                              ScrollAxis aHorizontal, ScrollFlags aScrollFlags,

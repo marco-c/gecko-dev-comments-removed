@@ -403,6 +403,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   void MaybeNotifyCrashed(mozilla::dom::BrowsingContext* aBrowsingContext,
                           mozilla::ipc::MessageChannel* aChannel);
 
+  void FireErrorEvent();
+
  private:
   nsFrameLoader(mozilla::dom::Element* aOwner,
                 mozilla::dom::BrowsingContext* aBrowsingContext,
@@ -441,7 +443,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
   nsresult CheckURILoad(nsIURI* aURI, nsIPrincipal* aTriggeringPrincipal);
-  void FireErrorEvent();
   nsresult ReallyStartLoadingInternal();
 
   
