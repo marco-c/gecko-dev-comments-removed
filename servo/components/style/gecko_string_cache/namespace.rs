@@ -24,7 +24,18 @@ macro_rules! ns {
 }
 
 
-#[derive(Clone, Debug, Default, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(transparent)]
 pub struct Namespace(pub Atom);
 

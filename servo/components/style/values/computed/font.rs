@@ -227,7 +227,9 @@ impl ToCss for FontFamily {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
+)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 pub struct FamilyName {
@@ -270,7 +272,9 @@ impl ToCss for FamilyName {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
+)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 
 
@@ -285,7 +289,9 @@ pub enum FontFamilyNameSyntax {
     Identifiers,
 }
 
-#[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Debug, Eq, MallocSizeOf, PartialEq, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
+)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize, Hash))]
 
 pub enum SingleFontFamily {
@@ -301,7 +307,18 @@ pub enum SingleFontFamily {
 
 
 #[derive(
-    Clone, Copy, Debug, Eq, Hash, MallocSizeOf, PartialEq, Parse, ToCss, ToComputedValue, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(u8)]
@@ -427,7 +444,9 @@ impl SingleFontFamily {
 }
 
 #[cfg(feature = "servo")]
-#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
+)]
 
 pub struct FontFamilyList(Box<[SingleFontFamily]>);
 
@@ -684,7 +703,7 @@ pub type FontVariationSettings = FontSettings<VariationValue<Number>>;
 
 #[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToResolvedValue)]
 #[repr(C)]
-pub struct FontLanguageOverride(u32);
+pub struct FontLanguageOverride(pub u32);
 
 impl FontLanguageOverride {
     #[inline]
@@ -740,6 +759,15 @@ impl ToCss for FontLanguageOverride {
         W: fmt::Write,
     {
         self.to_str(&mut [0; 4]).to_css(dest)
+    }
+}
+
+
+
+#[cfg(feature = "gecko")]
+impl From<u32> for FontLanguageOverride {
+    fn from(v: u32) -> Self {
+        unsafe { Self::from_u32(v) }
     }
 }
 

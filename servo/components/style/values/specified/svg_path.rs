@@ -35,8 +35,7 @@ use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
 pub struct SVGPathData(
     
     
-    #[ignore_malloc_size_of = "Arc"]
-    pub crate::ArcSlice<PathCommand>,
+    #[ignore_malloc_size_of = "Arc"] pub crate::ArcSlice<PathCommand>,
 );
 
 impl SVGPathData {
@@ -541,7 +540,17 @@ impl CoordPair {
 
 
 #[derive(
-    Clone, Copy, Debug, Deserialize, MallocSizeOf, PartialEq, Serialize, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[repr(C)]
 pub struct ArcFlag(bool);
