@@ -17,7 +17,10 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 
-Cu.forcePermissiveCOWs();
+
+if (__URI__.includes("specialpowers")) {
+  Cu.forcePermissiveCOWs();
+}
 
 var registrar = Cm.QueryInterface(Ci.nsIComponentRegistrar);
 var oldClassID;
