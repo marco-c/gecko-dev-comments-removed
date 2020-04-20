@@ -227,6 +227,12 @@ var interfaceNamesInGlobalScope = [
     insecureContext: true,
   },
   
+  { name: "Report", nightly: true, insecureContext: true },
+  
+  { name: "ReportBody", nightly: true, insecureContext: true },
+  
+  { name: "ReportingObserver", nightly: true, insecureContext: true },
+  
   { name: "Request", insecureContext: true },
   
   { name: "Response", insecureContext: true },
