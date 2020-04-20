@@ -234,19 +234,14 @@ gfxMatrix OrientedImage::OrientationMatrix(Orientation aOrientation,
   
   
   
-  switch (aOrientation.flip) {
-    case Flip::Unflipped:
-      break;
-    case Flip::Horizontal:
-      if (aOrientation.SwapsWidthAndHeight()) {
-        builder.Translate(gfxPoint(aSize.height, 0));
-      } else {
-        builder.Translate(gfxPoint(aSize.width, 0));
-      }
-      builder.Scale(-1.0, 1.0);
-      break;
-    default:
-      MOZ_ASSERT(false, "Invalid flip value");
+  
+  if (aOrientation.flip == Flip::Horizontal && !aOrientation.flipFirst) {
+    if (aOrientation.SwapsWidthAndHeight()) {
+      builder.Translate(gfxPoint(aSize.height, 0));
+    } else {
+      builder.Translate(gfxPoint(aSize.width, 0));
+    }
+    builder.Scale(-1.0, 1.0);
   }
 
   
@@ -268,6 +263,12 @@ gfxMatrix OrientedImage::OrientationMatrix(Orientation aOrientation,
       break;
     default:
       MOZ_ASSERT(false, "Invalid rotation value");
+  }
+
+  
+  if (aOrientation.flip == Flip::Horizontal && aOrientation.flipFirst) {
+    builder.Translate(gfxPoint(aSize.width, 0.0));
+    builder.Scale(-1.0, 1.0);
   }
 
   return builder.Build();
