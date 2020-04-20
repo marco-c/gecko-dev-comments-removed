@@ -5,6 +5,7 @@
 
 
 #include "nsAnimationManager.h"
+#include "nsINode.h"
 #include "nsTransitionManager.h"
 #include "mozilla/dom/CSSAnimationBinding.h"
 
@@ -31,13 +32,26 @@
 #include <algorithm>  
 #include <math.h>
 
+namespace mozilla {
+namespace dom {
+struct ComputedEffectTiming;
+struct EffectTiming;
+struct OptionalEffectTiming;
+}  
+}  
+
 using namespace mozilla;
 using namespace mozilla::css;
 using mozilla::dom::Animation;
 using mozilla::dom::AnimationEffect;
 using mozilla::dom::AnimationPlayState;
+using mozilla::dom::ComputedEffectTiming;
 using mozilla::dom::CSSAnimation;
+using mozilla::dom::EffectTiming;
+using mozilla::dom::Element;
 using mozilla::dom::KeyframeEffect;
+using mozilla::dom::MutationObservers;
+using mozilla::dom::OptionalEffectTiming;
 
 typedef mozilla::ComputedTiming::AnimationPhase AnimationPhase;
 

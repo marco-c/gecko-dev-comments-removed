@@ -7,6 +7,8 @@
 
 
 #include "nsTransitionManager.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/KeyframeEffectBinding.h"
 #include "nsAnimationManager.h"
 #include "mozilla/dom/CSSTransitionBinding.h"
 
@@ -40,6 +42,8 @@ using mozilla::TimeStamp;
 using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSTransition;
+using mozilla::dom::DocumentTimeline;
+using mozilla::dom::KeyframeEffect;
 using mozilla::dom::Nullable;
 
 using namespace mozilla;
