@@ -540,9 +540,14 @@ ScrollAnchorContainer::ExamineAnchorCandidate(nsIFrame* aFrame) const {
   const bool isAnonBox = aFrame->Style()->IsAnonBox();
 
   
-  nsIScrollableFrame* scrollable = do_QueryFrame(aFrame);
-  const bool isScrollableWithAnchor =
-      scrollable && scrollable->Anchor()->CanMaintainAnchor();
+  const bool isScrollableWithAnchor = [&] {
+    nsIScrollableFrame* scrollable = do_QueryFrame(aFrame);
+    if (!scrollable) {
+      return false;
+    }
+    auto* anchor = scrollable->Anchor();
+    return anchor->AnchorNode() || anchor->CanMaintainAnchor();
+  }();
 
   
   
