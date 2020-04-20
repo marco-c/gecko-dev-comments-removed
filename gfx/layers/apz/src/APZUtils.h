@@ -166,9 +166,16 @@ gfxFloat IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin, gfxFloat aMax);
 
 
 
+
+
 bool IsStuckAtBottom(gfxFloat aTranslation,
                      const LayerRectAbsolute& aInnerRange,
                      const LayerRectAbsolute& aOuterRange);
+
+
+
+bool IsStuckAtTop(gfxFloat aTranslation, const LayerRectAbsolute& aInnerRange,
+                  const LayerRectAbsolute& aOuterRange);
 
 }  
 

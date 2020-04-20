@@ -3558,9 +3558,6 @@ bool APZCTreeManager::IsStuckToRootContentAtBottom(
     return false;
   }
 
-  
-  
-  
   ParentLayerPoint translation =
       stickyTargetApzc
           ->GetCurrentAsyncTransform(

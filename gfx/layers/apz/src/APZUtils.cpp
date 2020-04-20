@@ -32,7 +32,7 @@ namespace apz {
 }
 
  gfxFloat IntervalOverlap(gfxFloat aTranslation, gfxFloat aMin,
-                                      gfxFloat aMax) {
+                                    gfxFloat aMax) {
   if (aTranslation > 0) {
     return std::max(0.0, std::min(aMax, aTranslation) - std::max(aMin, 0.0));
   }
@@ -41,16 +41,23 @@ namespace apz {
 }
 
  bool IsStuckAtBottom(gfxFloat aTranslation,
-                                  const LayerRectAbsolute& aInnerRange,
-                                  const LayerRectAbsolute& aOuterRange) {
-  gfxFloat diff =
-      (IntervalOverlap(aTranslation, aOuterRange.Y(), aOuterRange.YMost()) -
-       IntervalOverlap(aTranslation, aInnerRange.Y(), aInnerRange.YMost())) -
-      aTranslation;
+                                const LayerRectAbsolute& aInnerRange,
+                                const LayerRectAbsolute& aOuterRange) {
+  
+  
+  
+  
+  
+  return aOuterRange.Y() <= -aTranslation && -aTranslation <= aInnerRange.Y();
+}
 
+ bool IsStuckAtTop(gfxFloat aTranslation,
+                             const LayerRectAbsolute& aInnerRange,
+                             const LayerRectAbsolute& aOuterRange) {
   
   
-  return diff == 0.0f && aInnerRange.YMost() >= 0;
+  return aInnerRange.YMost() <= -aTranslation &&
+         -aTranslation <= aOuterRange.YMost();
 }
 
 }  
