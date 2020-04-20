@@ -880,6 +880,15 @@ child:
 
 
 
+    async SetSuspendMediaWhenInactive(bool aSuspendMediaWhenInactive);
+
+    
+
+
+
+
+
+
 
 
 

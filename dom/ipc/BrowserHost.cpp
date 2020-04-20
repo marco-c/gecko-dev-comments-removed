@@ -99,6 +99,28 @@ void BrowserHost::UpdateEffects(EffectsInfo aEffects) {
 
 
 NS_IMETHODIMP
+BrowserHost::GetSuspendMediaWhenInactive(bool* aSuspendMediaWhenInactive) {
+  if (!mRoot) {
+    *aSuspendMediaWhenInactive = false;
+    return NS_OK;
+  }
+  *aSuspendMediaWhenInactive = mRoot->GetSuspendMediaWhenInactive();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+BrowserHost::SetSuspendMediaWhenInactive(bool aSuspendMediaWhenInactive) {
+  if (!mRoot) {
+    return NS_OK;
+  }
+  VisitAll([&](BrowserParent* aBrowserParent) {
+    aBrowserParent->SetSuspendMediaWhenInactive(aSuspendMediaWhenInactive);
+  });
+  return NS_OK;
+}
+
+
+NS_IMETHODIMP
 BrowserHost::GetDocShellIsActive(bool* aDocShellIsActive) {
   if (!mRoot) {
     *aDocShellIsActive = false;
