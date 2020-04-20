@@ -69,13 +69,6 @@ class Rule : public nsISupports, public nsWrapperCache {
   StyleSheet* GetStyleSheet() const { return mSheet; }
 
   
-  
-  
-  dom::Document* GetComposedDoc() const {
-    return mSheet ? mSheet->GetComposedDoc() : nullptr;
-  }
-
-  
   virtual void DropSheetReference();
 
   

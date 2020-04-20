@@ -258,10 +258,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  bool IsKeptAliveByDocument() const;
-
-  
-  dom::Document* GetComposedDoc() const;
+  dom::Document* GetKeptAliveByDocument() const;
 
   
   
