@@ -61,11 +61,8 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   void GetSelection(mozilla::PresShell* aPresShell,
                     nsISelectionController** aSelCon,
                     mozilla::dom::Selection** aDomSel);
-  
-  
   bool IsRangeVisible(nsRange* aRange, bool aMustBeVisible,
-                      bool aGetTopVisibleLeaf, nsRange** aNewRange,
-                      bool* aUsesIndependentSelection);
+                      bool aGetTopVisibleLeaf, bool* aUsesIndependentSelection);
   bool IsRangeRendered(nsRange* aRange);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult FindItNow(uint32_t aMode, bool aIsLinksOnly,
