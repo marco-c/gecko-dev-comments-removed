@@ -1608,12 +1608,31 @@ PerHandlerParser<ParseHandler>::newDotGeneratorName() {
   return newInternalDotName(cx_->names().dotGenerator);
 }
 
+static bool VarScopeHasBindings(ParseContext* pc) {
+  for (BindingIter bi = pc->varScope().bindings(pc); bi; bi++) {
+    if (bi.kind() == BindingKind::Var) {
+      return true;
+    }
+  }
+  return false;
+}
+
 template <class ParseHandler>
 bool PerHandlerParser<ParseHandler>::finishFunctionScopes(
     bool isStandaloneFunction) {
   FunctionBox* funbox = pc_->functionBox();
 
   if (funbox->hasParameterExprs) {
+    
+    
+    
+    
+    
+    if (VarScopeHasBindings(pc_) ||
+        funbox->needsExtraBodyVarEnvironmentRegardlessOfBindings()) {
+      funbox->setFunctionHasExtraBodyVarScope();
+    }
+
     if (!propagateFreeNamesAndMarkClosedOverBindings(pc_->functionScope())) {
       return false;
     }
@@ -1650,6 +1669,8 @@ bool PerHandlerParser<FullParseHandler>::finishFunction(
       return false;
     }
     funbox->extraVarScopeBindings().set(*bindings);
+
+    MOZ_ASSERT_IF(*bindings, funbox->functionHasExtraBodyVarScope());
   }
 
   {

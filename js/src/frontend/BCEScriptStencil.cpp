@@ -47,8 +47,6 @@ void BCEScriptStencil::init() {
     
     immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
                            funbox->hasMappedArgsObj());
-    immutableFlags.setFlag(ImmutableFlags::FunctionHasExtraBodyVarScope,
-                           funbox->hasExtraBodyVarScope());
   } 
 }
 

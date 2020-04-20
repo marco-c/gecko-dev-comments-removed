@@ -274,6 +274,12 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   HasDirectEval = 1 << 24,
+
+  
+  
+  
+  
+  FunctionHasExtraBodyVarScope = 1 << 25,
   
 
   
@@ -284,9 +290,7 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  HasNonSyntacticScope = 1 << 25,
-
-  FunctionHasExtraBodyVarScope = 1 << 26,
+  HasNonSyntacticScope = 1 << 26,
 
   
   NeedsFunctionEnvironmentObjects = 1 << 27,
