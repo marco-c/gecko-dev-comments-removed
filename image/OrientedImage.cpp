@@ -75,34 +75,37 @@ Maybe<AspectRatio> OrientedImage::GetIntrinsicRatio() {
   return ratio;
 }
 
-already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
-    Orientation aOrientation, SourceSurface* aSurface) {
-  MOZ_ASSERT(aSurface);
+NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
+OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
+  nsresult rv;
 
-  
-  if (aOrientation.IsIdentity()) {
-    return do_AddRef(aSurface);
+  if (mOrientation.IsIdentity()) {
+    return InnerImage()->GetFrame(aWhichFrame, aFlags);
   }
 
   
-  nsIntSize originalSize = aSurface->GetSize();
-  nsIntSize targetSize = originalSize;
-  if (aOrientation.SwapsWidthAndHeight()) {
-    swap(targetSize.width, targetSize.height);
-  }
+  IntSize size;
+  rv = InnerImage()->GetWidth(&size.width);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+  rv = InnerImage()->GetHeight(&size.height);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  RefPtr<SourceSurface> innerSurface =
+      InnerImage()->GetFrame(aWhichFrame, aFlags);
+  NS_ENSURE_TRUE(innerSurface, nullptr);
 
   
-  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(aSurface, originalSize);
+  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(innerSurface, size);
 
   
-  gfx::SurfaceFormat surfaceFormat = IsOpaque(aSurface->GetFormat())
+  gfx::SurfaceFormat surfaceFormat = IsOpaque(innerSurface->GetFormat())
                                          ? gfx::SurfaceFormat::OS_RGBX
                                          : gfx::SurfaceFormat::OS_RGBA;
 
   
   RefPtr<DrawTarget> target =
       gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-          targetSize, surfaceFormat);
+          size, surfaceFormat);
   if (!target || !target->IsValid()) {
     NS_ERROR("Could not create a DrawTarget");
     return nullptr;
@@ -111,23 +114,12 @@ already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx);  
-  ctx->Multiply(OrientationMatrix(aOrientation, originalSize));
-  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(originalSize),
-                             ImageRegion::Create(originalSize), surfaceFormat,
+  ctx->Multiply(OrientationMatrix(size));
+  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(size),
+                             ImageRegion::Create(size), surfaceFormat,
                              SamplingFilter::LINEAR);
 
   return target->Snapshot();
-}
-
-NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
-OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
-  
-  
-  RefPtr<SourceSurface> innerSurface =
-      InnerImage()->GetFrame(aWhichFrame, aFlags);
-  NS_ENSURE_TRUE(innerSurface, nullptr);
-
-  return OrientSurface(mOrientation, innerSurface);
 }
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
@@ -226,27 +218,44 @@ struct MatrixBuilder {
   bool mInvert;
 };
 
-gfxMatrix OrientedImage::OrientationMatrix(Orientation aOrientation,
-                                           const nsIntSize& aSize,
+
+
+
+
+
+
+
+
+
+
+
+
+
+gfxMatrix OrientedImage::OrientationMatrix(const nsIntSize& aSize,
                                            bool aInvert ) {
   MatrixBuilder builder(aInvert);
 
   
   
   
-  
-  if (aOrientation.flip == Flip::Horizontal && !aOrientation.flipFirst) {
-    if (aOrientation.SwapsWidthAndHeight()) {
-      builder.Translate(gfxPoint(aSize.height, 0));
-    } else {
-      builder.Translate(gfxPoint(aSize.width, 0));
-    }
-    builder.Scale(-1.0, 1.0);
+  switch (mOrientation.flip) {
+    case Flip::Unflipped:
+      break;
+    case Flip::Horizontal:
+      if (mOrientation.SwapsWidthAndHeight()) {
+        builder.Translate(gfxPoint(aSize.height, 0));
+      } else {
+        builder.Translate(gfxPoint(aSize.width, 0));
+      }
+      builder.Scale(-1.0, 1.0);
+      break;
+    default:
+      MOZ_ASSERT(false, "Invalid flip value");
   }
 
   
   
-  switch (aOrientation.rotation) {
+  switch (mOrientation.rotation) {
     case Angle::D0:
       break;
     case Angle::D90:
@@ -263,12 +272,6 @@ gfxMatrix OrientedImage::OrientationMatrix(Orientation aOrientation,
       break;
     default:
       MOZ_ASSERT(false, "Invalid rotation value");
-  }
-
-  
-  if (aOrientation.flip == Flip::Horizontal && aOrientation.flipFirst) {
-    builder.Translate(gfxPoint(aSize.width, 0.0));
-    builder.Scale(-1.0, 1.0);
   }
 
   return builder.Build();

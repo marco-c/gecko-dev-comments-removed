@@ -627,12 +627,6 @@ interface imgIContainer : nsISupports
 
 
 
-  [notxpcom] bool handledOrientation();
-
-  
-
-
-
 
 
 

@@ -63,39 +63,13 @@ class OrientedImage : public ImageWrapper {
                                     gfx::SamplingFilter aSamplingFilter,
                                     uint32_t aFlags) override;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static gfxMatrix OrientationMatrix(Orientation aOrientation,
-                                     const nsIntSize& aSize,
-                                     bool aInvert = false);
-
-  
-
-
-
-  static already_AddRefed<SourceSurface> OrientSurface(Orientation aOrientation,
-                                                       SourceSurface* aSurface);
-
  protected:
   OrientedImage(Image* aImage, Orientation aOrientation)
       : ImageWrapper(aImage), mOrientation(aOrientation) {}
 
   virtual ~OrientedImage() {}
 
-  gfxMatrix OrientationMatrix(const nsIntSize& aSize, bool aInvert = false) {
-    return OrientationMatrix(mOrientation, aSize, aInvert);
-  }
+  gfxMatrix OrientationMatrix(const nsIntSize& aSize, bool aInvert = false);
 
  private:
   Orientation mOrientation;
