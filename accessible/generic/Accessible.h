@@ -272,15 +272,6 @@ class Accessible : public nsISupports {
   
 
 
-  bool Unavailable() const {
-    uint64_t state = NativelyUnavailable() ? states::UNAVAILABLE : 0;
-    ApplyARIAState(&state);
-    return state & states::UNAVAILABLE;
-  }
-
-  
-
-
 
   virtual uint64_t NativeState() const;
 
@@ -980,6 +971,12 @@ class Accessible : public nsISupports {
   void SetHideEventTarget(bool aTarget) { mHideEventTarget = aTarget; }
 
   void Announce(const nsAString& aAnnouncement, uint16_t aPriority);
+
+  
+
+
+
+  void MaybeFireFocusableStateChange(bool aPreviouslyFocusable);
 
  protected:
   virtual ~Accessible();

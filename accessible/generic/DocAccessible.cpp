@@ -672,8 +672,10 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
   }
 
   if (aAttribute == nsGkAtoms::aria_disabled ||
-      aAttribute == nsGkAtoms::disabled)
-    mStateBitWasOn = accessible->Unavailable();
+      aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::tabindex ||
+      aAttribute == nsGkAtoms::contenteditable) {
+    mPrevStateBits = accessible->State();
+  }
 }
 
 void DocAccessible::NativeAnonymousChildListChange(nsIContent* aContent,
@@ -773,16 +775,32 @@ void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
   if (aAttribute == nsGkAtoms::disabled ||
       aAttribute == nsGkAtoms::aria_disabled) {
     
-    
-    if (aAccessible->Unavailable() == mStateBitWasOn) return;
+    aAccessible->MaybeFireFocusableStateChange(
+        (mPrevStateBits & states::FOCUSABLE) != 0);
 
-    RefPtr<AccEvent> enabledChangeEvent =
-        new AccStateChangeEvent(aAccessible, states::ENABLED, mStateBitWasOn);
+    
+    
+    uint64_t unavailableState = (aAccessible->State() & states::UNAVAILABLE);
+    if ((mPrevStateBits & states::UNAVAILABLE) == unavailableState) {
+      return;
+    }
+
+    RefPtr<AccEvent> enabledChangeEvent = new AccStateChangeEvent(
+        aAccessible, states::ENABLED, !unavailableState);
     FireDelayedEvent(enabledChangeEvent);
 
-    RefPtr<AccEvent> sensitiveChangeEvent =
-        new AccStateChangeEvent(aAccessible, states::SENSITIVE, mStateBitWasOn);
+    RefPtr<AccEvent> sensitiveChangeEvent = new AccStateChangeEvent(
+        aAccessible, states::SENSITIVE, !unavailableState);
     FireDelayedEvent(sensitiveChangeEvent);
+
+    return;
+  }
+
+  if (aAttribute == nsGkAtoms::tabindex) {
+    
+    
+    aAccessible->MaybeFireFocusableStateChange(
+        (mPrevStateBits & states::FOCUSABLE));
     return;
   }
 
@@ -892,6 +910,11 @@ void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
     RefPtr<AccEvent> editableChangeEvent =
         new AccStateChangeEvent(aAccessible, states::EDITABLE);
     FireDelayedEvent(editableChangeEvent);
+    
+    
+    
+    aAccessible->MaybeFireFocusableStateChange(
+        (mPrevStateBits & states::FOCUSABLE));
     return;
   }
 

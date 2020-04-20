@@ -646,7 +646,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
     const nsAtom* mARIAAttrOldValue;
 
     
-    bool mStateBitWasOn;
+    uint64_t mPrevStateBits;
   };
 
   nsTArray<RefPtr<DocAccessible>> mChildDocuments;
