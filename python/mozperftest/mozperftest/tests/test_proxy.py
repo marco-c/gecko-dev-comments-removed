@@ -1,15 +1,16 @@
 
 import mozunit
 
-from mozperftest.system import pick_system
 from mozperftest.tests.support import get_running_env
+from mozperftest.environment import SYSTEM
 
 
 def test_proxy():
-    mach_cmd, metadata = get_running_env()
+    mach_cmd, metadata, env = get_running_env()
+    system = env.layers[SYSTEM]
 
     
-    with pick_system("script", mach_cmd) as proxy:
+    with system as proxy:
         proxy(metadata)
 
 

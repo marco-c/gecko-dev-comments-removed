@@ -1,11 +1,15 @@
 
 
 
-from mozperftest.base import MultipleMachEnvironment
+from mozperftest.layers import Layers
 from mozperftest.system.proxy import ProxyRunner
 
 
-def pick_system(flavor, mach_cmd):
+def get_layers():
+    return (ProxyRunner,)
+
+
+def pick_system(env, flavor, mach_cmd):
     if flavor == "script":
-        return MultipleMachEnvironment(mach_cmd, (ProxyRunner,))
+        return Layers(env, mach_cmd, get_layers())
     raise NotImplementedError(flavor)
