@@ -684,9 +684,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  bool IsStuckToRootContentAtBottom(const HitTestingTreeNode* aNode) const;
-  bool IsStuckToRootContentAtBottom(const StickyPositionInfo& aStickyInfo,
-                                    const MutexAutoLock& aProofOfMapLock) const;
+  SideBits SidesStuckToRootContent(const HitTestingTreeNode* aNode) const;
+  SideBits SidesStuckToRootContent(const StickyPositionInfo& aStickyInfo,
+                                   const MutexAutoLock& aProofOfMapLock) const;
 
   
 
