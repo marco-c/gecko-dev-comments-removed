@@ -244,10 +244,6 @@ const RECOMMENDED_PREFS = new Map([
   ["network.http.prompt-temp-redirect", false],
 
   
-  
-  ["network.http.speculative-parallel-limit", 0],
-
-  
   ["network.manage-offline-status", false],
 
   
