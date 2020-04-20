@@ -10,10 +10,6 @@ const {
   moveInfobar,
 } = require("devtools/server/actors/highlighters/utils/markup");
 
-const {
-  HighlighterRenderer,
-} = require("devtools/server/actors/highlighters/highlighter-renderer");
-
 
 
 const BOX_MODEL_REGIONS = ["margin", "border", "padding", "content"];
@@ -62,24 +58,10 @@ const GUIDE_STROKE_WIDTH = 1;
 
 
 
-class BoxModelHighlighterRenderer extends HighlighterRenderer {
-  constructor(mm, prefix) {
-    super();
-    
-    this.typeName = this.constructor.name.replace("Renderer", "");
+class BoxModelHighlighterRenderer {
+  constructor() {
     
     this.ID_CLASS_PREFIX = "box-model-";
-
-    
-    
-    
-    
-    if (mm && prefix) {
-      this.setMessageManager(mm, prefix);
-      this.init(false);
-    } else {
-      this.init(true);
-    }
   }
 
   
@@ -725,32 +707,3 @@ class BoxModelHighlighterRenderer extends HighlighterRenderer {
 }
 
 exports.BoxModelHighlighterRenderer = BoxModelHighlighterRenderer;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function setupParentProcess({ mm, prefix }) {
-  let renderer = new BoxModelHighlighterRenderer(mm, prefix);
-
-  return {
-    onBrowserSwap: newMM => renderer.setMessageManager(newMM, prefix),
-    onDisconnected: () => {
-      renderer.destroy();
-      renderer = null;
-    },
-  };
-}
-
-exports.setupParentProcess = setupParentProcess;
