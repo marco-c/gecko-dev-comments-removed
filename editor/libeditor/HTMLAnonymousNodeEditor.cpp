@@ -385,7 +385,8 @@ nsresult HTMLEditor::RefreshEditingUI() {
       
       
       
-      focusElement = GetEnclosingTable(cellElement);
+      focusElement =
+          HTMLEditUtils::GetClosestAncestorTableElement(*cellElement);
       focusTagAtom = nsGkAtoms::table;
     }
   }
