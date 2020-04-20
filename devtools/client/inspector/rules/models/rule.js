@@ -856,18 +856,12 @@ class Rule {
   
 
 
-
-
-
-  stringifyRule(filterTextProps = []) {
+  stringifyRule() {
     const selectorText = this.selectorText;
     let cssText = "";
     const terminator = Services.appinfo.OS === "WINNT" ? "\r\n" : "\n";
 
     for (const textProp of this.textProps) {
-      if (filterTextProps.length && !filterTextProps.includes(textProp)) {
-        continue;
-      }
       if (!textProp.invisible) {
         cssText += "\t" + textProp.stringifyProperty() + terminator;
       }

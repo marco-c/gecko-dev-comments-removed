@@ -161,7 +161,6 @@ function CssRuleView(inspector, document, store) {
   this._onTogglePrintSimulation = this._onTogglePrintSimulation.bind(this);
   this.highlightElementRule = this.highlightElementRule.bind(this);
   this.highlightProperty = this.highlightProperty.bind(this);
-  this.getApplicableTextProperty = this.getApplicableTextProperty.bind(this);
   this.refreshPanel = this.refreshPanel.bind(this);
 
   const doc = this.styleDocument;
@@ -1751,71 +1750,43 @@ CssRuleView.prototype = {
 
 
   highlightProperty: function(name) {
-    const textProp = this.getApplicableTextProperty(name);
-    if (!textProp) {
-      return false;
-    }
-
-    const rule = textProp.rule;
-    const {
-      editor: { selectorText },
-    } = rule;
-    let scrollBehavior = "smooth";
-
-    
-    if (!this.inspector.is3PaneModeEnabled) {
-      this.inspector.sidebar.select("ruleview");
-    }
-
-    
-    
-    if (rule.pseudoElement.length && !this.showPseudoElements) {
-      
-      
-      scrollBehavior = "auto";
-      this._togglePseudoElementRuleContainer();
-    }
-
-    
-    let element = textProp.editor.element;
-    
-    
-    if (name !== textProp.name) {
-      const subProperty = textProp.computed.find(
-        subProp => subProp.name === name
-      );
-
-      
-      textProp.editor.expandForFilter();
-      
-      element = subProperty.element;
-    }
-
-    
-    
-    this._scrollToElement(selectorText, element, scrollBehavior);
-    this._flashElement(element);
-
-    return true;
-  },
-
-  
-
-
-
-
-
-
-
-
-  getApplicableTextProperty: function(name) {
     for (const rule of this.rules) {
       for (const textProp of rule.textProps) {
         if (textProp.overridden || textProp.invisible || !textProp.enabled) {
           continue;
         }
+
+        const {
+          editor: { selectorText },
+        } = rule;
+        let scrollBehavior = "smooth";
+
+        
         if (textProp.name === name) {
-          return textProp;
+          
+          if (!this.inspector.is3PaneModeEnabled) {
+            this.inspector.sidebar.select("ruleview");
+          }
+
+          
+          
+          if (rule.pseudoElement.length && !this.showPseudoElements) {
+            
+            
+            scrollBehavior = "auto";
+            this._togglePseudoElementRuleContainer();
+          }
+
+          
+          
+          this._scrollToElement(
+            selectorText,
+            textProp.editor.element,
+            scrollBehavior
+          );
+          this._flashElement(textProp.editor.element);
+
+          return true;
         }
 
         
@@ -1825,12 +1796,35 @@ CssRuleView.prototype = {
           }
 
           if (computed.name === name) {
-            return textProp;
+            if (!this.inspector.is3PaneModeEnabled) {
+              this.inspector.sidebar.select("ruleview");
+            }
+
+            if (
+              textProp.rule.pseudoElement.length &&
+              !this.showPseudoElements
+            ) {
+              scrollBehavior = "auto";
+              this._togglePseudoElementRuleContainer();
+            }
+
+            
+            textProp.editor.expandForFilter();
+
+            this._scrollToElement(
+              selectorText,
+              computed.element,
+              scrollBehavior
+            );
+            this._flashElement(computed.element);
+
+            return true;
           }
         }
       }
     }
-    return null;
+
+    return false;
   },
 };
 

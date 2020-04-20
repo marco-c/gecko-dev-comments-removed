@@ -4,17 +4,12 @@
 
 "use strict";
 
-const Services = require("Services");
 const boxModelReducer = require("devtools/client/inspector/boxmodel/reducers/box-model");
 const {
   updateGeometryEditorEnabled,
   updateLayout,
   updateOffsetParent,
 } = require("devtools/client/inspector/boxmodel/actions/box-model");
-
-const HIGHLIGHT_RULE_PREF = Services.prefs.getBoolPref(
-  "devtools.layout.boxmodel.highlightProperty"
-);
 
 loader.lazyRequireGetter(
   this,
@@ -314,16 +309,14 @@ BoxModel.prototype = {
 
 
   onShowRulePreviewTooltip(target, property) {
-    const { getApplicableTextProperty } = this.inspector.getPanel(
-      "ruleview"
-    ).view;
-    const textProp = getApplicableTextProperty(property);
+    const { highlightProperty } = this.inspector.getPanel("ruleview").view;
+    const isHighlighted = highlightProperty(property);
 
     
-    if (textProp) {
-      
-      const rule = textProp.rule.stringifyRule([textProp]);
-      this.rulePreviewTooltip.show(target, rule);
+    
+    
+    if (!isHighlighted) {
+      this.rulePreviewTooltip.show(target);
     }
   },
 
@@ -339,12 +332,6 @@ BoxModel.prototype = {
 
 
   onShowBoxModelEditor(element, event, property) {
-    if (HIGHLIGHT_RULE_PREF && event.shiftKey) {
-      const { highlightProperty } = this.inspector.getPanel("ruleview").view;
-      highlightProperty(property);
-      return;
-    }
-
     const session = new EditingSession({
       inspector: this.inspector,
       doc: this.document,
