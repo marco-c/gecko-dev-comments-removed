@@ -396,20 +396,18 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     let scripts = this.dbg.findScripts({ source: this._source });
 
     if (!this.isWasm) {
-      const topLevel = scripts.filter(script => !script.isFunction);
-      if (topLevel.length) {
-        scripts = topLevel;
-      } else {
-        const allScripts = new Set(scripts);
-
-        for (const script of allScripts) {
-          for (const child of script.getChildScripts()) {
-            allScripts.delete(child);
-          }
+      
+      
+      
+      
+      
+      const allScripts = new Set(scripts);
+      for (const script of allScripts) {
+        for (const child of script.getChildScripts()) {
+          allScripts.delete(child);
         }
-
-        scripts = [...allScripts];
       }
+      scripts = [...allScripts];
     }
 
     this._scripts = scripts;
