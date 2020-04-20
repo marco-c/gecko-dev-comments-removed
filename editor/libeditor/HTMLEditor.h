@@ -882,12 +882,6 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  virtual bool TagCanContainTag(nsAtom& aParentTag,
-                                nsAtom& aChildTag) const override;
-
-  
-
-
   virtual bool IsContainer(nsINode* aNode) const override;
 
   
@@ -1305,12 +1299,6 @@ class HTMLEditor final : public TextEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   SplitMailCiteElements(const EditorDOMPoint& aPointToSplit);
-
-  
-
-
-
-  bool CanContainParagraph(Element& aElement) const;
 
   
 

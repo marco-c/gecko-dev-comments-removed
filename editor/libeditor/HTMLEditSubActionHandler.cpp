@@ -1442,7 +1442,8 @@ EditActionResult HTMLEditor::HandleInsertText(
 
   
   if (!pointToInsert.IsInTextNode() &&
-      !CanContainTag(*pointToInsert.GetContainer(), *nsGkAtoms::textTagName)) {
+      !HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
+                                     *nsGkAtoms::textTagName)) {
     NS_WARNING("Selection start container couldn't have text nodes");
     return EditActionHandled(NS_ERROR_FAILURE);
   }
@@ -1706,27 +1707,6 @@ EditActionResult HTMLEditor::HandleInsertText(
   return EditActionHandled(rv);
 }
 
-bool HTMLEditor::CanContainParagraph(Element& aElement) const {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  if (CanContainTag(aElement, *nsGkAtoms::p)) {
-    return true;
-  }
-
-  
-  
-  if (aElement.IsAnyOfHTMLElements(nsGkAtoms::ol, nsGkAtoms::ul, nsGkAtoms::dl,
-                                   nsGkAtoms::table, nsGkAtoms::thead,
-                                   nsGkAtoms::tbody, nsGkAtoms::tfoot,
-                                   nsGkAtoms::tr)) {
-    return true;
-  }
-
-  
-  
-  return false;
-}
-
 EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   if (NS_WARN_IF(!mInitSucceeded)) {
     return EditActionIgnored(NS_ERROR_NOT_INITIALIZED);
@@ -1857,7 +1837,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   
   else if (editingHost == blockParent) {
     insertBRElement = separator == ParagraphSeparator::br ||
-                      !CanContainParagraph(*editingHost);
+                      !HTMLEditUtils::CanElementContainParagraph(*editingHost);
   }
   
   
@@ -1872,7 +1852,8 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     for (Element* blockAncestor = blockParent; blockAncestor && insertBRElement;
          blockAncestor =
              HTMLEditor::GetBlockNodeParent(blockAncestor, editingHost)) {
-      insertBRElement = !CanContainParagraph(*blockAncestor);
+      insertBRElement =
+          !HTMLEditUtils::CanElementContainParagraph(*blockAncestor);
     }
   }
 
@@ -3572,7 +3553,8 @@ nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
   }
 
   
-  if (!CanContainTag(*aPointToInsert.GetContainer(), *nsGkAtoms::br)) {
+  if (!HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(),
+                                     *nsGkAtoms::br)) {
     return NS_OK;
   }
 
@@ -4191,7 +4173,7 @@ MoveNodeResult HTMLEditor::MoveNodeOrChildren(
   MOZ_ASSERT(aPointToInsert.IsSet());
 
   
-  if (CanContain(*aPointToInsert.GetContainer(), aContent)) {
+  if (HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(), aContent)) {
     
     uint32_t offsetAtInserting = aPointToInsert.Offset();
     nsresult rv = MoveNodeWithTransaction(aContent, aPointToInsert);
@@ -4550,8 +4532,8 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
     }
 
     
-    if (!CanContainTag(*atStartOfSelection.GetContainer(),
-                       aListElementTagName)) {
+    if (!HTMLEditUtils::CanNodeContain(*atStartOfSelection.GetContainer(),
+                                       aListElementTagName)) {
       return EditActionCanceled();
     }
 
@@ -5618,7 +5600,8 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
 
     if (!curQuote) {
       
-      if (!CanContainTag(*atContent.GetContainer(), *nsGkAtoms::div)) {
+      if (!HTMLEditUtils::CanNodeContain(*atContent.GetContainer(),
+                                         *nsGkAtoms::div)) {
         return NS_OK;  
       }
 
@@ -5883,7 +5866,8 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
 
     if (!curQuote) {
       
-      if (!CanContainTag(*atContent.GetContainer(), *nsGkAtoms::blockquote)) {
+      if (!HTMLEditUtils::CanNodeContain(*atContent.GetContainer(),
+                                         *nsGkAtoms::blockquote)) {
         return NS_OK;  
       }
 
@@ -7085,7 +7069,8 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
     
     if (!createdDivElement || transitionList[indexOfTransitionList]) {
       
-      if (!CanContainTag(*atContent.GetContainer(), *nsGkAtoms::div)) {
+      if (!HTMLEditUtils::CanNodeContain(*atContent.GetContainer(),
+                                         *nsGkAtoms::div)) {
         
         
         return NS_OK;
@@ -9805,7 +9790,7 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
 
-    if (CanContainTag(*pointToInsert.GetContainer(), aTag)) {
+    if (HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(), aTag)) {
       
       break;
     }
@@ -10275,7 +10260,7 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
     if (blockElement &&
         EditorUtils::IsEditableContent(*blockElement, EditorType::HTML) &&
         IsEmptyNode(*blockElement, false, false) &&
-        CanContainTag(*point.GetContainer(), *nsGkAtoms::br)) {
+        HTMLEditUtils::CanNodeContain(*point.GetContainer(), *nsGkAtoms::br)) {
       Element* bodyOrDocumentElement = GetRoot();
       if (NS_WARN_IF(!bodyOrDocumentElement)) {
         return NS_ERROR_FAILURE;

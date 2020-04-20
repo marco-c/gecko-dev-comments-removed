@@ -2057,14 +2057,6 @@ class EditorBase : public nsIEditor,
   
 
 
-  bool CanContain(nsINode& aParent, nsIContent& aChild) const;
-  bool CanContainTag(nsINode& aParent, nsAtom& aTag) const;
-  bool TagCanContain(nsAtom& aParentTag, nsIContent& aChild) const;
-  virtual bool TagCanContainTag(nsAtom& aParentTag, nsAtom& aChildTag) const;
-
-  
-
-
   bool IsRoot(nsINode* inNode) const;
   bool IsEditorRoot(nsINode* aNode) const;
 
