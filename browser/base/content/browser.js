@@ -1403,7 +1403,7 @@ var gKeywordURIFixup = {
     
     
     this.check(browser, {
-      fixedURI: makeURI(fixupInfo.fixedURI),
+      fixedURI: fixupInfo.fixedURI ? makeURI(fixupInfo.fixedURI) : null,
       keywordProviderName: fixupInfo.keywordProviderName,
       preferredURI: makeURI(fixupInfo.preferredURI),
     });

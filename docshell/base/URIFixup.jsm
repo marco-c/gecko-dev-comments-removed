@@ -456,9 +456,14 @@ URIFixup.prototype = {
       responseType = "application/x-moz-keywordsearch";
     }
     let submission = engine.getSubmission(keyword, responseType, "keyword");
-    if (!submission) {
+    if (
+      !submission ||
+      
+      
+      !submission.uri.scheme.startsWith("http")
+    ) {
       throw new Components.Exception(
-        "Invalid search submission",
+        "Invalid search submission uri",
         Cr.NS_ERROR_NOT_AVAILABLE
       );
     }
@@ -589,6 +594,13 @@ function tryKeywordFixupForURIInfo(
     fixupInfo.preferredURI = keywordInfo.preferredURI;
   } catch (ex) {}
 }
+
+
+
+
+
+
+
 
 function makeAlternateFixedURI(info) {
   let uri = info.fixedURI;

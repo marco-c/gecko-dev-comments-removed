@@ -1093,11 +1093,6 @@ class nsDocShell final : public nsDocLoader,
   void NotifyPrivateBrowsingChanged();
 
  private:  
-#ifdef DEBUG
-           
-  static unsigned long gNumberOfDocShells;
-#endif 
-
   nsID mHistoryID;
   nsString mTitle;
   nsCString mOriginalUriString;
@@ -1140,6 +1135,9 @@ class nsDocShell final : public nsDocLoader,
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
 
 #ifdef DEBUG
+  
+  static unsigned long gNumberOfDocShells;
+
   nsCOMPtr<nsIURI> mLastOpenedURI;
 #endif
 
