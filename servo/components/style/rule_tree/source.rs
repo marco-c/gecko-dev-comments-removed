@@ -2,8 +2,7 @@
 
 
 
-
-#![deny(unsafe_code)]
+#![forbid(unsafe_code)]
 
 use crate::properties::PropertyDeclarationBlock;
 use crate::shared_lock::{Locked, SharedRwLockReadGuard};
@@ -51,31 +50,6 @@ impl StyleSource {
         }
 
         let _ = write!(writer, "  -> {:?}", self.read(guard).declarations());
-    }
-
-    
-    
-    #[allow(unsafe_code)]
-    #[cfg(feature = "gecko")]
-    pub(super) unsafe fn dump_unchecked<W: Write>(&self, writer: &mut W) {
-        if let Some(ref rule) = self.0.as_first() {
-            let rule = rule.read_unchecked();
-            let _ = write!(writer, "{:?}", rule.selectors);
-        }
-        let _ = write!(writer, "  -> {:?}", self.read_unchecked().declarations());
-    }
-
-    
-    
-    #[inline]
-    #[allow(unsafe_code)]
-    #[cfg(feature = "gecko")]
-    pub(super) unsafe fn read_unchecked(&self) -> &PropertyDeclarationBlock {
-        let block: &Locked<PropertyDeclarationBlock> = match self.0.borrow() {
-            ArcUnionBorrow::First(ref rule) => &rule.get().read_unchecked().block,
-            ArcUnionBorrow::Second(ref block) => block.get(),
-        };
-        block.read_unchecked()
     }
 
     
