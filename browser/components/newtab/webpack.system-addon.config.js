@@ -15,6 +15,7 @@ module.exports = (env = {}) => ({
   output: {
     path: absolute("data/content"),
     filename: "activity-stream.bundle.js",
+    library: "NewtabRenderUtils",
   },
   
   devtool: env.development ? "inline-source-map" : false,

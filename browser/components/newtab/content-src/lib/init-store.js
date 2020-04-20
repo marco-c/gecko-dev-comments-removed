@@ -135,9 +135,10 @@ export const queueEarlyMessageMiddleware = ({ getState }) => {
 
 
 
-export function initStore(reducers) {
+export function initStore(reducers, initialState) {
   const store = createStore(
     mergeStateReducer(combineReducers(reducers)),
+    initialState,
     global.RPMAddMessageListener &&
       applyMiddleware(
         rehydrationMiddleware,
