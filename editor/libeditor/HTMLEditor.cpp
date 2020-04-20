@@ -149,8 +149,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mTypeInState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mChangedRangeForTopLevelEditSubAction)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mStyleSheets)
-
   tmp->HideAnonymousEditingUIs();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -158,7 +156,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLEditor, TextEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTypeInState)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mComposerCommandsUpdater)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mChangedRangeForTopLevelEditSubAction)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStyleSheets)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTopLeftHandle)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTopHandle)
@@ -195,7 +192,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(HTMLEditor)
   NS_INTERFACE_MAP_ENTRY(nsIHTMLAbsPosEditor)
   NS_INTERFACE_MAP_ENTRY(nsIHTMLInlineTableEditor)
   NS_INTERFACE_MAP_ENTRY(nsITableEditor)
-  NS_INTERFACE_MAP_ENTRY(nsIEditorStyleSheets)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
   NS_INTERFACE_MAP_ENTRY(nsIEditorMailSupport)
 NS_INTERFACE_MAP_END_INHERITING(TextEditor)
@@ -249,15 +245,6 @@ nsresult HTMLEditor::Init(Document& aDoc, Element* aRoot,
   
   mTypeInState = new TypeInState();
 
-  if (!IsInteractionAllowed()) {
-    
-    DebugOnly<nsresult> rvIgnored = AddOverrideStyleSheetInternal(
-        NS_LITERAL_STRING("resource://gre/res/EditorOverride.css"));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "HTMLEditor::AddOverrideStyleSheetInternal("
-                         "EditorOverride.css) failed, but ignored");
-  }
-
   
   
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
@@ -295,14 +282,6 @@ void HTMLEditor::PreDestroy(bool aDestroyingFrames) {
   RefPtr<Document> document = GetDocument();
   if (document) {
     document->RemoveMutationObserver(this);
-  }
-
-  while (!mStyleSheetURLs.IsEmpty()) {
-    DebugOnly<nsresult> rv =
-        RemoveOverrideStyleSheetInternal(mStyleSheetURLs[0]);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "HTMLEditor::RemoveOverrideStyleSheetInternal() failed, but ignored");
   }
 
   
@@ -3062,202 +3041,6 @@ nsresult HTMLEditor::SetHTMLBackgroundColorWithTransaction(
       NS_SUCCEEDED(rv),
       "EditorBase::RemoveAttributeWithTransaction(nsGkAtoms::bgcolor) failed");
   return rv;
-}
-
-NS_IMETHODIMP HTMLEditor::AddOverrideStyleSheet(const nsAString& aURL) {
-  AutoEditActionDataSetter editActionData(*this,
-                                          EditAction::eAddOverrideStyleSheet);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  nsresult rv = AddOverrideStyleSheetInternal(aURL);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::AddOverrideStyleSheetInternal() failed");
-  return rv;
-}
-
-nsresult HTMLEditor::AddOverrideStyleSheetInternal(const nsAString& aURL) {
-  
-  if (EnableExistingStyleSheet(aURL)) {
-    return NS_OK;
-  }
-
-  
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (NS_WARN_IF(!presShell)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  nsCOMPtr<nsIURI> uaURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(uaURI), aURL);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("NS_NewURI() failed");
-    return rv;
-  }
-
-  
-  
-  
-  
-  auto result = presShell->GetDocument()->CSSLoader()->LoadSheetSync(
-      uaURI, css::eAgentSheetFeatures, css::Loader::UseSystemPrincipal::Yes);
-  
-  if (result.isErr()) {
-    NS_WARNING("css::Loader::LoadSheetSync() failed");
-    return result.unwrapErr();
-  }
-
-  RefPtr<StyleSheet> sheet = result.unwrap();
-
-  
-  
-  DebugOnly<nsresult> rvIgnored = presShell->AddOverrideStyleSheet(sheet);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "PresShell::AddOverrideStyleSheet() failed, but ignored");
-  presShell->GetDocument()->ApplicableStylesChanged();
-
-  
-  rv = AddNewStyleSheetToList(aURL, sheet);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::AddNewStyleSheetToList() failed");
-  return rv;
-}
-
-
-NS_IMETHODIMP HTMLEditor::RemoveOverrideStyleSheet(const nsAString& aURL) {
-  AutoEditActionDataSetter editActionData(
-      *this, EditAction::eRemoveOverrideStyleSheet);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  nsresult rv = RemoveOverrideStyleSheetInternal(aURL);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "HTMLEditor::RemoveOverrideStyleSheetInternal() failed");
-  return rv;
-}
-
-nsresult HTMLEditor::RemoveOverrideStyleSheetInternal(const nsAString& aURL) {
-  if (NS_WARN_IF(!IsInitialized())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  
-  
-  RefPtr<StyleSheet> sheet = RemoveStyleSheetFromList(aURL);
-  if (!sheet) {
-    return NS_OK;  
-  }
-
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (NS_WARN_IF(!presShell)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  DebugOnly<nsresult> rvIgnored = presShell->RemoveOverrideStyleSheet(sheet);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "PresShell::RemoveOverrideStyleSheet() failed, but ignored");
-  presShell->GetDocument()->ApplicableStylesChanged();
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP HTMLEditor::EnableStyleSheet(const nsAString& aURL,
-                                           bool aEnable) {
-  AutoEditActionDataSetter editActionData(*this, EditAction::eEnableStyleSheet);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
-  EnableStyleSheetInternal(aURL, aEnable);
-  return NS_OK;
-}
-
-void HTMLEditor::EnableStyleSheetInternal(const nsAString& aURL, bool aEnable) {
-  RefPtr<StyleSheet> sheet = GetStyleSheetForURL(aURL);
-  if (!sheet) {
-    return;
-  }
-
-  
-  RefPtr<Document> document = GetDocument();
-  NS_WARNING_ASSERTION(
-      document, "EditorBase::GetDocument() returned nullptr, but ignored");
-  sheet->SetAssociatedDocumentOrShadowRoot(
-      document, StyleSheet::NotOwnedByDocumentOrShadowRoot);
-
-  sheet->SetDisabled(!aEnable);
-}
-
-bool HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL) {
-  RefPtr<StyleSheet> sheet = GetStyleSheetForURL(aURL);
-
-  
-  if (!sheet) {
-    return false;
-  }
-
-  
-  RefPtr<Document> document = GetDocument();
-  NS_WARNING_ASSERTION(
-      document, "EditorBase::GetDocument() returned nullptr, but ignored");
-  sheet->SetAssociatedDocumentOrShadowRoot(
-      document, StyleSheet::NotOwnedByDocumentOrShadowRoot);
-
-  
-  
-  return true;
-}
-
-nsresult HTMLEditor::AddNewStyleSheetToList(const nsAString& aURL,
-                                            StyleSheet* aStyleSheet) {
-  uint32_t countSS = mStyleSheets.Length();
-  uint32_t countU = mStyleSheetURLs.Length();
-
-  if (countSS != countU) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  if (NS_WARN_IF(!mStyleSheetURLs.AppendElement(aURL))) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  return NS_WARN_IF(!mStyleSheets.AppendElement(aStyleSheet))
-             ? NS_ERROR_UNEXPECTED
-             : NS_OK;
-}
-
-already_AddRefed<StyleSheet> HTMLEditor::RemoveStyleSheetFromList(
-    const nsAString& aURL) {
-  
-  size_t foundIndex = mStyleSheetURLs.IndexOf(aURL);
-  if (foundIndex == mStyleSheetURLs.NoIndex) {
-    return nullptr;
-  }
-
-  RefPtr<StyleSheet> removingStyleSheet = mStyleSheets[foundIndex];
-  MOZ_ASSERT(removingStyleSheet);
-
-  
-  mStyleSheets.RemoveElementAt(foundIndex);
-  mStyleSheetURLs.RemoveElementAt(foundIndex);
-
-  return removingStyleSheet.forget();
-}
-
-StyleSheet* HTMLEditor::GetStyleSheetForURL(const nsAString& aURL) {
-  
-  size_t foundIndex;
-  foundIndex = mStyleSheetURLs.IndexOf(aURL);
-  if (foundIndex == mStyleSheetURLs.NoIndex) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(mStyleSheets[foundIndex]);
-  return mStyleSheets[foundIndex];
 }
 
 nsresult HTMLEditor::DeleteSelectionWithTransaction(

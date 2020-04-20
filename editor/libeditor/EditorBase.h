@@ -1075,10 +1075,6 @@ class EditorBase : public nsIEditor,
         
         case EditAction::eStartComposition:
         
-        case EditAction::eAddOverrideStyleSheet:
-        case EditAction::eRemoveOverrideStyleSheet:
-        
-        case EditAction::eEnableStyleSheet:
         case EditAction::eEnableOrDisableCSS:
         case EditAction::eEnableOrDisableAbsolutePositionEditor:
         case EditAction::eEnableOrDisableResizer:

@@ -12,7 +12,6 @@
 #include "mozilla/EditorUtils.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
-#include "mozilla/StyleSheet.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Element.h"
@@ -20,11 +19,9 @@
 
 #include "nsAttrName.h"
 #include "nsCOMPtr.h"
-#include "nsICSSLoaderObserver.h"
 #include "nsIDocumentObserver.h"
 #include "nsIDOMEventListener.h"
 #include "nsIEditorMailSupport.h"
-#include "nsIEditorStyleSheets.h"
 #include "nsIHTMLAbsPosEditor.h"
 #include "nsIHTMLEditor.h"
 #include "nsIHTMLInlineTableEditor.h"
@@ -88,7 +85,6 @@ class HTMLEditor final : public TextEditor,
                          public nsIHTMLAbsPosEditor,
                          public nsITableEditor,
                          public nsIHTMLInlineTableEditor,
-                         public nsIEditorStyleSheets,
                          public nsStubMutationObserver,
                          public nsIEditorMailSupport {
  public:
@@ -121,9 +117,6 @@ class HTMLEditor final : public TextEditor,
 
   
   NS_DECL_NSIHTMLINLINETABLEEDITOR
-
-  
-  NS_DECL_NSIEDITORSTYLESHEETS
 
   
   NS_DECL_NSIEDITORMAILSUPPORT
@@ -3451,63 +3444,6 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT void CollapseSelectionToDeepestNonTableFirstChild(
       nsINode* aNode);
-
-  
-
-
-  bool EnableExistingStyleSheet(const nsAString& aURL);
-
-  
-
-
-
-
-
-  StyleSheet* GetStyleSheetForURL(const nsAString& aURL);
-
-  
-
-
-  nsresult AddNewStyleSheetToList(const nsAString& aURL,
-                                  StyleSheet* aStyleSheet);
-
-  
-
-
-
-
-
-
-
-  already_AddRefed<StyleSheet> RemoveStyleSheetFromList(const nsAString& aURL);
-
-  
-
-
-
-
-  nsresult AddOverrideStyleSheetInternal(const nsAString& aURL);
-
-  
-
-
-
-
-
-
-  nsresult RemoveOverrideStyleSheetInternal(const nsAString& aURL);
-
-  
-
-
-
-
-
-
-
-
-  void EnableStyleSheetInternal(const nsAString& aURL, bool aEnable);
-
   
 
 
@@ -4455,10 +4391,6 @@ class HTMLEditor final : public TextEditor,
   
   
   mutable uint32_t mSelectedCellIndex;
-
-  
-  nsTArray<nsString> mStyleSheetURLs;
-  nsTArray<RefPtr<StyleSheet>> mStyleSheets;
 
   
   bool mIsObjectResizingEnabled;

@@ -722,16 +722,6 @@ class PresShell final : public nsStubDocumentObserver,
   
 
 
-  nsresult AddOverrideStyleSheet(StyleSheet* aSheet);
-
-  
-
-
-  nsresult RemoveOverrideStyleSheet(StyleSheet* aSheet);
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT void ReconstructFrames();
 
   
