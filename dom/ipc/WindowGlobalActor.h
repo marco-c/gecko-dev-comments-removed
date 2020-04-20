@@ -30,7 +30,7 @@ class WindowGlobalActor : public nsISupports {
   
   
   
-  void ConstructActor(const nsAString& aName, JS::MutableHandleObject aActor,
+  void ConstructActor(const nsACString& aName, JS::MutableHandleObject aActor,
                       ErrorResult& aRv);
   virtual nsIURI* GetDocumentURI() = 0;
   virtual const nsAString& GetRemoteType() = 0;
