@@ -3587,7 +3587,7 @@ EditorDOMPoint HTMLEditor::GetGoodCaretPointFor(
   
 
   
-  if (aContent.IsText() || IsContainer(&aContent) ||
+  if (aContent.IsText() || HTMLEditUtils::IsContainerNode(aContent) ||
       NS_WARN_IF(!aContent.GetParentNode())) {
     return EditorDOMPoint(&aContent, goingForward ? 0 : aContent.Length());
   }
@@ -6616,7 +6616,9 @@ nsresult HTMLEditor::CreateStyleForInsertText(AbstractRange& aAbstractRange) {
       }
       pointToPutCaret = splitTextNodeResult.SplitPoint();
     }
-    if (!IsContainer(pointToPutCaret.GetContainer())) {
+    if (!pointToPutCaret.IsInContentNode() ||
+        !HTMLEditUtils::IsContainerNode(
+            *pointToPutCaret.ContainerAsContent())) {
       return NS_OK;
     }
     RefPtr<Text> newEmptyTextNode = CreateTextNode(EmptyString());
@@ -8350,8 +8352,8 @@ nsresult HTMLEditor::MaybeSplitElementsAtEveryBRElement(
     case EditSubAction::eOutdent:
       for (int32_t i = aArrayOfContents.Length() - 1; i >= 0; i--) {
         OwningNonNull<nsIContent>& content = aArrayOfContents[i];
-        if (HTMLEditUtils::IsInlineElement(content) && IsContainer(content) &&
-            !content->IsText()) {
+        if (HTMLEditUtils::IsInlineElement(content) &&
+            HTMLEditUtils::IsContainerNode(content) && !content->IsText()) {
           AutoTArray<OwningNonNull<nsIContent>, 24> arrayOfInlineContents;
           
           
@@ -9015,7 +9017,7 @@ nsresult HTMLEditor::SplitParagraph(
   
   
   nsCOMPtr<nsIContent> child = GetLeftmostChild(&aParentDivOrP, true);
-  if (child && (child->IsText() || IsContainer(child))) {
+  if (child && (child->IsText() || HTMLEditUtils::IsContainerNode(*child))) {
     nsresult rv = CollapseSelectionToStartOf(*child);
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -10134,7 +10136,8 @@ nsresult HTMLEditor::EnsureCaretInBlockElement(Element& aElement) {
       lastEditableContent = &aElement;
     }
     EditorRawDOMPoint endPoint;
-    if (lastEditableContent->IsText() || IsContainer(lastEditableContent)) {
+    if (lastEditableContent->IsText() ||
+        HTMLEditUtils::IsContainerNode(*lastEditableContent)) {
       endPoint.SetToEndOf(lastEditableContent);
     } else {
       endPoint.SetAfter(lastEditableContent);
@@ -10154,7 +10157,8 @@ nsresult HTMLEditor::EnsureCaretInBlockElement(Element& aElement) {
     firstEditableContent = &aElement;
   }
   EditorRawDOMPoint atStartOfBlock;
-  if (firstEditableContent->IsText() || IsContainer(firstEditableContent)) {
+  if (firstEditableContent->IsText() ||
+      HTMLEditUtils::IsContainerNode(*firstEditableContent)) {
     atStartOfBlock.Set(firstEditableContent);
   } else {
     atStartOfBlock.Set(firstEditableContent, 0);

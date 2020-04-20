@@ -1099,9 +1099,9 @@ nsIContent* WSRunScanner::GetPreviousWSNodeInner(nsINode* aStartNode,
     return nullptr;
   }
 
-  nsCOMPtr<nsIContent> priorNode = aStartNode->GetPreviousSibling();
+  nsCOMPtr<nsIContent> previousContent = aStartNode->GetPreviousSibling();
   OwningNonNull<nsINode> curNode = *aStartNode;
-  while (!priorNode) {
+  while (!previousContent) {
     
     nsCOMPtr<nsINode> curParent = curNode->GetParentNode();
     if (!curParent) {
@@ -1118,27 +1118,28 @@ nsIContent* WSRunScanner::GetPreviousWSNodeInner(nsINode* aStartNode,
       return nullptr;
     }
     
-    priorNode = curParent->GetPreviousSibling();
+    previousContent = curParent->GetPreviousSibling();
     curNode = curParent;
   }
 
-  if (!priorNode) {
+  if (!previousContent) {
     return nullptr;
   }
 
   
-  if (HTMLEditUtils::IsBlockElement(*priorNode)) {
-    return priorNode;
+  if (HTMLEditUtils::IsBlockElement(*previousContent)) {
+    return previousContent;
   }
-  if (mHTMLEditor->IsContainer(priorNode)) {
+  if (HTMLEditUtils::IsContainerNode(*previousContent)) {
     
-    nsCOMPtr<nsIContent> child = mHTMLEditor->GetRightmostChild(priorNode);
+    nsCOMPtr<nsIContent> child =
+        mHTMLEditor->GetRightmostChild(previousContent);
     if (child) {
       return child;
     }
   }
   
-  return priorNode;
+  return previousContent;
 }
 
 nsIContent* WSRunScanner::GetPreviousWSNode(const EditorDOMPoint& aPoint,
@@ -1151,7 +1152,8 @@ nsIContent* WSRunScanner::GetPreviousWSNode(const EditorDOMPoint& aPoint,
   if (aPoint.IsInTextNode()) {
     return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.GetContainer())) {
+  if (!aPoint.IsInContentNode() ||
+      !HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
     return GetPreviousWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
@@ -1169,24 +1171,25 @@ nsIContent* WSRunScanner::GetPreviousWSNode(const EditorDOMPoint& aPoint,
     return nullptr;
   }
 
-  nsCOMPtr<nsIContent> priorNode = aPoint.GetPreviousSiblingOfChild();
-  if (NS_WARN_IF(!priorNode)) {
+  nsCOMPtr<nsIContent> previousContent = aPoint.GetPreviousSiblingOfChild();
+  if (NS_WARN_IF(!previousContent)) {
     return nullptr;
   }
 
   
-  if (HTMLEditUtils::IsBlockElement(*priorNode)) {
-    return priorNode;
+  if (HTMLEditUtils::IsBlockElement(*previousContent)) {
+    return previousContent;
   }
-  if (mHTMLEditor->IsContainer(priorNode)) {
+  if (HTMLEditUtils::IsContainerNode(*previousContent)) {
     
-    nsCOMPtr<nsIContent> child = mHTMLEditor->GetRightmostChild(priorNode);
+    nsCOMPtr<nsIContent> child =
+        mHTMLEditor->GetRightmostChild(previousContent);
     if (child) {
       return child;
     }
   }
   
-  return priorNode;
+  return previousContent;
 }
 
 nsIContent* WSRunScanner::GetNextWSNodeInner(nsINode* aStartNode,
@@ -1202,9 +1205,9 @@ nsIContent* WSRunScanner::GetNextWSNodeInner(nsINode* aStartNode,
     return nullptr;
   }
 
-  nsCOMPtr<nsIContent> nextNode = aStartNode->GetNextSibling();
+  nsCOMPtr<nsIContent> nextContent = aStartNode->GetNextSibling();
   nsCOMPtr<nsINode> curNode = aStartNode;
-  while (!nextNode) {
+  while (!nextContent) {
     
     nsCOMPtr<nsINode> curParent = curNode->GetParentNode();
     if (!curParent) {
@@ -1221,27 +1224,27 @@ nsIContent* WSRunScanner::GetNextWSNodeInner(nsINode* aStartNode,
       return nullptr;
     }
     
-    nextNode = curParent->GetNextSibling();
+    nextContent = curParent->GetNextSibling();
     curNode = curParent;
   }
 
-  if (!nextNode) {
+  if (!nextContent) {
     return nullptr;
   }
 
   
-  if (HTMLEditUtils::IsBlockElement(*nextNode)) {
-    return nextNode;
+  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
+    return nextContent;
   }
-  if (mHTMLEditor->IsContainer(nextNode)) {
+  if (HTMLEditUtils::IsContainerNode(*nextContent)) {
     
-    nsCOMPtr<nsIContent> child = mHTMLEditor->GetLeftmostChild(nextNode);
+    nsCOMPtr<nsIContent> child = mHTMLEditor->GetLeftmostChild(nextContent);
     if (child) {
       return child;
     }
   }
   
-  return nextNode;
+  return nextContent;
 }
 
 nsIContent* WSRunScanner::GetNextWSNode(const EditorDOMPoint& aPoint,
@@ -1254,7 +1257,8 @@ nsIContent* WSRunScanner::GetNextWSNode(const EditorDOMPoint& aPoint,
   if (aPoint.IsInTextNode()) {
     return GetNextWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
-  if (!mHTMLEditor->IsContainer(aPoint.GetContainer())) {
+  if (!aPoint.IsInContentNode() ||
+      !HTMLEditUtils::IsContainerNode(*aPoint.ContainerAsContent())) {
     return GetNextWSNodeInner(aPoint.GetContainer(), aBlockParent);
   }
 
@@ -1262,8 +1266,8 @@ nsIContent* WSRunScanner::GetNextWSNode(const EditorDOMPoint& aPoint,
     return nullptr;
   }
 
-  nsCOMPtr<nsIContent> nextNode = aPoint.GetChild();
-  if (!nextNode) {
+  nsCOMPtr<nsIContent> nextContent = aPoint.GetChild();
+  if (!nextContent) {
     if (aPoint.GetContainer() == aBlockParent) {
       
       return nullptr;
@@ -1274,18 +1278,18 @@ nsIContent* WSRunScanner::GetNextWSNode(const EditorDOMPoint& aPoint,
   }
 
   
-  if (HTMLEditUtils::IsBlockElement(*nextNode)) {
-    return nextNode;
+  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
+    return nextContent;
   }
-  if (mHTMLEditor->IsContainer(nextNode)) {
+  if (HTMLEditUtils::IsContainerNode(*nextContent)) {
     
-    nsCOMPtr<nsIContent> child = mHTMLEditor->GetLeftmostChild(nextNode);
+    nsCOMPtr<nsIContent> child = mHTMLEditor->GetLeftmostChild(nextContent);
     if (child) {
       return child;
     }
   }
   
-  return nextNode;
+  return nextContent;
 }
 
 nsresult WSRunObject::PrepareToDeleteRangePriv(WSRunObject* aEndObject) {

@@ -882,11 +882,6 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  virtual bool IsContainer(nsINode* aNode) const override;
-
-  
-
-
   MOZ_CAN_RUN_SCRIPT nsresult CollapseAdjacentTextNodes(nsRange& aRange);
 
   

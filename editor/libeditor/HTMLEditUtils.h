@@ -97,7 +97,6 @@ class HTMLEditUtils final {
   static bool IsMailCite(nsINode* aNode);
   static bool IsFormWidget(nsINode* aNode);
   static bool SupportsAlignAttr(nsINode& aNode);
-  static bool IsContainer(int32_t aTag);
 
   static bool CanNodeContain(const nsINode& aParent, const nsIContent& aChild) {
     switch (aParent.NodeType()) {
@@ -172,6 +171,22 @@ class HTMLEditUtils final {
   
 
 
+  static bool IsContainerNode(const nsIContent& aContent) {
+    nsHTMLTag tagEnum;
+    
+    if (aContent.IsText()) {
+      tagEnum = eHTMLTag_text;
+    } else {
+      
+      
+      tagEnum = nsHTMLTags::StringTagToId(aContent.NodeName());
+    }
+    return HTMLEditUtils::IsContainerNode(tagEnum);
+  }
+
+  
+
+
 
 
   static bool IsNonListSingleLineContainer(nsINode& aNode);
@@ -187,6 +202,7 @@ class HTMLEditUtils final {
 
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);
+  static bool IsContainerNode(nsHTMLTag aTagId);
 };
 
 

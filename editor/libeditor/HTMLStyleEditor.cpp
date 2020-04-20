@@ -889,7 +889,9 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   RefPtr<HTMLBRElement> brElement;
   
   
-  if (!IsContainer(atStartOfNextNode.GetContainer())) {
+  if (!atStartOfNextNode.IsInContentNode() ||
+      !HTMLEditUtils::IsContainerNode(
+          *atStartOfNextNode.ContainerAsContent())) {
     
     brElement = HTMLBRElement::FromNode(atStartOfNextNode.GetContainer());
     if (!atStartOfNextNode.GetContainerParentAsContent()) {

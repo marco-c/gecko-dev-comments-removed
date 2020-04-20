@@ -2069,11 +2069,6 @@ class EditorBase : public nsIEditor,
   
 
 
-  virtual bool IsContainer(nsINode* aNode) const;
-
-  
-
-
   uint32_t CountEditableChildren(nsINode* aNode);
 
   
