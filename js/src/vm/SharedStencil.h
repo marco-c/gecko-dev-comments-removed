@@ -7,11 +7,15 @@
 #ifndef vm_SharedStencil_h
 #define vm_SharedStencil_h
 
+#include "mozilla/Span.h"  
+
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jstypes.h"
-#include "js/CompileOptions.h"
+#include "frontend/SourceNotes.h"  
+#include "js/CompileOptions.h"  
+#include "js/TypeDecls.h"  
+#include "js/UniquePtr.h"  
 #include "vm/StencilEnums.h"  
 
 
@@ -87,11 +91,10 @@ struct ScopeNote {
   uint32_t parent = 0;
 };
 
+
+
 template <typename EnumType>
 class ScriptFlagBase {
-  
-  friend class js::BaseScript;
-
  protected:
   
   
@@ -126,13 +129,6 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
  public:
   using ScriptFlagBase<ImmutableScriptFlagsEnum>::ScriptFlagBase;
 
-  void static_asserts() {
-    static_assert(sizeof(ImmutableScriptFlags) == sizeof(flags_),
-                  "No extra members allowed");
-    static_assert(offsetof(ImmutableScriptFlags, flags_) == 0,
-                  "Required for JIT flag access");
-  }
-
   void operator=(uint32_t flag) { flags_ = flag; }
 
   static ImmutableScriptFlags fromCompileOptions(
@@ -163,13 +159,6 @@ class ImmutableScriptFlags : public ScriptFlagBase<ImmutableScriptFlagsEnum> {
 class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
  public:
   MutableScriptFlags() = default;
-
-  void static_asserts() {
-    static_assert(sizeof(MutableScriptFlags) == sizeof(flags_),
-                  "No extra members allowed");
-    static_assert(offsetof(MutableScriptFlags, flags_) == 0,
-                  "Required for JIT flag access");
-  }
 
   MutableScriptFlags& operator&=(const uint32_t rhs) {
     flags_ &= rhs;
