@@ -1054,7 +1054,9 @@ uint32_t H264::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
     }
     const uint8_t* p = reader.Read(nalLen);
     if (!p) {
-      return extradata.forget();
+      
+      
+      break;
     }
     uint8_t nalType = *p & 0x1f;
 
