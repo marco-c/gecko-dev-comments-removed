@@ -6,8 +6,8 @@
 
 import buildconfig
 import yaml
+import six
 from collections import OrderedDict
-from six import StringIO
 from mozbuild.preprocessor import Preprocessor
 
 HEADER_TEMPLATE = """\
@@ -38,7 +38,7 @@ def load_yaml(yaml_path):
     
     pp = Preprocessor()
     pp.context.update(buildconfig.defines['ALLDEFINES'])
-    pp.out = StringIO()
+    pp.out = six.StringIO()
     pp.do_filter('substitution')
     pp.do_include(yaml_path)
     contents = pp.out.getvalue()
@@ -57,17 +57,124 @@ def load_yaml(yaml_path):
     return yaml.load(contents, OrderedLoader)
 
 
+
+
+operand_writer_info = {
+    'ValId': ('ValOperandId', 'writeOperandId'),
+    'ObjId': ('ObjOperandId', 'writeOperandId'),
+    'StrId': ('StringOperandId', 'writeOperandId'),
+    'Int32Id': ('Int32OperandId', 'writeOperandId'),
+
+    'ShapeField': ('Shape*', 'writeShapeField'),
+    'GroupField': ('ObjectGroup*', 'writeGroupField'),
+
+    'JSOpImm': ('JSOp', 'writeJSOpImm'),
+    'BoolImm': ('bool', 'writeBoolImm'),
+}
+
+
+def gen_writer_method(name, operands):
+    """Generates a CacheIRWRiter method for a single opcode."""
+
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    method_name = name[0].lower() + name[1:]
+
+    args_sig = []
+    operands_code = ''
+    if operands:
+        for opnd_name, opnd_type in six.iteritems(operands):
+            argtype, write_method = operand_writer_info[opnd_type]
+            args_sig.append('{} {}'.format(argtype, opnd_name))
+            operands_code += '  {}({});\\\n'.format(write_method, opnd_name)
+
+    code = 'void {}({}) {{\\\n'.format(method_name, ', '.join(args_sig))
+    code += '  writeOp(CacheOp::{});\\\n'.format(name)
+    code += operands_code
+    code += '}'
+    return code
+
+
+
+
+
+operand_compiler_info = {
+    'ValId': ('ValOperandId', 'Id', 'reader.valOperandId()'),
+    'ObjId': ('ObjOperandId', 'Id', 'reader.objOperandId()'),
+    'StrId': ('StringOperandId', 'Id', 'reader.stringOperandId()'),
+    'Int32Id': ('Int32OperandId', 'Id', 'reader.int32OperandId()'),
+
+    'ShapeField': ('uint32_t', 'Offset', 'reader.stubOffset()'),
+    'GroupField': ('uint32_t', 'Offset', 'reader.stubOffset()'),
+
+    'JSOpImm': ('JSOp', '', 'reader.jsop()'),
+    'BoolImm': ('bool', '', 'reader.readBool()')
+}
+
+
+def gen_compiler_method(name, operands):
+    """Generates CacheIRCompiler header code for a single opcode."""
+
+    method_name = 'emit' + name
+
+    
+    if not operands:
+        return 'MOZ_MUST_USE bool {}();\\\n'.format(method_name)
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    args_names = []
+    args_sig = []
+    operands_code = ''
+    for opnd_name, opnd_type in six.iteritems(operands):
+        vartype, suffix, readexpr = operand_compiler_info[opnd_type]
+        varname = opnd_name + suffix
+        args_names.append(varname)
+        args_sig.append('{} {}'.format(vartype, varname))
+        operands_code += '  {} {} = {};\\\n'.format(vartype, varname, readexpr)
+
+    
+    code = 'MOZ_MUST_USE bool {}({});\\\n'.format(method_name, ', '.join(args_sig))
+
+    
+    code += 'MOZ_MUST_USE bool {}() {{\\\n'.format(method_name)
+    code += operands_code
+    code += '  return {}({});\\\n'.format(method_name, ', '.join(args_names))
+    code += '}\\\n'
+
+    return code
+
+
 def generate_cacheirops_header(c_out, yaml_path):
     """Generate CacheIROpsGenerated.h from CacheIROps.yaml. The generated file
-    has a list of CacheIR ops, like this:
+    contains:
+
+    * A list of all CacheIR ops:
 
         #define CACHE_IR_OPS(_)\
         _(GuardToObject, Id)\
         _(CompareObjectUndefinedNullResult, Id, Byte)\
         ...
 
-    It also contains lists of shared and unshared ops. See the 'shared'
-    attribute in the YAML file.
+    * Lists of shared and unshared ops for the CacheIRCompiler classes. See the
+    'shared' attribute in the YAML file.
+
+    * Generated source code for CacheIRWriter and CacheIRCompiler.
     """
 
     data = load_yaml(yaml_path)
@@ -116,9 +223,21 @@ def generate_cacheirops_header(c_out, yaml_path):
         'StaticStringImm': 'Word',
     }
 
+    
     ops_items = []
+
+    
+    
     ops_shared = []
     ops_unshared = []
+
+    
+    writer_methods = []
+
+    
+    compiler_shared_methods = []
+    compiler_unshared_methods = []
+
     for op in data:
         name = op['name']
 
@@ -128,16 +247,25 @@ def generate_cacheirops_header(c_out, yaml_path):
         shared = op['shared']
         assert isinstance(shared, bool)
 
+        gen_boilerplate = op.get('gen_boilerplate', False)
+
         if operands:
             operands_str = ', '.join([mapping[v] for v in operands.values()])
         else:
             operands_str = 'None'
         ops_items.append('_({}, {})'.format(name, operands_str))
 
-        if shared:
-            ops_shared.append('_({})'.format(name))
+        if gen_boilerplate:
+            writer_methods.append(gen_writer_method(name, operands))
+            if shared:
+                compiler_shared_methods.append(gen_compiler_method(name, operands))
+            else:
+                compiler_unshared_methods.append(gen_compiler_method(name, operands))
         else:
-            ops_unshared.append('_({})'.format(name))
+            if shared:
+                ops_shared.append('_({})'.format(name))
+            else:
+                ops_unshared.append('_({})'.format(name))
 
     contents = '#define CACHE_IR_OPS(_)\\\n'
     contents += '\\\n'.join(ops_items)
@@ -149,6 +277,18 @@ def generate_cacheirops_header(c_out, yaml_path):
 
     contents += '#define CACHE_IR_UNSHARED_OPS(_)\\\n'
     contents += '\\\n'.join(ops_unshared)
+    contents += '\n\n'
+
+    contents += '#define CACHE_IR_WRITER_GENERATED \\\n'
+    contents += '\\\n'.join(writer_methods)
+    contents += '\n\n'
+
+    contents += '#define CACHE_IR_COMPILER_SHARED_GENERATED \\\n'
+    contents += '\\\n'.join(compiler_shared_methods)
+    contents += '\n\n'
+
+    contents += '#define CACHE_IR_COMPILER_UNSHARED_GENERATED \\\n'
+    contents += '\\\n'.join(compiler_unshared_methods)
     contents += '\n\n'
 
     generate_header(c_out, 'jit_CacheIROpsGenerated_h', contents)
