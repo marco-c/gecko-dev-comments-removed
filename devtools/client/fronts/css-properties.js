@@ -240,23 +240,6 @@ const initCssProperties = async function(toolbox) {
 
 
 
-function getCssProperties(toolbox) {
-  if (!cachedCssProperties.has(toolbox.target.client)) {
-    throw new Error(
-      "The CSS database has not been initialized, please make " +
-        "sure initCssDatabase was called once before for this " +
-        "toolbox."
-    );
-  }
-  return cachedCssProperties.get(toolbox.target.client).cssProperties;
-}
-
-
-
-
-
-
-
 function getClientCssProperties() {
   return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
 }
@@ -353,7 +336,6 @@ function reattachCssColorValues(db) {
 module.exports = {
   CssPropertiesFront,
   CssProperties,
-  getCssProperties,
   getClientCssProperties,
   initCssProperties,
   isCssVariable,

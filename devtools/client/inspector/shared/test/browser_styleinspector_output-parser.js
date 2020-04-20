@@ -9,10 +9,8 @@
 
 
 const OutputParser = require("devtools/client/shared/output-parser");
-const { CSS_PROPERTIES_DB } = require("devtools/shared/css/properties-db");
 const {
-  initCssProperties,
-  getCssProperties,
+  getClientCssProperties,
 } = require("devtools/client/fronts/css-properties");
 
 const COLOR_CLASS = "color-class";
@@ -305,17 +303,7 @@ const TEST_DATA = [
 ];
 
 add_task(async function() {
-  
-  const toolbox = {
-    target: {
-      client: {},
-      hasActor: () => false,
-      getFront: typeName => ({ getCSSDatabase: () => CSS_PROPERTIES_DB }),
-    },
-  };
-  await initCssProperties(toolbox);
-  const cssProperties = getCssProperties(toolbox);
-
+  const cssProperties = getClientCssProperties();
   const parser = new OutputParser(document, cssProperties);
   for (let i = 0; i < TEST_DATA.length; i++) {
     const data = TEST_DATA[i];
