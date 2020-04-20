@@ -2620,13 +2620,6 @@ class CompartmentPrivate {
   bool isWebExtensionContentScript;
 
   
-  
-  
-  
-  
-  bool allowCPOWs;
-
-  
   bool isUAWidgetCompartment;
 
   

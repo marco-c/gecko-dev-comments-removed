@@ -50,8 +50,6 @@ bool JavaScriptParent::allowMessage(JSContext* cx) {
   
   
   
-  
-  
 
   if (!xpc::IsInAutomation()) {
     JS_ReportErrorASCII(cx, "CPOW usage forbidden");
@@ -71,8 +69,7 @@ bool JavaScriptParent::allowMessage(JSContext* cx) {
   if (jsGlobal) {
     JSAutoRealm ar(cx, jsGlobal);
 
-    if (!xpc::CompartmentPrivate::Get(jsGlobal)->allowCPOWs &&
-        ForbidUnsafeBrowserCPOWs()) {
+    if (ForbidUnsafeBrowserCPOWs()) {
       JS_ReportErrorASCII(cx, "unsafe CPOW usage forbidden");
       return false;
     }
