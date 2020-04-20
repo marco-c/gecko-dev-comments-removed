@@ -511,14 +511,9 @@ function testMultipleCacheEntries() {
 
 
 function step(testPromise) {
-  return testPromise.then(
-    function() {
-      caches.delete(name);
-    },
-    function() {
-      caches.delete(name);
-    }
-  );
+  return testPromise.finally(function() {
+    caches.delete(name);
+  });
 }
 
 step(testBasics())

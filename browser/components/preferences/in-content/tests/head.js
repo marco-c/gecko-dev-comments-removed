@@ -130,13 +130,12 @@ function waitForEvent(aSubject, aEventName, aTimeoutMs, aTarget) {
     eventDeferred.resolve(aEvent);
   };
 
-  function cleanup(aEventOrError) {
+  function cleanup() {
     
     aSubject.removeEventListener(aEventName, listener);
-    return aEventOrError;
   }
   aSubject.addEventListener(aEventName, listener);
-  return eventDeferred.promise.then(cleanup, cleanup);
+  return eventDeferred.promise.finally(cleanup);
 }
 
 function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {

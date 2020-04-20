@@ -856,7 +856,7 @@ var TelemetryStorageImpl = {
     
     let clear = () => (this._cleanArchiveTask = null);
     
-    this._cleanArchiveTask = this._cleanArchive().then(clear, clear);
+    this._cleanArchiveTask = this._cleanArchive().finally(clear);
     return this._cleanArchiveTask;
   },
 
@@ -1541,7 +1541,7 @@ var TelemetryStorageImpl = {
 
   _trackPendingPingSaveTask(promise) {
     let clear = () => this._activePendingPingSaves.delete(promise);
-    promise.then(clear, clear);
+    promise.finally(clear);
     this._activePendingPingSaves.add(promise);
   },
 
