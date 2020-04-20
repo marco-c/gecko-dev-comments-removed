@@ -668,13 +668,16 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   already_AddRefed<AsyncPanZoomController> CommonAncestor(
       AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
 
+  struct FixedPositionInfo;
+  struct StickyPositionInfo;
+
   
   
   
   
   
   bool IsFixedToRootContent(const HitTestingTreeNode* aNode) const;
-  bool IsFixedToRootContent(const HitTestingTreeNode* aNode,
+  bool IsFixedToRootContent(const FixedPositionInfo& aFixedInfo,
                             const MutexAutoLock& aProofOfMapLock) const;
 
   
@@ -682,7 +685,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   bool IsStuckToRootContentAtBottom(const HitTestingTreeNode* aNode) const;
-  bool IsStuckToRootContentAtBottom(const HitTestingTreeNode* aNode,
+  bool IsStuckToRootContentAtBottom(const StickyPositionInfo& aStickyInfo,
                                     const MutexAutoLock& aProofOfMapLock) const;
 
   
@@ -939,6 +942,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct FixedPositionInfo {
     Maybe<uint64_t> mFixedPositionAnimationId;
     SideBits mFixedPosSides;
+    ScrollableLayerGuid::ViewID mFixedPosTarget;
+    LayersId mLayersId;
 
     explicit FixedPositionInfo(const HitTestingTreeNode* aNode);
   };
@@ -962,6 +967,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct StickyPositionInfo {
     Maybe<uint64_t> mStickyPositionAnimationId;
     SideBits mFixedPosSides;
+    ScrollableLayerGuid::ViewID mStickyPosTarget;
+    LayersId mLayersId;
+    LayerRectAbsolute mStickyScrollRangeInner;
+    LayerRectAbsolute mStickyScrollRangeOuter;
 
     explicit StickyPositionInfo(const HitTestingTreeNode* aNode);
   };
