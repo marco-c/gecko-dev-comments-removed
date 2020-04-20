@@ -589,9 +589,6 @@ pref("media.plugins.enabled", true);
 
 pref("media.stagefright.omxcodec.flags", 0);
 
-
-pref("dom.event.touch.coalescing.enabled", false);
-
 pref("layers.enable-tiles", true);
 
 
