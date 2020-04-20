@@ -262,10 +262,9 @@ nsresult ClientSource::WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow) {
   
   
   if (mController.isSome()) {
-    MOZ_DIAGNOSTIC_ASSERT(spec.LowerCaseEqualsLiteral("about:blank") ||
-                          StringBeginsWith(spec, NS_LITERAL_CSTRING("blob:")) ||
-                          StorageAllowedForWindow(aInnerWindow) ==
-                              StorageAccess::eAllow);
+    MOZ_ASSERT(spec.LowerCaseEqualsLiteral("about:blank") ||
+               StringBeginsWith(spec, NS_LITERAL_CSTRING("blob:")) ||
+               StorageAllowedForWindow(aInnerWindow) == StorageAccess::eAllow);
   }
 
   nsPIDOMWindowOuter* outer = aInnerWindow->GetOuterWindow();
