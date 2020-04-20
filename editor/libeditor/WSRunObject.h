@@ -412,6 +412,8 @@ class MOZ_STACK_CLASS WSRunScanner {
   Element* GetEditingHost() const { return mEditingHost; }
 
  protected:
+  using EditorType = EditorBase::EditorType;
+
   
   
   

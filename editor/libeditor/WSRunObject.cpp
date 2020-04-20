@@ -669,14 +669,14 @@ nsIContent* WSRunScanner::GetEditableBlockParentOrTopmotEditableInlineContent(
   if (NS_WARN_IF(!aContent)) {
     return nullptr;
   }
-  NS_ASSERTION(mHTMLEditor->IsEditable(aContent),
+  NS_ASSERTION(EditorUtils::IsEditableContent(*aContent, EditorType::HTML),
                "Given content is not editable");
   
   
   
   nsIContent* editableBlockParentOrTopmotEditableInlineContent = nullptr;
   for (nsIContent* content : InclusiveAncestorsOfType<nsIContent>(*aContent)) {
-    if (!mHTMLEditor->IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
       break;
     }
     editableBlockParentOrTopmotEditableInlineContent = content;

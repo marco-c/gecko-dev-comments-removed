@@ -154,6 +154,8 @@ class EditorBase : public nsIEditor,
   typedef dom::Selection Selection;
   typedef dom::Text Text;
 
+  enum class EditorType { Text, HTML };
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EditorBase, nsIEditor)
 
@@ -168,6 +170,9 @@ class EditorBase : public nsIEditor,
 
 
   EditorBase();
+
+  bool IsTextEditor() const { return !mIsHTMLEditorClass; }
+  bool IsHTMLEditor() const { return mIsHTMLEditorClass; }
 
   
 
@@ -214,7 +219,7 @@ class EditorBase : public nsIEditor,
   
   bool MaybeHasMutationEventListeners(
       uint32_t aMutationEventType = 0xFFFFFFFF) const {
-    if (!mIsHTMLEditorClass) {
+    if (IsTextEditor()) {
       
       
       return false;
@@ -1414,7 +1419,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteNodeWithTransaction(nsINode& aNode);
+  MOZ_CAN_RUN_SCRIPT nsresult DeleteNodeWithTransaction(nsIContent& aContent);
 
   
 
@@ -2100,54 +2105,6 @@ class EditorBase : public nsIEditor,
   
 
 
-  bool IsEditable(nsINode* aNode) const {
-    if (NS_WARN_IF(!aNode)) {
-      return false;
-    }
-
-    if (!aNode->IsContent() || !IsModifiableNode(*aNode) ||
-        EditorBase::IsPaddingBRElementForEmptyEditor(*aNode)) {
-      return false;
-    }
-
-    switch (aNode->NodeType()) {
-      case nsINode::ELEMENT_NODE:
-        
-        
-        return mIsHTMLEditorClass ? aNode->IsEditable() : true;
-      case nsINode::TEXT_NODE:
-        
-        return true;
-      default:
-        return false;
-    }
-  }
-
-  
-
-
-
-
-  bool IsElementOrText(const nsINode& aNode) const {
-    if (aNode.IsText()) {
-      return true;
-    }
-    return aNode.IsElement() &&
-           !EditorBase::IsPaddingBRElementForEmptyEditor(aNode);
-  }
-
-  
-
-
-
-  static bool IsPaddingBRElementForEmptyEditor(const nsINode& aNode) {
-    const dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(&aNode);
-    return brElement && brElement->IsPaddingForEmptyEditor();
-  }
-
-  
-
-
 
   static bool IsPaddingBRElementForEmptyLastLine(const nsINode& aNode) {
     const dom::HTMLBRElement* brElement = dom::HTMLBRElement::FromNode(&aNode);
@@ -2180,11 +2137,6 @@ class EditorBase : public nsIEditor,
   static bool IsTextNode(nsINode* aNode) {
     return aNode->NodeType() == nsINode::TEXT_NODE;
   }
-
-  
-
-
-  bool IsModifiableNode(const nsINode& aNode) const;
 
   
 
@@ -2368,6 +2320,10 @@ class EditorBase : public nsIEditor,
 
 
   virtual ~EditorBase();
+
+  MOZ_ALWAYS_INLINE EditorType GetEditorType() const {
+    return mIsHTMLEditorClass ? EditorType::HTML : EditorType::Text;
+  }
 
   int32_t WrapWidth() const { return mWrapColumn; }
 

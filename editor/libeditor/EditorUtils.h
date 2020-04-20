@@ -12,6 +12,7 @@
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/RangeBoundary.h"
+#include "mozilla/dom/HTMLBRElement.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"
 #include "nsAtom.h"
@@ -783,6 +784,8 @@ class MOZ_RAII DOMSubtreeIterator final : public DOMIterator {
 
 class EditorUtils final {
  public:
+  using EditorType = EditorBase::EditorType;
+
   
 
 
@@ -793,6 +796,53 @@ class EditorUtils final {
                              EditorRawDOMPoint* aOutPoint = nullptr);
   static bool IsDescendantOf(const nsINode& aNode, const nsINode& aParent,
                              EditorDOMPoint* aOutPoint);
+
+  
+
+
+
+  static bool IsPaddingBRElementForEmptyEditor(const nsIContent& aContent) {
+    const dom::HTMLBRElement* brElement =
+        dom::HTMLBRElement::FromNode(&aContent);
+    return brElement && brElement->IsPaddingForEmptyEditor();
+  }
+
+  
+
+
+
+
+
+
+
+  static bool IsEditableContent(const nsIContent& aContent,
+                                EditorType aEditorType) {
+    if ((aEditorType == EditorType::HTML && !aContent.IsEditable()) ||
+        EditorUtils::IsPaddingBRElementForEmptyEditor(aContent)) {
+      return false;
+    }
+
+    
+    
+    if (aContent.IsElement()) {
+      return aEditorType == EditorType::HTML ? aContent.IsEditable() : true;
+    }
+    
+    return aContent.IsText();
+  }
+
+  
+
+
+
+
+  static bool IsElementOrText(const nsIContent& aContent) {
+    if (aContent.IsText()) {
+      return true;
+    }
+    return aContent.IsElement() &&
+           !EditorUtils::IsPaddingBRElementForEmptyEditor(aContent);
+  }
 
   
 

@@ -688,7 +688,7 @@ EditActionResult HTMLEditor::CanHandleHTMLEditSubAction() const {
     return EditActionResult(NS_ERROR_FAILURE);
   }
 
-  if (!IsModifiableNode(*selStartNode)) {
+  if (!HTMLEditUtils::IsSimplyEditableNode(*selStartNode)) {
     return EditActionCanceled();
   }
 
@@ -701,21 +701,22 @@ EditActionResult HTMLEditor::CanHandleHTMLEditSubAction() const {
     return EditActionIgnored();
   }
 
-  if (!IsModifiableNode(*selEndNode)) {
+  if (!HTMLEditUtils::IsSimplyEditableNode(*selEndNode)) {
     return EditActionCanceled();
   }
 
+  
+  
+  
   nsINode* commonAncestor = range->GetClosestCommonInclusiveAncestor();
   if (!commonAncestor) {
     NS_WARNING(
         "AbstractRange::GetClosestCommonInclusiveAncestor() returned nullptr");
     return EditActionResult(NS_ERROR_FAILURE);
   }
-  if (!IsModifiableNode(*commonAncestor)) {
-    return EditActionCanceled();
-  }
-
-  return EditActionIgnored();
+  return HTMLEditUtils::IsSimplyEditableNode(*commonAncestor)
+             ? EditActionIgnored()
+             : EditActionCanceled();
 }
 
 ListElementSelectionState::ListElementSelectionState(HTMLEditor& aHTMLEditor,
@@ -1255,7 +1256,7 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
     OwningNonNull<nsIContent> content = aArrayOfContents[i];
 
     
-    if (!aHTMLEditor.IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       aArrayOfContents.RemoveElementAt(i);
       continue;
     }
@@ -1823,7 +1824,8 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
   
-  if (!IsModifiableNode(*atStartOfSelection.GetContainer())) {
+  if (!HTMLEditUtils::IsSimplyEditableNode(
+          *atStartOfSelection.GetContainer())) {
     return EditActionCanceled();
   }
 
@@ -3481,13 +3483,18 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
     }
   }
 
+  if (NS_WARN_IF(!atCaret.IsInContentNode()) ||
+      NS_WARN_IF(!selectionEndPoint.IsInContentNode())) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+
   
   {
     AutoTrackDOMPoint startTracker(RangeUpdaterRef(), &atCaret);
     AutoTrackDOMPoint endTracker(RangeUpdaterRef(), &selectionEndPoint);
 
     nsresult rv = DeleteNodeIfInvisibleAndEditableTextNode(
-        MOZ_KnownLive(*atCaret.GetContainer()));
+        MOZ_KnownLive(*atCaret.ContainerAsContent()));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -3495,7 +3502,7 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
                          "HTMLEditor::DeleteNodeIfInvisibleAndEditableTextNode("
                          ") failed to remove start node, but ignored");
     rv = DeleteNodeIfInvisibleAndEditableTextNode(
-        MOZ_KnownLive(*selectionEndPoint.GetContainer()));
+        MOZ_KnownLive(*selectionEndPoint.ContainerAsContent()));
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -3512,19 +3519,20 @@ nsresult HTMLEditor::DeleteUnnecessaryNodesAndCollapseSelection(
   return rv;
 }
 
-nsresult HTMLEditor::DeleteNodeIfInvisibleAndEditableTextNode(nsINode& aNode) {
+nsresult HTMLEditor::DeleteNodeIfInvisibleAndEditableTextNode(
+    nsIContent& aContent) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  Text* text = aNode.GetAsText();
+  Text* text = aContent.GetAsText();
   if (!text) {
     return NS_OK;
   }
 
-  if (IsVisibleTextNode(*text) || !IsModifiableNode(*text)) {
+  if (IsVisibleTextNode(*text) || !HTMLEditUtils::IsSimplyEditableNode(*text)) {
     return NS_OK;
   }
 
-  nsresult rv = DeleteNodeWithTransaction(aNode);
+  nsresult rv = DeleteNodeWithTransaction(aContent);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -4177,7 +4185,7 @@ nsresult HTMLEditor::DeleteElementsExceptTableRelatedElements(nsINode& aNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!HTMLEditUtils::IsTableElementButNotTable(&aNode)) {
-    nsresult rv = DeleteNodeWithTransaction(aNode);
+    nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*aNode.AsContent()));
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -4545,7 +4553,7 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
     
     
     
-    if (IsEditable(content) &&
+    if (EditorUtils::IsEditableContent(content, EditorType::HTML) &&
         (content->IsHTMLElement(nsGkAtoms::br) || IsEmptyInlineNode(content))) {
       nsresult rv = DeleteNodeWithTransaction(*content);
       if (NS_WARN_IF(Destroyed())) {
@@ -4929,7 +4937,7 @@ nsresult HTMLEditor::RemoveListAtSelectionAsSubAction() {
   
   for (int32_t i = arrayOfContents.Length() - 1; i >= 0; i--) {
     OwningNonNull<nsIContent>& content = arrayOfContents[i];
-    if (!IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       arrayOfContents.RemoveElementAt(i);
     }
   }
@@ -5498,7 +5506,7 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
 
     
     
-    if (!IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       continue;
     }
 
@@ -5706,7 +5714,7 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
 
     
     
-    if (!IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       continue;
     }
 
@@ -6908,7 +6916,7 @@ nsresult HTMLEditor::AlignNodesAndDescendants(
     ++indexOfTransitionList;
 
     
-    if (!IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       continue;
     }
 
@@ -7350,7 +7358,7 @@ size_t HTMLEditor::CollectChildren(
           aIndexToInsertChildren + numberOfFoundChildren, aCollectListChildren,
           aCollectTableChildren, aCollectNonEditableNodes);
     } else if (aCollectNonEditableNodes == CollectNonEditableNodes::Yes ||
-               IsEditable(content)) {
+               EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
       aOutArrayOfContents.InsertElementAt(
           aIndexToInsertChildren + numberOfFoundChildren++, *content);
     }
@@ -8155,7 +8163,8 @@ nsresult HTMLEditor::CollectEditTargetNodes(
     }
     if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
       for (size_t i = aOutArrayOfContents.Length(); i > 0; --i) {
-        if (!IsEditable(aOutArrayOfContents[i - 1])) {
+        if (!EditorUtils::IsEditableContent(aOutArrayOfContents[i - 1],
+                                            EditorType::HTML)) {
           aOutArrayOfContents.RemoveElementAt(i - 1);
         }
       }
@@ -9303,7 +9312,7 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
         }
         firstContent = lastContent = curBlock = nullptr;
       }
-      if (!IsEditable(content)) {
+      if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
         continue;
       }
       
@@ -9337,7 +9346,7 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
         }
         firstContent = lastContent = curBlock = nullptr;
       }
-      if (!IsEditable(content)) {
+      if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
         continue;
       }
       
@@ -9376,7 +9385,7 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
       }
       curBlock = GetBlockNodeParent(content);
       if (!curBlock || !HTMLEditUtils::IsFormatNode(curBlock) ||
-          !IsEditable(curBlock)) {
+          !EditorUtils::IsEditableContent(*curBlock, EditorType::HTML)) {
         
         curBlock = nullptr;
       } else {
@@ -9439,7 +9448,8 @@ nsresult HTMLEditor::CreateOrChangeBlockContainerElement(
 
     
     if (content->IsHTMLElement(&aBlockTag) ||
-        (!IsEditable(content) && HTMLEditUtils::IsBlockElement(content))) {
+        (!EditorUtils::IsEditableContent(content, EditorType::HTML) &&
+         HTMLEditUtils::IsBlockElement(content))) {
       
       curBlock = nullptr;
       
@@ -9605,7 +9615,8 @@ nsresult HTMLEditor::CreateOrChangeBlockContainerElement(
       
       
       
-      if (&aBlockTag == nsGkAtoms::pre && !IsEditable(content)) {
+      if (&aBlockTag == nsGkAtoms::pre &&
+          !EditorUtils::IsEditableContent(content, EditorType::HTML)) {
         
         continue;
       }
@@ -9999,7 +10010,7 @@ nsresult HTMLEditor::InsertBRElementToEmptyListItemsAndTableCellsInRange(
         MOZ_ASSERT(Element::FromNode(&aNode));
         MOZ_ASSERT(aSelf);
         Element* element = aNode.AsElement();
-        if (!static_cast<HTMLEditor*>(aSelf)->IsEditable(element) ||
+        if (!EditorUtils::IsEditableContent(*element, EditorType::HTML) ||
             (!HTMLEditUtils::IsListItem(element) &&
              !HTMLEditUtils::IsTableCellOrCaption(*element))) {
           return false;
@@ -10175,14 +10186,15 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   MOZ_ASSERT(SelectionRefPtr()->IsCollapsed());
 
   EditorDOMPoint point(EditorBase::GetStartPoint(*SelectionRefPtr()));
-  if (NS_WARN_IF(!point.IsSet())) {
+  if (NS_WARN_IF(!point.IsInContentNode())) {
     return NS_ERROR_FAILURE;
   }
 
   
-  while (!IsEditable(point.GetContainer())) {
+  while (!EditorUtils::IsEditableContent(*point.ContainerAsContent(),
+                                         EditorType::HTML)) {
     point.Set(point.GetContainer());
-    if (NS_WARN_IF(!point.IsSet())) {
+    if (NS_WARN_IF(!point.IsInContentNode())) {
       return NS_ERROR_FAILURE;
     }
   }
@@ -10190,7 +10202,9 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   
   
   if (RefPtr<Element> blockElement = GetBlock(*point.GetContainer())) {
-    if (IsEditable(blockElement) && IsEmptyNode(*blockElement, false, false) &&
+    if (blockElement &&
+        EditorUtils::IsEditableContent(*blockElement, EditorType::HTML) &&
+        IsEmptyNode(*blockElement, false, false) &&
         CanContainTag(*point.GetContainer(), *nsGkAtoms::br)) {
       Element* bodyOrDocumentElement = GetRoot();
       if (NS_WARN_IF(!bodyOrDocumentElement)) {
@@ -10501,7 +10515,8 @@ nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
 
   
   for (OwningNonNull<nsIContent>& emptyContent : arrayOfEmptyContents) {
-    if (IsModifiableNode(emptyContent)) {
+    
+    if (HTMLEditUtils::IsSimplyEditableNode(emptyContent)) {
       
       
       rv = DeleteNodeWithTransaction(MOZ_KnownLive(emptyContent));
@@ -11380,7 +11395,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
     }
 
     
-    if (!IsEditable(content)) {
+    if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
       continue;
     }
 

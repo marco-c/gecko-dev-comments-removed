@@ -14,11 +14,31 @@ class nsAtom;
 
 namespace mozilla {
 
+enum class EditAction;
+
 class HTMLEditUtils final {
   using Element = dom::Element;
   using Selection = dom::Selection;
 
  public:
+  
+
+
+
+
+  static bool IsSimplyEditableNode(const nsINode& aNode) {
+    return aNode.IsEditable();
+  }
+
+  
+
+
+
+  static bool IsRemovableFromParentNode(const nsIContent& aContent) {
+    return aContent.IsEditable() && aContent.GetParentNode() &&
+           aContent.GetParentNode()->IsEditable();
+  }
+
   
 
 
