@@ -440,10 +440,8 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
                  pointToInsert.Offset()) == pointToInsert.GetChild());
 
   
-  nsCOMPtr<nsINode> parentBlock =
-      IsBlockNode(pointToInsert.GetContainer())
-          ? pointToInsert.GetContainer()
-          : GetBlockNodeParent(pointToInsert.GetContainer());
+  RefPtr<Element> blockElement =
+      HTMLEditor::GetBlock(*pointToInsert.GetContainer());
   EditorDOMPoint lastInsertedPoint;
   nsCOMPtr<nsIContent> insertedContextParentContent;
   for (OwningNonNull<nsIContent>& content : arrayOfTopMostChildContents) {
@@ -562,7 +560,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
     }
     
     
-    else if (parentBlock && HTMLEditUtils::IsPre(parentBlock) &&
+    else if (blockElement && HTMLEditUtils::IsPre(blockElement) &&
              HTMLEditUtils::IsPre(content)) {
       
       for (nsCOMPtr<nsIContent> firstChild = content->GetFirstChild();

@@ -800,34 +800,19 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   return rv;
 }
 
-
-
-
-
-bool HTMLEditor::NodeIsBlockStatic(const nsINode& aElement) {
-  if (!aElement.IsElement()) {
-    return false;
-  }
-  
-  
-  if (aElement.IsAnyOfHTMLElements(
-          nsGkAtoms::body, nsGkAtoms::head, nsGkAtoms::tbody, nsGkAtoms::thead,
-          nsGkAtoms::tfoot, nsGkAtoms::tr, nsGkAtoms::th, nsGkAtoms::td,
-          nsGkAtoms::dt, nsGkAtoms::dd)) {
-    return true;
-  }
-
-  return nsHTMLElement::IsBlock(
-      nsHTMLTags::AtomTagToId(aElement.NodeInfo()->NameAtom()));
-}
-
 NS_IMETHODIMP HTMLEditor::NodeIsBlock(nsINode* aNode, bool* aIsBlock) {
-  *aIsBlock = IsBlockNode(aNode);
+  *aIsBlock = aNode && aNode->IsContent() &&
+              HTMLEditUtils::IsBlockElement(*aNode->AsContent());
   return NS_OK;
 }
 
-bool HTMLEditor::IsBlockNode(nsINode* aNode) const {
-  return aNode && HTMLEditor::NodeIsBlockStatic(*aNode);
+bool HTMLEditor::IsEmptyInlineNode(nsIContent& aContent) const {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (!HTMLEditUtils::IsInlineElement(aContent) || !IsContainer(&aContent)) {
+    return false;
+  }
+  return IsEmptyNode(aContent);
 }
 
 
@@ -845,17 +830,19 @@ Element* HTMLEditor::GetBlockNodeParent(nsINode* aNode,
     return nullptr;
   }
 
-  nsCOMPtr<nsINode> p = aNode->GetParentNode();
+  if (!aNode->GetParent()) {
+    return nullptr;
+  }
 
-  while (p) {
-    if (HTMLEditor::NodeIsBlockStatic(*p)) {
-      return p->AsElement();
+  for (Element* element :
+       InclusiveAncestorsOfType<Element>(*aNode->GetParent())) {
+    if (HTMLEditUtils::IsBlockElement(*element)) {
+      return element;
     }
     
-    if (p == aAncestorLimiter) {
+    if (element == aAncestorLimiter) {
       return nullptr;
     }
-    p = p->GetParentNode();
   }
 
   return nullptr;
@@ -869,7 +856,11 @@ Element* HTMLEditor::GetBlock(nsINode& aNode, nsINode* aAncestorLimiter) {
                  EditorUtils::IsDescendantOf(aNode, *aAncestorLimiter),
              "aNode isn't in aAncestorLimiter");
 
-  if (HTMLEditor::NodeIsBlockStatic(aNode)) {
+  if (!aNode.IsContent()) {
+    return nullptr;
+  }
+
+  if (HTMLEditUtils::IsBlockElement(*aNode.AsContent())) {
     return aNode.AsElement();
   }
   return GetBlockNodeParent(&aNode, aAncestorLimiter);
@@ -945,19 +936,19 @@ bool HTMLEditor::IsVisibleBRElement(nsINode* aNode) {
   
   
   
-  nsCOMPtr<nsINode> nextNode = GetNextHTMLElementOrTextInBlock(*aNode);
-  if (nextNode && nextNode->IsHTMLElement(nsGkAtoms::br)) {
+  nsIContent* nextContent = GetNextHTMLElementOrTextInBlock(*aNode);
+  if (nextContent && nextContent->IsHTMLElement(nsGkAtoms::br)) {
     return true;
   }
 
   
   
   
-  if (!nextNode) {
+  if (!nextContent) {
     
     return false;
   }
-  if (IsBlockNode(nextNode)) {
+  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
     
     return false;
   }
@@ -1598,7 +1589,7 @@ EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
 
   
   
-  if (!IsBlockNode(&aContentToInsert)) {
+  if (!HTMLEditUtils::IsBlockElement(aContentToInsert)) {
     return pointToInsert;
   }
 
@@ -1718,7 +1709,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
   }
 
   if (aDeleteSelection) {
-    if (!IsBlockNode(aElement)) {
+    if (!HTMLEditUtils::IsBlockElement(*aElement)) {
       
       
       
@@ -2101,6 +2092,9 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
   
   nsIContent* contentToExamine;
   if (SelectionRefPtr()->IsCollapsed() || IsTextNode(startContainer)) {
+    if (NS_WARN_IF(!startContainer->IsContent())) {
+      return NS_ERROR_FAILURE;
+    }
     
     contentToExamine = startContainer->AsContent();
   } else {
@@ -2165,7 +2159,7 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
              contentToExamine->GetAsElementOrParentElement();
          element; element = element->GetParentElement()) {
       
-      if (HTMLEditor::NodeIsBlockStatic(*element)) {
+      if (HTMLEditUtils::IsBlockElement(*element)) {
         
         
         aOutColor.AssignLiteral("transparent");
@@ -3326,42 +3320,49 @@ nsresult HTMLEditor::DeleteSelectionWithTransaction(
   
   if (NS_WARN_IF(!SelectionRefPtr()->GetAnchorFocusRange()) ||
       NS_WARN_IF(!SelectionRefPtr()->GetAnchorFocusRange()->Collapsed()) ||
+      NS_WARN_IF(!SelectionRefPtr()->GetAnchorNode()) ||
       NS_WARN_IF(!SelectionRefPtr()->GetAnchorNode()->IsContent())) {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIContent> content =
-      SelectionRefPtr()->GetAnchorNode()->AsContent();
+  OwningNonNull<nsIContent> content =
+      *SelectionRefPtr()->GetAnchorNode()->AsContent();
 
   
   
-  nsCOMPtr<nsIContent> blockParent = content;
-  while (blockParent && !IsBlockNode(blockParent)) {
-    blockParent = blockParent->GetParent();
-  }
-  if (!blockParent) {
+  
+  Element* blockElement = HTMLEditor::GetBlock(content);
+  if (!blockElement) {
     return NS_OK;
   }
-  if (IsEmptyNode(*blockParent)) {
+  if (IsEmptyNode(*blockElement)) {
     return NS_OK;
   }
 
-  if (content && !IsBlockNode(content) && !content->Length() &&
-      content->IsEditable() && content != content->GetEditingHost()) {
-    while (content->GetParent() && !IsBlockNode(content->GetParent()) &&
-           content->GetParent()->Length() == 1 &&
-           content->GetParent()->IsEditable() &&
-           content->GetParent() != content->GetEditingHost()) {
-      content = content->GetParent();
-    }
-    rv = DeleteNodeWithTransaction(*content);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-      return rv;
-    }
+  if (HTMLEditUtils::IsBlockElement(content) || content->Length() ||
+      !content->IsEditable() || !content->GetParent()) {
+    return NS_OK;
   }
-
-  return NS_OK;
+  Element* editingHost = content->GetEditingHost();
+  if (content == editingHost) {
+    return NS_OK;
+  }
+  for (nsIContent* parentContent :
+       InclusiveAncestorsOfType<nsIContent>(*content->GetParent())) {
+    if (HTMLEditUtils::IsBlockElement(*parentContent) ||
+        parentContent->Length() != 1 || !parentContent->IsEditable() ||
+        parentContent == editingHost) {
+      break;
+    }
+    content = *parentContent;
+  }
+  rv = DeleteNodeWithTransaction(content);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "HTMLEditor::DeleteNodeWithTransaction() failed");
+  return rv;
 }
 
 nsresult HTMLEditor::DeleteNodeWithTransaction(nsINode& aNode) {
@@ -4029,58 +4030,68 @@ nsresult HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
     
     
 
-    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(&aElement);
-    if (sibling && !IsBlockNode(sibling) &&
-        !sibling->IsHTMLElement(nsGkAtoms::br) && !IsBlockNode(child)) {
-      
-      RefPtr<Element> brElement =
-          InsertBRElementWithTransaction(EditorDOMPoint(&aElement, 0));
-      if (!brElement) {
-        NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
-        return NS_ERROR_FAILURE;
-      }
-    }
-
-    
-    
-    
-    
-    
-
-    sibling = GetNextHTMLSibling(&aElement);
-    if (sibling && !IsBlockNode(sibling)) {
-      child = GetLastEditableChild(aElement);
-      MOZ_ASSERT(child, "aNode has first editable child but not last?");
-      if (!IsBlockNode(child) && !child->IsHTMLElement(nsGkAtoms::br)) {
+    if (nsIContent* previousSibling = GetPriorHTMLSibling(&aElement)) {
+      if (!HTMLEditUtils::IsBlockElement(*previousSibling) &&
+          !previousSibling->IsHTMLElement(nsGkAtoms::br) &&
+          !HTMLEditUtils::IsBlockElement(*child)) {
         
-        EditorDOMPoint endOfNode;
-        endOfNode.SetToEndOf(&aElement);
-        RefPtr<Element> brElement = InsertBRElementWithTransaction(endOfNode);
+        RefPtr<Element> brElement =
+            InsertBRElementWithTransaction(EditorDOMPoint(&aElement, 0));
+        if (NS_WARN_IF(Destroyed())) {
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (!brElement) {
           NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
           return NS_ERROR_FAILURE;
         }
       }
     }
-  } else {
+
+    
+    
+    
+    
+    
+
+    if (nsIContent* nextSibling = GetNextHTMLSibling(&aElement)) {
+      if (nextSibling && !HTMLEditUtils::IsBlockElement(*nextSibling)) {
+        if (nsIContent* lastChild = GetLastEditableChild(aElement)) {
+          if (!HTMLEditUtils::IsBlockElement(*lastChild) &&
+              !lastChild->IsHTMLElement(nsGkAtoms::br)) {
+            RefPtr<Element> brElement = InsertBRElementWithTransaction(
+                EditorDOMPoint::AtEndOf(aElement));
+            if (NS_WARN_IF(Destroyed())) {
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+            if (!brElement) {
+              NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
+              return NS_ERROR_FAILURE;
+            }
+          }
+        }
+      }
+    }
+  } else if (nsIContent* previousSibling = GetPriorHTMLSibling(&aElement)) {
     
     
     
     
     
     
-    nsCOMPtr<nsIContent> sibling = GetPriorHTMLSibling(&aElement);
-    if (sibling && !IsBlockNode(sibling) &&
-        !sibling->IsHTMLElement(nsGkAtoms::br)) {
-      sibling = GetNextHTMLSibling(&aElement);
-      if (sibling && !IsBlockNode(sibling) &&
-          !sibling->IsHTMLElement(nsGkAtoms::br)) {
-        
-        RefPtr<Element> brElement =
-            InsertBRElementWithTransaction(EditorDOMPoint(&aElement, 0));
-        if (!brElement) {
-          NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
-          return NS_ERROR_FAILURE;
+    if (!HTMLEditUtils::IsBlockElement(*previousSibling) &&
+        !previousSibling->IsHTMLElement(nsGkAtoms::br)) {
+      if (nsIContent* nextSibling = GetNextHTMLSibling(&aElement)) {
+        if (!HTMLEditUtils::IsBlockElement(*nextSibling) &&
+            !nextSibling->IsHTMLElement(nsGkAtoms::br)) {
+          RefPtr<Element> brElement =
+              InsertBRElementWithTransaction(EditorDOMPoint(&aElement, 0));
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          if (!brElement) {
+            NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
+            return NS_ERROR_FAILURE;
+          }
         }
       }
     }

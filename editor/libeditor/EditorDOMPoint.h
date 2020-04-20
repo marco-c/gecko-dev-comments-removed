@@ -217,6 +217,12 @@ class EditorDOMPointBase final {
 
 
 
+  bool IsInContentNode() const { return mParent && mParent->IsContent(); }
+
+  
+
+
+
   bool IsInDataNode() const { return mParent && mParent->IsCharacterData(); }
 
   

@@ -19,6 +19,20 @@ class HTMLEditUtils final {
   using Selection = dom::Selection;
 
  public:
+  
+
+
+
+  static bool IsBlockElement(const nsIContent& aContent);
+  
+
+
+
+
+  static bool IsInlineElement(const nsIContent& aContent) {
+    return !IsBlockElement(aContent);
+  }
+
   static bool IsInlineStyle(nsINode* aNode);
   
 

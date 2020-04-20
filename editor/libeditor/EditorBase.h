@@ -1936,8 +1936,6 @@ class EditorBase : public nsIEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal(nsITransaction* aTxn);
 
-  virtual bool IsBlockNode(nsINode* aNode) const;
-
   
 
 

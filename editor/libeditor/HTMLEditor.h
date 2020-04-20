@@ -862,21 +862,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  static bool NodeIsBlockStatic(const nsINode& aElement);
-
-  
-
-
-
-
-  static bool NodeIsInlineStatic(const nsINode& aElement) {
-    return !NodeIsBlockStatic(aElement);
-  }
-
-  
-
-
-
 
 
 
@@ -892,9 +877,6 @@ class HTMLEditor final : public TextEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RelativeChangeElementZIndex(
       Element& aElement, int32_t aChange, int32_t* aReturn);
-
-  virtual bool IsBlockNode(nsINode* aNode) const override;
-  using EditorBase::IsBlockNode;
 
   
 
@@ -1690,14 +1672,7 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsEmptyInlineNode(nsIContent& aContent) const {
-    MOZ_ASSERT(IsEditActionDataAvailable());
-
-    if (!HTMLEditor::NodeIsInlineStatic(aContent) || !IsContainer(&aContent)) {
-      return false;
-    }
-    return IsEmptyNode(aContent);
-  }
+  bool IsEmptyInlineNode(nsIContent& aContent) const;
 
   
 

@@ -747,13 +747,20 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
   
   bool useCSS = aProperty != nsGkAtoms::tt || IsCSSEnabled();
 
+  AutoTArray<OwningNonNull<nsIContent>, 24> arrayOfParents;
+  for (nsIContent* content :
+       InclusiveAncestorsOfType<nsIContent>(*aPointToSplit.GetContainer())) {
+    if (HTMLEditUtils::IsBlockElement(*content) || !content->GetParent() ||
+        !IsEditable(content->GetParent())) {
+      break;
+    }
+    arrayOfParents.AppendElement(*content);
+  }
+
   
   SplitNodeResult result(aPointToSplit);
   MOZ_ASSERT(!result.Handled());
-  for (nsCOMPtr<nsIContent> content = aPointToSplit.GetContainerAsContent();
-       !IsBlockNode(content) && content->GetParent() &&
-       IsEditable(content->GetParent());
-       content = content->GetParent()) {
+  for (OwningNonNull<nsIContent>& content : arrayOfParents) {
     bool isSetByCSS = false;
     if (useCSS &&
         CSSEditUtils::IsCSSEditableProperty(content, aProperty, aAttribute)) {
@@ -793,7 +800,7 @@ SplitNodeResult HTMLEditor::SplitAncestorStyledInlineElementsAt(
     
     
     SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(
-        *content, result.SplitPoint(),
+        MOZ_KnownLive(content), result.SplitPoint(),
         SplitAtEdges::eAllowToCreateEmptyContainer);
     if (splitNodeResult.Failed()) {
       NS_WARNING("EditorBase::SplitNodeDeepWithTransaction() failed");

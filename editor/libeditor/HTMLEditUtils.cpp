@@ -5,25 +5,47 @@
 
 #include "HTMLEditUtils.h"
 
-#include "mozilla/ArrayUtils.h"   
-#include "mozilla/Assertions.h"   
-#include "mozilla/EditAction.h"   
-#include "mozilla/EditorBase.h"   
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/EditAction.h"  
+#include "mozilla/EditorBase.h"  
+#include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/Element.h"  
 #include "nsAString.h"            
-#include "nsCOMPtr.h"             
+#include "nsAtom.h"               
 #include "nsCaseTreatment.h"
-#include "nsDebug.h"    
-#include "nsError.h"    
-#include "nsGkAtoms.h"  
+#include "nsCOMPtr.h"        
+#include "nsDebug.h"         
+#include "nsElementTable.h"  
+#include "nsError.h"         
+#include "nsGkAtoms.h"       
 #include "nsHTMLTags.h"
-#include "nsAtom.h"              
-#include "nsNameSpaceManager.h"  
 #include "nsLiteralString.h"     
+#include "nsNameSpaceManager.h"  
 #include "nsString.h"            
-#include "mozilla/dom/HTMLAnchorElement.h"
 
 namespace mozilla {
+
+bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent) {
+  if (!aContent.IsElement()) {
+    return false;
+  }
+  if (aContent.IsHTMLElement(nsGkAtoms::br)) {  
+    MOZ_ASSERT(!nsHTMLElement::IsBlock(nsHTMLTags::AtomTagToId(nsGkAtoms::br)));
+    return false;
+  }
+  
+  
+  if (aContent.IsAnyOfHTMLElements(
+          nsGkAtoms::body, nsGkAtoms::head, nsGkAtoms::tbody, nsGkAtoms::thead,
+          nsGkAtoms::tfoot, nsGkAtoms::tr, nsGkAtoms::th, nsGkAtoms::td,
+          nsGkAtoms::dt, nsGkAtoms::dd)) {
+    return true;
+  }
+
+  return nsHTMLElement::IsBlock(
+      nsHTMLTags::AtomTagToId(aContent.NodeInfo()->NameAtom()));
+}
 
 
 
