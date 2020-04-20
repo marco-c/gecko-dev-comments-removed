@@ -94,7 +94,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
                          ipc::StructuredCloneData&& aStack);
 
   
-  already_AddRefed<JSWindowActorChild> GetActor(const nsACString& aName,
+  already_AddRefed<JSWindowActorChild> GetActor(const nsAString& aName,
                                                 ErrorResult& aRv);
 
   
@@ -150,7 +150,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   RefPtr<nsGlobalWindowInner> mWindowGlobal;
   RefPtr<dom::BrowsingContext> mBrowsingContext;
   RefPtr<dom::WindowContext> mWindowContext;
-  nsRefPtrHashtable<nsCStringHashKey, JSWindowActorChild> mWindowActors;
+  nsRefPtrHashtable<nsStringHashKey, JSWindowActorChild> mWindowActors;
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
   nsCOMPtr<nsIURI> mDocumentURI;
   uint64_t mInnerWindowId;
