@@ -430,6 +430,20 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     return null;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   _compareAndUpdatePreviouslySentValues(
     formLikeRoot,
     usernameValue,
@@ -1452,6 +1466,19 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     );
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   _maybeSendFormInteractionMessage(
     form,
     messageName,
@@ -1466,152 +1493,167 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     let logMessagePrefix = isSubmission ? "form submission" : "field edit";
     let dismissedPrompt = !isSubmission;
 
-    
-    if (
-      !triggeredByFillingGenerated &&
-      PrivateBrowsingUtils.isContentWindowPrivate(win) &&
-      !LoginHelper.privateBrowsingCaptureEnabled
-    ) {
+    let detail = { messageSent: false };
+    try {
       
-      
-      log(`(${logMessagePrefix} ignored in private browsing mode)`);
-      return;
-    }
-
-    
-    if (!LoginHelper.enabled) {
-      return;
-    }
-
-    let origin = LoginHelper.getLoginOrigin(doc.documentURI);
-    if (!origin) {
-      log(`(${logMessagePrefix} ignored -- invalid origin)`);
-      return;
-    }
-
-    let formActionOrigin = LoginHelper.getFormActionOrigin(form);
-
-    let recipes = LoginRecipesContent.getRecipes(this, origin, win);
-
-    
-    let [
-      usernameField,
-      newPasswordField,
-      oldPasswordField,
-    ] = this._getFormFields(form, true, recipes);
-
-    
-    if (
-      passwordField &&
-      passwordField != newPasswordField &&
-      passwordField != oldPasswordField
-    ) {
-      newPasswordField = passwordField;
-    }
-
-    
-    if (newPasswordField == null) {
-      return;
-    }
-
-    if (usernameField && usernameField.value.match(/[•\*]{3,}/)) {
-      log(
-        `usernameField.value "${usernameField.value}" looks munged, setting to null`
-      );
-      usernameField = null;
-    }
-
-    
-    
-    
-    
-    if (
-      (this._isAutocompleteDisabled(form) ||
-        this._isAutocompleteDisabled(usernameField) ||
-        this._isAutocompleteDisabled(newPasswordField) ||
-        this._isAutocompleteDisabled(oldPasswordField)) &&
-      !LoginHelper.storeWhenAutocompleteOff
-    ) {
-      log(`(${logMessagePrefix} ignored -- autocomplete=off found)`);
-      return;
-    }
-
-    
-    let mockUsername = usernameField
-      ? { name: usernameField.name, value: usernameField.value }
-      : null;
-    let mockPassword = {
-      name: newPasswordField.name,
-      value: newPasswordField.value,
-    };
-    let mockOldPassword = oldPasswordField
-      ? { name: oldPasswordField.name, value: oldPasswordField.value }
-      : null;
-
-    let usernameValue = usernameField ? usernameField.value : null;
-    
-    
-    
-    
-    let newPasswordFieldValue = newPasswordField.value;
-    if (
-      (!dismissedPrompt &&
-        CreditCard.isValidNumber(usernameValue) &&
-        newPasswordFieldValue.trim().match(/^[0-9]{3}$/)) ||
-      (CreditCard.isValidNumber(newPasswordFieldValue) &&
-        newPasswordField.getAutocompleteInfo().fieldName == "cc-number")
-    ) {
-      dismissedPrompt = true;
-    }
-
-    let docState = this.stateForDocument(doc);
-    let fieldsModified = this._formHasModifiedFields(form);
-    if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
-      if (targetField) {
-        throw new Error("No user input on targetField");
+      if (
+        !triggeredByFillingGenerated &&
+        PrivateBrowsingUtils.isContentWindowPrivate(win) &&
+        !LoginHelper.privateBrowsingCaptureEnabled
+      ) {
+        
+        
+        log(`(${logMessagePrefix} ignored in private browsing mode)`);
+        return;
       }
+
       
-      log(
-        `(${logMessagePrefix} ignored -- submitting values that are not changed by the user)`
-      );
-      return;
+      if (!LoginHelper.enabled) {
+        return;
+      }
+
+      let origin = LoginHelper.getLoginOrigin(doc.documentURI);
+      if (!origin) {
+        log(`(${logMessagePrefix} ignored -- invalid origin)`);
+        return;
+      }
+
+      let formActionOrigin = LoginHelper.getFormActionOrigin(form);
+
+      let recipes = LoginRecipesContent.getRecipes(this, origin, win);
+
+      
+      let [
+        usernameField,
+        newPasswordField,
+        oldPasswordField,
+      ] = this._getFormFields(form, true, recipes);
+
+      
+      if (
+        passwordField &&
+        passwordField != newPasswordField &&
+        passwordField != oldPasswordField
+      ) {
+        newPasswordField = passwordField;
+      }
+
+      
+      if (newPasswordField == null) {
+        return;
+      }
+
+      let fullyMungedPattern = /^\*+$|^•+$|^\.+$/;
+      
+      
+      if (isSubmission && newPasswordField?.value.match(fullyMungedPattern)) {
+        log("new password looks munged. Not sending prompt");
+        return;
+      }
+
+      if (usernameField && usernameField.value.match(/\.{3,}|\*{3,}|•{3,}/)) {
+        log(
+          `usernameField.value "${usernameField.value}" looks munged, setting to null`
+        );
+        usernameField = null;
+      }
+
+      
+      
+      
+      
+      if (
+        (this._isAutocompleteDisabled(form) ||
+          this._isAutocompleteDisabled(usernameField) ||
+          this._isAutocompleteDisabled(newPasswordField) ||
+          this._isAutocompleteDisabled(oldPasswordField)) &&
+        !LoginHelper.storeWhenAutocompleteOff
+      ) {
+        log(`(${logMessagePrefix} ignored -- autocomplete=off found)`);
+        return;
+      }
+
+      
+      let mockUsername = usernameField
+        ? { name: usernameField.name, value: usernameField.value }
+        : null;
+      let mockPassword = {
+        name: newPasswordField.name,
+        value: newPasswordField.value,
+      };
+      let mockOldPassword = oldPasswordField
+        ? { name: oldPasswordField.name, value: oldPasswordField.value }
+        : null;
+
+      let usernameValue = usernameField ? usernameField.value : null;
+      
+      
+      
+      
+      let newPasswordFieldValue = newPasswordField.value;
+      if (
+        (!dismissedPrompt &&
+          CreditCard.isValidNumber(usernameValue) &&
+          newPasswordFieldValue.trim().match(/^[0-9]{3}$/)) ||
+        (CreditCard.isValidNumber(newPasswordFieldValue) &&
+          newPasswordField.getAutocompleteInfo().fieldName == "cc-number")
+      ) {
+        dismissedPrompt = true;
+      }
+
+      if (
+        this._compareAndUpdatePreviouslySentValues(
+          form.rootElement,
+          usernameValue,
+          newPasswordField.value,
+          dismissedPrompt
+        )
+      ) {
+        log(
+          `(${logMessagePrefix} ignored -- already submitted with the same username and password)`
+        );
+        return;
+      }
+
+      let docState = this.stateForDocument(doc);
+      let fieldsModified = this._formHasModifiedFields(form);
+      if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
+        if (targetField) {
+          throw new Error("No user input on targetField");
+        }
+        
+        log(
+          `(${logMessagePrefix} ignored -- submitting values that are not changed by the user)`
+        );
+        return;
+      }
+
+      let { login: autoFilledLogin } =
+        docState.fillsByRootElement.get(form.rootElement) || {};
+      let browsingContextId = win.windowGlobalChild.browsingContext.id;
+
+      detail = {
+        origin,
+        browsingContextId,
+        formActionOrigin,
+        autoFilledLoginGuid: autoFilledLogin && autoFilledLogin.guid,
+        usernameField: mockUsername,
+        newPasswordField: mockPassword,
+        oldPasswordField: mockOldPassword,
+        dismissedPrompt,
+        triggeredByFillingGenerated,
+        messageSent: true,
+      };
+
+      this.sendAsyncMessage(messageName, detail);
+    } catch (ex) {
+      Cu.reportError(ex);
+      throw ex;
+    } finally {
+      detail.form = form;
+      const evt = new CustomEvent(messageName, { detail });
+      win.windowRoot.dispatchEvent(evt);
     }
-
-    if (
-      this._compareAndUpdatePreviouslySentValues(
-        form.rootElement,
-        usernameValue,
-        newPasswordField.value,
-        dismissedPrompt
-      )
-    ) {
-      log(
-        `(${logMessagePrefix} ignored -- already submitted with the same username and password)`
-      );
-      return;
-    }
-
-    let { login: autoFilledLogin } =
-      docState.fillsByRootElement.get(form.rootElement) || {};
-    let browsingContextId = win.windowGlobalChild.browsingContext.id;
-
-    let detail = {
-      origin,
-      browsingContextId,
-      formActionOrigin,
-      autoFilledLoginGuid: autoFilledLogin && autoFilledLogin.guid,
-      usernameField: mockUsername,
-      newPasswordField: mockPassword,
-      oldPasswordField: mockOldPassword,
-      dismissedPrompt,
-      triggeredByFillingGenerated,
-    };
-
-    this.sendAsyncMessage(messageName, detail);
-
-    detail.form = form;
-    const evt = new CustomEvent(messageName, { detail });
-    win.windowRoot.dispatchEvent(evt);
   }
 
   _maybeStopTreatingAsGeneratedPasswordField(event) {

@@ -826,6 +826,25 @@ class LoginManagerParent extends JSWindowActorParent {
     );
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async _onPasswordEditedOrGenerated(
     browser,
     {
