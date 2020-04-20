@@ -11848,8 +11848,12 @@ EditActionResult HTMLEditor::AddZIndexAsSubAction(int32_t aChange) {
 }
 
 nsresult HTMLEditor::OnDocumentModified() {
-  nsContentUtils::AddScriptRunner(NewRunnableMethod(
-      "HTMLEditor::OnModifyDocument", this, &HTMLEditor::OnModifyDocument));
+  if (mPendingDocumentModifiedRunner) {
+    return NS_OK;  
+  }
+  mPendingDocumentModifiedRunner = NewRunnableMethod(
+      "HTMLEditor::OnModifyDocument", this, &HTMLEditor::OnModifyDocument);
+  nsContentUtils::AddScriptRunner(do_AddRef(mPendingDocumentModifiedRunner));
   
   
   return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
