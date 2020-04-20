@@ -70,6 +70,8 @@ SlicedInputStream::SlicedInputStream()
       mWeakSeekableInputStream(nullptr),
       mWeakTellableInputStream(nullptr),
       mWeakAsyncInputStream(nullptr),
+      mWeakInputStreamLength(nullptr),
+      mWeakAsyncInputStreamLength(nullptr),
       mStart(0),
       mLength(0),
       mCurPos(0),
@@ -78,7 +80,7 @@ SlicedInputStream::SlicedInputStream()
       mAsyncWaitRequestedCount(0),
       mMutex("SlicedInputStream::mMutex") {}
 
-SlicedInputStream::~SlicedInputStream() {}
+SlicedInputStream::~SlicedInputStream() = default;
 
 void SlicedInputStream::SetSourceStream(
     already_AddRefed<nsIInputStream> aInputStream) {
