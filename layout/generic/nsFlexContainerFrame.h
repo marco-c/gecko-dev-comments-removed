@@ -275,6 +275,19 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   void DoFlexLayout(const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
                     nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
                     nscoord& aFlexContainerAscent,
@@ -466,11 +479,32 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   void ComputeFinalSize(
       ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
-      nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
-      const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
-      nsTArray<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker);
+      nsReflowStatus& aStatus, const mozilla::LogicalSize& aContentBoxSize,
+      const mozilla::LogicalMargin& aBorderPadding,
+      const nscoord aConsumedBSize, const bool aMayNeedNextInFlow,
+      const nscoord aMaxBlockEndEdgeOfChildren, const bool aAreChildrenComplete,
+      nscoord aFlexContainerAscent, nsTArray<FlexLine>& aLines,
+      const FlexboxAxisTracker& aAxisTracker);
 
   
 

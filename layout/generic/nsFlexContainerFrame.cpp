@@ -4244,7 +4244,6 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   const LogicalSize availableSizeForItems =
       ComputeAvailableSizeForItems(aReflowInput, borderPadding);
-  const nscoord availableBSizeForContent = availableSizeForItems.BSize(wm);
   const nscoord columnWrapThreshold = availableSizeForItems.BSize(wm);
 
   nscoord contentBoxMainSize =
@@ -4276,6 +4275,16 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   AutoTArray<nsIFrame*, 1> placeholders;
 
   if (!GetPrevInFlow()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    const nscoord availableBSizeForContent = NS_UNCONSTRAINEDSIZE;
+
     DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
                  flexContainerAscent, availableBSizeForContent,
                  columnWrapThreshold, lines, struts, placeholders, axisTracker,
@@ -4316,6 +4325,24 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(
+      aStatus.IsEmpty(),
+      "DoFlexLayout shouldn't modify aStatus if it is given unconstrained "
+      "page size!");
+
+  
+  
   const bool mayNeedNextInFlow =
       effectiveContentBSize > availableSizeForItems.BSize(wm);
   if (mayNeedNextInFlow) {
@@ -4330,12 +4357,10 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
       availableSizeForItems, borderPadding, consumedBSize, flexContainerAscent,
       lines, placeholders, axisTracker, hasLineClampEllipsis);
 
-  Unused << maxBlockEndEdgeOfChildren;
-  Unused << areChildrenComplete;
-
-  ComputeFinalSize(aReflowOutput, aReflowInput, aStatus, contentBoxMainSize,
-                   contentBoxCrossSize, flexContainerAscent, lines,
-                   axisTracker);
+  ComputeFinalSize(aReflowOutput, aReflowInput, aStatus, contentBoxSize,
+                   borderPadding, consumedBSize, mayNeedNextInFlow,
+                   maxBlockEndEdgeOfChildren, areChildrenComplete,
+                   flexContainerAscent, lines, axisTracker);
 
   
   if (MOZ_UNLIKELY(containerInfo)) {
@@ -5033,31 +5058,68 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
 void nsFlexContainerFrame::ComputeFinalSize(
     ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
-    nsReflowStatus& aStatus, const nscoord aContentBoxMainSize,
-    const nscoord aContentBoxCrossSize, nscoord aFlexContainerAscent,
+    nsReflowStatus& aStatus, const LogicalSize& aContentBoxSize,
+    const LogicalMargin& aBorderPadding, const nscoord aConsumedBSize,
+    const bool aMayNeedNextInFlow, const nscoord aMaxBlockEndEdgeOfChildren,
+    const bool aAreChildrenComplete, nscoord aFlexContainerAscent,
     nsTArray<FlexLine>& aLines, const FlexboxAxisTracker& aAxisTracker) {
-  
-  
   const WritingMode flexWM = aReflowInput.GetWritingMode();
-  LogicalMargin containerBP = aReflowInput.ComputedLogicalBorderPadding();
+
+  
+  
+  LogicalSize reflowOutputInFlexWM(flexWM);
+  reflowOutputInFlexWM.ISize(flexWM) =
+      aContentBoxSize.ISize(flexWM) + aBorderPadding.IStartEnd(flexWM);
 
   
   
   
-  
-  const nscoord blockEndContainerBP = containerBP.BEnd(flexWM);
-  const LogicalSides skipSides =
-      GetLogicalSkipSides(&aReflowInput) | LogicalSides(eLogicalSideBitsBEnd);
-  containerBP.ApplySkipSides(skipSides);
+  const nscoord effectiveContentBSizeWithBStartBP =
+      aContentBoxSize.BSize(flexWM) - aConsumedBSize +
+      aBorderPadding.BStart(flexWM);
+  nscoord blockEndContainerBP = aBorderPadding.BEnd(flexWM);
 
-  
-  
-  LogicalSize reflowOutputInFlexWM =
-      aAxisTracker.LogicalSizeFromFlexRelativeSizes(aContentBoxMainSize,
-                                                    aContentBoxCrossSize);
-  
-  reflowOutputInFlexWM.ISize(flexWM) += containerBP.IStartEnd(flexWM);
-  reflowOutputInFlexWM.BSize(flexWM) += containerBP.BStartEnd(flexWM);
+  if (aMayNeedNextInFlow) {
+    
+    
+    bool isStatusIncomplete = true;
+
+    const nscoord availableBSizeMinusBEndBP =
+        aReflowInput.AvailableBSize() - aBorderPadding.BEnd(flexWM);
+
+    if (aMaxBlockEndEdgeOfChildren <= availableBSizeMinusBEndBP) {
+      
+      reflowOutputInFlexWM.BSize(flexWM) = availableBSizeMinusBEndBP;
+    } else {
+      
+      
+      reflowOutputInFlexWM.BSize(flexWM) = std::min(
+          effectiveContentBSizeWithBStartBP, aMaxBlockEndEdgeOfChildren);
+
+      if (aMaxBlockEndEdgeOfChildren >= effectiveContentBSizeWithBStartBP) {
+        
+        
+        isStatusIncomplete = false;
+
+        
+        
+        
+        if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+            StyleBoxDecorationBreak::Slice) {
+          blockEndContainerBP =
+              aReflowInput.ComputedLogicalBorderPadding().BEnd(flexWM);
+        }
+      }
+    }
+
+    if (isStatusIncomplete) {
+      aStatus.SetIncomplete();
+    }
+  } else {
+    
+    
+    reflowOutputInFlexWM.BSize(flexWM) = effectiveContentBSizeWithBStartBP;
+  }
 
   if (aFlexContainerAscent == nscoord_MIN) {
     
@@ -5093,20 +5155,32 @@ void nsFlexContainerFrame::ComputeFinalSize(
   
   
   
-  if (aStatus.IsComplete()) {
-    nscoord desiredBSizeWithBEndBP =
-        reflowOutputInFlexWM.BSize(flexWM) + blockEndContainerBP;
+  
+  const nscoord effectiveContentBSizeWithBStartEndBP =
+      reflowOutputInFlexWM.BSize(flexWM) + blockEndContainerBP;
 
-    if (aReflowInput.AvailableBSize() == NS_UNCONSTRAINEDSIZE ||
-        reflowOutputInFlexWM.BSize(flexWM) == 0 ||
-        desiredBSizeWithBEndBP <= aReflowInput.AvailableBSize() ||
-        aReflowInput.ComputedBSize() == NS_UNCONSTRAINEDSIZE) {
-      
-      reflowOutputInFlexWM.BSize(flexWM) = desiredBSizeWithBEndBP;
-    } else {
-      
-      aStatus.SetIncomplete();
+  if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
+      effectiveContentBSizeWithBStartEndBP > aReflowInput.AvailableBSize() &&
+      reflowOutputInFlexWM.BSize(flexWM) != 0 &&
+      aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
+    
+    
+    aStatus.SetIncomplete();
+
+    if (aReflowInput.mStyleBorder->mBoxDecorationBreak ==
+        StyleBoxDecorationBreak::Slice) {
+      blockEndContainerBP = 0;
     }
+  }
+
+  
+  
+  
+  reflowOutputInFlexWM.BSize(flexWM) += blockEndContainerBP;
+
+  if (aStatus.IsComplete() && !aAreChildrenComplete) {
+    aStatus.SetOverflowIncomplete();
+    aStatus.SetNextInFlowNeedsReflow();
   }
 
   
