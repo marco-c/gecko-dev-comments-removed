@@ -1018,7 +1018,17 @@ SearchService.prototype = {
     if (!defaultEngine) {
       
       
-      return this._getSortedEngines(false)[0];
+      
+      defaultEngineName = privateMode
+        ? this._searchPrivateDefault
+        : this._searchDefault;
+      defaultEngine = this.getEngineByName(defaultEngineName);
+
+      if (!defaultEngine) {
+        
+        
+        return this._getSortedEngines(false)[0];
+      }
     }
 
     return defaultEngine;
