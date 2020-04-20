@@ -1072,6 +1072,21 @@ struct nsFlexContainerFrame::StrutInfo {
   nscoord mStrutCrossSize;  
 };
 
+
+
+
+struct nsFlexContainerFrame::SharedFlexData {
+  nsTArray<FlexLine> mLines;
+
+  
+  nscoord mContentBoxMainSize = NS_UNCONSTRAINEDSIZE;
+  nscoord mContentBoxCrossSize = NS_UNCONSTRAINEDSIZE;
+
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(Prop, SharedFlexData)
+};
+
 static void BuildStrutInfoFromCollapsedItems(const nsTArray<FlexLine>& aLines,
                                              nsTArray<StrutInfo>& aStruts) {
   MOZ_ASSERT(aStruts.IsEmpty(),
@@ -4259,21 +4274,37 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   AutoTArray<FlexLine, 1> lines;
   AutoTArray<StrutInfo, 1> struts;
   AutoTArray<nsIFrame*, 1> placeholders;
-  DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
-               flexContainerAscent, availableBSizeForContent,
-               columnWrapThreshold, lines, struts, placeholders, axisTracker,
-               mainGapSize, crossGapSize, hasLineClampEllipsis, containerInfo);
 
-  if (!struts.IsEmpty()) {
-    
-    aStatus.Reset();
-    lines.Clear();
-    placeholders.Clear();
+  if (!GetPrevInFlow()) {
     DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize, contentBoxCrossSize,
                  flexContainerAscent, availableBSizeForContent,
                  columnWrapThreshold, lines, struts, placeholders, axisTracker,
                  mainGapSize, crossGapSize, hasLineClampEllipsis,
                  containerInfo);
+
+    if (!struts.IsEmpty()) {
+      
+      aStatus.Reset();
+      lines.Clear();
+      placeholders.Clear();
+      DoFlexLayout(aReflowInput, aStatus, contentBoxMainSize,
+                   contentBoxCrossSize, flexContainerAscent,
+                   availableBSizeForContent, columnWrapThreshold, lines, struts,
+                   placeholders, axisTracker, mainGapSize, crossGapSize,
+                   hasLineClampEllipsis, containerInfo);
+    }
+  } else {
+    auto* data = FirstInFlow()->GetProperty(SharedFlexData::Prop());
+
+    
+    
+    lines.AppendElement(FlexLine(0));
+
+    
+    
+
+    contentBoxMainSize = data->mContentBoxMainSize;
+    contentBoxCrossSize = data->mContentBoxCrossSize;
   }
 
   const LogicalSize contentBoxSize =
@@ -4306,6 +4337,25 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   
   if (MOZ_UNLIKELY(containerInfo)) {
     UpdateFlexLineAndItemInfo(*containerInfo, lines);
+  }
+
+  
+  
+  if (!GetPrevInFlow()) {
+    SharedFlexData* data = GetProperty(SharedFlexData::Prop());
+    if (!aStatus.IsFullyComplete()) {
+      if (!data) {
+        data = new SharedFlexData;
+        SetProperty(SharedFlexData::Prop(), data);
+      }
+      data->mLines = std::move(lines);
+      data->mContentBoxMainSize = contentBoxMainSize;
+      data->mContentBoxCrossSize = contentBoxCrossSize;
+    } else if (data) {
+      
+      
+      RemoveProperty(SharedFlexData::Prop());
+    }
   }
 }
 

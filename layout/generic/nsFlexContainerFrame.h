@@ -105,6 +105,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   struct StrutInfo;
   class CachedBAxisMeasurement;
   class CachedFlexItemData;
+  struct SharedFlexData;
 
   
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
