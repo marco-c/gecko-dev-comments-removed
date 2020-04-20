@@ -705,6 +705,11 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   float ComputedVolume() const;
   bool ComputedMuted() const;
 
+  
+  
+  bool IsSuspendedByInactiveDocOrDocShell() const;
+  
+
   void SetMediaInfo(const MediaInfo& aInfo);
 
   AbstractThread* AbstractMainThread() const final;
