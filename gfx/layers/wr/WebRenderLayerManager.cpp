@@ -359,6 +359,9 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
       mIsFirstPaint = false;
     }
     mScrollData.SetPaintSequenceNumber(mPaintSequenceNumber);
+    if (dumpEnabled) {
+      mScrollData.Dump();
+    }
   }
 
   
