@@ -413,7 +413,7 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Create(
 
 already_AddRefed<nsFrameLoader> nsFrameLoader::Recreate(
     mozilla::dom::Element* aOwner, BrowsingContext* aContext,
-    const nsAString& aRemoteType, bool aNetworkCreated) {
+    const nsAString& aRemoteType, bool aNetworkCreated, bool aPreserveContext) {
   NS_ENSURE_TRUE(aOwner, nullptr);
 
 #ifdef DEBUG
@@ -426,10 +426,15 @@ already_AddRefed<nsFrameLoader> nsFrameLoader::Recreate(
 #endif
 
   RefPtr<BrowsingContext> context = aContext;
-  if (!context) {
+  if (!context || !aPreserveContext) {
     context = CreateBrowsingContext(aOwner,  nullptr);
   }
   NS_ENSURE_TRUE(context, nullptr);
+
+  
+  if (aContext && !aPreserveContext) {
+    context->SetEmbedderPolicy(aContext->GetEmbedderPolicy());
+  }
 
   RefPtr<nsFrameLoader> fl =
       new nsFrameLoader(aOwner, context, aRemoteType, aNetworkCreated);
