@@ -37,6 +37,7 @@
 #include "vm/JSFunction.h"     
 #include "vm/JSObject.h"       
 #include "vm/ObjectOperations.h"  
+#include "vm/PlainObject.h"       
 #include "vm/Realm.h"             
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        

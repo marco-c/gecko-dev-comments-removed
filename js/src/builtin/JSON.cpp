@@ -26,6 +26,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/JSONParser.h"
+#include "vm/PlainObject.h"  
 
 #include "builtin/Array-inl.h"
 #include "builtin/Boolean-inl.h"

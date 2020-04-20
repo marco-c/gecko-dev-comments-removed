@@ -25,6 +25,7 @@
 #include "vm/ArrayBufferObject.h"
 #include "vm/Compartment.h"
 #include "vm/NativeObject.h"
+#include "vm/PlainObject.h"    
 #include "vm/PromiseLookup.h"  
 #include "vm/ReceiverGuard.h"
 #include "vm/RegExpShared.h"

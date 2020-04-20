@@ -9,6 +9,7 @@
 
 #include "jit/TemplateObject.h"
 
+#include "vm/PlainObject.h"  
 #include "vm/RegExpObject.h"
 
 namespace js {

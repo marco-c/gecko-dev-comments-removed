@@ -39,6 +39,7 @@
 #include "vm/Compartment-inl.h"                        
 #include "vm/JSContext-inl.h"                          
 #include "vm/List-inl.h"  
+#include "vm/PlainObject-inl.h"  
 #include "vm/Realm-inl.h"  
 
 using JS::BooleanValue;

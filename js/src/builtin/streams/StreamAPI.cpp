@@ -31,7 +31,7 @@
 #include "vm/ArrayBufferViewObject.h"  
 #include "vm/JSContext.h"              
 #include "vm/JSObject.h"               
-#include "vm/NativeObject.h"           
+#include "vm/PlainObject.h"            
 #include "vm/PromiseObject.h"          
 
 #include "builtin/streams/ReadableStreamReader-inl.h"  

@@ -20,6 +20,7 @@
 #include "vm/ArrayObject.h"
 #include "vm/EqualityOperations.h"  
 #include "vm/Interpreter.h"
+#include "vm/PlainObject.h"  
 #include "vm/SelfHosting.h"
 #include "vm/TraceLogging.h"
 #include "vm/TypedArrayObject.h"

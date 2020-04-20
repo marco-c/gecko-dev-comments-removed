@@ -1492,19 +1492,6 @@ class NativeObject : public JSObject {
   static size_t offsetOfSlots() { return offsetof(NativeObject, slots_); }
 };
 
-
-
-class PlainObject : public NativeObject {
- public:
-  static const JSClass class_;
-
-  static inline JS::Result<PlainObject*, JS::OOM&> createWithTemplate(
-      JSContext* cx, Handle<PlainObject*> templateObject);
-
-  
-  inline js::gc::AllocKind allocKindForTenure() const;
-};
-
 inline void NativeObject::privateWriteBarrierPre(void** oldval) {
   JS::shadow::Zone* shadowZone = this->shadowZoneFromAnyThread();
   if (shadowZone->needsIncrementalBarrier() && *oldval &&
@@ -1651,12 +1638,6 @@ bool IsPackedArray(JSObject* obj);
 
 extern void AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
                                              ObjectGroup* oldGroup);
-
-
-extern bool CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
-                                     HandleNativeObject from,
-                                     HandlePlainObject excludedItems,
-                                     bool* optimized);
 
 
 

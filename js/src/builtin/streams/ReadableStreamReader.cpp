@@ -21,6 +21,7 @@
 #include "js/Value.h"        
 #include "vm/Interpreter.h"  
 #include "vm/JSContext.h"    
+#include "vm/PlainObject.h"  
 #include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"        
 

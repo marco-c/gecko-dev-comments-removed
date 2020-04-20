@@ -36,6 +36,7 @@
 #include "util/Text.h"
 #include "vm/ErrorObject.h"
 #include "vm/Interpreter.h"
+#include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/StringType.h"
 #include "vm/Warnings.h"  

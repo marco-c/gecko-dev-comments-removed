@@ -26,6 +26,7 @@
 #include "vm/JSAtom.h"
 #include "vm/JSObject.h"
 #include "vm/ModuleBuilder.h"  
+#include "vm/PlainObject.h"    
 #include "vm/RegExpObject.h"
 
 #include "vm/JSObject-inl.h"

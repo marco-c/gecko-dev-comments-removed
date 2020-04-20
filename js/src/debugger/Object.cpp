@@ -55,6 +55,7 @@
 #include "vm/NativeObject.h"              
 #include "vm/ObjectGroup.h"               
 #include "vm/ObjectOperations.h"          
+#include "vm/PlainObject.h"               
 #include "vm/PromiseObject.h"             
 #include "vm/Realm.h"                     
 #include "vm/Runtime.h"                   

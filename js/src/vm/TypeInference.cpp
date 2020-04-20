@@ -36,6 +36,7 @@
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/Opcodes.h"
+#include "vm/PlainObject.h"  
 #include "vm/Printer.h"
 #include "vm/Shape.h"
 #include "vm/Time.h"

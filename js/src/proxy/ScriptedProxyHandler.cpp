@@ -13,6 +13,7 @@
 #include "vm/EqualityOperations.h"  
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
+#include "vm/PlainObject.h"  
 
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"

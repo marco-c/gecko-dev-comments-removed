@@ -23,6 +23,7 @@
 #include "vm/AsyncIteration.h"
 #include "vm/EqualityOperations.h"  
 #include "vm/ModuleBuilder.h"       
+#include "vm/PlainObject.h"         
 #include "vm/PromiseObject.h"       
 #include "vm/SelfHosting.h"
 

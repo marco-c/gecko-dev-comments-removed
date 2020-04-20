@@ -13,6 +13,7 @@
 #include "vm/GeneratorObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
+#include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/Realm.h"
 #include "vm/SelfHosting.h"

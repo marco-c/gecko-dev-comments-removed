@@ -87,6 +87,7 @@
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
+#include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"
 #include "vm/SavedStacks.h"

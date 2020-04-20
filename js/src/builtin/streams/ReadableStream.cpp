@@ -32,8 +32,8 @@
 #include "js/Value.h"             
 #include "vm/JSContext.h"         
 #include "vm/JSObject.h"          
-#include "vm/NativeObject.h"      
 #include "vm/ObjectOperations.h"  
+#include "vm/PlainObject.h"       
 #include "vm/Runtime.h"           
 #include "vm/StringType.h"        
 
