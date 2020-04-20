@@ -25,10 +25,12 @@
 
 var EXPORTED_SYMBOLS = ["ContextObserver"];
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { EventEmitter } = ChromeUtils.import(
   "resource://gre/modules/EventEmitter.jsm"
 );
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
+const { executeSoon } = ChromeUtils.import("chrome://remote/content/Sync.jsm");
 
 class ContextObserver {
   constructor(chromeEventHandler) {
@@ -81,7 +83,7 @@ class ContextObserver {
         this.emit("frame-navigated", { frameId, window });
         this.emit("context-created", { windowId: id, window });
         
-        Services.tm.dispatchToMainThread(() => {
+        executeSoon(() => {
           this.emit("script-loaded");
         });
         break;

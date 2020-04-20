@@ -6,17 +6,18 @@
 
 var EXPORTED_SYMBOLS = ["Runtime"];
 
-const { ContentProcessDomain } = ChromeUtils.import(
-  "chrome://remote/content/domains/ContentProcessDomain.jsm"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { ExecutionContext } = ChromeUtils.import(
-  "chrome://remote/content/domains/content/runtime/ExecutionContext.jsm"
-);
 const { addDebuggerToGlobal } = ChromeUtils.import(
   "resource://gre/modules/jsdebugger.jsm",
   {}
 );
+
+const { ContentProcessDomain } = ChromeUtils.import(
+  "chrome://remote/content/domains/ContentProcessDomain.jsm"
+);
+const { ExecutionContext } = ChromeUtils.import(
+  "chrome://remote/content/domains/content/runtime/ExecutionContext.jsm"
+);
+const { executeSoon } = ChromeUtils.import("chrome://remote/content/Sync.jsm");
 
 
 addDebuggerToGlobal(Cu.getGlobalForObject(this));
@@ -80,7 +81,7 @@ class Runtime extends ContentProcessDomain {
 
       
       
-      Services.tm.dispatchToMainThread(() => {
+      executeSoon(() => {
         this._onContextCreated("context-created", {
           windowId: this.content.windowUtils.currentInnerWindowID,
           window: this.content,
