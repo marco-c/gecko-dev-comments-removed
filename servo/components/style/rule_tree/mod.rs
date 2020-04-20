@@ -2,6 +2,8 @@
 
 
 
+#![deny(unsafe_code)]
+
 
 
 use crate::applicable_declarations::ApplicableDeclarationList;
@@ -15,6 +17,7 @@ mod core;
 mod level;
 mod map;
 mod source;
+mod unsafe_box;
 
 pub use self::core::{RuleTree, StrongRuleNode};
 pub use self::level::{CascadeLevel, ShadowCascadeOrder};
