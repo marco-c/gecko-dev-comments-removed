@@ -500,6 +500,15 @@ fn specific_bucket_for<'a>(component: &'a Component<SelectorImpl>) -> Bucket<'a>
         
         Component::Slotted(ref selector) => find_bucket(selector.iter()),
         Component::Host(Some(ref selector)) => find_bucket(selector.iter()),
+        Component::Is(ref list) | Component::Where(ref list) => {
+            if list.len() == 1 {
+                find_bucket(list[0].iter())
+            } else {
+                
+                
+                Bucket::Universal
+            }
+        },
         _ => Bucket::Universal,
     }
 }

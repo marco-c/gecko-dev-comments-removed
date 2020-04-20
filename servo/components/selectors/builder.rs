@@ -330,6 +330,19 @@ where
                     specificity.class_like_selectors += 1;
                 }
             },
+            Component::Is(ref list) => {
+                
+                
+                
+                
+                
+                let mut max = 0;
+                for selector in &**list {
+                    max = std::cmp::max(selector.specificity(), max);
+                }
+                *specificity += Specificity::from(max);
+            },
+            Component::Where(..) |
             Component::ExplicitUniversalType |
             Component::ExplicitAnyNamespace |
             Component::ExplicitNoNamespace |

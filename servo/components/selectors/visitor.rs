@@ -7,13 +7,13 @@
 #![deny(missing_docs)]
 
 use crate::attr::NamespaceConstraint;
-use crate::parser::{Combinator, Component, SelectorImpl};
+use crate::parser::{Combinator, Component, Selector, SelectorImpl};
 
 
 
 
 
-pub trait SelectorVisitor {
+pub trait SelectorVisitor: Sized {
     
     type Impl: SelectorImpl;
 
@@ -38,35 +38,20 @@ pub trait SelectorVisitor {
     
     
     
+    fn visit_selector_list(&mut self, list: &[Selector<Self::Impl>]) -> bool {
+        for nested in list {
+            if !nested.visit(self) {
+                return false;
+            }
+        }
+        true
+    }
+
+    
+    
+    
+    
     fn visit_complex_selector(&mut self, _combinator_to_right: Option<Combinator>) -> bool {
         true
     }
-}
-
-
-pub trait Visit {
-    
-    type Impl: SelectorImpl;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn visit<V>(&self, visitor: &mut V) -> bool
-    where
-        V: SelectorVisitor<Impl = Self::Impl>;
 }

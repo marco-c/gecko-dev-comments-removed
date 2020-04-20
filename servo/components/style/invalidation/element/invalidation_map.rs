@@ -13,7 +13,7 @@ use fallible::FallibleVec;
 use hashglobe::FailedAllocationError;
 use selectors::attr::NamespaceConstraint;
 use selectors::parser::{Combinator, Component};
-use selectors::parser::{Selector, SelectorIter, Visit};
+use selectors::parser::{Selector, SelectorIter};
 use selectors::visitor::SelectorVisitor;
 use smallvec::SmallVec;
 
@@ -320,6 +320,17 @@ impl InvalidationMap {
         Ok(())
     }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 struct CompoundSelectorDependencyCollector<'a> {
