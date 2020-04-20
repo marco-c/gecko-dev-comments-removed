@@ -636,6 +636,24 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
+
+
+
+
+
+
+
+  using FrameHashtable = nsTHashtable<nsPtrHashKey<nsIFrame>>;
+  bool PushIncompleteChildren(const FrameHashtable& aPushedItems,
+                              const FrameHashtable& aIncompleteItems,
+                              const FrameHashtable& aOverflowIncompleteItems);
+
+  
+
+
+
+
+
   static void ReparentFloatsForInlineChild(nsIFrame* aOurBlock,
                                            nsIFrame* aFrame,
                                            bool aReparentSiblings);

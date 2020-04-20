@@ -41,7 +41,6 @@ using namespace mozilla;
 
 typedef nsAbsoluteContainingBlock::AbsPosReflowFlags AbsPosReflowFlags;
 typedef nsGridContainerFrame::TrackSize TrackSize;
-typedef nsTHashtable<nsPtrHashKey<nsIFrame>> FrameHashtable;
 typedef mozilla::CSSAlignUtils::AlignJustifyFlags AlignJustifyFlags;
 typedef nsLayoutUtils::IntrinsicISizeType IntrinsicISizeType;
 
@@ -6874,121 +6873,24 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
     }
   }
 
-  if (!pushedItems.IsEmpty() || !incompleteItems.IsEmpty() ||
-      !overflowIncompleteItems.IsEmpty()) {
-    if (aStatus.IsComplete()) {
-      aStatus.SetOverflowIncomplete();
-      aStatus.SetNextInFlowNeedsReflow();
-    }
-    
-    
-    nsFrameList pushedList;
-    nsFrameList incompleteList;
-    nsFrameList overflowIncompleteList;
-    auto* fc = PresShell()->FrameConstructor();
-    for (nsIFrame* child = GetChildList(kPrincipalList).FirstChild(); child;) {
-      MOZ_ASSERT((pushedItems.Contains(child) ? 1 : 0) +
-                         (incompleteItems.Contains(child) ? 1 : 0) +
-                         (overflowIncompleteItems.Contains(child) ? 1 : 0) <=
-                     1,
-                 "child should only be in one of these sets");
-      
-      nsIFrame* next = child->GetNextSibling();
-      if (pushedItems.Contains(child)) {
-        MOZ_ASSERT(child->GetParent() == this);
-        StealFrame(child);
-        pushedList.AppendFrame(nullptr, child);
-      } else if (incompleteItems.Contains(child)) {
-        nsIFrame* childNIF = child->GetNextInFlow();
-        if (!childNIF) {
-          childNIF = fc->CreateContinuingFrame(child, this);
-          incompleteList.AppendFrame(nullptr, childNIF);
-        } else {
-          auto parent =
-              static_cast<nsGridContainerFrame*>(childNIF->GetParent());
-          MOZ_ASSERT(parent != this || !mFrames.ContainsFrame(childNIF),
-                     "child's NIF shouldn't be in the same principal list");
-          
-          
-          
-          if ((childNIF->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) ||
-              (parent != this && parent != GetNextInFlow())) {
-            parent->StealFrame(childNIF);
-            childNIF->RemoveStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-            if (parent == this) {
-              incompleteList.AppendFrame(nullptr, childNIF);
-            } else {
-              
-              
-              
-              if (parent == GetNextInFlow()) {
-                nsFrameList toMove(childNIF, childNIF);
-                parent->MergeSortedOverflow(toMove);
-              } else {
-                ReparentFrame(childNIF, parent, this);
-                incompleteList.AppendFrame(nullptr, childNIF);
-              }
-            }
-          }
-        }
-      } else if (overflowIncompleteItems.Contains(child)) {
-        nsIFrame* childNIF = child->GetNextInFlow();
-        if (!childNIF) {
-          childNIF = fc->CreateContinuingFrame(child, this);
-          childNIF->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-          overflowIncompleteList.AppendFrame(nullptr, childNIF);
-        } else {
-          DebugOnly<nsGridContainerFrame*> lastParent = this;
-          auto nif = static_cast<nsGridContainerFrame*>(GetNextInFlow());
-          
-          
-          while (childNIF &&
-                 !childNIF->HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
-            auto parent =
-                static_cast<nsGridContainerFrame*>(childNIF->GetParent());
-            parent->StealFrame(childNIF);
-            childNIF->AddStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER);
-            if (parent == this) {
-              overflowIncompleteList.AppendFrame(nullptr, childNIF);
-            } else {
-              if (!nif || parent == nif) {
-                nsFrameList toMove(childNIF, childNIF);
-                parent->MergeSortedExcessOverflowContainers(toMove);
-              } else {
-                ReparentFrame(childNIF, parent, nif);
-                nsFrameList toMove(childNIF, childNIF);
-                nif->MergeSortedExcessOverflowContainers(toMove);
-              }
-              
-              
-              nif = nullptr;
-            }
-            lastParent = parent;
-            childNIF = childNIF->GetNextInFlow();
-          }
-        }
-      }
-      child = next;
-    }
-
-    
-    if (!pushedList.IsEmpty()) {
-      MergeSortedOverflow(pushedList);
-      AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
-      
-      
-      aState.mIter.Invalidate();
-    }
-    if (!incompleteList.IsEmpty()) {
-      MergeSortedOverflow(incompleteList);
-      
-      
-      aState.mIter.Invalidate();
-    }
-    if (!overflowIncompleteList.IsEmpty()) {
-      MergeSortedExcessOverflowContainers(overflowIncompleteList);
-    }
+  const bool childrenMoved = PushIncompleteChildren(
+      pushedItems, incompleteItems, overflowIncompleteItems);
+  if (childrenMoved && aStatus.IsComplete()) {
+    aStatus.SetOverflowIncomplete();
+    aStatus.SetNextInFlowNeedsReflow();
   }
+  if (!pushedItems.IsEmpty()) {
+    AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
+    
+    
+    aState.mIter.Invalidate();
+  }
+  if (!incompleteItems.IsEmpty()) {
+    
+    
+    aState.mIter.Invalidate();
+  }
+
   return aBSize;
 }
 
