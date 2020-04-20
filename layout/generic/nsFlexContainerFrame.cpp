@@ -2521,7 +2521,7 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   nsDisplayListSet childLists(tempLists, tempLists.BlockBorderBackgrounds());
 
-  typedef CSSOrderAwareFrameIterator::OrderState OrderState;
+  using OrderState = CSSOrderAwareFrameIterator::OrderState;
   OrderState orderState =
       HasAnyStateBits(NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER)
           ? OrderState::eKnownOrdered
@@ -3842,24 +3842,23 @@ void nsFlexContainerFrame::GenerateFlexLines(
       curLine = ConstructNewFlexLine();
     }
 
-    FlexItem* item;
     if (useMozBoxCollapseBehavior &&
         (StyleVisibility::Collapse ==
          childFrame->StyleVisibility()->mVisible)) {
       
       
-      item = curLine->Items().EmplaceBack(
-          childFrame, 0, aReflowInput.GetWritingMode(), aAxisTracker);
+      curLine->Items().EmplaceBack(childFrame, 0, aReflowInput.GetWritingMode(),
+                                   aAxisTracker);
     } else if (nextStrutIdx < aStruts.Length() &&
                aStruts[nextStrutIdx].mItemIdx == itemIdxInContainer) {
       
-      item = curLine->Items().EmplaceBack(
-          childFrame, aStruts[nextStrutIdx].mStrutCrossSize,
-          aReflowInput.GetWritingMode(), aAxisTracker);
+      curLine->Items().EmplaceBack(childFrame,
+                                   aStruts[nextStrutIdx].mStrutCrossSize,
+                                   aReflowInput.GetWritingMode(), aAxisTracker);
       nextStrutIdx++;
     } else {
-      item = GenerateFlexItemForChild(*curLine, childFrame, aReflowInput,
-                                      aAxisTracker, aHasLineClampEllipsis);
+      GenerateFlexItemForChild(*curLine, childFrame, aReflowInput, aAxisTracker,
+                               aHasLineClampEllipsis);
     }
 
     
@@ -3876,8 +3875,10 @@ void nsFlexContainerFrame::GenerateFlexLines(
       
       
       
-      nscoord newOuterSize = AddChecked(
-          curLine->TotalOuterHypotheticalMainSize(), item->OuterMainSize());
+      nscoord newOuterSize =
+          AddChecked(curLine->TotalOuterHypotheticalMainSize(),
+                     curLine->Items().LastElement().OuterMainSize());
+
       
       newOuterSize = AddChecked(newOuterSize, aMainGapSize);
       if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
@@ -3888,8 +3889,7 @@ void nsFlexContainerFrame::GenerateFlexLines(
         FlexLine& prevLine = aLines[aLines.Length() - 2];
 
         
-        item =
-            curLine->Items().AppendElement(prevLine.Items().PopLastElement());
+        curLine->Items().AppendElement(prevLine.Items().PopLastElement());
       }
     }
 
