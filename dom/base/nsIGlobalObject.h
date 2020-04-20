@@ -36,6 +36,9 @@ class DOMEventTargetHelper;
 namespace dom {
 class VoidFunction;
 class DebuggerNotificationManager;
+class Report;
+class ReportBody;
+class ReportingObserver;
 class ServiceWorker;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
@@ -56,8 +59,7 @@ class nsIGlobalObject : public nsISupports,
  protected:
   bool mIsInnerWindow;
 
-  nsIGlobalObject()
-      : mIsDying(false), mIsScriptForbidden(false), mIsInnerWindow(false) {}
+  nsIGlobalObject();
 
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
@@ -124,8 +126,8 @@ class nsIGlobalObject : public nsISupports,
 
   
   
-  void UnlinkHostObjectURIs();
-  void TraverseHostObjectURIs(nsCycleCollectionTraversalCallback& aCb);
+  void UnlinkObjectsInGlobal();
+  void TraverseObjectsInGlobal(nsCycleCollectionTraversalCallback& aCb);
 
   
   
@@ -187,6 +189,17 @@ class nsIGlobalObject : public nsISupports,
 
   void QueueMicrotask(mozilla::dom::VoidFunction& aCallback);
 
+  void RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
+                                 bool aBuffered);
+
+  void UnregisterReportingObserver(mozilla::dom::ReportingObserver* aObserver);
+
+  void BroadcastReport(mozilla::dom::Report* aReport);
+
+  MOZ_CAN_RUN_SCRIPT void NotifyReportingObservers();
+
+  void RemoveReportRecords();
+
  protected:
   virtual ~nsIGlobalObject();
 
@@ -198,6 +211,11 @@ class nsIGlobalObject : public nsISupports,
   void DisconnectEventTargetObjects();
 
   size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
+
+ private:
+  
+  nsTArray<RefPtr<mozilla::dom::ReportingObserver>> mReportingObservers;
+  nsTArray<RefPtr<mozilla::dom::Report>> mReportRecords;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject, NS_IGLOBALOBJECT_IID)
