@@ -107,8 +107,9 @@ use crate::prim_store::{ClipData, ImageMaskData, SpaceMapper, VisibleMaskImageTi
 use crate::prim_store::{PointKey, SizeKey, RectangleKey};
 use crate::render_task_cache::to_cache_size;
 use crate::resource_cache::{ImageRequest, ResourceCache};
-use std::{iter, ops, u32};
 use crate::util::{extract_inner_rect_safe, project_rect, ScaleOffset};
+use euclid::approxeq::ApproxEq;
+use std::{iter, ops, u32};
 
 
 
@@ -1573,7 +1574,6 @@ pub fn projected_rect_contains(
         target_rect.bottom_right(),
         target_rect.bottom_left(),
     ];
-
     
     for (a, b) in points
         .iter()
@@ -1581,15 +1581,17 @@ pub fn projected_rect_contains(
         .zip(points[1..].iter().cloned().chain(iter::once(points[0])))
     {
         
-        for &c in target_points.iter() {
-            if (b - a).cross(c - a) < 0.0 {
-                return None
-            }
+        
+        
+        
+        if a.approx_eq(&b) || target_points.iter().any(|&c| (b - a).cross(c - a) < 0.0) {
+            return None
         }
     }
 
     Some(())
 }
+
 
 
 
@@ -1649,4 +1651,23 @@ fn add_clip_node_to_current_chain(
     });
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::projected_rect_contains;
+    use euclid::{Transform3D, rect};
+
+    #[test]
+    fn test_empty_projected_rect() {
+        assert_eq!(
+            None,
+            projected_rect_contains(
+                &rect(10.0, 10.0, 0.0, 0.0),
+                &Transform3D::identity(),
+                &rect(20.0, 20.0, 10.0, 10.0),
+            ),
+            "Empty rectangle is considered to include a non-empty!"
+        );
+    }
 }
