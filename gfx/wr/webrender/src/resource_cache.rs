@@ -448,26 +448,6 @@ pub struct BlobImageRasterizerEpoch(usize);
 
 
 
-#[derive(Clone, Copy, Debug)]
-pub struct BlobImageClearParams {
-    pub key: BlobImageKey,
-    
-    pub original_tile_range: TileRange,
-    
-    
-    pub actual_tile_range: TileRange,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct AsyncBlobImageInfo {
-    pub epoch: BlobImageRasterizerEpoch,
-    pub clear_requests: Vec<BlobImageClearParams>,
-}
-
-
-
-
 
 
 pub struct ResourceCache {
@@ -494,20 +474,6 @@ pub struct ResourceCache {
     rasterized_blob_images: FastHashMap<BlobImageKey, RasterizedBlob>,
     blob_image_templates: FastHashMap<BlobImageKey, BlobImageTemplate>,
 
-    
-    
-    missing_blob_images: Vec<BlobImageParams>,
-    
-    blob_image_rasterizer: Option<Box<dyn AsyncBlobImageRasterizer>>,
-    
-    
-    
-    
-    
-    
-    
-    blob_image_rasterizer_produced_epoch: BlobImageRasterizerEpoch,
-    blob_image_rasterizer_consumed_epoch: BlobImageRasterizerEpoch,
     
     
     deleted_blob_keys: VecDeque<Vec<BlobImageKey>>,
@@ -537,10 +503,6 @@ impl ResourceCache {
             blob_image_handler,
             rasterized_blob_images: FastHashMap::default(),
             blob_image_templates: FastHashMap::default(),
-            missing_blob_images: Vec::new(),
-            blob_image_rasterizer: None,
-            blob_image_rasterizer_produced_epoch: BlobImageRasterizerEpoch(0),
-            blob_image_rasterizer_consumed_epoch: BlobImageRasterizerEpoch(0),
             
             deleted_blob_keys: vec![Vec::new(), Vec::new(), Vec::new()].into(),
             pending_native_surface_updates: Vec::new(),
@@ -732,16 +694,6 @@ impl ResourceCache {
                 _ => { unreachable!(); }
             }
         );
-    }
-
-    pub fn set_blob_rasterizer(
-        &mut self, rasterizer: Box<dyn AsyncBlobImageRasterizer>,
-        supp: AsyncBlobImageInfo,
-    ) {
-        if self.blob_image_rasterizer_consumed_epoch.0 < supp.epoch.0 {
-            self.blob_image_rasterizer = Some(rasterizer);
-            self.blob_image_rasterizer_consumed_epoch = supp.epoch;
-        }
     }
 
     pub fn add_rasterized_blob_images(
@@ -1159,45 +1111,14 @@ impl ResourceCache {
                 _ => true,
             };
 
-            
-            
-            if missing {
-                let descriptor = BlobImageDescriptor {
-                    rect: match template.tiling {
-                        Some(tile_size) => {
-                            let tile = request.tile;
-                            blob_rect(compute_tile_rect(
-                                &template.visible_rect,
-                                tile_size,
-                                tile,
-                            ))
-                        }
-                        None => blob_size(template.visible_rect.size).into(),
-                    },
-                    format: template.descriptor.format,
-                };
-
-                assert!(!descriptor.rect.is_empty());
-
-                if !self.blob_image_templates.contains_key(&request.key) {
-                    panic!("already missing blob image key {:?} deleted: {:?}", request, self.deleted_blob_keys);
-                }
-
-                self.missing_blob_images.push(
-                    BlobImageParams {
-                        request,
-                        descriptor,
-                        dirty_rect: DirtyRect::All,
-                    }
-                );
-            }
+            assert!(!missing);
         }
     }
 
     pub fn create_blob_scene_builder_requests(
         &mut self,
         keys: &[BlobImageKey]
-    ) -> (Option<(Box<dyn AsyncBlobImageRasterizer>, AsyncBlobImageInfo)>, Vec<BlobImageParams>) {
+    ) -> (Option<Box<dyn AsyncBlobImageRasterizer>>, Vec<BlobImageParams>) {
         if self.blob_image_handler.is_none() || keys.is_empty() {
             return (None, Vec::new());
         }
@@ -1269,14 +1190,10 @@ impl ResourceCache {
 
             template.valid_tiles_after_bounds_change = None;
         }
-        self.blob_image_rasterizer_produced_epoch.0 += 1;
-        let info = AsyncBlobImageInfo {
-            epoch: self.blob_image_rasterizer_produced_epoch,
-            clear_requests: Vec::new(),
-        };
+
         let handler = self.blob_image_handler.as_mut().unwrap();
         handler.prepare_resources(&self.resources, &blob_request_params);
-        (Some((handler.create_blob_rasterizer(), info)), blob_request_params)
+        (Some(handler.create_blob_rasterizer()), blob_request_params)
     }
 
     fn discard_tiles_outside_visible_area(
@@ -1522,40 +1439,8 @@ impl ResourceCache {
             texture_cache_profile,
         );
 
-        self.rasterize_missing_blob_images(texture_cache_profile);
-
         
         self.update_texture_cache(gpu_cache);
-    }
-
-    fn rasterize_missing_blob_images(
-        &mut self,
-        texture_cache_profile: &mut TextureCacheProfileCounters,
-    ) {
-        if self.missing_blob_images.is_empty() {
-            return;
-        }
-
-        self.blob_image_handler
-            .as_mut()
-            .unwrap()
-            .prepare_resources(&self.resources, &self.missing_blob_images);
-
-
-        for blob_image in &self.missing_blob_images {
-            if !self.blob_image_templates.contains_key(&blob_image.request.key) {
-                panic!("missing blob image key {:?} deleted: {:?}", blob_image, self.deleted_blob_keys);
-            }
-        }
-        let is_low_priority = false;
-        let rasterized_blobs = self.blob_image_rasterizer
-            .as_mut()
-            .unwrap()
-            .rasterize(&self.missing_blob_images, is_low_priority);
-
-        self.add_rasterized_blob_images(rasterized_blobs, texture_cache_profile);
-
-        self.missing_blob_images.clear();
     }
 
     fn update_texture_cache(&mut self, gpu_cache: &mut GpuCache) {
@@ -1765,9 +1650,6 @@ impl ResourceCache {
         }
         if what.contains(ClearCache::TEXTURE_CACHE) {
             self.texture_cache.clear_all();
-        }
-        if what.contains(ClearCache::RASTERIZED_BLOBS) {
-            self.rasterized_blob_images.clear();
         }
     }
 
