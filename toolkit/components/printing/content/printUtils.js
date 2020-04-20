@@ -279,16 +279,7 @@ var PrintUtils = {
   _originalURL: "",
   _shouldSimplify: false,
 
-  _displayPrintingError(nsresult, isPrinting) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  _getErrorCodeForNSResult(nsresult) {
     const MSG_CODES = [
       "GFX_PRINTER_NO_PRINTER_AVAILABLE",
       "GFX_PRINTER_NAME_NOT_FOUND",
@@ -304,20 +295,30 @@ var PrintUtils = {
       "UNEXPECTED",
     ];
 
-    
-    
-    let msgName = "PERR_FAILURE";
-
     for (let code of MSG_CODES) {
       let nsErrorResult = "NS_ERROR_" + code;
       if (Cr[nsErrorResult] == nsresult) {
-        msgName = "PERR_" + code;
-        break;
+        return code;
       }
     }
 
-    let msg, title;
+    
+    
+    return "FAILURE";
+  },
 
+  _displayPrintingError(nsresult, isPrinting) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let msgName = "PERR_" + this._getErrorCodeForNSResult(nsresult);
+    let msg, title;
     if (!isPrinting) {
       
       let ppMsgName = msgName + "_PP";
@@ -347,6 +348,11 @@ var PrintUtils = {
       this._displayPrintingError(
         aMessage.data.nsresult,
         aMessage.data.isPrinting
+      );
+      Services.telemetry.keyedScalarAdd(
+        "printing.error",
+        this._getErrorCodeForNSResult(aMessage.data.nsresult),
+        1
       );
       return undefined;
     }
