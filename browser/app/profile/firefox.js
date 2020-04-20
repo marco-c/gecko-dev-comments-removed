@@ -283,7 +283,7 @@ pref("browser.urlbar.suggest.searches",             true);
 
 
 
-pref("browser.urlbar.maxCharsForSearchSuggestions", 20);
+pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.formatting.enabled", true);
 pref("browser.urlbar.trimURLs", true);

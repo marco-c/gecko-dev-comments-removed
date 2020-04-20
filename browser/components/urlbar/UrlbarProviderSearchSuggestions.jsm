@@ -120,6 +120,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return false;
     }
 
+    if (!queryContext.allowSearchSuggestions) {
+      return false;
+    }
+
     if (
       queryContext.isPrivate &&
       !UrlbarPrefs.get("browser.search.suggest.enabled.private")
@@ -251,9 +255,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     if (leadingRestrictionToken === UrlbarTokenizer.RESTRICT.SEARCH) {
       query = substringAfter(query, leadingRestrictionToken).trim();
     }
-
-    
-    query = query.substr(0, UrlbarPrefs.get("maxCharsForSearchSuggestions"));
 
     
     let engine;

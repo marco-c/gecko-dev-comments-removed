@@ -811,6 +811,11 @@ class UrlbarQueryContext {
 
 
 
+
+
+
+
+
   constructor(options = {}) {
     this._checkRequiredOptions(options, [
       "allowAutofill",
@@ -826,19 +831,25 @@ class UrlbarQueryContext {
     }
 
     
-    for (let [prop, checkFn] of [
+    for (let [prop, checkFn, defaultValue] of [
       ["providers", v => Array.isArray(v) && v.length],
       ["sources", v => Array.isArray(v) && v.length],
       ["engineName", v => typeof v == "string" && !!v.length],
       ["currentPage", v => typeof v == "string" && !!v.length],
+      ["allowSearchSuggestions", v => true, true],
     ]) {
-      if (options[prop]) {
+      if (prop in options) {
         if (!checkFn(options[prop])) {
           throw new Error(`Invalid value for option "${prop}"`);
         }
         this[prop] = options[prop];
+      } else if (defaultValue !== undefined) {
+        this[prop] = defaultValue;
       }
     }
+
+    this.allowSearchSuggestions =
+      "allowSearchSuggestions" in this ? !!this.allowSearchSuggestions : true;
 
     this.lastResultCount = 0;
     this.userContextId =
