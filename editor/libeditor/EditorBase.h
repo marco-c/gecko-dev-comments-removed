@@ -1875,10 +1875,8 @@ class EditorBase : public nsIEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT nsresult DoJoinNodes(nsINode* aNodeToKeep,
-                                          nsINode* aNodeToJoin,
-                                          nsINode* aParent);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DoJoinNodes(nsIContent& aContentToKeep, nsIContent& aContentToJoin);
 
   
 
@@ -1925,12 +1923,6 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
 
   MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal(nsITransaction* aTxn);
-
-  
-
-
-
-  static nsINode* GetNodeLocation(nsINode* aChild, int32_t* aOffset);
 
   
 
@@ -2482,15 +2474,6 @@ class EditorBase : public nsIEditor,
 
 
   virtual void InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit);
-
-  
-
-
-
-
-
-
-  static int32_t GetChildOffset(nsINode* aChild, nsINode* aParent);
 
   
 

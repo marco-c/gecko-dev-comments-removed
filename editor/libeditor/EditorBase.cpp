@@ -1642,8 +1642,7 @@ already_AddRefed<nsIContent> EditorBase::SplitNodeWithTransaction(
     const EditorDOMPoint& aStartOfRightNode, ErrorResult& aError) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aStartOfRightNode.IsSet()) ||
-      NS_WARN_IF(!aStartOfRightNode.GetContainerAsContent())) {
+  if (NS_WARN_IF(!aStartOfRightNode.IsInContentNode())) {
     aError.Throw(NS_ERROR_INVALID_ARG);
     return nullptr;
   }
@@ -3542,22 +3541,21 @@ void EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   }
 }
 
-nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
-                                 nsINode* aParent) {
+nsresult EditorBase::DoJoinNodes(nsIContent& aContentToKeep,
+                                 nsIContent& aContentToJoin) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_DIAGNOSTIC_ASSERT(AsHTMLEditor());
 
-  MOZ_ASSERT(aNodeToKeep);
-  MOZ_ASSERT(aNodeToJoin);
-  MOZ_ASSERT(aParent);
+  uint32_t firstNodeLength = aContentToJoin.Length();
 
-  uint32_t firstNodeLength = aNodeToJoin->Length();
+  EditorRawDOMPoint atNodeToJoin(&aContentToJoin);
+  EditorRawDOMPoint atNodeToKeep(&aContentToKeep);
 
-  int32_t joinOffset;
-  GetNodeLocation(aNodeToJoin, &joinOffset);
-  int32_t keepOffset;
-  nsINode* parent = GetNodeLocation(aNodeToKeep, &keepOffset);
-
+  
+  
+  
+  
+  
   
   AutoTArray<SavedRange, 10> savedRanges;
   for (SelectionType selectionType : kPresentSelectionTypes) {
@@ -3584,15 +3582,17 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
       
       
       if (range.mStartContainer) {
-        if (range.mStartContainer == parent &&
-            joinOffset < range.mStartOffset &&
-            range.mStartOffset <= keepOffset) {
-          range.mStartContainer = aNodeToJoin;
+        if (range.mStartContainer == atNodeToKeep.GetContainer() &&
+            atNodeToJoin.Offset() < static_cast<uint32_t>(range.mStartOffset) &&
+            static_cast<uint32_t>(range.mStartOffset) <=
+                atNodeToKeep.Offset()) {
+          range.mStartContainer = &aContentToJoin;
           range.mStartOffset = firstNodeLength;
         }
-        if (range.mEndContainer == parent && joinOffset < range.mEndOffset &&
-            range.mEndOffset <= keepOffset) {
-          range.mEndContainer = aNodeToJoin;
+        if (range.mEndContainer == atNodeToKeep.GetContainer() &&
+            atNodeToJoin.Offset() < static_cast<uint32_t>(range.mEndOffset) &&
+            static_cast<uint32_t>(range.mEndOffset) <= atNodeToKeep.Offset()) {
+          range.mEndContainer = &aContentToJoin;
           range.mEndOffset = firstNodeLength;
         }
       }
@@ -3603,26 +3603,28 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
 
   
   
-  if (aNodeToKeep->IsText() && aNodeToJoin->IsText()) {
+  if (aContentToKeep.IsText() && aContentToJoin.IsText()) {
     nsAutoString rightText;
     nsAutoString leftText;
-    aNodeToKeep->GetAsText()->GetData(rightText);
-    aNodeToJoin->GetAsText()->GetData(leftText);
+    aContentToKeep.AsText()->GetData(rightText);
+    aContentToJoin.AsText()->GetData(leftText);
     leftText += rightText;
-    
     IgnoredErrorResult ignoredError;
-    DoSetText(MOZ_KnownLive(*aNodeToKeep->GetAsText()), leftText, ignoredError);
+    DoSetText(MOZ_KnownLive(*aContentToKeep.AsText()), leftText, ignoredError);
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     NS_WARNING_ASSERTION(!ignoredError.Failed(),
                          "EditorBase::DoSetText() failed, but ignored");
   } else {
     
-    nsCOMPtr<nsINodeList> childNodes = aNodeToJoin->ChildNodes();
+    nsCOMPtr<nsINodeList> childNodes = aContentToJoin.ChildNodes();
     MOZ_ASSERT(childNodes);
 
     
     
     
-    nsCOMPtr<nsIContent> firstNode = aNodeToKeep->GetFirstChild();
+    nsCOMPtr<nsIContent> firstNode = aContentToKeep.GetFirstChild();
 
     
     
@@ -3631,7 +3633,11 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
       if (childNode) {
         
         ErrorResult error;
-        aNodeToKeep->InsertBefore(*childNode, firstNode, error);
+        aContentToKeep.InsertBefore(*childNode, firstNode, error);
+        if (NS_WARN_IF(Destroyed())) {
+          error.SuppressException();
+          return NS_ERROR_EDITOR_DESTROYED;
+        }
         if (error.Failed()) {
           NS_WARNING("nsINode::InsertBefore() failed");
           return error.StealNSResult();
@@ -3642,9 +3648,10 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
   }
 
   
-  ErrorResult error;
-  aParent->RemoveChild(*aNodeToJoin, error);
-  NS_WARNING_ASSERTION(!error.Failed(), "nsINode::RemoveChild() failed");
+  aContentToJoin.Remove();
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
 
   bool allowedTransactionsToChangeSelection =
       AllowsTransactionsToChangeSelection();
@@ -3658,6 +3665,10 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
     if (range.mSelection != previousSelection) {
       ErrorResult error;
       range.mSelection->RemoveAllRanges(error);
+      if (NS_WARN_IF(Destroyed())) {
+        error.SuppressException();
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
       if (error.Failed()) {
         NS_WARNING("Selection::RemoveAllRanges() failed");
         return error.StealNSResult();
@@ -3673,16 +3684,16 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
     }
 
     
-    if (range.mStartContainer == aNodeToJoin) {
-      range.mStartContainer = aNodeToKeep;
-    } else if (range.mStartContainer == aNodeToKeep) {
+    if (range.mStartContainer == &aContentToJoin) {
+      range.mStartContainer = &aContentToKeep;
+    } else if (range.mStartContainer == &aContentToKeep) {
       range.mStartOffset += firstNodeLength;
     }
 
     
-    if (range.mEndContainer == aNodeToJoin) {
-      range.mEndContainer = aNodeToKeep;
-    } else if (range.mEndContainer == aNodeToKeep) {
+    if (range.mEndContainer == &aContentToJoin) {
+      range.mEndContainer = &aContentToKeep;
+    } else if (range.mEndContainer == &aContentToKeep) {
       range.mEndOffset += firstNodeLength;
     }
 
@@ -3700,6 +3711,10 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
     
     MOZ_KnownLive(range.mSelection)
         ->AddRangeAndSelectFramesAndNotifyListeners(*newRange, error);
+    if (NS_WARN_IF(Destroyed())) {
+      error.SuppressException();
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     if (NS_WARN_IF(error.Failed())) {
       return error.StealNSResult();
     }
@@ -3708,53 +3723,15 @@ nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
   if (allowedTransactionsToChangeSelection) {
     
     DebugOnly<nsresult> rvIgnored = SelectionRefPtr()->Collapse(
-        aNodeToKeep, AssertedCast<int32_t>(firstNodeLength));
+        &aContentToKeep, AssertedCast<int32_t>(firstNodeLength));
+    if (NS_WARN_IF(Destroyed())) {
+      return NS_ERROR_EDITOR_DESTROYED;
+    }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "Selection::Collapse() failed, but ignored");
   }
 
-  return error.StealNSResult();
-}
-
-
-int32_t EditorBase::GetChildOffset(nsINode* aChild, nsINode* aParent) {
-  MOZ_ASSERT(aChild);
-  MOZ_ASSERT(aParent);
-
-  
-  
-
-  
-  if (aParent->GetFirstChild() == aChild) {
-    MOZ_ASSERT(aParent->ComputeIndexOf(aChild) == 0);
-    return 0;
-  }
-
-  
-  if (aParent->GetLastChild() == aChild) {
-    int32_t lastChildIndex = static_cast<int32_t>(aParent->Length() - 1);
-    MOZ_ASSERT(aParent->ComputeIndexOf(aChild) == lastChildIndex);
-    return lastChildIndex;
-  }
-
-  int32_t index = aParent->ComputeIndexOf(aChild);
-  MOZ_ASSERT(index != -1);
-  return index;
-}
-
-
-nsINode* EditorBase::GetNodeLocation(nsINode* aChild, int32_t* aOffset) {
-  MOZ_ASSERT(aChild);
-  MOZ_ASSERT(aOffset);
-
-  nsINode* parent = aChild->GetParentNode();
-  if (parent) {
-    *aOffset = GetChildOffset(aChild, parent);
-    MOZ_ASSERT(*aOffset != -1);
-  } else {
-    *aOffset = -1;
-  }
-  return parent;
+  return NS_OK;
 }
 
 nsIContent* EditorBase::GetPreviousNodeInternal(nsINode& aNode,
@@ -4806,19 +4783,18 @@ nsresult EditorBase::CreateRange(nsINode* aStartContainer, int32_t aStartOffset,
 nsresult EditorBase::AppendNodeToSelectionAsRange(nsINode* aNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (NS_WARN_IF(!aNode)) {
+  if (NS_WARN_IF(!aNode) && NS_WARN_IF(!aNode->IsContent())) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsINode> parentNode = aNode->GetParentNode();
-  if (NS_WARN_IF(!parentNode)) {
+  EditorRawDOMPoint atContent(aNode->AsContent());
+  if (NS_WARN_IF(!atContent.IsSet())) {
     return NS_ERROR_FAILURE;
   }
 
-  int32_t offset = GetChildOffset(aNode, parentNode);
-
   RefPtr<nsRange> range;
-  nsresult rv = CreateRange(parentNode, offset, parentNode, offset + 1,
+  nsresult rv = CreateRange(atContent.GetContainer(), atContent.Offset(),
+                            atContent.GetContainer(), atContent.Offset() + 1,
                             getter_AddRefs(range));
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::CreateRange() failed");
