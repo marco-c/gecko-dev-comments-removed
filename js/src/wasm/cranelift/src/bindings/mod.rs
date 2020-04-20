@@ -198,6 +198,7 @@ impl FuncTypeWithId {
 
 
 
+#[derive(Clone, Copy)]
 pub struct ModuleEnvironment<'a> {
     env: &'a CraneliftModuleEnvironment,
 }
