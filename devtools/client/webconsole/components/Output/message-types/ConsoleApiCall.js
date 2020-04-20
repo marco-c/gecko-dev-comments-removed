@@ -71,6 +71,10 @@ function ConsoleApiCall(props) {
     serviceContainer,
     type,
     maybeScrollToBottom,
+    
+    
+    
+    customFormat: type !== "dir",
   };
 
   if (type === "trace") {
@@ -171,6 +175,7 @@ function formatReps(options = {}) {
     userProvidedStyles,
     type,
     maybeScrollToBottom,
+    customFormat,
   } = options;
 
   return (
@@ -191,6 +196,7 @@ function formatReps(options = {}) {
           loadedObjectEntries,
           type,
           maybeScrollToBottom,
+          customFormat,
         })
       )
       

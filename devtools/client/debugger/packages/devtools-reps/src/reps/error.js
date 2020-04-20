@@ -25,10 +25,25 @@ ErrorRep.propTypes = {
   renderStacktrace: PropTypes.func,
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function ErrorRep(props) {
-  const object = props.object;
+  const { object, mode, depth } = props;
   const preview = object.preview;
-  const mode = props.mode;
+  const customFormat = props.customFormat && mode !== MODE.TINY && !depth;
 
   let name;
   if (
@@ -53,13 +68,17 @@ function ErrorRep(props) {
 
   const content = [];
 
-  if (mode === MODE.TINY || typeof preview.message !== "string") {
+  if (!customFormat) {
+    content.push(span({ className: "objectTitle" }, name));
+  } else if (typeof preview.message !== "string") {
     content.push(name);
   } else {
     content.push(`${name}: "${preview.message}"`);
   }
 
-  if (preview.stack && mode !== MODE.TINY && mode !== MODE.SHORT) {
+  const renderStack = preview.stack && customFormat;
+
+  if (renderStack) {
     const stacktrace = props.renderStacktrace
       ? props.renderStacktrace(parseStackString(preview.stack))
       : getStacktraceElements(props, preview);
@@ -69,7 +88,9 @@ function ErrorRep(props) {
   return span(
     {
       "data-link-actor-id": object.actor,
-      className: "objectBox-stackTrace",
+      className: `objectBox-stackTrace ${
+        customFormat ? "reps-custom-format" : ""
+      }`,
     },
     content
   );
