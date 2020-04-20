@@ -44,13 +44,11 @@ class AnimationState {
 
 
 
-  const gfx::IntRect UpdateState(bool aAnimationFinished, RasterImage* aImage,
-                                 const gfx::IntSize& aSize,
+  const gfx::IntRect UpdateState(RasterImage* aImage, const gfx::IntSize& aSize,
                                  bool aAllowInvalidation = true);
 
  private:
   const gfx::IntRect UpdateStateInternal(LookupResult& aResult,
-                                         bool aAnimationFinished,
                                          const gfx::IntSize& aSize,
                                          bool aAllowInvalidation = true);
 
@@ -298,8 +296,7 @@ class FrameAnimator {
 
 
 
-  RefreshResult RequestRefresh(AnimationState& aState, const TimeStamp& aTime,
-                               bool aAnimationFinished);
+  RefreshResult RequestRefresh(AnimationState& aState, const TimeStamp& aTime);
 
   
 

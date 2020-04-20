@@ -24,19 +24,18 @@ namespace image {
 
 
 const gfx::IntRect AnimationState::UpdateState(
-    bool aAnimationFinished, RasterImage* aImage, const gfx::IntSize& aSize,
+    RasterImage* aImage, const gfx::IntSize& aSize,
     bool aAllowInvalidation ) {
   LookupResult result = SurfaceCache::Lookup(
       ImageKey(aImage),
       RasterSurfaceKey(aSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
        false);
 
-  return UpdateStateInternal(result, aAnimationFinished, aSize,
-                             aAllowInvalidation);
+  return UpdateStateInternal(result, aSize, aAllowInvalidation);
 }
 
 const gfx::IntRect AnimationState::UpdateStateInternal(
-    LookupResult& aResult, bool aAnimationFinished, const gfx::IntSize& aSize,
+    LookupResult& aResult, const gfx::IntSize& aSize,
     bool aAllowInvalidation ) {
   
   if (aResult.Type() == MatchType::NOT_FOUND) {
@@ -69,12 +68,7 @@ const gfx::IntRect AnimationState::UpdateStateInternal(
 
   if (aAllowInvalidation) {
     
-    if (mIsCurrentlyDecoded || aAnimationFinished) {
-      
-      
-      
-      
-      
+    if (mIsCurrentlyDecoded) {
       
       
       
@@ -345,8 +339,7 @@ void FrameAnimator::ResetAnimation(AnimationState& aState) {
 }
 
 RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
-                                            const TimeStamp& aTime,
-                                            bool aAnimationFinished) {
+                                            const TimeStamp& aTime) {
   
   RefreshResult ret;
 
@@ -364,8 +357,7 @@ RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
       RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
        true);
 
-  ret.mDirtyRect =
-      aState.UpdateStateInternal(result, aAnimationFinished, mSize);
+  ret.mDirtyRect = aState.UpdateStateInternal(result, mSize);
   if (aState.IsDiscarded() || !result) {
     aState.MaybeAdvanceAnimationFrameTime(aTime);
     if (!ret.mDirtyRect.IsEmpty()) {
