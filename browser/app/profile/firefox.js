@@ -1030,7 +1030,7 @@ pref("dom.ipc.shims.enabledWarnings", false);
   
   
   
-  pref("security.sandbox.gpu.level", 1);
+  pref("security.sandbox.gpu.level", 0);
 
   
   
