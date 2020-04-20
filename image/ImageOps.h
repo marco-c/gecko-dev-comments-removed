@@ -84,6 +84,15 @@ class ImageOps {
 
 
 
+
+
+  static already_AddRefed<imgIContainer> Unorient(imgIContainer* aImage);
+
+  
+
+
+
+
   static already_AddRefed<imgIContainer> CreateFromDrawable(
       gfxDrawable* aDrawable);
 
