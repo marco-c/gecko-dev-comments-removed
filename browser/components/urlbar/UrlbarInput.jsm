@@ -777,6 +777,11 @@ class UrlbarInput {
   setValueFromResult(result = null, event = null) {
     let canonizedUrl;
 
+    
+    
+    
+    this.setPageProxyState("invalid", true);
+
     if (!result) {
       
       
