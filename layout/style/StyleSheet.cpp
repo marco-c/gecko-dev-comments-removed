@@ -40,7 +40,6 @@ StyleSheet::StyleSheet(css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
       mOwnerRule(nullptr),
       mParsingMode(aParsingMode),
       mState(static_cast<State>(0)),
-      mAssociationMode(NotOwnedByDocumentOrShadowRoot),
       mInner(new StyleSheetInfo(aCORSMode, aIntegrity, aParsingMode)) {
   mInner->AddSheet(this);
 }
@@ -58,9 +57,6 @@ StyleSheet::StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentSheetToUse,
       mOwnerRule(aOwnerRuleToUse),
       mParsingMode(aCopy.mParsingMode),
       mState(aCopy.mState),
-      
-      
-      mAssociationMode(NotOwnedByDocumentOrShadowRoot),
       
       mInner(aCopy.mInner) {
   MOZ_ASSERT(!aConstructorDocToUse || aCopy.IsConstructed());
@@ -176,8 +172,7 @@ dom::DocumentOrShadowRoot* StyleSheet::GetAssociatedDocumentOrShadowRoot()
 
 Document* StyleSheet::GetKeptAliveByDocument() const {
   for (const auto* sheet = this; sheet; sheet = sheet->mParentSheet) {
-    if (sheet->mAssociationMode == OwnedByDocumentOrShadowRoot) {
-      MOZ_ASSERT(sheet->mDocumentOrShadowRoot);
+    if (sheet->mDocumentOrShadowRoot) {
       return sheet->mDocumentOrShadowRoot->AsNode().GetComposedDoc();
     }
     if (sheet->IsConstructed()) {
@@ -884,7 +879,7 @@ void StyleSheet::RemoveFromParent() {
 }
 
 void StyleSheet::UnparentChildren() {
-  MOZ_ASSERT(mAssociationMode == NotOwnedByDocumentOrShadowRoot,
+  MOZ_ASSERT(!mDocumentOrShadowRoot,
              "How did we get to the destructor, exactly, if we're owned "
              "by a document?");
   
@@ -951,16 +946,12 @@ bool StyleSheet::AreRulesAvailable(nsIPrincipal& aSubjectPrincipal,
 }
 
 void StyleSheet::SetAssociatedDocumentOrShadowRoot(
-    DocumentOrShadowRoot* aDocOrShadowRoot, AssociationMode aAssociationMode) {
+    DocumentOrShadowRoot* aDocOrShadowRoot) {
   MOZ_ASSERT(!IsConstructed());
-  MOZ_ASSERT(aDocOrShadowRoot ||
-             aAssociationMode == NotOwnedByDocumentOrShadowRoot);
   MOZ_ASSERT(!mParentSheet || !aDocOrShadowRoot,
              "Shouldn't be set on child sheets");
-
   
   mDocumentOrShadowRoot = aDocOrShadowRoot;
-  mAssociationMode = aAssociationMode;
 }
 
 void StyleSheet::AppendStyleSheet(StyleSheet& aSheet) {

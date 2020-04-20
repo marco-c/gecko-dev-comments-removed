@@ -245,14 +245,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void EnsureUniqueInner();
 
   
-  enum AssociationMode : uint8_t {
-    
-    
-    OwnedByDocumentOrShadowRoot,
-    
-    
-    NotOwnedByDocumentOrShadowRoot
-  };
+  
+  
+  
   dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const;
 
   
@@ -267,10 +262,9 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   dom::Document* GetAssociatedDocument() const;
 
-  void SetAssociatedDocumentOrShadowRoot(dom::DocumentOrShadowRoot*,
-                                         AssociationMode);
+  void SetAssociatedDocumentOrShadowRoot(dom::DocumentOrShadowRoot*);
   void ClearAssociatedDocumentOrShadowRoot() {
-    SetAssociatedDocumentOrShadowRoot(nullptr, NotOwnedByDocumentOrShadowRoot);
+    SetAssociatedDocumentOrShadowRoot(nullptr);
   }
 
   nsINode* GetOwnerNode() const { return mOwningNode; }
@@ -576,12 +570,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   css::SheetParsingMode mParsingMode;
 
   State mState;
-
-  
-  
-  
-  
-  AssociationMode mAssociationMode;
 
   
   
