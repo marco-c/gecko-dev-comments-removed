@@ -8,6 +8,7 @@ import {
   getOriginalFrameScope,
   getGeneratedFrameScope,
   getInlinePreviews,
+  getSelectedLocation,
 } from "../../selectors";
 import { features } from "../../utils/prefs";
 import { validateThreadContext } from "../../utils/context";
@@ -62,14 +63,21 @@ export function generateInlinePreview(cx: ThreadContext, frame: ?Frame) {
       return;
     }
 
-    const originalAstScopes = await parser.getScopes(frame.location);
+    
+    
+    const selectedLocation = getSelectedLocation(getState());
+    if (!selectedLocation) {
+      return;
+    }
+
+    const originalAstScopes = await parser.getScopes(selectedLocation);
     validateThreadContext(getState(), cx);
     if (!originalAstScopes) {
       return;
     }
 
     const allPreviews = [];
-    const pausedOnLine: number = frame.location.line;
+    const pausedOnLine: number = selectedLocation.line;
     const levels: number = getLocalScopeLevels(originalAstScopes);
 
     for (

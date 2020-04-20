@@ -33,7 +33,9 @@ export function selectFrame(cx: ThreadContext, frame: Frame) {
       frame,
     });
 
-    dispatch(selectLocation(cx, frame.location));
+    
+    
+    await dispatch(selectLocation(cx, frame.location));
 
     dispatch(evaluateExpressions(cx));
     dispatch(fetchScopes(cx));
