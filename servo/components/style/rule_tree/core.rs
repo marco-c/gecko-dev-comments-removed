@@ -186,6 +186,9 @@ impl RuleTree {
 const RULE_TREE_GC_INTERVAL: usize = 300;
 
 
+pub const RULE_NODE_SIZE: usize = std::mem::size_of::<RuleNode>();
+
+
 struct RuleNode {
     
     root: Option<WeakRuleNode>,
