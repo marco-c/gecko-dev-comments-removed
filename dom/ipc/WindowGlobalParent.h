@@ -74,7 +74,7 @@ class WindowGlobalParent final : public WindowContext,
   already_AddRefed<WindowGlobalChild> GetChildActor();
 
   
-  already_AddRefed<JSWindowActorParent> GetActor(const nsAString& aName,
+  already_AddRefed<JSWindowActorParent> GetActor(const nsACString& aName,
                                                  ErrorResult& aRv);
 
   
@@ -233,7 +233,7 @@ class WindowGlobalParent final : public WindowContext,
   nsCOMPtr<nsIURI> mDocumentURI;
   nsString mDocumentTitle;
 
-  nsRefPtrHashtable<nsStringHashKey, JSWindowActorParent> mWindowActors;
+  nsRefPtrHashtable<nsCStringHashKey, JSWindowActorParent> mWindowActors;
   bool mInProcess;
   bool mIsInitialDocument;
 
