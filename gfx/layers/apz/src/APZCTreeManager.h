@@ -937,13 +937,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   struct FixedPositionInfo {
-    uint64_t mFixedPositionAnimationId;
+    Maybe<uint64_t> mFixedPositionAnimationId;
     SideBits mFixedPosSides;
 
-    FixedPositionInfo(const uint64_t& aFixedPositionAnimationId,
-                      const SideBits aFixedPosSides)
-        : mFixedPositionAnimationId(aFixedPositionAnimationId),
-          mFixedPosSides(aFixedPosSides) {}
+    explicit FixedPositionInfo(const HitTestingTreeNode* aNode);
   };
   
 
@@ -963,13 +960,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   struct StickyPositionInfo {
-    uint64_t mStickyPositionAnimationId;
+    Maybe<uint64_t> mStickyPositionAnimationId;
     SideBits mFixedPosSides;
 
-    StickyPositionInfo(const uint64_t& aStickyPositionAnimationId,
-                       const SideBits aFixedPosSides)
-        : mStickyPositionAnimationId(aStickyPositionAnimationId),
-          mFixedPosSides(aFixedPosSides) {}
+    explicit StickyPositionInfo(const HitTestingTreeNode* aNode);
   };
   
 
