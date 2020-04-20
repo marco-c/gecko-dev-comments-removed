@@ -86,16 +86,13 @@ class nsDocLoader : public nsIDocumentLoader,
 
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICHANNELEVENTSINK
-  
-  
-  NS_DECL_NSISUPPORTSPRIORITY
+  NS_DECL_NSISUPPORTSPRIORITY;  
 
   
 
   
   
   [[nodiscard]] nsresult RemoveChildLoader(nsDocLoader* aChild);
-  
 
   
   
