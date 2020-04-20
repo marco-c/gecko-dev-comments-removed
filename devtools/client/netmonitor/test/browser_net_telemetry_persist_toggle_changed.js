@@ -10,11 +10,21 @@ const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
 
+function togglePersistLogsOption(monitor) {
+  clickSettingsMenuItem(monitor, "persist-logs");
+}
+
+function ensurePersistLogsCheckedState(monitor, isChecked) {
+  openSettingsMenu(monitor);
+  const persistNode = getSettingsMenuItem(monitor, "persist-logs");
+  return !!persistNode?.getAttribute("aria-checked") === isChecked;
+}
+
 add_task(async function() {
   const { monitor } = await initNetMonitor(SINGLE_GET_URL, { requestCount: 1 });
   info("Starting test... ");
 
-  const { document, store, windowRequire } = monitor.panelWin;
+  const { store, windowRequire } = monitor.panelWin;
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
 
   store.dispatch(Actions.batchEnable(false));
@@ -26,17 +36,12 @@ add_task(async function() {
   TelemetryTestUtils.assertNumberOfEvents(0);
 
   
-  const logPersistToggle = document.getElementById(
-    "devtools-persistlog-checkbox"
-  );
+  togglePersistLogsOption(monitor);
+  await waitUntil(() => ensurePersistLogsCheckedState(monitor, true));
 
   
-  logPersistToggle.click();
-  await waitUntil(() => logPersistToggle.checked === true);
-
-  
-  logPersistToggle.click();
-  await waitUntil(() => logPersistToggle.checked === false);
+  togglePersistLogsOption(monitor);
+  await waitUntil(() => ensurePersistLogsCheckedState(monitor, false));
 
   const expectedEvents = [
     {
