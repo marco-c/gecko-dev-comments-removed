@@ -17,9 +17,18 @@ namespace dom {
 
 
 
+
+
+
+
+
+
+
+
 struct PopupIPCTabContext
 {
   PBrowserOrId opener;
+  bool isMozBrowserElement;
   uint64_t chromeOuterWindowID;
 };
 
@@ -28,6 +37,10 @@ struct FrameIPCTabContext
 {
   
   OriginAttributes originAttributes;
+
+  
+  
+  bool isMozBrowserElement;
 
   uint64_t chromeOuterWindowID;
 

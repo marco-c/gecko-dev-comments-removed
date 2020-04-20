@@ -3162,12 +3162,12 @@ nsPIDOMWindowOuter* nsGlobalWindowOuter::GetInProcessScriptableParent() {
     return nullptr;
   }
 
-  if (BrowsingContext* parentBC = GetBrowsingContext()->GetParent()) {
-    if (nsCOMPtr<nsPIDOMWindowOuter> parent = parentBC->GetDOMWindow()) {
-      return parent;
-    }
+  if (mDocShell->GetIsMozBrowser()) {
+    return this;
   }
-  return this;
+
+  nsCOMPtr<nsPIDOMWindowOuter> parent = GetInProcessParent();
+  return parent;
 }
 
 
@@ -3338,6 +3338,13 @@ already_AddRefed<nsPIDOMWindowOuter> nsGlobalWindowOuter::GetContentInternal(
   if (bc) {
     nsCOMPtr<nsPIDOMWindowOuter> content(bc->GetDOMWindow());
     return content.forget();
+  }
+
+  
+  
+  if (mDocShell && mDocShell->GetIsInMozBrowser()) {
+    nsCOMPtr<nsPIDOMWindowOuter> domWindow(GetInProcessScriptableTop());
+    return domWindow.forget();
   }
 
   nsCOMPtr<nsIDocShellTreeItem> primaryContent;
@@ -5378,6 +5385,19 @@ void nsGlobalWindowOuter::ResizeToOuter(int32_t aWidth, int32_t aHeight,
 
 
 
+  if (mDocShell && mDocShell->GetIsMozBrowser()) {
+    CSSIntSize size(aWidth, aHeight);
+    if (!DispatchResizeEvent(size)) {
+      
+      
+      return;
+    }
+  }
+
+  
+
+
+
 
   if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
@@ -5402,6 +5422,26 @@ void nsGlobalWindowOuter::ResizeToOuter(int32_t aWidth, int32_t aHeight,
 void nsGlobalWindowOuter::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
                                         CallerType aCallerType,
                                         ErrorResult& aError) {
+  
+
+
+
+  if (mDocShell && mDocShell->GetIsMozBrowser()) {
+    CSSIntSize size;
+    if (NS_FAILED(GetInnerSize(size))) {
+      return;
+    }
+
+    size.width += aWidthDif;
+    size.height += aHeightDif;
+
+    if (!DispatchResizeEvent(size)) {
+      
+      
+      return;
+    }
+  }
+
   
 
 
@@ -6069,7 +6109,8 @@ bool nsGlobalWindowOuter::CanClose() {
 }
 
 void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
-  if (!mDocShell || IsInModalState() || IsFrame()) {
+  if (!mDocShell || IsInModalState() ||
+      (IsFrame() && !mDocShell->GetIsMozBrowser())) {
     
     
     

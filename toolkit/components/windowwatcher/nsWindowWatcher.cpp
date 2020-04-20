@@ -1980,6 +1980,13 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForParent(
     chromeFlags = EnsureFlagsSafeForContent(chromeFlags, aChromeURL);
   }
 
+  
+  
+  nsCOMPtr<nsIDocShell> docshell = do_GetInterface(aParent);
+  if (docshell && docshell->GetIsInMozBrowser()) {
+    chromeFlags &= ~nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
+  }
+
   return chromeFlags;
 }
 

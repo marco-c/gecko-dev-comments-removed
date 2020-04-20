@@ -1864,6 +1864,13 @@ class SpecialPowersChild extends JSWindowActorChild {
     return debugsvc.assertionCount;
   }
 
+  
+
+
+  getBrowserFrameMessageManager(aFrameElement) {
+    return this.wrap(aFrameElement.frameLoader.messageManager);
+  }
+
   _getPrincipalFromArg(arg) {
     let principal;
     let secMan = Services.scriptSecurityManager;

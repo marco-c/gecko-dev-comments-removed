@@ -236,30 +236,25 @@ static void GetFrameName(Element* aOwnerContent, nsAString& aFrameName) {
 
 
 static bool IsTopContent(BrowsingContext* aParent, Element* aOwner) {
-  if (XRE_IsContentProcess()) {
-    return false;
-  }
-
-  
-  
   nsCOMPtr<nsIMozBrowserFrame> mozbrowser = aOwner->GetAsMozBrowserFrame();
-  if (mozbrowser && mozbrowser->GetReallyIsBrowser()) {
-    return true;
-  }
 
   if (aParent->IsContent()) {
     
     
     
-    return aOwner->IsXULElement() &&
-           aOwner->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
-                               nsGkAtoms::_true, eCaseMatters);
+    
+    return (mozbrowser && mozbrowser->GetReallyIsBrowser()) ||
+           (aOwner->IsXULElement() &&
+            aOwner->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                                nsGkAtoms::_true, eCaseMatters));
   }
 
   
   
-  return aOwner->AttrValueIs(kNameSpaceID_None, TypeAttrName(aOwner),
-                             nsGkAtoms::content, eIgnoreCase);
+  
+  return (mozbrowser && mozbrowser->GetMozbrowser()) ||
+         (aOwner->AttrValueIs(kNameSpaceID_None, TypeAttrName(aOwner),
+                              nsGkAtoms::content, eIgnoreCase));
 }
 
 static already_AddRefed<BrowsingContext> CreateBrowsingContext(
@@ -308,8 +303,19 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   if (IsTopContent(parentContext, aOwner)) {
     
-    return BrowsingContext::CreateDetached(nullptr, opener, frameName,
-                                           BrowsingContext::Type::Content);
+    RefPtr<BrowsingContext> bc = BrowsingContext::CreateDetached(
+        nullptr, opener, frameName, BrowsingContext::Type::Content);
+
+    
+    
+    
+    if (nsCOMPtr<nsIMozBrowserFrame> mozbrowser =
+            aOwner->GetAsMozBrowserFrame()) {
+      if (mozbrowser->GetReallyIsBrowser()) {
+        bc->SetWindowless();
+      }
+    }
+    return bc.forget();
   }
 
   MOZ_ASSERT(!aOpenWindowInfo,
@@ -2139,6 +2145,10 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  if (OwnerIsMozBrowserFrame()) {
+    docShell->SetFrameType(nsIDocShell::FRAME_TYPE_BROWSER);
+  }
+
   
   
   
@@ -2156,6 +2166,10 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
     if (mOwnerContent->GetAttr(kNameSpaceID_None, nsGkAtoms::name, name)) {
       docShell->SetName(name);
     }
+    docShell->SetFullscreenAllowed(
+        mOwnerContent->HasAttr(kNameSpaceID_None, nsGkAtoms::allowfullscreen) ||
+        mOwnerContent->HasAttr(kNameSpaceID_None,
+                               nsGkAtoms::mozallowfullscreen));
   }
 
   
@@ -2163,7 +2177,8 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   
   
   nsCOMPtr<nsPIDOMWindowOuter> win = doc->GetWindow();
-  if (parentDocShell->ItemType() == docShell->ItemType() &&
+  if (!docShell->GetIsMozBrowser() &&
+      parentDocShell->ItemType() == docShell->ItemType() &&
       !doc->IsStaticDocument() && win) {
     
     nsTArray<nsCOMPtr<nsIPrincipal>> ancestorPrincipals;
@@ -2804,7 +2819,8 @@ class nsAsyncMessageToChild : public nsSameProcessAsyncMessageBase,
 nsresult nsFrameLoader::DoSendAsyncMessage(JSContext* aCx,
                                            const nsAString& aMessage,
                                            StructuredCloneData& aData,
-                                           JS::Handle<JSObject*> aCpows) {
+                                           JS::Handle<JSObject*> aCpows,
+                                           nsIPrincipal* aPrincipal) {
   auto* browserParent = GetBrowserParent();
   if (browserParent) {
     ClonedMessageData data;
@@ -2818,7 +2834,8 @@ nsresult nsFrameLoader::DoSendAsyncMessage(JSContext* aCx,
     if (aCpows && (!mgr || !mgr->Wrap(aCx, aCpows, &cpows))) {
       return NS_ERROR_UNEXPECTED;
     }
-    if (browserParent->SendAsyncMessage(nsString(aMessage), cpows, data)) {
+    if (browserParent->SendAsyncMessage(nsString(aMessage), cpows, aPrincipal,
+                                        data)) {
       return NS_OK;
     } else {
       return NS_ERROR_UNEXPECTED;
@@ -2829,7 +2846,7 @@ nsresult nsFrameLoader::DoSendAsyncMessage(JSContext* aCx,
     JS::RootingContext* rcx = JS::RootingContext::get(aCx);
     RefPtr<nsAsyncMessageToChild> ev =
         new nsAsyncMessageToChild(rcx, aCpows, this);
-    nsresult rv = ev->Init(aMessage, aData);
+    nsresult rv = ev->Init(aMessage, aData, aPrincipal);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -3329,9 +3346,9 @@ nsresult nsFrameLoader::GetNewTabContext(MutableTabContext* aTabContext,
 
   uint32_t maxTouchPoints = BrowserParent::GetMaxTouchPoints(mOwnerContent);
 
-  bool tabContextUpdated =
-      aTabContext->SetTabContext(chromeOuterWindowID, showFocusRings, attrs,
-                                 presentationURLStr, maxTouchPoints);
+  bool tabContextUpdated = aTabContext->SetTabContext(
+      OwnerIsMozBrowserFrame(), chromeOuterWindowID, showFocusRings, attrs,
+      presentationURLStr, maxTouchPoints);
   NS_ENSURE_STATE(tabContextUpdated);
 
   return NS_OK;

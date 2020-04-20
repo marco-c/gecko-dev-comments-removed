@@ -120,12 +120,7 @@ var MockService = {
       sendAsyncMessage("service-request", {
         name,
         id,
-        
-        
-        
-        
-        
-        params: Object.assign({}, params, { principal: null }),
+        params,
       });
     });
   },
