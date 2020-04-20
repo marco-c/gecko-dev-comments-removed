@@ -729,12 +729,11 @@ bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
     return false;
   }
 
-  nsCOMPtr<nsIPrincipal> parentPrincipal;
   nsAutoCString trackingOrigin;
-  if (!GetParentPrincipalAndTrackingOrigin(
-          nsGlobalWindowInner::Cast(aWindow), behavior,
-          getter_AddRefs(parentPrincipal), trackingOrigin, nullptr)) {
-    LOG(("Failed to obtain the parent principal and the tracking origin"));
+  if (!GetParentPrincipalAndTrackingOrigin(nsGlobalWindowInner::Cast(aWindow),
+                                           behavior, nullptr, trackingOrigin,
+                                           nullptr)) {
+    LOG(("Failed to obtain the the tracking origin"));
     *aRejectedReason = blockedReason;
     return false;
   }
@@ -789,61 +788,6 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
       channelURI);
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-  
-  
-  
-  nsCOMPtr<nsIPrincipal> toplevelPrincipal = loadInfo->GetTopLevelPrincipal();
-
-  
-  
-  if (!toplevelPrincipal) {
-    LOG(
-        ("Our loadInfo lacks a top-level principal, use the loadInfo's loading "
-         "principal instead"));
-    toplevelPrincipal = loadInfo->GetLoadingPrincipal();
-  }
-
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
-
-  
-  
-  if (!toplevelPrincipal) {
-    LOG(
-        ("We don't have a loading principal, let's see if this is a document "
-         "channel"
-         " that belongs to a top-level window"));
-    bool isDocument = false;
-    if (httpChannel) {
-      rv = httpChannel->GetIsMainDocumentChannel(&isDocument);
-    }
-    if (httpChannel && NS_SUCCEEDED(rv) && isDocument) {
-      rv = ssm->GetChannelResultPrincipal(aChannel,
-                                          getter_AddRefs(toplevelPrincipal));
-      if (NS_SUCCEEDED(rv)) {
-        LOG(("Yes, we guessed right!"));
-      } else {
-        LOG(
-            ("Yes, we guessed right, but minting the channel result principal "
-             "failed"));
-      }
-    } else {
-      LOG(("No, we guessed wrong!"));
-    }
-  }
-
-  
-  if (!toplevelPrincipal) {
-    LOG(
-        ("Our loadInfo lacks a top-level principal, use the loadInfo's "
-         "triggering principal instead"));
-    toplevelPrincipal = loadInfo->TriggeringPrincipal();
-  }
-
-  if (NS_WARN_IF(!toplevelPrincipal)) {
-    LOG(("No top-level principal! Bail out early"));
-    return false;
-  }
-
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   rv = loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -888,6 +832,8 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
     LOG(("The cookie behavior pref mandates accepting all cookies!"));
     return true;
   }
+
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
 
   if (httpChannel && ContentBlockingAllowList::Check(httpChannel)) {
     return true;
@@ -975,33 +921,6 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
   }
 
   
-  
-  nsIPrincipal* parentPrincipal =
-      (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER)
-          ? loadInfo->GetTopLevelStorageAreaPrincipal()
-          : loadInfo->GetTopLevelPrincipal();
-  if (!parentPrincipal) {
-    LOG(("No top-level storage area principal at hand"));
-
-    
-    
-    if (loadInfo->GetTopLevelPrincipal()) {
-      LOG(("Parent window is the top-level window, bail out early"));
-      *aRejectedReason = blockedReason;
-      return false;
-    }
-
-    parentPrincipal = toplevelPrincipal;
-    if (NS_WARN_IF(!parentPrincipal)) {
-      LOG(
-          ("No triggering principal, this shouldn't be happening! Bail out "
-           "early"));
-      
-      return true;
-    }
-  }
-
-  
 
   nsCOMPtr<nsIURI> trackingURI;
   rv = aChannel->GetURI(getter_AddRefs(trackingURI));
@@ -1019,13 +938,6 @@ bool ContentBlocking::ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
 
   nsAutoCString type;
   AntiTrackingUtils::CreateStoragePermissionKey(trackingOrigin, type);
-
-  uint32_t privateBrowsingId = 0;
-  rv = channelPrincipal->GetPrivateBrowsingId(&privateBrowsingId);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    LOG(("Failed to get the channel principal's private browsing ID"));
-    return false;
-  }
 
   auto checkPermission = [loadInfo, aRejectedReason, blockedReason]() -> bool {
     bool allowed = loadInfo->GetHasStoragePermission();
