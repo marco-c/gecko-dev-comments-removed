@@ -982,9 +982,11 @@ static MOZ_MUST_USE bool RunBinAST(JSContext* cx, const char* filename,
 
 #endif  
 
-static bool InitModuleLoader(JSContext* cx) {
+static bool InitModuleLoader(JSContext* cx, HandleObject global) {
   
   
+
+  JSAutoRealm ar(cx, global);
 
   uint32_t srcLen = moduleloader::GetRawScriptsSize();
   auto src = cx->make_pod_array<char>(srcLen);
@@ -6645,6 +6647,10 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  if (!InitModuleLoader(cx, global)) {
+    return false;
+  }
+
   RootedObject wrapped(cx, ToWindowProxyIfWindow(global));
   if (!JS_WrapObject(cx, &wrapped)) {
     return false;
@@ -10333,7 +10339,7 @@ static MOZ_MUST_USE bool ProcessArgs(JSContext* cx, OptionParser* op) {
     return false;
   }
 
-  if (!InitModuleLoader(cx)) {
+  if (!InitModuleLoader(cx, cx->global())) {
     return false;
   }
 
