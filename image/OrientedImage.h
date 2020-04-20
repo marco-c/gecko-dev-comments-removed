@@ -84,11 +84,8 @@ class OrientedImage : public ImageWrapper {
 
 
 
-
-
   static already_AddRefed<SourceSurface> OrientSurface(Orientation aOrientation,
-                                                       SourceSurface* aSurface,
-                                                       const nsIntSize& aSize);
+                                                       SourceSurface* aSurface);
 
  protected:
   OrientedImage(Image* aImage, Orientation aOrientation)

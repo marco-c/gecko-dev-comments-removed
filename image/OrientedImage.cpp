@@ -76,7 +76,7 @@ Maybe<AspectRatio> OrientedImage::GetIntrinsicRatio() {
 }
 
 already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
-    Orientation aOrientation, SourceSurface* aSurface, const nsIntSize& aSize) {
+    Orientation aOrientation, SourceSurface* aSurface) {
   MOZ_ASSERT(aSurface);
 
   
@@ -85,13 +85,14 @@ already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
   }
 
   
-  nsIntSize targetSize = aSize;
+  nsIntSize originalSize = aSurface->GetSize();
+  nsIntSize targetSize = originalSize;
   if (aOrientation.SwapsWidthAndHeight()) {
     swap(targetSize.width, targetSize.height);
   }
 
   
-  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(aSurface, aSize);
+  RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(aSurface, originalSize);
 
   
   gfx::SurfaceFormat surfaceFormat = IsOpaque(aSurface->GetFormat())
@@ -110,9 +111,9 @@ already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
   
   RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(target);
   MOZ_ASSERT(ctx);  
-  ctx->Multiply(OrientationMatrix(aOrientation, aSize));
-  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(aSize),
-                             ImageRegion::Create(aSize), surfaceFormat,
+  ctx->Multiply(OrientationMatrix(aOrientation, originalSize));
+  gfxUtils::DrawPixelSnapped(ctx, drawable, SizeDouble(originalSize),
+                             ImageRegion::Create(originalSize), surfaceFormat,
                              SamplingFilter::LINEAR);
 
   return target->Snapshot();
@@ -120,22 +121,13 @@ already_AddRefed<SourceSurface> OrientedImage::OrientSurface(
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
 OrientedImage::GetFrame(uint32_t aWhichFrame, uint32_t aFlags) {
-  nsresult rv;
-
   
   
   RefPtr<SourceSurface> innerSurface =
       InnerImage()->GetFrame(aWhichFrame, aFlags);
   NS_ENSURE_TRUE(innerSurface, nullptr);
 
-  
-  IntSize size;
-  rv = InnerImage()->GetWidth(&size.width);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-  rv = InnerImage()->GetHeight(&size.height);
-  NS_ENSURE_SUCCESS(rv, nullptr);
-
-  return OrientSurface(mOrientation, innerSurface, size);
+  return OrientSurface(mOrientation, innerSurface);
 }
 
 NS_IMETHODIMP_(already_AddRefed<SourceSurface>)
