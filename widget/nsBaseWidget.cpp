@@ -823,12 +823,6 @@ bool nsBaseWidget::IsSmallPopup() const {
 }
 
 bool nsBaseWidget::ComputeShouldAccelerate() {
-  if (gfx::gfxVars::UseWebRender() && !AllowWebRenderForThisWindow()) {
-    
-    
-    
-    return false;
-  }
   return gfx::gfxConfig::IsEnabled(gfx::Feature::HW_COMPOSITING) &&
          WidgetTypeSupportsAcceleration();
 }
@@ -839,13 +833,6 @@ bool nsBaseWidget::UseAPZ() {
            WindowType() == eWindowType_child ||
            (WindowType() == eWindowType_popup && HasRemoteContent() &&
             StaticPrefs::apz_popups_enabled())));
-}
-
-bool nsBaseWidget::AllowWebRenderForThisWindow() {
-  return WindowType() == eWindowType_toplevel ||
-         WindowType() == eWindowType_child ||
-         WindowType() == eWindowType_dialog ||
-         (WindowType() == eWindowType_popup && HasRemoteContent());
 }
 
 void nsBaseWidget::CreateCompositor() {
@@ -1212,9 +1199,8 @@ already_AddRefed<LayerManager> nsBaseWidget::CreateCompositorSession(
     
     
     
-    bool enableWR = gfx::gfxVars::UseWebRender() &&
-                    WidgetTypeSupportsAcceleration() &&
-                    AllowWebRenderForThisWindow();
+    bool enableWR =
+        gfx::gfxVars::UseWebRender() && WidgetTypeSupportsAcceleration();
     bool enableAPZ = UseAPZ();
     CompositorOptions options(enableAPZ, enableWR);
 
