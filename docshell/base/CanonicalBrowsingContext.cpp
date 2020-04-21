@@ -578,6 +578,15 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
   
   
   
+  
+  
+  if (GetWatchedByDevtools()) {
+    return false;
+  }
+
+  
+  
+  
   if (!aLoadState->URI()->SchemeIs("http") &&
       !aLoadState->URI()->SchemeIs("https")) {
     return false;
