@@ -161,6 +161,10 @@ class nsNSSSocketInfo final : public CommonSocketControl {
 
   nsresult SetResumptionTokenFromExternalCache();
 
+  void SetClientCertChain(mozilla::UniqueCERTCertList&& clientCertChain) {
+    mClientCertChain = std::move(clientCertChain);
+  }
+
  protected:
   virtual ~nsNSSSocketInfo();
 
@@ -215,6 +219,17 @@ class nsNSSSocketInfo final : public CommonSocketControl {
   uint64_t mPlaintextBytesRead;
 
   nsCOMPtr<nsIX509Cert> mClientCert;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::UniqueCERTCertList mClientCertChain;
 
   
   
