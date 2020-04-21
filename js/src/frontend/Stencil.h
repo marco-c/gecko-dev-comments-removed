@@ -430,24 +430,21 @@ class ScriptStencil {
   using ImmutableFlags = ImmutableScriptFlagsEnum;
 
  public:
-  js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
-
-  
-  uint32_t natoms = 0;
-
-  
-  uint32_t ngcthings = 0;
-
-  
-  ImmutableScriptFlags immutableFlags;
-
-  ScriptThingsVector gcThings;
-
   
   mozilla::Maybe<FunctionIndex> functionIndex;
 
   
+  ImmutableScriptFlags immutableFlags;
+
+  
   mozilla::Maybe<FieldInitializers> fieldInitializers;
+  ScriptThingsVector gcThings;
+
+  
+  uint32_t natoms = 0;
+  js::UniquePtr<js::ImmutableScriptData> immutableScriptData = nullptr;
+
+  
 
   ScriptStencil(JSContext* cx) : gcThings(cx) {}
 
