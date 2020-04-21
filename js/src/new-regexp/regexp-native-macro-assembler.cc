@@ -1012,8 +1012,13 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
   masm_.storePtr(backtrack_stack_pointer_, backtrackStackBase());
 }
 
+
+
+
 void SMRegExpMacroAssembler::successHandler() {
-  MOZ_ASSERT(success_label_.used());
+  if (!success_label_.used()) {
+    return;
+  }
   masm_.bind(&success_label_);
 
   
@@ -1101,8 +1106,6 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
     return;
   }
 
-  
-  
   
   masm_.bind(&stack_overflow_label_);
 
