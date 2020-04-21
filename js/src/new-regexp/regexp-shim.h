@@ -1065,7 +1065,18 @@ class StackLimitCheck {
   StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()) {}
 
   
-  bool HasOverflowed() { return !CheckRecursionLimitDontReport(cx_); }
+  bool HasOverflowed() {
+    bool overflowed = !CheckRecursionLimitDontReport(cx_);
+#ifdef JS_MORE_DETERMINISTIC
+    if (overflowed) {
+      
+      
+      
+      fprintf(stderr, "ReportOverRecursed called\n");
+    }
+#endif
+    return overflowed;
+  }
 
   
   bool InterruptRequested() {
@@ -1134,7 +1145,6 @@ class Label {
 };
 
 
-extern bool FLAG_correctness_fuzzer_suppressions;
 extern bool FLAG_harmony_regexp_sequence;
 extern bool FLAG_regexp_interpret_all;
 extern bool FLAG_regexp_mode_modifiers;
@@ -1142,6 +1152,10 @@ extern bool FLAG_regexp_optimization;
 extern bool FLAG_regexp_peephole_optimization;
 extern bool FLAG_regexp_possessive_quantifier;
 extern bool FLAG_regexp_tier_up;
+
+
+
+const bool FLAG_correctness_fuzzer_suppressions = false;
 
 
 
