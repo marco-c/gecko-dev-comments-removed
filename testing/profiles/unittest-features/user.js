@@ -9,8 +9,6 @@
 
 user_pref("dom.w3c_touch_events.enabled", 1);
 
-user_pref("layout.css.contain.enabled", true);
-
 user_pref("layout.css.grid-template-subgrid-value.enabled", true);
 
 user_pref("layout.css.initial-letter.enabled", true);
