@@ -143,6 +143,9 @@
 #  include "nsIWebBrowserPrint.h"
 #endif
 
+#define BROWSER_ELEMENT_CHILD_SCRIPT \
+  NS_LITERAL_STRING("chrome://global/content/BrowserElementChild.js")
+
 static mozilla::LazyLogModule sApzChildLog("apz.child");
 
 using namespace mozilla;
@@ -198,7 +201,7 @@ void BrowserChild::DispatchMessageManagerMessage(const nsAString& aMessageName,
       mBrowserChildMessageManager);
   RefPtr<nsFrameMessageManager> mm = kungFuDeathGrip->GetMessageManager();
   mm->ReceiveMessage(static_cast<EventTarget*>(kungFuDeathGrip), nullptr,
-                     aMessageName, false, &data, nullptr, nullptr,
+                     aMessageName, false, &data, nullptr, nullptr, nullptr,
                      IgnoreErrors());
 }
 
@@ -593,10 +596,22 @@ void BrowserChild::NotifyTabContextUpdated() {
     return;
   }
 
+  UpdateFrameType();
+
   
   if (!PresentationURL().IsEmpty()) {
     mBrowsingContext->SetSandboxFlags(SANDBOXED_AUXILIARY_NAVIGATION);
   }
+}
+
+void BrowserChild::UpdateFrameType() {
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  MOZ_ASSERT(docShell);
+
+  
+  docShell->SetFrameType(IsMozBrowserElement()
+                             ? nsIDocShell::FRAME_TYPE_BROWSER
+                             : nsIDocShell::FRAME_TYPE_REGULAR);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(BrowserChild)
@@ -1081,6 +1096,9 @@ void BrowserChild::ApplyParentShowInfo(const ParentShowInfo& aInfo) {
     mDidSetRealShowInfo = true;
   }
 
+  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
+    docShell->SetFullscreenAllowed(aInfo.fullscreenAllowed());
+  }
   mIsTransparent = aInfo.isTransparent();
 }
 
@@ -2180,7 +2198,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvLoadRemoteScript(
 
 mozilla::ipc::IPCResult BrowserChild::RecvAsyncMessage(
     const nsString& aMessage, nsTArray<CpowEntry>&& aCpows,
-    const ClonedMessageData& aData) {
+    nsIPrincipal* aPrincipal, const ClonedMessageData& aData) {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING("BrowserChild::RecvAsyncMessage",
                                              OTHER, aMessage);
   MMPrinter::Print("BrowserChild::RecvAsyncMessage", aMessage, aData);
@@ -2206,8 +2224,8 @@ mozilla::ipc::IPCResult BrowserChild::RecvAsyncMessage(
   StructuredCloneData data;
   UnpackClonedMessageDataForChild(aData, data);
   mm->ReceiveMessage(static_cast<EventTarget*>(mBrowserChildMessageManager),
-                     nullptr, aMessage, false, &data, &cpows, nullptr,
-                     IgnoreErrors());
+                     nullptr, aMessage, false, &data, &cpows, aPrincipal,
+                     nullptr, IgnoreErrors());
   return IPC_OK();
 }
 
@@ -2250,7 +2268,16 @@ mozilla::ipc::IPCResult BrowserChild::RecvSwappedWithOtherRemoteLoader(
   }
 
   
+  
+  
+  UpdateFrameType();
+
+  
   mTriedBrowserInit = true;
+  
+  if (IsMozBrowserElement()) {
+    RecvLoadRemoteScript(BROWSER_ELEMENT_CHILD_SCRIPT, true);
+  }
 
   nsContentUtils::FirePageShowEventForFrameLoaderSwap(
       ourDocShell, ourEventTarget, true, true);
@@ -2597,6 +2624,11 @@ bool BrowserChild::InitBrowserChildMessageManager() {
 
   if (!mTriedBrowserInit) {
     mTriedBrowserInit = true;
+    
+    
+    if (IsMozBrowserElement()) {
+      RecvLoadRemoteScript(BROWSER_ELEMENT_CHILD_SCRIPT, true);
+    }
   }
 
   return true;
@@ -2920,12 +2952,10 @@ void BrowserChild::SetTabId(const TabId& aTabId) {
   NestedBrowserChildMap()[mUniqueId] = this;
 }
 
-bool BrowserChild::DoSendBlockingMessage(JSContext* aCx,
-                                         const nsAString& aMessage,
-                                         StructuredCloneData& aData,
-                                         JS::Handle<JSObject*> aCpows,
-                                         nsTArray<StructuredCloneData>* aRetVal,
-                                         bool aIsSync) {
+bool BrowserChild::DoSendBlockingMessage(
+    JSContext* aCx, const nsAString& aMessage, StructuredCloneData& aData,
+    JS::Handle<JSObject*> aCpows, nsIPrincipal* aPrincipal,
+    nsTArray<StructuredCloneData>* aRetVal, bool aIsSync) {
   ClonedMessageData data;
   if (!BuildClonedMessageDataForChild(Manager(), aData, data)) {
     return false;
@@ -2938,16 +2968,19 @@ bool BrowserChild::DoSendBlockingMessage(JSContext* aCx,
     }
   }
   if (aIsSync) {
-    return SendSyncMessage(PromiseFlatString(aMessage), data, cpows, aRetVal);
+    return SendSyncMessage(PromiseFlatString(aMessage), data, cpows, aPrincipal,
+                           aRetVal);
   }
 
-  return SendRpcMessage(PromiseFlatString(aMessage), data, cpows, aRetVal);
+  return SendRpcMessage(PromiseFlatString(aMessage), data, cpows, aPrincipal,
+                        aRetVal);
 }
 
 nsresult BrowserChild::DoSendAsyncMessage(JSContext* aCx,
                                           const nsAString& aMessage,
                                           StructuredCloneData& aData,
-                                          JS::Handle<JSObject*> aCpows) {
+                                          JS::Handle<JSObject*> aCpows,
+                                          nsIPrincipal* aPrincipal) {
   ClonedMessageData data;
   if (!BuildClonedMessageDataForChild(Manager(), aData, data)) {
     return NS_ERROR_DOM_DATA_CLONE_ERR;
@@ -2959,7 +2992,7 @@ nsresult BrowserChild::DoSendAsyncMessage(JSContext* aCx,
       return NS_ERROR_UNEXPECTED;
     }
   }
-  if (!SendAsyncMessage(PromiseFlatString(aMessage), cpows, data)) {
+  if (!SendAsyncMessage(PromiseFlatString(aMessage), cpows, aPrincipal, data)) {
     return NS_ERROR_UNEXPECTED;
   }
   return NS_OK;

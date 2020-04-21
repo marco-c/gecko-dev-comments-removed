@@ -19,10 +19,13 @@ namespace dom {
 
 TabContext::TabContext()
     : mInitialized(false),
+      mIsMozBrowserElement(false),
       mChromeOuterWindowID(0),
       mJSPluginID(-1),
       mShowFocusRings(UIStateChangeType_NoChange),
       mMaxTouchPoints(0) {}
+
+bool TabContext::IsMozBrowserElement() const { return mIsMozBrowserElement; }
 
 bool TabContext::IsJSPlugin() const { return mJSPluginID >= 0; }
 
@@ -56,11 +59,13 @@ bool TabContext::UpdateTabContextAfterSwap(const TabContext& aContext) {
 
   
   
+  
   if (aContext.mOriginAttributes != mOriginAttributes) {
     return false;
   }
 
   mChromeOuterWindowID = aContext.mChromeOuterWindowID;
+  mIsMozBrowserElement = aContext.mIsMozBrowserElement;
   return true;
 }
 
@@ -74,7 +79,8 @@ const nsAString& TabContext::PresentationURL() const {
 
 UIStateChangeType TabContext::ShowFocusRings() const { return mShowFocusRings; }
 
-bool TabContext::SetTabContext(uint64_t aChromeOuterWindowID,
+bool TabContext::SetTabContext(bool aIsMozBrowserElement,
+                               uint64_t aChromeOuterWindowID,
                                UIStateChangeType aShowFocusRings,
                                const OriginAttributes& aOriginAttributes,
                                const nsAString& aPresentationURL,
@@ -82,6 +88,7 @@ bool TabContext::SetTabContext(uint64_t aChromeOuterWindowID,
   NS_ENSURE_FALSE(mInitialized, false);
 
   mInitialized = true;
+  mIsMozBrowserElement = aIsMozBrowserElement;
   mChromeOuterWindowID = aChromeOuterWindowID;
   mOriginAttributes = aOriginAttributes;
   mPresentationURL = aPresentationURL;
@@ -103,13 +110,14 @@ IPCTabContext TabContext::AsIPCTabContext() const {
     return IPCTabContext(JSPluginFrameIPCTabContext(mJSPluginID));
   }
 
-  return IPCTabContext(
-      FrameIPCTabContext(mOriginAttributes, mChromeOuterWindowID,
-                         mPresentationURL, mShowFocusRings, mMaxTouchPoints));
+  return IPCTabContext(FrameIPCTabContext(
+      mOriginAttributes, mIsMozBrowserElement, mChromeOuterWindowID,
+      mPresentationURL, mShowFocusRings, mMaxTouchPoints));
 }
 
 MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
     : mInvalidReason(nullptr) {
+  bool isMozBrowserElement = false;
   uint64_t chromeOuterWindowID = 0;
   int32_t jsPluginId = -1;
   OriginAttributes originAttributes;
@@ -131,6 +139,17 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
               "open a null tab.";
           return;
         }
+        if (context->IsMozBrowserElement() &&
+            !ipcContext.isMozBrowserElement()) {
+          
+          
+          
+          
+          mInvalidReason =
+              "Child is-browser process tried to "
+              "open a non-browser tab.";
+          return;
+        }
       } else if (ipcContext.opener().type() == PBrowserOrId::TPBrowserChild) {
         context =
             static_cast<BrowserChild*>(ipcContext.opener().get_PBrowserChild());
@@ -148,6 +167,14 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
         return;
       }
 
+      
+      
+      
+      
+      
+      
+      
+      isMozBrowserElement = ipcContext.isMozBrowserElement();
       originAttributes = context->mOriginAttributes;
       chromeOuterWindowID = ipcContext.chromeOuterWindowID();
       break;
@@ -162,6 +189,7 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
     case IPCTabContext::TFrameIPCTabContext: {
       const FrameIPCTabContext& ipcContext = aParams.get_FrameIPCTabContext();
 
+      isMozBrowserElement = ipcContext.isMozBrowserElement();
       chromeOuterWindowID = ipcContext.chromeOuterWindowID();
       presentationURL = ipcContext.presentationURL();
       showFocusRings = ipcContext.showFocusRings();
@@ -190,9 +218,9 @@ MaybeInvalidTabContext::MaybeInvalidTabContext(const IPCTabContext& aParams)
   if (jsPluginId >= 0) {
     rv = mTabContext.SetTabContextForJSPluginFrame(jsPluginId);
   } else {
-    rv = mTabContext.SetTabContext(chromeOuterWindowID, showFocusRings,
-                                   originAttributes, presentationURL,
-                                   maxTouchPoints);
+    rv = mTabContext.SetTabContext(isMozBrowserElement, chromeOuterWindowID,
+                                   showFocusRings, originAttributes,
+                                   presentationURL, maxTouchPoints);
   }
   if (!rv) {
     mInvalidReason = "Couldn't initialize TabContext.";
