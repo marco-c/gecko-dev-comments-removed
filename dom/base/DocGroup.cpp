@@ -141,7 +141,6 @@ void DocGroup::RemoveDocument(Document* aDocument) {
     mBrowsingContextGroup = nullptr;
     
     mEventTarget = nullptr;
-    mAbstractThread = nullptr;
   }
 }
 
@@ -290,20 +289,10 @@ AbstractThread* DocGroup::AbstractMainThreadFor(TaskCategory aCategory) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mDocuments.IsEmpty());
 
-  if (!mEventTarget) {
-    return AbstractThread::MainThread();
-  }
-
   
   
   
-  if (!mAbstractThread) {
-    mAbstractThread = AbstractThread::CreateEventTargetWrapper(
-        mEventTarget,
-         true);
-  }
-
-  return mAbstractThread;
+  return AbstractThread::MainThread();
 }
 
 void DocGroup::SignalSlotChange(HTMLSlotElement& aSlot) {

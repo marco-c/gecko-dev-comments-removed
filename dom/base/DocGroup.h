@@ -145,7 +145,6 @@ class DocGroup final {
   RefPtr<mozilla::ThrottledEventQueue> mIframePostMessageQueue;
   nsTHashtable<nsUint64HashKey> mIframesUsedPostMessageQueue;
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
-  RefPtr<AbstractThread> mAbstractThread;
 
   
   
