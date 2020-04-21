@@ -280,16 +280,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   }
   TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
 
-  typedef MozPromise<uint64_t, nsresult, true >
-      ContentProcessIdPromise;
-  already_AddRefed<ContentProcessIdPromise>
-  TakeRedirectContentProcessIdPromise() {
-    return mRedirectContentProcessIdPromise.forget();
-  }
-  uint64_t CrossProcessRedirectIdentifier() {
-    return mCrossProcessRedirectIdentifier;
-  }
-
   CacheDisposition mCacheDisposition;
 
  protected:
@@ -584,12 +574,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsIURI> mRedirectURI;
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIChannel> mPreflightChannel;
-
-  
-  
-  RefPtr<ContentProcessIdPromise> mRedirectContentProcessIdPromise;
-  
-  uint64_t mCrossProcessRedirectIdentifier = 0;
 
   
   

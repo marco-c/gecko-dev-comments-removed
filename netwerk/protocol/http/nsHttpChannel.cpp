@@ -2721,6 +2721,7 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
   rv = NS_OK;
 
   uint32_t httpStatus = mResponseHead->Status();
+  bool trrRequestRedirected = false;
 
   
   
@@ -2769,6 +2770,11 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
 #if 0
     case 305: 
 #endif
+      if (mIsTRRServiceChannel) {
+        trrRequestRedirected = true;
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_DNS_TRR_REDIRECTED::Redirected);
+      }
       
       MaybeInvalidateCacheEntryForSubsequentGet();
       PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse4);
@@ -2868,6 +2874,11 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
       rv = ProcessNormal();
       MaybeInvalidateCacheEntryForSubsequentGet();
       break;
+  }
+
+  if (mIsTRRServiceChannel && !trrRequestRedirected) {
+    Telemetry::AccumulateCategorical(
+        Telemetry::LABELS_DNS_TRR_REDIRECTED::None);
   }
 
   UpdateCacheDisposition(false, false);
@@ -7417,31 +7428,6 @@ nsHttpChannel::GetRequestMethod(nsACString& aMethod) {
 
 NS_IMETHODIMP nsHttpChannel::GetChannel(nsIChannel** aChannel) {
   *aChannel = do_AddRef(this).take();
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsHttpChannel::SwitchProcessTo(
-    dom::Promise* aContentProcessIdPromise, uint64_t aIdentifier) {
-  MOZ_ASSERT(NS_IsMainThread());
-  NS_ENSURE_ARG(aContentProcessIdPromise);
-
-  LOG(("nsHttpChannel::SwitchProcessTo [this=%p]", this));
-  LogCallingScriptLocation(this);
-
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(this, parentChannel);
-  RefPtr<DocumentLoadListener> documentChannelParent =
-      do_QueryObject(parentChannel);
-  
-  
-  if (!documentChannelParent) {
-    
-    NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
-  }
-
-  mRedirectContentProcessIdPromise =
-      ContentProcessIdPromise::FromDomPromise(aContentProcessIdPromise);
-  mCrossProcessRedirectIdentifier = aIdentifier;
   return NS_OK;
 }
 
