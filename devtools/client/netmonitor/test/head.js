@@ -16,6 +16,10 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+const { LinkHandlerParent } = ChromeUtils.import(
+  "resource:///actors/LinkHandlerParent.jsm"
+);
+
 const {
   getFormattedIPAndPort,
   getFormattedTime,
@@ -1131,26 +1135,33 @@ function validateRequests(requests, monitor) {
       
       if (Array.isArray(stack)) {
         stack.forEach((frame, j) => {
-          is(
-            stacktrace[j].functionName,
-            frame.fn,
-            `Request #${i} has the correct function on JS stack frame #${j}`
-          );
-          is(
-            stacktrace[j].filename.split("/").pop(),
-            frame.file.split("/").pop(),
-            `Request #${i} has the correct file on JS stack frame #${j}`
-          );
-          is(
-            stacktrace[j].lineNumber,
-            frame.line,
-            `Request #${i} has the correct line number on JS stack frame #${j}`
-          );
-          is(
-            stacktrace[j].asyncCause,
-            frame.asyncCause,
-            `Request #${i} has the correct async cause on JS stack frame #${j}`
-          );
+          
+          
+          
+          if (frame.file.startsWith("resource:///")) {
+            todo(false, "Requests from chrome resource should not be included");
+          } else {
+            is(
+              stacktrace[j].functionName,
+              frame.fn,
+              `Request #${i} has the correct function on JS stack frame #${j}`
+            );
+            is(
+              stacktrace[j].filename.split("/").pop(),
+              frame.file.split("/").pop(),
+              `Request #${i} has the correct file on JS stack frame #${j}`
+            );
+            is(
+              stacktrace[j].lineNumber,
+              frame.line,
+              `Request #${i} has the correct line number on JS stack frame #${j}`
+            );
+            is(
+              stacktrace[j].asyncCause,
+              frame.asyncCause,
+              `Request #${i} has the correct async cause on JS stack frame #${j}`
+            );
+          }
         });
       }
     } else {
@@ -1223,6 +1234,27 @@ async function toggleBlockedUrl(element, monitor, store, action = "block") {
 
 function clickElement(element, monitor) {
   EventUtils.synthesizeMouseAtCenter(element, {}, monitor.panelWin);
+}
+
+
+
+
+
+
+
+
+function registerFaviconNotifier(browser) {
+  const listener = async (name, data) => {
+    if (name == "SetIcon" || name == "SetFailedIcon") {
+      await SpecialPowers.spawn(browser, [], async () => {
+        content.document
+          .querySelector("link[rel='icon']")
+          .dispatchEvent(new content.CustomEvent("devtools:test:favicon"));
+      });
+      LinkHandlerParent.removeListenerForTests(listener);
+    }
+  };
+  LinkHandlerParent.addListenerForTests(listener);
 }
 
 
