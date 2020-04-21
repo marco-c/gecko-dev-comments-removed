@@ -290,6 +290,40 @@ function getContentProperty(prop) {
 
 
 
+function getFlattendFrameList() {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    const frames = new Map();
+
+    function getFrameDetails(context) {
+      const frame = {
+        id: context.id.toString(),
+        parentId: context.parent ? context.parent.id.toString() : null,
+        loaderId: null,
+        name: null,
+        url: context.docShell.domWindow.location.href,
+        securityOrigin: null,
+        mimeType: null,
+      };
+
+      if (context.parent) {
+        frame.parentId = context.parent.id.toString();
+      }
+
+      frames.set(context.id.toString(), frame);
+
+      for (const childContext of context.children) {
+        getFrameDetails(childContext);
+      }
+    }
+
+    getFrameDetails(content.docShell.browsingContext);
+    return frames;
+  });
+}
+
+
+
+
 function timeoutPromise(ms) {
   return new Promise(resolve => {
     window.setTimeout(resolve, ms);
