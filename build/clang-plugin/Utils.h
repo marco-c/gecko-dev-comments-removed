@@ -174,7 +174,8 @@ inline bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
          Name == "arm_ex_to_module" ||  
          Name == "testing" ||           
          Name == "Json" ||              
-         Name == "rlbox";               
+         Name == "rlbox" ||             
+         Name == "v8";                  
 }
 
 inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {
