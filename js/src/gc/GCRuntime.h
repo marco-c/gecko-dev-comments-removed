@@ -70,8 +70,8 @@ class ChunkPool {
  public:
   ChunkPool() : head_(nullptr), count_(0) {}
   ~ChunkPool() {
-    
-    
+    MOZ_ASSERT(!head_);
+    MOZ_ASSERT(count_ == 0);
   }
 
   bool empty() const { return !head_; }
