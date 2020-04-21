@@ -3,10 +3,11 @@
 
 from mozperftest.layers import Layers
 from mozperftest.system.proxy import ProxyRunner
+from mozperftest.system.android import AndroidDevice
 
 
 def get_layers():
-    return (ProxyRunner,)
+    return (ProxyRunner, AndroidDevice)
 
 
 def pick_system(env, flavor, mach_cmd):
