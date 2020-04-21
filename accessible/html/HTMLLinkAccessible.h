@@ -35,20 +35,16 @@ class HTMLLinkAccessible : public HyperTextAccessibleWrap {
   virtual already_AddRefed<nsIURI> AnchorURIAt(
       uint32_t aAnchorIndex) const override;
 
-  
-
-
-  bool IsLinked() const;
-
  protected:
   virtual ~HTMLLinkAccessible() {}
 
   enum { eAction_Jump = 0 };
-};
 
-inline HTMLLinkAccessible* Accessible::AsHTMLLink() {
-  return IsHTMLLink() ? static_cast<HTMLLinkAccessible*>(this) : nullptr;
-}
+  
+
+
+  bool IsLinked() const;
+};
 
 }  
 }  
