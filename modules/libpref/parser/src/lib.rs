@@ -83,7 +83,7 @@ use std::os::raw::{c_char, c_uchar};
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
 pub enum PrefType {
     None,
@@ -103,9 +103,9 @@ pub enum PrefValueKind {
 
 #[repr(C)]
 pub union PrefValue {
-    string_val: *const c_char,
-    int_val: i32,
-    bool_val: bool,
+    pub string_val: *const c_char,
+    pub int_val: i32,
+    pub bool_val: bool,
 }
 
 
