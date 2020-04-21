@@ -99,11 +99,9 @@ void MediaControlKeysManager::SetPlaybackState(
     MediaSessionPlaybackState aState) {
   if (mEventSource && mEventSource->IsOpened()) {
     mEventSource->SetPlaybackState(aState);
-  } else {
-    
-    
-    mPlaybackState = aState;
   }
+  mPlaybackState = aState;
+  LOG_INFO("playbackState=%s", ToMediaSessionPlaybackStateStr(mPlaybackState));
 }
 
 MediaSessionPlaybackState MediaControlKeysManager::GetPlaybackState() const {
@@ -116,11 +114,12 @@ void MediaControlKeysManager::SetMediaMetadata(
     const MediaMetadataBase& aMetadata) {
   if (mEventSource && mEventSource->IsOpened()) {
     mEventSource->SetMediaMetadata(aMetadata);
-  } else {
-    
-    
-    mMetadata = aMetadata;
   }
+  mMetadata = aMetadata;
+  LOG_INFO("title=%s, artist=%s album=%s",
+           NS_ConvertUTF16toUTF8(mMetadata.mTitle).get(),
+           NS_ConvertUTF16toUTF8(mMetadata.mArtist).get(),
+           NS_ConvertUTF16toUTF8(mMetadata.mAlbum).get());
 }
 
 }  
