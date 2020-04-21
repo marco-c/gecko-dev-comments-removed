@@ -294,6 +294,8 @@ module.exports = {
           "mochitest",
           script.src
         );
+      } else if (script.src.startsWith("/tests/")) {
+        scriptName = path.join(helpers.rootDir, script.src.substring(7));
       } else {
         
         scriptName = path.join(dir, script.src);
