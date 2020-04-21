@@ -2151,17 +2151,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         let disabledOrReadOnly =
           usernameField.disabled || usernameField.readOnly;
 
-        let userNameDiffers = selectedLogin.username != usernameField.value;
-        
-        
-        
-        let userEnteredDifferentCase =
-          userTriggered &&
-          userNameDiffers &&
-          usernameField.value.toLowerCase() ==
-            selectedLogin.username.toLowerCase();
+        if (selectedLogin.username && !disabledOrReadOnly) {
+          let userNameDiffers = selectedLogin.username != usernameField.value;
+          
+          
+          
+          let userEnteredDifferentCase =
+            userTriggered &&
+            userNameDiffers &&
+            usernameField.value.toLowerCase() ==
+              selectedLogin.username.toLowerCase();
 
-        if (!disabledOrReadOnly) {
           if (!userEnteredDifferentCase && userNameDiffers) {
             usernameField.setUserInput(selectedLogin.username);
           }
