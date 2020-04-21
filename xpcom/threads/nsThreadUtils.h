@@ -1782,6 +1782,8 @@ nsISerialEventTarget* GetCurrentThreadSerialEventTarget();
 
 nsISerialEventTarget* GetMainThreadSerialEventTarget();
 
+void DispatchAsMicroTask(already_AddRefed<nsIRunnable> aRunnable);
+
 
 
 
