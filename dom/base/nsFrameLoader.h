@@ -354,16 +354,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-  void InitializeFromBrowserParent(BrowserParent* aBrowserParent);
-
-  
-
-
-
-
-
-
-
 
 
   void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame,
