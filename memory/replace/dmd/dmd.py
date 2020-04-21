@@ -209,7 +209,7 @@ variable is used to find breakpad symbols for stack fixing.
 
 
 
-def fixStackTraces(inputFilename, isZipped, opener):
+def initStackFixing():
     
     
     sys.path.append(os.path.dirname(__file__))
@@ -217,19 +217,22 @@ def fixStackTraces(inputFilename, isZipped, opener):
     bpsyms = os.environ.get('BREAKPAD_SYMBOLS_PATH', None)
     sysname = platform.system()
     if bpsyms and os.path.exists(bpsyms):
-        import fix_stacks as fixModule
-
-        def fix(line):
-            return fixModule.fixSymbols(line, jsonMode=True, breakpadSymsDir=bpsyms)
+        import fix_stacks
+        return fix_stacks.init(json_mode=True, breakpad_syms_dir=bpsyms)
 
     elif sysname in ('Linux', 'Darwin', 'Windows'):
-        import fix_stacks as fixModule
-
-        def fix(line): return fixModule.fixSymbols(line, jsonMode=True)
+        import fix_stacks
+        return fix_stacks.init(json_mode=True)
 
     else:
-        return
+        
+        
+        return (lambda line: line, lambda: None)
 
+
+
+
+def fixStackTraces(fix, inputFilename, isZipped, opener):
     
     
     tmpFile = tempfile.NamedTemporaryFile(delete=False)
@@ -264,7 +267,9 @@ def getDigestFromFile(args, inputFile):
 
     
     if not args.no_fix_stacks:
-        fixStackTraces(inputFile, isZipped, opener)
+        (fix, finish) = initStackFixing()
+        fixStackTraces(fix, inputFile, isZipped, opener)
+        finish()
 
     if args.clamp_contents:
         clampBlockList(args, inputFile, isZipped, opener)

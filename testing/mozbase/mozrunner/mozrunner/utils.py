@@ -250,21 +250,22 @@ def get_stack_fixer_function(utilityPath, symbolsPath):
         
         
         
-        stack_fixer_module = import_stack_fixer_module('fix_stacks')
-
-        def stack_fixer_function(line):
-            return stack_fixer_module.fixSymbols(
-                line, slowWarning=True, breakpadSymsDir=symbolsPath)
+        
+        
+        
+        fix_stacks = import_stack_fixer_module('fix_stacks')
+        (fix, finish) = fix_stacks.init(slow_warning=True, breakpad_syms_dir=symbolsPath)
+        return fix
 
     elif mozinfo.isLinux or mozinfo.isMac or mozinfo.isWin:
         
         
-        stack_fixer_module = import_stack_fixer_module('fix_stacks')
-
-        def stack_fixer_function(line):
-            return stack_fixer_module.fixSymbols(line, slowWarning=True)
+        
+        
+        
+        fix_stacks = import_stack_fixer_module('fix_stacks')
+        (fix, finish) = fix_stacks.init(slow_warning=True)
+        return fix
 
     else:
         return None
-
-    return stack_fixer_function

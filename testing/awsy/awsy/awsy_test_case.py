@@ -126,20 +126,26 @@ class AwsyTestCase(MarionetteTestCase):
         """
         Handles moving DMD reports from the temp dir to our resultsDir.
         """
-        from dmd import fixStackTraces
+        from dmd import initStackFixing, fixStackTraces
+
+        
+        
+        
+        
+        (fix, finish) = initStackFixing()
 
         
         tmpdir = tempfile.gettempdir()
         tmp_files = os.listdir(tmpdir)
         for f in fnmatch.filter(tmp_files, "dmd-*.json.gz"):
             f = os.path.join(tmpdir, f)
-            
-            
-            if not sys.platform.startswith('win'):
-                self.logger.info("Fixing stacks for %s, this may take a while" % f)
-                isZipped = True
-                fixStackTraces(f, isZipped, gzip.open)
+            self.logger.info("Fixing stacks for %s, this may take a while" % f)
+            isZipped = True
+            fixStackTraces(fix, f, isZipped, gzip.open)
             shutil.move(f, self._resultsDir)
+
+        
+        finish()
 
         
         for f in fnmatch.filter(tmp_files, "unified-memory-report-*.json.gz"):
