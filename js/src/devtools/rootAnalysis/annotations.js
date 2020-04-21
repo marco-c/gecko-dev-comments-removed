@@ -292,6 +292,9 @@ var ignoreFunctions = {
 
     
     "uint64 nsCycleCollectingAutoRefCnt::incr(void*, nsCycleCollectionParticipant*) [with void (* suspect)(void*, nsCycleCollectionParticipant*, nsCycleCollectingAutoRefCnt*, bool*) = NS_CycleCollectorSuspect3; uintptr_t = long unsigned int]": true,
+
+    
+    "uint8 v8::internal::RegExpDisjunction::SortConsecutiveAtoms(v8::internal::RegExpCompiler*)": true,
 };
 
 function extraGCFunctions() {
@@ -315,6 +318,12 @@ function isGTest(name)
     return name.match(/\btesting::/);
 }
 
+function isICU(name)
+{
+    return name.match(/\bicu_\d+::/) ||
+           name.match(/u(prv_malloc|prv_realloc|prv_free|case_toFullLower)_\d+/)
+}
+
 function ignoreGCFunction(mangled)
 {
     
@@ -329,7 +338,8 @@ function ignoreGCFunction(mangled)
     
     
     
-    if (isProtobuf(fun))
+    
+    if (isProtobuf(fun) || isICU(fun))
         return true;
 
     
