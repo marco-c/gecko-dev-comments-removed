@@ -547,6 +547,14 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   nsIWidget* GetParentMenuWidget();
+#ifdef MOZ_WAYLAND
+  
+  nsRect GetAnchorRect() { return mAnchorRect; }
+  int GetPopupAlignment() { return mPopupAlignment; }
+  int GetPopupAnchor() { return mPopupAnchor; }
+  int GetPopupPosition() { return mPosition; }
+  FlipType GetFlipType() { return mFlip; }
+#endif
 
  protected:
   nsString mIncrementalString;  
@@ -579,7 +587,11 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   int32_t mXPos;
   int32_t mYPos;
   nsIntRect mScreenRect;
-
+  
+  
+#ifdef MOZ_WAYLAND
+  nsRect mAnchorRect;
+#endif
   
   
   
