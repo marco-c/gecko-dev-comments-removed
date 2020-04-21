@@ -313,21 +313,6 @@ void CookieServiceChild::GetCookieStringFromCookieHashTable(
       continue;
     }
 
-    int32_t sameSiteAttr = 0;
-    cookie->GetSameSite(&sameSiteAttr);
-    if (aIsSameSiteForeign) {
-      
-      
-      if (sameSiteAttr == nsICookie::SAMESITE_STRICT) {
-        continue;
-      }
-      
-      
-      if (sameSiteAttr == nsICookie::SAMESITE_LAX && !aIsSafeTopLevelNav) {
-        continue;
-      }
-    }
-
     
     if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
       continue;
