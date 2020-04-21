@@ -19,10 +19,8 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/CallbackDebuggerNotification.h"
 #include "mozilla/dom/ClientManager.h"
-#include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/ClientState.h"
 #include "mozilla/dom/Console.h"
 #include "mozilla/dom/DOMTypes.h"
@@ -53,6 +51,7 @@
 #include "nsNetUtil.h"
 #include "nsIMemoryReporter.h"
 #include "nsIPermissionManager.h"
+#include "nsIProtocolHandler.h"
 #include "nsIScriptError.h"
 #include "nsIURI.h"
 #include "nsIURL.h"
@@ -77,7 +76,6 @@
 #include "WorkerNavigator.h"
 #include "WorkerRef.h"
 #include "WorkerRunnable.h"
-#include "WorkerScope.h"
 #include "WorkerThread.h"
 
 #include "nsThreadManager.h"
@@ -333,7 +331,9 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
                          WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->AssertIsOnWorkerThread();
 
-    if (NS_WARN_IF(!aWorkerPrivate->EnsureClientSource())) {
+    WorkerGlobalScope* globalScope =
+        aWorkerPrivate->GetOrCreateGlobalScope(aCx);
+    if (NS_WARN_IF(!globalScope)) {
       return false;
     }
 
@@ -350,15 +350,6 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
     
     
     if (rv.ErrorCodeIs(NS_BINDING_ABORTED)) {
-      rv.SuppressException();
-      return false;
-    }
-
-    WorkerGlobalScope* globalScope = aWorkerPrivate->GlobalScope();
-    if (NS_WARN_IF(!globalScope)) {
-      
-      
-      
       rv.SuppressException();
       return false;
     }
@@ -1377,8 +1368,9 @@ nsresult WorkerPrivate::SetCSPFromHeaderValues(
 
 void WorkerPrivate::StoreCSPOnClient() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-  if (data->mClientSource && mLoadInfo.mCSPInfo) {
-    data->mClientSource->SetCspInfo(*mLoadInfo.mCSPInfo.get());
+  MOZ_ASSERT(data->mScope);
+  if (mLoadInfo.mCSPInfo) {
+    data->mScope->GetClientSource()->SetCspInfo(*mLoadInfo.mCSPInfo);
   }
 }
 
@@ -2545,7 +2537,7 @@ nsresult WorkerPrivate::GetLoadInfo(JSContext* aCx, nsPIDOMWindowInner* aWindow,
     loadInfo.mOriginAttributes = aParent->GetOriginAttributes();
     loadInfo.mServiceWorkersTestingInWindow =
         aParent->ServiceWorkersTestingInWindow();
-    loadInfo.mParentController = aParent->GetController();
+    loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevtools = aParent->IsWatchedByDevtools();
   } else {
     AssertIsOnMainThread();
@@ -2895,10 +2887,6 @@ void WorkerPrivate::DoRunLoop(JSContext* aCx) {
       if (currentStatus == Killing) {
         
         
-        MOZ_DIAGNOSTIC_ASSERT(!data->mClientSource);
-
-        
-        
         PromiseDebugging::FlushUncaughtRejections();
 
         ShutdownGCTimers();
@@ -3060,36 +3048,31 @@ nsISerialEventTarget* WorkerPrivate::HybridEventTarget() {
   return mWorkerHybridEventTarget;
 }
 
-bool WorkerPrivate::EnsureClientSource() {
-  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-
-  if (data->mClientSource) {
-    return true;
-  }
-
-  ClientType type;
+ClientType WorkerPrivate::GetClientType() const {
   switch (Type()) {
     case WorkerTypeDedicated:
-      type = ClientType::Worker;
-      break;
+      return ClientType::Worker;
     case WorkerTypeShared:
-      type = ClientType::Sharedworker;
-      break;
+      return ClientType::Sharedworker;
     case WorkerTypeService:
-      type = ClientType::Serviceworker;
-      break;
+      return ClientType::Serviceworker;
     default:
       MOZ_CRASH("unknown worker type!");
   }
+}
 
-  data->mClientSource = ClientManager::CreateSource(
-      type, mWorkerHybridEventTarget, GetPrincipalInfo());
-  MOZ_DIAGNOSTIC_ASSERT(data->mClientSource);
+UniquePtr<ClientSource> WorkerPrivate::CreateClientSource() {
+  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  MOZ_ASSERT(!data->mScope, "Client should be created before the global");
 
-  data->mClientSource->SetAgentClusterId(mAgentClusterId);
+  auto clientSource = ClientManager::CreateSource(
+      GetClientType(), mWorkerHybridEventTarget, GetPrincipalInfo());
+  MOZ_DIAGNOSTIC_ASSERT(clientSource);
+
+  clientSource->SetAgentClusterId(mAgentClusterId);
 
   if (data->mFrozen) {
-    data->mClientSource->Freeze();
+    clientSource->Freeze();
   }
 
   
@@ -3112,10 +3095,10 @@ bool WorkerPrivate::EnsureClientSource() {
   
   
   if (Type() != WorkerTypeService && !IsChromeWorker()) {
-    data->mClientSource->WorkerSyncPing(this);
+    clientSource->WorkerSyncPing(this);
   }
 
-  return true;
+  return clientSource;
 }
 
 bool WorkerPrivate::EnsureCSPEventListener() {
@@ -3139,31 +3122,6 @@ void WorkerPrivate::EnsurePerformanceStorage() {
   if (!mPerformanceStorage) {
     mPerformanceStorage = PerformanceStorageWorker::Create(this);
   }
-}
-
-Maybe<ClientInfo> WorkerPrivate::GetClientInfo() const {
-  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-  Maybe<ClientInfo> clientInfo;
-  if (!data->mClientSource) {
-    MOZ_DIAGNOSTIC_ASSERT(mStatus >= Canceling);
-    return clientInfo;
-  }
-  clientInfo.emplace(data->mClientSource->Info());
-  return clientInfo;
-}
-
-const ClientState WorkerPrivate::GetClientState() const {
-  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-  MOZ_DIAGNOSTIC_ASSERT(data->mClientSource);
-  Result<ClientState, ErrorResult> res = data->mClientSource->SnapshotState();
-  if (res.isOk()) {
-    return res.unwrap();
-  }
-
-  
-  
-  res.unwrapErr().SuppressException();
-  return ClientState();
 }
 
 bool WorkerPrivate::GetExecutionGranted() const {
@@ -3209,41 +3167,6 @@ void WorkerPrivate::SetExecutionManager(JSExecutionManager* aManager) {
   data->mExecutionManager = aManager;
 }
 
-const Maybe<ServiceWorkerDescriptor> WorkerPrivate::GetController() {
-  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-  {
-    MutexAutoLock lock(mMutex);
-    if (mStatus >= Canceling) {
-      return Maybe<ServiceWorkerDescriptor>();
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(data->mClientSource);
-  return data->mClientSource->GetController();
-}
-
-void WorkerPrivate::Control(const ServiceWorkerDescriptor& aServiceWorker) {
-  MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-  MOZ_DIAGNOSTIC_ASSERT(!IsChromeWorker());
-  MOZ_DIAGNOSTIC_ASSERT(Type() != WorkerTypeService);
-  {
-    MutexAutoLock lock(mMutex);
-    if (mStatus >= Canceling) {
-      return;
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(data->mClientSource);
-
-  if (IsBlobURI(mLoadInfo.mBaseURI)) {
-    
-    
-    data->mClientSource->InheritController(aServiceWorker);
-  } else {
-    
-    
-    data->mClientSource->SetController(aServiceWorker);
-  }
-}
-
 void WorkerPrivate::ExecutionReady() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
   {
@@ -3252,8 +3175,11 @@ void WorkerPrivate::ExecutionReady() {
       return;
     }
   }
-  MOZ_DIAGNOSTIC_ASSERT(data->mClientSource);
-  data->mClientSource->WorkerExecutionReady(this);
+
+  MOZ_ASSERT(data->mScope);
+  auto& clientSource = data->mScope->GetClientSource();
+  MOZ_DIAGNOSTIC_ASSERT(clientSource);
+  clientSource->WorkerExecutionReady(this);
 }
 
 void WorkerPrivate::InitializeGCTimers() {
@@ -3613,12 +3539,14 @@ void WorkerPrivate::ClearDebuggerEventQueue() {
 
 bool WorkerPrivate::FreezeInternal() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
+  MOZ_ASSERT(data->mScope);
   NS_ASSERTION(!data->mFrozen, "Already frozen!");
 
   AutoYieldJSThreadExecution yield;
 
-  if (data->mClientSource) {
-    data->mClientSource->Freeze();
+  auto& clientSource = data->mScope->GetClientSource();
+  if (clientSource) {
+    clientSource->Freeze();
   }
 
   data->mFrozen = true;
@@ -3632,7 +3560,7 @@ bool WorkerPrivate::FreezeInternal() {
 
 bool WorkerPrivate::ThawInternal() {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-
+  MOZ_ASSERT(data->mScope);
   NS_ASSERTION(data->mFrozen, "Not yet frozen!");
 
   for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
@@ -3641,8 +3569,9 @@ bool WorkerPrivate::ThawInternal() {
 
   data->mFrozen = false;
 
-  if (data->mClientSource) {
-    data->mClientSource->Thaw();
+  auto& clientSource = data->mScope->GetClientSource();
+  if (clientSource) {
+    clientSource->Thaw();
   }
 
   return true;
@@ -4343,7 +4272,6 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
 
     if (aStatus >= Canceling) {
       MutexAutoUnlock unlock(mMutex);
-      data->mClientSource.reset();
       if (data->mScope) {
         data->mScope->NoteTerminating();
       }
@@ -5080,33 +5008,33 @@ bool WorkerPrivate::ConnectMessagePort(JSContext* aCx,
 WorkerGlobalScope* WorkerPrivate::GetOrCreateGlobalScope(JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
 
-  if (!data->mScope) {
-    RefPtr<WorkerGlobalScope> globalScope;
-    if (IsSharedWorker()) {
-      globalScope = new SharedWorkerGlobalScope(this, WorkerName());
-    } else if (IsServiceWorker()) {
-      globalScope = new ServiceWorkerGlobalScope(
-          this, GetServiceWorkerRegistrationDescriptor());
-    } else {
-      globalScope = new DedicatedWorkerGlobalScope(this, WorkerName());
-    }
-
-    JS::Rooted<JSObject*> global(aCx);
-    NS_ENSURE_TRUE(globalScope->WrapGlobalObject(aCx, &global), nullptr);
-
-    JSAutoRealm ar(aCx, global);
-
-    
-    
-    data->mScope = std::move(globalScope);
-
-    if (!RegisterBindings(aCx, global)) {
-      data->mScope = nullptr;
-      return nullptr;
-    }
-
-    JS_FireOnNewGlobalObject(aCx, global);
+  if (data->mScope) {
+    return data->mScope;
   }
+
+  if (IsSharedWorker()) {
+    data->mScope = new SharedWorkerGlobalScope(
+        WrapNotNull(this), CreateClientSource(), WorkerName());
+  } else if (IsServiceWorker()) {
+    data->mScope =
+        new ServiceWorkerGlobalScope(WrapNotNull(this), CreateClientSource(),
+                                     GetServiceWorkerRegistrationDescriptor());
+  } else {
+    data->mScope = new DedicatedWorkerGlobalScope(
+        WrapNotNull(this), CreateClientSource(), WorkerName());
+  }
+
+  JS::Rooted<JSObject*> global(aCx);
+  NS_ENSURE_TRUE(data->mScope->WrapGlobalObject(aCx, &global), nullptr);
+
+  JSAutoRealm ar(aCx, global);
+
+  if (!RegisterBindings(aCx, global)) {
+    data->mScope = nullptr;
+    return nullptr;
+  }
+
+  JS_FireOnNewGlobalObject(aCx, global);
 
   return data->mScope;
 }
@@ -5114,21 +5042,20 @@ WorkerGlobalScope* WorkerPrivate::GetOrCreateGlobalScope(JSContext* aCx) {
 WorkerDebuggerGlobalScope* WorkerPrivate::CreateDebuggerGlobalScope(
     JSContext* aCx) {
   MOZ_ACCESS_THREAD_BOUND(mWorkerThreadAccessible, data);
-
   MOZ_ASSERT(!data->mDebuggerScope);
 
-  RefPtr<WorkerDebuggerGlobalScope> globalScope =
-      new WorkerDebuggerGlobalScope(this);
+  
+  
+  auto clientSource = ClientManager::CreateSource(
+      GetClientType(), HybridEventTarget(), NullPrincipalInfo());
+
+  data->mDebuggerScope =
+      new WorkerDebuggerGlobalScope(WrapNotNull(this), std::move(clientSource));
 
   JS::Rooted<JSObject*> global(aCx);
-  NS_ENSURE_TRUE(globalScope->WrapGlobalObject(aCx, &global), nullptr);
+  NS_ENSURE_TRUE(data->mDebuggerScope->WrapGlobalObject(aCx, &global), nullptr);
 
   JSAutoRealm ar(aCx, global);
-
-  
-  
-  
-  data->mDebuggerScope = std::move(globalScope);
 
   if (!RegisterDebuggerBindings(aCx, global)) {
     data->mDebuggerScope = nullptr;

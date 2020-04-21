@@ -1941,7 +1941,7 @@ class ChannelGetterRunnable final : public WorkerMainThreadRunnable {
         
         
         ,
-        mClientInfo(aParentWorker->GetClientInfo().ref()),
+        mClientInfo(aParentWorker->GlobalScope()->GetClientInfo().ref()),
         mLoadInfo(aLoadInfo),
         mResult(NS_ERROR_FAILURE) {
     MOZ_ASSERT(aParentWorker);
@@ -2045,23 +2045,6 @@ bool ScriptExecutorRunnable::PreRun(WorkerPrivate* aWorkerPrivate) {
   
   aWorkerPrivate->StoreCSPOnClient();
 
-  AutoJSAPI jsapi;
-  jsapi.Init();
-
-  WorkerGlobalScope* globalScope =
-      aWorkerPrivate->GetOrCreateGlobalScope(jsapi.cx());
-  if (NS_WARN_IF(!globalScope)) {
-    NS_WARNING("Failed to make global!");
-    
-    
-    
-    
-    
-    
-    jsapi.ClearException();
-    return false;
-  }
-
   return true;
 }
 
@@ -2133,7 +2116,9 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
     
     if (mIsWorkerScript) {
       if (mScriptLoader.mController.isSome()) {
-        aWorkerPrivate->Control(mScriptLoader.mController.ref());
+        MOZ_ASSERT(mScriptLoader.mWorkerScriptType == WorkerScript,
+                   "Debugger clients can't be controlled.");
+        aWorkerPrivate->GlobalScope()->Control(mScriptLoader.mController.ref());
       }
       aWorkerPrivate->ExecutionReady();
     }
@@ -2294,8 +2279,13 @@ void LoadAllScripts(WorkerPrivate* aWorkerPrivate,
   Maybe<ClientInfo> clientInfo;
   Maybe<ServiceWorkerDescriptor> controller;
   if (!aIsMainScript) {
-    clientInfo = aWorkerPrivate->GetClientInfo();
-    controller = aWorkerPrivate->GetController();
+    nsIGlobalObject* global =
+        aWorkerScriptType == WorkerScript
+            ? static_cast<nsIGlobalObject*>(aWorkerPrivate->GlobalScope())
+            : aWorkerPrivate->DebuggerGlobalScope();
+
+    clientInfo = global->GetClientInfo();
+    controller = global->GetController();
   }
 
   RefPtr<ScriptLoaderRunnable> loader = new ScriptLoaderRunnable(
@@ -2428,7 +2418,12 @@ void LoadMainScript(WorkerPrivate* aWorkerPrivate,
 
   
   
-  info->mReservedClientInfo = aWorkerPrivate->GetClientInfo();
+  if (aWorkerScriptType == WorkerScript) {
+    info->mReservedClientInfo = aWorkerPrivate->GlobalScope()->GetClientInfo();
+  } else {
+    info->mReservedClientInfo =
+        aWorkerPrivate->DebuggerGlobalScope()->GetClientInfo();
+  }
 
   LoadAllScripts(aWorkerPrivate, std::move(aOriginStack), loadInfos, true,
                  aWorkerScriptType, aRv);
