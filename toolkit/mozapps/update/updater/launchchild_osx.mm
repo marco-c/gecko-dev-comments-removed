@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include <Cocoa/Cocoa.h>
 #include <CoreServices/CoreServices.h>
@@ -40,14 +40,14 @@ void LaunchChild(int argc, const char** argv) {
 void LaunchMacPostProcess(const char* aAppBundle) {
   MacAutoreleasePool pool;
 
-  // Launch helper to perform post processing for the update; this is the Mac
-  // analogue of LaunchWinPostProcess (PostUpdateWin).
+  
+  
   NSString* iniPath = [NSString stringWithUTF8String:aAppBundle];
   iniPath = [iniPath stringByAppendingPathComponent:@"Contents/Resources/updater.ini"];
 
   NSFileManager* fileManager = [NSFileManager defaultManager];
   if (![fileManager fileExistsAtPath:iniPath]) {
-    // the file does not exist; there is nothing to run
+    
     return;
   }
 
@@ -65,10 +65,10 @@ void LaunchMacPostProcess(const char* aAppBundle) {
     return;
   }
 
-  // The path must not traverse directories and it must be a relative path.
-  if ([exeRelPath rangeOfString:@".."].location != NSNotFound ||
-      [exeRelPath rangeOfString:@"./"].location != NSNotFound ||
-      [exeRelPath rangeOfString:@"/"].location == 0) {
+  
+  if ([exeRelPath isEqualToString:@".."] || [exeRelPath hasPrefix:@"/"] ||
+      [exeRelPath hasPrefix:@"../"] || [exeRelPath hasSuffix:@"/.."] ||
+      [exeRelPath containsString:@"/../"]) {
     return;
   }
 
@@ -88,7 +88,7 @@ void LaunchMacPostProcess(const char* aAppBundle) {
       [task waitUntilExit];
     }
   }
-  // ignore the return value of the task, there's nothing we can do with it
+  
   [task release];
 }
 
@@ -98,8 +98,8 @@ id ConnectToUpdateServer() {
   id updateServer = nil;
   BOOL isConnected = NO;
   int currTry = 0;
-  const int numRetries = 10;  // Number of IPC connection retries before
-                              // giving up.
+  const int numRetries = 10;  
+                              
   while (!isConnected && currTry < numRetries) {
     @try {
       updateServer = (id)[NSConnection
@@ -110,14 +110,14 @@ id ConnectToUpdateServer() {
           ![updateServer respondsToSelector:@selector(getArguments)] ||
           ![updateServer respondsToSelector:@selector(shutdown)]) {
         NSLog(@"Server doesn't exist or doesn't provide correct selectors.");
-        sleep(1);  // Wait 1 second.
+        sleep(1);  
         currTry++;
       } else {
         isConnected = YES;
       }
     } @catch (NSException* e) {
       NSLog(@"Encountered exception, retrying: %@: %@", e.name, e.reason);
-      sleep(1);  // Wait 1 second.
+      sleep(1);  
       currTry++;
     }
   }
@@ -147,20 +147,20 @@ void CleanupElevatedMacUpdate(bool aFailureOccurred) {
   [manager removeItemAtPath:@"/Library/PrivilegedHelperTools/org.mozilla.updater" error:nil];
   [manager removeItemAtPath:@"/Library/LaunchDaemons/org.mozilla.updater.plist" error:nil];
   const char* launchctlArgs[] = {"/bin/launchctl", "remove", "org.mozilla.updater"};
-  // The following call will terminate the current process due to the "remove"
-  // argument in launchctlArgs.
+  
+  
   LaunchChild(3, launchctlArgs);
 }
 
-// Note: Caller is responsible for freeing argv.
+
 bool ObtainUpdaterArguments(int* argc, char*** argv) {
   MacAutoreleasePool pool;
 
   id updateServer = ConnectToUpdateServer();
   if (!updateServer) {
-    // Let's try our best and clean up.
+    
     CleanupElevatedMacUpdate(true);
-    return false;  // Won't actually get here due to CleanupElevatedMacUpdate.
+    return false;  
   }
 
   @try {
@@ -174,19 +174,19 @@ bool ObtainUpdaterArguments(int* argc, char*** argv) {
     }
     *argv = tempArgv;
   } @catch (NSException* e) {
-    // Let's try our best and clean up.
+    
     CleanupElevatedMacUpdate(true);
-    return false;  // Won't actually get here due to CleanupElevatedMacUpdate.
+    return false;  
   }
   return true;
 }
 
-/**
- * The ElevatedUpdateServer is launched from a non-elevated updater process.
- * It allows an elevated updater process (usually a privileged helper tool) to
- * connect to it and receive all the necessary arguments to complete a
- * successful update.
- */
+
+
+
+
+
+
 @interface ElevatedUpdateServer : NSObject {
   NSArray* mUpdaterArguments;
   BOOL mShouldKeepRunning;
@@ -295,8 +295,8 @@ void SetGroupOwnershipAndPermissions(const char* aAppBundle) {
     return;
   }
 
-  // Set group ownership of Firefox.app to 80 ("admin") and permissions to
-  // 0775.
+  
+  
   if (![fileManager setAttributes:@{
         NSFileGroupOwnerAccountID : @(80),
         NSFilePosixPermissions : @(0775)
@@ -309,16 +309,16 @@ void SetGroupOwnershipAndPermissions(const char* aAppBundle) {
 
   NSArray* permKeys =
       [NSArray arrayWithObjects:NSFileGroupOwnerAccountID, NSFilePosixPermissions, nil];
-  // For all descendants of Firefox.app, set group ownership to 80 ("admin") and
-  // ensure write permission for the group.
+  
+  
   for (NSString* currPath in paths) {
     NSString* child = [appDir stringByAppendingPathComponent:currPath];
     NSDictionary* oldAttributes = [fileManager attributesOfItemAtPath:child error:&error];
     if (error) {
       return;
     }
-    // Skip symlinks, since they could be pointing to files outside of the .app
-    // bundle.
+    
+    
     if ([oldAttributes fileType] == NSFileTypeSymbolicLink) {
       continue;
     }

@@ -307,8 +307,17 @@ bool IsValidFullPath(NS_tchar* origFullPath) {
   }
 
   
-  if (NS_tstrstr(origFullPath, NS_T("..")) != nullptr ||
-      NS_tstrstr(origFullPath, NS_T("./")) != nullptr) {
+  if (NS_tstrstr(origFullPath, NS_T("/../")) != nullptr) {
+    return false;
+  }
+
+  
+  const NS_tchar invalidSuffix[] = NS_T("/..");
+  size_t pathLen = NS_tstrlen(origFullPath);
+  size_t invalidSuffixLen = NS_tstrlen(invalidSuffix);
+  if (invalidSuffixLen <= pathLen &&
+      NS_tstrncmp(origFullPath + pathLen - invalidSuffixLen, invalidSuffix,
+                  invalidSuffixLen) == 0) {
     return false;
   }
 #endif
