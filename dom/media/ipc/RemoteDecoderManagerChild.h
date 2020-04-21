@@ -26,7 +26,6 @@ class RemoteDecoderManagerChild final
 
   
   static nsIThread* GetManagerThread();
-  static AbstractThread* GetManagerAbstractThread();
 
   
   
