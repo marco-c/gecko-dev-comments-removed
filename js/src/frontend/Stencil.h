@@ -129,9 +129,8 @@ struct FunctionCreationData {
   
   FunctionCreationData(const FunctionCreationData& data)
       : atom(data.atom),
-        generatorKind(data.generatorKind),
-        asyncKind(data.asyncKind),
-        flags(data.flags) {
+        flags(data.flags),
+        immutableFlags(data.immutableFlags) {
     MOZ_RELEASE_ASSERT(!data.lazyScriptData);
   }
 
@@ -139,10 +138,9 @@ struct FunctionCreationData {
 
   
   JSAtom* atom = nullptr;
-  GeneratorKind generatorKind = GeneratorKind::NotGenerator;
-  FunctionAsyncKind asyncKind = FunctionAsyncKind::SyncFunction;
 
   FunctionFlags flags = {};
+  ImmutableScriptFlags immutableFlags = {};
 
   mozilla::Maybe<LazyScriptCreationData> lazyScriptData = {};
 
