@@ -49,6 +49,29 @@ constexpr auto SAMESITE_MDN_URL = NS_LITERAL_STRING(
 
 namespace {
 
+void ComposeCookieString(nsTArray<Cookie*>& aCookieList,
+                         nsACString& aCookieString) {
+  for (Cookie* cookie : aCookieList) {
+    
+    if (!cookie->Name().IsEmpty() || !cookie->Value().IsEmpty()) {
+      
+      
+      if (!aCookieString.IsEmpty()) {
+        aCookieString.AppendLiteral("; ");
+      }
+
+      if (!cookie->Name().IsEmpty()) {
+        
+        aCookieString +=
+            cookie->Name() + NS_LITERAL_CSTRING("=") + cookie->Value();
+      } else {
+        
+        aCookieString += cookie->Value();
+      }
+    }
+  }
+}
+
 
 bool ProcessSameSiteCookieForForeignRequest(nsIChannel* aChannel,
                                             Cookie* aCookie,
@@ -224,6 +247,116 @@ CookieService::Observe(nsISupports* , const char* aTopic,
     RemoveCookiesWithOriginAttributes(pattern, EmptyCString());
     mPrivateStorage = CookiePrivateStorage::Create();
   }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CookieService::GetCookieStringForPrincipal(nsIPrincipal* aPrincipal,
+                                           nsACString& aCookie) {
+  NS_ENSURE_ARG(aPrincipal);
+
+  nsresult rv;
+
+  aCookie.Truncate();
+
+  if (!IsInitialized()) {
+    return NS_OK;
+  }
+
+  CookieStorage* storage = PickStorage(aPrincipal->OriginAttributesRef());
+
+  nsAutoCString baseDomain;
+  
+  if (aPrincipal->SchemeIs("file")) {
+    rv = aPrincipal->GetAsciiHost(baseDomain);
+  } else {
+    rv = aPrincipal->GetBaseDomain(baseDomain);
+  }
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_OK;
+  }
+
+  nsAutoCString hostFromURI;
+  rv = aPrincipal->GetAsciiHost(hostFromURI);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_OK;
+  }
+
+  nsAutoCString pathFromURI;
+  rv = aPrincipal->GetFilePath(pathFromURI);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return NS_OK;
+  }
+
+  int64_t currentTimeInUsec = PR_Now();
+  int64_t currentTime = currentTimeInUsec / PR_USEC_PER_SEC;
+
+  const nsTArray<RefPtr<Cookie>>* cookies = storage->GetCookiesFromHost(
+      baseDomain, aPrincipal->OriginAttributesRef());
+  if (!cookies) {
+    return NS_OK;
+  }
+
+  
+  
+  bool potentiallyTurstworthy = aPrincipal->GetIsOriginPotentiallyTrustworthy();
+
+  bool stale = false;
+  nsTArray<Cookie*> cookieList;
+
+  
+  for (Cookie* cookie : *cookies) {
+    
+    if (!CookieCommons::DomainMatches(cookie, hostFromURI)) {
+      continue;
+    }
+
+    
+    
+    if (cookie->IsHttpOnly()) {
+      continue;
+    }
+
+    
+    if (cookie->IsSecure() && !potentiallyTurstworthy) {
+      continue;
+    }
+
+    
+    if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
+      continue;
+    }
+
+    
+    if (cookie->Expiry() <= currentTime) {
+      continue;
+    }
+
+    
+    
+    cookieList.AppendElement(cookie);
+    if (cookie->IsStale()) {
+      stale = true;
+    }
+  }
+
+  if (cookieList.IsEmpty()) {
+    return NS_OK;
+  }
+
+  
+  
+  if (stale) {
+    storage->StaleCookies(cookieList, currentTimeInUsec);
+  }
+
+  
+  
+  
+  cookieList.Sort(CompareCookiesForSending());
+  ComposeCookieString(cookieList, aCookie);
 
   return NS_OK;
 }
@@ -783,28 +916,7 @@ void CookieService::GetCookieStringInternal(
       aRejectedReason, aIsSafeTopLevelNav, aIsSameSiteForeign, aHttpBound,
       aOriginAttrs, foundCookieList);
 
-  Cookie* cookie;
-  for (uint32_t i = 0; i < foundCookieList.Length(); ++i) {
-    cookie = foundCookieList.ElementAt(i);
-
-    
-    if (!cookie->Name().IsEmpty() || !cookie->Value().IsEmpty()) {
-      
-      
-      if (!aCookieString.IsEmpty()) {
-        aCookieString.AppendLiteral("; ");
-      }
-
-      if (!cookie->Name().IsEmpty()) {
-        
-        aCookieString +=
-            cookie->Name() + NS_LITERAL_CSTRING("=") + cookie->Value();
-      } else {
-        
-        aCookieString += cookie->Value();
-      }
-    }
-  }
+  ComposeCookieString(foundCookieList, aCookieString);
 
   if (!aCookieString.IsEmpty()) {
     COOKIE_LOGSUCCESS(GET_COOKIE, aHostURI, aCookieString, nullptr, false);
