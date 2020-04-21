@@ -122,14 +122,12 @@ void SetACookieNoHttp(nsICookieService* aCookieService, const char* aSpec,
 }
 
 
-void GetACookie(nsICookieService* aCookieService, const char* aSpec1,
-                const char* aSpec2, nsACString& aCookie) {
-  nsCOMPtr<nsIURI> uri1, uri2;
-  NS_NewURI(getter_AddRefs(uri1), aSpec1);
-  if (aSpec2) NS_NewURI(getter_AddRefs(uri2), aSpec2);
+void GetACookie(nsICookieService* aCookieService, const char* aSpec,
+                nsACString& aCookie) {
+  nsCOMPtr<nsIURI> uri;
+  NS_NewURI(getter_AddRefs(uri), aSpec);
 
-  Unused << aCookieService->GetCookieStringFromHttp(uri1, uri2, nullptr,
-                                                    aCookie);
+  Unused << aCookieService->GetCookieStringFromHttp(uri, nullptr, aCookie);
 }
 
 
@@ -235,23 +233,23 @@ TEST(TestCookie, TestCookieMain)
 
   
   SetACookie(cookieService, "http://www.basic.com", nullptr, "test=basic");
-  GetACookie(cookieService, "http://www.basic.com", nullptr, cookie);
+  GetACookie(cookieService, "http://www.basic.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=basic"));
   GetACookie(cookieService, "http://www.basic.com/testPath/testfile.txt",
-             nullptr, cookie);
+             cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=basic"));
-  GetACookie(cookieService, "http://www.basic.com./", nullptr, cookie);
+  GetACookie(cookieService, "http://www.basic.com./", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://www.basic.com.", nullptr, cookie);
+  GetACookie(cookieService, "http://www.basic.com.", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   GetACookie(cookieService, "http://www.basic.com./testPath/testfile.txt",
-             nullptr, cookie);
+             cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://www.basic2.com/", nullptr, cookie);
+  GetACookie(cookieService, "http://www.basic2.com/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://www.basic.com", nullptr,
              "test=basic; max-age=-1");
-  GetACookie(cookieService, "http://www.basic.com/", nullptr, cookie);
+  GetACookie(cookieService, "http://www.basic.com/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -260,64 +258,64 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=domain.com");
-  GetACookie(cookieService, "http://domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
-  GetACookie(cookieService, "http://domain.com.", nullptr, cookie);
+  GetACookie(cookieService, "http://domain.com.", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://www.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://www.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=domain.com; max-age=-1");
-  GetACookie(cookieService, "http://domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=.domain.com");
-  GetACookie(cookieService, "http://domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
-  GetACookie(cookieService, "http://www.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://www.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
-  GetACookie(cookieService, "http://bah.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://bah.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=domain"));
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=.domain.com; max-age=-1");
-  GetACookie(cookieService, "http://domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=.foo.domain.com");
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=moose.com");
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=domain.com.");
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=..domain.com");
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.domain.com", nullptr,
              "test=domain; domain=..domain.com.");
-  GetACookie(cookieService, "http://foo.domain.com", nullptr, cookie);
+  GetACookie(cookieService, "http://foo.domain.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              R"(test=taco; path="/bogus")");
-  GetACookie(cookieService, "http://path.net/path/file", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/file", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=taco"));
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=taco; max-age=-1");
-  GetACookie(cookieService, "http://path.net/path/file", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/file", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -326,34 +324,32 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/path");
-  GetACookie(cookieService, "http://path.net/path", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
-  GetACookie(cookieService, "http://path.net/path/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
-  GetACookie(cookieService, "http://path.net/path/hithere.foo", nullptr,
-             cookie);
+  GetACookie(cookieService, "http://path.net/path/hithere.foo", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
-  GetACookie(cookieService, "http://path.net/path?hithere/foo", nullptr,
-             cookie);
+  GetACookie(cookieService, "http://path.net/path?hithere/foo", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
-  GetACookie(cookieService, "http://path.net/path2", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path2", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://path.net/path2/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path2/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/path; max-age=-1");
-  GetACookie(cookieService, "http://path.net/path/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/path/");
-  GetACookie(cookieService, "http://path.net/path", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://path.net/path/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=path"));
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/path/; max-age=-1");
-  GetACookie(cookieService, "http://path.net/path/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -361,13 +357,13 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/foo/");
-  GetACookie(cookieService, "http://path.net/path", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/path", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
-  GetACookie(cookieService, "http://path.net/foo", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/foo", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://path.net/path/file", nullptr,
              "test=path; path=/foo/; max-age=-1");
-  GetACookie(cookieService, "http://path.net/foo/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/foo/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -411,7 +407,7 @@ TEST(TestCookie, TestCookieMain)
       "567890123456789012345678901234567890123456789012345678901234567890123456"
       "789012345678901234567890123456789012345678901234567890123456789012345678"
       "9012345678901234567890",
-      nullptr, cookie);
+      cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   
@@ -452,24 +448,24 @@ TEST(TestCookie, TestCookieMain)
       "567890123456789012345678901234567890123456789012345678901234567890123456"
       "789012345678901234567890123456789012345678901234567890123456789012345678"
       "9012345678901234567890/",
-      nullptr, cookie);
+      cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   SetACookie(cookieService, "http://path.net/", nullptr,
              "test=path; path=/foo\tbar/");
-  GetACookie(cookieService, "http://path.net/foo\tbar/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/foo\tbar/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   SetACookie(cookieService, "http://path.net/", nullptr, "test\ttabs=tab");
-  GetACookie(cookieService, "http://path.net/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   SetACookie(cookieService, "http://path.net/", nullptr, "test=tab\ttest");
-  GetACookie(cookieService, "http://path.net/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=tab\ttest"));
   SetACookie(cookieService, "http://path.net/", nullptr,
              "test=tab\ttest; max-age=-1");
-  GetACookie(cookieService, "http://path.net/", nullptr, cookie);
+  GetACookie(cookieService, "http://path.net/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -479,68 +475,68 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=-1");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=0");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; expires=bad");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=expiry"));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; expires=Thu, 10 Apr 1980 16:33:12 GMT");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              R"(test=expiry; expires="Thu, 10 Apr 1980 16:33:12 GMT)");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              R"(test=expiry; expires="Thu, 10 Apr 1980 16:33:12 GMT")");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=60");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=expiry"));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=-20");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=60");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=expiry"));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; expires=Thu, 10 Apr 1980 16:33:12 GMT");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=expiry; max-age=60");
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "newtest=expiry; max-age=60");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=expiry"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "newtest=expiry"));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "test=differentvalue; max-age=0");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "newtest=expiry"));
   SetACookie(cookieService, "http://expireme.org/", nullptr,
              "newtest=evendifferentvalue; max-age=0");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://foo.expireme.org/", nullptr,
              "test=expiry; domain=.expireme.org; max-age=60");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=expiry"));
   SetACookie(cookieService, "http://bar.expireme.org/", nullptr,
              "test=differentvalue; domain=.expireme.org; max-age=0");
-  GetACookie(cookieService, "http://expireme.org/", nullptr, cookie);
+  GetACookie(cookieService, "http://expireme.org/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   nsAutoCString ServerTime;
@@ -554,7 +550,7 @@ TEST(TestCookie, TestCookieMain)
              "test=multiple; domain=.multiple.cookies \n test=different \n "
              "test=same; domain=.multiple.cookies \n newtest=ciao \n "
              "newtest=foo; max-age=-6 \n newtest=reincarnated");
-  GetACookie(cookieService, "http://multiple.cookies/", nullptr, cookie);
+  GetACookie(cookieService, "http://multiple.cookies/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test=multiple"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=different"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=same"));
@@ -563,15 +559,15 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "newtest=reincarnated"));
   SetACookie(cookieService, "http://multiple.cookies/", nullptr,
              "test=expiry; domain=.multiple.cookies; max-age=0");
-  GetACookie(cookieService, "http://multiple.cookies/", nullptr, cookie);
+  GetACookie(cookieService, "http://multiple.cookies/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test=same"));
   SetACookie(cookieService, "http://multiple.cookies/", nullptr,
              "\n test=different; max-age=0 \n");
-  GetACookie(cookieService, "http://multiple.cookies/", nullptr, cookie);
+  GetACookie(cookieService, "http://multiple.cookies/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test=different"));
   SetACookie(cookieService, "http://multiple.cookies/", nullptr,
              "newtest=dead; max-age=0");
-  GetACookie(cookieService, "http://multiple.cookies/", nullptr, cookie);
+  GetACookie(cookieService, "http://multiple.cookies/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -580,37 +576,37 @@ TEST(TestCookie, TestCookieMain)
   SetACookie(cookieService, "http://parser.test/", nullptr,
              "test=parser; domain=.parser.test; ;; ;=; ,,, ===,abc,=; "
              "abracadabra! max-age=20;=;;");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=parser"));
   SetACookie(cookieService, "http://parser.test/", nullptr,
              "test=parser; domain=.parser.test; max-age=0");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   SetACookie(cookieService, "http://parser.test/", nullptr,
              "test=\"fubar! = foo;bar\\\";\" parser; domain=.parser.test; "
              "max-age=6\nfive; max-age=2.63,");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, R"(test="fubar! = foo)"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "five"));
   SetACookie(cookieService, "http://parser.test/", nullptr,
              "test=kill; domain=.parser.test; max-age=0 \n five; max-age=0");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
   
   
   SetACookie(cookieService, "http://parser.test/", nullptr, "six");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "six"));
   SetACookie(cookieService, "http://parser.test/", nullptr, "seven");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "seven"));
   SetACookie(cookieService, "http://parser.test/", nullptr, " =eight");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "eight"));
   SetACookie(cookieService, "http://parser.test/", nullptr, "test=six");
-  GetACookie(cookieService, "http://parser.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://parser.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test=six"));
 
   
@@ -630,8 +626,7 @@ TEST(TestCookie, TestCookieMain)
   SetACookie(cookieService, "http://multi.path.tests/", nullptr,
              "test8=path; path=/");
   GetACookie(cookieService,
-             "http://multi.path.tests/one/two/three/four/five/six/", nullptr,
-             cookie);
+             "http://multi.path.tests/one/two/three/four/five/six/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL,
                           "test7=path; test6=path; test3=path; test1=path; "
                           "test5=path; test4=path; test2=path; test8=path"));
@@ -641,12 +636,12 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookieNoHttp(cookieService, "http://httponly.test/",
                    "test=httponly; httponly");
-  GetACookie(cookieService, "http://httponly.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://httponly.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   SetACookie(cookieService, "http://httponly.test/", nullptr,
              "test=httponly; httponly");
-  GetACookie(cookieService, "http://httponly.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://httponly.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
   
   GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
@@ -655,7 +650,7 @@ TEST(TestCookie, TestCookieMain)
   SetACookie(cookieService, "http://httponly.test/", nullptr,
              "test=httponly; httponly");
   SetACookieNoHttp(cookieService, "http://httponly.test/", "test=not-httponly");
-  GetACookie(cookieService, "http://httponly.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://httponly.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
   
   GetACookieNoHttp(cookieService, "http://httponly.test/", cookie);
@@ -665,12 +660,12 @@ TEST(TestCookie, TestCookieMain)
              "test=httponly; httponly");
   SetACookieNoHttp(cookieService, "http://httponly.test/",
                    "test=httponly; max-age=-1");
-  GetACookie(cookieService, "http://httponly.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://httponly.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=httponly"));
   
   SetACookie(cookieService, "http://httponly.test/", nullptr,
              "test=httponly; httponly; max-age=-1");
-  GetACookie(cookieService, "http://httponly.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://httponly.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
   
   SetACookie(cookieService, "http://httponly.test/", nullptr,
@@ -699,7 +694,7 @@ TEST(TestCookie, TestCookieMain)
              "__Host-test1=test");
   SetACookie(cookieService, "http://prefixed.test/", nullptr,
              "__Host-test2=test; secure");
-  GetACookie(cookieService, "http://prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -707,7 +702,7 @@ TEST(TestCookie, TestCookieMain)
              "__Secure-test=test");
   SetACookie(cookieService, "https://prefixed.test/", nullptr,
              "__Host-test=test");
-  GetACookie(cookieService, "https://prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "https://prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -715,12 +710,12 @@ TEST(TestCookie, TestCookieMain)
              "__Secure-test=test; secure");
   SetACookie(cookieService, "https://prefixed.test/", nullptr,
              "__Host-test=test; secure");
-  GetACookie(cookieService, "https://prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "https://prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "__Secure-test=test"));
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "__Host-test=test"));
 
   
-  GetACookie(cookieService, "http://prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "http://prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -732,7 +727,7 @@ TEST(TestCookie, TestCookieMain)
              "__Host-c=test; secure; domain=host.prefixed.test");
   SetACookie(cookieService, "https://host.prefixed.test/", nullptr,
              "__Host-d=test; secure; domain=.host.prefixed.test");
-  GetACookie(cookieService, "https://host.prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "https://host.prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   
@@ -742,7 +737,7 @@ TEST(TestCookie, TestCookieMain)
              "__Host-f=test; secure; path=/");
   SetACookie(cookieService, "https://host.prefixed.test/some/path", nullptr,
              "__Host-g=test; secure; path=/some");
-  GetACookie(cookieService, "https://host.prefixed.test/", nullptr, cookie);
+  GetACookie(cookieService, "https://host.prefixed.test/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "__Host-f=test"));
 
   
@@ -860,7 +855,7 @@ TEST(TestCookie, TestCookieMain)
   }
   EXPECT_EQ(cookies.Length(), 3ul);
   
-  GetACookie(cookieService, "http://cookiemgr.test/foo/", nullptr, cookie);
+  GetACookie(cookieService, "http://cookiemgr.test/foo/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_CONTAIN, "test2=yes"));
   GetACookieNoHttp(cookieService, "http://cookiemgr.test/foo/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test2=yes"));
@@ -913,7 +908,7 @@ TEST(TestCookie, TestCookieMain)
       if (i < 59) expected += NS_LITERAL_CSTRING("; ");
     }
   }
-  GetACookie(cookieService, "http://creation.ordering.tests/", nullptr, cookie);
+  GetACookie(cookieService, "http://creation.ordering.tests/", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, expected.get()));
 
   cookieMgr->RemoveAll();
@@ -935,7 +930,7 @@ TEST(TestCookie, TestCookieMain)
                  name.get());
     }
   }
-  GetACookie(cookieService, "http://creation.ordering.tests/", nullptr, cookie);
+  GetACookie(cookieService, "http://creation.ordering.tests/", cookie);
 
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
@@ -1019,12 +1014,12 @@ TEST(TestCookie, TestCookieMain)
   
   SetACookie(cookieService, "http://www.samesite.com", nullptr,
              "test=sameSiteStrictVal; samesite=strict");
-  GetACookie(cookieService, "http://www.notsamesite.com", nullptr, cookie);
+  GetACookie(cookieService, "http://www.notsamesite.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   SetACookie(cookieService, "http://www.samesite.test", nullptr,
              "test=sameSiteLaxVal; samesite=lax");
-  GetACookie(cookieService, "http://www.notsamesite.com", nullptr, cookie);
+  GetACookie(cookieService, "http://www.notsamesite.com", cookie);
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_BE_NULL));
 
   static const char* secureURIs[] = {
@@ -1036,7 +1031,7 @@ TEST(TestCookie, TestCookieMain)
   uint32_t numSecureURIs = sizeof(secureURIs) / sizeof(const char*);
   for (uint32_t i = 0; i < numSecureURIs; ++i) {
     SetACookie(cookieService, secureURIs[i], nullptr, "test=basic; secure");
-    GetACookie(cookieService, secureURIs[i], nullptr, cookie);
+    GetACookie(cookieService, secureURIs[i], cookie);
     EXPECT_TRUE(CheckResult(cookie.get(), MUST_EQUAL, "test=basic"));
   }
 

@@ -123,11 +123,7 @@ interface nsICookieService : nsISupports
 
 
 
-
-
-
-  ACString getCookieStringFromHttp(in nsIURI aURI, in nsIURI aFirstURI,
-                                   in nsIChannel aChannel);
+  ACString getCookieStringFromHttp(in nsIURI aURI, in nsIChannel aChannel);
 
   
 
