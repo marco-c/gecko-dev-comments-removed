@@ -107,6 +107,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   
   
+  already_AddRefed<Promise> ChangeFrameRemoteness(const nsAString& aRemoteType,
+                                                  uint64_t aPendingSwitchId,
+                                                  ErrorResult& aRv);
+
+  
+  
   
   MediaController* GetMediaController();
 
