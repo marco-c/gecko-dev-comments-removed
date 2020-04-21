@@ -131,36 +131,6 @@ void nsGenericHTMLFrameElement::EnsureFrameLoader() {
   mFrameLoader = nsFrameLoader::Create(this, mNetworkCreated);
 }
 
-void nsGenericHTMLFrameElement::DisallowCreateFrameLoader() {
-  MOZ_ASSERT(!mFrameLoader);
-  MOZ_ASSERT(!mFrameLoaderCreationDisallowed);
-  mFrameLoaderCreationDisallowed = true;
-}
-
-void nsGenericHTMLFrameElement::AllowCreateFrameLoader() {
-  MOZ_ASSERT(!mFrameLoader);
-  MOZ_ASSERT(mFrameLoaderCreationDisallowed);
-  mFrameLoaderCreationDisallowed = false;
-}
-
-void nsGenericHTMLFrameElement::CreateRemoteFrameLoader(
-    BrowserParent* aBrowserParent) {
-  MOZ_ASSERT(!mFrameLoader);
-  EnsureFrameLoader();
-  if (NS_WARN_IF(!mFrameLoader)) {
-    return;
-  }
-  mFrameLoader->InitializeFromBrowserParent(aBrowserParent);
-
-  if (nsSubDocumentFrame* subdocFrame = do_QueryFrame(GetPrimaryFrame())) {
-    
-    
-    
-    
-    mFrameLoader->UpdatePositionAndSize(subdocFrame);
-  }
-}
-
 void nsGenericHTMLFrameElement::SwapFrameLoaders(
     HTMLIFrameElement& aOtherLoaderOwner, ErrorResult& rv) {
   if (&aOtherLoaderOwner == this) {

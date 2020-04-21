@@ -89,31 +89,6 @@ class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
 
 
 
-
-
-
-
-
-
-
-
-
-  void DisallowCreateFrameLoader();
-  void AllowCreateFrameLoader();
-
-  
-
-
-
-
-
-  void CreateRemoteFrameLoader(mozilla::dom::BrowserParent* aBrowserParent);
-
-  
-
-
-
-
   static mozilla::ScrollbarPreference MapScrollingAttribute(const nsAttrValue*);
 
   nsIPrincipal* GetSrcTriggeringPrincipal() const {
