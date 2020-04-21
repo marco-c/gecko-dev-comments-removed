@@ -9,15 +9,14 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"  
-#include "mozilla/StaticPtr.h"
 #include "mozilla/StateWatching.h"  
-#include "mozilla/TaskQueue.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/TaskDispatcher.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/Unused.h"
-
-#include "nsThreadUtils.h"
 #include "nsContentUtils.h"
 #include "nsServiceManagerUtils.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 
@@ -227,6 +226,9 @@ void AbstractThread::InitMainThread() {
   if (!sCurrentThreadTLS.init()) {
     MOZ_CRASH();
   }
+  
+  
+  sCurrentThreadTLS.set(sMainThread);
 }
 
 void AbstractThread::DispatchStateChange(
