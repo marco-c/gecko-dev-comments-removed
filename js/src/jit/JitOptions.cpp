@@ -286,6 +286,17 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(enableTraceLogger, false);
 #endif
 
+#ifdef ENABLE_NEW_REGEXP
+  
+  SET_DEFAULT(traceRegExpParser, false);
+  
+  SET_DEFAULT(traceRegExpAssembler, false);
+  
+  SET_DEFAULT(traceRegExpInterpreter, false);
+  
+  SET_DEFAULT(traceRegExpPeephole, false);
+#endif
+
   SET_DEFAULT(enableWasmJitExit, true);
   SET_DEFAULT(enableWasmJitEntry, true);
   SET_DEFAULT(enableWasmIonFastCalls, true);
