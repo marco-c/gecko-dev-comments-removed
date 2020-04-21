@@ -61,14 +61,6 @@ interface nsIPrincipal : nsISerializable
     
 
 
-
-
-
-    boolean equalsForPermission(in nsIPrincipal other, in bool aExactHost);
-
-    
-
-
     boolean equalsConsideringDomain(in nsIPrincipal other);
 
     %{C++
