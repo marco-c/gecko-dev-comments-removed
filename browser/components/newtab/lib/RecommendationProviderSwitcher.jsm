@@ -58,6 +58,15 @@ this.RecommendationProviderSwitcher = class RecommendationProviderSwitcher {
     const { affinityProviderV2 } = this;
     if (affinityProviderV2 && affinityProviderV2.modelKeys) {
       
+      
+      
+      
+      
+      
+      if (this.affinityProvider) {
+        return;
+      }
+      
       this.affinityProvider = new PersonalityProvider(...args, {
         modelKeys: affinityProviderV2.modelKeys,
         dispatch: this.store.dispatch,
