@@ -12,8 +12,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -50,27 +52,28 @@ var UrlbarTestUtils = {
     selectionEnd = -1,
   } = {}) {
     await new Promise(resolve => waitForFocus(resolve, window));
-    let lastSearchString = window.gURLBar._lastSearchString;
     window.gURLBar.inputField.focus();
-    window.gURLBar.value = value;
+    
+    
+    if (UrlbarPrefs.get("trimURLs") && value != BrowserUtils.trimURL(value)) {
+      window.gURLBar.inputField.value = value;
+      fireInputEvent = true;
+    } else {
+      window.gURLBar.value = value;
+    }
     if (selectionStart >= 0 && selectionEnd >= 0) {
       window.gURLBar.selectionEnd = selectionEnd;
       window.gURLBar.selectionStart = selectionStart;
     }
+
+    
+    
     if (fireInputEvent) {
       
       this.fireInputEvent(window);
     } else {
       window.gURLBar.setPageProxyState("invalid");
-    }
-    
-    
-    
-    
-    
-    
-    if (!fireInputEvent || value == lastSearchString) {
-      this._startSearch(window.gURLBar, value, selectionStart, selectionEnd);
+      window.gURLBar.startQuery();
     }
     return this.promiseSearchComplete(window);
   },
@@ -108,16 +111,6 @@ var UrlbarTestUtils = {
 
   getOneOffSearchButtonsVisible(win) {
     return this.getOneOffSearchButtons(win).style.display != "none";
-  },
-
-  _startSearch(urlbar, text, selectionStart = -1, selectionEnd = -1) {
-    urlbar.value = text;
-    if (selectionStart >= 0 && selectionEnd >= 0) {
-      urlbar.selectionEnd = selectionEnd;
-      urlbar.selectionStart = selectionStart;
-    }
-    urlbar.setPageProxyState("invalid");
-    urlbar.startQuery();
   },
 
   

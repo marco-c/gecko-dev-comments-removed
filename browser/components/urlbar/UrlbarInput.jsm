@@ -786,7 +786,9 @@ class UrlbarInput {
       
       
       
-      this.value = this._valueOnLastSearch;
+      
+      
+      this.value = this._lastSearchString || this._valueOnLastSearch;
     } else {
       
       
@@ -1220,7 +1222,9 @@ class UrlbarInput {
       val = originalUrl.displaySpec;
     }
 
-    val = allowTrim ? this._trimValue(val) : val;
+    if (allowTrim) {
+      val = this._trimValue(val);
+    }
 
     this.valueIsTyped = false;
     this._resultForCurrentValue = null;
@@ -1844,8 +1848,13 @@ class UrlbarInput {
 
     if (this._autofillPlaceholder && this.window.gBrowser.userTypedValue) {
       
+      
       this.value = this.window.gBrowser.userTypedValue;
+    } else if (this.value == this._focusUntrimmedValue) {
+      
+      this.value = this._focusUntrimmedValue;
     }
+    this._focusUntrimmedValue = null;
 
     this.formatValue();
     this._resetSearchState();
@@ -1905,6 +1914,31 @@ class UrlbarInput {
   _on_focus(event) {
     if (!this._hideFocus) {
       this.setAttribute("focused", "true");
+    }
+
+    
+    
+    
+    
+    if (this.value != this._untrimmedValue) {
+      
+      
+      
+      let untrim = false;
+      try {
+        let fixedSpec = Services.uriFixup.createFixupURI(
+          this.value,
+          Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
+            Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS
+        ).displaySpec;
+        let expectedSpec = Services.io.newURI(this._untrimmedValue).displaySpec;
+        untrim = fixedSpec != expectedSpec;
+      } catch (ex) {
+        untrim = true;
+      }
+      if (untrim) {
+        this.inputField.value = this._focusUntrimmedValue = this._untrimmedValue;
+      }
     }
 
     this.startLayoutExtend();

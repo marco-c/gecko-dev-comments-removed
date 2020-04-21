@@ -7,7 +7,6 @@
 
 
 
-
 "use strict";
 
 async function checkInputHistory(len = 0) {

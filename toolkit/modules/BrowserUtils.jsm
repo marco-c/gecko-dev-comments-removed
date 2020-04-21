@@ -850,35 +850,15 @@ var BrowserUtils = {
 
 
 
+
+
+
+
+
   trimURL(aURL) {
-    
-    
     let url = this.removeSingleTrailingSlashFromURL(aURL);
     
-    if (!url.startsWith("http://")) {
-      return url;
-    }
-    let urlWithoutProtocol = url.substring(7);
-    
-    
-    
-    
-    
-    
-    let flags =
-      Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
-      Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
-    let fixedUpURL, expectedURLSpec;
-    try {
-      fixedUpURL = Services.uriFixup.createFixupURI(urlWithoutProtocol, flags);
-      expectedURLSpec = Services.io.newURI(aURL).displaySpec;
-    } catch (ex) {
-      return url;
-    }
-    if (fixedUpURL.displaySpec == expectedURLSpec) {
-      return urlWithoutProtocol;
-    }
-    return url;
+    return url.startsWith("http://") ? url.substring(7) : url;
   },
 
   recordSiteOriginTelemetry(aWindows, aIsGeckoView) {

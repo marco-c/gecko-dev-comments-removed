@@ -145,7 +145,7 @@ var UrlbarUtils = {
 
   
   
-  REGEXP_SINGLE_WORD: /^[^\s.?@:/]+\.?$/,
+  REGEXP_SINGLE_WORD: /^[^\s@:/?#]+(:\d+)?$/,
 
   
 

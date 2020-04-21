@@ -8,13 +8,17 @@ add_task(async function test() {
   const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
   const sandbox = sinon.createSandbox();
 
-  const PREF = "browser.fixup.dns_first_for_single_words";
-  Services.prefs.setBoolPref(PREF, true);
-
-  registerCleanupFunction(function() {
-    Services.prefs.clearUserPref(PREF);
-    sandbox.restore();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.fixup.dns_first_for_single_words", true]],
   });
+
+  registerCleanupFunction(sandbox.restore);
+
+  
+
+
+
+
 
   async function testVal(str, passthrough) {
     sandbox.stub(gURLBar, "_loadURL").callsFake(url => {
@@ -38,7 +42,7 @@ add_task(async function test() {
   await testVal("test ", true);
   await testVal(" test", true);
   await testVal(" test", true);
+  await testVal("test.test", true);
   await testVal("test test", false);
-  await testVal("test.test", false);
-  await testVal("test/test", false);
+  await testVal("test/test", false); 
 });

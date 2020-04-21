@@ -5,7 +5,6 @@
 
 
 
-
 "use strict";
 
 async function bumpScore(uri, searchString, counts, useMouseClick = false) {
