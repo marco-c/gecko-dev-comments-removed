@@ -473,8 +473,9 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
+
   void AttributeChangedImpl(Accessible* aAccessible, int32_t aNameSpaceID,
-                            nsAtom* aAttribute);
+                            nsAtom* aAttribute, int32_t aModType);
 
   
 

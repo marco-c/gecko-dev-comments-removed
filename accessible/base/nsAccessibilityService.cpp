@@ -285,16 +285,23 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
     change->GetCountOfEventListenerChangesAffectingAccessibility(&changeCount);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    for (uint32_t i = 0; i < changeCount; i++) {
+    if (changeCount) {
       Document* ownerDoc = node->OwnerDoc();
       DocAccessible* document = GetExistingDocAccessible(ownerDoc);
 
-      
-      
-      if (document && !document->HasAccessible(node) &&
-          nsCoreUtils::HasClickListener(node)) {
-        document->ContentInserted(node, node->GetNextSibling());
-        break;
+      if (document) {
+        Accessible* acc = document->GetAccessible(node);
+        if (!acc && nsCoreUtils::HasClickListener(node)) {
+          
+          
+          document->ContentInserted(node, node->GetNextSibling());
+        } else if (acc && acc->IsHTMLLink() && !acc->AsHTMLLink()->IsLinked()) {
+          
+          
+          RefPtr<AccEvent> linkedChangeEvent =
+              new AccStateChangeEvent(acc, states::LINKED);
+          document->FireDelayedEvent(linkedChangeEvent);
+        }
       }
     }
   }

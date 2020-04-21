@@ -23,7 +23,9 @@ using namespace mozilla::a11y;
 
 HTMLLinkAccessible::HTMLLinkAccessible(nsIContent* aContent,
                                        DocAccessible* aDoc)
-    : HyperTextAccessibleWrap(aContent, aDoc) {}
+    : HyperTextAccessibleWrap(aContent, aDoc) {
+  mType = eHTMLLinkType;
+}
 
 
 
