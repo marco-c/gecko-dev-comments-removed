@@ -8245,17 +8245,6 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
              "placeholder for primary frame has previous continuations?");
   nsIFrame* parent = inFlowFrame->GetParent();
 
-  if (aFrame->GetContent() == mDocument->GetBodyElement()) {
-    
-    
-    
-    
-    
-    TRACE("Root");
-    RecreateFramesForContent(mDocument->GetRootElement(), InsertionKind::Async);
-    return true;
-  }
-
   if (inFlowFrame->HasAnyStateBits(NS_FRAME_HAS_MULTI_COLUMN_ANCESTOR)) {
     nsIFrame* grandparent = parent->GetParent();
     MOZ_ASSERT(grandparent);
