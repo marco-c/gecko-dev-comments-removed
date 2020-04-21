@@ -176,6 +176,12 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(fullIonWarmUpThreshold, 100'000);
 
+#ifdef ENABLE_NEW_REGEXP
+  
+  
+  SET_DEFAULT(regexpWarmUpThreshold, 10);
+#endif
+
   
   
   SET_DEFAULT(exceptionBailoutThreshold, 10);
@@ -298,6 +304,9 @@ void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
 void DefaultJitOptions::setEagerBaselineCompilation() {
   baselineInterpreterWarmUpThreshold = 0;
   baselineJitWarmUpThreshold = 0;
+#ifdef ENABLE_NEW_REGEXP
+  regexpWarmUpThreshold = 0;
+#endif
 }
 
 void DefaultJitOptions::setEagerIonCompilation() {
