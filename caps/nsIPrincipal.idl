@@ -231,7 +231,6 @@ interface nsIPrincipal : nsISerializable
 
     [noscript] readonly attribute ACString asciiHost;
 
-
     
 
 
@@ -243,7 +242,12 @@ interface nsIPrincipal : nsISerializable
 
 
 
-        [noscript] readonly attribute ACString prepath;
+    [noscript] readonly attribute ACString prepath;
+
+    
+
+
+    [noscript] readonly attribute ACString filePath;
 
     
 
@@ -322,7 +326,8 @@ interface nsIPrincipal : nsISerializable
 
 
  
-    readonly attribute bool isOriginPotentiallyTrustworthy;
+    [infallible]
+    readonly attribute boolean isOriginPotentiallyTrustworthy;
 
     
 
@@ -474,7 +479,14 @@ interface nsIPrincipal : nsISerializable
 
 
     boolean isL10nAllowed(in nsIURI aDocumentURI);
-     
+    
+    
+
+
+
+
+    [infallible] readonly attribute nsIPrincipal nextSubDomainPrincipal;
+
     
 
 
