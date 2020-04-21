@@ -638,12 +638,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return true;
   }
 
-  void DidChange(FieldIndex<IDX_UserActivationState>, UserActivation::State);
+  void DidSet(FieldIndex<IDX_UserActivationState>);
 
   
   
   
-  void DidChange(FieldIndex<IDX_Muted>, bool);
+  void DidSet(FieldIndex<IDX_Muted>);
 
   bool CanSet(FieldIndex<IDX_EmbedderInnerWindowId>, const uint64_t& aValue,
               ContentParent* aSource);
@@ -651,23 +651,21 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_CurrentInnerWindowId>, const uint64_t& aValue,
               ContentParent* aSource);
 
-  void DidChange(FieldIndex<IDX_CurrentInnerWindowId>, uint64_t);
+  void DidSet(FieldIndex<IDX_CurrentInnerWindowId>);
 
   bool CanSet(FieldIndex<IDX_IsPopupSpam>, const bool& aValue,
               ContentParent* aSource);
 
-  void DidChange(FieldIndex<IDX_IsPopupSpam>, bool);
+  void DidSet(FieldIndex<IDX_IsPopupSpam>);
 
-  void DidChange(FieldIndex<IDX_GVAudibleAutoplayRequestStatus>,
-                 GVAutoplayRequestStatus);
-  void DidChange(FieldIndex<IDX_GVInaudibleAutoplayRequestStatus>,
-                 GVAutoplayRequestStatus);
+  void DidSet(FieldIndex<IDX_GVAudibleAutoplayRequestStatus>);
+  void DidSet(FieldIndex<IDX_GVInaudibleAutoplayRequestStatus>);
 
-  void DidChange(FieldIndex<IDX_Loading>, bool);
+  void DidSet(FieldIndex<IDX_Loading>);
 
-  void DidChange(FieldIndex<IDX_AncestorLoading>, bool);
+  void DidSet(FieldIndex<IDX_AncestorLoading>);
 
-  void DidChange(FieldIndex<IDX_UserAgentOverride>, const nsAString&);
+  void DidSet(FieldIndex<IDX_UserAgentOverride>);
   bool CanSet(FieldIndex<IDX_UserAgentOverride>, const nsString& aUserAgent,
               ContentParent* aSource);
 
@@ -690,8 +688,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return true;
   }
 
-  template <size_t I, typename T>
-  void DidChange(FieldIndex<I>, const T&) {}
+  template <size_t I>
+  void DidSet(FieldIndex<I>) {}
 
   
   
