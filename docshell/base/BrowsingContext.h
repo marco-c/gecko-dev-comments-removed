@@ -688,8 +688,13 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return true;
   }
 
+  
+  
+  
   template <size_t I>
   void DidSet(FieldIndex<I>) {}
+  template <size_t I, typename T>
+  void DidSet(FieldIndex<I>, T&& aOldValue) {}
 
   
   

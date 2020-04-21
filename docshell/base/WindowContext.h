@@ -90,8 +90,12 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   }
 
   
+  
+  
   template <size_t I>
   void DidSet(FieldIndex<I>) {}
+  template <size_t I, typename T>
+  void DidSet(FieldIndex<I>, T&& aOldValue) {}
 
   uint64_t mInnerWindowId;
   RefPtr<BrowsingContext> mBrowsingContext;
