@@ -351,8 +351,7 @@ class ContentParent final
 
   virtual nsresult DoSendAsyncMessage(JSContext* aCx, const nsAString& aMessage,
                                       StructuredCloneData& aData,
-                                      JS::Handle<JSObject*> aCpows,
-                                      nsIPrincipal* aPrincipal) override;
+                                      JS::Handle<JSObject*> aCpows) override;
 
   
   void NotifyTabDestroying();
@@ -1030,17 +1029,14 @@ class ContentParent final
 
   mozilla::ipc::IPCResult RecvSyncMessage(
       const nsString& aMsg, const ClonedMessageData& aData,
-      nsTArray<CpowEntry>&& aCpows, const IPC::Principal& aPrincipal,
-      nsTArray<StructuredCloneData>* aRetvals);
+      nsTArray<CpowEntry>&& aCpows, nsTArray<StructuredCloneData>* aRetvals);
 
   mozilla::ipc::IPCResult RecvRpcMessage(
       const nsString& aMsg, const ClonedMessageData& aData,
-      nsTArray<CpowEntry>&& aCpows, const IPC::Principal& aPrincipal,
-      nsTArray<StructuredCloneData>* aRetvals);
+      nsTArray<CpowEntry>&& aCpows, nsTArray<StructuredCloneData>* aRetvals);
 
   mozilla::ipc::IPCResult RecvAsyncMessage(const nsString& aMsg,
                                            nsTArray<CpowEntry>&& aCpows,
-                                           const IPC::Principal& aPrincipal,
                                            const ClonedMessageData& aData);
 
   
