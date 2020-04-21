@@ -98,6 +98,16 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   ForceStrict = 1 << 3,
+
+  
+  IsForEval = 1 << 4,
+
+  
+  
+  IsModule = 1 << 5,
+
+  
+  IsFunction = 1 << 6,
   
 
   
@@ -106,72 +116,7 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
 
   
-  Strict = 1 << 4,
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  BindingsAccessedDynamically = 1 << 5,
-
-  
-  
-  
-  
-  
-  
-  
-  FunHasExtensibleScope = 1 << 6,
-
-  
-  
-  
-  HasCallSiteObj = 1 << 7,
-
-  
-  
-  HasModuleGoal = 1 << 8,
-
-  
-  
-  FunctionHasThisBinding = 1 << 9,
-
-  
-  
-  HasMappedArgsObj = 1 << 10,
-
-  
-  
-  HasInnerFunctions = 1 << 11,
-
-  NeedsHomeObject = 1 << 12,
-  IsDerivedClassConstructor = 1 << 13,
-
-  
-  
-  IsLikelyConstructorWrapper = 1 << 14,
-
-  
-  IsGenerator = 1 << 15,
-
-  
-  IsAsync = 1 << 16,
-
-  
-  HasRest = 1 << 17,
+  Strict = 1 << 7,
 
   
   
@@ -190,30 +135,85 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  
-  
-  
-  
-  
-  ArgumentsHasVarBinding = 1 << 18,
+  BindingsAccessedDynamically = 1 << 8,
 
   
   
   
-  AlwaysNeedsArgsObj = 1 << 19,
+  
+  
+  
+  
+  FunHasExtensibleScope = 1 << 9,
 
   
-  ShouldDeclareArguments = 1 << 20,
+  
+  
+  HasCallSiteObj = 1 << 10,
 
   
-  IsForEval = 1 << 21,
+  
+  HasModuleGoal = 1 << 11,
 
   
   
-  IsModule = 1 << 22,
+  FunctionHasThisBinding = 1 << 12,
 
   
-  IsFunction = 1 << 23,
+  
+  HasMappedArgsObj = 1 << 13,
+
+  
+  
+  HasInnerFunctions = 1 << 14,
+
+  NeedsHomeObject = 1 << 15,
+  IsDerivedClassConstructor = 1 << 16,
+
+  
+  
+  IsLikelyConstructorWrapper = 1 << 17,
+
+  
+  IsGenerator = 1 << 18,
+
+  
+  IsAsync = 1 << 19,
+
+  
+  HasRest = 1 << 20,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArgumentsHasVarBinding = 1 << 21,
+
+  
+  
+  
+  AlwaysNeedsArgsObj = 1 << 22,
+
+  
+  ShouldDeclareArguments = 1 << 23,
 
   
   HasDirectEval = 1 << 24,
