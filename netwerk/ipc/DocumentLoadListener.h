@@ -94,7 +94,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIMultiPartChannelListener {
  public:
   explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
-                                nsILoadContext* aLoadContext,
                                 ADocumentChannelBridge* aBridge);
 
   
@@ -325,8 +324,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   RefPtr<ADocumentChannelBridge> mDocumentChannelBridge;
-
-  nsCOMPtr<nsILoadContext> mLoadContext;
 
   
   
