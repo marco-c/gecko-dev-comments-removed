@@ -392,6 +392,10 @@ menuitem.bookmark-item {
   list-style-image: url(chrome://browser/skin/window-controls/restore.svg);
 }
 
+#restore-button > .toolbarbutton-icon:-moz-locale-dir(rtl) {
+  transform: scaleX(-1);
+}
+
 #minimize-button:hover,
 #restore-button:hover {
   background-color: hsla(0,0%,0%,.12);
@@ -711,6 +715,7 @@ notification[value="translation"] {
 .translation-menupopup {
   -moz-appearance: none;
 }
+
 
 
 #bookmarksToolbarFolderMenu,
