@@ -1145,13 +1145,8 @@ class Label {
 };
 
 
-extern bool FLAG_harmony_regexp_sequence;
-extern bool FLAG_regexp_interpret_all;
-extern bool FLAG_regexp_mode_modifiers;
-extern bool FLAG_regexp_optimization;
-extern bool FLAG_regexp_peephole_optimization;
-extern bool FLAG_regexp_possessive_quantifier;
-extern bool FLAG_regexp_tier_up;
+
+
 
 
 
@@ -1160,6 +1155,39 @@ const bool FLAG_correctness_fuzzer_suppressions = false;
 
 
 const bool FLAG_enable_regexp_unaligned_accesses = false;
+
+
+
+
+const bool FLAG_harmony_regexp_sequence = false;
+
+
+const bool FLAG_regexp_interpret_all = false;
+
+
+
+
+const bool FLAG_regexp_mode_modifiers = false;
+
+
+
+const bool FLAG_regexp_possessive_quantifier = false;
+
+
+
+
+
+const bool FLAG_regexp_optimization = true;
+const bool FLAG_regexp_peephole_optimization = true;
+
+
+
+
+const bool FLAG_regexp_tier_up = true;
+
+
+
+
 
 extern bool FLAG_trace_regexp_assembler;
 extern bool FLAG_trace_regexp_bytecodes;
