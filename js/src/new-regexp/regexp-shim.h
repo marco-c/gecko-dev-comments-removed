@@ -88,19 +88,7 @@ static constexpr inline T Max(T t1, T t2) {
 #  define V8PRIuPTRDIFF "tu"
 #endif
 
-
-
-
-
-
-
-#define arraysize(array) (sizeof(ArraySizeHelper(array)))
-
-
-
-
-template <typename T, size_t N>
-char (&ArraySizeHelper(T (&array)[N]))[N];
+#define arraysize mozilla::ArrayLength
 
 
 #define DISALLOW_ASSIGN(TypeName) TypeName& operator=(const TypeName&) = delete
@@ -735,14 +723,7 @@ inline Handle<T> handle(T object, Isolate* isolate) {
 
 
 
-class DisallowHeapAllocation {
- public:
-  DisallowHeapAllocation() {}
-  operator const JS::AutoAssertNoGC&() const { return no_gc_; }
-
- private:
-  const JS::AutoAssertNoGC no_gc_;
-};
+using DisallowHeapAllocation = JS::AutoAssertNoGC;
 
 
 
