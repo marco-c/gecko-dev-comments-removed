@@ -1,13 +1,11 @@
 
 
-async function test() {
+function test() {
   waitForExplicitFinish();
 
   Services.prefs.setBoolPref("xpinstall.enabled", false);
 
-  let tab = BrowserTestUtils.addTab(gBrowser, TESTROOT);
-  gBrowser.selectedTab = tab;
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, TESTROOT);
+  gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, TESTROOT);
 
   ContentTask.spawn(
     gBrowser.selectedBrowser,

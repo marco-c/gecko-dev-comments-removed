@@ -65,7 +65,7 @@ class ParentChannelListener final : public nsIInterfaceRequestor,
   
   void SetListenerAfterRedirect(nsIStreamListener* aListener);
 
-  dom::CanonicalBrowsingContext* GetBrowsingContext() const {
+  dom::CanonicalBrowsingContext* GetBrowsingContext() {
     return mBrowsingContext;
   }
 

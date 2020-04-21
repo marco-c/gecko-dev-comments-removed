@@ -13,12 +13,8 @@
 #include "mozilla/dom/MediaController.h"
 #include "mozilla/dom/MediaControlService.h"
 #include "mozilla/dom/PlaybackController.h"
-#include "mozilla/net/DocumentLoadListener.h"
-#include "mozilla/net/BrowsingContextDocumentChannel.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/NullPrincipal.h"
-#include "mozilla/net/DocumentLoadListener.h"
-#include "nsIWebNavigation.h"
 
 #include "nsGlobalWindowOuter.h"
 
@@ -285,25 +281,6 @@ void CanonicalBrowsingContext::LoadURI(const nsAString& aURI,
   LoadURI(loadState, true);
 }
 
-void CanonicalBrowsingContext::Stop(uint32_t aStopFlags) {
-  if (IsDiscarded()) {
-    return;
-  }
-
-  
-  if (mCurrentLoad && (aStopFlags & nsIWebNavigation::STOP_NETWORK)) {
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
-  }
-
-  
-  
-  if (GetDocShell()) {
-    nsDocShell::Cast(GetDocShell())->Stop(aStopFlags);
-  } else if (ContentParent* cp = GetContentParent()) {
-    Unused << cp->SendStopLoad(this, aStopFlags);
-  }
-}
-
 void CanonicalBrowsingContext::PendingRemotenessChange::Complete(
     ContentParent* aContentParent) {
   if (!mPromise) {
@@ -564,87 +541,6 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
     mTabMediaController = new MediaController(Id());
   }
   return mTabMediaController;
-}
-
-bool CanonicalBrowsingContext::AttemptLoadURIInParent(
-    nsDocShellLoadState* aLoadState, bool aSetNavigating) {
-  
-  
-  if (!IsTopContent() || !StaticPrefs::browser_tabs_documentchannel() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_initiated()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  if (GetWatchedByDevtools()) {
-    return false;
-  }
-
-  
-  
-  
-  if (!aLoadState->URI()->SchemeIs("http") &&
-      !aLoadState->URI()->SchemeIs("https")) {
-    return false;
-  }
-
-  uint64_t outerWindowId = 0;
-  if (WindowGlobalParent* global = GetCurrentWindowGlobal()) {
-    nsCOMPtr<nsIURI> currentURI = global->GetDocumentURI();
-    if (currentURI) {
-      bool newURIHasRef = false;
-      aLoadState->URI()->GetHasRef(&newURIHasRef);
-      bool equalsExceptRef = false;
-      aLoadState->URI()->EqualsExceptRef(currentURI, &equalsExceptRef);
-
-      if (equalsExceptRef && newURIHasRef) {
-        
-        
-        return false;
-      }
-    }
-    
-    
-    if (global->HasBeforeUnload()) {
-      return false;
-    }
-
-    outerWindowId = global->OuterWindowId();
-  }
-
-  RefPtr<net::BrowsingContextDocumentChannel> docChannel =
-      new net::BrowsingContextDocumentChannel(this);
-
-  
-  
-  
-  return docChannel->Open(aLoadState, outerWindowId, aSetNavigating);
-}
-
-bool CanonicalBrowsingContext::StartDocumentLoad(
-    net::DocumentLoadListener* aLoad) {
-  if (mCurrentLoad) {
-    
-    
-    
-    
-    if (aLoad->OtherPid() && !mCurrentLoad->OtherPid()) {
-      return false;
-    }
-    mCurrentLoad->Cancel(NS_BINDING_ABORTED);
-  }
-  mCurrentLoad = aLoad;
-  return true;
-}
-void CanonicalBrowsingContext::EndDocumentLoad(
-    net::DocumentLoadListener* aLoad) {
-  if (mCurrentLoad == aLoad) {
-    mCurrentLoad = nullptr;
-  }
 }
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CanonicalBrowsingContext, BrowsingContext,

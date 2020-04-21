@@ -19,10 +19,6 @@
 #include "nsISHEntry.h"
 
 namespace mozilla {
-namespace net {
-class DocumentLoadListener;
-}
-
 namespace dom {
 
 class WindowGlobalParent;
@@ -104,7 +100,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   using BrowsingContext::LoadURI;
   void LoadURI(const nsAString& aURI, const LoadURIOptions& aOptions,
                ErrorResult& aError);
-  void Stop(uint32_t aStopFlags);
 
   using RemotenessPromise = MozPromise<RefPtr<BrowserParent>, nsresult, false>;
   RefPtr<RemotenessPromise> ChangeFrameRemoteness(const nsAString& aRemoteType,
@@ -120,9 +115,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   MediaController* GetMediaController();
-
-  bool AttemptLoadURIInParent(nsDocShellLoadState* aLoadState,
-                              bool aSetNavigating);
 
   bool HasHistoryEntry(nsISHEntry* aEntry) const {
     return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
@@ -184,16 +176,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     uint64_t mPendingSwitchId;
   };
 
-  friend class net::DocumentLoadListener;
-  
-  
-  
-  bool StartDocumentLoad(net::DocumentLoadListener* aLoad);
-  
-  
-  
-  void EndDocumentLoad(net::DocumentLoadListener* aLoad);
-
   
   
   uint64_t mProcessId;
@@ -214,8 +196,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   RefPtr<MediaController> mTabMediaController;
-
-  RefPtr<net::DocumentLoadListener> mCurrentLoad;
 
   
   nsCOMPtr<nsISHEntry> mOSHE;

@@ -198,7 +198,7 @@ add_task(async function navigate_around() {
       
     },
     "toolkit.cosmeticAnimations.enabled": {
-      min: 39,
+      min: 45,
       max: 55,
     },
   };
