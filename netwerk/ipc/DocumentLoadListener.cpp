@@ -15,6 +15,7 @@
 #include "mozilla/dom/ClientChannelHelper.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
+#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/ServiceWorkerManager.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -43,6 +44,8 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "nsICookieService.h"
 #include "nsDocShellLoadTypes.h"
+#include "nsDOMNavigationTiming.h"
+#include "nsSandboxFlags.h"
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -380,6 +383,8 @@ bool DocumentLoadListener::Open(
           browsingContext, aLoadState, loadInfo, mParentChannelListener,
           nullptr, attrs, aLoadFlags, aCacheKey, *aRv,
           getter_AddRefs(mChannel))) {
+    LOG(("DocumentLoadListener::Open failed to create channel [this=%p]",
+         this));
     mParentChannelListener = nullptr;
     return false;
   }
@@ -447,6 +452,15 @@ bool DocumentLoadListener::Open(
   
   AddClientChannelHelperInParent(mChannel, std::move(aInfo));
 
+  if (!GetBrowsingContext()->StartDocumentLoad(this)) {
+    LOG(("DocumentLoadListener::Open failed StartDocumentLoad [this=%p]",
+         this));
+    *aRv = NS_BINDING_ABORTED;
+    mParentChannelListener = nullptr;
+    mChannel = nullptr;
+    return false;
+  }
+
   
   
   
@@ -505,7 +519,9 @@ bool DocumentLoadListener::Open(
       LOG(("DocumentLoadListener::Open failed AsyncOpen [this=%p rv=%" PRIx32
            "]",
            this, static_cast<uint32_t>(*aRv)));
+      GetBrowsingContext()->EndDocumentLoad(this);
       mParentChannelListener = nullptr;
+      mChannel = nullptr;
       return false;
     }
   }
@@ -516,11 +532,87 @@ bool DocumentLoadListener::Open(
   mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
-
-  if (auto* ctx = GetBrowsingContext()) {
-    ctx->StartDocumentLoad(this);
-  }
   return true;
+}
+
+bool DocumentLoadListener::OpenFromParent(nsDocShellLoadState* aLoadState,
+                                          uint64_t aOuterWindowId) {
+  
+  
+  if (!GetBrowsingContext()->IsTopContent()) {
+    LOG(
+        ("DocumentLoadListener::OpenFromParent failed because of subdoc "
+         "[this=%p]",
+         this));
+    mParentChannelListener = nullptr;
+    return false;
+  }
+
+  if (nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadState->Csp()) {
+    
+    bool allowsNavigateTo = false;
+    nsresult rv = csp->GetAllowsNavigateTo(aLoadState->URI(),
+                                           aLoadState->IsFormSubmission(),
+                                           false, 
+                                           false, 
+                                           &allowsNavigateTo);
+    if (NS_FAILED(rv) || !allowsNavigateTo) {
+      mParentChannelListener = nullptr;
+      return false;
+    }
+  }
+
+  aLoadState->CalculateLoadURIFlags();
+
+  
+  
+  
+  auto loadType = aLoadState->LoadType();
+  if (loadType == LOAD_HISTORY || loadType == LOAD_RELOAD_NORMAL ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
+      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) {
+    LOG(
+        ("DocumentLoadListener::OpenFromParent failed because of history "
+         "load [this=%p]",
+         this));
+    mParentChannelListener = nullptr;
+    return false;
+  }
+
+  nsLoadFlags loadFlags = aLoadState->LoadFlags() |
+                          nsIChannel::LOAD_DOCUMENT_URI |
+                          nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
+  uint32_t sandboxFlags = GetBrowsingContext()->GetSandboxFlags();
+  if ((sandboxFlags & (SANDBOXED_ORIGIN | SANDBOXED_SCRIPTS)) == 0) {
+    loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
+  }
+  if (aLoadState->FirstParty()) {
+    
+    loadFlags |= nsIChannel::LOAD_INITIAL_DOCUMENT_URI;
+  }
+
+  RefPtr<nsDOMNavigationTiming> timing = new nsDOMNavigationTiming(nullptr);
+  timing->NotifyNavigationStart(
+      GetBrowsingContext()->GetIsActive()
+          ? nsDOMNavigationTiming::DocShellState::eActive
+          : nsDOMNavigationTiming::DocShellState::eInactive);
+
+  
+  uint32_t cacheKey = 0;
+
+  
+  
+  
+  Maybe<uint64_t> channelId;
+
+  
+  
+  Maybe<dom::ClientInfo> initialClientInfo;
+
+  nsresult rv;
+  return Open(aLoadState, loadFlags, cacheKey, channelId, TimeStamp::Now(),
+              timing, std::move(initialClientInfo), aOuterWindowId, false, &rv);
 }
 
 void DocumentLoadListener::DocumentChannelBridgeDisconnected() {
@@ -671,9 +763,7 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
       redirectChannel->Delete();
     }
     mChannel->Resume();
-    if (auto* ctx = GetBrowsingContext()) {
-      ctx->EndDocumentLoad(this);
-    }
+    DisconnectChildListeners(NS_ERROR_UNEXPECTED, NS_ERROR_UNEXPECTED);
     return;
   }
 
@@ -1070,6 +1160,11 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   nsContentSecurityUtils::PerformCSPFrameAncestorAndXFOCheck(mChannel);
 
+  if (!GetBrowsingContext() || GetBrowsingContext()->IsDiscarded()) {
+    DisconnectChildListeners(NS_ERROR_UNEXPECTED, NS_ERROR_UNEXPECTED);
+    return NS_ERROR_UNEXPECTED;
+  }
+
   
   
   
@@ -1120,11 +1215,43 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   }
 
   if (mRedirectContentProcessIdPromise) {
+    
+    
     TriggerCrossProcessSwitch();
-    return NS_OK;
-  }
+  } else if (!mDocumentChannelBridge->SupportsRedirectToRealChannel()) {
+    
+    
 
-  TriggerRedirectToRealChannel();
+    
+    
+    
+    static uint64_t sIdent = 0x10000;
+    uint64_t ident = ++sIdent;
+    mCrossProcessRedirectIdentifier = ident;
+
+    
+    
+    MOZ_ASSERT(GetBrowsingContext()->GetCurrentWindowGlobal());
+
+    RefPtr<BrowserParent> browserParent =
+        GetBrowsingContext()->GetCurrentWindowGlobal()->GetBrowserParent();
+
+    
+    
+    browserParent->SuspendProgressEventsUntilAfterNextLoadStarts();
+
+    
+    
+    browserParent->ResumeLoad(ident);
+
+    
+    
+    TriggerRedirectToRealChannel(Some(GetBrowsingContext()->OwnerProcessId()));
+  } else {
+    
+    
+    TriggerRedirectToRealChannel(Nothing());
+  }
 
   return NS_OK;
 }

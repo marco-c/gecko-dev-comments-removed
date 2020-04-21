@@ -102,6 +102,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
             const TimeStamp& aAsyncOpenTime, nsDOMNavigationTiming* aTiming,
             Maybe<dom::ClientInfo>&& aInfo, uint64_t aOuterWindowId,
             bool aHasGesture, nsresult* aRv);
+  bool OpenFromParent(nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -194,8 +195,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void TriggerRedirectToRealChannel(
-      const Maybe<uint64_t>& aDestinationProcess = Nothing());
+  void TriggerRedirectToRealChannel(const Maybe<uint64_t>& aDestinationProcess);
 
   
   
