@@ -3201,17 +3201,6 @@ bool ContentParent::CanOpenBrowser(const IPCTabContext& aContext) {
           "Got null opener from child; aborting AllocPBrowserParent.");
       return false;
     }
-
-    
-    
-    
-    
-    if (!popupContext.isMozBrowserElement() && opener->IsMozBrowserElement()) {
-      ASSERT_UNLESS_FUZZING(
-          "Child trying to escalate privileges!  Aborting "
-          "AllocPBrowserParent.");
-      return false;
-    }
   }
 
   MaybeInvalidTabContext tc(aContext);
@@ -4676,10 +4665,6 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   nsCOMPtr<nsIContent> frame;
   if (topParent) {
     frame = topParent->GetOwnerElement();
-
-    if (NS_WARN_IF(topParent->IsMozBrowserElement())) {
-      return IPC_FAIL(this, "aThisTab is not a MozBrowser");
-    }
   }
 
   nsCOMPtr<nsPIDOMWindowOuter> outerWin;

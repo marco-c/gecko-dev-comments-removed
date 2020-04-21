@@ -39,13 +39,6 @@ class TabContext {
 
   IPCTabContext AsIPCTabContext() const;
 
-  
-
-
-
-
-  bool IsMozBrowserElement() const;
-
   bool IsJSPlugin() const;
   int32_t JSPluginId() const;
 
@@ -95,7 +88,7 @@ class TabContext {
 
   void SetFirstPartyDomainAttributes(const nsAString& aFirstPartyDomain);
 
-  bool SetTabContext(bool aIsMozBrowserElement, uint64_t aChromeOuterWindowID,
+  bool SetTabContext(uint64_t aChromeOuterWindowID,
                      UIStateChangeType aShowFocusRings,
                      const OriginAttributes& aOriginAttributes,
                      const nsAString& aPresentationURL,
@@ -131,14 +124,6 @@ class TabContext {
 
 
   bool mInitialized;
-
-  
-
-
-
-
-
-  bool mIsMozBrowserElement;
 
   
 
@@ -179,14 +164,14 @@ class MutableTabContext : public TabContext {
     return TabContext::SetTabContext(aContext);
   }
 
-  bool SetTabContext(bool aIsMozBrowserElement, uint64_t aChromeOuterWindowID,
+  bool SetTabContext(uint64_t aChromeOuterWindowID,
                      UIStateChangeType aShowFocusRings,
                      const OriginAttributes& aOriginAttributes,
                      const nsAString& aPresentationURL,
                      uint32_t aMaxTouchPoints) {
-    return TabContext::SetTabContext(aIsMozBrowserElement, aChromeOuterWindowID,
-                                     aShowFocusRings, aOriginAttributes,
-                                     aPresentationURL, aMaxTouchPoints);
+    return TabContext::SetTabContext(aChromeOuterWindowID, aShowFocusRings,
+                                     aOriginAttributes, aPresentationURL,
+                                     aMaxTouchPoints);
   }
 
   bool SetTabContextForJSPluginFrame(uint32_t aJSPluginID) {
