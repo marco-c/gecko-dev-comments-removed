@@ -176,7 +176,7 @@ function setCookie(name, domain, path, maxAge, url) {
   }
   s += " for " + url.spec;
   info(s);
-  cs.setCookieStringFromHttp(url, null, value, null);
+  cs.setCookieStringFromHttp(url, value, null);
   return new Promise(function(resolve) {
     
     
