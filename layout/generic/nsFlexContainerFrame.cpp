@@ -5066,9 +5066,8 @@ void nsFlexContainerFrame::ComputeFinalSize(
   const WritingMode flexWM = aReflowInput.GetWritingMode();
 
   
-  
-  LogicalSize reflowOutputInFlexWM(flexWM);
-  reflowOutputInFlexWM.ISize(flexWM) =
+  LogicalSize desiredSizeInFlexWM(flexWM);
+  desiredSizeInFlexWM.ISize(flexWM) =
       aContentBoxSize.ISize(flexWM) + aBorderPadding.IStartEnd(flexWM);
 
   
@@ -5089,11 +5088,11 @@ void nsFlexContainerFrame::ComputeFinalSize(
 
     if (aMaxBlockEndEdgeOfChildren <= availableBSizeMinusBEndBP) {
       
-      reflowOutputInFlexWM.BSize(flexWM) = availableBSizeMinusBEndBP;
+      desiredSizeInFlexWM.BSize(flexWM) = availableBSizeMinusBEndBP;
     } else {
       
       
-      reflowOutputInFlexWM.BSize(flexWM) = std::min(
+      desiredSizeInFlexWM.BSize(flexWM) = std::min(
           effectiveContentBSizeWithBStartBP, aMaxBlockEndEdgeOfChildren);
 
       if (aMaxBlockEndEdgeOfChildren >= effectiveContentBSizeWithBStartBP) {
@@ -5118,7 +5117,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
   } else {
     
     
-    reflowOutputInFlexWM.BSize(flexWM) = effectiveContentBSizeWithBStartBP;
+    desiredSizeInFlexWM.BSize(flexWM) = effectiveContentBSizeWithBStartBP;
   }
 
   if (aFlexContainerAscent == nscoord_MIN) {
@@ -5135,7 +5134,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
     
     
     
-    aFlexContainerAscent = reflowOutputInFlexWM.BSize(flexWM);
+    aFlexContainerAscent = desiredSizeInFlexWM.BSize(flexWM);
   }
 
   if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
@@ -5157,11 +5156,11 @@ void nsFlexContainerFrame::ComputeFinalSize(
   
   
   const nscoord effectiveContentBSizeWithBStartEndBP =
-      reflowOutputInFlexWM.BSize(flexWM) + blockEndContainerBP;
+      desiredSizeInFlexWM.BSize(flexWM) + blockEndContainerBP;
 
   if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
       effectiveContentBSizeWithBStartEndBP > aReflowInput.AvailableBSize() &&
-      reflowOutputInFlexWM.BSize(flexWM) != 0 &&
+      desiredSizeInFlexWM.BSize(flexWM) != 0 &&
       aReflowInput.ComputedBSize() != NS_UNCONSTRAINEDSIZE) {
     
     
@@ -5176,7 +5175,7 @@ void nsFlexContainerFrame::ComputeFinalSize(
   
   
   
-  reflowOutputInFlexWM.BSize(flexWM) += blockEndContainerBP;
+  desiredSizeInFlexWM.BSize(flexWM) += blockEndContainerBP;
 
   if (aStatus.IsComplete() && !aAreChildrenComplete) {
     aStatus.SetOverflowIncomplete();
@@ -5190,12 +5189,11 @@ void nsFlexContainerFrame::ComputeFinalSize(
     
     
     mLastBaselineFromLastReflow =
-        reflowOutputInFlexWM.BSize(flexWM) - aFlexContainerAscent;
+        desiredSizeInFlexWM.BSize(flexWM) - aFlexContainerAscent;
   }
 
   
-  
-  aReflowOutput.SetSize(flexWM, reflowOutputInFlexWM);
+  aReflowOutput.SetSize(flexWM, desiredSizeInFlexWM);
 
   
   aReflowOutput.SetOverflowAreasToDesiredBounds();
