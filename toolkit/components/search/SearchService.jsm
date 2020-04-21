@@ -1685,6 +1685,7 @@ SearchService.prototype = {
       }
       
       if (
+        !gModernConfig &&
         json.appVersion != Services.appinfo.version &&
         gGeoSpecificDefaultsEnabled &&
         json.metaData
