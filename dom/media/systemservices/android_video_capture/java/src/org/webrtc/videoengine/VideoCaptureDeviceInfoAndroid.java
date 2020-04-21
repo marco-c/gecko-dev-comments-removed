@@ -56,7 +56,16 @@ public class VideoCaptureDeviceInfoAndroid {
           }
 
           CaptureCapabilityAndroid device = new CaptureCapabilityAndroid();
-          device.name = camera;
+
+          
+          
+          
+          
+          
+          
+          
+          
+          device.name = "Facing " + (enumerator.isFrontFacing(camera) ? "front" : "back") + ":" + camera;
 
           
           
