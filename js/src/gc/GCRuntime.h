@@ -614,6 +614,7 @@ class GCRuntime {
 
 
   friend class BackgroundDecommitTask;
+  bool tooManyEmptyChunks(const AutoLockGC& lock);
   ChunkPool expireEmptyChunkPool(const AutoLockGC& lock);
   void freeEmptyChunks(const AutoLockGC& lock);
   void prepareToFreeChunk(ChunkInfo& info);
