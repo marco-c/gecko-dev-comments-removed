@@ -50,7 +50,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/LateWriteChecks.h"
 
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
@@ -92,7 +91,6 @@ static ShutdownStep sShutdownSteps[] = {
 };
 
 Atomic<bool> sShutdownNotified;
-Atomic<bool> sHasTerminatorLateWrite;
 
 
 
@@ -144,12 +142,6 @@ struct Options {
 
 
   uint32_t crashAfterTicks;
-
-  
-
-
-
-  uint32_t reportWritesAfterTicks;
 };
 
 
@@ -162,7 +154,6 @@ void RunWatchdog(void* arg) {
   
   UniquePtr<Options> options((Options*)arg);
   uint32_t crashAfterTicks = options->crashAfterTicks;
-  uint32_t reportWritesAfterTicks = options->reportWritesAfterTicks;
   options = nullptr;
 
   const uint32_t timeToLive = crashAfterTicks;
@@ -182,17 +173,8 @@ void RunWatchdog(void* arg) {
 #else
     usleep(1000000 );
 #endif
+
     if (gHeartbeat++ < timeToLive) {
-#if !defined(MOZ_VALGRIND) || !defined(MOZ_CODE_COVERAGE)
-      
-      
-      
-      
-      if (gHeartbeat >= reportWritesAfterTicks && !sHasTerminatorLateWrite) {
-        sHasTerminatorLateWrite = true;
-        BeginLateWriteChecks();
-      }
-#endif
       continue;
     }
 
@@ -400,7 +382,6 @@ void nsTerminator::Start() {
 #endif  
   mInitialized = true;
   sShutdownNotified = false;
-  sHasTerminatorLateWrite = false;
 }
 
 
@@ -408,10 +389,6 @@ void nsTerminator::Start() {
 void nsTerminator::StartWatchdog() {
   int32_t crashAfterMS =
       Preferences::GetInt("toolkit.asyncshutdown.crash_timeout",
-                          FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS);
-
-  int32_t reducedCrashTimeoutMS =
-      Preferences::GetInt("toolkit.asyncshutdown.report_writes_after",
                           FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS);
   
   if (crashAfterMS <= 0) {
@@ -425,7 +402,6 @@ void nsTerminator::StartWatchdog() {
     crashAfterMS = INT32_MAX;
   } else {
     crashAfterMS += ADDITIONAL_WAIT_BEFORE_CRASH_MS;
-    reducedCrashTimeoutMS += ADDITIONAL_WAIT_BEFORE_CRASH_MS;
   }
 
 #ifdef MOZ_VALGRIND
@@ -450,11 +426,9 @@ void nsTerminator::StartWatchdog() {
   UniquePtr<Options> options(new Options());
   const PRIntervalTime ticksDuration = PR_MillisecondsToInterval(1000);
   options->crashAfterTicks = crashAfterMS / ticksDuration;
-  options->reportWritesAfterTicks = reducedCrashTimeoutMS / ticksDuration;
   
   if (options->crashAfterTicks == 0) {
     options->crashAfterTicks = crashAfterMS / 1000;
-    options->reportWritesAfterTicks = reducedCrashTimeoutMS / 1000;
   }
 
   DebugOnly<PRThread*> watchdogThread =
@@ -605,8 +579,6 @@ void nsTerminator::UpdateCrashReport(const char* aTopic) {
   Unused << CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ShutdownProgress, report);
 }
-
-bool nsTerminator::IsCheckingLateWrites() { return sHasTerminatorLateWrite; }
 
 void XPCOMShutdownNotified() {
   MOZ_DIAGNOSTIC_ASSERT(sShutdownNotified == false);
