@@ -969,7 +969,7 @@ async function showColumn(monitor, column) {
 
 
 async function selectIndexAndWaitForSourceEditor(monitor, index) {
-  const document = monitor.panelWin.document;
+  const { document } = monitor.panelWin;
   const onResponseContent = monitor.panelWin.api.once(
     TEST_EVENTS.RECEIVED_RESPONSE_CONTENT
   );
@@ -1006,7 +1006,7 @@ async function performRequests(monitor, tab, count) {
 
 
 function getCodeMirrorValue(monitor) {
-  const document = monitor.panelWin.document;
+  const { document } = monitor.panelWin;
   return document.querySelector(".CodeMirror").CodeMirror.getValue();
 }
 
@@ -1118,7 +1118,7 @@ function validateRequests(requests, monitor) {
       { cause: { type: causeType, loadingDocumentUri: causeUri } }
     );
 
-    const stacktrace = requestItem.stacktrace;
+    const { stacktrace } = requestItem;
     const stackLen = stacktrace ? stacktrace.length : 0;
 
     if (stack) {

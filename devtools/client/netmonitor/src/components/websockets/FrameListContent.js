@@ -88,7 +88,7 @@ class FrameListContent extends Component {
 
   componentDidMount() {
     const { startPanelContainer } = this.props;
-    const scrollAnchor = this.refs.scrollAnchor;
+    const { scrollAnchor } = this.refs;
 
     if (scrollAnchor) {
       
@@ -99,7 +99,7 @@ class FrameListContent extends Component {
 
   componentDidUpdate(prevProps) {
     const { startPanelContainer, channelId } = this.props;
-    const scrollAnchor = this.refs.scrollAnchor;
+    const { scrollAnchor } = this.refs;
 
     
     if (!scrollAnchor) {
@@ -146,7 +146,7 @@ class FrameListContent extends Component {
 
   componentWillUnmount() {
     
-    const scrollAnchor = this.refs.scrollAnchor;
+    const { scrollAnchor } = this.refs;
 
     if (this.intersectionObserver) {
       if (scrollAnchor) {

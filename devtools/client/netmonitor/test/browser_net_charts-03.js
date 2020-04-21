@@ -1,11 +1,11 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
-
+/**
+ * Makes sure Table Charts have the right internal structure.
+ */
 
 add_task(async function() {
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
@@ -49,7 +49,7 @@ add_task(async function() {
     },
   });
 
-  const node = table.node;
+  const { node } = table;
   const title = node.querySelector(".table-chart-title");
   const grid = node.querySelector(".table-chart-grid");
   const totals = node.querySelector(".table-chart-totals");

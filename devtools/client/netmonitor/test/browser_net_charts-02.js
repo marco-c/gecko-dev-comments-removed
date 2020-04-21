@@ -1,12 +1,12 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-
-
-
-
+/**
+ * Makes sure Pie Charts have the right internal structure when
+ * initialized with empty data.
+ */
 
 add_task(async function() {
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
@@ -27,7 +27,7 @@ add_task(async function() {
     height: 100,
   });
 
-  const node = pie.node;
+  const { node } = pie;
   const slices = node.querySelectorAll(".pie-chart-slice.chart-colored-blob");
   const labels = node.querySelectorAll(".pie-chart-label");
 

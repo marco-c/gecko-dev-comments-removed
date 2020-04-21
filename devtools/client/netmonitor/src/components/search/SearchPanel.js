@@ -95,7 +95,7 @@ class SearchPanel extends Component {
 
 
   renderLabel(props) {
-    const member = props.member;
+    const { member } = props;
     const level = member.level || 0;
     const className = level == RESOURCE_LEVEL ? "resourceCell" : "resultCell";
 
