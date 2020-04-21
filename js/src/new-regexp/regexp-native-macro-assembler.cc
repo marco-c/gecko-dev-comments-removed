@@ -371,13 +371,13 @@ void SMRegExpMacroAssembler::CheckNotBackReferenceImpl(int start_reg,
     
     
     
-    js::jit::Label convert_capture;
+    js::jit::Label convert_match;
     masm_.or32(Imm32(0x20), temp1_);
 
     
     masm_.computeEffectiveAddress(Address(temp1_, -'a'), temp2_);
     masm_.branch32(Assembler::BelowOrEqual, temp2_, Imm32('z' - 'a'),
-                   &convert_capture);
+                   &convert_match);
     
     
     masm_.sub32(Imm32(224 - 'a'), temp2_);
@@ -386,8 +386,8 @@ void SMRegExpMacroAssembler::CheckNotBackReferenceImpl(int start_reg,
 
     
     
-    masm_.bind(&convert_capture);
-    masm_.load8ZeroExtend(Address(current_character_, 0), temp2_);
+    masm_.bind(&convert_match);
+    masm_.load8ZeroExtend(Address(current_position_, 0), temp2_);
     masm_.or32(Imm32(0x20), temp2_);
     masm_.branch32(Assembler::NotEqual, temp1_, temp2_, &fail);
 
