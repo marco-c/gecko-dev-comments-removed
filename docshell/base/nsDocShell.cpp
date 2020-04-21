@@ -372,8 +372,7 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mAllowMedia(true),
       mAllowDNSPrefetch(true),
       mAllowWindowControl(true),
-      mUseErrorPages(false),
-      mObserveErrorPages(true),
+      mUseErrorPages(true),
       mCSSErrorReportingEnabled(false),
       mAllowAuth(mItemType == typeContent),
       mAllowKeywordFixup(false),
@@ -1101,19 +1100,25 @@ bool nsDocShell::ValidateOrigin(BrowsingContext* aOrigin,
   if (NS_SUCCEEDED(rv) && equal) {
     return true;
   }
-
   
   nsCOMPtr<nsIURI> originURI;
   nsCOMPtr<nsIURI> targetURI;
   nsCOMPtr<nsIURI> innerOriginURI;
   nsCOMPtr<nsIURI> innerTargetURI;
 
-  rv = originDocument->NodePrincipal()->GetURI(getter_AddRefs(originURI));
+  
+  auto* originDocumentBasePrincipal =
+      BasePrincipal::Cast(originDocument->NodePrincipal());
+
+  rv = originDocumentBasePrincipal->GetURI(getter_AddRefs(originURI));
   if (NS_SUCCEEDED(rv) && originURI) {
     innerOriginURI = NS_GetInnermostURI(originURI);
   }
 
-  rv = targetDocument->NodePrincipal()->GetURI(getter_AddRefs(targetURI));
+  auto* targetDocumentBasePrincipal =
+      BasePrincipal::Cast(targetDocument->NodePrincipal());
+
+  rv = targetDocumentBasePrincipal->GetURI(getter_AddRefs(targetURI));
   if (NS_SUCCEEDED(rv) && targetURI) {
     innerTargetURI = NS_GetInnermostURI(targetURI);
   }
@@ -2020,17 +2025,12 @@ already_AddRefed<nsILoadURIDelegate> nsDocShell::GetLoadURIDelegate() {
 
 NS_IMETHODIMP
 nsDocShell::GetUseErrorPages(bool* aUseErrorPages) {
-  *aUseErrorPages = UseErrorPages();
+  *aUseErrorPages = mUseErrorPages;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::SetUseErrorPages(bool aUseErrorPages) {
-  
-  
-  if (mObserveErrorPages) {
-    mObserveErrorPages = false;
-  }
   mUseErrorPages = aUseErrorPages;
   return NS_OK;
 }
@@ -3805,7 +3805,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
     error = "nssFailure2";
   }
 
-  if (UseErrorPages()) {
+  if (mUseErrorPages) {
     
     nsresult loadedPage =
         LoadErrorPage(aURI, aURL, errorPage.get(), error, messageStr.get(),
@@ -4258,9 +4258,6 @@ nsDocShell::Create() {
   NS_ENSURE_TRUE(Preferences::GetRootBranch(), NS_ERROR_FAILURE);
   mCreated = true;
 
-  
-  mUseErrorPages = StaticPrefs::browser_xul_error_pages_enabled();
-
   mDisableMetaRefreshWhenInactive =
       Preferences::GetBool("browser.meta_refresh_when_inactive.disabled",
                            mDisableMetaRefreshWhenInactive);
@@ -4306,11 +4303,6 @@ nsDocShell::Destroy() {
 
   
   SetRecordProfileTimelineMarkers(false);
-
-  
-  if (mObserveErrorPages) {
-    mObserveErrorPages = false;
-  }
 
   
   
@@ -6245,7 +6237,7 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
          aStatus == NS_ERROR_PROXY_TOO_MANY_REQUESTS ||
          aStatus == NS_ERROR_MALFORMED_URI ||
          aStatus == NS_ERROR_BLOCKED_BY_POLICY) &&
-        (isTopFrame || UseErrorPages())) {
+        (isTopFrame || mUseErrorPages)) {
       DisplayLoadError(aStatus, url, nullptr, aChannel);
     } else if (aStatus == NS_ERROR_NET_TIMEOUT ||
                aStatus == NS_ERROR_PROXY_GATEWAY_TIMEOUT ||
