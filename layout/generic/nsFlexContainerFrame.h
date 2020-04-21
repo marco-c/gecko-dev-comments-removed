@@ -497,7 +497,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void ComputeFinalSize(
+  void PopulateReflowOutput(
       ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
       nsReflowStatus& aStatus, const mozilla::LogicalSize& aContentBoxSize,
       const mozilla::LogicalMargin& aBorderPadding,
