@@ -142,7 +142,7 @@ bool RenderCompositorANGLE::Initialize() {
   const auto& gle = gl::GLContextEGL::Cast(gl);
   const auto& egl = gle->mEgl;
   if (!gl::CreateConfig(egl, &mEGLConfig,  32,
-                         true)) {
+                         true, gl->IsGLES())) {
     gfxCriticalNote << "Failed to create EGLConfig for WebRender";
   }
   MOZ_ASSERT(mEGLConfig);
