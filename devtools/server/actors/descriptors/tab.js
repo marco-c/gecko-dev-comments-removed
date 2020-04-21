@@ -90,10 +90,15 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     
     
     const topAppWindow = Services.wm.getMostRecentBrowserWindow();
-    if (!topAppWindow) {
+
+    const selectedBrowser = topAppWindow?.gBrowser?.selectedBrowser;
+    if (!selectedBrowser) {
+      
+      
+      
       return false;
     }
-    const selectedBrowser = topAppWindow.gBrowser.selectedBrowser;
+
     return this._browser === selectedBrowser;
   },
 
