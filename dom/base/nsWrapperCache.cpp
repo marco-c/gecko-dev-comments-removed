@@ -100,6 +100,11 @@ void nsWrapperCache::CheckCCWrapperTraversal(void* aScriptObjectHolder,
     return;
   }
 
+  
+  
+  bool wasPreservingWrapper = PreservingWrapper();
+  SetPreservingWrapper(true);
+
   DebugWrapperTraversalCallback callback(wrapper);
 
   
@@ -117,6 +122,8 @@ void nsWrapperCache::CheckCCWrapperTraversal(void* aScriptObjectHolder,
   MOZ_ASSERT(callback.mFound,
              "Cycle collection participant didn't trace preserved wrapper! "
              "This will probably crash.");
+
+  SetPreservingWrapper(wasPreservingWrapper);
 }
 
 #endif  
