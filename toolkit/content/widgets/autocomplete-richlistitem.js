@@ -653,11 +653,13 @@
     }
 
     _adjustAcItem() {
-      let outerBoxRect = this.parentNode.getBoundingClientRect();
-
+      const popup = this.parentNode.parentNode;
+      const minWidth = getComputedStyle(popup).minWidth.replace("px", "");
       
       
-      this.firstElementChild.style.width = outerBoxRect.width + "px";
+      
+      this.firstElementChild.style.width =
+        Math.max(minWidth, popup.width) + "px";
     }
 
     _onOverflow() {}
