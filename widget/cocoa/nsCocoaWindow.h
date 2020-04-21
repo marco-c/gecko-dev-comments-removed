@@ -212,14 +212,12 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
  public:
   nsCocoaWindow();
 
-  
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSPIWIDGETCOCOA
+  NS_DECL_NSPIWIDGETCOCOA;  
 
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                         const DesktopIntRect& aRect,
                                         nsWidgetInitData* aInitData = nullptr) override;
-  
 
   [[nodiscard]] virtual nsresult Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                         const LayoutDeviceIntRect& aRect,
