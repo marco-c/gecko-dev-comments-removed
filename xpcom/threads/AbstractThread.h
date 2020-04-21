@@ -52,11 +52,6 @@ class AbstractThread : public nsISerialEventTarget {
   static already_AddRefed<AbstractThread> CreateXPCOMThreadWrapper(
       nsIThread* aThread, bool aRequireTailDispatch);
 
-  
-  
-  static already_AddRefed<AbstractThread> CreateEventTargetWrapper(
-      nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
-
   NS_DECL_THREADSAFE_ISUPPORTS
 
   
