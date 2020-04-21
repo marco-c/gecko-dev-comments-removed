@@ -39,6 +39,8 @@ class CombinedStacks {
   size_t GetStackCount() const;
   size_t SizeOfExcludingThis() const;
   void RemoveStack(unsigned aIndex);
+  bool GetIsFromTerminatorWatchdog();
+  void SetIsFromTerminatorWatchdog(bool aIsFromTerminatorWatchdog);
 
 #if defined(MOZ_GECKO_PROFILER)
   
@@ -53,6 +55,8 @@ class CombinedStacks {
   size_t mNextIndex;
   
   size_t mMaxStacksCount;
+  
+  bool mIsFromTerminatorWatchdog;
 
   friend struct ::IPC::ParamTraits<CombinedStacks>;
 };
