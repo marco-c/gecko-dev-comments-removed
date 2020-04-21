@@ -1238,7 +1238,8 @@ RefPtr<MediaRawData> OggTrackDemuxer::NextSample() {
   bool eos = packet->e_o_s;
   OggCodecState* state = mParent->GetTrackCodecState(mType);
   RefPtr<MediaRawData> data = state->PacketOutAsMediaRawData();
-  if (!data) {
+  
+  if (!data || (data->mEOS && data->Size() == 0)) {
     return nullptr;
   }
   if (mType == TrackInfo::kAudioTrack) {
