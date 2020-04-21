@@ -74,8 +74,6 @@ parent:
   async ScheduleComposite();
   
   async Capture();
-  
-  async ToggleCaptureSequence();
 
   
   async SetTransactionLogging(bool aValue);

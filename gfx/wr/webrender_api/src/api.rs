@@ -913,8 +913,6 @@ bitflags!{
         const FRAME = 0x2;
         ///
         const TILE_CACHE = 0x4;
-        ///
-        const EXTERNAL_RESOURCES = 0x8;
     }
 }
 
@@ -969,11 +967,7 @@ pub enum DebugCommand {
     SaveCapture(PathBuf, CaptureBits),
     
     #[serde(skip_serializing, skip_deserializing)]
-    LoadCapture(PathBuf, Option<(u32, u32)>, Sender<CapturedDocument>),
-    
-    StartCaptureSequence(PathBuf, CaptureBits),
-    
-    StopCaptureSequence,
+    LoadCapture(PathBuf, Sender<CapturedDocument>),
     
     ClearCaches(ClearCache),
     
@@ -1738,13 +1732,13 @@ impl RenderApi {
     }
 
     
-    pub fn load_capture(&self, path: PathBuf, ids: Option<(u32, u32)>) -> Vec<CapturedDocument> {
+    pub fn load_capture(&self, path: PathBuf) -> Vec<CapturedDocument> {
         
         
         self.flush_scene_builder();
 
         let (tx, rx) = channel();
-        let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, ids, tx));
+        let msg = ApiMsg::DebugCommand(DebugCommand::LoadCapture(path, tx));
         self.send_message(msg);
 
         let mut documents = Vec::new();
@@ -1752,18 +1746,6 @@ impl RenderApi {
             documents.push(captured_doc);
         }
         documents
-    }
-
-    
-    pub fn start_capture_sequence(&self, path: PathBuf, bits: CaptureBits) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::StartCaptureSequence(path, bits));
-        self.send_message(msg);
-    }
-
-    
-    pub fn stop_capture_sequence(&self) {
-        let msg = ApiMsg::DebugCommand(DebugCommand::StopCaptureSequence);
-        self.send_message(msg);
     }
 
     

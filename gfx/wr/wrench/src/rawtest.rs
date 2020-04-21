@@ -1288,7 +1288,7 @@ impl<'a> RawtestHarness<'a> {
 
         
 
-        let mut documents = self.wrench.api.load_capture(path.into(), None);
+        let mut documents = self.wrench.api.load_capture(path.into());
         let captured = documents.swap_remove(0);
 
         

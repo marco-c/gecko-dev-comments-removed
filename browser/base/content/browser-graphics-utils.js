@@ -15,9 +15,6 @@ var gGfxUtils = {
   init() {
     if (Services.prefs.getBoolPref("gfx.webrender.enable-capture")) {
       document.getElementById("wrCaptureCmd").removeAttribute("disabled");
-      document
-        .getElementById("wrToggleCaptureSequenceCmd")
-        .removeAttribute("disabled");
     }
   },
 
@@ -33,13 +30,6 @@ var gGfxUtils = {
 
   webrenderCapture() {
     window.windowUtils.wrCapture();
-  },
-  
-
-
-
-  toggleWebrenderCaptureSequence() {
-    window.windowUtils.wrToggleCaptureSequence();
   },
 
   
