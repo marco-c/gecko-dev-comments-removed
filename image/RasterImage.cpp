@@ -371,7 +371,11 @@ LookupResult RasterImage::LookupFrame(const UnorientedIntSize& aSize,
           UnorientedIntSize::FromUnknownSize(result.SuggestedSize());
     }
 
-    bool ranSync = Decode(requestedSize, aFlags, aPlaybackType);
+    bool ranSync = false, failed = false;
+    Decode(requestedSize, aFlags, aPlaybackType, ranSync, failed);
+    if (failed) {
+      result.SetFailedToRequestDecode();
+    }
 
     
     if (ranSync || syncDecode) {
@@ -1089,23 +1093,31 @@ bool RasterImage::StartDecodingWithResult(uint32_t aFlags,
 
   uint32_t flags = (aFlags & FLAG_ASYNC_NOTIFY) | FLAG_SYNC_DECODE_IF_FAST |
                    FLAG_HIGH_QUALITY_SCALING;
-  DrawableSurface surface =
+  LookupResult result =
       RequestDecodeForSizeInternal(ToUnoriented(mSize), flags, aWhichFrame);
+  DrawableSurface surface = std::move(result.Surface());
   return surface && surface->IsFinished();
 }
 
-bool RasterImage::RequestDecodeWithResult(uint32_t aFlags,
-                                          uint32_t aWhichFrame) {
+imgIContainer::DecodeResult RasterImage::RequestDecodeWithResult(
+    uint32_t aFlags, uint32_t aWhichFrame) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mError) {
-    return false;
+    return imgIContainer::DECODE_REQUEST_FAILED;
   }
 
   uint32_t flags = aFlags | FLAG_ASYNC_NOTIFY;
-  DrawableSurface surface =
+  LookupResult result =
       RequestDecodeForSizeInternal(ToUnoriented(mSize), flags, aWhichFrame);
-  return surface && surface->IsFinished();
+  DrawableSurface surface = std::move(result.Surface());
+  if (surface && surface->IsFinished()) {
+    return imgIContainer::DECODE_SURFACE_AVAILABLE;
+  }
+  if (result.GetFailedToRequestDecode()) {
+    return imgIContainer::DECODE_REQUEST_FAILED;
+  }
+  return imgIContainer::DECODE_REQUESTED;
 }
 
 NS_IMETHODIMP
@@ -1124,21 +1136,23 @@ RasterImage::RequestDecodeForSize(const IntSize& aSize, uint32_t aFlags,
   return NS_OK;
 }
 
-DrawableSurface RasterImage::RequestDecodeForSizeInternal(
+LookupResult RasterImage::RequestDecodeForSizeInternal(
     const UnorientedIntSize& aSize, uint32_t aFlags, uint32_t aWhichFrame) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (aWhichFrame > FRAME_MAX_VALUE) {
-    return DrawableSurface();
+    return LookupResult(MatchType::NOT_FOUND);
   }
 
   if (mError) {
-    return DrawableSurface();
+    LookupResult result = LookupResult(MatchType::NOT_FOUND);
+    result.SetFailedToRequestDecode();
+    return result;
   }
 
   if (!mHasSize) {
     mWantFullDecode = true;
-    return DrawableSurface();
+    return LookupResult(MatchType::NOT_FOUND);
   }
 
   
@@ -1151,9 +1165,8 @@ DrawableSurface RasterImage::RequestDecodeForSizeInternal(
       shouldSyncDecodeIfFast ? aFlags : aFlags & ~FLAG_SYNC_DECODE_IF_FAST;
 
   
-  LookupResult result = LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame),
-                                     false);
-  return std::move(result.Surface());
+  return LookupFrame(aSize, flags, ToPlaybackType(aWhichFrame),
+                      false);
 }
 
 static bool LaunchDecodingTask(IDecodingTask* aTask, RasterImage* aImage,
@@ -1178,18 +1191,20 @@ static bool LaunchDecodingTask(IDecodingTask* aTask, RasterImage* aImage,
   return false;
 }
 
-bool RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
-                         PlaybackType aPlaybackType) {
+void RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
+                         PlaybackType aPlaybackType, bool& aOutRanSync,
+                         bool& aOutFailed) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mError) {
-    return false;
+    aOutFailed = true;
+    return;
   }
 
   
   if (!mHasSize) {
     mWantFullDecode = true;
-    return false;
+    return;
   }
 
   
@@ -1248,7 +1263,8 @@ bool RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
     
     
     MOZ_ASSERT(!task);
-    return true;
+    aOutRanSync = true;
+    return;
   }
 
   if (animated) {
@@ -1266,14 +1282,15 @@ bool RasterImage::Decode(const UnorientedIntSize& aSize, uint32_t aFlags,
   
   if (NS_FAILED(rv)) {
     MOZ_ASSERT(!task);
-    return false;
+    aOutFailed = true;
+    return;
   }
 
   MOZ_ASSERT(task);
   mDecodeCount++;
 
   
-  return LaunchDecodingTask(task, this, aFlags, mAllSourceData);
+  aOutRanSync = LaunchDecodingTask(task, this, aFlags, mAllSourceData);
 }
 
 NS_IMETHODIMP
@@ -1314,17 +1331,19 @@ void RasterImage::RecoverFromInvalidFrames(const UnorientedIntSize& aSize,
     SurfaceCache::LockImage(ImageKey(this));
   }
 
+  bool unused1, unused2;
+
   
   
   if (mAnimationState) {
     Decode(ToUnoriented(mSize), aFlags | FLAG_SYNC_DECODE,
-           PlaybackType::eAnimated);
+           PlaybackType::eAnimated, unused1, unused2);
     ResetAnimation();
     return;
   }
 
   
-  Decode(aSize, aFlags, PlaybackType::eStatic);
+  Decode(aSize, aFlags, PlaybackType::eStatic, unused1, unused2);
 }
 
 static bool HaveSkia() {

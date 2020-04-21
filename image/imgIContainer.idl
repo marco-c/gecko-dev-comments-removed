@@ -526,10 +526,19 @@ interface imgIContainer : nsISupports
 
 
 
-  [noscript, notxpcom] boolean requestDecodeWithResult(in uint32_t aFlags, in uint32_t aWhichFrame);
+
+
+
+
+   cenum DecodeResult : 8 {
+     DECODE_SURFACE_AVAILABLE = 0,
+     DECODE_REQUESTED = 1,
+     DECODE_REQUEST_FAILED = 2
+   };
+  [noscript, notxpcom] imgIContainer_DecodeResult requestDecodeWithResult(in uint32_t aFlags, in uint32_t aWhichFrame);
 
 %{C++
-  bool RequestDecodeWithResult(uint32_t aFlags) {
+  DecodeResult RequestDecodeWithResult(uint32_t aFlags) {
     return RequestDecodeWithResult(aFlags, FRAME_CURRENT);
   }
 %}
