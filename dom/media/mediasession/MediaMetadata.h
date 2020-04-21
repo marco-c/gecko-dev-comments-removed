@@ -10,6 +10,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/ErrorResult.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -19,10 +20,24 @@ class nsIGlobalObject;
 namespace mozilla {
 namespace dom {
 
-struct MediaImage;
-struct MediaMetadataInit;
+class MediaMetadataBase {
+ public:
+  MediaMetadataBase() = default;
+  MediaMetadataBase(const nsString& aTitle, const nsString& aArtist,
+                    const nsString& aAlbum)
+      : mTitle(aTitle), mArtist(aArtist), mAlbum(aAlbum) {}
 
-class MediaMetadata final : public nsISupports, public nsWrapperCache {
+  static MediaMetadataBase EmptyData() { return MediaMetadataBase(); }
+
+  nsString mTitle;
+  nsString mArtist;
+  nsString mAlbum;
+  nsTArray<MediaImage> mArtwork;
+};
+
+class MediaMetadata final : public nsISupports,
+                            public nsWrapperCache,
+                            private MediaMetadataBase {
  public:
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -56,6 +71,11 @@ class MediaMetadata final : public nsISupports, public nsWrapperCache {
   void SetArtwork(JSContext* aCx, const Sequence<JSObject*>& aArtwork,
                   ErrorResult& aRv);
 
+  
+  
+  
+  MediaMetadataBase* AsMetadataBase() { return this; }
+
  private:
   MediaMetadata(nsIGlobalObject* aParent, const nsString& aTitle,
                 const nsString& aArtist, const nsString& aAlbum);
@@ -68,11 +88,6 @@ class MediaMetadata final : public nsISupports, public nsWrapperCache {
                           ErrorResult& aRv);
 
   nsCOMPtr<nsIGlobalObject> mParent;
-
-  nsString mTitle;
-  nsString mArtist;
-  nsString mAlbum;
-  nsTArray<MediaImage> mArtwork;
 };
 
 }  
