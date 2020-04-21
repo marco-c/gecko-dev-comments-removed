@@ -770,9 +770,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   void NotifyTabContextUpdated();
 
-  
-  void UpdateFrameType();
-
   void ActorDestroy(ActorDestroyReason why) override;
 
   bool InitBrowserChildMessageManager();
