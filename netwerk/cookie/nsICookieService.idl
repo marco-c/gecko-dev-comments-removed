@@ -172,15 +172,8 @@ interface nsICookieService : nsISupports
 
 
 
-
-
-
-
-
-
   void setCookieStringFromHttp(in nsIURI aURI, in nsIURI aFirstURI,
-                               in ACString aCookie, in ACString aServerTime,
-                               in nsIChannel aChannel);
+                               in ACString aCookie, in nsIChannel aChannel);
 
 
   
