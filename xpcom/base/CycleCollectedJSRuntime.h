@@ -98,7 +98,7 @@ class JSHolderMap {
   bool Has(void* aHolder) const;
   nsScriptObjectTracer* Get(void* aHolder) const;
   nsScriptObjectTracer* GetAndRemove(void* aHolder);
-  void Put(void* aHolder, nsScriptObjectTracer* aTracer);
+  void Put(void* aHolder, nsScriptObjectTracer* aTracer, JS::Zone* aZone);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 
@@ -106,17 +106,41 @@ class JSHolderMap {
   struct Entry {
     void* mHolder;
     nsScriptObjectTracer* mTracer;
-  };
+#ifdef DEBUG
+    JS::Zone* mZone;
+#endif
 
-  using EntryVector = SegmentedVector<Entry, 1024, InfallibleAllocPolicy>;
+    Entry();
+    Entry(void* aHolder, nsScriptObjectTracer* aTracer, JS::Zone* aZone);
+  };
 
   using EntryMap = mozilla::HashMap<void*, Entry*, DefaultHasher<void*>,
                                     InfallibleAllocPolicy>;
 
-  bool RemoveEntry(Entry* aEntry);
+  using EntryVector = SegmentedVector<Entry, 256, InfallibleAllocPolicy>;
 
-  EntryVector mJSHolders;
+  using EntryVectorMap =
+      mozilla::HashMap<JS::Zone*, UniquePtr<EntryVector>,
+                       DefaultHasher<JS::Zone*>, InfallibleAllocPolicy>;
+
+  template <typename F>
+  void ForEach(EntryVector& aJSHolders, const F& f, JS::Zone* aZone);
+
+  bool RemoveEntry(EntryVector& aJSHolders, Entry* aEntry);
+
+  
   EntryMap mJSHolderMap;
+
+  
+  
+  EntryVector mAnyZoneJSHolders;
+
+  
+  
+  
+  
+  
+  EntryVectorMap mPerZoneJSHolders;
 };
 
 class CycleCollectedJSRuntime {
