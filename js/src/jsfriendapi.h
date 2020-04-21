@@ -2692,7 +2692,7 @@ extern JS_FRIEND_API void SetPerformanceHint(JSContext* cx,
 
 } 
 
-extern JS_FRIEND_API JS::Zone* GetObjectZoneFromAnyThread(JSObject* obj);
+extern JS_FRIEND_API JS::Zone* GetObjectZoneFromAnyThread(const JSObject* obj);
 
 } 
 
