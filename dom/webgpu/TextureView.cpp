@@ -18,6 +18,10 @@ TextureView::TextureView(Texture* const aParent, RawId aId)
 
 TextureView::~TextureView() { Cleanup(); }
 
+dom::HTMLCanvasElement* TextureView::GetTargetCanvasElement() const {
+  return mParent->mTargetCanvasElement;
+}  
+
 void TextureView::Cleanup() {
   if (mValid && mParent && mParent->GetParentDevice()) {
     mValid = false;

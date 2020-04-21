@@ -47,6 +47,8 @@ class CommandEncoder final : public ObjectBase, public ChildOf<Device> {
   void Cleanup();
 
   RefPtr<WebGPUChild> mBridge;
+  
+  WeakPtr<dom::HTMLCanvasElement> mTargetCanvasElement;
 
  public:
   void EndComputePass(Span<const uint8_t> aData, ErrorResult& aRv);
