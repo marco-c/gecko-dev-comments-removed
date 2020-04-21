@@ -114,9 +114,6 @@ class SharedContext {
   ThisBinding thisBinding_;
 
  public:
-  bool strictScript : 1;
-  bool localStrict : 1;
-
   SourceExtent extent;
 
  protected:
@@ -126,6 +123,9 @@ class SharedContext {
   bool allowArguments_ : 1;
   bool inWith_ : 1;
   bool needsThisTDZChecks_ : 1;
+
+  
+  bool localStrict : 1;
 
   
   bool hasExplicitUseStrict_ : 1;
@@ -146,8 +146,6 @@ class SharedContext {
         kind_(kind),
         compilationInfo_(compilationInfo),
         thisBinding_(ThisBinding::Global),
-        strictScript(directives.strict()),
-        localStrict(false),
         extent(extent),
         allowNewTarget_(false),
         allowSuperProperty_(false),
@@ -155,6 +153,7 @@ class SharedContext {
         allowArguments_(true),
         inWith_(false),
         needsThisTDZChecks_(false),
+        localStrict(false),
         hasExplicitUseStrict_(false) {
     if (kind_ == Kind::FunctionBox) {
       immutableFlags_.setFlag(ImmutableFlags::IsFunction);
@@ -165,6 +164,8 @@ class SharedContext {
     } else {
       MOZ_ASSERT(kind_ == Kind::Global);
     }
+
+    immutableFlags_.setFlag(ImmutableFlags::Strict, directives.strict());
   }
 
   
@@ -248,7 +249,14 @@ class SharedContext {
 
   inline bool allBindingsClosedOver();
 
-  bool strict() const { return strictScript || localStrict; }
+  
+  
+  
+  
+  bool strict() const {
+    return immutableFlags_.hasFlag(ImmutableFlags::Strict) || localStrict;
+  }
+  void setStrictScript() { immutableFlags_.setFlag(ImmutableFlags::Strict); }
   bool setLocalStrictMode(bool strict) {
     bool retVal = localStrict;
     localStrict = strict;
