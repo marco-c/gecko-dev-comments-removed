@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+include!(concat!(
+    env!("MOZ_TOPOBJDIR"),
+    "/toolkit/components/updateagent/url_constants.rs"
+));
