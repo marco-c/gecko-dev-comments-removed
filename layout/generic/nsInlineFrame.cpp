@@ -794,12 +794,12 @@ void nsInlineFrame::PushFrames(nsPresContext* aPresContext,
 
 nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
     const ReflowInput* aReflowInput) const {
+  LogicalSides skip(mWritingMode);
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
                    StyleBoxDecorationBreak::Clone)) {
-    return LogicalSides();
+    return skip;
   }
 
-  LogicalSides skip;
   if (!IsFirst()) {
     nsInlineFrame* prev = (nsInlineFrame*)GetPrevContinuation();
     if ((GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
@@ -831,7 +831,7 @@ nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
     
     
     
-    if (skip != LogicalSides(eLogicalSideBitsIBoth)) {
+    if (skip != LogicalSides(mWritingMode, eLogicalSideBitsIBoth)) {
       
       
       nsIFrame* firstContinuation = FirstContinuation();
