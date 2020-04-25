@@ -4,6 +4,8 @@
 
 
 
+#define INITGUID
+
 #include "mozilla/mscom/MainThreadHandoff.h"
 
 #include <utility>
@@ -251,8 +253,8 @@ MainThreadHandoff::QueryInterface(REFIID riid, void** ppv) {
   }
 
   if (riid == IID_IUnknown || riid == IID_ICallFrameEvents ||
-      riid == IID_IInterceptorSink) {
-    punk = static_cast<IInterceptorSink*>(this);
+      riid == IID_IInterceptorSink || riid == IID_IMainThreadHandoff) {
+    punk = static_cast<IMainThreadHandoff*>(this);
   } else if (riid == IID_ICallFrameWalker) {
     punk = static_cast<ICallFrameWalker*>(this);
   }
