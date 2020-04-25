@@ -1385,12 +1385,14 @@ AttachDecision GetPropIRGenerator::tryAttachXrayCrossCompartmentWrapper(
   
   
   
-  writer.guardXrayExpandoShapeAndDefaultProto(objId, expandoShapeWrapper);
+  writer.guardXrayExpandoShapeAndDefaultProto(objId, !!expandoShapeWrapper,
+                                              expandoShapeWrapper);
   for (size_t i = 0; i < prototypes.length(); i++) {
     JSObject* proto = prototypes[i];
     ObjOperandId protoId = writer.loadObject(proto);
-    writer.guardXrayExpandoShapeAndDefaultProto(
-        protoId, prototypeExpandoShapeWrappers[i]);
+    JSObject* protoShapeWrapper = prototypeExpandoShapeWrappers[i];
+    writer.guardXrayExpandoShapeAndDefaultProto(protoId, !!protoShapeWrapper,
+                                                protoShapeWrapper);
   }
 
   writer.callNativeGetterResult(objId, &getter->as<JSFunction>());
@@ -1536,8 +1538,9 @@ static void CheckDOMProxyExpandoDoesNotShadow(CacheIRWriter& writer,
   if (!expandoVal.isObject() && !expandoVal.isUndefined()) {
     auto expandoAndGeneration =
         static_cast<ExpandoAndGeneration*>(expandoVal.toPrivate());
-    expandoId =
-        writer.loadDOMExpandoValueGuardGeneration(objId, expandoAndGeneration);
+    uint64_t generation = expandoAndGeneration->generation;
+    expandoId = writer.loadDOMExpandoValueGuardGeneration(
+        objId, expandoAndGeneration, generation);
     expandoVal = expandoAndGeneration->expando;
   } else {
     expandoId = writer.loadDOMExpandoValue(objId);
@@ -4598,7 +4601,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
   
   ObjOperandId protoId = writer.loadObject(prototypeObject);
   
-  writer.guardFunctionPrototype(rhsId, slot, protoId);
+  writer.guardFunctionPrototype(rhsId, protoId, slot);
 
   
   
