@@ -9746,10 +9746,10 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   
   
   
-  
   bool canUseDocumentChannel =
-      !aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC) &&
-      URIUsesDocChannel(aLoadState->URI());
+      aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_IS_SRCDOC)
+          ? (sandboxFlags & SANDBOXED_ORIGIN)
+          : URIUsesDocChannel(aLoadState->URI());
 
   if (StaticPrefs::browser_tabs_documentchannel() && XRE_IsContentProcess() &&
       canUseDocumentChannel) {
