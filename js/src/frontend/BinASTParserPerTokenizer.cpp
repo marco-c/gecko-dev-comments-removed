@@ -398,11 +398,13 @@ JS::Result<Ok> BinASTParserPerTokenizer<Tok>::finishLazyFunction(
 
   SourceExtent extent(start, end, start, end,
                        0, start);
-  BINJS_TRY_DECL(lazy, BaseScript::CreateLazy(cx_, this->getCompilationInfo(),
-                                              fun, sourceObject_,
-                                              pc_->closedOverBindingsForLazy(),
-                                              pc_->innerFunctionIndexesForLazy,
-                                              extent, immutableFlags));
+
+  
+  
+  
+  BINJS_TRY_DECL(
+      lazy, BaseScript::CreateRawLazy(cx_,  0, fun,
+                                      sourceObject_, extent, immutableFlags));
 
   MOZ_ASSERT(lazy->isBinAST());
   funbox->initLazyScript(lazy);
