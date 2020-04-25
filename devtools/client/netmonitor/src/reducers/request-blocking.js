@@ -50,13 +50,20 @@ function addBlockedUrl(state, action) {
   
   
   const uniqueUrls = [...new Set(action.url.split(" "))].map(url => url.trim());
+
   const newUrls = uniqueUrls
     
     .filter(url => url && !state.blockedUrls.some(item => item.url === url))
     
     .map(url => ({ url, enabled: true }));
 
-  const blockedUrls = [...state.blockedUrls, ...newUrls];
+  
+  
+  const currentBlockedUrls = state.blockedUrls.map(item =>
+    uniqueUrls.includes(item.url) ? { url: item.url, enabled: true } : item
+  );
+
+  const blockedUrls = [...currentBlockedUrls, ...newUrls];
   return {
     ...state,
     blockedUrls,
