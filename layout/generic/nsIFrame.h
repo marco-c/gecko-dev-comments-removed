@@ -1304,6 +1304,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
   virtual nsMargin GetUsedMargin() const;
   virtual mozilla::LogicalMargin GetLogicalUsedMargin(
       mozilla::WritingMode aWritingMode) const {
@@ -1321,6 +1324,10 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
+
+
   virtual nsMargin GetUsedBorder() const;
   virtual mozilla::LogicalMargin GetLogicalUsedBorder(
       mozilla::WritingMode aWritingMode) const {
@@ -1328,6 +1335,10 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
+
+
+
+
 
 
 
