@@ -73,9 +73,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(CompositionTransaction, EditTransactionBase,
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CompositionTransaction)
-  NS_INTERFACE_MAP_ENTRY_CONCRETE(CompositionTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
-
 NS_IMPL_ADDREF_INHERITED(CompositionTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(CompositionTransaction, EditTransactionBase)
 
