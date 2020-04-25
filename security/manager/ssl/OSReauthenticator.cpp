@@ -105,17 +105,25 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
   }
 
   if (!IsOS(OS_DOMAINMEMBER)) {
-    HANDLE logonUserHandle = nullptr;
-    bool result = LogonUser(username, L".", L"", LOGON32_LOGON_INTERACTIVE,
-                            LOGON32_PROVIDER_DEFAULT, &logonUserHandle);
+    const WCHAR* usernameNoDomain = username;
+    
+    LPCWSTR backslash = wcschr(username, L'\\');
+    if (backslash) {
+      usernameNoDomain = backslash + 1;
+    }
+
+    HANDLE logonUserHandle = INVALID_HANDLE_VALUE;
+    bool result =
+        LogonUser(usernameNoDomain, L".", L"", LOGON32_LOGON_INTERACTIVE,
+                  LOGON32_PROVIDER_DEFAULT, &logonUserHandle);
+    if (result) {
+      CloseHandle(logonUserHandle);
+    }
     
     
     
     
     if (result || GetLastError() == ERROR_ACCOUNT_RESTRICTION) {
-      if (logonUserHandle && logonUserHandle != INVALID_HANDLE_VALUE) {
-        CloseHandle(logonUserHandle);
-      }
       reauthenticated = true;
       isBlankPassword = true;
       return NS_OK;
