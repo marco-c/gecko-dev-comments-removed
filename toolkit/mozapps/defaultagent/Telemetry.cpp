@@ -41,6 +41,18 @@
 using TelemetryFieldResult = mozilla::WindowsErrorResult<std::string>;
 using FilePathResult = mozilla::WindowsErrorResult<std::wstring>;
 
+
+
+
+static bool IsOfficialTelemetry() {
+#if defined(MOZILLA_OFFICIAL) && defined(MOZ_TELEMETRY_REPORTING) && \
+    !defined(DEBUG)
+  return true;
+#else
+  return false;
+#endif
+}
+
 static TelemetryFieldResult GetDefaultBrowser() {
   RefPtr<IApplicationAssociationRegistration> pAAR;
   HRESULT hr = CoCreateInstance(
@@ -406,6 +418,13 @@ HRESULT SendDefaultBrowserPing() {
     return osLocaleResult.unwrapErr().AsHResult();
   }
   std::string osLocale = osLocaleResult.unwrap();
+
+  
+  
+  
+  if (!IsOfficialTelemetry()) {
+    return S_OK;
+  }
 
   return SendPing(defaultBrowser, previousDefaultBrowser, osVersion, osLocale)
       .AsHResult();
