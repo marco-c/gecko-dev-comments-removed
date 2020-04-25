@@ -1536,6 +1536,11 @@ class HTMLMediaElement::AudioChannelAgentCallback final
     }
 
     
+    if (mOwner->ShouldBeSuspendedByInactiveDocShell()) {
+      return false;
+    }
+
+    
     if (mOwner->mPaused) {
       return false;
     }
@@ -4214,6 +4219,12 @@ already_AddRefed<Promise> HTMLMediaElement::Play(ErrorResult& aRv) {
   
   
 
+  if (ShouldBeSuspendedByInactiveDocShell()) {
+    LOG(LogLevel::Debug, ("%p no allow to play by the docShell for now", this));
+    mPendingPlayPromises.AppendElement(promise);
+    return promise.forget();
+  }
+
   
   
   if (MediaPlaybackDelayPolicy::ShouldDelayPlayback(this)) {
@@ -6026,6 +6037,11 @@ bool HTMLMediaElement::CanActivateAutoplay() {
   
   
   if (OwnerDoc()->IsStaticDocument()) {
+    return false;
+  }
+
+  if (ShouldBeSuspendedByInactiveDocShell()) {
+    LOG(LogLevel::Debug, ("%p prohibiting autoplay by the docShell", this));
     return false;
   }
 
