@@ -57,44 +57,6 @@ bool GetTopLevelWindowId(BrowsingContext* aParentContext, uint32_t aBehavior,
   return aTopLevelInnerWindowId != 0;
 }
 
-bool GetParentPrincipalAndTrackingOrigin(
-    nsGlobalWindowInner* a3rdPartyTrackingWindow, uint32_t aBehavior,
-    nsIPrincipal** aTopLevelStoragePrincipal, nsACString& aTrackingOrigin,
-    nsIPrincipal** aTrackingPrincipal) {
-  
-  nsCOMPtr<nsIPrincipal> topLevelStoragePrincipal =
-      
-      
-      (aBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER)
-          ? a3rdPartyTrackingWindow->GetTopLevelStorageAreaPrincipal()
-          : a3rdPartyTrackingWindow->GetTopLevelAntiTrackingPrincipal();
-  if (!topLevelStoragePrincipal) {
-    LOG(("No top-level storage area principal at hand"));
-    return false;
-  }
-
-  
-  nsCOMPtr<nsIPrincipal> trackingPrincipal =
-      a3rdPartyTrackingWindow->GetPrincipal();
-  if (NS_WARN_IF(!trackingPrincipal)) {
-    return false;
-  }
-
-  nsresult rv = trackingPrincipal->GetOriginNoSuffix(aTrackingOrigin);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  if (aTopLevelStoragePrincipal) {
-    topLevelStoragePrincipal.forget(aTopLevelStoragePrincipal);
-  }
-
-  if (aTrackingPrincipal) {
-    trackingPrincipal.forget(aTrackingPrincipal);
-  }
-  return true;
-};
-
 bool GetTrackingOrigin(nsGlobalWindowInner* a3rdPartyTrackingWindow,
                        nsACString& aTrackingOrigin) {
   nsCOMPtr<nsIPrincipal> trackingPrincipal =
@@ -319,23 +281,28 @@ ContentBlocking::AllowAccessFor(
       return StorageAccessGrantPromise::CreateAndReject(false, __func__);
     }
 
-    if (!GetTopLevelWindowId(aParentContext, nsICookieService::BEHAVIOR_ACCEPT,
+    if (!GetTopLevelWindowId(aParentContext,
+                             
+                             
+                             
+                             nsICookieService::BEHAVIOR_ACCEPT,
                              topLevelWindowId)) {
       LOG(("Error while retrieving the parent window id, bailing out early"));
       return StorageAccessGrantPromise::CreateAndReject(false, __func__);
     }
 
-    if (!GetParentPrincipalAndTrackingOrigin(
-            nsGlobalWindowInner::Cast(parentInnerWindow),
-            
-            
-            
-            nsICookieService::BEHAVIOR_ACCEPT, nullptr, trackingOrigin,
-            getter_AddRefs(trackingPrincipal))) {
-      LOG(
-          ("Error while computing the parent principal and tracking origin, "
-           "bailing out early"));
-      return StorageAccessGrantPromise::CreateAndReject(false, __func__);
+    
+    
+    
+    if (aParentContext->IsInProcess()) {
+      if (!AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
+              aParentContext, getter_AddRefs(trackingPrincipal),
+              trackingOrigin)) {
+        LOG(
+            ("Error while computing the parent principal and tracking origin, "
+             "bailing out early"));
+        return StorageAccessGrantPromise::CreateAndReject(false, __func__);
+      }
     }
   }
 

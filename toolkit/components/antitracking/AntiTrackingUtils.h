@@ -66,6 +66,19 @@ class AntiTrackingUtils final {
   
   static uint64_t GetTopLevelStorageAreaWindowId(
       dom::BrowsingContext* aBrowsingContext);
+
+  
+  
+  
+  static already_AddRefed<nsIPrincipal> GetPrincipal(
+      dom::BrowsingContext* aBrowsingContext);
+
+  
+  
+  
+  static bool GetPrincipalAndTrackingOrigin(
+      dom::BrowsingContext* aBrowsingContext, nsIPrincipal** aPrincipal,
+      nsACString& aTrackingOrigin);
 };
 
 }  
