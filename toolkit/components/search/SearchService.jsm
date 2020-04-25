@@ -1508,9 +1508,13 @@ SearchService.prototype = {
     
     const prevCurrentEngine = this._currentEngine;
     const prevPrivateEngine = this._currentPrivateEngine;
+    
     this._currentEngine = null;
     this._currentPrivateEngine = null;
-
+    
+    
+    
+    this.__sortedEngines = null;
     await this._loadEngines(await this._readCacheFile(), true);
     
     await this._buildCache();

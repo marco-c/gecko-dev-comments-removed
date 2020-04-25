@@ -593,6 +593,31 @@ async function setupRemoteSettings() {
 
 
 
+
+
+
+
+function useCustomGeoServer(region, waitToRespond = Promise.resolve()) {
+  let srv = useHttpServer();
+  srv.registerPathHandler("/fetch_region", async (req, res) => {
+    res.processAsync();
+    await waitToRespond;
+    res.setStatusLine("1.1", 200, "OK");
+    res.write(JSON.stringify({ country_code: region }));
+    res.finish();
+  });
+
+  Services.prefs.setCharPref(
+    "geo.provider-country.network.url",
+    `http://localhost:${srv.identity.primaryPort}/fetch_region`
+  );
+}
+
+
+
+
+
+
 let updatePromise = SearchTestUtils.promiseSearchNotification(
   "settings-update-complete"
 );
