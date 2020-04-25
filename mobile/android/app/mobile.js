@@ -81,9 +81,6 @@ pref("browser.offline-apps.notify", true);
 pref("browser.cache.offline.capacity", 5120); 
 
 
-pref("browser.enable_automatic_image_resizing", true);
-
-
 pref("network.protocol-handler.warn-external.tel", false);
 pref("network.protocol-handler.warn-external.sms", false);
 pref("network.protocol-handler.warn-external.mailto", false);
@@ -293,9 +290,6 @@ pref("gfx.displayport.strategy_pb.threshold", -1);
 
 
 pref("dom.disable_window_move_resize", true);
-
-
-pref("browser.enable_click_image_resizing", false);
 
 
 
