@@ -314,7 +314,7 @@ class GCRuntime {
   
   
   
-  void maybeAllocTriggerZoneGC(Zone* zone, size_t nbytes = 0);
+  void maybeAllocTriggerZoneGC(Zone* zone);
   
   void maybeMallocTriggerZoneGC(Zone* zone);
   bool maybeMallocTriggerZoneGC(Zone* zone, const HeapSize& heap,

@@ -65,8 +65,11 @@ class ZoneAllocator : public JS::shadow::Zone,
   }
 
   void updateMemoryCountersOnGCStart();
-  void updateGCThresholds(gc::GCRuntime& gc, JSGCInvocationKind invocationKind,
-                          const js::AutoLockGC& lock);
+  void updateGCStartThresholds(gc::GCRuntime& gc,
+                               JSGCInvocationKind invocationKind,
+                               const js::AutoLockGC& lock);
+  void setGCSliceThresholds(gc::GCRuntime& gc);
+  void clearGCSliceThresholds();
 
   
 
@@ -164,7 +167,7 @@ class ZoneAllocator : public JS::shadow::Zone,
   void maybeTriggerZoneGC(const js::gc::HeapSize& heap,
                           const js::gc::HeapThreshold& threshold,
                           JS::GCReason reason) {
-    if (heap.bytes() >= threshold.bytes()) {
+    if (heap.bytes() >= threshold.startBytes()) {
       gc::MaybeMallocTriggerZoneGC(runtimeFromAnyThread(), this, heap,
                                    threshold, reason);
     }
@@ -176,10 +179,6 @@ class ZoneAllocator : public JS::shadow::Zone,
 
   
   gc::GCHeapThreshold gcHeapThreshold;
-
-  
-  
-  MainThreadData<size_t> gcDelayBytes;
 
   
   

@@ -749,19 +749,29 @@ class HeapSize {
 
 class HeapThreshold {
  protected:
-  HeapThreshold() = default;
+  HeapThreshold() : startBytes_(SIZE_MAX), sliceBytes_(SIZE_MAX) {}
 
   
   
   
   
-  AtomicByteCount bytes_;
+  AtomicByteCount startBytes_;
+
+  
+  
+  size_t sliceBytes_;
 
  public:
-  size_t bytes() const { return bytes_; }
+  size_t startBytes() const { return startBytes_; }
+  size_t sliceBytes() const { return sliceBytes_; }
   size_t nonIncrementalBytes(ZoneAllocator* zone,
                              const GCSchedulingTunables& tunables) const;
   float eagerAllocTrigger(bool highFrequencyGC) const;
+
+  void setSliceThreshold(ZoneAllocator* zone, const HeapSize& heapSize,
+                         const GCSchedulingTunables& tunables);
+  void clearSliceThreshold() { sliceBytes_ = SIZE_MAX; }
+  bool hasSliceThreshold() const { return sliceBytes_ != SIZE_MAX; }
 };
 
 
@@ -769,10 +779,10 @@ class HeapThreshold {
 
 class GCHeapThreshold : public HeapThreshold {
  public:
-  void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
-                     const GCSchedulingTunables& tunables,
-                     const GCSchedulingState& state, bool isAtomsZone,
-                     const AutoLockGC& lock);
+  void updateStartThreshold(size_t lastBytes, JSGCInvocationKind gckind,
+                            const GCSchedulingTunables& tunables,
+                            const GCSchedulingState& state, bool isAtomsZone,
+                            const AutoLockGC& lock);
 
  private:
   static float computeZoneHeapGrowthFactorForHeapSize(
@@ -789,8 +799,8 @@ class GCHeapThreshold : public HeapThreshold {
 
 class MallocHeapThreshold : public HeapThreshold {
  public:
-  void updateAfterGC(size_t lastBytes, size_t baseBytes, float growthFactor,
-                     const AutoLockGC& lock);
+  void updateStartThreshold(size_t lastBytes, size_t baseBytes,
+                            float growthFactor, const AutoLockGC& lock);
 
  private:
   static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
@@ -802,7 +812,7 @@ class MallocHeapThreshold : public HeapThreshold {
 
 class JitHeapThreshold : public HeapThreshold {
  public:
-  explicit JitHeapThreshold(size_t bytes) { bytes_ = bytes; }
+  explicit JitHeapThreshold(size_t bytes) { startBytes_ = bytes; }
 };
 
 struct SharedMemoryUse {

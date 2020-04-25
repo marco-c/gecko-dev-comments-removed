@@ -671,7 +671,7 @@ Arena* GCRuntime::allocateArena(Chunk* chunk, Zone* zone, AllocKind thingKind,
 
   
   if (checkThresholds != ShouldCheckThresholds::DontCheckThresholds) {
-    maybeAllocTriggerZoneGC(zone, ArenaSize);
+    maybeAllocTriggerZoneGC(zone);
   }
 
   return arena;
