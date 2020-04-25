@@ -5994,32 +5994,45 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
         UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
       UnblockEmbedderLoadEventForFailure();
 
-      
-      RefPtr<Element> frameElement;
-      nsPIDOMWindowOuter* thisWindow = GetWindow();
-      if (!thisWindow) {
+      RefPtr<BrowsingContext> bc = GetBrowsingContext();
+      RefPtr<BrowsingContext> parentBC = bc->GetParent();
+
+      if (!parentBC) {
         return NS_OK;
       }
 
-      frameElement = thisWindow->GetFrameElement();
-      if (!frameElement) {
-        return NS_OK;
+      if (parentBC->IsInProcess()) {
+        
+        
+        nsCOMPtr<nsPIDOMWindowOuter> parentOuter = parentBC->GetDOMWindow();
+
+        if (!parentOuter) {
+          return NS_OK;
+        }
+
+        nsCOMPtr<nsPIDOMWindowInner> parentInner =
+            parentOuter->GetCurrentInnerWindow();
+
+        if (!parentInner) {
+          return NS_OK;
+        }
+
+        RefPtr<Document> parentDoc;
+        parentDoc = parentInner->GetExtantDoc();
+        if (!parentDoc) {
+          return NS_OK;
+        }
+
+        parentDoc->AddBlockedNodeByClassifier(bc->GetEmbedderElement());
+      } else {
+        
+        
+        RefPtr<BrowserChild> browserChild = BrowserChild::GetFrom(this);
+        if (browserChild) {
+          Unused << browserChild->SendReportBlockedEmbedderNodeByClassifier();
+        }
       }
 
-      
-      nsCOMPtr<nsIDocShellTreeItem> parentItem;
-      GetInProcessSameTypeParent(getter_AddRefs(parentItem));
-      if (!parentItem) {
-        return NS_OK;
-      }
-
-      RefPtr<Document> parentDoc;
-      parentDoc = parentItem->GetDocument();
-      if (!parentDoc) {
-        return NS_OK;
-      }
-
-      parentDoc->AddBlockedNodeByClassifier(frameElement);
       return NS_OK;
     }
 
