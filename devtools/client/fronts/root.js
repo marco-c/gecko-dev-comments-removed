@@ -60,34 +60,34 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
     for (const registrationFront of registrations) {
       
-      const latestWorker =
-        registrationFront.activeWorker ||
-        registrationFront.waitingWorker ||
-        registrationFront.installingWorker ||
-        registrationFront.evaluatingWorker;
-
-      if (latestWorker !== null) {
-        const latestWorkerFront = allWorkers.find(
-          workerFront => workerFront.id === latestWorker.id
-        );
-        if (latestWorkerFront) {
-          registrationFront.workerTargetFront = latestWorkerFront;
-        }
+      const workers = [
+        registrationFront.activeWorker,
+        registrationFront.waitingWorker,
+        registrationFront.installingWorker,
+        registrationFront.evaluatingWorker,
+      ]
+        .filter(w => !!w) 
         
-        result.push({
-          registration: registrationFront,
-          workers: [
-            {
-              id: registrationFront.id,
-              name: latestWorker.url,
-              state: latestWorker.state,
-              stateText: latestWorker.stateText,
-              url: latestWorker.url,
-              workerTargetFront: latestWorkerFront,
-            },
-          ],
+        .map(workerFront => {
+          const workerTargetFront = allWorkers.find(
+            targetFront => targetFront.id === workerFront.id
+          );
+
+          return {
+            id: registrationFront.id,
+            name: workerFront.url,
+            state: workerFront.state,
+            stateText: workerFront.stateText,
+            url: workerFront.url,
+            workerTargetFront,
+          };
         });
-      }
+
+      
+      result.push({
+        registration: registrationFront,
+        workers,
+      });
     }
 
     return result;
@@ -112,10 +112,14 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     const allWorkers = await this.listAllWorkerTargets();
     const serviceWorkers = await this.listAllServiceWorkers(allWorkers);
 
+    
+    
+    
+    
     const result = {
       service: serviceWorkers
         .map(({ registration, workers }) => {
-          return workers.map(worker => {
+          return workers.slice(0, 1).map(worker => {
             return Object.assign(worker, {
               registrationFront: registration,
               fetch: registration.fetch,

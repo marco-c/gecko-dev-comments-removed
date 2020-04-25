@@ -107,7 +107,6 @@ class Worker extends PureComponent {
     } else if (this.isActive()) {
       return l10n.getString("serviceworker-worker-status-stopped");
     }
-
     
     
     return this.props.worker.stateText;
