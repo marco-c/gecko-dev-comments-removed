@@ -11,7 +11,7 @@
 
 namespace mozilla {
 
-class BlocksRingBuffer;
+class ProfileChunkedBuffer;
 class TimeStamp;
 
 namespace baseprofiler {
@@ -25,7 +25,7 @@ class UniqueStacks;
 class ProfilerBacktrace {
  public:
   ProfilerBacktrace(const char* aName, int aThreadId,
-                    UniquePtr<BlocksRingBuffer> aBlocksRingBuffer,
+                    UniquePtr<ProfileChunkedBuffer> aProfileChunkedBuffer,
                     UniquePtr<ProfileBuffer> aProfileBuffer);
   ~ProfilerBacktrace();
 
@@ -48,7 +48,7 @@ class ProfilerBacktrace {
   int mThreadId;
   
   
-  UniquePtr<BlocksRingBuffer> mBlocksRingBuffer;
+  UniquePtr<ProfileChunkedBuffer> mProfileChunkedBuffer;
   UniquePtr<ProfileBuffer> mProfileBuffer;
 };
 
@@ -63,7 +63,7 @@ struct ProfileBufferEntryWriter::Serializer<baseprofiler::ProfilerBacktrace> {
       
       return ULEB128Size<Length>(0);
     }
-    auto bufferBytes = SumBytes(*aBacktrace.mBlocksRingBuffer);
+    auto bufferBytes = SumBytes(*aBacktrace.mProfileChunkedBuffer);
     if (bufferBytes == 0) {
       
       return ULEB128Size<Length>(0);
@@ -76,12 +76,12 @@ struct ProfileBufferEntryWriter::Serializer<baseprofiler::ProfilerBacktrace> {
   static void Write(ProfileBufferEntryWriter& aEW,
                     const baseprofiler::ProfilerBacktrace& aBacktrace) {
     if (!aBacktrace.mProfileBuffer ||
-        SumBytes(aBacktrace.mBlocksRingBuffer) == 0) {
+        SumBytes(aBacktrace.mProfileChunkedBuffer) == 0) {
       
       aEW.WriteULEB128<Length>(0);
       return;
     }
-    aEW.WriteObject(aBacktrace.mBlocksRingBuffer);
+    aEW.WriteObject(aBacktrace.mProfileChunkedBuffer);
     aEW.WriteObject(aBacktrace.mThreadId);
     aEW.WriteObject(WrapProfileBufferUnownedCString(aBacktrace.mName.get()));
   }

@@ -8,9 +8,10 @@
 
 #include "ProfileBufferEntry.h"
 
-#include "mozilla/BlocksRingBuffer.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PowerOfTwo.h"
+#include "mozilla/ProfileBufferChunkManagerSingle.h"
+#include "mozilla/ProfileChunkedBuffer.h"
 
 namespace mozilla {
 namespace baseprofiler {
@@ -24,11 +25,7 @@ class ProfileBuffer final {
   
   
   
-  ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity);
-
-  
-  
-  explicit ProfileBuffer(BlocksRingBuffer& aBuffer);
+  explicit ProfileBuffer(ProfileChunkedBuffer& aBuffer);
 
   ~ProfileBuffer();
 
@@ -94,18 +91,19 @@ class ProfileBuffer final {
   
   
   
-  static ProfileBufferBlockIndex AddEntry(BlocksRingBuffer& aBlocksRingBuffer,
-                                          const ProfileBufferEntry& aEntry);
+  static ProfileBufferBlockIndex AddEntry(
+      ProfileChunkedBuffer& aProfileChunkedBuffer,
+      const ProfileBufferEntry& aEntry);
 
   
   
   
   
   static ProfileBufferBlockIndex AddThreadIdEntry(
-      BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
+      ProfileChunkedBuffer& aProfileChunkedBuffer, int aThreadId);
 
   
-  BlocksRingBuffer& mEntries;
+  ProfileChunkedBuffer& mEntries;
 
  public:
   
@@ -121,16 +119,21 @@ class ProfileBuffer final {
   
   
   
-  uint64_t BufferRangeStart() const {
-    return mEntries.GetState().mRangeStart.ConvertToProfileBufferIndex();
-  }
-  uint64_t BufferRangeEnd() const {
-    return mEntries.GetState().mRangeEnd.ConvertToProfileBufferIndex();
-  }
+  uint64_t BufferRangeStart() const { return mEntries.GetState().mRangeStart; }
+  uint64_t BufferRangeEnd() const { return mEntries.GetState().mRangeEnd; }
 
  private:
   
-  const UniquePtr<BlocksRingBuffer::Byte[]> mDuplicationBuffer;
+  static constexpr auto WorkerBufferBytes = MakePowerOfTwo32<65536>();
+
+  
+  
+  
+  
+  
+  mutable ProfileBufferChunkManagerSingle mWorkerChunkManager{
+      ProfileBufferChunk::Create(ProfileBufferChunk::SizeofChunkMetadata() +
+                                 WorkerBufferBytes.Value())};
 
   
   double mFirstSamplingTimeNs = 0.0;

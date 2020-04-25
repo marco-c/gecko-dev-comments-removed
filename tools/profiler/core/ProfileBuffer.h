@@ -13,8 +13,6 @@
 #include "mozilla/PowerOfTwo.h"
 #include "mozilla/ProfileBufferChunkManagerSingle.h"
 #include "mozilla/ProfileChunkedBuffer.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/PowerOfTwo.h"
 
 
 

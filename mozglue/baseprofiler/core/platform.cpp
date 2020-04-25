@@ -49,6 +49,9 @@
 #  include "mozilla/BaseProfilerDetail.h"
 #  include "mozilla/DoubleConversion.h"
 #  include "mozilla/Printf.h"
+#  include "mozilla/ProfileBufferChunkManagerSingle.h"
+#  include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
+#  include "mozilla/ProfileChunkedBuffer.h"
 #  include "mozilla/Services.h"
 #  include "mozilla/Span.h"
 #  include "mozilla/StackWalk.h"
@@ -284,7 +287,7 @@ class CorePS {
         
         
         
-        mCoreBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
+        mCoreBuffer(ProfileChunkedBuffer::ThreadSafety::WithMutex)
 #  ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -349,7 +352,7 @@ class CorePS {
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
 
   
-  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBuffer)
+  PS_GET_LOCKLESS(ProfileChunkedBuffer&, CoreBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -467,7 +470,7 @@ class CorePS {
   
   
   
-  BlocksRingBuffer mCoreBuffer;
+  ProfileChunkedBuffer mCoreBuffer;
 
   
   
@@ -523,6 +526,26 @@ class ActivePS {
     return aFeatures;
   }
 
+  constexpr static uint32_t bytesPerEntry = 8;
+
+  
+  
+  
+  
+
+  
+  
+  
+  constexpr static uint32_t minimumNumberOfChunks = 4;
+
+  
+  
+  
+  
+  
+  
+  constexpr static uint32_t maximumChunkSize = 1024 * 1024;
+
   ActivePS(PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
            uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
            const Maybe<double>& aDuration)
@@ -531,9 +554,14 @@ class ActivePS {
         mDuration(aDuration),
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
-        
-        mProfileBuffer(CorePS::CoreBuffer(),
-                       PowerOfTwo32(aCapacity.Value() * 8)),
+        mProfileBufferChunkManager(
+            aCapacity.Value() * bytesPerEntry,
+            std::min(aCapacity.Value() * bytesPerEntry / minimumNumberOfChunks,
+                     maximumChunkSize)),
+        mProfileBuffer([this]() -> ProfileChunkedBuffer& {
+          CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
+          return CorePS::CoreBuffer();
+        }()),
         
         
         
@@ -553,7 +581,7 @@ class ActivePS {
     }
   }
 
-  ~ActivePS() {}
+  ~ActivePS() { CorePS::CoreBuffer().ResetChunkManager(); }
 
   bool ThreadSelected(const char* aThreadName) {
     if (mFilters.empty()) {
@@ -673,6 +701,11 @@ class ActivePS {
 #  undef PS_GET_FEATURE
 
   PS_GET(const Vector<std::string>&, Filters)
+
+  static void FulfillChunkRequests(PSLockRef) {
+    MOZ_ASSERT(sInstance);
+    sInstance->mProfileBufferChunkManager.FulfillChunkRequests();
+  }
 
   static ProfileBuffer& Buffer(PSLockRef) {
     MOZ_ASSERT(sInstance);
@@ -910,6 +943,9 @@ class ActivePS {
 
   
   Vector<std::string> mFilters;
+
+  
+  ProfileBufferChunkManagerWithLocalLimit mProfileBufferChunkManager;
 
   
   ProfileBuffer mProfileBuffer;
@@ -2049,8 +2085,10 @@ void SamplerThread::Run() {
   
   
   
-  BlocksRingBuffer localBuffer(BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  ProfileBuffer localProfileBuffer(localBuffer, MakePowerOfTwo32<65536>());
+  ProfileBufferChunkManagerSingle localChunkManager(65536);
+  ProfileChunkedBuffer localBuffer(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex, localChunkManager);
+  ProfileBuffer localProfileBuffer(localBuffer);
 
   
   auto previousState = localBuffer.GetState();
@@ -2156,17 +2194,11 @@ void SamplerThread::Run() {
             auto state = localBuffer.GetState();
             if (state.mClearedBlockCount != previousState.mClearedBlockCount) {
               LOG("Stack sample too big for local storage, needed %u bytes",
-                  unsigned(
-                      state.mRangeEnd.ConvertToProfileBufferIndex() -
-                      previousState.mRangeEnd.ConvertToProfileBufferIndex()));
-            } else if (state.mRangeEnd.ConvertToProfileBufferIndex() -
-                           previousState.mRangeEnd
-                               .ConvertToProfileBufferIndex() >=
-                       CorePS::CoreBuffer().BufferLength()->Value()) {
+                  unsigned(state.mRangeEnd - previousState.mRangeEnd));
+            } else if (state.mRangeEnd - previousState.mRangeEnd >=
+                       *CorePS::CoreBuffer().BufferLength()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
-                  unsigned(
-                      state.mRangeEnd.ConvertToProfileBufferIndex() -
-                      previousState.mRangeEnd.ConvertToProfileBufferIndex()));
+                  unsigned(state.mRangeEnd - previousState.mRangeEnd));
             } else {
               CorePS::CoreBuffer().AppendContents(localBuffer);
             }
@@ -2186,6 +2218,11 @@ void SamplerThread::Run() {
         CorePS::Lul(lock)->MaybeShowStats();
 #  endif
         TimeStamp threadsSampled = TimeStamp::NowUnfuzzed();
+
+        {
+          AUTO_PROFILER_STATS(Sampler_FulfillChunkRequests);
+          ActivePS::FulfillChunkRequests(lock);
+        }
 
         buffer.CollectOverheadStats(delta, lockAcquired - sampleStart,
                                     expiredMarkersCleaned - lockAcquired,
@@ -3271,10 +3308,10 @@ UniqueProfilerBacktrace profiler_get_backtrace() {
 #  endif
 
   
-  auto bufferManager = MakeUnique<BlocksRingBuffer>(
-      BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  auto buffer =
-      MakeUnique<ProfileBuffer>(*bufferManager, MakePowerOfTwo32<65536>());
+  auto bufferManager = MakeUnique<ProfileChunkedBuffer>(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+      MakeUnique<ProfileBufferChunkManagerSingle>(65536));
+  auto buffer = MakeUnique<ProfileBuffer>(*bufferManager);
 
   DoSyncSample(lock, *registeredThread, now, regs, *buffer.get());
 
