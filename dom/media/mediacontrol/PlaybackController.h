@@ -12,6 +12,8 @@
 namespace mozilla {
 namespace dom {
 
+class MediaSession;
+
 
 
 
@@ -36,6 +38,7 @@ class MOZ_STACK_CLASS PlaybackController {
   explicit PlaybackController(BrowsingContext* aContext);
   ~PlaybackController() = default;
 
+  void Focus();
   void Play();
   void Pause();
   void SeekBackward();
@@ -47,6 +50,7 @@ class MOZ_STACK_CLASS PlaybackController {
   void SeekTo();
 
  private:
+  MediaSession* GetMediaSession();
   RefPtr<BrowsingContext> mBC;
 };
 
