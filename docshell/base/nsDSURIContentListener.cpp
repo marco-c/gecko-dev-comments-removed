@@ -195,7 +195,6 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
 
   if (NS_FAILED(rv)) {
     
-    nsCOMPtr<nsIStreamListener> forget = dont_AddRef(*aContentHandler);
     *aContentHandler = nullptr;
     return rv;
   }
