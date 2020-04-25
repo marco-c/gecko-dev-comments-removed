@@ -44,9 +44,10 @@ class InChunkPointer {
 
   
   
+  
   InChunkPointer(const ProfileBufferChunk* aChunk,
                  const ProfileBufferChunk* aNextChunkGroup,
-                 ProfileBufferBlockIndex aBlockIndex = nullptr)
+                 ProfileBufferBlockIndex aBlockIndex)
       : mChunk(aChunk), mNextChunkGroup(aNextChunkGroup) {
     if (mChunk) {
       mOffsetInChunk = mChunk->OffsetFirstBlock();
@@ -61,8 +62,38 @@ class InChunkPointer {
     }
 
     
-    Unused << AdvanceToGlobalRangePosition(
-        aBlockIndex.ConvertToProfileBufferIndex());
+    if (!AdvanceToGlobalRangePosition(aBlockIndex)) {
+      
+      
+      mChunk = nullptr;
+      mNextChunkGroup = nullptr;
+    }
+  }
+
+  
+  
+  InChunkPointer(const ProfileBufferChunk* aChunk,
+                 const ProfileBufferChunk* aNextChunkGroup,
+                 ProfileBufferIndex aIndex = ProfileBufferIndex(0))
+      : mChunk(aChunk), mNextChunkGroup(aNextChunkGroup) {
+    if (mChunk) {
+      mOffsetInChunk = mChunk->OffsetFirstBlock();
+      Adjust();
+    } else if (mNextChunkGroup) {
+      mChunk = mNextChunkGroup;
+      mNextChunkGroup = nullptr;
+      mOffsetInChunk = mChunk->OffsetFirstBlock();
+      Adjust();
+    } else {
+      mOffsetInChunk = 0;
+    }
+
+    
+    if (!AdvanceToGlobalRangePosition(aIndex)) {
+      
+      mChunk = nullptr;
+      mNextChunkGroup = nullptr;
+    }
   }
 
   
@@ -72,6 +103,50 @@ class InChunkPointer {
       return 0;
     }
     return mChunk->RangeStart() + mOffsetInChunk;
+  }
+
+  
+  
+  
+  
+  [[nodiscard]] bool AdvanceToGlobalRangePosition(
+      ProfileBufferBlockIndex aBlockIndex) {
+    if (IsNull()) {
+      
+      return false;
+    }
+    if (!aBlockIndex) {
+      
+      return ShouldPointAtValidBlock();
+    }
+    if (aBlockIndex.ConvertToProfileBufferIndex() < GlobalRangePosition()) {
+      
+      
+      return ShouldPointAtValidBlock();
+    }
+    for (;;) {
+      if (aBlockIndex.ConvertToProfileBufferIndex() <
+          mChunk->RangeStart() + mChunk->OffsetPastLastBlock()) {
+        
+        mOffsetInChunk =
+            aBlockIndex.ConvertToProfileBufferIndex() - mChunk->RangeStart();
+        return ShouldPointAtValidBlock();
+      }
+      
+      GoToNextChunk();
+      if (IsNull()) {
+        return false;
+      }
+      
+      
+      mOffsetInChunk = mChunk->OffsetFirstBlock();
+      if (aBlockIndex.ConvertToProfileBufferIndex() < GlobalRangePosition()) {
+        
+        
+        MOZ_ASSERT(false, "AdvanceToGlobalRangePosition - In-between blocks");
+        return false;
+      }
+    }
   }
 
   
@@ -296,6 +371,32 @@ class InChunkPointer {
       }
       GoToNextChunk();
     }
+  }
+
+  
+  
+  
+  
+  
+  [[nodiscard]] bool ShouldPointAtValidBlock() const {
+    if (IsNull()) {
+      
+      MOZ_ASSERT(false, "ShouldPointAtValidBlock - null pointer");
+      return false;
+    }
+    
+    InChunkPointer pointer = *this;
+    
+    Length entrySize = pointer.ReadEntrySize();
+    if (entrySize == 0) {
+      
+      MOZ_ASSERT(false, "ShouldPointAtValidBlock - invalid size");
+      return false;
+    }
+    
+    pointer += entrySize - 1;
+    MOZ_ASSERT(!IsNull(), "ShouldPointAtValidBlock - past end of buffer");
+    return !IsNull();
   }
 
   const ProfileBufferChunk* mChunk;
