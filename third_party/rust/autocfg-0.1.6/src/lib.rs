@@ -34,30 +34,12 @@
 
 
 
-
-
-
-
-
-
-
-
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 
 #![allow(unknown_lints)]
 #![allow(bare_trait_objects)]
 #![allow(ellipsis_inclusive_range_patterns)]
-
-
-macro_rules! try {
-    ($result:expr) => {
-        match $result {
-            Ok(value) => value,
-            Err(error) => return Err(error),
-        }
-    };
-}
 
 use std::env;
 use std::ffi::OsString;
@@ -86,7 +68,6 @@ pub struct AutoCfg {
     rustc_version: Version,
     target: Option<OsString>,
     no_std: bool,
-    rustflags: Option<Vec<String>>,
 }
 
 
@@ -164,35 +145,12 @@ impl AutoCfg {
             return Err(error::from_str("output path is not a writable directory"));
         }
 
-        
-        
-        
-        
-        
-        
-        let rustflags = if env::var_os("TARGET") != env::var_os("HOST") {
-            env::var("RUSTFLAGS").ok().map(|rustflags| {
-                
-                
-                
-                rustflags
-                    .split(' ')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(str::to_string)
-                    .collect::<Vec<String>>()
-            })
-        } else {
-            None
-        };
-
         let mut ac = AutoCfg {
             out_dir: dir,
             rustc: rustc,
             rustc_version: rustc_version,
             target: env::var_os("TARGET"),
             no_std: false,
-            rustflags: rustflags,
         };
 
         
@@ -235,10 +193,6 @@ impl AutoCfg {
             .arg("--out-dir")
             .arg(&self.out_dir)
             .arg("--emit=llvm-ir");
-
-        if let &Some(ref rustflags) = &self.rustflags {
-            command.args(rustflags);
-        }
 
         if let Some(target) = self.target.as_ref() {
             command.arg("--target").arg(target);
@@ -359,44 +313,6 @@ impl AutoCfg {
     
     pub fn emit_type_cfg(&self, name: &str, cfg: &str) {
         if self.probe_type(name) {
-            emit(cfg);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn probe_expression(&self, expr: &str) -> bool {
-        self.probe(format!("pub fn probe() {{ let _ = {}; }}", expr))
-            .unwrap_or(false)
-    }
-
-    
-    pub fn emit_expression_cfg(&self, expr: &str, cfg: &str) {
-        if self.probe_expression(expr) {
-            emit(cfg);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn probe_constant(&self, expr: &str) -> bool {
-        self.probe(format!("pub const PROBE: () = ((), {}).0;", expr))
-            .unwrap_or(false)
-    }
-
-    
-    pub fn emit_constant_cfg(&self, expr: &str, cfg: &str) {
-        if self.probe_constant(expr) {
             emit(cfg);
         }
     }
