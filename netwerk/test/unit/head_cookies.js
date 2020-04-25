@@ -125,11 +125,8 @@ function do_set_cookies(uri, channel, session, expected) {
   Services.cookies.setCookieString(uri, "can=has" + suffix, channel);
   Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[1]);
   
-  Services.cookies.setCookieStringFromHttp(uri, "cheez=burger" + suffix, null);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[2]);
-  
   Services.cookies.setCookieStringFromHttp(uri, "hot=dog" + suffix, channel);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[3]);
+  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[2]);
 }
 
 function do_count_cookies() {

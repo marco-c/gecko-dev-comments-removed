@@ -59,15 +59,15 @@ function* do_run_test() {
     "network.cookie.thirdparty.nonsecureSessionOnly",
     false
   );
-  do_set_cookies(uri1, channel2, false, [1, 2, 3, 4]); 
-  do_set_cookies(uri2, channel1, false, [1, 2, 3, 4]); 
+  do_set_cookies(uri1, channel2, false, [1, 2, 3]); 
+  do_set_cookies(uri2, channel1, false, [1, 2, 3]); 
 
   
   do_close_profile(test_generator);
   yield;
   do_load_profile();
-  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 4); 
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 4); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 3); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 3); 
 
   
   Services.prefs.setBoolPref(
@@ -75,15 +75,15 @@ function* do_run_test() {
     true
   );
   Services.cookies.removeAll();
-  do_set_cookies(uri1, channel2, false, [1, 2, 3, 4]); 
-  do_set_cookies(uri2, channel1, false, [1, 2, 3, 4]); 
+  do_set_cookies(uri1, channel2, false, [1, 2, 3]); 
+  do_set_cookies(uri2, channel1, false, [1, 2, 3]); 
 
   
   do_close_profile(test_generator);
   yield;
   do_load_profile();
   Assert.equal(Services.cookies.countCookiesFromHost(uri1.host), 0); 
-  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 4); 
+  Assert.equal(Services.cookies.countCookiesFromHost(uri2.host), 3); 
 
   finish_test();
 }
