@@ -7361,9 +7361,13 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   
   
-  if (presShell &&
-      presShell->GetPresContext()->DeviceContext()->CheckDPIChange()) {
-    presShell->BackingScaleFactorChanged();
+  if (presShell) {
+    RefPtr<nsPresContext> pc = presShell->GetPresContext();
+    if (pc->DeviceContext()->CheckDPIChange()) {
+      presShell->BackingScaleFactorChanged();
+    }
+    
+    pc->RecomputeBrowsingContextDependentData();
   }
 
   nsViewManager* newVM = presShell ? presShell->GetViewManager() : nullptr;
