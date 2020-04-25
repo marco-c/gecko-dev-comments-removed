@@ -11,6 +11,9 @@
 #include <gtk/gtk.h>
 #include <functional>
 #include <vector>
+#ifdef MOZ_WAYLAND
+#  include "mozilla/Mutex.h"
+#endif
 
 
 
@@ -87,6 +90,10 @@ struct _MozContainer {
   gboolean surface_needs_clear;
   gboolean ready_to_draw;
   std::vector<std::function<void(void)>> initial_draw_cbs;
+  
+  
+  
+  mozilla::Mutex* container_lock;
 #endif
   gboolean force_default_visual;
 };
