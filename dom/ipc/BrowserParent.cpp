@@ -4066,56 +4066,19 @@ void BrowserParent::OnSubFrameCrashed() {
   if (mBrowsingContext->IsDiscarded()) {
     return;
   }
-
-  auto processId = Manager()->ChildID();
-  BrowsingContext* parent = mBrowsingContext->GetParent();
-  ContentParent* embedderProcess = parent->Canonical()->GetContentParent();
-  if (!embedderProcess) {
+  BrowserBridgeParent* bridge = GetBrowserBridgeParent();
+  if (!bridge || !bridge->CanSend()) {
     return;
   }
 
-  ContentParent* manager = Manager();
   
   
   
-  mBrowsingContext->SetOwnerProcessId(embedderProcess->ChildID());
+  mBrowsingContext->SetOwnerProcessId(bridge->Manager()->Manager()->ChildID());
+  mBrowsingContext->SetCurrentInnerWindowId(0);
 
   
-  
-  mBrowsingContext->PostOrderWalk([&](auto* aContext) {
-    
-    
-    for (auto it = aContext->GetChildren().rbegin();
-         it != aContext->GetChildren().rend(); it++) {
-      RefPtr<BrowsingContext> context = *it;
-      if (context->Canonical()->IsOwnedByProcess(processId)) {
-        
-        
-        
-        auto resolve = [context](bool) {};
-        auto reject = [context](ResponseRejectReason) {};
-        context->Group()->EachOtherParent(manager, [&](auto* aParent) {
-          aParent->SendDetachBrowsingContext(context->Id(), resolve, reject);
-        });
-
-        context->Detach( true);
-      }
-    }
-
-    
-    
-    
-    aContext->Group()->EachOtherParent(manager, [&](auto* aParent) {
-      Unused << aParent->SendCacheBrowsingContextChildren(aContext);
-    });
-    aContext->CacheChildren( true);
-  });
-
-  MOZ_DIAGNOSTIC_ASSERT(!mBrowsingContext->GetChildren().Length());
-  
-  if (GetBrowserBridgeParent()) {
-    Unused << GetBrowserBridgeParent()->SendSubFrameCrashed(mBrowsingContext);
-  }
+  Unused << bridge->SendSubFrameCrashed(mBrowsingContext);
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvIsWindowSupportingProtectedMedia(

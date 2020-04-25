@@ -10459,7 +10459,7 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
 
   
   if (RefPtr<BrowsingContext> browsingContext = GetBrowsingContext()) {
-    for (auto& child : browsingContext->GetChildren()) {
+    for (auto& child : browsingContext->Children()) {
       if (!child->IsInProcess()) {
         aBFCacheCombo |= BFCacheStatus::CONTAINS_REMOTE_SUBFRAMES;
         ret = false;
@@ -11158,7 +11158,7 @@ void Document::NotifyLoading(bool aNewParentIsLoading,
       
       
       
-      for (auto& child : context->GetChildren()) {
+      for (auto& child : context->Children()) {
         MOZ_LOG(gTimeoutDeferralLog, mozilla::LogLevel::Debug,
                 ("bc: %p SetAncestorLoading(%d)", (void*)child, is_loading));
         child->SetAncestorLoading(is_loading);
