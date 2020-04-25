@@ -414,11 +414,9 @@ bool ReferrerInfo::ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
 
   
   
-  
   uint32_t corsMode = CORS_NONE;
   NS_ENSURE_SUCCESS(aChannel->GetCorsMode(&corsMode), false);
-  bool isCrossOriginRequest = ReferrerInfo::IsCrossOriginRequest(aChannel);
-  if (corsMode == CORS_USE_CREDENTIALS && isCrossOriginRequest) {
+  if (corsMode == CORS_USE_CREDENTIALS) {
     return false;
   }
 
@@ -444,7 +442,7 @@ bool ReferrerInfo::ShouldSetNullOriginHeader(net::HttpBaseChannel* aChannel,
   }
 
   if (policy == ReferrerPolicy::Same_origin) {
-    return isCrossOriginRequest;
+    return ReferrerInfo::IsCrossOriginRequest(aChannel);
   }
 
   return false;
