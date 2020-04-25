@@ -12,6 +12,15 @@ export interface RecipeArgs {
   branches: Branch[];
 }
 
+export interface Recipe {
+  id: string;
+  
+  filter_expression?: string;
+  
+  targeting?: string;
+  arguments: RecipeArgs;
+}
+
 export interface Enrollment {
   slug: string;
   enrollmentId: string;

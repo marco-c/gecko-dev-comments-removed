@@ -4,6 +4,10 @@
 
 "use strict";
 
+
+
+
+
 const EXPORTED_SYMBOLS = [
   "_RemoteSettingsExperimentLoader",
   "RemoteSettingsExperimentLoader",
@@ -95,17 +99,32 @@ class _RemoteSettingsExperimentLoader {
     this._initialized = false;
   }
 
-  testFilterExpression(expression) {
-    log.debug("Testing filter expression:", expression);
-    return ASRouterTargeting.isMatch(
-      expression,
+  
+
+
+
+
+  async checkTargeting(recipe) {
+    const { targeting } = recipe;
+    if (!targeting) {
+      log.debug("No targeting for recipe, so it matches automatically");
+      return true;
+    }
+    log.debug("Testing targeting expression:", targeting);
+    const result = await ASRouterTargeting.isMatch(
+      targeting,
       this.manager.filterContext,
       err => {
         log.debug("Targeting failed because of an error");
         Cu.reportError(err);
       }
     );
+    return Boolean(result);
   }
+
+  
+
+
 
   async updateRecipes(trigger) {
     if (this._updating || !this._initialized) {
@@ -130,12 +149,12 @@ class _RemoteSettingsExperimentLoader {
     let matches = 0;
     if (recipes && !loadingError) {
       for (const r of recipes) {
-        if (await this.testFilterExpression(r.filter_expression)) {
+        if (await this.checkTargeting(r)) {
           matches++;
-          log.debug(`${r.id} passed filter_expression`);
+          log.debug(`${r.id} matched`);
           await this.manager.onRecipe(r.arguments, "rs-loader");
         } else {
-          log.debug(`${r.id} failed filter_expression`);
+          log.debug(`${r.id} did not match due to targeting`);
         }
       }
 
@@ -159,8 +178,10 @@ class _RemoteSettingsExperimentLoader {
     }
   }
 
+  
+
+
   setTimer() {
-    
     
     timerManager.registerTimer(
       TIMER_NAME,
