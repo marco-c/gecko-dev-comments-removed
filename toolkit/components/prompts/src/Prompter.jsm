@@ -20,6 +20,10 @@ function Prompter() {
   
 }
 
+
+
+
+
 Prompter.prototype = {
   classID: Components.ID("{1c978d25-b37f-43a8-a2d6-0c7a239ead87}"),
   QueryInterface: ChromeUtils.generateQI([
@@ -58,65 +62,226 @@ Prompter.prototype = {
 
   
 
+  
+
+
+
+
+
   alert(domWin, title, text) {
     let p = this.pickPrompter({ domWin });
     p.alert(title, text);
   },
+
+  
+
+
+
+
+
+
+
 
   alertBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     p.alert(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
   asyncAlert(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.alert(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
 
   alertCheck(domWin, title, text, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
     p.alertCheck(title, text, checkLabel, checkValue);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   alertCheckBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     p.alertCheck(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
   asyncAlertCheck(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.alertCheck(...promptArgs);
   },
 
+  
+
+
+
+
+
+
   confirm(domWin, title, text) {
     let p = this.pickPrompter({ domWin });
     return p.confirm(title, text);
   },
+
+  
+
+
+
+
+
+
+
+
 
   confirmBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.confirm(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
   asyncConfirm(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.confirm(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
 
   confirmCheck(domWin, title, text, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
     return p.confirmCheck(title, text, checkLabel, checkValue);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   confirmCheckBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.confirmCheck(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   asyncConfirmCheck(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.confirmCheck(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   confirmEx(
     domWin,
@@ -142,30 +307,140 @@ Prompter.prototype = {
     );
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   confirmExBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.confirmEx(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   asyncConfirmEx(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.confirmEx(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   prompt(domWin, title, text, value, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
     return p.nsIPrompt_prompt(title, text, value, checkLabel, checkValue);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   promptBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.nsIPrompt_prompt(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   asyncPrompt(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.nsIPrompt_prompt(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   promptUsernameAndPassword(
     domWin,
@@ -187,15 +462,73 @@ Prompter.prototype = {
     );
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   promptUsernameAndPasswordBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.nsIPrompt_promptUsernameAndPassword(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   asyncPromptUsernameAndPassword(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.nsIPrompt_promptUsernameAndPassword(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   promptPassword(domWin, title, text, pass, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
@@ -208,40 +541,174 @@ Prompter.prototype = {
     );
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   promptPasswordBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.nsIPrompt_promptPassword(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   asyncPromptPassword(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.nsIPrompt_promptPassword(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
   select(domWin, title, text, list, selected) {
     let p = this.pickPrompter({ domWin });
     return p.select(title, text, list, selected);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   selectBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.select(...promptArgs);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   asyncSelect(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType, async: true });
     return p.select(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   promptAuth(domWin, channel, level, authInfo, checkLabel, checkValue) {
     let p = this.pickPrompter({ domWin });
     return p.promptAuth(channel, level, authInfo, checkLabel, checkValue);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   promptAuthBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
     return p.promptAuth(...promptArgs);
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   asyncPromptAuth(
     domWin,
@@ -264,6 +731,30 @@ Prompter.prototype = {
       checkValue
     );
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   asyncPromptAuthBC(browsingContext, modalType, ...promptArgs) {
     let p = this.pickPrompter({ browsingContext, modalType });
