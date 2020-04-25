@@ -1713,9 +1713,10 @@ let IconDetails = {
   },
 };
 
-StartupCache = {
-  DB_NAME: "ExtensionStartupCache",
 
+
+
+StartupCache = {
   STORE_NAMES: Object.freeze([
     "general",
     "locales",
@@ -1725,6 +1726,8 @@ StartupCache = {
     "schemas",
   ]),
 
+  
+  
   file: OS.Path.join(
     OS.Constants.Path.localProfileDir,
     "startupCache",
