@@ -163,8 +163,10 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     const source = this._source;
 
     let introductionUrl = null;
-    if (source.introductionScript) {
-      introductionUrl = source.introductionScript.source.url;
+    if (source.introductionScript && source.introductionScript.source.url) {
+      introductionUrl = source.introductionScript.source.url
+        .split(" -> ")
+        .pop();
     }
 
     return {
@@ -172,10 +174,13 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       extensionName: this.extensionName,
       url: this.url,
       isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
+      
+      
+      
+      
+      
+      sourceMapBaseURL: this.url || introductionUrl || null,
       sourceMapURL: source.sourceMapURL,
-      introductionUrl: introductionUrl
-        ? introductionUrl.split(" -> ").pop()
-        : null,
       introductionType: source.introductionType,
     };
   },

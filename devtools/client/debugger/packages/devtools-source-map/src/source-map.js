@@ -48,7 +48,11 @@ type Range = {
 };
 export type SourceMapInput = {|
   id: SourceId,
+  
+  
+  
   url: string,
+  sourceMapBaseURL: string,
   sourceMapURL: string,
   isWasm: boolean,
 |};

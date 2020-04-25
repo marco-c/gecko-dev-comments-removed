@@ -3869,11 +3869,13 @@ function hasOriginalURL(url) {
 
 function _resolveSourceMapURL(source) {
   let {
-    url = "",
+    sourceMapBaseURL,
     sourceMapURL
   } = source;
+  sourceMapBaseURL = sourceMapBaseURL || "";
+  sourceMapURL = sourceMapURL || "";
 
-  if (!url) {
+  if (!sourceMapBaseURL) {
     
     return {
       sourceMapURL,
@@ -3881,7 +3883,6 @@ function _resolveSourceMapURL(source) {
     };
   }
 
-  sourceMapURL = sourceMapURL || "";
   let resolvedString;
   let baseURL; 
   
@@ -3889,12 +3890,12 @@ function _resolveSourceMapURL(source) {
 
   if (sourceMapURL.startsWith("data:")) {
     resolvedString = sourceMapURL;
-    baseURL = url;
+    baseURL = sourceMapBaseURL;
   } else {
     resolvedString = new URL(sourceMapURL, 
     
     
-    url.startsWith("data:") ? undefined : url).toString();
+    sourceMapBaseURL.startsWith("data:") ? undefined : sourceMapBaseURL).toString();
     baseURL = resolvedString;
   }
 

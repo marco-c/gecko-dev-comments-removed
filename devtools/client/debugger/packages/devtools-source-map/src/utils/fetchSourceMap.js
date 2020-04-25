@@ -25,13 +25,14 @@ function hasOriginalURL(url: string): boolean {
 }
 
 function _resolveSourceMapURL(source: SourceMapInput) {
-  let { url = "", sourceMapURL } = source;
+  let { sourceMapBaseURL, sourceMapURL } = source;
+  sourceMapBaseURL = sourceMapBaseURL || "";
+  sourceMapURL = sourceMapURL || "";
 
-  if (!url) {
+  if (!sourceMapBaseURL) {
     
     return { sourceMapURL, baseURL: sourceMapURL };
   }
-  sourceMapURL = sourceMapURL || "";
 
   let resolvedString;
   let baseURL;
@@ -41,14 +42,14 @@ function _resolveSourceMapURL(source: SourceMapInput) {
   
   if (sourceMapURL.startsWith("data:")) {
     resolvedString = sourceMapURL;
-    baseURL = url;
+    baseURL = sourceMapBaseURL;
   } else {
     resolvedString = new URL(
       sourceMapURL,
       
       
       
-      url.startsWith("data:") ? undefined : url
+      sourceMapBaseURL.startsWith("data:") ? undefined : sourceMapBaseURL
     ).toString();
     baseURL = resolvedString;
   }
