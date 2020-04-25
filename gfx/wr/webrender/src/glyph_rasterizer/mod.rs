@@ -2,8 +2,8 @@
 
 
 
-use api::{FontInstanceFlags, FontInstancePlatformOptions};
-use api::{FontKey, FontInstanceKey, FontRenderMode, FontTemplate, FontVariation};
+use api::{FontInstanceFlags, BaseFontInstance};
+use api::{FontKey, FontRenderMode, FontTemplate};
 use api::{ColorU, GlyphIndex, GlyphDimensions, SyntheticItalics};
 use api::units::*;
 use api::{ImageDescriptor, ImageDescriptorFlags, ImageFormat, DirtyRect};
@@ -437,26 +437,6 @@ impl Hash for FontInstance {
         self.color.hash(state);
         self.size.hash(state);
     }
-}
-
-
-
-
-
-#[derive(Clone, PartialEq, Eq, Debug, Ord, PartialOrd, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct BaseFontInstance {
-    pub instance_key: FontInstanceKey,
-    pub font_key: FontKey,
-    pub size: Au,
-    pub bg_color: ColorU,
-    pub render_mode: FontRenderMode,
-    pub flags: FontInstanceFlags,
-    pub synthetic_italics: SyntheticItalics,
-    #[cfg_attr(any(feature = "capture", feature = "replay"), serde(skip))]
-    pub platform_options: Option<FontInstancePlatformOptions>,
-    pub variations: Vec<FontVariation>,
 }
 
 impl Deref for FontInstance {
