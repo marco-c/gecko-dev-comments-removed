@@ -207,8 +207,27 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin,
         env["MOZ_JAR_LOG_FILE"] = jarlog
         env["LLVM_PROFILE_FILE"] = profdata
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        sdcard_test_root = '/sdcard/tests'
         adbdevice = ADBDevice(adb=adb,
-                              device='emulator-5554')
+                              device='emulator-5554',
+                              test_root=sdcard_test_root)
+        if adbdevice.test_root != sdcard_test_root:
+            
+            
+            
+            adbdevice.test_root = sdcard_test_root
         adbdevice.mkdir(outputdir)
 
         try:
