@@ -27,7 +27,6 @@ void BCEScriptStencil::init(BytecodeEmitter& bce,
   immutableFlags = bce.sc->immutableFlags();
 
   
-  immutableFlags.setFlag(ImmutableFlags::Strict, bce.sc->strict());
   immutableFlags.setFlag(
       ImmutableFlags::HasNonSyntacticScope,
       bce.outermostScope().hasOnChain(ScopeKind::NonSyntactic));
