@@ -27,6 +27,7 @@ class OriginAttributes;
 
 namespace dom {
 class BrowsingContext;
+class ContentParent;
 }
 
 class ContentBlocking final {
@@ -109,6 +110,7 @@ class ContentBlocking final {
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
 
  private:
+  friend class dom::ContentParent;
   
   
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise> CompleteAllowAccessFor(

@@ -331,7 +331,29 @@ ContentBlocking::AllowAccessFor(
         behavior, aReason, aPerformFinalChecks);
   }
 
-  return StorageAccessGrantPromise::CreateAndReject(false, __func__);
+  MOZ_ASSERT(XRE_IsContentProcess());
+  
+  
+  
+  MOZ_ASSERT(!aPerformFinalChecks);
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  MOZ_ASSERT(cc);
+
+  return cc
+      ->SendCompleteAllowAccessFor(aParentContext, topLevelWindowId,
+                                   IPC::Principal(trackingPrincipal),
+                                   trackingOrigin, behavior, aReason)
+      ->Then(GetCurrentThreadSerialEventTarget(), __func__,
+             [](const ContentChild::CompleteAllowAccessForPromise::
+                    ResolveOrRejectValue& aValue) {
+               if (aValue.IsResolve() && aValue.ResolveValue().isSome()) {
+                 return StorageAccessGrantPromise::CreateAndResolve(
+                     aValue.ResolveValue().value(), __func__);
+               }
+               return StorageAccessGrantPromise::CreateAndReject(false,
+                                                                 __func__);
+             });
 }
 
 
@@ -462,7 +484,7 @@ ContentBlocking::CompleteAllowAccessFor(
                  [](ParentAccessGrantPromise::ResolveOrRejectValue&& aValue) {
                    if (aValue.IsResolve()) {
                      return StorageAccessGrantPromise::CreateAndResolve(
-                         eAllow, __func__);
+                         ContentBlocking::eAllow, __func__);
                    }
                    return StorageAccessGrantPromise::CreateAndReject(false,
                                                                      __func__);
