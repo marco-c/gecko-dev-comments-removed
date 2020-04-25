@@ -171,6 +171,18 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     }
   } else {
     
+
+    
+    
+    
+    nsACString::const_iterator start, end;
+    langStr.BeginReading(start);
+    langStr.EndReading(end);
+    if (FindInReadable(NS_LITERAL_CSTRING("-x-"), start, end)) {
+      
+      langStr.Truncate(start.get() - langStr.BeginReading());
+    }
+
     Locale loc(langStr);
     if (loc.IsWellFormed()) {
       
