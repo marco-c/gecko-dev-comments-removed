@@ -13,4 +13,9 @@ window.attachEvent("onload", function() {
   document.getElementById("footer").innerText = external.getUIString(
     "global_footer"
   );
+
+  
+  document.getElementById("background").attachEvent("ondragstart", function() {
+    return false;
+  });
 });
