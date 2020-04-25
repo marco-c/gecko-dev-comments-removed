@@ -151,13 +151,14 @@ async function listProcessTargets(args: Args): Promise<*> {
     if (currentTarget.url && features.windowlessServiceWorkers) {
       
       
-      const origin = new URL(currentTarget.url).origin;
-      const targets = await getAllProcessTargets(args);
       try {
+        const origin = new URL(currentTarget.url).origin;
+        const targets = await getAllProcessTargets(args);
         await Promise.all(
           targets.map(t => t.pauseMatchingServiceWorkers({ origin }))
         );
       } catch (e) {
+        
         
         
       }
