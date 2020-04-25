@@ -96,21 +96,25 @@ class AboutWelcomeChild extends JSWindowActorChild {
 
 
   AWGetStartupData() {
-    return this.wrapPromise(
-      ExperimentAPI.ready().then(() => {
-        const experimentData = ExperimentAPI.getExperiment({
-          group: "aboutwelcome",
-        });
-        if (experimentData && experimentData.slug) {
-          log.debug(
-            `Loading about:welcome with experiment: ${experimentData.slug}`
-          );
-        } else {
-          log.debug("Loading about:welcome without experiment");
-        }
-        return Cu.cloneInto(experimentData || {}, this.contentWindow);
-      })
-    );
+    let experimentData;
+    try {
+      
+      
+      experimentData = ExperimentAPI.getExperiment({
+        group: "aboutwelcome",
+      });
+    } catch (e) {
+      Cu.reportError(e);
+    }
+
+    if (experimentData && experimentData.slug) {
+      log.debug(
+        `Loading about:welcome with experiment: ${experimentData.slug}`
+      );
+    } else {
+      log.debug("Loading about:welcome without experiment");
+    }
+    return Cu.cloneInto(experimentData || {}, this.contentWindow);
   }
 
   AWGetFxAMetricsFlowURI() {
