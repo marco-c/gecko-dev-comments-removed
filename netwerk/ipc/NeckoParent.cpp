@@ -411,15 +411,7 @@ already_AddRefed<PDocumentChannelParent>
 NeckoParent::AllocPDocumentChannelParent(
     const MaybeDiscarded<BrowsingContext>& aContext,
     const DocumentChannelCreationArgs& args) {
-  
-  
-  
-  CanonicalBrowsingContext* context = nullptr;
-  if (!aContext.IsNullOrDiscarded()) {
-    context = aContext.get_canonical();
-  }
-
-  RefPtr<DocumentChannelParent> p = new DocumentChannelParent(context);
+  RefPtr<DocumentChannelParent> p = new DocumentChannelParent();
   return p.forget();
 }
 
@@ -434,7 +426,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDocumentChannelConstructor(
     return IPC_OK();
   }
 
-  if (!p->Init(aArgs)) {
+  if (!p->Init(aContext.get_canonical(), aArgs)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
