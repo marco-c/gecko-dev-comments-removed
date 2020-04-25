@@ -7145,12 +7145,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   mContentViewer = nullptr;
 
-  if (!mWillChangeProcess) {
-    
-    
-    mBrowsingContext->CacheChildren();
-  }
-
   
   
   DestroyChildren();
@@ -7269,7 +7263,6 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   document->NotifyPossibleTitleChange(false);
 
-  BrowsingContext::Children contexts(childShells.Count());
   
   for (i = 0; i < childShells.Count(); ++i) {
     nsIDocShellTreeItem* childItem = childShells.ObjectAt(i);
@@ -7306,8 +7299,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     
     AddChild(childItem);
 
-    contexts.AppendElement(childShell->GetBrowsingContext());
-
     childShell->SetAllowJavascript(allowJavascript);
     childShell->SetAllowMetaRedirects(allowRedirects);
     childShell->SetAllowSubframes(allowSubframes);
@@ -7321,10 +7312,6 @@ nsresult nsDocShell::RestoreFromHistory() {
 
     rv = childShell->BeginRestore(nullptr, false);
     NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  if (!contexts.IsEmpty()) {
-    mBrowsingContext->RestoreChildren(std::move(contexts));
   }
 
   
@@ -7878,10 +7865,6 @@ nsresult nsDocShell::SetupNewViewer(nsIContentViewer* aNewViewer,
   }
 
   mContentViewer = nullptr;
-
-  
-  
-  mBrowsingContext->CacheChildren();
 
   
   

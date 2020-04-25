@@ -3647,73 +3647,46 @@ mozilla::ipc::IPCResult ContentChild::RecvDetachBrowsingContext(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvCacheBrowsingContextChildren(
-    const MaybeDiscarded<BrowsingContext>& aContext) {
-  if (aContext.IsNullOrDiscarded()) {
-    return IPC_OK();
-  }
-
-  aContext.get()->CacheChildren( true);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentChild::RecvRestoreBrowsingContextChildren(
-    const MaybeDiscarded<BrowsingContext>& aContext,
-    const nsTArray<MaybeDiscarded<BrowsingContext>>& aChildren) {
-  if (aContext.IsNullOrDiscarded()) {
-    return IPC_OK();
-  }
-
-  nsTArray<RefPtr<BrowsingContext>> children(aChildren.Length());
-  for (const auto& child : aChildren) {
-    if (!child.IsNullOrDiscarded()) {
-      children.AppendElement(child.get());
-    }
-  }
-
-  aContext.get()->RestoreChildren(std::move(children),  true);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
-    nsTArray<BrowsingContext::IPCInitializer>&& aInits,
-    nsTArray<WindowContext::IPCInitializer>&& aWindowInits) {
+    nsTArray<SyncedContextInitializer>&& aInits) {
   RefPtr<BrowsingContextGroup> group = new BrowsingContextGroup();
-  
-  
-  for (auto& init : aInits) {
-#ifdef DEBUG
-    RefPtr<BrowsingContext> existing = BrowsingContext::Get(init.mId);
-    MOZ_ASSERT(!existing, "BrowsingContext must not exist yet!");
 
-    RefPtr<BrowsingContext> parent = init.GetParent();
-    MOZ_ASSERT_IF(parent, parent->Group() == group);
+  
+  
+  for (auto& initUnion : aInits) {
+    switch (initUnion.type()) {
+      case SyncedContextInitializer::TBrowsingContextInitializer: {
+        auto& init = initUnion.get_BrowsingContextInitializer();
+#ifdef DEBUG
+        RefPtr<BrowsingContext> existing = BrowsingContext::Get(init.mId);
+        MOZ_ASSERT(!existing, "BrowsingContext must not exist yet!");
+
+        RefPtr<WindowContext> parent = init.GetParent();
+        MOZ_ASSERT_IF(parent, parent->Group() == group);
 #endif
 
-    bool cached = init.mCached;
-    RefPtr<BrowsingContext> ctxt =
-        BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
+        RefPtr<BrowsingContext> ctxt =
+            BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
+        ctxt->Attach( true);
+        break;
+      }
+      case SyncedContextInitializer::TWindowContextInitializer: {
+        auto& init = initUnion.get_WindowContextInitializer();
+#ifdef DEBUG
+        RefPtr<WindowContext> existing =
+            WindowContext::GetById(init.mInnerWindowId);
+        MOZ_ASSERT(!existing, "WindowContext must not exist yet!");
+        RefPtr<BrowsingContext> parent =
+            BrowsingContext::Get(init.mBrowsingContextId);
+        MOZ_ASSERT(parent && parent->Group() == group);
+#endif
 
-    
-    
-    if (cached) {
-      ctxt->Group()->CacheContext(ctxt);
-    } else {
-      ctxt->Attach( true);
+        WindowContext::CreateFromIPC(std::move(init));
+        break;
+      };
+      default:
+        MOZ_ASSERT_UNREACHABLE();
     }
-  }
-
-  for (auto& init : aWindowInits) {
-#ifdef DEBUG
-    RefPtr<WindowContext> existing =
-        WindowContext::GetById(init.mInnerWindowId);
-    MOZ_ASSERT(!existing, "WindowContext must not exist yet!");
-    RefPtr<BrowsingContext> parent =
-        BrowsingContext::Get(init.mBrowsingContextId);
-    MOZ_ASSERT(parent && parent->Group() == group);
-#endif
-
-    WindowContext::CreateFromIPC(std::move(init));
   }
 
   return IPC_OK();
