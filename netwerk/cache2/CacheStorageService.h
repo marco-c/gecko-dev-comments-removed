@@ -314,7 +314,7 @@ class CacheStorageService final : public nsICacheStorageService,
   mozilla::Mutex mLock;
   mozilla::Mutex mForcedValidEntriesLock;
 
-  bool mShutdown;
+  Atomic<bool, Relaxed> mShutdown;
 
   
   class MemoryPool {
