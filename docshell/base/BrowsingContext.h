@@ -11,6 +11,7 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Span.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -32,6 +33,7 @@
 #include "nsILoadContext.h"
 
 class nsDocShellLoadState;
+class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
 class nsILoadInfo;
 class nsIPrincipal;
@@ -149,8 +151,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
  public:
   enum class Type { Chrome, Content };
 
-  using Children = nsTArray<RefPtr<BrowsingContext>>;
-
   static void Init();
   static LogModule* GetLog();
   static void CleanupContexts(uint64_t aProcessId);
@@ -186,7 +186,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   static already_AddRefed<BrowsingContext> CreateDetached(
-      BrowsingContext* aParent, BrowsingContext* aOpener,
+      nsGlobalWindowInner* aParent, BrowsingContext* aOpener,
       const nsAString& aName, Type aType);
 
   void EnsureAttached();
@@ -254,13 +254,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void PrepareForProcessChange();
 
   
-  
-  void CacheChildren(bool aFromIPC = false);
-
-  
-  void RestoreChildren(Children&& aChildren, bool aFromIPC = false);
-
-  
   nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating = false);
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState,
@@ -273,7 +266,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   void DisplayLoadError(const nsAString& aURI);
 
-  
   
   bool IsCached();
 
@@ -301,6 +293,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     return mParent;
   }
   BrowsingContext* Top();
+
+  
+  
+  WindowContext* GetParentWindow() const { return mParentWindow; }
 
   already_AddRefed<BrowsingContext> GetOpener() const {
     RefPtr<BrowsingContext> opener(Get(GetOpenerId()));
@@ -342,8 +338,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   uint32_t SandboxFlags() { return GetSandboxFlags(); }
 
-  void GetChildren(Children& aChildren);
+  Span<RefPtr<BrowsingContext>> Children() const;
+  void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
 
+  const nsTArray<RefPtr<WindowContext>>& GetWindowContexts() {
+    return mWindowContexts;
+  }
   void GetWindowContexts(nsTArray<RefPtr<WindowContext>>& aWindows);
 
   void RegisterWindowContext(WindowContext* aWindow);
@@ -454,22 +454,17 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(BrowsingContext)
   NS_DECL_NSILOADCONTEXT
 
-  const Children& GetChildren() { return mChildren; }
-  const nsTArray<RefPtr<WindowContext>>& GetWindowContexts() {
-    return mWindowContexts;
-  }
-
   
   void PreOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
     aCallback(this);
-    for (auto& child : GetChildren()) {
+    for (auto& child : Children()) {
       child->PreOrderWalk(aCallback);
     }
   }
 
   
   void PostOrderWalk(const std::function<void(BrowsingContext*)>& aCallback) {
-    for (auto& child : GetChildren()) {
+    for (auto& child : Children()) {
       child->PostOrderWalk(aCallback);
     }
 
@@ -486,7 +481,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void Focus(CallerType aCallerType, ErrorResult& aError);
   void Blur(ErrorResult& aError);
   WindowProxyHolder GetFrames(ErrorResult& aError);
-  int32_t Length() const { return mChildren.Length(); }
+  int32_t Length() const { return Children().Length(); }
   Nullable<WindowProxyHolder> GetTop(ErrorResult& aError);
   void GetOpener(JSContext* aCx, JS::MutableHandle<JS::Value> aOpener,
                  ErrorResult& aError) const;
@@ -527,18 +522,26 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     
     
     uint64_t mParentId = 0;
-    already_AddRefed<BrowsingContext> GetParent();
+    already_AddRefed<WindowContext> GetParent();
     already_AddRefed<BrowsingContext> GetOpener();
 
     uint64_t GetOpenerId() const { return mozilla::Get<IDX_OpenerId>(mFields); }
 
-    bool mCached = false;
     bool mWindowless = false;
     bool mUseRemoteTabs = false;
     bool mUseRemoteSubframes = false;
     OriginAttributes mOriginAttributes;
 
     FieldTuple mFields;
+
+    bool operator==(const IPCInitializer& aOther) const {
+      return mId == aOther.mId && mParentId == aOther.mParentId &&
+             mWindowless == aOther.mWindowless &&
+             mUseRemoteTabs == aOther.mUseRemoteTabs &&
+             mUseRemoteSubframes == aOther.mUseRemoteSubframes &&
+             mOriginAttributes == aOther.mOriginAttributes &&
+             mFields == aOther.mFields;
+    }
   };
 
   
@@ -569,7 +572,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
  protected:
   virtual ~BrowsingContext();
-  BrowsingContext(BrowsingContext* aParent, BrowsingContextGroup* aGroup,
+  BrowsingContext(WindowContext* aParentWindow, BrowsingContextGroup* aGroup,
                   uint64_t aBrowsingContextId, Type aType,
                   FieldTuple&& aFields);
 
@@ -720,10 +723,11 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   const uint64_t mBrowsingContextId;
 
   RefPtr<BrowsingContextGroup> mGroup;
+  RefPtr<WindowContext> mParentWindow;
+  
+  
+  
   RefPtr<BrowsingContext> mParent;
-  
-  
-  Children mChildren;
   nsCOMPtr<nsIDocShell> mDocShell;
 
   RefPtr<Element> mEmbedderElement;
@@ -832,7 +836,6 @@ extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
 
 using BrowsingContextTransaction = BrowsingContext::BaseTransaction;
 using BrowsingContextInitializer = BrowsingContext::IPCInitializer;
-using BrowsingContextChildren = BrowsingContext::Children;
 using MaybeDiscardedBrowsingContext = MaybeDiscarded<BrowsingContext>;
 
 
