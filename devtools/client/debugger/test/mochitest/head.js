@@ -45,7 +45,6 @@ const EXAMPLE_URL =
   "http://example.com/browser/devtools/client/debugger/test/mochitest/examples/";
 
 
-
 async function takeScreenshot(dbg) {
   let canvas = dbg.win.document.createElementNS(
     "http://www.w3.org/1999/xhtml",
