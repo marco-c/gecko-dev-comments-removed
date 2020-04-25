@@ -1166,6 +1166,18 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
     newLoadFlags |= nsIChannel::LOAD_REPLACE;
   }
 
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  mChannel->GetURI(getter_AddRefs(uri));
+  if (uri && uri->SchemeIs("https")) {
+    newLoadFlags &= ~nsIRequest::INHIBIT_PERSISTENT_CACHING;
+  }
+
   RefPtr<DocumentLoadListener> self = this;
   RedirectToRealChannel(redirectFlags, newLoadFlags, aDestinationProcess,
                         std::move(parentEndpoints))
