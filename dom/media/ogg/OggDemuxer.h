@@ -10,10 +10,7 @@
 #  include "MediaDataDemuxer.h"
 #  include "OggCodecState.h"
 #  include "OggCodecStore.h"
-#  include "OggRLBoxTypes.h"
 #  include "MediaMetadataManager.h"
-
-#  include <memory>
 
 namespace mozilla {
 
@@ -48,10 +45,9 @@ class OggDemuxer : public MediaDataDemuxer,
                                     size_t aTrackNumber) const;
 
   struct nsAutoOggSyncState {
-    explicit nsAutoOggSyncState(rlbox_sandbox_ogg& aSandbox);
-    ~nsAutoOggSyncState();
-    rlbox_sandbox_ogg& mSandbox;
-    tainted_opaque_ogg<ogg_sync_state*> mState;
+    nsAutoOggSyncState() { ogg_sync_init(&mState); }
+    ~nsAutoOggSyncState() { ogg_sync_clear(&mState); }
+    ogg_sync_state mState;
   };
   media::TimeIntervals GetBuffered(TrackInfo::TrackType aType);
   void FindStartTime(int64_t& aOutStartTime);
@@ -144,13 +140,10 @@ class OggDemuxer : public MediaDataDemuxer,
     PAGE_SYNC_END_OF_RANGE = 2,
     PAGE_SYNC_OK = 3
   };
-  static PageSyncResult PageSync(rlbox_sandbox_ogg* aSandbox,
-                                 MediaResourceIndex* aResource,
-                                 tainted_opaque_ogg<ogg_sync_state*> aState,
-                                 bool aCachedDataOnly, int64_t aOffset,
-                                 int64_t aEndOffset,
-                                 tainted_ogg<ogg_page*> aPage,
-                                 int& aSkippedBytes);
+  static PageSyncResult PageSync(MediaResourceIndex* aResource,
+                                 ogg_sync_state* aState, bool aCachedDataOnly,
+                                 int64_t aOffset, int64_t aEndOffset,
+                                 ogg_page* aPage, int& aSkippedBytes);
 
   
   ogg_packet* GetNextPacket(TrackInfo::TrackType aType);
@@ -169,14 +162,12 @@ class OggDemuxer : public MediaDataDemuxer,
 
   
   
-  bool ReadOggPage(TrackInfo::TrackType aType,
-                   tainted_opaque_ogg<ogg_page*> aPage);
+  bool ReadOggPage(TrackInfo::TrackType aType, ogg_page* aPage);
 
   
   
   
-  nsresult DemuxOggPage(TrackInfo::TrackType aType,
-                        tainted_opaque_ogg<ogg_page*> aPage);
+  nsresult DemuxOggPage(TrackInfo::TrackType aType, ogg_page* aPage);
 
   
   void DemuxUntilPacketAvailable(TrackInfo::TrackType aType,
@@ -206,8 +197,7 @@ class OggDemuxer : public MediaDataDemuxer,
   void FillTags(TrackInfo* aInfo, UniquePtr<MetadataTags>&& aTags);
 
   
-  tainted_opaque_ogg<ogg_uint32_t> GetPageChecksum(
-      tainted_opaque_ogg<ogg_page*> aPage);
+  ogg_uint32_t GetPageChecksum(ogg_page* aPage);
 
   
   
@@ -227,19 +217,6 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   int64_t RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
-
-  
-  
-  
-  static rlbox_sandbox_ogg* CreateSandbox();
-  struct SandboxDestroy {
-    void operator()(rlbox_sandbox_ogg* sandbox);
-  };
-
-  
-  
-  
-  std::unique_ptr<rlbox_sandbox_ogg, SandboxDestroy> mSandbox;
 
   MediaInfo mInfo;
   nsTArray<RefPtr<OggTrackDemuxer>> mDemuxers;
@@ -273,9 +250,8 @@ class OggDemuxer : public MediaDataDemuxer,
 
   
   struct OggStateContext {
-    explicit OggStateContext(MediaResource* aResource,
-                             rlbox_sandbox_ogg& aSandbox)
-        : mOggState(aSandbox), mResource(aResource), mNeedKeyframe(true) {}
+    explicit OggStateContext(MediaResource* aResource)
+        : mResource(aResource), mNeedKeyframe(true) {}
     nsAutoOggSyncState mOggState;
     MediaResourceIndex mResource;
     Maybe<media::TimeUnit> mStartTime;
@@ -283,7 +259,7 @@ class OggDemuxer : public MediaDataDemuxer,
   };
 
   OggStateContext& OggState(TrackInfo::TrackType aType);
-  tainted_opaque_ogg<ogg_sync_state*> OggSyncState(TrackInfo::TrackType aType);
+  ogg_sync_state* OggSyncState(TrackInfo::TrackType aType);
   MediaResourceIndex* Resource(TrackInfo::TrackType aType);
   MediaResourceIndex* CommonResource();
   OggStateContext mAudioOggState;

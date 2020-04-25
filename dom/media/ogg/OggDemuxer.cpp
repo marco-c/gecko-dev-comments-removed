@@ -5,20 +5,16 @@
 
 
 #include "OggDemuxer.h"
-#include "OggRLBox.h"
 #include "MediaDataDemuxer.h"
 #include "OggCodecState.h"
 #include "XiphExtradata.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/PodOperations.h"
-#include "mozilla/ScopeExit.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
-#ifdef MOZ_WASM_SANDBOXING_OGG
-#  include "mozilla/ipc/LibrarySandboxPreload.h"
-#endif
 #include "nsAutoRef.h"
 #include "nsError.h"
 
@@ -36,14 +32,6 @@ extern mozilla::LazyLogModule gMediaDemuxerLog;
 #else
 #  define SEEK_LOG(type, msg)
 #endif
-
-#define CopyAndVerifyOrFail(t, cond, failed) \
-  (t).copy_and_verify([&](auto val) {        \
-    if (!(cond)) {                           \
-      *(failed) = true;                      \
-    }                                        \
-    return val;                              \
-  })
 
 namespace mozilla {
 
@@ -64,45 +52,6 @@ static const uint32_t OGG_SEEK_FUZZ_USECS = 500000;
 static const int64_t OGG_SEEK_OPUS_PREROLL = 80 * USECS_PER_MS;
 
 static Atomic<uint32_t> sStreamSourceID(0u);
-
-OggDemuxer::nsAutoOggSyncState::nsAutoOggSyncState(rlbox_sandbox_ogg& aSandbox)
-    : mSandbox(aSandbox) {
-  tainted_ogg<ogg_sync_state*> state =
-      mSandbox.malloc_in_sandbox<ogg_sync_state>();
-  MOZ_ASSERT(state != nullptr);
-  mState = state.to_opaque();
-  sandbox_invoke(mSandbox, ogg_sync_init, mState);
-}
-OggDemuxer::nsAutoOggSyncState::~nsAutoOggSyncState() {
-  sandbox_invoke(mSandbox, ogg_sync_clear, mState);
-  mSandbox.free_in_sandbox(rlbox::from_opaque(mState));
-  tainted_ogg<ogg_sync_state*> null = nullptr;
-  mState = null.to_opaque();
-}
-
-
-rlbox_sandbox_ogg* OggDemuxer::CreateSandbox() {
-  rlbox_sandbox_ogg* sandbox = new rlbox_sandbox_ogg();
-#ifdef MOZ_WASM_SANDBOXING_OGG
-  
-  
-  const bool external_loads_exist = true;
-  
-  
-  
-  const bool allow_stdio = false;
-  sandbox->create_sandbox(mozilla::ipc::GetSandboxedOggPath().get(),
-                          external_loads_exist, allow_stdio);
-#else
-  sandbox->create_sandbox();
-#endif
-  return sandbox;
-}
-
-void OggDemuxer::SandboxDestroy::operator()(rlbox_sandbox_ogg* sandbox) {
-  sandbox->destroy_sandbox();
-  delete sandbox;
-}
 
 
 
@@ -149,15 +98,14 @@ void OggDemuxer::InitTrack(MessageField* aMsgInfo, TrackInfo* aInfo,
 }
 
 OggDemuxer::OggDemuxer(MediaResource* aResource)
-    : mSandbox(CreateSandbox()),
-      mTheoraState(nullptr),
+    : mTheoraState(nullptr),
       mVorbisState(nullptr),
       mOpusState(nullptr),
       mFlacState(nullptr),
       mOpusEnabled(MediaDecoder::IsOpusEnabled()),
       mSkeletonState(nullptr),
-      mAudioOggState(aResource, *mSandbox),
-      mVideoOggState(aResource, *mSandbox),
+      mAudioOggState(aResource),
+      mVideoOggState(aResource),
       mIsChained(false),
       mTimedMetadataEvent(nullptr),
       mOnSeekableEvent(nullptr) {
@@ -215,19 +163,11 @@ int64_t OggDemuxer::StartTime(TrackInfo::TrackType aType) {
 }
 
 RefPtr<OggDemuxer::InitPromise> OggDemuxer::Init() {
-  const char RLBOX_OGG_RETURN_CODE_SAFE[] =
-      "Return codes only control whether to early exit. Incorrect return codes "
-      "will not lead to memory safety issues in the renderer.";
-
-  int ret = sandbox_invoke(*mSandbox, ogg_sync_init,
-                           OggSyncState(TrackInfo::kAudioTrack))
-                .unverified_safe_because(RLBOX_OGG_RETURN_CODE_SAFE);
+  int ret = ogg_sync_init(OggSyncState(TrackInfo::kAudioTrack));
   if (ret != 0) {
     return InitPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
-  ret = sandbox_invoke(*mSandbox, ogg_sync_init,
-                       OggSyncState(TrackInfo::kVideoTrack))
-            .unverified_safe_because(RLBOX_OGG_RETURN_CODE_SAFE);
+  ret = ogg_sync_init(OggSyncState(TrackInfo::kVideoTrack));
   if (ret != 0) {
     return InitPromise::CreateAndReject(NS_ERROR_OUT_OF_MEMORY, __func__);
   }
@@ -314,7 +254,7 @@ already_AddRefed<MediaTrackDemuxer> OggDemuxer::GetTrackDemuxer(
 
 nsresult OggDemuxer::Reset(TrackInfo::TrackType aType) {
   
-  sandbox_invoke(*mSandbox, ogg_sync_reset, OggSyncState(aType));
+  ogg_sync_reset(OggSyncState(aType));
   OggCodecState* trackState = GetTrackCodecState(aType);
   if (trackState) {
     return trackState->Reset();
@@ -479,28 +419,18 @@ nsresult OggDemuxer::ReadMetadata() {
   nsTArray<uint32_t> serials;
 
   for (uint32_t i = 0; i < ArrayLength(tracks); i++) {
-    tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-    if (!page) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-    auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
-
+    ogg_page page;
     bool readAllBOS = false;
     while (!readAllBOS) {
-      if (!ReadOggPage(tracks[i], page.to_opaque())) {
+      if (!ReadOggPage(tracks[i], &page)) {
         
         OGG_DEBUG("OggDemuxer::ReadOggPage failed? leaving ReadMetadata...");
         return NS_ERROR_FAILURE;
       }
 
-      int serial = sandbox_invoke(*mSandbox, ogg_page_serialno, page)
-                       .unverified_safe_because(RLBOX_OGG_PAGE_SERIAL_REASON);
+      int serial = ogg_page_serialno(&page);
 
-      if (!sandbox_invoke(*mSandbox, ogg_page_bos, page)
-               .unverified_safe_because(
-                   "If this value is incorrect, it would mean not all "
-                   "bitstreams are read. This does not affect the memory "
-                   "safety of the renderer.")) {
+      if (!ogg_page_bos(&page)) {
         
         
         
@@ -509,13 +439,12 @@ nsresult OggDemuxer::ReadMetadata() {
         
         
         
-        OggCodecState* codecState =
-            OggCodecState::Create(mSandbox.get(), page.to_opaque(), serial);
+        OggCodecState* codecState = OggCodecState::Create(&page);
         mCodecStore.Add(serial, codecState);
         bitstreams.AppendElement(codecState);
         serials.AppendElement(serial);
       }
-      if (NS_FAILED(DemuxOggPage(tracks[i], page.to_opaque()))) {
+      if (NS_FAILED(DemuxOggPage(tracks[i], &page))) {
         return NS_ERROR_FAILURE;
       }
     }
@@ -643,29 +572,18 @@ bool OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime) {
     return false;
   }
 
-  tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-  if (!page) {
-    return false;
-  }
-  auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
-  if (!ReadOggPage(TrackInfo::kAudioTrack, page.to_opaque()) ||
-      !sandbox_invoke(*mSandbox, ogg_page_bos, page)
-           .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON)) {
+  ogg_page page;
+  if (!ReadOggPage(TrackInfo::kAudioTrack, &page) || !ogg_page_bos(&page)) {
     
     return false;
   }
 
-  int serial =
-      sandbox_invoke(*mSandbox, ogg_page_serialno, page)
-          .unverified_safe_because(
-              "We are reading a new page with a serial number for the first "
-              "time and will check if we have seen it before prior to use.");
+  int serial = ogg_page_serialno(&page);
   if (mCodecStore.Contains(serial)) {
     return false;
   }
 
-  UniquePtr<OggCodecState> codecState(
-      OggCodecState::Create(mSandbox.get(), page.to_opaque(), serial));
+  UniquePtr<OggCodecState> codecState(OggCodecState::Create(&page));
   if (!codecState) {
     return false;
   }
@@ -689,7 +607,7 @@ bool OggDemuxer::ReadOggChain(const media::TimeUnit& aLastEndTime) {
 
   NS_ENSURE_TRUE(state != nullptr, false);
 
-  if (NS_FAILED(state->PageIn(page.to_opaque()))) {
+  if (NS_FAILED(state->PageIn(&page))) {
     return false;
   }
 
@@ -771,9 +689,8 @@ OggDemuxer::OggStateContext& OggDemuxer::OggState(TrackInfo::TrackType aType) {
   return mAudioOggState;
 }
 
-tainted_opaque_ogg<ogg_sync_state*> OggDemuxer::OggSyncState(
-    TrackInfo::TrackType aType) {
-  return OggState(aType).mOggState.mState;
+ogg_sync_state* OggDemuxer::OggSyncState(TrackInfo::TrackType aType) {
+  return &OggState(aType).mOggState.mState;
 }
 
 MediaResourceIndex* OggDemuxer::Resource(TrackInfo::TrackType aType) {
@@ -784,13 +701,9 @@ MediaResourceIndex* OggDemuxer::CommonResource() {
   return &mAudioOggState.mResource;
 }
 
-bool OggDemuxer::ReadOggPage(TrackInfo::TrackType aType,
-                             tainted_opaque_ogg<ogg_page*> aPage) {
+bool OggDemuxer::ReadOggPage(TrackInfo::TrackType aType, ogg_page* aPage) {
   int ret = 0;
-  while ((ret = sandbox_invoke(*mSandbox, ogg_sync_pageseek,
-                               OggSyncState(aType), aPage)
-                    .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON)) <=
-         0) {
+  while ((ret = ogg_sync_pageseek(OggSyncState(aType), aPage)) <= 0) {
     if (ret < 0) {
       
       continue;
@@ -798,19 +711,13 @@ bool OggDemuxer::ReadOggPage(TrackInfo::TrackType aType,
     
     
     
-    const uint32_t MIN_BUFFER_SIZE = 4096;
-    tainted_ogg<char*> buffer_tainted = sandbox_invoke(
-        *mSandbox, ogg_sync_buffer, OggSyncState(aType), MIN_BUFFER_SIZE);
-    MOZ_ASSERT(buffer_tainted != nullptr, "ogg_sync_buffer failed");
+    char* buffer = ogg_sync_buffer(OggSyncState(aType), 4096);
+    MOZ_ASSERT(buffer, "ogg_sync_buffer failed");
 
     
     uint32_t bytesRead = 0;
 
-    char* buffer = buffer_tainted.copy_and_verify_buffer_address(
-        [](uintptr_t val) { return reinterpret_cast<char*>(val); },
-        MIN_BUFFER_SIZE);
-
-    nsresult rv = Resource(aType)->Read(buffer, MIN_BUFFER_SIZE, &bytesRead);
+    nsresult rv = Resource(aType)->Read(buffer, 4096, &bytesRead);
     if (NS_FAILED(rv) || !bytesRead) {
       
       return false;
@@ -818,20 +725,16 @@ bool OggDemuxer::ReadOggPage(TrackInfo::TrackType aType,
 
     
     
-    ret = sandbox_invoke(*mSandbox, ogg_sync_wrote, OggSyncState(aType),
-                         bytesRead)
-              .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON);
+    ret = ogg_sync_wrote(OggSyncState(aType), bytesRead);
     NS_ENSURE_TRUE(ret == 0, false);
   }
 
   return true;
 }
 
-nsresult OggDemuxer::DemuxOggPage(TrackInfo::TrackType aType,
-                                  tainted_opaque_ogg<ogg_page*> aPage) {
-  tainted_ogg<int> serial = sandbox_invoke(*mSandbox, ogg_page_serialno, aPage);
-  OggCodecState* codecState = mCodecStore.Get(
-      serial.unverified_safe_because(RLBOX_OGG_PAGE_SERIAL_REASON));
+nsresult OggDemuxer::DemuxOggPage(TrackInfo::TrackType aType, ogg_page* aPage) {
+  int serial = ogg_page_serialno(aPage);
+  OggCodecState* codecState = mCodecStore.Get(serial);
   if (codecState == nullptr) {
     OGG_DEBUG("encountered packet for unrecognized codecState");
     return NS_ERROR_FAILURE;
@@ -889,14 +792,12 @@ void OggDemuxer::DemuxUntilPacketAvailable(TrackInfo::TrackType aType,
                                            OggCodecState* aState) {
   while (!aState->IsPacketReady()) {
     OGG_DEBUG("no packet yet, reading some more");
-    tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-    MOZ_ASSERT(page != nullptr);
-    auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
-    if (!ReadOggPage(aType, page.to_opaque())) {
+    ogg_page page;
+    if (!ReadOggPage(aType, &page)) {
       OGG_DEBUG("no more pages to read in resource?");
       return;
     }
-    DemuxOggPage(aType, page.to_opaque());
+    DemuxOggPage(aType, &page);
   }
 }
 
@@ -921,18 +822,12 @@ TimeIntervals OggDemuxer::GetBuffered(TrackInfo::TrackType aType) {
   nsresult res = resource->GetCachedRanges(ranges);
   NS_ENSURE_SUCCESS(res, TimeIntervals::Invalid());
 
-  const char time_interval_reason[] =
-      "Even if this computation is incorrect due to the reliance on tainted "
-      "values, only the search for the time interval or the time interval "
-      "returned will be affected. However this will not result in a memory "
-      "safety vulnerabilty in the Firefox renderer.";
-
   
   
   
   
   
-  nsAutoOggSyncState sync(*mSandbox);
+  nsAutoOggSyncState sync;
   for (uint32_t index = 0; index < ranges.Length(); index++) {
     
     int64_t startOffset = ranges[index].mStart;
@@ -947,18 +842,13 @@ TimeIntervals OggDemuxer::GetBuffered(TrackInfo::TrackType aType) {
     
     
     
-    sandbox_invoke(*mSandbox, ogg_sync_reset, sync.mState);
-    tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-    if (!page) {
-      return TimeIntervals::Invalid();
-    }
-    auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
-
+    ogg_sync_reset(&sync.mState);
     while (startTime == -1) {
+      ogg_page page;
       int32_t discard;
       PageSyncResult pageSyncResult =
-          PageSync(mSandbox.get(), Resource(aType), sync.mState, true,
-                   startOffset, endOffset, page, discard);
+          PageSync(Resource(aType), &sync.mState, true, startOffset, endOffset,
+                   &page, discard);
       if (pageSyncResult == PAGE_SYNC_ERROR) {
         return TimeIntervals::Invalid();
       } else if (pageSyncResult == PAGE_SYNC_END_OF_RANGE) {
@@ -967,64 +857,35 @@ TimeIntervals OggDemuxer::GetBuffered(TrackInfo::TrackType aType) {
         break;
       }
 
-      int64_t granulepos = sandbox_invoke(*mSandbox, ogg_page_granulepos, page)
-                               .unverified_safe_because(time_interval_reason);
+      int64_t granulepos = ogg_page_granulepos(&page);
       if (granulepos == -1) {
         
         
-
-        bool failedPageLenVerify = false;
-        
-        
-        long pageLength =
-            CopyAndVerifyOrFail(page->header_len + page->body_len,
-                                val <= 64 * 1024, &failedPageLenVerify);
-        if (failedPageLenVerify) {
-          return TimeIntervals::Invalid();
-        }
-
-        startOffset += pageLength;
+        startOffset += page.header_len + page.body_len;
         continue;
       }
 
-      tainted_ogg<uint32_t> serial = rlbox::sandbox_static_cast<uint32_t>(
-          sandbox_invoke(*mSandbox, ogg_page_serialno, page));
+      uint32_t serial = ogg_page_serialno(&page);
       if (aType == TrackInfo::kAudioTrack && mVorbisState &&
-          (serial == mVorbisState->mSerial)
-              .unverified_safe_because(time_interval_reason)) {
+          serial == mVorbisState->mSerial) {
         startTime = mVorbisState->Time(granulepos);
         MOZ_ASSERT(startTime > 0, "Must have positive start time");
       } else if (aType == TrackInfo::kAudioTrack && mOpusState &&
-                 (serial == mOpusState->mSerial)
-                     .unverified_safe_because(time_interval_reason)) {
+                 serial == mOpusState->mSerial) {
         startTime = mOpusState->Time(granulepos);
         MOZ_ASSERT(startTime > 0, "Must have positive start time");
       } else if (aType == TrackInfo::kAudioTrack && mFlacState &&
-                 (serial == mFlacState->mSerial)
-                     .unverified_safe_because(time_interval_reason)) {
+                 serial == mFlacState->mSerial) {
         startTime = mFlacState->Time(granulepos);
         MOZ_ASSERT(startTime > 0, "Must have positive start time");
       } else if (aType == TrackInfo::kVideoTrack && mTheoraState &&
-                 (serial == mTheoraState->mSerial)
-                     .unverified_safe_because(time_interval_reason)) {
+                 serial == mTheoraState->mSerial) {
         startTime = mTheoraState->Time(granulepos);
         MOZ_ASSERT(startTime > 0, "Must have positive start time");
-      } else if (mCodecStore.Contains(
-                     serial.unverified_safe_because(time_interval_reason))) {
+      } else if (mCodecStore.Contains(serial)) {
         
         
-
-        bool failedPageLenVerify = false;
-        
-        
-        long pageLength =
-            CopyAndVerifyOrFail(page->header_len + page->body_len,
-                                val <= 64 * 1024, &failedPageLenVerify);
-        if (failedPageLenVerify) {
-          return TimeIntervals::Invalid();
-        }
-
-        startOffset += pageLength;
+        startOffset += page.header_len + page.body_len;
         continue;
       } else {
         
@@ -1237,16 +1098,11 @@ OggDemuxer::IndexedSeekResult OggDemuxer::SeekToKeyframeUsingIndex(
 
   
   
-  tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-  if (!page) {
-    return SEEK_INDEX_FAIL;
-  }
-  auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
+  ogg_page page;
   int skippedBytes = 0;
-  PageSyncResult syncres =
-      PageSync(mSandbox.get(), Resource(aType), OggSyncState(aType), false,
-               keyframe.mKeyPoint.mOffset, Resource(aType)->GetLength(), page,
-               skippedBytes);
+  PageSyncResult syncres = PageSync(
+      Resource(aType), OggSyncState(aType), false, keyframe.mKeyPoint.mOffset,
+      Resource(aType)->GetLength(), &page, skippedBytes);
   NS_ENSURE_TRUE(syncres != PAGE_SYNC_ERROR, SEEK_FATAL_ERROR);
   if (syncres != PAGE_SYNC_OK || skippedBytes != 0) {
     OGG_DEBUG(
@@ -1254,12 +1110,7 @@ OggDemuxer::IndexedSeekResult OggDemuxer::SeekToKeyframeUsingIndex(
         "or sync error after seek");
     return RollbackIndexedSeek(aType, tell);
   }
-  uint32_t serial =
-      sandbox_invoke(*mSandbox, ogg_page_serialno, page)
-          .unverified_safe_because(
-              "Serial is only used to locate the correct page. If the serial "
-              "is incorrect the the renderer would just fail to seek with an "
-              "error code. This would not lead to any memory safety bugs.");
+  uint32_t serial = ogg_page_serialno(&page);
   if (serial != keyframe.mSerial) {
     
     
@@ -1267,8 +1118,7 @@ OggDemuxer::IndexedSeekResult OggDemuxer::SeekToKeyframeUsingIndex(
   }
   OggCodecState* codecState = mCodecStore.Get(serial);
   if (codecState && codecState->mActive &&
-      sandbox_invoke(*mSandbox, ogg_stream_pagein, codecState->mState, page)
-              .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) != 0) {
+      ogg_stream_pagein(&codecState->mState, &page) != 0) {
     
     
     return RollbackIndexedSeek(aType, tell);
@@ -1278,37 +1128,18 @@ OggDemuxer::IndexedSeekResult OggDemuxer::SeekToKeyframeUsingIndex(
 
 
 OggDemuxer::PageSyncResult OggDemuxer::PageSync(
-    rlbox_sandbox_ogg* aSandbox, MediaResourceIndex* aResource,
-    tainted_opaque_ogg<ogg_sync_state*> aState, bool aCachedDataOnly,
-    int64_t aOffset, int64_t aEndOffset, tainted_ogg<ogg_page*> aPage,
-    int& aSkippedBytes) {
+    MediaResourceIndex* aResource, ogg_sync_state* aState, bool aCachedDataOnly,
+    int64_t aOffset, int64_t aEndOffset, ogg_page* aPage, int& aSkippedBytes) {
   aSkippedBytes = 0;
   
-  tainted_ogg<int> ret = 0;
+  int ret = 0;
   uint32_t bytesRead = 0;
   int64_t readHead = aOffset;
-  while (ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) <= 0) {
-    tainted_ogg<long> seek_ret =
-        sandbox_invoke(*aSandbox, ogg_sync_pageseek, aState, aPage);
-
-    
-    
-    
-    
-    bool failedVerify = false;
-    CheckedInt<int> checker;
-    ret = CopyAndVerifyOrFail(
-        seek_ret, (static_cast<void>(checker = val), checker.isValid()),
-        &failedVerify);
-    if (failedVerify) {
-      return PAGE_SYNC_ERROR;
-    }
-
-    if (ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) == 0) {
-      const int page_step_val = PAGE_STEP;
-      tainted_ogg<char*> buffer_tainted =
-          sandbox_invoke(*aSandbox, ogg_sync_buffer, aState, page_step_val);
-      MOZ_ASSERT(buffer_tainted != nullptr, "Must have a buffer");
+  while (ret <= 0) {
+    ret = ogg_sync_pageseek(aState, aPage);
+    if (ret == 0) {
+      char* buffer = ogg_sync_buffer(aState, PAGE_STEP);
+      MOZ_ASSERT(buffer, "Must have a buffer");
 
       
       int64_t bytesToRead =
@@ -1317,10 +1148,6 @@ OggDemuxer::PageSyncResult OggDemuxer::PageSync(
       if (bytesToRead <= 0) {
         return PAGE_SYNC_END_OF_RANGE;
       }
-      char* buffer = buffer_tainted.copy_and_verify_buffer_address(
-          [](uintptr_t val) { return reinterpret_cast<char*>(val); },
-          bytesToRead);
-
       nsresult rv = NS_OK;
       if (aCachedDataOnly) {
         rv = aResource->GetResource()->ReadFromCache(
@@ -1342,28 +1169,15 @@ OggDemuxer::PageSyncResult OggDemuxer::PageSync(
 
       
       
-      ret = sandbox_invoke(*aSandbox, ogg_sync_wrote, aState, bytesRead);
-      NS_ENSURE_TRUE(
-          ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) == 0,
-          PAGE_SYNC_ERROR);
+      ret = ogg_sync_wrote(aState, bytesRead);
+      NS_ENSURE_TRUE(ret == 0, PAGE_SYNC_ERROR);
       continue;
     }
 
-    if (ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) < 0) {
+    if (ret < 0) {
       MOZ_ASSERT(aSkippedBytes >= 0, "Offset >= 0");
-      bool failedSkippedBytesVerify = false;
-      ret.copy_and_verify([&](int val) {
-        int64_t result = static_cast<int64_t>(aSkippedBytes) - val;
-        if (result > std::numeric_limits<int>::max() ||
-            result > (aEndOffset - aOffset) || result < 0) {
-          failedSkippedBytesVerify = true;
-        } else {
-          aSkippedBytes = result;
-        }
-      });
-      if (failedSkippedBytesVerify) {
-        return PAGE_SYNC_ERROR;
-      }
+      aSkippedBytes += -ret;
+      MOZ_ASSERT(aSkippedBytes >= 0, "Offset >= 0");
       continue;
     }
   }
@@ -1516,31 +1330,13 @@ TimeIntervals OggTrackDemuxer::GetBuffered() {
 void OggTrackDemuxer::BreakCycles() { mParent = nullptr; }
 
 
-tainted_opaque_ogg<ogg_uint32_t> OggDemuxer::GetPageChecksum(
-    tainted_opaque_ogg<ogg_page*> aPage) {
-  tainted_ogg<ogg_page*> page = rlbox::from_opaque(aPage);
-
-  const char hint_reason[] =
-      "Early bail out of checksum. Even if this is wrong, the renderer's "
-      "security is not compromised.";
-  if (page == nullptr ||
-      (page->header == nullptr).unverified_safe_because(hint_reason) ||
-      (page->header_len < 25).unverified_safe_because(hint_reason)) {
-    tainted_ogg<ogg_uint32_t> ret = 0;
-    return ret.to_opaque();
+ogg_uint32_t OggDemuxer::GetPageChecksum(ogg_page* page) {
+  if (page == 0 || page->header == 0 || page->header_len < 25) {
+    return 0;
   }
-
-  const int CHECKSUM_BYTES_LENGTH = 4;
-  const unsigned char* p =
-      (page->header + 22)
-          .copy_and_verify_buffer_address(
-              [](uintptr_t val) {
-                return reinterpret_cast<const unsigned char*>(val);
-              },
-              CHECKSUM_BYTES_LENGTH);
+  const unsigned char* p = page->header + 22;
   uint32_t c = p[0] + (p[1] << 8) + (p[2] << 16) + (p[3] << 24);
-  tainted_ogg<uint32_t> ret = c;
-  return ret.to_opaque();
+  return c;
 }
 
 int64_t OggDemuxer::RangeStartTime(TrackInfo::TrackType aType,
@@ -1556,18 +1352,9 @@ int64_t OggDemuxer::RangeStartTime(TrackInfo::TrackType aType,
 }
 
 struct nsDemuxerAutoOggSyncState {
-  explicit nsDemuxerAutoOggSyncState(rlbox_sandbox_ogg& aSandbox)
-      : mSandbox(aSandbox) {
-    mState = mSandbox.malloc_in_sandbox<ogg_sync_state>();
-    MOZ_ASSERT(mState != nullptr);
-    sandbox_invoke(mSandbox, ogg_sync_init, mState);
-  }
-  ~nsDemuxerAutoOggSyncState() {
-    sandbox_invoke(mSandbox, ogg_sync_clear, mState);
-    mSandbox.free_in_sandbox(mState);
-  }
-  rlbox_sandbox_ogg& mSandbox;
-  tainted_ogg<ogg_sync_state*> mState;
+  nsDemuxerAutoOggSyncState() { ogg_sync_init(&mState); }
+  ~nsDemuxerAutoOggSyncState() { ogg_sync_clear(&mState); }
+  ogg_sync_state mState;
 };
 
 int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
@@ -1583,7 +1370,7 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
 int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
                                  int64_t aStartOffset, int64_t aEndOffset,
                                  bool aCachedDataOnly) {
-  nsDemuxerAutoOggSyncState sync(*mSandbox);
+  nsDemuxerAutoOggSyncState sync;
 
   
   
@@ -1600,29 +1387,10 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
   uint32_t checksumAfterSeek = 0;
   uint32_t prevChecksumAfterSeek = 0;
   bool mustBackOff = false;
-  tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-  if (!page) {
-    return -1;
-  }
-  auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
   while (true) {
-    tainted_ogg<long> seek_ret =
-        sandbox_invoke(*mSandbox, ogg_sync_pageseek, sync.mState, page);
-
-    
-    
-    
-    
-    bool failedVerify = false;
-    CheckedInt<int> checker;
-    tainted_ogg<int> ret = CopyAndVerifyOrFail(
-        seek_ret, (static_cast<void>(checker = val), checker.isValid()),
-        &failedVerify);
-    if (failedVerify) {
-      return -1;
-    }
-
-    if (ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) == 0) {
+    ogg_page page;
+    int ret = ogg_sync_pageseek(&sync.mState, &page);
+    if (ret == 0) {
       
       
       if (mustBackOff || readHead == aEndOffset || readHead == aStartOffset) {
@@ -1633,7 +1401,7 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
         mustBackOff = false;
         prevChecksumAfterSeek = checksumAfterSeek;
         checksumAfterSeek = 0;
-        sandbox_invoke(*mSandbox, ogg_sync_reset, sync.mState);
+        ogg_sync_reset(&sync.mState);
         readStartOffset =
             std::max(static_cast<int64_t>(0), readStartOffset - step);
         
@@ -1651,11 +1419,7 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
       limit = std::min(limit, static_cast<int64_t>(step));
       uint32_t bytesToRead = static_cast<uint32_t>(limit);
       uint32_t bytesRead = 0;
-      tainted_ogg<char*> buffer_tainted =
-          sandbox_invoke(*mSandbox, ogg_sync_buffer, sync.mState, bytesToRead);
-      char* buffer = buffer_tainted.copy_and_verify_buffer_address(
-          [](uintptr_t val) { return reinterpret_cast<char*>(val); },
-          bytesToRead);
+      char* buffer = ogg_sync_buffer(&sync.mState, bytesToRead);
       MOZ_ASSERT(buffer, "Must have buffer");
       nsresult res;
       if (aCachedDataOnly) {
@@ -1678,32 +1442,19 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
 
       
       
-      ret = sandbox_invoke(*mSandbox, ogg_sync_wrote, sync.mState, bytesRead);
-      bool failedWroteVerify = false;
-      int wrote_success =
-          CopyAndVerifyOrFail(ret, val == 0 || val == -1, &failedWroteVerify);
-      if (failedWroteVerify) {
-        return -1;
-      }
-
-      if (wrote_success != 0) {
+      ret = ogg_sync_wrote(&sync.mState, bytesRead);
+      if (ret != 0) {
         endTime = -1;
         break;
       }
       continue;
     }
 
-    if (ret.unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) < 0 ||
-        sandbox_invoke(*mSandbox, ogg_page_granulepos, page)
-                .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON) < 0) {
+    if (ret < 0 || ogg_page_granulepos(&page) < 0) {
       continue;
     }
 
-    tainted_ogg<uint32_t> checksum_tainted =
-        rlbox::from_opaque(GetPageChecksum(page.to_opaque()));
-    uint32_t checksum = checksum_tainted.unverified_safe_because(
-        "checksum is only being used as a hint as part of search for end time. "
-        "Incorrect values will not affect the memory safety of the renderer.");
+    uint32_t checksum = GetPageChecksum(&page);
     if (checksumAfterSeek == 0) {
       
       
@@ -1720,14 +1471,8 @@ int64_t OggDemuxer::RangeEndTime(TrackInfo::TrackType aType,
       continue;
     }
 
-    int64_t granulepos =
-        sandbox_invoke(*mSandbox, ogg_page_granulepos, page)
-            .unverified_safe_because(
-                "If this is incorrect it may lead to incorrect seeking "
-                "behavior in the stream, however will not affect the memory "
-                "safety of the Firefox renderer.");
-    int serial = sandbox_invoke(*mSandbox, ogg_page_serialno, page)
-                     .unverified_safe_because(RLBOX_OGG_PAGE_SERIAL_REASON);
+    int64_t granulepos = ogg_page_granulepos(&page);
+    int serial = ogg_page_serialno(&page);
 
     OggCodecState* codecState = nullptr;
     codecState = mCodecStore.Get(serial);
@@ -1920,16 +1665,12 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
   
   
   
-  tainted_ogg<ogg_page*> page = mSandbox->malloc_in_sandbox<ogg_page>();
-  if (!page) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  auto clean_page = MakeScopeExit([&] { mSandbox->free_in_sandbox(page); });
   while (true) {
     ogg_int64_t duration = 0;
     double target = 0;
     ogg_int64_t interval = 0;
     ogg_int64_t guess = 0;
+    ogg_page page;
     int skippedBytes = 0;
     ogg_int64_t pageOffset = 0;
     ogg_int64_t pageLength = 0;
@@ -2011,8 +1752,8 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
       
       
       PageSyncResult pageSyncResult =
-          PageSync(mSandbox.get(), Resource(aType), OggSyncState(aType), false,
-                   guess, endOffset, page, skippedBytes);
+          PageSync(Resource(aType), OggSyncState(aType), false, guess,
+                   endOffset, &page, skippedBytes);
       NS_ENSURE_TRUE(pageSyncResult != PAGE_SYNC_ERROR, NS_ERROR_FAILURE);
 
       if (pageSyncResult == PAGE_SYNC_END_OF_RANGE) {
@@ -2027,15 +1768,7 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
       
       
       pageOffset = guess + skippedBytes;
-
-      bool failedPageLenVerify = false;
-      
-      
-      pageLength = CopyAndVerifyOrFail(page->header_len + page->body_len,
-                                       val <= 64 * 1024, &failedPageLenVerify);
-      if (failedPageLenVerify) {
-        return NS_ERROR_FAILURE;
-      }
+      pageLength = page.header_len + page.body_len;
 
       
       
@@ -2043,25 +1776,15 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
       ogg_int64_t videoTime = -1;
       do {
         
-        uint32_t serial =
-            sandbox_invoke(*mSandbox, ogg_page_serialno, page)
-                .unverified_safe_because(RLBOX_OGG_PAGE_SERIAL_REASON);
+        uint32_t serial = ogg_page_serialno(&page);
         OggCodecState* codecState = mCodecStore.Get(serial);
         if (codecState && GetCodecStateType(codecState) == aType) {
           if (codecState->mActive) {
-            int ret =
-                sandbox_invoke(*mSandbox, ogg_stream_pagein, codecState->mState,
-                               page)
-                    .unverified_safe_because(RLBOX_OGG_STATE_ASSERT_REASON);
+            int ret = ogg_stream_pagein(&codecState->mState, &page);
             NS_ENSURE_TRUE(ret == 0, NS_ERROR_FAILURE);
           }
 
-          ogg_int64_t granulepos =
-              sandbox_invoke(*mSandbox, ogg_page_granulepos, page)
-                  .unverified_safe_because(
-                      "If this is incorrect it may lead to incorrect seeking "
-                      "behavior in the stream, however will not affect the "
-                      "memory safety of the Firefox renderer.");
+          ogg_int64_t granulepos = ogg_page_granulepos(&page);
 
           if (aType == TrackInfo::kAudioTrack && granulepos > 0 &&
               audioTime == -1) {
@@ -2084,7 +1807,7 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
             break;
           }
         }
-        if (!ReadOggPage(aType, page.to_opaque())) {
+        if (!ReadOggPage(aType, &page)) {
           break;
         }
 
@@ -2172,5 +1895,4 @@ nsresult OggDemuxer::SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
 
 #undef OGG_DEBUG
 #undef SEEK_LOG
-#undef CopyAndVerifyOrFail
 }  
