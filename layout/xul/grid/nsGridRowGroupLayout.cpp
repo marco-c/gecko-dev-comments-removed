@@ -139,8 +139,8 @@ void nsGridRowGroupLayout::DirtyRows(nsIFrame* aBox, nsBoxLayoutState& aState) {
     
     
     
-    aState.PresShell()->FrameNeedsReflow(aBox, IntrinsicDirty::TreeChange,
-                                         NS_FRAME_IS_DIRTY);
+    aState.PresShell()->FrameNeedsReflow(
+        aBox, mozilla::IntrinsicDirty::TreeChange, NS_FRAME_IS_DIRTY);
     nsIFrame* child = nsIFrame::GetChildXULBox(aBox);
 
     while (child) {

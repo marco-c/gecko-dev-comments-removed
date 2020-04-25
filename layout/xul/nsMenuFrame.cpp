@@ -43,6 +43,7 @@
 #include <algorithm>
 
 using namespace mozilla;
+using dom::Element;
 
 #define NS_MENU_POPUP_LIST_INDEX 0
 
@@ -906,7 +907,7 @@ void nsMenuFrame::BuildAcceleratorText(bool aNotify) {
   if (keyValue.IsEmpty()) return;
 
   
-  Document* document = mContent->GetUncomposedDoc();
+  dom::Document* document = mContent->GetUncomposedDoc();
   if (!document) return;
 
   
@@ -1116,7 +1117,7 @@ void nsMenuFrame::CreateMenuCommandEvent(WidgetGUIEvent* aEvent,
   
   
   
-  bool userinput = UserActivation::IsHandlingUserInput();
+  bool userinput = dom::UserActivation::IsHandlingUserInput();
 
   mDelayedMenuCommandEvent =
       new nsXULMenuCommandEvent(mContent->AsElement(), isTrusted, shift,

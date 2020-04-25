@@ -18,6 +18,7 @@
 #include "nsTreeColumns.h"
 
 using namespace mozilla;
+using dom::XULTreeElement;
 
 
 struct nsTreeRange {
