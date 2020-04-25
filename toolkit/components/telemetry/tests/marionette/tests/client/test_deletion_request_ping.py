@@ -9,7 +9,7 @@ from telemetry_harness.ping_filters import ANY_PING, DELETION_REQUEST_PING, MAIN
 class TestDeletionRequestPing(TelemetryTestCase):
     """Tests for "deletion-request" ping."""
 
-    def test_optout_ping_across_sessions(self):
+    def test_deletion_request_ping_across_sessions(self):
         """Test the "deletion-request" ping behaviour across sessions."""
 
         
