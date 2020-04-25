@@ -322,6 +322,7 @@
 namespace js {
 
 class AutoLockGC;
+class ZoneAllocator;
 class ZoneAllocPolicy;
 
 namespace gc {
@@ -751,13 +752,15 @@ class HeapThreshold {
   HeapThreshold() = default;
 
   
+  
+  
+  
   AtomicByteCount bytes_;
 
  public:
   size_t bytes() const { return bytes_; }
-  size_t nonIncrementalTriggerBytes(GCSchedulingTunables& tunables) const {
-    return bytes_ * tunables.nonIncrementalFactor();
-  }
+  size_t nonIncrementalBytes(ZoneAllocator* zone,
+                             const GCSchedulingTunables& tunables) const;
   float eagerAllocTrigger(bool highFrequencyGC) const;
 };
 

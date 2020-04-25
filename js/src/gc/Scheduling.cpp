@@ -338,6 +338,20 @@ void GCSchedulingTunables::resetParameter(JSGCParamKey key,
   }
 }
 
+size_t HeapThreshold::nonIncrementalBytes(
+    ZoneAllocator* zone, const GCSchedulingTunables& tunables) const {
+  size_t bytes = bytes_ * tunables.nonIncrementalFactor();
+
+  
+  
+  
+  if (zone->gcState() > ZoneAllocator::Sweep) {
+    bytes *= tunables.lowFrequencyHeapGrowth();
+  }
+
+  return bytes;
+}
+
 float HeapThreshold::eagerAllocTrigger(bool highFrequencyGC) const {
   float eagerTriggerFactor = highFrequencyGC
                                  ? HighFrequencyEagerAllocTriggerFactor
