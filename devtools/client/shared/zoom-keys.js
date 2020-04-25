@@ -25,8 +25,7 @@ const L10N = new LocalizationHelper(
 
 
 exports.register = function(window, shortcuts) {
-  const docShell = window.docShell;
-  const contViewer = docShell.contentViewer;
+  const bc = BrowsingContext.getFromWindow(window);
   let zoomValue = parseFloat(Services.prefs.getCharPref(ZOOM_PREF));
   const zoomIn = function(event) {
     setZoom(zoomValue + 0.1);
@@ -50,7 +49,7 @@ exports.register = function(window, shortcuts) {
     
     zoomValue = Math.round(zoomValue * 10) / 10;
 
-    contViewer.fullZoom = zoomValue;
+    bc.fullZoom = zoomValue;
 
     Services.prefs.setCharPref(ZOOM_PREF, zoomValue);
   };

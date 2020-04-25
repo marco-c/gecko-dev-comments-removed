@@ -84,10 +84,7 @@ function testOffsetAtPoint(aHyperTextID, aX, aY, aCoordType, aExpectedOffset) {
 
 
 function zoomDocument(aDocument, aZoom) {
-  var docShell = aDocument.defaultView.docShell;
-  var docViewer = docShell.contentViewer;
-
-  docViewer.fullZoom = aZoom;
+  SpecialPowers.setFullZoom(aDocument.defaultView, aZoom);
 }
 
 

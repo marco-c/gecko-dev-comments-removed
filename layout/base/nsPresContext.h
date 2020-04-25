@@ -491,13 +491,16 @@ class nsPresContext : public nsISupports,
 
 
   float TextZoom() const { return mTextZoom; }
-  void SetTextZoom(float aZoom) {
-    MOZ_ASSERT(aZoom > 0.0f, "invalid zoom factor");
-    if (aZoom == mTextZoom) return;
 
-    mTextZoom = aZoom;
-    UpdateEffectiveTextZoom();
-  }
+  
+
+
+
+
+
+
+
+  float EffectiveTextZoom() const { return mEffectiveTextZoom; }
 
   
 
@@ -513,16 +516,15 @@ class nsPresContext : public nsISupports,
   void ValidatePresShellAndDocumentReleation() const;
 #endif  
 
+  void SetTextZoom(float aZoom) {
+    MOZ_ASSERT(aZoom > 0.0f, "invalid zoom factor");
+    if (aZoom == mTextZoom) return;
+
+    mTextZoom = aZoom;
+    UpdateEffectiveTextZoom();
+  }
+  void SetFullZoom(float aZoom);
  public:
-  
-
-
-
-
-
-
-
-  float EffectiveTextZoom() const { return mEffectiveTextZoom; }
 
   float GetFullZoom() { return mFullZoom; }
   
@@ -531,10 +533,18 @@ class nsPresContext : public nsISupports,
 
 
   float GetDeviceFullZoom();
-  void SetFullZoom(float aZoom);
 
   float GetOverrideDPPX() const { return mMediaEmulationData.mDPPX; }
   void SetOverrideDPPX(float);
+
+  
+
+
+
+
+
+
+  void RecomputeBrowsingContextDependentData();
 
   Maybe<StylePrefersColorScheme> GetOverridePrefersColorScheme() const {
     return mMediaEmulationData.mPrefersColorScheme;

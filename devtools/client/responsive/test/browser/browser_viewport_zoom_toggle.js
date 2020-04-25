@@ -59,7 +59,7 @@ addRDMTask(
     
     
 
-    const preZoomUIZoom = uiDocShell.contentViewer.fullZoom;
+    const preZoomUIZoom = uiDocShell.browsingContext.fullZoom;
     is(
       preZoomUIZoom,
       INITIAL_ZOOM_LEVEL,
@@ -70,7 +70,7 @@ addRDMTask(
     setZoomForBrowser(browser, MID_RDM_ZOOM_LEVEL);
 
     
-    const postZoomUIZoom = uiDocShell.contentViewer.fullZoom;
+    const postZoomUIZoom = uiDocShell.browsingContext.fullZoom;
     is(
       postZoomUIZoom,
       preZoomUIZoom,

@@ -35,8 +35,7 @@ add_task(async function() {
   await pushPref("devtools.toolbox.zoomValue", zoom.toString(10));
 
   
-  const contentViewer = host.frame.docShell.contentViewer;
-  contentViewer.fullZoom = zoom;
+  host.frame.docShell.browsingContext.fullZoom = zoom;
   const tooltip = new HTMLTooltip(doc, { useXulWrapper: true });
 
   info("Set tooltip content");
