@@ -62,13 +62,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/PromiseWorker.jsm"
 );
 
-const TOPIC_APP_QUIT = "quit-application-granted";
-const TOPIC_CONTENT_DOCUMENT_INTERACTIVE = "content-document-interactive";
-
-const BASE_URL = "resource://activity-stream/";
 const CACHE_WORKER_URL = "resource://activity-stream/lib/cache-worker.js";
-
-const ACTIVITY_STREAM_PAGES = new Set(["home", "newtab", "welcome"]);
 
 const IS_PRIVILEGED_PROCESS =
   Services.appinfo.remoteType === E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
@@ -353,103 +347,6 @@ class BaseAboutNewTabService {
 
 
 class AboutNewTabChildService extends BaseAboutNewTabService {
-  constructor() {
-    super();
-    if (this.privilegedAboutProcessEnabled) {
-      Services.obs.addObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
-      Services.obs.addObserver(this, TOPIC_APP_QUIT);
-    }
-  }
-
-  observe(subject, topic, data) {
-    switch (topic) {
-      case TOPIC_APP_QUIT: {
-        Services.obs.removeObserver(this, TOPIC_CONTENT_DOCUMENT_INTERACTIVE);
-        Services.obs.removeObserver(this, TOPIC_APP_QUIT);
-        break;
-      }
-      case TOPIC_CONTENT_DOCUMENT_INTERACTIVE: {
-        if (!this.privilegedAboutProcessEnabled || !IS_PRIVILEGED_PROCESS) {
-          return;
-        }
-
-        const win = subject.defaultView;
-
-        
-        
-        
-        
-        
-        if (win === null) {
-          return;
-        }
-
-        if (win.location.protocol !== "about:") {
-          
-          
-          let debug = Cc["@mozilla.org/xpcom/debug;1"].getService(Ci.nsIDebug2);
-          debug.abort("AboutNewTabService.jsm", 0);
-          
-          return;
-        }
-
-        
-        
-        
-        
-        
-        
-        if (!ACTIVITY_STREAM_PAGES.has(win.location.pathname)) {
-          return;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        if (ChromeUtils.waiveXrays(win).__FROM_STARTUP_CACHE__) {
-          return;
-        }
-
-        
-        if (
-          this.isSeparateAboutWelcome &&
-          win.location.pathname.includes("welcome")
-        ) {
-          return;
-        }
-
-        const onLoaded = () => {
-          const debugString = this.activityStreamDebug ? "-dev" : "";
-
-          
-          const scripts = [
-            "chrome://browser/content/contentSearchUI.js",
-            "chrome://browser/content/contentSearchHandoffUI.js",
-            "chrome://browser/content/contentTheme.js",
-            `${BASE_URL}vendor/react${debugString}.js`,
-            `${BASE_URL}vendor/react-dom${debugString}.js`,
-            `${BASE_URL}vendor/prop-types.js`,
-            `${BASE_URL}vendor/react-transition-group.js`,
-            `${BASE_URL}vendor/redux.js`,
-            `${BASE_URL}vendor/react-redux.js`,
-            `${BASE_URL}data/content/activity-stream.bundle.js`,
-            `${BASE_URL}data/content/newtab-render.js`,
-          ];
-
-          for (let script of scripts) {
-            Services.scriptloader.loadSubScript(script, win); 
-          }
-        };
-        win.addEventListener("DOMContentLoaded", onLoaded, { once: true });
-        break;
-      }
-    }
-  }
-
   aboutHomeChannel(uri, loadInfo) {
     if (IS_PRIVILEGED_PROCESS) {
       let cacheChannel = AboutHomeStartupCacheChild.maybeGetCachedPageChannel(

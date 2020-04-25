@@ -94,6 +94,19 @@ let ACTORS = {
     matches: ["about:logins", "about:logins?*"],
   },
 
+  AboutNewTab: {
+    child: {
+      moduleURI: "resource:///actors/AboutNewTabChild.jsm",
+      events: {
+        DOMContentLoaded: {},
+      },
+    },
+    
+    
+    matches: ["about:home", "about:welcome", "about:newtab*"],
+    remoteTypes: ["privilegedabout"],
+  },
+
   AboutWelcome: {
     parent: {
       moduleURI: "resource:///actors/AboutWelcomeParent.jsm",
