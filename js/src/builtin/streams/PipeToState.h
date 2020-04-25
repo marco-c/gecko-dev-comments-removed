@@ -72,6 +72,17 @@ class PipeToState : public NativeObject {
 
     Slot_Writer,
 
+    
+
+
+
+
+
+
+
+
+    Slot_LastWriteRequest,
+
     SlotCount,
   };
 
@@ -108,6 +119,20 @@ class PipeToState : public NativeObject {
     return &getFixedSlot(Slot_Writer)
                 .toObject()
                 .as<WritableStreamDefaultWriter>();
+  }
+
+  PromiseObject* lastWriteRequest() const {
+    const auto& slot = getFixedSlot(Slot_LastWriteRequest);
+    if (slot.isUndefined()) {
+      return nullptr;
+    }
+
+    return &slot.toObject().as<PromiseObject>();
+  }
+
+  void updateLastWriteRequest(PromiseObject* writeRequest) {
+    MOZ_ASSERT(writeRequest != nullptr);
+    setFixedSlot(Slot_LastWriteRequest, JS::ObjectValue(*writeRequest));
   }
 
   bool shuttingDown() const { return flags() & Flag_ShuttingDown; }

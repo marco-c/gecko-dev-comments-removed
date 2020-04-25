@@ -59,6 +59,7 @@ using js::UnwrapStreamFromWriter;
 using js::UnwrapWriterFromStream;
 using js::WritableStream;
 using js::WritableStreamDefaultWriter;
+using js::WritableStreamDefaultWriterWrite;
 
 
 
@@ -449,6 +450,72 @@ static inline JSObject* GetClosedPromise(
   return unwrappedAccessor->closedPromise();
 }
 
+static MOZ_MUST_USE bool ReadFromSource(JSContext* cx,
+                                        Handle<PipeToState*> state);
+
+static bool ReadFulfilled(JSContext* cx, Handle<PipeToState*> state,
+                          Handle<JSObject*> result) {
+  cx->check(state);
+  cx->check(result);
+
+  state->clearReadPending();
+
+  
+  
+  
+  
+
+  {
+    bool done;
+    {
+      Rooted<Value> doneVal(cx);
+      if (!GetProperty(cx, result, result, cx->names().done, &doneVal)) {
+        return false;
+      }
+      done = doneVal.toBoolean();
+    }
+
+    if (done) {
+      
+      
+      
+      
+      return OnSourceClosed(cx, state);
+    }
+  }
+
+  
+  
+  
+  
+  {
+    Rooted<Value> chunk(cx);
+    if (!GetProperty(cx, result, result, cx->names().value, &chunk)) {
+      return false;
+    }
+
+    Rooted<WritableStreamDefaultWriter*> writer(cx, state->writer());
+    cx->check(writer);
+
+    PromiseObject* writeRequest =
+        WritableStreamDefaultWriterWrite(cx, writer, chunk);
+    if (!writeRequest) {
+      return false;
+    }
+
+    
+    
+    
+    state->updateLastWriteRequest(writeRequest);
+  }
+
+  
+  
+  
+  
+  return ReadFromSource(cx, state);
+}
+
 static bool ReadFulfilled(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 1);
@@ -456,9 +523,12 @@ static bool ReadFulfilled(JSContext* cx, unsigned argc, Value* vp) {
   Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
   cx->check(state);
 
-  state->clearReadPending();
+  Rooted<JSObject*> result(cx, &args[0].toObject());
+  cx->check(result);
 
-  
+  if (!ReadFulfilled(cx, state, result)) {
+    return false;
+  }
 
   args.rval().setUndefined();
   return true;
