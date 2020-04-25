@@ -2918,8 +2918,7 @@ void nsGlobalWindowInner::GetOwnPropertyNames(
 }
 
 
-bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx,
-                                                   JSObject* aObj) {
+bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext*, JSObject* aObj) {
   
   nsGlobalWindowInner* win = xpc::WindowOrNull(aObj);
   return win && win->IsChromeWindow() &&
@@ -2929,15 +2928,21 @@ bool nsGlobalWindowInner::IsPrivilegedChromeWindow(JSContext* aCx,
 
 
 bool nsGlobalWindowInner::IsRequestIdleCallbackEnabled(JSContext* aCx,
-                                                       JSObject* aObj) {
+                                                       JSObject*) {
   
   return StaticPrefs::dom_requestIdleCallback_enabled() ||
          nsContentUtils::IsSystemCaller(aCx);
 }
 
 
-bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext* aCx, JSObject* aObj) {
+bool nsGlobalWindowInner::DeviceSensorsEnabled(JSContext*, JSObject*) {
   return Preferences::GetBool("device.sensors.enabled");
+}
+
+
+bool nsGlobalWindowInner::ContentPropertyEnabled(JSContext* aCx, JSObject*) {
+  return StaticPrefs::dom_window_content_untrusted_enabled() ||
+         nsContentUtils::IsSystemCaller(aCx);
 }
 
 nsDOMOfflineResourceList* nsGlobalWindowInner::GetApplicationCache(
