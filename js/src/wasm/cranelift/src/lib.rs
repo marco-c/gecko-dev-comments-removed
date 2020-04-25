@@ -13,17 +13,136 @@
 
 
 
-mod bindings; 
-mod compile; 
-mod isa; 
-mod utils; 
-mod wasm2clif; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+mod bindings;
+mod compile;
+mod isa;
+mod utils;
+mod wasm2clif;
 
 use log::{self, error, info};
 use std::ptr;
 
 use crate::bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
 use crate::compile::BatchCompiler;
+
+
+
 
 #[no_mangle]
 pub extern "C" fn cranelift_initialize() {
@@ -38,6 +157,9 @@ pub extern "C" fn cranelift_initialize() {
         }
     }
 }
+
+
+
 
 
 
@@ -57,6 +179,9 @@ pub unsafe extern "C" fn cranelift_compiler_create<'a, 'b>(
         }
     }
 }
+
+
+
 
 
 
