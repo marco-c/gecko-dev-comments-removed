@@ -148,6 +148,17 @@ JSObject* HTMLMetaElement::WrapNode(JSContext* aCx,
 }
 
 void HTMLMetaElement::ProcessViewportContent(Document* aDocument) {
+  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::content)) {
+    
+    
+    
+    
+    
+    
+    aDocument->RemoveMetaViewportElement(this);
+    return;
+  }
+
   nsAutoString content;
   GetContent(content);
 
