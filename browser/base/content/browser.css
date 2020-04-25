@@ -1019,12 +1019,9 @@ toolbarpaletteitem[place="palette"] > #downloads-button[indicator] > .toolbarbut
   -moz-appearance: none;
   background: transparent;
   border: none;
-  -moz-font-smoothing-background-color: unset;
-
   
   -moz-image-region: auto;
 }
-
 
 @supports -moz-bool-pref("xul.panel-animations.enabled") {
 %ifdef MOZ_WIDGET_COCOA
