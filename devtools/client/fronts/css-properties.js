@@ -44,8 +44,6 @@ var IS_VARIABLE_TOKEN = new RegExp(
   "i"
 );
 
-var cachedCssProperties = new WeakMap();
-
 
 
 
@@ -224,32 +222,6 @@ function hasFeature(featureSet, feature) {
 
 
 
-
-
-
-
-
-const initCssProperties = async function(toolbox) {
-  const client = toolbox.target.client;
-  if (cachedCssProperties.has(client)) {
-    return cachedCssProperties.get(client);
-  }
-
-  
-  const front = await toolbox.target.getFront("cssProperties");
-  const db = await front.getCSSDatabase();
-
-  const cssProperties = new CssProperties(normalizeCssData(db));
-  cachedCssProperties.set(client, { cssProperties, front });
-  return { cssProperties, front };
-};
-
-
-
-
-
-
-
 function getClientCssProperties() {
   return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
 }
@@ -345,9 +317,7 @@ function reattachCssColorValues(db) {
 
 module.exports = {
   CssPropertiesFront,
-  CssProperties,
   getClientCssProperties,
-  initCssProperties,
   isCssVariable,
 };
 registerFront(CssPropertiesFront);
