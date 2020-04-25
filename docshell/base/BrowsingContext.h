@@ -240,12 +240,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
-  
-  
-  void Attach(bool aFromIPC = false);
-
-  
-  
   void Detach(bool aFromIPC = false);
 
   
@@ -540,9 +534,9 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   IPCInitializer GetIPCInitializer();
 
   
-  static already_AddRefed<BrowsingContext> CreateFromIPC(
-      IPCInitializer&& aInitializer, BrowsingContextGroup* aGroup,
-      ContentParent* aOriginProcess);
+  static void CreateFromIPC(IPCInitializer&& aInitializer,
+                            BrowsingContextGroup* aGroup,
+                            ContentParent* aOriginProcess);
 
   
   bool CanAccess(BrowsingContext* aTarget, bool aConsiderOpener = true);
@@ -569,6 +563,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
                   FieldTuple&& aFields);
 
  private:
+  void Attach(bool aFromIPC, ContentParent* aOriginProcess);
+
   
   
   BrowsingContext* FindWithSpecialName(const nsAString& aName,
