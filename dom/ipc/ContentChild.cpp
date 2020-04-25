@@ -2201,8 +2201,6 @@ void ContentChild::ActorDestroy(ActorDestroyReason why) {
 
   mIdleObservers.Clear();
 
-  mBrowsingContextGroupHolder.Clear();
-
   nsCOMPtr<nsIConsoleService> svc(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
   if (svc) {
     svc->UnregisterListener(mConsoleListener);
@@ -3614,42 +3612,46 @@ PContentChild::Result ContentChild::OnMessageReceived(const Message& aMsg,
   return result;
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvAttachBrowsingContext(
-    BrowsingContext::IPCInitializer&& aInit) {
-  RefPtr<BrowsingContext> child = BrowsingContext::Get(aInit.mId);
-  MOZ_RELEASE_ASSERT(!child || child->IsCached());
-
-  if (!child) {
-    
-    RefPtr<BrowsingContextGroup> group =
-        BrowsingContextGroup::Select(aInit.mParentId, aInit.GetOpenerId());
-    child = BrowsingContext::CreateFromIPC(std::move(aInit), group, nullptr);
+mozilla::ipc::IPCResult ContentChild::RecvCreateBrowsingContext(
+    uint64_t aGroupId, BrowsingContext::IPCInitializer&& aInit) {
+  
+  if (RefPtr<BrowsingContext> existing = BrowsingContext::Get(aInit.mId)) {
+    return IPC_FAIL(this, "Browsing context already exists");
   }
 
-  child->Attach( true);
+  RefPtr<WindowContext> parent = WindowContext::GetById(aInit.mParentId);
+  if (!parent && aInit.mParentId != 0) {
+    
+    
+    
+    
+    NS_WARNING("Attempt to attach BrowsingContext to discarded parent");
+    return IPC_OK();
+  }
 
+  RefPtr<BrowsingContextGroup> group =
+      BrowsingContextGroup::GetOrCreate(aGroupId);
+  BrowsingContext::CreateFromIPC(std::move(aInit), group, nullptr);
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentChild::RecvDetachBrowsingContext(
-    uint64_t aContextId, DetachBrowsingContextResolver&& aResolve) {
+mozilla::ipc::IPCResult ContentChild::RecvDiscardBrowsingContext(
+    const MaybeDiscarded<BrowsingContext>& aContext,
+    DiscardBrowsingContextResolver&& aResolve) {
+  if (!aContext.IsNullOrDiscarded()) {
+    aContext.get()->Detach( true);
+  }
+
   
   
   aResolve(true);
-
-  
-  
-  RefPtr<BrowsingContext> context = BrowsingContext::Get(aContextId);
-  if (context) {
-    context->Detach( true);
-  }
-
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
-    nsTArray<SyncedContextInitializer>&& aInits) {
-  RefPtr<BrowsingContextGroup> group = new BrowsingContextGroup();
+    uint64_t aGroupId, nsTArray<SyncedContextInitializer>&& aInits) {
+  RefPtr<BrowsingContextGroup> group =
+      BrowsingContextGroup::GetOrCreate(aGroupId);
 
   
   
@@ -3665,9 +3667,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRegisterBrowsingContextGroup(
         MOZ_ASSERT_IF(parent, parent->Group() == group);
 #endif
 
-        RefPtr<BrowsingContext> ctxt =
-            BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
-        ctxt->Attach( true);
+        BrowsingContext::CreateFromIPC(std::move(init), group, nullptr);
         break;
       }
       case SyncedContextInitializer::TWindowContextInitializer: {
@@ -3997,14 +3997,6 @@ mozilla::ipc::IPCResult ContentChild::RecvDiscardWindowContext(
 
   window->Discard();
   return IPC_OK();
-}
-
-void ContentChild::HoldBrowsingContextGroup(BrowsingContextGroup* aBCG) {
-  mBrowsingContextGroupHolder.AppendElement(aBCG);
-}
-
-void ContentChild::ReleaseBrowsingContextGroup(BrowsingContextGroup* aBCG) {
-  mBrowsingContextGroupHolder.RemoveElement(aBCG);
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvScriptError(

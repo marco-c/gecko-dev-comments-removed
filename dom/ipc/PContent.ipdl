@@ -832,7 +832,7 @@ child:
 
     
     
-    async RegisterBrowsingContextGroup(SyncedContextInitializer[] aInits);
+    async RegisterBrowsingContextGroup(uint64_t aGroupId, SyncedContextInitializer[] aInits);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
     
@@ -1579,7 +1579,7 @@ both:
 
 
 
-    async AttachBrowsingContext(BrowsingContextInitializer aInit);
+    async CreateBrowsingContext(uint64_t aGroupId, BrowsingContextInitializer aInit);
 
     
 
@@ -1587,17 +1587,8 @@ both:
 
 
 
-
-
-
-
-
-
-
-
-
-
-    async DetachBrowsingContext(uint64_t aContextId) returns (bool unused);
+    async DiscardBrowsingContext(MaybeDiscardedBrowsingContext aContext)
+            returns (bool unused);
 
     async WindowClose(MaybeDiscardedBrowsingContext aContext,
                       bool aTrustedCaller);
