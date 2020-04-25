@@ -333,7 +333,10 @@ class WebConsoleUI {
 
     const resourceWatcher = this.hud.resourceWatcher;
     await resourceWatcher.watch(
-      [resourceWatcher.TYPES.CONSOLE_MESSAGES],
+      [
+        resourceWatcher.TYPES.CONSOLE_MESSAGES,
+        resourceWatcher.TYPES.PLATFORM_MESSAGES,
+      ],
       this._onResourceAvailable
     );
   }
@@ -344,6 +347,14 @@ class WebConsoleUI {
       
       
       resource.type = "consoleAPICall";
+      this.wrapper.dispatchMessageAdd(resource);
+      return;
+    }
+
+    if (resourceType == resourceWatcher.TYPES.PLATFORM_MESSAGES) {
+      
+      
+      resource.type = "logMessage";
       this.wrapper.dispatchMessageAdd(resource);
     }
   }

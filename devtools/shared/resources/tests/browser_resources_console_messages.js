@@ -7,7 +7,6 @@
 
 
 
-const { TargetList } = require("devtools/shared/resources/target-list");
 const {
   ResourceWatcher,
 } = require("devtools/shared/resources/resource-watcher");
@@ -17,18 +16,15 @@ add_task(async function() {
   gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser);
   const tab = await addTab("data:text/html,Console Messages");
 
-  
-  const client = await createLocalClient();
-  const target = await client.mainRoot.getTab({ tab });
-  const targetList = new TargetList(client.mainRoot, target);
-  await targetList.startListening();
-
-  
-  const resourceWatcher = new ResourceWatcher(targetList);
+  const {
+    client,
+    resourceWatcher,
+    targetList,
+  } = await initResourceWatcherAndTarget(tab);
 
   await testMessages(tab.linkedBrowser, resourceWatcher);
 
-  await targetList.stopListening();
+  targetList.stopListening();
   await client.close();
 });
 
