@@ -487,7 +487,7 @@ int CollectPositions(BrowsingContext* aBrowsingContext,
 
   
   
-  for (auto& child : aBrowsingContext->Children()) {
+  for (auto& child : aBrowsingContext->GetChildren()) {
     aPositionDescendants[currentIdx] +=
         CollectPositions(child, aPositions, aPositionDescendants);
   }
@@ -576,7 +576,7 @@ int CollectInputs(BrowsingContext* aBrowsingContext,
 
   
   
-  for (auto& child : aBrowsingContext->Children()) {
+  for (auto& child : aBrowsingContext->GetChildren()) {
     aInputs[currentIdx].descendants +=
         CollectInputs(child, aInputs, aIdVals, aXPathVals);
   }

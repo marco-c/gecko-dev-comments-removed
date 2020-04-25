@@ -345,12 +345,6 @@ struct KeyValuePair
     nsString value;
 };
 
-union SyncedContextInitializer
-{
-    BrowsingContextInitializer;
-    WindowContextInitializer;
-};
-
 
 
 
@@ -835,7 +829,8 @@ child:
 
     
     
-    async RegisterBrowsingContextGroup(uint64_t aGroupId, SyncedContextInitializer[] aInits);
+    async RegisterBrowsingContextGroup(BrowsingContextInitializer[] aInits,
+                                       WindowContextInitializer[] aWindowInits);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
     
@@ -1596,7 +1591,7 @@ both:
 
 
 
-    async CreateBrowsingContext(uint64_t aGroupId, BrowsingContextInitializer aInit);
+    async AttachBrowsingContext(BrowsingContextInitializer aInit);
 
     
 
@@ -1604,8 +1599,29 @@ both:
 
 
 
-    async DiscardBrowsingContext(MaybeDiscardedBrowsingContext aContext)
-            returns (bool unused);
+
+
+
+
+
+
+
+
+
+
+    async DetachBrowsingContext(uint64_t aContextId) returns (bool unused);
+
+    
+
+
+
+    async CacheBrowsingContextChildren(MaybeDiscardedBrowsingContext aContext);
+
+    
+
+
+    async RestoreBrowsingContextChildren(MaybeDiscardedBrowsingContext aContext,
+                                         MaybeDiscardedBrowsingContext[] aChildren);
 
     async WindowClose(MaybeDiscardedBrowsingContext aContext,
                       bool aTrustedCaller);
