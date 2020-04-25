@@ -20,16 +20,20 @@ function WorkersState() {
 }
 
 function buildWorkerDataFromFronts({ registration, workers }) {
-  return workers.map(worker => ({
-    id: worker.id,
-    isActive: worker.state === Ci.nsIServiceWorkerInfo.STATE_ACTIVATED,
-    scope: registration.scope,
-    lastUpdateTime: registration.lastUpdateTime, 
-    url: worker.url,
+  return {
+    id: registration.id,
+    lastUpdateTime: registration.lastUpdateTime,
     registrationFront: registration,
-    workerTargetFront: worker.workerTargetFront,
-    stateText: worker.stateText,
-  }));
+    scope: registration.scope,
+    workers: workers.map(worker => ({
+      id: worker.id,
+      isActive: worker.state === Ci.nsIServiceWorkerInfo.STATE_ACTIVATED,
+      url: worker.url,
+      stateText: worker.stateText,
+      registrationFront: registration,
+      workerTargetFront: worker.workerTargetFront,
+    })),
+  };
 }
 
 function workersReducer(state = WorkersState(), action) {
