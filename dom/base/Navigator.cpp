@@ -109,6 +109,8 @@
 #include "mozilla/webgpu/Instance.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 
+#include "mozilla/intl/LocaleService.h"
+
 namespace mozilla {
 namespace dom {
 
@@ -318,6 +320,12 @@ void Navigator::GetAppName(nsAString& aAppName, CallerType aCallerType) const {
 
 
 
+
+
+
+
+
+
 void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -361,9 +369,12 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
 
     aLanguages.AppendElement(lang);
   }
+  if (aLanguages.Length() == 0) {
+    nsTArray<nsCString> locales;
+    mozilla::intl::LocaleService::GetInstance()->GetWebExposedLocales(locales);
+    aLanguages.AppendElement(NS_ConvertUTF8toUTF16(locales[0]));
+  }
 }
-
-
 
 
 
@@ -373,11 +384,8 @@ void Navigator::GetAcceptLanguages(nsTArray<nsString>& aLanguages) {
 void Navigator::GetLanguage(nsAString& aLanguage) {
   nsTArray<nsString> languages;
   GetLanguages(languages);
-  if (languages.Length() >= 1) {
-    aLanguage.Assign(languages[0]);
-  } else {
-    aLanguage.Truncate();
-  }
+  MOZ_ASSERT(languages.Length() >= 1);
+  aLanguage.Assign(languages[0]);
 }
 
 void Navigator::GetLanguages(nsTArray<nsString>& aLanguages) {
