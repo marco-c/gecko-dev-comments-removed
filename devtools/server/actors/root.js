@@ -140,9 +140,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
       bulk: true,
       
       
-      webConsoleCommands: true,
-      
-      
       
       
       
