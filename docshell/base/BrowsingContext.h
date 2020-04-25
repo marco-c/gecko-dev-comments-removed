@@ -288,10 +288,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsContentSubframe() const { return IsContent() && GetParent(); }
   uint64_t Id() const { return mBrowsingContextId; }
 
-  BrowsingContext* GetParent() const {
-    MOZ_ASSERT_IF(mParent, mParent->mType == mType);
-    return mParent;
-  }
+  BrowsingContext* GetParent() const;
   BrowsingContext* Top();
 
   
@@ -724,10 +721,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   RefPtr<BrowsingContextGroup> mGroup;
   RefPtr<WindowContext> mParentWindow;
-  
-  
-  
-  RefPtr<BrowsingContext> mParent;
   nsCOMPtr<nsIDocShell> mDocShell;
 
   RefPtr<Element> mEmbedderElement;
