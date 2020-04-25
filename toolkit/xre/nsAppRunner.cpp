@@ -2448,11 +2448,6 @@ static void ExtractCompatVersionInfo(const nsACString& aCompatVersion,
 int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
                               const nsACString& aNewCompatVersion) {
   
-  if (aOldCompatVersion.Equals(aNewCompatVersion)) {
-    return 0;
-  }
-
-  
   
   
   if (aOldCompatVersion.EqualsLiteral("Safe Mode")) {
@@ -2471,6 +2466,9 @@ int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
   return CompareVersions(PromiseFlatCString(oldMajorVersion).get(),
                          PromiseFlatCString(newMajorVersion).get());
 }
+
+
+
 
 
 
@@ -2505,17 +2503,19 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
     return false;
   }
 
-  int32_t comparison = CompareCompatVersions(aLastVersion, aVersion);
-  if (comparison != 0) {
-    *aIsDowngrade = comparison > 0;
+  if (!aLastVersion.Equals(aVersion)) {
+    
+    
+    *aIsDowngrade = 0 < CompareCompatVersions(aLastVersion, aVersion);
     ExtractCompatVersionInfo(aLastVersion, gLastAppVersion, gLastAppBuildID);
-
     return false;
   }
 
+  
+  
+
   gLastAppVersion.Assign(gAppData->version);
   gLastAppBuildID.Assign(gAppData->buildID);
-  *aIsDowngrade = false;
 
   nsAutoCString buf;
   rv = parser.GetString("Compatibility", "LastOSABI", buf);
@@ -4087,7 +4087,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       mProfD, version, osABI, mDirProvider.GetGREDir(), mAppData->directory,
       flagFile, &cachesOK, &isDowngrade, lastVersion);
 
-  MOZ_RELEASE_ASSERT(!cachesOK || versionOK,
+  MOZ_RELEASE_ASSERT(!cachesOK || lastVersion.Equals(version),
                      "Caches cannot be good if the version has changed.");
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
