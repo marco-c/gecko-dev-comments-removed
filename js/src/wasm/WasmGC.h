@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2019 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef wasm_gc_h
 #define wasm_gc_h
@@ -27,45 +27,45 @@ namespace wasm {
 
 using namespace js::jit;
 
-// Definitions for stack maps.
+
 
 typedef Vector<bool, 32, SystemAllocPolicy> ExitStubMapVector;
 
 struct StackMap final {
-  // A StackMap is a bit-array containing numMappedWords bits, one bit per
-  // word of stack.  Bit index zero is for the lowest addressed word in the
-  // range.
-  //
-  // This is a variable-length structure whose size must be known at creation
-  // time.
-  //
-  // Users of the map will know the address of the wasm::Frame that is covered
-  // by this map.  In order that they can calculate the exact address range
-  // covered by the map, the map also stores the offset, from the highest
-  // addressed word of the map, of the embedded wasm::Frame.  This is an
-  // offset down from the highest address, rather than up from the lowest, so
-  // as to limit its range to 11 bits, where
-  // 11 == ceil(log2(MaxParams * sizeof-biggest-param-type-in-words))
-  //
-  // The map may also cover a ref-typed DebugFrame.  If so that can be noted,
-  // since users of the map need to trace pointers in such a DebugFrame.
-  //
-  // Finally, for sanity checking only, for stack maps associated with a wasm
-  // trap exit stub, the number of words used by the trap exit stub save area
-  // is also noted.  This is used in Instance::traceFrame to check that the
-  // TrapExitDummyValue is in the expected place in the frame.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  // The total number of stack words covered by the map ..
+  
   uint32_t numMappedWords : 30;
 
-  // .. of which this many are "exit stub" extras
+  
   uint32_t numExitStubWords : 6;
 
-  // Where is Frame* relative to the top?  This is an offset in words.
+  
   uint32_t frameOffsetFromTop : 11;
 
-  // Notes the presence of a ref-typed DebugFrame.
-  uint32_t hasRefTypedDebugFrame : 1;
+  
+  uint32_t hasDebugFrame : 1;
 
  private:
   static constexpr uint32_t maxMappedWords = (1 << 30) - 1;
@@ -78,7 +78,7 @@ struct StackMap final {
       : numMappedWords(numMappedWords),
         numExitStubWords(0),
         frameOffsetFromTop(0),
-        hasRefTypedDebugFrame(0) {
+        hasDebugFrame(0) {
     const uint32_t nBitmap = calcNBitmap(numMappedWords);
     memset(bitmap, 0, nBitmap * sizeof(bitmap[0]));
   }
@@ -96,8 +96,8 @@ struct StackMap final {
 
   void destroy() { js_free((char*)this); }
 
-  // Record the number of words in the map used as a wasm trap exit stub
-  // save area.  See comment above.
+  
+  
   void setExitStubWords(uint32_t nWords) {
     MOZ_ASSERT(numExitStubWords == 0);
     MOZ_RELEASE_ASSERT(nWords <= maxExitStubWords);
@@ -105,8 +105,8 @@ struct StackMap final {
     numExitStubWords = nWords;
   }
 
-  // Record the offset from the highest-addressed word of the map, that the
-  // wasm::Frame lives at.  See comment above.
+  
+  
   void setFrameOffsetFromTop(uint32_t nWords) {
     MOZ_ASSERT(frameOffsetFromTop == 0);
     MOZ_RELEASE_ASSERT(nWords <= maxFrameOffsetFromTop);
@@ -114,11 +114,11 @@ struct StackMap final {
     frameOffsetFromTop = nWords;
   }
 
-  // If the frame described by this StackMap includes a DebugFrame for a
-  // ref-typed return value, call here to record that fact.
-  void setHasRefTypedDebugFrame() {
-    MOZ_ASSERT(hasRefTypedDebugFrame == 0);
-    hasRefTypedDebugFrame = 1;
+  
+  
+  void setHasDebugFrame() {
+    MOZ_ASSERT(hasDebugFrame == 0);
+    hasDebugFrame = 1;
   }
 
   inline void setBit(uint32_t bitIndex) {
@@ -146,17 +146,17 @@ struct StackMap final {
   }
 };
 
-// This is the expected size for a map that covers 32 or fewer words.
+
 static_assert(sizeof(StackMap) == 12, "wasm::StackMap has unexpected size");
 
 class StackMaps {
  public:
-  // A Maplet holds a single code-address-to-map binding.  Note that the
-  // code address is the lowest address of the instruction immediately
-  // following the instruction of interest, not of the instruction of
-  // interest itself.  In practice (at least for the Wasm Baseline compiler)
-  // this means that |nextInsnAddr| points either immediately after a call
-  // instruction, after a trap instruction or after a no-op.
+  
+  
+  
+  
+  
+  
   struct Maplet {
     uint8_t* nextInsnAddr;
     StackMap* map;
@@ -236,20 +236,20 @@ class StackMaps {
   }
 };
 
-// Supporting code for creation of stackmaps.
 
-// StackArgAreaSizeUnaligned returns the size, in bytes, of the stack arg area
-// size needed to pass |argTypes|, excluding any alignment padding beyond the
-// size of the area as a whole.  The size is as determined by the platforms
-// native ABI.
-//
-// StackArgAreaSizeAligned returns the same, but rounded up to the nearest 16
-// byte boundary.
-//
-// Note, StackArgAreaSize{Unaligned,Aligned}() must process all the arguments
-// in order to take into account all necessary alignment constraints.  The
-// signature must include any receiver argument -- in other words, it must be
-// the complete native-ABI-level call signature.
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class T>
 static inline size_t StackArgAreaSizeUnaligned(const T& argTypes) {
   ABIArgIter<const T> i(argTypes);
@@ -261,9 +261,9 @@ static inline size_t StackArgAreaSizeUnaligned(const T& argTypes) {
 
 static inline size_t StackArgAreaSizeUnaligned(
     const SymbolicAddressSignature& saSig) {
-  // ABIArgIter::ABIArgIter wants the items to be iterated over to be
-  // presented in some type that has methods length() and operator[].  So we
-  // have to wrap up |saSig|'s array of types in this API-matching class.
+  
+  
+  
   class MOZ_STACK_CLASS ItemsAndLength {
     const MIRType* items_;
     size_t length_;
@@ -275,12 +275,12 @@ static inline size_t StackArgAreaSizeUnaligned(
     MIRType operator[](size_t i) const { return items_[i]; }
   };
 
-  // Assert, at least crudely, that we're not accidentally going to run off
-  // the end of the array of types, nor into undefined parts of it, while
-  // iterating.
+  
+  
+  
   MOZ_ASSERT(saSig.numArgs <
              sizeof(saSig.argTypes) / sizeof(saSig.argTypes[0]));
-  MOZ_ASSERT(saSig.argTypes[saSig.numArgs] == MIRType::None /*the end marker*/);
+  MOZ_ASSERT(saSig.argTypes[saSig.numArgs] == MIRType::None );
 
   ItemsAndLength itemsAndLength(saSig.argTypes, saSig.numArgs);
   return StackArgAreaSizeUnaligned(itemsAndLength);
@@ -295,103 +295,103 @@ static inline size_t StackArgAreaSizeAligned(const T& argTypes) {
   return AlignStackArgAreaSize(StackArgAreaSizeUnaligned(argTypes));
 }
 
-// A stackmap creation helper.  Create a stackmap from a vector of booleans.
-// The caller owns the resulting stackmap.
+
+
 
 typedef Vector<bool, 128, SystemAllocPolicy> StackMapBoolVector;
 
 wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
     const StackMapBoolVector& vec, bool hasRefs);
 
-// Generate a stackmap for a function's stack-overflow-at-entry trap, with
-// the structure:
-//
-//    <reg dump area>
-//    |       ++ <space reserved before trap, if any>
-//    |               ++ <space for Frame>
-//    |                       ++ <inbound arg area>
-//    |                                           |
-//    Lowest Addr                                 Highest Addr
-//
-// The caller owns the resulting stackmap.  This assumes a grow-down stack.
-//
-// For non-debug builds, if the stackmap would contain no pointers, no
-// stackmap is created, and nullptr is returned.  For a debug build, a
-// stackmap is always created and returned.
-//
-// The "space reserved before trap" is the space reserved by
-// MacroAssembler::wasmReserveStackChecked, in the case where the frame is
-// "small", as determined by that function.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 MOZ_MUST_USE bool CreateStackMapForFunctionEntryTrap(
     const ArgTypeVector& argTypes, const MachineState& trapExitLayout,
     size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
     size_t nInboundStackArgBytes, wasm::StackMap** result);
 
-// At a resumable wasm trap, the machine's registers are saved on the stack by
-// (code generated by) GenerateTrapExit().  This function writes into |args| a
-// vector of booleans describing the ref-ness of the saved integer registers.
-// |args[0]| corresponds to the low addressed end of the described section of
-// the save area.
+
+
+
+
+
 MOZ_MUST_USE bool GenerateStackmapEntriesForTrapExit(
     const ArgTypeVector& args, const MachineState& trapExitLayout,
     const size_t trapExitLayoutNumWords, ExitStubMapVector* extras);
 
-// Shared write barrier code.
-//
-// A barriered store looks like this:
-//
-//   Label skipPreBarrier;
-//   EmitWasmPreBarrierGuard(..., &skipPreBarrier);
-//   <COMPILER-SPECIFIC ACTIONS HERE>
-//   EmitWasmPreBarrierCall(...);
-//   bind(&skipPreBarrier);
-//
-//   <STORE THE VALUE IN MEMORY HERE>
-//
-//   Label skipPostBarrier;
-//   <COMPILER-SPECIFIC ACTIONS HERE>
-//   EmitWasmPostBarrierGuard(..., &skipPostBarrier);
-//   <CALL POST-BARRIER HERE IN A COMPILER-SPECIFIC WAY>
-//   bind(&skipPostBarrier);
-//
-// The actions are divided up to allow other actions to be placed between them,
-// such as saving and restoring live registers.  The postbarrier call invokes
-// C++ and will kill all live registers.
 
-// Before storing a GC pointer value in memory, skip to `skipBarrier` if the
-// prebarrier is not needed.  Will clobber `scratch`.
-//
-// It is OK for `tls` and `scratch` to be the same register.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
                              Register scratch, Register valueAddr,
                              Label* skipBarrier);
 
-// Before storing a GC pointer value in memory, call out-of-line prebarrier
-// code. This assumes `PreBarrierReg` contains the address that will be updated.
-// On ARM64 it also assums that x28 (the PseudoStackPointer) has the same value
-// as SP.  `PreBarrierReg` is preserved by the barrier function.  Will clobber
-// `scratch`.
-//
-// It is OK for `tls` and `scratch` to be the same register.
+
+
+
+
+
+
+
 
 void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
                             Register scratch, Register valueAddr);
 
-// After storing a GC pointer value in memory, skip to `skipBarrier` if a
-// postbarrier is not needed.  If the location being set is in an heap-allocated
-// object then `object` must reference that object; otherwise it should be None.
-// The value that was stored is `setValue`.  Will clobber `otherScratch` and
-// will use other available scratch registers.
-//
-// `otherScratch` cannot be a designated scratch register.
+
+
+
+
+
+
+
 
 void EmitWasmPostBarrierGuard(MacroAssembler& masm,
                               const Maybe<Register>& object,
                               Register otherScratch, Register setValue,
                               Label* skipBarrier);
 
-}  // namespace wasm
-}  // namespace js
+}  
+}  
 
-#endif  // wasm_gc_h
+#endif  

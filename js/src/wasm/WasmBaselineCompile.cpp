@@ -2343,7 +2343,7 @@ class MachineStackTracker {
 
 
 
-enum class HasRefTypedDebugFrame { No, Yes };
+enum class HasDebugFrame { No, Yes };
 
 struct StackMapGenerator {
  private:
@@ -2439,13 +2439,13 @@ struct StackMapGenerator {
   MOZ_MUST_USE bool createStackMap(const char* who,
                                    const ExitStubMapVector& extras,
                                    uint32_t assemblerOffset,
-                                   HasRefTypedDebugFrame refDebugFrame,
+                                   HasDebugFrame debugFrame,
                                    const StkVector& stk) {
     size_t countedPointers = machineStackTracker.numPtrs() + memRefsOnStk;
 #ifndef DEBUG
     
     
-    if (countedPointers == 0 && refDebugFrame == HasRefTypedDebugFrame::No) {
+    if (countedPointers == 0 && debugFrame == HasDebugFrame::No) {
       
       
       bool extrasHasRef = false;
@@ -2646,8 +2646,8 @@ struct StackMapGenerator {
 #endif
 
     
-    if (refDebugFrame == HasRefTypedDebugFrame::Yes) {
-      stackMap->setHasRefTypedDebugFrame();
+    if (debugFrame == HasDebugFrame::Yes) {
+      stackMap->setHasDebugFrame();
     }
 
     
@@ -3602,35 +3602,24 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   MOZ_MUST_USE bool createStackMap(const char* who) {
     const ExitStubMapVector noExtras;
-    return stackMapGenerator_.createStackMap(
-        who, noExtras, masm.currentOffset(), HasRefTypedDebugFrame::No, stk_);
+    return createStackMap(who, noExtras, masm.currentOffset());
   }
 
   
   MOZ_MUST_USE bool createStackMap(const char* who,
                                    CodeOffset assemblerOffset) {
     const ExitStubMapVector noExtras;
-    return stackMapGenerator_.createStackMap(who, noExtras,
-                                             assemblerOffset.offset(),
-                                             HasRefTypedDebugFrame::No, stk_);
-  }
-
-  
-  
-  MOZ_MUST_USE bool createStackMap(const char* who,
-                                   HasRefTypedDebugFrame refDebugFrame) {
-    const ExitStubMapVector noExtras;
-    return stackMapGenerator_.createStackMap(
-        who, noExtras, masm.currentOffset(), refDebugFrame, stk_);
+    return createStackMap(who, noExtras, assemblerOffset.offset());
   }
 
   
   MOZ_MUST_USE bool createStackMap(const char* who,
                                    const ExitStubMapVector& extras,
-                                   uint32_t assemblerOffset,
-                                   HasRefTypedDebugFrame refDebugFrame) {
+                                   uint32_t assemblerOffset) {
+    auto debugFrame =
+        env_.debugEnabled() ? HasDebugFrame::Yes : HasDebugFrame::No;
     return stackMapGenerator_.createStackMap(who, extras, assemblerOffset,
-                                             refDebugFrame, stk_);
+                                             debugFrame, stk_);
   }
 
   
@@ -4641,22 +4630,12 @@ class BaseCompiler final : public BaseCompilerInterface {
       masm.store32(
           Imm32(func_.index),
           Address(masm.getStackPointer(), DebugFrame::offsetOfFuncIndex()));
-      masm.storePtr(ImmWord(0), Address(masm.getStackPointer(),
-                                        DebugFrame::offsetOfFlagsWord()));
-      
-      
+      masm.store32(Imm32(0), Address(masm.getStackPointer(),
+                                     DebugFrame::offsetOfFlags()));
 
       
-      masm.storePtr(ImmWord(0), Address(masm.getStackPointer(),
-                                        DebugFrame::offsetOfResults()));
-
       
-      for (size_t i = 0; i < sizeof(js::Value) / sizeof(void*); i++) {
-        masm.storePtr(ImmWord(0),
-                      Address(masm.getStackPointer(),
-                              DebugFrame::offsetOfCachedReturnJSValue() +
-                                  i * sizeof(void*)));
-      }
+      
     }
 
     
@@ -4667,8 +4646,7 @@ class BaseCompiler final : public BaseCompilerInterface {
     if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
       return false;
     }
-    if (!createStackMap("stack check", extras, masm.currentOffset(),
-                        HasRefTypedDebugFrame::No)) {
+    if (!createStackMap("stack check", extras, masm.currentOffset())) {
       return false;
     }
 
@@ -4695,13 +4673,27 @@ class BaseCompiler final : public BaseCompilerInterface {
 
     
     for (ABIArgIter i(args); !i.done(); i++) {
-      if (!i->argInRegister()) {
-        continue;
-      }
       if (args.isSyntheticStackResultPointerArg(i.index())) {
         
         
-        fr.storeIncomingStackResultAreaPtr(RegPtr(i->gpr()));
+        if (i->argInRegister()) {
+          fr.storeIncomingStackResultAreaPtr(RegPtr(i->gpr()));
+        }
+        
+        
+        if (env_.debugEnabled()) {
+          Register target = ABINonArgReturnReg0;
+          fr.loadIncomingStackResultAreaPtr(RegPtr(target));
+          size_t debugFrameOffset =
+              masm.framePushed() - DebugFrame::offsetOfFrame();
+          size_t debugStackResultsPointerOffset =
+              debugFrameOffset + DebugFrame::offsetOfStackResultsPointer();
+          masm.storePtr(target, Address(masm.getStackPointer(),
+                                        debugStackResultsPointerOffset));
+        }
+        continue;
+      }
+      if (!i->argInRegister()) {
         continue;
       }
       Local& l = localInfo_[args.naturalIndex(i.index())];
@@ -4764,9 +4756,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   void saveRegisterReturnValues(const ResultType& resultType) {
     MOZ_ASSERT(env_.debugEnabled());
     size_t debugFrameOffset = masm.framePushed() - DebugFrame::offsetOfFrame();
-    Address resultsAddress(masm.getStackPointer(),
-                           debugFrameOffset + DebugFrame::offsetOfResults());
-
+    size_t registerResultIdx = 0;
     for (ABIResultIter i(resultType); !i.done(); i.next()) {
       const ABIResult result = i.cur();
       if (!result.inRegister()) {
@@ -4777,34 +4767,42 @@ class BaseCompiler final : public BaseCompilerInterface {
 #endif
         break;
       }
-      MOZ_ASSERT(i.index() == 0,
-                 "debug frame only has space for one stored register result");
+
+      size_t resultOffset =
+          DebugFrame::offsetOfRegisterResult(registerResultIdx);
+      Address dest(masm.getStackPointer(), debugFrameOffset + resultOffset);
       switch (result.type().kind()) {
         case ValType::I32:
-          masm.store32(RegI32(result.gpr()), resultsAddress);
+          masm.store32(RegI32(result.gpr()), dest);
           break;
         case ValType::I64:
-          masm.store64(RegI64(result.gpr64()), resultsAddress);
+          masm.store64(RegI64(result.gpr64()), dest);
           break;
         case ValType::F64:
-          masm.storeDouble(RegF64(result.fpr()), resultsAddress);
+          masm.storeDouble(RegF64(result.fpr()), dest);
           break;
         case ValType::F32:
-          masm.storeFloat32(RegF32(result.fpr()), resultsAddress);
+          masm.storeFloat32(RegF32(result.fpr()), dest);
           break;
-        case ValType::Ref:
-          masm.storePtr(RegPtr(result.gpr()), resultsAddress);
+        case ValType::Ref: {
+          uint32_t flag =
+              DebugFrame::hasSpilledRegisterRefResultBitMask(registerResultIdx);
+          
+          masm.or32(Imm32(flag),
+                    Address(masm.getStackPointer(),
+                            debugFrameOffset + DebugFrame::offsetOfFlags()));
+          masm.storePtr(RegPtr(result.gpr()), dest);
           break;
+        }
       }
+      registerResultIdx++;
     }
   }
 
   void restoreRegisterReturnValues(const ResultType& resultType) {
     MOZ_ASSERT(env_.debugEnabled());
     size_t debugFrameOffset = masm.framePushed() - DebugFrame::offsetOfFrame();
-    Address resultsAddress(masm.getStackPointer(),
-                           debugFrameOffset + DebugFrame::offsetOfResults());
-
+    size_t registerResultIdx = 0;
     for (ABIResultIter i(resultType); !i.done(); i.next()) {
       const ABIResult result = i.cur();
       if (!result.inRegister()) {
@@ -4815,23 +4813,24 @@ class BaseCompiler final : public BaseCompilerInterface {
 #endif
         break;
       }
-      MOZ_ASSERT(i.index() == 0,
-                 "debug frame only has space for one stored register result");
+      size_t resultOffset =
+          DebugFrame::offsetOfRegisterResult(registerResultIdx++);
+      Address src(masm.getStackPointer(), debugFrameOffset + resultOffset);
       switch (result.type().kind()) {
         case ValType::I32:
-          masm.load32(resultsAddress, RegI32(result.gpr()));
+          masm.load32(src, RegI32(result.gpr()));
           break;
         case ValType::I64:
-          masm.load64(resultsAddress, RegI64(result.gpr64()));
+          masm.load64(src, RegI64(result.gpr64()));
           break;
         case ValType::F64:
-          masm.loadDouble(resultsAddress, RegF64(result.fpr()));
+          masm.loadDouble(src, RegF64(result.fpr()));
           break;
         case ValType::F32:
-          masm.loadFloat32(resultsAddress, RegF32(result.fpr()));
+          masm.loadFloat32(src, RegF32(result.fpr()));
           break;
         case ValType::Ref:
-          masm.loadPtr(resultsAddress, RegPtr(result.gpr()));
+          masm.loadPtr(src, RegPtr(result.gpr()));
           break;
       }
     }
@@ -4863,25 +4862,13 @@ class BaseCompiler final : public BaseCompilerInterface {
     if (env_.debugEnabled()) {
       
       
-      
-      
-      
-      HasRefTypedDebugFrame refDebugFrame = HasRefTypedDebugFrame::No;
-      for (ValType result : funcType().results()) {
-        if (result.isReference()) {
-          refDebugFrame = HasRefTypedDebugFrame::Yes;
-          break;
-        }
-      }
-      
-      
       saveRegisterReturnValues(resultType);
       insertBreakablePoint(CallSiteDesc::Breakpoint);
-      if (!createStackMap("debug: breakpoint", refDebugFrame)) {
+      if (!createStackMap("debug: breakpoint")) {
         return false;
       }
       insertBreakablePoint(CallSiteDesc::LeaveFrame);
-      if (!createStackMap("debug: leave frame", refDebugFrame)) {
+      if (!createStackMap("debug: leave frame")) {
         return false;
       }
       restoreRegisterReturnValues(resultType);

@@ -1816,7 +1816,8 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
   }
 
   
-  if (map->hasRefTypedDebugFrame) {
+  
+  if (map->hasDebugFrame) {
     DebugFrame* debugFrame = DebugFrame::from(frame);
     char* debugFrameP = (char*)debugFrame;
 
@@ -1824,10 +1825,13 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
     
     ASSERT_ANYREF_IS_JSOBJECT;
 
-    char* resultRefP = debugFrameP + DebugFrame::offsetOfResults();
-    if (*(intptr_t*)resultRefP) {
-      TraceRoot(trc, (JSObject**)resultRefP,
-                "Instance::traceWasmFrame: DebugFrame::resultRef_");
+    for (size_t i = 0; i < MaxRegisterResults; i++) {
+      if (debugFrame->hasSpilledRegisterRefResult(i)) {
+        char* resultRefP = debugFrameP + DebugFrame::offsetOfRegisterResult(i);
+        TraceNullableRoot(
+            trc, (JSObject**)resultRefP,
+            "Instance::traceWasmFrame: DebugFrame::resultResults_");
+      }
     }
 
     if (debugFrame->hasCachedReturnJSValue()) {
@@ -1953,6 +1957,73 @@ static bool GetInterpEntry(Instance& instance, uint32_t funcIndex,
   return true;
 }
 
+bool wasm::ResultsToJSValue(JSContext* cx, ResultType type,
+                            void* registerResultLoc,
+                            Maybe<char*> stackResultsLoc,
+                            MutableHandleValue rval) {
+  if (type.empty()) {
+    
+    rval.setUndefined();
+    return true;
+  }
+
+  
+  
+  
+  static_assert(MaxRegisterResults == 1);
+
+  
+  
+
+  
+  
+  
+  ABIResultIter iter(type);
+  DebugOnly<bool> usedRegisterResult = false;
+  for (; !iter.done(); iter.next()) {
+    if (iter.cur().inRegister()) {
+      MOZ_ASSERT(!usedRegisterResult);
+      if (!ToJSValue<DebugCodegenVal>(cx, registerResultLoc, iter.cur().type(),
+                                      rval)) {
+        return false;
+      }
+      usedRegisterResult = true;
+    }
+  }
+  MOZ_ASSERT(usedRegisterResult);
+
+  MOZ_ASSERT((stackResultsLoc.isSome()) == (iter.count() > 1));
+  if (!stackResultsLoc) {
+    
+    return true;
+  }
+
+  
+  Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
+  if (!array) {
+    return false;
+  }
+  RootedValue tmp(cx);
+  for (iter.switchToPrev(); !iter.done(); iter.prev()) {
+    const ABIResult& result = iter.cur();
+    if (result.onStack()) {
+      char* loc = stackResultsLoc.value() + result.stackOffset();
+      if (!ToJSValue<DebugCodegenVal>(cx, loc, result.type(), &tmp)) {
+        return false;
+      }
+      if (!NewbornArrayPush(cx, array, tmp)) {
+        return false;
+      }
+    } else {
+      if (!NewbornArrayPush(cx, array, rval)) {
+        return false;
+      }
+    }
+  }
+  rval.set(ObjectValue(*array));
+  return true;
+}
+
 class MOZ_RAII ReturnToJSResultCollector {
   class MOZ_RAII StackResultsRooter : public JS::CustomAutoRooter {
     ReturnToJSResultCollector& collector_;
@@ -2012,63 +2083,10 @@ class MOZ_RAII ReturnToJSResultCollector {
 
   bool collect(JSContext* cx, void* registerResultLoc,
                MutableHandleValue rval) {
-    if (type_.empty()) {
-      
-      rval.setUndefined();
-      return true;
-    }
-
-    
-    
-
-    
-    
-    
-    
-    ABIResultIter iter(type_);
-    DebugOnly<bool> usedRegisterResult = false;
-    for (; !iter.done(); iter.next()) {
-      if (iter.cur().inRegister()) {
-        MOZ_ASSERT(!usedRegisterResult);
-        if (!ToJSValue<DebugCodegenVal>(cx, registerResultLoc,
-                                        iter.cur().type(), rval)) {
-          return false;
-        }
-        usedRegisterResult = true;
-      }
-    }
-    MOZ_ASSERT(usedRegisterResult);
-
-    MOZ_ASSERT((stackResultsArea_ != nullptr) == (iter.count() > 1));
-    if (!stackResultsArea_) {
-      
-      return true;
-    }
-
-    
-    Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
-    if (!array) {
-      return false;
-    }
-    RootedValue tmp(cx);
-    for (iter.switchToPrev(); !iter.done(); iter.prev()) {
-      const ABIResult& result = iter.cur();
-      if (result.onStack()) {
-        char* loc = stackResultsArea_.get() + result.stackOffset();
-        if (!ToJSValue<DebugCodegenVal>(cx, loc, result.type(), &tmp)) {
-          return false;
-        }
-        if (!NewbornArrayPush(cx, array, tmp)) {
-          return false;
-        }
-      } else {
-        if (!NewbornArrayPush(cx, array, rval)) {
-          return false;
-        }
-      }
-    }
-    rval.set(ObjectValue(*array));
-    return true;
+    Maybe<char*> stackResultsLoc =
+        stackResultsArea_ ? Some(stackResultsArea_.get()) : Nothing();
+    return ResultsToJSValue(cx, type_, registerResultLoc, stackResultsLoc,
+                            rval);
   }
 };
 

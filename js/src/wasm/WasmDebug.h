@@ -116,8 +116,12 @@ class DebugState {
                                        ValTypeVector* locals,
                                        size_t* argsLength,
                                        StackResults* stackResults);
-  MOZ_MUST_USE bool debugGetResultTypes(uint32_t funcIndex,
-                                        ValTypeVector* results);
+  
+  
+  
+  ResultType debugGetResultType(uint32_t funcIndex) const {
+    return metadata().getFuncResultType(funcIndex);
+  }
   MOZ_MUST_USE bool getGlobal(Instance& instance, uint32_t globalIndex,
                               MutableHandleValue vp);
 

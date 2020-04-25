@@ -372,6 +372,13 @@ struct Metadata : public ShareableBase<Metadata>, public MetadataCacheablePod {
   
   
   
+  ResultType getFuncResultType(uint32_t funcIndex) const {
+    return ResultType::Vector(debugFuncReturnTypes[funcIndex]);
+  };
+
+  
+  
+  
   
 
   bool isAsmJS() const { return kind == ModuleKind::AsmJS; }

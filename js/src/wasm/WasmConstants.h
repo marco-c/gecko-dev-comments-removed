@@ -614,6 +614,9 @@ static const unsigned MaxResultsForJitExit = 1;
 static const unsigned MaxResultsForJitInlineCall = MaxResultsForJitEntry;
 
 
+static const unsigned MaxRegisterResults = 1;
+
+
 
 
 static const unsigned FailFP = 0xbad;
