@@ -69,18 +69,7 @@ function background(events) {
   
   function getExpected(details) {
     let url = new URL(details.url);
-    let filename;
-    if (url.protocol == "data:") {
-      
-      if (details.originUrl == "about:newtab") {
-        return;
-      }
-
-      
-      filename = url.pathname;
-    } else {
-      filename = url.pathname.split("/").pop();
-    }
+    let filename = url.pathname.split("/").pop();
     if (ignore && ignore.includes(filename)) {
       return;
     }
