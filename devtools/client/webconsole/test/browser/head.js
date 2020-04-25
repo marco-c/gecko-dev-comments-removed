@@ -622,11 +622,19 @@ async function setInputValueForAutocompletion(
   setInputValue(hud, "");
   await Promise.all(initialPromises);
 
+  
+  
+  await waitForTick();
+
   jsterm.focus();
 
   const updated = jsterm.once("autocomplete-updated");
   EventUtils.sendString(value, hud.iframeWindow);
   await updated;
+
+  
+  
+  await waitForTick();
 
   if (caretPosition < 0) {
     caretPosition = value.length + caretPosition;
