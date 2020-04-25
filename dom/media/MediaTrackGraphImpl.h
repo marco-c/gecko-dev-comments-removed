@@ -308,8 +308,16 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   void RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessage);
 
-  void NotifyWhenGraphStarted(RefPtr<AudioNodeTrack> aTrack,
-                              MozPromiseHolder<GraphStartedPromise>&& aHolder);
+  
+
+
+
+
+
+  enum class ProcessingThread { FALLBACK_THREAD, AUDIO_THREAD };
+  void NotifyWhenGraphStarted(RefPtr<MediaTrack> aTrack,
+                              MozPromiseHolder<GraphStartedPromise>&& aHolder,
+                              ProcessingThread aProcessingThread);
 
   
 
