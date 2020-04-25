@@ -142,8 +142,10 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   
-  nsresult CreateStaticClone(nsFrameLoader* aDest);
-  nsresult FinishStaticClone();
+  
+  nsresult FinishStaticClone(nsFrameLoader* aStaticCloneOf,
+                             nsIDocShell** aCloneDocShell,
+                             Document** aCloneDocument);
 
   
 
@@ -485,10 +487,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   RefPtr<Document> mContainerDocWhileDetached;
-
-  
-  
-  RefPtr<nsFrameLoader> mStaticCloneOf;
 
   
   
