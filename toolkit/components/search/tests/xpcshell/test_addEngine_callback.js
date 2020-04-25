@@ -14,10 +14,12 @@ const { MockRegistrar } = ChromeUtils.import(
 
 var promptService = {
   QueryInterface: ChromeUtils.generateQI([Ci.nsIPromptService]),
-  asyncConfirmEx() {},
-  asyncAlert() {},
+  confirmEx() {},
 };
-
+var prompt = {
+  QueryInterface: ChromeUtils.generateQI([Ci.nsIPrompt]),
+  alert() {},
+};
 
 
 
@@ -25,6 +27,7 @@ MockRegistrar.register(
   "@mozilla.org/embedcomp/prompt-service;1",
   promptService
 );
+MockRegistrar.register("@mozilla.org/prompter;1", prompt);
 
 
 add_task(async function init_search_service() {
