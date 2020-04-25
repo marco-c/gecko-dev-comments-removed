@@ -21,6 +21,7 @@ class ThrottledEventQueue;
 namespace dom {
 
 class BrowsingContext;
+class WindowContext;
 class ContentParent;
 
 
@@ -48,15 +49,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void EnsureSubscribed(ContentParent* aProcess);
 
   
-  bool IsContextCached(BrowsingContext* aContext) const;
-  void CacheContext(BrowsingContext* aContext);
-  void CacheContexts(const BrowsingContext::Children& aContexts);
-  bool EvictCachedContext(BrowsingContext* aContext);
-
   
-  
-  BrowsingContext::Children& Toplevels() { return mToplevels; }
-  void GetToplevels(BrowsingContext::Children& aToplevels) {
+  nsTArray<RefPtr<BrowsingContext>>& Toplevels() { return mToplevels; }
+  void GetToplevels(nsTArray<RefPtr<BrowsingContext>>& aToplevels) {
     aToplevels.AppendElements(mToplevels);
   }
 
@@ -67,26 +62,10 @@ class BrowsingContextGroup final : public nsWrapperCache {
   BrowsingContextGroup();
 
   static already_AddRefed<BrowsingContextGroup> Select(
-      BrowsingContext* aParent, BrowsingContext* aOpener) {
-    if (aParent) {
-      return do_AddRef(aParent->Group());
-    }
-    if (aOpener) {
-      return do_AddRef(aOpener->Group());
-    }
-    return MakeAndAddRef<BrowsingContextGroup>();
-  }
+      WindowContext* aParent, BrowsingContext* aOpener);
 
   static already_AddRefed<BrowsingContextGroup> Select(uint64_t aParentId,
-                                                       uint64_t aOpenerId) {
-    RefPtr<BrowsingContext> parent = BrowsingContext::Get(aParentId);
-    MOZ_RELEASE_ASSERT(parent || aParentId == 0);
-
-    RefPtr<BrowsingContext> opener = BrowsingContext::Get(aOpenerId);
-    MOZ_RELEASE_ASSERT(opener || aOpenerId == 0);
-
-    return Select(parent, opener);
-  }
+                                                       uint64_t aOpenerId);
 
   
   
@@ -148,7 +127,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mContexts;
 
   
-  BrowsingContext::Children mToplevels;
+  nsTArray<RefPtr<BrowsingContext>> mToplevels;
 
   
   
@@ -157,9 +136,6 @@ class BrowsingContextGroup final : public nsWrapperCache {
   nsRefPtrHashtable<nsCStringHashKey, DocGroup> mDocGroups;
 
   ContentParents mSubscribers;
-
-  
-  nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mCachedContexts;
 
   
   

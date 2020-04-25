@@ -3195,7 +3195,7 @@ static void DumpViews(nsIDocShell* aDocShell, FILE* out) {
     
     int32_t i, n;
     BrowsingContext* bc = nsDocShell::Cast(aDocShell)->GetBrowsingContext();
-    for (auto& child : bc->GetChildren()) {
+    for (auto& child : bc->Children()) {
       if (auto childDS = child->GetDocShell()) {
         DumpViews(childAsShell, out);
       }

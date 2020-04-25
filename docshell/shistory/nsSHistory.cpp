@@ -386,7 +386,7 @@ nsresult nsSHistory::WalkHistoryEntries(nsISHEntry* aRootEntry,
 
     BrowsingContext* childBC = nullptr;
     if (aBC) {
-      for (BrowsingContext* child : aBC->GetChildren()) {
+      for (BrowsingContext* child : aBC->Children()) {
         
         
         if (StaticPrefs::fission_sessionHistoryInParent() ||

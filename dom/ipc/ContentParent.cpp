@@ -5915,13 +5915,13 @@ mozilla::ipc::IPCResult ContentParent::RecvSessionStorageData(
 
 mozilla::ipc::IPCResult ContentParent::RecvAttachBrowsingContext(
     BrowsingContext::IPCInitializer&& aInit) {
-  RefPtr<CanonicalBrowsingContext> parent;
+  RefPtr<WindowGlobalParent> parent;
   if (aInit.mParentId != 0) {
-    parent = CanonicalBrowsingContext::Get(aInit.mParentId);
+    parent = WindowGlobalParent::GetByInnerWindowId(aInit.mParentId);
     MOZ_RELEASE_ASSERT(parent, "Parent doesn't exist in parent process");
   }
 
-  if (parent && !parent->IsOwnedByProcess(ChildID())) {
+  if (parent && parent->GetContentParent() != this) {
     
     
     
@@ -6013,73 +6013,6 @@ mozilla::ipc::IPCResult ContentParent::RecvDetachBrowsingContext(
   }
 
   context->Detach( true);
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvCacheBrowsingContextChildren(
-    const MaybeDiscarded<BrowsingContext>& aContext) {
-  if (aContext.IsNullOrDiscarded()) {
-    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
-            ("ParentIPC: Trying to cache already detached"));
-    return IPC_OK();
-  }
-  CanonicalBrowsingContext* context = aContext.get_canonical();
-
-  if (!CheckBrowsingContextOwnership(context, "cache")) {
-    
-    
-    
-    
-    return IPC_OK();
-  }
-
-  context->CacheChildren( true);
-
-  context->Group()->EachOtherParent(this, [&](ContentParent* aParent) {
-    Unused << aParent->SendCacheBrowsingContextChildren(context);
-  });
-
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult ContentParent::RecvRestoreBrowsingContextChildren(
-    const MaybeDiscarded<BrowsingContext>& aContext,
-    nsTArray<MaybeDiscarded<BrowsingContext>>&& aChildren) {
-  if (aContext.IsNullOrDiscarded()) {
-    MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
-            ("ParentIPC: Trying to restore already detached"));
-    return IPC_OK();
-  }
-  CanonicalBrowsingContext* context = aContext.get_canonical();
-
-  if (!CheckBrowsingContextOwnership(context, "restore")) {
-    
-    
-    
-    
-    return IPC_OK();
-  }
-
-  
-  
-  
-  
-  nsTArray<RefPtr<BrowsingContext>> children(aChildren.Length());
-  aChildren.RemoveElementsBy(
-      [&](const MaybeDiscarded<BrowsingContext>& child) -> bool {
-        if (child.IsNullOrDiscarded()) {
-          return true;
-        }
-        children.AppendElement(child.get());
-        return false;
-      });
-
-  context->RestoreChildren(std::move(children),  true);
-
-  context->Group()->EachOtherParent(this, [&](ContentParent* aParent) {
-    Unused << aParent->SendRestoreBrowsingContextChildren(context, aChildren);
-  });
 
   return IPC_OK();
 }
