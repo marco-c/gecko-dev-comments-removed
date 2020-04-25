@@ -70,6 +70,13 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMSVGLengthList)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+void DOMSVGLengthList::IndexedSetter(uint32_t index, DOMSVGLength& newValue,
+                                     ErrorResult& error) {
+  
+  RefPtr<DOMSVGLength> ignored = ReplaceItem(newValue, index, error);
+  Unused << ignored;
+}
+
 JSObject* DOMSVGLengthList::WrapObject(JSContext* cx,
                                        JS::Handle<JSObject*> aGivenProto) {
   return mozilla::dom::SVGLengthList_Binding::Wrap(cx, this, aGivenProto);

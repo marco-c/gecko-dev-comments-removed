@@ -122,11 +122,7 @@ class DOMSVGLengthList final : public nsISupports, public nsWrapperCache {
     return InsertItemBefore(newItem, LengthNoFlush(), error);
   }
   void IndexedSetter(uint32_t index, DOMSVGLength& newValue,
-                     ErrorResult& error) {
-    
-    RefPtr<DOMSVGLength> ignored = ReplaceItem(newValue, index, error);
-    Unused << ignored;
-  }
+                     ErrorResult& error);
   uint32_t Length() const { return NumberOfItems(); }
 
  private:
