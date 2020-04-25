@@ -106,9 +106,13 @@ void WebrtcTCPSocket::CloseWithReason(nsresult aReason) {
     
     mOpened = true;
 
-    MOZ_ALWAYS_SUCCEEDS(mSocketThread->Dispatch(NewRunnableMethod<nsresult>(
+    
+    
+    
+    
+    MOZ_ASSERT(NS_SUCCEEDED(mSocketThread->Dispatch(NewRunnableMethod<nsresult>(
         "WebrtcTCPSocket::CloseWithReason", this,
-        &WebrtcTCPSocket::CloseWithReason, aReason)));
+        &WebrtcTCPSocket::CloseWithReason, aReason))));
     return;
   }
 
