@@ -1948,6 +1948,15 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
     
     if (gRaiseWindows && owningWindow->mIsShown && owningWindow->mShell &&
         !gtk_window_is_active(GTK_WINDOW(owningWindow->mShell))) {
+      if (!mIsX11Display &&
+          Preferences::GetBool("testing.browserTestHarness.running", false)) {
+        
+        
+        owningWindow->NativeShow(false);
+        owningWindow->NativeShow(true);
+        return;
+      }
+
       uint32_t timestamp = GDK_CURRENT_TIME;
 
       nsGTKToolkit* GTKToolkit = nsGTKToolkit::GetToolkit();
