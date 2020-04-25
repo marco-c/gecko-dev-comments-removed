@@ -684,14 +684,15 @@ impl BitsRequest {
         )
     }
 
+    xpcom_method!(
+        get_load_group => GetLoadGroup() -> *const nsILoadGroup
+    );
+
     
 
 
 
 
-    xpcom_method!(
-        get_load_group => GetLoadGroup() -> *const nsILoadGroup
-    );
     fn get_load_group(&self) -> Result<RefPtr<nsILoadGroup>, nsresult> {
         Err(NS_ERROR_NOT_IMPLEMENTED)
     }

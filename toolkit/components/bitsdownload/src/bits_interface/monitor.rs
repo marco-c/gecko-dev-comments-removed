@@ -140,10 +140,11 @@ impl MonitorRunnable {
         }
     }
 
-    
-    
-    
     xpcom_method!(run => Run());
+
+    
+    
+    
     pub fn run(&self) -> Result<(), nsresult> {
         if self.in_error_state.load() {
             self.free_mainthread_data();
