@@ -1,19 +1,15 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 @template
 def STHTestFile(name):
     if not CONFIG['COMPILE_ENVIRONMENT']:
         return
 
-    GENERATED_FILES += [name]
-    props = GENERATED_FILES[name]
-    props.script = 'createSTHTestData.py'
-    props.inputs = ['%s.tbs' % name]
-    props.py2 = True
+    GeneratedFile(name, script='createSTHTestData.py', inputs=['%s.tbs' % name])
 
 STHTestFile('valid-sth.inc')
 STHTestFile('valid-with-extension-sth.inc')
