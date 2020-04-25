@@ -294,6 +294,7 @@ class MasterList {
     
     
     
+    
     return mIsEnabled && !!(mObservedOperations & aOp);
   }
 
@@ -306,9 +307,7 @@ class MasterList {
   
   mozilla::IOInterposer::Mutex mLock;
   
-  mozilla::Atomic<mozilla::IOInterposeObserver::Operation,
-                  mozilla::MemoryOrdering::Relaxed>
-      mObservedOperations;
+  mozilla::IOInterposeObserver::Operation mObservedOperations;
   
   mozilla::Atomic<bool> mIsEnabled;
   
