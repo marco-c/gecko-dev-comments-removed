@@ -47,10 +47,7 @@ add_task(async function contextCreatedAfterNavigation({ client }) {
   info("Page notifications are enabled");
   info("Navigating...");
   const { frameId } = await Page.navigate({ url: DOC });
-
-  
-  const { frame } = await Page.frameNavigated();
-  is(frame.url, DOC, "Navigated to expected url");
+  await Page.loadEventFired();
 
   const { executionContextId: isolatedId } = await Page.createIsolatedWorld({
     frameId,
