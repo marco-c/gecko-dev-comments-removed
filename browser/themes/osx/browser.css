@@ -2,9 +2,6 @@
 
 
 
-%include ../../../toolkit/themes/osx/global/shared.inc
-%define toolbarButtonPressed :hover:active:not([disabled="true"]):not([cui-areatype="menu-panel"])
-
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 %include ../shared/browser.inc.css
@@ -491,8 +488,6 @@
 
 
 .browserContainer > findbar {
-  background: @scopeBarBackground@;
-  border-top: @scopeBarSeparatorBorder@;
   color: -moz-DialogText;
   text-shadow: none;
 }
@@ -564,7 +559,6 @@
 
 #TabsToolbar:not(:-moz-lwtheme) {
   color: #333;
-  text-shadow: @loweredShadow@;
 }
 
 :root:-moz-any([inFullscreen], [tabsintitlebar]) #TabsToolbar:not(:-moz-lwtheme) {
