@@ -35,7 +35,7 @@ class GtkCompositorWidget : public CompositorWidget,
  public:
   GtkCompositorWidget(const GtkCompositorWidgetInitData& aInitData,
                       const layers::CompositorOptions& aOptions,
-                      nsWindow* aWindow );
+                      nsWindow* aWindow = nullptr);
   ~GtkCompositorWidget();
 
   
@@ -78,7 +78,6 @@ class GtkCompositorWidget : public CompositorWidget,
   Display* mXDisplay;
   Window mXWindow;
   WindowSurfaceProvider mProvider;
-  bool mIsX11Display;
 };
 
 }  
