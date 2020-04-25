@@ -205,9 +205,11 @@ class Browsertime(Perftest):
             "--timeouts.pageLoad", str(timeout),
             
             "--timeouts.script", str(timeout * int(test.get("page_cycles", 1))),
-            "-vvv",
             "--resultDir", self.results_handler.result_dir_for_test(test),
         ]
+
+        if self.verbose:
+            browsertime_options.append("-vvv")
 
         if self.browsertime_video:
             
