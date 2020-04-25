@@ -3803,32 +3803,31 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState);
 
   
 
 
 
 
-  virtual nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState);
 
   
 
 
 
 
-  virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState);
 
   
 
 
 
-  virtual nsSize GetXULMinSizeForScrollArea(
-      nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMinSizeForScrollArea(nsBoxLayoutState& aBoxLayoutState);
 
-  virtual nscoord GetXULFlex() = 0;
-  virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState) = 0;
-  virtual bool IsXULCollapsed() = 0;
+  virtual nscoord GetXULFlex();
+  virtual nscoord GetXULBoxAscent(nsBoxLayoutState& aBoxLayoutState);
+  virtual bool IsXULCollapsed();
   
   
   
@@ -3836,14 +3835,14 @@ class nsIFrame : public nsQueryFrame {
   
   virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState,
                             const nsRect& aRect,
-                            bool aRemoveOverflowAreas = false) = 0;
+                            bool aRemoveOverflowAreas = false);
   nsresult XULLayout(nsBoxLayoutState& aBoxLayoutState);
   
   
   virtual nsresult GetXULBorderAndPadding(nsMargin& aBorderAndPadding);
-  virtual nsresult GetXULBorder(nsMargin& aBorder) = 0;
-  virtual nsresult GetXULPadding(nsMargin& aBorderAndPadding) = 0;
-  virtual nsresult GetXULMargin(nsMargin& aMargin) = 0;
+  virtual nsresult GetXULBorder(nsMargin& aBorder);
+  virtual nsresult GetXULPadding(nsMargin& aBorderAndPadding);
+  virtual nsresult GetXULMargin(nsMargin& aMargin);
   virtual void SetXULLayoutManager(nsBoxLayout* aLayout) {}
   virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
   nsresult GetXULClientRect(nsRect& aContentRect);
@@ -3853,8 +3852,8 @@ class nsIFrame : public nsQueryFrame {
   }
 
   
-  virtual Valignment GetXULVAlign() const = 0;
-  virtual Halignment GetXULHAlign() const = 0;
+  virtual Valignment GetXULVAlign() const { return vAlign_Top; }
+  virtual Halignment GetXULHAlign() const { return hAlign_Left; }
 
   bool IsXULHorizontal() const {
     return (mState & NS_STATE_IS_HORIZONTAL) != 0;
@@ -3864,7 +3863,7 @@ class nsIFrame : public nsQueryFrame {
   }
 
   nsresult XULRedraw(nsBoxLayoutState& aState);
-  virtual nsresult XULRelayoutChildAtOrdinal(nsIFrame* aChild) = 0;
+  virtual nsresult XULRelayoutChildAtOrdinal(nsIFrame* aChild);
 
   static bool AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
                              bool& aHeightSet);
@@ -3874,10 +3873,47 @@ class nsIFrame : public nsQueryFrame {
                             bool& aHeightSet);
   static bool AddXULFlex(nsIFrame* aBox, nscoord& aFlex);
 
+  void AddXULBorderAndPadding(nsSize& aSize);
+
+  static void AddXULBorderAndPadding(nsIFrame* aBox, nsSize& aSize);
+  static void AddXULMargin(nsIFrame* aChild, nsSize& aSize);
+  static void AddXULMargin(nsSize& aSize, const nsMargin& aMargin);
+
+  static nsSize XULBoundsCheckMinMax(const nsSize& aMinSize,
+                                     const nsSize& aMaxSize);
+  static nsSize XULBoundsCheck(const nsSize& aMinSize, const nsSize& aPrefSize,
+                               const nsSize& aMaxSize);
+  static nscoord XULBoundsCheck(nscoord aMinSize, nscoord aPrefSize,
+                                nscoord aMaxSize);
+
+  static nsIFrame* GetChildXULBox(const nsIFrame* aFrame);
+  static nsIFrame* GetNextXULBox(const nsIFrame* aFrame);
+  static nsIFrame* GetParentXULBox(const nsIFrame* aFrame);
+
+ protected:
+  
+
+
+
+  virtual bool DoesClipChildren();
+  virtual bool XULComputesOwnOverflowArea() = 0;
+
+  nsresult SyncXULLayout(nsBoxLayoutState& aBoxLayoutState);
+
+  bool XULNeedsRecalc(const nsSize& aSize);
+  bool XULNeedsRecalc(nscoord aCoord);
+  void XULSizeNeedsRecalc(nsSize& aSize);
+  void XULCoordNeedsRecalc(nscoord& aCoord);
+
+  nsresult BeginXULLayout(nsBoxLayoutState& aState);
+  NS_IMETHOD DoXULLayout(nsBoxLayoutState& aBoxLayoutState);
+  nsresult EndXULLayout(nsBoxLayoutState& aState);
+
   
   
   
 
+ public:
   
 
 

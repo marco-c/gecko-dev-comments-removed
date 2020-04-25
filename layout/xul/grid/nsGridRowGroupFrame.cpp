@@ -40,13 +40,17 @@ nscoord nsGridRowGroupFrame::GetXULFlex() {
   
   
 
-  if (!DoesNeedRecalc(mFlex)) return mFlex;
+  if (!XULNeedsRecalc(mFlex)) {
+    return mFlex;
+  }
 
-  if (nsBoxFrame::GetXULFlex() == 0) return 0;
+  if (nsBoxFrame::GetXULFlex() == 0) {
+    return 0;
+  }
 
   
   nscoord totalFlex = 0;
-  nsIFrame* child = nsBox::GetChildXULBox(this);
+  nsIFrame* child = nsIFrame::GetChildXULBox(this);
   while (child) {
     totalFlex += child->GetXULFlex();
     child = GetNextXULBox(child);

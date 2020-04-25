@@ -12,7 +12,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Likely.h"
-#include "nsBox.h"
 #include "mozilla/Logging.h"
 
 #include "mozilla/ReflowInput.h"
@@ -125,7 +124,7 @@ struct nsRect;
 
 
 
-class nsFrame : public nsBox {
+class nsFrame : public nsIFrame {
  public:
   
 
@@ -437,7 +436,7 @@ class nsFrame : public nsBox {
 
   
   
-  bool ComputesOwnOverflowArea() override { return true; }
+  bool XULComputesOwnOverflowArea() override { return true; }
 
   
   

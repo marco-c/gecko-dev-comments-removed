@@ -190,10 +190,10 @@ nsresult nsScrollbarFrame::GetXULMargin(nsMargin& aMargin) {
   }
 
   if (!didSetMargin) {
-    DebugOnly<nsresult> rv = nsBox::GetXULMargin(aMargin);
+    DebugOnly<nsresult> rv = nsIFrame::GetXULMargin(aMargin);
     
     
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "nsBox::GetXULMargin can't really fail");
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "nsIFrame::GetXULMargin can't really fail");
   }
 
   if (!horizontal) {

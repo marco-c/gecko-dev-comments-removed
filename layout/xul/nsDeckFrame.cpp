@@ -219,7 +219,7 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   nsresult rv = nsBoxFrame::DoXULLayout(aState);
 
   
-  nsIFrame* box = nsBox::GetChildXULBox(this);
+  nsIFrame* box = nsIFrame::GetChildXULBox(this);
 
   nscoord count = 0;
   while (box) {

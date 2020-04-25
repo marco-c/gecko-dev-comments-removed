@@ -6822,7 +6822,7 @@ nsDisplayOwnLayer::nsDisplayOwnLayer(
   
   
   if (IsScrollThumbLayer()) {
-    if (nsIFrame* thumbFrame = nsBox::GetChildXULBox(mFrame)) {
+    if (nsIFrame* thumbFrame = nsIFrame::GetChildXULBox(mFrame)) {
       mAnimatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(thumbFrame);
     }
   }

@@ -11,27 +11,26 @@
 
 
 
-#include "nsBox.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsBoxLayout.h"
 
-void nsBoxLayout::AddBorderAndPadding(nsIFrame* aBox, nsSize& aSize) {
-  nsBox::AddBorderAndPadding(aBox, aSize);
+void nsBoxLayout::AddXULBorderAndPadding(nsIFrame* aBox, nsSize& aSize) {
+  nsIFrame::AddXULBorderAndPadding(aBox, aSize);
 }
 
-void nsBoxLayout::AddMargin(nsIFrame* aBox, nsSize& aSize) {
-  nsBox::AddMargin(aBox, aSize);
+void nsBoxLayout::AddXULMargin(nsIFrame* aChild, nsSize& aSize) {
+  nsIFrame::AddXULMargin(aChild, aSize);
 }
 
-void nsBoxLayout::AddMargin(nsSize& aSize, const nsMargin& aMargin) {
-  nsBox::AddMargin(aSize, aMargin);
+void nsBoxLayout::AddXULMargin(nsSize& aSize, const nsMargin& aMargin) {
+  nsIFrame::AddXULMargin(aSize, aMargin);
 }
 
 nsSize nsBoxLayout::GetXULPrefSize(nsIFrame* aBox,
                                    nsBoxLayoutState& aBoxLayoutState) {
   nsSize pref(0, 0);
-  AddBorderAndPadding(aBox, pref);
+  AddXULBorderAndPadding(aBox, pref);
 
   return pref;
 }
@@ -39,7 +38,7 @@ nsSize nsBoxLayout::GetXULPrefSize(nsIFrame* aBox,
 nsSize nsBoxLayout::GetXULMinSize(nsIFrame* aBox,
                                   nsBoxLayoutState& aBoxLayoutState) {
   nsSize minSize(0, 0);
-  AddBorderAndPadding(aBox, minSize);
+  AddXULBorderAndPadding(aBox, minSize);
   return minSize;
 }
 
