@@ -383,7 +383,7 @@ class CorePS {
         
         
         
-        mCoreBlocksRingBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
+        mCoreBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -443,7 +443,7 @@ class CorePS {
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
 
   
-  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBlocksRingBuffer)
+  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -561,7 +561,7 @@ class CorePS {
   
   
   
-  BlocksRingBuffer mCoreBlocksRingBuffer;
+  BlocksRingBuffer mCoreBuffer;
 
   
   
@@ -635,7 +635,7 @@ class ActivePS {
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         mActiveBrowsingContextID(aActiveBrowsingContextID),
         
-        mProfileBuffer(CorePS::CoreBlocksRingBuffer(),
+        mProfileBuffer(CorePS::CoreBuffer(),
                        PowerOfTwo32(aCapacity.Value() * 8)),
         
         
@@ -1082,7 +1082,7 @@ class ActivePS {
     
     if (sInstance->mBaseProfileThreads &&
         sInstance->mGeckoIndexWhenBaseProfileAdded <
-            CorePS::CoreBlocksRingBuffer().GetState().mRangeStart) {
+            CorePS::CoreBuffer().GetState().mRangeStart) {
       DEBUG_LOG("ClearExpiredExitProfiles() - Discarding base profile %p",
                 sInstance->mBaseProfileThreads.get());
       sInstance->mBaseProfileThreads.reset();
@@ -1101,7 +1101,7 @@ class ActivePS {
     DEBUG_LOG("AddBaseProfileThreads(%p)", aBaseProfileThreads.get());
     sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
     sInstance->mGeckoIndexWhenBaseProfileAdded =
-        CorePS::CoreBlocksRingBuffer().GetState().mRangeEnd;
+        CorePS::CoreBuffer().GetState().mRangeEnd;
   }
 
   static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
@@ -2883,13 +2883,11 @@ void SamplerThread::Run() {
   
   
   
-  BlocksRingBuffer localBlocksRingBuffer(
-      BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  ProfileBuffer localProfileBuffer(localBlocksRingBuffer,
-                                   MakePowerOfTwo32<65536>());
+  BlocksRingBuffer localBuffer(BlocksRingBuffer::ThreadSafety::WithoutMutex);
+  ProfileBuffer localProfileBuffer(localBuffer, MakePowerOfTwo32<65536>());
 
   
-  auto previousState = localBlocksRingBuffer.GetState();
+  auto previousState = localBuffer.GetState();
 
   
   
@@ -3206,7 +3204,7 @@ void SamplerThread::Run() {
             
             
             if (unresponsiveDuration_ms.isSome()) {
-              CorePS::CoreBlocksRingBuffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::UnresponsiveDurationMs,
                   *unresponsiveDuration_ms);
             }
@@ -3217,7 +3215,7 @@ void SamplerThread::Run() {
             
             
             
-            auto state = localBlocksRingBuffer.GetState();
+            auto state = localBuffer.GetState();
             if (NS_WARN_IF(state.mClearedBlockCount !=
                            previousState.mClearedBlockCount)) {
               LOG("Stack sample too big for local storage, needed %u bytes",
@@ -3226,31 +3224,30 @@ void SamplerThread::Run() {
                       previousState.mRangeEnd.ConvertToProfileBufferIndex()));
               
               
-              CorePS::CoreBlocksRingBuffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<BlocksRingBuffer>(nullptr));
             } else if (state.mRangeEnd.ConvertToProfileBufferIndex() -
                            previousState.mRangeEnd
                                .ConvertToProfileBufferIndex() >=
-                       CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
+                       CorePS::CoreBuffer().BufferLength()->Value()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(
                       state.mRangeEnd.ConvertToProfileBufferIndex() -
                       previousState.mRangeEnd.ConvertToProfileBufferIndex()));
               
               
-              CorePS::CoreBlocksRingBuffer().PutObjects(
+              CorePS::CoreBuffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<BlocksRingBuffer>(nullptr));
             } else {
-              CorePS::CoreBlocksRingBuffer().PutObjects(
-                  ProfileBufferEntry::Kind::CompactStack,
-                  localBlocksRingBuffer);
+              CorePS::CoreBuffer().PutObjects(
+                  ProfileBufferEntry::Kind::CompactStack, localBuffer);
             }
 
             
-            localBlocksRingBuffer.Clear();
-            previousState = localBlocksRingBuffer.GetState();
+            localBuffer.Clear();
+            previousState = localBuffer.GetState();
           }
         } else {
           samplingState = SamplingState::NoStackSamplingCompleted;
@@ -4812,7 +4809,7 @@ static void racy_profiler_add_marker(const char* aMarkerName,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
+  CorePS::CoreBuffer().PutObjects(
       ProfileBufferEntry::Kind::MarkerData, racyRegisteredThread->ThreadId(),
       WrapProfileBufferUnownedCString(aMarkerName),
       static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
@@ -4933,7 +4930,7 @@ void profiler_add_marker_for_thread(int aThreadId,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
+  CorePS::CoreBuffer().PutObjects(
       ProfileBufferEntry::Kind::MarkerData, aThreadId,
       WrapProfileBufferUnownedCString(aMarkerName),
       static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
