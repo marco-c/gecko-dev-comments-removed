@@ -10,6 +10,8 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 XPCOMUtils.defineLazyModuleGetters(this, {
   SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
 });
@@ -70,6 +72,43 @@ class Page extends Domain {
   }
 
   
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async navigate(options = {}) {
+    const { url, frameId, referrer, transitionType } = options;
+    if (frameId && frameId != this.session.browsingContext.id.toString()) {
+      throw new UnsupportedError("frameId not supported");
+    }
+
+    const opts = {
+      loadFlags: transitionToLoadFlag(transitionType),
+      referrerURI: referrer,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    };
+    this.session.browsingContext.loadURI(url, opts);
+
+    return {
+      frameId: this.session.browsingContext.id.toString(),
+    };
+  }
 
   
 
@@ -631,5 +670,15 @@ class Page extends Domain {
     
     
     this.emit("Page.javascriptDialogOpening", { message, type });
+  }
+}
+
+function transitionToLoadFlag(transitionType) {
+  switch (transitionType) {
+    case "reload":
+      return Ci.nsIWebNavigation.LOAD_FLAGS_IS_REFRESH;
+    case "link":
+    default:
+      return Ci.nsIWebNavigation.LOAD_FLAGS_IS_LINK;
   }
 }
