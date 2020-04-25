@@ -1668,7 +1668,7 @@ class nsTArray_Impl
   
   
   
-  elem_type* ReconstructElementAt(index_type aIndex) {
+  elem_type* ReconstructElementAt(index_type aIndex) MOZ_NONNULL_RETURN {
     elem_type* elem = &ElementAt(aIndex);
     elem_traits::Destruct(elem);
     elem_traits::Construct(elem);
