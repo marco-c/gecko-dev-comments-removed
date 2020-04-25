@@ -394,14 +394,7 @@ class MarkupContextMenu {
 
     
     
-    
-    if (
-      this.inspector.accessibilityFront.enabled ||
-      Services.prefs.getBoolPref(
-        "devtools.accessibility.auto-init.enabled",
-        false
-      )
-    ) {
+    if (this.inspector.accessibilityFront.enabled) {
       this._updateA11YMenuItem(showA11YPropsItem);
     }
 
@@ -959,25 +952,9 @@ class MarkupContextMenu {
   }
 
   async _updateA11YMenuItem(menuItem) {
-    if (!this.walker?.actorID) {
-      return;
-    }
-
-    let hasA11YProps = false;
-    try {
-      hasA11YProps = await this.walker.hasAccessibilityProperties(
-        this.selection.nodeFront
-      );
-    } catch (e) {
-      
-      
-      if (this.walker?.actorID) {
-        throw e;
-      }
-
-      return;
-    }
-
+    const hasA11YProps = await this.walker.hasAccessibilityProperties(
+      this.selection.nodeFront
+    );
     if (hasA11YProps) {
       const menuItemEl = Menu.getMenuElementById(menuItem.id, this.toolbox.doc);
       menuItemEl.disabled = menuItem.disabled = false;
