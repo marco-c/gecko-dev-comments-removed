@@ -745,7 +745,8 @@ nsresult nsWebBrowserFind::OnFind(nsPIDOMWindowOuter* aFoundWindow) {
   if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
     
     
-    if (RefPtr<Element> frameElement = aFoundWindow->GetFrameElementInternal()) {
+    if (RefPtr<Element> frameElement =
+            aFoundWindow->GetFrameElementInternal()) {
       fm->SetFocus(frameElement, 0);
     }
 

@@ -339,7 +339,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
           aOriginalURI,    
           true,            
           cspNonce,        
-                       parserCreatedScript, &decision);
+          parserCreatedScript, &decision);
 
       
       
@@ -361,7 +361,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
                     aOriginalURI,    
                     true,            
                     cspNonce,        
-        parserCreatedScript, &decision);
+                    parserCreatedScript, &decision);
     if (NS_CP_REJECTED(decision)) {
       aCancelCode = Some(NS_ERROR_DOM_BAD_URI);
       return NS_BINDING_FAILED;

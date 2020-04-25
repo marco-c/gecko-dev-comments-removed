@@ -28,7 +28,7 @@ class OriginAttributes;
 namespace dom {
 class BrowsingContext;
 class ContentParent;
-}
+}  
 
 class ContentBlocking final {
  public:

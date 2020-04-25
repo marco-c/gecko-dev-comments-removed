@@ -18,7 +18,7 @@
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  
 #include "vm/ObjectGroup.h"  
-#include "vm/Shape.h"         
+#include "vm/Shape.h"        
 
 #include "gc/ObjectKind-inl.h"  
 #include "vm/JSObject-inl.h"  

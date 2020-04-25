@@ -5,17 +5,17 @@
 
 
 #include "gfxCrashReporterUtils.h"
-#include <string.h>              
-#include "mozilla/Assertions.h"  
+#include <string.h>                  
+#include "mozilla/Assertions.h"      
 #include "mozilla/SchedulerGroup.h"  
-#include "mozilla/Services.h"    
+#include "mozilla/Services.h"        
 #include "mozilla/StaticMutex.h"
-#include "mozilla/mozalloc.h"     
-#include "mozilla/RefPtr.h"       
-#include "MainThreadUtils.h"      
-#include "nsCOMPtr.h"             
-#include "nsError.h"              
-#include "nsExceptionHandler.h"   
+#include "mozilla/mozalloc.h"    
+#include "mozilla/RefPtr.h"      
+#include "MainThreadUtils.h"     
+#include "nsCOMPtr.h"            
+#include "nsError.h"             
+#include "nsExceptionHandler.h"  
 #include "nsID.h"
 #include "nsIObserver.h"         
 #include "nsIObserverService.h"  

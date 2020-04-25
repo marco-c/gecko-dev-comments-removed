@@ -16,15 +16,15 @@ XRNativeOriginTracker::XRNativeOriginTracker(const gfx::VRPose* aPose)
 
 gfx::PointDouble3D XRNativeOriginTracker::GetPosition() {
   MOZ_ASSERT(mPose);
-  return gfx::PointDouble3D(mPose->position[0],
-                            mPose->position[1],
+  return gfx::PointDouble3D(mPose->position[0], mPose->position[1],
                             mPose->position[2]);
 }
 
 gfx::QuaternionDouble XRNativeOriginTracker::GetOrientation() {
   MOZ_ASSERT(mPose);
-  gfx::QuaternionDouble orientation(mPose->orientation[0],
-    mPose->orientation[1], mPose->orientation[2], mPose->orientation[3]);
+  gfx::QuaternionDouble orientation(
+      mPose->orientation[0], mPose->orientation[1], mPose->orientation[2],
+      mPose->orientation[3]);
   
   
   

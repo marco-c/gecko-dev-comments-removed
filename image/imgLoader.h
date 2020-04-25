@@ -365,8 +365,7 @@ class imgLoader final : public imgILoader,
 
   
   
-  nsresult CreateNewProxyForRequest(imgRequest* aRequest,
-                                    nsIURI* aURI,
+  nsresult CreateNewProxyForRequest(imgRequest* aRequest, nsIURI* aURI,
                                     nsILoadGroup* aLoadGroup,
                                     mozilla::dom::Document* aLoadingDocument,
                                     imgINotificationObserver* aObserver,

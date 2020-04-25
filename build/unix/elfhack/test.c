@@ -40,7 +40,9 @@ DEF(data)
 DEF(relocation)
 DEF(sections)
 DEF(are)
+
 DEF(not)
+
 DEF(sufficiently)
 DEF(large)
 DEF(and)

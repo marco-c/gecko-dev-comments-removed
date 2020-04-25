@@ -87,7 +87,7 @@ void MediaElementAudioSourceNode::ListenForAllowedToPlay(
           
           
           
-          [& self = *this]() {
+          [&self = *this]() {
             self.Context()->StartBlockedAudioContextIfAllowed();
             self.mAllowedToPlayRequest.Complete();
           })

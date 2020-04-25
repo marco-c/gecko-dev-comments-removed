@@ -263,9 +263,9 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   
   
-  void ShareFontListShmBlockToProcess(
-      uint32_t aGeneration, uint32_t aIndex, base::ProcessId aPid,
-      base::SharedMemoryHandle* aOut);
+  void ShareFontListShmBlockToProcess(uint32_t aGeneration, uint32_t aIndex,
+                                      base::ProcessId aPid,
+                                      base::SharedMemoryHandle* aOut);
 
   void SetCharacterMap(uint32_t aGeneration,
                        const mozilla::fontlist::Pointer& aFacePtr,

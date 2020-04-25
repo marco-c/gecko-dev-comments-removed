@@ -537,7 +537,6 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   }
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
 
-
   bool sizeChanged = (mPrefSize != prefSize);
   
   if (sizeChanged) {

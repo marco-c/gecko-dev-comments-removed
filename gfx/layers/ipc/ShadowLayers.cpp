@@ -18,7 +18,7 @@
 
 #include "ipc/IPCMessageUtils.h"  
 #include "IPDLActor.h"
-#include "mozilla/Assertions.h"  
+#include "mozilla/Assertions.h"                 
 #include "mozilla/gfx/Point.h"                  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"

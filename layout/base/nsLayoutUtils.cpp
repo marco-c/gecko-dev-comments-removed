@@ -1302,8 +1302,7 @@ bool nsLayoutUtils::SetDisplayPortMargins(nsIContent* aContent,
     
     
     
-    hadDisplayPort =
-        GetHighResolutionDisplayPort(aContent, &oldDisplayPort);
+    hadDisplayPort = GetHighResolutionDisplayPort(aContent, &oldDisplayPort);
   }
 
   aContent->SetProperty(

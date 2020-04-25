@@ -37,8 +37,8 @@
 #include "vm/Compartment-inl.h"        
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSObject-inl.h"  
-#include "vm/ObjectOperations-inl.h"   
-#include "vm/Realm-inl.h"              
+#include "vm/ObjectOperations-inl.h"  
+#include "vm/Realm-inl.h"             
 
 namespace js {
 class GlobalObject;

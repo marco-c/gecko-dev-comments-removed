@@ -415,7 +415,7 @@ CGFontRef MacOSFontEntry::CreateOrCopyFontRef() {
       ref = CTFontCopyGraphicsFont((CTFontRef)font, nullptr);
     }
   }
-  return ref; 
+  return ref;  
 }
 
 
