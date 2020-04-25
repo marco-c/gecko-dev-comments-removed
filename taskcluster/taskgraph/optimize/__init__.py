@@ -376,10 +376,10 @@ import_sibling_modules()
 
 
 register_strategy('build', args=('skip-unless-schedules',))(Alias)
+register_strategy('build-fuzzing', args=('skip-unless-schedules', 'seta'))(Any)
 register_strategy('test', args=(Any('skip-unless-schedules', 'seta'), 'backstop'))(All)
 register_strategy('test-inclusive', args=('skip-unless-schedules',))(Alias)
 register_strategy('test-try', args=('skip-unless-schedules',))(Alias)
-register_strategy('fuzzing-builds', args=('skip-unless-schedules', 'seta'))(Any)
 
 
 
@@ -459,5 +459,5 @@ class ExperimentalOverride(object):
 
 tryselect = ExperimentalOverride(experimental, {
     'build': Alias('always'),
-    'fuzzing-builds': Alias('always'),
+    'build-fuzzing': Alias('always'),
 })
