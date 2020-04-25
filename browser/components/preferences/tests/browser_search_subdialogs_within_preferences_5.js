@@ -1,0 +1,46 @@
+
+
+
+
+requestLongerTimeout(2);
+
+
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.preferences.search", true]],
+  });
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+  
+  await evaluateSearchResults("Unified Canadian Syllabary", "fontsGroup");
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+  await evaluateSearchResults("Link Colors", "fontsGroup");
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+
+
+
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+  await evaluateSearchResults("sites will not be saved", "passwordsGroup");
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
