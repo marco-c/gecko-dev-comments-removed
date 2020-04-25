@@ -846,6 +846,41 @@ this.LoginHelper = {
 
 
 
+  isPasswordFieldType(element) {
+    if (ChromeUtils.getClassName(element) !== "HTMLInputElement") {
+      return false;
+    }
+
+    if (!element.isConnected) {
+      
+      
+      return false;
+    }
+
+    if (!element.hasBeenTypePassword) {
+      return false;
+    }
+
+    
+    
+    
+    let acInfo = element.getAutocompleteInfo();
+    if (!acInfo) {
+      return false;
+    }
+
+    return true;
+  },
+
+  
+
+
+
+
+
+
+
+
   isUsernameFieldType(element) {
     if (ChromeUtils.getClassName(element) !== "HTMLInputElement") {
       return false;
