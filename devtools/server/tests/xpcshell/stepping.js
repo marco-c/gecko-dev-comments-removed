@@ -25,3 +25,12 @@ function chaining() {
   debugger;
   a().b();
 }
+
+function c() {
+  return b();
+}
+
+function nested() {
+  debugger;
+  c();
+}

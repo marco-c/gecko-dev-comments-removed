@@ -980,7 +980,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  _makeSteppingHooks: function({ steppingType, completion }) {
+  _makeSteppingHooks: function({ steppingType, startFrame, completion }) {
     
     
     
@@ -988,7 +988,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const steppingHookState = {
       pauseAndRespond: (frame, onPacket = k => k) =>
         this._pauseAndRespond(frame, { type: "resumeLimit" }, onPacket),
-      startFrame: this.youngestFrame,
+      startFrame: startFrame || this.youngestFrame,
       steppingType,
       completion,
     };
@@ -1009,25 +1009,25 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-  _handleResumeLimit: async function({ resumeLimit }) {
+  _handleResumeLimit: async function({ resumeLimit, frameActorID }) {
     const steppingType = resumeLimit.type;
-    if (!["break", "step", "next", "finish", "warp"].includes(steppingType)) {
+    if (!["break", "step", "next", "finish"].includes(steppingType)) {
       return Promise.reject({
         error: "badParameterType",
         message: "Unknown resumeLimit type",
       });
     }
 
-    if (steppingType == "warp") {
-      
-      return true;
+    let frame = this.youngestFrame;
+
+    if (frameActorID) {
+      frame = this._framesPool.get(frameActorID).frame;
+      if (!frame) {
+        throw new Error("Frame should exist in the frames pool.");
+      }
     }
 
-    return this._attachSteppingHooks(
-      this.youngestFrame,
-      steppingType,
-      undefined
-    );
+    return this._attachSteppingHooks(frame, steppingType, undefined);
   },
 
   _attachSteppingHooks: function(frame, steppingType, completion) {
@@ -1047,6 +1047,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     const { onEnterFrame, onPop, onStep } = this._makeSteppingHooks({
       steppingType,
       completion,
+      startFrame: frame,
     });
 
     if (steppingType === "step") {
@@ -1090,7 +1091,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-  onResume: async function({ resumeLimit }) {
+  onResume: async function({ resumeLimit, frameActorID }) {
     if (this._state !== "paused") {
       return {
         error: "wrongState",
@@ -1118,7 +1119,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     try {
       if (resumeLimit) {
-        await this._handleResumeLimit({ resumeLimit });
+        await this._handleResumeLimit({ resumeLimit, frameActorID });
       } else {
         this._clearSteppingHooks();
       }
