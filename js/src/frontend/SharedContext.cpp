@@ -7,7 +7,10 @@
 #include "frontend/SharedContext.h"
 
 #include "frontend/AbstractScopePtr.h"
+#include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ModuleSharedContext.h"
+#include "vm/FunctionFlags.h"          
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "wasm/AsmJS.h"
 
 #include "frontend/ParseContext-inl.h"

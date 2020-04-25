@@ -11,15 +11,16 @@
 
 #include <stdint.h>  
 
-#include "frontend/DefaultEmitter.h"  
-#include "frontend/EmitterScope.h"    
-#include "frontend/SharedContext.h"   
-#include "frontend/TDZCheckCache.h"   
-#include "frontend/TryEmitter.h"      
-#include "gc/Rooting.h"               
-#include "vm/BytecodeUtil.h"          
-#include "vm/JSAtom.h"                
-#include "vm/JSFunction.h"            
+#include "frontend/DefaultEmitter.h"      
+#include "frontend/EmitterScope.h"        
+#include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/SharedContext.h"       
+#include "frontend/TDZCheckCache.h"       
+#include "frontend/TryEmitter.h"          
+#include "gc/Rooting.h"                   
+#include "vm/BytecodeUtil.h"              
+#include "vm/JSAtom.h"                    
+#include "vm/JSFunction.h"                
 
 namespace js {
 namespace frontend {

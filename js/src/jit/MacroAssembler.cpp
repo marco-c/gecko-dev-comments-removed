@@ -27,6 +27,7 @@
 #include "jit/Simulator.h"
 #include "js/Conversions.h"
 #include "js/Printf.h"
+#include "vm/FunctionFlags.h"  
 #include "vm/TraceLogging.h"
 
 #include "gc/Nursery-inl.h"

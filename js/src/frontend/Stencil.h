@@ -16,22 +16,25 @@
 #include <stdint.h>  
 #include <stdlib.h>  
 
-#include "frontend/AbstractScopePtr.h"   
-#include "frontend/NameAnalysisTypes.h"  
-#include "frontend/ObjLiteral.h"         
-#include "frontend/TypedIndex.h"         
-#include "gc/Barrier.h"                  
+#include "frontend/AbstractScopePtr.h"    
+#include "frontend/FunctionSyntaxKind.h"  
+#include "frontend/NameAnalysisTypes.h"   
+#include "frontend/ObjLiteral.h"          
+#include "frontend/TypedIndex.h"          
+#include "gc/Barrier.h"                   
 #include "gc/Rooting.h"  
-#include "js/GCVariant.h"    
-#include "js/RegExpFlags.h"  
-#include "js/RootingAPI.h"   
-#include "js/TypeDecls.h"    
-#include "js/UniquePtr.h"    
-#include "js/Utility.h"      
-#include "js/Vector.h"       
-#include "util/Text.h"       
-#include "vm/BigIntType.h"   
-#include "vm/JSFunction.h"   
+#include "js/GCVariant.h"              
+#include "js/RegExpFlags.h"            
+#include "js/RootingAPI.h"             
+#include "js/TypeDecls.h"              
+#include "js/UniquePtr.h"              
+#include "js/Utility.h"                
+#include "js/Vector.h"                 
+#include "util/Text.h"                 
+#include "vm/BigIntType.h"             
+#include "vm/FunctionFlags.h"          
+#include "vm/GeneratorAndAsyncKind.h"  
+#include "vm/JSFunction.h"             
 #include "vm/JSScript.h"  
 #include "vm/Runtime.h"   
 #include "vm/Scope.h"  
@@ -53,8 +56,6 @@ class FunctionBox;
 
 
 
-
-enum class FunctionSyntaxKind : uint8_t;
 
 
 class FunctionIndexType;

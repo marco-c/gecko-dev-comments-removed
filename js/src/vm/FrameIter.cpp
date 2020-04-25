@@ -22,7 +22,7 @@
 #include "vm/EnvironmentObject.h"  
 #include "vm/JitActivation.h"      
 #include "vm/JSContext.h"          
-#include "vm/JSFunction.h"  
+#include "vm/JSFunction.h"         
 #include "vm/JSScript.h"  
 #include "vm/Runtime.h"   
 #include "vm/Stack.h"  

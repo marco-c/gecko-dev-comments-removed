@@ -24,6 +24,7 @@
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/EnvironmentObject.h"
+#include "vm/FunctionFlags.h"  
 #include "vm/Interpreter.h"
 #include "vm/JSFunction.h"
 #include "vm/TraceLogging.h"

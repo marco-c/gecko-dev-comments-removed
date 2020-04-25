@@ -58,6 +58,7 @@
 #include "vm/BytecodeLocation.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/Compression.h"
+#include "vm/FunctionFlags.h"  
 #include "vm/HelperThreads.h"  
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"

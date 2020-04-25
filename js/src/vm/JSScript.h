@@ -41,6 +41,7 @@
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
 #include "vm/BytecodeUtil.h"
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSAtom.h"
 #include "vm/NativeObject.h"
 #include "vm/Scope.h"
@@ -1265,9 +1266,6 @@ class ScriptSourceObject : public NativeObject {
     RESERVED_SLOTS
   };
 };
-
-enum class GeneratorKind : bool { NotGenerator, Generator };
-enum class FunctionAsyncKind : bool { SyncFunction, AsyncFunction };
 
 
 

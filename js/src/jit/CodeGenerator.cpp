@@ -57,6 +57,7 @@
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
 #include "vm/EqualityOperations.h"  
+#include "vm/FunctionFlags.h"       
 #include "vm/MatchPairs.h"
 #include "vm/PlainObject.h"  
 #include "vm/RegExpObject.h"

@@ -24,6 +24,7 @@
 #include "frontend/BinASTTokenReaderContext.h"
 #include "frontend/BinASTTokenReaderMultipart.h"
 #include "frontend/FullParseHandler.h"
+#include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
 #include "frontend/SharedContext.h"
@@ -34,6 +35,7 @@
 #ifdef ENABLE_NEW_REGEXP
 #  include "new-regexp/RegExpAPI.h"
 #endif
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/RegExpObject.h"
 
 #include "frontend/ParseContext-inl.h"

@@ -33,6 +33,7 @@
 
 #include "jsmath.h"
 
+#include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
 #include "gc/Policy.h"
@@ -45,6 +46,8 @@
 #include "util/StringBuffer.h"
 #include "util/Text.h"
 #include "vm/ErrorReporting.h"
+#include "vm/FunctionFlags.h"          
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/SelfHosting.h"
 #include "vm/Time.h"
 #include "vm/TypedArrayObject.h"

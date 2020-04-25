@@ -13,6 +13,7 @@
 #include <cstddef>  
 #include <string.h>
 
+#include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"

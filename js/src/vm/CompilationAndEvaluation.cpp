@@ -31,6 +31,7 @@
 #include "util/CompleteFile.h"     
 #include "util/StringBuffer.h"     
 #include "vm/EnvironmentObject.h"  
+#include "vm/FunctionFlags.h"      
 #include "vm/Interpreter.h"        
 #include "vm/JSContext.h"          
 

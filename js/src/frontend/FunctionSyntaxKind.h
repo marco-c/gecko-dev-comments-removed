@@ -1,0 +1,36 @@
+
+
+
+
+
+
+#ifndef frontend_FunctionSyntaxKind_h
+#define frontend_FunctionSyntaxKind_h
+
+#include <stdint.h>  
+
+namespace js {
+namespace frontend {
+
+enum class FunctionSyntaxKind : uint8_t {
+  
+  Expression,
+
+  
+  Statement,
+
+  Arrow,
+
+  
+  Method,
+
+  ClassConstructor,
+  DerivedClassConstructor,
+  Getter,
+  Setter,
+};
+
+} 
+} 
+
+#endif 

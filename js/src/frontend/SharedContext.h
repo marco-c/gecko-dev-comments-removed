@@ -14,8 +14,11 @@
 #include "jstypes.h"
 
 #include "frontend/AbstractScopePtr.h"
+#include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
 #include "frontend/Stencil.h"
+#include "vm/FunctionFlags.h"          
+#include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/JSFunction.h"
 #include "vm/JSScript.h"
 #include "vm/Scope.h"
