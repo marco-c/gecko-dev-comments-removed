@@ -384,7 +384,7 @@ nsIFrame::LogicalSides nsFirstLetterFrame::GetLogicalSkipSides(
     
     
     
-    return LogicalSides(eLogicalSideBitsAll);
+    return LogicalSides(mWritingMode, eLogicalSideBitsAll);
   }
-  return LogicalSides();  
+  return LogicalSides(mWritingMode);  
 }
