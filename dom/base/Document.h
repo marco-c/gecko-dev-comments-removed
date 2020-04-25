@@ -87,6 +87,7 @@ class nsContentList;
 class nsDocShell;
 class nsDOMNavigationTiming;
 class nsFrameLoader;
+class nsFrameLoaderOwner;
 class nsGlobalWindowInner;
 class nsHtml5TreeOpExecutor;
 class nsHTMLCSSStyleSheet;
@@ -3905,6 +3906,20 @@ class Document : public nsINode,
 
   already_AddRefed<Promise> AddCertException(bool aIsTemporary);
 
+  
+  
+  
+  
+  
+  
+  struct PendingFrameStaticClone {
+    RefPtr<nsFrameLoaderOwner> mElement;
+    RefPtr<nsFrameLoader> mStaticCloneOf;
+  };
+  nsTArray<PendingFrameStaticClone> TakePendingFrameStaticClones();
+  void AddPendingFrameStaticClone(nsFrameLoaderOwner* aElement,
+                                  nsFrameLoader* aStaticCloneOf);
+
  protected:
   void DoUpdateSVGUseElementShadowTrees();
 
@@ -4955,6 +4970,8 @@ class Document : public nsINode,
   nsTArray<RefPtr<nsFrameLoader>> mInitializableFrameLoaders;
   nsTArray<nsCOMPtr<nsIRunnable>> mFrameLoaderFinalizers;
   RefPtr<nsRunnableMethod<Document>> mFrameLoaderRunner;
+
+  nsTArray<PendingFrameStaticClone> mPendingFrameStaticClones;
 
   
   
