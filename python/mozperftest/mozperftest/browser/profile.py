@@ -26,15 +26,22 @@ class Profile(Layer):
     def setup(self):
         pass
 
+    def _cleanup(self):
+        pass
+
     def __call__(self, metadata):
         if self.get_arg("profile-directory") is not None:
             
             return
+
+        
+        profile = create_profile(app="firefox")
+
         
         
         
-        
-        self.profile = profile = create_profile(app="firefox")
+        profile.cleanup = self._cleanup
+
         prefs = metadata.get_browser_prefs()
 
         if prefs == {}:
