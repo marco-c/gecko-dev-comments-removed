@@ -69,8 +69,6 @@ child:
 
   async SubFrameCrashed(MaybeDiscardedBrowsingContext aContext);
 
-  async AddBlockedNodeByClassifier();
-
 parent:
   
   async __delete__();

@@ -688,8 +688,6 @@ parent:
                              ScrollAxis aHorizontal, ScrollFlags aScrollFlags,
                              int32_t aAppUnitsPerDevPixel);
 
-    async ReportBlockedEmbedderNodeByClassifier();
-
 child:
     
 
