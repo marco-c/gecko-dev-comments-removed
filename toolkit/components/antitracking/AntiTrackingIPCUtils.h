@@ -27,6 +27,14 @@ struct ParamTraits<mozilla::ContentBlockingNotifier::StorageAccessGrantedReason>
 
 
 template <>
+struct ParamTraits<mozilla::ContentBlockingNotifier::BlockingDecision>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::ContentBlockingNotifier::BlockingDecision,
+          mozilla::ContentBlockingNotifier::BlockingDecision::eBlock,
+          mozilla::ContentBlockingNotifier::BlockingDecision::eAllow> {};
+
+
+template <>
 struct ParamTraits<mozilla::ContentBlocking::StorageAccessPromptChoices>
     : public ContiguousEnumSerializerInclusive<
           mozilla::ContentBlocking::StorageAccessPromptChoices,
