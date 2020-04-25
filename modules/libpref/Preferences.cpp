@@ -3039,27 +3039,36 @@ class PreferencesWriter final {
   }
 
   static void Flush() {
+    MOZ_DIAGNOSTIC_ASSERT(sPendingWriteCount >= 0);
     
     
     
-    if (!sPendingWriteData.compareExchange(nullptr, nullptr)) {
-      nsresult rv = NS_OK;
-      nsCOMPtr<nsIEventTarget> target =
-          do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
-      if (NS_SUCCEEDED(rv)) {
-        target->Dispatch(NS_NewRunnableFunction("Preferences_dummy", [] {}),
-                         nsIEventTarget::DISPATCH_SYNC);
-      }
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mozilla::SpinEventLoopUntil([]() { return sPendingWriteCount <= 0; });
   }
 
   
   
   
   static Atomic<PrefSaveData*> sPendingWriteData;
+
+  
+  
+  
+  
+  static Atomic<int> sPendingWriteCount;
 };
 
 Atomic<PrefSaveData*> PreferencesWriter::sPendingWriteData(nullptr);
+Atomic<int> PreferencesWriter::sPendingWriteCount(0);
 
 class PWRunnable : public Runnable {
  public:
@@ -3089,6 +3098,13 @@ class PWRunnable : public Runnable {
                                    }
                                  }));
     }
+
+    
+    
+    
+    
+    
+    PreferencesWriter::sPendingWriteCount--;
     return rv;
   }
 
@@ -4121,6 +4137,17 @@ nsresult Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod) {
         do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
     if (NS_SUCCEEDED(rv)) {
       bool async = aSaveMethod == SaveMethod::Asynchronous;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      PreferencesWriter::sPendingWriteCount++;
       if (async) {
         rv = target->Dispatch(new PWRunnable(aFile),
                               nsIEventTarget::DISPATCH_NORMAL);
