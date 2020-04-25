@@ -1333,17 +1333,18 @@ nscoord ScrollFrameHelper::GetNondisappearingScrollbarWidth(
                "computations");
 
   bool verticalWM = aWM.IsVertical();
-  if (LookAndFeel::GetInt(LookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
+  if (UsesOverlayScrollbars()) {
     
     
+    nsIFrame* box = verticalWM ? mHScrollbarBox : mVScrollbarBox;
     nsITheme* theme = aState->PresContext()->Theme();
-    if (theme->ThemeSupportsWidget(aState->PresContext(),
-                                   verticalWM ? mHScrollbarBox : mVScrollbarBox,
+    if (box &&
+        theme->ThemeSupportsWidget(aState->PresContext(), box,
                                    StyleAppearance::ScrollbarNonDisappearing)) {
       LayoutDeviceIntSize size;
       bool canOverride = true;
       theme->GetMinimumWidgetSize(
-          aState->PresContext(), verticalWM ? mHScrollbarBox : mVScrollbarBox,
+          aState->PresContext(), box,
           StyleAppearance::ScrollbarNonDisappearing, &size, &canOverride);
       return aState->PresContext()->DevPixelsToAppUnits(
           verticalWM ? size.height : size.width);
