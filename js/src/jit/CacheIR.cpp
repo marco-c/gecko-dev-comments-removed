@@ -1637,13 +1637,13 @@ AttachDecision GetPropIRGenerator::tryAttachProxy(HandleObject obj,
 
 static TypedThingLayout GetTypedThingLayout(const JSClass* clasp) {
   if (IsTypedArrayClass(clasp)) {
-    return Layout_TypedArray;
+    return TypedThingLayout::TypedArray;
   }
   if (IsOutlineTypedObjectClass(clasp)) {
-    return Layout_OutlineTypedObject;
+    return TypedThingLayout::OutlineTypedObject;
   }
   if (IsInlineTypedObjectClass(clasp)) {
-    return Layout_InlineTypedObject;
+    return TypedThingLayout::InlineTypedObject;
   }
   MOZ_CRASH("Bad object class");
 }
@@ -2243,9 +2243,14 @@ AttachDecision GetPropIRGenerator::tryAttachTypedElement(
 
   
   
-  writer.loadTypedElementResult(objId, indexId, layout,
-                                TypedThingElementType(obj),
-                                 false);
+  if (layout == TypedThingLayout::TypedArray) {
+    writer.loadTypedArrayElementResult(objId, indexId,
+                                       TypedThingElementType(obj),
+                                        false);
+  } else {
+    writer.loadTypedObjectElementResult(objId, indexId, layout,
+                                        TypedThingElementType(obj));
+  }
 
   
   
@@ -2272,13 +2277,10 @@ AttachDecision GetPropIRGenerator::tryAttachTypedArrayNonInt32Index(
   ValOperandId keyId = getElemKeyValueId();
   Int32OperandId indexId = writer.guardToTypedArrayIndex(keyId);
 
-  TypedThingLayout layout = GetTypedThingLayout(obj->getClass());
-
   writer.guardShapeForClass(objId, obj->as<TypedArrayObject>().shape());
 
-  writer.loadTypedElementResult(objId, indexId, layout,
-                                TypedThingElementType(obj),
-                                 true);
+  writer.loadTypedArrayElementResult(objId, indexId, TypedThingElementType(obj),
+                                      true);
 
   
   writer.typeMonitorResult();
