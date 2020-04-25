@@ -1838,12 +1838,12 @@ static ReturnAbortOnError ProfileLockedDialog(nsIFile* aProfileDir,
     NS_ENSURE_TRUE_LOG(sbs, NS_ERROR_FAILURE);
 
     NS_ConvertUTF8toUTF16 appName(gAppData->name);
-    AutoTArray<nsString, 2> params = {appName, appName};
+    AutoTArray<nsString, 3> params = {appName, appName, appName};
 
     nsAutoString killMessage;
 #ifndef XP_MACOSX
     rv = sb->FormatStringFromName(
-        aUnlocker ? "restartMessageUnlocker" : "restartMessageNoUnlocker",
+        aUnlocker ? "restartMessageUnlocker" : "restartMessageNoUnlocker2",
         params, killMessage);
 #else
     rv = sb->FormatStringFromName(
@@ -2448,6 +2448,11 @@ static void ExtractCompatVersionInfo(const nsACString& aCompatVersion,
 int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
                               const nsACString& aNewCompatVersion) {
   
+  if (aOldCompatVersion.Equals(aNewCompatVersion)) {
+    return 0;
+  }
+
+  
   
   
   if (aOldCompatVersion.EqualsLiteral("Safe Mode")) {
@@ -2466,9 +2471,6 @@ int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
   return CompareVersions(PromiseFlatCString(oldMajorVersion).get(),
                          PromiseFlatCString(newMajorVersion).get());
 }
-
-
-
 
 
 
@@ -2503,19 +2505,17 @@ static bool CheckCompatibility(nsIFile* aProfileDir, const nsCString& aVersion,
     return false;
   }
 
-  if (!aLastVersion.Equals(aVersion)) {
-    
-    
-    *aIsDowngrade = 0 < CompareCompatVersions(aLastVersion, aVersion);
+  int32_t comparison = CompareCompatVersions(aLastVersion, aVersion);
+  if (comparison != 0) {
+    *aIsDowngrade = comparison > 0;
     ExtractCompatVersionInfo(aLastVersion, gLastAppVersion, gLastAppBuildID);
+
     return false;
   }
 
-  
-  
-
   gLastAppVersion.Assign(gAppData->version);
   gLastAppBuildID.Assign(gAppData->buildID);
+  *aIsDowngrade = false;
 
   nsAutoCString buf;
   rv = parser.GetString("Compatibility", "LastOSABI", buf);
@@ -4087,7 +4087,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       mProfD, version, osABI, mDirProvider.GetGREDir(), mAppData->directory,
       flagFile, &cachesOK, &isDowngrade, lastVersion);
 
-  MOZ_RELEASE_ASSERT(!cachesOK || lastVersion.Equals(version),
+  MOZ_RELEASE_ASSERT(!cachesOK || versionOK,
                      "Caches cannot be good if the version has changed.");
 
 #ifdef MOZ_BLOCK_PROFILE_DOWNGRADE
