@@ -55,17 +55,17 @@ class BrowsingContextGroup final : public nsWrapperCache {
     aToplevels.AppendElements(mToplevels);
   }
 
+  uint64_t Id() { return mId; }
+
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  BrowsingContextGroup();
-
+  
+  static already_AddRefed<BrowsingContextGroup> GetOrCreate(uint64_t aId);
+  static already_AddRefed<BrowsingContextGroup> Create();
   static already_AddRefed<BrowsingContextGroup> Select(
       WindowContext* aParent, BrowsingContext* aOpener);
-
-  static already_AddRefed<BrowsingContextGroup> Select(uint64_t aParentId,
-                                                       uint64_t aOpenerId);
 
   
   
@@ -114,12 +114,17 @@ class BrowsingContextGroup final : public nsWrapperCache {
     return mWorkerEventQueue;
   }
 
+  static void GetAllGroups(nsTArray<RefPtr<BrowsingContextGroup>>& aGroups);
+
  private:
   friend class CanonicalBrowsingContext;
 
+  explicit BrowsingContextGroup(uint64_t aId);
   ~BrowsingContextGroup();
 
   void UnsubscribeAllContentParents();
+
+  uint64_t mId;
 
   
   
