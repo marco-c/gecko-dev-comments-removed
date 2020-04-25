@@ -6,6 +6,49 @@ use ast::arena;
 use ast::source_atom_set::{CommonSourceAtomSetIndices, SourceAtomSet, SourceAtomSetIndex};
 use std::collections::HashMap;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum ControlKind {
+    Continue,
+
+    Break,
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct ControlInfo {
+    pub label: Option<SourceAtomSetIndex>,
+    
+    pub offset: usize,
+    pub kind: ControlKind,
+}
+
+impl ControlInfo {
+    pub fn new_continue(offset: usize, label: Option<SourceAtomSetIndex>) -> Self {
+        Self {
+            label,
+            kind: ControlKind::Continue,
+            offset,
+        }
+    }
+
+    pub fn new_break(offset: usize, label: Option<SourceAtomSetIndex>) -> Self {
+        Self {
+            label,
+            kind: ControlKind::Break,
+            offset,
+        }
+    }
+}
+
+pub struct BreakOrContinueIndex {
+    pub index: usize,
+}
+
+impl BreakOrContinueIndex {
+    pub fn new(index: usize) -> Self {
+        Self { index }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct DeclarationInfo {
     kind: DeclarationKind,
@@ -46,6 +89,13 @@ pub trait ParameterEarlyErrorsContext {
         name: SourceAtomSetIndex,
         offset: usize,
         atoms: &SourceAtomSet<'alloc>,
+    ) -> EarlyErrorsResult<'alloc>;
+}
+
+pub trait ControlEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
     ) -> EarlyErrorsResult<'alloc>;
 }
 
@@ -914,6 +964,83 @@ impl VarEarlyErrorsContext for LexicalForBodyEarlyErrorsContext {
 
 
 
+pub struct LabelledStatementEarlyErrorsContext {
+    name: SourceAtomSetIndex,
+    is_loop: bool,
+}
+
+impl LabelledStatementEarlyErrorsContext {
+    pub fn new(name: SourceAtomSetIndex, is_loop: bool) -> Self {
+        Self { name, is_loop }
+    }
+
+    pub fn check_duplicate_label<'alloc>(
+        &self,
+        inner_label_name: SourceAtomSetIndex,
+    ) -> EarlyErrorsResult<'alloc> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if inner_label_name == self.name {
+            return Err(ParseError::DuplicateLabel);
+        }
+        Ok(())
+    }
+
+    pub fn check_labelled_continue_to_non_loop<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if let Some(name) = info.label {
+            if !self.is_loop && info.kind == ControlKind::Continue && name == self.name {
+                return Err(ParseError::BadContinue);
+            }
+        }
+
+        Ok(())
+    }
+}
+
+
+
+
+
+
 #[derive(Debug, PartialEq)]
 pub struct CaseBlockEarlyErrorsContext {
     lex_names_of_case_block: HashMap<SourceAtomSetIndex, DeclarationInfo>,
@@ -1555,6 +1682,15 @@ impl VarEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
     }
 }
 
+impl ControlEarlyErrorsContext for InternalFunctionBodyEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        ModuleScriptOrFunctionEarlyErrorsContext::on_unhandled_break_or_continue(info)
+    }
+}
+
 
 
 
@@ -1683,6 +1819,15 @@ impl VarEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
         atoms: &SourceAtomSet<'alloc>,
     ) -> EarlyErrorsResult<'alloc> {
         self.body.declare_var(name, kind, offset, atoms)
+    }
+}
+
+impl ControlEarlyErrorsContext for FunctionBodyEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        self.body.on_unhandled_break_or_continue(info)
     }
 }
 
@@ -1830,6 +1975,15 @@ impl VarEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
     }
 }
 
+impl ControlEarlyErrorsContext for UniqueFunctionBodyEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        self.body.on_unhandled_break_or_continue(info)
+    }
+}
+
 
 
 
@@ -1973,6 +2127,15 @@ impl VarEarlyErrorsContext for ScriptEarlyErrorsContext {
             .insert(name, DeclarationInfo::new(kind, offset));
 
         Ok(())
+    }
+}
+
+impl ControlEarlyErrorsContext for ScriptEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        ModuleScriptOrFunctionEarlyErrorsContext::on_unhandled_break_or_continue(info)
     }
 }
 
@@ -2231,5 +2394,86 @@ impl VarEarlyErrorsContext for ModuleEarlyErrorsContext {
             .insert(name, DeclarationInfo::new(kind, offset));
 
         Ok(())
+    }
+}
+
+impl ControlEarlyErrorsContext for ModuleEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(
+        &self,
+        info: &ControlInfo,
+    ) -> EarlyErrorsResult<'alloc> {
+        ModuleScriptOrFunctionEarlyErrorsContext::on_unhandled_break_or_continue(info)
+    }
+}
+
+struct ModuleScriptOrFunctionEarlyErrorsContext {}
+
+impl ModuleScriptOrFunctionEarlyErrorsContext {
+    fn on_unhandled_break_or_continue<'alloc>(info: &ControlInfo) -> EarlyErrorsResult<'alloc> {
+        if let Some(_) = info.label {
+            match info.kind {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                ControlKind::Continue => {
+                    return Err(ParseError::BadContinue);
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                ControlKind::Break => {
+                    return Err(ParseError::LabelNotFound);
+                }
+            }
+        } else {
+            match info.kind {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                ControlKind::Continue => {
+                    return Err(ParseError::BadContinue);
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                ControlKind::Break => {
+                    return Err(ParseError::ToughBreak);
+                }
+            }
+        }
     }
 }

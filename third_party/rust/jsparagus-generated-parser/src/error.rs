@@ -40,6 +40,12 @@ pub enum ParseError<'alloc> {
     MissingExport(&'alloc str, usize),
 
     
+    DuplicateLabel,
+    BadContinue,
+    ToughBreak,
+    LabelNotFound,
+
+    
     
     FunctionDeclInSingleStatement,
     LabelledFunctionDeclInSingleStatement,
@@ -105,6 +111,18 @@ impl<'alloc> ParseError<'alloc> {
             ),
             ParseError::LabelledFunctionDeclInSingleStatement => format!(
                 "functions can only be labelled inside blocks"
+            ),
+            ParseError::DuplicateLabel => format!(
+                "duplicate label"
+            ),
+            ParseError::BadContinue => format!(
+                "continue must be inside loop"
+            ),
+            ParseError::ToughBreak => format!(
+                "unlabeled break must be inside loop or switch"
+            ),
+            ParseError::LabelNotFound => format!(
+                "label not found"
             ),
         }
     }
