@@ -142,6 +142,9 @@ var TestRunner = {
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
 
     
+    browserWindow.windowUtils.disableNonTestMouseEvents(true);
+
+    
     
     
     browserWindow.document
@@ -252,6 +255,7 @@ var TestRunner = {
     browserWindow.restore();
     Services.prefs.clearUserPref("ui.caretBlinkTime");
     Services.prefs.clearUserPref("ui.prefersReducedMotion");
+    browserWindow.windowUtils.disableNonTestMouseEvents(false);
   },
 
   
