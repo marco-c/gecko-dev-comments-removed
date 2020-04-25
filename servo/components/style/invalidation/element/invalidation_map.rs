@@ -92,6 +92,22 @@ impl Dependency {
     
     
     
+    
+    
+    
+    
+    pub fn for_full_selector_invalidation(selector: Selector<SelectorImpl>) -> Self {
+        Self {
+            selector_offset: selector.len() + 1,
+            selector,
+            parent: None,
+        }
+    }
+
+    
+    
+    
+    
     pub fn combinator(&self) -> Option<Combinator> {
         if self.selector_offset == 0 {
             return None;
@@ -154,7 +170,7 @@ pub struct DocumentStateDependency {
         ignore_malloc_size_of = "CssRules have primary refs, we measure there"
     )]
     #[cfg_attr(feature = "servo", ignore_malloc_size_of = "Arc")]
-    pub selector: Selector<SelectorImpl>,
+    pub dependency: Dependency,
     
     pub state: DocumentState,
 }
@@ -269,7 +285,7 @@ impl InvalidationMap {
         if !document_state.is_empty() {
             let dep = DocumentStateDependency {
                 state: document_state,
-                selector: selector.clone(),
+                dependency: Dependency::for_full_selector_invalidation(selector.clone()),
             };
             self.document_state_selectors.try_push(dep)?;
         }
