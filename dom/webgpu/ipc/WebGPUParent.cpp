@@ -200,11 +200,6 @@ ipc::IPCResult WebGPUParent::RecvDeviceCreateBuffer(
   ffi::WGPUBufferDescriptor desc = {};
   desc.usage = aDesc.mUsage;
   desc.size = aDesc.mSize;
-  
-  
-  if (desc.usage & WGPUBufferUsage_STORAGE) {
-    desc.usage |= WGPUBufferUsage_STORAGE_READ;
-  }
   ffi::wgpu_server_device_create_buffer(mContext, aSelfId, &desc, aNewId);
   return IPC_OK();
 }

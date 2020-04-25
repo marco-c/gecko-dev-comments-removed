@@ -17,8 +17,8 @@ use std::{
     borrow::Borrow, collections::hash_map::Entry, fmt, marker::PhantomData, ops, vec::Drain,
 };
 
-pub use buffer::BufferState;
-pub use texture::TextureState;
+pub(crate) use buffer::BufferState;
+pub(crate) use texture::TextureState;
 
 
 
@@ -436,7 +436,7 @@ pub const DUMMY_SELECTOR: () = ();
 
 
 #[derive(Debug)]
-pub struct TrackerSet {
+pub(crate) struct TrackerSet {
     pub buffers: ResourceTracker<BufferState>,
     pub textures: ResourceTracker<TextureState>,
     pub views: ResourceTracker<PhantomData<id::TextureViewId>>,
