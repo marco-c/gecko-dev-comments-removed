@@ -1018,11 +1018,15 @@ function openSettingsMenu(monitor) {
 function clickSettingsMenuItem(monitor, itemKey) {
   openSettingsMenu(monitor);
   const node = getSettingsMenuItem(monitor, itemKey);
-  node?.click();
+  node.click();
 }
 
 function getSettingsMenuItem(monitor, itemKey) {
-  const { document } = monitor.panelWin;
+  
+  
+  const { parent } = monitor.panelWin;
+  const { document } = parent;
+
   return document.querySelector(SETTINGS_MENU_ITEMS[itemKey]);
 }
 

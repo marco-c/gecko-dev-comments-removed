@@ -68,6 +68,7 @@ class MonitorPanel extends Component {
       isEmpty: PropTypes.bool.isRequired,
       networkDetailsOpen: PropTypes.bool.isRequired,
       openNetworkDetails: PropTypes.func.isRequired,
+      toolboxDoc: PropTypes.object.isRequired,
       
       openSplitConsole: PropTypes.func,
       onNetworkDetailsResized: PropTypes.func.isRequired,
@@ -205,6 +206,7 @@ class MonitorPanel extends Component {
       openLink,
       openSplitConsole,
       sourceMapService,
+      toolboxDoc,
     } = this.props;
 
     const initialWidth = Services.prefs.getIntPref(
@@ -222,6 +224,7 @@ class MonitorPanel extends Component {
         connector,
         openSplitConsole,
         singleRow: this.state.isSingleRow,
+        toolboxDoc,
       }),
       SplitBox({
         className: "devtools-responsive-container",

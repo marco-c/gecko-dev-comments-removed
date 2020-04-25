@@ -70,6 +70,7 @@ NetMonitorApp.prototype = {
       openLink,
       openSplitConsole,
       sourceMapService,
+      toolboxDoc: toolbox.doc,
     });
 
     

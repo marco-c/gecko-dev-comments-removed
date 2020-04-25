@@ -84,17 +84,6 @@
 
 
 
-#netmonitor-settings-menu-button.tooltip-container[type="doorhanger"] .menuitem > .command[role="menuseparator"] {
-  padding-top: 0;
-  margin-bottom: 6px;
-}
-
-#netmonitor-settings-menu-button.tooltip-container[type="doorhanger"] .menuitem > .command[disabled] {
-  opacity: 0.5;
-}
-
-
-
 @media (max-width: 590px) {
   .network-monitor .devtools-searchbox .learn-more-link {
     display: none;
