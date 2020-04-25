@@ -186,7 +186,7 @@ var ModuleManager = {
     }
 
     
-    let disabledModules = [];
+    const disabledModules = [];
     this.forEach(module => {
       if (module.enabled) {
         module.enabled = false;

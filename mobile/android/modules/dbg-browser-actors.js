@@ -40,7 +40,7 @@ const { ProcessActorList } = require("devtools/server/actors/process");
 
 
 exports.createRootActor = function createRootActor(aConnection) {
-  let parameters = {
+  const parameters = {
     tabList: new MobileTabList(aConnection),
     addonList: new BrowserAddonList(aConnection),
     workerList: new WorkerTargetActorList(aConnection, {}),

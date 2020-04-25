@@ -20,13 +20,13 @@ var EXPORTED_SYMBOLS = ["GeckoViewContentChild"];
 class GeckoViewContentChild extends GeckoViewActorChild {
   collectSessionState() {
     const { docShell, contentWindow } = this;
-    let history = SessionHistory.collect(docShell);
+    const history = SessionHistory.collect(docShell);
     let formdata = SessionStoreUtils.collectFormData(contentWindow);
     let scrolldata = SessionStoreUtils.collectScrollPosition(contentWindow);
 
     
     let zoom = 1;
-    let domWindowUtils = contentWindow.windowUtils;
+    const domWindowUtils = contentWindow.windowUtils;
     zoom = domWindowUtils.getResolution();
     scrolldata = scrolldata || {};
     scrolldata.zoom = {};
@@ -34,8 +34,8 @@ class GeckoViewContentChild extends GeckoViewActorChild {
 
     
     
-    let displaySize = {};
-    let width = {},
+    const displaySize = {};
+    const width = {},
       height = {};
     domWindowUtils.getContentViewerSize(width, height);
 
