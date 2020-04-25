@@ -47,6 +47,7 @@ class ADocumentChannelBridge {
       uint32_t aRedirectFlags, uint32_t aLoadFlags) = 0;
 
   
+  
   virtual base::ProcessId OtherPid() const = 0;
 
  protected:

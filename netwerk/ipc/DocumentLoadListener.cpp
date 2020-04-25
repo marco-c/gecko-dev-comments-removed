@@ -431,8 +431,8 @@ bool DocumentLoadListener::Open(
   
   
   
-  if (nsCOMPtr<nsIViewSourceChannel> viewSourceChannel =
-          do_QueryInterface(mChannel)) {
+  nsCOMPtr<nsIViewSourceChannel> viewSourceChannel;
+  if (OtherPid() && (viewSourceChannel = do_QueryInterface(mChannel))) {
     viewSourceChannel->SetReplaceRequest(false);
   }
 
@@ -1139,12 +1139,14 @@ DocumentLoadListener::RedirectToRealChannel(
     nsTArray<ParentEndpoint>&& aStreamFilterEndpoints) {
   LOG(("DocumentLoadListener RedirectToRealChannel [this=%p]", this));
 
-  
-  nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
-      RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
-  MOZ_ALWAYS_SUCCEEDS(
-      registrar->RegisterChannel(mChannel, &mRedirectChannelId));
+  if (aDestinationProcess || OtherPid()) {
+    
+    nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
+        RedirectChannelRegistrar::GetOrCreate();
+    MOZ_ASSERT(registrar);
+    MOZ_ALWAYS_SUCCEEDS(
+        registrar->RegisterChannel(mChannel, &mRedirectChannelId));
+  }
 
   if (aDestinationProcess) {
     dom::ContentParent* cp =

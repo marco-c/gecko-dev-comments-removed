@@ -5712,7 +5712,8 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
   
   
   
-  if (RefPtr<DocumentChannel> docChannel = do_QueryObject(aOldChannel)) {
+  RefPtr<DocumentChannel> docChannel = do_QueryObject(aOldChannel);
+  if (docChannel) {
     nsCOMPtr<nsIURI> previousURI;
     uint32_t previousFlags = 0;
     docChannel->GetLastVisit(getter_AddRefs(previousURI), &previousFlags);
@@ -5760,7 +5761,7 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
   
   nsCOMPtr<nsIApplicationCacheChannel> appCacheChannel =
       do_QueryInterface(aNewChannel);
-  if (appCacheChannel) {
+  if (appCacheChannel && !docChannel) {
     if (GeckoProcessType_Default != XRE_GetProcessType()) {
       
       appCacheChannel->SetChooseApplicationCache(true);
