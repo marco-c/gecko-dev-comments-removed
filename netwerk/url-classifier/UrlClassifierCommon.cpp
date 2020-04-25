@@ -340,31 +340,6 @@ nsresult UrlClassifierCommon::CreatePairwiseWhiteListURI(nsIChannel* aChannel,
 
 namespace {
 
-void SetClassificationFlagsHelper(nsIChannel* aChannel,
-                                  uint32_t aClassificationFlags,
-                                  bool aIsThirdParty) {
-  MOZ_ASSERT(aChannel);
-
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  NS_QueryNotificationCallbacks(aChannel, parentChannel);
-  if (parentChannel) {
-    
-    
-    parentChannel->NotifyClassificationFlags(aClassificationFlags,
-                                             aIsThirdParty);
-  }
-
-  RefPtr<HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
-  if (httpChannel) {
-    httpChannel->AddClassificationFlags(aClassificationFlags, aIsThirdParty);
-  }
-
-  RefPtr<ClassifierDummyChannel> dummyChannel = do_QueryObject(aChannel);
-  if (dummyChannel) {
-    dummyChannel->AddClassificationFlags(aClassificationFlags, aIsThirdParty);
-  }
-}
-
 void LowerPriorityHelper(nsIChannel* aChannel) {
   MOZ_ASSERT(aChannel);
 
@@ -412,6 +387,31 @@ void LowerPriorityHelper(nsIChannel* aChannel) {
 }
 
 }  
+
+
+void UrlClassifierCommon::SetClassificationFlagsHelper(
+    nsIChannel* aChannel, uint32_t aClassificationFlags, bool aIsThirdParty) {
+  MOZ_ASSERT(aChannel);
+
+  nsCOMPtr<nsIParentChannel> parentChannel;
+  NS_QueryNotificationCallbacks(aChannel, parentChannel);
+  if (parentChannel) {
+    
+    
+    parentChannel->NotifyClassificationFlags(aClassificationFlags,
+                                             aIsThirdParty);
+  }
+
+  RefPtr<HttpBaseChannel> httpChannel = do_QueryObject(aChannel);
+  if (httpChannel) {
+    httpChannel->AddClassificationFlags(aClassificationFlags, aIsThirdParty);
+  }
+
+  RefPtr<ClassifierDummyChannel> dummyChannel = do_QueryObject(aChannel);
+  if (dummyChannel) {
+    dummyChannel->AddClassificationFlags(aClassificationFlags, aIsThirdParty);
+  }
+}
 
 
 void UrlClassifierCommon::AnnotateChannel(nsIChannel* aChannel,
