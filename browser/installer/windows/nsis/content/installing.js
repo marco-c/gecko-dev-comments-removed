@@ -35,10 +35,13 @@ window.attachEvent("onload", function() {
 
   
   var currentBlurb = 0;
+  
+  
+  
   var blurbStrings = [
     external.getUIString("installing_blurb_0"),
     external.getUIString("installing_blurb_1"),
-    external.getUIString("installing_blurb_2"),
+    external.getUIString("installing_blurb_2")
   ];
   function rotateBlurb() {
     document.getElementById("blurb").innerText = blurbStrings[currentBlurb];
