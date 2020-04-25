@@ -318,12 +318,16 @@ ContentBlocking::AllowAccessFor(
     
     
     
-    bool isThirdParty;
-    nsCOMPtr<nsIPrincipal> principal =
-        AntiTrackingUtils::GetPrincipal(aParentContext);
-    Unused << trackingPrincipal->IsThirdPartyPrincipal(principal,
-                                                       &isThirdParty);
-    runInSameProcess = aParentContext->IsInProcess() && !isThirdParty;
+    if (aParentContext->IsInProcess()) {
+      bool isThirdParty;
+      nsCOMPtr<nsIPrincipal> principal =
+          AntiTrackingUtils::GetPrincipal(aParentContext);
+      Unused << trackingPrincipal->IsThirdPartyPrincipal(principal,
+                                                         &isThirdParty);
+      runInSameProcess = !isThirdParty;
+    } else {
+      runInSameProcess = false;
+    }
   }
 
   if (runInSameProcess) {
