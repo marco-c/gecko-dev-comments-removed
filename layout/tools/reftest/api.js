@@ -42,31 +42,15 @@ function startAndroid(win) {
   }, 0);
 }
 
-var WindowListener = {
-  onOpenWindow: function(xulWin) {
-    Services.wm.removeListener(WindowListener);
-
-    let win = xulWin.docShell.domWindow;
-    win.addEventListener(
-      "load",
-      function listener() {
-        
-        for (win of Services.wm.getEnumerator("navigator:browser")) {
-          break;
-        }
-
-        win.addEventListener(
-          "pageshow",
-          function() {
-            startAndroid(win);
-          },
-          { once: true }
-        );
-      },
-      { once: true }
-    );
-  },
-};
+function GetMainWindow() {
+  let win = Services.wm.getMostRecentWindow("navigator:browser");
+  if (!win) {
+    
+    
+    win = Services.wm.getMostRecentWindow("navigator:geckoview");
+  }
+  return win;
+}
 
 this.reftest = class extends ExtensionAPI {
   onStartup() {
@@ -101,13 +85,7 @@ this.reftest = class extends ExtensionAPI {
     
     
     
-    let win = Services.wm.getMostRecentWindow("navigator:browser");
-    if (!win) {
-      
-      
-      win = Services.wm.getMostRecentWindow("navigator:geckoview");
-    }
-
+    let win = GetMainWindow();
     if (Services.appinfo.OS == "Android") {
       ({ OnRefTestLoad, OnRefTestUnload } = ChromeUtils.import(
         "resource://reftest/reftest.jsm"
@@ -115,7 +93,16 @@ this.reftest = class extends ExtensionAPI {
       if (win) {
         startAndroid(win);
       } else {
-        Services.wm.addListener(WindowListener);
+        
+        
+        
+        
+        
+        
+        Services.obs.addObserver(function observer(aSubject, aTopic, aData) {
+          Services.obs.removeObserver(observer, aTopic);
+          startAndroid(GetMainWindow());
+        }, "initial-document-element-inserted");
       }
       return;
     }
