@@ -114,11 +114,14 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void ResumeSuspendedChannel(nsIStreamListener* aListener);
+  
+  bool ResumeSuspendedChannel(nsIStreamListener* aListener);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_LOAD_LISTENER_IID)
 
   void Cancel(const nsresult& status);
+
+  nsIChannel* GetChannel() const { return mChannel; }
 
   nsresult ReportSecurityMessage(const nsAString& aMessageTag,
                                  const nsAString& aMessageCategory) override {
@@ -221,7 +224,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
 
-  bool HasCrossOriginOpenerPolicyMismatch();
+  bool HasCrossOriginOpenerPolicyMismatch() const;
+  void ApplyPendingFunctions(nsISupports* aChannel) const;
 
   
   
