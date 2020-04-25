@@ -81,6 +81,39 @@ impl<'a, 'b: 'a, E: TElement + 'b> StateAndAttrInvalidationProcessor<'a, 'b, E> 
 
 
 
+pub fn check_dependency<E, W>(
+    dependency: &Dependency,
+    element: &E,
+    wrapper: &W,
+    context: &mut MatchingContext<'_, SelectorImpl>,
+)
+where
+    E: TElement,
+    W: selectors::Element<Impl = E::Impl>,
+{
+    let matches_now = matches_selector(
+        &dependency.selector,
+        dependency.selector_offset,
+        None,
+        element,
+        &mut context,
+        &mut |_, _| {},
+    );
+
+    let matched_then = matches_selector(
+        &dependency.selector,
+        dependency.selector_offset,
+        None,
+        wrapper,
+        &mut context,
+        &mut |_, _| {},
+    );
+
+    matched_then != matches_now
+}
+
+
+
 pub fn should_process_descendants(data: &ElementData) -> bool {
     !data.styles.is_display_none() && !data.hint.contains(RestyleHint::RESTYLE_DESCENDANTS)
 }
@@ -412,28 +445,9 @@ where
     }
 
     
+    #[inline]
     fn check_dependency(&mut self, dependency: &Dependency) -> bool {
-        let element = &self.element;
-        let wrapper = &self.wrapper;
-        let matches_now = matches_selector(
-            &dependency.selector,
-            dependency.selector_offset,
-            None,
-            element,
-            &mut self.matching_context,
-            &mut |_, _| {},
-        );
-
-        let matched_then = matches_selector(
-            &dependency.selector,
-            dependency.selector_offset,
-            None,
-            wrapper,
-            &mut self.matching_context,
-            &mut |_, _| {},
-        );
-
-        matched_then != matches_now
+        check_dependency(&self.element, &self.wrapper, &mut self.matching_context)
     }
 
     fn scan_dependency(&mut self, dependency: &'selectors Dependency) {
@@ -456,7 +470,13 @@ where
 
         let invalidation_kind = dependency.invalidation_kind();
         if matches!(invalidation_kind, DependencyInvalidationKind::Element) {
-            self.invalidates_self = true;
+            if let Some(ref parent) = dependency.parent {
+                
+                
+                self.scan_dependency(parent);
+            } else {
+                self.invalidates_self = true;
+            }
             return;
         }
 
