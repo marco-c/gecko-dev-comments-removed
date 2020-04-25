@@ -10,6 +10,7 @@
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/Range.h"                  
 #include "mozilla/Span.h"                   
+#include "mozilla/Variant.h"                
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -17,13 +18,14 @@
 #include "jsapi.h"
 
 #include "frontend/AbstractScopePtr.h"  
+#include "frontend/BytecodeSection.h"   
 #include "frontend/CompilationInfo.h"   
 #include "frontend/Parser.h"  
 #include "frontend/smoosh_generated.h"  
 #include "frontend/SourceNotes.h"       
-#include "frontend/Stencil.h"  
-#include "frontend/TokenStream.h"  
-#include "gc/Rooting.h"            
+#include "frontend/Stencil.h"           
+#include "frontend/TokenStream.h"       
+#include "gc/Rooting.h"                 
 #ifndef ENABLE_NEW_REGEXP
 #  include "irregexp/RegExpParser.h"  
 #endif
@@ -38,7 +40,6 @@
 #endif
 #include "vm/JSAtom.h"         
 #include "vm/JSScript.h"       
-#include "vm/RegExpObject.h"   
 #include "vm/Scope.h"          
 #include "vm/ScopeKind.h"      
 #include "vm/SharedStencil.h"  
@@ -91,6 +92,10 @@ class SmooshScriptStencil : public ScriptStencil {
       return false;
     }
 
+    if (!createGCThings(cx)) {
+      return false;
+    }
+
     if (!createScopeCreationData(cx)) {
       return false;
     }
@@ -104,44 +109,7 @@ class SmooshScriptStencil : public ScriptStencil {
 
   virtual bool finishGCThings(
       JSContext* cx, mozilla::Span<JS::GCCellPtr> output) const override {
-    uint32_t ngcthings = output.Length();
-    for (size_t i = 0; i < ngcthings; i++) {
-      SmooshGCThing& item = result_.gcthings.data[i];
-
-      switch (item.kind) {
-        case SmooshGCThingKind::ScopeIndex: {
-          
-          
-          
-          MutableHandle<ScopeCreationData> data =
-              compilationInfo_.scopeCreationData[item.index];
-          Scope* scope = data.get().createScope(cx);
-          if (!scope) {
-            return false;
-          }
-
-          output[i] = JS::GCCellPtr(scope);
-
-          break;
-        }
-        case SmooshGCThingKind::RegExpIndex: {
-          
-          
-          
-          RegExpCreationData& data = compilationInfo_.regExpData[item.index];
-          RegExpObject* regexp = data.createRegExp(cx);
-          if (!regexp) {
-            return false;
-          }
-
-          output[i] = JS::GCCellPtr(regexp);
-
-          break;
-        }
-      }
-    }
-
-    return true;
+    return EmitScriptThingsVector(cx, compilationInfo_, gcThings, output);
   }
 
   virtual void initAtomMap(GCPtrAtom* atoms) const override {
@@ -171,6 +139,31 @@ class SmooshScriptStencil : public ScriptStencil {
         return false;
       }
       allAtoms_[i] = atom;
+    }
+
+    return true;
+  }
+
+  bool createGCThings(JSContext* cx) {
+    size_t ngcthings = result_.gcthings.len;
+    if (!gcThings.reserve(ngcthings)) {
+      return false;
+    }
+
+    for (size_t i = 0; i < ngcthings; i++) {
+      SmooshGCThing& item = result_.gcthings.data[i];
+
+      switch (item.kind) {
+        case SmooshGCThingKind::ScopeIndex: {
+          gcThings.infallibleAppend(mozilla::AsVariant(ScopeIndex(item.index)));
+          break;
+        }
+        case SmooshGCThingKind::RegExpIndex: {
+          gcThings.infallibleAppend(
+              mozilla::AsVariant(RegExpIndex(item.index)));
+          break;
+        }
+      }
     }
 
     return true;

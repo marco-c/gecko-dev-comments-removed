@@ -423,7 +423,7 @@
 
 
  \
-    MACRO(Pos, pos, "+ ", 1, 1, 1, JOF_BYTE) \
+    MACRO(Pos, pos, "+ ", 1, 1, 1, JOF_BYTE|JOF_IC) \
     
 
 

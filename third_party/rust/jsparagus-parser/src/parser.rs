@@ -1,3 +1,4 @@
+use crate::queue_stack::QueueStack;
 use crate::simulator::Simulator;
 use ast::SourceLocation;
 use generated_parser::{
@@ -10,10 +11,9 @@ pub struct Parser<'alloc> {
     
     state_stack: Vec<usize>,
     
-    node_stack: Vec<TermValue<StackValue<'alloc>>>,
     
     
-    replay_stack: Vec<TermValue<StackValue<'alloc>>>,
+    node_stack: QueueStack<TermValue<StackValue<'alloc>>>,
     
     handler: AstBuilder<'alloc>,
 }
@@ -27,13 +27,16 @@ impl<'alloc> AstBuilderDelegate<'alloc> for Parser<'alloc> {
 impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
     fn shift(&mut self, tv: TermValue<StackValue<'alloc>>) -> Result<'alloc, bool> {
         
+        
+        debug_assert!(self.node_stack.queue_empty());
+        self.node_stack.enqueue(tv);
+        
         json_trace!({ "enter": "shift" });
         let mut state = self.state();
-        assert!(state < TABLES.shift_count);
-        let mut tv = tv;
-        loop {
-            let term_index: usize = tv.term.into();
-            assert!(term_index < TABLES.shift_width);
+        debug_assert!(state < TABLES.shift_count);
+        while !self.node_stack.queue_empty() {
+            let term_index: usize = self.node_stack.next().unwrap().term.into();
+            debug_assert!(term_index < TABLES.shift_width);
             let index = state * TABLES.shift_width + term_index;
             let goto = TABLES.shift_table[index];
             json_trace!({
@@ -42,18 +45,18 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
                 "term": format!("{:?}", { let s: &'static str = tv.term.into(); s }),
             });
             if goto < 0 {
+                self.node_stack.shift();
+                let tv = self.node_stack.pop().unwrap();
                 
                 
                 self.try_error_handling(tv)?;
-                tv = self.replay_stack.pop().unwrap();
-                json_trace!({ "replay_term": true });
                 continue;
             }
             state = goto as usize;
             self.state_stack.push(state);
-            self.node_stack.push(tv);
+            self.node_stack.shift();
             
-            while state >= TABLES.shift_count {
+            if state >= TABLES.shift_count {
                 assert!(state < TABLES.action_count + TABLES.shift_count);
                 json_trace!({ "action": state });
                 if full_actions(self, state)? {
@@ -61,28 +64,29 @@ impl<'alloc> ParserTrait<'alloc, StackValue<'alloc>> for Parser<'alloc> {
                 }
                 state = self.state();
             }
-            assert!(state < TABLES.shift_count);
-            if let Some(tv_temp) = self.replay_stack.pop() {
-                json_trace!({ "replay_term": true });
-                tv = tv_temp;
-            } else {
-                break;
-            }
+            debug_assert!(state < TABLES.shift_count);
         }
         Ok(false)
     }
-    fn replay(&mut self, tv: TermValue<StackValue<'alloc>>) {
-        self.replay_stack.push(tv)
-    }
-    fn epsilon(&mut self, state: usize) {
-        *self.state_stack.last_mut().unwrap() = state;
+    fn unshift(&mut self) {
+        self.state_stack.pop().unwrap();
+        self.node_stack.unshift()
     }
     fn pop(&mut self) -> TermValue<StackValue<'alloc>> {
         self.state_stack.pop().unwrap();
         self.node_stack.pop().unwrap()
     }
+    fn replay(&mut self, tv: TermValue<StackValue<'alloc>>) {
+        self.node_stack.push_next(tv)
+    }
+    fn epsilon(&mut self, state: usize) {
+        *self.state_stack.last_mut().unwrap() = state;
+    }
     fn check_not_on_new_line(&mut self, peek: usize) -> Result<'alloc, bool> {
-        let sv = &self.node_stack[self.node_stack.len() - peek].value;
+        let sv = {
+            let stack = self.node_stack.stack_slice();
+            &stack[stack.len() - peek].value
+        };
         if let StackValue::Token(ref token) = sv {
             if !token.is_on_new_line {
                 return Ok(true);
@@ -100,11 +104,12 @@ impl<'alloc> Parser<'alloc> {
     pub fn new(handler: AstBuilder<'alloc>, entry_state: usize) -> Self {
         TABLES.check();
         assert!(entry_state < TABLES.shift_count);
+        let mut state_stack = Vec::with_capacity(128);
+        state_stack.push(entry_state);
 
         Self {
-            state_stack: vec![entry_state],
-            node_stack: vec![],
-            replay_stack: vec![],
+            state_stack,
+            node_stack: QueueStack::with_capacity(128),
             handler,
         }
     }
@@ -150,9 +155,9 @@ impl<'alloc> Parser<'alloc> {
 
         
         
-        assert!(self.node_stack.len() >= 1);
-        assert!(self.node_stack.len() <= 2);
-        if self.node_stack.len() > 1 {
+        assert!(self.node_stack.stack_len() >= 1);
+        assert!(self.node_stack.stack_len() <= 2);
+        if self.node_stack.stack_len() > 1 {
             self.node_stack.pop();
         }
         Ok(self.node_stack.pop().unwrap().value)
@@ -222,8 +227,8 @@ impl<'alloc> Parser<'alloc> {
     }
 
     fn simulator<'a>(&'a self) -> Simulator<'alloc, 'a> {
-        assert_eq!(self.replay_stack.len(), 0);
-        Simulator::new(&self.state_stack, &self.node_stack)
+        assert_eq!(self.node_stack.queue_len(), 0);
+        Simulator::new(&self.state_stack, self.node_stack.stack_slice())
     }
 
     pub fn can_accept_terminal(&self, t: TerminalId) -> bool {

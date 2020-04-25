@@ -1,4 +1,4 @@
-use crate::emitter::BytecodeOffset;
+use crate::bytecode_offset::BytecodeOffset;
 use crate::gcthings::GCThingIndex;
 
 

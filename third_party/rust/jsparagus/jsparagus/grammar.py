@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+
 import copy
 import typing
 import dataclasses
@@ -65,6 +66,7 @@ Condition = typing.Tuple[str, bool]
 
 
 
+
 @dataclass
 class Production:
     __slots__ = ['body', 'reducer', 'condition']
@@ -88,7 +90,7 @@ class Production:
             return ("Production({!r}, reducer={!r}, condition={!r})"
                     .format(self.body, self.reducer, self.condition))
 
-    def copy_with(self, **kwargs) -> Production:
+    def copy_with(self, **kwargs: typing.Any) -> Production:
         return dataclasses.replace(self, **kwargs)
 
 
@@ -191,7 +193,7 @@ class Grammar:
 
     *   self.type_to_mods - {Type: [str]} or None - ?
 
-    *   self._cache - {object: object} - Cache of immutable objects used by
+    *   self._cache - {Any: Any} - Cache of immutable objects used by
         Grammar.intern().
     """
 
@@ -203,7 +205,7 @@ class Grammar:
     init_nts: typing.List[typing.Union[Nt, InitNt]]
     exec_modes: typing.Optional[typing.DefaultDict[str, OrderedSet[types.Type]]]
     type_to_modes: typing.Optional[typing.Mapping[types.Type, typing.List[str]]]
-    _cache: typing.Dict[object, object]
+    _cache: typing.Dict[typing.Any, typing.Any]
 
     def __init__(
             self,
@@ -211,7 +213,7 @@ class Grammar:
             *,
             goal_nts: typing.Optional[typing.Iterable[LenientNt]] = None,
             variable_terminals: typing.Iterable[str] = (),
-            synthetic_terminals: typing.Dict[str, OrderedFrozenSet] = None,
+            synthetic_terminals: SyntheticTerminalsDict = None,
             method_types: typing.Optional[typing.Dict[str, types.MethodType]] = None,
             exec_modes: typing.Optional[typing.DefaultDict[str, OrderedSet[types.Type]]] = None,
             type_to_modes: typing.Optional[typing.Mapping[types.Type, typing.List[str]]] = None):
@@ -707,9 +709,7 @@ class Grammar:
         equality testing.
         """
         try:
-            
-            
-            return self._cache[obj]  
+            return self._cache[obj]
         except KeyError:
             self._cache[obj] = obj
             return obj
@@ -793,7 +793,7 @@ class Grammar:
     def symbols_to_str(self, rhs: typing.Iterable[Element]) -> str:
         return " ".join(self.element_to_str(e) for e in rhs)
 
-    def rhs_to_str(self, rhs: LenientProduction):
+    def rhs_to_str(self, rhs: LenientProduction) -> str:
         if isinstance(rhs, Production):
             if rhs.condition is None:
                 prefix = ''
@@ -812,22 +812,28 @@ class Grammar:
         else:
             return self.symbols_to_str(rhs)
 
+    def nt_to_str(self, nt: LenientNt) -> str:
+        if isinstance(nt, Nt):
+            return self.element_to_str(nt)
+        else:
+            return str(nt)
+
     def production_to_str(
             self,
-            nt: typing.Union[str, Nt],
+            nt: LenientNt,
             rhs: LenientProduction,
             *reducer: ReduceExpr
     ) -> str:
         
         
         return "{} ::= {}{}".format(
-            self.element_to_str(nt),
+            self.nt_to_str(nt),
             self.rhs_to_str(rhs),
             "".join(" => " + expr_to_str(expr) for expr in reducer))
 
     
     
-    def lr_item_to_str(self, prods: typing.List, item) -> str:
+    def lr_item_to_str(self, prods: typing.List, item: typing.Any) -> str:
         prod = prods[item.prod_index]
         if item.lookahead is None:
             la = []
@@ -873,9 +879,9 @@ class Grammar:
         return (len(seq1) == len(seq1)
                 and all(self.compatible_elements(e1, e2) for e1, e2 in zip(seq1, seq2)))
 
-    def dump(self):
+    def dump(self) -> None:
         for nt, nt_def in self.nonterminals.items():
-            left_side = self.element_to_str(nt)
+            left_side = self.nt_to_str(nt)
             if nt_def.params:
                 left_side += "[" + ", ".join(nt_def.params) + "]"
             print(left_side + " ::=")
@@ -883,14 +889,14 @@ class Grammar:
                 print("   ", self.rhs_to_str(rhs))
             print()
 
-    def dump_type_info(self):
+    def dump_type_info(self) -> None:
         for nt, nt_def in self.nonterminals.items():
             print(nt, nt_def.type)
         for name, mty in self.methods.items():
             print("fn {}({}) -> {}"
                   .format(name,
-                          ", ".join(types.type_to_str(ty) for ty in mty.argument_types),
-                          types.type_to_str(mty.return_type)))
+                          ", ".join(str(ty) for ty in mty.argument_types),
+                          str(mty.return_type)))
 
     def is_shifted_element(self, e: Element) -> bool:
         if isinstance(e, Nt):
@@ -955,32 +961,44 @@ def is_concrete_element(e: Element) -> bool:
     return not isinstance(e, (LookaheadRule, ErrorSymbol, NoLineTerminatorHereClass))
 
 
+
+
+
+
+
+
+
+
+
+
+NtParameter = typing.Hashable
+
+
 class Nt:
     """Nt(name, ((param0, arg0), ...)) - An invocation of a nonterminal.
 
     Nonterminals are like lambdas. Each nonterminal in a grammar is defined by an
     NtDef which has 0 or more parameters.
 
-    Parameter names are strings. The arguments are typically booleans. They can be
-    whatever you want, but each function nonterminal gets expanded into a set of
-    productions, one for every different argument tuple that is ever passed to it.
+    Parameter names `param0...` are strings. The actual arguments `arg0...` are
+    NtParameters (see above).
     """
 
     __slots__ = ['name', 'args']
 
     name: typing.Union[str, InitNt]
-    args: typing.Tuple[typing.Tuple[str, typing.Hashable], ...]
+    args: typing.Tuple[typing.Tuple[str, NtParameter], ...]
 
     def __init__(self,
                  name: typing.Union[str, InitNt],
-                 args: typing.Tuple[typing.Tuple[str, typing.Hashable], ...] = ()):
+                 args: typing.Tuple[typing.Tuple[str, NtParameter], ...] = ()):
         self.name = name
         self.args = args
 
     def __hash__(self) -> int:
         return hash(('nt', self.name, self.args))
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (isinstance(other, Nt)
                 and (self.name, self.args) == (other.name, other.args))
 
@@ -995,7 +1013,7 @@ class Nt:
 
         Also used in debug/verbose output.
         """
-        def arg_to_str(name, value):
+        def arg_to_str(name: str, value: NtParameter) -> str:
             if value is True:
                 return '+' + name
             elif value is False:
@@ -1068,7 +1086,7 @@ class LookaheadRule:
 
 
 
-def lookahead_contains(rule: typing.Optional[LookaheadRule], t: str):
+def lookahead_contains(rule: typing.Optional[LookaheadRule], t: str) -> bool:
     """True if the given lookahead restriction `rule` allows the terminal `t`."""
     return (rule is None
             or (t in rule.set if rule.positive
@@ -1097,7 +1115,7 @@ def lookahead_intersect(
 
 
 class NoLineTerminatorHereClass:
-    def __str__(self):
+    def __str__(self) -> str:
         return 'NoLineTerminatorHere'
 
 
