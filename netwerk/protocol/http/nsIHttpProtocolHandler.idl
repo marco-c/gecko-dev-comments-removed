@@ -139,6 +139,13 @@ interface nsIHttpProtocolHandler : nsIProxiedProtocolHandler
 
 
 
+#define NS_DOCUMENT_ON_MODIFY_REQUEST_TOPIC "document-on-modify-request"
+
+
+
+
+
+
 
 
 
