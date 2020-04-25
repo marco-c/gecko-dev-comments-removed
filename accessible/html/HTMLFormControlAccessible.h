@@ -8,6 +8,7 @@
 
 #include "FormControlAccessible.h"
 #include "HyperTextAccessibleWrap.h"
+#include "nsAccUtils.h"
 
 namespace mozilla {
 class TextEditor;
@@ -280,6 +281,40 @@ class HTMLProgressAccessible : public LeafAccessible {
 
  protected:
   virtual ~HTMLProgressAccessible() {}
+};
+
+
+
+
+template <a11y::role R>
+class HTMLDateTimeAccessible : public AccessibleWrap {
+ public:
+  HTMLDateTimeAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : AccessibleWrap(aContent, aDoc) {}
+
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLDateTimeAccessible, AccessibleWrap)
+
+  
+  virtual mozilla::a11y::role NativeRole() const override { return R; }
+  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes()
+      override {
+    nsCOMPtr<nsIPersistentProperties> attributes =
+        AccessibleWrap::NativeAttributes();
+    
+    
+    nsAutoString type;
+    if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
+                                       type)) {
+      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::textInputType, type);
+    }
+    return attributes.forget();
+  }
+
+  
+  virtual bool IsWidget() const override { return true; }
+
+ protected:
+  virtual ~HTMLDateTimeAccessible() {}
 };
 
 }  
