@@ -562,18 +562,6 @@ class TryOptionSyntax(object):
             return set(['try', 'all']) & set(attr('run_on_projects', []))
 
         
-        if 'ccov' in attr('build_platform', []):
-            return False
-
-        
-        if 'windows10-aarch64' in attr("test_platform", ""):
-            return False
-
-        
-        if 'android-hw' in task.label:
-            return False
-
-        
         if attr('unittest_variant') == 'fission':
             return False
 
