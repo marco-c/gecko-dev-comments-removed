@@ -1,5 +1,9 @@
 
 
+function assert(x) {
+  assertEq(true, x);
+}
+
 
 gczeal(0);
 
@@ -10,8 +14,8 @@ assertEq(gcstate(), "NotActive");
 
 
 gcslice(1000000);
-while (gcstate() == "Finalize") { gcslice(1); }
-while (gcstate() == "Decommit") { gcslice(1); }
+assert(gcstate() !== "Mark");
+finishgc();
 assertEq(gcstate(), "NotActive");
 
 
@@ -22,9 +26,8 @@ assertEq(gcstate(), "Mark");
 gcslice(1000000);
 assertEq(gcstate(), "Mark");
 gcslice(1000000);
-while (gcstate() == "Finalize") { gcslice(1); }
-while (gcstate() == "Decommit") { gcslice(1); }
-assertEq(gcstate(), "NotActive");
+assert(gcstate() !== "Mark");
+finishgc();
 
 
 
@@ -51,9 +54,8 @@ gczeal(10, 0);
 gcslice(1000000);
 assertEq(gcstate(), "Sweep");
 gcslice(1000000);
-while (gcstate() == "Finalize") { gcslice(1); }
-while (gcstate() == "Decommit") { gcslice(1); }
-assertEq(gcstate(), "NotActive");
+assert(gcstate() !== "Sweep");
+finishgc();
 
 
 for (let mode of [ 17, 19 ]) {

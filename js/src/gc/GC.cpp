@@ -901,6 +901,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       lastMarkSlice(false),
       safeToYield(true),
       sweepOnBackgroundThread(false),
+      requestSliceAfterBackgroundTask(false),
       lifoBlocksToFree((size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
       lifoBlocksToFreeAfterMinorGC(
           (size_t)JSContext::TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
@@ -2868,14 +2869,15 @@ bool SliceBudget::checkOverBudget() {
 }
 
 void GCRuntime::requestMajorGC(JS::GCReason reason) {
-  MOZ_ASSERT(!CurrentThreadIsPerformingGC());
+  MOZ_ASSERT_IF(reason != JS::GCReason::BG_TASK_FINISHED,
+                !CurrentThreadIsPerformingGC());
 
   if (majorGCRequested()) {
     return;
   }
 
   majorGCTriggerReason = reason;
-  rt->mainContextFromOwnThread()->requestInterrupt(InterruptReason::GC);
+  rt->mainContextFromAnyThread()->requestInterrupt(InterruptReason::GC);
 }
 
 void Nursery::requestMinorGC(JS::GCReason reason) const {
@@ -3173,6 +3175,13 @@ void GCRuntime::startDecommit() {
 
   decommitTask.setChunksToScan(toDecommit);
 
+#ifdef DEBUG
+  {
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!requestSliceAfterBackgroundTask);
+  }
+#endif
+
   if (sweepOnBackgroundThread) {
     decommitTask.start();
     return;
@@ -3189,29 +3198,57 @@ void js::gc::BackgroundDecommitTask::setChunksToScan(ChunkVector& chunks) {
 }
 
 void js::gc::BackgroundDecommitTask::run() {
-  AutoLockGC lock(gc);
+  ChunkPool toFree;
 
-  for (Chunk* chunk : toDecommit.ref()) {
-    
-    
-    while (chunk->info.numArenasFreeCommitted) {
-      bool ok = chunk->decommitOneFreeArena(gc, lock);
+  {
+    AutoLockGC lock(gc);
 
+    for (Chunk* chunk : toDecommit.ref()) {
       
       
-      
-      if (cancel_ || !ok) {
-        break;
+
+      while (chunk->info.numArenasFreeCommitted && !cancel_) {
+        if (!chunk->decommitOneFreeArena(gc, lock)) {
+          
+          
+          break;
+        }
       }
     }
-  }
-  toDecommit.ref().clearAndFree();
 
-  ChunkPool toFree = gc->expireEmptyChunkPool(lock);
-  if (toFree.count()) {
-    AutoUnlockGC unlock(lock);
-    FreeChunkPool(toFree);
+    toDecommit.ref().clearAndFree();
+    toFree = gc->expireEmptyChunkPool(lock);
   }
+
+  FreeChunkPool(toFree);
+
+  AutoLockHelperThreadState lock;
+  setFinishing(lock);
+  gc->maybeRequestGCAfterBackgroundTask(lock);
+}
+
+void GCRuntime::maybeRequestGCAfterBackgroundTask(
+    const AutoLockHelperThreadState& lock) {
+  if (requestSliceAfterBackgroundTask) {
+    
+    
+    requestSliceAfterBackgroundTask = false;
+    requestMajorGC(JS::GCReason::BG_TASK_FINISHED);
+  }
+}
+
+void GCRuntime::cancelRequestedGCAfterBackgroundTask() {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+
+#ifdef DEBUG
+  {
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!requestSliceAfterBackgroundTask);
+  }
+#endif
+
+  majorGCTriggerReason.compareExchange(JS::GCReason::BG_TASK_FINISHED,
+                                       JS::GCReason::NO_REASON);
 }
 
 void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
@@ -3281,6 +3318,7 @@ void GCRuntime::assertBackgroundSweepingFinished() {
 void GCRuntime::queueZonesAndStartBackgroundSweep(ZoneList& zones) {
   {
     AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!requestSliceAfterBackgroundTask);
     backgroundSweepZones.ref().transferFrom(zones);
     if (sweepOnBackgroundThread) {
       sweepTask.startOrRunIfIdle(lock);
@@ -3317,6 +3355,8 @@ void GCRuntime::sweepFromBackgroundThread(AutoLockHelperThreadState& lock) {
     
     
   } while (!backgroundSweepZones.ref().isEmpty());
+
+  maybeRequestGCAfterBackgroundTask(lock);
 }
 
 void GCRuntime::waitBackgroundSweepEnd() {
@@ -6232,6 +6272,13 @@ void GCRuntime::finishCollection() {
   MOZ_ASSERT(zonesToMaybeCompact.ref().isEmpty());
   MOZ_ASSERT(cellsToAssertNotGray.ref().empty());
 
+#ifdef DEBUG
+  {
+    AutoLockHelperThreadState lock;
+    MOZ_ASSERT(!requestSliceAfterBackgroundTask);
+  }
+#endif
+
   lastGCEndTime_ = currentTime;
 }
 
@@ -6571,20 +6618,23 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
 
       [[fallthrough]];
 
-    case State::Finalize: {
-      gcstats::AutoPhase ap(stats(),
-                            gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
-
+    case State::Finalize:
+      
       
       if (!budget.isUnlimited()) {
-        
-        if (isBackgroundSweeping()) {
+        AutoLockHelperThreadState lock;
+        if (sweepTask.wasStarted(lock)) {
+          requestSliceAfterBackgroundTask = true;
           break;
         }
-      } else {
-        waitBackgroundSweepEnd();
       }
-    }
+
+      {
+        gcstats::AutoPhase ap(stats(),
+                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+        waitBackgroundSweepEnd();
+        cancelRequestedGCAfterBackgroundTask();
+      }
 
       {
         
@@ -6625,21 +6675,27 @@ void GCRuntime::incrementalSlice(SliceBudget& budget,
 
       [[fallthrough]];
 
-    case State::Decommit: {
-      gcstats::AutoPhase ap(stats(),
-                            gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
-
+    case State::Decommit:
       
-      if (!budget.isUnlimited() && decommitTask.wasStarted()) {
-        break;
+      
+      if (!budget.isUnlimited()) {
+        AutoLockHelperThreadState lock;
+        if (decommitTask.wasStarted(lock)) {
+          requestSliceAfterBackgroundTask = true;
+          break;
+        }
       }
 
-      decommitTask.join();
+      {
+        gcstats::AutoPhase ap(stats(),
+                              gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
+        decommitTask.join();
+        cancelRequestedGCAfterBackgroundTask();
+      }
 
       incrementalState = State::Finish;
 
       [[fallthrough]];
-    }
 
     case State::Finish:
       finishCollection();

@@ -69,9 +69,21 @@ class ChunkPool {
 
  public:
   ChunkPool() : head_(nullptr), count_(0) {}
+  ChunkPool(const ChunkPool& other) = delete;
+  ChunkPool(ChunkPool&& other) { *this = std::move(other); }
+
   ~ChunkPool() {
     MOZ_ASSERT(!head_);
     MOZ_ASSERT(count_ == 0);
+  }
+
+  ChunkPool& operator=(const ChunkPool& other) = delete;
+  ChunkPool& operator=(ChunkPool&& other) {
+    head_ = other.head_;
+    other.head_ = nullptr;
+    count_ = other.count_;
+    other.count_ = 0;
+    return *this;
   }
 
   bool empty() const { return !head_; }
@@ -784,6 +796,8 @@ class GCRuntime {
   void releaseRelocatedArenas(Arena* arenaList);
   void releaseRelocatedArenasWithoutUnlocking(Arena* arenaList,
                                               const AutoLockGC& lock);
+  void maybeRequestGCAfterBackgroundTask(const AutoLockHelperThreadState& lock);
+  void cancelRequestedGCAfterBackgroundTask();
   void finishCollection();
   IncrementalProgress joinSweepMarkTask();
 
@@ -923,7 +937,7 @@ class GCRuntime {
 
   UnprotectedData<bool> grayBitsValid;
 
-  mozilla::Atomic<JS::GCReason, mozilla::Relaxed> majorGCTriggerReason;
+  mozilla::Atomic<JS::GCReason, mozilla::ReleaseAcquire> majorGCTriggerReason;
 
  private:
   
@@ -981,6 +995,14 @@ class GCRuntime {
 
   
   HelperThreadLockData<ZoneList> backgroundSweepZones;
+
+  
+
+
+
+
+
+  HelperThreadLockData<bool> requestSliceAfterBackgroundTask;
 
   
 
