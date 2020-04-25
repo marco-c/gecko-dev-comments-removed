@@ -1,11 +1,24 @@
 #![deny(warnings)]
-extern crate tokio;
-extern crate warp;
 
+use std::convert::Infallible;
 use std::str::FromStr;
-use std::time::{Duration, Instant};
-use tokio::timer::Delay;
-use warp::{Filter, Future};
+use std::time::Duration;
+use warp::Filter;
+
+#[tokio::main]
+async fn main() {
+    
+    let routes = warp::path::param()
+        
+        .and_then(sleepy);
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+}
+
+async fn sleepy(Seconds(seconds): Seconds) -> Result<impl warp::Reply, Infallible> {
+    tokio::time::delay_for(Duration::from_secs(seconds)).await;
+    Ok(format!("I waited {} seconds!", seconds))
+}
 
 
 struct Seconds(u64);
@@ -21,23 +34,4 @@ impl FromStr for Seconds {
             }
         })
     }
-}
-
-fn main() {
-    
-    let routes = warp::path::param()
-        
-        .and_then(|Seconds(seconds)| {
-            Delay::new(Instant::now() + Duration::from_secs(seconds))
-                
-                .map(move |()| seconds)
-                
-                .map_err(|timer_err| {
-                    eprintln!("timer error: {}", timer_err);
-                    warp::reject::custom(timer_err)
-                })
-        })
-        .map(|seconds| format!("I waited {} seconds!", seconds));
-
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
 }

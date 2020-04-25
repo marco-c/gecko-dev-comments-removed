@@ -7,43 +7,47 @@
 
 
 
+
 use std::fmt;
-use std::marker::PhantomData;
 use std::mem;
 use std::sync::Arc;
+#[cfg(feature = "runtime")]
+use std::time::Duration;
 
 use bytes::Bytes;
-use futures::{Async, Future, Poll};
-use futures::future::{self, Either, Executor};
-use tokio_io::{AsyncRead, AsyncWrite};
+use futures_util::future::{self, Either, FutureExt as _};
+use pin_project::{pin_project, project};
+use tokio::io::{AsyncRead, AsyncWrite};
+use tower_service::Service;
 
-use body::Payload;
-use common::Exec;
-use upgrade::Upgraded;
-use proto;
 use super::dispatch;
-use {Body, Request, Response};
+use crate::body::Payload;
+use crate::common::{task, BoxSendFuture, Exec, Executor, Future, Pin, Poll};
+use crate::proto;
+use crate::upgrade::Upgraded;
+use crate::{Body, Request, Response};
 
-type Http1Dispatcher<T, B, R> = proto::dispatch::Dispatcher<
-    proto::dispatch::Client<B>,
-    B,
-    T,
-    R,
->;
-type ConnEither<T, B> = Either<
-    Http1Dispatcher<T, B, proto::h1::ClientTransaction>,
-    proto::h2::Client<T, B>,
->;
+type Http1Dispatcher<T, B, R> = proto::dispatch::Dispatcher<proto::dispatch::Client<B>, B, T, R>;
 
-
-
-
-pub fn handshake<T>(io: T) -> Handshake<T, ::Body>
+#[pin_project]
+enum ProtoClient<T, B>
 where
-    T: AsyncRead + AsyncWrite + Send + 'static,
+    B: Payload,
 {
-    Builder::new()
-        .handshake(io)
+    H1(#[pin] Http1Dispatcher<T, B, proto::h1::ClientTransaction>),
+    H2(#[pin] proto::h2::ClientTask<B>),
+}
+
+
+
+
+pub async fn handshake<T>(
+    io: T,
+) -> crate::Result<(SendRequest<crate::Body>, Connection<T, crate::Body>)>
+where
+    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+{
+    Builder::new().handshake(io).await
 }
 
 
@@ -55,16 +59,14 @@ pub struct SendRequest<B> {
 
 
 
-
 #[must_use = "futures do nothing unless polled"]
 pub struct Connection<T, B>
 where
     T: AsyncRead + AsyncWrite + Send + 'static,
     B: Payload + 'static,
 {
-    inner: Option<ConnEither<T, B>>,
+    inner: Option<ProtoClient<T, B>>,
 }
-
 
 
 
@@ -75,17 +77,9 @@ pub struct Builder {
     h1_writev: bool,
     h1_title_case_headers: bool,
     h1_read_buf_exact_size: Option<usize>,
+    h1_max_buf_size: Option<usize>,
     http2: bool,
-}
-
-
-
-
-#[must_use = "futures do nothing unless polled"]
-pub struct Handshake<T, B> {
-    builder: Builder,
-    io: Option<T>,
-    _marker: PhantomData<B>,
+    h2_builder: proto::h2::client::Config,
 }
 
 
@@ -93,9 +87,13 @@ pub struct Handshake<T, B> {
 
 #[must_use = "futures do nothing unless polled"]
 pub struct ResponseFuture {
+    inner: ResponseFutureState,
+}
+
+enum ResponseFutureState {
+    Waiting(dispatch::Promise<Response<Body>>),
     
-    
-    inner: Box<Future<Item=Response<Body>, Error=::Error> + Send>,
+    Error(Option<crate::Error>),
 }
 
 
@@ -122,14 +120,6 @@ pub struct Parts<T> {
 
 
 
-#[allow(missing_debug_implementations)]
-#[must_use = "futures do nothing unless polled"]
-pub(super) struct WhenReady<B> {
-    tx: Option<SendRequest<B>>,
-}
-
-
-
 #[must_use = "futures do nothing unless polled"]
 pub(super) struct Http2SendRequest<B> {
     dispatch: dispatch::UnboundedSender<Request<B>, Response<Body>>,
@@ -137,19 +127,20 @@ pub(super) struct Http2SendRequest<B> {
 
 
 
-impl<B> SendRequest<B>
-{
+impl<B> SendRequest<B> {
     
     
     
-    pub fn poll_ready(&mut self) -> Poll<(), ::Error> {
-        self.dispatch.poll_ready()
+    pub fn poll_ready(&mut self, cx: &mut task::Context<'_>) -> Poll<crate::Result<()>> {
+        self.dispatch.poll_ready(cx)
     }
 
-    pub(super) fn when_ready(self) -> WhenReady<B> {
-        WhenReady {
-            tx: Some(self),
-        }
+    pub(super) fn when_ready(self) -> impl Future<Output = crate::Result<Self>> {
+        let mut me = Some(self);
+        future::poll_fn(move |cx| {
+            ready!(me.as_mut().unwrap().poll_ready(cx))?;
+            Poll::Ready(Ok(me.take().unwrap()))
+        })
     }
 
     pub(super) fn is_ready(&self) -> bool {
@@ -212,77 +203,66 @@ where
     
     
     
-    
-    
-    
-    
-    
-    
     pub fn send_request(&mut self, req: Request<B>) -> ResponseFuture {
         let inner = match self.dispatch.send(req) {
-            Ok(rx) => {
-                Either::A(rx.then(move |res| {
-                    match res {
-                        Ok(Ok(res)) => Ok(res),
-                        Ok(Err(err)) => Err(err),
-                        
-                        Err(_) => panic!("dispatch dropped without returning error"),
-                    }
-                }))
-            },
+            Ok(rx) => ResponseFutureState::Waiting(rx),
             Err(_req) => {
                 debug!("connection was not ready");
-                let err = ::Error::new_canceled(Some("connection was not ready"));
-                Either::B(future::err(err))
+                let err = crate::Error::new_canceled().with("connection was not ready");
+                ResponseFutureState::Error(Some(err))
             }
         };
 
-        ResponseFuture {
-            inner: Box::new(inner),
-        }
+        ResponseFuture { inner }
     }
 
-    pub(crate) fn send_request_retryable(&mut self, req: Request<B>) -> impl Future<Item = Response<Body>, Error = (::Error, Option<Request<B>>)>
+    pub(crate) fn send_request_retryable(
+        &mut self,
+        req: Request<B>,
+    ) -> impl Future<Output = Result<Response<Body>, (crate::Error, Option<Request<B>>)>> + Unpin
     where
         B: Send,
     {
         match self.dispatch.try_send(req) {
             Ok(rx) => {
-                Either::A(rx.then(move |res| {
+                Either::Left(rx.then(move |res| {
                     match res {
-                        Ok(Ok(res)) => Ok(res),
-                        Ok(Err(err)) => Err(err),
+                        Ok(Ok(res)) => future::ok(res),
+                        Ok(Err(err)) => future::err(err),
                         
                         Err(_) => panic!("dispatch dropped without returning error"),
                     }
                 }))
-            },
+            }
             Err(req) => {
                 debug!("connection was not ready");
-                let err = ::Error::new_canceled(Some("connection was not ready"));
-                Either::B(future::err((err, Some(req))))
+                let err = crate::Error::new_canceled().with("connection was not ready");
+                Either::Right(future::err((err, Some(req))))
             }
         }
     }
 }
 
+impl<B> Service<Request<B>> for SendRequest<B>
+where
+    B: Payload + 'static,
+{
+    type Response = Response<Body>;
+    type Error = crate::Error;
+    type Future = ResponseFuture;
 
+    fn poll_ready(&mut self, cx: &mut task::Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.poll_ready(cx)
+    }
 
-
-
-
-
-
-
-
-
-
-
+    fn call(&mut self, req: Request<B>) -> Self::Future {
+        self.send_request(req)
+    }
+}
 
 impl<B> fmt::Debug for SendRequest<B> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("SendRequest")
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SendRequest").finish()
     }
 }
 
@@ -302,34 +282,36 @@ impl<B> Http2SendRequest<B>
 where
     B: Payload + 'static,
 {
-    pub(super) fn send_request_retryable(&mut self, req: Request<B>) -> impl Future<Item=Response<Body>, Error=(::Error, Option<Request<B>>)>
+    pub(super) fn send_request_retryable(
+        &mut self,
+        req: Request<B>,
+    ) -> impl Future<Output = Result<Response<Body>, (crate::Error, Option<Request<B>>)>>
     where
         B: Send,
     {
         match self.dispatch.try_send(req) {
             Ok(rx) => {
-                Either::A(rx.then(move |res| {
+                Either::Left(rx.then(move |res| {
                     match res {
-                        Ok(Ok(res)) => Ok(res),
-                        Ok(Err(err)) => Err(err),
+                        Ok(Ok(res)) => future::ok(res),
+                        Ok(Err(err)) => future::err(err),
                         
                         Err(_) => panic!("dispatch dropped without returning error"),
                     }
                 }))
-            },
+            }
             Err(req) => {
                 debug!("connection was not ready");
-                let err = ::Error::new_canceled(Some("connection was not ready"));
-                Either::B(future::err((err, Some(req))))
+                let err = crate::Error::new_canceled().with("connection was not ready");
+                Either::Right(future::err((err, Some(req))))
             }
         }
     }
 }
 
 impl<B> fmt::Debug for Http2SendRequest<B> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Http2SendRequest")
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Http2SendRequest").finish()
     }
 }
 
@@ -345,23 +327,23 @@ impl<B> Clone for Http2SendRequest<B> {
 
 impl<T, B> Connection<T, B>
 where
-    T: AsyncRead + AsyncWrite + Send + 'static,
-    B: Payload + 'static,
+    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    B: Payload + Unpin + 'static,
 {
     
     
     
     pub fn into_parts(self) -> Parts<T> {
         let (io, read_buf, _) = match self.inner.expect("already upgraded") {
-            Either::A(h1) => h1.into_inner(),
-            Either::B(_h2) => {
+            ProtoClient::H1(h1) => h1.into_inner(),
+            ProtoClient::H2(_h2) => {
                 panic!("http2 cannot into_inner");
             }
         };
 
         Parts {
-            io: io,
-            read_buf: read_buf,
+            io,
+            read_buf,
             _inner: (),
         }
     }
@@ -373,41 +355,47 @@ where
     
     
     
-    pub fn poll_without_shutdown(&mut self) -> Poll<(), ::Error> {
-        match self.inner.as_mut().expect("already upgraded") {
-            &mut Either::A(ref mut h1) => {
-                h1.poll_without_shutdown()
-            },
-            &mut Either::B(ref mut h2) => {
-                h2.poll().map(|x| x.map(|_| ()))
-            }
+    
+    
+    
+    
+    pub fn poll_without_shutdown(&mut self, cx: &mut task::Context<'_>) -> Poll<crate::Result<()>> {
+        match *self.inner.as_mut().expect("already upgraded") {
+            ProtoClient::H1(ref mut h1) => h1.poll_without_shutdown(cx),
+            ProtoClient::H2(ref mut h2) => Pin::new(h2).poll(cx).map_ok(|_| ()),
         }
+    }
+
+    
+    
+    pub fn without_shutdown(self) -> impl Future<Output = crate::Result<Parts<T>>> {
+        let mut conn = Some(self);
+        future::poll_fn(move |cx| -> Poll<crate::Result<Parts<T>>> {
+            ready!(conn.as_mut().unwrap().poll_without_shutdown(cx))?;
+            Poll::Ready(Ok(conn.take().unwrap().into_parts()))
+        })
     }
 }
 
 impl<T, B> Future for Connection<T, B>
 where
-    T: AsyncRead + AsyncWrite + Send + 'static,
+    T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
     B: Payload + 'static,
 {
-    type Item = ();
-    type Error = ::Error;
+    type Output = crate::Result<()>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match try_ready!(self.inner.poll()) {
-            Some(proto::Dispatched::Shutdown) |
-            None => {
-                Ok(Async::Ready(()))
-            },
-            Some(proto::Dispatched::Upgrade(pending)) => {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        match ready!(Pin::new(self.inner.as_mut().unwrap()).poll(cx))? {
+            proto::Dispatched::Shutdown => Poll::Ready(Ok(())),
+            proto::Dispatched::Upgrade(pending) => {
                 let h1 = match mem::replace(&mut self.inner, None) {
-                    Some(Either::A(h1)) => h1,
+                    Some(ProtoClient::H1(h1)) => h1,
                     _ => unreachable!("Upgrade expects h1"),
                 };
 
                 let (io, buf, _) = h1.into_inner();
-                pending.fulfill(Upgraded::new(Box::new(io), buf));
-                Ok(Async::Ready(()))
+                pending.fulfill(Upgraded::new(io, buf));
+                Poll::Ready(Ok(()))
             }
         }
     }
@@ -418,9 +406,8 @@ where
     T: AsyncRead + AsyncWrite + fmt::Debug + Send + 'static,
     B: Payload + 'static,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Connection")
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Connection").finish()
     }
 }
 
@@ -435,14 +422,16 @@ impl Builder {
             h1_writev: true,
             h1_read_buf_exact_size: None,
             h1_title_case_headers: false,
+            h1_max_buf_size: None,
             http2: false,
+            h2_builder: Default::default(),
         }
     }
 
     
     pub fn executor<E>(&mut self, exec: E) -> &mut Builder
     where
-        E: Executor<Box<Future<Item=(), Error=()> + Send>> + Send + Sync + 'static,
+        E: Executor<BoxSendFuture> + Send + Sync + 'static,
     {
         self.exec = Exec::Executor(Arc::new(exec));
         self
@@ -460,8 +449,21 @@ impl Builder {
 
     pub(super) fn h1_read_buf_exact_size(&mut self, sz: Option<usize>) -> &mut Builder {
         self.h1_read_buf_exact_size = sz;
+        self.h1_max_buf_size = None;
         self
     }
+
+    pub(super) fn h1_max_buf_size(&mut self, max: usize) -> &mut Self {
+        assert!(
+            max >= proto::h1::MINIMUM_MAX_BUFFER_SIZE,
+            "the max_buf_size cannot be smaller than the minimum that h1 specifies."
+        );
+
+        self.h1_max_buf_size = Some(max);
+        self.h1_read_buf_exact_size = None;
+        self
+    }
+
     
     
     
@@ -471,104 +473,195 @@ impl Builder {
     }
 
     
-    #[inline]
-    pub fn handshake<T, B>(&self, io: T) -> Handshake<T, B>
+    
+    
+    
+    
+    
+    
+    
+    pub fn http2_initial_stream_window_size(&mut self, sz: impl Into<Option<u32>>) -> &mut Self {
+        if let Some(sz) = sz.into() {
+            self.h2_builder.adaptive_window = false;
+            self.h2_builder.initial_stream_window_size = sz;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn http2_initial_connection_window_size(
+        &mut self,
+        sz: impl Into<Option<u32>>,
+    ) -> &mut Self {
+        if let Some(sz) = sz.into() {
+            self.h2_builder.adaptive_window = false;
+            self.h2_builder.initial_conn_window_size = sz;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn http2_adaptive_window(&mut self, enabled: bool) -> &mut Self {
+        use proto::h2::SPEC_WINDOW_SIZE;
+
+        self.h2_builder.adaptive_window = enabled;
+        if enabled {
+            self.h2_builder.initial_conn_window_size = SPEC_WINDOW_SIZE;
+            self.h2_builder.initial_stream_window_size = SPEC_WINDOW_SIZE;
+        }
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "runtime")]
+    pub fn http2_keep_alive_interval(
+        &mut self,
+        interval: impl Into<Option<Duration>>,
+    ) -> &mut Self {
+        self.h2_builder.keep_alive_interval = interval.into();
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "runtime")]
+    pub fn http2_keep_alive_timeout(&mut self, timeout: Duration) -> &mut Self {
+        self.h2_builder.keep_alive_timeout = timeout;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "runtime")]
+    pub fn http2_keep_alive_while_idle(&mut self, enabled: bool) -> &mut Self {
+        self.h2_builder.keep_alive_while_idle = enabled;
+        self
+    }
+
+    
+    pub fn handshake<T, B>(
+        &self,
+        io: T,
+    ) -> impl Future<Output = crate::Result<(SendRequest<B>, Connection<T, B>)>>
     where
-        T: AsyncRead + AsyncWrite + Send + 'static,
+        T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
         B: Payload + 'static,
     {
-        trace!("client handshake HTTP/{}", if self.http2 { 2 } else { 1 });
-        Handshake {
-            builder: self.clone(),
-            io: Some(io),
-            _marker: PhantomData,
+        let opts = self.clone();
+
+        async move {
+            trace!("client handshake HTTP/{}", if opts.http2 { 2 } else { 1 });
+
+            let (tx, rx) = dispatch::channel();
+            let proto = if !opts.http2 {
+                let mut conn = proto::Conn::new(io);
+                if !opts.h1_writev {
+                    conn.set_write_strategy_flatten();
+                }
+                if opts.h1_title_case_headers {
+                    conn.set_title_case_headers();
+                }
+                if let Some(sz) = opts.h1_read_buf_exact_size {
+                    conn.set_read_buf_exact_size(sz);
+                }
+                if let Some(max) = opts.h1_max_buf_size {
+                    conn.set_max_buf_size(max);
+                }
+                let cd = proto::h1::dispatch::Client::new(rx);
+                let dispatch = proto::h1::Dispatcher::new(cd, conn);
+                ProtoClient::H1(dispatch)
+            } else {
+                let h2 = proto::h2::client::handshake(io, rx, &opts.h2_builder, opts.exec.clone())
+                    .await?;
+                ProtoClient::H2(h2)
+            };
+
+            Ok((
+                SendRequest { dispatch: tx },
+                Connection { inner: Some(proto) },
+            ))
         }
     }
 }
 
 
 
-impl<T, B> Future for Handshake<T, B>
-where
-    T: AsyncRead + AsyncWrite + Send + 'static,
-    B: Payload + 'static,
-{
-    type Item = (SendRequest<B>, Connection<T, B>);
-    type Error = ::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let io = self.io.take().expect("polled more than once");
-        let (tx, rx) = dispatch::channel();
-        let either = if !self.builder.http2 {
-            let mut conn = proto::Conn::new(io);
-            if !self.builder.h1_writev {
-                conn.set_write_strategy_flatten();
-            }
-            if self.builder.h1_title_case_headers {
-                conn.set_title_case_headers();
-            }
-            if let Some(sz) = self.builder.h1_read_buf_exact_size {
-                conn.set_read_buf_exact_size(sz);
-            }
-            let cd = proto::h1::dispatch::Client::new(rx);
-            let dispatch = proto::h1::Dispatcher::new(cd, conn);
-            Either::A(dispatch)
-        } else {
-            let h2 = proto::h2::Client::new(io, rx, self.builder.exec.clone());
-            Either::B(h2)
-        };
-
-        Ok(Async::Ready((
-            SendRequest {
-                dispatch: tx,
-            },
-            Connection {
-                inner: Some(either),
-            },
-        )))
-    }
-}
-
-impl<T, B> fmt::Debug for Handshake<T, B> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Handshake")
-            .finish()
-    }
-}
-
-
-
 impl Future for ResponseFuture {
-    type Item = Response<Body>;
-    type Error = ::Error;
+    type Output = crate::Result<Response<Body>>;
 
-    #[inline]
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.inner.poll()
+    fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        match self.inner {
+            ResponseFutureState::Waiting(ref mut rx) => {
+                Pin::new(rx).poll(cx).map(|res| match res {
+                    Ok(Ok(resp)) => Ok(resp),
+                    Ok(Err(err)) => Err(err),
+                    
+                    Err(_canceled) => panic!("dispatch dropped without returning error"),
+                })
+            }
+            ResponseFutureState::Error(ref mut err) => {
+                Poll::Ready(Err(err.take().expect("polled after ready")))
+            }
+        }
     }
 }
 
 impl fmt::Debug for ResponseFuture {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("ResponseFuture")
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ResponseFuture").finish()
     }
 }
 
 
 
-impl<B> Future for WhenReady<B> {
-    type Item = SendRequest<B>;
-    type Error = ::Error;
+impl<T, B> Future for ProtoClient<T, B>
+where
+    T: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    B: Payload + 'static,
+{
+    type Output = crate::Result<proto::Dispatched>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let mut tx = self.tx.take().expect("polled after complete");
-        match tx.poll_ready()? {
-            Async::Ready(()) => Ok(Async::Ready(tx)),
-            Async::NotReady => {
-                self.tx = Some(tx);
-                Ok(Async::NotReady)
-            }
+    #[project]
+    fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        #[project]
+        match self.project() {
+            ProtoClient::H1(c) => c.poll(cx),
+            ProtoClient::H2(c) => c.poll(cx),
         }
     }
 }
@@ -578,7 +671,6 @@ impl<B> Future for WhenReady<B> {
 trait AssertSend: Send {}
 trait AssertSendSync: Send + Sync {}
 
-
 #[doc(hidden)]
 impl<B: Send> AssertSendSync for SendRequest<B> {}
 
@@ -587,7 +679,8 @@ impl<T: Send, B: Send> AssertSend for Connection<T, B>
 where
     T: AsyncRead + AsyncWrite + Send + 'static,
     B: Payload + 'static,
-{}
+{
+}
 
 #[doc(hidden)]
 impl<T: Send + Sync, B: Send + Sync> AssertSendSync for Connection<T, B>
@@ -595,11 +688,11 @@ where
     T: AsyncRead + AsyncWrite + Send + 'static,
     B: Payload + 'static,
     B::Data: Send + Sync + 'static,
-{}
+{
+}
 
 #[doc(hidden)]
 impl AssertSendSync for Builder {}
 
 #[doc(hidden)]
 impl AssertSend for ResponseFuture {}
-

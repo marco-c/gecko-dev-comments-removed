@@ -135,70 +135,20 @@
 
 
 
+use crate::codec::{Codec, RecvError, SendError, UserError};
+use crate::frame::{Headers, Pseudo, Reason, Settings, StreamId};
+use crate::proto;
+use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use {SendStream, RecvStream, ReleaseCapacity};
-use codec::{Codec, RecvError, SendError, UserError};
-use frame::{Headers, Pseudo, Reason, Settings, StreamId};
-use proto;
-
-use bytes::{Bytes, IntoBuf};
-use futures::{Async, Future, Poll};
-use http::{uri, Request, Response, Method, Version};
-use tokio_io::{AsyncRead, AsyncWrite};
-use tokio_io::io::WriteAll;
-
+use bytes::{Buf, Bytes};
+use http::{uri, HeaderMap, Method, Request, Response, Version};
 use std::fmt;
-use std::marker::PhantomData;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 use std::time::Duration;
 use std::usize;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[must_use = "futures do nothing unless polled"]
-pub struct Handshake<T, B: IntoBuf = Bytes> {
-    builder: Builder,
-    inner: WriteAll<T, &'static [u8]>,
-    _marker: PhantomData<B>,
-}
+use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
 
 
 
@@ -221,15 +171,15 @@ pub struct Handshake<T, B: IntoBuf = Bytes> {
 
 
 
-pub struct SendRequest<B: IntoBuf> {
-    inner: proto::Streams<B::Buf, Peer>,
+pub struct SendRequest<B: Buf> {
+    inner: proto::Streams<B, Peer>,
     pending: Option<proto::OpaqueStreamRef>,
 }
 
 
 
 #[derive(Debug)]
-pub struct ReadySendRequest<B: IntoBuf> {
+pub struct ReadySendRequest<B: Buf> {
     inner: Option<SendRequest<B>>,
 }
 
@@ -276,23 +226,8 @@ pub struct ReadySendRequest<B: IntoBuf> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[must_use = "futures do nothing unless polled"]
-pub struct Connection<T, B: IntoBuf = Bytes> {
+pub struct Connection<T, B: Buf = Bytes> {
     inner: proto::Connection<T, Peer, B>,
 }
 
@@ -301,8 +236,37 @@ pub struct Connection<T, B: IntoBuf = Bytes> {
 #[must_use = "futures do nothing unless polled"]
 pub struct ResponseFuture {
     inner: proto::OpaqueStreamRef,
+    push_promise_consumed: bool,
 }
 
+
+
+
+
+
+
+#[derive(Debug)]
+#[must_use = "futures do nothing unless polled"]
+pub struct PushedResponseFuture {
+    inner: ResponseFuture,
+}
+
+
+#[derive(Debug)]
+pub struct PushPromise {
+    
+    request: Request<()>,
+
+    
+    response: PushedResponseFuture,
+}
+
+
+#[derive(Debug)]
+#[must_use = "streams do nothing unless polled"]
+pub struct PushPromises {
+    inner: proto::OpaqueStreamRef,
+}
 
 
 
@@ -372,8 +336,7 @@ pub(crate) struct Peer;
 
 impl<B> SendRequest<B>
 where
-    B: IntoBuf,
-    B::Buf: 'static,
+    B: Buf + 'static,
 {
     
     
@@ -385,19 +348,12 @@ where
     
     
     
-    pub fn poll_ready(&mut self) -> Poll<(), ::Error> {
-        try_ready!(self.inner.poll_pending_open(self.pending.as_ref()));
+    pub fn poll_ready(&mut self, cx: &mut Context) -> Poll<Result<(), crate::Error>> {
+        ready!(self.inner.poll_pending_open(cx, self.pending.as_ref()))?;
         self.pending = None;
-        Ok(().into())
+        Poll::Ready(Ok(()))
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -537,32 +493,11 @@ where
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn send_request(
         &mut self,
         request: Request<()>,
         end_of_stream: bool,
-    ) -> Result<(ResponseFuture, SendStream<B>), ::Error> {
+    ) -> Result<(ResponseFuture, SendStream<B>), crate::Error> {
         self.inner
             .send_request(request, end_of_stream, self.pending.as_ref())
             .map_err(Into::into)
@@ -573,6 +508,7 @@ where
 
                 let response = ResponseFuture {
                     inner: stream.clone_to_opaque(),
+                    push_promise_consumed: false,
                 };
 
                 let stream = SendStream::new(stream);
@@ -584,7 +520,7 @@ where
 
 impl<B> fmt::Debug for SendRequest<B>
 where
-    B: IntoBuf,
+    B: Buf,
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("SendRequest").finish()
@@ -593,7 +529,7 @@ where
 
 impl<B> Clone for SendRequest<B>
 where
-    B: IntoBuf,
+    B: Buf,
 {
     fn clone(&self) -> Self {
         SendRequest {
@@ -606,7 +542,7 @@ where
 #[cfg(feature = "unstable")]
 impl<B> SendRequest<B>
 where
-    B: IntoBuf,
+    B: Buf,
 {
     
     
@@ -629,28 +565,26 @@ where
 
 
 impl<B> Future for ReadySendRequest<B>
-where B: IntoBuf,
-      B::Buf: 'static,
+where
+    B: Buf + 'static,
 {
-    type Item = SendRequest<B>;
-    type Error = ::Error;
+    type Output = Result<SendRequest<B>, crate::Error>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        match self.inner {
-            Some(ref mut send_request) => {
-                let _ = try_ready!(send_request.poll_ready());
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match &mut self.inner {
+            Some(send_request) => {
+                ready!(send_request.poll_ready(cx))?;
             }
             None => panic!("called `poll` after future completed"),
         }
 
-        Ok(self.inner.take().unwrap().into())
+        Poll::Ready(Ok(self.inner.take().unwrap()))
     }
 }
 
 
 
 impl Builder {
-    
     
     
     
@@ -718,13 +652,11 @@ impl Builder {
     
     
     
-    
     pub fn initial_window_size(&mut self, size: u32) -> &mut Self {
         self.settings.set_initial_window_size(Some(size));
         self
     }
 
-    
     
     
     
@@ -794,7 +726,6 @@ impl Builder {
     
     
     
-    
     pub fn max_frame_size(&mut self, max: u32) -> &mut Self {
         self.settings.set_max_frame_size(Some(max));
         self
@@ -830,13 +761,11 @@ impl Builder {
     
     
     
-    
     pub fn max_header_list_size(&mut self, max: u32) -> &mut Self {
         self.settings.set_max_header_list_size(Some(max));
         self
     }
 
-    
     
     
     
@@ -922,15 +851,11 @@ impl Builder {
     
     
     
-    
     pub fn initial_max_send_streams(&mut self, initial: usize) -> &mut Self {
         self.initial_max_send_streams = initial;
         self
     }
 
-    
-    
-    
     
     
     
@@ -1017,15 +942,11 @@ impl Builder {
     
     
     
-    
-    
-    
     pub fn reset_stream_duration(&mut self, dur: Duration) -> &mut Self {
         self.reset_stream_duration = dur;
         self
     }
 
-    
     
     
     
@@ -1136,11 +1057,13 @@ impl Builder {
     
     
     
-    pub fn handshake<T, B>(&self, io: T) -> Handshake<T, B>
+    pub fn handshake<T, B>(
+        &self,
+        io: T,
+    ) -> impl Future<Output = Result<(SendRequest<B>, Connection<T, B>), crate::Error>>
     where
-        T: AsyncRead + AsyncWrite,
-        B: IntoBuf,
-        B::Buf: 'static,
+        T: AsyncRead + AsyncWrite + Unpin,
+        B: Buf + 'static,
     {
         Connection::handshake2(io, self.clone())
     }
@@ -1187,39 +1110,69 @@ impl Default for Builder {
 
 
 
-
-
-
-
-
-
-
-pub fn handshake<T>(io: T) -> Handshake<T, Bytes>
-where T: AsyncRead + AsyncWrite,
+pub async fn handshake<T>(io: T) -> Result<(SendRequest<Bytes>, Connection<T, Bytes>), crate::Error>
+where
+    T: AsyncRead + AsyncWrite + Unpin,
 {
-    Builder::new().handshake(io)
+    let builder = Builder::new();
+    builder.handshake(io).await
 }
 
 
 
 impl<T, B> Connection<T, B>
 where
-    T: AsyncRead + AsyncWrite,
-    B: IntoBuf,
+    T: AsyncRead + AsyncWrite + Unpin,
+    B: Buf + 'static,
 {
-    fn handshake2(io: T, builder: Builder) -> Handshake<T, B> {
-        use tokio_io::io;
-
-        debug!("binding client connection");
+    async fn handshake2(
+        mut io: T,
+        builder: Builder,
+    ) -> Result<(SendRequest<B>, Connection<T, B>), crate::Error> {
+        log::debug!("binding client connection");
 
         let msg: &'static [u8] = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
-        let handshake = io::write_all(io, msg);
+        io.write_all(msg).await.map_err(crate::Error::from_io)?;
 
-        Handshake {
-            builder,
-            inner: handshake,
-            _marker: PhantomData,
+        log::debug!("client connection bound");
+
+        
+        let mut codec = Codec::new(io);
+
+        if let Some(max) = builder.settings.max_frame_size() {
+            codec.set_max_recv_frame_size(max as usize);
         }
+
+        if let Some(max) = builder.settings.max_header_list_size() {
+            codec.set_max_recv_header_list_size(max as usize);
+        }
+
+        
+        codec
+            .buffer(builder.settings.clone().into())
+            .expect("invalid SETTINGS frame");
+
+        let inner = proto::Connection::new(
+            codec,
+            proto::Config {
+                next_stream_id: builder.stream_id,
+                initial_max_send_streams: builder.initial_max_send_streams,
+                reset_stream_duration: builder.reset_stream_duration,
+                reset_stream_max: builder.reset_stream_max,
+                settings: builder.settings.clone(),
+            },
+        );
+        let send_request = SendRequest {
+            inner: inner.streams().clone(),
+            pending: None,
+        };
+
+        let mut connection = Connection { inner };
+        if let Some(sz) = builder.initial_target_connection_window_size {
+            connection.set_target_window_size(sz);
+        }
+
+        Ok((send_request, connection))
     }
 
     
@@ -1243,19 +1196,46 @@ where
         assert!(size <= proto::MAX_WINDOW_SIZE);
         self.inner.set_target_window_size(size);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_initial_window_size(&mut self, size: u32) -> Result<(), crate::Error> {
+        assert!(size <= proto::MAX_WINDOW_SIZE);
+        self.inner.set_initial_window_size(size)?;
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    pub fn ping_pong(&mut self) -> Option<PingPong> {
+        self.inner.take_user_pings().map(PingPong::new)
+    }
 }
 
 impl<T, B> Future for Connection<T, B>
 where
-    T: AsyncRead + AsyncWrite,
-    B: IntoBuf,
+    T: AsyncRead + AsyncWrite + Unpin,
+    B: Buf + 'static,
 {
-    type Item = ();
-    type Error = ::Error;
+    type Output = Result<(), crate::Error>;
 
-    fn poll(&mut self) -> Poll<(), ::Error> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         self.inner.maybe_close_connection_if_no_streams();
-        self.inner.poll().map_err(Into::into)
+        self.inner.poll(cx).map_err(Into::into)
     }
 }
 
@@ -1263,8 +1243,7 @@ impl<T, B> fmt::Debug for Connection<T, B>
 where
     T: AsyncRead + AsyncWrite,
     T: fmt::Debug,
-    B: fmt::Debug + IntoBuf,
-    B::Buf: fmt::Debug,
+    B: fmt::Debug + Buf,
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(&self.inner, fmt)
@@ -1273,83 +1252,14 @@ where
 
 
 
-impl<T, B> Future for Handshake<T, B>
-where
-    T: AsyncRead + AsyncWrite,
-    B: IntoBuf,
-    B::Buf: 'static,
-{
-    type Item = (SendRequest<B>, Connection<T, B>);
-    type Error = ::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let res = self.inner.poll()
-            .map_err(::Error::from);
-
-        let (io, _) = try_ready!(res);
-
-        debug!("client connection bound");
-
-        
-        let mut codec = Codec::new(io);
-
-        if let Some(max) = self.builder.settings.max_frame_size() {
-            codec.set_max_recv_frame_size(max as usize);
-        }
-
-        if let Some(max) = self.builder.settings.max_header_list_size() {
-            codec.set_max_recv_header_list_size(max as usize);
-        }
-
-        
-        codec
-            .buffer(self.builder.settings.clone().into())
-            .expect("invalid SETTINGS frame");
-
-        let inner = proto::Connection::new(codec, proto::Config {
-            next_stream_id: self.builder.stream_id,
-            initial_max_send_streams: self.builder.initial_max_send_streams,
-            reset_stream_duration: self.builder.reset_stream_duration,
-            reset_stream_max: self.builder.reset_stream_max,
-            settings: self.builder.settings.clone(),
-        });
-        let send_request = SendRequest {
-            inner: inner.streams().clone(),
-            pending: None,
-        };
-
-        let mut connection = Connection { inner };
-        if let Some(sz) = self.builder.initial_target_connection_window_size {
-            connection.set_target_window_size(sz);
-        }
-
-        Ok(Async::Ready((send_request, connection)))
-    }
-}
-
-impl<T, B> fmt::Debug for Handshake<T, B>
-where
-    T: AsyncRead + AsyncWrite,
-    T: fmt::Debug,
-    B: fmt::Debug + IntoBuf,
-    B::Buf: fmt::Debug + IntoBuf,
-{
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "client::Handshake")
-    }
-}
-
-
-
 impl Future for ResponseFuture {
-    type Item = Response<RecvStream>;
-    type Error = ::Error;
+    type Output = Result<Response<RecvStream>, crate::Error>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let (parts, _) = try_ready!(self.inner.poll_response()).into_parts();
-        let body = RecvStream::new(ReleaseCapacity::new(self.inner.clone()));
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let (parts, _) = ready!(self.inner.poll_response(cx))?.into_parts();
+        let body = RecvStream::new(FlowControl::new(self.inner.clone()));
 
-        Ok(Response::from_parts(parts, body).into())
+        Poll::Ready(Ok(Response::from_parts(parts, body)))
     }
 }
 
@@ -1359,8 +1269,103 @@ impl ResponseFuture {
     
     
     
-    pub fn stream_id(&self) -> ::StreamId {
-        ::StreamId::from_internal(self.inner.stream_id())
+    pub fn stream_id(&self) -> crate::StreamId {
+        crate::StreamId::from_internal(self.inner.stream_id())
+    }
+    
+    
+    
+    
+    
+    
+    pub fn push_promises(&mut self) -> PushPromises {
+        if self.push_promise_consumed {
+            panic!("Reference to push promises stream taken!");
+        }
+        self.push_promise_consumed = true;
+        PushPromises {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+
+
+impl PushPromises {
+    
+    pub async fn push_promise(&mut self) -> Option<Result<PushPromise, crate::Error>> {
+        futures_util::future::poll_fn(move |cx| self.poll_push_promise(cx)).await
+    }
+
+    #[doc(hidden)]
+    pub fn poll_push_promise(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<PushPromise, crate::Error>>> {
+        match self.inner.poll_pushed(cx) {
+            Poll::Ready(Some(Ok((request, response)))) => {
+                let response = PushedResponseFuture {
+                    inner: ResponseFuture {
+                        inner: response,
+                        push_promise_consumed: false,
+                    },
+                };
+                Poll::Ready(Some(Ok(PushPromise { request, response })))
+            }
+            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(e.into()))),
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+
+#[cfg(feature = "stream")]
+impl futures_core::Stream for PushPromises {
+    type Item = Result<PushPromise, crate::Error>;
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.poll_push_promise(cx)
+    }
+}
+
+
+
+impl PushPromise {
+    
+    pub fn request(&self) -> &Request<()> {
+        &self.request
+    }
+
+    
+    pub fn request_mut(&mut self) -> &mut Request<()> {
+        &mut self.request
+    }
+
+    
+    
+    pub fn into_parts(self) -> (Request<()>, PushedResponseFuture) {
+        (self.request, self.response)
+    }
+}
+
+
+
+impl Future for PushedResponseFuture {
+    type Output = Result<Response<RecvStream>, crate::Error>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        Pin::new(&mut self.inner).poll(cx)
+    }
+}
+
+impl PushedResponseFuture {
+    
+    
+    
+    
+    
+    pub fn stream_id(&self) -> crate::StreamId {
+        self.inner.stream_id()
     }
 }
 
@@ -1370,8 +1375,8 @@ impl Peer {
     pub fn convert_send_message(
         id: StreamId,
         request: Request<()>,
-        end_of_stream: bool) -> Result<Headers, SendError>
-    {
+        end_of_stream: bool,
+    ) -> Result<Headers, SendError> {
         use http::request::Parts;
 
         let (
@@ -1433,7 +1438,7 @@ impl Peer {
 impl proto::Peer for Peer {
     type Poll = Response<()>;
 
-    fn dyn() -> proto::DynPeer {
+    fn r#dyn() -> proto::DynPeer {
         proto::DynPeer::Client
     }
 
@@ -1441,16 +1446,17 @@ impl proto::Peer for Peer {
         false
     }
 
-    fn convert_poll_message(headers: Headers) -> Result<Self::Poll, RecvError> {
+    fn convert_poll_message(
+        pseudo: Pseudo,
+        fields: HeaderMap,
+        stream_id: StreamId,
+    ) -> Result<Self::Poll, RecvError> {
         let mut b = Response::builder();
 
-        let stream_id = headers.stream_id();
-        let (pseudo, fields) = headers.into_parts();
-
-        b.version(Version::HTTP_2);
+        b = b.version(Version::HTTP_2);
 
         if let Some(status) = pseudo.status {
-            b.status(status);
+            b = b.status(status);
         }
 
         let mut response = match b.body(()) {
@@ -1462,7 +1468,7 @@ impl proto::Peer for Peer {
                     id: stream_id,
                     reason: Reason::PROTOCOL_ERROR,
                 });
-            },
+            }
         };
 
         *response.headers_mut() = fields;

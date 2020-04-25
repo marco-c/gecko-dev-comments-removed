@@ -4,9 +4,9 @@ use fnv::FnvHasher;
 use http::header;
 use http::method::Method;
 
-use std::{cmp, mem, usize};
 use std::collections::VecDeque;
 use std::hash::{Hash, Hasher};
+use std::{cmp, mem, usize};
 
 
 #[derive(Debug)]
@@ -54,7 +54,7 @@ struct Pos {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 struct HashValue(usize);
 
-const MAX_SIZE: usize = (1 << 16);
+const MAX_SIZE: usize = 1 << 16;
 const DYN_OFFSET: usize = 62;
 
 macro_rules! probe_loop {
@@ -80,7 +80,7 @@ impl Table {
                 slots: VecDeque::new(),
                 inserted: 0,
                 size: 0,
-                max_size: max_size,
+                max_size,
             }
         } else {
             let capacity = cmp::max(to_raw_capacity(capacity).next_power_of_two(), 8);
@@ -91,7 +91,7 @@ impl Table {
                 slots: VecDeque::with_capacity(usable_capacity(capacity)),
                 inserted: 0,
                 size: 0,
-                max_size: max_size,
+                max_size,
             }
         }
     }
@@ -125,7 +125,7 @@ impl Table {
             Indexed(idx, ..) => idx,
             Name(idx, ..) => idx,
             Inserted(idx) => idx + DYN_OFFSET,
-            InsertedValue(idx, _) => idx,
+            InsertedValue(_name_idx, slot_idx) => slot_idx + DYN_OFFSET,
             NotIndexed(_) => panic!("cannot resolve index"),
         }
     }
@@ -140,6 +140,7 @@ impl Table {
             
             
             
+            debug_assert!(statik.is_some(), "skip_value_index requires a static name",);
             return Index::new(statik, header);
         }
 
@@ -191,7 +192,7 @@ impl Table {
                     return self.index_vacant(header, hash, dist, probe, statik);
                 } else if pos.hash == hash && self.slots[slot_idx].header.name() == header.name() {
                     // Matching name, check values
-                    return self.index_occupied(header, hash, pos.index);
+                    return self.index_occupied(header, hash, pos.index, statik.map(|(n, _)| n));
                 }
             } else {
                 return self.index_vacant(header, hash, dist, probe, statik);
@@ -201,7 +202,13 @@ impl Table {
         });
     }
 
-    fn index_occupied(&mut self, header: Header, hash: HashValue, mut index: usize) -> Index {
+    fn index_occupied(
+        &mut self,
+        header: Header,
+        hash: HashValue,
+        mut index: usize,
+        statik: Option<usize>,
+    ) -> Index {
         debug_assert!(self.assert_valid_state("top"));
 
         
@@ -222,6 +229,8 @@ impl Table {
             }
 
             if header.is_sensitive() {
+                
+                
                 return Index::Name(real_idx + DYN_OFFSET, header);
             }
 
@@ -245,7 +254,12 @@ impl Table {
 
             
             
-            return Index::InsertedValue(real_idx + DYN_OFFSET, 0);
+            return if let Some(n) = statik {
+                
+                Index::InsertedValue(n, 0)
+            } else {
+                Index::InsertedValue(real_idx + DYN_OFFSET, 0)
+            };
         }
     }
 
@@ -296,7 +310,7 @@ impl Table {
             &mut self.indices[probe],
             Some(Pos {
                 index: pos_idx,
-                hash: hash,
+                hash,
             }),
         );
 
@@ -327,8 +341,8 @@ impl Table {
         self.inserted = self.inserted.wrapping_add(1);
 
         self.slots.push_front(Slot {
-            hash: hash,
-            header: header,
+            hash,
+            header,
             next: None,
         });
     }
@@ -667,11 +681,13 @@ fn index_static(header: &Header) -> Option<(usize, bool)> {
             ref value,
         } => match *name {
             header::ACCEPT_CHARSET => Some((15, false)),
-            header::ACCEPT_ENCODING => if value == "gzip, deflate" {
-                Some((16, true))
-            } else {
-                Some((16, false))
-            },
+            header::ACCEPT_ENCODING => {
+                if value == "gzip, deflate" {
+                    Some((16, true))
+                } else {
+                    Some((16, false))
+                }
+            }
             header::ACCEPT_LANGUAGE => Some((17, false)),
             header::ACCEPT_RANGES => Some((18, false)),
             header::ACCEPT => Some((19, false)),

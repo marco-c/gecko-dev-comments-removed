@@ -112,24 +112,151 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(test)]
+#[macro_use]
+mod tests;
+
+pub(crate) mod context;
+
+cfg_rt_core! {
+    mod basic_scheduler;
+    use basic_scheduler::BasicScheduler;
+
+    pub(crate) mod task;
+}
+
+mod blocking;
+use blocking::BlockingPool;
+
+cfg_blocking_impl! {
+    #[allow(unused_imports)]
+    pub(crate) use blocking::{spawn_blocking, try_spawn_blocking};
+}
+
 mod builder;
-pub mod current_thread;
-mod shutdown;
-mod task_executor;
-
 pub use self::builder::Builder;
-pub use self::shutdown::Shutdown;
-pub use self::task_executor::TaskExecutor;
 
-use reactor::{Background, Handle};
+pub(crate) mod enter;
+use self::enter::enter;
 
-use std::io;
+mod handle;
+pub use self::handle::{Handle, TryCurrentError};
 
-use tokio_executor::enter;
-use tokio_threadpool as threadpool;
+mod io;
 
-use futures;
-use futures::future::Future;
+cfg_rt_threaded! {
+    mod park;
+    use park::Parker;
+}
+
+mod shell;
+use self::shell::Shell;
+
+mod spawner;
+use self::spawner::Spawner;
+
+mod time;
+
+cfg_rt_threaded! {
+    mod queue;
+
+    pub(crate) mod thread_pool;
+    use self::thread_pool::ThreadPool;
+}
+
+cfg_rt_core! {
+    use crate::task::JoinHandle;
+}
+
+use std::future::Future;
+use std::time::Duration;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -147,74 +274,34 @@ use futures::future::Future;
 
 #[derive(Debug)]
 pub struct Runtime {
-    inner: Option<Inner>,
+    
+    kind: Kind,
+
+    
+    handle: Handle,
+
+    
+    blocking_pool: BlockingPool,
 }
+
 
 #[derive(Debug)]
-struct Inner {
+enum Kind {
     
-    reactor: Background,
+    
+    Shell(Shell),
 
     
-    pool: threadpool::ThreadPool,
+    #[cfg(feature = "rt-core")]
+    Basic(BasicScheduler<time::Driver>),
+
+    
+    #[cfg(feature = "rt-threaded")]
+    ThreadPool(ThreadPool),
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn run<F>(future: F)
-where F: Future<Item = (), Error = ()> + Send + 'static,
-{
-    let mut runtime = Runtime::new().unwrap();
-    runtime.spawn(future);
-    enter().expect("nested tokio::run")
-        .block_on(runtime.shutdown_on_idle())
-        .unwrap();
-}
+type Callback = std::sync::Arc<dyn Fn() + Send + Sync>;
 
 impl Runtime {
     
@@ -247,57 +334,22 @@ impl Runtime {
     
     
     
-    pub fn new() -> io::Result<Self> {
-        Builder::new().build()
-    }
+    
+    
+    
+    
+    
+    pub fn new() -> io::Result<Runtime> {
+        #[cfg(feature = "rt-threaded")]
+        let ret = Builder::new().threaded_scheduler().enable_all().build();
 
-    #[deprecated(since = "0.1.5", note = "use `reactor` instead")]
-    #[doc(hidden)]
-    pub fn handle(&self) -> &Handle {
-        self.reactor()
-    }
+        #[cfg(all(not(feature = "rt-threaded"), feature = "rt-core"))]
+        let ret = Builder::new().basic_scheduler().enable_all().build();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn reactor(&self) -> &Handle {
-        self.inner().reactor.handle()
-    }
+        #[cfg(not(feature = "rt-core"))]
+        let ret = Builder::new().enable_all().build();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn executor(&self) -> TaskExecutor {
-        let inner = self.inner().pool.sender().clone();
-        TaskExecutor { inner }
+        ret
     }
 
     
@@ -330,167 +382,113 @@ impl Runtime {
     
     
     
-    
-    
-    
-    
-    
-    pub fn spawn<F>(&mut self, future: F) -> &mut Self
-    where F: Future<Item = (), Error = ()> + Send + 'static,
-    {
-        self.inner_mut().pool.sender().spawn(future).unwrap();
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn block_on<F, R, E>(&mut self, future: F) -> Result<R, E>
+    #[cfg(feature = "rt-core")]
+    pub fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
-        F: Send + 'static + Future<Item = R, Error = E>,
-        R: Send + 'static,
-        E: Send + 'static,
+        F: Future + Send + 'static,
+        F::Output: Send + 'static,
     {
-        let (tx, rx) = futures::sync::oneshot::channel();
-        self.spawn(future.then(move |r| tx.send(r).map_err(|_| unreachable!())));
-        rx.wait().unwrap()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn block_on_all<F, R, E>(mut self, future: F) -> Result<R, E>
-    where
-        F: Send + 'static + Future<Item = R, Error = E>,
-        R: Send + 'static,
-        E: Send + 'static,
-    {
-        let res = self.block_on(future);
-        self.shutdown_on_idle().wait().unwrap();
-        res
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn shutdown_on_idle(mut self) -> Shutdown {
-        let inner = self.inner.take().unwrap();
-
-        let inner = Box::new({
-            let pool = inner.pool;
-            let reactor = inner.reactor;
-
-            pool.shutdown_on_idle().and_then(|_| {
-                reactor.shutdown_on_idle()
-            })
-        });
-
-        Shutdown { inner }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn shutdown_now(mut self) -> Shutdown {
-        let inner = self.inner.take().unwrap();
-        Shutdown::shutdown_now(inner)
-    }
-
-    fn inner(&self) -> &Inner {
-        self.inner.as_ref().unwrap()
-    }
-
-    fn inner_mut(&mut self) -> &mut Inner {
-        self.inner.as_mut().unwrap()
-    }
-}
-
-impl Drop for Runtime {
-    fn drop(&mut self) {
-        if let Some(inner) = self.inner.take() {
-            let shutdown = Shutdown::shutdown_now(inner);
-            let _ = shutdown.wait();
+        match &self.kind {
+            Kind::Shell(_) => panic!("task execution disabled"),
+            #[cfg(feature = "rt-threaded")]
+            Kind::ThreadPool(exec) => exec.spawn(future),
+            Kind::Basic(exec) => exec.spawn(future),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn block_on<F: Future>(&mut self, future: F) -> F::Output {
+        let kind = &mut self.kind;
+
+        self.handle.enter(|| match kind {
+            Kind::Shell(exec) => exec.block_on(future),
+            #[cfg(feature = "rt-core")]
+            Kind::Basic(exec) => exec.block_on(future),
+            #[cfg(feature = "rt-threaded")]
+            Kind::ThreadPool(exec) => exec.block_on(future),
+        })
+    }
+
+    
+    pub fn enter<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce() -> R,
+    {
+        self.handle.enter(f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn handle(&self) -> &Handle {
+        &self.handle
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn shutdown_timeout(self, duration: Duration) {
+        let Runtime {
+            mut blocking_pool, ..
+        } = self;
+        blocking_pool.shutdown(Some(duration));
     }
 }

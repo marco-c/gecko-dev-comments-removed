@@ -39,8 +39,13 @@ use util::HeaderValueString;
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Header)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UserAgent(HeaderValueString);
+
+derive_header! {
+    UserAgent(_),
+    name: USER_AGENT
+}
 
 impl UserAgent {
     
@@ -74,4 +79,3 @@ impl fmt::Display for UserAgent {
         fmt::Display::fmt(&self.0, f)
     }
 }
-

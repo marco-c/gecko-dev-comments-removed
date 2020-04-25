@@ -1,5 +1,17 @@
-use winapi::{WSABUF, DWORD};
 use std::{mem, slice, u32};
+
+
+
+
+type DWORD = u32;
+type ULONG = u32;
+type CHAR = i8;
+
+#[repr(C)]
+struct WSABUF {
+    pub len: ULONG,
+    pub buf: *mut CHAR,
+}
 
 pub struct IoVec {
     inner: [u8],

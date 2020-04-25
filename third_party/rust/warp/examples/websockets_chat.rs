@@ -1,16 +1,12 @@
-#![deny(warnings)]
-extern crate futures;
-extern crate pretty_env_logger;
-extern crate warp;
 
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
-    Arc, Mutex,
+    Arc,
 };
 
-use futures::sync::mpsc;
-use futures::{Future, Stream};
+use futures::{FutureExt, StreamExt};
+use tokio::sync::{mpsc, Mutex};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
 
@@ -21,9 +17,10 @@ static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
 
 
 
-type Users = Arc<Mutex<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
+type Users = Arc<Mutex<HashMap<usize, mpsc::UnboundedSender<Result<Message, warp::Error>>>>>;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     
@@ -35,9 +32,9 @@ fn main() {
     
     let chat = warp::path("chat")
         
-        .and(warp::ws2())
+        .and(warp::ws())
         .and(users)
-        .map(|ws: warp::ws::Ws2, users| {
+        .map(|ws: warp::ws::Ws, users| {
             
             ws.on_upgrade(move |socket| user_connected(socket, users))
         });
@@ -47,30 +44,29 @@ fn main() {
 
     let routes = index.or(chat);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
 
-fn user_connected(ws: WebSocket, users: Users) -> impl Future<Item = (), Error = ()> {
+async fn user_connected(ws: WebSocket, users: Users) {
     
     let my_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
 
     eprintln!("new chat user: {}", my_id);
 
     
-    let (user_ws_tx, user_ws_rx) = ws.split();
+    let (user_ws_tx, mut user_ws_rx) = ws.split();
 
     
     
-    let (tx, rx) = mpsc::unbounded();
-    warp::spawn(
-        rx.map_err(|()| -> warp::Error { unreachable!("unbounded rx never errors") })
-            .forward(user_ws_tx)
-            .map(|_tx_rx| ())
-            .map_err(|ws_err| eprintln!("websocket send error: {}", ws_err)),
-    );
+    let (tx, rx) = mpsc::unbounded_channel();
+    tokio::task::spawn(rx.forward(user_ws_tx).map(|result| {
+        if let Err(e) = result {
+            eprintln!("websocket send error: {}", e);
+        }
+    }));
 
     
-    users.lock().unwrap().insert(my_id, tx);
+    users.lock().await.insert(my_id, tx);
 
     
     
@@ -78,26 +74,25 @@ fn user_connected(ws: WebSocket, users: Users) -> impl Future<Item = (), Error =
     
     let users2 = users.clone();
 
-    user_ws_rx
-        
-        
-        .for_each(move |msg| {
-            user_message(my_id, msg, &users);
-            Ok(())
-        })
-        
-        
-        .then(move |result| {
-            user_disconnected(my_id, &users2);
-            result
-        })
-        
-        .map_err(move |e| {
-            eprintln!("websocket error(uid={}): {}", my_id, e);
-        })
+    
+    
+    while let Some(result) = user_ws_rx.next().await {
+        let msg = match result {
+            Ok(msg) => msg,
+            Err(e) => {
+                eprintln!("websocket error(uid={}): {}", my_id, e);
+                break;
+            }
+        };
+        user_message(my_id, msg, &users).await;
+    }
+
+    
+    
+    user_disconnected(my_id, &users2).await;
 }
 
-fn user_message(my_id: usize, msg: Message, users: &Users) {
+async fn user_message(my_id: usize, msg: Message, users: &Users) {
     
     let msg = if let Ok(s) = msg.to_str() {
         s
@@ -111,25 +106,22 @@ fn user_message(my_id: usize, msg: Message, users: &Users) {
     
     
     
-    for (&uid, tx) in users.lock().unwrap().iter() {
+    for (&uid, tx) in users.lock().await.iter_mut() {
         if my_id != uid {
-            match tx.unbounded_send(Message::text(new_msg.clone())) {
-                Ok(()) => (),
-                Err(_disconnected) => {
-                    
-                    
-                    
-                }
+            if let Err(_disconnected) = tx.send(Ok(Message::text(new_msg.clone()))) {
+                
+                
+                
             }
         }
     }
 }
 
-fn user_disconnected(my_id: usize, users: &Users) {
+async fn user_disconnected(my_id: usize, users: &Users) {
     eprintln!("good bye user: {}", my_id);
 
     
-    users.lock().unwrap().remove(&my_id);
+    users.lock().await.remove(&my_id);
 }
 
 static INDEX_HTML: &str = r#"

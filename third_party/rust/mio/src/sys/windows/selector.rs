@@ -55,7 +55,7 @@ impl Selector {
         
         let id = NEXT_ID.fetch_add(1, Ordering::Relaxed) + 1;
 
-        CompletionPort::new(1).map(|cp| {
+        CompletionPort::new(0).map(|cp| {
             Selector {
                 inner: Arc::new(SelectorInner {
                     id: id,

@@ -1,12 +1,15 @@
-use codec::UserError;
-use frame::Reason;
-use proto::{self, WindowSize};
+use crate::codec::UserError;
+use crate::frame::Reason;
+use crate::proto::{self, WindowSize};
 
-use bytes::{Bytes, IntoBuf};
-use futures::{self, Poll, Async};
-use http::{HeaderMap};
+use bytes::{Buf, Bytes};
+use http::HeaderMap;
 
+use crate::PollExt;
 use std::fmt;
+#[cfg(feature = "stream")]
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
 
 
@@ -92,8 +95,8 @@ use std::fmt;
 
 
 #[derive(Debug)]
-pub struct SendStream<B: IntoBuf> {
-    inner: proto::StreamRef<B::Buf>,
+pub struct SendStream<B: Buf> {
+    inner: proto::StreamRef<B>,
 }
 
 
@@ -133,7 +136,7 @@ pub struct StreamId(u32);
 
 #[must_use = "streams do nothing unless polled"]
 pub struct RecvStream {
-    inner: ReleaseCapacity,
+    inner: FlowControl,
 }
 
 
@@ -188,21 +191,39 @@ pub struct RecvStream {
 
 
 
-#[derive(Debug)]
-pub struct ReleaseCapacity {
+#[derive(Clone, Debug)]
+pub struct FlowControl {
     inner: proto::OpaqueStreamRef,
 }
 
 
 
-impl<B: IntoBuf> SendStream<B> {
-    pub(crate) fn new(inner: proto::StreamRef<B::Buf>) -> Self {
+pub struct PingPong {
+    inner: proto::UserPings,
+}
+
+
+
+
+pub struct Ping {
+    _p: (),
+}
+
+
+
+
+
+pub struct Pong {
+    _p: (),
+}
+
+
+
+impl<B: Buf> SendStream<B> {
+    pub(crate) fn new(inner: proto::StreamRef<B>) -> Self {
         SendStream { inner }
     }
 
-    
-    
-    
     
     
     
@@ -288,9 +309,11 @@ impl<B: IntoBuf> SendStream<B> {
     
     
     
-    pub fn poll_capacity(&mut self) -> Poll<Option<usize>, ::Error> {
-        let res = try_ready!(self.inner.poll_capacity());
-        Ok(Async::Ready(res.map(|v| v as usize)))
+    pub fn poll_capacity(&mut self, cx: &mut Context) -> Poll<Option<Result<usize, crate::Error>>> {
+        self.inner
+            .poll_capacity(cx)
+            .map_ok_(|w| w as usize)
+            .map_err_(Into::into)
     }
 
     
@@ -308,9 +331,9 @@ impl<B: IntoBuf> SendStream<B> {
     
     
     
-    pub fn send_data(&mut self, data: B, end_of_stream: bool) -> Result<(), ::Error> {
+    pub fn send_data(&mut self, data: B, end_of_stream: bool) -> Result<(), crate::Error> {
         self.inner
-            .send_data(data.into_buf(), end_of_stream)
+            .send_data(data, end_of_stream)
             .map_err(Into::into)
     }
 
@@ -318,7 +341,7 @@ impl<B: IntoBuf> SendStream<B> {
     
     
     
-    pub fn send_trailers(&mut self, trailers: HeaderMap) -> Result<(), ::Error> {
+    pub fn send_trailers(&mut self, trailers: HeaderMap) -> Result<(), crate::Error> {
         self.inner.send_trailers(trailers).map_err(Into::into)
     }
 
@@ -345,8 +368,8 @@ impl<B: IntoBuf> SendStream<B> {
     
     
     
-    pub fn poll_reset(&mut self) -> Poll<Reason, ::Error> {
-        self.inner.poll_reset(proto::PollReset::Streaming)
+    pub fn poll_reset(&mut self, cx: &mut Context) -> Poll<Result<Reason, crate::Error>> {
+        self.inner.poll_reset(cx, proto::PollReset::Streaming)
     }
 
     
@@ -362,22 +385,42 @@ impl<B: IntoBuf> SendStream<B> {
 
 
 impl StreamId {
-    pub(crate) fn from_internal(id: ::frame::StreamId) -> Self {
+    pub(crate) fn from_internal(id: crate::frame::StreamId) -> Self {
         StreamId(id.into())
     }
 }
 
 
 impl RecvStream {
-    pub(crate) fn new(inner: ReleaseCapacity) -> Self {
+    pub(crate) fn new(inner: FlowControl) -> Self {
         RecvStream { inner }
     }
 
-    #[deprecated(since = "0.0.0")]
+    
+    pub async fn data(&mut self) -> Option<Result<Bytes, crate::Error>> {
+        futures_util::future::poll_fn(move |cx| self.poll_data(cx)).await
+    }
+
+    
+    pub async fn trailers(&mut self) -> Result<Option<HeaderMap>, crate::Error> {
+        futures_util::future::poll_fn(move |cx| self.poll_trailers(cx)).await
+    }
+
     #[doc(hidden)]
-    pub fn is_empty(&self) -> bool {
-        
-        self.inner.inner.body_is_empty()
+    pub fn poll_data(&mut self, cx: &mut Context<'_>) -> Poll<Option<Result<Bytes, crate::Error>>> {
+        self.inner.inner.poll_data(cx).map_err_(Into::into)
+    }
+
+    #[doc(hidden)]
+    pub fn poll_trailers(
+        &mut self,
+        cx: &mut Context,
+    ) -> Poll<Result<Option<HeaderMap>, crate::Error>> {
+        match ready!(self.inner.inner.poll_trailers(cx)) {
+            Some(Ok(map)) => Poll::Ready(Ok(Some(map))),
+            Some(Err(e)) => Poll::Ready(Err(e.into())),
+            None => Poll::Ready(Ok(None)),
+        }
     }
 
     
@@ -391,13 +434,8 @@ impl RecvStream {
     
     
     
-    pub fn release_capacity(&mut self) -> &mut ReleaseCapacity {
+    pub fn flow_control(&mut self) -> &mut FlowControl {
         &mut self.inner
-    }
-
-    
-    pub fn poll_trailers(&mut self) -> Poll<Option<HeaderMap>, ::Error> {
-        self.inner.inner.poll_trailers().map_err(Into::into)
     }
 
     
@@ -410,12 +448,12 @@ impl RecvStream {
     }
 }
 
-impl futures::Stream for RecvStream {
-    type Item = Bytes;
-    type Error = ::Error;
+#[cfg(feature = "stream")]
+impl futures_core::Stream for RecvStream {
+    type Item = Result<Bytes, crate::Error>;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.inner.inner.poll_data().map_err(Into::into)
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        self.poll_data(cx)
     }
 }
 
@@ -427,17 +465,24 @@ impl fmt::Debug for RecvStream {
     }
 }
 
+impl Drop for RecvStream {
+    fn drop(&mut self) {
+        
+        
+        
+        
+        
+        self.inner.inner.clear_recv_buffer();
+    }
+}
 
 
-impl ReleaseCapacity {
+
+impl FlowControl {
     pub(crate) fn new(inner: proto::OpaqueStreamRef) -> Self {
-        ReleaseCapacity { inner }
+        FlowControl { inner }
     }
 
-    
-    
-    
-    
     
     
     pub fn stream_id(&self) -> StreamId {
@@ -445,6 +490,17 @@ impl ReleaseCapacity {
     }
 
     
+    pub fn available_capacity(&self) -> isize {
+        self.inner.available_recv_capacity()
+    }
+
+    
+    
+    
+    pub fn used_capacity(&self) -> usize {
+        self.inner.used_recv_capacity() as usize
+    }
+
     
     
     
@@ -461,7 +517,7 @@ impl ReleaseCapacity {
     
     
     
-    pub fn release_capacity(&mut self, sz: usize) -> Result<(), ::Error> {
+    pub fn release_capacity(&mut self, sz: usize) -> Result<(), crate::Error> {
         if sz > proto::MAX_WINDOW_SIZE as usize {
             return Err(UserError::ReleaseCapacityTooBig.into());
         }
@@ -471,9 +527,68 @@ impl ReleaseCapacity {
     }
 }
 
-impl Clone for ReleaseCapacity {
-    fn clone(&self) -> Self {
-        let inner = self.inner.clone();
-        ReleaseCapacity { inner }
+
+
+impl PingPong {
+    pub(crate) fn new(inner: proto::UserPings) -> Self {
+        PingPong { inner }
+    }
+
+    
+    pub async fn ping(&mut self, ping: Ping) -> Result<Pong, crate::Error> {
+        self.send_ping(ping)?;
+        futures_util::future::poll_fn(|cx| self.poll_pong(cx)).await
+    }
+
+    #[doc(hidden)]
+    pub fn send_ping(&mut self, ping: Ping) -> Result<(), crate::Error> {
+        
+        
+        
+        drop(ping);
+
+        self.inner.send_ping().map_err(|err| match err {
+            Some(err) => err.into(),
+            None => UserError::SendPingWhilePending.into(),
+        })
+    }
+
+    #[doc(hidden)]
+    pub fn poll_pong(&mut self, cx: &mut Context) -> Poll<Result<Pong, crate::Error>> {
+        ready!(self.inner.poll_pong(cx))?;
+        Poll::Ready(Ok(Pong { _p: () }))
+    }
+}
+
+impl fmt::Debug for PingPong {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("PingPong").finish()
+    }
+}
+
+
+
+impl Ping {
+    
+    
+    
+    
+    
+    pub fn opaque() -> Ping {
+        Ping { _p: () }
+    }
+}
+
+impl fmt::Debug for Ping {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Ping").finish()
+    }
+}
+
+
+
+impl fmt::Debug for Pong {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("Pong").finish()
     }
 }

@@ -1,5 +1,5 @@
 use util::FlatCsv;
-use ::HeaderValue;
+use HeaderValue;
 
 
 
@@ -38,8 +38,13 @@ use ::HeaderValue;
 
 
 
-#[derive(Clone, Debug, Header)]
+#[derive(Clone, Debug)]
 pub struct TransferEncoding(FlatCsv);
+
+derive_header! {
+    TransferEncoding(_),
+    name: TRANSFER_ENCODING
+}
 
 impl TransferEncoding {
     
@@ -49,27 +54,24 @@ impl TransferEncoding {
 
     
     pub fn is_chunked(&self) -> bool {
-        self
-            .0
+        self.0
             .value
             
             .to_str()
-            .map(|s| s
-                .split(',')
-                .next_back()
-                .map(|encoding| {
-                    encoding.trim() == "chunked"
-                })
-                .expect("split always has at least 1 item")
-            )
+            .map(|s| {
+                s.split(',')
+                    .next_back()
+                    .map(|encoding| encoding.trim() == "chunked")
+                    .expect("split always has at least 1 item")
+            })
             .unwrap_or(false)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::TransferEncoding;
     use super::super::test_decode;
+    use super::TransferEncoding;
 
     #[test]
     fn chunked_is_chunked() {

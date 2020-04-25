@@ -1,6 +1,6 @@
-use ::{HeaderValue};
-use ::util::{IterExt, TryFromValues};
-use super::origin::{Origin};
+use super::origin::Origin;
+use util::{IterExt, TryFromValues};
+use HeaderValue;
 
 
 
@@ -29,8 +29,13 @@ use super::origin::{Origin};
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Header)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct AccessControlAllowOrigin(OriginOrAny);
+
+derive_header! {
+    AccessControlAllowOrigin(_),
+    name: ACCESS_CONTROL_ALLOW_ORIGIN
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 enum OriginOrAny {
@@ -43,13 +48,14 @@ impl AccessControlAllowOrigin {
     
     pub const ANY: AccessControlAllowOrigin = AccessControlAllowOrigin(OriginOrAny::Any);
     
-    pub const NULL: AccessControlAllowOrigin = AccessControlAllowOrigin(OriginOrAny::Origin(Origin::NULL));
+    pub const NULL: AccessControlAllowOrigin =
+        AccessControlAllowOrigin(OriginOrAny::Origin(Origin::NULL));
 
     
     pub fn origin(&self) -> Option<&Origin> {
         match self.0 {
             OriginOrAny::Origin(ref origin) => Some(origin),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -66,8 +72,7 @@ impl TryFromValues for OriginOrAny {
                     return Some(OriginOrAny::Any);
                 }
 
-                Origin::try_from_value(value)
-                    .map(OriginOrAny::Origin)
+                Origin::try_from_value(value).map(OriginOrAny::Origin)
             })
             .ok_or_else(::Error::invalid)
     }
@@ -84,9 +89,8 @@ impl<'a> From<&'a OriginOrAny> for HeaderValue {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::{test_decode, test_encode};
-
+    use super::*;
 
     #[test]
     fn origin() {
@@ -121,4 +125,3 @@ mod tests {
         assert_eq!(headers["access-control-allow-origin"], "null");
     }
 }
-

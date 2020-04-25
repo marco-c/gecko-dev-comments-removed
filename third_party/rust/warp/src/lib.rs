@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/warp/0.1.19")]
+#![doc(html_root_url = "https://docs.rs/warp/0.2.2")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![cfg_attr(test, deny(warnings))]
@@ -83,44 +83,19 @@
 
 
 
-extern crate bytes;
-#[macro_use]
-extern crate futures;
-extern crate headers;
-#[doc(hidden)]
-pub extern crate http;
-extern crate hyper;
-#[macro_use]
-extern crate log as logcrate;
-extern crate mime;
-extern crate mime_guess;
-#[cfg(feature = "multipart")]
-extern crate multipart as multipart_c;
-#[macro_use]
-extern crate scoped_tls;
-#[cfg(feature = "tls")]
-extern crate rustls;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_urlencoded;
-extern crate tokio;
-#[cfg_attr(feature = "tls", macro_use)]
-extern crate tokio_io;
-extern crate tokio_threadpool;
-#[cfg(feature = "websocket")]
-extern crate tungstenite;
-extern crate urlencoding;
 
+
+#[macro_use]
 mod error;
 mod filter;
 pub mod filters;
 mod generic;
-mod never;
 pub mod redirect;
 pub mod reject;
 pub mod reply;
 mod route;
 mod server;
+mod service;
 pub mod test;
 #[cfg(feature = "tls")]
 mod tls;
@@ -131,8 +106,13 @@ pub use self::filter::Filter;
 
 
 
+#[cfg(feature = "multipart")]
 #[doc(hidden)]
-#[allow(deprecated)]
+pub use self::filters::multipart;
+#[cfg(feature = "websocket")]
+#[doc(hidden)]
+pub use self::filters::ws;
+#[doc(hidden)]
 pub use self::filters::{
     addr,
     
@@ -152,32 +132,19 @@ pub use self::filters::{
     log,
     
     log::log,
-    method::{delete, get, method, post, put},
-    method::{delete2, get2, post2, put2},
-    method::{head, options, patch},
+    method::{delete, get, head, method, options, patch, post, put},
     path,
-    
-    path::index,
     
     path::path,
     query,
     
     query::query,
     sse,
-    
-    sse::sse,
 };
-#[cfg(feature = "multipart")]
-#[doc(hidden)]
-pub use self::filters::multipart;
-#[cfg(feature = "websocket")]
-#[doc(hidden)]
-pub use self::filters::ws;
 
 #[cfg(feature = "websocket")]
 #[doc(hidden)]
-#[allow(deprecated)]
-pub use self::filters::ws::{ws, ws2};
+pub use self::filters::ws::ws;
 #[doc(hidden)]
 pub use self::redirect::redirect;
 #[doc(hidden)]
@@ -185,12 +152,19 @@ pub use self::redirect::redirect;
 pub use self::reject::{reject, Rejection};
 #[doc(hidden)]
 pub use self::reply::{reply, Reply};
+#[cfg(feature = "tls")]
+pub use self::server::TlsServer;
 pub use self::server::{serve, Server};
-pub use hyper::rt::spawn;
+pub use self::service::service;
+#[doc(hidden)]
+pub use http;
+#[doc(hidden)]
+pub use hyper;
 
 #[doc(hidden)]
 pub use bytes::Buf;
 #[doc(hidden)]
 pub use futures::{Future, Sink, Stream};
+#[doc(hidden)]
 
 pub(crate) type Request = http::Request<hyper::Body>;

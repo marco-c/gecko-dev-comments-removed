@@ -1,4 +1,4 @@
-use ::HeaderValue;
+use HeaderValue;
 
 
 
@@ -39,8 +39,13 @@ use ::HeaderValue;
 
 
 
-#[derive(Clone, Debug, PartialEq, Header)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Upgrade(HeaderValue);
+
+derive_header! {
+    Upgrade(_),
+    name: UPGRADE
+}
 
 impl Upgrade {
     

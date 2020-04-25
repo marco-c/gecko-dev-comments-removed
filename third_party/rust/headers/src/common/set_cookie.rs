@@ -51,7 +51,6 @@
 
 
 
-
 #[derive(Clone, Debug)]
 pub struct SetCookie(Vec<::HeaderValue>);
 
@@ -61,9 +60,7 @@ impl ::Header for SetCookie {
     }
 
     fn decode<'i, I: Iterator<Item = &'i ::HeaderValue>>(values: &mut I) -> Result<Self, ::Error> {
-        let vec = values
-            .cloned()
-            .collect::<Vec<_>>();
+        let vec = values.cloned().collect::<Vec<_>>();
 
         if !vec.is_empty() {
             Ok(SetCookie(vec))
@@ -79,8 +76,8 @@ impl ::Header for SetCookie {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::{test_decode, test_encode};
+    use super::*;
 
     #[test]
     fn decode() {

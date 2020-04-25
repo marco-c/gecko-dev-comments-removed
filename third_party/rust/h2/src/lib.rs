@@ -78,41 +78,31 @@
 
 
 
+#![doc(html_root_url = "https://docs.rs/h2/0.2.3")]
+#![deny(missing_debug_implementations, missing_docs)]
+#![cfg_attr(test, deny(warnings))]
 
+macro_rules! proto_err {
+    (conn: $($msg:tt)+) => {
+        log::debug!("connection error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
+    };
+    (stream: $($msg:tt)+) => {
+        log::debug!("stream error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
+    };
+}
 
+macro_rules! ready {
+    ($e:expr) => {
+        match $e {
+            ::std::task::Poll::Ready(r) => r,
+            ::std::task::Poll::Pending => return ::std::task::Poll::Pending,
+        }
+    };
+}
 
-
-
-
-#![doc(html_root_url = "https://docs.rs/h2/0.1.12")]
-#![deny(warnings, missing_debug_implementations, missing_docs)]
-
-#[macro_use]
-extern crate futures;
-
-#[macro_use]
-extern crate tokio_io;
-
-
-extern crate http;
-
-
-extern crate bytes;
-
-
-extern crate fnv;
-
-extern crate byteorder;
-extern crate slab;
-
-#[macro_use]
-extern crate log;
-extern crate string;
-extern crate indexmap;
-
-mod error;
 #[cfg_attr(feature = "unstable", allow(missing_docs))]
 mod codec;
+mod error;
 mod hpack;
 mod proto;
 
@@ -127,8 +117,49 @@ pub mod client;
 pub mod server;
 mod share;
 
-pub use error::{Error, Reason};
-pub use share::{SendStream, StreamId, RecvStream, ReleaseCapacity};
+pub use crate::error::{Error, Reason};
+pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream, StreamId};
 
 #[cfg(feature = "unstable")]
 pub use codec::{Codec, RecvError, SendError, UserError};
+
+use std::task::Poll;
+
+
+
+trait PollExt<T, E> {
+    
+    fn map_ok_<U, F>(self, f: F) -> Poll<Option<Result<U, E>>>
+    where
+        F: FnOnce(T) -> U;
+    
+    fn map_err_<U, F>(self, f: F) -> Poll<Option<Result<T, U>>>
+    where
+        F: FnOnce(E) -> U;
+}
+
+impl<T, E> PollExt<T, E> for Poll<Option<Result<T, E>>> {
+    fn map_ok_<U, F>(self, f: F) -> Poll<Option<Result<U, E>>>
+    where
+        F: FnOnce(T) -> U,
+    {
+        match self {
+            Poll::Ready(Some(Ok(t))) => Poll::Ready(Some(Ok(f(t)))),
+            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(e))),
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => Poll::Pending,
+        }
+    }
+
+    fn map_err_<U, F>(self, f: F) -> Poll<Option<Result<T, U>>>
+    where
+        F: FnOnce(E) -> U,
+    {
+        match self {
+            Poll::Ready(Some(Ok(t))) => Poll::Ready(Some(Ok(t))),
+            Poll::Ready(Some(Err(e))) => Poll::Ready(Some(Err(f(e)))),
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}

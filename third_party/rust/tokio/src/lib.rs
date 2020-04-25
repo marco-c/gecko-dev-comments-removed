@@ -1,10 +1,21 @@
-#![doc(html_root_url = "https://docs.rs/tokio/0.1.11")]
-#![deny(missing_docs, warnings, missing_debug_implementations)]
-#![cfg_attr(feature = "async-await-preview", feature(
-        async_await,
-        await_macro,
-        futures_api,
-        ))]
+#![doc(html_root_url = "https://docs.rs/tokio/0.2.18")]
+#![allow(
+    clippy::cognitive_complexity,
+    clippy::large_enum_variant,
+    clippy::needless_doctest_main
+)]
+#![warn(
+    missing_debug_implementations,
+    missing_docs,
+    rust_2018_idioms,
+    unreachable_pub
+)]
+#![deny(intra_doc_link_resolution_failure)]
+#![doc(test(
+    no_crate_inject,
+    attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
+))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 
 
@@ -72,49 +83,308 @@
 
 
 
-extern crate bytes;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_use]
-extern crate futures;
-extern crate mio;
-extern crate tokio_current_thread;
-extern crate tokio_io;
-extern crate tokio_executor;
-extern crate tokio_codec;
-extern crate tokio_fs;
-extern crate tokio_reactor;
-extern crate tokio_threadpool;
-extern crate tokio_timer;
-extern crate tokio_tcp;
-extern crate tokio_udp;
+#[doc(hidden)]
+pub mod macros;
 
-#[cfg(feature = "async-await-preview")]
-extern crate tokio_async_await;
+cfg_fs! {
+    pub mod fs;
+}
 
-#[cfg(unix)]
-extern crate tokio_uds;
+#[doc(hidden)]
+pub mod future;
 
-pub mod clock;
-pub mod codec;
-pub mod executor;
-pub mod fs;
 pub mod io;
 pub mod net;
+
+mod loom;
+mod park;
+
 pub mod prelude;
-pub mod reactor;
+
+cfg_process! {
+    pub mod process;
+}
+
 pub mod runtime;
-pub mod timer;
-pub mod util;
 
-pub use executor::spawn;
-pub use runtime::run;
+pub(crate) mod coop;
+
+cfg_signal! {
+    pub mod signal;
+}
+
+cfg_stream! {
+    pub mod stream;
+}
+
+cfg_sync! {
+    pub mod sync;
+}
+cfg_not_sync! {
+    mod sync;
+}
+
+cfg_rt_core! {
+    pub mod task;
+    pub use task::spawn;
+}
+
+cfg_time! {
+    pub mod time;
+}
+
+mod util;
+
+cfg_macros! {
+    /// Implementation detail of the `select!` macro. This macro is **not**
+    /// intended to be used as part of the public API and is permitted to
+    /// change.
+    #[doc(hidden)]
+    pub use tokio_macros::select_priv_declare_output_enum;
+
+    doc_rt_core! {
+        cfg_rt_threaded! {
+            // This is the docs.rs case (with all features) so make sure macros
+            // is included in doc(cfg).
+
+            #[cfg(not(test))] // Work around for rust-lang/rust#62127
+            #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+            pub use tokio_macros::main_threaded as main;
+
+            #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+            pub use tokio_macros::test_threaded as test;
+        }
+
+        cfg_not_rt_threaded! {
+            #[cfg(not(test))] // Work around for rust-lang/rust#62127
+            pub use tokio_macros::main_basic as main;
+            pub use tokio_macros::test_basic as test;
+        }
+    }
+
+    // Maintains old behavior
+    cfg_not_rt_core! {
+        #[cfg(not(test))]
+        pub use tokio_macros::main;
+        pub use tokio_macros::test;
+    }
+}
 
 
-
-#[cfg(feature = "async-await-preview")]
-mod async_await;
-
-#[cfg(feature = "async-await-preview")]
-pub use async_await::{run_async, spawn_async};
-
-#[cfg(feature = "async-await-preview")]
-pub use tokio_async_await::await;
+#[cfg(feature = "io-util")]
+#[cfg(test)]
+fn is_unpin<T: Unpin>() {}

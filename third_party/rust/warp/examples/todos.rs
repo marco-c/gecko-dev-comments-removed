@@ -1,26 +1,7 @@
 #![deny(warnings)]
-#[macro_use]
-extern crate log;
-extern crate pretty_env_logger;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate warp;
 
 use std::env;
-use std::sync::{Arc, Mutex};
-use warp::{http::StatusCode, Filter};
-
-
-
-type Db = Arc<Mutex<Vec<Todo>>>;
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct Todo {
-    id: u64,
-    text: String,
-    completed: bool,
-}
+use warp::Filter;
 
 
 
@@ -30,7 +11,8 @@ struct Todo {
 
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
     if env::var_os("RUST_LOG").is_none() {
         
         
@@ -38,158 +20,276 @@ fn main() {
     }
     pretty_env_logger::init();
 
-    
-    
+    let db = models::blank_db();
 
-    
-    
-    let db = Arc::new(Mutex::new(Vec::<Todo>::new()));
-    let db = warp::any().map(move || db.clone());
-
-    
-    let todos = warp::path("todos");
-
-    
-    
-    let todos_index = todos.and(warp::path::end());
-
-    
-    
-    let todos_id = todos.and(warp::path::param::<u64>()).and(warp::path::end());
-
-    
-    
-    let json_body = warp::body::content_length_limit(1024 * 16).and(warp::body::json());
-
-    
-    let list_options = warp::query::<ListOptions>();
-
-    
-
-    
-    let list = warp::get2()
-        .and(todos_index)
-        .and(list_options)
-        .and(db.clone())
-        .map(list_todos);
-
-    
-    let create = warp::post2()
-        .and(todos_index)
-        .and(json_body)
-        .and(db.clone())
-        .and_then(create_todo);
-
-    
-    let update = warp::put2()
-        .and(todos_id)
-        .and(json_body)
-        .and(db.clone())
-        .and_then(update_todo);
-
-    
-    let delete = warp::delete2()
-        .and(todos_id)
-        .and(db.clone())
-        .and_then(delete_todo);
-
-    
-    let api = list.or(create).or(update).or(delete);
+    let api = filters::todos(db);
 
     
     let routes = api.with(warp::log("todos"));
+    
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+}
+
+mod filters {
+    use super::handlers;
+    use super::models::{Db, ListOptions, Todo};
+    use warp::Filter;
 
     
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
-}
+    pub fn todos(
+        db: Db,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        todos_list(db.clone())
+            .or(todos_create(db.clone()))
+            .or(todos_update(db.clone()))
+            .or(todos_delete(db))
+    }
 
-
-
-
-
-
-
-#[derive(Debug, Deserialize)]
-struct ListOptions {
-    offset: Option<usize>,
-    limit: Option<usize>,
-}
-
-
-fn list_todos(opts: ListOptions, db: Db) -> impl warp::Reply {
     
-    let todos = db.lock().unwrap();
-    let todos: Vec<Todo> = todos
-        .clone()
-        .into_iter()
-        .skip(opts.offset.unwrap_or(0))
-        .take(opts.limit.unwrap_or(std::usize::MAX))
-        .collect();
-    warp::reply::json(&todos)
-}
+    pub fn todos_list(
+        db: Db,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("todos")
+            .and(warp::get())
+            .and(warp::query::<ListOptions>())
+            .and(with_db(db))
+            .and_then(handlers::list_todos)
+    }
 
+    
+    pub fn todos_create(
+        db: Db,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("todos")
+            .and(warp::post())
+            .and(json_body())
+            .and(with_db(db))
+            .and_then(handlers::create_todo)
+    }
 
-fn create_todo(create: Todo, db: Db) -> Result<impl warp::Reply, warp::Rejection> {
-    debug!("create_todo: {:?}", create);
+    
+    pub fn todos_update(
+        db: Db,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        warp::path!("todos" / u64)
+            .and(warp::put())
+            .and(json_body())
+            .and(with_db(db))
+            .and_then(handlers::update_todo)
+    }
 
-    let mut vec = db.lock().unwrap();
+    
+    pub fn todos_delete(
+        db: Db,
+    ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+        
+        let admin_only = warp::header::exact("authorization", "Bearer admin");
 
-    for todo in vec.iter() {
-        if todo.id == create.id {
-            debug!("    -> id already exists: {}", create.id);
+        warp::path!("todos" / u64)
             
-            return Ok(StatusCode::BAD_REQUEST);
-        }
+            
+            
+            
+            .and(admin_only)
+            .and(warp::delete())
+            .and(with_db(db))
+            .and_then(handlers::delete_todo)
     }
 
-    
-    vec.push(create);
+    fn with_db(db: Db) -> impl Filter<Extract = (Db,), Error = std::convert::Infallible> + Clone {
+        warp::any().map(move || db.clone())
+    }
 
-    Ok(StatusCode::CREATED)
+    fn json_body() -> impl Filter<Extract = (Todo,), Error = warp::Rejection> + Clone {
+        
+        
+        warp::body::content_length_limit(1024 * 16).and(warp::body::json())
+    }
 }
 
 
-fn update_todo(id: u64, update: Todo, db: Db) -> Result<impl warp::Reply, warp::Rejection> {
-    debug!("update_todo: id={}, todo={:?}", id, update);
-    let mut vec = db.lock().unwrap();
 
-    
-    for todo in vec.iter_mut() {
-        if todo.id == id {
-            *todo = update;
-            return Ok(warp::reply());
-        }
+
+
+mod handlers {
+    use super::models::{Db, ListOptions, Todo};
+    use std::convert::Infallible;
+    use warp::http::StatusCode;
+
+    pub async fn list_todos(opts: ListOptions, db: Db) -> Result<impl warp::Reply, Infallible> {
+        
+        let todos = db.lock().await;
+        let todos: Vec<Todo> = todos
+            .clone()
+            .into_iter()
+            .skip(opts.offset.unwrap_or(0))
+            .take(opts.limit.unwrap_or(std::usize::MAX))
+            .collect();
+        Ok(warp::reply::json(&todos))
     }
 
-    debug!("    -> todo id not found!");
+    pub async fn create_todo(create: Todo, db: Db) -> Result<impl warp::Reply, Infallible> {
+        log::debug!("create_todo: {:?}", create);
 
-    
-    Err(warp::reject::not_found())
+        let mut vec = db.lock().await;
+
+        for todo in vec.iter() {
+            if todo.id == create.id {
+                log::debug!("    -> id already exists: {}", create.id);
+                
+                return Ok(StatusCode::BAD_REQUEST);
+            }
+        }
+
+        
+        vec.push(create);
+
+        Ok(StatusCode::CREATED)
+    }
+
+    pub async fn update_todo(
+        id: u64,
+        update: Todo,
+        db: Db,
+    ) -> Result<impl warp::Reply, Infallible> {
+        log::debug!("update_todo: id={}, todo={:?}", id, update);
+        let mut vec = db.lock().await;
+
+        
+        for todo in vec.iter_mut() {
+            if todo.id == id {
+                *todo = update;
+                return Ok(StatusCode::OK);
+            }
+        }
+
+        log::debug!("    -> todo id not found!");
+
+        
+        Ok(StatusCode::NOT_FOUND)
+    }
+
+    pub async fn delete_todo(id: u64, db: Db) -> Result<impl warp::Reply, Infallible> {
+        log::debug!("delete_todo: id={}", id);
+
+        let mut vec = db.lock().await;
+
+        let len = vec.len();
+        vec.retain(|todo| {
+            
+            
+            todo.id != id
+        });
+
+        
+        let deleted = vec.len() != len;
+
+        if deleted {
+            
+            
+            Ok(StatusCode::NO_CONTENT)
+        } else {
+            log::debug!("    -> todo id not found!");
+            Ok(StatusCode::NOT_FOUND)
+        }
+    }
 }
 
-
-fn delete_todo(id: u64, db: Db) -> Result<impl warp::Reply, warp::Rejection> {
-    debug!("delete_todo: id={}", id);
-
-    let mut vec = db.lock().unwrap();
-
-    let len = vec.len();
-    vec.retain(|todo| {
-        
-        
-        todo.id != id
-    });
+mod models {
+    use serde_derive::{Deserialize, Serialize};
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
 
     
-    let deleted = vec.len() != len;
+    
+    pub type Db = Arc<Mutex<Vec<Todo>>>;
 
-    if deleted {
-        
-        
-        Ok(StatusCode::NO_CONTENT)
-    } else {
-        debug!("    -> todo id not found!");
-        
-        Err(warp::reject::not_found())
+    pub fn blank_db() -> Db {
+        Arc::new(Mutex::new(Vec::new()))
+    }
+
+    #[derive(Debug, Deserialize, Serialize, Clone)]
+    pub struct Todo {
+        pub id: u64,
+        pub text: String,
+        pub completed: bool,
+    }
+
+    
+    #[derive(Debug, Deserialize)]
+    pub struct ListOptions {
+        pub offset: Option<usize>,
+        pub limit: Option<usize>,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use warp::http::StatusCode;
+    use warp::test::request;
+
+    use super::{
+        filters,
+        models::{self, Todo},
+    };
+
+    #[tokio::test]
+    async fn test_post() {
+        let db = models::blank_db();
+        let api = filters::todos(db);
+
+        let resp = request()
+            .method("POST")
+            .path("/todos")
+            .json(&Todo {
+                id: 1,
+                text: "test 1".into(),
+                completed: false,
+            })
+            .reply(&api)
+            .await;
+
+        assert_eq!(resp.status(), StatusCode::CREATED);
+    }
+
+    #[tokio::test]
+    async fn test_post_conflict() {
+        let db = models::blank_db();
+        db.lock().await.push(todo1());
+        let api = filters::todos(db);
+
+        let resp = request()
+            .method("POST")
+            .path("/todos")
+            .json(&todo1())
+            .reply(&api)
+            .await;
+
+        assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn test_put_unknown() {
+        let _ = pretty_env_logger::try_init();
+        let db = models::blank_db();
+        let api = filters::todos(db);
+
+        let resp = request()
+            .method("PUT")
+            .path("/todos/1")
+            .header("authorization", "Bearer admin")
+            .json(&todo1())
+            .reply(&api)
+            .await;
+
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    fn todo1() -> Todo {
+        Todo {
+            id: 1,
+            text: "test 1".into(),
+            completed: false,
+        }
     }
 }

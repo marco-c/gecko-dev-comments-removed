@@ -50,27 +50,35 @@
 
 
 
+
+pub mod accept;
 pub mod conn;
 mod shutdown;
-#[cfg(feature = "runtime")] mod tcp;
+#[cfg(feature = "tcp")]
+mod tcp;
 
+use std::error::Error as StdError;
 use std::fmt;
-#[cfg(feature = "runtime")] use std::net::{SocketAddr, TcpListener as StdTcpListener};
+#[cfg(feature = "tcp")]
+use std::net::{SocketAddr, TcpListener as StdTcpListener};
 
-#[cfg(feature = "runtime")] use std::time::Duration;
+#[cfg(feature = "tcp")]
+use std::time::Duration;
 
-use futures::{Future, Stream, Poll};
-use tokio_io::{AsyncRead, AsyncWrite};
-#[cfg(feature = "runtime")] use tokio_reactor;
+use pin_project::pin_project;
+use tokio::io::{AsyncRead, AsyncWrite};
 
-use body::{Body, Payload};
-use common::exec::{Exec, H2Exec, NewSvcExec};
-use service::{MakeServiceRef, Service};
+use self::accept::Accept;
+use crate::body::{Body, Payload};
+use crate::common::exec::{Exec, H2Exec, NewSvcExec};
+use crate::common::{task, Future, Pin, Poll, Unpin};
+use crate::service::{HttpService, MakeServiceRef};
 
 
 use self::conn::{Http as Http_, NoopWatcher, SpawnAll};
 use self::shutdown::{Graceful, GracefulWatcher};
-#[cfg(feature = "runtime")] use self::tcp::AddrIncoming;
+#[cfg(feature = "tcp")]
+use self::tcp::AddrIncoming;
 
 
 
@@ -78,7 +86,9 @@ use self::shutdown::{Graceful, GracefulWatcher};
 
 
 
+#[pin_project]
 pub struct Server<I, S, E = Exec> {
+    #[pin]
     spawn_all: SpawnAll<I, S, E>,
 }
 
@@ -101,7 +111,7 @@ impl<I> Server<I, ()> {
     }
 }
 
-#[cfg(feature = "runtime")]
+#[cfg(feature = "tcp")]
 impl Server<AddrIncoming, ()> {
     
     
@@ -110,50 +120,42 @@ impl Server<AddrIncoming, ()> {
     
     
     pub fn bind(addr: &SocketAddr) -> Builder<AddrIncoming> {
-        let incoming = AddrIncoming::new(addr, None)
-            .unwrap_or_else(|e| {
-                panic!("error binding to {}: {}", addr, e);
-            });
+        let incoming = AddrIncoming::new(addr).unwrap_or_else(|e| {
+            panic!("error binding to {}: {}", addr, e);
+        });
         Server::builder(incoming)
     }
 
     
-    pub fn try_bind(addr: &SocketAddr) -> ::Result<Builder<AddrIncoming>> {
-        AddrIncoming::new(addr, None)
-            .map(Server::builder)
+    pub fn try_bind(addr: &SocketAddr) -> crate::Result<Builder<AddrIncoming>> {
+        AddrIncoming::new(addr).map(Server::builder)
     }
 
     
-    pub fn from_tcp(listener: StdTcpListener) -> Result<Builder<AddrIncoming>, ::Error> {
-        let handle = tokio_reactor::Handle::default();
-        AddrIncoming::from_std(listener, &handle)
-            .map(Server::builder)
+    pub fn from_tcp(listener: StdTcpListener) -> Result<Builder<AddrIncoming>, crate::Error> {
+        AddrIncoming::from_std(listener).map(Server::builder)
     }
 }
 
-#[cfg(feature = "runtime")]
-impl<S> Server<AddrIncoming, S> {
+#[cfg(feature = "tcp")]
+impl<S, E> Server<AddrIncoming, S, E> {
     
     pub fn local_addr(&self) -> SocketAddr {
         self.spawn_all.local_addr()
     }
 }
 
-impl<I, S, E, B> Server<I, S, E>
+impl<I, IO, IE, S, E, B> Server<I, S, E>
 where
-    I: Stream,
-    I::Error: Into<Box<::std::error::Error + Send + Sync>>,
-    I::Item: AsyncRead + AsyncWrite + Send + 'static,
-    S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
-    S::Error: Into<Box<::std::error::Error + Send + Sync>>,
-    S::Service: 'static,
+    I: Accept<Conn = IO, Error = IE>,
+    IE: Into<Box<dyn StdError + Send + Sync>>,
+    IO: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    S: MakeServiceRef<IO, Body, ResBody = B>,
+    S::Error: Into<Box<dyn StdError + Send + Sync>>,
     B: Payload,
-    E: H2Exec<<S::Service as Service>::Future, B>,
-    E: NewSvcExec<I::Item, S::Future, S::Service, E, GracefulWatcher>,
+    E: H2Exec<<S::Service as HttpService<Body>>::Future, B>,
+    E: NewSvcExec<IO, S::Future, S::Service, E, GracefulWatcher>,
 {
-    
-    
-    
     
     
     
@@ -192,34 +194,32 @@ where
     
     pub fn with_graceful_shutdown<F>(self, signal: F) -> Graceful<I, S, F, E>
     where
-        F: Future<Item=()>
+        F: Future<Output = ()>,
     {
         Graceful::new(self.spawn_all, signal)
     }
 }
 
-impl<I, S, B, E> Future for Server<I, S, E>
+impl<I, IO, IE, S, B, E> Future for Server<I, S, E>
 where
-    I: Stream,
-    I::Error: Into<Box<::std::error::Error + Send + Sync>>,
-    I::Item: AsyncRead + AsyncWrite + Send + 'static,
-    S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
-    S::Error: Into<Box<::std::error::Error + Send + Sync>>,
-    S::Service: 'static,
+    I: Accept<Conn = IO, Error = IE>,
+    IE: Into<Box<dyn StdError + Send + Sync>>,
+    IO: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    S: MakeServiceRef<IO, Body, ResBody = B>,
+    S::Error: Into<Box<dyn StdError + Send + Sync>>,
     B: Payload,
-    E: H2Exec<<S::Service as Service>::Future, B>,
-    E: NewSvcExec<I::Item, S::Future, S::Service, E, NoopWatcher>,
+    E: H2Exec<<S::Service as HttpService<Body>>::Future, B>,
+    E: NewSvcExec<IO, S::Future, S::Service, E, NoopWatcher>,
 {
-    type Item = ();
-    type Error = ::Error;
+    type Output = crate::Result<()>;
 
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.spawn_all.poll_watch(&NoopWatcher)
+    fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        self.project().spawn_all.poll_watch(cx, &NoopWatcher)
     }
 }
 
 impl<I: fmt::Debug, S: fmt::Debug> fmt::Debug for Server<I, S> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Server")
             .field("listener", &self.spawn_all.incoming_ref())
             .finish()
@@ -233,20 +233,16 @@ impl<I, E> Builder<I, E> {
     
     
     pub fn new(incoming: I, protocol: Http_<E>) -> Self {
-        Builder {
-            incoming,
-            protocol,
-        }
+        Builder { incoming, protocol }
     }
 
     
     
     
     pub fn http1_keepalive(mut self, val: bool) -> Self {
-        self.protocol.keep_alive(val);
+        self.protocol.http1_keep_alive(val);
         self
     }
-
 
     
     
@@ -264,8 +260,8 @@ impl<I, E> Builder<I, E> {
     
     
     
-    pub fn http1_only(mut self, val: bool) -> Self {
-        self.protocol.http1_only(val);
+    pub fn http1_max_buf_size(mut self, val: usize) -> Self {
+        self.protocol.max_buf_size(val);
         self
     }
 
@@ -297,8 +293,93 @@ impl<I, E> Builder<I, E> {
     
     
     
+    pub fn http1_only(mut self, val: bool) -> Self {
+        self.protocol.http1_only(val);
+        self
+    }
+
+    
+    
+    
     pub fn http2_only(mut self, val: bool) -> Self {
         self.protocol.http2_only(val);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn http2_initial_stream_window_size(mut self, sz: impl Into<Option<u32>>) -> Self {
+        self.protocol.http2_initial_stream_window_size(sz.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn http2_initial_connection_window_size(mut self, sz: impl Into<Option<u32>>) -> Self {
+        self.protocol
+            .http2_initial_connection_window_size(sz.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn http2_adaptive_window(mut self, enabled: bool) -> Self {
+        self.protocol.http2_adaptive_window(enabled);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn http2_max_concurrent_streams(mut self, max: impl Into<Option<u32>>) -> Self {
+        self.protocol.http2_max_concurrent_streams(max.into());
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "runtime")]
+    pub fn http2_keep_alive_interval(mut self, interval: impl Into<Option<Duration>>) -> Self {
+        self.protocol.http2_keep_alive_interval(interval);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "runtime")]
+    pub fn http2_keep_alive_timeout(mut self, timeout: Duration) -> Self {
+        self.protocol.http2_keep_alive_timeout(timeout);
         self
     }
 
@@ -341,27 +422,25 @@ impl<I, E> Builder<I, E> {
     
     
     
+    
     pub fn serve<S, B>(self, new_service: S) -> Server<I, S, E>
     where
-        I: Stream,
-        I::Error: Into<Box<::std::error::Error + Send + Sync>>,
-        I::Item: AsyncRead + AsyncWrite + Send + 'static,
-        S: MakeServiceRef<I::Item, ReqBody=Body, ResBody=B>,
-        S::Error: Into<Box<::std::error::Error + Send + Sync>>,
-        S::Service: 'static,
+        I: Accept,
+        I::Error: Into<Box<dyn StdError + Send + Sync>>,
+        I::Conn: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+        S: MakeServiceRef<I::Conn, Body, ResBody = B>,
+        S::Error: Into<Box<dyn StdError + Send + Sync>>,
         B: Payload,
-        E: NewSvcExec<I::Item, S::Future, S::Service, E, NoopWatcher>,
-        E: H2Exec<<S::Service as Service>::Future, B>,
+        E: NewSvcExec<I::Conn, S::Future, S::Service, E, NoopWatcher>,
+        E: H2Exec<<S::Service as HttpService<Body>>::Future, B>,
     {
-        let serve = self.protocol.serve_incoming(self.incoming, new_service);
+        let serve = self.protocol.serve(self.incoming, new_service);
         let spawn_all = serve.spawn_all();
-        Server {
-            spawn_all,
-        }
+        Server { spawn_all }
     }
 }
 
-#[cfg(feature = "runtime")]
+#[cfg(feature = "tcp")]
 impl<E> Builder<AddrIncoming, E> {
     
     
@@ -399,4 +478,3 @@ impl<E> Builder<AddrIncoming, E> {
         self
     }
 }
-

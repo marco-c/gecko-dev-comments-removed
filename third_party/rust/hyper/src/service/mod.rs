@@ -29,12 +29,21 @@
 
 
 
-mod make_service;
-mod new_service;
-mod service;
 
-pub use self::make_service::{make_service_fn, MakeService, MakeServiceRef};
 
-#[doc(hidden)]
-pub use self::new_service::NewService;
-pub use self::service::{service_fn, service_fn_ok, Service};
+
+
+
+pub use tower_service::Service;
+
+mod http;
+mod make;
+mod oneshot;
+mod util;
+
+pub(crate) use self::http::HttpService;
+pub(crate) use self::make::{MakeConnection, MakeServiceRef};
+pub(crate) use self::oneshot::{oneshot, Oneshot};
+
+pub use self::make::make_service_fn;
+pub use self::util::service_fn;

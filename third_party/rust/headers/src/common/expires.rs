@@ -29,8 +29,13 @@ use util::HttpDate;
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Header)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Expires(HttpDate);
+
+derive_header! {
+    Expires(_),
+    name: EXPIRES
+}
 
 impl From<SystemTime> for Expires {
     fn from(time: SystemTime) -> Expires {

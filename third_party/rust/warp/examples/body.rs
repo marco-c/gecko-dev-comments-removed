@@ -1,9 +1,6 @@
 #![deny(warnings)]
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate pretty_env_logger;
-extern crate warp;
+
+use serde_derive::{Deserialize, Serialize};
 
 use warp::Filter;
 
@@ -13,11 +10,12 @@ struct Employee {
     rate: u32,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     
-    let promote = warp::post2()
+    let promote = warp::post()
         .and(warp::path("employees"))
         .and(warp::path::param::<u32>())
         
@@ -28,5 +26,5 @@ fn main() {
             warp::reply::json(&employee)
         });
 
-    warp::serve(promote).run(([127, 0, 0, 1], 3030));
+    warp::serve(promote).run(([127, 0, 0, 1], 3030)).await
 }

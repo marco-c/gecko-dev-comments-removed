@@ -1,5 +1,5 @@
-use frame::Reason;
-use proto::{WindowSize, MAX_WINDOW_SIZE};
+use crate::frame::Reason;
+use crate::proto::{WindowSize, MAX_WINDOW_SIZE};
 
 use std::fmt;
 
@@ -120,7 +120,7 @@ impl FlowControl {
             return Err(Reason::FLOW_CONTROL_ERROR);
         }
 
-        trace!(
+        log::trace!(
             "inc_window; sz={}; old={}; new={}",
             sz,
             self.window_size,
@@ -135,8 +135,8 @@ impl FlowControl {
     
     
     
-    pub fn dec_window(&mut self, sz: WindowSize) {
-        trace!(
+    pub fn dec_send_window(&mut self, sz: WindowSize) {
+        log::trace!(
             "dec_window; sz={}; window={}, available={}",
             sz,
             self.window_size,
@@ -148,8 +148,24 @@ impl FlowControl {
 
     
     
+    
+    
+    pub fn dec_recv_window(&mut self, sz: WindowSize) {
+        log::trace!(
+            "dec_recv_window; sz={}; window={}, available={}",
+            sz,
+            self.window_size,
+            self.available
+        );
+        
+        self.window_size -= sz;
+        self.available -= sz;
+    }
+
+    
+    
     pub fn send_data(&mut self, sz: WindowSize) {
-        trace!(
+        log::trace!(
             "send_data; sz={}; window={}; available={}",
             sz,
             self.window_size,
@@ -200,7 +216,6 @@ impl PartialEq<WindowSize> for Window {
     }
 }
 
-
 impl PartialEq<Window> for WindowSize {
     fn eq(&self, other: &Window) -> bool {
         other.eq(self)
@@ -227,7 +242,6 @@ impl PartialOrd<Window> for WindowSize {
     }
 }
 
-
 impl ::std::ops::SubAssign<WindowSize> for Window {
     fn sub_assign(&mut self, other: WindowSize) {
         self.0 -= other as i32;
@@ -250,5 +264,11 @@ impl ::std::ops::AddAssign<WindowSize> for Window {
 impl fmt::Display for Window {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(&self.0, f)
+    }
+}
+
+impl From<Window> for isize {
+    fn from(w: Window) -> isize {
+        w.0 as isize
     }
 }

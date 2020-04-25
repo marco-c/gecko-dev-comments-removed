@@ -29,8 +29,13 @@ use http::header::HeaderValue;
 
 
 
-#[derive(Debug, Clone, PartialEq, Header)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Referer(HeaderValue);
+
+derive_header! {
+    Referer(_),
+    name: REFERER
+}
 
 impl Referer {
     
@@ -53,4 +58,3 @@ impl FromStr for Referer {
             .map_err(|_| InvalidReferer { _inner: () })
     }
 }
-

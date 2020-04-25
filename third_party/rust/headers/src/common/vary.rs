@@ -1,6 +1,6 @@
 use util::FlatCsv;
 
-use {HeaderValue};
+use HeaderValue;
 
 
 
@@ -29,8 +29,13 @@ use {HeaderValue};
 
 
 
-#[derive(Debug, Clone, PartialEq, Header)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Vary(FlatCsv);
+
+derive_header! {
+    Vary(_),
+    name: VARY
+}
 
 impl Vary {
     

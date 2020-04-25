@@ -1,52 +1,35 @@
-extern crate futures;
-
-mod support;
-
+use futures::future;
 use futures::stream;
 
-use support::*;
+use futures_test::future::FutureTestExt;
+use futures_test::{
+    assert_stream_done, assert_stream_next, assert_stream_pending,
+};
 
 #[test]
 fn unfold1() {
     let mut stream = stream::unfold(0, |state| {
         if state <= 2 {
-            let res: Result<_,()> = Ok((state * 2, state + 1));
-            Some(delay_future(res))
+            future::ready(Some((state * 2, state + 1))).pending_once()
         } else {
-            None
+            future::ready(None).pending_once()
         }
     });
-    
-    
-    sassert_empty(&mut stream);
-    
-    sassert_next(&mut stream, 0);
 
     
-    sassert_empty(&mut stream);
-    sassert_next(&mut stream, 2);
-
-    sassert_empty(&mut stream);
-    sassert_next(&mut stream, 4);
+    
+    assert_stream_pending!(stream);
+    
+    assert_stream_next!(stream, 0);
 
     
-    sassert_done(&mut stream);
-}
+    assert_stream_pending!(stream);
+    assert_stream_next!(stream, 2);
 
-#[test]
-fn unfold_err1() {
-    let mut stream = stream::unfold(0, |state| {
-        if state <= 2 {
-            Some(Ok((state * 2, state + 1)))
-        } else {
-            Some(Err(-1))
-        }
-    });
-    sassert_next(&mut stream, 0);
-    sassert_next(&mut stream, 2);
-    sassert_next(&mut stream, 4);
-    sassert_err(&mut stream, -1);
+    assert_stream_pending!(stream);
+    assert_stream_next!(stream, 4);
 
     
-    sassert_done(&mut stream);
+    assert_stream_pending!(stream);
+    assert_stream_done!(stream);
 }

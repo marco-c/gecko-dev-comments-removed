@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use util::EntityTag;
 
 
@@ -26,11 +27,39 @@ use util::EntityTag;
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Header)]
-#[header(name_const = "ETAG")]
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ETag(pub(super) EntityTag);
 
-    
+derive_header! {
+    ETag(_),
+    name: ETAG
+}
+
+impl ETag {
+    #[cfg(test)]
+    pub(crate) fn from_static(src: &'static str) -> ETag {
+        ETag(EntityTag::from_static(src))
+    }
+}
+
+error_type!(InvalidETag);
+
+impl FromStr for ETag {
+    type Err = InvalidETag;
+    fn from_str(src: &str) -> Result<Self, Self::Err> {
+        let val = src
+            .parse()
+            .map_err(|_| InvalidETag { _inner: () })?;
+
+        EntityTag::from_owned(val)
+            .map(ETag)
+            .ok_or_else(|| InvalidETag { _inner: () })
+    }
+}
+
 
 
 

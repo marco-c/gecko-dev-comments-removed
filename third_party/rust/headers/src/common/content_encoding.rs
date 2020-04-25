@@ -1,6 +1,6 @@
-use util::FlatCsv;
-use {HeaderValue};
 use self::sealed::AsCoding;
+use util::FlatCsv;
+use HeaderValue;
 
 
 
@@ -31,8 +31,13 @@ use self::sealed::AsCoding;
 
 
 
-#[derive(Clone, Debug, Header)]
+#[derive(Clone, Debug)]
 pub struct ContentEncoding(FlatCsv);
+
+derive_header! {
+    ContentEncoding(_),
+    name: CONTENT_ENCODING
+}
 
 impl ContentEncoding {
     
@@ -60,11 +65,7 @@ impl ContentEncoding {
     
     pub fn contains(&self, coding: impl AsCoding) -> bool {
         let s = coding.as_coding();
-        self
-            .0
-            .iter()
-            .find(|&opt| opt == s)
-            .is_some()
+        self.0.iter().find(|&opt| opt == s).is_some()
     }
 }
 

@@ -11,8 +11,8 @@
 
 use super::chunked_encoder::ChunkedEncoder;
 use super::Config;
-use std::fmt::{Display, Formatter};
-use std::{fmt, str};
+use core::fmt::{Display, Formatter};
+use core::{fmt, str};
 
 
 pub struct Base64Display<'a> {

@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/want/0.0.6")]
+#![doc(html_root_url = "https://docs.rs/want/0.3.0")]
 #![deny(warnings)]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
@@ -19,21 +19,81 @@
 
 
 
-extern crate futures;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_use]
 extern crate log;
-extern crate try_lock;
 
 use std::fmt;
+use std::future::Future;
 use std::mem;
+use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 
 
 use std::sync::atomic::Ordering::SeqCst;
+use std::task::{self, Poll, Waker};
 
-use futures::{Async, Poll};
-use futures::task::{self, Task};
 
 use try_lock::TryLock;
 
@@ -111,13 +171,17 @@ impl From<usize> for State {
 
 struct Inner {
     state: AtomicUsize,
-    task: TryLock<Option<Task>>,
+    task: TryLock<Option<Waker>>,
 }
 
 
 
 impl Giver {
     
+    pub fn want<'a>(&'a mut self) -> impl Future<Output = Result<(), Closed>> + 'a {
+        Want(self)
+    }
+
     
     
     
@@ -127,17 +191,18 @@ impl Giver {
     
     
     
-    pub fn poll_want(&mut self) -> Poll<(), Closed> {
+    
+    pub fn poll_want(&mut self, cx: &mut task::Context<'_>) -> Poll<Result<(), Closed>> {
         loop {
             let state = self.inner.state.load(SeqCst).into();
             match state {
                 State::Want => {
                     trace!("poll_want: taker wants!");
-                    return Ok(Async::Ready(()));
+                    return Poll::Ready(Ok(()));
                 },
                 State::Closed => {
                     trace!("poll_want: closed");
-                    return Err(Closed { _inner: () });
+                    return Poll::Ready(Err(Closed { _inner: () }));
                 },
                 State::Idle | State::Give => {
                     
@@ -152,19 +217,19 @@ impl Giver {
                         
                         if old == state.into() {
                             let park = locked.as_ref()
-                                .map(|t| !t.will_notify_current())
+                                .map(|w| !w.will_wake(cx.waker()))
                                 .unwrap_or(true);
                             if park {
-                                let old = mem::replace(&mut *locked, Some(task::current()));
+                                let old = mem::replace(&mut *locked, Some(cx.waker().clone()));
                                 drop(locked);
                                 old.map(|prev_task| {
                                     
                                     
                                     
-                                    prev_task.notify();
+                                    prev_task.wake();
                                 });
                             }
-                            return Ok(Async::NotReady)
+                            return Poll::Pending;
                         }
                         
                     } else {
@@ -288,7 +353,7 @@ impl Taker {
                         if let Some(task) = locked.take() {
                             drop(locked);
                             trace!("signal found waiting giver, notifying");
-                            task.notify();
+                            task.wake();
                         }
                         return;
                     } else {
@@ -336,19 +401,38 @@ impl Inner {
     }
 }
 
+
+
+struct Want<'a>(&'a mut Giver);
+
+
+impl Future for Want<'_> {
+    type Output = Result<(), Closed>;
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
+        self.0.poll_want(cx)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::thread;
-    use futures::{Async, Stream};
-    use futures::future::{poll_fn, Future};
-    use futures::sync::{mpsc, oneshot};
+    use tokio_sync::oneshot;
     use super::*;
+
+    fn block_on<F: Future>(f: F) -> F::Output {
+        tokio_executor::enter()
+            .expect("block_on enter")
+            .block_on(f)
+    }
 
     #[test]
     fn want_ready() {
         let (mut gv, mut tk) = new();
+
         tk.want();
-        assert!(gv.poll_want().unwrap().is_ready());
+
+        block_on(gv.want()).unwrap();
     }
 
     #[test]
@@ -360,12 +444,10 @@ mod tests {
             tk.want();
             
             
-            rx.wait().expect("rx");
+            block_on(rx).expect("rx");
         });
 
-        poll_fn(|| {
-            gv.poll_want()
-        }).wait().expect("wait");
+        block_on(gv.want()).expect("want");
 
         assert!(gv.is_wanting(), "still wanting after poll_want success");
         assert!(gv.give(), "give is true when wanting");
@@ -379,41 +461,43 @@ mod tests {
     }
 
     
-    
-    #[test]
-    fn want_notify_moving_tasks() {
-        use std::sync::Arc;
-        use futures::executor::{spawn, Notify, NotifyHandle};
 
-        struct WantNotify;
 
-        impl Notify for WantNotify {
-            fn notify(&self, _id: usize) {
-            }
-        }
 
-        fn n() -> NotifyHandle {
-            Arc::new(WantNotify).into()
-        }
 
-        let (mut gv, mut tk) = new();
 
-        let mut s = spawn(poll_fn(move || {
-            gv.poll_want()
-        }));
 
-        
-        let t1 = n();
-        assert!(s.poll_future_notify(&t1, 1).unwrap().is_not_ready());
 
-        thread::spawn(move || {
-            thread::sleep(::std::time::Duration::from_millis(100));
-            tk.want();
-        });
 
-        
-        s.into_inner().wait().expect("poll_want");
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     #[test]
     fn cancel() {
@@ -425,7 +509,7 @@ mod tests {
         tk.cancel();
 
         assert!(gv.is_canceled());
-        assert!(gv.poll_want().is_err());
+        block_on(gv.want()).unwrap_err();
 
         
         let (mut gv, tk) = new();
@@ -435,7 +519,7 @@ mod tests {
         drop(tk);
 
         assert!(gv.is_canceled());
-        assert!(gv.poll_want().is_err());
+        block_on(gv.want()).unwrap_err();
 
         
         let (mut gv, tk) = new();
@@ -445,57 +529,57 @@ mod tests {
             
         });
 
-        poll_fn(move || {
-            gv.poll_want()
-        }).wait().expect_err("wait");
+        block_on(gv.want()).unwrap_err();
     }
 
-    #[test]
-    fn stress() {
-        let nthreads = 5;
-        let nwants = 100;
+    
 
-        for _ in 0..nthreads {
-            let (mut gv, mut tk) = new();
-            let (mut tx, mut rx) = mpsc::channel(0);
 
-            
-            thread::spawn(move || {
-                let mut cnt = 0;
-                poll_fn(move || {
-                    while cnt < nwants {
-                        let n = match rx.poll().expect("rx poll") {
-                            Async::Ready(n) => n.expect("rx opt"),
-                            Async::NotReady => {
-                                tk.want();
-                                return Ok(Async::NotReady);
-                            },
-                        };
-                        assert_eq!(cnt, n);
-                        cnt += 1;
-                    }
-                    Ok::<_, ()>(Async::Ready(()))
-                }).wait().expect("rx wait");
-            });
 
-            
-            thread::spawn(move || {
-                let mut cnt = 0;
-                let nsent = poll_fn(move || {
-                    loop {
-                        while let Ok(()) = tx.try_send(cnt) {
-                            cnt += 1;
-                        }
-                        match gv.poll_want() {
-                            Ok(Async::Ready(_)) => (),
-                            Ok(Async::NotReady) => return Ok::<_, ()>(Async::NotReady),
-                            Err(_) => return Ok(Async::Ready(cnt)),
-                        }
-                    }
-                }).wait().expect("tx wait");
 
-                assert_eq!(nsent, nwants);
-            }).join().expect("thread join");
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

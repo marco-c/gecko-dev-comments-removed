@@ -1,11 +1,10 @@
 #![deny(warnings)]
-extern crate warp;
-
 use warp::Filter;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     
     let routes = warp::any().map(|| "Hello, World!");
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

@@ -6,58 +6,24 @@
 
 
 
+use futures::future;
 use http::Method;
 
-use filter::{filter_fn, filter_fn_one, And, Filter, One};
-use never::Never;
-use reject::{CombineRejection, Rejection};
+use crate::filter::{filter_fn, filter_fn_one, Filter, One};
+use crate::reject::Rejection;
+use std::convert::Infallible;
 
-pub use self::v2::{
-    delete as delete2, get as get2, head, options, patch, post as post2, put as put2,
-};
 
-#[doc(hidden)]
-#[deprecated(note = "warp::get2() is meant to replace get()")]
-pub fn get<F>(filter: F) -> And<impl Filter<Extract = (), Error = Rejection> + Copy, F>
-where
-    F: Filter + Clone,
-    F::Error: CombineRejection<Rejection>,
-    <F::Error as CombineRejection<Rejection>>::Rejection: CombineRejection<Rejection>,
-{
-    method_is(|| &Method::GET).and(filter)
-}
 
-#[doc(hidden)]
-#[deprecated(note = "warp::post2() is meant to replace post()")]
-pub fn post<F>(filter: F) -> And<impl Filter<Extract = (), Error = Rejection> + Copy, F>
-where
-    F: Filter + Clone,
-    F::Error: CombineRejection<Rejection>,
-    <F::Error as CombineRejection<Rejection>>::Rejection: CombineRejection<Rejection>,
-{
-    method_is(|| &Method::POST).and(filter)
-}
 
-#[doc(hidden)]
-#[deprecated(note = "warp::put2() is meant to replace put()")]
-pub fn put<F>(filter: F) -> And<impl Filter<Extract = (), Error = Rejection> + Copy, F>
-where
-    F: Filter + Clone,
-    F::Error: CombineRejection<Rejection>,
-    <F::Error as CombineRejection<Rejection>>::Rejection: CombineRejection<Rejection>,
-{
-    method_is(|| &Method::PUT).and(filter)
-}
 
-#[doc(hidden)]
-#[deprecated(note = "warp::delete2() is meant to replace delete()")]
-pub fn delete<F>(filter: F) -> And<impl Filter<Extract = (), Error = Rejection> + Copy, F>
-where
-    F: Filter + Clone,
-    F::Error: CombineRejection<Rejection>,
-    <F::Error as CombineRejection<Rejection>>::Rejection: CombineRejection<Rejection>,
-{
-    method_is(|| &Method::DELETE).and(filter)
+
+
+
+
+
+pub fn get() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::GET)
 }
 
 
@@ -69,13 +35,91 @@ where
 
 
 
+pub fn post() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::POST)
+}
 
 
 
 
 
-pub fn method() -> impl Filter<Extract = One<Method>, Error = Never> + Copy {
-    filter_fn_one(|route| Ok::<_, Never>(route.method().clone()))
+
+
+
+
+
+pub fn put() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::PUT)
+}
+
+
+
+
+
+
+
+
+
+
+pub fn delete() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::DELETE)
+}
+
+
+
+
+
+
+
+
+
+
+pub fn head() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::HEAD)
+}
+
+
+
+
+
+
+
+
+
+
+pub fn options() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::OPTIONS)
+}
+
+
+
+
+
+
+
+
+
+
+pub fn patch() -> impl Filter<Extract = (), Error = Rejection> + Copy {
+    method_is(|| &Method::PATCH)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn method() -> impl Filter<Extract = One<Method>, Error = Infallible> + Copy {
+    filter_fn_one(|route| future::ok::<_, Infallible>(route.method().clone()))
 }
 
 
@@ -87,116 +131,20 @@ where
 {
     filter_fn(move |route| {
         let method = func();
-        trace!("method::{:?}?: {:?}", method, route.method());
+        log::trace!("method::{:?}?: {:?}", method, route.method());
         if route.method() == method {
-            Ok(())
+            future::ok(())
         } else {
-            Err(::reject::method_not_allowed())
+            future::err(crate::reject::method_not_allowed())
         }
     })
 }
 
-pub mod v2 {
-    
-    
-    
-    
-    
-    use http::Method;
-
-    use filter::Filter;
-    use reject::Rejection;
-
-    use super::method_is;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn get() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::GET)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn post() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::POST)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn put() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::PUT)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn delete() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::DELETE)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn head() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::HEAD)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn options() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::OPTIONS)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn patch() -> impl Filter<Extract = (), Error = Rejection> + Copy {
-        method_is(|| &Method::PATCH)
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn method_size_of() {
+        
+        assert_eq!(std::mem::size_of_val(&super::get()), 0,);
     }
 }

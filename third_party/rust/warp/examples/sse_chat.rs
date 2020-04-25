@@ -1,35 +1,14 @@
-extern crate futures;
-extern crate pretty_env_logger;
-extern crate warp;
-
-use futures::{
-    future::poll_fn,
-    sync::{mpsc, oneshot},
-    Future, Stream,
-};
+use futures::{Stream, StreamExt};
 use std::collections::HashMap;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc, Mutex,
 };
-use warp::{sse::ServerSentEvent, Buf, Filter};
+use tokio::sync::mpsc;
+use warp::{sse::ServerSentEvent, Filter};
 
-
-static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
-
-
-enum Message {
-    UserId(usize),
-    Reply(String),
-}
-
-
-
-
-
-type Users = Arc<Mutex<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
-
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     
@@ -40,14 +19,16 @@ fn main() {
 
     
     let chat_send = warp::path("chat")
-        .and(warp::post2())
+        .and(warp::post())
         .and(warp::path::param::<usize>())
         .and(warp::body::content_length_limit(500))
-        .and(warp::body::concat().and_then(|body: warp::body::FullBody| {
-            std::str::from_utf8(body.bytes())
-                .map(String::from)
-                .map_err(warp::reject::custom)
-        }))
+        .and(
+            warp::body::bytes().and_then(|body: bytes::Bytes| async move {
+                std::str::from_utf8(&body)
+                    .map(String::from)
+                    .map_err(|_e| warp::reject::custom(NotUtf8))
+            }),
+        )
         .and(users.clone())
         .map(|my_id, msg, users| {
             user_message(my_id, msg, &users);
@@ -55,15 +36,11 @@ fn main() {
         });
 
     
-    let chat_recv =
-        warp::path("chat")
-            .and(warp::sse())
-            .and(users)
-            .map(|sse: warp::sse::Sse, users| {
-                
-                let stream = user_connected(users);
-                sse.reply(warp::sse::keep_alive().stream(stream))
-            });
+    let chat_recv = warp::path("chat").and(warp::get()).and(users).map(|users| {
+        
+        let stream = user_connected(users);
+        warp::sse::reply(warp::sse::keep_alive().stream(stream))
+    });
 
     
     let index = warp::path::end().map(|| {
@@ -74,12 +51,32 @@ fn main() {
 
     let routes = index.or(chat_recv).or(chat_send);
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
+
+
+static NEXT_USER_ID: AtomicUsize = AtomicUsize::new(1);
+
+
+#[derive(Debug)]
+enum Message {
+    UserId(usize),
+    Reply(String),
+}
+
+#[derive(Debug)]
+struct NotUtf8;
+impl warp::reject::Reject for NotUtf8 {}
+
+
+
+
+
+type Users = Arc<Mutex<HashMap<usize, mpsc::UnboundedSender<Message>>>>;
 
 fn user_connected(
     users: Users,
-) -> impl Stream<Item = impl ServerSentEvent + Send + 'static, Error = warp::Error> + Send + 'static
+) -> impl Stream<Item = Result<impl ServerSentEvent + Send + 'static, warp::Error>> + Send + 'static
 {
     
     let my_id = NEXT_USER_ID.fetch_add(1, Ordering::Relaxed);
@@ -88,42 +85,19 @@ fn user_connected(
 
     
     
-    let (tx, rx) = mpsc::unbounded();
+    let (tx, rx) = mpsc::unbounded_channel();
 
-    match tx.unbounded_send(Message::UserId(my_id)) {
-        Ok(()) => (),
-        Err(_disconnected) => {
-            
-            
-            
-        }
-    }
-
-    
-    let users2 = users.clone();
+    tx.send(Message::UserId(my_id))
+        
+        .unwrap();
 
     
     users.lock().unwrap().insert(my_id, tx);
 
     
-    
-    let (mut dtx, mut drx) = oneshot::channel::<()>();
-
-    
-    
-    warp::spawn(poll_fn(move || dtx.poll_cancel()).map(move |_| {
-        user_disconnected(my_id, &users2);
-    }));
-
-    
     rx.map(|msg| match msg {
-        Message::UserId(my_id) => (warp::sse::event("user"), warp::sse::data(my_id)).into_a(),
-        Message::Reply(reply) => warp::sse::data(reply).into_b(),
-    })
-    .map_err(move |_| {
-        
-        drx.close();
-        unreachable!("unbounded rx never errors");
+        Message::UserId(my_id) => Ok((warp::sse::event("user"), warp::sse::data(my_id)).into_a()),
+        Message::Reply(reply) => Ok(warp::sse::data(reply).into_b()),
     })
 }
 
@@ -134,25 +108,15 @@ fn user_message(my_id: usize, msg: String, users: &Users) {
     
     
     
-    for (&uid, tx) in users.lock().unwrap().iter() {
-        if my_id != uid {
-            match tx.unbounded_send(Message::Reply(new_msg.clone())) {
-                Ok(()) => (),
-                Err(_disconnected) => {
-                    
-                    
-                    
-                }
-            }
+    users.lock().unwrap().retain(|uid, tx| {
+        if my_id == *uid {
+            
+            true
+        } else {
+            
+            tx.send(Message::Reply(new_msg.clone())).is_ok()
         }
-    }
-}
-
-fn user_disconnected(my_id: usize, users: &Users) {
-    eprintln!("good bye user: {}", my_id);
-
-    
-    users.lock().unwrap().remove(&my_id);
+    });
 }
 
 static INDEX_HTML: &str = r#"

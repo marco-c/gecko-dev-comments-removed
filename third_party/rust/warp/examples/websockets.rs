@@ -1,25 +1,27 @@
 #![deny(warnings)]
-extern crate pretty_env_logger;
-extern crate warp;
 
-use warp::{Filter, Future, Stream};
+use futures::{FutureExt, StreamExt};
+use warp::Filter;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     let routes = warp::path("echo")
         
-        .and(warp::ws2())
-        .map(|ws: warp::ws::Ws2| {
+        .and(warp::ws())
+        .map(|ws: warp::ws::Ws| {
             
             ws.on_upgrade(|websocket| {
                 
                 let (tx, rx) = websocket.split();
-                rx.forward(tx).map(|_| ()).map_err(|e| {
-                    eprintln!("websocket error: {:?}", e);
+                rx.forward(tx).map(|result| {
+                    if let Err(e) = result {
+                        eprintln!("websocket error: {:?}", e);
+                    }
                 })
             })
         });
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

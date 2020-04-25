@@ -1,4 +1,4 @@
-use ::HeaderValue;
+use HeaderValue;
 
 
 
@@ -24,14 +24,18 @@ use ::HeaderValue;
 
 
 
-
-#[derive(Clone, Debug, PartialEq, Header)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ContentLocation(HeaderValue);
+
+derive_header! {
+    ContentLocation(_),
+    name: CONTENT_LOCATION
+}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::test_decode;
+    use super::*;
 
     #[test]
     fn absolute_uri() {

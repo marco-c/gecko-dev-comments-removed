@@ -1,13 +1,25 @@
-use codec::UserError;
-use codec::UserError::*;
-use frame::{self, Frame, FrameSize};
-use hpack;
+use crate::codec::UserError;
+use crate::codec::UserError::*;
+use crate::frame::{self, Frame, FrameSize};
+use crate::hpack;
 
-use bytes::{Buf, BufMut, BytesMut};
-use futures::*;
-use tokio_io::{AsyncRead, AsyncWrite};
+use bytes::{
+    buf::{BufExt, BufMutExt},
+    Buf, BufMut, BytesMut,
+};
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use std::io::{self, Cursor};
+
+
+macro_rules! limited_write_buf {
+    ($self:expr) => {{
+        let limit = $self.max_frame_size() + frame::HEADER_LEN;
+        $self.buf.get_mut().limit(limit)
+    }};
+}
 
 #[derive(Debug)]
 pub struct FramedWrite<T, B> {
@@ -39,7 +51,10 @@ enum Next<B> {
 }
 
 
-const DEFAULT_BUFFER_CAPACITY: usize = 4 * 1_024;
+
+
+
+const DEFAULT_BUFFER_CAPACITY: usize = 16 * 1_024;
 
 
 const MIN_BUFFER_CAPACITY: usize = frame::HEADER_LEN + CHAIN_THRESHOLD;
@@ -52,12 +67,12 @@ const CHAIN_THRESHOLD: usize = 256;
 
 impl<T, B> FramedWrite<T, B>
 where
-    T: AsyncWrite,
+    T: AsyncWrite + Unpin,
     B: Buf,
 {
     pub fn new(inner: T) -> FramedWrite<T, B> {
         FramedWrite {
-            inner: inner,
+            inner,
             hpack: hpack::Encoder::default(),
             buf: Cursor::new(BytesMut::with_capacity(DEFAULT_BUFFER_CAPACITY)),
             next: None,
@@ -70,17 +85,17 @@ where
     
     
     
-    pub fn poll_ready(&mut self) -> Poll<(), io::Error> {
+    pub fn poll_ready(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
         if !self.has_capacity() {
             
-            self.flush()?;
+            ready!(self.flush(cx))?;
 
             if !self.has_capacity() {
-                return Ok(Async::NotReady);
+                return Poll::Pending;
             }
         }
 
-        Ok(Async::Ready(()))
+        Poll::Ready(Ok(()))
     }
 
     
@@ -91,7 +106,7 @@ where
         
         assert!(self.has_capacity());
 
-        debug!("send; frame={:?}", item);
+        log::debug!("send; frame={:?}", item);
 
         match item {
             Frame::Data(mut v) => {
@@ -120,33 +135,35 @@ where
                     
                     self.last_data_frame = Some(v);
                 }
-            },
+            }
             Frame::Headers(v) => {
-                if let Some(continuation) = v.encode(&mut self.hpack, self.buf.get_mut()) {
+                let mut buf = limited_write_buf!(self);
+                if let Some(continuation) = v.encode(&mut self.hpack, &mut buf) {
                     self.next = Some(Next::Continuation(continuation));
                 }
-            },
+            }
             Frame::PushPromise(v) => {
-                if let Some(continuation) = v.encode(&mut self.hpack, self.buf.get_mut()) {
+                let mut buf = limited_write_buf!(self);
+                if let Some(continuation) = v.encode(&mut self.hpack, &mut buf) {
                     self.next = Some(Next::Continuation(continuation));
                 }
-            },
+            }
             Frame::Settings(v) => {
                 v.encode(self.buf.get_mut());
-                trace!("encoded settings; rem={:?}", self.buf.remaining());
-            },
+                log::trace!("encoded settings; rem={:?}", self.buf.remaining());
+            }
             Frame::GoAway(v) => {
                 v.encode(self.buf.get_mut());
-                trace!("encoded go_away; rem={:?}", self.buf.remaining());
-            },
+                log::trace!("encoded go_away; rem={:?}", self.buf.remaining());
+            }
             Frame::Ping(v) => {
                 v.encode(self.buf.get_mut());
-                trace!("encoded ping; rem={:?}", self.buf.remaining());
-            },
+                log::trace!("encoded ping; rem={:?}", self.buf.remaining());
+            }
             Frame::WindowUpdate(v) => {
                 v.encode(self.buf.get_mut());
-                trace!("encoded window_update; rem={:?}", self.buf.remaining());
-            },
+                log::trace!("encoded window_update; rem={:?}", self.buf.remaining());
+            }
 
             Frame::Priority(_) => {
                 
@@ -154,32 +171,32 @@ where
 
 
                 unimplemented!();
-            },
+            }
             Frame::Reset(v) => {
                 v.encode(self.buf.get_mut());
-                trace!("encoded reset; rem={:?}", self.buf.remaining());
-            },
+                log::trace!("encoded reset; rem={:?}", self.buf.remaining());
+            }
         }
 
         Ok(())
     }
 
     
-    pub fn flush(&mut self) -> Poll<(), io::Error> {
-        trace!("flush");
+    pub fn flush(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        log::trace!("flush");
 
         loop {
             while !self.is_empty() {
                 match self.next {
                     Some(Next::Data(ref mut frame)) => {
-                        trace!("  -> queued data frame");
-                        let mut buf = Buf::by_ref(&mut self.buf).chain(frame.payload_mut());
-                        try_ready!(self.inner.write_buf(&mut buf));
-                    },
+                        log::trace!("  -> queued data frame");
+                        let mut buf = (&mut self.buf).chain(frame.payload_mut());
+                        ready!(Pin::new(&mut self.inner).poll_write_buf(cx, &mut buf))?;
+                    }
                     _ => {
-                        trace!("  -> not a queued data frame");
-                        try_ready!(self.inner.write_buf(&mut self.buf));
-                    },
+                        log::trace!("  -> not a queued data frame");
+                        ready!(Pin::new(&mut self.inner).poll_write_buf(cx, &mut self.buf))?;
+                    }
                 }
             }
 
@@ -193,30 +210,41 @@ where
                     self.last_data_frame = Some(frame);
                     debug_assert!(self.is_empty());
                     break;
-                },
+                }
                 Some(Next::Continuation(frame)) => {
                     
-                    if let Some(continuation) = frame.encode(&mut self.hpack, self.buf.get_mut()) {
+                    let mut buf = limited_write_buf!(self);
+                    if let Some(continuation) = frame.encode(&mut self.hpack, &mut buf) {
+                        
+                        
+                        
+                        if self.buf.get_ref().len() == frame::HEADER_LEN {
+                            
+                            
+                            
+                            panic!("CONTINUATION frame write loop; header value too big to encode");
+                        }
+
                         self.next = Some(Next::Continuation(continuation));
                     }
-                },
+                }
                 None => {
                     break;
                 }
             }
         }
 
-        trace!("flushing buffer");
+        log::trace!("flushing buffer");
         
-        try_nb!(self.inner.flush());
+        ready!(Pin::new(&mut self.inner).poll_flush(cx))?;
 
-        Ok(Async::Ready(()))
+        Poll::Ready(Ok(()))
     }
 
     
-    pub fn shutdown(&mut self) -> Poll<(), io::Error> {
-        try_ready!(self.flush());
-        self.inner.shutdown().map_err(Into::into)
+    pub fn shutdown(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        ready!(self.flush(cx))?;
+        Pin::new(&mut self.inner).poll_shutdown(cx)
     }
 
     fn has_capacity(&self) -> bool {
@@ -253,24 +281,30 @@ impl<T, B> FramedWrite<T, B> {
     }
 }
 
-impl<T: io::Read, B> io::Read for FramedWrite<T, B> {
-    fn read(&mut self, dst: &mut [u8]) -> io::Result<usize> {
-        self.inner.read(dst)
-    }
-}
-
-impl<T: AsyncRead, B> AsyncRead for FramedWrite<T, B> {
-    fn read_buf<B2: BufMut>(&mut self, buf: &mut B2) -> Poll<usize, io::Error>
-    where
-        Self: Sized,
-    {
-        self.inner.read_buf(buf)
-    }
-
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
+impl<T: AsyncRead + Unpin, B> AsyncRead for FramedWrite<T, B> {
+    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
         self.inner.prepare_uninitialized_buffer(buf)
     }
+
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut self.inner).poll_read(cx, buf)
+    }
+
+    fn poll_read_buf<Buf: BufMut>(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut Buf,
+    ) -> Poll<io::Result<usize>> {
+        Pin::new(&mut self.inner).poll_read_buf(cx, buf)
+    }
 }
+
+
+impl<T: Unpin, B> Unpin for FramedWrite<T, B> {}
 
 #[cfg(feature = "unstable")]
 mod unstable {

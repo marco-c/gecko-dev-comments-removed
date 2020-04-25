@@ -1,18 +1,21 @@
 #![deny(warnings)]
-extern crate warp;
 
 
 
 #[cfg(feature = "tls")]
-fn main() {
+#[tokio::main]
+async fn main() {
     use warp::Filter;
 
     
     let routes = warp::any().map(|| "Hello, World!");
 
     warp::serve(routes)
-        .tls("examples/tls/cert.pem", "examples/tls/key.rsa")
-        .run(([127, 0, 0, 1], 3030));
+        .tls()
+        .cert_path("examples/tls/cert.pem")
+        .key_path("examples/tls/key.rsa")
+        .run(([127, 0, 0, 1], 3030))
+        .await;
 }
 
 #[cfg(not(feature = "tls"))]

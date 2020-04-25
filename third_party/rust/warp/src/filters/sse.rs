@@ -35,29 +35,37 @@
 
 
 
+
+
+
+
 use std::borrow::Cow;
 use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter, Write};
+use std::future::Future;
+use std::pin::Pin;
 use std::str::FromStr;
+use std::task::{Context, Poll};
 use std::time::Duration;
 
-use futures::{Async, Future, Poll, Stream};
+use futures::{future, Stream, TryStream, TryStreamExt};
 use http::header::{HeaderValue, CACHE_CONTROL, CONTENT_TYPE};
 use hyper::Body;
+use pin_project::pin_project;
 use serde::Serialize;
 use serde_json;
-use tokio::{clock::now, timer::Delay};
+use tokio::time::{self, Delay};
 
 use self::sealed::{
     BoxedServerSentEvent, EitherServerSentEvent, SseError, SseField, SseFormat, SseWrapper,
 };
 use super::header;
-use filter::One;
-use reply::Response;
-use {Filter, Rejection, Reply};
+use crate::filter::One;
+use crate::reply::Response;
+use crate::{Filter, Rejection, Reply};
 
 
-pub trait ServerSentEvent: SseFormat + Sized + Send + 'static {
+pub trait ServerSentEvent: SseFormat + Sized + Send + Sync + 'static {
     
     fn into_a<B>(self) -> EitherServerSentEvent<Self, B> {
         EitherServerSentEvent::A(self)
@@ -74,7 +82,7 @@ pub trait ServerSentEvent: SseFormat + Sized + Send + 'static {
     }
 }
 
-impl<T: SseFormat + Send + 'static> ServerSentEvent for T {}
+impl<T: SseFormat + Send + Sync + 'static> ServerSentEvent for T {}
 
 #[allow(missing_debug_implementations)]
 struct SseComment<T>(T);
@@ -82,7 +90,7 @@ struct SseComment<T>(T);
 
 pub fn comment<T>(comment: T) -> impl ServerSentEvent
 where
-    T: Display + Send + 'static,
+    T: Display + Send + Sync + 'static,
 {
     SseComment(comment)
 }
@@ -104,7 +112,7 @@ struct SseEvent<T>(T);
 
 pub fn event<T>(event: T) -> impl ServerSentEvent
 where
-    T: Display + Send + 'static,
+    T: Display + Send + Sync + 'static,
 {
     SseEvent(event)
 }
@@ -126,7 +134,7 @@ struct SseId<T>(T);
 
 pub fn id<T>(id: T) -> impl ServerSentEvent
 where
-    T: Display + Send + 'static,
+    T: Display + Send + Sync + 'static,
 {
     SseId(id)
 }
@@ -156,7 +164,7 @@ impl SseFormat for SseRetry {
             k.fmt(f)?;
 
             let secs = self.0.as_secs();
-            let millis = self.0.subsec_nanos() / 1_000_000;
+            let millis = self.0.subsec_millis();
 
             if secs > 0 {
                 
@@ -188,7 +196,7 @@ struct SseData<T>(T);
 
 pub fn data<T>(data: T) -> impl ServerSentEvent
 where
-    T: Display + Send + 'static,
+    T: Display + Send + Sync + 'static,
 {
     SseData(data)
 }
@@ -212,7 +220,7 @@ struct SseJson<T>(T);
 
 pub fn json<T>(data: T) -> impl ServerSentEvent
 where
-    T: Serialize + Send + 'static,
+    T: Serialize + Send + Sync + 'static,
 {
     SseJson(data)
 }
@@ -223,7 +231,7 @@ impl<T: Serialize> SseFormat for SseJson<T> {
             k.fmt(f)?;
             serde_json::to_string(&self.0)
                 .map_err(|error| {
-                    error!("sse::json error {}", error);
+                    log::error!("sse::json error {}", error);
                     fmt::Error
                 })
                 .and_then(|data| data.fmt(f))?;
@@ -286,18 +294,16 @@ tuple_fmt!((A, B, C, D, E, F, G, H) => (0, 1, 2, 3, 4, 5, 6, 7));
 
 
 
-pub fn last_event_id<T>() -> impl Filter<Extract = One<Option<T>>, Error = Rejection>
+
+
+
+
+
+pub fn last_event_id<T>() -> impl Filter<Extract = One<Option<T>>, Error = Rejection> + Copy
 where
-    T: FromStr + Send,
+    T: FromStr + Send + Sync + 'static,
 {
-    header::header("last-event-id")
-        .map(Some)
-        .or_else(|rejection: Rejection| {
-            if rejection.find_cause::<::reject::MissingHeader>().is_some() {
-                return Ok((None,));
-            }
-            Err(rejection)
-        })
+    header::optional("last-event-id")
 }
 
 
@@ -317,105 +323,73 @@ where
 
 
 
-pub fn sse() -> impl Filter<Extract = One<Sse>, Error = Rejection> + Copy {
-    ::get2()
-        .and(
-            header::exact_ignore_case("connection", "keep-alive").or_else(
-                |rejection: Rejection| {
-                    if rejection.find_cause::<::reject::MissingHeader>().is_some() {
-                        return Ok(());
-                    }
-                    Err(rejection)
-                },
-            ),
-        )
-        .map(|| Sse)
-}
 
 
-pub struct Sse;
 
-impl Sse {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn reply<S>(self, event_stream: S) -> impl Reply
-    where
-        S: Stream + Send + 'static,
-        S::Item: ServerSentEvent,
-        S::Error: StdError + Send + Sync + 'static,
-    {
-        SseReply { event_stream }
-    }
-}
 
-impl fmt::Debug for Sse {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Sse").finish()
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn reply<S>(event_stream: S) -> impl Reply
+where
+    S: TryStream + Send + Sync + 'static,
+    S::Ok: ServerSentEvent,
+    S::Error: StdError + Send + Sync + 'static,
+{
+    SseReply { event_stream }
 }
 
 #[allow(missing_debug_implementations)]
@@ -425,8 +399,8 @@ struct SseReply<S> {
 
 impl<S> Reply for SseReply<S>
 where
-    S: Stream + Send + 'static,
-    S::Item: ServerSentEvent,
+    S: TryStream + Send + Sync + 'static,
+    S::Ok: ServerSentEvent,
     S::Error: StdError + Send + Sync + 'static,
 {
     #[inline]
@@ -435,10 +409,11 @@ where
             .event_stream
             .map_err(|error| {
                 
-                error!("sse stream error: {}", error);
+                log::error!("sse stream error: {}", error);
                 SseError
             })
-            .and_then(|event| SseWrapper::format(&event));
+            .into_stream()
+            .and_then(|event| future::ready(SseWrapper::format(&event)));
 
         let mut res = Response::new(Body::wrap_stream(body_stream));
         
@@ -482,17 +457,17 @@ impl KeepAlive {
     pub fn stream<S>(
         self,
         event_stream: S,
-    ) -> impl Stream<
-        Item = impl ServerSentEvent + Send + 'static,
+    ) -> impl TryStream<
+        Ok = impl ServerSentEvent + Send + 'static,
         Error = impl StdError + Send + Sync + 'static,
     > + Send
-                 + 'static
+           + 'static
     where
-        S: Stream + Send + 'static,
-        S::Item: ServerSentEvent + Send,
+        S: TryStream + Send + 'static,
+        S::Ok: ServerSentEvent + Send,
         S::Error: StdError + Send + Sync + 'static,
     {
-        let alive_timer = Delay::new(now() + self.max_interval);
+        let alive_timer = time::delay_for(self.max_interval);
         SseKeepAlive {
             event_stream,
             comment_text: self.comment_text,
@@ -503,7 +478,9 @@ impl KeepAlive {
 }
 
 #[allow(missing_debug_implementations)]
+#[pin_project]
 struct SseKeepAlive<S> {
+    #[pin]
     event_stream: S,
     comment_text: Cow<'static, str>,
     max_interval: Duration,
@@ -515,20 +492,20 @@ struct SseKeepAlive<S> {
 pub fn keep<S>(
     event_stream: S,
     keep_interval: impl Into<Option<Duration>>,
-) -> impl Stream<
-    Item = impl ServerSentEvent + Send + 'static,
+) -> impl TryStream<
+    Ok = impl ServerSentEvent + Send + 'static,
     Error = impl StdError + Send + Sync + 'static,
 > + Send
-         + 'static
+       + 'static
 where
-    S: Stream + Send + 'static,
-    S::Item: ServerSentEvent + Send,
+    S: TryStream + Send + 'static,
+    S::Ok: ServerSentEvent + Send,
     S::Error: StdError + Send + Sync + 'static,
 {
     let max_interval = keep_interval
         .into()
         .unwrap_or_else(|| Duration::from_secs(15));
-    let alive_timer = Delay::new(now() + max_interval);
+    let alive_timer = time::delay_for(max_interval);
     SseKeepAlive {
         event_stream,
         comment_text: Cow::Borrowed(""),
@@ -536,6 +513,9 @@ where
         alive_timer,
     }
 }
+
+
+
 
 
 
@@ -585,39 +565,35 @@ pub fn keep_alive() -> KeepAlive {
 
 impl<S> Stream for SseKeepAlive<S>
 where
-    S: Stream + Send + 'static,
-    S::Item: ServerSentEvent,
+    S: TryStream + Send + 'static,
+    S::Ok: ServerSentEvent,
     S::Error: StdError + Send + Sync + 'static,
 {
-    type Item = EitherServerSentEvent<S::Item, SseComment<Cow<'static, str>>>;
-    type Error = SseError;
+    type Item = Result<EitherServerSentEvent<S::Ok, SseComment<Cow<'static, str>>>, SseError>;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        match self.event_stream.poll() {
-            Ok(Async::NotReady) => match self.alive_timer.poll() {
-                Ok(Async::NotReady) => Ok(Async::NotReady),
-                Ok(Async::Ready(_)) => {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
+        let mut pin = self.project();
+        match pin.event_stream.try_poll_next(cx) {
+            Poll::Pending => match Pin::new(&mut pin.alive_timer).poll(cx) {
+                Poll::Pending => Poll::Pending,
+                Poll::Ready(_) => {
                     
-                    self.alive_timer.reset(now() + self.max_interval);
-                    let comment_str = self.comment_text.clone();
-                    Ok(Async::Ready(Some(EitherServerSentEvent::B(SseComment(
-                        comment_str,
-                    )))))
-                }
-                Err(error) => {
-                    error!("sse::keep error: {}", error);
-                    Err(SseError)
+                    pin.alive_timer
+                        .reset(tokio::time::Instant::now() + *pin.max_interval);
+                    let comment_str = pin.comment_text.clone();
+                    Poll::Ready(Some(Ok(EitherServerSentEvent::B(SseComment(comment_str)))))
                 }
             },
-            Ok(Async::Ready(Some(event))) => {
+            Poll::Ready(Some(Ok(event))) => {
                 
-                self.alive_timer.reset(now() + self.max_interval);
-                Ok(Async::Ready(Some(EitherServerSentEvent::A(event))))
+                pin.alive_timer
+                    .reset(tokio::time::Instant::now() + *pin.max_interval);
+                Poll::Ready(Some(Ok(EitherServerSentEvent::A(event))))
             }
-            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
-            Err(error) => {
-                error!("sse::keep error: {}", error);
-                Err(SseError)
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Ready(Some(Err(error))) => {
+                log::error!("sse::keep error: {}", error);
+                Poll::Ready(Some(Err(SseError)))
             }
         }
     }
@@ -636,11 +612,7 @@ mod sealed {
         }
     }
 
-    impl StdError for SseError {
-        fn description(&self) -> &str {
-            "sse error"
-        }
-    }
+    impl StdError for SseError {}
 
     impl Display for SseField {
         fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -714,7 +686,7 @@ mod sealed {
     }
 
     #[allow(missing_debug_implementations)]
-    pub struct BoxedServerSentEvent(pub(super) Box<dyn SseFormat + Send>);
+    pub struct BoxedServerSentEvent(pub(super) Box<dyn SseFormat + Send + Sync>);
 
     impl SseFormat for BoxedServerSentEvent {
         fn fmt_field(&self, f: &mut Formatter, k: &SseField) -> fmt::Result {

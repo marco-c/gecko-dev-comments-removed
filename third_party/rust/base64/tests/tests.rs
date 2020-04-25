@@ -6,7 +6,7 @@ use rand::{FromEntropy, Rng};
 use base64::*;
 
 mod helpers;
-use helpers::*;
+use self::helpers::*;
 
 
 fn roundtrip_random(

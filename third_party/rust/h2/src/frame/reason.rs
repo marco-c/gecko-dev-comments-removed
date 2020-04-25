@@ -15,7 +15,6 @@ use std::fmt;
 
 
 
-
 #[derive(PartialEq, Eq, Clone, Copy)]
 pub struct Reason(u32);
 
@@ -76,7 +75,7 @@ impl Reason {
             10 => {
                 "connection established in response to a CONNECT request was reset or abnormally \
                  closed"
-            },
+            }
             11 => "detected excessive load generating behavior",
             12 => "security properties do not meet minimum requirements",
             13 => "endpoint requires HTTP/1.1",
@@ -114,9 +113,7 @@ impl fmt::Debug for Reason {
             11 => "ENHANCE_YOUR_CALM",
             12 => "INADEQUATE_SECURITY",
             13 => "HTTP_1_1_REQUIRED",
-            other => return f.debug_tuple("Reason")
-                .field(&Hex(other))
-                .finish(),
+            other => return f.debug_tuple("Reason").field(&Hex(other)).finish(),
         };
         f.write_str(name)
     }

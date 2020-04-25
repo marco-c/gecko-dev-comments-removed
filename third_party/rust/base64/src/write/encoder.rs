@@ -1,7 +1,9 @@
-use encode::encode_to_slice;
-use std::io::{ErrorKind, Result, Write};
-use std::{cmp, fmt};
-use {encode_config_slice, Config};
+use crate::encode::encode_to_slice;
+use crate::{encode_config_slice, Config};
+use std::{
+    cmp, fmt,
+    io::{ErrorKind, Result, Write},
+};
 
 pub(crate) const BUF_SIZE: usize = 1024;
 
@@ -153,7 +155,7 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
         let res = self.w.write(&self.output[..current_output_len]);
         self.panicked = false;
 
-        return res.map(|consumed| {
+        res.map(|consumed| {
             debug_assert!(consumed <= current_output_len);
 
             if consumed < current_output_len {
@@ -165,9 +167,7 @@ impl<'a, W: Write> EncoderWriter<'a, W> {
             } else {
                 self.output_occupied_len = 0;
             }
-
-            ()
-        });
+        })
     }
 
     
@@ -232,10 +232,10 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
         
         if self.output_occupied_len > 0 {
             let current_len = self.output_occupied_len;
-            return self.write_to_delegate(current_len)
+            return self
+                .write_to_delegate(current_len)
                 
-                .map(|_| 0)
-
+                .map(|_| 0);
         }
 
         debug_assert_eq!(0, self.output_occupied_len);
@@ -282,7 +282,7 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
                 
                 max_input_len = MAX_INPUT_LEN - MIN_ENCODE_CHUNK_SIZE;
 
-                
+            
             } else {
                 
                 
@@ -329,7 +329,7 @@ impl<'a, W: Write> Write for EncoderWriter<'a, W> {
             
             
             .map(|_| extra_input_read_len + input_chunks_to_encode_len)
-            .map_err( |e| {
+            .map_err(|e| {
                 
                 self.extra_input_occupied_len = orig_extra_len;
 

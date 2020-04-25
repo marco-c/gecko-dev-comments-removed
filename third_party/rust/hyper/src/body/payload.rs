@@ -1,33 +1,41 @@
+use std::error::Error as StdError;
+
 use bytes::Buf;
-use futures::{Async, Poll};
 use http::HeaderMap;
 
-use super::internal::{FullDataArg, FullDataRet};
+use crate::common::{task, Pin, Poll};
+use http_body::{Body as HttpBody, SizeHint};
 
 
 
 
 
-pub trait Payload: Send + 'static {
+pub trait Payload: sealed::Sealed + Send + 'static {
     
     type Data: Buf + Send;
 
     
-    type Error: Into<Box<::std::error::Error + Send + Sync>>;
+    type Error: Into<Box<dyn StdError + Send + Sync>>;
 
     
     
     
     
-    fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error>;
+    fn poll_data(
+        self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> Poll<Option<Result<Self::Data, Self::Error>>>;
 
     
     
     
     
     
-    fn poll_trailers(&mut self) -> Poll<Option<HeaderMap>, Self::Error> {
-        Ok(Async::Ready(None))
+    fn poll_trailers(
+        self: Pin<&mut Self>,
+        _cx: &mut task::Context<'_>,
+    ) -> Poll<Result<Option<HeaderMap>, Self::Error>> {
+        Poll::Ready(Ok(None))
     }
 
     
@@ -53,45 +61,79 @@ pub trait Payload: Send + 'static {
     
     
     
-    fn content_length(&self) -> Option<u64> {
-        None
-    }
-
-    
-    
-    
-    
-    
-    #[doc(hidden)]
-    fn __hyper_full_data(&mut self, FullDataArg) -> FullDataRet<Self::Data> {
-        FullDataRet(None)
+    fn size_hint(&self) -> SizeHint {
+        SizeHint::default()
     }
 }
 
-impl<E: Payload> Payload for Box<E> {
-    type Data = E::Data;
-    type Error = E::Error;
+impl<T> Payload for T
+where
+    T: HttpBody + Send + 'static,
+    T::Data: Send,
+    T::Error: Into<Box<dyn StdError + Send + Sync>>,
+{
+    type Data = T::Data;
+    type Error = T::Error;
 
-    fn poll_data(&mut self) -> Poll<Option<Self::Data>, Self::Error> {
-        (**self).poll_data()
+    fn poll_data(
+        self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> Poll<Option<Result<Self::Data, Self::Error>>> {
+        HttpBody::poll_data(self, cx)
     }
 
-    fn poll_trailers(&mut self) -> Poll<Option<HeaderMap>, Self::Error> {
-        (**self).poll_trailers()
+    fn poll_trailers(
+        self: Pin<&mut Self>,
+        cx: &mut task::Context<'_>,
+    ) -> Poll<Result<Option<HeaderMap>, Self::Error>> {
+        HttpBody::poll_trailers(self, cx)
     }
 
     fn is_end_stream(&self) -> bool {
-        (**self).is_end_stream()
+        HttpBody::is_end_stream(self)
     }
 
-    fn content_length(&self) -> Option<u64> {
-        (**self).content_length()
-    }
-
-    #[doc(hidden)]
-    fn __hyper_full_data(&mut self, arg: FullDataArg) -> FullDataRet<Self::Data> {
-        (**self).__hyper_full_data(arg)
+    fn size_hint(&self) -> SizeHint {
+        HttpBody::size_hint(self)
     }
 }
+
+impl<T> sealed::Sealed for T
+where
+    T: HttpBody + Send + 'static,
+    T::Data: Send,
+    T::Error: Into<Box<dyn StdError + Send + Sync>>,
+{
+}
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -30,8 +30,13 @@ use util::HttpDate;
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Header)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct IfUnmodifiedSince(HttpDate);
+
+derive_header! {
+    IfUnmodifiedSince(_),
+    name: IF_UNMODIFIED_SINCE
+}
 
 impl IfUnmodifiedSince {
     
@@ -54,8 +59,8 @@ impl From<IfUnmodifiedSince> for SystemTime {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn precondition_passes() {

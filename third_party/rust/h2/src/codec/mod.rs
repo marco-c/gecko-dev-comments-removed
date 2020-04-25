@@ -7,14 +7,15 @@ pub use self::error::{RecvError, SendError, UserError};
 use self::framed_read::FramedRead;
 use self::framed_write::FramedWrite;
 
-use frame::{self, Data, Frame};
-
-use futures::*;
-
-use tokio_io::{AsyncRead, AsyncWrite};
-use tokio_io::codec::length_delimited;
+use crate::frame::{self, Data, Frame};
 
 use bytes::Buf;
+use futures_core::Stream;
+use futures_sink::Sink;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tokio::io::{AsyncRead, AsyncWrite};
+use tokio_util::codec::length_delimited;
 
 use std::io;
 
@@ -25,7 +26,7 @@ pub struct Codec<T, B> {
 
 impl<T, B> Codec<T, B>
 where
-    T: AsyncRead + AsyncWrite,
+    T: AsyncRead + AsyncWrite + Unpin,
     B: Buf,
 {
     
@@ -52,9 +53,7 @@ where
         
         inner.set_max_frame_size(max_frame_size);
 
-        Codec {
-            inner,
-        }
+        Codec { inner }
     }
 }
 
@@ -118,12 +117,12 @@ impl<T, B> Codec<T, B> {
 
 impl<T, B> Codec<T, B>
 where
-    T: AsyncWrite,
+    T: AsyncWrite + Unpin,
     B: Buf,
 {
     
-    pub fn poll_ready(&mut self) -> Poll<(), io::Error> {
-        self.framed_write().poll_ready()
+    pub fn poll_ready(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        self.framed_write().poll_ready(cx)
     }
 
     
@@ -137,60 +136,58 @@ where
     }
 
     
-    pub fn flush(&mut self) -> Poll<(), io::Error> {
-        self.framed_write().flush()
+    pub fn flush(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        self.framed_write().flush(cx)
     }
 
     
-    pub fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.framed_write().shutdown()
+    pub fn shutdown(&mut self, cx: &mut Context) -> Poll<io::Result<()>> {
+        self.framed_write().shutdown(cx)
     }
 }
 
 impl<T, B> Stream for Codec<T, B>
 where
-    T: AsyncRead,
+    T: AsyncRead + Unpin,
 {
-    type Item = Frame;
-    type Error = RecvError;
+    type Item = Result<Frame, RecvError>;
 
-    fn poll(&mut self) -> Poll<Option<Frame>, Self::Error> {
-        self.inner.poll()
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Pin::new(&mut self.inner).poll_next(cx)
     }
 }
 
-impl<T, B> Sink for Codec<T, B>
+impl<T, B> Sink<Frame<B>> for Codec<T, B>
 where
-    T: AsyncWrite,
+    T: AsyncWrite + Unpin,
     B: Buf,
 {
-    type SinkItem = Frame<B>;
-    type SinkError = SendError;
+    type Error = SendError;
 
-    fn start_send(&mut self, item: Self::SinkItem) -> StartSend<Self::SinkItem, Self::SinkError> {
-        if !self.poll_ready()?.is_ready() {
-            return Ok(AsyncSink::NotReady(item));
-        }
-
-        self.buffer(item)?;
-        Ok(AsyncSink::Ready)
+    fn start_send(mut self: Pin<&mut Self>, item: Frame<B>) -> Result<(), Self::Error> {
+        Codec::buffer(&mut self, item)?;
+        Ok(())
+    }
+    
+    fn poll_ready(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.framed_write().poll_ready(cx).map_err(Into::into)
     }
 
-    fn poll_complete(&mut self) -> Poll<(), Self::SinkError> {
-        self.flush()?;
-        Ok(Async::Ready(()))
+    
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.framed_write().flush(cx).map_err(Into::into)
     }
 
-    fn close(&mut self) -> Poll<(), Self::SinkError> {
-        self.shutdown()?;
-        Ok(Async::Ready(()))
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        ready!(self.shutdown(cx))?;
+        Poll::Ready(Ok(()))
     }
 }
 
 
-impl<T> From<T> for Codec<T, ::std::io::Cursor<::bytes::Bytes>>
+impl<T> From<T> for Codec<T, bytes::Bytes>
 where
-    T: AsyncRead + AsyncWrite,
+    T: AsyncRead + AsyncWrite + Unpin,
 {
     fn from(src: T) -> Self {
         Self::new(src)

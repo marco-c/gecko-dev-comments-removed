@@ -1,5 +1,6 @@
 use super::*;
 
+use std::task::{Context, Waker};
 use std::time::Instant;
 use std::usize;
 
@@ -47,7 +48,7 @@ pub(super) struct Stream {
     pub buffered_send_data: WindowSize,
 
     
-    send_task: Option<task::Task>,
+    send_task: Option<Waker>,
 
     
     pub pending_send: buffer::Deque,
@@ -67,6 +68,9 @@ pub(super) struct Stream {
 
     
     pub is_pending_open: bool,
+
+    
+    pub is_pending_push: bool,
 
     
     
@@ -96,7 +100,7 @@ pub(super) struct Stream {
     pub pending_recv: buffer::Deque,
 
     
-    pub recv_task: Option<task::Task>,
+    pub recv_task: Option<Waker>,
 
     
     pub pending_push_promises: store::Queue<NextAccept>,
@@ -132,23 +136,17 @@ pub(super) struct NextOpen;
 pub(super) struct NextResetExpire;
 
 impl Stream {
-    pub fn new(
-        id: StreamId,
-        init_send_window: WindowSize,
-        init_recv_window: WindowSize,
-    ) -> Stream {
+    pub fn new(id: StreamId, init_send_window: WindowSize, init_recv_window: WindowSize) -> Stream {
         let mut send_flow = FlowControl::new();
         let mut recv_flow = FlowControl::new();
 
         recv_flow
             .inc_window(init_recv_window)
-            .ok()
             .expect("invalid initial receive window");
         recv_flow.assign_capacity(init_recv_window);
 
         send_flow
             .inc_window(init_send_window)
-            .ok()
             .expect("invalid initial send window size");
 
         Stream {
@@ -160,7 +158,7 @@ impl Stream {
             
             next_pending_send: None,
             is_pending_send: false,
-            send_flow: send_flow,
+            send_flow,
             requested_send_capacity: 0,
             buffered_send_data: 0,
             send_task: None,
@@ -170,11 +168,12 @@ impl Stream {
             send_capacity_inc: false,
             is_pending_open: false,
             next_open: None,
+            is_pending_push: false,
 
             
             next_pending_accept: None,
             is_pending_accept: false,
-            recv_flow: recv_flow,
+            recv_flow,
             in_flight_recv_data: 0,
             next_window_update: None,
             is_pending_window_update: false,
@@ -203,6 +202,26 @@ impl Stream {
     
     pub fn is_pending_reset_expiration(&self) -> bool {
         self.reset_at.is_some()
+    }
+
+    
+    pub fn is_send_ready(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        !self.is_pending_open && !self.is_pending_push
     }
 
     
@@ -246,12 +265,16 @@ impl Stream {
         self.send_capacity_inc = true;
         self.send_flow.assign_capacity(capacity);
 
-        trace!("  assigned capacity to stream; available={}; buffered={}; id={:?}",
-               self.send_flow.available(), self.buffered_send_data, self.id);
+        log::trace!(
+            "  assigned capacity to stream; available={}; buffered={}; id={:?}",
+            self.send_flow.available(),
+            self.buffered_send_data,
+            self.id
+        );
 
         
         if self.send_flow.available() > self.buffered_send_data {
-            trace!("  notifying task");
+            log::trace!("  notifying task");
             self.notify_send();
         }
     }
@@ -264,7 +287,7 @@ impl Stream {
                 None => return Err(()),
             },
             ContentLength::Head => return Err(()),
-            _ => {},
+            _ => {}
         }
 
         Ok(())
@@ -280,17 +303,17 @@ impl Stream {
 
     pub fn notify_send(&mut self) {
         if let Some(task) = self.send_task.take() {
-            task.notify();
+            task.wake();
         }
     }
 
-    pub fn wait_send(&mut self) {
-        self.send_task = Some(task::current());
+    pub fn wait_send(&mut self, cx: &Context) {
+        self.send_task = Some(cx.waker().clone());
     }
 
     pub fn notify_recv(&mut self) {
         if let Some(task) = self.recv_task.take() {
-            task.notify();
+            task.wake();
         }
     }
 }

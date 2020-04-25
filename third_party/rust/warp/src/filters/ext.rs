@@ -1,9 +1,11 @@
 
 
-use std::error::Error as StdError;
+use std::convert::Infallible;
 
-use filter::{filter_fn_one, Filter};
-use reject::{self, Rejection};
+use futures::future;
+
+use crate::filter::{filter_fn_one, Filter};
+use crate::reject::{self, Rejection};
 
 
 
@@ -11,42 +13,24 @@ use reject::{self, Rejection};
 pub fn get<T: Clone + Send + Sync + 'static>(
 ) -> impl Filter<Extract = (T,), Error = Rejection> + Copy {
     filter_fn_one(|route| {
-        route
+        let route = route
             .extensions()
             .get::<T>()
             .cloned()
-            .ok_or_else(|| reject::known(MissingExtension { _p: () }))
+            .ok_or_else(|| reject::known(MissingExtension { _p: () }));
+        future::ready(route)
     })
 }
 
 
 
 
-
-
-
-
-
-pub fn set<T: Send + Sync + 'static>(val: T) {
-    ::route::with(move |route| {
-        route.extensions_mut().insert(val);
-    });
+pub fn optional<T: Clone + Send + Sync + 'static>(
+) -> impl Filter<Extract = (Option<T>,), Error = Infallible> + Copy {
+    filter_fn_one(|route| future::ok(route.extensions().get::<T>().cloned()))
 }
 
-
-#[derive(Debug)]
-pub struct MissingExtension {
-    _p: (),
-}
-
-impl ::std::fmt::Display for MissingExtension {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.write_str("Missing request extension")
-    }
-}
-
-impl StdError for MissingExtension {
-    fn description(&self) -> &str {
-        "Missing request extension"
-    }
+unit_error! {
+    /// An error used to reject if `get` cannot find the extension.
+    pub MissingExtension: "Missing request extension"
 }

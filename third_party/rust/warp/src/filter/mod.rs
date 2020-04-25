@@ -6,16 +6,19 @@ mod map_err;
 mod or;
 mod or_else;
 mod recover;
-mod service;
+pub(crate) mod service;
 mod unify;
 mod untuple_one;
 mod wrap;
 
-use futures::{future, Future, IntoFuture};
+use std::future::Future;
+use std::pin::Pin;
 
-pub(crate) use generic::{one, Combine, Either, Func, HList, One, Tuple};
-use reject::{CombineRejection, Reject, Rejection};
-use route::{self, Route};
+use futures::{future, TryFuture, TryFutureExt};
+
+pub(crate) use crate::generic::{one, Combine, Either, Func, HList, One, Tuple};
+use crate::reject::{CombineRejection, IsReject, Rejection};
+use crate::route::{self, Route};
 
 pub(crate) use self::and::And;
 use self::and_then::AndThen;
@@ -33,14 +36,12 @@ pub(crate) use self::wrap::{Wrap, WrapSealed};
 
 pub trait FilterBase {
     type Extract: Tuple; 
-    type Error: Reject;
-    type Future: Future<Item = Self::Extract, Error = Self::Error> + Send;
+    type Error: IsReject;
+    type Future: Future<Output = Result<Self::Extract, Self::Error>> + Send;
 
-    fn filter(&self) -> Self::Future;
+    fn filter(&self, internal: Internal) -> Self::Future;
 
-    
-
-    fn map_err<F, E>(self, fun: F) -> MapErr<Self, F>
+    fn map_err<F, E>(self, _internal: Internal, fun: F) -> MapErr<Self, F>
     where
         Self: Sized,
         F: Fn(Self::Error) -> E + Clone,
@@ -63,10 +64,8 @@ pub trait FilterBase {
 
 
 
-pub fn __warp_filter_compilefail_doctest() {
-    
-    let _ = ::any().filter();
-}
+#[allow(missing_debug_implementations)]
+pub struct Internal;
 
 
 
@@ -112,7 +111,6 @@ pub trait Filter: FilterBase {
     fn and<F>(self, other: F) -> And<Self, F>
     where
         Self: Sized,
-        
         <Self::Extract as Tuple>::HList: Combine<<F::Extract as Tuple>::HList>,
         F: Filter + Clone,
         F::Error: CombineRejection<Self::Error>,
@@ -137,7 +135,7 @@ pub trait Filter: FilterBase {
     
     fn or<F>(self, other: F) -> Or<Self, F>
     where
-        Self: Sized,
+        Self: Filter<Error = Rejection> + Sized,
         F: Filter,
         F::Error: CombineRejection<Self::Error>,
     {
@@ -224,9 +222,8 @@ pub trait Filter: FilterBase {
     where
         Self: Sized,
         F: Func<Self::Extract> + Clone,
-        F::Output: IntoFuture + Send,
-        <F::Output as IntoFuture>::Error: CombineRejection<Self::Error>,
-        <F::Output as IntoFuture>::Future: Send,
+        F::Output: TryFuture + Send,
+        <F::Output as TryFuture>::Error: CombineRejection<Self::Error>,
     {
         AndThen {
             filter: self,
@@ -240,10 +237,10 @@ pub trait Filter: FilterBase {
     
     fn or_else<F>(self, fun: F) -> OrElse<Self, F>
     where
-        Self: Sized,
-        F: Func<Self::Error>,
-        F::Output: IntoFuture<Item = Self::Extract, Error = Self::Error> + Send,
-        <F::Output as IntoFuture>::Future: Send,
+        Self: Filter<Error = Rejection> + Sized,
+        F: Func<Rejection>,
+        F::Output: TryFuture<Ok = Self::Extract> + Send,
+        <F::Output as TryFuture>::Error: IsReject,
     {
         OrElse {
             filter: self,
@@ -260,10 +257,10 @@ pub trait Filter: FilterBase {
     
     fn recover<F>(self, fun: F) -> Recover<Self, F>
     where
-        Self: Sized,
-        F: Func<Self::Error>,
-        F::Output: IntoFuture<Error = Self::Error> + Send,
-        <F::Output as IntoFuture>::Future: Send,
+        Self: Filter<Error = Rejection> + Sized,
+        F: Func<Rejection>,
+        F::Output: TryFuture + Send,
+        <F::Output as TryFuture>::Error: IsReject,
     {
         Recover {
             filter: self,
@@ -409,7 +406,7 @@ pub trait FilterClone: Filter + Clone {}
 impl<T: Filter + Clone> FilterClone for T {}
 
 fn _assert_object_safe() {
-    fn _assert(_f: &dyn Filter<Extract = (), Error = (), Future = future::FutureResult<(), ()>>) {}
+    fn _assert(_f: &dyn Filter<Extract = (), Error = (), Future = future::Ready<()>>) {}
 }
 
 
@@ -417,22 +414,22 @@ fn _assert_object_safe() {
 pub(crate) fn filter_fn<F, U>(func: F) -> FilterFn<F>
 where
     F: Fn(&mut Route) -> U,
-    U: IntoFuture,
-    U::Item: Tuple,
-    U::Error: Reject,
+    U: TryFuture,
+    U::Ok: Tuple,
+    U::Error: IsReject,
 {
     FilterFn { func }
 }
 
 pub(crate) fn filter_fn_one<F, U>(
     func: F,
-) -> FilterFn<impl Fn(&mut Route) -> future::Map<U::Future, fn(U::Item) -> (U::Item,)> + Copy>
+) -> FilterFn<impl Fn(&mut Route) -> future::MapOk<U, fn(U::Ok) -> (U::Ok,)> + Copy>
 where
     F: Fn(&mut Route) -> U + Copy,
-    U: IntoFuture,
-    U::Error: Reject,
+    U: TryFuture,
+    U::Error: IsReject,
 {
-    filter_fn(move |route| func(route).into_future().map(tup_one as _))
+    filter_fn(move |route| func(route).map_ok(tup_one as _))
 }
 
 fn tup_one<T>(item: T) -> (T,) {
@@ -449,17 +446,17 @@ pub(crate) struct FilterFn<F> {
 impl<F, U> FilterBase for FilterFn<F>
 where
     F: Fn(&mut Route) -> U,
-    U: IntoFuture,
-    U::Future: Send,
-    U::Item: Tuple,
-    U::Error: Reject,
+    U: TryFuture + Send + 'static,
+    U::Ok: Tuple + Send,
+    U::Error: IsReject,
 {
-    type Extract = U::Item;
+    type Extract = U::Ok;
     type Error = U::Error;
-    type Future = U::Future;
+    type Future =
+        Pin<Box<dyn Future<Output = Result<Self::Extract, Self::Error>> + Send + 'static>>;
 
     #[inline]
-    fn filter(&self) -> Self::Future {
-        route::with(|route| (self.func)(route).into_future())
+    fn filter(&self, _: Internal) -> Self::Future {
+        Box::pin(route::with(|route| (self.func)(route)).into_future())
     }
 }

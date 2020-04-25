@@ -1,11 +1,9 @@
 #![deny(warnings)]
-extern crate pretty_env_logger;
-#[macro_use]
-extern crate warp;
 
 use warp::Filter;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::init();
 
     
@@ -17,17 +15,18 @@ fn main() {
     
     
     
-    let hello_from_warp = path!("hello" / "from" / "warp").map(|| "Hello from warp!");
+    let hello_from_warp = warp::path!("hello" / "from" / "warp").map(|| "Hello from warp!");
 
     
     
     
-    let sum = path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
+    let sum = warp::path!("sum" / u32 / u32).map(|a, b| format!("{} + {} = {}", a, b, a + b));
 
     
     
     
-    let times = path!(u16 / "times" / u16).map(|a, b| format!("{} times {} = {}", a, b, a * b));
+    let times =
+        warp::path!(u16 / "times" / u16).map(|a, b| format!("{} times {} = {}", a, b, a * b));
 
     
     
@@ -61,6 +60,14 @@ fn main() {
     let math = warp::path("math").and(sum.or(times));
 
     
+    let help = warp::path("math")
+        
+        
+        .and(warp::path::end())
+        .map(|| "This is the Math API. Try calling /math/sum/:u32/:u32 or /math/:u16/times/:u16");
+    let math = help.or(math);
+
+    
     let sum = sum.map(|output| format!("(This route has moved to /math/sum/:u16/:u16) {}", output));
     let times =
         times.map(|output| format!("(This route has moved to /math/:u16/times/:u16) {}", output));
@@ -75,7 +82,11 @@ fn main() {
     
     
 
-    let routes = warp::get2().and(hi.or(hello_from_warp).or(bye).or(math).or(sum).or(times));
+    let routes = warp::get().and(hi.or(hello_from_warp).or(bye).or(math).or(sum).or(times));
 
-    warp::serve(routes).run(([127, 0, 0, 1], 3030));
+    
+    
+    
+
+    warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }

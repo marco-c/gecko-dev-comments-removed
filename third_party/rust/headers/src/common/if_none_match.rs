@@ -1,6 +1,6 @@
-use util::{FlatCsv};
 use super::ETag;
-use {HeaderValue};
+use util::EntityTagRange;
+use HeaderValue;
 
 
 
@@ -38,23 +38,32 @@ use {HeaderValue};
 
 
 
-#[derive(Clone, Debug, PartialEq, Header)]
-pub struct IfNoneMatch(FlatCsv);
+#[derive(Clone, Debug, PartialEq)]
+pub struct IfNoneMatch(EntityTagRange);
+
+derive_header! {
+    IfNoneMatch(_),
+    name: IF_NONE_MATCH
+}
 
 impl IfNoneMatch {
     
     pub fn any() -> IfNoneMatch {
-        IfNoneMatch(HeaderValue::from_static("*").into())
+        IfNoneMatch(EntityTagRange::Any)
+    }
+
+    
+    pub fn precondition_passes(&self, etag: &ETag) -> bool {
+        !self.0.matches_weak(&etag.0)
     }
 }
 
 impl From<ETag> for IfNoneMatch {
     fn from(etag: ETag) -> IfNoneMatch {
-        IfNoneMatch(HeaderValue::from(etag.0).into())
+        IfNoneMatch(EntityTagRange::Tags(HeaderValue::from(etag.0).into()))
     }
 }
 
-    
 
 
 
@@ -65,27 +74,38 @@ impl From<ETag> for IfNoneMatch {
 
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
 
+    #[test]
+    fn precondition_fails() {
+        let foo = ETag::from_static("\"foo\"");
+        let weak_foo = ETag::from_static("W/\"foo\"");
 
+        let if_none = IfNoneMatch::from(foo.clone());
 
+        assert!(!if_none.precondition_passes(&foo));
+        assert!(!if_none.precondition_passes(&weak_foo));
+    }
 
+    #[test]
+    fn precondition_passes() {
+        let if_none = IfNoneMatch::from(ETag::from_static("\"foo\""));
 
+        let bar = ETag::from_static("\"bar\"");
+        let weak_bar = ETag::from_static("W/\"bar\"");
 
+        assert!(if_none.precondition_passes(&bar));
+        assert!(if_none.precondition_passes(&weak_bar));
+    }
 
+    #[test]
+    fn precondition_any() {
+        let foo = ETag::from_static("\"foo\"");
 
+        let if_none = IfNoneMatch::any();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        assert!(!if_none.precondition_passes(&foo));
+    }
+}

@@ -66,16 +66,13 @@ impl Header for ContentLength {
             }
         }
 
-        len
-            .map(ContentLength)
-            .ok_or_else(::Error::invalid)
+        len.map(ContentLength).ok_or_else(::Error::invalid)
     }
 
     fn encode<E: Extend<::HeaderValue>>(&self, values: &mut E) {
         values.extend(::std::iter::once(self.0.into()));
     }
 }
-
 
 
 

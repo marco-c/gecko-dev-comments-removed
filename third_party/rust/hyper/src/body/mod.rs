@@ -14,28 +14,45 @@
 
 
 
+
+pub use bytes::{Buf, Bytes};
+pub use http_body::Body as HttpBody;
+
+pub use self::aggregate::aggregate;
 pub use self::body::{Body, Sender};
-pub use self::chunk::Chunk;
-pub use self::payload::Payload;
+pub use self::to_bytes::to_bytes;
 
+pub(crate) use self::payload::Payload;
+
+mod aggregate;
 mod body;
-mod chunk;
 mod payload;
+mod to_bytes;
 
 
 
 
+pub(crate) fn take_full_data<T: Payload + 'static>(body: &mut T) -> Option<T::Data> {
+    use std::any::{Any, TypeId};
 
-
-
-
-
-
-pub(crate) mod internal {
-    #[allow(missing_debug_implementations)]
-    pub struct FullDataArg(pub(crate) ());
-    #[allow(missing_debug_implementations)]
-    pub struct FullDataRet<B>(pub(crate) Option<B>);
+    
+    if TypeId::of::<T>() == TypeId::of::<Body>() {
+        let mut full = (body as &mut dyn Any)
+            .downcast_mut::<Body>()
+            .expect("must be Body")
+            .take_full_data();
+        
+        
+        
+        
+        
+        (&mut full as &mut dyn Any)
+            .downcast_mut::<Option<T::Data>>()
+            .expect("must be T::Data")
+            .take()
+    } else {
+        None
+    }
 }
 
 fn _assert_send_sync() {
@@ -43,7 +60,5 @@ fn _assert_send_sync() {
     fn _assert_sync<T: Sync>() {}
 
     _assert_send::<Body>();
-    _assert_send::<Chunk>();
-    _assert_sync::<Chunk>();
+    _assert_sync::<Body>();
 }
-

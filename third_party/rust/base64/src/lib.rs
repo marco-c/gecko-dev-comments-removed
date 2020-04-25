@@ -49,7 +49,15 @@
 
 
 
-#![cfg_attr(feature = "cargo-clippy", allow(cast_lossless))]
+
+
+
+
+
+
+
+
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::cast_lossless))]
 #![deny(
     missing_docs,
     trivial_casts,
@@ -58,22 +66,40 @@
     unused_import_braces,
     unused_results,
     variant_size_differences,
-    warnings,
-    unsafe_code
+    warnings
 )]
+#![forbid(unsafe_code)]
+#![cfg_attr(not(any(feature = "std", test)), no_std)]
 
-extern crate byteorder;
+#[cfg(all(feature = "alloc", not(any(feature = "std", test))))]
+extern crate alloc;
+#[cfg(any(feature = "std", test))]
+extern crate std as alloc;
+
+#[cfg(test)]
+#[macro_use]
+extern crate doc_comment;
+
+#[cfg(test)]
+doctest!("../README.md");
 
 mod chunked_encoder;
 pub mod display;
+#[cfg(any(feature = "std", test))]
+pub mod read;
 mod tables;
+#[cfg(any(feature = "std", test))]
 pub mod write;
 
 mod encode;
-pub use encode::{encode, encode_config, encode_config_buf, encode_config_slice};
+pub use crate::encode::encode_config_slice;
+#[cfg(any(feature = "alloc", feature = "std", test))]
+pub use crate::encode::{encode, encode_config, encode_config_buf};
 
 mod decode;
-pub use decode::{decode, decode_config, decode_config_buf, decode_config_slice, DecodeError};
+#[cfg(any(feature = "alloc", feature = "std", test))]
+pub use crate::decode::{decode, decode_config, decode_config_buf};
+pub use crate::decode::{decode_config_slice, DecodeError};
 
 #[cfg(test)]
 mod tests;
@@ -93,6 +119,10 @@ pub enum CharacterSet {
     
     
     Crypt,
+    
+    
+    
+    ImapMutf7,
 }
 
 impl CharacterSet {
@@ -101,6 +131,7 @@ impl CharacterSet {
             CharacterSet::Standard => tables::STANDARD_ENCODE,
             CharacterSet::UrlSafe => tables::URL_SAFE_ENCODE,
             CharacterSet::Crypt => tables::CRYPT_ENCODE,
+            CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_ENCODE,
         }
     }
 
@@ -109,6 +140,7 @@ impl CharacterSet {
             CharacterSet::Standard => tables::STANDARD_DECODE,
             CharacterSet::UrlSafe => tables::URL_SAFE_DECODE,
             CharacterSet::Crypt => tables::CRYPT_DECODE,
+            CharacterSet::ImapMutf7 => tables::IMAP_MUTF7_DECODE,
         }
     }
 }
@@ -127,7 +159,11 @@ pub struct Config {
 impl Config {
     
     pub fn new(char_set: CharacterSet, pad: bool) -> Config {
-        Config { char_set, pad, decode_allow_trailing_bits: false }
+        Config {
+            char_set,
+            pad,
+            decode_allow_trailing_bits: false,
+        }
     }
 
     
@@ -140,7 +176,10 @@ impl Config {
     
     
     pub fn decode_allow_trailing_bits(self, allow: bool) -> Config {
-        Config { decode_allow_trailing_bits: allow, ..self }
+        Config {
+            decode_allow_trailing_bits: allow,
+            ..self
+        }
     }
 }
 
@@ -175,6 +214,13 @@ pub const URL_SAFE_NO_PAD: Config = Config {
 
 pub const CRYPT: Config = Config {
     char_set: CharacterSet::Crypt,
+    pad: false,
+    decode_allow_trailing_bits: false,
+};
+
+
+pub const IMAP_MUTF7: Config = Config {
+    char_set: CharacterSet::ImapMutf7,
     pad: false,
     decode_allow_trailing_bits: false,
 };
