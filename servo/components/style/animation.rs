@@ -204,7 +204,8 @@ pub enum Animation {
     
     
     
-    Transition(OpaqueNode, f64, AnimationFrame),
+    Transition(OpaqueNode, f64, PropertyAnimation),
+
     
     
     
@@ -248,20 +249,15 @@ impl Animation {
 
 
 #[derive(Clone, Debug)]
-pub struct AnimationFrame {
+pub struct PropertyAnimation {
     
-    pub property_animation: PropertyAnimation,
+    property: AnimatedProperty,
+
     
+    timing_function: TimingFunction,
+
     
     pub duration: f64,
-}
-
-
-#[derive(Clone, Debug)]
-pub struct PropertyAnimation {
-    property: AnimatedProperty,
-    timing_function: TimingFunction,
-    duration: Time, 
 }
 
 impl PropertyAnimation {
@@ -282,7 +278,7 @@ impl PropertyAnimation {
         let property_animation = PropertyAnimation {
             property: animated_property,
             timing_function,
-            duration,
+            duration: duration.seconds() as f64,
         };
 
         if property_animation.does_animate() {
@@ -294,7 +290,7 @@ impl PropertyAnimation {
 
     
     pub fn update(&self, style: &mut ComputedValues, time: f64) {
-        let epsilon = 1. / (200. * (self.duration.seconds() as f64));
+        let epsilon = 1. / (200. * self.duration);
         let progress = match self.timing_function {
             GenericTimingFunction::CubicBezier { x1, y1, x2, y2 } => {
                 Bezier::new(x1, y1, x2, y2).solve(time, epsilon)
@@ -345,7 +341,7 @@ impl PropertyAnimation {
 
     #[inline]
     fn does_animate(&self) -> bool {
-        self.property.does_animate() && self.duration.seconds() != 0.0
+        self.property.does_animate() && self.duration != 0.0
     }
 
     
@@ -416,17 +412,11 @@ pub fn start_transitions_if_applicable(
         let box_style = new_style.get_box();
         let now = timer.seconds();
         let start_time = now + (box_style.transition_delay_mod(transition.index).seconds() as f64);
-        let duration = box_style
-            .transition_duration_mod(transition.index)
-            .seconds() as f64;
         new_animations_sender
             .send(Animation::Transition(
                 opaque_node,
                 start_time,
-                AnimationFrame {
-                    duration,
-                    property_animation,
-                },
+                property_animation,
             ))
             .unwrap();
 
@@ -581,30 +571,6 @@ where
 }
 
 
-
-pub fn update_style_for_animation_frame(
-    mut new_style: &mut Arc<ComputedValues>,
-    now: f64,
-    start_time: f64,
-    frame: &AnimationFrame,
-) -> bool {
-    let mut progress = (now - start_time) / frame.duration;
-    if progress > 1.0 {
-        progress = 1.0
-    }
-
-    if progress <= 0.0 {
-        return false;
-    }
-
-    frame
-        .property_animation
-        .update(Arc::make_mut(&mut new_style), progress);
-
-    true
-}
-
-
 pub enum AnimationUpdate {
     
     Regular,
@@ -635,14 +601,14 @@ where
     debug_assert!(!animation.is_expired());
 
     match *animation {
-        Animation::Transition(_, start_time, ref frame) => {
+        Animation::Transition(_, start_time, ref property_animation) => {
             let now = context.timer.seconds();
-            let mut new_style = (*style).clone();
-            let updated_style =
-                update_style_for_animation_frame(&mut new_style, now, start_time, frame);
-            if updated_style {
-                *style = new_style
+            let progress = (now - start_time) / (property_animation.duration);
+            let progress = progress.min(1.0);
+            if progress >= 0.0 {
+                property_animation.update(Arc::make_mut(style), progress);
             }
+
             
             
             
