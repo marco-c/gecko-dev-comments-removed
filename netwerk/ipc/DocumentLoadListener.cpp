@@ -33,6 +33,7 @@
 #include "nsIViewSourceChannel.h"
 #include "nsImportModule.h"
 #include "nsMimeTypes.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "nsRedirectHistoryEntry.h"
 #include "nsURILoader.h"
 #include "nsWebNavigationInfo.h"
@@ -340,6 +341,13 @@ GetTopWindowExcludingExtensionAccessibleContentFrames(
   return prev.forget();
 }
 
+CanonicalBrowsingContext* DocumentLoadListener::GetBrowsingContext() {
+  if (!mParentChannelListener) {
+    return nullptr;
+  }
+  return mParentChannelListener->GetBrowsingContext();
+}
+
 bool DocumentLoadListener::Open(
     nsDocShellLoadState* aLoadState, nsLoadFlags aLoadFlags, uint32_t aCacheKey,
     const uint64_t& aChannelId, const TimeStamp& aAsyncOpenTime,
@@ -506,6 +514,10 @@ bool DocumentLoadListener::Open(
   mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
+
+  if (auto* ctx = GetBrowsingContext()) {
+    ctx->StartDocumentLoad(this);
+  }
   return true;
 }
 
@@ -519,6 +531,10 @@ void DocumentLoadListener::DocumentChannelBridgeDisconnected() {
     httpChannelImpl->SetWarningReporter(nullptr);
   }
   mDocumentChannelBridge = nullptr;
+
+  if (auto* ctx = GetBrowsingContext()) {
+    ctx->EndDocumentLoad(this);
+  }
 }
 
 void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
@@ -526,9 +542,18 @@ void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
       ("DocumentLoadListener Cancel [this=%p, "
        "aStatusCode=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aStatusCode)));
-  if (mChannel && !mDoingProcessSwitch) {
+  if (mDoingProcessSwitch) {
+    
+    
+    
+    return;
+  }
+
+  if (mChannel) {
     mChannel->Cancel(aStatusCode);
   }
+
+  DisconnectChildListeners(aStatusCode, aStatusCode);
 }
 
 void DocumentLoadListener::DisconnectChildListeners(nsresult aStatus,
@@ -538,7 +563,10 @@ void DocumentLoadListener::DisconnectChildListeners(nsresult aStatus,
        "aStatus=%" PRIx32 " aLoadGroupStatus=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aStatus),
        static_cast<uint32_t>(aLoadGroupStatus)));
+  RefPtr<DocumentLoadListener> keepAlive(this);
   if (mDocumentChannelBridge) {
+    
+    
     mDocumentChannelBridge->DisconnectChildListeners(aStatus, aLoadGroupStatus);
   }
   DocumentChannelBridgeDisconnected();
@@ -651,6 +679,9 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
       redirectChannel->Delete();
     }
     mChannel->Resume();
+    if (auto* ctx = GetBrowsingContext()) {
+      ctx->EndDocumentLoad(this);
+    }
     return;
   }
 
@@ -831,6 +862,11 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
                "Should not have added new stream listener function!");
 
   mChannel->Resume();
+
+  if (auto* ctx = GetBrowsingContext()) {
+    ctx->EndDocumentLoad(this);
+  }
+
   return !mIsFinished;
 }
 
@@ -1290,9 +1326,6 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
 
-  
-  
-
   if (!mDocumentChannelBridge) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -1306,20 +1339,11 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
-  if (mDoingProcessSwitch) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  
   
   nsresult status = NS_OK;
   aRequest->GetStatus(&status);
   if (status == NS_ERROR_NO_CONTENT) {
-    mDocumentChannelBridge->DisconnectChildListeners(status, status);
+    DisconnectChildListeners(status, status);
     return NS_OK;
   }
 
