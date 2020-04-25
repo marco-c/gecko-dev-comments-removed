@@ -178,30 +178,35 @@ NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
   return rv;
 }
 
-NS_IMETHODIMP CompositionTransaction::Merge(nsITransaction* aTransaction,
+NS_IMETHODIMP CompositionTransaction::Merge(nsITransaction* aOtherTransaction,
                                             bool* aDidMerge) {
-  if (NS_WARN_IF(!aTransaction) || NS_WARN_IF(!aDidMerge)) {
+  if (NS_WARN_IF(!aOtherTransaction) || NS_WARN_IF(!aDidMerge)) {
     return NS_ERROR_INVALID_ARG;
   }
+  *aDidMerge = false;
 
   
   if (mFixed) {
-    *aDidMerge = false;
+    return NS_OK;
+  }
+
+  RefPtr<EditTransactionBase> otherTransactionBase =
+      aOtherTransaction->GetAsEditTransactionBase();
+  if (!otherTransactionBase) {
     return NS_OK;
   }
 
   
-  RefPtr<CompositionTransaction> otherTransaction =
-      do_QueryObject(aTransaction);
-  if (otherTransaction) {
-    
-    mStringToInsert = otherTransaction->mStringToInsert;
-    mRanges = otherTransaction->mRanges;
-    *aDidMerge = true;
+  CompositionTransaction* otherCompositionTransaction =
+      otherTransactionBase->GetAsCompositionTransaction();
+  if (!otherCompositionTransaction) {
     return NS_OK;
   }
 
-  *aDidMerge = false;
+  
+  mStringToInsert = otherCompositionTransaction->mStringToInsert;
+  mRanges = otherCompositionTransaction->mRanges;
+  *aDidMerge = true;
   return NS_OK;
 }
 

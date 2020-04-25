@@ -3,7 +3,7 @@
 
 
 
-#include "mozilla/EditorBase.h"
+#include "EditorBase.h"
 
 #include "mozilla/DebugOnly.h"  
 #include "mozilla/Encoding.h"   
@@ -18,6 +18,7 @@
 #include "DeleteRangeTransaction.h"           
 #include "DeleteTextTransaction.h"            
 #include "EditAggregateTransaction.h"         
+#include "EditTransactionBase.h"              
 #include "EditorEventListener.h"              
 #include "HTMLEditUtils.h"                    
 #include "InsertNodeTransaction.h"            
@@ -98,7 +99,6 @@
 #include "nsISupportsBase.h"           
 #include "nsISupportsUtils.h"          
 #include "nsITransferable.h"           
-#include "nsITransaction.h"            
 #include "nsITransactionManager.h"
 #include "nsIWeakReference.h"  
 #include "nsIWidget.h"         
@@ -755,20 +755,20 @@ nsresult EditorBase::GetSelection(SelectionType aSelectionType,
   return NS_WARN_IF(!*aSelection) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-NS_IMETHODIMP EditorBase::DoTransaction(nsITransaction* aTxn) {
+NS_IMETHODIMP EditorBase::DoTransaction(nsITransaction* aTransaction) {
   AutoEditActionDataSetter editActionData(*this, EditAction::eUnknown);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_FAILURE;
   }
   
   
-  nsresult rv = DoTransactionInternal(aTxn);
+  nsresult rv = DoTransactionInternal(aTransaction);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DoTransactionInternal() failed");
   return rv;
 }
 
-nsresult EditorBase::DoTransactionInternal(nsITransaction* aTxn) {
+nsresult EditorBase::DoTransactionInternal(nsITransaction* aTransaction) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!NeedsToDispatchBeforeInputEvent(),
              "beforeinput event hasn't been dispatched yet");
@@ -788,25 +788,24 @@ nsresult EditorBase::DoTransactionInternal(nsITransaction* aTxn) {
         "EditorBase::DoTransactionInternal() failed, but ignored");
 
     if (mTransactionManager) {
-      nsCOMPtr<nsITransaction> topTransaction =
-          mTransactionManager->PeekUndoStack();
-      nsCOMPtr<nsIAbsorbingTransaction> topAbsorbingTransaction =
-          do_QueryInterface(topTransaction);
-      if (topAbsorbingTransaction) {
-        RefPtr<PlaceholderTransaction> topPlaceholderTransaction =
-            topAbsorbingTransaction->AsPlaceholderTransaction();
-        if (topPlaceholderTransaction) {
-          
-          
-          
-          
-          mPlaceholderTransaction = topPlaceholderTransaction;
+      if (nsCOMPtr<nsITransaction> topTransaction =
+              mTransactionManager->PeekUndoStack()) {
+        if (RefPtr<EditTransactionBase> topTransactionBase =
+                topTransaction->GetAsEditTransactionBase()) {
+          if (PlaceholderTransaction* topPlaceholderTransaction =
+                  topTransactionBase->GetAsPlaceholderTransaction()) {
+            
+            
+            
+            
+            mPlaceholderTransaction = topPlaceholderTransaction;
+          }
         }
       }
     }
   }
 
-  if (aTxn) {
+  if (aTransaction) {
     
     
     
@@ -831,20 +830,20 @@ nsresult EditorBase::DoTransactionInternal(nsITransaction* aTxn) {
 
     if (mTransactionManager) {
       RefPtr<TransactionManager> transactionManager(mTransactionManager);
-      nsresult rv = transactionManager->DoTransaction(aTxn);
+      nsresult rv = transactionManager->DoTransaction(aTransaction);
       if (NS_FAILED(rv)) {
         NS_WARNING("TransactionManager::DoTransaction() failed");
         return rv;
       }
     } else {
-      nsresult rv = aTxn->DoTransaction();
+      nsresult rv = aTransaction->DoTransaction();
       if (NS_FAILED(rv)) {
         NS_WARNING("nsITransaction::DoTransaction() failed");
         return rv;
       }
     }
 
-    DoAfterDoTransaction(aTxn);
+    DoAfterDoTransaction(aTransaction);
   }
 
   return NS_OK;
@@ -4429,9 +4428,9 @@ bool EditorBase::ShouldHandleIMEComposition() const {
   return mComposition && mDidPostCreate;
 }
 
-void EditorBase::DoAfterDoTransaction(nsITransaction* aTxn) {
+void EditorBase::DoAfterDoTransaction(nsITransaction* aTransaction) {
   bool isTransientTransaction;
-  MOZ_ALWAYS_SUCCEEDS(aTxn->GetIsTransient(&isTransientTransaction));
+  MOZ_ALWAYS_SUCCEEDS(aTransaction->GetIsTransient(&isTransientTransaction));
 
   if (!isTransientTransaction) {
     

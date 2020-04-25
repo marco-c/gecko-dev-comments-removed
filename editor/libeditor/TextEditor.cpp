@@ -1395,10 +1395,11 @@ void TextEditor::OnCompositionEnd(
   
   
   if (mTransactionManager) {
-    nsCOMPtr<nsITransaction> txn = mTransactionManager->PeekUndoStack();
-    nsCOMPtr<nsIAbsorbingTransaction> plcTxn = do_QueryInterface(txn);
-    if (plcTxn) {
-      plcTxn->Commit();
+    nsCOMPtr<nsITransaction> transaction = mTransactionManager->PeekUndoStack();
+    nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
+        do_QueryInterface(transaction);
+    if (absorbingTransaction) {
+      absorbingTransaction->Commit();
     }
   }
 

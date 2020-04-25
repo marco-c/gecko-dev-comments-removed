@@ -8,7 +8,6 @@
 #include "nsCOMPtr.h"          
 #include "nsError.h"           
 #include "nsISupportsUtils.h"  
-#include "nsITransaction.h"    
 #include "nsString.h"          
 
 namespace mozilla {
@@ -62,7 +61,7 @@ NS_IMETHODIMP EditAggregateTransaction::RedoTransaction() {
   return NS_OK;
 }
 
-NS_IMETHODIMP EditAggregateTransaction::Merge(nsITransaction* aTransaction,
+NS_IMETHODIMP EditAggregateTransaction::Merge(nsITransaction* aOtherTransaction,
                                               bool* aDidMerge) {
   if (aDidMerge) {
     *aDidMerge = false;
@@ -72,7 +71,7 @@ NS_IMETHODIMP EditAggregateTransaction::Merge(nsITransaction* aTransaction,
   }
   
   
-  return mChildren[0]->Merge(aTransaction, aDidMerge);
+  return mChildren[0]->Merge(aOtherTransaction, aDidMerge);
 }
 
 NS_IMETHODIMP EditAggregateTransaction::AppendChild(

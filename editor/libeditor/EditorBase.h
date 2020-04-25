@@ -1918,7 +1918,8 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
 
-  MOZ_CAN_RUN_SCRIPT nsresult DoTransactionInternal(nsITransaction* aTxn);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DoTransactionInternal(nsITransaction* aTransaction);
 
   
 
@@ -2319,7 +2320,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  MOZ_CAN_RUN_SCRIPT void DoAfterDoTransaction(nsITransaction* aTxn);
+  MOZ_CAN_RUN_SCRIPT void DoAfterDoTransaction(nsITransaction* aTransaction);
 
   
 
