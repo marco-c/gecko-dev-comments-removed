@@ -2500,7 +2500,7 @@ XPCOMUtils.defineLazyGlobalGetters(global, ["fetch"]);
             {
                 headers: options.headers ? options.headers : {},
                 path: path + "?" + querystring,
-            }, 
+            },
             
             
             

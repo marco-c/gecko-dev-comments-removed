@@ -765,24 +765,17 @@ class RemoteSettingsClient extends EventEmitter {
     options = {}
   ) {
     const { retry = false } = options;
+    const since = retry || !localTimestamp ? undefined : `${localTimestamp}`;
 
     
-    
-    const client = this.httpClient();
-    const [
+    console.debug(
+      `Fetch changes from server (expected=${expectedTimestamp}, since=${since})`
+    );
+    const {
       metadata,
-      { data: remoteRecords, last_modified: remoteTimestamp },
-    ] = await Promise.all([
-      client.getData({
-        query: { _expected: expectedTimestamp },
-      }),
-      client.listRecords({
-        filters: {
-          _expected: expectedTimestamp,
-        },
-        since: retry || !localTimestamp ? undefined : `${localTimestamp}`,
-      }),
-    ]);
+      remoteTimestamp,
+      remoteRecords,
+    } = await this._fetchChangeset(expectedTimestamp, since);
 
     
     const syncResult = {
@@ -891,6 +884,36 @@ class RemoteSettingsClient extends EventEmitter {
     );
 
     return syncResult;
+  }
+
+  
+
+
+
+
+
+  async _fetchChangeset(expectedTimestamp, since) {
+    const client = this.httpClient();
+    const {
+      metadata,
+      timestamp: remoteTimestamp,
+      changes: remoteRecords,
+    } = await client.execute(
+      {
+        path: `/buckets/${this.bucketName}/collections/${this.collectionName}/changeset`,
+      },
+      {
+        query: {
+          _expected: expectedTimestamp,
+          _since: since,
+        },
+      }
+    );
+    return {
+      remoteTimestamp,
+      metadata,
+      remoteRecords,
+    };
   }
 
   
