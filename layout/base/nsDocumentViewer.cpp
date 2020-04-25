@@ -2817,18 +2817,8 @@ nsDocumentViewer::GetFullZoom(float* aFullZoom) {
 }
 
 NS_IMETHODIMP
-nsDocumentViewer::GetDeviceFullZoom(float* aDeviceFullZoom) {
+nsDocumentViewer::GetDeviceFullZoomForTest(float* aDeviceFullZoom) {
   NS_ENSURE_ARG_POINTER(aDeviceFullZoom);
-#ifdef NS_PRINT_PREVIEW
-  if (GetIsPrintPreview()) {
-    
-    
-    *aDeviceFullZoom = mPrintPreviewZoom;
-    return NS_OK;
-  }
-#endif
-  
-  
   nsPresContext* pc = GetPresContext();
   *aDeviceFullZoom = pc ? pc->GetDeviceFullZoom() : mPageZoom;
   return NS_OK;
