@@ -20,6 +20,13 @@ XPCOMUtils.defineLazyServiceGetters(this, {
   gChromeReg: ["@mozilla.org/chrome/chrome-registry;1", "nsIChromeRegistry"],
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "promptModalType",
+  "prompts.modalType.searchService",
+  Services.prompt.MODAL_TYPE_WINDOW
+);
+
 const BinaryInputStream = Components.Constructor(
   "@mozilla.org/binaryinputstream;1",
   "nsIBinaryInputStream",
@@ -760,6 +767,9 @@ EngineURL.prototype = {
 
 
 
+
+
+
 function SearchEngine(options = {}) {
   if (!("isBuiltin" in options)) {
     throw new Error("isBuiltin missing from options.");
@@ -771,6 +781,7 @@ function SearchEngine(options = {}) {
   this._definedAlias = null;
   this._urls = [];
   this._metaData = {};
+  this._reqContext = options.reqContext;
 
   let file, uri;
   if ("name" in options) {
@@ -1012,7 +1023,7 @@ SearchEngine.prototype = {
     return null;
   },
 
-  _confirmAddEngine() {
+  async _confirmAddEngine() {
     var stringBundle = Services.strings.createBundle(SEARCH_BUNDLE);
     var titleMessage = stringBundle.GetStringFromName("addEngineConfirmTitle");
 
@@ -1037,28 +1048,37 @@ SearchEngine.prototype = {
       "addEngineAddButtonLabel"
     );
 
-    var ps = Services.prompt;
-    var buttonFlags =
+    let ps = Services.prompt;
+    let buttonFlags =
       ps.BUTTON_TITLE_IS_STRING * ps.BUTTON_POS_0 +
       ps.BUTTON_TITLE_CANCEL * ps.BUTTON_POS_1 +
       ps.BUTTON_POS_0_DEFAULT;
 
-    var checked = { value: false };
-    
-    
-    var confirm = !ps.confirmEx(
-      null,
-      titleMessage,
-      dialogMessage,
-      buttonFlags,
-      addButtonLabel,
-      null,
-      null, 
-      checkboxMessage,
-      checked
-    );
+    let promptResult;
+    try {
+      promptResult = await ps.asyncConfirmEx(
+        this._reqContext,
+        promptModalType,
+        titleMessage,
+        dialogMessage,
+        buttonFlags,
+        addButtonLabel,
+        null,
+        null, 
+        checkboxMessage,
+        false
+      );
+    } catch (error) {
+      
+      return { confirmed: false, useNow: false };
+    }
 
-    return { confirmed: confirm, useNow: checked.value };
+    
+    
+    return {
+      confirmed: !promptResult.getProperty("buttonNumClicked"),
+      useNow: promptResult.getProperty("checked"),
+    };
   },
 
   
@@ -1071,7 +1091,7 @@ SearchEngine.prototype = {
 
 
 
-  _onLoad(bytes, engine) {
+  async _onLoad(bytes, engine) {
     
 
 
@@ -1106,7 +1126,12 @@ SearchEngine.prototype = {
         engine._location,
       ]);
 
-      Services.ww.getNewPrompter(null).alert(title, text);
+      Services.prompt.asyncAlert(
+        engine._reqContext,
+        promptModalType,
+        title,
+        text
+      );
     }
 
     if (!bytes) {
@@ -1179,7 +1204,7 @@ SearchEngine.prototype = {
       
       
       if (engine._confirm) {
-        var confirmation = engine._confirmAddEngine();
+        var confirmation = await engine._confirmAddEngine();
         SearchUtils.log(
           "_onLoad: confirm is " +
             confirmation.confirmed +
