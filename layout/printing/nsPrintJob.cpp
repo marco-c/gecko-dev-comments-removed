@@ -9,7 +9,6 @@
 #include "nsDocShell.h"
 #include "nsReadableUtils.h"
 #include "nsCRT.h"
-#include "nsQueryObject.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/ComputedStyleInlines.h"
@@ -409,41 +408,43 @@ static void MapContentToWebShells(const UniquePtr<nsPrintObject>& aRootPO,
 
 
 
-static void BuildNestedPrintObjects(Document* aDocument,
+static void BuildNestedPrintObjects(BrowsingContext* aBrowsingContext,
                                     const UniquePtr<nsPrintObject>& aPO,
                                     nsTArray<nsPrintObject*>* aDocList) {
-  MOZ_ASSERT(aDocument, "Pointer is null!");
+  MOZ_ASSERT(aBrowsingContext, "Pointer is null!");
   MOZ_ASSERT(aDocList, "Pointer is null!");
   MOZ_ASSERT(aPO, "Pointer is null!");
 
-  nsTArray<Document::PendingFrameStaticClone> pendingClones =
-      aDocument->TakePendingFrameStaticClones();
-  for (auto& clone : pendingClones) {
-    if (NS_WARN_IF(!clone.mStaticCloneOf)) {
+  for (auto& childBC : aBrowsingContext->GetChildren()) {
+    
+    
+    nsCOMPtr<nsFrameLoaderOwner> flo =
+        do_QueryInterface(childBC->GetEmbedderElement());
+    RefPtr<nsFrameLoader> frameLoader = flo ? flo->GetFrameLoader() : nullptr;
+    if (!frameLoader) {
       continue;
     }
 
-    RefPtr<Element> element = do_QueryObject(clone.mElement);
-    RefPtr<nsFrameLoader> frameLoader =
-        nsFrameLoader::Create(element,  false);
-    clone.mElement->SetFrameLoader(frameLoader);
-
-    nsCOMPtr<nsIDocShell> docshell;
-    RefPtr<Document> doc;
-    nsresult rv = frameLoader->FinishStaticClone(
-        clone.mStaticCloneOf, getter_AddRefs(docshell), getter_AddRefs(doc));
+    
+    nsresult rv = frameLoader->FinishStaticClone();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
 
+    auto window = childBC->GetDOMWindow();
+    if (!window) {
+      
+      continue;
+    }
     auto childPO = MakeUnique<nsPrintObject>();
-    rv = childPO->InitAsNestedObject(docshell, doc, aPO.get());
+    rv = childPO->InitAsNestedObject(childBC->GetDocShell(),
+                                     window->GetExtantDoc(), aPO.get());
     if (NS_FAILED(rv)) {
       MOZ_ASSERT_UNREACHABLE("Init failed?");
     }
     aPO->mKids.AppendElement(std::move(childPO));
     aDocList->AppendElement(aPO->mKids.LastElement().get());
-    BuildNestedPrintObjects(doc, aPO->mKids.LastElement(), aDocList);
+    BuildNestedPrintObjects(childBC, aPO->mKids.LastElement(), aDocList);
   }
 }
 
@@ -795,8 +796,9 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     printData->mPrintObject->mFrameType =
         printData->mIsParentAFrameSet ? eFrameSet : eDoc;
 
-    BuildNestedPrintObjects(printData->mPrintObject->mDocument,
-                            printData->mPrintObject, &printData->mPrintDocList);
+    BuildNestedPrintObjects(
+        printData->mPrintObject->mDocShell->GetBrowsingContext(),
+        printData->mPrintObject, &printData->mPrintDocList);
   }
 
   
@@ -3195,7 +3197,7 @@ static void DumpViews(nsIDocShell* aDocShell, FILE* out) {
     
     int32_t i, n;
     BrowsingContext* bc = nsDocShell::Cast(aDocShell)->GetBrowsingContext();
-    for (auto& child : bc->Children()) {
+    for (auto& child : bc->GetChildren()) {
       if (auto childDS = child->GetDocShell()) {
         DumpViews(childAsShell, out);
       }
