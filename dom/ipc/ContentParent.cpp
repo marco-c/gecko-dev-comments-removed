@@ -2861,19 +2861,6 @@ mozilla::ipc::IPCResult ContentParent::RecvGetIconForExtension(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult ContentParent::RecvGetShowPasswordSetting(
-    bool* showPassword) {
-  
-  *showPassword = true;
-#ifdef MOZ_WIDGET_ANDROID
-  NS_ASSERTION(AndroidBridge::Bridge() != nullptr,
-               "AndroidBridge is not available");
-
-  *showPassword = java::GeckoAppShell::GetShowPasswordSetting();
-#endif
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult ContentParent::RecvFirstIdle() {
   
   
