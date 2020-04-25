@@ -21,6 +21,7 @@
 
 
 
+use log::warn;
 use std::env;
 
 use cranelift_codegen::isa;

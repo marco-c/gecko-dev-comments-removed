@@ -13,15 +13,13 @@
 
 
 
-#[macro_use]
-extern crate log;
-
 mod bindings; 
 mod compile; 
 mod isa; 
 mod utils; 
 mod wasm2clif; 
 
+use log::{self, error, info};
 use std::ptr;
 
 use crate::bindings::{CompiledFunc, FuncCompileInput, ModuleEnvironment, StaticEnvironment};
