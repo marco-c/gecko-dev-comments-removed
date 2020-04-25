@@ -566,7 +566,7 @@ static void WriteSample(SpliceableJSONWriter& aWriter,
 
 class EntryGetter {
  public:
-  explicit EntryGetter(BlocksRingBuffer::Reader& aReader,
+  explicit EntryGetter(ProfileChunkedBuffer::Reader& aReader,
                        uint64_t aInitialReadPos = 0)
       : mBlockIt(
             aReader.At(ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
@@ -597,7 +597,7 @@ class EntryGetter {
     }
   }
 
-  BlocksRingBuffer::BlockIterator Iterator() const { return mBlockIt; }
+  ProfileChunkedBuffer::BlockIterator Iterator() const { return mBlockIt; }
 
   ProfileBufferBlockIndex CurBlockIndex() const {
     return mBlockIt.CurrentBlockIndex();
@@ -619,26 +619,27 @@ class EntryGetter {
       return true;
     }
     
-    ProfileBufferEntryReader aER = *mBlockIt;
+    ProfileBufferEntryReader er = *mBlockIt;
     auto type = static_cast<ProfileBufferEntry::Kind>(
-        aER.ReadObject<ProfileBufferEntry::KindUnderlyingType>());
+        er.ReadObject<ProfileBufferEntry::KindUnderlyingType>());
     MOZ_ASSERT(static_cast<ProfileBufferEntry::KindUnderlyingType>(type) <
                static_cast<ProfileBufferEntry::KindUnderlyingType>(
                    ProfileBufferEntry::Kind::MODERN_LIMIT));
     if (type >= ProfileBufferEntry::Kind::LEGACY_LIMIT) {
+      er.SetRemainingBytes(0);
       return false;
     }
     
     
     
-    aER = *mBlockIt;
-    aER.ReadBytes(&mEntry, aER.RemainingBytes());
+    er = *mBlockIt;
+    er.ReadBytes(&mEntry, er.RemainingBytes());
     return true;
   }
 
   ProfileBufferEntry mEntry;
-  BlocksRingBuffer::BlockIterator mBlockIt;
-  const BlocksRingBuffer::BlockIterator mBlockItEnd;
+  ProfileChunkedBuffer::BlockIterator mBlockIt;
+  const ProfileChunkedBuffer::BlockIterator mBlockItEnd;
 };
 
 
@@ -789,10 +790,10 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
                                         UniqueStacks& aUniqueStacks) const {
   UniquePtr<char[]> dynStrBuf = MakeUnique<char[]>(kMaxFrameKeyLength);
 
-  mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-    MOZ_ASSERT(
-        aReader,
-        "BlocksRingBuffer cannot be out-of-session when sampler is running");
+  mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
+    MOZ_ASSERT(aReader,
+               "ProfileChunkedBuffer cannot be out-of-session when sampler is "
+               "running");
 
     EntryGetter e(*aReader);
 
@@ -1019,7 +1020,7 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
 
         Maybe<double> unresponsiveDuration;
 
-        BlocksRingBuffer::BlockIterator it = e.Iterator();
+        ProfileChunkedBuffer::BlockIterator it = e.Iterator();
         for (;;) {
           ++it;
           if (it.IsAtEnd()) {
@@ -1036,13 +1037,13 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
           }
 
           if (kind == ProfileBufferEntry::Kind::CompactStack) {
-            BlocksRingBuffer tempBuffer(
-                BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                mWorkerBuffer.get(), WorkerBufferBytes);
+            ProfileChunkedBuffer tempBuffer(
+                ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+                mWorkerChunkManager);
             er.ReadIntoObject(tempBuffer);
-            tempBuffer.Read([&](BlocksRingBuffer::Reader* aReader) {
+            tempBuffer.Read([&](ProfileChunkedBuffer::Reader* aReader) {
               MOZ_ASSERT(aReader,
-                         "Local BlocksRingBuffer cannot be out-of-session");
+                         "Local ProfileChunkedBuffer cannot be out-of-session");
               EntryGetter stackEntryGetter(*aReader);
               if (stackEntryGetter.Has()) {
                 ReadStack(stackEntryGetter,
@@ -1050,12 +1051,14 @@ void ProfileBuffer::StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
                           unresponsiveDuration);
               }
             });
+            mWorkerChunkManager.Reset(tempBuffer.GetAllChunks());
             break;
           }
 
           MOZ_ASSERT(kind >= ProfileBufferEntry::Kind::LEGACY_LIMIT,
                      "There should be no legacy entries between "
                      "TimeBeforeCompactStack and CompactStack");
+          er.SetRemainingBytes(0);
         }
 
         e.Next();
@@ -1079,10 +1082,10 @@ void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
         
         
 
-        mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
+        mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
           MOZ_ASSERT(aReader,
-                     "BlocksRingBuffer cannot be out-of-session when sampler "
-                     "is running");
+                     "ProfileChunkedBuffer cannot be out-of-session when "
+                     "sampler is running");
 
           EntryGetter e(*aReader, aRangeStart);
 
@@ -1115,7 +1118,7 @@ void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
               }
             } else if (e.Has() && e.Get().IsTimeBeforeCompactStack()) {
               
-              BlocksRingBuffer::BlockIterator it = e.Iterator();
+              ProfileChunkedBuffer::BlockIterator it = e.Iterator();
               for (;;) {
                 ++it;
                 if (it.IsAtEnd()) {
@@ -1125,14 +1128,14 @@ void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
                 ProfileBufferEntry::Kind kind =
                     er.ReadObject<ProfileBufferEntry::Kind>();
                 if (kind == ProfileBufferEntry::Kind::CompactStack) {
-                  BlocksRingBuffer tempBuffer(
-                      BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                      mWorkerBuffer.get(), WorkerBufferBytes);
+                  ProfileChunkedBuffer tempBuffer(
+                      ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+                      mWorkerChunkManager);
                   er.ReadIntoObject(tempBuffer);
-                  tempBuffer.Read([&](BlocksRingBuffer::Reader* aReader) {
+                  tempBuffer.Read([&](ProfileChunkedBuffer::Reader* aReader) {
                     MOZ_ASSERT(
                         aReader,
-                        "Local BlocksRingBuffer cannot be out-of-session");
+                        "Local ProfileChunkedBuffer cannot be out-of-session");
                     EntryGetter stackEntryGetter(*aReader);
                     while (stackEntryGetter.Has()) {
                       if (stackEntryGetter.Get().IsJitReturnAddr()) {
@@ -1141,11 +1144,14 @@ void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
                       stackEntryGetter.Next();
                     }
                   });
+                  mWorkerChunkManager.Reset(tempBuffer.GetAllChunks());
                   break;
                 }
+
                 MOZ_ASSERT(kind >= ProfileBufferEntry::Kind::LEGACY_LIMIT,
                            "There should be no legacy entries between "
                            "TimeBeforeCompactStack and CompactStack");
+                er.SetRemainingBytes(0);
               }
 
               e.Next();
@@ -1193,6 +1199,8 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
         }
       }
       aWriter.EndArray();
+    } else {
+      aER.SetRemainingBytes(0);
     }
   });
 }
@@ -1200,10 +1208,10 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
 void ProfileBuffer::StreamProfilerOverheadToJSON(
     SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
     double aSinceTime) const {
-  mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-    MOZ_ASSERT(
-        aReader,
-        "BlocksRingBuffer cannot be out-of-session when sampler is running");
+  mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
+    MOZ_ASSERT(aReader,
+               "ProfileChunkedBuffer cannot be out-of-session when sampler is "
+               "running");
 
     EntryGetter e(*aReader);
 
@@ -1353,10 +1361,10 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
   
   
 
-  mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-    MOZ_ASSERT(
-        aReader,
-        "BlocksRingBuffer cannot be out-of-session when sampler is running");
+  mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
+    MOZ_ASSERT(aReader,
+               "ProfileChunkedBuffer cannot be out-of-session when sampler is "
+               "running");
 
     EntryGetter e(*aReader);
 
@@ -1536,10 +1544,10 @@ static void AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
 
 void ProfileBuffer::StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
                                              double aSinceTime) const {
-  mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-    MOZ_ASSERT(
-        aReader,
-        "BlocksRingBuffer cannot be out-of-session when sampler is running");
+  mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
+    MOZ_ASSERT(aReader,
+               "ProfileChunkedBuffer cannot be out-of-session when sampler is "
+               "running");
 
     EntryGetter e(*aReader);
 
@@ -1581,13 +1589,16 @@ bool ProfileBuffer::DuplicateLastSample(int aThreadId,
     return false;
   }
 
-  BlocksRingBuffer tempBuffer(BlocksRingBuffer::ThreadSafety::WithoutMutex,
-                              mWorkerBuffer.get(), WorkerBufferBytes);
+  ProfileChunkedBuffer tempBuffer(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex, mWorkerChunkManager);
 
-  const bool ok = mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-    MOZ_ASSERT(
-        aReader,
-        "BlocksRingBuffer cannot be out-of-session when sampler is running");
+  auto retrieveWorkerChunk = MakeScopeExit(
+      [&]() { mWorkerChunkManager.Reset(tempBuffer.GetAllChunks()); });
+
+  const bool ok = mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
+    MOZ_ASSERT(aReader,
+               "ProfileChunkedBuffer cannot be out-of-session when sampler is "
+               "running");
 
     EntryGetter e(*aReader, *aLastSample);
 
@@ -1632,7 +1643,7 @@ bool ProfileBuffer::DuplicateLastSample(int aThreadId,
           
           
           
-          BlocksRingBuffer::BlockIterator it = e.Iterator();
+          ProfileChunkedBuffer::BlockIterator it = e.Iterator();
           for (;;) {
             ++it;
             if (it.IsAtEnd()) {
@@ -1656,9 +1667,11 @@ bool ProfileBuffer::DuplicateLastSample(int aThreadId,
               });
               break;
             }
+
             MOZ_ASSERT(kind >= ProfileBufferEntry::Kind::LEGACY_LIMIT,
                        "There should be no legacy entries between "
                        "TimeBeforeCompactStack and CompactStack");
+            er.SetRemainingBytes(0);
             
             
           }
@@ -1749,56 +1762,9 @@ bool ProfileBuffer::DuplicateLastSample(int aThreadId,
 }
 
 void ProfileBuffer::DiscardSamplesBeforeTime(double aTime) {
-  const ProfileBufferBlockIndex firstBlockToKeep =
-      mEntries.Read([&](BlocksRingBuffer::Reader* aReader) {
-        MOZ_ASSERT(aReader,
-                   "BlocksRingBuffer cannot be out-of-session when sampler is "
-                   "running");
-
-        EntryGetter e(*aReader);
-
-        const ProfileBufferBlockIndex bufferStartPos = e.CurBlockIndex();
-        for (;;) {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          while (e.Has()) {
-            if (e.Get().IsThreadId()) {
-              break;
-            }
-            e.Next();
-          }
-
-          if (!e.Has()) {
-            return bufferStartPos;
-          }
-
-          MOZ_RELEASE_ASSERT(e.Get().IsThreadId());
-          const ProfileBufferBlockIndex sampleStartPos = e.CurBlockIndex();
-          e.Next();
-
-          if (e.Has() &&
-              (e.Get().IsTime() || e.Get().IsTimeBeforeCompactStack())) {
-            double sampleTime = e.Get().GetDouble();
-
-            if (sampleTime >= aTime) {
-              
-              
-              
-              return sampleStartPos;
-            }
-          }
-        }
-      });
-  mEntries.ClearBefore(firstBlockToKeep);
+  
+  
+  Unused << aTime;
 }
 
 

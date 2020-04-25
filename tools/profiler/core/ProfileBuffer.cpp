@@ -15,21 +15,8 @@
 
 using namespace mozilla;
 
-
-static constexpr auto WorkerBufferBytes = MakePowerOfTwo32<65536>();
-
-ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer, PowerOfTwo32 aCapacity)
-    : mEntries(aBuffer),
-      mWorkerBuffer(
-          MakeUnique<BlocksRingBuffer::Byte[]>(WorkerBufferBytes.Value())) {
-  
-  
-  MOZ_ASSERT(!mEntries.IsInSession());
-  
-  mEntries.Set(aCapacity);
-}
-
-ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer) : mEntries(aBuffer) {
+ProfileBuffer::ProfileBuffer(ProfileChunkedBuffer& aBuffer)
+    : mEntries(aBuffer) {
   
   MOZ_ASSERT(mEntries.IsInSession());
 }
@@ -37,17 +24,18 @@ ProfileBuffer::ProfileBuffer(BlocksRingBuffer& aBuffer) : mEntries(aBuffer) {
 ProfileBuffer::~ProfileBuffer() {
   
   
-  mEntries.Reset();
+  mEntries.ResetChunkManager();
   MOZ_ASSERT(!mEntries.IsInSession());
 }
 
 
 ProfileBufferBlockIndex ProfileBuffer::AddEntry(
-    BlocksRingBuffer& aBlocksRingBuffer, const ProfileBufferEntry& aEntry) {
+    ProfileChunkedBuffer& aProfileChunkedBuffer,
+    const ProfileBufferEntry& aEntry) {
   switch (aEntry.GetKind()) {
-#define SWITCH_KIND(KIND, TYPE, SIZE)                      \
-  case ProfileBufferEntry::Kind::KIND: {                   \
-    return aBlocksRingBuffer.PutFrom(&aEntry, 1 + (SIZE)); \
+#define SWITCH_KIND(KIND, TYPE, SIZE)                          \
+  case ProfileBufferEntry::Kind::KIND: {                       \
+    return aProfileChunkedBuffer.PutFrom(&aEntry, 1 + (SIZE)); \
   }
 
     FOR_EACH_PROFILE_BUFFER_ENTRY_KIND(SWITCH_KIND)
@@ -66,8 +54,9 @@ uint64_t ProfileBuffer::AddEntry(const ProfileBufferEntry& aEntry) {
 
 
 ProfileBufferBlockIndex ProfileBuffer::AddThreadIdEntry(
-    BlocksRingBuffer& aBlocksRingBuffer, int aThreadId) {
-  return AddEntry(aBlocksRingBuffer, ProfileBufferEntry::ThreadId(aThreadId));
+    ProfileChunkedBuffer& aProfileChunkedBuffer, int aThreadId) {
+  return AddEntry(aProfileChunkedBuffer,
+                  ProfileBufferEntry::ThreadId(aThreadId));
 }
 
 uint64_t ProfileBuffer::AddThreadIdEntry(int aThreadId) {
@@ -164,7 +153,8 @@ void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
 ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
   return {BufferRangeStart(),
           BufferRangeEnd(),
-          mEntries.BufferLength()->Value() / 8,  
+          static_cast<uint32_t>(*mEntries.BufferLength() /
+                                8),  
           mIntervalsNs,
           mOverheadsNs,
           mLockingsNs,

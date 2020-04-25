@@ -9,7 +9,10 @@
 #include "GeckoProfiler.h"
 #include "ProfileBufferEntry.h"
 
-#include "mozilla/BlocksRingBuffer.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/PowerOfTwo.h"
+#include "mozilla/ProfileBufferChunkManagerSingle.h"
+#include "mozilla/ProfileChunkedBuffer.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PowerOfTwo.h"
 
@@ -22,12 +25,7 @@ class ProfileBuffer final {
   
   
   
-  ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer,
-                mozilla::PowerOfTwo32 aCapacity);
-
-  
-  
-  explicit ProfileBuffer(mozilla::BlocksRingBuffer& aBuffer);
+  explicit ProfileBuffer(mozilla::ProfileChunkedBuffer& aBuffer);
 
   ~ProfileBuffer();
 
@@ -93,25 +91,25 @@ class ProfileBuffer final {
 
   
   ProfileBufferEntry GetEntry(uint64_t aPosition) const {
-    ProfileBufferEntry entry;
-    mEntries.Read([&](mozilla::BlocksRingBuffer::Reader* aReader) {
-      
-      MOZ_ASSERT(aReader);
-      const auto itEnd = aReader->end();
-      for (auto it = aReader->begin(); it != itEnd; ++it) {
-        if (it.CurrentBlockIndex().ConvertToProfileBufferIndex() > aPosition) {
-          
-          return;
-        }
-        if (it.CurrentBlockIndex().ConvertToProfileBufferIndex() == aPosition) {
-          mozilla::ProfileBufferEntryReader er = *it;
-          MOZ_RELEASE_ASSERT(er.RemainingBytes() <= sizeof(entry));
-          er.ReadBytes(&entry, er.RemainingBytes());
-          return;
-        }
-      }
-    });
-    return entry;
+    return mEntries.ReadAt(
+        mozilla::ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+            aPosition),
+        [&](mozilla::Maybe<mozilla::ProfileBufferEntryReader>&& aMER) {
+          ProfileBufferEntry entry;
+          if (aMER.isSome()) {
+            if (aMER->CurrentBlockIndex().ConvertToProfileBufferIndex() ==
+                aPosition) {
+              
+              MOZ_RELEASE_ASSERT(aMER->RemainingBytes() <= sizeof(entry));
+              aMER->ReadBytes(&entry, aMER->RemainingBytes());
+            } else {
+              
+              
+              aMER->SetRemainingBytes(0);
+            }
+          }
+          return entry;
+        });
   }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
@@ -130,7 +128,7 @@ class ProfileBuffer final {
   
   
   static mozilla::ProfileBufferBlockIndex AddEntry(
-      mozilla::BlocksRingBuffer& aBlocksRingBuffer,
+      mozilla::ProfileChunkedBuffer& aProfileChunkedBuffer,
       const ProfileBufferEntry& aEntry);
 
   
@@ -138,10 +136,10 @@ class ProfileBuffer final {
   
   
   static mozilla::ProfileBufferBlockIndex AddThreadIdEntry(
-      mozilla::BlocksRingBuffer& aBlocksRingBuffer, int aThreadId);
+      mozilla::ProfileChunkedBuffer& aProfileChunkedBuffer, int aThreadId);
 
   
-  mozilla::BlocksRingBuffer& mEntries;
+  mozilla::ProfileChunkedBuffer& mEntries;
 
  public:
   
@@ -157,19 +155,22 @@ class ProfileBuffer final {
   
   
   
-  uint64_t BufferRangeStart() const {
-    return mEntries.GetState().mRangeStart.ConvertToProfileBufferIndex();
-  }
-  uint64_t BufferRangeEnd() const {
-    return mEntries.GetState().mRangeEnd.ConvertToProfileBufferIndex();
-  }
+  uint64_t BufferRangeStart() const { return mEntries.GetState().mRangeStart; }
+  uint64_t BufferRangeEnd() const { return mEntries.GetState().mRangeEnd; }
 
  private:
   
+  static constexpr auto WorkerBufferBytes = mozilla::MakePowerOfTwo32<65536>();
+
   
   
   
-  mozilla::UniquePtr<mozilla::BlocksRingBuffer::Byte[]> mWorkerBuffer;
+  
+  
+  mutable mozilla::ProfileBufferChunkManagerSingle mWorkerChunkManager{
+      mozilla::ProfileBufferChunk::Create(
+          mozilla::ProfileBufferChunk::SizeofChunkMetadata() +
+          WorkerBufferBytes.Value())};
 
   double mFirstSamplingTimeNs = 0.0;
   double mLastSamplingTimeNs = 0.0;
