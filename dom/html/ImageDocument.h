@@ -55,8 +55,17 @@ class ImageDocument final : public MediaDocument,
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool ImageIsOverflowing() const {
-    return mImageIsOverflowingHorizontally || mImageIsOverflowingVertically;
+    return ImageIsOverflowingHorizontally() || ImageIsOverflowingVertically();
   }
+
+  bool ImageIsOverflowingVertically() const {
+    return mImageHeight > mVisibleHeight;
+  }
+
+  bool ImageIsOverflowingHorizontally() const {
+    return mImageWidth > mVisibleWidth;
+  }
+
   bool ImageIsResized() const { return mImageIsResized; }
   
   
@@ -107,8 +116,6 @@ class ImageDocument final : public MediaDocument,
   int32_t mImageWidth;
   int32_t mImageHeight;
 
-  bool mImageIsOverflowingHorizontally;
-  bool mImageIsOverflowingVertically;
   
   bool mImageIsResized;
   
