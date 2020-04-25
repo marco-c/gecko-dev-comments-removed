@@ -5,6 +5,7 @@
 
 
 DevToolsModules(
+    "BrowserIcon.js",
     "CompatibilityApp.js",
     "Footer.js",
     "IssueItem.js",
