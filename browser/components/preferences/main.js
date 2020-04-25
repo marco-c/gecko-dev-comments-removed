@@ -1320,7 +1320,9 @@ var gMainPane = {
 
 
   showLanguages() {
-    gSubDialog.open("chrome://browser/content/preferences/dialogs/languages.xhtml");
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/languages.xhtml"
+    );
   },
 
   recordBrowserLanguagesTelemetry(method, value = null) {
@@ -1399,7 +1401,9 @@ var gMainPane = {
 
 
   showTranslationExceptions() {
-    gSubDialog.open("chrome://browser/content/preferences/dialogs/translation.xhtml");
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/translation.xhtml"
+    );
   },
 
   openTranslationProviderAttribution() {
