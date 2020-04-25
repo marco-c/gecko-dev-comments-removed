@@ -52,7 +52,7 @@ impl Default for QualitySettings {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub enum ResourceUpdate {
     
     AddImage(AddImage),
@@ -555,7 +555,6 @@ pub struct DocumentTransaction {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
 pub struct TransactionMsg {
     
     pub scene_ops: Vec<SceneMsg>,
@@ -574,7 +573,6 @@ pub struct TransactionMsg {
     pub low_priority: bool,
 
     
-    #[serde(skip)]
     pub notifications: Vec<NotificationRequest>,
 }
 
@@ -644,7 +642,7 @@ impl TransactionMsg {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct AddImage {
     
     pub key: ImageKey,
@@ -661,7 +659,7 @@ pub struct AddImage {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct UpdateImage {
     
     pub key: ImageKey,
@@ -679,7 +677,7 @@ pub struct UpdateImage {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct AddBlobImage {
     
     pub key: BlobImageKey,
@@ -705,7 +703,7 @@ pub struct AddBlobImage {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct UpdateBlobImage {
     
     pub key: BlobImageKey,
@@ -724,20 +722,16 @@ pub struct UpdateBlobImage {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub enum AddFont {
     
-    Raw(
-        font::FontKey,
-        #[serde(with = "serde_bytes")] Vec<u8>,
-        u32
-    ),
+    Raw(font::FontKey, Vec<u8>, u32),
     
     Native(font::FontKey, font::NativeFontHandle),
 }
 
 
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct HitTestItem {
     
     pub pipeline: PipelineId,
@@ -756,14 +750,14 @@ pub struct HitTestItem {
 }
 
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default)]
 pub struct HitTestResult {
     
     pub items: Vec<HitTestItem>,
 }
 
 bitflags! {
-    #[derive(Deserialize, MallocSizeOf, Serialize)]
+    #[derive(MallocSizeOf)]
     ///
     pub struct HitTestFlags: u8 {
         ///
@@ -777,7 +771,7 @@ bitflags! {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct AddFontInstance {
     
     pub key: font::FontInstanceKey,
@@ -794,7 +788,6 @@ pub struct AddFontInstance {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
 pub enum SceneMsg {
     
     UpdateEpoch(PipelineId, Epoch),
@@ -840,15 +833,12 @@ pub enum SceneMsg {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
 pub enum FrameMsg {
     
     UpdateEpoch(PipelineId, Epoch),
     
-    #[serde(skip_serializing, skip_deserializing)]
     HitTest(Option<PipelineId>, WorldPoint, HitTestFlags, Sender<HitTestResult>),
     
-    #[serde(skip_serializing, skip_deserializing)]
     RequestHitTester(Sender<Arc<dyn ApiHitTester>>),
     
     SetPan(DeviceIntPoint),
@@ -857,7 +847,6 @@ pub enum FrameMsg {
     
     ScrollNodeWithId(LayoutPoint, di::ExternalScrollId, ScrollClamping),
     
-    #[serde(skip_serializing, skip_deserializing)]
     GetScrollNodeState(Sender<Vec<ScrollNodeState>>),
     
     UpdateDynamicProperties(DynamicProperties),
@@ -905,7 +894,6 @@ impl fmt::Debug for FrameMsg {
 bitflags!{
     /// Bit flags for WR stages to store in a capture.
     // Note: capturing `FRAME` without `SCENE` is not currently supported.
-    #[derive(Deserialize, Serialize)]
     pub struct CaptureBits: u8 {
         ///
         const SCENE = 0x1;
@@ -920,7 +908,6 @@ bitflags!{
 
 bitflags!{
     /// Mask for clearing caches in debug commands.
-    #[derive(Deserialize, Serialize)]
     pub struct ClearCache: u8 {
         ///
         const IMAGES = 0b1;
@@ -937,7 +924,7 @@ bitflags!{
 
 
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
 pub struct CapturedDocument {
     
     pub document_id: DocumentId,
@@ -946,7 +933,7 @@ pub struct CapturedDocument {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub enum DebugCommand {
     
     SetFlags(DebugFlags),
@@ -968,7 +955,6 @@ pub enum DebugCommand {
     
     SaveCapture(PathBuf, CaptureBits),
     
-    #[serde(skip_serializing, skip_deserializing)]
     LoadCapture(PathBuf, Option<(u32, u32)>, Sender<CapturedDocument>),
     
     StartCaptureSequence(PathBuf, CaptureBits),
@@ -997,22 +983,18 @@ pub enum DebugCommand {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
 pub enum ApiMsg {
     
     UpdateResources(Vec<ResourceUpdate>),
     
-    #[serde(skip_serializing, skip_deserializing)]
     GetGlyphDimensions(
         font::FontInstanceKey,
         Vec<font::GlyphIndex>,
         Sender<Vec<Option<font::GlyphDimensions>>>,
     ),
     
-    #[serde(skip_serializing, skip_deserializing)]
     GetGlyphIndices(font::FontKey, String, Sender<Vec<Option<u32>>>),
     
-    #[serde(skip_serializing, skip_deserializing)]
     CloneApi(Sender<IdNamespace>),
     
     CloneApiByClient(IdNamespace),
@@ -1031,7 +1013,6 @@ pub enum ApiMsg {
     
     MemoryPressure,
     
-    #[serde(skip_serializing, skip_deserializing)]
     ReportMemory(Sender<Box<MemoryReport>>),
     
     DebugCommand(DebugCommand),
@@ -1043,10 +1024,8 @@ pub enum ApiMsg {
     
     
     
-    #[serde(skip_serializing, skip_deserializing)]
     FlushSceneBuilder(Sender<()>),
     
-    #[serde(skip_serializing, skip_deserializing)]
     ShutDown(Option<Sender<()>>),
 }
 
@@ -1202,7 +1181,7 @@ macro_rules! declare_interning_memory_report {
     ( $( $name:ident: $ty:ident, )+ ) => {
         ///
         #[repr(C)]
-        #[derive(AddAssign, Clone, Debug, Default, Deserialize, Serialize)]
+        #[derive(AddAssign, Clone, Debug, Default)]
         pub struct InternerSubReport {
             $(
                 ///
@@ -1217,7 +1196,7 @@ enumerate_interners!(declare_interning_memory_report);
 
 /// cbindgen:derive-eq=false
 #[repr(C)]
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default)]
 pub struct InterningMemoryReport {
     
     pub interners: InternerSubReport,
@@ -1236,7 +1215,7 @@ impl ::std::ops::AddAssign for InterningMemoryReport {
 /// cbindgen:derive-eq=false
 #[repr(C)]
 #[allow(missing_docs)]
-#[derive(AddAssign, Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(AddAssign, Clone, Debug, Default)]
 pub struct MemoryReport {
     
     
@@ -1276,7 +1255,7 @@ struct ResourceId(pub u32);
 
 
 #[repr(C)]
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct ExternalEvent {
     raw: usize,
 }
@@ -1295,7 +1274,7 @@ impl ExternalEvent {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub enum ScrollClamping {
     
     ToContentBounds,
@@ -1795,7 +1774,7 @@ impl HitTesterRequest {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone)]
 pub struct ScrollNodeState {
     
     pub id: di::ExternalScrollId,
@@ -1804,7 +1783,7 @@ pub struct ScrollNodeState {
 }
 
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug)]
 pub enum ScrollLocation {
     
     Delta(LayoutVector2D),
@@ -1815,7 +1794,7 @@ pub enum ScrollLocation {
 }
 
 
-#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct ZoomFactor(f32);
 
 impl ZoomFactor {
@@ -1988,7 +1967,7 @@ pub trait RenderNotifier: Send {
 
 
 #[repr(u32)]
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Checkpoint {
     
     SceneBuilt,
