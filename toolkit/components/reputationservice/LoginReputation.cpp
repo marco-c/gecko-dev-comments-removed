@@ -333,7 +333,7 @@ LoginReputationService::QueryReputation(
   
   
   
-  auto* request =
+  auto request =
       mQueryRequests.AppendElement(MakeUnique<QueryRequest>(aQuery, aCallback));
 
   return QueryLoginWhitelist(request->get());
