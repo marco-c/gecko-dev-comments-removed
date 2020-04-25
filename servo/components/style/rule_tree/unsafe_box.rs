@@ -50,6 +50,16 @@ impl<T> UnsafeBox<T> {
     
     
     
+    pub(crate) unsafe fn deref_mut(this: &mut Self) -> &mut T {
+        &mut this.inner
+    }
+
+    
+    
+    
+    
+    
+    
     pub(super) unsafe fn drop(this: &mut Self) {
         ManuallyDrop::drop(&mut this.inner)
     }
