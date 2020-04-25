@@ -709,6 +709,9 @@ class BrowserParent final : public PBrowserParent,
   bool GetDocShellIsActive();
   void SetDocShellIsActive(bool aDocShellIsActive);
 
+  bool GetSuspendMediaWhenInactive() const;
+  void SetSuspendMediaWhenInactive(bool aSuspendMediaWhenInactive);
+
   bool GetHasPresented();
   bool GetHasLayers();
   bool GetRenderLayers();
@@ -995,6 +998,10 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mSuspendedProgressEvents : 1;
+
+  
+  
+  bool mSuspendMediaWhenInactive : 1;
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {
