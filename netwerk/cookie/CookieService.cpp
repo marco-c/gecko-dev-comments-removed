@@ -177,8 +177,6 @@ nsresult CookieService::Init() {
   os->AddObserver(this, "profile-do-change", true);
   os->AddObserver(this, "last-pb-context-exited", true);
 
-  mPermissionService = CookiePermission::GetOrCreate();
-
   return NS_OK;
 }
 
@@ -1065,6 +1063,17 @@ bool CookieService::SetCookieInternal(CookieStorage* aStorage, nsIURI* aHostURI,
     return newCookie;
   }
 
+  
+  if (!CookieCommons::CheckCookiePermission(aChannel, cookieData)) {
+    COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
+                      "cookie rejected by permission manager");
+    CookieCommons::NotifyRejected(
+        aHostURI, aChannel,
+        nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
+        OPERATION_WRITE);
+    return newCookie;
+  }
+
   int64_t currentTimeInUsec = PR_Now();
   
   RefPtr<Cookie> cookie = Cookie::Create(
@@ -1073,32 +1082,7 @@ bool CookieService::SetCookieInternal(CookieStorage* aStorage, nsIURI* aHostURI,
       Cookie::GenerateUniqueCreationTime(currentTimeInUsec),
       cookieData.isSession(), cookieData.isSecure(), cookieData.isHttpOnly(),
       aOriginAttributes, cookieData.sameSite(), cookieData.rawSameSite());
-  if (!cookie) {
-    return newCookie;
-  }
-
-  
-  
-  if (mPermissionService) {
-    bool permission;
-    mPermissionService->CanSetCookie(
-        aHostURI, aChannel,
-        static_cast<nsICookie*>(static_cast<Cookie*>(cookie)),
-        &cookieData.isSession(), &cookieData.expiry(), &permission);
-    if (!permission) {
-      COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, savedCookieHeader,
-                        "cookie rejected by permission manager");
-      CookieCommons::NotifyRejected(
-          aHostURI, aChannel,
-          nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
-          OPERATION_WRITE);
-      return newCookie;
-    }
-
-    
-    cookie->SetIsSession(cookieData.isSession());
-    cookie->SetExpiry(cookieData.expiry());
-  }
+  MOZ_ASSERT(cookie);
 
   
   

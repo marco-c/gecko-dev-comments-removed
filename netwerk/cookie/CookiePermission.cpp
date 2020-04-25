@@ -5,23 +5,8 @@
 
 
 #include "mozilla/net/CookiePermission.h"
-
-#include "Cookie.h"
-#include "mozilla/StaticPrefs_network.h"
-#include "nsICookie.h"
-#include "nsICookieService.h"
-#include "nsNetUtil.h"
-#include "nsIInterfaceRequestorUtils.h"
-#include "nsIURI.h"
-#include "nsIChannel.h"
-#include "nsString.h"
-#include "nsCRT.h"
-#include "nsIScriptObjectPrincipal.h"
-#include "nsNetCID.h"
-#include "prtime.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "nsContentUtils.h"
 
 
 
@@ -29,8 +14,6 @@
 
 namespace mozilla {
 namespace net {
-
-static const bool kDefaultPolicy = true;
 
 namespace {
 StaticRefPtr<CookiePermission> gSingleton;
@@ -47,73 +30,7 @@ already_AddRefed<nsICookiePermission> CookiePermission::GetOrCreate() {
   return do_AddRef(gSingleton);
 }
 
-bool CookiePermission::Init() {
-  
-  
-  
-
-  mPermMgr = PermissionManager::GetInstance();
-  return mPermMgr != nullptr;
-}
-
-NS_IMETHODIMP
-CookiePermission::CanSetCookie(nsIURI* aURI, nsIChannel* ,
-                               nsICookie* aCookie, bool* aIsSession,
-                               int64_t* aExpiry, bool* aResult) {
-  NS_ASSERTION(aURI, "null uri");
-
-  *aResult = kDefaultPolicy;
-
-  
-  if (!EnsureInitialized()) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  auto* cookie = static_cast<Cookie*>(aCookie);
-  uint32_t perm;
-  mPermMgr->LegacyTestPermissionFromURI(aURI, &cookie->OriginAttributesRef(),
-                                        NS_LITERAL_CSTRING("cookie"), &perm);
-  switch (perm) {
-    case nsICookiePermission::ACCESS_SESSION:
-      *aIsSession = true;
-      [[fallthrough]];
-
-    case nsICookiePermission::ACCESS_ALLOW:
-      *aResult = true;
-      break;
-
-    case nsICookiePermission::ACCESS_DENY:
-      *aResult = false;
-      break;
-
-    default:
-      
-
-      
-      
-      if (StaticPrefs::network_cookie_lifetimePolicy() ==
-          nsICookieService::ACCEPT_NORMALLY) {
-        *aResult = true;
-        return NS_OK;
-      }
-
-      
-      int64_t currentTime = PR_Now() / PR_USEC_PER_SEC;
-      int64_t delta = *aExpiry - currentTime;
-
-      
-      
-      if (!*aIsSession && delta > 0) {
-        if (StaticPrefs::network_cookie_lifetimePolicy() ==
-            nsICookieService::ACCEPT_SESSION) {
-          
-          *aIsSession = true;
-        }
-      }
-  }
-
-  return NS_OK;
-}
+bool CookiePermission::Init() { return true; }
 
 }  
 }  

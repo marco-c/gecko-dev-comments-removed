@@ -79,8 +79,6 @@ CookieServiceChild::CookieServiceChild() {
   mTLDService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
   NS_ASSERTION(mTLDService, "couldn't get TLDService");
 
-  mPermissionService = CookiePermission::GetOrCreate();
-
   
   nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
   NS_WARNING_ASSERTION(prefBranch, "no prefservice");
@@ -413,34 +411,24 @@ nsresult CookieServiceChild::SetCookieStringInternal(
       continue;
     }
 
+    
+    if (!CookieCommons::CheckCookiePermission(aChannel, cookieData)) {
+      COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
+                        "cookie rejected by permission manager");
+      CookieCommons::NotifyRejected(
+          aHostURI, aChannel,
+          nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
+          OPERATION_WRITE);
+      continue;
+    }
+
     RefPtr<Cookie> cookie = Cookie::Create(
         cookieData.name(), cookieData.value(), cookieData.host(),
         cookieData.path(), cookieData.expiry(), currentTimeInUsec,
         Cookie::GenerateUniqueCreationTime(currentTimeInUsec),
         cookieData.isSession(), cookieData.isSecure(), cookieData.isHttpOnly(),
         attrs, cookieData.sameSite(), cookieData.rawSameSite());
-
-    
-    
-    if (mPermissionService) {
-      bool permission;
-      mPermissionService->CanSetCookie(aHostURI, aChannel, cookie,
-                                       &cookieData.isSession(),
-                                       &cookieData.expiry(), &permission);
-      if (!permission) {
-        COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieString,
-                          "cookie rejected by permission manager");
-        CookieCommons::NotifyRejected(
-            aHostURI, aChannel,
-            nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION,
-            OPERATION_WRITE);
-        continue;
-      }
-
-      
-      cookie->SetIsSession(cookieData.isSession());
-      cookie->SetExpiry(cookieData.expiry());
-    }
+    MOZ_ASSERT(cookie);
 
     RecordDocumentCookie(cookie, attrs);
     cookiesToSend.AppendElement(cookieData);
