@@ -223,12 +223,6 @@ menubar > menu:empty {
 menupopup,
 panel {
   -moz-box-orient: vertical;
-
-%ifdef XP_WIN
-  
-
-  background: Menu;
-%endif
 }
 
 menupopup,
