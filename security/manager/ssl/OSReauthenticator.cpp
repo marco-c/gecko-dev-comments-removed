@@ -104,7 +104,13 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
     return NS_ERROR_FAILURE;
   }
 
-  if (!IsOS(OS_DOMAINMEMBER)) {
+#  ifdef OS_DOMAINMEMBER
+  bool isDomainMember = IsOS(OS_DOMAINMEMBER);
+#  else
+  
+  bool isDomainMember = false;
+#  endif
+  if (!isDomainMember) {
     const WCHAR* usernameNoDomain = username;
     
     LPCWSTR backslash = wcschr(username, L'\\');
