@@ -1,5 +1,31 @@
 'use strict';
 
+
+
+
+class RingBuffer {
+  constructor(data) {
+    this.bufferPosition_ = 0;
+    
+    this.data_ = Array.from(data, element => {
+      if (!Array.isArray(element)) {
+        throw new TypeError('Every |data| element must be an array.');
+      }
+      return Array.from(element);
+    })
+  }
+
+  next() {
+    const value = this.data_[this.bufferPosition_];
+    this.bufferPosition_ = (this.bufferPosition_ + 1) % this.data_.length;
+    return { done: false, value: value };
+  }
+
+  [Symbol.iterator]() {
+    return this;
+  }
+}
+
 var GenericSensorTest = (() => {
   
   const DEFAULT_FREQUENCY = 5;
@@ -10,6 +36,7 @@ var GenericSensorTest = (() => {
     constructor(sensorRequest, handle, offset, size, reportingMode) {
       this.client_ = null;
       this.startShouldFail_ = false;
+      this.notifyOnReadingChange_ = true;
       this.reportingMode_ = reportingMode;
       this.sensorReadingTimerId_ = null;
       this.readingData_ = null;
@@ -60,12 +87,20 @@ var GenericSensorTest = (() => {
     }
 
     
+    
+    
+    configureReadingChangeNotifications(notifyOnReadingChange) {
+      this.notifyOnReadingChange_ = notifyOnReadingChange;
+    }
+
+    
 
     
     reset() {
       this.stopReading();
       this.startShouldFail_ = false;
       this.requestedFrequencies_ = [];
+      this.notifyOnReadingChange_ = true;
       this.readingData_ = null;
       this.buffer_.fill(0);
       this.binding_.close();
@@ -100,7 +135,8 @@ var GenericSensorTest = (() => {
         
         
         this.buffer_[1] = window.performance.now() * 0.001;
-        if (this.reportingMode_ === device.mojom.ReportingMode.ON_CHANGE) {
+        if (this.reportingMode_ === device.mojom.ReportingMode.ON_CHANGE &&
+            this.notifyOnReadingChange_) {
           this.client_.sensorReadingChanged();
         }
       }, timeout);
