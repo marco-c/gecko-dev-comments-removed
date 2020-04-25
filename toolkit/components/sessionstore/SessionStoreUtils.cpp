@@ -1169,7 +1169,7 @@ void SessionStoreUtils::CollectedSessionStorage(
   }
 
   
-  for (BrowsingContext* child : aBrowsingContext->Children()) {
+  for (BrowsingContext* child : aBrowsingContext->GetChildren()) {
     window = child->GetDOMWindow();
     if (!window) {
       return;
@@ -1279,7 +1279,7 @@ static void CollectFrameTreeData(JSContext* aCx,
   uint32_t trailingNullCounter = 0;
 
   
-  for (auto& child : aBrowsingContext->Children()) {
+  for (auto& child : aBrowsingContext->GetChildren()) {
     NullableRootedDictionary<CollectedData> data(aCx);
     CollectFrameTreeData(aCx, child, data, aFunc);
     if (data.IsNull()) {

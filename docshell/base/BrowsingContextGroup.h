@@ -21,7 +21,6 @@ class ThrottledEventQueue;
 namespace dom {
 
 class BrowsingContext;
-class WindowContext;
 class ContentParent;
 
 
@@ -49,23 +48,45 @@ class BrowsingContextGroup final : public nsWrapperCache {
   void EnsureSubscribed(ContentParent* aProcess);
 
   
+  bool IsContextCached(BrowsingContext* aContext) const;
+  void CacheContext(BrowsingContext* aContext);
+  void CacheContexts(const BrowsingContext::Children& aContexts);
+  bool EvictCachedContext(BrowsingContext* aContext);
+
   
-  nsTArray<RefPtr<BrowsingContext>>& Toplevels() { return mToplevels; }
-  void GetToplevels(nsTArray<RefPtr<BrowsingContext>>& aToplevels) {
+  
+  BrowsingContext::Children& Toplevels() { return mToplevels; }
+  void GetToplevels(BrowsingContext::Children& aToplevels) {
     aToplevels.AppendElements(mToplevels);
   }
-
-  uint64_t Id() { return mId; }
 
   nsISupports* GetParentObject() const;
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  
-  static already_AddRefed<BrowsingContextGroup> GetOrCreate(uint64_t aId);
-  static already_AddRefed<BrowsingContextGroup> Create();
+  BrowsingContextGroup();
+
   static already_AddRefed<BrowsingContextGroup> Select(
-      WindowContext* aParent, BrowsingContext* aOpener);
+      BrowsingContext* aParent, BrowsingContext* aOpener) {
+    if (aParent) {
+      return do_AddRef(aParent->Group());
+    }
+    if (aOpener) {
+      return do_AddRef(aOpener->Group());
+    }
+    return MakeAndAddRef<BrowsingContextGroup>();
+  }
+
+  static already_AddRefed<BrowsingContextGroup> Select(uint64_t aParentId,
+                                                       uint64_t aOpenerId) {
+    RefPtr<BrowsingContext> parent = BrowsingContext::Get(aParentId);
+    MOZ_RELEASE_ASSERT(parent || aParentId == 0);
+
+    RefPtr<BrowsingContext> opener = BrowsingContext::Get(aOpenerId);
+    MOZ_RELEASE_ASSERT(opener || aOpenerId == 0);
+
+    return Select(parent, opener);
+  }
 
   
   
@@ -114,17 +135,12 @@ class BrowsingContextGroup final : public nsWrapperCache {
     return mWorkerEventQueue;
   }
 
-  static void GetAllGroups(nsTArray<RefPtr<BrowsingContextGroup>>& aGroups);
-
  private:
   friend class CanonicalBrowsingContext;
 
-  explicit BrowsingContextGroup(uint64_t aId);
   ~BrowsingContextGroup();
 
   void UnsubscribeAllContentParents();
-
-  uint64_t mId;
 
   
   
@@ -132,7 +148,7 @@ class BrowsingContextGroup final : public nsWrapperCache {
   nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mContexts;
 
   
-  nsTArray<RefPtr<BrowsingContext>> mToplevels;
+  BrowsingContext::Children mToplevels;
 
   
   
@@ -141,6 +157,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
   nsRefPtrHashtable<nsCStringHashKey, DocGroup> mDocGroups;
 
   ContentParents mSubscribers;
+
+  
+  nsTHashtable<nsRefPtrHashKey<BrowsingContext>> mCachedContexts;
 
   
   

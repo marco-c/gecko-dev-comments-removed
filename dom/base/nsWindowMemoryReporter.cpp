@@ -68,7 +68,7 @@ static nsresult AddNonJSSizeOfWindowAndItsDescendents(
   }
 
   
-  for (const auto& frame : bc->Children()) {
+  for (const auto& frame : bc->GetChildren()) {
     if (auto* childWin = nsGlobalWindowOuter::Cast(frame->GetDOMWindow())) {
       MOZ_TRY(AddNonJSSizeOfWindowAndItsDescendents(childWin, aSizes));
     }
