@@ -589,13 +589,14 @@ class WebConsoleUI {
 
 
   async handleTabNavigated(packet) {
+    
+    
+    await this.wrapper.waitAsyncDispatches();
+
     if (!packet.nativeConsoleAPI) {
       this.logWarningAboutReplacedAPI();
     }
 
-    
-    
-    await this.wrapper.waitAsyncDispatches();
     this.emit("reloaded");
   }
 
