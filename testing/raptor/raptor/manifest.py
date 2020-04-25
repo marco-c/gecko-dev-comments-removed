@@ -39,7 +39,21 @@ playback_settings = [
 ]
 
 whitelist_live_site_tests = [
+    "booking-sf",
+    "discord",
+    "expedia",
+    "fashionbeans",
+    "google-accounts",
+    "imdb-firefox",
+    "medium-article",
+    "nytimes",
+    "people-article",
     "raptor-youtube-playback",
+    "reddit-thread",
+    "rumble-fox",
+    "stackoverflow-question",
+    "urbandictionary-define",
+    "wikia-marvel",
 ]
 
 
@@ -330,7 +344,10 @@ def get_raptor_test_list(args, oskey):
     
     if args.live_sites:
         for next_test in tests_to_run:
+            
+            
             next_test['use_live_sites'] = "true"
+            next_test['playback'] = None
 
     
     
@@ -339,6 +356,17 @@ def get_raptor_test_list(args, oskey):
         LOG.info("configuring settings for test %s" % next_test['name'])
         max_page_cycles = next_test.get('page_cycles', 1)
         max_browser_cycles = next_test.get('browser_cycles', 1)
+
+        
+        
+        
+        if next_test.get('playback') is not None:
+            next_test['playback_pageset_manifest'] = \
+                transform_subtest(next_test['playback_pageset_manifest'],
+                                  next_test['name'])
+            next_test['playback_recordings'] = \
+                transform_subtest(next_test['playback_recordings'],
+                                  next_test['name'])
 
         if args.gecko_profile is True:
             next_test['gecko_profile'] = True
@@ -446,15 +474,6 @@ def get_raptor_test_list(args, oskey):
             next_test['page_timeout'] = int(
                 next_test['page_timeout']) * LIVE_SITE_TIMEOUT_MULTIPLIER
             LOG.info("using live sites so using page timeout of %dms" % next_test['page_timeout'])
-
-        
-        if next_test.get('playback') is not None:
-            next_test['playback_pageset_manifest'] = \
-                transform_subtest(next_test['playback_pageset_manifest'],
-                                  next_test['name'])
-            next_test['playback_recordings'] = \
-                transform_subtest(next_test['playback_recordings'],
-                                  next_test['name'])
 
         
         
