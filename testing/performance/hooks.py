@@ -2,7 +2,7 @@
 
 
 import os
-from mozperftest.utils import add_options, add_option
+from mozperftest.browser.browsertime import add_options, add_option
 
 
 sites = os.path.join(os.path.dirname(__file__), "sites.txt")
