@@ -304,6 +304,7 @@ class MarionetteParentProcess {
     if (env.exists(ENV_ENABLED)) {
       this.enabled = true;
     } else {
+      
       this.enabled = MarionettePrefs.enabled;
     }
 
@@ -312,6 +313,19 @@ class MarionetteParentProcess {
     }
 
     Services.ppmm.addMessageListener("Marionette:IsRunning", this);
+  }
+
+  get enabled() {
+    return !!this._enabled;
+  }
+
+  set enabled(value) {
+    if (value) {
+      
+      MarionettePrefs.enabled = value;
+    }
+
+    this._enabled = value;
   }
 
   get running() {

@@ -135,6 +135,10 @@ class MarionetteBranch extends Branch {
     return this.get("enabled", false);
   }
 
+  set enabled(isEnabled) {
+    this.set("enabled", isEnabled);
+  }
+
   
 
 

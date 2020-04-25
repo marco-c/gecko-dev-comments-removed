@@ -94,8 +94,6 @@ class GeckoInstance(object):
         "javascript.options.showInConsole": True,
 
         
-        "marionette.enabled": True,
-        
         "marionette.defaultPrefs.enabled": True,
 
         
