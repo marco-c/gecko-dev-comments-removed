@@ -119,6 +119,11 @@ class SharedContext {
  public:
   SourceExtent extent;
 
+  
+  
+  
+  mozilla::Maybe<SourceExtent> scriptExtent;
+
  protected:
   bool allowNewTarget_ : 1;
   bool allowSuperProperty_ : 1;
@@ -265,6 +270,8 @@ class SharedContext {
     localStrict = strict;
     return retVal;
   }
+
+  SourceExtent getScriptExtent() { return scriptExtent.refOr(extent); }
 };
 
 class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
