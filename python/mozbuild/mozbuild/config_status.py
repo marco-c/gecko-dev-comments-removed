@@ -111,7 +111,7 @@ def config_status(topobjdir='.', topsrcdir='.', defines=None,
 
     
     if not options.not_topobjdir:
-        topobjdir = os.path.abspath('.')
+        topobjdir = os.path.realpath('.')
 
     env = ConfigEnvironment(topsrcdir, topobjdir, defines=defines,
                             non_global_defines=non_global_defines, substs=substs,
