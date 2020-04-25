@@ -205,6 +205,8 @@ OptimizationSchema = voluptuous.Any(
     
     
     {'index-search': [text_type]},
+    {'push-interval-10': list(schedules.ALL_COMPONENTS)},
+    {'push-interval-25': list(schedules.ALL_COMPONENTS)},
     
     {'seta': None},
     
