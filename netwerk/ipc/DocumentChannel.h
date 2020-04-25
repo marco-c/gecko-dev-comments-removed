@@ -45,9 +45,6 @@ class DocumentChannel : public nsIIdentChannel, public nsITraceableChannel {
 
   NS_DECLARE_STATIC_IID_ACCESSOR(DOCUMENT_CHANNEL_IID)
 
-  DocumentChannel(nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
-                  nsLoadFlags aLoadFlags, uint32_t aCacheKey);
-
   const nsTArray<DocumentChannelRedirect>& GetRedirectChain() const {
     return mRedirects;
   }
@@ -65,7 +62,23 @@ class DocumentChannel : public nsIIdentChannel, public nsITraceableChannel {
     mInitialClientInfo = aInfo;
   }
 
+  
+
+
+
+
+
+  static already_AddRefed<DocumentChannel> CreateDocumentChannel(
+      nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
+      nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks,
+      uint32_t aCacheKey);
+
+  static bool CanUseDocumentChannel(nsDocShellLoadState* aLoadState);
+
  protected:
+  DocumentChannel(nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
+                  nsLoadFlags aLoadFlags, uint32_t aCacheKey);
+
   void ShutdownListeners(nsresult aStatusCode);
   void DisconnectChildListeners(const nsresult& aStatus,
                                 const nsresult& aLoadGroupStatus);
