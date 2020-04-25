@@ -180,9 +180,7 @@ nsresult nsPrintObject::InitAsRootObject(nsIDocShell* aDocShell, Document* aDoc,
     
 
     
-    RefPtr<BrowsingContext> bc = BrowsingContext::CreateWindowless(
-         nullptr,
-         nullptr, EmptyString(),
+    RefPtr<BrowsingContext> bc = BrowsingContext::CreateIndependent(
         nsDocShell::Cast(aDocShell)->GetBrowsingContext()->GetType());
 
     

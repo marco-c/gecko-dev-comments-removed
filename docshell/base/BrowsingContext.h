@@ -169,24 +169,23 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   }
 
   
-  static already_AddRefed<BrowsingContext> Create(BrowsingContext* aParent,
-                                                  BrowsingContext* aOpener,
-                                                  const nsAString& aName,
-                                                  Type aType);
+  
+  
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<BrowsingContext> CreateIndependent(Type aType);
 
+  
+  
+  
   
   
   
   static already_AddRefed<BrowsingContext> CreateDetached(
-      BrowsingContext* aParent, BrowsingContext* aOpener,
-      const nsAString& aName, Type aType);
-
-  
-  
-  
-  
-  
-  static already_AddRefed<BrowsingContext> CreateWindowless(
       BrowsingContext* aParent, BrowsingContext* aOpener,
       const nsAString& aName, Type aType);
 
