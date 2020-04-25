@@ -9,7 +9,76 @@
 
 #include "unicode/ubidi.h"
 #include "ICUUtils.h"
-#include "nsIFrame.h"  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef uint8_t nsBidiLevel;
+
+
+
+
+
+
+#define NSBIDI_DEFAULT_LTR 0xfe
+
+
+
+
+
+
+#define NSBIDI_DEFAULT_RTL 0xff
+
+
+
+
+
+
+#define NSBIDI_MAX_EXPLICIT_LEVEL 125
+
+
+
+
+#define NSBIDI_LEVEL_OVERRIDE 0x80
+
+
+
+
+enum nsBidiDirection {
+  
+  NSBIDI_LTR,
+  
+  NSBIDI_RTL,
+  
+  NSBIDI_MIXED
+};
 
 
 

@@ -62,6 +62,7 @@
 #include "nsFrameList.h"
 #include "nsFrameState.h"
 #include "mozilla/ReflowOutput.h"
+#include "nsBidi.h"
 #include "nsITheme.h"
 #include "nsLayoutUtils.h"
 #include "nsQueryFrame.h"
@@ -381,76 +382,6 @@ std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 #define NS_FRAME_OVERFLOW_LARGE 0x000000ff
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef uint8_t nsBidiLevel;
-
-
-
-
-
-
-#define NSBIDI_DEFAULT_LTR 0xfe
-
-
-
-
-
-
-#define NSBIDI_DEFAULT_RTL 0xff
-
-
-
-
-
-
-#define NSBIDI_MAX_EXPLICIT_LEVEL 125
-
-
-
-
-#define NSBIDI_LEVEL_OVERRIDE 0x80
-
-
-
-
-enum nsBidiDirection {
-  
-  NSBIDI_LTR,
-  
-  NSBIDI_RTL,
-  
-  NSBIDI_MIXED
-};
 
 namespace mozilla {
 
