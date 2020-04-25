@@ -3,7 +3,6 @@
 
 
 extern crate hashbrown;
-extern crate hashglobe;
 extern crate smallvec;
 
 use hashbrown::hash_map::Entry;
