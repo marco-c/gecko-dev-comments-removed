@@ -1885,6 +1885,11 @@ void nsDisplayListBuilder::MarkPreserve3DFramesForDisplayList(
       if (child->Combines3DTransformWithAncestors()) {
         MarkFrameForDisplay(child, aDirtyFrame);
       }
+
+      if (child->IsBlockWrapper()) {
+        
+        MarkPreserve3DFramesForDisplayList(child);
+      }
     }
   }
 }
