@@ -97,7 +97,7 @@ class FindBarChild extends JSWindowActorChild {
       return FindBarContent.onKeypress(event);
     }
 
-    if (event.charCode && BrowserUtils.shouldFastFind(event.target)) {
+    if (event.charCode && this.shouldFastFind(event.target)) {
       let key = String.fromCharCode(event.charCode);
       if ((key == "/" || key == "'") && FindBarChild.manualFAYT) {
         return FindBarContent.startQuickFind(event);
@@ -107,6 +107,42 @@ class FindBarChild extends JSWindowActorChild {
       }
     }
     return null;
+  }
+
+  
+
+
+
+
+
+  shouldFastFind(elt) {
+    if (elt) {
+      let win = elt.ownerGlobal;
+      if (elt instanceof win.HTMLInputElement && elt.mozIsTextField(false)) {
+        return false;
+      }
+
+      if (elt.isContentEditable || win.document.designMode == "on") {
+        return false;
+      }
+
+      if (
+        elt instanceof win.HTMLTextAreaElement ||
+        elt instanceof win.HTMLSelectElement ||
+        elt instanceof win.HTMLObjectElement ||
+        elt instanceof win.HTMLEmbedElement
+      ) {
+        return false;
+      }
+
+      if (elt instanceof win.HTMLIFrameElement && elt.mozbrowser) {
+        
+        
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 

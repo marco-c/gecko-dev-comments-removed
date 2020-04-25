@@ -389,8 +389,6 @@ function openLinkIn(url, where, params) {
   }
 
   if (where == "save") {
-    
-    
     if ("isContentWindowPrivate" in params) {
       saveURL(
         url,

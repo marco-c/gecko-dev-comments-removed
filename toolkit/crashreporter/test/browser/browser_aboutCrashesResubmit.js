@@ -103,6 +103,7 @@ function check_submit_pending(tab, crashes) {
       }
 
       
+      
       BrowserTestUtils.waitForEvent(browser, "pageshow", true).then(
         csp_pageshow
       );

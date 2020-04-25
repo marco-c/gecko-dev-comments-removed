@@ -3158,32 +3158,7 @@ function readFromClipboard() {
 
 
 
-
-
-
-
-
-async function BrowserViewSourceOfDocument(aArgsOrDocument) {
-  let args;
-
-  if (aArgsOrDocument instanceof Document) {
-    let doc = aArgsOrDocument;
-    
-    if (Cu.isCrossProcessWrapper(doc)) {
-      throw new Error(
-        "BrowserViewSourceOfDocument cannot accept a CPOW as a document."
-      );
-    }
-
-    let win = doc.defaultView;
-    let browser = win.docShell.chromeEventHandler;
-    let outerWindowID = win.windowUtils.outerWindowID;
-    let URL = browser.currentURI.spec;
-    args = { browser, outerWindowID, URL };
-  } else {
-    args = aArgsOrDocument;
-  }
-
+async function BrowserViewSourceOfDocument(args) {
   
   
   if (Services.prefs.getBoolPref("view_source.editor.external")) {
