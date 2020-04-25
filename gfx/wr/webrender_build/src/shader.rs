@@ -13,8 +13,35 @@ use std::io::Read;
 use std::path::Path;
 use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
+use crate::MAX_VERTEX_TEXTURE_WIDTH;
 
 pub use crate::shader_features::*;
+
+lazy_static! {
+    static ref MAX_VERTEX_TEXTURE_WIDTH_STRING: String = MAX_VERTEX_TEXTURE_WIDTH.to_string();
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ShaderKind {
+    Vertex,
+    Fragment,
+}
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum ShaderVersion {
+    Gl,
+    Gles,
+}
+
+impl ShaderVersion {
+    
+    pub fn variant_name(&self) -> &'static str {
+        match self {
+            ShaderVersion::Gl => "ShaderVersion::Gl",
+            ShaderVersion::Gles => "ShaderVersion::Gles",
+        }
+    }
+}
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Default)]
 #[cfg_attr(feature = "serialize_program", derive(Deserialize, Serialize))]
@@ -84,4 +111,112 @@ pub fn shader_source_from_file(shader_path: &Path) -> String {
         .read_to_string(&mut source)
         .unwrap();
     source
+}
+
+
+pub fn build_shader_strings<G: Fn(&str) -> Cow<'static, str>>(
+    gl_version: ShaderVersion,
+    features: &[&str],
+    base_filename: &str,
+    get_source: &G,
+) -> (String, String) {
+   let mut vs_source = String::new();
+   do_build_shader_string(
+       gl_version,
+       features,
+       ShaderKind::Vertex,
+       base_filename,
+       get_source,
+       |s| vs_source.push_str(s),
+   );
+
+   let mut fs_source = String::new();
+   do_build_shader_string(
+       gl_version,
+       features,
+       ShaderKind::Fragment,
+       base_filename,
+       get_source,
+       |s| fs_source.push_str(s),
+   );
+
+   (vs_source, fs_source)
+}
+
+
+
+
+pub fn do_build_shader_string<F: FnMut(&str), G: Fn(&str) -> Cow<'static, str>>(
+   gl_version: ShaderVersion,
+   features: &[&str],
+   kind: ShaderKind,
+   base_filename: &str,
+   get_source: &G,
+   mut output: F,
+) {
+   build_shader_prefix_string(gl_version, features, kind, base_filename, &mut output);
+   build_shader_main_string(base_filename, get_source, &mut output);
+}
+
+
+
+pub fn build_shader_prefix_string<F: FnMut(&str)>(
+   gl_version: ShaderVersion,
+   features: &[&str],
+   kind: ShaderKind,
+   base_filename: &str,
+   output: &mut F,
+) {
+    
+    let gl_version_string = match gl_version {
+        ShaderVersion::Gl => "#version 150\n",
+        ShaderVersion::Gles => "#version 300 es\n",
+    };
+    output(gl_version_string);
+
+    
+    output("// shader: ");
+    output(base_filename);
+    output(" ");
+    for (i, feature) in features.iter().enumerate() {
+        output(feature);
+        if i != features.len() - 1 {
+            output("_");
+        }
+    }
+    output("\n");
+
+    
+    let kind_string = match kind {
+        ShaderKind::Vertex => "#define WR_VERTEX_SHADER\n",
+        ShaderKind::Fragment => "#define WR_FRAGMENT_SHADER\n",
+    };
+    output(kind_string);
+
+    
+    output("#define WR_MAX_VERTEX_TEXTURE_WIDTH ");
+    output(&MAX_VERTEX_TEXTURE_WIDTH_STRING);
+    output("U\n");
+
+    
+    for feature in features {
+        assert!(!feature.is_empty());
+        output("#define WR_FEATURE_");
+        output(feature);
+        output("\n");
+    }
+}
+
+
+pub fn build_shader_main_string<F: FnMut(&str), G: Fn(&str) -> Cow<'static, str>>(
+   base_filename: &str,
+   get_source: &G,
+   output: &mut F,
+) {
+   let shared_source = get_source(base_filename);
+   ShaderSourceParser::new().parse(
+       shared_source,
+       &|f| get_source(f),
+       output
+   );
 }
