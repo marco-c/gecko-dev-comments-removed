@@ -5,7 +5,6 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const Services = require("Services");
 
 class ResourceWatcher {
   
@@ -308,47 +307,6 @@ module.exports = { ResourceWatcher };
 
 
 const LegacyListeners = {
-  
-  
-  async [ResourceWatcher.TYPES.CONSOLE_MESSAGES]({
-    targetList,
-    targetType,
-    targetFront,
-    isTopLevel,
-    onAvailable,
-  }) {
-    
-    
-    
-    
-    
-    const isContentToolbox = targetList.targetFront.isLocalTab;
-    const listenForFrames =
-      isContentToolbox &&
-      Services.prefs.getBoolPref("devtools.contenttoolbox.fission");
-    const isAllowed =
-      isTopLevel ||
-      targetType === targetList.TYPES.PROCESS ||
-      (targetType === targetList.TYPES.FRAME && listenForFrames);
-
-    if (!isAllowed) {
-      return;
-    }
-
-    const webConsoleFront = await targetFront.getFront("console");
-
-    
-    await webConsoleFront.startListeners(["ConsoleAPI"]);
-
-    
-    
-    const { messages } = await webConsoleFront.getCachedMessages([
-      "ConsoleAPI",
-    ]);
-    
-    messages.map(message => ({ message })).forEach(onAvailable);
-
-    
-    webConsoleFront.on("consoleAPICall", onAvailable);
-  },
+  [ResourceWatcher.TYPES
+    .CONSOLE_MESSAGES]: require("devtools/shared/resources/legacy-listeners/console-messages"),
 };
