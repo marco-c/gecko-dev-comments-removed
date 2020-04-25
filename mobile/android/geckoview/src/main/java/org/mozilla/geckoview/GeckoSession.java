@@ -129,7 +129,6 @@ public class GeckoSession implements Parcelable {
     
     private PanZoomController mPanZoomController = new PanZoomController(this);
     private OverscrollEdgeEffect mOverscroll;
-    private DynamicToolbarAnimator mToolbar;
     private CompositorController mController;
     private Autofill.Support mAutofillSupport;
 
@@ -231,9 +230,6 @@ public class GeckoSession implements Parcelable {
         public native void setFixedBottomOffset(int offset);
 
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void setPinned(boolean pinned, int reason);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void sendToolbarAnimatorMessage(int message);
 
         @WrapForJNI(calledFrom = "ui")
@@ -252,10 +248,6 @@ public class GeckoSession implements Parcelable {
 
         @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
         public native void enableLayerUpdateNotifications(boolean enable);
-
-        @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
-        public native void sendToolbarPixelsToCompositor(final int width, final int height,
-                                                         final int[] pixels);
 
         
         
@@ -2828,10 +2820,6 @@ public class GeckoSession implements Parcelable {
             ThreadUtils.assertOnUiThread();
         }
 
-        if (mToolbar != null) {
-            mToolbar.setPinned(pinned, DynamicToolbarAnimator.PinReason.CARET_DRAG);
-        }
-
         mShouldPinOnScreen = pinned;
     }
 
@@ -5052,21 +5040,6 @@ public class GeckoSession implements Parcelable {
 
 
     @UiThread
-    public @NonNull DynamicToolbarAnimator getDynamicToolbarAnimator() {
-        ThreadUtils.assertOnUiThread();
-
-        if (mToolbar == null) {
-            mToolbar = new DynamicToolbarAnimator(this);
-        }
-        return mToolbar;
-    }
-
-    
-
-
-
-
-    @UiThread
     public @NonNull CompositorController getCompositorController() {
         ThreadUtils.assertOnUiThread();
 
@@ -5735,22 +5708,8 @@ public class GeckoSession implements Parcelable {
                 break;
             }
 
-            case STATIC_TOOLBAR_READY:
-            case TOOLBAR_SHOW: {
-                if (mToolbar != null) {
-                    mToolbar.handleToolbarAnimatorMessage(message);
-                    
-                    onWindowBoundsChanged();
-                }
-                break;
-            }
-
             default: {
-                if (mToolbar != null) {
-                    mToolbar.handleToolbarAnimatorMessage(message);
-                } else {
-                    Log.w(LOGTAG, "Unexpected message: " + message);
-                }
+                Log.w(LOGTAG, "Unexpected message: " + message);
                 break;
             }
         }
@@ -5780,10 +5739,6 @@ public class GeckoSession implements Parcelable {
             
             onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
             mSurface = null;
-        }
-
-        if (mToolbar != null) {
-            mToolbar.onCompositorReady();
         }
 
         if (mFixedBottomOffset != 0) {
@@ -5842,12 +5797,7 @@ public class GeckoSession implements Parcelable {
                           mHeight + ")"));
         }
 
-        final int toolbarHeight;
-        if (mToolbar != null) {
-            toolbarHeight = mToolbar.getCurrentToolbarHeight();
-        } else {
-            toolbarHeight = 0;
-        }
+        final int toolbarHeight = 0;
 
         mClientTop = mTop + toolbarHeight;
         
