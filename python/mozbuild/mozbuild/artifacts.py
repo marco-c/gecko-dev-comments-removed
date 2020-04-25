@@ -477,6 +477,7 @@ class MacArtifactJob(ArtifactJob):
         
         'libmozavutil.dylib',
         'libmozavcodec.dylib',
+        'liboggwasm.dylib',
         'libosclientcerts.dylib',
         'libsoftokn3.dylib',
         'minidump-analyzer',
