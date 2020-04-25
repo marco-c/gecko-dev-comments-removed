@@ -294,7 +294,11 @@ function runAllTests(withStoragePrincipalEnabled, prefValue) {
           ifr2.contentWindow.postMessage("getEvents", "*");
         });
 
-        is(events, 0, "No events");
+        if (obj.withStoragePrincipalEnabled || obj.dynamicFPITest) {
+          is(events, 1, "one event");
+        } else {
+          is(events, 0, "No events");
+        }
       }
     );
 

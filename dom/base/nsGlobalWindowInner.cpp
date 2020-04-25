@@ -4508,23 +4508,25 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     cookieJarSettings = net::CookieJarSettings::GetBlockingAll();
   }
 
-  bool partitioningEnabled =
-      StoragePartitioningEnabled(access, cookieJarSettings);
-  bool shouldPartition = ShouldPartitionStorage(access);
-  bool partition = partitioningEnabled && shouldPartition;
+  
+  
+  
+  
+  
+  if (mLocalStorage) {
+    if ((mLocalStorage->Type() == (isolated ? Storage::ePartitionedLocalStorage
+                                            : Storage::eLocalStorage)) &&
+        (mLocalStorage->StoragePrincipal() == GetEffectiveStoragePrincipal())) {
+      return mLocalStorage;
+    }
 
-  
-  
-  
-  
-  
-  if ((partitioningEnabled || !shouldPartition) &&
-      ((mLocalStorage && ((mLocalStorage->Type() !=
-                           (partition ? Storage::ePartitionedLocalStorage
-                                      : Storage::eLocalStorage)) ||
-                          mLocalStorage->StoragePrincipal() !=
-                              GetEffectiveStoragePrincipal())) ||
-       (!partition && !mLocalStorage))) {
+    
+    mLocalStorage = nullptr;
+  }
+
+  MOZ_ASSERT(!mLocalStorage);
+
+  if (!isolated) {
     RefPtr<Storage> storage;
 
     if (NextGenLocalStorageEnabled()) {
@@ -4568,11 +4570,7 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
     }
 
     mLocalStorage = storage;
-    MOZ_ASSERT(mLocalStorage);
-  }
-
-  if (((partitioningEnabled && shouldPartition) || isolated) &&
-      !mLocalStorage) {
+  } else {
     nsresult rv;
     nsCOMPtr<nsIDOMSessionStorageManager> storageManager =
         do_GetService("@mozilla.org/dom/sessionStorage-manager;1", &rv);
@@ -4610,10 +4608,10 @@ Storage* nsGlobalWindowInner::GetLocalStorage(ErrorResult& aError) {
         new PartitionedLocalStorage(this, principal, storagePrincipal, cache);
   }
 
-  MOZ_ASSERT_IF(!partitioningEnabled,
-                shouldPartition == (mLocalStorage->Type() ==
-                                    Storage::ePartitionedLocalStorage));
-
+  MOZ_ASSERT(mLocalStorage);
+  MOZ_ASSERT(
+      mLocalStorage->Type() ==
+      (isolated ? Storage::ePartitionedLocalStorage : Storage::eLocalStorage));
   return mLocalStorage;
 }
 
