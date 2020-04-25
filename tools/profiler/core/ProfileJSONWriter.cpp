@@ -49,6 +49,12 @@ void ChunkedJSONWriteFunc::CopyDataIntoLazilyAllocatedBuffer(
     const std::function<char*(size_t)>& aAllocator) const {
   size_t totalLen = GetTotalLength();
   char* ptr = aAllocator(totalLen);
+
+  if (!ptr) {
+    
+    return;
+  }
+
   for (size_t i = 0; i < mChunkList.length(); i++) {
     size_t len = mChunkLengths[i];
     memcpy(ptr, mChunkList[i].get(), len);
