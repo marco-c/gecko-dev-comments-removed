@@ -686,7 +686,9 @@ class ExtensionData {
   }
 
   
-  static shouldPromptFor(permission) {
+  static async shouldPromptFor(permission) {
+    
+    await Management.lazyInit();
     return !NO_PROMPT_PERMISSIONS.has(permission);
   }
 
@@ -1545,14 +1547,12 @@ class ExtensionData {
       if (permission == "nativeMessaging") {
         continue;
       }
-      if (!ExtensionData.shouldPromptFor(permission)) {
-        continue;
+      try {
+        result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
+      } catch (err) {
+        
+        
       }
-      
-      
-      
-      
-      result.msgs.push(bundle.GetStringFromName(permissionKey(permission)));
     }
 
     const haveAccessKeys = AppConstants.platform !== "android";
