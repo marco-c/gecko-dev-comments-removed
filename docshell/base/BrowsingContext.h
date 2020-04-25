@@ -217,6 +217,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   
+  Document* GetDocument() const {
+    return mDocShell ? mDocShell->GetDocument() : nullptr;
+  }
+
+  
+  
   
   
   
@@ -278,6 +284,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool IsTop() const { return !GetParent(); }
 
   bool IsTopContent() const { return IsContent() && !GetParent(); }
+
+  bool IsInSubtreeOf(BrowsingContext* aContext);
 
   bool IsContentSubframe() const { return IsContent() && GetParent(); }
   uint64_t Id() const { return mBrowsingContextId; }
