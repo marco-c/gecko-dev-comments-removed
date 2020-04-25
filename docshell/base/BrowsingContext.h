@@ -260,7 +260,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void RestoreChildren(Children&& aChildren, bool aFromIPC = false);
 
   
-  nsresult LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating = false);
+  nsresult LoadURI(nsDocShellLoadState* aLoadState,
+                   bool aSetNavigating = false);
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState,
                         nsIDocShell** aDocShell, nsIRequest** aRequest);
@@ -352,6 +353,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   }
 
   BrowsingContextGroup* Group() { return mGroup; }
+
+  
+  Nullable<WindowProxyHolder> GetAssociatedWindow();
+  Nullable<WindowProxyHolder> GetTopWindow();
+  Element* GetTopFrameElement();
+  bool GetIsContent() { return IsContent(); }
+  void SetUsePrivateBrowsing(bool aUsePrivateBrowsing, ErrorResult& aError);
+  
+  
+  void SetUseTrackingProtectionWebIDL(bool aUseTrackingProtection);
+  bool UseTrackingProtectionWebIDL() { return UseTrackingProtection(); }
+  void GetOriginAttributes(JSContext* aCx, JS::MutableHandle<JS::Value> aVal,
+                           ErrorResult& aError);
 
   bool InRDMPane() const { return GetInRDMPane(); }
 
