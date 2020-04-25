@@ -15,7 +15,7 @@ use crate::font_metrics::FontMetricsProvider;
 use crate::properties::animated_properties::{AnimatedProperty, TransitionPropertyIteration};
 use crate::properties::longhands::animation_direction::computed_value::single_value::T as AnimationDirection;
 use crate::properties::longhands::animation_play_state::computed_value::single_value::T as AnimationPlayState;
-use crate::properties::{self, CascadeMode, ComputedValues, LonghandId};
+use crate::properties::{self, CascadeMode, ComputedValues, LonghandId, LonghandIdSet};
 use crate::stylesheets::keyframes_rule::{KeyframesAnimation, KeyframesStep, KeyframesStepValue};
 use crate::stylesheets::Origin;
 use crate::timer::Timer;
@@ -245,6 +245,17 @@ impl Animation {
             Animation::Keyframes(..) => false,
         }
     }
+
+    
+    #[inline]
+    pub fn is_transition_with_same_end_value(&self, other_animation: &PropertyAnimation) -> bool {
+        match *self {
+            Animation::Transition(_, _, ref animation) => {
+                animation.has_the_same_end_value_as(other_animation)
+            },
+            Animation::Keyframes(..) => false,
+        }
+    }
 }
 
 
@@ -261,6 +272,11 @@ pub struct PropertyAnimation {
 }
 
 impl PropertyAnimation {
+    
+    pub fn property_id(&self) -> LonghandId {
+        self.property.id()
+    }
+
     
     pub fn property_name(&self) -> &'static str {
         self.property.name()
@@ -354,17 +370,83 @@ impl PropertyAnimation {
 
 
 
-pub fn start_transitions_if_applicable(
+#[cfg(feature = "servo")]
+pub fn update_transitions(
+    context: &SharedStyleContext,
     new_animations_sender: &Sender<Animation>,
     opaque_node: OpaqueNode,
     old_style: &ComputedValues,
     new_style: &mut Arc<ComputedValues>,
-    timer: &Timer,
-    running_and_expired_transitions: &[PropertyAnimation],
-) -> bool {
-    let mut had_animations = false;
+    expired_transitions: &[PropertyAnimation],
+) {
+    let mut all_running_animations = context.running_animations.write();
+    let previously_running_animations = all_running_animations
+        .remove(&opaque_node)
+        .unwrap_or_else(Vec::new);
+
+    let properties_that_transition = start_transitions_if_applicable(
+        context,
+        new_animations_sender,
+        opaque_node,
+        old_style,
+        new_style,
+        expired_transitions,
+        &previously_running_animations,
+    );
+
+    let mut all_cancelled_animations = context.cancelled_animations.write();
+    let mut cancelled_animations = all_cancelled_animations
+        .remove(&opaque_node)
+        .unwrap_or_else(Vec::new);
+    let mut running_animations = vec![];
+
+    
+    
+    for running_animation in previously_running_animations.into_iter() {
+        if let Animation::Transition(_, _, ref property_animation) = running_animation {
+            if !properties_that_transition.contains(property_animation.property_id()) {
+                cancelled_animations.push(running_animation);
+                continue;
+            }
+        }
+        running_animations.push(running_animation);
+    }
+
+    if !cancelled_animations.is_empty() {
+        all_cancelled_animations.insert(opaque_node, cancelled_animations);
+    }
+    if !running_animations.is_empty() {
+        all_running_animations.insert(opaque_node, running_animations);
+    }
+}
+
+
+
+#[cfg(feature = "servo")]
+pub fn start_transitions_if_applicable(
+    context: &SharedStyleContext,
+    new_animations_sender: &Sender<Animation>,
+    opaque_node: OpaqueNode,
+    old_style: &ComputedValues,
+    new_style: &mut Arc<ComputedValues>,
+    expired_transitions: &[PropertyAnimation],
+    running_animations: &[Animation],
+) -> LonghandIdSet {
+    
+    
+    if new_style.get_box().clone_display().is_none() {
+        return LonghandIdSet::new();
+    }
+
+    let mut properties_that_transition = LonghandIdSet::new();
     let transitions: Vec<TransitionPropertyIteration> = new_style.transition_properties().collect();
     for transition in &transitions {
+        if properties_that_transition.contains(transition.longhand_id) {
+            continue;
+        } else {
+            properties_that_transition.insert(transition.longhand_id);
+        }
+
         let property_animation = match PropertyAnimation::from_longhand(
             transition.longhand_id,
             new_style
@@ -389,18 +471,25 @@ pub fn start_transitions_if_applicable(
         
         
         
-        
-        
-        debug!(
-            "checking {:?} for matching end value",
-            running_and_expired_transitions
-        );
-        if running_and_expired_transitions
+        debug!("checking {:?} for matching end value", expired_transitions);
+        if expired_transitions
             .iter()
             .any(|animation| animation.has_the_same_end_value_as(&property_animation))
         {
             debug!(
-                "Not initiating transition for {}, other transition \
+                "Not initiating transition for {}, expired transition \
+                 found with the same end value",
+                property_animation.property_name()
+            );
+            continue;
+        }
+
+        if running_animations
+            .iter()
+            .any(|animation| animation.is_transition_with_same_end_value(&property_animation))
+        {
+            debug!(
+                "Not initiating transition for {}, running transition \
                  found with the same end value",
                 property_animation.property_name()
             );
@@ -410,7 +499,7 @@ pub fn start_transitions_if_applicable(
         
         debug!("Kicking off transition of {:?}", property_animation);
         let box_style = new_style.get_box();
-        let now = timer.seconds();
+        let now = context.timer.seconds();
         let start_time = now + (box_style.transition_delay_mod(transition.index).seconds() as f64);
         new_animations_sender
             .send(Animation::Transition(
@@ -419,11 +508,9 @@ pub fn start_transitions_if_applicable(
                 property_animation,
             ))
             .unwrap();
-
-        had_animations = true;
     }
 
-    had_animations
+    properties_that_transition
 }
 
 fn compute_style_for_animation_step<E>(
@@ -608,12 +695,6 @@ where
             if progress >= 0.0 {
                 property_animation.update(Arc::make_mut(style), progress);
             }
-
-            
-            
-            
-            
-            
             AnimationUpdate::Regular
         },
         Animation::Keyframes(_, ref animation, ref name, ref state) => {

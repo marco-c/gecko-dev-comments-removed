@@ -196,6 +196,10 @@ pub struct SharedStyleContext<'a> {
 
     
     #[cfg(feature = "servo")]
+    pub cancelled_animations: Arc<RwLock<FxHashMap<OpaqueNode, Vec<Animation>>>>,
+
+    
+    #[cfg(feature = "servo")]
     pub registered_speculative_painters: &'a dyn RegisteredSpeculativePainters,
 
     
