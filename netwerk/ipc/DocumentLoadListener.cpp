@@ -239,7 +239,6 @@ NS_INTERFACE_MAP_BEGIN(DocumentLoadListener)
   NS_INTERFACE_MAP_ENTRY(nsIParentChannel)
   NS_INTERFACE_MAP_ENTRY(nsIAsyncVerifyRedirectReadyCallback)
   NS_INTERFACE_MAP_ENTRY(nsIChannelEventSink)
-  NS_INTERFACE_MAP_ENTRY(nsIProcessSwitchRequestor)
   NS_INTERFACE_MAP_ENTRY(nsIMultiPartChannelListener)
   NS_INTERFACE_MAP_ENTRY_CONCRETE(DocumentLoadListener)
 NS_INTERFACE_MAP_END
@@ -957,11 +956,12 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
 
   
   
-  bool isCOOPSwitch = false;
+  bool isCOOPSwitch = HasCrossOriginOpenerPolicyMismatch();
   nsILoadInfo::CrossOriginOpenerPolicy coop =
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
-  MOZ_ALWAYS_SUCCEEDS(HasCrossOriginOpenerPolicyMismatch(&isCOOPSwitch));
-  MOZ_ALWAYS_SUCCEEDS(GetCachedCrossOriginOpenerPolicy(&coop));
+  if (RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel)) {
+    MOZ_ALWAYS_SUCCEEDS(httpChannel->GetCrossOriginOpenerPolicy(&coop));
+  }
 
   nsAutoString preferredRemoteType(currentProcess->GetRemoteType());
   if (coop ==
@@ -1410,10 +1410,8 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(aOldChannel);
   if (httpChannel) {
-    bool mismatch = false;
-    MOZ_ALWAYS_SUCCEEDS(
-        httpChannel->HasCrossOriginOpenerPolicyMismatch(&mismatch));
-    mHasCrossOriginOpenerPolicyMismatch |= mismatch;
+    mHasCrossOriginOpenerPolicyMismatch |=
+        httpChannel->HasCrossOriginOpenerPolicyMismatch();
   }
 
   
@@ -1506,57 +1504,20 @@ DocumentLoadListener::AsyncOnChannelRedirect(
 
 
 
-
-
-NS_IMETHODIMP DocumentLoadListener::GetChannel(nsIChannel** aChannel) {
-  MOZ_ASSERT(mChannel);
-  nsCOMPtr<nsIChannel> channel(mChannel);
-  channel.forget(aChannel);
-  return NS_OK;
-}
-
-
-
-NS_IMETHODIMP
-DocumentLoadListener::HasCrossOriginOpenerPolicyMismatch(bool* aMismatch) {
-  MOZ_ASSERT(aMismatch);
-
-  if (!aMismatch) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
+bool DocumentLoadListener::HasCrossOriginOpenerPolicyMismatch() {
   
   
   if (mHasCrossOriginOpenerPolicyMismatch) {
-    *aMismatch = true;
-    return NS_OK;
+    return true;
   }
 
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
   if (!httpChannel) {
     
-    *aMismatch = false;
-    return NS_OK;
+    return false;
   }
 
-  return httpChannel->HasCrossOriginOpenerPolicyMismatch(aMismatch);
-}
-
-NS_IMETHODIMP
-DocumentLoadListener::GetCachedCrossOriginOpenerPolicy(
-    nsILoadInfo::CrossOriginOpenerPolicy* aPolicy) {
-  MOZ_ASSERT(aPolicy);
-  if (!aPolicy) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
-  if (!httpChannel) {
-    *aPolicy = nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
-    return NS_OK;
-  }
-
-  return httpChannel->GetCrossOriginOpenerPolicy(aPolicy);
+  return httpChannel->HasCrossOriginOpenerPolicyMismatch();
 }
 
 auto DocumentLoadListener::AttachStreamFilter(base::ProcessId aChildProcessId)

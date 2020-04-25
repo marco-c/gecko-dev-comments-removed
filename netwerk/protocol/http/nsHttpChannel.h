@@ -32,7 +32,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/extensions/PStreamFilterParent.h"
 #include "mozilla/Mutex.h"
-#include "nsIProcessSwitchRequestor.h"
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -79,8 +78,7 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsIChannelWithDivertableParentListener,
                             public nsIRaceCacheWithNetwork,
                             public nsIRequestTailUnblockCallback,
-                            public nsITimerCallback,
-                            public nsIProcessSwitchRequestor {
+                            public nsITimerCallback {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUESTOBSERVER
@@ -102,7 +100,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSIRACECACHEWITHNETWORK
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
-  NS_DECL_NSIPROCESSSWITCHREQUESTOR
 
   
   
@@ -488,6 +485,11 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsresult ProcessCrossOriginResourcePolicyHeader();
 
   nsresult ComputeCrossOriginOpenerPolicyMismatch();
+  
+  
+  bool HasCrossOriginOpenerPolicyMismatch() {
+    return mHasCrossOriginOpenerPolicyMismatch;
+  }
 
   
 
