@@ -37,6 +37,7 @@ class WebConsoleConnectionProxy {
 
     this._connecter = null;
 
+    this._onPageError = this._onPageError.bind(this);
     this._onNetworkEvent = this._onNetworkEvent.bind(this);
     this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
     this._onTabNavigated = this._onTabNavigated.bind(this);
@@ -77,8 +78,13 @@ class WebConsoleConnectionProxy {
         );
       await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
 
+      
+      
+      const cachedMessages = await this._getCachedMessages();
       const networkMessages = this._getNetworkMessages();
-      this.dispatchMessagesAdd(networkMessages);
+      const messages = cachedMessages.concat(networkMessages);
+      messages.sort((a, b) => a.timeStamp - b.timeStamp);
+      this.dispatchMessagesAdd(messages);
 
       this._addWebConsoleFrontEventListeners();
 
@@ -114,7 +120,7 @@ class WebConsoleConnectionProxy {
 
 
   _attachConsole() {
-    const listeners = ["NetworkActivity"];
+    const listeners = ["PageError", "NetworkActivity"];
     
     
     
@@ -133,6 +139,7 @@ class WebConsoleConnectionProxy {
   _addWebConsoleFrontEventListeners() {
     this.webConsoleFront.on("networkEvent", this._onNetworkEvent);
     this.webConsoleFront.on("networkEventUpdate", this._onNetworkEventUpdate);
+    this.webConsoleFront.on("pageError", this._onPageError);
     this.webConsoleFront.on(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -151,6 +158,7 @@ class WebConsoleConnectionProxy {
   _removeWebConsoleFrontEventListeners() {
     this.webConsoleFront.off("networkEvent", this._onNetworkEvent);
     this.webConsoleFront.off("networkEventUpdate", this._onNetworkEventUpdate);
+    this.webConsoleFront.off("pageError", this._onPageError);
     this.webConsoleFront.off(
       "lastPrivateContextExited",
       this._onLastPrivateContextExited
@@ -167,8 +175,50 @@ class WebConsoleConnectionProxy {
 
 
 
+
+  async _getCachedMessages() {
+    const response = await this.webConsoleFront.getCachedMessages([
+      "PageError",
+    ]);
+
+    if (response.error) {
+      throw new Error(
+        `Web Console getCachedMessages error: ${response.error} ${response.message}`
+      );
+    }
+
+    if (this.webConsoleFront.traits.newCacheStructure) {
+      return response.messages;
+    }
+
+    
+    return response.messages.filter(message => message._type !== "LogMessage");
+  }
+
+  
+
+
+
+
+
   _getNetworkMessages() {
     return Array.from(this.webConsoleFront.getNetworkEvents());
+  }
+
+  
+
+
+
+
+
+
+
+  _onPageError(packet) {
+    if (!this.webConsoleUI) {
+      return;
+    }
+    packet.type = "pageError";
+    this.dispatchMessageAdd(packet);
   }
 
   _clearLogpointMessages(logpointId) {
