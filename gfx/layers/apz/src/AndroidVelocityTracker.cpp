@@ -32,7 +32,7 @@ static const uint8_t kPolyDegree = kDegree + 1;
 static const uint8_t kHistorySize = 20;
 
 AndroidVelocityTracker::AndroidVelocityTracker()
-    : mLastEventTime(0), mAdditionalDelta(0) {}
+    : mLastEventTime(0) {}
 
 void AndroidVelocityTracker::StartTracking(ParentLayerCoord aPos,
                                            uint32_t aTimestampMs) {
@@ -46,8 +46,6 @@ Maybe<float> AndroidVelocityTracker::AddPosition(ParentLayerCoord aPos,
   if ((aTimestampMs - mLastEventTime) >= kAssumePointerMoveStoppedTimeMs) {
     Clear();
   }
-
-  aPos += mAdditionalDelta;
 
   if (aTimestampMs == mLastEventTime) {
     
@@ -72,24 +70,6 @@ Maybe<float> AndroidVelocityTracker::AddPosition(ParentLayerCoord aPos,
   auto start = mHistory[mHistory.Length() - 2];
   auto end = mHistory[mHistory.Length() - 1];
   return Some((end.second - start.second) / (end.first - start.first));
-}
-
-float AndroidVelocityTracker::HandleDynamicToolbarMovement(
-    uint32_t aStartTimestampMs, uint32_t aEndTimestampMs,
-    ParentLayerCoord aDelta) {
-  
-  
-  
-  
-  
-  
-  
-  
-  mAdditionalDelta += aDelta;
-
-  float timeDelta = aEndTimestampMs - aStartTimestampMs;
-  MOZ_ASSERT(timeDelta != 0);
-  return aDelta / timeDelta;
 }
 
 static float VectorDot(const float* a, const float* b, uint32_t m) {
@@ -296,7 +276,6 @@ Maybe<float> AndroidVelocityTracker::ComputeVelocity(uint32_t aTimestampMs) {
 }
 
 void AndroidVelocityTracker::Clear() {
-  mAdditionalDelta = 0;
   mHistory.Clear();
 }
 

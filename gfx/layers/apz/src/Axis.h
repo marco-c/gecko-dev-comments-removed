@@ -61,16 +61,6 @@ class VelocityTracker {
 
 
 
-  virtual float HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
-                                             uint32_t aEndTimestampMs,
-                                             ParentLayerCoord aDelta) = 0;
-  
-
-
-
-
-
-
   virtual Maybe<float> ComputeVelocity(uint32_t aTimestampMs) = 0;
   
 
@@ -98,10 +88,6 @@ class Axis {
                                     uint32_t aTimestampMs);
 
  public:
-  void HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
-                                    uint32_t aEndTimestampMs,
-                                    ParentLayerCoord aDelta);
-
   
 
 

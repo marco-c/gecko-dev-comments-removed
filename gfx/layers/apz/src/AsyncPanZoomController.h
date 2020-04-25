@@ -363,17 +363,6 @@ class AsyncPanZoomController {
   
 
 
-
-
-
-
-  void HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
-                                    uint32_t aEndTimestampMs,
-                                    ParentLayerCoord aDeltaY);
-
-  
-
-
   void StartAutoscroll(const ScreenPoint& aAnchorLocation);
 
   
@@ -411,17 +400,6 @@ class AsyncPanZoomController {
 
 
   void CancelAnimation(CancelAnimationFlags aFlags = Default);
-
-  
-
-
-
-
-
-
-
-
-  void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
 
   
 

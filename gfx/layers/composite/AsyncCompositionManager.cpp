@@ -1045,25 +1045,17 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
                 Compositor* compositor = mLayerManager->GetCompositor();
                 if (CompositorBridgeParent* bridge =
                         compositor->GetCompositorBridgeParent()) {
-                  AndroidDynamicToolbarAnimator* animator =
-                      bridge->GetAndroidDynamicToolbarAnimator();
 
                   LayersId rootLayerTreeId = bridge->RootLayerTreeId();
                   if (mIsFirstPaint || FrameMetricsHaveUpdated(metrics)) {
-                    if (animator) {
-                      animator->UpdateRootFrameMetrics(metrics);
-                    } else if (RefPtr<UiCompositorControllerParent>
-                                   uiController = UiCompositorControllerParent::
-                                       GetFromRootLayerTreeId(
-                                           rootLayerTreeId)) {
+                    if (RefPtr<UiCompositorControllerParent> uiController =
+                            UiCompositorControllerParent::
+                                GetFromRootLayerTreeId(rootLayerTreeId)) {
                       uiController->NotifyUpdateScreenMetrics(metrics);
                     }
                     mLastMetrics = metrics;
                   }
                   if (mIsFirstPaint) {
-                    if (animator) {
-                      animator->FirstPaint();
-                    }
                     if (RefPtr<UiCompositorControllerParent> uiController =
                             UiCompositorControllerParent::
                                 GetFromRootLayerTreeId(rootLayerTreeId)) {
@@ -1079,15 +1071,6 @@ bool AsyncCompositionManager::ApplyAsyncContentTransformToTree(
                       uiController->NotifyLayersUpdated();
                     }
                     mLayersUpdated = false;
-                  }
-                  
-                  
-                  
-                  
-                  
-                  if (animator && !metrics.IsRootContent()) {
-                    animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(
-                        metrics);
                   }
                 }
                 fixedLayerMargins = GetFixedLayerMargins();
@@ -1463,17 +1446,6 @@ bool AsyncCompositionManager::TransformShadowTree(
   if (aVsyncRate != TimeDuration::Forever()) {
     nextFrame += aVsyncRate;
   }
-
-#if defined(MOZ_WIDGET_ANDROID)
-  Compositor* compositor = mLayerManager->GetCompositor();
-  if (CompositorBridgeParent* bridge =
-          compositor->GetCompositorBridgeParent()) {
-    if (AndroidDynamicToolbarAnimator* animator =
-            bridge->GetAndroidDynamicToolbarAnimator()) {
-      wantNextFrame |= animator->UpdateAnimation(nextFrame);
-    }
-  }
-#endif  
 
   
   

@@ -94,7 +94,6 @@
 #include "KeyboardScrollAnimation.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "AndroidAPZ.h"
-#  include "mozilla/layers/AndroidDynamicToolbarAnimator.h"
 #endif  
 
 static mozilla::LazyLogModule sApzCtlLog("apz.controller");
@@ -1306,12 +1305,6 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
   }
 
   return rv;
-}
-
-void AsyncPanZoomController::HandleDynamicToolbarMovement(
-    uint32_t aStartTimestampMs, uint32_t aEndTimestampMs,
-    ParentLayerCoord aDeltaY) {
-  mY.HandleDynamicToolbarMovement(aStartTimestampMs, aEndTimestampMs, aDeltaY);
 }
 
 void AsyncPanZoomController::StartAutoscroll(const ScreenPoint& aPoint) {
@@ -3217,17 +3210,6 @@ bool AsyncPanZoomController::AttemptScroll(
     if (!IsZero(adjustedDisplacement)) {
       ScrollBy(adjustedDisplacement / Metrics().GetZoom());
       if (InputBlockState* block = GetCurrentInputBlock()) {
-#if defined(MOZ_WIDGET_ANDROID)
-        if (block->AsTouchBlock() && (block->GetScrolledApzc() != this) &&
-            IsRootContent()) {
-          if (APZCTreeManager* manager = GetApzcTreeManager()) {
-            if (AndroidDynamicToolbarAnimator* animator =
-                    manager->GetAndroidDynamicToolbarAnimator()) {
-              animator->SetScrollingRootContent();
-            }
-          }
-        }
-#endif
         bool displacementIsUserVisible = true;
 
         {  
@@ -3659,33 +3641,6 @@ void AsyncPanZoomController::SetCompositorController(
 void AsyncPanZoomController::SetMetricsSharingController(
     MetricsSharingController* aMetricsSharingController) {
   mMetricsSharingController = aMetricsSharingController;
-}
-
-void AsyncPanZoomController::AdjustScrollForSurfaceShift(
-    const ScreenPoint& aShift) {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
-  CSSPoint adjustment =
-      ViewAs<ParentLayerPixel>(
-          aShift, PixelCastJustification::ScreenIsParentLayerForRoot) /
-      Metrics().GetZoom();
-  APZC_LOG("%p adjusting scroll position by %s for surface shift\n", this,
-           Stringify(adjustment).c_str());
-  CSSRect scrollRange = Metrics().CalculateScrollRange();
-  
-  SetScrollOffset(
-      scrollRange.ClampPoint(Metrics().GetScrollOffset() + adjustment));
-  
-  
-  mCompositedScrollOffset =
-      scrollRange.ClampPoint(mCompositedScrollOffset + adjustment);
-  
-  
-  
-  
-  mCompositedLayoutViewport.SizeTo(Metrics().GetLayoutViewport().Size());
-  RecalculateCompositedLayoutViewport();
-  RequestContentRepaint();
-  UpdateSharedCompositorFrameMetrics();
 }
 
 void AsyncPanZoomController::SetScrollOffset(const CSSPoint& aOffset) {
@@ -4592,17 +4547,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
   }
 
-#if defined(MOZ_WIDGET_ANDROID)
-  if (aLayerMetrics.IsRootContent()) {
-    if (APZCTreeManager* manager = GetApzcTreeManager()) {
-      if (AndroidDynamicToolbarAnimator* animator =
-              manager->GetAndroidDynamicToolbarAnimator()) {
-        animator->MaybeUpdateCompositionSizeAndRootFrameMetrics(aLayerMetrics);
-      }
-    }
-  }
-#endif
-
   if ((aIsFirstPaint && aThisLayerTreeUpdated) || isDefault) {
     
     
@@ -5150,19 +5094,6 @@ void AsyncPanZoomController::DispatchStateChangeNotification(
 #endif
     } else if (IsTransformingState(aOldState) &&
                !IsTransformingState(aNewState)) {
-#if defined(MOZ_WIDGET_ANDROID)
-      
-      
-      
-      if (APZCTreeManager* manager = GetApzcTreeManager()) {
-        if (AndroidDynamicToolbarAnimator* animator =
-                manager->GetAndroidDynamicToolbarAnimator()) {
-          RecursiveMutexAutoLock lock(mRecursiveMutex);
-          animator->UpdateRootFrameMetrics(Metrics());
-        }
-      }
-#endif
-
       controller->NotifyAPZStateChange(GetGuid(),
                                        APZStateChange::eTransformEnd);
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)

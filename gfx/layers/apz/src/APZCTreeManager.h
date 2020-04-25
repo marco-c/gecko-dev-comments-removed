@@ -30,10 +30,6 @@
 #include "mozilla/UniquePtr.h"               
 #include "nsCOMPtr.h"                        
 
-#if defined(MOZ_WIDGET_ANDROID)
-#  include "mozilla/layers/AndroidDynamicToolbarAnimator.h"
-#endif  
-
 namespace mozilla {
 class MultiTouchInput;
 
@@ -271,14 +267,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   void UpdateZoomConstraints(
       const ScrollableLayerGuid& aGuid,
       const Maybe<ZoomConstraints>& aConstraints) override;
-
-  
-
-
-
-
-
-  void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
 
   
 
@@ -615,19 +603,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-
-
-
-
-  void ProcessDynamicToolbarMovement(uint32_t aStartTimestampMs,
-                                     uint32_t aEndTimestampMs,
-                                     ScreenCoord aDeltaY);
-
-  
-
-
-
   already_AddRefed<AsyncPanZoomController> FindZoomableApzc(
       AsyncPanZoomController* aStart) const;
 
@@ -662,7 +637,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   AsyncPanZoomController* FindRootApzcForLayersId(LayersId aLayersId) const;
   AsyncPanZoomController* FindRootContentApzcForLayersId(
       LayersId aLayersId) const;
-  AsyncPanZoomController* FindRootContentOrRootApzc() const;
   already_AddRefed<AsyncPanZoomController> GetZoomableTarget(
       AsyncPanZoomController* aApzc1, AsyncPanZoomController* aApzc2) const;
   already_AddRefed<AsyncPanZoomController> CommonAncestor(
@@ -1067,12 +1041,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   float mDPI;
 
 #if defined(MOZ_WIDGET_ANDROID)
- public:
-  AndroidDynamicToolbarAnimator* GetAndroidDynamicToolbarAnimator();
-
  private:
-  RefPtr<AndroidDynamicToolbarAnimator> mToolbarAnimator;
-
   
   FrameMetrics mLastRootMetrics;
 #endif  
