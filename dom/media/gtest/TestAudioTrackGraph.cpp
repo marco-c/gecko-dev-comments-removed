@@ -47,12 +47,49 @@ TEST(TestAudioTrackGraph, DifferentDeviceIDs)
       g1->CreateSourceTrack(MediaSegment::AUDIO);
   RefPtr<SourceMediaTrack> dummySource2 =
       g2->CreateSourceTrack(MediaSegment::AUDIO);
+
+  
+  
+  
+  
+  GMPTestMonitor testMonitor;
+  Atomic<int> counter{0};
+
+  
+  class Message : public ControlMessage {
+   public:
+    explicit Message(MediaTrack* aTrack) : ControlMessage(aTrack) {}
+    void Run() override {
+      MOZ_ASSERT(mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver());
+      if (++(*mCounter) == 2) {
+        mTestMonitor->SetFinished();
+      }
+    }
+    void RunDuringShutdown() override {
+      
+      
+      Run();
+    }
+    GMPTestMonitor* mTestMonitor = nullptr;
+    Atomic<int>* mCounter = nullptr;
+  };
+
+  UniquePtr<Message> message1 = MakeUnique<Message>(dummySource1);
+  message1->mTestMonitor = &testMonitor;
+  message1->mCounter = &counter;
+  dummySource1->GraphImpl()->AppendMessage(std::move(message1));
+
+  UniquePtr<Message> message2 = MakeUnique<Message>(dummySource2);
+  message2->mTestMonitor = &testMonitor;
+  message2->mCounter = &counter;
+  dummySource2->GraphImpl()->AppendMessage(std::move(message2));
+
   dummySource1->Destroy();
   dummySource2->Destroy();
+
+  testMonitor.AwaitFinished();
 }
 
-
-#if !defined(ANDROID)
 TEST(TestAudioTrackGraph, SetOutputDeviceID)
 {
   MockCubeb* cubeb = new MockCubeb();
@@ -63,7 +100,7 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       MediaTrackGraph::AUDIO_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
-       reinterpret_cast<cubeb_devid>(1));
+       reinterpret_cast<cubeb_devid>(2));
 
   
   EXPECT_EQ(cubeb->GetCurrentOutputDeviceID(),
@@ -75,36 +112,17 @@ TEST(TestAudioTrackGraph, SetOutputDeviceID)
   RefPtr<SourceMediaTrack> dummySource =
       graph->CreateSourceTrack(MediaSegment::AUDIO);
 
-  
-  class Message : public ControlMessage {
-   public:
-    explicit Message(MediaTrack* aTrack) : ControlMessage(aTrack) {}
-    void Run() override {
-      MOZ_ASSERT(mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver());
-      mGraphStartedPromise.Resolve(true, __func__);
-    }
-    void RunDuringShutdown() override {
-      
-      
-      Run();
-    }
-    MozPromiseHolder<GenericPromise> mGraphStartedPromise;
-  };
-
   GMPTestMonitor mon;
-  UniquePtr<Message> message = MakeUnique<Message>(dummySource);
-  RefPtr<GenericPromise> p = message->mGraphStartedPromise.Ensure(__func__);
+  RefPtr<GenericPromise> p = graph->NotifyWhenDeviceStarted(dummySource);
   p->Then(GetMainThreadSerialEventTarget(), __func__,
           [&mon, cubeb, dummySource]() {
             EXPECT_EQ(cubeb->GetCurrentOutputDeviceID(),
-                      reinterpret_cast<cubeb_devid>(1))
+                      reinterpret_cast<cubeb_devid>(2))
                 << "After init confirm the expected output device id";
             
             dummySource->Destroy();
             mon.SetFinished();
           });
-
-  dummySource->GraphImpl()->AppendMessage(std::move(message));
 
   mon.AwaitFinished();
 }
@@ -140,4 +158,3 @@ TEST(TestAudioTrackGraph, NotifyDeviceStarted)
 
   mon.AwaitFinished();
 }
-#endif
