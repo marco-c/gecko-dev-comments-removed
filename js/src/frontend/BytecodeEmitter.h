@@ -80,9 +80,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   BytecodeEmitter* const parent = nullptr;
 
   
-  JS::Rooted<JSScript*> inputScript;
-
-  
   JS::Rooted<JSScript*> outputScript;
 
  public:
@@ -181,7 +178,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
  private:
   
   BytecodeEmitter(BytecodeEmitter* parent, SharedContext* sc,
-                  JS::Handle<JSScript*> script,
                   CompilationInfo& compilationInfo, EmitterMode emitterMode);
 
   void initFromBodyPosition(TokenPos bodyPosition);
@@ -197,24 +193,20 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
  public:
   BytecodeEmitter(BytecodeEmitter* parent, BCEParserHandle* handle,
-                  SharedContext* sc, JS::Handle<JSScript*> script,
-
-                  CompilationInfo& compilationInfo,
+                  SharedContext* sc, CompilationInfo& compilationInfo,
                   EmitterMode emitterMode = Normal);
 
   BytecodeEmitter(BytecodeEmitter* parent, const EitherParser& parser,
-                  SharedContext* sc, JS::Handle<JSScript*> script,
-                  CompilationInfo& compilationInfo,
+                  SharedContext* sc, CompilationInfo& compilationInfo,
                   EmitterMode emitterMode = Normal);
 
   template <typename Unit>
   BytecodeEmitter(BytecodeEmitter* parent,
                   Parser<FullParseHandler, Unit>* parser, SharedContext* sc,
-                  JS::Handle<JSScript*> script,
                   CompilationInfo& compilationInfo,
                   EmitterMode emitterMode = Normal)
-      : BytecodeEmitter(parent, EitherParser(parser), sc, script,
-                        compilationInfo, emitterMode) {}
+      : BytecodeEmitter(parent, EitherParser(parser), sc, compilationInfo,
+                        emitterMode) {}
 
   MOZ_MUST_USE bool init();
   MOZ_MUST_USE bool init(TokenPos bodyPosition);
