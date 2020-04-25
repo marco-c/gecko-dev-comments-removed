@@ -87,6 +87,7 @@ class MachCommands(MachCommandBase):
         return self.run_process([python_path] + args,
                                 pass_thru=True,  
                                 ensure_exit_code=False,  
+                                python_unbuffered=False,  
                                 append_env=append_env)
 
     @Command('python-test', category='testing',
