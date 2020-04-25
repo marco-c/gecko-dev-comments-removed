@@ -4047,7 +4047,6 @@ void JSScript::relazify(JSRuntime* rt) {
   
   
   clearFlag(ImmutableFlags::HasNonSyntacticScope);
-  clearFlag(ImmutableFlags::NeedsFunctionEnvironmentObjects);
 
   
   

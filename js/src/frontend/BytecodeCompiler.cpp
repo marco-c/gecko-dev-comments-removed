@@ -936,8 +936,7 @@ static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
   
   
   constexpr uint32_t NonLazyFlagsMask =
-      uint32_t(BaseScript::ImmutableFlags::HasNonSyntacticScope) |
-      uint32_t(BaseScript::ImmutableFlags::NeedsFunctionEnvironmentObjects);
+      uint32_t(BaseScript::ImmutableFlags::HasNonSyntacticScope);
 
   
   constexpr uint32_t MatchedFlagsMask = ~NonLazyFlagsMask;

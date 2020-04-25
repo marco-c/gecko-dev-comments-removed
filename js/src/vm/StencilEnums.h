@@ -223,6 +223,9 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   FunctionHasExtraBodyVarScope = 1 << 25,
+
+  
+  NeedsFunctionEnvironmentObjects = 1 << 26,
   
 
   
@@ -233,10 +236,7 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  HasNonSyntacticScope = 1 << 26,
-
-  
-  NeedsFunctionEnvironmentObjects = 1 << 27,
+  HasNonSyntacticScope = 1 << 27,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {

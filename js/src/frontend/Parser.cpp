@@ -1211,6 +1211,29 @@ Maybe<FunctionScope::Data*> NewFunctionScopeData(
   return Some(bindings);
 }
 
+
+
+
+bool FunctionScopeHasClosedOverBindings(ParseContext* pc) {
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
+
+  for (BindingIter bi = pc->functionScope().bindings(pc); bi; bi++) {
+    switch (bi.kind()) {
+      case BindingKind::FormalParameter:
+      case BindingKind::Var:
+        if (allBindingsClosedOver || bi.closedOver()) {
+          return true;
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return false;
+}
+
 Maybe<FunctionScope::Data*> ParserBase::newFunctionScopeData(
     ParseContext::Scope& scope, bool hasParameterExprs,
     IsFieldInitializer isFieldInitializer) {
@@ -1295,6 +1318,30 @@ Maybe<LexicalScope::Data*> NewLexicalScopeData(JSContext* cx,
   }
 
   return Some(bindings);
+}
+
+
+
+
+bool LexicalScopeHasClosedOverBindings(ParseContext* pc,
+                                       ParseContext::Scope& scope) {
+  bool allBindingsClosedOver = pc->sc()->allBindingsClosedOver();
+
+  for (BindingIter bi = scope.bindings(pc); bi; bi++) {
+    switch (bi.kind()) {
+      case BindingKind::Let:
+      case BindingKind::Const:
+        if (allBindingsClosedOver || bi.closedOver()) {
+          return true;
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return false;
 }
 
 Maybe<LexicalScope::Data*> ParserBase::newLexicalScopeData(
@@ -1634,9 +1681,20 @@ bool PerHandlerParser<ParseHandler>::finishFunctionScopes(
     }
   }
 
+  
+  if (FunctionScopeHasClosedOverBindings(pc_) ||
+      funbox->needsCallObjectRegardlessOfBindings()) {
+    funbox->setNeedsFunctionEnvironmentObjects();
+  }
+
   if (funbox->isNamedLambda() && !isStandaloneFunction) {
     if (!propagateFreeNamesAndMarkClosedOverBindings(pc_->namedLambdaScope())) {
       return false;
+    }
+
+    
+    if (LexicalScopeHasClosedOverBindings(pc_, pc_->namedLambdaScope())) {
+      funbox->setNeedsFunctionEnvironmentObjects();
     }
   }
 

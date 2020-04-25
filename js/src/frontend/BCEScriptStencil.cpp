@@ -28,8 +28,6 @@ void BCEScriptStencil::init(BytecodeEmitter& bce,
 
   
   immutableFlags.setFlag(ImmutableFlags::Strict, bce.sc->strict());
-  immutableFlags.setFlag(ImmutableFlags::NeedsFunctionEnvironmentObjects,
-                         getNeedsFunctionEnvironmentObjects(bce));
   immutableFlags.setFlag(
       ImmutableFlags::HasNonSyntacticScope,
       bce.outermostScope().hasOnChain(ScopeKind::NonSyntactic));
@@ -50,30 +48,6 @@ void BCEScriptStencil::init(BytecodeEmitter& bce,
     immutableFlags.setFlag(ImmutableFlags::HasMappedArgsObj,
                            funbox->hasMappedArgsObj());
   } 
-}
-
-bool BCEScriptStencil::getNeedsFunctionEnvironmentObjects(
-    BytecodeEmitter& bce) const {
-  
-  js::AbstractScopePtr bodyScope = bce.bodyScope();
-  if (bodyScope.kind() == js::ScopeKind::Function) {
-    if (bodyScope.hasEnvironment()) {
-      return true;
-    }
-  }
-
-  
-  js::AbstractScopePtr outerScope = bce.outermostScope();
-  if (outerScope.kind() == js::ScopeKind::NamedLambda ||
-      outerScope.kind() == js::ScopeKind::StrictNamedLambda) {
-    MOZ_ASSERT(bce.sc->asFunctionBox()->isNamedLambda());
-
-    if (outerScope.hasEnvironment()) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 bool BCEScriptStencil::finishGCThings(
