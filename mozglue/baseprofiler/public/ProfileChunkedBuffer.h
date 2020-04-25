@@ -511,7 +511,7 @@ class ProfileChunkedBuffer {
   auto ReserveAndPut(CallbackEntryBytes&& aCallbackEntryBytes,
                      Callback&& aCallback)
       -> decltype(std::forward<Callback>(aCallback)(
-          std::declval<ProfileBufferEntryWriter*>())) {
+          std::declval<Maybe<ProfileBufferEntryWriter>&>())) {
     baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
 
     
@@ -524,12 +524,12 @@ class ProfileChunkedBuffer {
           MOZ_ASSERT(entryBytes != 0, "Empty entries are not allowed");
           return ULEB128Size(entryBytes) + entryBytes;
         },
-        [&](ProfileBufferEntryWriter* aEntryWriter) {
-          if (aEntryWriter) {
-            aEntryWriter->WriteULEB128(entryBytes);
-            MOZ_ASSERT(aEntryWriter->RemainingBytes() == entryBytes);
+        [&](Maybe<ProfileBufferEntryWriter>& aMaybeEntryWriter) {
+          if (aMaybeEntryWriter.isSome()) {
+            aMaybeEntryWriter->WriteULEB128(entryBytes);
+            MOZ_ASSERT(aMaybeEntryWriter->RemainingBytes() == entryBytes);
           }
-          return std::forward<Callback>(aCallback)(aEntryWriter);
+          return std::forward<Callback>(aCallback)(aMaybeEntryWriter);
         },
         lock);
   }
@@ -544,12 +544,12 @@ class ProfileChunkedBuffer {
   ProfileBufferBlockIndex PutFrom(const void* aSrc, Length aBytes) {
     return ReserveAndPut(
         [aBytes]() { return aBytes; },
-        [aSrc, aBytes](ProfileBufferEntryWriter* aEntryWriter) {
-          if (!aEntryWriter) {
+        [aSrc, aBytes](Maybe<ProfileBufferEntryWriter>& aMaybeEntryWriter) {
+          if (aMaybeEntryWriter.isNothing()) {
             return ProfileBufferBlockIndex{};
           }
-          aEntryWriter->WriteBytes(aSrc, aBytes);
-          return aEntryWriter->CurrentBlockIndex();
+          aMaybeEntryWriter->WriteBytes(aSrc, aBytes);
+          return aMaybeEntryWriter->CurrentBlockIndex();
         });
   }
 
@@ -561,12 +561,12 @@ class ProfileChunkedBuffer {
                   "PutObjects must be given at least one object.");
     return ReserveAndPut(
         [&]() { return ProfileBufferEntryWriter::SumBytes(aTs...); },
-        [&](ProfileBufferEntryWriter* aEntryWriter) {
-          if (!aEntryWriter) {
+        [&](Maybe<ProfileBufferEntryWriter>& aMaybeEntryWriter) {
+          if (aMaybeEntryWriter.isNothing()) {
             return ProfileBufferBlockIndex{};
           }
-          aEntryWriter->WriteObjects(aTs...);
-          return aEntryWriter->CurrentBlockIndex();
+          aMaybeEntryWriter->WriteObjects(aTs...);
+          return aMaybeEntryWriter->CurrentBlockIndex();
         });
   }
 
@@ -971,16 +971,17 @@ class ProfileChunkedBuffer {
       if (failed) {
         return;
       }
-      failed = !Put(aER.RemainingBytes(), [&](ProfileBufferEntryWriter* aEW) {
-        if (!aEW) {
-          return false;
-        }
-        if (!firstBlockIndex) {
-          firstBlockIndex = aEW->CurrentBlockIndex();
-        }
-        aEW->WriteFromReader(aER, aER.RemainingBytes());
-        return true;
-      });
+      failed =
+          !Put(aER.RemainingBytes(), [&](Maybe<ProfileBufferEntryWriter>& aEW) {
+            if (aEW.isNothing()) {
+              return false;
+            }
+            if (!firstBlockIndex) {
+              firstBlockIndex = aEW->CurrentBlockIndex();
+            }
+            aEW->WriteFromReader(aER, aER.RemainingBytes());
+            return true;
+          });
     });
     return failed ? nullptr : firstBlockIndex;
   }
@@ -1263,22 +1264,79 @@ class ProfileChunkedBuffer {
                         uint64_t aBlockCount = 1) {
     
     
+    Maybe<ProfileBufferEntryWriter> maybeEntryWriter;
+
+    
+    
     bool currentChunkFilled = false;
 
     
     
     bool nextChunkInitialized = false;
 
+    if (MOZ_LIKELY(mChunkManager)) {
+      
+
+      if (ProfileBufferChunk* current = GetOrCreateCurrentChunk(aLock);
+          MOZ_LIKELY(current)) {
+        const Length blockBytes =
+            std::forward<CallbackBlockBytes>(aCallbackBlockBytes)();
+        if (blockBytes <= current->RemainingBytes()) {
+          
+          currentChunkFilled = blockBytes == current->RemainingBytes();
+          const auto [mem0, blockIndex] = current->ReserveBlock(blockBytes);
+          MOZ_ASSERT(mem0.LengthBytes() == blockBytes);
+          maybeEntryWriter.emplace(
+              mem0, blockIndex,
+              ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+                  blockIndex.ConvertToProfileBufferIndex() + blockBytes));
+          MOZ_ASSERT(maybeEntryWriter->RemainingBytes() == blockBytes);
+          mRangeEnd += blockBytes;
+          mPushedBlockCount += aBlockCount;
+        } else {
+          
+          
+          
+          
+          if (ProfileBufferChunk* next = GetOrCreateNextChunk(aLock);
+              MOZ_LIKELY(next)) {
+            
+            
+            const auto [mem0, blockIndex] =
+                current->ReserveBlock(current->RemainingBytes());
+            MOZ_ASSERT(mem0.LengthBytes() < blockBytes);
+            MOZ_ASSERT(current->RemainingBytes() == 0);
+            
+            
+            next->SetRangeStart(mNextChunkRangeStart);
+            mNextChunkRangeStart += next->BufferBytes();
+            const auto mem1 = next->ReserveInitialBlockAsTail(
+                blockBytes - mem0.LengthBytes());
+            MOZ_ASSERT(next->RemainingBytes() != 0);
+            currentChunkFilled = true;
+            nextChunkInitialized = true;
+            
+            maybeEntryWriter.emplace(
+                mem0, mem1, blockIndex,
+                ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+                    blockIndex.ConvertToProfileBufferIndex() + blockBytes));
+            MOZ_ASSERT(maybeEntryWriter->RemainingBytes() == blockBytes);
+            mRangeEnd += blockBytes;
+            mPushedBlockCount += aBlockCount;
+          }
+        }
+      }  
+    }    
+
     
     
-    ProfileBufferEntryWriter entryWriter;
 
     
     
     auto handleFilledChunk = MakeScopeExit([&]() {
       
       
-      MOZ_ASSERT(entryWriter.RemainingBytes() == 0);
+      MOZ_ASSERT(!maybeEntryWriter || maybeEntryWriter->RemainingBytes() == 0);
 
       if (currentChunkFilled) {
         
@@ -1313,76 +1371,7 @@ class ProfileChunkedBuffer {
       }
     });
 
-    if (MOZ_LIKELY(mChunkManager)) {
-      
-
-      if (ProfileBufferChunk* current = GetOrCreateCurrentChunk(aLock);
-          MOZ_LIKELY(current)) {
-        const Length blockBytes =
-            std::forward<CallbackBlockBytes>(aCallbackBlockBytes)();
-        if (blockBytes <= current->RemainingBytes()) {
-          
-          currentChunkFilled = blockBytes == current->RemainingBytes();
-          const auto [mem0, blockIndex] = current->ReserveBlock(blockBytes);
-          MOZ_ASSERT(mem0.LengthBytes() == blockBytes);
-          entryWriter.Set(
-              mem0, blockIndex,
-              ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
-                  blockIndex.ConvertToProfileBufferIndex() + blockBytes));
-        } else {
-          
-          
-          
-          
-          if (ProfileBufferChunk* next = GetOrCreateNextChunk(aLock);
-              MOZ_LIKELY(next)) {
-            
-            
-            const auto [mem0, blockIndex] =
-                current->ReserveBlock(current->RemainingBytes());
-            MOZ_ASSERT(mem0.LengthBytes() < blockBytes);
-            MOZ_ASSERT(current->RemainingBytes() == 0);
-            
-            
-            next->SetRangeStart(mNextChunkRangeStart);
-            mNextChunkRangeStart += next->BufferBytes();
-            const auto mem1 = next->ReserveInitialBlockAsTail(
-                blockBytes - mem0.LengthBytes());
-            MOZ_ASSERT(next->RemainingBytes() != 0);
-            currentChunkFilled = true;
-            nextChunkInitialized = true;
-            
-            entryWriter.Set(
-                mem0, mem1, blockIndex,
-                ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
-                    blockIndex.ConvertToProfileBufferIndex() + blockBytes));
-          }
-        }
-
-        
-        
-
-        
-        
-        
-
-        if (MOZ_LIKELY(entryWriter.RemainingBytes() != 0)) {
-          
-          
-          MOZ_ASSERT(entryWriter.RemainingBytes() == blockBytes);
-          mRangeEnd += blockBytes;
-          mPushedBlockCount += aBlockCount;
-          return std::forward<Callback>(aCallback)(&entryWriter);
-        }
-
-        
-        
-        
-
-      }  
-    }    
-
-    return std::forward<Callback>(aCallback)(nullptr);
+    return std::forward<Callback>(aCallback)(maybeEntryWriter);
   }
 
   
@@ -1607,8 +1596,8 @@ struct ProfileBufferEntryReader::Deserializer<ProfileChunkedBuffer> {
     
     aBuffer.ReserveAndPutRaw(
         len,
-        [&](ProfileBufferEntryWriter* aEW) {
-          MOZ_RELEASE_ASSERT(aEW);
+        [&](Maybe<ProfileBufferEntryWriter>& aEW) {
+          MOZ_RELEASE_ASSERT(aEW.isSome());
           aEW->WriteFromReader(aER, len);
         },
         0);
