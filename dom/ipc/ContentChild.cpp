@@ -3981,6 +3981,16 @@ mozilla::ipc::IPCResult ContentChild::RecvCommitWindowContextTransaction(
 
 mozilla::ipc::IPCResult ContentChild::RecvCreateWindowContext(
     WindowContext::IPCInitializer&& aInit) {
+  RefPtr<BrowsingContext> bc = BrowsingContext::Get(aInit.mBrowsingContextId);
+  if (!bc) {
+    
+    
+    
+    
+    NS_WARNING("Attempt to attach WindowContext to discarded parent");
+    return IPC_OK();
+  }
+
   WindowContext::CreateFromIPC(std::move(aInit));
   return IPC_OK();
 }
