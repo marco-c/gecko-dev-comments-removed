@@ -7,13 +7,19 @@
 
 
 
+
+
+var xr_debug = function(name, msg) {}
+
 function xr_promise_test(name, func, properties) {
   promise_test(async (t) => {
     
+    xr_debug(name, 'setup');
 
     if (window.XRTest === undefined) {
       
       await loadChromiumResources;
+      xr_debug = navigator.xr.test.Debug;
     }
 
     
@@ -22,9 +28,11 @@ function xr_promise_test(name, func, properties) {
     
     t.add_cleanup(async () => {
       
+      xr_debug(name, 'cleanup');
       await navigator.xr.test.disconnectAllDevices();
     });
 
+    xr_debug(name, 'main');
     return func(t);
   }, name, properties);
 }
@@ -74,9 +82,12 @@ function xr_session_promise_test(
               })
               .then(() => new Promise((resolve, reject) => {
                       
+                      xr_debug(name, 'simulateUserActivation');
                       navigator.xr.test.simulateUserActivation(() => {
+                        xr_debug(name, 'document.hasFocus()=' + document.hasFocus());
                         navigator.xr.requestSession(sessionMode, sessionInit || {})
                             .then((session) => {
+                              xr_debug(name, 'session start');
                               testSession = session;
                               session.mode = sessionMode;
                               let glLayer = new XRWebGLLayer(session, gl, gllayerProperties);
@@ -87,9 +98,11 @@ function xr_session_promise_test(
                                   baseLayer: glLayer
                               });
                               sessionObjects.glLayer = glLayer;
+                              xr_debug(name, 'session.visibilityState=' + session.visibilityState);
                               resolve(func(session, testDeviceController, t, sessionObjects));
                             })
                             .catch((err) => {
+                              xr_debug(name, 'error: ' + err);
                               reject(
                                   'Session with params ' +
                                   JSON.stringify(sessionMode) +
