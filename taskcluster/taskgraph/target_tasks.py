@@ -27,6 +27,7 @@ TARGET_TASK_BLACKLIST = [
     r'linux1804-32',   
     r'linux-',  
     r'linux.*web-platform-tests.*-fis-',  
+    r'web-platform-tests.*backlog',  
 ]
 
 
