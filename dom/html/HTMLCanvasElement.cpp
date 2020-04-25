@@ -1043,6 +1043,12 @@ void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
 
     if (layer) {
       static_cast<CanvasLayer*>(layer)->Updated();
+    } else {
+      
+      
+      
+      
+      frame->SchedulePaint(nsIFrame::PAINT_DEFAULT, false);
     }
   }
 
