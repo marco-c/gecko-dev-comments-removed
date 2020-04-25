@@ -51,6 +51,11 @@
   
   if (![self getGeckoAccessible] && ![self getProxyAccessible]) return [NSArray array];
 
+  if (![self stateWithMask:states::LINKED]) {
+    
+    return [super accessibilityAttributeNames];
+  }
+
   static NSMutableArray* attributes = nil;
 
   if (!attributes) {
@@ -63,9 +68,12 @@
 }
 
 - (id)accessibilityAttributeValue:(NSString*)attribute {
-  if ([attribute isEqualToString:NSAccessibilityURLAttribute]) return [self url];
-  if ([attribute isEqualToString:@"AXVisited"]) {
-    return [NSNumber numberWithBool:[self stateWithMask:states::TRAVERSED] != 0];
+  if ([self stateWithMask:states::LINKED]) {
+    
+    if ([attribute isEqualToString:NSAccessibilityURLAttribute]) return [self url];
+    if ([attribute isEqualToString:@"AXVisited"]) {
+      return [NSNumber numberWithBool:[self stateWithMask:states::TRAVERSED] != 0];
+    }
   }
 
   return [super accessibilityAttributeValue:attribute];
@@ -91,6 +99,17 @@
   if (!urlString) return nil;
 
   return [NSURL URLWithString:urlString];
+}
+
+- (NSString*)role {
+  
+  
+  
+  if (![self stateWithMask:states::LINKED]) {
+    return NSAccessibilityGroupRole;
+  }
+
+  return [super role];
 }
 
 @end
