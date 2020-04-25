@@ -361,13 +361,6 @@ void HandlerProvider::BuildDynamicIA2Data(DynamicIA2Data* aOutIA2Data) {
   hr = target->get_uniqueID(&aOutIA2Data->mUniqueId);
 }
 
-void HandlerProvider::CleanupStaticIA2Data(StaticIA2Data& aData) {
-  
-  
-  ReleaseStaticIA2DataInterfaces(aData);
-  ZeroMemory(&aData, sizeof(StaticIA2Data));
-}
-
 void HandlerProvider::BuildInitialIA2Data(
     NotNull<mscom::IInterceptor*> aInterceptor, StaticIA2Data* aOutStaticData,
     DynamicIA2Data* aOutDynamicData) {

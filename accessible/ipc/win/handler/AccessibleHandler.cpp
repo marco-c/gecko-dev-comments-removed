@@ -103,8 +103,7 @@ AccessibleHandler::AccessibleHandler(IUnknown* aOuter, HRESULT* aResult)
 }
 
 AccessibleHandler::~AccessibleHandler() {
-  
-  CleanupDynamicIA2Data(mCachedData.mDynamicData, false);
+  CleanupDynamicIA2Data(mCachedData.mDynamicData);
   if (mCachedData.mGeckoBackChannel) {
     mCachedData.mGeckoBackChannel->Release();
   }
@@ -467,8 +466,7 @@ AccessibleHandler::ReadHandlerPayload(IStream* aStream, REFIID aIid) {
     return E_FAIL;
   }
   
-  
-  CleanupDynamicIA2Data(mCachedData.mDynamicData, false);
+  CleanupDynamicIA2Data(mCachedData.mDynamicData);
   mCachedData = newData;
 
   
