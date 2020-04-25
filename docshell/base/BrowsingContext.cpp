@@ -28,6 +28,7 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/SyncedContextInlines.h"
+#include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -1464,9 +1465,30 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     }
 
     if (ContentParent* cp = Canonical()->GetContentParent()) {
+      
+      
+      uint32_t loadIdentifier = 0;
+      if (Canonical()->AttemptLoadURIInParent(aLoadState, &loadIdentifier)) {
+        aLoadState->SetLoadIdentifier(loadIdentifier);
+      }
+
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI(),
                                     aLoadState->TriggeringPrincipal());
-      Unused << cp->SendLoadURI(this, aLoadState, aSetNavigating);
+
+      
+      
+      
+      
+      cp->SendLoadURI(this, aLoadState, aSetNavigating)
+          ->Then(GetMainThreadSerialEventTarget(), __func__,
+                 [loadIdentifier](
+                     const PContentParent::LoadURIPromise::ResolveOrRejectValue&
+                         aValue) {
+                   if (loadIdentifier) {
+                     net::DocumentLoadListener::CleanupParentLoadAttempt(
+                         loadIdentifier);
+                   }
+                 });
     }
   }
   return NS_OK;
