@@ -1320,7 +1320,7 @@ const JsonView = {
       
       
       const persistable = browser.frameLoader;
-      persistable.startPersistence(null, {
+      persistable.startPersistence(0, {
         onDocumentReady(doc) {
           const uri = chrome.makeURI(doc.documentURI, doc.characterSet);
           const filename = chrome.getDefaultFileName(undefined, uri, doc, null);
