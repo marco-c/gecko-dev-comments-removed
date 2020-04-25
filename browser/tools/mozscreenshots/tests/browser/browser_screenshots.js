@@ -4,6 +4,8 @@
 
 "use strict";
 
+
+
 add_task(async function capture() {
   let setsEnv = env.get("MOZSCREENSHOTS_SETS");
   if (!setsEnv) {
