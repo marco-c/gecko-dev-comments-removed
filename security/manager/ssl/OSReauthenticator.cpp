@@ -113,7 +113,6 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
 
   
   DWORD err = 0;
-  uint8_t numAttempts = 3;
   std::unique_ptr<char[]> userTokenInfo = GetUserTokenInfo();
 
   
@@ -126,9 +125,7 @@ static nsresult ReauthenticateUserWindows(const nsAString& aMessageText,
   credui.pszCaptionText = captionText.get();
   credui.hbmBanner = nullptr;  
 
-  while (!reauthenticated && numAttempts > 0) {
-    --numAttempts;
-
+  while (!reauthenticated) {
     HANDLE lsa;
     
     
