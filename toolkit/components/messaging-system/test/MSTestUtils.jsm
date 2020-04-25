@@ -38,8 +38,10 @@ const ExperimentFakes = {
     const loader = new _RemoteSettingsExperimentLoader();
     
     Object.defineProperty(loader, "remoteSettingsClient", {
-      get: () => ({ get: () => Promise.resolve([]) }),
+      value: { get: () => Promise.resolve([]) },
     });
+    
+    loader.manager = this.manager();
 
     return loader;
   },
