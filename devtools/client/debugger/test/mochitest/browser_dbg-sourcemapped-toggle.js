@@ -3,7 +3,7 @@
 
 
 
-requestLongerTimeout(6);
+requestLongerTimeout(3);
 
 function getOriginalScope(dbg) {
   return dbg.selectors.getSelectedOriginalScope(
