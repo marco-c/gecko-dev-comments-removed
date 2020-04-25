@@ -80,7 +80,17 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   BytecodeEmitter* const parent = nullptr;
 
   
-  JS::Rooted<JSScript*> script;
+  JS::Rooted<JSScript*> inputScript;
+
+  
+  JS::Rooted<JSScript*> outputScript;
+
+ public:
+  
+  JSScript* getResultScript() {
+    MOZ_ASSERT(outputScript);
+    return outputScript;
+  }
 
  private:
   BytecodeSection bytecodeSection_;
