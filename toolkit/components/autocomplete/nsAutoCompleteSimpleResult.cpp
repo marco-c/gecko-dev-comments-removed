@@ -139,9 +139,9 @@ nsAutoCompleteSimpleResult::InsertMatchAt(
   AutoCompleteSimpleResultMatch match(aValue, aComment, aImage, aStyle,
                                       aFinalCompleteValue, aLabel);
 
-  if (!mMatches.InsertElementAt(aIndex, match)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  mMatches.InsertElementAt(aIndex, match);
 
   return NS_OK;
 }

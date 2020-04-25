@@ -440,9 +440,9 @@ nsresult txStylesheet::addStripSpace(
         break;
       }
     }
-    if (!aFrameStripSpaceTests.InsertElementAt(i, sst)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    
+    
+    aFrameStripSpaceTests.InsertElementAt(i, sst);
 
     aStripSpaceItem->mStripSpaceTests.RemoveElementAt(testCount - 1);
   }

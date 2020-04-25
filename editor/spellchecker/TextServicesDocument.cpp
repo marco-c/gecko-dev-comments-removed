@@ -1135,9 +1135,9 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
       itEntry = new OffsetEntry(entry->mNode, entry->mStrOffset, strLength);
       itEntry->mIsInsertedText = true;
       itEntry->mNodeOffset = entry->mNodeOffset;
-      if (!mOffsetTable.InsertElementAt(mSelStartIndex, itEntry)) {
-        return NS_ERROR_FAILURE;
-      }
+      
+      
+      mOffsetTable.InsertElementAt(mSelStartIndex, itEntry);
     }
   } else if (entry->mStrOffset + entry->mLength == mSelStartOffset) {
     
@@ -1168,10 +1168,9 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
       itEntry = new OffsetEntry(entry->mNode, mSelStartOffset, 0);
       itEntry->mNodeOffset = entry->mNodeOffset + entry->mLength;
       itEntry->mIsInsertedText = true;
-      if (!mOffsetTable.InsertElementAt(i, itEntry)) {
-        delete itEntry;
-        return NS_ERROR_FAILURE;
-      }
+      
+      
+      mOffsetTable.InsertElementAt(i, itEntry);
     }
 
     
@@ -1210,9 +1209,9 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
     itEntry = new OffsetEntry(entry->mNode, mSelStartOffset, strLength);
     itEntry->mIsInsertedText = true;
     itEntry->mNodeOffset = entry->mNodeOffset + entry->mLength;
-    if (!mOffsetTable.InsertElementAt(mSelStartIndex + 1, itEntry)) {
-      return NS_ERROR_FAILURE;
-    }
+    
+    
+    mOffsetTable.InsertElementAt(mSelStartIndex + 1, itEntry);
 
     mSelEndIndex = ++mSelStartIndex;
   }
@@ -2703,10 +2702,9 @@ nsresult TextServicesDocument::SplitOffsetEntry(int32_t aTableIndex,
   OffsetEntry* newEntry = new OffsetEntry(
       entry->mNode, entry->mStrOffset + oldLength, aNewEntryLength);
 
-  if (!mOffsetTable.InsertElementAt(aTableIndex + 1, newEntry)) {
-    delete newEntry;
-    return NS_ERROR_FAILURE;
-  }
+  
+  
+  mOffsetTable.InsertElementAt(aTableIndex + 1, newEntry);
 
   
 

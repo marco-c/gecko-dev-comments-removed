@@ -761,9 +761,9 @@ nsresult Selection::SubtractRange(StyledRange& aRange, nsRange& aSubtract,
     }
     MOZ_ASSERT(postOverlap);
     if (!postOverlap->Collapsed()) {
-      if (!aOutput->InsertElementAt(0, StyledRange(postOverlap))) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+      
+      
+      aOutput->InsertElementAt(0, StyledRange(postOverlap));
       (*aOutput)[0].mTextRangeStyle = aRange.mTextRangeStyle;
     }
   }
@@ -779,9 +779,9 @@ nsresult Selection::SubtractRange(StyledRange& aRange, nsRange& aSubtract,
     }
     MOZ_ASSERT(preOverlap);
     if (!preOverlap->Collapsed()) {
-      if (!aOutput->InsertElementAt(0, StyledRange(preOverlap))) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+      
+      
+      aOutput->InsertElementAt(0, StyledRange(preOverlap));
       (*aOutput)[0].mTextRangeStyle = aRange.mTextRangeStyle;
     }
   }
@@ -1008,9 +1008,9 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 
   if (startIndex == endIndex) {
     
-    if (!mRanges.InsertElementAt(startIndex, StyledRange(aRange))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    
+    
+    mRanges.InsertElementAt(startIndex, StyledRange(aRange));
     aRange->RegisterSelection(aSelection);
     *aOutIndex = startIndex;
     return NS_OK;
@@ -1023,12 +1023,14 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
   
   
   nsTArray<StyledRange> overlaps;
-  if (!overlaps.InsertElementAt(0, mRanges[startIndex]))
-    return NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  overlaps.InsertElementAt(0, mRanges[startIndex]);
 
   if (endIndex - 1 != startIndex) {
-    if (!overlaps.InsertElementAt(1, mRanges[endIndex - 1]))
-      return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    overlaps.InsertElementAt(1, mRanges[endIndex - 1]);
   }
 
   
@@ -1049,13 +1051,14 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
                                             aRange->StartOffset(),
                                             CompareToRangeStart)};
 
-  if (!temp.InsertElementAt(insertionPoint, StyledRange(aRange))) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  temp.InsertElementAt(insertionPoint, StyledRange(aRange));
 
   
-  if (!mRanges.InsertElementsAt(startIndex, temp))
-    return NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  mRanges.InsertElementsAt(startIndex, temp);
 
   for (uint32_t i = 0; i < temp.Length(); ++i) {
     MOZ_KnownLive(temp[i].mRange)->RegisterSelection(aSelection);
