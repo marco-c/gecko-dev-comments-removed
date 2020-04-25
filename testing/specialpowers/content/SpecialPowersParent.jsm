@@ -1012,12 +1012,6 @@ class SpecialPowersParent extends JSWindowActorParent {
         
         let extension = this._extensions.get(id);
         extension.on("startup", (eventName, ext) => {
-          if (!ext) {
-            
-            
-            
-            return;
-          }
           if (AppConstants.platform === "android") {
             
             
