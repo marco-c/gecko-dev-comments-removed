@@ -404,6 +404,66 @@ pub struct AncestorHashes {
     pub packed_hashes: [u32; 3],
 }
 
+fn collect_ancestor_hashes<Impl: SelectorImpl>(
+    iter: SelectorIter<Impl>,
+    quirks_mode: QuirksMode,
+    hashes: &mut [u32; 4],
+    len: &mut usize,
+) -> bool
+where
+    Impl::Identifier: PrecomputedHash,
+    Impl::ClassName: PrecomputedHash,
+    Impl::LocalName: PrecomputedHash,
+    Impl::NamespaceUrl: PrecomputedHash,
+{
+    for component in AncestorIter::new(iter) {
+        let hash = match *component {
+            Component::LocalName(LocalName {
+                ref name,
+                ref lower_name,
+            }) => {
+                
+                
+                
+                if name != lower_name {
+                    continue;
+                }
+                name.precomputed_hash()
+            },
+            Component::DefaultNamespace(ref url) | Component::Namespace(_, ref url) => {
+                url.precomputed_hash()
+            },
+            
+            
+            Component::ID(ref id) if quirks_mode != QuirksMode::Quirks => {
+                id.precomputed_hash()
+            },
+            Component::Class(ref class) if quirks_mode != QuirksMode::Quirks => {
+                class.precomputed_hash()
+            },
+            Component::Is(ref list) | Component::Where(ref list) => {
+                
+                
+                
+                if list.len() == 1 {
+                    if !collect_ancestor_hashes(list[0].iter(), quirks_mode, hashes, len) {
+                        return false;
+                    }
+                }
+                continue;
+            }
+            _ => continue,
+        };
+
+        hashes[*len] = hash & BLOOM_HASH_MASK;
+        *len += 1;
+        if *len == hashes.len() {
+            return false;
+        }
+    }
+    true
+}
+
 impl AncestorHashes {
     pub fn new<Impl: SelectorImpl>(selector: &Selector<Impl>, quirks_mode: QuirksMode) -> Self
     where
@@ -412,30 +472,16 @@ impl AncestorHashes {
         Impl::LocalName: PrecomputedHash,
         Impl::NamespaceUrl: PrecomputedHash,
     {
-        Self::from_iter(selector.iter(), quirks_mode)
-    }
-
-    fn from_iter<Impl: SelectorImpl>(iter: SelectorIter<Impl>, quirks_mode: QuirksMode) -> Self
-    where
-        Impl::Identifier: PrecomputedHash,
-        Impl::ClassName: PrecomputedHash,
-        Impl::LocalName: PrecomputedHash,
-        Impl::NamespaceUrl: PrecomputedHash,
-    {
         
         let mut hashes = [0u32; 4];
-        let mut hash_iter = AncestorIter::new(iter).filter_map(|x| x.ancestor_hash(quirks_mode));
-        for i in 0..4 {
-            hashes[i] = match hash_iter.next() {
-                Some(x) => x & BLOOM_HASH_MASK,
-                None => break,
-            }
-        }
+        let mut len = 0;
+        collect_ancestor_hashes(selector.iter(), quirks_mode, &mut hashes, &mut len);
+        debug_assert!(len <= 4);
 
         
         
-        let fourth = hashes[3];
-        if fourth != 0 {
+        if len == 4 {
+            let fourth = hashes[3];
             hashes[0] |= (fourth & 0x000000ff) << 24;
             hashes[1] |= (fourth & 0x0000ff00) << 16;
             hashes[2] |= (fourth & 0x00ff0000) << 8;
@@ -980,43 +1026,6 @@ pub enum Component<Impl: SelectorImpl> {
 }
 
 impl<Impl: SelectorImpl> Component<Impl> {
-    
-    fn ancestor_hash(&self, quirks_mode: QuirksMode) -> Option<u32>
-    where
-        Impl::Identifier: PrecomputedHash,
-        Impl::ClassName: PrecomputedHash,
-        Impl::LocalName: PrecomputedHash,
-        Impl::NamespaceUrl: PrecomputedHash,
-    {
-        match *self {
-            Component::LocalName(LocalName {
-                ref name,
-                ref lower_name,
-            }) => {
-                
-                
-                
-                if name == lower_name {
-                    Some(name.precomputed_hash())
-                } else {
-                    None
-                }
-            },
-            Component::DefaultNamespace(ref url) | Component::Namespace(_, ref url) => {
-                Some(url.precomputed_hash())
-            },
-            
-            
-            Component::ID(ref id) if quirks_mode != QuirksMode::Quirks => {
-                Some(id.precomputed_hash())
-            },
-            Component::Class(ref class) if quirks_mode != QuirksMode::Quirks => {
-                Some(class.precomputed_hash())
-            },
-            _ => None,
-        }
-    }
-
     
     pub fn is_combinator(&self) -> bool {
         matches!(*self, Component::Combinator(_))
