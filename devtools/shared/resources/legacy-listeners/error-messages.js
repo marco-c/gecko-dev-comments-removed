@@ -31,14 +31,32 @@ module.exports = async function({
   const webConsoleFront = await targetFront.getFront("console");
 
   
-  await webConsoleFront.startListeners(["ConsoleAPI"]);
+  
+  
+  
+  await webConsoleFront.startListeners(["PageError"]);
 
   
   
-  const { messages } = await webConsoleFront.getCachedMessages(["ConsoleAPI"]);
-  
-  messages.map(message => ({ message })).forEach(onAvailable);
+  const { messages } = await webConsoleFront.getCachedMessages(["PageError"]);
 
-  
-  webConsoleFront.on("consoleAPICall", onAvailable);
+  for (let message of messages) {
+    
+    
+    if (
+      !webConsoleFront.traits.newCacheStructure &&
+      message._type !== "PageError"
+    ) {
+      continue;
+    }
+
+    
+    
+    if (message._type) {
+      message = { pageError: message };
+    }
+    onAvailable(message);
+  }
+
+  webConsoleFront.on("pageError", onAvailable);
 };
