@@ -59,6 +59,7 @@ interface nsIProtocolProxyFilter : nsISupports
 
 
 
+
   void applyFilter(in nsIURI aURI, in nsIProxyInfo aProxy,
                    in nsIProxyProtocolFilterResult aCallback);
 };
