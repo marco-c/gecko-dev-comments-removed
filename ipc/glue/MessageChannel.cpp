@@ -1453,7 +1453,6 @@ bool MessageChannel::Send(Message* aMsg, Message* aReply) {
   if (DispatchingSyncMessageNestedLevel() == IPC::Message::NOT_NESTED &&
       msg->nested_level() > IPC::Message::NOT_NESTED) {
     
-    
     IPC_LOG("Nested level forbids send");
     mLastSendError = SyncSendError::SendingCPOWWhileDispatchingSync;
     return false;
