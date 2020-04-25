@@ -971,7 +971,12 @@ NS_IMETHODIMP AppWindow::SetVisibility(bool aVisibility) {
   
   
   nsCOMPtr<nsIWidget> window = mWindow;
-  window->Show(aVisibility);
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
+    window->Show(aVisibility);
+  }
 
   nsCOMPtr<nsIWindowMediator> windowMediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
