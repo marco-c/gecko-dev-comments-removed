@@ -325,9 +325,9 @@
           return;
         }
         if (this.parentNode.parentNode.enableColumnDrag) {
-          var xulns =
+          var XUL_NS =
             "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-          var cols = this.parentNode.getElementsByTagNameNS(xulns, "treecol");
+          var cols = this.parentNode.getElementsByTagNameNS(XUL_NS, "treecol");
 
           
           var visible = 0;

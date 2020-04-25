@@ -171,7 +171,7 @@ const TAB_EVENTS = [
   "TabUnpinned",
 ];
 
-const NS_XUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 
 
@@ -1560,7 +1560,7 @@ var SessionStoreInternal = {
         break;
       case "XULFrameLoaderCreated":
         if (
-          target.namespaceURI == NS_XUL &&
+          target.namespaceURI == XUL_NS &&
           target.localName == "browser" &&
           target.frameLoader &&
           target.permanentKey
