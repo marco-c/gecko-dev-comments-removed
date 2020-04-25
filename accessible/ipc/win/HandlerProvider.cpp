@@ -25,7 +25,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/a11y/AccessibleWrap.h"
-#include "mozilla/a11y/HandlerDataCleanup.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/mscom/AgileReference.h"
 #include "mozilla/mscom/FastMarshaler.h"
@@ -47,7 +46,8 @@ HandlerProvider::HandlerProvider(REFIID aIid,
     : mRefCnt(0),
       mMutex("mozilla::a11y::HandlerProvider::mMutex"),
       mTargetUnkIid(aIid),
-      mTargetUnk(std::move(aTarget)) {}
+      mTargetUnk(std::move(aTarget)),
+      mPayloadMutex("mozilla::a11y::HandlerProvider::mPayloadMutex") {}
 
 HRESULT
 HandlerProvider::QueryInterface(REFIID riid, void** ppv) {
@@ -107,33 +107,38 @@ void HandlerProvider::GetAndSerializePayload(
     return;
   }
 
-  IA2Payload payload{};
+  IA2PayloadPtr payload;
+  {  
+    MutexAutoLock lock(mPayloadMutex);
+    if (mPayload) {
+      
+      
+      payload = std::move(mPayload);
+    }
+  }
 
-  if (!mscom::InvokeOnMainThread(
-          "HandlerProvider::BuildInitialIA2Data", this,
-          &HandlerProvider::BuildInitialIA2Data,
-          std::forward<NotNull<mscom::IInterceptor*>>(aInterceptor),
-          std::forward<StaticIA2Data*>(&payload.mStaticData),
-          std::forward<DynamicIA2Data*>(&payload.mDynamicData)) ||
-      !payload.mDynamicData.mUniqueId) {
-    return;
+  if (!payload) {
+    
+    payload.reset(new IA2Payload());
+    if (!mscom::InvokeOnMainThread(
+            "HandlerProvider::BuildInitialIA2Data", this,
+            &HandlerProvider::BuildInitialIA2Data,
+            std::forward<NotNull<mscom::IInterceptor*>>(aInterceptor),
+            std::forward<StaticIA2Data*>(&payload->mStaticData),
+            std::forward<DynamicIA2Data*>(&payload->mDynamicData)) ||
+        !payload->mDynamicData.mUniqueId) {
+      return;
+    }
   }
 
   
   
   
-
   RefPtr<IGeckoBackChannel> payloadRef(this);
   
-  payload.mGeckoBackChannel = this;
+  payload->mGeckoBackChannel = this;
 
-  mSerializer = MakeUnique<mscom::StructToStream>(payload, &IA2Payload_Encode);
-
-  
-  
-  CleanupStaticIA2Data(payload.mStaticData);
-  
-  CleanupDynamicIA2Data(payload.mDynamicData, false);
+  mSerializer = MakeUnique<mscom::StructToStream>(*payload, &IA2Payload_Encode);
 }
 
 HRESULT
@@ -371,11 +376,6 @@ void HandlerProvider::BuildInitialIA2Data(
     return;
   }
   BuildDynamicIA2Data(aOutDynamicData);
-  if (!aOutDynamicData->mUniqueId) {
-    
-    
-    CleanupStaticIA2Data(*aOutStaticData);
-  }
 }
 
 bool HandlerProvider::IsTargetInterfaceCacheable() {
@@ -551,8 +551,22 @@ HandlerProvider::Refresh(DynamicIA2Data* aOutData) {
   return S_OK;
 }
 
+void HandlerProvider::PrebuildPayload(
+    NotNull<mscom::IInterceptor*> aInterceptor) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MutexAutoLock lock(mPayloadMutex);
+  mPayload.reset(new IA2Payload());
+  BuildInitialIA2Data(aInterceptor, &mPayload->mStaticData,
+                      &mPayload->mDynamicData);
+  if (!mPayload->mDynamicData.mUniqueId) {
+    
+    mPayload.reset();
+  }
+}
+
 template <typename Interface>
 HRESULT HandlerProvider::ToWrappedObject(Interface** aObj) {
+  MOZ_ASSERT(NS_IsMainThread());
   mscom::STAUniquePtr<Interface> inObj(*aObj);
   RefPtr<HandlerProvider> hprov = new HandlerProvider(
       __uuidof(Interface), mscom::ToInterceptorTargetPtr(inObj));
@@ -560,7 +574,32 @@ HRESULT HandlerProvider::ToWrappedObject(Interface** aObj) {
       mscom::MainThreadHandoff::WrapInterface(std::move(inObj), hprov, aObj);
   if (FAILED(hr)) {
     *aObj = nullptr;
+    return hr;
   }
+  
+  
+  RefPtr<mscom::IInterceptor> interceptor;
+  hr = (*aObj)->QueryInterface(mscom::IID_IInterceptor,
+                               getter_AddRefs(interceptor));
+  MOZ_ASSERT(SUCCEEDED(hr));
+  
+  
+  
+  RefPtr<mscom::IInterceptorSink> interceptorSink;
+  interceptor->GetEventSink(getter_AddRefs(interceptorSink));
+  MOZ_ASSERT(interceptorSink);
+  RefPtr<mscom::IMainThreadHandoff> handoff;
+  hr = interceptorSink->QueryInterface(mscom::IID_IMainThreadHandoff,
+                                       getter_AddRefs(handoff));
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(hr),
+                        "A11y Interceptor isn't using MainThreadHandoff");
+  RefPtr<mscom::IHandlerProvider> usedIHprov;
+  handoff->GetHandlerProvider(getter_AddRefs(usedIHprov));
+  MOZ_ASSERT(usedIHprov);
+  auto usedHprov = static_cast<HandlerProvider*>(usedIHprov.get());
+  usedHprov->PrebuildPayload(WrapNotNull(interceptor));
   return hr;
 }
 

@@ -8,6 +8,7 @@
 #define mozilla_a11y_HandlerProvider_h
 
 #include "mozilla/a11y/AccessibleHandler.h"
+#include "mozilla/a11y/HandlerDataCleanup.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/mscom/IHandlerProvider.h"
@@ -80,6 +81,14 @@ class HandlerProvider final : public IGeckoBackChannel,
                            DynamicIA2Data* aOutDynamicData);
   static void CleanupStaticIA2Data(StaticIA2Data& aData);
   bool IsTargetInterfaceCacheable();
+
+  
+
+
+
+
+  void PrebuildPayload(NotNull<mscom::IInterceptor*> aInterceptor);
+
   
   
   
@@ -104,6 +113,21 @@ class HandlerProvider final : public IGeckoBackChannel,
       mTargetUnk;  
   UniquePtr<mscom::StructToStream> mSerializer;
   RefPtr<IUnknown> mFastMarshalUnk;
+
+  struct IA2PayloadDeleter {
+    void operator()(IA2Payload* aPayload) {
+      CleanupStaticIA2Data(aPayload->mStaticData);
+      
+      CleanupDynamicIA2Data(aPayload->mDynamicData, false);
+      delete aPayload;
+    }
+  };
+  using IA2PayloadPtr = UniquePtr<IA2Payload, IA2PayloadDeleter>;
+
+  
+  
+  IA2PayloadPtr mPayload;
+  Mutex mPayloadMutex;  
 };
 
 }  
