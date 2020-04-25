@@ -12364,20 +12364,20 @@ void ConnectionPool::Cleanup() {
 
   if (!mCompleteCallbacks.IsEmpty()) {
     
-    
-    
-    for (uint32_t count = mCompleteCallbacks.Length(), index = 0; index < count;
-         index++) {
-      
-      
-      const auto completeCallback = std::move(mCompleteCallbacks[index]);
-      MOZ_ASSERT(completeCallback);
-      MOZ_ASSERT(completeCallback->mCallback);
 
-      Unused << completeCallback->mCallback->Run();
+    {
+      auto completeCallbacks = std::move(mCompleteCallbacks);
+      for (const auto& completeCallback : completeCallbacks) {
+        MOZ_ASSERT(completeCallback);
+        MOZ_ASSERT(completeCallback->mCallback);
+
+        Unused << completeCallback->mCallback->Run();
+      }
+
+      
+      
+      MOZ_ASSERT(mCompleteCallbacks.IsEmpty());
     }
-
-    mCompleteCallbacks.Clear();
 
     
     nsIThread* currentThread = NS_GetCurrentThread();
