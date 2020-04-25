@@ -5994,6 +5994,13 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
         UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatus)) {
       UnblockEmbedderLoadEventForFailure();
 
+      
+      
+      if (!StaticPrefs::
+              privacy_trackingprotection_testing_report_blocked_node()) {
+        return NS_OK;
+      }
+
       RefPtr<BrowsingContext> bc = GetBrowsingContext();
       RefPtr<BrowsingContext> parentBC = bc->GetParent();
 
