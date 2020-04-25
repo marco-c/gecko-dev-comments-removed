@@ -536,11 +536,20 @@ void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
   }
   prefSize = XULBoundsCheck(minSize, prefSize, maxSize);
 
-  
+
   bool sizeChanged = (mPrefSize != prefSize);
+  
   if (sizeChanged) {
     SetXULBounds(aState, nsRect(0, 0, prefSize.width, prefSize.height), false);
     mPrefSize = prefSize;
+#if MOZ_WAYLAND
+    nsIWidget* widget = GetWidget();
+    if (widget) {
+      
+      
+      widget->FlushPreferredPopupRect();
+    }
+#endif
   }
 
   bool needCallback = false;
@@ -1407,7 +1416,17 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
       
       
       
-      screenPoint = AdjustPositionForAnchorAlign(anchorRect, hFlip, vFlip);
+
+#ifdef MOZ_WAYLAND
+      if (gdk_display_get_default() &&
+          !GDK_IS_X11_DISPLAY(gdk_display_get_default())) {
+        screenPoint = nsPoint(anchorRect.x, anchorRect.y);
+        mAnchorRect = anchorRect;
+      } else
+#endif
+      {
+        screenPoint = AdjustPositionForAnchorAlign(anchorRect, hFlip, vFlip);
+      }
     } else {
       
       anchorRect = rootScreenRect;
@@ -1519,6 +1538,17 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     
     anchorRect = anchorRect.Intersect(screenRect);
 
+#ifdef MOZ_WAYLAND
+    nsIWidget* widget = GetWidget();
+    if (widget) {
+      nsRect prefRect = widget->GetPreferredPopupRect();
+      if (prefRect.width > 0 && prefRect.height > 0) {
+        screenRect = prefRect;
+      }
+    } else {
+      NS_WARNING("No widget associated with popup frame.");
+    }
+#endif
     
     if (mRect.width > screenRect.width) mRect.width = screenRect.width;
     if (mRect.height > screenRect.height) mRect.height = screenRect.height;
