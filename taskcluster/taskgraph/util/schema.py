@@ -198,6 +198,10 @@ OptimizationSchema = voluptuous.Any(
     
     None,
     
+    {'always': None},
+    
+    {'build': list(schedules.ALL_COMPONENTS)},
+    
     
     {'index-search': [text_type]},
     
@@ -210,6 +214,7 @@ OptimizationSchema = voluptuous.Any(
     {'test': list(schedules.ALL_COMPONENTS)},
     {'test-inclusive': list(schedules.ALL_COMPONENTS)},
     {'test-try': list(schedules.ALL_COMPONENTS)},
+    {'fuzzing-builds': list(schedules.ALL_COMPONENTS)},
 )
 
 
