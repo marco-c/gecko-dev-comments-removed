@@ -21,6 +21,7 @@
 #include "builtin/streams/WritableStream.h"        
 #include "builtin/streams/WritableStreamDefaultWriter.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
+#include "builtin/streams/WritableStreamWriterOperations.h"  
 #include "js/CallArgs.h"       
 #include "js/Class.h"          
 #include "js/Promise.h"        
@@ -49,6 +50,7 @@ using JS::Value;
 using js::GetErrorMessage;
 using js::NewHandler;
 using js::PipeToState;
+using js::PromiseObject;
 using js::ReadableStream;
 using js::ReadableStreamDefaultReader;
 using js::TargetFromHandler;
@@ -447,11 +449,176 @@ static inline JSObject* GetClosedPromise(
   return unwrappedAccessor->closedPromise();
 }
 
+static bool ReadFulfilled(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 1);
+
+  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+  cx->check(state);
+
+  state->clearReadPending();
+
+  
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool ReadRejected(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 1);
+
+  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+  cx->check(state);
+
+  state->clearReadPending();
+
+  
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool ReadFromSource(JSContext* cx, unsigned argc, Value* vp);
+
+static MOZ_MUST_USE bool ReadFromSource(JSContext* cx,
+                                        Handle<PipeToState*> state) {
+  cx->check(state);
+
+  MOZ_ASSERT(!state->isReadPending(),
+             "should only have one read in flight at a time, because multiple "
+             "reads could cause the latter read to ignore backpressure "
+             "signals");
+
+  
+  
+  if (state->shuttingDown()) {
+    return true;
+  }
+
+  Rooted<WritableStreamDefaultWriter*> writer(cx, state->writer());
+  cx->check(writer);
+
+  
+  
+  Rooted<Value> desiredSize(cx);
+  if (!WritableStreamDefaultWriterGetDesiredSize(cx, writer, &desiredSize)) {
+    return false;
+  }
+
+  
+  
+  
+  if (desiredSize.isNull()) {
+#ifdef DEBUG
+    {
+      WritableStream* unwrappedDest = GetUnwrappedDest(cx, state);
+      if (!unwrappedDest) {
+        return false;
+      }
+
+      MOZ_ASSERT(unwrappedDest->erroring() || unwrappedDest->errored());
+    }
+#endif
+
+    return true;
+  }
+
+  
+  
+  MOZ_ASSERT(desiredSize.isNumber());
+  if (desiredSize.toNumber() <= 0) {
+    Rooted<JSObject*> readyPromise(cx, writer->readyPromise());
+    cx->check(readyPromise);
+
+    Rooted<JSFunction*> readFromSource(cx,
+                                       NewHandler(cx, ReadFromSource, state));
+    if (!readFromSource) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    return JS::AddPromiseReactionsIgnoringUnhandledRejection(
+        cx, readyPromise, readFromSource, nullptr);
+  }
+
+  
+  
+  Rooted<ReadableStreamDefaultReader*> reader(cx, state->reader());
+  cx->check(reader);
+
+  Rooted<PromiseObject*> readRequest(
+      cx, js::ReadableStreamDefaultReaderRead(cx, reader));
+  if (!readRequest) {
+    return false;
+  }
+
+  Rooted<JSFunction*> readFulfilled(cx, NewHandler(cx, ReadFulfilled, state));
+  if (!readFulfilled) {
+    return false;
+  }
+
+  Rooted<JSFunction*> readRejected(cx, NewHandler(cx, ReadRejected, state));
+  if (!readRejected) {
+    return false;
+  }
+
+  
+  
+  
+  if (!JS::AddPromiseReactionsIgnoringUnhandledRejection(
+          cx, readRequest, readFulfilled, readRejected)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  state->setReadPending();
+  return true;
+}
+
+static bool ReadFromSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  Rooted<PipeToState*> state(cx, TargetFromHandler<PipeToState>(args));
+  cx->check(state);
+
+  if (!ReadFromSource(cx, state)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
 static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
                                      Handle<ReadableStream*> unwrappedSource,
                                      Handle<WritableStream*> unwrappedDest) {
   cx->check(state);
 
+  
+  
+  MOZ_ASSERT(!state->shuttingDown(), "can't be shutting down when starting");
+
+  
+  
+  
+  
   
   bool erroredOrClosed;
   if (!SourceOrDestErroredOrClosed(cx, state, unwrappedSource, unwrappedDest,
@@ -507,11 +674,7 @@ static MOZ_MUST_USE bool StartPiping(JSContext* cx, Handle<PipeToState*> state,
     }
   }
 
-  
-  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_READABLESTREAM_METHOD_NOT_IMPLEMENTED,
-                            "pipeTo");
-  return false;
+  return ReadFromSource(cx, state);
 }
 
 
