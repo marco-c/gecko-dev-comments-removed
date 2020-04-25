@@ -21,6 +21,34 @@ const IDB_VERSION = 2;
 const IDB_RECORDS_STORE = "records";
 const IDB_TIMESTAMPS_STORE = "timestamps";
 
+
+
+
+
+
+
+
+
+function bulkOperationHelper(store, operation, list, listIndex = 0) {
+  const CHUNK_LENGTH = 250;
+  const max = Math.min(listIndex + CHUNK_LENGTH, list.length);
+  let request;
+  for (; listIndex < max; listIndex++) {
+    request = store[operation](list[listIndex]);
+  }
+  if (listIndex < list.length) {
+    
+    request.onsuccess = bulkOperationHelper.bind(
+      null,
+      store,
+      operation,
+      list,
+      listIndex
+    );
+  }
+  
+}
+
 const Agent = {
   
 
@@ -165,18 +193,10 @@ async function importDumpIDB(bucket, collection, records) {
   const cid = bucket + "/" + collection;
   await executeIDB(db, IDB_RECORDS_STORE, store => {
     
-    
-    let i = 0;
-    putNext();
-
-    function putNext() {
-      if (i == records.length) {
-        return;
-      }
-      const entry = { ...records[i], _status: "synced", _cid: cid };
-      store.put(entry).onsuccess = putNext; 
-      ++i;
-    }
+    records.forEach(item => {
+      item._cid = cid;
+    });
+    bulkOperationHelper(store, "put", records);
   });
 
   

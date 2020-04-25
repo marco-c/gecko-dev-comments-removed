@@ -45,6 +45,34 @@ class ShutdownError extends IndexedDBError {
 
 
 
+
+
+
+function bulkOperationHelper(store, operation, list, listIndex = 0) {
+  const CHUNK_LENGTH = 250;
+  const max = Math.min(listIndex + CHUNK_LENGTH, list.length);
+  let request;
+  for (; listIndex < max; listIndex++) {
+    request = store[operation](list[listIndex]);
+  }
+  if (listIndex < list.length) {
+    
+    request.onsuccess = bulkOperationHelper.bind(
+      null,
+      store,
+      operation,
+      list,
+      listIndex
+    );
+  }
+  
+}
+
+
+
+
+
+
 class Database {
   
   static get IDBError() {
@@ -100,19 +128,13 @@ class Database {
       await executeIDB(
         "records",
         store => {
-          
-          
-          let i = 0;
-          putNext();
-
-          function putNext() {
-            if (i == toInsert.length) {
-              return;
-            }
-            const entry = { ...toInsert[i], _cid };
-            store.put(entry).onsuccess = putNext; 
-            ++i;
-          }
+          bulkOperationHelper(
+            store,
+            "put",
+            toInsert.map(item => {
+              return Object.assign({ _cid }, item);
+            })
+          );
         },
         { desc: "importBulk() in " + this.identifier }
       );
@@ -127,18 +149,13 @@ class Database {
       await executeIDB(
         "records",
         store => {
-          
-          
-          let i = 0;
-          deleteNext();
-
-          function deleteNext() {
-            if (i == toDelete.length) {
-              return;
-            }
-            store.delete([_cid, toDelete[i].id]).onsuccess = deleteNext; 
-            ++i;
-          }
+          bulkOperationHelper(
+            store,
+            "delete",
+            toDelete.map(item => {
+              return [_cid, item.id];
+            })
+          );
         },
         { desc: "deleteBulk() in " + this.identifier }
       );
