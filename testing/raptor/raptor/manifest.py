@@ -328,21 +328,17 @@ def get_raptor_test_list(args, oskey):
                 tests_to_run.append(next_test)
 
     
+    if args.live_sites:
+        for next_test in tests_to_run:
+            next_test['use_live_sites'] = "true"
+
+    
     
     
     for next_test in tests_to_run:
         LOG.info("configuring settings for test %s" % next_test['name'])
         max_page_cycles = next_test.get('page_cycles', 1)
         max_browser_cycles = next_test.get('browser_cycles', 1)
-
-        
-        if next_test.get('playback') is not None:
-            next_test['playback_pageset_manifest'] = \
-                transform_subtest(next_test['playback_pageset_manifest'],
-                                  next_test['name'])
-            next_test['playback_recordings'] = \
-                transform_subtest(next_test['playback_recordings'],
-                                  next_test['name'])
 
         if args.gecko_profile is True:
             next_test['gecko_profile'] = True
@@ -446,12 +442,19 @@ def get_raptor_test_list(args, oskey):
             
             LOG.info("using live sites so turning playback off!")
             next_test['playback'] = None
-            LOG.info("using live sites so appending '-live' to the test name")
-            next_test['name'] = next_test['name'] + "-live"
             
             next_test['page_timeout'] = int(
                 next_test['page_timeout']) * LIVE_SITE_TIMEOUT_MULTIPLIER
             LOG.info("using live sites so using page timeout of %dms" % next_test['page_timeout'])
+
+        
+        if next_test.get('playback') is not None:
+            next_test['playback_pageset_manifest'] = \
+                transform_subtest(next_test['playback_pageset_manifest'],
+                                  next_test['name'])
+            next_test['playback_recordings'] = \
+                transform_subtest(next_test['playback_recordings'],
+                                  next_test['name'])
 
         
         
