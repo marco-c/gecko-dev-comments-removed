@@ -1049,6 +1049,18 @@ class UrlbarInput {
       
       return;
     }
+    if (this.document.fullscreenElement) {
+      
+      
+      this.window.addEventListener(
+        "fullscreen",
+        () => {
+          this.updateLayoutBreakout();
+        },
+        { once: true }
+      );
+      return;
+    }
     await this._updateLayoutBreakoutDimensions();
     this.startLayoutExtend();
   }
