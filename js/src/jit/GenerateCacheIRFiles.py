@@ -197,10 +197,6 @@ def gen_compiler_method(name, operands):
     method_name = 'emit' + name
 
     
-    if not operands:
-        return 'MOZ_MUST_USE bool {}();\\\n'.format(method_name)
-
-    
     
     
     
@@ -212,18 +208,19 @@ def gen_compiler_method(name, operands):
     args_names = []
     args_sig = []
     operands_code = ''
-    for opnd_name, opnd_type in six.iteritems(operands):
-        vartype, suffix, readexpr = operand_compiler_info[opnd_type]
-        varname = opnd_name + suffix
-        args_names.append(varname)
-        args_sig.append('{} {}'.format(vartype, varname))
-        operands_code += '  {} {} = {};\\\n'.format(vartype, varname, readexpr)
+    if operands:
+        for opnd_name, opnd_type in six.iteritems(operands):
+            vartype, suffix, readexpr = operand_compiler_info[opnd_type]
+            varname = opnd_name + suffix
+            args_names.append(varname)
+            args_sig.append('{} {}'.format(vartype, varname))
+            operands_code += '  {} {} = {};\\\n'.format(vartype, varname, readexpr)
 
     
     code = 'MOZ_MUST_USE bool {}({});\\\n'.format(method_name, ', '.join(args_sig))
 
     
-    code += 'MOZ_MUST_USE bool {}() {{\\\n'.format(method_name)
+    code += 'MOZ_MUST_USE bool {}(CacheIRReader& reader) {{\\\n'.format(method_name)
     code += operands_code
     code += '  return {}({});\\\n'.format(method_name, ', '.join(args_names))
     code += '}\\\n'
