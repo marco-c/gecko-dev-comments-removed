@@ -594,20 +594,6 @@ function makeKeyForMatch(match) {
 
 
 
-function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
-  
-  return (
-    !REGEXP_SPACES.test(str) &&
-    (["/", "@", ":", "["].some(c => str.includes(c)) ||
-      (ignoreAlphanumericHosts
-        ? /^([\[\]A-Z0-9-]+\.){3,}[^.]+$/i.test(str)
-        : str.includes(".")))
-  );
-}
-
-
-
-
 
 
 
@@ -1392,12 +1378,17 @@ Search.prototype = {
         
         
         
+        let str = this._originalSearchString;
         try {
-          new URL(this._originalSearchString);
+          new URL(str);
         } catch (ex) {
           if (
             UrlbarPrefs.get("keyword.enabled") &&
-            !looksLikeUrl(this._originalSearchString, true)
+            (UrlbarTokenizer.looksLikeOrigin(str, {
+              noIp: true,
+              noPort: true,
+            }) ||
+              UrlbarTokenizer.REGEXP_COMMON_EMAIL.test(str))
           ) {
             this._addingHeuristicResult = false;
             await this._matchCurrentSearchEngine();
