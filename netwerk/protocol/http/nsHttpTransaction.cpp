@@ -1087,6 +1087,27 @@ void nsHttpTransaction::Close(nsresult reason) {
     return;
   }
 
+  
+  
+  if (mTunnelProvider && reason == NS_ERROR_PROXY_AUTHENTICATION_FAILED) {
+    MOZ_ASSERT(mProxyConnectResponseCode == 407, "non-407 proxy auth failed");
+    MOZ_ASSERT(!mFlat407Headers.IsEmpty(), "Contain status line at least");
+    uint32_t unused = 0;
+
+    
+    reason = ProcessData(mFlat407Headers.BeginWriting(),
+                         mFlat407Headers.Length(), &unused);
+
+    if (NS_SUCCEEDED(reason)) {
+      
+      mReceivedData = true;
+    }
+
+    LOG(("nsHttpTransaction::Close [this=%p] overwrite reason to %" PRIx32
+         " for 407 proxy via CONNECT\n",
+         this, static_cast<uint32_t>(reason)));
+  }
+
   NotifyTransactionObserver(reason);
 
   if (mTokenBucketCancel) {
@@ -1250,7 +1271,7 @@ void nsHttpTransaction::Close(nsresult reason) {
     
     if (!mHaveAllHeaders) {
       char data = '\n';
-      uint32_t unused;
+      uint32_t unused = 0;
       Unused << ParseHead(&data, 1, &unused);
 
       if (mResponseHead->Version() == HttpVersion::v0_9) {
@@ -2552,6 +2573,14 @@ void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
 int32_t nsHttpTransaction::GetProxyConnectResponseCode() {
   MutexAutoLock lock(mLock);
   return mProxyConnectResponseCode;
+}
+
+void nsHttpTransaction::SetFlat407Headers(const nsACString& aHeaders) {
+  MOZ_ASSERT(mProxyConnectResponseCode == 407);
+  MOZ_ASSERT(!mResponseHead);
+
+  LOG(("nsHttpTransaction::SetFlat407Headers %p", this));
+  mFlat407Headers = aHeaders;
 }
 
 void nsHttpTransaction::NotifyTransactionObserver(nsresult reason) {

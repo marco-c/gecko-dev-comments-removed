@@ -137,6 +137,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void SetH2WSTransaction(SpdyConnectTransaction*);
 
   void OnProxyConnectComplete(int32_t aResponseCode) override;
+  void SetFlat407Headers(const nsACString& aHeaders);
 
   
   
@@ -267,6 +268,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
 
   HttpVersion mHttpVersion;
   uint16_t mHttpResponseCode;
+  nsCString mFlat407Headers;
 
   uint32_t mCurrentHttpResponseHeaderSize;
 
