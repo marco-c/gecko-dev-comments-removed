@@ -414,53 +414,53 @@ class BlocksRingBuffer {
   
   template <typename CallbackBytes, typename Callback>
   auto ReserveAndPut(CallbackBytes aCallbackBytes, Callback&& aCallback) {
-    {  
-      baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
-      if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
-        const Length entryBytes = std::forward<CallbackBytes>(aCallbackBytes)();
-        const Length bufferBytes =
-            mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value();
-        MOZ_RELEASE_ASSERT(entryBytes <= bufferBytes - ULEB128Size(entryBytes),
-                           "Entry would wrap and overwrite itself");
+    Maybe<ProfileBufferEntryWriter> maybeEntryWriter;
+
+    baseprofiler::detail::BaseProfilerMaybeAutoLock lock(mMutex);
+
+    if (MOZ_LIKELY(mMaybeUnderlyingBuffer)) {
+      const Length entryBytes = std::forward<CallbackBytes>(aCallbackBytes)();
+      MOZ_RELEASE_ASSERT(entryBytes > 0);
+      const Length bufferBytes =
+          mMaybeUnderlyingBuffer->mBuffer.BufferLength().Value();
+      MOZ_RELEASE_ASSERT(entryBytes <= bufferBytes - ULEB128Size(entryBytes),
+                         "Entry would wrap and overwrite itself");
+      
+      const Length blockBytes = ULEB128Size(entryBytes) + entryBytes;
+      
+      const ProfileBufferIndex blockIndex =
+          mNextWriteIndex.ConvertToProfileBufferIndex();
+      
+      const ProfileBufferIndex blockEnd = blockIndex + blockBytes;
+      while (blockEnd >
+             mFirstReadIndex.ConvertToProfileBufferIndex() + bufferBytes) {
         
-        const Length blockBytes = ULEB128Size(entryBytes) + entryBytes;
+        ProfileBufferEntryReader reader = ReaderInBlockAt(mFirstReadIndex);
+        mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
         
-        const ProfileBufferIndex blockIndex =
-            mNextWriteIndex.ConvertToProfileBufferIndex();
-        
-        const ProfileBufferIndex blockEnd = blockIndex + blockBytes;
-        while (blockEnd >
-               mFirstReadIndex.ConvertToProfileBufferIndex() + bufferBytes) {
-          
-          ProfileBufferEntryReader reader = ReaderInBlockAt(mFirstReadIndex);
-          mMaybeUnderlyingBuffer->mClearedBlockCount += 1;
-          
-          mFirstReadIndex =
-              ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
-                  mFirstReadIndex.ConvertToProfileBufferIndex() +
-                  ULEB128Size(reader.RemainingBytes()) +
-                  reader.RemainingBytes());
-        }
-        
-        mNextWriteIndex =
-            ProfileBufferBlockIndex::CreateFromProfileBufferIndex(blockEnd);
-        mMaybeUnderlyingBuffer->mPushedBlockCount += 1;
-        
-        ProfileBufferEntryWriter entryWriter =
-            mMaybeUnderlyingBuffer->mBuffer.EntryWriterFromTo(blockIndex,
-                                                              blockEnd);
-        entryWriter.WriteULEB128(entryBytes);
-        MOZ_ASSERT(entryWriter.RemainingBytes() == entryBytes);
-#ifdef DEBUG
-        auto checkAllWritten = MakeScopeExit(
-            [&]() { MOZ_ASSERT(entryWriter.RemainingBytes() == 0); });
-#endif  
-        return std::forward<Callback>(aCallback)(&entryWriter);
+        mFirstReadIndex = ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
+            mFirstReadIndex.ConvertToProfileBufferIndex() +
+            ULEB128Size(reader.RemainingBytes()) + reader.RemainingBytes());
       }
-    }  
-    
-    
-    return std::forward<Callback>(aCallback)(nullptr);
+      
+      mNextWriteIndex =
+          ProfileBufferBlockIndex::CreateFromProfileBufferIndex(blockEnd);
+      mMaybeUnderlyingBuffer->mPushedBlockCount += 1;
+      
+      mMaybeUnderlyingBuffer->mBuffer.EntryWriterFromTo(maybeEntryWriter,
+                                                        blockIndex, blockEnd);
+      MOZ_ASSERT(maybeEntryWriter.isSome(),
+                 "Non-empty entry should always create an EntryWriter");
+      maybeEntryWriter->WriteULEB128(entryBytes);
+      MOZ_ASSERT(maybeEntryWriter->RemainingBytes() == entryBytes);
+    }
+
+#ifdef DEBUG
+    auto checkAllWritten = MakeScopeExit([&]() {
+      MOZ_ASSERT(!maybeEntryWriter || maybeEntryWriter->RemainingBytes() == 0);
+    });
+#endif  
+    return std::forward<Callback>(aCallback)(maybeEntryWriter);
   }
 
   
@@ -477,8 +477,8 @@ class BlocksRingBuffer {
   
   ProfileBufferBlockIndex PutFrom(const void* aSrc, Length aBytes) {
     return ReserveAndPut([aBytes]() { return aBytes; },
-                         [&](ProfileBufferEntryWriter* aEntryWriter) {
-                           if (MOZ_UNLIKELY(!aEntryWriter)) {
+                         [&](Maybe<ProfileBufferEntryWriter>& aEntryWriter) {
+                           if (MOZ_UNLIKELY(aEntryWriter.isNothing())) {
                              
                              return ProfileBufferBlockIndex{};
                            }
@@ -495,8 +495,8 @@ class BlocksRingBuffer {
                   "PutObjects must be given at least one object.");
     return ReserveAndPut(
         [&]() { return ProfileBufferEntryWriter::SumBytes(aTs...); },
-        [&](ProfileBufferEntryWriter* aEntryWriter) {
-          if (MOZ_UNLIKELY(!aEntryWriter)) {
+        [&](Maybe<ProfileBufferEntryWriter>& aEntryWriter) {
+          if (MOZ_UNLIKELY(aEntryWriter.isNothing())) {
             
             return ProfileBufferBlockIndex{};
           }

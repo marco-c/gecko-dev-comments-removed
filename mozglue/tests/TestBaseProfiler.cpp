@@ -1707,8 +1707,8 @@ void TestBlocksRingBufferAPI() {
 
     
     auto bi2 = rb.ReserveAndPut([]() { return sizeof(uint32_t); },
-                                [](ProfileBufferEntryWriter* aEW) {
-                                  MOZ_RELEASE_ASSERT(!!aEW);
+                                [](Maybe<ProfileBufferEntryWriter>& aEW) {
+                                  MOZ_RELEASE_ASSERT(aEW.isSome());
                                   aEW->WriteObject(uint32_t(2));
                                   return aEW->CurrentBlockIndex();
                                 });
@@ -1790,12 +1790,13 @@ void TestBlocksRingBufferAPI() {
 
     
     
-    auto put3 = rb.Put(sizeof(uint32_t), [&](ProfileBufferEntryWriter* aEW) {
-      MOZ_RELEASE_ASSERT(!!aEW);
-      aEW->WriteObject(uint32_t(3));
-      MOZ_RELEASE_ASSERT(aEW->CurrentBlockIndex() == bi2Next);
-      return float(aEW->CurrentBlockIndex().ConvertToProfileBufferIndex());
-    });
+    auto put3 =
+        rb.Put(sizeof(uint32_t), [&](Maybe<ProfileBufferEntryWriter>& aEW) {
+          MOZ_RELEASE_ASSERT(aEW.isSome());
+          aEW->WriteObject(uint32_t(3));
+          MOZ_RELEASE_ASSERT(aEW->CurrentBlockIndex() == bi2Next);
+          return float(aEW->CurrentBlockIndex().ConvertToProfileBufferIndex());
+        });
     static_assert(std::is_same<decltype(put3), float>::value,
                   "Expect float as returned by callback.");
     MOZ_RELEASE_ASSERT(put3 == 11.0);
@@ -1847,11 +1848,12 @@ void TestBlocksRingBufferAPI() {
     
     
     
-    auto bi5 = rb.Put(sizeof(uint32_t), [&](ProfileBufferEntryWriter* aEW) {
-      MOZ_RELEASE_ASSERT(!!aEW);
-      aEW->WriteObject(uint32_t(5));
-      return aEW->CurrentBlockIndex();
-    });
+    auto bi5 =
+        rb.Put(sizeof(uint32_t), [&](Maybe<ProfileBufferEntryWriter>& aEW) {
+          MOZ_RELEASE_ASSERT(aEW.isSome());
+          aEW->WriteObject(uint32_t(5));
+          return aEW->CurrentBlockIndex();
+        });
     auto bi6 = rb.GetState().mRangeEnd;
     
     
@@ -2031,8 +2033,8 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
     MOZ_RELEASE_ASSERT(state.mClearedBlockCount == 0);
     
     int32_t ran = 0;
-    rb.Put(1, [&](ProfileBufferEntryWriter* aMaybeEntryWriter) {
-      MOZ_RELEASE_ASSERT(!aMaybeEntryWriter);
+    rb.Put(1, [&](Maybe<ProfileBufferEntryWriter>& aMaybeEntryWriter) {
+      MOZ_RELEASE_ASSERT(aMaybeEntryWriter.isNothing());
       ++ran;
     });
     MOZ_RELEASE_ASSERT(ran == 1);
@@ -2103,12 +2105,13 @@ void TestBlocksRingBufferUnderlyingBufferChanges() {
     }
     int32_t ran = 0;
     
-    bi = rb.Put(sizeof(ran), [&](ProfileBufferEntryWriter* aMaybeEntryWriter) {
-      MOZ_RELEASE_ASSERT(!!aMaybeEntryWriter);
-      ++ran;
-      aMaybeEntryWriter->WriteObject(ran);
-      return aMaybeEntryWriter->CurrentBlockIndex();
-    });
+    bi = rb.Put(sizeof(ran),
+                [&](Maybe<ProfileBufferEntryWriter>& aMaybeEntryWriter) {
+                  MOZ_RELEASE_ASSERT(aMaybeEntryWriter.isSome());
+                  ++ran;
+                  aMaybeEntryWriter->WriteObject(ran);
+                  return aMaybeEntryWriter->CurrentBlockIndex();
+                });
     MOZ_RELEASE_ASSERT(ran == 1);
     MOZ_RELEASE_ASSERT(rb.PutFrom(&ran, sizeof(ran)) !=
                        ProfileBufferBlockIndex{});
@@ -2253,8 +2256,8 @@ void TestBlocksRingBufferThreading() {
             
             
             rb.Put(std::max(aThreadNo, int(sizeof(push))),
-                   [&](ProfileBufferEntryWriter* aEW) {
-                     MOZ_RELEASE_ASSERT(!!aEW);
+                   [&](Maybe<ProfileBufferEntryWriter>& aEW) {
+                     MOZ_RELEASE_ASSERT(aEW.isSome());
                      aEW->WriteObject(aThreadNo * 1000000 + push);
                      *aEW += aEW->RemainingBytes();
                    });
