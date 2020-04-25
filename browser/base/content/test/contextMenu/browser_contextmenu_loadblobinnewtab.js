@@ -13,7 +13,8 @@ const blobDataAsString = `!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUV
 
 
 
-async function open_in_new_tab_and_return_content(selector) {
+
+async function rightClickOpenInNewTabAndReturnContent(selector) {
   const loaded = BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
@@ -80,13 +81,62 @@ async function open_in_new_tab_and_return_content(selector) {
     }
   );
 
+  let tabClosed = BrowserTestUtils.waitForTabClosing(openTab);
   await BrowserTestUtils.removeTab(openTab);
+  await tabClosed;
+
+  return blobDataFromContent;
+}
+
+
+
+
+async function openInNewTabAndReturnContent(selector) {
+  const loaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    RESOURCE_LINK
+  );
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, RESOURCE_LINK);
+  await loaded;
+
+  const generatedBlobURL = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    { selector },
+    async args => {
+      return content.document.getElementById(args.selector).href;
+    }
+  );
+
+  let openTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    generatedBlobURL
+  );
+
+  let blobDataFromContent = await ContentTask.spawn(
+    gBrowser.selectedBrowser,
+    null,
+    async function() {
+      while (!content.document.querySelector("body pre")) {
+        await new Promise(resolve =>
+          content.setTimeout(() => {
+            resolve();
+          }, 100)
+        );
+      }
+      return content.document.body.firstElementChild.innerText.trim();
+    }
+  );
+
+  let tabClosed = BrowserTestUtils.waitForTabClosing(openTab);
+  await BrowserTestUtils.removeTab(openTab);
+  await tabClosed;
 
   return blobDataFromContent;
 }
 
 add_task(async function test_rightclick_open_bloburl_in_new_tab() {
-  let blobDataFromLoadedPage = await open_in_new_tab_and_return_content(
+  let blobDataFromLoadedPage = await rightClickOpenInNewTabAndReturnContent(
     "blob-url-link"
   );
   is(
@@ -97,7 +147,29 @@ add_task(async function test_rightclick_open_bloburl_in_new_tab() {
 });
 
 add_task(async function test_rightclick_open_bloburl_referrer_in_new_tab() {
-  let blobDataFromLoadedPage = await open_in_new_tab_and_return_content(
+  let blobDataFromLoadedPage = await rightClickOpenInNewTabAndReturnContent(
+    "blob-url-referrer-link"
+  );
+  is(
+    blobDataFromLoadedPage,
+    blobDataAsString,
+    "The blobURL is correctly loaded"
+  );
+});
+
+add_task(async function test_open_bloburl_in_new_tab() {
+  let blobDataFromLoadedPage = await openInNewTabAndReturnContent(
+    "blob-url-link"
+  );
+  is(
+    blobDataFromLoadedPage,
+    blobDataAsString,
+    "The blobURL is correctly loaded"
+  );
+});
+
+add_task(async function test_open_bloburl_referrer_in_new_tab() {
+  let blobDataFromLoadedPage = await openInNewTabAndReturnContent(
     "blob-url-referrer-link"
   );
   is(
