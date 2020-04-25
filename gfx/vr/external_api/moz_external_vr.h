@@ -121,11 +121,17 @@ enum class ControllerCapabilityFlags : uint16_t {
   
 
 
-  Cap_TargetRaySpacePosition = 1 << 5,
+  Cap_GripSpacePosition = 1 << 5,
   
 
 
-  Cap_All = (1 << 6) - 1
+
+
+  Cap_PositionEmulated = 1 << 6,
+  
+
+
+  Cap_All = (1 << 7) - 1
 };
 
 #endif  
