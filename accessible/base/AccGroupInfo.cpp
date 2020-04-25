@@ -40,9 +40,16 @@ void AccGroupInfo::Update() {
     
     if (siblingRole == roles::SEPARATOR) break;
 
-    
-    if (BaseRole(siblingRole) != mRole || sibling->State() & states::INVISIBLE)
+    if (BaseRole(siblingRole) != mRole) {
       continue;
+    }
+    bool siblingHasGroupInfo =
+        sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo();
+    
+    
+    if (!siblingHasGroupInfo && sibling->State() & states::INVISIBLE) {
+      continue;
+    }
 
     
     
@@ -59,7 +66,7 @@ void AccGroupInfo::Update() {
 
     
     
-    if (sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo()) {
+    if (siblingHasGroupInfo) {
       mPosInSet += sibling->mBits.groupInfo->mPosInSet;
       mParent = sibling->mBits.groupInfo->mParent;
       mSetSize = sibling->mBits.groupInfo->mSetSize;
@@ -80,9 +87,16 @@ void AccGroupInfo::Update() {
     
     if (siblingRole == roles::SEPARATOR) break;
 
-    
-    if (BaseRole(siblingRole) != mRole || sibling->State() & states::INVISIBLE)
+    if (BaseRole(siblingRole) != mRole) {
       continue;
+    }
+    bool siblingHasGroupInfo =
+        sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo();
+    
+    
+    if (!siblingHasGroupInfo && sibling->State() & states::INVISIBLE) {
+      continue;
+    }
 
     
     int32_t siblingLevel = nsAccUtils::GetARIAOrDefaultLevel(sibling);
@@ -93,7 +107,7 @@ void AccGroupInfo::Update() {
 
     
     
-    if (sibling->mBits.groupInfo && !sibling->HasDirtyGroupInfo()) {
+    if (siblingHasGroupInfo) {
       mParent = sibling->mBits.groupInfo->mParent;
       mSetSize = sibling->mBits.groupInfo->mSetSize;
       return;
