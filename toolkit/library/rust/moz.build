@@ -11,7 +11,6 @@ RustLibrary('gkrust', gkrust_features, is_gkrust=True)
 
 
 RUST_TESTS = [
-    'glean',
     'selectors',
     'servo_arc',
     'stylo_tests',
