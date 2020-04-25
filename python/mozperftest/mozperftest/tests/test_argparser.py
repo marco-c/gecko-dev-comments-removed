@@ -3,7 +3,8 @@
 
 
 import mozunit
-from mozperftest.argparser import PerftestArgumentParser
+
+from mozperftest.argparser import PerftestArgumentParser, Options
 
 
 def test_argparser():
@@ -11,6 +12,13 @@ def test_argparser():
     args = ["test_one.js"]
     res = parser.parse_args(args)
     assert res.tests == ["test_one.js"]
+
+
+def test_options():
+    assert Options.args["--proxy"]["help"] == "Activates the proxy layer"
+    assert Options.args["--no-browsertime"]["help"] == (
+        "Deactivates the " "browsertime layer"
+    )
 
 
 if __name__ == "__main__":
