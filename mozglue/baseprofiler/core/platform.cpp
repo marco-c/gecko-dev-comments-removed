@@ -284,7 +284,7 @@ class CorePS {
         
         
         
-        mCoreBlocksRingBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
+        mCoreBuffer(BlocksRingBuffer::ThreadSafety::WithMutex)
 #  ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -349,7 +349,7 @@ class CorePS {
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
 
   
-  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBlocksRingBuffer)
+  PS_GET_LOCKLESS(BlocksRingBuffer&, CoreBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -467,7 +467,7 @@ class CorePS {
   
   
   
-  BlocksRingBuffer mCoreBlocksRingBuffer;
+  BlocksRingBuffer mCoreBuffer;
 
   
   
@@ -532,7 +532,7 @@ class ActivePS {
         mInterval(aInterval),
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         
-        mProfileBuffer(CorePS::CoreBlocksRingBuffer(),
+        mProfileBuffer(CorePS::CoreBuffer(),
                        PowerOfTwo32(aCapacity.Value() * 8)),
         
         
@@ -2049,13 +2049,11 @@ void SamplerThread::Run() {
   
   
   
-  BlocksRingBuffer localBlocksRingBuffer(
-      BlocksRingBuffer::ThreadSafety::WithoutMutex);
-  ProfileBuffer localProfileBuffer(localBlocksRingBuffer,
-                                   MakePowerOfTwo32<65536>());
+  BlocksRingBuffer localBuffer(BlocksRingBuffer::ThreadSafety::WithoutMutex);
+  ProfileBuffer localProfileBuffer(localBuffer, MakePowerOfTwo32<65536>());
 
   
-  auto previousState = localBlocksRingBuffer.GetState();
+  auto previousState = localBuffer.GetState();
 
   
   
@@ -2155,7 +2153,7 @@ void SamplerThread::Run() {
                 });
 
             
-            auto state = localBlocksRingBuffer.GetState();
+            auto state = localBuffer.GetState();
             if (state.mClearedBlockCount != previousState.mClearedBlockCount) {
               LOG("Stack sample too big for local storage, needed %u bytes",
                   unsigned(
@@ -2164,19 +2162,18 @@ void SamplerThread::Run() {
             } else if (state.mRangeEnd.ConvertToProfileBufferIndex() -
                            previousState.mRangeEnd
                                .ConvertToProfileBufferIndex() >=
-                       CorePS::CoreBlocksRingBuffer().BufferLength()->Value()) {
+                       CorePS::CoreBuffer().BufferLength()->Value()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(
                       state.mRangeEnd.ConvertToProfileBufferIndex() -
                       previousState.mRangeEnd.ConvertToProfileBufferIndex()));
             } else {
-              CorePS::CoreBlocksRingBuffer().AppendContents(
-                  localBlocksRingBuffer);
+              CorePS::CoreBuffer().AppendContents(localBuffer);
             }
 
             
-            localBlocksRingBuffer.Clear();
-            previousState = localBlocksRingBuffer.GetState();
+            localBuffer.Clear();
+            previousState = localBuffer.GetState();
           }
         }
 
@@ -3313,7 +3310,7 @@ static void racy_profiler_add_marker(const char* aMarkerName,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
+  CorePS::CoreBuffer().PutObjects(
       ProfileBufferEntry::Kind::MarkerData, racyRegisteredThread->ThreadId(),
       WrapProfileBufferUnownedCString(aMarkerName),
       static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
@@ -3376,7 +3373,7 @@ void profiler_add_marker_for_thread(int aThreadId,
                          ? aPayload->GetStartTime()
                          : TimeStamp::NowUnfuzzed();
   TimeDuration delta = origin - CorePS::ProcessStartTime();
-  CorePS::CoreBlocksRingBuffer().PutObjects(
+  CorePS::CoreBuffer().PutObjects(
       ProfileBufferEntry::Kind::MarkerData, aThreadId,
       WrapProfileBufferUnownedCString(aMarkerName),
       static_cast<uint32_t>(aCategoryPair), aPayload, delta.ToMilliseconds());
