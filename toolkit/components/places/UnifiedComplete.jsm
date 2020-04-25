@@ -1448,7 +1448,11 @@ Search.prototype = {
     
     
     let query, params;
-    if (UrlbarTokenizer.looksLikeOrigin(this._searchString)) {
+    if (
+      UrlbarTokenizer.looksLikeOrigin(this._searchString, {
+        ignoreWhitelist: true,
+      })
+    ) {
       [query, params] = this._originQuery;
     } else {
       [query, params] = this._urlQuery;
@@ -1550,7 +1554,9 @@ Search.prototype = {
       searchStr = searchStr.slice(0, -1);
     }
     
-    if (!UrlbarTokenizer.looksLikeOrigin(searchStr)) {
+    if (
+      !UrlbarTokenizer.looksLikeOrigin(searchStr, { ignoreWhitelist: true })
+    ) {
       return false;
     }
 

@@ -170,8 +170,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     
     if (
       queryContext.tokens.length == 1 &&
-      queryContext.tokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-      Services.uriFixup.isDomainWhitelisted(queryContext.tokens[0].value)
+      queryContext.tokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN
     ) {
       return false;
     }
@@ -183,7 +182,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return (
         t.type == UrlbarTokenizer.TYPE.POSSIBLE_URL ||
         (t.type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN &&
-          !/^[a-z0-9-]+$/i.test(t.value))
+          !UrlbarTokenizer.REGEXP_SINGLE_WORD_HOST.test(t.value))
       );
     });
   }

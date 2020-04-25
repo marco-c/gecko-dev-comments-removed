@@ -32,7 +32,7 @@ var UrlbarTokenizer = {
   REGEXP_LIKE_PROTOCOL: /^[A-Z+.-]+:\/*(?!\/)/i,
   REGEXP_USERINFO_INVALID_CHARS: /[^\w.~%!$&'()*+,;=:-]/,
   REGEXP_HOSTPORT_INVALID_CHARS: /[^\[\]A-Z0-9.:-]/i,
-  REGEXP_SINGLE_WORD_HOST: /^[^.:]$/i,
+  REGEXP_SINGLE_WORD_HOST: /^[^.:]+$/i,
   REGEXP_HOSTPORT_IP_LIKE: /^(?=(.*[.:].*){2})[a-f0-9\.\[\]:]+$/i,
   
   REGEXP_HOSTPORT_INVALID_IP: /\.{2,}|\d{5,}|\d{4,}(?![:\]])|^\.|^(\d+\.){4,}\d+$|^\d{4,}$/,
@@ -41,7 +41,7 @@ var UrlbarTokenizer = {
   
   REGEXP_HOSTPORT_IPV6: /^\[([0-9a-f]{0,4}:){0,7}[0-9a-f]{0,4}\]?$/i,
   REGEXP_COMMON_EMAIL: /^[\w!#$%&'*+/=?^`{|}~.-]+@[\[\]A-Z0-9.-]+$/i,
-
+  REGEXP_HAS_PORT: /:\d+$/,
   
   REGEXP_PERCENT_ENCODED_START: /^(%[0-9a-f]{2}){2,}/i,
 
@@ -85,13 +85,14 @@ var UrlbarTokenizer = {
 
 
 
-
-
-  looksLikeUrl(token, options = {}) {
+  looksLikeUrl(token, { requirePath = false } = {}) {
     if (token.length < 2) {
       return false;
     }
     
+    if (token.startsWith("data:")) {
+      return token.length > 5;
+    }
     if (this.REGEXP_SPACES.test(token)) {
       return false;
     }
@@ -103,13 +104,13 @@ var UrlbarTokenizer = {
     
     let slashIndex = token.indexOf("/");
     let prePath = slashIndex != -1 ? token.slice(0, slashIndex) : token;
-    if (!this.looksLikeOrigin(prePath)) {
+    if (!this.looksLikeOrigin(prePath, { ignoreWhitelist: true })) {
       return false;
     }
 
     let path = slashIndex != -1 ? token.slice(slashIndex) : "";
     logger.debug("path", path);
-    if (options.requirePath && !path) {
+    if (requirePath && !path) {
       return false;
     }
     
@@ -158,7 +159,9 @@ var UrlbarTokenizer = {
 
 
 
-  looksLikeOrigin(token) {
+
+
+  looksLikeOrigin(token, { ignoreWhitelist = false } = {}) {
     if (!token.length) {
       return false;
     }
@@ -179,14 +182,28 @@ var UrlbarTokenizer = {
     }
 
     
-    return (
-      !this.REGEXP_LIKE_PROTOCOL.test(hostPort) &&
-      !this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) &&
-      !this.REGEXP_HOSTPORT_INVALID_CHARS.test(hostPort) &&
-      (this.REGEXP_SINGLE_WORD_HOST.test(hostPort) ||
-        !this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) ||
-        !this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort))
-    );
+    if (
+      this.REGEXP_LIKE_PROTOCOL.test(hostPort) ||
+      this.REGEXP_USERINFO_INVALID_CHARS.test(userinfo) ||
+      this.REGEXP_HOSTPORT_INVALID_CHARS.test(hostPort) ||
+      (!this.REGEXP_SINGLE_WORD_HOST.test(hostPort) &&
+        this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) &&
+        this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort))
+    ) {
+      return false;
+    }
+
+    
+    if (
+      !ignoreWhitelist &&
+      !userinfo &&
+      !this.REGEXP_HAS_PORT.test(hostPort) &&
+      this.REGEXP_SINGLE_WORD_HOST.test(hostPort)
+    ) {
+      return Services.uriFixup.isDomainWhitelisted(hostPort);
+    }
+
+    return true;
   },
 
   
@@ -238,7 +255,12 @@ const CHAR_TO_TYPE_MAP = new Map(
 
 function splitString(searchString) {
   
-  let tokens = searchString.trim().split(UrlbarTokenizer.REGEXP_SPACES);
+  
+  
+  let trimmed = searchString.trim();
+  let tokens = trimmed.startsWith("data:")
+    ? [trimmed]
+    : trimmed.split(UrlbarTokenizer.REGEXP_SPACES);
   let accumulator = [];
   let hasRestrictionToken = tokens.some(t => CHAR_TO_TYPE_MAP.has(t));
   let chars = Array.from(CHAR_TO_TYPE_MAP.keys()).join("");
