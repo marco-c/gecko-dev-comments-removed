@@ -465,6 +465,7 @@ function _parseModifiers(aEvent, aWindow = window) {
 
 
 
+
 function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
   var rect = aTarget.getBoundingClientRect();
   return synthesizeMouseAtPoint(
@@ -1031,6 +1032,7 @@ function synthesizeAndWaitNativeMouseMove(
   });
   return eventReceivedPromise;
 }
+
 
 
 
