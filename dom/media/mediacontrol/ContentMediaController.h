@@ -61,6 +61,12 @@ class ContentMediaAgent : public MediaControlKeysEventSource {
 
   
   
+  
+  
+  
+  
+  
+  
   virtual void NotifyAudibleStateChanged(
       const MediaControlKeysEventListener* aMedia, bool aAudible) = 0;
 
