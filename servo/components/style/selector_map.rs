@@ -14,8 +14,8 @@ use crate::rule_tree::CascadeLevel;
 use crate::selector_parser::SelectorImpl;
 use crate::stylist::Rule;
 use crate::{Atom, LocalName, Namespace, WeakAtom};
-use fallible::FallibleVec;
-use hashglobe::FailedAllocationError;
+use fallible::{FallibleHashMap, FallibleVec};
+use hashbrown::CollectionAllocErr;
 use precomputed_hash::PrecomputedHash;
 use selectors::matching::{matches_selector, ElementSelectorFlags, MatchingContext};
 use selectors::parser::{Combinator, Component, SelectorIter};
@@ -95,7 +95,7 @@ pub trait SelectorMapEntry: Sized + Clone {
 
 
 #[derive(Debug, MallocSizeOf)]
-pub struct SelectorMap<T: 'static> {
+pub struct SelectorMap<T> {
     
     pub root: SmallVec<[T; 1]>,
     
@@ -112,17 +112,14 @@ pub struct SelectorMap<T: 'static> {
     pub count: usize,
 }
 
-impl<T: 'static> Default for SelectorMap<T> {
+impl<T> Default for SelectorMap<T> {
     #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
-
-
-
-impl<T: 'static> SelectorMap<T> {
+impl<T> SelectorMap<T> {
     
     pub fn new() -> Self {
         SelectorMap {
@@ -280,11 +277,7 @@ impl SelectorMap<Rule> {
 impl<T: SelectorMapEntry> SelectorMap<T> {
     
     
-    pub fn insert(
-        &mut self,
-        entry: T,
-        quirks_mode: QuirksMode,
-    ) -> Result<(), FailedAllocationError> {
+    pub fn insert(&mut self, entry: T, quirks_mode: QuirksMode) -> Result<(), CollectionAllocErr> {
         self.count += 1;
 
         let vector = match find_bucket(entry.selector()) {
@@ -563,14 +556,11 @@ fn find_bucket<'a>(mut iter: SelectorIter<'a, SelectorImpl>) -> Bucket<'a> {
 
 
 #[derive(Debug, MallocSizeOf)]
-pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V: 'static>(
+pub struct MaybeCaseInsensitiveHashMap<K: PrecomputedHash + Hash + Eq, V>(
     PrecomputedHashMap<K, V>,
 );
 
-
-
-
-impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
+impl<V> MaybeCaseInsensitiveHashMap<Atom, V> {
     
     pub fn new() -> Self {
         MaybeCaseInsensitiveHashMap(PrecomputedHashMap::default())
@@ -581,7 +571,8 @@ impl<V: 'static> MaybeCaseInsensitiveHashMap<Atom, V> {
         &mut self,
         mut key: Atom,
         quirks_mode: QuirksMode,
-    ) -> Result<hash_map::Entry<Atom, V>, FailedAllocationError> {
+    ) -> Result<hash_map::Entry<Atom, V, BuildHasherDefault<PrecomputedHasher>>, CollectionAllocErr>
+    {
         if quirks_mode == QuirksMode::Quirks {
             key = key.to_ascii_lowercase()
         }
