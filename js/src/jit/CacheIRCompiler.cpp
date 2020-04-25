@@ -5671,11 +5671,7 @@ bool CacheIRCompiler::emitCallIsSuspendedGeneratorResult(ValOperandId valId) {
 }
 
 
-bool CacheIRCompiler::emitMetaTwoByte() {
-  mozilla::Unused << reader.readByte();  
-  mozilla::Unused << reader.readByte();  
-  mozilla::Unused << reader.readByte();  
-
+bool CacheIRCompiler::emitMetaTwoByte(MetaTwoByteKind, uint32_t, uint32_t) {
   return true;
 }
 
