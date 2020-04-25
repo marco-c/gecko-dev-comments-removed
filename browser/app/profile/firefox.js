@@ -1970,6 +1970,10 @@ pref("devtools.gridinspector.showInfiniteLines", false);
 pref("devtools.gridinspector.maxHighlighters", 3);
 
 
+
+pref("devtools.inspector.compatibility.target-browsers", "");
+
+
 pref("devtools.layout.boxmodel.opened", true);
 
 pref("devtools.layout.flexbox.opened", true);
