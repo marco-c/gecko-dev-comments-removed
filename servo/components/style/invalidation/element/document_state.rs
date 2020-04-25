@@ -6,6 +6,7 @@
 
 use crate::dom::TElement;
 use crate::element_state::DocumentState;
+use crate::invalidation::element::invalidation_map::Dependency;
 use crate::invalidation::element::invalidator::{DescendantInvalidationLists, InvalidationVector};
 use crate::invalidation::element::invalidator::{Invalidation, InvalidationProcessor};
 use crate::invalidation::element::state_and_attributes;
@@ -65,6 +66,11 @@ where
     E: TElement,
     I: Iterator<Item = &'a CascadeData>,
 {
+    fn check_outer_dependency(&mut self, _: &Dependency, _: E) -> bool {
+        debug_assert!(false, "how, we should only have parent-less dependencies here!");
+        true
+    }
+
     fn collect_invalidations(
         &mut self,
         _element: E,
@@ -81,10 +87,14 @@ where
 
                 
                 
+                
+                
+                
+                
+                
                 self_invalidations.push(Invalidation::new(
-                    &dependency.selector,
+                    &dependency.dependency,
                      None,
-                    0,
                 ));
             }
         }
