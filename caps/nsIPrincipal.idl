@@ -9,8 +9,6 @@
 #include "nsISerializable.idl"
 #include "nsIAboutModule.idl"
 #include "nsIReferrerInfo.idl"
-interface nsIChannel;
-
 
 %{C++
 struct JSPrincipals;
@@ -183,16 +181,6 @@ interface nsIPrincipal : nsISerializable
 
 
     boolean isThirdPartyPrincipal(in nsIPrincipal principal);
-
-    
-
-
-
-
-
-
-
-    boolean isThirdPartyChannel(in nsIChannel channel);
 
     
 
