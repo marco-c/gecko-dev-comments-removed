@@ -5,6 +5,7 @@
 
 
 #include "nsLayoutDebugCLH.h"
+#include "mozIDOMWindow.h"
 #include "nsArray.h"
 #include "nsString.h"
 #include "plstr.h"
