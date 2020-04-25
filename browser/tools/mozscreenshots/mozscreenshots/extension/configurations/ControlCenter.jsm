@@ -319,4 +319,6 @@ async function openProtectionsPopup() {
     gProtectionsHandler._protectionsPopup.classList.add("no-shadow");
   }
   gProtectionsHandler.showProtectionsPopup();
+  
+  await new Promise(_ => setTimeout(_, 500));
 }
