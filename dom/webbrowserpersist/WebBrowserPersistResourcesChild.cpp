@@ -38,7 +38,7 @@ WebBrowserPersistResourcesChild::VisitDocument(
   
   
   if (!Manager()->Manager()->SendPWebBrowserPersistDocumentConstructor(
-          subActor, nullptr, nullptr)) {
+          subActor, nullptr, 0)) {
     
     return NS_ERROR_FAILURE;
   }
@@ -54,14 +54,6 @@ WebBrowserPersistResourcesChild::VisitDocument(
   
   SendVisitDocument(subActor);
   subActor->Start(aSubDocument);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-WebBrowserPersistResourcesChild::VisitBrowsingContext(
-    nsIWebBrowserPersistDocument* aDocument,
-    dom::BrowsingContext* aBrowsingContext) {
-  SendVisitBrowsingContext(aBrowsingContext);
   return NS_OK;
 }
 
