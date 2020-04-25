@@ -233,8 +233,7 @@ nsresult AppWindow::Initialize(nsIAppWindow* aParent, nsIAppWindow* aOpener,
   
   
   RefPtr<BrowsingContext> browsingContext =
-      BrowsingContext::Create( nullptr,  nullptr,
-                              EmptyString(), BrowsingContext::Type::Chrome);
+      BrowsingContext::CreateIndependent(BrowsingContext::Type::Chrome);
 
   
   mDocShell = nsDocShell::Create(browsingContext);
