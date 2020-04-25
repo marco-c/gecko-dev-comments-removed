@@ -96,6 +96,13 @@ class ContentBlocking final {
       const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
   
+  
+  static void OnAllowAccessFor(
+      dom::BrowsingContext* aParentContext, const nsCString& aTrackingOrigin,
+      uint32_t aCookieBehavior,
+      ContentBlockingNotifier::StorageAccessGrantedReason aReason);
+
+  
   typedef MozPromise<nsresult, bool, true> ParentAccessGrantPromise;
   static RefPtr<ParentAccessGrantPromise> SaveAccessForOriginOnParentProcess(
       nsIPrincipal* aParentPrincipal, nsIPrincipal* aTrackingPrinciapl,

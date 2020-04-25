@@ -13,6 +13,7 @@
 #include "mozilla/ContentBlockingUserInteraction.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/CookieJarSettings.h"
@@ -340,14 +341,24 @@ ContentBlocking::AllowAccessFor(
   ContentChild* cc = ContentChild::GetSingleton();
   MOZ_ASSERT(cc);
 
+  RefPtr<BrowsingContext> bc = aParentContext;
   return cc
       ->SendCompleteAllowAccessFor(aParentContext, topLevelWindowId,
                                    IPC::Principal(trackingPrincipal),
                                    trackingOrigin, behavior, aReason)
       ->Then(GetCurrentThreadSerialEventTarget(), __func__,
-             [](const ContentChild::CompleteAllowAccessForPromise::
-                    ResolveOrRejectValue& aValue) {
+             [bc, trackingOrigin, behavior,
+              aReason](const ContentChild::CompleteAllowAccessForPromise::
+                           ResolveOrRejectValue& aValue) {
                if (aValue.IsResolve() && aValue.ResolveValue().isSome()) {
+                 
+                 
+                 
+                 if (aReason == ContentBlockingNotifier::eOpener) {
+                   MOZ_ASSERT(bc->IsInProcess());
+                   ContentBlocking::OnAllowAccessFor(bc, trackingOrigin,
+                                                     behavior, aReason);
+                 }
                  return StorageAccessGrantPromise::CreateAndResolve(
                      aValue.ResolveValue().value(), __func__);
                }
@@ -456,45 +467,28 @@ ContentBlocking::CompleteAllowAccessFor(
     return StorageAccessGrantPromise::CreateAndReject(false, __func__);
   }
 
-  
-  
-  nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow =
-      AntiTrackingUtils::GetTopWindow(parentInnerWindow);
-  if (!topOuterWindow) {
-    LOG(("Couldn't get the top window"));
-    return StorageAccessGrantPromise::CreateAndReject(false, __func__);
-  }
-
-  nsCOMPtr<nsPIDOMWindowInner> topInnerWindow =
-      topOuterWindow->GetCurrentInnerWindow();
-  if (NS_WARN_IF(!topInnerWindow)) {
-    LOG(("No top inner window."));
-    return StorageAccessGrantPromise::CreateAndReject(false, __func__);
-  }
-
   auto storePermission =
-      [parentInnerWindow, topInnerWindow, trackingOrigin, trackingPrincipal,
-       aReason, aCookieBehavior,
-       aTopLevelWindowId](int aAllowMode) -> RefPtr<StorageAccessGrantPromise> {
-    nsAutoCString permissionKey;
-    AntiTrackingUtils::CreateStoragePermissionKey(trackingOrigin,
-                                                  permissionKey);
-
+      [aParentContext, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
+       aCookieBehavior,
+       aReason](int aAllowMode) -> RefPtr<StorageAccessGrantPromise> {
     
-    topInnerWindow->SaveStorageAccessGranted(permissionKey);
-
     
-    nsGlobalWindowInner::Cast(parentInnerWindow)->StorageAccessGranted();
+    if (aParentContext->IsInProcess()) {
+      ContentBlocking::OnAllowAccessFor(aParentContext, trackingOrigin,
+                                        aCookieBehavior, aReason);
+    } else {
+      MOZ_ASSERT(XRE_IsParentProcess());
 
-    ContentBlockingNotifier::OnEvent(
-        parentInnerWindow->GetExtantDoc()->GetChannel(), false,
-        CookieJarSettings::IsRejectThirdPartyWithExceptions(aCookieBehavior)
-            ? nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN
-            : nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
-        trackingOrigin, Some(aReason));
-
-    ContentBlockingNotifier::ReportUnblockingToConsole(
-        parentInnerWindow, NS_ConvertUTF8toUTF16(trackingOrigin), aReason);
+      
+      
+      
+      
+      if (aReason != ContentBlockingNotifier::eOpener) {
+        ContentParent* cp = aParentContext->Canonical()->GetContentParent();
+        Unused << cp->SendOnAllowAccessFor(aParentContext, trackingOrigin,
+                                           aCookieBehavior, aReason);
+      }
+    }
 
     if (XRE_IsParentProcess()) {
       LOG(("Saving the permission: trackingOrigin=%s", trackingOrigin.get()));
@@ -551,6 +545,54 @@ ContentBlocking::CompleteAllowAccessFor(
         });
   }
   return storePermission(false);
+}
+
+ void ContentBlocking::OnAllowAccessFor(
+    dom::BrowsingContext* aParentContext, const nsCString& aTrackingOrigin,
+    uint32_t aCookieBehavior,
+    ContentBlockingNotifier::StorageAccessGrantedReason aReason) {
+  MOZ_ASSERT(aParentContext->IsInProcess());
+
+  nsCOMPtr<nsPIDOMWindowInner> parentInner =
+      aParentContext->GetDOMWindow()->GetCurrentInnerWindow();
+
+  
+  nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow =
+      AntiTrackingUtils::GetTopWindow(parentInner);
+  if (!topOuterWindow) {
+    return;
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> topInnerWindow =
+      topOuterWindow->GetCurrentInnerWindow();
+  if (!topInnerWindow) {
+    return;
+  }
+
+  nsAutoCString permissionKey;
+  AntiTrackingUtils::CreateStoragePermissionKey(aTrackingOrigin, permissionKey);
+
+  
+  topInnerWindow->SaveStorageAccessGranted(permissionKey);
+
+  
+  nsGlobalWindowInner::Cast(parentInner)->StorageAccessGranted();
+
+  
+  
+  
+  
+  ContentBlockingNotifier::OnEvent(
+      parentInner->GetExtantDoc()->GetChannel(), false,
+      CookieJarSettings::IsRejectThirdPartyWithExceptions(aCookieBehavior)
+          ? nsIWebProgressListener::STATE_COOKIES_BLOCKED_FOREIGN
+          : nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER,
+      aTrackingOrigin, Some(aReason));
+
+  
+  
+  ContentBlockingNotifier::ReportUnblockingToConsole(
+      parentInner, NS_ConvertUTF8toUTF16(aTrackingOrigin), aReason);
 }
 
 
