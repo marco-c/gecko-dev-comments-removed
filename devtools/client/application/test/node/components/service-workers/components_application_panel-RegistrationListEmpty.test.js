@@ -1,0 +1,23 @@
+
+
+
+"use strict";
+
+
+const { shallow } = require("enzyme");
+const { createFactory } = require("react");
+
+const RegistrationListEmpty = createFactory(
+  require("devtools/client/application/src/components/service-workers/RegistrationListEmpty")
+);
+
+
+
+
+
+describe("RegistrationListEmpty", () => {
+  it("renders the expected snapshot", () => {
+    const wrapper = shallow(RegistrationListEmpty({}));
+    expect(wrapper).toMatchSnapshot();
+  });
+});
