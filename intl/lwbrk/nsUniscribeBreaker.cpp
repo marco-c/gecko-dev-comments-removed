@@ -47,7 +47,9 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                     &items[iItem].a, sla.Elements()) < 0)
       return;
 
-    for (uint32_t j = 0; j + startOffset < endOffset; ++j) {
+    
+    
+    for (uint32_t j = startOffset ? 0 : 1; j + startOffset < endOffset; ++j) {
       aBreakBefore[j + startOffset] = sla[j].fSoftBreak;
     }
   }
