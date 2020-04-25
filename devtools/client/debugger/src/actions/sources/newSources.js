@@ -108,14 +108,25 @@ function loadSourceMap(cx: Context, sourceActor: SourceActor) {
     try {
       
       
+      let url = sourceActor.url || "";
+      if (!sourceActor.url && typeof sourceActor.introductionUrl === "string") {
+        
+        
+        
+        
+        
+        url = sourceActor.introductionUrl;
+      }
+
+      
+      
       const source = getSourceByActorId(getState(), sourceActor.id);
       if (source) {
         data = await sourceMaps.getOriginalURLs({
           
           
           id: source.id,
-          url: sourceActor.url || "",
-          sourceMapBaseURL: sourceActor.sourceMapBaseURL || "",
+          url,
           sourceMapURL: sourceActor.sourceMapURL || "",
           isWasm: sourceActor.introductionType === "wasm",
         });
@@ -270,6 +281,8 @@ export function newOriginalSources(sourceInfo: Array<OriginalSourceData>) {
         isPrettyPrinted: false,
         isWasm: false,
         isBlackBoxed: false,
+        introductionUrl: null,
+        introductionType: undefined,
         isExtension: false,
         extensionName: null,
         isOriginal: true,
@@ -315,6 +328,8 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
           relativeUrl: source.url,
           isPrettyPrinted: false,
           extensionName: source.extensionName,
+          introductionUrl: source.introductionUrl,
+          introductionType: source.introductionType,
           isBlackBoxed: false,
           isWasm:
             !!supportsWasm(getState()) && source.introductionType === "wasm",
@@ -334,9 +349,9 @@ export function newGeneratedSources(sourceInfo: Array<GeneratedSourceData>) {
           thread,
           source: newId,
           isBlackBoxed: source.isBlackBoxed,
-          sourceMapBaseURL: source.sourceMapBaseURL,
           sourceMapURL: source.sourceMapURL,
           url: source.url,
+          introductionUrl: source.introductionUrl,
           introductionType: source.introductionType,
         });
       }

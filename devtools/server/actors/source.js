@@ -11,11 +11,8 @@ const {
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert } = DevToolsUtils;
+const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
-const {
-  resolveSourceURL,
-  getSourcemapBaseURL,
-} = require("devtools/server/actors/utils/source-map-utils");
 
 loader.lazyRequireGetter(
   this,
@@ -43,10 +40,7 @@ function isEvalSource(source) {
   
   
   
-  if (
-    (introType == "scriptElement" || introType == "importedModule") &&
-    source.introductionScript
-  ) {
+  if (introType == "scriptElement" && source.introductionScript) {
     return true;
   }
 
@@ -65,21 +59,33 @@ function isEvalSource(source) {
 exports.isEvalSource = isEvalSource;
 
 function getSourceURL(source, window) {
-  
-  
-  const resourceURL =
-    ((!isEvalSource(source) && source.url) || "").split(" -> ").pop() || null;
+  if (isEvalSource(source)) {
+    
+    
+    
 
-  
-  
-  
-  
-  return (
-    resolveSourceURL(source.displayURL, window) ||
-    resolveSourceURL(resourceURL, window) ||
-    resourceURL
-  );
+    if (source.displayURL && source.introductionScript) {
+      if (source.introductionScript.source.url === "debugger eval code") {
+        if (window) {
+          
+          
+          
+          return joinURI(window.location.href, source.displayURL);
+        }
+      } else if (!isEvalSource(source.introductionScript.source)) {
+        return joinURI(source.introductionScript.source.url, source.displayURL);
+      }
+    }
+
+    return source.displayURL;
+  } else if (source.url === "debugger eval code") {
+    
+    return null;
+  }
+  return source.url;
 }
+
+exports.getSourceURL = getSourceURL;
 
 
 
@@ -101,7 +107,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     Actor.prototype.initialize.call(this, thread.conn);
 
     this._threadActor = thread;
-    this._url = undefined;
+    this._url = null;
     this._source = source;
     this._contentType = contentType;
     this._isInlineSource = isInlineSource;
@@ -130,7 +136,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return this.threadActor.breakpointActorMap;
   },
   get url() {
-    if (this._url === undefined) {
+    if (!this._url) {
       this._url = getSourceURL(this._source, this.threadActor._parent.window);
     }
     return this._url;
@@ -163,17 +169,21 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
   form: function() {
     const source = this._source;
 
+    let introductionUrl = null;
+    if (source.introductionScript) {
+      introductionUrl = source.introductionScript.source.url;
+    }
+
     return {
       actor: this.actorID,
       extensionName: this.extensionName,
-      url: this.url,
+      url: this.url ? this.url.split(" -> ").pop() : null,
       isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
-      sourceMapBaseURL: getSourcemapBaseURL(
-        this.url,
-        this.threadActor._parent.window
-      ),
-      sourceMapURL: source.sourceMapURL,
-      introductionType: source.introductionType,
+      sourceMapURL: source ? source.sourceMapURL : null,
+      introductionUrl: introductionUrl
+        ? introductionUrl.split(" -> ").pop()
+        : null,
+      introductionType: source ? source.introductionType : null,
     };
   },
 
@@ -212,6 +222,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     
     
     if (
+      this._source &&
       this._source.text !== "[no source]" &&
       this._contentType &&
       (this._contentType.includes("javascript") ||

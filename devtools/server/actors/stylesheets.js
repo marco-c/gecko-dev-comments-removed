@@ -15,9 +15,6 @@ const {
   styleSheetsSpec,
 } = require("devtools/shared/specs/stylesheets");
 const InspectorUtils = require("InspectorUtils");
-const {
-  getSourcemapBaseURL,
-} = require("devtools/server/actors/utils/source-map-utils");
 
 loader.lazyRequireGetter(
   this,
@@ -434,13 +431,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
       title: this.rawSheet.title,
       system: !CssLogic.isAuthorStylesheet(this.rawSheet),
       styleSheetIndex: this.styleSheetIndex,
-      sourceMapBaseURL: getSourcemapBaseURL(
-        
-        
-        
-        this.href || docHref,
-        this.ownerWindow
-      ),
       sourceMapURL: this.rawSheet.sourceMapURL,
     };
 
