@@ -481,7 +481,6 @@ decorate_task(
 
 decorate_task(
   withStudiesEnabled,
-  PreferenceExperiments.withMockExperiments([]),
   async function test_temporary_errors_set_deadline() {
     let suitabilities = [
       {
@@ -521,8 +520,8 @@ decorate_task(
     let now = Date.now();
     let hour = 60 * 60 * 1000;
     let expectedDeadline = now + 7 * 24 * hour;
-    let minDeadline = new Date(expectedDeadline - hour);
-    let maxDeadline = new Date(expectedDeadline + hour);
+    let minDeadline = new Date(expectedDeadline - 2 * hour);
+    let maxDeadline = new Date(expectedDeadline + 2 * hour);
 
     
     
@@ -564,7 +563,6 @@ decorate_task(
 
 decorate_task(
   withStudiesEnabled,
-  withMockPreferences,
   PreferenceExperiments.withMockExperiments([]),
   async function test_temporary_errors_dont_overwrite_deadline() {
     let temporaryFailureSuitabilities = [
@@ -574,7 +572,7 @@ decorate_task(
 
     
     let now = Date.now();
-    let hour = 60 * 60 * 1000;
+    let hour = 2 * 60 * 60 * 1000;
     let unhitDeadline = new Date(now + hour).toJSON();
 
     
@@ -608,8 +606,6 @@ decorate_task(
 
 decorate_task(
   withStudiesEnabled,
-  withMockPreferences,
-  PreferenceExperiments.withMockExperiments([]),
   async function test_temporary_errors_hit_deadline() {
     let temporaryFailureSuitabilities = [
       BaseAction.suitability.SIGNATURE_ERROR,
@@ -618,7 +614,7 @@ decorate_task(
 
     
     let now = Date.now();
-    let hour = 60 * 60 * 1000;
+    let hour = 2 * 60 * 60 * 1000;
     let hitDeadline = new Date(now - hour).toJSON();
 
     
@@ -653,7 +649,6 @@ decorate_task(
 
 decorate_task(
   withStudiesEnabled,
-  withMockPreferences,
   PreferenceExperiments.withMockExperiments([]),
   async function test_non_temporary_error_clears_temporary_error_deadline() {
     let suitabilitiesThatShouldClearDeadline = [
@@ -667,7 +662,7 @@ decorate_task(
     
     let now = Date.now();
     let hour = 60 * 60 * 1000;
-    let hitDeadline = new Date(now - hour).toJSON();
+    let hitDeadline = new Date(now - 2 * hour).toJSON();
 
     
     
@@ -699,7 +694,6 @@ decorate_task(
 
 decorate_task(
   withStudiesEnabled,
-  withMockPreferences,
   PreferenceExperiments.withMockExperiments([]),
   async function test_non_temporary_error_clears_temporary_error_deadline() {
     let temporaryFailureSuitabilities = [

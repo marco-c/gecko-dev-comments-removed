@@ -40,6 +40,10 @@
 
 
 
+
+
+
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
@@ -423,6 +427,7 @@ var AddonStudies = {
     }
 
     study.active = false;
+    study.temporaryErrorDeadline = null;
     study.studyEndDate = new Date();
     const db = await getDatabase();
     await getStore(db, "readwrite").put(study);

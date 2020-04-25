@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ActionSchemas: "resource://normandy/actions/schemas/index.js",
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   AddonStudies: "resource://normandy/lib/AddonStudies.jsm",
+  BaseAction: "resource://normandy/actions/BaseAction.jsm",
   ClientEnvironment: "resource://normandy/lib/ClientEnvironment.jsm",
   NormandyApi: "resource://normandy/lib/NormandyApi.jsm",
   NormandyUtils: "resource://normandy/lib/NormandyUtils.jsm",
@@ -124,6 +125,10 @@ class BranchedAddonStudyAction extends BaseStudyAction {
     this.seenRecipeIds = new Set();
   }
 
+  async _run(recipe) {
+    throw new Error("_run should not be called anymore");
+  }
+
   
 
 
@@ -134,13 +139,67 @@ class BranchedAddonStudyAction extends BaseStudyAction {
 
 
 
-  async _run(recipe) {
+
+
+
+  async _processRecipe(recipe, suitability) {
     this.seenRecipeIds.add(recipe.id);
     const study = await AddonStudies.get(recipe.id);
-    if (study) {
-      await this.update(recipe, study);
-    } else {
-      await this.enroll(recipe);
+
+    switch (suitability) {
+      case BaseAction.suitability.FILTER_MATCH: {
+        if (study) {
+          await this.update(recipe, study);
+        } else {
+          await this.enroll(recipe);
+        }
+        break;
+      }
+
+      case BaseAction.suitability.SIGNATURE_ERROR: {
+        if (study) {
+          await this._considerTemporaryError({
+            study,
+            reason: "signature-error",
+          });
+        }
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_ERROR: {
+        if (study) {
+          await this._considerTemporaryError({
+            study,
+            reason: "filter-error",
+          });
+        }
+        break;
+      }
+
+      case BaseAction.suitability.CAPABILITES_MISMATCH: {
+        if (study) {
+          await this.unenroll(recipe.id, "capability-mismatch");
+        }
+        break;
+      }
+
+      case BaseAction.suitability.FILTER_MISMATCH: {
+        if (study) {
+          await this.unenroll(recipe.id, "filter-mismatch");
+        }
+        break;
+      }
+
+      case BaseAction.suitability.ARGUMENTS_INVALID: {
+        if (study) {
+          await this.unenroll(recipe.id, "arguments-invalid");
+        }
+        break;
+      }
+
+      default: {
+        throw new Error(`Unknown recipe suitability "${suitability}".`);
+      }
     }
   }
 
@@ -339,6 +398,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
         studyStartDate: new Date(),
         studyEndDate: null,
         enrollmentId,
+        temporaryErrorDeadline: null,
       };
 
       try {
@@ -403,6 +463,7 @@ class BranchedAddonStudyAction extends BaseStudyAction {
           studyStartDate: new Date(),
           studyEndDate: null,
           enrollmentId,
+          temporaryErrorDeadline: null,
         };
 
         try {
@@ -463,6 +524,10 @@ class BranchedAddonStudyAction extends BaseStudyAction {
       await this.unenroll(recipe.id, "branch-removed");
       return;
     }
+
+    
+    study.temporaryErrorDeadline = null;
+    await AddonStudies.update(study);
 
     const extensionDetails = await NormandyApi.fetchExtensionDetails(
       branch.extensionApiId
@@ -666,6 +731,46 @@ class BranchedAddonStudyAction extends BaseStudyAction {
           `Could not uninstall addon ${study.addonId} for recipe ${study.recipeId}: it is not installed.`
         );
       }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async _considerTemporaryError({ study, reason }) {
+    let now = Date.now(); 
+    let day = 24 * 60 * 60 * 1000;
+    let newDeadline = new Date(now + 7 * day);
+
+    if (study.temporaryErrorDeadline) {
+      
+      if (isNaN(study.temporaryErrorDeadline)) {
+        study.temporaryErrorDeadline = newDeadline;
+        await AddonStudies.update(study);
+        return;
+      }
+
+      if (now > study.temporaryErrorDeadline) {
+        await this.unenroll(study.recipeId, reason);
+      }
+    } else {
+      
+      study.temporaryErrorDeadline = newDeadline;
+      await AddonStudies.update(study);
     }
   }
 }
