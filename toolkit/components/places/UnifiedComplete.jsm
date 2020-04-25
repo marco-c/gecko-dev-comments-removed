@@ -1006,12 +1006,10 @@ Search.prototype = {
 
     
     
-    if (this._trimmedOriginalSearchString == "@") {
-      let added = await this._addSearchEngineTokenAliasMatches();
-      if (added) {
-        this._autocompleteSearch.finishSearch(true);
-        return;
-      }
+    let tokenAliasEngines = await PlacesSearchAutocompleteProvider.tokenAliasEngines();
+    if (this._trimmedOriginalSearchString == "@" && tokenAliasEngines.length) {
+      this._autocompleteSearch.finishSearch(true);
+      return;
     }
 
     
@@ -1254,25 +1252,6 @@ Search.prototype = {
     value = value.substr(value.indexOf(this._searchString));
 
     this._addAutofillMatch(value, url, Infinity, ["preloaded-top-site"]);
-    return true;
-  },
-
-  
-
-
-
-
-  async _addSearchEngineTokenAliasMatches() {
-    let engines = await PlacesSearchAutocompleteProvider.tokenAliasEngines();
-    if (!engines || !engines.length) {
-      return false;
-    }
-    for (let { engine, tokenAliases } of engines) {
-      this._addSearchEngineMatch({
-        engine,
-        alias: tokenAliases[0],
-      });
-    }
     return true;
   },
 
