@@ -41,7 +41,7 @@ var TestRunner = {
   currentComboIndex: 0,
   _lastCombo: null,
   _libDir: null,
-  croppingPadding: 0,
+  croppingPadding: 10,
   mochitestScope: null,
 
   init(extensionPath) {
@@ -140,9 +140,6 @@ var TestRunner = {
     Services.prefs.setIntPref("ui.prefersReducedMotion", 1);
 
     let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-
-    
-    browserWindow.windowUtils.disableNonTestMouseEvents(true);
 
     
     
@@ -255,7 +252,6 @@ var TestRunner = {
     browserWindow.restore();
     Services.prefs.clearUserPref("ui.caretBlinkTime");
     Services.prefs.clearUserPref("ui.prefersReducedMotion");
-    browserWindow.windowUtils.disableNonTestMouseEvents(false);
   },
 
   
