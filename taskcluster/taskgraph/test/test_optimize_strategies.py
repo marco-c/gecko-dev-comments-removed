@@ -100,6 +100,23 @@ def test_optimization_strategy(responses, params, tasks, strategy, expected):
 
     
     pytest.param(
+        (0.75, False, False),
+        {'groups': {'foo/test.ini': 0.5, 'bar/test.ini': 0.5}},
+        [],
+    ),
+    pytest.param(
+        (0.75, False, True),
+        {'groups': {'foo/test.ini': 0.5, 'bar/test.ini': 0.5}},
+        ['task-0'],
+    ),
+    pytest.param(
+        (0.76, False, True),
+        {'groups': {'foo/test.ini': 0.5, 'bar/test.ini': 0.5}},
+        [],
+    ),
+
+    
+    pytest.param(
         (0.1,),
         {'tasks': {'task-2': 0.2}, 'groups': {'foo/test.ini': 0.25, 'bar/test.ini': 0.75}},
         ['task-0', 'task-1', 'task-2'],
