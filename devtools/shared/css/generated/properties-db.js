@@ -14,6 +14,7 @@
 
 
 
+
 exports.CSS_PROPERTIES = {
   "-moz-animation": {
     "isInherited": false,
