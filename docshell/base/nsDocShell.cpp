@@ -10070,6 +10070,7 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
     
     CreateReservedSourceIfNeeded(aChannel,
                                  win->EventTargetFor(TaskCategory::Other));
+    rv = NS_OK;
   } else {
     rv = AddClientChannelHelper(aChannel, std::move(noReservedClient),
                                 GetInitialClientInfo(),
