@@ -4602,7 +4602,7 @@ AttachDecision InstanceOfIRGenerator::tryAttachStub() {
 
   
   
-  writer.loadInstanceOfObjectResult(lhs, protoId, slot);
+  writer.loadInstanceOfObjectResult(lhs, protoId);
   writer.returnFromIC();
   trackAttached("InstanceOf");
   return AttachDecision::Attach;
