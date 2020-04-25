@@ -600,18 +600,12 @@ void CompositorOGL::PrepareViewport(CompositingRenderTargetOGL* aRenderTarget) {
     viewMatrix.PreScale(1.0f, -1.0f);
 
     MOZ_ASSERT(mCurrentRenderTarget, "No destination");
-    
-    
-    if (!mTarget && mCurrentRenderTarget->IsWindow()) {
-      viewMatrix.PreTranslate(mRenderOffset.x, mRenderOffset.y);
-    }
 
     Matrix4x4 matrix3d = Matrix4x4::From2D(viewMatrix);
     matrix3d._33 = 0.0f;
     mProjMatrix = matrix3d;
     mGLContext->fDepthRange(0.0f, 1.0f);
   } else {
-    
     bool depthEnable;
     float zNear, zFar;
     aRenderTarget->GetProjection(mProjMatrix, depthEnable, zNear, zFar);
@@ -1469,13 +1463,8 @@ void CompositorOGL::DrawGeometry(const Geometry& aGeometry,
   IntPoint offset = mCurrentRenderTarget->GetOrigin();
   clipRect -= offset;
 
-  
-  
-  
-  
   if (!mTarget && mCurrentRenderTarget->IsWindow()) {
-    clipRect.MoveBy(mRenderOffset.x + mSurfaceOrigin.x,
-                    mRenderOffset.y - mSurfaceOrigin.y);
+    clipRect.MoveBy(mSurfaceOrigin.x, -mSurfaceOrigin.y);
   }
 
   ScopedGLState scopedScissorTestState(mGLContext, LOCAL_GL_SCISSOR_TEST, true);

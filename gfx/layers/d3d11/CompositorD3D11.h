@@ -71,17 +71,6 @@ class CompositorD3D11 : public Compositor {
 
   void SetDestinationSurfaceSize(const gfx::IntSize& aSize) override {}
 
-  
-
-
-
-  void SetScreenRenderOffset(const ScreenPoint& aOffset) override {
-    if (aOffset.x || aOffset.y) {
-      MOZ_CRASH("SetScreenRenderOffset not supported by CompositorD3D11.");
-    }
-    
-  }
-
   void ClearRect(const gfx::Rect& aRect) override;
 
   void DrawQuad(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,

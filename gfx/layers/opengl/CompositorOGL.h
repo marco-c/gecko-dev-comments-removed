@@ -208,10 +208,6 @@ class CompositorOGL final : public Compositor {
 
   void SetDestinationSurfaceSize(const gfx::IntSize& aSize) override;
 
-  void SetScreenRenderOffset(const ScreenPoint& aOffset) override {
-    mRenderOffset = aOffset;
-  }
-
   void MakeCurrent(MakeCurrentFlags aFlags = 0) override;
 
 #ifdef MOZ_DUMP_PAINTING
@@ -250,17 +246,9 @@ class CompositorOGL final : public Compositor {
 
   GLuint GetTemporaryTexture(GLenum aTarget, GLenum aUnit);
 
-  const gfx::Matrix4x4& GetProjMatrix() const { return mProjMatrix; }
-
-  void SetProjMatrix(const gfx::Matrix4x4& aProjMatrix) {
-    mProjMatrix = aProjMatrix;
-  }
-
   const gfx::IntSize GetDestinationSurfaceSize() const {
     return gfx::IntSize(mSurfaceSize.width, mSurfaceSize.height);
   }
-
-  const ScreenPoint& GetScreenRenderOffset() const { return mRenderOffset; }
 
   
 
@@ -305,8 +293,6 @@ class CompositorOGL final : public Compositor {
 
   
   gfx::IntSize mSurfaceSize;
-
-  ScreenPoint mRenderOffset;
 
   
   ScreenIntPoint mSurfaceOrigin;
