@@ -27,6 +27,15 @@ import textwrap
 import six
 
 
+
+
+
+def _ord(c):
+    if six.PY3:
+        return c
+    return ord(c)
+
+
 class PerfectHash(object):
     """PerfectHash objects represent a computed perfect hash function, which
     can be generated at compile time to provide highly efficient and compact
@@ -116,12 +125,7 @@ class PerfectHash(object):
         stored in that table is used as the offset basis for indexing into the
         values table."""
         for byte in memoryview(key):
-            
-            
-            if six.PY3:
-                obyte = byte
-            else:
-                obyte = ord(byte)
+            obyte = _ord(byte)
             basis ^= obyte          
             basis *= cls.FNV_PRIME  
             basis &= cls.U32_MAX    
@@ -296,7 +300,7 @@ class CGHelper(object):
                             can be used for additional checks, e.g. for keys
                             not in the table."""
 
-        assert all(ord(b) <= 0x7f
+        assert all(_ord(b) <= 0x7f
                    for e in self.phf.entries
                    for b in self.phf.key(e)), "non-ASCII key"
 
