@@ -1915,8 +1915,6 @@ Search.prototype = {
 
     
     
-    
-    
     let terms = parseResult.terms.toLowerCase();
     if (
       this._searchTokens.length &&
@@ -1926,14 +1924,45 @@ Search.prototype = {
     }
 
     
+    let [typedSuggestionUrl] = UrlbarUtils.getSearchQueryUrl(
+      parseResult.engine,
+      this._searchTokens.map(t => t.value).join(" ")
+    );
+
+    let historyParams = new URL(match.value).searchParams;
+    let typedParams = new URL(typedSuggestionUrl).searchParams;
+
+    
+    
+    
+    if (
+      Array.from(historyParams).length != Array.from(typedParams).length ||
+      !Array.from(historyParams.entries()).every(
+        ([key, value]) =>
+          
+          
+          
+          
+          
+          
+          key == parseResult.termsParameterName ||
+          value === typedParams.get(key)
+      )
+    ) {
+      return;
+    }
+
+    
     match.value = makeActionUrl("searchengine", {
-      engineName: parseResult.engineName,
+      engineName: parseResult.engine.name,
       input: parseResult.terms,
+      searchSuggestion: parseResult.terms,
       searchQuery: parseResult.terms,
+      isSearchHistory: true,
     });
-    match.comment = parseResult.engineName;
+    match.comment = parseResult.engine.name;
     match.icon = match.icon || match.iconUrl;
-    match.style = "action searchengine favicon";
+    match.style = "action searchengine favicon suggestion";
   },
 
   _addMatch(match) {

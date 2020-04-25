@@ -309,6 +309,7 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
+
   parseSubmissionURL(url) {
     if (!SearchAutocompleteProviderInternal.initialized) {
       throw new Error("The component has not been initialized.");
@@ -317,8 +318,9 @@ var PlacesSearchAutocompleteProvider = Object.freeze({
     let parseUrlResult = Services.search.parseSubmissionURL(url);
     return (
       parseUrlResult.engine && {
-        engineName: parseUrlResult.engine.name,
+        engine: parseUrlResult.engine,
         terms: parseUrlResult.terms,
+        termsParameterName: parseUrlResult.termsParameterName,
       }
     );
   },

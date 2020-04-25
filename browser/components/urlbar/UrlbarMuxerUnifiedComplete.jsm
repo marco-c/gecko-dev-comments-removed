@@ -56,6 +56,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   sort(context) {
     
+    context.results = this._dedupeSearchHistoryAndSuggestions(context.results);
+
+    
+    
+    
+    
+    
+    
     
     
     let searchInPrivateWindowIndex = context.results.findIndex(
@@ -74,7 +82,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       context.results.splice(searchInPrivateWindowIndex, 1);
     }
-
     if (!context.results.length) {
       return;
     }
@@ -134,6 +141,75 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
     }
     context.results = sortedResults;
+  }
+
+  
+
+
+
+
+
+
+
+  _dedupeSearchHistoryAndSuggestions(results) {
+    if (
+      !UrlbarPrefs.get("restyleSearches") ||
+      !UrlbarPrefs.get("browser.search.suggest.enabled") ||
+      !UrlbarPrefs.get("suggest.searches")
+    ) {
+      return results;
+    }
+
+    let suggestionResults = [];
+    
+    
+    
+    let historyEnginesBySuggestion = new Map();
+    for (let i = 0; i < results.length; i++) {
+      let result = results[i];
+      if (
+        !result.heuristic &&
+        groupFromResult(result) == UrlbarUtils.RESULT_GROUP.SUGGESTION
+      ) {
+        if (result.payload.isSearchHistory) {
+          let historyEngines = historyEnginesBySuggestion.get(
+            result.payload.suggestion
+          );
+          if (!historyEngines) {
+            historyEngines = new Set();
+            historyEnginesBySuggestion.set(
+              result.payload.suggestion,
+              historyEngines
+            );
+          }
+          historyEngines.add(result.payload.engine);
+        } else {
+          
+          suggestionResults.unshift([result, i]);
+        }
+      }
+    }
+    for (
+      let i = 0;
+      historyEnginesBySuggestion.size && i < suggestionResults.length;
+      i++
+    ) {
+      let [result, index] = suggestionResults[i];
+      let historyEngines = historyEnginesBySuggestion.get(
+        result.payload.suggestion
+      );
+      if (historyEngines && historyEngines.has(result.payload.engine)) {
+        
+        
+        results.splice(index, 1);
+        historyEngines.delete(result.payload.engine);
+        if (!historyEngines.size) {
+          historyEnginesBySuggestion.delete(result.payload.suggestion);
+        }
+      }
+    }
+
+    return results;
   }
 }
 
