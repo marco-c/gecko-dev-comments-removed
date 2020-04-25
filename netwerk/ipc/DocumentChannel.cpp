@@ -153,6 +153,12 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
 
 bool DocumentChannel::CanUseDocumentChannel(nsDocShellLoadState* aLoadState) {
   MOZ_ASSERT(aLoadState);
+
+  if (XRE_IsParentProcess() &&
+      !StaticPrefs::browser_tabs_documentchannel_ppdc()) {
+    return false;
+  }
+
   
   
   
