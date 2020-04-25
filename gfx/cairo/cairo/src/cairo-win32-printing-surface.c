@@ -1299,6 +1299,9 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
 
     if (surface->paginated_mode == CAIRO_PAGINATED_MODE_ANALYZE) {
 	
+	if (style->num_dashes > 16)
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
+	
 	if (style->num_dashes > 0 && style->dash_offset != 0.0)
 	    return CAIRO_INT_STATUS_UNSUPPORTED;
 
