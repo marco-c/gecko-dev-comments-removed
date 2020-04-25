@@ -311,6 +311,12 @@ class Manager::Factory {
     MOZ_DIAGNOSTIC_ASSERT(!sFactory->mManagerList.IsEmpty());
 
     {
+      
+      
+      
+      AutoRestore<bool> restore(sFactory->mInSyncAbortOrShutdown);
+      sFactory->mInSyncAbortOrShutdown = true;
+
       ManagerList::ForwardIterator iter(sFactory->mManagerList);
       while (iter.HasMore()) {
         RefPtr<Manager> manager = iter.GetNext();
@@ -319,6 +325,8 @@ class Manager::Factory {
         }
       }
     }
+
+    MaybeDestroyInstance();
   }
 
   static void ShutdownAll() {
@@ -334,8 +342,8 @@ class Manager::Factory {
       
       
       
-      AutoRestore<bool> restore(sFactory->mInSyncShutdown);
-      sFactory->mInSyncShutdown = true;
+      AutoRestore<bool> restore(sFactory->mInSyncAbortOrShutdown);
+      sFactory->mInSyncAbortOrShutdown = true;
 
       ManagerList::ForwardIterator iter(sFactory->mManagerList);
       while (iter.HasMore()) {
@@ -353,14 +361,14 @@ class Manager::Factory {
   }
 
  private:
-  Factory() : mInSyncShutdown(false) {
+  Factory() : mInSyncAbortOrShutdown(false) {
     MOZ_COUNT_CTOR(cache::Manager::Factory);
   }
 
   ~Factory() {
     MOZ_COUNT_DTOR(cache::Manager::Factory);
     MOZ_DIAGNOSTIC_ASSERT(mManagerList.IsEmpty());
-    MOZ_DIAGNOSTIC_ASSERT(!mInSyncShutdown);
+    MOZ_DIAGNOSTIC_ASSERT(!mInSyncAbortOrShutdown);
   }
 
   static nsresult MaybeCreateInstance() {
@@ -401,7 +409,7 @@ class Manager::Factory {
     
     
     
-    if (!sFactory->mManagerList.IsEmpty() || sFactory->mInSyncShutdown) {
+    if (!sFactory->mManagerList.IsEmpty() || sFactory->mInSyncAbortOrShutdown) {
       return;
     }
 
@@ -429,7 +437,7 @@ class Manager::Factory {
   
   
   
-  bool mInSyncShutdown;
+  bool mInSyncAbortOrShutdown;
 };
 
 
