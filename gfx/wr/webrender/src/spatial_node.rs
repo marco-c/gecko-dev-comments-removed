@@ -424,15 +424,20 @@ impl SpatialNode {
 
                 
                 
+                let mut snapped_cs_scale_offset = state.coordinate_system_relative_scale_offset;
+                snapped_cs_scale_offset.offset = snap_offset(snapped_cs_scale_offset.offset, WorldVector2D::new(1.0, 1.0), global_device_pixel_scale);
+
+                
+                
                 
                 let accumulated_offset = state.parent_accumulated_scroll_offset + sticky_offset;
-                self.viewport_transform = state.coordinate_system_relative_scale_offset
+                self.viewport_transform = snapped_cs_scale_offset
                     .offset(snap_offset(accumulated_offset, state.coordinate_system_relative_scale_offset.scale, global_device_pixel_scale).to_untyped());
 
                 
                 
                 let added_offset = accumulated_offset + self.scroll_offset();
-                self.content_transform = state.coordinate_system_relative_scale_offset
+                self.content_transform = snapped_cs_scale_offset
                     .offset(snap_offset(added_offset, state.coordinate_system_relative_scale_offset.scale, global_device_pixel_scale).to_untyped());
 
                 if let SpatialNodeType::StickyFrame(ref mut info) = self.node_type {
