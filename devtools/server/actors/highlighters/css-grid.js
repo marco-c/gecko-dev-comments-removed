@@ -679,7 +679,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
 
 
   isGrid() {
-    return this.currentNode.getGridFragments().length > 0;
+    return this.currentNode.hasGridFragments();
   }
 
   

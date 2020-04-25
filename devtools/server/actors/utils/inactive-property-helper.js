@@ -822,7 +822,7 @@ class InactivePropertyHelper {
 
 
   isGridContainer(node) {
-    return node.getGridFragments().length > 0;
+    return node.hasGridFragments();
   }
 
   
