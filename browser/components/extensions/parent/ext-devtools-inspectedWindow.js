@@ -11,9 +11,6 @@ var { SpreadArgs } = ExtensionCommon;
 this.devtools_inspectedWindow = class extends ExtensionAPI {
   getAPI(context) {
     
-    let waitForInspectedWindowFront;
-
-    
     
     
     const callerInfo = {
@@ -25,12 +22,7 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
       devtools: {
         inspectedWindow: {
           async eval(expression, options) {
-            if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront(context);
-            }
-
-            const front = await waitForInspectedWindowFront;
-
+            const front = await getInspectedWindowFront(context);
             const toolboxEvalOptions = await getToolboxEvalOptions(context);
             const evalOptions = Object.assign({}, options, toolboxEvalOptions);
 
@@ -47,11 +39,7 @@ this.devtools_inspectedWindow = class extends ExtensionAPI {
           async reload(options) {
             const { ignoreCache, userAgent, injectedScript } = options || {};
 
-            if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront(context);
-            }
-
-            const front = await waitForInspectedWindowFront;
+            const front = await getInspectedWindowFront(context);
             front.reload(callerInfo, {
               ignoreCache,
               userAgent,

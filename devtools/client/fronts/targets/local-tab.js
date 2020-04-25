@@ -35,6 +35,10 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     this._teardownTabListeners = this._teardownTabListeners.bind(this);
     this._handleTabEvent = this._handleTabEvent.bind(this);
 
+    
+    
+    this.isDevToolsExtensionContext = false;
+
     this._tab = tab;
     this._setupTabListeners();
 
@@ -106,6 +110,11 @@ class LocalTabTargetFront extends BrowsingContextTargetFront {
     
     
     if (this.localTab.isResponsiveDesignMode) {
+      return;
+    }
+
+    
+    if (this.isDevToolsExtensionContext) {
       return;
     }
 

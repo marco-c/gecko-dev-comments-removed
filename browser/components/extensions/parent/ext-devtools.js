@@ -39,41 +39,6 @@ function getDevToolsPrefBranchName(extensionId) {
 
 
 
-global.getDevToolsTargetForContext = async context => {
-  if (!context.devToolsTargetPromise) {
-    if (!context.devToolsToolbox || !context.devToolsToolbox.target) {
-      throw new Error(
-        "Unable to get a Target for a context not associated to any toolbox"
-      );
-    }
-
-    if (!context.devToolsToolbox.target.isLocalTab) {
-      throw new Error(
-        "Unexpected target type: only local tabs are currently supported."
-      );
-    }
-
-    const tab = context.devToolsToolbox.target.localTab;
-    context.devToolsTargetPromise = DevToolsShim.createTargetForTab(tab);
-  }
-
-  const target = await context.devToolsTargetPromise;
-  await target.attach();
-
-  return target;
-};
-
-
-
-
-
-
-
-
-
-
-
-
 global.getTargetTabIdForToolbox = toolbox => {
   let { target } = toolbox;
 
@@ -94,12 +59,8 @@ global.getTargetTabIdForToolbox = toolbox => {
 
 
 global.getInspectedWindowFront = async function(context) {
-  
-  
-  
-  
-  const clonedTarget = await getDevToolsTargetForContext(context);
-  return DevToolsShim.createWebExtensionInspectedWindowFront(clonedTarget);
+  const target = await context.getCurrentDevToolsTarget();
+  return DevToolsShim.createWebExtensionInspectedWindowFront(target);
 };
 
 
@@ -201,7 +162,7 @@ class DevToolsPage extends HiddenExtensionPage {
     this.closed = true;
 
     
-    this.devToolsPageDefinition.forgetForTarget(this.toolbox.target);
+    this.devToolsPageDefinition.forgetForToolbox(this.toolbox);
 
     
     if (this.topLevelContext) {
@@ -242,7 +203,7 @@ class DevToolsPageDefinition {
     this.extension = extension;
 
     
-    this.devtoolsPageForTarget = new Map();
+    this.devtoolsPageForToolbox = new Map();
   }
 
   onThemeChanged(themeName) {
@@ -258,7 +219,7 @@ class DevToolsPageDefinition {
       return;
     }
 
-    if (this.devtoolsPageForTarget.has(toolbox.target)) {
+    if (this.devtoolsPageForToolbox.has(toolbox)) {
       return Promise.reject(
         new Error("DevtoolsPage has been already created for this toolbox")
       );
@@ -271,36 +232,36 @@ class DevToolsPageDefinition {
     });
 
     
-    if (this.devtoolsPageForTarget.size === 0) {
+    if (this.devtoolsPageForToolbox.size === 0) {
       DevToolsShim.on("theme-changed", this.onThemeChanged);
     }
-    this.devtoolsPageForTarget.set(toolbox.target, devtoolsPage);
+    this.devtoolsPageForToolbox.set(toolbox, devtoolsPage);
 
     return devtoolsPage.build();
   }
 
-  shutdownForTarget(target) {
-    if (this.devtoolsPageForTarget.has(target)) {
-      const devtoolsPage = this.devtoolsPageForTarget.get(target);
+  shutdownForToolbox(toolbox) {
+    if (this.devtoolsPageForToolbox.has(toolbox)) {
+      const devtoolsPage = this.devtoolsPageForToolbox.get(toolbox);
       devtoolsPage.close();
 
       
       
-      if (this.devtoolsPageForTarget.has(target)) {
+      if (this.devtoolsPageForToolbox.has(toolbox)) {
         throw new Error(
-          `Leaked DevToolsPage instance for target "${target.toString()}"`
+          `Leaked DevToolsPage instance for target "${toolbox.target.descriptorFront.url}", extension "${this.extension.policy.debugName}"`
         );
       }
 
       
-      if (this.devtoolsPageForTarget.size === 0) {
+      if (this.devtoolsPageForToolbox.size === 0) {
         DevToolsShim.off("theme-changed", this.onThemeChanged);
       }
     }
   }
 
-  forgetForTarget(target) {
-    this.devtoolsPageForTarget.delete(target);
+  forgetForToolbox(toolbox) {
+    this.devtoolsPageForToolbox.delete(toolbox);
   }
 
   
@@ -334,13 +295,13 @@ class DevToolsPageDefinition {
 
 
   shutdown() {
-    for (let target of this.devtoolsPageForTarget.keys()) {
-      this.shutdownForTarget(target);
+    for (let toolbox of this.devtoolsPageForToolbox.keys()) {
+      this.shutdownForToolbox(toolbox);
     }
 
-    if (this.devtoolsPageForTarget.size > 0) {
+    if (this.devtoolsPageForToolbox.size > 0) {
       throw new Error(
-        `Leaked ${this.devtoolsPageForTarget.size} DevToolsPage instances in devtoolsPageForTarget Map`
+        `Leaked ${this.devtoolsPageForToolbox.size} DevToolsPage instances in devtoolsPageForToolbox Map`
       );
     }
   }
@@ -433,14 +394,14 @@ this.devtools = class extends ExtensionAPI {
     }
   }
 
-  onToolboxDestroy(target) {
-    if (!target.isLocalTab) {
+  onToolboxDestroy(toolbox) {
+    if (!toolbox.target.isLocalTab) {
       
       
       return;
     }
 
-    this.pageDefinition.shutdownForTarget(target);
+    this.pageDefinition.shutdownForToolbox(toolbox);
   }
 
   
