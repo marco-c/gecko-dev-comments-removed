@@ -2721,15 +2721,6 @@ pref("browser.tabs.remote.dataUriInDefaultWebProcess", false);
 
 
 
-
-
-
-
-
-pref("browser.tabs.remote.allowLinkedWebInFileUriProcess", false);
-
-
-
 pref("browser.tabs.remote.enforceRemoteTypeRestrictions", false);
 
 

@@ -31,12 +31,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "allowLinkedWebInFileUriProcess",
-  "browser.tabs.remote.allowLinkedWebInFileUriProcess",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "useSeparatePrivilegedAboutContentProcess",
   "browser.tabs.remote.separatePrivilegedContentProcess",
   false
@@ -262,38 +256,6 @@ function validatedWebRemoteType(
 
   if (aPreferredRemoteType.startsWith(WEB_REMOTE_TYPE)) {
     return aPreferredRemoteType;
-  }
-
-  if (
-    allowLinkedWebInFileUriProcess &&
-    
-    
-    !documentChannel &&
-    aPreferredRemoteType == FILE_REMOTE_TYPE
-  ) {
-    E10SUtils.log().debug("checking allowLinkedWebInFileUriProcess");
-    
-    
-    
-    if (aCurrentUri) {
-      if (aCurrentUri.scheme == "file" || aCurrentUri.spec == "about:blank") {
-        return FILE_REMOTE_TYPE;
-      }
-      try {
-        
-        
-        
-        sm.checkSameOriginURI(aCurrentUri, aTargetUri, false, false);
-        E10SUtils.log().debug("Next URL is same origin");
-        return FILE_REMOTE_TYPE;
-      } catch (e) {
-        E10SUtils.log().debug("Leaving same origin");
-        return WEB_REMOTE_TYPE;
-      }
-    }
-
-    E10SUtils.log().debug("No aCurrentUri");
-    return FILE_REMOTE_TYPE;
   }
 
   return WEB_REMOTE_TYPE;
@@ -850,6 +812,17 @@ var E10SUtils = {
     this.log().info(
       `shouldLoadURIInThisProcess: have ${remoteType} want ${wantRemoteType}`
     );
+
+    if (
+      (aRemoteSubframes || documentChannel) &&
+      remoteType != NOT_REMOTE &&
+      wantRemoteType != NOT_REMOTE &&
+      documentChannelPermittedForURI(aURI)
+    ) {
+      
+      return true;
+    }
+
     return remoteType == wantRemoteType;
   },
 
