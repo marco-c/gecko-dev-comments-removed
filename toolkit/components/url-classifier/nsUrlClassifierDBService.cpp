@@ -1355,8 +1355,9 @@ nsresult nsUrlClassifierLookupCallback::ProcessComplete(
     RefPtr<CacheResult> aCacheResult) {
   NS_ENSURE_ARG_POINTER(mResults);
 
-  
-  mCacheResults.AppendElement(aCacheResult, fallible);
+  if (!mCacheResults.AppendElement(aCacheResult, fallible)) {
+    
+  }
 
   
   for (const auto& result : *mResults) {
@@ -1759,7 +1760,9 @@ nsUrlClassifierDBService::Classify(nsIPrincipal* aPrincipal,
   }
 
   nsCOMPtr<nsIURI> uri;
-  rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+  rv = basePrincipal->GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 
@@ -2031,7 +2034,9 @@ nsUrlClassifierDBService::Lookup(nsIPrincipal* aPrincipal,
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIURI> uri;
-  rv = aPrincipal->GetURI(getter_AddRefs(uri));
+  
+  auto* basePrincipal = BasePrincipal::Cast(aPrincipal);
+  rv = basePrincipal->GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(uri, NS_ERROR_FAILURE);
 

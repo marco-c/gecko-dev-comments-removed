@@ -31,6 +31,7 @@
 
 #include "runnable_utils.h"
 
+#include "mozilla/Algorithm.h"
 #include "mozilla/Telemetry.h"
 
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -963,9 +964,15 @@ MediaTransportHandlerSTS::GetIceLog(const nsCString& aPattern) {
         if (logs) {
           logs->Filter(aPattern.get(), 0, &result);
         }
+        
+        
+        if (!converted.SetCapacity(result.size(), fallible)) {
+          mozalloc_handle_oom(sizeof(nsString) * result.size());
+        }
         for (auto& line : result) {
-          converted.AppendElement(NS_ConvertUTF8toUTF16(line.c_str()),
-                                  fallible);
+          
+          (void)converted.AppendElement(NS_ConvertUTF8toUTF16(line.c_str()),
+                                        fallible);
         }
         return IceLogPromise::CreateAndResolve(std::move(converted), __func__);
       });
@@ -1054,9 +1061,16 @@ static void ToRTCIceCandidateStats(
     }
     cand.mProxied.Construct(NS_ConvertASCIItoUTF16(
         candidate.is_proxied ? "proxied" : "non-proxied"));
-    stats->mIceCandidateStats.AppendElement(cand, fallible);
+    if (!stats->mIceCandidateStats.AppendElement(cand, fallible)) {
+      
+      
+      
+      mozalloc_handle_oom(0);
+    }
     if (candidate.trickled) {
-      stats->mTrickledIceCandidateStats.AppendElement(cand, fallible);
+      if (!stats->mTrickledIceCandidateStats.AppendElement(cand, fallible)) {
+        mozalloc_handle_oom(0);
+      }
     }
   }
 }
@@ -1102,7 +1116,12 @@ void MediaTransportHandlerSTS::GetIceStats(
     s.mLastPacketReceivedTimestamp.Construct(candPair.ms_since_last_recv);
     s.mState.Construct(dom::RTCStatsIceCandidatePairState(candPair.state));
     s.mComponentId.Construct(candPair.component_id);
-    aStats->mIceCandidatePairStats.AppendElement(s, fallible);
+    if (!aStats->mIceCandidatePairStats.AppendElement(s, fallible)) {
+      
+      
+      
+      mozalloc_handle_oom(0);
+    }
   }
 
   std::vector<NrIceCandidate> candidates;
@@ -1112,8 +1131,13 @@ void MediaTransportHandlerSTS::GetIceStats(
                            mSignaledAddresses);
     
     for (const auto& candidate : candidates) {
-      aStats->mRawLocalCandidates.AppendElement(
-          NS_ConvertASCIItoUTF16(candidate.label.c_str()), fallible);
+      if (!aStats->mRawLocalCandidates.AppendElement(
+              NS_ConvertASCIItoUTF16(candidate.label.c_str()), fallible)) {
+        
+        
+        
+        mozalloc_handle_oom(0);
+      }
     }
   }
   candidates.clear();
@@ -1124,8 +1148,13 @@ void MediaTransportHandlerSTS::GetIceStats(
                            mSignaledAddresses);
     
     for (const auto& candidate : candidates) {
-      aStats->mRawRemoteCandidates.AppendElement(
-          NS_ConvertASCIItoUTF16(candidate.label.c_str()), fallible);
+      if (!aStats->mRawRemoteCandidates.AppendElement(
+              NS_ConvertASCIItoUTF16(candidate.label.c_str()), fallible)) {
+        
+        
+        
+        mozalloc_handle_oom(0);
+      }
     }
   }
 }

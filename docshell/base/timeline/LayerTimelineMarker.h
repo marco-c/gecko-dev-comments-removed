@@ -9,6 +9,7 @@
 
 #include "TimelineMarker.h"
 #include "mozilla/dom/ProfileTimelineMarkerBinding.h"
+#include "mozilla/mozalloc_oom.h"
 #include "nsRegion.h"
 
 namespace mozilla {
@@ -28,7 +29,12 @@ class LayerTimelineMarker : public TimelineMarker {
       rect.mY = iterRect.Y();
       rect.mWidth = iterRect.Width();
       rect.mHeight = iterRect.Height();
-      aRectangles.AppendElement(rect, fallible);
+      if (!aRectangles.AppendElement(rect, fallible)) {
+        
+        
+        
+        mozalloc_handle_oom(0);
+      }
     }
   }
 

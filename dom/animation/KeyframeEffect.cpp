@@ -1147,7 +1147,12 @@ void KeyframeEffect::GetProperties(
       }
       
       
-      propertyDetails.mValues.AppendElement(fromValue, mozilla::fallible);
+      
+      if (!propertyDetails.mValues.AppendElement(fromValue,
+                                                 mozilla::fallible)) {
+        aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
 
       
       
@@ -1164,7 +1169,11 @@ void KeyframeEffect::GetProperties(
         
         
         toValue.mEasing.Reset();
-        propertyDetails.mValues.AppendElement(toValue, mozilla::fallible);
+        if (!propertyDetails.mValues.AppendElement(toValue,
+                                                   mozilla::fallible)) {
+          aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+          return;
+        }
       }
     }
 

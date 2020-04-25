@@ -19,7 +19,12 @@ struct APZTestDataToJSConverter {
                          void (*aElementConverter)(const Key&, const Value&,
                                                    KeyValuePair&)) {
     for (auto it = aFrom.begin(); it != aFrom.end(); ++it) {
-      aOutTo.AppendElement(fallible);
+      if (!aOutTo.AppendElement(fallible)) {
+        
+        
+        
+        mozalloc_handle_oom(0);
+      }
       aElementConverter(it->first, it->second, aOutTo.LastElement());
     }
   }
@@ -29,7 +34,12 @@ struct APZTestDataToJSConverter {
                           dom::Sequence<Target>& aOutTo,
                           void (*aElementConverter)(const Src&, Target&)) {
     for (auto it = aFrom.begin(); it != aFrom.end(); ++it) {
-      aOutTo.AppendElement(fallible);
+      if (!aOutTo.AppendElement(fallible)) {
+        
+        
+        
+        mozalloc_handle_oom(0);
+      }
       aElementConverter(*it, aOutTo.LastElement());
     }
   }

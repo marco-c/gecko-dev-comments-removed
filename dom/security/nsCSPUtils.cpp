@@ -1092,7 +1092,12 @@ void nsCSPDirective::toDomCSPStruct(mozilla::dom::CSP& outCSP) const {
   for (uint32_t i = 0; i < mSrcs.Length(); i++) {
     src.Truncate();
     mSrcs[i]->toString(src);
-    srcs.AppendElement(src, mozilla::fallible);
+    if (!srcs.AppendElement(src, mozilla::fallible)) {
+      
+      
+      
+      mozalloc_handle_oom(0);
+    }
   }
 
   switch (mDirective) {

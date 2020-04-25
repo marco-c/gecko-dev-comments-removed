@@ -334,7 +334,8 @@ bool SVGTransformListSMILType::GetTransforms(
   for (uint32_t i = 0; i < smilTransforms.Length(); ++i) {
     
     
-    aTransforms.AppendElement(smilTransforms[i].ToSVGTransform(), fallible);
+    (void)aTransforms.AppendElement(smilTransforms[i].ToSVGTransform(),
+                                    fallible);
   }
   return true;
 }

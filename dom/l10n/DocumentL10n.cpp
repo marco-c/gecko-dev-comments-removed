@@ -135,7 +135,15 @@ void DocumentL10n::TriggerInitialDocumentTranslation() {
       Element* elem = elements.ElementAt(i - 1);
       MOZ_RELEASE_ASSERT(elem->HasAttr(nsGkAtoms::datal10nid));
       if (!elem->HasElementCreatedFromPrototypeAndHasUnmodifiedL10n()) {
-        nonProtoElements.AppendElement(*elem, fallible);
+        if (!nonProtoElements.AppendElement(*elem, fallible)) {
+          mozalloc_handle_oom(0);
+        }
+        
+        
+        
+        
+        
+        
         elements.RemoveElement(elem);
       }
       i--;

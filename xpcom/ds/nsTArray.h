@@ -1753,25 +1753,24 @@ class nsTArray_Impl
   
  public:
   template <class Item>
-  
-  elem_type* AppendElements(const Item* aArray, size_type aArrayLen,
-                            const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElements(const Item* aArray,
+                                          size_type aArrayLen,
+                                          const mozilla::fallible_t&) {
     return AppendElementsInternal<FallibleAlloc>(aArray, aArrayLen);
   }
 
   template <class Item>
-  
-  elem_type* AppendElements(mozilla::Span<Item> aSpan,
-                            const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElements(mozilla::Span<Item> aSpan,
+                                          const mozilla::fallible_t&) {
     return AppendElementsInternal<FallibleAlloc>(aSpan.Elements(),
                                                  aSpan.Length());
   }
 
   
   template <class Item, class Allocator>
-  
-  elem_type* AppendElements(const nsTArray_Impl<Item, Allocator>& aArray,
-                            const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElements(
+      const nsTArray_Impl<Item, Allocator>& aArray,
+      const mozilla::fallible_t&) {
     return AppendElementsInternal<FallibleAlloc>(aArray.Elements(),
                                                  aArray.Length());
   }
@@ -1784,9 +1783,8 @@ class nsTArray_Impl
   
  public:
   template <class Item, class Allocator>
-  
-  elem_type* AppendElements(nsTArray_Impl<Item, Allocator>&& aArray,
-                            const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElements(
+      nsTArray_Impl<Item, Allocator>&& aArray, const mozilla::fallible_t&) {
     return AppendElementsInternal<FallibleAlloc>(std::move(aArray));
   }
 
@@ -1810,8 +1808,8 @@ class nsTArray_Impl
   
  public:
   template <class Item>
-  
-  elem_type* AppendElement(Item&& aItem, const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElement(Item&& aItem,
+                                         const mozilla::fallible_t&) {
     return AppendElementInternal<FallibleAlloc>(std::forward<Item>(aItem));
   }
 
@@ -1835,8 +1833,8 @@ class nsTArray_Impl
   
   
  public:
-  
-  elem_type* AppendElements(size_type aCount, const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElements(size_type aCount,
+                                          const mozilla::fallible_t&) {
     return AppendElementsInternal<FallibleAlloc>(aCount);
   }
 
@@ -1845,8 +1843,7 @@ class nsTArray_Impl
   
   
  public:
-  
-  elem_type* AppendElement(const mozilla::fallible_t&) {
+  [[nodiscard]] elem_type* AppendElement(const mozilla::fallible_t&) {
     return AppendElements(1, mozilla::fallible);
   }
 
