@@ -50,5 +50,9 @@ window.attachEvent("onload", function() {
   rotateBlurb();
   setInterval(rotateBlurb, BLURB_CYCLE_MS);
 
+  
+  
+  
+  label.className += " no-focus-outline";
   label.focus();
 });
