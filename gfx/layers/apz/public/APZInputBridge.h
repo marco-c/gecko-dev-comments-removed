@@ -7,9 +7,9 @@
 #ifndef mozilla_layers_APZInputBridge_h
 #define mozilla_layers_APZInputBridge_h
 
-#include "APZUtils.h"               
-#include "mozilla/EventForwards.h"  
-#include "Units.h"                  
+#include "mozilla/EventForwards.h"    
+#include "mozilla/layers/APZUtils.h"  
+#include "Units.h"                    
 
 namespace mozilla {
 
