@@ -21,11 +21,6 @@ const { classifySite } = ChromeUtils.import(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "ASRouterPreferences",
-  "resource://activity-stream/lib/ASRouterPreferences.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "perfService",
   "resource://activity-stream/common/PerfService.jsm"
 );
@@ -71,6 +66,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  ExperimentAPI: "resource://messaging-system/experiments/ExperimentAPI.jsm",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
 });
@@ -313,11 +309,17 @@ this.TelemetryFeed = class TelemetryFeed {
   
 
 
+
   get isInCFRCohort() {
-    for (let provider of ASRouterPreferences.providers) {
-      if (provider.id === "cfr" && provider.enabled && provider.cohort) {
+    try {
+      const experimentData = ExperimentAPI.getExperiment({
+        group: "cfr",
+      });
+      if (experimentData && experimentData.slug) {
         return true;
       }
+    } catch (e) {
+      return false;
     }
     return false;
   }
