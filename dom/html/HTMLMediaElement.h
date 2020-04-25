@@ -1626,7 +1626,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   bool mPlayingBeforeSeek = false;
 
   
-  bool mSuspendedForInactiveDocument = false;
+  
+  bool mSuspendedByInactiveDocOrDocshell = false;
 
   
   
@@ -1897,6 +1898,10 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   RefPtr<dom::Promise> mSeekDOMPromise;
+
+  
+  
+  bool ShouldBeSuspendedByInactiveDocShell() const;
 
   
   void AssertReadyStateIsNothing();
