@@ -622,8 +622,6 @@ class PaintedLayerData {
 
 
 
-
-
   void Accumulate(ContainerState* aState, nsPaintedDisplayItem* aItem,
                   const nsIntRect& aVisibleRect, const nsRect& aContentRect,
                   const DisplayItemClip& aClip, LayerState aLayerState,
