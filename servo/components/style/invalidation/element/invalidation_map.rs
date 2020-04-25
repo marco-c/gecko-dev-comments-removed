@@ -47,6 +47,23 @@ pub struct Dependency {
 
     
     pub selector_offset: usize,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub parent: Option<Box<Dependency>>,
 }
 
 
@@ -227,78 +244,120 @@ impl InvalidationMap {
     ) -> Result<(), CollectionAllocErr> {
         debug!("InvalidationMap::note_selector({:?})", selector);
 
-        let mut iter = selector.iter();
+        let mut document_state = DocumentState::empty();
+
+        {
+            let mut parent_stack = SmallVec::new();
+            let mut alloc_error = None;
+            let mut collector = SelectorDependencyCollector {
+                map: self,
+                document_state: &mut document_state,
+                selector,
+                parent_selectors: &mut parent_stack,
+                quirks_mode,
+                compound_state: PerCompoundState::new(0),
+                alloc_error: &mut alloc_error,
+            };
+
+            let visit_result = collector.visit_whole_selector();
+            debug_assert_eq!(!visit_result, alloc_error.is_some());
+            if let Some(alloc_error) = alloc_error {
+                return Err(alloc_error);
+            }
+        }
+
+        if !document_state.is_empty() {
+            let dep = DocumentStateDependency {
+                state: document_state,
+                selector: selector.clone(),
+            };
+            self.document_state_selectors.try_push(dep)?;
+        }
+
+        Ok(())
+    }
+}
+
+struct PerCompoundState {
+    
+    offset: usize,
+
+    
+    element_state: ElementState,
+
+    
+    added_attr_dependency: bool,
+}
+
+impl PerCompoundState {
+    fn new(offset: usize) -> Self {
+        Self {
+            offset,
+            element_state: ElementState::empty(),
+            added_attr_dependency: false,
+        }
+    }
+}
+
+
+struct SelectorDependencyCollector<'a> {
+    map: &'a mut InvalidationMap,
+
+    
+    
+    
+    
+    document_state: &'a mut DocumentState,
+
+    
+    selector: &'a Selector<SelectorImpl>,
+
+    
+    
+    
+    
+    
+    parent_selectors: &'a mut SmallVec<[(Selector<SelectorImpl>, usize); 5]>,
+
+    
+    quirks_mode: QuirksMode,
+
+    
+    compound_state: PerCompoundState,
+
+    
+    alloc_error: &'a mut Option<CollectionAllocErr>,
+}
+
+impl<'a> SelectorDependencyCollector<'a> {
+    fn visit_whole_selector(&mut self) -> bool {
+        let mut iter = self.selector.iter();
         let mut combinator;
         let mut index = 0;
 
-        let mut document_state = DocumentState::empty();
-
         loop {
-            let sequence_start = index;
+            
+            self.compound_state = PerCompoundState::new(index);
 
-            let mut compound_visitor = CompoundSelectorDependencyCollector {
-                classes: SmallVec::new(),
-                ids: SmallVec::new(),
-                state: ElementState::empty(),
-                document_state: &mut document_state,
-                other_attributes: false,
-                flags: &mut self.flags,
-            };
-
-            
-            
-            
-            
-            
-            
-            
             
             for ss in &mut iter {
-                ss.visit(&mut compound_visitor);
+                ss.visit(self);
                 index += 1; 
             }
 
-            for class in compound_visitor.classes {
-                self.class_to_selector
-                    .try_entry(class, quirks_mode)?
-                    .or_insert_with(SmallVec::new)
-                    .try_push(Dependency {
-                        selector: selector.clone(),
-                        selector_offset: sequence_start,
-                    })?;
-            }
-
-            for id in compound_visitor.ids {
-                self.id_to_selector
-                    .try_entry(id, quirks_mode)?
-                    .or_insert_with(SmallVec::new)
-                    .try_push(Dependency {
-                        selector: selector.clone(),
-                        selector_offset: sequence_start,
-                    })?;
-            }
-
-            if !compound_visitor.state.is_empty() {
-                self.state_affecting_selectors.insert(
+            if !self.compound_state.element_state.is_empty() {
+                let dependency = self.dependency();
+                let result = self.map.state_affecting_selectors.insert(
                     StateDependency {
-                        dep: Dependency {
-                            selector: selector.clone(),
-                            selector_offset: sequence_start,
-                        },
-                        state: compound_visitor.state,
+                        dep: dependency,
+                        state: self.compound_state.element_state,
                     },
-                    quirks_mode,
-                )?;
-            }
-
-            if compound_visitor.other_attributes {
-                self.other_attribute_affecting_selectors.insert(
-                    Dependency {
-                        selector: selector.clone(),
-                        selector_offset: sequence_start,
-                    },
-                    quirks_mode,
-                )?;
+                    self.quirks_mode,
+                );
+                if let Err(alloc_error) = result {
+                    *self.alloc_error = Some(alloc_error);
+                    return false;
+                }
             }
 
             combinator = iter.next_sequence();
@@ -309,88 +368,107 @@ impl InvalidationMap {
             index += 1; 
         }
 
-        if !document_state.is_empty() {
-            self.document_state_selectors
-                .try_push(DocumentStateDependency {
-                    state: document_state,
-                    selector: selector.clone(),
-                })?;
+        true
+    }
+
+    fn add_attr_dependency(&mut self) -> bool {
+        debug_assert!(!self.compound_state.added_attr_dependency);
+        self.compound_state.added_attr_dependency = true;
+
+        let dependency = self.dependency();
+        let result = self.map.other_attribute_affecting_selectors.insert(
+            dependency,
+            self.quirks_mode,
+        );
+        if let Err(alloc_error) = result {
+            *self.alloc_error = Some(alloc_error);
+            return false;
+        }
+        true
+    }
+
+    fn dependency(&self) -> Dependency {
+        let mut parent = None;
+
+        
+        
+        for &(ref selector, ref selector_offset) in self.parent_selectors.iter() {
+            let new_parent = Dependency {
+                selector: selector.clone(),
+                selector_offset: *selector_offset,
+                parent,
+            };
+            parent = Some(Box::new(new_parent));
         }
 
-        Ok(())
+        Dependency {
+            selector: self.selector.clone(),
+            selector_offset: self.compound_state.offset,
+            parent,
+        }
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-struct CompoundSelectorDependencyCollector<'a> {
-    
-    state: ElementState,
-
-    
-    
-    
-    
-    document_state: &'a mut DocumentState,
-
-    
-    
-    
-    
-    classes: SmallVec<[Atom; 5]>,
-
-    
-    
-    
-    
-    ids: SmallVec<[Atom; 5]>,
-
-    
-    
-    
-    other_attributes: bool,
-
-    
-    flags: &'a mut InvalidationMapFlags,
-}
-
-impl<'a> SelectorVisitor for CompoundSelectorDependencyCollector<'a> {
+impl<'a> SelectorVisitor for SelectorDependencyCollector<'a> {
     type Impl = SelectorImpl;
+
+    fn visit_selector_list(&mut self, list: &[Selector<SelectorImpl>]) -> bool {
+        self.parent_selectors.push((self.selector.clone(), self.compound_state.offset));
+        for selector in list {
+            let mut nested = SelectorDependencyCollector {
+                map: &mut *self.map,
+                document_state: &mut *self.document_state,
+                selector,
+                parent_selectors: &mut *self.parent_selectors,
+                quirks_mode: self.quirks_mode,
+                compound_state: PerCompoundState::new(0),
+                alloc_error: &mut *self.alloc_error,
+            };
+            if !nested.visit_whole_selector() {
+                return false;
+            }
+        }
+        self.parent_selectors.pop();
+        true
+    }
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
         #[cfg(feature = "gecko")]
         use crate::selector_parser::NonTSPseudoClass;
 
         match *s {
-            Component::ID(ref id) => {
-                self.ids.push(id.clone());
-            },
-            Component::Class(ref class) => {
-                self.classes.push(class.clone());
+            Component::ID(ref atom) | Component::Class(ref atom) => {
+                let dependency = self.dependency();
+                let map = match *s {
+                    Component::ID(..) => &mut self.map.id_to_selector,
+                    Component::Class(..) => &mut self.map.class_to_selector,
+                    _ => unreachable!(),
+                };
+                let entry = match map.try_entry(atom.clone(), self.quirks_mode) {
+                    Ok(entry) => entry,
+                    Err(err) => {
+                        *self.alloc_error = Some(err);
+                        return false;
+                    },
+                };
+                entry.or_insert_with(SmallVec::new).try_push(dependency).is_ok()
             },
             Component::NonTSPseudoClass(ref pc) => {
-                self.other_attributes |= pc.is_attr_based();
-                self.state |= match *pc {
+                self.compound_state.element_state |= match *pc {
                     #[cfg(feature = "gecko")]
                     NonTSPseudoClass::Dir(ref dir) => dir.element_state(),
                     _ => pc.state_flag(),
                 };
                 *self.document_state |= pc.document_state_flag();
-            },
-            _ => {},
-        }
 
-        true
+                if !self.compound_state.added_attr_dependency && pc.is_attr_based() {
+                    self.add_attr_dependency()
+                } else {
+                    true
+                }
+            },
+            _ => true,
+        }
     }
 
     fn visit_attribute_selector(
@@ -399,7 +477,6 @@ impl<'a> SelectorVisitor for CompoundSelectorDependencyCollector<'a> {
         _local_name: &LocalName,
         local_name_lower: &LocalName,
     ) -> bool {
-        self.other_attributes = true;
         let may_match_in_no_namespace = match *constraint {
             NamespaceConstraint::Any => true,
             NamespaceConstraint::Specific(ref ns) => ns.is_empty(),
@@ -407,14 +484,16 @@ impl<'a> SelectorVisitor for CompoundSelectorDependencyCollector<'a> {
 
         if may_match_in_no_namespace {
             if *local_name_lower == local_name!("id") {
-                self.flags
-                    .insert(InvalidationMapFlags::HAS_ID_ATTR_SELECTOR)
+                self.map.flags.insert(InvalidationMapFlags::HAS_ID_ATTR_SELECTOR)
             } else if *local_name_lower == local_name!("class") {
-                self.flags
-                    .insert(InvalidationMapFlags::HAS_CLASS_ATTR_SELECTOR)
+                self.map.flags.insert(InvalidationMapFlags::HAS_CLASS_ATTR_SELECTOR)
             }
         }
 
-        true
+        if !self.compound_state.added_attr_dependency {
+            self.add_attr_dependency()
+        } else {
+            true
+        }
     }
 }
