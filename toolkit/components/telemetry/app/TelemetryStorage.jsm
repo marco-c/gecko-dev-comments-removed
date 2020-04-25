@@ -1689,7 +1689,15 @@ var TelemetryStorageImpl = {
         
         
         await TelemetryStorage.savePing(pingData, true);
+      } catch (ex) {
+        this._log.error(
+          "_migrateAppDataPings - failed to load or migrate file. Removing. " +
+            file.path,
+          ex
+        );
+      }
 
+      try {
         
         await OS.File.remove(file.path);
       } catch (ex) {
