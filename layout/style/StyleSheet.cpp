@@ -659,7 +659,15 @@ void StyleSheet::MaybeRejectReplacePromise() {
 
 already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
                                                    ErrorResult& aRv) {
-  nsIGlobalObject* globalObject = mConstructorDocument->GetScopeObject();
+  nsIGlobalObject* globalObject = nullptr;
+  if (Document* doc = GetAssociatedDocument()) {
+    globalObject = doc->GetScopeObject();
+  }
+
+  
+  
+  
+
   RefPtr<dom::Promise> promise = dom::Promise::Create(globalObject, aRv);
   if (!promise) {
     return nullptr;
