@@ -36,21 +36,6 @@ for (const key of Object.keys(ThreadSafeDevToolsUtils)) {
 
 
 
-
-
-
-
-
-exports.isCPOW = function(debuggerObject) {
-  try {
-    return Cu.isCrossProcessWrapper(debuggerObject.unsafeDereference());
-  } catch (e) {}
-  return false;
-};
-
-
-
-
 exports.executeSoon = function(fn) {
   if (isWorker) {
     setImmediate(fn);
@@ -195,7 +180,6 @@ exports.unwrap = function unwrap(obj) {
   
   
   
-  
   let unwrapped;
   try {
     unwrapped = obj.unwrap();
@@ -223,11 +207,6 @@ exports.unwrap = function unwrap(obj) {
 
 
 exports.isSafeDebuggerObject = function(obj) {
-  
-  if (exports.isCPOW(obj)) {
-    return false;
-  }
-
   const unwrapped = exports.unwrap(obj);
 
   

@@ -320,18 +320,11 @@ function waitForContentMessage(name) {
 
 
 
-
-
-function executeInContent(
-  name,
-  data = {},
-  objects = {},
-  expectResponse = true
-) {
+function executeInContent(name, data = {}, expectResponse = true) {
   info("Sending message " + name + " to content");
   const mm = gBrowser.selectedBrowser.messageManager;
 
-  mm.sendAsyncMessage(name, data, objects);
+  mm.sendAsyncMessage(name, data);
   if (expectResponse) {
     return waitForContentMessage(name);
   }

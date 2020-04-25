@@ -870,17 +870,10 @@ function performRequestsInContent(requests) {
 
 
 
-
-
-function executeInContent(
-  name,
-  data = {},
-  objects = {},
-  expectResponse = true
-) {
+function executeInContent(name, data = {}, expectResponse = true) {
   const mm = gBrowser.selectedBrowser.messageManager;
 
-  mm.sendAsyncMessage(name, data, objects);
+  mm.sendAsyncMessage(name, data);
   if (expectResponse) {
     return waitForContentMessage(name);
   }

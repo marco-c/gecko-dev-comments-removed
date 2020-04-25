@@ -39,7 +39,6 @@ waitForExplicitFinish();
 
 
 
-
 var addTab = async function(url) {
   info(`Adding a new tab with URL: ${url}`);
   const tab = (gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, url));

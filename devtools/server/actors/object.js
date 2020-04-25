@@ -135,13 +135,6 @@ const proto = {
       actor: this.actorID,
     };
 
-    
-    if (DevToolsUtils.isCPOW(this.obj)) {
-      
-      g.class = "CPOW";
-      return g;
-    }
-
     const unwrapped = DevToolsUtils.unwrap(this.obj);
     if (unwrapped === undefined) {
       
