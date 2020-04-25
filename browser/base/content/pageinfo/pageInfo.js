@@ -282,42 +282,6 @@ function getClipboardHelper() {
 const gClipboardHelper = getClipboardHelper();
 
 
-const XLinkNS = "http://www.w3.org/1999/xlink";
-const XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-const XMLNS = "http://www.w3.org/XML/1998/namespace";
-const XHTMLNS = "http://www.w3.org/1999/xhtml";
-const XHTML2NS = "http://www.w3.org/2002/06/xhtml2";
-
-const XHTMLNSre = "^http://www.w3.org/1999/xhtml$";
-const XHTML2NSre = "^http://www.w3.org/2002/06/xhtml2$";
-const XHTMLre = RegExp(XHTMLNSre + "|" + XHTML2NSre, "");
-
-
-
-
-
-
-
-
-
-
-
-var onLoadRegistry = [];
-
-
-
-
-
-var onResetRegistry = [];
-
-
-
-var onFinished = [];
-
-
-var onUnloadRegistry = [];
-
-
 
 
 
@@ -338,18 +302,19 @@ async function onLoadPageInfo() {
   gStrings.mediaVideo = await document.l10n.formatValue("media-video");
   gStrings.mediaAudio = await document.l10n.formatValue("media-audio");
 
-  var args =
+  const args =
     "arguments" in window &&
     window.arguments.length >= 1 &&
     window.arguments[0];
 
   
-  var imageTree = document.getElementById("imagetree");
-  imageTree.view = gImageView;
+  document.getElementById("imagetree").view = gImageView;
 
   
-  loadTab(args);
-  Services.obs.notifyObservers(window, "page-info-dialog-loaded");
+  await loadTab(args);
+
+  
+  window.dispatchEvent(new Event("page-info-init"));
 }
 
 async function loadPageInfo(browsingContext, imageElement, browser) {
@@ -389,25 +354,14 @@ async function loadPageInfo(browsingContext, imageElement, browser) {
     selectImage();
     contextsToVisit.push(...currContext.children);
   }
-
-  
-  onLoadRegistry.forEach(function(func) {
-    func();
-  });
-
-  onFinished.forEach(function(func) {
-    func();
-  });
 }
 
 
 
 
 
-async function onNonMediaPageInfoLoad(browser, args, imageInfo) {
-  let pageInfoData = args;
-  let docInfo = pageInfoData.docInfo;
-  let windowInfo = pageInfoData.windowInfo;
+async function onNonMediaPageInfoLoad(browser, pageInfoData, imageInfo) {
+  const { docInfo, windowInfo } = pageInfoData;
   let uri = Services.io.newURI(docInfo.documentURIObject.spec);
   let principal = docInfo.principal;
   gDocInfo = docInfo;
@@ -452,19 +406,7 @@ function resetPageInfo(args) {
   gImageHash = {};
 
   
-  onResetRegistry.forEach(function(func) {
-    func();
-  });
-
-  
   loadTab(args);
-}
-
-function onUnloadPageInfo() {
-  
-  onUnloadRegistry.forEach(function(func) {
-    func();
-  });
 }
 
 function doHelpButton() {
@@ -489,14 +431,14 @@ function showTab(id) {
 async function loadTab(args) {
   
   
-  let imageElement = args && args.imageElement;
-  let browsingContext = args && args.browsingContext;
-  let browser = args && args.browser;
+  let imageElement = args?.imageElement;
+  let browsingContext = args?.browsingContext;
+  let browser = args?.browser;
 
   
-  loadPageInfo(browsingContext, imageElement, browser);
+  await loadPageInfo(browsingContext, imageElement, browser);
 
-  var initialTab = (args && args.initialTab) || "generalTab";
+  var initialTab = args?.initialTab || "generalTab";
   var radioGroup = document.getElementById("viewGroup");
   initialTab =
     document.getElementById(initialTab) ||
@@ -547,8 +489,7 @@ async function makeGeneralTab(metaViewRows, docInfo) {
   document.l10n.setAttributes(document.getElementById("modetext"), mode);
 
   
-  var mimeType = docInfo.contentType;
-  setItemValue("typetext", mimeType);
+  setItemValue("typetext", docInfo.contentType);
 
   
   var encoding = docInfo.characterSet;
@@ -566,8 +507,7 @@ async function makeGeneralTab(metaViewRows, docInfo) {
       { tags: length }
     );
 
-    var metaTree = document.getElementById("metatree");
-    metaTree.view = gMetaView;
+    document.getElementById("metatree").view = gMetaView;
 
     
     gMetaView.addRows(metaViewRows);
@@ -584,7 +524,6 @@ async function makeGeneralTab(metaViewRows, docInfo) {
   
   var cacheKey = url.replace(/#.*$/, "");
   openCacheEntry(cacheKey, function(cacheEntry) {
-    var sizeText;
     if (cacheEntry) {
       var pageSize = cacheEntry.dataSize;
       var kbSize = formatNumber(Math.round((pageSize / 1024) * 100) / 100);
@@ -594,7 +533,7 @@ async function makeGeneralTab(metaViewRows, docInfo) {
         { kb: kbSize, bytes: formatNumber(pageSize) }
       );
     } else {
-      setItemValue("sizetext", sizeText);
+      setItemValue("sizetext", null);
     }
   });
 }
@@ -658,11 +597,6 @@ async function addImage(imageViewRow) {
 }
 
 
-function openURL(target) {
-  var url = target.parentNode.childNodes[2].value;
-  window.open(url, "_blank", "chrome");
-}
-
 function onBeginLinkDrag(event, urlField, descField) {
   if (event.originalTarget.localName != "treechildren") {
     return;
@@ -713,8 +647,7 @@ function getSelectedRow(tree) {
 }
 
 async function selectSaveFolder(aCallback) {
-  const nsIFile = Ci.nsIFile;
-  const nsIFilePicker = Ci.nsIFilePicker;
+  const { nsIFile, nsIFilePicker } = Ci;
   let titleText = await document.l10n.formatValue("media-select-folder");
   let fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
   let fpCallback = function fpCallback_done(aResult) {
@@ -1027,10 +960,7 @@ function makePreview(row) {
     } else {
       
       if (item.HTMLVideoElement && isProtocolAllowed) {
-        newImage = document.createElementNS(
-          "http://www.w3.org/1999/xhtml",
-          "video"
-        );
+        newImage = document.createElement("video");
         newImage.id = "thepreviewimage";
         newImage.setAttribute("triggeringprincipal", triggeringPrinStr);
         newImage.src = url;
