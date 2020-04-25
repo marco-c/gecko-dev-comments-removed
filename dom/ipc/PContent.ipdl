@@ -431,7 +431,7 @@ both:
     
     
     async PWebBrowserPersistDocument(nullable PBrowser aBrowser,
-                                     uint64_t aOuterWindowID);
+                                     MaybeDiscardedBrowsingContext aContext);
 
 child:
     async InitGMPService(Endpoint<PGMPServiceChild> service);
