@@ -63,6 +63,10 @@ interface nsIPromptService : nsISupports
                in unsigned long modalType,
                in wstring aDialogTitle,
                in wstring aText);
+  Promise asyncAlert(in BrowsingContext aBrowsingContext,
+              in unsigned long modalType,
+              in wstring aDialogTitle,
+              in wstring aText);
 
   
 
@@ -90,6 +94,12 @@ interface nsIPromptService : nsISupports
                     in wstring aText,
                     in wstring aCheckMsg,
                     inout boolean aCheckState);
+  Promise asyncAlertCheck(in BrowsingContext aBrowsingContext,
+                          in unsigned long modalType,
+                          in wstring aDialogTitle,
+                          in wstring aText,
+                          in wstring aCheckMsg,
+                          in boolean aCheckState);
 
   
 
@@ -110,6 +120,10 @@ interface nsIPromptService : nsISupports
                     in unsigned long modalType,
                     in wstring aDialogTitle,
                     in wstring aText);
+  Promise asyncConfirm(in BrowsingContext aBrowsingContext,
+                       in unsigned long modalType,
+                       in wstring aDialogTitle,
+                       in wstring aText);
 
   
 
@@ -139,6 +153,12 @@ interface nsIPromptService : nsISupports
                          in wstring aText,
                          in wstring aCheckMsg,
                          inout boolean aCheckState);
+  Promise asyncConfirmCheck(in BrowsingContext aBrowsingContext,
+                            in unsigned long modalType,
+                            in wstring aDialogTitle,
+                            in wstring aText,
+                            in wstring aCheckMsg,
+                            in boolean aCheckState);
 
   
 
@@ -262,7 +282,16 @@ interface nsIPromptService : nsISupports
                       in wstring aButton2Title,
                       in wstring aCheckMsg,
                       inout boolean aCheckState);
-
+  Promise asyncConfirmEx(in BrowsingContext aBrowsingContext,
+                      in unsigned long modalType,
+                      in wstring aDialogTitle,
+                      in wstring aText,
+                      in unsigned long aButtonFlags,
+                      in wstring aButton0Title,
+                      in wstring aButton1Title,
+                      in wstring aButton2Title,
+                      in wstring aCheckMsg,
+                      in boolean aCheckState);
   
 
 
@@ -298,6 +327,13 @@ interface nsIPromptService : nsISupports
                    inout wstring aValue,
                    in wstring aCheckMsg,
                    inout boolean aCheckState);
+  Promise asyncPrompt(in BrowsingContext aBrowsingContext,
+                   in unsigned long modalType,
+                   in wstring aDialogTitle,
+                   in wstring aText,
+                   in wstring aValue,
+                   in wstring aCheckMsg,
+                   in boolean aCheckState);
 
   
 
@@ -342,6 +378,14 @@ interface nsIPromptService : nsISupports
                                       inout wstring aPassword,
                                       in wstring aCheckMsg,
                                       inout boolean aCheckState);
+  Promise asyncPromptUsernameAndPassword(in BrowsingContext aBrowsingContext,
+                                      in unsigned long modalType,
+                                      in wstring aDialogTitle,
+                                      in wstring aText,
+                                      in wstring aUsername,
+                                      in wstring aPassword,
+                                      in wstring aCheckMsg,
+                                      in boolean aCheckState);
 
   
 
@@ -378,7 +422,13 @@ interface nsIPromptService : nsISupports
                            inout wstring aPassword,
                            in wstring aCheckMsg,
                            inout boolean aCheckState);
-
+  Promise asyncPromptPassword(in BrowsingContext aBrowsingContext,
+                           in unsigned long modalType,
+                           in wstring aDialogTitle,
+                           in wstring aText,
+                           in wstring aPassword,
+                           in wstring aCheckMsg,
+                           in boolean aCheckState);
   
 
 
@@ -408,6 +458,11 @@ interface nsIPromptService : nsISupports
                    in wstring aText,
                    in Array<AString> aSelectList,
                    out long aOutSelection);
+  Promise asyncSelect(in BrowsingContext aBrowsingContext,
+                   in unsigned long modalType,
+                   in wstring aDialogTitle,
+                   in wstring aText,
+                   in Array<AString> aSelectList);
 
   
   
