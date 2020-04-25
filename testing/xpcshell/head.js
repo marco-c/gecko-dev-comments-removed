@@ -118,10 +118,6 @@ if (runningInParent && "mozIAsyncHistory" in Ci) {
 try {
   if (runningInParent) {
     
-    
-    _Services.prefs.setBoolPref("network.disable.ipc.security", true);
-
-    
     if ("@mozilla.org/windows-registry-key;1" in Cc) {
       _Services.prefs.setCharPref("network.dns.ipv4OnlyDomains", "localhost");
     }

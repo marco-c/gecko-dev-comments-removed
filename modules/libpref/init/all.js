@@ -1267,9 +1267,6 @@ pref("network.tickle-wifi.duration", 400);
 pref("network.tickle-wifi.delay", 16);
 
 
-pref("network.disable.ipc.security", true);
-
-
 pref("network.protocol-handler.external-default", true);      
 pref("network.protocol-handler.warn-external-default", true); 
 

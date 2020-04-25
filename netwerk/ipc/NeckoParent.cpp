@@ -82,15 +82,6 @@ NeckoParent::NeckoParent() : mSocketProcessBridgeInited(false) {
   
   nsCOMPtr<nsIProtocolHandler> proto =
       do_GetService("@mozilla.org/network/protocol;1?name=http");
-
-  
-  
-  static bool registeredBool = false;
-  if (!registeredBool) {
-    Preferences::AddBoolVarCache(&NeckoCommonInternal::gSecurityDisabled,
-                                 "network.disable.ipc.security");
-    registeredBool = true;
-  }
 }
 
 static PBOverrideStatus PBOverrideStatusFromLoadContext(
