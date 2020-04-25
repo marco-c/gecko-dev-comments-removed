@@ -254,7 +254,7 @@ const char* NeckoParent::CreateChannelLoadContext(
         break;
       }
       case PBrowserOrId::TTabId: {
-        aResult = new LoadContext(aSerialized, nullptr, attrs);
+        aResult = new LoadContext(aSerialized, aBrowser.get_TabId(), attrs);
         break;
       }
       default:
@@ -409,15 +409,43 @@ mozilla::ipc::IPCResult NeckoParent::RecvPFTPChannelConstructor(
 
 already_AddRefed<PDocumentChannelParent>
 NeckoParent::AllocPDocumentChannelParent(
-    const MaybeDiscarded<BrowsingContext>& aContext,
+    PBrowserParent* aBrowser, const MaybeDiscarded<BrowsingContext>& aContext,
+    const SerializedLoadContext& aSerialized,
     const DocumentChannelCreationArgs& args) {
-  RefPtr<DocumentChannelParent> p = new DocumentChannelParent();
+  
+  
+  
+  CanonicalBrowsingContext* context = nullptr;
+  if (!aContext.IsNullOrDiscarded()) {
+    context = aContext.get_canonical();
+  }
+
+  nsCOMPtr<nsIPrincipal> requestingPrincipal;
+  
+  
+  
+  if (context && !aContext.IsDiscarded() && context->GetParent()) {
+    if (RefPtr<WindowGlobalParent> embedderWGP =
+            context->GetParentWindowGlobal()) {
+      requestingPrincipal = embedderWGP->DocumentPrincipal();
+    }
+  }
+
+  nsCOMPtr<nsILoadContext> loadContext;
+  const char* error = CreateChannelLoadContext(
+      aBrowser, Manager(), aSerialized, requestingPrincipal, loadContext);
+  if (error) {
+    return nullptr;
+  }
+  RefPtr<DocumentChannelParent> p =
+      new DocumentChannelParent(context, loadContext);
   return p.forget();
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvPDocumentChannelConstructor(
-    PDocumentChannelParent* aActor,
+    PDocumentChannelParent* aActor, PBrowserParent* aBrowser,
     const MaybeDiscarded<BrowsingContext>& aContext,
+    const SerializedLoadContext& aSerialized,
     const DocumentChannelCreationArgs& aArgs) {
   DocumentChannelParent* p = static_cast<DocumentChannelParent*>(aActor);
 
@@ -426,7 +454,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDocumentChannelConstructor(
     return IPC_OK();
   }
 
-  if (!p->Init(aContext.get_canonical(), aArgs)) {
+  if (!p->Init(aArgs)) {
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();

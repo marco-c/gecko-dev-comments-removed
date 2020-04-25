@@ -14,6 +14,7 @@
 #include "mozilla/net/PDocumentChannelParent.h"
 #include "mozilla/net/ParentChannelListener.h"
 #include "mozilla/net/ADocumentChannelBridge.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIParentChannel.h"
@@ -29,9 +30,6 @@
   }
 
 namespace mozilla {
-namespace dom {
-class CanonicalBrowsingContext;
-}
 namespace net {
 using ChildEndpointPromise =
     MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
@@ -91,33 +89,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                              public nsIMultiPartChannelListener {
  public:
   explicit DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
+                                nsILoadContext* aLoadContext,
                                 ADocumentChannelBridge* aBridge);
 
   
   bool Open(nsDocShellLoadState* aLoadState, nsLoadFlags aLoadFlags,
-            uint32_t aCacheKey, const Maybe<uint64_t>& aChannelId,
+            uint32_t aCacheKey, const uint64_t& aChannelId,
             const TimeStamp& aAsyncOpenTime, nsDOMNavigationTiming* aTiming,
             Maybe<dom::ClientInfo>&& aInfo, uint64_t aOuterWindowId,
             bool aHasGesture, nsresult* aRv);
-
-  
-  
-  
-  
-  
-  static bool OpenFromParent(dom::CanonicalBrowsingContext* aBrowsingContext,
-                             nsDocShellLoadState* aLoadState,
-                             uint64_t aOuterWindowId, uint32_t* aOutIdent);
-
-  
-  
-  
-  static void CleanupParentLoadAttempt(uint32_t aLoadIdent);
-
-  
-  
-  static already_AddRefed<DocumentLoadListener> ClaimParentLoad(
-      uint32_t aLoadIdent, ADocumentChannelBridge* aBridge);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -185,9 +165,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     if (mDocumentChannelBridge) {
       return mDocumentChannelBridge->OtherPid();
     }
-    if (mPendingDocumentChannelBridgeProcess) {
-      return *mPendingDocumentChannelBridgeProcess;
-    }
     return 0;
   }
 
@@ -209,25 +186,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   net::LastVisitInfo LastVisitInfo() const;
 
  protected:
-  DocumentLoadListener(dom::CanonicalBrowsingContext* aBrowsingContext,
-                       base::ProcessId aPendingBridgeProcess);
   virtual ~DocumentLoadListener();
-
-  
-  
-  void NotifyBridgeConnected(ADocumentChannelBridge* aBridge);
-
-  
-  
-  void NotifyBridgeFailed();
-
-  
-  
-  
-  
-  typedef MozPromise<RefPtr<ADocumentChannelBridge>, bool, false>
-      EnsureBridgePromise;
-  RefPtr<EnsureBridgePromise> EnsureBridge();
 
   
   
@@ -263,8 +222,6 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   already_AddRefed<LoadInfo> CreateLoadInfo(
       dom::CanonicalBrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId);
-
-  dom::CanonicalBrowsingContext* GetBrowsingContext();
 
   bool HasCrossOriginOpenerPolicyMismatch() const;
   void ApplyPendingFunctions(nsISupports* aChannel) const;
@@ -373,14 +330,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   RefPtr<ADocumentChannelBridge> mDocumentChannelBridge;
 
-  
-  
-  
-  Maybe<base::ProcessId> mPendingDocumentChannelBridgeProcess;
-
-  
-  
-  MozPromiseHolder<EnsureBridgePromise> mBridgePromise;
+  nsCOMPtr<nsILoadContext> mLoadContext;
 
   
   

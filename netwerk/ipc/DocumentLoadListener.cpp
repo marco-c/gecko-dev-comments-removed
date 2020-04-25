@@ -33,12 +33,9 @@
 #include "nsIViewSourceChannel.h"
 #include "nsImportModule.h"
 #include "nsMimeTypes.h"
-#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "nsRedirectHistoryEntry.h"
 #include "nsURILoader.h"
 #include "nsWebNavigationInfo.h"
-#include "nsDocShellLoadTypes.h"
-#include "nsSandboxFlags.h"
 
 #ifdef ANDROID
 #  include "mozilla/widget/nsWindow.h"
@@ -241,21 +238,12 @@ NS_INTERFACE_MAP_BEGIN(DocumentLoadListener)
 NS_INTERFACE_MAP_END
 
 DocumentLoadListener::DocumentLoadListener(
-    CanonicalBrowsingContext* aBrowsingContext,
-    ADocumentChannelBridge* aBridge) {
-  MOZ_ASSERT(aBridge);
+    CanonicalBrowsingContext* aBrowsingContext, nsILoadContext* aLoadContext,
+    ADocumentChannelBridge* aBridge)
+    : mDocumentChannelBridge(aBridge), mLoadContext(aLoadContext) {
   LOG(("DocumentLoadListener ctor [this=%p]", this));
   mParentChannelListener = new ParentChannelListener(
-      this, aBrowsingContext, aBrowsingContext->UsePrivateBrowsing());
-}
-
-DocumentLoadListener::DocumentLoadListener(
-    CanonicalBrowsingContext* aBrowsingContext,
-    base::ProcessId aPendingBridgeProcess) {
-  LOG(("DocumentLoadListener ctor [this=%p]", this));
-  mParentChannelListener = new ParentChannelListener(
-      this, aBrowsingContext, aBrowsingContext->UsePrivateBrowsing());
-  mPendingDocumentChannelBridgeProcess = Some(aPendingBridgeProcess);
+      this, aBrowsingContext, aLoadContext->UsePrivateBrowsing());
 }
 
 DocumentLoadListener::~DocumentLoadListener() {
@@ -310,7 +298,7 @@ already_AddRefed<LoadInfo> DocumentLoadListener::CreateLoadInfo(
   } else {
     
     OriginAttributes attrs;
-    aBrowsingContext->GetOriginAttributes(attrs);
+    mLoadContext->GetOriginAttributes(attrs);
     loadInfo = new LoadInfo(aBrowsingContext, aLoadState->TriggeringPrincipal(),
                             attrs, aOuterWindowId, securityFlags, sandboxFlags);
   }
@@ -352,16 +340,9 @@ GetTopWindowExcludingExtensionAccessibleContentFrames(
   return prev.forget();
 }
 
-CanonicalBrowsingContext* DocumentLoadListener::GetBrowsingContext() {
-  if (!mParentChannelListener) {
-    return nullptr;
-  }
-  return mParentChannelListener->GetBrowsingContext();
-}
-
 bool DocumentLoadListener::Open(
     nsDocShellLoadState* aLoadState, nsLoadFlags aLoadFlags, uint32_t aCacheKey,
-    const Maybe<uint64_t>& aChannelId, const TimeStamp& aAsyncOpenTime,
+    const uint64_t& aChannelId, const TimeStamp& aAsyncOpenTime,
     nsDOMNavigationTiming* aTiming, Maybe<ClientInfo>&& aInfo,
     uint64_t aOuterWindowId, bool aHasGesture, nsresult* aRv) {
   LOG(("DocumentLoadListener Open [this=%p, uri=%s]", this,
@@ -370,7 +351,7 @@ bool DocumentLoadListener::Open(
       mParentChannelListener->GetBrowsingContext();
 
   OriginAttributes attrs;
-  browsingContext->GetOriginAttributes(attrs);
+  mLoadContext->GetOriginAttributes(attrs);
 
   RefPtr<WindowGlobalParent> embedderWGP =
       browsingContext->GetParentWindowGlobal();
@@ -432,8 +413,8 @@ bool DocumentLoadListener::Open(
       AntiTrackingUtils::HasStoragePermissionInParent(mChannel));
 
   nsCOMPtr<nsIIdentChannel> identChannel = do_QueryInterface(mChannel);
-  if (identChannel && aChannelId) {
-    Unused << identChannel->SetChannelId(*aChannelId);
+  if (identChannel) {
+    Unused << identChannel->SetChannelId(aChannelId);
   }
 
   RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(mChannel);
@@ -525,165 +506,7 @@ bool DocumentLoadListener::Open(
   mTiming = aTiming;
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
-
-  if (auto* ctx = GetBrowsingContext()) {
-    ctx->StartDocumentLoad(this);
-  }
   return true;
-}
-
-bool DocumentLoadListener::OpenFromParent(
-    dom::CanonicalBrowsingContext* aBrowsingContext,
-    nsDocShellLoadState* aLoadState, uint64_t aOuterWindowId,
-    uint32_t* aOutIdent) {
-  LOG(("DocumentLoadListener::OpenFromParent"));
-
-  
-  
-  if (!aBrowsingContext->IsTopContent() ||
-      !aBrowsingContext->GetContentParent()) {
-    LOG(("DocumentLoadListener::OpenFromParent failed because of subdoc"));
-    return false;
-  }
-
-  if (nsCOMPtr<nsIContentSecurityPolicy> csp = aLoadState->Csp()) {
-    
-    bool allowsNavigateTo = false;
-    nsresult rv = csp->GetAllowsNavigateTo(aLoadState->URI(),
-                                           aLoadState->IsFormSubmission(),
-                                           false, 
-                                           false, 
-                                           &allowsNavigateTo);
-    if (NS_FAILED(rv) || !allowsNavigateTo) {
-      return false;
-    }
-  }
-
-  
-  
-  
-  auto loadType = aLoadState->LoadType();
-  if (loadType == LOAD_HISTORY || loadType == LOAD_RELOAD_NORMAL ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE ||
-      loadType == LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE) {
-    LOG(
-        ("DocumentLoadListener::OpenFromParent failed because of history "
-         "load"));
-    return false;
-  }
-
-  
-  
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(*aLoadState);
-  loadState->CalculateLoadURIFlags();
-
-  nsLoadFlags loadFlags = loadState->LoadFlags() |
-                          nsIChannel::LOAD_DOCUMENT_URI |
-                          nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
-  uint32_t sandboxFlags = aBrowsingContext->GetSandboxFlags();
-  if ((sandboxFlags & (SANDBOXED_ORIGIN | SANDBOXED_SCRIPTS)) == 0) {
-    loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
-  }
-  if (loadState->FirstParty()) {
-    
-    loadFlags |= nsIChannel::LOAD_INITIAL_DOCUMENT_URI;
-  }
-
-  RefPtr<nsDOMNavigationTiming> timing = new nsDOMNavigationTiming(nullptr);
-  timing->NotifyNavigationStart(
-      aBrowsingContext->GetIsActive()
-          ? nsDOMNavigationTiming::DocShellState::eActive
-          : nsDOMNavigationTiming::DocShellState::eInactive);
-
-  
-  uint32_t cacheKey = 0;
-
-  
-  
-  
-  Maybe<uint64_t> channelId = Nothing();
-
-  
-  
-  Maybe<dom::ClientInfo> initialClientInfo;
-
-  RefPtr<DocumentLoadListener> listener = new DocumentLoadListener(
-      aBrowsingContext, aBrowsingContext->GetContentParent()->OtherPid());
-
-  nsresult rv;
-  bool result = listener->Open(
-      loadState, loadFlags, cacheKey, channelId, TimeStamp::Now(), timing,
-      std::move(initialClientInfo), aOuterWindowId, false, &rv);
-  if (result) {
-    
-    
-    nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
-        RedirectChannelRegistrar::GetOrCreate();
-    rv = registrar->RegisterChannel(nullptr, aOutIdent);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-    
-    rv = registrar->LinkChannels(*aOutIdent, listener, nullptr);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-  }
-  return result;
-}
-
-void DocumentLoadListener::CleanupParentLoadAttempt(uint32_t aLoadIdent) {
-  nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
-      RedirectChannelRegistrar::GetOrCreate();
-
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  registrar->GetParentChannel(aLoadIdent, getter_AddRefs(parentChannel));
-  RefPtr<DocumentLoadListener> loadListener = do_QueryObject(parentChannel);
-
-  if (loadListener) {
-    
-    
-    loadListener->NotifyBridgeFailed();
-  }
-
-  registrar->DeregisterChannels(aLoadIdent);
-}
-
-already_AddRefed<DocumentLoadListener> DocumentLoadListener::ClaimParentLoad(
-    uint32_t aLoadIdent, ADocumentChannelBridge* aBridge) {
-  nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
-      RedirectChannelRegistrar::GetOrCreate();
-
-  nsCOMPtr<nsIParentChannel> parentChannel;
-  registrar->GetParentChannel(aLoadIdent, getter_AddRefs(parentChannel));
-  RefPtr<DocumentLoadListener> loadListener = do_QueryObject(parentChannel);
-  registrar->DeregisterChannels(aLoadIdent);
-
-  MOZ_ASSERT(loadListener);
-  if (loadListener) {
-    loadListener->NotifyBridgeConnected(aBridge);
-  }
-  return loadListener.forget();
-}
-
-void DocumentLoadListener::NotifyBridgeConnected(
-    ADocumentChannelBridge* aBridge) {
-  LOG(("DocumentLoadListener NotifyBridgeConnected [this=%p]", this));
-  MOZ_ASSERT(!mDocumentChannelBridge);
-  MOZ_ASSERT(mPendingDocumentChannelBridgeProcess);
-  MOZ_ASSERT(aBridge->OtherPid() == *mPendingDocumentChannelBridgeProcess);
-
-  mDocumentChannelBridge = aBridge;
-  mPendingDocumentChannelBridgeProcess.reset();
-  mBridgePromise.ResolveIfExists(aBridge, __func__);
-}
-
-void DocumentLoadListener::NotifyBridgeFailed() {
-  LOG(("DocumentLoadListener NotifyBridgeFailed [this=%p]", this));
-  MOZ_ASSERT(!mDocumentChannelBridge);
-  MOZ_ASSERT(mPendingDocumentChannelBridgeProcess);
-  mPendingDocumentChannelBridgeProcess.reset();
-
-  Cancel(NS_BINDING_ABORTED);
-
-  mBridgePromise.RejectIfExists(false, __func__);
 }
 
 void DocumentLoadListener::DocumentChannelBridgeDisconnected() {
@@ -696,10 +519,6 @@ void DocumentLoadListener::DocumentChannelBridgeDisconnected() {
     httpChannelImpl->SetWarningReporter(nullptr);
   }
   mDocumentChannelBridge = nullptr;
-
-  if (auto* ctx = GetBrowsingContext()) {
-    ctx->EndDocumentLoad(this);
-  }
 }
 
 void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
@@ -707,18 +526,9 @@ void DocumentLoadListener::Cancel(const nsresult& aStatusCode) {
       ("DocumentLoadListener Cancel [this=%p, "
        "aStatusCode=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aStatusCode)));
-  if (mDoingProcessSwitch) {
-    
-    
-    
-    return;
-  }
-
-  if (mChannel) {
+  if (mChannel && !mDoingProcessSwitch) {
     mChannel->Cancel(aStatusCode);
   }
-
-  DisconnectChildListeners(aStatusCode, aStatusCode);
 }
 
 void DocumentLoadListener::DisconnectChildListeners(nsresult aStatus,
@@ -728,20 +538,8 @@ void DocumentLoadListener::DisconnectChildListeners(nsresult aStatus,
        "aStatus=%" PRIx32 " aLoadGroupStatus=%" PRIx32 " ]",
        this, static_cast<uint32_t>(aStatus),
        static_cast<uint32_t>(aLoadGroupStatus)));
-  RefPtr<DocumentLoadListener> keepAlive(this);
   if (mDocumentChannelBridge) {
-    
-    
     mDocumentChannelBridge->DisconnectChildListeners(aStatus, aLoadGroupStatus);
-  } else if (mPendingDocumentChannelBridgeProcess) {
-    EnsureBridge()->Then(
-        GetCurrentThreadSerialEventTarget(), __func__,
-        [keepAlive, aStatus,
-         aLoadGroupStatus](ADocumentChannelBridge* aBridge) {
-          aBridge->DisconnectChildListeners(aStatus, aLoadGroupStatus);
-          keepAlive->mDocumentChannelBridge = nullptr;
-        },
-        [](bool aDummy) {});
   }
   DocumentChannelBridgeDisconnected();
 
@@ -853,9 +651,6 @@ void DocumentLoadListener::FinishReplacementChannelSetup(bool aSucceeded) {
       redirectChannel->Delete();
     }
     mChannel->Resume();
-    if (auto* ctx = GetBrowsingContext()) {
-      ctx->EndDocumentLoad(this);
-    }
     return;
   }
 
@@ -1036,11 +831,6 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
                "Should not have added new stream listener function!");
 
   mChannel->Resume();
-
-  if (auto* ctx = GetBrowsingContext()) {
-    ctx->EndDocumentLoad(this);
-  }
-
   return !mIsFinished;
 }
 
@@ -1065,17 +855,8 @@ void DocumentLoadListener::SerializeRedirectData(
   channelLoadInfo->GetPrincipalToInherit(getter_AddRefs(principalToInherit));
 
   const RefPtr<nsHttpChannel> baseChannel = do_QueryObject(mChannel.get());
-
-  nsCOMPtr<nsILoadContext> loadContext;
-  NS_QueryNotificationCallbacks(mChannel, loadContext);
   nsCOMPtr<nsILoadInfo> redirectLoadInfo;
-
-  
-  
-  
-  
-  
-  if (baseChannel && loadContext) {
+  if (baseChannel) {
     redirectLoadInfo = baseChannel->CloneLoadInfoForRedirect(
         aArgs.uri(), nsIChannelEventSink::REDIRECT_INTERNAL);
     redirectLoadInfo->SetResultPrincipalURI(aArgs.uri());
@@ -1351,17 +1132,6 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
   return true;
 }
 
-auto DocumentLoadListener::EnsureBridge() -> RefPtr<EnsureBridgePromise> {
-  MOZ_ASSERT(mDocumentChannelBridge || mPendingDocumentChannelBridgeProcess);
-  if (mDocumentChannelBridge) {
-    MOZ_ASSERT(mBridgePromise.IsEmpty());
-    return EnsureBridgePromise::CreateAndResolve(mDocumentChannelBridge,
-                                                 __func__);
-  }
-
-  return mBridgePromise.Ensure(__func__);
-}
-
 RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
 DocumentLoadListener::RedirectToRealChannel(
     uint32_t aRedirectFlags, uint32_t aLoadFlags,
@@ -1413,19 +1183,9 @@ DocumentLoadListener::RedirectToRealChannel(
     return cp->SendCrossProcessRedirect(args,
                                         std::move(aStreamFilterEndpoints));
   }
-
-  return EnsureBridge()->Then(
-      GetCurrentThreadSerialEventTarget(), __func__,
-      [endpoints = std::move(aStreamFilterEndpoints), aRedirectFlags,
-       aLoadFlags](ADocumentChannelBridge* aBridge) mutable {
-        return aBridge->RedirectToRealChannel(std::move(endpoints),
-                                              aRedirectFlags, aLoadFlags);
-      },
-      [](bool aDummy) {
-        return PDocumentChannelParent::RedirectToRealChannelPromise::
-            CreateAndReject(ipc::ResponseRejectReason::ActorDestroyed,
-                            __func__);
-      });
+  MOZ_ASSERT(mDocumentChannelBridge);
+  return mDocumentChannelBridge->RedirectToRealChannel(
+      std::move(aStreamFilterEndpoints), aRedirectFlags, aLoadFlags);
 }
 
 void DocumentLoadListener::TriggerRedirectToRealChannel(
@@ -1530,7 +1290,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
   RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
 
-  if (!mDocumentChannelBridge && !mPendingDocumentChannelBridgeProcess) {
+  
+  
+
+  if (!mDocumentChannelBridge) {
     return NS_ERROR_UNEXPECTED;
   }
 
@@ -1543,11 +1306,20 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
   
   
   
+  if (mDoingProcessSwitch) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
   
   nsresult status = NS_OK;
   aRequest->GetStatus(&status);
   if (status == NS_ERROR_NO_CONTENT) {
-    DisconnectChildListeners(status, status);
+    mDocumentChannelBridge->DisconnectChildListeners(status, status);
     return NS_OK;
   }
 
@@ -1660,10 +1432,10 @@ DocumentLoadListener::SetParentListener(
 
 NS_IMETHODIMP
 DocumentLoadListener::GetInterface(const nsIID& aIID, void** result) {
-  RefPtr<CanonicalBrowsingContext> browsingContext =
-      mParentChannelListener->GetBrowsingContext();
-  if (aIID.Equals(NS_GET_IID(nsILoadContext)) && browsingContext) {
-    browsingContext.forget(result);
+  
+  if (aIID.Equals(NS_GET_IID(nsILoadContext)) && mLoadContext) {
+    nsCOMPtr<nsILoadContext> copy = mLoadContext;
+    copy.forget(result);
     return NS_OK;
   }
 
@@ -1768,20 +1540,8 @@ DocumentLoadListener::AsyncOnChannelRedirect(
        "mRedirects=%" PRIx32,
        this, uint32_t(mRedirects.Length())));
 
-  
-  
-  
-  
-  
-  nsresult rv = nsContentUtils::CheckSameOrigin(aOldChannel, aNewChannel);
-  if (NS_FAILED(rv)) {
-    if (mLoadStateLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT) {
-      mLoadStateLoadType = LOAD_NORMAL;
-    } else if (mLoadStateLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
-      mLoadStateLoadType = LOAD_RELOAD_NORMAL;
-    }
-    MOZ_ASSERT(!LOAD_TYPE_HAS_FLAGS(
-        mLoadStateLoadType, nsIWebNavigation::LOAD_FLAGS_ALLOW_MIXED_CONTENT));
+  if (!mDocumentChannelBridge) {
+    return NS_BINDING_ABORTED;
   }
 
   
@@ -1799,7 +1559,7 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
 
   nsCOMPtr<nsIURI> originalUri;
-  rv = aOldChannel->GetOriginalURI(getter_AddRefs(originalUri));
+  nsresult rv = aOldChannel->GetOriginalURI(getter_AddRefs(originalUri));
   if (NS_FAILED(rv)) {
     aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
     return rv;

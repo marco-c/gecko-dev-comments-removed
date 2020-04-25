@@ -43,7 +43,6 @@ class nsDocShellLoadState final {
   explicit nsDocShellLoadState(nsIURI* aURI);
   explicit nsDocShellLoadState(
       const mozilla::dom::DocShellLoadStateInit& aLoadState);
-  explicit nsDocShellLoadState(const nsDocShellLoadState& aOther);
 
   static nsresult CreateFromPendingChannel(nsIChannel* aPendingChannel,
                                            nsDocShellLoadState** aResult);
@@ -229,9 +228,6 @@ class nsDocShellLoadState final {
     return mCancelContentJSEpoch;
   }
 
-  void SetLoadIdentifier(uint32_t aIdent) { mLoadIdentifier = aIdent; }
-  uint32_t GetLoadIdentifier() const { return mLoadIdentifier; }
-
   
   
   
@@ -392,12 +388,6 @@ class nsDocShellLoadState final {
   
   
   mozilla::Maybe<int32_t> mCancelContentJSEpoch;
-
-  
-  
-  
-  
-  uint32_t mLoadIdentifier;
 };
 
 #endif 

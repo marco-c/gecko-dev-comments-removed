@@ -28,7 +28,6 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/SyncedContextInlines.h"
-#include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
@@ -201,7 +200,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
       nsILoadInfo::EMBEDDER_POLICY_NULL);
   context->mFields.SetWithoutSyncing<IDX_OpenerPolicy>(
       nsILoadInfo::OPENER_POLICY_UNSAFE_NONE);
-  context->mFields.SetWithoutSyncing<IDX_WatchedByDevtools>(false);
 
   if (aOpener && aOpener->SameOriginWithTop()) {
     
@@ -1109,47 +1107,6 @@ bool BrowsingContext::CanSetOriginAttributes() {
   return true;
 }
 
-Nullable<WindowProxyHolder> BrowsingContext::GetAssociatedWindow() {
-  
-  
-  
-  if (IsInProcess()) {
-    return WindowProxyHolder(this);
-  }
-  return nullptr;
-}
-
-Nullable<WindowProxyHolder> BrowsingContext::GetTopWindow() {
-  return Top()->GetAssociatedWindow();
-}
-
-Element* BrowsingContext::GetTopFrameElement() {
-  return Top()->GetEmbedderElement();
-}
-
-void BrowsingContext::SetUsePrivateBrowsing(bool aUsePrivateBrowsing,
-                                            ErrorResult& aError) {
-  nsresult rv = SetUsePrivateBrowsing(aUsePrivateBrowsing);
-  if (NS_FAILED(rv)) {
-    aError.Throw(rv);
-  }
-}
-
-void BrowsingContext::SetUseTrackingProtectionWebIDL(
-    bool aUseTrackingProtection) {
-  SetForceEnableTrackingProtection(aUseTrackingProtection);
-}
-
-void BrowsingContext::GetOriginAttributes(JSContext* aCx,
-                                          JS::MutableHandle<JS::Value> aVal,
-                                          ErrorResult& aError) {
-  AssertOriginAttributesMatchPrivateBrowsing();
-
-  if (!ToJSValue(aCx, mOriginAttributes, aVal)) {
-    aError.NoteJSContextException(aCx);
-  }
-}
-
 NS_IMETHODIMP BrowsingContext::GetAssociatedWindow(
     mozIDOMWindowProxy** aAssociatedWindow) {
   nsCOMPtr<mozIDOMWindowProxy> win = GetDOMWindow();
@@ -1162,8 +1119,14 @@ NS_IMETHODIMP BrowsingContext::GetTopWindow(mozIDOMWindowProxy** aTopWindow) {
 }
 
 NS_IMETHODIMP BrowsingContext::GetTopFrameElement(Element** aTopFrameElement) {
-  RefPtr<Element> topFrameElement = GetTopFrameElement();
+  RefPtr<Element> topFrameElement = Top()->GetEmbedderElement();
   topFrameElement.forget(aTopFrameElement);
+  return NS_OK;
+}
+
+NS_IMETHODIMP BrowsingContext::GetNestedFrameId(uint64_t* aNestedFrameId) {
+  
+  *aNestedFrameId = 0;
   return NS_OK;
 }
 
@@ -1342,7 +1305,6 @@ void BrowsingContext::AssertOriginAttributesMatchPrivateBrowsing() {
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BrowsingContext)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
-  NS_INTERFACE_MAP_ENTRY(nsILoadContext)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
@@ -1466,30 +1428,9 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     }
 
     if (ContentParent* cp = Canonical()->GetContentParent()) {
-      
-      
-      uint32_t loadIdentifier = 0;
-      if (Canonical()->AttemptLoadURIInParent(aLoadState, &loadIdentifier)) {
-        aLoadState->SetLoadIdentifier(loadIdentifier);
-      }
-
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI(),
                                     aLoadState->TriggeringPrincipal());
-
-      
-      
-      
-      
-      cp->SendLoadURI(this, aLoadState, aSetNavigating)
-          ->Then(GetMainThreadSerialEventTarget(), __func__,
-                 [loadIdentifier](
-                     const PContentParent::LoadURIPromise::ResolveOrRejectValue&
-                         aValue) {
-                   if (loadIdentifier) {
-                     net::DocumentLoadListener::CleanupParentLoadAttempt(
-                         loadIdentifier);
-                   }
-                 });
+      Unused << cp->SendLoadURI(this, aLoadState, aSetNavigating);
     }
   }
   return NS_OK;
@@ -1892,12 +1833,6 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_AllowContentRetargetingOnChildren>,
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_AllowPlugins>,
                              const bool& aAllowPlugins,
-                             ContentParent* aSource) {
-  return CheckOnlyOwningProcessCanSet(aSource);
-}
-
-bool BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevtools>,
-                             const bool& aWatchedByDevtools,
                              ContentParent* aSource) {
   return CheckOnlyOwningProcessCanSet(aSource);
 }

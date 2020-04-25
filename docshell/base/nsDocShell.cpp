@@ -9792,6 +9792,26 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     mContentTypeHint.Truncate();
   }
 
+  if (mLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT ||
+      mLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
+    rv = SetMixedContentChannel(channel);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (mMixedContentChannel) {
+    
+
+
+
+
+
+
+
+
+    rv = nsContentUtils::CheckSameOrigin(mMixedContentChannel, channel);
+    if (NS_FAILED(rv) || NS_FAILED(SetMixedContentChannel(channel))) {
+      SetMixedContentChannel(nullptr);
+    }
+  }
+
   rv = DoChannelLoad(
       channel, uriLoader,
       aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER));
@@ -9999,26 +10019,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
                                             uint32_t aOpenFlags) {
   nsresult rv = NS_OK;
 
-  if (mLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT ||
-      mLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
-    rv = SetMixedContentChannel(aChannel);
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else if (mMixedContentChannel) {
-    
-
-
-
-
-
-
-
-
-    rv = nsContentUtils::CheckSameOrigin(mMixedContentChannel, aChannel);
-    if (NS_FAILED(rv) || NS_FAILED(SetMixedContentChannel(aChannel))) {
-      SetMixedContentChannel(nullptr);
-    }
-  }
-
   
   auto cleanupInitialClient =
       MakeScopeExit([&] { mInitialClientSource.reset(); });
@@ -10070,7 +10070,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
     
     CreateReservedSourceIfNeeded(aChannel,
                                  win->EventTargetFor(TaskCategory::Other));
-    rv = NS_OK;
   } else {
     rv = AddClientChannelHelper(aChannel, std::move(noReservedClient),
                                 GetInitialClientInfo(),
@@ -11766,6 +11765,11 @@ nsDocShell::GetTopFrameElement(Element** aElement) {
 }
 
 NS_IMETHODIMP
+nsDocShell::GetNestedFrameId(uint64_t* aId) {
+  return mBrowsingContext->GetNestedFrameId(aId);
+}
+
+NS_IMETHODIMP
 nsDocShell::GetUseTrackingProtection(bool* aUseTrackingProtection) {
   return mBrowsingContext->GetUseTrackingProtection(aUseTrackingProtection);
 }
@@ -12436,6 +12440,10 @@ nsDocShell::ResumeRedirectedLoad(uint64_t aIdentifier, int32_t aHistoryIndex) {
             aLoadState->GetPendingRedirectedChannel(), previousURI,
             previousFlags, aRedirects);
 
+        MOZ_ASSERT(
+            (self->mCurrentURI && NS_IsAboutBlank(self->mCurrentURI)) ||
+                !self->mTiming,
+            "timing object can't already exists in non-about:blank loads");
         self->mTiming = new nsDOMNavigationTiming(self, aTiming);
 
         
@@ -12845,6 +12853,5 @@ nsDocShell::GetWatchedByDevtools(bool* aWatched) {
 NS_IMETHODIMP
 nsDocShell::SetWatchedByDevtools(bool aWatched) {
   mWatchedByDevtools = aWatched;
-  mBrowsingContext->SetWatchedByDevtools(aWatched);
   return NS_OK;
 }

@@ -10,7 +10,7 @@ const INITIAL_VALUE = "browser_broadcast.js-initial-value-" + Date.now();
 
 
 add_task(async function flush_on_tabclose() {
-  let tab = await createTabWithStorageData(["http://example.com/"]);
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   await modifySessionStorage(browser, { test: "on-tab-close" });
@@ -33,7 +33,7 @@ add_task(async function flush_on_tabclose() {
 
 
 add_task(async function flush_on_duplicate() {
-  let tab = await createTabWithStorageData(["http://example.com/"]);
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   await modifySessionStorage(browser, { test: "on-duplicate" });
@@ -61,7 +61,7 @@ add_task(async function flush_on_duplicate() {
 
 add_task(async function flush_on_windowclose() {
   let win = await promiseNewWindow();
-  let tab = await createTabWithStorageData(["http://example.com/"], win);
+  let tab = await createTabWithStorageData(["http://example.com"], win);
   let browser = tab.linkedBrowser;
 
   await modifySessionStorage(browser, { test: "on-window-close" });
@@ -84,7 +84,7 @@ add_task(async function flush_on_windowclose() {
 
 
 add_task(async function flush_on_settabstate() {
-  let tab = await createTabWithStorageData(["http://example.com/"]);
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   
@@ -115,7 +115,7 @@ add_task(async function flush_on_settabstate() {
 
 
 add_task(async function flush_on_tabclose_racy() {
-  let tab = await createTabWithStorageData(["http://example.com/"]);
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   
@@ -152,8 +152,7 @@ async function createTabWithStorageData(urls, win = window) {
 
   for (let url of urls) {
     BrowserTestUtils.loadURI(browser, url);
-    await promiseBrowserLoaded(browser, true, url);
-    dump("Loaded url: " + url + "\n");
+    await promiseBrowserLoaded(browser);
     await modifySessionStorage(browser, { test: INITIAL_VALUE });
   }
 

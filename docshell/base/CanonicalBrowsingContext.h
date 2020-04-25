@@ -19,10 +19,6 @@
 #include "nsISHEntry.h"
 
 namespace mozilla {
-namespace net {
-class DocumentLoadListener;
-}
-
 namespace dom {
 
 class WindowGlobalParent;
@@ -114,9 +110,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   MediaController* GetMediaController();
 
-  bool AttemptLoadURIInParent(nsDocShellLoadState* aLoadState,
-                              uint32_t* aLoadIdentifier);
-
   bool HasHistoryEntry(nsISHEntry* aEntry) const {
     return aEntry && (aEntry == mOSHE || aEntry == mLSHE);
   }
@@ -177,15 +170,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     uint64_t mPendingSwitchId;
   };
 
-  friend class net::DocumentLoadListener;
-  
-  
-  void StartDocumentLoad(net::DocumentLoadListener* aLoad);
-  
-  
-  
-  void EndDocumentLoad(net::DocumentLoadListener* aLoad);
-
   
   
   uint64_t mProcessId;
@@ -206,8 +190,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   RefPtr<MediaController> mTabMediaController;
-
-  RefPtr<net::DocumentLoadListener> mCurrentLoad;
 
   
   nsCOMPtr<nsISHEntry> mOSHE;
