@@ -8,7 +8,8 @@
 
 #include "mozilla/EditTransactionBase.h"  
 
-#include "mozilla/EditorDOMPoint.h"        
+#include "mozilla/EditorDOMPoint.h"  
+#include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsString.h"                      
 
@@ -35,7 +36,9 @@ class Text;
 
 
 
-class CompositionTransaction final : public EditTransactionBase {
+class CompositionTransaction final
+    : public EditTransactionBase,
+      public SupportsWeakPtr<CompositionTransaction> {
  protected:
   CompositionTransaction(EditorBase& aEditorBase,
                          const nsAString& aStringToInsert,
@@ -59,6 +62,8 @@ class CompositionTransaction final : public EditTransactionBase {
   static already_AddRefed<CompositionTransaction> Create(
       EditorBase& aEditorBase, const nsAString& aStringToInsert,
       const EditorDOMPointInText& aPointToInsert);
+
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(CompositionTransaction)
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
                                            EditTransactionBase)

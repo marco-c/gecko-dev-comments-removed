@@ -83,8 +83,6 @@
 #include "nsFrameSelection.h"          
 #include "nsGenericHTMLElement.h"      
 #include "nsGkAtoms.h"                 
-#include "nsIAbsorbingTransaction.h"   
-#include "nsAtom.h"                    
 #include "nsIContent.h"                
 #include "mozilla/dom/Document.h"      
 #include "nsIDocumentStateListener.h"  
@@ -774,8 +772,9 @@ nsresult EditorBase::DoTransactionInternal(nsITransaction* aTransaction) {
              "beforeinput event hasn't been dispatched yet");
 
   if (mPlaceholderBatch && !mPlaceholderTransaction) {
+    MOZ_DIAGNOSTIC_ASSERT(mPlaceholderName);
     mPlaceholderTransaction = PlaceholderTransaction::Create(
-        *this, mPlaceholderName, std::move(mSelState));
+        *this, *mPlaceholderName, std::move(mSelState));
     MOZ_ASSERT(mSelState.isNothing());
 
     
@@ -950,7 +949,7 @@ void EditorBase::EndTransactionInternal() {
   EndUpdateViewBatch();
 }
 
-void EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName) {
+void EditorBase::BeginPlaceholderTransaction(nsStaticAtom& aTransactionName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch >= 0, "negative placeholder batch count!");
 
@@ -959,7 +958,7 @@ void EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName) {
     
     BeginUpdateViewBatch();
     mPlaceholderTransaction = nullptr;
-    mPlaceholderName = aTransactionName;
+    mPlaceholderName = &aTransactionName;
     mSelState.emplace();
     mSelState->SaveSelection(*SelectionRefPtr());
     

@@ -41,7 +41,6 @@
 #include "nsDependentSubstring.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
-#include "nsIAbsorbingTransaction.h"
 #include "nsIClipboard.h"
 #include "nsIContent.h"
 #include "nsIDocumentEncoder.h"
@@ -1395,11 +1394,15 @@ void TextEditor::OnCompositionEnd(
   
   
   if (mTransactionManager) {
-    nsCOMPtr<nsITransaction> transaction = mTransactionManager->PeekUndoStack();
-    nsCOMPtr<nsIAbsorbingTransaction> absorbingTransaction =
-        do_QueryInterface(transaction);
-    if (absorbingTransaction) {
-      absorbingTransaction->Commit();
+    if (nsCOMPtr<nsITransaction> transaction =
+            mTransactionManager->PeekUndoStack()) {
+      if (RefPtr<EditTransactionBase> transactionBase =
+              transaction->GetAsEditTransactionBase()) {
+        if (PlaceholderTransaction* placeholderTransaction =
+                transactionBase->GetAsPlaceholderTransaction()) {
+          placeholderTransaction->Commit();
+        }
+      }
     }
   }
 

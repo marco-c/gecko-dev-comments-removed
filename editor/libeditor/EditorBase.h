@@ -23,6 +23,7 @@
 #include "mozilla/dom/HTMLBRElement.h"   
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
+#include "nsAtom.h"    
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
@@ -2236,10 +2237,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void BeginPlaceholderTransaction(nsAtom* aTransactionName);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void EndPlaceholderTransaction();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void BeginPlaceholderTransaction(
+      nsStaticAtom& aTransactionName);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void EndPlaceholderTransaction();
 
   void BeginUpdateViewBatch();
   MOZ_CAN_RUN_SCRIPT void EndUpdateViewBatch();
@@ -2547,15 +2547,15 @@ class EditorBase : public nsIEditor,
         EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
         : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      mEditorBase->BeginPlaceholderTransaction(nullptr);
+      mEditorBase->BeginPlaceholderTransaction(*nsGkAtoms::_empty);
     }
 
     AutoPlaceholderBatch(EditorBase& aEditorBase,
-                         nsAtom& aTransactionName
+                         nsStaticAtom& aTransactionName
                              MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
         : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-      mEditorBase->BeginPlaceholderTransaction(&aTransactionName);
+      mEditorBase->BeginPlaceholderTransaction(aTransactionName);
     }
 
     ~AutoPlaceholderBatch() { mEditorBase->EndPlaceholderTransaction(); }
@@ -2703,7 +2703,7 @@ class EditorBase : public nsIEditor,
   
   RefPtr<PlaceholderTransaction> mPlaceholderTransaction;
   
-  nsAtom* mPlaceholderName;
+  nsStaticAtom* mPlaceholderName;
   
   mozilla::Maybe<SelectionState> mSelState;
   
