@@ -81,9 +81,4 @@ pref("media.geckoview.autoplay.request", true);
 pref("media.eme.require-app-approval", true);
 
 
-#ifndef RELEASE_OR_BETA
-  pref("extensions.webextensions.remote", true);
-#endif
-
-
 pref("dom.ipc.processPriorityManager.enabled", true);
