@@ -121,7 +121,7 @@
 #include "vm/JSAtom-inl.h"         
 #include "vm/JSContext-inl.h"      
 #include "vm/JSObject-inl.h"  
-#include "vm/JSScript-inl.h"       
+#include "vm/JSScript-inl.h"      
 #include "vm/NativeObject-inl.h"  
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
@@ -6075,6 +6075,7 @@ const JSPropertySpec Debugger::properties[] = {
     JS_DEBUG_PSGS("collectCoverageInfo", getCollectCoverageInfo,
                   setCollectCoverageInfo),
     JS_DEBUG_PSG("memory", getMemory),
+    JS_STRING_SYM_PS(toStringTag, "Debugger", JSPROP_READONLY),
     JS_PS_END};
 
 const JSFunctionSpec Debugger::methods[] = {
