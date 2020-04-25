@@ -66,6 +66,9 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
         self.clear_app_data()
         self.set_debug_app_flag()
 
+    def process_exists(self):
+        return self.device is not None and self.device.process_exist(self.config["binary"])
+
     def write_android_app_config(self):
         
         
@@ -166,7 +169,7 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
                 )
 
             
-            if not self.device.process_exist(self.config["binary"]):
+            if not self.process_exists:
                 raise Exception(
                     "Error launching %s. App did not start properly!"
                     % self.config["binary"]
@@ -333,7 +336,7 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
                 
                 self.cpu_profiler = start_android_cpu_profiler(self)
 
-            self.wait_for_test_finish(test, timeout)
+            self.wait_for_test_finish(test, timeout, self.process_exists)
 
             
             if self.debug_mode and self.config["run_local"]:
@@ -378,7 +381,7 @@ class WebExtensionAndroid(PerftestAndroid, WebExtension):
             
             self.cpu_profiler = start_android_cpu_profiler(self)
 
-        self.wait_for_test_finish(test, timeout)
+        self.wait_for_test_finish(test, timeout, self.process_exists)
 
         
         if self.debug_mode and self.config["run_local"]:

@@ -60,6 +60,9 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
         
         self.control_server.browser_proc = proc
 
+    def process_exists(self):
+        return self.runner.is_running()
+
     def run_test(self, test, timeout):
         
         
@@ -169,7 +172,7 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
             
             self.control_server._finished = False
 
-            self.wait_for_test_finish(test, timeout)
+            self.wait_for_test_finish(test, timeout, self.process_exists)
 
     def __run_test_warm(self, test, timeout):
         self.run_test_setup(test)
@@ -183,7 +186,7 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
         
         self.control_server._finished = False
 
-        self.wait_for_test_finish(test, timeout)
+        self.wait_for_test_finish(test, timeout, self.process_exists)
 
     def run_test_teardown(self, test):
         
