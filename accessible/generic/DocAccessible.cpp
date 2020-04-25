@@ -671,7 +671,7 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
     return;
   }
 
-  if (aAttribute == nsGkAtoms::aria_disabled ||
+  if (aAttribute == nsGkAtoms::aria_disabled || aAttribute == nsGkAtoms::href ||
       aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::tabindex ||
       aAttribute == nsGkAtoms::contenteditable) {
     mPrevStateBits = accessible->State();
@@ -732,7 +732,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
   
   
-  AttributeChangedImpl(accessible, aNameSpaceID, aAttribute);
+  AttributeChangedImpl(accessible, aNameSpaceID, aAttribute, aModType);
 
   
   
@@ -748,7 +748,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
 void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
                                          int32_t aNameSpaceID,
-                                         nsAtom* aAttribute) {
+                                         nsAtom* aAttribute, int32_t aModType) {
   
   
   
@@ -921,6 +921,23 @@ void DocAccessible::AttributeChangedImpl(Accessible* aAccessible,
   if (aAttribute == nsGkAtoms::value) {
     if (aAccessible->IsProgress())
       FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, aAccessible);
+    return;
+  }
+
+  if (aModType == dom::MutationEvent_Binding::REMOVAL ||
+      aModType == dom::MutationEvent_Binding::ADDITION) {
+    if (aAttribute == nsGkAtoms::href) {
+      if (aAccessible->IsHTMLLink() &&
+          !nsCoreUtils::HasClickListener(aAccessible->GetContent())) {
+        RefPtr<AccEvent> linkedChangeEvent =
+            new AccStateChangeEvent(aAccessible, states::LINKED);
+        FireDelayedEvent(linkedChangeEvent);
+        
+        
+        aAccessible->MaybeFireFocusableStateChange(
+            (mPrevStateBits & states::FOCUSABLE));
+      }
+    }
   }
 }
 
@@ -1786,17 +1803,6 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     RecreateAccessible(aElement);
 
-    return true;
-  }
-
-  if (aAttribute == nsGkAtoms::href) {
-    
-    
-    
-
-    
-    
-    RecreateAccessible(aElement);
     return true;
   }
 
