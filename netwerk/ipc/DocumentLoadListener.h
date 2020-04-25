@@ -175,7 +175,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   void SerializeRedirectData(RedirectToRealChannelArgs& aArgs,
                              bool aIsCrossProcess, uint32_t aRedirectFlags,
-                             uint32_t aLoadFlags);
+                             uint32_t aLoadFlags) const;
 
  protected:
   virtual ~DocumentLoadListener();
