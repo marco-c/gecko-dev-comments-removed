@@ -145,13 +145,6 @@ nsresult ContentBlockingAllowList::Check(
     return;
   }
 
-  if (aDocumentPrincipal->SchemeIs("chrome") ||
-      aDocumentPrincipal->SchemeIs("about")) {
-    returnInputArgument.release();
-    *aPrincipal = nullptr;
-    return;
-  }
-
   
   
   
