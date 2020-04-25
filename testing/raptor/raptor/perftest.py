@@ -141,13 +141,10 @@ either Raptor or browsertime."""
         
         
         
-        
         self.using_condprof = not (
              (self.config["platform"] == "win" and self.config["processor"] == "aarch64")
              or self.config["binary"] == "org.mozilla.fennec_aurora"
              or self.config["binary"] == "org.mozilla.reference.browser.raptor"
-             or self.config["binary"] == "org.mozilla.firefox"
-             or self.config["binary"].startswith("org.mozilla.fenix")
              or self.config["no_conditioned_profile"]
         )
         if self.using_condprof:
