@@ -852,7 +852,6 @@ struct NewLayerEntry {
         mLayerState(LayerState::LAYER_INACTIVE),
         mHideAllLayersBelow(false),
         mOpaqueForAnimatedGeometryRootParent(false),
-        mPropagateComponentAlphaFlattening(true),
         mUntransformedVisibleRegion(false),
         mIsFixedToRootScrollFrame(false) {}
   
@@ -885,9 +884,6 @@ struct NewLayerEntry {
   
   bool mOpaqueForAnimatedGeometryRootParent;
 
-  
-  
-  bool mPropagateComponentAlphaFlattening;
   
   
   bool mUntransformedVisibleRegion;
@@ -5000,13 +4996,6 @@ void ContainerState::ProcessDisplayItems(nsDisplayList* aList) {
             item->Frame()->StyleDisplay()->mPosition ==
                 StylePositionProperty::Fixed &&
             nsLayoutUtils::IsReallyFixedPos(item->Frame());
-      }
-
-      
-      
-      if (itemType == DisplayItemType::TYPE_TRANSFORM ||
-          layerState == LayerState::LAYER_ACTIVE_FORCE) {
-        newLayerEntry->mPropagateComponentAlphaFlattening = false;
       }
 
       float contentXScale = 1.0f;
