@@ -320,7 +320,14 @@ class WebRTCParent extends JSWindowActorParent {
     if (videoDevices.length && sharingScreen) {
       camAllowed = false;
     }
-    if (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) {
+    
+    
+    
+    
+    if (
+      (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) ||
+      aRequest.secondOrigin
+    ) {
       camAllowed = false;
       micAllowed = false;
     }
@@ -441,10 +448,7 @@ function prompt(aActor, aBrowser, aRequest) {
     
     
     if (isPopup) {
-      if (
-        aRequest.secondOrigin ||
-        !aActor.checkRequestAllowed(aRequest, principal, aBrowser)
-      ) {
+      if (!aActor.checkRequestAllowed(aRequest, principal, aBrowser)) {
         aActor.denyRequest(aRequest);
       }
       return;
@@ -607,12 +611,7 @@ function prompt(aActor, aBrowser, aRequest) {
       
       
       
-      
-      
-      if (
-        !aRequest.secondOrigin &&
-        aActor.checkRequestAllowed(aRequest, principal, aBrowser)
-      ) {
+      if (aActor.checkRequestAllowed(aRequest, principal, aBrowser)) {
         this.remove();
         return true;
       }
