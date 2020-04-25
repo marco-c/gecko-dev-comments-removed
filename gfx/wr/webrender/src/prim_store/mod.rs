@@ -2105,15 +2105,7 @@ impl PrimitiveStore {
                         continue;
                     }
 
-                    
-                    
-                    
-                    
-                    let inflation_factor = surface.inflation_factor;
-                    let local_rect = prim_shadowed_rect
-                        .inflate(inflation_factor, inflation_factor)
-                        .intersection(&prim_instance.local_clip_rect);
-                    let local_rect = match local_rect {
+                    let local_rect = match prim_shadowed_rect.intersection(&prim_instance.local_clip_rect) {
                         Some(local_rect) => local_rect,
                         None => {
                             if prim_instance.is_chased() {
