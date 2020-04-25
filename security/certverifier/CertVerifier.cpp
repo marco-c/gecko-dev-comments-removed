@@ -903,12 +903,17 @@ Result CertVerifier::VerifySSLServerCert(
      SHA1ModeResult* sha1ModeResult,
      PinningTelemetryInfo* pinningTelemetryInfo,
      CertificateTransparencyInfo* ctInfo,
-     CRLiteTelemetryInfo* crliteInfo) {
+     CRLiteTelemetryInfo* crliteInfo,
+     bool* isBuiltCertChainRootBuiltInRoot) {
   MOZ_ASSERT(peerCert);
   
   MOZ_ASSERT(!hostname.IsEmpty());
 
   SECOidTag evPolicyOidTag = SEC_OID_UNKNOWN;
+
+  if (isBuiltCertChainRootBuiltInRoot) {
+    *isBuiltCertChainRootBuiltInRoot = false;
+  }
 
   if (evOidPolicy) {
     *evOidPolicy = evPolicyOidTag;
@@ -998,6 +1003,11 @@ Result CertVerifier::VerifySSLServerCert(
   if (rv != Success) {
     return rv;
   }
+
+  if (isBuiltCertChainRootBuiltInRoot) {
+    *isBuiltCertChainRootBuiltInRoot = isBuiltInRoot;
+  }
+
   BRNameMatchingPolicy nameMatchingPolicy(
       isBuiltInRoot ? mNameMatchingMode
                     : BRNameMatchingPolicy::Mode::DoNotEnforce);

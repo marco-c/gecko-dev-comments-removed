@@ -5,8 +5,12 @@
 
 
 #include "CommonSocketControl.h"
+
+#include "BRNameMatchingPolicy.h"
+#include "PublicKeyPinningService.h"
 #include "SharedCertVerifier.h"
 #include "nsNSSComponent.h"
+#include "SharedSSLState.h"
 #include "sslt.h"
 #include "ssl.h"
 
@@ -141,32 +145,54 @@ CommonSocketControl::IsAcceptableForHost(const nsACString& hostname,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<psm::SharedCertVerifier> certVerifier(psm::GetDefaultCertVerifier());
-  if (!certVerifier) {
+  if (mSucceededCertChain.IsEmpty()) {
     return NS_OK;
   }
-  psm::CertVerifier::Flags flags = psm::CertVerifier::FLAG_LOCAL_ONLY;
-  UniqueCERTCertList unusedBuiltChain;
-  mozilla::pkix::Result result =
-      certVerifier->VerifySSLServerCert(nssCert, mozilla::pkix::Now(),
-                                        nullptr,  
-                                        hostname, unusedBuiltChain, flags);
-  if (result != mozilla::pkix::Success) {
+
+  
+  
+  
+  
+  Input serverCertInput;
+  mozilla::pkix::Result rv =
+      serverCertInput.Init(nssCert->derCert.data, nssCert->derCert.len);
+  if (rv != Success) {
     return NS_OK;
+  }
+
+  Input hostnameInput;
+  rv = hostnameInput.Init(
+      BitwiseCast<const uint8_t*, const char*>(hostname.BeginReading()),
+      hostname.Length());
+  if (rv != Success) {
+    return NS_OK;
+  }
+
+  mozilla::psm::BRNameMatchingPolicy nameMatchingPolicy(
+      mIsBuiltCertChainRootBuiltInRoot
+          ? mozilla::psm::PublicSSLState()->NameMatchingMode()
+          : mozilla::psm::BRNameMatchingPolicy::Mode::DoNotEnforce);
+  rv = CheckCertHostname(serverCertInput, hostnameInput, nameMatchingPolicy);
+  if (rv != Success) {
+    return NS_OK;
+  }
+
+  mozilla::psm::CertVerifier::PinningMode pinningMode =
+      mozilla::psm::PublicSSLState()->PinningMode();
+  if (pinningMode != mozilla::psm::CertVerifier::pinningDisabled) {
+    bool chainHasValidPins;
+    bool enforceTestMode =
+        (pinningMode == mozilla::psm::CertVerifier::pinningEnforceTestMode);
+    nsresult nsrv = mozilla::psm::PublicKeyPinningService::ChainHasValidPins(
+        mSucceededCertChain, PromiseFlatCString(hostname).BeginReading(), Now(),
+        enforceTestMode, GetOriginAttributes(), chainHasValidPins, nullptr);
+    if (NS_FAILED(nsrv)) {
+      return NS_OK;
+    }
+
+    if (!chainHasValidPins) {
+      return NS_OK;
+    }
   }
 
   

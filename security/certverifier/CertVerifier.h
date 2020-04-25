@@ -227,7 +227,8 @@ class CertVerifier {
        SHA1ModeResult* sha1ModeResult = nullptr,
        PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
        CertificateTransparencyInfo* ctInfo = nullptr,
-       CRLiteTelemetryInfo* crliteInfo = nullptr);
+       CRLiteTelemetryInfo* crliteInfo = nullptr,
+       bool* isBuiltCertChainRootBuiltInRoot = nullptr);
 
   enum PinningMode {
     pinningDisabled = 0,
