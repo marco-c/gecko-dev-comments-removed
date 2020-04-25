@@ -733,7 +733,10 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     doc = outer;
   }
   auto* browsingContext = doc->GetBrowsingContext();
-  if (NS_WARN_IF(!browsingContext)) {
+  if (!browsingContext) {
+    
+    
+    
     return;
   }
   SetFullZoom(browsingContext->FullZoom());
