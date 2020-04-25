@@ -56,6 +56,16 @@ class AccessibilityProxy {
     return this.accessibilityFront && this.accessibilityFront.enabled;
   }
 
+  
+
+
+  get canBeEnabled() {
+    
+    const { canBeEnabled } =
+      this.parentAccessibilityFront || this.accessibilityFront;
+    return canBeEnabled;
+  }
+
   get currentTarget() {
     return this._currentTarget;
   }

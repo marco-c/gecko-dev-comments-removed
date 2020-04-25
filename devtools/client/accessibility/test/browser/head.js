@@ -156,6 +156,15 @@ async function addTestTab(url) {
 
 
 async function disableAccessibilityInspector(env) {
+  if (
+    Services.prefs.getBoolPref(
+      "devtools.accessibility.auto-init.enabled",
+      false
+    )
+  ) {
+    return;
+  }
+
   const { doc, win, panel } = env;
   
   
