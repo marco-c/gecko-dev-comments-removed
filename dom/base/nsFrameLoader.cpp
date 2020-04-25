@@ -148,7 +148,7 @@ typedef ScrollableLayerGuid::ViewID ViewID;
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mPendingBrowsingContext,
                                       mMessageManager, mChildMessageManager,
-                                      mRemoteBrowser)
+                                      mRemoteBrowser, mStaticCloneOf)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -274,18 +274,24 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   RefPtr<BrowsingContext> opener;
   if (aOpenWindowInfo && !aOpenWindowInfo->GetForceNoOpener()) {
     opener = aOpenWindowInfo->GetParent();
-    MOZ_ASSERT(opener->IsInProcess(),
-               "Must create BrowsingContext with opener in-process");
   }
 
-  RefPtr<nsGlobalWindowInner> parentInner =
-      nsGlobalWindowInner::Cast(aOwner->OwnerDoc()->GetInnerWindow());
-  if (NS_WARN_IF(!parentInner) || parentInner->IsDying()) {
+  Document* doc = aOwner->OwnerDoc();
+  
+  
+  
+
+  
+  RefPtr<nsDocShell> parentDocShell = nsDocShell::Cast(doc->GetDocShell());
+
+  if (NS_WARN_IF(!parentDocShell)) {
     return nullptr;
   }
 
-  BrowsingContext* parentBC = parentInner->GetBrowsingContext();
-  if (NS_WARN_IF(!parentBC) || parentBC->IsDiscarded()) {
+  RefPtr<BrowsingContext> parentContext = parentDocShell->GetBrowsingContext();
+
+  
+  if (NS_WARN_IF(!parentContext) || parentContext->IsDiscarded()) {
     return nullptr;
   }
 
@@ -299,7 +305,7 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   
   
   
-  if (IsTopContent(parentBC, aOwner)) {
+  if (IsTopContent(parentContext, aOwner)) {
     
     return BrowsingContext::CreateDetached(nullptr, opener, frameName,
                                            BrowsingContext::Type::Content);
@@ -308,8 +314,11 @@ static already_AddRefed<BrowsingContext> CreateBrowsingContext(
   MOZ_ASSERT(!aOpenWindowInfo,
              "Can't have openWindowInfo for non-toplevel context");
 
-  return BrowsingContext::CreateDetached(parentInner, nullptr, frameName,
-                                         parentBC->GetType());
+  auto type = parentContext->IsContent() ? BrowsingContext::Type::Content
+                                         : BrowsingContext::Type::Chrome;
+
+  return BrowsingContext::CreateDetached(parentContext, nullptr, frameName,
+                                         type);
 }
 
 static bool InitialLoadIsRemote(Element* aOwner) {
@@ -818,7 +827,7 @@ void nsFrameLoader::AddTreeItemToTreeOwner(nsIDocShellTreeItem* aItem,
 
 static bool AllDescendantsOfType(BrowsingContext* aParent,
                                  BrowsingContext::Type aType) {
-  for (auto& child : aParent->Children()) {
+  for (auto& child : aParent->GetChildren()) {
     if (child->GetType() != aType || !AllDescendantsOfType(child, aType)) {
       return false;
     }
@@ -2710,51 +2719,48 @@ void nsFrameLoader::ActivateFrameEvent(const nsAString& aType, bool aCapture,
   }
 }
 
-nsresult nsFrameLoader::FinishStaticClone(nsFrameLoader* aStaticCloneOf,
-                                          nsIDocShell** aCloneDocShell,
-                                          Document** aCloneDocument) {
-  MOZ_DIAGNOSTIC_ASSERT(
-      !nsContentUtils::IsSafeToRunScript(),
-      "A script blocker should be on the stack while FinishStaticClone is run");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (NS_WARN_IF(IsDead())) {
-    return NS_ERROR_UNEXPECTED;
-  }
-  if (NS_WARN_IF(aStaticCloneOf->IsRemoteFrame())) {
+nsresult nsFrameLoader::CreateStaticClone(nsFrameLoader* aDest) {
+  if (NS_WARN_IF(IsRemoteFrame())) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  MaybeCreateDocShell();
-  RefPtr<nsDocShell> docShell = GetDocShell();
-  NS_ENSURE_STATE(docShell);
+  aDest->mPendingBrowsingContext->EnsureAttached();
 
-  nsCOMPtr<Document> kungFuDeathGrip = docShell->GetDocument();
+  
+  aDest->mPendingBrowsingContext->SetEmbedderElement(aDest->mOwnerContent);
+  aDest->mPendingBrowsingContext->Embed();
+  aDest->mStaticCloneOf = this;
+  return NS_OK;
+}
+
+nsresult nsFrameLoader::FinishStaticClone() {
+  
+  
+  auto exitGuard = MakeScopeExit([&] { mStaticCloneOf = nullptr; });
+
+  if (NS_WARN_IF(!mStaticCloneOf || IsDead())) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  MaybeCreateDocShell();
+  NS_ENSURE_STATE(GetDocShell());
+
+  nsCOMPtr<Document> kungFuDeathGrip = GetDocShell()->GetDocument();
   Unused << kungFuDeathGrip;
 
   nsCOMPtr<nsIContentViewer> viewer;
-  docShell->GetContentViewer(getter_AddRefs(viewer));
+  GetDocShell()->GetContentViewer(getter_AddRefs(viewer));
   NS_ENSURE_STATE(viewer);
 
-  nsIDocShell* origDocShell = aStaticCloneOf->GetDocShell(IgnoreErrors());
+  nsIDocShell* origDocShell = mStaticCloneOf->GetDocShell(IgnoreErrors());
   NS_ENSURE_STATE(origDocShell);
 
   nsCOMPtr<Document> doc = origDocShell->GetDocument();
   NS_ENSURE_STATE(doc);
 
-  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(docShell);
+  nsCOMPtr<Document> clonedDoc = doc->CreateStaticClone(GetDocShell());
 
   viewer->SetDocument(clonedDoc);
-
-  docShell.forget(aCloneDocShell);
-  clonedDoc.forget(aCloneDocument);
   return NS_OK;
 }
 
