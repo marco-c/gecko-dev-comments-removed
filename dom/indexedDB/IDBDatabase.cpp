@@ -706,11 +706,14 @@ void IDBDatabase::AbortTransactions(bool aShouldWarn) {
     return;
   }
 
+  
+  
+  
   StrongTransactionArray transactionsToAbort;
   transactionsToAbort.SetCapacity(mTransactions.Count());
 
-  for (auto iter = mTransactions.ConstIter(); !iter.Done(); iter.Next()) {
-    IDBTransaction* transaction = iter.Get()->GetKey();
+  for (const auto& entry : mTransactions) {
+    IDBTransaction* transaction = entry.GetKey();
     MOZ_ASSERT(transaction);
 
     transaction->AssertIsOnOwningThread();
