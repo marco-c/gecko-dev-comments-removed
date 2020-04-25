@@ -14,7 +14,6 @@ var {
 var {
   getString,
 } = require("resource://devtools/client/styleeditor/StyleEditorUtil.jsm");
-var { initCssProperties } = require("devtools/client/fronts/css-properties");
 
 var StyleEditorPanel = function StyleEditorPanel(panelWin, toolbox) {
   EventEmitter.decorate(this);
@@ -39,7 +38,9 @@ StyleEditorPanel.prototype = {
 
   async open() {
     
-    const { cssProperties } = await initCssProperties(this._toolbox);
+    const { cssProperties } = await this._toolbox.target.getFront(
+      "cssProperties"
+    );
 
     
     this.UI = new StyleEditorUI(this._toolbox, this._panelDoc, cssProperties);

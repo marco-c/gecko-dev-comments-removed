@@ -59,6 +59,16 @@ class CssPropertiesFront extends FrontClassWithSpec(cssPropertiesSpec) {
     
     this.formAttributeName = "cssPropertiesActor";
   }
+
+  async initialize() {
+    const db = await super.getCSSDatabase();
+    this.cssProperties = new CssProperties(normalizeCssData(db));
+  }
+
+  destroy() {
+    this.cssProperties = null;
+    super.destroy();
+  }
 }
 
 
