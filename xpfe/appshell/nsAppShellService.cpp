@@ -449,8 +449,7 @@ nsAppShellService::CreateWindowlessBrowser(bool aIsChrome,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  RefPtr<BrowsingContext> browsingContext = BrowsingContext::CreateWindowless(
-      nullptr, nullptr, EmptyString(),
+  RefPtr<BrowsingContext> browsingContext = BrowsingContext::CreateIndependent(
       aIsChrome ? BrowsingContext::Type::Chrome
                 : BrowsingContext::Type::Content);
 
