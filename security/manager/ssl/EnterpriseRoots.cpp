@@ -48,9 +48,9 @@ nsresult EnterpriseCert::Init(const EnterpriseCert& orig) {
 
 nsresult EnterpriseCert::CopyBytes(nsTArray<uint8_t>& dest) const {
   dest.Clear();
-  if (!dest.AppendElements(mDER.begin(), mDER.length())) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  dest.AppendElements(mDER.begin(), mDER.length());
   return NS_OK;
 }
 

@@ -208,11 +208,10 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
       NS_ASSERTION(notInElementsIdx < notInElementsLen,
                    "Should have remaining not-in-elements");
       
-      if (!aControls.AppendElements(
-              mNotInElements.Elements() + notInElementsIdx,
-              notInElementsLen - notInElementsIdx)) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+      
+      
+      aControls.AppendElements(mNotInElements.Elements() + notInElementsIdx,
+                               notInElementsLen - notInElementsIdx);
       break;
     }
     
@@ -220,10 +219,10 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
       NS_ASSERTION(elementsIdx < elementsLen,
                    "Should have remaining in-elements");
       
-      if (!aControls.AppendElements(mElements.Elements() + elementsIdx,
-                                    elementsLen - elementsIdx)) {
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+      
+      
+      aControls.AppendElements(mElements.Elements() + elementsIdx,
+                               elementsLen - elementsIdx);
       break;
     }
     
@@ -242,9 +241,9 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
       ++notInElementsIdx;
     }
     
-    if (!aControls.AppendElement(elementToAdd)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    
+    
+    aControls.AppendElement(elementToAdd);
   }
 
   NS_ASSERTION(aControls.Length() == elementsLen + notInElementsLen,

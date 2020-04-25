@@ -424,7 +424,10 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   bool AppendChildDocument(DocAccessible* aChildDocument) {
-    return mChildDocuments.AppendElement(aChildDocument);
+    
+    
+    mChildDocuments.AppendElement(aChildDocument);
+    return true;
   }
 
   

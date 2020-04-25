@@ -493,9 +493,9 @@ Dashboard::AddHost(const nsACString& aHost, uint32_t aSerial, bool aEncrypted) {
     if (mWs.data.Contains(mData)) {
       return NS_OK;
     }
-    if (!mWs.data.AppendElement(mData)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    
+    
+    mWs.data.AppendElement(mData);
     return NS_OK;
   }
   return NS_ERROR_FAILURE;

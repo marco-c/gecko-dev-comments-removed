@@ -288,9 +288,9 @@ txResultBuffer::~txResultBuffer() {
 }
 
 nsresult txResultBuffer::addTransaction(txOutputTransaction* aTransaction) {
-  if (mTransactions.AppendElement(aTransaction) == nullptr) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  mTransactions.AppendElement(aTransaction);
   return NS_OK;
 }
 

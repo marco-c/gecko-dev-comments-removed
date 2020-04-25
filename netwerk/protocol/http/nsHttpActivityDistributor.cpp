@@ -144,10 +144,12 @@ nsHttpActivityDistributor::AddObserver(nsIHttpActivityObserver* aObserver) {
   {
     MutexAutoLock lock(mLock);
     wasEmpty = mObservers.IsEmpty();
-    if (!mObservers.AppendElement(observer)) return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mObservers.AppendElement(observer);
   }
 
-  if (gIOService->UseSocketProcess() && wasEmpty) {
+  if (nsIOService::UseSocketProcess() && wasEmpty) {
     SocketProcessParent* parent = SocketProcessParent::GetSingleton();
     if (parent && parent->CanSend()) {
       Unused << parent->SendOnHttpActivityDistributorActivated(true);
@@ -172,7 +174,7 @@ nsHttpActivityDistributor::RemoveObserver(nsIHttpActivityObserver* aObserver) {
     isEmpty = mObservers.IsEmpty();
   }
 
-  if (gIOService->UseSocketProcess() && isEmpty) {
+  if (nsIOService::UseSocketProcess() && isEmpty) {
     SocketProcessParent* parent = SocketProcessParent::GetSingleton();
     if (parent && parent->CanSend()) {
       Unused << parent->SendOnHttpActivityDistributorActivated(false);

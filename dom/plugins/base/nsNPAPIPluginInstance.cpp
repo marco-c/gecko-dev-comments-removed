@@ -773,11 +773,9 @@ nsresult nsNPAPIPluginInstance::PushPopupsEnabledState(bool aEnabled) {
           aEnabled ? PopupBlocker::openAllowed : PopupBlocker::openAbused,
           true);
 
-  if (!mPopupStates.AppendElement(oldState)) {
-    
-    PopupBlocker::PopPopupControlState(oldState);
-    return NS_ERROR_FAILURE;
-  }
+  
+  
+  mPopupStates.AppendElement(oldState);
 
   return NS_OK;
 }

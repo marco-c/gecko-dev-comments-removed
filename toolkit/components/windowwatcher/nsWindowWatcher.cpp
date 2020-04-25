@@ -1617,7 +1617,10 @@ nsWindowWatcher::GetWindowByName(const nsAString& aTargetName,
 
 bool nsWindowWatcher::AddEnumerator(nsWatcherWindowEnumerator* aEnumerator) {
   
-  return mEnumeratorList.AppendElement(aEnumerator) != nullptr;
+  
+  
+  mEnumeratorList.AppendElement(aEnumerator);
+  return true;
 }
 
 bool nsWindowWatcher::RemoveEnumerator(nsWatcherWindowEnumerator* aEnumerator) {

@@ -27,10 +27,9 @@ txStripSpaceItem::~txStripSpaceItem() {
 
 nsresult txStripSpaceItem::addStripSpaceTest(
     txStripSpaceTest* aStripSpaceTest) {
-  if (!mStripSpaceTests.AppendElement(aStripSpaceTest)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
+  
+  
+  mStripSpaceTests.AppendElement(aStripSpaceTest);
   return NS_OK;
 }
 

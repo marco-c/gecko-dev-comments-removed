@@ -28,7 +28,10 @@ class txStack : private nsTArray<void*> {
 
 
   inline nsresult push(void* aObject) {
-    return AppendElement(aObject) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    AppendElement(aObject);
+    return NS_OK;
   }
 
   

@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "ProxyUtils.h"
 #include "nsTArray.h"
@@ -12,15 +12,13 @@ namespace mozilla {
 namespace toolkit {
 namespace system {
 
-/**
- * Normalize the short IP form into the complete form.
- * For example, it converts "192.168" into "192.168.0.0"
- */
-static bool NormalizeAddr(const nsACString& aAddr, nsCString& aNormalized) {
+
+
+
+
+static void NormalizeAddr(const nsACString& aAddr, nsCString& aNormalized) {
   nsTArray<nsCString> addr;
-  if (!ParseString(aAddr, '.', addr)) {
-    return false;
-  }
+  ParseString(aAddr, '.', addr);
   aNormalized = "";
   for (uint32_t i = 0; i < 4; ++i) {
     if (i != 0) {
@@ -32,7 +30,6 @@ static bool NormalizeAddr(const nsACString& aAddr, nsCString& aNormalized) {
       aNormalized.AppendLiteral("0");
     }
   }
-  return true;
 }
 
 static PRUint32 MaskIPv4Addr(PRUint32 aAddr, uint16_t aMaskLen) {
@@ -81,9 +78,7 @@ static bool IsMatchMask(const nsACString& aHost, const nsACString& aOverride) {
   }
 
   nsAutoCString override(aOverride);
-  if (!NormalizeAddr(Substring(aOverride, 0, tokenEnd), override)) {
-    return false;
-  }
+  NormalizeAddr(Substring(aOverride, 0, tokenEnd), override);
 
   PRNetAddr prAddrHost;
   PRNetAddr prAddrOverride;
@@ -117,11 +112,11 @@ static bool IsMatchWildcard(const nsACString& aHost, const nsACString& aOverride
   while (tokenStart < overrideLength) {
     int32_t tokenEnd = override.FindChar('*', tokenStart);
     if (tokenEnd == tokenStart) {
-      // Star is the first character in the token.
+      
       star = true;
       tokenStart++;
-      // If the character following the '*' is a '.' character then skip
-      // it so that "*.foo.com" allows "foo.com".
+      
+      
       if (override.FindChar('.', tokenStart) == tokenStart) {
         nsAutoCString token(Substring(override, tokenStart + 1, overrideLength - tokenStart - 1));
         if (host.Equals(token)) {
@@ -130,10 +125,10 @@ static bool IsMatchWildcard(const nsACString& aHost, const nsACString& aOverride
       }
     } else {
       if (tokenEnd == -1) {
-        tokenEnd = overrideLength;  // no '*' char, match rest of string
+        tokenEnd = overrideLength;  
       }
       nsAutoCString token(Substring(override, tokenStart, tokenEnd - tokenStart));
-      offset = host.Find(token, /* aIgnoreCase = */ false, offset);
+      offset = host.Find(token,  false, offset);
       if (offset == -1 || (!star && offset)) {
         return false;
       }
@@ -150,6 +145,6 @@ bool IsHostProxyEntry(const nsACString& aHost, const nsACString& aOverride) {
   return IsMatchMask(aHost, aOverride) || IsMatchWildcard(aHost, aOverride);
 }
 
-}  // namespace system
-}  // namespace toolkit
-}  // namespace mozilla
+}  
+}  
+}  

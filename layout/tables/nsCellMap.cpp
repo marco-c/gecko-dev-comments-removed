@@ -254,12 +254,9 @@ void nsTableCellMap::Synchronize(nsTableFrame* aTableFrame) {
     map = GetMapFor(static_cast<nsTableRowGroupFrame*>(rgFrame->FirstInFlow()),
                     map);
     if (map) {
-      if (!maps.AppendElement(map)) {
-        delete map;
-        map = nullptr;
-        NS_WARNING("Could not AppendElement");
-        break;
-      }
+      
+      
+      maps.AppendElement(map);
     }
   }
   if (maps.IsEmpty()) {
@@ -382,13 +379,13 @@ CellData* nsTableCellMap::GetDataAt(int32_t aRowIndex,
 }
 
 void nsTableCellMap::AddColsAtEnd(uint32_t aNumCols) {
-  if (!mCols.AppendElements(aNumCols)) {
-    NS_WARNING("Could not AppendElement");
-  }
+  
+  
+  mCols.AppendElements(aNumCols);
   if (mBCInfo) {
-    if (!mBCInfo->mBEndBorders.AppendElements(aNumCols)) {
-      NS_WARNING("Could not AppendElement");
-    }
+    
+    
+    mBCInfo->mBEndBorders.AppendElements(aNumCols);
   }
 }
 

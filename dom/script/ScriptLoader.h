@@ -340,7 +340,10 @@ class ScriptLoader final : public nsISupports {
   nsresult ProcessOffThreadRequest(ScriptLoadRequest* aRequest);
 
   bool AddPendingChildLoader(ScriptLoader* aChild) {
-    return mPendingChildLoaders.AppendElement(aChild) != nullptr;
+    
+    
+    mPendingChildLoaders.AppendElement(aChild);
+    return true;
   }
 
   mozilla::dom::DocGroup* GetDocGroup() const {

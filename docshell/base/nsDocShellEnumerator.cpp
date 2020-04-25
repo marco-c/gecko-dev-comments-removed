@@ -74,7 +74,7 @@ nsresult nsDocShellEnumerator::BuildArrayRecursiveBackwards(
   
   if (mDocShellType == nsIDocShellTreeItem::typeAll ||
       aItem->ItemType() == mDocShellType) {
-    if (!aItemArray.AppendElement(aItem)) {
+    if (!aItemArray.AppendElement(aItem, fallible)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
   }

@@ -419,9 +419,9 @@ nsIdleService::AddIdleObserver(nsIObserver* aObserver, uint32_t aIdleTimeInS) {
   
   IdleListener listener(aObserver, aIdleTimeInS);
 
-  if (!mArrayListeners.AppendElement(listener)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  mArrayListeners.AppendElement(listener);
 
   
   if (!mTimer) {

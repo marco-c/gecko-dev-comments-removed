@@ -8001,10 +8001,9 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
 
   int32_t textOffset = aTextFrame->GetContentOffset();
   int32_t textLen = aTextFrame->GetContentLength();
-  if (!mWordBreaks.AppendElements(textLen + 1)) {
-    mDirection = 0;  
-    return;
-  }
+  
+  
+  mWordBreaks.AppendElements(textLen + 1);
   memset(mWordBreaks.Elements(), false, (textLen + 1) * sizeof(bool));
   int32_t textStart;
   if (aDirection > 0) {

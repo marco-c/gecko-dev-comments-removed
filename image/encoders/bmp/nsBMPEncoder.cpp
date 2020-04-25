@@ -271,17 +271,13 @@ nsresult nsBMPEncoder::ParseOptions(const nsAString& aOptions,
   
   
   nsTArray<nsCString> nameValuePairs;
-  if (!ParseString(NS_ConvertUTF16toUTF8(aOptions), ';', nameValuePairs)) {
-    return NS_ERROR_INVALID_ARG;
-  }
+  ParseString(NS_ConvertUTF16toUTF8(aOptions), ';', nameValuePairs);
 
   
   for (uint32_t i = 0; i < nameValuePairs.Length(); ++i) {
     
     nsTArray<nsCString> nameValuePair;
-    if (!ParseString(nameValuePairs[i], '=', nameValuePair)) {
-      return NS_ERROR_INVALID_ARG;
-    }
+    ParseString(nameValuePairs[i], '=', nameValuePair);
     if (nameValuePair.Length() != 2) {
       return NS_ERROR_INVALID_ARG;
     }

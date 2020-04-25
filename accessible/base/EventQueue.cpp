@@ -31,7 +31,9 @@ bool EventQueue::PushEvent(AccEvent* aEvent) {
                    aEvent->Document() == mDocument,
                "Queued event belongs to another document!");
 
-  if (!mEvents.AppendElement(aEvent)) return false;
+  
+  
+  mEvents.AppendElement(aEvent);
 
   
   CoalesceEvents();

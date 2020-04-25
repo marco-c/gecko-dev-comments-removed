@@ -47,15 +47,13 @@ nsresult txNamespaceMap::mapNamespace(nsAtom* aPrefix,
   }
 
   
-  if (!mPrefixes.AppendElement(prefix)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  mPrefixes.AppendElement(prefix);
 
-  if (mNamespaces.AppendElement(nsId) == nullptr) {
-    mPrefixes.RemoveLastElement();
-
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  mNamespaces.AppendElement(nsId);
 
   return NS_OK;
 }

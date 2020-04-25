@@ -225,7 +225,10 @@ class FunctionCall : public Expr {
 
 
   nsresult addParam(Expr* aExpr) {
-    return mParams.AppendElement(aExpr) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mParams.AppendElement(aExpr);
+    return NS_OK;
   }
 
   
@@ -448,7 +451,10 @@ class PredicateList {
 
   nsresult add(Expr* aExpr) {
     NS_ASSERTION(aExpr, "missing expression");
-    return mPredicates.AppendElement(aExpr) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mPredicates.AppendElement(aExpr);
+    return NS_OK;
   }
 
   nsresult evaluatePredicates(txNodeSet* aNodes, txIMatchContext* aContext);
@@ -784,7 +790,10 @@ class UnionExpr : public Expr {
 
 
   nsresult addExpr(Expr* aExpr) {
-    return mExpressions.AppendElement(aExpr) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mExpressions.AppendElement(aExpr);
+    return NS_OK;
   }
 
   
@@ -826,7 +835,10 @@ class txNamedAttributeStep : public Expr {
 class txUnionNodeTest : public txNodeTest {
  public:
   nsresult addNodeTest(txNodeTest* aNodeTest) {
-    return mNodeTests.AppendElement(aNodeTest) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mNodeTests.AppendElement(aNodeTest);
+    return NS_OK;
   }
 
   TX_DECL_NODE_TEST

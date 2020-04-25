@@ -290,11 +290,13 @@ void nsAttrValue::SetTo(const nsAttrValue& aOther) {
       break;
     }
     case eAtomArray: {
-      if (!EnsureEmptyAtomArray() ||
-          !GetAtomArrayValue()->AppendElements(*otherCont->mValue.mAtomArray)) {
+      if (!EnsureEmptyAtomArray()) {
         Reset();
         return;
       }
+      
+      
+      GetAtomArrayValue()->AppendElements(*otherCont->mValue.mAtomArray);
       break;
     }
     case eDoubleValue: {
@@ -1125,10 +1127,9 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
 
   AtomArray* array = GetAtomArrayValue();
 
-  if (!array->AppendElement(std::move(classAtom))) {
-    Reset();
-    return;
-  }
+  
+  
+  array->AppendElement(std::move(classAtom));
 
   
   while (iter != end) {
@@ -1140,10 +1141,9 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
 
     classAtom = NS_AtomizeMainThread(Substring(start, iter));
 
-    if (!array->AppendElement(std::move(classAtom))) {
-      Reset();
-      return;
-    }
+    
+    
+    array->AppendElement(std::move(classAtom));
 
     
     while (iter != end && nsContentUtils::IsHTMLWhitespace(*iter)) {

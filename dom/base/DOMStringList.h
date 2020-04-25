@@ -59,7 +59,9 @@ class DOMStringList : public nsISupports, public nsWrapperCache {
   bool Add(const nsAString& aName) {
     
     
-    return mNames.AppendElement(aName) != nullptr;
+    
+    mNames.AppendElement(aName);
+    return true;
   }
 
   void Clear() { mNames.Clear(); }

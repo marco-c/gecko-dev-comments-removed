@@ -293,9 +293,9 @@ bool AnnexB::ConvertSampleToAVCC(mozilla::MediaRawData* aSample,
       0xe0 ,
       0 
   };
-  if (!extradata->AppendElements(kFakeExtraData, ArrayLength(kFakeExtraData))) {
-    return false;
-  }
+  
+  
+  extradata->AppendElements(kFakeExtraData, ArrayLength(kFakeExtraData));
   aSample->mExtraData = std::move(extradata);
   return true;
 }

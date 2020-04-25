@@ -113,7 +113,9 @@ nsresult nsVideoFrame::CreateAnonymousContent(
 
     UpdatePosterSource(false);
 
-    if (!aElements.AppendElement(mPosterImage)) return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    aElements.AppendElement(mPosterImage);
 
     
     nodeInfo = nodeInfoManager->GetNodeInfo(
@@ -125,7 +127,9 @@ nsresult nsVideoFrame::CreateAnonymousContent(
         static_cast<nsGenericHTMLElement*>(mCaptionDiv.get());
     div->SetClassName(NS_LITERAL_STRING("caption-box"));
 
-    if (!aElements.AppendElement(mCaptionDiv)) return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    aElements.AppendElement(mCaptionDiv);
     UpdateTextTrack();
   }
 

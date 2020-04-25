@@ -256,9 +256,12 @@ nsresult nsFileControlFrame::CreateAnonymousContent(
   fileContent->GetAccessKey(accessKey);
 
   mBrowseFilesOrDirs = MakeAnonButton(doc, "Browse", fileContent, accessKey);
-  if (!mBrowseFilesOrDirs || !aElements.AppendElement(mBrowseFilesOrDirs)) {
+  if (!mBrowseFilesOrDirs) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
+  
+  
+  aElements.AppendElement(mBrowseFilesOrDirs);
 
   
   mTextContent = doc->CreateHTMLElement(nsGkAtoms::label);

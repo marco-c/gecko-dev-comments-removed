@@ -524,9 +524,9 @@ XULContentSinkImpl::HandleProcessingInstruction(const char16_t* aTarget,
     return rv;
   }
 
-  if (!children->AppendElement(pi)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  children->AppendElement(pi);
 
   return NS_OK;
 }

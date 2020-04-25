@@ -747,9 +747,9 @@ nsresult internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
   
   const size_t bucketCount = h->bucket_count();
   for (size_t i = 0; i < bucketCount; i++) {
-    if (!aSnapshot.mBucketRanges.AppendElement(h->ranges(i))) {
-      return NS_ERROR_FAILURE;
-    }
+    
+    
+    aSnapshot.mBucketRanges.AppendElement(h->ranges(i));
   }
 
   
@@ -758,9 +758,9 @@ nsresult internal_GetHistogramAndSamples(const StaticMutexAutoLock& aLock,
 
   
   for (size_t i = 0; i < bucketCount; i++) {
-    if (!aSnapshot.mBucketCounts.AppendElement(ss.counts(i))) {
-      return NS_ERROR_FAILURE;
-    }
+    
+    
+    aSnapshot.mBucketCounts.AppendElement(ss.counts(i));
   }
 
   

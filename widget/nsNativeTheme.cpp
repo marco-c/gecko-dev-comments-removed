@@ -557,10 +557,9 @@ bool nsNativeTheme::QueueAnimatedContentForRefresh(nsIContent* aContent,
     mAnimatedContentTimeout = timeout;
   }
 
-  if (!mAnimatedContentList.AppendElement(aContent)) {
-    NS_WARNING("Out of memory!");
-    return false;
-  }
+  
+  
+  mAnimatedContentList.AppendElement(aContent);
 
   return true;
 }

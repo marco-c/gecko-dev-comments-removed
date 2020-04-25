@@ -319,7 +319,10 @@ txIEvalContext* txExecutionState::popEvalContext() {
 }
 
 nsresult txExecutionState::pushBool(bool aBool) {
-  return mBoolStack.AppendElement(aBool) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  mBoolStack.AppendElement(aBool);
+  return NS_OK;
 }
 
 bool txExecutionState::popBool() {

@@ -98,8 +98,9 @@ nsresult nsDocElementBoxFrame::CreateAnonymousContent(
                                  nodeInfo.forget(), dom::NOT_FROM_PARSER);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!aElements.AppendElement(mPopupgroupContent))
-    return NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  aElements.AppendElement(mPopupgroupContent);
 
   
   nodeInfo = nodeInfoManager->GetNodeInfo(
@@ -113,7 +114,9 @@ nsresult nsDocElementBoxFrame::CreateAnonymousContent(
   mTooltipContent->SetAttr(kNameSpaceID_None, nsGkAtoms::_default,
                            NS_LITERAL_STRING("true"), false);
 
-  if (!aElements.AppendElement(mTooltipContent)) return NS_ERROR_OUT_OF_MEMORY;
+  
+  
+  aElements.AppendElement(mTooltipContent);
 
   return NS_OK;
 }

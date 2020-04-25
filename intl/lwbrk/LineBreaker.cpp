@@ -921,8 +921,7 @@ int32_t LineBreaker::WordMove(const char16_t* aText, uint32_t aLen,
 
   int32_t ret;
   AutoTArray<uint8_t, 2000> breakState;
-  if (!textNeedsJISx4051 || !breakState.AppendElements(end - begin)) {
-    
+  if (!textNeedsJISx4051) {
     
     
     if (aDirection < 0) {
@@ -931,6 +930,9 @@ int32_t LineBreaker::WordMove(const char16_t* aText, uint32_t aLen,
       ret = end;
     }
   } else {
+    
+    
+    breakState.AppendElements(end - begin);
     GetJISx4051Breaks(aText + begin, end - begin, WordBreak::Normal,
                       Strictness::Auto, false, breakState.Elements());
 

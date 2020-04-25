@@ -2130,8 +2130,9 @@ bool Accessible::InsertChildAt(uint32_t aIndex, Accessible* aChild) {
   if (!aChild) return false;
 
   if (aIndex == mChildren.Length()) {
-    if (!mChildren.AppendElement(aChild)) return false;
-
+    
+    
+    mChildren.AppendElement(aChild);
   } else {
     
     

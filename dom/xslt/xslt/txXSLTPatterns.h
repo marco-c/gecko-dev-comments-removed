@@ -103,8 +103,10 @@ class txPattern {
 class txUnionPattern : public txPattern {
  public:
   nsresult addPattern(txPattern* aPattern) {
-    return mLocPathPatterns.AppendElement(aPattern) ? NS_OK
-                                                    : NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    mLocPathPatterns.AppendElement(aPattern);
+    return NS_OK;
   }
 
   TX_DECL_PATTERN;

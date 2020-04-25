@@ -340,9 +340,10 @@ nsresult TokenizeQueryString(const nsACString& aQuery,
     if (query[i] == '&') {
       
       if (i - keyFirstIndex > 1) {
-        if (!aTokens->AppendElement(
-                QueryKeyValuePair(query, keyFirstIndex, equalsIndex, i)))
-          return NS_ERROR_OUT_OF_MEMORY;
+        
+        
+        aTokens->AppendElement(
+            QueryKeyValuePair(query, keyFirstIndex, equalsIndex, i));
       }
       keyFirstIndex = equalsIndex = i + 1;
     } else if (query[i] == '=') {
@@ -352,9 +353,10 @@ nsresult TokenizeQueryString(const nsACString& aQuery,
 
   
   if (query.Length() - keyFirstIndex > 1) {
-    if (!aTokens->AppendElement(QueryKeyValuePair(query, keyFirstIndex,
-                                                  equalsIndex, query.Length())))
-      return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    aTokens->AppendElement(
+        QueryKeyValuePair(query, keyFirstIndex, equalsIndex, query.Length()));
   }
   return NS_OK;
 }

@@ -105,9 +105,9 @@ nsresult nsRangeFrame::MakeAnonymousDiv(Element** aResult,
   
   resultElement->SetPseudoElementType(aPseudoType);
 
-  if (!aElements.AppendElement(resultElement)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
+  
+  
+  aElements.AppendElement(resultElement);
 
   resultElement.forget(aResult);
   return NS_OK;

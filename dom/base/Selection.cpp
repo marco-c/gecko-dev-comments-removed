@@ -970,9 +970,9 @@ nsresult Selection::StyledRanges::MaybeAddRangeAndTruncateOverlaps(
 
   
   if (mRanges.Length() == 0) {
-    if (!mRanges.AppendElement(StyledRange(aRange))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
+    
+    
+    mRanges.AppendElement(StyledRange(aRange));
     aRange->RegisterSelection(aSelection);
 
     *aOutIndex = 0;
@@ -1175,8 +1175,9 @@ nsresult Selection::GetRangesForIntervalArray(
   if (startIndex == -1 || endIndex == -1) return NS_OK;
 
   for (int32_t i = startIndex; i < endIndex; i++) {
-    if (!aRanges->AppendElement(mStyledRanges.mRanges[i].mRange))
-      return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    aRanges->AppendElement(mStyledRanges.mRanges[i].mRange);
   }
 
   return NS_OK;

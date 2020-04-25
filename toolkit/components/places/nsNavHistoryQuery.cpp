@@ -851,11 +851,9 @@ NS_IMETHODIMP nsNavHistoryQuery::SetTags(nsIVariant* aTags) {
     
     
     if (!mTags.Contains(tag)) {
-      if (!mTags.AppendElement(tag)) {
-        free(tags[i]);
-        free(tags);
-        return NS_ERROR_OUT_OF_MEMORY;
-      }
+      
+      
+      mTags.AppendElement(tag);
     }
     free(tags[i]);
   }
