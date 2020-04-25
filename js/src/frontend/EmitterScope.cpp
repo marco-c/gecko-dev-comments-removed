@@ -29,13 +29,6 @@ EmitterScope::EmitterScope(BytecodeEmitter* bce)
       scopeIndex_(ScopeNote::NoScopeIndex),
       noteIndex_(ScopeNote::NoScopeNoteIndex) {}
 
-static inline void MarkAllBindingsClosedOver(LexicalScope::Data& data) {
-  TrailingNamesArray& names = data.trailingNames;
-  for (uint32_t i = 0; i < data.length; i++) {
-    names[i] = BindingName(names[i].name(), true);
-  }
-}
-
 bool EmitterScope::ensureCache(BytecodeEmitter* bce) {
   return nameCache_.acquire(bce->cx);
 }
@@ -466,20 +459,6 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (bce->sc->allBindingsClosedOver()) {
-    MarkAllBindingsClosedOver(*bindings);
-  }
-
-  
   TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
   uint32_t firstFrameSlot = frameSlotStart();
   BindingIter bi(*bindings, firstFrameSlot,  false);
@@ -540,11 +519,6 @@ bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
 
   if (!ensureCache(bce)) {
     return false;
-  }
-
-  
-  if (funbox->allBindingsClosedOver()) {
-    MarkAllBindingsClosedOver(*funbox->namedLambdaBindings());
   }
 
   BindingIter bi(*funbox->namedLambdaBindings(), LOCALNO_LIMIT,
