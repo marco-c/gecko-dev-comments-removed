@@ -58,7 +58,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
 
   
   
-  RefPtr<IDBTransaction> mTransaction;
+  SafeRefPtr<IDBTransaction> mTransaction;
   JS::Heap<JS::Value> mCachedKeyPath;
 
   
@@ -96,7 +96,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
   };
 
   static MOZ_MUST_USE RefPtr<IDBObjectStore> Create(
-      IDBTransaction* aTransaction, ObjectStoreSpec& aSpec);
+      SafeRefPtr<IDBTransaction> aTransaction, ObjectStoreSpec& aSpec);
 
   static void AppendIndexUpdateInfo(int64_t aIndexID, const KeyPath& aKeyPath,
                                     bool aMultiEntry, const nsCString& aLocale,
@@ -150,10 +150,28 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
 
   MOZ_MUST_USE RefPtr<DOMStringList> IndexNames();
 
-  IDBTransaction* Transaction() const {
+  const IDBTransaction& TransactionRef() const {
     AssertIsOnOwningThread();
 
-    return mTransaction;
+    return *mTransaction;
+  }
+
+  IDBTransaction& MutableTransactionRef() {
+    AssertIsOnOwningThread();
+
+    return *mTransaction;
+  }
+
+  SafeRefPtr<IDBTransaction> AcquireTransaction() const {
+    AssertIsOnOwningThread();
+
+    return mTransaction.clonePtr();
+  }
+
+  RefPtr<IDBTransaction> Transaction() const {
+    AssertIsOnOwningThread();
+
+    return AsRefPtr(mTransaction.clonePtr());
   }
 
   MOZ_MUST_USE RefPtr<IDBRequest> Add(JSContext* aCx,
@@ -236,7 +254,8 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                JS::Handle<JSObject*> aGivenProto) override;
 
  private:
-  IDBObjectStore(IDBTransaction* aTransaction, ObjectStoreSpec* aSpec);
+  IDBObjectStore(SafeRefPtr<IDBTransaction> aTransaction,
+                 ObjectStoreSpec* aSpec);
 
   ~IDBObjectStore();
 
