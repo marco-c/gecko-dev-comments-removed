@@ -4794,7 +4794,7 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("identity.fxaccounts.auth.uri", "https://api.accounts.firefox.com/v1");
 
   
-  pref("services.sync.extension-storage.skipPercentageChance", 20);
+  pref("services.sync.extension-storage.skipPercentageChance", 50);
 #endif // MOZ_SERVICES_SYNC
 
 
