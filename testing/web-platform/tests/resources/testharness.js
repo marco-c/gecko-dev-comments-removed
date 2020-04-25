@@ -1848,6 +1848,49 @@
     }
     expose(assert_any, "assert_any");
 
+    
+
+
+
+
+
+
+
+
+
+
+
+    function assert_implements(condition, description) {
+        assert(!!condition, "assert_implements", description);
+    }
+    expose(assert_implements, "assert_implements")
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    function assert_implements_optional(condition, description) {
+        if (!condition) {
+            
+            
+            
+            
+            
+            
+            throw new PreconditionFailedError(description);
+        }
+    }
+    expose(assert_implements_optional, "assert_implements_optional")
+
     function assert_precondition(precondition, description) {
         if (!precondition) {
             throw new PreconditionFailedError(description);
