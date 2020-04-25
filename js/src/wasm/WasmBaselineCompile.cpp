@@ -4335,13 +4335,37 @@ class BaseCompiler final : public BaseCompilerInterface {
 
   
   
-  StackHeight topBlockResults(ResultType type) {
+  
+  
+  void topBlockParams(ResultType type) {
+    
+    
+    
+    StackHeight base = controlItem().stackHeight;
+    MOZ_ASSERT(fr.stackResultsBase(stackConsumed(type.length())) == base);
+    popBlockResults(type, base, ContinuationKind::Fallthrough);
+    pushBlockResults(type);
+  }
+
+  
+  
+  
+  
+  
+  StackHeight topBranchParams(ResultType type) {
     if (type.empty()) {
       return fr.stackHeight();
     }
-    StackHeight base = fr.stackResultsBase(stackConsumed(type.length()));
-    popBlockResults(type, base, ContinuationKind::Fallthrough);
-    pushBlockResults(type);
+    
+    
+    
+    ABIResultIter iter(type);
+    popRegisterResults(iter);
+    StackHeight base = fr.stackResultsBase(stackConsumed(iter.remaining()));
+    if (!iter.done()) {
+      popStackResults(iter, base);
+    }
+    pushResults(type, base);
     return base;
   }
 
@@ -7180,7 +7204,7 @@ class BaseCompiler final : public BaseCompilerInterface {
   template <typename Cond, typename Lhs, typename Rhs>
   void jumpConditionalWithResults(BranchState* b, Cond cond, Lhs lhs, Rhs rhs) {
     if (b->hasBlockResults()) {
-      StackHeight resultsBase = topBlockResults(b->resultType);
+      StackHeight resultsBase = topBranchParams(b->resultType);
       if (b->stackHeight != resultsBase) {
         Label notTaken;
         branchTo(b->invertBranch ? cond : Assembler::InvertCondition(cond), lhs,
@@ -8741,7 +8765,7 @@ bool BaseCompiler::emitLoop() {
   if (!deadCode_) {
     
     
-    topBlockResults(params);
+    topBlockParams(params);
     masm.nopAlign(CodeAlignment);
     masm.bind(&controlItem(0).label);
     
@@ -8791,7 +8815,7 @@ bool BaseCompiler::emitIf() {
     
     
     
-    topBlockResults(params);
+    topBlockParams(params);
     emitBranchPerform(&b);
   }
 
@@ -9061,7 +9085,7 @@ bool BaseCompiler::emitBrTable() {
 
   freeIntegerResultRegisters(branchParams);
 
-  StackHeight resultsBase = topBlockResults(branchParams);
+  StackHeight resultsBase = topBranchParams(branchParams);
 
   Label dispatchCode;
   masm.branch32(Assembler::Below, rc, Imm32(depths.length()), &dispatchCode);
