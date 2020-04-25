@@ -1,5 +1,5 @@
 async_test(t => {
-  assert_precondition(window.PerformancePaintTiming, "Paint Timing isn't supported.");
+  assert_implements(window.PerformancePaintTiming, "Paint Timing isn't supported.");
   
   
   let entries_seen = 0;
