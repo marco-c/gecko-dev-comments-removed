@@ -277,7 +277,6 @@ nsresult nsIOService::Init() {
     observerService->AddObserver(this, NS_NETWORK_LINK_TOPIC, true);
     observerService->AddObserver(this, NS_NETWORK_ID_CHANGED_TOPIC, true);
     observerService->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true);
-    observerService->AddObserver(this, NS_PREFSERVICE_READ_TOPIC_ID, true);
   } else
     NS_WARNING("failed to get observer service");
 
@@ -449,11 +448,6 @@ nsresult nsIOService::LaunchSocketProcess() {
     return NS_OK;
   }
 
-  if (!XRE_IsE10sParentProcess()) {
-    LOG(("nsIOService skipping LaunchSocketProcess because e10s is disabled"));
-    return NS_OK;
-  }
-
   if (!Preferences::GetBool("network.process.enabled", true)) {
     LOG(("nsIOService skipping LaunchSocketProcess because of the pref"));
     return NS_OK;
@@ -499,15 +493,16 @@ static bool sUseSocketProcess = false;
 static bool sUseSocketProcessChecked = false;
 
 
-bool nsIOService::UseSocketProcess() {
-  if (sUseSocketProcessChecked) {
+bool nsIOService::UseSocketProcess(bool aCheckAgain) {
+  if (sUseSocketProcessChecked && !aCheckAgain) {
     return sUseSocketProcess;
   }
 
   sUseSocketProcessChecked = true;
-  if (Preferences::GetBool("network.process.enabled")) {
-    sUseSocketProcess = Preferences::GetBool(
-        "network.http.network_access_on_socket_process.enabled", true);
+  sUseSocketProcess = false;
+  if (StaticPrefs::network_process_enabled()) {
+    sUseSocketProcess =
+        StaticPrefs::network_http_network_access_on_socket_process_enabled();
   }
   return sUseSocketProcess;
 }
@@ -1550,10 +1545,7 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
       SetOffline(false);
     }
   } else if (!strcmp(topic, kProfileDoChange)) {
-    if (!data) {
-      return NS_OK;
-    }
-    if (NS_LITERAL_STRING("startup").Equals(data)) {
+    if (data && NS_LITERAL_STRING("startup").Equals(data)) {
       
       InitializeNetworkLinkService();
       
@@ -1568,9 +1560,6 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
       
       nsCOMPtr<nsISupports> cookieServ =
           do_GetService(NS_COOKIESERVICE_CONTRACTID);
-    } else if (NS_LITERAL_STRING("xpcshell-do-get-profile").Equals(data)) {
-      
-      LaunchSocketProcess();
     }
   } else if (!strcmp(topic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     
@@ -1609,10 +1598,6 @@ nsIOService::Observe(nsISupports* subject, const char* topic,
     
     nsCOMPtr<nsIRunnable> wakeupNotifier = new nsWakeupNotifier(this);
     NS_DispatchToMainThread(wakeupNotifier);
-  } else if (!strcmp(topic, NS_PREFSERVICE_READ_TOPIC_ID)) {
-    
-    
-    LaunchSocketProcess();
   }
 
   return NS_OK;
