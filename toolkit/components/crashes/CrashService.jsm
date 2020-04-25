@@ -21,6 +21,35 @@ var gRunningProcesses = new Set();
 
 
 
+async function maybeRunMinidumpAnalyzer(minidumpPath, allThreads) {
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  let shutdown = env.exists("MOZ_CRASHREPORTER_SHUTDOWN");
+
+  if (gQuitting || shutdown) {
+    return;
+  }
+
+  await runMinidumpAnalyzer(minidumpPath, allThreads);
+}
+
+function getMinidumpAnalyzerPath() {
+  const binSuffix = AppConstants.platform === "win" ? ".exe" : "";
+  const exeName = "minidump-analyzer" + binSuffix;
+
+  let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  exe.append(exeName);
+
+  return exe;
+}
+
+
+
+
+
+
+
 
 
 
@@ -29,12 +58,7 @@ var gRunningProcesses = new Set();
 function runMinidumpAnalyzer(minidumpPath, allThreads) {
   return new Promise((resolve, reject) => {
     try {
-      const binSuffix = AppConstants.platform === "win" ? ".exe" : "";
-      const exeName = "minidump-analyzer" + binSuffix;
-
-      let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-      exe.append(exeName);
-
+      let exe = getMinidumpAnalyzerPath();
       let args = [minidumpPath];
       let process = Cc["@mozilla.org/process/util;1"].createInstance(
         Ci.nsIProcess
@@ -195,12 +219,7 @@ CrashService.prototype = Object.freeze({
     let metadata = {};
     let hash = null;
 
-    if (!gQuitting) {
-      
-      
-      await runMinidumpAnalyzer(minidumpPath, allThreads);
-    }
-
+    await maybeRunMinidumpAnalyzer(minidumpPath, allThreads);
     metadata = await processExtraFile(extraPath);
     hash = await computeMinidumpHash(minidumpPath);
 
