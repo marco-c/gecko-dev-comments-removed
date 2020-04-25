@@ -542,6 +542,16 @@ class Element : public FragmentOrElement {
     }
   }
 
+  
+  void GetRole(nsAString& aValue) const {
+    if (!GetAttr(nsGkAtoms::role, aValue)) {
+      SetDOMStringToNull(aValue);
+    }
+  }
+  void SetRole(const nsAString& aValue, ErrorResult& aRv) {
+    SetAttr(nsGkAtoms::role, aValue, aRv);
+  }
+
  protected:
   
 
