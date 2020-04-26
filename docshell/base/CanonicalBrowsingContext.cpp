@@ -16,6 +16,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/net/DocumentLoadListener.h"
+#include "nsNetUtil.h"
 
 #include "nsGlobalWindowOuter.h"
 
@@ -523,6 +524,55 @@ MediaController* CanonicalBrowsingContext::GetMediaController() {
     mTabMediaController = new MediaController(Id());
   }
   return mTabMediaController;
+}
+
+bool CanonicalBrowsingContext::AttemptLoadURIInParent(
+    nsDocShellLoadState* aLoadState, uint32_t* aLoadIdentifier) {
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      !StaticPrefs::browser_tabs_documentchannel() ||
+      !StaticPrefs::browser_tabs_documentchannel_parent_initiated()) {
+    return false;
+  }
+
+  
+  
+  
+  if (!net::SchemeIsHTTP(aLoadState->URI()) &&
+      !net::SchemeIsHTTPS(aLoadState->URI())) {
+    return false;
+  }
+
+  uint64_t outerWindowId = 0;
+  if (WindowGlobalParent* global = GetCurrentWindowGlobal()) {
+    nsCOMPtr<nsIURI> currentURI = global->GetDocumentURI();
+    if (currentURI) {
+      bool newURIHasRef = false;
+      aLoadState->URI()->GetHasRef(&newURIHasRef);
+      bool equalsExceptRef = false;
+      aLoadState->URI()->EqualsExceptRef(currentURI, &equalsExceptRef);
+
+      if (equalsExceptRef && newURIHasRef) {
+        
+        
+        return false;
+      }
+    }
+    
+    
+    if (global->HasBeforeUnload()) {
+      return false;
+    }
+
+    outerWindowId = global->OuterWindowId();
+  }
+
+  
+  
+  
+  return net::DocumentLoadListener::OpenFromParent(
+      this, aLoadState, outerWindowId, aLoadIdentifier);
 }
 
 void CanonicalBrowsingContext::StartDocumentLoad(
