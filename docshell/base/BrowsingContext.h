@@ -346,6 +346,19 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   BrowsingContextGroup* Group() { return mGroup; }
 
+  
+  Nullable<WindowProxyHolder> GetAssociatedWindow();
+  Nullable<WindowProxyHolder> GetTopWindow();
+  Element* GetTopFrameElement();
+  bool GetIsContent() { return IsContent(); }
+  void SetUsePrivateBrowsing(bool aUsePrivateBrowsing, ErrorResult& aError);
+  
+  
+  void SetUseTrackingProtectionWebIDL(bool aUseTrackingProtection);
+  bool UseTrackingProtectionWebIDL() { return UseTrackingProtection(); }
+  void GetOriginAttributes(JSContext* aCx, JS::MutableHandle<JS::Value> aVal,
+                           ErrorResult& aError);
+
   bool InRDMPane() const { return GetInRDMPane(); }
 
   float FullZoom() const { return GetFullZoom(); }
