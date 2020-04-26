@@ -539,6 +539,15 @@ bool CanonicalBrowsingContext::AttemptLoadURIInParent(
   
   
   
+  
+  
+  if (GetWatchedByDevtools()) {
+    return false;
+  }
+
+  
+  
+  
   if (!net::SchemeIsHTTP(aLoadState->URI()) &&
       !net::SchemeIsHTTPS(aLoadState->URI())) {
     return false;
