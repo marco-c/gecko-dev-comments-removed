@@ -117,7 +117,7 @@ var PermissionPrompts = {
           "navigator:browser"
         );
         let notification = browserWindow.document.getElementById(
-          "addon-install-confirmation-notification"
+          "addon-webext-permissions-notification"
         );
 
         await closeLastTab();
@@ -126,7 +126,7 @@ var PermissionPrompts = {
         
         
         return BrowserTestUtils.waitForCondition(
-          () => !notification.hasAttribute("hidden"),
+          () => !notification.hidden,
           "addon install confirmation did not show",
           200
         ).catch(msg => {
