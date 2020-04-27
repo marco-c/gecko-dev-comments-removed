@@ -224,6 +224,12 @@ function handlingUserInputFrameScript() {
   });
 }
 
+
+
+function resetHandlingUserInput() {
+  extensionHandlers = new WeakSet();
+}
+
 async function withHandlingUserInput(extension, fn) {
   let { messageManager } = extension.extension.groupFrameLoader;
 
