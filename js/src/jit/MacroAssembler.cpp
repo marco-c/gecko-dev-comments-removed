@@ -2563,7 +2563,7 @@ void MacroAssembler::PopRegsInMask(LiveGeneralRegisterSet set) {
 }
 
 void MacroAssembler::Push(jsid id, Register scratchReg) {
-  if (JSID_IS_GCTHING(id)) {
+  if (id.isGCThing()) {
     
     
     
