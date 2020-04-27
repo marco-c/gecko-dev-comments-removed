@@ -495,6 +495,12 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       [[fallthrough]];
     case DeviceFamily::IntelModernRolloutWebRender:
       
+      APPEND_DEVICE(0x1902);
+      APPEND_DEVICE(0x1906);
+      APPEND_DEVICE(0x190a);
+      APPEND_DEVICE(0x190e);
+
+      
       APPEND_DEVICE(0x1912);
       APPEND_DEVICE(0x1913);
       APPEND_DEVICE(0x1915);
