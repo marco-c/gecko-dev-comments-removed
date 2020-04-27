@@ -6,7 +6,7 @@ use std::slice::from_raw_parts;
 use std::{convert, fmt, mem, ptr, str};
 
 use super::ffi;
-use super::{len_as_c_int, str_for_sqlite, str_to_cstring};
+use super::{len_as_c_int, str_for_sqlite};
 use super::{
     AndThenRows, Connection, Error, MappedRows, RawStatement, Result, Row, Rows, ValueRef,
 };
@@ -432,8 +432,7 @@ impl Statement<'_> {
     
     
     pub fn parameter_index(&self, name: &str) -> Result<Option<usize>> {
-        let c_name = str_to_cstring(name)?;
-        Ok(self.stmt.bind_parameter_index(&c_name))
+        Ok(self.stmt.bind_parameter_index(name))
     }
 
     fn bind_parameters<P>(&mut self, params: P) -> Result<()>
@@ -669,16 +668,9 @@ impl Statement<'_> {
     
     #[cfg(feature = "modern_sqlite")]
     pub fn expanded_sql(&self) -> Option<String> {
-        unsafe {
-            match self.stmt.expanded_sql() {
-                Some(s) => {
-                    let sql = str::from_utf8_unchecked(s.to_bytes()).to_owned();
-                    ffi::sqlite3_free(s.as_ptr() as *mut _);
-                    Some(sql)
-                }
-                _ => None,
-            }
-        }
+        self.stmt
+            .expanded_sql()
+            .map(|s| s.to_string_lossy().to_string())
     }
 
     
@@ -756,6 +748,7 @@ impl Statement<'_> {
             }
             ffi::SQLITE_TEXT => {
                 let s = unsafe {
+                    
                     
                     
                     

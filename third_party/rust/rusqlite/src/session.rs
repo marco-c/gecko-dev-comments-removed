@@ -69,9 +69,11 @@ impl Session<'_> {
             let boxed_filter: *mut F = p_arg as *mut F;
             let tbl_name = {
                 let c_slice = CStr::from_ptr(tbl_str).to_bytes();
-                str::from_utf8_unchecked(c_slice)
+                str::from_utf8(c_slice)
             };
-            if let Ok(true) = catch_unwind(|| (*boxed_filter)(tbl_name)) {
+            if let Ok(true) =
+                catch_unwind(|| (*boxed_filter)(tbl_name.expect("non-utf8 table name")))
+            {
                 1
             } else {
                 0
@@ -100,10 +102,11 @@ impl Session<'_> {
     
     pub fn attach(&mut self, table: Option<&str>) -> Result<()> {
         let table = if let Some(table) = table {
-            str_to_cstring(table)?.as_ptr()
+            Some(str_to_cstring(table)?)
         } else {
-            ptr::null()
+            None
         };
+        let table = table.as_ref().map(|s| s.as_ptr()).unwrap_or(ptr::null());
         unsafe { check!(ffi::sqlite3session_attach(self.s, table)) };
         Ok(())
     }
@@ -154,7 +157,8 @@ impl Session<'_> {
     
     pub fn diff(&mut self, from: DatabaseName<'_>, table: &str) -> Result<()> {
         let from = from.to_cstring()?;
-        let table = str_to_cstring(table)?.as_ptr();
+        let table = str_to_cstring(table)?;
+        let table = table.as_ptr();
         unsafe {
             let mut errmsg = ptr::null_mut();
             let r =
@@ -660,11 +664,11 @@ where
     let tuple: *mut (Option<F>, C) = p_ctx as *mut (Option<F>, C);
     let tbl_name = {
         let c_slice = CStr::from_ptr(tbl_str).to_bytes();
-        str::from_utf8_unchecked(c_slice)
+        str::from_utf8(c_slice)
     };
     match *tuple {
         (Some(ref filter), _) => {
-            if let Ok(true) = catch_unwind(|| filter(tbl_name)) {
+            if let Ok(true) = catch_unwind(|| filter(tbl_name.expect("illegal table name"))) {
                 1
             } else {
                 0

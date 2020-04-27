@@ -620,8 +620,8 @@ typedef int (*sqlite3_loadext_entry)(
 
 #define sqlite3_normalized_sql         sqlite3_api->normalized_sql
 
-#define sqlite3_stmt_isexplain         sqlite3_api->isexplain
-#define sqlite3_value_frombind         sqlite3_api->frombind
+#define sqlite3_stmt_isexplain         sqlite3_api->stmt_isexplain
+#define sqlite3_value_frombind         sqlite3_api->value_frombind
 
 #define sqlite3_drop_modules           sqlite3_api->drop_modules
 

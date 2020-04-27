@@ -80,6 +80,11 @@ mod build_bundled {
             .flag("-DSQLITE_USE_URI")
             .flag("-DHAVE_USLEEP=1")
             .warnings(false);
+
+        if cfg!(feature = "with-asan") {
+            cfg.flag("-fsanitize=address");
+        }
+
         
         
         
@@ -325,6 +330,18 @@ mod bindings {
         }
     }
 
+    
+    
+    
+    fn generating_bundled_bindings() -> bool {
+        
+        println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_BUNDLING");
+        match std::env::var("LIBSQLITE3_SYS_BUNDLING") {
+            Ok(v) if v != "0" => true,
+            _ => false,
+        }
+    }
+
     pub fn write_to_out_dir(header: HeaderLocation, out_path: &Path) {
         let header: String = header.into();
         let mut output = Vec::new();
@@ -341,6 +358,35 @@ mod bindings {
         }
         if cfg!(feature = "session") {
             bindings = bindings.clang_arg("-DSQLITE_ENABLE_SESSION");
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let target_arch = std::env::var("TARGET").unwrap();
+        let host_arch = std::env::var("HOST").unwrap();
+        let is_cross_compiling = target_arch != host_arch;
+
+        
+        
+        if generating_bundled_bindings() || is_cross_compiling {
+            
+            bindings = bindings
+                .blacklist_function("sqlite3_vmprintf")
+                .blacklist_function("sqlite3_vsnprintf")
+                .blacklist_function("sqlite3_str_vappendf")
+                .blacklist_type("va_list")
+                .blacklist_type("__builtin_va_list")
+                .blacklist_type("__gnuc_va_list")
+                .blacklist_type("__va_list_tag")
+                .blacklist_item("__GNUC_VA_LIST");
         }
 
         bindings

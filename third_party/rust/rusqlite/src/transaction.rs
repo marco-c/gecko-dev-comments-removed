@@ -95,7 +95,20 @@ impl Transaction<'_> {
     
     
     
+    
     pub fn new(conn: &mut Connection, behavior: TransactionBehavior) -> Result<Transaction<'_>> {
+        Self::new_unchecked(conn, behavior)
+    }
+
+    
+    
+    
+    
+    
+    pub fn new_unchecked(
+        conn: &Connection,
+        behavior: TransactionBehavior,
+    ) -> Result<Transaction<'_>> {
         let query = match behavior {
             TransactionBehavior::Deferred => "BEGIN DEFERRED",
             TransactionBehavior::Immediate => "BEGIN IMMEDIATE",
@@ -394,6 +407,41 @@ impl Connection {
     
     
     
+    
+    
+    
+    
+    
+    
+    pub fn unchecked_transaction(&self) -> Result<Transaction<'_>> {
+        Transaction::new_unchecked(self, TransactionBehavior::Deferred)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn savepoint(&mut self) -> Result<Savepoint<'_>> {
         Savepoint::new(self)
     }
@@ -413,7 +461,7 @@ impl Connection {
 #[cfg(test)]
 mod test {
     use super::DropBehavior;
-    use crate::{Connection, NO_PARAMS};
+    use crate::{Connection, Error, NO_PARAMS};
 
     fn checked_memory_handle() -> Connection {
         let db = Connection::open_in_memory().unwrap();
@@ -442,6 +490,44 @@ mod test {
                     .unwrap()
             );
         }
+    }
+    fn assert_nested_tx_error(e: crate::Error) {
+        if let Error::SqliteFailure(e, Some(m)) = &e {
+            assert_eq!(e.extended_code, crate::ffi::SQLITE_ERROR);
+            
+            assert_eq!(e.code, crate::ErrorCode::Unknown);
+            assert!(m.contains("transaction"));
+        } else {
+            panic!("Unexpected error type: {:?}", e);
+        }
+    }
+
+    #[test]
+    fn test_unchecked_nesting() {
+        let db = checked_memory_handle();
+
+        {
+            let tx = db.unchecked_transaction().unwrap();
+            let e = tx.unchecked_transaction().unwrap_err();
+            assert_nested_tx_error(e);
+            
+        }
+        {
+            let tx = db.unchecked_transaction().unwrap();
+            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+            
+            let e = tx.unchecked_transaction().unwrap_err();
+            assert_nested_tx_error(e);
+
+            tx.execute_batch("INSERT INTO foo VALUES(1)").unwrap();
+            tx.commit().unwrap();
+        }
+
+        assert_eq!(
+            2i32,
+            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", NO_PARAMS, |r| r.get(0))
+                .unwrap()
+        );
     }
 
     #[test]

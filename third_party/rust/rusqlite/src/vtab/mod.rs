@@ -60,7 +60,7 @@ use crate::{str_to_cstring, Connection, Error, InnerConnection, Result};
 
 
 
-#[repr(C)]
+#[repr(transparent)]
 pub struct Module<T: VTab> {
     base: ffi::sqlite3_module,
     phantom: PhantomData<T>,
@@ -69,47 +69,55 @@ pub struct Module<T: VTab> {
 unsafe impl<T: VTab> Send for Module<T> {}
 unsafe impl<T: VTab> Sync for Module<T> {}
 
-
-
-fn zeroed_module() -> ffi::sqlite3_module {
-    
-    unsafe { std::mem::MaybeUninit::zeroed().assume_init() }
+union ModuleZeroHack {
+    bytes: [u8; std::mem::size_of::<ffi::sqlite3_module>()],
+    module: ffi::sqlite3_module,
 }
 
 
 
 
-pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
+const ZERO_MODULE: ffi::sqlite3_module = unsafe {
+    ModuleZeroHack {
+        bytes: [0u8; std::mem::size_of::<ffi::sqlite3_module>()],
+    }
+    .module
+};
+
+
+
+
+pub fn read_only_module<T: CreateVTab>() -> &'static Module<T> {
     
     
-    let ffi_module = ffi::sqlite3_module {
-        iVersion: version,
-        xCreate: Some(rust_create::<T>),
-        xConnect: Some(rust_connect::<T>),
-        xBestIndex: Some(rust_best_index::<T>),
-        xDisconnect: Some(rust_disconnect::<T>),
-        xDestroy: Some(rust_destroy::<T>),
-        xOpen: Some(rust_open::<T>),
-        xClose: Some(rust_close::<T::Cursor>),
-        xFilter: Some(rust_filter::<T::Cursor>),
-        xNext: Some(rust_next::<T::Cursor>),
-        xEof: Some(rust_eof::<T::Cursor>),
-        xColumn: Some(rust_column::<T::Cursor>),
-        xRowid: Some(rust_rowid::<T::Cursor>),
-        xUpdate: None,
-        xBegin: None,
-        xSync: None,
-        xCommit: None,
-        xRollback: None,
-        xFindFunction: None,
-        xRename: None,
-        xSavepoint: None,
-        xRelease: None,
-        xRollbackTo: None,
-        ..zeroed_module()
-    };
-    Module {
-        base: ffi_module,
+    &Module {
+        base: ffi::sqlite3_module {
+            
+            iVersion: 2, 
+            xCreate: Some(rust_create::<T>),
+            xConnect: Some(rust_connect::<T>),
+            xBestIndex: Some(rust_best_index::<T>),
+            xDisconnect: Some(rust_disconnect::<T>),
+            xDestroy: Some(rust_destroy::<T>),
+            xOpen: Some(rust_open::<T>),
+            xClose: Some(rust_close::<T::Cursor>),
+            xFilter: Some(rust_filter::<T::Cursor>),
+            xNext: Some(rust_next::<T::Cursor>),
+            xEof: Some(rust_eof::<T::Cursor>),
+            xColumn: Some(rust_column::<T::Cursor>),
+            xRowid: Some(rust_rowid::<T::Cursor>),
+            xUpdate: None,
+            xBegin: None,
+            xSync: None,
+            xCommit: None,
+            xRollback: None,
+            xFindFunction: None,
+            xRename: None,
+            xSavepoint: None,
+            xRelease: None,
+            xRollbackTo: None,
+            ..ZERO_MODULE
+        },
         phantom: PhantomData::<T>,
     }
 }
@@ -117,38 +125,38 @@ pub fn read_only_module<T: CreateVTab>(version: c_int) -> Module<T> {
 
 
 
-pub fn eponymous_only_module<T: VTab>(version: c_int) -> Module<T> {
+pub fn eponymous_only_module<T: VTab>() -> &'static Module<T> {
     
     
     
-    let ffi_module = ffi::sqlite3_module {
-        iVersion: version,
-        xCreate: None,
-        xConnect: Some(rust_connect::<T>),
-        xBestIndex: Some(rust_best_index::<T>),
-        xDisconnect: Some(rust_disconnect::<T>),
-        xDestroy: None,
-        xOpen: Some(rust_open::<T>),
-        xClose: Some(rust_close::<T::Cursor>),
-        xFilter: Some(rust_filter::<T::Cursor>),
-        xNext: Some(rust_next::<T::Cursor>),
-        xEof: Some(rust_eof::<T::Cursor>),
-        xColumn: Some(rust_column::<T::Cursor>),
-        xRowid: Some(rust_rowid::<T::Cursor>),
-        xUpdate: None,
-        xBegin: None,
-        xSync: None,
-        xCommit: None,
-        xRollback: None,
-        xFindFunction: None,
-        xRename: None,
-        xSavepoint: None,
-        xRelease: None,
-        xRollbackTo: None,
-        ..zeroed_module()
-    };
-    Module {
-        base: ffi_module,
+    &Module {
+        base: ffi::sqlite3_module {
+            
+            iVersion: 2,
+            xCreate: None,
+            xConnect: Some(rust_connect::<T>),
+            xBestIndex: Some(rust_best_index::<T>),
+            xDisconnect: Some(rust_disconnect::<T>),
+            xDestroy: None,
+            xOpen: Some(rust_open::<T>),
+            xClose: Some(rust_close::<T::Cursor>),
+            xFilter: Some(rust_filter::<T::Cursor>),
+            xNext: Some(rust_next::<T::Cursor>),
+            xEof: Some(rust_eof::<T::Cursor>),
+            xColumn: Some(rust_column::<T::Cursor>),
+            xRowid: Some(rust_rowid::<T::Cursor>),
+            xUpdate: None,
+            xBegin: None,
+            xSync: None,
+            xCommit: None,
+            xRollback: None,
+            xFindFunction: None,
+            xRename: None,
+            xSavepoint: None,
+            xRelease: None,
+            xRollbackTo: None,
+            ..ZERO_MODULE
+        },
         phantom: PhantomData::<T>,
     }
 }
@@ -192,7 +200,11 @@ impl VTabConnection {
 
 
 
-pub trait VTab: Sized {
+
+
+
+
+pub unsafe trait VTab: Sized {
     type Aux;
     type Cursor: VTabCursor;
 
@@ -397,6 +409,7 @@ impl IndexConstraint<'_> {
 }
 
 
+
 pub struct IndexConstraintUsage<'a>(&'a mut ffi::sqlite3_index_constraint_usage);
 
 impl IndexConstraintUsage<'_> {
@@ -456,7 +469,7 @@ impl OrderBy<'_> {
 
 
 
-pub trait VTabCursor: Sized {
+pub unsafe trait VTabCursor: Sized {
     
     
     fn filter(&mut self, idx_num: c_int, idx_str: Option<&str>, args: &Values<'_>) -> Result<()>;
@@ -476,6 +489,7 @@ pub trait VTabCursor: Sized {
     
     fn rowid(&self) -> Result<i64>;
 }
+
 
 
 pub struct Context(*mut ffi::sqlite3_context);
@@ -582,10 +596,11 @@ impl Connection {
     
     
     
+    
     pub fn create_module<T: VTab>(
         &self,
         module_name: &str,
-        module: &Module<T>,
+        module: &'static Module<T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
         self.db.borrow_mut().create_module(module_name, module, aux)
@@ -596,7 +611,7 @@ impl InnerConnection {
     fn create_module<T: VTab>(
         &mut self,
         module_name: &str,
-        module: &Module<T>,
+        module: &'static Module<T>,
         aux: Option<T::Aux>,
     ) -> Result<()> {
         let c_name = str_to_cstring(module_name)?;
@@ -1011,23 +1026,8 @@ unsafe fn result_error<T>(ctx: *mut ffi::sqlite3_context, result: Result<T>) -> 
 
 
 
-unsafe fn alloc<S: AsRef<[u8]>>(s: S) -> *mut c_char {
-    use std::convert::TryInto;
-    let s = s.as_ref();
-    if memchr::memchr(0, s).is_some() {
-        panic!("Null character found")
-    }
-    let len = s.len();
-    let total_len = len.checked_add(1).unwrap();
-
-    let dst = ffi::sqlite3_malloc(total_len.try_into().unwrap()) as *mut c_char;
-    if dst.is_null() {
-        panic!("Out of memory")
-    }
-    ptr::copy_nonoverlapping(s.as_ptr() as *const c_char, dst, len);
-    
-    *dst.offset(len.try_into().unwrap()) = 0;
-    dst
+fn alloc(s: &str) -> *mut c_char {
+    crate::util::SqliteMallocString::from_str(s).into_raw()
 }
 
 #[cfg(feature = "array")]
