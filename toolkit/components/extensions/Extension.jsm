@@ -766,12 +766,11 @@ class ExtensionData {
     );
 
     let removed = oldPerms.filter(x => !permSet.has(x));
-    if (removed.length) {
-      await Management.asyncLoadSettingsModules();
-      for (let name of removed) {
-        await ExtensionPreferencesManager.removeSettingsForPermission(id, name);
-      }
-    }
+    
+    
+    
+    
+    await ExtensionPreferencesManager.removeSettingsForPermissions(id, removed);
 
     
     await ExtensionPermissions.remove(id, {
