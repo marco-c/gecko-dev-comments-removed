@@ -226,6 +226,16 @@ panel {
 }
 
 menupopup,
+panel:not([type="arrow"]) {
+  
+
+%ifdef XP_WIN
+  background: Menu;
+  border: 1px solid ThreeDShadow;
+%endif
+}
+
+menupopup,
 panel,
 tooltip {
   display: -moz-popup;
