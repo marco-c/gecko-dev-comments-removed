@@ -162,7 +162,7 @@ class ArtifactCache(object):
             if len(fname) not in (32, 40, 56, 64, 96, 128):
                 raise TypeError()
             binascii.unhexlify(fname)
-        except TypeError:
+        except (TypeError, binascii.Error):
             
             
             
