@@ -122,21 +122,23 @@ void CookieServiceParent::SerialializeCookieList(
 }
 
 IPCResult CookieServiceParent::RecvPrepareCookieList(
-    const URIParams& aHost, const bool& aIsForeign,
+    nsIURI* aHost, const bool& aIsForeign,
     const bool& aIsThirdPartyTrackingResource,
     const bool& aIsThirdPartySocialTrackingResource,
     const bool& aFirstPartyStorageAccessGranted,
     const uint32_t& aRejectedReason, const bool& aIsSafeTopLevelNav,
     const bool& aIsSameSiteForeign, const OriginAttributes& aAttrs) {
-  nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
-
   
+  if (!aHost) {
+    return IPC_FAIL(this, "aHost must not be null");
+  }
+
   nsTArray<Cookie*> foundCookieList;
   
   
   
   mCookieService->GetCookiesForURI(
-      hostURI, nullptr, aIsForeign, aIsThirdPartyTrackingResource,
+      aHost, nullptr, aIsForeign, aIsThirdPartyTrackingResource,
       aIsThirdPartySocialTrackingResource, aFirstPartyStorageAccessGranted,
       aRejectedReason, aIsSafeTopLevelNav, aIsSameSiteForeign, false, aAttrs,
       foundCookieList);
@@ -153,17 +155,15 @@ void CookieServiceParent::ActorDestroy(ActorDestroyReason aWhy) {
 
 IPCResult CookieServiceParent::RecvSetCookies(
     const nsCString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    const URIParams& aHost, bool aFromHttp,
-    const nsTArray<CookieStruct>& aCookies) {
+    nsIURI* aHost, bool aFromHttp, const nsTArray<CookieStruct>& aCookies) {
   if (!mCookieService) {
     return IPC_OK();
   }
 
   
   
-  nsCOMPtr<nsIURI> hostURI = DeserializeURI(aHost);
-  if (!hostURI) {
-    return IPC_FAIL_NO_REASON(this);
+  if (!aHost) {
+    return IPC_FAIL(this, "aHost must not be null");
   }
 
   
@@ -171,8 +171,7 @@ IPCResult CookieServiceParent::RecvSetCookies(
   mProcessingCookie = true;
 
   bool ok = mCookieService->SetCookiesFromIPC(aBaseDomain, aOriginAttributes,
-                                              hostURI, aFromHttp, aCookies);
-
+                                              aHost, aFromHttp, aCookies);
   mProcessingCookie = false;
   return ok ? IPC_OK() : IPC_FAIL(this, "Invalid cookie received.");
 }
