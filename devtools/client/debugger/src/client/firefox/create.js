@@ -31,6 +31,19 @@ export function prepareSourcePayload(
     makeSourceId(source, isServiceWorker)
   );
 
+  source = { ...source };
+
+  
+  
+  if (
+    typeof source.sourceMapBaseURL === "undefined" &&
+    typeof (source: any).introductionUrl !== "undefined"
+  ) {
+    source.sourceMapBaseURL =
+      source.url || (source: any).introductionUrl || null;
+    delete (source: any).introductionUrl;
+  }
+
   return { thread: threadFront.actor, isServiceWorker, source };
 }
 

@@ -45,15 +45,14 @@ export type SourceActor = {|
   +isBlackBoxed: boolean,
 
   
+  +sourceMapBaseURL: URL | null,
+
+  
   +sourceMapURL: URL | null,
 
   
   
   +url: URL | null,
-
-  
-  
-  +introductionUrl: URL | null,
 
   
   
