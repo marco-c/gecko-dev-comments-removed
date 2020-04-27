@@ -11,8 +11,10 @@ const {
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { assert } = DevToolsUtils;
-const { joinURI } = require("devtools/shared/path");
 const { sourceSpec } = require("devtools/shared/specs/source");
+const {
+  resolveSourceURL,
+} = require("devtools/server/actors/utils/source-map-utils");
 
 loader.lazyRequireGetter(
   this,
@@ -40,7 +42,10 @@ function isEvalSource(source) {
   
   
   
-  if (introType == "scriptElement" && source.introductionScript) {
+  if (
+    (introType == "scriptElement" || introType == "importedModule") &&
+    source.introductionScript
+  ) {
     return true;
   }
 
@@ -58,34 +63,40 @@ function isEvalSource(source) {
 
 exports.isEvalSource = isEvalSource;
 
+const windowsDrive = /^([a-zA-Z]:)/;
+
 function getSourceURL(source, window) {
-  if (isEvalSource(source)) {
-    
-    
-    
+  
+  
+  const resourceURL =
+    ((!isEvalSource(source) && source.url) || "").split(" -> ").pop() || null;
 
-    if (source.displayURL && source.introductionScript) {
-      if (source.introductionScript.source.url === "debugger eval code") {
-        if (window) {
-          
-          
-          
-          return joinURI(window.location.href, source.displayURL);
-        }
-      } else if (!isEvalSource(source.introductionScript.source)) {
-        return joinURI(source.introductionScript.source.url, source.displayURL);
-      }
+  
+  
+  
+  
+  let result = resolveSourceURL(source.displayURL, window);
+  if (!result) {
+    result = resolveSourceURL(resourceURL, window) || resourceURL;
+
+    
+    
+    
+    
+    
+    
+    
+    if (
+      resourceURL &&
+      resourceURL.match(windowsDrive) &&
+      result.slice(0, 2) == resourceURL.slice(0, 2).toLowerCase()
+    ) {
+      result = resourceURL.slice(0, 2) + result.slice(2);
     }
-
-    return source.displayURL;
-  } else if (source.url === "debugger eval code") {
-    
-    return null;
   }
-  return source.url;
-}
 
-exports.getSourceURL = getSourceURL;
+  return result;
+}
 
 
 
@@ -107,7 +118,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     Actor.prototype.initialize.call(this, thread.conn);
 
     this._threadActor = thread;
-    this._url = null;
+    this._url = undefined;
     this._source = source;
     this._contentType = contentType;
     this._isInlineSource = isInlineSource;
@@ -136,7 +147,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return this.threadActor.breakpointActorMap;
   },
   get url() {
-    if (!this._url) {
+    if (this._url === undefined) {
       this._url = getSourceURL(this._source, this.threadActor._parent.window);
     }
     return this._url;
@@ -177,7 +188,7 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     return {
       actor: this.actorID,
       extensionName: this.extensionName,
-      url: this.url ? this.url.split(" -> ").pop() : null,
+      url: this.url,
       isBlackBoxed: this.threadActor.sources.isBlackBoxed(this.url),
       sourceMapURL: source ? source.sourceMapURL : null,
       introductionUrl: introductionUrl
