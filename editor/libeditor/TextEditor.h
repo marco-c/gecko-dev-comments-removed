@@ -542,7 +542,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  EditActionResult TruncateInsertionStringForMaxLength(
+  EditActionResult MaybeTruncateInsertionStringForMaxLength(
       nsAString& aInsertionString);
 
   
