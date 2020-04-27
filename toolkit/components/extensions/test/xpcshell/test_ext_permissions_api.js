@@ -1,23 +1,5 @@
 "use strict";
 
-Services.prefs.setBoolPref(
-  "extensions.webextensions.background-delayed-startup",
-  false
-);
-
-const { AddonManager } = ChromeUtils.import(
-  "resource://gre/modules/AddonManager.jsm"
-);
-const { ExtensionPermissions } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionPermissions.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExtensionParent",
-  "resource://gre/modules/ExtensionParent.jsm"
-);
-
 AddonTestUtils.init(this);
 AddonTestUtils.overrideCertDB();
 AddonTestUtils.createAppInfo(
@@ -26,8 +8,6 @@ AddonTestUtils.createAppInfo(
   "1",
   "42"
 );
-
-let OptionalPermissions;
 
 add_task(async function setup() {
   Services.prefs.setBoolPref(
@@ -39,161 +19,56 @@ add_task(async function setup() {
   });
   await AddonTestUtils.promiseStartupManager();
   AddonTestUtils.usePrivilegedSignatures = false;
-
-  
-  
-  await ExtensionParent.apiManager.lazyInit();
-
-  
-  
-  let ignore = [
-    "activeTab",
-    "clipboardRead",
-    "clipboardWrite",
-    "downloads.open",
-    "geolocation",
-    "management",
-    "menus.overrideContext",
-    "search",
-    "tabHide",
-    "tabs",
-    "webRequestBlocking",
-  ];
-  OptionalPermissions = Schemas.getPermissionNames([
-    "OptionalPermission",
-    "OptionalPermissionNoPrompt",
-  ]).filter(n => !ignore.includes(n));
 });
 
 add_task(async function test_api_on_permissions_changed() {
   async function background() {
-    let manifest = browser.runtime.getManifest();
-    let permObj = { permissions: manifest.optional_permissions, origins: [] };
-
-    function verifyPermissions(enabled) {
-      for (let perm of manifest.optional_permissions) {
-        browser.test.assertEq(
-          enabled,
-          !!browser[perm],
-          `${perm} API is ${
-            enabled ? "injected" : "removed"
-          } after permission request`
+    browser.test.onMessage.addListener(async opts => {
+      for (let perm of opts.optional_permissions) {
+        let permObj = { permissions: [perm] };
+        browser.test.assertFalse(
+          browser[perm],
+          `${perm} API is not available at start`
+        );
+        await browser.permissions.request(permObj);
+        browser.test.assertTrue(
+          browser[perm],
+          `${perm} API is available after permission request`
+        );
+        await browser.permissions.remove(permObj);
+        browser.test.assertFalse(
+          browser[perm],
+          `${perm} API is not available after permission remove`
         );
       }
-    }
-
-    browser.permissions.onAdded.addListener(details => {
-      browser.test.assertEq(
-        JSON.stringify(details.permissions),
-        JSON.stringify(manifest.optional_permissions),
-        "expected permissions added"
-      );
-      verifyPermissions(true);
-      browser.test.sendMessage("added");
-    });
-
-    browser.permissions.onRemoved.addListener(details => {
-      browser.test.assertEq(
-        JSON.stringify(details.permissions),
-        JSON.stringify(manifest.optional_permissions),
-        "expected permissions removed"
-      );
-      verifyPermissions(false);
-      browser.test.sendMessage("removed");
-    });
-
-    browser.test.onMessage.addListener((msg, enabled) => {
-      if (msg === "request") {
-        browser.permissions.request(permObj);
-      } else if (msg === "verify_access") {
-        verifyPermissions(enabled);
-        browser.test.sendMessage("verified");
-      } else if (msg === "revoke") {
-        browser.permissions.remove(permObj);
-      }
+      browser.test.notifyPass("done");
     });
   }
+
+  let optional_permissions = [
+    "downloads",
+    "cookies",
+    "privacy",
+    "webRequest",
+    "webNavigation",
+    "browserSettings",
+    "idle",
+    "notifications",
+  ];
 
   let extension = ExtensionTestUtils.loadExtension({
     background,
     manifest: {
-      optional_permissions: OptionalPermissions,
+      optional_permissions,
     },
     useAddonManager: "permanent",
   });
   await extension.startup();
 
-  function addPermissions() {
-    extension.sendMessage("request");
-    return extension.awaitMessage("added");
-  }
-
-  function removePermissions() {
-    extension.sendMessage("revoke");
-    return extension.awaitMessage("removed");
-  }
-
-  function verifyPermissions(enabled) {
-    extension.sendMessage("verify_access", enabled);
-    return extension.awaitMessage("verified");
-  }
-
   await withHandlingUserInput(extension, async () => {
-    await addPermissions();
-    await removePermissions();
-    await addPermissions();
+    extension.sendMessage({ optional_permissions });
+    await extension.awaitFinish("done");
   });
-
-  
-  extensionHandlers.delete(extension);
-
-  
-  await AddonTestUtils.promiseRestartManager();
-  await extension.awaitStartup();
-  await verifyPermissions(true);
-
-  await withHandlingUserInput(extension, async () => {
-    await removePermissions();
-  });
-
-  
-  let permObj = {
-    permissions: OptionalPermissions.concat("internal:privateBrowsingAllowed"),
-    origins: [],
-  };
-
-  
-  await ExtensionPermissions.add(extension.id, permObj, extension.extension);
-  await extension.awaitMessage("added");
-  await verifyPermissions(true);
-
-  
-  await ExtensionPermissions.remove(extension.id, permObj, extension.extension);
-  await extension.awaitMessage("removed");
-  await verifyPermissions(false);
-
-  
-  
-  await ExtensionPermissions.add(
-    extension.id,
-    { permissions: ["internal:privateBrowsingAllowed"], origins: [] },
-    extension.extension
-  );
-
-  
-  await withHandlingUserInput(extension, async () => {
-    await addPermissions();
-  });
-  let addon = await AddonManager.getAddonByID(extension.id);
-  await addon.disable();
-  await ExtensionPermissions.remove(extension.id, permObj);
-  await addon.enable();
-  await extension.awaitStartup();
-
-  await verifyPermissions(false);
-  let perms = await ExtensionPermissions.get(extension.id);
-  equal(perms.permissions.length, 0, "no permissions on startup");
-
   await extension.unload();
 });
 
@@ -313,23 +188,7 @@ add_task(async function test_browserSetting_permissions() {
     extension.sendMessage("remove");
     await extension.awaitMessage("done");
     ok(cacheIsEnabled(), "setting is reset after remove");
-
-    extension.sendMessage("request");
-    await extension.awaitMessage("done");
-    ok(!cacheIsEnabled(), "setting was set after request");
   });
-
-  await ExtensionPermissions._uninit();
-  extensionHandlers.delete(extension);
-  await AddonTestUtils.promiseRestartManager();
-  await extension.awaitStartup();
-
-  await withHandlingUserInput(extension, async () => {
-    extension.sendMessage("remove");
-    await extension.awaitMessage("done");
-    ok(cacheIsEnabled(), "setting is reset after remove");
-  });
-
   await extension.unload();
 });
 
@@ -371,22 +230,6 @@ add_task(async function test_privacy_permissions() {
     extension.sendMessage("remove");
     await extension.awaitMessage("done");
     ok(!hasSetting(), "setting is reset after remove");
-
-    extension.sendMessage("request");
-    await extension.awaitMessage("done");
-    ok(hasSetting(), "setting was set after request");
   });
-
-  await ExtensionPermissions._uninit();
-  extensionHandlers.delete(extension);
-  await AddonTestUtils.promiseRestartManager();
-  await extension.awaitStartup();
-
-  await withHandlingUserInput(extension, async () => {
-    extension.sendMessage("remove");
-    await extension.awaitMessage("done");
-    ok(!hasSetting(), "setting is reset after remove");
-  });
-
   await extension.unload();
 });
