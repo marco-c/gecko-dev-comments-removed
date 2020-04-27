@@ -6989,7 +6989,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   }
 
   if (shouldCollectNurseryForSlice(nonincrementalByAPI, budget)) {
-    minorGC(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
+    collectNursery(reason, gcstats::PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC);
   } else {
     ++number;  
   }
@@ -6997,6 +6997,7 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   AutoGCSession session(this, JS::HeapState::MajorCollecting);
 
   majorGCTriggerReason = JS::GCReason::NO_REASON;
+  MOZ_ASSERT(!stats().hasTrigger());
 
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
@@ -7425,6 +7426,15 @@ void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {
     return;
   }
 
+  collectNursery(reason, phase);
+
+  for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
+    maybeAllocTriggerZoneGC(zone);
+    maybeMallocTriggerZoneGC(zone);
+  }
+}
+
+void GCRuntime::collectNursery(JS::GCReason reason, gcstats::PhaseKind phase) {
   AutoMaybeLeaveAtomsZone leaveAtomsZone(rt->mainContextFromOwnThread());
 
   
@@ -7452,11 +7462,6 @@ void GCRuntime::minorGC(JS::GCReason reason, gcstats::PhaseKind phase) {
     CheckHeapAfterGC(rt);
   }
 #endif
-
-  for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    maybeAllocTriggerZoneGC(zone);
-    maybeMallocTriggerZoneGC(zone);
-  }
 }
 
 void GCRuntime::startBackgroundFreeAfterMinorGC() {
