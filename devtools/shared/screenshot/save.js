@@ -116,6 +116,11 @@ function getFormattedHelpData() {
 
 
 function saveScreenshot(window, args = {}, value) {
+  
+  if (!value.data) {
+    return [];
+  }
+
   if (args.help) {
     const message = getFormattedHelpData();
     
@@ -224,6 +229,11 @@ function saveToClipboard(base64URI) {
 
 async function saveToFile(image) {
   let filename = image.filename;
+
+  
+  if (!image.data) {
+    return "";
+  }
 
   
   if (!filename.match(/.png$/i)) {

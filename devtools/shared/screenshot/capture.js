@@ -3,14 +3,22 @@
 
 
 "use strict";
-const { Cu } = require("chrome");
+const { Cu, Cc, Ci } = require("chrome");
+const Services = require("Services");
 const { LocalizationHelper } = require("devtools/shared/l10n");
+
+loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
 
 const CONTAINER_FLASHING_DURATION = 500;
 const STRINGS_URI = "devtools/shared/locales/screenshot.properties";
 const L10N = new LocalizationHelper(STRINGS_URI);
 
-loader.lazyRequireGetter(this, "getRect", "devtools/shared/layout/utils", true);
+
+
+
+
+const MAX_IMAGE_WIDTH = 10000;
+const MAX_IMAGE_HEIGHT = 10000;
 
 
 
@@ -88,35 +96,65 @@ function createScreenshotDataURL(document, args) {
     height -= scrollbarHeight.value;
   }
 
+  let ratio;
+  if (args.fullpage) {
+    
+    ratio = 1;
+    
+    if ((args.dpr && args.dpr > 1) || window.devicePixelRatio > 1) {
+      logWarningInPage(L10N.getStr("screenshotDPRDecreasedWarning"), window);
+    }
+  } else {
+    ratio = args.dpr ? args.dpr : window.devicePixelRatio;
+  }
+
+  
+  if (width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT) {
+    width = Math.min(width, MAX_IMAGE_WIDTH);
+    height = Math.min(height, MAX_IMAGE_HEIGHT);
+    logWarningInPage(
+      L10N.getFormatStr("screenshotTruncationWarning", width, height),
+      window
+    );
+  }
+
   const canvas = document.createElementNS(
     "http://www.w3.org/1999/xhtml",
     "canvas"
   );
   const ctx = canvas.getContext("2d");
-  const ratio = args.dpr ? args.dpr : window.devicePixelRatio;
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
-  ctx.scale(ratio, ratio);
-  ctx.drawWindow(window, left, top, width, height, "#fff");
-  const data = canvas.toDataURL("image/png", "");
+
+  
+  
+  
+  let data = null;
+  try {
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.drawWindow(window, left, top, width, height, "#fff");
+    data = canvas.toDataURL("image/png", "");
+  } catch (e) {
+    logErrorInPage(L10N.getStr("screenshotRenderingError"), window);
+  }
 
   
   if (args.fullpage) {
     window.scrollTo(currentX, currentY);
   }
 
-  simulateCameraFlash(document);
+  if (data) {
+    simulateCameraFlash(document);
+  }
 
   return Promise.resolve({
     destinations: [],
-    data: data,
-    height: height,
-    width: width,
-    filename: filename,
+    data,
+    height,
+    width,
+    filename,
   });
 }
-
-exports.createScreenshotDataURL = createScreenshotDataURL;
 
 
 
@@ -150,3 +188,23 @@ function getFilename(defaultName) {
     ".png"
   );
 }
+
+function logInPage(text, flags, window) {
+  const scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(
+    Ci.nsIScriptError
+  );
+  scriptError.initWithWindowID(
+    text,
+    null,
+    null,
+    0,
+    0,
+    flags,
+    "screenshot",
+    window.windowUtils.currentInnerWindowID
+  );
+  Services.console.logMessage(scriptError);
+}
+
+const logErrorInPage = (text, window) => logInPage(text, 0, window);
+const logWarningInPage = (text, window) => logInPage(text, 1, window);
