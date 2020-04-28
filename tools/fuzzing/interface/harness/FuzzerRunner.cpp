@@ -20,10 +20,31 @@ namespace mozilla {
 class _InitFuzzer {
  public:
   _InitFuzzer() { fuzzerRunner = new FuzzerRunner(); }
+  void InitXPCOM() { mScopedXPCOM = new ScopedXPCOM("Fuzzer"); }
+  void DeinitXPCOM() {
+    if (mScopedXPCOM) delete mScopedXPCOM;
+    mScopedXPCOM = nullptr;
+  }
+
+ private:
+  ScopedXPCOM* mScopedXPCOM;
 } InitLibFuzzer;
 
+static void DeinitXPCOM() { InitLibFuzzer.DeinitXPCOM(); }
+
 int FuzzerRunner::Run(int* argc, char*** argv) {
-  ScopedXPCOM xpcom("Fuzzer");
+  
+
+
+
+
+
+
+
+
+  InitLibFuzzer.InitXPCOM();
+  std::atexit(DeinitXPCOM);
+
   const char* fuzzerEnv = getenv("FUZZER");
 
   if (!fuzzerEnv) {
@@ -51,11 +72,14 @@ int FuzzerRunner::Run(int* argc, char*** argv) {
   }
 
 #ifdef LIBFUZZER
-  return mFuzzerDriver(argc, argv, testingFunc);
+  int ret = mFuzzerDriver(argc, argv, testingFunc);
 #else
   
-  return testingFunc(NULL, 0);
+  int ret = testingFunc(NULL, 0);
 #endif
+
+  InitLibFuzzer.DeinitXPCOM();
+  return ret;
 }
 
 #ifdef LIBFUZZER
