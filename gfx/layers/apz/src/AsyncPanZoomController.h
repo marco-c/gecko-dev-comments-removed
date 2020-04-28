@@ -963,7 +963,9 @@ class AsyncPanZoomController {
   
   
   
-  SampledAPZCState mSampledState;
+  
+  
+  std::deque<SampledAPZCState> mSampledState;
 
   
   
