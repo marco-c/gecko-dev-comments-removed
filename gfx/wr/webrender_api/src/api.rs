@@ -52,7 +52,7 @@ impl Default for QualitySettings {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum ResourceUpdate {
     
     AddImage(AddImage),
@@ -642,7 +642,7 @@ impl TransactionMsg {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct AddImage {
     
     pub key: ImageKey,
@@ -659,7 +659,7 @@ pub struct AddImage {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct UpdateImage {
     
     pub key: ImageKey,
@@ -677,7 +677,7 @@ pub struct UpdateImage {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct AddBlobImage {
     
     pub key: BlobImageKey,
@@ -703,7 +703,7 @@ pub struct AddBlobImage {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct UpdateBlobImage {
     
     pub key: BlobImageKey,
@@ -722,7 +722,7 @@ pub struct UpdateBlobImage {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum AddFont {
     
     Raw(font::FontKey, Vec<u8>, u32),
@@ -731,7 +731,7 @@ pub enum AddFont {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct HitTestItem {
     
     pub pipeline: PipelineId,
@@ -750,14 +750,14 @@ pub struct HitTestItem {
 }
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct HitTestResult {
     
     pub items: Vec<HitTestItem>,
 }
 
 bitflags! {
-    #[derive(MallocSizeOf)]
+    #[derive(Deserialize, MallocSizeOf, Serialize)]
     ///
     pub struct HitTestFlags: u8 {
         ///
@@ -771,7 +771,7 @@ bitflags! {
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct AddFontInstance {
     
     pub key: font::FontInstanceKey,
@@ -1274,7 +1274,7 @@ impl ExternalEvent {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub enum ScrollClamping {
     
     ToContentBounds,
