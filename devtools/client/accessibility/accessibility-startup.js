@@ -96,6 +96,12 @@ class AccessibilityStartup {
 
 
   async _updateToolHighlight() {
+    
+    
+    if (this.accessibilityProxy.supports.autoInit) {
+      return;
+    }
+
     const isHighlighted = await this.toolbox.isToolHighlighted("accessibility");
     if (this.accessibilityProxy.enabled && !isHighlighted) {
       this.toolbox.highlightTool("accessibility");
