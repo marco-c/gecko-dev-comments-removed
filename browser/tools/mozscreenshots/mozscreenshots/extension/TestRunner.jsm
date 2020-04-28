@@ -384,7 +384,7 @@ var TestRunner = {
       
       return Promise.race([applyPromise, timeoutPromise]).then(result => {
         return new Promise(resolve => {
-          setTimeout(() => resolve(result), 700);
+          setTimeout(() => resolve(result), 500);
         });
       });
     };
