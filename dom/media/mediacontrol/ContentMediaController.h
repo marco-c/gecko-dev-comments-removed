@@ -51,6 +51,10 @@ class ContentControlKeyEventReceiver {
 
   
   virtual void HandleEvent(MediaControlKeysEvent aKeyEvent) = 0;
+
+  
+  
+  virtual BrowsingContext* GetBrowsingContext() const { return nullptr; }
 };
 
 
@@ -141,7 +145,6 @@ class ContentMediaController final : public ContentMediaAgent,
 
  private:
   ~ContentMediaController() = default;
-  already_AddRefed<BrowsingContext> GetTopLevelBrowsingContext() const;
 
   nsTArray<RefPtr<ContentControlKeyEventReceiver>> mReceivers;
   uint64_t mTopLevelBrowsingContextId;
