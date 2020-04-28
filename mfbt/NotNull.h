@@ -144,6 +144,13 @@ class NotNull {
     return mBasePtr.operator->();
   }
   constexpr decltype(*mBasePtr) operator*() const { return *mBasePtr; }
+
+  
+  
+  
+  
+  NotNull(const NotNull&) = default;
+  NotNull& operator=(const NotNull&) = default;
 };
 
 

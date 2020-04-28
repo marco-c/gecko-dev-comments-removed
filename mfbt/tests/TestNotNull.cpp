@@ -288,6 +288,14 @@ void TestNotNullWithRefPtr() {
 
   
 
+  NotNull<RefPtr<MyRefType>> r6 = std::move(r2);
+  mozilla::Unused << r6;
+
+  CHECK(r2.get());
+  CHECK(r6.get());
+
+  
+
   
   
 }
