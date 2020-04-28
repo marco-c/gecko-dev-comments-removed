@@ -15,6 +15,7 @@ function cleanup_and_finish() {
 
 
 
+
 function check_crash_list(crashes) {
   const doc = content.document;
   const crashIdNodes = Array.from(doc.getElementsByClassName("crash-id"));
@@ -102,7 +103,6 @@ function check_submit_pending(tab, crashes) {
         }
       }
 
-      
       
       BrowserTestUtils.waitForEvent(browser, "pageshow", true).then(
         csp_pageshow
