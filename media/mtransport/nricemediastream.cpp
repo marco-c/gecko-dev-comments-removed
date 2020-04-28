@@ -213,13 +213,18 @@ nsresult NrIceMediaStream::ConnectToPeer(
 
   if (Matches(old_stream_, ufrag, pwd)) {
     
-    
+    MOZ_MTLOG(ML_DEBUG,
+              "Rolling back to old stream ufrag=" << ufrag << " " << name_);
     std::swap(stream_, old_stream_);
     CloseStream(&old_stream_);
   } else if (old_stream_) {
     
     
     
+    MOZ_MTLOG(ML_DEBUG,
+              "ICE restart committed, marking old stream as obsolete, "
+              "beginning switchover to ufrag="
+                  << ufrag << " " << name_);
     nr_ice_media_stream_set_obsolete(old_stream_);
   }
 
