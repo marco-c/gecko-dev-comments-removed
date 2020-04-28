@@ -3,6 +3,9 @@
 
 
 
+PromiseTestUtils.whitelistRejectionsGlobally(/No such actor/);
+
+
 function isFrameSelected(dbg, index, title) {
   const $frame = findElement(dbg, "frame", index);
 
