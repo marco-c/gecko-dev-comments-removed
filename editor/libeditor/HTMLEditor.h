@@ -676,17 +676,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT virtual nsresult DeleteSelectionWithTransaction(
-      EDirection aAction, EStripWrappers aStripWrappers) override;
-
-  
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult DeleteNodeWithTransaction(nsIContent& aContent);
 
   
@@ -2116,6 +2105,15 @@ class HTMLEditor final : public TextEditor,
 
   EditorDOMPoint GetGoodCaretPointFor(
       nsIContent& aContent, nsIEditor::EDirection aDirectionAndAmount);
+
+  
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveEmptyInclusiveAncestorInlineElements(nsIContent& aContent);
 
   
 

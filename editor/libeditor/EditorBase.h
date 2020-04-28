@@ -2184,11 +2184,14 @@ class EditorBase : public nsIEditor,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteSelectionAsSubAction(nsIEditor::EDirection aDirectionAndAmount,
                              nsIEditor::EStripWrappers aStripWrappers);
 
   
+
+
 
 
 
@@ -2556,9 +2559,13 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual nsresult DeleteSelectionWithTransaction(
-      nsIEditor::EDirection aDirectionAndAmount,
-      nsIEditor::EStripWrappers aStripWrappers);
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteSelectionWithTransaction(nsIEditor::EDirection aDirectionAndAmount,
+                                 nsIEditor::EStripWrappers aStripWrappers);
 
   
 

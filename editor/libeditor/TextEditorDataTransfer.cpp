@@ -85,6 +85,7 @@ nsresult TextEditor::PrepareTransferable(nsITransferable** aOutTransferable) {
 
 nsresult TextEditor::PrepareToInsertContent(
     const EditorDOMPoint& aPointToInsert, bool aDoDeleteSelection) {
+  
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   MOZ_ASSERT(aPointToInsert.IsSet());
@@ -92,10 +93,11 @@ nsresult TextEditor::PrepareToInsertContent(
   EditorDOMPoint pointToInsert(aPointToInsert);
   if (aDoDeleteSelection) {
     AutoTrackDOMPoint tracker(RangeUpdaterRef(), &pointToInsert);
-    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
+    nsresult rv = DeleteSelectionAsSubAction(
+        nsIEditor::eNone,
+        IsTextEditor() ? nsIEditor::eNoStrip : nsIEditor::eStrip);
     if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "EditorBase::DeleteSelectionAsSubAction(eNone, eStrip) failed");
+      NS_WARNING("EditorBase::DeleteSelectionAsSubAction(eNone) failed");
       return rv;
     }
   }
@@ -531,6 +533,7 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
 }
 
 nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
+  
   AutoRestore<bool> saveDispatchInputEvent(mDispatchInputEvent);
   mDispatchInputEvent = aDispatchInputEvent;
   
@@ -551,9 +554,11 @@ nsresult TextEditor::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
     treatAsOneTransaction.emplace(*this);
   }
 
-  rv = DeleteSelectionAsSubAction(eNone, eStrip);
+  rv = DeleteSelectionAsSubAction(nsIEditor::eNone, IsTextEditor()
+                                                        ? nsIEditor::eNoStrip
+                                                        : nsIEditor::eStrip);
   if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteSelectionAsSubAction() failed");
+    NS_WARNING("EditorBase::DeleteSelectionAsSubAction(eNone) failed");
     return rv;
   }
 
