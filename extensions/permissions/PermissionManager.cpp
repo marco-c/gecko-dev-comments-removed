@@ -1515,16 +1515,6 @@ nsresult PermissionManager::CreateTable() {
                          ")"));
 }
 
-
-
-bool PermissionManager::HasExpired(uint32_t aExpireType,
-                                     int64_t aExpireTime) {
-  return (aExpireType == nsIPermissionManager::EXPIRE_TIME ||
-          (aExpireType == nsIPermissionManager::EXPIRE_SESSION &&
-           aExpireTime != 0)) &&
-         aExpireTime <= EXPIRY_NOW;
-}
-
 NS_IMETHODIMP
 PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
                                     const nsACString& aType,
@@ -1539,7 +1529,11 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
                  NS_ERROR_INVALID_ARG);
 
   
-  if (HasExpired(aExpireType, aExpireTime)) {
+  
+  if ((aExpireType == nsIPermissionManager::EXPIRE_TIME ||
+       (aExpireType == nsIPermissionManager::EXPIRE_SESSION &&
+        aExpireTime != 0)) &&
+      aExpireTime <= EXPIRY_NOW) {
     return NS_OK;
   }
 
@@ -2243,13 +2237,6 @@ NS_IMETHODIMP PermissionManager::GetAllWithTypePrefix(
         continue;
       }
 
-      
-      
-      
-      if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
-        continue;
-      }
-
       if (!aPrefix.IsEmpty() &&
           !StringBeginsWith(mTypeArray[permEntry.mType], aPrefix)) {
         continue;
@@ -2304,13 +2291,6 @@ PermissionManager::GetAllForPrincipal(
     for (const auto& permEntry : entry->GetPermissions()) {
       
       if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
-        continue;
-      }
-
-      
-      
-      
-      if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
         continue;
       }
 
@@ -2517,7 +2497,11 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     PermissionEntry permEntry = entry->GetPermission(aType);
 
     
-    if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
+    
+    if ((permEntry.mExpireType == nsIPermissionManager::EXPIRE_TIME ||
+         (permEntry.mExpireType == nsIPermissionManager::EXPIRE_SESSION &&
+          permEntry.mExpireTime != 0)) &&
+        permEntry.mExpireTime <= EXPIRY_NOW) {
       entry = nullptr;
       RemoveFromPrincipal(aPrincipal, mTypeArray[aType]);
     } else if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
@@ -2580,7 +2564,11 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     PermissionEntry permEntry = entry->GetPermission(aType);
 
     
-    if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
+    
+    if ((permEntry.mExpireType == nsIPermissionManager::EXPIRE_TIME ||
+         (permEntry.mExpireType == nsIPermissionManager::EXPIRE_SESSION &&
+          permEntry.mExpireTime != 0)) &&
+        permEntry.mExpireTime <= EXPIRY_NOW) {
       entry = nullptr;
       
       
