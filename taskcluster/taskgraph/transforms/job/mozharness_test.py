@@ -391,9 +391,6 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
     }
     if is_bitbar:
         job['run']['run-as-root'] = True
-        
-        
-        job['run']['tooltool-downloads'] = False
     configure_taskdesc_for_run(config, job, taskdesc, worker['implementation'])
 
 
