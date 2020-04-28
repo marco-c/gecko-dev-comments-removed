@@ -137,6 +137,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:XDRScriptGCThing<js::XDR_DECODE>\n"
 
          
+         "race:currentNameHasEscapes\n"
+
+         
          "race:SkARGB32_Blitter\n"
          "race:SkARGB32_Shader_Blitter\n"
          "race:SkARGB32_Opaque_Blitter\n"
