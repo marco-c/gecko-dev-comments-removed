@@ -117,6 +117,7 @@ class ProviderTopSites extends UrlbarProvider {
     sites = sites.map(link => ({
       type: link.searchTopSite ? "search" : "url",
       url: link.url,
+      isPinned: link.isPinned,
       
       
       
@@ -134,6 +135,7 @@ class ProviderTopSites extends UrlbarProvider {
               title: site.title,
               url: site.url,
               icon: site.favicon,
+              isPinned: site.isPinned,
             })
           );
 
@@ -198,6 +200,7 @@ class ProviderTopSites extends UrlbarProvider {
               engine: engine.name,
               query: "",
               icon: site.favicon,
+              isPinned: site.isPinned,
             })
           );
           addCallback(this, result);
