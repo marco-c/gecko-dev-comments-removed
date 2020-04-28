@@ -23,10 +23,11 @@ const Actions = require("devtools/client/netmonitor/src/actions/index");
 const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 const { PANELS } = require("devtools/client/netmonitor/src/constants");
 
+const RequestBlockingContextMenu = require("devtools/client/netmonitor/src/widgets/RequestBlockingContextMenu");
+
 const ENABLE_BLOCKING_LABEL = L10N.getStr(
   "netmonitor.actionbar.enableBlocking"
 );
-const ADD_BUTTON_TOOLTIP = L10N.getStr("netmonitor.actionbar.addBlockedUrl");
 const ADD_URL_PLACEHOLDER = L10N.getStr(
   "netmonitor.actionbar.blockSearchPlaceholder"
 );
@@ -42,6 +43,9 @@ class RequestBlockingPanel extends Component {
       toggleBlockingEnabled: PropTypes.func.isRequired,
       toggleBlockedUrl: PropTypes.func.isRequired,
       updateBlockedUrl: PropTypes.func.isRequired,
+      removeAllBlockedUrls: PropTypes.func.isRequired,
+      disableAllBlockedUrls: PropTypes.func.isRequired,
+      enableAllBlockedUrls: PropTypes.func.isRequired,
       blockingEnabled: PropTypes.bool.isRequired,
     };
   }
@@ -67,6 +71,24 @@ class RequestBlockingPanel extends Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.scrollToBottomTimeout) {
+      clearTimeout(this.scrollToBottomTimeout);
+    }
+  }
+
+  scrollToBottom() {
+    if (this.scrollToBottomTimeout) {
+      clearTimeout(this.scrollToBottomTimeout);
+    }
+    this.scrollToBottomTimeout = setTimeout(() => {
+      const { contents } = this.refs;
+      if (contents.scrollHeight > contents.offsetHeight) {
+        contents.scrollTo({ top: contents.scrollHeight });
+      }
+    }, 40);
+  }
+
   renderEnableBar() {
     return div(
       { className: "request-blocking-enable-bar" },
@@ -86,12 +108,7 @@ class RequestBlockingPanel extends Component {
           }),
           span({ className: "request-blocking-label" }, ENABLE_BLOCKING_LABEL)
         )
-      ),
-      button({
-        className: "devtools-button",
-        title: ADD_BUTTON_TOOLTIP,
-        onClick: () => this.refs.addInput.focus(),
-      })
+      )
     );
   }
 
@@ -171,7 +188,13 @@ class RequestBlockingPanel extends Component {
   }
 
   renderBlockedList() {
-    const { blockedUrls, blockingEnabled } = this.props;
+    const {
+      blockedUrls,
+      blockingEnabled,
+      removeAllBlockedUrls,
+      disableAllBlockedUrls,
+      enableAllBlockedUrls,
+    } = this.props;
 
     if (blockedUrls.length === 0) {
       return null;
@@ -183,26 +206,46 @@ class RequestBlockingPanel extends Component {
         : this.renderItemContent(item)
     );
 
-    return ul(
+    return div(
       {
-        className: `request-blocking-list ${blockingEnabled ? "" : "disabled"}`,
+        className: "request-blocking-contents",
+        ref: "contents",
+        onContextMenu: event => {
+          if (!this.contextMenu) {
+            this.contextMenu = new RequestBlockingContextMenu({
+              removeAllBlockedUrls,
+              disableAllBlockedUrls,
+              enableAllBlockedUrls,
+            });
+          }
+          this.contextMenu.open(event);
+        },
       },
-      ...listItems
+      ul(
+        {
+          className: `request-blocking-list ${
+            blockingEnabled ? "" : "disabled"
+          }`,
+        },
+        ...listItems
+      )
     );
   }
 
   renderAddForm() {
     const { addBlockedUrl } = this.props;
     return div(
-      { className: "request-blocking-add-form" },
+      { className: "request-blocking-footer" },
       form(
         {
+          className: "request-blocking-add-form",
           onSubmit: e => {
             const { addInput } = this.refs;
             e.preventDefault();
             addBlockedUrl(addInput.value);
             addInput.value = "";
             addInput.focus();
+            this.scrollToBottom();
           },
         },
         input({
@@ -230,11 +273,8 @@ class RequestBlockingPanel extends Component {
     return div(
       { className: "request-blocking-panel" },
       this.renderEnableBar(),
-      div(
-        { className: "request-blocking-contents" },
-        this.renderBlockedList(),
-        this.renderAddForm()
-      )
+      this.renderBlockedList(),
+      this.renderAddForm()
     );
   }
 }
@@ -251,6 +291,9 @@ module.exports = connect(
     addBlockedUrl: url => dispatch(Actions.addBlockedUrl(url)),
     removeBlockedUrl: url => dispatch(Actions.removeBlockedUrl(url)),
     toggleBlockedUrl: url => dispatch(Actions.toggleBlockedUrl(url)),
+    removeAllBlockedUrls: () => dispatch(Actions.removeAllBlockedUrls()),
+    enableAllBlockedUrls: () => dispatch(Actions.enableAllBlockedUrls()),
+    disableAllBlockedUrls: () => dispatch(Actions.disableAllBlockedUrls()),
     updateBlockedUrl: (oldUrl, newUrl) =>
       dispatch(Actions.updateBlockedUrl(oldUrl, newUrl)),
   })
