@@ -129,24 +129,24 @@ class JitRuntime {
  private:
   friend class JitRealm;
 
-  MainThreadData<uint64_t> nextCompilationId_{0};
+  MainThreadData<uint64_t> nextCompilationId_;
 
   
   
   
-  MainThreadData<js::UniquePtr<uint8_t>> ionOsrTempData_{nullptr};
+  MainThreadData<js::UniquePtr<uint8_t>> ionOsrTempData_;
 
   
-  WriteOnceData<uint32_t> exceptionTailOffset_{0};
+  WriteOnceData<uint32_t> exceptionTailOffset_;
 
   
-  WriteOnceData<uint32_t> bailoutTailOffset_{0};
+  WriteOnceData<uint32_t> bailoutTailOffset_;
 
   
-  WriteOnceData<uint32_t> profilerExitFrameTailOffset_{0};
+  WriteOnceData<uint32_t> profilerExitFrameTailOffset_;
 
   
-  WriteOnceData<uint32_t> enterJITOffset_{0};
+  WriteOnceData<uint32_t> enterJITOffset_;
 
   
   struct BailoutTable {
@@ -155,61 +155,58 @@ class JitRuntime {
     BailoutTable(uint32_t startOffset, uint32_t size)
         : startOffset(startOffset), size(size) {}
   };
-  using BailoutTableVector = Vector<BailoutTable, 4, SystemAllocPolicy>;
+  typedef Vector<BailoutTable, 4, SystemAllocPolicy> BailoutTableVector;
   WriteOnceData<BailoutTableVector> bailoutTables_;
 
   
-  WriteOnceData<uint32_t> bailoutHandlerOffset_{0};
+  WriteOnceData<uint32_t> bailoutHandlerOffset_;
 
   
   
-  WriteOnceData<uint32_t> argumentsRectifierOffset_{0};
-  WriteOnceData<uint32_t> argumentsRectifierReturnOffset_{0};
+  WriteOnceData<uint32_t> argumentsRectifierOffset_;
+  WriteOnceData<uint32_t> argumentsRectifierReturnOffset_;
 
   
-  WriteOnceData<uint32_t> invalidatorOffset_{0};
+  WriteOnceData<uint32_t> invalidatorOffset_;
 
   
-  WriteOnceData<uint32_t> valuePreBarrierOffset_{0};
-  WriteOnceData<uint32_t> stringPreBarrierOffset_{0};
-  WriteOnceData<uint32_t> objectPreBarrierOffset_{0};
-  WriteOnceData<uint32_t> shapePreBarrierOffset_{0};
-  WriteOnceData<uint32_t> objectGroupPreBarrierOffset_{0};
+  WriteOnceData<uint32_t> valuePreBarrierOffset_;
+  WriteOnceData<uint32_t> stringPreBarrierOffset_;
+  WriteOnceData<uint32_t> objectPreBarrierOffset_;
+  WriteOnceData<uint32_t> shapePreBarrierOffset_;
+  WriteOnceData<uint32_t> objectGroupPreBarrierOffset_;
 
   
-  WriteOnceData<uint32_t> freeStubOffset_{0};
+  WriteOnceData<uint32_t> freeStubOffset_;
 
   
-  WriteOnceData<uint32_t> lazyLinkStubOffset_{0};
+  WriteOnceData<uint32_t> lazyLinkStubOffset_;
 
   
-  WriteOnceData<uint32_t> interpreterStubOffset_{0};
+  WriteOnceData<uint32_t> interpreterStubOffset_;
 
   
   
-  WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_{0};
+  WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_;
 
   
-  using DebugHandlerArray =
-      mozilla::EnumeratedArray<DebugTrapHandlerKind,
-                               DebugTrapHandlerKind::Count,
-                               WriteOnceData<JitCode*>>;
-  DebugHandlerArray debugTrapHandlers_;
+  mozilla::EnumeratedArray<DebugTrapHandlerKind, DebugTrapHandlerKind::Count,
+                           WriteOnceData<JitCode*>>
+      debugTrapHandlers_;
 
   
-  MainThreadData<BaselineInterpreter> baselineInterpreter_;
+  BaselineInterpreter baselineInterpreter_;
 
   
-  WriteOnceData<JitCode*> trampolineCode_{nullptr};
+  WriteOnceData<JitCode*> trampolineCode_;
 
   
   
   using VMWrapperMap = HashMap<const VMFunction*, uint32_t, VMFunction>;
-  WriteOnceData<VMWrapperMap*> functionWrappers_{nullptr};
+  WriteOnceData<VMWrapperMap*> functionWrappers_;
 
   
-  using VMWrapperOffsets =
-      Vector<WriteOnceData<uint32_t>, 0, SystemAllocPolicy>;
+  using VMWrapperOffsets = Vector<uint32_t, 0, SystemAllocPolicy>;
   VMWrapperOffsets functionWrapperOffsets_;
 
   
@@ -219,28 +216,28 @@ class JitRuntime {
   MainThreadData<BaselineICFallbackCode> baselineICFallbackCode_;
 
   
-  UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_{nullptr};
+  UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
 #ifdef DEBUG
   
   
-  MainThreadData<uint32_t> ionBailAfter_{false};
+  MainThreadData<uint32_t> ionBailAfter_;
 #endif
 
   
   
   
-  using NumFinishedOffThreadTasksType =
-      mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>;
-  NumFinishedOffThreadTasksType numFinishedOffThreadTasks_{0};
+  typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
+      NumFinishedOffThreadTasksType;
+  NumFinishedOffThreadTasksType numFinishedOffThreadTasks_;
 
   
   using IonCompileTaskList = mozilla::LinkedList<js::jit::IonCompileTask>;
   MainThreadData<IonCompileTaskList> ionLazyLinkList_;
-  MainThreadData<size_t> ionLazyLinkListSize_{0};
+  MainThreadData<size_t> ionLazyLinkListSize_;
 
   
-  MainThreadData<uint64_t> disambiguationId_{0};
+  MainThreadData<uint64_t> disambiguationId_;
 
 #ifdef DEBUG
   
@@ -298,7 +295,7 @@ class JitRuntime {
   }
 
  public:
-  JitRuntime() = default;
+  JitRuntime();
   ~JitRuntime();
   MOZ_MUST_USE bool initialize(JSContext* cx);
 
@@ -338,9 +335,7 @@ class JitRuntime {
 
   JitCode* debugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 
-  BaselineInterpreter& baselineInterpreter() {
-    return baselineInterpreter_.ref();
-  }
+  BaselineInterpreter& baselineInterpreter() { return baselineInterpreter_; }
 
   TrampolinePtr getGenericBailoutHandler() const {
     return trampolineCode(bailoutHandlerOffset_);
