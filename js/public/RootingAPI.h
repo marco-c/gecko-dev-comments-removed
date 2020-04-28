@@ -917,6 +917,19 @@ namespace JS {
 
 class JS_PUBLIC_API AutoGCRooter;
 
+enum class AutoGCRooterKind : uint8_t {
+  Array,         
+  ValueArray,    
+  Parser,        
+  BinASTParser,  
+
+  WrapperVector, 
+  Wrapper,       
+  Custom,        
+
+  Limit
+};
+
 
 
 template <>
@@ -927,17 +940,21 @@ struct MapTypeToRootKind<void*> {
 using RootedListHeads =
     mozilla::EnumeratedArray<RootKind, RootKind::Limit, Rooted<void*>*>;
 
+using AutoRooterListHeads =
+    mozilla::EnumeratedArray<AutoGCRooterKind, AutoGCRooterKind::Limit,
+                             AutoGCRooter*>;
+
 
 
 class RootingContext {
   
   RootedListHeads stackRoots_;
   template <typename T>
-  friend class JS::Rooted;
+  friend class Rooted;
 
   
-  JS::AutoGCRooter* autoGCRooters_;
-  friend class JS::AutoGCRooter;
+  AutoRooterListHeads autoGCRooters_;
+  friend class AutoGCRooter;
 
   
   
@@ -949,6 +966,12 @@ class RootingContext {
   RootingContext();
 
   void traceStackRoots(JSTracer* trc);
+
+  
+  void traceAllGCRooters(JSTracer* trc);
+  void traceWrapperGCRooters(JSTracer* trc);
+  static void traceGCRooterList(JSTracer* trc, AutoGCRooter* head);
+
   void checkNoGCRooters();
 
   js::GeckoProfilerThread& geckoProfiler() { return geckoProfiler_; }
@@ -959,10 +982,10 @@ class RootingContext {
   
 
   
-  JS::Realm* realm_;
+  Realm* realm_;
 
   
-  JS::Zone* zone_;
+  Zone* zone_;
 
  public:
   
@@ -981,23 +1004,15 @@ class RootingContext {
 };
 
 class JS_PUBLIC_API AutoGCRooter {
- protected:
-  enum class Tag : uint8_t {
-    Array,         
-    ValueArray,    
-    Parser,        
-    BinASTParser,  
-
-    WrapperVector, 
-    Wrapper,       
-    Custom         
-  };
-
  public:
-  AutoGCRooter(JSContext* cx, Tag tag)
-      : AutoGCRooter(JS::RootingContext::get(cx), tag) {}
-  AutoGCRooter(JS::RootingContext* cx, Tag tag)
-      : down(cx->autoGCRooters_), stackTop(&cx->autoGCRooters_), tag_(tag) {
+  using Kind = AutoGCRooterKind;
+
+  AutoGCRooter(JSContext* cx, Kind kind)
+      : AutoGCRooter(JS::RootingContext::get(cx), kind) {}
+  AutoGCRooter(RootingContext* cx, Kind kind)
+      : down(cx->autoGCRooters_[kind]),
+        stackTop(&cx->autoGCRooters_[kind]),
+        kind_(kind) {
     MOZ_ASSERT(this != *stackTop);
     *stackTop = this;
   }
@@ -1007,12 +1022,11 @@ class JS_PUBLIC_API AutoGCRooter {
     *stackTop = down;
   }
 
-  
-  inline void trace(JSTracer* trc);
-  static void traceAll(JSContext* cx, JSTracer* trc);
-  static void traceAllWrappers(JSContext* cx, JSTracer* trc);
+  void trace(JSTracer* trc);
 
  private:
+  friend class RootingContext;
+
   AutoGCRooter* const down;
   AutoGCRooter** const stackTop;
 
@@ -1020,7 +1034,7 @@ class JS_PUBLIC_API AutoGCRooter {
 
 
 
-  Tag tag_;
+  Kind kind_;
 
   
   AutoGCRooter(AutoGCRooter& ida) = delete;
@@ -1514,4 +1528,4 @@ void CallTraceCallbackOnNonHeap(T* v, const TraceCallbacks& aCallbacks,
 
 } 
 
-#endif
+#endif 

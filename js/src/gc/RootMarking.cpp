@@ -153,19 +153,19 @@ void JSRuntime::finishPersistentRoots() {
   
 }
 
-inline void AutoGCRooter::trace(JSTracer* trc) {
-  switch (tag_) {
-    case Tag::Parser:
+void AutoGCRooter::trace(JSTracer* trc) {
+  switch (kind_) {
+    case Kind::Parser:
       frontend::TraceParser(trc, this);
-      return;
+      break;
 
-    case Tag::BinASTParser:
+    case Kind::BinASTParser:
 #if defined(JS_BUILD_BINAST)
       frontend::TraceBinASTParser(trc, this);
 #endif  
-      return;
+      break;
 
-    case Tag::ValueArray: {
+    case Kind::ValueArray: {
       
 
 
@@ -173,10 +173,10 @@ inline void AutoGCRooter::trace(JSTracer* trc) {
       AutoValueArray<1>* array = static_cast<AutoValueArray<1>*>(this);
       TraceRootRange(trc, array->length(), array->begin(),
                      "js::AutoValueArray");
-      return;
+      break;
     }
 
-    case Tag::Wrapper: {
+    case Kind::Wrapper: {
       
 
 
@@ -185,10 +185,10 @@ inline void AutoGCRooter::trace(JSTracer* trc) {
       TraceManuallyBarrieredEdge(
           trc, &static_cast<AutoWrapperRooter*>(this)->value.get(),
           "js::AutoWrapperRooter.value");
-      return;
+      break;
     }
 
-    case Tag::WrapperVector: {
+    case Kind::WrapperVector: {
       auto vector = static_cast<AutoWrapperVector*>(this);
       
 
@@ -199,38 +199,43 @@ inline void AutoGCRooter::trace(JSTracer* trc) {
         TraceManuallyBarrieredEdge(trc, &p->get(),
                                    "js::AutoWrapperVector.vector");
       }
-      return;
+      break;
     }
 
-    case Tag::Custom:
+    case Kind::Custom:
       static_cast<JS::CustomAutoRooter*>(this)->trace(trc);
-      return;
+      break;
 
-    case Tag::Array: {
+    case Kind::Array: {
       auto array = static_cast<AutoArrayRooter*>(this);
       if (Value* vp = array->begin()) {
         TraceRootRange(trc, array->length(), vp, "js::AutoArrayRooter");
       }
-      return;
+      break;
     }
-  }
 
-  MOZ_CRASH("Bad AutoGCRooter::Tag");
-}
-
-
-void AutoGCRooter::traceAll(JSContext* cx, JSTracer* trc) {
-  for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
-    gcr->trace(trc);
+    default:
+      MOZ_CRASH("Bad AutoGCRooter::Kind");
+      break;
   }
 }
 
+void JS::RootingContext::traceAllGCRooters(JSTracer* trc) {
+  for (AutoGCRooter* list : autoGCRooters_) {
+    traceGCRooterList(trc, list);
+  }
+}
 
-void AutoGCRooter::traceAllWrappers(JSContext* cx, JSTracer* trc) {
-  for (AutoGCRooter* gcr = cx->autoGCRooters_; gcr; gcr = gcr->down) {
-    if (gcr->tag_ == Tag::WrapperVector || gcr->tag_ == Tag::Wrapper) {
-      gcr->trace(trc);
-    }
+void JS::RootingContext::traceWrapperGCRooters(JSTracer* trc) {
+  traceGCRooterList(trc, autoGCRooters_[AutoGCRooter::Kind::Wrapper]);
+  traceGCRooterList(trc, autoGCRooters_[AutoGCRooter::Kind::WrapperVector]);
+}
+
+
+inline void JS::RootingContext::traceGCRooterList(JSTracer* trc,
+                                                  AutoGCRooter* head) {
+  for (AutoGCRooter* rooter = head; rooter; rooter = rooter->down) {
+    rooter->trace(trc);
   }
 }
 
@@ -365,7 +370,7 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     jit::TraceJitActivations(cx, trc);
 
     
-    AutoGCRooter::traceAll(cx, trc);
+    cx->traceAllGCRooters(trc);
 
     
     TraceExactStackRoots(cx, trc);
