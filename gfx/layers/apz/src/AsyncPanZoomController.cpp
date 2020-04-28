@@ -493,13 +493,6 @@ typedef PlatformSpecificStateBase
 
 
 
-
-
-
-
-
-
-
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -3156,12 +3149,7 @@ void AsyncPanZoomController::UpdateWithTouchAtDevicePoint(
 }
 
 Maybe<CompositionPayload> AsyncPanZoomController::NotifyScrollSampling() {
-  if (StaticPrefs::apz_frame_delay_enabled()) {
-    return std::move(mCompositedScrollPayload);
-  }
-  
-  
-  return std::move(mScrollPayload);
+  return std::move(mCompositedScrollPayload);
 }
 
 bool AsyncPanZoomController::AttemptScroll(
@@ -4187,7 +4175,7 @@ CSSRect AsyncPanZoomController::GetEffectiveLayoutViewport(
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return mLastContentPaintMetrics.GetLayoutViewport();
   }
-  if (aMode == eForCompositing && StaticPrefs::apz_frame_delay_enabled()) {
+  if (aMode == eForCompositing) {
     return mCompositedLayoutViewport;
   }
   return Metrics().GetLayoutViewport();
@@ -4198,7 +4186,7 @@ CSSPoint AsyncPanZoomController::GetEffectiveScrollOffset(
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return mLastContentPaintMetrics.GetVisualViewportOffset();
   }
-  if (aMode == eForCompositing && StaticPrefs::apz_frame_delay_enabled()) {
+  if (aMode == eForCompositing) {
     return mCompositedScrollOffset;
   }
   return Metrics().GetScrollOffset();
@@ -4209,7 +4197,7 @@ CSSToParentLayerScale2D AsyncPanZoomController::GetEffectiveZoom(
   if (aMode == eForCompositing && mScrollMetadata.IsApzForceDisabled()) {
     return mLastContentPaintMetrics.GetZoom();
   }
-  if (aMode == eForCompositing && StaticPrefs::apz_frame_delay_enabled()) {
+  if (aMode == eForCompositing) {
     return mCompositedZoom;
   }
   return Metrics().GetZoom();
@@ -4223,9 +4211,6 @@ bool AsyncPanZoomController::SampleCompositedAsyncTransform(
     mCompositedLayoutViewport = Metrics().GetLayoutViewport();
     mCompositedScrollOffset = Metrics().GetScrollOffset();
     mCompositedZoom = Metrics().GetZoom();
-
-    
-    
     mCompositedScrollPayload = std::move(mScrollPayload);
     return true;
   }

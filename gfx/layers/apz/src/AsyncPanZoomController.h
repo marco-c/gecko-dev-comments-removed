@@ -1166,10 +1166,6 @@ class AsyncPanZoomController {
 
 
 
-
-
-
-
   bool SampleCompositedAsyncTransform(
       const RecursiveMutexAutoLock& aProofOfLock);
 
