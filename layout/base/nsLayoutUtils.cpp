@@ -2238,8 +2238,9 @@ nsPoint nsLayoutUtils::GetEventCoordinatesRelativeTo(
       nsPoint pt(presContext->DevPixelsToAppUnits(aPoint.x),
                  presContext->DevPixelsToAppUnits(aPoint.y));
       pt = pt - view->ViewToWidgetOffset();
-      pt = pt.RemoveResolution(
-          GetCurrentAPZResolutionScale(presContext->PresShell()));
+      if (aFrame.mViewportType == ViewportType::Layout) {
+        pt = ViewportUtils::VisualToLayout(pt, frame->PresShell());
+      }
       return pt;
     }
   }
@@ -2251,7 +2252,7 @@ nsPoint nsLayoutUtils::GetEventCoordinatesRelativeTo(
   const nsIFrame* rootFrame = frame;
   bool transformFound = false;
   for (const nsIFrame* f = frame; f; f = GetCrossDocParentFrame(f)) {
-    if (f->IsTransformed()) {
+    if (f->IsTransformed() || ViewportUtils::IsZoomedContentRoot(f)) {
       transformFound = true;
     }
 
@@ -2275,18 +2276,12 @@ nsPoint nsLayoutUtils::GetEventCoordinatesRelativeTo(
   int32_t rootAPD = rootFrame->PresContext()->AppUnitsPerDevPixel();
   int32_t localAPD = frame->PresContext()->AppUnitsPerDevPixel();
   widgetToView = widgetToView.ScaleToOtherAppUnits(rootAPD, localAPD);
-  PresShell* presShell = aFrame.mFrame->PresShell();
-
-  
-  
-  widgetToView =
-      widgetToView.RemoveResolution(GetCurrentAPZResolutionScale(presShell));
 
   
 
 
   if (transformFound || nsSVGUtils::IsInSVGTextSubtree(frame)) {
-    return TransformRootPointToFrame(ViewportType::Layout, aFrame,
+    return TransformRootPointToFrame(ViewportType::Visual, aFrame,
                                      widgetToView);
   }
 
