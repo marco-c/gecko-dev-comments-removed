@@ -8,6 +8,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/FlushType.h"
+#include "mozilla/HTMLEditor.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"  
 #include "mozilla/TextEditor.h"
@@ -732,7 +733,7 @@ static const struct PhysicalCommand {
 nsresult SelectionMoveCommands::DoCommand(Command aCommand,
                                           TextEditor& aTextEditor,
                                           nsIPrincipal* aPrincipal) const {
-  RefPtr<Document> document = aTextEditor.GetDocument();
+  RefPtr<dom::Document> document = aTextEditor.GetDocument();
   if (document) {
     
     

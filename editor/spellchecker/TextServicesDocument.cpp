@@ -23,6 +23,7 @@
 #include "nsIContent.h"                
 #include "nsID.h"                      
 #include "nsIEditor.h"                 
+#include "nsIEditorSpellCheck.h"       
 #include "nsINode.h"                   
 #include "nsISelectionController.h"    
 #include "nsISupportsBase.h"           

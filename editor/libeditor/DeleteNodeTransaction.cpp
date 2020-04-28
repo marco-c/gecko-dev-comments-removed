@@ -8,6 +8,7 @@
 #include "HTMLEditUtils.h"
 #include "mozilla/EditorBase.h"
 #include "mozilla/SelectionState.h"  
+#include "mozilla/TextEditor.h"
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsAString.h"

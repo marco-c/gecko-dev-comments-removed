@@ -12,6 +12,7 @@
 #include "mozilla/EditorBase.h"            
 #include "mozilla/EventListenerManager.h"  
 #include "mozilla/EventStateManager.h"     
+#include "mozilla/HTMLEditor.h"            
 #include "mozilla/IMEStateManager.h"       
 #include "mozilla/Preferences.h"           
 #include "mozilla/PresShell.h"             
