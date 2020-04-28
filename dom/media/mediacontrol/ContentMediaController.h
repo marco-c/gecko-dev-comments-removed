@@ -26,7 +26,7 @@ class BrowsingContext;
 
 
 
-enum class ControlledMediaState : uint32_t {
+enum class MediaPlaybackState : uint32_t {
   eStarted,
   ePlayed,
   ePaused,
@@ -90,9 +90,9 @@ class ContentMediaAgent {
 
   
   
-  virtual void NotifyMediaStateChanged(
+  virtual void NotifyPlaybackStateChanged(
       const ContentControlKeyEventReceiver* aMedia,
-      ControlledMediaState aState) = 0;
+      MediaPlaybackState aState) = 0;
 
   
   
@@ -143,8 +143,8 @@ class ContentMediaController final : public ContentMediaAgent,
   
   void AddReceiver(ContentControlKeyEventReceiver* aListener) override;
   void RemoveReceiver(ContentControlKeyEventReceiver* aListener) override;
-  void NotifyMediaStateChanged(const ContentControlKeyEventReceiver* aMedia,
-                               ControlledMediaState aState) override;
+  void NotifyPlaybackStateChanged(const ContentControlKeyEventReceiver* aMedia,
+                                  MediaPlaybackState aState) override;
   void NotifyAudibleStateChanged(const ContentControlKeyEventReceiver* aMedia,
                                  MediaAudibleState aState) override;
   void NotifyPictureInPictureModeChanged(

@@ -83,7 +83,7 @@ class MediaController final
 
   
   
-  void NotifyMediaStateChanged(ControlledMediaState aState);
+  void NotifyMediaPlaybackChanged(MediaPlaybackState aState);
   void NotifyMediaAudibleChanged(MediaAudibleState aState);
 
  private:
