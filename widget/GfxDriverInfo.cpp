@@ -574,6 +574,9 @@ const GfxDeviceFamily* GfxDriverInfo::GetDeviceFamily(DeviceFamily id) {
       APPEND_RANGE(0x7310, 0x731f);
       APPEND_RANGE(0x9830, 0x986f);
       APPEND_RANGE(0x9900, 0x99ff);
+      
+      APPEND_DEVICE(0x15dd);
+      APPEND_DEVICE(0x15d8);
       break;
     
     case DeviceFamily::Max:
