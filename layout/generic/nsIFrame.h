@@ -4088,6 +4088,12 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+
+  inline bool IsMasonry(mozilla::LogicalAxis aAxis) const;
+
+  
+
+
   inline bool IsTableCaption() const;
 
   inline bool IsBlockOutside() const;

@@ -45,7 +45,7 @@ struct ComputedGridTrackInfo {
       nsTArray<uint32_t>&& aStates, nsTArray<bool>&& aRemovedRepeatTracks,
       uint32_t aRepeatFirstTrack,
       nsTArray<nsTArray<StyleCustomIdent>>&& aResolvedLineNames,
-      bool aIsSubgrid)
+      bool aIsSubgrid, bool aIsMasonry)
       : mNumLeadingImplicitTracks(aNumLeadingImplicitTracks),
         mNumExplicitTracks(aNumExplicitTracks),
         mStartFragmentTrack(aStartFragmentTrack),
@@ -56,7 +56,8 @@ struct ComputedGridTrackInfo {
         mRemovedRepeatTracks(aRemovedRepeatTracks),
         mResolvedLineNames(std::move(aResolvedLineNames)),
         mRepeatFirstTrack(aRepeatFirstTrack),
-        mIsSubgrid(aIsSubgrid) {}
+        mIsSubgrid(aIsSubgrid),
+        mIsMasonry(aIsMasonry) {}
   uint32_t mNumLeadingImplicitTracks;
   uint32_t mNumExplicitTracks;
   uint32_t mStartFragmentTrack;
@@ -74,6 +75,7 @@ struct ComputedGridTrackInfo {
   nsTArray<nsTArray<StyleCustomIdent>> mResolvedLineNames;
   uint32_t mRepeatFirstTrack;
   bool mIsSubgrid;
+  bool mIsMasonry;
 };
 
 struct ComputedGridLineInfo {
@@ -243,6 +245,14 @@ class nsGridContainerFrame final : public nsContainerFrame {
     return GetProperty(ExplicitNamedAreasProperty());
   }
 
+  using nsContainerFrame::IsMasonry;
+
+  
+  bool IsMasonry() const {
+    return HasAnyStateBits(NS_STATE_GRID_IS_ROW_MASONRY |
+                           NS_STATE_GRID_IS_COL_MASONRY);
+  }
+
   
   bool IsSubgrid(LogicalAxis aAxis) const {
     return HasAnyStateBits(aAxis == mozilla::eLogicalAxisBlock
@@ -298,6 +308,13 @@ class nsGridContainerFrame final : public nsContainerFrame {
   
   nsGridContainerFrame* ParentGridContainerForSubgrid() const;
 
+  
+  enum class SizingConstraint {
+    MinContent,   
+    MaxContent,   
+    NoConstraint  
+  };
+
  protected:
   typedef mozilla::LogicalPoint LogicalPoint;
   typedef mozilla::LogicalRect LogicalRect;
@@ -352,6 +369,7 @@ class nsGridContainerFrame final : public nsContainerFrame {
 
   nscoord ReflowChildren(GridReflowInput& aState,
                          const LogicalRect& aContentArea,
+                         const nsSize& aContainerSize,
                          ReflowOutput& aDesiredSize, nsReflowStatus& aStatus);
 
   
@@ -445,7 +463,8 @@ class nsGridContainerFrame final : public nsContainerFrame {
   
 
 
-  nsFrameState ComputeSelfSubgridBits() const;
+
+  nsFrameState ComputeSelfSubgridMasonryBits() const;
 
   
   bool WillHaveAtLeastOneTrackInAxis(LogicalAxis aAxis) const;
@@ -504,6 +523,21 @@ class nsGridContainerFrame final : public nsContainerFrame {
                          const GridReflowInput& aState,
                          const LogicalRect& aContentArea,
                          ReflowOutput& aDesiredSize, nsReflowStatus& aStatus);
+
+  
+
+
+
+
+
+
+
+  nscoord MasonryLayout(GridReflowInput& aState,
+                        const LogicalRect& aContentArea,
+                        SizingConstraint aConstraint,
+                        ReflowOutput& aDesiredSize, nsReflowStatus& aStatus,
+                        Fragmentainer* aFragmentainer,
+                        const nsSize& aContainerSize);
 
   
   UsedTrackSizes* GetUsedTrackSizes() const;

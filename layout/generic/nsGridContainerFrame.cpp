@@ -33,6 +33,7 @@
 #include "nsHashKeys.h"
 #include "nsFieldSetFrame.h"
 #include "nsIFrameInlines.h"
+#include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsReadableUtils.h"
 #include "nsTableWrapperFrame.h"
@@ -49,6 +50,7 @@ using TrackListValue =
     StyleGenericTrackListValue<LengthPercentage, StyleInteger>;
 using TrackRepeat = StyleGenericTrackRepeat<LengthPercentage, StyleInteger>;
 using NameList = StyleOwnedSlice<StyleCustomIdent>;
+using SizingConstraint = nsGridContainerFrame::SizingConstraint;
 
 static const int32_t kMaxLine = StyleMAX_GRID_LINE;
 static const int32_t kMinLine = StyleMIN_GRID_LINE;
@@ -58,13 +60,6 @@ static const uint32_t kAutoLine = kTranslatedMaxLine + 3457U;
 
 static const nsFrameState kIsSubgridBits =
     (NS_STATE_GRID_IS_COL_SUBGRID | NS_STATE_GRID_IS_ROW_SUBGRID);
-
-
-enum class SizingConstraint {
-  MinContent,   
-  MaxContent,   
-  NoConstraint  
-};
 
 namespace mozilla {
 
@@ -77,7 +72,7 @@ GridTemplate::LineNameLists(bool aIsSubgrid) const {
   if (IsSubgrid() && aIsSubgrid) {
     return AsSubgrid()->names.AsSpan();
   }
-  MOZ_ASSERT(IsNone() || (IsSubgrid() && !aIsSubgrid));
+  MOZ_ASSERT(IsNone() || IsMasonry() || (IsSubgrid() && !aIsSubgrid));
   return {};
 }
 
@@ -267,12 +262,24 @@ struct nsGridContainerFrame::TrackSize {
     eBreakBefore =              0x800,
     eFitContent =              0x1000,
     eInfinitelyGrowable =      0x2000,
+
+    
+    
+    
+    
+    
+    eItemStretchSize =            0x1,
+    
+    eClampToLimit =               0x2,
+    
+    eItemHasAutoMargin =          0x4,
     
   };
 
   StateBits Initialize(nscoord aPercentageBasis, const StyleTrackSize&);
   bool IsFrozen() const { return mState & eFrozen; }
 #ifdef DEBUG
+  static void DumpStateBits(StateBits aState);
   void Dump() const;
 #endif
 
@@ -571,41 +578,46 @@ struct nsGridContainerFrame::GridItemInfo {
     eSelfBaseline =           0x8, 
     
     eContentBaseline =       0x10,
-    eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline,
     
     
-    eApplyAutoMinSize =      0x20,
-    
-    eClampMarginBoxMinSize = 0x40,
-    eIsSubgrid =             0x80,
     
     
-    eStartEdge =            0x100,
-    eEndEdge =              0x200,
+    eEndSideBaseline =       0x20,
+    eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline |
+                       eEndSideBaseline,
+    
+    
+    eApplyAutoMinSize =      0x40,
+    
+    eClampMarginBoxMinSize = 0x80,
+    eIsSubgrid =            0x100,
+    
+    
+    eStartEdge =            0x200,
+    eEndEdge =              0x400,
     eEdgeBits = eStartEdge | eEndEdge,
+    
+    eAutoPlacement =        0x800,
+    
+    eIsLastItemInMasonryTrack =   0x1000,
     
   };
 
-  explicit GridItemInfo(nsIFrame* aFrame, const GridArea& aArea)
-      : mFrame(aFrame), mArea(aArea) {
-    mState[eLogicalAxisBlock] = StateBits(0);
-    mState[eLogicalAxisInline] = StateBits(0);
-    nsGridContainerFrame* gridFrame = GetGridContainerFrame(mFrame);
-    if (gridFrame) {
-      auto parentWM = aFrame->GetParent()->GetWritingMode();
-      bool isOrthogonal = parentWM.IsOrthogonalTo(gridFrame->GetWritingMode());
-      if (gridFrame->IsColSubgrid()) {
-        mState[isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline] =
-            StateBits::eIsSubgrid;
-      }
-      if (gridFrame->IsRowSubgrid()) {
-        mState[isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock] =
-            StateBits::eIsSubgrid;
-      }
-    }
-    mBaselineOffset[eLogicalAxisBlock] = nscoord(0);
-    mBaselineOffset[eLogicalAxisInline] = nscoord(0);
+  GridItemInfo(nsIFrame* aFrame, const GridArea& aArea);
+
+  static bool BaselineAlignmentAffectsEndSide(StateBits state) {
+    return state & StateBits::eEndSideBaseline;
   }
+
+  
+
+
+
+
+
+
+  void MaybeInhibitSubgridInMasonry(nsGridContainerFrame* aParent,
+                                    uint32_t aGridAxisTrackCount);
 
   
 
@@ -707,6 +719,50 @@ struct nsGridContainerFrame::GridItemInfo {
     return a->mArea.mRows.mStart < b->mArea.mRows.mStart;
   }
 
+  
+  
+  
+  
+  static bool RowMasonryOrdered(const GridItemInfo* a, const GridItemInfo* b) {
+    return a->mArea.mRows.mStart == 0 && b->mArea.mRows.mStart != 0 &&
+           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+  }
+  static bool ColMasonryOrdered(const GridItemInfo* a, const GridItemInfo* b) {
+    return a->mArea.mCols.mStart == 0 && b->mArea.mCols.mStart != 0 &&
+           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+  }
+
+  
+  
+  
+  
+  
+  static bool RowMasonryDefiniteFirst(const GridItemInfo* a,
+                                      const GridItemInfo* b) {
+    bool isContinuationA = a->mFrame->GetPrevInFlow();
+    bool isContinuationB = b->mFrame->GetPrevInFlow();
+    if (isContinuationA != isContinuationB) {
+      return isContinuationA;
+    }
+    auto masonryA = a->mArea.mRows.mStart;
+    auto gridA = a->mState[eLogicalAxisInline] & StateBits::eAutoPlacement;
+    auto masonryB = b->mArea.mRows.mStart;
+    auto gridB = b->mState[eLogicalAxisInline] & StateBits::eAutoPlacement;
+    return (masonryA == 0 ? masonryB != 0 : (masonryB != 0 && gridA < gridB)) &&
+           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+  }
+  static bool ColMasonryDefiniteFirst(const GridItemInfo* a,
+                                      const GridItemInfo* b) {
+    MOZ_ASSERT(!a->mFrame->GetPrevInFlow() && !b->mFrame->GetPrevInFlow(),
+               "fragmentation not supported in inline axis");
+    auto masonryA = a->mArea.mCols.mStart;
+    auto gridA = a->mState[eLogicalAxisBlock] & StateBits::eAutoPlacement;
+    auto masonryB = b->mArea.mCols.mStart;
+    auto gridB = b->mState[eLogicalAxisBlock] & StateBits::eAutoPlacement;
+    return (masonryA == 0 ? masonryB != 0 : (masonryB != 0 && gridA < gridB)) &&
+           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
+  }
+
   nsIFrame* const mFrame;
   GridArea mArea;
   
@@ -722,6 +778,28 @@ using GridItemInfo = nsGridContainerFrame::GridItemInfo;
 using ItemState = GridItemInfo::StateBits;
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ItemState)
 
+GridItemInfo::GridItemInfo(nsIFrame* aFrame, const GridArea& aArea)
+    : mFrame(aFrame), mArea(aArea) {
+  mState[eLogicalAxisBlock] =
+      StateBits(mArea.mRows.mStart == kAutoLine ? eAutoPlacement : 0);
+  mState[eLogicalAxisInline] =
+      StateBits(mArea.mCols.mStart == kAutoLine ? eAutoPlacement : 0);
+  if (auto* gridFrame = GetGridContainerFrame(mFrame)) {
+    auto parentWM = aFrame->GetParent()->GetWritingMode();
+    bool isOrthogonal = parentWM.IsOrthogonalTo(gridFrame->GetWritingMode());
+    if (gridFrame->IsColSubgrid()) {
+      mState[isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline] |=
+          StateBits::eIsSubgrid;
+    }
+    if (gridFrame->IsRowSubgrid()) {
+      mState[isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock] |=
+          StateBits::eIsSubgrid;
+    }
+  }
+  mBaselineOffset[eLogicalAxisBlock] = nscoord(0);
+  mBaselineOffset[eLogicalAxisInline] = nscoord(0);
+}
+
 void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
   mArea.LineRangeForAxis(aAxis).ReverseDirection(aGridEnd);
   ItemState& state = mState[aAxis];
@@ -733,6 +811,31 @@ void GridItemInfo::ReverseDirection(LogicalAxis aAxis, uint32_t aGridEnd) {
     newState |= ItemState::eStartEdge;
   }
   state = newState;
+}
+
+void GridItemInfo::MaybeInhibitSubgridInMasonry(nsGridContainerFrame* aParent,
+                                                uint32_t aGridAxisTrackCount) {
+  if (IsSubgrid(eLogicalAxisInline) && aParent->IsMasonry(eLogicalAxisBlock) &&
+      mArea.mRows.mStart != 0 && mArea.mCols.Extent() != aGridAxisTrackCount &&
+      (mState[eLogicalAxisInline] & eAutoPlacement)) {
+    mState[eLogicalAxisInline] &= StateBits(~StateBits::eIsSubgrid);
+    if (aParent->GetWritingMode().IsOrthogonalTo(mFrame->GetWritingMode())) {
+      mFrame->RemoveStateBits(NS_STATE_GRID_IS_ROW_SUBGRID);
+    } else {
+      mFrame->RemoveStateBits(NS_STATE_GRID_IS_COL_SUBGRID);
+    }
+    return;
+  }
+  if (IsSubgrid(eLogicalAxisBlock) && aParent->IsMasonry(eLogicalAxisInline) &&
+      mArea.mCols.mStart != 0 && mArea.mRows.Extent() != aGridAxisTrackCount &&
+      (mState[eLogicalAxisBlock] & eAutoPlacement)) {
+    mState[eLogicalAxisBlock] &= StateBits(~StateBits::eIsSubgrid);
+    if (aParent->GetWritingMode().IsOrthogonalTo(mFrame->GetWritingMode())) {
+      mFrame->RemoveStateBits(NS_STATE_GRID_IS_COL_SUBGRID);
+    } else {
+      mFrame->RemoveStateBits(NS_STATE_GRID_IS_ROW_SUBGRID);
+    }
+  }
 }
 
 
@@ -834,6 +937,9 @@ void nsGridContainerFrame::GridItemInfo::Dump() const {
       }
       printf(") ");
     }
+    if (state & ItemState::eAutoPlacement) {
+      printf("masonry-auto ");
+    }
     if (state & ItemState::eIsSubgrid) {
       printf("subgrid ");
     }
@@ -845,6 +951,9 @@ void nsGridContainerFrame::GridItemInfo::Dump() const {
     }
     if (state & ItemState::eClampMarginBoxMinSize) {
       printf("clamp ");
+    }
+    if (state & ItemState::eIsLastItemInMasonryTrack) {
+      printf("last-in-track ");
     }
     if (state & ItemState::eFirstBaseline) {
       printf("first baseline %s-alignment ",
@@ -1819,7 +1928,8 @@ struct nsGridContainerFrame::Tracks {
         mGridGap(NS_UNCONSTRAINEDSIZE),
         mStateUnion(TrackSize::StateBits(0)),
         mAxis(aAxis),
-        mCanResolveLineRangeSize(false) {
+        mCanResolveLineRangeSize(false),
+        mIsMasonry(false) {
     mBaselineSubtreeAlign[BaselineSharingGroup::First] = StyleAlignFlags::AUTO;
     mBaselineSubtreeAlign[BaselineSharingGroup::Last] = StyleAlignFlags::AUTO;
     mBaseline[BaselineSharingGroup::First] = NS_INTRINSIC_ISIZE_UNKNOWN;
@@ -1859,6 +1969,47 @@ struct nsGridContainerFrame::Tracks {
 
   void InitializeItemBaselines(GridReflowInput& aState,
                                nsTArray<GridItemInfo>& aGridItems);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  struct BaselineAlignmentSet {
+    bool MatchTrackAlignment(StyleAlignFlags aTrackAlignment) const {
+      if (mTrackAlignmentSet == BaselineAlignmentSet::StartStretch) {
+        return aTrackAlignment == StyleAlignFlags::START ||
+               (aTrackAlignment == StyleAlignFlags::STRETCH &&
+                mItemSet == BaselineAlignmentSet::FirstItems);
+      }
+      return aTrackAlignment == StyleAlignFlags::END ||
+             (aTrackAlignment == StyleAlignFlags::STRETCH &&
+              mItemSet == BaselineAlignmentSet::LastItems);
+    }
+
+    enum ItemSet { FirstItems, LastItems };
+    ItemSet mItemSet = FirstItems;
+    enum TrackAlignmentSet { StartStretch, EndStretch };
+    TrackAlignmentSet mTrackAlignmentSet = StartStretch;
+  };
+  void InitializeItemBaselinesInMasonryAxis(
+      GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
+      BaselineAlignmentSet aSet, const nsSize& aContainerSize,
+      nsTArray<nscoord>& aTrackSizes,
+      nsTArray<ItemBaselineData>& aFirstBaselineItems,
+      nsTArray<ItemBaselineData>& aLastBaselineItems);
 
   
 
@@ -2333,8 +2484,10 @@ struct nsGridContainerFrame::Tracks {
 
 
 
-  void AlignJustifyContent(const nsStylePosition* aStyle, WritingMode aWM,
-                           nscoord aContentBoxSize, bool aIsSubgridded);
+  void AlignJustifyContent(const nsStylePosition* aStyle,
+                           StyleContentDistribution aAligmentStyleValue,
+                           WritingMode aWM, nscoord aContentBoxSize,
+                           bool aIsSubgridded);
 
   nscoord GridLineEdge(uint32_t aLine, GridLineSide aSide) const {
     if (MOZ_UNLIKELY(mSizes.IsEmpty())) {
@@ -2410,13 +2563,7 @@ struct nsGridContainerFrame::Tracks {
   }
 
 #ifdef DEBUG
-  void Dump() const {
-    for (uint32_t i = 0, len = mSizes.Length(); i < len; ++i) {
-      printf("  %d: ", i);
-      mSizes[i].Dump();
-      printf("\n");
-    }
-  }
+  void Dump() const;
 #endif
 
   AutoTArray<TrackSize, 32> mSizes;
@@ -2434,7 +2581,29 @@ struct nsGridContainerFrame::Tracks {
   PerBaseline<StyleAlignFlags> mBaselineSubtreeAlign;
   
   bool mCanResolveLineRangeSize;
+  
+  bool mIsMasonry;
 };
+
+#ifdef DEBUG
+void nsGridContainerFrame::Tracks::Dump() const {
+  printf("%zu %s %s ", mSizes.Length(), mIsMasonry ? "masonry" : "grid",
+         mAxis == eLogicalAxisBlock ? "rows" : "columns");
+  TrackSize::DumpStateBits(mStateUnion);
+  printf("\n");
+  for (uint32_t i = 0, len = mSizes.Length(); i < len; ++i) {
+    printf("  %d: ", i);
+    mSizes[i].Dump();
+    printf("\n");
+  }
+  double px = AppUnitsPerCSSPixel();
+  printf("Baselines: %.2fpx %2fpx\n",
+         mBaseline[BaselineSharingGroup::First] / px,
+         mBaseline[BaselineSharingGroup::Last] / px);
+  printf("Gap: %.2fpx\n", mGridGap / px);
+  printf("ContentBoxSize: %.2fpx\n", mContentBoxSize / px);
+}
+#endif
 
 
 
@@ -2527,7 +2696,9 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
         }
       }
     }
-    if (mStartRow == numRows) {
+    if (mStartRow == numRows ||
+        aGridContainerFrame->IsMasonry(eLogicalAxisBlock)) {
+      
       
       mFragBStart = aConsumedBSize;
     }
@@ -2567,6 +2738,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
           item->mState[1] |= itemInfo.mState[1] & ItemState::eAllBaselineBits;
           item->mBaselineOffset[0] = itemInfo.mBaselineOffset[0];
           item->mBaselineOffset[1] = itemInfo.mBaselineOffset[1];
+          item->mState[0] |= itemInfo.mState[0] & ItemState::eAutoPlacement;
+          item->mState[1] |= itemInfo.mState[1] & ItemState::eAutoPlacement;
           break;
         }
       }
@@ -2636,6 +2809,18 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
                                        const LogicalRect& aGridCB) const;
 
   
+
+
+
+  void AlignJustifyContentInMasonryAxis(nscoord aMasonryBoxSize,
+                                        nscoord aContentBoxSize);
+  
+
+
+  void AlignJustifyTracksInMasonryAxis(const LogicalSize& aContentSize,
+                                       const nsSize& aContainerSize);
+
+  
   static void CollectSubgridForAxis(LogicalAxis aAxis, WritingMode aContainerWM,
                                     const LineRange& aRangeInAxis,
                                     const LineRange& aRangeInOppositeAxis,
@@ -2697,6 +2882,13 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
                               subgrid->mGridItems, aResult);
       }
     }
+  }
+
+  Tracks& TracksFor(LogicalAxis aAxis) {
+    return aAxis == eLogicalAxisBlock ? mRows : mCols;
+  }
+  const Tracks& TracksFor(LogicalAxis aAxis) const {
+    return aAxis == eLogicalAxisBlock ? mRows : mCols;
   }
 
   CSSOrderAwareFrameIterator mIter;
@@ -2774,6 +2966,10 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       mSkipSides = aFrame->PreReflowBlockLevelLogicalSkipSides();
       mBorderPadding.ApplySkipSides(mSkipSides);
     }
+    mCols.mIsMasonry = aFrame->IsMasonry(eLogicalAxisInline);
+    mRows.mIsMasonry = aFrame->IsMasonry(eLogicalAxisBlock);
+    MOZ_ASSERT(!(mCols.mIsMasonry && mRows.mIsMasonry),
+               "can't have masonry layout in both axes");
   }
 };
 
@@ -3332,6 +3528,12 @@ void nsGridContainerFrame::GridReflowInput::CalculateTrackSizesForAxis(
       aAxis == eLogicalAxisInline ? mColFunctions : mRowFunctions;
   const auto& gapStyle = aAxis == eLogicalAxisInline ? mGridStyle->mColumnGap
                                                      : mGridStyle->mRowGap;
+  if (tracks.mIsMasonry) {
+    
+    tracks.Initialize(sizingFunctions, gapStyle, 2, aContentBoxSize);
+    tracks.mCanResolveLineRangeSize = true;
+    return;
+  }
   uint32_t gridEnd =
       aAxis == eLogicalAxisInline ? aGrid.mGridColEnd : aGrid.mGridRowEnd;
   Maybe<TrackSizingFunctions> fallbackTrackSizing;
@@ -3381,7 +3583,8 @@ void nsGridContainerFrame::GridReflowInput::CalculateTrackSizesForAxis(
   }
 
   if (aContentBoxSize != NS_UNCONSTRAINEDSIZE) {
-    tracks.AlignJustifyContent(mGridStyle, mWM, aContentBoxSize,
+    auto alignment = mGridStyle->UsedContentAlignment(tracks.mAxis);
+    tracks.AlignJustifyContent(mGridStyle, alignment, mWM, aContentBoxSize,
                                isSubgriddedAxis);
   } else if (!useParentGaps) {
     const nscoord gridGap = tracks.mGridGap;
@@ -3451,16 +3654,15 @@ static void AlignJustifySelf(StyleAlignFlags aAlignment, LogicalAxis aAxis,
 }
 
 static void AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
-                      StyleAlignSelf aAlignSelf, nscoord aCBSize,
+                      StyleAlignFlags aAlignSelf, nscoord aCBSize,
                       const WritingMode aCBWM, const ReflowInput& aRI,
-                      const LogicalSize& aSize, LogicalPoint* aPos) {
-  auto alignSelf = aAlignSelf._0;
-
-  AlignJustifyFlags flags = AlignJustifyFlags::NoFlags;
-  if (alignSelf & StyleAlignFlags::SAFE) {
+                      const LogicalSize& aSize, AlignJustifyFlags aFlags,
+                      LogicalPoint* aPos) {
+  AlignJustifyFlags flags = aFlags;
+  if (aAlignSelf & StyleAlignFlags::SAFE) {
     flags |= AlignJustifyFlags::OverflowSafe;
   }
-  alignSelf &= ~StyleAlignFlags::FLAG_BITS;
+  aAlignSelf &= ~StyleAlignFlags::FLAG_BITS;
 
   WritingMode childWM = aRI.GetWritingMode();
   if (aCBWM.ParallelAxisStartsOnSameSide(eLogicalAxisBlock, childWM)) {
@@ -3468,66 +3670,85 @@ static void AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
   }
 
   
-  if (alignSelf == StyleAlignFlags::LEFT ||
-      alignSelf == StyleAlignFlags::RIGHT) {
-    alignSelf = StyleAlignFlags::START;
+  if (aAlignSelf == StyleAlignFlags::LEFT ||
+      aAlignSelf == StyleAlignFlags::RIGHT) {
+    aAlignSelf = StyleAlignFlags::START;
   }
-  if (MOZ_LIKELY(alignSelf == StyleAlignFlags::NORMAL)) {
-    alignSelf = StyleAlignFlags::STRETCH;
+  if (MOZ_LIKELY(aAlignSelf == StyleAlignFlags::NORMAL)) {
+    aAlignSelf = StyleAlignFlags::STRETCH;
   }
 
   nscoord baselineAdjust = 0;
-  if (alignSelf == StyleAlignFlags::BASELINE ||
-      alignSelf == StyleAlignFlags::LAST_BASELINE) {
-    alignSelf = aGridItem.GetSelfBaseline(alignSelf, eLogicalAxisBlock,
-                                          &baselineAdjust);
+  if (aAlignSelf == StyleAlignFlags::BASELINE ||
+      aAlignSelf == StyleAlignFlags::LAST_BASELINE) {
+    aAlignSelf = aGridItem.GetSelfBaseline(aAlignSelf, eLogicalAxisBlock,
+                                           &baselineAdjust);
+    
+    
+    auto state = aGridItem.mState[eLogicalAxisBlock];
+    if (aAlignSelf == StyleAlignFlags::LAST_BASELINE &&
+        !GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
+      aAlignSelf = StyleAlignFlags::BASELINE;
+    } else if (aAlignSelf == StyleAlignFlags::BASELINE &&
+               GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
+      aAlignSelf = StyleAlignFlags::LAST_BASELINE;
+    }
   }
 
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   LogicalAxis axis = isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock;
-  AlignJustifySelf(alignSelf, axis, flags, baselineAdjust, aCBSize, aRI, aSize,
+  AlignJustifySelf(aAlignSelf, axis, flags, baselineAdjust, aCBSize, aRI, aSize,
                    aPos);
 }
 
 static void JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
-                        StyleJustifySelf aJustifySelf, nscoord aCBSize,
+                        StyleAlignFlags aJustifySelf, nscoord aCBSize,
                         const WritingMode aCBWM, const ReflowInput& aRI,
-                        const LogicalSize& aSize, LogicalPoint* aPos) {
-  auto justifySelf = aJustifySelf._0;
-
-  AlignJustifyFlags flags = AlignJustifyFlags::NoFlags;
-  if (justifySelf & StyleAlignFlags::SAFE) {
+                        const LogicalSize& aSize, AlignJustifyFlags aFlags,
+                        LogicalPoint* aPos) {
+  AlignJustifyFlags flags = aFlags;
+  if (aJustifySelf & StyleAlignFlags::SAFE) {
     flags |= AlignJustifyFlags::OverflowSafe;
   }
-  justifySelf &= ~StyleAlignFlags::FLAG_BITS;
+  aJustifySelf &= ~StyleAlignFlags::FLAG_BITS;
 
   WritingMode childWM = aRI.GetWritingMode();
   if (aCBWM.ParallelAxisStartsOnSameSide(eLogicalAxisInline, childWM)) {
     flags |= AlignJustifyFlags::SameSide;
   }
 
-  if (MOZ_LIKELY(justifySelf == StyleAlignFlags::NORMAL)) {
-    justifySelf = StyleAlignFlags::STRETCH;
+  if (MOZ_LIKELY(aJustifySelf == StyleAlignFlags::NORMAL)) {
+    aJustifySelf = StyleAlignFlags::STRETCH;
   }
 
   nscoord baselineAdjust = 0;
   
   
-  if (justifySelf == StyleAlignFlags::LEFT) {
-    justifySelf =
+  if (aJustifySelf == StyleAlignFlags::LEFT) {
+    aJustifySelf =
         aCBWM.IsBidiLTR() ? StyleAlignFlags::START : StyleAlignFlags::END;
-  } else if (justifySelf == StyleAlignFlags::RIGHT) {
-    justifySelf =
+  } else if (aJustifySelf == StyleAlignFlags::RIGHT) {
+    aJustifySelf =
         aCBWM.IsBidiLTR() ? StyleAlignFlags::END : StyleAlignFlags::START;
-  } else if (justifySelf == StyleAlignFlags::BASELINE ||
-             justifySelf == StyleAlignFlags::LAST_BASELINE) {
-    justifySelf = aGridItem.GetSelfBaseline(justifySelf, eLogicalAxisInline,
-                                            &baselineAdjust);
+  } else if (aJustifySelf == StyleAlignFlags::BASELINE ||
+             aJustifySelf == StyleAlignFlags::LAST_BASELINE) {
+    aJustifySelf = aGridItem.GetSelfBaseline(aJustifySelf, eLogicalAxisInline,
+                                             &baselineAdjust);
+    
+    
+    auto state = aGridItem.mState[eLogicalAxisInline];
+    if (aJustifySelf == StyleAlignFlags::LAST_BASELINE &&
+        !GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
+      aJustifySelf = StyleAlignFlags::BASELINE;
+    } else if (aJustifySelf == StyleAlignFlags::BASELINE &&
+               GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
+      aJustifySelf = StyleAlignFlags::LAST_BASELINE;
+    }
   }
 
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   LogicalAxis axis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
-  AlignJustifySelf(justifySelf, axis, flags, baselineAdjust, aCBSize, aRI,
+  AlignJustifySelf(aJustifySelf, axis, flags, baselineAdjust, aCBSize, aRI,
                    aSize, aPos);
 }
 
@@ -4311,8 +4532,12 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   aState.mRowFunctions.mExplicitGridOffset = mExplicitGridOffsetRow;
   const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
   const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
+  const bool isRowMasonry = aState.mFrame->IsMasonry(eLogicalAxisBlock);
+  const bool isColMasonry = aState.mFrame->IsMasonry(eLogicalAxisInline);
+  const bool isMasonry = isColMasonry || isRowMasonry;
   mGridColEnd += offsetToColZero;
   mGridRowEnd += offsetToRowZero;
+  const uint32_t gridAxisTrackCount = isRowMasonry ? mGridColEnd : mGridRowEnd;
   aState.mIter.Reset();
   for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
     auto& item = aState.mGridItems[aState.mIter.ItemIndex()];
@@ -4326,6 +4551,9 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
       area.mRows.mEnd = area.mRows.mUntranslatedEnd + offsetToRowZero;
     }
     if (area.IsDefinite()) {
+      if (isMasonry) {
+        item.MaybeInhibitSubgridInMasonry(aState.mFrame, gridAxisTrackCount);
+      }
       if (item.IsSubgrid()) {
         Grid grid(this);
         grid.SubgridPlaceGridItems(aState, this, item);
@@ -4340,7 +4568,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   
   
   auto flowStyle = gridStyle->mGridAutoFlow;
-  const bool isRowOrder = bool(flowStyle & StyleGridAutoFlow::ROW);
+  const bool isRowOrder =
+      isMasonry ? isRowMasonry : !!(flowStyle & StyleGridAutoFlow::ROW);
   const bool isSparse = !(flowStyle & StyleGridAutoFlow::DENSE);
   uint32_t clampMaxColLine = colLineNameMap.mClampMaxLine + offsetToColZero;
   uint32_t clampMaxRowLine = rowLineNameMap.mClampMaxLine + offsetToRowZero;
@@ -4366,6 +4595,9 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
           cursors->Get(major.mStart, &cursor);
         }
         (this->*placeAutoMinorFunc)(cursor, &area, clampMaxLine);
+        if (isMasonry) {
+          item.MaybeInhibitSubgridInMasonry(aState.mFrame, gridAxisTrackCount);
+        }
         if (item.IsSubgrid()) {
           Grid grid(this);
           grid.SubgridPlaceGridItems(aState, this, item);
@@ -4438,6 +4670,9 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
 #endif
         }
       }
+      if (isMasonry) {
+        item.MaybeInhibitSubgridInMasonry(aState.mFrame, gridAxisTrackCount);
+      }
       if (item.IsSubgrid()) {
         Grid grid(this);
         grid.SubgridPlaceGridItems(aState, this, item);
@@ -4445,6 +4680,23 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
       mCellMap.Fill(area);
       InflateGridFor(area);
       SetSubgridChildEdgeBits(item);
+      
+      
+      
+      
+    }
+  }
+
+  
+  
+  if (isMasonry) {
+    auto masonryAxis = isRowMasonry ? eLogicalAxisBlock : eLogicalAxisInline;
+    aState.mIter.Reset();
+    for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
+      auto& item = aState.mGridItems[aState.mIter.ItemIndex()];
+      auto& masonryRange = item.mArea.LineRangeForAxis(masonryAxis);
+      masonryRange.mStart = std::min(masonryRange.mStart, 1U);
+      masonryRange.mEnd = masonryRange.mStart + 1U;
     }
   }
 
@@ -4472,15 +4724,38 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
       GridArea& area = info->mArea;
       if (area.mCols.mUntranslatedStart != int32_t(kAutoLine)) {
         area.mCols.mStart = area.mCols.mUntranslatedStart + offsetToColZero;
+        if (isColMasonry) {
+          
+          
+          
+          
+          
+          area.mCols.mStart = std::min(area.mCols.mStart, 1U);
+        }
       }
       if (area.mCols.mUntranslatedEnd != int32_t(kAutoLine)) {
         area.mCols.mEnd = area.mCols.mUntranslatedEnd + offsetToColZero;
+        if (isColMasonry) {
+          
+          area.mCols.mEnd = std::min(area.mCols.mEnd, 1U);
+        }
       }
       if (area.mRows.mUntranslatedStart != int32_t(kAutoLine)) {
         area.mRows.mStart = area.mRows.mUntranslatedStart + offsetToRowZero;
+        if (isRowMasonry) {
+          
+          area.mRows.mStart = std::min(area.mRows.mStart, 1U);
+        }
       }
       if (area.mRows.mUntranslatedEnd != int32_t(kAutoLine)) {
         area.mRows.mEnd = area.mRows.mUntranslatedEnd + offsetToRowZero;
+        if (isRowMasonry) {
+          
+          area.mRows.mEnd = std::min(area.mRows.mEnd, 1U);
+        }
+      }
+      if (isMasonry) {
+        info->MaybeInhibitSubgridInMasonry(aState.mFrame, gridAxisTrackCount);
       }
       if (info->IsSubgrid()) {
         Grid grid(this);
@@ -4584,8 +4859,12 @@ void nsGridContainerFrame::Tracks::Initialize(
   mSizes.SetLength(aNumTracks);
   PodZero(mSizes.Elements(), mSizes.Length());
   for (uint32_t i = 0, len = mSizes.Length(); i < len; ++i) {
-    mStateUnion |=
-        mSizes[i].Initialize(aContentBoxSize, aFunctions.SizingFor(i));
+    auto& sz = mSizes[i];
+    mStateUnion |= sz.Initialize(aContentBoxSize, aFunctions.SizingFor(i));
+    if (mIsMasonry) {
+      sz.mBase = aContentBoxSize;
+      sz.mLimit = aContentBoxSize;
+    }
   }
   mGridGap = nsLayoutUtils::ResolveGapToLength(aGridGap, aContentBoxSize);
   mContentBoxSize = aContentBoxSize;
@@ -4659,6 +4938,47 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   parent->RemoveProperty(nsContainerFrame::DebugReflowingWithInfiniteISize());
 #endif
   return childSize.BSize(wm);
+}
+
+
+
+
+
+static void PostReflowStretchChild(
+    nsIFrame* aChild, const ReflowInput& aReflowInput,
+    const LogicalSize& aAvailableSize, const LogicalSize& aCBSize,
+    LogicalAxis aChildAxis, const nscoord aNewContentBoxSize,
+    nscoord aIMinSizeClamp = NS_MAXSIZE, nscoord aBMinSizeClamp = NS_MAXSIZE) {
+  nsPresContext* pc = aChild->PresContext();
+  uint32_t riFlags = 0U;
+  if (aIMinSizeClamp != NS_MAXSIZE) {
+    riFlags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+  }
+  if (aBMinSizeClamp != NS_MAXSIZE) {
+    riFlags |= ReflowInput::B_CLAMP_MARGIN_BOX_MIN_SIZE;
+    aChild->SetProperty(nsIFrame::BClampMarginBoxMinSizeProperty(),
+                        aBMinSizeClamp);
+  } else {
+    aChild->RemoveProperty(nsIFrame::BClampMarginBoxMinSizeProperty());
+  }
+  ReflowInput ri(pc, aReflowInput, aChild, aAvailableSize, Some(aCBSize),
+                 riFlags);
+  if (aChildAxis == eLogicalAxisBlock) {
+    ri.SetComputedBSize(ri.ApplyMinMaxBSize(aNewContentBoxSize));
+  } else {
+    ri.SetComputedISize(ri.ApplyMinMaxISize(aNewContentBoxSize));
+  }
+  ReflowOutput childSize(ri);
+  nsReflowStatus childStatus;
+  const nsIFrame::ReflowChildFlags flags =
+      nsIFrame::ReflowChildFlags::NoMoveFrame |
+      nsIFrame::ReflowChildFlags::NoDeleteNextInFlowChild;
+  auto wm = aChild->GetWritingMode();
+  nsContainerFrame* parent = aChild->GetParent();
+  parent->ReflowChild(aChild, pc, childSize, ri, wm, LogicalPoint(wm), nsSize(),
+                      flags, childStatus);
+  nsContainerFrame::FinishReflowChild(aChild, pc, childSize, &ri, wm,
+                                      LogicalPoint(wm), nsSize(), flags);
 }
 
 
@@ -5204,6 +5524,7 @@ void nsGridContainerFrame::Tracks::CalculateItemBaselines(
 
 void nsGridContainerFrame::Tracks::InitializeItemBaselines(
     GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems) {
+  MOZ_ASSERT(!mIsMasonry);
   if (aState.mFrame->IsSubgrid(mAxis)) {
     
     return;
@@ -5364,6 +5685,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
               frameSize + (isInlineAxis ? m.IStartEnd(wm) : m.BStartEnd(wm));
           lastBaselineItems.AppendElement(
               ItemBaselineData({baselineTrack, descent, alignSize, &gridItem}));
+          state |= ItemState::eEndSideBaseline;
         } else {
           state &= ~ItemState::eAllBaselineBits;
         }
@@ -5398,8 +5720,213 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
   CalculateItemBaselines(lastBaselineItems, BaselineSharingGroup::Last);
 }
 
+
+void nsGridContainerFrame::Tracks::InitializeItemBaselinesInMasonryAxis(
+    GridReflowInput& aState, nsTArray<GridItemInfo>& aGridItems,
+    BaselineAlignmentSet aSet, const nsSize& aContainerSize,
+    nsTArray<nscoord>& aTrackSizes,
+    nsTArray<ItemBaselineData>& aFirstBaselineItems,
+    nsTArray<ItemBaselineData>& aLastBaselineItems) {
+  MOZ_ASSERT(mIsMasonry);
+  WritingMode wm = aState.mWM;
+  ComputedStyle* containerSC = aState.mFrame->Style();
+  for (GridItemInfo& gridItem : aGridItems) {
+    if (gridItem.IsSubgrid(mAxis)) {
+      
+      continue;
+    }
+    const auto& area = gridItem.mArea;
+    if (aSet.mItemSet == BaselineAlignmentSet::LastItems) {
+      
+      
+      
+      
+      
+      
+      
+      if (!(gridItem.mState[mAxis] & ItemState::eIsLastItemInMasonryTrack) ||
+          (gridItem.mState[mAxis] & ItemState::eIsBaselineAligned)) {
+        continue;
+      }
+    } else {
+      if (area.LineRangeForAxis(mAxis).mStart > 0 ||
+          (gridItem.mState[mAxis] & ItemState::eIsBaselineAligned)) {
+        continue;
+      }
+    }
+    auto trackAlign =
+        aState.mGridStyle
+            ->UsedTracksAlignment(
+                mAxis, area.LineRangeForAxis(GetOrthogonalAxis(mAxis)).mStart)
+            .primary;
+    if (!aSet.MatchTrackAlignment(trackAlign)) {
+      continue;
+    }
+
+    nsIFrame* child = gridItem.mFrame;
+    uint32_t baselineTrack = kAutoLine;
+    auto state = ItemState(0);
+    auto childWM = child->GetWritingMode();
+    const bool isOrthogonal = wm.IsOrthogonalTo(childWM);
+    const bool isInlineAxis = mAxis == eLogicalAxisInline;  
+    
+    
+    
+    const bool itemHasBaselineParallelToTrack = isInlineAxis == isOrthogonal;
+    if (itemHasBaselineParallelToTrack) {
+      const auto* pos = child->StylePosition();
+      
+      auto selfAlignment = pos->UsedSelfAlignment(mAxis, containerSC);
+      selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
+      if (selfAlignment == StyleAlignFlags::BASELINE) {
+        state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
+        baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
+      } else if (selfAlignment == StyleAlignFlags::LAST_BASELINE) {
+        state |= ItemState::eLastBaseline | ItemState::eSelfBaseline;
+        baselineTrack = (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
+      } else {
+        
+        auto childAxis = isOrthogonal ? GetOrthogonalAxis(mAxis) : mAxis;
+        auto alignContent = pos->UsedContentAlignment(childAxis).primary;
+        alignContent &= ~StyleAlignFlags::FLAG_BITS;
+        if (alignContent == StyleAlignFlags::BASELINE) {
+          state |= ItemState::eFirstBaseline | ItemState::eContentBaseline;
+          baselineTrack = isInlineAxis ? area.mCols.mStart : area.mRows.mStart;
+        } else if (alignContent == StyleAlignFlags::LAST_BASELINE) {
+          state |= ItemState::eLastBaseline | ItemState::eContentBaseline;
+          baselineTrack =
+              (isInlineAxis ? area.mCols.mEnd : area.mRows.mEnd) - 1;
+        }
+      }
+    }
+
+    if (state & ItemState::eIsBaselineAligned) {
+      
+      
+
+      nscoord baseline;
+      nsGridContainerFrame* grid = do_QueryFrame(child);
+      if (state & ItemState::eFirstBaseline) {
+        if (grid) {
+          if (isOrthogonal == isInlineAxis) {
+            grid->GetBBaseline(BaselineSharingGroup::First, &baseline);
+          } else {
+            grid->GetIBaseline(BaselineSharingGroup::First, &baseline);
+          }
+        }
+        if (grid || nsLayoutUtils::GetFirstLineBaseline(wm, child, &baseline)) {
+          NS_ASSERTION(baseline != NS_INTRINSIC_ISIZE_UNKNOWN,
+                       "about to use an unknown baseline");
+          auto frameSize = isInlineAxis ? child->ISize(wm) : child->BSize(wm);
+          nscoord alignSize;
+          LogicalPoint pos =
+              child->GetLogicalNormalPosition(wm, aContainerSize);
+          baseline += pos.Pos(mAxis, wm);
+          if (aSet.mTrackAlignmentSet == BaselineAlignmentSet::EndStretch) {
+            state |= ItemState::eEndSideBaseline;
+            
+            baseline =
+                aTrackSizes[gridItem.mArea
+                                .LineRangeForAxis(GetOrthogonalAxis(mAxis))
+                                .mStart] -
+                baseline;
+          }
+          alignSize = frameSize;
+          aFirstBaselineItems.AppendElement(ItemBaselineData(
+              {baselineTrack, baseline, alignSize, &gridItem}));
+        } else {
+          state &= ~ItemState::eAllBaselineBits;
+        }
+      } else {
+        if (grid) {
+          if (isOrthogonal == isInlineAxis) {
+            grid->GetBBaseline(BaselineSharingGroup::Last, &baseline);
+          } else {
+            grid->GetIBaseline(BaselineSharingGroup::Last, &baseline);
+          }
+        }
+        if (grid || nsLayoutUtils::GetLastLineBaseline(wm, child, &baseline)) {
+          NS_ASSERTION(baseline != NS_INTRINSIC_ISIZE_UNKNOWN,
+                       "about to use an unknown baseline");
+          auto frameSize = isInlineAxis ? child->ISize(wm) : child->BSize(wm);
+          auto m = child->GetLogicalUsedMargin(wm);
+          if (!grid &&
+              aSet.mTrackAlignmentSet == BaselineAlignmentSet::EndStretch) {
+            
+            state |= ItemState::eEndSideBaseline;
+            LogicalPoint pos =
+                child->GetLogicalNormalPosition(wm, aContainerSize);
+            baseline += pos.Pos(mAxis, wm);
+            baseline =
+                aTrackSizes[gridItem.mArea
+                                .LineRangeForAxis(GetOrthogonalAxis(mAxis))
+                                .mStart] -
+                baseline;
+          } else if (grid && aSet.mTrackAlignmentSet ==
+                                 BaselineAlignmentSet::StartStretch) {
+            
+            baseline = frameSize - baseline;
+          }
+          if (aSet.mItemSet == BaselineAlignmentSet::LastItems &&
+              aSet.mTrackAlignmentSet == BaselineAlignmentSet::StartStretch) {
+            LogicalPoint pos =
+                child->GetLogicalNormalPosition(wm, aContainerSize);
+            baseline += pos.B(wm);
+          }
+          if (aSet.mTrackAlignmentSet == BaselineAlignmentSet::EndStretch) {
+            state |= ItemState::eEndSideBaseline;
+          }
+          auto descent =
+              baseline + ((state & ItemState::eEndSideBaseline)
+                              ? (isInlineAxis ? m.IEnd(wm) : m.BEnd(wm))
+                              : (isInlineAxis ? m.IStart(wm) : m.BStart(wm)));
+          auto alignSize =
+              frameSize + (isInlineAxis ? m.IStartEnd(wm) : m.BStartEnd(wm));
+          aLastBaselineItems.AppendElement(
+              ItemBaselineData({baselineTrack, descent, alignSize, &gridItem}));
+        } else {
+          state &= ~ItemState::eAllBaselineBits;
+        }
+      }
+    }
+    MOZ_ASSERT(
+        (state & (ItemState::eFirstBaseline | ItemState::eLastBaseline)) !=
+            (ItemState::eFirstBaseline | ItemState::eLastBaseline),
+        "first/last baseline bits are mutually exclusive");
+    MOZ_ASSERT(
+        (state & (ItemState::eSelfBaseline | ItemState::eContentBaseline)) !=
+            (ItemState::eSelfBaseline | ItemState::eContentBaseline),
+        "*-self and *-content baseline bits are mutually exclusive");
+    MOZ_ASSERT(
+        !(state & (ItemState::eFirstBaseline | ItemState::eLastBaseline)) ==
+            !(state & (ItemState::eSelfBaseline | ItemState::eContentBaseline)),
+        "first/last bit requires self/content bit and vice versa");
+    gridItem.mState[mAxis] |= state;
+    gridItem.mBaselineOffset[mAxis] = nscoord(0);
+  }
+
+  CalculateItemBaselines(aFirstBaselineItems, BaselineSharingGroup::First);
+  CalculateItemBaselines(aLastBaselineItems, BaselineSharingGroup::Last);
+
+  
+  
+  
+
+  MOZ_ASSERT(aFirstBaselineItems.Length() != 1 ||
+                 aFirstBaselineItems[0].mGridItem->mBaselineOffset[mAxis] == 0,
+             "a baseline group that contains only one item should not "
+             "produce a non-zero item baseline offset");
+  MOZ_ASSERT(aLastBaselineItems.Length() != 1 ||
+                 aLastBaselineItems[0].mGridItem->mBaselineOffset[mAxis] == 0,
+             "a baseline group that contains only one item should not "
+             "produce a non-zero item baseline offset");
+}
+
 void nsGridContainerFrame::Tracks::AlignBaselineSubtree(
     const GridItemInfo& aGridItem) const {
+  if (mIsMasonry) {
+    return;
+  }
   auto state = aGridItem.mState[mAxis];
   if (!(state & ItemState::eIsBaselineAligned)) {
     return;
@@ -5507,6 +6034,8 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       aConstraint == SizingConstraint::MaxContent
           ? (TrackSize::eMaxContentMinSizing | TrackSize::eAutoMinSizing)
           : TrackSize::eMaxContentMinSizing;
+  const auto orthogonalAxis = GetOrthogonalAxis(mAxis);
+  const bool isMasonryInOtherAxis = aState.mFrame->IsMasonry(orthogonalAxis);
   for (auto& gridItem : aGridItems) {
     MOZ_ASSERT(!(gridItem.mState[mAxis] &
                  (ItemState::eApplyAutoMinSize | ItemState::eIsFlexing |
@@ -5514,6 +6043,18 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
                "Why are any of these bits set already?");
     const GridArea& area = gridItem.mArea;
     const LineRange& lineRange = area.*aRange;
+
+    
+    
+    
+    
+    if (isMasonryInOtherAxis &&
+        gridItem.mArea.LineRangeForAxis(orthogonalAxis).mStart != 0 &&
+        (gridItem.mState[mAxis] & ItemState::eAutoPlacement) &&
+        gridItem.mArea.LineRangeForAxis(mAxis).Extent() != mSizes.Length()) {
+      continue;
+    }
+
     uint32_t span = lineRange.Extent();
     if (MOZ_UNLIKELY(gridItem.mState[mAxis] & ItemState::eIsSubgrid)) {
       auto itemWM = gridItem.mFrame->GetWritingMode();
@@ -5886,8 +6427,8 @@ void nsGridContainerFrame::Tracks::StretchFlexibleTracks(
 }
 
 void nsGridContainerFrame::Tracks::AlignJustifyContent(
-    const nsStylePosition* aStyle, WritingMode aWM, nscoord aContentBoxSize,
-    bool aIsSubgriddedAxis) {
+    const nsStylePosition* aStyle, StyleContentDistribution aAligmentStyleValue,
+    WritingMode aWM, nscoord aContentBoxSize, bool aIsSubgriddedAxis) {
   const bool isAlign = mAxis == eLogicalAxisBlock;
   
   
@@ -5949,15 +6490,13 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
     return;
   }
 
-  auto valueAndFallback =
-      isAlign ? aStyle->mAlignContent : aStyle->mJustifyContent;
   bool overflowSafe;
-  auto alignment = ::GetAlignJustifyValue(valueAndFallback.primary, aWM,
+  auto alignment = ::GetAlignJustifyValue(aAligmentStyleValue.primary, aWM,
                                           isAlign, &overflowSafe);
   if (alignment == StyleAlignFlags::NORMAL) {
     alignment = StyleAlignFlags::STRETCH;
     
-    valueAndFallback = {alignment};
+    aAligmentStyleValue = {alignment};
   }
 
   
@@ -5979,7 +6518,7 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
     
     if (space < 0 ||
         (alignment == StyleAlignFlags::SPACE_BETWEEN && mSizes.Length() == 1)) {
-      auto fallback = ::GetAlignJustifyFallbackIfAny(valueAndFallback, aWM,
+      auto fallback = ::GetAlignJustifyFallbackIfAny(aAligmentStyleValue, aWM,
                                                      isAlign, &overflowSafe);
       if (fallback) {
         alignment = *fallback;
@@ -6023,22 +6562,44 @@ void nsGridContainerFrame::Tracks::AlignJustifyContent(
   nscoord between, roundingError;
   if (alignment == StyleAlignFlags::STRETCH) {
     MOZ_ASSERT(numAutoTracks > 0, "we handled numAutoTracks == 0 above");
-    nscoord spacePerTrack;
-    roundingError = NSCoordDivRem(space, numAutoTracks, &spacePerTrack);
-    for (TrackSize& sz : mSizes) {
-      sz.mPosition = pos;
-      if (!(sz.mState & TrackSize::eAutoMaxSizing)) {
-        pos += sz.mBase + mGridGap;
-        continue;
+    
+    
+    
+    
+    while (space) {
+      pos = 0;
+      nscoord spacePerTrack;
+      roundingError = NSCoordDivRem(space, numAutoTracks, &spacePerTrack);
+      space = 0;
+      for (TrackSize& sz : mSizes) {
+        sz.mPosition = pos;
+        if (!(sz.mState & TrackSize::eAutoMaxSizing)) {
+          pos += sz.mBase + mGridGap;
+          continue;
+        }
+        nscoord stretch = spacePerTrack;
+        if (roundingError) {
+          roundingError -= 1;
+          stretch += 1;
+        }
+        nscoord newBase = sz.mBase + stretch;
+        if (mIsMasonry && (sz.mState & TrackSize::eClampToLimit)) {
+          auto clampedSize = std::min(newBase, sz.mLimit);
+          auto sizeOverLimit = newBase - clampedSize;
+          if (sizeOverLimit > 0) {
+            newBase = clampedSize;
+            sz.mState &= ~(sz.mState & TrackSize::eAutoMaxSizing);
+            
+            space += sizeOverLimit;
+            if (--numAutoTracks == 0) {
+              
+              space = 0;
+            }
+          }
+        }
+        sz.mBase = newBase;
+        pos += newBase + mGridGap;
       }
-      nscoord stretch = spacePerTrack;
-      if (roundingError) {
-        roundingError -= 1;
-        stretch += 1;
-      }
-      nscoord newBase = sz.mBase + stretch;
-      sz.mBase = newBase;
-      pos += newBase + mGridGap;
     }
     MOZ_ASSERT(!roundingError, "we didn't distribute all rounding error?");
     return;
@@ -6203,6 +6764,220 @@ LogicalRect nsGridContainerFrame::GridReflowInput::ContainingBlockForAbsPos(
   return LogicalRect(mWM, i, b, iSize, bSize);
 }
 
+void nsGridContainerFrame::GridReflowInput::AlignJustifyContentInMasonryAxis(
+    nscoord aMasonryBoxSize, nscoord aContentBoxSize) {
+  if (aContentBoxSize == NS_UNCONSTRAINEDSIZE) {
+    aContentBoxSize = aMasonryBoxSize;
+  }
+  auto& masonryAxisTracks = mRows.mIsMasonry ? mRows : mCols;
+  MOZ_ASSERT(masonryAxisTracks.mSizes.Length() == 2,
+             "unexpected masonry axis tracks");
+  const auto masonryAxis = masonryAxisTracks.mAxis;
+  const auto contentAlignment = mGridStyle->UsedContentAlignment(masonryAxis);
+  if (contentAlignment.primary == StyleAlignFlags::NORMAL ||
+      contentAlignment.primary == StyleAlignFlags::STRETCH) {
+    
+    nscoord cbSize = std::max(aMasonryBoxSize, aContentBoxSize);
+    for (auto& sz : masonryAxisTracks.mSizes) {
+      sz.mBase = cbSize;
+    }
+    return;
+  }
+
+  
+  
+  auto savedTrackSizes(std::move(masonryAxisTracks.mSizes));
+  masonryAxisTracks.mSizes.AppendElement(savedTrackSizes[0]);
+  masonryAxisTracks.mSizes[0].mBase = aMasonryBoxSize;
+  masonryAxisTracks.AlignJustifyContent(mGridStyle, contentAlignment, mWM,
+                                        aContentBoxSize, false);
+  nscoord masonryBoxOffset = masonryAxisTracks.mSizes[0].mPosition;
+  
+  masonryAxisTracks.mSizes = std::move(savedTrackSizes);
+  
+  for (auto& sz : masonryAxisTracks.mSizes) {
+    sz.mPosition = masonryBoxOffset;
+    sz.mBase = aMasonryBoxSize;
+  }
+}
+
+
+
+
+void nsGridContainerFrame::GridReflowInput::AlignJustifyTracksInMasonryAxis(
+    const LogicalSize& aContentSize, const nsSize& aContainerSize) {
+  auto& masonryAxisTracks = mRows.mIsMasonry ? mRows : mCols;
+  MOZ_ASSERT(masonryAxisTracks.mSizes.Length() == 2,
+             "unexpected masonry axis tracks");
+  const auto masonryAxis = masonryAxisTracks.mAxis;
+  auto gridAxis = GetOrthogonalAxis(masonryAxis);
+  auto& gridAxisTracks = TracksFor(gridAxis);
+  AutoTArray<TrackSize, 2> savedSizes;
+  savedSizes.AppendElements(masonryAxisTracks.mSizes);
+  auto wm = mWM;
+  nscoord contentAreaStart = mBorderPadding.Start(masonryAxis, wm);
+  
+  nscoord masonryBoxOffset = masonryAxisTracks.mSizes[0].mPosition;
+  nscoord alignmentContainerSize = masonryAxisTracks.mSizes[0].mBase;
+
+  for (auto i : IntegerRange(gridAxisTracks.mSizes.Length())) {
+    auto tracksAlignment = mGridStyle->UsedTracksAlignment(masonryAxis, i);
+    if (tracksAlignment.primary != StyleAlignFlags::START) {
+      masonryAxisTracks.mSizes.ClearAndRetainStorage();
+      for (const auto& item : mGridItems) {
+        if (item.mArea.LineRangeForAxis(gridAxis).mStart == i) {
+          const auto* child = item.mFrame;
+          LogicalRect rect = child->GetLogicalRect(wm, aContainerSize);
+          TrackSize sz = {0, 0, 0, {0, 0}, TrackSize::StateBits(0)};
+          const auto& margin = child->GetLogicalUsedMargin(wm);
+          sz.mPosition = rect.Start(masonryAxis, wm) -
+                         margin.Start(masonryAxis, wm) - contentAreaStart;
+          sz.mBase =
+              rect.Size(masonryAxis, wm) + margin.StartEnd(masonryAxis, wm);
+          
+          
+          
+          auto state = item.mState[masonryAxis];
+          if ((state & ItemState::eSelfBaseline) &&
+              (state & ItemState::eEndSideBaseline)) {
+            sz.mBase += item.mBaselineOffset[masonryAxis];
+          }
+          if (tracksAlignment.primary == StyleAlignFlags::STRETCH) {
+            const auto* pos = child->StylePosition();
+            auto itemAlignment =
+                pos->UsedSelfAlignment(masonryAxis, mFrame->Style());
+            if (child->StyleMargin()->HasAuto(masonryAxis, wm)) {
+              sz.mState |= TrackSize::eAutoMaxSizing;
+              sz.mState |= TrackSize::eItemHasAutoMargin;
+            } else if (pos->Size(masonryAxis, wm).IsAuto() &&
+                       (itemAlignment == StyleAlignFlags::NORMAL ||
+                        itemAlignment == StyleAlignFlags::STRETCH)) {
+              sz.mState |= TrackSize::eAutoMaxSizing;
+              sz.mState |= TrackSize::eItemStretchSize;
+              const auto& max = pos->MaxSize(masonryAxis, wm);
+              if (max.ConvertsToLength()) {  
+                
+                
+                nscoord boxSizingAdjust =
+                    child->GetLogicalUsedBorderAndPadding(wm).StartEnd(
+                        masonryAxis, wm);
+                if (pos->mBoxSizing == StyleBoxSizing::Border) {
+                  boxSizingAdjust = 0;
+                }
+                sz.mLimit = nsLayoutUtils::ComputeBSizeValue(
+                    aContentSize.Size(masonryAxis, wm), boxSizingAdjust,
+                    max.AsLengthPercentage());
+                sz.mLimit += margin.StartEnd(masonryAxis, wm);
+                sz.mState |= TrackSize::eClampToLimit;
+              }
+            }
+          }
+          masonryAxisTracks.mSizes.AppendElement(std::move(sz));
+        }
+      }
+      masonryAxisTracks.AlignJustifyContent(mGridStyle, tracksAlignment, wm,
+                                            alignmentContainerSize, false);
+      auto iter = mGridItems.begin();
+      auto end = mGridItems.end();
+      
+      
+      for (auto r : IntegerRange(masonryAxisTracks.mSizes.Length())) {
+        GridItemInfo* item = nullptr;
+        auto& sz = masonryAxisTracks.mSizes[r];
+        
+        for (; iter != end; ++iter) {
+          if (iter->mArea.LineRangeForAxis(gridAxis).mStart == i) {
+            item = &*iter;
+            ++iter;
+            break;
+          }
+        }
+        nsIFrame* child = item->mFrame;
+        const auto childWM = child->GetWritingMode();
+        auto masonryChildAxis =
+            childWM.IsOrthogonalTo(wm) ? gridAxis : masonryAxis;
+        LogicalMargin margin = child->GetLogicalUsedMargin(childWM);
+        bool forceReposition = false;
+        if (sz.mState & TrackSize::eItemStretchSize) {
+          auto size = child->GetLogicalSize().Size(masonryChildAxis, childWM);
+          auto newSize = sz.mBase - margin.StartEnd(masonryChildAxis, childWM);
+          if (size != newSize) {
+            
+            LogicalSize cb =
+                ContainingBlockFor(item->mArea).Size(wm).ConvertTo(childWM, wm);
+            LogicalSize availableSize = cb;
+            cb.Size(masonryChildAxis, childWM) = alignmentContainerSize;
+            availableSize.Size(eLogicalAxisBlock, childWM) =
+                NS_UNCONSTRAINEDSIZE;
+            const auto& bp = child->GetLogicalUsedBorderAndPadding(childWM);
+            newSize -= bp.StartEnd(masonryChildAxis, childWM);
+            ::PostReflowStretchChild(child, *mReflowInput, availableSize, cb,
+                                     masonryChildAxis, newSize);
+            if (childWM.IsPhysicalRTL()) {
+              
+              
+              forceReposition = true;
+            }
+          }
+        } else if (sz.mState & TrackSize::eItemHasAutoMargin) {
+          
+          auto size = child->GetLogicalSize().Size(masonryChildAxis, childWM);
+          auto spaceToFill = sz.mBase - size;
+          if (spaceToFill > nscoord(0)) {
+            const auto& marginStyle = child->StyleMargin();
+            if (marginStyle->mMargin.Start(masonryChildAxis, childWM)
+                    .IsAuto()) {
+              if (marginStyle->mMargin.End(masonryChildAxis, childWM)
+                      .IsAuto()) {
+                nscoord half;
+                nscoord roundingError = NSCoordDivRem(spaceToFill, 2, &half);
+                margin.Start(masonryChildAxis, childWM) = half;
+                margin.End(masonryChildAxis, childWM) = half + roundingError;
+              } else {
+                margin.Start(masonryChildAxis, childWM) = spaceToFill;
+              }
+            } else {
+              MOZ_ASSERT(
+                  marginStyle->mMargin.End(masonryChildAxis, childWM).IsAuto());
+              margin.End(masonryChildAxis, childWM) = spaceToFill;
+            }
+            nsMargin* propValue =
+                child->GetProperty(nsIFrame::UsedMarginProperty());
+            if (propValue) {
+              *propValue = margin.GetPhysicalMargin(childWM);
+            } else {
+              child->AddProperty(
+                  nsIFrame::UsedMarginProperty(),
+                  new nsMargin(margin.GetPhysicalMargin(childWM)));
+            }
+          }
+        }
+        nscoord newPos = contentAreaStart + masonryBoxOffset + sz.mPosition +
+                         margin.Start(masonryChildAxis, childWM);
+        LogicalPoint pos = child->GetLogicalNormalPosition(wm, aContainerSize);
+        auto delta = newPos - pos.Pos(masonryAxis, wm);
+        if (delta != 0 || forceReposition) {
+          LogicalPoint logicalDelta(wm);
+          logicalDelta.Pos(masonryAxis, wm) = delta;
+          child->MovePositionBy(wm, logicalDelta);
+        }
+      }
+    } else if (masonryBoxOffset != nscoord(0)) {
+      
+      auto delta = masonryBoxOffset;
+      LogicalPoint logicalDelta(wm);
+      logicalDelta.Pos(masonryAxis, wm) = delta;
+      for (const auto& item : mGridItems) {
+        if (item.mArea.LineRangeForAxis(gridAxis).mStart != i) {
+          continue;
+        }
+        item.mFrame->MovePositionBy(wm, logicalDelta);
+      }
+    }
+  }
+  masonryAxisTracks.mSizes = savedSizes;
+}
+
 
 
 
@@ -6309,8 +7084,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
         
         
         baselineAdjust = nscoord(0);
-      } else if (baselineAdjust > nscoord(0) &&
-                 (state & ItemState::eLastBaseline)) {
+      } else if (GridItemInfo::BaselineAlignmentAffectsEndSide(state)) {
         baselineAdjust = -baselineAdjust;
       }
       if (baselineAdjust != nscoord(0)) {
@@ -6347,18 +7121,26 @@ void nsGridContainerFrame::ReflowInFlowChild(
   uint32_t flags = 0;
   if (aGridItemInfo) {
     
+    
     auto* pos = aChild->StylePosition();
-    auto j = pos->UsedJustifySelf(Style())._0;
-    auto a = pos->UsedAlignSelf(Style())._0;
+    auto j = IsMasonry(eLogicalAxisInline) ? StyleAlignFlags::START
+                                           : pos->UsedJustifySelf(Style())._0;
+    auto a = IsMasonry(eLogicalAxisBlock) ? StyleAlignFlags::START
+                                          : pos->UsedAlignSelf(Style())._0;
     bool stretch[2];
     stretch[eLogicalAxisInline] =
         j == StyleAlignFlags::NORMAL || j == StyleAlignFlags::STRETCH;
     stretch[eLogicalAxisBlock] =
         a == StyleAlignFlags::NORMAL || a == StyleAlignFlags::STRETCH;
     auto childIAxis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
-    if (stretch[childIAxis] &&
-        aGridItemInfo->mState[childIAxis] & ItemState::eClampMarginBoxMinSize) {
-      flags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+    
+    if (stretch[childIAxis]) {
+      if (aGridItemInfo->mState[childIAxis] &
+          ItemState::eClampMarginBoxMinSize) {
+        flags |= ReflowInput::I_CLAMP_MARGIN_BOX_MIN_SIZE;
+      }
+    } else {
+      flags |= ReflowInput::COMPUTE_SIZE_SHRINK_WRAP;
     }
 
     auto childBAxis = GetOrthogonalAxis(childIAxis);
@@ -6415,8 +7197,9 @@ void nsGridContainerFrame::ReflowInFlowChild(
     if (!childRI.mStyleMargin->HasBlockAxisAuto(childWM) &&
         childRI.mStylePosition->BSize(childWM).IsAuto()) {
       auto blockAxisAlignment = childRI.mStylePosition->UsedAlignSelf(Style());
-      if (blockAxisAlignment._0 == StyleAlignFlags::NORMAL ||
-          blockAxisAlignment._0 == StyleAlignFlags::STRETCH) {
+      if (!IsMasonry(eLogicalAxisBlock) &&
+          (blockAxisAlignment._0 == StyleAlignFlags::NORMAL ||
+           blockAxisAlignment._0 == StyleAlignFlags::STRETCH)) {
         stretch = true;
       }
     }
@@ -6463,26 +7246,46 @@ void nsGridContainerFrame::ReflowInFlowChild(
   
   if (MOZ_LIKELY(isGridItem)) {
     LogicalSize size = childSize.Size(childWM);  
-    if (aStatus.IsComplete()) {
-      auto align = childRI.mStylePosition->UsedAlignSelf(containerSC);
-      auto state = aGridItemInfo->mState[eLogicalAxisBlock];
-      if (state & ItemState::eContentBaseline) {
+    auto applyItemSelfAlignment = [&](LogicalAxis aAxis, nscoord aCBSize) {
+      auto align =
+          childRI.mStylePosition->UsedSelfAlignment(aAxis, containerSC);
+      auto state = aGridItemInfo->mState[aAxis];
+      auto flags = AlignJustifyFlags::NoFlags;
+      if (IsMasonry(aAxis)) {
+        
+        
+        
+        
+        if (MOZ_LIKELY(!(state & ItemState::eSelfBaseline))) {
+          align = {StyleAlignFlags::START};
+        } else {
+          auto group = (state & ItemState::eFirstBaseline)
+                           ? BaselineSharingGroup::First
+                           : BaselineSharingGroup::Last;
+          auto itemStart = aGridItemInfo->mArea.LineRangeForAxis(aAxis).mStart;
+          aCBSize = aState.TracksFor(aAxis)
+                        .mSizes[itemStart]
+                        .mBaselineSubtreeSize[group];
+        }
+        flags = AlignJustifyFlags::IgnoreAutoMargins;
+      } else if (state & ItemState::eContentBaseline) {
         align = {(state & ItemState::eFirstBaseline)
                      ? StyleAlignFlags::SELF_START
                      : StyleAlignFlags::SELF_END};
       }
-      nscoord cbsz = cb.BSize(wm) - consumedGridAreaBSize;
-      AlignSelf(*aGridItemInfo, align, cbsz, wm, childRI, size, &childPos);
+      if (aAxis == eLogicalAxisBlock) {
+        AlignSelf(*aGridItemInfo, align, aCBSize, wm, childRI, size, flags,
+                  &childPos);
+      } else {
+        JustifySelf(*aGridItemInfo, align, aCBSize, wm, childRI, size, flags,
+                    &childPos);
+      }
+    };
+    if (aStatus.IsComplete()) {
+      applyItemSelfAlignment(eLogicalAxisBlock,
+                             cb.BSize(wm) - consumedGridAreaBSize);
     }
-    auto justify = childRI.mStylePosition->UsedJustifySelf(containerSC);
-    auto state = aGridItemInfo->mState[eLogicalAxisInline];
-    if (state & ItemState::eContentBaseline) {
-      justify = {(state & ItemState::eFirstBaseline)
-                     ? StyleAlignFlags::SELF_START
-                     : StyleAlignFlags::SELF_END};
-    }
-    nscoord cbsz = cb.ISize(wm);
-    JustifySelf(*aGridItemInfo, justify, cbsz, wm, childRI, size, &childPos);
+    applyItemSelfAlignment(eLogicalAxisInline, cb.ISize(wm));
   }  
 
   FinishReflowChild(aChild, pc, childSize, &childRI, childWM, childPos,
@@ -6513,8 +7316,14 @@ nscoord nsGridContainerFrame::ReflowInFragmentainer(
   }
   
   
-  std::sort(sortedItems.begin(), sortedItems.end(),
-            GridItemInfo::IsStartRowLessThan);
+  
+  if (IsMasonry()) {
+    std::stable_sort(sortedItems.begin(), sortedItems.end(),
+                     GridItemInfo::IsStartRowLessThan);
+  } else {
+    std::sort(sortedItems.begin(), sortedItems.end(),
+              GridItemInfo::IsStartRowLessThan);
+  }
 
   
   for (auto child : placeholders) {
@@ -6713,6 +7522,22 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
   FrameHashtable pushedItems;
   FrameHashtable incompleteItems;
   FrameHashtable overflowIncompleteItems;
+  Maybe<nsTArray<nscoord>> masonryAxisPos;
+  const auto rowCount = aState.mRows.mSizes.Length();
+  nscoord masonryAxisGap;
+  const auto wm = aState.mWM;
+  const bool isColMasonry = IsMasonry(eLogicalAxisInline);
+  if (isColMasonry) {
+    for (auto& sz : aState.mCols.mSizes) {
+      sz.mPosition = 0;
+    }
+    masonryAxisGap = nsLayoutUtils::ResolveGapToLength(
+        aState.mGridStyle->mColumnGap, aContentArea.ISize(wm));
+    aState.mCols.mGridGap = masonryAxisGap;
+    masonryAxisPos.emplace(rowCount);
+    masonryAxisPos->SetLength(rowCount);
+    PodZero(masonryAxisPos->Elements(), rowCount);
+  }
   bool isBDBClone = aState.mReflowInput->mStyleBorder->mBoxDecorationBreak ==
                     StyleBoxDecorationBreak::Clone;
   bool didGrowRow = false;
@@ -6760,8 +7585,7 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
                       aFragmentainer.mIsAutoBSize);
         if (rowCanGrow) {
           if (isBDBClone) {
-            maxRowSize =
-                gridAvailableSize - aState.mBorderPadding.BEnd(aState.mWM);
+            maxRowSize = gridAvailableSize - aState.mBorderPadding.BEnd(wm);
           } else {
             maxRowSize = gridAvailableSize;
           }
@@ -6770,6 +7594,12 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
           rowCanGrow = maxRowSize > sz.mBase;
         }
       }
+    }
+
+    if (isColMasonry) {
+      const auto& cols = info->mArea.mCols;
+      MOZ_ASSERT((cols.mStart == 0 || cols.mStart == 1) && cols.Extent() == 1);
+      aState.mCols.mSizes[cols.mStart].mPosition = masonryAxisPos.ref()[row];
     }
 
     
@@ -6863,11 +7693,23 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
     } else if (!childStatus.IsFullyComplete()) {
       overflowIncompleteItems.PutEntry(child);
     }
+    if (isColMasonry) {
+      auto childWM = child->GetWritingMode();
+      auto childAxis =
+          !childWM.IsOrthogonalTo(wm) ? eLogicalAxisInline : eLogicalAxisBlock;
+      auto normalPos = child->GetLogicalNormalPosition(wm, aContainerSize);
+      auto sz =
+          childAxis == eLogicalAxisBlock ? child->BSize() : child->ISize();
+      auto pos = normalPos.Pos(eLogicalAxisInline, wm) + sz +
+                 child->GetLogicalUsedMargin(childWM).End(childAxis, childWM);
+      masonryAxisPos.ref()[row] =
+          pos + masonryAxisGap - aContentArea.Start(eLogicalAxisInline, wm);
+    }
   }
 
   
   aState.mNextFragmentStartRow = aEndRow;
-  if (aEndRow < aState.mRows.mSizes.Length()) {
+  if (aEndRow < rowCount) {
     aState.mRows.BreakBeforeRow(aEndRow);
     if (aState.mSharedGridData) {
       aState.mSharedGridData->mRows.BreakBeforeRow(aEndRow);
@@ -6892,7 +7734,526 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
     aState.mIter.Invalidate();
   }
 
+  if (isColMasonry) {
+    nscoord maxSize = 0;
+    for (auto pos : masonryAxisPos.ref()) {
+      maxSize = std::max(maxSize, pos);
+    }
+    maxSize = std::max(nscoord(0), maxSize - masonryAxisGap);
+    aState.AlignJustifyContentInMasonryAxis(maxSize, aContentArea.ISize(wm));
+  }
+
   return aBSize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nscoord nsGridContainerFrame::MasonryLayout(GridReflowInput& aState,
+                                            const LogicalRect& aContentArea,
+                                            SizingConstraint aConstraint,
+                                            ReflowOutput& aDesiredSize,
+                                            nsReflowStatus& aStatus,
+                                            Fragmentainer* aFragmentainer,
+                                            const nsSize& aContainerSize) {
+  using BaselineAlignmentSet = Tracks::BaselineAlignmentSet;
+
+  auto recordAutoPlacement = [this, &aState](GridItemInfo* aItem,
+                                             LogicalAxis aGridAxis) {
+    
+    
+    if (MOZ_UNLIKELY(aState.mSharedGridData && GetPrevInFlow()) &&
+        (aItem->mState[aGridAxis] & ItemState::eAutoPlacement)) {
+      auto* child = aItem->mFrame;
+      MOZ_RELEASE_ASSERT(!child->GetPrevInFlow(),
+                         "continuations should never be auto-placed");
+      for (auto& sharedItem : aState.mSharedGridData->mGridItems) {
+        if (sharedItem.mFrame == child) {
+          sharedItem.mArea.LineRangeForAxis(aGridAxis) =
+              aItem->mArea.LineRangeForAxis(aGridAxis);
+          MOZ_ASSERT(sharedItem.mState[aGridAxis] & ItemState::eAutoPlacement);
+          sharedItem.mState[aGridAxis] &= ~ItemState::eAutoPlacement;
+          break;
+        }
+      }
+    }
+    aItem->mState[aGridAxis] &= ~ItemState::eAutoPlacement;
+  };
+
+  
+  nsTArray<GridItemInfo*> sortedItems(aState.mGridItems.Length());
+  aState.mIter.Reset(CSSOrderAwareFrameIterator::eIncludeAll);
+  size_t absposIndex = 0;
+  const LogicalAxis masonryAxis =
+      IsMasonry(eLogicalAxisBlock) ? eLogicalAxisBlock : eLogicalAxisInline;
+  const auto wm = aState.mWM;
+  for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
+    nsIFrame* child = *aState.mIter;
+    if (MOZ_LIKELY(!child->IsPlaceholderFrame())) {
+      GridItemInfo* item = &aState.mGridItems[aState.mIter.ItemIndex()];
+      sortedItems.AppendElement(item);
+    } else if (aConstraint == SizingConstraint::NoConstraint) {
+      
+      
+      GridItemInfo* item = nullptr;
+      auto* ph = static_cast<nsPlaceholderFrame*>(child);
+      if (ph->GetOutOfFlowFrame()->GetParent() == this) {
+        item = &aState.mAbsPosItems[absposIndex++];
+        MOZ_RELEASE_ASSERT(item->mFrame == ph->GetOutOfFlowFrame());
+        auto masonryStart = item->mArea.LineRangeForAxis(masonryAxis).mStart;
+        
+        
+        
+        
+        
+        
+        if (masonryStart == 0 ||
+            (masonryStart == kAutoLine && item->mFrame->StylePosition()
+                                              ->mOffset.Start(masonryAxis, wm)
+                                              .IsAuto())) {
+          sortedItems.AppendElement(item);
+        } else {
+          item = nullptr;
+        }
+      }
+      if (!item) {
+        
+        nsReflowStatus childStatus;
+        ReflowInFlowChild(child, nullptr, aContainerSize, Nothing(), nullptr,
+                          aState, aContentArea, aDesiredSize, childStatus);
+      }
+    }
+  }
+  const auto masonryAutoFlow = aState.mGridStyle->mMasonryAutoFlow;
+  bool definiteFirst = masonryAutoFlow & NS_STYLE_MASONRY_ORDER_DEFINITE_FIRST;
+  if (masonryAxis == eLogicalAxisBlock) {
+    std::stable_sort(sortedItems.begin(), sortedItems.end(),
+                     definiteFirst ? GridItemInfo::RowMasonryDefiniteFirst
+                                   : GridItemInfo::RowMasonryOrdered);
+  } else {
+    std::stable_sort(sortedItems.begin(), sortedItems.end(),
+                     definiteFirst ? GridItemInfo::ColMasonryDefiniteFirst
+                                   : GridItemInfo::ColMasonryOrdered);
+  }
+
+  FrameHashtable pushedItems;
+  FrameHashtable incompleteItems;
+  FrameHashtable overflowIncompleteItems;
+  nscoord toFragmentainerEnd = nscoord_MAX;
+  nscoord fragStartPos = aState.mFragBStart;
+  const bool avoidBreakInside =
+      aFragmentainer && ShouldAvoidBreakInside(*aState.mReflowInput);
+  const bool isTopOfPageAtStart =
+      aFragmentainer && aFragmentainer->mIsTopOfPage;
+  if (aFragmentainer) {
+    toFragmentainerEnd = std::max(0, aFragmentainer->mToFragmentainerEnd);
+  }
+  const LogicalAxis gridAxis = GetOrthogonalAxis(masonryAxis);
+  const auto gridAxisTrackCount = aState.TracksFor(gridAxis).mSizes.Length();
+  auto& masonryTracks = aState.TracksFor(masonryAxis);
+  auto& masonrySizes = masonryTracks.mSizes;
+  MOZ_ASSERT(masonrySizes.Length() == 2);
+  for (auto& sz : masonrySizes) {
+    sz.mPosition = fragStartPos;
+  }
+  
+  
+  
+  nsTArray<nscoord> currentPos(gridAxisTrackCount);
+  currentPos.SetLength(gridAxisTrackCount);
+  for (auto& sz : currentPos) {
+    sz = fragStartPos;
+  }
+  nsTArray<nscoord> lastPos(currentPos);
+  nsTArray<GridItemInfo*> lastItems(gridAxisTrackCount);
+  lastItems.SetLength(gridAxisTrackCount);
+  PodZero(lastItems.Elements(), gridAxisTrackCount);
+  const nscoord gap = nsLayoutUtils::ResolveGapToLength(
+      masonryAxis == eLogicalAxisBlock ? aState.mGridStyle->mRowGap
+                                       : aState.mGridStyle->mColumnGap,
+      masonryTracks.mContentBoxSize);
+  masonryTracks.mGridGap = gap;
+  uint32_t cursor = 0;
+  const auto containerToMasonryBoxOffset =
+      fragStartPos - aContentArea.Start(masonryAxis, wm);
+  const bool isPack = masonryAutoFlow & NS_STYLE_MASONRY_PLACEMENT_PACK;
+  bool didAlignStartAlignedFirstItems = false;
+
+  
+  
+  auto lastItemHasBaselineAlignment = [&](const LineRange& aRange) {
+    for (auto i : aRange.Range()) {
+      if (auto* child = lastItems[i] ? lastItems[i]->mFrame : nullptr) {
+        const auto& pos = child->StylePosition();
+        auto selfAlignment = pos->UsedSelfAlignment(masonryAxis, this->Style());
+        if (selfAlignment == StyleAlignFlags::BASELINE ||
+            selfAlignment == StyleAlignFlags::LAST_BASELINE) {
+          return true;
+        }
+        auto childAxis = masonryAxis;
+        if (child->GetWritingMode().IsOrthogonalTo(wm)) {
+          childAxis = gridAxis;
+        }
+        auto contentAlignment = pos->UsedContentAlignment(childAxis).primary;
+        if (contentAlignment == StyleAlignFlags::BASELINE ||
+            contentAlignment == StyleAlignFlags::LAST_BASELINE) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  
+  
+  auto placeItem = [&](GridItemInfo* aItem) -> nscoord {
+    auto& masonryAxisRange = aItem->mArea.LineRangeForAxis(masonryAxis);
+    MOZ_ASSERT(masonryAxisRange.mStart != 0, "item placement is already final");
+    auto& gridAxisRange = aItem->mArea.LineRangeForAxis(gridAxis);
+    bool isAutoPlaced = aItem->mState[gridAxis] & ItemState::eAutoPlacement;
+    uint32_t start = isAutoPlaced ? 0 : gridAxisRange.mStart;
+    if (isAutoPlaced && !isPack) {
+      start = cursor;
+      isAutoPlaced = false;
+    }
+    const uint32_t extent = gridAxisRange.Extent();
+    if (start + extent > gridAxisTrackCount) {
+      
+      
+      start = 0;
+    }
+    
+    
+    nscoord minPos = nscoord_MAX;
+    MOZ_ASSERT(extent <= gridAxisTrackCount);
+    const uint32_t iEnd = gridAxisTrackCount + 1 - extent;
+    for (uint32_t i = start; i < iEnd; ++i) {
+      
+      
+      nscoord maxPosForRange = 0;
+      for (auto j = i, jEnd = j + extent; j < jEnd; ++j) {
+        maxPosForRange = std::max(currentPos[j], maxPosForRange);
+      }
+      if (maxPosForRange < minPos) {
+        minPos = maxPosForRange;
+        start = i;
+      }
+      if (!isAutoPlaced) {
+        break;
+      }
+    }
+    gridAxisRange.mStart = start;
+    gridAxisRange.mEnd = start + extent;
+    bool isFirstItem = true;
+    for (uint32_t i : gridAxisRange.Range()) {
+      if (lastItems[i]) {
+        isFirstItem = false;
+        break;
+      }
+    }
+    
+    
+    masonryAxisRange.mStart = isFirstItem ? 0 : 1;
+    masonryAxisRange.mEnd = masonryAxisRange.mStart + 1;
+    return minPos;
+  };
+
+  
+  
+  
+  
+  auto handleChildStatus = [&](GridItemInfo* aItem,
+                               const nsReflowStatus& aChildStatus) {
+    bool result = false;
+    if (MOZ_UNLIKELY(aFragmentainer)) {
+      auto* child = aItem->mFrame;
+      if (!aChildStatus.IsComplete() || aChildStatus.IsInlineBreakBefore() ||
+          aChildStatus.IsInlineBreakAfter() ||
+          child->StyleDisplay()->BreakAfter()) {
+        if (!isTopOfPageAtStart && avoidBreakInside) {
+          aStatus.SetInlineLineBreakBeforeAndReset();
+          return result;
+        }
+        result = true;
+      }
+      if (aChildStatus.IsInlineBreakBefore()) {
+        aStatus.SetIncomplete();
+        pushedItems.PutEntry(child);
+      } else if (aChildStatus.IsIncomplete()) {
+        recordAutoPlacement(aItem, gridAxis);
+        aStatus.SetIncomplete();
+        incompleteItems.PutEntry(child);
+      } else if (!aChildStatus.IsFullyComplete()) {
+        recordAutoPlacement(aItem, gridAxis);
+        overflowIncompleteItems.PutEntry(child);
+      }
+    }
+    return result;
+  };
+
+  
+  
+  auto offsetToMarginBoxEnd = [&](nsIFrame* aChild) {
+    auto childWM = aChild->GetWritingMode();
+    auto childAxis = !childWM.IsOrthogonalTo(wm) ? masonryAxis : gridAxis;
+    auto normalPos = aChild->GetLogicalNormalPosition(wm, aContainerSize);
+    auto sz =
+        childAxis == eLogicalAxisBlock ? aChild->BSize() : aChild->ISize();
+    return containerToMasonryBoxOffset + normalPos.Pos(masonryAxis, wm) + sz +
+           aChild->GetLogicalUsedMargin(childWM).End(childAxis, childWM);
+  };
+
+  
+  nsTArray<Tracks::ItemBaselineData> firstBaselineItems;
+  nsTArray<Tracks::ItemBaselineData> lastBaselineItems;
+  auto applyBaselineAlignment = [&](BaselineAlignmentSet aSet) {
+    firstBaselineItems.ClearAndRetainStorage();
+    lastBaselineItems.ClearAndRetainStorage();
+    masonryTracks.InitializeItemBaselinesInMasonryAxis(
+        aState, aState.mGridItems, aSet, aContainerSize, currentPos,
+        firstBaselineItems, lastBaselineItems);
+
+    bool didBaselineAdjustment = false;
+    nsTArray<Tracks::ItemBaselineData>* baselineItems[] = {&firstBaselineItems,
+                                                           &lastBaselineItems};
+    for (const auto* items : baselineItems) {
+      for (const auto& data : *items) {
+        GridItemInfo* item = data.mGridItem;
+        MOZ_ASSERT((item->mState[masonryAxis] & ItemState::eIsBaselineAligned));
+        nscoord baselineOffset = item->mBaselineOffset[masonryAxis];
+        if (baselineOffset == nscoord(0)) {
+          continue;  
+        }
+        didBaselineAdjustment = true;
+        auto* child = item->mFrame;
+        auto masonryAxisStart =
+            item->mArea.LineRangeForAxis(masonryAxis).mStart;
+        auto gridAxisRange = item->mArea.LineRangeForAxis(gridAxis);
+        masonrySizes[masonryAxisStart].mPosition =
+            aSet.mItemSet == BaselineAlignmentSet::LastItems
+                ? lastPos[gridAxisRange.mStart]
+                : fragStartPos;
+        bool consumeAllSpace = false;
+        const auto state = item->mState[masonryAxis];
+        if ((state & ItemState::eContentBaseline) ||
+            MOZ_UNLIKELY(aFragmentainer)) {
+          if (MOZ_UNLIKELY(aFragmentainer)) {
+            aFragmentainer->mIsTopOfPage =
+                isTopOfPageAtStart &&
+                masonrySizes[masonryAxisStart].mPosition == fragStartPos;
+          }
+          nsReflowStatus childStatus;
+          ReflowInFlowChild(child, item, aContainerSize, Nothing(),
+                            aFragmentainer, aState, aContentArea, aDesiredSize,
+                            childStatus);
+          consumeAllSpace = handleChildStatus(item, childStatus);
+          if (aStatus.IsInlineBreakBefore()) {
+            return false;
+          }
+        } else if (!(state & ItemState::eEndSideBaseline)) {
+          
+          
+          
+          LogicalPoint logicalDelta(wm);
+          logicalDelta.Pos(masonryAxis, wm) = baselineOffset;
+          child->MovePositionBy(wm, logicalDelta);
+        }
+        if ((state & ItemState::eEndSideBaseline) && !consumeAllSpace) {
+          
+          for (uint32_t i : gridAxisRange.Range()) {
+            currentPos[i] += baselineOffset;
+          }
+        } else {
+          nscoord pos = consumeAllSpace ? toFragmentainerEnd
+                                        : offsetToMarginBoxEnd(child);
+          pos += gap;
+          for (uint32_t i : gridAxisRange.Range()) {
+            currentPos[i] = pos;
+          }
+        }
+      }
+    }
+    return didBaselineAdjustment;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  for (GridItemInfo* item : sortedItems) {
+    auto* child = item->mFrame;
+    auto& masonryRange = item->mArea.LineRangeForAxis(masonryAxis);
+    auto& gridRange = item->mArea.LineRangeForAxis(gridAxis);
+    nsReflowStatus childStatus;
+    if (MOZ_UNLIKELY(child->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) {
+      auto contentArea = aContentArea;
+      nscoord pos = nscoord_MAX;
+      
+      if (gridRange.mStart == kAutoLine) {
+        for (auto p : currentPos) {
+          pos = std::min(p, pos);
+        }
+      } else if (gridRange.mStart < currentPos.Length()) {
+        pos = currentPos[gridRange.mStart];
+      } else if (currentPos.Length() > 0) {
+        pos = currentPos.LastElement();
+      }
+      if (pos == nscoord_MAX) {
+        pos = nscoord(0);
+      }
+      contentArea.Start(masonryAxis, wm) = pos;
+      child = child->GetPlaceholderFrame();
+      ReflowInFlowChild(child, nullptr, aContainerSize, Nothing(), nullptr,
+                        aState, contentArea, aDesiredSize, childStatus);
+    } else {
+      MOZ_ASSERT(gridRange.Extent() > 0 &&
+                 gridRange.Extent() <= gridAxisTrackCount);
+      MOZ_ASSERT((masonryRange.mStart == 0 || masonryRange.mStart == 1) &&
+                 masonryRange.Extent() == 1);
+      if (masonryRange.mStart != 0) {
+        masonrySizes[1].mPosition = placeItem(item);
+      }
+
+      
+      
+      
+      
+      if (!didAlignStartAlignedFirstItems &&
+          aConstraint == SizingConstraint::NoConstraint &&
+          masonryRange.mStart != 0 && lastItemHasBaselineAlignment(gridRange)) {
+        didAlignStartAlignedFirstItems = true;
+        if (applyBaselineAlignment({BaselineAlignmentSet::FirstItems,
+                                    BaselineAlignmentSet::StartStretch})) {
+          
+          masonrySizes[1].mPosition = placeItem(item);
+        }
+        if (aStatus.IsInlineBreakBefore()) {
+          return fragStartPos;
+        }
+      }
+
+      for (uint32_t i : gridRange.Range()) {
+        lastItems[i] = item;
+      }
+      cursor = gridRange.mEnd;
+      if (cursor >= gridAxisTrackCount) {
+        cursor = 0;
+      }
+
+      nscoord pos;
+      if (aConstraint == SizingConstraint::NoConstraint) {
+        const auto* disp = child->StyleDisplay();
+        if (MOZ_UNLIKELY(aFragmentainer)) {
+          aFragmentainer->mIsTopOfPage =
+              isTopOfPageAtStart &&
+              masonrySizes[masonryRange.mStart].mPosition == fragStartPos;
+          if (!aFragmentainer->mIsTopOfPage &&
+              (disp->BreakBefore() ||
+               masonrySizes[masonryRange.mStart].mPosition >=
+                   toFragmentainerEnd)) {
+            childStatus.SetInlineLineBreakBeforeAndReset();
+          }
+        }
+        if (!childStatus.IsInlineBreakBefore()) {
+          ReflowInFlowChild(child, item, aContainerSize, Nothing(),
+                            aFragmentainer, aState, aContentArea, aDesiredSize,
+                            childStatus);
+        }
+        bool consumeAllSpace = handleChildStatus(item, childStatus);
+        if (aStatus.IsInlineBreakBefore()) {
+          return fragStartPos;
+        }
+        pos =
+            consumeAllSpace ? toFragmentainerEnd : offsetToMarginBoxEnd(child);
+      } else {
+        LogicalSize percentBasis(
+            aState.PercentageBasisFor(eLogicalAxisInline, *item));
+        IntrinsicISizeType type = aConstraint == SizingConstraint::MaxContent
+                                      ? nsLayoutUtils::PREF_ISIZE
+                                      : nsLayoutUtils::MIN_ISIZE;
+        auto sz =
+            ::ContentContribution(*item, aState, &aState.mRenderingContext, wm,
+                                  masonryAxis, Some(percentBasis), type);
+        pos = sz + masonrySizes[masonryRange.mStart].mPosition;
+      }
+      pos += gap;
+      for (uint32_t i : gridRange.Range()) {
+        lastPos[i] = currentPos[i];
+        currentPos[i] = pos;
+      }
+    }
+  }
+
+  
+  if (aConstraint == SizingConstraint::NoConstraint) {
+    for (auto*& item : lastItems) {
+      if (item) {
+        item->mState[masonryAxis] |= ItemState::eIsLastItemInMasonryTrack;
+      }
+    }
+    BaselineAlignmentSet baselineSets[] = {
+        {BaselineAlignmentSet::FirstItems, BaselineAlignmentSet::StartStretch},
+        {BaselineAlignmentSet::FirstItems, BaselineAlignmentSet::EndStretch},
+        {BaselineAlignmentSet::LastItems, BaselineAlignmentSet::StartStretch},
+        {BaselineAlignmentSet::LastItems, BaselineAlignmentSet::EndStretch},
+    };
+    for (uint32_t i = 0; i < ArrayLength(baselineSets); ++i) {
+      if (i == 0 && didAlignStartAlignedFirstItems) {
+        continue;
+      }
+      applyBaselineAlignment(baselineSets[i]);
+    }
+  }
+
+  const bool childrenMoved = PushIncompleteChildren(
+      pushedItems, incompleteItems, overflowIncompleteItems);
+  if (childrenMoved && aStatus.IsComplete()) {
+    aStatus.SetOverflowIncomplete();
+    aStatus.SetNextInFlowNeedsReflow();
+  }
+  if (!pushedItems.IsEmpty()) {
+    AddStateBits(NS_STATE_GRID_DID_PUSH_ITEMS);
+    
+    
+    aState.mIter.Invalidate();
+  }
+  if (!incompleteItems.IsEmpty()) {
+    
+    
+    aState.mIter.Invalidate();
+  }
+
+  nscoord masonryBoxSize = 0;
+  for (auto pos : currentPos) {
+    masonryBoxSize = std::max(masonryBoxSize, pos);
+  }
+  masonryBoxSize = std::max(nscoord(0), masonryBoxSize - gap);
+  if (aConstraint == SizingConstraint::NoConstraint) {
+    aState.AlignJustifyContentInMasonryAxis(masonryBoxSize,
+                                            masonryTracks.mContentBoxSize);
+  }
+  return masonryBoxSize;
 }
 
 nsGridContainerFrame* nsGridContainerFrame::ParentGridContainerForSubgrid()
@@ -6910,6 +8271,7 @@ nsGridContainerFrame* nsGridContainerFrame::ParentGridContainerForSubgrid()
 
 nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
                                              const LogicalRect& aContentArea,
+                                             const nsSize& aContainerSize,
                                              ReflowOutput& aDesiredSize,
                                              nsReflowStatus& aStatus) {
   MOZ_ASSERT(aState.mReflowInput);
@@ -6924,16 +8286,34 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
   }
 
   WritingMode wm = aState.mReflowInput->GetWritingMode();
-  const nsSize containerSize =
-      (aContentArea.Size(wm) + aState.mBorderPadding.Size(wm))
-          .GetPhysicalSize(wm);
-
   nscoord bSize = aContentArea.BSize(wm);
   Maybe<Fragmentainer> fragmentainer = GetNearestFragmentainer(aState);
-  if (MOZ_UNLIKELY(fragmentainer.isSome())) {
+  
+  
+  
+  if (IsMasonry() &&
+      !(IsMasonry(eLogicalAxisInline) && fragmentainer.isSome())) {
+    aState.mInFragmentainer = fragmentainer.isSome();
+    nscoord sz = MasonryLayout(
+        aState, aContentArea, SizingConstraint::NoConstraint, aDesiredSize,
+        aStatus, fragmentainer.ptrOr(nullptr), aContainerSize);
+    if (IsMasonry(eLogicalAxisBlock)) {
+      bSize = aState.mReflowInput->ComputedBSize();
+      if (bSize == NS_UNCONSTRAINEDSIZE) {
+        bSize = NS_CSS_MINMAX(sz, aState.mReflowInput->ComputedMinBSize(),
+                              aState.mReflowInput->ComputedMaxBSize());
+      }
+    }
+  } else if (MOZ_UNLIKELY(fragmentainer.isSome())) {
+    if (IsMasonry(eLogicalAxisInline) && !GetPrevInFlow()) {
+      
+      
+      MasonryLayout(aState, aContentArea, SizingConstraint::NoConstraint,
+                    aDesiredSize, aStatus, nullptr, aContainerSize);
+    }
     aState.mInFragmentainer = true;
     bSize = ReflowInFragmentainer(aState, aContentArea, aDesiredSize, aStatus,
-                                  *fragmentainer, containerSize);
+                                  *fragmentainer, aContainerSize);
   } else {
     aState.mIter.Reset(CSSOrderAwareFrameIterator::eIncludeAll);
     for (; !aState.mIter.AtEnd(); aState.mIter.Next()) {
@@ -6942,11 +8322,10 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aState,
       if (!child->IsPlaceholderFrame()) {
         info = &aState.mGridItems[aState.mIter.ItemIndex()];
       }
-      ReflowInFlowChild(*aState.mIter, info, containerSize, Nothing(), nullptr,
+      ReflowInFlowChild(*aState.mIter, info, aContainerSize, Nothing(), nullptr,
                         aState, aContentArea, aDesiredSize, aStatus);
       MOZ_ASSERT(aStatus.IsComplete(),
-                 "child should be complete "
-                 "in unconstrained reflow");
+                 "child should be complete in unconstrained reflow");
     }
   }
 
@@ -7267,17 +8646,21 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     if (!aReflowInput.mStyleDisplay->IsContainSize()) {
-      const auto& rowSizes = gridReflowInput.mRows.mSizes;
-      if (MOZ_LIKELY(!IsSubgrid(eLogicalAxisBlock))) {
-        
-        
-        for (const auto& sz : rowSizes) {
-          bSize += sz.mBase;
+      if (IsMasonry(eLogicalAxisBlock)) {
+        bSize = computedBSize;
+      } else {
+        const auto& rowSizes = gridReflowInput.mRows.mSizes;
+        if (MOZ_LIKELY(!IsSubgrid(eLogicalAxisBlock))) {
+          
+          
+          for (const auto& sz : rowSizes) {
+            bSize += sz.mBase;
+          }
+          bSize += gridReflowInput.mRows.SumOfGridGaps();
+        } else if (computedBSize == NS_UNCONSTRAINEDSIZE) {
+          bSize = gridReflowInput.mRows.GridLineEdge(
+              rowSizes.Length(), GridLineSide::BeforeGridGap);
         }
-        bSize += gridReflowInput.mRows.SumOfGridGaps();
-      } else if (computedBSize == NS_UNCONSTRAINEDSIZE) {
-        bSize = gridReflowInput.mRows.GridLineEdge(rowSizes.Length(),
-                                                   GridLineSide::BeforeGridGap);
       }
     }
   } else {
@@ -7298,7 +8681,9 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   } else {
     bSize = computedBSize;
   }
-  bSize = std::max(bSize - consumedBSize, 0);
+  if (bSize != NS_UNCONSTRAINEDSIZE) {
+    bSize = std::max(bSize - consumedBSize, 0);
+  }
   auto& bp = gridReflowInput.mBorderPadding;
   LogicalRect contentArea(wm, bp.IStart(wm), bp.BStart(wm), computedISize,
                           bSize);
@@ -7314,7 +8699,11 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         gridReflowInput.mRows.mGridGap =
             nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, bSize);
       }
-      gridReflowInput.mRows.AlignJustifyContent(stylePos, wm, bSize, false);
+      if (!gridReflowInput.mRows.mIsMasonry) {
+        auto alignment = stylePos->mAlignContent;
+        gridReflowInput.mRows.AlignJustifyContent(stylePos, alignment, wm,
+                                                  bSize, false);
+      }
     } else {
       if (computedBSize == NS_UNCONSTRAINEDSIZE) {
         bSize = gridReflowInput.mRows.GridLineEdge(rowSizes.Length(),
@@ -7328,7 +8717,26 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     }
   }
 
-  bSize = ReflowChildren(gridReflowInput, contentArea, aDesiredSize, aStatus);
+  nsSize containerSize = contentArea.Size(wm).GetPhysicalSize(wm);
+  bool repositionChildren = false;
+  if (containerSize.width == NS_UNCONSTRAINEDSIZE && wm.IsVerticalRL()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    repositionChildren = true;
+    containerSize.width = 0;
+  }
+  containerSize.width += bp.LeftRight(wm);
+  containerSize.height += bp.TopBottom(wm);
+
+  bSize = ReflowChildren(gridReflowInput, contentArea, containerSize,
+                         aDesiredSize, aStatus);
   bSize = std::max(bSize - consumedBSize, 0);
 
   
@@ -7342,6 +8750,22 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   aDesiredSize.SetSize(wm, desiredSize);
   nsRect frameRect(0, 0, aDesiredSize.Width(), aDesiredSize.Height());
   aDesiredSize.mOverflowAreas.UnionAllWith(frameRect);
+
+  if (repositionChildren) {
+    nsPoint physicalDelta(aDesiredSize.Width() - bp.LeftRight(wm), 0);
+    for (const auto& item : gridReflowInput.mGridItems) {
+      auto* child = item.mFrame;
+      child->MovePositionBy(physicalDelta);
+      ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
+    }
+  }
+
+  
+  if ((IsMasonry(eLogicalAxisBlock) && !prevInFlow) ||
+      IsMasonry(eLogicalAxisInline)) {
+    gridReflowInput.AlignJustifyTracksInMasonryAxis(
+        contentArea.Size(wm), aDesiredSize.PhysicalSize());
+  }
 
   
   if (HasAnyStateBits(NS_FRAME_IS_OVERFLOW_CONTAINER)) {
@@ -7468,7 +8892,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         std::move(colTrackStates), std::move(colRemovedRepeatTracks),
         gridReflowInput.mColFunctions.mRepeatAutoStart,
         colLineNameMap.GetResolvedLineNamesForComputedGridTrackInfo(),
-        IsSubgrid(eLogicalAxisInline));
+        IsSubgrid(eLogicalAxisInline), IsMasonry(eLogicalAxisInline));
     SetProperty(GridColTrackInfo(), colInfo);
 
     const auto* subgridRowRange = subgrid && IsSubgrid(eLogicalAxisBlock)
@@ -7514,7 +8938,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         std::move(rowRemovedRepeatTracks),
         gridReflowInput.mRowFunctions.mRepeatAutoStart,
         rowLineNameMap.GetResolvedLineNamesForComputedGridTrackInfo(),
-        IsSubgrid(eLogicalAxisBlock));
+        IsSubgrid(eLogicalAxisBlock), IsMasonry(eLogicalAxisBlock));
     SetProperty(GridRowTrackInfo(), rowInfo);
 
     if (prevInFlow) {
@@ -7543,8 +8967,8 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
           std::move(priorRowInfo->mSizes), std::move(priorRowInfo->mStates),
           std::move(priorRowInfo->mRemovedRepeatTracks),
           priorRowInfo->mRepeatFirstTrack,
-          std::move(priorRowInfo->mResolvedLineNames),
-          priorRowInfo->mIsSubgrid);
+          std::move(priorRowInfo->mResolvedLineNames), priorRowInfo->mIsSubgrid,
+          priorRowInfo->mIsMasonry);
       prevInFlow->SetProperty(GridRowTrackInfo(), revisedPriorRowInfo);
     }
 
@@ -7659,6 +9083,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
           gridReflowInput.mCols.mContentBoxSize;
       sharedGridData->mCols.mBaselineSubtreeAlign =
           gridReflowInput.mCols.mBaselineSubtreeAlign;
+      sharedGridData->mCols.mIsMasonry = gridReflowInput.mCols.mIsMasonry;
       sharedGridData->mRows.mSizes.Clear();
       sharedGridData->mRows.mSizes.SwapElements(gridReflowInput.mRows.mSizes);
       
@@ -7676,6 +9101,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
           gridReflowInput.mRows.mContentBoxSize;
       sharedGridData->mRows.mBaselineSubtreeAlign =
           gridReflowInput.mRows.mBaselineSubtreeAlign;
+      sharedGridData->mRows.mIsMasonry = gridReflowInput.mRows.mIsMasonry;
       sharedGridData->mGridItems.Clear();
       sharedGridData->mGridItems.SwapElements(gridReflowInput.mGridItems);
       sharedGridData->mAbsPosItems.Clear();
@@ -7694,7 +9120,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
 void nsGridContainerFrame::UpdateSubgridFrameState() {
   nsFrameState oldBits = GetStateBits() & kIsSubgridBits;
-  nsFrameState newBits = ComputeSelfSubgridBits();
+  nsFrameState newBits = ComputeSelfSubgridMasonryBits() & kIsSubgridBits;
   if (newBits != oldBits) {
     RemoveStateBits(kIsSubgridBits);
     if (!newBits) {
@@ -7705,16 +9131,23 @@ void nsGridContainerFrame::UpdateSubgridFrameState() {
   }
 }
 
-nsFrameState nsGridContainerFrame::ComputeSelfSubgridBits() const {
+nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
   
   
   
   
-  {
-    const auto* display = StyleDisplay();
-    if (display->IsContainLayout() || display->IsContainPaint()) {
-      return nsFrameState(0);
-    }
+  const auto* display = StyleDisplay();
+  const bool inhibitSubgrid =
+      display->IsContainLayout() || display->IsContainPaint();
+
+  nsFrameState bits = nsFrameState(0);
+  const auto* pos = StylePosition();
+
+  
+  if (pos->mGridTemplateRows.IsMasonry()) {
+    bits |= NS_STATE_GRID_IS_ROW_MASONRY;
+  } else if (pos->mGridTemplateColumns.IsMasonry()) {
+    bits |= NS_STATE_GRID_IS_COL_MASONRY;
   }
 
   
@@ -7733,20 +9166,29 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridBits() const {
     outerFrame = parent;
     parent = parent->GetParent();
   }
-  nsFrameState bits = nsFrameState(0);
   const nsGridContainerFrame* gridParent = do_QueryFrame(parent);
   if (gridParent) {
+    bool isOrthogonal =
+        GetWritingMode().IsOrthogonalTo(parent->GetWritingMode());
     
     bool isOutOfFlow =
         outerFrame->StyleDisplay()->IsAbsolutelyPositionedStyle();
-    const auto* pos = StylePosition();
-    bool isColSubgrid = pos->mGridTemplateColumns.IsSubgrid();
+    bool isColSubgrid =
+        pos->mGridTemplateColumns.IsSubgrid() && !inhibitSubgrid;
+    
+    
+    if (isColSubgrid &&
+        parent->HasAnyStateBits(isOrthogonal ? NS_STATE_GRID_IS_ROW_MASONRY
+                                             : NS_STATE_GRID_IS_COL_MASONRY)) {
+      isColSubgrid = false;
+      if (!HasAnyStateBits(NS_STATE_GRID_IS_ROW_MASONRY)) {
+        bits |= NS_STATE_GRID_IS_COL_MASONRY;
+      }
+    }
     
     
     
     if (isColSubgrid && isOutOfFlow) {
-      bool isOrthogonal =
-          GetWritingMode().IsOrthogonalTo(parent->GetWritingMode());
       auto parentAxis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
       if (!gridParent->WillHaveAtLeastOneTrackInAxis(parentAxis)) {
         isColSubgrid = false;
@@ -7756,10 +9198,16 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridBits() const {
       bits |= NS_STATE_GRID_IS_COL_SUBGRID;
     }
 
-    bool isRowSubgrid = pos->mGridTemplateRows.IsSubgrid();
+    bool isRowSubgrid = pos->mGridTemplateRows.IsSubgrid() && !inhibitSubgrid;
+    if (isRowSubgrid &&
+        parent->HasAnyStateBits(isOrthogonal ? NS_STATE_GRID_IS_COL_MASONRY
+                                             : NS_STATE_GRID_IS_ROW_MASONRY)) {
+      isRowSubgrid = false;
+      if (!HasAnyStateBits(NS_STATE_GRID_IS_COL_MASONRY)) {
+        bits |= NS_STATE_GRID_IS_ROW_MASONRY;
+      }
+    }
     if (isRowSubgrid && isOutOfFlow) {
-      bool isOrthogonal =
-          GetWritingMode().IsOrthogonalTo(parent->GetWritingMode());
       auto parentAxis = isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock;
       if (!gridParent->WillHaveAtLeastOneTrackInAxis(parentAxis)) {
         isRowSubgrid = false;
@@ -7778,6 +9226,9 @@ bool nsGridContainerFrame::WillHaveAtLeastOneTrackInAxis(
     
     
     return true;
+  }
+  if (IsMasonry(aAxis)) {
+    return false;
   }
   const auto* pos = StylePosition();
   const auto& gridTemplate = aAxis == eLogicalAxisBlock
@@ -7808,10 +9259,11 @@ void nsGridContainerFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsFrameState bits = nsFrameState(0);
   if (MOZ_LIKELY(!aPrevInFlow)) {
-    bits = ComputeSelfSubgridBits();
+    bits = ComputeSelfSubgridMasonryBits();
   } else {
     bits = aPrevInFlow->GetStateBits() &
-           (kIsSubgridBits | NS_STATE_GRID_HAS_COL_SUBGRID_ITEM |
+           (NS_STATE_GRID_IS_ROW_MASONRY | NS_STATE_GRID_IS_COL_MASONRY |
+            kIsSubgridBits | NS_STATE_GRID_HAS_COL_SUBGRID_ITEM |
             NS_STATE_GRID_HAS_ROW_SUBGRID_ITEM);
   }
   AddStateBits(bits);
@@ -7842,8 +9294,10 @@ nscoord nsGridContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
     repeatSizing.InitFromStyle(eLogicalAxisInline, state.mWM,
                                state.mFrame->Style());
   }
-  if (!IsRowSubgrid() && state.mRowFunctions.mHasRepeatAuto &&
-      !(state.mGridStyle->mGridAutoFlow & StyleGridAutoFlow::ROW)) {
+  if ((!IsRowSubgrid() && state.mRowFunctions.mHasRepeatAuto &&
+       !(state.mGridStyle->mGridAutoFlow & StyleGridAutoFlow::ROW)) ||
+      IsMasonry(eLogicalAxisInline)) {
+    
     
     
     repeatSizing.InitFromStyle(eLogicalAxisBlock, state.mWM,
@@ -7860,13 +9314,26 @@ nscoord nsGridContainerFrame::IntrinsicISize(gfxContext* aRenderingContext,
     grid.mGridColEnd = subgrid->mGridColEnd;
     grid.mGridRowEnd = subgrid->mGridRowEnd;
   }
-  if (grid.mGridColEnd == 0) {
-    return nscoord(0);
-  }
 
   auto constraint = aType == nsLayoutUtils::MIN_ISIZE
                         ? SizingConstraint::MinContent
                         : SizingConstraint::MaxContent;
+  if (IsMasonry(eLogicalAxisInline)) {
+    ReflowOutput desiredSize(state.mWM);
+    nsSize containerSize;
+    LogicalRect contentArea(state.mWM);
+    nsReflowStatus status;
+    state.mRows.mSizes.SetLength(grid.mGridRowEnd);
+    state.CalculateTrackSizesForAxis(eLogicalAxisInline, grid,
+                                     NS_UNCONSTRAINEDSIZE, constraint);
+    return MasonryLayout(state, contentArea, constraint, desiredSize, status,
+                         nullptr, containerSize);
+  }
+
+  if (grid.mGridColEnd == 0) {
+    return nscoord(0);
+  }
+
   state.CalculateTrackSizesForAxis(eLogicalAxisInline, grid,
                                    NS_UNCONSTRAINEDSIZE, constraint);
 
@@ -8343,38 +9810,39 @@ void nsGridContainerFrame::SanityCheckGridItemsBeforeReflow() const {
   }
 }
 
-void nsGridContainerFrame::TrackSize::Dump() const {
-  printf("mPosition=%d mBase=%d mLimit=%d", mPosition, mBase, mLimit);
-
-  printf(" min:");
-  if (mState & eAutoMinSizing) {
-    printf("auto ");
-  } else if (mState & eMinContentMinSizing) {
+void nsGridContainerFrame::TrackSize::DumpStateBits(StateBits aState) {
+  printf("min:");
+  if (aState & eAutoMinSizing) {
+    printf("auto-min ");
+  } else if (aState & eMinContentMinSizing) {
     printf("min-content ");
-  } else if (mState & eMaxContentMinSizing) {
+  } else if (aState & eMaxContentMinSizing) {
     printf("max-content ");
   }
-
   printf(" max:");
-  if (mState & eAutoMaxSizing) {
+  if (aState & eAutoMaxSizing) {
     printf("auto ");
-  } else if (mState & eMinContentMaxSizing) {
+  } else if (aState & eMinContentMaxSizing) {
     printf("min-content ");
-  } else if (mState & eMaxContentMaxSizing) {
+  } else if (aState & eMaxContentMaxSizing) {
     printf("max-content ");
-  } else if (mState & eFlexMaxSizing) {
+  } else if (aState & eFlexMaxSizing) {
     printf("flex ");
   }
-
-  if (mState & eFrozen) {
+  if (aState & eFrozen) {
     printf("frozen ");
   }
-  if (mState & eModified) {
+  if (aState & eModified) {
     printf("modified ");
   }
-  if (mState & eBreakBefore) {
+  if (aState & eBreakBefore) {
     printf("break-before ");
   }
+}
+
+void nsGridContainerFrame::TrackSize::Dump() const {
+  printf("mPosition=%d mBase=%d mLimit=%d ", mPosition, mBase, mLimit);
+  DumpStateBits(mState);
 }
 
 #endif  
