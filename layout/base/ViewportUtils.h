@@ -27,7 +27,10 @@ class ViewportUtils {
 
 
 
-  static CSSToCSSMatrix4x4 GetCallbackTransform(
+
+
+
+  static CSSToCSSMatrix4x4 GetVisualToLayoutTransform(
       layers::ScrollableLayerGuid::ViewID aScrollId);
 };
 
