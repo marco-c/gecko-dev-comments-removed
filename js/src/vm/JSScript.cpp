@@ -4047,12 +4047,6 @@ void JSScript::relazify(JSRuntime* rt) {
   
   
   
-  clearFlag(ImmutableFlags::HasNonSyntacticScope);
-
-  
-  
-  
-  
   MOZ_ASSERT(!coverage::IsLCovEnabled());
   MOZ_ASSERT(!hasScriptCounts());
   MOZ_ASSERT(!hasDebugScript());
@@ -4873,15 +4867,16 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   
   JS::AssertObjectIsNotGray(sourceObject);
 
+  ImmutableScriptFlags flags = src->immutableFlags();
+  flags.setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
+                scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
+
   
   RootedScript dst(cx, JSScript::Create(cx, functionOrGlobal, sourceObject,
-                                        src->extent(), src->immutableFlags()));
+                                        src->extent(), flags));
   if (!dst) {
     return nullptr;
   }
-
-  dst->setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
-               scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
 
   
   dst->resetArgsUsageAnalysis();
