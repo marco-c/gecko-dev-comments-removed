@@ -87,7 +87,10 @@ function getVisibleMenuItems(aMenu, aData) {
         item.id != "fill-login-no-logins" &&
         
         
-        item.id != "screenshots_mozilla_org-menuitem-_create-screenshot"
+        item.id != "screenshots_mozilla_org-menuitem-_create-screenshot" &&
+        
+        
+        item.id != "context-inspect-a11y"
       ) {
         if (item.id != FRAME_OS_PID) {
           ok(key, "menuitem " + item.id + " has an access key");
@@ -432,7 +435,11 @@ async function test_contextmenu(selector, menuItems, options = {}) {
 
     if (
       Services.prefs.getBoolPref("devtools.accessibility.enabled", true) &&
-      Services.appinfo.accessibilityEnabled
+      (Services.appinfo.accessibilityEnabled ||
+        Services.prefs.getBoolPref(
+          "devtools.accessibility.auto-init.enabled",
+          false
+        ))
     ) {
       let inspectA11YItems = ["context-inspect-a11y", true];
       menuItems = menuItems.concat(inspectA11YItems);
