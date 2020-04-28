@@ -31,6 +31,7 @@
 #include "nsTArray.h"
 #include "PotentialCheckerboardDurationTracker.h"
 #include "RecentEventsBuffer.h"  
+#include "SampledAPZCState.h"
 
 #include "base/message_loop.h"
 
@@ -702,21 +703,6 @@ class AsyncPanZoomController {
 
 
 
-  void ClampCompositedScrollOffset();
-
-  
-
-
-
-
-
-  void RecalculateCompositedLayoutViewport();
-
-  
-
-
-
-
   void ScrollBy(const CSSPoint& aOffset);
 
   
@@ -977,9 +963,7 @@ class AsyncPanZoomController {
   
   
   
-  CSSRect mCompositedLayoutViewport;
-  CSSPoint mCompositedScrollOffset;
-  CSSToParentLayerScale2D mCompositedZoom;
+  SampledAPZCState mSampledState;
 
   
   
@@ -1033,8 +1017,6 @@ class AsyncPanZoomController {
 
   
   ExternalPoint mStartTouch;
-
-  Maybe<CompositionPayload> mCompositedScrollPayload;
 
   
   Maybe<CompositionPayload> mScrollPayload;
