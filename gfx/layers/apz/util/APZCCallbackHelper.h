@@ -8,6 +8,7 @@
 
 #include "InputData.h"
 #include "LayersTypes.h"
+#include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/MatrixMessage.h"
@@ -111,7 +112,10 @@ class APZCCallbackHelper {
 
 
 
+  static CSSToCSSMatrix4x4 GetCallbackTransform(
+      const ScrollableLayerGuid& aGuid);
 
+  
   static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
                                          const ScrollableLayerGuid& aGuid);
 
