@@ -4530,7 +4530,7 @@ nsresult nsFrame::GetDataForTableSelection(
 
   int16_t displaySelection = aPresShell->GetSelectionFlags();
 
-  bool selectingTableCells = aFrameSelection->GetTableCellSelection();
+  bool selectingTableCells = aFrameSelection->IsInTableSelectionMode();
 
   
   

@@ -384,7 +384,7 @@ class nsFrameSelection final {
   
 
 
-  bool GetTableCellSelection() const {
+  bool IsInTableSelectionMode() const {
     return mTableSelection.mMode != mozilla::TableSelectionMode::None;
   }
   void ClearTableCellSelection() {
