@@ -14,12 +14,6 @@ const PARENT_ACCESSIBILITY_EVENTS = [
   "can-be-enabled-change",
 ];
 
-loader.lazyImporter(
-  this,
-  "FeatureGate",
-  "resource://featuregates/FeatureGate.jsm"
-);
-
 
 
 
@@ -30,7 +24,6 @@ class AccessibilityProxy {
 
     this.accessibilityEventsMap = new Map();
     this.accessibleWalkerEventsMap = new Map();
-    this.supports = {};
 
     this.audit = this.audit.bind(this);
     this.disableAccessibility = this.disableAccessibility.bind(this);
@@ -54,16 +47,6 @@ class AccessibilityProxy {
 
   get enabled() {
     return this.accessibilityFront && this.accessibilityFront.enabled;
-  }
-
-  
-
-
-  get canBeEnabled() {
-    
-    const { canBeEnabled } =
-      this.parentAccessibilityFront || this.accessibilityFront;
-    return canBeEnabled;
   }
 
   get currentTarget() {
@@ -267,22 +250,11 @@ class AccessibilityProxy {
     }
   }
 
-  async onChange(isEnabled) {
-    this.supports.autoInit = isEnabled;
-  }
-
   async initialize() {
     try {
       await this.toolbox.targetList.watchTargets(
         [this.toolbox.targetList.TYPES.FRAME],
         this._onTargetAvailable
-      );
-      
-      
-      
-      this.supports.autoInit = await FeatureGate.addObserver(
-        "accessibility-panel-auto-init",
-        this
       );
       return true;
     } catch (e) {
@@ -291,13 +263,11 @@ class AccessibilityProxy {
     }
   }
 
-  async destroy() {
+  destroy() {
     this.toolbox.targetList.unwatchTargets(
       [this.toolbox.targetList.TYPES.FRAME],
       this._onTargetAvailable
     );
-
-    await FeatureGate.removeObserver("accessibility-panel-auto-init", this);
 
     this.accessibilityEventsMap = null;
     this.accessibleWalkerEventsMap = null;
@@ -372,6 +342,7 @@ class AccessibilityProxy {
       
       
       await this.accessibilityFront.bootstrap();
+      this.supports = {};
       
       
       

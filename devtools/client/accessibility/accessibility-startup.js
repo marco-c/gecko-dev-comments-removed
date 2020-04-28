@@ -85,7 +85,7 @@ class AccessibilityStartup {
         shutdown: this._updateToolHighlight,
       });
 
-      await this.accessibilityProxy.destroy();
+      this.accessibilityProxy.destroy();
       this.accessibilityProxy = null;
     }.bind(this)();
     return this._destroyingAccessibility;
@@ -96,12 +96,6 @@ class AccessibilityStartup {
 
 
   async _updateToolHighlight() {
-    
-    
-    if (this.accessibilityProxy.supports.autoInit) {
-      return;
-    }
-
     const isHighlighted = await this.toolbox.isToolHighlighted("accessibility");
     if (this.accessibilityProxy.enabled && !isHighlighted) {
       this.toolbox.highlightTool("accessibility");
