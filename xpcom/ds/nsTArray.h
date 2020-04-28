@@ -1623,12 +1623,11 @@ class nsTArray_Impl
   
   template <class Item>
   mozilla::NotNull<elem_type*> ReplaceElementAt(index_type aIndex,
-                                                const Item& aItem) {
-    
-    
-    
-    return mozilla::WrapNotNullUnchecked(
-        ReplaceElementsAtInternal<InfallibleAlloc>(aIndex, 1, &aItem, 1));
+                                                Item&& aItem) {
+    elem_type* const elem = &ElementAt(aIndex);
+    elem_traits::Destruct(elem);
+    elem_traits::Construct(elem, std::forward<Item>(aItem));
+    return mozilla::WrapNotNullUnchecked(elem);
   }
 
   
