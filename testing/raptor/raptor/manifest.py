@@ -471,6 +471,10 @@ def get_raptor_test_list(args, oskey):
             LOG.info("using live sites so turning playback off!")
             next_test['playback'] = None
             
+            
+            if "raptor-youtube-playback" in next_test['name']:
+                next_test['name'] = next_test['name'] + "-live"
+            
             next_test['page_timeout'] = int(
                 next_test['page_timeout']) * LIVE_SITE_TIMEOUT_MULTIPLIER
             LOG.info("using live sites so using page timeout of %dms" % next_test['page_timeout'])
