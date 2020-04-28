@@ -21,6 +21,7 @@ import android.view.inputmethod.InputConnection
 
 import org.hamcrest.Matchers.*
 import org.junit.Assume.assumeThat
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -418,60 +419,90 @@ class TextInputDelegateTest : BaseSessionTest() {
         mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
     }
 
+    
+    @Ignore 
     @WithDisplay(width = 512, height = 512) 
-    @Test fun inputConnection() {
-        
-        assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
-        
-        assumeThat(sessionRule.env.isX86, equalTo(false))
-
-        mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
-
-        mainSession.loadTestPath(INPUTS_PATH)
-        mainSession.waitForPageStop()
-
-        textContent = "foo"
-        mainSession.evaluateJS("document.querySelector('$id').focus()")
-        mainSession.waitUntilCalled(GeckoSession.TextInputDelegate::class, "restartInput")
+    @Test fun inputConnection_setSelection() {
+        setupContent("")
 
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
-        assertText("Can set initial text", ic, "foo")
+        assertText("Can set initial text", ic, "")
 
         
-        ic.setSelection(0, 3)
+        
+        
+        commitText(ic, "foo", 1) 
+        assertTextAndSelectionAt("Can commit text", ic, "foo", 3)
+
+        setSelection(ic, 0, 3)
         assertSelection("Can set selection to range", ic, 0, 3)
+        
         ic.setSelection(-3, 6)
         
         assertTextAndSelection("Can handle invalid range", ic,
                                "foo", 0, 3)
-        ic.setSelection(3, 3)
+        setSelection(ic, 3, 3)
         assertSelectionAt("Can collapse selection", ic, 3)
+        
         ic.setSelection(4, 4)
         assertTextAndSelectionAt("Can handle invalid cursor", ic, "foo", 3)
+    }
 
-        
-        ic.commitText("", 10) 
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_commitText() {
+        setupContent("")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "foo", 1) 
         assertTextAndSelectionAt("Can commit empty text", ic, "foo", 3)
-        ic.commitText("bar", 1) 
+
+        commitText(ic, "", 10) 
+        assertTextAndSelectionAt("Can commit empty text", ic, "foo", 3)
+        commitText(ic, "bar", 1) 
         assertTextAndSelectionAt("Can commit text (select after)", ic,
                                  "foobar", 6)
-        ic.commitText("foo", -1) 
+        commitText(ic, "foo", -1) 
         assertTextAndSelectionAt("Can commit text (select before)", ic,
                                  "foobarfoo", 5,  false)
+    }
 
-        
-        ic.deleteSurroundingText(1, 0)
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_deleteSurroundingText() {
+        setupContent("foobarfoo")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "foobarfoo")
+
+        setSelection(ic, 5, 5)
+        assertSelection("Can set selection to range", ic, 5, 5)
+
+        deleteSurroundingText(ic, 1, 0)
         assertTextAndSelectionAt("Can delete text before", ic,
                                  "foobrfoo", 4)
-        ic.deleteSurroundingText(1, 1)
+        deleteSurroundingText(ic, 1, 1)
         assertTextAndSelectionAt("Can delete text before/after", ic,
                                  "foofoo", 3)
-        ic.deleteSurroundingText(0, 10)
+        deleteSurroundingText(ic, 0, 10)
         assertTextAndSelectionAt("Can delete text after", ic, "foo", 3)
-        ic.deleteSurroundingText(0, 0)
+        deleteSurroundingText(ic, 0, 0)
         assertTextAndSelectionAt("Can delete empty text", ic, "foo", 3)
+    }
 
-        
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_setComposingText() {
+        setupContent("")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "foo", 1) 
+        assertTextAndSelectionAt("Can commit text", ic, "foo", 3)
+
         setComposingText(ic, "foo", 1)
         assertTextAndSelectionAt("Can start composition", ic, "foofoo", 6)
         setComposingText(ic, "", 1)
@@ -480,10 +511,21 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelectionAt("Can update composition", ic, "foobar", 6)
 
         
-        ic.finishComposingText()
+        finishComposingText(ic)
         assertTextAndSelectionAt("Can finish composition", ic, "foobar", 6)
+    }
 
-        
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_setComposingRegion() {
+        setupContent("")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "foobar", 1) 
+        assertTextAndSelectionAt("Can commit text", ic, "foobar", 6)
+
         ic.setComposingRegion(0, 3)
         assertTextAndSelectionAt("Can set composing region", ic, "foobar", 6)
 
@@ -499,42 +541,82 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelectionAt("Can set new composing region text", ic,
                                  "frabar", 6,  false)
 
+        finishComposingText(ic)
+    }
+
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_getTextBeforeAfterCursor() {
+        setupContent("foobar")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "foobar")
+
+        setSelection(ic, 3, 3)
+        assertSelection("Can set selection to range", ic, 3, 3)
+
         
         assertThat("Can retrieve text before cursor",
-                   "bar", equalTo(ic.getTextBeforeCursor(3, 0)))
+                   "foo", equalTo(ic.getTextBeforeCursor(3, 0)))
 
         
         assertThat("Can retrieve text after cursor",
-                   "", equalTo(ic.getTextAfterCursor(3, 0)))
+                   "bar", equalTo(ic.getTextAfterCursor(3, 0)))
+    }
 
-        ic.finishComposingText()
-        assertTextAndSelectionAt("Can finish composition", ic,
-                                 "frabar", 6,  false)
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_sendKeyEvent() {
+        setupContent("")
 
-        
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "frabar", 1) 
+        assertTextAndSelectionAt("Can commit text", ic, "frabar", 6)
+
         val time = SystemClock.uptimeMillis()
         val shiftKey = KeyEvent(time, time, KeyEvent.ACTION_DOWN,
                                 KeyEvent.KEYCODE_SHIFT_LEFT, 0)
-        val leftKey = KeyEvent(time, time, KeyEvent.ACTION_DOWN,
-                               KeyEvent.KEYCODE_DPAD_LEFT, 0)
-        val tKey = KeyEvent(time, time, KeyEvent.ACTION_DOWN,
-                            KeyEvent.KEYCODE_T, 0)
+
+        
+        var promise = mainSession.evaluatePromiseJS(
+                when (id) {
+                    "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('selectionchange', r, { once: true }))"
+                    "#contenteditable" -> "new Promise(r => document.addEventListener('selectionchange', r, { once: true }))"
+                    else -> "new Promise(r => document.querySelector('$id').addEventListener('selectionchange', r, { once: true }))"
+                })
 
         ic.sendKeyEvent(shiftKey)
-        ic.sendKeyEvent(leftKey)
-        ic.sendKeyEvent(KeyEvent.changeAction(leftKey, KeyEvent.ACTION_UP))
+        pressKey(ic, KeyEvent.KEYCODE_DPAD_LEFT)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
+        promise.value
         assertTextAndSelection("Can select using key event", ic,
                                "frabar", 6, 5)
 
-        ic.sendKeyEvent(tKey)
-        ic.sendKeyEvent(KeyEvent.changeAction(tKey, KeyEvent.ACTION_UP))
-        assertTextAndSelectionAt("Can type using event", ic, "frabat", 6)
+        promise = mainSession.evaluatePromiseJS(
+            when (id) {
+                "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('input', r, { once: true }))"
+                else -> "new Promise(r => document.querySelector('$id').addEventListener('input', r, { once: true }))"
+            })
 
-        ic.deleteSurroundingText(6, 0)
-        assertTextAndSelectionAt("Can clear text", ic, "", 0)
+        pressKey(ic, KeyEvent.KEYCODE_T)
+        promise.value
+        assertText("Can type using event", ic, "frabat")
+    }
 
+    
+    @Ignore 
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_bug1133802() {
         
+        
+        
+        setupContent("")
+
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
         setComposingText(ic, "foo", 1)
         assertTextAndSelectionAt("Can set the composing text", ic, "foo", 3)
         
@@ -552,46 +634,68 @@ class TextInputDelegateTest : BaseSessionTest() {
         ic.setComposingText("bar", 1)
         assertTextAndSelectionAt("Can set the same composing text again", ic,
                                  "bar", 3)
-        ic.finishComposingText()
+        finishComposingText(ic)
         assertTextAndSelectionAt("Can finish composing text", ic, "bar", 3)
+    }
 
-        ic.deleteSurroundingText(3, 0)
-        assertTextAndSelectionAt("Can clear text", ic, "", 0)
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_bug1209465() {
+        setupContent("")
 
-        
-        ic.commitText("\u3000", 1)
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "\u3000", 1)
         assertTextAndSelectionAt("Can commit ideographic space", ic,
                                  "\u3000", 1)
+    }
 
-        ic.deleteSurroundingText(1, 0)
-        assertTextAndSelectionAt("Can clear text", ic, "", 0)
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_bug1275371() {
+        setupContent("")
 
-        
-        val delKey = KeyEvent(time, time, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL, 0)
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
 
         ic.beginBatchEdit()
-        ic.commitText("foo", 1)
-        ic.setSelection(1, 1)
+        commitText(ic, "foo", 1)
+        setSelection(ic, 1, 1)
         ic.endBatchEdit()
         assertTextAndSelectionAt("Can commit text", ic, "foo", 1)
 
+        val time = SystemClock.uptimeMillis()
+        val shiftKey = KeyEvent(time, time, KeyEvent.ACTION_DOWN,
+                                KeyEvent.KEYCODE_SHIFT_LEFT, 0)
         ic.sendKeyEvent(shiftKey)
-        ic.sendKeyEvent(delKey)
-        ic.sendKeyEvent(KeyEvent.changeAction(delKey, KeyEvent.ACTION_UP))
-        assertTextAndSelectionAt("Can backspace with shift+backspace", ic,
-                                 "oo", 0)
 
-        ic.sendKeyEvent(delKey)
-        ic.sendKeyEvent(KeyEvent.changeAction(delKey, KeyEvent.ACTION_UP))
+        
+        val promise = mainSession.evaluatePromiseJS(
+                when (id) {
+                    "#designmode" -> "new Promise(r => document.querySelector('$id').contentDocument.addEventListener('input', r, { once: true }))"
+                    else -> "new Promise(r => document.querySelector('$id').addEventListener('input', r, { once: true }))"
+                })
+
+        pressKey(ic, KeyEvent.KEYCODE_DEL)
+        promise.value
+        assertText("Can backspace with shift+backspace", ic, "oo")
+
+        pressKey(ic, KeyEvent.KEYCODE_DEL)
         ic.sendKeyEvent(KeyEvent.changeAction(shiftKey, KeyEvent.ACTION_UP))
         assertTextAndSelectionAt("Cannot forward delete with shift+backspace", ic,
                                  "oo", 0)
+    }
 
-        ic.deleteSurroundingText(0, 2)
-        assertTextAndSelectionAt("Can clear text", ic, "", 0)
+    
+    @WithDisplay(width = 512, height = 512) 
+    @Test fun inputConnection_bug1490391() {
+        setupContent("")
 
-        
-        ic.commitText("far", 1)
+        val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
+        assertText("Can set initial text", ic, "")
+
+        commitText(ic, "far", 1)
         setComposingText(ic, "bar", 1)
         assertTextAndSelectionAt("Can commit then set composition", ic,
                                  "farbar", 6)
@@ -599,9 +703,12 @@ class TextInputDelegateTest : BaseSessionTest() {
         assertTextAndSelectionAt("Composition still exists after setting", ic,
                                  "farbaz", 6)
 
-        ic.finishComposingText()
-        ic.deleteSurroundingText(6, 0)
-        assertTextAndSelectionAt("Can clear text", ic, "", 0)
+        finishComposingText(ic)
+
+        
+        
+        
+        
     }
 
     @WithDisplay(width = 512, height = 512) 
