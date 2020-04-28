@@ -2132,6 +2132,11 @@ pref("devtools.dom.enabled", false);
 
 
 pref("devtools.accessibility.enabled", true);
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.accessibility.auto-init.enabled", true);
+#else
+  pref("devtools.accessibility.auto-init.enabled", false);
+#endif
 
 
 pref("devtools.webconsole.filter.error", true);
