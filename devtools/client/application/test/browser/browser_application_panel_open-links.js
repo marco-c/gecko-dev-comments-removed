@@ -25,7 +25,8 @@ add_task(async function() {
   
   const onTabLoaded = BrowserTestUtils.waitForNewTab(
     gBrowser,
-    "about:debugging#workers"
+    "about:debugging#workers",
+    true
   );
   doc.querySelector(".js-trusted-link").click();
   info("Opening link in a new tab.");
