@@ -3544,10 +3544,10 @@ static void linear_blit(Texture& srctex, const IntRect& srcReq, int srcZ,
   vec2_scalar srcDUV(float(srcReq.width()) / dstReq.width(),
                      float(srcReq.height()) / dstReq.height());
   
-  srcUV *= 128.0f;
-  srcDUV *= 128.0f;
-  
   srcUV += srcDUV * vec2_scalar(dstBounds.x0, dstBounds.y0);
+  
+  srcUV = linearQuantize(srcUV, 128);
+  srcDUV *= 128.0f;
   
   int bpp = dsttex.bpp();
   int destStride = dsttex.stride(bpp);
