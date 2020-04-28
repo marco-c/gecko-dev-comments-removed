@@ -813,7 +813,7 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
     case LOAD_NORMAL:
     case LOAD_LINK:
       
-      switch (Preferences::GetInt("browser.cache.check_doc_frequency", -1)) {
+      switch (StaticPrefs::browser_cache_check_doc_frequency()) {
         case 0:
           loadFlags |= nsIRequest::VALIDATE_ONCE_PER_SESSION;
           break;
