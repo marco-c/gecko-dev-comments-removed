@@ -17,6 +17,7 @@
 
 using mozilla::CheckedUint32;
 using mozilla::MakeUniqueFallible;
+using mozilla::UniquePtr;
 
 
 

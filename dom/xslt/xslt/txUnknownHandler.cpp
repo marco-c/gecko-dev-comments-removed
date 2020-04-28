@@ -12,6 +12,9 @@
 #include "txStringUtils.h"
 #include "txStylesheet.h"
 
+using mozilla::UniquePtr;
+using mozilla::WrapUnique;
+
 txUnknownHandler::txUnknownHandler(txExecutionState* aEs)
     : mEs(aEs), mFlushed(false) {
   MOZ_COUNT_CTOR_INHERITED(txUnknownHandler, txBufferingHandler);
@@ -162,7 +165,7 @@ nsresult txUnknownHandler::createHandlerAndFlush(bool aHTMLRoot,
   
   
   
-  mEs->mObsoleteHandler = this;
+  mEs->mObsoleteHandler = WrapUnique(this);
 
   mFlushed = true;
 
