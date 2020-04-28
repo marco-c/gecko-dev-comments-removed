@@ -1046,7 +1046,8 @@ bool DocumentLoadListener::ResumeSuspendedChannel(
 
 void DocumentLoadListener::SerializeRedirectData(
     RedirectToRealChannelArgs& aArgs, bool aIsCrossProcess,
-    uint32_t aRedirectFlags, uint32_t aLoadFlags) const {
+    uint32_t aRedirectFlags, uint32_t aLoadFlags,
+    ContentParent* aParent) const {
   
   
   aArgs.uri() = mChannelCreationURI;
@@ -1132,7 +1133,7 @@ void DocumentLoadListener::SerializeRedirectData(
                  ->CloneReplacementChannelConfig(
                      true, aRedirectFlags,
                      HttpBaseChannel::ReplacementReason::DocumentChannel)
-                 .Serialize());
+                 .Serialize(aParent));
   }
 
   uint32_t contentDispositionTemp;
@@ -1389,7 +1390,7 @@ DocumentLoadListener::RedirectToRealChannel(
 
     RedirectToRealChannelArgs args;
     SerializeRedirectData(args, !!aDestinationProcess, aRedirectFlags,
-                          aLoadFlags);
+                          aLoadFlags, cp);
     if (mTiming) {
       mTiming->Anonymize(args.uri());
       args.timing() = Some(std::move(mTiming));
