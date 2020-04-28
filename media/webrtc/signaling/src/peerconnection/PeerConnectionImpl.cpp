@@ -2173,8 +2173,9 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(bool rollback, bool remote) {
 
   
   
-  if (!rollback && (newSignalingState == RTCSignalingState::Have_local_offer ||
-                    mSignalingState == RTCSignalingState::Have_remote_offer)) {
+
+  
+  if (!remote) {
     
     
     
