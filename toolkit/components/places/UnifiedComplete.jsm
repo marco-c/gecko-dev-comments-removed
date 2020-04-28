@@ -499,6 +499,8 @@ function stripAnyPrefix(str) {
 
 
 
+
+
 function stripPrefixAndTrim(spec, options = {}) {
   let prefix = "";
   let suffix = "";
@@ -513,13 +515,17 @@ function stripPrefixAndTrim(spec, options = {}) {
     spec = spec.slice(4);
     prefix += "www.";
   }
-  if (options.trimSlash && spec.endsWith("/")) {
+  if (options.trimEmptyHash && spec.endsWith("#")) {
     spec = spec.slice(0, -1);
-    suffix += "/";
+    suffix = "#" + suffix;
   }
   if (options.trimEmptyQuery && spec.endsWith("?")) {
     spec = spec.slice(0, -1);
-    suffix += "?";
+    suffix = "?" + suffix;
+  }
+  if (options.trimSlash && spec.endsWith("/")) {
+    spec = spec.slice(0, -1);
+    suffix = "/" + suffix;
   }
   return [spec, prefix, suffix];
 }
@@ -558,8 +564,9 @@ function makeKeyForMatch(match) {
       stripHttp: true,
       stripHttps: true,
       stripWww: true,
-      trimEmptyQuery: true,
       trimSlash: true,
+      trimEmptyQuery: true,
+      trimEmptyHash: true,
     });
     return [key, prefix, null];
   }
