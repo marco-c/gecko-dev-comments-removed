@@ -279,6 +279,9 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:ScriptPreloader::OffThreadDecodeCallback\n"
 
          
+         "race:mp_exptmod.max_window_bits\n"
+
+         
          
          "mutex:GLContextGLX::~GLContextGLX\n"
 
