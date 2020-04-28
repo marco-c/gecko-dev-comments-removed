@@ -333,6 +333,12 @@ this.LoginHelper = {
       return true;
     }
 
+    
+    
+    if (!aOptions.acceptDifferentSubdomains && !aOptions.schemeUpgrades) {
+      return false;
+    }
+
     try {
       let loginURI = Services.io.newURI(aLoginOrigin);
       let searchURI = Services.io.newURI(aSearchOrigin);
