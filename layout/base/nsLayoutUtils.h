@@ -980,6 +980,38 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static Matrix4x4Flagged GetTransformToAncestor(
       RelativeTo aFrame, RelativeTo aAncestor, uint32_t aFlags = 0,
       nsIFrame** aOutAncestor = nullptr);
