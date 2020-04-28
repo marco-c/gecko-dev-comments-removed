@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Sqlite"];
+var EXPORTED_SYMBOLS = ["Sqlite", "Barriers"];
 
 
 
