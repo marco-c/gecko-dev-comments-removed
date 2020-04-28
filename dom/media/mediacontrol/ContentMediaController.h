@@ -37,6 +37,15 @@ enum class ControlledMediaState : uint32_t {
 
 
 
+enum class MediaAudibleState : bool {
+  eInaudible = false,
+  eAudible = true,
+};
+
+
+
+
+
 
 
 
@@ -94,7 +103,8 @@ class ContentMediaAgent {
   
   
   virtual void NotifyAudibleStateChanged(
-      const ContentControlKeyEventReceiver* aMedia, bool aAudible) = 0;
+      const ContentControlKeyEventReceiver* aMedia,
+      MediaAudibleState aState) = 0;
 
   
   
@@ -136,7 +146,7 @@ class ContentMediaController final : public ContentMediaAgent,
   void NotifyMediaStateChanged(const ContentControlKeyEventReceiver* aMedia,
                                ControlledMediaState aState) override;
   void NotifyAudibleStateChanged(const ContentControlKeyEventReceiver* aMedia,
-                                 bool aAudible) override;
+                                 MediaAudibleState aState) override;
   void NotifyPictureInPictureModeChanged(
       const ContentControlKeyEventReceiver* aMedia, bool aEnabled) override;
 

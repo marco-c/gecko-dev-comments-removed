@@ -447,7 +447,7 @@ class HTMLMediaElement::MediaControlEventListener final
       
       
       if (mIsOwnerAudible) {
-        NotifyAudibleStateChanged(true);
+        NotifyAudibleStateChanged(MediaAudibleState::eAudible);
       }
     }
   }
@@ -459,7 +459,7 @@ class HTMLMediaElement::MediaControlEventListener final
       NotifyMediaStateChanged(ControlledMediaState::ePaused);
       
       if (mIsOwnerAudible) {
-        NotifyAudibleStateChanged(false);
+        NotifyAudibleStateChanged(MediaAudibleState::eInaudible);
       }
     }
   }
@@ -477,7 +477,9 @@ class HTMLMediaElement::MediaControlEventListener final
     
     
     if (mState == ControlledMediaState::ePlayed) {
-      NotifyAudibleStateChanged(mIsOwnerAudible);
+      NotifyAudibleStateChanged(mIsOwnerAudible
+                                    ? MediaAudibleState::eAudible
+                                    : MediaAudibleState::eInaudible);
     }
   }
 
@@ -539,10 +541,10 @@ class HTMLMediaElement::MediaControlEventListener final
     mControlAgent->NotifyMediaStateChanged(this, mState);
   }
 
-  void NotifyAudibleStateChanged(bool aIsOwnerAudible) {
+  void NotifyAudibleStateChanged(MediaAudibleState aState) {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(IsStarted());
-    mControlAgent->NotifyAudibleStateChanged(this, aIsOwnerAudible);
+    mControlAgent->NotifyAudibleStateChanged(this, aState);
   }
 
   ControlledMediaState mState = ControlledMediaState::eStopped;

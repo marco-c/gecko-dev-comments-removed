@@ -84,7 +84,7 @@ class MediaController final
   
   
   void NotifyMediaStateChanged(ControlledMediaState aState);
-  void NotifyMediaAudibleChanged(bool aAudible);
+  void NotifyMediaAudibleChanged(MediaAudibleState aState);
 
  private:
   ~MediaController();
@@ -106,7 +106,7 @@ class MediaController final
   
   void UpdateActualPlaybackState();
 
-  bool mAudible = false;
+  MediaAudibleState mAudibleState = MediaAudibleState::eInaudible;
   bool mIsRegisteredToService = false;
   int64_t mControlledMediaNum = 0;
   int64_t mPlayingControlledMediaNum = 0;
