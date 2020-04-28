@@ -4,11 +4,15 @@
 
 
 
-#include "mozilla/StaticPrefs_dom.h"
-#include "nsContentUtils.h"
 #include "nsHTTPSOnlyUtils.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/net/DNS.h"
+#include "nsContentUtils.h"
 #include "nsIConsoleService.h"
 #include "nsIScriptError.h"
+#include "prnetdb.h"
+
+
 
 
 bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
@@ -17,6 +21,12 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
   if (!mozilla::StaticPrefs::dom_security_https_only_mode()) {
     return false;
   }
+
+  
+  if (OnionException(aURI) || LoopbackOrLocalException(aURI)) {
+    return false;
+  }
+
   
   uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
   if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
@@ -30,8 +40,6 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
         aURI);
     return false;
   }
-
-  
 
   
   
@@ -55,6 +63,47 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeRequest(nsIURI* aURI,
     httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED;
     aLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
   }
+  return true;
+}
+
+
+bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
+                                              int32_t aInnerWindowId,
+                                              bool aFromPrivateWindow,
+                                              uint32_t aHttpsOnlyStatus) {
+  
+  if (!mozilla::StaticPrefs::dom_security_https_only_mode()) {
+    return false;
+  }
+
+  
+  if (OnionException(aURI) || LoopbackOrLocalException(aURI)) {
+    return false;
+  }
+
+  
+  if (aHttpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    
+    AutoTArray<nsString, 1> params = {
+        NS_ConvertUTF8toUTF16(aURI->GetSpecOrDefault())};
+    nsHTTPSOnlyUtils::LogLocalizedString(
+        "HTTPSOnlyNoUpgradeException", params, nsIScriptError::infoFlag,
+        aInnerWindowId, aFromPrivateWindow, aURI);
+    return false;
+  }
+
+  
+  
+  nsAutoCString scheme;
+  aURI->GetScheme(scheme);
+  scheme.AppendLiteral("s");
+  NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
+  NS_ConvertUTF8toUTF16 reportScheme(scheme);
+
+  AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
+  nsHTTPSOnlyUtils::LogLocalizedString(
+      "HTTPSOnlyUpgradeRequest", params, nsIScriptError::warningFlag,
+      aInnerWindowId, aFromPrivateWindow, aURI);
 
   return true;
 }
@@ -93,4 +142,56 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
         message, category.get(), aFromPrivateWindow,
         true , aFlags);
   }
+}
+
+
+
+
+bool nsHTTPSOnlyUtils::OnionException(nsIURI* aURI) {
+  
+  if (mozilla::StaticPrefs::dom_security_https_only_mode_upgrade_onion()) {
+    return false;
+  }
+  nsAutoCString host;
+  aURI->GetHost(host);
+  return StringEndsWith(host, NS_LITERAL_CSTRING(".onion"));
+}
+
+
+bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
+  nsAutoCString asciiHost;
+  nsresult rv = aURI->GetAsciiHost(asciiHost);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  
+  if (asciiHost.EqualsLiteral("localhost") || asciiHost.EqualsLiteral("::1")) {
+    return true;
+  }
+
+  
+  
+  
+  PRNetAddr tempAddr;
+  memset(&tempAddr, 0, sizeof(PRNetAddr));
+  
+  
+  if (PR_StringToNetAddr(asciiHost.get(), &tempAddr) != PR_SUCCESS) {
+    return false;
+  }
+
+  
+  
+  mozilla::net::NetAddr addr;  
+  PRNetAddrToNetAddr(&tempAddr, &addr);
+
+  
+  if (IsLoopBackAddress(&addr)) {
+    return true;
+  }
+
+  
+  bool upgradeLocal =
+      mozilla::StaticPrefs::dom_security_https_only_mode_upgrade_local();
+  return (!upgradeLocal && IsIPAddrLocal(&addr));
 }
