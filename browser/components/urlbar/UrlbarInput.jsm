@@ -1328,12 +1328,15 @@ class UrlbarInput {
   _checkForRtlText(value) {
     let directionality = this.window.windowUtils.getDirectionFromText(value);
     if (directionality == this.window.windowUtils.DIRECTION_RTL) {
-      this.setAttribute("rtltext", "true");
       return true;
     }
-    this.removeAttribute("rtltext");
     return false;
   }
+
+  
+
+
+
 
   _updateTextOverflow() {
     if (!this._overflowing) {
@@ -1341,15 +1344,34 @@ class UrlbarInput {
       return;
     }
 
-    let isRTL = this._checkForRtlText(this.value);
+    let isRTL =
+      this.getAttribute("domaindir") != "ltr" &&
+      this._checkForRtlText(this.value);
 
     this.window.promiseDocumentFlushed(() => {
       
       let input = this.inputField;
       if (input && this._overflowing) {
-        let side = isRTL ? "left" : "right";
-        if (input.scrollLeft == input.scrollLeftMax) {
-          side = isRTL == !input.scrollLeft ? "left" : "right";
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let side = "both";
+        if (isRTL) {
+          if (input.scrollLeft == 0) {
+            side = "left";
+          } else if (input.scrollLeft == input.scrollLeftMin) {
+            side = "right";
+          }
+        } else if (input.scrollLeft == 0) {
+          side = "right";
+        } else if (input.scrollLeft == input.scrollLeftMax) {
+          side = "left";
         }
 
         this.window.requestAnimationFrame(() => {
@@ -2059,7 +2081,6 @@ class UrlbarInput {
 
     if (value) {
       this.setAttribute("usertyping", "true");
-      this._checkForRtlText(value);
     } else {
       this.removeAttribute("usertyping");
     }
