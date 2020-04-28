@@ -174,12 +174,6 @@ class nsNavHistory final : public nsSupportsWeakReference,
   static void GetMonthYear(const PRExplodedTime& aTime, nsACString& aResult);
 
   
-  static nsresult CanAddURIToHistory(nsIURI* aURI, bool* aCanAdd);
-
-  
-  static uint32_t MaxURILength();
-
-  
   bool IsHistoryDisabled() { return !mHistoryEnabled; }
 
   
