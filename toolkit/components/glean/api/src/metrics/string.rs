@@ -61,6 +61,13 @@ impl StringMetric {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_value(&self, storage_name: &str) -> Option<String> {
         crate::with_glean(move |glean| self.0.test_get_value(glean, storage_name))
     }
