@@ -2452,9 +2452,14 @@ LayoutDeviceIntPoint BrowserParent::GetChildProcessOffset() {
   
   
 
+  
+  
+  
+  ViewportType viewportType = ViewportType::Visual;
+
   nsPoint pt = targetFrame->GetOffsetTo(rootFrame);
   return -nsLayoutUtils::TranslateViewToWidget(presContext, rootView, pt,
-                                               widget);
+                                               viewportType, widget);
 }
 
 LayoutDeviceIntPoint BrowserParent::GetClientOffset() {

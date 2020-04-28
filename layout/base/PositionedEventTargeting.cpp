@@ -510,7 +510,8 @@ nsIFrame* FindFrameTargetedByInputEvent(
     return target;
   }
   LayoutDeviceIntPoint widgetPoint = nsLayoutUtils::TranslateViewToWidget(
-      aRootFrame.mFrame->PresContext(), view, point, aEvent->mWidget);
+      aRootFrame.mFrame->PresContext(), view, point, aRootFrame.mViewportType,
+      aEvent->mWidget);
   if (widgetPoint.x != NS_UNCONSTRAINEDSIZE) {
     
     aEvent->mRefPoint = widgetPoint;
