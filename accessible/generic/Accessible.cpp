@@ -527,16 +527,8 @@ Accessible* Accessible::ChildAtPoint(int32_t aX, int32_t aY,
   nsPoint offset(presContext->DevPixelsToAppUnits(aX) - screenRect.X(),
                  presContext->DevPixelsToAppUnits(aY) - screenRect.Y());
 
-  
-  
-  offset = offset.RemoveResolution(presContext->PresShell()->GetResolution());
-
-  
-  
-  offset += presContext->PresShell()->GetVisualViewportOffset() -
-            presContext->PresShell()->GetLayoutViewportOffset();
-
-  nsIFrame* foundFrame = nsLayoutUtils::GetFrameForPoint(startFrame, offset);
+  nsIFrame* foundFrame = nsLayoutUtils::GetFrameForPoint(
+      RelativeTo{startFrame, ViewportType::Visual}, offset);
 
   nsIContent* content = nullptr;
   if (!foundFrame || !(content = foundFrame->GetContent()))

@@ -521,7 +521,7 @@ nsresult nsFrameSelection::ConstrainFrameAndPointToAnchorSubtree(
       nsIFrame* rootFrame = mPresShell->GetRootFrame();
       nsPoint ptInRoot = aPoint + aFrame->GetOffsetTo(rootFrame);
       nsIFrame* cursorFrame =
-          nsLayoutUtils::GetFrameForPoint(rootFrame, ptInRoot);
+          nsLayoutUtils::GetFrameForPoint(RelativeTo{rootFrame}, ptInRoot);
 
       
       

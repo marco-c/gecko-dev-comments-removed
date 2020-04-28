@@ -1186,7 +1186,7 @@ bool nsTypeAheadFind::IsRangeRendered(nsRange* aRange) {
              nsPresContext::CSSPixelsToAppUnits((float)rect->Height()));
     
     nsLayoutUtils::GetFramesForArea(
-        rootFrame, r, frames,
+        RelativeTo{rootFrame}, r, frames,
         {FrameForPointOption::IgnorePaintSuppression,
          FrameForPointOption::IgnoreRootScrollFrame,
          FrameForPointOption::OnlyVisible});

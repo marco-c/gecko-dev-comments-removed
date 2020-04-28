@@ -544,8 +544,8 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   }
 
   
-  AutoWeakFrame ptFrame =
-      nsLayoutUtils::GetFrameForPoint(rootFrame, aPoint, GetHitTestOptions());
+  AutoWeakFrame ptFrame = nsLayoutUtils::GetFrameForPoint(
+      RelativeTo{rootFrame}, aPoint, GetHitTestOptions());
   if (!ptFrame.GetFrame()) {
     return NS_ERROR_FAILURE;
   }
@@ -1217,8 +1217,8 @@ nsresult AccessibleCaretManager::DragCaretInternal(const nsPoint& aPoint) {
 
   
 
-  nsIFrame* ptFrame =
-      nsLayoutUtils::GetFrameForPoint(rootFrame, point, GetHitTestOptions());
+  nsIFrame* ptFrame = nsLayoutUtils::GetFrameForPoint(
+      RelativeTo{rootFrame}, point, GetHitTestOptions());
   if (!ptFrame) {
     return NS_ERROR_FAILURE;
   }
