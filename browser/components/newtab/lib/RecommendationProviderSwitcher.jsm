@@ -67,10 +67,13 @@ this.RecommendationProviderSwitcher = class RecommendationProviderSwitcher {
         return;
       }
       
-      this.affinityProvider = new PersonalityProvider(...args, {
-        modelKeys: affinityProviderV2.modelKeys,
-        dispatch: this.store.dispatch,
-      });
+      if (!this.affinityProvider) {
+        this.affinityProvider = new PersonalityProvider({
+          modelKeys: affinityProviderV2.modelKeys,
+          dispatch: this.store.dispatch,
+        });
+      }
+      this.affinityProvider.setAffinities(...args);
       return;
     }
 
