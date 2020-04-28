@@ -591,12 +591,12 @@ class MediaRawDataWriter {
 
   
   
-  MOZ_MUST_USE bool SetSize(size_t aSize);
+  [[nodiscard]] bool SetSize(size_t aSize);
   
-  MOZ_MUST_USE bool Prepend(const uint8_t* aData, size_t aSize);
-  MOZ_MUST_USE bool Append(const uint8_t* aData, size_t aSize);
+  [[nodiscard]] bool Prepend(const uint8_t* aData, size_t aSize);
+  [[nodiscard]] bool Append(const uint8_t* aData, size_t aSize);
   
-  MOZ_MUST_USE bool Replace(const uint8_t* aData, size_t aSize);
+  [[nodiscard]] bool Replace(const uint8_t* aData, size_t aSize);
   
   void Clear();
   
@@ -605,7 +605,7 @@ class MediaRawDataWriter {
  private:
   friend class MediaRawData;
   explicit MediaRawDataWriter(MediaRawData* aMediaRawData);
-  MOZ_MUST_USE bool EnsureSize(size_t aSize);
+  [[nodiscard]] bool EnsureSize(size_t aSize);
   MediaRawData* mTarget;
 };
 
