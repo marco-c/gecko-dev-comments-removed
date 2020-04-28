@@ -2125,6 +2125,20 @@ haveAChild(int argc, char **argv, PRProcessAttr *attr)
     return newProcess;
 }
 
+#ifdef XP_UNIX
+void
+sigusr1_parent_handler(int sig)
+{
+    PRProcess *process;
+    int i;
+    fprintf(stderr, "SIG_USER: Parent got sig_user, killing children (%d).\n", numChildren);
+    for (i = 0; i < numChildren; i++) {
+        process = child[i];
+        PR_KillProcess(process); 
+    }
+}
+#endif
+
 void
 beAGoodParent(int argc, char **argv, int maxProcs, PRFileDesc *listen_sock)
 {
@@ -2133,6 +2147,19 @@ beAGoodParent(int argc, char **argv, int maxProcs, PRFileDesc *listen_sock)
     int i;
     PRInt32 exitCode;
     PRStatus rv;
+
+#ifdef XP_UNIX
+    struct sigaction act;
+
+    
+    act.sa_handler = sigusr1_parent_handler;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (sigaction(SIGUSR1, &act, NULL)) {
+        fprintf(stderr, "Error installing signal handler.\n");
+        exit(1);
+    }
+#endif
 
     rv = PR_SetFDInheritable(listen_sock, PR_TRUE);
     if (rv != PR_SUCCESS)
@@ -2588,7 +2615,8 @@ main(int argc, char **argv)
         exit(14);
     }
 
-    if (pidFile) {
+    envString = PR_GetEnvSecure(envVarName);
+    if (!envString && pidFile) {
         FILE *tmpfile = fopen(pidFile, "w+");
 
         if (tmpfile) {
@@ -2613,13 +2641,6 @@ main(int argc, char **argv)
     if (!tmp)
         tmp = PR_GetEnvSecure("TEMP");
 
-    
-    rv = NSS_Initialize(dir, certPrefix, certPrefix, SECMOD_DB, NSS_INIT_READONLY);
-    if (rv != SECSuccess) {
-        fputs("NSS_Init failed.\n", stderr);
-        exit(8);
-    }
-
     if (envString) {
         
         listen_sock = PR_GetInheritedFD(inheritableSockName);
@@ -2642,6 +2663,12 @@ main(int argc, char **argv)
         if (rv != SECSuccess)
             errExit("SSL_InheritMPServerSIDCache");
         hasSidCache = PR_TRUE;
+        
+        rv = NSS_Initialize(dir, certPrefix, certPrefix, SECMOD_DB, NSS_INIT_READONLY);
+        if (rv != SECSuccess) {
+            fputs("NSS_Init failed.\n", stderr);
+            exit(8);
+        }
     } else if (maxProcs > 1) {
         
         listen_sock = getBoundListenSocket(port);
@@ -2652,6 +2679,12 @@ main(int argc, char **argv)
         beAGoodParent(argc, argv, maxProcs, listen_sock);
         exit(99); 
     } else {
+        
+        rv = NSS_Initialize(dir, certPrefix, certPrefix, SECMOD_DB, NSS_INIT_READONLY);
+        if (rv != SECSuccess) {
+            fputs("NSS_Init failed.\n", stderr);
+            exit(8);
+        }
         
         listen_sock = getBoundListenSocket(port);
         prStatus = PR_SetFDInheritable(listen_sock, PR_FALSE);

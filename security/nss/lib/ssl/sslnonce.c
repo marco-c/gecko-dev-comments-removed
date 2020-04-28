@@ -1200,14 +1200,15 @@ ssl3_SetSIDSessionTicket(sslSessionID *sid,
 
 
     if (sid->u.ssl3.lock) {
-        PORT_Assert(sid->cached == in_client_cache);
         PR_RWLock_Wlock(sid->u.ssl3.lock);
+        
+        PORT_Assert(sid->cached != never_cached);
     }
     
 
 
     if (sid->u.ssl3.locked.sessionTicket.ticket.data) {
-        PORT_Assert(sid->cached == in_client_cache ||
+        PORT_Assert(sid->cached != never_cached ||
                     sid->version >= SSL_LIBRARY_VERSION_TLS_1_3);
         SECITEM_FreeItem(&sid->u.ssl3.locked.sessionTicket.ticket,
                          PR_FALSE);

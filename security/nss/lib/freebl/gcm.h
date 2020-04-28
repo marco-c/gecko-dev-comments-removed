@@ -31,26 +31,8 @@
 #include <arm_neon.h>
 #endif
 
-#if defined(__powerpc64__) && !defined(NSS_DISABLE_ALTIVEC)
-#include "altivec-types.h"
-
-
-#ifdef __cplusplus
-#undef pixel
-#undef vector
-#undef bool
-#endif
-
-
-
-
-
-
-#if (defined(__clang__) || (defined(__GNUC__) && __GNUC__ >= 8)) && \
-    defined(IS_LITTLE_ENDIAN)
-#define USE_PPC_CRYPTO
-#endif
-
+#if defined(__powerpc64__)
+#include "ppc-crypto.h"
 #endif
 
 SEC_BEGIN_PROTOS

@@ -92,38 +92,6 @@ typedef enum {
 
 
 
-
-
-
-
-
-
-
-
-
-
-struct SDBPrivateStr {
-    char *sqlDBName;               
-    sqlite3 *sqlXactDB;            
-
-    PRThread *sqlXactThread;       
-
-    sqlite3 *sqlReadDB;            
-    PRIntervalTime lastUpdateTime; 
-    PRIntervalTime updateInterval; 
-
-    sdbDataType type;              
-    char *table;                   
-    char *cacheTable;              
-    PRMonitor *dbMon;              
-
-};
-
-typedef struct SDBPrivateStr SDBPrivate;
-
-
-
-
 static const CK_ATTRIBUTE_TYPE known_attributes[] = {
     CKA_CLASS, CKA_TOKEN, CKA_PRIVATE, CKA_LABEL, CKA_APPLICATION,
     CKA_VALUE, CKA_OBJECT_ID, CKA_CERTIFICATE_TYPE, CKA_ISSUER,
@@ -135,35 +103,68 @@ static const CK_ATTRIBUTE_TYPE known_attributes[] = {
     CKA_VERIFY, CKA_VERIFY_RECOVER, CKA_DERIVE, CKA_START_DATE, CKA_END_DATE,
     CKA_MODULUS, CKA_MODULUS_BITS, CKA_PUBLIC_EXPONENT, CKA_PRIVATE_EXPONENT,
     CKA_PRIME_1, CKA_PRIME_2, CKA_EXPONENT_1, CKA_EXPONENT_2, CKA_COEFFICIENT,
-    CKA_PRIME, CKA_SUBPRIME, CKA_BASE, CKA_PRIME_BITS,
+    CKA_PUBLIC_KEY_INFO, CKA_PRIME, CKA_SUBPRIME, CKA_BASE, CKA_PRIME_BITS,
     CKA_SUB_PRIME_BITS, CKA_VALUE_BITS, CKA_VALUE_LEN, CKA_EXTRACTABLE,
     CKA_LOCAL, CKA_NEVER_EXTRACTABLE, CKA_ALWAYS_SENSITIVE,
     CKA_KEY_GEN_MECHANISM, CKA_MODIFIABLE, CKA_EC_PARAMS,
     CKA_EC_POINT, CKA_SECONDARY_AUTH, CKA_AUTH_PIN_FLAGS,
-    CKA_ALWAYS_AUTHENTICATE, CKA_WRAP_WITH_TRUSTED, CKA_WRAP_TEMPLATE,
-    CKA_UNWRAP_TEMPLATE, CKA_HW_FEATURE_TYPE, CKA_RESET_ON_INIT,
-    CKA_HAS_RESET, CKA_PIXEL_X, CKA_PIXEL_Y, CKA_RESOLUTION, CKA_CHAR_ROWS,
-    CKA_CHAR_COLUMNS, CKA_COLOR, CKA_BITS_PER_PIXEL, CKA_CHAR_SETS,
-    CKA_ENCODING_METHODS, CKA_MIME_TYPES, CKA_MECHANISM_TYPE,
-    CKA_REQUIRED_CMS_ATTRIBUTES, CKA_DEFAULT_CMS_ATTRIBUTES,
-    CKA_SUPPORTED_CMS_ATTRIBUTES, CKA_NSS_URL, CKA_NSS_EMAIL,
-    CKA_NSS_SMIME_INFO, CKA_NSS_SMIME_TIMESTAMP,
+    CKA_ALWAYS_AUTHENTICATE, CKA_WRAP_WITH_TRUSTED, CKA_HW_FEATURE_TYPE,
+    CKA_RESET_ON_INIT, CKA_HAS_RESET, CKA_PIXEL_X, CKA_PIXEL_Y,
+    CKA_RESOLUTION, CKA_CHAR_ROWS, CKA_CHAR_COLUMNS, CKA_COLOR,
+    CKA_BITS_PER_PIXEL, CKA_CHAR_SETS, CKA_ENCODING_METHODS, CKA_MIME_TYPES,
+    CKA_MECHANISM_TYPE, CKA_REQUIRED_CMS_ATTRIBUTES,
+    CKA_DEFAULT_CMS_ATTRIBUTES, CKA_SUPPORTED_CMS_ATTRIBUTES,
+    CKA_WRAP_TEMPLATE, CKA_UNWRAP_TEMPLATE, CKA_NSS_TRUST, CKA_NSS_URL,
+    CKA_NSS_EMAIL, CKA_NSS_SMIME_INFO, CKA_NSS_SMIME_TIMESTAMP,
     CKA_NSS_PKCS8_SALT, CKA_NSS_PASSWORD_CHECK, CKA_NSS_EXPIRES,
     CKA_NSS_KRL, CKA_NSS_PQG_COUNTER, CKA_NSS_PQG_SEED,
     CKA_NSS_PQG_H, CKA_NSS_PQG_SEED_BITS, CKA_NSS_MODULE_SPEC,
-    CKA_TRUST_DIGITAL_SIGNATURE, CKA_TRUST_NON_REPUDIATION,
-    CKA_TRUST_KEY_ENCIPHERMENT, CKA_TRUST_DATA_ENCIPHERMENT,
-    CKA_TRUST_KEY_AGREEMENT, CKA_TRUST_KEY_CERT_SIGN, CKA_TRUST_CRL_SIGN,
-    CKA_TRUST_SERVER_AUTH, CKA_TRUST_CLIENT_AUTH, CKA_TRUST_CODE_SIGNING,
-    CKA_TRUST_EMAIL_PROTECTION, CKA_TRUST_IPSEC_END_SYSTEM,
-    CKA_TRUST_IPSEC_TUNNEL, CKA_TRUST_IPSEC_USER, CKA_TRUST_TIME_STAMPING,
-    CKA_TRUST_STEP_UP_APPROVED, CKA_CERT_SHA1_HASH, CKA_CERT_MD5_HASH,
-    CKA_NSS_DB, CKA_NSS_TRUST, CKA_NSS_OVERRIDE_EXTENSIONS,
-    CKA_PUBLIC_KEY_INFO, CKA_NSS_SERVER_DISTRUST_AFTER, CKA_NSS_EMAIL_DISTRUST_AFTER
+    CKA_NSS_OVERRIDE_EXTENSIONS, CKA_NSS_SERVER_DISTRUST_AFTER,
+    CKA_NSS_EMAIL_DISTRUST_AFTER, CKA_TRUST_DIGITAL_SIGNATURE,
+    CKA_TRUST_NON_REPUDIATION, CKA_TRUST_KEY_ENCIPHERMENT,
+    CKA_TRUST_DATA_ENCIPHERMENT, CKA_TRUST_KEY_AGREEMENT,
+    CKA_TRUST_KEY_CERT_SIGN, CKA_TRUST_CRL_SIGN, CKA_TRUST_SERVER_AUTH,
+    CKA_TRUST_CLIENT_AUTH, CKA_TRUST_CODE_SIGNING, CKA_TRUST_EMAIL_PROTECTION,
+    CKA_TRUST_IPSEC_END_SYSTEM, CKA_TRUST_IPSEC_TUNNEL, CKA_TRUST_IPSEC_USER,
+    CKA_TRUST_TIME_STAMPING, CKA_TRUST_STEP_UP_APPROVED, CKA_CERT_SHA1_HASH,
+    CKA_CERT_MD5_HASH, CKA_NSS_DB
 };
 
-static int known_attributes_size = sizeof(known_attributes) /
-                                   sizeof(known_attributes[0]);
+static const int known_attributes_size = PR_ARRAY_SIZE(known_attributes);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct SDBPrivateStr {
+    char *sqlDBName;                
+    sqlite3 *sqlXactDB;             
+
+    PRThread *sqlXactThread;        
+
+    sqlite3 *sqlReadDB;             
+    PRIntervalTime lastUpdateTime;  
+    PRIntervalTime updateInterval;  
+
+    sdbDataType type;               
+    char *table;                    
+    char *cacheTable;               
+    PRMonitor *dbMon;               
+
+    CK_ATTRIBUTE_TYPE *schemaAttrs; 
+    unsigned int numSchemaAttrs;
+};
+
+typedef struct SDBPrivateStr SDBPrivate;
 
 
 
@@ -400,8 +401,20 @@ sdb_measureAccess(const char *directory)
     PRIntervalTime duration = PR_MillisecondsToInterval(33);
     const char *doesntExistName = "_dOeSnotExist_.db";
     char *temp, *tempStartOfFilename;
-    size_t maxTempLen, maxFileNameLen, directoryLength;
+    size_t maxTempLen, maxFileNameLen, directoryLength, tmpdirLength = 0;
+#ifdef SDB_MEASURE_USE_TEMP_DIR
+    
 
+
+
+
+
+
+
+
+    const char template[] = "dbTemp.XXXXXX";
+    tmpdirLength = sizeof(template);
+#endif
     
     if (directory == NULL) {
         return 1;
@@ -412,11 +425,13 @@ sdb_measureAccess(const char *directory)
 
     directoryLength = strlen(directory);
 
-    maxTempLen = directoryLength + strlen(doesntExistName) + 1 
-                 + 11                                          
-                 + 1;                                          
+    maxTempLen = directoryLength + 1       
+                 + tmpdirLength            
+                 + strlen(doesntExistName) 
+                 + 11                      
+                 + 1;                      
 
-    temp = PORT_Alloc(maxTempLen);
+    temp = PORT_ZAlloc(maxTempLen);
     if (!temp) {
         return 1;
     }
@@ -424,12 +439,25 @@ sdb_measureAccess(const char *directory)
     
 
 
-
     strcpy(temp, directory);
     if (directory[directoryLength - 1] != PR_GetDirectorySeparator()) {
         temp[directoryLength++] = PR_GetDirectorySeparator();
     }
-    tempStartOfFilename = temp + directoryLength;
+
+#ifdef SDB_MEASURE_USE_TEMP_DIR
+    
+    strcat(temp, template);
+    if (!mkdtemp(temp)) {
+        PORT_Free(temp);
+        return 1;
+    }
+    
+    strcat(temp, "/");
+#endif
+
+    
+
+    tempStartOfFilename = temp + directoryLength + tmpdirLength;
     maxFileNameLen = maxTempLen - directoryLength;
 
     
@@ -453,6 +481,12 @@ sdb_measureAccess(const char *directory)
             break;
     }
 
+#ifdef SDB_MEASURE_USE_TEMP_DIR
+    
+
+    *tempStartOfFilename = '\0';
+    (void)rmdir(temp);
+#endif
     PORT_Free(temp);
 
     
@@ -858,9 +892,9 @@ sdb_FindObjectsFinal(SDB *sdb, SDBFind *sdbFind)
     return sdb_mapSQLError(sdb_p->type, sqlerr);
 }
 
-CK_RV
-sdb_GetAttributeValueNoLock(SDB *sdb, CK_OBJECT_HANDLE object_id,
-                            CK_ATTRIBUTE *template, CK_ULONG count)
+static CK_RV
+sdb_GetValidAttributeValueNoLock(SDB *sdb, CK_OBJECT_HANDLE object_id,
+                                 CK_ATTRIBUTE *template, CK_ULONG count)
 {
     SDBPrivate *sdb_p = sdb->private;
     sqlite3 *sqlDB = NULL;
@@ -992,19 +1026,109 @@ loser:
     return error;
 }
 
+
+inline static PRBool
+sdb_attributeExists(SDB *sdb, CK_ATTRIBUTE_TYPE attr)
+{
+    SDBPrivate *sdb_p = sdb->private;
+    int first = 0;
+    int last = (int)sdb_p->numSchemaAttrs - 1;
+    while (last >= first) {
+        int mid = first + (last - first) / 2;
+        if (sdb_p->schemaAttrs[mid] == attr) {
+            return PR_TRUE;
+        }
+        if (attr > sdb_p->schemaAttrs[mid]) {
+            first = mid + 1;
+        } else {
+            last = mid - 1;
+        }
+    }
+
+    return PR_FALSE;
+}
+
 CK_RV
 sdb_GetAttributeValue(SDB *sdb, CK_OBJECT_HANDLE object_id,
                       CK_ATTRIBUTE *template, CK_ULONG count)
 {
-    CK_RV crv;
+    CK_RV crv = CKR_OK;
+    unsigned int tmplIdx;
+    unsigned int resIdx = 0;
+    unsigned int validCount = 0;
+    unsigned int i;
 
     if (count == 0) {
-        return CKR_OK;
+        return crv;
     }
 
-    LOCK_SQLITE()
-    crv = sdb_GetAttributeValueNoLock(sdb, object_id, template, count);
-    UNLOCK_SQLITE()
+    CK_ATTRIBUTE *validTemplate;
+    PRBool invalidExists = PR_FALSE;
+    for (tmplIdx = 0; tmplIdx < count; tmplIdx++) {
+        if (!sdb_attributeExists(sdb, template[tmplIdx].type)) {
+            template[tmplIdx].ulValueLen = -1;
+            crv = CKR_ATTRIBUTE_TYPE_INVALID;
+            invalidExists = PR_TRUE;
+            break;
+        }
+    }
+
+    if (!invalidExists) {
+        validTemplate = template;
+        validCount = count;
+    } else {
+        
+
+        validCount = tmplIdx;
+        validTemplate = malloc(sizeof(CK_ATTRIBUTE) * count);
+        if (!validTemplate) {
+            return CKR_HOST_MEMORY;
+        }
+        
+        for (i = 0; i < validCount; i++) {
+            validTemplate[i] = template[i];
+        }
+
+        
+
+
+        tmplIdx++;
+        for (; tmplIdx < count; tmplIdx++) {
+            if (sdb_attributeExists(sdb, template[tmplIdx].type)) {
+                validTemplate[validCount++] = template[tmplIdx];
+            } else {
+                template[tmplIdx].ulValueLen = -1;
+            }
+        }
+    }
+
+    if (validCount) {
+        LOCK_SQLITE()
+        CK_RV crv2 = sdb_GetValidAttributeValueNoLock(sdb, object_id, validTemplate, validCount);
+        UNLOCK_SQLITE()
+
+        
+
+
+        crv = (crv2 == CKR_OK) ? crv : crv2;
+    }
+
+    if (invalidExists) {
+        
+        tmplIdx = 0;
+        for (resIdx = 0; resIdx < validCount; resIdx++) {
+            for (; tmplIdx < count; tmplIdx++) {
+                if (template[tmplIdx].type != validTemplate[resIdx].type) {
+                    continue;
+                }
+                template[tmplIdx].ulValueLen = validTemplate[resIdx].ulValueLen;
+                tmplIdx++;
+                break;
+            }
+        }
+        free(validTemplate);
+    }
+
     return crv;
 }
 
@@ -1115,7 +1239,7 @@ sdb_objectExists(SDB *sdb, CK_OBJECT_HANDLE candidate)
     CK_RV crv;
     CK_ATTRIBUTE template = { CKA_LABEL, NULL, 0 };
 
-    crv = sdb_GetAttributeValueNoLock(sdb, candidate, &template, 1);
+    crv = sdb_GetValidAttributeValueNoLock(sdb, candidate, &template, 1);
     if (crv == CKR_OBJECT_HANDLE_INVALID) {
         return PR_FALSE;
     }
@@ -1759,6 +1883,7 @@ sdb_Close(SDB *sdb)
     if (sdb_p->dbMon) {
         PR_DestroyMonitor(sdb_p->dbMon);
     }
+    free(sdb_p->schemaAttrs);
     free(sdb_p);
     free(sdb);
     return sdb_mapSQLError(type, sqlerr);
@@ -1796,6 +1921,18 @@ sdb_SetForkState(PRBool forked)
 
 }
 
+static int
+sdb_attributeComparator(const void *a, const void *b)
+{
+    if (*(CK_ATTRIBUTE_TYPE *)a < *(CK_ATTRIBUTE_TYPE *)b) {
+        return -1;
+    }
+    if (*(CK_ATTRIBUTE_TYPE *)a > *(CK_ATTRIBUTE_TYPE *)b) {
+        return 1;
+    }
+    return 0;
+}
+
 
 
 
@@ -1809,6 +1946,7 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
     int i;
     char *initStr = NULL;
     char *newStr;
+    char *queryStr = NULL;
     int inTransaction = 0;
     SDB *sdb = NULL;
     SDBPrivate *sdb_p = NULL;
@@ -2062,7 +2200,85 @@ sdb_init(char *dbname, char *table, sdbDataType type, int *inUpdate,
     }
 
     sdb = (SDB *)malloc(sizeof(SDB));
+    if (!sdb) {
+        error = CKR_HOST_MEMORY;
+        goto loser;
+    }
     sdb_p = (SDBPrivate *)malloc(sizeof(SDBPrivate));
+    if (!sdb_p) {
+        error = CKR_HOST_MEMORY;
+        goto loser;
+    }
+
+    
+
+
+    sdb_p->schemaAttrs = NULL;
+    if (!PORT_Strcmp("nssPublic", table) ||
+        !PORT_Strcmp("nssPrivate", table)) {
+        sqlite3_stmt *stmt = NULL;
+        int retry = 0;
+        unsigned int backedAttrs = 0;
+
+        
+        queryStr = sqlite3_mprintf("PRAGMA table_info(%s);", table);
+        if (queryStr == NULL) {
+            error = CKR_HOST_MEMORY;
+            goto loser;
+        }
+        sqlerr = sqlite3_prepare_v2(sqlDB, queryStr, -1, &stmt, NULL);
+        sqlite3_free(queryStr);
+        queryStr = NULL;
+        if (sqlerr != SQLITE_OK) {
+            goto loser;
+        }
+        unsigned int schemaAttrsCapacity = known_attributes_size;
+        sdb_p->schemaAttrs = malloc(schemaAttrsCapacity * sizeof(CK_ATTRIBUTE));
+        if (!sdb_p->schemaAttrs) {
+            error = CKR_HOST_MEMORY;
+            goto loser;
+        }
+        do {
+            sqlerr = sqlite3_step(stmt);
+            if (sqlerr == SQLITE_BUSY) {
+                PR_Sleep(SDB_BUSY_RETRY_TIME);
+            }
+            if (sqlerr == SQLITE_ROW) {
+                if (backedAttrs == schemaAttrsCapacity) {
+                    schemaAttrsCapacity += known_attributes_size;
+                    sdb_p->schemaAttrs = realloc(sdb_p->schemaAttrs,
+                                                 schemaAttrsCapacity * sizeof(CK_ATTRIBUTE));
+                    if (!sdb_p->schemaAttrs) {
+                        error = CKR_HOST_MEMORY;
+                        goto loser;
+                    }
+                }
+                
+                char *val = (char *)sqlite3_column_text(stmt, 1);
+                if (val && val[0] == 'a') {
+                    CK_ATTRIBUTE_TYPE attr = strtoul(&val[1], NULL, 16);
+                    sdb_p->schemaAttrs[backedAttrs++] = attr;
+                }
+            }
+        } while (!sdb_done(sqlerr, &retry));
+        if (sqlerr != SQLITE_DONE) {
+            goto loser;
+        }
+        sqlerr = sqlite3_reset(stmt);
+        if (sqlerr != SQLITE_OK) {
+            goto loser;
+        }
+        sqlerr = sqlite3_finalize(stmt);
+        if (sqlerr != SQLITE_OK) {
+            goto loser;
+        }
+
+        sdb_p->numSchemaAttrs = backedAttrs;
+
+        
+        qsort(sdb_p->schemaAttrs, sdb_p->numSchemaAttrs,
+              sizeof(CK_ATTRIBUTE_TYPE), sdb_attributeComparator);
+    }
 
     
     sdb_p->sqlDBName = PORT_Strdup(dbname);
@@ -2123,6 +2339,9 @@ loser:
         free(sdb);
     }
     if (sdb_p) {
+        if (sdb_p->schemaAttrs) {
+            free(sdb_p->schemaAttrs);
+        }
         free(sdb_p);
     }
     if (sqlDB) {

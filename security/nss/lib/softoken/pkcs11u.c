@@ -2051,7 +2051,7 @@ unsigned int
 sftk_CKRVToMask(CK_RV rv)
 {
     PR_STATIC_ASSERT(CKR_OK == 0);
-    return ~CT_NOT_ZERO(rv);
+    return ~PORT_CT_NOT_ZERO(rv);
 }
 
 
@@ -2065,18 +2065,18 @@ sftk_CheckCBCPadding(CK_BYTE_PTR pBuf, unsigned int bufLen,
     unsigned int padSize = (unsigned int)pBuf[bufLen - 1];
 
     
-    unsigned int goodPad = CT_DUPLICATE_MSB_TO_ALL(~(blockSize - padSize));
+    unsigned int goodPad = PORT_CT_DUPLICATE_MSB_TO_ALL(~(blockSize - padSize));
     
-    goodPad &= CT_NOT_ZERO(padSize);
+    goodPad &= PORT_CT_NOT_ZERO(padSize);
 
     unsigned int i;
     for (i = 0; i < blockSize; i++) {
         
-        unsigned int loopMask = CT_DUPLICATE_MSB_TO_ALL(~(padSize - 1 - i));
+        unsigned int loopMask = PORT_CT_DUPLICATE_MSB_TO_ALL(~(padSize - 1 - i));
         
         unsigned int padVal = pBuf[bufLen - 1 - i];
         
-        goodPad &= CT_SEL(loopMask, ~(padVal ^ padSize), goodPad);
+        goodPad &= PORT_CT_SEL(loopMask, ~(padVal ^ padSize), goodPad);
     }
 
     
@@ -2086,12 +2086,12 @@ sftk_CheckCBCPadding(CK_BYTE_PTR pBuf, unsigned int bufLen,
     goodPad &= goodPad >> 2;
     goodPad &= goodPad >> 1;
     goodPad <<= sizeof(goodPad) * 8 - 1;
-    goodPad = CT_DUPLICATE_MSB_TO_ALL(goodPad);
+    goodPad = PORT_CT_DUPLICATE_MSB_TO_ALL(goodPad);
 
     
-    *outPadSize = CT_SEL(goodPad, padSize, 0);
+    *outPadSize = PORT_CT_SEL(goodPad, padSize, 0);
     
-    return CT_SEL(goodPad, CKR_OK, CKR_ENCRYPTED_DATA_INVALID);
+    return PORT_CT_SEL(goodPad, CKR_OK, CKR_ENCRYPTED_DATA_INVALID);
 }
 
 void

@@ -278,6 +278,17 @@ typedef struct inheritanceStr inheritance;
 
 
 
+
+
+static SECStatus
+ssl_InitSessionCache()
+{
+    
+    return ssl_InitializePRErrorTable();
+}
+
+
+
 static PRUint32
 ssl_CacheNow()
 {
@@ -1165,7 +1176,7 @@ ssl_ConfigServerSessionIDCacheInstanceWithOpt(cacheDesc *cache,
 {
     SECStatus rv;
 
-    rv = ssl_Init();
+    rv = ssl_InitSessionCache();
     if (rv != SECSuccess) {
         return rv;
     }
@@ -1341,7 +1352,7 @@ SSL_InheritMPServerSIDCacheInstance(cacheDesc *cache, const char *envString)
     int locks_initialized = 0;
     int locks_to_initialize = 0;
 #endif
-    SECStatus status = ssl_Init();
+    SECStatus status = ssl_InitSessionCache();
 
     if (status != SECSuccess) {
         return status;

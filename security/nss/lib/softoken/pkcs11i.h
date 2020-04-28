@@ -73,17 +73,6 @@
 
 
 
-#define CT_DUPLICATE_MSB_TO_ALL(x) ((unsigned int)((int)(x) >> (sizeof(int) * 8 - 1)))
-
-
-
-#define CT_SEL(m, l, r) (((m) & (l)) | (~(m) & (r)))
-
-
-#define CT_NOT_ZERO(x) (CT_DUPLICATE_MSB_TO_ALL(((x) | (0 - x))))
-
-
-
 
 
 

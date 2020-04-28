@@ -12294,39 +12294,24 @@ loser : {
 
 
 
-
-
-#define DUPLICATE_MSB_TO_ALL(x) ((unsigned)((int)(x) >> (sizeof(int) * 8 - 1)))
-#define DUPLICATE_MSB_TO_ALL_8(x) ((unsigned char)(DUPLICATE_MSB_TO_ALL(x)))
-
-
-
 static unsigned int
 SECStatusToMask(SECStatus rv)
 {
-    unsigned int good;
-    
-
-    good = rv ^ SECSuccess;
-    good--;
-    return DUPLICATE_MSB_TO_ALL(good);
+    return PORT_CT_EQ(rv, SECSuccess);
 }
 
 
 static unsigned char
 ssl_ConstantTimeGE(unsigned int a, unsigned int b)
 {
-    a -= b;
-    return DUPLICATE_MSB_TO_ALL(~a);
+    return PORT_CT_GE(a, b);
 }
 
 
 static unsigned char
-ssl_ConstantTimeEQ8(unsigned char a, unsigned char b)
+ssl_ConstantTimeEQ(unsigned char a, unsigned char b)
 {
-    unsigned int c = a ^ b;
-    c--;
-    return DUPLICATE_MSB_TO_ALL_8(c);
+    return PORT_CT_EQ(a, b);
 }
 
 
@@ -12341,7 +12326,7 @@ ssl_RemoveSSLv3CBCPadding(sslBuffer *plaintext,
                           unsigned int blockSize,
                           unsigned int macSize)
 {
-    unsigned int paddingLength, good, t;
+    unsigned int paddingLength, good;
     const unsigned int overhead = 1  + macSize;
 
     
@@ -12352,13 +12337,9 @@ ssl_RemoveSSLv3CBCPadding(sslBuffer *plaintext,
 
     paddingLength = plaintext->buf[plaintext->len - 1];
     
-    t = plaintext->len;
-    t -= paddingLength + overhead;
+    good = PORT_CT_GE(plaintext->len, paddingLength + overhead);
     
-    good = DUPLICATE_MSB_TO_ALL(~t);
-    
-    t = blockSize - (paddingLength + 1);
-    good &= DUPLICATE_MSB_TO_ALL(~t);
+    good &= PORT_CT_GE(blockSize, paddingLength + 1);
     plaintext->len -= good & (paddingLength + 1);
     return (good & SECSuccess) | (~good & SECFailure);
 }
@@ -12366,7 +12347,7 @@ ssl_RemoveSSLv3CBCPadding(sslBuffer *plaintext,
 SECStatus
 ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize)
 {
-    unsigned int paddingLength, good, t, toCheck, i;
+    unsigned int paddingLength, good, toCheck, i;
     const unsigned int overhead = 1  + macSize;
 
     
@@ -12376,10 +12357,7 @@ ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize)
     }
 
     paddingLength = plaintext->buf[plaintext->len - 1];
-    t = plaintext->len;
-    t -= paddingLength + overhead;
-    
-    good = DUPLICATE_MSB_TO_ALL(~t);
+    good = PORT_CT_GE(plaintext->len, paddingLength + overhead);
 
     
 
@@ -12396,10 +12374,9 @@ ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize)
     }
 
     for (i = 0; i < toCheck; i++) {
-        t = paddingLength - i;
         
 
-        unsigned char mask = DUPLICATE_MSB_TO_ALL(~t);
+        unsigned char mask = PORT_CT_LE(i, paddingLength);
         unsigned char b = plaintext->buf[plaintext->len - 1 - i];
         
 
@@ -12414,7 +12391,7 @@ ssl_RemoveTLSCBCPadding(sslBuffer *plaintext, unsigned int macSize)
     good &= good >> 2;
     good &= good >> 1;
     good <<= sizeof(good) * 8 - 1;
-    good = DUPLICATE_MSB_TO_ALL(good);
+    good = PORT_CT_DUPLICATE_MSB_TO_ALL(good);
 
     plaintext->len -= good & (paddingLength + 1);
     return (good & SECSuccess) | (~good & SECFailure);
@@ -12507,7 +12484,7 @@ ssl_CBCExtractMAC(sslBuffer *plaintext,
                                           0, rotateOffset);
     for (i = 0; i < macSize; i++) {
         for (j = 0; j < macSize; j++) {
-            out[j] |= rotatedMac[i] & ssl_ConstantTimeEQ8(j, rotateOffset);
+            out[j] |= rotatedMac[i] & ssl_ConstantTimeEQ(j, rotateOffset);
         }
         rotateOffset++;
         rotateOffset = ssl_constantTimeSelect(ssl_ConstantTimeGE(rotateOffset, macSize),

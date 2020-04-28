@@ -18,32 +18,17 @@
 
 
 
-
-
-
-
-
-
-
-#define DUPLICATE_MSB_TO_ALL(x) ((unsigned int)((int)(x) >> (sizeof(int) * 8 - 1)))
-#define DUPLICATE_MSB_TO_ALL_8(x) ((unsigned char)(DUPLICATE_MSB_TO_ALL(x)))
-
-
-
 static unsigned char
 constantTimeGE(unsigned int a, unsigned int b)
 {
-    a -= b;
-    return DUPLICATE_MSB_TO_ALL(~a);
+    return PORT_CT_GE(a, b);
 }
 
 
 static unsigned char
-constantTimeEQ8(unsigned char a, unsigned char b)
+constantTimeEQ(unsigned char a, unsigned char b)
 {
-    unsigned int c = a ^ b;
-    c--;
-    return DUPLICATE_MSB_TO_ALL_8(c);
+    return PORT_CT_EQ(a, b);
 }
 
 
@@ -223,8 +208,8 @@ MAC(unsigned char *mdOut,
 
     for (i = numStartingBlocks; i <= numStartingBlocks + varianceBlocks; i++) {
         unsigned char block[HASH_BLOCK_LENGTH_MAX];
-        unsigned char isBlockA = constantTimeEQ8(i, indexA);
-        unsigned char isBlockB = constantTimeEQ8(i, indexB);
+        unsigned char isBlockA = constantTimeEQ(i, indexA);
+        unsigned char isBlockB = constantTimeEQ(i, indexB);
         for (j = 0; j < mdBlockSize; j++) {
             unsigned char isPastC = isBlockA & constantTimeGE(j, c);
             unsigned char isPastCPlus1 = isBlockA & constantTimeGE(j, c + 1);
