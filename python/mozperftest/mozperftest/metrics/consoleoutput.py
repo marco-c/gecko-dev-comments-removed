@@ -1,9 +1,8 @@
 
 
 
+from mozperftest.metrics.common import filtered_metrics
 from mozperftest.layers import Layer
-from mozperftest.metrics.common import CommonMetricsSingleton
-from mozperftest.metrics.utils import filter_metrics
 
 
 class ConsoleOutput(Layer):
@@ -13,34 +12,29 @@ class ConsoleOutput(Layer):
     name = "console"
     activated = False
 
+    arguments = {
+        "metrics": {
+            "nargs": "*",
+            "default": [],
+            "help": "The metrics that should be retrieved from the data.",
+        },
+        
+        "prefix": {
+            "type": str,
+            "default": "",
+            "help": "Prefix used by the output files.",
+        },
+    }
+
     def __call__(self, metadata):
-        """Processes the given results into a perfherder-formatted data blob.
-
-        If the `--perfherder` flag isn't provided, then the
-        results won't be processed into a perfherder-data blob. If the
-        flavor is unknown to us, then we assume that it comes from
-        browsertime.
-
-        :param results list/dict/str: Results to process.
-        :param perfherder bool: True if results should be processed
-            into a perfherder-data blob.
-        :param flavor str: The flavor that is being processed.
-        """
         
-        
-        cm = CommonMetricsSingleton(
-            metadata.get_result(),
-            self.warning,
-            output=self.get_arg("output"),
-            prefix=self.get_arg("perfherder-prefix"),
+        results = filtered_metrics(
+            metadata,
+            self.get_arg("output"),
+            self.get_arg("prefix"),
+            self.get_arg("metrics"),
         )
-        res = cm.get_standardized_data(
-            group_name="firefox", transformer="SingleJsonRetriever"
-        )
-        _, results = res["file-output"], res["data"]
 
-        
-        results = filter_metrics(results, self.get_arg("perfherder-metrics"))
         if not results:
             self.warning("No results left after filtering")
             return metadata
