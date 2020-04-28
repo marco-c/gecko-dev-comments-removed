@@ -7,6 +7,7 @@
 
 
 #include "nsFind.h"
+#include "mozilla/Likely.h"
 #include "nsContentCID.h"
 #include "nsIContent.h"
 #include "nsINode.h"
@@ -30,6 +31,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/Text.h"
+#include "mozilla/StaticPrefs_browser.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -150,6 +152,25 @@ static bool IsTextFormControl(nsIContent& aContent) {
   return formControl->IsTextControl(true);
 }
 
+static bool ShouldFindAnonymousContent(const nsIContent& aContent) {
+  MOZ_ASSERT(aContent.IsInNativeAnonymousSubtree());
+
+  nsIContent& parent = AnonymousSubtreeRootParent(aContent);
+  if (IsTextFormControl(parent)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    return aContent.IsEditable();
+  }
+
+  return StaticPrefs::browser_find_anonymous_content_enabled();
+}
+
 static bool SkipNode(const nsIContent* aContent) {
   const nsIContent* content = aContent;
   while (content) {
@@ -173,11 +194,7 @@ static bool SkipNode(const nsIContent* aContent) {
     }
 
     if (content->IsInNativeAnonymousSubtree()) {
-      
-      
-      
-      if (!content->IsEditable() ||
-          !IsTextFormControl(AnonymousSubtreeRootParent(*content))) {
+      if (!ShouldFindAnonymousContent(*content)) {
         DEBUG_FIND_PRINTF("Skipping node: ");
         DumpNode(content);
         return true;
@@ -210,14 +227,15 @@ struct nsFind::State final {
       : mFindBackward(aFindBackward),
         mInitialized(false),
         mIterOffset(-1),
-        mLastBlockParent(nullptr),
         mIterator(aRoot),
         mStartPoint(aStartPoint) {}
 
   void PositionAt(Text& aNode) { mIterator.Seek(aNode); }
 
   Text* GetCurrentNode() const {
-    MOZ_ASSERT(mInitialized);
+    if (MOZ_UNLIKELY(!mInitialized)) {
+      return nullptr;
+    }
     nsINode* node = mIterator.GetCurrent();
     MOZ_ASSERT(!node || node->IsText());
     return node ? node->GetAsText() : nullptr;
@@ -255,7 +273,6 @@ struct nsFind::State final {
  public:
   
   int mIterOffset;
-  const nsIContent* mLastBlockParent;
   TreeIterator<StyleChildrenIterator> mIterator;
 
   
@@ -312,8 +329,6 @@ void nsFind::State::Initialize() {
     }
   }
 
-  mLastBlockParent = GetBlockParent(*current->AsText());
-
   if (current != container) {
     return;
   }
@@ -322,39 +337,18 @@ void nsFind::State::Initialize() {
       mFindBackward ? mStartPoint.StartOffset() : mStartPoint.EndOffset();
 }
 
-const nsTextFragment* nsFind::State::GetNextNonEmptyTextFragmentInSameBlock() {
-  while (true) {
-    const Text* current = GetNextNode();
-    if (!current) {
-      return nullptr;
-    }
-
-    const nsIContent* blockParent = GetBlockParent(*current);
-    if (!blockParent || blockParent != mLastBlockParent) {
-      return nullptr;
-    }
-
-    const nsTextFragment& frag = current->TextFragment();
-    if (frag.GetLength()) {
-      return &frag;
-    }
-  }
-}
-
 class MOZ_STACK_CLASS nsFind::StateRestorer final {
  public:
   explicit StateRestorer(State& aState)
       : mState(aState),
         mIterOffset(aState.mIterOffset),
-        mCurrNode(aState.GetCurrentNode()),
-        mLastBlockParent(aState.mLastBlockParent) {}
+        mCurrNode(aState.GetCurrentNode()) {}
 
   ~StateRestorer() {
     mState.mIterOffset = mIterOffset;
     if (mCurrNode) {
       mState.PositionAt(*mCurrNode);
     }
-    mState.mLastBlockParent = mLastBlockParent;
   }
 
  private:
@@ -362,7 +356,6 @@ class MOZ_STACK_CLASS nsFind::StateRestorer final {
 
   int32_t mIterOffset;
   Text* mCurrNode;
-  const nsIContent* mLastBlockParent;
 };
 
 NS_IMETHODIMP
@@ -478,25 +471,37 @@ bool nsFind::BreakInBetween(char32_t x, char32_t y) const {
   return mWordBreaker->BreakInBetween(x16, x16len, y16, y16len);
 }
 
+static bool ForceBreakBetween(const Text& aPrevious, const Text& aNext) {
+  if (!nsContentUtils::IsInSameAnonymousTree(&aPrevious, &aNext)) {
+    
+    
+    return true;
+  }
+
+  return GetBlockParent(aPrevious) != GetBlockParent(aNext);
+}
+
 char32_t nsFind::PeekNextChar(State& aState) const {
   
   StateRestorer restorer(aState);
 
-  const nsTextFragment* frag = aState.GetNextNonEmptyTextFragmentInSameBlock();
-  if (!frag) {
+  const Text* previous = aState.GetCurrentNode();
+  const Text* text = aState.GetNextNode();
+  if (!text || (previous && ForceBreakBetween(*previous, *text))) {
     return L'\0';
   }
 
   const char16_t* t2b = nullptr;
   const char* t1b = nullptr;
 
-  if (frag->Is2b()) {
-    t2b = frag->Get2b();
+  const nsTextFragment& frag = text->TextFragment();
+  if (frag.Is2b()) {
+    t2b = frag.Get2b();
   } else {
-    t1b = frag->Get1b();
+    t1b = frag.Get1b();
   }
 
-  uint32_t len = frag->GetLength();
+  uint32_t len = frag.GetLength();
   MOZ_ASSERT(len);
 
   int32_t index = mFindBackward ? len - 1 : 0;
@@ -597,6 +602,7 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
 
     
     if (!frag) {
+      const Text* prevNode = state.GetCurrentNode();
       current = state.GetNextNode();
       if (!current) {
         return NS_OK;
@@ -605,12 +611,8 @@ nsFind::Find(const nsAString& aPatText, nsRange* aSearchRange,
       
       
       
-      const nsIContent* blockParent = GetBlockParent(*current);
-      DEBUG_FIND_PRINTF("New node: old blockparent = %p, new = %p\n",
-                        (void*)state.mLastBlockParent, (void*)blockParent);
-      if (blockParent != state.mLastBlockParent) {
+      if (prevNode && ForceBreakBetween(*prevNode, *current)) {
         DEBUG_FIND_PRINTF("Different block parent!\n");
-        state.mLastBlockParent = blockParent;
         
         matchAnchorNode = nullptr;
         matchAnchorOffset = 0;
