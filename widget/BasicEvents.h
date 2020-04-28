@@ -559,6 +559,9 @@ class WidgetEvent : public WidgetEventTime {
   EventMessage mMessage;
   
   
+  
+  
+  
   LayoutDeviceIntPoint mRefPoint;
   
   LayoutDeviceIntPoint mLastRefPoint;
