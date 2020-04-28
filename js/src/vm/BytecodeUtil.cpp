@@ -225,10 +225,7 @@ bool js::DumpRealmPCCounts(JSContext* cx) {
 
 
 
-struct OffsetAndDefIndex {
-  
-  
-
+class OffsetAndDefIndex {
   
   uint32_t offset_;
 
@@ -248,6 +245,7 @@ struct OffsetAndDefIndex {
     Merged,
   } type_;
 
+ public:
   uint32_t offset() const {
     MOZ_ASSERT(!isSpecial());
     return offset_;
@@ -288,13 +286,6 @@ struct OffsetAndDefIndex {
     return !(*this == rhs);
   }
 };
-
-namespace mozilla {
-
-template <>
-struct IsPod<OffsetAndDefIndex> : std::true_type {};
-
-}  
 
 namespace {
 
