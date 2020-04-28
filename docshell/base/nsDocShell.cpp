@@ -4788,41 +4788,43 @@ nsDocShell::GetMixedContentChannel(nsIChannel** aMixedContentChannel) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GetAllowMixedContentAndConnectionData(bool* aAllowMixedContent) {
+nsDocShell::GetAllowMixedContentAndConnectionData(
+    bool* aRootHasSecureConnection, bool* aAllowMixedContent,
+    bool* aIsRootDocShell) {
+  *aRootHasSecureConnection = true;
   *aAllowMixedContent = false;
+  *aIsRootDocShell = false;
+
+  nsCOMPtr<nsIDocShellTreeItem> sameTypeRoot;
+  GetInProcessSameTypeRootTreeItem(getter_AddRefs(sameTypeRoot));
+  NS_ASSERTION(
+      sameTypeRoot,
+      "No document shell root tree item from document shell tree item!");
+  *aIsRootDocShell =
+      sameTypeRoot.get() == static_cast<nsIDocShellTreeItem*>(this);
 
   
-  
-  
-  
-  
-  
-  
-  
+  RefPtr<Document> rootDoc = sameTypeRoot->GetDocument();
+  if (rootDoc) {
+    nsCOMPtr<nsIPrincipal> rootPrincipal = rootDoc->NodePrincipal();
 
-  nsCOMPtr<nsIDocShell> rootShell = mBrowsingContext->Top()->GetDocShell();
-  
-  
-  
-  if (!rootShell) {
-    return NS_OK;
+    
+    
+    nsCOMPtr<nsIURI> rootUri = rootPrincipal->GetURI();
+    if (rootPrincipal->IsSystemPrincipal() || !rootUri ||
+        !SchemeIsHTTPS(rootUri)) {
+      *aRootHasSecureConnection = false;
+    }
+
+    
+    
+    
+    nsCOMPtr<nsIDocShell> rootDocShell = do_QueryInterface(sameTypeRoot);
+    nsCOMPtr<nsIChannel> mixedChannel;
+    rootDocShell->GetMixedContentChannel(getter_AddRefs(mixedChannel));
+    *aAllowMixedContent =
+        mixedChannel && (mixedChannel == rootDoc->GetChannel());
   }
-
-  nsCOMPtr<nsIChannel> mixedChannel;
-  rootShell->GetMixedContentChannel(getter_AddRefs(mixedChannel));
-  if (!mixedChannel) {
-    return NS_OK;
-  }
-
-  RefPtr<Document> rootDoc = rootShell->GetDocument();
-  if (!rootDoc) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  *aAllowMixedContent = (mixedChannel == rootDoc->GetChannel());
 
   return NS_OK;
 }
