@@ -40,7 +40,7 @@ class txList : public txObject {
   
 
 
-  nsresult add(void* objPtr);
+  void add(void* objPtr);
 
   
 
@@ -66,8 +66,8 @@ class txList : public txObject {
   ListItem* lastItem;
   int32_t itemCount;
 
-  nsresult insertAfter(void* objPtr, ListItem* sItem);
-  nsresult insertBefore(void* objPtr, ListItem* sItem);
+  void insertAfter(void* objPtr, ListItem* sItem);
+  void insertBefore(void* objPtr, ListItem* sItem);
 };
 
 
@@ -87,7 +87,7 @@ class txListIterator {
 
 
 
-  nsresult addAfter(void* objPtr);
+  void addAfter(void* objPtr);
 
   
 
@@ -95,7 +95,7 @@ class txListIterator {
 
 
 
-  nsresult addBefore(void* objPtr);
+  void addBefore(void* objPtr);
 
   
 

@@ -102,8 +102,7 @@ nsresult txNodeSorter::addSortElement(Expr* aSelectExpr, Expr* aLangExpr,
   }
 
   
-  rv = mSortKeys.add(key);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mSortKeys.add(key);
 
   key.forget();
   mNKeys++;
