@@ -101,23 +101,6 @@ class APZCCallbackHelper {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  static CSSToCSSMatrix4x4 GetCallbackTransform(
-      ScrollableLayerGuid::ViewID aScrollId);
-
-  
-
-
   static nsEventStatus DispatchWidgetEvent(WidgetGUIEvent& aEvent);
 
   

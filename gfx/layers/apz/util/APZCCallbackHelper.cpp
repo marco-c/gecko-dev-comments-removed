@@ -20,6 +20,7 @@
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TouchEvents.h"
+#include "mozilla/ViewportUtils.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
@@ -449,38 +450,6 @@ PresShell* APZCCallbackHelper::GetRootContentDocumentPresShellForContent(
     return nullptr;
   }
   return context->PresShell();
-}
-
-mozilla::CSSToCSSMatrix4x4 APZCCallbackHelper::GetCallbackTransform(
-    ScrollableLayerGuid::ViewID aScrollId) {
-  if (aScrollId == ScrollableLayerGuid::NULL_SCROLL_ID) {
-    return {};
-  }
-  nsCOMPtr<nsIContent> content = nsLayoutUtils::FindContentFor(aScrollId);
-  if (!content) {
-    return {};
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  float resolution = 1.0f;
-  if (PresShell* presShell =
-          GetRootContentDocumentPresShellForContent(content)) {
-    resolution = presShell->GetResolution();
-  }
-
-  
-  
-  CSSPoint transform = nsLayoutUtils::GetCumulativeApzCallbackTransform(
-      content->GetPrimaryFrame());
-
-  return mozilla::CSSToCSSMatrix4x4::Scaling(1 / resolution, 1 / resolution, 1)
-      .PostTranslate(transform.x, transform.y, 0);
 }
 
 nsEventStatus APZCCallbackHelper::DispatchWidgetEvent(WidgetGUIEvent& aEvent) {
