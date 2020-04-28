@@ -238,6 +238,12 @@ class nsDocShellLoadState final {
   
   void CalculateLoadURIFlags();
 
+  
+  
+  nsLoadFlags CalculateChannelLoadFlags(
+      mozilla::dom::BrowsingContext* aBrowsingContext, Maybe<bool> aUriModified,
+      Maybe<bool> aIsXFOError);
+
   mozilla::dom::DocShellLoadStateInit Serialize();
 
  protected:

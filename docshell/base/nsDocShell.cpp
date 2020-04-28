@@ -9150,6 +9150,11 @@ static bool IsConsideredSameOriginForUIR(nsIPrincipal* aTriggeringPrincipal,
     isc->SetBaseURI(aBaseURI);
   }
 
+  if (aLoadFlags != nsIRequest::LOAD_NORMAL) {
+    nsresult rv = channel->SetLoadFlags(aLoadFlags);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   channel.forget(aChannel);
   return NS_OK;
 }
@@ -9661,29 +9666,11 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     inheritPrincipal = inheritAttrs && !isURIUniqueOrigin;
   }
 
-  nsLoadFlags loadFlags = mBrowsingContext->GetDefaultLoadFlags();
+  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
   nsSecurityFlags securityFlags =
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
-  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
-
-  if (aLoadState->FirstParty()) {
-    
-    loadFlags |= nsIChannel::LOAD_INITIAL_DOCUMENT_URI;
-  }
 
   if (mLoadType == LOAD_ERROR_PAGE) {
-    
-    
-    
-    bool isXFOError = false;
-    if (mFailedChannel) {
-      nsresult status;
-      mFailedChannel->GetStatus(&status);
-      isXFOError = status == NS_ERROR_XFO_VIOLATION;
-    }
-    if (!isXFOError) {
-      loadFlags |= nsIChannel::LOAD_BACKGROUND;
-    }
     securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
   }
 
@@ -9724,6 +9711,17 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
   } else if (mOSHE) {  
     cacheKey = mOSHE->GetCacheKey();
   }
+
+  bool uriModified = mLSHE ? mLSHE->GetURIWasModified() : false;
+  bool isXFOError = false;
+  if (mFailedChannel) {
+    nsresult status;
+    mFailedChannel->GetStatus(&status);
+    isXFOError = status == NS_ERROR_XFO_VIOLATION;
+  }
+
+  nsLoadFlags loadFlags = aLoadState->CalculateChannelLoadFlags(
+      mBrowsingContext, Some(uriModified), Some(isXFOError));
 
   nsCOMPtr<nsIChannel> channel;
   if (DocumentChannel::CanUseDocumentChannel(aLoadState)) {
@@ -9766,9 +9764,40 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     mContentTypeHint.Truncate();
   }
 
-  rv = DoChannelLoad(
-      channel, uriLoader,
-      aLoadState->HasLoadFlags(INTERNAL_LOAD_FLAGS_BYPASS_CLASSIFIER));
+  if (mLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT ||
+      mLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
+    rv = SetMixedContentChannel(channel);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (mMixedContentChannel) {
+    
+
+
+
+
+
+
+
+
+    rv = nsContentUtils::CheckSameOrigin(mMixedContentChannel, channel);
+    if (NS_FAILED(rv) || NS_FAILED(SetMixedContentChannel(channel))) {
+      SetMixedContentChannel(nullptr);
+    }
+  }
+
+  
+  if (mLoadType == LOAD_RELOAD_CHARSET_CHANGE) {
+    
+    
+    
+    nsCOMPtr<nsICacheInfoChannel> cachingChannel = do_QueryInterface(channel);
+    if (cachingChannel) {
+      cachingChannel->SetAllowStaleCacheContent(true);
+    }
+  }
+
+  uint32_t openFlags =
+      nsDocShell::ComputeURILoaderFlags(mBrowsingContext, mLoadType);
+  rv = OpenInitializedChannel(channel, uriLoader, openFlags);
 
   
   
@@ -9852,105 +9881,6 @@ static nsresult AppendSegmentToString(nsIInputStream* aIn, void* aClosure,
 
   MOZ_ASSERT_UNREACHABLE("oops");
   return NS_ERROR_UNEXPECTED;
-}
-
-nsresult nsDocShell::DoChannelLoad(nsIChannel* aChannel,
-                                   nsIURILoader* aURILoader,
-                                   bool aBypassClassifier) {
-  
-  nsLoadFlags loadFlags = 0;
-  (void)aChannel->GetLoadFlags(&loadFlags);
-  loadFlags |=
-      nsIChannel::LOAD_DOCUMENT_URI | nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
-
-  uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
-  if (SandboxFlagsImplyCookies(sandboxFlags)) {
-    loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
-  }
-
-  
-  switch (mLoadType) {
-    case LOAD_HISTORY: {
-      
-      
-      bool uriModified = false;
-      if (mLSHE) {
-        uriModified = mLSHE->GetURIWasModified();
-      }
-
-      if (!uriModified) {
-        loadFlags |= nsIRequest::VALIDATE_NEVER;
-      }
-      break;
-    }
-
-    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_PROXY_AND_CACHE:
-    case LOAD_RELOAD_CHARSET_CHANGE_BYPASS_CACHE:
-      loadFlags |=
-          nsIRequest::LOAD_BYPASS_CACHE | nsIRequest::LOAD_FRESH_CONNECTION;
-      [[fallthrough]];
-
-    case LOAD_RELOAD_CHARSET_CHANGE: {
-      
-      
-      
-      nsCOMPtr<nsICacheInfoChannel> cachingChannel =
-          do_QueryInterface(aChannel);
-      if (cachingChannel) {
-        cachingChannel->SetAllowStaleCacheContent(true);
-      }
-      break;
-    }
-
-    case LOAD_RELOAD_NORMAL:
-    case LOAD_REFRESH:
-      loadFlags |= nsIRequest::VALIDATE_ALWAYS;
-      break;
-
-    case LOAD_NORMAL_BYPASS_CACHE:
-    case LOAD_NORMAL_BYPASS_PROXY:
-    case LOAD_NORMAL_BYPASS_PROXY_AND_CACHE:
-    case LOAD_NORMAL_ALLOW_MIXED_CONTENT:
-    case LOAD_RELOAD_BYPASS_CACHE:
-    case LOAD_RELOAD_BYPASS_PROXY:
-    case LOAD_RELOAD_BYPASS_PROXY_AND_CACHE:
-    case LOAD_RELOAD_ALLOW_MIXED_CONTENT:
-    case LOAD_REPLACE_BYPASS_CACHE:
-      loadFlags |=
-          nsIRequest::LOAD_BYPASS_CACHE | nsIRequest::LOAD_FRESH_CONNECTION;
-      break;
-
-    case LOAD_NORMAL:
-    case LOAD_LINK:
-      
-      switch (Preferences::GetInt("browser.cache.check_doc_frequency", -1)) {
-        case 0:
-          loadFlags |= nsIRequest::VALIDATE_ONCE_PER_SESSION;
-          break;
-        case 1:
-          loadFlags |= nsIRequest::VALIDATE_ALWAYS;
-          break;
-        case 2:
-          loadFlags |= nsIRequest::VALIDATE_NEVER;
-          break;
-      }
-      break;
-  }
-
-  if (aBypassClassifier) {
-    loadFlags |= nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
-  }
-
-  
-  
-  if (IsForceReloading()) {
-    loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
-  }
-
-  (void)aChannel->SetLoadFlags(loadFlags);
-  uint32_t openFlags = ComputeURILoaderFlags(mBrowsingContext, mLoadType);
-
-  return OpenInitializedChannel(aChannel, aURILoader, openFlags);
 }
 
  uint32_t nsDocShell::ComputeURILoaderFlags(
