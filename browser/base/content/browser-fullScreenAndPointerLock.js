@@ -596,19 +596,17 @@ var FullScreen = {
     
     
     
+    let target = aEvent.originalTarget;
+    if (target.localName == "tooltip") {
+      return;
+    }
     if (
       aEvent.type == "popupshown" &&
       !FullScreen._isChromeCollapsed &&
-      aEvent.target.localName != "tooltip" &&
-      aEvent.target.localName != "window" &&
-      aEvent.target.getAttribute("nopreventnavboxhide") != "true"
+      target.getAttribute("nopreventnavboxhide") != "true"
     ) {
       FullScreen._isPopupOpen = true;
-    } else if (
-      aEvent.type == "popuphidden" &&
-      aEvent.target.localName != "tooltip" &&
-      aEvent.target.localName != "window"
-    ) {
+    } else if (aEvent.type == "popuphidden") {
       FullScreen._isPopupOpen = false;
       
       FullScreen.hideNavToolbox(true);
