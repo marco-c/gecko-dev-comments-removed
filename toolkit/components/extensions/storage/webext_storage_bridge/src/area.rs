@@ -78,12 +78,12 @@ impl StorageSyncArea {
         Ok(())
     }
 
-    
     xpcom_method!(
         configure => Configure(
             database_file: *const nsIFile
         )
     );
+    
     fn configure(&self, database_file: &nsIFile) -> Result<()> {
         let mut raw_path = nsString::new();
         
@@ -110,7 +110,6 @@ impl StorageSyncArea {
         Ok(())
     }
 
-    
     xpcom_method!(
         set => Set(
             ext_id: *const ::nsstring::nsACString,
@@ -118,6 +117,7 @@ impl StorageSyncArea {
             callback: *const mozIExtensionStorageCallback
         )
     );
+    
     fn set(
         &self,
         ext_id: &nsACString,
@@ -129,7 +129,6 @@ impl StorageSyncArea {
         Ok(())
     }
 
-    
     xpcom_method!(
         get => Get(
             ext_id: *const ::nsstring::nsACString,
@@ -137,6 +136,7 @@ impl StorageSyncArea {
             callback: *const mozIExtensionStorageCallback
         )
     );
+    
     fn get(
         &self,
         ext_id: &nsACString,
@@ -147,7 +147,6 @@ impl StorageSyncArea {
         self.dispatch(ext_id, StorageOp::Get(keys), callback)
     }
 
-    
     xpcom_method!(
         remove => Remove(
             ext_id: *const ::nsstring::nsACString,
@@ -155,6 +154,7 @@ impl StorageSyncArea {
             callback: *const mozIExtensionStorageCallback
         )
     );
+    
     fn remove(
         &self,
         ext_id: &nsACString,
@@ -165,19 +165,19 @@ impl StorageSyncArea {
         self.dispatch(ext_id, StorageOp::Remove(keys), callback)
     }
 
-    
     xpcom_method!(
         clear => Clear(
             ext_id: *const ::nsstring::nsACString,
             callback: *const mozIExtensionStorageCallback
         )
     );
+    
     fn clear(&self, ext_id: &nsACString, callback: &mozIExtensionStorageCallback) -> Result<()> {
         self.dispatch(ext_id, StorageOp::Clear, callback)
     }
 
-    
     xpcom_method!(teardown => Teardown(callback: *const mozIExtensionStorageCallback));
+    
     fn teardown(&self, callback: &mozIExtensionStorageCallback) -> Result<()> {
         
         
