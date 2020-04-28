@@ -42,43 +42,15 @@ enum class ControlledMediaState : uint32_t {
 
 
 
-
-
-
-
-
-
-class ContentMediaAgent : public MediaControlKeysEventSource {
+class ContentControlKeyEventReceiver {
  public:
-  
-  static ContentMediaAgent* Get(BrowsingContext* aBC);
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   
-  
-  virtual void NotifyMediaStateChanged(
-      const MediaControlKeysEventListener* aMedia,
-      ControlledMediaState aState) = 0;
+  static ContentControlKeyEventReceiver* Get(BrowsingContext* aBC);
 
   
-  
-  
-  
-  
-  
-  
-  
-  virtual void NotifyAudibleStateChanged(
-      const MediaControlKeysEventListener* aMedia, bool aAudible) = 0;
-
-  
-  
-  virtual void NotifyPictureInPictureModeChanged(
-      const MediaControlKeysEventListener* aMedia, bool aEnabled) = 0;
-
- private:
-  
-  bool Open() override { return true; }
-  bool IsOpened() const override { return true; }
+  virtual void HandleEvent(MediaControlKeysEvent aKeyEvent) = 0;
 };
 
 
@@ -90,12 +62,45 @@ class ContentMediaAgent : public MediaControlKeysEventSource {
 
 
 
-class ContentControlKeyEventReceiver : public MediaControlKeysEventListener {
- public:
-  
-  static ContentControlKeyEventReceiver* Get(BrowsingContext* aBC);
 
-  void OnKeyPressed(MediaControlKeysEvent aKeyEvent) override = 0;
+
+
+
+
+
+class ContentMediaAgent {
+ public:
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  
+  static ContentMediaAgent* Get(BrowsingContext* aBC);
+
+  
+  
+  virtual void NotifyMediaStateChanged(
+      const ContentControlKeyEventReceiver* aMedia,
+      ControlledMediaState aState) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void NotifyAudibleStateChanged(
+      const ContentControlKeyEventReceiver* aMedia, bool aAudible) = 0;
+
+  
+  
+  virtual void NotifyPictureInPictureModeChanged(
+      const ContentControlKeyEventReceiver* aMedia, bool aEnabled) = 0;
+
+  
+  
+  virtual void AddReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
+  virtual void RemoveReceiver(ContentControlKeyEventReceiver* aReceiver) = 0;
 };
 
 
@@ -122,23 +127,23 @@ class ContentMediaController final : public ContentMediaAgent,
 
   explicit ContentMediaController(uint64_t aId);
   
-  void AddListener(MediaControlKeysEventListener* aListener) override;
-  void RemoveListener(MediaControlKeysEventListener* aListener) override;
-  void NotifyMediaStateChanged(const MediaControlKeysEventListener* aMedia,
+  void AddReceiver(ContentControlKeyEventReceiver* aListener) override;
+  void RemoveReceiver(ContentControlKeyEventReceiver* aListener) override;
+  void NotifyMediaStateChanged(const ContentControlKeyEventReceiver* aMedia,
                                ControlledMediaState aState) override;
-  void NotifyAudibleStateChanged(const MediaControlKeysEventListener* aMedia,
+  void NotifyAudibleStateChanged(const ContentControlKeyEventReceiver* aMedia,
                                  bool aAudible) override;
   void NotifyPictureInPictureModeChanged(
-      const MediaControlKeysEventListener* aMedia, bool aEnabled) override;
+      const ContentControlKeyEventReceiver* aMedia, bool aEnabled) override;
 
   
-  void OnKeyPressed(MediaControlKeysEvent aEvent) override;
+  void HandleEvent(MediaControlKeysEvent aEvent) override;
 
  private:
   ~ContentMediaController() = default;
-  void Close() override;
   already_AddRefed<BrowsingContext> GetTopLevelBrowsingContext() const;
 
+  nsTArray<RefPtr<ContentControlKeyEventReceiver>> mReceivers;
   uint64_t mTopLevelBrowsingContextId;
 };
 
