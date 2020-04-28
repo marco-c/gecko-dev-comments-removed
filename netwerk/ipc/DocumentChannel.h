@@ -71,13 +71,14 @@ class DocumentChannel : public nsIIdentChannel, public nsITraceableChannel {
   static already_AddRefed<DocumentChannel> CreateDocumentChannel(
       nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
       nsLoadFlags aLoadFlags, nsIInterfaceRequestor* aNotificationCallbacks,
-      uint32_t aCacheKey);
+      uint32_t aCacheKey, bool aUriModified, bool aIsXFOError);
 
   static bool CanUseDocumentChannel(nsDocShellLoadState* aLoadState);
 
  protected:
   DocumentChannel(nsDocShellLoadState* aLoadState, class LoadInfo* aLoadInfo,
-                  nsLoadFlags aLoadFlags, uint32_t aCacheKey);
+                  nsLoadFlags aLoadFlags, uint32_t aCacheKey, bool aUriModified,
+                  bool aIsXFOError);
 
   void ShutdownListeners(nsresult aStatusCode);
   void DisconnectChildListeners(const nsresult& aStatus,
@@ -109,6 +110,12 @@ class DocumentChannel : public nsIIdentChannel, public nsITraceableChannel {
   nsCOMPtr<nsISupports> mOwner;
   RefPtr<nsDOMNavigationTiming> mTiming;
   Maybe<dom::ClientInfo> mInitialClientInfo;
+  
+  
+  bool mUriModified = false;
+  
+  
+  bool mIsXFOError = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentChannel, DOCUMENT_CHANNEL_IID)
