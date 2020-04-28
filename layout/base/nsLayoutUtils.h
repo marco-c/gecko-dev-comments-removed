@@ -872,6 +872,12 @@ class nsLayoutUtils {
 
 
     OnlyVisible,
+    
+
+
+
+
+    IsRelativeToLayoutViewport,
   };
 
   
