@@ -358,9 +358,6 @@ static const float NonIncrementalFactor = 1.12f;
 static const size_t ZoneAllocDelayBytes = 1024 * 1024;
 
 
-static const bool DynamicHeapGrowthEnabled = false;
-
-
 static const auto HighFrequencyThreshold = 1;  
 
 
@@ -377,9 +374,6 @@ static const float HighFrequencyHeapGrowthMin = 1.5f;
 
 
 static const float LowFrequencyHeapGrowth = 1.5f;
-
-
-static const bool DynamicMarkSliceEnabled = false;
 
 
 static const uint32_t MinEmptyChunkCount = 1;
@@ -473,14 +467,6 @@ class GCSchedulingTunables {
 
 
 
-  MainThreadOrGCTaskData<bool> dynamicHeapGrowthEnabled_;
-
-  
-
-
-
-
-
   MainThreadOrGCTaskData<mozilla::TimeDuration> highFrequencyThreshold_;
 
   
@@ -504,13 +490,6 @@ class GCSchedulingTunables {
 
 
   MainThreadOrGCTaskData<float> lowFrequencyHeapGrowth_;
-
-  
-
-
-
-
-  MainThreadData<bool> dynamicMarkSliceEnabled_;
 
   
 
@@ -581,7 +560,6 @@ class GCSchedulingTunables {
   size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
   double nonIncrementalFactor() const { return nonIncrementalFactor_; }
   size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
-  bool isDynamicHeapGrowthEnabled() const { return dynamicHeapGrowthEnabled_; }
   const mozilla::TimeDuration& highFrequencyThreshold() const {
     return highFrequencyThreshold_;
   }
@@ -598,7 +576,6 @@ class GCSchedulingTunables {
     return highFrequencyHeapGrowthMin_;
   }
   double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
-  bool isDynamicMarkSliceEnabled() const { return dynamicMarkSliceEnabled_; }
   unsigned minEmptyChunkCount(const AutoLockGC&) const {
     return minEmptyChunkCount_;
   }
@@ -658,9 +635,11 @@ class GCSchedulingState {
   void updateHighFrequencyMode(const mozilla::TimeStamp& lastGCTime,
                                const mozilla::TimeStamp& currentTime,
                                const GCSchedulingTunables& tunables) {
+#ifndef JS_MORE_DETERMINISTIC
     inHighFrequencyGCMode_ =
-        tunables.isDynamicHeapGrowthEnabled() && !lastGCTime.IsNull() &&
+        !lastGCTime.IsNull() &&
         lastGCTime + tunables.highFrequencyThreshold() > currentTime;
+#endif
   }
 };
 
