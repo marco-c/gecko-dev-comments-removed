@@ -158,7 +158,6 @@
 
 
 
-#include "nsAgg.h"
 #include "nsAutoRef.h"
 #include "nsInterfaceRequestorAgg.h"
 
