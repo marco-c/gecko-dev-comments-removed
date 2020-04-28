@@ -178,12 +178,12 @@ static bool MaybeWrapWindowProxy(JSContext* cx, HandleObject origObj,
     MOZ_ASSERT(bc);
   }
 
-  if (bc->IsInProcess()) {
-    
-    
-    
-    MOZ_RELEASE_ASSERT(isWindowProxy);
+  
+  
+  
+  MOZ_RELEASE_ASSERT(isWindowProxy || bc->CanHaveRemoteOuterProxies());
 
+  if (bc->IsInProcess()) {
     retObj.set(obj);
   } else {
     

@@ -204,6 +204,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   bool IsInProcess() const { return mIsInProcess; }
 
+  bool CanHaveRemoteOuterProxies() const {
+    return !mIsInProcess || mDanglingRemoteOuterProxies;
+  }
+
   
   
   
