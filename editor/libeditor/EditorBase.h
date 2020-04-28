@@ -1774,39 +1774,6 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
-
-
-
-  already_AddRefed<EditAggregateTransaction> CreateTxnForDeleteSelection(
-      EDirection aAction, nsINode** aNode, int32_t* aOffset, int32_t* aLength);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  already_AddRefed<EditTransactionBase> CreateTxnForDeleteRange(
-      nsRange* aRangeToDelete, EDirection aAction, nsINode** aRemovingNode,
-      int32_t* aOffset, int32_t* aLength);
-
-  
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTextWithTransaction(dom::Text& aTextNode,
                                                         uint32_t aOffset,
                                                         uint32_t aLength);
@@ -2543,6 +2510,39 @@ class EditorBase : public nsIEditor,
   
 
 
+  enum class HowToHandleCollapsedRange {
+    
+    Ignore,
+    
+    ExtendBackward,
+    
+    ExtendForward,
+  };
+
+  static HowToHandleCollapsedRange HowToHandleCollapsedRangeFor(
+      nsIEditor::EDirection aDirectionAndAmount) {
+    switch (aDirectionAndAmount) {
+      case nsIEditor::eNone:
+        return HowToHandleCollapsedRange::Ignore;
+      case nsIEditor::ePrevious:
+        return HowToHandleCollapsedRange::ExtendBackward;
+      case nsIEditor::eNext:
+        return HowToHandleCollapsedRange::ExtendForward;
+      case nsIEditor::ePreviousWord:
+      case nsIEditor::eNextWord:
+      case nsIEditor::eToBeginningOfLine:
+      case nsIEditor::eToEndOfLine:
+        
+        
+        return HowToHandleCollapsedRange::Ignore;
+    }
+    MOZ_ASSERT_UNREACHABLE("Invalid nsIEditor::EDirection value");
+    return HowToHandleCollapsedRange::Ignore;
+  }
+
+  
+
+
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
@@ -2559,6 +2559,50 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT virtual nsresult DeleteSelectionWithTransaction(
       nsIEditor::EDirection aDirectionAndAmount,
       nsIEditor::EStripWrappers aStripWrappers);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<EditAggregateTransaction>
+  CreateTransactionForDeleteSelection(
+      HowToHandleCollapsedRange aHowToHandleCollapsedRange,
+      nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  already_AddRefed<EditTransactionBase> CreateTransactionForCollapsedRange(
+      nsRange& aCollapsedRange,
+      HowToHandleCollapsedRange aHowToHandleCollapsedRange,
+      nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;

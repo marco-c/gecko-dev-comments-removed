@@ -4478,13 +4478,16 @@ void EditorBase::DoAfterRedoTransaction() {
 }
 
 already_AddRefed<EditAggregateTransaction>
-EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
-                                        nsINode** aRemovingNode,
-                                        int32_t* aOffset, int32_t* aLength) {
+EditorBase::CreateTransactionForDeleteSelection(
+    HowToHandleCollapsedRange aHowToHandleCollapsedRange,
+    nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(SelectionRefPtr()->RangeCount());
 
   
-  if (NS_WARN_IF(SelectionRefPtr()->IsCollapsed() && aAction == eNone)) {
+  if (NS_WARN_IF(SelectionRefPtr()->IsCollapsed() &&
+                 aHowToHandleCollapsedRange ==
+                     HowToHandleCollapsedRange::Ignore)) {
     return nullptr;
   }
 
@@ -4494,7 +4497,7 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
 
   for (uint32_t rangeIdx = 0; rangeIdx < SelectionRefPtr()->RangeCount();
        ++rangeIdx) {
-    RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(rangeIdx);
+    nsRange* range = SelectionRefPtr()->GetRangeAt(rangeIdx);
     if (NS_WARN_IF(!range)) {
       return nullptr;
     }
@@ -4510,28 +4513,31 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "EditAggregationTransaction::AppendChild() failed, but ignored");
-    } else if (aAction != eNone) {
-      
-      
-      
-      
-      RefPtr<EditTransactionBase> deleteRangeTransaction =
-          CreateTxnForDeleteRange(range, aAction, aRemovingNode, aOffset,
-                                  aLength);
-      NS_WARNING_ASSERTION(deleteRangeTransaction,
-                           "EditorBase::CreateTxnForDeleteRange() failed");
-      
-      
-      
-      if (!deleteRangeTransaction) {
-        return nullptr;
-      }
-      DebugOnly<nsresult> rvIgnored =
-          aggregateTransaction->AppendChild(deleteRangeTransaction);
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rvIgnored),
-          "EditAggregationTransaction::AppendChild() failed, but ignored");
+      continue;
     }
+
+    if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::Ignore) {
+      continue;
+    }
+
+    
+    
+    
+    RefPtr<EditTransactionBase> deleteNodeOrTextTransaction =
+        CreateTransactionForCollapsedRange(*range, aHowToHandleCollapsedRange,
+                                           aRemovingContent, aOffset, aLength);
+    
+    
+    
+    if (!deleteNodeOrTextTransaction) {
+      NS_WARNING("EditorBase::CreateTransactionForCollapsedRange() failed");
+      return nullptr;
+    }
+    DebugOnly<nsresult> rvIgnored =
+        aggregateTransaction->AppendChild(deleteNodeOrTextTransaction);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rvIgnored),
+        "EditAggregationTransaction::AppendChild() failed, but ignored");
   }
 
   return aggregateTransaction.forget();
@@ -4539,52 +4545,51 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
 
 
 
-already_AddRefed<EditTransactionBase> EditorBase::CreateTxnForDeleteRange(
-    nsRange* aRangeToDelete, EDirection aAction, nsINode** aRemovingNode,
-    int32_t* aOffset, int32_t* aLength) {
-  MOZ_ASSERT(aAction != eNone);
+already_AddRefed<EditTransactionBase>
+EditorBase::CreateTransactionForCollapsedRange(
+    nsRange& aCollapsedRange,
+    HowToHandleCollapsedRange aHowToHandleCollapsedRange,
+    nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength) {
+  MOZ_ASSERT(aCollapsedRange.Collapsed());
+  MOZ_ASSERT(
+      aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward ||
+      aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendForward);
 
-  
-  nsCOMPtr<nsINode> node = aRangeToDelete->GetStartContainer();
-  if (NS_WARN_IF(!node)) {
+  EditorRawDOMPoint point(aCollapsedRange.StartRef());
+  if (NS_WARN_IF(!point.IsSet())) {
     return nullptr;
   }
 
-  nsIContent* child = aRangeToDelete->GetChildAtStartOffset();
-  int32_t offset = aRangeToDelete->StartOffset();
-
-  
-  
-
-  uint32_t count = node->Length();
-
-  bool isFirst = !offset;
-  bool isLast = (count == (uint32_t)offset);
-
   
   
 
   
   
-  if (aAction == ePrevious && isFirst) {
+  if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward &&
+      point.IsStartOfContainer()) {
     
     
-    nsCOMPtr<nsIContent> priorNode = GetPreviousEditableNode(*node);
-    if (NS_WARN_IF(!priorNode)) {
+    nsIContent* previousEditableContent =
+        GetPreviousEditableNode(*point.GetContainer());
+    if (!previousEditableContent) {
+      NS_WARNING("There was no editable content before the collapsed range");
       return nullptr;
     }
 
     
     
-    if (RefPtr<Text> priorNodeAsText = Text::FromNode(priorNode)) {
-      uint32_t length = priorNode->Length();
+    if (previousEditableContent->IsText()) {
+      uint32_t length = previousEditableContent->Length();
+      
+      
       
       if (NS_WARN_IF(!length)) {
+        NS_WARNING("Previous editable content was an empty text node");
         return nullptr;
       }
       RefPtr<DeleteTextTransaction> deleteTextTransaction =
           DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-              *this, *priorNodeAsText, length);
+              *this, *previousEditableContent->AsText(), length);
       if (!deleteTextTransaction) {
         NS_WARNING(
             "DeleteTextTransaction::MaybeCreateForPreviousCharacter() failed");
@@ -4592,40 +4597,45 @@ already_AddRefed<EditTransactionBase> EditorBase::CreateTxnForDeleteRange(
       }
       *aOffset = deleteTextTransaction->Offset();
       *aLength = deleteTextTransaction->LengthToDelete();
-      priorNode.forget(aRemovingNode);
+      *aRemovingContent = do_AddRef(previousEditableContent).take();
       return deleteTextTransaction.forget();
     }
 
-    
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-        DeleteNodeTransaction::MaybeCreate(*this, *priorNode);
+        DeleteNodeTransaction::MaybeCreate(*this, *previousEditableContent);
     if (!deleteNodeTransaction) {
       NS_WARNING("DeleteNodeTransaction::MaybeCreate() failed");
       return nullptr;
     }
-    priorNode.forget(aRemovingNode);
+    *aRemovingContent = do_AddRef(previousEditableContent).take();
     return deleteNodeTransaction.forget();
   }
 
-  if (aAction == eNext && isLast) {
+  if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendForward &&
+      point.IsEndOfContainer()) {
     
     
-    nsCOMPtr<nsIContent> nextNode = GetNextEditableNode(*node);
-    if (NS_WARN_IF(!nextNode)) {
+    nsIContent* nextEditableContent =
+        GetNextEditableNode(*point.GetContainer());
+    if (!nextEditableContent) {
+      NS_WARNING("There was no editable content after the collapsed range");
       return nullptr;
     }
 
     
     
-    if (RefPtr<Text> nextNodeAsText = Text::FromNode(nextNode)) {
-      uint32_t length = nextNode->Length();
+    if (nextEditableContent->IsText()) {
+      uint32_t length = nextEditableContent->Length();
       
-      if (NS_WARN_IF(!length)) {
+      
+      
+      if (!length) {
+        NS_WARNING("Next editable content was an empty text node");
         return nullptr;
       }
       RefPtr<DeleteTextTransaction> deleteTextTransaction =
           DeleteTextTransaction::MaybeCreateForNextCharacter(
-              *this, *nextNodeAsText, 0);
+              *this, *nextEditableContent->AsText(), 0);
       if (!deleteTextTransaction) {
         NS_WARNING(
             "DeleteTextTransaction::MaybeCreateForNextCharacter() failed");
@@ -4633,118 +4643,106 @@ already_AddRefed<EditTransactionBase> EditorBase::CreateTxnForDeleteRange(
       }
       *aOffset = deleteTextTransaction->Offset();
       *aLength = deleteTextTransaction->LengthToDelete();
-      nextNode.forget(aRemovingNode);
+      *aRemovingContent = do_AddRef(nextEditableContent).take();
       return deleteTextTransaction.forget();
     }
 
-    
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-        DeleteNodeTransaction::MaybeCreate(*this, *nextNode);
+        DeleteNodeTransaction::MaybeCreate(*this, *nextEditableContent);
     if (!deleteNodeTransaction) {
       NS_WARNING("DeleteNodeTransaction::MaybeCreate() failed");
       return nullptr;
     }
-    nextNode.forget(aRemovingNode);
+    *aRemovingContent = do_AddRef(nextEditableContent).take();
     return deleteNodeTransaction.forget();
   }
 
-  if (RefPtr<Text> nodeAsText = Text::FromNode(node)) {
-    if (NS_WARN_IF(aAction != ePrevious && aAction != eNext)) {
-      return nullptr;
-    }
-    
+  if (point.IsInTextNode()) {
     RefPtr<DeleteTextTransaction> deleteTextTransaction;
-    if (aAction == ePrevious) {
+    if (aHowToHandleCollapsedRange ==
+        HowToHandleCollapsedRange::ExtendBackward) {
       deleteTextTransaction =
           DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-              *this, *nodeAsText, offset);
-      NS_WARNING_ASSERTION(
-          deleteTextTransaction,
-          "DeleteTextTransaction::MaybeCreateForPreviousCharacter() failed");
-    } else {
-      deleteTextTransaction =
-          DeleteTextTransaction::MaybeCreateForNextCharacter(*this, *nodeAsText,
-                                                             offset);
-      NS_WARNING_ASSERTION(
-          deleteTextTransaction,
-          "DeleteTextTransaction::MaybeCreateForNextCharacter() failed");
-    }
-    if (!deleteTextTransaction) {
-      return nullptr;
-    }
-    *aOffset = deleteTextTransaction->Offset();
-    *aLength = deleteTextTransaction->LengthToDelete();
-    node.forget(aRemovingNode);
-    return deleteTextTransaction.forget();
-  }
-
-  
-  
-  nsCOMPtr<nsIContent> selectedContent;
-  if (aAction == ePrevious) {
-    selectedContent =
-        GetPreviousEditableNode(EditorRawDOMPoint(node, child, offset));
-  } else if (aAction == eNext) {
-    selectedContent =
-        GetNextEditableNode(EditorRawDOMPoint(node, child, offset));
-  }
-
-  while (selectedContent && selectedContent->IsCharacterData() &&
-         !selectedContent->Length()) {
-    
-    if (aAction == ePrevious) {
-      selectedContent = GetPreviousEditableNode(*selectedContent);
-    } else if (aAction == eNext) {
-      selectedContent = GetNextEditableNode(*selectedContent);
-    }
-  }
-
-  if (NS_WARN_IF(!selectedContent)) {
-    return nullptr;
-  }
-
-  if (RefPtr<Text> selectedTextNode = Text::FromNode(selectedContent)) {
-    if (NS_WARN_IF(aAction != ePrevious && aAction != eNext)) {
-      return nullptr;
-    }
-    
-    uint32_t position = 0;
-    if (aAction == ePrevious) {
-      position = selectedTextNode->Length();
-    }
-    RefPtr<DeleteTextTransaction> deleteTextTransaction;
-    if (aAction == ePrevious) {
-      deleteTextTransaction =
-          DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-              *this, *selectedTextNode, position);
-      NS_WARNING_ASSERTION(
-          deleteTextTransaction,
-          "DeleteTextTransaction::MaybeCreateForPreviousCharacter() failed");
+              *this, *point.ContainerAsText(), point.Offset());
+      if (!deleteTextTransaction) {
+        NS_WARNING(
+            "DeleteTextTransaction::MaybeCreateForPreviousCharacter() failed");
+        return nullptr;
+      }
     } else {
       deleteTextTransaction =
           DeleteTextTransaction::MaybeCreateForNextCharacter(
-              *this, *selectedTextNode, position);
-      NS_WARNING_ASSERTION(
-          deleteTextTransaction,
-          "DeleteTextTransaction::MaybeCreateForNextCharacter() failed");
-    }
-    if (!deleteTextTransaction) {
-      return nullptr;
+              *this, *point.ContainerAsText(), point.Offset());
+      if (!deleteTextTransaction) {
+        NS_WARNING(
+            "DeleteTextTransaction::MaybeCreateForNextCharacter() failed");
+        return nullptr;
+      }
     }
     *aOffset = deleteTextTransaction->Offset();
     *aLength = deleteTextTransaction->LengthToDelete();
-    nsCOMPtr<nsINode> removingNode(selectedTextNode);
-    removingNode.forget(aRemovingNode);
+    *aRemovingContent = do_AddRef(point.ContainerAsText()).take();
+    return deleteTextTransaction.forget();
+  }
+
+  nsIContent* editableContent =
+      aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
+          ? GetPreviousEditableNode(point)
+          : GetNextEditableNode(point);
+  if (!editableContent) {
+    NS_WARNING("There was no editable content around the collapsed range");
+    return nullptr;
+  }
+  while (editableContent && editableContent->IsCharacterData() &&
+         !editableContent->Length()) {
+    
+    editableContent =
+        aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
+            ? GetPreviousEditableNode(*editableContent)
+            : GetNextEditableNode(*editableContent);
+  }
+  if (NS_WARN_IF(!editableContent)) {
+    NS_WARNING(
+        "There was no editable content which is not empty around the collapsed "
+        "range");
+    return nullptr;
+  }
+
+  if (editableContent->IsText()) {
+    RefPtr<DeleteTextTransaction> deleteTextTransaction;
+    if (aHowToHandleCollapsedRange ==
+        HowToHandleCollapsedRange::ExtendBackward) {
+      deleteTextTransaction =
+          DeleteTextTransaction::MaybeCreateForPreviousCharacter(
+              *this, *editableContent->AsText(), editableContent->Length());
+      if (!deleteTextTransaction) {
+        NS_WARNING(
+            "DeleteTextTransaction::MaybeCreateForPreviousCharacter() failed");
+        return nullptr;
+      }
+    } else {
+      deleteTextTransaction =
+          DeleteTextTransaction::MaybeCreateForNextCharacter(
+              *this, *editableContent->AsText(), 0);
+      if (!deleteTextTransaction) {
+        NS_WARNING(
+            "DeleteTextTransaction::MaybeCreateForNextCharacter() failed");
+        return nullptr;
+      }
+    }
+    *aOffset = deleteTextTransaction->Offset();
+    *aLength = deleteTextTransaction->LengthToDelete();
+    *aRemovingContent = do_AddRef(editableContent).take();
     return deleteTextTransaction.forget();
   }
 
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      DeleteNodeTransaction::MaybeCreate(*this, *selectedContent);
-  if (NS_WARN_IF(!deleteNodeTransaction)) {
+      DeleteNodeTransaction::MaybeCreate(*this, *editableContent);
+  if (!deleteNodeTransaction) {
+    NS_WARNING("DeleteNodeTransaction::MaybeCreate() failed");
     return nullptr;
   }
-  nsCOMPtr<nsINode> removingNode(selectedContent);
-  removingNode.forget(aRemovingNode);
+  *aRemovingContent = do_AddRef(editableContent).take();
   return deleteNodeTransaction.forget();
 }
 
@@ -5074,22 +5072,27 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
 
-  RefPtr<EditAggregateTransaction> deleteSelectionTransaction;
-  nsCOMPtr<nsINode> deleteNode;
+  if (NS_WARN_IF(!SelectionRefPtr()->RangeCount()) ||
+      NS_WARN_IF(
+          SelectionRefPtr()->IsCollapsed() &&
+          EditorBase::HowToHandleCollapsedRangeFor(aDirectionAndAmount) ==
+              HowToHandleCollapsedRange::Ignore)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsIContent> deleteContent;
   int32_t deleteCharOffset = 0, deleteCharLength = 0;
-  if (!SelectionRefPtr()->IsCollapsed() ||
-      aDirectionAndAmount != nsIEditor::eNone) {
-    deleteSelectionTransaction = CreateTxnForDeleteSelection(
-        aDirectionAndAmount, getter_AddRefs(deleteNode), &deleteCharOffset,
-        &deleteCharLength);
-    if (!deleteSelectionTransaction) {
-      NS_WARNING("EditorBase::CreateTxnForDeleteSelection() failed");
-      return NS_ERROR_FAILURE;
-    }
+  RefPtr<EditAggregateTransaction> deleteSelectionTransaction =
+      CreateTransactionForDeleteSelection(
+          EditorBase::HowToHandleCollapsedRangeFor(aDirectionAndAmount),
+          getter_AddRefs(deleteContent), &deleteCharOffset, &deleteCharLength);
+  if (!deleteSelectionTransaction) {
+    NS_WARNING("EditorBase::CreateTransactionForDeleteSelection() failed");
+    return NS_ERROR_FAILURE;
   }
 
   RefPtr<CharacterData> deleteCharData =
-      CharacterData::FromNodeOrNull(deleteNode);
+      CharacterData::FromNodeOrNull(deleteContent);
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eDeleteSelectedContent, aDirectionAndAmount,
@@ -5102,7 +5105,7 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
       "TextEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
   if (IsHTMLEditor()) {
-    if (!deleteNode) {
+    if (!deleteContent) {
       
       
       
@@ -5110,15 +5113,13 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
           *this, EditorBase::GetStartPoint(*SelectionRefPtr()),
           EditorBase::GetEndPoint(*SelectionRefPtr()));
     } else if (!deleteCharData) {
-      MOZ_ASSERT(deleteNode->IsContent());
-      TopLevelEditSubActionDataRef().WillDeleteContent(
-          *this, *deleteNode->AsContent());
+      TopLevelEditSubActionDataRef().WillDeleteContent(*this, *deleteContent);
     }
   }
 
   
   if (!mActionListeners.IsEmpty()) {
-    if (!deleteNode) {
+    if (!deleteContent) {
       AutoActionListenerArray listeners(mActionListeners);
       for (auto& listener : listeners) {
         DebugOnly<nsresult> rvIgnored =
@@ -5145,20 +5146,20 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
                        "EditorBase::DoTransactionInternal() failed");
 
   if (IsHTMLEditor() && deleteCharData) {
-    MOZ_ASSERT(deleteNode);
-    TopLevelEditSubActionDataRef().DidDeleteText(*this,
-                                                 EditorRawDOMPoint(deleteNode));
+    MOZ_ASSERT(deleteContent);
+    TopLevelEditSubActionDataRef().DidDeleteText(
+        *this, EditorRawDOMPoint(deleteContent));
   }
 
-  if (mTextServicesDocument && NS_SUCCEEDED(rv) && deleteNode &&
+  if (mTextServicesDocument && NS_SUCCEEDED(rv) && deleteContent &&
       !deleteCharData) {
     RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
-    textServicesDocument->DidDeleteNode(deleteNode);
+    textServicesDocument->DidDeleteNode(deleteContent);
   }
 
   
   AutoActionListenerArray listeners(mActionListeners);
-  if (!deleteNode) {
+  if (!deleteContent) {
     for (auto& listener : mActionListeners) {
       DebugOnly<nsresult> rvIgnored =
           listener->DidDeleteSelection(SelectionRefPtr());
@@ -5176,7 +5177,8 @@ nsresult EditorBase::DeleteSelectionWithTransaction(
     }
   } else {
     for (auto& listener : mActionListeners) {
-      DebugOnly<nsresult> rvIgnored = listener->DidDeleteNode(deleteNode, rv);
+      DebugOnly<nsresult> rvIgnored =
+          listener->DidDeleteNode(deleteContent, rv);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "nsIEditActionListener::DidDeleteNode() failed, but ignored");
