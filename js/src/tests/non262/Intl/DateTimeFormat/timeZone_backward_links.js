@@ -17,6 +17,7 @@ const links = {
     "America/Catamarca": "America/Argentina/Catamarca",
     "America/Cordoba": "America/Argentina/Cordoba",
     "America/Fort_Wayne": "America/Indiana/Indianapolis",
+    "America/Godthab": "America/Nuuk",
     "America/Indianapolis": "America/Indiana/Indianapolis",
     "America/Jujuy": "America/Argentina/Jujuy",
     "America/Knox_IN": "America/Indiana/Knox",
