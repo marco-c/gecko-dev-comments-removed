@@ -201,17 +201,6 @@ bool IsIdentifierNameOrPrivateName(const char16_t* chars, size_t length);
 
 bool IsKeyword(JSLinearString* str);
 
-
-void TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
-
-#if defined(JS_BUILD_BINAST)
-
-
-
-void TraceBinASTParser(JSTracer* trc, JS::AutoGCRooter* parser);
-
-#endif  
-
 class MOZ_STACK_CLASS AutoFrontendTraceLog {
 #ifdef JS_TRACE_LOGGING
   TraceLoggerThread* logger_;
