@@ -2442,7 +2442,12 @@
       }
 
       
-      let attributesToRemove = ["busy", "progress", "pendingicon"];
+      let attributesToRemove = [
+        "busy",
+        "pendingicon",
+        "progress",
+        "soundplaying",
+      ];
       let removedAttributes = [];
       for (let attr of attributesToRemove) {
         if (aTab.hasAttribute(attr)) {
