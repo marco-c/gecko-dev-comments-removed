@@ -3974,8 +3974,6 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   
-  
-  
   if (mLastSampleTime == aSampleTime) {
     return (mAnimation != nullptr);
   }
@@ -3983,8 +3981,16 @@ bool AsyncPanZoomController::UpdateAnimation(
   
   
   
-  bool needComposite = SampleCompositedAsyncTransform(aProofOfLock);
   AdvanceToNextSample();
+
+  
+  
+  
+  
+  
+  
+  
+  bool needComposite = SampleCompositedAsyncTransform(aProofOfLock);
 
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
@@ -4211,7 +4217,7 @@ void AsyncPanZoomController::AdvanceToNextSample() {
 
 bool AsyncPanZoomController::SampleCompositedAsyncTransform(
     const RecursiveMutexAutoLock& aProofOfLock) {
-  MOZ_ASSERT(mSampledState.size() == 1);
+  MOZ_ASSERT(mSampledState.size() <= 2);
   bool sampleChanged = (mSampledState.back() != SampledAPZCState(Metrics()));
   mSampledState.emplace_back(Metrics(), std::move(mScrollPayload));
   return sampleChanged;

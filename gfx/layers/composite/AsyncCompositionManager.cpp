@@ -1452,6 +1452,12 @@ bool AsyncCompositionManager::TransformShadowTree(
   mPreviousFrameTimeStamp = wantNextFrame ? aCurrentFrame : TimeStamp();
 
   if (!(aSkip & CompositorBridgeParentBase::TransformsToSkip::APZ)) {
+    bool apzAnimating = false;
+    if (RefPtr<APZSampler> apz = mCompositorBridge->GetAPZSampler()) {
+      apzAnimating = apz->AdvanceAnimations(nextFrame);
+    }
+    wantNextFrame |= apzAnimating;
+
     
     
     bool foundRoot = false;
@@ -1464,12 +1470,6 @@ bool AsyncCompositionManager::TransformShadowTree(
       }
 #endif
     }
-
-    bool apzAnimating = false;
-    if (RefPtr<APZSampler> apz = mCompositorBridge->GetAPZSampler()) {
-      apzAnimating = apz->AdvanceAnimations(nextFrame);
-    }
-    wantNextFrame |= apzAnimating;
   }
 
   HostLayer* rootComposite = root->AsHostLayer();
