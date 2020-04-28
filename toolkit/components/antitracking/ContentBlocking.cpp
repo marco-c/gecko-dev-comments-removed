@@ -865,6 +865,16 @@ bool ContentBlocking::ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow,
     return false;
   }
 
+  
+  
+  
+  if (behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
+      !AntiTrackingUtils::IsFirstLevelSubContext(
+          aWindow->GetBrowsingContext())) {
+    *aRejectedReason = blockedReason;
+    return false;
+  }
+
   nsAutoCString trackingOrigin;
   if (!GetTrackingOrigin(nsGlobalWindowInner::Cast(aWindow), trackingOrigin)) {
     LOG(("Failed to obtain the the tracking origin"));

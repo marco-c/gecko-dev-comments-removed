@@ -441,3 +441,19 @@ bool AntiTrackingUtils::GetPrincipalAndTrackingOrigin(
 
   return true;
 };
+
+bool AntiTrackingUtils::IsFirstLevelSubContext(
+    BrowsingContext* aBrowsingContext) {
+  MOZ_ASSERT(aBrowsingContext);
+
+  RefPtr<BrowsingContext> parentBC = aBrowsingContext->GetParent();
+
+  if (!parentBC) {
+    
+    return false;
+  }
+
+  
+  
+  return parentBC->IsTopContent();
+}

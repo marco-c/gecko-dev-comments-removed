@@ -79,6 +79,10 @@ class AntiTrackingUtils final {
   static bool GetPrincipalAndTrackingOrigin(
       dom::BrowsingContext* aBrowsingContext, nsIPrincipal** aPrincipal,
       nsACString& aTrackingOrigin);
+
+  
+  
+  static bool IsFirstLevelSubContext(dom::BrowsingContext* aBrowsingContext);
 };
 
 }  
