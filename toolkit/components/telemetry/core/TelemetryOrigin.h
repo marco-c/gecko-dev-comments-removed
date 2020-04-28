@@ -7,6 +7,9 @@
 #define TelemetryOrigin_h__
 
 #include "TelemetryOriginEnums.h"
+#include "jsapi.h"
+#include "nsError.h"
+#include "nsString.h"
 
 
 

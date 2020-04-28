@@ -2,6 +2,8 @@
 
 
 
+#include "TelemetryFixture.h"
+#include "TelemetryTestHelpers.h"
 #include "other/CombinedStacks.h"
 #include "other/ProcessedStack.h"
 #include "nsPrintfCString.h"
