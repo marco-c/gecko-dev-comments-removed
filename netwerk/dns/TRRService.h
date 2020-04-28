@@ -96,12 +96,25 @@ class TRRService : public nsIObserver,
   
   
   bool MaybeSetPrivateURI(const nsACString& aURI);
+  
+  
+  
+  
+  
+  
+  
+  void CheckURIPrefs();
   void ProcessURITemplate(nsACString& aURI);
   void ClearEntireCache();
 
   bool mInitialized;
   Atomic<uint32_t, Relaxed> mMode;
   Atomic<uint32_t, Relaxed> mTRRBlacklistExpireTime;
+
+  
+  nsCString mURIPref;
+  bool mURIPrefHasUserValue = false;
+  nsCString mRolloutURIPref;
 
   Mutex mLock;
 
