@@ -2579,14 +2579,9 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
   already_AddRefed<EditAggregateTransaction>
   CreateTransactionForDeleteSelection(
-      HowToHandleCollapsedRange aHowToHandleCollapsedRange,
-      nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength);
+      HowToHandleCollapsedRange aHowToHandleCollapsedRange);
 
   
 
@@ -2602,14 +2597,9 @@ class EditorBase : public nsIEditor,
 
 
 
-
-
-
-
   already_AddRefed<EditTransactionBase> CreateTransactionForCollapsedRange(
       nsRange& aCollapsedRange,
-      HowToHandleCollapsedRange aHowToHandleCollapsedRange,
-      nsIContent** aRemovingContent, int32_t* aOffset, int32_t* aLength);
+      HowToHandleCollapsedRange aHowToHandleCollapsedRange);
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
