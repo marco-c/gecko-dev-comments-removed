@@ -77,6 +77,18 @@ Management.on("enabling", async (type, id) => {
   return ExtensionPreferencesManager.enableAll(id);
 });
 
+Management.on("change-permissions", (type, change) => {
+  
+  if (!change.removed) {
+    return;
+  }
+  ExtensionPreferencesManager.removeSettingsForPermissions(
+    change.extensionId,
+    change.removed.permissions
+  );
+});
+
+
 
 const STORE_TYPE = "prefs";
 
@@ -417,10 +429,15 @@ this.ExtensionPreferencesManager = {
 
 
 
-  removeSettingsForPermission(id, permission) {
+
+  async removeSettingsForPermissions(id, permissions) {
+    if (!permissions || !permissions.length) {
+      return;
+    }
+    await Management.asyncLoadSettingsModules();
     let removePromises = [];
     settingsMap.forEach((setting, name) => {
-      if (setting.permission == permission) {
+      if (permissions.includes(setting.permission)) {
         removePromises.push(this.removeSetting(id, name));
       }
     });
