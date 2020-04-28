@@ -84,7 +84,10 @@ impl App {
             radii: BorderRadius::uniform(30.0),
             mode: ClipMode::Clip,
         };
-        let clip_id = builder.define_clip(&space_and_clip, clip_bounds, vec![complex_clip]);
+        let clip_id = builder.define_clip_rounded_rect(
+            &space_and_clip,
+            complex_clip,
+        );
 
         
         builder.push_rect(
