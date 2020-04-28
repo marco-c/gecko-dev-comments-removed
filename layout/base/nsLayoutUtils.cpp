@@ -708,7 +708,7 @@ bool nsLayoutUtils::AllowZoomingForDocument(
 }
 
 float nsLayoutUtils::GetCurrentAPZResolutionScale(PresShell* aPresShell) {
-  return aPresShell ? aPresShell->GetCumulativeNonRootScaleResolution() : 1.0;
+  return aPresShell ? aPresShell->GetCumulativeResolution() : 1.0;
 }
 
 
