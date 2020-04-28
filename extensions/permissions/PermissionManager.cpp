@@ -323,38 +323,6 @@ already_AddRefed<nsIURI> GetNextSubDomainURI(nsIURI* aURI) {
   return uri.forget();
 }
 
-
-
-
-already_AddRefed<nsIPrincipal> GetNextSubDomainPrincipal(
-    nsIPrincipal* aPrincipal) {
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv) || !uri) {
-    return nullptr;
-  }
-
-  
-  
-  nsCOMPtr<nsIURI> newURI = GetNextSubDomainURI(uri);
-  if (!newURI) {
-    return nullptr;
-  }
-
-  
-  OriginAttributes attrs = aPrincipal->OriginAttributesRef();
-
-  if (!StaticPrefs::permissions_isolateBy_userContext()) {
-    
-    attrs.StripAttributes(OriginAttributes::STRIP_USER_CONTEXT_ID);
-  }
-
-  nsCOMPtr<nsIPrincipal> principal =
-      BasePrincipal::CreateContentPrincipal(newURI, attrs);
-
-  return principal.forget();
-}
-
 nsresult UpgradeHostToOriginAndInsert(
     const nsACString& aHost, const nsCString& aType, uint32_t aPermission,
     uint32_t aExpireType, int64_t aExpireTime, int64_t aModificationTime,
@@ -1547,6 +1515,16 @@ nsresult PermissionManager::CreateTable() {
                          ")"));
 }
 
+
+
+bool PermissionManager::HasExpired(uint32_t aExpireType,
+                                     int64_t aExpireTime) {
+  return (aExpireType == nsIPermissionManager::EXPIRE_TIME ||
+          (aExpireType == nsIPermissionManager::EXPIRE_SESSION &&
+           aExpireTime != 0)) &&
+         aExpireTime <= EXPIRY_NOW;
+}
+
 NS_IMETHODIMP
 PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
                                     const nsACString& aType,
@@ -1561,11 +1539,7 @@ PermissionManager::AddFromPrincipal(nsIPrincipal* aPrincipal,
                  NS_ERROR_INVALID_ARG);
 
   
-  
-  if ((aExpireType == nsIPermissionManager::EXPIRE_TIME ||
-       (aExpireType == nsIPermissionManager::EXPIRE_SESSION &&
-        aExpireTime != 0)) &&
-      aExpireTime <= EXPIRY_NOW) {
+  if (HasExpired(aExpireType, aExpireTime)) {
     return NS_OK;
   }
 
@@ -2269,6 +2243,13 @@ NS_IMETHODIMP PermissionManager::GetAllWithTypePrefix(
         continue;
       }
 
+      
+      
+      
+      if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
+        continue;
+      }
+
       if (!aPrefix.IsEmpty() &&
           !StringBeginsWith(mTypeArray[permEntry.mType], aPrefix)) {
         continue;
@@ -2323,6 +2304,13 @@ PermissionManager::GetAllForPrincipal(
     for (const auto& permEntry : entry->GetPermissions()) {
       
       if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
+        continue;
+      }
+
+      
+      
+      
+      if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
         continue;
       }
 
@@ -2529,11 +2517,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     PermissionEntry permEntry = entry->GetPermission(aType);
 
     
-    
-    if ((permEntry.mExpireType == nsIPermissionManager::EXPIRE_TIME ||
-         (permEntry.mExpireType == nsIPermissionManager::EXPIRE_SESSION &&
-          permEntry.mExpireTime != 0)) &&
-        permEntry.mExpireTime <= EXPIRY_NOW) {
+    if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
       entry = nullptr;
       RemoveFromPrincipal(aPrincipal, mTypeArray[aType]);
     } else if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
@@ -2548,7 +2532,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
   
   
   if (!aExactHostMatch) {
-    nsCOMPtr<nsIPrincipal> principal = GetNextSubDomainPrincipal(aPrincipal);
+    nsCOMPtr<nsIPrincipal> principal = aPrincipal->GetNextSubDomainPrincipal();
     if (principal) {
       return GetPermissionHashKey(principal, aType, aExactHostMatch);
     }
@@ -2596,11 +2580,7 @@ PermissionManager::PermissionHashKey* PermissionManager::GetPermissionHashKey(
     PermissionEntry permEntry = entry->GetPermission(aType);
 
     
-    
-    if ((permEntry.mExpireType == nsIPermissionManager::EXPIRE_TIME ||
-         (permEntry.mExpireType == nsIPermissionManager::EXPIRE_SESSION &&
-          permEntry.mExpireTime != 0)) &&
-        permEntry.mExpireTime <= EXPIRY_NOW) {
+    if (HasExpired(permEntry.mExpireType, permEntry.mExpireTime)) {
       entry = nullptr;
       
       
@@ -3117,9 +3097,8 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     GetKeyForPrincipal(prin, false, pair->first);
 
     Unused << GetOriginFromPrincipal(prin, false, pair->second);
-
+    prin = prin->GetNextSubDomainPrincipal();
     
-    prin = GetNextSubDomainPrincipal(prin);
   }
 
   MOZ_ASSERT(pairs.Length() >= 1,
