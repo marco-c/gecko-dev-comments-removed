@@ -729,8 +729,9 @@ int32_t Selection::StyledRanges::FindInsertionPoint(
 
 
 
-nsresult Selection::SubtractRange(StyledRange& aRange, nsRange& aSubtract,
-                                  nsTArray<StyledRange>* aOutput) {
+
+nsresult Selection::StyledRanges::SubtractRange(
+    StyledRange& aRange, nsRange& aSubtract, nsTArray<StyledRange>* aOutput) {
   nsRange* range = aRange.mRange;
 
   if (NS_WARN_IF(!range->IsPositioned())) {
