@@ -1072,6 +1072,10 @@ class nsDocShell final : public nsDocLoader,
   
   void NotifyPrivateBrowsingChanged();
 
+  
+  
+  void SetLoadGroupDefaultLoadFlags(nsLoadFlags aLoadFlags);
+
  private:  
   nsID mHistoryID;
   nsString mTitle;
@@ -1206,7 +1210,6 @@ class nsDocShell final : public nsDocLoader,
   BusyFlags mBusyFlags;
   AppType mAppType;
   uint32_t mLoadType;
-  uint32_t mDefaultLoadFlags;
   uint32_t mFailedLoadType;
 
   

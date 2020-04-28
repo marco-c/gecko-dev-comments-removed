@@ -351,7 +351,6 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mBusyFlags(BUSY_FLAGS_NONE),
       mAppType(nsIDocShell::APP_TYPE_UNKNOWN),
       mLoadType(0),
-      mDefaultLoadFlags(nsIRequest::LOAD_NORMAL),
       mFailedLoadType(0),
       mDisplayMode(nsIDocShell::DISPLAY_MODE_BROWSER),
       mJSRunToCompletionDepth(0),
@@ -520,6 +519,9 @@ already_AddRefed<nsDocShell> nsDocShell::Create(
 
   
   aBrowsingContext->SetDocShell(ds);
+
+  
+  ds->SetLoadGroupDefaultLoadFlags(aBrowsingContext->GetDefaultLoadFlags());
 
   return ds.forget();
 }
@@ -725,11 +727,13 @@ nsDocShell::LoadURI(nsDocShellLoadState* aLoadState, bool aSetNavigating) {
     return NS_OK;  
   }
 
+  nsLoadFlags defaultLoadFlags = mBrowsingContext->GetDefaultLoadFlags();
   if (aLoadState->LoadFlags() & LOAD_FLAGS_FORCE_TRR) {
-    mDefaultLoadFlags |= nsIRequest::LOAD_TRR_ONLY_MODE;
+    defaultLoadFlags |= nsIRequest::LOAD_TRR_ONLY_MODE;
   } else if (aLoadState->LoadFlags() & LOAD_FLAGS_DISABLE_TRR) {
-    mDefaultLoadFlags |= nsIRequest::LOAD_TRR_DISABLED_MODE;
+    defaultLoadFlags |= nsIRequest::LOAD_TRR_DISABLED_MODE;
   }
+  mBrowsingContext->SetDefaultLoadFlags(defaultLoadFlags);
 
   if (!StartupTimeline::HasRecord(StartupTimeline::FIRST_LOAD_URI) &&
       mItemType == typeContent && !NS_IsAboutBlank(aLoadState->URI())) {
@@ -2576,10 +2580,6 @@ nsresult nsDocShell::SetDocLoaderParent(nsDocLoader* aParent) {
     SetAllowDNSPrefetch(mAllowDNSPrefetch && value);
     SetAffectPrivateSessionLifetime(
         parentAsDocShell->GetAffectPrivateSessionLifetime());
-    uint32_t flags;
-    if (NS_SUCCEEDED(parentAsDocShell->GetDefaultLoadFlags(&flags))) {
-      SetDefaultLoadFlags(flags);
-    }
 
     SetTouchEventsOverride(parentAsDocShell->GetTouchEventsOverride());
 
@@ -3077,6 +3077,16 @@ NS_IMETHODIMP nsDocShell::SynchronizeLayoutHistoryState() {
     mOSHE->SynchronizeLayoutHistoryState();
   }
   return NS_OK;
+}
+
+void nsDocShell::SetLoadGroupDefaultLoadFlags(nsLoadFlags aLoadFlags) {
+  if (mLoadGroup) {
+    mLoadGroup->SetDefaultLoadFlags(aLoadFlags);
+  } else {
+    NS_WARNING(
+        "nsDocShell::SetLoadGroupDefaultLoadFlags has no loadGroup to "
+        "propagate the mode to");
+  }
 }
 
 nsIScriptGlobalObject* nsDocShell::GetScriptGlobalObject() {
@@ -4737,34 +4747,19 @@ nsDocShell::GetIsAppTab(bool* aIsAppTab) {
 
 NS_IMETHODIMP
 nsDocShell::SetDefaultLoadFlags(uint32_t aDefaultLoadFlags) {
-  mDefaultLoadFlags = aDefaultLoadFlags;
-
-  
-  if (mLoadGroup) {
-    mLoadGroup->SetDefaultLoadFlags(aDefaultLoadFlags);
+  if (!mWillChangeProcess) {
+    mBrowsingContext->SetDefaultLoadFlags(aDefaultLoadFlags);
   } else {
-    NS_WARNING(
-        "nsDocShell::SetDefaultLoadFlags has no loadGroup to propagate the "
-        "flags to");
-  }
-
-  
-  
-  
-  nsTObserverArray<nsDocLoader*>::ForwardIterator iter(mChildList);
-  while (iter.HasMore()) {
-    nsCOMPtr<nsIDocShell> docshell = do_QueryObject(iter.GetNext());
-    if (!docshell) {
-      continue;
-    }
-    docshell->SetDefaultLoadFlags(aDefaultLoadFlags);
+    
+    
+    NS_WARNING("nsDocShell::SetDefaultLoadFlags called on Zombie DocShell");
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShell::GetDefaultLoadFlags(uint32_t* aDefaultLoadFlags) {
-  *aDefaultLoadFlags = mDefaultLoadFlags;
+  *aDefaultLoadFlags = mBrowsingContext->GetDefaultLoadFlags();
   return NS_OK;
 }
 
@@ -7305,9 +7300,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     bool allowContentRetargetingOnChildren =
         childShell->GetAllowContentRetargetingOnChildren();
 
-    uint32_t defaultLoadFlags;
-    childShell->GetDefaultLoadFlags(&defaultLoadFlags);
-
     
     
     
@@ -7322,7 +7314,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     childShell->SetAllowContentRetargeting(allowContentRetargeting);
     childShell->SetAllowContentRetargetingOnChildren(
         allowContentRetargetingOnChildren);
-    childShell->SetDefaultLoadFlags(defaultLoadFlags);
 
     rv = childShell->BeginRestore(nullptr, false);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -9670,7 +9661,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
     inheritPrincipal = inheritAttrs && !isURIUniqueOrigin;
   }
 
-  nsLoadFlags loadFlags = mDefaultLoadFlags;
+  nsLoadFlags loadFlags = mBrowsingContext->GetDefaultLoadFlags();
   nsSecurityFlags securityFlags =
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
   uint32_t sandboxFlags = mBrowsingContext->GetSandboxFlags();
