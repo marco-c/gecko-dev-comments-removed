@@ -1083,7 +1083,7 @@ nsStylePosition::nsStylePosition(const Document& aDocument)
       mFlexBasis(StyleFlexBasis::Size(StyleSize::Auto())),
       mAspectRatio(0.0f),
       mGridAutoFlow(StyleGridAutoFlow::ROW),
-      mBoxSizing(StyleBoxSizing::Content),
+      mMasonryAutoFlow(NS_STYLE_MASONRY_AUTO_FLOW_INITIAL_VALUE),
       mAlignContent({StyleAlignFlags::NORMAL}),
       mAlignItems({StyleAlignFlags::NORMAL}),
       mAlignSelf({StyleAlignFlags::AUTO}),
@@ -1093,6 +1093,7 @@ nsStylePosition::nsStylePosition(const Document& aDocument)
       mFlexDirection(StyleFlexDirection::Row),
       mFlexWrap(StyleFlexWrap::Nowrap),
       mObjectFit(StyleObjectFit::Fill),
+      mBoxSizing(StyleBoxSizing::Content),
       mOrder(NS_STYLE_ORDER_INITIAL),
       mFlexGrow(0.0f),
       mFlexShrink(1.0f),
@@ -1116,7 +1117,9 @@ nsStylePosition::nsStylePosition(const Document& aDocument)
 nsStylePosition::~nsStylePosition() { MOZ_COUNT_DTOR(nsStylePosition); }
 
 nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
-    : mObjectPosition(aSource.mObjectPosition),
+    : mAlignTracks(aSource.mAlignTracks),
+      mJustifyTracks(aSource.mJustifyTracks),
+      mObjectPosition(aSource.mObjectPosition),
       mOffset(aSource.mOffset),
       mWidth(aSource.mWidth),
       mMinWidth(aSource.mMinWidth),
@@ -1129,7 +1132,7 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
       mGridAutoRows(aSource.mGridAutoRows),
       mAspectRatio(aSource.mAspectRatio),
       mGridAutoFlow(aSource.mGridAutoFlow),
-      mBoxSizing(aSource.mBoxSizing),
+      mMasonryAutoFlow(aSource.mMasonryAutoFlow),
       mAlignContent(aSource.mAlignContent),
       mAlignItems(aSource.mAlignItems),
       mAlignSelf(aSource.mAlignSelf),
@@ -1139,6 +1142,7 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
       mFlexDirection(aSource.mFlexDirection),
       mFlexWrap(aSource.mFlexWrap),
       mObjectFit(aSource.mObjectFit),
+      mBoxSizing(aSource.mBoxSizing),
       mOrder(aSource.mOrder),
       mFlexGrow(aSource.mFlexGrow),
       mFlexShrink(aSource.mFlexShrink),
@@ -1168,6 +1172,14 @@ static bool IsAutonessEqual(const StyleRect<LengthPercentageOrAuto>& aSides1,
 nsChangeHint nsStylePosition::CalcDifference(
     const nsStylePosition& aNewData,
     const nsStyleVisibility& aOldStyleVisibility) const {
+  if (mGridTemplateColumns.IsMasonry() !=
+          aNewData.mGridTemplateColumns.IsMasonry() ||
+      mGridTemplateRows.IsMasonry() != aNewData.mGridTemplateRows.IsMasonry()) {
+    
+    
+    return nsChangeHint_ReconstructFrame;
+  }
+
   nsChangeHint hint = nsChangeHint(0);
 
   
@@ -1198,10 +1210,17 @@ nsChangeHint nsStylePosition::CalcDifference(
     return hint | nsChangeHint_AllReflowHints;
   }
 
+  if (mAlignItems != aNewData.mAlignItems ||
+      mAlignSelf != aNewData.mAlignSelf ||
+      mJustifyTracks != aNewData.mJustifyTracks ||
+      mAlignTracks != aNewData.mAlignTracks) {
+    return hint | nsChangeHint_AllReflowHints;
+  }
+
   
   
-  if (mAlignSelf != aNewData.mAlignSelf || mFlexBasis != aNewData.mFlexBasis ||
-      mFlexGrow != aNewData.mFlexGrow || mFlexShrink != aNewData.mFlexShrink) {
+  if (mFlexBasis != aNewData.mFlexBasis || mFlexGrow != aNewData.mFlexGrow ||
+      mFlexShrink != aNewData.mFlexShrink) {
     return hint | nsChangeHint_AllReflowHints;
   }
 
@@ -1209,10 +1228,7 @@ nsChangeHint nsStylePosition::CalcDifference(
   
   
   
-  
-  
-  if (mAlignItems != aNewData.mAlignItems ||
-      mFlexDirection != aNewData.mFlexDirection ||
+  if (mFlexDirection != aNewData.mFlexDirection ||
       mFlexWrap != aNewData.mFlexWrap) {
     return hint | nsChangeHint_AllReflowHints;
   }
@@ -1225,7 +1241,8 @@ nsChangeHint nsStylePosition::CalcDifference(
       mGridTemplateAreas != aNewData.mGridTemplateAreas ||
       mGridAutoColumns != aNewData.mGridAutoColumns ||
       mGridAutoRows != aNewData.mGridAutoRows ||
-      mGridAutoFlow != aNewData.mGridAutoFlow) {
+      mGridAutoFlow != aNewData.mGridAutoFlow ||
+      mMasonryAutoFlow != aNewData.mMasonryAutoFlow) {
     return hint | nsChangeHint_AllReflowHints;
   }
 

@@ -171,16 +171,6 @@ impl ContentDistribution {
         Self { primary }
     }
 
-    fn from_bits(bits: u16) -> Self {
-        Self {
-            primary: AlignFlags::from_bits_truncate(bits as u8),
-        }
-    }
-
-    fn as_bits(&self) -> u16 {
-        self.primary.bits() as u16
-    }
-
     
     pub fn is_baseline_position(&self) -> bool {
         matches!(
@@ -297,6 +287,41 @@ impl SpecifiedValueInfo for AlignContent {
 
 #[derive(
     Clone,
+    Debug,
+    Default,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(transparent)]
+#[css(comma)]
+pub struct AlignTracks(
+    #[css(iterable, if_empty = "normal")]
+    pub crate::OwnedSlice<AlignContent>
+);
+
+impl Parse for AlignTracks {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let values = input.parse_comma_separated(|input| {
+            AlignContent::parse(context, input)
+        })?;
+        Ok(AlignTracks(values.into()))
+    }
+}
+
+
+
+
+#[derive(
+    Clone,
     Copy,
     Debug,
     Eq,
@@ -330,17 +355,37 @@ impl SpecifiedValueInfo for JustifyContent {
     }
 }
 
-#[cfg(feature = "gecko")]
-impl From<u16> for JustifyContent {
-    fn from(bits: u16) -> Self {
-        JustifyContent(ContentDistribution::from_bits(bits))
-    }
-}
 
-#[cfg(feature = "gecko")]
-impl From<JustifyContent> for u16 {
-    fn from(v: JustifyContent) -> u16 {
-        v.0.as_bits()
+
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(transparent)]
+#[css(comma)]
+pub struct JustifyTracks(
+    #[css(iterable, if_empty = "normal")]
+    pub crate::OwnedSlice<JustifyContent>
+);
+
+impl Parse for JustifyTracks {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let values = input.parse_comma_separated(|input| {
+            JustifyContent::parse(context, input)
+        })?;
+        Ok(JustifyTracks(values.into()))
     }
 }
 
