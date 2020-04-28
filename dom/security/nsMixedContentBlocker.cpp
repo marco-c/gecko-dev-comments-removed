@@ -37,6 +37,7 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/ContentChild.h"
@@ -831,20 +832,15 @@ nsresult nsMixedContentBlocker::ShouldLoad(
 
   
   
-  bool rootHasSecureConnection = false;
+  bool rootHasSecureConnection =
+      docShell->GetBrowsingContext()->Top()->GetIsSecure();
   bool allowMixedContent = false;
-  bool isRootDocShell = false;
-  nsresult rv = docShell->GetAllowMixedContentAndConnectionData(
-      &rootHasSecureConnection, &allowMixedContent, &isRootDocShell);
+  nsresult rv =
+      docShell->GetAllowMixedContentAndConnectionData(&allowMixedContent);
   if (NS_FAILED(rv)) {
     *aDecision = REJECT_REQUEST;
     return rv;
   }
-
-  
-  nsCOMPtr<nsIDocShellTreeItem> sameTypeRoot;
-  docShell->GetInProcessSameTypeRootTreeItem(getter_AddRefs(sameTypeRoot));
-  NS_ASSERTION(sameTypeRoot, "No root tree item from docshell!");
 
   
   
@@ -852,43 +848,12 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   if (aContentType == TYPE_SUBDOCUMENT && !rootHasSecureConnection) {
     bool httpsParentExists = false;
 
-    nsCOMPtr<nsIDocShellTreeItem> parentTreeItem;
-    parentTreeItem = docShell;
+    RefPtr<BrowsingContext> curBC = docShell->GetBrowsingContext();
 
-    while (!httpsParentExists && parentTreeItem) {
-      nsCOMPtr<nsIWebNavigation> parentAsNav(do_QueryInterface(parentTreeItem));
-      NS_ASSERTION(parentAsNav,
-                   "No web navigation object from parent's docshell tree item");
-      nsCOMPtr<nsIURI> parentURI;
-
-      parentAsNav->GetCurrentURI(getter_AddRefs(parentURI));
-      if (!parentURI) {
-        
-        httpsParentExists = true;
-        break;
-      }
-
-      nsCOMPtr<nsIURI> innerParentURI = NS_GetInnermostURI(parentURI);
-      if (!innerParentURI) {
-        NS_ERROR("Can't get innerURI from parentURI");
-        *aDecision = REJECT_REQUEST;
-        return NS_OK;
-      }
-
-      httpsParentExists = innerParentURI->SchemeIs("https");
-
-      
-      
-      if (sameTypeRoot == parentTreeItem) {
-        break;
-      }
-
-      
-      nsCOMPtr<nsIDocShellTreeItem> newParentTreeItem;
-      parentTreeItem->GetInProcessSameTypeParent(
-          getter_AddRefs(newParentTreeItem));
-      parentTreeItem = newParentTreeItem;
-    }  
+    while (!httpsParentExists && curBC) {
+      httpsParentExists = curBC->GetIsSecure();
+      curBC = curBC->GetParent();
+    }
 
     if (!httpsParentExists) {
       *aDecision = nsIContentPolicy::ACCEPT;
@@ -897,13 +862,37 @@ nsresult nsMixedContentBlocker::ShouldLoad(
   }
 
   
-  nsCOMPtr<Document> rootDoc = sameTypeRoot->GetDocument();
-  NS_ASSERTION(rootDoc, "No root document from document shell root tree item.");
+  nsCOMPtr<nsIDocShell> rootShell =
+      docShell->GetBrowsingContext()->Top()->GetDocShell();
+  nsCOMPtr<Document> rootDoc = rootShell ? rootShell->GetDocument() : nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (StaticPrefs::fission_autostart()) {
+    if (!rootShell || !rootDoc) {
+      if (classification == eMixedDisplay) {
+        *aDecision = nsIContentPolicy::ACCEPT;
+        return NS_OK;
+      }
+      
+      
+      if (!StaticPrefs::security_mixed_content_block_active_content()) {
+        *aDecision = nsIContentPolicy::ACCEPT;
+        return NS_OK;
+      }
+      *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      return NS_OK;
+    }
+  }
 
   nsDocShell* nativeDocShell = nsDocShell::Cast(docShell);
-  nsCOMPtr<nsIDocShell> rootShell = do_GetInterface(sameTypeRoot);
-  NS_ASSERTION(rootShell,
-               "No root docshell from document shell root tree item.");
+
   uint32_t state = nsIWebProgressListener::STATE_IS_BROKEN;
   nsCOMPtr<nsISecureBrowserUI> securityUI;
   rootShell->GetSecurityUI(getter_AddRefs(securityUI));
