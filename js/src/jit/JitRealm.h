@@ -155,7 +155,7 @@ class JitRuntime {
     BailoutTable(uint32_t startOffset, uint32_t size)
         : startOffset(startOffset), size(size) {}
   };
-  typedef Vector<BailoutTable, 4, SystemAllocPolicy> BailoutTableVector;
+  using BailoutTableVector = Vector<BailoutTable, 4, SystemAllocPolicy>;
   WriteOnceData<BailoutTableVector> bailoutTables_;
 
   
@@ -190,12 +190,14 @@ class JitRuntime {
   WriteOnceData<uint32_t> doubleToInt32ValueStubOffset_{0};
 
   
-  mozilla::EnumeratedArray<DebugTrapHandlerKind, DebugTrapHandlerKind::Count,
-                           WriteOnceData<JitCode*>>
-      debugTrapHandlers_;
+  using DebugHandlerArray =
+      mozilla::EnumeratedArray<DebugTrapHandlerKind,
+                               DebugTrapHandlerKind::Count,
+                               WriteOnceData<JitCode*>>;
+  DebugHandlerArray debugTrapHandlers_;
 
   
-  BaselineInterpreter baselineInterpreter_;
+  MainThreadData<BaselineInterpreter> baselineInterpreter_;
 
   
   WriteOnceData<JitCode*> trampolineCode_{nullptr};
@@ -206,7 +208,8 @@ class JitRuntime {
   WriteOnceData<VMWrapperMap*> functionWrappers_{nullptr};
 
   
-  using VMWrapperOffsets = Vector<uint32_t, 0, SystemAllocPolicy>;
+  using VMWrapperOffsets =
+      Vector<WriteOnceData<uint32_t>, 0, SystemAllocPolicy>;
   VMWrapperOffsets functionWrapperOffsets_;
 
   
@@ -227,8 +230,8 @@ class JitRuntime {
   
   
   
-  typedef mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>
-      NumFinishedOffThreadTasksType;
+  using NumFinishedOffThreadTasksType =
+      mozilla::Atomic<size_t, mozilla::SequentiallyConsistent>;
   NumFinishedOffThreadTasksType numFinishedOffThreadTasks_{0};
 
   
@@ -335,7 +338,9 @@ class JitRuntime {
 
   JitCode* debugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 
-  BaselineInterpreter& baselineInterpreter() { return baselineInterpreter_; }
+  BaselineInterpreter& baselineInterpreter() {
+    return baselineInterpreter_.ref();
+  }
 
   TrampolinePtr getGenericBailoutHandler() const {
     return trampolineCode(bailoutHandlerOffset_);
