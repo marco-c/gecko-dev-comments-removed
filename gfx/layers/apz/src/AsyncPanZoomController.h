@@ -1175,9 +1175,15 @@ class AsyncPanZoomController {
 
 
 
-  CSSRect GetEffectiveLayoutViewport(AsyncTransformConsumer aMode) const;
-  CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const;
-  CSSToParentLayerScale2D GetEffectiveZoom(AsyncTransformConsumer aMode) const;
+  CSSRect GetEffectiveLayoutViewport(
+      AsyncTransformConsumer aMode,
+      const RecursiveMutexAutoLock& aProofOfLock) const;
+  CSSPoint GetEffectiveScrollOffset(
+      AsyncTransformConsumer aMode,
+      const RecursiveMutexAutoLock& aProofOfLock) const;
+  CSSToParentLayerScale2D GetEffectiveZoom(
+      AsyncTransformConsumer aMode,
+      const RecursiveMutexAutoLock& aProofOfLock) const;
 
   
 
