@@ -250,8 +250,6 @@ class SearchEngineSelector {
       }
     }
 
-    engines = this._filterEngines(engines);
-
     let defaultEngine;
     let privateEngine;
 
@@ -332,35 +330,6 @@ class SearchEngineSelector {
       return Number.MAX_SAFE_INTEGER - 1;
     }
     return obj.orderHint || 0;
-  }
-
-  
-
-
-
-
-
-  _filterEngines(engines) {
-    let branch = Services.prefs.getDefaultBranch(
-      SearchUtils.BROWSER_SEARCH_PREF
-    );
-    if (
-      SearchUtils.isPartnerBuild() &&
-      branch.getPrefType("ignoredJAREngines") == branch.PREF_STRING
-    ) {
-      let ignoredJAREngines = branch
-        .getCharPref("ignoredJAREngines")
-        .split(",");
-      let filteredEngines = engines.filter(engine => {
-        let name = engine.webExtension.id.split("@")[0];
-        return !ignoredJAREngines.includes(name);
-      });
-      
-      if (filteredEngines.length) {
-        engines = filteredEngines;
-      }
-    }
-    return engines;
   }
 
   
