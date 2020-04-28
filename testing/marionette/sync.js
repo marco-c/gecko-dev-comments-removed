@@ -333,11 +333,20 @@ function MessageManagerDestroyedPromise(messageManager) {
 
 
 function IdlePromise(win) {
-  return new Promise(resolve => {
-    Services.tm.idleDispatchToMainThread(() => {
+  const animationFramePromise = new Promise(resolve => {
+    executeSoon(() => {
       win.requestAnimationFrame(resolve);
     });
   });
+
+  
+  const windowClosedPromise = new PollPromise(resolve => {
+    if (win.closed) {
+      resolve();
+    }
+  });
+
+  return Promise.race([animationFramePromise, windowClosedPromise]);
 }
 
 
