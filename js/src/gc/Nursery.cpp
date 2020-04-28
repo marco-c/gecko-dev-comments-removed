@@ -702,25 +702,35 @@ static bool IsWriteableAddress(void* ptr) {
 }
 #endif
 
-void js::Nursery::forwardBufferPointer(HeapSlot** pSlotsElems) {
-  HeapSlot* old = *pSlotsElems;
+void js::Nursery::forwardBufferPointer(uintptr_t* pSlotsElems) {
+  
+  
+  
+  
+  
+  
+  
+  void* buffer = reinterpret_cast<void*>(*pSlotsElems);
 
-  if (!isInside(old)) {
+  if (!isInside(buffer)) {
     return;
   }
 
   
   
-  if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(old)) {
-    *pSlotsElems = reinterpret_cast<HeapSlot*>(p->value());
+  if (ForwardedBufferMap::Ptr p = forwardedBuffers.lookup(buffer)) {
+    buffer = p->value();
     
     
   } else {
-    *pSlotsElems = *reinterpret_cast<HeapSlot**>(old);
-    MOZ_ASSERT(IsWriteableAddress(*pSlotsElems));
+    BufferRelocationOverlay* reloc =
+        static_cast<BufferRelocationOverlay*>(buffer);
+    buffer = *reloc;
+    MOZ_ASSERT(IsWriteableAddress(buffer));
   }
 
-  MOZ_ASSERT(!isInside(*pSlotsElems));
+  MOZ_ASSERT(!isInside(buffer));
+  *pSlotsElems = reinterpret_cast<uintptr_t>(buffer);
 }
 
 js::TenuringTracer::TenuringTracer(JSRuntime* rt, Nursery* nursery)
