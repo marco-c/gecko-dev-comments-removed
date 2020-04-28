@@ -116,23 +116,6 @@ class APZCCallbackHelper {
       const ScrollableLayerGuid& aGuid);
 
   
-  static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
-                                         const ScrollableLayerGuid& aGuid);
-
-  
-
-
-  static mozilla::LayoutDeviceIntPoint ApplyCallbackTransform(
-      const LayoutDeviceIntPoint& aPoint, const ScrollableLayerGuid& aGuid,
-      const CSSToLayoutDeviceScale& aScale);
-
-  
-
-  static void ApplyCallbackTransform(WidgetEvent& aEvent,
-                                     const ScrollableLayerGuid& aGuid,
-                                     const CSSToLayoutDeviceScale& aScale);
-
-  
 
 
   static nsEventStatus DispatchWidgetEvent(WidgetGUIEvent& aEvent);
