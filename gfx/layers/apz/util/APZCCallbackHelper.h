@@ -113,7 +113,7 @@ class APZCCallbackHelper {
 
 
   static CSSToCSSMatrix4x4 GetCallbackTransform(
-      const ScrollableLayerGuid& aGuid);
+      ScrollableLayerGuid::ViewID aScrollId);
 
   
 
