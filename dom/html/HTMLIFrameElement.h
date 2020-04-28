@@ -29,9 +29,7 @@ class HTMLIFrameElement final : public nsGenericHTMLFrameElement {
                                            nsGenericHTMLFrameElement)
 
   
-  virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override {
-    return true;
-  }
+  virtual bool IsInteractiveHTMLContent() const override { return true; }
 
   
   virtual bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,

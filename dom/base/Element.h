@@ -378,7 +378,7 @@ class Element : public FragmentOrElement {
   
 
 
-  virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const;
+  virtual bool IsInteractiveHTMLContent() const;
 
   
 

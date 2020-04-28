@@ -47,7 +47,7 @@ class HTMLObjectElement final : public nsGenericHTMLFormElement,
 #endif
 
   
-  virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const override;
+  virtual bool IsInteractiveHTMLContent() const override;
 
   
   virtual void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;

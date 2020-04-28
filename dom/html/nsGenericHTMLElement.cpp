@@ -1546,16 +1546,6 @@ already_AddRefed<nsINodeList> nsGenericHTMLElement::Labels() {
   return labels.forget();
 }
 
-bool nsGenericHTMLElement::IsInteractiveHTMLContent(
-    bool aIgnoreTabindex) const {
-  
-  
-  
-  
-  
-  return !aIgnoreTabindex && HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex);
-}
-
 
 bool nsGenericHTMLElement::LegacyTouchAPIEnabled(JSContext* aCx,
                                                  JSObject* aGlobal) {
