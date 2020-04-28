@@ -77,7 +77,7 @@ class GeckoInstance(object):
         "extensions.update.enabled": False,
         "extensions.update.notifyUser": False,
         
-        "extensions.webservice.discoverURL": "http://%(server)s/dummy/discoveryURL",
+        "extensions.getAddons.discovery.api_url": "data:, ",
 
         
         "focusmanager.testmode": True,

@@ -638,7 +638,7 @@ class FirefoxLauncher {
       'extensions.update.notifyUser': false,
 
       
-      'extensions.webservice.discoverURL': `http://${server}/dummy/discoveryURL`,
+      'extensions.getAddons.discovery.api_url': 'data:, ',
 
       
       'focusmanager.testmode': true,
