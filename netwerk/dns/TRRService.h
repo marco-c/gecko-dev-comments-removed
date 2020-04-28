@@ -92,6 +92,10 @@ class TRRService : public nsIObserver,
   nsresult DispatchTRRRequestInternal(TRR* aTrrRequest, bool aWithLock);
   already_AddRefed<nsIThread> TRRThread_locked();
 
+  
+  
+  
+  bool MaybeSetPrivateURI(const nsACString& aURI);
   void ProcessURITemplate(nsACString& aURI);
   void ClearEntireCache();
 
@@ -105,6 +109,7 @@ class TRRService : public nsIObserver,
   nsCString mPrivateCred;  
   nsCString mConfirmationNS;
   nsCString mBootstrapAddr;
+  bool mURISetByDetection = false;
 
   Atomic<bool, Relaxed> mWaitForCaptive;  
                                           
