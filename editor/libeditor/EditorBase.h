@@ -626,6 +626,24 @@ class EditorBase : public nsIEditor,
   MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
       const nsAString& aStringToInsert, nsIPrincipal* aPrincipal = nullptr);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteSelectionAsAction(nsIEditor::EDirection aDirectionAndAmount,
+                          nsIEditor::EStripWrappers aStripWrappers,
+                          nsIPrincipal* aPrincipal = nullptr);
+
  protected:  
   class AutoEditActionDataSetter;
 
@@ -2190,6 +2208,32 @@ class EditorBase : public nsIEditor,
 
   void UndefineCaretBidiLevel() const;
 
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteSelectionAsSubAction(nsIEditor::EDirection aDirectionAndAmount,
+                             nsIEditor::EStripWrappers aStripWrappers);
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
+  HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
+                        nsIEditor::EStripWrappers aStripWrappers) = 0;
+
  protected:  
   
 
@@ -2496,6 +2540,14 @@ class EditorBase : public nsIEditor,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InsertLineBreakAsSubAction();
 
+  
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  ExtendSelectionForDelete(nsIEditor::EDirection* aDirectionAndAmount);
+
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
   RefPtr<Document> mDocument;
@@ -2745,6 +2797,7 @@ class EditorBase : public nsIEditor,
 
   int32_t mWrapColumn;
   int32_t mNewlineHandling;
+  int32_t mCaretStyle;
 
   
   int8_t mDocDirtyState;

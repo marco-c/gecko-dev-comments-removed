@@ -20,6 +20,7 @@
 #include "EditAggregateTransaction.h"         
 #include "EditTransactionBase.h"              
 #include "EditorEventListener.h"              
+#include "gfxFontUtils.h"                     
 #include "HTMLEditUtils.h"                    
 #include "InsertNodeTransaction.h"            
 #include "InsertTextTransaction.h"            
@@ -46,13 +47,15 @@
 #include "mozilla/mozSpellChecker.h"        
 #include "mozilla/Preferences.h"            
 #include "mozilla/PresShell.h"              
-#include "mozilla/RangeBoundary.h"      
-#include "mozilla/Services.h"           
-#include "mozilla/ServoCSSParser.h"     
-#include "mozilla/StaticPrefs_bidi.h"   
-#include "mozilla/StaticPrefs_dom.h"    
-#include "mozilla/TextComposition.h"    
-#include "mozilla/TextInputListener.h"  
+#include "mozilla/RangeBoundary.h"       
+#include "mozilla/Services.h"            
+#include "mozilla/ServoCSSParser.h"      
+#include "mozilla/StaticPrefs_bidi.h"    
+#include "mozilla/StaticPrefs_dom.h"     
+#include "mozilla/StaticPrefs_editor.h"  
+#include "mozilla/StaticPrefs_layout.h"  
+#include "mozilla/TextComposition.h"     
+#include "mozilla/TextInputListener.h"   
 #include "mozilla/TextServicesDocument.h"  
 #include "mozilla/TextEvents.h"
 #include "mozilla/TransactionManager.h"  
@@ -140,7 +143,8 @@ EditorBase::EditorBase()
       mUpdateCount(0),
       mPlaceholderBatch(0),
       mWrapColumn(0),
-      mNewlineHandling(nsIEditor::eNewlinesPasteToFirst),
+      mNewlineHandling(StaticPrefs::editor_singleLine_pasteNewlines()),
+      mCaretStyle(StaticPrefs::layout_selection_caret_style()),
       mDocDirtyState(-1),
       mSpellcheckCheckboxState(eTriUnset),
       mInitSucceeded(false),
@@ -151,7 +155,17 @@ EditorBase::EditorBase()
       mIsInEditSubAction(false),
       mHidingCaret(false),
       mSpellCheckerDictionaryUpdated(true),
-      mIsHTMLEditorClass(false) {}
+      mIsHTMLEditorClass(false) {
+#ifdef XP_WIN
+  if (!mCaretStyle) {
+    mCaretStyle = 1;
+  }
+#endif  
+  if (mNewlineHandling < nsIEditor::eNewlinesPasteIntact ||
+      mNewlineHandling > nsIEditor::eNewlinesStripSurroundingWhitespace) {
+    mNewlineHandling = nsIEditor::eNewlinesPasteToFirst;
+  }
+}
 
 EditorBase::~EditorBase() {
   MOZ_ASSERT(!IsInitialized() || mDidPreDestroy,
@@ -722,7 +736,10 @@ NS_IMETHODIMP EditorBase::GetSelectionController(
 
 NS_IMETHODIMP EditorBase::DeleteSelection(EDirection aAction,
                                           EStripWrappers aStripWrappers) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  nsresult rv = DeleteSelectionAsAction(aAction, aStripWrappers);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::DeleteSelectionAsAction() failed");
+  return rv;
 }
 
 NS_IMETHODIMP EditorBase::GetSelection(Selection** aSelection) {
@@ -4729,6 +4746,326 @@ already_AddRefed<EditTransactionBase> EditorBase::CreateTxnForDeleteRange(
   nsCOMPtr<nsINode> removingNode(selectedContent);
   removingNode.forget(aRemovingNode);
   return deleteNodeTransaction.forget();
+}
+
+nsresult EditorBase::DeleteSelectionAsAction(
+    nsIEditor::EDirection aDirectionAndAmount,
+    nsIEditor::EStripWrappers aStripWrappers, nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+  
+  
+  
+  NS_ASSERTION(
+      !mPlaceholderBatch,
+      "Should be called only when this is the only edit action of the "
+      "operation unless mutation event listener nests some operations");
+
+  EditAction editAction = EditAction::eDeleteSelection;
+  switch (aDirectionAndAmount) {
+    case nsIEditor::ePrevious:
+      editAction = EditAction::eDeleteBackward;
+      break;
+    case nsIEditor::eNext:
+      editAction = EditAction::eDeleteForward;
+      break;
+    case nsIEditor::ePreviousWord:
+      editAction = EditAction::eDeleteWordBackward;
+      break;
+    case nsIEditor::eNextWord:
+      editAction = EditAction::eDeleteWordForward;
+      break;
+    case nsIEditor::eToBeginningOfLine:
+      editAction = EditAction::eDeleteToBeginningOfSoftLine;
+      break;
+    case nsIEditor::eToEndOfLine:
+      editAction = EditAction::eDeleteToEndOfSoftLine;
+      break;
+  }
+
+  AutoEditActionDataSetter editActionData(*this, editAction, aPrincipal);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  
+  
+  
+  
+  
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    switch (aDirectionAndAmount) {
+      case eNextWord:
+      case ePreviousWord:
+      case eToBeginningOfLine:
+      case eToEndOfLine: {
+        if (mCaretStyle != 1) {
+          aDirectionAndAmount = eNone;
+          break;
+        }
+        ErrorResult error;
+        SelectionRefPtr()->CollapseToStart(error);
+        if (NS_WARN_IF(Destroyed())) {
+          error.SuppressException();
+          return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+        }
+        if (error.Failed()) {
+          NS_WARNING("Selection::CollapseToStart() failed");
+          editActionData.Abort();
+          return EditorBase::ToGenericNSResult(error.StealNSResult());
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!SelectionRefPtr()->IsCollapsed()) {
+    switch (editAction) {
+      case EditAction::eDeleteWordBackward:
+      case EditAction::eDeleteToBeginningOfSoftLine:
+        editActionData.UpdateEditAction(EditAction::eDeleteBackward);
+        break;
+      case EditAction::eDeleteWordForward:
+      case EditAction::eDeleteToEndOfSoftLine:
+        editActionData.UpdateEditAction(EditAction::eDeleteForward);
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (EditorUtils::IsFrameSelectionRequiredToExtendSelection(
+          aDirectionAndAmount, *SelectionRefPtr())) {
+    
+    
+    
+    if (RefPtr<PresShell> presShell = GetPresShell()) {
+      presShell->FlushPendingNotifications(FlushType::Layout);
+      if (NS_WARN_IF(Destroyed())) {
+        editActionData.Abort();
+        return EditorBase::ToGenericNSResult(NS_ERROR_EDITOR_DESTROYED);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+
+  nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+  if (NS_FAILED(rv)) {
+    NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
+                         "MaybeDispatchBeforeInputEvent() failed");
+    return EditorBase::ToGenericNSResult(rv);
+  }
+
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName);
+  rv = DeleteSelectionAsSubAction(aDirectionAndAmount, aStripWrappers);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::DeleteSelectionAsSubAction() failed");
+  return EditorBase::ToGenericNSResult(rv);
+}
+
+nsresult EditorBase::DeleteSelectionAsSubAction(
+    nsIEditor::EDirection aDirectionAndAmount,
+    nsIEditor::EStripWrappers aStripWrappers) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(mPlaceholderBatch);
+
+  MOZ_ASSERT(aStripWrappers == eStrip || aStripWrappers == eNoStrip);
+
+  if (NS_WARN_IF(!mInitSucceeded)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  IgnoredErrorResult ignoredError;
+  AutoEditSubActionNotifier startToHandleEditSubAction(
+      *this, EditSubAction::eDeleteSelectedContent, aDirectionAndAmount,
+      ignoredError);
+  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
+    return ignoredError.StealNSResult();
+  }
+  NS_WARNING_ASSERTION(
+      !ignoredError.Failed(),
+      "TextEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
+
+  EditActionResult result =
+      HandleDeleteSelection(aDirectionAndAmount, aStripWrappers);
+  if (result.Failed() || result.Canceled()) {
+    NS_WARNING_ASSERTION(result.Succeeded(),
+                         "TextEditor::HandleDeleteSelection() failed");
+    return result.Rv();
+  }
+
+  
+  
+  
+  EditorDOMPoint atNewStartOfSelection(
+      EditorBase::GetStartPoint(*SelectionRefPtr()));
+  if (NS_WARN_IF(!atNewStartOfSelection.IsSet())) {
+    
+    
+    
+    return NS_ERROR_FAILURE;
+  }
+  if (atNewStartOfSelection.IsInTextNode() &&
+      !atNewStartOfSelection.GetContainer()->Length()) {
+    nsresult rv = DeleteNodeWithTransaction(
+        MOZ_KnownLive(*atNewStartOfSelection.ContainerAsText()));
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      return rv;
+    }
+  }
+
+  
+  
+  
+  
+  if (!TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine) {
+    
+    
+    ErrorResult error;
+    SelectionRefPtr()->SetInterlinePosition(true, error);
+    if (error.Failed()) {
+      NS_WARNING("Selection::SetInterlinePosition(true) failed");
+      return error.StealNSResult();
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult EditorBase::ExtendSelectionForDelete(
+    nsIEditor::EDirection* aDirectionAndAmount) {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (!EditorUtils::IsFrameSelectionRequiredToExtendSelection(
+          *aDirectionAndAmount, *SelectionRefPtr())) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISelectionController> selectionController =
+      GetSelectionController();
+  if (NS_WARN_IF(!selectionController)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  switch (*aDirectionAndAmount) {
+    case eNextWord: {
+      nsresult rv = selectionController->WordExtendForDelete(true);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "nsISelectionController::WordExtendForDelete(true) failed");
+      
+      
+      *aDirectionAndAmount = eNone;
+      return rv;
+    }
+    case ePreviousWord: {
+      nsresult rv = selectionController->WordExtendForDelete(false);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "nsISelectionController::WordExtendForDelete(false) failed");
+      *aDirectionAndAmount = eNone;
+      return rv;
+    }
+    case eNext: {
+      nsresult rv = selectionController->CharacterExtendForDelete();
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "nsISelectionController::CharacterExtendForDelete() failed");
+      
+      return rv;
+    }
+    case ePrevious: {
+      
+      
+      
+      
+      
+      EditorRawDOMPoint atStartOfSelection =
+          EditorBase::GetStartPoint(*SelectionRefPtr());
+      if (NS_WARN_IF(!atStartOfSelection.IsSet())) {
+        return NS_ERROR_FAILURE;
+      }
+
+      
+      EditorRawDOMPoint insertionPoint =
+          FindBetterInsertionPoint(atStartOfSelection);
+      if (!insertionPoint.IsSet()) {
+        NS_WARNING(
+            "EditorBase::FindBetterInsertionPoint() failed, but ignored");
+        return NS_OK;
+      }
+
+      if (insertionPoint.IsInTextNode()) {
+        const nsTextFragment* data =
+            &insertionPoint.GetContainerAsText()->TextFragment();
+        uint32_t offset = insertionPoint.Offset();
+        if ((offset > 1 &&
+             data->IsLowSurrogateFollowingHighSurrogateAt(offset - 1)) ||
+            (offset > 0 &&
+             gfxFontUtils::IsVarSelector(data->CharAt(offset - 1)))) {
+          nsresult rv = selectionController->CharacterExtendForBackspace();
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          NS_WARNING_ASSERTION(
+              NS_SUCCEEDED(rv),
+              "nsISelectionController::CharacterExtendForBackspace() failed");
+          return rv;
+        }
+      }
+      return NS_OK;
+    }
+    case eToBeginningOfLine: {
+      
+      nsresult rv = selectionController->IntraLineMove(false, true);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "nsISelectionController::IntraLineMove(false, true) failed");
+      *aDirectionAndAmount = eNone;
+      return rv;
+    }
+    case eToEndOfLine: {
+      nsresult rv = selectionController->IntraLineMove(true, true);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
+      }
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "nsISelectionController::IntraLineMove(true, true) failed");
+      *aDirectionAndAmount = eNext;
+      return rv;
+    }
+    default:
+      return NS_OK;
+  }
 }
 
 nsresult EditorBase::CreateRange(nsINode* aStartContainer, int32_t aStartOffset,

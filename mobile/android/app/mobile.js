@@ -407,9 +407,6 @@ pref("app.update.url.android", "https://aus5.mozilla.org/update/4/%PRODUCT%/%VER
 #endif
 
 
-pref("editor.singleLine.pasteNewlines", 2);
-
-
 
 pref("ui.dragThresholdX", 25);
 pref("ui.dragThresholdY", 25);

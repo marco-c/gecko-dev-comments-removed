@@ -978,7 +978,6 @@ pref("editor.use_div_for_default_newlines",  true);
 
 
 pref("editor.use_custom_colors", false);
-pref("editor.singleLine.pasteNewlines",      2);
 pref("editor.use_css",                       false);
 pref("editor.css.default_length_unit",       "px");
 pref("editor.resizing.preserve_ratio",       true);
@@ -2529,17 +2528,6 @@ pref("layout.word_select.stop_at_punctuation", true);
 
 
 pref("layout.word_select.stop_at_underscore", false);
-
-
-
-
-
-
-
-
-
-
-pref("layout.selection.caret_style", 0);
 
 
 

@@ -120,10 +120,10 @@ nsresult HTMLEditor::LoadHTML(const nsAString& aInputString) {
 
   
   if (!SelectionRefPtr()->IsCollapsed()) {
-    rv = DeleteSelectionAsSubAction(eNone, eStrip);
+    nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
     if (NS_FAILED(rv)) {
       NS_WARNING(
-          "TextEditor::DeleteSelectionAsSubAction(eNone, eStrip) failed");
+          "EditorBase::DeleteSelectionAsSubAction(eNone, eStrip) failed");
       return rv;
     }
   }
@@ -281,7 +281,7 @@ nsresult HTMLEditor::DoInsertHTMLWithContext(
       nsresult rv = DeleteSelectionAsSubAction(eNone, eStrip);
       if (NS_FAILED(rv)) {
         NS_WARNING(
-            "TextEditor::DeleteSelectionAsSubAction(eNone, eStrip) failed");
+            "EditorBase::DeleteSelectionAsSubAction(eNone, eStrip) failed");
         return rv;
       }
     }

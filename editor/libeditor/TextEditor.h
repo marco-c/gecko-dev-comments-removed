@@ -59,9 +59,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   NS_IMETHOD GetDocumentIsEmpty(bool* aDocumentIsEmpty) override;
 
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD
-  DeleteSelection(EDirection aAction, EStripWrappers aStripWrappers) override;
-
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD
   SetDocumentCharacterSet(const nsACString& characterSet) override;
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
@@ -206,23 +203,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   MOZ_CAN_RUN_SCRIPT virtual nsresult PasteAsQuotationAsAction(
       int32_t aClipboardType, bool aDispatchPasteEvent,
       nsIPrincipal* aPrincipal = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteSelectionAsAction(EDirection aDirection, EStripWrappers aStripWrappers,
-                          nsIPrincipal* aPrincipal = nullptr);
 
   
 
@@ -380,18 +360,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult DeleteSelectionAsSubAction(
-      EDirection aDirection, EStripWrappers aStripWrappers);
-
-  
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
 
@@ -422,16 +390,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   MOZ_CAN_RUN_SCRIPT nsresult
   ReplaceSelectionAsSubAction(const nsAString& aString);
-
-  
-
-
-
-
-  nsresult ExtendSelectionForDelete(nsIEditor::EDirection* aAction);
-
-  static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
-                                    int32_t& aCaretStyle);
 
   
 
@@ -602,9 +560,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual EditActionResult
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   HandleDeleteSelection(nsIEditor::EDirection aDirectionAndAmount,
-                        nsIEditor::EStripWrappers aStripWrappers);
+                        nsIEditor::EStripWrappers aStripWrappers) override;
 
   
 
@@ -849,7 +807,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   mutable nsString mCachedDocumentEncoderType;
 
   int32_t mMaxTextLength;
-  int32_t mCaretStyle;
 
   
   

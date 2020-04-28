@@ -785,6 +785,7 @@ class MOZ_RAII DOMSubtreeIterator final : public DOMIterator {
 class EditorUtils final {
  public:
   using EditorType = EditorBase::EditorType;
+  using Selection = dom::Selection;
 
   
 
@@ -879,6 +880,27 @@ class EditorUtils final {
       return nullptr;  
     }
     return NS_GetStaticAtom(aAttribute);
+  }
+
+  
+
+
+
+
+  static bool IsFrameSelectionRequiredToExtendSelection(
+      nsIEditor::EDirection aDirectionAndAmount, Selection& aSelection) {
+    switch (aDirectionAndAmount) {
+      case nsIEditor::eNextWord:
+      case nsIEditor::ePreviousWord:
+      case nsIEditor::eToBeginningOfLine:
+      case nsIEditor::eToEndOfLine:
+        return true;
+      case nsIEditor::ePrevious:
+      case nsIEditor::eNext:
+        return aSelection.IsCollapsed();
+      default:
+        return false;
+    }
   }
 };
 
