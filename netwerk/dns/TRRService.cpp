@@ -132,7 +132,21 @@ void TRRService::GetParentalControlEnabledInternal() {
 }
 
 void TRRService::SetDetectedTrrURI(const nsACString& aURI) {
-  
+  nsAutoCString newURI(aURI);
+  ProcessURITemplate(newURI);
+  bool clearEntireCache = false;
+  {
+    MutexAutoLock lock(mLock);
+    if (!mPrivateURI.IsEmpty() && !newURI.Equals(mPrivateURI)) {
+      mClearTRRBLStorage = true;
+      LOG(("TRRService clearing blacklist because of change in uri service\n"));
+      clearEntireCache = true;
+    }
+    mPrivateURI = newURI;
+  }
+  if (clearEntireCache) {
+    ClearEntireCache();
+  }
 }
 
 bool TRRService::Enabled(nsIRequest::TRRMode aMode) {
@@ -165,6 +179,55 @@ void TRRService::GetPrefBranch(nsIPrefBranch** result) {
   CallGetService(NS_PREFSERVICE_CONTRACTID, result);
 }
 
+void TRRService::ProcessURITemplate(nsACString& aURI) {
+  
+  if (aURI.IsEmpty()) {
+    return;
+  }
+  nsAutoCString scheme;
+  nsCOMPtr<nsIIOService> ios(do_GetIOService());
+  if (ios) {
+    ios->ExtractScheme(aURI, scheme);
+  }
+  if (!scheme.Equals("https")) {
+    LOG(("TRRService TRR URI %s is not https. Not used.\n",
+         PromiseFlatCString(aURI).get()));
+    aURI.Truncate();
+    return;
+  }
+
+  
+  
+  nsAutoCString uri(aURI);
+
+  do {
+    nsCCharSeparatedTokenizer openBrace(uri, '{');
+    if (openBrace.hasMoreTokens()) {
+      
+      nsAutoCString prefix(openBrace.nextToken());
+
+      
+      const nsACString& endBrace = openBrace.nextToken();
+      nsCCharSeparatedTokenizer closeBrace(endBrace, '}');
+      if (closeBrace.hasMoreTokens()) {
+        
+        
+        closeBrace.nextToken();
+        nsAutoCString suffix(closeBrace.nextToken());
+        uri = prefix + suffix;
+      } else {
+        
+        break;
+      }
+    } else {
+      
+      break;
+    }
+  } while (true);
+
+  aURI = uri;
+}
+
 nsresult TRRService::ReadPrefs(const char* name) {
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
 
@@ -190,58 +253,17 @@ nsresult TRRService::ReadPrefs(const char* name) {
     }
   }
   if (!name || !strcmp(name, TRR_PREF("uri"))) {
-    
+    nsAutoCString newURI;
+    Preferences::GetCString(TRR_PREF("uri"), newURI);
+    ProcessURITemplate(newURI);
+
     MutexAutoLock lock(mLock);
-    nsAutoCString old(mPrivateURI);
-    Preferences::GetCString(TRR_PREF("uri"), mPrivateURI);
-    nsAutoCString scheme;
-    if (!mPrivateURI.IsEmpty()) {
-      nsCOMPtr<nsIIOService> ios(do_GetIOService());
-      if (ios) {
-        ios->ExtractScheme(mPrivateURI, scheme);
-      }
-    }
-    if (!mPrivateURI.IsEmpty() && !scheme.Equals("https")) {
-      LOG(("TRRService TRR URI %s is not https. Not used.\n",
-           mPrivateURI.get()));
-      mPrivateURI.Truncate();
-    }
-    if (!mPrivateURI.IsEmpty()) {
-      
-      
-      nsAutoCString uri(mPrivateURI);
-
-      do {
-        nsCCharSeparatedTokenizer openBrace(uri, '{');
-        if (openBrace.hasMoreTokens()) {
-          
-          nsAutoCString prefix(openBrace.nextToken());
-
-          
-          const nsACString& endBrace = openBrace.nextToken();
-          nsCCharSeparatedTokenizer closeBrace(endBrace, '}');
-          if (closeBrace.hasMoreTokens()) {
-            
-            
-            closeBrace.nextToken();
-            nsAutoCString suffix(closeBrace.nextToken());
-            uri = prefix + suffix;
-          } else {
-            
-            break;
-          }
-        } else {
-          
-          break;
-        }
-      } while (true);
-      mPrivateURI = uri;
-    }
-    if (!old.IsEmpty() && !mPrivateURI.Equals(old)) {
+    if (!mPrivateURI.IsEmpty() && !newURI.Equals(mPrivateURI)) {
       mClearTRRBLStorage = true;
-      LOG(("TRRService clearing blacklist because of change is uri service\n"));
+      LOG(("TRRService clearing blacklist because of change in uri service\n"));
       clearEntireCache = true;
     }
+    mPrivateURI = newURI;
   }
   if (!name || !strcmp(name, TRR_PREF("credentials"))) {
     MutexAutoLock lock(mLock);
@@ -364,18 +386,27 @@ nsresult TRRService::ReadPrefs(const char* name) {
   
   
   if (name && clearEntireCache) {
-    bool tmp;
-    if (NS_SUCCEEDED(Preferences::GetBool(
-            TRR_PREF("clear-cache-on-pref-change"), &tmp)) &&
-        tmp) {
-      nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
-      if (dns) {
-        dns->ClearCache(true);
-      }
-    }
+    ClearEntireCache();
   }
 
   return NS_OK;
+}
+
+void TRRService::ClearEntireCache() {
+  bool tmp;
+  nsresult rv =
+      Preferences::GetBool(TRR_PREF("clear-cache-on-pref-change"), &tmp);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+  if (!tmp) {
+    return;
+  }
+  nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
+  if (!dns) {
+    return;
+  }
+  dns->ClearCache(true);
 }
 
 nsresult TRRService::GetURI(nsCString& result) {
