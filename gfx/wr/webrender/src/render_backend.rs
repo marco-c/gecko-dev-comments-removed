@@ -1546,7 +1546,6 @@ impl RenderBackend {
             profile_scope!("generate frame");
 
             *frame_counter += 1;
-            doc.rendered_frame_is_valid = false;
 
             
             let (pending_update, rendered_document) = {
@@ -1583,10 +1582,10 @@ impl RenderBackend {
             
             
             
-            if pending_update.is_nop() &&
-               rendered_document.frame.is_nop() &&
-               composite_descriptor == doc.prev_composite_descriptor {
-                doc.rendered_frame_is_valid = true;
+            if !pending_update.is_nop() ||
+               !rendered_document.frame.is_nop() ||
+               composite_descriptor != doc.prev_composite_descriptor {
+                doc.rendered_frame_is_valid = false;
             }
             doc.prev_composite_descriptor = composite_descriptor;
 
