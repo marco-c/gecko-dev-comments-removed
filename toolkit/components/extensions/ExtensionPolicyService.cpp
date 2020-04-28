@@ -487,6 +487,8 @@ void ExtensionPolicyService::CheckContentScripts(const DocInfo& aDocInfo,
     win = aDocInfo.GetWindow()->GetCurrentInnerWindow();
   }
 
+  nsTArray<RefPtr<WebExtensionContentScript>> scriptsToLoad;
+
   for (auto iter = mExtensions.Iter(); !iter.Done(); iter.Next()) {
     RefPtr<WebExtensionPolicy> policy = iter.Data();
 
@@ -495,15 +497,26 @@ void ExtensionPolicyService::CheckContentScripts(const DocInfo& aDocInfo,
         if (aIsPreload) {
           ProcessScript().PreloadContentScript(script);
         } else {
-          if (!win->IsCurrentInnerWindow()) {
-            break;
-          }
-          RefPtr<Promise> promise;
-          ProcessScript().LoadContentScript(script, win,
-                                            getter_AddRefs(promise));
+          
+          
+          
+          
+          
+          scriptsToLoad.AppendElement(script);
         }
       }
     }
+
+    for (auto& script : scriptsToLoad) {
+      if (!win->IsCurrentInnerWindow()) {
+        break;
+      }
+
+      RefPtr<Promise> promise;
+      ProcessScript().LoadContentScript(script, win, getter_AddRefs(promise));
+    }
+
+    scriptsToLoad.ClearAndRetainStorage();
   }
 
   for (auto iter = mObservers.Iter(); !iter.Done(); iter.Next()) {
