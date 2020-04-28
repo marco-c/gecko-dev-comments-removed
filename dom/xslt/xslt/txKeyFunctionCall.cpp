@@ -220,7 +220,7 @@ nsresult txKeyHash::init() {
 
 
 
-bool txXSLKey::addKey(nsAutoPtr<txPattern>&& aMatch, nsAutoPtr<Expr>&& aUse) {
+bool txXSLKey::addKey(UniquePtr<txPattern>&& aMatch, UniquePtr<Expr>&& aUse) {
   if (!aMatch || !aUse) return false;
 
   Key* key = mKeys.AppendElement();

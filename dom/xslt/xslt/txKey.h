@@ -102,7 +102,8 @@ class txXSLKey {
 
 
 
-  bool addKey(nsAutoPtr<txPattern>&& aMatch, nsAutoPtr<Expr>&& aUse);
+  bool addKey(mozilla::UniquePtr<txPattern>&& aMatch,
+              mozilla::UniquePtr<Expr>&& aUse);
 
   
 
@@ -141,8 +142,8 @@ class txXSLKey {
 
 
   struct Key {
-    nsAutoPtr<txPattern> matchPattern;
-    nsAutoPtr<Expr> useExpr;
+    mozilla::UniquePtr<txPattern> matchPattern;
+    mozilla::UniquePtr<Expr> useExpr;
   };
 
   
