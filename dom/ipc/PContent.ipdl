@@ -867,6 +867,12 @@ child:
                                     BlockingDecision aReason,
                                     uint32_t aRejectedReason);
 
+    
+
+
+
+    async AbortOrientationPendingPromises(MaybeDiscardedBrowsingContext aContext);
+
 parent:
     async InitBackground(Endpoint<PBackgroundParent> aEndpoint);
 
@@ -1563,6 +1569,12 @@ parent:
 
     async UpdateSHEntriesInBC(nullable PSHEntry aNewLSHE, nullable
                               PSHEntry aNewOSHE, MaybeDiscardedBrowsingContext aContext);
+
+    
+
+
+
+    async AbortOtherOrientationPendingPromises(MaybeDiscardedBrowsingContext aContext);
 
 both:
     async ScriptError(nsString message, nsString sourceName, nsString sourceLine,
