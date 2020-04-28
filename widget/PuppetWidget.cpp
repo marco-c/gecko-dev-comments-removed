@@ -395,15 +395,6 @@ nsEventStatus PuppetWidget::DispatchInputEvent(WidgetInputEvent* aEvent) {
     return nsEventStatus_eIgnore;
   }
 
-  if (PresShell* presShell = mBrowserChild->GetTopLevelPresShell()) {
-    
-    
-    
-    LayoutDevicePoint pt(aEvent->mRefPoint);
-    pt = pt * presShell->GetResolution();
-    aEvent->mRefPoint = LayoutDeviceIntPoint::Round(pt);
-  }
-
   switch (aEvent->mClass) {
     case eWheelEventClass:
       Unused << mBrowserChild->SendDispatchWheelEvent(*aEvent->AsWheelEvent());

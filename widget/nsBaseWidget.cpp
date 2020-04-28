@@ -971,17 +971,6 @@ nsEventStatus nsBaseWidget::ProcessUntransformedAPZEvent(
   
   
   
-  
-  
-  if (aApzResult.mTargetGuid.mLayersId ==
-      mCompositorSession->RootLayerTreeId()) {
-    APZCCallbackHelper::ApplyCallbackTransform(*aEvent, targetGuid,
-                                               GetDefaultScale());
-  }
-
-  
-  
-  
   nsEventStatus status;
   UniquePtr<WidgetEvent> original(aEvent->Duplicate());
   DispatchEvent(aEvent, status);
