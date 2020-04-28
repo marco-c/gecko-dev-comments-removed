@@ -927,6 +927,23 @@ ModuleObject* frontend::CompileModule(JSContext* cx,
   return CreateModule(cx, options, srcBuf);
 }
 
+static void CheckFlagsOnDelazification(uint32_t lazy, uint32_t nonLazy) {
+#ifdef DEBUG
+  
+  
+  
+  
+  constexpr uint32_t NonLazyFlagsMask =
+      uint32_t(BaseScript::ImmutableFlags::HasNonSyntacticScope);
+
+  
+  constexpr uint32_t MatchedFlagsMask = ~NonLazyFlagsMask;
+
+  MOZ_ASSERT((lazy & NonLazyFlagsMask) == 0);
+  MOZ_ASSERT((lazy & MatchedFlagsMask) == (nonLazy & MatchedFlagsMask));
+#endif  
+}
+
 template <typename Unit>
 static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
                                     const Unit* units, size_t length) {
@@ -990,8 +1007,7 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
     return false;
   }
 
-  mozilla::DebugOnly<uint32_t> lazyFlags =
-      static_cast<uint32_t>(lazy->immutableFlags());
+  uint32_t lazyFlags = lazy->immutableFlags();
 
   BytecodeEmitter bce( nullptr, &parser, pn->funbox(),
                       compilationInfo, BytecodeEmitter::LazyFunction);
@@ -1003,11 +1019,8 @@ static bool CompileLazyFunctionImpl(JSContext* cx, Handle<BaseScript*> lazy,
     return false;
   }
 
-  MOZ_ASSERT(lazyFlags == bce.getResultScript()->immutableFlags());
-  MOZ_ASSERT(bce.getResultScript()->outermostScope()->hasOnChain(
-                 ScopeKind::NonSyntactic) ==
-             bce.getResultScript()->immutableFlags().hasFlag(
-                 JSScript::ImmutableFlags::HasNonSyntacticScope));
+  CheckFlagsOnDelazification(lazyFlags,
+                             bce.getResultScript()->immutableFlags());
 
   assertException.reset();
   return true;
