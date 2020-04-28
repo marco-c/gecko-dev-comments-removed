@@ -12,7 +12,6 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/RelativeTo.h"
 #include "mozilla/StaticPrefs_nglayout.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
@@ -148,8 +147,6 @@ class nsLayoutUtils {
   typedef mozilla::layers::StackingContextHelper StackingContextHelper;
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::IntrinsicSize IntrinsicSize;
-  typedef mozilla::RelativeTo RelativeTo;
-  typedef mozilla::ViewportType ViewportType;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::sRGBColor sRGBColor;
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -772,7 +769,7 @@ class nsLayoutUtils {
 
 
   static nsPoint GetEventCoordinatesRelativeTo(
-      const mozilla::WidgetEvent* aEvent, RelativeTo aFrame);
+      const mozilla::WidgetEvent* aEvent, nsIFrame* aFrame);
 
   
 
@@ -786,7 +783,7 @@ class nsLayoutUtils {
 
   static nsPoint GetEventCoordinatesRelativeTo(
       const mozilla::WidgetEvent* aEvent,
-      const mozilla::LayoutDeviceIntPoint& aPoint, RelativeTo aFrame);
+      const mozilla::LayoutDeviceIntPoint& aPoint, nsIFrame* aFrame);
 
   
 
@@ -800,7 +797,7 @@ class nsLayoutUtils {
 
   static nsPoint GetEventCoordinatesRelativeTo(
       nsIWidget* aWidget, const mozilla::LayoutDeviceIntPoint& aPoint,
-      RelativeTo aFrame);
+      nsIFrame* aFrame);
 
   
 
@@ -849,10 +846,9 @@ class nsLayoutUtils {
 
 
 
-
   static mozilla::LayoutDeviceIntPoint TranslateViewToWidget(
       nsPresContext* aPresContext, nsView* aView, nsPoint aPt,
-      ViewportType aViewportType, nsIWidget* aWidget);
+      nsIWidget* aWidget);
 
   static mozilla::LayoutDeviceIntPoint WidgetToWidgetOffset(
       nsIWidget* aFromWidget, nsIWidget* aToWidget);
@@ -885,8 +881,7 @@ class nsLayoutUtils {
 
 
 
-
-  static nsIFrame* GetFrameForPoint(RelativeTo aRelativeTo, nsPoint aPt,
+  static nsIFrame* GetFrameForPoint(const nsIFrame* aFrame, nsPoint aPt,
                                     mozilla::EnumSet<FrameForPointOption> = {});
 
   
@@ -897,8 +892,7 @@ class nsLayoutUtils {
 
 
 
-
-  static nsresult GetFramesForArea(RelativeTo aRelativeTo, const nsRect& aRect,
+  static nsresult GetFramesForArea(const nsIFrame* aFrame, const nsRect& aRect,
                                    nsTArray<nsIFrame*>& aOutFrames,
                                    mozilla::EnumSet<FrameForPointOption> = {});
 
@@ -927,17 +921,6 @@ class nsLayoutUtils {
       bool* aPreservesAxisAlignedRectangles = nullptr,
       mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
       bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
-      nsIFrame** aOutAncestor = nullptr) {
-    return TransformFrameRectToAncestor(
-        aFrame, aRect, RelativeTo{aAncestor}, aPreservesAxisAlignedRectangles,
-        aMatrixCache, aStopAtStackingContextAndDisplayPortAndOOFFrame,
-        aOutAncestor);
-  }
-  static nsRect TransformFrameRectToAncestor(
-      const nsIFrame* aFrame, const nsRect& aRect, RelativeTo aAncestor,
-      bool* aPreservesAxisAlignedRectangles = nullptr,
-      mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-      bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
       nsIFrame** aOutAncestor = nullptr);
 
   
@@ -947,40 +930,8 @@ class nsLayoutUtils {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   static Matrix4x4Flagged GetTransformToAncestor(
-      RelativeTo aFrame, RelativeTo aAncestor, uint32_t aFlags = 0,
+      const nsIFrame* aFrame, const nsIFrame* aAncestor, uint32_t aFlags = 0,
       nsIFrame** aOutAncestor = nullptr);
 
   
@@ -1028,8 +979,9 @@ class nsLayoutUtils {
 
 
 
-  static TransformResult TransformPoint(RelativeTo aFromFrame,
-                                        RelativeTo aToFrame, nsPoint& aPoint);
+  static TransformResult TransformPoint(const nsIFrame* aFromFrame,
+                                        const nsIFrame* aToFrame,
+                                        nsPoint& aPoint);
 
   
 
@@ -1085,22 +1037,18 @@ class nsLayoutUtils {
 
 
 
-
-
-  static nsPoint TransformRootPointToFrame(ViewportType aFromType,
-                                           RelativeTo aFrame,
+  static nsPoint TransformRootPointToFrame(nsIFrame* aFrame,
                                            const nsPoint& aPoint) {
-    return TransformAncestorPointToFrame(aFrame, aPoint,
-                                         RelativeTo{nullptr, aFromType});
+    return TransformAncestorPointToFrame(aFrame, aPoint, nullptr);
   }
 
   
 
 
 
-  static nsPoint TransformAncestorPointToFrame(RelativeTo aFrame,
+  static nsPoint TransformAncestorPointToFrame(nsIFrame* aFrame,
                                                const nsPoint& aPoint,
-                                               RelativeTo aAncestor);
+                                               nsIFrame* aAncestor);
 
   
 

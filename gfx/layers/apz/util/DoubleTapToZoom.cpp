@@ -33,6 +33,7 @@ using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
 
 
+
 static already_AddRefed<dom::Element> ElementFromPoint(
     const RefPtr<PresShell>& aPresShell, const CSSPoint& aPoint) {
   nsIFrame* rootFrame = aPresShell->GetRootFrame();
@@ -40,8 +41,9 @@ static already_AddRefed<dom::Element> ElementFromPoint(
     return nullptr;
   }
   nsIFrame* frame = nsLayoutUtils::GetFrameForPoint(
-      RelativeTo{rootFrame, ViewportType::Visual}, CSSPoint::ToAppUnits(aPoint),
-      {FrameForPointOption::IgnorePaintSuppression});
+      rootFrame, CSSPoint::ToAppUnits(aPoint),
+      {FrameForPointOption::IgnorePaintSuppression,
+       FrameForPointOption::IgnoreRootScrollFrame});
   while (frame && (!frame->GetContent() ||
                    frame->GetContent()->IsInAnonymousSubtree())) {
     frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);

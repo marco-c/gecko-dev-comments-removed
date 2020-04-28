@@ -2273,8 +2273,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
                                       WidgetGUIEvent* aEvent,
                                       nsEventStatus* aEventStatus) {
   if (aEvent->mMessage == eMouseOver || aEvent->mMessage == eMouseMove) {
-    nsPoint pt =
-        nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, RelativeTo{this});
+    nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, this);
     int32_t xTwips = pt.x - mInnerBox.x;
     int32_t yTwips = pt.y - mInnerBox.y;
     int32_t newrow = GetRowAtInternal(xTwips, yTwips);
@@ -4036,8 +4035,7 @@ void nsTreeBodyFrame::ComputeDropPosition(WidgetGUIEvent* aEvent, int32_t* aRow,
 
   
   
-  nsPoint pt =
-      nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, RelativeTo{this});
+  nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, this);
   int32_t xTwips = pt.x - mInnerBox.x;
   int32_t yTwips = pt.y - mInnerBox.y;
 

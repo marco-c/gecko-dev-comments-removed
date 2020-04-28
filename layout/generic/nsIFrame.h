@@ -2946,15 +2946,11 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-
-
-
   enum {
     IN_CSS_UNITS = 1 << 0,
     STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT = 1 << 1
   };
-  Matrix4x4Flagged GetTransformMatrix(mozilla::ViewportType aViewportType,
-                                      mozilla::RelativeTo aStopAtAncestor,
+  Matrix4x4Flagged GetTransformMatrix(const nsIFrame* aStopAtAncestor,
                                       nsIFrame** aOutAncestor,
                                       uint32_t aFlags = 0) const;
 

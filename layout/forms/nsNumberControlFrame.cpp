@@ -196,7 +196,7 @@ int32_t nsNumberControlFrame::GetSpinButtonForPointerEvent(
     
     LayoutDeviceIntPoint absPoint = aEvent->mRefPoint;
     nsPoint point = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-        aEvent, absPoint, RelativeTo{mSpinBox->GetPrimaryFrame()});
+        aEvent, absPoint, mSpinBox->GetPrimaryFrame());
     if (point != nsPoint(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)) {
       if (point.y < mSpinBox->GetPrimaryFrame()->GetSize().height / 2) {
         return eSpinButtonUp;

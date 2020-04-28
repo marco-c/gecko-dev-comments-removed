@@ -1833,9 +1833,9 @@ static NPCocoaEvent TranslateToNPCocoaEvent(WidgetGUIEvent* anEvent,
       anEvent->mMessage == eMouseUp ||
       anEvent->mMessage == eLegacyMouseLineOrPageScroll ||
       anEvent->mMessage == eMouseOver || anEvent->mMessage == eMouseOut) {
-    nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-                     anEvent, RelativeTo{aObjectFrame}) -
-                 aObjectFrame->GetContentRectRelativeToSelf().TopLeft();
+    nsPoint pt =
+        nsLayoutUtils::GetEventCoordinatesRelativeTo(anEvent, aObjectFrame) -
+        aObjectFrame->GetContentRectRelativeToSelf().TopLeft();
     nsPresContext* presContext = aObjectFrame->PresContext();
     
     
@@ -2164,9 +2164,9 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
               anEvent.mMessage == eMouseOver || anEvent.mMessage == eMouseOut ||
               anEvent.mMessage == eMouseMove || anEvent.mMessage == eWheel,
           "Incorrect event type for coordinate translation");
-      nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-                       &anEvent, RelativeTo{mPluginFrame}) -
-                   mPluginFrame->GetContentRectRelativeToSelf().TopLeft();
+      nsPoint pt =
+          nsLayoutUtils::GetEventCoordinatesRelativeTo(&anEvent, mPluginFrame) -
+          mPluginFrame->GetContentRectRelativeToSelf().TopLeft();
       nsPresContext* presContext = mPluginFrame->PresContext();
       nsIntPoint ptPx(presContext->AppUnitsToDevPixels(pt.x),
                       presContext->AppUnitsToDevPixels(pt.y));
@@ -2246,9 +2246,9 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(
 
       
       const nsPresContext* presContext = mPluginFrame->PresContext();
-      nsPoint appPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
-                             &anEvent, RelativeTo{mPluginFrame}) -
-                         mPluginFrame->GetContentRectRelativeToSelf().TopLeft();
+      nsPoint appPoint =
+          nsLayoutUtils::GetEventCoordinatesRelativeTo(&anEvent, mPluginFrame) -
+          mPluginFrame->GetContentRectRelativeToSelf().TopLeft();
       nsIntPoint pluginPoint(presContext->AppUnitsToDevPixels(appPoint.x),
                              presContext->AppUnitsToDevPixels(appPoint.y));
       const WidgetMouseEvent& mouseEvent = *anEvent.AsMouseEvent();

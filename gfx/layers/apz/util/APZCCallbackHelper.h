@@ -8,7 +8,6 @@
 
 #include "InputData.h"
 #include "LayersTypes.h"
-#include "Units.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/MatrixMessage.h"
@@ -97,6 +96,29 @@ class APZCCallbackHelper {
 
   static PresShell* GetRootContentDocumentPresShellForContent(
       nsIContent* aContent);
+
+  
+
+
+
+
+
+
+  static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
+                                         const ScrollableLayerGuid& aGuid);
+
+  
+
+
+  static mozilla::LayoutDeviceIntPoint ApplyCallbackTransform(
+      const LayoutDeviceIntPoint& aPoint, const ScrollableLayerGuid& aGuid,
+      const CSSToLayoutDeviceScale& aScale);
+
+  
+
+  static void ApplyCallbackTransform(WidgetEvent& aEvent,
+                                     const ScrollableLayerGuid& aGuid,
+                                     const CSSToLayoutDeviceScale& aScale);
 
   
 

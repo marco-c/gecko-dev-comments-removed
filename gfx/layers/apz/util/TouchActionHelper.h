@@ -8,7 +8,6 @@
 #define __mozilla_layers_TouchActionHelper_h__
 
 #include "mozilla/layers/LayersTypes.h"  
-#include "nsLayoutUtils.h"               
 
 class nsIFrame;
 class nsIWidget;
@@ -29,7 +28,7 @@ class TouchActionHelper {
 
 
   static TouchBehaviorFlags GetAllowedTouchBehavior(
-      nsIWidget* aWidget, RelativeTo aRootFrame,
+      nsIWidget* aWidget, nsIFrame* aRootFrame,
       const LayoutDeviceIntPoint& aPoint);
 };
 

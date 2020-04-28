@@ -62,6 +62,17 @@ APZEventResult APZInputBridge::ReceiveInputEvent(WidgetInputEvent& aEvent) {
         UpdateWheelTransaction(mouseEvent.mRefPoint, mouseEvent.mMessage);
       }
 
+      
+      
+      
+      
+      
+      
+      
+      if (StaticPrefs::apz_allow_zooming()) {
+        mouseEvent.mIgnoreRootScrollFrame = true;
+      }
+
       if (WillHandleMouseEvent(mouseEvent)) {
         MouseInput input(mouseEvent);
         input.mOrigin =

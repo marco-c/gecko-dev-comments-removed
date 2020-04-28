@@ -15,7 +15,6 @@
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
-#include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/dom/Document.h"
 #include "nsIInterfaceRequestorUtils.h"
@@ -140,7 +139,14 @@ void ChromeProcessController::HandleDoubleTap(
     return;
   }
 
-  CSSRect zoomToRect = CalculateRectToZoomTo(document, aPoint);
+  
+  
+  
+  
+  PresShell* presShell = document->GetPresShell();
+  const float resolution = presShell->GetResolution();
+  CSSPoint point(aPoint.x / resolution, aPoint.y / resolution);
+  CSSRect zoomToRect = CalculateRectToZoomTo(document, point);
 
   uint32_t presShellId;
   ScrollableLayerGuid::ViewID viewId;
@@ -185,14 +191,8 @@ void ChromeProcessController::HandleTap(
   }
   CSSToLayoutDeviceScale scale(
       presShell->GetPresContext()->CSSToDevPixelScale());
-
-  CSSPoint point = aPoint / scale;
-
-  
-  
-  
-  
-  InputAPZContext context(aGuid, aInputBlockId, nsEventStatus_eSentinel);
+  CSSPoint point =
+      APZCCallbackHelper::ApplyCallbackTransform(aPoint / scale, aGuid);
 
   switch (aType) {
     case TapType::eSingleTap:

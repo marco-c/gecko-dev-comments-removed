@@ -527,8 +527,26 @@ Accessible* Accessible::ChildAtPoint(int32_t aX, int32_t aY,
   nsPoint offset(presContext->DevPixelsToAppUnits(aX) - screenRect.X(),
                  presContext->DevPixelsToAppUnits(aY) - screenRect.Y());
 
-  nsIFrame* foundFrame = nsLayoutUtils::GetFrameForPoint(
-      RelativeTo{startFrame, ViewportType::Visual}, offset);
+  
+  
+  offset = offset.RemoveResolution(presContext->PresShell()->GetResolution());
+
+  
+  
+  offset += presContext->PresShell()->GetVisualViewportOffset() -
+            presContext->PresShell()->GetLayoutViewportOffset();
+
+  EnumSet<nsLayoutUtils::FrameForPointOption> options = {
+#ifdef MOZ_WIDGET_ANDROID
+      
+      
+      
+      nsLayoutUtils::FrameForPointOption::IgnoreRootScrollFrame
+#endif
+  };
+
+  nsIFrame* foundFrame =
+      nsLayoutUtils::GetFrameForPoint(startFrame, offset, options);
 
   nsIContent* content = nullptr;
   if (!foundFrame || !(content = foundFrame->GetContent()))

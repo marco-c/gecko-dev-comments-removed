@@ -978,6 +978,12 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+  float GetCumulativeNonRootScaleResolution();
+
+  
+
+
+
   void SetRestoreResolution(float aResolution,
                             LayoutDeviceIntSize aDisplaySize);
 
