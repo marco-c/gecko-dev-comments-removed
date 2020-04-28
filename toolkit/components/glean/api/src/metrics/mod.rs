@@ -9,6 +9,8 @@
 
 pub use glean_core::{CommonMetricData, Lifetime};
 
+mod counter;
 mod string;
 
-pub use string::StringMetric;
+pub use self::counter::CounterMetric;
+pub use self::string::StringMetric;
