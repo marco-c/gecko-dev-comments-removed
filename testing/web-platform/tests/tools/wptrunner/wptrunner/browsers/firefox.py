@@ -428,11 +428,8 @@ class OutputHandler(object):
 
         self.symbols_path = symbols_path
         if stackfix_dir:
-            
-            
             self.stack_fixer = get_stack_fixer_function(stackfix_dir,
-                                                        self.symbols_path,
-                                                        hideErrors=True)
+                                                        self.symbols_path)
         else:
             self.stack_fixer = None
         self.asan = asan
