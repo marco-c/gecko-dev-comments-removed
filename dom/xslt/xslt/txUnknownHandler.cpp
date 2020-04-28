@@ -158,7 +158,7 @@ nsresult txUnknownHandler::createHandlerAndFlush(bool aHTMLRoot,
   NS_ENSURE_SUCCESS(rv, rv);
 
   mEs->mOutputHandler = handler.get();
-  mEs->mResultHandler = handler.forget();
+  mEs->mResultHandler = handler.release();
   
   
   
