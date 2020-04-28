@@ -8,7 +8,11 @@
 #include "Units.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
 
+class nsIFrame;
+
 namespace mozilla {
+
+class PresShell;
 
 class ViewportUtils {
  public:
@@ -32,6 +36,19 @@ class ViewportUtils {
 
   static CSSToCSSMatrix4x4 GetVisualToLayoutTransform(
       layers::ScrollableLayerGuid::ViewID aScrollId);
+
+  
+
+
+
+
+
+
+
+
+  static nsPoint VisualToLayout(const nsPoint& aPt, PresShell* aContext);
+  static nsRect VisualToLayout(const nsRect& aRect, PresShell* aContext);
+  static nsPoint LayoutToVisual(const nsPoint& aPt, PresShell* aContext);
 };
 
 }  
