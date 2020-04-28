@@ -7055,7 +7055,8 @@ bool ScrollFrameHelper::DragScroll(WidgetEvent* aEvent) {
   
   
   bool willScroll = false;
-  nsPoint pnt = nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, mOuter);
+  nsPoint pnt =
+      nsLayoutUtils::GetEventCoordinatesRelativeTo(aEvent, RelativeTo{mOuter});
   nsPoint scrollPoint = GetScrollPosition();
   nsRect rangeRect = GetLayoutScrollRange();
 

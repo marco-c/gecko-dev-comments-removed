@@ -5234,8 +5234,8 @@ double SVGTextFrame::GetFontSizeScaleFactor() const {
 
 
 
-Point SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
-                                                   nsIFrame* aChildFrame) {
+Point SVGTextFrame::TransformFramePointToTextChild(
+    const Point& aPoint, const nsIFrame* aChildFrame) {
   NS_ASSERTION(aChildFrame && nsLayoutUtils::GetClosestFrameOfType(
                                   aChildFrame->GetParent(),
                                   LayoutFrameType::SVGText) == this,

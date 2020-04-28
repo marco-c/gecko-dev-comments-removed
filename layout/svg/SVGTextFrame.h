@@ -317,7 +317,7 @@ class SVGTextFrame final : public nsSVGDisplayContainerFrame {
 
 
   Point TransformFramePointToTextChild(const Point& aPoint,
-                                       nsIFrame* aChildFrame);
+                                       const nsIFrame* aChildFrame);
 
   
 
