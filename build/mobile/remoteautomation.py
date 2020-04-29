@@ -348,10 +348,13 @@ class RemoteAutomation(object):
         endTime = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
         
         retries = 0
-        while retries < 20 and not self.device.is_file(self.remoteLog):
+        while retries < 20 and not self.device.is_file(self.remoteLog, root=True):
             retries += 1
             time.sleep(1)
-        if not self.device.is_file(self.remoteLog):
+        if self.device.is_file(self.remoteLog, root=True):
+            
+            self.device.chmod(self.remoteLog, mask="666", root=True)
+        else:
             print("Failed wait for remote log: %s missing?" % self.remoteLog)
         while top == self.procName:
             

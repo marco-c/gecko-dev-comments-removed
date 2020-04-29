@@ -42,7 +42,19 @@ class RemoteReftestResolver(ReftestResolver):
     def manifestURL(self, options, path):
         
         
-        relPath = os.path.relpath(path, SCRIPT_DIRECTORY)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if 'jsreftest' not in path or os.environ.get('MOZ_AUTOMATION'):
+            relPath = os.path.relpath(path, SCRIPT_DIRECTORY)
+        else:
+            relPath = 'jsreftest/' + path.split('jsreftest/')[-1]
         return "http://%s:%s/%s" % (options.remoteWebServer, options.httpPort, relPath)
 
 
@@ -305,7 +317,10 @@ class RemoteReftest(RefTest):
 
         try:
             self.device.push(profileDir, options.remoteProfile)
-            self.device.chmod(options.remoteProfile, recursive=True, root=True)
+            
+            
+            
+            self.device.chmod(options.remoteTestRoot, recursive=True, root=True)
         except Exception:
             print("Automation Error: Failed to copy profiledir to device")
             raise
@@ -387,7 +402,18 @@ def run_test_harness(parser, options):
     parser.validate(options, reftest)
 
     
-    os.system("ln -s ../jsreftest " + str(os.path.join(SCRIPT_DIRECTORY, "jsreftest")))
+    
+    
+    
+    
+    
+    jsreftest_target = str(os.path.join(SCRIPT_DIRECTORY, "jsreftest"))
+    if os.environ.get('MOZ_AUTOMATION'):
+        os.system("ln -s ../jsreftest " + jsreftest_target)
+    else:
+        jsreftest_source = os.path.join(build_obj.topobjdir, "dist", "test-stage", "jsreftest")
+        if not os.path.islink(jsreftest_target):
+            os.symlink(jsreftest_source, jsreftest_target)
 
     
     
