@@ -300,6 +300,11 @@ class FirefoxConnector {
 
 
   onDocEvent(event) {
+    if (event.name === "dom-loading") {
+      
+      return;
+    }
+
     if (this.actions) {
       this.actions.addTimingMarker(event);
     }
