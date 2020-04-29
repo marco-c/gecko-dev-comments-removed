@@ -8,25 +8,11 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
-const { PureComponent } = require("devtools/client/shared/vendor/react");
+const {
+  PureComponent,
+  createElement,
+} = require("devtools/client/shared/vendor/react");
 const {
   div,
   label,
@@ -35,6 +21,79 @@ const {
 const selectors = require("devtools/client/performance-new/store/selectors");
 const actions = require("devtools/client/performance-new/store/actions");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Preset extends PureComponent {
+  
+
+
+
+  onChange = event => {
+    this.props.onChange(event.target.value);
+  };
+
+  render() {
+    const { preset, presetName, selected } = this.props;
+    let labelText, description;
+    if (preset) {
+      labelText = preset.label;
+      description = preset.description;
+    } else {
+      labelText = "Custom";
+    }
+    return label(
+      { className: "perf-presets-label" },
+      div(
+        { className: "perf-presets-input-container" },
+        input({
+          className: "perf-presets-input",
+          type: "radio",
+          name: "presets",
+          value: presetName,
+          checked: selected,
+          onChange: this.onChange,
+        })
+      ),
+      div(
+        { className: "perf-presets-text" },
+        div({ className: "pref-preset-text-label" }, labelText),
+        description
+          ? div({ className: "perf-presets-description" }, description)
+          : null
+      )
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -53,54 +112,32 @@ class Presets extends PureComponent {
 
 
 
-  onChange(event) {
+  onChange(presetName) {
     const { presets } = this.props;
-    this.props.changePreset(presets, event.target.value);
-  }
-
-  
-
-
-
-  renderPreset(presetName) {
-    const preset = this.props.presets[presetName];
-    let labelText, description;
-    if (preset) {
-      labelText = preset.label;
-      description = preset.description;
-    } else {
-      labelText = "Custom";
-    }
-    return label(
-      { className: "perf-presets-label" },
-      div(
-        { className: "perf-presets-input-container" },
-        input({
-          className: "perf-presets-input",
-          type: "radio",
-          name: "presets",
-          value: presetName,
-          checked: this.props.presetName === presetName,
-          onChange: this.onChange,
-        })
-      ),
-      div(
-        { className: "perf-presets-text" },
-        div({ className: "pref-preset-text-label" }, labelText),
-        description
-          ? div({ className: "perf-presets-description" }, description)
-          : null
-      )
-    );
+    this.props.changePreset(presets, presetName);
   }
 
   render() {
+    const { presets, selectedPresetName } = this.props;
+
     return div(
       { className: "perf-presets" },
-      this.renderPreset("web-developer"),
-      this.renderPreset("firefox-platform"),
-      this.renderPreset("firefox-front-end"),
-      this.renderPreset("custom")
+      Object.entries(presets).map(([presetName, preset]) =>
+        createElement(Preset, {
+          key: presetName,
+          presetName,
+          preset,
+          selected: presetName === selectedPresetName,
+          onChange: this.onChange,
+        })
+      ),
+      createElement(Preset, {
+        key: "custom",
+        presetName: "custom",
+        selected: selectedPresetName == "custom",
+        preset: null,
+        onChange: this.onChange,
+      })
     );
   }
 }
@@ -111,7 +148,7 @@ class Presets extends PureComponent {
 
 function mapStateToProps(state) {
   return {
-    presetName: selectors.getPresetName(state),
+    selectedPresetName: selectors.getPresetName(state),
     presets: selectors.getPresets(state),
   };
 }
