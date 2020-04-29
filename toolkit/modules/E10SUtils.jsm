@@ -770,6 +770,17 @@ var E10SUtils = {
 
     let mustChangeProcess = requiredRemoteType != currentRemoteType;
 
+    let newFrameloader = false;
+    if (
+      browser.getAttribute("preloadedState") === "consumed" &&
+      uri != "about:newtab"
+    ) {
+      
+      
+      mustChangeProcess = true;
+      newFrameloader = true;
+    }
+
     
     
     
@@ -781,16 +792,7 @@ var E10SUtils = {
       documentChannelPermittedForURI(uriObject)
     ) {
       mustChangeProcess = false;
-    }
-    let newFrameloader = false;
-    if (
-      browser.getAttribute("preloadedState") === "consumed" &&
-      uri != "about:newtab"
-    ) {
-      
-      
-      mustChangeProcess = true;
-      newFrameloader = true;
+      newFrameloader = false;
     }
 
     return {
@@ -841,20 +843,6 @@ var E10SUtils = {
 
     let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
     let sessionHistory = webNav.sessionHistory;
-    if (
-      !aHasPostData &&
-      remoteType == WEB_REMOTE_TYPE &&
-      sessionHistory.count == 1 &&
-      webNav.currentURI.spec == "about:newtab"
-    ) {
-      
-      
-      
-      
-      
-      return false;
-    }
-
     let wantRemoteType = this.getRemoteTypeForURIObject(
       aURI,
       true,
@@ -873,6 +861,20 @@ var E10SUtils = {
       documentChannelPermittedForURI(aURI)
     ) {
       return true;
+    }
+
+    if (
+      !aHasPostData &&
+      remoteType == WEB_REMOTE_TYPE &&
+      sessionHistory.count == 1 &&
+      webNav.currentURI.spec == "about:newtab"
+    ) {
+      
+      
+      
+      
+      
+      return false;
     }
 
     

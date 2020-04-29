@@ -1181,6 +1181,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
   
   
   nsCOMPtr<nsIBrowser> browser;
+  bool isPreloadSwitch = false;
   if (!browsingContext->GetParent()) {
     Element* browserElement = browsingContext->GetEmbedderElement();
     if (!browserElement) {
@@ -1197,6 +1198,25 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
         !loadedInTab) {
       LOG(("Process Switch Abort: browser is not loaded in a tab"));
       return false;
+    }
+
+    
+    
+    nsAutoString isPreloadBrowserStr;
+    if (browserElement->GetAttr(kNameSpaceID_None, nsGkAtoms::preloadedState,
+                                isPreloadBrowserStr)) {
+      if (isPreloadBrowserStr.EqualsLiteral("consumed")) {
+        nsCOMPtr<nsIURI> originalURI;
+        if (NS_SUCCEEDED(
+                mChannel->GetOriginalURI(getter_AddRefs(originalURI)))) {
+          if (!originalURI->GetSpecOrDefault().EqualsLiteral("about:newtab")) {
+            LOG(("Process Switch: leaving preloaded browser"));
+            isPreloadSwitch = true;
+            browserElement->UnsetAttr(kNameSpaceID_None,
+                                      nsGkAtoms::preloadedState, true);
+          }
+        }
+      }
     }
   }
 
@@ -1278,7 +1298,8 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch() {
   }
 
   
-  if (currentProcess->GetRemoteType() == remoteType && !isCOOPSwitch) {
+  if (currentProcess->GetRemoteType() == remoteType && !isCOOPSwitch &&
+      !isPreloadSwitch) {
     LOG(("Process Switch Abort: type (%s) is compatible",
          NS_ConvertUTF16toUTF8(remoteType).get()));
     return false;
