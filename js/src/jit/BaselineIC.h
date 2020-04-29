@@ -1722,6 +1722,7 @@ class ICRest_Fallback : public ICFallbackStub {
 
 
 
+
 class ICUnaryArith_Fallback : public ICFallbackStub {
   friend class ICStubSpace;
 
