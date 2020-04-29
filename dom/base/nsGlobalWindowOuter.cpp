@@ -2417,12 +2417,6 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
     
     
-    newInnerWindow->GetWindowGlobalChild()
-        ->WindowContext()
-        ->SetHasStoragePermission(aDocument->HasStoragePermission());
-
-    
-    
     rv = newInnerWindow->ExecutionReady();
     NS_ENSURE_SUCCESS(rv, rv);
 
