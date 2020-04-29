@@ -1417,12 +1417,20 @@ struct FieldInitializers {
 
 
 class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
+ private:
   uint32_t ngcthings = 0;
 
   js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
 
   
-  static size_t AllocationSize(uint32_t ngcthings);
+
+ private:
+  
+  Offset gcThingsOffset() { return offsetOfGCThings(); }
+  Offset endOffset() const {
+    uintptr_t size = ngcthings * sizeof(JS::GCCellPtr);
+    return offsetOfGCThings() + size;
+  }
 
   
   explicit PrivateScriptData(uint32_t ngcthings);
@@ -1487,7 +1495,11 @@ class alignas(uintptr_t) RuntimeScriptData final : public TrailingArray {
 
  private:
   
-  static size_t AllocationSize(uint32_t natoms);
+  Offset atomsOffset() { return offsetOfAtoms(); }
+  Offset endOffset() const {
+    uintptr_t size = natoms_ * sizeof(GCPtrAtom);
+    return offsetOfAtoms() + size;
+  }
 
   
   explicit RuntimeScriptData(uint32_t natoms);

@@ -898,22 +898,11 @@ static XDRResult XDRImmutableScriptData(XDRState<mode>* xdr,
   return Ok();
 }
 
- size_t RuntimeScriptData::AllocationSize(uint32_t natoms) {
-  size_t size = sizeof(RuntimeScriptData);
-
-  size += natoms * sizeof(GCPtrAtom);
-
-  return size;
-}
-
 RuntimeScriptData::RuntimeScriptData(uint32_t natoms) : natoms_(natoms) {
   
-  size_t cursor = sizeof(*this);
+  Offset cursor = sizeof(RuntimeScriptData);
 
   
-
-  static_assert(alignof(RuntimeScriptData) >= alignof(GCPtrAtom),
-                "Incompatible alignment");
   initElements<GCPtrAtom>(cursor, natoms);
   cursor += natoms * sizeof(GCPtrAtom);
 
@@ -921,7 +910,7 @@ RuntimeScriptData::RuntimeScriptData(uint32_t natoms) : natoms_(natoms) {
   MOZ_ASSERT(this->natoms() == natoms);
 
   
-  MOZ_ASSERT(AllocationSize(natoms) == cursor);
+  MOZ_ASSERT(endOffset() == cursor);
 }
 
 template <XDRMode mode>
@@ -3961,10 +3950,15 @@ js::UniquePtr<ImmutableScriptData> js::ImmutableScriptData::new_(
 
 RuntimeScriptData* js::RuntimeScriptData::new_(JSContext* cx, uint32_t natoms) {
   
-  size_t size = AllocationSize(natoms);
+  CheckedInt<Offset> size = sizeof(RuntimeScriptData);
+  size += CheckedInt<Offset>(natoms) * sizeof(GCPtrAtom);
+  if (!size.isValid()) {
+    ReportAllocationOverflow(cx);
+    return nullptr;
+  }
 
   
-  void* raw = cx->pod_malloc<uint8_t>(size);
+  void* raw = cx->pod_malloc<uint8_t>(size.value());
   MOZ_ASSERT(uintptr_t(raw) % alignof(RuntimeScriptData) == 0);
   if (!raw) {
     return nullptr;
@@ -3972,7 +3966,12 @@ RuntimeScriptData* js::RuntimeScriptData::new_(JSContext* cx, uint32_t natoms) {
 
   
   
-  return new (raw) RuntimeScriptData(natoms);
+  RuntimeScriptData* result = new (raw) RuntimeScriptData(natoms);
+
+  
+  MOZ_ASSERT(result->endOffset() == size.value());
+
+  return result;
 }
 
 bool JSScript::createScriptData(JSContext* cx, uint32_t natoms) {
@@ -4076,18 +4075,7 @@ void js::SweepScriptData(JSRuntime* rt) {
   }
 }
 
-
-size_t PrivateScriptData::AllocationSize(uint32_t ngcthings) {
-  size_t size = sizeof(PrivateScriptData);
-
-  size += ngcthings * sizeof(JS::GCCellPtr);
-
-  return size;
-}
-
-inline size_t PrivateScriptData::allocationSize() const {
-  return AllocationSize(ngcthings);
-}
+inline size_t PrivateScriptData::allocationSize() const { return endOffset(); }
 
 
 PrivateScriptData::PrivateScriptData(uint32_t ngcthings)
@@ -4095,23 +4083,30 @@ PrivateScriptData::PrivateScriptData(uint32_t ngcthings)
   
   
   
-  size_t cursor = sizeof(*this);
+  Offset cursor = sizeof(PrivateScriptData);
 
   
   {
     initElements<JS::GCCellPtr>(cursor, ngcthings);
-
     cursor += ngcthings * sizeof(JS::GCCellPtr);
   }
 
   
-  MOZ_ASSERT(AllocationSize(ngcthings) == cursor);
+  MOZ_ASSERT(endOffset() == cursor);
 }
 
 
 PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings) {
   
-  void* raw = cx->pod_malloc<uint8_t>(AllocationSize(ngcthings));
+  CheckedInt<Offset> size = sizeof(PrivateScriptData);
+  size += CheckedInt<Offset>(ngcthings) * sizeof(JS::GCCellPtr);
+  if (!size.isValid()) {
+    ReportAllocationOverflow(cx);
+    return nullptr;
+  }
+
+  
+  void* raw = cx->pod_malloc<uint8_t>(size.value());
   MOZ_ASSERT(uintptr_t(raw) % alignof(PrivateScriptData) == 0);
   if (!raw) {
     return nullptr;
@@ -4119,7 +4114,15 @@ PrivateScriptData* PrivateScriptData::new_(JSContext* cx, uint32_t ngcthings) {
 
   
   
-  return new (raw) PrivateScriptData(ngcthings);
+  PrivateScriptData* result = new (raw) PrivateScriptData(ngcthings);
+  if (!result) {
+    return nullptr;
+  }
+
+  
+  MOZ_ASSERT(result->endOffset() == size.value());
+
+  return result;
 }
 
 
