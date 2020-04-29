@@ -27,6 +27,10 @@ class TrailingArray {
   static constexpr bool isAlignedOffset(Offset offset) {
     return offset % alignof(T) == 0;
   }
+  template <size_t N>
+  static constexpr bool isAlignedOffset(Offset offset) {
+    return offset % N == 0;
+  }
 
   
   template <typename T>
