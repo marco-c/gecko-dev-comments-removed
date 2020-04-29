@@ -434,6 +434,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   uint64_t mCrossProcessRedirectIdentifier = 0;
+
+  
+  bool mCancelled = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DocumentLoadListener, DOCUMENT_LOAD_LISTENER_IID)
