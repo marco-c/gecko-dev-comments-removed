@@ -2443,6 +2443,7 @@
 
       
       let attributesToRemove = [
+        "activemedia-blocked",
         "busy",
         "pendingicon",
         "progress",
