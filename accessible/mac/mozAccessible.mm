@@ -601,13 +601,6 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
   return NSAccessibilityActionDescription(action);
 }
 
-- (BOOL)providesLabelNotTitle {
-  
-  
-  return mRole == roles::GROUPING || mRole == roles::RADIO_GROUP || mRole == roles::FIGURE ||
-         mRole == roles::GRAPHIC;
-}
-
 - (NSString*)accessibilityLabel {
   AccessibleWrap* accWrap = [self getGeckoAccessible];
   ProxyAccessible* proxy = [self getProxyAccessible];
@@ -629,7 +622,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
       return nil;
     }
 
-    if (![self providesLabelNotTitle]) {
+    if (mRole != roles::GROUPING && mRole != roles::RADIO_GROUP) {
       Relation rel = accWrap->RelationByType(RelationType::LABELLED_BY);
       if (rel.Next() && !rel.Next()) {
         return nil;
@@ -641,7 +634,7 @@ static const uint64_t kCacheInitialized = ((uint64_t)0x1) << 63;
       return nil;
     }
 
-    if (![self providesLabelNotTitle]) {
+    if (mRole != roles::GROUPING && mRole != roles::RADIO_GROUP) {
       nsTArray<ProxyAccessible*> rels = proxy->RelationByType(RelationType::LABELLED_BY);
       if (rels.Length() == 1) {
         return nil;
@@ -1136,7 +1129,7 @@ struct RoleDescrComparator {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   
-  if ([self providesLabelNotTitle]) {
+  if (mRole == roles::GROUPING || mRole == roles::RADIO_GROUP) {
     return nil;
   }
 
