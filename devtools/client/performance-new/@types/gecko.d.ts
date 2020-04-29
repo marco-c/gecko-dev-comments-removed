@@ -17,11 +17,51 @@
 
 
 declare namespace MockedExports {
+
+  
+
+
+  interface KnownModules {
+    "resource://gre/modules/Services.jsm":
+      typeof import("resource://gre/modules/Services.jsm");
+    "Services":
+      typeof import("Services");
+    "chrome":
+      typeof import("chrome");
+    "resource://gre/modules/osfile.jsm":
+      typeof import("resource://gre/modules/osfile.jsm");
+    "resource://gre/modules/AppConstants.jsm":
+      typeof import("resource://gre/modules/AppConstants.jsm");
+    "resource://gre/modules/ProfilerGetSymbols.jsm":
+      typeof import("resource://gre/modules/ProfilerGetSymbols.jsm");
+    "resource:///modules/CustomizableUI.jsm":
+      typeof import("resource:///modules/CustomizableUI.jsm")
+    "resource:///modules/CustomizableWidgets.jsm":
+      typeof import("resource:///modules/CustomizableWidgets.jsm");
+    "resource://devtools/shared/Loader.jsm":
+      typeof import("resource://devtools/shared/Loader.jsm");
+    "resource://devtools/client/performance-new/popup/background.jsm.js":
+      typeof import("resource://devtools/client/performance-new/popup/background.jsm.js");
+    "resource://devtools/client/shared/browser-loader.js": any;
+    "resource://devtools/client/performance-new/popup/menu-button.jsm.js":
+      typeof import("devtools/client/performance-new/popup/menu-button.jsm.js");
+    "resource://devtools/client/performance-new/popup/panel.jsm.js":
+      typeof import("devtools/client/performance-new/popup/panel.jsm.js");
+    "resource:///modules/PanelMultiView.jsm":
+      typeof import("resource:///modules/PanelMultiView.jsm");
+  }
+
   interface ChromeUtils {
     
 
 
-    import: (path: string) => any;
+
+
+
+
+
+
+    import: <S extends keyof KnownModules>(module: S) => KnownModules[S];
     createObjectIn: (content: ContentWindow) => object;
     exportFunction: (fn: Function, scope: object, options?: object) => void;
     cloneInto: (value: any, scope: object, options?: object) => void;
@@ -160,6 +200,10 @@ declare namespace MockedExports {
   const CustomizableWidgetsJSM: any;
   const PanelMultiViewJSM: any;
 
+  const LoaderJSM: {
+    require: (path: string) => any;
+  };
+
   const Services: Services;
 
   
@@ -270,6 +314,10 @@ declare module "resource:///modules/CustomizableWidgets.jsm" {
 
 declare module "resource:///modules/PanelMultiView.jsm" {
   export = MockedExports.PanelMultiViewJSM;
+}
+
+declare module "resource://devtools/shared/Loader.jsm" {
+  export = MockedExports.LoaderJSM;
 }
 
 declare var ChromeUtils: MockedExports.ChromeUtils;

@@ -13,12 +13,12 @@
 
 
 
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { AppConstants } = ChromeUtils.import(
+
+const AppConstants = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
-);
+).AppConstants;
 
 
 
@@ -73,20 +73,17 @@ function requireLazy(callback) {
 }
 
 const lazyOS = requireLazy(() =>
-  
-  (ChromeUtils.import("resource://gre/modules/osfile.jsm"))
+  ChromeUtils.import("resource://gre/modules/osfile.jsm")
 );
 
 const lazyProfilerGetSymbols = requireLazy(() =>
-  
-  (ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm"))
+  ChromeUtils.import("resource://gre/modules/ProfilerGetSymbols.jsm")
 );
 
 const lazyBrowserModule = requireLazy(() => {
   const { require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  
   const browserModule = require("devtools/client/performance-new/browser");
   return browserModule;
 });
@@ -96,7 +93,6 @@ const lazyPreferenceManagement = requireLazy(() => {
     "resource://devtools/shared/Loader.jsm"
   );
 
-  
   const preferenceManagementModule = require("devtools/client/performance-new/preference-management");
   return preferenceManagementModule;
 });
@@ -106,7 +102,6 @@ const lazyRecordingUtils = requireLazy(() => {
     "resource://devtools/shared/Loader.jsm"
   );
 
-  
   const recordingUtils = require("devtools/shared/performance-new/recording-utils");
   return recordingUtils;
 });
@@ -115,21 +110,18 @@ const lazyUtils = requireLazy(() => {
   const { require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  
   const recordingUtils = require("devtools/client/performance-new/utils");
   return recordingUtils;
 });
 
 const lazyProfilerMenuButton = requireLazy(() =>
-  
-  (ChromeUtils.import(
+  ChromeUtils.import(
     "resource://devtools/client/performance-new/popup/menu-button.jsm.js"
-  ))
+  )
 );
 
 const lazyCustomizableUI = requireLazy(() =>
-  
-  (ChromeUtils.import("resource:///modules/CustomizableUI.jsm"))
+  ChromeUtils.import("resource:///modules/CustomizableUI.jsm")
 );
 
 

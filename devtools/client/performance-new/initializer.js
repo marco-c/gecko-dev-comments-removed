@@ -59,9 +59,9 @@ const {
   setRecordingPreferences,
   presets,
   getRecordingPreferences,
-} =  (ChromeUtils.import(
+} = ChromeUtils.import(
   "resource://devtools/client/performance-new/popup/background.jsm.js"
-));
+);
 
 
 
