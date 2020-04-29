@@ -181,6 +181,25 @@ static bool IsDescendant(nsIFrame* aFrame, nsIContent* aAncestor,
 static nsIContent* GetClickableAncestor(
     nsIFrame* aFrame, nsAtom* stopAt = nullptr,
     nsAutoString* aLabelTargetId = nullptr) {
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aFrame->StyleUI()->mCursor.keyword == StyleCursorKind::Pointer) {
+    return aFrame->GetContent();
+  }
+
   
   
   for (nsIContent* content = aFrame->GetContent(); content;
