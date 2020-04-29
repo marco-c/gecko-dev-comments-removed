@@ -62,6 +62,20 @@ function Object_hasOwnProperty(V) {
 }
 
 
+
+function $ObjectProtoGetter() {
+    return std_Reflect_getPrototypeOf(ToObject(this));
+}
+_SetCanonicalName($ObjectProtoGetter, "get __proto__");
+
+
+
+function $ObjectProtoSetter(proto) {
+    return callFunction(std_Object_setProto, this, proto);
+}
+_SetCanonicalName($ObjectProtoSetter, "set __proto__");
+
+
 function ObjectDefineSetter(name, setter) {
     
     var object = ToObject(this);
