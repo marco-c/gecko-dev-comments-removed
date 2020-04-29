@@ -28,6 +28,7 @@ const kDebuggerPrefs = [
 ];
 
 const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
+const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
 
@@ -363,6 +364,13 @@ DevToolsStartup.prototype = {
       
       
       Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+
+      
+      
+      
+      if (this.isDevToolsUser()) {
+        Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
+      }
 
       
       this.devtoolsFlag = flags.devtools;
