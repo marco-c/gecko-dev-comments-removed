@@ -68,6 +68,11 @@ class DisplayItemCache final {
   
 
 
+  void Clear();
+
+  
+
+
   void SetCapacity(const size_t aInitialSize, const size_t aMaximumSize);
 
   
@@ -142,7 +147,6 @@ class DisplayItemCache final {
     bool mUsed;
   };
 
-  void ClearCache();
   void FreeUnusedSlots();
   Maybe<uint16_t> GetNextFreeSlot();
   bool GrowIfPossible();
