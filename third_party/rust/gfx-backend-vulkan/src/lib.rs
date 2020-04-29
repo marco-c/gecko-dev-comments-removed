@@ -52,16 +52,8 @@ mod window;
 
 
 lazy_static! {
-    static ref LAYERS: Vec<&'static CStr> = if cfg!(all(target_os = "android", debug_assertions)) {
-        vec![
-            CStr::from_bytes_with_nul(b"VK_LAYER_LUNARG_core_validation\0").unwrap(),
-            CStr::from_bytes_with_nul(b"VK_LAYER_LUNARG_object_tracker\0").unwrap(),
-            CStr::from_bytes_with_nul(b"VK_LAYER_LUNARG_parameter_validation\0").unwrap(),
-            CStr::from_bytes_with_nul(b"VK_LAYER_GOOGLE_threading\0").unwrap(),
-            CStr::from_bytes_with_nul(b"VK_LAYER_GOOGLE_unique_objects\0").unwrap(),
-        ]
-    } else if cfg!(debug_assertions) {
-        vec![CStr::from_bytes_with_nul(b"VK_LAYER_LUNARG_standard_validation\0").unwrap()]
+    static ref LAYERS: Vec<&'static CStr> = if cfg!(debug_assertions) {
+        vec![CStr::from_bytes_with_nul(b"VK_LAYER_KHRONOS_validation\0").unwrap()]
     } else {
         vec![]
     };
@@ -359,11 +351,17 @@ impl hal::Instance<Backend> for Instance {
 
         let instance_extensions = entry
             .enumerate_instance_extension_properties()
-            .expect("Unable to enumerate instance extensions");
+            .map_err(|e| {
+                info!("Unable to enumerate instance extensions: {:?}", e);
+                hal::UnsupportedBackend
+            })?;
 
         let instance_layers = entry
             .enumerate_instance_layer_properties()
-            .expect("Unable to enumerate instance layers");
+            .map_err(|e| {
+                info!("Unable to enumerate instance layers: {:?}", e);
+                hal::UnsupportedBackend
+            })?;
 
         
         let extensions = SURFACE_EXTENSIONS
@@ -377,7 +375,7 @@ impl hal::Instance<Backend> for Instance {
                     })
                     .map(|_| ext)
                     .or_else(|| {
-                        warn!("Unable to find extension: {}", ext.to_string_lossy());
+                        info!("Unable to find extension: {}", ext.to_string_lossy());
                         None
                     })
             })
