@@ -11785,20 +11785,12 @@ int main(int argc, char** argv, char** envp) {
 
   EnvironmentPreparer environmentPreparer(cx);
 
-  JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_ZONE_INCREMENTAL);
-
-  JS::SetProcessLargeAllocationFailureCallback(my_LargeAllocFailCallback);
-
-  
-  
-  
-#ifndef JS_MORE_DETERMINISTIC
   if (!op.getBoolOption("no-incremental-gc")) {
-    JS_SetGCParameter(cx, JSGC_DYNAMIC_HEAP_GROWTH, 1);
-    JS_SetGCParameter(cx, JSGC_DYNAMIC_MARK_SLICE, 1);
+    JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_ZONE_INCREMENTAL);
     JS_SetGCParameter(cx, JSGC_SLICE_TIME_BUDGET_MS, 10);
   }
-#endif
+
+  JS::SetProcessLargeAllocationFailureCallback(my_LargeAllocFailCallback);
 
   js::SetPreserveWrapperCallback(cx, DummyPreserveWrapperCallback);
 
