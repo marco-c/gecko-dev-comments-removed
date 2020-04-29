@@ -167,9 +167,7 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-  
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  AddRangesForUserSelectableNodes(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AddRangesForUserSelectableNodes(
       nsRange* aRange, int32_t* aOutIndex,
       const DispatchSelectstartEvent aDispatchSelectstartEvent);
 
@@ -220,7 +218,8 @@ class Selection final : public nsSupportsWeakReference,
   nsDirection GetDirection() const { return mDirection; }
 
   void SetDirection(nsDirection aDir) { mDirection = aDir; }
-  nsresult SetAnchorFocusToRange(nsRange* aRange);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetAnchorFocusToRange(nsRange* aRange);
   void ReplaceAnchorFocusRange(nsRange* aRange);
   void AdjustAnchorFocusForMultiRange(nsDirection aDirection);
 
@@ -436,7 +435,9 @@ class Selection final : public nsSupportsWeakReference,
 
   
   
-  void Collapse(nsINode& aContainer, uint32_t aOffset, ErrorResult& aRv) {
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Collapse(nsINode& aContainer,
+                                            uint32_t aOffset,
+                                            ErrorResult& aRv) {
     Collapse(RawRangeBoundary(&aContainer, aOffset), aRv);
   }
 
