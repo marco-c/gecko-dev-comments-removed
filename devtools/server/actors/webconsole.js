@@ -1011,12 +1011,11 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   evaluateJSAsync: async function(request) {
-    const startTime = Date.now();
     
     
     
     
-    const resultID = startTime + "-" + this._evalCounter++;
+    const resultID = Date.now() + "-" + this._evalCounter++;
 
     
     
@@ -1033,7 +1032,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         this.emit("evaluationResult", {
           type: "evaluationResult",
           resultID,
-          startTime,
           ...response,
         });
         return;
