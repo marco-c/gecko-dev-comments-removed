@@ -231,6 +231,10 @@ struct alignas(gc::CellAlignBytes) Cell {
  protected:
   uintptr_t address() const;
   inline Chunk* chunk() const;
+
+ private:
+  
+  void operator delete(void*) = delete;
 } JS_HAZ_GC_THING;
 
 
