@@ -4,6 +4,8 @@
 
 
 
+#include "nsContentUtils.h"
+#include "nsCRT.h"
 #include "ViewportMetaData.h"
 
 using namespace mozilla;

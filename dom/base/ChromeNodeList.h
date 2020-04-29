@@ -4,8 +4,10 @@
 
 
 
+#include "Document.h"
 #include "nsCOMArray.h"
 #include "nsContentList.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla {
 class ErrorResult;
