@@ -8,6 +8,7 @@
 #define mozilla_DataStorage_h
 
 #include "mozilla/Atomics.h"
+#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
@@ -26,6 +27,9 @@ class DataStorageMemoryReporter;
 
 namespace dom {
 class ContentChild;
+}  
+
+namespace psm {
 class DataStorageEntry;
 class DataStorageItem;
 }  
@@ -101,7 +105,7 @@ enum class DataStorageClass {
 };
 
 class DataStorage : public nsIObserver {
-  typedef dom::DataStorageItem DataStorageItem;
+  typedef psm::DataStorageItem DataStorageItem;
 
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -115,7 +119,19 @@ class DataStorage : public nsIObserver {
   
   
   
-  nsresult Init(const nsTArray<mozilla::dom::DataStorageItem>* aItems);
+  
+  
+  
+  nsresult Init(
+      const nsTArray<mozilla::psm::DataStorageItem>* aItems,
+      mozilla::ipc::FileDescriptor aWriteFd = mozilla::ipc::FileDescriptor());
+
+  
+  
+  
+  nsresult AsyncTakeFileDesc(
+      std::function<void(mozilla::ipc::FileDescriptor&&)>&& aResolver);
+
   
   
   
@@ -136,16 +152,19 @@ class DataStorage : public nsIObserver {
 
   
   static void GetAllChildProcessData(
-      nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
+      nsTArray<mozilla::psm::DataStorageEntry>& aEntries);
 
   
   void GetAll(nsTArray<DataStorageItem>* aItems);
 
   
   static void SetCachedStorageEntries(
-      const nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
+      const nsTArray<mozilla::psm::DataStorageEntry>& aEntries);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+  
+  bool IsReady();
 
  private:
   explicit DataStorage(const nsString& aFilename);
@@ -160,6 +179,7 @@ class DataStorage : public nsIObserver {
 
   class Writer;
   class Reader;
+  class Opener;
 
   class Entry {
    public:
@@ -229,6 +249,8 @@ class DataStorage : public nsIObserver {
   bool mReady;  
 
   const nsString mFilename;
+
+  mozilla::ipc::FileDescriptor mWriteFd;
 
   static StaticAutoPtr<DataStorages> sDataStorages;
 };
