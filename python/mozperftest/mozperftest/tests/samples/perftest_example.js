@@ -4,26 +4,26 @@
 
 "use strict";
 
-async function test(context, commands) {
-  
-  
-  await commands.measure.start();
-  await commands.measure.browser.wait(commands.measure.pageCompleteCheck);
-  await commands.measure.stop();
+var someVar;
 
-  const browserScripts = commands.measure.result[0].browserScripts;
-
-  const processLaunchToNavStart =
-    browserScripts.pageinfo.navigationStartTime -
-    browserScripts.browser.processStartTime;
-
-  browserScripts.pageinfo.processLaunchToNavStart = processLaunchToNavStart;
-  console.log("processLaunchToNavStart: " + processLaunchToNavStart);
-
-  return true;
+async function setUp(context) {
+  context.log.info("setUp example!");
 }
 
+async function test(context, commands) {
+  context.log.info("Test with setUp/tearDown example!");
+  await commands.measure.start("https://www.sitespeed.io/");
+  await commands.measure.start("https://www.mozilla.org/en-US/");
+}
+
+async function tearDown(context) {
+  context.log.info("tearDown example!");
+}
+
+
 module.exports = {
+  setUp,
+  tearDown,
   test,
   owner: "Performance Team",
   description: "Measures cold process applink time",
