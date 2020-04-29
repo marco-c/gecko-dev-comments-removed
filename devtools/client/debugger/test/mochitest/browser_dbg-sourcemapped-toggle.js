@@ -3,7 +3,7 @@
 
 
 
-requestLongerTimeout(3);
+requestLongerTimeout(5);
 
 
 add_task(async function() {
