@@ -11,7 +11,11 @@ use nserror::{
 use serde_json::error::Error as JsonError;
 use webext_storage::error::Error as WebextStorageError;
 
+
 pub type Result<T> = result::Result<T, Error>;
+
+
+
 
 #[derive(Debug)]
 pub enum Error {

@@ -26,20 +26,25 @@ use crate::store::LazyStore;
 
 
 pub enum StorageOp {
-    Get(JsonValue),
-    Set(JsonValue),
-    Remove(JsonValue),
-    Clear,
+    
+    Get { ext_id: String, keys: JsonValue },
+    
+    Set { ext_id: String, value: JsonValue },
+    
+    Remove { ext_id: String, keys: JsonValue },
+    
+    Clear { ext_id: String },
 }
 
 impl StorageOp {
+    
     
     pub fn name(&self) -> &'static str {
         match self {
             StorageOp::Get { .. } => "webext_storage::get",
             StorageOp::Set { .. } => "webext_storage::set",
             StorageOp::Remove { .. } => "webext_storage::remove",
-            StorageOp::Clear => "webext_storage::clear",
+            StorageOp::Clear { .. } => "webext_storage::clear",
         }
     }
 }
@@ -83,16 +88,17 @@ pub struct StorageTask {
     
     
     store: Weak<LazyStore>,
-    ext_id: String,
     op: AtomicRefCell<Option<StorageOp>>,
     callback: ThreadPtrHandle<mozIExtensionStorageCallback>,
     result: AtomicRefCell<Result<StorageResult>>,
 }
 
 impl StorageTask {
+    
+    
+    
     pub fn new(
         store: Weak<LazyStore>,
-        ext_id: &str,
         op: StorageOp,
         callback: &mozIExtensionStorageCallback,
     ) -> Result<Self> {
@@ -100,7 +106,6 @@ impl StorageTask {
         Ok(Self {
             name,
             store,
-            ext_id: ext_id.into(),
             op: AtomicRefCell::new(Some(op)),
             callback: ThreadPtrHolder::new(
                 cstr!("mozIExtensionStorageCallback"),
@@ -112,6 +117,10 @@ impl StorageTask {
 
     
     
+    
+    
+    
+    
     fn store(&self) -> Result<Arc<LazyStore>> {
         match self.store.upgrade() {
             Some(store) => Ok(store),
@@ -119,19 +128,20 @@ impl StorageTask {
         }
     }
 
+    
     fn run_with_op(&self, op: StorageOp) -> Result<StorageResult> {
         Ok(match op {
-            StorageOp::Set(value) => {
-                StorageResult::with_changes(self.store()?.get()?.set(&self.ext_id, value)?)
+            StorageOp::Set { ext_id, value } => {
+                StorageResult::with_changes(self.store()?.get()?.set(&ext_id, value)?)
             }
-            StorageOp::Get(keys) => {
-                StorageResult::with_value(self.store()?.get()?.get(&self.ext_id, keys)?)
+            StorageOp::Get { ext_id, keys } => {
+                StorageResult::with_value(self.store()?.get()?.get(&ext_id, keys)?)
             }
-            StorageOp::Remove(keys) => {
-                StorageResult::with_changes(self.store()?.get()?.remove(&self.ext_id, keys)?)
+            StorageOp::Remove { ext_id, keys } => {
+                StorageResult::with_changes(self.store()?.get()?.remove(&ext_id, keys)?)
             }
-            StorageOp::Clear => {
-                StorageResult::with_changes(self.store()?.get()?.clear(&self.ext_id)?)
+            StorageOp::Clear { ext_id } => {
+                StorageResult::with_changes(self.store()?.get()?.clear(&ext_id)?)
             }
         }?)
     }
@@ -141,12 +151,16 @@ impl Task for StorageTask {
     fn run(&self) {
         *self.result.borrow_mut() = match mem::take(&mut *self.op.borrow_mut()) {
             Some(op) => self.run_with_op(op),
+            
+            
             None => Err(Error::AlreadyRan(self.name)),
         };
     }
 
     fn done(&self) -> result::Result<(), nsresult> {
         let callback = self.callback.get().unwrap();
+        
+        
         match mem::replace(
             &mut *self.result.borrow_mut(),
             Err(Error::AlreadyRan(self.name)),
@@ -176,12 +190,18 @@ impl Task for StorageTask {
 
 
 pub struct TeardownTask {
+    
+    
+    
     store: AtomicRefCell<Option<Arc<LazyStore>>>,
     callback: ThreadPtrHandle<mozIExtensionStorageCallback>,
     result: AtomicRefCell<Result<()>>,
 }
 
 impl TeardownTask {
+    
+    
+    
     pub fn new(store: Arc<LazyStore>, callback: &mozIExtensionStorageCallback) -> Result<Self> {
         Ok(Self {
             store: AtomicRefCell::new(Some(store)),
@@ -198,6 +218,7 @@ impl TeardownTask {
         "webext_storage::teardown"
     }
 
+    
     fn run_with_store(&self, store: Arc<LazyStore>) -> Result<()> {
         
         
