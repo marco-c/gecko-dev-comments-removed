@@ -195,10 +195,12 @@ impl StorageSyncArea {
                 
                 
                 
-                if let Err(error) = teardown(&self.queue, Arc::clone(&store), callback) {
-                    *maybe_store = Some(store);
-                    return Err(error);
-                }
+                
+                
+                
+                
+                
+                teardown(&self.queue, store, callback)?;
             }
             None => return Err(Error::AlreadyTornDown),
         }

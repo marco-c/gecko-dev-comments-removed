@@ -2,7 +2,11 @@
 
 
 
-use std::path::PathBuf;
+use std::{
+    mem,
+    path::PathBuf,
+    sync::{Mutex, MutexGuard},
+};
 
 use once_cell::sync::OnceCell;
 use webext_storage::store::Store;
@@ -19,7 +23,7 @@ pub struct LazyStoreConfig {
 
 #[derive(Default)]
 pub struct LazyStore {
-    store: OnceCell<Store>,
+    store: OnceCell<Mutex<Store>>,
     config: OnceCell<LazyStoreConfig>,
 }
 
@@ -35,20 +39,35 @@ impl LazyStore {
     
     
     
-    pub fn get(&self) -> Result<&Store> {
-        self.store.get_or_try_init(|| match self.config.get() {
-            Some(config) => Ok(Store::new(&config.path)?),
-            None => Err(Error::NotConfigured),
-        })
+    pub fn get(&self) -> Result<MutexGuard<'_, Store>> {
+        Ok(self
+            .store
+            .get_or_try_init(|| match self.config.get() {
+                Some(config) => Ok(Mutex::new(Store::new(&config.path)?)),
+                None => Err(Error::NotConfigured),
+            })?
+            .lock()
+            .unwrap())
     }
 
     
     
     
     pub fn teardown(self) -> Result<()> {
-        if let Some(store) = self.store.into_inner() {
-            
-            drop(store);
+        if let Some(store) = self
+            .store
+            .into_inner()
+            .map(|mutex| mutex.into_inner().unwrap())
+        {
+            if let Err((store, error)) = store.close() {
+                
+                
+                
+                
+                
+                mem::forget(store);
+                return Err(error.into());
+            }
         }
         Ok(())
     }

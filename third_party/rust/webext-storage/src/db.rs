@@ -9,8 +9,9 @@ use rusqlite::Connection;
 use rusqlite::OpenFlags;
 use sql_support::ConnExt;
 use std::fs;
+use std::ops::{Deref, DerefMut};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
+use std::result;
 use url::Url;
 
 
@@ -19,8 +20,9 @@ use url::Url;
 
 
 
+
 pub struct StorageDb {
-    pub writer: Arc<Mutex<Connection>>,
+    writer: Connection,
 }
 impl StorageDb {
     
@@ -48,9 +50,7 @@ impl StorageDb {
 
         let conn = Connection::open_with_flags(db_path.clone(), flags)?;
         match init_sql_connection(&conn, true) {
-            Ok(()) => Ok(Self {
-                writer: Arc::new(Mutex::new(conn)),
-            }),
+            Ok(()) => Ok(Self { writer: conn }),
             Err(e) => {
                 
                 if let ErrorKind::DatabaseUpgradeError = e.kind() {
@@ -61,6 +61,33 @@ impl StorageDb {
                 }
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn close(self) -> result::Result<(), (StorageDb, Error)> {
+        self.writer
+            .close()
+            .map_err(|(writer, err)| (StorageDb { writer }, err.into()))
+    }
+}
+
+impl Deref for StorageDb {
+    type Target = Connection;
+
+    fn deref(&self) -> &Self::Target {
+        &self.writer
+    }
+}
+
+impl DerefMut for StorageDb {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.writer
     }
 }
 
@@ -90,6 +117,7 @@ fn define_functions(_c: &Connection) -> Result<()> {
 }
 
 
+#[allow(dead_code)]
 pub fn put_meta(db: &Connection, key: &str, value: &dyn ToSql) -> Result<()> {
     db.conn().execute_named_cached(
         "REPLACE INTO meta (key, value) VALUES (:key, :value)",
@@ -98,6 +126,7 @@ pub fn put_meta(db: &Connection, key: &str, value: &dyn ToSql) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn get_meta<T: FromSql>(db: &Connection, key: &str) -> Result<Option<T>> {
     let res = db.conn().try_query_one(
         "SELECT value FROM meta WHERE key = :key",
@@ -107,6 +136,7 @@ pub fn get_meta<T: FromSql>(db: &Connection, key: &str) -> Result<Option<T>> {
     Ok(res)
 }
 
+#[allow(dead_code)]
 pub fn delete_meta(db: &Connection, key: &str) -> Result<()> {
     db.conn()
         .execute_named_cached("DELETE FROM meta WHERE key = :key", &[(":key", &key)])?;
@@ -141,6 +171,7 @@ fn unurl_path(p: impl AsRef<Path>) -> PathBuf {
 
 
 
+#[allow(dead_code)]
 pub fn ensure_url_path(p: impl AsRef<Path>) -> Result<Url> {
     if let Some(u) = p.as_ref().to_str().and_then(|s| Url::parse(s).ok()) {
         if u.scheme() == "file" {
@@ -218,8 +249,7 @@ mod tests {
 
     #[test]
     fn test_meta() -> Result<()> {
-        let db = new_mem_db();
-        let writer = db.writer.lock().unwrap();
+        let writer = new_mem_db();
         assert_eq!(get_meta::<String>(&writer, "foo")?, None);
         put_meta(&writer, "foo", &"bar".to_string())?;
         assert_eq!(get_meta(&writer, "foo")?, Some("bar".to_string()));
