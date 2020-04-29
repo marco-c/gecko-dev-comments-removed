@@ -1081,7 +1081,37 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive) {
     return;
   }
 
-  if (!strncmp(name, "MacBookPro", 10)) {
+  int major,minor;
+  for (uint32_t i = 0; i < length; i++) {
+    
+    if (isalpha(name[i])) {
+      continue;
+    }
+    sscanf(name+i, "%d,%d", &major, &minor);
+    break;
+  }
+
+  enum MacbookModel {
+    MacBook,
+    MacBookPro,
+    MacBookAir,
+    NotAMacbook
+  };
+
+  MacbookModel model;
+
+  if (!strncmp(name, "MacBookPro", length)) {
+    model = MacBookPro;
+  } else if (strncmp(name, "MacBookAir", length)) {
+    model = MacBookAir;
+  } else if (strncmp(name, "MacBook", length)) {
+    model = MacBook;
+  } else {
+    model = NotAMacbook;
+  }
+  
+  
+  if (model == MacBookPro && major <= 12) {
     if (cubeb_stream_get_current_device(mAudioStream, &out) == CUBEB_OK) {
       MOZ_ASSERT(out);
       
