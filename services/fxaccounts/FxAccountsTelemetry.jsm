@@ -14,12 +14,24 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  log: "resource://gre/modules/FxAccountsCommon.js",
   
   
   Observers: "resource://services-common/observers.js",
   Services: "resource://gre/modules/Services.jsm",
+  CryptoUtils: "resource://services-crypto/utils.js",
 });
+
+const { PREF_ACCOUNT_ROOT, log } = ChromeUtils.import(
+  "resource://gre/modules/FxAccountsCommon.js"
+);
+
+const PREF_SANITIZED_UID = PREF_ACCOUNT_ROOT + "telemetry.sanitized_uid";
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "pref_sanitizedUid",
+  PREF_SANITIZED_UID,
+  ""
+);
 
 class FxAccountsTelemetry {
   constructor(fxai) {
@@ -46,21 +58,34 @@ class FxAccountsTelemetry {
 
   
   
-  sanitizeDeviceId(deviceId) {
+  
+  _setHashedUID(hashedUID) {
+    if (!hashedUID) {
+      Services.prefs.clearUserPref(PREF_SANITIZED_UID);
+    } else {
+      Services.prefs.setStringPref(PREF_SANITIZED_UID, hashedUID);
+    }
+  }
+
+  getSanitizedUID() {
     
-    let xps =
-      this._weaveXPCOM ||
-      Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
-        .wrappedJSObject;
-    if (!xps.enabled) {
+    return pref_sanitizedUid || null;
+  }
+
+  
+  
+  sanitizeDeviceId(deviceId) {
+    const uid = this.getSanitizedUID();
+    if (!uid) {
+      
       return null;
     }
-    try {
-      return xps.Weave.Service.identity.hashedDeviceID(deviceId);
-    } catch {
-      
-    }
-    return null;
+    
+    
+    
+    
+    
+    return CryptoUtils.sha256(deviceId + uid);
   }
 
   

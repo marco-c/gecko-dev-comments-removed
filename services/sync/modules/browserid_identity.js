@@ -130,19 +130,20 @@ this.BrowserIDManager.prototype = {
   _userUid: null,
 
   hashedUID() {
-    if (!this._hashedUID) {
+    const id = this._fxaService.telemetry.getSanitizedUID();
+    if (!id) {
       throw new Error("hashedUID: Don't seem to have previously seen a token");
     }
-    return this._hashedUID;
+    return id;
   },
 
   
   hashedDeviceID(deviceID) {
-    let uid = this.hashedUID();
-    
-    
-    
-    return Utils.sha256(deviceID + uid);
+    const id = this._fxaService.telemetry.sanitizeDeviceId(deviceID);
+    if (!id) {
+      throw new Error("hashedUID: Don't seem to have previously seen a token");
+    }
+    return id;
   },
 
   
@@ -282,7 +283,6 @@ this.BrowserIDManager.prototype = {
   resetCredentials() {
     this._syncKeyBundle = null;
     this._token = null;
-    this._hashedUID = null;
     
     
     Weave.Service.clusterURL = null;
@@ -553,7 +553,8 @@ this.BrowserIDManager.prototype = {
       
       
       
-      this._hashedUID = token.hashed_fxa_uid;
+      
+      this._fxaService.telemetry._setHashedUID(token.hashed_fxa_uid);
       return token;
     } finally {
       Services.obs.notifyObservers(null, "weave:service:login:change");

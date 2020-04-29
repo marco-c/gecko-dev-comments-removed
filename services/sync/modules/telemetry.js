@@ -6,6 +6,16 @@
 
 var EXPORTED_SYMBOLS = ["SyncTelemetry"];
 
+
+
+
+
+
+
+
+
+
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -50,10 +60,19 @@ const log = Log.repository.getLogger("Sync.Telemetry");
 
 const TOPICS = [
   "profile-before-change",
+
+  
+  "fxaccounts:new_device_id",
+  "fxaccounts:onlogout",
+  "weave:service:ready",
+  "weave:service:login:change",
+
+  
   "weave:service:sync:start",
   "weave:service:sync:finish",
   "weave:service:sync:error",
 
+  
   "weave:engine:sync:start",
   "weave:engine:sync:finish",
   "weave:engine:sync:error",
@@ -63,9 +82,9 @@ const TOPICS = [
   "weave:engine:validate:finish",
   "weave:engine:validate:error",
 
+  
   "weave:telemetry:event",
   "weave:telemetry:histogram",
-  
   "fxa:telemetry:event",
 ];
 
@@ -372,12 +391,7 @@ class TelemetryRecord {
       this.failureReason = SyncTelemetry.transformError(error);
     }
 
-    try {
-      this.uid = Weave.Service.identity.hashedUID();
-    } catch (e) {
-      this.uid = EMPTY_UID;
-    }
-
+    this.uid = fxAccounts.telemetry.getSanitizedUID() || EMPTY_UID;
     this.syncNodeType = Weave.Service.identity.telemetryNodeType;
 
     
@@ -566,15 +580,7 @@ class SyncTelemetryImpl {
   }
 
   sanitizeFxaDeviceId(deviceId) {
-    if (!this.syncIsEnabled()) {
-      return null;
-    }
-    try {
-      return Weave.Service.identity.hashedDeviceID(deviceId);
-    } catch {
-      
-    }
-    return null;
+    fxAccounts.telemetry.sanitizeDeviceId(deviceId);
   }
 
   prepareFxaDevices(devices) {
@@ -708,11 +714,7 @@ class SyncTelemetryImpl {
   }
 
   submit(record) {
-    if (
-      Services.prefs.prefHasUserValue("identity.sync.tokenserver.uri") ||
-      Services.prefs.prefHasUserValue("services.sync.tokenServerURI")
-    ) {
-      log.trace(`Not sending telemetry ping for self-hosted Sync user`);
+    if (!this.isProductionSyncUser()) {
       return false;
     }
     
@@ -731,6 +733,17 @@ class SyncTelemetryImpl {
     return false;
   }
 
+  isProductionSyncUser() {
+    if (
+      Services.prefs.prefHasUserValue("identity.sync.tokenserver.uri") ||
+      Services.prefs.prefHasUserValue("services.sync.tokenServerURI")
+    ) {
+      log.trace(`Not sending telemetry ping for self-hosted Sync user`);
+      return false;
+    }
+    return true;
+  }
+
   onSyncStarted(data) {
     const why = data && JSON.parse(data).why;
     if (this.current) {
@@ -741,6 +754,49 @@ class SyncTelemetryImpl {
       this.current = null;
     }
     this.current = new TelemetryRecord(this.allowedEngines, why);
+  }
+
+  
+  
+  
+  
+  onAccountInitOrChange() {
+    
+    if (!this.isProductionSyncUser()) {
+      return;
+    }
+    
+    
+    
+    fxAccounts.device
+      .getLocalId()
+      .then(deviceId => {
+        let sanitizedDeviceId = fxAccounts.telemetry.sanitizeDeviceId(deviceId);
+        
+        
+        
+        if (sanitizedDeviceId) {
+          
+          
+          
+          sanitizedDeviceId = sanitizedDeviceId.substr(0, 32);
+          Services.telemetry.scalarSet(
+            "deletion.request.sync_device_id",
+            sanitizedDeviceId
+          );
+        }
+      })
+      .catch(err => {
+        log.warn(
+          `Failed to set sync identifiers in the deletion-request ping: ${err}`
+        );
+      });
+  }
+
+  
+  
+  onAccountLogout() {
+    Services.telemetry.scalarSet("deletion.request.sync_device_id", "");
   }
 
   _checkCurrent(topic) {
@@ -874,6 +930,16 @@ class SyncTelemetryImpl {
     switch (topic) {
       case "profile-before-change":
         this.shutdown();
+        break;
+
+      case "weave:service:ready":
+      case "weave:service:login:change":
+      case "fxaccounts:new_device_id":
+        this.onAccountInitOrChange();
+        break;
+
+      case "fxaccounts:onlogout":
+        this.onAccountLogout();
         break;
 
       
