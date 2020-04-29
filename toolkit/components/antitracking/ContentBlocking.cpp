@@ -493,9 +493,9 @@ ContentBlocking::CompleteAllowAccessFor(
 
     if (XRE_IsParentProcess()) {
       LOG(("Saving the permission: trackingOrigin=%s", trackingOrigin.get()));
-      return SaveAccessForOriginOnParentProcess(aTopLevelWindowId,
-                                                trackingPrincipal,
-                                                trackingOrigin, aAllowMode)
+      return SaveAccessForOriginOnParentProcess(
+                 aTopLevelWindowId, aParentContext, trackingPrincipal,
+                 trackingOrigin, aAllowMode)
           ->Then(GetCurrentThreadSerialEventTarget(), __func__,
                  [](ParentAccessGrantPromise::ResolveOrRejectValue&& aValue) {
                    if (aValue.IsResolve()) {
@@ -519,8 +519,8 @@ ContentBlocking::CompleteAllowAccessFor(
     
     return cc
         ->SendFirstPartyStorageAccessGrantedForOrigin(
-            aTopLevelWindowId, IPC::Principal(trackingPrincipal),
-            trackingOrigin, aAllowMode)
+            aTopLevelWindowId, aParentContext,
+            IPC::Principal(trackingPrincipal), trackingOrigin, aAllowMode)
         ->Then(GetCurrentThreadSerialEventTarget(), __func__,
                [](const ContentChild::
                       FirstPartyStorageAccessGrantedForOriginPromise::
@@ -581,13 +581,13 @@ ContentBlocking::CompleteAllowAccessFor(
 
 RefPtr<mozilla::ContentBlocking::ParentAccessGrantPromise>
 ContentBlocking::SaveAccessForOriginOnParentProcess(
-    uint64_t aParentWindowId, nsIPrincipal* aTrackingPrincipal,
-    const nsCString& aTrackingOrigin, int aAllowMode,
-    uint64_t aExpirationTime) {
-  MOZ_ASSERT(aParentWindowId != 0);
+    uint64_t aTopLevelWindowId, BrowsingContext* aParentContext,
+    nsIPrincipal* aTrackingPrincipal, const nsCString& aTrackingOrigin,
+    int aAllowMode, uint64_t aExpirationTime) {
+  MOZ_ASSERT(aTopLevelWindowId != 0);
 
   RefPtr<WindowGlobalParent> wgp =
-      WindowGlobalParent::GetByInnerWindowId(aParentWindowId);
+      WindowGlobalParent::GetByInnerWindowId(aTopLevelWindowId);
   if (!wgp) {
     LOG(("Can't get window global parent"));
     return ParentAccessGrantPromise::CreateAndReject(false, __func__);
@@ -595,9 +595,10 @@ ContentBlocking::SaveAccessForOriginOnParentProcess(
 
   
   
-  BrowsingContext* bc = wgp->BrowsingContext();
-  if (bc->IsTop()) {
-    ContentBlocking::UpdateAllowAccessOnParentProcess(bc, aTrackingOrigin);
+  
+  if (aParentContext->IsTop()) {
+    ContentBlocking::UpdateAllowAccessOnParentProcess(aParentContext,
+                                                      aTrackingOrigin);
   }
 
   return ContentBlocking::SaveAccessForOriginOnParentProcess(
