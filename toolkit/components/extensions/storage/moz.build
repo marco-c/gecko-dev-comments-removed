@@ -17,7 +17,7 @@ XPIDL_SOURCES += [
 
 
 
-if CONFIG['MOZ_WIDGET_TOOLKIT'] != "android":
+if CONFIG['MOZ_WIDGET_TOOLKIT'] != "android" and CONFIG['MOZ_NEW_WEBEXT_STORAGE']:
     EXPORTS.mozilla.extensions.storage += [
         'ExtensionStorageComponents.h',
     ]
