@@ -110,13 +110,14 @@ async function test_save_change(testData) {
       await SimpleTest.promiseFocus(browser.ownerGlobal);
 
       
-      
       info(`update form with username: ${username}, password: ${password}`);
       await changeContentFormValues(browser, {
         "#form-basic-username": username,
         "#form-basic-password": password,
       });
 
+      
+      
       let formSubmittedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async function() {
         let doc = this.content.document;
