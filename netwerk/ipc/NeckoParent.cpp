@@ -133,88 +133,17 @@ static already_AddRefed<nsIPrincipal> GetRequestingPrincipal(
   return GetRequestingPrincipal(args.loadInfo());
 }
 
-
-
-
-static MOZ_COLD void CrashWithReason(const char* reason) {
-#ifndef RELEASE_OR_BETA
-  MOZ_CRASH_UNSAFE(reason);
-#endif
-}
-
 const char* NeckoParent::GetValidatedOriginAttributes(
     const SerializedLoadContext& aSerialized, PContentParent* aContent,
     nsIPrincipal* aRequestingPrincipal, OriginAttributes& aAttrs) {
-  if (!UsingNeckoIPCSecurity()) {
-    if (!aSerialized.IsNotNull()) {
-      
-      
-      aAttrs = OriginAttributes(false);
-    } else {
-      aAttrs = aSerialized.mOriginAttributes;
-    }
-    return nullptr;
-  }
-
   if (!aSerialized.IsNotNull()) {
-    CrashWithReason(
-        "GetValidatedOriginAttributes | SerializedLoadContext from child is "
-        "null");
-    return "SerializedLoadContext from child is null";
-  }
-
-  nsAutoCString serializedSuffix;
-  aSerialized.mOriginAttributes.CreateAnonymizedSuffix(serializedSuffix);
-
-  nsAutoCString debugString;
-  const auto& browsers = aContent->ManagedPBrowserParent();
-  for (auto iter = browsers.ConstIter(); !iter.Done(); iter.Next()) {
-    auto* browserParent = BrowserParent::GetFrom(iter.Get()->GetKey());
-
-    if (!ChromeUtils::IsOriginAttributesEqual(
-            aSerialized.mOriginAttributes,
-            browserParent->OriginAttributesRef())) {
-      debugString.AppendLiteral("(");
-      debugString.Append(serializedSuffix);
-      debugString.AppendLiteral(",");
-
-      nsAutoCString tabSuffix;
-      browserParent->OriginAttributesRef().CreateAnonymizedSuffix(tabSuffix);
-      debugString.Append(tabSuffix);
-
-      debugString.AppendLiteral(")");
-      continue;
-    }
-
+    
+    
+    aAttrs = OriginAttributes(false);
+  } else {
     aAttrs = aSerialized.mOriginAttributes;
-    return nullptr;
   }
-
-  
-  
-  
-  
-  if (aRequestingPrincipal) {
-    RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
-    if (swm &&
-        swm->MayHaveActiveServiceWorkerInstance(
-            static_cast<ContentParent*>(aContent), aRequestingPrincipal)) {
-      aAttrs = aSerialized.mOriginAttributes;
-      return nullptr;
-    }
-  }
-
-  nsAutoCString errorString;
-  errorString.AppendLiteral(
-      "GetValidatedOriginAttributes | App does not have permission -");
-  errorString.Append(debugString);
-
-  
-  
-  
-  char* error = strdup(errorString.BeginReading());
-  CrashWithReason(error);
-  return "App does not have permission";
+  return nullptr;
 }
 
 const char* NeckoParent::CreateChannelLoadContext(
