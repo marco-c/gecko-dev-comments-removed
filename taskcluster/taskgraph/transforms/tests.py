@@ -1593,7 +1593,9 @@ def make_job_description(config, tests):
         elif category in INCLUSIVE_COMPONENTS:
             jobdesc['optimization'] = {'test-inclusive': schedules}
         else:
-            jobdesc['optimization'] = {'test': schedules}
+            
+            
+            jobdesc['optimization'] = {'test': (schedules, None)}
 
         run = jobdesc['run'] = {}
         run['using'] = 'mozharness-test'
