@@ -15,6 +15,7 @@
 #include "jit/Bailouts.h"
 #include "jit/IonCode.h"
 #include "jit/shared/Assembler-shared.h"
+#include "util/TrailingArray.h"
 #include "vm/EnvironmentObject.h"
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
@@ -160,18 +161,37 @@ class RetAddrEntry {
   }
 };
 
-struct BaselineScript final {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class alignas(uintptr_t) BaselineScript final : public TrailingArray {
  private:
   
   HeapPtr<JitCode*> method_ = nullptr;
 
   
-  
-  uint32_t warmUpCheckPrologueOffset_;
+  IonCompileTask* pendingIonCompileTask_ = nullptr;
 
   
-  uint32_t profilerEnterToggleOffset_;
-  uint32_t profilerExitToggleOffset_;
+  
+  uint32_t warmUpCheckPrologueOffset_ = 0;
+
+  
+  uint32_t profilerEnterToggleOffset_ = 0;
+  uint32_t profilerExitToggleOffset_ = 0;
 
   
 #ifdef JS_TRACE_LOGGING
@@ -183,26 +203,20 @@ struct BaselineScript final {
 #endif
 
  private:
-  uint32_t retAddrEntriesOffset_ = 0;
-  uint32_t retAddrEntries_ = 0;
-
-  uint32_t osrEntriesOffset_ = 0;
-  uint32_t osrEntries_ = 0;
-
-  uint32_t debugTrapEntriesOffset_ = 0;
-  uint32_t debugTrapEntries_ = 0;
-
   
   
-  uint32_t resumeEntriesOffset_ = 0;
+  
+  Offset resumeEntriesOffset_ = 0;
+  Offset retAddrEntriesOffset_ = 0;
+  Offset osrEntriesOffset_ = 0;
+  Offset debugTrapEntriesOffset_ = 0;
+  Offset traceLoggerToggleOffsetsOffset_ = 0;
+  Offset allocBytes_ = 0;
 
   
-  
-  uint32_t traceLoggerToggleOffsetsOffset_ = 0;
-  uint32_t numTraceLoggerToggleOffsets_ = 0;
+  uint8_t flags_ = 0;
 
   
-  uint32_t allocBytes_ = 0;
 
  public:
   enum Flag {
@@ -229,10 +243,15 @@ struct BaselineScript final {
   };
 
  private:
-  uint8_t flags_ = 0;
-
   
-  IonCompileTask* pendingIonCompileTask_ = nullptr;
+  Offset resumeEntriesOffset() const { return resumeEntriesOffset_; }
+  Offset retAddrEntriesOffset() const { return retAddrEntriesOffset_; }
+  Offset osrEntriesOffset() const { return osrEntriesOffset_; }
+  Offset debugTrapEntriesOffset() const { return debugTrapEntriesOffset_; }
+  Offset traceLoggerToggleOffsetsOffset() const {
+    return traceLoggerToggleOffsetsOffset_;
+  }
+  Offset endOffset() const { return allocBytes_; }
 
   
   
@@ -243,46 +262,40 @@ struct BaselineScript final {
         profilerEnterToggleOffset_(profilerEnterToggleOffset),
         profilerExitToggleOffset_(profilerExitToggleOffset) {}
 
-  
   template <typename T>
-  T* offsetToPointer(size_t offset) const {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    uintptr_t elem = base + offset;
-    return reinterpret_cast<T*>(elem);
+  mozilla::Span<T> makeSpan(Offset start, Offset end) {
+    return mozilla::MakeSpan(offsetToPointer<T>(start),
+                             numElements<T>(start, end));
   }
 
-  mozilla::Span<RetAddrEntry> retAddrEntries() const {
-    return mozilla::MakeSpan(
-        offsetToPointer<RetAddrEntry>(retAddrEntriesOffset_), retAddrEntries_);
+  
+  
+  mozilla::Span<uint8_t*> resumeEntryList() {
+    return makeSpan<uint8_t*>(resumeEntriesOffset(), retAddrEntriesOffset());
   }
-  mozilla::Span<OSREntry> osrEntries() const {
-    return mozilla::MakeSpan(offsetToPointer<OSREntry>(osrEntriesOffset_),
-                             osrEntries_);
+
+  
+  mozilla::Span<RetAddrEntry> retAddrEntries() {
+    return makeSpan<RetAddrEntry>(retAddrEntriesOffset(), osrEntriesOffset());
   }
-  mozilla::Span<DebugTrapEntry> debugTrapEntries() const {
-    return mozilla::MakeSpan(
-        offsetToPointer<DebugTrapEntry>(debugTrapEntriesOffset_),
-        debugTrapEntries_);
+  mozilla::Span<OSREntry> osrEntries() {
+    return makeSpan<OSREntry>(osrEntriesOffset(), debugTrapEntriesOffset());
+  }
+  mozilla::Span<DebugTrapEntry> debugTrapEntries() {
+    return makeSpan<DebugTrapEntry>(debugTrapEntriesOffset(),
+                                    traceLoggerToggleOffsetsOffset());
   }
 
 #ifdef JS_TRACE_LOGGING
-  mozilla::Span<uint32_t> traceLoggerToggleOffsets() const {
-    MOZ_ASSERT(traceLoggerToggleOffsetsOffset_);
-    return mozilla::MakeSpan(
-        offsetToPointer<uint32_t>(traceLoggerToggleOffsetsOffset_),
-        numTraceLoggerToggleOffsets_);
+  
+  
+  mozilla::Span<uint32_t> traceLoggerToggleOffsets() {
+    return makeSpan<uint32_t>(traceLoggerToggleOffsetsOffset(), endOffset());
   }
 #endif
 
-  
-  
-  uint8_t** resumeEntryList() const {
-    return offsetToPointer<uint8_t*>(resumeEntriesOffset_);
-  }
-
  public:
-  static BaselineScript* New(JSScript* jsscript,
-                             uint32_t warmUpCheckPrologueOffset,
+  static BaselineScript* New(JSContext* cx, uint32_t warmUpCheckPrologueOffset,
                              uint32_t profilerEnterToggleOffset,
                              uint32_t profilerExitToggleOffset,
                              size_t retAddrEntries, size_t osrEntries,
@@ -368,6 +381,8 @@ struct BaselineScript final {
 #endif
 
   static size_t offsetOfResumeEntriesOffset() {
+    static_assert(sizeof(Offset) == sizeof(uint32_t),
+                  "JIT expect Offset to be uint32_t");
     return offsetof(BaselineScript, resumeEntriesOffset_);
   }
 
