@@ -509,6 +509,7 @@ const MESSAGES = [
   "SessionStore:resetRestore",
   "SessionStore:flush",
   "SessionStore:becomeActiveProcess",
+  "SessionStore:prepareForProcessChange",
 ];
 
 class ContentSessionStore {
@@ -617,6 +618,15 @@ class ContentSessionStore {
         if (!this._shistoryInParent) {
           SessionHistoryListener.collect();
         }
+        break;
+      case "SessionStore:prepareForProcessChange":
+        
+        
+        
+        
+        
+        
+        this.mm.docShell.persistLayoutHistoryState();
         break;
       default:
         debug("received unknown message '" + name + "'");

@@ -3834,10 +3834,15 @@ var SessionStoreInternal = {
 
   async _asyncNavigateAndRestore(tab) {
     let permanentKey = tab.linkedBrowser.permanentKey;
+    let browser = tab.linkedBrowser;
+
+    browser.messageManager.sendAsyncMessage(
+      "SessionStore:prepareForProcessChange"
+    );
 
     
     
-    await TabStateFlusher.flush(tab.linkedBrowser);
+    await TabStateFlusher.flush(browser);
 
     
     
