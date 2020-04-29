@@ -211,13 +211,8 @@ OutputParser.prototype = {
         options.isVariableInUse
       ) {
         sawVariable = true;
-        const variableNode = this._parseVariable(
-          token,
-          text,
-          tokenStream,
-          options
-        );
-        functionData.push(variableNode);
+        const { node } = this._parseVariable(token, text, tokenStream, options);
+        functionData.push(node);
       } else if (token.tokenType === "function") {
         ++depth;
       }
@@ -239,6 +234,7 @@ OutputParser.prototype = {
   },
 
   
+
 
 
 
@@ -330,7 +326,7 @@ OutputParser.prototype = {
     }
     variableNode.appendChild(this.doc.createTextNode(")"));
 
-    return variableNode;
+    return { node: variableNode, value: varValue };
   },
 
   
@@ -407,13 +403,24 @@ OutputParser.prototype = {
             }
             ++parenDepth;
           } else if (token.text === "var" && options.isVariableInUse) {
-            const variableNode = this._parseVariable(
+            const { node: variableNode, value } = this._parseVariable(
               token,
               text,
               tokenStream,
               options
             );
-            this.parsed.push(variableNode);
+            if (
+              value &&
+              colorOK() &&
+              colorUtils.isValidCSSColor(value, this.cssColor4)
+            ) {
+              this._appendColor(value, {
+                ...options,
+                variableContainer: variableNode,
+              });
+            } else {
+              this.parsed.push(variableNode);
+            }
           } else {
             const { functionData, sawVariable } = this._parseMatchingParens(
               text,
@@ -1513,6 +1520,7 @@ OutputParser.prototype = {
         this.colorSwatches.set(swatch, colorObj);
         swatch.addEventListener("mousedown", this._onColorSwatchMouseDown);
         EventEmitter.decorate(swatch);
+
         container.appendChild(swatch);
       }
 
@@ -1526,15 +1534,27 @@ OutputParser.prototype = {
       color = colorObj.toString();
       container.dataset.color = color;
 
-      const value = this._createNode(
-        "span",
-        {
-          class: options.colorClass,
-        },
-        color
-      );
+      
+      if (options.variableContainer) {
+        
+        
+        if (options.colorClass) {
+          options.variableContainer.classList.add(options.colorClass);
+        }
+        container.appendChild(options.variableContainer);
+      } else {
+        
+        const value = this._createNode(
+          "span",
+          {
+            class: options.colorClass,
+          },
+          color
+        );
 
-      container.appendChild(value);
+        container.appendChild(value);
+      }
+
       this.parsed.push(container);
     } else {
       this._appendTextNode(color);
