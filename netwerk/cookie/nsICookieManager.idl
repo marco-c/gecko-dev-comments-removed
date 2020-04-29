@@ -204,15 +204,6 @@ interface nsICookieManager : nsISupports
 
 
 
-  void importCookies(in nsIFile aCookieFile);
-
-  
-
-
-
-
-
-
 
 
 
