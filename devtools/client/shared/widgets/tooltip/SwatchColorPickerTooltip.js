@@ -134,7 +134,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
 
     
     if (this.activeSwatch) {
-      this._originalColor = this.activeSwatch.parentNode.dataset.color;
+      this._originalColor = this._getSwatchColorContainer().dataset.color;
       const color = this.activeSwatch.style.backgroundColor;
 
       this.spectrum.off("changed", this._onSpectrumColorChange);
@@ -200,6 +200,14 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
     event.stopPropagation();
   }
 
+  _getSwatchColorContainer() {
+    
+    
+    
+    
+    return this.activeSwatch.closest("[data-color]");
+  }
+
   _onSpectrumColorChange(rgba, cssColor) {
     this._selectColor(cssColor);
   }
@@ -210,7 +218,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
 
       color = this._toDefaultType(color);
 
-      this.activeSwatch.parentNode.dataset.color = color;
+      this._getSwatchColorContainer().dataset.color = color;
       if (this.activeSwatch.nextSibling) {
         this.activeSwatch.nextSibling.textContent = color;
       }
