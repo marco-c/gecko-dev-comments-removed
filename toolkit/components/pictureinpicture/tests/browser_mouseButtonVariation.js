@@ -58,7 +58,10 @@ add_task(async () => {
       info(
         "Clicking on toggle, and expecting a Picture-in-Picture window to open"
       );
-      let domWindowOpened = BrowserTestUtils.domWindowOpened(null);
+      
+      
+      
+      let domWindowOpened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
 
       await BrowserTestUtils.synthesizeMouseAtPoint(
         toggleLeft,

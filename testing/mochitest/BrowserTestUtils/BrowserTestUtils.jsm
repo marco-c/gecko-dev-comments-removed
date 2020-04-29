@@ -898,6 +898,24 @@ var BrowserTestUtils = {
 
 
 
+
+
+  domWindowOpenedAndLoaded(win) {
+    return this.domWindowOpened(win, async win => {
+      await this.waitForEvent(win, "load");
+      return true;
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
   domWindowClosed(win) {
     return new Promise(resolve => {
       function observer(subject, topic, data) {
