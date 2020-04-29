@@ -55,6 +55,35 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
   constructor(document, inspector, { supportsCssColor4ColorFunction }) {
     super(document);
