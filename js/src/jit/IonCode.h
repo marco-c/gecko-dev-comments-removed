@@ -155,91 +155,91 @@ class IonIC;
 struct IonScript {
  private:
   
-  HeapPtrJitCode method_;
+  HeapPtrJitCode method_ = nullptr;
 
   
-  jsbytecode* osrPc_;
+  jsbytecode* osrPc_ = nullptr;
 
   
-  uint32_t osrEntryOffset_;
+  uint32_t osrEntryOffset_ = 0;
 
   
-  uint32_t skipArgCheckEntryOffset_;
-
-  
-  
-  uint32_t invalidateEpilogueOffset_;
+  uint32_t skipArgCheckEntryOffset_ = 0;
 
   
   
-  
-  
-  uint32_t invalidateEpilogueDataOffset_;
-
-  
-  uint32_t numBailouts_;
-
-  
-  bool hasProfilingInstrumentation_;
-
-  
-  uint32_t recompiling_;
-
-  
-  
-  uint32_t runtimeData_;
-  uint32_t runtimeSize_;
+  uint32_t invalidateEpilogueOffset_ = 0;
 
   
   
   
-  uint32_t icIndex_;
-  uint32_t icEntries_;
+  
+  uint32_t invalidateEpilogueDataOffset_ = 0;
 
   
-  uint32_t safepointIndexOffset_;
-  uint32_t safepointIndexEntries_;
+  uint32_t numBailouts_ = 0;
 
   
-  uint32_t safepointsStart_;
-  uint32_t safepointsSize_;
+  bool hasProfilingInstrumentation_ = false;
 
   
-  uint32_t frameSlots_;
-
-  
-  uint32_t argumentSlots_;
+  uint32_t recompiling_ = 0;
 
   
   
-  uint32_t frameSize_;
+  uint32_t runtimeData_ = 0;
+  uint32_t runtimeSize_ = 0;
 
   
-  uint32_t bailoutTable_;
-  uint32_t bailoutEntries_;
+  
+  
+  uint32_t icIndex_ = 0;
+  uint32_t icEntries_ = 0;
 
   
-  uint32_t osiIndexOffset_;
-  uint32_t osiIndexEntries_;
+  uint32_t safepointIndexOffset_ = 0;
+  uint32_t safepointIndexEntries_ = 0;
 
   
-  uint32_t snapshots_;
-  uint32_t snapshotsListSize_;
-  uint32_t snapshotsRVATableSize_;
+  uint32_t safepointsStart_ = 0;
+  uint32_t safepointsSize_ = 0;
 
   
-  uint32_t recovers_;
-  uint32_t recoversSize_;
+  uint32_t frameSlots_ = 0;
 
   
-  uint32_t constantTable_;
-  uint32_t constantEntries_;
+  uint32_t argumentSlots_ = 0;
+
+  
+  
+  uint32_t frameSize_ = 0;
+
+  
+  uint32_t bailoutTable_ = 0;
+  uint32_t bailoutEntries_ = 0;
+
+  
+  uint32_t osiIndexOffset_ = 0;
+  uint32_t osiIndexEntries_ = 0;
+
+  
+  uint32_t snapshots_ = 0;
+  uint32_t snapshotsListSize_ = 0;
+  uint32_t snapshotsRVATableSize_ = 0;
+
+  
+  uint32_t recovers_ = 0;
+  uint32_t recoversSize_ = 0;
+
+  
+  uint32_t constantTable_ = 0;
+  uint32_t constantEntries_ = 0;
 
   
   uint32_t allocBytes_ = 0;
 
   
-  uint32_t invalidationCount_;
+  uint32_t invalidationCount_ = 0;
 
   
   IonCompilationId compilationId_;
@@ -249,7 +249,7 @@ struct IonScript {
 
   
   
-  uint32_t osrPcMismatchCounter_;
+  uint32_t osrPcMismatchCounter_ = 0;
 
   
   TraceLoggerEventVector traceLoggerEvents_;
@@ -282,10 +282,12 @@ struct IonScript {
   uint32_t* icIndex() { return (uint32_t*)&bottomBuffer()[icIndex_]; }
   uint8_t* runtimeData() { return &bottomBuffer()[runtimeData_]; }
 
- public:
-  
-  explicit IonScript(IonCompilationId compilationId);
+ private:
+  IonScript(IonCompilationId compilationId, uint32_t frameSlots,
+            uint32_t argumentSlots, uint32_t frameSize,
+            OptimizationLevel optimizationLevel);
 
+ public:
   static IonScript* New(JSContext* cx, IonCompilationId compilationId,
                         uint32_t frameSlots, uint32_t argumentSlots,
                         uint32_t frameSize, size_t snapshotsListSize,
