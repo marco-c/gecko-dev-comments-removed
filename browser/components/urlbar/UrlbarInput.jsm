@@ -2456,13 +2456,8 @@ function losslessDecodeURI(aURI) {
           
           
           
-          
-          
-          
-          
-          
           .replace(
-            /%(?!3B|2F|3F|3A|40|26|3D|2B|24|2C|23)|[\r\n\t]|\s(?=\s)|\s$/gi,
+            /%(?!3B|2F|3F|3A|40|26|3D|2B|24|2C|23)/gi,
             encodeURIComponent
           );
       } catch (e) {}
@@ -2472,9 +2467,18 @@ function losslessDecodeURI(aURI) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   value = value.replace(
     
-    /[\u0000-\u001f\u007f-\u00a0\u2028\u2029\ufffc]/g,
+    /[\u0000-\u001f\u007f-\u00a0\u2028\u2029\u2800\ufffc]|[\r\n\t]|\s(?=\s)|\s$/g,
     encodeURIComponent
   );
 
