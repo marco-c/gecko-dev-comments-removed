@@ -47,14 +47,36 @@ class XPCOMThreadWrapper : public AbstractThread {
 
   nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable,
                     DispatchReason aReason = NormalDispatch) override {
+    nsCOMPtr<nsIRunnable> r = aRunnable;
     AbstractThread* currentThread;
     if (aReason != TailDispatch && (currentThread = GetCurrent()) &&
         RequiresTailDispatch(currentThread)) {
-      return currentThread->TailDispatcher().AddTask(this,
-                                                     std::move(aRunnable));
+      return currentThread->TailDispatcher().AddTask(this, r.forget());
     }
 
-    RefPtr<nsIRunnable> runner = new Runner(this, std::move(aRunnable));
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (gXPCOMMainThreadEventsAreDoomed) {
+      return NS_ERROR_FAILURE;
+    }
+
+    RefPtr<nsIRunnable> runner = new Runner(this, r.forget());
     return mThread->Dispatch(runner.forget(), NS_DISPATCH_NORMAL);
   }
 
