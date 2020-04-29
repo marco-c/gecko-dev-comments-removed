@@ -62,10 +62,6 @@ CycleCollectedJSContext::CycleCollectedJSContext()
       mMicroTaskRecursionDepth(0) {
   MOZ_COUNT_CTOR(CycleCollectedJSContext);
 
-  
-  
-  memset(static_cast<PerThreadAtomCache*>(this), 0, sizeof(PerThreadAtomCache));
-
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
   mOwningThread = thread.forget().downcast<nsThread>().take();
   MOZ_RELEASE_ASSERT(mOwningThread);
