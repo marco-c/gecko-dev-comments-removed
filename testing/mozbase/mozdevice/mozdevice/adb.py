@@ -691,7 +691,7 @@ class ADBDevice(ADBCommand):
         
         
         
-        ls_dir = "/sdcard"
+        ls_dir = "/system"
 
         
         
