@@ -1825,7 +1825,9 @@ MoveOperand CodeGeneratorX86Shared::toMoveOperand(LAllocation a) const {
   if (a.isFloatReg()) {
     return MoveOperand(ToFloatRegister(a));
   }
-  return MoveOperand(StackPointer, ToStackOffset(a));
+  MoveOperand::Kind kind =
+      a.isStackArea() ? MoveOperand::EFFECTIVE_ADDRESS : MoveOperand::MEMORY;
+  return MoveOperand(StackPointer, ToStackOffset(a), kind);
 }
 
 class OutOfLineTableSwitch : public OutOfLineCodeBase<CodeGeneratorX86Shared> {
@@ -2435,13 +2437,9 @@ void CodeGeneratorX86Shared::generateInvalidateEpilogue() {
   
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
-  masm.call(thunk);
-
-  
-  
-  masm.assumeUnreachable(
-      "Should have returned directly to its caller instead of here.");
+  masm.jump(thunk);
 }
 
 void CodeGenerator::visitNegI(LNegI* ins) {

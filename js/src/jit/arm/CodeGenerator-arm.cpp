@@ -1067,7 +1067,9 @@ MoveOperand CodeGeneratorARM::toMoveOperand(LAllocation a) const {
   }
   int32_t offset = ToStackOffset(a);
   MOZ_ASSERT((offset & 3) == 0);
-  return MoveOperand(StackPointer, offset);
+  MoveOperand::Kind kind =
+      a.isStackArea() ? MoveOperand::EFFECTIVE_ADDRESS : MoveOperand::MEMORY;
+  return MoveOperand(StackPointer, offset, kind);
 }
 
 class js::jit::OutOfLineTableSwitch
@@ -1664,13 +1666,9 @@ void CodeGeneratorARM::generateInvalidateEpilogue() {
   
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
   masm.jump(thunk);
-
-  
-  
-  masm.assumeUnreachable(
-      "Should have returned directly to its caller instead of here.");
 }
 
 void CodeGenerator::visitCompareExchangeTypedArrayElement(

@@ -1812,13 +1812,9 @@ void CodeGeneratorARM64::generateInvalidateEpilogue() {
   
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
-  masm.call(thunk);
-
-  
-  
-  masm.assumeUnreachable(
-      "Should have returned directly to its caller instead of here.");
+  masm.jump(thunk);
 }
 
 template <class U>

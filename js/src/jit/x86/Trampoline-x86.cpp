@@ -348,9 +348,6 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   
   
   
-  
-
-  masm.addl(Imm32(sizeof(uintptr_t)), esp);
 
   
   DumpAllRegs(masm);
