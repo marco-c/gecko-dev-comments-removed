@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -56,7 +56,7 @@ class ContentDelegateTest : BaseSessionTest() {
     }
 
     @Test fun download() {
-        // disable test on pgo for frequently failing Bug 1543355
+        
         assumeThat(sessionRule.env.isDebugBuild, equalTo(true))
         sessionRule.session.loadTestPath(DOWNLOAD_HTML_PATH)
 
@@ -86,7 +86,7 @@ class ContentDelegateTest : BaseSessionTest() {
 
     @IgnoreCrash
     @Test fun crashContent() {
-        // This test doesn't make sense without multiprocess
+        
         assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
 
         mainSession.loadUri(CONTENT_CRASH_URL)
@@ -98,7 +98,7 @@ class ContentDelegateTest : BaseSessionTest() {
             }
         })
 
-        // Recover immediately
+        
         mainSession.open()
         mainSession.loadTestPath(HELLO_HTML_PATH)
         mainSession.waitUntilCalled(object: Callbacks.ProgressDelegate {
@@ -112,7 +112,7 @@ class ContentDelegateTest : BaseSessionTest() {
     @IgnoreCrash
     @WithDisplay(width = 10, height = 10)
     @Test fun crashContent_tapAfterCrash() {
-        // This test doesn't make sense without multiprocess
+        
         assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
 
         mainSession.delegateUntilTestEnd(object : Callbacks.ContentDelegate {
@@ -131,54 +131,13 @@ class ContentDelegateTest : BaseSessionTest() {
         mainSession.waitForPageStop()
     }
 
-    @IgnoreCrash
-    @Test fun crashContentMultipleSessions() {
-        // This test doesn't make sense without multiprocess
-        assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
-
-        // XXX we need to make sure all sessions in a given content process receive onCrash().
-        // If we add multiple content processes, this test will need to be fixed to ensure the
-        // test sessions go into the same one.
-        val newSession = sessionRule.createOpenSession()
-
-        // We can inadvertently catch the `onCrash` call for the cached session if we don't specify
-        // individual sessions here. Therefore, assert 'onCrash' is called for the two sessions
-        // individually.
-        val mainSessionCrash = GeckoResult<Void>()
-        val newSessionCrash = GeckoResult<Void>()
-        sessionRule.delegateUntilTestEnd(object : Callbacks.ContentDelegate {
-            fun reportCrash(session: GeckoSession) {
-                if (session == mainSession) {
-                    mainSessionCrash.complete(null)
-                } else if (session == newSession) {
-                    newSessionCrash.complete(null)
-                }
-            }
-            // Slower devices may not catch crashes in a timely manner, so we check to see
-            // if either `onKill` or `onCrash` is called
-            override fun onCrash(session: GeckoSession) {
-                reportCrash(session)
-            }
-            override fun onKill(session: GeckoSession) {
-                reportCrash(session)
-            }
-        })
-
-        newSession.loadTestPath(HELLO_HTML_PATH)
-        newSession.waitForPageStop()
-
-        mainSession.loadUri(CONTENT_CRASH_URL)
-
-        sessionRule.waitForResult(newSessionCrash)
-        sessionRule.waitForResult(mainSessionCrash)
-    }
-
     @AnyThread
-    fun killContentProcess() {
+    fun killAllContentProcesses() {
         val context = GeckoAppShell.getApplicationContext()
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val expr = ".*:tab\\d+$".toRegex()
         for (info in manager.runningAppProcesses) {
-            if (info.processName.endsWith(":tab0")) {
+            if (info.processName.matches(expr)) {
                 Process.killProcess(info.pid)
             }
         }
@@ -190,7 +149,7 @@ class ContentDelegateTest : BaseSessionTest() {
         assumeThat(sessionRule.env.isDebugBuild && sessionRule.env.isX86,
                 equalTo(false))
 
-        killContentProcess()
+        killAllContentProcesses()
         mainSession.waitUntilCalled(object : Callbacks.ContentDelegate {
             @AssertCalled(count = 1)
             override fun onKill(session: GeckoSession) {
@@ -207,26 +166,6 @@ class ContentDelegateTest : BaseSessionTest() {
                 assertThat("Page should load successfully", success, equalTo(true))
             }
         })
-    }
-
-    @IgnoreCrash
-    @Test fun killContentMultipleSessions() {
-        assumeThat(sessionRule.env.isMultiprocess, equalTo(true))
-        assumeThat(sessionRule.env.isDebugBuild && sessionRule.env.isX86,
-                equalTo(false))
-
-        val newSession = sessionRule.createOpenSession()
-        killContentProcess()
-
-        val remainingSessions = mutableListOf(newSession, mainSession)
-        while (remainingSessions.isNotEmpty()) {
-            sessionRule.waitUntilCalled(object : Callbacks.ContentDelegate {
-                @AssertCalled(count = 1)
-                override fun onKill(session: GeckoSession) {
-                    remainingSessions.remove(session)
-                }
-            })
-        }
     }
 
     private fun goFullscreen() {
@@ -300,7 +239,7 @@ class ContentDelegateTest : BaseSessionTest() {
         val initialState = sessionRule.runtime.settings.getWebManifestEnabled()
         val jsToRun = "document.querySelector('link[rel=manifest]').relList.supports('manifest');"
 
-        // Check pref'ed off
+        
         sessionRule.runtime.settings.setWebManifestEnabled(false)
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop(mainSession)
@@ -309,7 +248,7 @@ class ContentDelegateTest : BaseSessionTest() {
 
         assertThat("Disabling pref makes relList.supports('manifest') return false", false, result)
 
-        // Check pref'ed on
+        
         sessionRule.runtime.settings.setWebManifestEnabled(true)
         mainSession.loadTestPath(HELLO_HTML_PATH)
         sessionRule.waitForPageStop(mainSession)
@@ -330,12 +269,12 @@ class ContentDelegateTest : BaseSessionTest() {
 
             @AssertCalled(count = 1)
             override fun onWebAppManifest(session: GeckoSession, manifest: JSONObject) {
-                // These values come from the manifest at assets/www/manifest.webmanifest
+                
                 assertThat("name should match", manifest.getString("name"), equalTo("App"))
                 assertThat("short_name should match", manifest.getString("short_name"), equalTo("app"))
                 assertThat("display should match", manifest.getString("display"), equalTo("standalone"))
 
-                // The color here is "cadetblue" converted to #aarrggbb.
+                
                 assertThat("theme_color should match", manifest.getString("theme_color"), equalTo("#ff5f9ea0"))
                 assertThat("background_color should match", manifest.getString("background_color"), equalTo("#eec0ffee"))
                 assertThat("start_url should match", manifest.getString("start_url"), endsWith("/assets/www/start/index.html"))
@@ -379,9 +318,9 @@ class ContentDelegateTest : BaseSessionTest() {
         })
     }
 
-    /**
-     * Preferences to induce wanted behaviour.
-     */
+    
+
+
     private fun setHangReportTestPrefs(timeout: Int = 20000) {
         sessionRule.setPrefsUntilTestEnd(mapOf(
                 "dom.max_script_run_time" to 1,
@@ -392,9 +331,9 @@ class ContentDelegateTest : BaseSessionTest() {
         ))
     }
 
-    /**
-     * With no delegate set, the default behaviour is to stop hung scripts.
-     */
+    
+
+
     @NullDelegate(GeckoSession.ContentDelegate::class)
     @Test fun stopHungProcessDefault() {
         setHangReportTestPrefs()
@@ -410,14 +349,14 @@ class ContentDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStop(mainSession)
     }
 
-    /**
-     * With no overriding implementation for onSlowScript, the default behaviour is to stop hung
-     * scripts.
-     */
+    
+
+
+
     @Test fun stopHungProcessNull() {
         setHangReportTestPrefs()
         sessionRule.delegateUntilTestEnd(object : GeckoSession.ContentDelegate, Callbacks.ProgressDelegate {
-            // default onSlowScript returns null
+            
             @AssertCalled(count = 1)
             override fun onPageStop(session: GeckoSession, success: Boolean) {
                 assertThat("The script did not complete.",
@@ -429,9 +368,9 @@ class ContentDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStop(mainSession)
     }
 
-    /**
-     * Test that, with a 'do nothing' delegate, the hung process completes after its delay
-     */
+    
+
+
     @Test fun stopHungProcessDoNothing() {
         setHangReportTestPrefs()
         var scriptHungReportCount = 0
@@ -453,9 +392,9 @@ class ContentDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStop(mainSession)
     }
 
-    /**
-     * Test that the delegate is called and can stop a hung script
-     */
+    
+
+
     @Test fun stopHungProcess() {
         setHangReportTestPrefs()
         sessionRule.delegateUntilTestEnd(object : GeckoSession.ContentDelegate, Callbacks.ProgressDelegate {
@@ -474,9 +413,9 @@ class ContentDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStop(mainSession)
     }
 
-    /**
-     * Test that the delegate is called and can continue executing hung scripts
-     */
+    
+
+
     @Test fun stopHungProcessWait() {
         setHangReportTestPrefs()
         sessionRule.delegateUntilTestEnd(object : GeckoSession.ContentDelegate, Callbacks.ProgressDelegate {
@@ -495,9 +434,9 @@ class ContentDelegateTest : BaseSessionTest() {
         sessionRule.waitForPageStop(mainSession)
     }
 
-    /**
-     * Test that the delegate is called and paused scripts re-notify after the wait period
-     */
+    
+
+
     @Test fun stopHungProcessWaitThenStop() {
         setHangReportTestPrefs(500)
         var scriptWaited = false
