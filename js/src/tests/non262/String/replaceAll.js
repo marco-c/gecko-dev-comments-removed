@@ -1,5 +1,3 @@
-
-
 function neverCalled() {
   assertEq(true, false, "unexpected call");
 }
