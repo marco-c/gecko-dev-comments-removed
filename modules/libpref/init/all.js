@@ -4911,9 +4911,6 @@ pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json"
 
 pref("devtools.inspector.inactive.css.enabled", true);
 
-
-pref("devtools.experiment.f12.shortcut_disabled", false);
-
 #if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 
 

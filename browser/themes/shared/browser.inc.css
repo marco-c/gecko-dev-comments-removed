@@ -587,13 +587,3 @@ menupopup::part(drop-indicator) {
   display: block;
   margin-bottom: 4px; 
 }
-
-
-
-#enable-devtools-popup {
-  font-size: 13px;
-}
-
-.enable-devtools-description {
-  margin: 8px 12px;
-}
