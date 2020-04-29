@@ -314,6 +314,7 @@ ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
   CONSOLE_MESSAGES: "console-messages",
   ERROR_MESSAGES: "error-messages",
   PLATFORM_MESSAGES: "platform-messages",
+  DOCUMENT_EVENTS: "document-events",
 };
 module.exports = { ResourceWatcher };
 
@@ -327,4 +328,63 @@ const LegacyListeners = {
     .ERROR_MESSAGES]: require("devtools/shared/resources/legacy-listeners/error-messages"),
   [ResourceWatcher.TYPES
     .PLATFORM_MESSAGES]: require("devtools/shared/resources/legacy-listeners/platform-messages"),
+  
+  
+  async [ResourceWatcher.TYPES.CONSOLE_MESSAGES]({
+    targetList,
+    targetType,
+    targetFront,
+    isTopLevel,
+    onAvailable,
+  }) {
+    
+    
+    
+    
+    
+    const isContentToolbox = targetList.targetFront.isLocalTab;
+    const listenForFrames =
+      isContentToolbox &&
+      Services.prefs.getBoolPref("devtools.contenttoolbox.fission");
+    const isAllowed =
+      isTopLevel ||
+      targetType === targetList.TYPES.PROCESS ||
+      (targetType === targetList.TYPES.FRAME && listenForFrames);
+
+    if (!isAllowed) {
+      return;
+    }
+
+    const webConsoleFront = await targetFront.getFront("console");
+
+    
+    await webConsoleFront.startListeners(["ConsoleAPI"]);
+
+    
+    
+    const { messages } = await webConsoleFront.getCachedMessages([
+      "ConsoleAPI",
+    ]);
+    
+    messages.map(message => ({ message })).forEach(onAvailable);
+
+    
+    webConsoleFront.on("consoleAPICall", onAvailable);
+  },
+  async [ResourceWatcher.TYPES.DOCUMENT_EVENTS]({
+    targetList,
+    targetType,
+    targetFront,
+    isTopLevel,
+    onAvailable,
+  }) {
+    
+    if (!isTopLevel) {
+      return;
+    }
+
+    const webConsoleFront = await targetFront.getFront("console");
+    webConsoleFront.on("documentEvent", onAvailable);
+    await webConsoleFront.startListeners(["DocumentEvents"]);
+  },
 };
