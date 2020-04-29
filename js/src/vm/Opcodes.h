@@ -726,7 +726,7 @@
 
 
  \
-    MACRO(ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    MACRO(ToNumeric, to_numeric, NULL, 1, 1, 1, JOF_BYTE) \
     
 
 

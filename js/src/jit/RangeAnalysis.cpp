@@ -1711,6 +1711,10 @@ void MToInt64::computeRange(TempAllocator& alloc) {
   setRange(new (alloc) Range(getOperand(0)));
 }
 
+void MToNumeric::computeRange(TempAllocator& alloc) {
+  setRange(new (alloc) Range(getOperand(0)));
+}
+
 void MToNumberInt32::computeRange(TempAllocator& alloc) {
   
   setRange(new (alloc) Range(getOperand(0)));

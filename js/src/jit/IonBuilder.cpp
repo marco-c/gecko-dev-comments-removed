@@ -3883,8 +3883,7 @@ AbortReasonOr<Ok> IonBuilder::jsop_tonumeric() {
 
   
   MDefinition* popped = current->pop();
-  MInstruction* ins = MUnaryCache::New(alloc(), popped);
-  ins->setResultTypeSet(types);  
+  MToNumeric* ins = MToNumeric::New(alloc(), popped, types);
   current->add(ins);
   current->push(ins);
 

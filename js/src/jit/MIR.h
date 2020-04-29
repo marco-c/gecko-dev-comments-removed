@@ -4039,6 +4039,40 @@ class MInt64ToFloatingPoint : public MUnaryInstruction,
 
 
 
+class MToNumeric : public MUnaryInstruction, public BoxInputsPolicy::Data {
+  MToNumeric(MDefinition* arg, TemporaryTypeSet* types)
+      : MUnaryInstruction(classOpcode, arg) {
+    if (!JitOptions.warpBuilder) {
+      
+      
+      MOZ_ASSERT(!IsNumericType(arg->type()),
+                 "Unboxable definitions don't need ToNumeric");
+    }
+    setResultType(MIRType::Value);
+    
+    
+    
+    setResultTypeSet(types);
+    setGuard();
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(ToNumeric)
+  TRIVIAL_NEW_WRAPPERS
+
+  void computeRange(TempAllocator& alloc) override;
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+  MDefinition* foldsTo(TempAllocator& alloc) override;
+
+  ALLOW_CLONE(MToNumeric)
+};
+
+
+
+
 
 
 
