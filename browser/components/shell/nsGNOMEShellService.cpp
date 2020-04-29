@@ -101,14 +101,6 @@ nsresult nsGNOMEShellService::Init() {
 
   if (!giovfs && !gsettings) return NS_ERROR_NOT_AVAILABLE;
 
-#ifdef MOZ_ENABLE_DBUS
-  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
-  if (currentDesktop && strstr(currentDesktop, "GNOME") != nullptr &&
-      Preferences::GetBool("browser.gnome-search-provider.enabled", false)) {
-    mSearchProvider.Startup();
-  }
-#endif
-
   
   
   mUseLocaleFilenames = PR_GetEnv("G_BROKEN_FILENAMES") != nullptr;
