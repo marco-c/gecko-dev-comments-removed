@@ -397,6 +397,17 @@ class Span {
   
 
 
+  template <typename OtherElementType, size_t OtherExtent, bool IsConst>
+  constexpr Span(
+      span_details::span_iterator<Span<OtherElementType, OtherExtent>, IsConst>
+          aBegin,
+      span_details::span_iterator<Span<OtherElementType, OtherExtent>, IsConst>
+          aEnd)
+      : storage_(aBegin == aEnd ? nullptr : &*aBegin, aEnd - aBegin) {}
+
+  
+
+
   template <size_t N>
   constexpr MOZ_IMPLICIT Span(element_type (&aArr)[N])
       : storage_(&aArr[0], span_details::extent_type<N>()) {}
@@ -731,6 +742,11 @@ class Span {
 
   storage_type<span_details::extent_type<Extent>> storage_;
 };
+
+template <typename T, size_t OtherExtent, bool IsConst>
+Span(span_details::span_iterator<Span<T, OtherExtent>, IsConst> aBegin,
+     span_details::span_iterator<Span<T, OtherExtent>, IsConst> aEnd)
+    -> Span<std::conditional_t<IsConst, std::add_const_t<T>, T>>;
 
 template <typename T, size_t Extent>
 Span(T (&aArr)[Extent]) -> Span<T, Extent>;
