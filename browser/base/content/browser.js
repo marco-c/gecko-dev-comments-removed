@@ -416,10 +416,15 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", () => {
     
     
     
+    
+    
     let shouldSuppress = () => {
       return (
         window.windowState == window.STATE_MINIMIZED ||
-        (gURLBar.getAttribute("pageproxystate") != "valid" && gURLBar.focused)
+        (gURLBar.getAttribute("pageproxystate") != "valid" &&
+          gURLBar.focused) ||
+        (gBrowser &&
+          gBrowser?.selectedBrowser.hasAttribute("tabmodalChromePromptShowing"))
       );
     };
     return new PopupNotifications(
@@ -8873,6 +8878,18 @@ TabModalPromptBox.prototype = {
     );
     browser.setAttribute("tabmodalPromptShowing", true);
 
+    
+    
+    if (
+      args.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB &&
+      !browser.hasAttribute("tabmodalChromePromptShowing")
+    ) {
+      browser.setAttribute("tabmodalChromePromptShowing", true);
+      
+      
+      PopupNotifications.anchorVisibilityChange();
+    }
+
     let prompts = this.listPrompts(args.modalType);
     if (prompts.length > 1) {
       
@@ -8918,7 +8935,8 @@ TabModalPromptBox.prototype = {
   },
 
   removePrompt(aPrompt) {
-    if (aPrompt.modalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+    let { modalType } = aPrompt.args;
+    if (modalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
       this._tabPrompts.delete(aPrompt.element);
     } else {
       this._contentPrompts.delete(aPrompt.element);
@@ -8927,34 +8945,73 @@ TabModalPromptBox.prototype = {
     let browser = this.browser;
     aPrompt.element.remove();
 
-    let prompts = this.listPrompts(aPrompt.modalType);
+    let prompts = this.listPrompts(modalType);
     if (prompts.length) {
       let prompt = prompts[prompts.length - 1];
       prompt.element.hidden = false;
       
       prompt.Dialog.setDefaultFocus();
-    } else {
+    } else if (modalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+      
+      
+      browser.removeAttribute("tabmodalChromePromptShowing");
+      
+      
+      PopupNotifications.anchorVisibilityChange();
+    }
+    
+    if (!this._hasPrompts()) {
       browser.removeAttribute("tabmodalPromptShowing");
       browser.focus();
     }
   },
 
-  listPrompts(aModalType = null) {
-    
+  
+
+
+
+  _hasPrompts() {
+    return !!this._getPromptElements().length;
+  },
+
+  
+
+
+
+
+
+  _getPromptElements(aModalType = null) {
     let selector = "tabmodalprompt";
-    let promptMap;
 
     if (aModalType != null) {
       if (aModalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
         selector += ".tab-prompt";
-        promptMap = this._tabPrompts;
       } else {
         selector += ".content-prompt";
+      }
+    }
+    return this.browser.parentNode.querySelectorAll(selector);
+  },
+
+  
+
+
+
+
+
+  listPrompts(aModalType = null) {
+    
+    let promptMap;
+
+    if (aModalType) {
+      if (aModalType === Ci.nsIPrompt.MODAL_TYPE_TAB) {
+        promptMap = this._tabPrompts;
+      } else {
         promptMap = this._contentPrompts;
       }
     }
 
-    let elements = this.browser.parentNode.querySelectorAll(selector);
+    let elements = this._getPromptElements(aModalType);
 
     if (promptMap) {
       return [...elements].map(el => promptMap.get(el));
