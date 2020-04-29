@@ -43,6 +43,7 @@ enum CheckboxValue {
                         NSAccessibilityFocusedAttribute,  
                         NSAccessibilityTitleAttribute,    
                         NSAccessibilityChildrenAttribute, NSAccessibilityDescriptionAttribute,
+                        NSAccessibilityRequiredAttribute,
 #if DEBUG
                         @"AXMozDescription",
 #endif
