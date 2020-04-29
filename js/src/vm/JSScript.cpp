@@ -753,14 +753,6 @@ XDRResult js::PrivateScriptData::XDR(XDRState<mode>* xdr, HandleScript script,
 
 
 
-template <typename T>
-void ImmutableScriptData::initElements(size_t offset, size_t length) {
-  uintptr_t base = reinterpret_cast<uintptr_t>(this);
-  DefaultInitializeElements<T>(reinterpret_cast<void*>(base + offset), length);
-}
-
-
-
 
 void ImmutableScriptData::initOptionalArrays(size_t* pcursor,
                                              ImmutableScriptData::Flags* flags,
@@ -953,14 +945,6 @@ static XDRResult XDRImmutableScriptData(XDRState<mode>* xdr,
   size += natoms * sizeof(GCPtrAtom);
 
   return size;
-}
-
-
-
-template <typename T>
-void RuntimeScriptData::initElements(size_t offset, size_t length) {
-  uintptr_t base = reinterpret_cast<uintptr_t>(this);
-  DefaultInitializeElements<T>(reinterpret_cast<void*>(base + offset), length);
 }
 
 RuntimeScriptData::RuntimeScriptData(uint32_t natoms) : natoms_(natoms) {
@@ -4128,14 +4112,6 @@ size_t PrivateScriptData::AllocationSize(uint32_t ngcthings) {
 
 inline size_t PrivateScriptData::allocationSize() const {
   return AllocationSize(ngcthings);
-}
-
-
-
-template <typename T>
-void PrivateScriptData::initElements(size_t offset, size_t length) {
-  void* raw = offsetToPointer<void>(offset);
-  DefaultInitializeElements<T>(raw, length);
 }
 
 

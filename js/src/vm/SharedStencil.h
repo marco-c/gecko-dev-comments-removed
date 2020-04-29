@@ -14,8 +14,9 @@
 
 #include "frontend/SourceNotes.h"  
 #include "js/CompileOptions.h"  
-#include "js/TypeDecls.h"  
-#include "js/UniquePtr.h"  
+#include "js/TypeDecls.h"        
+#include "js/UniquePtr.h"        
+#include "util/TrailingArray.h"  
 #include "vm/StencilEnums.h"  
 
 
@@ -221,11 +222,8 @@ class MutableScriptFlags : public ScriptFlagBase<MutableScriptFlagsEnum> {
 
 
 
-class alignas(uint32_t) ImmutableScriptData final {
+class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
  private:
-  
-  using Offset = uint32_t;
-
   Offset optArrayOffset_ = 0;
 
   
@@ -269,10 +267,10 @@ class alignas(uint32_t) ImmutableScriptData final {
   
   
   
-  size_t flagOffset() const { return offsetOfCode() - sizeof(Flags); }
-  size_t codeOffset() const { return offsetOfCode(); }
-  size_t noteOffset() const { return offsetOfCode() + codeLength_; }
-  size_t optionalOffsetsOffset() const {
+  Offset flagOffset() const { return offsetOfCode() - sizeof(Flags); }
+  Offset codeOffset() const { return offsetOfCode(); }
+  Offset noteOffset() const { return offsetOfCode() + codeLength_; }
+  Offset optionalOffsetsOffset() const {
     
     
     
@@ -288,14 +286,14 @@ class alignas(uint32_t) ImmutableScriptData final {
 
     return optArrayOffset_ - (numOffsets * sizeof(Offset));
   }
-  size_t resumeOffsetsOffset() const { return optArrayOffset_; }
-  size_t scopeNotesOffset() const {
+  Offset resumeOffsetsOffset() const { return optArrayOffset_; }
+  Offset scopeNotesOffset() const {
     return getOptionalOffset(flags().resumeOffsetsEndIndex);
   }
-  size_t tryNotesOffset() const {
+  Offset tryNotesOffset() const {
     return getOptionalOffset(flags().scopeNotesEndIndex);
   }
-  size_t endOffset() const {
+  Offset endOffset() const {
     return getOptionalOffset(flags().tryNotesEndIndex);
   }
 
@@ -303,16 +301,6 @@ class alignas(uint32_t) ImmutableScriptData final {
   static size_t AllocationSize(uint32_t codeLength, uint32_t noteLength,
                                uint32_t numResumeOffsets,
                                uint32_t numScopeNotes, uint32_t numTryNotes);
-
-  
-  template <typename T>
-  T* offsetToPointer(size_t offset) {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    return reinterpret_cast<T*>(base + offset);
-  }
-
-  template <typename T>
-  void initElements(size_t offset, size_t length);
 
   void initOptionalArrays(size_t* cursor, Flags* flags,
                           uint32_t numResumeOffsets, uint32_t numScopeNotes,

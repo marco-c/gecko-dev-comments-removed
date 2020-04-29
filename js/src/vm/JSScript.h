@@ -37,6 +37,7 @@
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
 #include "util/StructuredSpewer.h"
+#include "util/TrailingArray.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeIterator.h"
 #include "vm/BytecodeLocation.h"
@@ -1415,22 +1416,10 @@ struct FieldInitializers {
 
 
 
-class alignas(uintptr_t) PrivateScriptData final {
+class alignas(uintptr_t) PrivateScriptData final : public TrailingArray {
   uint32_t ngcthings = 0;
 
   js::FieldInitializers fieldInitializers_ = js::FieldInitializers::Invalid();
-
-  
-  template <typename T>
-  T* offsetToPointer(size_t offset) {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    uintptr_t elem = base + offset;
-    return reinterpret_cast<T*>(elem);
-  }
-
-  
-  template <typename T>
-  void initElements(size_t offset, size_t length);
 
   
   static size_t AllocationSize(uint32_t ngcthings);
@@ -1445,7 +1434,7 @@ class alignas(uintptr_t) PrivateScriptData final {
 
   
   mozilla::Span<JS::GCCellPtr> gcthings() {
-    size_t offset = offsetOfGCThings();
+    Offset offset = offsetOfGCThings();
     return mozilla::MakeSpan(offsetToPointer<JS::GCCellPtr>(offset), ngcthings);
   }
 
@@ -1481,7 +1470,7 @@ class alignas(uintptr_t) PrivateScriptData final {
 };
 
 
-class RuntimeScriptData final {
+class alignas(uintptr_t) RuntimeScriptData final : public TrailingArray {
   
   
   
@@ -1498,13 +1487,7 @@ class RuntimeScriptData final {
 
  private:
   
-  size_t atomOffset() const { return offsetOfAtoms(); }
-
-  
   static size_t AllocationSize(uint32_t natoms);
-
-  template <typename T>
-  void initElements(size_t offset, size_t length);
 
   
   explicit RuntimeScriptData(uint32_t natoms);
@@ -1528,15 +1511,13 @@ class RuntimeScriptData final {
 
   uint32_t natoms() const { return natoms_; }
   GCPtrAtom* atoms() {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    return reinterpret_cast<GCPtrAtom*>(base + atomOffset());
+    Offset offset = offsetOfAtoms();
+    return offsetToPointer<GCPtrAtom>(offset);
   }
 
   mozilla::Span<const GCPtrAtom> atomsSpan() const {
-    uintptr_t base = reinterpret_cast<uintptr_t>(this);
-    const GCPtrAtom* p =
-        reinterpret_cast<const GCPtrAtom*>(base + atomOffset());
-    return mozilla::MakeSpan(p, natoms_);
+    Offset offset = offsetOfAtoms();
+    return mozilla::MakeSpan(offsetToPointer<GCPtrAtom>(offset), natoms_);
   }
 
   static constexpr size_t offsetOfAtoms() { return sizeof(RuntimeScriptData); }

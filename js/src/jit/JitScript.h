@@ -12,6 +12,7 @@
 #include "jstypes.h"
 #include "jit/BaselineIC.h"
 #include "js/UniquePtr.h"
+#include "util/TrailingArray.h"
 #include "vm/TypeInference.h"
 
 class JS_PUBLIC_API JSScript;
@@ -114,7 +115,7 @@ static IonScript* const IonCompilingScriptPtr =
 
 
 
-class alignas(uintptr_t) JitScript final {
+class alignas(uintptr_t) JitScript final : public TrailingArray {
   friend class ::JSScript;
 
   
@@ -184,17 +185,17 @@ class alignas(uintptr_t) JitScript final {
   mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
 
   
-  uint32_t typeSetOffset_ = 0;
+  Offset typeSetOffset_ = 0;
 
   
-  uint32_t bytecodeTypeMapOffset_ = 0;
+  Offset bytecodeTypeMapOffset_ = 0;
+
+  
+  Offset endOffset_ = 0;
 
   
   
   uint32_t bytecodeTypeMapHint_ = 0;
-
-  
-  uint32_t allocBytes_ = 0;
 
   struct Flags {
     
@@ -215,15 +216,18 @@ class alignas(uintptr_t) JitScript final {
   };
   Flags flags_ = {};  
 
-  ICEntry* icEntries() {
-    uint8_t* base = reinterpret_cast<uint8_t*>(this);
-    return reinterpret_cast<ICEntry*>(base + offsetOfICEntries());
-  }
+  
+
+  Offset icEntriesOffset() const { return offsetOfICEntries(); }
+  Offset typeSetOffset() const { return typeSetOffset_; }
+  Offset bytecodeTypeMapOffset() const { return bytecodeTypeMapOffset_; }
+  Offset endOffset() const { return endOffset_; }
+
+  ICEntry* icEntries() { return offsetToPointer<ICEntry>(icEntriesOffset()); }
 
   StackTypeSet* typeArrayDontCheckGeneration() {
     MOZ_ASSERT(IsTypeInferenceEnabled());
-    uint8_t* base = reinterpret_cast<uint8_t*>(this);
-    return reinterpret_cast<StackTypeSet*>(base + typeSetOffset_);
+    return offsetToPointer<StackTypeSet>(typeSetOffset());
   }
 
   uint32_t typesGeneration() const { return uint32_t(flags_.typesGeneration); }
@@ -244,8 +248,8 @@ class alignas(uintptr_t) JitScript final {
   }
 
  public:
-  JitScript(JSScript* script, uint32_t typeSetOffset,
-            uint32_t bytecodeTypeMapOffset, uint32_t allocBytes,
+  JitScript(JSScript* script, Offset typeSetOffset,
+            Offset bytecodeTypeMapOffset, Offset endOffset,
             const char* profileString);
 
 #ifdef DEBUG
@@ -300,11 +304,11 @@ class alignas(uintptr_t) JitScript final {
   }
 
   uint32_t numICEntries() const {
-    return (typeSetOffset_ - offsetOfICEntries()) / sizeof(ICEntry);
+    return (typeSetOffset() - icEntriesOffset()) / sizeof(ICEntry);
   }
   uint32_t numTypeSets() const {
     MOZ_ASSERT(IsTypeInferenceEnabled());
-    return (bytecodeTypeMapOffset_ - typeSetOffset_) / sizeof(StackTypeSet);
+    return (bytecodeTypeMapOffset() - typeSetOffset()) / sizeof(StackTypeSet);
   }
 
   uint32_t* bytecodeTypeMapHint() { return &bytecodeTypeMapHint_; }
@@ -328,8 +332,7 @@ class alignas(uintptr_t) JitScript final {
 
   uint32_t* bytecodeTypeMap() {
     MOZ_ASSERT(IsTypeInferenceEnabled());
-    uint8_t* base = reinterpret_cast<uint8_t*>(this);
-    return reinterpret_cast<uint32_t*>(base + bytecodeTypeMapOffset_);
+    return offsetToPointer<uint32_t>(bytecodeTypeMapOffset());
   }
 
   inline StackTypeSet* thisTypes(const AutoSweepJitScript& sweep,
@@ -399,7 +402,7 @@ class alignas(uintptr_t) JitScript final {
 
   static void Destroy(Zone* zone, JitScript* script);
 
-  static constexpr size_t offsetOfICEntries() { return sizeof(JitScript); }
+  static constexpr Offset offsetOfICEntries() { return sizeof(JitScript); }
 
   static constexpr size_t offsetOfJitCodeSkipArgCheck() {
     return offsetof(JitScript, jitCodeSkipArgCheck_);
@@ -415,9 +418,6 @@ class alignas(uintptr_t) JitScript final {
   }
 
   uint32_t warmUpCount() const { return warmUpCount_; }
-  uint32_t* addressOfWarmUpCount() {
-    return reinterpret_cast<uint32_t*>(&warmUpCount_);
-  }
 
 #ifdef DEBUG
   void printTypes(JSContext* cx, HandleScript script);
@@ -470,7 +470,7 @@ class alignas(uintptr_t) JitScript final {
   void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
   void unlinkDependentWasmImports();
 
-  size_t allocBytes() const { return allocBytes_; }
+  size_t allocBytes() const { return endOffset(); }
 
   EnvironmentObject* templateEnvironment() const {
     return cachedIonData().templateEnv;
