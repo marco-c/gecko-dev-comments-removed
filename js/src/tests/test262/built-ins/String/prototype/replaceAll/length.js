@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(String.prototype.replaceAll, 'length', {
   value: 2,
   enumerable: false,

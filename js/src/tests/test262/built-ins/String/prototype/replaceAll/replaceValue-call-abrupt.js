@@ -17,7 +17,6 @@
 
 
 
-
 function custom() {
   throw new Test262Error();
 }

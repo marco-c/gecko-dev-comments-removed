@@ -24,7 +24,6 @@
 
 
 
-
 let called = 0;
 
 class RE extends RegExp {

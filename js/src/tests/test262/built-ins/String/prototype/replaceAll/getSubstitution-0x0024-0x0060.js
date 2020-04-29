@@ -47,7 +47,6 @@
 
 
 
-
 var str = 'Ninguém é igual a ninguém. Todo o ser humano é um estranho ímpar.';
 
 var result;

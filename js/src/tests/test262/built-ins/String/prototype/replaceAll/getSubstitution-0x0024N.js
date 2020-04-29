@@ -49,7 +49,6 @@
 
 
 
-
 var str = 'ABC AAA ABC AAA';
 
 var result;

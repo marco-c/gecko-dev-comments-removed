@@ -20,7 +20,6 @@
 
 
 
-
 assert.sameValue(
   typeof String.prototype.replaceAll,
   'function',

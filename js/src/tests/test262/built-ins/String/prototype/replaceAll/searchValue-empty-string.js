@@ -44,7 +44,6 @@
 
 
 
-
 var result;
 
 result = 'aab c  \nx'.replaceAll('', '_');

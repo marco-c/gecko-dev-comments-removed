@@ -23,7 +23,6 @@
 
 
 
-
 var result = 'aaab a a aac'.replaceAll('aa', 'z');
 assert.sameValue(result, 'zab a a zc');
 

@@ -23,7 +23,6 @@
 
 
 
-
 var result;
 
 var called;

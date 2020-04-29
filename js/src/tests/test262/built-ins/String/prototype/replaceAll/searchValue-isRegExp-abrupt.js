@@ -23,7 +23,6 @@
 
 
 
-
 var searchValue = {
   get [Symbol.match]() {
     throw new Test262Error();

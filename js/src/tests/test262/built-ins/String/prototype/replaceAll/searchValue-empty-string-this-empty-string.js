@@ -37,7 +37,6 @@
 
 
 
-
 var result = ''.replaceAll('', 'abc');
 assert.sameValue(result, 'abc');
 

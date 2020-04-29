@@ -24,7 +24,6 @@
 
 
 
-
 var called = 0;
 var searchValue = /./g;
 Object.defineProperty(searchValue, Symbol.replace, {

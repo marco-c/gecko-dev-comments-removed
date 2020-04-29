@@ -25,7 +25,6 @@
 
 
 
-
 var result;
 
 var called;

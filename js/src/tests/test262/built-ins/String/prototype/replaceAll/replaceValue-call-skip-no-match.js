@@ -17,7 +17,6 @@
 
 
 
-
 function replaceValue() {
   throw new Test262Error();
 }

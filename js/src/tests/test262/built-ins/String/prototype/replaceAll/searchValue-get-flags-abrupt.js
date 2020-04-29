@@ -19,7 +19,6 @@
 
 
 
-
 var searchValue = {
   [Symbol.match]: true,
   get flags() {

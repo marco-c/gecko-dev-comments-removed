@@ -24,7 +24,6 @@
 
 
 
-
 var result;
 var searchValue;
 
