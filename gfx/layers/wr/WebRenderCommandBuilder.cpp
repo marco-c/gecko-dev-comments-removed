@@ -302,7 +302,6 @@ struct DIGroup {
   int32_t mAppUnitsPerDevPixel;
   gfx::Size mScale;
   ScrollableLayerGuid::ViewID mScrollId;
-  CompositorHitTestInfo mHitInfo;
   LayerPoint mResidualOffset;
   LayerIntRect mLayerBounds;  
   
@@ -314,8 +313,7 @@ struct DIGroup {
 
   DIGroup()
       : mAppUnitsPerDevPixel(0),
-        mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID),
-        mHitInfo(CompositorHitTestInvisibleToHit) {}
+        mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID) {}
 
   void InvalidateRect(const IntRect& aRect) {
     auto r = aRect.Intersect(mPreservedRect);
@@ -669,9 +667,6 @@ struct DIGroup {
       return;
     }
 
-    
-    mHitInfo = CompositorHitTestInvisibleToHit;
-
     PaintItemRange(aGrouper, aStartItem, aEndItem, context, recorder,
                    rootManager, aResources);
 
@@ -747,11 +742,8 @@ struct DIGroup {
 
     
     
-    
-    CompositorHitTestInfo hitInfo = mHitInfo;
-    if (hitInfo.contains(CompositorHitTestFlags::eVisibleToHitTest)) {
-      hitInfo += CompositorHitTestFlags::eIrregularArea;
-    }
+    CompositorHitTestInfo hitInfo(CompositorHitTestFlags::eVisibleToHitTest,
+                                  CompositorHitTestFlags::eIrregularArea);
 
     
     
@@ -779,19 +771,6 @@ struct DIGroup {
       GP("Trying %s %p-%d %d %d %d %d\n", item->Name(), item->Frame(),
          item->GetPerFrameKey(), bounds.x, bounds.y, bounds.XMost(),
          bounds.YMost());
-
-      if (item->GetType() == DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
-        
-        
-        
-        
-        
-        
-        mHitInfo +=
-            static_cast<nsDisplayCompositorHitTestInfo*>(item)->HitTestFlags();
-        continue;
-      }
-
       GP("paint check invalid %d %d - %d %d\n", bottomRight.x, bottomRight.y,
          size.width, size.height);
       
@@ -819,39 +798,41 @@ struct DIGroup {
         aGrouper->PaintContainerItem(this, item, data, bounds, children,
                                      aContext, aRecorder, aRootManager,
                                      aResources);
-        continue;
-      }
-      nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
-      if (!paintedItem) {
-        continue;
-      }
-      if (dirty) {
-        
-        
-        
-        
-        DisplayItemClip currentClip = paintedItem->GetClip();
+      } else {
+        nsPaintedDisplayItem* paintedItem = item->AsPaintedDisplayItem();
+        if (paintedItem &&
+            
+            
+            item->GetType() != DisplayItemType::TYPE_COMPOSITOR_HITTEST_INFO) {
+          if (dirty) {
+            
+            
+            
+            
+            DisplayItemClip currentClip = paintedItem->GetClip();
 
-        if (currentClip.HasClip()) {
-          aContext->Save();
-          currentClip.ApplyTo(aContext, aGrouper->mAppUnitsPerDevPixel);
-        }
-        aContext->NewPath();
-        GP("painting %s %p-%d\n", paintedItem->Name(), paintedItem->Frame(),
-           paintedItem->GetPerFrameKey());
-        if (aGrouper->mDisplayListBuilder->IsPaintingToWindow()) {
-          paintedItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
-        }
+            if (currentClip.HasClip()) {
+              aContext->Save();
+              currentClip.ApplyTo(aContext, aGrouper->mAppUnitsPerDevPixel);
+            }
+            aContext->NewPath();
+            GP("painting %s %p-%d\n", paintedItem->Name(), paintedItem->Frame(),
+               paintedItem->GetPerFrameKey());
+            if (aGrouper->mDisplayListBuilder->IsPaintingToWindow()) {
+              paintedItem->Frame()->AddStateBits(NS_FRAME_PAINTED_THEBES);
+            }
 
-        paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
-        TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
-                             aResources);
+            paintedItem->Paint(aGrouper->mDisplayListBuilder, aContext);
+            TakeExternalSurfaces(aRecorder, data->mExternalSurfaces,
+                                 aRootManager, aResources);
 
-        if (currentClip.HasClip()) {
-          aContext->Restore();
+            if (currentClip.HasClip()) {
+              aContext->Restore();
+            }
+          }
+          aContext->GetDrawTarget()->FlushItem(bounds);
         }
       }
-      aContext->GetDrawTarget()->FlushItem(bounds);
     }
   }
 
